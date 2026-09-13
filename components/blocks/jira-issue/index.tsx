@@ -2,7 +2,6 @@
 
 import { useId, useRef, useState, type ComponentProps, type CSSProperties, type FocusEvent, type PointerEvent, type ReactNode } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
-
 export type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
 import type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
 import {
@@ -805,7 +804,8 @@ function JiraIssueDefault({
 			className={agentActivityShellClassName}
 			data-slot="jira-issue-agent-shell"
 			initial={false}
-			layout={shouldReduceMotion || agentActivityHoverOpen ? false : "size"}
+			layout={!(shouldReduceMotion || agentActivityHoverOpen)}
+			layoutRoot
 			style={AGENT_ACTIVITY_SHELL_STYLE}
 			transition={layoutTransition}
 		>
