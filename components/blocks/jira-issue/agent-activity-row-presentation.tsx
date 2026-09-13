@@ -437,7 +437,7 @@ export function JiraIssueAgentRowSurface({
 				isDraggedOut
 					? "h-auto w-fit max-w-full justify-start bg-transparent p-0"
 					: cn(
-						"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
+						"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered has-[[aria-expanded=true]]:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
 						iconScale === "comfortable" ? "pr-2 pl-1" : "px-2",
 						inheritChinSurface ? "bg-transparent" : "bg-bg-neutral",
 					),
