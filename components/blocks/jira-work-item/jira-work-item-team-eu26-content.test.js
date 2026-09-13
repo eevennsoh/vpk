@@ -254,6 +254,8 @@ test("Team EU26 header and empty Development share Open in and agent selector me
 	assert.match(openInSource, /Rovo CLI/u);
 	assert.match(openInSource, /VS Code/u);
 	assert.match(openInSource, /Copy prompt/u);
+	assert.match(openInSource, /className: "flex min-w-56 flex-col gap-1 p-1"/u);
+	assert.doesNotMatch(openInSource, /className: "min-w-56 p-0"/u);
 	assert.match(
 		openInSource,
 		/<DropdownMenuGroup>[\s\S]*<DropdownMenuLabel>Copy prompt for<\/DropdownMenuLabel>[\s\S]*<\/DropdownMenuGroup>/u,
