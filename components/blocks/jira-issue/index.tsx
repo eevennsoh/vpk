@@ -805,7 +805,8 @@ function JiraIssueDefault({
 			className={agentActivityShellClassName}
 			data-slot="jira-issue-agent-shell"
 			initial={false}
-			layout={shouldReduceMotion || agentActivityHoverOpen ? false : "size"}
+			layout={!(shouldReduceMotion || agentActivityHoverOpen)}
+			layoutRoot
 			style={AGENT_ACTIVITY_SHELL_STYLE}
 			transition={layoutTransition}
 		>

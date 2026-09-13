@@ -832,7 +832,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 		/const agentActivitySurfaceAnimation = getJiraIssueAgentSurfaceOffsets\(\s*\n\s*agentActivitySurfacePosition,\s*\n\s*insetsAgentActivitySurfaceBottom,\s*\n\s*\);/u,
 	);
 	assert.match(SOURCE, /<article[\s\S]*className=\{agentActivityArticleClassName\}[\s\S]*data-agent-activity-mode=\{resolvedAgentActivityMode\}/);
-	assert.match(SOURCE, /<motion\.div[\s\S]*className=\{agentActivityShellClassName\}[\s\S]*initial=\{false\}[\s\S]*layout=\{shouldReduceMotion \|\| agentActivityHoverOpen \? false : "size"\}/);
+	assert.match(SOURCE, /<motion\.div[\s\S]*className=\{agentActivityShellClassName\}[\s\S]*initial=\{false\}[\s\S]*layout=\{!\(shouldReduceMotion \|\| agentActivityHoverOpen\)\}[\s\S]*layoutRoot/);
 	assert.match(
 		SOURCE,
 		/className=\{cn\(\s*"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",\s*agentSessionTargetHighlighted \? "bg-bg-neutral-hovered" : "bg-bg-neutral",\s*\)\}/u,
