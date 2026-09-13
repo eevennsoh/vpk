@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { useInView } from "motion/react";
+import { Button } from "@/components/ui/button";
 import {
 	ProgressCircle,
 	type ProgressCircleSegment,
@@ -118,12 +120,63 @@ export function ProgressCircleDemoFilled() {
 }
 
 export function ProgressCircleDemoFilledControlled() {
-	const [value, setValue] = useState(50);
+	const [value, setValue] = useState(0);
+	const [animateDashes, setAnimateDashes] = useState(true);
+	const [colorByProgress, setColorByProgress] = useState(true);
+	const [playing, setPlaying] = useState(false);
+	const animationId = useId();
+	const colorId = useId();
+	const containerRef = useRef<HTMLDivElement>(null);
+	const isVisible = useInView(containerRef);
+
+	useEffect(() => {
+		if (!playing || !isVisible || value >= 100) return;
+		const timeout = window.setTimeout(() => setValue((current) => Math.min(100, current + 25)), 1500);
+		return () => window.clearTimeout(timeout);
+	}, [isVisible, playing, value]);
+
+	function selectValue(next: number) {
+		setPlaying(false);
+		setValue(next);
+	}
 
 	return (
-		<div className="flex w-full max-w-xs items-center gap-4">
-			<ProgressCircle variant="filled" value={value} size="lg" />
-			<Slider value={value} onValueChange={(v) => setValue(v as number)} min={0} max={100} step={1} />
+		<div ref={containerRef} className="flex w-full max-w-sm flex-col gap-6">
+			<div className="flex items-center justify-center gap-4">
+				<ProgressCircle variant="filled" dashed animateDashes={animateDashes} colorByProgress={colorByProgress} value={value} className="size-16" label="Filled progress" />
+			</div>
+			<div className="flex flex-col gap-3">
+				<Slider aria-label="Filled progress percentage" value={value} onValueChange={(v) => selectValue(v as number)} min={0} max={100} step={25} />
+				<div className="flex flex-wrap justify-center gap-1">
+					{[0, 25, 50, 75, 100].map((step) => (
+						<Button key={step} size="compact" variant={value === step ? "secondary" : "ghost"} aria-current={value === step ? "step" : undefined} onClick={() => selectValue(step)}>
+							{step}%
+						</Button>
+					))}
+				</div>
+			</div>
+			<div className="flex flex-wrap items-center justify-between gap-4">
+				<div className="flex flex-col gap-3">
+					<div className="flex items-center gap-2">
+						<Switch id={animationId} checked={animateDashes} onCheckedChange={setAnimateDashes} />
+						<Label htmlFor={animationId}>Animate dashed border</Label>
+					</div>
+					<div className="flex items-center gap-2">
+						<Switch id={colorId} checked={colorByProgress} onCheckedChange={setColorByProgress} />
+						<Label htmlFor={colorId}>Color by progress</Label>
+					</div>
+				</div>
+				<Button variant="outline" onClick={() => {
+					if (playing && value < 100) {
+						setPlaying(false);
+					} else {
+						setValue(0);
+						setPlaying(true);
+					}
+				}}>
+					{playing && value < 100 ? "Pause" : value === 100 ? "Replay" : "Play sequence"}
+				</Button>
+			</div>
 		</div>
 	);
 }
