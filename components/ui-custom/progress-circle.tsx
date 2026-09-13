@@ -5,7 +5,8 @@
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
 import { cva, type VariantProps } from "class-variance-authority";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useEffect, useId, useState } from "react";
+import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { cn } from "@/lib/utils";
 
 const VIEWBOX_SIZE = 24;
@@ -17,6 +18,10 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 /** Filled variant: outer ring + gap + inner sector fill. */
 const FILLED_RING_WIDTH = 3;
 const FILLED_RING_RADIUS = CENTER - FILLED_RING_WIDTH / 2; // 10.5
+const FILLED_CIRCUMFERENCE = 2 * Math.PI * FILLED_RING_RADIUS;
+// 15° gaps throughout; longer 45° dashes at zero, then 15° dashes once started.
+const FILLED_DASH_GAP = FILLED_CIRCUMFERENCE / 24;
+const FILL_TRANSITION = { duration: 0.4, ease: [0, 0.4, 0, 1] } as const; // duration-slower / ease-out
 const FILLED_GAP = 1.5;
 const FILLED_ARC_OUTER = FILLED_RING_RADIUS - FILLED_RING_WIDTH / 2 - FILLED_GAP; // 7.5
 
@@ -101,6 +106,12 @@ export interface ProgressCircleProps
 	showCompleteIcon?: boolean;
 	/** Class for the outline track ring behind the progress arc. Defaults to `text-border`. */
 	trackClassName?: string;
+	/** Show a dashed remainder and solid completed arc for determinate filled progress. Defaults to `false`. */
+	dashed?: boolean;
+	/** March the dashed remainder clockwise. Requires `dashed`; reduced motion keeps it static. Defaults to `true`. */
+	animateDashes?: boolean;
+	/** Color determinate filled progress: grey at 0, blue below 75, purple from 75, green at 100. Defaults to `false`. */
+	colorByProgress?: boolean;
 }
 
 function segmentStrokeClassName(status: ProgressCircleSegmentStatus): string {
@@ -168,6 +179,9 @@ function ProgressCircle({
 	animated = true,
 	showCompleteIcon = true,
 	trackClassName,
+	dashed = false,
+	animateDashes = true,
+	colorByProgress = false,
 	className,
 	...props
 }: Readonly<ProgressCircleProps>) {
@@ -181,15 +195,42 @@ function ProgressCircle({
 	const segmentList = segments ?? [];
 	const hasSegments = segmented && segmentList.length > 0;
 	const isIndeterminate = !hasSegments && value == null && !status;
+	const clampedValue = isIndeterminate ? 0 : Math.min(100, Math.max(0, value ?? 0));
+	const isFilled = variant === "filled";
+	const filledColor = !colorByProgress || isIndeterminate || clampedValue === 0
+		? "text-text-subtle"
+		: clampedValue >= 100
+			? "text-icon-success"
+			: clampedValue >= 75
+				? "text-icon-discovery"
+				: "text-icon-information";
+	const hasDashedRing = dashed && isFilled && !hasSegments && !status && value != null;
+	const remainderMaskId = useId();
+	const filledProgress = useMotionValue(clampedValue);
+	const [settledFilledValue, setSettledFilledValue] = useState(clampedValue);
+	const filledSector = useTransform(() => sectorPath(CENTER, CENTER, FILLED_ARC_OUTER, filledProgress.get() * 3.6));
+	const completedMask = useTransform(() => sectorPath(CENTER, CENTER, VIEWBOX_SIZE, filledProgress.get() * 3.6));
+	const completedOffset = useTransform(filledProgress, [0, 100], [FILLED_CIRCUMFERENCE, 0]);
+
+	useEffect(() => {
+		if (!hasDashedRing) return;
+		const playback = animate(filledProgress, clampedValue, {
+			...FILL_TRANSITION,
+			duration: shouldReduceMotion ? 0 : FILL_TRANSITION.duration,
+			onComplete: () => setSettledFilledValue(clampedValue),
+		});
+		return () => playback.stop();
+	}, [clampedValue, filledProgress, hasDashedRing, shouldReduceMotion]);
+
 	const isComplete =
 		!hasSegments
 		&& !status
 		&& !isIndeterminate
 		&& value != null
 		&& value >= 100
+		&& (!hasDashedRing || shouldReduceMotion || settledFilledValue >= 100)
 		&& showCompleteIcon;
-	const clampedValue = isIndeterminate ? 0 : Math.min(100, Math.max(0, value ?? 0));
-	const isFilled = variant === "filled";
+	const animateComplete = animated && !shouldReduceMotion;
 	const segmentWeights = segmentList.map((segment) => Math.max(0, segment.weight ?? 1));
 	const totalSegmentWeight = segmentWeights.reduce((sum, weight) => sum + weight, 0);
 	const passedSegmentWeight = segmentList.reduce((sum, segment, index) => {
@@ -265,12 +306,12 @@ function ProgressCircle({
 						viewBox="0 0 16 16"
 						fill="none"
 						className="size-full"
-						initial={animated ? { opacity: 0, scale: 0.5 } : false}
+						initial={animateComplete ? { opacity: 0, scale: 0.5 } : false}
 						animate={{ opacity: 1, scale: 1 }}
 						transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
 					>
 						{/* Circle background */}
-						{animated ? (
+						{animateComplete ? (
 							<motion.path
 								d="M8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16Z"
 								fill="currentColor"
@@ -287,7 +328,7 @@ function ProgressCircle({
 							/>
 						)}
 						{/* Checkmark */}
-						{animated ? (
+						{animateComplete ? (
 							<motion.path
 								d="M4.82617 7.51953L6.75 9.82812L11.1738 4.51953L12.3262 5.48047L7.32617 11.4805C7.18368 11.6513 6.9725 11.75 6.75 11.75C6.5275 11.75 6.31632 11.6513 6.17383 11.4805L3.67383 8.48047L4.82617 7.51953Z"
 								fill="white"
@@ -327,20 +368,59 @@ function ProgressCircle({
 						exit={statusExit}
 						transition={statusExitTransition}
 					>
-						{/* Outer ring (stays fixed) */}
-						<circle
-							cx={CENTER}
-							cy={CENTER}
-							r={FILLED_RING_RADIUS}
-							strokeWidth={FILLED_RING_WIDTH}
-							stroke="currentColor"
-							className="text-text-subtle"
-						/>
+						{hasDashedRing ? (
+							<>
+								<defs>
+									<mask id={remainderMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width={VIEWBOX_SIZE} height={VIEWBOX_SIZE}>
+										<rect width={VIEWBOX_SIZE} height={VIEWBOX_SIZE} fill="white" />
+										<motion.path d={completedMask} fill="black" />
+									</mask>
+								</defs>
+								{/* The mask stays fixed while only the unfinished dashes rotate. */}
+								<g mask={`url(#${remainderMaskId})`}>
+									<circle
+										data-slot="progress-circle-dashes"
+										cx={CENTER}
+										cy={CENTER}
+										r={FILLED_RING_RADIUS}
+										strokeWidth={FILLED_RING_WIDTH}
+										stroke="currentColor"
+										strokeDasharray={`${clampedValue === 0 ? FILLED_DASH_GAP * 3 : FILLED_DASH_GAP} ${FILLED_DASH_GAP}`}
+										className={cn("origin-center motion-safe:animate-spin", filledColor)}
+										style={{
+											animationDuration: "calc(var(--duration-slowest) * 10)",
+											animationPlayState: animateDashes && clampedValue < 100 ? "running" : "paused",
+										}}
+									/>
+								</g>
+								<motion.circle
+									data-slot="progress-circle-solid"
+									cx={CENTER}
+									cy={CENTER}
+									r={FILLED_RING_RADIUS}
+									strokeWidth={FILLED_RING_WIDTH}
+									stroke="currentColor"
+									strokeDasharray={FILLED_CIRCUMFERENCE}
+									style={{ strokeDashoffset: completedOffset }}
+									transform={`rotate(-90 ${CENTER} ${CENTER})`}
+									className={filledColor}
+								/>
+							</>
+						) : (
+							<circle
+								cx={CENTER}
+								cy={CENTER}
+								r={FILLED_RING_RADIUS}
+								strokeWidth={FILLED_RING_WIDTH}
+								stroke="currentColor"
+								className={filledColor}
+							/>
+						)}
 						{/* Inner sector fill — true pie sweep from center */}
-						<path
-							d={sectorPath(CENTER, CENTER, FILLED_ARC_OUTER, filledAngle)}
+						<motion.path
+							d={hasDashedRing ? filledSector : sectorPath(CENTER, CENTER, FILLED_ARC_OUTER, filledAngle)}
 							fill="currentColor"
-							className="text-text-subtle"
+							className={filledColor}
 						/>
 					</motion.svg>
 				) : (

@@ -9,6 +9,9 @@ export const PROGRESS_CIRCLE_DETAIL: ComponentDetail = {
 <ProgressCircle />                       {/* indeterminate / spinning */}
 <ProgressCircle value={100} />           {/* completed / check icon */}
 <ProgressCircle variant="filled" value={65} /> {/* filled pie-wedge style */}
+<ProgressCircle variant="filled" value={50} dashed animateDashes /> {/* marching dashed remainder */}
+<ProgressCircle variant="filled" value={75} dashed colorByProgress /> {/* grey → blue → purple → green */}
+<ProgressCircle variant="filled" value={75} dashed animateDashes={false} /> {/* static dashed remainder */}
 <ProgressCircle
   segmented
   segments={[
@@ -18,6 +21,24 @@ export const PROGRESS_CIRCLE_DETAIL: ComponentDetail = {
   ]}
 />`,
 	props: [
+		{
+			name: "colorByProgress",
+			type: "boolean",
+			default: "false",
+			description: "Color determinate filled progress: grey at 0%, blue above 0% and below 75%, purple from 75%, and green at 100%. Off keeps the neutral ring and green completion check. Independent of dashed border animation.",
+		},
+		{
+			name: "dashed",
+			type: "boolean",
+			default: "false",
+			description: "For determinate filled progress, show a solid completed arc and dashed remainder. Longer dashes at 0%; shorter dashes with the same gap once progress starts. Ignored for outline, indeterminate, segmented, and status states.",
+		},
+		{
+			name: "animateDashes",
+			type: "boolean",
+			default: "true",
+			description: "Rotate the dashed remainder clockwise when dashed is enabled. Turn off to pause the dashes without changing progress or the dashed appearance. Respects reduced-motion preferences.",
+		},
 		{
 			name: "value",
 			type: "number | null",
@@ -100,7 +121,7 @@ export const PROGRESS_CIRCLE_DETAIL: ComponentDetail = {
 		},
 		{
 			title: "Filled Controlled",
-			description: "Interactive filled progress with a slider control.",
+			description: "Play 0% → 25% → 50% → 75% → 100%, or choose a step. Completed progress becomes solid while the remaining dashes march. Toggle animation and progress colors independently: grey, blue, purple, then the green completion check.",
 			demoSlug: "progress-circle-demo-filled-controlled",
 		},
 		{
