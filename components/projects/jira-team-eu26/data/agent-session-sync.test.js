@@ -51,12 +51,12 @@ test("the Jira v5 demo syncs one, two, or three new sessions per batch", async (
 	assert.equal(finalBatch.nextIndex, sync.JIRA_TEAM_EU26_SYNC_SESSIONS.length);
 });
 
-test("the Jira v5 demo chooses a fresh delay inside the four-to-eight-second window", async () => {
+test("the Jira v5 demo chooses a fresh delay inside the one-to-three-second window", async () => {
 	const sync = await loadSyncModule();
 
-	assert.equal(sync.getJiraTeamEu26SyncDelayMs(() => 0), 4_000);
-	assert.equal(sync.getJiraTeamEu26SyncDelayMs(() => 0.5), 6_000);
-	assert.equal(sync.getJiraTeamEu26SyncDelayMs(() => 0.999_999), 8_000);
+	assert.equal(sync.getJiraTeamEu26SyncDelayMs(() => 0), 1_000);
+	assert.equal(sync.getJiraTeamEu26SyncDelayMs(() => 0.5), 2_000);
+	assert.equal(sync.getJiraTeamEu26SyncDelayMs(() => 0.999_999), 3_000);
 });
 
 test("every queued Jira v5 session has a unique stable identity", async () => {
@@ -64,7 +64,7 @@ test("every queued Jira v5 session has a unique stable identity", async () => {
 	const sessions = sync.JIRA_TEAM_EU26_SYNC_SESSIONS;
 	const codingAgentIds = new Set(["claude", "codex", "copilot", "cursor"]);
 
-	assert.equal(sessions.length, 24);
+	assert.equal(sessions.length, 32);
 	assert.equal(new Set(sessions.map((session) => session.id)).size, sessions.length);
 	assert.ok(sessions.every((session) => session.kind === "agent-session"));
 	assert.ok(sessions.every((session) => codingAgentIds.has(session.agentId)));
