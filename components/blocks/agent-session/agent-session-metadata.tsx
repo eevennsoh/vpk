@@ -48,6 +48,7 @@ export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean
 					<span
 						aria-label={label}
 						className="grid size-4 shrink-0 place-items-center text-text-subtle"
+						role="img"
 						tabIndex={0}
 					/>
 				}

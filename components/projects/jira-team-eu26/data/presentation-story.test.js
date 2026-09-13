@@ -190,6 +190,7 @@ test("the PAY board fills every existing status with coding work and the full st
 	const pay112 = cards.find((card) => card.code === "PAY-112")?.agentActivities?.[0];
 	assert.equal(pay112?.name, "Codex");
 	assert.equal(pay112?.role, "owner");
+	assert.equal(pay112?.invokedBy, undefined, "the owner session does not show their own avatar");
 	assert.equal(pay112?.state, "awaiting-input");
 	assert.equal(pay112?.timeLabel, "Last week");
 	assert.equal(pay112?.question?.label, story.JIRA_TEAM_EU26_PAY_112_RETENTION_QUESTION.label);

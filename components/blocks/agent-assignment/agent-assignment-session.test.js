@@ -106,11 +106,12 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.ok(details.indexOf('title: "Default"') < details.indexOf('title: "Simple"'));
 });
 
-test("needs-input assigned sessions are owners even when source data says viewer", () => {
+test("needs-input preserves explicit viewer ownership", () => {
 	const { assignmentSessionRole } = require("./components/assignment-session-role.ts");
 
-	assert.equal(assignmentSessionRole("needs-input", "viewer"), "owner");
+	assert.equal(assignmentSessionRole("needs-input", "viewer"), "viewer");
 	assert.equal(assignmentSessionRole("needs-input"), "owner");
+	assert.equal(assignmentSessionRole("needs-input", "expired"), "expired");
 	assert.equal(assignmentSessionRole("working", "viewer"), "viewer");
 	assert.equal(assignmentSessionRole("idle", "owner"), "owner");
 	assert.equal(assignmentSessionRole("finished"), undefined);
