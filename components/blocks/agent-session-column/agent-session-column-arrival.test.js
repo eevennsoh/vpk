@@ -253,12 +253,11 @@ test("the arrival target survives until Motion finishes, then stays one-shot", (
 	// Collapsing swaps the cards for the rail and back, remounting them — and a
 	// mount re-arms `initial`. The column survives the toggle, so it owns the
 	// history of which ids have already played; the two branches only render it.
-	assert.match(INDEX_SOURCE, /const \[playedArrivalIds, setPlayedArrivalIds\]/u);
-	assert.match(INDEX_SOURCE, /if \(!playedArrivalIds\.has\(id\)\)/u);
+	assert.match(INDEX_SOURCE, /useAgentSessionArrivals\(\{/u);
 	// Do not eagerly mirror every new id into played history. That removes the
 	// card's animate target one effect after mount and strands it at opacity 0.
 	assert.doesNotMatch(INDEX_SOURCE, /new Set<string>\(newItemIds\)/u);
-	assert.match(INDEX_SOURCE, /const handleArrivalComplete = useCallback/u);
+	assert.match(INDEX_SOURCE, /onArrivalComplete: handleArrivalComplete/u);
 	assert.match(CARD_SOURCE, /onAnimationComplete=\{handleArrivalComplete\}/u);
 	assert.match(NOTCH_MARK_SOURCE, /onAnimationComplete=\{handleArrivalComplete\}/u);
 	// Both branches report completion and keep the beat set distinct from the mark.

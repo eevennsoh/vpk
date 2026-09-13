@@ -49,6 +49,7 @@ import {
 	AGENT_SESSION_DECK_STACKED,
 } from "./deck/deck-model";
 import { useAgentSessionDeck } from "./deck/use-agent-session-deck";
+import { useAgentSessionArrivals } from "./use-agent-session-arrivals";
 import { useAgentSessionColumnFilter } from "./use-agent-session-column-filter";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
 import { useAgentSessionColumnInteraction } from "./use-agent-session-column-interaction";
@@ -361,12 +362,13 @@ export function AgentSessionColumn({
 	const isCollapsedControlled = collapsedProp !== undefined;
 	const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(defaultCollapsed);
 	const collapsed = collapsedProp ?? uncontrolledCollapsed;
+	const columnRef = useRef<HTMLElement>(null);
 	const {
 		handleColumnBlurCapture,
 		handleColumnFocusCapture,
 		handleColumnPointerEnter,
 		handleColumnPointerLeave,
-	} = useAgentSessionColumnInteraction(onInteractionChange);
+	} = useAgentSessionColumnInteraction(onInteractionChange, columnRef, collapsed);
 	// Collapse remounts `AgentSession`, so the column keeps the selected id the
 	// same way it keeps arrival-beat history. `multiSelect={false}` also opts
 	// out of that singleton chrome — article click still views, but the row
@@ -449,7 +451,6 @@ export function AgentSessionColumn({
 		overflowListRef(node);
 		deckListRef(node);
 	}, [deckListRef, overflowListRef]);
-	const columnRef = useRef<HTMLElement>(null);
 	const untrackedCount = count ?? visibleItems.length;
 	const showWellFooter = view === "hidden" || hiddenCount > 0;
 	const hasActiveFilters = showFilter && selectedFilterCount > 0;
@@ -519,62 +520,12 @@ export function AgentSessionColumn({
 		: visibleItems.reduce((total: number, item: AgentSessionItem) => (
 			newItemIds.has(item.id) ? total + 1 : total
 		), 0);
-	// Collapsing swaps the cards for the rail and back, which remounts them — and
-	// a mount is exactly what re-arms an `initial` animation. The beat is meant to
-	// fire once per arrival, so the column, which survives the toggle, remembers
-	// which ids have already played. This is history, not derived state: nothing
-	// in the current props can say whether a beat has already run.
-	const [playedArrivalIds, setPlayedArrivalIds] = useState<ReadonlySet<string>>(
-		() => new Set<string>(),
-	);
-	const arrivingItemIds = useMemo(() => {
-		if (newItemIds === undefined || newItemIds.size === 0) {
-			return undefined;
-		}
-
-		const arriving = new Set<string>();
-		for (const id of newItemIds) {
-			if (!playedArrivalIds.has(id)) {
-				arriving.add(id);
-			}
-		}
-		return arriving;
-	}, [newItemIds, playedArrivalIds]);
-
-	const handleArrivalComplete = useCallback((itemId: string) => {
-		if (newItemIds?.has(itemId) !== true) {
-			return;
-		}
-		setPlayedArrivalIds((current) => {
-			if (current.has(itemId)) {
-				return current;
-			}
-			const next = new Set(current);
-			next.add(itemId);
-			return next;
-		});
-	}, [newItemIds]);
-
-	useEffect(() => {
-		setPlayedArrivalIds((current) => {
-			// Forget reviewed ids so a later re-arrival can animate again. Reduced
-			// motion has no completion callback, so mark those ids as played now.
-			const next = new Set<string>();
-			for (const id of current) {
-				if (newItemIds?.has(id) === true) {
-					next.add(id);
-				}
-			}
-			if (shouldReduceMotion) {
-				for (const id of newItemIds ?? []) {
-					next.add(id);
-				}
-			}
-			const isUnchanged = next.size === current.size
-				&& [...next].every((id: string) => current.has(id));
-			return isUnchanged ? current : next;
-		});
-	}, [newItemIds, shouldReduceMotion]);
+	const { arrivingItemIds, onArrivalComplete: handleArrivalComplete } = useAgentSessionArrivals({
+		items: displayedItems,
+		newItemIds,
+		presentation: collapsed ? notchShape : `expanded:${sessionProps.variant ?? "large"}:${sessionProps.density ?? "short"}`,
+		reduceMotion: shouldReduceMotion === true,
+	});
 	// A controlled host can flip `collapsed` from its own affordance, which never
 	// runs `handleToggleCollapsed`. React to the committed change so an external
 	// collapse behaves like an internal one: clip the overflow for the width
