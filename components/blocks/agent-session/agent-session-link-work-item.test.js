@@ -21,6 +21,7 @@ const BOARD_PAGE_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental/page.tsx"),
 	"utf8",
 );
+const INPUT_GROUP_SOURCE = readFileSync(join(__dirname, "../../ui/input-group.tsx"), "utf8");
 
 test("the picker is a submenu of the row's own menu, not a second overlay", () => {
 	assert.match(SUBMENU_SOURCE, /<DropdownMenuSub\b/u);
@@ -106,6 +107,18 @@ test("the return chip is a real submit button, reachable by pointer and by Enter
 	assert.match(SUBMENU_SOURCE, /<InputGroupButton[\s\S]*type="submit"/u);
 });
 
+test("a disabled empty-submit button does not make the editable input group look disabled", () => {
+	assert.match(
+		INPUT_GROUP_SOURCE,
+		/has-\[\[data-slot=input-group-control\]:disabled\]:bg-input\/50/u,
+	);
+	assert.match(
+		INPUT_GROUP_SOURCE,
+		/has-\[\[data-slot=input-group-control\]:disabled\]:opacity-50/u,
+	);
+	assert.doesNotMatch(INPUT_GROUP_SOURCE, /\bhas-disabled:(?:bg-input\/50|opacity-50)\b/u);
+});
+
 test("the issue-type picker stays inside the menu without leaving the a11y tree", () => {
 	// Model the picker as another submenu so Base UI keeps it inside the parent
 	// menu tree while its shared portal remains in the viewport coordinate space.
@@ -119,6 +132,10 @@ test("the issue-type picker stays inside the menu without leaving the a11y tree"
 });
 
 test("the issue-type picker matches Jira List geometry without shifting the name field", () => {
+	assert.match(
+		SUBMENU_SOURCE,
+		/<DropdownMenuRadioItem\s+className="gap-2"\s+indicatorPlacement="end"/u,
+	);
 	assert.match(
 		SUBMENU_SOURCE,
 		/<Button\s+aria-label=\{`Work item type: \$\{issueTypeLabel\(value\)\}`\}\s+className="shrink-0 gap-1 px-2"\s+size="compact"\s+type="button"\s+variant="ghost"/u,
@@ -165,10 +182,8 @@ test("the menu renders the picker only when the host supplied a capability", () 
 		MORE_MENU_SOURCE,
 		/\{canPickWorkItem \?\s*\(\s*<AgentSessionLinkWorkItemSubmenu/u,
 	);
-	assert.match(
-		MORE_MENU_SOURCE,
-		/<DropdownMenuItem disabled>\{AGENT_SESSION_LINK_WORK_ITEM_LABEL\}<\/DropdownMenuItem>/u,
-	);
+	assert.match(MORE_MENU_SOURCE, /workItemOptions=\{workItemOptions\}\s*\/>\s*\) : null\}/u);
+	assert.doesNotMatch(MORE_MENU_SOURCE, /<DropdownMenuItem[^>]*>\{AGENT_SESSION_LINK_WORK_ITEM_LABEL\}/u);
 });
 
 test("the hook resolves each capability to undefined when the host omits it", () => {

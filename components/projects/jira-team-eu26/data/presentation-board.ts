@@ -501,10 +501,6 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					agentName: "Codex",
 					agentBrandName: "openai-codex",
 					host: "cloud",
-					invokedBy: {
-						avatarSrc: PAY_STORY_PEOPLE.jordan.avatarSrc,
-						name: PAY_STORY_PEOPLE.jordan.name,
-					},
 					label: "Needs the retention window",
 					message: JIRA_TEAM_EU26_PAY_112_RETENTION_MESSAGE,
 					question: JIRA_TEAM_EU26_PAY_112_RETENTION_QUESTION,

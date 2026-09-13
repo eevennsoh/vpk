@@ -969,7 +969,6 @@ function ExperimentalJiraKanbanPageContent({
 					>
 						{showInFlowAgentSessionColumn && agentSessionColumnConfig ? (
 							<InFlowAgentSessionColumn
-								key={agentSessionColumnConfig.collapsed ? "collapsed" : "expanded"}
 								agentSessionColumn={{
 									...agentSessionColumnConfig,
 									draggingIds: boardSessionDrag.draggingIds,

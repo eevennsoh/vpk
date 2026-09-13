@@ -11,11 +11,11 @@ const SCROLL_PREVIEW_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("an open session flyout keeps its source row in the complete hover state", () => {
-	// The session flyout and its nested Smart Link preview are portalled, so CSS
-	// `:hover` cannot keep the source article lit while the pointer crosses them.
-	// The shared flyout identity must pin every visual part of the row hover until
-	// that payload closes or changes.
+test("an open session overlay keeps its source row in the complete hover state", () => {
+	// The session flyout, more-actions menu, and nested Smart Link preview are
+	// portalled, so CSS `:hover` cannot keep the source article lit while the
+	// pointer crosses them. Their controlled open state must pin every visual
+	// part of the row hover until the active overlay closes or changes.
 	assert.match(SCROLL_PREVIEW_SOURCE, /const \[activeItemId, setActiveItemId\] = useState<string \| null>\(null\);/u);
 	assert.match(
 		SCROLL_PREVIEW_SOURCE,
@@ -23,8 +23,9 @@ test("an open session flyout keeps its source row in the complete hover state", 
 	);
 	assert.match(SCROLL_PREVIEW_SOURCE, /return \{ activeItemId, anchor, onOpenChange, popupRef,/u);
 	assert.match(CARD_SOURCE, /isFlyoutActive = false,/u);
-	assert.match(CARD_SOURCE, /data-hovered=\{isFlyoutActive \|\| undefined\}/u);
-	assert.match(CARD_SOURCE, /isHighlighted \|\| isFlyoutActive/u);
+	assert.match(CARD_SOURCE, /const isHoverStateActive = isFlyoutActive \|\| menu\.isOpen;/u);
+	assert.match(CARD_SOURCE, /data-hovered=\{isHoverStateActive \|\| undefined\}/u);
+	assert.match(CARD_SOURCE, /isHighlighted \|\| isHoverStateActive/u);
 	assert.match(
 		CARD_SOURCE,
 		/pinned: isFlyoutActive \|\| \(showMoreMenu && role === "owner" && \(menu\.isOpen \|\| menu\.copied\)\),/u,

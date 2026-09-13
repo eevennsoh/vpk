@@ -343,7 +343,7 @@ test("Jira issue keeps activity rows composer-free and uses one shared assignmen
 	// `relative` is load-bearing: the link-flash overlay is absolutely positioned
 	// against this row, and without it the sweep escapes to a further ancestor.
 	assert.match(AGENT_ACTIVITY_SOURCE, /"group\/agent-chin-row relative flex min-w-0 items-center"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered has-\[\[aria-expanded=true\]\]:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /iconScale === "comfortable" \? "pr-2 pl-1" : "px-2"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /inheritChinSurface \? "bg-transparent" : "bg-bg-neutral"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
@@ -993,4 +993,8 @@ test("Jira issue agent activity chin splits into one row per agent only when ask
 	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentActivityRow\s*\n\s*activities=\{rowGroup\.activities\}/u);
 	assert.match(MODEL_SOURCE, /export type JiraIssueAgentActivityLayout = "merged" \| "split";/u);
 	assert.match(MODEL_SOURCE, /if \(layout === "split"\) \{[\s\S]*activeActivities\.map\(\(activity\) => \(\{ activities: \[activity\], key: activity\.id \}\)\)/u);
+});
+
+test("single viewer and expired session chins cannot open Rovo chat", () => {
+	assert.match(AGENT_ACTIVITY_SOURCE, /const canOpenChat = isSingleAgent && hasViewChat\s*&& \(featuredActivity\?\.role \?\? "owner"\) === "owner";/u);
 });

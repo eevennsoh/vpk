@@ -13,6 +13,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/agent-session-column/use-agent-session-arrivals.test.ts",
 		".agents/skills/vpk-html/scripts/evals.test.js",
 		"twg-install.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-chat-transport.test.js",

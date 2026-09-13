@@ -199,14 +199,16 @@ export function AgentSessionCard({
 	// column, leaving avatar and padding inert. A triage mark uses that same
 	// path so selection is not avatar-only. Hover actions stay buttons so they
 	// can stop the article from changing the selection.
-	const activateCard = onView === undefined && mark == null
+	const role = getAgentSessionRole(item);
+	const viewSession = role === "owner" ? onView : undefined;
+	const activateCard = viewSession === undefined && mark == null
 		? undefined
 		: (gesture: AgentSessionSelectionGesture) => {
 			if (mark != null) {
 				mark.onActivate(gesture);
 				return;
 			}
-			onView?.(item);
+			viewSession?.(item);
 		};
 	const handleArticleClick = activateCard === undefined
 		? undefined
@@ -253,7 +255,10 @@ export function AgentSessionCard({
 		onToggleVisibility,
 		resumeCommand,
 	});
-	const role = getAgentSessionRole(item);
+	// The more-actions popup is portalled, so moving into it ends CSS `:hover`
+	// on the article. Keep the row's complete hover treatment tied to the
+	// controlled overlay state until that popup closes.
+	const isHoverStateActive = isFlyoutActive || menu.isOpen;
 	// Title-led long rows spend their reclaimed width on a trailing progression
 	// column. Short rows do not: `stateAwareTitle` already says "Needs input" on
 	// the title line, so a resting status glyph would only repeat it.
@@ -381,14 +386,14 @@ export function AgentSessionCard({
 						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
 						showSelectedFill && "bg-bg-selected",
-						!showSelectedFill && (isHighlighted || isFlyoutActive) && "bg-surface-hovered",
-						!showSelectedFill && !isHighlighted && !isFlyoutActive && "bg-transparent hover:bg-surface-hovered",
+						!showSelectedFill && (isHighlighted || isHoverStateActive) && "bg-surface-hovered",
+						!showSelectedFill && !isHighlighted && !isHoverStateActive && "bg-transparent hover:bg-surface-hovered",
 						activateCard === undefined
 							? null
 							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
 							)}
 							data-captured={captured || undefined}
-							data-hovered={isFlyoutActive || undefined}
+							data-hovered={isHoverStateActive || undefined}
 							data-highlighted={isHighlighted || undefined}
 							data-marked={isMarked || undefined}
 							data-new={isNew || undefined}
@@ -426,7 +431,7 @@ export function AgentSessionCard({
 										? <AgentSessionLongMetadata item={item} />
 										: <AgentSessionShortMetadata item={item} />
 								}
-								onView={mark == null && bind === undefined ? onView : undefined}
+								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderIdentity={() => {
 									const sessionIdentity = (
 										<AgentListIdentity

@@ -700,7 +700,6 @@ export function ExperimentalV2JiraKanban({
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
 					<InFlowAgentSessionColumn
-						key={agentSessionColumn.collapsed ? "collapsed" : "expanded"}
 						agentSessionColumn={agentSessionColumn}
 						columnFrame={chrome.headerFrame}
 						paddingBottom={paddingBottom}

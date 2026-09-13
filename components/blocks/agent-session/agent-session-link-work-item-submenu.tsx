@@ -100,6 +100,7 @@ function IssueTypePicker({
 				>
 					{ISSUE_TYPE_OPTIONS.map((issueType) => (
 						<DropdownMenuRadioItem
+							className="gap-2"
 							indicatorPlacement="end"
 							key={issueType}
 							onClick={() => setOpen(false)}
