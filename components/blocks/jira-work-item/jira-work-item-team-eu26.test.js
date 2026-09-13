@@ -663,6 +663,8 @@ test("Team EU26 header Actions menu copies the work item as markdown", () => {
 
 test("the Team EU26 Agents details row opens the assigned menu first and swaps to the palette in place", () => {
 	const detailsEditorsSource = readBlockFile("team-eu26/components/detail-field-editors.tsx");
+	const filledRailSource = readBlockFile("team-eu26/components/high-confidence-metadata-rail.tsx");
+	const emptyRailSource = readBlockFile("team-eu26/components/empty-metadata-rail.tsx");
 
 	assert.match(
 		detailsEditorsSource,
@@ -680,6 +682,14 @@ test("the Team EU26 Agents details row opens the assigned menu first and swaps t
 		detailsEditorsSource,
 		/<AgentAssignment[\s\S]*agents=\{agents\}[\s\S]*assignedAgents=\{assignedAgents\}[\s\S]*defaultPinnedAgentIds=\{DEFAULT_PINNED_SPACE_AGENT_IDS\}[\s\S]*onAssignedAgentIdsChange=\{handleAssignedAgentIdsChange\}[\s\S]*onAssignedAgentSelect=\{handleOpenAgentSession\}[\s\S]*onContinueExistingSession=\{handleContinueExistingSession\}[\s\S]*onStartNewSession=\{handleAgentAssign\}[\s\S]*usedAgentIds=\{resolveUsedAgentIds\(sessions\)\}/u,
 	);
+	assert.doesNotMatch(detailsEditorsSource, /trigger\?: ReactElement|trigger=\{trigger\}/u);
+	for (const railSource of [filledRailSource, emptyRailSource]) {
+		assert.match(
+			railSource,
+			/label="Agent sessions"[\s\S]*<AgentsRowField[\s\S]*onChange=\{\(crew\) => actions\.updateMetadata\(\{ crew \}\)\}[\s\S]*value=\{metadata\.crew\}/u,
+		);
+		assert.doesNotMatch(railSource, /AiAgentIcon|aria-label="Edit agent sessions"/u);
+	}
 	assert.match(
 		detailsEditorsSource,
 		/const handleAssignedAgentIdsChange = \(agentIds: readonly string\[\]\) =>[\s\S]*const nonAgentCrew = value\.filter\(\(member\) => member\.kind !== "agent"\);[\s\S]*const nextAgents = agentIds\.flatMap[\s\S]*onChange\(\[\.\.\.nonAgentCrew, \.\.\.nextAgents\]\);/u,
