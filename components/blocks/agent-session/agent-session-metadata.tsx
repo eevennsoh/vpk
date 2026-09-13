@@ -47,7 +47,7 @@ export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean
 				render={
 					<span
 						aria-label={label}
-						className="grid size-4 shrink-0 place-items-center text-text-subtle"
+						className="grid size-4 shrink-0 place-items-center text-icon-subtlest"
 						role="img"
 						tabIndex={0}
 					/>
@@ -205,7 +205,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
-			<span className="min-w-0 truncate text-text-subtle" title={item.agent.name}>
+			<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
 				{item.agent.name}
 			</span>
 			<MetadataDot />
