@@ -134,3 +134,27 @@ test("the board stays inside the Jira shell at short viewport heights", async ({
 	expect(boardBox).not.toBeNull();
 	expect((boardBox?.y ?? 0) + (boardBox?.height ?? 0)).toBeLessThanOrEqual(640);
 });
+
+for (const hostLabel of ["Cloud session", "Local session"]) {
+	test(`the agent assignment stays open while its ${hostLabel} tooltip is hovered`, async ({ page }) => {
+		await page.setViewportSize({ width: 1600, height: 900 });
+		await openBoard(page);
+
+		const card = page.locator("article", {
+			has: page.getByText("PAY-123", { exact: true }),
+		});
+		await card.getByRole("button", { name: "2 agents: 2 Working" }).hover();
+		const assignment = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+		await expect(assignment).toBeVisible();
+
+		await assignment.getByRole("img", { name: hostLabel }).hover();
+		const tooltip = page.locator('[data-slot="tooltip-content"]', { hasText: hostLabel });
+		await expect(tooltip).toBeVisible();
+		await tooltip.hover();
+		await page.waitForTimeout(100);
+		expect(await assignment.getAttribute("data-open")).not.toBeNull();
+
+		await page.getByRole("heading", { name: "Jira Design" }).hover();
+		await expect(assignment).toBeHidden();
+	});
+}
