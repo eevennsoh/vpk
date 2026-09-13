@@ -4,7 +4,7 @@ import test from "node:test";
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { SCROLLING_ENTRANCE_SPRING } from "../../../visual/scrolling/data.ts";
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { AGENT_SESSION_DECK_END_SPACE_PX, AGENT_SESSION_DECK_FLAT, AGENT_SESSION_DECK_STACKED, deckRunFrame, groupDeckRuns, isAgentSessionDeckActive, isIdentityFrame, resolveAgentSessionDeckMotion, type AgentSessionDeck, type DeckRow } from "./deck-model.ts";
+import { AGENT_SESSION_DECK_END_SPACE_PX, AGENT_SESSION_DECK_FLAT, AGENT_SESSION_DECK_STACKED, deckRunFrame, groupDeckRuns, isAgentSessionDeckActive, isIdentityFrame, resolveAgentSessionDeckCollapse, resolveAgentSessionDeckMotion, type AgentSessionDeck, type DeckRow } from "./deck-model.ts";
 
 const STACKED_WITH_ENTRANCE: AgentSessionDeck = {
 	...AGENT_SESSION_DECK_STACKED,
@@ -25,6 +25,16 @@ test("FLAT is inactive and STACKED is active", () => {
 
 test("STACKED has no entrance and starts laid out", () => {
 	assert.equal(AGENT_SESSION_DECK_STACKED.entrance, null);
+});
+
+test("a deck without an entrance stays laid out when its scrollport remounts", () => {
+	assert.equal(resolveAgentSessionDeckCollapse(AGENT_SESSION_DECK_STACKED, false), 0);
+	assert.equal(resolveAgentSessionDeckCollapse(AGENT_SESSION_DECK_STACKED, true), 0);
+});
+
+test("a deck with an entrance collapses only until that entrance has played", () => {
+	assert.equal(resolveAgentSessionDeckCollapse(STACKED_WITH_ENTRANCE, false), 1);
+	assert.equal(resolveAgentSessionDeckCollapse(STACKED_WITH_ENTRANCE, true), 0);
 });
 
 test("reduced motion keeps deck order but removes movement", () => {

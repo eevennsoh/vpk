@@ -58,6 +58,17 @@ export function isAgentSessionDeckActive(deck: AgentSessionDeck): boolean {
 	return deck.depth !== "none" || deck.entrance !== null;
 }
 
+/**
+ * Collapse belongs only to the optional entrance. A depth-only deck must stay
+ * fully laid out across scrollport remounts or its depth gate remains closed.
+ */
+export function resolveAgentSessionDeckCollapse(
+	deck: AgentSessionDeck,
+	entrancePlayed: boolean,
+): 0 | 1 {
+	return deck.entrance !== null && !entrancePlayed ? 1 : 0;
+}
+
 export interface DeckRow {
 	readonly marked: boolean;
 	readonly top: number;
