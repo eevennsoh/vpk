@@ -855,7 +855,7 @@ test("a card body click toggles a single selected session on the selected token"
 	);
 	assert.match(
 		CARD_SOURCE,
-		/!showSelectedFill && !isHighlighted && !isFlyoutActive && "bg-transparent hover:bg-surface-hovered"/u,
+		/!showSelectedFill && !isHighlighted && !isHoverStateActive && "bg-transparent hover:bg-surface-hovered"/u,
 	);
 	assert.match(CARD_SOURCE, /data-selected=\{isSelected \|\| undefined\}/u);
 	assert.match(CARD_SOURCE, /aria-current=\{isSelected \? "true" : undefined\}/u);
