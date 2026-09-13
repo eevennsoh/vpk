@@ -311,6 +311,9 @@ export function useSessionColumnReposition({ hostRef, width, onStart, disabled }
 	};
 
 	const onPointerDownCapture = (event: PointerEvent<HTMLDivElement>) => {
+		// Suppress only the click ending the drag, never a new press (including
+		// portalled menu items whose React events still pass through this host).
+		suppressClick.current = false;
 		if (!placement || disabled || event.button !== 0 || !event.isPrimary) return;
 		const target = event.target as HTMLElement;
 		if (!isSessionColumnRepositionPointerTarget(target)) return;
@@ -325,7 +328,6 @@ export function useSessionColumnReposition({ hostRef, width, onStart, disabled }
 		// Keep short presses targeted at their original header control. The
 		// pointer events still bubble to the host once the drag threshold wins.
 		captureElement.setPointerCapture(event.pointerId);
-		suppressClick.current = false;
 		drag.current = {
 			pointerId: event.pointerId,
 			startX: event.clientX,
@@ -414,6 +416,7 @@ export function useSessionColumnReposition({ hostRef, width, onStart, disabled }
 	};
 
 	const onKeyDownCapture = (event: KeyboardEvent<HTMLDivElement>) => {
+		suppressClick.current = false;
 		if (event.key === "Escape" && drag.current) {
 			event.preventDefault();
 			event.stopPropagation();
