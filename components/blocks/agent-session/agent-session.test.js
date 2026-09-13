@@ -534,9 +534,9 @@ test("the card file exports only a component", () => {
 	assert.match(INDEX_SOURCE, /toJiraIssueAgentActivityFromSession,/u);
 });
 
-test("the menu offers host-appropriate actions, disabled without the capability", () => {
+test("the prototype menu keeps host-appropriate actions enabled without callbacks", () => {
 	// Copying writes to the clipboard before `onCopyResume` ever runs, so a row
-	// the host cannot resume must not offer an enabled Terminal row.
+	// the host cannot resume must not execute the copy action.
 	assert.match(
 		CARD_SOURCE,
 		/const canResume = \(isResumable\?\.\(item\) \?\? true\) && resumeCommand\.length > 0;/u,
@@ -545,8 +545,7 @@ test("the menu offers host-appropriate actions, disabled without the capability"
 	assert.match(CARD_SOURCE, /toAgentListResumeCommand\(item\)/u);
 	assert.match(CARD_SOURCE, /const isCloudSession = !isLocalAgentListItem\(item\);/u);
 	// Continue in is local-only; the record actions are cloud-only. Each is also
-	// gated on its callback, so a host that supplies nothing gets a disabled row
-	// rather than an enabled control backed by an optional call.
+	// backed by optional callbacks, so unimplemented prototype actions are no-ops.
 	assert.match(MENU_HOOK_SOURCE, /onContinueInAgent: onContinueInAgent === undefined \|\| isCloud/u);
 	assert.match(MENU_HOOK_SOURCE, /onDelete: onDeleteSession === undefined \|\| !isCloud/u);
 	assert.match(MENU_HOOK_SOURCE, /onRename: onRenameSession === undefined \|\| !isCloud/u);
@@ -567,10 +566,8 @@ test("the menu offers host-appropriate actions, disabled without the capability"
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DeleteIcon label="" size="small" \/>[\s\S]*variant="destructive"[\s\S]*Delete/u);
 	// Order below the separator: work-item picker, then Dismiss. The picker's own contract lives in agent-session-link-work-item.test.js.
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DropdownMenuSeparator \/>\s*\{canPickWorkItem \?[\s\S]*<DropdownMenuItem[\s\S]*\{dismissLabel\}/u);
-	// Every remaining row disables itself when its capability is missing.
-	for (const capability of ["onRename", "onDelete", "onContinueInAgent", "onCopyPrompt", "onDismiss"]) {
-		assert.match(SESSION_MORE_MENU_SOURCE, new RegExp(`disabled=\\{actions\\.${capability} === undefined\\}`, "u"));
-	}
+	// Missing callbacks must never dim or disable prototype menu rows.
+	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /disabled[= >]/u);
 	// The trigger must not start a card drag, and the card's click guard already
 	// exempts buttons and menu items from activating the row.
 	assert.match(SESSION_MORE_MENU_SOURCE, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/u);
@@ -691,6 +688,8 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	// the title still keeps the work name.
 	assert.match(CARD_SOURCE, /stateAwareTitle=\{!isLongDensity\}/u);
 	assert.match(TYPES_SOURCE, /export type AgentSessionRole = "owner" \| "viewer" \| "expired"/u);
+	assert.match(CARD_SOURCE, /const viewSession = role === "owner" \? onView : undefined/u);
+	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
 	assert.match(CARD_SOURCE, /case "viewer":\s*return <AgentSessionViewerHint \/>;/u);
 	// An expired short row has no resting slot, so its hint joins the hover column.
 	assert.match(CARD_SOURCE, /case "expired":\s*(?:\/\/[^\n]*\n\s*)*return isLongDensity \? undefined : <AgentSessionExpiredHint \/>;/u);
@@ -770,6 +769,7 @@ test("a working long row breathes with the experimental spinner, not the pixel l
 	// Needs-input / complete stay 16-in-24 IconTiles. Running must not — those
 	// `[&_svg]:size-4!` rules shrink the experimental spinner to a speck.
 	assert.match(LIFECYCLE_SOURCE, /iconSize="medium"/u);
+	assert.match(LIFECYCLE_SOURCE, /\[&_svg:not\(\[class\*='size-'\]\)\]:size-4!/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /iconSize="small"/u);
 	assert.match(LIFECYCLE_SOURCE, /size="small"/u);
 	assert.match(LIFECYCLE_SOURCE, /variant="transparent"/u);
@@ -871,7 +871,7 @@ test("a card body click toggles a single selected session on the selected token"
 	// stays presentational and cannot become a nested interactive control.
 	assert.match(CARD_SOURCE, /onClick=\{handleArticleClick\}/u);
 	assert.match(CARD_SOURCE, /onKeyDown=\{handleArticleKeyDown\}/u);
-	assert.match(CARD_SOURCE, /onView === undefined && mark == null/u);
+	assert.match(CARD_SOURCE, /viewSession === undefined && mark == null/u);
 	assert.match(CARD_SOURCE, /mark\.onActivate\(gesture\)/u);
 	assert.match(CARD_SOURCE, /selectionGestureFromModifierKeys\(event\)/u);
 	assert.match(CARD_SOURCE, /const articleRole = mark == null \? undefined : "gridcell";/u);
@@ -895,7 +895,7 @@ test("a card body click toggles a single selected session on the selected token"
 	assert.match(SESSION_MORE_MENU_SOURCE, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/<AgentListRow[\s\S]*onView=\{mark == null && bind === undefined \? onView : undefined\}/u,
+		/<AgentListRow[\s\S]*onView=\{mark == null && bind === undefined \? viewSession : undefined\}/u,
 	);
 	assert.match(CARD_SOURCE, /onActivate=\{activateCard \?\? mark\.onActivate\}/u);
 	assert.match(LIST_ROW_ACTION_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);

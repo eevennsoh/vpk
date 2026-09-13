@@ -994,3 +994,7 @@ test("Jira issue agent activity chin splits into one row per agent only when ask
 	assert.match(MODEL_SOURCE, /export type JiraIssueAgentActivityLayout = "merged" \| "split";/u);
 	assert.match(MODEL_SOURCE, /if \(layout === "split"\) \{[\s\S]*activeActivities\.map\(\(activity\) => \(\{ activities: \[activity\], key: activity\.id \}\)\)/u);
 });
+
+test("single viewer and expired session chins cannot open Rovo chat", () => {
+	assert.match(AGENT_ACTIVITY_SOURCE, /const canOpenChat = isSingleAgent && hasViewChat\s*&& \(featuredActivity\?\.role \?\? "owner"\) === "owner";/u);
+});

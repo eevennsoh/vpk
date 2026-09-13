@@ -123,3 +123,16 @@ test("uses meaningful status narration to infer working and safely falls back to
 		},
 	);
 });
+
+test("needs-input viewer sessions preserve access and attribution in both presenters", async () => {
+	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
+	const agent = assignmentAgent({
+		role: "viewer",
+		statusKind: "needs-input",
+		invokedBy: { name: "Jordan", avatarSrc: "/avatars/jordan.svg" },
+	});
+	for (const result of [toAssignmentActivity(agent), toAssignmentSessionItem(agent)]) {
+		assert.equal(result.role, "viewer");
+		assert.deepEqual(result.invokedBy, agent.invokedBy);
+	}
+});
