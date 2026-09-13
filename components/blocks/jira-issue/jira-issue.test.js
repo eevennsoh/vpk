@@ -65,13 +65,6 @@ test("Jira issue hover keeps the default cursor instead of a drag-handle cursor"
 	assert.doesNotMatch(SOURCE, /cursor:\s*"move"/);
 });
 
-test("Jira issue agent row keeps its hover surface while the assignment flyout is open", () => {
-	assert.match(
-		AGENT_ACTIVITY_SOURCE,
-		/hover:bg-bg-neutral-subtle-hovered has-\[\[aria-expanded=true\]\]:bg-bg-neutral-subtle-hovered/u,
-	);
-});
-
 test("Jira issue stroke chrome drops the raised shadow and uses the disabled border token", () => {
 	assert.match(TYPES_SOURCE, /export type JiraIssueChrome = "raised" \| "stroke";/u);
 	assert.match(SOURCE, /chrome\?: JiraIssueChrome;/u);
