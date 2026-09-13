@@ -181,6 +181,39 @@ test("the collapsed options button still moves the column and opens its menu", a
 	await expect(placement).toHaveAttribute("data-session-column-placement", "2");
 });
 
+for (const activation of ["click", "Enter", "Space"] as const) {
+	test(`the first Expand ${activation} works after dragging a collapsed session column`, async ({ page }) => {
+		await openCollapsedBoard(page);
+		if (await page.locator("[data-agent-session-column-hit-area]").count()) {
+			await revealCollapsedAgentSessionColumn(page);
+		}
+		const options = page.getByRole("button", { name: "Unlink sessions column options" });
+		const start = (await options.boundingBox())!;
+		const progress = (await page.locator('[data-jira-kanban-column="In progress"]').boundingBox())!;
+		await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(progress.x + progress.width - 8, start.y + start.height / 2, { steps: 12 });
+		await expect(page.locator("[data-session-column-drag-chip]")).toHaveCount(1);
+		await page.mouse.up();
+		await expect(page.locator("[data-session-column-placement]")).toHaveAttribute("data-session-column-placement", "2");
+		await expect(page.locator("[data-agent-session-column-expansion]")).not.toHaveAttribute("data-agent-session-column-expansion", "expanded");
+		// Hover only: a header click would clear the stale drag suppression flag.
+		await options.hover();
+		const expand = page.getByRole("menuitem", { name: "Expand", exact: true });
+		await expect(expand).toBeVisible();
+		if (activation === "click") {
+			await expand.click();
+		} else {
+			await expand.focus();
+			await page.keyboard.press(activation);
+		}
+		await expect(page.locator("[data-agent-session-column-expansion]")).toHaveAttribute("data-agent-session-column-expansion", "expanded");
+		if (activation === "click") {
+			await page.screenshot({ path: "output/agent-browser/session-column-first-expand-click.png" });
+		}
+	});
+}
+
 test("dragging a session notch never starts a column drag", async ({ page }) => {
 	await openCollapsedBoard(page);
 	await revealCollapsedAgentSessionColumn(page);
