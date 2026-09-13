@@ -704,7 +704,6 @@ function ExperimentalJiraKanbanView({
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
 					<InFlowAgentSessionColumn
-						key={agentSessionColumn.collapsed ? "collapsed" : "expanded"}
 						agentSessionColumn={{
 							...agentSessionColumn,
 							highlightedItemId: highlightedSessionId,

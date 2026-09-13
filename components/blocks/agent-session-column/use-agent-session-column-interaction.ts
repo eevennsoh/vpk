@@ -3,6 +3,7 @@ import {
 	useEffect,
 	useRef,
 	type FocusEvent,
+	type RefObject,
 } from "react";
 
 interface AgentSessionColumnInteraction {
@@ -12,6 +13,8 @@ interface AgentSessionColumnInteraction {
 
 export function useAgentSessionColumnInteraction(
 	onInteractionChange?: (interacting: boolean) => void,
+	columnRef?: RefObject<HTMLElement | null>,
+	collapsed?: boolean,
 ) {
 	const interactionRef = useRef<AgentSessionColumnInteraction>({
 		focused: false,
@@ -44,6 +47,16 @@ export function useAgentSessionColumnInteraction(
 		reportedInteractionRef.current = interacting;
 		onInteractionChange?.(interacting);
 	}, [onInteractionChange]);
+	useEffect(() => {
+		// Removing the focused menu/row during a mode switch does not dispatch
+		// blur. Reconcile after menu focus restoration so sync is not left paused.
+		const frame = requestAnimationFrame(() => {
+			if (columnRef?.current) {
+				reportColumnInteraction("focused", columnRef.current.contains(document.activeElement));
+			}
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [collapsed, columnRef, reportColumnInteraction]);
 	const handleColumnFocusCapture = useCallback(() => {
 		reportColumnInteraction("focused", true);
 	}, [reportColumnInteraction]);
