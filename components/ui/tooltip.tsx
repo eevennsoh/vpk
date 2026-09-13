@@ -7,25 +7,32 @@ import { cn } from "@/lib/utils"
 
 const TooltipConfiguredContext = React.createContext(false)
 const TooltipAnimateContext = React.createContext(true)
+const TooltipPortalContainerContext = React.createContext<
+	TooltipPrimitive.Portal.Props["container"]
+>(undefined)
 
 const TOOLTIP_POPUP_ANIMATION_CLASSES =
 	"transition-[opacity,translate] duration-normal ease-out-practical motion-reduce:transition-none data-ending-style:duration-fast data-ending-style:ease-in data-starting-style:opacity-0 data-ending-style:opacity-0 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=top]:data-starting-style:translate-y-2 data-[side=left]:data-starting-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=inline-start]:data-starting-style:translate-x-2 data-[side=inline-end]:data-starting-style:-translate-x-2 data-[side=bottom]:data-ending-style:-translate-y-2 data-[side=top]:data-ending-style:translate-y-2 data-[side=left]:data-ending-style:translate-x-2 data-[side=right]:data-ending-style:-translate-x-2 data-[side=inline-start]:data-ending-style:translate-x-2 data-[side=inline-end]:data-ending-style:-translate-x-2"
 
 type TooltipProviderProps = TooltipPrimitive.Provider.Props & {
 	delay?: number
+	portalContainer?: TooltipPrimitive.Portal.Props["container"]
 }
 
 function TooltipProvider({
 	delay = 0,
+	portalContainer,
 	...props
 }: Readonly<TooltipProviderProps>) {
 	return (
 		<TooltipConfiguredContext value={true}>
-			<TooltipPrimitive.Provider
-				data-slot="tooltip-provider"
-				delay={delay}
-				{...props}
-			/>
+			<TooltipPortalContainerContext value={portalContainer}>
+				<TooltipPrimitive.Provider
+					data-slot="tooltip-provider"
+					delay={delay}
+					{...props}
+				/>
+			</TooltipPortalContainerContext>
 		</TooltipConfiguredContext>
 	)
 }
@@ -123,10 +130,11 @@ function TooltipContent({
 	...props
 }: Readonly<TooltipContentProps>) {
 	const animateFromRoot = React.use(TooltipAnimateContext)
+	const portalContainer = React.use(TooltipPortalContainerContext)
 	const shouldAnimate = animate ?? animateFromRoot
 
 	return (
-		<TooltipPrimitive.Portal>
+		<TooltipPrimitive.Portal container={portalContainer}>
 			<TooltipPrimitive.Positioner
 				align={align}
 				alignOffset={alignOffset}
