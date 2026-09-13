@@ -27,7 +27,7 @@ function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
 				// Error state.
 				"has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot]:user-invalid]:ring-destructive/20 has-[[data-slot]:user-invalid]:border-destructive has-[[data-slot]:user-invalid]:ring-3",
 				// Disabled state.
-				"has-disabled:bg-input/50 has-disabled:opacity-50",
+				"has-[[data-slot=input-group-control]:disabled]:bg-input/50 has-[[data-slot=input-group-control]:disabled]:opacity-50",
 				// Combobox integration.
 				"in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0",
 				className
