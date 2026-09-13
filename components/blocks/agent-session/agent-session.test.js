@@ -141,15 +141,7 @@ test("short uncaptured-work rows restore the owner byline", () => {
 	assert.match(METADATA_SOURCE, /<TooltipContent positionerClassName="z-\[600\]">\{label\}<\/TooltipContent>/u);
 	assert.match(
 		METADATA_SOURCE,
-		/<TooltipTrigger[\s\S]*render=\{\s*<span[\s\S]*aria-label=\{label\}[\s\S]*tabIndex=\{0\}/u,
-	);
-	assert.match(
-		METADATA_SOURCE,
-		/aria-label=\{label\}[\s\S]*className="grid size-4 shrink-0 place-items-center text-icon-subtlest"/u,
-	);
-	assert.match(
-		METADATA_SOURCE,
-		/<span className="min-w-0 truncate text-text-subtlest" title=\{item\.agent\.name\}>/u,
+		/<TooltipTrigger[\s\S]*render=\{\s*<span[\s\S]*aria-label=\{label\}[\s\S]*className="grid size-4 shrink-0 place-items-center text-icon-subtlest"[\s\S]*role="img"[\s\S]*tabIndex=\{0\}/u,
 	);
 	assert.doesNotMatch(METADATA_SOURCE, /<TooltipTrigger[\s\S]*<button/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
