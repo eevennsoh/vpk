@@ -235,7 +235,7 @@ test("Team EU26 empty preset uses sparse wiv-v2 body and rail", () => {
 	assert.match(readBlockFile("team-eu26/components/team-eu-rail-panel.tsx"), /absolute inset-0 z-0/u);
 });
 
-test("Team EU26 header and empty Development share Open in and agent selector menus", () => {
+test("Team EU26 header and empty Development share Open in and the board agent selector menu", () => {
 	const dialogSource = readBlockFile("team-eu26/components/experimental-work-item-dialog.tsx");
 	const developmentSource = readBlockFile("team-eu26/components/team-eu-development-panel.tsx");
 	const openInSource = readBlockFile("team-eu26/components/open-in-menu.tsx");
@@ -264,10 +264,16 @@ test("Team EU26 header and empty Development share Open in and agent selector me
 	assert.doesNotMatch(openInSource, /<DropdownMenuItem[^>]*onClick=/u);
 
 	assert.match(agentSelectorSource, /export function WorkItemAgentSelectorMenu/u);
-	assert.match(agentSelectorSource, /heading="Select agent"/u);
-	assert.match(agentSelectorSource, /searchVariant="boxed"/u);
-	assert.doesNotMatch(agentSelectorSource, /onBrowseAgents=\{handleFooterAction\}/u);
-	assert.doesNotMatch(agentSelectorSource, /onCreateAgent=\{handleFooterAction\}/u);
-	assert.doesNotMatch(agentSelectorSource, /heading="Select agent"[\s\S]*onBrowseAgents=/u);
+	assert.match(
+		agentSelectorSource,
+		/const \[pinnedAgentIds, setPinnedAgentIds\] = useState<readonly string\[\]>\(DEFAULT_PINNED_SPACE_AGENT_IDS\);/u,
+	);
+	assert.match(agentSelectorSource, /onBrowseAgents=\{handleFooterAction\}/u);
+	assert.match(agentSelectorSource, /onCreateAgent=\{handleFooterAction\}/u);
+	assert.match(agentSelectorSource, /onPinnedAgentIdsChange=\{setPinnedAgentIds\}/u);
+	assert.match(agentSelectorSource, /pinnedAgentIds=\{pinnedAgentIds\}/u);
+	assert.doesNotMatch(agentSelectorSource, /heading="Select agent"/u);
+	assert.doesNotMatch(agentSelectorSource, /searchVariant="boxed"/u);
+	assert.doesNotMatch(agentSelectorSource, /pinningEnabled=\{false\}/u);
 	assert.match(agentSelectorSource, /actions\.invokeAgent/u);
 });

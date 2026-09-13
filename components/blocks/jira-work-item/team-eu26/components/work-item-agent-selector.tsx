@@ -6,7 +6,10 @@ import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { useJiraWorkItemActions } from "@/components/blocks/jira-work-item/team-eu26/context-jira-work-item";
 import { WORK_ITEM_AGENT_SELECTOR_MENU } from "@/components/blocks/jira-work-item/team-eu26/lib/work-item-agent-selector-menu";
-import { WORK_ITEM_PINNED_ITEMS_LABEL } from "@/components/blocks/jira-work-item/team-eu26/lib/work-item-picker-options";
+import {
+	DEFAULT_PINNED_SPACE_AGENT_IDS,
+	WORK_ITEM_PINNED_ITEMS_LABEL,
+} from "@/components/blocks/jira-work-item/team-eu26/lib/work-item-picker-options";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -77,6 +80,7 @@ export function WorkItemAgentSelectorMenu({
 }>) {
 	const actions = useJiraWorkItemActions();
 	const [isOpen, setIsOpen] = useState(false);
+	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(DEFAULT_PINNED_SPACE_AGENT_IDS);
 	const [query, setQuery] = useState("");
 
 	const handleOpenChange = (nextOpen: boolean) => {
@@ -96,18 +100,23 @@ export function WorkItemAgentSelectorMenu({
 		setQuery("");
 	};
 
+	const handleFooterAction = () => {
+		setIsOpen(false);
+		setQuery("");
+	};
+
 	return (
 		<DropdownMenu onOpenChange={handleOpenChange} open={isOpen}>
 			<DropdownMenuTrigger render={trigger} />
 			<DropdownMenuContent {...WORK_ITEM_AGENT_SELECTOR_MENU} align={align}>
 				<WorkItemAgentSelector
-					heading="Select agent"
 					onAgentToggle={handleAgentToggle}
+					onBrowseAgents={handleFooterAction}
+					onCreateAgent={handleFooterAction}
+					onPinnedAgentIdsChange={setPinnedAgentIds}
 					onQueryChange={setQuery}
-					pinnedAgentIds={[]}
-					pinningEnabled={false}
+					pinnedAgentIds={pinnedAgentIds}
 					query={query}
-					searchVariant="boxed"
 				/>
 			</DropdownMenuContent>
 		</DropdownMenu>
