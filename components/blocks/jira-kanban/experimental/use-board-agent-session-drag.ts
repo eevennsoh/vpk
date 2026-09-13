@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { toSessionTransferMember } from "@/components/blocks/agent-session/agent-session-transfer-member";
 import { createSessionCohort } from "@/components/blocks/agent-session/session-cohort";
 import type {
 	JiraIssueAgentSessionDragControl,
 	JiraIssueAgentSessionDragState,
-	JiraIssueGenerativeActionRequest,
 } from "@/components/blocks/jira-issue";
 import {
 	JIRA_ISSUE_LINK_FLASH_DURATION_MS,
@@ -584,11 +584,10 @@ export function useBoardAgentSessionDrag({
 	 * mention id this board never sees. A sweep the board cannot target would
 	 * silently never play, so fuse boards keep the assign menu they have today.
 	 */
-	const armAssignedAgentLink = useCallback((
+	const armMemberLink = useCallback((
 		cardCode: string,
-		request: Readonly<JiraIssueGenerativeActionRequest>,
+		member: JiraIssueAgentSessionTransferMember | null,
 	) => {
-		const member = toAssignedAgentTransferMember(request);
 		if (!member || shouldReduceMotion || linkingVariant !== "glow") {
 			return;
 		}
@@ -627,6 +626,10 @@ export function useBoardAgentSessionDrag({
 		});
 	}, [armFusionRelease, flushPendingAttach, linkingVariant, shouldReduceMotion]);
 
+	const armSessionLink = useCallback((cardCode: string, session: AgentSessionItem) => {
+		armMemberLink(cardCode, toSessionTransferMember(session));
+	}, [armMemberLink]);
+
 	/**
 	 * A card's generative-action handler with the link acknowledgement attached.
 	 *
@@ -639,8 +642,8 @@ export function useBoardAgentSessionDrag({
 		onSubmit: JiraKanbanProps["onCardGenerativeActionSubmit"],
 	): JiraKanbanProps["onCardGenerativeActionSubmit"] => onSubmit && ((request, card, columnTitle) => {
 		void onSubmit(request, card, columnTitle);
-		armAssignedAgentLink(card.code, request);
-	}), [armAssignedAgentLink]);
+		armMemberLink(card.code, toAssignedAgentTransferMember(request));
+	}), [armMemberLink]);
 
 	useEffect(() => () => {
 		if (settleDeadlineRef.current !== null) {
@@ -816,6 +819,7 @@ export function useBoardAgentSessionDrag({
 		 * The menu owns the link; this only draws it.
 		 */
 		withAssignedAgentLink,
+		armSessionLink,
 		boardRootRef,
 		/**
 		 * The slot the board should draw its insertion line in, or null. Derived

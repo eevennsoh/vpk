@@ -60,6 +60,7 @@ export function useBoardCreatedCardArrival({
 				? { id, columnTitle, cardCodes: [...current.cardCodes, cardCode], appended }
 				: { id, columnTitle, cardCodes: [cardCode], appended }
 		));
+		return cardCode;
 	}, [captureSession, onCreate]);
 
 	const handleComplete = useCallback((arrivalId: number) => {

@@ -12,6 +12,7 @@ import { animate, useMotionValue, useReducedMotion } from "motion/react";
 
 import {
 	isAgentSessionDeckActive,
+	resolveAgentSessionDeckCollapse,
 	resolveAgentSessionDeckMotion,
 	type AgentSessionDeck,
 } from "./deck-model";
@@ -43,9 +44,7 @@ export function useAgentSessionDeck(deck: AgentSessionDeck): RefCallback<HTMLEle
 		() => resolveAgentSessionDeckMotion(deck, reduceEntrance),
 		[deck, reduceEntrance],
 	);
-	const collapse = useMotionValue(
-		active && presentationDeck.entrance !== null ? 1 : 0,
-	);
+	const collapse = useMotionValue(resolveAgentSessionDeckCollapse(presentationDeck, false));
 	const willChange = useMotionValue("auto");
 	const playedRef = useRef(false);
 	const itemsRef = useRef<MeasuredDeckItem[]>([]);
@@ -160,11 +159,7 @@ export function useAgentSessionDeck(deck: AgentSessionDeck): RefCallback<HTMLEle
 			entranceControls?.stop();
 			clearAgentSessionDeck(port);
 			itemsRef.current = [];
-			if (playedRef.current) {
-				collapse.set(0);
-			} else {
-				collapse.set(1);
-			}
+			collapse.set(resolveAgentSessionDeckCollapse(presentationDeck, playedRef.current));
 			willChange.set("auto");
 		};
 	}, [active, collapse, port, presentationDeck, willChange]);
