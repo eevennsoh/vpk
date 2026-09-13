@@ -65,6 +65,13 @@ test("Jira issue hover keeps the default cursor instead of a drag-handle cursor"
 	assert.doesNotMatch(SOURCE, /cursor:\s*"move"/);
 });
 
+test("Jira issue agent row keeps its hover surface while the assignment flyout is open", () => {
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/hover:bg-bg-neutral-subtle-hovered has-\[\[aria-expanded=true\]\]:bg-bg-neutral-subtle-hovered/u,
+	);
+});
+
 test("Jira issue stroke chrome drops the raised shadow and uses the disabled border token", () => {
 	assert.match(TYPES_SOURCE, /export type JiraIssueChrome = "raised" \| "stroke";/u);
 	assert.match(SOURCE, /chrome\?: JiraIssueChrome;/u);
@@ -343,7 +350,7 @@ test("Jira issue keeps activity rows composer-free and uses one shared assignmen
 	// `relative` is load-bearing: the link-flash overlay is absolutely positioned
 	// against this row, and without it the sweep escapes to a further ancestor.
 	assert.match(AGENT_ACTIVITY_SOURCE, /"group\/agent-chin-row relative flex min-w-0 items-center"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered has-\[\[aria-expanded=true\]\]:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /iconScale === "comfortable" \? "pr-2 pl-1" : "px-2"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /inheritChinSurface \? "bg-transparent" : "bg-bg-neutral"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
