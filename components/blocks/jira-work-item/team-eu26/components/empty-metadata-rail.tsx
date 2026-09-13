@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, type ReactElement, type ReactNode } from "react";
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import PersonIcon from "@atlaskit/icon/core/person";
 
@@ -13,7 +12,7 @@ import {
 	PriorityRowField,
 } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
 import { CollapsibleWorkItemSection } from "@/components/blocks/jira-work-item/team-eu26/components/collapsible-work-item-section";
-import { DetailFieldRow, DetailValueTrigger } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-row";
+import { DetailFieldRow } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-row";
 import {
 	TeamEuAutomationPanel,
 	TeamEuRecentAutomationRuns,
@@ -94,13 +93,6 @@ export function EmptyMetadataRail() {
 								value={(
 									<AgentsRowField
 										onChange={(crew) => actions.updateMetadata({ crew })}
-										trigger={(
-											<DetailValueTrigger aria-label="Edit agent sessions">
-												<FieldValue icon={<AiAgentIcon label="" size="small" />}>
-													{metadata.crew.length > 0 ? `${metadata.crew.length} assigned` : "Add agents"}
-												</FieldValue>
-											</DetailValueTrigger>
-										)}
 										value={metadata.crew}
 									/>
 								)}

@@ -128,9 +128,10 @@ test("Team EU26 filled preset renders the high-confidence sections and details r
 		/<CollapsibleWorkItemSection headingId="team-eu26-details-heading" label="Details" variant="rail">/u,
 	);
 	assert.match(sectionSource, /isRail \? "min-h-12 px-4" : expanded \? "min-h-9" : "min-h-8"/u);
-	for (const copy of ["Needs input..", "Development", "Automation", "Apps"]) {
+	for (const copy of ["Development", "Automation", "Apps"]) {
 		assert.match(railSource, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
 	}
+	assert.doesNotMatch(railSource, /Needs input\.\./u);
 	assert.match(railSource, /<TeamEuDevelopmentPanel \/>/u);
 	assert.match(railSource, /<TeamEuAutomationPanel[\s\S]*rules=\{automationRules\}/u);
 	assert.match(railSource, /<TeamEuAutomationPanel[\s\S]*onShowRecentRuns/u);

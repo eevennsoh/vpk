@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactElement, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import PersonIcon from "@atlaskit/icon/core/person";
 import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
@@ -404,11 +404,9 @@ function toSelectorAgent(member: CrewMember): AgentSelectorAgent {
 }
 
 export function AgentsRowField({
-	trigger,
 	value,
 	onChange,
 }: Readonly<{
-	trigger?: ReactElement<{ "aria-expanded"?: boolean }>;
 	value: readonly CrewMember[];
 	onChange: (next: CrewMember[]) => void;
 }>) {
@@ -487,7 +485,6 @@ export function AgentsRowField({
 			pinnedItemsLabel={WORK_ITEM_PINNED_ITEMS_LABEL}
 			usedAgentIds={resolveUsedAgentIds(sessions)}
 			positionerClassName="z-[502]"
-			trigger={trigger}
 		/>
 	);
 }
