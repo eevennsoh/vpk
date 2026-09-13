@@ -117,8 +117,9 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(source, /<PopoverContent[\s\S]*style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
 	assert.match(
 		source,
-		/<HoverCardContent[\s\S]*className="max-h-none w-\[280px\] max-w-\[280px\] gap-0 overflow-hidden rounded-xl p-0 shadow-none"/u,
+		/<TooltipProvider portalContainer=\{hoverPopupRef\}>[\s\S]*<HoverCardContent[\s\S]*className="max-h-none w-\[280px\] max-w-\[280px\] gap-0 overflow-visible rounded-xl p-0 shadow-none"[\s\S]*ref=\{hoverPopupRef\}/u,
 	);
+	assert.match(source, /openMode === "hover" && "overflow-hidden rounded-xl"/u);
 	assert.match(
 		source,
 		/<PopoverContent[\s\S]*className="max-h-none w-\[280px\] max-w-\[280px\] gap-0 overflow-hidden rounded-xl p-0"/u,
@@ -243,7 +244,7 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(source, /eventDetails\?\.reason === "focus-out"/u);
 	assert.match(
 		source,
-		/const menuSurface = \(\s*<div className="w-full outline-none" ref=\{menuRootRef\} tabIndex=\{-1\}>/u,
+		/const menuSurface = \([\s\S]*className=\{cn\([\s\S]*"w-full outline-none"[\s\S]*ref=\{menuRootRef\}[\s\S]*tabIndex=\{-1\}/u,
 	);
 	assert.match(suggestionMenu, /showReturnShortcut\?: boolean;/u);
 	assert.match(suggestionMenu, /showReturnShortcut = true,/u);
