@@ -27,7 +27,7 @@ test("the picker is a submenu of the row's own menu, not a second overlay", () =
 	assert.match(SUBMENU_SOURCE, /<DropdownMenuSub\b/u);
 	assert.match(
 		SUBMENU_SOURCE,
-		/<DropdownMenuSubTrigger>\{AGENT_SESSION_LINK_WORK_ITEM_LABEL\}<\/DropdownMenuSubTrigger>/u,
+		/<DropdownMenuSubTrigger aria-haspopup="dialog">\{AGENT_SESSION_LINK_WORK_ITEM_LABEL\}<\/DropdownMenuSubTrigger>/u,
 	);
 	// A click inside the panel is not a menu selection; letting it bubble would
 	// close the row's menu out from under the panel.

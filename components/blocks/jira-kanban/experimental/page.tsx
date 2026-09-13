@@ -550,15 +550,18 @@ function ExperimentalJiraKanbanPageContent({
 			return;
 		}
 		untrackedTriage.attach(item, target);
+		boardSessionDrag.armSessionLink(target.card.code, item);
 	};
 	const boardMenuWorkItem = useBoardMenuWorkItem({
 		boardColumns: filteredBoardColumns,
-		hostCreate: onBoardAgentSessionCreate === undefined ? undefined : (item, draft) =>
-			handleBoardAgentSessionCreate(
+		hostCreate: onBoardAgentSessionCreate === undefined ? undefined : (item, draft) => {
+			const cardCode = handleBoardAgentSessionCreate(
 				{ ...item, title: draft.summary },
 				filteredBoardColumns[0]?.title ?? "To do",
 				undefined, draft.issueType, // no slot: the menu appends, unlike a gap drop
-			),
+			);
+			if (cardCode !== undefined) boardSessionDrag.armSessionLink(cardCode, item);
+		},
 		hostLink: onCardAgentSessionLink === undefined ? undefined : handleUntrackedLinkWorkItem,
 		onCapture: handleCaptureLooseWork,
 		updateBoardColumns,

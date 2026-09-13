@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 
 import ReturnIcon from "@atlaskit/icon-lab/core/return";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -42,6 +42,12 @@ const ISSUE_TYPE_OPTIONS: readonly JiraListIssueType[] = [
 	"bug",
 	"subtask",
 ];
+
+// Menu typeahead consumes printable keys, including spaces, even in an input.
+// Keep native editing/submission local; Escape still dismisses the submenu.
+function handleInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+	if (event.key !== "Escape") event.stopPropagation();
+}
 
 /** Title Case for the type menu; the option values stay the lowercase board union. */
 function issueTypeLabel(issueType: JiraListIssueType): string {
@@ -102,6 +108,7 @@ function IssueTypePicker({
 						<DropdownMenuRadioItem
 							className="gap-2"
 							indicatorPlacement="end"
+							closeOnClick={false}
 							key={issueType}
 							onClick={() => setOpen(false)}
 							value={issueType}
@@ -152,8 +159,10 @@ function CreateWorkItemField({
 				</InputGroupAddon>
 				<InputGroupInput
 					aria-label="Name this work item"
+					autoComplete="off"
 					name="summary"
 					onChange={(event) => onSummaryChange(event.target.value)}
+					onKeyDown={handleInputKeyDown}
 					placeholder="Name this work item"
 					type="text"
 					value={summary}
@@ -241,14 +250,16 @@ export function AgentSessionLinkWorkItemSubmenu({
 				}
 			}}
 		>
-			<DropdownMenuSubTrigger>{AGENT_SESSION_LINK_WORK_ITEM_LABEL}</DropdownMenuSubTrigger>
+			<DropdownMenuSubTrigger aria-haspopup="dialog">{AGENT_SESSION_LINK_WORK_ITEM_LABEL}</DropdownMenuSubTrigger>
 			{/*
 			 * Keep the panel content-sized across tabs. The existing-items list owns
 			 * its bounded scroll while Create new keeps the InputGroup focus ring clear.
 			 */}
 			<DropdownMenuSubContent
+				aria-orientation={undefined}
 				className="max-h-none w-[22rem] p-0"
 				onClick={(event) => event.stopPropagation()}
+				role="dialog"
 			>
 				<Tabs className="gap-0" defaultValue={canLink ? "existing" : "create"}>
 					<TabsList className="mx-2.5 mt-2.5 w-[calc(100%-1.25rem)]">
@@ -263,8 +274,10 @@ export function AgentSessionLinkWorkItemSubmenu({
 							</InputGroupAddon>
 							<InputGroupInput
 								aria-label="Search work items"
+								autoComplete="off"
 								className="text-sm"
 								onChange={(event) => setQuery(event.target.value)}
+								onKeyDown={handleInputKeyDown}
 								placeholder="Search..."
 								type="text"
 								value={query}
