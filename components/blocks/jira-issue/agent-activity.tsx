@@ -295,7 +295,8 @@ function resolveJiraIssueAgentRowPresentation(
 	const rowLabel = isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
-	const canOpenChat = isSingleAgent && hasViewChat;
+	const canOpenChat = isSingleAgent && hasViewChat
+		&& (featuredActivity?.role ?? "owner") === "owner";
 	const activityKey = activities.map((activity) => activity.id).join("\n");
 	const startupSequenceKey = isSingleAgent && featuredActivity?.startupSequence === "jira-work-item-start"
 		? activityKey

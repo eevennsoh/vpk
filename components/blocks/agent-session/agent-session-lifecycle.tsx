@@ -145,7 +145,7 @@ export function AgentSessionLifecycle({
 			aria-label={label}
 			aria-pressed={pressed}
 			className={cn(
-				"h-6 w-auto min-w-6 gap-1 py-0 pr-0 text-xs shadow-none focus-visible:ring-0 aria-pressed:[&_svg]:text-icon-selected",
+				"h-6 w-auto min-w-6 gap-1 py-0 pr-0 text-xs shadow-none focus-visible:ring-0 aria-pressed:[&_svg]:text-icon-selected [&_svg:not([class*='size-'])]:size-4!",
 				showLabel ? "pl-1" : "pl-0",
 			)}
 			onClick={(event) => {

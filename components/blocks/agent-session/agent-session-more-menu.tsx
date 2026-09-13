@@ -21,10 +21,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 
-import {
-	AGENT_SESSION_LINK_WORK_ITEM_LABEL,
-	AgentSessionLinkWorkItemSubmenu,
-} from "./agent-session-link-work-item-submenu";
+import { AgentSessionLinkWorkItemSubmenu } from "./agent-session-link-work-item-submenu";
 import type {
 	AgentSessionItem,
 	AgentSessionWorkItemDraft,
@@ -38,14 +35,11 @@ import type {
  * getting back into it — reopen the agent, or take the prompt to a terminal. A
  * cloud session lives on the server, where the row is a handle on a remote
  * record, so its actions are about the record: rename it, delete it. Link work
- * item and Dismiss are common to both, which is why they sit below a
- * separator in each menu.
+ * item is offered only when the host supplies linking actions (the session
+ * column). Dismiss is common to both menu variants.
  *
- * An item whose capability the host did not supply renders disabled rather than
- * enabled-and-inert — an enabled control backed by nothing is a lie about what
- * this surface can do. Link work item follows the same rule at submenu scale:
- * with neither link nor create wired it collapses to a disabled row instead of
- * opening onto an empty panel.
+ * Prototype rows stay interactive when a callback is not yet implemented.
+ * Optional callbacks make those selections safe no-ops.
  */
 export interface AgentSessionMoreMenuActions {
 	/** Reopen the session in its own agent. Labeled with the agent's name. */
@@ -151,14 +145,12 @@ export function AgentSessionMoreMenu({
 				{isCloud ? (
 					<>
 						<DropdownMenuItem
-							disabled={actions.onRename === undefined}
 							elemBefore={<EditIcon label="" size="small" />}
 							onSelect={() => actions.onRename?.()}
 						>
 							Rename
 						</DropdownMenuItem>
 						<DropdownMenuItem
-							disabled={actions.onDelete === undefined}
 							elemBefore={<DeleteIcon label="" size="small" />}
 							onSelect={() => actions.onDelete?.()}
 							variant="destructive"
@@ -173,7 +165,6 @@ export function AgentSessionMoreMenu({
 					<DropdownMenuGroup>
 						<DropdownMenuLabel>Continue in</DropdownMenuLabel>
 						<DropdownMenuItem
-							disabled={actions.onContinueInAgent === undefined}
 							elemBefore={<AgentMenuGlyph agent={item.agent} />}
 							onSelect={() => actions.onContinueInAgent?.()}
 						>
@@ -181,7 +172,6 @@ export function AgentSessionMoreMenu({
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							description="Copy prompt"
-							disabled={actions.onCopyPrompt === undefined}
 							elemBefore={<TerminalIcon label="" size="small" />}
 							onSelect={(event) => {
 								event.preventDefault();
@@ -201,11 +191,8 @@ export function AgentSessionMoreMenu({
 						onRequestClose={() => onOpenChange(false)}
 						workItemOptions={workItemOptions}
 					/>
-				) : (
-					<DropdownMenuItem disabled>{AGENT_SESSION_LINK_WORK_ITEM_LABEL}</DropdownMenuItem>
-				)}
+				) : null}
 				<DropdownMenuItem
-					disabled={actions.onDismiss === undefined}
 					onSelect={() => actions.onDismiss?.()}
 				>
 					{dismissLabel}

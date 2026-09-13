@@ -165,10 +165,8 @@ test("the menu renders the picker only when the host supplied a capability", () 
 		MORE_MENU_SOURCE,
 		/\{canPickWorkItem \?\s*\(\s*<AgentSessionLinkWorkItemSubmenu/u,
 	);
-	assert.match(
-		MORE_MENU_SOURCE,
-		/<DropdownMenuItem disabled>\{AGENT_SESSION_LINK_WORK_ITEM_LABEL\}<\/DropdownMenuItem>/u,
-	);
+	assert.match(MORE_MENU_SOURCE, /workItemOptions=\{workItemOptions\}\s*\/>\s*\) : null\}/u);
+	assert.doesNotMatch(MORE_MENU_SOURCE, /<DropdownMenuItem[^>]*>\{AGENT_SESSION_LINK_WORK_ITEM_LABEL\}/u);
 });
 
 test("the hook resolves each capability to undefined when the host omits it", () => {

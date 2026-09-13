@@ -199,14 +199,16 @@ export function AgentSessionCard({
 	// column, leaving avatar and padding inert. A triage mark uses that same
 	// path so selection is not avatar-only. Hover actions stay buttons so they
 	// can stop the article from changing the selection.
-	const activateCard = onView === undefined && mark == null
+	const role = getAgentSessionRole(item);
+	const viewSession = role === "owner" ? onView : undefined;
+	const activateCard = viewSession === undefined && mark == null
 		? undefined
 		: (gesture: AgentSessionSelectionGesture) => {
 			if (mark != null) {
 				mark.onActivate(gesture);
 				return;
 			}
-			onView?.(item);
+			viewSession?.(item);
 		};
 	const handleArticleClick = activateCard === undefined
 		? undefined
@@ -253,7 +255,6 @@ export function AgentSessionCard({
 		onToggleVisibility,
 		resumeCommand,
 	});
-	const role = getAgentSessionRole(item);
 	// Title-led long rows spend their reclaimed width on a trailing progression
 	// column. Short rows do not: `stateAwareTitle` already says "Needs input" on
 	// the title line, so a resting status glyph would only repeat it.
@@ -426,7 +427,7 @@ export function AgentSessionCard({
 										? <AgentSessionLongMetadata item={item} />
 										: <AgentSessionShortMetadata item={item} />
 								}
-								onView={mark == null && bind === undefined ? onView : undefined}
+								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderIdentity={() => {
 									const sessionIdentity = (
 										<AgentListIdentity
