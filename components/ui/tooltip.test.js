@@ -36,6 +36,9 @@ test("tooltip content uses popup-family fade and 8px side-axis slide", () => {
 });
 
 test("tooltip content keeps the shared portal positioner layer hook", () => {
+	assert.match(source, /portalContainer\?: TooltipPrimitive\.Portal\.Props\["container"\]/u);
+	assert.match(source, /<TooltipPortalContainerContext value=\{portalContainer\}>/u);
+	assert.match(source, /<TooltipPrimitive\.Portal container=\{portalContainer\}>/u);
 	assert.match(source, /positionerClassName\?: string/u);
 	assert.match(source, /"align" \| "alignOffset" \| "anchor" \| "collisionAvoidance" \| "side" \| "sideOffset"/u);
 	assert.match(source, /<TooltipPrimitive\.Positioner[\s\S]*anchor=\{anchor\}/u);

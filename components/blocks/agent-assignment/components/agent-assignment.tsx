@@ -155,6 +155,7 @@ export function AgentAssignment({
 	const [view, setView] = useState<"assigned" | "selector" | "session">("assigned");
 	const [pendingSessionAgent, setPendingSessionAgent] = useState<AgentSelectorAgent | null>(null);
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(defaultPinnedAgentIds);
+	const hoverPopupRef = useRef<HTMLDivElement>(null);
 	const menuRootRef = useRef<HTMLDivElement>(null);
 	const moreMenuOpenRef = useRef(false);
 	const retainPopoverOpenRef = useRef(false);
@@ -406,14 +407,21 @@ export function AgentAssignment({
 		/>
 	);
 	const menuSurface = (
-		<div className="w-full outline-none" ref={menuRootRef} tabIndex={-1}>
+		<div
+			className={cn(
+				"w-full outline-none",
+				openMode === "hover" && "overflow-hidden rounded-xl",
+			)}
+			ref={menuRootRef}
+			tabIndex={-1}
+		>
 			{menu}
 		</div>
 	);
 
 	if (openMode === "hover") {
 		return (
-			<TooltipProvider>
+			<TooltipProvider portalContainer={hoverPopupRef}>
 				<HoverCard onOpenChange={handleOpenChange} open={open}>
 					<HoverCardTrigger
 						closeDelay={80}
@@ -430,8 +438,9 @@ export function AgentAssignment({
 					<HoverCardContent
 						align="start"
 						aria-label="Agent assignment"
-						className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-hidden rounded-xl p-0 shadow-none"
+						className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-visible rounded-xl p-0 shadow-none"
 						positionerClassName={overlayPositionerClassName}
+						ref={hoverPopupRef}
 						side={side ?? "right"}
 						sideOffset={8}
 						style={{ boxShadow: token("elevation.shadow.overlay") }}
