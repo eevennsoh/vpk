@@ -73,6 +73,16 @@ function useInFlowAgentSessionColumnInteraction(
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [pinned, setPinned] = useState(rest.pinned);
 	const [expanded, setExpanded] = useState(rest.expanded);
+	const [previousCollapsed, setPreviousCollapsed] = useState(collapsed);
+	if (previousCollapsed !== collapsed) {
+		// Reset presentation axes when the board filter changes, preserving the
+		// mounted column's session-arrival history and gutter introduction.
+		setPreviousCollapsed(collapsed);
+		setPinned(rest.pinned);
+		setExpanded(rest.expanded);
+		setIsHovered(false);
+		setIsMenuOpen(false);
+	}
 	const isEmbedded = isHovered || pinned || isMenuOpen;
 	const isFullWidth = expanded && isEmbedded;
 

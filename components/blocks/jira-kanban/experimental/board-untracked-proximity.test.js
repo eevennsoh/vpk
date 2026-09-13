@@ -343,7 +343,7 @@ test("a hovered detached board session lights its column twin", () => {
 	assert.match(SESSION_INDEX_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
 	assert.match(
 		LARGE_CARD_SOURCE,
-		/!showSelectedFill && \(isHighlighted \|\| isFlyoutActive\) && "bg-surface-hovered"/u,
+		/!showSelectedFill && \(isHighlighted \|\| isHoverStateActive\) && "bg-surface-hovered"/u,
 	);
 });
 

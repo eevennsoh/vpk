@@ -255,6 +255,10 @@ export function AgentSessionCard({
 		onToggleVisibility,
 		resumeCommand,
 	});
+	// The more-actions popup is portalled, so moving into it ends CSS `:hover`
+	// on the article. Keep the row's complete hover treatment tied to the
+	// controlled overlay state until that popup closes.
+	const isHoverStateActive = isFlyoutActive || menu.isOpen;
 	// Title-led long rows spend their reclaimed width on a trailing progression
 	// column. Short rows do not: `stateAwareTitle` already says "Needs input" on
 	// the title line, so a resting status glyph would only repeat it.
@@ -382,14 +386,14 @@ export function AgentSessionCard({
 						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
 						showSelectedFill && "bg-bg-selected",
-						!showSelectedFill && (isHighlighted || isFlyoutActive) && "bg-surface-hovered",
-						!showSelectedFill && !isHighlighted && !isFlyoutActive && "bg-transparent hover:bg-surface-hovered",
+						!showSelectedFill && (isHighlighted || isHoverStateActive) && "bg-surface-hovered",
+						!showSelectedFill && !isHighlighted && !isHoverStateActive && "bg-transparent hover:bg-surface-hovered",
 						activateCard === undefined
 							? null
 							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
 							)}
 							data-captured={captured || undefined}
-							data-hovered={isFlyoutActive || undefined}
+							data-hovered={isHoverStateActive || undefined}
 							data-highlighted={isHighlighted || undefined}
 							data-marked={isMarked || undefined}
 							data-new={isNew || undefined}

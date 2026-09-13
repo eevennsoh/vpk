@@ -64,15 +64,15 @@ test("the in-flow host pins and expands on separate axes", () => {
 	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /Expand more/u);
 	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /ExpandMoreHorizontalIcon/u);
 	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /preserveExpandTooltipOnPress/u);
-	assert.match(
+	assert.doesNotMatch(
 		EXPERIMENTAL_BOARD_SOURCE,
 		/key=\{agentSessionColumn\.collapsed \? "collapsed" : "expanded"\}/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		BOARD_SOURCE,
 		/key=\{agentSessionColumn\.collapsed \? "collapsed" : "expanded"\}/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/key=\{agentSessionColumnConfig\.collapsed \? "collapsed" : "expanded"\}/u,
 	);
