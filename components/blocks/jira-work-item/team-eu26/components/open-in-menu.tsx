@@ -54,7 +54,7 @@ const OPEN_IN_MENU_AGENTS: readonly OpenInAgent[] = [
 
 const OPEN_IN_MENU_CONTENT = {
 	align: "end",
-	className: "min-w-56 p-0",
+	className: "flex min-w-56 flex-col gap-1 p-1",
 	positionerClassName: "z-[502]",
 } as const;
 

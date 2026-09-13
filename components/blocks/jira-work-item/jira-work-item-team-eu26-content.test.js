@@ -128,9 +128,10 @@ test("Team EU26 filled preset renders the high-confidence sections and details r
 		/<CollapsibleWorkItemSection headingId="team-eu26-details-heading" label="Details" variant="rail">/u,
 	);
 	assert.match(sectionSource, /isRail \? "min-h-12 px-4" : expanded \? "min-h-9" : "min-h-8"/u);
-	for (const copy of ["Needs input..", "Development", "Automation", "Apps"]) {
+	for (const copy of ["Development", "Automation", "Apps"]) {
 		assert.match(railSource, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
 	}
+	assert.doesNotMatch(railSource, /Needs input\.\./u);
 	assert.match(railSource, /<TeamEuDevelopmentPanel \/>/u);
 	assert.match(railSource, /<TeamEuAutomationPanel[\s\S]*rules=\{automationRules\}/u);
 	assert.match(railSource, /<TeamEuAutomationPanel[\s\S]*onShowRecentRuns/u);
@@ -253,6 +254,8 @@ test("Team EU26 header and empty Development share Open in and the board agent s
 	assert.match(openInSource, /Rovo CLI/u);
 	assert.match(openInSource, /VS Code/u);
 	assert.match(openInSource, /Copy prompt/u);
+	assert.match(openInSource, /className: "flex min-w-56 flex-col gap-1 p-1"/u);
+	assert.doesNotMatch(openInSource, /className: "min-w-56 p-0"/u);
 	assert.match(
 		openInSource,
 		/<DropdownMenuGroup>[\s\S]*<DropdownMenuLabel>Copy prompt for<\/DropdownMenuLabel>[\s\S]*<\/DropdownMenuGroup>/u,
