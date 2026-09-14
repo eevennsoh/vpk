@@ -818,8 +818,6 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_LAYOUT: Transition = \{ duration: 0\.2, ease: \[0\.4, 0, 0, 1\] \}; \/\/ duration-medium \+ ease-in-out/);
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
-	assert.match(SOURCE, /layoutOwner = "self"/u);
-	assert.match(SOURCE, /const parentOwnsLayout = layoutOwner === "parent";/u);
 	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence key=\{rowPresenceKey\} initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup, index\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);

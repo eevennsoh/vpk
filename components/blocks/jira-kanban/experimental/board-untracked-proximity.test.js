@@ -368,9 +368,8 @@ test("Jira cards animate surrounding reflow when a session attach chin opens", (
 		BOARD_SOURCE,
 		/transition=\{shouldAnimateCardPosition \? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT\}/u,
 	);
-	assert.match(CARD_SOURCE, /layoutOwner="parent"/u);
-	assert.match(JIRA_ISSUE_SOURCE, /layoutOwner\?: "self" \| "parent";/u);
-	assert.match(JIRA_ISSUE_SOURCE, /const parentOwnsLayout = layoutOwner === "parent";/u);
+	assert.match(CARD_SOURCE, /parentOwnsLayout/u);
+	assert.match(JIRA_ISSUE_SOURCE, /parentOwnsLayout\?: boolean;/u);
 	assert.match(
 		JIRA_ISSUE_SOURCE,
 		/layout=\{!\(shouldReduceMotion \|\| agentActivityHoverOpen \|\| parentOwnsLayout\)\}/u,

@@ -207,8 +207,7 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	compact?: boolean;
 	/** Compact keeps 12px icons and 16px avatars. Comfortable uses 16px icons and 24px avatars. */
 	iconScale?: JiraIssueIconScale;
-	/** Selects whether this issue or an animated parent owns position projection. */
-	layoutOwner?: "self" | "parent";
+	parentOwnsLayout?: boolean;
 	/** Nested subtask cards inherit the parent chrome unless set. Compact cards default to stroke so Raised/Stroke only changes the parent. */
 	subtaskChrome?: JiraIssueChrome;
 	selected?: boolean;
@@ -286,9 +285,7 @@ function JiraIssueDefault({
 	assigneePulse = false,
 	assigneeUnassignedKind,
 	chrome = "raised",
-	compact = false,
-	iconScale = "compact",
-	layoutOwner = "self",
+	compact = false, iconScale = "compact", parentOwnsLayout = false,
 	className,
 	defaultSubtasksExpanded = false,
 	dragging = false,
@@ -330,7 +327,6 @@ function JiraIssueDefault({
 }: Readonly<JiraIssueDefaultProps>) {
 	const isMounted = useIsMounted();
 	const shouldReduceMotion = useReducedMotion();
-	const parentOwnsLayout = layoutOwner === "parent";
 	const subtasksPanelId = useId();
 	const agentActivityLayoutGroupId = useId();
 	const [generativeActionAnchor, setGenerativeActionAnchor] = useState<HTMLElement | null>(null);
