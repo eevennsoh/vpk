@@ -46,6 +46,7 @@ export function JiraDropzone({
 	exclusiveWinner = true,
 	label,
 	measuredRef,
+	openMinHeight,
 	renderResting,
 	title,
 }: Readonly<{
@@ -54,6 +55,8 @@ export function JiraDropzone({
 	exclusiveWinner?: boolean;
 	label: string;
 	measuredRef?: RefObject<HTMLDivElement | null>;
+	/** Available space used only in proximity or while receiving a drop. */
+	openMinHeight?: number;
 	renderResting: () => ReactElement;
 	title: string;
 }>): ReactElement {
@@ -119,6 +122,7 @@ export function JiraDropzone({
 			label={label}
 			magnet={magnet}
 			onLanded={onLanded}
+			openMinHeight={openMinHeight}
 			phase={phase}
 			pinMagnet={pinMagnet}
 			profile={profile}
@@ -145,6 +149,7 @@ type JiraDropzoneOpenSurfaceProps = Readonly<{
 	label: string;
 	magnet: ReturnType<typeof useMagneticProximity>;
 	onLanded: (key: SessionFlight["key"]) => void;
+	openMinHeight?: number;
 	phase: ReturnType<typeof resolveJiraDropzonePhase>;
 	pinMagnet: boolean;
 	profile: FlightProfile;
@@ -169,6 +174,7 @@ function JiraDropzoneOpenSurface({
 	label,
 	magnet,
 	onLanded,
+	openMinHeight,
 	phase,
 	pinMagnet,
 	profile,
@@ -194,6 +200,7 @@ function JiraDropzoneOpenSurface({
 				impacts={impacts}
 				label={label}
 				magnet={magnet}
+				openMinHeight={openMinHeight}
 				phase={phase}
 				pinMagnet={pinMagnet}
 				proximity={proximity}
@@ -226,6 +233,7 @@ type JiraDropzoneWellProps = Pick<
 	| "exclusiveWinner"
 	| "label"
 	| "magnet"
+	| "openMinHeight"
 	| "phase"
 	| "pinMagnet"
 	| "proximity"
@@ -249,6 +257,7 @@ function JiraDropzoneWell({
 	impacts,
 	label,
 	magnet,
+	openMinHeight,
 	phase,
 	pinMagnet,
 	proximity,
@@ -302,6 +311,7 @@ function JiraDropzoneWell({
 					impacts={impacts}
 					label={label}
 					magnet={magnet}
+					openMinHeight={openMinHeight}
 					marching={marching}
 					phase={phase}
 					pinMagnet={pinMagnet}
@@ -320,6 +330,7 @@ type JiraDropzoneWellChromeProps = Pick<
 	| "impacts"
 	| "label"
 	| "magnet"
+	| "openMinHeight"
 	| "phase"
 	| "pinMagnet"
 	| "selected"
@@ -334,6 +345,7 @@ function JiraDropzoneWellChrome({
 	impacts,
 	label,
 	magnet,
+	openMinHeight,
 	marching,
 	phase,
 	pinMagnet,
@@ -362,6 +374,7 @@ function JiraDropzoneWellChrome({
 				? { x: bounce.impulseXPx, y: bounce.impulseYPx }
 				: { x: 0, y: 0 }}
 			key={impacts}
+			style={{ minHeight: expanded && phase !== "resting" ? openMinHeight : undefined }}
 			transition={bounce
 				? { damping: bounce.damping, stiffness: bounce.stiffness, type: "spring" }
 				: { duration: 0 }}
