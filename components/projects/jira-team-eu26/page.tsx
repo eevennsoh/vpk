@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
+import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { DEFAULT_SKILLS, ROVO_DIRECTORY_AGENT_PROFILES } from "@/app/data/directory";
@@ -132,6 +133,7 @@ function JiraTeamEu26App(): React.ReactElement {
 	const createWorkItemDropZoneLabel = "Create new work item";
 	const [workItemView, setWorkItemView] = useState<JiraWorkItemView>(DEFAULT_JIRA_WORK_ITEM_VIEW);
 	const [selectedTabLabel, setSelectedTabLabel] = useState(JIRA_TEAM_EU26_DEFAULT_TAB_LABEL);
+	const startInstantTransition = useInstantTransition();
 	const activeTab = resolveJiraTab(tabs, selectedTabLabel, workItemView);
 	const tabOwnsView = activeTab?.view !== undefined;
 	const activeView = activeTab?.view ?? workItemView;
@@ -146,12 +148,19 @@ function JiraTeamEu26App(): React.ReactElement {
 		paused: agentSessionColumnInteracting,
 	});
 	const handleTabChange = useCallback((tabLabel: string) => {
-		setSelectedTabLabel(tabLabel);
 		const tabView = tabs.find((tab) => tab.label === tabLabel)?.view;
-		if (tabView) {
-			setWorkItemView(tabView);
+		if (!tabView) {
+			setSelectedTabLabel(tabLabel);
+			return;
 		}
-	}, [tabs]);
+
+		// Board and List keep their DOM through React Activity. Block Motion's
+		// cross-view projection so a hidden chin cannot become the next FLIP origin.
+		startInstantTransition(() => {
+			setSelectedTabLabel(tabLabel);
+			setWorkItemView(tabView);
+		});
+	}, [startInstantTransition, tabs]);
 	const [resumeAnnouncement, setResumeAnnouncement] = useState("");
 	// Team EU presents every unlinked session as locally resumable, even when the
 	// fixture names a teammate's machine. The card owns the clipboard copy and
