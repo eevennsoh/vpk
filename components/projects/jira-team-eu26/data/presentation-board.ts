@@ -25,6 +25,11 @@ import { getJiraTeamEu26PullRequestPreview } from "./presentation-pull-requests"
 
 export { JIRA_TEAM_EU26_PAY_CURRENT_USER };
 
+const JIRA_TEAM_EU26_PAY_CURRENT_USER_INVOKER = {
+	avatarSrc: JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+	name: JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+} as const satisfies NonNullable<JiraIssueAgentActivity["invokedBy"]>;
+
 const PAY_AVATARS = {
 	releaseAgent: "/avatar-agent/strategy-agents/strategic-insight.svg",
 	reviewAgent: "/avatar-agent/teamwork-agents/decision-director.svg",
@@ -279,6 +284,10 @@ function createActivity({
 	state: "working" | "awaiting-input";
 	timeLabel: string;
 }>): JiraIssueAgentActivity {
+	const resolvedInvoker = role === "owner"
+		? JIRA_TEAM_EU26_PAY_CURRENT_USER_INVOKER
+		: invokedBy;
+
 	return {
 		id,
 		name: agentName,
@@ -296,7 +305,7 @@ function createActivity({
 		state,
 		timeLabel,
 		...(host !== undefined ? { host } : {}),
-		...(invokedBy ? { invokedBy } : {}),
+		...(resolvedInvoker ? { invokedBy: resolvedInvoker } : {}),
 		...(question ? { question } : {}),
 		...(role !== undefined ? { role } : {}),
 	};
