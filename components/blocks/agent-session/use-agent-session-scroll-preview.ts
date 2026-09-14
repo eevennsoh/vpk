@@ -1,85 +1,77 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type {
 	JiraSessionFlyoutHandle,
 	JiraSessionFlyoutSurfaceProps,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 
-interface ScrollPreview {
-	port: HTMLElement;
-	scrollTop: number;
-	scrolled: boolean;
-}
+const SCROLL_SETTLE_FALLBACK_MS = 120;
 
-/** Keep the current column preview readable as rows pass a stationary pointer. */
+/** Track the active session preview and dismiss it when its list starts scrolling. */
 export function useAgentSessionScrollPreview(handle: JiraSessionFlyoutHandle) {
-	const popupRef = useRef<HTMLDivElement>(null);
-	const preview = useRef<ScrollPreview | null>(null);
+	const activeScrollport = useRef<HTMLElement | null>(null);
+	const dismissedScrollport = useRef<HTMLElement | null>(null);
+	const hoverRearmed = useRef(true);
+	const scrollSettled = useRef(true);
+	const scrollSettleTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [activeItemId, setActiveItemId] = useState<string | null>(null);
-	const [anchor, setAnchor] = useState<JiraSessionFlyoutSurfaceProps["anchor"]>();
-
-	const anchorToTrigger = useCallback((trigger: Element | undefined) => {
-		const port = trigger?.closest<HTMLElement>("[data-agent-session-column-scrollport]");
-		if (!port || !trigger) {
-			preview.current = null;
-			setAnchor(undefined);
-			return;
-		}
-		const rect = trigger.getBoundingClientRect();
-		preview.current = { port, scrollTop: port.scrollTop, scrolled: false };
-		// Base UI still owns collision handling; only the reference rectangle is
-		// stable. No per-scroll React render or moving-row hover work is needed.
-		setAnchor({ getBoundingClientRect: () => rect });
-	}, []);
 
 	useEffect(() => {
-		function resumePointer(event: PointerEvent) {
-			const active = preview.current;
-			if (!active || (!active.scrolled && active.port.scrollTop === active.scrollTop)) return;
-			const target = event.target;
-			if (!(target instanceof Element) || popupRef.current?.contains(target)) return;
-			// Nested menus live in body portals. Follow their trigger's explicit
-			// ownership instead of treating movement into an action as an exit.
-			const ownsTarget = Array.from(popupRef.current?.querySelectorAll("[aria-controls]") ?? [])
-				.some((control) => control.getAttribute("aria-controls")?.split(/\s+/u)
-					.some((id) => document.getElementById(id)?.contains(target)));
-			if (ownsTarget) return;
-			const trigger = target.closest<HTMLElement>('[data-slot="hover-card-trigger"]');
-			if (trigger && active.port.contains(trigger)) {
-				anchorToTrigger(trigger);
-				handle.open(trigger.id);
-			} else {
-				handle.close();
+		function clearScrollSettleTimeout() {
+			if (scrollSettleTimeout.current !== null) {
+				clearTimeout(scrollSettleTimeout.current);
+				scrollSettleTimeout.current = null;
 			}
 		}
+		function finishScroll(event?: Event) {
+			if (event !== undefined && dismissedScrollport.current !== event.target) return;
+			clearScrollSettleTimeout();
+			scrollSettled.current = true;
+		}
 		function dismissOnResize() {
-			if (preview.current) handle.close();
+			if (activeScrollport.current) handle.close();
 		}
-		function trackScroll(event: Event) {
-			if (preview.current?.port === event.target) preview.current.scrolled = true;
+		function dismissOnScroll(event: Event) {
+			const port = activeScrollport.current ?? dismissedScrollport.current;
+			if (port !== event.target) return;
+			dismissedScrollport.current = port;
+			hoverRearmed.current = false;
+			scrollSettled.current = false;
+			handle.close();
+			clearScrollSettleTimeout();
+			scrollSettleTimeout.current = setTimeout(finishScroll, SCROLL_SETTLE_FALLBACK_MS);
 		}
-		document.addEventListener("pointermove", resumePointer, true);
-		document.addEventListener("scroll", trackScroll, true);
+		function rearmHoverAfterScroll() {
+			if (!scrollSettled.current || hoverRearmed.current) return;
+			hoverRearmed.current = true;
+			dismissedScrollport.current = null;
+		}
+		document.addEventListener("scroll", dismissOnScroll, true);
+		document.addEventListener("scrollend", finishScroll, true);
+		document.addEventListener("pointermove", rearmHoverAfterScroll, true);
 		window.addEventListener("resize", dismissOnResize);
 		return () => {
-			document.removeEventListener("pointermove", resumePointer, true);
-			document.removeEventListener("scroll", trackScroll, true);
+			document.removeEventListener("scroll", dismissOnScroll, true);
+			document.removeEventListener("scrollend", finishScroll, true);
+			document.removeEventListener("pointermove", rearmHoverAfterScroll, true);
 			window.removeEventListener("resize", dismissOnResize);
+			clearScrollSettleTimeout();
 		};
-	}, [anchorToTrigger, handle]);
+	}, [handle]);
 
 	const onOpenChange: NonNullable<JiraSessionFlyoutSurfaceProps["onOpenChange"]> = (open, details) => {
-		const active = preview.current;
-		if (details.reason === "trigger-hover" && active && (active.scrolled || active.port.scrollTop !== active.scrollTop)) {
-			// Scroll-induced leave/enter events are not a request to change sessions.
+		if (open && details.reason === "trigger-hover" && !hoverRearmed.current) {
 			details.cancel();
 			return;
 		}
-		anchorToTrigger(open ? details.trigger : undefined);
+		activeScrollport.current = open
+			? details.trigger?.closest<HTMLElement>("[data-agent-session-column-scrollport]") ?? null
+			: null;
+		if (!open && hoverRearmed.current) dismissedScrollport.current = null;
 		setActiveItemId(open ? details.trigger?.getAttribute("data-session-id") ?? null : null);
 	};
 
-	return { activeItemId, anchor, onOpenChange, popupRef, positionMethod: anchor ? "fixed" as const : undefined };
+	return { activeItemId, onOpenChange };
 }
