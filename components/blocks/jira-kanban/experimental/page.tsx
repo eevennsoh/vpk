@@ -991,7 +991,7 @@ function ExperimentalJiraKanbanPageContent({
 										: undefined,
 									sessionDrag: boardSessionDrag.untrackedBinding,
 								}}
-								className={isListContent ? "pb-4 md:pb-5" : "pb-3"}
+								className="pb-3"
 								columnFrame={columnChromeStyles.headerFrame}
 								paddingTop={withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
