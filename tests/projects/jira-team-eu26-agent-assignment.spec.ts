@@ -46,17 +46,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const sourceRow = page.locator("[data-agent-session-column]")
 			.getByTestId("agent-session-row-lw-scope-thread");
 		if (!await sourceRow.isVisible()) {
-			const hitArea = page.locator("[data-agent-session-column-hit-area]");
-			if (await hitArea.count()) {
-				await hitArea.hover();
-			}
-			await page.getByRole("button", { name: "Unlink sessions column options" }).click();
-			const pin = page.getByRole("menuitem", { name: "Pin", exact: true });
-			if (await pin.isVisible()) {
-				await pin.click();
-				await page.getByRole("button", { name: "Unlink sessions column options" }).click();
-			}
-			await page.getByRole("menuitem", { name: "Expand" }).click();
+			await page.getByRole("button", { name: "Expand Unlink sessions column" }).click();
 		}
 		await sourceRow.scrollIntoViewIfNeeded();
 		const source = sourceRow.locator("article");
@@ -163,17 +153,7 @@ test("the between-card create marker escapes the card-list clip", async ({ page 
 	const sourceRow = page.locator("[data-agent-session-column]")
 		.getByTestId("agent-session-row-lw-scope-thread");
 	if (!await sourceRow.isVisible()) {
-		const hitArea = page.locator("[data-agent-session-column-hit-area]");
-		if (await hitArea.count()) {
-			await hitArea.hover();
-		}
-		await page.getByRole("button", { name: "Unlink sessions column options" }).click();
-		const pin = page.getByRole("menuitem", { name: "Pin", exact: true });
-		if (await pin.isVisible()) {
-			await pin.click();
-			await page.getByRole("button", { name: "Unlink sessions column options" }).click();
-		}
-		await page.getByRole("menuitem", { name: "Expand" }).click();
+		await page.getByRole("button", { name: "Expand Unlink sessions column" }).click();
 	}
 	const source = sourceRow.locator("article");
 	await source.scrollIntoViewIfNeeded();
