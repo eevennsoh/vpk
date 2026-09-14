@@ -441,6 +441,7 @@ export function AgentSessionCard({
 										<AgentListIdentity
 											agent={item.agent}
 											attributedBy={item.invokedBy}
+											attributionOrder="agent-first"
 											sizePx={32}
 										/>
 									);
