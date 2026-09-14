@@ -40,3 +40,4 @@ export {
 	JIRA_TEAM_EU26_PAY_101_UNCAPTURED_SESSION_ID,
 	JIRA_TEAM_EU26_PAY_101_WORK_ITEM,
 } from "./presentation-build";
+export { JIRA_TEAM_EU26_PAY_SESSION_MEMBERS } from "./presentation-people";

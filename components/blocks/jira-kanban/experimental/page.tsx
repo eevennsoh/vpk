@@ -178,6 +178,7 @@ function ExperimentalJiraKanbanPageContent({
 	activeView = "board",
 	activeCardCode,
 	additionalAgentSessions,
+	agentSessionMembers = PULSE_TIMELINE.members,
 	agentActivityLayout,
 	cardGenerativeActionFooterActions,
 	cardGenerativeActionPresentation, iconScale,
@@ -434,9 +435,13 @@ function ExperimentalJiraKanbanPageContent({
 	// same field the popover writes, so the Filter button is pressed whenever
 	// a human or agent face is selected.
 	const pulseMemberId = toPulseMemberId(selectedAssigneeIds, PULSE_MEMBER_IDS);
+	const agentSessionMemberIds = useMemo(
+		() => new Set(agentSessionMembers.map((member) => member.id)),
+		[agentSessionMembers],
+	);
 	const agentSessionMemberId = toPulseMemberId(
 		selectedAssigneeIds,
-		PULSE_MEMBER_IDS,
+		agentSessionMemberIds,
 		agentSessionAssigneeIdAliases,
 	);
 	const {
@@ -476,10 +481,10 @@ function ExperimentalJiraKanbanPageContent({
 	const agentSessionItems = useMemo(
 		() => toPulseSessionItems(
 			filterPulseLooseWorkByMember(agentSessionLooseWork, agentSessionMemberId),
-			PULSE_TIMELINE.members,
+			agentSessionMembers,
 			PULSE_TIMELINE.workItems,
 		),
-		[agentSessionLooseWork, agentSessionMemberId],
+		[agentSessionLooseWork, agentSessionMemberId, agentSessionMembers],
 	);
 	const untrackedAgentSessionItems = useMemo(
 		() => selectBoardUntrackedSessions({
