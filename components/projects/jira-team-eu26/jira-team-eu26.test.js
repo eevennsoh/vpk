@@ -867,7 +867,8 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 	);
 	assert.match(
 		BOARD_VIEW_MENU_SOURCE,
-		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>[\s\S]*Needs input[\s\S]*<Badge max=\{false\} variant="information">\{count\}<\/Badge>/u,
+		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>\s*Needs input\s*<\/Button>/u,
+		"the Needs input control shows its label without a visible count badge",
 	);
 	assert.doesNotMatch(BOARD_VIEW_MENU_SOURCE, /StatusInformationIcon/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardGroupByMenu/u);

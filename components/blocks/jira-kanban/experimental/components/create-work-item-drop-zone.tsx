@@ -12,6 +12,7 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 import { resolveBoardCreateDropzoneDrag } from "../lib/board-agent-session-drag";
+import { useCreateDropzoneHeight } from "../hooks/use-create-dropzone-height";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
 import { useExclusiveCreateWellProximity } from "./create-work-item-exclusive-proximity-context";
 
@@ -39,12 +40,13 @@ export function BoardColumnCreateAction({
 		sessionDragTransaction,
 		title,
 	);
+	const { anchorRef, minimumHeight } = useCreateDropzoneHeight(Boolean(dropZoneLabel) && drag !== "idle", placement);
 
 	return (
 		// Reserve only the resting button footprint. The expanded well overlays
 		// the card list so arrival scrolling always measures the same viewport.
 		<div className="relative h-8 w-full">
-			<div className={cn("absolute inset-x-0 z-10", placement === "top" ? "top-1" : "bottom-1")}>
+			<div ref={anchorRef} className={cn("absolute inset-x-0 z-10", placement === "top" ? "top-1" : "bottom-1")}>
 				{dropZoneLabel ? (
 					<JiraDropzone
 						ants={ants}
@@ -52,6 +54,7 @@ export function BoardColumnCreateAction({
 						exclusiveWinner={isExclusiveWinner}
 						label={dropZoneLabel}
 						measuredRef={targetRef}
+						openMinHeight={minimumHeight}
 						renderResting={() => <BoardColumnAddButton reveal={reveal} title={title} />}
 						title={title}
 					/>
