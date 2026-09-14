@@ -22,7 +22,7 @@ import type {
 import type { ExperimentalJiraKanbanProps } from "./experimental-jira-kanban";
 import type { ExperimentalJiraKanbanView } from "./experimental-board-header";
 import type { ExperimentalJiraKanbanMode } from "./pulse/components/pulse-mode-controls";
-import type { PulseAgentSession, PulseLooseWork, PulseWorkItem } from "./pulse/types";
+import type { PulseAgentSession, PulseLooseWork, PulseMember, PulseWorkItem } from "./pulse/types";
 
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
@@ -48,6 +48,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	activeCardCode?: string;
 	/** Extra local sessions discovered after the static Pulse fixture loaded. */
 	additionalAgentSessions?: readonly PulseAgentSession[];
+	/** Route-owned people used to attribute and render unattached sessions. */
+	agentSessionMembers?: readonly PulseMember[];
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	cardGenerativeActionFooterActions?: ExperimentalJiraKanbanProps["cardGenerativeActionFooterActions"];
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;

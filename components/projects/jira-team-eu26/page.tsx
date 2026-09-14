@@ -52,6 +52,7 @@ import {
 	JIRA_TEAM_EU26_PAY_BOARD_AGENTS,
 	JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES,
 	JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
+	JIRA_TEAM_EU26_PAY_SESSION_MEMBERS,
 } from "./data/presentation-story";
 import { useJiraTeamEu26AgentSessionSync } from "./hooks/use-jira-team-eu26-agent-session-sync";
 import { useJiraTeamEu26GenerativeActions } from "./hooks/use-jira-team-eu26-generative-actions";
@@ -370,6 +371,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						retainWorkItemViews
 						additionalAgentSessions={syncedAgentSessions}
 						agentActivityLayout="merged"
+						agentSessionMembers={JIRA_TEAM_EU26_PAY_SESSION_MEMBERS}
 						agentSessionMultiSelect={false}
 						cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 						cardGenerativeActionPresentation="more-actions"

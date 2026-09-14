@@ -59,14 +59,28 @@ test("the PAY board fills every existing status with coding work and the full st
 	assert.ok(cards.every((card) => card.code.startsWith("PAY-")));
 	assert.ok(!columns.some((column) => column.title === "Review"));
 	assert.deepEqual(
-		new Set(cards.map((card) => card.assignee?.avatarSrc).filter(Boolean)),
-		new Set([
-			"/avatar-user/chloe-lee/color/asow-strategy-orange-64.png",
-			"/avatar-user/dev-rana/color/asow-product-purple.png",
-			"/avatar-user/issac-varghese/color/asow-service-yellow-64.png",
-			"/avatar-user/ting-chen/color/asow-teamwork-blue.png",
+		new Map(cards.flatMap((card) => (
+			card.assignee ? [[card.assignee.id, card.assignee.avatarSrc]] : []
+		))),
+		new Map([
+			["diego-santos", "/avatar-user/dev-rana/color/asow-dev-lime-64.png"],
+			["jordan-okafor", "/avatar-user/issac-varghese/color/asow-product-purple-64.png"],
+			["maya-ferreira", "/avatar-user/chloe-lee/color/asow-teamwork-blue-64.png"],
+			["priya-raman", "/avatar-user/ting-chen/color/asow-strategy-orange-64.png"],
 		]),
-		"board assignees should use a balanced mix of existing avatar color variants",
+		"board assignees should keep their faces and use a shuffled mix of the five-color avatar sets",
+	);
+	assert.deepEqual(
+		new Map(story.JIRA_TEAM_EU26_PAY_SESSION_MEMBERS
+			.filter((member) => ["diego", "jordan", "maya", "priya"].includes(member.id))
+			.map((member) => [member.id, member.avatarSrc])),
+		new Map([
+			["diego", "/avatar-user/dev-rana/color/asow-dev-lime-64.png"],
+			["jordan", "/avatar-user/issac-varghese/color/asow-product-purple-64.png"],
+			["maya", "/avatar-user/chloe-lee/color/asow-teamwork-blue-64.png"],
+			["priya", "/avatar-user/ting-chen/color/asow-strategy-orange-64.png"],
+		]),
+		"unlinked sessions should use the same stable teammate faces and shuffled colors as the board",
 	);
 
 	const inReviewCodes = new Set(
