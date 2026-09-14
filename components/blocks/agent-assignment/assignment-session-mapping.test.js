@@ -73,7 +73,7 @@ test("preserves assigned-session identity and narrator metadata through both pre
 		brandName: "github-copilot",
 		host: "local",
 		invokedBy: { avatarSrc: "/avatars/mia.svg", name: "Mia Tan" },
-		role: "viewer",
+		role: "owner",
 		statusKind: "working",
 		statusSequence: ["Inspecting release notes"],
 	});
@@ -89,7 +89,7 @@ test("preserves assigned-session identity and narrator metadata through both pre
 		host: "local",
 		id: "release-notes-drafter",
 		invokedBy: { avatarSrc: "/avatars/mia.svg", name: "Mia Tan" },
-		role: "viewer",
+		role: "owner",
 		state: "running",
 		title: "Release notes drafter",
 	});
@@ -102,7 +102,7 @@ test("preserves assigned-session identity and narrator metadata through both pre
 		label: "Working",
 		labels: ["Inspecting release notes"],
 		name: "Release notes drafter",
-		role: "viewer",
+		role: "owner",
 		state: "working",
 	});
 });
@@ -124,15 +124,29 @@ test("uses meaningful status narration to infer working and safely falls back to
 	);
 });
 
-test("needs-input viewer sessions preserve access and attribution in both presenters", async () => {
+test("role omission keeps the default owner attribution", async () => {
 	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
-	const agent = assignmentAgent({
-		role: "viewer",
-		statusKind: "needs-input",
-		invokedBy: { name: "Jordan", avatarSrc: "/avatars/jordan.svg" },
-	});
+	const invokedBy = { name: "Mia Tan", avatarSrc: "/avatars/mia.svg" };
+	const agent = assignmentAgent({ invokedBy, statusKind: "working" });
+
 	for (const result of [toAssignmentActivity(agent), toAssignmentSessionItem(agent)]) {
-		assert.equal(result.role, "viewer");
-		assert.deepEqual(result.invokedBy, agent.invokedBy);
+		assert.deepEqual(result.invokedBy, invokedBy);
+		assert.equal(result.role, undefined);
+	}
+});
+
+test("non-owner sessions preserve their role without showing owner attribution", async () => {
+	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
+	for (const role of ["viewer", "expired"]) {
+		const agent = assignmentAgent({
+			role,
+			statusKind: "needs-input",
+			invokedBy: { name: "Jordan", avatarSrc: "/avatars/jordan.svg" },
+		});
+		for (const result of [toAssignmentActivity(agent), toAssignmentSessionItem(agent)]) {
+			assert.equal(result.role, role);
+			assert.equal(result.invokedBy, undefined);
+			assert.ok(!("invokedBy" in result));
+		}
 	}
 });

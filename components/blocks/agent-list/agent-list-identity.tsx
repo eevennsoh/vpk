@@ -20,7 +20,7 @@ const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>>
 	32: "default",
 };
 
-/** Figma's agent + human attribution frame keeps the composite at the row footprint. */
+/** The human + agent attribution frame keeps the composite at the row footprint. */
 const PX_TO_IDENTITY_FRAME_CLASS_NAME: Record<number, string> = {
 	16: "size-4",
 	20: "size-5",
@@ -65,13 +65,6 @@ export function AgentListAttributionAvatarGroup({
 			label={`${agent.name}, used by ${attributedBy.name}`}
 			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
 		>
-			<AgentAvatarVisual
-				avatarSrc={agent.avatarSrc}
-				brandName={agent.brandName}
-				label=""
-				sizePx={sizePx}
-				vpkLogo={agent.vpkLogo}
-			/>
 			<Avatar
 				label=""
 				size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
@@ -81,6 +74,13 @@ export function AgentListAttributionAvatarGroup({
 				) : null}
 				<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
 			</Avatar>
+			<AgentAvatarVisual
+				avatarSrc={agent.avatarSrc}
+				brandName={agent.brandName}
+				label=""
+				sizePx={sizePx}
+				vpkLogo={agent.vpkLogo}
+			/>
 		</AvatarGroup>
 	);
 }
@@ -90,8 +90,8 @@ export function AgentListAttributionAvatarGroup({
  * people get the circular photo avatar the rest of Jira uses, so a mixed list —
  * agents waiting on an answer beside teammates who @mentioned you — is
  * separable at a glance without reading a word. An attributed agent session
- * composes the agent mark with the human who invoked it, matching the 24px +
- * 16px marks inside Figma's 32px attribution frame.
+ * leads with the human who invoked it and follows with the agent mark, matching
+ * the 16px + 24px marks inside the 32px attribution frame.
  */
 export function AgentListIdentity({
 	agent,
@@ -115,18 +115,9 @@ export function AgentListIdentity({
 				className={cn("relative block shrink-0", frameClassName, className)}
 				role="img"
 			>
-				<span aria-hidden="true" className="absolute left-0 top-0">
-					<AgentAvatarVisual
-						avatarSrc={agent.avatarSrc}
-						brandName={agent.brandName}
-						label=""
-						sizePx={agentSizePx}
-						vpkLogo={agent.vpkLogo}
-					/>
-				</span>
 				<Avatar
 					aria-hidden="true"
-					className="absolute bottom-0 right-0 ring-2 ring-background"
+					className="absolute left-0 top-0 ring-2 ring-background"
 					label=""
 					size={personAvatarSize}
 				>
@@ -135,6 +126,15 @@ export function AgentListIdentity({
 					) : null}
 					<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
 				</Avatar>
+				<span aria-hidden="true" className="absolute bottom-0 right-0">
+					<AgentAvatarVisual
+						avatarSrc={agent.avatarSrc}
+						brandName={agent.brandName}
+						label=""
+						sizePx={agentSizePx}
+						vpkLogo={agent.vpkLogo}
+					/>
+				</span>
 			</span>
 		);
 	}

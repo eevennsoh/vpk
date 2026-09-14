@@ -351,7 +351,6 @@ export function JiraIssueAgentAssignmentHandle({
 	agents,
 	assignedAgents,
 	assignment,
-	isCompletedRow,
 	onOpenChange,
 	onViewChat,
 	rowHandle,
@@ -361,13 +360,13 @@ export function JiraIssueAgentAssignmentHandle({
 	agents: readonly AgentSelectorAgent[];
 	assignedAgents: readonly AgentAssignmentAgent[];
 	assignment?: JiraIssueAgentAssignment;
-	isCompletedRow: boolean;
 	onOpenChange?: (open: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	rowHandle: ReactElement<{ "aria-expanded"?: boolean }>;
 	showAssignmentFlyout: boolean;
 }>): ReactElement {
-	if (!showAssignmentFlyout || isCompletedRow) {
+	// Session lifecycle changes the row's status, never access to its flyout.
+	if (!showAssignmentFlyout) {
 		return rowHandle;
 	}
 

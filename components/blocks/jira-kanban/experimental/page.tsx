@@ -236,6 +236,7 @@ function ExperimentalJiraKanbanPageContent({
 	showAgentSessionFlyoutFooter = true,
 	showAgentSessionFilter = true,
 	showAgentSessionLinkAction = true,
+	showAgentSessionLinkWorkItemMenuItem = true,
 	showAgentSessionOverflow = true,
 	showBoardContent = true,
 	timelineLastViewedAt: controlledTimelineLastViewedAt,
@@ -593,6 +594,7 @@ function ExperimentalJiraKanbanPageContent({
 		onLinkWorkItem: boardMenuWorkItem.onLinkWorkItem,
 		showFilter: showAgentSessionFilter,
 		showLinkAction: showAgentSessionLinkAction,
+		showLinkWorkItemMenuItem: showAgentSessionLinkWorkItemMenuItem,
 		showOverflow: showAgentSessionOverflow,
 		showUntrackedWorkFooter: showAgentSessionFlyoutFooter,
 		triage: untrackedTriage,
@@ -990,7 +992,7 @@ function ExperimentalJiraKanbanPageContent({
 										: undefined,
 									sessionDrag: boardSessionDrag.untrackedBinding,
 								}}
-								className="pb-4 md:pb-5"
+								className="pb-3"
 								columnFrame={columnChromeStyles.headerFrame}
 								paddingTop={withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}

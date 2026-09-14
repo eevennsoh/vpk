@@ -13,11 +13,16 @@ import type {
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list";
 
-/** Same person as TopNavigation / `JIRA_TEAM_EU26_PAY_CURRENT_USER`. */
+/** Mirrors TopNavigation / `JIRA_TEAM_EU26_PAY_CURRENT_USER`; covered by the list-row contract tests. */
 const CURRENT_USER_ASSIGNEE = {
 	id: "venn",
 	name: "Venn",
 	avatarSrc: "/avatar-user/venn/venn.png",
+} as const;
+
+const CURRENT_USER_INVOKER = {
+	avatarSrc: CURRENT_USER_ASSIGNEE.avatarSrc,
+	name: CURRENT_USER_ASSIGNEE.name,
 } as const;
 
 export const JIRA_TEAM_EU26_LIST_STATUS_OPTIONS: readonly JiraListStatusOption[] = [
@@ -127,7 +132,9 @@ function toAssignedAgent(
 		catalog: readonly JiraKanbanAgentData[];
 		fallbackStatusKind: JiraListAssignedAgent["statusKind"];
 		idHint?: string;
+		invokedBy?: JiraListAssignedAgent["invokedBy"];
 		name: string;
+		role?: JiraListAssignedAgent["role"];
 		state?: string;
 	}>,
 ): JiraListAssignedAgent {
@@ -145,6 +152,8 @@ function toAssignedAgent(
 		...((catalogAgent?.brandName ?? input.brandName)
 			? { brandName: catalogAgent?.brandName ?? input.brandName }
 			: {}),
+		...(input.invokedBy ? { invokedBy: input.invokedBy } : {}),
+		...(input.role ? { role: input.role } : {}),
 		statusKind: status.statusKind,
 		statusLabel: status.statusLabel,
 	};
@@ -164,7 +173,9 @@ export function assignedAgentsFromCard(
 			catalog,
 			fallbackStatusKind: "working",
 			idHint: activity.id,
+			invokedBy: activity.invokedBy,
 			name: activity.name,
+			role: activity.role,
 			state: activity.state,
 		});
 		if (seenIds.has(agent.id)) {
@@ -205,6 +216,8 @@ function createAssignedActivity(
 		agentBrandName: agent.brandName,
 		label: `Assigned to ${card.title}`,
 		message: `${agent.name} is working and will post the next result to the Jira work item.`,
+		invokedBy: CURRENT_USER_INVOKER,
+		role: "owner",
 		startedAtMs: Date.now(),
 		startupSequence: "jira-work-item-start",
 		state: "working",
