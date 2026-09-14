@@ -128,6 +128,7 @@ import {
 } from "../state";
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
+import { token } from "@/lib/tokens";
 
 export type {
 	ExperimentalJiraKanbanListRenderContext,
@@ -139,6 +140,7 @@ const ExperimentalPulse = dynamic(() => import("./pulse/experimental-pulse").the
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 const CREATE_WELL_BOUNCE_OFF_PROFILE: Partial<FlightProfile> = { impact: null };
+const BOARD_CONTENT_PADDING_BOTTOM = token("space.150");
 const PULSE_MEMBER_IDS = new Set(PULSE_TIMELINE.members.map((member) => member.id));
 const EMPTY_PROXIMITY_SESSIONS: Readonly<Record<string, readonly AgentSessionItem[]>> = {};
 
@@ -989,8 +991,9 @@ function ExperimentalJiraKanbanPageContent({
 										: undefined,
 									sessionDrag: boardSessionDrag.untrackedBinding,
 								}}
-								className="pb-4 md:pb-5"
+								className={isListContent ? "pb-4 md:pb-5" : undefined}
 								columnFrame={columnChromeStyles.headerFrame}
+								paddingBottom={isListContent ? undefined : BOARD_CONTENT_PADDING_BOTTOM}
 								paddingTop={withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
 								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
@@ -1068,6 +1071,7 @@ function ExperimentalJiraKanbanPageContent({
 								onToggleColumnAgent={handleToggleColumnAgent}
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								paddingTop={0}
+								paddingBottom={BOARD_CONTENT_PADDING_BOTTOM}
 								selectionToolbar={{
 									onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
 									onClearSelection: () => setSelection(createJiraKanbanSelectionState()),

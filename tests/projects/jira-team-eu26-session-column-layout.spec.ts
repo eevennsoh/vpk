@@ -51,6 +51,41 @@ async function revealCollapsedAgentSessionColumn(page: Page): Promise<void> {
 	await expect(hitArea).toHaveCount(0);
 }
 
+async function openHeightComparisonBoard(page: Page): Promise<void> {
+	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
+		timeout: 15_000,
+	});
+	const directExpand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+	if (await directExpand.isVisible()) {
+		await directExpand.click();
+	} else {
+		await openBoard(page);
+	}
+	await expect(page.locator("[data-agent-session-column-expansion]"))
+		.toHaveAttribute("data-agent-session-column-expansion", "expanded");
+}
+
+test("the expanded session column matches the Kanban column height", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await openHeightComparisonBoard(page);
+	const sessionColumn = page.locator("[data-agent-session-column]");
+	const kanbanColumn = page.locator('[data-jira-kanban-column="To do"] > .group\\/board-column');
+
+	await expect.poll(async () => {
+		const [sessionBox, kanbanBox] = await Promise.all([
+			sessionColumn.boundingBox(),
+			kanbanColumn.boundingBox(),
+		]);
+		return sessionBox && kanbanBox
+			? {
+				heightDelta: Math.abs(sessionBox.height - kanbanBox.height),
+				topDelta: Math.abs(sessionBox.y - kanbanBox.y),
+			}
+			: null;
+	}).toEqual({ heightDelta: 0, topDelta: 0 });
+});
+
 test("hovering the leading gutter stays open without bouncing under a stationary pointer", async ({ page }) => {
 	await page.goto(JIRA_TEAM_EU26_EMBEDDED_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
