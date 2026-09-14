@@ -21,6 +21,8 @@ const FLYOUT_HANDLE_PATH = "components/blocks/product-sidebar/variants/jira-sess
 const FLYOUT_CARD_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout-card.tsx";
 const DETAILS_CARD_PATH = "components/blocks/product-sidebar/variants/jira-session-details-card.tsx";
 const UNTRACKED_CARD_PATH = "components/blocks/product-sidebar/variants/jira-session-untracked-work-card.tsx";
+const PULL_REQUEST_SECTION_PATH = "components/blocks/product-sidebar/variants/jira-session-pull-request-section.tsx";
+const STATUS_INDICATOR_PATH = "components/blocks/product-sidebar/variants/jira-session-status-indicator.tsx";
 const FLYOUT_DEMO_DATA_PATH = "components/blocks/agent-session-flyout/agent-session-flyout-data.ts";
 const QUEUE_SESSION_DATA_PATH = "components/projects/jira-queue/data/queue-sessions.ts";
 const HOVER_CARD_PATH = "components/ui/hover-card.tsx";
@@ -34,6 +36,7 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	const cardShellSource = readRepoFile(FLYOUT_CARD_PATH);
 	const cardSource = readRepoFile(UNTRACKED_CARD_PATH);
+	const pullRequestSectionSource = readRepoFile(PULL_REQUEST_SECTION_PATH);
 	assert.match(source, /export type JiraSessionFlyoutContent = "details" \| "composer" \| "untracked-work";/u);
 	assert.match(source, /content = "details"/u);
 	assert.match(source, /case "details":/u);
@@ -74,27 +77,30 @@ test("shared hover flyout defaults to session details and exposes composer and u
 		/\{footer \? \(\s*<div className=\{cn\("flex flex-col border-t border-border-disabled p-3", footerClassName\)\}/u,
 	);
 	assert.match(cardSource, /import \{ JiraSessionFlyoutCard \} from "\.\/jira-session-flyout-card";/u);
-	assert.match(cardSource, /import \{ JiraSessionDetailsBody \} from "\.\/jira-session-details-card";/u);
+	assert.match(cardSource, /import \{ JiraSessionPullRequestSection \} from "\.\/jira-session-pull-request-section";/u);
 	assert.match(cardSource, /<JiraSessionFlyoutCard/u);
-	assert.match(cardSource, /<JiraSessionDetailsBody hideAgentRow hideSessionRow session=\{session\} \/>/u);
-	assert.match(cardSource, /bodyClassName="gap-1"/u);
-	assert.match(cardSource, /artifacts=\{artifacts\}/u);
 	assert.match(
 		cardSource,
-		/body=\{\s*artifacts\.length > 0 \? \(\s*<JiraSessionDetailsBody hideAgentRow hideSessionRow session=\{session\} \/>\s*\) : undefined/u,
+		/body=\{\s*hasPullRequest \? \(\s*<JiraSessionPullRequestSection[\s\S]*confidenceLabel=\{hasIssueKey \? rationaleTitle : "Pull request"\}[\s\S]*session=\{session\}[\s\S]*titleId=\{pullRequestTitleId\}/u,
 	);
-	assert.doesNotMatch(cardSource, /from "@\/components\/blocks\/smart-link"/u);
-	assert.doesNotMatch(cardSource, />\s*Artifacts\s*<\/h3>/u);
-	assert.doesNotMatch(cardSource, /variant: "confluence"/u);
-	assert.match(cardSource, /artifacts\.length > 0 \?/u);
+	assert.match(cardSource, /const hasPullRequest = session\.pullRequestNumber !== undefined;/u);
+	assert.match(cardSource, /const showRationale = !hasPullRequest \|\| !hasIssueKey;/u);
+	assert.match(cardSource, /\{showRationale \? \(/u);
+	assert.doesNotMatch(cardSource, /SmartLink|sessionArtifactItems|JiraSessionDetailsBody/u);
 	assert.match(cardSource, /High confidence to link/u);
 	assert.match(cardSource, /Nothing available to link to/u);
 	assert.match(cardSource, /Create a work item to track it\./u);
 	assert.doesNotMatch(cardSource, /Create a new work item to start tracking this session\./u);
 	assert.match(cardSource, /const archiveUnavailable = onArchiveSession === undefined;/u);
 	assert.match(cardSource, /import ArchiveBoxIcon from "@atlaskit\/icon\/core\/archive-box";/u);
-	assert.match(cardSource, /<Lozenge className="shrink-0" variant="success">High<\/Lozenge>/u);
+	assert.doesNotMatch(cardSource, /Lozenge/u);
 	assert.match(cardSource, /This session appears related to \$\{session\.issueKey\}/u);
+	assert.match(pullRequestSectionSource, /import MergeSuccessIcon from "@atlaskit\/icon\/core\/merge-success";/u);
+	assert.match(pullRequestSectionSource, /className="flex size-4 shrink-0 items-center justify-center text-icon-accent-purple"/u);
+	assert.match(pullRequestSectionSource, /<MergeSuccessIcon color="currentColor" label="" size="small" \/>/u);
+	assert.match(pullRequestSectionSource, /#\{session\.pullRequestNumber\}/u);
+	assert.match(pullRequestSectionSource, /\{pullRequestDescription\(session\)\}/u);
+	assert.doesNotMatch(pullRequestSectionSource, /SmartLink/u);
 	assert.match(source, /capturedSessionIds\?: ReadonlySet<string>;/u);
 	assert.match(cardSource, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
 	assert.match(
@@ -171,14 +177,11 @@ test("untracked-work suggestion footer is visible by default and can be hidden t
 	assert.match(cardSource, /showFooter\?: boolean;/u);
 	assert.match(
 		cardSource,
-		/aria-labelledby=\{showFooter \? `\$\{titleId\} \$\{rationaleId\}` : undefined\}/u,
+		/aria-labelledby=\{[\s\S]*hasPullRequest[\s\S]*`\$\{titleId\} \$\{pullRequestTitleId\}`[\s\S]*showFooter[\s\S]*`\$\{titleId\} \$\{rationaleId\}`/u,
 	);
 	assert.match(cardSource, /footer=\{\s*showFooter \? \(/u);
 	assert.match(cardSource, /<JiraSessionUntrackedWorkActions[\s\S]*?\/>\s*<\/>\s*\) : undefined\s*\}/u);
-	assert.match(
-		cardSource,
-		/trailing=\{showFooter && hasIssueKey \? <Lozenge className="shrink-0" variant="success">High<\/Lozenge> : null\}/u,
-	);
+	assert.doesNotMatch(cardSource, /Lozenge/u);
 
 	assert.match(flyoutSource, /showUntrackedWorkFooter\?: boolean;/u);
 	assert.match(flyoutSource, /showFooter=\{props\.showUntrackedWorkFooter\}/u);
@@ -192,6 +195,43 @@ test("untracked-work suggestion footer is visible by default and can be hidden t
 	assert.match(agentSessionSource, /showUntrackedWorkFooter=\{showUntrackedWorkFooter\}/u);
 	assert.match(detailSource, /name: "showUntrackedWorkFooter"/u);
 	assert.match(detailSource, /default: "true"/u);
+});
+
+test("untracked work shows lifecycle state in metadata and a matching corner indicator", () => {
+	const cardShellSource = readRepoFile(FLYOUT_CARD_PATH);
+	const cardSource = readRepoFile(UNTRACKED_CARD_PATH);
+	const dataSource = readRepoFile(FLYOUT_HANDLE_PATH);
+	const demoSource = readRepoFile("components/website/demos/blocks/agent-session-flyout-demo.tsx");
+	const indicatorSource = readRepoFile(STATUS_INDICATOR_PATH);
+
+	assert.match(dataSource, /export type JiraSessionFlyoutState = "needs-input" \| "working" \| "finished";/u);
+	assert.match(
+		dataSource,
+		/JIRA_SESSION_FLYOUT_STATE:[\s\S]*"awaiting-input": "needs-input"[\s\S]*running: "working"[\s\S]*"pr-open": "finished"[\s\S]*merged: "finished"[\s\S]*stopped: "finished"/u,
+	);
+	assert.match(
+		dataSource,
+		/JIRA_SESSION_FLYOUT_STATE_LABEL:[\s\S]*"needs-input": "Needs input"[\s\S]*working: "Working"[\s\S]*finished: "Finished"/u,
+	);
+	assert.match(cardSource, /const lifecycleState = JIRA_SESSION_FLYOUT_STATE\[session\.status\];/u);
+	assert.match(
+		cardSource,
+		/\{session\.agentName\}[\s\S]*>·<\/span>[\s\S]*\{JIRA_SESSION_FLYOUT_STATE_LABEL\[lifecycleState\]\}[\s\S]*>·<\/span>[\s\S]*\{JIRA_SESSION_UPDATED_LABEL\[session\.status\]\}/u,
+	);
+	assert.match(cardSource, /trailing=\{<JiraSessionStatusIndicator state=\{lifecycleState\} \/>\}/u);
+	assert.match(indicatorSource, /case "needs-input":[\s\S]*text-icon-information[\s\S]*QuestionCircleFilledIcon[\s\S]*size="medium"/u);
+	assert.match(indicatorSource, /case "working":[\s\S]*text-icon-subtlest[\s\S]*<Spinner label="" size="default" variant="experimental" \/>/u);
+	assert.match(indicatorSource, /case "finished":[\s\S]*text-icon-success[\s\S]*StatusSuccessIcon[\s\S]*size="medium"/u);
+	assert.equal(indicatorSource.match(/<span aria-hidden="true"/gu)?.length, 3);
+	assert.equal(
+		indicatorSource.match(/className="mt-0\.5 grid size-4 shrink-0 self-start place-items-center/gu)?.length,
+		3,
+	);
+	assert.match(cardShellSource, /<div className="flex items-start gap-3 px-3">/u);
+	assert.match(cardShellSource, /<h2 className="min-w-0 text-sm leading-5 font-normal text-text"/u);
+	assert.doesNotMatch(cardShellSource, /<h2 className="[^"]*(?:truncate|whitespace-nowrap|line-clamp)/u);
+	assert.match(demoSource, /id: "lw-no-link-demo",[\s\S]*state: "needs-input"/u);
+	assert.match(demoSource, /item\.id === "lw-no-pr-session" \? \{ \.\.\.item, state: "running" as const \} : item/u);
 });
 
 test("details hover card uses Figma chrome without panel property rows", () => {
@@ -249,10 +289,11 @@ test("details hover card uses Figma chrome without panel property rows", () => {
 	assert.doesNotMatch(source, /ScreenIcon/u);
 });
 
-test("session flyout artifact rows render the PR as a GitHub Smart Link without a heading", () => {
+test("details render a PR Smart Link while untracked work embeds its PR summary", () => {
 	const cardShellSource = readRepoFile(FLYOUT_CARD_PATH);
 	const detailsSource = readRepoFile(DETAILS_CARD_PATH);
 	const cardSource = readRepoFile(UNTRACKED_CARD_PATH);
+	const pullRequestSectionSource = readRepoFile(PULL_REQUEST_SECTION_PATH);
 	const dataSource = readRepoFile(FLYOUT_HANDLE_PATH);
 
 	assert.match(dataSource, /toPullRequestSmartLink/u);
@@ -274,15 +315,18 @@ test("session flyout artifact rows render the PR as a GitHub Smart Link without 
 		/const pullRequest = toSessionPullRequestSmartLink\(session\);\s*return pullRequest === null \? \[\] : \[pullRequest\]/u,
 	);
 	assert.match(detailsSource, /artifacts=\{sessionArtifactItems\(session\)\}/u);
-	assert.match(cardSource, /artifacts=\{artifacts\}/u);
-	assert.match(cardSource, /sessionArtifactItems/u);
+	assert.doesNotMatch(cardSource, /artifacts=|sessionArtifactItems/u);
 	assert.doesNotMatch(cardShellSource, />\s*Artifacts\s*</u);
 	assert.match(
 		cardShellSource,
 		/<SmartLink[\s\S]*className="max-w-full"[\s\S]*item=\{item\}[\s\S]*showStatus=\{item\.variant === "pull-request"\}[\s\S]*side="right"[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(detailsSource, /MetadataPathLink[\s\S]*#\$\{session\.pullRequestNumber\}/u);
-	assert.doesNotMatch(cardSource, /<SmartLink /u);
+	assert.match(pullRequestSectionSource, /const PULL_REQUEST_SUMMARY_PREFIX = \/\^#\{1,6\}\\s\*summary/u);
+	assert.match(pullRequestSectionSource, /description\.replace\(PULL_REQUEST_SUMMARY_PREFIX, ""\)\.trim\(\)/u);
+	assert.match(pullRequestSectionSource, /session\.pullRequestTitle\?\.trim\(\) \|\| `Pull request #\$\{session\.pullRequestNumber\}`/u);
+	assert.doesNotMatch(cardSource, /<SmartLink |sessionArtifactItems/u);
+	assert.doesNotMatch(pullRequestSectionSource, /SmartLink/u);
 });
 
 test("shared Agent States flyout forwards submission, timing, and stopped lifecycle data", () => {

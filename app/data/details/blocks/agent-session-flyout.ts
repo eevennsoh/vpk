@@ -24,7 +24,7 @@ export const AGENT_SESSION_FLYOUT_DETAIL: ComponentDetail = {
 		{
 			title: "Untracked work",
 			description:
-				"AgentSession uncaptured-work cards. Hovering a card opens the untracked-work flyout so the viewer can link, create, or add as a subtask.",
+				"AgentSession uncaptured-work cards across Needs input, Working, and Finished. Hovering a card opens the untracked-work flyout with lifecycle metadata, a corner status indicator, and an embedded PR summary so the viewer can link, create, or add as a subtask.",
 			demoSlug: "agent-session-flyout-demo-untracked-work",
 		},
 		{
@@ -47,7 +47,7 @@ export const AGENT_SESSION_FLYOUT_DETAIL: ComponentDetail = {
 			type: '"details" | "composer" | "untracked-work"',
 			default: '"details"',
 			description:
-				"Hover flyout body. `details` is the session property card; `composer` is the Agent States card; `untracked-work` suggests a Jira relationship with confidence and rationale.",
+				"Hover flyout body. `details` is the session property card; `composer` is the Agent States card; `untracked-work` embeds the PR summary and suggests a Jira relationship.",
 		},
 		{
 			name: "className",
@@ -59,7 +59,7 @@ export const AGENT_SESSION_FLYOUT_DETAIL: ComponentDetail = {
 			type: "boolean",
 			default: "true",
 			description:
-				"Shows the untracked-work rationale and action controls below the flyout card body.",
+				"Shows the untracked-work action controls and the fallback rationale when no suggested relationship is available.",
 		},
 		{
 			name: "onLinkWorkItem",
