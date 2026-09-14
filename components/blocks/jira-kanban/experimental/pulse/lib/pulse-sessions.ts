@@ -176,7 +176,7 @@ export function toPulseSessionItems(
 				worktreePath: worktree,
 			},
 			shortTitle: item.shortTitle,
-			state: "complete",
+			state: item.state ?? "complete",
 			timeLabel: item.timeLabel,
 			title: item.title,
 		} satisfies AgentSessionItem];

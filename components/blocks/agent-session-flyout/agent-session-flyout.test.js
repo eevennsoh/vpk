@@ -81,8 +81,9 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(cardSource, /<JiraSessionFlyoutCard/u);
 	assert.match(
 		cardSource,
-		/body=\{\s*hasPullRequest \? \(\s*<JiraSessionPullRequestSection[\s\S]*confidenceLabel=\{hasIssueKey \? rationaleTitle : "Pull request"\}[\s\S]*session=\{session\}[\s\S]*titleId=\{pullRequestTitleId\}/u,
+		/body=\{\s*hasPullRequest \? \(\s*<JiraSessionPullRequestSection[\s\S]*session=\{session\}[\s\S]*titleId=\{pullRequestTitleId\}/u,
 	);
+	assert.doesNotMatch(cardSource, /confidenceLabel=/u);
 	assert.match(cardSource, /const hasPullRequest = session\.pullRequestNumber !== undefined;/u);
 	assert.match(cardSource, /const showRationale = !hasPullRequest \|\| !hasIssueKey;/u);
 	assert.match(cardSource, /\{showRationale \? \(/u);
@@ -99,6 +100,11 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(pullRequestSectionSource, /className="flex size-4 shrink-0 items-center justify-center text-icon-accent-purple"/u);
 	assert.match(pullRequestSectionSource, /<MergeSuccessIcon color="currentColor" label="" size="small" \/>/u);
 	assert.match(pullRequestSectionSource, /#\{session\.pullRequestNumber\}/u);
+	assert.match(pullRequestSectionSource, /\{pullRequestTitle\(session\)\}/u);
+	assert.match(pullRequestSectionSource, /group\/pull-request grid min-w-0 grid-cols-\[1rem_minmax\(0,1fr\)\] items-center/u);
+	assert.match(pullRequestSectionSource, /<div className="min-w-0 line-clamp-2 text-xs leading-4">/u);
+	assert.match(pullRequestSectionSource, /<h3[\s\S]*className="inline text-xs leading-4 font-normal text-text no-underline underline-offset-2 group-hover\/pull-request:underline"/u);
+	assert.match(pullRequestSectionSource, /group-hover\/pull-request:underline/u);
 	assert.match(pullRequestSectionSource, /\{pullRequestDescription\(session\)\}/u);
 	assert.doesNotMatch(pullRequestSectionSource, /SmartLink/u);
 	assert.match(source, /capturedSessionIds\?: ReadonlySet<string>;/u);

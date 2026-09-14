@@ -5,7 +5,7 @@ type JiraTeamEu26SyncSession = Extract<PulseLooseWork, { kind: "agent-session" }
 const SYNC_DELAY_MIN_MS = 1_000;
 const SYNC_DELAY_MAX_MS = 3_000;
 
-export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
+const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 	{
 		agentId: "cursor",
 		detail: "host local · worktree .worktrees/pay-107-webhook-gap · findings have not been linked yet",
@@ -27,6 +27,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		},
 		shortTitle: "Challenge webhook gap",
 		sourceTitle: "PAY-107",
+		state: "running",
 		timeLabel: "Just now",
 		title: "Challenge webhook gap notes just landed from a local Cursor session",
 	},
@@ -51,6 +52,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		},
 		shortTitle: "Sandbox 401 root cause",
 		sourceTitle: "PAY-112",
+		state: "needs-input",
 		timeLabel: "Just now",
 		title: "Sandbox 401 root cause just arrived from a local Codex session",
 	},
@@ -99,6 +101,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		},
 		shortTitle: "Kill switch rollout notes",
 		sourceTitle: "PAY-121",
+		state: "running",
 		timeLabel: "Just now",
 		title: "Kill switch rollout notes just appeared from a local Claude session",
 	},
@@ -113,6 +116,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		memberIds: ["maya", "priya"],
 		shortTitle: "Retry telemetry review",
 		sourceTitle: "PAY-115",
+		state: "needs-input",
 		timeLabel: "Just now",
 		title: "Retry telemetry review just synced from a local Codex session",
 	},
@@ -127,6 +131,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		memberIds: ["jordan", "maya"],
 		shortTitle: "Contract test gaps",
 		sourceTitle: "PAY-119",
+		state: "running",
 		timeLabel: "Just now",
 		title: "Contract test gaps just landed from a local Cursor session",
 	},
@@ -155,6 +160,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		memberIds: ["venn", "priya"],
 		shortTitle: "Release gate decision",
 		sourceTitle: "PAY-132",
+		state: "needs-input",
 		timeLabel: "Just now",
 		title: "Release gate decision just synced from a local Claude session",
 	},
@@ -615,6 +621,29 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		title: "Final readiness observations just appeared from a local Claude session",
 	},
 ] as const satisfies readonly JiraTeamEu26SyncSession[];
+
+function resolveJiraTeamEu26SyncSessionState(
+	session: JiraTeamEu26SyncSession,
+	index: number,
+): NonNullable<JiraTeamEu26SyncSession["state"]> {
+	if (session.state !== undefined) {
+		return session.state;
+	}
+	if (session.issueStatus === "In progress") {
+		return "running";
+	}
+	if (session.pullRequest?.status === "failed" || index % 5 === 0) {
+		return "needs-input";
+	}
+	return "complete";
+}
+
+export const JIRA_TEAM_EU26_SYNC_SESSIONS = JIRA_TEAM_EU26_SYNC_SESSION_SOURCE.map(
+	(session, index) => ({
+		...session,
+		state: resolveJiraTeamEu26SyncSessionState(session, index),
+	}),
+) satisfies readonly JiraTeamEu26SyncSession[];
 
 export function getJiraTeamEu26SyncDelayMs(
 	random: () => number = Math.random,

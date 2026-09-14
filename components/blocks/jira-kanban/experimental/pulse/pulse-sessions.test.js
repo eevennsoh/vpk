@@ -63,7 +63,7 @@ test("every local session becomes one agent-list row with fixture identity", asy
 			assert.equal(item.id, session.id, where);
 			assert.equal(item.title, session.title, where);
 			assert.equal(item.host, "local", where);
-			assert.equal(item.state, "complete", where);
+			assert.equal(item.state, session.state ?? "complete", where);
 			assert.equal(item.agent.id, agent.id, where);
 			assert.equal(item.agent.name, agent.name, where);
 			assert.equal(item.agent.brandName, agent.brandName, where);
@@ -99,6 +99,11 @@ test("every local session becomes one agent-list row with fixture identity", asy
 		PULSE_TIMELINE.workItems,
 	);
 	assert.equal(allItems.length, 16, "the untracked-work column should have sixteen sessions");
+	assert.deepEqual(
+		new Set(allItems.map((item) => item.state)),
+		new Set(["running", "needs-input", "complete"]),
+		"baseline sessions should cover every untracked-work lifecycle",
+	);
 	const pullRequestItems = allItems.filter(
 		(item) => item.sessionDetails.pullRequestNumber !== undefined,
 	);

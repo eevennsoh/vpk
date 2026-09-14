@@ -58,8 +58,8 @@ const FOR_YOU_PANEL_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("awaiting sessions shimmer the title; running and complete are solid", () => {
-	assert.match(CARD_SOURCE, /running:\s*\{[^}]*shimmerTitle:\s*false/);
+test("working and awaiting sessions shimmer the title; complete sessions are solid", () => {
+	assert.match(CARD_SOURCE, /running:\s*\{[^}]*shimmerTitle:\s*true/);
 	assert.match(CARD_SOURCE, /"needs-input":\s*\{[^}]*shimmerTitle:\s*true/);
 	assert.match(CARD_SOURCE, /complete:\s*\{[^}]*shimmerTitle:\s*false[^}]*showDots:\s*false/);
 	assert.match(CARD_SOURCE, /stateMeta\.shimmerTitle \?\s*\(\s*<Shimmer/);
