@@ -113,6 +113,7 @@ export function AgentSession({
 	sessionDrag,
 	draggingIds,
 	showUntrackedWorkFooter,
+	showLinkWorkItemMenuItem = true,
 	style,
 	variant = "large",
 	visibilityLabel,
@@ -260,6 +261,7 @@ export function AgentSession({
 								onToggleVisibility={onToggleVisibility}
 								onView={itemOnView}
 								sessionDrag={sessionDrag}
+								showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 								triageRow={rowTriage?.get(item.id)}
 								draggingIds={draggingIds}
 								visibilityLabel={visibilityLabel}

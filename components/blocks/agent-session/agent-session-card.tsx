@@ -82,6 +82,7 @@ export function AgentSessionCard({
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
+	showLinkWorkItemMenuItem = true,
 	triageRow,
 	draggingIds,
 	visibilityLabel = "Archive",
@@ -144,6 +145,8 @@ export function AgentSessionCard({
 	showMoreMenu?: boolean;
 	/** Keep false only for compact consumers that borrow long-density title geometry. */
 	showLifecycleLabel?: boolean;
+	/** Shows the Link work item row without changing the underlying link capabilities. */
+	showLinkWorkItemMenuItem?: boolean;
 	triageRow?: AgentSessionTriageRow | null;
 	draggingIds?: ReadonlySet<string>;
 	/** Accessible name for the menu's dismiss row. Archive in the active list, Unarchive in the archived view. */
@@ -290,6 +293,7 @@ export function AgentSessionCard({
 						open={menu.isOpen}
 						portalled={moreMenuPortalled}
 						positionerClassName={moreMenuPositionerClassName}
+						showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 						workItemOptions={workItemOptions}
 					/>
 				);
