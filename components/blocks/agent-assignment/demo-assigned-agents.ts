@@ -93,7 +93,7 @@ function getDemoAssignedAgent(agent: AgentSelectorAgent): AgentAssignmentAgent {
 	return {
 		...agent,
 		host: demoStatus.host,
-		...(demoStatus.role === "viewer" && DEMO_INVOKERS[agent.id]
+		...(demoStatus.role === "owner" && DEMO_INVOKERS[agent.id]
 			? { invokedBy: DEMO_INVOKERS[agent.id] }
 			: {}),
 		role: demoStatus.role,

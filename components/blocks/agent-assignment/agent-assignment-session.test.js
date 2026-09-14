@@ -38,7 +38,8 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(mapper, /export function toAssignmentActivity/u);
 	assert.match(mapper, /export function toAssignmentSessionItem/u);
 	assert.match(mapper, /state: assignmentSessionState\(statusKind\)/u);
-	assert.match(mapper, /\.\.\.\(agent\.invokedBy \? \{ invokedBy: agent\.invokedBy \} : \{\}\)/u);
+	assert.match(mapper, /const invokedBy = role === "viewer" \|\| role === "expired" \? undefined : agent\.invokedBy;/u);
+	assert.match(mapper, /\.\.\.\(invokedBy \? \{ invokedBy \} : \{\}\)/u);
 	assert.match(mapper, /\.\.\.\(agent\.host !== undefined \? \{ host: agent\.host \} : \{\}\)/u);
 	assert.match(mapper, /import \{ assignmentSessionRole \} from "@\/components\/blocks\/agent-assignment\/components\/assignment-session-role";/u);
 	assert.match(mapper, /const role = assignmentSessionRole\(statusKind, agent\.role\);/u);
@@ -65,7 +66,8 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(source, /onMoreMenuOpenChange=\{\(open\) => \{\s*moreMenuOpenRef\.current = open;/u);
 	assert.match(sessionMenu, /className="flex w-full flex-col gap-1 p-1 outline-none"/u);
 	assert.match(sessionMenu, /className="flex w-full flex-col gap-0"/u);
-	assert.match(mapper, /\.\.\.\(agent\.invokedBy \? \{ invokedBy: agent\.invokedBy \} : \{\}\)/u);
+	assert.match(mapper, /const invokedBy = role === "viewer" \|\| role === "expired" \? undefined : agent\.invokedBy;/u);
+	assert.match(mapper, /\.\.\.\(invokedBy \? \{ invokedBy \} : \{\}\)/u);
 	assert.doesNotMatch(mapper, /DEFAULT_ASSIGNMENT_INVOKER/u);
 	assert.doesNotMatch(mapper, /Priya Raman/u);
 	assert.match(mapper, /\.\.\.\(agent\.host !== undefined \? \{ host: agent\.host \} : \{\}\)/u);
@@ -73,7 +75,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(mapper, /\.\.\.\(role !== undefined \? \{ role \} : \{\}\)/u);
 	assert.doesNotMatch(mapper, /host: "cloud"/u);
 	const demoAgents = readProjectFile("components/blocks/agent-assignment/demo-assigned-agents.ts");
-	assert.match(demoAgents, /demoStatus\.role === "viewer" && DEMO_INVOKERS\[agent\.id\]/u);
+	assert.match(demoAgents, /demoStatus\.role === "owner" && DEMO_INVOKERS\[agent\.id\]/u);
 	assert.match(demoAgents, /host: demoStatus\.host/u);
 	assert.match(demoAgents, /role: demoStatus\.role/u);
 	assert.match(
