@@ -2,8 +2,14 @@
 
 import type { CSSProperties } from "react";
 
-import type { AgentListAgent, AgentListInvoker } from "@/components/blocks/agent-list";
-import { AgentListIdentity } from "@/components/blocks/agent-list/agent-list-identity";
+import type {
+	AgentListAgent,
+	AgentListInvoker,
+} from "@/components/blocks/agent-list";
+import {
+	AgentListIdentity,
+	type AgentListAttributionOrder,
+} from "@/components/blocks/agent-list/agent-list-identity";
 import { Badge } from "@/components/ui/badge";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -69,11 +75,13 @@ function sessionCohortLabel(total: number): string {
 export function AgentSessionDragPill({
 	agent,
 	attributedBy,
+	attributionOrder = "human-first",
 	elevated = false,
 	isFusionSource = false,
 }: Readonly<{
 	agent: AgentListAgent;
 	attributedBy?: AgentListInvoker;
+	attributionOrder?: AgentListAttributionOrder;
 	/** Overlay copies paint an opaque surface + shadow; resting copies stay flat. */
 	elevated?: boolean;
 	/** Only a travelling lead pill is measured by the Jira fusion overlay. */
@@ -99,7 +107,12 @@ export function AgentSessionDragPill({
 			data-session-fusion-chip={isFusionSource ? "" : undefined}
 			style={elevated ? DRAG_CHIP_ELEVATION : undefined}
 		>
-			<AgentListIdentity agent={agent} attributedBy={attributedBy} sizePx={32} />
+			<AgentListIdentity
+				agent={agent}
+				attributedBy={attributedBy}
+				attributionOrder={attributionOrder}
+				sizePx={32}
+			/>
 			<span className="truncate text-xs text-text">
 				{agentIdentityLabel(agent, attributedBy)}
 			</span>
@@ -138,6 +151,7 @@ export function AgentSessionDragChip({
 			<AgentSessionDragPill
 				agent={lead.agent}
 				attributedBy={lead.invokedBy}
+				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}
 			/>
@@ -188,6 +202,7 @@ export function AgentSessionDragChip({
 			<AgentSessionDragPill
 				agent={lead.agent}
 				attributedBy={lead.invokedBy}
+				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}
 			/>
