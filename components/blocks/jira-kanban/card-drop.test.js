@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { moveJiraKanbanCardsToDropTarget } = require("./card-drop.ts");
+const { moveJiraKanbanCardsToDropTarget, moveJiraKanbanCardsToStatus } = require("./card-drop.ts");
 
 const card = (code, status) => ({ code, title: code, tags: [], priority: "medium", status });
 const board = () => [
@@ -23,6 +23,13 @@ test("same-column drops reorder and can change the issue status", () => {
 	const next = moveJiraKanbanCardsToDropTarget(board(), ["C"], "In progress", { status: "Paused", beforeCardCode: null });
 	assert.deepEqual(next[1].cards.map((item) => item.code), ["D", "C"]);
 	assert.equal(next[1].cards[1].status, "Paused");
+});
+
+test("a status move resolves the column that owns a grouped status", () => {
+	const next = moveJiraKanbanCardsToStatus(board(), ["A"], "Paused");
+	assert.deepEqual(next.map((column) => column.cards.map((item) => item.code)), [["B"], ["A", "C", "D"]]);
+	assert.equal(next[1].cards[0].status, "Paused");
+	assert.deepEqual(moveJiraKanbanCardsToStatus(board(), ["A"], "Missing"), board());
 });
 
 test("bulk movement retains board order and supports empty columns", () => {

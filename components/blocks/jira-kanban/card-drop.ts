@@ -6,6 +6,15 @@ export interface JiraKanbanCardDropTarget {
 	beforeCardCode?: string | null;
 }
 
+export function moveJiraKanbanCardsToStatus(
+	columns: readonly JiraKanbanColumnData[],
+	cardCodes: readonly string[],
+	status: string,
+): JiraKanbanColumnData[] {
+	const column = columns.find((candidate) => (candidate.statuses ?? [candidate.title]).includes(status));
+	return column ? moveJiraKanbanCardsToDropTarget(columns, cardCodes, column.title, { status }) : [...columns];
+}
+
 export function moveJiraKanbanCardsToDropTarget(
 	columns: readonly JiraKanbanColumnData[],
 	cardCodes: readonly string[],

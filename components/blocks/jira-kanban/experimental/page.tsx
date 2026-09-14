@@ -58,7 +58,7 @@ import {
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
 import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
-import { moveJiraKanbanCardsToDropTarget, type JiraKanbanCardDropTarget } from "../card-drop";
+import { moveJiraKanbanCardsToDropTarget, moveJiraKanbanCardsToStatus, type JiraKanbanCardDropTarget } from "../card-drop";
 import { SessionColumnPlacementProvider } from "./components/session-column-placement";
 import {
 	collectBoardIssueKeys,
@@ -822,10 +822,7 @@ function ExperimentalJiraKanbanPageContent({
 	};
 
 	const handleSelectedCardsStatusChange = (status: string) => {
-		updateBoardColumns((columns) => {
-			const column = columns.find((candidate) => (candidate.statuses ?? [candidate.title]).includes(status));
-			return column ? moveJiraKanbanCardsToDropTarget(columns, [...selection.selectedCardCodes], column.title, { status }) : columns;
-		});
+		updateBoardColumns((columns) => moveJiraKanbanCardsToStatus(columns, [...selection.selectedCardCodes], status));
 	};
 
 	const handleSelectedCardsAgentAssignmentChange = (agentId: string, assigned: boolean) => {
