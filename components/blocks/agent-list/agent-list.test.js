@@ -537,6 +537,13 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 		CARD_ACTIONS_SOURCE,
 		/"pointer-events-none absolute inset-y-0 right-0 flex w-6 items-center justify-center opacity-0/u,
 	);
+	// The lifecycle control is itself inline-flex. Its wrapper must establish a
+	// flex formatting context so an inline baseline line box cannot lift the
+	// spinner above the centered ellipsis occupying the same trailing slot.
+	assert.match(
+		CARD_SOURCE,
+		/"flex items-center leading-none",[\s\S]*overlayHoverActions/u,
+	);
 	assert.doesNotMatch(CARD_SOURCE, /data-agent-list-title-(?:layout|hover)/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.match(

@@ -15,6 +15,16 @@ const GENERATIVE_ACTIONS_SOURCE = readFileSync(
 	"utf8",
 );
 
+test("assignment flyout access is independent of the session lifecycle", () => {
+	const assignmentHandle = AGENT_ACTIVITY_PRESENTATION_SOURCE.slice(
+		AGENT_ACTIVITY_PRESENTATION_SOURCE.indexOf("export function JiraIssueAgentAssignmentHandle"),
+		AGENT_ACTIVITY_PRESENTATION_SOURCE.indexOf("export function JiraIssueAgentRowSurface"),
+	);
+	assert.match(assignmentHandle, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;/u);
+	assert.match(assignmentHandle, /<AgentAssignment[\s\S]*openMode="hover"[\s\S]*trigger=\{rowHandle\}/u);
+	assert.doesNotMatch(assignmentHandle, /isCompletedRow|\.state\s*===|\.state\s*!==/u);
+});
+
 test("chin rows keep lifecycle copy stable while flyout rows retain detailed status sequences", () => {
 	assert.match(
 		AGENT_ACTIVITY_PRESENTATION_SOURCE,
