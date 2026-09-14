@@ -98,11 +98,26 @@ test("the settings property controls the advanced session timeline", () => {
 test("the Dragging property controls session-column width resizing", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*\] as const;/u,
+		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*\] as const;/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
 		/agentSessionColumnResizable=\{designVariants\.agentSessionColumnResizing\}/u,
+	);
+});
+
+test("Manual link is off by default and controls the session menu item", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/showAgentSessionLinkWorkItemMenuItem=\{designVariants\.manualLink\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/showAgentSessionLinkWorkItemMenuItem\?: boolean;/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/showLinkWorkItemMenuItem: showAgentSessionLinkWorkItemMenuItem,/u,
 	);
 });
 
@@ -422,7 +437,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 		"create wells must not transition the layout height; only colour is transitional",
 	);
 	assert.match(
-		EXPERIMENTAL_BOARD_SOURCE,
+		readProjectFile("components/blocks/jira-kanban/experimental/components/board-column.tsx"),
 		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}[\s\S]*title=\{title\}/u,
 	);
 	assert.match(

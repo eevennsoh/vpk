@@ -321,7 +321,7 @@ test("enclosed chrome puts the collapsed count inside the framed box", () => {
 	assert.match(BOARD_SOURCE, /withKanbanDropContentGutter\(paddingTop, chrome\)/u);
 	assert.match(BOARD_SOURCE, /paddingTop: scrollportPaddingTop/u);
 	assert.match(BOARD_SOURCE, /paddingTop=\{untrackedPaddingTop\}/u);
-	assert.match(BOARD_SOURCE, /\.\.\.chrome\.dropContentPadding,/u);
+	assert.match(readFileSync(join(__dirname, "../components/board-column.tsx"), "utf8"), /\.\.\.chrome\.dropContentPadding,/u);
 	assert.match(
 		BOARD_SOURCE,
 		/collapsed \? \(\s*<div style=\{\{ paddingTop: chrome\.dropContentPadding\?\.paddingTop \}\}>/u,

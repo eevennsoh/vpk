@@ -173,24 +173,26 @@ test("people render a circular photo beside the hexagon agents in the same list"
 	assert.match(IDENTITY_SOURCE, /PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps\["size"\]>> = \{\s*16: "xs",\s*24: "sm",\s*32: "default",/u);
 });
 
-test("agent identities can show a human invoker in the 32px attribution frame", () => {
+test("agent identities default to human-first and expose an explicit agent-first attribution order", () => {
 	assert.match(IDENTITY_SOURCE, /attributedBy\?: AgentListInvoker;/u);
+	assert.match(IDENTITY_SOURCE, /export type AgentListAttributionOrder = "agent-first" \| "human-first";/u);
+	assert.match(IDENTITY_SOURCE, /attributionOrder\?: AgentListAttributionOrder;/u);
+	assert.match(IDENTITY_SOURCE, /attributionOrder = "human-first"/u);
 	assert.match(IDENTITY_SOURCE, /aria-label=\{`\$\{agent\.name\}, used by \$\{attributedBy\.name\}`\}/u);
 	assert.match(IDENTITY_SOURCE, /PX_TO_ATTRIBUTED_AGENT_SIZE: Record<number, number> = \{[\s\S]*32: 24,/u);
 	assert.match(IDENTITY_SOURCE, /PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE:[\s\S]*32: "xs",/u);
-	assert.match(IDENTITY_SOURCE, /className="absolute bottom-0 right-0 ring-2 ring-background"/u);
+	assert.match(IDENTITY_SOURCE, /const agentFirst = attributionOrder === "agent-first";/u);
+	assert.match(IDENTITY_SOURCE, /const personPositionClassName = agentFirst\s*\? "absolute bottom-0 right-0 ring-2 ring-background"\s*: "absolute left-0 top-0 ring-2 ring-background";/u);
+	assert.match(IDENTITY_SOURCE, /const agentPositionClassName = agentFirst\s*\? "absolute left-0 top-0"\s*: "absolute bottom-0 right-0";/u);
 });
 
-test("agent attribution groups overlap the agent and invoker like a facepile", () => {
+test("agent attribution groups share the same explicit order contract", () => {
 	assert.match(
 		IDENTITY_SOURCE,
 		/export function AgentListAttributionAvatarGroup[\s\S]*<AvatarGroup[\s\S]*className=\{cn\("shrink-0", className\)\}[\s\S]*label=\{`\$\{agent\.name\}, used by \$\{attributedBy\.name\}`\}/u,
 	);
 	assert.doesNotMatch(IDENTITY_SOURCE, /gap-1 space-x-0/u);
-	assert.match(
-		IDENTITY_SOURCE,
-		/export function AgentListAttributionAvatarGroup[\s\S]*<AgentAvatarVisual[\s\S]*sizePx=\{sizePx\}[\s\S]*<Avatar[\s\S]*size=\{PX_TO_PERSON_AVATAR_SIZE\[sizePx\] \?\? "default"\}/u,
-	);
+	assert.match(IDENTITY_SOURCE, /orderAttributionAvatars\(attributionOrder, agentAvatar, personAvatar\)/u);
 });
 
 test("the attention state keeps the row's own title and warns instead of shimmering", () => {
@@ -526,6 +528,13 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	assert.match(
 		CARD_ACTIONS_SOURCE,
 		/"pointer-events-none absolute inset-y-0 right-0 flex w-6 items-center justify-center opacity-0/u,
+	);
+	// The lifecycle control is itself inline-flex. Its wrapper must establish a
+	// flex formatting context so an inline baseline line box cannot lift the
+	// spinner above the centered ellipsis occupying the same trailing slot.
+	assert.match(
+		CARD_SOURCE,
+		/"flex items-center leading-none",[\s\S]*overlayHoverActions/u,
 	);
 	assert.doesNotMatch(CARD_SOURCE, /data-agent-list-title-(?:layout|hover)/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);

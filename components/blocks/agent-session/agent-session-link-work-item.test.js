@@ -180,10 +180,20 @@ test("the menu renders the picker only when the host supplied a capability", () 
 	assert.match(MORE_MENU_SOURCE, /onRequestClose=\{\(\) => onOpenChange\(false\)\}/u);
 	assert.match(
 		MORE_MENU_SOURCE,
-		/\{canPickWorkItem \?\s*\(\s*<AgentSessionLinkWorkItemSubmenu/u,
+		/\{showLinkWorkItemMenuItem && canPickWorkItem \?\s*\(\s*<AgentSessionLinkWorkItemSubmenu/u,
 	);
 	assert.match(MORE_MENU_SOURCE, /workItemOptions=\{workItemOptions\}\s*\/>\s*\) : null\}/u);
 	assert.doesNotMatch(MORE_MENU_SOURCE, /<DropdownMenuItem[^>]*>\{AGENT_SESSION_LINK_WORK_ITEM_LABEL\}/u);
+});
+
+test("the host can hide only the Link work item menu row", () => {
+	assert.match(MORE_MENU_SOURCE, /showLinkWorkItemMenuItem = true,/u);
+	assert.match(
+		MORE_MENU_SOURCE,
+		/\{showLinkWorkItemMenuItem && canPickWorkItem \?/u,
+	);
+	assert.match(CARD_SOURCE, /showLinkWorkItemMenuItem=\{showLinkWorkItemMenuItem\}/u);
+	assert.match(LIST_SOURCE, /showLinkWorkItemMenuItem=\{showLinkWorkItemMenuItem\}/u);
 });
 
 test("the hook resolves each capability to undefined when the host omits it", () => {
@@ -197,8 +207,8 @@ test("the hook resolves each capability to undefined when the host omits it", ()
 	assert.doesNotMatch(MENU_HOOK_SOURCE, /onCreateWorkItem\?: \(item: AgentSessionItem, draft/u);
 });
 
-test("the list threads the picker's capabilities and options down to the card", () => {
-	for (const prop of ["onCreateWorkItemFromDraft", "onLinkWorkItem", "workItemOptions"]) {
+test("the list threads the picker's capabilities, visibility, and options down to the card", () => {
+	for (const prop of ["onCreateWorkItemFromDraft", "onLinkWorkItem", "showLinkWorkItemMenuItem", "workItemOptions"]) {
 		assert.match(LIST_SOURCE, new RegExp(`${prop}=\\{${prop}\\}`, "u"));
 		assert.match(CARD_SOURCE, new RegExp(`\\b${prop}\\b`, "u"));
 	}

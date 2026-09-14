@@ -57,7 +57,8 @@ const GAP_CENTRED_OFFSET = "calc(var(--board-card-gap, 8px) / -2 - 1px)";
 export function BoardCardInsertionLine({
 	position,
 	seam,
-}: Readonly<{ position: BoardCardInsertion["position"]; seam: BoardCardInsertionSeam }>) {
+	marker = "add",
+}: Readonly<{ position: BoardCardInsertion["position"]; seam: BoardCardInsertionSeam; marker?: "add" | "circle" }>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const anchorName = `--board-insertion-${insertionAnchorId}`;
 
@@ -96,7 +97,7 @@ export function BoardCardInsertionLine({
 			 * half-outside marker would be clipped — the same reason the list
 			 * column controls use `fixed`.
 			 */}
-			<span
+			{marker === "circle" ? <span className="absolute left-0 top-1/2 size-2 -translate-y-1/2 rounded-full border-2 border-border-selected bg-surface" /> : <span
 				className="fixed z-30 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-surface-overlay text-icon-subtle"
 				data-board-insertion-marker={position}
 				style={{
@@ -116,7 +117,7 @@ export function BoardCardInsertionLine({
 				 * icon's own prop.
 				 */}
 				<Icon render={<AddIcon color={token("color.icon.subtle")} label="" size="small" />} />
-			</span>
+			</span>}
 		</div>
 	);
 }

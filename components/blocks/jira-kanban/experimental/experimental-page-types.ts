@@ -44,6 +44,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 }
 
 export interface ExperimentalJiraKanbanPageProps {
+	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	activeView?: ExperimentalJiraKanbanView;
 	activeCardCode?: string;
 	/** Extra local sessions discovered after the static Pulse fixture loaded. */
@@ -208,6 +209,12 @@ export interface ExperimentalJiraKanbanPageProps {
 	 * feature, so the row shows no link affordance at all.
 	 */
 	showAgentSessionLinkAction?: boolean;
+	/**
+	 * Whether an unattached session's more menu offers Link work item.
+	 * Defaults to true; routes can hide this manual path independently from
+	 * drag-to-link and other linking capabilities.
+	 */
+	showAgentSessionLinkWorkItemMenuItem?: boolean;
 	/**
 	 * Whether the unattached sessions column shows the overflow (ellipsis)
 	 * menu. Collapse remains when this is off. Defaults to true.
