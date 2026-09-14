@@ -91,7 +91,7 @@ test("Jira issue agent activity experimental v2 duplicates the playground with l
 	assert.match(SOURCE, /iconScale === "comfortable" && resolvedAgentActivityMode === "completed"/u);
 	assert.match(SOURCE, /const hasAgentDoneNotification = iconScale !== "comfortable" && hasCompletedAgentChin/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isCompletedRow = activities\.length > 0\s*&& activities\.every\(\(activity\) => activity\.state === "completed"\)/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout \|\| isCompletedRow\) \{\s*return rowHandle;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;/u);
 	assert.doesNotMatch(SOURCE, /iconScale === "comfortable"[\s\S]*<JiraIssueAgentDoneMerged/u);
 	assert.match(SOURCE, /from "@\/components\/blocks\/jira-issue\/completed-agent-runs-model"/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /export function toJiraIssueAgentActivityFromCompletedRun/u);

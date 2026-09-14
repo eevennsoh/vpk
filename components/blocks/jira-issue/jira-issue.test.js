@@ -367,7 +367,7 @@ test("Jira issue keeps activity rows composer-free and uses one shared assignmen
 	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="hover"/u);
 	// The drag wrapper is applied around the row shell. AgentAssignment still
 	// clones only the drag handle so the hover card keeps `aria-expanded`.
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout \|\| isCompletedRow\) \{\s*return rowHandle;[\s\S]*<AgentAssignment/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;[\s\S]*<AgentAssignment/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /onAssignedAgentIdsChange=\{assignment\?\.onAssignedAgentIdsChange\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /onContinueExistingSession=\{assignment\?\.onContinueExistingSession\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /onRenameAssignedAgent=\{assignment\?\.onRenameAssignedAgent\}/u);
@@ -710,7 +710,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*iconScale=\{iconScale\}/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*inheritChinSurface/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout \|\| isCompletedRow\) \{\s*return rowHandle;[\s\S]*<AgentAssignment[\s\S]*openMode="hover"[\s\S]*trigger=\{rowHandle\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;[\s\S]*<AgentAssignment[\s\S]*openMode="hover"[\s\S]*trigger=\{rowHandle\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /inheritChinSurface \? "bg-transparent" : "bg-bg-neutral"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
 	assert.match(SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);

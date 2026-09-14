@@ -529,7 +529,7 @@ function JiraIssueAgentActivityRow({
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
-	/** Hover assignment menu. Completed rows stay assignment-flyout-free. */
+	/** Hover assignment menu for every session lifecycle state. */
 	showAssignmentFlyout?: boolean;
 	shouldReduceMotion: boolean | null;
 }>) {
@@ -671,7 +671,6 @@ function JiraIssueAgentActivityRow({
 			agents={catalogAgents}
 			assignedAgents={assignedAgents}
 			assignment={assignment}
-			isCompletedRow={isCompletedRow}
 			onOpenChange={onOpenChange}
 			onViewChat={onViewChat}
 			rowHandle={rowHandle}
@@ -745,7 +744,7 @@ export function JiraIssueAgentActivityRows({
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	/** Opt-in: makes every chin row a draggable session handle. */
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
-	/** Hover assignment menu. Completed rows stay assignment-flyout-free. */
+	/** Hover assignment menu for every session lifecycle state. */
 	showAssignmentFlyout?: boolean;
 	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;
