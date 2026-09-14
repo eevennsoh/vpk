@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { useInView } from "motion/react";
+
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 
@@ -9,7 +12,10 @@ import {
 } from "@/components/blocks/agent-list/agent-list-card";
 import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
+import { Shimmer } from "@/components/ui-custom/shimmer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 import {
@@ -17,6 +23,8 @@ import {
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
 import type { AgentSessionItem } from "./agent-session-types";
+
+const TOOL_CALL_CYCLE_MS = 2_200;
 
 /** The `·` between metadata chunks. Decorative — the chunks read fine without it. */
 function MetadataDot() {
@@ -108,6 +116,52 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 	);
 }
 
+/** Cycles only while visible; reduced motion holds the first tool call still. */
+// react-doctor-disable-next-line react-doctor/no-multi-component-file -- The tool call is one metadata segment and stays beside the segment renderer it serves.
+function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly string[] }>) {
+	const [cycleIndex, setCycleIndex] = useState(0);
+	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+	const wrapperRef = useRef<HTMLSpanElement>(null);
+	const isInView = useInView(wrapperRef);
+
+	useEffect(() => {
+		if (!isInView || shouldReduceMotion || toolCalls.length < 2) {
+			return undefined;
+		}
+
+		const intervalId = window.setInterval(() => {
+			setCycleIndex((index) => index + 1);
+		}, TOOL_CALL_CYCLE_MS);
+		return () => window.clearInterval(intervalId);
+	}, [isInView, shouldReduceMotion, toolCalls.length]);
+
+	const toolCall = toolCalls[cycleIndex % toolCalls.length];
+	if (toolCall === undefined) {
+		return null;
+	}
+
+	return (
+		<span className="min-w-0 max-w-28 truncate" ref={wrapperRef}>
+			<span className="sr-only">Tool call: </span>
+			<CyclingByline
+				className="text-xs leading-4 text-text-subtle"
+				contentKey={toolCall}
+			>
+				<Shimmer
+					as="span"
+					className="max-w-full truncate text-text-subtle"
+					data-agent-session-tool-call=""
+					duration={1.4}
+					spread={2}
+					title={toolCall}
+				>
+					{toolCall}
+				</Shimmer>
+			</CyclingByline>
+		</span>
+	);
+}
+
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 function LongMetadataSegment({
 	item,
@@ -123,6 +177,8 @@ function LongMetadataSegment({
 					</span>
 				</span>
 			);
+		case "tool-call":
+			return <AgentSessionToolCall toolCalls={segment.toolCalls ?? []} />;
 		case "artifact":
 			return (
 				<span className="flex min-w-0 shrink items-center gap-1">
@@ -168,6 +224,7 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
 		artifactLabel: toArtifactLabel(item),
 		host: declaredHost,
 		prStatus: item.prStatus,
+		toolCalls: item.toolCalls,
 	});
 
 	return (
