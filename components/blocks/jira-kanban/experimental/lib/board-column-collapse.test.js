@@ -203,7 +203,7 @@ test("the expanded pinned session column reuses the accessible sidebar resize co
 	);
 	assert.match(
 		IN_FLOW_SOURCE,
-		/const title = agentSessionColumn\.title \?\? IN_FLOW_AGENT_SESSION_COLUMN_TITLE;[\s\S]*\{isFullWidth && resizable \? \([\s\S]*<SidebarResizeHandle[\s\S]*aria-label=\{`Resize \$\{title\} column`\}[\s\S]*aria-valuemax=\{resize\.maxWidth\}[\s\S]*aria-valuemin=\{resize\.minWidth\}[\s\S]*aria-valuenow=\{expandedWidthPx\}[\s\S]*className=\{IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME\}[\s\S]*onKeyDown=\{resize\.onResizeHandleKeyDown\}[\s\S]*onPointerDown=\{resize\.onResizeHandlePointerDown\}[\s\S]*role="separator"[\s\S]*side="right"[\s\S]*left: `calc\(100% \+ \$\{resolveInFlowResizeHandleOffsetPx\(columnFrame\)\}px\)`[\s\S]*right: "auto"[\s\S]*tabIndex=\{0\}/u,
+		/function InFlowAgentSessionColumnResizeHandle[\s\S]*<SidebarResizeHandle[\s\S]*aria-label=\{`Resize \$\{title\} column`\}[\s\S]*aria-valuemax=\{resize\.maxWidth\}[\s\S]*aria-valuemin=\{resize\.minWidth\}[\s\S]*aria-valuenow=\{expandedWidthPx\}[\s\S]*className=\{IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME\}[\s\S]*onKeyDown=\{resize\.onResizeHandleKeyDown\}[\s\S]*onPointerDown=\{resize\.onResizeHandlePointerDown\}[\s\S]*role="separator"[\s\S]*side="right"[\s\S]*left: `calc\(100% \+ \$\{resolveInFlowResizeHandleOffsetPx\(columnFrame\)\}px\)`[\s\S]*right: "auto"[\s\S]*tabIndex=\{0\}/u,
 	);
 });
 

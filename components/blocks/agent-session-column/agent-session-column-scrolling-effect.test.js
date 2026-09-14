@@ -39,7 +39,11 @@ test("the scrolling effect is an optional boolean capability", () => {
 test("the in-flow timeline enables deck depth and its end-state only in advanced mode", () => {
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/<AgentSessionColumn[\s\S]*?hasScrollingEffect=\{advancedTimeline\}/u,
+		/function resolveInFlowAgentSessionColumnAdvancedCapabilities[\s\S]*hasScrollingEffect: false,[\s\S]*hasScrollingEffect: true,/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/<AgentSessionColumn[\s\S]*?hasScrollingEffect=\{hasScrollingEffect\}/u,
 	);
 	assert.match(
 		INDEX_SOURCE,

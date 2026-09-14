@@ -107,11 +107,11 @@ test("simple timeline stays embedded with only expand and collapse controls", ()
 	);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/collapsedMenu=\{advancedTimeline \? \([\s\S]*?<InFlowAgentSessionColumnCollapsedMenu[\s\S]*?\) : undefined\}/u,
+		/function resolveInFlowAgentSessionColumnAdvancedCapabilities[\s\S]*if \(!advancedTimeline\)[\s\S]*collapsedMenu: undefined,[\s\S]*onPinnedChange: undefined,[\s\S]*<InFlowAgentSessionColumnCollapsedMenu/u,
 	);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/onPinnedChange=\{advancedTimeline \? onPinnedChange : undefined\}/u,
+		/onPinnedChange=\{advancedOnPinnedChange\}/u,
 	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /advancedAgentSessionTimeline = true,/u);
 	assert.match(
@@ -129,7 +129,11 @@ test("session-column width dragging is an explicit host capability", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /resizable = true,/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/\{isFullWidth && resizable \? \(\s*<SidebarResizeHandle/u,
+		/function InFlowAgentSessionColumnResizeHandle[\s\S]*if \(!visible\) return null;[\s\S]*<SidebarResizeHandle/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/<InFlowAgentSessionColumnResizeHandle[\s\S]*visible=\{isFullWidth && resizable\}/u,
 	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionColumnResizable = true,/u);
 	assert.match(
@@ -153,7 +157,7 @@ test("pin persists the column after the pointer leaves", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /reduceInFlowSessionColumnAxes\(\{ expanded, pinned \}, \{ type: "pin", pinned: nextPinned \}\)/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded = !advancedTimeline \|\| isHovered \|\| pinned \|\| isMenuOpen/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /data-agent-session-column-pinned=\{pinned \? "" : undefined\}/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /onPinnedChange=\{advancedTimeline \? onPinnedChange : undefined\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /onPinnedChange=\{advancedOnPinnedChange\}/u);
 });
 
 test("the collapsed options menu uses Atlaskit show-more-horizontal, not a custom SVG", () => {
@@ -232,7 +236,7 @@ test("collapsed drag paints the outlined overlay chip and keeps the same button 
 	assert.match(IN_FLOW_MENU_SOURCE, /style=\{\{ width: "100%" \}\}/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/collapsedMenu=\{advancedTimeline \? \(\{ className: collapsedControlClassName, dragging \}\) => \(/u,
+		/collapsedMenu: \(\{ className, dragging \}\) => \(/u,
 	);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /dragging=\{dragging\}/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /open=\{menuOpen\}/u);

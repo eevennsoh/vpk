@@ -212,6 +212,92 @@ function InFlowAgentSessionColumnFootprint({
 	);
 }
 
+function resolveInFlowAgentSessionColumnAdvancedCapabilities({
+	advancedTimeline,
+	menuOpen,
+	onExpand,
+	onMenuOpenChange,
+	onPinnedChange,
+	pinned,
+	title,
+}: Readonly<{
+	advancedTimeline: boolean;
+	menuOpen: boolean;
+	onExpand: () => void;
+	onMenuOpenChange: (open: boolean) => void;
+	onPinnedChange: (pinned: boolean) => void;
+	pinned: boolean;
+	title: string;
+}>): Readonly<{
+	collapsedMenu: AgentSessionColumnProps["collapsedMenu"];
+	hasScrollingEffect: boolean;
+	onPinnedChange: AgentSessionColumnProps["onPinnedChange"];
+}> {
+	if (!advancedTimeline) {
+		return {
+			collapsedMenu: undefined,
+			hasScrollingEffect: false,
+			onPinnedChange: undefined,
+		};
+	}
+
+	return {
+		collapsedMenu: ({ className, dragging }) => (
+			<InFlowAgentSessionColumnCollapsedMenu
+				className={className}
+				dragging={dragging}
+				open={menuOpen}
+				onExpand={onExpand}
+				onOpenChange={onMenuOpenChange}
+				onPinnedChange={onPinnedChange}
+				pinned={pinned}
+				title={title}
+			/>
+		),
+		hasScrollingEffect: true,
+		onPinnedChange,
+	};
+}
+
+function InFlowAgentSessionColumnResizeHandle({
+	columnFrame,
+	expandedWidthPx,
+	resize,
+	title,
+	visible,
+}: Readonly<{
+	columnFrame: AgentSessionColumnFrame;
+	expandedWidthPx: number;
+	resize: ReturnType<typeof useSidebarResize>;
+	title: string;
+	visible: boolean;
+}>) {
+	if (!visible) return null;
+
+	return (
+		<SidebarResizeHandle
+			aria-label={`Resize ${title} column`}
+			aria-orientation="vertical"
+			aria-valuemax={resize.maxWidth}
+			aria-valuemin={resize.minWidth}
+			aria-valuenow={expandedWidthPx}
+			className={IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME}
+			data-active={resize.isResizing ? "" : undefined}
+			data-testid="jira-kanban-agent-session-column-resize-handle"
+			onDoubleClick={resize.onResizeHandleDoubleClick}
+			onKeyDown={resize.onResizeHandleKeyDown}
+			onPointerDown={resize.onResizeHandlePointerDown}
+			role="separator"
+			side="right"
+			style={{
+				left: `calc(100% + ${resolveInFlowResizeHandleOffsetPx(columnFrame)}px)`,
+				right: "auto",
+			}}
+			tabIndex={0}
+		/>
+	);
+}
+
 function InFlowAgentSessionColumnSurface({
 	advancedTimeline,
 	agentSessionColumn,
@@ -236,11 +322,13 @@ function InFlowAgentSessionColumnSurface({
 	shouldReduceMotion,
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps & {
+	advancedTimeline: boolean;
 	expanded: boolean;
 	expandedWidthPx: number;
 	isEmbedded: boolean;
 	isFullWidth: boolean;
 	pinned: boolean;
+	resizable: boolean;
 	resize: ReturnType<typeof useSidebarResize>;
 	onCollapsedChange: (collapsed: boolean) => void;
 	onExpand: () => void;
@@ -252,6 +340,19 @@ function InFlowAgentSessionColumnSurface({
 	shouldReduceMotion: boolean | null;
 }>) {
 	const title = agentSessionColumn.title ?? IN_FLOW_AGENT_SESSION_COLUMN_TITLE;
+	const {
+		collapsedMenu,
+		hasScrollingEffect,
+		onPinnedChange: advancedOnPinnedChange,
+	} = resolveInFlowAgentSessionColumnAdvancedCapabilities({
+		advancedTimeline,
+		menuOpen,
+		onExpand,
+		onMenuOpenChange,
+		onPinnedChange,
+		pinned,
+		title,
+	});
 
 	return (
 		<div
@@ -277,19 +378,8 @@ function InFlowAgentSessionColumnSurface({
 			<AgentSessionColumn
 				{...agentSessionColumn}
 				collapsed={!isFullWidth}
-				hasScrollingEffect={advancedTimeline}
-				collapsedMenu={advancedTimeline ? ({ className: collapsedControlClassName, dragging }) => (
-					<InFlowAgentSessionColumnCollapsedMenu
-						className={collapsedControlClassName}
-						dragging={dragging}
-						open={menuOpen}
-						onExpand={onExpand}
-						onOpenChange={onMenuOpenChange}
-						onPinnedChange={onPinnedChange}
-						pinned={pinned}
-						title={title}
-					/>
-				) : undefined}
+				collapsedMenu={collapsedMenu}
+				hasScrollingEffect={hasScrollingEffect}
 				collapsedPresentation={isEmbedded ? "column" : "gutter"}
 				collapsedRailHitSlopPx={isEmbedded && !isFullWidth
 					? IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX
@@ -299,33 +389,18 @@ function InFlowAgentSessionColumnSurface({
 				widthTransitionDisabled={resize.isResizing}
 				onCollapsedChange={onCollapsedChange}
 				onGutterIntroComplete={onGutterIntroComplete}
-				onPinnedChange={advancedTimeline ? onPinnedChange : undefined}
+				onPinnedChange={advancedOnPinnedChange}
 				pinned={pinned}
 				playGutterIntro={playGutterIntro}
 				toggleChangesWidth={expanded}
 			/>
-			{isFullWidth && resizable ? (
-				<SidebarResizeHandle
-					aria-label={`Resize ${title} column`}
-					aria-orientation="vertical"
-					aria-valuemax={resize.maxWidth}
-					aria-valuemin={resize.minWidth}
-					aria-valuenow={expandedWidthPx}
-					className={IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME}
-					data-active={resize.isResizing ? "" : undefined}
-					data-testid="jira-kanban-agent-session-column-resize-handle"
-					onDoubleClick={resize.onResizeHandleDoubleClick}
-					onKeyDown={resize.onResizeHandleKeyDown}
-					onPointerDown={resize.onResizeHandlePointerDown}
-					role="separator"
-					side="right"
-					style={{
-						left: `calc(100% + ${resolveInFlowResizeHandleOffsetPx(columnFrame)}px)`,
-						right: "auto",
-					}}
-					tabIndex={0}
-				/>
-			) : null}
+			<InFlowAgentSessionColumnResizeHandle
+				columnFrame={columnFrame}
+				expandedWidthPx={expandedWidthPx}
+				resize={resize}
+				title={title}
+				visible={isFullWidth && resizable}
+			/>
 		</div>
 	);
 }
