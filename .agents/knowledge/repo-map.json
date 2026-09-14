@@ -8245,7 +8245,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-deploy"
 			},
 			{
-				"description": "Translate Figma URLs, screenshots, mockups, and pixel-perfect design specs into VPK code. Use the atlas ads CLI only for token/icon/a11y mapping inside Figma tasks. Use vpk-component for ADS or shadcn component harvesting.",
+				"description": "Inspect Figma URLs, inventory or export design assets, and translate screenshots, mockups, or pixel-perfect specs into VPK code. Use the official Figma MCP first. Use the atlas ads CLI only for token/icon/a11y mapping inside Figma tasks, and vpk-component for ADS or shadcn component harvesting.",
 				"name": "vpk-design",
 				"path": ".agents/skills/vpk-design/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-design"
