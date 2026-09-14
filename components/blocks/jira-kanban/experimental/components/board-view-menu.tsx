@@ -150,7 +150,6 @@ export function BoardNeedsInputButton({
 		>
 			<Icon data-icon="inline-start" render={<QuestionCircleIcon label="" />} />
 			Needs input
-			<Badge max={false} variant="information">{count}</Badge>
 		</Button>
 	);
 }
