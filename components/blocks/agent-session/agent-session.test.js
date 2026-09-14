@@ -565,7 +565,7 @@ test("the prototype menu keeps host-appropriate actions enabled without callback
 	assert.match(SESSION_MORE_MENU_SOURCE, /<EditIcon label="" size="small" \/>[\s\S]*Rename/u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DeleteIcon label="" size="small" \/>[\s\S]*variant="destructive"[\s\S]*Delete/u);
 	// Order below the separator: work-item picker, then Dismiss. The picker's own contract lives in agent-session-link-work-item.test.js.
-	assert.match(SESSION_MORE_MENU_SOURCE, /<DropdownMenuSeparator \/>\s*\{canPickWorkItem \?[\s\S]*<DropdownMenuItem[\s\S]*\{dismissLabel\}/u);
+	assert.match(SESSION_MORE_MENU_SOURCE, /<DropdownMenuSeparator \/>\s*\{showLinkWorkItemMenuItem && canPickWorkItem \?[\s\S]*<DropdownMenuItem[\s\S]*\{dismissLabel\}/u);
 	// Missing callbacks must never dim or disable prototype menu rows.
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /disabled[= >]/u);
 	// The trigger must not start a card drag, and the card's click guard already

@@ -77,6 +77,7 @@ export function AgentSessionMoreMenu({
 	open,
 	positionerClassName,
 	portalled,
+	showLinkWorkItemMenuItem = true,
 	workItemOptions = [],
 }: Readonly<{
 	actions: AgentSessionMoreMenuActions;
@@ -108,6 +109,8 @@ export function AgentSessionMoreMenu({
 	 * `false`; assignment uses the default portal and keeps the picker open.
 	 */
 	portalled?: boolean;
+	/** Shows the manual Link work item row when the host also supplies a capability. */
+	showLinkWorkItemMenuItem?: boolean;
 	/** Work items the Link work item submenu offers on its Link to existing tab. */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
@@ -184,7 +187,7 @@ export function AgentSessionMoreMenu({
 					</DropdownMenuGroup>
 				)}
 				<DropdownMenuSeparator />
-				{canPickWorkItem ? (
+				{showLinkWorkItemMenuItem && canPickWorkItem ? (
 					<AgentSessionLinkWorkItemSubmenu
 						onCreateWorkItem={actions.onCreateWorkItem}
 						onLinkWorkItem={actions.onLinkWorkItem}
