@@ -45,6 +45,10 @@ test("the PAY board fills every existing status with coding work and the full st
 	const story = await loadPresentationModule();
 	const columns = story.createJiraTeamEu26PayBoardColumns();
 	const cards = columns.flatMap((column) => column.cards);
+	const currentUserInvoker = {
+		avatarSrc: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+		name: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+	};
 
 	assert.deepEqual(
 		[...story.JIRA_TEAM_EU26_PAY_STATUS_PHASES],
@@ -146,10 +150,25 @@ test("the PAY board fills every existing status with coding work and the full st
 		})),
 		[
 			{ host: "cloud", name: "Cursor", role: "viewer", invokedBy: "Jordan Okafor" },
-			{ host: "local", name: "Claude Code", role: "owner", invokedBy: undefined },
+			{ host: "local", name: "Claude Code", role: "owner", invokedBy: "Venn" },
 		],
 	);
-	assert.ok(!("invokedBy" in (workingActivities.find((activity) => activity.role === "owner") ?? {})));
+	const ownerActivities = cards
+		.flatMap((card) => card.agentActivities ?? [])
+		.filter((activity) => activity.role === "owner");
+	assert.deepEqual(
+		ownerActivities.map((activity) => activity.id).sort(),
+		[
+			"PAY-105:test-agent",
+			"PAY-112:review-agent",
+			"PAY-121:release-agent",
+			"PAY-123:claude-code",
+		],
+	);
+	assert.ok(ownerActivities.every((activity) => (
+		activity.invokedBy?.name === currentUserInvoker.name
+		&& activity.invokedBy.avatarSrc === currentUserInvoker.avatarSrc
+	)));
 
 	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.id, "venn");
 	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name, "Venn");
@@ -204,7 +223,7 @@ test("the PAY board fills every existing status with coding work and the full st
 	const pay112 = cards.find((card) => card.code === "PAY-112")?.agentActivities?.[0];
 	assert.equal(pay112?.name, "Codex");
 	assert.equal(pay112?.role, "owner");
-	assert.equal(pay112?.invokedBy, undefined, "the owner session does not show their own avatar");
+	assert.deepEqual(pay112?.invokedBy, currentUserInvoker);
 	assert.equal(pay112?.state, "awaiting-input");
 	assert.equal(pay112?.timeLabel, "Last week");
 	assert.equal(pay112?.question?.label, story.JIRA_TEAM_EU26_PAY_112_RETENTION_QUESTION.label);
@@ -240,9 +259,13 @@ test("a linked Jira activity becomes a medium-detached Agent Session item", asyn
 				kind: "agent",
 				name: activity.name,
 			},
-			host: "local",
-			role: "owner",
-			sessionDetails: {
+				host: "local",
+				role: "owner",
+				invokedBy: {
+					avatarSrc: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+					name: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+				},
+				sessionDetails: {
 				host: "local",
 				issueKey: card.code,
 				issueSummary: card.title,
@@ -250,7 +273,10 @@ test("a linked Jira activity becomes a medium-detached Agent Session item", asyn
 			timeLabel: "12m",
 		},
 	);
-	assert.equal(detached.invokedBy, undefined);
+	assert.deepEqual(detached.invokedBy, {
+		avatarSrc: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+		name: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+	});
 	assert.deepEqual(
 		story.toJiraTeamEu26AgentActivityFromSession(detached),
 		{
@@ -258,8 +284,12 @@ test("a linked Jira activity becomes a medium-detached Agent Session item", asyn
 			name: activity.name,
 			avatarSrc: activity.avatarSrc,
 			agentBrandName: activity.agentBrandName,
-			host: "local",
-			label: activity.label,
+				host: "local",
+				invokedBy: {
+					avatarSrc: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+					name: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+				},
+				label: activity.label,
 			role: "owner",
 			state: "working",
 			timeLabel: "12m",

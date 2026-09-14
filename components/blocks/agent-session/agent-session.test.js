@@ -115,7 +115,7 @@ test("renders each session as a solid uncaptured-work card around the shared row
 
 test("large uncaptured-work rows show the agent with its human invoker in a 32px identity", () => {
 	assert.match(IDENTITY_SOURCE, /export function AgentListIdentity/u);
-	assert.match(CARD_SOURCE, /<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{item\.invokedBy\}[\s\S]*sizePx=\{32\}/u);
+	assert.match(CARD_SOURCE, /<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{item\.invokedBy\}[\s\S]*attributionOrder="agent-first"[\s\S]*sizePx=\{32\}/u);
 	assert.match(CARD_SOURCE, /renderIdentity=\{\(\) =>/u);
 	assert.match(TYPES_SOURCE, /export function toAgentSessionVisibleIdentity/u);
 	assert.match(TYPES_SOURCE, /kind: "person"/u);
@@ -138,7 +138,7 @@ test("short uncaptured-work rows restore the owner byline", () => {
 		/export function AgentSessionHostSegment[\s\S]*isLocal \? \(\s*<ScreenIcon color="currentColor" label="" size="small" \/>\s*\) : \(\s*<CloudIcon color="currentColor" label="" size="small" \/>\s*\)/u,
 	);
 	assert.match(METADATA_SOURCE, /const label = isLocal \? "Local session" : "Cloud session";/u);
-	assert.match(METADATA_SOURCE, /<TooltipContent positionerClassName="z-\[600\]">\{label\}<\/TooltipContent>/u);
+	assert.match(METADATA_SOURCE, /triggerRef\.current\?\.closest<HTMLElement>[\s\S]*scrollport\.scrollBy\([\s\S]*<TooltipContent onWheel=\{handleTooltipWheel\}/u);
 	assert.match(
 		METADATA_SOURCE,
 		/<TooltipTrigger[\s\S]*render=\{\s*<span[\s\S]*aria-label=\{label\}[\s\S]*className="grid size-4 shrink-0 place-items-center text-icon-subtlest"[\s\S]*role="img"[\s\S]*tabIndex=\{0\}/u,
@@ -193,7 +193,7 @@ test("large remains the default while every card receives the selected size vari
 test("medium detached is a 276px stroked white chip with the 32px combo identity and up-arrow", () => {
 	assert.match(
 		MEDIUM_CARD_SOURCE,
-		/<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{item\.invokedBy\}[\s\S]*sizePx=\{32\}/u,
+		/<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{item\.invokedBy\}[\s\S]*attributionOrder="agent-first"[\s\S]*sizePx=\{32\}/u,
 	);
 	assert.match(MEDIUM_CARD_SOURCE, /import ArrowUpIcon from "@atlaskit\/icon\/core\/arrow-up"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<IconTile[\s\S]*icon=\{\s*<ArrowUpIcon/u);
@@ -565,7 +565,7 @@ test("the prototype menu keeps host-appropriate actions enabled without callback
 	assert.match(SESSION_MORE_MENU_SOURCE, /<EditIcon label="" size="small" \/>[\s\S]*Rename/u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DeleteIcon label="" size="small" \/>[\s\S]*variant="destructive"[\s\S]*Delete/u);
 	// Order below the separator: work-item picker, then Dismiss. The picker's own contract lives in agent-session-link-work-item.test.js.
-	assert.match(SESSION_MORE_MENU_SOURCE, /<DropdownMenuSeparator \/>\s*\{canPickWorkItem \?[\s\S]*<DropdownMenuItem[\s\S]*\{dismissLabel\}/u);
+	assert.match(SESSION_MORE_MENU_SOURCE, /<DropdownMenuSeparator \/>\s*\{showLinkWorkItemMenuItem && canPickWorkItem \?[\s\S]*<DropdownMenuItem[\s\S]*\{dismissLabel\}/u);
 	// Missing callbacks must never dim or disable prototype menu rows.
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /disabled[= >]/u);
 	// The trigger must not start a card drag, and the card's click guard already
@@ -663,7 +663,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(METADATA_SOURCE, /<CyclingByline[\s\S]*contentKey=\{toolCall\}[\s\S]*<Shimmer[\s\S]*case "tool-call":[\s\S]*<AgentSessionToolCall toolCalls=\{segment\.toolCalls \?\? \[\]\} \/>/u);
 	assert.match(
 		METADATA_SOURCE,
-		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{item\.invokedBy\}\s+sizePx=\{16\}/u,
+		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{item\.invokedBy\}\s+attributionOrder="agent-first"\s+sizePx=\{16\}/u,
 	);
 	assert.match(
 		IDENTITY_SOURCE,

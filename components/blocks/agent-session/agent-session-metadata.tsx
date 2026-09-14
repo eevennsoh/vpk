@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type WheelEvent } from "react";
 import { useInView } from "motion/react";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
@@ -48,6 +48,22 @@ function MetadataDot() {
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean }>) {
 	const label = isLocal ? "Local session" : "Cloud session";
+	const triggerRef = useRef<HTMLSpanElement>(null);
+
+	const handleTooltipWheel = (event: WheelEvent<HTMLDivElement>) => {
+		// The popup is portalled outside the column, so native wheel bubbling cannot
+		// reach the scroll owner. Keep the tooltip hoverable and forward only when
+		// this particular trigger belongs to an Agent Session column.
+		const scrollport = triggerRef.current?.closest<HTMLElement>(
+			"[data-agent-session-column-scrollport]",
+		);
+		if (scrollport === undefined || scrollport === null) {
+			return;
+		}
+
+		event.preventDefault();
+		scrollport.scrollBy({ left: event.deltaX, top: event.deltaY });
+	};
 
 	return (
 		<Tooltip>
@@ -56,6 +72,7 @@ export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean
 					<span
 						aria-label={label}
 						className="grid size-4 shrink-0 place-items-center text-icon-subtlest"
+						ref={triggerRef}
 						role="img"
 						tabIndex={0}
 					/>
@@ -67,7 +84,9 @@ export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean
 					<CloudIcon color="currentColor" label="" size="small" />
 				)}
 			</TooltipTrigger>
-			<TooltipContent positionerClassName="z-[600]">{label}</TooltipContent>
+			<TooltipContent onWheel={handleTooltipWheel} positionerClassName="z-[600]">
+				{label}
+			</TooltipContent>
 		</Tooltip>
 	);
 }
@@ -97,6 +116,7 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 			<AgentListAttributionAvatarGroup
 				agent={item.agent}
 				attributedBy={item.invokedBy}
+				attributionOrder="agent-first"
 				sizePx={16}
 			/>
 		);
