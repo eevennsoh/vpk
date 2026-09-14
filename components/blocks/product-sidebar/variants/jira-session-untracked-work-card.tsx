@@ -183,7 +183,6 @@ export function JiraSessionUntrackedWorkCard({
 			body={
 				hasPullRequest ? (
 					<JiraSessionPullRequestSection
-						confidenceLabel={hasIssueKey ? rationaleTitle : "Pull request"}
 						session={session}
 						titleId={pullRequestTitleId}
 					/>

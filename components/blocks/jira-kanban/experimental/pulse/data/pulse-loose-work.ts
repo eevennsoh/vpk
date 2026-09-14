@@ -1,5 +1,6 @@
 import type {
 	PulseAgentSessionPullRequest,
+	PulseAgentSessionState,
 	PulseCodingAgentId,
 	PulseLooseWork,
 	PulseLooseWorkPullRequest,
@@ -45,6 +46,7 @@ function session(
 		machineName: string;
 		pullRequest?: PulseAgentSessionPullRequest;
 		shortTitle: string;
+		state?: PulseAgentSessionState;
 		timeLabel: string;
 	}>,
 ): PulseLooseWork {
@@ -60,6 +62,7 @@ function session(
 		machineName: fields.machineName,
 		...(fields.pullRequest === undefined ? {} : { pullRequest: fields.pullRequest }),
 		shortTitle: fields.shortTitle,
+		...(fields.state === undefined ? {} : { state: fields.state }),
 		timeLabel: fields.timeLabel,
 	};
 }
@@ -126,7 +129,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-kill-switch · Jordan asked; the answer is not on the item",
 		["venn", "jordan"],
-		{ agentId: "cursor", machineName: PULSE_VIEWER_MACHINE_NAME, shortTitle: "Kill switch as port gate", timeLabel: "5d ago" },
+		{ agentId: "cursor", machineName: PULSE_VIEWER_MACHINE_NAME, shortTitle: "Kill switch as port gate", state: "needs-input", timeLabel: "5d ago" },
 	),
 	pullRequest(
 		"lw-kickoff-inventory-pr",
@@ -212,7 +215,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-107",
 		"host local · worktree .worktrees/pay-107-webhook · payments-api still has no handler",
 		["maya", "review-agent", "venn"],
-		{ agentId: "copilot", machineName: "MacBook-Pro.local", shortTitle: "Challenge webhook gap", timeLabel: "2d ago" },
+		{ agentId: "copilot", machineName: "MacBook-Pro.local", shortTitle: "Challenge webhook gap", state: "running", timeLabel: "2d ago" },
 	),
 	pullRequest(
 		"lw-spike-retry-pr",
@@ -290,7 +293,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-112",
 		"host local · worktree .worktrees/pay-112-replay-risk · retention window still unknown",
 		["jordan", "priya"],
-		{ agentId: "cursor", machineName: "DESKTOP-7K2M9Q1", shortTitle: "Key replay blast radius", timeLabel: "5hr ago" },
+		{ agentId: "cursor", machineName: "DESKTOP-7K2M9Q1", shortTitle: "Key replay blast radius", state: "needs-input", timeLabel: "5hr ago" },
 	),
 	pullRequest(
 		"lw-regression-reject-pr",
@@ -361,7 +364,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-per-account · read out of PAY-112, never filed",
 		["release-agent", "priya"],
-		{ agentId: "codex", machineName: "esoh-mbp", shortTitle: "Per-account kill switch", timeLabel: "1hr ago" },
+		{ agentId: "codex", machineName: "esoh-mbp", shortTitle: "Per-account kill switch", state: "running", timeLabel: "1hr ago" },
 	),
 	pullRequest(
 		"lw-night-reject-pr",
@@ -417,7 +420,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-118",
 		"host local · worktree .worktrees/pay-118-wallet-cut · the reason we cut it is not on the item",
 		["diego"],
-		{ agentId: "cursor", machineName: "Diego’s MacBook Air", shortTitle: "Why the wallet was cut", timeLabel: "18m ago" },
+		{ agentId: "cursor", machineName: "Diego’s MacBook Air", shortTitle: "Why the wallet was cut", state: "needs-input", timeLabel: "18m ago" },
 	),
 	commit(
 		"lw-copy-doc",
@@ -488,7 +491,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-119",
 		"host local · worktree .worktrees/pay-119-rollback-rehearsal · 4m 11s recorded · not linked to the epic",
 		["priya", "release-agent", "venn"],
-		{ agentId: "claude", machineName: "Home Mini", shortTitle: "Rollback rehearsal log", timeLabel: "Yesterday" },
+		{ agentId: "claude", machineName: "Home Mini", shortTitle: "Rollback rehearsal log", state: "running", timeLabel: "Yesterday" },
 	),
 	pullRequest(
 		"lw-rehearsal-runbook-pr",
@@ -566,7 +569,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-126",
 		"host local · worktree .worktrees/pay-126-p95 · strongest argument for going faster, unfiled",
 		["maya"],
-		{ agentId: "codex", machineName: "Gaming PC", shortTitle: "42 ms p95 win on v2", timeLabel: "18m ago" },
+		{ agentId: "codex", machineName: "Gaming PC", shortTitle: "42 ms p95 win on v2", state: "running", timeLabel: "18m ago" },
 	),
 	session(
 		"lw-ship-approval-session",
@@ -613,7 +616,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-english-only · the Monday path is not on the item",
 		["venn"],
-		{ agentId: "codex", machineName: "C02Y91N8JGH5", shortTitle: "English-only first slice", timeLabel: "3m ago" },
+		{ agentId: "codex", machineName: "C02Y91N8JGH5", shortTitle: "English-only first slice", state: "needs-input", timeLabel: "3m ago" },
 	),
 	pullRequest(
 		"lw-ship-retention-pr",

@@ -49,7 +49,7 @@ import type {
 export { AgentListIdentity } from "./agent-list-identity";
 
 /**
- * State → title-line + lifecycle treatment. `running` shows a solid title with a
+ * State → title-line + lifecycle treatment. `running` shimmers the work title with a
  * trailing pixel loader; `needs-input` swaps the title for "Needs input"
  * (see {@link getSessionTitle}), adds animated dots, and shows a trailing info
  * icon; `attention` keeps the row's own title — it is already the news — and
@@ -73,7 +73,7 @@ const STATE_META: Record<
 	}
 > = {
 	running: {
-		shimmerTitle: false,
+		shimmerTitle: true,
 		showDots: false,
 		showLifecycle: true,
 	},
