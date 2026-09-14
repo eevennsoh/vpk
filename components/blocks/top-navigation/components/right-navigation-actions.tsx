@@ -14,7 +14,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
-import { DESIGN_VARIANTS } from "@/components/utils/design-variants";
+import { DESIGN_VARIANTS, type DesignVariantId } from "@/components/utils/design-variants";
 import { ThemeToggle } from "@/components/utils/theme-wrapper";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { token } from "@/lib/tokens";
@@ -36,6 +36,7 @@ interface RightNavigationActionsProps {
 	showRovoAction: boolean;
 	isChatOpen: boolean;
 	onToggleChat: () => void;
+	settingsDesignVariantIds?: readonly DesignVariantId[];
 	settingsIconOnly?: boolean;
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
 }
@@ -47,11 +48,15 @@ export function RightNavigationActions({
 	showRovoAction,
 	isChatOpen,
 	onToggleChat,
+	settingsDesignVariantIds,
 	settingsIconOnly = false,
 	settingsMenuItems,
 }: Readonly<RightNavigationActionsProps>) {
 	const hasSettingsMenu = Boolean(settingsMenuItems && settingsMenuItems.length > 0);
 	const { designVariants, setDesignVariant } = useDesignVariants();
+	const settingsDesignVariants = settingsDesignVariantIds === undefined
+		? DESIGN_VARIANTS
+		: DESIGN_VARIANTS.filter((variant) => settingsDesignVariantIds.includes(variant.id));
 
 	return (
 		<>
@@ -108,8 +113,9 @@ export function RightNavigationActions({
 							{/* Base UI requires group parts (the label) to live inside the
 							    group that owns them, so the label is nested here. */}
 							<DropdownMenuLabel>Properties</DropdownMenuLabel>
-							{DESIGN_VARIANTS.map((variant) => (
+							{settingsDesignVariants.map((variant) => (
 								<DropdownMenuCheckboxItem
+									indicatorPlacement="end"
 									checked={designVariants[variant.id]}
 									key={variant.id}
 									onCheckedChange={(checked) => {

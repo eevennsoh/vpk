@@ -93,6 +93,17 @@ export interface ExperimentalJiraKanbanPageProps {
 	 */
 	agentSessionPresentation?: "column" | "panel";
 	/**
+	 * Enables deck depth, its end-state, unpinning, and cross-column repositioning
+	 * for the in-flow session timeline. Defaults to true so existing boards retain
+	 * their interaction model; routes can opt into the simpler flat timeline.
+	 */
+	advancedAgentSessionTimeline?: boolean;
+	/**
+	 * Whether the expanded in-flow session column can be resized by dragging or
+	 * keyboard. Defaults to true so existing boards retain their width control.
+	 */
+	agentSessionColumnResizable?: boolean;
+	/**
 	 * Whether the unattached sessions column supports additive/range selection
 	 * and multi-session drag cohorts. Defaults to true. `false` also disables
 	 * single-select row chrome on that column.

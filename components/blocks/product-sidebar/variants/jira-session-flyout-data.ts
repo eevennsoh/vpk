@@ -24,6 +24,22 @@ export const JIRA_SESSION_UPDATED_LABEL: Record<JiraSidebarSessionStatus, string
 	stopped: "1d ago",
 };
 
+export type JiraSessionFlyoutState = "needs-input" | "working" | "finished";
+
+export const JIRA_SESSION_FLYOUT_STATE: Record<JiraSidebarSessionStatus, JiraSessionFlyoutState> = {
+	"awaiting-input": "needs-input",
+	running: "working",
+	"pr-open": "finished",
+	merged: "finished",
+	stopped: "finished",
+};
+
+export const JIRA_SESSION_FLYOUT_STATE_LABEL: Record<JiraSessionFlyoutState, string> = {
+	"needs-input": "Needs input",
+	working: "Working",
+	finished: "Finished",
+};
+
 export function prStateLozenge(status: JiraSidebarSessionStatus): { label: string; variant: LozengeProps["variant"] } {
 	return status === "merged"
 		? { label: "Merged", variant: "discovery" }

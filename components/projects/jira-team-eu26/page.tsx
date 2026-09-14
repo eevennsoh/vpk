@@ -7,6 +7,7 @@ import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { DEFAULT_SKILLS, ROVO_DIRECTORY_AGENT_PROFILES } from "@/app/data/directory";
+import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
@@ -63,6 +64,10 @@ const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-d
 
 const JIRA_TEAM_EU26_TABS = getJiraTabs(false);
 const JIRA_TEAM_EU26_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(JIRA_TEAM_EU26_TABS);
+const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
+	"advancedTimeline",
+	"agentSessionColumnResizing",
+] as const;
 const isJiraTeamEu26LooseWorkResumable = () => true;
 
 function resolveJiraTeamEu26ContinueChatAgent(
@@ -94,6 +99,7 @@ export default function JiraTeamEu26Page(): React.ReactElement {
 
 function JiraTeamEu26App(): React.ReactElement {
 	const router = useRouter();
+	const { designVariants } = useDesignVariants();
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
@@ -126,9 +132,9 @@ function JiraTeamEu26App(): React.ReactElement {
 		Readonly<Record<string, readonly AgentSessionItem[]>>
 	>({});
 	const detachedActivitiesByIdRef = useRef<Record<string, JiraIssueAgentActivity>>({});
-	// Team EU 26 has a fixed presentation: Board and List remain sibling tabs,
-	// untracked work remains an in-flow column, and the standard kanban chrome
-	// is always used. It deliberately does not read the global variant store.
+	// Team EU 26 keeps its page structure fixed: Board and List remain sibling
+	// tabs, untracked work remains an in-flow column, and standard kanban chrome
+	// stays on. Only the timeline interaction model is user-configurable.
 	const tabs = JIRA_TEAM_EU26_TABS;
 	const createWorkItemDropZoneLabel = "Create new work item";
 	const [workItemView, setWorkItemView] = useState<JiraWorkItemView>(DEFAULT_JIRA_WORK_ITEM_VIEW);
@@ -363,7 +369,7 @@ function JiraTeamEu26App(): React.ReactElement {
 				defaultSidebarOpen={true}
 				hideFloatingRovo
 				product="jira"
-				settingsIconOnly
+				settingsDesignVariantIds={JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
 			>
 				<div className="h-full min-h-0 min-w-0 overflow-hidden bg-surface [&>div]:min-h-0">
 					<ExperimentalJiraKanbanPage
@@ -382,6 +388,8 @@ function JiraTeamEu26App(): React.ReactElement {
 						agentSessionLinkingVariant="glow"
 						suggestSessionBoardLinkOnHover={false}
 						agentSessionPresentation="column"
+						advancedAgentSessionTimeline={designVariants.advancedTimeline}
+						agentSessionColumnResizable={designVariants.agentSessionColumnResizing}
 						columnChrome="default"
 						agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."

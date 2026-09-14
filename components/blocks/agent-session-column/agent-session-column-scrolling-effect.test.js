@@ -13,6 +13,10 @@ const BOARD_PAGE_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental-v2/page.tsx"),
 	"utf8",
 );
+const IN_FLOW_COLUMN_SOURCE = readFileSync(
+	join(__dirname, "../jira-kanban/experimental/components/in-flow-agent-session-column.tsx"),
+	"utf8",
+);
 const DETAIL_SOURCE = readFileSync(
 	join(__dirname, "../../../app/data/details/blocks/agent-session-column.ts"),
 	"utf8",
@@ -30,6 +34,21 @@ test("the scrolling effect is an optional boolean capability", () => {
 	assert.match(DETAIL_SOURCE, /name: "hasScrollingEffect"/u);
 	assert.match(DETAIL_SOURCE, /hasScrollingEffect/u);
 	assert.doesNotMatch(TYPES_SOURCE, /deck\?: AgentSessionDeck/u);
+});
+
+test("the in-flow timeline enables deck depth and its end-state only in advanced mode", () => {
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/function resolveInFlowAgentSessionColumnAdvancedCapabilities[\s\S]*hasScrollingEffect: false,[\s\S]*hasScrollingEffect: true,/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/<AgentSessionColumn[\s\S]*?hasScrollingEffect=\{hasScrollingEffect\}/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/\{hasScrollingEffect \? \(\s*<AgentSessionColumnEndState/u,
+	);
 });
 
 test("the opt-in scrollport uses transient chrome and an extended bottom fade", () => {

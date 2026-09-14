@@ -16,6 +16,11 @@ const DEMO_SOURCE = readProjectFile("components/website/demos/ui-custom/chain-of
 const DETAILS_SOURCE = readDetailCategorySource("ui-custom");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
+test("CyclingByline accepts an explicit content key for composed cycling labels", () => {
+	assert.match(COMPONENT_SOURCE, /contentKey\?: string;/u);
+	assert.match(COMPONENT_SOURCE, /const textKey = contentKey \?\? \(typeof children === "string" \? children : "byline"\);/u);
+});
+
 test("ChainOfThoughtScenario composes the primitive chain-of-thought parts", () => {
 	assert.match(COMPONENT_SOURCE, /export interface ChainOfThoughtScenarioStep/u);
 	assert.match(COMPONENT_SOURCE, /export interface ChainOfThoughtScenarioProps/u);
