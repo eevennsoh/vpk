@@ -40,6 +40,7 @@ export const DESIGN_VARIANTS = [
 	{ id: "simpleKanban", label: "Simple kanban" },
 	{ id: "advancedTimeline", label: "Advanced timeline" },
 	{ id: "agentSessionColumnResizing", label: "Dragging" },
+	{ id: "manualLink", label: "Manual link" },
 ] as const;
 
 export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
@@ -66,10 +67,14 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  *
  * Agent Session column resizing starts off: Team EU omits the width drag
  * handle until the user explicitly enables Dragging.
+ *
+ * Manual link starts off: Team EU hides the Link work item session-menu row
+ * until the user explicitly enables it.
  */
 const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	advancedTimeline: false,
 	agentSessionColumnResizing: false,
+	manualLink: false,
 	panel: false,
 	"simple-views": true,
 	simpleKanban: true,
