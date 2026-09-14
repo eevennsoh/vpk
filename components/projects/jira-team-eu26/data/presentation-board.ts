@@ -395,6 +395,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 	},
 	{
 		title: "In progress",
+		statuses: ["In progress", "Paused"],
 		count: 4,
 		cards: [
 			createCard({

@@ -58,6 +58,7 @@ import {
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
 import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
+import { moveJiraKanbanCardsToDropTarget, moveJiraKanbanCardsToStatus, type JiraKanbanCardDropTarget } from "../card-drop";
 import { SessionColumnPlacementProvider } from "./components/session-column-placement";
 import {
 	collectBoardIssueKeys,
@@ -184,6 +185,7 @@ function ExperimentalJiraKanbanPageContent({
 	cardGenerativeActionPresentation, iconScale,
 	createWellBounce = "once",
 	createWorkItemDropZoneLabel,
+	issueDragTransitions = false,
 	defaultAgentSessionColumnCollapsed = false,
 	defaultShowUntracked = true,
 	detachedAgentSessionsByCard,
@@ -718,8 +720,8 @@ function ExperimentalJiraKanbanPageContent({
 		setDraggedCard({ card, sourceColumnTitle });
 	};
 
-	const handleCardDrop = (targetColumnTitle: string) => {
-		if (!draggedCard || draggedCard.sourceColumnTitle === targetColumnTitle) {
+	const handleCardDrop = (targetColumnTitle: string, target?: JiraKanbanCardDropTarget) => {
+		if (!draggedCard || (!target && draggedCard.sourceColumnTitle === targetColumnTitle)) {
 			setDraggedCard(null);
 			return;
 		}
@@ -731,6 +733,7 @@ function ExperimentalJiraKanbanPageContent({
 			: [draggedCard.card.code];
 
 		updateBoardColumns((prevColumns) => {
+			if (target) return moveJiraKanbanCardsToDropTarget(prevColumns, draggedCardCodes, targetColumnTitle, target);
 			const movableCardCodes = draggedCardCodes.filter((cardCode) => prevColumns.some((column) => (
 				column.title !== targetColumnTitle && column.cards.some((card) => card.code === cardCode)
 			)));
@@ -742,7 +745,6 @@ function ExperimentalJiraKanbanPageContent({
 		}
 		setDraggedCard(null);
 	};
-
 	const handleCardDragEnd = () => {
 		setDraggedCard(null);
 	};
@@ -819,12 +821,8 @@ function ExperimentalJiraKanbanPageContent({
 		handleAssigneeFilterChange(toPulseMemberAssigneeIds(memberId));
 	};
 
-	const handleSelectedCardsStatusChange = (targetColumnTitle: string) => {
-		updateBoardColumns((currentColumns) => moveJiraKanbanCardsToColumn(
-			currentColumns,
-			[...selection.selectedCardCodes],
-			targetColumnTitle,
-		));
+	const handleSelectedCardsStatusChange = (status: string) => {
+		updateBoardColumns((columns) => moveJiraKanbanCardsToStatus(columns, [...selection.selectedCardCodes], status));
 	};
 
 	const handleSelectedCardsAgentAssignmentChange = (agentId: string, assigned: boolean) => {
@@ -1046,6 +1044,7 @@ function ExperimentalJiraKanbanPageContent({
 								onCollapsedColumnsChange={handleCollapsedColumnsChange}
 								onCreatedCardArrivalComplete={handleCreatedCardArrivalComplete}
 								draggedCardCode={draggedCard?.card.code ?? null}
+								issueDragTransitions={issueDragTransitions}
 								selectedCardCodes={selection.selectedCardCodes}
 								onCardClick={handleCardClick}
 								onCardAgentActivityViewChat={onCardAgentActivityViewChat}

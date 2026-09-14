@@ -437,7 +437,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 		"create wells must not transition the layout height; only colour is transitional",
 	);
 	assert.match(
-		EXPERIMENTAL_BOARD_SOURCE,
+		readProjectFile("components/blocks/jira-kanban/experimental/components/board-column.tsx"),
 		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}[\s\S]*title=\{title\}/u,
 	);
 	assert.match(
