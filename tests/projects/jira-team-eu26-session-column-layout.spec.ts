@@ -426,6 +426,31 @@ test("scrolling the session column dismisses the active flyout", async ({ page }
 	await expect(popup).toHaveCount(0);
 });
 
+test("wheel input over a session host tooltip scrolls the session column", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
+		timeout: 15_000,
+	});
+	const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+	if (await expand.isVisible()) {
+		await expand.click();
+	}
+	const column = page.locator("[data-agent-session-column]");
+	const scrollport = column.locator("[data-agent-session-column-scrollport]");
+	const hostIcon = column.getByRole("img", { name: "Local session" }).first();
+
+	await hostIcon.hover();
+	const tooltip = page.locator('[data-slot="tooltip-content"]', {
+		hasText: "Local session",
+	});
+	await expect(tooltip).toBeVisible();
+	await tooltip.hover();
+	await page.mouse.wheel(0, 450);
+
+	await expect.poll(() => scrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(200);
+});
+
 test("the work-item type menu is anchored on its first open", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });

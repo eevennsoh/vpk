@@ -138,7 +138,15 @@ test("short uncaptured-work rows restore the owner byline", () => {
 		/export function AgentSessionHostSegment[\s\S]*isLocal \? \(\s*<ScreenIcon color="currentColor" label="" size="small" \/>\s*\) : \(\s*<CloudIcon color="currentColor" label="" size="small" \/>\s*\)/u,
 	);
 	assert.match(METADATA_SOURCE, /const label = isLocal \? "Local session" : "Cloud session";/u);
-	assert.match(METADATA_SOURCE, /<TooltipContent positionerClassName="z-\[600\]">\{label\}<\/TooltipContent>/u);
+	assert.match(
+		METADATA_SOURCE,
+		/triggerRef\.current\?\.closest<HTMLElement>\(\s*"\[data-agent-session-column-scrollport\]"/u,
+	);
+	assert.match(METADATA_SOURCE, /scrollport\.scrollBy\(\{ left: event\.deltaX, top: event\.deltaY \}\)/u);
+	assert.match(
+		METADATA_SOURCE,
+		/<TooltipContent onWheel=\{handleTooltipWheel\} positionerClassName="z-\[600\]">/u,
+	);
 	assert.match(
 		METADATA_SOURCE,
 		/<TooltipTrigger[\s\S]*render=\{\s*<span[\s\S]*aria-label=\{label\}[\s\S]*className="grid size-4 shrink-0 place-items-center text-icon-subtlest"[\s\S]*role="img"[\s\S]*tabIndex=\{0\}/u,
