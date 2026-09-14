@@ -26,7 +26,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 | React patterns reference (1000+ lines) | `.agents/skills/vpk-tidy/references/patterns.md`            |
 | Shared visual contract                 | `DESIGN.md`                                                 |
 | Design token catalog (200+ tokens)     | `.agents/skills/vpk-design/references/tokens.md`            |
-| Figma-to-code pipeline                 | `.agents/skills/vpk-design/SKILL.md`                        |
+| Figma inspection, asset export, and code pipeline | `.agents/skills/vpk-design/SKILL.md`                        |
 | Deployment guide                       | `.agents/skills/vpk-deploy/references/guide-deployment.md`  |
 | Setup walkthrough                      | `.agents/skills/vpk-setup/references/guide-setup.md`        |
 | Local skills catalog (generated)       | `.agents/skills/INDEX.md`                                   |
@@ -79,6 +79,7 @@ If instructions overlap, use this precedence:
 - React 19: `use(Context)`, `<Context value={}>`, and `ref` as a regular prop; not `useContext()`, `<Context.Provider>`, or `forwardRef`.
 - Conditional rendering: use ternary (`cond ? <X /> : null`), not `&&` patterns that can render `0`.
 - Prefer semantic token classes; do not introduce `bg-[var(--ds-...)]` / `text-[var(--ds-...)]` in VPK components.
+- Figma links and assets: load `vpk-design` and use the official Figma MCP first. Its tools may be lazy/deferred, so discover the exact `mcp__figma__*` capability and use `whoami` for access diagnostics before declaring Figma unavailable. Do not jump to browser login or `FIGMA_TOKEN` while the configured MCP is callable.
 - ADS content (components, tokens, icons, docs): query the `atlas ads` CLI first; ADS MCP tools are fallback only. See **ADS Lookups**.
 - Custom CSS classes: prefer `@utility name { … }` (Tailwind v4 idiom) over `@layer components`. Full rules in `.agents/rules/token-priority.md`.
 

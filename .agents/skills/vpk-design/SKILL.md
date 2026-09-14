@@ -1,6 +1,6 @@
 ---
 name: vpk-design
-description: Translate Figma URLs, screenshots, mockups, and pixel-perfect design specs into VPK code. Use the atlas ads CLI only for token/icon/a11y mapping inside Figma tasks. Use vpk-component for ADS or shadcn component harvesting.
+description: Inspect Figma URLs, inventory or export design assets, and translate screenshots, mockups, or pixel-perfect specs into VPK code. Use the official Figma MCP first. Use the atlas ads CLI only for token/icon/a11y mapping inside Figma tasks, and vpk-component for ADS or shadcn component harvesting.
 ---
 
 # VPK Design
@@ -12,11 +12,44 @@ description: Translate Figma URLs, screenshots, mockups, and pixel-perfect desig
 | Input                 | Action                               |
 | --------------------- | ------------------------------------ |
 | Figma URL             | Extract specs → Implement → Validate |
+| Figma asset audit     | Inspect nodes → Compare local assets → Export missing files |
 | Figma screenshot/mockup | Extract specs → Implement → Validate |
 
 ```
 /vpk-design https://figma.com/design/abc123/File?node-id=1-2
 ```
+
+---
+
+## Figma MCP Access and Tool Routing
+
+Use the official Figma MCP before browser automation, a personal access token, or a separate REST/CLI importer. The normal Codex setup is the OAuth-authenticated remote server at `https://mcp.figma.com/mcp`; it does not require the Figma desktop app to be open.
+
+Figma tools may be lazy/deferred and absent from an initial compact tool inventory. Discover the exact current-runtime capability by the `mcp__figma__*` prefix or tool name. An app-connector inventory or an initial missing tool list is not proof that Figma is unavailable.
+
+If access, authentication, or server identity is uncertain:
+
+1. Discover and call `mcp__figma__whoami` before asking the user for credentials or declaring the file inaccessible.
+2. If the Figma tools truly are not callable, check `codex mcp list` or `/mcp`. The expected server is named `figma`, enabled, OAuth-authenticated, and points to `https://mcp.figma.com/mcp`.
+3. A configured server does not retrofit tools into an already-running session. Start a new Codex session only when the server is configured/authenticated but the current runtime still lacks its tools.
+4. Use browser login only for UI interaction the MCP cannot provide. Ask for `FIGMA_TOKEN` only when an explicitly required REST/CLI workflow cannot use the official MCP.
+
+| Need | Official Figma MCP tool |
+| --- | --- |
+| Confirm authenticated account or diagnose permissions | `mcp__figma__whoami` |
+| Outline pages, frames, layer names, node IDs, and geometry | `mcp__figma__get_metadata` |
+| Visually inspect one node | `mcp__figma__get_screenshot` |
+| Get implementation context | Load the Figma server's `figma-design-to-code` skill, then use `mcp__figma__get_design_context` |
+| Read variables and styles | `mcp__figma__get_variable_defs` |
+| Deliver exports or original source images | `mcp__figma__download_assets` |
+
+For an asset inventory/export request:
+
+1. Use `get_metadata` on the supplied node to enumerate candidate child nodes and IDs.
+2. Use `get_screenshot` to map those candidates to the visible design.
+3. Compare the candidates with the target local directory before downloading anything.
+4. Use `download_assets` only for missing nodes. It returns temporary URLs, so fetch them promptly. Preserve each raw image's reported format; set `defaultFormat` or `defaultScale` only when the user explicitly requests a format or resolution.
+5. Verify filenames, dimensions, file types, and duplicate content after saving.
 
 ---
 
@@ -57,7 +90,7 @@ Not every Figma design requires the full 3-agent pipeline. Choose the approach b
 
 ### Phase 0: Preflight (Before Spawning Agents OR Direct Implementation)
 
-1. **Get the Figma screenshot first** — use `figma__get_screenshot` to see the actual design before doing anything else. This is the source of truth.
+1. **Get the Figma screenshot first** — use `mcp__figma__get_screenshot` to see the actual design before doing anything else. This is the source of truth.
 2. **Understand Figma node scope** — the provided Figma node defines the boundary of what to implement. Do NOT add structural components (headers, navigation, toolbars) that aren't shown in the Figma node. If unsure about the full page layout, check the parent node.
 3. Confirm the exact target files/routes by searching for distinctive text/classes.
 4. **Read the current component code** to understand what already exists. Diff the Figma screenshot against the current code to identify ALL differences.
