@@ -110,6 +110,7 @@ export function AgentSessionMediumCard({
 							<AgentListIdentity
 								agent={item.agent}
 								attributedBy={item.invokedBy}
+								attributionOrder="agent-first"
 								sizePx={32}
 							/>
 						</span>
