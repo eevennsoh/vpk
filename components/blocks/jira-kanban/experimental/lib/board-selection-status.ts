@@ -11,11 +11,11 @@ export function getCommonSelectedCardStatus(
 		for (const card of column.cards) {
 			if (!selectedCardCodes.has(card.code)) continue;
 			if (!foundSelectedCard) {
-				commonStatus = column.title;
+				commonStatus = card.status ?? column.title;
 				foundSelectedCard = true;
 				continue;
 			}
-			if (commonStatus !== column.title) return null;
+			if (commonStatus !== (card.status ?? column.title)) return null;
 		}
 	}
 

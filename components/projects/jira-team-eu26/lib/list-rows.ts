@@ -23,6 +23,7 @@ const CURRENT_USER_ASSIGNEE = {
 export const JIRA_TEAM_EU26_LIST_STATUS_OPTIONS: readonly JiraListStatusOption[] = [
 	{ status: "To do", statusVariant: "neutral" },
 	{ status: "In progress", statusVariant: "information" },
+	{ status: "Paused", statusVariant: "neutral" },
 	{ status: "In review", statusVariant: "warning" },
 	{ status: "Done", statusVariant: "success" },
 ];
@@ -30,6 +31,7 @@ export const JIRA_TEAM_EU26_LIST_STATUS_OPTIONS: readonly JiraListStatusOption[]
 const STATUS_VARIANTS: Readonly<Record<string, JiraListRowData["statusVariant"]>> = {
 	"To do": "neutral",
 	"In progress": "information",
+	Paused: "neutral",
 	"In review": "warning",
 	Done: "success",
 };
@@ -59,7 +61,7 @@ export function progressJiraTeamEu26WorkItemOnStart(
 		const cards = column.title === sourceColumn.title
 			? column.cards.filter((candidate) => candidate.code !== issueKey)
 			: column.title === JIRA_AGENT_ACTIVE_COLUMN
-				? [card, ...column.cards]
+				? [card.status === undefined ? card : { ...card, status: JIRA_AGENT_ACTIVE_COLUMN }, ...column.cards]
 				: column.cards;
 		return cards === column.cards ? column : { ...column, cards, count: cards.length };
 	});
@@ -300,8 +302,8 @@ function createListRow(
 		summary: card.title,
 		issueType: card.issueType ?? "task",
 		priority: card.priority,
-		status: columnTitle,
-		statusVariant: STATUS_VARIANTS[columnTitle],
+		status: card.status ?? columnTitle,
+		statusVariant: STATUS_VARIANTS[card.status ?? columnTitle],
 		assignee: card.assignee,
 		agentSessions: assignedAgentsFromCard(card, catalog),
 		labels: card.tags,
@@ -339,7 +341,7 @@ export function selectListRows(
 ): JiraListRowData[] {
 	return columns.flatMap((column) => column.cards.map((card) => {
 		const row = index.get(card);
-		return row?.status === column.title ? row : createListRow(card, column.title, catalog);
+		return row?.status === (card.status ?? column.title) ? row : createListRow(card, column.title, catalog);
 	}));
 }
 

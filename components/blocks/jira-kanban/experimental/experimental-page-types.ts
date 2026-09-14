@@ -44,6 +44,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 }
 
 export interface ExperimentalJiraKanbanPageProps {
+	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	activeView?: ExperimentalJiraKanbanView;
 	activeCardCode?: string;
 	/** Extra local sessions discovered after the static Pulse fixture loaded. */
