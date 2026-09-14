@@ -55,11 +55,15 @@ const IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME = [
 ].join(" ");
 
 export interface InFlowAgentSessionColumnProps {
+	/** False keeps the timeline embedded and removes advanced placement/depth chrome. */
+	advancedTimeline?: boolean;
 	agentSessionColumn: AgentSessionColumnProps;
 	className?: string;
 	columnFrame: AgentSessionColumnFrame;
 	paddingBottom?: CSSProperties["paddingBottom"];
 	paddingTop?: CSSProperties["paddingTop"];
+	/** Whether the expanded column exposes its width-resize separator. */
+	resizable?: boolean;
 	sessionFlyoutsSuspended: boolean;
 	untrackedDropArmed: boolean;
 }
@@ -67,6 +71,7 @@ export interface InFlowAgentSessionColumnProps {
 function useInFlowAgentSessionColumnInteraction(
 	collapsed: AgentSessionColumnProps["collapsed"],
 	onCollapsedChange: AgentSessionColumnProps["onCollapsedChange"],
+	advancedTimeline: boolean,
 ) {
 	const rest = resolveInFlowSessionColumnRest(collapsed);
 	const [isHovered, setIsHovered] = useState(false);
@@ -83,8 +88,9 @@ function useInFlowAgentSessionColumnInteraction(
 		setIsHovered(false);
 		setIsMenuOpen(false);
 	}
-	const isEmbedded = isHovered || pinned || isMenuOpen;
+	const isEmbedded = !advancedTimeline || isHovered || pinned || isMenuOpen;
 	const isFullWidth = expanded && isEmbedded;
+	const resolvedPinned = advancedTimeline ? pinned : true;
 
 	const handlePointerEnter = (event: PointerEvent<HTMLDivElement>) => {
 		if (event.pointerType !== "touch") {
@@ -159,7 +165,7 @@ function useInFlowAgentSessionColumnInteraction(
 		isEmbedded,
 		isFullWidth,
 		isMenuOpen,
-		pinned,
+		pinned: resolvedPinned,
 	};
 }
 
@@ -206,7 +212,94 @@ function InFlowAgentSessionColumnFootprint({
 	);
 }
 
+function resolveInFlowAgentSessionColumnAdvancedCapabilities({
+	advancedTimeline,
+	menuOpen,
+	onExpand,
+	onMenuOpenChange,
+	onPinnedChange,
+	pinned,
+	title,
+}: Readonly<{
+	advancedTimeline: boolean;
+	menuOpen: boolean;
+	onExpand: () => void;
+	onMenuOpenChange: (open: boolean) => void;
+	onPinnedChange: (pinned: boolean) => void;
+	pinned: boolean;
+	title: string;
+}>): Readonly<{
+	collapsedMenu: AgentSessionColumnProps["collapsedMenu"];
+	hasScrollingEffect: boolean;
+	onPinnedChange: AgentSessionColumnProps["onPinnedChange"];
+}> {
+	if (!advancedTimeline) {
+		return {
+			collapsedMenu: undefined,
+			hasScrollingEffect: false,
+			onPinnedChange: undefined,
+		};
+	}
+
+	return {
+		collapsedMenu: ({ className, dragging }) => (
+			<InFlowAgentSessionColumnCollapsedMenu
+				className={className}
+				dragging={dragging}
+				open={menuOpen}
+				onExpand={onExpand}
+				onOpenChange={onMenuOpenChange}
+				onPinnedChange={onPinnedChange}
+				pinned={pinned}
+				title={title}
+			/>
+		),
+		hasScrollingEffect: true,
+		onPinnedChange,
+	};
+}
+
+function InFlowAgentSessionColumnResizeHandle({
+	columnFrame,
+	expandedWidthPx,
+	resize,
+	title,
+	visible,
+}: Readonly<{
+	columnFrame: AgentSessionColumnFrame;
+	expandedWidthPx: number;
+	resize: ReturnType<typeof useSidebarResize>;
+	title: string;
+	visible: boolean;
+}>) {
+	if (!visible) return null;
+
+	return (
+		<SidebarResizeHandle
+			aria-label={`Resize ${title} column`}
+			aria-orientation="vertical"
+			aria-valuemax={resize.maxWidth}
+			aria-valuemin={resize.minWidth}
+			aria-valuenow={expandedWidthPx}
+			className={IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME}
+			data-active={resize.isResizing ? "" : undefined}
+			data-testid="jira-kanban-agent-session-column-resize-handle"
+			onDoubleClick={resize.onResizeHandleDoubleClick}
+			onKeyDown={resize.onResizeHandleKeyDown}
+			onPointerDown={resize.onResizeHandlePointerDown}
+			role="separator"
+			side="right"
+			style={{
+				left: `calc(100% + ${resolveInFlowResizeHandleOffsetPx(columnFrame)}px)`,
+				right: "auto",
+			}}
+			tabIndex={0}
+		/>
+	);
+}
+
 function InFlowAgentSessionColumnSurface({
+	advancedTimeline,
 	agentSessionColumn,
 	className,
 	columnFrame,
@@ -215,6 +308,7 @@ function InFlowAgentSessionColumnSurface({
 	isEmbedded,
 	isFullWidth,
 	pinned,
+	resizable,
 	resize,
 	onCollapsedChange,
 	onExpand,
@@ -228,11 +322,13 @@ function InFlowAgentSessionColumnSurface({
 	shouldReduceMotion,
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps & {
+	advancedTimeline: boolean;
 	expanded: boolean;
 	expandedWidthPx: number;
 	isEmbedded: boolean;
 	isFullWidth: boolean;
 	pinned: boolean;
+	resizable: boolean;
 	resize: ReturnType<typeof useSidebarResize>;
 	onCollapsedChange: (collapsed: boolean) => void;
 	onExpand: () => void;
@@ -244,6 +340,19 @@ function InFlowAgentSessionColumnSurface({
 	shouldReduceMotion: boolean | null;
 }>) {
 	const title = agentSessionColumn.title ?? IN_FLOW_AGENT_SESSION_COLUMN_TITLE;
+	const {
+		collapsedMenu,
+		hasScrollingEffect,
+		onPinnedChange: advancedOnPinnedChange,
+	} = resolveInFlowAgentSessionColumnAdvancedCapabilities({
+		advancedTimeline,
+		menuOpen,
+		onExpand,
+		onMenuOpenChange,
+		onPinnedChange,
+		pinned,
+		title,
+	});
 
 	return (
 		<div
@@ -269,18 +378,8 @@ function InFlowAgentSessionColumnSurface({
 			<AgentSessionColumn
 				{...agentSessionColumn}
 				collapsed={!isFullWidth}
-				collapsedMenu={({ className: collapsedControlClassName, dragging }) => (
-					<InFlowAgentSessionColumnCollapsedMenu
-						className={collapsedControlClassName}
-						dragging={dragging}
-						open={menuOpen}
-						onExpand={onExpand}
-						onOpenChange={onMenuOpenChange}
-						onPinnedChange={onPinnedChange}
-						pinned={pinned}
-						title={title}
-					/>
-				)}
+				collapsedMenu={collapsedMenu}
+				hasScrollingEffect={hasScrollingEffect}
 				collapsedPresentation={isEmbedded ? "column" : "gutter"}
 				collapsedRailHitSlopPx={isEmbedded && !isFullWidth
 					? IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX
@@ -290,33 +389,18 @@ function InFlowAgentSessionColumnSurface({
 				widthTransitionDisabled={resize.isResizing}
 				onCollapsedChange={onCollapsedChange}
 				onGutterIntroComplete={onGutterIntroComplete}
-				onPinnedChange={onPinnedChange}
+				onPinnedChange={advancedOnPinnedChange}
 				pinned={pinned}
 				playGutterIntro={playGutterIntro}
 				toggleChangesWidth={expanded}
 			/>
-			{isFullWidth ? (
-				<SidebarResizeHandle
-					aria-label={`Resize ${title} column`}
-					aria-orientation="vertical"
-					aria-valuemax={resize.maxWidth}
-					aria-valuemin={resize.minWidth}
-					aria-valuenow={expandedWidthPx}
-					className={IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME}
-					data-active={resize.isResizing ? "" : undefined}
-					data-testid="jira-kanban-agent-session-column-resize-handle"
-					onDoubleClick={resize.onResizeHandleDoubleClick}
-					onKeyDown={resize.onResizeHandleKeyDown}
-					onPointerDown={resize.onResizeHandlePointerDown}
-					role="separator"
-					side="right"
-					style={{
-						left: `calc(100% + ${resolveInFlowResizeHandleOffsetPx(columnFrame)}px)`,
-						right: "auto",
-					}}
-					tabIndex={0}
-				/>
-			) : null}
+			<InFlowAgentSessionColumnResizeHandle
+				columnFrame={columnFrame}
+				expandedWidthPx={expandedWidthPx}
+				resize={resize}
+				title={title}
+				visible={isFullWidth && resizable}
+			/>
 		</div>
 	);
 }
@@ -369,9 +453,10 @@ function InFlowAgentSessionColumnGutter({
 }
 
 function useInFlowAgentSessionColumnModel({
+	advancedTimeline = true,
 	agentSessionColumn,
 	sessionFlyoutsSuspended,
-}: Readonly<Pick<InFlowAgentSessionColumnProps, "agentSessionColumn" | "sessionFlyoutsSuspended">>) {
+}: Readonly<Pick<InFlowAgentSessionColumnProps, "advancedTimeline" | "agentSessionColumn" | "sessionFlyoutsSuspended">>) {
 	const shouldReduceMotion = useReducedMotion();
 	const hostRef = useRef<HTMLDivElement>(null);
 	const showGutterScrollMask = useInFlowGutterScrollMask(hostRef);
@@ -384,6 +469,7 @@ function useInFlowAgentSessionColumnModel({
 	const interaction = useInFlowAgentSessionColumnInteraction(
 		agentSessionColumn.collapsed,
 		agentSessionColumn.onCollapsedChange,
+		advancedTimeline,
 	);
 	const resize = useSidebarResize({
 		defaultWidth: agentSessionColumn.expandedWidthPx ?? AGENT_SESSION_COLUMN_WIDTH_PX,
@@ -439,23 +525,23 @@ function useInFlowAgentSessionColumnModel({
 }
 
 /**
- * The Untracked rail starts pinned in the board as a compact timeline.
- * Unpin tucks it into the page's leading gutter. Hover from the gutter
- * temporarily returns that same compact timeline to the board's original
- * 24px column inset and reveals the collapsed header chrome — the session
- * total and a "…" options menu — without swapping dots for cards. Pin
- * keeps that surface embedded after the pointer leaves. Expand from the
- * gutter opens the full-width column and pins it. Collapsing the full
- * column keeps the compact rail pinned until the user unpins it. The
- * full-height gutter target sits behind each session row so a row can own
- * its whole 24px band while empty gutter space still opens the column preview.
+ * The Untracked rail starts pinned in the board as a compact timeline. In the
+ * simple mode it remains embedded, uses a flat list without an end cap, and
+ * reuses AgentSessionColumn's dedicated expand/collapse control. Advanced mode
+ * restores deck depth, its end-state, and the optional placement axis: Unpin
+ * tucks the rail into the leading gutter, hover previews it in place, and the
+ * column can be repositioned between status columns. The full-height gutter
+ * target sits behind each session row so a row can own its whole 24px band
+ * while empty gutter space still opens the advanced preview.
  */
 export function InFlowAgentSessionColumn({
+	advancedTimeline = true,
 	agentSessionColumn,
 	className,
 	columnFrame,
 	paddingBottom,
 	paddingTop,
+	resizable = true,
 	sessionFlyoutsSuspended,
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps>): ReactNode {
@@ -484,7 +570,11 @@ export function InFlowAgentSessionColumn({
 		setPlayGutterIntro,
 		shouldReduceMotion,
 		showGutterScrollMask,
-	} = useInFlowAgentSessionColumnModel({ agentSessionColumn, sessionFlyoutsSuspended });
+	} = useInFlowAgentSessionColumnModel({
+		advancedTimeline,
+		agentSessionColumn,
+		sessionFlyoutsSuspended,
+	});
 
 	return (
 		<JiraSessionFlyoutSuspensionProvider
@@ -523,6 +613,7 @@ export function InFlowAgentSessionColumn({
 					shouldReduceMotion={shouldReduceMotion}
 				/>}
 				<InFlowAgentSessionColumnSurface
+					advancedTimeline={advancedTimeline}
 					agentSessionColumn={{ ...agentSessionColumn, headerDragHandle: dragHandle, isRepositioning: reposition.dragging }}
 					className={className}
 					columnFrame={columnFrame}
@@ -532,6 +623,7 @@ export function InFlowAgentSessionColumn({
 					isFullWidth={isFullWidth}
 					menuOpen={isMenuOpen}
 					pinned={pinned}
+					resizable={resizable}
 					resize={resize}
 					onCollapsedChange={handleCollapsedChange}
 					onExpand={handleExpand}

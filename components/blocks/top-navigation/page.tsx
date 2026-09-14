@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarResizeHandle } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
+import type { DesignVariantId } from "@/components/utils/design-variants";
 import SearchSuggestionsPanel from "./components/search-suggestions-panel";
 import { LeftNavigation } from "./components/left-navigation";
 import { RightNavigation } from "./components/right-navigation";
@@ -66,6 +67,7 @@ interface TopNavigationProps {
 	/** Preserve the legacy leading inset used by sidebar-owned product shells. */
 	searchAlignment?: "responsive" | "sidebar";
 	hideRovoAction?: boolean;
+	settingsDesignVariantIds?: readonly DesignVariantId[];
 	settingsIconOnly?: boolean;
 	/**
 	 * Forces the "Ask Rovo" pill to render even for products that normally
@@ -156,6 +158,7 @@ export default function TopNavigation({
 	shellHeight = "viewport",
 	searchAlignment = "responsive",
 	hideRovoAction = false,
+	settingsDesignVariantIds,
 	settingsIconOnly = false,
 	forceShowRovoAction = false,
 	variant = "shell",
@@ -352,6 +355,7 @@ export default function TopNavigation({
 			product={product}
 			windowWidth={responsiveWidth}
 			hideRovoAction={hideRovoAction}
+			settingsDesignVariantIds={settingsDesignVariantIds}
 			settingsIconOnly={settingsIconOnly}
 			forceShowRovoAction={forceShowRovoAction}
 			isChatOpen={nav.isSidebarChatOpen}
