@@ -113,13 +113,16 @@ const BYLINE_TRANSITION = { duration: 0.2, ease: "easeOut" } as const;
 export function CyclingByline({
 	children,
 	className,
+	contentKey,
 }: Readonly<{
 	children: ReactNode;
 	className?: string;
+	/** Explicit transition key when composed children carry cycling text. */
+	contentKey?: string;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const hasContent = children != null && children !== false;
-	const textKey = typeof children === "string" ? children : "byline";
+	const textKey = contentKey ?? (typeof children === "string" ? children : "byline");
 
 	return (
 		<motion.span

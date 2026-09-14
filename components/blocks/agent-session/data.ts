@@ -55,6 +55,11 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		},
 		machineName: "Priya’s MacBook",
 		timeLabel: "Last week",
+		toolCalls: [
+			"Reading the relevant files.",
+			"Editing the shared implementation.",
+			"Running the focused tests.",
+		],
 		sessionDetails: {
 			additions: 86,
 			branch: "feature/shop-4821-guest-checkout",
@@ -89,6 +94,11 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		},
 		machineName: "Work Laptop",
 		timeLabel: "18m ago",
+		toolCalls: [
+			"Searching the codebase for affected paths.",
+			"Updating the shared implementation.",
+			"Checking the change against tests.",
+		],
 		sessionDetails: {
 			additions: 148,
 			branch: "fix/comment-highlight",
@@ -126,6 +136,11 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		},
 		machineName: "MBP-M4-MAX",
 		timeLabel: "Yesterday",
+		toolCalls: [
+			"Reading the linked work item context.",
+			"Updating the delivery details.",
+			"Checking the latest status.",
+		],
 		sessionDetails: {
 			additions: 214,
 			branch: "fix/pay-113-3ds-contract-suite",
@@ -162,6 +177,11 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		},
 		machineName: "Telemetry MacBook",
 		timeLabel: "7m ago",
+		toolCalls: [
+			"Searching the checkout telemetry events.",
+			"Reading the relevant logs.",
+			"Tracing the gap through the code.",
+		],
 		sessionDetails: {
 			host: "local",
 			issueKey: "PAY-128",
@@ -211,6 +231,11 @@ export const AGENT_SESSION_CLOUD_ITEMS: readonly AgentSessionItem[] = [
 		state: "running",
 		timeLabel: "2m",
 		title: "Refactor active air suspension dampening logic for off-road mode",
+		toolCalls: [
+			"Reading the suspension control paths.",
+			"Adjusting the dampening logic.",
+			"Running the off-road mode tests.",
+		],
 	},
 	{
 		agent: {
@@ -235,6 +260,11 @@ export const AGENT_SESSION_CLOUD_ITEMS: readonly AgentSessionItem[] = [
 		state: "needs-input",
 		timeLabel: "2m",
 		title: "Active air suspension roadmap",
+		toolCalls: [
+			"Reviewing the current roadmap layout.",
+			"Updating the design hierarchy.",
+			"Preparing the latest design export.",
+		],
 	},
 	{
 		agent: {
@@ -259,6 +289,11 @@ export const AGENT_SESSION_CLOUD_ITEMS: readonly AgentSessionItem[] = [
 		state: "complete",
 		timeLabel: "29d",
 		title: "Figma with Austin",
+		toolCalls: [
+			"Inspecting the current design frame.",
+			"Comparing the component styles.",
+			"Preparing the latest asset export.",
+		],
 	},
 ];
 

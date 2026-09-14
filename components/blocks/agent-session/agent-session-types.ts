@@ -21,15 +21,16 @@ export type AgentSessionRole = "owner" | "viewer" | "expired";
 /**
  * An agent session rendered either detached from or attached to a work item.
  *
- * Structurally identical to an Agent List row — the card renders the shared
- * `AgentListRow` presenter inside a dashed uncaptured-work frame — so this is
- * an alias rather than a parallel model. Consumers that already build
+ * Starts from the Agent List row rendered by the shared `AgentListRow`
+ * presenter instead of forking a parallel model. Consumers that already build
  * `AgentListItem` values (Pulse maps loose-work fixtures into them) need no
- * conversion step. `role` is session-card vocabulary: Agent List rows have no
- * owner/viewer split.
+ * conversion step. `role` and `toolCalls` are session-card vocabulary: Agent
+ * List rows have neither the owner/viewer split nor the long-form tool cycle.
  */
 export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
+	/** Human-readable tool calls cycled in the long-form metadata line. */
+	toolCalls?: readonly string[];
 };
 
 /** Defaults to `owner` so existing payloads keep the more menu. */
@@ -88,9 +89,9 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
  *
  * `short` leads with a 32px identity and an agent · host · time byline. `long`
  * drops the leading avatar, gives the title the full width, and spends the
- * reclaimed room on a fuller metadata line (agent mark, host, artifact, time)
- * plus a trailing lifecycle label and icon. Progression stays at the far right,
- * not in the byline. Long rows have no hover flyout — highlight and trailing
+ * reclaimed room on a fuller metadata line (agent mark, cycling tool call,
+ * artifact, host, time) plus a trailing lifecycle label and icon. Progression
+ * stays at the far right, not in the byline. Long rows have no hover flyout — highlight and trailing
  * controls only. Same data either way; the difference is how much of it the
  * surface has room to state.
  */
