@@ -974,10 +974,7 @@ function ExperimentalJiraKanbanPageContent({
 			) : (
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 					<SessionColumnPlacementProvider
-						enabled={advancedAgentSessionTimeline
-							&& !isListContent
-							&& showInFlowAgentSessionColumn
-							&& Boolean(agentSessionColumnConfig)}
+						enabled={advancedAgentSessionTimeline && !isListContent && showInFlowAgentSessionColumn && Boolean(agentSessionColumnConfig)}
 						titles={filteredBoardColumns.map((column) => column.title)}
 					>
 						{showInFlowAgentSessionColumn && agentSessionColumnConfig ? (
