@@ -110,7 +110,7 @@ export function AgentSessionMediumCard({
 							<AgentListIdentity
 								agent={item.agent}
 								attributedBy={item.invokedBy}
-								sizePx={24}
+								sizePx={32}
 							/>
 						</span>
 						<span className="min-w-0 truncate text-sm font-medium leading-5 text-text">
