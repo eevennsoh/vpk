@@ -260,8 +260,8 @@ export function AgentSessionCard({
 	// controlled overlay state until that popup closes.
 	const isHoverStateActive = isFlyoutActive || menu.isOpen;
 	// Title-led long rows spend their reclaimed width on a trailing progression
-	// column. Short rows do not: `stateAwareTitle` already says "Needs input" on
-	// the title line, so a resting status glyph would only repeat it.
+	// column. Short rows keep lifecycle state in their metadata line so every
+	// density preserves the authored session title unchanged.
 	const isLongDensity = density === "long";
 	const trailingControl = (() => {
 		if (!showMoreMenu) {
@@ -422,9 +422,8 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
-								// The title-led long row states its own lifecycle, including the
-								// success check Agent List has no slot for. A short row states
-								// it in the title and keeps the trailing column empty at rest.
+								// Agent Session owns lifecycle outside the title: long rows use the
+								// trailing control and short rows use their metadata line.
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isLongDensity
@@ -460,9 +459,7 @@ export function AgentSessionCard({
 									);
 								}}
 								showHoverActionsWhenSelected
-								// Long form keeps the work title; progression is the trailing
-								// icon, not a state-aware title swap.
-								stateAwareTitle={!isLongDensity}
+								stateAwareTitle={false}
 							/>
 						</article>
 					);
