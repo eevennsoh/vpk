@@ -45,7 +45,7 @@ import {
 } from "./hooks/use-created-card-arrival";
 import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
 import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
-import { JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
+import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	getBoardColumnOuterWidthPx,
@@ -791,6 +791,7 @@ function ExperimentalJiraKanbanView({
 										? cardMoveAnimation.phase
 										: undefined;
 									const shouldAnimateCardPosition = shouldAnimateCardMoves && cardMovePhase === undefined;
+									const shouldAnimateCardLayout = !shouldReduceMotion && cardMovePhase === undefined;
 									const detachedAgentSessions = detachedAgentSessionsByCard?.[card.code] ?? [];
 										const proximityActions = bindBoardProximitySessionActions({
 										actionableSessionIds: proximityAgentSession?.actionableSessionIds,
@@ -821,10 +822,9 @@ function ExperimentalJiraKanbanView({
 										<motion.div
 											key={card.code}
 											className="w-full min-w-0 max-w-[280px]"
-											layout={shouldAnimateCardPosition ? "position" : false}
+											layout={shouldAnimateCardLayout ? "position" : false}
 											layoutId={shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined}
-											style={shouldAnimateCardPosition ? { willChange: "transform" } : undefined}
-											transition={JIRA_KANBAN_CARD_MOVE}
+											transition={shouldAnimateCardPosition ? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT}
 										>
 											<CreatedCardArrivalMotion
 												arrival={createdCardArrival?.columnTitle === column.title

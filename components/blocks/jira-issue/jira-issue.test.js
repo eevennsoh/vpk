@@ -818,6 +818,8 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_LAYOUT: Transition = \{ duration: 0\.2, ease: \[0\.4, 0, 0, 1\] \}; \/\/ duration-medium \+ ease-in-out/);
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
+	assert.match(SOURCE, /layoutOwner = "self"/u);
+	assert.match(SOURCE, /const parentOwnsLayout = layoutOwner === "parent";/u);
 	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence key=\{rowPresenceKey\} initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup, index\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
@@ -832,7 +834,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 		/const agentActivitySurfaceAnimation = getJiraIssueAgentSurfaceOffsets\(\s*\n\s*agentActivitySurfacePosition,\s*\n\s*insetsAgentActivitySurfaceBottom,\s*\n\s*\);/u,
 	);
 	assert.match(SOURCE, /<article[\s\S]*className=\{agentActivityArticleClassName\}[\s\S]*data-agent-activity-mode=\{resolvedAgentActivityMode\}/);
-	assert.match(SOURCE, /<motion\.div[\s\S]*className=\{agentActivityShellClassName\}[\s\S]*initial=\{false\}[\s\S]*layout=\{!\(shouldReduceMotion \|\| agentActivityHoverOpen\)\}[\s\S]*layoutRoot/);
+	assert.match(SOURCE, /<motion\.div[\s\S]*className=\{agentActivityShellClassName\}[\s\S]*initial=\{false\}[\s\S]*layout=\{!\(shouldReduceMotion \|\| agentActivityHoverOpen \|\| parentOwnsLayout\)\}[\s\S]*layoutRoot=\{!parentOwnsLayout\}/);
 	assert.match(
 		SOURCE,
 		/className=\{cn\(\s*"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",\s*agentSessionTargetHighlighted \? "bg-bg-neutral-hovered" : "bg-bg-neutral",\s*\)\}/u,
@@ -843,8 +845,8 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /transformOrigin: "top center"/);
 	assert.match(SOURCE, /const AGENT_ACTIVITY_INNER_STYLE: CSSProperties = \{[\s\S]*transformOrigin: "top center"/);
 	assert.doesNotMatch(SOURCE, /layout=\{!shouldReduceMotion\}/);
-	assert.match(SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/);
-	assert.match(SOURCE, /layout=\{shouldReduceMotion \|\| agentActivityHoverOpen \? false : "position"\}/);
+	assert.match(SOURCE, /layout=\{shouldReduceMotion \|\| parentOwnsLayout \? false : "position"\}/);
+	assert.match(SOURCE, /layout=\{shouldReduceMotion \|\| agentActivityHoverOpen \|\| parentOwnsLayout \? false : "position"\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const rowLayout = shouldReduceMotion \|\| sessionDragging \|\| assignmentHoverOpen\s*\n\s*\? false\s*\n\s*: "position";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentAvatarVisual[\s\S]*animate=\{false\}/u);
 	assert.match(SUBTASKS_SOURCE, /style=\{shouldReduceMotion \? undefined : JIRA_ISSUE_MOTION_STYLE\}/);
