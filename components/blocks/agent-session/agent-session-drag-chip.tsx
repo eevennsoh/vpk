@@ -58,9 +58,9 @@ function sessionCohortLabel(total: number): string {
 }
 
 /**
- * One travelling session, drawn as the Figma drag pill: an elevated white
- * surface holding the agent hexagon with the human invoker tucked into its
- * corner, then "Claude with Annie".
+ * One travelling session, drawn as the drag pill: an elevated white surface
+ * holding the human invoker followed by the agent hexagon, then "Claude with
+ * Annie".
  *
  * `AgentListIdentity` already draws that composite at `sizePx={32}` — the same
  * footprint the resting medium card uses — so the avatar can morph 1:1 out of

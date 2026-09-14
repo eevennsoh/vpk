@@ -209,6 +209,12 @@ export interface ExperimentalJiraKanbanPageProps {
 	 */
 	showAgentSessionLinkAction?: boolean;
 	/**
+	 * Whether an unattached session's more menu offers Link work item.
+	 * Defaults to true; routes can hide this manual path independently from
+	 * drag-to-link and other linking capabilities.
+	 */
+	showAgentSessionLinkWorkItemMenuItem?: boolean;
+	/**
 	 * Whether the unattached sessions column shows the overflow (ellipsis)
 	 * menu. Collapse remains when this is off. Defaults to true.
 	 */
