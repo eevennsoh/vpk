@@ -200,6 +200,11 @@ export interface AgentSessionProps {
 	 */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 	/**
+	 * Shows the Link work item row in the session's more menu. Defaults to true.
+	 * This affects only that manual menu path; other linking capabilities remain wired.
+	 */
+	showLinkWorkItemMenuItem?: boolean;
+	/**
 	 * Add-as-subtask action behind the untracked-work flyout menu. Omit to expose
 	 * the menu option as unavailable.
 	 */
