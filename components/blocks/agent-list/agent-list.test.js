@@ -173,24 +173,34 @@ test("people render a circular photo beside the hexagon agents in the same list"
 	assert.match(IDENTITY_SOURCE, /PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps\["size"\]>> = \{\s*16: "xs",\s*24: "sm",\s*32: "default",/u);
 });
 
-test("agent identities can show a human invoker in the 32px attribution frame", () => {
+test("agent identities put the human before the agent in the 32px attribution frame", () => {
 	assert.match(IDENTITY_SOURCE, /attributedBy\?: AgentListInvoker;/u);
 	assert.match(IDENTITY_SOURCE, /aria-label=\{`\$\{agent\.name\}, used by \$\{attributedBy\.name\}`\}/u);
 	assert.match(IDENTITY_SOURCE, /PX_TO_ATTRIBUTED_AGENT_SIZE: Record<number, number> = \{[\s\S]*32: 24,/u);
 	assert.match(IDENTITY_SOURCE, /PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE:[\s\S]*32: "xs",/u);
-	assert.match(IDENTITY_SOURCE, /className="absolute bottom-0 right-0 ring-2 ring-background"/u);
+	assert.match(IDENTITY_SOURCE, /className="absolute left-0 top-0 ring-2 ring-background"/u);
+	assert.match(
+		IDENTITY_SOURCE,
+		/role="img"[\s\S]*<Avatar[\s\S]*className="absolute left-0 top-0 ring-2 ring-background"[\s\S]*<span aria-hidden="true" className="absolute bottom-0 right-0">[\s\S]*<AgentAvatarVisual/u,
+	);
 });
 
-test("agent attribution groups overlap the agent and invoker like a facepile", () => {
+test("agent attribution groups overlap the human before the agent like a facepile", () => {
+	const attributionGroupSource = IDENTITY_SOURCE.slice(
+		IDENTITY_SOURCE.indexOf("export function AgentListAttributionAvatarGroup"),
+		IDENTITY_SOURCE.indexOf("export function AgentListIdentity"),
+	);
+	const humanAvatarIndex = attributionGroupSource.indexOf("\n\t\t\t<Avatar\n");
+	const agentAvatarIndex = attributionGroupSource.indexOf("\n\t\t\t<AgentAvatarVisual\n");
+
 	assert.match(
 		IDENTITY_SOURCE,
 		/export function AgentListAttributionAvatarGroup[\s\S]*<AvatarGroup[\s\S]*className=\{cn\("shrink-0", className\)\}[\s\S]*label=\{`\$\{agent\.name\}, used by \$\{attributedBy\.name\}`\}/u,
 	);
 	assert.doesNotMatch(IDENTITY_SOURCE, /gap-1 space-x-0/u);
-	assert.match(
-		IDENTITY_SOURCE,
-		/export function AgentListAttributionAvatarGroup[\s\S]*<AgentAvatarVisual[\s\S]*sizePx=\{sizePx\}[\s\S]*<Avatar[\s\S]*size=\{PX_TO_PERSON_AVATAR_SIZE\[sizePx\] \?\? "default"\}/u,
-	);
+	assert.ok(humanAvatarIndex > -1);
+	assert.ok(agentAvatarIndex > -1);
+	assert.ok(humanAvatarIndex < agentAvatarIndex);
 });
 
 test("the attention state keeps the row's own title and warns instead of shimmering", () => {

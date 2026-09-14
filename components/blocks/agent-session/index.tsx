@@ -73,7 +73,7 @@ function buildArrivalDelays(
  * Link / Create / Add as a subtask without a footer chin. Long density has no
  * flyout — hover only highlights the row and reveals trailing controls. Medium
  * detached keeps that uncaptured relationship as a 276px stroked white chip:
- * 24px agent+human identity, the session title, and a trailing up-arrow key,
+ * 24px human+agent identity, the session title, and a trailing up-arrow key,
  * with the untracked-work flyout. Medium attached reuses the Jira Issue
  * activity row and its assignment hover — the Assign agent footer appears when
  * the host supplies `assignment.onAssignedAgentIdsChange`. Work-item capture
