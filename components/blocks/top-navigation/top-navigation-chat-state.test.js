@@ -10,6 +10,10 @@ const RIGHT_NAVIGATION_ACTIONS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components", "right-navigation-actions.tsx"),
 	"utf8",
 );
+const PROJECT_LAYOUT_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "..", "projects", "page.tsx"),
+	"utf8",
+);
 const LAYOUT_CONSTANTS_SOURCE = fs.readFileSync(path.join(__dirname, "layout-constants.ts"), "utf8");
 const CREATE_BUTTON_SOURCE = fs.readFileSync(path.join(__dirname, "components", "create-button.tsx"), "utf8");
 const TOP_NAVIGATION_DEMO_SOURCE = fs.readFileSync(
@@ -200,6 +204,31 @@ test("right navigation settings button can render optional dropdown actions", ()
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /onSelect=\{item\.onSelect\}/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsMenuItems\?: ReadonlyArray<RightNavigationSettingsMenuItem>/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsMenuItems=\{settingsMenuItems\}/);
+});
+
+test("routes can limit Settings properties to supported design variants", () => {
+	assert.match(
+		RIGHT_NAVIGATION_ACTIONS_SOURCE,
+		/settingsDesignVariantIds\?: readonly DesignVariantId\[\];/u,
+	);
+	assert.match(
+		RIGHT_NAVIGATION_ACTIONS_SOURCE,
+		/const settingsDesignVariants = settingsDesignVariantIds === undefined\s*\? DESIGN_VARIANTS\s*: DESIGN_VARIANTS\.filter\(\(variant\) => settingsDesignVariantIds\.includes\(variant\.id\)\);/u,
+	);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /\{settingsDesignVariants\.map\(\(variant\) => \(/u);
+	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsDesignVariantIds\?: readonly DesignVariantId\[\];/u);
+	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsDesignVariantIds=\{settingsDesignVariantIds\}/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /settingsDesignVariantIds\?: readonly DesignVariantId\[\];/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /settingsDesignVariantIds=\{settingsDesignVariantIds\}/u);
+	assert.match(PROJECT_LAYOUT_SOURCE, /settingsDesignVariantIds\?: readonly DesignVariantId\[\];/u);
+	assert.match(PROJECT_LAYOUT_SOURCE, /settingsDesignVariantIds=\{settingsDesignVariantIds\}/u);
+});
+
+test("Settings properties put their checkmark in the trailing slot", () => {
+	assert.match(
+		RIGHT_NAVIGATION_ACTIONS_SOURCE,
+		/<DropdownMenuCheckboxItem[\s\S]*?indicatorPlacement="end"[\s\S]*?checked=\{designVariants\[variant\.id\]\}/u,
+	);
 });
 
 test("top navigation can retain a static settings icon for fixed-presentation routes", () => {

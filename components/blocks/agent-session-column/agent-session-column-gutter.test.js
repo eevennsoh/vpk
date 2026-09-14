@@ -56,7 +56,7 @@ test("the in-flow host pins and expands on separate axes", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /resolveInFlowSessionColumnRest\(collapsed\)/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /const \[pinned, setPinned\] = useState\(rest\.pinned\)/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /const \[expanded, setExpanded\] = useState\(rest\.expanded\)/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /const isEmbedded = isHovered \|\| pinned \|\| isMenuOpen/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /const isEmbedded = !advancedTimeline \|\| isHovered \|\| pinned \|\| isMenuOpen/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /const isFullWidth = expanded && isEmbedded/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsed=\{!isFullWidth\}/u);
 	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /expansion: "gutter" \| "pinned" \| "expanded"/u);
@@ -99,6 +99,45 @@ test("the in-flow host pins and expands on separate axes", () => {
 	assert.doesNotMatch(pointerEnterSource, /onCollapsedChange/u);
 });
 
+test("simple timeline stays embedded with only expand and collapse controls", () => {
+	assert.match(IN_FLOW_COLUMN_SOURCE, /advancedTimeline\?: boolean;/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/const isEmbedded = !advancedTimeline \|\| isHovered \|\| pinned \|\| isMenuOpen/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/collapsedMenu=\{advancedTimeline \? \([\s\S]*?<InFlowAgentSessionColumnCollapsedMenu[\s\S]*?\) : undefined\}/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/onPinnedChange=\{advancedTimeline \? onPinnedChange : undefined\}/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /advancedAgentSessionTimeline = true,/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/enabled=\{advancedAgentSessionTimeline[\s\S]*?showInFlowAgentSessionColumn/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<InFlowAgentSessionColumn[\s\S]*?advancedTimeline=\{advancedAgentSessionTimeline\}/u,
+	);
+});
+
+test("session-column width dragging is an explicit host capability", () => {
+	assert.match(IN_FLOW_COLUMN_SOURCE, /resizable\?: boolean;/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /resizable = true,/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/\{isFullWidth && resizable \? \(\s*<SidebarResizeHandle/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionColumnResizable = true,/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<InFlowAgentSessionColumn[\s\S]*?resizable=\{agentSessionColumnResizable\}/u,
+	);
+});
+
 test("gutter Expand expands and pins; the menu then says Unpin", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /reduceInFlowSessionColumnAxes\(\{ expanded, pinned \}, \{ type: "expand" \}\)/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /onCollapsedChange\?\.\(false\)/u);
@@ -112,9 +151,9 @@ test("gutter Expand expands and pins; the menu then says Unpin", () => {
 
 test("pin persists the column after the pointer leaves", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /reduceInFlowSessionColumnAxes\(\{ expanded, pinned \}, \{ type: "pin", pinned: nextPinned \}\)/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded = isHovered \|\| pinned \|\| isMenuOpen/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded = !advancedTimeline \|\| isHovered \|\| pinned \|\| isMenuOpen/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /data-agent-session-column-pinned=\{pinned \? "" : undefined\}/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /onPinnedChange=\{onPinnedChange\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /onPinnedChange=\{advancedTimeline \? onPinnedChange : undefined\}/u);
 });
 
 test("the collapsed options menu uses Atlaskit show-more-horizontal, not a custom SVG", () => {
@@ -193,7 +232,7 @@ test("collapsed drag paints the outlined overlay chip and keeps the same button 
 	assert.match(IN_FLOW_MENU_SOURCE, /style=\{\{ width: "100%" \}\}/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/collapsedMenu=\{\(\{ className: collapsedControlClassName, dragging \}\) => \(/u,
+		/collapsedMenu=\{advancedTimeline \? \(\{ className: collapsedControlClassName, dragging \}\) => \(/u,
 	);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /dragging=\{dragging\}/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /open=\{menuOpen\}/u);

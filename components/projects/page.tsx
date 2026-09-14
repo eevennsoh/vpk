@@ -21,6 +21,7 @@ import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/comp
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
+import type { DesignVariantId } from "@/components/utils/design-variants";
 
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
 
@@ -35,6 +36,7 @@ interface AppLayoutProps {
 	embeddedHeight?: "parent" | "viewport";
 	hideFloatingRovo?: boolean;
 	hideRovoAction?: boolean;
+	settingsDesignVariantIds?: readonly DesignVariantId[];
 	settingsIconOnly?: boolean;
 	onChatSurfaceSwitch?: ChatSurfaceSwitchHandler;
 	chatContextBar?: ChatContextBarDescriptor | null;
@@ -142,6 +144,7 @@ export default function AppLayout({
 	embeddedHeight = "viewport",
 	hideFloatingRovo,
 	hideRovoAction = false,
+	settingsDesignVariantIds,
 	settingsIconOnly = false,
 	onChatSurfaceSwitch,
 	chatContextBar,
@@ -298,6 +301,7 @@ export default function AppLayout({
 			searchAlignment={topNavigationSearchAlignment}
 			variant="shell"
 			hideRovoAction={shouldHideRovoAction}
+			settingsDesignVariantIds={settingsDesignVariantIds}
 			settingsIconOnly={settingsIconOnly}
 			sidebar={(slot) => (
 				<Sidebar

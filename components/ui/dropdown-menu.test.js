@@ -160,6 +160,19 @@ test("trailing selected indicators keep the tick and match the submenu chevron s
 	assert.equal(source.match(/<DropdownMenuSelectionGlyph \/>/gu).length, 2);
 });
 
+test("Base UI selection indicators center glyphs without baseline offset", () => {
+	assert.match(
+		source,
+		/const dropdownMenuSelectionIndicatorClassName =\s*"flex items-center justify-center leading-none";/u,
+	);
+	assert.equal(
+		source.match(
+			/<MenuPrimitive\.(?:Checkbox|Radio)ItemIndicator\s+className=\{dropdownMenuSelectionIndicatorClassName\}\s*>/gu,
+		)?.length,
+		2,
+	);
+});
+
 test("caller elemAfter stays pointer-interactive", () => {
 	// The default tick can sit in `indicatorEnd` (`pointer-events-none`). A
 	// caller-supplied trailing control, like the Auto merge Switch, must not.

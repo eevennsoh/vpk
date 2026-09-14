@@ -4,6 +4,7 @@ import { useState, type Ref } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMounted } from "@/components/hooks/use-is-mounted";
+import type { DesignVariantId } from "@/components/utils/design-variants";
 import { token } from "@/lib/tokens";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import {
@@ -18,6 +19,7 @@ interface RightNavigationProps {
 	product: Product;
 	windowWidth: number;
 	hideRovoAction?: boolean;
+	settingsDesignVariantIds?: readonly DesignVariantId[];
 	settingsIconOnly?: boolean;
 	forceShowRovoAction?: boolean;
 	isChatOpen?: boolean;
@@ -35,6 +37,7 @@ export function RightNavigation({
 	product,
 	windowWidth,
 	hideRovoAction = false,
+	settingsDesignVariantIds,
 	settingsIconOnly = false,
 	forceShowRovoAction = false,
 	isChatOpen = false,
@@ -71,6 +74,7 @@ export function RightNavigation({
 
 	const actions = (
 		<RightNavigationActions
+			settingsDesignVariantIds={settingsDesignVariantIds}
 			settingsIconOnly={settingsIconOnly}
 			showRovoAction={showRovoAction}
 			isChatOpen={isChatOpen}
