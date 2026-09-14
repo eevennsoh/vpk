@@ -207,6 +207,7 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	compact?: boolean;
 	/** Compact keeps 12px icons and 16px avatars. Comfortable uses 16px icons and 24px avatars. */
 	iconScale?: JiraIssueIconScale;
+	parentOwnsLayout?: boolean;
 	/** Nested subtask cards inherit the parent chrome unless set. Compact cards default to stroke so Raised/Stroke only changes the parent. */
 	subtaskChrome?: JiraIssueChrome;
 	selected?: boolean;
@@ -284,8 +285,7 @@ function JiraIssueDefault({
 	assigneePulse = false,
 	assigneeUnassignedKind,
 	chrome = "raised",
-	compact = false,
-	iconScale = "compact",
+	compact = false, iconScale = "compact", parentOwnsLayout = false,
 	className,
 	defaultSubtasksExpanded = false,
 	dragging = false,
@@ -754,7 +754,7 @@ function JiraIssueDefault({
 						animate={presenceMotion.animate}
 						exit={presenceMotion.exit}
 						initial={presenceMotion.initial}
-						layout={shouldReduceMotion ? false : "position"}
+						layout={shouldReduceMotion || parentOwnsLayout ? false : "position"}
 						style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
 						transition={layoutTransition}
 					>
@@ -804,8 +804,8 @@ function JiraIssueDefault({
 			className={agentActivityShellClassName}
 			data-slot="jira-issue-agent-shell"
 			initial={false}
-			layout={!(shouldReduceMotion || agentActivityHoverOpen)}
-			layoutRoot
+			layout={!(shouldReduceMotion || agentActivityHoverOpen || parentOwnsLayout)}
+			layoutRoot={!parentOwnsLayout}
 			style={AGENT_ACTIVITY_SHELL_STYLE}
 			transition={layoutTransition}
 		>
@@ -825,7 +825,7 @@ function JiraIssueDefault({
 				<motion.div
 					className={rootClassName}
 					data-slot="jira-issue-card"
-					layout={shouldReduceMotion || agentActivityHoverOpen ? false : "position"}
+					layout={shouldReduceMotion || agentActivityHoverOpen || parentOwnsLayout ? false : "position"}
 					style={AGENT_ACTIVITY_INNER_STYLE}
 					transition={layoutTransition}
 				>
@@ -867,7 +867,7 @@ function JiraIssueDefault({
 							animate={presenceMotion.animate}
 							exit={presenceMotion.exit}
 							initial={presenceMotion.initial}
-							layout={shouldReduceMotion ? false : "position"}
+							layout={shouldReduceMotion || parentOwnsLayout ? false : "position"}
 							style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
 							transition={layoutTransition}
 						>
