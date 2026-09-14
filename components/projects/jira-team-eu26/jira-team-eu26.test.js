@@ -68,13 +68,42 @@ const TRANSFER_SOURCE = readProjectFile(
 
 test("the route renders the Payments board directly inside Jira app chrome", () => {
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
-	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{true\}[\s\S]*product="jira"[\s\S]*settingsIconOnly/u);
+	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{true\}[\s\S]*product="jira"/u);
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
 	assert.match(PAGE_SOURCE, /createJiraTeamEu26PayBoardColumns/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_BOARD_AGENTS/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES/u);
 	assert.match(PAGE_SOURCE, /agentSessionMembers=\{JIRA_TEAM_EU26_PAY_SESSION_MEMBERS\}/u);
 	assert.match(PAGE_SOURCE, /overflow-hidden bg-surface \[&>div\]:min-h-0/u);
+});
+
+test("the settings property controls the advanced session timeline", () => {
+	assert.match(PAGE_SOURCE, /import \{ useDesignVariants \} from "@\/components\/hooks\/use-design-variants"/u);
+	assert.match(PAGE_SOURCE, /const \{ designVariants \} = useDesignVariants\(\);/u);
+	assert.match(
+		PAGE_SOURCE,
+		/JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS[\s\S]*"advancedTimeline"/u,
+	);
+	assert.doesNotMatch(PAGE_SOURCE, /settingsIconOnly/u);
+	assert.match(
+		PAGE_SOURCE,
+		/settingsDesignVariantIds=\{JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS\}/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/advancedAgentSessionTimeline=\{designVariants\.advancedTimeline\}/u,
+	);
+});
+
+test("the Dragging property controls session-column width resizing", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*\] as const;/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/agentSessionColumnResizable=\{designVariants\.agentSessionColumnResizing\}/u,
+	);
 });
 
 test("the route no longer renders gallery or presentation phases", () => {
@@ -723,7 +752,10 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /showMoreControls/u);
 	assert.match(PAGE_SOURCE, /simpleViews=\{false\}/u);
 	assert.match(PAGE_SOURCE, /showCustomizeControl/u);
-	assert.doesNotMatch(PAGE_SOURCE, /useDesignVariants|designVariants/u);
+	assert.doesNotMatch(
+		PAGE_SOURCE,
+		/designVariants\.(?:panel|simpleKanban)|designVariants\["simple-views"\]/u,
+	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /moreControlsPlacement\?: "inline" \| "end";/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showMoreControls\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /simpleViews\?: boolean;/u);
@@ -835,7 +867,8 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 	);
 	assert.match(
 		BOARD_VIEW_MENU_SOURCE,
-		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>[\s\S]*Needs input[\s\S]*<Badge max=\{false\} variant="information">\{count\}<\/Badge>/u,
+		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>\s*Needs input\s*<\/Button>/u,
+		"the Needs input control shows its label without a visible count badge",
 	);
 	assert.doesNotMatch(BOARD_VIEW_MENU_SOURCE, /StatusInformationIcon/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardGroupByMenu/u);

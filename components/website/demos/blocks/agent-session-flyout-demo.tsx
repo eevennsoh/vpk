@@ -15,6 +15,7 @@ const AGENT_SESSION_FLYOUT_NO_LINK_ITEM: AgentSessionItem = {
 	...AGENT_SESSION_ITEMS[0],
 	id: "lw-no-link-demo",
 	shortTitle: "No linked work item",
+	state: "needs-input",
 	title: "This session has no Jira work item yet",
 	sessionDetails: {
 		...AGENT_SESSION_ITEMS[0].sessionDetails,
@@ -25,7 +26,9 @@ const AGENT_SESSION_FLYOUT_NO_LINK_ITEM: AgentSessionItem = {
 
 const AGENT_SESSION_FLYOUT_UNTRACKED_WORK_ITEMS: readonly AgentSessionItem[] = [
 	AGENT_SESSION_FLYOUT_NO_LINK_ITEM,
-	...AGENT_SESSION_ITEMS,
+	...AGENT_SESSION_ITEMS.map((item) => (
+		item.id === "lw-no-pr-session" ? { ...item, state: "running" as const } : item
+	)),
 ];
 
 export default function AgentSessionFlyoutDemo() {

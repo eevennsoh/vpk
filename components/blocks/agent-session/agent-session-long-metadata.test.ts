@@ -9,6 +9,7 @@ type Segment = {
 	label?: string;
 	prStatus?: string;
 	host?: "cloud" | "local";
+	toolCalls?: readonly string[];
 };
 
 type Input = {
@@ -16,6 +17,7 @@ type Input = {
 	artifactLabel?: string;
 	host?: "cloud" | "local";
 	prStatus?: "created" | "merged" | "failed";
+	toolCalls?: readonly string[];
 };
 
 const build = toAgentSessionMetadataSegments as (input: Input) => readonly Segment[];
@@ -29,15 +31,20 @@ function chunk(input: Input, kind: string): Segment | undefined {
 	return build(input).find((segment) => segment.kind === kind);
 }
 
-test("a fully described session reads agent, artifact, then host-tagged time", () => {
+test("a fully described session reads agent, tool call, artifact, then host-tagged time", () => {
 	assert.deepEqual(
 		kinds({
 			agentName: "Claude",
 			artifactLabel: "#124: Cargo retract",
 			host: "local",
 			prStatus: "created",
+			toolCalls: ["Reading the relevant files.", "Editing the shared implementation."],
 		}),
-		["agent", "artifact", "time"],
+		["agent", "tool-call", "artifact", "time"],
+	);
+	assert.deepEqual(
+		chunk({ agentName: "Claude", toolCalls: ["Reading the relevant files.", "Editing the shared implementation."] }, "tool-call")?.toolCalls,
+		["Reading the relevant files.", "Editing the shared implementation."],
 	);
 	assert.equal(
 		chunk({
@@ -46,6 +53,13 @@ test("a fully described session reads agent, artifact, then host-tagged time", (
 			host: "local",
 		}, "time")?.host,
 		"local",
+	);
+});
+
+test("empty tool-call labels are omitted instead of leaving a blank clause", () => {
+	assert.deepEqual(
+		kinds({ agentName: "Claude", toolCalls: ["", "  "] }),
+		["agent", "time"],
 	);
 });
 

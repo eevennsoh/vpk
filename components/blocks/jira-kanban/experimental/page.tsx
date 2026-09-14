@@ -191,6 +191,8 @@ function ExperimentalJiraKanbanPageContent({
 	agentSessionLinkingVariant = "fuse",
 	suggestSessionBoardLinkOnHover = true,
 	agentSessionPresentation = "column",
+	advancedAgentSessionTimeline = true,
+	agentSessionColumnResizable = true,
 	agentSessionMultiSelect = true,
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
@@ -972,11 +974,13 @@ function ExperimentalJiraKanbanPageContent({
 			) : (
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 					<SessionColumnPlacementProvider
-						enabled={!isListContent && showInFlowAgentSessionColumn && Boolean(agentSessionColumnConfig)}
+						enabled={advancedAgentSessionTimeline && !isListContent && showInFlowAgentSessionColumn && Boolean(agentSessionColumnConfig)}
 						titles={filteredBoardColumns.map((column) => column.title)}
 					>
 						{showInFlowAgentSessionColumn && agentSessionColumnConfig ? (
 							<InFlowAgentSessionColumn
+								advancedTimeline={advancedAgentSessionTimeline}
+								resizable={agentSessionColumnResizable}
 								agentSessionColumn={{
 									...agentSessionColumnConfig,
 									draggingIds: boardSessionDrag.draggingIds,

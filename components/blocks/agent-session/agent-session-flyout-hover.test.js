@@ -21,7 +21,7 @@ test("an open session overlay keeps its source row in the complete hover state",
 		SCROLL_PREVIEW_SOURCE,
 		/setActiveItemId\(open \? details\.trigger\?\.getAttribute\("data-session-id"\) \?\? null : null\);/u,
 	);
-	assert.match(SCROLL_PREVIEW_SOURCE, /return \{ activeItemId, anchor, onOpenChange, popupRef,/u);
+	assert.match(SCROLL_PREVIEW_SOURCE, /return \{ activeItemId, onOpenChange \};/u);
 	assert.match(CARD_SOURCE, /isFlyoutActive = false,/u);
 	assert.match(CARD_SOURCE, /const isHoverStateActive = isFlyoutActive \|\| menu\.isOpen;/u);
 	assert.match(CARD_SOURCE, /data-hovered=\{isHoverStateActive \|\| undefined\}/u);

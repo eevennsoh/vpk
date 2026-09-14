@@ -134,7 +134,8 @@ export interface AgentSessionFlyoutProps extends Pick<
 	sessions?: readonly JiraSidebarSessionItem[];
 	/**
 	 * Hover flyout body. Defaults to session details; pass `"composer"` for the
-	 * Agent States card or `"untracked-work"` for a suggested Jira relationship.
+	 * Agent States card or `"untracked-work"` for an embedded PR summary and
+	 * suggested Jira relationship.
 	 */
 	content?: JiraSessionFlyoutContent;
 	/** Additional classes applied to the outer session list. */

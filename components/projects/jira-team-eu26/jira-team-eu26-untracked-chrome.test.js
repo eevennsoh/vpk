@@ -129,8 +129,10 @@ test("the route hides untracked-work confidence chrome across column and card fl
 });
 
 test("the route locks untracked work to the in-flow column", () => {
-	// Team EU 26 is fixed and does not inherit a persisted global Panel choice.
-	assert.doesNotMatch(PAGE_SOURCE, /useDesignVariants|designVariants/u);
+	// Team EU 26 reads only the persisted timeline capability. It must not
+	// inherit the global Panel choice or move untracked work out of flow.
+	assert.match(PAGE_SOURCE, /advancedAgentSessionTimeline=\{designVariants\.advancedTimeline\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /designVariants\.panel/u);
 	assert.match(
 		PAGE_SOURCE,
 		/<ExperimentalJiraKanbanPage[\s\S]*agentSessionPresentation="column"/u,

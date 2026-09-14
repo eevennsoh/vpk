@@ -90,7 +90,7 @@ export interface JiraSessionFlyoutSurfaceProps {
 	 * is the Agent States card, and `untracked-work` suggests a related Jira item.
 	 */
 	content?: JiraSessionFlyoutContent;
-	/** Shows the untracked-work rationale and actions below the card body. Defaults to true. */
+	/** Shows untracked-work actions and fallback rationale when no suggestion is available. Defaults to true. */
 	showUntrackedWorkFooter?: boolean;
 	/** Captured sessions hide Link / Create / subtask so capture cannot run twice. Archive stays available. */
 	capturedSessionIds?: ReadonlySet<string>;

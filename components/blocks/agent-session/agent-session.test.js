@@ -190,10 +190,10 @@ test("large remains the default while every card receives the selected size vari
 	assert.match(INDEX_SOURCE, /render=\{<li data-testid=\{"agent-session-row-" \+ item\.id\} \/>\}/u);
 });
 
-test("medium detached is a 276px stroked white chip with a combo identity and up-arrow", () => {
+test("medium detached is a 276px stroked white chip with the 32px combo identity and up-arrow", () => {
 	assert.match(
 		MEDIUM_CARD_SOURCE,
-		/<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{item\.invokedBy\}[\s\S]*sizePx=\{24\}/u,
+		/<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{item\.invokedBy\}[\s\S]*sizePx=\{32\}/u,
 	);
 	assert.match(MEDIUM_CARD_SOURCE, /import ArrowUpIcon from "@atlaskit\/icon\/core\/arrow-up"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<IconTile[\s\S]*icon=\{\s*<ArrowUpIcon/u);
@@ -660,7 +660,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "status"/u);
-	assert.doesNotMatch(METADATA_SOURCE, /AnimatedDots/u);
+	assert.match(METADATA_SOURCE, /<CyclingByline[\s\S]*contentKey=\{toolCall\}[\s\S]*<Shimmer[\s\S]*case "tool-call":[\s\S]*<AgentSessionToolCall toolCalls=\{segment\.toolCalls \?\? \[\]\} \/>/u);
 	assert.match(
 		METADATA_SOURCE,
 		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{item\.invokedBy\}\s+sizePx=\{16\}/u,
@@ -819,7 +819,7 @@ test("reuses the Agent List row model instead of forking a parallel one", () => 
 		TYPES_SOURCE,
 		/import type \{ AgentListAgent, AgentListItem \} from "@\/components\/blocks\/agent-list";/u,
 	);
-	assert.match(TYPES_SOURCE, /export type AgentSessionItem = AgentListItem & \{\s*role\?: AgentSessionRole;\s*\};/u);
+	assert.match(TYPES_SOURCE, /export type AgentSessionItem = AgentListItem & \{\s*role\?: AgentSessionRole;[\s\S]*toolCalls\?: readonly string\[\];\s*\};/u);
 	assert.match(INDEX_SOURCE, /isCodingAgentListItem\(item\)/u);
 });
 

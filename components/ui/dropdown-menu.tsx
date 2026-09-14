@@ -73,6 +73,11 @@ const dropdownMenuFrontSlotClassName =
 // text is allowed to wrap (explicit `allowTextWrap` or a `description`).
 const dropdownMenuRowHeightClassName = "h-8 py-0";
 const dropdownMenuWrappingRowClassName = "min-h-8 py-1.5";
+// Base UI's indicator wrapper otherwise inherits the row's 20px line box,
+// which baseline-aligns the 12px glyph one pixel high. Make the wrapper its
+// own centered flex box so every checkbox/radio indicator is optically centered.
+const dropdownMenuSelectionIndicatorClassName =
+  "flex items-center justify-center leading-none";
 
 type DropdownMenuProps = MenuPrimitive.Root.Props;
 
@@ -429,7 +434,9 @@ function DropdownMenuCheckboxItem({
       className={isIndicatorAtEnd ? dropdownStyles.indicatorEnd : dropdownStyles.indicator}
       data-slot="dropdown-menu-checkbox-item-indicator"
     >
-      <MenuPrimitive.CheckboxItemIndicator>
+      <MenuPrimitive.CheckboxItemIndicator
+        className={dropdownMenuSelectionIndicatorClassName}
+      >
         <DropdownMenuSelectionGlyph />
       </MenuPrimitive.CheckboxItemIndicator>
     </span>
@@ -485,7 +492,9 @@ function DropdownMenuRadioItem({
       className={isIndicatorAtEnd ? dropdownStyles.indicatorEnd : dropdownStyles.indicator}
       data-slot="dropdown-menu-radio-item-indicator"
     >
-      <MenuPrimitive.RadioItemIndicator>
+      <MenuPrimitive.RadioItemIndicator
+        className={dropdownMenuSelectionIndicatorClassName}
+      >
         <DropdownMenuSelectionGlyph />
       </MenuPrimitive.RadioItemIndicator>
     </span>
