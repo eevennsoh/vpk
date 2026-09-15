@@ -92,6 +92,44 @@ function IndicatorGlyph({ state }: Readonly<{ state: AgentSessionItem["state"] }
 	}
 }
 
+/**
+ * Resting status mark for short rows. Settled states occupy the shared trailing
+ * slot so the hover/focus more-actions button can replace them in place.
+ */
+export function AgentSessionShortLifecycleIcon({
+	state,
+}: Readonly<{ state: AgentSessionItem["state"] }>) {
+	switch (state) {
+		case "needs-input":
+			return (
+				<span
+					aria-label="Needs input"
+					className="grid size-6 shrink-0 place-items-center text-icon-information"
+					role="img"
+				>
+					<QuestionCircleFilledIcon color="currentColor" label="" size="small" />
+				</span>
+			);
+		case "complete":
+			return (
+				<span
+					aria-label="Finished"
+					className="grid size-6 shrink-0 place-items-center text-icon-success"
+					role="img"
+				>
+					<StatusSuccessIcon color="currentColor" label="" size="small" />
+				</span>
+			);
+		case "attention":
+		case "running":
+			return null;
+		default: {
+			const exhaustiveState: never = state;
+			return exhaustiveState;
+		}
+	}
+}
+
 function LifecycleState({
 	showLabel,
 	state,

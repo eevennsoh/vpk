@@ -124,14 +124,30 @@ test("large uncaptured-work rows show the agent with its human invoker in a 32px
 	assert.doesNotMatch(DATA_SOURCE, /name: "person A"/u);
 });
 
-test("short uncaptured-work rows restore the owner byline", () => {
+test("short rows keep the owner byline and move settled status to the hover-action slot", () => {
 	assert.match(METADATA_SOURCE, /AgentListTime,/u);
 	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionProvenanceMetadata/u);
 	assert.doesNotMatch(CARD_SOURCE, /AgentSessionProvenanceMetadata/u);
 	assert.match(METADATA_SOURCE, /export function AgentSessionShortMetadata/u);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.match(LIST_CARD_SOURCE, /\{metadata === undefined \? \(/u);
-	assert.match(METADATA_SOURCE, /import CloudIcon from "@atlaskit\/icon-lab\/core\/cloud";[\s\S]*import QuestionCircleFilledIcon[\s\S]*import StatusSuccessIcon[\s\S]*function AgentSessionShortLifecycleIcon[\s\S]*case "needs-input":[\s\S]*aria-label="Needs input"[\s\S]*text-icon-information[\s\S]*case "complete":[\s\S]*aria-label="Finished"[\s\S]*text-icon-success[\s\S]*case "running":[\s\S]*return null;[\s\S]*<AgentSessionShortLifecycleIcon state=\{item\.state\} \/>/u);
+	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|QuestionCircleFilledIcon|StatusSuccessIcon/u);
+	assert.match(
+		LIFECYCLE_SOURCE,
+		/export function AgentSessionShortLifecycleIcon[\s\S]*case "needs-input":[\s\S]*aria-label="Needs input"[\s\S]*text-icon-information[\s\S]*case "complete":[\s\S]*aria-label="Finished"[\s\S]*text-icon-success[\s\S]*case "running":[\s\S]*return null;/u,
+	);
+	assert.equal(
+		(LIFECYCLE_SOURCE.match(/className="grid size-6 shrink-0 place-items-center text-icon-(?:information|success)"/gu) ?? []).length,
+		2,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/const lifecycleIndicator = isLongDensity[\s\S]*: item\.state === "needs-input" \|\| item\.state === "complete"\s*\? <AgentSessionShortLifecycleIcon state=\{item\.state\} \/>\s*: null;/u,
+	);
+	assert.match(
+		LIST_CARD_SOURCE,
+		/lifecycleNode[\s\S]*overlayHoverActions[\s\S]*<AgentListCardActions[\s\S]*overlay/u,
+	);
 	assert.match(METADATA_SOURCE, /import ScreenIcon from "@atlaskit\/icon\/core\/screen";/u);
 	assert.match(
 		METADATA_SOURCE,
@@ -639,7 +655,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /const hideIdentity = isLongDensity && mark == null;/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hideIdentity=\{hideIdentity\}/u);
 	assert.match(CARD_SOURCE, /lifecycle=\{lifecycleIndicator\}/u);
-	assert.match(CARD_SOURCE, /const lifecycleIndicator = !isLongDensity\s*\? null\s*: role === "expired"\s*\? <AgentSessionExpiredHint \/>\s*: <AgentSessionLifecycle showLabel=\{showLifecycleLabel\} state=\{item\.state\} \/>;/u);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity\s*\? role === "expired"\s*\? <AgentSessionExpiredHint \/>\s*: <AgentSessionLifecycle showLabel=\{showLifecycleLabel\} state=\{item\.state\} \/>\s*: item\.state === "needs-input" \|\| item\.state === "complete"\s*\? <AgentSessionShortLifecycleIcon state=\{item\.state\} \/>\s*: null;/u);
 	assert.match(CARD_SOURCE, /<AgentSessionLongMetadata item=\{item\} \/>/u);
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 cursor-default rounded-lg/u);
 	assert.match(
@@ -684,8 +700,8 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 		/const lifecycleNode = lifecycle === undefined\s*\? \(stateMeta\.showLifecycle \? <LifecycleIndicator state=\{item\.state\} \/> : null\)\s*: lifecycle;/u,
 	);
 	assert.match(LIST_CARD_SOURCE, /\{hideIdentity \? null : \(/u);
-	// Agent Session cards always keep the authored work title. Short rows carry
-	// settled lifecycle state in metadata; long rows keep their trailing control.
+	// Agent Session cards always keep the authored work title. Every density keeps
+	// lifecycle outside the byline in its trailing control slot.
 	assert.match(CARD_SOURCE, /stateAwareTitle=\{false\}/u);
 	assert.match(TYPES_SOURCE, /export type AgentSessionRole = "owner" \| "viewer" \| "expired"/u);
 	assert.match(CARD_SOURCE, /const viewSession = role === "owner" \? onView : undefined/u);

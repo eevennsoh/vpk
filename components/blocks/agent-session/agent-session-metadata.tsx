@@ -4,9 +4,7 @@ import { useEffect, useRef, useState, type WheelEvent } from "react";
 import { useInView } from "motion/react";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
-import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 import ScreenIcon from "@atlaskit/icon/core/screen";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import {
 	AgentListPrStatusIcon,
@@ -35,41 +33,6 @@ function MetadataDot() {
 			·
 		</span>
 	);
-}
-
-// react-doctor-disable-next-line react-doctor/no-multi-component-file -- This is a fixed fragment of the short metadata line and belongs beside its separators.
-function AgentSessionShortLifecycleIcon({
-	state,
-}: Readonly<{ state: AgentSessionItem["state"] }>) {
-	switch (state) {
-		case "needs-input":
-			return (
-				<span
-					aria-label="Needs input"
-					className="grid size-4 shrink-0 place-items-center text-icon-information"
-					role="img"
-				>
-					<QuestionCircleFilledIcon color="currentColor" label="" size="small" />
-				</span>
-			);
-		case "complete":
-			return (
-				<span
-					aria-label="Finished"
-					className="grid size-4 shrink-0 place-items-center text-icon-success"
-					role="img"
-				>
-					<StatusSuccessIcon color="currentColor" label="" size="small" />
-				</span>
-			);
-		case "attention":
-		case "running":
-			return null;
-		default: {
-			const _exhaustive: never = state;
-			return _exhaustive;
-		}
-	}
 }
 
 /**
@@ -310,9 +273,8 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
  * Owner short byline: `Claude · ☁ Last week`.
  *
  * The leading 32px identity already shows the agent (and invoker). This line
- * Names who ran it and pairs the host icon with when. Settled states append a
- * persistent lifecycle icon so Needs input and Finished remain visible without
- * changing the authored title. Working has no settled-state metadata marker.
+ * Names who ran it and pairs the host icon with when. Lifecycle stays outside
+ * the byline in the trailing control slot shared with the more-actions button.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- Short and long metadata stay together so the two densities cannot drift apart.
 export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessionItem }>) {
@@ -332,12 +294,6 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					<AgentListTime item={item} />
 				</span>
 			</span>
-			{item.state === "needs-input" || item.state === "complete" ? (
-				<>
-					<MetadataDot />
-					<AgentSessionShortLifecycleIcon state={item.state} />
-				</>
-			) : null}
 		</span>
 	);
 }
