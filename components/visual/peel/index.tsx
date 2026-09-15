@@ -51,12 +51,8 @@ import {
 	type PeelFinish,
 	type PeelTuning,
 } from "./data";
-import {
-	PeelScene,
-	resolvePeelUv,
-	type PeelBox,
-	type PeelPointerSample,
-} from "./peel-scene";
+import { resolvePeelUv, type PeelBox, type PeelPointerSample } from "./peel-geometry";
+import { PeelScene } from "./peel-scene";
 import {
 	createPeelState,
 	dragPeel,
@@ -65,6 +61,7 @@ import {
 	nudgePeel,
 	pointPeel,
 	releasePeel,
+	type PeelState,
 } from "./peel-model";
 
 /**
@@ -148,10 +145,15 @@ export function Peel({
 
 	// The model outlives every render: the frame loop mutates it in place and
 	// the event handlers below push into it, so it must never be recreated.
-	const stateRef = useRef(createPeelState(resolvedTuning));
+	//
+	// Initialised lazily. `useRef(createPeelState(...))` evaluates the factory on
+	// EVERY render and throws the result away — React only keeps the first — so
+	// it would allocate a model and its impulse ring on each pass for nothing.
+	const stateRef = useRef<PeelState | null>(null);
+	const state = (stateRef.current ??= createPeelState(resolvedTuning));
 	useEffect(() => {
-		stateRef.current.tuning = resolvedTuning;
-	}, [resolvedTuning]);
+		state.tuning = resolvedTuning;
+	}, [resolvedTuning, state]);
 
 	const box = useMemo<PeelBox>(
 		() => ({ width, height: sheetHeight, rotation: (rotation * Math.PI) / 180 }),
@@ -179,10 +181,10 @@ export function Peel({
 	const handlePointerEnter = useCallback(
 		(event: PointerEvent<HTMLDivElement>) => {
 			pointerRef.current = { clientX: event.clientX, clientY: event.clientY, valid: true };
-			hoverPeel(stateRef.current, true);
+			hoverPeel(state, true);
 			wake();
 		},
-		[wake],
+		[state, wake],
 	);
 
 	const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
@@ -194,8 +196,8 @@ export function Peel({
 
 	const handlePointerLeave = useCallback(() => {
 		pointerRef.current.valid = false;
-		hoverPeel(stateRef.current, false);
-	}, []);
+		hoverPeel(state, false);
+	}, [state]);
 
 	// While the sheet is up it follows the cursor with no button held, and the
 	// next click — anywhere — puts it down.
@@ -232,7 +234,7 @@ export function Peel({
 			// Arithmetic only. Turning this into sheet UV needs a geometry
 			// read, which the scene does once per frame after the model steps.
 			dragPeel(
-				stateRef.current,
+				state,
 				anchor.x + (event.clientX - anchor.clientX),
 				anchor.y + (event.clientY - anchor.clientY),
 			);
@@ -243,7 +245,7 @@ export function Peel({
 			if (!armed) {
 				return;
 			}
-			releasePeel(stateRef.current);
+			releasePeel(state);
 			setLifted(false);
 			onLand?.();
 			wake();
@@ -257,7 +259,7 @@ export function Peel({
 			window.removeEventListener("pointermove", follow);
 			window.removeEventListener("pointerdown", drop);
 		};
-	}, [lifted, draggable, onLand, wake]);
+	}, [lifted, draggable, onLand, state, wake]);
 
 	const handlePointerDown = useCallback(
 		(event: PointerEvent<HTMLDivElement>) => {
@@ -265,7 +267,6 @@ export function Peel({
 				return;
 			}
 
-			const state = stateRef.current;
 			if (state.held) {
 				// Already up and following the cursor — the window listener
 				// owns the second click. Doing it here as well would drop the
@@ -290,7 +291,7 @@ export function Peel({
 			onPeel?.();
 			wake();
 		},
-		[box, draggable, onPeel, wake],
+		[box, draggable, onPeel, state, wake],
 	);
 
 	const handleKeyDown = useCallback(
@@ -298,7 +299,6 @@ export function Peel({
 			if (!draggable) {
 				return;
 			}
-			const state = stateRef.current;
 			const step = event.shiftKey ? PEEL_NUDGE_STEP * 4 : PEEL_NUDGE_STEP;
 
 			switch (event.key) {
@@ -348,18 +348,18 @@ export function Peel({
 			event.preventDefault();
 			wake();
 		},
-		[draggable, onLand, onPeel, wake],
+		[draggable, onLand, onPeel, state, wake],
 	);
 
 	const handleFocus = useCallback(() => {
 		// Focus lights the sheen, so tabbing to a stamp shows the same surface
 		// a pointer user gets rather than a flat one.
-		pointPeel(stateRef.current, 0.32, 0.7);
-		hoverPeel(stateRef.current, true);
+		pointPeel(state, 0.32, 0.7);
+		hoverPeel(state, true);
 		wake();
-	}, [wake]);
+	}, [state, wake]);
 
-	const handleBlur = useCallback(() => hoverPeel(stateRef.current, false), []);
+	const handleBlur = useCallback(() => hoverPeel(state, false), [state]);
 
 	// The caller's ref and the observer's ref are the same node, so they have
 	// to be merged rather than chosen between — forwarding only the caller's
@@ -410,7 +410,7 @@ export function Peel({
 							}}
 						>
 							<PeelScene
-								state={stateRef.current}
+								state={state}
 								tuning={resolvedTuning}
 								liftRef={liftRef}
 								hitRef={hitRef}
