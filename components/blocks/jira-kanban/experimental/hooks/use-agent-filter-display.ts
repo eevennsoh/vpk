@@ -64,8 +64,9 @@ export function useAgentFilterDisplay({
 		: agentFilterId === "untracked";
 	// Scope first, then strip chrome. The focus row answers "which work is
 	// waiting on me", so a card that only shares a column with a waiting
-	// session leaves the board; the visibility pass then trims the rows the
-	// viewer is not focused on inside the cards that stayed.
+	// session leaves the board; unlink sessions use the same focus in
+	// `filterAgentSessionsByAgentFilter`. The visibility pass then trims the
+	// rows the viewer is not focused on inside the cards that stayed.
 	const agentFocusedColumns = useMemo(
 		() => filterJiraKanbanColumnsByAgentFilter(assigneeScopedColumns, agentFilterId),
 		[agentFilterId, assigneeScopedColumns],
