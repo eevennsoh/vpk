@@ -13,19 +13,6 @@ export const SESSION_DRAG_CHIP_ENTER_TRANSITION = {
 	ease: [0.4, 1, 0.6, 1],
 } satisfies Transition; // duration-normal + ease-out-practical
 
-/**
- * VPK duration tokens resolve to literal ms and do not collapse themselves, so
- * every motion path gates reduced motion explicitly.
- */
-export const SESSION_DRAG_CHIP_REDUCED_TRANSITION = { duration: 0 } satisfies Transition;
-
-/**
- * Resting state of the chip: sitting on the pointer, fully opaque. The chip
- * enters from the grabbed row's identity mark, so the measured offset lives in
- * `initial` and this target is always the origin.
- */
-export const SESSION_DRAG_CHIP_ENTER_TARGET = { opacity: 1, x: 0, y: 0 } as const;
-
 /** Marks the row's identity mark so the chip can fly out of the grabbed avatar. */
 export const SESSION_DRAG_IDENTITY_SELECTOR = "[data-session-drag-identity]";
 
@@ -34,29 +21,46 @@ interface SessionDragIdentityHost {
 	querySelector: (selector: string) => { getBoundingClientRect: () => DOMRect } | null;
 }
 
-/**
- * Viewport centre of the grabbed row's identity mark. Captured in the same
- * pointerdown that already measures the source height, so the chip's entrance
- * is a measured FLIP rather than a Motion layout projection: the chip lives in
- * a `position: fixed` portal whose projection ancestors (`motion.li
- * layout="position"`) are not DOM ancestors, and the row it left is collapsing
- * to `h-0` on exactly those frames.
- *
- * Rows that mark no identity — or mark one that has already collapsed to a zero
- * box — return `null` and the chip degrades to a plain fade. That is deliberate
- * for the collapsed column rail, whose grab handle *is* the mark, so its origin
- * already sits under the pointer and a FLIP would travel nowhere.
- */
-export function measureSessionDragIdentityOrigin(
-	host: SessionDragIdentityHost,
-): PointerDragPosition | null {
-	const identity = host.querySelector(SESSION_DRAG_IDENTITY_SELECTOR);
-	if (identity === null) {
-		return null;
-	}
-	const rect = identity.getBoundingClientRect();
-	if (rect.width === 0 || rect.height === 0) {
-		return null;
-	}
-	return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+type SessionDragRect = Readonly<Pick<DOMRect, "left" | "top" | "width" | "height">>;
+
+export interface SessionDragGeometry {
+	readonly surface: SessionDragRect;
+	readonly identity: SessionDragRect;
+}
+
+/** Read both boxes before the source dims or leaves flow. */
+export function measureSessionDragGeometry(
+	host: SessionDragIdentityHost & { getBoundingClientRect: () => DOMRect },
+): SessionDragGeometry | null {
+	const identity = host.querySelector(SESSION_DRAG_IDENTITY_SELECTOR)?.getBoundingClientRect();
+	const surface = host.getBoundingClientRect();
+	return identity && identity.width > 0 && identity.height > 0 && surface.width > 0 && surface.height > 0
+		? { surface, identity }
+		: null;
+}
+
+/** Both the source and portal measure in the pointer's coordinate space. */
+export function sessionDragGeometryRelativeToPointer(
+	geometry: SessionDragGeometry,
+	pointer: PointerDragPosition,
+): SessionDragGeometry {
+	const relative = (rect: SessionDragRect): SessionDragRect => ({
+		left: rect.left - pointer.x,
+		top: rect.top - pointer.y,
+		width: rect.width,
+		height: rect.height,
+	});
+	return { surface: relative(geometry.surface), identity: relative(geometry.identity) };
+}
+
+/** Scale only the background; the shared avatar moves without deformation. */
+export function resolveSessionDragMorph(source: SessionDragGeometry, target: SessionDragGeometry) {
+	return {
+		x: source.surface.left - target.surface.left,
+		y: source.surface.top - target.surface.top,
+		scaleX: source.surface.width / target.surface.width,
+		scaleY: source.surface.height / target.surface.height,
+		identityX: source.identity.left - source.surface.left - (target.identity.left - target.surface.left),
+		identityY: source.identity.top - source.surface.top - (target.identity.top - target.surface.top),
+	};
 }
