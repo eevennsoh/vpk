@@ -4,6 +4,8 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { motion, type Transition } from "motion/react";
 
 import { MonitorIcon } from "@/components/ui/vpk-icons";
+import TextMorphing from "@/components/visual/text-morphing";
+import type { TextMorphConfig } from "@/components/visual/text-morphing/data";
 
 // Keep the number visible through brief gaps between arrival batches.
 // Each increase restarts this window before the local icon returns.
@@ -12,6 +14,22 @@ const COUNT_SETTLE_MS = 4_000;
 const SWAP_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
 const SWAP_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
 const SWAP_REDUCED: Transition = { duration: 0 };
+
+/** Both column presentations roll the same digit slots when the session total changes. */
+const HEAD_COUNT_MORPH: TextMorphConfig = {
+	variant: "slots",
+	animation: "snappy",
+	driftX: 0,
+	driftY: 0,
+	trend: 0,
+	stagger: 0.02,
+	initial: false,
+	autoSize: true,
+};
+
+export function AgentSessionColumnCountMorph({ count }: Readonly<{ count: number }>) {
+	return <TextMorphing config={HEAD_COUNT_MORPH} text={String(count)} />;
+}
 
 export function useRisingSessionCount(count: number): boolean {
 	const previousCount = useRef(count);

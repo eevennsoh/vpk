@@ -342,7 +342,7 @@ test("the collapsed count lives in the header, not on the rail", () => {
 	assert.match(INDEX_SOURCE, /HEADER_COUNT_AT_REST/u);
 	assert.match(INDEX_SOURCE, /HEADER_CONTROL_ON_REVEAL/u);
 	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\("absolute shrink-0", HEADER_CONTROL_ON_REVEAL\)\}/u);
-	assert.match(INDEX_SOURCE, /<TextMorphing/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnCountMorph/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<TextMorphing/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /sessionCount/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
@@ -673,23 +673,27 @@ test("the collapsed rail preserves session twin hover previews", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /const showAvatar = isHighlighted \|\| arrivalReveal;/u);
 });
 
-test("the collapsed header count rolls through the shared Text Morphing slots effect", () => {
+test("collapsed and expanded browsing counts share the Text Morphing slots effect", () => {
 	// Reused, never re-implemented: the header must not hand-roll a digit animation.
-	assert.match(INDEX_SOURCE, /import TextMorphing from "@\/components\/visual\/text-morphing"/u);
-	assert.match(INDEX_SOURCE, /<TextMorphing\s+config=\{HEAD_COUNT_MORPH\}/u);
-	assert.match(INDEX_SOURCE, /variant: "slots"/u);
+	assert.match(COUNT_SWAP_SOURCE, /import TextMorphing from "@\/components\/visual\/text-morphing"/u);
+	assert.match(COUNT_SWAP_SOURCE, /variant: "slots"/u);
 	// `autoSize` eases the slot's width as the total crosses a digit.
-	assert.match(INDEX_SOURCE, /autoSize: true/u);
+	assert.match(COUNT_SWAP_SOURCE, /autoSize: true/u);
 	// A column that mounts already collapsed must not spin its count in.
-	assert.match(INDEX_SOURCE, /initial: false/u);
+	assert.match(COUNT_SWAP_SOURCE, /initial: false/u);
+	assert.match(COUNT_SWAP_SOURCE, /<TextMorphing config=\{HEAD_COUNT_MORPH\} text=\{String\(count\)\} \/>/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnCountMorph count=\{sessionCount\} \/>/u);
+	assert.match(HEADER_SOURCE, /<AgentSessionColumnCountMorph count=\{model\.count\} \/>/u);
+	assert.match(HEADER_SOURCE, /isSelecting \? model\.count :/u);
 	// The renderer sets its own `aria-label`; the wrapper's `aria-hidden` has to
-	// suppress it so the sibling `sr-only` stays the single spoken source.
-	assert.match(INDEX_SOURCE, /aria-hidden="true"[\s\S]{0,1500}?<TextMorphing/u);
+	// suppress it so the sibling `sr-only` stays the single spoken source in each presentation.
+	assert.match(INDEX_SOURCE, /aria-hidden="true"[\s\S]{0,1500}?<AgentSessionColumnCountMorph/u);
+	assert.match(HEADER_SOURCE, /aria-hidden="true"[\s\S]{0,300}?<AgentSessionColumnCountMorph/u);
 	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-number=""/u);
 	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-local-icon=""/u);
 	assert.match(COUNT_SWAP_SOURCE, /<MonitorIcon label="" size="small" \/>/u);
-	// `text` must be a string — `sessionCount` is a number.
-	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
+	// `text` must be a string — the shared renderer converts the numeric count.
+	assert.match(COUNT_SWAP_SOURCE, /text=\{String\(count\)\}/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /TextMorphing/u);
 });
 
