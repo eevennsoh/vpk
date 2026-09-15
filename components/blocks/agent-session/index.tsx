@@ -8,15 +8,12 @@ import {
 	JiraSessionFlyoutSurface,
 	JiraSessionFlyoutTrigger,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
-import {
-	CARD_GLOW_EFFECT_STYLE,
-	type CardGlowCSSProperties,
-} from "@/components/visual/card-glow";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS } from "./data";
 import { AgentSessionCard } from "./agent-session-card";
+import { resolveAgentSessionGlow } from "./agent-session-glow";
 import { useAgentSessionScrollPreview } from "./use-agent-session-scroll-preview";
 import {
 	AgentSessionAttachedCard,
@@ -83,25 +80,6 @@ function buildArrivalDelays(
  * the host supplies `assignment.onAssignedAgentIdsChange`. Work-item capture
  * is already the card. Small is the collapsed-column identity notch.
  */
-// The shared bloom was tuned on 144px bento tiles. A large session row is 60px,
-// so the same blob covers the whole row and reads as a selected fill rather
-// than a glow — measured side by side in the column at 0.25 / 0.18 / 0.12.
-// Dialling it back leaves the traced accent stroke as the primary signal and
-// lets the row's own `bg-surface-hovered` still show through.
-const AGENT_SESSION_GLOW_STYLE: CardGlowCSSProperties = {
-	...CARD_GLOW_EFFECT_STYLE,
-	// The gradient stays tight so the stroke reads as a travelling arc rather
-	// than a border: widening it far enough to be seen from across the column
-	// lights a 60px row's whole ring at once. Distance is carried by
-	// `--card-glow-proximity` instead, which the enclosing plane writes — a far
-	// row traces faintly, a near row brightly. A little above the tile-tuned
-	// 120px because these rows are wide and short, so an arc needs the reach to
-	// cover a useful share of the edge.
-	"--card-glow-border-core": 24,
-	"--card-glow-border-spread": 150,
-	"--card-glow-icon-opacity": 0.18,
-};
-
 export function AgentSession({
 	className,
 	items: itemsProp,
@@ -146,9 +124,9 @@ export function AgentSession({
 }: Readonly<AgentSessionProps>) {
 	const isAttached = variant === "medium-attached";
 	const isLongDensity = variant === "large" && density === "long";
-	// Only the large card renders glow layers. The tuning vars live here rather
-	// than on each row: one declaration for the list instead of one per card.
-	const useCardGlow = (glowStroke || glowBloom) && variant === "large";
+	// Which accent layers this list paints, and the tuning vars that go with
+	// them. One declaration for the list rather than one per card.
+	const cardGlow = resolveAgentSessionGlow({ bloom: glowBloom, stroke: glowStroke, variant });
 	const showUntrackedWorkFlyout = !isAttached && !isLongDensity;
 	const items = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
 	const isSelectionControlled = selectedItemIdProp !== undefined;
@@ -228,9 +206,7 @@ export function AgentSession({
 				// fuse. Detached compact rows sit 2px apart (`space.025`).
 				style={variant === "medium-detached"
 					? { ...style, gap: token("space.025") }
-					: useCardGlow
-						? { ...AGENT_SESSION_GLOW_STYLE, ...style }
-						: style}
+					: { ...cardGlow.style, ...style }}
 			>
 				{isAttached ? (
 					<li data-testid="agent-session-attached-group">
@@ -270,8 +246,8 @@ export function AgentSession({
 								flyoutHandle={isLongDensity ? undefined : flyoutHandle}
 								flyoutSession={flyoutSession}
 								getResumeCommand={getResumeCommand}
-							glowBloom={useCardGlow && glowBloom}
-							glowStroke={useCardGlow && glowStroke}
+							glowBloom={cardGlow.bloom}
+							glowStroke={cardGlow.stroke}
 								isArriving={beatItemIds?.has(item.id) ?? false}
 								isFlyoutActive={item.id === scrollPreview.activeItemId}
 								isHighlighted={item.id === highlightedItemId}

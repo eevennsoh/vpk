@@ -286,30 +286,23 @@ test("the flash still resolves its tint the way the glow assumes", () => {
 
 test("the glow is opt-in per host and large-card only", () => {
 	assert.match(SESSION_CARD_SOURCE, /glowBloom = false,\n\tglowStroke = false,/u);
+	// The large-card-only rule and the two-layer combination live in
+	// `resolveAgentSessionGlow`, which has its own behavioural tests; the list
+	// just applies the answer.
 	assert.match(
 		SESSION_INDEX_SOURCE,
-		/const useCardGlow = \(glowStroke \|\| glowBloom\) && variant === "large";/u,
+		/const cardGlow = resolveAgentSessionGlow\(\{ bloom: glowBloom, stroke: glowStroke, variant \}\);/u,
 	);
-	assert.match(SESSION_INDEX_SOURCE, /glowBloom=\{useCardGlow && glowBloom\}/u);
-	assert.match(SESSION_INDEX_SOURCE, /glowStroke=\{useCardGlow && glowStroke\}/u);
+	assert.match(SESSION_INDEX_SOURCE, /glowBloom=\{cardGlow\.bloom\}/u);
+	assert.match(SESSION_INDEX_SOURCE, /glowStroke=\{cardGlow\.stroke\}/u);
 	// The tuning vars belong to the list, not to each of its rows.
-	assert.match(SESSION_INDEX_SOURCE, /\{ \.\.\.AGENT_SESSION_GLOW_STYLE, \.\.\.style \}/u);
+	assert.match(SESSION_INDEX_SOURCE, /\{ \.\.\.cardGlow\.style, \.\.\.style \}/u);
 	// The column opts in by default but forwards each switch, so the settings
 	// menu can turn one off without the column losing its own defaults.
 	assert.match(SESSION_COLUMN_SOURCE, /glowBloom=\{glowBloom\}/u);
 	assert.match(SESSION_COLUMN_SOURCE, /glowStroke=\{glowStroke\}/u);
 });
 
-test("the session row dials the bloom back from the tile-tuned default", async () => {
-	const { CARD_GLOW_DEFAULTS } = await loadCardGlow();
-	// A 60px row is well under the 144px tile the default was tuned on, so the
-	// same blob washes the whole row. The row must ask for less, not inherit it.
-	assert.match(SESSION_INDEX_SOURCE, /"--card-glow-icon-opacity": 0\.18/u);
-	assert.ok(
-		0.18 < CARD_GLOW_DEFAULTS.iconOpacity,
-		"the row override must be lighter than the shared tile default",
-	);
-});
 
 // ---------------------------------------------------------------------
 // Proximity reach

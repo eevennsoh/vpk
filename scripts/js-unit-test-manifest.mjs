@@ -267,6 +267,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	],
 	"source-contract": [
 		"components/visual/card-glow/card-glow.test.js",
+		"components/blocks/agent-session/agent-session-glow.test.js",
 		"components/blocks/jira-issue/attach-trace.test.js",
 		"components/blocks/jira-kanban/experimental/agent-session-review.test.js",
 		"components/arts/rovo-p5/index.test.js",
