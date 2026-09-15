@@ -62,12 +62,14 @@ const PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE: Record<
 
 export function AgentListAttributionAvatarGroup({
 	agent,
+	animate,
 	attributedBy,
 	attributionOrder = "human-first",
 	className,
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
+	animate?: boolean;
 	attributedBy: AgentListInvoker;
 	attributionOrder?: AgentListAttributionOrder;
 	className?: string;
@@ -87,6 +89,7 @@ export function AgentListAttributionAvatarGroup({
 	);
 	const agentAvatar = (
 		<AgentAvatarVisual
+			animate={animate}
 			key="agent"
 			avatarSrc={agent.avatarSrc}
 			brandName={agent.brandName}

@@ -44,6 +44,7 @@ import {
 	resolveJiraTab,
 } from "@/components/projects/jira/lib/jira-tab-model";
 import AppLayout from "@/components/projects/page";
+import { cn } from "@/lib/utils";
 import { JiraTeamEu26List } from "./components/jira-team-eu26-list";
 
 import { renderJiraTeamEu26AgentActivityIndicator } from "./data/agent-activity-indicators";
@@ -65,6 +66,7 @@ const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-d
 const JIRA_TEAM_EU26_TABS = getJiraTabs(false);
 const JIRA_TEAM_EU26_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(JIRA_TEAM_EU26_TABS);
 const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
+	"kanbanBackground",
 	"advancedTimeline",
 	"agentSessionColumnResizing",
 	"manualLink",
@@ -372,7 +374,13 @@ function JiraTeamEu26App(): React.ReactElement {
 				product="jira"
 				settingsDesignVariantIds={JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
 			>
-				<div className="h-full min-h-0 min-w-0 overflow-hidden bg-surface [&>div]:min-h-0">
+				<div
+					className={cn(
+						"h-full min-h-0 min-w-0 overflow-hidden [&>div]:min-h-0",
+						designVariants.kanbanBackground ? "bg-bg-accent-gray-subtlest" : "bg-surface",
+					)}
+					data-jira-team-eu26-board-surface=""
+				>
 					<ExperimentalJiraKanbanPage
 						activeView={activeView}
 						retainWorkItemViews
