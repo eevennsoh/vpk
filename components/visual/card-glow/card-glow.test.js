@@ -391,7 +391,7 @@ test("a row hands pointer tracking to its plane, and keeps its own when there is
 	assert.match(SESSION_CARD_SOURCE, /const tracksOwnPointer = glow && !isOnGlowPlane;/u);
 	assert.match(SESSION_CARD_SOURCE, /onPointerMove=\{tracksOwnPointer \? cardGlow\.onPointerMove : undefined\}/u);
 	assert.match(SESSION_CARD_SOURCE, /glowPlaneSurface\?\.\(node\)/u);
-	assert.match(SESSION_CARD_SOURCE, /const departureFocus = useAgentSessionCardDepartureFocus\(/u);
+	assert.match(SESSION_CARD_SOURCE, /const departureFocus = useAgentSessionDepartureFocus\(/u);
 	assert.match(SESSION_CARD_SOURCE, /ref=\{departureFocus\.setRowNode\}/u);
 });
 
