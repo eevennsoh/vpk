@@ -106,6 +106,11 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(pullRequestSectionSource, /<h3[\s\S]*className="inline text-xs leading-4 font-normal text-text no-underline underline-offset-2 group-hover\/pull-request:underline"/u);
 	assert.match(pullRequestSectionSource, /group-hover\/pull-request:underline/u);
 	assert.match(pullRequestSectionSource, /\{pullRequestDescription\(session\)\}/u);
+	assert.match(cardSource, /import \{ AgentListAttributionAvatarGroup \}/u);
+	assert.match(
+		cardSource,
+		/session\.invokedBy \? \([\s\S]*<AgentListAttributionAvatarGroup[\s\S]*agent=\{agentIdentity\}[\s\S]*animate=\{animateAvatars\}[\s\S]*attributedBy=\{session\.invokedBy\}[\s\S]*sizePx=\{16\}/u,
+	);
 	assert.doesNotMatch(pullRequestSectionSource, /SmartLink/u);
 	assert.match(source, /capturedSessionIds\?: ReadonlySet<string>;/u);
 	assert.match(cardSource, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
