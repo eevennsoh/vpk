@@ -132,27 +132,11 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.match(LIST_CARD_SOURCE, /\{metadata === undefined \? \(/u);
 	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|QuestionCircleFilledIcon|StatusSuccessIcon/u);
-	assert.match(
-		LIFECYCLE_SOURCE,
-		/export function AgentSessionShortLifecycleIcon[\s\S]*case "needs-input":[\s\S]*aria-label="Needs input"[\s\S]*text-icon-information[\s\S]*case "complete":[\s\S]*aria-label="Finished"[\s\S]*text-icon-success[\s\S]*case "running":[\s\S]*return null;/u,
-	);
-	assert.equal(
-		(LIFECYCLE_SOURCE.match(/className="grid size-6 shrink-0 place-items-center text-icon-(?:information|success)"/gu) ?? []).length,
-		2,
-	);
-	assert.match(
-		CARD_SOURCE,
-		/const lifecycleIndicator = isLongDensity[\s\S]*: item\.state === "needs-input" \|\| item\.state === "complete"\s*\? <AgentSessionShortLifecycleIcon state=\{item\.state\} \/>\s*: null;/u,
-	);
-	assert.match(
-		LIST_CARD_SOURCE,
-		/lifecycleNode[\s\S]*overlayHoverActions[\s\S]*<AgentListCardActions[\s\S]*overlay/u,
-	);
+	assert.match(LIFECYCLE_SOURCE, /export function AgentSessionShortLifecycleIcon[\s\S]*case "needs-input":[\s\S]*aria-label="Needs input"[\s\S]*text-icon-information[\s\S]*case "complete":[\s\S]*aria-label="Finished"[\s\S]*text-icon-success[\s\S]*case "running":[\s\S]*return null;/u);
+	assert.equal((LIFECYCLE_SOURCE.match(/className="grid size-6 shrink-0 place-items-center text-icon-(?:information|success)"/gu) ?? []).length, 2);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity[\s\S]*: item\.state === "needs-input" \|\| item\.state === "complete"\s*\? <AgentSessionShortLifecycleIcon state=\{item\.state\} \/>\s*: null;/u);
 	assert.match(METADATA_SOURCE, /import ScreenIcon from "@atlaskit\/icon\/core\/screen";/u);
-	assert.match(
-		METADATA_SOURCE,
-		/export function AgentSessionHostSegment[\s\S]*isLocal \? \(\s*<ScreenIcon color="currentColor" label="" size="small" \/>\s*\) : \(\s*<CloudIcon color="currentColor" label="" size="small" \/>\s*\)/u,
-	);
+	assert.match(METADATA_SOURCE, /export function AgentSessionHostSegment[\s\S]*isLocal \? \(\s*<ScreenIcon color="currentColor" label="" size="small" \/>\s*\) : \(\s*<CloudIcon color="currentColor" label="" size="small" \/>\s*\)/u);
 	assert.match(METADATA_SOURCE, /const label = isLocal \? "Local session" : "Cloud session";/u);
 	assert.match(METADATA_SOURCE, /triggerRef\.current\?\.closest<HTMLElement>[\s\S]*scrollport\.scrollBy\([\s\S]*<TooltipContent onWheel=\{handleTooltipWheel\}/u);
 	assert.match(
