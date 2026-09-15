@@ -31,20 +31,24 @@ for arbitrary process killing, repository cleanup, or generated-artifact removal
   sudoers guard exists. Do not broaden names or paths.
 - Do not run global `portless prune`; it may kill another worktree after port
   reuse. The cleanup never touches the long-lived Portless `:443` proxy. Idle
-  stacks are stopped through that worktree's own `dev-tmux-plain.sh stop` so
-  Portless drops only this route.
+  private-socket stacks are stopped through that worktree's own
+  `dev-tmux-plain.sh stop` so Portless drops only this route. Legacy sessions
+  on tmux's default socket get SIGINT and an exact session stop.
 - The skill does not run `sudo`. Missing sudoers support is reported for the
   user to repair deliberately.
 
 ## Route the request
 
-Run commands from this skill directory with `zsh`:
+Run skill scripts from this directory with `zsh`; run `pnpm ports` from the
+repository root:
 
 | Intent | Command |
 | --- | --- |
 | Diagnose a hot dev server | `scripts/doctor.sh` |
 | Restart proven runaway dev servers | `scripts/doctor.sh --kill` |
 | Inspect setup, processes, caches, sessions, or logs | `scripts/status.sh` |
+| Inventory VPK worktree localhost ports | `pnpm ports once` |
+| Stop one confirmed idle private-socket stack | `pnpm ports kill <unique worktree identifier>` |
 | Run the installed scheduled sweep now | `~/.local/bin/vpk-system-clean.sh` |
 | Inspect cleanup history | `scripts/records.sh` |
 | Change or inspect schedule | `scripts/schedule.sh ...` |
@@ -67,6 +71,28 @@ uninstall details, read [maintenance.md](references/maintenance.md).
    a stable worktree Portless URL, or the appropriate `pnpm run dev`/`rovo`
    command otherwise.
 
+## Unused worktree ports
+
+The full sweep already stops eligible idle `vpk-dev-*` stacks and closes their
+frontend/backend listeners and worktree Portless routes. Its unattended
+idle-stack pass keeps Codex Desktop worktrees because task activity is not
+reliably visible through a process-cwd check. For a ports-only request, use
+`pnpm ports once` to inventory
+and `scripts/status.sh` to screen candidates before using
+`pnpm ports kill <unique worktree identifier>`. A status "idle candidate"
+is provisional: confirm no guarded tool process has that worktree as its cwd.
+For a Codex Desktop worktree, check its live task status with
+`mcp__codex_app__list_threads` when available; keep it if active, recently used,
+or status is unavailable.
+Keep the primary checkout, attached sessions, stacks under the 30-minute grace
+window, and operator-owned worktrees. `pnpm ports` probes recorded port numbers
+for liveness; a stale port file can point at another worktree's listener, so
+confirm the listener's cwd before treating a row as a separate server. After a
+stop, rerun `pnpm ports once` and verify the selected listeners are gone.
+If `pnpm ports kill` reports a legacy default-socket session, leave that
+ports-only stop unchanged; the full sweep owns its exact SIGINT/session-stop
+path.
+
 ## Full sweep
 
 Run the installed copy so manual and scheduled behavior match:
@@ -75,12 +101,12 @@ Run the installed copy so manual and scheduled behavior match:
 zsh ~/.local/bin/vpk-system-clean.sh
 ```
 
-The sweep samples sustained-hot `next-server`, rechecks memory-bloated but idle
-servers, stops leftover unattached `vpk-dev-*` stacks (then deletes only
-oversized inactive `.next` caches), stops unattached tmux sessions whose
-worktree path is gone, samples old exact-path `almd` before TERM and guarded
-KILL, and restarts oversized `fseventsd` only when the least-privilege sudoers
-rule exists.
+The sweep samples sustained-hot `next-server` and rechecks memory-bloated but
+idle servers. It stops eligible unattached `vpk-dev-*` stacks and their worktree
+routes, deletes only oversized inactive `.next` caches, and stops unattached
+tmux sessions whose worktree path is gone. It also samples old exact-path
+`almd` before TERM and guarded KILL, and restarts oversized `fseventsd` only
+  when the least-privilege sudoers rule exists.
 
 Silent exit zero is a valid successful run. Do not improvise extra remediation
 after it. For a script-only handoff, report status, the log path
@@ -102,7 +128,8 @@ cleanup.
   when unattached, older than the grace window, not the primary checkout, and
   with no process named exactly `claude`, `caffeinate`, `lazygit`,
   `cursor-agent`, or `codex` whose cwd is that worktree. Worktree names are
-  not part of this check.
+  not part of this check. The unattended idle-stack pass keeps Codex Desktop
+  worktrees until a task-aware manual pass confirms they are unused.
 - If sandbox permissions block a cache or log path, report the exact failure;
   do not attempt alternate deletion, permission repair, or schedule changes.
 

@@ -234,6 +234,27 @@ test("stops an old unattached leftover stack through the worktree stop script", 
 	assert.match(cleanupLog, /1 idle stack\(s\) stopped/);
 });
 
+test("stops an exact legacy default-socket stack without calling the private-socket launcher", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, tmuxLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [
+			{
+				socket: "default",
+				name: "vpk-dev-legacy",
+				path: join(home, "wt-legacy"),
+				attached: "0",
+				createdAgoSecs: 3600,
+			},
+		],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(tmuxLog, /send-keys default/);
+	assert.match(tmuxLog, /kill-session default/);
+	assert.equal(stopLog, "");
+	assert.match(cleanupLog, /stopped idle tmux session vpk-dev-legacy on default socket/);
+});
+
 test("keeps the primary checkout even when old and unattached", ZSH_TEST_OPTIONS, () => {
 	const { cleanupLog, stopLog, result } = runSweep({
 		almd: false,
@@ -299,6 +320,25 @@ test("keeps an old leftover stack that still has a claude operator", ZSH_TEST_OP
 	assert.equal(result.status, 0, result.stderr);
 	assert.equal(stopLog, "");
 	assert.match(cleanupLog, /kept tmux session vpk-dev-operator on vpk-dev socket \(tool process cwd is /);
+});
+
+test("keeps a Codex Desktop worktree whose live task status is unavailable to the sweep", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [
+			{
+				socket: "vpk-dev",
+				name: "vpk-dev-codex",
+				path: join(home, ".codex/worktrees/89b2/project"),
+				attached: "0",
+				createdAgoSecs: 7200,
+			},
+		],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.match(cleanupLog, /kept tmux session vpk-dev-codex on vpk-dev socket \(Codex Desktop task status unavailable\)/);
 });
 
 test("keeps an attached leftover stack", ZSH_TEST_OPTIONS, () => {
