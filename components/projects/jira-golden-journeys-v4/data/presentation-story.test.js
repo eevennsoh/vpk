@@ -167,9 +167,10 @@ test("the PAY board fills every existing status with coding work and the full st
 			&& Boolean(preview.relativeTime)
 		);
 	}));
+	assert.ok(prCards.every((card) => !/ ago$/u.test(card.pullRequestPreview.relativeTime)));
 	assert.equal(
 		prCards.find((card) => card.code === "PAY-105")?.pullRequestPreview.relativeTime,
-		"2h ago",
+		"2h",
 	);
 	assert.notEqual(
 		prCards.find((card) => card.code === "PAY-105")?.pullRequestPreview.title,

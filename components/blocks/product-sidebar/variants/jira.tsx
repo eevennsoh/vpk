@@ -123,7 +123,7 @@ export interface JiraSidebarSessionItem {
 	/** Number of reviewers shown in the untracked-work PR summary. */
 	pullRequestReviewerCount?: number;
 	pullRequestTitle?: string;
-	/** Preformatted relative PR update time, for example `1h ago`. */
+	/** Preformatted relative PR update time, for example `1h`. */
 	pullRequestUpdatedLabel?: string;
 	pullRequestUrl?: string;
 	repository?: string;

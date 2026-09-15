@@ -275,7 +275,7 @@ test("Pull Request demos include source → target branch paths", () => {
 	assert.match(DATA_SOURCE, /targetBranch: "main"/u);
 	assert.match(DATA_SOURCE, /branch: "rovo\/rfp-103-response-validation"/u);
 	assert.match(DATA_SOURCE, /filesChanged: 6/u);
-	assert.match(DATA_SOURCE, /relativeTime: "1h ago"/u);
+	assert.match(DATA_SOURCE, /relativeTime: "1h"/u);
 	assert.match(DATA_SOURCE, /relativeTime: "Yesterday"/u);
 	assert.doesNotMatch(DATA_SOURCE, /relativeTime: "yesterday"/u);
 	assert.doesNotMatch(DATA_SOURCE, /number:\s*902/u);
