@@ -21,13 +21,11 @@ import {
 	useCardGlowProximityPlane,
 } from "@/components/visual/card-glow";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
-import TextMorphing from "@/components/visual/text-morphing";
-import type { TextMorphConfig } from "@/components/visual/text-morphing/data";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { AgentSessionColumnFilterMenu } from "./agent-session-column-filter-menu";
-import { AgentSessionColumnCountSwap, useRisingSessionCount } from "./agent-session-column-count-swap";
+import { AgentSessionColumnCountMorph, AgentSessionColumnCountSwap, useRisingSessionCount } from "./agent-session-column-count-swap";
 import { AgentSessionColumnCollapsedExpandControl, AgentSessionColumnHeader } from "./agent-session-column-header";
 import { AgentSessionColumnEndState } from "./agent-session-column-end-state";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
@@ -308,30 +306,6 @@ const COLLAPSED_REPOSITION_CHIP_CLASS_NAME =
  * painted while the overflow menu is open so the trigger does not vanish
  * under the portalled popup.
  */
-/**
- * Count morphing for the collapsed header.
- *
- * `slots` spins each digit behind a fade mask, which suits a value that changes
- * because work arrived rather than because the viewer acted. Gutter presentation
- * keeps this renderer mounted while the digits stay hidden, so a column
- * presentation can still roll the total without remounting.
- *
- * `autoSize` eases the slot's width as the total crosses a digit. `initial:
- * false` keeps a column that mounts already collapsed from spinning its count
- * in on first paint. `TextMorphing` degrades to static text under
- * `prefers-reduced-motion`.
- */
-const HEAD_COUNT_MORPH: TextMorphConfig = {
-	variant: "slots",
-	animation: "snappy",
-	driftX: 0,
-	driftY: 0,
-	trend: 0,
-	stagger: 0.02,
-	initial: false,
-	autoSize: true,
-};
-
 /** The edge fades follow the plane's base surface color. */
 const AGENT_SESSION_PLANE_FADE_COLOR = "var(--color-surface)";
 
@@ -775,7 +749,7 @@ export function AgentSessionColumn({
 					data-agent-session-column-counter-state={showRisingCount ? "count" : "local"}
 				>
 					<AgentSessionColumnCountSwap reducedMotion={shouldReduceMotion} rising={showRisingCount}>
-							<TextMorphing config={HEAD_COUNT_MORPH} text={String(sessionCount)} />
+							<AgentSessionColumnCountMorph count={sessionCount} />
 					</AgentSessionColumnCountSwap>
 				</span>
 				<span className="sr-only">{collapsedCountLabel}</span>

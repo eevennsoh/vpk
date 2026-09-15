@@ -29,6 +29,7 @@ import {
 	DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	type AgentSessionColumnFrame,
 } from "./agent-session-column-frame";
+import { AgentSessionColumnCountMorph } from "./agent-session-column-count-swap";
 import {
 	SELECT_ALL_ACTION_COPY,
 	type HeaderActionId,
@@ -470,7 +471,14 @@ function renderColumnChrome({
 				aria-live={isSelecting ? "polite" : undefined}
 				className="ms-1.5 shrink-0 text-xs font-normal text-text-subtlest"
 			>
-				{model.count}
+				{isSelecting ? model.count : (
+					<>
+						<span aria-hidden="true">
+							<AgentSessionColumnCountMorph count={model.count} />
+						</span>
+						<span className="sr-only">{model.count}</span>
+					</>
+				)}
 			</span>
 			{isSelecting ? (
 				<div className="ms-auto flex shrink-0 items-center">
