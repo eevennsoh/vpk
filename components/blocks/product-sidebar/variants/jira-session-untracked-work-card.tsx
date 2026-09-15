@@ -5,6 +5,8 @@ import { useId } from "react";
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
+import type { AgentListAgent } from "@/components/blocks/agent-list";
+import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -166,6 +168,12 @@ export function JiraSessionUntrackedWorkCard({
 	const hasIssueKey = session.issueKey.length > 0;
 	const hasPullRequest = session.pullRequestNumber !== undefined;
 	const lifecycleState = JIRA_SESSION_FLYOUT_STATE[session.status];
+	const agentIdentity = {
+		avatarSrc: session.agentAvatarSrc,
+		brandName: session.brandName,
+		name: session.agentName,
+		vpkLogo: session.vpkLogo,
+	} satisfies AgentListAgent;
 	const showRationale = !hasPullRequest || !hasIssueKey;
 	const rationaleTitle = hasIssueKey ? "High confidence to link" : "Nothing available to link to";
 	const confidenceRationale = hasIssueKey
@@ -215,18 +223,27 @@ export function JiraSessionUntrackedWorkCard({
 			}
 			meta={
 				<div className="flex h-4 min-w-0 items-center gap-1">
-					<span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center">
-						<AgentAvatarVisual
+					{session.invokedBy ? (
+						<AgentListAttributionAvatarGroup
+							agent={agentIdentity}
 							animate={animateAvatars}
-							avatarClassName="after:border-0"
-							avatarSrc={session.agentAvatarSrc}
-							brandName={session.brandName}
-							fallbackText={session.agentName}
-							label=""
+							attributedBy={session.invokedBy}
 							sizePx={16}
-							vpkLogo={session.vpkLogo}
 						/>
-					</span>
+					) : (
+						<span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center">
+							<AgentAvatarVisual
+								animate={animateAvatars}
+								avatarClassName="after:border-0"
+								avatarSrc={session.agentAvatarSrc}
+								brandName={session.brandName}
+								fallbackText={session.agentName}
+								label=""
+								sizePx={16}
+								vpkLogo={session.vpkLogo}
+							/>
+						</span>
+					)}
 					<p className="min-w-0 truncate text-xs leading-4 text-text-subtlest">{session.agentName}</p>
 					<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">·</span>
 					{lifecycleState === "working" ? (

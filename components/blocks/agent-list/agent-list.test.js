@@ -187,6 +187,8 @@ test("agent identities default to human-first and expose an explicit agent-first
 });
 
 test("agent attribution groups share the same explicit order contract", () => {
+	assert.match(IDENTITY_SOURCE, /animate\?: boolean;/u);
+	assert.match(IDENTITY_SOURCE, /<AgentAvatarVisual[\s\S]*animate=\{animate\}/u);
 	assert.match(
 		IDENTITY_SOURCE,
 		/export function AgentListAttributionAvatarGroup[\s\S]*<AvatarGroup[\s\S]*className=\{cn\("shrink-0", className\)\}[\s\S]*label=\{`\$\{agent\.name\}, used by \$\{attributedBy\.name\}`\}/u,

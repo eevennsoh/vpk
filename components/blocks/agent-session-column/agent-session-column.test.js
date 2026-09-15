@@ -698,7 +698,7 @@ test("the collapsed rail preserves session twin hover previews", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /isHovered=\{item\.id === hoverIntent\.activeItemId\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /data-highlighted=\{isHighlighted \|\| undefined\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{isHighlighted\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /showAvatar \? "opacity-100 scale-100"/u);
+	assert.match(RAIL_COLUMN_SOURCE, /showAvatar && !isMorphing\s*\n?\s*\? "opacity-100 scale-100"/u);
 	assert.match(RAIL_COLUMN_SOURCE, /const showAvatar = isHighlighted \|\| arrivalReveal;/u);
 });
 

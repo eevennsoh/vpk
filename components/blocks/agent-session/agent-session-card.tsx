@@ -392,7 +392,9 @@ export function AgentSessionCard({
 						padding === "compact" ? "px-3 py-2" : "p-3",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
-						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",
+						// Hover and the retained flyout highlight must paint immediately;
+						// fading the fill flashes transparent frames between nearby rows.
+						"transition-[border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
 						showSelectedFill && "bg-bg-selected",
 						!showSelectedFill && (isHighlighted || isHoverStateActive) && "bg-surface-hovered",

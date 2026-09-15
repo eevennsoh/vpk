@@ -16,6 +16,7 @@ import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { token } from "@/lib/tokens";
 
 import {
 	IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX,
@@ -41,7 +42,7 @@ const IN_FLOW_AGENT_SESSION_COLUMN_MAX_WIDTH_PX = 560;
 const IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION =
 	"width var(--duration-normal) var(--ease-out-practical)";
 const IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_TRANSITION =
-	"transform var(--duration-normal) var(--ease-out-practical)";
+	"transform var(--duration-normal) var(--ease-out-practical), box-shadow var(--duration-normal) var(--ease-out-practical)";
 const IN_FLOW_AGENT_SESSION_COLUMN_EXPANSION_TRANSITION =
 	"width var(--duration-medium) var(--ease-in-out)";
 const IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME = [
@@ -65,6 +66,8 @@ export interface InFlowAgentSessionColumnProps {
 	/** Whether the expanded column exposes its width-resize separator. */
 	resizable?: boolean;
 	sessionFlyoutsSuspended: boolean;
+	/** Elevates the white column above horizontally scrolled board content. */
+	showTrailingShadow?: boolean;
 	untrackedDropArmed: boolean;
 }
 
@@ -320,6 +323,7 @@ function InFlowAgentSessionColumnSurface({
 	paddingTop,
 	playGutterIntro,
 	shouldReduceMotion,
+	showTrailingShadow,
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps & {
 	advancedTimeline: boolean;
@@ -368,12 +372,15 @@ function InFlowAgentSessionColumnSurface({
 			data-board-agent-session-drop-zone="untracked"
 			data-board-agent-session-target={untrackedDropArmed ? "untracked" : undefined}
 			style={{
+				borderRadius: token("radius.xlarge"),
+				boxShadow: showTrailingShadow && isEmbedded ? token("elevation.shadow.overlay") : "none",
 				paddingTop,
 				paddingBottom,
 				willChange: shouldReduceMotion ? undefined : "transform",
 				transform: `translateX(${isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX : IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX}px)`,
 				transition: shouldReduceMotion ? "none" : IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_TRANSITION,
 			}}
+			data-agent-session-column-surface=""
 		>
 			<AgentSessionColumn
 				{...agentSessionColumn}
@@ -543,6 +550,7 @@ export function InFlowAgentSessionColumn({
 	paddingTop,
 	resizable = true,
 	sessionFlyoutsSuspended,
+	showTrailingShadow,
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps>): ReactNode {
 	const {
@@ -635,6 +643,7 @@ export function InFlowAgentSessionColumn({
 					playGutterIntro={playGutterIntro}
 					sessionFlyoutsSuspended={sessionFlyoutsSuspended}
 					shouldReduceMotion={shouldReduceMotion}
+					showTrailingShadow={showTrailingShadow}
 					untrackedDropArmed={untrackedDropArmed}
 				/>
 			</div>

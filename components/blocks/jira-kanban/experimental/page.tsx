@@ -12,7 +12,6 @@ import {
 	useState,
 	type CSSProperties,
 } from "react";
-
 import { useOptionalRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import {
 	resolveAgentSessionWorkItemKey,
@@ -304,6 +303,7 @@ function ExperimentalJiraKanbanPageContent({
 	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
 	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
 	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
+	const [boardContentUnderlapsSessionColumn, setBoardContentUnderlapsSessionColumn] = useState(false);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [focusedCollapsedColumns, setFocusedCollapsedColumns] = useState<CollapsedBoardColumns | null>(
 		null,
@@ -892,7 +892,6 @@ function ExperimentalJiraKanbanPageContent({
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
 		untrackedSessions: agentSessionColumnConfig?.items,
 	});
-
 	return (
 		<div
 			className="relative flex h-full min-h-[640px] flex-col bg-surface"
@@ -993,6 +992,7 @@ function ExperimentalJiraKanbanPageContent({
 								columnFrame={columnChromeStyles.headerFrame}
 								paddingTop={withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
+								showTrailingShadow={!isListContent && boardContentUnderlapsSessionColumn}
 								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 							/>
 						) : null}
@@ -1066,6 +1066,7 @@ function ExperimentalJiraKanbanPageContent({
 								onCardDrop={handleCardDrop}
 								onCardDragEnd={handleCardDragEnd}
 								onCreateAgent={handleCreateColumnAgent}
+								onScrollUnderlapChange={setBoardContentUnderlapsSessionColumn}
 								onToggleColumnAgent={handleToggleColumnAgent}
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								paddingTop={0}

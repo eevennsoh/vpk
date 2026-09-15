@@ -377,7 +377,7 @@ test("the row reveals one … menu where Agent List puts its hover pair", () => 
 	assert.doesNotMatch(CARD_SOURCE, /hover:border-border(?!-disabled)/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:border-border(?!-disabled)/u);
 	assert.match(CARD_SOURCE, /hover:bg-surface-hovered/u);
-	assert.match(CARD_SOURCE, /transition-\[background-color,border-radius\] duration-xxshort ease-out-practical/u);
+	assert.match(CARD_SOURCE, /transition-\[border-radius\] duration-xxshort ease-out-practical/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:bg-white/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:bg-/u);
 	assert.doesNotMatch(CARD_SOURCE, /active:bg-/u);
