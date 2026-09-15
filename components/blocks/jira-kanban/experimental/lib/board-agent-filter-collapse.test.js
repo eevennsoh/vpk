@@ -153,10 +153,10 @@ test("assignee filter only keeps columns whose remaining cards match the agent s
 	assert.equal(jordanWorking.has("In review"), true);
 });
 
-test("Untracked expands the session column; linked states collapse it", () => {
+test("Untracked and Needs input expand the session column; Working and Finished collapse it", () => {
 	assert.equal(agentSessionColumnCollapsedForAgentFilter("untracked"), false);
+	assert.equal(agentSessionColumnCollapsedForAgentFilter("needs-input"), false);
 	assert.equal(agentSessionColumnCollapsedForAgentFilter("working"), true);
-	assert.equal(agentSessionColumnCollapsedForAgentFilter("needs-input"), true);
 	assert.equal(agentSessionColumnCollapsedForAgentFilter("finished"), true);
 });
 
@@ -233,8 +233,9 @@ test("assignee scope changes which focused columns stay expanded", () => {
 	assert.equal(maya.has("In review"), false);
 });
 
-test("Untracked overlay expands the session column without writing viewer collapse", () => {
+test("Untracked and Needs input overlays expand the session column without writing viewer collapse", () => {
 	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("untracked", true), false);
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("needs-input", true), false);
 	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("working", false), true);
 	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter(null, true), true);
 });
