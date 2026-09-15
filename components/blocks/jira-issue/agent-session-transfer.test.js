@@ -646,7 +646,10 @@ test("Jira issue card hugs its content the moment the chip leaves the chin", () 
 	// The row flags itself; the list closes its gutter off that flag with `:has()`.
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-session-chip-out=\{isDraggedOut \|\| undefined\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row-wrap"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /\(hasActivities \|\| hasAttachPreview\) && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",/u);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?"py-1 has-\[\[data-session-chip-out\]\]:py-0"/u,
+	);
 	assert.match(
 		SOURCE,
 		/has-\[\[data-session-chip-out\]\]:not-has-\[\[data-slot=jira-issue-agent-row-wrap\]:not\(\[data-session-chip-out\]\)\]:pb-1/u,
