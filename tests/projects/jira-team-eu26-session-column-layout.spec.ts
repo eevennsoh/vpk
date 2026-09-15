@@ -8,7 +8,7 @@ const JIRA_TEAM_EU26_EMBEDDED_URL = (
 ) + "/preview/projects/jira-team-eu26?embedded=1";
 
 async function openBoard(page: Page): Promise<void> {
-	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "networkidle" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
 		timeout: 15_000,
 	});
@@ -16,6 +16,12 @@ async function openBoard(page: Page): Promise<void> {
 		.getByTestId("agent-session-row-lw-scope-thread");
 	const options = page.getByRole("button", { name: "Unlink sessions column options" });
 	if (!await session.isVisible()) {
+		const directExpand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+		if (await directExpand.isVisible()) {
+			await directExpand.click();
+			await expect(session).toBeVisible();
+			return;
+		}
 		if (await page.locator("[data-agent-session-column-hit-area]").count() > 0) {
 			await revealCollapsedAgentSessionColumn(page);
 		}
@@ -38,6 +44,41 @@ async function openCollapsedBoard(page: Page): Promise<void> {
 	await expect(page.getByRole("button", { name: "Unlink sessions column options" })).toBeVisible();
 }
 
+test("collapsed status glyphs cover the resting dot before returning to it", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
+	await expect(page.locator("[data-agent-session-column-rail]")).toBeAttached();
+	const notch = page.getByTestId("agent-session-notch-lw-sync-webhook-gap");
+	await expect(notch).toBeAttached({ timeout: 20_000 });
+
+	for (const [state, accessibleState] of [
+		["needs-input", "needs input"],
+		["complete", "finished"],
+	] as const) {
+		const mark = notch.locator(`[data-agent-session-state-mark="${state}"]`);
+		await expect(mark).toBeAttached({ timeout: 25_000 });
+		await expect.poll(async () => mark.evaluate((element) => Number(getComputedStyle(element).opacity)), {
+			timeout: 25_000,
+		}).toBeGreaterThan(0.8);
+		const backing = await mark.evaluate((element) => {
+			const style = getComputedStyle(element);
+			return {
+				backgroundColor: style.backgroundColor,
+				backgroundAlpha: style.backgroundColor.startsWith("rgb(")
+					? 1
+					: Number(style.backgroundColor.match(/^rgba\([^)]*,\s*([0-9.]+)\)$/u)?.[1] ?? 0),
+				borderRadius: Number.parseFloat(style.borderTopLeftRadius),
+				width: element.getBoundingClientRect().width,
+			};
+		});
+		expect(backing.backgroundAlpha, `Expected an opaque backing, got ${backing.backgroundColor}`).toBe(1);
+		expect(backing.width).toBeGreaterThanOrEqual(10);
+		expect(backing.borderRadius).toBeGreaterThanOrEqual(backing.width / 2);
+		await expect(notch).toHaveAccessibleName(new RegExp(accessibleState, "u"));
+	}
+});
+
 async function revealCollapsedAgentSessionColumn(page: Page): Promise<void> {
 	const hitArea = page.locator("[data-agent-session-column-hit-area]");
 	const hitAreaBox = await hitArea.boundingBox();
@@ -52,21 +93,98 @@ async function revealCollapsedAgentSessionColumn(page: Page): Promise<void> {
 }
 
 async function openHeightComparisonBoard(page: Page): Promise<void> {
-	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
-		timeout: 15_000,
-	});
-	const directExpand = page.getByRole("button", { name: "Expand Unlink sessions column" });
-	if (await directExpand.isVisible()) {
-		await directExpand.click();
-	} else {
-		await openBoard(page);
-	}
+	await openBoard(page);
 	await expect(page.locator("[data-agent-session-column-expansion]"))
 		.toHaveAttribute("data-agent-session-column-expansion", "expanded");
+	// Leave the column's focus/pointer pause before waiting for live revisions.
+	await page.getByRole("heading", { name: "Jira Design" }).click();
+	await expect(page.locator('[data-agent-session-column] [data-agent-session-lifecycle-current="needs-input"]').first())
+		.toBeVisible({ timeout: 20_000 });
 }
 
+for (const collapsed of [true, false]) {
+	test(`status revisions fade at their old slot and return at the top in ${collapsed ? "collapsed" : "expanded"} mode`, async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		if (collapsed) {
+			await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+		} else {
+			await openBoard(page);
+			await page.getByRole("heading", { name: "Jira Design" }).click();
+		}
+		const id = `agent-session-${collapsed ? "notch" : "row"}-lw-sync-webhook-gap`;
+		const row = page.getByTestId(id);
+		await expect(row).toBeAttached({ timeout: 10_000 });
+		if (!collapsed) await expect(row.locator(".shimmer")).toBeVisible();
+		const trace = await page.evaluateHandle(({ id, collapsed }) => {
+			const samples: { leaving: boolean; index: number; opacity: number; translateY: number; glow: boolean; accent: string; state: string | null }[] = [];
+			let stopped = false;
+			const sample = () => {
+				const element = document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
+				const host = collapsed ? element?.closest("li") : element;
+				if (host) {
+					const style = getComputedStyle(host);
+					const transform = style.transform === "none" ? null : new DOMMatrixReadOnly(style.transform);
+					const glow = host.querySelector<HTMLElement>("[data-agent-session-status-glow]");
+					samples.push({
+						leaving: host.hasAttribute(collapsed ? "data-agent-session-status-exit" : "data-departing"),
+						index: Array.from(host.parentElement?.children ?? []).indexOf(host),
+						opacity: Number(style.opacity),
+						translateY: transform?.m42 ?? 0,
+						glow: glow !== null,
+						accent: getComputedStyle(host).getPropertyValue("--card-glow-tile-accent").trim(),
+						state: host.querySelector("[data-agent-session-lifecycle-current]")?.getAttribute("data-agent-session-lifecycle-current") ?? null,
+					});
+				}
+				if (!stopped) requestAnimationFrame(sample);
+			};
+			requestAnimationFrame(sample);
+			return { samples, stop: () => { stopped = true; } };
+		}, { id, collapsed });
+		await expect.poll(async () => collapsed
+			? row.getAttribute("aria-label").then((label) => label ?? row.textContent())
+			: row.locator("[data-agent-session-lifecycle-current]").getAttribute("data-agent-session-lifecycle-current"),
+		{ timeout: 15_000 }).toMatch(/needs.?input/u);
+		// The first revision is already first. The next arrival displaces it,
+		// so its teammate-completed revision must retire the old lower slot.
+		await expect.poll(async () => collapsed
+			? row.textContent()
+			: row.locator("[data-agent-session-lifecycle-current]").getAttribute("data-agent-session-lifecycle-current"),
+		{ timeout: 15_000 }).toMatch(collapsed ? /finished/u : /complete/u);
+		await expect.poll(() => row.evaluate((element) => {
+			const host = element.closest("li");
+			return host?.parentElement?.firstElementChild === host;
+		})).toBe(true);
+		if (!collapsed) {
+			await expect(row.locator("[data-agent-session-status-glow]")).toHaveCount(0, { timeout: 5_000 });
+			await expect(row.locator(".shimmer")).toHaveCount(0);
+		}
+		const samples = await trace.evaluate((value) => { value.stop(); return value.samples; });
+		await trace.dispose();
+		const departure = samples.findIndex((sample) => sample.leaving && sample.index > 0);
+		expect(departure).toBeGreaterThanOrEqual(0);
+		const revision = samples.slice(departure);
+		expect(revision.some((sample) => sample.leaving && sample.opacity < 0.5)).toBe(true);
+		expect(revision.some((sample) => !sample.leaving && sample.index === 0 && sample.opacity > 0.8)).toBe(true);
+		expect(revision.every((sample) => Math.abs(sample.translateY) <= 16.1)).toBe(true);
+		if (!collapsed) expect(revision.some((sample) => sample.state === "complete" && sample.glow && sample.accent !== "")).toBe(true);
+	});
+}
+
+test("reduced motion keeps Working titles static and applies status changes without glow", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openBoard(page);
+	await page.getByRole("heading", { name: "Jira Design" }).click();
+	const row = page.getByTestId("agent-session-row-lw-sync-webhook-gap");
+	await expect(row).toBeAttached({ timeout: 10_000 });
+	await expect(row.locator(".shimmer")).toHaveCount(0);
+	await expect(row.locator("[data-agent-session-lifecycle-current]")).toHaveAttribute("data-agent-session-lifecycle-current", "needs-input", { timeout: 15_000 });
+	await expect(row.locator("[data-agent-session-status-glow]")).toHaveCount(0);
+	await expect(page.locator("[data-departing]")).toHaveCount(0);
+});
+
 test("the expanded session well hugs a short filtered list and caps a long list", async ({ page }) => {
+	test.setTimeout(60_000);
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await openHeightComparisonBoard(page);
 	const sessionColumn = page.locator("[data-agent-session-column]");
@@ -78,7 +196,7 @@ test("the expanded session well hugs a short filtered list and caps a long list"
 	await page.getByRole("button", { name: "Needs input: 1 agent" }).click();
 	const filteredRows = sessionColumn.locator('[data-testid^="agent-session-row-"]');
 	await expect.poll(() => filteredRows.count()).toBeLessThan(6);
-	await expect.poll(() => filteredRows.count()).toBeGreaterThan(0);
+	await expect.poll(() => filteredRows.count(), { timeout: 30_000 }).toBeGreaterThan(0);
 	const columnBox = await sessionColumn.boundingBox();
 	const lastRowBox = await filteredRows.last().boundingBox();
 	expect(columnBox && lastRowBox ? columnBox.y + columnBox.height - lastRowBox.y - lastRowBox.height : Infinity)
@@ -87,6 +205,7 @@ test("the expanded session well hugs a short filtered list and caps a long list"
 });
 
 test("Needs input switches session positions without travel", async ({ page }) => {
+	test.setTimeout(60_000);
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await openHeightComparisonBoard(page);
 	const rows = page.locator('[data-agent-session-column] [data-testid^="agent-session-row-"]');
@@ -98,7 +217,7 @@ test("Needs input switches session positions without travel", async ({ page }) =
 		await needsInput.click();
 		if (filtered) {
 			await expect.poll(() => rows.count()).toBeLessThan(6);
-			await expect.poll(() => rows.count()).toBeGreaterThan(0);
+			await expect.poll(() => rows.count(), { timeout: 30_000 }).toBeGreaterThan(0);
 		} else {
 			await expect.poll(() => rows.count()).toBeGreaterThan(4);
 		}
@@ -686,14 +805,7 @@ test("scrolling the session column dismisses the active flyout", async ({ page }
 
 test("wheel input over a session host tooltip scrolls the session column", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
-		timeout: 15_000,
-	});
-	const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
-	if (await expand.isVisible()) {
-		await expand.click();
-	}
+	await openBoard(page);
 	const column = page.locator("[data-agent-session-column]");
 	const scrollport = column.locator("[data-agent-session-column-scrollport]");
 	const hostIcon = column.getByRole("img", { name: "Local session" }).first();
@@ -703,7 +815,11 @@ test("wheel input over a session host tooltip scrolls the session column", async
 		hasText: "Local session",
 	});
 	await expect(tooltip).toBeVisible();
-	await tooltip.hover();
+	await expect.poll(() => tooltip.evaluate((element) => Number(getComputedStyle(element).opacity))).toBe(1);
+	const tooltipBox = await tooltip.boundingBox();
+	expect(tooltipBox).not.toBeNull();
+	if (!tooltipBox) return;
+	await page.mouse.move(tooltipBox.x + tooltipBox.width / 2, tooltipBox.y + tooltipBox.height / 2);
 	await page.mouse.wheel(0, 450);
 
 	await expect.poll(() => scrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(200);

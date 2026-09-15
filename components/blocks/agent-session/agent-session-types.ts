@@ -145,6 +145,8 @@ export interface AgentSessionProps {
 	density?: AgentSessionDensity;
 	/** Sessions to render; defaults to relationship-appropriate built-in sample data. */
 	items?: readonly AgentSessionItem[];
+	/** Show the experimental Working indicator in short rows. In-flow columns opt in. */
+	showWorkingSpinner?: boolean;
 	/**
 	 * Wash each agent's accent behind its row on hover. `variant="large"` only.
 	 * Opt-in per host, and independent of {@link glowStroke}.
@@ -183,8 +185,14 @@ export interface AgentSessionProps {
 	 * that never unmounts the list.
 	 */
 	arrivingItemIds?: ReadonlySet<string>;
+	/** Column-owned subset whose lifecycle change is animating its status icon. */
+	stateChangedItemIds?: ReadonlySet<string>;
+	/** Revision keys keep a rapid second lifecycle change distinct from the first. */
+	stateChangeVersions?: ReadonlyMap<string, number>;
 	/** Called when a card's one-shot arrival beat reaches its visible resting state. */
 	onArrivalComplete?: (itemId: string) => void;
+	/** Called after the revised card's one-shot accent glow has finished. */
+	onStateChangeComplete?: (itemId: string) => void;
 	/** Suggested Jira key for the untracked-work flyout. Defaults to `sessionDetails.issueKey`. */
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	/**

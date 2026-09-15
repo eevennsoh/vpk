@@ -56,6 +56,7 @@ import { DROPZONE_EFFECT_DETAIL } from "./visual/dropzone-effect";
 import { HEATMAP_DETAIL } from "./visual/heatmap";
 import { INK_WASH_DETAIL } from "./visual/ink-wash";
 import { LIQUID_METAL_DETAIL } from "./visual/liquid-metal";
+import { PEEL_DETAIL } from "./visual/peel";
 import { NOISE_DETAIL } from "./visual/noise";
 import { GOOEY_DETAIL } from "./visual/gooey";
 
@@ -216,6 +217,7 @@ export const VISUAL_DETAILS: Record<string, ComponentDetail> = {
 	heatmap: HEATMAP_DETAIL,
 	"ink-wash": INK_WASH_DETAIL,
 	"liquid-metal": LIQUID_METAL_DETAIL,
+	peel: PEEL_DETAIL,
 	noise: NOISE_DETAIL,
 	gooey: GOOEY_DETAIL,
 	...PAPER_SHADER_DETAILS,

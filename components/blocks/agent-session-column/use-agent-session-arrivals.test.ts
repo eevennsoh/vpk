@@ -40,8 +40,151 @@ test("filtering and unread changes do not erase first-appearance history", () =>
 	assert.equal(advanceAgentSessionArrivals(hidden, initialInput).arriving.size, 0);
 });
 
+test("a sync arrival hidden by a filter is consumed before the filter is cleared", () => {
+	const filtered = advanceAgentSessionArrivals(undefined, { ...initialInput, items: [], newItemIds: new Set() });
+	const syncedWhileHidden = advanceAgentSessionArrivals(filtered, { ...initialInput, items: [] });
+	const revealed = advanceAgentSessionArrivals(syncedWhileHidden, initialInput);
+	assert.equal(revealed.arriving.size, 0, "clearing a filter must not animate a past sync arrival");
+	const next = advanceAgentSessionArrivals(revealed, {
+		...initialInput,
+		items: [{ id: "second" }, ...initialInput.items],
+		newItemIds: new Set(["first", "second"]),
+	});
+	assert.deepEqual([...next.arriving], ["second"], "the next actual visible sync must still enter");
+});
+
 test("reduced motion consumes the entrance without animation", () => {
 	const reduced = advanceAgentSessionArrivals(undefined, { ...initialInput, reduceMotion: true });
 	assert.equal(reduced.arriving.size, 0);
 	assert.equal(advanceAgentSessionArrivals(reduced, initialInput).arriving.size, 0);
+});
+
+test("a top lifecycle revision animates only its icon", () => {
+	const input = {
+		items: [{ id: "session" }],
+		presentation: "expanded:large:short",
+		reduceMotion: false,
+		stateChangeVersions: new Map([["session", 0]]),
+	};
+	const working = advanceAgentSessionArrivals(undefined, input);
+	assert.equal(working.arriving.size, 0, "a loaded working session is not a state change");
+	const needsInput = advanceAgentSessionArrivals(working, {
+		...input,
+		stateChangeVersions: new Map([["session", 1]]),
+	});
+	assert.equal(needsInput.arriving.size, 0, "a first-place card must stay mounted");
+	assert.deepEqual([...needsInput.stateChanged], ["session"]);
+	const settledNeedsInput = {
+		...needsInput,
+		stateChanged: new Set<string>(),
+	};
+	const unchanged = advanceAgentSessionArrivals(settledNeedsInput, {
+		...needsInput.input,
+		items: [...input.items],
+		stateChangeVersions: new Map([["session", 1]]),
+	});
+	assert.equal(unchanged.arriving.size, 0);
+	assert.equal(unchanged.stateChanged.size, 0);
+	const finished = advanceAgentSessionArrivals(unchanged, {
+		...input,
+		stateChangeVersions: new Map([["session", 2]]),
+	});
+	assert.equal(finished.arriving.size, 0);
+	assert.deepEqual([...finished.stateChanged], ["session"]);
+});
+
+test("a lower session still exits and reintroduces at the top", () => {
+	const input = {
+		items: [{ id: "other" }, { id: "session" }],
+		presentation: "expanded:large:short",
+		reduceMotion: false,
+		stateChangeVersions: new Map([["session", 0]]),
+	};
+	const working = advanceAgentSessionArrivals(undefined, input);
+	const changed = advanceAgentSessionArrivals(working, {
+		...input,
+		items: [{ id: "session" }, { id: "other" }],
+		stateChangeVersions: new Map([["session", 1]]),
+	});
+	assert.deepEqual([...changed.arriving], ["session"]);
+	assert.deepEqual([...changed.stateChanged], ["session"]);
+});
+
+test("a top collapsed status revision still introduces its question or check glyph", () => {
+	const input = {
+		items: [{ id: "session" }],
+		presentation: "circle",
+		reduceMotion: false,
+		stateChangeVersions: new Map([["session", 0]]),
+	};
+	const working = advanceAgentSessionArrivals(undefined, input);
+	const changed = advanceAgentSessionArrivals(working, {
+		...input,
+		stateChangeVersions: new Map([["session", 1]]),
+	});
+	assert.deepEqual([...changed.arriving], ["session"]);
+	assert.equal(changed.stateChanged.size, 0);
+});
+
+test("collapse interrupts a status beat without replaying it on expansion", () => {
+	const input = {
+		items: [{ id: "session" }],
+		presentation: "expanded:large:short",
+		reduceMotion: false,
+		stateChangeVersions: new Map([["session", 0]]),
+	};
+	const baseline = advanceAgentSessionArrivals(undefined, input);
+	const changed = advanceAgentSessionArrivals(baseline, {
+		...input,
+		stateChangeVersions: new Map([["session", 1]]),
+	});
+	const collapsed = advanceAgentSessionArrivals(changed, { ...changed.input, presentation: "circle" });
+	assert.equal(collapsed.arriving.size, 0);
+	assert.equal(collapsed.stateChanged.size, 0);
+	const expanded = advanceAgentSessionArrivals(collapsed, changed.input);
+	assert.equal(expanded.arriving.size, 0);
+	assert.equal(expanded.stateChanged.size, 0);
+});
+
+test("a changed session filtered out at transition does not replay its icon when revealed", () => {
+	const input = {
+		items: [{ id: "session" }],
+		presentation: "expanded:large:short",
+		reduceMotion: false,
+		stateChangeVersions: new Map([["session", 0]]),
+	};
+	const baseline = advanceAgentSessionArrivals(undefined, input);
+	const hidden = advanceAgentSessionArrivals(baseline, {
+		...input,
+		items: [],
+		stateChangeVersions: new Map([["session", 1]]),
+	});
+	assert.equal(hidden.arriving.size, 0);
+	assert.equal(advanceAgentSessionArrivals(hidden, { ...input, stateChangeVersions: hidden.input.stateChangeVersions }).stateChanged.size, 0);
+});
+
+test("reduced motion consumes lifecycle revisions and the next session still gets its first arrival", () => {
+	const input = {
+		items: [{ id: "session" }],
+		presentation: "expanded:large:short",
+		reduceMotion: false,
+		stateChangeVersions: new Map([["session", 0]]),
+	};
+	const baseline = advanceAgentSessionArrivals(undefined, input);
+	const reduced = advanceAgentSessionArrivals(baseline, {
+		...input,
+		reduceMotion: true,
+		stateChangeVersions: new Map([["session", 1]]),
+	});
+	assert.equal(reduced.arriving.size, 0);
+	assert.equal(reduced.stateChanged.size, 0);
+	assert.equal(advanceAgentSessionArrivals(reduced, { ...input, stateChangeVersions: reduced.input.stateChangeVersions }).arriving.size, 0);
+	const nextSession = advanceAgentSessionArrivals(reduced, {
+		...input,
+		items: [{ id: "new" }, ...input.items],
+		newItemIds: new Set(["new"]),
+		stateChangeVersions: new Map([["session", 1], ["new", 0]]),
+	});
+	assert.deepEqual([...nextSession.arriving], ["new"]);
+	assert.equal(nextSession.stateChanged.size, 0);
 });

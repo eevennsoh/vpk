@@ -342,7 +342,7 @@ test("the collapsed count lives in the header, not on the rail", () => {
 	assert.match(INDEX_SOURCE, /HEADER_COUNT_AT_REST/u);
 	assert.match(INDEX_SOURCE, /HEADER_CONTROL_ON_REVEAL/u);
 	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\("absolute shrink-0", HEADER_CONTROL_ON_REVEAL\)\}/u);
-	assert.match(INDEX_SOURCE, /<TextMorphing/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnCountMorph/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<TextMorphing/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /sessionCount/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
@@ -392,7 +392,7 @@ test("notch flyouts use a stable trigger host so the shared popup follows the ra
 	// Same contract as expanded AgentSessionCard: layout on the `li`, a plain
 	// `div` as the HoverCard trigger. Putting `layout` on the trigger remounts
 	// the host and opens a new flyout per notch.
-	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \|\| !animateLayout \? false : "position"\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \|\| !animateLayout \|\| isLeaving \|\| isStatusReentering \? false : "position"\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]{0,200}?render=\{\s*<div\s*className="mx-auto flex h-5 items-center/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /delay=\{0\}/u);
@@ -406,10 +406,9 @@ test("a notch is a drag handle, so a session leaves the collapsed rail too", () 
 	// The column inherits the binding from AgentSessionProps, so the rail is
 	// reached with the prop the expanded cards already take.
 	assert.match(SESSION_TYPES_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
-	assert.match(
-		TYPES_SOURCE,
-		/extends Omit<\s*AgentSessionProps,\s*"arrivingItemIds" \| "className" \| "onArrivalComplete" \| "rowTriage"\s*>/u,
-	);
+	const inheritedSessionProps = TYPES_SOURCE.match(/extends Omit<\s*AgentSessionProps,[\s\S]*?>/u)?.[0] ?? "";
+	assert.match(inheritedSessionProps, /"stateChangeVersions"/u);
+	assert.doesNotMatch(inheritedSessionProps, /"sessionDrag"/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,1600}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
@@ -670,26 +669,30 @@ test("the collapsed rail preserves session twin hover previews", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /data-highlighted=\{isHighlighted \|\| undefined\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{isHighlighted\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /showAvatar && !isMorphing\s*\n?\s*\? "opacity-100 scale-100"/u);
-	assert.match(RAIL_COLUMN_SOURCE, /const showAvatar = isHighlighted \|\| arrivalReveal;/u);
+	assert.match(RAIL_COLUMN_SOURCE, /const showAvatar = isHighlighted \|\| \(!hasStateGlyph && arrivalReveal\);/u);
 });
 
-test("the collapsed header count rolls through the shared Text Morphing slots effect", () => {
+test("collapsed and expanded browsing counts share the Text Morphing slots effect", () => {
 	// Reused, never re-implemented: the header must not hand-roll a digit animation.
-	assert.match(INDEX_SOURCE, /import TextMorphing from "@\/components\/visual\/text-morphing"/u);
-	assert.match(INDEX_SOURCE, /<TextMorphing\s+config=\{HEAD_COUNT_MORPH\}/u);
-	assert.match(INDEX_SOURCE, /variant: "slots"/u);
+	assert.match(COUNT_SWAP_SOURCE, /import TextMorphing from "@\/components\/visual\/text-morphing"/u);
+	assert.match(COUNT_SWAP_SOURCE, /variant: "slots"/u);
 	// `autoSize` eases the slot's width as the total crosses a digit.
-	assert.match(INDEX_SOURCE, /autoSize: true/u);
+	assert.match(COUNT_SWAP_SOURCE, /autoSize: true/u);
 	// A column that mounts already collapsed must not spin its count in.
-	assert.match(INDEX_SOURCE, /initial: false/u);
+	assert.match(COUNT_SWAP_SOURCE, /initial: false/u);
+	assert.match(COUNT_SWAP_SOURCE, /<TextMorphing config=\{HEAD_COUNT_MORPH\} text=\{String\(count\)\} \/>/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnCountMorph count=\{sessionCount\} \/>/u);
+	assert.match(HEADER_SOURCE, /<AgentSessionColumnCountMorph count=\{model\.count\} \/>/u);
+	assert.match(HEADER_SOURCE, /isSelecting \? model\.count :/u);
 	// The renderer sets its own `aria-label`; the wrapper's `aria-hidden` has to
-	// suppress it so the sibling `sr-only` stays the single spoken source.
-	assert.match(INDEX_SOURCE, /aria-hidden="true"[\s\S]{0,1500}?<TextMorphing/u);
+	// suppress it so the sibling `sr-only` stays the single spoken source in each presentation.
+	assert.match(INDEX_SOURCE, /aria-hidden="true"[\s\S]{0,1500}?<AgentSessionColumnCountMorph/u);
+	assert.match(HEADER_SOURCE, /aria-hidden="true"[\s\S]{0,300}?<AgentSessionColumnCountMorph/u);
 	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-number=""/u);
 	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-local-icon=""/u);
 	assert.match(COUNT_SWAP_SOURCE, /<MonitorIcon label="" size="small" \/>/u);
-	// `text` must be a string — `sessionCount` is a number.
-	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
+	// `text` must be a string — the shared renderer converts the numeric count.
+	assert.match(COUNT_SWAP_SOURCE, /text=\{String\(count\)\}/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /TextMorphing/u);
 });
 
@@ -881,7 +884,8 @@ test("the gutter-collapsed rail shows at most ten dots before it scrolls under t
 	assert.match(RAIL_COLUMN_SOURCE, /maxHeight: railViewportMaxHeight/u);
 	assert.match(RAIL_COLUMN_SOURCE, /w-full flex-1 flex-col/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /w-full flex-none flex-col/u);
-	assert.match(RAIL_COLUMN_SOURCE, /items\.map\(/u);
+	assert.match(RAIL_COLUMN_SOURCE, /const visibleItems = order\.visibleItems;/u);
+	assert.match(RAIL_COLUMN_SOURCE, /visibleItems\.map\(/u);
 });
 
 test("the embedded column rail does not cap the viewport to ten notches", () => {

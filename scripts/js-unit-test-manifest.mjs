@@ -15,6 +15,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
 		"components/blocks/jira-kanban/card-drop.test.js",
 		"components/blocks/agent-session-column/use-agent-session-arrivals.test.ts",
+		"components/blocks/agent-session/use-agent-session-status-departure.test.ts",
 		".agents/skills/vpk-html/scripts/evals.test.js",
 		"twg-install.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-chat-transport.test.js",
@@ -195,6 +196,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/visual/heatmap/data.test.js",
 		"components/visual/gooey/gooey.test.ts",
 		"components/visual/dropzone-effect/flow-model.test.ts",
+		"components/visual/peel/peel-model.test.ts",
 		"components/visual/thinking-orbs/thinking-orbs.test.js",
 		"components/website/demos/visual/ascii-control-model.test.js",
 		"components/projects/studio/lib/demo-agent-builder.test.js",
@@ -408,6 +410,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/visual/ink-wash/registry.test.js",
 		"components/visual/liquid-metal/registry.test.js",
 		"components/visual/dropzone-effect/registry.test.js",
+		"components/visual/peel/registry.test.js",
 		"components/visual/border-beam/registry.test.js",
 		"components/visual/heatmap/registry.test.js",
 		"components/visual/scrolling/registry.test.js",
