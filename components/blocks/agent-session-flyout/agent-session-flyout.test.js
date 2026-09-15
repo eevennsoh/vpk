@@ -106,10 +106,20 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(pullRequestSectionSource, /<h3[\s\S]*className="inline text-xs leading-4 font-normal text-text no-underline underline-offset-2 group-hover\/pull-request:underline"/u);
 	assert.match(pullRequestSectionSource, /group-hover\/pull-request:underline/u);
 	assert.match(pullRequestSectionSource, /\{pullRequestDescription\(session\)\}/u);
+	assert.match(pullRequestSectionSource, /import PeopleGroupIcon from "@atlaskit\/icon\/core\/people-group";/u);
+	assert.match(pullRequestSectionSource, /session\.pullRequestReviewerCount/u);
+	assert.match(pullRequestSectionSource, /session\.pullRequestUpdatedLabel/u);
+	assert.match(pullRequestSectionSource, />Reviewers: <\/span>/u);
+	assert.match(pullRequestSectionSource, />Updated <\/span>/u);
 	assert.match(cardSource, /import \{ AgentListAttributionAvatarGroup \}/u);
 	assert.match(
 		cardSource,
-		/session\.invokedBy \? \([\s\S]*<AgentListAttributionAvatarGroup[\s\S]*agent=\{agentIdentity\}[\s\S]*animate=\{animateAvatars\}[\s\S]*attributedBy=\{session\.invokedBy\}[\s\S]*sizePx=\{16\}/u,
+		/const invokedBy = session\.invokedBy === undefined[\s\S]*avatarSrc: session\.invokedBy\.src[\s\S]*\};/u,
+	);
+	assert.match(cardSource, /attributedBy=\{invokedBy\}/u);
+	assert.match(
+		cardSource,
+		/invokedBy \? \([\s\S]*<AgentListAttributionAvatarGroup[\s\S]*agent=\{agentIdentity\}[\s\S]*animate=\{animateAvatars\}[\s\S]*attributedBy=\{invokedBy\}[\s\S]*sizePx=\{16\}/u,
 	);
 	assert.doesNotMatch(pullRequestSectionSource, /SmartLink/u);
 	assert.match(source, /capturedSessionIds\?: ReadonlySet<string>;/u);

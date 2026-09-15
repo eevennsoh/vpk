@@ -1,4 +1,5 @@
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
+import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 
 import type { JiraSidebarSessionItem } from "./jira";
 
@@ -51,6 +52,24 @@ export function JiraSessionPullRequestSection({
 			<p className="text-xs leading-4 text-text-subtlest">
 				{pullRequestDescription(session)}
 			</p>
+			{session.pullRequestReviewerCount !== undefined || session.pullRequestUpdatedLabel !== undefined ? (
+				<div className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtlest">
+					{session.pullRequestReviewerCount !== undefined ? (
+						<>
+							<span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center text-icon-subtlest">
+								<PeopleGroupIcon color="currentColor" label="" size="small" />
+							</span>
+							<span><span className="sr-only">Reviewers: </span>{session.pullRequestReviewerCount}</span>
+						</>
+					) : null}
+					{session.pullRequestReviewerCount !== undefined && session.pullRequestUpdatedLabel !== undefined ? (
+						<span aria-hidden="true">·</span>
+					) : null}
+					{session.pullRequestUpdatedLabel !== undefined ? (
+						<span><span className="sr-only">Updated </span>{session.pullRequestUpdatedLabel}</span>
+					) : null}
+				</div>
+			) : null}
 		</section>
 	);
 }

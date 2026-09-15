@@ -168,6 +168,15 @@ export function JiraSessionUntrackedWorkCard({
 	const hasIssueKey = session.issueKey.length > 0;
 	const hasPullRequest = session.pullRequestNumber !== undefined;
 	const lifecycleState = JIRA_SESSION_FLYOUT_STATE[session.status];
+	// Jira's sidebar payload uses `src`; the shared agent-list attribution
+	// primitive uses `avatarSrc`. Normalize at this feature boundary so the
+	// human face is preserved alongside the agent mark in every flyout.
+	const invokedBy = session.invokedBy === undefined
+		? undefined
+		: {
+			avatarSrc: session.invokedBy.src,
+			name: session.invokedBy.name,
+		};
 	const agentIdentity = {
 		avatarSrc: session.agentAvatarSrc,
 		brandName: session.brandName,
@@ -223,11 +232,11 @@ export function JiraSessionUntrackedWorkCard({
 			}
 			meta={
 				<div className="flex h-4 min-w-0 items-center gap-1">
-					{session.invokedBy ? (
+					{invokedBy ? (
 						<AgentListAttributionAvatarGroup
 							agent={agentIdentity}
 							animate={animateAvatars}
-							attributedBy={session.invokedBy}
+							attributedBy={invokedBy}
 							sizePx={16}
 						/>
 					) : (

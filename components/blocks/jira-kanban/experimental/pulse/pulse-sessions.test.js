@@ -341,6 +341,20 @@ test("every session pull request maps to a complete Smart Link payload", async (
 		assert.equal(details.pullRequestNumber, pullRequest.number, where);
 		assert.equal(details.pullRequestTitle, pullRequest.title, where);
 		assert.equal(details.pullRequestDescription, pullRequest.description, where);
+		assert.equal(
+			details.pullRequestReviewerCount,
+			pullRequest.status === "merged" ? 3 : 2,
+			where,
+		);
+		assert.equal(
+			details.pullRequestUpdatedLabel,
+			pullRequest.status === "merged"
+				? "5h ago"
+				: pullRequest.status === "failed"
+					? "2h ago"
+					: "1h ago",
+			where,
+		);
 		assert.equal(details.files, pullRequest.files, where);
 		assert.equal(details.additions, pullRequest.additions, where);
 		assert.equal(details.deletions, pullRequest.deletions, where);
