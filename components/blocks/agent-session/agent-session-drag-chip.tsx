@@ -118,6 +118,7 @@ export function AgentSessionDragPill({
 						animate={isFusionSource}
 						composition="horizontal-group"
 						attributionOrder={attributionOrder}
+						sizePx={32}
 					/>
 				) : (
 					<AgentListIdentity agent={agent} sizePx={32} />
