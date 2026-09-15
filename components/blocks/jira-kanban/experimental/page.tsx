@@ -80,6 +80,7 @@ import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filte
 import {
 	isExperimentalJiraListContent,
 	useAgentSessionLooseWork,
+	useAgentSessionItems,
 } from "./hooks/use-page-content-model";
 import {
 	BOARD_FILTER_DEMO_NOW_ISO,
@@ -112,10 +113,8 @@ import {
 } from "./pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
 import {
-	filterPulseLooseWorkByMember,
 	isPulseLooseWorkOnViewerMachine,
 	toPulseSessionHandlers,
-	toPulseSessionItems,
 } from "./pulse/lib/pulse-sessions";
 import type { PulseAnswer } from "./pulse/types";
 import {
@@ -178,6 +177,7 @@ function ExperimentalJiraKanbanPageContent({
 	activeView = "board",
 	activeCardCode,
 	additionalAgentSessions,
+	agentSessionSeedOverrides,
 	agentSessionMembers = PULSE_TIMELINE.members,
 	agentActivityLayout,
 	cardGenerativeActionFooterActions,
@@ -208,6 +208,7 @@ function ExperimentalJiraKanbanPageContent({
 	isLooseWorkResumable = isPulseLooseWorkOnViewerMachine,
 	mode: controlledMode,
 	newAgentSessionIds,
+	stateChangeVersions,
 	onAgentSessionColumnInteractionChange,
 	onAgentSessionsReviewed,
 	onBoardAgentSessionCreate,
@@ -483,14 +484,9 @@ function ExperimentalJiraKanbanPageContent({
 		PULSE_TIMELINE.snapshots,
 		timelineLastViewedAt,
 	);
-	const agentSessionLooseWork = useAgentSessionLooseWork(additionalAgentSessions, pulseTimeline.looseWork);
-	const agentSessionItems = useMemo(
-		() => toPulseSessionItems(
-			filterPulseLooseWorkByMember(agentSessionLooseWork, agentSessionMemberId),
-			agentSessionMembers,
-			PULSE_TIMELINE.workItems,
-		),
-		[agentSessionLooseWork, agentSessionMemberId, agentSessionMembers],
+	const agentSessionLooseWork = useAgentSessionLooseWork(additionalAgentSessions, pulseTimeline.looseWork, agentSessionSeedOverrides);
+	const agentSessionItems = useAgentSessionItems(
+		agentSessionLooseWork, agentSessionMemberId, agentSessionMembers, PULSE_TIMELINE.workItems,
 	);
 	const displayedUntrackedAgentSessionItems = useAgentFilterSessions({
 		agentFilterId,
@@ -587,6 +583,7 @@ function ExperimentalJiraKanbanPageContent({
 		items: displayedUntrackedAgentSessionItems,
 		multiSelect: agentSessionMultiSelect,
 		newItemIds: newAgentSessionIds,
+		stateChangeVersions,
 		onCollapsedChange: handleAgentSessionColumnCollapsedChange,
 		onInteractionChange: onAgentSessionColumnInteractionChange,
 		onItemHover: handleUntrackedItemHover,
