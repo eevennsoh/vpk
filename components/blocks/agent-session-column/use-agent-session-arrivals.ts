@@ -55,6 +55,9 @@ export function advanceAgentSessionArrivals(previous: ArrivalState | undefined, 
 		}
 		seen.add(id);
 	}
+	// A sync received behind a filter is still an arrival in this column.
+	// Consume it without a beat so clearing that filter only reveals the row.
+	for (const id of input.newItemIds ?? []) seen.add(id);
 	return { input, seen, arriving, seenStateChangeVersions, stateChanged };
 }
 

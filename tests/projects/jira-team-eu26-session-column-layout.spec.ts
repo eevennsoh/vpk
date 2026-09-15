@@ -105,7 +105,6 @@ async function openHeightComparisonBoard(page: Page): Promise<void> {
 for (const collapsed of [true, false]) {
 	test(`status revisions fade at their old slot and return at the top in ${collapsed ? "collapsed" : "expanded"} mode`, async ({ page }) => {
 		await page.setViewportSize({ width: 1440, height: 900 });
-		await page.addInitScript(() => { Math.random = () => 0.999; });
 		if (collapsed) {
 			await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
 			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
@@ -118,7 +117,7 @@ for (const collapsed of [true, false]) {
 		await expect(row).toBeAttached({ timeout: 10_000 });
 		if (!collapsed) await expect(row.locator(".shimmer")).toBeVisible();
 		const trace = await page.evaluateHandle(({ id, collapsed }) => {
-			const samples: { leaving: boolean; index: number; opacity: number; translateY: number; glow: boolean; accent: string }[] = [];
+			const samples: { leaving: boolean; index: number; opacity: number; translateY: number; glow: boolean; accent: string; state: string | null }[] = [];
 			let stopped = false;
 			const sample = () => {
 				const element = document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
@@ -134,6 +133,7 @@ for (const collapsed of [true, false]) {
 						translateY: transform?.m42 ?? 0,
 						glow: glow !== null,
 						accent: getComputedStyle(host).getPropertyValue("--card-glow-tile-accent").trim(),
+						state: host.querySelector("[data-agent-session-lifecycle-current]")?.getAttribute("data-agent-session-lifecycle-current") ?? null,
 					});
 				}
 				if (!stopped) requestAnimationFrame(sample);
@@ -156,7 +156,6 @@ for (const collapsed of [true, false]) {
 			return host?.parentElement?.firstElementChild === host;
 		})).toBe(true);
 		if (!collapsed) {
-			await expect(row.locator("[data-agent-session-status-glow]")).toBeAttached();
 			await expect(row.locator("[data-agent-session-status-glow]")).toHaveCount(0, { timeout: 5_000 });
 			await expect(row.locator(".shimmer")).toHaveCount(0);
 		}
@@ -168,13 +167,12 @@ for (const collapsed of [true, false]) {
 		expect(revision.some((sample) => sample.leaving && sample.opacity < 0.5)).toBe(true);
 		expect(revision.some((sample) => !sample.leaving && sample.index === 0 && sample.opacity > 0.8)).toBe(true);
 		expect(revision.every((sample) => Math.abs(sample.translateY) <= 16.1)).toBe(true);
-		if (!collapsed) expect(revision.some((sample) => sample.glow && sample.accent !== "")).toBe(true);
+		if (!collapsed) expect(revision.some((sample) => sample.state === "complete" && sample.glow && sample.accent !== "")).toBe(true);
 	});
 }
 
 test("reduced motion keeps Working titles static and applies status changes without glow", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.addInitScript(() => { Math.random = () => 0.999; });
 	await openBoard(page);
 	await page.getByRole("heading", { name: "Jira Design" }).click();
 	const row = page.getByTestId("agent-session-row-lw-sync-webhook-gap");
@@ -817,7 +815,11 @@ test("wheel input over a session host tooltip scrolls the session column", async
 		hasText: "Local session",
 	});
 	await expect(tooltip).toBeVisible();
-	await tooltip.hover();
+	await expect.poll(() => tooltip.evaluate((element) => Number(getComputedStyle(element).opacity))).toBe(1);
+	const tooltipBox = await tooltip.boundingBox();
+	expect(tooltipBox).not.toBeNull();
+	if (!tooltipBox) return;
+	await page.mouse.move(tooltipBox.x + tooltipBox.width / 2, tooltipBox.y + tooltipBox.height / 2);
 	await page.mouse.wheel(0, 450);
 
 	await expect.poll(() => scrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(200);

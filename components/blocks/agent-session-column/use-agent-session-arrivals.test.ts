@@ -40,6 +40,19 @@ test("filtering and unread changes do not erase first-appearance history", () =>
 	assert.equal(advanceAgentSessionArrivals(hidden, initialInput).arriving.size, 0);
 });
 
+test("a sync arrival hidden by a filter is consumed before the filter is cleared", () => {
+	const filtered = advanceAgentSessionArrivals(undefined, { ...initialInput, items: [], newItemIds: new Set() });
+	const syncedWhileHidden = advanceAgentSessionArrivals(filtered, { ...initialInput, items: [] });
+	const revealed = advanceAgentSessionArrivals(syncedWhileHidden, initialInput);
+	assert.equal(revealed.arriving.size, 0, "clearing a filter must not animate a past sync arrival");
+	const next = advanceAgentSessionArrivals(revealed, {
+		...initialInput,
+		items: [{ id: "second" }, ...initialInput.items],
+		newItemIds: new Set(["first", "second"]),
+	});
+	assert.deepEqual([...next.arriving], ["second"], "the next actual visible sync must still enter");
+});
+
 test("reduced motion consumes the entrance without animation", () => {
 	const reduced = advanceAgentSessionArrivals(undefined, { ...initialInput, reduceMotion: true });
 	assert.equal(reduced.arriving.size, 0);
