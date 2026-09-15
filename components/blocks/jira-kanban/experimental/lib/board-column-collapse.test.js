@@ -14,6 +14,9 @@ const IN_FLOW_SOURCE = readFileSync(
 const COLLAPSED_COLUMN_SOURCE = readFileSync(
 	join(__dirname, "../components/collapsed-board-column.tsx"),
 	"utf8",
+) + readFileSync(
+	join(__dirname, "../../../agent-session-column/collapsed-column-label.tsx"),
+	"utf8",
 );
 const SESSION_COLUMN_PLACEMENT_SOURCE = readFileSync(
 	join(__dirname, "../components/session-column-placement.tsx"),

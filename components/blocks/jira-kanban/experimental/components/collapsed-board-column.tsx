@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
 
+import { CollapsedColumnLabel } from "@/components/blocks/agent-session-column/collapsed-column-label";
 import type { AgentSessionColumnFrame } from "@/components/blocks/agent-session-column/agent-session-column-frame";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -116,63 +117,12 @@ export function CollapsedBoardColumn({
 			</div>
 		</div>
 	);
-	const titleLabel = (
-		<span className="min-h-0 truncate text-xs font-medium leading-4 text-text-subtle [writing-mode:vertical-rl]">
-			{title}
-		</span>
+	return (
+		<CollapsedColumnLabel
+			appearance={chrome}
+			countRow={countRow}
+			headerFrame={headerFrame}
+			title={title}
+		/>
 	);
-	const pillStyle = {
-		borderRadius: chrome.pillRadius,
-		paddingBlock: chrome.pillPaddingBlock,
-	};
-
-	switch (headerFrame) {
-		case "caption":
-			return (
-				<div className="flex w-full flex-col">
-					<div
-						className="w-full"
-						style={{ paddingBottom: chrome.captionPaddingBottom }}
-					>
-						{countRow}
-					</div>
-					<div
-						className={cn(
-							"flex w-full flex-col items-center justify-center",
-							chrome.pillClassName,
-						)}
-						style={pillStyle}
-					>
-						{titleLabel}
-					</div>
-				</div>
-			);
-		case "enclosed":
-			return (
-				<div className="flex w-full flex-col">
-					<div
-						className={cn(
-							"flex w-full flex-col items-center",
-							chrome.pillClassName,
-						)}
-						style={{
-							borderRadius: chrome.pillRadius,
-							paddingTop: chrome.countPaddingTop,
-						}}
-					>
-						{countRow}
-						<div
-							className="flex w-full flex-col items-center justify-center"
-							style={{ paddingBlock: chrome.pillPaddingBlock }}
-						>
-							{titleLabel}
-						</div>
-					</div>
-				</div>
-			);
-		default: {
-			const exhaustive: never = headerFrame;
-			return exhaustive;
-		}
-	}
 }
