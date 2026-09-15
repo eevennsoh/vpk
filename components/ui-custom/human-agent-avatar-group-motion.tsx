@@ -93,6 +93,7 @@ export function HumanAgentAvatarGroupMotion({
 	label,
 	animate = true,
 	composition,
+	onAnimationComplete,
 	...props
 }: HumanAgentAvatarMotionProps) {
 	const id = useId();
@@ -104,6 +105,7 @@ export function HumanAgentAvatarGroupMotion({
 		config,
 		active && animate,
 		composition === undefined ? undefined : composition === "horizontal-group",
+		onAnimationComplete,
 	);
 	const grouped = animate ? cycled : composition === "horizontal-group";
 	const transition: Transition = {

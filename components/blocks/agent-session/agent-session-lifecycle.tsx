@@ -32,14 +32,17 @@ const LIFECYCLE_LABELS = {
 	complete: "Finished",
 } as const satisfies Record<AgentSessionItem["state"], string>;
 
-function IndicatorGlyph({ state }: Readonly<{ state: AgentSessionItem["state"] }>) {
+function IndicatorGlyph({
+	compact = false,
+	state,
+}: Readonly<{ compact?: boolean; state: AgentSessionItem["state"] }>) {
 	switch (state) {
 		case "running":
-			// Same 24×24 slot + Spinner `xl` as `JiraIssueActiveAgentStatusIcon`.
-			// IconTile `[&_svg]:size-4!` would shrink the orb to a speck.
+			// Pulse and rotation extend the orb beyond its still-ring bounds.
+			// A 16.75px SVG box caps the short row's animated orbit at 12px.
 			return (
 				<Spinner
-					className="group-aria-pressed/button:text-icon-selected!"
+					className={cn("group-aria-pressed/button:text-icon-selected!", compact && "size-[16.75px]")}
 					label=""
 					pulse
 					size="xl"
@@ -52,7 +55,7 @@ function IndicatorGlyph({ state }: Readonly<{ state: AgentSessionItem["state"] }
 					aria-hidden="true"
 					className="text-icon-information"
 					icon={<QuestionCircleFilledIcon color="currentColor" label="" size="small" />}
-					iconSize="medium"
+					iconSize={compact ? "small" : "medium"}
 					label=""
 					size="small"
 					title="Needs input"
@@ -65,7 +68,7 @@ function IndicatorGlyph({ state }: Readonly<{ state: AgentSessionItem["state"] }
 					aria-hidden="true"
 					className="text-icon-warning"
 					icon={<StatusWarningIcon color="currentColor" label="" size="small" />}
-					iconSize="medium"
+					iconSize={compact ? "small" : "medium"}
 					label=""
 					size="small"
 					title="Needs attention"
@@ -78,7 +81,7 @@ function IndicatorGlyph({ state }: Readonly<{ state: AgentSessionItem["state"] }
 					aria-hidden="true"
 					className="text-icon-success"
 					icon={<StatusSuccessIcon color="currentColor" label="" size="small" />}
-					iconSize="medium"
+					iconSize={compact ? "small" : "medium"}
 					label=""
 					size="small"
 					title="Finished"
@@ -134,7 +137,7 @@ export function AgentSessionShortLifecycleIcon({
 					style={playMotion ? { willChange: "opacity, transform" } : undefined}
 					transition={playMotion ? INDICATOR_ENTER : { duration: 0 }}
 				>
-					<IndicatorGlyph state={state} />
+					<IndicatorGlyph compact state={state} />
 				</motion.span>
 			</AnimatePresence>
 		</span>

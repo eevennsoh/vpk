@@ -1,7 +1,7 @@
 "use client";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { HumanAgentAvatar, type HumanAgentAvatarOrder } from "@/components/ui-custom/human-agent-avatar";
+import { HumanAgentAvatar, type HumanAgentAvatarOrder, type HumanAgentAvatarProps } from "@/components/ui-custom/human-agent-avatar";
 import {
 	Avatar,
 	AvatarFallback,
@@ -93,9 +93,12 @@ export function AgentListAttributionAvatarGroup({
  */
 export function AgentListIdentity({
 	agent,
+	animate,
 	attributedBy,
 	attributionOrder = "human-first",
 	className,
+	motion,
+	onAnimationComplete,
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
@@ -103,7 +106,7 @@ export function AgentListIdentity({
 	attributionOrder?: AgentListAttributionOrder;
 	className?: string;
 	sizePx: number;
-}>) {
+} & Pick<HumanAgentAvatarProps, "animate" | "motion" | "onAnimationComplete">>) {
 	if (attributedBy !== undefined && agent.kind !== "person") {
 		return (
 			<HumanAgentAvatar
@@ -112,6 +115,9 @@ export function AgentListIdentity({
 				attributionOrder={attributionOrder}
 				className={className}
 				sizePx={sizePx}
+				animate={animate}
+				motion={motion}
+				onAnimationComplete={onAnimationComplete}
 			/>
 		);
 	}

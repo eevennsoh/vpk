@@ -115,9 +115,9 @@ for (const collapsed of [true, false]) {
 		const id = `agent-session-${collapsed ? "notch" : "row"}-lw-sync-webhook-gap`;
 		const row = page.getByTestId(id);
 		await expect(row).toBeAttached({ timeout: 10_000 });
-		if (!collapsed) await expect(row.locator(".shimmer")).toBeVisible();
+		if (!collapsed) await expect(row.locator(".shimmer")).toHaveCount(0);
 		const trace = await page.evaluateHandle(({ id, collapsed }) => {
-			const samples: { leaving: boolean; index: number; opacity: number; translateY: number; glow: boolean; accent: string; state: string | null }[] = [];
+			const samples: { leaving: boolean; index: number; opacity: number; translateY: number; glow: boolean; accent: string; state: string | null; shownState: string | null; rotating: boolean; humanTransform: string | null; avatarWidth: number }[] = [];
 			let stopped = false;
 			const sample = () => {
 				const element = document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
@@ -126,6 +126,8 @@ for (const collapsed of [true, false]) {
 					const style = getComputedStyle(host);
 					const transform = style.transform === "none" ? null : new DOMMatrixReadOnly(style.transform);
 					const glow = host.querySelector<HTMLElement>("[data-agent-session-status-glow]");
+					const avatar = host.querySelector<HTMLElement>('[data-slot="human-agent-avatar"]');
+					const human = avatar?.querySelector<HTMLElement>('[data-avatar-role="human"]');
 					samples.push({
 						leaving: host.hasAttribute(collapsed ? "data-agent-session-status-exit" : "data-departing"),
 						index: Array.from(host.parentElement?.children ?? []).indexOf(host),
@@ -134,6 +136,10 @@ for (const collapsed of [true, false]) {
 						glow: glow !== null,
 						accent: getComputedStyle(host).getPropertyValue("--card-glow-tile-accent").trim(),
 						state: host.querySelector("[data-agent-session-lifecycle-current]")?.getAttribute("data-agent-session-lifecycle-current") ?? null,
+						shownState: host.querySelector("[data-agent-session-lifecycle-shown]")?.getAttribute("data-agent-session-lifecycle-shown") ?? null,
+						rotating: avatar?.getAttribute("data-animated") === "true",
+						humanTransform: human ? getComputedStyle(human).transform : null,
+						avatarWidth: avatar?.getBoundingClientRect().width ?? 0,
 					});
 				}
 				if (!stopped) requestAnimationFrame(sample);
@@ -156,6 +162,8 @@ for (const collapsed of [true, false]) {
 			return host?.parentElement?.firstElementChild === host;
 		})).toBe(true);
 		if (!collapsed) {
+			await expect(row.locator("[data-agent-session-lifecycle-shown]")).toHaveAttribute("data-agent-session-lifecycle-shown", "complete");
+			await expect(row.locator("[data-agent-session-lifecycle-shown] > span").last()).toHaveCSS("will-change", "auto");
 			await expect(row.locator("[data-agent-session-status-glow]")).toHaveCount(0, { timeout: 5_000 });
 			await expect(row.locator(".shimmer")).toHaveCount(0);
 		}
@@ -167,7 +175,19 @@ for (const collapsed of [true, false]) {
 		expect(revision.some((sample) => sample.leaving && sample.opacity < 0.5)).toBe(true);
 		expect(revision.some((sample) => !sample.leaving && sample.index === 0 && sample.opacity > 0.8)).toBe(true);
 		expect(revision.every((sample) => Math.abs(sample.translateY) <= 16.1)).toBe(true);
-		if (!collapsed) expect(revision.some((sample) => sample.state === "complete" && sample.glow && sample.accent !== "")).toBe(true);
+		if (!collapsed) {
+			const rotation = revision.filter((sample) => sample.rotating);
+			expect(rotation.length).toBeGreaterThan(3);
+			expect(rotation.every((sample) => !sample.leaving && sample.index === 0 && sample.opacity > 0.99)).toBe(true);
+			expect(rotation.every((sample) => sample.state === "complete" && sample.shownState === "needs-input" && !sample.glow)).toBe(true);
+			expect(new Set(rotation.map((sample) => sample.humanTransform)).size).toBeGreaterThan(3);
+			expect(rotation.every((sample) => Math.abs(sample.avatarWidth - 32) < 0.1)).toBe(true);
+			const statusSwap = revision.findIndex((sample) => sample.shownState === "complete");
+			const rotationStart = revision.findIndex((sample) => sample.rotating);
+			expect(statusSwap).toBeGreaterThan(rotationStart);
+			expect(revision.slice(statusSwap).every((sample) => !sample.rotating)).toBe(true);
+			expect(revision.every((sample) => !sample.glow)).toBe(true);
+		}
 	});
 }
 
@@ -180,6 +200,7 @@ test("reduced motion keeps Working titles static and applies status changes with
 	await expect(row.locator(".shimmer")).toHaveCount(0);
 	await expect(row.locator("[data-agent-session-lifecycle-current]")).toHaveAttribute("data-agent-session-lifecycle-current", "needs-input", { timeout: 15_000 });
 	await expect(row.locator("[data-agent-session-status-glow]")).toHaveCount(0);
+	await expect(row.locator('[data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "false");
 	await expect(page.locator("[data-departing]")).toHaveCount(0);
 });
 

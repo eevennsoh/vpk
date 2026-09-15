@@ -25,6 +25,7 @@ export type HumanAgentAvatarMotionProps = Readonly<{
 	options?: Partial<HumanAgentAvatarMotionOptions>;
 	animate?: boolean;
 	composition?: "compact" | "horizontal-group";
+	onAnimationComplete?: () => void;
 }>;
 
 export function HumanAgentAvatarMotion(props: HumanAgentAvatarMotionProps) {
@@ -46,6 +47,7 @@ function HumanAgentAvatarOrbitMotion({
 	className,
 	label,
 	options,
+	onAnimationComplete,
 }: HumanAgentAvatarMotionProps) {
 	const ref = useRef<HTMLSpanElement>(null);
 	const inView = useInView(ref);
@@ -113,6 +115,7 @@ function HumanAgentAvatarOrbitMotion({
 				className="absolute left-0 top-0 z-[1] origin-top-left"
 				data-avatar-role="human"
 				initial={false}
+				onAnimationComplete={active && motionConfig.config.repeat !== "infinite" ? onAnimationComplete : undefined}
 				style={{
 					transform: humanOrbit.initial,
 					willChange: active ? "transform" : undefined,
