@@ -185,7 +185,7 @@ test("circle unread rest uses icon subtle color", () => {
 	// that same total visible.
 	assert.match(INDEX_SOURCE, /hideGutterCount = isGutterCollapsed/u);
 	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
-	assert.match(INDEX_SOURCE, /\$\{sessionCount\} sessions, \$\{newCount\} newly synced/u);
+	assert.match(INDEX_SOURCE, /\$\{sessionCount\} \$\{allLocalSessions \? "local " : ""\}sessions, \$\{newCount\} newly synced/u);
 	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);
 });
 

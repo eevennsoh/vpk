@@ -13,7 +13,7 @@ import { useReducedMotion, type Transition } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 
-import { isCodingAgentListItem } from "@/components/blocks/agent-list";
+import { isCodingAgentListItem, isLocalAgentListItem } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ITEMS, AgentSession } from "@/components/blocks/agent-session";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -32,6 +32,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { AgentSessionColumnFilterMenu } from "./agent-session-column-filter-menu";
+import { AgentSessionColumnCountSwap, useRisingSessionCount } from "./agent-session-column-count-swap";
 import { AgentSessionColumnHeader } from "./agent-session-column-header";
 import { AgentSessionColumnEndState } from "./agent-session-column-end-state";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
@@ -275,11 +276,11 @@ function resolveCollapsedHeaderStyle(
 }
 
 /**
- * Hover/focus swap on the collapsed header slot: the count at rest, the expand
- * control once the pointer or keyboard arrives. Both sit in the same 24px row
- * the expanded collapse control uses, so the number does not move. Gutter rest
- * keeps this pair hidden; `focus-visible` still unfades the control so keyboard
- * users can expand without a pointer.
+ * Hover/focus swap on the collapsed header slot: the count or local monitor at
+ * rest, the expand control once the pointer or keyboard arrives. Both sit in
+ * the same 24px row the expanded collapse control uses, so the status does not
+ * move. Gutter rest keeps this pair hidden; `focus-visible` still unfades the
+ * control so keyboard users can expand without a pointer.
  */
 const HEADER_COUNT_AT_REST = cn(
 	"pointer-events-none transition-opacity duration-normal ease-out-practical",
@@ -550,6 +551,9 @@ export function AgentSessionColumn({
 	const sessionCount = hasActiveFilters
 		? displayedItems.length
 		: (view === "hidden" ? hiddenItems.length : untrackedCount);
+	const risingCount = useRisingSessionCount(sessionCount);
+	const allLocalSessions = displayedItems.length > 0 && viewItems.every(isLocalAgentListItem);
+	const showRisingCount = !allLocalSessions || risingCount;
 	// Coding sessions are always activatable; person rows only when `canViewItem`
 	// allows it. Selection, notches, and board spotlight share this gate.
 	const canActivateItem = useCallback((item: AgentSessionItem) => (
@@ -710,14 +714,14 @@ export function AgentSessionColumn({
 		: elevatePlane
 			? AGENT_SESSION_UNDERLAP_SHADOW_ENTER
 			: AGENT_SESSION_UNDERLAP_SHADOW_EXIT;
-	// Gutter rest hides the digits and the expand icon so the rail can sit
+	// Gutter rest hides the count/monitor and the expand icon so the rail can sit
 	// in the page inset. Hover preview switches to column presentation, so
 	// the same 24px slot shows the count and the expand control again.
 	// Screen-reader copy still names the pool count.
 	const hideGutterCount = isGutterCollapsed;
 	const collapsedCountLabel = newCount > 0
-		? `${sessionCount} sessions, ${newCount} newly synced`
-		: `${sessionCount} sessions`;
+		? `${sessionCount} ${allLocalSessions ? "local " : ""}sessions, ${newCount} newly synced`
+		: `${sessionCount} ${allLocalSessions ? "local " : ""}sessions`;
 	const collapsedControlClassName = isRepositioning
 		? COLLAPSED_REPOSITION_CHIP_CLASS_NAME
 		: isGutterCollapsed ? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL;
@@ -772,11 +776,11 @@ export function AgentSessionColumn({
 						hideGutterCount || isRepositioning ? "opacity-0" : "opacity-100",
 					)}
 					data-agent-session-column-count=""
+					data-agent-session-column-counter-state={showRisingCount ? "count" : "local"}
 				>
-					<TextMorphing
-						config={HEAD_COUNT_MORPH}
-						text={String(sessionCount)}
-					/>
+					<AgentSessionColumnCountSwap reducedMotion={shouldReduceMotion} rising={showRisingCount}>
+							<TextMorphing config={HEAD_COUNT_MORPH} text={String(sessionCount)} />
+					</AgentSessionColumnCountSwap>
 				</span>
 				<span className="sr-only">{collapsedCountLabel}</span>
 			</div>
