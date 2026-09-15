@@ -33,6 +33,15 @@ export interface AgentSessionColumnProps extends Omit<
 	/** Copy shown in place of the list when there are no sessions. */
 	emptyLabel?: string;
 	/**
+	 * Drive the rows' accent stroke from one column-wide pointer plane, so it is
+	 * already tracing as the cursor approaches rather than switching on at each
+	 * row's edge. Defaults on.
+	 *
+	 * Only meaningful with `glowStroke` or `glowBloom` on — the plane exists to
+	 * start them early. Off leaves each row reacting on its own hover.
+	 */
+	glowReach?: boolean;
+	/**
 	 * Whether the column starts collapsed into its compact marker rail. The column owns
 	 * the state from there — the hover-revealed shrink/grow control toggles it.
 	 *

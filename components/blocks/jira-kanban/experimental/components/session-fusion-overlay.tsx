@@ -13,7 +13,7 @@ import {
 import {
 	resolveAgentBrandTint,
 	resolveAgentBrandTintVariable,
-} from "../lib/agent-brand-tint";
+} from "@/components/blocks/agent-session/agent-brand-tint";
 import type { BoardAgentSessionAttachProximity } from "../lib/board-agent-session-drag";
 import { toSessionFusionTarget } from "../lib/session-fusion-overlay-state";
 

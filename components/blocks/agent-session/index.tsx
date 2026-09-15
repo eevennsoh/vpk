@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS } from "./data";
 import { AgentSessionCard } from "./agent-session-card";
+import { resolveAgentSessionGlow } from "./agent-session-glow";
 import { useAgentSessionScrollPreview } from "./use-agent-session-scroll-preview";
 import {
 	AgentSessionAttachedCard,
@@ -90,6 +91,8 @@ export function AgentSession({
 	getResumeCommand,
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
+	glowBloom = false,
+	glowStroke = false,
 	highlightedItemId,
 	issueKey,
 	isResumable,
@@ -121,6 +124,9 @@ export function AgentSession({
 }: Readonly<AgentSessionProps>) {
 	const isAttached = variant === "medium-attached";
 	const isLongDensity = variant === "large" && density === "long";
+	// Which accent layers this list paints, and the tuning vars that go with
+	// them. One declaration for the list rather than one per card.
+	const cardGlow = resolveAgentSessionGlow({ bloom: glowBloom, stroke: glowStroke, variant });
 	const showUntrackedWorkFlyout = !isAttached && !isLongDensity;
 	const items = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
 	const isSelectionControlled = selectedItemIdProp !== undefined;
@@ -200,7 +206,7 @@ export function AgentSession({
 				// fuse. Detached compact rows sit 2px apart (`space.025`).
 				style={variant === "medium-detached"
 					? { ...style, gap: token("space.025") }
-					: style}
+					: { ...cardGlow.style, ...style }}
 			>
 				{isAttached ? (
 					<li data-testid="agent-session-attached-group">
@@ -240,6 +246,8 @@ export function AgentSession({
 								flyoutHandle={isLongDensity ? undefined : flyoutHandle}
 								flyoutSession={flyoutSession}
 								getResumeCommand={getResumeCommand}
+							glowBloom={cardGlow.bloom}
+							glowStroke={cardGlow.stroke}
 								isArriving={beatItemIds?.has(item.id) ?? false}
 								isFlyoutActive={item.id === scrollPreview.activeItemId}
 								isHighlighted={item.id === highlightedItemId}

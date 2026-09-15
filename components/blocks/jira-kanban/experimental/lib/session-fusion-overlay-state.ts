@@ -27,7 +27,7 @@ import {
 	AGENT_BRAND_TINT_FALLBACK,
 	resolveAgentBrandTintColor,
 	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-} from "./agent-brand-tint.ts";
+} from "../../../agent-session/agent-brand-tint.ts";
 import {
 	sessionTransferTintSeed,
 	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.

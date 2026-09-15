@@ -42,6 +42,9 @@ export const DESIGN_VARIANTS = [
 	{ id: "advancedTimeline", label: "Advanced timeline" },
 	{ id: "agentSessionColumnResizing", label: "Dragging" },
 	{ id: "manualLink", label: "Manual link" },
+	{ id: "sessionStroke", label: "Stroke tracing" },
+	{ id: "sessionBloom", label: "Card glow" },
+	{ id: "sessionProximity", label: "Proximity sensor" },
 ] as const;
 
 export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
@@ -74,6 +77,16 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  *
  * Manual link starts off: Team EU hides the Link work item session-menu row
  * until the user explicitly enables it.
+ *
+ * All three session-chrome variants start on, so the shipped behaviour is what
+ * you see unless you deliberately turn a layer off. They are separate because
+ * they are separate layers, and each is worth judging alone:
+ *
+ * - Stroke tracing — the accent border traced along the card edge.
+ * - Card glow — the soft accent wash behind the row.
+ * - Proximity sensor — the column-wide pointer plane that starts the other two
+ *   before the cursor reaches a row. With both layers off it drives nothing, so
+ *   it is the only one whose effect depends on another.
  */
 const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	advancedTimeline: false,
@@ -81,6 +94,9 @@ const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	kanbanBackground: false,
 	manualLink: false,
 	panel: false,
+	sessionBloom: true,
+	sessionProximity: true,
+	sessionStroke: true,
 	"simple-views": true,
 	simpleKanban: true,
 });
