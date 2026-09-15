@@ -53,7 +53,7 @@ export interface AgentAssignmentAgent extends AgentSelectorAgent {
 	 */
 	statusKind?: AgentAssignmentStatusKind;
 	statusLabel: string;
-	/** Human who invoked this assigned session, shown in the Default picker byline combo. */
+	/** Human who invoked this assigned session, shown for owner rows in the Default presenters. */
 	invokedBy?: AgentListInvoker;
 	/** Where the assigned session runs. Defaults to cloud in the session mapper. */
 	host?: AgentListHost;

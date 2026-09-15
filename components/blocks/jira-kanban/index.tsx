@@ -25,6 +25,7 @@ import {
 	mapSkillToMentionItem,
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import { AgentSelector } from "@/components/blocks/agent-selector";
+import type { JiraKanbanCardDropTarget } from "./card-drop";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
@@ -75,6 +76,8 @@ export interface JiraKanbanAssigneeData {
 }
 
 export interface JiraKanbanCardData {
+	/** Workflow status when a board column groups several statuses. */
+	status?: string;
 	title: string;
 	code: string;
 	tags: JiraKanbanCardTag[];
@@ -95,6 +98,8 @@ export interface JiraKanbanCardData {
 }
 
 export interface JiraKanbanColumnData {
+	/** Workflow destinations grouped into this column. Defaults to its title. */
+	statuses?: readonly string[];
 	title: string;
 	count: number;
 	cards: JiraKanbanCardData[];
@@ -172,7 +177,7 @@ export interface JiraKanbanProps {
 		modifiers: JiraKanbanCardSelectModifiers,
 	) => void;
 	onCardDragStart?: (card: JiraKanbanCardData, sourceColumnTitle: string) => void;
-	onCardDrop?: (targetColumnTitle: string) => void;
+	onCardDrop?: (targetColumnTitle: string, target?: JiraKanbanCardDropTarget) => void;
 	onCardDragEnd?: () => void;
 	onCardGenerativeActionSubmit?: (
 		request: JiraIssueGenerativeActionRequest,

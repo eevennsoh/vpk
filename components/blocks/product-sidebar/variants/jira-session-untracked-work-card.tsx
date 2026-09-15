@@ -17,6 +17,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { Shimmer } from "@/components/ui-custom/shimmer";
 import { cn } from "@/lib/utils";
 
 import type { JiraSidebarSessionItem } from "./jira";
@@ -245,9 +246,20 @@ export function JiraSessionUntrackedWorkCard({
 					)}
 					<p className="min-w-0 truncate text-xs leading-4 text-text-subtlest">{session.agentName}</p>
 					<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">·</span>
-					<p className="shrink-0 text-xs leading-4 text-text-subtlest">
-						{JIRA_SESSION_FLYOUT_STATE_LABEL[lifecycleState]}
-					</p>
+					{lifecycleState === "working" ? (
+						<Shimmer
+							as="span"
+							className="shrink-0 text-xs leading-4 text-text-subtlest"
+							duration={1.4}
+							spread={2}
+						>
+							{JIRA_SESSION_FLYOUT_STATE_LABEL[lifecycleState]}
+						</Shimmer>
+					) : (
+						<p className="shrink-0 text-xs leading-4 text-text-subtlest">
+							{JIRA_SESSION_FLYOUT_STATE_LABEL[lifecycleState]}
+						</p>
+					)}
 					<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">·</span>
 					<p className="shrink-0 text-xs leading-4 text-text-subtlest">
 						{JIRA_SESSION_UPDATED_LABEL[session.status]}

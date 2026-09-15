@@ -619,8 +619,9 @@ test("Jira issue drag pill floats on overlay elevation, not a dead utility", () 
 		dragChipSource,
 		/boxShadow: token\("elevation\.shadow\.overlay"\),/u,
 	);
-	// The Figma pill is the agent hexagon with the human tucked in its corner.
-	assert.match(dragChipSource, /<AgentListIdentity agent=\{agent\} attributedBy=\{attributedBy\} sizePx=\{32\} \/>/u);
+	// The shared pill forwards its caller-selected attribution order; Jira-owned
+	// work keeps the human-first default while the untracked cohort opts out.
+	assert.match(dragChipSource, /<AgentListIdentity[\s\S]*agent=\{agent\}[\s\S]*attributedBy=\{attributedBy\}[\s\S]*attributionOrder=\{attributionOrder\}[\s\S]*sizePx=\{32\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /attributedBy=\{featuredActivity\?\.invokedBy\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /elevated/u);
 });

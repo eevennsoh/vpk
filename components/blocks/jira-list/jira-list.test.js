@@ -286,8 +286,15 @@ test("JiraList agent sessions reuse AgentAssignment instead of a custom menu", (
 	assert.doesNotMatch(agentSessionsRendererSource, /aria-label="Agent assignment"/u);
 	assert.doesNotMatch(agentSessionsRendererSource, />None</u);
 	assert.doesNotMatch(agentSessionsRendererSource, /AgentSessionTag|OverflowMenu|MAX_AGENT_AVATARS/u);
-	assert.match(TYPES_SOURCE, /export interface JiraListAssignedAgent/u);
+	assert.match(
+		TYPES_SOURCE,
+		/export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "invokedBy" \| "role">/u,
+	);
 	assert.match(TYPES_SOURCE, /agentSessions\?: readonly JiraListAssignedAgent\[\];/u);
+	assert.match(CELLS_SOURCE, /\.\.\.\(assigned\.invokedBy \? \{ invokedBy: assigned\.invokedBy \} : \{\}\)/u);
+	assert.match(CELLS_SOURCE, /\.\.\.\(assigned\.role \? \{ role: assigned\.role \} : \{\}\)/u);
+	assert.match(CELLS_SOURCE, /\.\.\.\(agent\.invokedBy \? \{ invokedBy: agent\.invokedBy \} : \{\}\)/u);
+	assert.match(CELLS_SOURCE, /\.\.\.\(agent\.role \? \{ role: agent\.role \} : \{\}\)/u);
 	assert.doesNotMatch(TYPES_SOURCE, /agentSessions\?: readonly string\[\];/u);
 });
 

@@ -12,7 +12,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const FOOTER = readFileSync(join(__dirname, "create-work-item-drop-zone.tsx"), "utf8");
-const BOARD = readFileSync(join(__dirname, "../experimental-jira-kanban.tsx"), "utf8");
+const BOARD = readFileSync(join(__dirname, "board-column.tsx"), "utf8");
 const CARD_LIST = readFileSync(join(__dirname, "board-column-card-list.tsx"), "utf8");
 const DROPZONE = readFileSync(
 	join(__dirname, "../../../jira-dropzone/jira-dropzone.tsx"),

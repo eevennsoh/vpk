@@ -13,6 +13,18 @@ import { cn } from "@/lib/utils";
 import { actorInitials } from "./agent-list-actor";
 import type { AgentListAgent, AgentListInvoker } from "./agent-list-types";
 
+export type AgentListAttributionOrder = "agent-first" | "human-first";
+
+function orderAttributionAvatars<T>(
+	attributionOrder: AgentListAttributionOrder,
+	agentAvatar: T,
+	personAvatar: T,
+): readonly T[] {
+	return attributionOrder === "agent-first"
+		? [agentAvatar, personAvatar]
+		: [personAvatar, agentAvatar];
+}
+
 /** The two leading-avatar footprints the row uses, as Avatar size tokens. */
 const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>> = {
 	16: "xs",
@@ -20,7 +32,7 @@ const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>>
 	32: "default",
 };
 
-/** Figma's agent + human attribution frame keeps the composite at the row footprint. */
+/** The human + agent attribution frame keeps the composite at the row footprint. */
 const PX_TO_IDENTITY_FRAME_CLASS_NAME: Record<number, string> = {
 	16: "size-4",
 	20: "size-5",
@@ -52,38 +64,48 @@ export function AgentListAttributionAvatarGroup({
 	agent,
 	animate,
 	attributedBy,
+	attributionOrder = "human-first",
 	className,
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
 	animate?: boolean;
 	attributedBy: AgentListInvoker;
+	attributionOrder?: AgentListAttributionOrder;
 	className?: string;
 	sizePx: number;
 }>) {
+	const personAvatar = (
+		<Avatar
+			key="person"
+			label=""
+			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
+		>
+			{attributedBy.avatarSrc ? (
+				<AvatarImage alt="" src={attributedBy.avatarSrc} />
+			) : null}
+			<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
+		</Avatar>
+	);
+	const agentAvatar = (
+		<AgentAvatarVisual
+			animate={animate}
+			key="agent"
+			avatarSrc={agent.avatarSrc}
+			brandName={agent.brandName}
+			label=""
+			sizePx={sizePx}
+			vpkLogo={agent.vpkLogo}
+		/>
+	);
+
 	return (
 		<AvatarGroup
 			className={cn("shrink-0", className)}
 			label={`${agent.name}, used by ${attributedBy.name}`}
 			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
 		>
-			<AgentAvatarVisual
-				animate={animate}
-				avatarSrc={agent.avatarSrc}
-				brandName={agent.brandName}
-				label=""
-				sizePx={sizePx}
-				vpkLogo={agent.vpkLogo}
-			/>
-			<Avatar
-				label=""
-				size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
-			>
-				{attributedBy.avatarSrc ? (
-					<AvatarImage alt="" src={attributedBy.avatarSrc} />
-				) : null}
-				<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
-			</Avatar>
+			{orderAttributionAvatars(attributionOrder, agentAvatar, personAvatar)}
 		</AvatarGroup>
 	);
 }
@@ -92,18 +114,20 @@ export function AgentListAttributionAvatarGroup({
  * The row's leading identity. Agents keep the shared hexagon agent visual;
  * people get the circular photo avatar the rest of Jira uses, so a mixed list —
  * agents waiting on an answer beside teammates who @mentioned you — is
- * separable at a glance without reading a word. An attributed agent session
- * composes the agent mark with the human who invoked it, matching the 24px +
- * 16px marks inside Figma's 32px attribution frame.
+ * separable at a glance without reading a word. Attributed identities default
+ * to human-first for owned work; callers representing untracked work can
+ * explicitly restore the agent-first composition.
  */
 export function AgentListIdentity({
 	agent,
 	attributedBy,
+	attributionOrder = "human-first",
 	className,
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
 	attributedBy?: AgentListInvoker;
+	attributionOrder?: AgentListAttributionOrder;
 	className?: string;
 	sizePx: number;
 }>) {
@@ -111,6 +135,38 @@ export function AgentListIdentity({
 		const frameClassName = PX_TO_IDENTITY_FRAME_CLASS_NAME[sizePx] ?? "size-8";
 		const agentSizePx = PX_TO_ATTRIBUTED_AGENT_SIZE[sizePx] ?? sizePx;
 		const personAvatarSize = PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE[sizePx] ?? "xs";
+		const agentFirst = attributionOrder === "agent-first";
+		const personPositionClassName = agentFirst
+			? "absolute bottom-0 right-0 ring-2 ring-background"
+			: "absolute left-0 top-0 ring-2 ring-background";
+		const agentPositionClassName = agentFirst
+			? "absolute left-0 top-0"
+			: "absolute bottom-0 right-0";
+		const personAvatar = (
+			<Avatar
+				aria-hidden="true"
+				className={personPositionClassName}
+				key="person"
+				label=""
+				size={personAvatarSize}
+			>
+				{attributedBy.avatarSrc ? (
+					<AvatarImage alt="" src={attributedBy.avatarSrc} />
+				) : null}
+				<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
+			</Avatar>
+		);
+		const agentAvatar = (
+			<span aria-hidden="true" className={agentPositionClassName} key="agent">
+				<AgentAvatarVisual
+					avatarSrc={agent.avatarSrc}
+					brandName={agent.brandName}
+					label=""
+					sizePx={agentSizePx}
+					vpkLogo={agent.vpkLogo}
+				/>
+			</span>
+		);
 
 		return (
 			<span
@@ -118,26 +174,7 @@ export function AgentListIdentity({
 				className={cn("relative block shrink-0", frameClassName, className)}
 				role="img"
 			>
-				<span aria-hidden="true" className="absolute left-0 top-0">
-					<AgentAvatarVisual
-						avatarSrc={agent.avatarSrc}
-						brandName={agent.brandName}
-						label=""
-						sizePx={agentSizePx}
-						vpkLogo={agent.vpkLogo}
-					/>
-				</span>
-				<Avatar
-					aria-hidden="true"
-					className="absolute bottom-0 right-0 ring-2 ring-background"
-					label=""
-					size={personAvatarSize}
-				>
-					{attributedBy.avatarSrc ? (
-						<AvatarImage alt="" src={attributedBy.avatarSrc} />
-					) : null}
-					<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
-				</Avatar>
+				{orderAttributionAvatars(attributionOrder, agentAvatar, personAvatar)}
 			</span>
 		);
 	}
