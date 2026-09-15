@@ -62,7 +62,7 @@ export const JIRA_TEAM_EU26_TERMINAL_BEATS: readonly TerminalBeat[] = [
 				pane: "right",
 				lines: [
 					[{ text: "⏺ Git · ", tone: "brand" }, { text: "commit 8c2f4e1 · map 61 v1 call sites and owners" }],
-					[{ text: "⏺ GitHub · ", tone: "brand" }, { text: "PR #1839 merged · Call-site inventory across four services · +312 lines" }],
+					[{ text: "⏺ GitHub · ", tone: "brand" }, { text: "PR #1839 merged · Map v1 call sites · +312 lines" }],
 					[{ text: "⏺ Artifact · ", tone: "brand" }, { text: "Payments SDK v2 — migration scope" }],
 					[{ text: "⏺ Artifact · ", tone: "brand" }, { text: "#payments-migration — keep or delete the adapter" }],
 					[{ text: "⏺ Artifact · ", tone: "brand" }, { text: "Lane assignments, humans and agents" }],

@@ -18,7 +18,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1856,
 			status: "created",
-			title: "Move retry and backoff out of LegacyGatewayAdapter",
+			title: "Extract retry policy",
 			files: 7,
 			additions: 163,
 			deletions: 88,
@@ -43,7 +43,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1858,
 			status: "failed",
-			title: "Confirm the sandbox key retention window before replay",
+			title: "Set key retention",
 			files: 4,
 			additions: 97,
 			deletions: 12,
@@ -68,7 +68,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1871,
 			status: "merged",
-			title: "Measure saved-card round-trip latency",
+			title: "Measure card latency",
 			files: 8,
 			additions: 204,
 			deletions: 57,
@@ -92,7 +92,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1866,
 			status: "created",
-			title: "Add per-account targeting and an armed kill switch",
+			title: "Add kill switch",
 			files: 6,
 			additions: 142,
 			deletions: 16,
@@ -176,7 +176,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1875,
 			status: "created",
-			title: "Document retry timeout budgets by endpoint",
+			title: "Set timeout budgets",
 			files: 5,
 			additions: 118,
 			deletions: 24,
@@ -200,7 +200,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1877,
 			status: "failed",
-			title: "Reproduce duplicate capture idempotency race",
+			title: "Reproduce capture race",
 			files: 9,
 			additions: 231,
 			deletions: 46,
@@ -224,7 +224,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1880,
 			status: "merged",
-			title: "Align settlement payloads across v1 and v2",
+			title: "Align settlement data",
 			files: 11,
 			additions: 286,
 			deletions: 73,
@@ -248,7 +248,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1882,
 			status: "created",
-			title: "Calibrate v2 reconciliation alert thresholds",
+			title: "Tune recon alerts",
 			files: 6,
 			additions: 154,
 			deletions: 31,
@@ -272,7 +272,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1885,
 			status: "created",
-			title: "Add dry-run output to ledger replay",
+			title: "Add replay dry run",
 			files: 7,
 			additions: 172,
 			deletions: 28,
@@ -296,7 +296,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1888,
 			status: "merged",
-			title: "Exercise payment token rotation without downtime",
+			title: "Rotate payment tokens",
 			files: 10,
 			additions: 249,
 			deletions: 64,
@@ -320,7 +320,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1890,
 			status: "failed",
-			title: "Preserve webhook ordering during failover",
+			title: "Keep webhook order",
 			files: 8,
 			additions: 193,
 			deletions: 39,
@@ -344,7 +344,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1893,
 			status: "created",
-			title: "Record refund actor and decision metadata",
+			title: "Log refund decisions",
 			files: 6,
 			additions: 137,
 			deletions: 19,
@@ -480,7 +480,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1897,
 			status: "created",
-			title: "Trace issuer authentication fallback paths",
+			title: "Trace auth fallback",
 			files: 7,
 			additions: 184,
 			deletions: 33,
@@ -504,7 +504,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1901,
 			status: "merged",
-			title: "Recover interrupted payout batches safely",
+			title: "Recover payout batches",
 			files: 12,
 			additions: 315,
 			deletions: 81,
@@ -528,7 +528,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1904,
 			status: "failed",
-			title: "Compare v1 and v2 decline responses",
+			title: "Compare decline codes",
 			files: 9,
 			additions: 227,
 			deletions: 52,
@@ -552,7 +552,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		pullRequest: {
 			number: 1907,
 			status: "created",
-			title: "Guard account migration with scoped locks",
+			title: "Lock account migration",
 			files: 6,
 			additions: 149,
 			deletions: 21,

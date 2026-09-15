@@ -193,7 +193,7 @@ test("the PAY board fills every existing status with coding work and the full st
 	const pay101 = cards.find((card) => card.code === "PAY-101");
 	assert.equal(pay101.pullRequestNumber, 1839);
 	assert.equal(pay101.pullRequestStatus, "merged");
-	assert.equal(pay101.pullRequestPreview.title, "Call-site inventory across four services");
+	assert.equal(pay101.pullRequestPreview.title, "Map v1 call sites");
 	assert.equal(pay101.pullRequestPreview.additions, 312);
 	assert.equal(pay101.pullRequestPreview.deletions, 8);
 

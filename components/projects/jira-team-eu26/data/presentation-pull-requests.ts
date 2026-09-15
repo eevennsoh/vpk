@@ -53,7 +53,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 41,
 		filesChanged: 9,
 		relativeTime: "2d ago",
-		title: "Prove LegacyGatewayAdapter can be deleted outright",
+		title: "Verify adapter removal",
 	}),
 	"PAY-104": createPreview({
 		additions: 248,
@@ -62,7 +62,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 33,
 		filesChanged: 11,
 		relativeTime: "yesterday",
-		title: "Port createPaymentIntent onto the v2 client",
+		title: "Port payment intents",
 	}),
 	"PAY-105": createPreview({
 		additions: 274,
@@ -71,7 +71,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 52,
 		filesChanged: 13,
 		relativeTime: "2h ago",
-		title: "Port confirmPaymentIntent and the 3-D Secure challenge flow",
+		title: "Port 3DS flow",
 	}),
 	"PAY-107": createPreview({
 		additions: 163,
@@ -80,7 +80,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 88,
 		filesChanged: 7,
 		relativeTime: "4h ago",
-		title: "Move retry and backoff out of LegacyGatewayAdapter",
+		title: "Extract retry policy",
 	}),
 	"PAY-109": createPreview({
 		additions: 419,
@@ -89,7 +89,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 27,
 		filesChanged: 18,
 		relativeTime: "yesterday",
-		title: "Regenerate webhook payloads from the v2 OpenAPI spec",
+		title: "Refresh webhook data",
 	}),
 	"PAY-112": createPreview({
 		additions: 97,
@@ -98,7 +98,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 12,
 		filesChanged: 4,
 		relativeTime: "6h ago",
-		title: "Confirm the sandbox key retention window before replay",
+		title: "Set key retention",
 	}),
 	"PAY-113": createPreview({
 		additions: 531,
@@ -107,7 +107,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 19,
 		filesChanged: 22,
 		relativeTime: "4d ago",
-		title: "Land the 3-D Secure contract suite with 214 assertions",
+		title: "Add 3DS contracts",
 	}),
 	"PAY-119": createPreview({
 		additions: 64,
@@ -116,7 +116,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 3,
 		filesChanged: 3,
 		relativeTime: "8h ago",
-		title: "Publish and link the rollback rehearsal runbook",
+		title: "Publish rollback guide",
 	}),
 	"PAY-121": createPreview({
 		additions: 142,
@@ -125,7 +125,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 16,
 		filesChanged: 6,
 		relativeTime: "12h ago",
-		title: "Add per-account targeting and an armed kill switch",
+		title: "Add kill switch",
 	}),
 	"PAY-126": createPreview({
 		additions: 28,
@@ -134,7 +134,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 410,
 		filesChanged: 17,
 		relativeTime: "5d ago",
-		title: "Delete LegacyGatewayAdapter after all 61 ports land",
+		title: "Remove v1 adapter",
 	}),
 	"PAY-128": createPreview({
 		additions: 81,
@@ -143,7 +143,7 @@ export const JIRA_TEAM_EU26_PULL_REQUEST_PREVIEWS = {
 		deletions: 9,
 		filesChanged: 5,
 		relativeTime: "3h ago",
-		title: "Stamp SDK version at settlement for finance exports",
+		title: "Stamp SDK version",
 	}),
 } as const satisfies Readonly<Record<string, JiraIssuePullRequestPreview>>;
 
