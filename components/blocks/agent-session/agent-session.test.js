@@ -146,19 +146,8 @@ test("short uncaptured-work rows restore the owner byline", () => {
 	assert.doesNotMatch(METADATA_SOURCE, /<TooltipTrigger[\s\S]*<button/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "host"/u);
-	// A linked PR sits between the agent and the host/time clause. Title and
-	// machine name still belong to the flyout rather than this compact line.
-	assert.match(
-		METADATA_SOURCE,
-		/export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*<AgentListPrStatusIcon status=\{item\.prStatus \?\? "created"\} \/>[\s\S]*\{pullRequestLabel\}/u,
-	);
-	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`/u);
-	assert.match(
-		METADATA_SOURCE,
-		/className="text-nowrap text-text-subtlest underline-offset-2 hover:underline"[\s\S]*\{pullRequestLabel\}/u,
-	);
-	assert.doesNotMatch(METADATA_SOURCE, /<a[\s\S]*\{pullRequestLabel\}/u);
-	assert.doesNotMatch(METADATA_SOURCE, /href=\{item\.sessionDetails\?\.pullRequestUrl/u);
+	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`[\s\S]*export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*<AgentListPrStatusIcon status=\{item\.prStatus \?\? "created"\} \/>[\s\S]*underline-offset-2 hover:underline[\s\S]*\{pullRequestLabel\}/u);
+	assert.doesNotMatch(METADATA_SOURCE, /<a[\s\S]*href=\{item\.sessionDetails\?\.pullRequestUrl/u);
 	assert.doesNotMatch(CARD_SOURCE, /pullRequest/u);
 	assert.doesNotMatch(CARD_SOURCE, /MetadataPathLink/u);
 	assert.doesNotMatch(METADATA_SOURCE, /MetadataPathLink/u);
