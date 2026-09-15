@@ -114,7 +114,7 @@ export function moveJiraKanbanCardsToColumn(
 	return columns.map((column) => {
 		const remainingCards = column.cards.filter((card) => !movingCardCodes.has(card.code));
 		const cards = column.title === targetColumnTitle
-			? [...movingCards, ...remainingCards]
+			? [...movingCards.map((card) => card.status === undefined ? card : { ...card, status: targetColumnTitle }), ...remainingCards]
 			: remainingCards;
 
 		return {

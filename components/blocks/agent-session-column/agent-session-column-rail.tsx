@@ -5,7 +5,10 @@ import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type
 import { animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "motion/react";
 
 import type { AgentListState } from "@/components/blocks/agent-list";
-import { AGENT_SESSION_ARRIVAL_TRANSITION } from "@/components/blocks/agent-session/agent-session-arrival-motion";
+import {
+	AGENT_SESSION_ARRIVAL_TRANSITION,
+	AGENT_SESSION_USER_NOTCH_MORPH_TRANSITION,
+} from "@/components/blocks/agent-session/agent-session-arrival-motion";
 import { AgentSessionMediumDrag } from "@/components/blocks/agent-session/agent-session-medium-drag";
 import { AgentSessionNotchMark } from "@/components/blocks/agent-session/agent-session-notch";
 import {
@@ -64,9 +67,9 @@ export { AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS } from "./agent-session-column-rai
  * Circular markers are the default and are the compact form of the same human
  * avatar shown on the expanded card. The dock grows nearby dots from 4px toward
  * a 12px cap; the dot under the pointer or keyboard focus reveals that person's
- * face. An arriving session flashes that same face, holds, then morphs —
- * the face shrinks 12→4 as one disc — before the photo is dropped and the
- * unread rest takes `icon.subtle`. Reviewed sessions rest at 4px
+ * face. An arriving session flashes that same face, holds, then morphs — the
+ * face collapses 12→4 onto the rest disc already sitting beneath it and
+ * crossfades into `icon.subtle` at matched size. Reviewed sessions rest at 4px
  * `icon.disabled`. Line markers retain the original horizontal treatment
  * and falloff.
  *
@@ -333,8 +336,16 @@ function AgentSessionUserNotch({
 		shouldReduceMotion,
 	});
 	const showAvatar = isHighlighted || arrivalReveal;
+	const isMorphing = arrivalExiting && !isHighlighted;
+	// The rest disc is the morph's destination, so it has to be under the face
+	// before the face starts collapsing — otherwise the photo dissolves to bare
+	// plane and a separate dot fades up behind it, which is the flash. It is
+	// hidden only for the pre-reveal frame, when there is no face to sit under;
+	// from reveal onward an opaque 12px face covers it, so its own 150ms fade-in
+	// plays out unseen during the hold and it is solid by the time the morph
+	// starts. Hover keeps its own crossfade.
 	const hideRestDisc = Boolean(avatarSrc) && (
-		arrivalPending || arrivalReveal || arrivalExiting || isHighlighted
+		(arrivalPending && !arrivalReveal) || isHighlighted
 	);
 	const arrivalMorphScale = AGENT_SESSION_USER_NOTCH_DIAMETER.rest
 		/ AGENT_SESSION_USER_NOTCH_DIAMETER.peak;
@@ -408,14 +419,20 @@ function AgentSessionUserNotch({
 							"motion-reduce:transition-none",
 							"group-data-[hovered]/notch:scale-100 group-data-[hovered]/notch:opacity-100",
 							"group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
-							arrivalExiting && !isHighlighted
-								? "opacity-100 scale-[var(--agent-session-user-notch-morph)] transition-transform duration-normal ease-in-out"
-								: showAvatar ? "opacity-100 scale-100" : "scale-[var(--agent-session-user-notch-morph)] opacity-0",
+							// Morphing and settled share one target: the face ends the
+							// beat exactly where it already sits, so completing the
+							// arrival only drops the transition — it never re-snaps.
+							showAvatar && !isMorphing
+								? "opacity-100 scale-100"
+								: "scale-[var(--agent-session-user-notch-morph)] opacity-0",
 						)}
 						height={12}
 						src={avatarSrc}
 						style={{
 							"--agent-session-user-notch-morph": String(arrivalMorphScale),
+							transition: isMorphing
+								? AGENT_SESSION_USER_NOTCH_MORPH_TRANSITION
+								: undefined,
 						} as CSSProperties}
 						width={12}
 					/>

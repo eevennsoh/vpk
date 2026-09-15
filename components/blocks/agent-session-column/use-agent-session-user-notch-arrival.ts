@@ -9,12 +9,14 @@ import {
 
 /**
  * Drives the collapsed circle-rail's arrival beat: reveal the session's face,
- * hold, then shrink that same disc to the 4px rest. `arrivalPending` is true
- * from the first arriving paint so the rest disc never sits under the face.
- * `arrivalReveal` stays true through the shrink. `arrivalExiting` is the
- * shrink itself. A missing face still grows in with the shared scale beat.
- * Reduced motion skips both and leaves the rest disc, which stays in default
- * icon color while unread.
+ * hold, then morph that same disc down onto the 4px rest. `arrivalPending` is
+ * true from the first arriving paint, before there is a face to sit under, so
+ * the rest disc can stay hidden for exactly that frame and be painted (unseen,
+ * behind an opaque face) for the rest of the beat — the morph needs its
+ * destination already there. `arrivalReveal` stays true through the morph.
+ * `arrivalExiting` is the morph itself. A missing face still grows in with the
+ * shared scale beat. Reduced motion skips both and leaves the rest disc, which
+ * stays in default icon color while unread.
  */
 export function useAgentSessionUserNotchArrival({
 	hasAvatar,

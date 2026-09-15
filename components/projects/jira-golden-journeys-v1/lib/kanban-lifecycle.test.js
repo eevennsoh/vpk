@@ -188,7 +188,7 @@ test("Carl's review card exposes the existing Claude PR run", async () => {
 	assert.equal(card.agentActivityMode, "completed");
 	assert.equal(card.pullRequestNumber, 247);
 	assert.equal(card.pullRequestStatus, "open");
-	assert.equal(run.agentName, "Claude Code");
+	assert.equal(run.agentName, "Claude");
 	assert.equal(run.agentBrandName, "claude");
 	assert.equal(run.pullRequestNumber, 247);
 	assert.equal(run.outputs[0].pullRequest.status, "Open");
@@ -253,7 +253,7 @@ test("JGP-247 completion story moves an open PR from In progress to Done as merg
 test("Cursor exists only in the route-owned JGP agent set", async () => {
 	const { JGP_KANBAN_AGENTS } = await loadHarness();
 	assert.deepEqual(JGP_KANBAN_AGENTS.map((agent) => [agent.id, agent.name]), [
-		["claude-code", "Claude Code"],
+		["claude-code", "Claude"],
 		["cursor", "Cursor"],
 	]);
 });

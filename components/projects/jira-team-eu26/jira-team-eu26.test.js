@@ -74,7 +74,7 @@ test("the route renders the Payments board directly inside Jira app chrome", () 
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_BOARD_AGENTS/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES/u);
 	assert.match(PAGE_SOURCE, /agentSessionMembers=\{JIRA_TEAM_EU26_PAY_SESSION_MEMBERS\}/u);
-	assert.match(PAGE_SOURCE, /overflow-hidden bg-surface \[&>div\]:min-h-0/u);
+	assert.match(PAGE_SOURCE, /h-full min-h-0 min-w-0 overflow-hidden \[&>div\]:min-h-0/u);
 });
 
 test("the settings property controls the advanced session timeline", () => {
@@ -95,14 +95,41 @@ test("the settings property controls the advanced session timeline", () => {
 	);
 });
 
+test("Background color paints the Kanban plane while preserving the Agent Session surface", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/designVariants\.kanbanBackground \? "bg-bg-accent-gray-subtlest" : "bg-surface"/u,
+	);
+	assert.match(PAGE_SOURCE, /data-jira-team-eu26-board-surface=""/u);
+});
+
 test("the Dragging property controls session-column width resizing", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*\] as const;/u,
+		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*\] as const;/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
 		/agentSessionColumnResizable=\{designVariants\.agentSessionColumnResizing\}/u,
+	);
+});
+
+test("Manual link is off by default and controls the session menu item", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/showAgentSessionLinkWorkItemMenuItem=\{designVariants\.manualLink\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/showAgentSessionLinkWorkItemMenuItem\?: boolean;/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/showLinkWorkItemMenuItem: showAgentSessionLinkWorkItemMenuItem,/u,
 	);
 });
 
@@ -422,7 +449,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 		"create wells must not transition the layout height; only colour is transitional",
 	);
 	assert.match(
-		EXPERIMENTAL_BOARD_SOURCE,
+		readProjectFile("components/blocks/jira-kanban/experimental/components/board-column.tsx"),
 		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}[\s\S]*title=\{title\}/u,
 	);
 	assert.match(

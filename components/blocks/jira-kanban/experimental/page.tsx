@@ -12,7 +12,6 @@ import {
 	useState,
 	type CSSProperties,
 } from "react";
-
 import { useOptionalRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import {
 	resolveAgentSessionWorkItemKey,
@@ -58,6 +57,7 @@ import {
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
 import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
+import { moveJiraKanbanCardsToDropTarget, moveJiraKanbanCardsToStatus, type JiraKanbanCardDropTarget } from "../card-drop";
 import { SessionColumnPlacementProvider } from "./components/session-column-placement";
 import {
 	collectBoardIssueKeys,
@@ -184,6 +184,7 @@ function ExperimentalJiraKanbanPageContent({
 	cardGenerativeActionPresentation, iconScale,
 	createWellBounce = "once",
 	createWorkItemDropZoneLabel,
+	issueDragTransitions = false,
 	defaultAgentSessionColumnCollapsed = false,
 	defaultShowUntracked = true,
 	detachedAgentSessionsByCard,
@@ -234,6 +235,7 @@ function ExperimentalJiraKanbanPageContent({
 	showAgentSessionFlyoutFooter = true,
 	showAgentSessionFilter = true,
 	showAgentSessionLinkAction = true,
+	showAgentSessionLinkWorkItemMenuItem = true,
 	showAgentSessionOverflow = true,
 	showBoardContent = true,
 	timelineLastViewedAt: controlledTimelineLastViewedAt,
@@ -301,6 +303,7 @@ function ExperimentalJiraKanbanPageContent({
 	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
 	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
 	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
+	const [boardContentUnderlapsSessionColumn, setBoardContentUnderlapsSessionColumn] = useState(false);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [focusedCollapsedColumns, setFocusedCollapsedColumns] = useState<CollapsedBoardColumns | null>(
 		null,
@@ -591,6 +594,7 @@ function ExperimentalJiraKanbanPageContent({
 		onLinkWorkItem: boardMenuWorkItem.onLinkWorkItem,
 		showFilter: showAgentSessionFilter,
 		showLinkAction: showAgentSessionLinkAction,
+		showLinkWorkItemMenuItem: showAgentSessionLinkWorkItemMenuItem,
 		showOverflow: showAgentSessionOverflow,
 		showUntrackedWorkFooter: showAgentSessionFlyoutFooter,
 		triage: untrackedTriage,
@@ -716,8 +720,8 @@ function ExperimentalJiraKanbanPageContent({
 		setDraggedCard({ card, sourceColumnTitle });
 	};
 
-	const handleCardDrop = (targetColumnTitle: string) => {
-		if (!draggedCard || draggedCard.sourceColumnTitle === targetColumnTitle) {
+	const handleCardDrop = (targetColumnTitle: string, target?: JiraKanbanCardDropTarget) => {
+		if (!draggedCard || (!target && draggedCard.sourceColumnTitle === targetColumnTitle)) {
 			setDraggedCard(null);
 			return;
 		}
@@ -729,6 +733,7 @@ function ExperimentalJiraKanbanPageContent({
 			: [draggedCard.card.code];
 
 		updateBoardColumns((prevColumns) => {
+			if (target) return moveJiraKanbanCardsToDropTarget(prevColumns, draggedCardCodes, targetColumnTitle, target);
 			const movableCardCodes = draggedCardCodes.filter((cardCode) => prevColumns.some((column) => (
 				column.title !== targetColumnTitle && column.cards.some((card) => card.code === cardCode)
 			)));
@@ -740,7 +745,6 @@ function ExperimentalJiraKanbanPageContent({
 		}
 		setDraggedCard(null);
 	};
-
 	const handleCardDragEnd = () => {
 		setDraggedCard(null);
 	};
@@ -817,12 +821,8 @@ function ExperimentalJiraKanbanPageContent({
 		handleAssigneeFilterChange(toPulseMemberAssigneeIds(memberId));
 	};
 
-	const handleSelectedCardsStatusChange = (targetColumnTitle: string) => {
-		updateBoardColumns((currentColumns) => moveJiraKanbanCardsToColumn(
-			currentColumns,
-			[...selection.selectedCardCodes],
-			targetColumnTitle,
-		));
+	const handleSelectedCardsStatusChange = (status: string) => {
+		updateBoardColumns((columns) => moveJiraKanbanCardsToStatus(columns, [...selection.selectedCardCodes], status));
 	};
 
 	const handleSelectedCardsAgentAssignmentChange = (agentId: string, assigned: boolean) => {
@@ -892,7 +892,6 @@ function ExperimentalJiraKanbanPageContent({
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
 		untrackedSessions: agentSessionColumnConfig?.items,
 	});
-
 	return (
 		<div
 			className="relative flex h-full min-h-[640px] flex-col bg-surface"
@@ -989,10 +988,11 @@ function ExperimentalJiraKanbanPageContent({
 										: undefined,
 									sessionDrag: boardSessionDrag.untrackedBinding,
 								}}
-								className="pb-4 md:pb-5"
+								className="pb-3"
 								columnFrame={columnChromeStyles.headerFrame}
 								paddingTop={withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
+								showTrailingShadow={!isListContent && boardContentUnderlapsSessionColumn}
 								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 							/>
 						) : null}
@@ -1044,6 +1044,7 @@ function ExperimentalJiraKanbanPageContent({
 								onCollapsedColumnsChange={handleCollapsedColumnsChange}
 								onCreatedCardArrivalComplete={handleCreatedCardArrivalComplete}
 								draggedCardCode={draggedCard?.card.code ?? null}
+								issueDragTransitions={issueDragTransitions}
 								selectedCardCodes={selection.selectedCardCodes}
 								onCardClick={handleCardClick}
 								onCardAgentActivityViewChat={onCardAgentActivityViewChat}
@@ -1065,6 +1066,7 @@ function ExperimentalJiraKanbanPageContent({
 								onCardDrop={handleCardDrop}
 								onCardDragEnd={handleCardDragEnd}
 								onCreateAgent={handleCreateColumnAgent}
+								onScrollUnderlapChange={setBoardContentUnderlapsSessionColumn}
 								onToggleColumnAgent={handleToggleColumnAgent}
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								paddingTop={0}

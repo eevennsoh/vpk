@@ -61,7 +61,7 @@ test("JGP chat profiles include every lifecycle-specific agent", async () => {
 	assert.equal(cursor.brandName, "cursor");
 	assert.equal(cursor.avatarSrc, undefined);
 	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.id, "claude-code");
-	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.name, "Claude Code");
+	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.name, "Claude");
 	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.brandName, "claude");
 	assert.equal(
 		JGP_CLAUDE_CODE_AGENT_PROFILE.description,

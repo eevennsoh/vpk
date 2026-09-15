@@ -100,7 +100,7 @@ export function KanbanStage({ scenario = "local-review" }: Readonly<KanbanStageP
 		setPendingChatQuestion(null);
 		openCardChat(
 			JGP_KANBAN_DEFAULT_AGENT_ID,
-			"Claude Code",
+			"Claude",
 			card,
 			request.prompt,
 		);

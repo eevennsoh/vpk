@@ -38,7 +38,7 @@ function createAssignedActivity(
 	const activity: JiraIssueAgentActivity = {
 		...createJgpKanbanActivity(
 			selection.id,
-			skillName ? { ...selection, name: "Claude Code" } : selection,
+			skillName ? { ...selection, name: "Claude" } : selection,
 			`${card.code}:${selection.id}`,
 		),
 		...(skillName ? { agentBrandName: "claude" as const } : {}),
@@ -57,7 +57,7 @@ function createAssignedActivity(
 			`Reading ${card.code} context`,
 			"Preparing the skill result",
 		],
-		message: `Claude Code is applying ${skillName} to ${card.code}.`,
+		message: `Claude is applying ${skillName} to ${card.code}.`,
 	};
 }
 
@@ -99,7 +99,7 @@ export function useJiraGoldenJourneysV4GenerativeActions({
 
 			openAgentChat({
 				agentId: JGP_KANBAN_DEFAULT_AGENT_ID,
-				agentName: "Claude Code",
+				agentName: "Claude",
 				issueKey: card.code,
 				issueSummary: card.title,
 				request: request.prompt,
