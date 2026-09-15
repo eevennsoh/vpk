@@ -86,8 +86,10 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	assert.match(INDEX_SOURCE, /style=\{\{ borderColor \}\}/u);
 	assert.match(INDEX_SOURCE, /AGENT_SESSION_WELL_STROKE = token\("color\.border\.disabled"\)/u);
 	assert.match(INDEX_SOURCE, /paintWellStroke = wearEnclosedWell && !collapsed && !elevatePlane/u);
+	assert.match(INDEX_SOURCE, /replaceWellBorderWithInset = !paintWellStroke/u);
 	assert.match(INDEX_SOURCE, /paintWellStroke \? AGENT_SESSION_WELL_STROKE : "transparent"/u);
-	assert.match(INDEX_SOURCE, /paintWellStroke \? "border-border-disabled" : "border-transparent"/u);
+	assert.match(INDEX_SOURCE, /paintWellStroke \? "border-border-disabled" : null/u);
+	assert.match(INDEX_SOURCE, /replaceWellBorderWithInset \? "border-0 p-px" : null/u);
 	assert.doesNotMatch(INDEX_SOURCE, /const planeBorderColor = "transparent"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /elevatePlane \? AGENT_SESSION_WELL_STROKE/u);
 	assert.doesNotMatch(INDEX_SOURCE, /animate=\{\{\s*borderColor/u);

@@ -322,7 +322,7 @@ test("the route locks untracked work to the in-flow column", () => {
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /paddingInline(?:Start|End)/u);
 });
 
-test("the white Agent Session surface gains overlay elevation only after Kanban underlap", () => {
+test("the Agent Session surface gains overlay elevation only after Kanban underlap", () => {
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/onScrollUnderlapChange=\{setBoardContentUnderlapsSessionColumn\}/u,
@@ -356,11 +356,13 @@ test("the white Agent Session surface gains overlay elevation only after Kanban 
 	);
 	assert.match(
 		AGENT_SESSION_COLUMN_SOURCE,
-		/elevatePlane \? AGENT_SESSION_OVERLAY_SHADOW : "none"/u,
+		/elevatePlane \? AGENT_SESSION_UNDERLAP_DEPTH_SHADOW : "none"/u,
 	);
+	assert.match(AGENT_SESSION_COLUMN_SOURCE, /bg-surface-overlay duration-normal ease-out-practical/u);
+	assert.match(AGENT_SESSION_COLUMN_SOURCE, /transition-\[background-color\] motion-reduce:transition-none/u);
 	assert.match(
 		AGENT_SESSION_COLUMN_SOURCE,
-		/AGENT_SESSION_OVERLAY_SHADOW = token\("elevation\.shadow\.overlay"\)/u,
+		/AGENT_SESSION_UNDERLAP_DEPTH_SHADOW =\s*"0px 8px 12px light-dark\(#1E1F2126, #0104045C\)"/u,
 	);
 	assert.match(
 		AGENT_SESSION_COLUMN_SOURCE,
@@ -376,8 +378,9 @@ test("the white Agent Session surface gains overlay elevation only after Kanban 
 	);
 	assert.match(
 		AGENT_SESSION_COLUMN_SOURCE,
-		/paintWellStroke \? "border-border-disabled" : "border-transparent"/u,
+		/paintWellStroke \? "border-border-disabled" : null/u,
 	);
+	assert.match(AGENT_SESSION_COLUMN_SOURCE, /replaceWellBorderWithInset \? "border-0 p-px" : null/u);
 	assert.doesNotMatch(AGENT_SESSION_COLUMN_SOURCE, /const planeBorderColor = "transparent"/u);
 	assert.match(AGENT_SESSION_COLUMN_SOURCE, /style=\{\{ borderColor \}\}/u);
 	assert.doesNotMatch(

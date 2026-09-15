@@ -113,7 +113,11 @@ if command -v tmux >/dev/null 2>&1; then
 			if [[ "$sattached" == 1 || "$sname" == "vpk-dev-main" || "$spath" == "$MAIN_WORKTREE" ]]; then
 				flag=""
 			elif [[ -n "$screated" && "$screated" != "0" ]] && (( now_epoch - screated >= IDLE_STACK_MIN_AGE_SECS )); then
-				flag="  ⚠ idle candidate — sweep stops if no tool process has cwd here"
+				if [[ "$spath" == "$HOME/.codex/worktrees/"* || ( -n "${CODEX_HOME:-}" && "$spath" == "$CODEX_HOME/worktrees/"* ) ]]; then
+					flag="  ⚠ Codex Desktop worktree — idle-stack sweep keeps; inspect task status before manual stop"
+				else
+					flag="  ⚠ idle candidate — sweep stops if no tool process has cwd here"
+				fi
 			fi
 			print -- "${sname}${att}${age}  $spath  [$socket]$flag"
 		done

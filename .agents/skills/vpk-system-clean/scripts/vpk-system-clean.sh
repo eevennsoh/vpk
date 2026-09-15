@@ -22,7 +22,10 @@
 #     `claude`, `caffeinate`, `lazygit`, `cursor-agent`, or `codex` whose cwd
 #     is that worktree — worktree directory names are ignored. Uses the
 #     worktree's own `dev-tmux-plain.sh stop` (SIGINT so Portless drops THIS
-#     route). Never `portless prune`.
+#     route). Codex Desktop worktrees are kept unattended because active task
+#     status is not visible through the executable-cwd guard. Never
+#     `portless prune`. Legacy sessions on tmux's default socket get SIGINT
+#     and an exact kill-session; their worktree launcher owns a different socket.
 #  4. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
 #     every file feeds macOS FSEvents and amplifies the thrash. Deleted PER
 #     WORKTREE when over threshold AND that worktree has no live dev server (each
@@ -156,9 +159,24 @@ worktree_has_operator() {
 	return 1
 }
 
+is_codex_desktop_worktree() {
+	local root="$1"
+	[[ "$root" == "$HOME/.codex/worktrees/"* ]] && return 0
+	[[ -n "${CODEX_HOME:-}" && "$root" == "$CODEX_HOME/worktrees/"* ]] && return 0
+	return 1
+}
+
 stop_idle_stack() {
 	local socket="$1" sname="$2" spath="$3"
 	local stop_script="$spath/scripts/dev-tmux-plain.sh"
+	if [[ "$socket" == "default" ]]; then
+		# The plain launcher uses the private vpk-dev socket. Calling it for a
+		# legacy default-socket session could stop a newer stack in this worktree.
+		tmux_cmd default send-keys -t "$sname" C-c 2>/dev/null || true
+		sleep 1
+		tmux_cmd default kill-session -t "$sname" 2>/dev/null
+		return $?
+	fi
 	if [[ -f "$stop_script" ]]; then
 		if (cd "$spath" && VPK_DEV_TMUX_SESSION="$sname" /bin/bash "$stop_script" stop) >/dev/null 2>&1; then
 			return 0
@@ -294,6 +312,10 @@ if command -v tmux >/dev/null 2>&1; then
 			fi
 			if worktree_has_operator "$spath"; then
 				log "kept tmux session $sname on $socket socket (tool process cwd is '$spath')"
+				continue
+			fi
+			if is_codex_desktop_worktree "$spath"; then
+				log "kept tmux session $sname on $socket socket (Codex Desktop task status unavailable)"
 				continue
 			fi
 			if (( ! KILL_IDLE_STACKS )); then

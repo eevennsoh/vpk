@@ -86,6 +86,90 @@ test("the expanded session column matches the Kanban column height", async ({ pa
 	}).toEqual({ heightDelta: 0, topDelta: 0 });
 });
 
+test("the expanded session plane follows overlay elevation as board columns underlap", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await openHeightComparisonBoard(page);
+	for (let attempt = 0; attempt < 3; attempt++) {
+		if (await page.getByRole("button", { name: "Dark theme" }).isVisible()) break;
+		await page.getByRole("button", { name: /^(Light|System) theme$/u }).click();
+	}
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "dark");
+
+	const plane = page.locator("[data-agent-session-column-surface]").first();
+	const fade = page.locator("[data-agent-session-column] [data-scroll-mask-overlay]").first();
+	const board = page.locator("[data-jira-kanban-scrollport]");
+	const [surfaceColor, overlayColor] = await page.evaluate(() => {
+		const probe = document.createElement("div");
+		document.body.append(probe);
+		probe.style.backgroundColor = "var(--color-surface)";
+		const surface = getComputedStyle(probe).backgroundColor;
+		probe.style.backgroundColor = "var(--color-surface-overlay)";
+		const overlay = getComputedStyle(probe).backgroundColor;
+		probe.remove();
+		return [surface, overlay];
+	});
+	expect(surfaceColor).not.toBe(overlayColor);
+	await expect(plane).toHaveCSS("background-color", surfaceColor);
+	await board.evaluate((element) => { element.scrollLeft = 120; });
+	await expect(plane).toHaveCSS("background-color", overlayColor);
+	await expect(fade).toHaveCSS("color", overlayColor);
+	expect(await fade.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain(overlayColor);
+	await board.evaluate((element) => { element.scrollLeft = 0; });
+	await expect(plane).toHaveCSS("background-color", surfaceColor);
+	await expect(fade).toHaveCSS("color", surfaceColor);
+	expect(await fade.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain(surfaceColor);
+
+	await page.getByRole("button", { name: "Dark theme" }).click();
+	await page.getByRole("button", { name: "System theme" }).click();
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
+	await board.evaluate((element) => { element.scrollLeft = 120; });
+	await expect(plane).toHaveCSS("background-color", "rgb(255, 255, 255)");
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	expect(await plane.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBeLessThan(0.001);
+});
+
+test("only the expanded resting session well retains its 1px border", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await openHeightComparisonBoard(page);
+	const plane = page.locator("[data-agent-session-column-surface]").first();
+	const board = page.locator("[data-jira-kanban-scrollport]");
+
+	await expect(plane).toHaveCSS("border-top-width", "1px");
+	await board.evaluate((element) => { element.scrollLeft = 120; });
+	await expect(plane).toHaveCSS("border-top-width", "0px");
+	await expect(plane).toHaveCSS("padding-left", "1px");
+	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+	await expect(plane).toHaveCSS("border-top-width", "0px");
+	await board.evaluate((element) => { element.scrollLeft = 0; });
+	await expect(plane).toHaveCSS("border-top-width", "0px");
+	await page.getByRole("button", { name: "Expand Unlink sessions column" }).click();
+	await expect(plane).toHaveCSS("border-top-width", "1px");
+});
+
+test("the elevated session well keeps depth without a perimeter shadow", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await openHeightComparisonBoard(page);
+	for (let attempt = 0; attempt < 3; attempt++) {
+		if (await page.getByRole("button", { name: "Dark theme" }).isVisible()) break;
+		await page.getByRole("button", { name: /^(Light|System) theme$/u }).click();
+	}
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "dark");
+
+	const plane = page.locator("[data-agent-session-column-surface]").first();
+	await page.locator("[data-jira-kanban-scrollport]").evaluate((element) => { element.scrollLeft = 120; });
+	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
+		.toMatch(/^rgba\(1, 4, 4, 0\.36\) 0px 8px 12px 0px$/u);
+	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
+		.toMatch(/^rgba\(1, 4, 4, 0\.36\) 0px 8px 12px 0px$/u);
+
+	await page.getByRole("button", { name: "Dark theme" }).click();
+	await page.getByRole("button", { name: "System theme" }).click();
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
+	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
+		.toMatch(/^rgba\(30, 31, 33, 0\.15\) 0px 8px 12px 0px$/u);
+});
+
 test("hovering the leading gutter stays open without bouncing under a stationary pointer", async ({ page }) => {
 	await page.goto(JIRA_TEAM_EU26_EMBEDDED_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
@@ -253,6 +337,89 @@ for (const activation of ["click", "Enter", "Space"] as const) {
 		}
 	});
 }
+
+for (const [surface, url] of [
+	["board", JIRA_TEAM_EU26_URL],
+	["embedded preview", JIRA_TEAM_EU26_EMBEDDED_URL],
+] as const) {
+	test(`the ${surface} collapsed timeline responds across both edges of its rail`, async ({ page }) => {
+		await page.goto(url, { waitUntil: "domcontentloaded" });
+		const heading = page.getByRole("heading", { name: "Jira Design" });
+		await expect(heading).toBeVisible({ timeout: 15_000 });
+		const rail = page.locator("[data-agent-session-column-rail]");
+		const notch = rail.locator("[data-agent-session-notch]").first();
+		const flyout = page.locator('[data-slot="hover-card-content"]');
+		await expect(notch).toBeVisible();
+		const notchId = await notch.getAttribute("data-testid");
+		expect(notchId).not.toBeNull();
+
+		for (const edge of ["left", "right"] as const) {
+			await heading.hover();
+			await expect(flyout).toBeHidden();
+			const railBox = await rail.boundingBox();
+			const notchBox = await notch.boundingBox();
+			if (!railBox || !notchBox) throw new Error("Expected the collapsed rail and notch");
+			const x = edge === "left" ? railBox.x + 2 : railBox.x + railBox.width - 2;
+			const y = notchBox.y + notchBox.height / 2;
+			const hitId = await page.evaluate(({ x, y }) =>
+				document.elementFromPoint(x, y)?.closest("[data-agent-session-notch]")?.getAttribute("data-testid"),
+				{ x, y },
+			);
+			expect(hitId).toBe(notchId);
+			await page.mouse.move(x, y);
+			await expect(flyout).toBeVisible();
+		}
+	});
+}
+
+test("the collapsed Expand gutter target paints only its 24px column control", async ({ page }) => {
+	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
+	const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+	const visual = expand.locator("[data-agent-session-column-expand-visual]");
+	const column = page.locator("[data-agent-session-column]");
+	const separator = page.locator('[data-slot="sidebar-resize-handle"]').first();
+	const todo = page.locator('[data-jira-kanban-column="To do"] > .group\\/board-column');
+	await expect(expand).toBeVisible();
+	const [buttonBox, columnBox, separatorBox, todoBox] = await Promise.all([
+		expand.boundingBox(), column.boundingBox(), separator.boundingBox(), todo.boundingBox(),
+	]);
+	if (!buttonBox || !columnBox || !separatorBox || !todoBox) {
+		throw new Error("Expected the collapsed control and board boundaries");
+	}
+	const separatorRight = separatorBox.x + separatorBox.width;
+	expect(buttonBox.x).toBeLessThanOrEqual(separatorRight);
+	expect(buttonBox.x + buttonBox.width).toBeLessThan(todoBox.x);
+	const visualBox = await visual.boundingBox();
+	if (!visualBox) throw new Error("Expected the 24px Expand visual");
+	expect(visualBox.width).toBe(24);
+	expect(visualBox.height).toBe(24);
+	expect(visualBox.x).toBeGreaterThanOrEqual(columnBox.x);
+	expect(visualBox.x + visualBox.width).toBeLessThanOrEqual(columnBox.x + columnBox.width);
+
+	const gutterX = separatorRight + 1;
+	const headerY = buttonBox.y + buttonBox.height / 2;
+	await page.mouse.move(gutterX, headerY);
+	expect(await expand.evaluate((node) => node.matches(":hover"))).toBe(true);
+	const tooltip = page.locator('[data-slot="tooltip-content"]', { hasText: "Expand" });
+	await expect(tooltip).toBeVisible();
+	await expect(expand).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	expect(await visual.evaluate((node) => getComputedStyle(node).backgroundColor))
+		.not.toBe("rgba(0, 0, 0, 0)");
+	const tooltipBox = await tooltip.boundingBox();
+	if (!tooltipBox) throw new Error("Expected the Expand tooltip");
+	expect(Math.abs(tooltipBox.x + tooltipBox.width / 2 - visualBox.x - visualBox.width / 2))
+		.toBeLessThan(1.5);
+
+	const lowerOwner = await page.evaluate(({ x, y }) =>
+		document.elementFromPoint(x, y)?.closest('[data-slot="sidebar-resize-handle"]') !== null,
+		{ x: gutterX, y: buttonBox.y + buttonBox.height + 20 },
+	);
+	expect(lowerOwner).toBe(true);
+	await page.mouse.click(gutterX, headerY);
+	await expect(page.locator("[data-agent-session-column-expansion]"))
+		.toHaveAttribute("data-agent-session-column-expansion", "expanded");
+});
 
 test("dragging a session notch never starts a column drag", async ({ page }) => {
 	await openCollapsedBoard(page);
