@@ -173,17 +173,12 @@ test("people render a circular photo beside the hexagon agents in the same list"
 	assert.match(IDENTITY_SOURCE, /PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps\["size"\]>> = \{\s*16: "xs",\s*24: "sm",\s*32: "default",/u);
 });
 
-test("agent identities default to human-first and expose an explicit agent-first attribution order", () => {
+test("agent identities delegate attributed avatars to the shared Human Agent Avatar", () => {
 	assert.match(IDENTITY_SOURCE, /attributedBy\?: AgentListInvoker;/u);
-	assert.match(IDENTITY_SOURCE, /export type AgentListAttributionOrder = "agent-first" \| "human-first";/u);
-	assert.match(IDENTITY_SOURCE, /attributionOrder\?: AgentListAttributionOrder;/u);
+	assert.match(IDENTITY_SOURCE, /export type AgentListAttributionOrder = HumanAgentAvatarOrder;/u);
 	assert.match(IDENTITY_SOURCE, /attributionOrder = "human-first"/u);
-	assert.match(IDENTITY_SOURCE, /aria-label=\{`\$\{agent\.name\}, used by \$\{attributedBy\.name\}`\}/u);
-	assert.match(IDENTITY_SOURCE, /PX_TO_ATTRIBUTED_AGENT_SIZE: Record<number, number> = \{[\s\S]*32: 24,/u);
-	assert.match(IDENTITY_SOURCE, /PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE:[\s\S]*32: "xs",/u);
-	assert.match(IDENTITY_SOURCE, /const agentFirst = attributionOrder === "agent-first";/u);
-	assert.match(IDENTITY_SOURCE, /const personPositionClassName = agentFirst\s*\? "absolute bottom-0 right-0 ring-2 ring-background"\s*: "absolute left-0 top-0 ring-2 ring-background";/u);
-	assert.match(IDENTITY_SOURCE, /const agentPositionClassName = agentFirst\s*\? "absolute left-0 top-0"\s*: "absolute bottom-0 right-0";/u);
+	assert.match(IDENTITY_SOURCE, /<HumanAgentAvatar\s+agent=\{agent\}\s+human=\{attributedBy\}\s+attributionOrder=\{attributionOrder\}\s+className=\{className\}\s+sizePx=\{sizePx\}/u);
+	assert.doesNotMatch(IDENTITY_SOURCE, /PX_TO_ATTRIBUTED_AGENT_SIZE|personPositionClassName|agentPositionClassName/u);
 });
 
 test("agent attribution groups share the same explicit order contract", () => {

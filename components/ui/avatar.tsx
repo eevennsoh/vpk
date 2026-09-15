@@ -7,6 +7,8 @@
 import * as React from "react"
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
 import { motion, useReducedMotion, type MotionProps, type Transition } from "motion/react"
+import { useAnimate } from "motion/react-mini"
+import type { AnimationOptions } from "motion/react"
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new"
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent"
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark"
@@ -16,6 +18,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { Icon } from "@/components/ui/icon"
 import { cn } from "@/lib/utils"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 const HEXAGON_CLIP =
 	"[clip-path:polygon(45%_1.34%,46.58%_0.6%,48.26%_0.15%,50%_0%,51.74%_0.15%,53.42%_0.6%,55%_1.34%,89.64%_21.34%,91.07%_22.34%,92.3%_23.57%,93.3%_25%,94.04%_26.58%,94.49%_28.26%,94.64%_30%,94.64%_70%,94.49%_71.74%,94.04%_73.42%,93.3%_75%,92.3%_76.43%,91.07%_77.66%,89.64%_78.66%,55%_98.66%,53.42%_99.4%,51.74%_99.85%,50%_100%,48.26%_99.85%,46.58%_99.4%,45%_98.66%,10.36%_78.66%,8.93%_77.66%,7.7%_76.43%,6.7%_75%,5.96%_73.42%,5.51%_71.74%,5.36%_70%,5.36%_30%,5.51%_28.26%,5.96%_26.58%,6.7%_25%,7.7%_23.57%,8.93%_22.34%,10.36%_21.34%)]"
@@ -87,14 +90,91 @@ function firstAvatarSize(children: React.ReactNode): AvatarSize | undefined {
 	return resolved
 }
 
+interface AvatarOutlineMotion {
+	scale: number | readonly number[]
+	transition?: Pick<AnimationOptions, "duration" | "ease" | "times" | "repeat" | "delay">
+	ring?: boolean
+}
+
 interface AvatarProps
 	extends AvatarPrimitive.Root.Props,
 		VariantProps<typeof avatarVariants> {
 	animate?: boolean
 	disabled?: boolean
 	label?: string
+	/** Match an ancestor scale animation while keeping circular outline strokes constant. */
+	outline?: AvatarOutlineMotion
 	/** Rendered as an unclipped sibling of hex artwork so the badge can hang past the tile. */
 	status?: AvatarStatus
+}
+
+function avatarScaleAnimation(element: Element | null): Animation | undefined {
+	for (let owner = element?.parentElement; owner; owner = owner.parentElement) {
+		const animation = owner.getAnimations().find((candidate) =>
+			candidate.effect instanceof KeyframeEffect && candidate.effect.getKeyframes().some((frame) =>
+				typeof frame.transform === "string" && frame.transform.includes("scale(")))
+		if (animation) return animation
+	}
+	return undefined
+}
+
+function AvatarCircleOutline({ scale, transition, ring = false }: Readonly<AvatarOutlineMotion>) {
+	const [scope, animateOutline] = useAnimate<HTMLSpanElement>()
+	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true)
+	React.useEffect(() => {
+		const values = typeof scale === "number" ? [scale] : scale
+		const scales = reducedMotion ? values.slice(0, 1) : values
+		const { duration, ease, times, repeat, delay } = transition ?? {}
+		const timing = reducedMotion ? { duration: 0 } : { duration, ease, times, repeat, delay }
+		const border = animateOutline('[data-slot="avatar-circle-border"] circle', { strokeWidth: scales.map((value) => 1 / value) }, timing)
+		const separator = ring ? animateOutline('[data-slot="avatar-circle-ring"] circle', { strokeWidth: scales.map((value) => 4 / value) }, timing) : undefined
+		const currentTime = avatarScaleAnimation(scope.current)?.currentTime
+		if (typeof currentTime === "number") {
+			border.time = currentTime / 1000
+			if (separator) separator.time = currentTime / 1000
+		}
+		return () => {
+			border.stop()
+			separator?.stop()
+		}
+	}, [scope, animateOutline, scale, transition, ring, reducedMotion])
+	return (
+		<span className="contents" ref={scope}>
+			{ring ? (
+				<svg
+					aria-hidden="true"
+					className="pointer-events-none absolute inset-0 -z-10 size-full overflow-visible text-background"
+					data-slot="avatar-circle-ring"
+					focusable="false"
+					viewBox="0 0 100 100"
+				>
+					<circle
+						cx="50" cy="50" r="50" fill="none"
+						stroke="currentColor" strokeWidth="4"
+						vectorEffect="non-scaling-stroke"
+					/>
+				</svg>
+			) : null}
+			<svg
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-0 z-[1] size-full overflow-visible text-border! mix-blend-darken dark:mix-blend-lighten"
+				data-slot="avatar-circle-border"
+				focusable="false"
+				viewBox="0 0 100 100"
+			>
+				<circle
+					cx="50" cy="50" r="50" fill="none"
+					stroke="currentColor" strokeWidth="1"
+					vectorEffect="non-scaling-stroke"
+				/>
+			</svg>
+		</span>
+	)
+}
+
+function avatarOutline(shape: AvatarProps["shape"], outline: AvatarProps["outline"]) {
+	const motion = shape === "circle" ? outline : undefined
+	return { motion, className: motion ? "isolate after:border-0" : undefined }
 }
 
 function AvatarHexagonBorder() {
@@ -125,11 +205,14 @@ function Avatar({
 	disabled = false,
 	label,
 	status,
+	outline: outlineMotion,
 	...props
 }: Readonly<AvatarProps>) {
 	const isInAvatarGroup = React.use(AvatarGroupContext)
+	const outline = avatarOutline(shape, outlineMotion)
 	const rootClassName = cn(
 		avatarVariants({ size, shape }),
+		outline.className,
 		disabled && "opacity-(--opacity-disabled) pointer-events-none grayscale",
 		className
 	)
@@ -206,6 +289,7 @@ function Avatar({
 			{...props}
 		>
 			{children}
+			{outline.motion ? <AvatarCircleOutline {...outline.motion} /> : null}
 			{status ? <AvatarStatusIndicator status={status} /> : null}
 		</AvatarPrimitive.Root>
 	)

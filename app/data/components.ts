@@ -166,6 +166,7 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("knowledge"),
 	customComponent("footer", "Footer"),
 	customComponent("hover-reveal-row", "Hover Reveal Row"),
+	customComponent("human-agent-avatar", "Human Agent Avatar"),
 	customComponent("object-tile", "Object Tile"),
 	customComponent("progress-circle", "Progress Circle"),
 	customComponent("progress-rovo", "Progress Rovo"),

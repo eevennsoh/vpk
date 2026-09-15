@@ -2,6 +2,9 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
+	"human-agent-avatar": dynamic(() => import("../../demos/ui-custom/human-agent-avatar-demo"), {
+		ssr: false,
+	}),
 	"agent-loading": dynamic(() => import("../../demos/ui-custom/agent-loading-demo"), {
 		ssr: false,
 	}),
