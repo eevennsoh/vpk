@@ -25,7 +25,11 @@ import {
 	sessionDragPlaceholderClasses,
 	sessionDragSourceClasses,
 } from "./agent-session-drag-layout";
-import { measureSessionDragIdentityOrigin } from "./agent-session-drag-motion";
+import {
+	measureSessionDragGeometry,
+	sessionDragGeometryRelativeToPointer,
+	type SessionDragGeometry,
+} from "./agent-session-drag-motion";
 import { AgentSessionDragOverlay } from "./agent-session-drag-overlay";
 import { toSessionTransferMember } from "./agent-session-transfer-member";
 import { toJiraIssueAgentActivityFromSession } from "./agent-session-work-item";
@@ -63,10 +67,7 @@ export function AgentSessionMediumDrag({
 	const [sourceHeight, setSourceHeight] = useState<number | undefined>(undefined);
 	// Where the chip starts, as an offset from the pointer that published the
 	// drag. Stored as the resolved delta so nothing has to read a ref at render.
-	const [chipOrigin, setChipOrigin] = useState<PointerDragPosition | null>(null);
-	// Drops `will-change` once the entrance lands so the promoted layer does not
-	// outlive the 150ms it was for.
-	const [chipSettled, setChipSettled] = useState(false);
+	const [chipOrigin, setChipOrigin] = useState<SessionDragGeometry | null>(null);
 	const drag = usePointerDrag(dragOffset, setDragOffset, sessionDrag?.bounds);
 	const chipPointer = useSessionDragChipPointer(shouldReduceMotion);
 	const isDragging = Boolean(sessionDrag) && drag.dragging && publishedDragging;
@@ -75,14 +76,9 @@ export function AgentSessionMediumDrag({
 		&& Math.hypot(drag.position.x, drag.position.y) >= SESSION_DRAG_CHIP_DISTANCE_PX;
 
 	const pointerOriginRef = useRef<PointerDragPosition | null>(null);
-	// Absolute viewport centre of the grabbed identity mark, kept raw. The chip
-	// mounts on the *publishing* pointermove, not on pointerdown, and the portal
-	// has already followed the pointer there — so the delta can only be taken
-	// against that later position. Resolving it at pointerdown would start the
-	// chip at `identityOrigin + firstMoveDelta` and it would visibly jump,
-	// worst with coalesced touch and stylus moves that clear the 2px threshold
-	// in one large step.
-	const identityOriginRef = useRef<PointerDragPosition | null>(null);
+	// Capture before dimming/collapse, then resolve against the first publishing
+	// move. A coalesced move must not offset the avatars from their source box.
+	const sourceGeometryRef = useRef<SessionDragGeometry | null>(null);
 	const didPublishDragRef = useRef(false);
 	const dragTargetRef = useRef<HTMLElement | null>(null);
 
@@ -127,13 +123,12 @@ export function AgentSessionMediumDrag({
 		}
 		drag.bind.onPointerUp(event);
 		pointerOriginRef.current = null;
-		identityOriginRef.current = null;
+		sourceGeometryRef.current = null;
 		dragTargetRef.current = null;
 		setPublishedDragging(false);
 		setGhostCohort(null);
 		setSourceHeight(undefined);
 		setChipOrigin(null);
-		setChipSettled(false);
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, event);
 	}
@@ -145,14 +140,13 @@ export function AgentSessionMediumDrag({
 		drag.bind.onPointerCancel(event);
 		drag.bind.onClick();
 		pointerOriginRef.current = null;
-		identityOriginRef.current = null;
+		sourceGeometryRef.current = null;
 		dragTargetRef.current = null;
 		didPublishDragRef.current = false;
 		setPublishedDragging(false);
 		setGhostCohort(null);
 		setSourceHeight(undefined);
 		setChipOrigin(null);
-		setChipSettled(false);
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, undefined, true);
 	}
@@ -233,7 +227,7 @@ export function AgentSessionMediumDrag({
 				didPublishDragRef.current = false;
 				dragTargetRef.current = event.currentTarget;
 				setSourceHeight(event.currentTarget.getBoundingClientRect().height);
-				identityOriginRef.current = measureSessionDragIdentityOrigin(event.currentTarget);
+				sourceGeometryRef.current = measureSessionDragGeometry(event.currentTarget);
 				drag.bind.onPointerDown(event);
 				pointerOriginRef.current = { x: event.clientX, y: event.clientY };
 				chipPointer.snapToPointer(
@@ -258,13 +252,12 @@ export function AgentSessionMediumDrag({
 					// Later moves already have the chip mounted; recomputing would
 					// restart the entrance mid-drag.
 					if (!didPublishDragRef.current) {
-						const identityOrigin = identityOriginRef.current;
-						setChipOrigin(identityOrigin === null
+						const sourceGeometry = sourceGeometryRef.current;
+						// Pin the publishing frame before the spring follows later moves.
+						chipPointer.snapToPointer({ x: event.clientX, y: event.clientY });
+						setChipOrigin(sourceGeometry === null
 							? null
-							: {
-								x: identityOrigin.x - event.clientX,
-								y: identityOrigin.y - event.clientY,
-							});
+							: sessionDragGeometryRelativeToPointer(sourceGeometry, { x: event.clientX, y: event.clientY }));
 					}
 					didPublishDragRef.current = true;
 					setPublishedDragging(true);
@@ -313,11 +306,9 @@ export function AgentSessionMediumDrag({
 					chipOrigin={chipOrigin}
 					cohort={ghostCohort ?? singletonSessionCohort(item)}
 					isDraggedOut={isDraggedOut}
-					onEntranceSettled={() => setChipSettled(true)}
 					pointerX={chipPointer.x}
 					pointerY={chipPointer.y}
 					reduceMotion={reduceChipMotion}
-					settled={chipSettled}
 				/>
 			) : null}
 		</div>
