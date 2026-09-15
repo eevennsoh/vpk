@@ -1,11 +1,11 @@
+export { CardGlowLayers } from "./card-glow";
 export {
 	CARD_GLOW_DEFAULTS,
 	CARD_GLOW_EFFECT_STYLE,
-	CardGlowLayers,
 	cardGlowSurfaceStyle,
 	type CardGlowCSSProperties,
 	type CardGlowTravel,
-} from "./card-glow";
+} from "./card-glow-surface";
 export {
 	CARD_GLOW_PROXIMITY_FALLOFF,
 	CARD_GLOW_PROXIMITY_REACH_PX,

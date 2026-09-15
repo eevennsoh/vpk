@@ -9,6 +9,10 @@ const { loadCjsModuleFromText } = require(
 
 const ROOT = path.join(__dirname, "..", "..", "..");
 const CARD_GLOW_SOURCE = fs.readFileSync(path.join(__dirname, "card-glow.tsx"), "utf8");
+const CARD_GLOW_SURFACE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "card-glow-surface.ts"),
+	"utf8",
+);
 const POINTER_SOURCE = fs.readFileSync(path.join(__dirname, "card-glow-pointer.ts"), "utf8");
 const SESSION_CARD_SOURCE = fs.readFileSync(
 	path.join(ROOT, "components/blocks/agent-session/agent-session-card.tsx"),
@@ -32,9 +36,12 @@ const MIGRATED_CONSUMERS = [
 	"components/projects/studio/components/rovo-app-home-starter-bento.tsx",
 ];
 
+// Load the package entry, not one file: the surface helpers moved out of the
+// component module (Fast Refresh keeps component files component-only), so this
+// also asserts they stay on the public export surface.
 async function loadCardGlow() {
 	const result = await esbuild.build({
-		entryPoints: [path.join(__dirname, "card-glow.tsx")],
+		entryPoints: [path.join(__dirname, "index.ts")],
 		bundle: true,
 		format: "cjs",
 		platform: "node",
@@ -61,6 +68,22 @@ async function loadBundled(relPathFromRoot) {
 function sessionFixture(agent) {
 	return { agent, id: "s1", state: "complete", title: "t" };
 }
+
+// ---------------------------------------------------------------------
+// Module shape
+// ---------------------------------------------------------------------
+
+test("the component module exports only its component", () => {
+	// Non-component exports in a component file defeat Fast Refresh's ability to
+	// preserve state (`react-doctor/only-export-components`), so the surface
+	// contract lives in its own module and `index.ts` recombines them.
+	const componentExports = CARD_GLOW_SOURCE.match(/^export /gmu) ?? [];
+	assert.equal(componentExports.length, 1, "card-glow.tsx exports CardGlowLayers and nothing else");
+	assert.match(CARD_GLOW_SOURCE, /^export function CardGlowLayers\(/mu);
+	for (const name of ["CARD_GLOW_DEFAULTS", "CARD_GLOW_EFFECT_STYLE", "cardGlowSurfaceStyle"]) {
+		assert.match(CARD_GLOW_SURFACE_SOURCE, new RegExp(`export (const|function) ${name}\\b`, "u"));
+	}
+});
 
 // ---------------------------------------------------------------------
 // Travel basis
