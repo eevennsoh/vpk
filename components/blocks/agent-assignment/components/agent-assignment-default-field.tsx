@@ -5,13 +5,18 @@ import { useReducedMotion } from "motion/react";
 import type { AgentAssignmentAgent } from "@/components/blocks/agent-assignment/components/agent-assignment";
 import { toAssignmentActivity } from "@/components/blocks/agent-assignment/components/assignment-session";
 import { JiraIssueAgentActivityRows } from "@/components/blocks/jira-issue/agent-activity";
+import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { cn } from "@/lib/utils";
 
 export function AgentAssignmentDefaultField({
 	assignedAgents,
+	activityIconScale,
+	activityRowFlush,
 	className,
 }: Readonly<{
 	assignedAgents: readonly AgentAssignmentAgent[];
+	activityIconScale?: JiraIssueIconScale;
+	activityRowFlush?: boolean;
 	className?: string;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -30,7 +35,9 @@ export function AgentAssignmentDefaultField({
 			<JiraIssueAgentActivityRows
 				activities={activities}
 				avatarLayout="animated"
+				flushContent={activityRowFlush}
 				inheritChinSurface
+				iconScale={activityIconScale}
 				showAssignmentFlyout={false}
 				shouldReduceMotion={shouldReduceMotion}
 				usesStrokeChrome
