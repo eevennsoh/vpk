@@ -50,11 +50,13 @@ const PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE: Record<
 
 export function AgentListAttributionAvatarGroup({
 	agent,
+	animate,
 	attributedBy,
 	className,
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
+	animate?: boolean;
 	attributedBy: AgentListInvoker;
 	className?: string;
 	sizePx: number;
@@ -66,6 +68,7 @@ export function AgentListAttributionAvatarGroup({
 			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
 		>
 			<AgentAvatarVisual
+				animate={animate}
 				avatarSrc={agent.avatarSrc}
 				brandName={agent.brandName}
 				label=""

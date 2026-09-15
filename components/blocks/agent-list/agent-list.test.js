@@ -182,6 +182,8 @@ test("agent identities can show a human invoker in the 32px attribution frame", 
 });
 
 test("agent attribution groups overlap the agent and invoker like a facepile", () => {
+	assert.match(IDENTITY_SOURCE, /animate\?: boolean;/u);
+	assert.match(IDENTITY_SOURCE, /<AgentAvatarVisual[\s\S]*animate=\{animate\}/u);
 	assert.match(
 		IDENTITY_SOURCE,
 		/export function AgentListAttributionAvatarGroup[\s\S]*<AvatarGroup[\s\S]*className=\{cn\("shrink-0", className\)\}[\s\S]*label=\{`\$\{agent\.name\}, used by \$\{attributedBy\.name\}`\}/u,
