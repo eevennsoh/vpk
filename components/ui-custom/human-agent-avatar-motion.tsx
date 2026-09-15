@@ -21,6 +21,7 @@ export function HumanAgentAvatarMotion({
 	className,
 	label,
 	options,
+	onAnimationComplete,
 }: Readonly<{
 	agent: ReactNode;
 	human: (outline: AvatarProps["outline"]) => ReactNode;
@@ -31,6 +32,7 @@ export function HumanAgentAvatarMotion({
 	className: string;
 	label: string;
 	options?: Partial<HumanAgentAvatarMotionOptions>;
+	onAnimationComplete?: () => void;
 }>) {
 	const ref = useRef<HTMLSpanElement>(null);
 	const inView = useInView(ref);
@@ -98,6 +100,7 @@ export function HumanAgentAvatarMotion({
 				className="absolute left-0 top-0 z-[1] origin-top-left"
 				data-avatar-role="human"
 				initial={false}
+				onAnimationComplete={active && motionConfig.config.repeat !== "infinite" ? onAnimationComplete : undefined}
 				style={{
 					transform: humanOrbit.initial,
 					willChange: active ? "transform" : undefined,

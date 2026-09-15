@@ -150,7 +150,7 @@ test("only an opted-in Working card shimmers and every state retains its authore
 	}
 });
 
-test("first-place and reentering revisions paint shared accent layers without enabling pointer glow", async () => {
+test("first-place and reentering revisions never force session glow", async () => {
 	const { AgentSessionCard } = await loadCard();
 	for (const isArriving of [false, true]) {
 		const html = renderToStaticMarkup(createElement(AgentSessionCard, {
@@ -159,11 +159,10 @@ test("first-place and reentering revisions paint shared accent layers without en
 			isStateChanged: true,
 			showMoreMenu: false,
 		}));
-		assert.ok(html.includes("data-agent-session-status-glow"));
-		assert.ok(html.includes("data-card-glow-border"));
-		assert.ok(html.includes("data-card-glow-bloom"));
-		assert.ok(html.includes("--card-glow-tile-accent:"));
-		assert.ok(html.includes("isolate"), "the shared layers remain above the article background");
+		assert.ok(!html.includes("data-agent-session-status-glow"));
+		assert.ok(!html.includes("data-card-glow-border"));
+		assert.ok(!html.includes("data-card-glow-bloom"));
+		assert.ok(!html.includes("--card-glow-tile-accent:"));
 	}
 	for (const props of [
 		{ isStateChanged: false },
@@ -197,12 +196,10 @@ test("reduced motion removes the Working shimmer and the one-shot revision glow"
 	assert.ok(html.includes(CARD_ITEM.title));
 });
 
-test("the revision glow owns completion after the faster card and status transitions", () => {
-	assert.match(CARD_SOURCE, /const shouldPlayStateChangeGlow = isStateChanged && !isDeparting && !shouldReduceMotion;/u);
-	assert.match(CARD_SOURCE, /<AgentSessionStateChangeGlow item=\{item\} key=\{item\.state\} onComplete=\{onStateChangeComplete\} \/>/u);
-	assert.match(CARD_SOURCE, /<motion\.span[\s\S]*?onAnimationComplete=\{onComplete\}[\s\S]*?<CardGlowLayers baseBorder=\{false\} \/>/u);
+test("the status icon owns revision completion after the avatar rotation", () => {
+	assert.doesNotMatch(CARD_SOURCE, /AgentSessionStateChangeGlow|STATUS_GLOW_TRANSITION/u);
+	assert.equal((CARD_SOURCE.match(/onTransitionComplete=\{isStateChanged \? onStateChangeComplete : undefined\}/gu) ?? []).length, 2);
 	const arrivalComplete = /const handleArrivalComplete = \(\) => \{[\s\S]*?\n\t\};/u.exec(CARD_SOURCE)?.[0] ?? "";
 	assert.ok(arrivalComplete.length > 0);
 	assert.doesNotMatch(arrivalComplete, /onStateChangeComplete/u);
-	assert.doesNotMatch(CARD_SOURCE, /onTransitionComplete=\{[^\n]*onStateChangeComplete/u);
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
 	AgentAvatarVisual,
 	type AgentAvatarVisualProps,
@@ -28,6 +29,8 @@ export interface HumanAgentAvatarProps {
 	human: { name: string; avatarSrc?: string };
 	/** Swap the human and agent, hold, then return. Static by default. */
 	animate?: boolean;
+	/** Called after a finite animation, or immediately when reduced motion skips it. */
+	onAnimationComplete?: () => void;
 	motion?: Partial<HumanAgentAvatarMotionOptions>;
 	attributionOrder?: HumanAgentAvatarOrder;
 	/** Default footprint: 32px, containing a 24px agent and a 16px human. */
@@ -64,6 +67,7 @@ export function HumanAgentAvatar({
 	agent,
 	human,
 	animate = false,
+	onAnimationComplete,
 	motion,
 	attributionOrder = "agent-first",
 	sizePx = 32,
@@ -71,6 +75,11 @@ export function HumanAgentAvatar({
 }: Readonly<HumanAgentAvatarProps>) {
 	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	const shouldAnimate = animate && !reducedMotion;
+	useEffect(() => {
+		if (animate && reducedMotion && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			onAnimationComplete?.();
+		}
+	}, [animate, reducedMotion, onAnimationComplete]);
 	const frameClassName = PX_TO_IDENTITY_FRAME_CLASS_NAME[sizePx] ?? "size-8";
 	const agentSizePx = PX_TO_ATTRIBUTED_AGENT_SIZE[sizePx] ?? sizePx;
 	const personAvatarSize = PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE[sizePx] ?? "xs";
@@ -109,6 +118,7 @@ export function HumanAgentAvatar({
 		return (
 			<HumanAgentAvatarMotion
 				options={motion}
+				onAnimationComplete={onAnimationComplete}
 				agent={agentAvatar}
 				human={humanAvatar}
 				agentFirst={agentFirst}
