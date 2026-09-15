@@ -3,9 +3,11 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
+import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { DEFAULT_SKILLS, ROVO_DIRECTORY_AGENT_PROFILES } from "@/app/data/directory";
+import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
@@ -42,6 +44,7 @@ import {
 	resolveJiraTab,
 } from "@/components/projects/jira/lib/jira-tab-model";
 import AppLayout from "@/components/projects/page";
+import { cn } from "@/lib/utils";
 import { JiraTeamEu26List } from "./components/jira-team-eu26-list";
 
 import { renderJiraTeamEu26AgentActivityIndicator } from "./data/agent-activity-indicators";
@@ -51,6 +54,7 @@ import {
 	JIRA_TEAM_EU26_PAY_BOARD_AGENTS,
 	JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES,
 	JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
+	JIRA_TEAM_EU26_PAY_SESSION_MEMBERS,
 } from "./data/presentation-story";
 import { useJiraTeamEu26AgentSessionSync } from "./hooks/use-jira-team-eu26-agent-session-sync";
 import { useJiraTeamEu26GenerativeActions } from "./hooks/use-jira-team-eu26-generative-actions";
@@ -61,6 +65,15 @@ const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-d
 
 const JIRA_TEAM_EU26_TABS = getJiraTabs(false);
 const JIRA_TEAM_EU26_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(JIRA_TEAM_EU26_TABS);
+const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
+	"kanbanBackground",
+	"advancedTimeline",
+	"agentSessionColumnResizing",
+	"manualLink",
+	"sessionStroke",
+	"sessionBloom",
+	"sessionProximity",
+] as const;
 const isJiraTeamEu26LooseWorkResumable = () => true;
 
 function resolveJiraTeamEu26ContinueChatAgent(
@@ -92,6 +105,7 @@ export default function JiraTeamEu26Page(): React.ReactElement {
 
 function JiraTeamEu26App(): React.ReactElement {
 	const router = useRouter();
+	const { designVariants } = useDesignVariants();
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
@@ -124,13 +138,14 @@ function JiraTeamEu26App(): React.ReactElement {
 		Readonly<Record<string, readonly AgentSessionItem[]>>
 	>({});
 	const detachedActivitiesByIdRef = useRef<Record<string, JiraIssueAgentActivity>>({});
-	// Team EU 26 has a fixed presentation: Board and List remain sibling tabs,
-	// untracked work remains an in-flow column, and the standard kanban chrome
-	// is always used. It deliberately does not read the global variant store.
+	// Team EU 26 keeps its page structure fixed: Board and List remain sibling
+	// tabs, untracked work remains an in-flow column, and standard kanban chrome
+	// stays on. Only the timeline interaction model is user-configurable.
 	const tabs = JIRA_TEAM_EU26_TABS;
 	const createWorkItemDropZoneLabel = "Create new work item";
 	const [workItemView, setWorkItemView] = useState<JiraWorkItemView>(DEFAULT_JIRA_WORK_ITEM_VIEW);
 	const [selectedTabLabel, setSelectedTabLabel] = useState(JIRA_TEAM_EU26_DEFAULT_TAB_LABEL);
+	const startInstantTransition = useInstantTransition();
 	const activeTab = resolveJiraTab(tabs, selectedTabLabel, workItemView);
 	const tabOwnsView = activeTab?.view !== undefined;
 	const activeView = activeTab?.view ?? workItemView;
@@ -145,12 +160,19 @@ function JiraTeamEu26App(): React.ReactElement {
 		paused: agentSessionColumnInteracting,
 	});
 	const handleTabChange = useCallback((tabLabel: string) => {
-		setSelectedTabLabel(tabLabel);
 		const tabView = tabs.find((tab) => tab.label === tabLabel)?.view;
-		if (tabView) {
-			setWorkItemView(tabView);
+		if (!tabView) {
+			setSelectedTabLabel(tabLabel);
+			return;
 		}
-	}, [tabs]);
+
+		// Board and List keep their DOM through React Activity. Block Motion's
+		// cross-view projection so a hidden chin cannot become the next FLIP origin.
+		startInstantTransition(() => {
+			setSelectedTabLabel(tabLabel);
+			setWorkItemView(tabView);
+		});
+	}, [startInstantTransition, tabs]);
 	const [resumeAnnouncement, setResumeAnnouncement] = useState("");
 	// Team EU presents every unlinked session as locally resumable, even when the
 	// fixture names a teammate's machine. The card owns the clipboard copy and
@@ -353,24 +375,39 @@ function JiraTeamEu26App(): React.ReactElement {
 				defaultSidebarOpen={true}
 				hideFloatingRovo
 				product="jira"
-				settingsIconOnly
+				settingsDesignVariantIds={JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
 			>
-				<div className="h-full min-h-0 min-w-0 overflow-hidden bg-surface [&>div]:min-h-0">
+				<div
+					className={cn(
+						"h-full min-h-0 min-w-0 overflow-hidden [&>div]:min-h-0",
+						designVariants.kanbanBackground ? "bg-bg-accent-gray-subtlest" : "bg-surface",
+					)}
+					data-jira-team-eu26-board-surface=""
+				>
 					<ExperimentalJiraKanbanPage
 						activeView={activeView}
 						retainWorkItemViews
 						additionalAgentSessions={syncedAgentSessions}
 						agentActivityLayout="merged"
+						agentSessionMembers={JIRA_TEAM_EU26_PAY_SESSION_MEMBERS}
 						agentSessionMultiSelect={false}
 						cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
+						issueDragTransitions
 						createWellBounce="off"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 						agentSessionAssigneeIdAliases={JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
 						agentSessionLinkingVariant="glow"
 						suggestSessionBoardLinkOnHover={false}
 						agentSessionPresentation="column"
+						advancedAgentSessionTimeline={designVariants.advancedTimeline}
+						agentSessionColumnResizable={designVariants.agentSessionColumnResizing}
+						agentSessionColumnGlow={{
+							glowBloom: designVariants.sessionBloom,
+							glowReach: designVariants.sessionProximity,
+							glowStroke: designVariants.sessionStroke,
+						}}
 						columnChrome="default"
 						agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
@@ -415,6 +452,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						showAgentSessionFlyoutFooter={false}
 						showAgentSessionFilter={false}
 						showAgentSessionLinkAction={false}
+						showAgentSessionLinkWorkItemMenuItem={designVariants.manualLink}
 						showAgentSessionOverflow={false}
 						showBoardContent={showBoardContent}
 						moreControlsPlacement="end"

@@ -208,7 +208,7 @@ test("attaching onto a running session replaces that chin row instead of stackin
 	const targetCard = getIssueArticle(page, "PAY-107");
 	await targetCard.scrollIntoViewIfNeeded();
 	const runningSession = targetCard.getByRole("button", {
-		name: /^Open Claude Code in Rovo chat:/u,
+		name: /^Open Claude in Rovo chat:/u,
 	});
 	await expect(runningSession).toBeVisible();
 	const restingBox = await targetCard.boundingBox();
@@ -234,7 +234,7 @@ test("attaching onto a running session replaces that chin row instead of stackin
 	);
 	await expect(dropZone).toHaveAttribute("data-board-agent-session-target", "attach");
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin"]')).toBeVisible();
-	await expect(targetCard.getByText("Link 1 agent session")).toBeVisible();
+	await expect(targetCard.getByText("Link agent session")).toBeVisible();
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin-slot"]')).toHaveCSS("height", "32px");
 	await expect(runningSession).toHaveCount(0);
 	await expect(targetCard.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(0);
@@ -272,7 +272,7 @@ test("attaching onto PAY-118 replaces any session chin instead of stacking the d
 	);
 	await expect(dropZone).toHaveAttribute("data-board-agent-session-target", "attach");
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin"]')).toHaveCount(1);
-	await expect(targetCard.getByText("Link 1 agent session")).toBeVisible();
+	await expect(targetCard.getByText("Link agent session")).toBeVisible();
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin-slot"]')).toHaveCSS("height", "32px");
 	await expect(targetCard.locator('[data-testid^="agent-session-row-"]:visible')).toHaveCount(0);
 	await expect(targetCard.getByText("Why the wallet was cut")).not.toBeVisible();
@@ -952,7 +952,7 @@ test("session flyouts close for a Jira card drag and recover after drag end", as
 		name: /^Open Codex in Rovo chat:/u,
 	});
 	const nextSession = getIssueArticle(page, "PAY-123").getByRole("button", {
-		name: "Open Claude Code in Rovo chat: Working",
+		name: "Open Claude in Rovo chat: Working",
 	});
 	const flyout = page.locator("[data-slot='hover-card-content']");
 	await sourceSession.hover();

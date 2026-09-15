@@ -36,7 +36,7 @@
 		"components/blocks/artifact.tsx": 1016,
 		"components/blocks/editor-toolbar/components/editor-toolbar.tsx": 1089,
 		"components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx": 1077,
-		"components/blocks/jira-kanban/experimental/page.tsx": 1055,
+		"components/blocks/jira-kanban/experimental/page.tsx": 1057,
 		"components/blocks/skills-directory/components/skills-directory.tsx": 1775,
 		"components/blocks/triggers/page.tsx": 1526,
 		"components/blocks/visual-waveform/page.tsx": 1482,

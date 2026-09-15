@@ -1,6 +1,27 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import { plugin as shadcn } from "@shadcn/lint";
+
+const buttonRestyleContract = {
+	pattern: "^Button$",
+	allow: ["layout"],
+	deny: ["h-*", "min-h-*", "max-h-*", "size-*"],
+	message: {
+		layout: "Button owns its height. Use its size prop in {{file}}; keep placement and width at the caller.",
+		shape: "Use Button's shape or variant props in {{file}} instead of overriding its radius or border.",
+	},
+};
+const badgeRestyleContract = {
+	pattern: "^Badge$",
+	allow: ["layout"],
+	deny: ["h-*", "min-h-*", "max-h-*", "size-*"],
+};
+const designSystemRestyleOptions = {
+	// Other primitives remain flexible until their contracts are reviewed.
+	allow: ["*"],
+	contracts: [buttonRestyleContract, badgeRestyleContract],
+};
 
 const vpkIconRestrictedImportNames = [
 	"Activity",
@@ -61,6 +82,72 @@ const appComponentRestrictedImportPaths = [
 const eslintConfig = defineConfig([
 	...nextVitals,
 	...nextTs,
+	{
+		files: ["app/**/*.{js,jsx,ts,tsx}", "components/**/*.{js,jsx,ts,tsx}"],
+		plugins: { shadcn },
+	},
+	{
+		// Expand this pilot only after reviewing each consumer's customization.
+		files: [
+			"components/projects/jira-team-eu26/**/*.{ts,tsx}",
+			"components/blocks/agent-session-column/**/*.{ts,tsx}",
+		],
+		settings: {
+			shadcn: {
+				note: "See DESIGN.md and .agents/rules/component-architecture.md for component ownership and lint maintenance.",
+			},
+		},
+		rules: {
+			"shadcn/no-restyle": ["warn", designSystemRestyleOptions],
+		},
+	},
+	{
+		files: ["components/blocks/agent-session-column/index.tsx"],
+		rules: {
+			"shadcn/no-restyle": ["warn", {
+				...designSystemRestyleOptions,
+				contracts: [
+					{
+						...buttonRestyleContract,
+						// This owner controls hover/focus visibility and the outlined
+						// collapsed drag-preview chip. These are lifecycle states,
+						// not general Button treatments; preserve their existing proof.
+						allow: [
+							...buttonRestyleContract.allow,
+							"opacity-0", "opacity-100", "transition-opacity",
+							"transition-none", "duration-normal", "ease-out-practical",
+							"border", "border-border", "bg-surface-overlay", "text-icon-subtle",
+						],
+					},
+					badgeRestyleContract,
+				],
+			}],
+		},
+	},
+	{
+		files: ["components/blocks/agent-session-column/agent-session-column-header.tsx"],
+		rules: {
+			"shadcn/no-restyle": ["warn", {
+				...designSystemRestyleOptions,
+				contracts: [
+					{
+						...buttonRestyleContract,
+						// The collapsed Expand control's gutter hit area stays
+						// transparent; its 24px child owns hover and focus paint.
+						allow: [
+							...buttonRestyleContract.allow,
+							"bg-transparent", "focus-visible:border-transparent", "focus-visible:ring-0",
+						],
+					},
+					badgeRestyleContract,
+				],
+			}],
+		},
+	},
+	{
+		files: ["components/ui/**/*.{js,jsx,ts,tsx}"],
+		rules: { "shadcn/no-restyle": "off" },
+	},
 	// Override default ignores of eslint-config-next.
 	globalIgnores([
 		// Default ignores of eslint-config-next:

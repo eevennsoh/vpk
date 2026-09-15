@@ -6,10 +6,11 @@ tools: [
   "Glob",
   "Grep",
   "Bash",
-  "mcp__plugin_figma_figma__get_design_context",
-  "mcp__plugin_figma_figma__get_screenshot",
-  "mcp__plugin_figma_figma__get_metadata",
-  "mcp__plugin_figma_figma__get_variable_defs",
+  "mcp__figma__whoami",
+  "mcp__figma__get_design_context",
+  "mcp__figma__get_screenshot",
+  "mcp__figma__get_metadata",
+  "mcp__figma__get_variable_defs",
   "mcp__ads__ads_plan",
   "mcp__ads__ads_search_components",
   "mcp__ads__ads_get_a11y_guidelines",
@@ -45,10 +46,14 @@ You receive a Figma URL or node reference. Extract the file key and node ID:
 
 ### Workflow
 
+Figma tools may be lazy/deferred. Discover the exact `mcp__figma__*` capability before treating an initial missing tool list as authoritative. If access or authentication is uncertain, call `mcp__figma__whoami` before asking for credentials or reporting that Figma is unavailable.
+
 #### Step 1: Fetch Design Context
 
+Load the Figma server's `figma-design-to-code` skill first (from the installed Figma plugin or `skill://figma/figma-design-to-code/SKILL.md` MCP resource), then call:
+
 ```text
-mcp__plugin_figma_figma__get_design_context(fileKey, nodeId)
+mcp__figma__get_design_context(fileKey, nodeId)
 ```
 
 If the response is truncated, first run `get_metadata` to understand structure, then fetch specific child nodes.
@@ -56,7 +61,7 @@ If the response is truncated, first run `get_metadata` to understand structure, 
 #### Step 2: Get Visual Reference
 
 ```text
-mcp__plugin_figma_figma__get_screenshot(fileKey, nodeId)
+mcp__figma__get_screenshot(fileKey, nodeId)
 ```
 
 Save the screenshot reference for the Validator agent.
@@ -64,7 +69,7 @@ Save the screenshot reference for the Validator agent.
 #### Step 3: Extract Variables
 
 ```text
-mcp__plugin_figma_figma__get_variable_defs(fileKey, nodeId)
+mcp__figma__get_variable_defs(fileKey, nodeId)
 ```
 
 Proceed without variable definitions if the call fails, but record the limitation in the output spec.

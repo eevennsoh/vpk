@@ -5,7 +5,7 @@ type JiraTeamEu26SyncSession = Extract<PulseLooseWork, { kind: "agent-session" }
 const SYNC_DELAY_MIN_MS = 1_000;
 const SYNC_DELAY_MAX_MS = 3_000;
 
-export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
+const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 	{
 		agentId: "cursor",
 		detail: "host local · worktree .worktrees/pay-107-webhook-gap · findings have not been linked yet",
@@ -18,7 +18,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1856,
 			status: "created",
-			title: "Move retry and backoff out of LegacyGatewayAdapter",
+			title: "Extract retry policy",
 			files: 7,
 			additions: 163,
 			deletions: 88,
@@ -27,6 +27,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		},
 		shortTitle: "Challenge webhook gap",
 		sourceTitle: "PAY-107",
+		state: "running",
 		timeLabel: "Just now",
 		title: "Challenge webhook gap notes just landed from a local Cursor session",
 	},
@@ -42,7 +43,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1858,
 			status: "failed",
-			title: "Confirm the sandbox key retention window before replay",
+			title: "Set key retention",
 			files: 4,
 			additions: 97,
 			deletions: 12,
@@ -51,6 +52,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		},
 		shortTitle: "Sandbox 401 root cause",
 		sourceTitle: "PAY-112",
+		state: "needs-input",
 		timeLabel: "Just now",
 		title: "Sandbox 401 root cause just arrived from a local Codex session",
 	},
@@ -66,7 +68,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1871,
 			status: "merged",
-			title: "Measure saved-card round-trip latency",
+			title: "Measure card latency",
 			files: 8,
 			additions: 204,
 			deletions: 57,
@@ -90,7 +92,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1866,
 			status: "created",
-			title: "Add per-account targeting and an armed kill switch",
+			title: "Add kill switch",
 			files: 6,
 			additions: 142,
 			deletions: 16,
@@ -99,6 +101,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		},
 		shortTitle: "Kill switch rollout notes",
 		sourceTitle: "PAY-121",
+		state: "running",
 		timeLabel: "Just now",
 		title: "Kill switch rollout notes just appeared from a local Claude session",
 	},
@@ -113,6 +116,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		memberIds: ["maya", "priya"],
 		shortTitle: "Retry telemetry review",
 		sourceTitle: "PAY-115",
+		state: "needs-input",
 		timeLabel: "Just now",
 		title: "Retry telemetry review just synced from a local Codex session",
 	},
@@ -127,6 +131,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		memberIds: ["jordan", "maya"],
 		shortTitle: "Contract test gaps",
 		sourceTitle: "PAY-119",
+		state: "running",
 		timeLabel: "Just now",
 		title: "Contract test gaps just landed from a local Cursor session",
 	},
@@ -155,6 +160,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		memberIds: ["venn", "priya"],
 		shortTitle: "Release gate decision",
 		sourceTitle: "PAY-132",
+		state: "needs-input",
 		timeLabel: "Just now",
 		title: "Release gate decision just synced from a local Claude session",
 	},
@@ -170,7 +176,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1875,
 			status: "created",
-			title: "Document retry timeout budgets by endpoint",
+			title: "Set timeout budgets",
 			files: 5,
 			additions: 118,
 			deletions: 24,
@@ -194,7 +200,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1877,
 			status: "failed",
-			title: "Reproduce duplicate capture idempotency race",
+			title: "Reproduce capture race",
 			files: 9,
 			additions: 231,
 			deletions: 46,
@@ -218,7 +224,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1880,
 			status: "merged",
-			title: "Align settlement payloads across v1 and v2",
+			title: "Align settlement data",
 			files: 11,
 			additions: 286,
 			deletions: 73,
@@ -242,7 +248,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1882,
 			status: "created",
-			title: "Calibrate v2 reconciliation alert thresholds",
+			title: "Tune recon alerts",
 			files: 6,
 			additions: 154,
 			deletions: 31,
@@ -266,7 +272,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1885,
 			status: "created",
-			title: "Add dry-run output to ledger replay",
+			title: "Add replay dry run",
 			files: 7,
 			additions: 172,
 			deletions: 28,
@@ -290,7 +296,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1888,
 			status: "merged",
-			title: "Exercise payment token rotation without downtime",
+			title: "Rotate payment tokens",
 			files: 10,
 			additions: 249,
 			deletions: 64,
@@ -314,7 +320,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1890,
 			status: "failed",
-			title: "Preserve webhook ordering during failover",
+			title: "Keep webhook order",
 			files: 8,
 			additions: 193,
 			deletions: 39,
@@ -338,7 +344,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1893,
 			status: "created",
-			title: "Record refund actor and decision metadata",
+			title: "Log refund decisions",
 			files: 6,
 			additions: 137,
 			deletions: 19,
@@ -474,7 +480,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1897,
 			status: "created",
-			title: "Trace issuer authentication fallback paths",
+			title: "Trace auth fallback",
 			files: 7,
 			additions: 184,
 			deletions: 33,
@@ -498,7 +504,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1901,
 			status: "merged",
-			title: "Recover interrupted payout batches safely",
+			title: "Recover payout batches",
 			files: 12,
 			additions: 315,
 			deletions: 81,
@@ -522,7 +528,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1904,
 			status: "failed",
-			title: "Compare v1 and v2 decline responses",
+			title: "Compare decline codes",
 			files: 9,
 			additions: 227,
 			deletions: 52,
@@ -546,7 +552,7 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		pullRequest: {
 			number: 1907,
 			status: "created",
-			title: "Guard account migration with scoped locks",
+			title: "Lock account migration",
 			files: 6,
 			additions: 149,
 			deletions: 21,
@@ -615,6 +621,29 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = [
 		title: "Final readiness observations just appeared from a local Claude session",
 	},
 ] as const satisfies readonly JiraTeamEu26SyncSession[];
+
+function resolveJiraTeamEu26SyncSessionState(
+	session: JiraTeamEu26SyncSession,
+	index: number,
+): NonNullable<JiraTeamEu26SyncSession["state"]> {
+	if (session.state !== undefined) {
+		return session.state;
+	}
+	if (session.issueStatus === "In progress") {
+		return "running";
+	}
+	if (session.pullRequest?.status === "failed" || index % 5 === 0) {
+		return "needs-input";
+	}
+	return "complete";
+}
+
+export const JIRA_TEAM_EU26_SYNC_SESSIONS = JIRA_TEAM_EU26_SYNC_SESSION_SOURCE.map(
+	(session, index) => ({
+		...session,
+		state: resolveJiraTeamEu26SyncSessionState(session, index),
+	}),
+) satisfies readonly JiraTeamEu26SyncSession[];
 
 export function getJiraTeamEu26SyncDelayMs(
 	random: () => number = Math.random,

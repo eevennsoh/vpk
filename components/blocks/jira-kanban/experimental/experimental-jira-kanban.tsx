@@ -29,30 +29,25 @@ import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-import { BoardColumnAgentAssignment } from "./components/board-column-agent-assignment";
 import {
-	BoardColumnResizeButton,
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
-import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
+import { BoardColumn } from "./components/board-column";
 import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
-import { BoardColumnCardList } from "./components/board-column-card-list";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
 import {
 	useCreatedCardArrivalCompletion,
 	type JiraKanbanCreatedCardArrival,
 } from "./hooks/use-created-card-arrival";
-import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
 import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
-import { JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
+import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	getBoardColumnOuterWidthPx,
 	isBoardColumnCollapsed,
 	toggleCollapsedBoardColumn,
 	resolveBoardColumnRowPaddingInlineStart,
-	BOARD_COLUMN_WIDTH_PX,
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
 import { ExperimentalJiraKanbanCard } from "./experimental-jira-kanban-card";
@@ -70,7 +65,6 @@ import {
 } from "./use-board-agent-session-drag";
 
 import type {
-	JiraKanbanAgentData,
 	JiraKanbanCardData,
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanProps,
@@ -94,6 +88,8 @@ import {
  * shared so both variants remain interchangeable inside an owning surface.
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
+	/** Issue-only previews, grouped workflow targets and ordered drops. */
+	issueDragTransitions?: boolean;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/** One-shot card entrance requested by the host after creating cards from sessions. */
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
@@ -118,6 +114,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * reserve dead space instead and defeat the overlay.
 	 */
 	scrollEndInset?: number;
+	/** Reports whether horizontally scrolled content sits beneath a fixed leading surface. */
+	onScrollUnderlapChange?: (hasUnderlap: boolean) => void;
 	/** Detached sessions keyed by the Jira card they should remain beneath. */
 	detachedAgentSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
 	/**
@@ -239,113 +237,6 @@ function orderPickerItems<T extends Readonly<{ id: string }>>(
 	];
 }
 
-function BoardColumn({
-	agents,
-	assignedAgentIds,
-	cardInsertion,
-	children,
-	chrome,
-	columnChrome,
-	count,
-	createdCardArrival,
-	createWorkItemDropZoneLabel,
-	onCollapse,
-	onCreateAgent,
-	onToggleAgent,
-	sessionDragTransaction,
-	title,
-}: Readonly<{
-	agents?: readonly JiraKanbanAgentData[];
-	assignedAgentIds: readonly string[];
-	cardInsertion: BoardAgentSessionDrag["cardInsertion"];
-	children: ReactNode;
-	chrome: KanbanColumnChromeStyles;
-	columnChrome: KanbanColumnChrome;
-	count: number;
-	createdCardArrival?: JiraKanbanCreatedCardArrival;
-	createWorkItemDropZoneLabel?: string;
-	onCollapse: () => void;
-	onCreateAgent?: (columnTitle: string) => void;
-	onToggleAgent?: (agentId: string) => void;
-	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
-	title: string;
-}>) {
-	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
-	const insertionArmed = cardInsertion?.columnTitle === title;
-	const isEmptyColumn = count === 0;
-	const createAction = <BoardColumnCreateAction
-		dropZoneLabel={createWorkItemDropZoneLabel}
-		placement={isEmptyColumn ? "top" : "bottom"}
-		reveal={isEmptyColumn ? "always" : "column-hover"}
-		sessionDragTransaction={sessionDragTransaction}
-		title={title}
-	/>;
-	return (
-		<div
-			className={cn("group/board-column min-w-0 overflow-visible", chrome.columnClassName)}
-			data-kanban-column-chrome={columnChrome}
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				width: "100%",
-				// Pin the layout width so the column never reflows while the shell
-				// animates back open from the collapsed pill.
-				minWidth: `${BOARD_COLUMN_WIDTH_PX}px`,
-				height: "100%",
-				borderRadius: token("radius.xlarge"),
-				...chrome.dropContentPadding,
-			}}
-		>
-			<div
-				className="flex min-w-0 items-center justify-between gap-2"
-				style={{ paddingBottom: token("space.100"), ...chrome.header }}
-			>
-				<div className="flex min-w-0 items-center gap-1.5">
-					<span className="truncate text-xs font-medium leading-4 text-text-subtle">
-						{title}
-					</span>
-					<span className="shrink-0 text-xs font-normal text-text-subtlest">
-						{count}
-					</span>
-				</div>
-				<div className="flex shrink-0 items-center gap-0.5">
-					{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
-						<BoardColumnAgentAssignment
-							agents={agents}
-							assignedAgentIds={assignedAgentIds}
-							columnTitle={title}
-							onCreateAgent={onCreateAgent}
-							onToggleAgent={onToggleAgent}
-						/>
-					) : null}
-					<BoardColumnResizeButton
-						className={cn(
-							BOARD_COLUMN_ACTION_REVEAL,
-							"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
-							"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
-						)}
-						collapsed={false}
-						onToggle={onCollapse}
-						title={title}
-					/>
-				</div>
-			</div>
-			<BoardColumnCardList
-				chrome={chrome}
-				columnTitle={title}
-				count={count}
-				createdCardArrival={createdCardArrival}
-				insertionArmed={insertionArmed}
-				isEmpty={isEmptyColumn}
-			>
-				{children}
-			</BoardColumnCardList>
-
-			<div style={{ order: isEmptyColumn ? 0 : 1, ...(!isEmptyColumn ? chrome.footer : {}) }}>{createAction}</div>
-		</div>
-	);
-}
-
 function BoardColumnShell({
 	children,
 	chrome,
@@ -365,8 +256,8 @@ function BoardColumnShell({
 	columnChrome: KanbanColumnChrome;
 	count: number;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
-	onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
-	onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
+	onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
+	onDrop?: (event: React.DragEvent<HTMLDivElement>) => void;
 	onToggleCollapsed: () => void;
 	title: string;
 }>) {
@@ -443,6 +334,7 @@ function ExperimentalJiraKanbanView({
 	cardGenerativeActionFooterActions,
 	cardMoveAnimation,
 	iconScale = "compact",
+	issueDragTransitions = false,
 	collapsedColumns: controlledCollapsedColumns,
 	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
 	createdCardArrival,
@@ -468,6 +360,7 @@ function ExperimentalJiraKanbanView({
 	onCreateAgent,
 	onCreatedCardArrivalComplete,
 	onCollapsedColumnsChange,
+	onScrollUnderlapChange,
 	onToggleColumnAgent,
 	boardSessionDrag,
 	proximityAgentSession,
@@ -495,6 +388,7 @@ function ExperimentalJiraKanbanView({
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
+	const boardContentUnderlapsRef = useRef(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
 	const handleCreatedCardArrivalComplete = useCreatedCardArrivalCompletion(
 		onCreatedCardArrivalComplete,
@@ -526,6 +420,14 @@ function ExperimentalJiraKanbanView({
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart(columnRowPaddingInlineStart, boardColumns[0]?.title, Boolean(chrome.dropContentPadding), collapsedColumns);
 	const selectedCount = selectedCardCodes?.size ?? 0;
+	const sourceColumn = boardColumns.find((column) => column.cards.some((card) => card.code === draggedCardCode));
+	const sourceCard = sourceColumn?.cards.find((card) => card.code === draggedCardCode);
+	const issueDragSource = issueDragTransitions && sourceCard && sourceColumn ? {
+		code: sourceCard.code,
+		columnTitle: sourceColumn.title,
+		status: sourceCard.status ?? sourceColumn.title,
+		codes: selectedCardCodes?.has(sourceCard.code) ? selectedCardCodes : new Set([sourceCard.code]),
+	} : undefined;
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
 		: null;
@@ -629,6 +531,10 @@ function ExperimentalJiraKanbanView({
 				labelNode.textContent = `${selectedCardCodes.size} items`;
 			}
 			event.dataTransfer.setDragImage(dragImageRef.current, 0, 0);
+		} else if (issueDragTransitions) {
+			const surface = event.currentTarget.querySelector<HTMLElement>('[data-slot="jira-issue-card"]') ?? event.currentTarget;
+			const bounds = surface.getBoundingClientRect();
+			event.dataTransfer.setDragImage(surface, event.clientX - bounds.left, event.clientY - bounds.top);
 		}
 		onCardDragStart?.(card, columnTitle);
 	};
@@ -691,6 +597,12 @@ function ExperimentalJiraKanbanView({
 		}
 		onCollapsedColumnsChange?.(nextCollapsedColumns);
 	};
+	const handleBoardScroll = (event: React.UIEvent<HTMLElement>) => {
+		const hasUnderlap = event.currentTarget.scrollLeft > 0;
+		if (boardContentUnderlapsRef.current === hasUnderlap) return;
+		boardContentUnderlapsRef.current = hasUnderlap;
+		onScrollUnderlapChange?.(hasUnderlap);
+	};
 	const sessionFlyoutsSuspended = boardSessionDrag.transaction !== null || draggedCardCode !== null;
 	const untrackedDropArmed = boardSessionDrag.transaction?.target?.kind === "untracked";
 
@@ -728,6 +640,7 @@ function ExperimentalJiraKanbanView({
 					tabIndex={0}
 					aria-label={ariaLabel}
 					className="flex min-h-0 min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+					onScroll={handleBoardScroll}
 					style={{
 						flex: 1,
 						paddingTop: scrollportPaddingTop,
@@ -753,9 +666,9 @@ function ExperimentalJiraKanbanView({
 							columnChrome={columnChrome}
 							count={column.cards.length}
 							key={column.title}
-							onDragOver={handleColumnDragOver}
+							onDragOver={issueDragTransitions && (column.statuses?.length ?? 0) > 1 ? undefined : handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
-							onDrop={(event) => handleColumnDrop(event, column.title)}
+							onDrop={issueDragTransitions && (column.statuses?.length ?? 0) > 1 ? undefined : (event) => handleColumnDrop(event, column.title)}
 							onToggleCollapsed={() => handleToggleColumnCollapsed(column.title)}
 							title={column.title}
 						>
@@ -780,6 +693,9 @@ function ExperimentalJiraKanbanView({
 								}
 								sessionDragTransaction={boardSessionDrag.transaction}
 								title={column.title}
+								issueDragSource={issueDragSource}
+								statuses={column.statuses}
+								onIssueDrop={onCardDrop}
 							>
 								{column.cards.map((card, cardIndex) => {
 									const isActive = activeCardCode === card.code;
@@ -791,6 +707,7 @@ function ExperimentalJiraKanbanView({
 										? cardMoveAnimation.phase
 										: undefined;
 									const shouldAnimateCardPosition = shouldAnimateCardMoves && cardMovePhase === undefined;
+									const shouldAnimateCardLayout = !shouldReduceMotion && cardMovePhase === undefined;
 									const detachedAgentSessions = detachedAgentSessionsByCard?.[card.code] ?? [];
 										const proximityActions = bindBoardProximitySessionActions({
 										actionableSessionIds: proximityAgentSession?.actionableSessionIds,
@@ -821,10 +738,9 @@ function ExperimentalJiraKanbanView({
 										<motion.div
 											key={card.code}
 											className="w-full min-w-0 max-w-[280px]"
-											layout={shouldAnimateCardPosition ? "position" : false}
+											layout={shouldAnimateCardLayout ? "position" : false}
 											layoutId={shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined}
-											style={shouldAnimateCardPosition ? { willChange: "transform" } : undefined}
-											transition={JIRA_KANBAN_CARD_MOVE}
+											transition={shouldAnimateCardPosition ? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT}
 										>
 											<CreatedCardArrivalMotion
 												arrival={createdCardArrival?.columnTitle === column.title
@@ -935,7 +851,7 @@ function ExperimentalJiraKanbanView({
 						selectedCount={selectedCount}
 						selectedStatus={selectedStatus}
 						skills={selectionToolbar.skills}
-						statusOptions={boardColumns.map((column) => column.title)}
+						statusOptions={boardColumns.flatMap((column) => column.statuses ?? [column.title])}
 					/>
 				) : null}
 			<SessionFusionOverlay

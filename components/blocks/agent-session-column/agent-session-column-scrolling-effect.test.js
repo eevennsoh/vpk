@@ -13,6 +13,10 @@ const BOARD_PAGE_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental-v2/page.tsx"),
 	"utf8",
 );
+const IN_FLOW_COLUMN_SOURCE = readFileSync(
+	join(__dirname, "../jira-kanban/experimental/components/in-flow-agent-session-column.tsx"),
+	"utf8",
+);
 const DETAIL_SOURCE = readFileSync(
 	join(__dirname, "../../../app/data/details/blocks/agent-session-column.ts"),
 	"utf8",
@@ -23,13 +27,28 @@ test("the scrolling effect is an optional boolean capability", () => {
 	assert.match(INDEX_SOURCE, /hasScrollingEffect = false/u);
 	assert.match(
 		INDEX_SOURCE,
-		/const deck = hasScrollingEffect\s*\? AGENT_SESSION_DECK_STACKED\s*: AGENT_SESSION_DECK_FLAT/u,
+		/const deck = hasScrollingEffect && showEndSpace\s*\? AGENT_SESSION_DECK_STACKED\s*: AGENT_SESSION_DECK_FLAT/u,
 	);
 	assert.match(BOARD_PAGE_SOURCE, /hasScrollingEffect: true/u);
 	assert.match(PANEL_DEMO_SOURCE, /\bhasScrollingEffect\b/u);
 	assert.match(DETAIL_SOURCE, /name: "hasScrollingEffect"/u);
 	assert.match(DETAIL_SOURCE, /hasScrollingEffect/u);
 	assert.doesNotMatch(TYPES_SOURCE, /deck\?: AgentSessionDeck/u);
+});
+
+test("the in-flow timeline enables deck depth and its end-state only when rows overflow", () => {
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/function resolveInFlowAgentSessionColumnAdvancedCapabilities[\s\S]*hasScrollingEffect: false,[\s\S]*hasScrollingEffect: true,/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/<AgentSessionColumn[\s\S]*?hasScrollingEffect=\{hasScrollingEffect\}/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/\{showEndSpace \? \(\s*<AgentSessionColumnEndState/u,
+	);
 });
 
 test("the opt-in scrollport uses transient chrome and an extended bottom fade", () => {

@@ -45,6 +45,10 @@ test("the PAY board fills every existing status with coding work and the full st
 	const story = await loadPresentationModule();
 	const columns = story.createJiraTeamEu26PayBoardColumns();
 	const cards = columns.flatMap((column) => column.cards);
+	const currentUserInvoker = {
+		avatarSrc: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+		name: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+	};
 
 	assert.deepEqual(
 		[...story.JIRA_TEAM_EU26_PAY_STATUS_PHASES],
@@ -59,14 +63,28 @@ test("the PAY board fills every existing status with coding work and the full st
 	assert.ok(cards.every((card) => card.code.startsWith("PAY-")));
 	assert.ok(!columns.some((column) => column.title === "Review"));
 	assert.deepEqual(
-		new Set(cards.map((card) => card.assignee?.avatarSrc).filter(Boolean)),
-		new Set([
-			"/avatar-user/chloe-lee/color/asow-strategy-orange-64.png",
-			"/avatar-user/dev-rana/color/asow-product-purple.png",
-			"/avatar-user/issac-varghese/color/asow-service-yellow-64.png",
-			"/avatar-user/ting-chen/color/asow-teamwork-blue.png",
+		new Map(cards.flatMap((card) => (
+			card.assignee ? [[card.assignee.id, card.assignee.avatarSrc]] : []
+		))),
+		new Map([
+			["diego-santos", "/avatar-user/dev-rana/color/asow-dev-lime-64.png"],
+			["jordan-okafor", "/avatar-user/issac-varghese/color/asow-product-purple-64.png"],
+			["maya-ferreira", "/avatar-user/chloe-lee/color/asow-teamwork-blue-64.png"],
+			["priya-raman", "/avatar-user/ting-chen/color/asow-strategy-orange-64.png"],
 		]),
-		"board assignees should use a balanced mix of existing avatar color variants",
+		"board assignees should keep their faces and use a shuffled mix of the five-color avatar sets",
+	);
+	assert.deepEqual(
+		new Map(story.JIRA_TEAM_EU26_PAY_SESSION_MEMBERS
+			.filter((member) => ["diego", "jordan", "maya", "priya"].includes(member.id))
+			.map((member) => [member.id, member.avatarSrc])),
+		new Map([
+			["diego", "/avatar-user/dev-rana/color/asow-dev-lime-64.png"],
+			["jordan", "/avatar-user/issac-varghese/color/asow-product-purple-64.png"],
+			["maya", "/avatar-user/chloe-lee/color/asow-teamwork-blue-64.png"],
+			["priya", "/avatar-user/ting-chen/color/asow-strategy-orange-64.png"],
+		]),
+		"unlinked sessions should use the same stable teammate faces and shuffled colors as the board",
 	);
 
 	const inReviewCodes = new Set(
@@ -92,7 +110,7 @@ test("the PAY board fills every existing status with coding work and the full st
 	assert.ok(cards.some((card) => card.agentActivityMode === "completed" && card.agentDoneRuns?.length));
 	assert.ok(agentCards.length <= 6, `expected a handful of agent cards, got ${agentCards.length}`);
 	assert.ok(agentBrandNames.size >= 3, "running sessions should preserve distinct coding-agent brands");
-	const allowedCodingAgentNames = new Set(["Claude Code", "Codex", "Cursor", "GitHub Copilot"]);
+	const allowedCodingAgentNames = new Set(["Claude", "Codex", "Cursor", "GitHub Copilot"]);
 	assert.ok(story.JIRA_TEAM_EU26_PAY_BOARD_AGENTS.every((agent) => (
 		allowedCodingAgentNames.has(agent.name)
 	)));
@@ -132,10 +150,25 @@ test("the PAY board fills every existing status with coding work and the full st
 		})),
 		[
 			{ host: "cloud", name: "Cursor", role: "viewer", invokedBy: "Jordan Okafor" },
-			{ host: "local", name: "Claude Code", role: "owner", invokedBy: undefined },
+			{ host: "local", name: "Claude", role: "owner", invokedBy: "Venn" },
 		],
 	);
-	assert.ok(!("invokedBy" in (workingActivities.find((activity) => activity.role === "owner") ?? {})));
+	const ownerActivities = cards
+		.flatMap((card) => card.agentActivities ?? [])
+		.filter((activity) => activity.role === "owner");
+	assert.deepEqual(
+		ownerActivities.map((activity) => activity.id).sort(),
+		[
+			"PAY-105:test-agent",
+			"PAY-112:review-agent",
+			"PAY-121:release-agent",
+			"PAY-123:claude-code",
+		],
+	);
+	assert.ok(ownerActivities.every((activity) => (
+		activity.invokedBy?.name === currentUserInvoker.name
+		&& activity.invokedBy.avatarSrc === currentUserInvoker.avatarSrc
+	)));
 
 	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.id, "venn");
 	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name, "Venn");
@@ -160,7 +193,7 @@ test("the PAY board fills every existing status with coding work and the full st
 	const pay101 = cards.find((card) => card.code === "PAY-101");
 	assert.equal(pay101.pullRequestNumber, 1839);
 	assert.equal(pay101.pullRequestStatus, "merged");
-	assert.equal(pay101.pullRequestPreview.title, "Call-site inventory across four services");
+	assert.equal(pay101.pullRequestPreview.title, "Map v1 call sites");
 	assert.equal(pay101.pullRequestPreview.additions, 312);
 	assert.equal(pay101.pullRequestPreview.deletions, 8);
 
@@ -177,9 +210,10 @@ test("the PAY board fills every existing status with coding work and the full st
 			&& Boolean(preview.relativeTime)
 		);
 	}));
+	assert.ok(prCards.every((card) => !/ ago$/u.test(card.pullRequestPreview.relativeTime)));
 	assert.equal(
 		prCards.find((card) => card.code === "PAY-105")?.pullRequestPreview.relativeTime,
-		"2h ago",
+		"2h",
 	);
 	assert.notEqual(
 		prCards.find((card) => card.code === "PAY-105")?.pullRequestPreview.title,
@@ -190,7 +224,7 @@ test("the PAY board fills every existing status with coding work and the full st
 	const pay112 = cards.find((card) => card.code === "PAY-112")?.agentActivities?.[0];
 	assert.equal(pay112?.name, "Codex");
 	assert.equal(pay112?.role, "owner");
-	assert.equal(pay112?.invokedBy, undefined, "the owner session does not show their own avatar");
+	assert.deepEqual(pay112?.invokedBy, currentUserInvoker);
 	assert.equal(pay112?.state, "awaiting-input");
 	assert.equal(pay112?.timeLabel, "Last week");
 	assert.equal(pay112?.question?.label, story.JIRA_TEAM_EU26_PAY_112_RETENTION_QUESTION.label);
@@ -226,9 +260,13 @@ test("a linked Jira activity becomes a medium-detached Agent Session item", asyn
 				kind: "agent",
 				name: activity.name,
 			},
-			host: "local",
-			role: "owner",
-			sessionDetails: {
+				host: "local",
+				role: "owner",
+				invokedBy: {
+					avatarSrc: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+					name: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+				},
+				sessionDetails: {
 				host: "local",
 				issueKey: card.code,
 				issueSummary: card.title,
@@ -236,7 +274,10 @@ test("a linked Jira activity becomes a medium-detached Agent Session item", asyn
 			timeLabel: "12m",
 		},
 	);
-	assert.equal(detached.invokedBy, undefined);
+	assert.deepEqual(detached.invokedBy, {
+		avatarSrc: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+		name: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+	});
 	assert.deepEqual(
 		story.toJiraTeamEu26AgentActivityFromSession(detached),
 		{
@@ -244,8 +285,12 @@ test("a linked Jira activity becomes a medium-detached Agent Session item", asyn
 			name: activity.name,
 			avatarSrc: activity.avatarSrc,
 			agentBrandName: activity.agentBrandName,
-			host: "local",
-			label: activity.label,
+				host: "local",
+				invokedBy: {
+					avatarSrc: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+					name: story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+				},
+				label: activity.label,
 			role: "owner",
 			state: "working",
 			timeLabel: "12m",

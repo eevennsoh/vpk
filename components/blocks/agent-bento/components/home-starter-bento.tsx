@@ -8,7 +8,7 @@ import {
 	useReducedMotion,
 	type AnimationPlaybackControls,
 } from "motion/react";
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
@@ -19,6 +19,14 @@ import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack } from "@/components/ui-custom/twg-appstack";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+	CARD_GLOW_EFFECT_STYLE,
+	CardGlowLayers,
+	cardGlowSurfaceStyle,
+	useCardGlowPointerGroup,
+	type CardGlowCSSProperties,
+} from "@/components/visual/card-glow";
+import { getAgentAvatarAccent } from "@/lib/agent-avatars";
 import { getSkillIcon } from "@/lib/skill-icons";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -37,73 +45,34 @@ import {
 // `lg` (handled by `BENTO_CAROUSEL_CONTAINER_CLASS`).
 const CONTENT_MAX_WIDTH_CLASS = "max-w-[1280px]";
 
-const DEFAULT_ACCENT_COLOR = "#1868DB";
+// Each tile's hover glow uses its own agent-avatar colour, so the traced stroke
+// always matches the avatar shown on the tile.
+function getCardStyle(iconSrc: string): CardGlowCSSProperties {
+	return {
+		// `container` travel keeps the bento's original reading of how far the
+		// bloom drifts; the tiles already declare `containerType: size` for it.
+		...cardGlowSurfaceStyle(getAgentAvatarAccent(iconSrc), "container"),
+		containerType: "size",
+		willChange: "transform, opacity",
+	};
+}
 
-// The hover glow uses each tile's own agent-avatar color so the stroke always
-// matches the avatar shown on the tile. Avatars are grouped by agent family
-// under /avatar-agent/<group>/, and every avatar in a family shares one brand
-// color, so we derive the accent from the avatar group in `iconSrc`.
-const AVATAR_GROUP_ACCENTS: Readonly<Record<string, string>> = {
-	"dev-agents": "#82B536",
-	"product-agents": "#BF63F3",
-	"service-agents": "#FFC716",
-	"strategy-agents": "#FCA700",
-	"teamwork-agents": "#1868DB",
-};
-
-type CardGlowCSSProperties = CSSProperties & Record<`--card-glow-${string}`, string | number>;
-
-const CARD_GLOW_EFFECT_STYLE: CardGlowCSSProperties = {
-	"--card-glow-border-core": 36,
-	"--card-glow-border-spread": 120,
-	"--card-glow-border-width": 1,
-	"--card-glow-icon-blur": 28,
-	"--card-glow-icon-brightness": 1.3,
-	"--card-glow-icon-contrast": 1.4,
-	"--card-glow-icon-opacity": 0.25,
-	"--card-glow-icon-saturate": 5,
-	"--card-glow-icon-scale": 3.4,
-};
-
-const CARD_GLOW_LAYER_STYLE: CSSProperties = {
-	filter: [
-		"blur(calc(var(--card-glow-icon-blur) * 1px))",
-		"saturate(var(--card-glow-icon-saturate))",
-		"brightness(var(--card-glow-icon-brightness))",
-		"contrast(var(--card-glow-icon-contrast))",
-	].join(" "),
-	scale: "var(--card-glow-icon-scale)",
-	translate: "calc(var(--card-glow-pointer-x, -10) * 50cqi) calc(var(--card-glow-pointer-y, -10) * 50cqh)",
-	willChange: "translate, scale, filter, opacity",
-};
-
-const CARD_BASE_BORDER_STYLE: CSSProperties = {
-	boxShadow: `inset 0 0 0 calc(var(--card-glow-border-width) * 1px) ${token("color.border")}`,
-};
-
-// The hover glow is a plain accent radial-gradient painted onto the same 1px
-// ring as the base grey border (same border-box geometry + radius). It is fully
-// transparent away from the pointer, so the grey stroke shows through everywhere
-// except where the accent overlays it. Deliberately no glass filter here — an
-// always-on filter recolors the ring even where the gradient is transparent,
-// which crushes the grey border underneath and breaks coexistence.
-const CARD_BORDER_GLOW_STYLE: CSSProperties = {
-	background: [
-		"radial-gradient(",
-		"circle at ",
-		"calc((var(--card-glow-pointer-x, -10) + 1) * 50%) ",
-		"calc((var(--card-glow-pointer-y, -10) + 1) * 50%), ",
-		"var(--card-glow-tile-accent) 0 calc(var(--card-glow-border-core) * 1px), ",
-		"transparent calc(var(--card-glow-border-spread) * 1px)",
-		") border-box",
-	].join(""),
-	borderColor: "transparent",
-	borderWidth: "calc(var(--card-glow-border-width) * 1px)",
-	mask: "linear-gradient(#fff 0 100%) border-box, linear-gradient(#fff 0 100%) padding-box",
-	maskComposite: "exclude",
-	WebkitMask: "linear-gradient(#fff 0 100%) border-box, linear-gradient(#fff 0 100%) padding-box",
-	WebkitMaskComposite: "xor",
-};
+function BentoTileGlow({ iconSrc }: Readonly<{ iconSrc: string }>) {
+	return (
+		<CardGlowLayers
+			art={(
+				<Image
+					alt=""
+					aria-hidden
+					className="size-12 object-contain opacity-[var(--card-glow-icon-opacity)]"
+					height={48}
+					src={iconSrc}
+					width={48}
+				/>
+			)}
+		/>
+	);
+}
 
 const HERO_VARIANTS = {
 	exit: { opacity: 0, scale: 0.98, y: -4 },
@@ -113,59 +82,7 @@ const HERO_VARIANTS = {
 
 const CYCLE_DURATION_MS = 6000;
 
-function getCardGlowAccent(iconSrc: string): string {
-	const group = iconSrc.match(/\/avatar-agent\/([^/]+)\//)?.[1];
-	return (group && AVATAR_GROUP_ACCENTS[group]) || DEFAULT_ACCENT_COLOR;
-}
-
-function getCardStyle(accentColor: string): CardGlowCSSProperties {
-	return {
-		"--card-glow-tile-accent": accentColor,
-		containerType: "size",
-		willChange: "transform, opacity",
-	};
-}
-
-function resetCardPointer(tile: HTMLElement) {
-	tile.style.setProperty("--card-glow-pointer-x", "-10");
-	tile.style.setProperty("--card-glow-pointer-y", "-10");
-}
-
-function CardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string }>) {
-	return (
-		<>
-			<span
-				aria-hidden
-				className="pointer-events-none absolute inset-0 z-0 grid place-items-center transform-gpu"
-				style={CARD_GLOW_LAYER_STYLE}
-			>
-				<Image
-					alt=""
-					aria-hidden
-					className="size-12 object-contain opacity-[var(--card-glow-icon-opacity)]"
-					height={48}
-					src={iconSrc}
-					width={48}
-				/>
-			</span>
-			<span
-				aria-hidden
-				className="pointer-events-none absolute inset-0 z-[1] rounded-[inherit]"
-				data-home-starter-card-base-border
-				style={CARD_BASE_BORDER_STYLE}
-			/>
-			<span
-				aria-hidden
-				className="pointer-events-none absolute inset-0 z-[2] overflow-hidden rounded-[inherit] border border-transparent"
-				data-home-starter-card-glow-border
-				style={CARD_BORDER_GLOW_STYLE}
-			/>
-		</>
-	);
-}
-
 function HomeStarterHeroTile({
-	accentColor,
 	onBlur,
 	onClick,
 	onFocus,
@@ -175,13 +92,12 @@ function HomeStarterHeroTile({
 	shouldReduceMotion,
 	template,
 }: Readonly<{
-	accentColor: string;
 	onBlur: () => void;
 	onClick: () => void;
 	onFocus: () => void;
 	onMouseEnter: () => void;
 	onMouseLeave: () => void;
-	setTileRef: (node: HTMLButtonElement | null) => void;
+	setTileRef: (node: HTMLButtonElement | null) => (() => void) | undefined;
 	shouldReduceMotion: boolean | null;
 	template: HomeStarterTemplate & { hero: HomeStarterHeroDecoration };
 }>) {
@@ -201,7 +117,7 @@ function HomeStarterHeroTile({
 			onMouseEnter={onMouseEnter}
 			onMouseLeave={onMouseLeave}
 			ref={setTileRef}
-			style={getCardStyle(accentColor)}
+			style={getCardStyle(template.iconSrc)}
 			transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
 			type="button"
 			variants={HERO_VARIANTS}
@@ -212,7 +128,7 @@ function HomeStarterHeroTile({
 			}
 			whileTap={shouldReduceMotion ? undefined : { scale: 0.98, transition: { duration: 0.05 } }}
 		>
-			<CardGlowLayers iconSrc={template.iconSrc} />
+			<BentoTileGlow iconSrc={template.iconSrc} />
 			<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center">
 				<Avatar shape="hexagon" size="default">
 					<AvatarImage src={template.iconSrc} alt="" className="object-contain" />
@@ -301,7 +217,7 @@ export function HomeStarterBento({
 	const focusedTemplatePromptRef = useRef<string | null>(null);
 	const hoveredTemplatePromptRef = useRef<string | null>(null);
 	const bentoInteractingRef = useRef(false);
-	const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
+	const cardGlow = useCardGlowPointerGroup();
 	const registerDescBox = useBentoDescriptionClamp();
 	const { ref: bentoCarouselRef, canScrollLeft, canScrollRight, scrollByDir } = useHasHorizontalOverflow<HTMLDivElement>({ reduceMotion: shouldReduceMotion ?? false });
 	const templates = HOME_STARTER_VIEWS[activeCategory];
@@ -385,31 +301,6 @@ export function HomeStarterBento({
 			onPreviewEnd();
 		}
 	}, [onPreviewEnd, onPreviewStart]);
-	const handleBentoPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-		for (const tile of tileRefs.current) {
-			if (!tile) {
-				continue;
-			}
-
-			const rect = tile.getBoundingClientRect();
-			const centerX = rect.left + rect.width / 2;
-			const centerY = rect.top + rect.height / 2;
-			const relativeX = event.clientX - centerX;
-			const relativeY = event.clientY - centerY;
-			const normalizedX = relativeX / (rect.width / 2);
-			const normalizedY = relativeY / (rect.height / 2);
-
-			tile.style.setProperty("--card-glow-pointer-x", normalizedX.toFixed(3));
-			tile.style.setProperty("--card-glow-pointer-y", normalizedY.toFixed(3));
-		}
-	}, []);
-	const resetBentoPointer = useCallback(() => {
-		for (const tile of tileRefs.current) {
-			if (tile) {
-				resetCardPointer(tile);
-			}
-		}
-	}, []);
 	return (
 		<div
 			className="w-full"
@@ -421,8 +312,8 @@ export function HomeStarterBento({
 			}}
 			onMouseEnter={() => updateBentoInteracting(true)}
 			onMouseLeave={() => updateBentoInteracting(false)}
-			onPointerLeave={resetBentoPointer}
-			onPointerMove={handleBentoPointerMove}
+			onPointerLeave={cardGlow.onPointerLeave}
+			onPointerMove={cardGlow.onPointerMove}
 		>
 			<div className="flex flex-wrap justify-center gap-2">
 				{HOME_STARTER_CATEGORIES.map((category) => {
@@ -500,22 +391,17 @@ export function HomeStarterBento({
 								},
 							}}
 						>
-							{visibleTemplates.map((template, index) => {
-								const accentColor = getCardGlowAccent(template.iconSrc);
-
+							{visibleTemplates.map((template) => {
 								if (template.hero) {
 									return (
 										<HomeStarterHeroTile
-											accentColor={accentColor}
 											key={template.title}
 											onBlur={handleTemplateBlur}
 											onClick={() => onSelect(template.prompt)}
 											onFocus={() => handleTemplateFocus(template.prompt)}
 											onMouseEnter={() => handleTemplateMouseEnter(template.prompt)}
 											onMouseLeave={handleTemplateMouseLeave}
-											setTileRef={(node) => {
-												tileRefs.current[index] = node;
-											}}
+											setTileRef={cardGlow.registerTile}
 											shouldReduceMotion={shouldReduceMotion}
 											template={template as HomeStarterTemplate & { hero: HomeStarterHeroDecoration }}
 										/>
@@ -537,9 +423,7 @@ export function HomeStarterBento({
 											BENTO_CAROUSEL_TILE_CLASS,
 											template.layoutClassName,
 										)}
-										ref={(node) => {
-											tileRefs.current[index] = node;
-										}}
+										ref={cardGlow.registerTile}
 										variants={{
 											hidden: { opacity: 0, y: 8, scale: 0.98 },
 											visible: { opacity: 1, y: 0, scale: 1 },
@@ -552,9 +436,9 @@ export function HomeStarterBento({
 												: { y: -2, transition: { type: "spring", stiffness: 400, damping: 22 } }
 										}
 										whileTap={shouldReduceMotion ? undefined : { scale: 0.98, transition: { duration: 0.05 } }}
-										style={getCardStyle(accentColor)}
+										style={getCardStyle(template.iconSrc)}
 									>
-										<CardGlowLayers iconSrc={template.iconSrc} />
+										<BentoTileGlow iconSrc={template.iconSrc} />
 										<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center transition-opacity duration-fast ease-out group-hover:opacity-90">
 											<Avatar shape="hexagon" size="default">
 												<AvatarImage src={template.iconSrc} alt="" className="object-contain" />

@@ -13,6 +13,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/jira-kanban/card-drop.test.js",
 		"components/blocks/agent-session-column/use-agent-session-arrivals.test.ts",
 		".agents/skills/vpk-html/scripts/evals.test.js",
 		"twg-install.test.js",
@@ -194,6 +195,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/visual/heatmap/data.test.js",
 		"components/visual/gooey/gooey.test.ts",
 		"components/visual/dropzone-effect/flow-model.test.ts",
+		"components/visual/peel/peel-model.test.ts",
 		"components/visual/thinking-orbs/thinking-orbs.test.js",
 		"components/website/demos/visual/ascii-control-model.test.js",
 		"components/projects/studio/lib/demo-agent-builder.test.js",
@@ -265,6 +267,9 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-verify/scripts/verify-feature-map.test.js",
 	],
 	"source-contract": [
+		"components/visual/card-glow/card-glow.test.js",
+		"components/blocks/agent-session/agent-session-glow.test.js",
+		"components/blocks/jira-issue/attach-trace.test.js",
 		"components/blocks/jira-kanban/experimental/agent-session-review.test.js",
 		"components/arts/rovo-p5/index.test.js",
 		"components/blocks/agent-evaluation/agent-evaluation.test.js",
@@ -287,6 +292,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-session-column/agent-session-column-overflow.test.js",
 		"components/blocks/agent-session-column/agent-session-column-arrival.test.js",
 		"components/blocks/agent-session-column/agent-session-column.test.js",
+		"components/blocks/agent-session-column/agent-session-column-well.test.js",
 		"components/blocks/agent-session-column/agent-session-column-frame.test.js",
 		"components/blocks/artifact-pane/artifact-pane.test.js",
 		"components/blocks/chatgpt/create-project-form.test.js",
@@ -403,6 +409,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/visual/ink-wash/registry.test.js",
 		"components/visual/liquid-metal/registry.test.js",
 		"components/visual/dropzone-effect/registry.test.js",
+		"components/visual/peel/registry.test.js",
 		"components/visual/border-beam/registry.test.js",
 		"components/visual/heatmap/registry.test.js",
 		"components/visual/scrolling/registry.test.js",

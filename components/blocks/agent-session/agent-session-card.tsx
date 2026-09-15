@@ -20,6 +20,12 @@ import {
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { Icon } from "@/components/ui/icon";
+import {
+	CardGlowLayers,
+	cardGlowSurfaceStyle,
+	useCardGlowPointer,
+	useCardGlowSurface,
+} from "@/components/visual/card-glow";
 import { cn } from "@/lib/utils";
 
 import {
@@ -28,7 +34,10 @@ import {
 } from "./agent-session-arrival-motion";
 import { approveActionLabel } from "./agent-session-approve";
 import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
-import { AgentSessionLifecycle } from "./agent-session-lifecycle";
+import {
+	AgentSessionLifecycle,
+	AgentSessionShortLifecycleIcon,
+} from "./agent-session-lifecycle";
 import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
 import {
 	AgentSessionLongMetadata,
@@ -39,6 +48,7 @@ import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
 import { AgentSessionViewerHint } from "./agent-session-viewer-hint";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
 import { selectionGestureFromModifierKeys } from "./agent-session-selection-gesture";
+import { agentSessionAccentColor } from "./agent-session-transfer-member";
 import { isTransferSourceFaded } from "./session-cohort";
 import {
 	type AgentSessionDensity,
@@ -52,12 +62,15 @@ import {
 import { useAgentSessionMenu } from "./use-agent-session-menu";
 
 export function AgentSessionCard({
+	animateLayout = true,
 	arrivalDelaySeconds,
 	captured = false,
 	density = "short",
 	flyoutHandle,
 	flyoutSession,
 	getResumeCommand,
+	glowBloom = false,
+	glowStroke = false,
 	isArriving = false,
 	isFlyoutActive = false,
 	isHighlighted = false,
@@ -82,11 +95,13 @@ export function AgentSessionCard({
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
+	showLinkWorkItemMenuItem = true,
 	triageRow,
 	draggingIds,
 	visibilityLabel = "Archive",
 	workItemOptions,
 }: Readonly<{
+	animateLayout?: boolean;
 	arrivalDelaySeconds?: number;
 	captured?: boolean;
 	/** Row shape — see {@link AgentSessionDensity}. Defaults to the avatar-led short row. */
@@ -95,6 +110,18 @@ export function AgentSessionCard({
 	flyoutHandle?: JiraSessionFlyoutHandle;
 	flyoutSession?: JiraSidebarSessionItem;
 	getResumeCommand?: (item: AgentSessionItem) => string | undefined;
+	/**
+	 * Wash the agent's accent behind the row on hover. Independent of
+	 * {@link glowStroke} so the two halves of the treatment can be judged
+	 * separately. Requires the host list to carry `CARD_GLOW_EFFECT_STYLE`.
+	 */
+	glowBloom?: boolean;
+	/**
+	 * Trace the agent's accent along the card edge on hover. Independent of
+	 * {@link glowBloom}. Both default off: the list host that wants the
+	 * treatment turns it on, so picker menus and attached rows stay flat.
+	 */
+	glowStroke?: boolean;
 	/** Play the one-shot arrival beat. A remounted card must not re-arm it. */
 	isArriving?: boolean;
 	/** Keep the row's hover treatment while its portalled flyout chain is active. */
@@ -144,6 +171,8 @@ export function AgentSessionCard({
 	showMoreMenu?: boolean;
 	/** Keep false only for compact consumers that borrow long-density title geometry. */
 	showLifecycleLabel?: boolean;
+	/** Shows the Link work item row without changing the underlying link capabilities. */
+	showLinkWorkItemMenuItem?: boolean;
 	triageRow?: AgentSessionTriageRow | null;
 	draggingIds?: ReadonlySet<string>;
 	/** Accessible name for the menu's dismiss row. Archive in the active list, Unarchive in the archived view. */
@@ -152,6 +181,22 @@ export function AgentSessionCard({
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
 	const shouldReduceMotion = useReducedMotion();
+	// The glow reads the pointer on the list item, not the article: the article
+	// spreads the drag binding, which owns `onPointerMove`. Custom properties
+	// inherit, so the layers inside still see what the item writes.
+	//
+	// Two ways in. A host that encloses its rows in a proximity plane — the
+	// session column does — drives every row from one window-level pointer, so
+	// the stroke is already tracing as the cursor approaches the column. Without
+	// a plane the row tracks its own hover and lights only under the pointer.
+	// Either layer needs the accent, the stacking context and a pointer, so the
+	// mounting decision is their union; which layer actually paints is decided
+	// in `CardGlowLayers`.
+	const glow = glowStroke || glowBloom;
+	const glowPlaneSurface = useCardGlowSurface();
+	const isOnGlowPlane = glow && glowPlaneSurface !== undefined;
+	const cardGlow = useCardGlowPointer({ reduceMotion: shouldReduceMotion });
+	const tracksOwnPointer = glow && !isOnGlowPlane;
 	const onItemHoverRef = useRef(onItemHover);
 	// Whether the pointer is on *this* row, so unmount cleanup can tell "I was
 	// the hovered row" from "a sibling went away".
@@ -259,9 +304,9 @@ export function AgentSessionCard({
 	// on the article. Keep the row's complete hover treatment tied to the
 	// controlled overlay state until that popup closes.
 	const isHoverStateActive = isFlyoutActive || menu.isOpen;
-	// Title-led long rows spend their reclaimed width on a trailing progression
-	// column. Short rows do not: `stateAwareTitle` already says "Needs input" on
-	// the title line, so a resting status glyph would only repeat it.
+	// Every density keeps lifecycle state outside the authored title and byline.
+	// Short rows use a settled-state glyph in the same slot the hover/focus menu
+	// replaces; long rows keep their full trailing progression control.
 	const isLongDensity = density === "long";
 	const trailingControl = (() => {
 		if (!showMoreMenu) {
@@ -290,6 +335,7 @@ export function AgentSessionCard({
 						open={menu.isOpen}
 						portalled={moreMenuPortalled}
 						positionerClassName={moreMenuPositionerClassName}
+						showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 						workItemOptions={workItemOptions}
 					/>
 				);
@@ -301,11 +347,13 @@ export function AgentSessionCard({
 	})();
 	// `null`, not `undefined`: the shared row treats `undefined` as "no opinion"
 	// and falls back to its own `STATE_META` indicator.
-	const lifecycleIndicator = !isLongDensity
-		? null
-		: role === "expired"
+	const lifecycleIndicator = isLongDensity
+		? role === "expired"
 			? <AgentSessionExpiredHint />
-			: <AgentSessionLifecycle showLabel={showLifecycleLabel} state={item.state} />;
+			: <AgentSessionLifecycle showLabel={showLifecycleLabel} state={item.state} />
+		: item.state === "needs-input" || item.state === "complete"
+			? <AgentSessionShortLifecycleIcon state={item.state} />
+			: null;
 	const hoverActions: AgentListRowHoverActions = {
 		// The reveal must outlive the pointer: a portalled popup and a post-click
 		// confirmation both take the cursor off the row.
@@ -346,21 +394,32 @@ export function AgentSessionCard({
 			inert={isTransferSource || undefined}
 			role={mark == null ? undefined : "row"}
 			onAnimationComplete={handleArrivalComplete}
-			onPointerEnter={() => {
+			onPointerEnter={(event) => {
 				isHoveredRef.current = true;
 				onItemHover?.(item);
+				if (tracksOwnPointer) {
+					cardGlow.onPointerEnter(event);
+				}
 			}}
-			onPointerLeave={() => {
+			onPointerLeave={(event) => {
 				isHoveredRef.current = false;
 				onItemHover?.(null);
+				if (tracksOwnPointer) {
+					cardGlow.onPointerLeave(event);
+				}
 			}}
+			onPointerMove={tracksOwnPointer ? cardGlow.onPointerMove : undefined}
+			ref={isOnGlowPlane ? glowPlaneSurface : undefined}
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
 			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
-			// Siblings slide down to make room instead of jumping. `"position"` so a
-			// displaced card is never scaled, only moved.
-			layout={shouldReduceMotion ? false : "position"}
-			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
+			// Standalone lists move siblings for arrivals. The in-flow column opts
+			// out so board filter changes place sessions immediately.
+			layout={shouldReduceMotion || !animateLayout ? false : "position"}
+			style={{
+				...(glow ? cardGlowSurfaceStyle(agentSessionAccentColor(item)) : null),
+				willChange: shouldPlayArrival ? "opacity, transform" : undefined,
+			}}
 			transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
 		>
 			<AgentSessionMediumDrag
@@ -380,10 +439,15 @@ export function AgentSessionCard({
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
 						"group/agent-row relative flex w-full min-w-0 cursor-default rounded-lg text-left text-text",
+						// The glow layers sit at `-z-[1]`; without a stacking context
+						// here they would escape behind the list surface.
+						glow && "isolate",
 						padding === "compact" ? "px-3 py-2" : "p-3",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
-						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",
+						// Hover and the retained flyout highlight must paint immediately;
+						// fading the fill flashes transparent frames between nearby rows.
+						"transition-[border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
 						showSelectedFill && "bg-bg-selected",
 						!showSelectedFill && (isHighlighted || isHoverStateActive) && "bg-surface-hovered",
@@ -404,6 +468,16 @@ export function AgentSessionCard({
 							role={articleRole}
 							tabIndex={articleTabIndex ?? (bind !== undefined && activateCard !== undefined ? 0 : undefined)}
 						>
+							{/*
+								No resting ring: the session list is a flush stack of
+								borderless tiles, so only the traced accent appears, and
+								only under the pointer. The bloom falls back to the accent
+								colour because these identities are brand glyphs — blurring
+								a monochrome mark would return grey.
+							*/}
+							{glow ? (
+								<CardGlowLayers baseBorder={false} bloom={glowBloom} stroke={glowStroke} />
+							) : null}
 							{isNew ? (
 						<>
 							{/* Colour never carries it alone. */}
@@ -422,9 +496,8 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
-								// The title-led long row states its own lifecycle, including the
-								// success check Agent List has no slot for. A short row states
-								// it in the title and keeps the trailing column empty at rest.
+								// Agent Session owns lifecycle outside the title and byline. The
+								// shared trailing slot lets hover actions replace it in place.
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isLongDensity
@@ -437,6 +510,7 @@ export function AgentSessionCard({
 										<AgentListIdentity
 											agent={item.agent}
 											attributedBy={item.invokedBy}
+											attributionOrder="agent-first"
 											sizePx={32}
 										/>
 									);
@@ -460,9 +534,7 @@ export function AgentSessionCard({
 									);
 								}}
 								showHoverActionsWhenSelected
-								// Long form keeps the work title; progression is the trailing
-								// icon, not a state-aware title swap.
-								stateAwareTitle={!isLongDensity}
+								stateAwareTitle={false}
 							/>
 						</article>
 					);

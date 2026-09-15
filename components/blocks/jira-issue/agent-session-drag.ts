@@ -5,6 +5,7 @@ import type {
 
 import type { AgentListInvoker } from "@/components/blocks/agent-list";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agent-activity";
+import type { JiraIssueAttachTrace } from "@/components/blocks/jira-issue/attach-proximity";
 
 // Kept out of `agent-activity.tsx` on purpose: that file exports components, and
 // a non-component value export there defeats Fast Refresh state preservation
@@ -87,6 +88,33 @@ export type JiraIssueAgentSessionDragState =
  * Supplying it is what mounts the drag wrapper and the pointer-drag bind;
  * without it the rows render exactly as before.
  */
+/**
+ * Optional board ownership for a session drag. Shared Jira issue demos keep
+ * their local transfer state when this is absent.
+ */
+export interface JiraIssueAgentSessionDragControl {
+	/**
+	 * 0..1 approach ramp for the travelling session. Drives only the grey
+	 * backdrop's opacity continuously; the chin and shell switch at a threshold.
+	 */
+	attachNearness?: number;
+	/**
+	 * Accent and pointer for the approach stroke traced along this card's edge.
+	 * Only the nearest card gets one; omit it to draw no stroke.
+	 */
+	attachTrace?: JiraIssueAttachTrace | null;
+	binding: JiraIssueAgentSessionDragBinding;
+	/**
+	 * Sessions in the current drag transfer. Needed on receiving cards (their
+	 * `state` stays idle) and during fusion after pointer-up. Falls back to
+	 * `state.transfer.members.length` on a live source drag.
+	 */
+	dragCount?: number;
+	dropTarget?: "attach" | "unlink" | null;
+	sourceActive: boolean;
+	state: JiraIssueAgentSessionDragState;
+}
+
 export interface JiraIssueAgentSessionDragBinding {
 	/** Clamp for the row translate, in px relative to its resting position. */
 	bounds?: PointerDragBounds;

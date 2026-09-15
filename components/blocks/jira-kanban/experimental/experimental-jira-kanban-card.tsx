@@ -344,6 +344,7 @@ export function ExperimentalJiraKanbanCard({
 			compact
 			dragging={dragging}
 			iconScale={iconScale}
+			parentOwnsLayout
 			generativeAction={{
 				agents: generativeActionAgents,
 				...generativeActionFooterActions,

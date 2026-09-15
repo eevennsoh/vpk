@@ -7,6 +7,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 import PinIcon from "@atlaskit/icon/core/pin";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
@@ -28,6 +29,7 @@ import {
 	DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	type AgentSessionColumnFrame,
 } from "./agent-session-column-frame";
+import { AgentSessionColumnCountMorph } from "./agent-session-column-count-swap";
 import {
 	SELECT_ALL_ACTION_COPY,
 	type HeaderActionId,
@@ -55,6 +57,68 @@ const HEADER_ACTIONS_REVEAL = cn(
 	"has-[[data-popup-open]]:opacity-100",
 	"group-has-[[data-popup-open]]/header-actions:opacity-100",
 );
+
+/** Keep the default collapsed button's visual 24px wide while its real target reaches the host gutter. */
+export function AgentSessionColumnCollapsedExpandControl({
+	canReposition,
+	className,
+	isRepositioning,
+	leadingHitSlopPx,
+	onExpand,
+	title,
+}: Readonly<{
+	canReposition: boolean;
+	className: string;
+	isRepositioning: boolean;
+	leadingHitSlopPx: number;
+	onExpand: () => void;
+	title: string;
+}>): ReactElement {
+	return (
+		<TooltipProvider>
+			<Tooltip animate={!isRepositioning} disabled={isRepositioning}>
+				<TooltipTrigger
+					render={
+						<Button
+							aria-label={`Expand ${title} column`}
+							aria-description={canReposition ? "Drag horizontally to move the column, or use Alt with the arrow keys." : undefined}
+							className={cn(
+								className,
+								isRepositioning
+									? null
+									: "bg-transparent hover:bg-transparent active:bg-transparent aria-pressed:bg-transparent aria-expanded:bg-transparent focus-visible:border-transparent focus-visible:ring-0",
+							)}
+							data-agent-session-column-expand-control=""
+							onClick={onExpand}
+							size="icon-compact"
+							style={!isRepositioning && leadingHitSlopPx > 0
+								? {
+									marginInlineStart: -leadingHitSlopPx,
+									paddingInlineStart: leadingHitSlopPx,
+									width: `calc(100% + ${leadingHitSlopPx}px)`,
+								}
+								: { width: "100%" }}
+							type="button"
+							variant={isRepositioning ? "outline" : "ghost"}
+						/>
+					}
+				>
+					{isRepositioning ? (
+						<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
+					) : (
+						<span
+							className="pointer-events-none flex size-6 shrink-0 items-center justify-center rounded-md border border-transparent transition-colors duration-normal ease-out-practical group-hover/button:bg-bg-neutral-subtle-hovered group-active/button:bg-bg-neutral-subtle-pressed group-focus-visible/button:border-ring group-focus-visible/button:ring-3 group-focus-visible/button:ring-ring/50 motion-reduce:transition-none"
+							data-agent-session-column-expand-visual=""
+						>
+							<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
+						</span>
+					)}
+				</TooltipTrigger>
+				<TooltipContent alignOffset={leadingHitSlopPx / 2}>Expand</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	);
+}
 
 const HEADER_ACTION_ICON: Record<SelectionActionId, ComponentType<NewCoreIconProps>> = {
 	approve: CheckMarkIcon,
@@ -407,7 +471,14 @@ function renderColumnChrome({
 				aria-live={isSelecting ? "polite" : undefined}
 				className="ms-1.5 shrink-0 text-xs font-normal text-text-subtlest"
 			>
-				{model.count}
+				{isSelecting ? model.count : (
+					<>
+						<span aria-hidden="true">
+							<AgentSessionColumnCountMorph count={model.count} />
+						</span>
+						<span className="sr-only">{model.count}</span>
+					</>
+				)}
 			</span>
 			{isSelecting ? (
 				<div className="ms-auto flex shrink-0 items-center">

@@ -103,13 +103,13 @@ test("default well and Untracked enclosed well share a 1px border box", () => {
 	);
 	assert.match(
 		SESSION_COLUMN_SOURCE,
-		/AGENT_SESSION_WELL_PAINT = cn\(\s*AGENT_SESSION_PLANE,\s*"rounded-xl border border-solid border-border-disabled",\s*\)/u,
+		/AGENT_SESSION_WELL_PAINT = cn\(\s*AGENT_SESSION_PLANE,\s*"rounded-xl border border-solid border-transparent",\s*\)/u,
 	);
 	assert.match(
 		SESSION_HEADER_SOURCE,
 		/enclosed: \{\s*\n\s*paddingTop: token\("space\.100"\),\s*\n\s*paddingInline: token\("space\.150"\),\s*\n\s*paddingBottom: token\("space\.050"\),\s*\n\s*\}/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		SESSION_COLUMN_SOURCE,
 		/layout === "enclosed" \? "border border-solid border-transparent" : null/u,
 	);

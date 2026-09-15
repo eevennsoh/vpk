@@ -100,6 +100,12 @@ export function toPulseSessionPullRequestDetails(
 	pullRequest: PulseAgentSessionPullRequest,
 ): AgentListSessionDetails {
 	const repository = pullRequest.repository ?? PULSE_SPACE_REPOSITORY;
+	const reviewerCount = pullRequest.status === "merged" ? 3 : 2;
+	const updatedLabel = pullRequest.status === "merged"
+		? "5h"
+		: pullRequest.status === "failed"
+			? "2h"
+			: "1h";
 
 	return {
 		additions: pullRequest.additions,
@@ -108,7 +114,9 @@ export function toPulseSessionPullRequestDetails(
 		files: pullRequest.files,
 		pullRequestDescription: pullRequest.description,
 		pullRequestNumber: pullRequest.number,
+		pullRequestReviewerCount: reviewerCount,
 		pullRequestTitle: pullRequest.title,
+		pullRequestUpdatedLabel: updatedLabel,
 		pullRequestUrl: `https://github.com/${repository}/pull/${pullRequest.number}`,
 		repository,
 		targetBranch: "main",
@@ -176,7 +184,7 @@ export function toPulseSessionItems(
 				worktreePath: worktree,
 			},
 			shortTitle: item.shortTitle,
-			state: "complete",
+			state: item.state ?? "complete",
 			timeLabel: item.timeLabel,
 			title: item.title,
 		} satisfies AgentSessionItem];

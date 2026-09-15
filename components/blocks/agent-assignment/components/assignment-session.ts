@@ -68,6 +68,7 @@ function assignmentActivityLabel(kind: AgentAssignmentStatusKind, agent: AgentAs
 export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessionItem {
 	const statusKind = resolveAssignedAgentStatusKind(agent);
 	const role = assignmentSessionRole(statusKind, agent.role);
+	const invokedBy = role === "viewer" || role === "expired" ? undefined : agent.invokedBy;
 
 	return {
 		agent: {
@@ -78,7 +79,7 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 			...(agent.brandName ? { brandName: agent.brandName } : {}),
 		},
 		id: agent.id,
-		...(agent.invokedBy ? { invokedBy: agent.invokedBy } : {}),
+		...(invokedBy ? { invokedBy } : {}),
 		state: assignmentSessionState(statusKind),
 		title: agent.name,
 		...(agent.host !== undefined ? { host: agent.host } : {}),
@@ -91,6 +92,7 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 export function toAssignmentActivity(agent: AgentAssignmentAgent): JiraIssueAgentActivity {
 	const statusKind = resolveAssignedAgentStatusKind(agent);
 	const role = assignmentSessionRole(statusKind, agent.role);
+	const invokedBy = role === "viewer" || role === "expired" ? undefined : agent.invokedBy;
 
 	return {
 		id: agent.id,
@@ -102,7 +104,7 @@ export function toAssignmentActivity(agent: AgentAssignmentAgent): JiraIssueAgen
 		...(statusKind === "working" && agent.statusSequence
 			? { labels: agent.statusSequence }
 			: {}),
-		...(agent.invokedBy ? { invokedBy: agent.invokedBy } : {}),
+		...(invokedBy ? { invokedBy } : {}),
 		...(agent.host !== undefined ? { host: agent.host } : {}),
 		...(role !== undefined ? { role } : {}),
 	};

@@ -29,6 +29,8 @@ export function useSessionDragChipPointer(shouldReduceMotion: boolean | null) {
 		const next = sessionDragPointerInContainingBlock(pointer, host);
 		pointerX.jump(next.x);
 		pointerY.jump(next.y);
+		springX.jump(next.x);
+		springY.jump(next.y);
 	}
 
 	function followPointer(pointer: PointerDragPosition, host?: HTMLElement | null) {

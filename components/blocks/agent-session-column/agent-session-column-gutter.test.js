@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+const HEADER_SOURCE = readFileSync(join(__dirname, "agent-session-column-header.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-column-types.ts"), "utf8");
 const RAIL_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
 const IN_FLOW_COLUMN_SOURCE = readFileSync(
@@ -56,7 +57,7 @@ test("the in-flow host pins and expands on separate axes", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /resolveInFlowSessionColumnRest\(collapsed\)/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /const \[pinned, setPinned\] = useState\(rest\.pinned\)/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /const \[expanded, setExpanded\] = useState\(rest\.expanded\)/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /const isEmbedded = isHovered \|\| pinned \|\| isMenuOpen/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /const isEmbedded = !advancedTimeline \|\| isHovered \|\| pinned \|\| isMenuOpen/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /const isFullWidth = expanded && isEmbedded/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsed=\{!isFullWidth\}/u);
 	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /expansion: "gutter" \| "pinned" \| "expanded"/u);
@@ -99,6 +100,49 @@ test("the in-flow host pins and expands on separate axes", () => {
 	assert.doesNotMatch(pointerEnterSource, /onCollapsedChange/u);
 });
 
+test("simple timeline stays embedded with only expand and collapse controls", () => {
+	assert.match(IN_FLOW_COLUMN_SOURCE, /advancedTimeline\?: boolean;/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/const isEmbedded = !advancedTimeline \|\| isHovered \|\| pinned \|\| isMenuOpen/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/function resolveInFlowAgentSessionColumnAdvancedCapabilities[\s\S]*if \(!advancedTimeline\)[\s\S]*collapsedMenu: undefined,[\s\S]*onPinnedChange: undefined,[\s\S]*<InFlowAgentSessionColumnCollapsedMenu/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/onPinnedChange=\{advancedOnPinnedChange\}/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /advancedAgentSessionTimeline = true,/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/enabled=\{advancedAgentSessionTimeline[\s\S]*?showInFlowAgentSessionColumn/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<InFlowAgentSessionColumn[\s\S]*?advancedTimeline=\{advancedAgentSessionTimeline\}/u,
+	);
+});
+
+test("session-column width dragging is an explicit host capability", () => {
+	assert.match(IN_FLOW_COLUMN_SOURCE, /resizable\?: boolean;/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /resizable = true,/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/function InFlowAgentSessionColumnResizeHandle[\s\S]*if \(!visible\) return null;[\s\S]*<SidebarResizeHandle/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/<InFlowAgentSessionColumnResizeHandle[\s\S]*visible=\{isFullWidth && resizable\}/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionColumnResizable = true,/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<InFlowAgentSessionColumn[\s\S]*?resizable=\{agentSessionColumnResizable\}/u,
+	);
+});
+
 test("gutter Expand expands and pins; the menu then says Unpin", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /reduceInFlowSessionColumnAxes\(\{ expanded, pinned \}, \{ type: "expand" \}\)/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /onCollapsedChange\?\.\(false\)/u);
@@ -112,9 +156,9 @@ test("gutter Expand expands and pins; the menu then says Unpin", () => {
 
 test("pin persists the column after the pointer leaves", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /reduceInFlowSessionColumnAxes\(\{ expanded, pinned \}, \{ type: "pin", pinned: nextPinned \}\)/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded = isHovered \|\| pinned \|\| isMenuOpen/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded = !advancedTimeline \|\| isHovered \|\| pinned \|\| isMenuOpen/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /data-agent-session-column-pinned=\{pinned \? "" : undefined\}/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /onPinnedChange=\{onPinnedChange\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /onPinnedChange=\{advancedOnPinnedChange\}/u);
 });
 
 test("the collapsed options menu uses Atlaskit show-more-horizontal, not a custom SVG", () => {
@@ -182,7 +226,7 @@ test("collapsed drag paints the outlined overlay chip and keeps the same button 
 		INDEX_SOURCE,
 		/const collapsedControlClassName = isRepositioning\s*\? COLLAPSED_REPOSITION_CHIP_CLASS_NAME\s*: isGutterCollapsed \? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL/u,
 	);
-	assert.match(INDEX_SOURCE, /variant=\{isRepositioning \? "outline" : "ghost"\}/u);
+	assert.match(HEADER_SOURCE, /variant=\{isRepositioning \? "outline" : "ghost"\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /border-transparent! bg-transparent!/u);
 	assert.doesNotMatch(
 		INDEX_SOURCE,
@@ -193,7 +237,7 @@ test("collapsed drag paints the outlined overlay chip and keeps the same button 
 	assert.match(IN_FLOW_MENU_SOURCE, /style=\{\{ width: "100%" \}\}/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/collapsedMenu=\{\(\{ className: collapsedControlClassName, dragging \}\) => \(/u,
+		/collapsedMenu: \(\{ className, dragging \}\) => \(/u,
 	);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /dragging=\{dragging\}/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /open=\{menuOpen\}/u);
@@ -227,7 +271,7 @@ test("gutter rest keeps the overlay and rail visually transparent", () => {
 	);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto bg-surface"[\s\S]{0,220}?: "pointer-events-none bg-transparent \[&_\[data-agent-session-notch\]\]:pointer-events-auto \[&_\[data-agent-session-column-expand-control\]\]:pointer-events-auto"/u,
+		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto"[\s\S]{0,220}?: "pointer-events-none \[&_\[data-agent-session-notch\]\]:pointer-events-auto \[&_\[data-agent-session-column-expand-control\]\]:pointer-events-auto"/u,
 	);
 	assert.doesNotMatch(
 		IN_FLOW_COLUMN_SOURCE,
@@ -236,7 +280,7 @@ test("gutter rest keeps the overlay and rail visually transparent", () => {
 });
 
 test("gutter rest keeps its exposed expand control pointer-enabled", () => {
-	assert.match(INDEX_SOURCE, /data-agent-session-column-expand-control=""/u);
+	assert.match(HEADER_SOURCE, /data-agent-session-column-expand-control=""/u);
 	assert.match(IN_FLOW_MENU_SOURCE, /data-agent-session-column-expand-control=""/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
@@ -290,7 +334,7 @@ test("the entire visible gutter is a hover target without covering To do", () =>
 	);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto bg-surface"[\s\S]{0,220}?: "pointer-events-none bg-transparent \[&_\[data-agent-session-notch\]\]:pointer-events-auto \[&_\[data-agent-session-column-expand-control\]\]:pointer-events-auto"/u,
+		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto"[\s\S]{0,220}?: "pointer-events-none \[&_\[data-agent-session-notch\]\]:pointer-events-auto \[&_\[data-agent-session-column-expand-control\]\]:pointer-events-auto"/u,
 	);
 	assert.doesNotMatch(
 		IN_FLOW_COLUMN_SOURCE,
@@ -313,6 +357,8 @@ test("the gutter hides the count", () => {
 	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
 	assert.doesNotMatch(INDEX_SOURCE, /const gutterHeader = \(/u);
 	assert.match(INDEX_SOURCE, /isGutterCollapsed \? "bg-transparent" : null/u);
+	assert.match(INDEX_SOURCE, /isGutterCollapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT/u);
+	assert.match(INDEX_SOURCE, /return isGutterCollapsed \? \(/u);
 });
 
 test("flyouts stay suspended in the gutter and under the collapsed options safezone", () => {
@@ -345,8 +391,7 @@ test("the tucked gutter hides the session total; hover preview shows collapsed h
 		/: isGutterCollapsed \? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL;/u,
 	);
 	assert.match(INDEX_SOURCE, /const HEADER_CONTROL_IN_GUTTER = cn\(\s*HEADER_CONTROL_ON_REVEAL,\s*"hover:opacity-0",\s*\)/u);
-	assert.match(INDEX_SOURCE, /<TextMorphing\s+config=\{HEAD_COUNT_MORPH\}/u);
-	assert.match(INDEX_SOURCE, /text=\{String\(sessionCount\)\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnCountMorph count=\{sessionCount\} \/>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
 	assert.match(
@@ -356,7 +401,11 @@ test("the tucked gutter hides the session total; hover preview shows collapsed h
 	assert.match(INDEX_SOURCE, /data-agent-session-column-count=""/u);
 	assert.match(
 		INDEX_SOURCE,
-		/toAgentSessionRailHitSlopStyle\(collapsedRailHitSlopPx\)/u,
+		/toAgentSessionRailHitSlopStyle\(collapsedHitSlopPx\)/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/const collapsedHitSlopPx = wearEnclosedWell && elevatePlane \? 0 : collapsedRailHitSlopPx/u,
 	);
 	assert.match(
 		RAIL_SOURCE,
@@ -367,7 +416,8 @@ test("the tucked gutter hides the session total; hover preview shows collapsed h
 test("the gutter preview and footprint share CSS hover timing in both directions", () => {
 	assert.match(IN_FLOW_GEOMETRY_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX = -5/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /transform: `translateX\(\$\{isEmbedded \? IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX : IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX\}px\)`/u);
+	assert.match(IN_FLOW_GEOMETRY_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX =\s*\n?\s*IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX\s*\n?\s*- IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /transform: `translateX\(\$\{isEmbedded \? IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX : IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX\}px\)`/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /"transform var\(--duration-normal\) var\(--ease-out-practical\)"/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /transition: columnWidthPx === AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX \? transition : expansionTransition/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /transition: shouldReduceMotion \? "none" : IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_TRANSITION/u);
@@ -377,6 +427,10 @@ test("the gutter preview and footprint share CSS hover timing in both directions
 
 test("Board visible cards and List share the header's 24px leading alignment", () => {
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /flex-wrap items-center gap-2 px-6/u);
+	assert.match(
+		IN_FLOW_GEOMETRY_SOURCE,
+		/IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX =\s*\n?\s*IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX\s*\n?\s*- IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX/u,
+	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
 		/const columnRowPaddingInlineStart = chrome\.dropContentPadding\s*\?\s*`calc\(\$\{token\("space\.300"\)\} - 2px - \$\{chrome\.dropContentPadding\.paddingInline\}\)`\s*:\s*token\("space\.300"\)/u,
@@ -421,7 +475,11 @@ test("Board and List give the in-flow column identical geometry props", () => {
 		inFlowColumn,
 		/paddingTop=\{withKanbanDropContentGutter\(0, columnChromeStyles\)\.paddingTop\}/u,
 	);
-	assert.doesNotMatch(inFlowColumn, /isListContent/u);
+	assert.doesNotMatch(inFlowColumn, /(?:paddingTop|columnFrame)=\{[^}]*isListContent/u);
+	assert.match(
+		inFlowColumn,
+		/showTrailingShadow=\{!isListContent && boardContentUnderlapsSessionColumn\}/u,
+	);
 });
 
 test("the first collapsed gutter mount plays a reduced-motion-safe staggered scale wave", () => {

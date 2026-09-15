@@ -193,6 +193,8 @@ function toAssignmentAgent(assigned: JiraListAssignedAgent): AgentAssignmentAgen
 		byline: assigned.byline ?? "",
 		...(assigned.avatarSrc ? { avatarSrc: assigned.avatarSrc } : {}),
 		...(assigned.brandName ? { brandName: assigned.brandName } : {}),
+		...(assigned.invokedBy ? { invokedBy: assigned.invokedBy } : {}),
+		...(assigned.role ? { role: assigned.role } : {}),
 		...(assigned.statusKind ? { statusKind: assigned.statusKind } : {}),
 		statusLabel: assigned.statusLabel,
 	};
@@ -215,6 +217,8 @@ function toListAssignedAgent(agent: AgentAssignmentAgent): JiraListAssignedAgent
 		byline: agent.byline,
 		...(agent.avatarSrc ? { avatarSrc: agent.avatarSrc } : {}),
 		...(agent.brandName ? { brandName: agent.brandName } : {}),
+		...(agent.invokedBy ? { invokedBy: agent.invokedBy } : {}),
+		...(agent.role ? { role: agent.role } : {}),
 		...(agent.statusKind ? { statusKind: agent.statusKind } : {}),
 		statusLabel: agent.statusLabel,
 	};
@@ -276,6 +280,8 @@ export function JiraListAgentSessionsCell({
 		<div>
 			<AgentAssignment
 				agents={agents}
+				activityIconScale="comfortable"
+				activityRowFlush
 				assignedAgents={assignedAgents}
 				maxVisibleAgents={LIST_ASSIGNED_AGENT_MAX_VISIBLE}
 				onAgentAssign={onAgentAssign}

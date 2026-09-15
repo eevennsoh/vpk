@@ -70,7 +70,7 @@ export interface SessionScreen {
 // pauses for Jira review, then resumes through deterministic Terminal snapshots
 // before returning to the completed board. `terminalBeat` remains 1-indexed.
 export const LOCAL_SESSION_SCREENS: readonly SessionScreen[] = [
-	{ id: "local-0", section: "Terminal", title: "Claude Code", liveBeat: 0 },
+	{ id: "local-0", section: "Terminal", title: "Claude", liveBeat: 0 },
 	{ id: "local-1", section: "Terminal", title: "Open Teamwork Graph", liveBeat: 1 },
 	{ id: "local-2", section: "Terminal", title: "Run twg start-work", liveBeat: 2 },
 	{ id: "local-3", section: "Terminal", title: "Browse available work", liveBeat: 3 },

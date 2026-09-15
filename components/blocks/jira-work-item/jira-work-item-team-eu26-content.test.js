@@ -128,9 +128,10 @@ test("Team EU26 filled preset renders the high-confidence sections and details r
 		/<CollapsibleWorkItemSection headingId="team-eu26-details-heading" label="Details" variant="rail">/u,
 	);
 	assert.match(sectionSource, /isRail \? "min-h-12 px-4" : expanded \? "min-h-9" : "min-h-8"/u);
-	for (const copy of ["Needs input..", "Development", "Automation", "Apps"]) {
+	for (const copy of ["Development", "Automation", "Apps"]) {
 		assert.match(railSource, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
 	}
+	assert.doesNotMatch(railSource, /Needs input\.\./u);
 	assert.match(railSource, /<TeamEuDevelopmentPanel \/>/u);
 	assert.match(railSource, /<TeamEuAutomationPanel[\s\S]*rules=\{automationRules\}/u);
 	assert.match(railSource, /<TeamEuAutomationPanel[\s\S]*onShowRecentRuns/u);
@@ -234,7 +235,7 @@ test("Team EU26 empty preset uses sparse wiv-v2 body and rail", () => {
 	assert.match(readBlockFile("team-eu26/components/team-eu-rail-panel.tsx"), /absolute inset-0 z-0/u);
 });
 
-test("Team EU26 header and empty Development share Open in and agent selector menus", () => {
+test("Team EU26 header and empty Development share Open in and the board agent selector menu", () => {
 	const dialogSource = readBlockFile("team-eu26/components/experimental-work-item-dialog.tsx");
 	const developmentSource = readBlockFile("team-eu26/components/team-eu-development-panel.tsx");
 	const openInSource = readBlockFile("team-eu26/components/open-in-menu.tsx");
@@ -246,13 +247,16 @@ test("Team EU26 header and empty Development share Open in and agent selector me
 	assert.match(developmentSource, /<OpenInMenu[\s\S]*Start local session/u);
 
 	assert.match(openInSource, /Copy prompt for/u);
-	assert.match(openInSource, /Claude Code/u);
+	assert.match(openInSource, /label: "Claude"/u);
+	assert.doesNotMatch(openInSource, /Claude Code/u);
 	assert.match(openInSource, /Codex/u);
 	assert.match(openInSource, /Cursor/u);
 	assert.match(openInSource, /GitHub Copilot/u);
 	assert.match(openInSource, /Rovo CLI/u);
 	assert.match(openInSource, /VS Code/u);
 	assert.match(openInSource, /Copy prompt/u);
+	assert.match(openInSource, /className: "flex min-w-56 flex-col gap-1 p-1"/u);
+	assert.doesNotMatch(openInSource, /className: "min-w-56 p-0"/u);
 	assert.match(
 		openInSource,
 		/<DropdownMenuGroup>[\s\S]*<DropdownMenuLabel>Copy prompt for<\/DropdownMenuLabel>[\s\S]*<\/DropdownMenuGroup>/u,
@@ -261,10 +265,16 @@ test("Team EU26 header and empty Development share Open in and agent selector me
 	assert.doesNotMatch(openInSource, /<DropdownMenuItem[^>]*onClick=/u);
 
 	assert.match(agentSelectorSource, /export function WorkItemAgentSelectorMenu/u);
-	assert.match(agentSelectorSource, /heading="Select agent"/u);
-	assert.match(agentSelectorSource, /searchVariant="boxed"/u);
-	assert.doesNotMatch(agentSelectorSource, /onBrowseAgents=\{handleFooterAction\}/u);
-	assert.doesNotMatch(agentSelectorSource, /onCreateAgent=\{handleFooterAction\}/u);
-	assert.doesNotMatch(agentSelectorSource, /heading="Select agent"[\s\S]*onBrowseAgents=/u);
+	assert.match(
+		agentSelectorSource,
+		/const \[pinnedAgentIds, setPinnedAgentIds\] = useState<readonly string\[\]>\(DEFAULT_PINNED_SPACE_AGENT_IDS\);/u,
+	);
+	assert.match(agentSelectorSource, /onBrowseAgents=\{handleFooterAction\}/u);
+	assert.match(agentSelectorSource, /onCreateAgent=\{handleFooterAction\}/u);
+	assert.match(agentSelectorSource, /onPinnedAgentIdsChange=\{setPinnedAgentIds\}/u);
+	assert.match(agentSelectorSource, /pinnedAgentIds=\{pinnedAgentIds\}/u);
+	assert.doesNotMatch(agentSelectorSource, /heading="Select agent"/u);
+	assert.doesNotMatch(agentSelectorSource, /searchVariant="boxed"/u);
+	assert.doesNotMatch(agentSelectorSource, /pinningEnabled=\{false\}/u);
 	assert.match(agentSelectorSource, /actions\.invokeAgent/u);
 });

@@ -351,7 +351,6 @@ export function JiraIssueAgentAssignmentHandle({
 	agents,
 	assignedAgents,
 	assignment,
-	isCompletedRow,
 	onOpenChange,
 	onViewChat,
 	rowHandle,
@@ -361,13 +360,13 @@ export function JiraIssueAgentAssignmentHandle({
 	agents: readonly AgentSelectorAgent[];
 	assignedAgents: readonly AgentAssignmentAgent[];
 	assignment?: JiraIssueAgentAssignment;
-	isCompletedRow: boolean;
 	onOpenChange?: (open: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	rowHandle: ReactElement<{ "aria-expanded"?: boolean }>;
 	showAssignmentFlyout: boolean;
 }>): ReactElement {
-	if (!showAssignmentFlyout || isCompletedRow) {
+	// Session lifecycle changes the row's status, never access to its flyout.
+	if (!showAssignmentFlyout) {
 		return rowHandle;
 	}
 
@@ -407,6 +406,7 @@ export function JiraIssueAgentRowSurface({
 	activities,
 	assignedRowHandle,
 	featuredActivity,
+	flushContent,
 	iconScale,
 	inheritChinSurface,
 	isDraggedOut,
@@ -420,6 +420,7 @@ export function JiraIssueAgentRowSurface({
 	activities: readonly JiraIssueAgentActivity[];
 	assignedRowHandle: ReactElement;
 	featuredActivity: JiraIssueAgentActivity | undefined;
+	flushContent?: boolean;
 	iconScale: JiraIssueIconScale;
 	inheritChinSurface: boolean;
 	isDraggedOut: boolean;
@@ -438,7 +439,7 @@ export function JiraIssueAgentRowSurface({
 					? "h-auto w-fit max-w-full justify-start bg-transparent p-0"
 					: cn(
 						"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered has-[[aria-expanded=true]]:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
-						iconScale === "comfortable" ? "pr-2 pl-1" : "px-2",
+						flushContent ? "px-0" : iconScale === "comfortable" ? "pr-2 pl-1" : "px-2",
 						inheritChinSurface ? "bg-transparent" : "bg-bg-neutral",
 					),
 			)}

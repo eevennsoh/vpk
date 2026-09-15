@@ -57,6 +57,9 @@ export type PulseLooseWorkSource = "GitHub" | "Claude";
 /** Coding agent on a local Pulse session. Mapped onto the shared row identity. */
 export type PulseCodingAgentId = "claude" | "codex" | "copilot" | "cursor";
 
+/** Lifecycle states supported by an untracked local coding session. */
+export type PulseAgentSessionState = "running" | "needs-input" | "complete";
+
 /** Flyout fields for a `pull-request` card — feeds `toPullRequestSmartLink`. */
 export interface PulseLooseWorkPullRequest {
 	number: number;
@@ -131,6 +134,8 @@ export type PulseLooseWork =
 			machineName: string;
 			/** Static stamp. Local rows must not tick. */
 			timeLabel: string;
+			/** Current lifecycle; omitted legacy fixtures remain completed. */
+			state?: PulseAgentSessionState;
 			/** Linked PR replaces the row timestamp when present. */
 			pullRequest?: PulseAgentSessionPullRequest;
 			/** Authoritative Jira status when this session comes from a live board owner. */

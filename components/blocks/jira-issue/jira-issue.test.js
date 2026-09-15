@@ -367,7 +367,7 @@ test("Jira issue keeps activity rows composer-free and uses one shared assignmen
 	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="hover"/u);
 	// The drag wrapper is applied around the row shell. AgentAssignment still
 	// clones only the drag handle so the hover card keeps `aria-expanded`.
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout \|\| isCompletedRow\) \{\s*return rowHandle;[\s\S]*<AgentAssignment/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;[\s\S]*<AgentAssignment/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /onAssignedAgentIdsChange=\{assignment\?\.onAssignedAgentIdsChange\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /onContinueExistingSession=\{assignment\?\.onContinueExistingSession\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /onRenameAssignedAgent=\{assignment\?\.onRenameAssignedAgent\}/u);
@@ -710,7 +710,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*iconScale=\{iconScale\}/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*inheritChinSurface/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout \|\| isCompletedRow\) \{\s*return rowHandle;[\s\S]*<AgentAssignment[\s\S]*openMode="hover"[\s\S]*trigger=\{rowHandle\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;[\s\S]*<AgentAssignment[\s\S]*openMode="hover"[\s\S]*trigger=\{rowHandle\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /inheritChinSurface \? "bg-transparent" : "bg-bg-neutral"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
 	assert.match(SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
@@ -722,7 +722,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome: boolean;/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden has-\[:focus-visible\]:overflow-visible",[\s\S]*\(hasActivities \|\| hasAttachPreview\) && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",\s*\)\}/u,
+		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden has-\[:focus-visible\]:overflow-visible",[\s\S]*\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?"py-1 has-\[\[data-session-chip-out\]\]:py-0",[\s\S]*?\),\s*\)\}/u,
 	);
 	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
@@ -832,7 +832,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 		/const agentActivitySurfaceAnimation = getJiraIssueAgentSurfaceOffsets\(\s*\n\s*agentActivitySurfacePosition,\s*\n\s*insetsAgentActivitySurfaceBottom,\s*\n\s*\);/u,
 	);
 	assert.match(SOURCE, /<article[\s\S]*className=\{agentActivityArticleClassName\}[\s\S]*data-agent-activity-mode=\{resolvedAgentActivityMode\}/);
-	assert.match(SOURCE, /<motion\.div[\s\S]*className=\{agentActivityShellClassName\}[\s\S]*initial=\{false\}[\s\S]*layout=\{!\(shouldReduceMotion \|\| agentActivityHoverOpen\)\}[\s\S]*layoutRoot/);
+	assert.match(SOURCE, /<motion\.div[\s\S]*className=\{agentActivityShellClassName\}[\s\S]*initial=\{false\}[\s\S]*layout=\{!\(shouldReduceMotion \|\| agentActivityHoverOpen \|\| parentOwnsLayout\)\}[\s\S]*layoutRoot=\{!parentOwnsLayout\}/);
 	assert.match(
 		SOURCE,
 		/className=\{cn\(\s*"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",\s*agentSessionTargetHighlighted \? "bg-bg-neutral-hovered" : "bg-bg-neutral",\s*\)\}/u,
@@ -843,8 +843,8 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /transformOrigin: "top center"/);
 	assert.match(SOURCE, /const AGENT_ACTIVITY_INNER_STYLE: CSSProperties = \{[\s\S]*transformOrigin: "top center"/);
 	assert.doesNotMatch(SOURCE, /layout=\{!shouldReduceMotion\}/);
-	assert.match(SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/);
-	assert.match(SOURCE, /layout=\{shouldReduceMotion \|\| agentActivityHoverOpen \? false : "position"\}/);
+	assert.match(SOURCE, /layout=\{shouldReduceMotion \|\| parentOwnsLayout \? false : "position"\}/);
+	assert.match(SOURCE, /layout=\{shouldReduceMotion \|\| agentActivityHoverOpen \|\| parentOwnsLayout \? false : "position"\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const rowLayout = shouldReduceMotion \|\| sessionDragging \|\| assignmentHoverOpen\s*\n\s*\? false\s*\n\s*: "position";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentAvatarVisual[\s\S]*animate=\{false\}/u);
 	assert.match(SUBTASKS_SOURCE, /style=\{shouldReduceMotion \? undefined : JIRA_ISSUE_MOTION_STYLE\}/);

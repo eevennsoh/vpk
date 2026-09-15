@@ -57,7 +57,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-101-call-site-inventory",
 		deletions: 8,
 		filesChanged: 14,
-		relativeTime: "3d ago",
+		relativeTime: "3d",
 		title: PAY_101_INVENTORY_PR_ARTIFACT.title,
 	}),
 	"PAY-102": createPreview({
@@ -66,7 +66,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-102-legacy-adapter-spike",
 		deletions: 41,
 		filesChanged: 9,
-		relativeTime: "2d ago",
+		relativeTime: "2d",
 		title: "Prove LegacyGatewayAdapter can be deleted outright",
 	}),
 	"PAY-104": createPreview({
@@ -84,7 +84,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-105-confirm-3ds-challenge",
 		deletions: 52,
 		filesChanged: 13,
-		relativeTime: "2h ago",
+		relativeTime: "2h",
 		title: "Port confirmPaymentIntent and the 3-D Secure challenge flow",
 	}),
 	"PAY-107": createPreview({
@@ -93,7 +93,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-107-retry-backoff-extract",
 		deletions: 88,
 		filesChanged: 7,
-		relativeTime: "4h ago",
+		relativeTime: "4h",
 		title: "Move retry and backoff out of LegacyGatewayAdapter",
 	}),
 	"PAY-109": createPreview({
@@ -111,7 +111,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-112-sandbox-key-retention",
 		deletions: 12,
 		filesChanged: 4,
-		relativeTime: "6h ago",
+		relativeTime: "6h",
 		title: "Confirm the sandbox key retention window before replay",
 	}),
 	"PAY-113": createPreview({
@@ -120,7 +120,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-113-3ds-contract-suite",
 		deletions: 19,
 		filesChanged: 22,
-		relativeTime: "4d ago",
+		relativeTime: "4d",
 		title: "Land the 3-D Secure contract suite with 214 assertions",
 	}),
 	"PAY-119": createPreview({
@@ -129,7 +129,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-119-rollback-rehearsal-runbook",
 		deletions: 3,
 		filesChanged: 3,
-		relativeTime: "8h ago",
+		relativeTime: "8h",
 		title: "Publish and link the rollback rehearsal runbook",
 	}),
 	"PAY-121": createPreview({
@@ -138,7 +138,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-121-account-targeting-kill-switch",
 		deletions: 16,
 		filesChanged: 6,
-		relativeTime: "12h ago",
+		relativeTime: "12h",
 		title: "Add per-account targeting and an armed kill switch",
 	}),
 	"PAY-126": createPreview({
@@ -147,7 +147,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-126-delete-legacy-adapter",
 		deletions: 410,
 		filesChanged: 17,
-		relativeTime: "5d ago",
+		relativeTime: "5d",
 		title: "Delete LegacyGatewayAdapter after all 61 ports land",
 	}),
 	"PAY-128": createPreview({
@@ -156,7 +156,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS = {
 		branch: "pay-128-sdk-version-settlement",
 		deletions: 9,
 		filesChanged: 5,
-		relativeTime: "3h ago",
+		relativeTime: "3h",
 		title: "Stamp SDK version at settlement for finance exports",
 	}),
 } as const satisfies Readonly<Record<string, JiraIssuePullRequestPreview>>;

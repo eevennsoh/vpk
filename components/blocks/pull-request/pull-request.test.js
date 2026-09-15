@@ -86,6 +86,19 @@ test("PullRequest card reuses Avatar, Lozenge, BrandLogoMark, and ArrowRight", (
 	assert.doesNotMatch(COMPONENT_SOURCE, /RelativeTime|from "@\/components\/ui\/elapsed-time"|BranchIcon|IconTile/u);
 });
 
+test("PullRequest GitHub mark does not add an inline line-box wrapper", () => {
+	const githubMark = COMPONENT_SOURCE.slice(
+		COMPONENT_SOURCE.indexOf("function PullRequestGitHubMark"),
+		COMPONENT_SOURCE.indexOf("function PullRequestInlineTitle"),
+	);
+
+	assert.match(
+		githubMark,
+		/return <BrandLogoMark frame="chip" label="GitHub" name="github" \/>;/u,
+	);
+	assert.doesNotMatch(githubMark, /<span className="shrink-0">/u);
+});
+
 test("PullRequest selection styling works for read-only and interactive cards", () => {
 	assert.match(
 		COMPONENT_SOURCE,
@@ -147,6 +160,18 @@ test("PullRequest spacious row one leads with the title and trails the status", 
 	);
 	// `flex-1` on the title is the only thing pushing the lozenge to the edge.
 	assert.match(spaciousBody, /<PullRequestInlineTitle\s*className="flex-1 font-medium"/u);
+});
+
+test("PullRequest spacious title and branch metadata share a zero-gap group", () => {
+	const spaciousBody = COMPONENT_SOURCE.slice(
+		COMPONENT_SOURCE.indexOf("function PullRequestSpaciousBody"),
+		COMPONENT_SOURCE.indexOf("function PullRequestFlyoutBody"),
+	);
+
+	assert.match(
+		spaciousBody,
+		/<div className="flex min-w-0 flex-col gap-0">[\s\S]*?<div className="flex min-w-0 items-start gap-2">[\s\S]*?<\/div>\s*<div className="flex min-w-0 flex-nowrap items-center gap-1\.5 overflow-hidden">[\s\S]*?<\/div>\s*<\/div>\s*<div className="flex min-w-0 items-center gap-2">/u,
+	);
 });
 
 test("PullRequest flyout and spacious titles wrap as one inline text run", () => {
@@ -250,7 +275,7 @@ test("Pull Request demos include source → target branch paths", () => {
 	assert.match(DATA_SOURCE, /targetBranch: "main"/u);
 	assert.match(DATA_SOURCE, /branch: "rovo\/rfp-103-response-validation"/u);
 	assert.match(DATA_SOURCE, /filesChanged: 6/u);
-	assert.match(DATA_SOURCE, /relativeTime: "1h ago"/u);
+	assert.match(DATA_SOURCE, /relativeTime: "1h"/u);
 	assert.match(DATA_SOURCE, /relativeTime: "Yesterday"/u);
 	assert.doesNotMatch(DATA_SOURCE, /relativeTime: "yesterday"/u);
 	assert.doesNotMatch(DATA_SOURCE, /number:\s*902/u);

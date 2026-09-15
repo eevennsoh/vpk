@@ -117,7 +117,7 @@ export const JIRA_CREATE_SESSION_ISSUE_POOL: readonly JiraCreateBoardCard[] = [
 		agentActivities: [
 			workingActivity(
 				"PAY-133:claude",
-				"Claude Code",
+				"Claude",
 				"claude",
 				"Preparing the wallet artwork handoff",
 				[
@@ -145,7 +145,7 @@ export const JIRA_CREATE_SESSION_ISSUE_POOL: readonly JiraCreateBoardCard[] = [
 			),
 			workingActivity(
 				"PAY-134:claude",
-				"Claude Code",
+				"Claude",
 				"claude",
 				"Wiring retry copy into the v2 client",
 				[

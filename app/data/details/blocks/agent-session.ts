@@ -2,19 +2,19 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Agent sessions in four footprints and relationship states. Large is the default detached, solid uncaptured-work card, and it comes in two densities: `short` leads with a 32px identity and a `agent · host · time` byline, while `long` drops the leading avatar, gives the title its own line, and spends the room on `agent · host · artifact · timestamp` plus a trailing lifecycle label and icon. Progression stays at the far right, not in the byline; Working shimmers while Needs input and Finished remain still. Owner rows reveal a `…` menu; viewer rows show an outline information-circle tooltip instead; expired cloud-long rows show an X because history is only kept for 28 days. A local owner menu offers Continue in — the agent itself or Terminal — while a cloud owner menu offers Rename and Delete. Both end in a dismiss row. Medium detached is a 276px stroked white chip (Jira issue width, 10px corners): 24px agent+human identity, the session title, and a trailing up-arrow key, still with the untracked-work flyout. Medium attached is the Jira Issue activity row (24px identity, h-8 chin, trailing 24×24 status) already connected to work. Small becomes the collapsed Agent Session Column notch. Short, medium, and small detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; long density does not. Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume disable the Terminal row.',
+		'Agent sessions in four footprints and relationship states. Large is the default detached, solid uncaptured-work card, and it comes in two densities: `short` leads with a 32px identity and a `agent · PR · host · time` byline (PR is omitted when the session has none), while `long` drops the leading avatar, gives the title its own line, and spends the room on `agent · cycling tool call · artifact · session type/timestamp` plus a trailing lifecycle label and icon. Progression stays at the far right, not in the byline; tool calls shimmer and cycle, Working also shimmers, and Needs input and Finished remain still. Owner rows reveal a `…` menu; viewer rows show an outline information-circle tooltip instead; expired cloud-long rows show an X because history is only kept for 28 days. A local owner menu offers Continue in — the agent itself or Terminal — while a cloud owner menu offers Rename and Delete. Both end in a dismiss row. Medium detached is a 276px stroked white chip (Jira issue width, 10px corners): the same 32px agent+human identity as a short row, the session title, and a trailing up-arrow key, still with the untracked-work flyout. Medium attached is the Jira Issue activity row (24px identity, h-8 chin, trailing 24×24 status) already connected to work. Small becomes the collapsed Agent Session Column notch. Short, medium, and small detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; long density does not. Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume disable the Terminal row.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
 			title: "Local — short",
 			description:
-				"The default avatar-led row for a session on the viewer's own machine, shown as owner and viewer. An owner byline reads agent · host · time and the more menu offers Continue in → the agent or Terminal. A viewer sees an information icon instead of that menu.",
+				"The default avatar-led row for a session on the viewer's own machine, shown as owner and viewer. An owner byline reads agent · PR · host · time when a pull request is linked, and the more menu offers Continue in → the agent or Terminal. A viewer sees an information icon instead of that menu.",
 			demoSlug: "agent-session-demo-local-short",
 		},
 		{
 			title: "Local — long",
 			description:
-				"Title-led owner and viewer rows with the provenance metadata line (agent, host, artifact, time) and a trailing lifecycle label and icon. No hover flyout — progression stays at the far right, not in the byline.",
+				"Title-led owner and viewer rows with the provenance metadata line (agent, cycling tool call, artifact, session type/time) and a trailing lifecycle label and icon. No hover flyout — progression stays at the far right, not in the byline.",
 			demoSlug: "agent-session-demo-local-long",
 		},
 		{
@@ -26,13 +26,13 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 		{
 			title: "Cloud — long",
 			description:
-				"Hosted owner, viewer, and expired sessions in the title-led density across Working, Needs input, and Finished — no hover flyout. The Working label shimmers beside the experimental spinner; settled labels stay still. Expired rows replace that trailing control with an X: history is only kept for 28 days.",
+				"Hosted owner, viewer, and expired sessions in the title-led density across Working, Needs input, and Finished — no hover flyout. Tool calls cycle with shimmering text; the Working label also shimmers beside the experimental spinner, while settled lifecycle labels stay still. Expired rows replace that trailing control with an X: history is only kept for 28 days.",
 			demoSlug: "agent-session-demo-cloud-long",
 		},
 		{
 			title: "Medium detached",
 			description:
-				"A 276px stroked white chip — the Jira issue card width — with 10px corners, a 24px agent+human identity, the session title, and a trailing up-arrow key. Still detached from Jira work, with the untracked-work flyout.",
+				"A 276px stroked white chip — the Jira issue card width — with 10px corners, the same 32px agent+human identity as a short row, the session title, and a trailing up-arrow key. Still detached from Jira work, with the untracked-work flyout.",
 			demoSlug: "agent-session-demo-medium-detached",
 		},
 		{
@@ -74,14 +74,14 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 			type: '"short" | "long"',
 			default: '"short"',
 			description:
-				"Row shape for the large footprint. `short` leads with a 32px identity and an agent · host · time byline. `long` drops the leading avatar, gives the title the full width, and adds agent, host, an artifact chip, time, and a trailing indicator. Ignored by the medium and small footprints, which have fixed geometry.",
+				"Row shape for the large footprint. `short` leads with a 32px identity and an agent · PR · host · time byline (PR omitted when none is linked). `long` drops the leading avatar, gives the title the full width, and adds agent, a cycling tool call, an artifact chip, session type/time, and a trailing indicator. Ignored by the medium and small footprints, which have fixed geometry.",
 		},
 		{
 			name: "items",
 			type: "readonly AgentSessionItem[]",
 			default: "built-in sample data",
 			description:
-				"Sessions to render. `AgentSessionItem` is the Agent List row model, so a surface that already builds those rows needs no conversion. `host` (falling back to `sessionDetails.host`) decides both the metadata glyph and which menu the row opens; a payload that declares neither omits the host segment in the long density rather than assuming the cloud. `sessionDetails.pullRequestNumber` and `pullRequestTitle` supply the long density's artifact chip, `sessionDetails.issueKey` seeds the untracked-work flyout suggestion, and `sessionDetails.worktreePath` the copied resume command.",
+				"Sessions to render. `AgentSessionItem` is the Agent List row model, so a surface that already builds those rows needs no conversion. `toolCalls` supplies the long density's shimmering cycle immediately after the agent name. `host` (falling back to `sessionDetails.host`) decides both the metadata glyph and which menu the row opens; a payload that declares neither omits the host segment in the long density rather than assuming the cloud. `sessionDetails.pullRequestNumber` and `pullRequestTitle` supply the short-byline PR number and the long-density artifact chip, `sessionDetails.issueKey` seeds the untracked-work flyout suggestion, and `sessionDetails.worktreePath` the copied resume command.",
 		},
 		{
 			name: "capturedItemIds",

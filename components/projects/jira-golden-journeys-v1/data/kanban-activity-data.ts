@@ -32,7 +32,7 @@ export function getDirectoryAgentAvatar(agentId: string): string | undefined {
 export const JGP_KANBAN_AGENTS: readonly JiraKanbanAgentData[] = [
 	{
 		id: JGP_KANBAN_DEFAULT_AGENT_ID,
-		name: "Claude Code",
+		name: "Claude",
 		byline: "Coding agent by Anthropic",
 		brandName: "claude",
 	},

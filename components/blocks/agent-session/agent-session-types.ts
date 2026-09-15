@@ -21,15 +21,16 @@ export type AgentSessionRole = "owner" | "viewer" | "expired";
 /**
  * An agent session rendered either detached from or attached to a work item.
  *
- * Structurally identical to an Agent List row — the card renders the shared
- * `AgentListRow` presenter inside a dashed uncaptured-work frame — so this is
- * an alias rather than a parallel model. Consumers that already build
+ * Starts from the Agent List row rendered by the shared `AgentListRow`
+ * presenter instead of forking a parallel model. Consumers that already build
  * `AgentListItem` values (Pulse maps loose-work fixtures into them) need no
- * conversion step. `role` is session-card vocabulary: Agent List rows have no
- * owner/viewer split.
+ * conversion step. `role` and `toolCalls` are session-card vocabulary: Agent
+ * List rows have neither the owner/viewer split nor the long-form tool cycle.
  */
 export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
+	/** Human-readable tool calls cycled in the long-form metadata line. */
+	toolCalls?: readonly string[];
 };
 
 /** Defaults to `owner` so existing payloads keep the more menu. */
@@ -86,11 +87,12 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
 /**
  * Row shape for the large footprint.
  *
- * `short` leads with a 32px identity and an agent · host · time byline. `long`
+ * `short` leads with a 32px identity and an agent · PR · host · time byline
+ * (PR omitted when none is linked). `long`
  * drops the leading avatar, gives the title the full width, and spends the
- * reclaimed room on a fuller metadata line (agent mark, host, artifact, time)
- * plus a trailing lifecycle label and icon. Progression stays at the far right,
- * not in the byline. Long rows have no hover flyout — highlight and trailing
+ * reclaimed room on a fuller metadata line (agent mark, cycling tool call,
+ * artifact, host, time) plus a trailing lifecycle label and icon. Progression
+ * stays at the far right, not in the byline. Long rows have no hover flyout — highlight and trailing
  * controls only. Same data either way; the difference is how much of it the
  * surface has room to state.
  */
@@ -132,6 +134,8 @@ export interface AgentSessionTriageRow {
 export interface AgentSessionProps {
 	className?: string;
 	style?: CSSProperties;
+	/** Animate sibling position changes; the in-flow session column keeps filter changes instant. */
+	animateLayout?: boolean;
 	/** Card footprint. Defaults to the full large uncaptured-work card. */
 	variant?: AgentSessionVariant;
 	/**
@@ -141,6 +145,17 @@ export interface AgentSessionProps {
 	density?: AgentSessionDensity;
 	/** Sessions to render; defaults to relationship-appropriate built-in sample data. */
 	items?: readonly AgentSessionItem[];
+	/**
+	 * Wash each agent's accent behind its row on hover. `variant="large"` only.
+	 * Opt-in per host, and independent of {@link glowStroke}.
+	 */
+	glowBloom?: boolean;
+	/**
+	 * Trace each agent's accent along its card edge on hover. `variant="large"`
+	 * only. Opt-in per host, and independent of {@link glowBloom} — the two are
+	 * separate layers so either can be judged on its own.
+	 */
+	glowStroke?: boolean;
 	/** Ids whose card should read as captured (solid border, still hoverable). */
 	capturedItemIds?: ReadonlySet<string>;
 	/**
@@ -198,6 +213,11 @@ export interface AgentSessionProps {
 	 * omitted list leaves the Link to existing tab in its empty state.
 	 */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
+	/**
+	 * Shows the Link work item row in the session's more menu. Defaults to true.
+	 * This affects only that manual menu path; other linking capabilities remain wired.
+	 */
+	showLinkWorkItemMenuItem?: boolean;
 	/**
 	 * Add-as-subtask action behind the untracked-work flyout menu. Omit to expose
 	 * the menu option as unavailable.

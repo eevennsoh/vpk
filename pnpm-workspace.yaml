@@ -3,6 +3,9 @@ packages:
   - backend
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
+  # Explicitly requested design-system lint pilot, published 2026-09-14.
+  # Exact version so the seven-day maturity gate applies to future updates.
+  - "@shadcn/lint@0.1.0"
   - undici
   # Latest gooey effect engine requested before the seven-day maturity gate.
   - liquid-gooey@0.2.1
@@ -32,9 +35,6 @@ minimumReleaseAgeExclude:
   # Security fix for the Express/MCP dependency tree. Version-pinned so the
   # seven-day gate re-applies automatically on any future qs bump.
   - qs@6.16.0
-  # Adopted before the maturity gate by explicit request. Version-pinned so
-  # the gate re-applies automatically on any future cn bump.
-  - cn@0.2.4
   # First-party ADS icons. `question-circle-filled` first ships in icon-lab
   # 7.8.0 (the only filled question glyph in the design system) and is required
   # by the jira-golden-journeys-v4 Team EU variation; icon-lab 7.8.0 in turn

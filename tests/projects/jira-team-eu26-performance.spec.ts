@@ -94,3 +94,45 @@ test("EU26 preserves warm view nodes and hides inactive controls", async ({ page
 	await expect(list).toBeVisible();
 	expect(await list.evaluate((element, original) => element === original, originalList)).toBe(true);
 });
+
+test("EU26 keeps retained board agent chins anchored when returning from List", async ({ page }) => {
+	await openBoard(page);
+	await page.getByRole("tab", { name: "List", exact: true }).first().click();
+	await expect(page.getByRole("region", { name: "Payments SDK v2 migration work items list" })).toBeVisible();
+
+	const samples = await page.evaluate(async () => {
+		const boardTab = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]'))
+			.find((tab) => tab.textContent?.trim() === "Board");
+		if (!boardTab) throw new Error("Expected the Board tab");
+
+		const frames: { offset: number; transform: string }[] = [];
+		boardTab.click();
+		for (let frame = 0; frame < 18; frame += 1) {
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			const board = document.querySelector(
+				'[aria-label="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."]',
+			);
+			const row = board?.querySelector<HTMLElement>('[data-slot="jira-issue-agent-row"]');
+			const shell = row?.closest<HTMLElement>('[data-slot="jira-issue-agent-shell"]');
+			const rowWrap = row?.closest<HTMLElement>('[data-slot="jira-issue-agent-row-wrap"]');
+			const rowMotion = rowWrap?.parentElement;
+			if (row && shell && rowMotion) {
+				frames.push({
+					offset: row.getBoundingClientRect().left - shell.getBoundingClientRect().left,
+					transform: getComputedStyle(rowMotion).transform,
+				});
+			}
+		}
+		return frames;
+	});
+
+	expect(samples).not.toHaveLength(0);
+	const restingOffset = samples.at(-1)?.offset ?? 0;
+	for (const [frame, sample] of samples.entries()) {
+		expect(sample.transform, `frame ${frame} should not project the chin from another view`).toBe("none");
+		expect(
+			Math.abs(sample.offset - restingOffset),
+			`frame ${frame} should keep the chin aligned to its Jira issue shell`,
+		).toBeLessThanOrEqual(0.5);
+	}
+});

@@ -5,7 +5,10 @@ import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type
 import { animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "motion/react";
 
 import type { AgentListState } from "@/components/blocks/agent-list";
-import { AGENT_SESSION_ARRIVAL_TRANSITION } from "@/components/blocks/agent-session/agent-session-arrival-motion";
+import {
+	AGENT_SESSION_ARRIVAL_TRANSITION,
+	AGENT_SESSION_USER_NOTCH_MORPH_TRANSITION,
+} from "@/components/blocks/agent-session/agent-session-arrival-motion";
 import { AgentSessionMediumDrag } from "@/components/blocks/agent-session/agent-session-medium-drag";
 import { AgentSessionNotchMark } from "@/components/blocks/agent-session/agent-session-notch";
 import {
@@ -59,14 +62,14 @@ export { AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS } from "./agent-session-column-rai
  * different: its contents are sessions, each of which is a live thing worth
  * reaching, so it collapses into a rail of compact markers instead of a label —
  * one per session, in list order. The count and expand control live in the
- * column header above this plane, not on the rail.
+ * column header, not on the rail.
  *
  * Circular markers are the default and are the compact form of the same human
  * avatar shown on the expanded card. The dock grows nearby dots from 4px toward
  * a 12px cap; the dot under the pointer or keyboard focus reveals that person's
- * face. An arriving session flashes that same face, holds, then morphs —
- * the face shrinks 12→4 as one disc — before the photo is dropped and the
- * unread rest takes `icon.subtle`. Reviewed sessions rest at 4px
+ * face. An arriving session flashes that same face, holds, then morphs — the
+ * face collapses 12→4 onto the rest disc already sitting beneath it and
+ * crossfades into `icon.subtle` at matched size. Reviewed sessions rest at 4px
  * `icon.disabled`. Line markers retain the original horizontal treatment
  * and falloff.
  *
@@ -333,8 +336,16 @@ function AgentSessionUserNotch({
 		shouldReduceMotion,
 	});
 	const showAvatar = isHighlighted || arrivalReveal;
+	const isMorphing = arrivalExiting && !isHighlighted;
+	// The rest disc is the morph's destination, so it has to be under the face
+	// before the face starts collapsing — otherwise the photo dissolves to bare
+	// plane and a separate dot fades up behind it, which is the flash. It is
+	// hidden only for the pre-reveal frame, when there is no face to sit under;
+	// from reveal onward an opaque 12px face covers it, so its own 150ms fade-in
+	// plays out unseen during the hold and it is solid by the time the morph
+	// starts. Hover keeps its own crossfade.
 	const hideRestDisc = Boolean(avatarSrc) && (
-		arrivalPending || arrivalReveal || arrivalExiting || isHighlighted
+		(arrivalPending && !arrivalReveal) || isHighlighted
 	);
 	const arrivalMorphScale = AGENT_SESSION_USER_NOTCH_DIAMETER.rest
 		/ AGENT_SESSION_USER_NOTCH_DIAMETER.peak;
@@ -408,14 +419,20 @@ function AgentSessionUserNotch({
 							"motion-reduce:transition-none",
 							"group-data-[hovered]/notch:scale-100 group-data-[hovered]/notch:opacity-100",
 							"group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
-							arrivalExiting && !isHighlighted
-								? "opacity-100 scale-[var(--agent-session-user-notch-morph)] transition-transform duration-normal ease-in-out"
-								: showAvatar ? "opacity-100 scale-100" : "scale-[var(--agent-session-user-notch-morph)] opacity-0",
+							// Morphing and settled share one target: the face ends the
+							// beat exactly where it already sits, so completing the
+							// arrival only drops the transition — it never re-snaps.
+							showAvatar && !isMorphing
+								? "opacity-100 scale-100"
+								: "scale-[var(--agent-session-user-notch-morph)] opacity-0",
 						)}
 						height={12}
 						src={avatarSrc}
 						style={{
 							"--agent-session-user-notch-morph": String(arrivalMorphScale),
+							transition: isMorphing
+								? AGENT_SESSION_USER_NOTCH_MORPH_TRANSITION
+								: undefined,
 						} as CSSProperties}
 						width={12}
 					/>
@@ -448,6 +465,7 @@ function AgentSessionUserNotch({
  * reflows the rail under the pointer.
  */
 function AgentSessionNotch({
+	animateLayout,
 	flyoutHandle,
 	flyoutSession,
 	hitSlopPx,
@@ -465,6 +483,7 @@ function AgentSessionNotch({
 	proximity,
 	sessionDrag,
 }: Readonly<{
+	animateLayout: boolean;
 	flyoutHandle: JiraSessionFlyoutHandle;
 	flyoutSession: JiraSidebarSessionItem;
 	hitSlopPx: number;
@@ -491,8 +510,8 @@ function AgentSessionNotch({
 		<motion.li
 			className="group/notch flex h-6 w-full shrink-0 items-center"
 			data-hovered={isHovered || undefined}
-			layout={shouldReduceMotion ? false : "position"}
-			// Animate session-order changes, not the rail's scrolling or board placement.
+			layout={shouldReduceMotion || !animateLayout ? false : "position"}
+			// Standalone rails animate order; the in-flow column keeps filters instant.
 			layoutDependency={introIndex}
 			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 		>
@@ -572,6 +591,7 @@ function AgentSessionNotch({
 }
 
 export function AgentSessionColumnRail({
+	animateLayout = true,
 	arrivingItemIds,
 	capturedItemIds,
 	getSuggestedWorkItemKey,
@@ -594,6 +614,7 @@ export function AgentSessionColumnRail({
 	sessionDrag,
 	showUntrackedWorkFooter,
 }: Readonly<{
+	animateLayout?: boolean;
 	/** Subset of `newItemIds` whose arrival beat has not played yet. */
 	arrivingItemIds?: ReadonlySet<string>;
 	capturedItemIds?: ReadonlySet<string>;
@@ -694,13 +715,18 @@ export function AgentSessionColumnRail({
 			    sits 2px inside each 24px button, so py-0.5 leaves its focus ring
 			    the same clearance and preserves the original marker centers.
 			    Hosts can add equal hit slop with a wider list and matching negative
-			    margins; those hosts must allow the rail past the section edges.
+			    margins; the widened buttons then fill the whole list width, with the
+			    extra width preserving focus-ring clearance. Those hosts must allow
+			    the rail past the section edges.
 			    Gutter rest still caps the
 			    viewport at ten notches; a hover-scaled hit area and column
 			    presentation omit that cap so every session can show inside the
-			    column height. Arrival layout stays on each `motion.li`. */}
+			    column height. Standalone rails retain per-notch arrival layout. */}
 			<ul
-				className="scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto overscroll-contain px-1 py-0.5"
+				className={cn(
+					"scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto overscroll-contain py-0.5",
+					hitSlopPx > 0 ? "px-0" : "px-1",
+				)}
 				data-agent-session-column-rail=""
 				onPointerDown={isDocked ? dock.resetPointer : undefined}
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}
@@ -717,6 +743,7 @@ export function AgentSessionColumnRail({
 			>
 				{items.map((item: AgentSessionItem, index: number) => (
 					<AgentSessionNotch
+						animateLayout={animateLayout}
 						flyoutHandle={flyoutHandle}
 						hitSlopPx={hitSlopPx}
 						flyoutSession={toAgentSessionUntrackedWorkFlyoutItem(

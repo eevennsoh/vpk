@@ -1,23 +1,28 @@
 /**
- * Brand mark colours for board agents.
+ * Brand mark colours for agents.
  *
  * Keyed by the lowercased brand the transfer already carries in `tintSeed`
  * (`agent.brandName`, then `agent.vpkLogo`, then the name). These are the
  * literal hexes the rendered logos use, read from `@atlassian/logo-third-party`
- * and `public/3p`, not palette approximations: the goo and the link flash both
- * exist to echo the mark the user is looking at, and a hashed accent put a teal
- * blob under Claude's orange asterisk.
+ * and `public/3p`, not palette approximations: the goo, the link flash and the
+ * session card's hover glow all exist to echo the mark the user is looking at,
+ * and a hashed accent put a teal blob under Claude's orange asterisk.
+ *
+ * This is the single owner for that colour. It sits beside the session block
+ * rather than inside `jira-kanban/experimental` because the shared session card
+ * reads it too, and a shared owner must not import an experimental variant.
  *
  * Unlisted brands resolve to `undefined`, which leaves the fusion field on its
- * own deterministic ramp and the flash on a neutral accent.
+ * own deterministic ramp and every CSS consumer on {@link AGENT_BRAND_TINT_FALLBACK}.
  */
 
 import {
 	parseColor,
 	// Relative leaf import with an explicit extension: this module is loaded raw
-	// by a node:test suite, where the `@/` alias does not resolve.
+	// by a node:test suite, where the `@/` alias does not resolve. Keep every
+	// import here in that shape, and keep this module dependency-light.
 	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-} from "../../../../ui-custom/lib/shimmer-colors.ts";
+} from "../../ui-custom/lib/shimmer-colors.ts";
 
 const BRAND_TINT_HEX: Readonly<Record<string, string>> = {
 	claude: "#d97757",

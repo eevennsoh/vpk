@@ -4,7 +4,7 @@ const test = require("node:test");
 const {
 	resolveAgentBrandTintColor,
 	resolveAgentBrandTintVariable,
-} = require("./agent-brand-tint.ts");
+} = require("../../../agent-session/agent-brand-tint.ts");
 
 const {
 	SESSION_FUSION_ROW_RADIUS_PX,

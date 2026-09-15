@@ -80,7 +80,8 @@ test("v5 terminal resumes the uncaptured PAY-101 Claude session in order", async
 	assert.match(allText, /restored local Claude session/u);
 	assert.match(allText, /38 messages · Ee Venn Soh · last active Mon 17 Aug 07:48/u);
 	assert.match(allText, /We agreed to delete the adapter, not wrap it/u);
-	assert.match(allText, /Call-site inventory across four services/u);
+	assert.match(allText, /Map v1 call sites/u);
+	assert.doesNotMatch(allText, /Call-site inventory across four services/u);
 	assert.match(allText, /#1839/u);
 	assert.match(allText, /8c2f4e1/u);
 	assert.match(allText, /Payments SDK v2 — migration scope/u);
@@ -100,7 +101,7 @@ test("v5 terminal finishes with restored artifacts and no implementation workflo
 	assert.equal(harness.JIRA_TEAM_EU26_TERMINAL_STORY.layout, "claude-only");
 	assert.match(
 		final.right.transcript.flatMap((line) => line.map((span) => span.text)).join("\n"),
-		/Call-site inventory across four services/u,
+		/Map v1 call sites/u,
 	);
 	assert.equal(harness.JIRA_TEAM_EU26_TERMINAL_STORY.finishedHint, "PAY-101 context restored · session ready");
 	assert.equal(

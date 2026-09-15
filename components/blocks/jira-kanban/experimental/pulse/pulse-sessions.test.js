@@ -63,7 +63,7 @@ test("every local session becomes one agent-list row with fixture identity", asy
 			assert.equal(item.id, session.id, where);
 			assert.equal(item.title, session.title, where);
 			assert.equal(item.host, "local", where);
-			assert.equal(item.state, "complete", where);
+			assert.equal(item.state, session.state ?? "complete", where);
 			assert.equal(item.agent.id, agent.id, where);
 			assert.equal(item.agent.name, agent.name, where);
 			assert.equal(item.agent.brandName, agent.brandName, where);
@@ -99,6 +99,11 @@ test("every local session becomes one agent-list row with fixture identity", asy
 		PULSE_TIMELINE.workItems,
 	);
 	assert.equal(allItems.length, 16, "the untracked-work column should have sixteen sessions");
+	assert.deepEqual(
+		new Set(allItems.map((item) => item.state)),
+		new Set(["running", "needs-input", "complete"]),
+		"baseline sessions should cover every untracked-work lifecycle",
+	);
 	const pullRequestItems = allItems.filter(
 		(item) => item.sessionDetails.pullRequestNumber !== undefined,
 	);
@@ -336,6 +341,20 @@ test("every session pull request maps to a complete Smart Link payload", async (
 		assert.equal(details.pullRequestNumber, pullRequest.number, where);
 		assert.equal(details.pullRequestTitle, pullRequest.title, where);
 		assert.equal(details.pullRequestDescription, pullRequest.description, where);
+		assert.equal(
+			details.pullRequestReviewerCount,
+			pullRequest.status === "merged" ? 3 : 2,
+			where,
+		);
+		assert.equal(
+			details.pullRequestUpdatedLabel,
+			pullRequest.status === "merged"
+				? "5h"
+				: pullRequest.status === "failed"
+					? "2h"
+					: "1h",
+			where,
+		);
 		assert.equal(details.files, pullRequest.files, where);
 		assert.equal(details.additions, pullRequest.additions, where);
 		assert.equal(details.deletions, pullRequest.deletions, where);
@@ -447,7 +466,11 @@ test("session flyout status resolves from the unscoped work-item collection", as
 	assert.equal(scopedIn.sessionDetails.issueStatus, fullStatus);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(agentSessionLooseWork, agentSessionMemberId\),\s*PULSE_TIMELINE\.members,\s*PULSE_TIMELINE\.workItems,/u,
+		/agentSessionMembers = PULSE_TIMELINE\.members/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(agentSessionLooseWork, agentSessionMemberId\),\s*agentSessionMembers,\s*PULSE_TIMELINE\.workItems,/u,
 	);
 	assert.match(SOURCES.shell, /workItems=\{sourceTimeline\.workItems\}/u);
 	assert.doesNotMatch(SOURCES.shell, /workItems=\{pulse\.workItems\}/u);

@@ -212,13 +212,6 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"jira-work-item-demo-team-eu26-empty": dynamic(
-		() =>
-			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
-				default: mod.JiraWorkItemDemoTeamEu26Empty,
-			})),
-		{ ssr: false },
-	),
 	"task-progress": dynamic(
 		() => import("../demos/blocks/task-progress-demo"),
 		{ ssr: false },

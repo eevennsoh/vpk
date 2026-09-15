@@ -117,11 +117,7 @@ function PullRequestStatusLozenge({
 }
 
 function PullRequestGitHubMark() {
-	return (
-		<span className="shrink-0">
-			<BrandLogoMark frame="chip" label="GitHub" name="github" />
-		</span>
-	);
+	return <BrandLogoMark frame="chip" label="GitHub" name="github" />;
 }
 
 /** `#N` + title as one wrapping text run so line 2 starts under the number. */
@@ -282,21 +278,23 @@ function PullRequestSpaciousBody({
 >) {
 	return (
 		<>
-			{/* The title takes the row and the lozenge trails, right-aligned, the
-			    same anchoring the flyout card uses. `flex-1` on the title is what
-			    pushes the lozenge out; `Lozenge` is already `shrink-0`, so a long
-			    title wraps under itself rather than squeezing the status. */}
-			<div className="flex min-w-0 items-start gap-2">
-				<PullRequestInlineTitle
-					className="flex-1 font-medium"
-					number={number}
-					title={title}
-				/>
-				<PullRequestStatusLozenge status={status} withIcon />
-			</div>
-			<div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
-				<PullRequestGitHubMark />
-				<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
+			<div className="flex min-w-0 flex-col gap-0">
+				{/* The title takes the row and the lozenge trails, right-aligned, the
+				    same anchoring the flyout card uses. `flex-1` on the title is what
+				    pushes the lozenge out; `Lozenge` is already `shrink-0`, so a long
+				    title wraps under itself rather than squeezing the status. */}
+				<div className="flex min-w-0 items-start gap-2">
+					<PullRequestInlineTitle
+						className="flex-1 font-medium"
+						number={number}
+						title={title}
+					/>
+					<PullRequestStatusLozenge status={status} withIcon />
+				</div>
+				<div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
+					<PullRequestGitHubMark />
+					<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
+				</div>
 			</div>
 			<div className="flex min-w-0 items-center gap-2">
 				{author ? (

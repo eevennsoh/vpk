@@ -362,7 +362,7 @@ test("Review, Fix, and Approve chapters auto-open PR #1847; Approve lands ready-
 	);
 });
 
-test("the lead activity shows the custom planner and Claude Code as mention tags", async () => {
+test("the lead activity shows the custom planner and Claude as mention tags", async () => {
 	const story = await loadStoryModule();
 	const plan = story.createJiraAgentsStoryState("plan");
 	const leadActivity = plan.staticEvents.find(
@@ -380,7 +380,7 @@ test("the lead activity shows the custom planner and Claude Code as mention tags
 		leadActivity.segments
 			.filter((segment) => segment.type === "agent-mention")
 			.map((segment) => segment.text),
-		["Claude Code", "Code Planner"],
+		["Claude", "Code Planner"],
 	);
 	assert.equal(leadActivity.segments.at(-1).text, " Started working");
 	assert.equal(leadActivity.segments[0].brandName, "claude");
@@ -389,7 +389,7 @@ test("the lead activity shows the custom planner and Claude Code as mention tags
 		story.createJiraAgentsStoryState("plan").comments.find(
 			(comment) => comment.id === "story-channel-orchestration",
 		).content,
-		"@Claude Code take the lead on implementing guest checkout. Consult @Code Planner on the secure API and validation contract first, then implement and verify the work.",
+		"@Claude take the lead on implementing guest checkout. Consult @Code Planner on the secure API and validation contract first, then implement and verify the work.",
 	);
 });
 
@@ -443,7 +443,7 @@ test("the software delivery chapters preserve the scripted status and agent-work
 	]);
 	assert.deepEqual(
 		story.JIRA_AGENTS_STORY_COMPOSER_AGENTS.map((agent) => agent.name),
-		["Claude Code", "Code Planner"],
+		["Claude", "Code Planner"],
 	);
 	assert.deepEqual(
 		chapters.map((chapter) => story.getJiraAgentsStoryStatus(chapter)),

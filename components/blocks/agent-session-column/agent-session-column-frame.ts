@@ -2,9 +2,9 @@
  * In-flow well framing. Independent of KanbanColumnChrome so this block
  * never imports jira-kanban.
  *
- * `"enclosed"` — expanded header is a child of the well (default kanban chrome).
- * Collapsed never wears the well. `"caption"` — header sits on the host
- * surface above the well (simple).
+ * `"enclosed"` — header is a child of the well (default kanban chrome),
+ * expanded and collapsed. Gutter rest stays unframed. `"caption"` — header
+ * sits on the host surface above the well (simple).
  */
 export type AgentSessionColumnFrame = "enclosed" | "caption";
 

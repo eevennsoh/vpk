@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useRef, useState, type WheelEvent } from "react";
+import { useInView } from "motion/react";
+
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 
@@ -9,7 +12,10 @@ import {
 } from "@/components/blocks/agent-list/agent-list-card";
 import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
+import { Shimmer } from "@/components/ui-custom/shimmer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 import {
@@ -17,6 +23,8 @@ import {
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
 import type { AgentSessionItem } from "./agent-session-types";
+
+const TOOL_CALL_CYCLE_MS = 2_200;
 
 /** The `·` between metadata chunks. Decorative — the chunks read fine without it. */
 function MetadataDot() {
@@ -40,6 +48,22 @@ function MetadataDot() {
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean }>) {
 	const label = isLocal ? "Local session" : "Cloud session";
+	const triggerRef = useRef<HTMLSpanElement>(null);
+
+	const handleTooltipWheel = (event: WheelEvent<HTMLDivElement>) => {
+		// The popup is portalled outside the column, so native wheel bubbling cannot
+		// reach the scroll owner. Keep the tooltip hoverable and forward only when
+		// this particular trigger belongs to an Agent Session column.
+		const scrollport = triggerRef.current?.closest<HTMLElement>(
+			"[data-agent-session-column-scrollport]",
+		);
+		if (scrollport === undefined || scrollport === null) {
+			return;
+		}
+
+		event.preventDefault();
+		scrollport.scrollBy({ left: event.deltaX, top: event.deltaY });
+	};
 
 	return (
 		<Tooltip>
@@ -48,6 +72,7 @@ export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean
 					<span
 						aria-label={label}
 						className="grid size-4 shrink-0 place-items-center text-icon-subtlest"
+						ref={triggerRef}
 						role="img"
 						tabIndex={0}
 					/>
@@ -59,7 +84,9 @@ export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean
 					<CloudIcon color="currentColor" label="" size="small" />
 				)}
 			</TooltipTrigger>
-			<TooltipContent positionerClassName="z-[600]">{label}</TooltipContent>
+			<TooltipContent onWheel={handleTooltipWheel} positionerClassName="z-[600]">
+				{label}
+			</TooltipContent>
 		</Tooltip>
 	);
 }
@@ -73,6 +100,12 @@ function toArtifactLabel(item: AgentSessionItem): string | undefined {
 
 	const title = item.sessionDetails?.pullRequestTitle;
 	return title === undefined ? `#${number}` : `#${number}: ${title}`;
+}
+
+/** `#1306` — the compact short-byline form, without the pull-request title. */
+function toPullRequestNumberLabel(item: AgentSessionItem): string | undefined {
+	const number = item.sessionDetails?.pullRequestNumber;
+	return number === undefined ? undefined : `#${number}`;
 }
 
 /**
@@ -89,6 +122,7 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 			<AgentListAttributionAvatarGroup
 				agent={item.agent}
 				attributedBy={item.invokedBy}
+				attributionOrder="human-first"
 				sizePx={16}
 			/>
 		);
@@ -108,6 +142,52 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 	);
 }
 
+/** Cycles only while visible; reduced motion holds the first tool call still. */
+// react-doctor-disable-next-line react-doctor/no-multi-component-file -- The tool call is one metadata segment and stays beside the segment renderer it serves.
+function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly string[] }>) {
+	const [cycleIndex, setCycleIndex] = useState(0);
+	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+	const wrapperRef = useRef<HTMLSpanElement>(null);
+	const isInView = useInView(wrapperRef);
+
+	useEffect(() => {
+		if (!isInView || shouldReduceMotion || toolCalls.length < 2) {
+			return undefined;
+		}
+
+		const intervalId = window.setInterval(() => {
+			setCycleIndex((index) => index + 1);
+		}, TOOL_CALL_CYCLE_MS);
+		return () => window.clearInterval(intervalId);
+	}, [isInView, shouldReduceMotion, toolCalls.length]);
+
+	const toolCall = toolCalls[cycleIndex % toolCalls.length];
+	if (toolCall === undefined) {
+		return null;
+	}
+
+	return (
+		<span className="min-w-0 max-w-28 truncate" ref={wrapperRef}>
+			<span className="sr-only">Tool call: </span>
+			<CyclingByline
+				className="text-xs leading-4 text-text-subtle"
+				contentKey={toolCall}
+			>
+				<Shimmer
+					as="span"
+					className="max-w-full truncate text-text-subtle"
+					data-agent-session-tool-call=""
+					duration={1.4}
+					spread={2}
+					title={toolCall}
+				>
+					{toolCall}
+				</Shimmer>
+			</CyclingByline>
+		</span>
+	);
+}
+
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 function LongMetadataSegment({
 	item,
@@ -123,10 +203,15 @@ function LongMetadataSegment({
 					</span>
 				</span>
 			);
+		case "tool-call":
+			return <AgentSessionToolCall toolCalls={segment.toolCalls ?? []} />;
 		case "artifact":
 			return (
 				<span className="flex min-w-0 shrink items-center gap-1">
-					<AgentListPrStatusIcon status={segment.prStatus ?? "created"} />
+					<AgentListPrStatusIcon
+						className="text-icon-subtlest"
+						status={segment.prStatus ?? "created"}
+					/>
 					<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
 						{segment.label}
 					</span>
@@ -168,6 +253,7 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
 		artifactLabel: toArtifactLabel(item),
 		host: declaredHost,
 		prStatus: item.prStatus,
+		toolCalls: item.toolCalls,
 	});
 
 	return (
@@ -193,21 +279,40 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
 }
 
 /**
- * Owner short byline: `Claude · ☁ Last week`.
+ * Owner short byline: `Claude · #1306 · ☁ Last week`.
  *
  * The leading 32px identity already shows the agent (and invoker). This line
- * only names who ran it and pairs the host icon with when — no status or
- * artifact chip, and no "Cloud" / "Local" label.
+ * names who ran it, the linked pull request when one exists, and pairs the host
+ * icon with when. Lifecycle stays outside the byline in the trailing control
+ * slot shared with the more-actions button.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- Short and long metadata stay together so the two densities cannot drift apart.
 export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessionItem }>) {
 	const declaredHost = item.host ?? item.sessionDetails?.host;
+	const pullRequestLabel = toPullRequestNumberLabel(item);
 
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 			<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
 				{item.agent.name}
 			</span>
+			{pullRequestLabel === undefined ? null : (
+				<>
+					<MetadataDot />
+					<span className="flex shrink-0 items-center gap-1">
+						<AgentListPrStatusIcon
+							className="text-icon-subtlest"
+							status={item.prStatus ?? "created"}
+						/>
+						<span
+							className="text-nowrap text-text-subtlest underline-offset-2 hover:underline"
+							title={toArtifactLabel(item)}
+						>
+							{pullRequestLabel}
+						</span>
+					</span>
+				</>
+			)}
 			<MetadataDot />
 			<span className="flex shrink-0 items-center gap-1 text-nowrap">
 				{declaredHost === undefined ? null : (

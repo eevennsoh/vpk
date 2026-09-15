@@ -20,7 +20,7 @@ const PAY_REPOSITORY = "payments-platform/payments";
 
 export const PAY_101_INVENTORY_PR_ARTIFACT: ArtifactListItem = {
 	id: "pay-101-inventory-pr-1839",
-	title: "Call-site inventory across four services",
+	title: "Map v1 call sites",
 	source: "Pull request",
 	owner: "Maya Ferreira",
 	logoName: "github",
@@ -85,7 +85,7 @@ export const JIRA_TEAM_EU26_PAY_101_WORK_ITEM: WorkItemData = {
 
 const PAY_CLAUDE_ACTOR: StaticTimelineEvent["actor"] = {
 	id: "pay-claude-code",
-	name: "Claude Code",
+	name: "Claude",
 	kind: "agent",
 	brandName: "claude",
 };
@@ -134,7 +134,7 @@ function createPay101ClaudeSession(): AgentSession {
 	return {
 		id: JIRA_TEAM_EU26_PAY_101_SESSION_ID,
 		agentId: "claude-code",
-		agentName: "Claude Code",
+		agentName: "Claude",
 		agentBrandName: "claude",
 		title: "Inventory v1 adapter call sites and owners",
 		status: "completed",
@@ -159,14 +159,14 @@ function createPay101ClaudeSession(): AgentSession {
 			{
 				id: "pay-101-claude-inventory",
 				role: "agent",
-				authorName: "Claude Code",
+				authorName: "Claude",
 				content: "I found 61 call sites across checkout-web, payments-api, ledger-sync, and merchant-admin. Every call site now has an owner and migration lane in commit 8c2f4e1.",
 				createdAtMs: startedAtMs + 720_000,
 			},
 			{
 				id: "pay-101-claude-evidence",
 				role: "agent",
-				authorName: "Claude Code",
+				authorName: "Claude",
 				content: "Published the inventory evidence to PAY-101. Commit 8c2f4e1 records all 61 call sites and owners, and PR #1839 is merged and linked. The separate keep-or-delete rationale session remains uncaptured.",
 				createdAtMs: startedAtMs + 1_440_000,
 			},
@@ -222,7 +222,7 @@ function createPay101StaticEvents(): StaticTimelineEvent[] {
 				state: "complete",
 				agent: {
 					id: "claude-code",
-					name: "Claude Code",
+					name: "Claude",
 					brandName: "claude",
 				},
 				branch: "pay-101/inventory-v1-call-sites",
@@ -361,7 +361,7 @@ export function createJiraTeamEu26Pay101BuildState(): JiraWorkItemState {
 				{
 					id: "claude-code",
 					kind: "agent",
-					name: "Claude Code",
+					name: "Claude",
 					brandName: "claude",
 				},
 			],

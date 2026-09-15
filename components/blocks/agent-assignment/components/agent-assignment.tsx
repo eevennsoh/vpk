@@ -16,6 +16,7 @@ import { AgentAssignmentDefaultField } from "@/components/blocks/agent-assignmen
 import { AssignedAgentsMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-menu";
 import { AssignedAgentsSessionMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-session-menu";
 import type { AgentAssignmentVariant } from "@/components/blocks/agent-assignment/components/assignment-session";
+import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { AssignmentAvatar } from "@/components/blocks/agent-assignment/components/assignment-avatar";
 import {
 	resolveAssignedAgentStatusKind,
@@ -53,7 +54,7 @@ export interface AgentAssignmentAgent extends AgentSelectorAgent {
 	 */
 	statusKind?: AgentAssignmentStatusKind;
 	statusLabel: string;
-	/** Human who invoked this assigned session, shown in the Default picker byline combo. */
+	/** Human who invoked this assigned session, shown for owner rows in the Default presenters. */
 	invokedBy?: AgentListInvoker;
 	/** Where the assigned session runs. Defaults to cloud in the session mapper. */
 	host?: AgentListHost;
@@ -77,6 +78,10 @@ export interface AgentAssignmentProps {
 	/** Whether assigned rows expose Archive. Disable when the owning state model
 	 * cannot remove a session-backed assignment without immediately restoring it. */
 	allowArchive?: boolean;
+	/** Comfortable scale uses the experimental working spinner; compact keeps the shared default. */
+	activityIconScale?: JiraIssueIconScale;
+	/** Let attached activity identities begin at the empty Assign agent label's edge. */
+	activityRowFlush?: boolean;
 	className?: string;
 	defaultPinnedAgentIds?: readonly string[];
 	maxVisibleAgents?: number;
@@ -128,6 +133,8 @@ export function AgentAssignment({
 	agents,
 	assignedAgents,
 	allowArchive = true,
+	activityIconScale,
+	activityRowFlush,
 	className,
 	defaultPinnedAgentIds = [],
 	maxVisibleAgents = 4,
@@ -468,7 +475,11 @@ export function AgentAssignment({
 								/>
 							}
 						/>
-						<AgentAssignmentDefaultField assignedAgents={assignedAgents} />
+						<AgentAssignmentDefaultField
+							activityIconScale={activityIconScale}
+							activityRowFlush={activityRowFlush}
+							assignedAgents={assignedAgents}
+						/>
 					</div>
 				) : (
 					<div className={cn("relative flex min-h-8 w-full min-w-0 items-center gap-0.5 overflow-visible px-2", className)}>

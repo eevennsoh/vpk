@@ -122,7 +122,7 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	assert.equal(planClaude.agentId, "claude-code");
 	assert.equal(planClaude.status, "running");
 	assert.equal(planPlanner.status, "running");
-	assert.equal(planPlanner.messages[0].authorName, "Claude Code");
+	assert.equal(planPlanner.messages[0].authorName, "Claude");
 	assert.match(planClaude.previewText, /Code Planner, review this work item/u);
 	// Early Plan snapshot: Consult still open (orchestration consult/complete checks it).
 	assert.equal(planClaude.progressChecklist.filter((item) => item.completed).length, 0);
@@ -450,18 +450,18 @@ test("Review moves deterministically from queued through settling to failed and 
 		(event) => event.id === "story-ci-repair",
 	);
 	assert.equal(claudeRepair.agentId, "claude-code");
-	assert.equal(claudeRepair.agentName, "Claude Code");
+	assert.equal(claudeRepair.agentName, "Claude");
 	assert.notEqual(claudeRepair.id, "story-session-claude-code");
 	assert.deepEqual(
 		claudeRepairing.sessions.find((session) => session.id === "story-session-claude-code").waitingOn,
-		{ kind: "agent", agentId: "claude-code", agentName: "Claude Code" },
+		{ kind: "agent", agentId: "claude-code", agentName: "Claude" },
 	);
 	assert.equal(
 		claudeRepairing.sessions.filter((session) => session.status !== "completed").length,
 		2,
 		"Claude as Fix agent still yields a distinct repair session beside the lead",
 	);
-	assert.equal(claudeRepairEvent.actor.name, "Claude Code");
+	assert.equal(claudeRepairEvent.actor.name, "Claude");
 	assert.equal(claudeRepairEvent.sessionItem.agent.id, "claude-code");
 });
 

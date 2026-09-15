@@ -5,6 +5,8 @@ import { useId } from "react";
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
+import type { AgentListAgent } from "@/components/blocks/agent-list";
+import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -14,17 +16,19 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Lozenge } from "@/components/ui/lozenge";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { Shimmer } from "@/components/ui-custom/shimmer";
 import { cn } from "@/lib/utils";
 
 import type { JiraSidebarSessionItem } from "./jira";
 import { JiraSessionFlyoutCard } from "./jira-session-flyout-card";
-import { JiraSessionDetailsBody } from "./jira-session-details-card";
 import {
+	JIRA_SESSION_FLYOUT_STATE,
+	JIRA_SESSION_FLYOUT_STATE_LABEL,
 	JIRA_SESSION_UPDATED_LABEL,
-	sessionArtifactItems,
 } from "./jira-session-flyout-data";
+import { JiraSessionPullRequestSection } from "./jira-session-pull-request-section";
+import { JiraSessionStatusIndicator } from "./jira-session-status-indicator";
 
 function JiraSessionUntrackedWorkActions({
 	archiveActionLabel = "Archive",
@@ -135,9 +139,9 @@ function JiraSessionUntrackedWorkActions({
 
 /**
  * Hover-card suggestion for linking an untracked agent session to a Jira work
- * item. The body is the shared session-details middle layer; Artifacts live on
- * the shared flyout card chrome. The body is omitted when there are no artifacts.
- * The footer contains the link rationale and actions.
+ * item. Pull requests render directly in a dedicated body section. The footer
+ * keeps the fallback rationale when no relationship is available and always
+ * owns the actions.
  */
 export function JiraSessionUntrackedWorkCard({
 	animateAvatars = true,
@@ -160,8 +164,26 @@ export function JiraSessionUntrackedWorkCard({
 }>) {
 	const titleId = useId();
 	const rationaleId = useId();
+	const pullRequestTitleId = useId();
 	const hasIssueKey = session.issueKey.length > 0;
-	const artifacts = sessionArtifactItems(session);
+	const hasPullRequest = session.pullRequestNumber !== undefined;
+	const lifecycleState = JIRA_SESSION_FLYOUT_STATE[session.status];
+	// Jira's sidebar payload uses `src`; the shared agent-list attribution
+	// primitive uses `avatarSrc`. Normalize at this feature boundary so the
+	// human face is preserved alongside the agent mark in every flyout.
+	const invokedBy = session.invokedBy === undefined
+		? undefined
+		: {
+			avatarSrc: session.invokedBy.src,
+			name: session.invokedBy.name,
+		};
+	const agentIdentity = {
+		avatarSrc: session.agentAvatarSrc,
+		brandName: session.brandName,
+		name: session.agentName,
+		vpkLogo: session.vpkLogo,
+	} satisfies AgentListAgent;
+	const showRationale = !hasPullRequest || !hasIssueKey;
 	const rationaleTitle = hasIssueKey ? "High confidence to link" : "Nothing available to link to";
 	const confidenceRationale = hasIssueKey
 		? `This session appears related to ${session.issueKey} because the work item matches its activity and context.`
@@ -169,25 +191,34 @@ export function JiraSessionUntrackedWorkCard({
 
 	return (
 		<JiraSessionFlyoutCard
-			aria-labelledby={showFooter ? `${titleId} ${rationaleId}` : undefined}
-			artifacts={artifacts}
+			aria-labelledby={
+				hasPullRequest
+					? `${titleId} ${pullRequestTitleId}`
+					: showFooter
+						? `${titleId} ${rationaleId}`
+						: undefined
+			}
 			body={
-				artifacts.length > 0 ? (
-					<JiraSessionDetailsBody hideAgentRow hideSessionRow session={session} />
+				hasPullRequest ? (
+					<JiraSessionPullRequestSection
+						session={session}
+						titleId={pullRequestTitleId}
+					/>
 				) : undefined
 			}
-			bodyClassName="gap-1"
 			footer={
 				showFooter ? (
 					<>
-						<div className="flex flex-col gap-2">
-							<h3 className="text-xs leading-4 font-medium text-text" id={rationaleId}>
-								{rationaleTitle}
-							</h3>
-							<p className="text-xs leading-4 text-text-subtlest">
-								{confidenceRationale}
-							</p>
-						</div>
+						{showRationale ? (
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xs leading-4 font-medium text-text" id={rationaleId}>
+									{rationaleTitle}
+								</h3>
+								<p className="text-xs leading-4 text-text-subtlest">
+									{confidenceRationale}
+								</p>
+							</div>
+						) : null}
 						<JiraSessionUntrackedWorkActions
 							archiveActionLabel={archiveActionLabel}
 							issueKey={session.issueKey}
@@ -201,19 +232,43 @@ export function JiraSessionUntrackedWorkCard({
 			}
 			meta={
 				<div className="flex h-4 min-w-0 items-center gap-1">
-					<span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center">
-						<AgentAvatarVisual
+					{invokedBy ? (
+						<AgentListAttributionAvatarGroup
+							agent={agentIdentity}
 							animate={animateAvatars}
-							avatarClassName="after:border-0"
-							avatarSrc={session.agentAvatarSrc}
-							brandName={session.brandName}
-							fallbackText={session.agentName}
-							label=""
+							attributedBy={invokedBy}
 							sizePx={16}
-							vpkLogo={session.vpkLogo}
 						/>
-					</span>
+					) : (
+						<span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center">
+							<AgentAvatarVisual
+								animate={animateAvatars}
+								avatarClassName="after:border-0"
+								avatarSrc={session.agentAvatarSrc}
+								brandName={session.brandName}
+								fallbackText={session.agentName}
+								label=""
+								sizePx={16}
+								vpkLogo={session.vpkLogo}
+							/>
+						</span>
+					)}
 					<p className="min-w-0 truncate text-xs leading-4 text-text-subtlest">{session.agentName}</p>
+					<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">·</span>
+					{lifecycleState === "working" ? (
+						<Shimmer
+							as="span"
+							className="shrink-0 text-xs leading-4 text-text-subtlest"
+							duration={1.4}
+							spread={2}
+						>
+							{JIRA_SESSION_FLYOUT_STATE_LABEL[lifecycleState]}
+						</Shimmer>
+					) : (
+						<p className="shrink-0 text-xs leading-4 text-text-subtlest">
+							{JIRA_SESSION_FLYOUT_STATE_LABEL[lifecycleState]}
+						</p>
+					)}
 					<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">·</span>
 					<p className="shrink-0 text-xs leading-4 text-text-subtlest">
 						{JIRA_SESSION_UPDATED_LABEL[session.status]}
@@ -222,7 +277,7 @@ export function JiraSessionUntrackedWorkCard({
 			}
 			title={session.title}
 			titleId={titleId}
-			trailing={showFooter && hasIssueKey ? <Lozenge className="shrink-0" variant="success">High</Lozenge> : null}
+			trailing={<JiraSessionStatusIndicator state={lifecycleState} />}
 		/>
 	);
 }

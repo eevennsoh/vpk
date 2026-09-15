@@ -33,6 +33,15 @@ export interface AgentSessionColumnProps extends Omit<
 	/** Copy shown in place of the list when there are no sessions. */
 	emptyLabel?: string;
 	/**
+	 * Drive the rows' accent stroke from one column-wide pointer plane, so it is
+	 * already tracing as the cursor approaches rather than switching on at each
+	 * row's edge. Defaults on.
+	 *
+	 * Only meaningful with `glowStroke` or `glowBloom` on — the plane exists to
+	 * start them early. Off leaves each row reacting on its own hover.
+	 */
+	glowReach?: boolean;
+	/**
 	 * Whether the column starts collapsed into its compact marker rail. The column owns
 	 * the state from there — the hover-revealed shrink/grow control toggles it.
 	 *
@@ -75,6 +84,8 @@ export interface AgentSessionColumnProps extends Omit<
 	 * without moving its markers.
 	 */
 	collapsedRailHitSlopPx?: number;
+	/** Extra leading reach for the default collapsed Expand button, beyond its rail-sized target. */
+	collapsedExpandLeadingHitSlopPx?: number;
 	/** Plays the collapsed gutter rail's one-time staggered dot introduction. */
 	playGutterIntro?: boolean;
 	/** Called after the final dot finishes the gutter introduction. */
@@ -148,6 +159,18 @@ export interface AgentSessionColumnProps extends Omit<
 	 * expanded list. Defaults to `false`.
 	 */
 	hasScrollingEffect?: boolean;
+	/**
+	 * Elevates this column's painted well above horizontally scrolled board
+	 * content. Defaults to `false`. The well already supplies the surface fill
+	 * and radius; hosts must not wrap it in a second surface. Underlap adds
+	 * the overlay surface and its downward depth shadow without perimeter
+	 * layers, and grows the well by `space.100` above and below. Expanded rest
+	 * paints the 1px disabled stroke. Underlap removes its border width while
+	 * preserving the inset. Collapsed wells never paint
+	 * a stroke. Collapsed hit slop stays wide at rest and shrinks
+	 * inside the elevated well while status columns underlap.
+	 */
+	showTrailingShadow?: boolean;
 	/**
 	 * Expanded width in px. Defaults to the board column's 280. A wider host
 	 * (the docked rail) passes its content-box width so the well fills that

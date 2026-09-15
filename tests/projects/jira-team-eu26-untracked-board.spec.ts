@@ -13,6 +13,12 @@ async function openBoard(page: Page): Promise<void> {
 		.getByTestId("agent-session-row-lw-scope-thread");
 	const options = page.getByRole("button", { name: "Unlink sessions column options" });
 	if (!await session.isVisible()) {
+		const directExpand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+		if (await directExpand.isVisible()) {
+			await directExpand.click();
+			await expect(session).toBeVisible();
+			return;
+		}
 		if (await page.locator("[data-agent-session-column-hit-area]").count() > 0) {
 			await revealCollapsedAgentSessionColumn(page);
 		}
@@ -200,7 +206,7 @@ test("attaching onto a running session replaces that chin row instead of stackin
 	const targetCard = getIssueArticle(page, "PAY-107");
 	await targetCard.scrollIntoViewIfNeeded();
 	const runningSession = targetCard.getByRole("button", {
-		name: /^Open Claude Code in Rovo chat:/u,
+		name: /^Open Claude in Rovo chat:/u,
 	});
 	await expect(runningSession).toBeVisible();
 	const restingBox = await targetCard.boundingBox();
@@ -226,7 +232,7 @@ test("attaching onto a running session replaces that chin row instead of stackin
 	);
 	await expect(dropZone).toHaveAttribute("data-board-agent-session-target", "attach");
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin"]')).toBeVisible();
-	await expect(targetCard.getByText("Link 1 agent session")).toBeVisible();
+	await expect(targetCard.getByText("Link agent session")).toBeVisible();
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin-slot"]')).toHaveCSS("height", "32px");
 	await expect(runningSession).toHaveCount(0);
 	await expect(targetCard.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(0);
@@ -264,7 +270,7 @@ test("attaching onto PAY-118 replaces any session chin instead of stacking the d
 	);
 	await expect(dropZone).toHaveAttribute("data-board-agent-session-target", "attach");
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin"]')).toHaveCount(1);
-	await expect(targetCard.getByText("Link 1 agent session")).toBeVisible();
+	await expect(targetCard.getByText("Link agent session")).toBeVisible();
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin-slot"]')).toHaveCSS("height", "32px");
 	await expect(targetCard.locator('[data-testid^="agent-session-row-"]:visible')).toHaveCount(0);
 	await expect(targetCard.getByText("Why the wallet was cut")).not.toBeVisible();
@@ -545,27 +551,6 @@ test("click auto-scroll keeps Untracked frozen and allows the status pane to scr
 	expect(await pay121ColumnScrollport.evaluate((element) => element.scrollTop)).toBe(0);
 	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
 	await expect(pay121).toHaveClass(/bg-bg-accent-blue-subtlest/);
-});
-
-test("Untracked stays frozen while the status pane scrolls", async ({ page }) => {
-	await openBoard(page);
-
-	const untrackedColumn = page.getByLabel(/^Unlink sessions,/u);
-	const statusScrollport = page.locator("[data-jira-kanban-scrollport]");
-	const frozenLeft = (await untrackedColumn.boundingBox())?.x;
-
-	await statusScrollport.evaluate((element) => {
-		element.scrollTo({ behavior: "instant", left: 400 });
-	});
-
-	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
-	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
-
-	await statusScrollport.evaluate((element) => {
-		element.scrollTo({ behavior: "instant", left: 0 });
-	});
-	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBe(0);
-	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
 });
 
 test("the Untracked resize handle reveals on column hover and widens the pinned column", async ({ page }) => {
@@ -954,7 +939,7 @@ test("session flyouts close for a Jira card drag and recover after drag end", as
 		name: /^Open Codex in Rovo chat:/u,
 	});
 	const nextSession = getIssueArticle(page, "PAY-123").getByRole("button", {
-		name: "Open Claude Code in Rovo chat: Working",
+		name: "Open Claude in Rovo chat: Working",
 	});
 	const flyout = page.locator("[data-slot='hover-card-content']");
 	await sourceSession.hover();
