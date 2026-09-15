@@ -115,7 +115,7 @@ for (const collapsed of [true, false]) {
 		const id = `agent-session-${collapsed ? "notch" : "row"}-lw-sync-webhook-gap`;
 		const row = page.getByTestId(id);
 		await expect(row).toBeAttached({ timeout: 10_000 });
-		if (!collapsed) await expect(row.locator(".shimmer")).toBeVisible();
+		if (!collapsed) await expect(row.locator(".shimmer")).toHaveCount(0);
 		const trace = await page.evaluateHandle(({ id, collapsed }) => {
 			const samples: { leaving: boolean; index: number; opacity: number; translateY: number; glow: boolean; accent: string; state: string | null; shownState: string | null; rotating: boolean; humanTransform: string | null; avatarWidth: number }[] = [];
 			let stopped = false;

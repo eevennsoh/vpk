@@ -135,7 +135,7 @@ test("the row dials the bloom back from the tile-tuned default", async () => {
 	);
 });
 
-test("only an opted-in Working card shimmers and every state retains its authored title", async () => {
+test("the Working spinner leaves every session title static and authored", async () => {
 	const { AgentSessionCard } = await loadCard();
 	for (const state of ["running", "needs-input", "complete"]) {
 		for (const showWorkingSpinner of [false, true]) {
@@ -144,7 +144,9 @@ test("only an opted-in Working card shimmers and every state retains its authore
 				showMoreMenu: false,
 				showWorkingSpinner,
 			}));
-			assert.equal(/class="shimmer /u.test(html), state === "running" && showWorkingSpinner);
+			assert.ok(!/class="shimmer /u.test(html), `${state} title must stay static`);
+			assert.ok(html.includes('data-agent-list-title=""'), `${state} uses the static title span`);
+			assert.equal(html.includes('data-slot="spinner"'), state === "running" && showWorkingSpinner);
 			assert.ok(html.includes(CARD_ITEM.title), `${state} retains the authored work title`);
 		}
 	}
