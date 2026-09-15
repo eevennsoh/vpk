@@ -682,9 +682,8 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 		/const lifecycleNode = lifecycle === undefined\s*\? \(stateMeta\.showLifecycle \? <LifecycleIndicator state=\{item\.state\} \/> : null\)\s*: lifecycle;/u,
 	);
 	assert.match(LIST_CARD_SOURCE, /\{hideIdentity \? null : \(/u);
-	// The in-flow column opts Working into the shared shimmer while blocked and
-	// finished rows retain their authored title without the shared state title.
-	assert.match(CARD_SOURCE, /stateAwareTitle=\{stateAwareTitle\}/u);
+	// The in-flow column can show a Working spinner without changing the title.
+	assert.match(CARD_SOURCE, /stateAwareTitle=\{false\}/u);
 	assert.match(TYPES_SOURCE, /export type AgentSessionRole = "owner" \| "viewer" \| "expired"/u);
 	assert.match(CARD_SOURCE, /const viewSession = role === "owner" \? onView : undefined/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
@@ -756,7 +755,7 @@ test("a working long row breathes with the experimental spinner, not the pixel l
 	);
 	assert.match(
 		LIFECYCLE_SOURCE,
-		/<Spinner[\s\S]*className="group-aria-pressed\/button:text-icon-selected!"[\s\S]*label=""[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="experimental"/u,
+		/<Spinner[\s\S]*className=\{cn\("group-aria-pressed\/button:text-icon-selected!", compact && "size-\[16\.75px\]"\)\}[\s\S]*label=""[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="experimental"/u,
 	);
 	assert.match(LIFECYCLE_SOURCE, /QuestionCircleFilledIcon/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /PixelLoader/u);
@@ -764,9 +763,11 @@ test("a working long row breathes with the experimental spinner, not the pixel l
 	assert.match(LIST_CARD_SOURCE, /PixelLoader/u);
 	// Complete earns a success check, which Agent List has no slot for.
 	assert.match(LIFECYCLE_SOURCE, /StatusSuccessIcon[\s\S]*text-icon-success|text-icon-success[\s\S]*StatusSuccessIcon/u);
-	// Needs-input / complete stay 16-in-24 IconTiles. Running must not — those
-	// `[&_svg]:size-4!` rules shrink the experimental spinner to a speck.
-	assert.match(LIFECYCLE_SOURCE, /iconSize="medium"/u);
+	// Short-row marks share a 24px slot: icons are 12px, and the 16.75px
+	// spinner SVG keeps the peak animated orb within that same footprint.
+	assert.match(LIFECYCLE_SOURCE, /className="relative grid size-6 shrink-0 place-items-center"/u);
+	assert.match(LIFECYCLE_SOURCE, /<IndicatorGlyph compact state=\{state\} \/>/u);
+	assert.equal((LIFECYCLE_SOURCE.match(/iconSize=\{compact \? "small" : "medium"\}/gu) ?? []).length, 3);
 	assert.match(LIFECYCLE_SOURCE, /\[&_svg:not\(\[class\*='size-'\]\)\]:size-4!/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /iconSize="small"/u);
 	assert.match(LIFECYCLE_SOURCE, /size="small"/u);

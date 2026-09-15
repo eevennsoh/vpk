@@ -196,7 +196,6 @@ function useAgentSessionCardTransition({
 	isTransferSource,
 	item,
 	onArrivalComplete,
-	showWorkingSpinner,
 	shouldReduceMotion,
 }: Readonly<{
 	animateLayout: boolean;
@@ -208,7 +207,6 @@ function useAgentSessionCardTransition({
 	isTransferSource: boolean;
 	item: AgentSessionItem;
 	onArrivalComplete?: () => void;
-	showWorkingSpinner: boolean;
 	shouldReduceMotion: boolean | null;
 }>) {
 	const [lifecycleState, setLifecycleState] = useState<AgentSessionItem["state"]>(item.state);
@@ -236,7 +234,6 @@ function useAgentSessionCardTransition({
 		shouldPlayDeparture,
 		shouldPlayStateChangeGlow,
 		shownLifecycleState,
-		stateAwareTitle: showWorkingSpinner && item.state === "running" && !shouldReduceMotion,
 		rowMotion: resolveAgentSessionCardMotion({
 			animateLayout,
 			arrivalDelaySeconds,
@@ -439,7 +436,6 @@ export function AgentSessionCard({
 		shouldPlayDeparture,
 		shouldPlayStateChangeGlow,
 		shownLifecycleState,
-		stateAwareTitle,
 	} = useAgentSessionCardTransition({
 		animateLayout,
 		arrivalDelaySeconds,
@@ -450,7 +446,6 @@ export function AgentSessionCard({
 		isTransferSource,
 		item,
 		onArrivalComplete,
-		showWorkingSpinner,
 		shouldReduceMotion,
 	});
 
@@ -764,7 +759,7 @@ export function AgentSessionCard({
 									);
 								}}
 								showHoverActionsWhenSelected
-								stateAwareTitle={stateAwareTitle}
+								stateAwareTitle={false}
 							/>
 						</article>
 					);
