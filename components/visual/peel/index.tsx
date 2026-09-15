@@ -61,7 +61,6 @@ import {
 	nudgePeel,
 	pointPeel,
 	releasePeel,
-	type PeelState,
 } from "./peel-model";
 
 /**
@@ -149,13 +148,11 @@ export function Peel({
 	// Initialised lazily. `useRef(createPeelState(...))` evaluates the factory on
 	// EVERY render and throws the result away — React only keeps the first — so
 	// it would allocate a model and its impulse ring on each pass for nothing.
-	const stateRef = useRef<PeelState | null>(null);
-	// The null-guarded form specifically: `??=` is still a ref write during
-	// render, and React may replay or discard render work.
-	if (stateRef.current === null) {
-		stateRef.current = createPeelState(resolvedTuning);
-	}
-	const state = stateRef.current;
+	// A useState lazy initialiser, not a ref: the factory runs exactly once and
+	// the identity never changes, with no ref write during render at all. A ref
+	// initialised in render — in any form, guarded or not — can leak from work
+	// React replays or discards.
+	const [state] = useState(() => createPeelState(resolvedTuning));
 	useEffect(() => {
 		state.tuning = resolvedTuning;
 	}, [resolvedTuning, state]);
