@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { formatElapsedTime, formatRelativeTime } from "./elapsed-time.ts";
+import { formatElapsedTime, formatRelativeTime, toCompactRelativeTimeLabel } from "./elapsed-time.ts";
 
 test("formatElapsedTime omits zero seconds from exact-minute durations", () => {
 	assert.equal(formatElapsedTime(300), "5m");
@@ -29,4 +29,17 @@ test("formatRelativeTime uses contextual minute, hour, and day labels", () => {
 	assert.equal(formatRelativeTime(60 * 60), "1hr ago");
 	assert.equal(formatRelativeTime(24 * 60 * 60), "Yesterday");
 	assert.equal(formatRelativeTime(3 * 24 * 60 * 60), "3d ago");
+});
+
+test("toCompactRelativeTimeLabel drops ago and spells hours as hr", () => {
+	assert.equal(toCompactRelativeTimeLabel("18m ago"), "18m");
+	assert.equal(toCompactRelativeTimeLabel("7m ago"), "7m");
+	assert.equal(toCompactRelativeTimeLabel("5h ago"), "5hr");
+	assert.equal(toCompactRelativeTimeLabel("5hr ago"), "5hr");
+	assert.equal(toCompactRelativeTimeLabel("1h"), "1hr");
+	assert.equal(toCompactRelativeTimeLabel("3d ago"), "3d");
+	assert.equal(toCompactRelativeTimeLabel("5mo ago"), "5mo");
+	assert.equal(toCompactRelativeTimeLabel("Last week"), "Last week");
+	assert.equal(toCompactRelativeTimeLabel("Yesterday"), "Yesterday");
+	assert.equal(toCompactRelativeTimeLabel("Just now"), "Just now");
 });
