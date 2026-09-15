@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
@@ -24,6 +24,7 @@ import {
 	CardGlowLayers,
 	cardGlowSurfaceStyle,
 	type CardGlowCSSProperties,
+	type CardGlowSurfaceRef,
 	useCardGlowPointer,
 	useCardGlowSurface,
 } from "@/components/visual/card-glow";
@@ -97,6 +98,157 @@ function AgentSessionStateChangeGlow({ item, onComplete }: Readonly<{
 			<CardGlowLayers baseBorder={false} />
 		</motion.span>
 	);
+}
+
+/** Keep row registration and focus restoration tied to the departing DOM owner. */
+function useAgentSessionDepartureFocus({
+	glowPlaneSurface,
+	isDeparting,
+	isOnGlowPlane,
+}: Readonly<{
+	glowPlaneSurface?: CardGlowSurfaceRef;
+	isDeparting: boolean;
+	isOnGlowPlane: boolean;
+}>) {
+	const rowRef = useRef<HTMLLIElement | null>(null);
+	const focusedControlRef = useRef<HTMLElement | null>(null);
+	const restoreFocusAfterDepartureRef = useRef(false);
+	const setRowNode = useCallback((node: HTMLLIElement | null) => {
+		rowRef.current = node;
+		const unregisterGlow = isOnGlowPlane ? glowPlaneSurface?.(node) : undefined;
+		return () => {
+			if (rowRef.current === node) rowRef.current = null;
+			unregisterGlow?.();
+		};
+	}, [glowPlaneSurface, isOnGlowPlane]);
+	useLayoutEffect(() => {
+		if (isDeparting || !restoreFocusAfterDepartureRef.current) return;
+		// A viewer may have focused another row during the exit; do not steal it.
+		const currentFocus = document.activeElement;
+		if (currentFocus !== document.body && currentFocus !== document.documentElement) {
+			restoreFocusAfterDepartureRef.current = false;
+			return;
+		}
+		const previousControl = focusedControlRef.current;
+		const focusTarget = previousControl?.isConnected && rowRef.current?.contains(previousControl)
+			? previousControl
+			: rowRef.current?.querySelector<HTMLElement>("article[tabindex], button[tabindex]");
+		focusTarget?.focus({ preventScroll: true });
+		restoreFocusAfterDepartureRef.current = false;
+	}, [isDeparting]);
+	return {
+		setRowNode,
+		onBlurCapture: () => {
+			if (isDeparting) restoreFocusAfterDepartureRef.current = true;
+		},
+		onFocusCapture: (event: FocusEvent<HTMLLIElement>) => {
+			focusedControlRef.current = event.target as HTMLElement;
+		},
+	};
+}
+
+/** Motion targets stay pure; focus and lifecycle effects live in their hooks. */
+function resolveAgentSessionCardMotion({
+	animateLayout,
+	arrivalDelaySeconds,
+	isDeparting,
+	isStateChanged,
+	isTransferSource,
+	shouldPlayArrival,
+	shouldPlayDeparture,
+	shouldPlayStatusReentry,
+	shouldReduceMotion,
+}: Readonly<{
+	animateLayout: boolean;
+	arrivalDelaySeconds?: number;
+	isDeparting: boolean;
+	isStateChanged: boolean;
+	isTransferSource: boolean;
+	shouldPlayArrival: boolean;
+	shouldPlayDeparture: boolean;
+	shouldPlayStatusReentry: boolean;
+	shouldReduceMotion: boolean | null;
+}>) {
+	return {
+		animate: shouldPlayDeparture ? { opacity: 0 }
+			: shouldPlayStatusReentry
+				? { opacity: [0, 1], y: [AGENT_SESSION_ARRIVAL_OFFSET_PX, 0] }
+				: shouldPlayArrival ? { opacity: 1, y: 0 } : undefined,
+		ariaHidden: isTransferSource || isDeparting || undefined,
+		departing: isDeparting || undefined,
+		initial: shouldPlayArrival && !isStateChanged ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false,
+		layout: shouldReduceMotion || !animateLayout || isDeparting || isStateChanged ? false : "position" as const,
+		transition: shouldPlayDeparture
+			? STATUS_DEPARTURE_TRANSITION
+			: { ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 },
+		willChange: shouldPlayDeparture ? "opacity" : shouldPlayArrival ? "opacity, transform" : undefined,
+	};
+}
+
+/** Hold the old lifecycle through reentry and derive the row's motion targets. */
+function useAgentSessionCardTransition({
+	animateLayout,
+	arrivalDelaySeconds,
+	glow,
+	isArriving,
+	isDeparting,
+	isStateChanged,
+	isTransferSource,
+	item,
+	onArrivalComplete,
+	showWorkingSpinner,
+	shouldReduceMotion,
+}: Readonly<{
+	animateLayout: boolean;
+	arrivalDelaySeconds?: number;
+	glow: boolean;
+	isArriving: boolean;
+	isDeparting: boolean;
+	isStateChanged: boolean;
+	isTransferSource: boolean;
+	item: AgentSessionItem;
+	onArrivalComplete?: () => void;
+	showWorkingSpinner: boolean;
+	shouldReduceMotion: boolean | null;
+}>) {
+	const [lifecycleState, setLifecycleState] = useState<AgentSessionItem["state"]>(item.state);
+	useEffect(() => {
+		if (!isStateChanged) setLifecycleState(item.state);
+	}, [isStateChanged, item.state]);
+	// The beat, not the mark: remounting an unreviewed card must not replay it.
+	const shouldPlayArrival = isArriving && !isDeparting && !shouldReduceMotion;
+	const shouldPlayDeparture = isDeparting && !shouldReduceMotion;
+	const shouldPlayStatusReentry = shouldPlayArrival && isStateChanged;
+	const shouldPlayStateChangeGlow = isStateChanged && !isDeparting && !shouldReduceMotion;
+	// A first-place change has no card arrival; swap its lifecycle glyph in place.
+	const shownLifecycleState = shouldPlayStatusReentry ? lifecycleState : item.state;
+	const handleArrivalComplete = () => {
+		if (shouldPlayArrival) {
+			if (isStateChanged) {
+				setLifecycleState(item.state);
+			}
+			onArrivalComplete?.();
+		}
+	};
+	return {
+		handleArrivalComplete,
+		paintsGlow: glow || shouldPlayStateChangeGlow,
+		shouldPlayDeparture,
+		shouldPlayStateChangeGlow,
+		shownLifecycleState,
+		stateAwareTitle: showWorkingSpinner && item.state === "running" && !shouldReduceMotion,
+		rowMotion: resolveAgentSessionCardMotion({
+			animateLayout,
+			arrivalDelaySeconds,
+			isDeparting,
+			isStateChanged,
+			isTransferSource,
+			shouldPlayArrival,
+			shouldPlayDeparture,
+			shouldPlayStatusReentry,
+			shouldReduceMotion,
+		}),
+	};
 }
 
 export function AgentSessionCard({
@@ -232,10 +384,6 @@ export function AgentSessionCard({
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
 	const shouldReduceMotion = useReducedMotion();
-	const [lifecycleState, setLifecycleState] = useState<AgentSessionItem["state"]>(item.state);
-	useEffect(() => {
-		if (!isStateChanged) setLifecycleState(item.state);
-	}, [isStateChanged, item.state]);
 	// The glow reads the pointer on the list item, not the article: the article
 	// spreads the drag binding, which owns `onPointerMove`. Custom properties
 	// inherit, so the layers inside still see what the item writes.
@@ -252,32 +400,7 @@ export function AgentSessionCard({
 	const isOnGlowPlane = glow && glowPlaneSurface !== undefined;
 	const cardGlow = useCardGlowPointer({ reduceMotion: shouldReduceMotion });
 	const tracksOwnPointer = glow && !isOnGlowPlane;
-	const rowRef = useRef<HTMLLIElement | null>(null);
-	const focusedControlRef = useRef<HTMLElement | null>(null);
-	const restoreFocusAfterDepartureRef = useRef(false);
-	const setRowNode = useCallback((node: HTMLLIElement | null) => {
-		rowRef.current = node;
-		const unregisterGlow = isOnGlowPlane ? glowPlaneSurface?.(node) : undefined;
-		return () => {
-			if (rowRef.current === node) rowRef.current = null;
-			unregisterGlow?.();
-		};
-	}, [glowPlaneSurface, isOnGlowPlane]);
-	useLayoutEffect(() => {
-		if (isDeparting || !restoreFocusAfterDepartureRef.current) return;
-		// A viewer may have focused another row during the exit; do not steal it.
-		const currentFocus = document.activeElement;
-		if (currentFocus !== document.body && currentFocus !== document.documentElement) {
-			restoreFocusAfterDepartureRef.current = false;
-			return;
-		}
-		const previousControl = focusedControlRef.current;
-		const focusTarget = previousControl?.isConnected && rowRef.current?.contains(previousControl)
-			? previousControl
-			: rowRef.current?.querySelector<HTMLElement>("article[tabindex], button[tabindex]");
-		focusTarget?.focus({ preventScroll: true });
-		restoreFocusAfterDepartureRef.current = false;
-	}, [isDeparting]);
+	const departureFocus = useAgentSessionDepartureFocus({ glowPlaneSurface, isDeparting, isOnGlowPlane });
 	const onItemHoverRef = useRef(onItemHover);
 	// Whether the pointer is on *this* row, so unmount cleanup can tell "I was
 	// the hovered row" from "a sibling went away".
@@ -302,23 +425,6 @@ export function AgentSessionCard({
 	// must not render an enabled control, because the button copies the command to
 	// the clipboard before `onCopyResume` ever runs.
 	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
-	// The beat, not the mark: a card remounted while still unreviewed keeps the
-	// information dot but must not replay its entrance.
-	const shouldPlayArrival = isArriving && !isDeparting && !shouldReduceMotion;
-	const shouldPlayDeparture = isDeparting && !shouldReduceMotion;
-	const shouldPlayStatusReentry = shouldPlayArrival && isStateChanged;
-	const shouldPlayStateChangeGlow = isStateChanged && !isDeparting && !shouldReduceMotion;
-	const paintsGlow = glow || shouldPlayStateChangeGlow;
-	// A first-place change has no card arrival; swap its lifecycle glyph in place.
-	const shownLifecycleState = shouldPlayStatusReentry ? lifecycleState : item.state;
-	const handleArrivalComplete = () => {
-		if (shouldPlayArrival) {
-			if (isStateChanged) {
-				setLifecycleState(item.state);
-			}
-			onArrivalComplete?.();
-		}
-	};
 
 	const approve = triageRow?.approve;
 	const mark = triageRow?.mark;
@@ -326,6 +432,27 @@ export function AgentSessionCard({
 	const isLead = mark?.isLead ?? false;
 	const isTransferSource = Boolean(draggingIds?.has(item.id));
 	const showSelectedFill = isMarked || (isSelected && mark == null);
+	const {
+		handleArrivalComplete,
+		paintsGlow,
+		rowMotion,
+		shouldPlayDeparture,
+		shouldPlayStateChangeGlow,
+		shownLifecycleState,
+		stateAwareTitle,
+	} = useAgentSessionCardTransition({
+		animateLayout,
+		arrivalDelaySeconds,
+		glow,
+		isArriving,
+		isDeparting,
+		isStateChanged,
+		isTransferSource,
+		item,
+		onArrivalComplete,
+		showWorkingSpinner,
+		shouldReduceMotion,
+	});
 
 	// The same hover/focus-revealed pair Agent List rows use, with Archive /
 	// Unarchive in the slot Agent List gives to Archive. The control always
@@ -478,11 +605,8 @@ export function AgentSessionCard({
 	// `div` as the trigger host so hovering down the list crossfades in place.
 	return (
 		<motion.li
-			animate={shouldPlayDeparture ? { opacity: 0 }
-				: shouldPlayStatusReentry
-				? { opacity: [0, 1], y: [AGENT_SESSION_ARRIVAL_OFFSET_PX, 0] }
-				: shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
-			aria-hidden={isTransferSource || isDeparting || undefined}
+			animate={rowMotion.animate}
+			aria-hidden={rowMotion.ariaHidden}
 			aria-selected={mark == null ? undefined : isMarked}
 			className={cn(
 				isMarked ? "has-[+[data-marked]]:[&_article]:rounded-b-none" : null,
@@ -490,15 +614,11 @@ export function AgentSessionCard({
 				"[[data-marked]+&[data-marked]]:in-[.gap-1]:-mt-1",
 			)}
 			data-marked={isMarked || undefined}
-			data-departing={isDeparting || undefined}
+			data-departing={rowMotion.departing}
 			data-testid={"agent-session-row-" + item.id}
-			inert={isTransferSource || isDeparting || undefined}
-			onBlurCapture={() => {
-			if (isDeparting) restoreFocusAfterDepartureRef.current = true;
-		}}
-			onFocusCapture={(event) => {
-			focusedControlRef.current = event.target as HTMLElement;
-		}}
+			inert={rowMotion.ariaHidden}
+			onBlurCapture={departureFocus.onBlurCapture}
+			onFocusCapture={departureFocus.onFocusCapture}
 			role={mark == null ? undefined : "row"}
 			onAnimationComplete={shouldPlayDeparture ? onDepartureComplete : handleArrivalComplete}
 			onPointerEnter={(event) => {
@@ -516,20 +636,18 @@ export function AgentSessionCard({
 				}
 			}}
 			onPointerMove={tracksOwnPointer ? cardGlow.onPointerMove : undefined}
-			ref={setRowNode}
+			ref={departureFocus.setRowNode}
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
-			initial={shouldPlayArrival && !isStateChanged ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
+			initial={rowMotion.initial}
 			// Standalone lists move siblings for arrivals. The in-flow column opts
 			// out so board filter changes place sessions immediately.
-			layout={shouldReduceMotion || !animateLayout || isDeparting || isStateChanged ? false : "position"}
+			layout={rowMotion.layout}
 			style={{
 				...(paintsGlow ? cardGlowSurfaceStyle(agentSessionAccentColor(item)) : null),
-				willChange: shouldPlayDeparture ? "opacity" : shouldPlayArrival ? "opacity, transform" : undefined,
+				willChange: rowMotion.willChange,
 			}}
-			transition={shouldPlayDeparture
-				? STATUS_DEPARTURE_TRANSITION
-				: { ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
+			transition={rowMotion.transition}
 		>
 			<AgentSessionMediumDrag
 				cohort={triageRow?.drag?.cohort}
@@ -646,7 +764,7 @@ export function AgentSessionCard({
 									);
 								}}
 								showHoverActionsWhenSelected
-								stateAwareTitle={showWorkingSpinner && item.state === "running" && !shouldReduceMotion}
+								stateAwareTitle={stateAwareTitle}
 							/>
 						</article>
 					);

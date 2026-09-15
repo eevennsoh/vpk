@@ -231,8 +231,8 @@ test("medium detached is a 276px stroked white chip with the 32px combo identity
 
 test("drag-source ghosts leave the grid accessibility tree while inert", () => {
 	assert.match(CARD_SOURCE, /const isTransferSource = Boolean\(draggingIds\?\.has\(item\.id\)\);/u);
-	assert.match(CARD_SOURCE, /aria-hidden=\{isTransferSource \|\| isDeparting \|\| undefined\}/u);
-	assert.match(CARD_SOURCE, /inert=\{isTransferSource \|\| isDeparting \|\| undefined\}/u);
+	assert.match(CARD_SOURCE, /aria-hidden=\{rowMotion\.ariaHidden\}/u);
+	assert.match(CARD_SOURCE, /inert=\{rowMotion\.ariaHidden\}/u);
 });
 
 test("medium drag publishes the attach transfer only after the pointer moves", () => {
@@ -684,7 +684,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(LIST_CARD_SOURCE, /\{hideIdentity \? null : \(/u);
 	// The in-flow column opts Working into the shared shimmer while blocked and
 	// finished rows retain their authored title without the shared state title.
-	assert.match(CARD_SOURCE, /stateAwareTitle=\{showWorkingSpinner && item\.state === "running" && !shouldReduceMotion\}/u);
+	assert.match(CARD_SOURCE, /stateAwareTitle=\{stateAwareTitle\}/u);
 	assert.match(TYPES_SOURCE, /export type AgentSessionRole = "owner" \| "viewer" \| "expired"/u);
 	assert.match(CARD_SOURCE, /const viewSession = role === "owner" \? onView : undefined/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);

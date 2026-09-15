@@ -97,7 +97,8 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_HIDE_MS/u);
 	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_COMPLETE_MS/u);
 	// A settled card must not replay its entrance on an unrelated re-render.
-	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival && !isStateChanged \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
+	assert.match(CARD_SOURCE, /initial: shouldPlayArrival && !isStateChanged \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false/u);
+	assert.match(CARD_SOURCE, /initial=\{rowMotion\.initial\}/u);
 });
 
 test("settled rail avatars reveal immediately while arrival morphing stays animated", () => {
@@ -147,10 +148,8 @@ test("the rest disc is already under the face when the morph starts", () => {
 		/\(arrivalPending && !arrivalReveal\) \|\| isHighlighted/u,
 	);
 	// The morph must never be able to hide its own destination again.
-	const hideRestDiscExpression = RAIL_COLUMN_SOURCE.slice(
-		RAIL_COLUMN_SOURCE.indexOf("const hideRestDisc"),
-		RAIL_COLUMN_SOURCE.indexOf("const arrivalMorphScale"),
-	);
+	const hideRestDiscExpression = RAIL_COLUMN_SOURCE.split("const hideRestDisc =")[1]?.split(";")[0];
+	assert.ok(hideRestDiscExpression, "the lifecycle owner must keep the resting disc available during the morph");
 	assert.doesNotMatch(hideRestDiscExpression, /arrivalExiting/u);
 	assert.match(RAIL_COLUMN_SOURCE, /hideRestDisc \? "opacity-0" : null/u);
 	assert.match(RAIL_COLUMN_SOURCE, /data-arrival-rest-hidden=\{hideRestDisc \|\| undefined\}/u);

@@ -313,31 +313,21 @@ function AgentSessionGutterIntro({
 	);
 }
 
-/** Arrival face or lifecycle glyph morphs onto the same resting dot. */
-function AgentSessionUserNotch({
+function useAgentSessionUserNotchLifecycle({
 	avatarSrc,
-	introIndex,
 	isArriving,
 	isHighlighted,
-	isNew,
 	onArrivalComplete,
-	onIntroComplete,
-	playIntro,
-	proximity,
+	shouldReduceMotion,
 	state,
 }: Readonly<{
 	avatarSrc?: string;
-	introIndex: number;
 	isArriving: boolean;
 	isHighlighted: boolean;
-	isNew: boolean;
 	onArrivalComplete?: () => void;
-	onIntroComplete?: () => void;
-	playIntro: boolean;
-	proximity?: AgentSessionNotchProximity;
+	shouldReduceMotion: boolean | null;
 	state: AgentSessionItem["state"];
 }>) {
-	const shouldReduceMotion = useReducedMotion();
 	const hasStateGlyph = state === "needs-input" || state === "complete";
 	const hasArrivalVisual = Boolean(avatarSrc) || hasStateGlyph;
 	const reducedArrivalStateRef = useRef<AgentSessionItem["state"] | null>(null);
@@ -371,6 +361,89 @@ function AgentSessionUserNotch({
 	const hideRestDisc = hasArrivalVisual && (
 		(arrivalPending && !arrivalReveal) || isHighlighted
 	);
+	return { arrivalExiting, arrivalReveal, shouldPlayScaleArrival, showAvatar, showStateGlyph, isMorphing, hideRestDisc };
+}
+
+function AgentSessionUserNotchStateGlyph({
+	avatarSrc,
+	arrivalMorphScale,
+	isMorphing,
+	showStateGlyph,
+	state,
+}: Readonly<{
+	avatarSrc?: string;
+	arrivalMorphScale: number;
+	isMorphing: boolean;
+	showStateGlyph: boolean;
+	state: AgentSessionItem["state"];
+}>) {
+	if (state !== "needs-input" && state !== "complete") return null;
+	return (
+		<span
+			aria-hidden="true"
+			className={cn(
+				// The filled icons have transparent cutouts. This plane-colored
+				// disc occludes the 4px rest beneath them until the matched-size
+				// morph lets that dot take over again.
+				"absolute inset-0 grid size-3 place-items-center rounded-full bg-surface motion-reduce:transition-none",
+				avatarSrc ? "group-data-[hovered]/notch:opacity-0 group-has-[:focus-visible]/notch:opacity-0" : null,
+				showStateGlyph && !isMorphing
+					? "opacity-100 scale-100"
+					: "scale-[var(--agent-session-user-notch-morph)] opacity-0",
+			)}
+			data-agent-session-state-mark={state}
+			style={{
+				"--agent-session-user-notch-morph": String(arrivalMorphScale),
+				transition: isMorphing
+					? AGENT_SESSION_USER_NOTCH_MORPH_TRANSITION
+					: undefined,
+			} as CSSProperties}
+		>
+			<Icon
+				aria-hidden
+				className={cn(
+					"size-3 [&>span]:size-3! [&_svg]:size-3!",
+					state === "needs-input" ? "text-icon-information" : "text-icon-success",
+				)}
+				render={state === "needs-input"
+					? <QuestionCircleFilledIcon color="currentColor" label="" size="small" />
+					: <StatusSuccessIcon color="currentColor" label="" size="small" />}
+			/>
+		</span>
+	);
+}
+
+/** Arrival face or lifecycle glyph morphs onto the same resting dot. */
+function AgentSessionUserNotch({
+	avatarSrc,
+	introIndex,
+	isArriving,
+	isHighlighted,
+	isNew,
+	onArrivalComplete,
+	onIntroComplete,
+	playIntro,
+	proximity,
+	state,
+}: Readonly<{
+	avatarSrc?: string;
+	introIndex: number;
+	isArriving: boolean;
+	isHighlighted: boolean;
+	isNew: boolean;
+	onArrivalComplete?: () => void;
+	onIntroComplete?: () => void;
+	playIntro: boolean;
+	proximity?: AgentSessionNotchProximity;
+	state: AgentSessionItem["state"];
+}>) {
+	const shouldReduceMotion = useReducedMotion();
+	const {
+		arrivalExiting, arrivalReveal, shouldPlayScaleArrival,
+		showAvatar, showStateGlyph, isMorphing, hideRestDisc,
+	} = useAgentSessionUserNotchLifecycle({
+		avatarSrc, isArriving, isHighlighted, onArrivalComplete, shouldReduceMotion, state,
+	});
 	const arrivalMorphScale = AGENT_SESSION_USER_NOTCH_DIAMETER.rest
 		/ AGENT_SESSION_USER_NOTCH_DIAMETER.peak;
 	const parkedPointerY = useMotionValue(AGENT_SESSION_NOTCH_POINTER_AWAY);
@@ -435,39 +508,13 @@ function AgentSessionUserNotch({
 							: dotScale,
 					}}
 				/>
-				{hasStateGlyph ? (
-					<span
-						aria-hidden="true"
-						className={cn(
-							// The filled icons have transparent cutouts. This plane-colored
-							// disc occludes the 4px rest beneath them until the matched-size
-							// morph lets that dot take over again.
-							"absolute inset-0 grid size-3 place-items-center rounded-full bg-surface motion-reduce:transition-none",
-							avatarSrc ? "group-data-[hovered]/notch:opacity-0 group-has-[:focus-visible]/notch:opacity-0" : null,
-							showStateGlyph && !isMorphing
-								? "opacity-100 scale-100"
-								: "scale-[var(--agent-session-user-notch-morph)] opacity-0",
-						)}
-						data-agent-session-state-mark={state}
-						style={{
-							"--agent-session-user-notch-morph": String(arrivalMorphScale),
-							transition: isMorphing
-								? AGENT_SESSION_USER_NOTCH_MORPH_TRANSITION
-								: undefined,
-						} as CSSProperties}
-					>
-						<Icon
-							aria-hidden
-							className={cn(
-								"size-3 [&>span]:size-3! [&_svg]:size-3!",
-								state === "needs-input" ? "text-icon-information" : "text-icon-success",
-							)}
-							render={state === "needs-input"
-								? <QuestionCircleFilledIcon color="currentColor" label="" size="small" />
-								: <StatusSuccessIcon color="currentColor" label="" size="small" />}
-						/>
-					</span>
-				) : null}
+				<AgentSessionUserNotchStateGlyph
+					avatarSrc={avatarSrc}
+					arrivalMorphScale={arrivalMorphScale}
+					isMorphing={isMorphing}
+					showStateGlyph={showStateGlyph}
+					state={state}
+				/>
 				{avatarSrc ? (
 					<Image
 						alt=""

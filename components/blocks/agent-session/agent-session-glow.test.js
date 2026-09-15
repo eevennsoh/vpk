@@ -165,13 +165,21 @@ test("first-place and reentering revisions paint shared accent layers without en
 		assert.ok(html.includes("--card-glow-tile-accent:"));
 		assert.ok(html.includes("isolate"), "the shared layers remain above the article background");
 	}
-	for (const props of [{ isStateChanged: false }, { isStateChanged: true, isDeparting: true }]) {
+	for (const props of [
+		{ isStateChanged: false },
+		{ isStateChanged: true, isDeparting: true },
+		{ isStateChanged: false, draggingIds: new Set([CARD_ITEM.id]) },
+	]) {
 		const html = renderToStaticMarkup(createElement(AgentSessionCard, {
 			item: CARD_ITEM,
 			showMoreMenu: false,
 			...props,
 		}));
 		assert.ok(!html.includes("data-agent-session-status-glow"), "settled and departing rows never start a glow");
+		const rowTag = /^<li\b[^>]*>/u.exec(html)?.[0] ?? "";
+		const hidden = Boolean(props.isDeparting || props.draggingIds?.has(CARD_ITEM.id));
+		assert.equal(rowTag.includes('aria-hidden="true"'), hidden, "departure and transfer remove the row from the accessibility tree");
+		assert.equal(rowTag.includes('inert=""'), hidden, "hidden rows cannot accept focus");
 	}
 });
 
