@@ -109,10 +109,10 @@ export function RightNavigationActions({
 						<SettingsIcon label="" color="currentColor" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-64">
-						<DropdownMenuGroup className="text-text">
+						<DropdownMenuGroup>
 							{/* Base UI requires group parts (the label) to live inside the
 							    group that owns them, so the label is nested here. */}
-							<DropdownMenuLabel className="text-text">Properties</DropdownMenuLabel>
+							<DropdownMenuLabel>Properties</DropdownMenuLabel>
 							{settingsDesignVariants.map((variant) => (
 								<DropdownMenuCheckboxItem
 									indicatorPlacement="end"
