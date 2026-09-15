@@ -116,6 +116,10 @@ export interface JiraIssueAgentSessionDragControl {
 }
 
 export interface JiraIssueAgentSessionDragBinding {
+	/** Optional paper-wave finish for detached/uncaptured session drag previews. */
+	previewEffect?: "peel";
+	/** Eager preparation is for a single-object demo; collections prepare on pointer/focus intent. */
+	previewPreparation?: "eager" | "intent";
 	/** Clamp for the row translate, in px relative to its resting position. */
 	bounds?: PointerDragBounds;
 	onDragStateChange: (state: JiraIssueAgentSessionDragState) => void;

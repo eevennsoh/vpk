@@ -38,10 +38,6 @@ precision highp float;
 
 uniform float uAspect;
 uniform float uLift;
-uniform float uLiftHeight;
-/** Corner-to-corner rock on grab. See the pivot note in peelHeight(). */
-uniform float uPivot;
-uniform vec2 uGrab;
 uniform vec4 uImpulses[IMPULSE_SLOTS];
 /** x: amplitude, y: wavelength in sheet-heights, z: speed. */
 uniform vec3 uWave;
@@ -71,43 +67,9 @@ vec2 toSheet(vec2 uv) {
 	return (uv - 0.5) * vec2(uAspect, 1.0);
 }
 
-/**
- * Out-of-plane displacement at a UV, split into its two halves.
- *
- *   x — the bulk lift. A smooth hump hanging the sheet off the grab point.
- *       Steep falloff on purpose: a sheet whose far corner stays near the page
- *       reads as being held by one corner, and the resulting tilt is also what
- *       makes every other term visible, since a z-offset on a plane viewed
- *       face-on barely moves anything in screen space.
- *   y — the flex. Everything that bends the paper: the grab and landing
- *       accents, and a sustained undulation that runs the whole time the sheet
- *       is off the page.
- *
- * They are returned separately because the in-plane gathering in main() must
- * respond to bending only. The bulk lift is close to a rigid translation, and
- * feeding its large, smooth gradient into the gather would saturate the clamp
- * everywhere and wipe out the wave-driven rippling that is the point.
- */
+/** Optional ripple accents over the cylindrical fold in peel-geometry.ts. */
 vec2 peelHeight(vec2 uv) {
 	vec2 p = toSheet(uv);
-	vec2 grab = toSheet(uGrab);
-
-	float reach = sqrt(uAspect * uAspect + 1.0);
-	float bias = 1.0 - smoothstep(0.0, reach, distance(p, grab));
-	// Squared, so the drop away from the grip is steep near it and shallow
-	// further out — the shape a held sheet actually takes.
-	float lifted = mix(0.12, 1.0, bias * bias);
-	// Net rise is deliberately tiny. Tracking the reference's stamp through a
-	// peel that stays in frame, its projected area grows by a factor of 1.04 —
-	// linear 1.02. It does not balloon toward the camera.
-	//
-	// What reads as "off the page" is the sheet ROCKING: the grabbed corner
-	// comes up while the far corner stays down. That differential is a pivot,
-	// not a translation, so it tilts the sheet in 3D — near corner larger, far
-	// corner smaller — and the two roughly cancel, conserving the footprint.
-	// Measured on the reference as a 4% top-vs-bottom trapezoid swing.
-	float bulk = uLift * (uLiftHeight * lifted + uPivot * (lifted - 0.55));
-
 	// Wavelength is authored against the sheet's LONG edge, not its height.
 	// The agent session card is about six times wider than it is tall, so a
 	// wavelength in sheet-heights would run six ripples down it — a vibration,
@@ -151,7 +113,7 @@ vec2 peelHeight(vec2 uv) {
 	// the paper solid, it should just stop driving it harder.
 	flex += uFlutter * uLift * mix(0.7, 1.0, uSpeed) * undulation;
 
-	return vec2(bulk, flex);
+	return vec2(0.0, flex);
 }
 
 void main() {
@@ -173,7 +135,8 @@ void main() {
 	// costs two extra evaluations of a handful of instructions.
 	vec3 tangentU = vec3(EPS * uAspect, 0.0, heightU - height);
 	vec3 tangentV = vec3(0.0, EPS, heightV - height);
-	vec3 objectNormal = normalize(cross(tangentU, tangentV));
+	vec3 rippleNormal = normalize(cross(tangentU, tangentV));
+	vec3 objectNormal = normalize(normal + vec3(rippleNormal.xy, rippleNormal.z - 1.0));
 
 	// --- in-plane contraction ----------------------------------------------
 	// Paper does not stretch. When a sheet bows, the arc length it spends
@@ -403,6 +366,12 @@ uniform vec3 uSurface;
 uniform sampler2D uArt;
 /** 0 until the artwork decodes; the sheet is bare stock until then. */
 uniform float uArtReady;
+/** 1 for captured DOM surfaces; 0 for printed, perforated stamps. */
+uniform float uSurfaceMode;
+/** Avatar-coloured light sweeping through the captured face, never outside it. */
+uniform vec3 uFlashColor;
+uniform float uFlashGain;
+uniform float uFlashProgress;
 
 uniform float uFilm;
 uniform float uGloss;
@@ -454,6 +423,23 @@ SILHOUETTE_CHUNK
 
 void main() {
 	vec2 p = toSheet(vUv);
+	if (uSurfaceMode > 0.5) {
+		if (uArtReady < 0.5) discard;
+		vec4 surface = texture2D(uArt, vUv);
+		if (surface.a < 0.001) discard;
+		vec3 light = normalize(vec3(-0.4, 0.6, 1.0));
+		float diffuse = dot(normalize(vNormalV), light) / light.z;
+		vec3 stock = surface.rgb * clamp(diffuse, 0.62, 1.08);
+		float beamCenter = mix(0.3, 0.95, uFlashProgress);
+		float beam = exp(-pow((vUv.x - beamCenter) / 0.42, 2.0));
+		float face = smoothstep(0.85, 0.99, surface.a);
+		// A soft pass through the face. The original alpha remains unchanged,
+		// keeping the light inside the card and its drop shadow unchanged.
+		stock = mix(stock, uFlashColor, uFlashGain * beam * face * 0.28);
+		gl_FragColor = vec4(stock, surface.a);
+		#include <colorspace_fragment>
+		return;
+	}
 
 	float sheet = sheetDistance(p);
 	// Antialiasing band for the die-cut, in sheet-heights. smoothstep spans
@@ -580,13 +566,9 @@ void main() {
 	// hard stripes. As an additive phase offset the grain stays a fixed, gentle
 	// mottle — the brushed texture of the coating — whatever filmScale does.
 	float grain = valueNoise(vec2(p.x * uGrain * 0.12, p.y * uGrain));
-	// Bands drift on their own while the sheet is off the page. Hue here is
-	// otherwise driven purely by the angle to the cursor light, so a sticker
-	// held still would wear a frozen rainbow — the reference keeps its
-	// spectrum sweeping across the surface even when the pointer stops. Gated
-	// on lift so a sheet lying flat stays optically still.
-	float drift = uTime * uLift * 1.9;
-	vec3 phase = TAU * uFilm * (0.35 + 0.65 * ndh) / LAMBDA + grain * 1.4 + drift;
+	// The coating responds to the pointer and fold normals, and stays still
+	// once lifted paper has settled, matching the reference's carried surface.
+	vec3 phase = TAU * uFilm * (0.35 + 0.65 * ndh) / LAMBDA + grain * 1.4;
 	vec3 iris = 0.5 + 0.5 * cos(phase);
 
 	float shininess = mix(14.0, 40.0, clamp(uSheenGain, 0.0, 1.5) / 1.5);
@@ -643,6 +625,7 @@ void main() {
 export interface PeelMaterialOptions {
 	aspect: number;
 	surfaceColor: THREE.ColorRepresentation;
+	shape?: "stamp" | "surface";
 }
 
 /**
@@ -652,6 +635,7 @@ export interface PeelMaterialOptions {
 export function createPeelMaterial({
 	aspect,
 	surfaceColor,
+	shape = "stamp",
 }: Readonly<PeelMaterialOptions>): THREE.ShaderMaterial {
 	const slots = `${PEEL_IMPULSE_SLOTS}`;
 
@@ -669,11 +653,12 @@ export function createPeelMaterial({
 			uSurface: { value: new THREE.Color(surfaceColor) },
 			uArt: { value: null },
 			uArtReady: { value: 0 },
+			uSurfaceMode: { value: shape === "surface" ? 1 : 0 },
+			uFlashColor: { value: new THREE.Color() },
+			uFlashGain: { value: 0 },
+			uFlashProgress: { value: 0 },
 
 			uLift: { value: 0 },
-			uLiftHeight: { value: 0 },
-			uPivot: { value: 0 },
-			uGrab: { value: new THREE.Vector2(0.5, 0.5) },
 			uImpulses: {
 				value: Array.from({ length: PEEL_IMPULSE_SLOTS }, () => new THREE.Vector4(0, 0, 0, 0)),
 			},

@@ -2,9 +2,121 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
-import { PEEL_DURATIONS, PEEL_MAX_DELTA, PEEL_PULSE_DURATION, PEEL_SWING_LIMIT, PEEL_TILT_REFERENCE_SPEED, createPeelState, dragPeel, firePeelImpulse, grabPeel, hoverPeel, isPeelIdle, nudgePeel, peelImpulseEnergy, peelRecoilRate, peelPivotOffset, pulsePeel, releasePeel, stepPeel, type PeelState } from "./peel-model.ts";
+import { PEEL_DURATIONS, PEEL_MAX_DELTA, PEEL_PULSE_DURATION, PEEL_SWING_LIMIT, PEEL_TILT_REFERENCE_SPEED, createPeelState, dragPeel, firePeelImpulse, grabPeel, hoverPeel, isPeelIdle, nudgePeel, peelFlashEnergy, peelFlashProgress, peelImpulseEnergy, peelRecoilRate, peelPivotOffset, pulsePeel, releasePeel, startPeelFlash, stepPeel, type PeelState } from "./peel-model.ts";
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
-import { resolvePeelTuning } from "./data.ts";
+import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, resolvePeelTuning } from "./data.ts";
+// @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
+import { deformPeelSheet } from "./peel-geometry.ts";
+
+test("the face flash outlasts the ripple, fades by its own deadline, and replays when requested", () => {
+	const state = createPeelState(resolvePeelTuning("uv-gloss", { waveAmplitude: 0.1 }));
+	assert.equal(peelFlashEnergy(state), 0, "preparation never spends a flash");
+	grabPeel(state, 0.25, 0.1);
+	assert.equal(peelFlashEnergy(state), 0, "ordinary stamps do not start a face flash");
+	startPeelFlash(state);
+	assert.equal(peelFlashEnergy(state), 1);
+	assert.equal(peelFlashProgress(state), 0);
+	run(state, PEEL_DURATIONS.flash / 2);
+	assert.ok(peelFlashEnergy(state) > 0.9, "the light remains visible after the paper's initial ripple");
+	assert.ok(state.impulses.every((impulse) => !Number.isFinite(impulse.age)), "the original ripple still retires at its unchanged deadline");
+	assert.ok(Math.abs(peelFlashProgress(state) - 0.5) < 0.01);
+	run(state, PEEL_DURATIONS.flash / 2 + 1 / 60);
+	assert.equal(peelFlashEnergy(state), 0, "the face sweep fades out while the paper remains held");
+	assert.equal(peelFlashProgress(state), 1);
+	releasePeel(state);
+	grabPeel(state, 0.25, 0.1);
+	startPeelFlash(state);
+	assert.equal(peelFlashEnergy(state), 1, "a later gesture gets its full flash");
+	assert.equal(peelFlashProgress(state), 0, "a later gesture starts its sweep from the lead edge again");
+	state.reducedMotion = true;
+	assert.equal(peelFlashEnergy(state), 0, "reduced motion suppresses the decorative flash");
+});
+
+test("the peel lens preserves the resting footprint and lifts without ballooning", () => {
+	const viewport = 2 * PEEL_CAMERA_DISTANCE * Math.tan((PEEL_CAMERA_FOV * Math.PI) / 360);
+	assert.ok(Math.abs(viewport - (1 + 2 * PEEL_OVERSCAN)) < 1e-6);
+	const growth = PEEL_CAMERA_DISTANCE / (PEEL_CAMERA_DISTANCE - resolvePeelTuning().liftHeight);
+	assert.ok(growth > 1 && growth < 1.01, "a flat detached sheet grows less than one percent, as in the reference");
+});
+
+test("the diagonal peel keeps the attached corner flat and curls the grabbed corner", () => {
+	for (const angle of [Math.PI / 4, -Math.PI / 4, 3 * Math.PI / 4, -3 * Math.PI / 4]) {
+		const x = Math.sign(Math.cos(angle)) * 0.38;
+		const y = Math.sign(Math.sin(angle)) * 0.5;
+		const original = new Float32Array([-x, -y, 0, x, y, 0]);
+		const positions = original.slice();
+		const normals = new Float32Array(6);
+		deformPeelSheet(original, positions, normals, 0.76, 0.3, angle, 0.32, 0.062);
+		assert.ok(Math.abs(positions[2]) < 1e-6, "the far corner stays attached during lift-off");
+		assert.ok(positions[5] > 0.02, "the grabbed corner leaves the page first");
+		assert.ok(Math.hypot(positions[3] - x, positions[4] - y) > 0.002, "curl shortens the projected footprint");
+		assert.ok(Math.abs(normals[3]) + Math.abs(normals[4]) > 0.05, "the fold turns the paper normal");
+	}
+});
+
+test("a complete peel relaxes to flat raised paper and reverses onto the original footprint", () => {
+	const original = new Float32Array([-0.38, -0.5, 0, 0.38, 0.5, 0, 0, 0, 0]);
+	const positions = original.slice();
+	const normals = new Float32Array(9);
+	for (const progress of [0, 0.2, 0.6, 0.9, 1, 0.9, 0.6, 0.2, 0]) {
+		deformPeelSheet(original, positions, normals, 0.76, progress, Math.PI / 4, 0.32, 0.062);
+		assert.ok(positions.every(Number.isFinite));
+		if (progress === 0 || progress === 1) {
+			for (let i = 0; i < positions.length; i += 3) {
+				assert.equal(positions[i], original[i]);
+				assert.ok(Math.abs(positions[i + 1] - original[i + 1] - progress * 0.031) < 1e-6);
+				assert.ok(Math.abs(positions[i + 2] - progress * 0.062) < 1e-6);
+				assert.ok(Math.abs(normals[i]) < 1e-6 && Math.abs(normals[i + 1]) < 1e-6);
+				assert.equal(normals[i + 2], 1);
+			}
+		}
+	}
+	assert.deepEqual(positions, original, "landing restores every original vertex without accumulated deformation");
+});
+
+test("the fold can reverse during lift-off without jumping or overshooting its travel", () => {
+	const state = createPeelState(resolvePeelTuning("foil"));
+	grabPeel(state, 0.2, 0.1);
+	run(state, 0.2);
+	assert.ok(state.fold > 0.2 && state.fold < 0.8);
+	const before = state.fold;
+	releasePeel(state);
+	assert.equal(state.fold, before, "changing the target preserves the current pose");
+	for (let i = 0; i < 180; i += 1) {
+		stepPeel(state, 1 / 60);
+		assert.ok(state.fold >= 0 && state.fold <= 1);
+	}
+	assert.equal(state.fold, 0);
+});
+
+test("a held sheet parks its frame loop once the fold and pointer have settled", () => {
+	const state = createPeelState(resolvePeelTuning("foil"));
+	grabPeel(state, 0.2, 0.1);
+	run(state, 3);
+	assert.equal(state.fold, 1);
+	assert.equal(isPeelIdle(state), true);
+	dragPeel(state, 20, 0);
+	assert.equal(isPeelIdle(state), false, "new pointer travel wakes the sheet");
+});
+
+test("reduced motion takes precedence over tuning and changes the fold without a sweep", () => {
+	const tuning = resolvePeelTuning("foil", { flutter: 0.1, waveAmplitude: 0.2, swing: 0.5 }, true);
+	assert.equal(tuning.flutter, 0);
+	assert.equal(tuning.waveAmplitude, 0);
+	assert.equal(tuning.swing, 0);
+	const state = createPeelState(tuning);
+	state.reducedMotion = true;
+	grabPeel(state, 0.1, 0.9);
+	dragPeel(state, 30, -20);
+	stepPeel(state, 1 / 60);
+	assert.equal(state.fold, 1);
+	assert.equal(state.lift, 1);
+	assert.equal(state.x, 30);
+	releasePeel(state);
+	stepPeel(state, 1 / 60);
+	assert.equal(state.fold, 0);
+	assert.equal(state.lift, 0);
+});
 
 /** Advances the model at a fixed 60Hz, the way a healthy frame loop would. */
 function run(state: PeelState, seconds: number, dt = 1 / 60): void {

@@ -105,7 +105,7 @@ test("reduced motion zeroes the chip entrance instead of just shortening it", ()
 	// pinned so neither can start honouring reduced motion on its own.
 	assert.match(MEDIUM_DRAG_SOURCE, /const reduceChipMotion = Boolean\(shouldReduceMotion\);/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /reduceMotion=\{reduceChipMotion\}/u);
-	assert.match(OVERLAY_SOURCE, /if \(!follower \|\| reduceMotion\) return;/u);
+	assert.match(OVERLAY_SOURCE, /if \(!dragging \|\| !follower \|\| reduceMotion\) return;/u);
 	assert.match(OVERLAY_SOURCE, /for \(const animation of animations\) animation\.stop\(\);/u);
 	assert.match(OVERLAY_SOURCE, /element\.style\.willChange = ""/u);
 

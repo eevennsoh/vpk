@@ -78,6 +78,7 @@ export function AgentSessionDragPill({
 	attributionOrder = "human-first",
 	elevated = false,
 	isFusionSource = false,
+	animateIdentity,
 }: Readonly<{
 	agent: AgentListAgent;
 	attributedBy?: AgentListInvoker;
@@ -86,6 +87,7 @@ export function AgentSessionDragPill({
 	elevated?: boolean;
 	/** Only a travelling lead pill is measured by the Jira fusion overlay. */
 	isFusionSource?: boolean;
+	animateIdentity?: boolean;
 }>) {
 	return (
 		<div
@@ -114,6 +116,7 @@ export function AgentSessionDragPill({
 			/>
 			<span className="block shrink-0" data-session-drag-identity="">
 				<AgentListIdentity
+					animate={animateIdentity}
 					agent={agent}
 					attributedBy={attributedBy}
 					attributionOrder={attributionOrder}
@@ -140,6 +143,7 @@ export function AgentSessionDragChip({
 	cohort,
 	elevated = false,
 	isFusionSource = false,
+	animateIdentity,
 }: Readonly<{
 	cohort: SessionCohort<AgentSessionItem>;
 	elevated?: boolean;
@@ -149,6 +153,7 @@ export function AgentSessionDragChip({
 	 * finds a page chip before the travelling one.
 	 */
 	isFusionSource?: boolean;
+	animateIdentity?: boolean;
 }>) {
 	const [lead] = cohort.members;
 	const total = cohort.members.length;
@@ -161,6 +166,7 @@ export function AgentSessionDragChip({
 				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}
+				animateIdentity={animateIdentity}
 			/>
 		);
 	}
@@ -212,6 +218,7 @@ export function AgentSessionDragChip({
 				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}
+				animateIdentity={animateIdentity}
 			/>
 			{/* The shared VPK Badge, unrestyled: its own `neutral` fill, 16px
 			    height, and `rounded-xs` corners are the count treatment, and its

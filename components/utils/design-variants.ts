@@ -45,6 +45,7 @@ export const DESIGN_VARIANTS = [
 	{ id: "sessionStroke", label: "Stroke tracing" },
 	{ id: "sessionBloom", label: "Card glow" },
 	{ id: "sessionProximity", label: "Proximity sensor" },
+	{ id: "sessionPeel", label: "Peel visual" },
 ] as const;
 
 export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
@@ -94,6 +95,7 @@ const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	manualLink: false,
 	panel: false,
 	sessionBloom: true,
+	sessionPeel: true,
 	sessionProximity: false,
 	sessionStroke: false,
 	"simple-views": true,

@@ -118,6 +118,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	 * ceiling, and a spreadable override costs it two lines instead of four.
 	 */
 	agentSessionColumnGlow?: Pick<AgentSessionColumnProps, "glowBloom" | "glowReach" | "glowStroke">;
+	/** Optional decorative finish for the session drag preview. */
+	agentSessionPreviewEffect?: "peel";
 	/**
 	 * Whether the unattached sessions column supports additive/range selection
 	 * and multi-session drag cohorts. Defaults to true. `false` also disables

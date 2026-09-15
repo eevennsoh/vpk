@@ -120,12 +120,14 @@ export function AgentListAttributionAvatarGroup({
  */
 export function AgentListIdentity({
 	agent,
+	animate,
 	attributedBy,
 	attributionOrder = "human-first",
 	className,
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
+	animate?: boolean;
 	attributedBy?: AgentListInvoker;
 	attributionOrder?: AgentListAttributionOrder;
 	className?: string;
@@ -144,6 +146,7 @@ export function AgentListIdentity({
 			: "absolute bottom-0 right-0";
 		const personAvatar = (
 			<Avatar
+				animate={animate}
 				aria-hidden="true"
 				className={personPositionClassName}
 				key="person"
@@ -159,6 +162,7 @@ export function AgentListIdentity({
 		const agentAvatar = (
 			<span aria-hidden="true" className={agentPositionClassName} key="agent">
 				<AgentAvatarVisual
+					animate={animate}
 					avatarSrc={agent.avatarSrc}
 					brandName={agent.brandName}
 					label=""
@@ -182,6 +186,7 @@ export function AgentListIdentity({
 	if (agent.kind === "person") {
 		return (
 			<Avatar
+				animate={animate}
 				className={className}
 				label={agent.name}
 				size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
@@ -194,6 +199,7 @@ export function AgentListIdentity({
 
 	return (
 		<AgentAvatarVisual
+			animate={animate}
 			avatarClassName={className}
 			avatarSrc={agent.avatarSrc}
 			brandName={agent.brandName}
