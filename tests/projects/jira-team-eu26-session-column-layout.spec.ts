@@ -86,6 +86,90 @@ test("the expanded session column matches the Kanban column height", async ({ pa
 	}).toEqual({ heightDelta: 0, topDelta: 0 });
 });
 
+test("the expanded session plane follows overlay elevation as board columns underlap", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await openHeightComparisonBoard(page);
+	for (let attempt = 0; attempt < 3; attempt++) {
+		if (await page.getByRole("button", { name: "Dark theme" }).isVisible()) break;
+		await page.getByRole("button", { name: /^(Light|System) theme$/u }).click();
+	}
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "dark");
+
+	const plane = page.locator("[data-agent-session-column-surface]").first();
+	const fade = page.locator("[data-agent-session-column] [data-scroll-mask-overlay]").first();
+	const board = page.locator("[data-jira-kanban-scrollport]");
+	const [surfaceColor, overlayColor] = await page.evaluate(() => {
+		const probe = document.createElement("div");
+		document.body.append(probe);
+		probe.style.backgroundColor = "var(--color-surface)";
+		const surface = getComputedStyle(probe).backgroundColor;
+		probe.style.backgroundColor = "var(--color-surface-overlay)";
+		const overlay = getComputedStyle(probe).backgroundColor;
+		probe.remove();
+		return [surface, overlay];
+	});
+	expect(surfaceColor).not.toBe(overlayColor);
+	await expect(plane).toHaveCSS("background-color", surfaceColor);
+	await board.evaluate((element) => { element.scrollLeft = 120; });
+	await expect(plane).toHaveCSS("background-color", overlayColor);
+	await expect(fade).toHaveCSS("color", overlayColor);
+	expect(await fade.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain(overlayColor);
+	await board.evaluate((element) => { element.scrollLeft = 0; });
+	await expect(plane).toHaveCSS("background-color", surfaceColor);
+	await expect(fade).toHaveCSS("color", surfaceColor);
+	expect(await fade.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain(surfaceColor);
+
+	await page.getByRole("button", { name: "Dark theme" }).click();
+	await page.getByRole("button", { name: "System theme" }).click();
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
+	await board.evaluate((element) => { element.scrollLeft = 120; });
+	await expect(plane).toHaveCSS("background-color", "rgb(255, 255, 255)");
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	expect(await plane.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBeLessThan(0.001);
+});
+
+test("only the expanded resting session well retains its 1px border", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await openHeightComparisonBoard(page);
+	const plane = page.locator("[data-agent-session-column-surface]").first();
+	const board = page.locator("[data-jira-kanban-scrollport]");
+
+	await expect(plane).toHaveCSS("border-top-width", "1px");
+	await board.evaluate((element) => { element.scrollLeft = 120; });
+	await expect(plane).toHaveCSS("border-top-width", "0px");
+	await expect(plane).toHaveCSS("padding-left", "1px");
+	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+	await expect(plane).toHaveCSS("border-top-width", "0px");
+	await board.evaluate((element) => { element.scrollLeft = 0; });
+	await expect(plane).toHaveCSS("border-top-width", "0px");
+	await page.getByRole("button", { name: "Expand Unlink sessions column" }).click();
+	await expect(plane).toHaveCSS("border-top-width", "1px");
+});
+
+test("the elevated session well keeps depth without a perimeter shadow", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await openHeightComparisonBoard(page);
+	for (let attempt = 0; attempt < 3; attempt++) {
+		if (await page.getByRole("button", { name: "Dark theme" }).isVisible()) break;
+		await page.getByRole("button", { name: /^(Light|System) theme$/u }).click();
+	}
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "dark");
+
+	const plane = page.locator("[data-agent-session-column-surface]").first();
+	await page.locator("[data-jira-kanban-scrollport]").evaluate((element) => { element.scrollLeft = 120; });
+	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
+		.toMatch(/^rgba\(1, 4, 4, 0\.36\) 0px 8px 12px 0px$/u);
+	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
+		.toMatch(/^rgba\(1, 4, 4, 0\.36\) 0px 8px 12px 0px$/u);
+
+	await page.getByRole("button", { name: "Dark theme" }).click();
+	await page.getByRole("button", { name: "System theme" }).click();
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
+	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
+		.toMatch(/^rgba\(30, 31, 33, 0\.15\) 0px 8px 12px 0px$/u);
+});
+
 test("hovering the leading gutter stays open without bouncing under a stationary pointer", async ({ page }) => {
 	await page.goto(JIRA_TEAM_EU26_EMBEDDED_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();

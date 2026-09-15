@@ -161,12 +161,13 @@ export interface AgentSessionColumnProps extends Omit<
 	hasScrollingEffect?: boolean;
 	/**
 	 * Elevates this column's painted well above horizontally scrolled board
-	 * content. Defaults to `false`. The well already supplies the white fill
+	 * content. Defaults to `false`. The well already supplies the surface fill
 	 * and radius; hosts must not wrap it in a second surface. Underlap adds
-	 * overlay shadow and grows the well by `space.100` above and below.
-	 * Expanded rest paints the 1px disabled stroke; underlap hides that
-	 * stroke so overlay shadow is the only edge. Collapsed wells never
-	 * paint a stroke. Collapsed hit slop stays wide at rest and shrinks
+	 * the overlay surface and its downward depth shadow without perimeter
+	 * layers, and grows the well by `space.100` above and below. Expanded rest
+	 * paints the 1px disabled stroke. Underlap removes its border width while
+	 * preserving the inset. Collapsed wells never paint
+	 * a stroke. Collapsed hit slop stays wide at rest and shrinks
 	 * inside the elevated well while status columns underlap.
 	 */
 	showTrailingShadow?: boolean;
