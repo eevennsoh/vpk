@@ -79,7 +79,7 @@ test("the Untracked column follows card session link and unlink state", () => {
 		PAGE_SOURCE,
 		/const untrackedAgentSessionItems = useMemo\([\s\S]*selectBoardUntrackedSessions\(\{[\s\S]*archivedItemIds: archivedLooseWorkIds,[\s\S]*capturedItemIds: capturedLooseWorkIds,[\s\S]*detachedByCard: detachedAgentSessionsByCard,[\s\S]*sessions: agentSessionItems,/u,
 	);
-	assert.match(PAGE_SOURCE, /items: untrackedAgentSessionItems/u);
+	assert.match(PAGE_SOURCE, /items: displayedUntrackedAgentSessionItems/u);
 	assert.match(
 		PAGE_SOURCE,
 		/const handleCardAgentSessionLink:[\s\S]*setCapturedLooseWorkIds\([\s\S]*new Set\(current\)\.add\(session\.id\)/u,

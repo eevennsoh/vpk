@@ -53,6 +53,10 @@ import {
 	type ExperimentalJiraKanbanProps,
 } from "./experimental-jira-kanban";
 import {
+	filterAgentSessionsByAgentFilter,
+	resolveAgentFilterViewer,
+} from "./lib/board-agent-filter";
+import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
@@ -500,6 +504,18 @@ function ExperimentalJiraKanbanPageContent({
 		}),
 		[agentSessionItems, archivedLooseWorkIds, capturedLooseWorkIds, detachedAgentSessionsByCard],
 	);
+	const agentFilterViewer = useMemo(
+		() => resolveAgentFilterViewer(agentSessionMembers),
+		[agentSessionMembers],
+	);
+	const displayedUntrackedAgentSessionItems = useMemo(
+		() => filterAgentSessionsByAgentFilter(
+			untrackedAgentSessionItems,
+			agentFilterId,
+			agentFilterViewer,
+		),
+		[agentFilterId, agentFilterViewer, untrackedAgentSessionItems],
+	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
 			isLooseWorkResumable,
@@ -583,7 +599,7 @@ function ExperimentalJiraKanbanPageContent({
 		// fighting the column's own post-mount state.
 		collapsed: displayedAgentSessionColumnCollapsed,
 		hasScrollingEffect: true,
-		items: untrackedAgentSessionItems,
+		items: displayedUntrackedAgentSessionItems,
 		multiSelect: agentSessionMultiSelect,
 		newItemIds: newAgentSessionIds,
 		onCollapsedChange: handleAgentSessionColumnCollapsedChange,
