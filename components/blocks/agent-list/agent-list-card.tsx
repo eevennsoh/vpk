@@ -124,14 +124,15 @@ const PR_STATUS_META: Record<
 };
 
 export function AgentListPrStatusIcon({
+	className,
 	status,
-}: Readonly<{ status: AgentListPrStatus }>) {
+}: Readonly<{ className?: string; status: AgentListPrStatus }>) {
 	const { Icon: PrIcon, colorClass, label } = PR_STATUS_META[status];
 
 	return (
 		<span
 			aria-label={label}
-			className={cn("grid size-4 shrink-0 place-items-center", colorClass)}
+			className={cn("grid size-4 shrink-0 place-items-center", colorClass, className)}
 			role="img"
 			title={label}
 		>
