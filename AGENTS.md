@@ -12,6 +12,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 - Frontend edits live mainly in `components/projects/`, `components/blocks/`, `components/arts/`, `components/ui-custom/`, `components/ui-audio/`, `components/visual/`, `components/website/`, and `app/`.
 - Backend/API ownership: `backend/app.js` composes Express; `backend/server.js` owns startup/static serving/listen/WebSockets; `backend/routes/*.js`, `backend/chat/*.js`, `backend/services/*`, and `backend/middleware/*` own their domains; `app/api/**/route.ts` owns dev proxies and route adapters.
 - Validate every change with `pnpm run lint` and `pnpm run typecheck`; UI changes also need visual and accessibility checks.
+- UI feedback and recurring component misuse: assess lint prevention before handoff. Read the **Design-system lint maintenance** section in `.agents/rules/component-architecture.md`; tighten established policy in the narrowest contract and add executable lint cases. Propose uncertain new policy rather than enforcing it globally. Run `pnpm run lint:design-system` and `node --test scripts/eslint-boundary-rules.test.js` when changing those contracts.
 - For browser verification after editing code served by the local Next.js app, load and follow `next-dev-loop`; it owns the `/_next/mcp` plus `agent-browser` runtime cross-check. For browser work that is not verifying a Next.js edit, default to `agent-browser` (`npx agent-browser`) and load its skill first. Keep artifacts under ignored `output/agent-browser/`. If `agent-browser` is unavailable or blocked, use Playwright CLI after loading its skill.
 - Symphony browser evidence is the exception: use `vpk-symphony` so issue evidence lands under ignored `output/playwright/` per `WORKFLOW.md` and `.agents/docs/symphony.md`.
 
@@ -23,6 +24,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 | -------------------------------------- | ----------------------------------------------------------- |
 | UI performance decisions and shared mechanisms | `.agents/docs/playbooks/improve-ui-performance.md`          |
 | Component architecture rules           | `.agents/skills/vpk-tidy/SKILL.md`                          |
+| Design-system lint contracts and maintenance | `eslint.config.mjs`, `.agents/rules/component-architecture.md`, `scripts/eslint-boundary-rules.test.js` |
 | React patterns reference (1000+ lines) | `.agents/skills/vpk-tidy/references/patterns.md`            |
 | Shared visual contract                 | `DESIGN.md`                                                 |
 | Design token catalog (200+ tokens)     | `.agents/skills/vpk-design/references/tokens.md`            |
