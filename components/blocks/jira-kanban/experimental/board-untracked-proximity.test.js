@@ -107,7 +107,7 @@ test("the experimental page can prepend newly synced agent sessions with arrival
 	assert.doesNotMatch(PAGE_SOURCE, /additionalAgentSessions = EMPTY_ADDITIONAL_AGENT_SESSIONS/u);
 	assert.match(
 		PAGE_SOURCE,
-		/const agentSessionLooseWork = useAgentSessionLooseWork\(additionalAgentSessions, pulseTimeline\.looseWork\)/u,
+		/const agentSessionLooseWork = useAgentSessionLooseWork\(\s*additionalAgentSessions,\s*pulseTimeline\.looseWork,\s*agentSessionSeedOverrides,?\s*\)/u,
 	);
 	assert.match(
 		PAGE_SOURCE,

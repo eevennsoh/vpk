@@ -15,6 +15,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
 		"components/blocks/jira-kanban/card-drop.test.js",
 		"components/blocks/agent-session-column/use-agent-session-arrivals.test.ts",
+		"components/blocks/agent-session/use-agent-session-status-departure.test.ts",
 		".agents/skills/vpk-html/scripts/evals.test.js",
 		"twg-install.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-chat-transport.test.js",

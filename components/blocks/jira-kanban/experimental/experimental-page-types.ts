@@ -50,6 +50,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	activeCardCode?: string;
 	/** Extra local sessions discovered after the static Pulse fixture loaded. */
 	additionalAgentSessions?: readonly PulseAgentSession[];
+	/** Route-owned replacements for static Agent Sessions, keyed by their stable IDs. */
+	agentSessionSeedOverrides?: ReadonlyMap<string, PulseAgentSession>;
 	/** Route-owned people used to attribute and render unattached sessions. */
 	agentSessionMembers?: readonly PulseMember[];
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
@@ -145,6 +147,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	mode?: ExperimentalJiraKanbanMode;
 	/** Newly discovered session ids that keep the shared arrival mark visible. */
 	newAgentSessionIds?: ReadonlySet<string>;
+	/** Per-session revisions for host-owned lifecycle changes; stable ids keep row state. */
+	stateChangeVersions?: ReadonlyMap<string, number>;
 	/** Reports hover or focus within the unattached sessions column. */
 	onAgentSessionColumnInteractionChange?: (interacting: boolean) => void;
 	onAgentSessionsReviewed?: (sessionIds?: readonly string[]) => void;

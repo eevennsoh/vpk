@@ -98,36 +98,47 @@ function IndicatorGlyph({ state }: Readonly<{ state: AgentSessionItem["state"] }
  */
 export function AgentSessionShortLifecycleIcon({
 	state,
-}: Readonly<{ state: AgentSessionItem["state"] }>) {
-	switch (state) {
-		case "needs-input":
-			return (
-				<span
-					aria-label="Needs input"
-					className="grid size-6 shrink-0 place-items-center text-icon-information"
-					role="img"
+	accessibleState = state,
+	animateTransition = false,
+	onTransitionComplete,
+	showWorkingSpinner = false,
+}: Readonly<{
+	accessibleState?: AgentSessionItem["state"];
+	animateTransition?: boolean;
+	onTransitionComplete?: () => void;
+	showWorkingSpinner?: boolean;
+	state: AgentSessionItem["state"];
+}>) {
+	const shouldReduceMotion = useReducedMotion();
+	const playMotion = animateTransition && shouldReduceMotion !== true;
+	if (state === "attention" && !animateTransition) return null;
+	if (state === "running" && !animateTransition && !showWorkingSpinner) return null;
+
+	return (
+		<span
+			aria-label={LIFECYCLE_LABELS[accessibleState]}
+			className="relative grid size-6 shrink-0 place-items-center"
+			data-agent-session-lifecycle-current={accessibleState}
+			data-agent-session-lifecycle-shown={state}
+			role="img"
+		>
+			<AnimatePresence initial={false} mode={playMotion ? "wait" : "sync"}>
+				<motion.span
+					animate={playMotion ? { opacity: 1, scale: 1 } : undefined}
+					aria-hidden="true"
+					className="absolute inset-0 grid place-items-center"
+					exit={playMotion ? { opacity: 0, scale: 0.6, transition: INDICATOR_EXIT } : undefined}
+					initial={playMotion ? { opacity: 0, scale: 0.6 } : false}
+					key={state}
+					onAnimationComplete={playMotion && state === accessibleState ? onTransitionComplete : undefined}
+					style={playMotion ? { willChange: "opacity, transform" } : undefined}
+					transition={playMotion ? INDICATOR_ENTER : { duration: 0 }}
 				>
-					<QuestionCircleFilledIcon color="currentColor" label="" size="small" />
-				</span>
-			);
-		case "complete":
-			return (
-				<span
-					aria-label="Finished"
-					className="grid size-6 shrink-0 place-items-center text-icon-success"
-					role="img"
-				>
-					<StatusSuccessIcon color="currentColor" label="" size="small" />
-				</span>
-			);
-		case "attention":
-		case "running":
-			return null;
-		default: {
-			const exhaustiveState: never = state;
-			return exhaustiveState;
-		}
-	}
+					<IndicatorGlyph state={state} />
+				</motion.span>
+			</AnimatePresence>
+		</span>
+	);
 }
 
 function LifecycleState({
@@ -168,15 +179,19 @@ function LifecycleState({
  * to the row.
  */
 export function AgentSessionLifecycle({
-	showLabel = true,
 	state,
+	accessibleState = state,
+	onTransitionComplete,
+	showLabel = true,
 }: Readonly<{
+	accessibleState?: AgentSessionItem["state"];
+	onTransitionComplete?: () => void;
 	showLabel?: boolean;
 	state: AgentSessionItem["state"];
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [pressed, setPressed] = useState(false);
-	const label = LIFECYCLE_LABELS[state];
+	const label = LIFECYCLE_LABELS[accessibleState];
 
 	return (
 		<Button
@@ -195,7 +210,7 @@ export function AgentSessionLifecycle({
 			type="button"
 			variant="ghost"
 		>
-			<AnimatePresence initial={false} mode="popLayout">
+			<AnimatePresence initial={false} mode="wait">
 				<motion.div
 					animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
 					className="grid place-items-center"
@@ -204,6 +219,7 @@ export function AgentSessionLifecycle({
 						: { opacity: 0, scale: 0.6, transition: INDICATOR_EXIT }}
 					initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.6 }}
 					key={state}
+					onAnimationComplete={shouldReduceMotion !== true && state === accessibleState ? onTransitionComplete : undefined}
 					style={shouldReduceMotion ? undefined : { willChange: "opacity, transform" }}
 					transition={shouldReduceMotion ? { duration: 0 } : INDICATOR_ENTER}
 				>

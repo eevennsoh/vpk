@@ -17,8 +17,10 @@ export type AgentSessionColumnNotchShape = "circle" | "line";
  */
 export interface AgentSessionColumnProps extends Omit<
 	AgentSessionProps,
-	"arrivingItemIds" | "className" | "onArrivalComplete" | "rowTriage"
+	"arrivingItemIds" | "className" | "onArrivalComplete" | "onStateChangeComplete" | "rowTriage" | "stateChangedItemIds" | "stateChangeVersions"
 > {
+	/** Per-session lifecycle revisions; each increase reintroduces the visible row once. */
+	stateChangeVersions?: ReadonlyMap<string, number>;
 	/** Additional classes applied to the column surface. */
 	className?: string;
 	/** Classes applied to the inner session list. */
