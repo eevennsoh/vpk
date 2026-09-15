@@ -11,16 +11,11 @@ import {
 } from "react";
 import { useReducedMotion, type Transition } from "motion/react";
 
-import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
-
 import { isCodingAgentListItem, isLocalAgentListItem } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ITEMS, AgentSession } from "@/components/blocks/agent-session";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { Button } from "@/components/ui/button";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { Icon } from "@/components/ui/icon";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	CardGlowSurfaceContext,
 	useCardGlowProximityPlane,
@@ -33,7 +28,7 @@ import { cn } from "@/lib/utils";
 
 import { AgentSessionColumnFilterMenu } from "./agent-session-column-filter-menu";
 import { AgentSessionColumnCountSwap, useRisingSessionCount } from "./agent-session-column-count-swap";
-import { AgentSessionColumnHeader } from "./agent-session-column-header";
+import { AgentSessionColumnCollapsedExpandControl, AgentSessionColumnHeader } from "./agent-session-column-header";
 import { AgentSessionColumnEndState } from "./agent-session-column-end-state";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
@@ -176,6 +171,7 @@ function resolveAgentSessionPlaneClassName(
 }
 
 function renderAgentSessionColumnFrame({
+	allowCollapsedRailOverflow,
 	body,
 	bodyHidden,
 	borderColor,
@@ -187,6 +183,7 @@ function renderAgentSessionColumnFrame({
 	planeClassName,
 	shadowTransition,
 }: Readonly<{
+	allowCollapsedRailOverflow: boolean;
 	body: ReactNode;
 	bodyHidden: boolean;
 	borderColor: string;
@@ -238,6 +235,7 @@ function renderAgentSessionColumnFrame({
 						aria-hidden={bodyHidden || undefined}
 						className={cn(
 							AGENT_SESSION_ENCLOSED_BODY,
+							allowCollapsedRailOverflow ? "overflow-visible" : null,
 							bodyHidden ? "invisible" : null,
 						)}
 						inert={bodyHidden || undefined}
@@ -386,6 +384,7 @@ export function AgentSessionColumn({
 	collapsedPresentation = "column",
 	collapsedMenu,
 	collapsedRailHitSlopPx = 0,
+	collapsedExpandLeadingHitSlopPx = 0,
 	count,
 	defaultCollapsed = false,
 	emptyLabel = "No sessions to unlink",
@@ -718,31 +717,14 @@ export function AgentSessionColumn({
 		: isGutterCollapsed ? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL;
 	const collapsedExpandControl = collapsedMenu === undefined
 		? (
-			<TooltipProvider>
-				<Tooltip
-					animate={!isRepositioning}
-					disabled={isRepositioning}
-				>
-					<TooltipTrigger
-						render={
-							<Button
-								aria-label={`Expand ${title} column`}
-								aria-description={headerDragHandle ? "Drag horizontally to move the column, or use Alt with the arrow keys." : undefined}
-								className={collapsedControlClassName}
-								data-agent-session-column-expand-control=""
-								onClick={handleToggleCollapsed}
-								size="icon-compact"
-								style={{ width: "100%" }}
-								type="button"
-								variant={isRepositioning ? "outline" : "ghost"}
-							/>
-						}
-					>
-						<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
-					</TooltipTrigger>
-					<TooltipContent>Expand</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
+			<AgentSessionColumnCollapsedExpandControl
+				canReposition={Boolean(headerDragHandle)}
+				className={collapsedControlClassName}
+				isRepositioning={isRepositioning}
+				leadingHitSlopPx={collapsedExpandLeadingHitSlopPx}
+				onExpand={handleToggleCollapsed}
+				title={title}
+			/>
 		)
 		: collapsedMenu({ className: collapsedControlClassName, dragging: isRepositioning });
 	const collapsedHeader = (
@@ -941,6 +923,7 @@ export function AgentSessionColumn({
 			}}
 		>
 			{renderAgentSessionColumnFrame({
+				allowCollapsedRailOverflow: collapsed && collapsedHitSlopPx > 0,
 				body: (
 					<CardGlowSurfaceContext value={glowPlaneEnabled ? registerGlowSurface : undefined}>
 						{body}
