@@ -54,7 +54,7 @@ function thirdPartyAgentLogo(name: ThirdPartyLogoName): ReactNode {
  * package or a local `public/3p` fallback); Rovo CLI uses the 1P `RovoColorIcon`.
  */
 const CODING_AGENTS: readonly CodingAgent[] = [
-	{ id: "claude-code", label: "Claude Code", logo: thirdPartyAgentLogo("claude") },
+	{ id: "claude-code", label: "Claude", logo: thirdPartyAgentLogo("claude") },
 	{ id: "codex", label: "Codex", logo: thirdPartyAgentLogo("openai-codex") },
 	{ id: "rovo-cli", label: "Rovo CLI", logo: <RovoColorIcon size="small" /> },
 	{ id: "cursor", label: "Cursor", logo: thirdPartyAgentLogo("cursor") },

@@ -547,7 +547,7 @@ function createStoryComments(
 		...(chapter === "intake" ? [] : [{
 			id: "story-channel-orchestration",
 			authorName: "Venn",
-			content: "@Claude Code take the lead on implementing guest checkout. Consult @Code Planner on the secure API and validation contract first, then implement and verify the work.",
+			content: "@Claude take the lead on implementing guest checkout. Consult @Code Planner on the secure API and validation contract first, then implement and verify the work.",
 			createdAtMs: STORY_EPOCH_MS - 2_940_000,
 		} satisfies AgentSessionComment]),
 	];
