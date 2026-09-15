@@ -375,14 +375,10 @@ test("the row reveals one … menu where Agent List puts its hover pair", () => 
 	assert.match(TYPES_SOURCE, /visibilityLabel\?: string;/u);
 	assert.match(TYPES_SOURCE, /onItemHover\?: \(item: AgentSessionItem \| null\) => void;/u);
 	assert.match(INDEX_SOURCE, /onItemHover=\{onItemHover\}/u);
-	assert.match(
-		CARD_SOURCE,
-		/onPointerEnter=\{\(\) => \{\s*isHoveredRef\.current = true;\s*onItemHover\?\.\(item\);\s*\}\}/u,
-	);
-	assert.match(
-		CARD_SOURCE,
-		/onPointerLeave=\{\(\) => \{\s*isHoveredRef\.current = false;\s*onItemHover\?\.\(null\);\s*\}\}/u,
-	);
+	// Hover reporting stays first in each handler, ahead of any decorative
+	// work the row also does on enter/leave (the card glow's pointer vars).
+	assert.match(CARD_SOURCE, /onPointerEnter=\{\(event\) => \{\s*isHoveredRef\.current = true;\s*onItemHover\?\.\(item\);/u);
+	assert.match(CARD_SOURCE, /onPointerLeave=\{\(event\) => \{\s*isHoveredRef\.current = false;\s*onItemHover\?\.\(null\);/u);
 	// Regression: unmount cleanup may only clear the hover it owns. Firing it
 	// unconditionally let a filtered/captured sibling wipe a highlight the
 	// pointer was still resting on, with no pointerenter left to restore it.

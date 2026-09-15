@@ -20,6 +20,12 @@ import {
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { Icon } from "@/components/ui/icon";
+import {
+	CardGlowLayers,
+	cardGlowSurfaceStyle,
+	useCardGlowPointer,
+	useCardGlowSurface,
+} from "@/components/visual/card-glow";
 import { cn } from "@/lib/utils";
 
 import {
@@ -39,6 +45,7 @@ import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
 import { AgentSessionViewerHint } from "./agent-session-viewer-hint";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
 import { selectionGestureFromModifierKeys } from "./agent-session-selection-gesture";
+import { agentSessionAccentColor } from "./agent-session-transfer-member";
 import { isTransferSourceFaded } from "./session-cohort";
 import {
 	type AgentSessionDensity,
@@ -58,6 +65,8 @@ export function AgentSessionCard({
 	flyoutHandle,
 	flyoutSession,
 	getResumeCommand,
+	glowBloom = false,
+	glowStroke = false,
 	isArriving = false,
 	isFlyoutActive = false,
 	isHighlighted = false,
@@ -96,6 +105,18 @@ export function AgentSessionCard({
 	flyoutHandle?: JiraSessionFlyoutHandle;
 	flyoutSession?: JiraSidebarSessionItem;
 	getResumeCommand?: (item: AgentSessionItem) => string | undefined;
+	/**
+	 * Wash the agent's accent behind the row on hover. Independent of
+	 * {@link glowStroke} so the two halves of the treatment can be judged
+	 * separately. Requires the host list to carry `CARD_GLOW_EFFECT_STYLE`.
+	 */
+	glowBloom?: boolean;
+	/**
+	 * Trace the agent's accent along the card edge on hover. Independent of
+	 * {@link glowBloom}. Both default off: the list host that wants the
+	 * treatment turns it on, so picker menus and attached rows stay flat.
+	 */
+	glowStroke?: boolean;
 	/** Play the one-shot arrival beat. A remounted card must not re-arm it. */
 	isArriving?: boolean;
 	/** Keep the row's hover treatment while its portalled flyout chain is active. */
@@ -155,6 +176,22 @@ export function AgentSessionCard({
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
 	const shouldReduceMotion = useReducedMotion();
+	// The glow reads the pointer on the list item, not the article: the article
+	// spreads the drag binding, which owns `onPointerMove`. Custom properties
+	// inherit, so the layers inside still see what the item writes.
+	//
+	// Two ways in. A host that encloses its rows in a proximity plane — the
+	// session column does — drives every row from one window-level pointer, so
+	// the stroke is already tracing as the cursor approaches the column. Without
+	// a plane the row tracks its own hover and lights only under the pointer.
+	// Either layer needs the accent, the stacking context and a pointer, so the
+	// mounting decision is their union; which layer actually paints is decided
+	// in `CardGlowLayers`.
+	const glow = glowStroke || glowBloom;
+	const glowPlaneSurface = useCardGlowSurface();
+	const isOnGlowPlane = glow && glowPlaneSurface !== undefined;
+	const cardGlow = useCardGlowPointer({ reduceMotion: shouldReduceMotion });
+	const tracksOwnPointer = glow && !isOnGlowPlane;
 	const onItemHoverRef = useRef(onItemHover);
 	// Whether the pointer is on *this* row, so unmount cleanup can tell "I was
 	// the hovered row" from "a sibling went away".
@@ -350,21 +387,32 @@ export function AgentSessionCard({
 			inert={isTransferSource || undefined}
 			role={mark == null ? undefined : "row"}
 			onAnimationComplete={handleArrivalComplete}
-			onPointerEnter={() => {
+			onPointerEnter={(event) => {
 				isHoveredRef.current = true;
 				onItemHover?.(item);
+				if (tracksOwnPointer) {
+					cardGlow.onPointerEnter(event);
+				}
 			}}
-			onPointerLeave={() => {
+			onPointerLeave={(event) => {
 				isHoveredRef.current = false;
 				onItemHover?.(null);
+				if (tracksOwnPointer) {
+					cardGlow.onPointerLeave(event);
+				}
 			}}
+			onPointerMove={tracksOwnPointer ? cardGlow.onPointerMove : undefined}
+			ref={isOnGlowPlane ? glowPlaneSurface : undefined}
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
 			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
 			// Siblings slide down to make room instead of jumping. `"position"` so a
 			// displaced card is never scaled, only moved.
 			layout={shouldReduceMotion ? false : "position"}
-			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
+			style={{
+				...(glow ? cardGlowSurfaceStyle(agentSessionAccentColor(item)) : null),
+				willChange: shouldPlayArrival ? "opacity, transform" : undefined,
+			}}
 			transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
 		>
 			<AgentSessionMediumDrag
@@ -384,6 +432,9 @@ export function AgentSessionCard({
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
 						"group/agent-row relative flex w-full min-w-0 cursor-default rounded-lg text-left text-text",
+						// The glow layers sit at `-z-[1]`; without a stacking context
+						// here they would escape behind the list surface.
+						glow && "isolate",
 						padding === "compact" ? "px-3 py-2" : "p-3",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
@@ -408,6 +459,16 @@ export function AgentSessionCard({
 							role={articleRole}
 							tabIndex={articleTabIndex ?? (bind !== undefined && activateCard !== undefined ? 0 : undefined)}
 						>
+							{/*
+								No resting ring: the session list is a flush stack of
+								borderless tiles, so only the traced accent appears, and
+								only under the pointer. The bloom falls back to the accent
+								colour because these identities are brand glyphs — blurring
+								a monochrome mark would return grey.
+							*/}
+							{glow ? (
+								<CardGlowLayers baseBorder={false} bloom={glowBloom} stroke={glowStroke} />
+							) : null}
 							{isNew ? (
 						<>
 							{/* Colour never carries it alone. */}

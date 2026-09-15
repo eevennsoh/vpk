@@ -377,9 +377,15 @@ test("Jira issue agentSessionTransfer is opt-in so existing consumers are unaffe
 });
 
 test("Jira issue session dragging can be controlled by a board without changing local consumers", () => {
+	// The control type lives with the other drag types; the card re-exports it
+	// so every board consumer still imports it from `@/components/blocks/jira-issue`.
+	assert.match(
+		DRAG_SOURCE,
+		/export interface JiraIssueAgentSessionDragControl \{[\s\S]*binding: JiraIssueAgentSessionDragBinding;[\s\S]*dropTarget\?: "attach" \| "unlink" \| null;[\s\S]*sourceActive: boolean;[\s\S]*state: JiraIssueAgentSessionDragState;[\s\S]*\}/u,
+	);
 	assert.match(
 		SOURCE,
-		/export interface JiraIssueAgentSessionDragControl \{[\s\S]*binding: JiraIssueAgentSessionDragBinding;[\s\S]*dropTarget\?: "attach" \| "unlink" \| null;[\s\S]*sourceActive: boolean;[\s\S]*state: JiraIssueAgentSessionDragState;[\s\S]*\}/u,
+		/export type \{ JiraIssueAgentSessionDragControl \} from "@\/components\/blocks\/jira-issue\/agent-session-drag";/u,
 	);
 	assert.match(SOURCE, /agentSessionDragControl\?: JiraIssueAgentSessionDragControl;/u);
 	assert.match(

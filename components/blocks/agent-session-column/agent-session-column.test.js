@@ -528,10 +528,10 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	// A host-driven pointer resize must bypass this transition so the column edge
 	// tracks the pointer instead of easing toward every intermediate width.
 	assert.match(TYPES_SOURCE, /widthTransitionDisabled\?: boolean;/u);
-	assert.match(
-		INDEX_SOURCE,
-		/expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,\s*(?:hasScrollingEffect = false,\s*)?widthTransitionDisabled = false,/u,
-	);
+	// The default itself is the contract. Pinning which prop it sits next to in
+	// the destructure only breaks whenever an unrelated prop is added between.
+	assert.match(INDEX_SOURCE, /expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,/u);
+	assert.match(INDEX_SOURCE, /widthTransitionDisabled = false,/u);
 	assert.match(
 		INDEX_SOURCE,
 		/shouldReduceMotion \|\| widthTransitionDisabled\s*\? "none"\s*: AGENT_SESSION_COLUMN_TRANSITION/u,
@@ -665,7 +665,11 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 	assert.doesNotMatch(INDEX_SOURCE, /\bchrome=/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnHeader/u);
 	assert.match(INDEX_SOURCE, /case "panel":\s*\n\s*return AGENT_SESSION_PLANE;/u);
-	assert.match(INDEX_SOURCE, /<section\s*\n\s*ref=\{columnRef\}\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
+	assert.match(INDEX_SOURCE, /<section\s*\n\s*ref=\{setColumnNode\}\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
+	// The section's ref is composed — it also feeds the card glow's proximity
+	// plane — but `columnRef` must still be the node, because focus management
+	// below reads it.
+	assert.match(INDEX_SOURCE, /const setColumnNode = useCallback\(\(node: HTMLElement \| null\) => \{\s*columnRef\.current = node;/u);
 	assert.match(INDEX_SOURCE, /tabIndex=\{-1\}/u);
 	assert.match(INDEX_SOURCE, /columnRef\.current\?\.focus\(\)/u);
 });

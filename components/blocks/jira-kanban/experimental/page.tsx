@@ -193,6 +193,7 @@ function ExperimentalJiraKanbanPageContent({
 	suggestSessionBoardLinkOnHover = true,
 	agentSessionPresentation = "column",
 	advancedAgentSessionTimeline = true,
+	agentSessionColumnGlow,
 	agentSessionColumnResizable = true,
 	agentSessionMultiSelect = true,
 	agents = BOARD_AGENTS,
@@ -582,6 +583,7 @@ function ExperimentalJiraKanbanPageContent({
 		// Controlled so View → Agents can expand or collapse Untracked without
 		// fighting the column's own post-mount state.
 		collapsed: displayedAgentSessionColumnCollapsed,
+		...agentSessionColumnGlow,
 		hasScrollingEffect: true,
 		items: untrackedAgentSessionItems,
 		multiSelect: agentSessionMultiSelect,

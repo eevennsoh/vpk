@@ -70,6 +70,9 @@ const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
 	"advancedTimeline",
 	"agentSessionColumnResizing",
 	"manualLink",
+	"sessionStroke",
+	"sessionBloom",
+	"sessionProximity",
 ] as const;
 const isJiraTeamEu26LooseWorkResumable = () => true;
 
@@ -400,6 +403,11 @@ function JiraTeamEu26App(): React.ReactElement {
 						agentSessionPresentation="column"
 						advancedAgentSessionTimeline={designVariants.advancedTimeline}
 						agentSessionColumnResizable={designVariants.agentSessionColumnResizing}
+						agentSessionColumnGlow={{
+							glowBloom: designVariants.sessionBloom,
+							glowReach: designVariants.sessionProximity,
+							glowStroke: designVariants.sessionStroke,
+						}}
 						columnChrome="default"
 						agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
