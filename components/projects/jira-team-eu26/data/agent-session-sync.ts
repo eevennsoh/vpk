@@ -4,6 +4,10 @@ type JiraTeamEu26SyncSession = Extract<PulseLooseWork, { kind: "agent-session" }
 
 const SYNC_DELAY_MIN_MS = 1_000;
 const SYNC_DELAY_MAX_MS = 3_000;
+// The counter settles after four seconds. Three seven-second breaks let the
+// local monitor return and stay visible before the next group arrives.
+const SYNC_BREAK_MS = 7_000;
+const SYNC_BREAK_AFTER_SESSION_COUNTS = [8, 16, 24] as const;
 
 const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 	{
@@ -646,8 +650,12 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = JIRA_TEAM_EU26_SYNC_SESSION_SOURCE.m
 ) satisfies readonly JiraTeamEu26SyncSession[];
 
 export function getJiraTeamEu26SyncDelayMs(
+	nextIndex: number,
 	random: () => number = Math.random,
 ): number {
+	if (SYNC_BREAK_AFTER_SESSION_COUNTS.some((count) => count === nextIndex)) {
+		return SYNC_BREAK_MS;
+	}
 	return SYNC_DELAY_MIN_MS + Math.round(random() * (SYNC_DELAY_MAX_MS - SYNC_DELAY_MIN_MS));
 }
 
@@ -659,9 +667,11 @@ export function takeJiraTeamEu26SyncBatch(
 	sessions: readonly JiraTeamEu26SyncSession[];
 }> {
 	const batchSize = 1 + Math.min(2, Math.floor(random() * 3));
+	const nextBreak = SYNC_BREAK_AFTER_SESSION_COUNTS.find((count) => count > nextIndex)
+		?? JIRA_TEAM_EU26_SYNC_SESSIONS.length;
 	const sessions = JIRA_TEAM_EU26_SYNC_SESSIONS.slice(
 		nextIndex,
-		nextIndex + batchSize,
+		Math.min(nextIndex + batchSize, nextBreak),
 	);
 
 	return {
