@@ -149,8 +149,7 @@ test("layers paint below in-flow content, so consumers do not lift every child",
 	assert.ok(negativeLayers.length >= 3, "bloom, base ring and glow ring all paint at -z-[1]");
 	// A negative z-index child escapes to the nearest stacking context, so every
 	// host has to make one.
-	assert.match(SESSION_CARD_SOURCE, /paintsGlow && "isolate"/u);
-	assert.match(SESSION_CARD_SOURCE, /paintsGlow: glow \|\| shouldPlayStateChangeGlow,/u);
+	assert.match(SESSION_CARD_SOURCE, /glow && "isolate"/u);
 	// Either layer needs the stacking context, so the union is what mounts it.
 	assert.match(SESSION_CARD_SOURCE, /const glow = glowStroke \|\| glowBloom;/u);
 });

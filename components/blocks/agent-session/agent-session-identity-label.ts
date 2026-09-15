@@ -6,9 +6,8 @@ import type { AgentSessionItem } from "./agent-session-types";
  * "Claude with Annie" — the agent that ran the session and the human who
  * invoked it, as one string.
  *
- * The medium card spends this on accessible names only; the drag chip prints
- * it. Both must read identically, so the sentence lives here rather than being
- * rebuilt per surface. Sessions with no invoker degrade to the agent name.
+ * Cards use the full identity for accessible names. Drag chips use the
+ * separate person-only label below. Sessions with no invoker use the agent name.
  */
 export function agentIdentityLabel(
 	agent: AgentListAgent,
@@ -20,4 +19,12 @@ export function agentIdentityLabel(
 /** `agentIdentityLabel` for a session row. */
 export function agentSessionIdentityLabel(item: AgentSessionItem): string {
 	return agentIdentityLabel(item.agent, item.invokedBy);
+}
+
+/** The human owns the visible drag label; agent identity remains in the avatar. */
+export function agentDragIdentityLabel(
+	agent: AgentListAgent,
+	attributedBy?: AgentListInvoker,
+): string {
+	return attributedBy?.name ?? agent.name;
 }

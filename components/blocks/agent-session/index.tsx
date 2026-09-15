@@ -167,6 +167,8 @@ export function AgentSession({
 	// The beat runs for arrivals the viewer has not seen yet; the mark stays on
 	// every unreviewed id. A host that never unmounts the list can pass one set.
 	const beatItemIds = arrivingItemIds ?? newItemIds;
+	// In-flow columns skip filter motion but still make room for real entries.
+	const moveRowsForArrival = !isDeparturePhase && (beatItemIds?.size ?? 0) > 0;
 	const arrivalDelays = useMemo(
 		() => buildArrivalDelays(items, beatItemIds),
 		[items, beatItemIds],
@@ -256,7 +258,7 @@ export function AgentSession({
 							);
 						return (
 							<AgentSessionCard
-								animateLayout={animateLayout}
+								animateLayout={animateLayout || moveRowsForArrival}
 								arrivalDelaySeconds={arrivalDelays.get(item.id)}
 								captured={capturedItemIds?.has(item.id) ?? false}
 								density={density}

@@ -104,9 +104,11 @@ test("reduced motion zeroes the chip entrance instead of just shortening it", ()
 	// The host resolves the flag; the overlay consumes it. Both halves are
 	// pinned so neither can start honouring reduced motion on its own.
 	assert.match(MEDIUM_DRAG_SOURCE, /const reduceChipMotion = Boolean\(shouldReduceMotion\);/u);
+	assert.match(CARD_SOURCE, /useMediaQuery\("\(prefers-reduced-motion: reduce\)", true\)/u);
+	assert.match(MEDIUM_CARD_SOURCE, /useMediaQuery\("\(prefers-reduced-motion: reduce\)", true\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /reduceMotion=\{reduceChipMotion\}/u);
 	assert.match(OVERLAY_SOURCE, /if \(!dragging \|\| !follower \|\| reduceMotion\) return;/u);
-	assert.match(OVERLAY_SOURCE, /for \(const animation of animations\) animation\.stop\(\);/u);
+	assert.match(OVERLAY_SOURCE, /for \(const animation of animations\) animation\.cancel\(\);/u);
 	assert.match(OVERLAY_SOURCE, /element\.style\.willChange = ""/u);
 
 	// Timing comes from the shared token module, never inlined at the callsite.

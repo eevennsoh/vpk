@@ -7,6 +7,15 @@ export const AGENT_SESSION_ARRIVAL_TRANSITION = {
 /** Vertical travel for Large and Medium arrivals; sessions enter from sync above. */
 export const AGENT_SESSION_ARRIVAL_OFFSET_PX = -8;
 
+/** Top entries and the rows making room share duration-slowest + ease-in-out. */
+export const AGENT_SESSION_TOP_ARRIVAL_TRANSITION = {
+	duration: 0.6,
+	ease: [0.4, 0, 0, 1] as [number, number, number, number],
+};
+
+/** Enter a full row from above so its lower edge follows the opening space. */
+export const AGENT_SESSION_TOP_ARRIVAL_TRANSFORM = "translateY(-100%)";
+
 /**
  * Circle-rail arrival: the face pops in on the avatar recipe, holds, then
  * morphs down onto the 4px rest disc it will become. The rest disc is already

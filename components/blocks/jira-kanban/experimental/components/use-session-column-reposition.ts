@@ -27,6 +27,7 @@ interface ColumnDrag {
 	preview: number;
 	highlightedIndex: number | null;
 	frame: number;
+	scheduleFrame: (() => void) | null;
 	element: HTMLDivElement;
 	source: HTMLDivElement | null;
 	chip: HTMLButtonElement | null;
@@ -339,6 +340,7 @@ export function useSessionColumnReposition({ hostRef, width, onStart, disabled }
 			preview: placement.index,
 			highlightedIndex: null,
 			frame: 0,
+			scheduleFrame: null,
 			element,
 			source: null,
 			chip: null,
@@ -359,7 +361,10 @@ export function useSessionColumnReposition({ hostRef, width, onStart, disabled }
 		current.x = event.clientX;
 		if (!current.active && Math.abs(current.x - current.startX) < 6) return;
 		event.preventDefault();
-		if (current.active) return;
+		if (current.active) {
+			current.scheduleFrame?.();
+			return;
+		}
 		current.active = true;
 		current.source = cloneSessionColumnDragSource(
 			current.element,
@@ -384,9 +389,11 @@ export function useSessionColumnReposition({ hostRef, width, onStart, disabled }
 		onStart();
 		const track = () => {
 			if (drag.current !== current) return;
+			current.frame = 0;
 			if (current.chip) positionSessionColumnDragChip(current.chip, current.x, current.startY);
 			const box = current.scrollport.getBoundingClientRect();
 			const scroll = current.x > box.right - 40 ? 12 : current.x < box.left + 40 ? -12 : 0;
+			const previousScrollLeft = current.scrollport.scrollLeft;
 			if (scroll) current.scrollport.scrollLeft += scroll;
 			const offset = current.scrollport.scrollLeft - current.scrollLeft;
 			if (current.sourceScrollsWithBoard && current.source) {
@@ -410,8 +417,15 @@ export function useSessionColumnReposition({ hostRef, width, onStart, disabled }
 				current.highlightedIndex = highlightedIndex;
 				placement.setHighlightedIndex(highlightedIndex);
 			}
+			if (current.scrollport.scrollLeft !== previousScrollLeft) {
+				scheduleFrame();
+			}
+		};
+		const scheduleFrame = () => {
+			if (drag.current !== current || current.frame !== 0) return;
 			current.frame = requestAnimationFrame(track);
 		};
+		current.scheduleFrame = scheduleFrame;
 		track();
 	};
 

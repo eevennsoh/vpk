@@ -181,6 +181,20 @@ test("a short click stays a click; only a 6px move claims the gesture", () => {
 	assert.match(HOOK_SOURCE, /if \(!suppressClick.current\) return/u);
 });
 
+test("a stationary column drag sleeps until the pointer moves or auto-scroll advances", () => {
+	assert.match(
+		HOOK_SOURCE,
+		/if \(current\.active\) \{\s*current\.scheduleFrame\?\.\(\);\s*return;\s*\}/u,
+		"an active drag must restart its frame from the next pointer move",
+	);
+	assert.match(HOOK_SOURCE, /const previousScrollLeft = current\.scrollport\.scrollLeft;/u);
+	assert.match(
+		HOOK_SOURCE,
+		/if \(current\.scrollport\.scrollLeft !== previousScrollLeft\) \{\s*scheduleFrame\(\);\s*\}/u,
+		"the loop may continue only while edge auto-scroll actually advances",
+	);
+});
+
 test("the expanded header move handle stays mounted while a width resize is live", () => {
 	assert.match(HOOK_SOURCE, /available: placement !== null,/u);
 	assert.match(HOOK_SOURCE, /enabled: placement !== null && !disabled,/u);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import {
@@ -23,7 +24,6 @@ import { Icon } from "@/components/ui/icon";
 import {
 	CardGlowLayers,
 	cardGlowSurfaceStyle,
-	type CardGlowCSSProperties,
 	type CardGlowSurfaceRef,
 	useCardGlowPointer,
 	useCardGlowSurface,
@@ -31,11 +31,10 @@ import {
 import { cn } from "@/lib/utils";
 
 import {
-	AGENT_SESSION_ARRIVAL_OFFSET_PX,
-	AGENT_SESSION_ARRIVAL_TRANSITION,
+	AGENT_SESSION_TOP_ARRIVAL_TRANSFORM,
+	AGENT_SESSION_TOP_ARRIVAL_TRANSITION,
 } from "./agent-session-arrival-motion";
 import { approveActionLabel } from "./agent-session-approve";
-import { AGENT_SESSION_GLOW_STYLE } from "./agent-session-glow";
 import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
 import {
 	AgentSessionLifecycle,
@@ -65,40 +64,7 @@ import {
 import { useAgentSessionMenu } from "./use-agent-session-menu";
 
 const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] as const }; // duration-fast + ease-in
-const STATUS_GLOW_TRANSITION = {
-	duration: 0.6, // duration-slowest: hold through the card arrival and glyph swap
-	ease: [0.4, 1, 0.6, 1] as const, // ease-out-practical
-	times: [0, 0.25, 0.65, 1],
-};
-const STATUS_GLOW_STYLE: CardGlowCSSProperties = {
-	...AGENT_SESSION_GLOW_STYLE,
-	"--card-glow-pointer-x": -1,
-	"--card-glow-pointer-y": 0,
-	"--card-glow-proximity": 1,
-};
-
-function AgentSessionStateChangeGlow({ item, onComplete }: Readonly<{
-	item: AgentSessionItem;
-	onComplete?: () => void;
-}>) {
-	return (
-		<motion.span
-			animate={{ opacity: [0, 1, 1, 0] }}
-			aria-hidden
-			className="pointer-events-none absolute inset-0 -z-[1] rounded-[inherit]"
-			data-agent-session-status-glow=""
-			initial={{ opacity: 0 }}
-			onAnimationComplete={onComplete}
-			style={{
-				...STATUS_GLOW_STYLE,
-				...cardGlowSurfaceStyle(agentSessionAccentColor(item)),
-			}}
-			transition={STATUS_GLOW_TRANSITION}
-		>
-			<CardGlowLayers baseBorder={false} />
-		</motion.span>
-	);
-}
+const STATUS_REENTRY_AVATAR_MOTION = { repeat: 0, repeatDelayMs: 0 } as const;
 
 /** Keep row registration and focus restoration tied to the departing DOM owner. */
 function useAgentSessionDepartureFocus({
@@ -172,15 +138,20 @@ function resolveAgentSessionCardMotion({
 	return {
 		animate: shouldPlayDeparture ? { opacity: 0 }
 			: shouldPlayStatusReentry
-				? { opacity: [0, 1], y: [AGENT_SESSION_ARRIVAL_OFFSET_PX, 0] }
-				: shouldPlayArrival ? { opacity: 1, y: 0 } : undefined,
+				? { opacity: [0, 1], transform: [AGENT_SESSION_TOP_ARRIVAL_TRANSFORM, "translateY(0%)"] }
+				: shouldPlayArrival ? { opacity: 1, transform: "translateY(0%)" } : undefined,
 		ariaHidden: isTransferSource || isDeparting || undefined,
 		departing: isDeparting || undefined,
-		initial: shouldPlayArrival && !isStateChanged ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false,
-		layout: shouldReduceMotion || !animateLayout || isDeparting || isStateChanged ? false : "position" as const,
-		transition: shouldPlayDeparture
+		initial: shouldPlayArrival && !isStateChanged ? { opacity: 0, transform: AGENT_SESSION_TOP_ARRIVAL_TRANSFORM } : false,
+		// Keep measuring settled rows even when filtering places them immediately.
+		layout: shouldReduceMotion || isDeparting || isStateChanged ? false : "position" as const,
+		transition: shouldReduceMotion ? { duration: 0 } : shouldPlayDeparture
 			? STATUS_DEPARTURE_TRANSITION
-			: { ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 },
+			: {
+				...AGENT_SESSION_TOP_ARRIVAL_TRANSITION,
+				delay: arrivalDelaySeconds ?? 0,
+				layout: animateLayout ? AGENT_SESSION_TOP_ARRIVAL_TRANSITION : { duration: 0 },
+			},
 		willChange: shouldPlayDeparture ? "opacity" : shouldPlayArrival ? "opacity, transform" : undefined,
 	};
 }
@@ -189,54 +160,59 @@ function resolveAgentSessionCardMotion({
 function useAgentSessionCardTransition({
 	animateLayout,
 	arrivalDelaySeconds,
-	glow,
+	hasAnimatedIdentity,
 	isArriving,
 	isDeparting,
 	isStateChanged,
 	isTransferSource,
 	item,
 	onArrivalComplete,
-	showWorkingSpinner,
 	shouldReduceMotion,
 }: Readonly<{
 	animateLayout: boolean;
 	arrivalDelaySeconds?: number;
-	glow: boolean;
+	hasAnimatedIdentity: boolean;
 	isArriving: boolean;
 	isDeparting: boolean;
 	isStateChanged: boolean;
 	isTransferSource: boolean;
 	item: AgentSessionItem;
 	onArrivalComplete?: () => void;
-	showWorkingSpinner: boolean;
 	shouldReduceMotion: boolean | null;
 }>) {
 	const [lifecycleState, setLifecycleState] = useState<AgentSessionItem["state"]>(item.state);
+	const [phase, setPhase] = useState<"arrival" | "avatar" | "status">("arrival");
 	useEffect(() => {
-		if (!isStateChanged) setLifecycleState(item.state);
-	}, [isStateChanged, item.state]);
+		if (!isStateChanged || isDeparting || shouldReduceMotion) {
+			setLifecycleState(item.state);
+			setPhase("arrival");
+		}
+	}, [isDeparting, isStateChanged, item.state, shouldReduceMotion]);
 	// The beat, not the mark: remounting an unreviewed card must not replay it.
 	const shouldPlayArrival = isArriving && !isDeparting && !shouldReduceMotion;
 	const shouldPlayDeparture = isDeparting && !shouldReduceMotion;
-	const shouldPlayStatusReentry = shouldPlayArrival && isStateChanged;
-	const shouldPlayStateChangeGlow = isStateChanged && !isDeparting && !shouldReduceMotion;
+	const shouldPlayStatusReentry = shouldPlayArrival && isStateChanged && phase === "arrival";
+	const shouldRotateAvatar = phase === "avatar" && !isDeparting && !shouldReduceMotion;
 	// A first-place change has no card arrival; swap its lifecycle glyph in place.
-	const shownLifecycleState = shouldPlayStatusReentry ? lifecycleState : item.state;
+	const shownLifecycleState = shouldPlayStatusReentry || shouldRotateAvatar ? lifecycleState : item.state;
 	const handleArrivalComplete = () => {
-		if (shouldPlayArrival) {
-			if (isStateChanged) {
-				setLifecycleState(item.state);
-			}
+		if (shouldPlayArrival && phase === "arrival") {
+			const rotateAvatar = isStateChanged && hasAnimatedIdentity;
+			setPhase(rotateAvatar ? "avatar" : "status");
+			if (!rotateAvatar) setLifecycleState(item.state);
 			onArrivalComplete?.();
 		}
 	};
+	const handleAvatarComplete = () => {
+		setLifecycleState(item.state);
+		setPhase("status");
+	};
 	return {
 		handleArrivalComplete,
-		paintsGlow: glow || shouldPlayStateChangeGlow,
+		handleAvatarComplete,
 		shouldPlayDeparture,
-		shouldPlayStateChangeGlow,
+		shouldRotateAvatar,
 		shownLifecycleState,
-		stateAwareTitle: showWorkingSpinner && item.state === "running" && !shouldReduceMotion,
 		rowMotion: resolveAgentSessionCardMotion({
 			animateLayout,
 			arrivalDelaySeconds,
@@ -383,7 +359,7 @@ export function AgentSessionCard({
 	/** Work items the menu's Link work item submenu offers. */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
-	const shouldReduceMotion = useReducedMotion();
+	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	// The glow reads the pointer on the list item, not the article: the article
 	// spreads the drag binding, which owns `onPointerMove`. Custom properties
 	// inherit, so the layers inside still see what the item writes.
@@ -434,23 +410,21 @@ export function AgentSessionCard({
 	const showSelectedFill = isMarked || (isSelected && mark == null);
 	const {
 		handleArrivalComplete,
-		paintsGlow,
+		handleAvatarComplete,
 		rowMotion,
 		shouldPlayDeparture,
-		shouldPlayStateChangeGlow,
+		shouldRotateAvatar,
 		shownLifecycleState,
-		stateAwareTitle,
 	} = useAgentSessionCardTransition({
 		animateLayout,
 		arrivalDelaySeconds,
-		glow,
+		hasAnimatedIdentity: (density !== "long" || mark != null) && item.invokedBy !== undefined && item.agent.kind !== "person",
 		isArriving,
 		isDeparting,
 		isStateChanged,
 		isTransferSource,
 		item,
 		onArrivalComplete,
-		showWorkingSpinner,
 		shouldReduceMotion,
 	});
 
@@ -569,12 +543,14 @@ export function AgentSessionCard({
 			? <AgentSessionExpiredHint />
 			: <AgentSessionLifecycle
 				accessibleState={item.state}
+				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
 				showLabel={showLifecycleLabel}
 				state={shownLifecycleState}
 			/>
 		: <AgentSessionShortLifecycleIcon
 			accessibleState={item.state}
 			animateTransition={isStateChanged}
+			onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
 			showWorkingSpinner={showWorkingSpinner}
 			state={shownLifecycleState}
 		/>;
@@ -640,11 +616,11 @@ export function AgentSessionCard({
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
 			initial={rowMotion.initial}
-			// Standalone lists move siblings for arrivals. The in-flow column opts
-			// out so board filter changes place sessions immediately.
+			// Track positions continuously; the layout transition decides whether
+			// this update makes room for an arrival or places filtered rows instantly.
 			layout={rowMotion.layout}
 			style={{
-				...(paintsGlow ? cardGlowSurfaceStyle(agentSessionAccentColor(item)) : null),
+				...(glow ? cardGlowSurfaceStyle(agentSessionAccentColor(item)) : null),
 				willChange: rowMotion.willChange,
 			}}
 			transition={rowMotion.transition}
@@ -668,7 +644,7 @@ export function AgentSessionCard({
 						"group/agent-row relative flex w-full min-w-0 cursor-default rounded-lg text-left text-text",
 						// The glow layers sit at `-z-[1]`; without a stacking context
 						// here they would escape behind the list surface.
-						paintsGlow && "isolate",
+						glow && "isolate",
 						padding === "compact" ? "px-3 py-2" : "p-3",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
@@ -705,9 +681,6 @@ export function AgentSessionCard({
 							{glow ? (
 								<CardGlowLayers baseBorder={false} bloom={glowBloom} stroke={glowStroke} />
 							) : null}
-							{shouldPlayStateChangeGlow ? (
-								<AgentSessionStateChangeGlow item={item} key={item.state} onComplete={onStateChangeComplete} />
-							) : null}
 							{isNew ? (
 						<>
 							{/* Colour never carries it alone. */}
@@ -742,6 +715,9 @@ export function AgentSessionCard({
 											attributedBy={item.invokedBy}
 											attributionOrder="agent-first"
 											sizePx={32}
+											animate={shouldRotateAvatar}
+											motion={STATUS_REENTRY_AVATAR_MOTION}
+											onAnimationComplete={handleAvatarComplete}
 										/>
 									);
 
@@ -764,7 +740,7 @@ export function AgentSessionCard({
 									);
 								}}
 								showHoverActionsWhenSelected
-								stateAwareTitle={stateAwareTitle}
+								stateAwareTitle={false}
 							/>
 						</article>
 					);

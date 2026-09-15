@@ -5419,7 +5419,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 445,
+			"manifestEntryCount": 446,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -6991,7 +6991,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 74,
+				"entryCount": 75,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -7154,6 +7154,12 @@
 						"slug": "hover-reveal-row",
 						"name": "Hover Reveal Row",
 						"importPath": "@/components/ui-custom/hover-reveal-row"
+					},
+					{
+						"category": "ui-custom",
+						"slug": "human-agent-avatar",
+						"name": "Human Agent Avatar",
+						"importPath": "@/components/ui-custom/human-agent-avatar"
 					},
 					{
 						"category": "ui-custom",

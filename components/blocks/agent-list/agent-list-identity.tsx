@@ -1,6 +1,7 @@
 "use client";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { HumanAgentAvatar, type HumanAgentAvatarOrder, type HumanAgentAvatarProps } from "@/components/ui-custom/human-agent-avatar";
 import {
 	Avatar,
 	AvatarFallback,
@@ -13,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { actorInitials } from "./agent-list-actor";
 import type { AgentListAgent, AgentListInvoker } from "./agent-list-types";
 
-export type AgentListAttributionOrder = "agent-first" | "human-first";
+export type AgentListAttributionOrder = HumanAgentAvatarOrder;
 
 function orderAttributionAvatars<T>(
 	attributionOrder: AgentListAttributionOrder,
@@ -30,34 +31,6 @@ const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>>
 	16: "xs",
 	24: "sm",
 	32: "default",
-};
-
-/** The human + agent attribution frame keeps the composite at the row footprint. */
-const PX_TO_IDENTITY_FRAME_CLASS_NAME: Record<number, string> = {
-	16: "size-4",
-	20: "size-5",
-	24: "size-6",
-	32: "size-8",
-	40: "size-10",
-	48: "size-12",
-};
-
-/** The composite keeps the agent mark one step smaller than its attribution frame. */
-const PX_TO_ATTRIBUTED_AGENT_SIZE: Record<number, number> = {
-	24: 16,
-	32: 24,
-	40: 32,
-	48: 40,
-};
-
-const PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE: Record<
-	number,
-	NonNullable<AvatarProps["size"]>
-> = {
-	24: "xs",
-	32: "xs",
-	40: "sm",
-	48: "sm",
 };
 
 export function AgentListAttributionAvatarGroup({
@@ -124,62 +97,28 @@ export function AgentListIdentity({
 	attributedBy,
 	attributionOrder = "human-first",
 	className,
+	motion,
+	onAnimationComplete,
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
-	animate?: boolean;
 	attributedBy?: AgentListInvoker;
 	attributionOrder?: AgentListAttributionOrder;
 	className?: string;
 	sizePx: number;
-}>) {
+} & Pick<HumanAgentAvatarProps, "animate" | "motion" | "onAnimationComplete">>) {
 	if (attributedBy !== undefined && agent.kind !== "person") {
-		const frameClassName = PX_TO_IDENTITY_FRAME_CLASS_NAME[sizePx] ?? "size-8";
-		const agentSizePx = PX_TO_ATTRIBUTED_AGENT_SIZE[sizePx] ?? sizePx;
-		const personAvatarSize = PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE[sizePx] ?? "xs";
-		const agentFirst = attributionOrder === "agent-first";
-		const personPositionClassName = agentFirst
-			? "absolute bottom-0 right-0 ring-2 ring-background"
-			: "absolute left-0 top-0 ring-2 ring-background";
-		const agentPositionClassName = agentFirst
-			? "absolute left-0 top-0"
-			: "absolute bottom-0 right-0";
-		const personAvatar = (
-			<Avatar
-				animate={animate}
-				aria-hidden="true"
-				className={personPositionClassName}
-				key="person"
-				label=""
-				size={personAvatarSize}
-			>
-				{attributedBy.avatarSrc ? (
-					<AvatarImage alt="" src={attributedBy.avatarSrc} />
-				) : null}
-				<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
-			</Avatar>
-		);
-		const agentAvatar = (
-			<span aria-hidden="true" className={agentPositionClassName} key="agent">
-				<AgentAvatarVisual
-					animate={animate}
-					avatarSrc={agent.avatarSrc}
-					brandName={agent.brandName}
-					label=""
-					sizePx={agentSizePx}
-					vpkLogo={agent.vpkLogo}
-				/>
-			</span>
-		);
-
 		return (
-			<span
-				aria-label={`${agent.name}, used by ${attributedBy.name}`}
-				className={cn("relative block shrink-0", frameClassName, className)}
-				role="img"
-			>
-				{orderAttributionAvatars(attributionOrder, agentAvatar, personAvatar)}
-			</span>
+			<HumanAgentAvatar
+				agent={agent}
+				human={attributedBy}
+				attributionOrder={attributionOrder}
+				className={className}
+				sizePx={sizePx}
+				animate={animate}
+				motion={motion}
+				onAnimationComplete={onAnimationComplete}
+			/>
 		);
 	}
 

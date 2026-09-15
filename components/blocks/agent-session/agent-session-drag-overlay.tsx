@@ -90,7 +90,9 @@ export function AgentSessionDragOverlay({
 		});
 		return () => {
 			active = false;
-			for (const animation of animations) animation.stop();
+			// stop() commits a motion value and queues a render after this cleanup;
+			// cancellation removes the effect without restoring a stale transform.
+			for (const animation of animations) animation.cancel();
 			for (const element of moving) {
 				element.style.willChange = "";
 				element.style.transform = "";

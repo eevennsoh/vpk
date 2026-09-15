@@ -159,7 +159,7 @@ export default function PeelDemo() {
 					rotation={-5.9}
 					tuning={overrides}
 				/> : null}
-				<div aria-hidden={object === "stamp" ? true : undefined} inert={object === "stamp" ? true : undefined} className={object === "stamp" ? "pointer-events-none absolute inset-6 opacity-0" : "w-full"}>
+				<div data-peel-session-visibility={object === "stamp" ? "hidden" : "visible"} aria-hidden={object === "stamp" ? true : undefined} inert={object === "stamp" ? true : undefined} className={object === "stamp" ? "pointer-events-none absolute inset-6 opacity-0" : "w-full"}>
 					<Suspense fallback={null}><PeelSessionDemo active={object === "agent-session"} /></Suspense>
 				</div>
 			</div>

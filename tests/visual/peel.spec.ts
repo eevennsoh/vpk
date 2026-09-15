@@ -55,6 +55,7 @@ test("Claude's avatar-coloured flash passes through the card face and fades with
 	expect(await overlay.locator("[data-peel-surface]").evaluate((element) => getComputedStyle(element).getPropertyValue("--peel-flash-color").trim())).toBe(accent);
 	const canvas = overlay.locator("canvas");
 	const pill = (await overlay.locator("[data-peel-native-source] [data-session-drag-pill]").boundingBox())!;
+	const identity = (await overlay.locator("[data-peel-native-source] [data-session-drag-identity]").boundingBox())!;
 	const canvasBox = (await canvas.boundingBox())!;
 	// Capture the rendered frame directly: locator screenshots wait for the
 	// pointer spring to become stationary, which can outlast this short flash.
@@ -63,7 +64,7 @@ test("Claude's avatar-coloured flash passes through the card face and fades with
 	const sustained = await page.screenshot({ clip: canvasBox, path: "output/agent-browser/peel/claude-peel-flash-sustained.png" });
 	await page.waitForTimeout(1_000);
 	const faded = await page.screenshot({ clip: canvasBox, path: "output/agent-browser/peel/claude-peel-flash-faded.png" });
-	const countFlashPixels = async (png: Buffer) => page.evaluate(async ({ png, pill, canvasBox }) => {
+	const countFlashPixels = async (png: Buffer) => page.evaluate(async ({ png, pill, identity, canvasBox }) => {
 		const image = new Image();
 		image.src = `data:image/png;base64,${png}`;
 		await image.decode();
@@ -83,13 +84,13 @@ test("Claude's avatar-coloured flash passes through the card face and fades with
 				const i = (y * image.width + x) * 4;
 				if (pixels[i] - pixels[i + 1] <= 6 || pixels[i + 1] - pixels[i + 2] <= 2) continue;
 				// Read the white face beyond the avatars, preserving its text.
-				if (cssX >= pill.x + 52 && cssX <= pill.x + pill.width - 10 && cssY >= pill.y + 6 && cssY <= pill.y + pill.height - 6 && pixels[i + 2] > 130) face++;
+				if (cssX >= identity.x + identity.width + 12 && cssX <= pill.x + pill.width - 10 && cssY >= pill.y + 6 && cssY <= pill.y + pill.height - 6 && pixels[i + 2] > 130) face++;
 				// Clear the bent outline and shadow, and avoid the receiver above.
 				if (cssX >= pill.x - 4 && cssX <= pill.x + pill.width + 4 && cssY >= pill.y + pill.height + 14 && cssY <= pill.y + pill.height + 28) exterior++;
 			}
 		}
 		return { face, exterior };
-	}, { png: png.toString("base64"), pill, canvasBox });
+	}, { png: png.toString("base64"), pill, identity, canvasBox });
 	const litPixels = await countFlashPixels(glowing);
 	expect(litPixels.face).toBeGreaterThan(30);
 	expect(litPixels.exterior).toBe(0);
@@ -167,7 +168,13 @@ test("the prepared Claude wave joins the morph within two frames and parks betwe
 		expect(await page.evaluate(() => (window as typeof window & { peelHandoff: { frames: number } }).peelHandoff.frames)).toBe(parkedFrames);
 	}
 	await page.getByRole("button", { name: "Stamp", exact: true }).click();
-	await expect(page.locator("[data-session-preview-idle], [data-peel-surface]")).toHaveCount(0);
+	await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(0);
+	await expect(page.locator('[data-peel-session-visibility="hidden"][aria-hidden="true"][inert]')).toHaveCount(1);
+	await expect(page.locator('[data-peel-session-visibility="hidden"] .shimmer')).toHaveCount(0);
+	await page.waitForTimeout(100);
+	const frames = await page.evaluate(() => (window as typeof window & { peelHandoff: { frames: number } }).peelHandoff.frames);
+	await page.waitForTimeout(200);
+	expect(await page.evaluate(() => (window as typeof window & { peelHandoff: { frames: number } }).peelHandoff.frames)).toBe(frames);
 });
 
 test("the font stylesheet stays readable and drag capture logs no CSSOM security errors", async ({ page }) => {
