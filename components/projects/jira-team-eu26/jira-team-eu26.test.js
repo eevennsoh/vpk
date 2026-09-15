@@ -105,6 +105,14 @@ test("Background color paints the Kanban plane while preserving the Agent Sessio
 		/designVariants\.kanbanBackground \? "bg-bg-accent-gray-subtlest" : "bg-surface"/u,
 	);
 	assert.match(PAGE_SOURCE, /data-jira-team-eu26-board-surface=""/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/className="relative flex h-full min-h-\[640px\] flex-col"/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/className="relative flex h-full min-h-\[640px\] flex-col bg-surface"/u,
+	);
 });
 
 test("the Dragging property controls session-column width resizing", () => {

@@ -895,7 +895,7 @@ function ExperimentalJiraKanbanPageContent({
 	});
 	return (
 		<div
-			className="relative flex h-full min-h-[640px] flex-col bg-surface"
+			className="relative flex h-full min-h-[640px] flex-col"
 			ref={boardSessionDrag.boardRootRef}
 			style={{ [UNTRACKED_PANEL_WIDTH_CSS_VAR]: `${untrackedPanelFabInsetPx}px` } as CSSProperties}
 		>

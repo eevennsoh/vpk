@@ -9,7 +9,7 @@ import {
 	type ReactNode,
 	type RefCallback,
 } from "react";
-import { useReducedMotion } from "motion/react";
+import { useReducedMotion, type Transition } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 
@@ -46,6 +46,12 @@ import {
 	resolveAgentSessionColumnLayout,
 	type AgentSessionColumnLayout,
 } from "./agent-session-column-frame";
+import { AgentSessionColumnSurface } from "./agent-session-column-surface";
+import {
+	AGENT_SESSION_UNDERLAP_SHADOW_ENTER,
+	AGENT_SESSION_UNDERLAP_SHADOW_EXIT,
+	AGENT_SESSION_UNDERLAP_SHADOW_REDUCED,
+} from "./agent-session-column-underlap";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
 import {
 	AGENT_SESSION_DECK_END_SPACE_PX,
@@ -84,34 +90,40 @@ const AGENT_SESSION_COLUMN_TRANSITION = "width var(--duration-medium) var(--ease
  *
  * Caption (simple / default omit): the header is a sibling of this plane so
  * it shares an inset and baseline with `To do`. Enclosed (default board
- * chrome): the expanded header is a child of the well, matching the status
- * columns that wrap title and cards in one painted object. Collapsed never
- * wears that well — a 32px bordered capsule next to a hugging status pill
- * reads as a different object, and the extra inset knocks the two counts
- * off the same row. Panel ignores framing and keeps the fill without a
- * nested well — the docked chrome already draws the leading hairline.
+ * chrome): header and body share one painted well — expanded and collapsed
+ * alike — matching the status columns that wrap title and cards in one
+ * object. Gutter rest is the exception: the tucked rail stays unframed so
+ * it can sit in the page inset without a 32px bordered capsule. Panel
+ * ignores framing and keeps the fill without a nested well — the docked
+ * chrome already draws the leading hairline.
  *
  * The list is the scrollport. Expanded in-flow caption, the plane is a
  * bordered well (`radius.xlarge`) that clips fades and the hidden-work
  * footer so they cannot paint over the 1px stroke. Enclosed moves
  * `overflow-hidden` onto the list/footer region so header focus rings are
  * not sliced, and that clip carries the well's bottom radius so the fade
- * cannot wash out the bottom corners. Collapsed, the rail sits in the
- * unframed fill. Cards are
- * borderless. Expanded in-flow uses the same 4px list inset and row gap as
- * the panel; adjacent marked cards fuse across that gap.
+ * cannot wash out the bottom corners. Collapsed enclosed (column
+ * presentation) keeps the rail inside that same well so the count and
+ * markers share one rounded object. Gutter rest leaves the rail in the
+ * unframed fill. Cards are borderless. Expanded in-flow uses the same 4px
+ * list inset and row gap as the panel; adjacent marked cards fuse across
+ * that gap.
  */
 const AGENT_SESSION_PLANE =
 	"relative flex min-h-0 min-w-0 flex-1 flex-col bg-surface";
 
+/**
+ * Transparent 1px keeps To-do count alignment. Expanded rest paints
+ * `border-border-disabled` over this; underlap and collapsed leave it unpainted.
+ */
 const AGENT_SESSION_WELL_PAINT = cn(
 	AGENT_SESSION_PLANE,
-	"rounded-xl border border-solid border-border-disabled",
+	"rounded-xl border border-solid border-transparent",
 );
 
 const AGENT_SESSION_WELL = cn(
 	AGENT_SESSION_PLANE,
-	"overflow-hidden rounded-xl border border-solid border-border-disabled",
+	"overflow-hidden rounded-xl border border-solid border-transparent",
 );
 
 /**
@@ -135,9 +147,18 @@ const AGENT_SESSION_LIST_SPACING = "gap-1 p-1";
 const AGENT_SESSION_ENCLOSED_BODY =
 	"flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-b-xl";
 
+const AGENT_SESSION_OVERLAY_SHADOW = token("elevation.shadow.overlay");
+const AGENT_SESSION_WELL_STROKE = token("color.border.disabled");
+/**
+ * space.100 — the painted well grows this far above and below its slot
+ * while status columns underlap, so the well is 16px taller, not shorter.
+ */
+const AGENT_SESSION_UNDERLAP_GROW_PX = 8;
+
 function resolveAgentSessionPlaneClassName(
 	layout: AgentSessionColumnLayout,
 	collapsed: boolean,
+	isGutterCollapsed: boolean,
 ): string {
 	switch (layout) {
 		case "panel":
@@ -145,7 +166,7 @@ function resolveAgentSessionPlaneClassName(
 		case "caption":
 			return collapsed ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL;
 		case "enclosed":
-			return collapsed ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;
+			return isGutterCollapsed ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;
 		default: {
 			const exhaustive: never = layout;
 			return exhaustive;
@@ -156,40 +177,73 @@ function resolveAgentSessionPlaneClassName(
 function renderAgentSessionColumnFrame({
 	body,
 	bodyHidden,
-	collapsed,
+	borderColor,
+	boxShadow,
 	header,
+	isGutterCollapsed,
 	layout,
+	marginBlock,
 	planeClassName,
+	shadowTransition,
 }: Readonly<{
 	body: ReactNode;
 	bodyHidden: boolean;
-	collapsed: boolean;
+	borderColor: string;
+	boxShadow: string;
 	header: ReactNode;
+	isGutterCollapsed: boolean;
 	layout: AgentSessionColumnLayout;
+	marginBlock: number;
 	planeClassName: string;
+	shadowTransition: Transition;
 }>): ReactNode {
+	const plane = (
+		<AgentSessionColumnSurface
+			borderColor={borderColor}
+			boxShadow={boxShadow}
+			className={planeClassName}
+			hidden={bodyHidden}
+			marginBlock={marginBlock}
+			transition={shadowTransition}
+		>
+			{body}
+		</AgentSessionColumnSurface>
+	);
 	switch (layout) {
 		case "panel":
 		case "caption":
 			return (
 				<>
 					{header}
-					<div aria-hidden={bodyHidden || undefined} inert={bodyHidden} className={planeClassName}>{body}</div>
+					{plane}
 				</>
 			);
 		case "enclosed":
-			return collapsed ? (
+			return isGutterCollapsed ? (
 				<>
 					{header}
-					<div aria-hidden={bodyHidden || undefined} inert={bodyHidden} className={planeClassName}>{body}</div>
+					{plane}
 				</>
 			) : (
-				<div className={planeClassName}>
+				<AgentSessionColumnSurface
+					borderColor={borderColor}
+					boxShadow={boxShadow}
+					className={planeClassName}
+					marginBlock={marginBlock}
+					transition={shadowTransition}
+				>
 					{header}
-					<div className={AGENT_SESSION_ENCLOSED_BODY}>
+					<div
+						aria-hidden={bodyHidden || undefined}
+						className={cn(
+							AGENT_SESSION_ENCLOSED_BODY,
+							bodyHidden ? "invisible" : null,
+						)}
+						inert={bodyHidden || undefined}
+					>
 						{body}
 					</div>
-				</div>
+				</AgentSessionColumnSurface>
 			);
 		default: {
 			const exhaustive: never = layout;
@@ -305,11 +359,12 @@ const AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE = `${AGENT_SESSION_DECK_END_SPACE_PX}
  * per-session markers. Circular user dots are the default; `notchShape="line"`
  * preserves the original horizontal marks. Both open the session flyout on
  * hover or keyboard focus. See
- * {@link AgentSessionColumnRail}. Collapsed drops the well so the count
- * shares the status pill's 24px header slot instead of sitting inside a
- * full-height bordered rail. `collapsedPresentation="gutter"` hides that
- * count and the expand icon at rest, while keeping the expand control in
- * the same slot for keyboard. Hover preview uses `"column"` so both return.
+ * {@link AgentSessionColumnRail}. Enclosed collapsed keeps the well so
+ * the count and rail share one rounded object with the status columns;
+ * gutter rest drops that well so the tucked rail can sit in the page inset.
+ * `collapsedPresentation="gutter"` hides that count and the expand icon at
+ * rest, while keeping the expand control in the same slot for keyboard.
+ * Hover preview uses `"column"` so both return.
  * Hosts that supply `collapsedMenu` replace that Expand button with their
  * own control (in-flow: a "…" options menu). `onPinnedChange` adds a pin
  * affordance to the expanded header; omit it and the pin control stays off.
@@ -338,6 +393,7 @@ export function AgentSessionColumn({
 	glowReach = true,
 	glowStroke = true,
 	hasScrollingEffect = false,
+	showTrailingShadow = false,
 	widthTransitionDisabled = false,
 	items = AGENT_SESSION_ITEMS,
 	listClassName,
@@ -615,11 +671,36 @@ export function AgentSessionColumn({
 
 	const layout = resolveAgentSessionColumnLayout(headerSurface, columnFrame);
 	const isGutterCollapsed = collapsed && collapsedPresentation === "gutter";
+	const wearEnclosedWell = layout === "enclosed" && !isGutterCollapsed;
+	const elevatePlane = showTrailingShadow && !isGutterCollapsed;
+	// Expanded rest uses the 1px disabled stroke. Underlap swaps that stroke
+	// for overlay shadow — stacking both reads as a double edge. Collapsed
+	// never paints a stroke. The color snaps (transparent ↔ token does not
+	// interpolate); Motion still tweens the shadow and grow.
+	const paintWellStroke = wearEnclosedWell && !collapsed && !elevatePlane;
+	// Rest keeps the in-flow hover band so the expand control is easy to hit
+	// beside the 32px rail — that rect may sit outside the painted well.
+	// Underlap elevates the well into the container; the same band would hang
+	// the trigger off that container, so the hit area shrinks to the well.
+	const collapsedHitSlopPx = wearEnclosedWell && elevatePlane ? 0 : collapsedRailHitSlopPx;
 	const planeClassName = cn(
-		resolveAgentSessionPlaneClassName(layout, collapsed),
+		resolveAgentSessionPlaneClassName(layout, collapsed, isGutterCollapsed),
 		isGutterCollapsed ? "bg-transparent" : null,
-		collapsed && isRepositioning ? "invisible" : null,
+		wearEnclosedWell
+			? paintWellStroke ? "border-border-disabled" : "border-transparent"
+			: null,
+		collapsed && isRepositioning && !wearEnclosedWell ? "invisible" : null,
 	);
+	const planeBorderColor = paintWellStroke ? AGENT_SESSION_WELL_STROKE : "transparent";
+	const planeBoxShadow = elevatePlane ? AGENT_SESSION_OVERLAY_SHADOW : "none";
+	const planeMarginBlock = elevatePlane && wearEnclosedWell
+		? -AGENT_SESSION_UNDERLAP_GROW_PX
+		: 0;
+	const planeShadowTransition = shouldReduceMotion
+		? AGENT_SESSION_UNDERLAP_SHADOW_REDUCED
+		: elevatePlane
+			? AGENT_SESSION_UNDERLAP_SHADOW_ENTER
+			: AGENT_SESSION_UNDERLAP_SHADOW_EXIT;
 	// Gutter rest hides the digits and the expand icon so the rail can sit
 	// in the page inset. Hover preview switches to column presentation, so
 	// the same 24px slot shows the count and the expand control again.
@@ -663,17 +744,14 @@ export function AgentSessionColumn({
 	const collapsedHeader = (
 		<div
 			data-agent-session-column-header=""
-			className={cn(
-				"flex min-w-0 items-center gap-1.5",
-				layout === "enclosed" ? "border border-solid border-transparent" : null,
-			)}
+			className="flex min-w-0 items-center gap-1.5"
 			style={resolveCollapsedHeaderStyle(layout)}
 		>
 			<div
 				className="relative flex h-6 w-full min-w-0 items-center justify-center px-1"
-				style={collapsedRailHitSlopPx === 0
+				style={collapsedHitSlopPx === 0
 					? undefined
-					: toAgentSessionRailHitSlopStyle(collapsedRailHitSlopPx)}
+					: toAgentSessionRailHitSlopStyle(collapsedHitSlopPx)}
 			>
 				{collapsedExpandControl}
 				<span
@@ -727,7 +805,7 @@ export function AgentSessionColumn({
 			getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
 			getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
 			highlightedItemId={sessionProps.highlightedItemId}
-			hitSlopPx={collapsedRailHitSlopPx}
+			hitSlopPx={collapsedHitSlopPx}
 			items={displayedItems}
 			maxVisibleItems={isGutterCollapsed && collapsedRailHitSlopPx === 0
 				? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS
@@ -833,7 +911,9 @@ export function AgentSessionColumn({
 			aria-label={`${displayTitle}, ${sessionCount} sessions`}
 			className={cn(
 				"group/session-column relative flex min-h-0 shrink-0 flex-col",
-				(collapsed && collapsedRailHitSlopPx === 0) || isResizing ? "overflow-hidden" : null,
+				!elevatePlane && ((collapsed && collapsedRailHitSlopPx === 0) || isResizing)
+					? "overflow-hidden"
+					: null,
 				className,
 			)}
 			data-agent-session-column={title}
@@ -863,10 +943,14 @@ export function AgentSessionColumn({
 					</CardGlowSurfaceContext>
 				),
 				bodyHidden: collapsed && isRepositioning,
-				collapsed,
+				borderColor: planeBorderColor,
+				boxShadow: planeBoxShadow,
 				header: collapsed ? collapsedHeader : expandedHeader,
+				isGutterCollapsed,
 				layout,
+				marginBlock: planeMarginBlock,
 				planeClassName,
+				shadowTransition: planeShadowTransition,
 			})}
 		</section>
 	);

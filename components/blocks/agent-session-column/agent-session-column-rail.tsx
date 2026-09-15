@@ -62,7 +62,7 @@ export { AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS } from "./agent-session-column-rai
  * different: its contents are sessions, each of which is a live thing worth
  * reaching, so it collapses into a rail of compact markers instead of a label —
  * one per session, in list order. The count and expand control live in the
- * column header above this plane, not on the rail.
+ * column header, not on the rail.
  *
  * Circular markers are the default and are the compact form of the same human
  * avatar shown on the expanded card. The dock grows nearby dots from 4px toward
