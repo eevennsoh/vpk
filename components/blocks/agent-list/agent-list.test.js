@@ -253,9 +253,10 @@ test("rows carry an optional summary below metadata, leading metadata, and a sta
 	);
 	// A pre-formatted stamp wins outright, so a historical list runs no per-row
 	// one-second interval to age a fact that cannot change.
+	assert.match(CARD_SOURCE, /import \{ toCompactRelativeTimeLabel \} from "@\/lib\/elapsed-time";/u);
 	assert.match(
 		CARD_SOURCE,
-		/if \(item\.timeLabel !== undefined\) \{\s*return <span>\{item\.timeLabel\}<\/span>;/u,
+		/if \(item\.timeLabel !== undefined\) \{\s*return <span>\{toCompactRelativeTimeLabel\(item\.timeLabel\)\}<\/span>;/u,
 	);
 	assert.match(DATA_SOURCE, /summary:\s*"Extracted shared helpers from the checkout path/u);
 	assert.match(DETAIL_SOURCE, /Optional `summary` copy wraps below that metadata/u);

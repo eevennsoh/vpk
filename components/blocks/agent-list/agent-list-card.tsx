@@ -30,6 +30,7 @@ import {
 	createHoverCardHandle,
 } from "@/components/ui/hover-card";
 import { IconTile } from "@/components/ui/icon-tile";
+import { toCompactRelativeTimeLabel } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 import { AgentListIdentity } from "./agent-list-identity";
@@ -251,7 +252,7 @@ export function AgentListTime({
 	);
 
 	if (item.timeLabel !== undefined) {
-		return <span>{item.timeLabel}</span>;
+		return <span>{toCompactRelativeTimeLabel(item.timeLabel)}</span>;
 	}
 
 	const isLive = !isLocalAgentListItem(item)

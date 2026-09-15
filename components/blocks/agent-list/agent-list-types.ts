@@ -140,13 +140,15 @@ export interface AgentListItem {
 	 */
 	metadataPrefix?: string;
 	/**
-	 * Pre-formatted time shown verbatim in place of the live runtime or relative
-	 * clock. Relative labels use compact units (`"32m ago"`, `"1hr ago"`,
-	 * `"3d ago"`) and title-case named periods (`"Just now"`, `"Yesterday"`,
-	 * `"Last week"`). Calendar stamps (`"Tue 18 Aug"`) are also allowed.
-	 * Historical rows use it so the list does not run a per-row one-second
-	 * interval to age a fact that cannot change. Local sessions always read as
-	 * a static stamp, even without this field.
+	 * Pre-formatted time shown in place of the live runtime or relative clock.
+	 * `AgentListTime` runs it through `toCompactRelativeTimeLabel`, which drops
+	 * a trailing `" ago"` and spells hours as `hr` so `5hr` cannot be read as
+	 * months next to `5m`. Authored labels may still use `"32m ago"` / `"5h ago"`;
+	 * named periods (`"Just now"`, `"Yesterday"`, `"Last week"`) and calendar
+	 * stamps (`"Tue 18 Aug"`) pass through. Historical rows use it so the list
+	 * does not run a per-row one-second interval to age a fact that cannot
+	 * change. Local sessions always read as a static stamp, even without this
+	 * field.
 	 */
 	timeLabel?: string;
 	/**

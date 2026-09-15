@@ -93,7 +93,7 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 			name: "Jordan Okafor",
 		},
 		machineName: "Work Laptop",
-		timeLabel: "18m ago",
+		timeLabel: "18m",
 		toolCalls: [
 			"Searching the codebase for affected paths.",
 			"Updating the shared implementation.",
@@ -176,7 +176,7 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 			name: "Venn",
 		},
 		machineName: "Telemetry MacBook",
-		timeLabel: "7m ago",
+		timeLabel: "7m",
 		toolCalls: [
 			"Searching the checkout telemetry events.",
 			"Reading the relevant logs.",

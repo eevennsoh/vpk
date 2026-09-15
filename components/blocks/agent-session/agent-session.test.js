@@ -146,8 +146,19 @@ test("short uncaptured-work rows restore the owner byline", () => {
 	assert.doesNotMatch(METADATA_SOURCE, /<TooltipTrigger[\s\S]*<button/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "host"/u);
-	// PR details stay in the flyout for the short row, and the machine name still
-	// belongs to the flyout host chip rather than any metadata line.
+	// A linked PR sits between the agent and the host/time clause. Title and
+	// machine name still belong to the flyout rather than this compact line.
+	assert.match(
+		METADATA_SOURCE,
+		/export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*<AgentListPrStatusIcon status=\{item\.prStatus \?\? "created"\} \/>[\s\S]*\{pullRequestLabel\}/u,
+	);
+	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`/u);
+	assert.match(
+		METADATA_SOURCE,
+		/className="text-nowrap text-text-subtlest underline-offset-2 hover:underline"[\s\S]*\{pullRequestLabel\}/u,
+	);
+	assert.doesNotMatch(METADATA_SOURCE, /<a[\s\S]*\{pullRequestLabel\}/u);
+	assert.doesNotMatch(METADATA_SOURCE, /href=\{item\.sessionDetails\?\.pullRequestUrl/u);
 	assert.doesNotMatch(CARD_SOURCE, /pullRequest/u);
 	assert.doesNotMatch(CARD_SOURCE, /MetadataPathLink/u);
 	assert.doesNotMatch(METADATA_SOURCE, /MetadataPathLink/u);
@@ -167,7 +178,7 @@ test("short uncaptured-work rows restore the owner byline", () => {
 	assert.match(DATA_SOURCE, /prStatus: "created"/u);
 	assert.match(DATA_SOURCE, /prStatus: "merged"/u);
 	assert.match(DATA_SOURCE, /prStatus: "failed"/u);
-	assert.match(DATA_SOURCE, /id: "lw-no-pr-session"[\s\S]*timeLabel: "7m ago"[\s\S]*sessionDetails:/u);
+	assert.match(DATA_SOURCE, /id: "lw-no-pr-session"[\s\S]*timeLabel: "7m"[\s\S]*sessionDetails:/u);
 	assert.doesNotMatch(/id: "lw-no-pr-session"[\s\S]*?\n\t\},/u.exec(DATA_SOURCE)?.[0] ?? "", /pullRequestNumber/u);
 });
 
@@ -911,7 +922,7 @@ test("ships demo data and catalog entries for every attachment and size variant"
 	assert.match(DATA_SOURCE, /brandName: "cursor"/u);
 	assert.match(DATA_SOURCE, /vpkLogo: "rovo"/u);
 	assert.doesNotMatch(DATA_SOURCE, /Venn’s MacBook/u);
-	assert.match(DATA_SOURCE, /timeLabel: "18m ago"/u);
+	assert.match(DATA_SOURCE, /timeLabel: "18m"/u);
 	assert.match(DATA_SOURCE, /issueKey: "PAY-101"/u);
 	assert.match(PAGE_SOURCE, /<AgentSession/u);
 	assert.match(PAGE_SOURCE, /case "expired":\s*return "Expired";/u);
