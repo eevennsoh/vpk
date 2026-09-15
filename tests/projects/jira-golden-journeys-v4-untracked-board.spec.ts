@@ -208,7 +208,7 @@ test("attaching onto a running session replaces that chin row instead of stackin
 	const targetCard = getIssueArticle(page, "PAY-107");
 	await targetCard.scrollIntoViewIfNeeded();
 	const runningSession = targetCard.getByRole("button", {
-		name: /^Open Claude Code in Rovo chat:/u,
+		name: /^Open Claude in Rovo chat:/u,
 	});
 	await expect(runningSession).toBeVisible();
 	const restingBox = await targetCard.boundingBox();
@@ -952,7 +952,7 @@ test("session flyouts close for a Jira card drag and recover after drag end", as
 		name: /^Open Codex in Rovo chat:/u,
 	});
 	const nextSession = getIssueArticle(page, "PAY-123").getByRole("button", {
-		name: "Open Claude Code in Rovo chat: Working",
+		name: "Open Claude in Rovo chat: Working",
 	});
 	const flyout = page.locator("[data-slot='hover-card-content']");
 	await sourceSession.hover();

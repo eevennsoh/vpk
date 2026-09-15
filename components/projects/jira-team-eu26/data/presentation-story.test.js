@@ -110,7 +110,7 @@ test("the PAY board fills every existing status with coding work and the full st
 	assert.ok(cards.some((card) => card.agentActivityMode === "completed" && card.agentDoneRuns?.length));
 	assert.ok(agentCards.length <= 6, `expected a handful of agent cards, got ${agentCards.length}`);
 	assert.ok(agentBrandNames.size >= 3, "running sessions should preserve distinct coding-agent brands");
-	const allowedCodingAgentNames = new Set(["Claude Code", "Codex", "Cursor", "GitHub Copilot"]);
+	const allowedCodingAgentNames = new Set(["Claude", "Codex", "Cursor", "GitHub Copilot"]);
 	assert.ok(story.JIRA_TEAM_EU26_PAY_BOARD_AGENTS.every((agent) => (
 		allowedCodingAgentNames.has(agent.name)
 	)));
@@ -150,7 +150,7 @@ test("the PAY board fills every existing status with coding work and the full st
 		})),
 		[
 			{ host: "cloud", name: "Cursor", role: "viewer", invokedBy: "Jordan Okafor" },
-			{ host: "local", name: "Claude Code", role: "owner", invokedBy: "Venn" },
+			{ host: "local", name: "Claude", role: "owner", invokedBy: "Venn" },
 		],
 	);
 	const ownerActivities = cards

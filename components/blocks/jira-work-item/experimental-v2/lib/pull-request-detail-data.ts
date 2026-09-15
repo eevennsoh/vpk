@@ -456,7 +456,7 @@ const SAM_RIVERA: PullRequestActivityActor = {
 
 const CLAUDE_CODE: PullRequestActivityActor = {
 	id: "claude-code",
-	name: "Claude Code",
+	name: "Claude",
 	kind: "agent",
 	brandName: "claude",
 };

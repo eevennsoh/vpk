@@ -124,19 +124,19 @@ test("large uncaptured-work rows show the agent with its human invoker in a 32px
 	assert.doesNotMatch(DATA_SOURCE, /name: "person A"/u);
 });
 
-test("short uncaptured-work rows restore the owner byline", () => {
+test("short rows keep the owner byline and move settled status to the hover-action slot", () => {
 	assert.match(METADATA_SOURCE, /AgentListTime,/u);
 	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionProvenanceMetadata/u);
 	assert.doesNotMatch(CARD_SOURCE, /AgentSessionProvenanceMetadata/u);
 	assert.match(METADATA_SOURCE, /export function AgentSessionShortMetadata/u);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.match(LIST_CARD_SOURCE, /\{metadata === undefined \? \(/u);
-	assert.match(METADATA_SOURCE, /import CloudIcon from "@atlaskit\/icon-lab\/core\/cloud";[\s\S]*import QuestionCircleFilledIcon[\s\S]*import StatusSuccessIcon[\s\S]*function AgentSessionShortLifecycleIcon[\s\S]*case "needs-input":[\s\S]*aria-label="Needs input"[\s\S]*text-icon-information[\s\S]*case "complete":[\s\S]*aria-label="Finished"[\s\S]*text-icon-success[\s\S]*case "running":[\s\S]*return null;[\s\S]*<AgentSessionShortLifecycleIcon state=\{item\.state\} \/>/u);
+	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|QuestionCircleFilledIcon|StatusSuccessIcon/u);
+	assert.match(LIFECYCLE_SOURCE, /export function AgentSessionShortLifecycleIcon[\s\S]*case "needs-input":[\s\S]*aria-label="Needs input"[\s\S]*text-icon-information[\s\S]*case "complete":[\s\S]*aria-label="Finished"[\s\S]*text-icon-success[\s\S]*case "running":[\s\S]*return null;/u);
+	assert.equal((LIFECYCLE_SOURCE.match(/className="grid size-6 shrink-0 place-items-center text-icon-(?:information|success)"/gu) ?? []).length, 2);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity[\s\S]*: item\.state === "needs-input" \|\| item\.state === "complete"\s*\? <AgentSessionShortLifecycleIcon state=\{item\.state\} \/>\s*: null;/u);
 	assert.match(METADATA_SOURCE, /import ScreenIcon from "@atlaskit\/icon\/core\/screen";/u);
-	assert.match(
-		METADATA_SOURCE,
-		/export function AgentSessionHostSegment[\s\S]*isLocal \? \(\s*<ScreenIcon color="currentColor" label="" size="small" \/>\s*\) : \(\s*<CloudIcon color="currentColor" label="" size="small" \/>\s*\)/u,
-	);
+	assert.match(METADATA_SOURCE, /export function AgentSessionHostSegment[\s\S]*isLocal \? \(\s*<ScreenIcon color="currentColor" label="" size="small" \/>\s*\) : \(\s*<CloudIcon color="currentColor" label="" size="small" \/>\s*\)/u);
 	assert.match(METADATA_SOURCE, /const label = isLocal \? "Local session" : "Cloud session";/u);
 	assert.match(METADATA_SOURCE, /triggerRef\.current\?\.closest<HTMLElement>[\s\S]*scrollport\.scrollBy\([\s\S]*<TooltipContent onWheel=\{handleTooltipWheel\}/u);
 	assert.match(
@@ -146,8 +146,8 @@ test("short uncaptured-work rows restore the owner byline", () => {
 	assert.doesNotMatch(METADATA_SOURCE, /<TooltipTrigger[\s\S]*<button/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "host"/u);
-	// PR details stay in the flyout for the short row, and the machine name still
-	// belongs to the flyout host chip rather than any metadata line.
+	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`[\s\S]*export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*<AgentListPrStatusIcon status=\{item\.prStatus \?\? "created"\} \/>[\s\S]*underline-offset-2 hover:underline[\s\S]*\{pullRequestLabel\}/u);
+	assert.doesNotMatch(METADATA_SOURCE, /<a[\s\S]*href=\{item\.sessionDetails\?\.pullRequestUrl/u);
 	assert.doesNotMatch(CARD_SOURCE, /pullRequest/u);
 	assert.doesNotMatch(CARD_SOURCE, /MetadataPathLink/u);
 	assert.doesNotMatch(METADATA_SOURCE, /MetadataPathLink/u);
@@ -167,7 +167,7 @@ test("short uncaptured-work rows restore the owner byline", () => {
 	assert.match(DATA_SOURCE, /prStatus: "created"/u);
 	assert.match(DATA_SOURCE, /prStatus: "merged"/u);
 	assert.match(DATA_SOURCE, /prStatus: "failed"/u);
-	assert.match(DATA_SOURCE, /id: "lw-no-pr-session"[\s\S]*timeLabel: "7m ago"[\s\S]*sessionDetails:/u);
+	assert.match(DATA_SOURCE, /id: "lw-no-pr-session"[\s\S]*timeLabel: "7m"[\s\S]*sessionDetails:/u);
 	assert.doesNotMatch(/id: "lw-no-pr-session"[\s\S]*?\n\t\},/u.exec(DATA_SOURCE)?.[0] ?? "", /pullRequestNumber/u);
 });
 
@@ -361,7 +361,7 @@ test("the row reveals one … menu where Agent List puts its hover pair", () => 
 	assert.doesNotMatch(CARD_SOURCE, /hover:border-border(?!-disabled)/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:border-border(?!-disabled)/u);
 	assert.match(CARD_SOURCE, /hover:bg-surface-hovered/u);
-	assert.match(CARD_SOURCE, /transition-\[background-color,border-radius\] duration-xxshort ease-out-practical/u);
+	assert.match(CARD_SOURCE, /transition-\[border-radius\] duration-xxshort ease-out-practical/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:bg-white/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:bg-/u);
 	assert.doesNotMatch(CARD_SOURCE, /active:bg-/u);
@@ -635,7 +635,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /const hideIdentity = isLongDensity && mark == null;/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hideIdentity=\{hideIdentity\}/u);
 	assert.match(CARD_SOURCE, /lifecycle=\{lifecycleIndicator\}/u);
-	assert.match(CARD_SOURCE, /const lifecycleIndicator = !isLongDensity\s*\? null\s*: role === "expired"\s*\? <AgentSessionExpiredHint \/>\s*: <AgentSessionLifecycle showLabel=\{showLifecycleLabel\} state=\{item\.state\} \/>;/u);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity\s*\? role === "expired"\s*\? <AgentSessionExpiredHint \/>\s*: <AgentSessionLifecycle showLabel=\{showLifecycleLabel\} state=\{item\.state\} \/>\s*: item\.state === "needs-input" \|\| item\.state === "complete"\s*\? <AgentSessionShortLifecycleIcon state=\{item\.state\} \/>\s*: null;/u);
 	assert.match(CARD_SOURCE, /<AgentSessionLongMetadata item=\{item\} \/>/u);
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 cursor-default rounded-lg/u);
 	assert.match(
@@ -680,8 +680,8 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 		/const lifecycleNode = lifecycle === undefined\s*\? \(stateMeta\.showLifecycle \? <LifecycleIndicator state=\{item\.state\} \/> : null\)\s*: lifecycle;/u,
 	);
 	assert.match(LIST_CARD_SOURCE, /\{hideIdentity \? null : \(/u);
-	// Agent Session cards always keep the authored work title. Short rows carry
-	// settled lifecycle state in metadata; long rows keep their trailing control.
+	// Agent Session cards always keep the authored work title. Every density keeps
+	// lifecycle outside the byline in its trailing control slot.
 	assert.match(CARD_SOURCE, /stateAwareTitle=\{false\}/u);
 	assert.match(TYPES_SOURCE, /export type AgentSessionRole = "owner" \| "viewer" \| "expired"/u);
 	assert.match(CARD_SOURCE, /const viewSession = role === "owner" \? onView : undefined/u);
@@ -907,7 +907,7 @@ test("ships demo data and catalog entries for every attachment and size variant"
 	assert.match(DATA_SOURCE, /brandName: "cursor"/u);
 	assert.match(DATA_SOURCE, /vpkLogo: "rovo"/u);
 	assert.doesNotMatch(DATA_SOURCE, /Venn’s MacBook/u);
-	assert.match(DATA_SOURCE, /timeLabel: "18m ago"/u);
+	assert.match(DATA_SOURCE, /timeLabel: "18m"/u);
 	assert.match(DATA_SOURCE, /issueKey: "PAY-101"/u);
 	assert.match(PAGE_SOURCE, /<AgentSession/u);
 	assert.match(PAGE_SOURCE, /case "expired":\s*return "Expired";/u);

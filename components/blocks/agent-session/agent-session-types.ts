@@ -87,7 +87,8 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
 /**
  * Row shape for the large footprint.
  *
- * `short` leads with a 32px identity and an agent · host · time byline. `long`
+ * `short` leads with a 32px identity and an agent · PR · host · time byline
+ * (PR omitted when none is linked). `long`
  * drops the leading avatar, gives the title the full width, and spends the
  * reclaimed room on a fuller metadata line (agent mark, cycling tool call,
  * artifact, host, time) plus a trailing lifecycle label and icon. Progression

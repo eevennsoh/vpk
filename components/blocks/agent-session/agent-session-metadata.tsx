@@ -4,9 +4,7 @@ import { useEffect, useRef, useState, type WheelEvent } from "react";
 import { useInView } from "motion/react";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
-import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 import ScreenIcon from "@atlaskit/icon/core/screen";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import {
 	AgentListPrStatusIcon,
@@ -35,41 +33,6 @@ function MetadataDot() {
 			·
 		</span>
 	);
-}
-
-// react-doctor-disable-next-line react-doctor/no-multi-component-file -- This is a fixed fragment of the short metadata line and belongs beside its separators.
-function AgentSessionShortLifecycleIcon({
-	state,
-}: Readonly<{ state: AgentSessionItem["state"] }>) {
-	switch (state) {
-		case "needs-input":
-			return (
-				<span
-					aria-label="Needs input"
-					className="grid size-4 shrink-0 place-items-center text-icon-information"
-					role="img"
-				>
-					<QuestionCircleFilledIcon color="currentColor" label="" size="small" />
-				</span>
-			);
-		case "complete":
-			return (
-				<span
-					aria-label="Finished"
-					className="grid size-4 shrink-0 place-items-center text-icon-success"
-					role="img"
-				>
-					<StatusSuccessIcon color="currentColor" label="" size="small" />
-				</span>
-			);
-		case "attention":
-		case "running":
-			return null;
-		default: {
-			const _exhaustive: never = state;
-			return _exhaustive;
-		}
-	}
 }
 
 /**
@@ -137,6 +100,12 @@ function toArtifactLabel(item: AgentSessionItem): string | undefined {
 
 	const title = item.sessionDetails?.pullRequestTitle;
 	return title === undefined ? `#${number}` : `#${number}: ${title}`;
+}
+
+/** `#1306` — the compact short-byline form, without the pull-request title. */
+function toPullRequestNumberLabel(item: AgentSessionItem): string | undefined {
+	const number = item.sessionDetails?.pullRequestNumber;
+	return number === undefined ? undefined : `#${number}`;
 }
 
 /**
@@ -307,22 +276,37 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
 }
 
 /**
- * Owner short byline: `Claude · ☁ Last week`.
+ * Owner short byline: `Claude · #1306 · ☁ Last week`.
  *
  * The leading 32px identity already shows the agent (and invoker). This line
- * Names who ran it and pairs the host icon with when. Settled states append a
- * persistent lifecycle icon so Needs input and Finished remain visible without
- * changing the authored title. Working has no settled-state metadata marker.
+ * names who ran it, the linked pull request when one exists, and pairs the host
+ * icon with when. Lifecycle stays outside the byline in the trailing control
+ * slot shared with the more-actions button.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- Short and long metadata stay together so the two densities cannot drift apart.
 export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessionItem }>) {
 	const declaredHost = item.host ?? item.sessionDetails?.host;
+	const pullRequestLabel = toPullRequestNumberLabel(item);
 
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 			<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
 				{item.agent.name}
 			</span>
+			{pullRequestLabel === undefined ? null : (
+				<>
+					<MetadataDot />
+					<span className="flex shrink-0 items-center gap-1">
+						<AgentListPrStatusIcon status={item.prStatus ?? "created"} />
+						<span
+							className="text-nowrap text-text-subtlest underline-offset-2 hover:underline"
+							title={toArtifactLabel(item)}
+						>
+							{pullRequestLabel}
+						</span>
+					</span>
+				</>
+			)}
 			<MetadataDot />
 			<span className="flex shrink-0 items-center gap-1 text-nowrap">
 				{declaredHost === undefined ? null : (
@@ -332,12 +316,6 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					<AgentListTime item={item} />
 				</span>
 			</span>
-			{item.state === "needs-input" || item.state === "complete" ? (
-				<>
-					<MetadataDot />
-					<AgentSessionShortLifecycleIcon state={item.state} />
-				</>
-			) : null}
 		</span>
 	);
 }

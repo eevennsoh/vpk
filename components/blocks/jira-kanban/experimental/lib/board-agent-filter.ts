@@ -2,6 +2,121 @@ import type { JiraKanbanCardData, JiraKanbanColumnData } from "../../index";
 import type { BoardAgentFilterId } from "../data/board-view-options";
 import type { CollapsedBoardColumns } from "./board-column-collapse";
 
+interface AgentFilterSession {
+	readonly invokedBy?: {
+		readonly avatarSrc?: string;
+		readonly name: string;
+	};
+	readonly role?: "expired" | "owner" | "viewer";
+	readonly state: string;
+}
+
+/** Prototype signed-in viewer — Pulse and Team EU26 both name this roster id. */
+export const BOARD_AGENT_FILTER_VIEWER_ID = "venn";
+
+export interface AgentFilterViewer {
+	readonly avatarSrc?: string;
+	readonly id?: string;
+	readonly name: string;
+}
+
+export function resolveAgentFilterViewer(
+	members: readonly Readonly<{
+		avatarSrc?: string;
+		id: string;
+		name: string;
+	}>[],
+	viewerId: string = BOARD_AGENT_FILTER_VIEWER_ID,
+): AgentFilterViewer | null {
+	const viewer = members.find((member) => member.id === viewerId);
+	if (viewer === undefined) {
+		return null;
+	}
+
+	return {
+		id: viewer.id,
+		name: viewer.name,
+		...(viewer.avatarSrc === undefined ? {} : { avatarSrc: viewer.avatarSrc }),
+	};
+}
+
+function isNeedsInputSession(item: AgentFilterSession): boolean {
+	return item.state === "needs-input" || item.state === "attention";
+}
+
+function sessionOwnedByViewer(
+	item: AgentFilterSession,
+	viewer: AgentFilterViewer | null,
+): boolean {
+	if (viewer === null) {
+		return true;
+	}
+
+	if (item.invokedBy !== undefined) {
+		return item.invokedBy.avatarSrc === viewer.avatarSrc
+			|| item.invokedBy.name === viewer.name;
+	}
+
+	return (item.role ?? "owner") === "owner";
+}
+
+function sessionMatchesAgentFilterState(
+	item: AgentFilterSession,
+	filterId: BoardAgentFilterId,
+): boolean {
+	switch (filterId) {
+		case "untracked":
+			return true;
+		case "working":
+			return item.state === "running";
+		case "needs-input":
+			return isNeedsInputSession(item);
+		case "finished":
+			return item.state === "complete";
+		default: {
+			const _exhaustive: never = filterId;
+			return _exhaustive;
+		}
+	}
+}
+
+/**
+ * Does this unlink session belong in the Agents focus the header asked for?
+ *
+ * Needs input is "waiting on me": the row has to be awaiting input *and*
+ * owned by the signed-in viewer. Working and Finished only match lifecycle.
+ * Untracked is the whole column, so every row stays.
+ */
+export function sessionMatchesAgentFilter(
+	item: AgentFilterSession,
+	filterId: BoardAgentFilterId,
+	viewer: AgentFilterViewer | null = null,
+): boolean {
+	if (!sessionMatchesAgentFilterState(item, filterId)) {
+		return false;
+	}
+
+	return filterId === "needs-input" ? sessionOwnedByViewer(item, viewer) : true;
+}
+
+/**
+ * Scope unlink sessions the same way the board scopes linked cards.
+ *
+ * A null focus returns the column as given. Needs input keeps the viewer's
+ * own waiting rows and drops everyone else's.
+ */
+export function filterAgentSessionsByAgentFilter<T extends AgentFilterSession>(
+	items: readonly T[],
+	filterId: BoardAgentFilterId | null,
+	viewer: AgentFilterViewer | null = null,
+): readonly T[] {
+	if (filterId === null) {
+		return items;
+	}
+
+	return items.filter((item) => sessionMatchesAgentFilter(item, filterId, viewer));
+}
+
 /**
  * Does this card carry the linked-session chrome the Agents focus asked for?
  *
@@ -87,17 +202,18 @@ export function collapsedColumnsForAgentFilter({
 }
 
 /**
- * Untracked work is only needed while focusing Untracked. Linked session
- * states collapse that column so status columns can take the space.
+ * Untracked and Needs input keep the session column open so their matching
+ * unlink rows stay on screen. Working and Finished collapse it — those
+ * focuses are about linked chrome on status columns.
  */
 export function agentSessionColumnCollapsedForAgentFilter(
 	filterId: BoardAgentFilterId,
 ): boolean {
 	switch (filterId) {
 		case "untracked":
+		case "needs-input":
 			return false;
 		case "working":
-		case "needs-input":
 		case "finished":
 			return true;
 		default: {

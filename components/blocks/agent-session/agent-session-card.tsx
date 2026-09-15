@@ -34,7 +34,10 @@ import {
 } from "./agent-session-arrival-motion";
 import { approveActionLabel } from "./agent-session-approve";
 import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
-import { AgentSessionLifecycle } from "./agent-session-lifecycle";
+import {
+	AgentSessionLifecycle,
+	AgentSessionShortLifecycleIcon,
+} from "./agent-session-lifecycle";
 import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
 import {
 	AgentSessionLongMetadata,
@@ -299,9 +302,9 @@ export function AgentSessionCard({
 	// on the article. Keep the row's complete hover treatment tied to the
 	// controlled overlay state until that popup closes.
 	const isHoverStateActive = isFlyoutActive || menu.isOpen;
-	// Title-led long rows spend their reclaimed width on a trailing progression
-	// column. Short rows keep lifecycle state in their metadata line so every
-	// density preserves the authored session title unchanged.
+	// Every density keeps lifecycle state outside the authored title and byline.
+	// Short rows use a settled-state glyph in the same slot the hover/focus menu
+	// replaces; long rows keep their full trailing progression control.
 	const isLongDensity = density === "long";
 	const trailingControl = (() => {
 		if (!showMoreMenu) {
@@ -342,11 +345,13 @@ export function AgentSessionCard({
 	})();
 	// `null`, not `undefined`: the shared row treats `undefined` as "no opinion"
 	// and falls back to its own `STATE_META` indicator.
-	const lifecycleIndicator = !isLongDensity
-		? null
-		: role === "expired"
+	const lifecycleIndicator = isLongDensity
+		? role === "expired"
 			? <AgentSessionExpiredHint />
-			: <AgentSessionLifecycle showLabel={showLifecycleLabel} state={item.state} />;
+			: <AgentSessionLifecycle showLabel={showLifecycleLabel} state={item.state} />
+		: item.state === "needs-input" || item.state === "complete"
+			? <AgentSessionShortLifecycleIcon state={item.state} />
+			: null;
 	const hoverActions: AgentListRowHoverActions = {
 		// The reveal must outlive the pointer: a portalled popup and a post-click
 		// confirmation both take the cursor off the row.
@@ -438,7 +443,9 @@ export function AgentSessionCard({
 						padding === "compact" ? "px-3 py-2" : "p-3",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
-						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",
+						// Hover and the retained flyout highlight must paint immediately;
+						// fading the fill flashes transparent frames between nearby rows.
+						"transition-[border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
 						showSelectedFill && "bg-bg-selected",
 						!showSelectedFill && (isHighlighted || isHoverStateActive) && "bg-surface-hovered",
@@ -487,8 +494,8 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
-								// Agent Session owns lifecycle outside the title: long rows use the
-								// trailing control and short rows use their metadata line.
+								// Agent Session owns lifecycle outside the title and byline. The
+								// shared trailing slot lets hover actions replace it in place.
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isLongDensity
