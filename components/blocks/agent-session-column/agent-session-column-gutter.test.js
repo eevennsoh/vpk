@@ -224,7 +224,7 @@ test("collapsed drag paints the outlined overlay chip and keeps the same button 
 	);
 	assert.match(
 		INDEX_SOURCE,
-		/const collapsedControlClassName = isRepositioning\s*\? COLLAPSED_REPOSITION_CHIP_CLASS_NAME\s*: isGutterCollapsed \? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL/u,
+		/const collapsedControlClassName = isRepositioning\s*\? COLLAPSED_REPOSITION_CHIP_CLASS_NAME\s*: isGutterCollapsed && !isEmptyCollapsed \? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL/u,
 	);
 	assert.match(HEADER_SOURCE, /variant=\{isRepositioning \? "outline" : "ghost"\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /border-transparent! bg-transparent!/u);
@@ -348,13 +348,13 @@ test("the entire visible gutter is a hover target without covering To do", () =>
 	);
 });
 
-test("the gutter hides the count", () => {
+test("the populated gutter hides the count while an empty column keeps zero visible", () => {
 	assert.match(TYPES_SOURCE, /collapsedPresentation\?: "column" \| "gutter";/u);
 	assert.match(INDEX_SOURCE, /const isGutterCollapsed = collapsed && collapsedPresentation === "gutter"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /isGutterCollapsed \? "justify-center" : null/u);
-	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed/u);
+	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed && !isEmptyCollapsed;/u);
 	assert.match(INDEX_SOURCE, /hideGutterCount \|\| isRepositioning \? "opacity-0" : "opacity-100"/u);
-	assert.match(INDEX_SOURCE, /style=\{resolveCollapsedHeaderStyle\(layout\)\}/u);
+	assert.match(INDEX_SOURCE, /style=\{isEmptyCollapsed \? undefined : resolveCollapsedHeaderStyle\(layout\)\}/u);
 	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
 	assert.doesNotMatch(INDEX_SOURCE, /const gutterHeader = \(/u);
 	assert.match(INDEX_SOURCE, /isGutterCollapsed \? "bg-transparent" : null/u);
@@ -385,11 +385,11 @@ test("gutter rest caps the rail; hover preview and column presentation show ever
 test("the tucked gutter hides the session total; hover preview shows collapsed header chrome", () => {
 	assert.match(
 		INDEX_SOURCE,
-		/const hideGutterCount = isGutterCollapsed/u,
+		/const hideGutterCount = isGutterCollapsed && !isEmptyCollapsed;/u,
 	);
 	assert.match(
 		INDEX_SOURCE,
-		/: isGutterCollapsed \? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL;/u,
+		/: isGutterCollapsed && !isEmptyCollapsed \? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL;/u,
 	);
 	assert.match(INDEX_SOURCE, /const HEADER_CONTROL_IN_GUTTER = cn\(\s*HEADER_CONTROL_ON_REVEAL,\s*"hover:opacity-0",\s*\)/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnCountMorph count=\{sessionCount\} \/>/u);

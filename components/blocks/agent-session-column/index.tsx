@@ -40,6 +40,7 @@ import {
 	resolveAgentSessionColumnLayout,
 	type AgentSessionColumnLayout,
 } from "./agent-session-column-frame";
+import { CollapsedColumnLabel } from "./collapsed-column-label";
 import { AgentSessionColumnSurface } from "./agent-session-column-surface";
 import {
 	AGENT_SESSION_UNDERLAP_SHADOW_ENTER,
@@ -665,6 +666,7 @@ export function AgentSessionColumn({
 	};
 
 	const layout = resolveAgentSessionColumnLayout(headerSurface, columnFrame);
+	const isEmptyCollapsed = collapsed && displayedItems.length === 0 && !showWellFooter && layout !== "panel";
 	const isGutterCollapsed = collapsed && collapsedPresentation === "gutter";
 	const wearEnclosedWell = layout === "enclosed" && !isGutterCollapsed;
 	const elevatePlane = showTrailingShadow && !isGutterCollapsed;
@@ -705,13 +707,13 @@ export function AgentSessionColumn({
 	// in the page inset. Hover preview switches to column presentation, so
 	// the same 24px slot shows the count and the expand control again.
 	// Screen-reader copy still names the pool count.
-	const hideGutterCount = isGutterCollapsed;
+	const hideGutterCount = isGutterCollapsed && !isEmptyCollapsed;
 	const collapsedCountLabel = newCount > 0
 		? `${sessionCount} ${allLocalSessions ? "local " : ""}sessions, ${newCount} newly synced`
 		: `${sessionCount} ${allLocalSessions ? "local " : ""}sessions`;
 	const collapsedControlClassName = isRepositioning
 		? COLLAPSED_REPOSITION_CHIP_CLASS_NAME
-		: isGutterCollapsed ? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL;
+		: isGutterCollapsed && !isEmptyCollapsed ? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL;
 	const collapsedExpandControl = collapsedMenu === undefined
 		? (
 			<AgentSessionColumnCollapsedExpandControl
@@ -727,8 +729,8 @@ export function AgentSessionColumn({
 	const collapsedHeader = (
 		<div
 			data-agent-session-column-header=""
-			className="flex min-w-0 items-center gap-1.5"
-			style={resolveCollapsedHeaderStyle(layout)}
+			className={cn("flex min-w-0 items-center gap-1.5", isEmptyCollapsed ? "w-full" : null)}
+			style={isEmptyCollapsed ? undefined : resolveCollapsedHeaderStyle(layout)}
 		>
 			<div
 				className="relative flex h-6 w-full min-w-0 items-center justify-center px-1"
@@ -929,7 +931,20 @@ export function AgentSessionColumn({
 					: `${expandedWidthPx}px`,
 			}}
 		>
-			{renderAgentSessionColumnFrame({
+			{isEmptyCollapsed ? (
+				<CollapsedColumnLabel
+					appearance={{
+						pillClassName: "border border-solid border-border-disabled",
+						captionPaddingBottom: token("space.100"),
+						countPaddingTop: token("space.100"),
+						pillRadius: token("radius.large"),
+						pillPaddingBlock: token("space.150"),
+					}}
+					countRow={collapsedHeader}
+					headerFrame={layout}
+					title={title}
+				/>
+			) : renderAgentSessionColumnFrame({
 				allowCollapsedRailOverflow: collapsed && collapsedHitSlopPx > 0,
 				body: (
 					<CardGlowSurfaceContext value={glowPlaneEnabled ? registerGlowSurface : undefined}>

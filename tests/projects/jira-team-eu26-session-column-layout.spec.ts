@@ -7,6 +7,60 @@ const JIRA_TEAM_EU26_EMBEDDED_URL = (
 	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
 ) + "/preview/projects/jira-team-eu26?embedded=1";
 
+for (const width of [1440, 1024]) {
+	test(`empty collapsed unlink sessions shares the status pill geometry at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 900 });
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.clock.install();
+		await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+		await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 100));
+		const needsInput = page.getByRole("button", { name: /^Needs input:/u });
+		await needsInput.click();
+		const column = page.getByRole("region", { name: "Unlink sessions, 0 sessions", exact: true });
+		await expect(column).toBeVisible();
+		await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+		await expect(column).toHaveCSS("width", "32px");
+		const title = column.getByText("Unlink sessions", { exact: true });
+		await expect(title).toBeVisible();
+		await expect(title).toHaveCSS("writing-mode", "vertical-rl");
+		await expect(column.locator("[data-agent-session-column-rail]")).toHaveCount(0);
+		await expect(column.locator("[data-agent-session-column-surface]")).toHaveCount(0);
+		const geometry = await title.evaluate((label) => {
+			const pill = label.parentElement!.parentElement!;
+			const statusTitle = document.querySelector<HTMLElement>('[data-jira-kanban-column="To do"] span.truncate')!;
+			const statusPill = statusTitle.parentElement!.parentElement!;
+			const pillStyle = getComputedStyle(pill);
+			const statusStyle = getComputedStyle(statusPill);
+			return {
+				width: pill.getBoundingClientRect().width,
+				statusWidth: statusPill.getBoundingClientRect().width,
+				radius: pillStyle.borderRadius,
+				statusRadius: statusStyle.borderRadius,
+				border: pillStyle.borderTopWidth,
+				stroke: pillStyle.borderTopColor,
+				height: pill.getBoundingClientRect().height,
+				countTop: pill.querySelector("[data-agent-session-column-count]")!.getBoundingClientRect().top,
+				statusCountTop: statusPill.querySelector(".h-6")!.getBoundingClientRect().top,
+			};
+		});
+		expect(geometry.width).toBe(geometry.statusWidth);
+		expect(geometry.radius).toBe(geometry.statusRadius);
+		expect(geometry.border).toBe("1px");
+		expect(geometry.stroke).not.toBe("rgba(0, 0, 0, 0)");
+		expect(geometry.height).toBeLessThan(200);
+		expect(geometry.countTop).toBeCloseTo(geometry.statusCountTop, 0);
+		await page.getByRole("button", { name: "Expand Unlink sessions column" }).focus();
+		await page.keyboard.press("Enter");
+		await expect(column).toHaveCSS("width", "280px");
+		await expect(column.getByText("No sessions to unlink", { exact: true })).toBeVisible();
+		await needsInput.click();
+		await expect(page.locator("[data-agent-session-column-scrollport]")).toBeVisible();
+		await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+		await expect(page.locator("[data-agent-session-column-rail]")).toBeVisible();
+	});
+}
+
 async function openBoard(page: Page): Promise<void> {
 	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "networkidle" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({

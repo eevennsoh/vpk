@@ -480,7 +480,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
-		/const magnet = useMagneticProximity\(targetRef, \{\s*hoverArea: JIRA_DROPZONE_HOVER_AREA_PX,\s*\}\);/u,
+		/const magnet = useMagneticProximity\(proximityRef \?\? targetRef, \{\s*hoverArea: JIRA_DROPZONE_HOVER_AREA_PX,\s*\}\);/u,
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
@@ -488,7 +488,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/const isExclusiveWinner = useExclusiveCreateWellProximity\(title, targetRef\);/u,
+		/const isExclusiveWinner = useExclusiveCreateWellProximity\(title, proximityRef\);/u,
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
