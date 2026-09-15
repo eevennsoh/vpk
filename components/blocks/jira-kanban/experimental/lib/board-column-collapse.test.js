@@ -153,7 +153,7 @@ test("the pinned session column shares the status columns' box model", () => {
 	// the column itself remains the Untracked drop zone and lights when armed.
 	assert.match(
 		IN_FLOW_SOURCE,
-		/className=\{cn\(\s*"group\/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",[\s\S]*?untrackedDropArmed \? "border-ring" : "border-transparent",[\s\S]*?className,\s*\)\}/u,
+		/className=\{cn\(\s*"group\/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 items-start border-2 border-r-0",[\s\S]*?untrackedDropArmed \? "border-ring" : "border-transparent",[\s\S]*?className,\s*\)\}/u,
 	);
 	assert.match(IN_FLOW_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
 });
@@ -209,10 +209,10 @@ test("the expanded pinned session column reuses the accessible sidebar resize co
 
 test("Untracked trailing geometry matches painted status-column gutters", () => {
 	assert.equal(resolveStatusColumnVisualGutterPx("caption"), 20);
-	assert.equal(resolveInFlowAgentSessionColumnGapPx("caption"), 22);
+	assert.equal(resolveInFlowAgentSessionColumnGapPx("caption"), 20);
 	assert.equal(resolveInFlowResizeHandleOffsetPx("caption"), 10);
 	assert.equal(resolveStatusColumnVisualGutterPx("enclosed"), 12);
-	assert.equal(resolveInFlowAgentSessionColumnGapPx("enclosed"), 12);
+	assert.equal(resolveInFlowAgentSessionColumnGapPx("enclosed"), 10);
 	assert.equal(resolveInFlowResizeHandleOffsetPx("enclosed"), 6);
 });
 
@@ -321,7 +321,7 @@ test("enclosed chrome puts the collapsed count inside the framed box", () => {
 	assert.match(BOARD_SOURCE, /withKanbanDropContentGutter\(paddingTop, chrome\)/u);
 	assert.match(BOARD_SOURCE, /paddingTop: scrollportPaddingTop/u);
 	assert.match(BOARD_SOURCE, /paddingTop=\{untrackedPaddingTop\}/u);
-	assert.match(BOARD_SOURCE, /\.\.\.chrome\.dropContentPadding,/u);
+	assert.match(readFileSync(join(__dirname, "../components/board-column.tsx"), "utf8"), /\.\.\.chrome\.dropContentPadding,/u);
 	assert.match(
 		BOARD_SOURCE,
 		/collapsed \? \(\s*<div style=\{\{ paddingTop: chrome\.dropContentPadding\?\.paddingTop \}\}>/u,

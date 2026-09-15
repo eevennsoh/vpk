@@ -9,18 +9,36 @@ export const AGENT_SESSION_ARRIVAL_OFFSET_PX = -8;
 
 /**
  * Circle-rail arrival: the face pops in on the avatar recipe, holds, then
- * morphs — one disc shrinking 12→4 — before the photo is dropped and the
- * unread rest takes `color.icon.subtle`. Enter matches the hover CSS
- * (`duration-normal` + `ease-out-practical`). The shrink is an in-place
- * scale (`duration-normal` + `ease-in-out`), not a fade over a rest disc
- * that was already sitting underneath. The hold is `2 × duration-slower`
- * so a 12px face can register before the shape changes.
+ * morphs down onto the 4px rest disc it will become. The rest disc is already
+ * painted underneath by then — hidden behind an opaque 12px face — so the
+ * morph lands on a solid dot instead of dissolving to bare plane and letting a
+ * separate dot fade up after it. Enter matches the hover CSS (`duration-normal`
+ * + `ease-out-practical`). The hold is `2 × duration-slower` so a 12px face can
+ * register before the shape changes.
  */
 export const AGENT_SESSION_USER_NOTCH_ARRIVAL = {
 	enterMs: 150, // duration-normal
-	exitMs: 150, // duration-normal — in-place shrink
+	exitMs: 150, // duration-normal — the morph onto the rest disc
 	lingerMs: 800, // 2 × duration-slower
 } as const;
+
+/**
+ * The morph itself, as a CSS transition list.
+ *
+ * Two properties on two curves, which no single Tailwind `ease-*` can express.
+ * Sharing one curve is what made the earlier attempt read as two layers: with
+ * matched easing the face is always `12 − 8p` px at `1 − p` opacity, so halfway
+ * through it is an 8px ghost hanging at 50% over a 4px dot, whatever curve `p`
+ * follows. Splitting them decouples size from opacity — `ease-out` front-loads
+ * the collapse so the face is dot-sized within the first third, while `ease-in`
+ * holds it opaque until it is. What crossfades is then a 4px photo over a 4px
+ * disc: a colour change at matched geometry, which is what "morph" should mean.
+ *
+ * `scale`, not `transform`: Tailwind v4 `scale-*` utilities set the standalone
+ * `scale` property, and a `transform` entry here would animate nothing.
+ */
+export const AGENT_SESSION_USER_NOTCH_MORPH_TRANSITION =
+	"scale var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-in)";
 
 export const AGENT_SESSION_USER_NOTCH_ARRIVAL_HIDE_MS =
 	AGENT_SESSION_USER_NOTCH_ARRIVAL.enterMs + AGENT_SESSION_USER_NOTCH_ARRIVAL.lingerMs;

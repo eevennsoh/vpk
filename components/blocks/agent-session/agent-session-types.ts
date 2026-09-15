@@ -87,7 +87,8 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
 /**
  * Row shape for the large footprint.
  *
- * `short` leads with a 32px identity and an agent · host · time byline. `long`
+ * `short` leads with a 32px identity and an agent · PR · host · time byline
+ * (PR omitted when none is linked). `long`
  * drops the leading avatar, gives the title the full width, and spends the
  * reclaimed room on a fuller metadata line (agent mark, cycling tool call,
  * artifact, host, time) plus a trailing lifecycle label and icon. Progression
@@ -133,6 +134,8 @@ export interface AgentSessionTriageRow {
 export interface AgentSessionProps {
 	className?: string;
 	style?: CSSProperties;
+	/** Animate sibling position changes; the in-flow session column keeps filter changes instant. */
+	animateLayout?: boolean;
 	/** Card footprint. Defaults to the full large uncaptured-work card. */
 	variant?: AgentSessionVariant;
 	/**
@@ -142,6 +145,17 @@ export interface AgentSessionProps {
 	density?: AgentSessionDensity;
 	/** Sessions to render; defaults to relationship-appropriate built-in sample data. */
 	items?: readonly AgentSessionItem[];
+	/**
+	 * Wash each agent's accent behind its row on hover. `variant="large"` only.
+	 * Opt-in per host, and independent of {@link glowStroke}.
+	 */
+	glowBloom?: boolean;
+	/**
+	 * Trace each agent's accent along its card edge on hover. `variant="large"`
+	 * only. Opt-in per host, and independent of {@link glowBloom} — the two are
+	 * separate layers so either can be judged on its own.
+	 */
+	glowStroke?: boolean;
 	/** Ids whose card should read as captured (solid border, still hoverable). */
 	capturedItemIds?: ReadonlySet<string>;
 	/**
@@ -199,6 +213,11 @@ export interface AgentSessionProps {
 	 * omitted list leaves the Link to existing tab in its empty state.
 	 */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
+	/**
+	 * Shows the Link work item row in the session's more menu. Defaults to true.
+	 * This affects only that manual menu path; other linking capabilities remain wired.
+	 */
+	showLinkWorkItemMenuItem?: boolean;
 	/**
 	 * Add-as-subtask action behind the untracked-work flyout menu. Omit to expose
 	 * the menu option as unavailable.

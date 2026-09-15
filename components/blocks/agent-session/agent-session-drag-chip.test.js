@@ -110,6 +110,24 @@ test("a single session is one pill carrying the agent, its invoker, and the labe
 	assert.doesNotMatch(markup, /data-session-cohort-chip/u);
 });
 
+test("untracked drag chips put the agent before the human while tracked pills keep the shared default", async () => {
+	const harness = await loadDragChipHarness();
+	const untracked = harness.renderChip({ cohort: cohort(session("lw-a", ANNIE)) });
+	const tracked = harness.renderPill({
+		agent: { brandName: "claude", name: "Claude" },
+		attributedBy: ANNIE,
+	});
+
+	assert.ok(
+		untracked.indexOf('data-shape="hexagon"') < untracked.indexOf('data-shape="circle"'),
+		"untracked work leads with the agent mark",
+	);
+	assert.ok(
+		tracked.indexOf('data-shape="circle"') < tracked.indexOf('data-shape="hexagon"'),
+		"tracked work keeps the human-first default",
+	);
+});
+
 test("an elevated pill paints the overlay surface; a resting one stays flat", async () => {
 	const harness = await loadDragChipHarness();
 	const elevated = harness.renderChip({ cohort: cohort(session("lw-a", ANNIE)), elevated: true });
@@ -237,7 +255,7 @@ test("deck sheets paint a solid fill instead of fading into the page", async () 
 	}
 
 	// Sheets carry the lead pill's own fill, so the stack is one material.
-	const leadFill = /bg-surface/u.test(openTag(markup, "data-session-drag-pill"));
+	const leadFill = /bg-surface/u.test(openTag(markup, "data-session-drag-surface"));
 	assert.ok(leadFill, "elevated lead pill paints bg-surface");
 	assert.match(openTag(markup, "data-session-deck-layer"), /bg-surface/u);
 });

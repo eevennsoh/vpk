@@ -377,9 +377,15 @@ test("Jira issue agentSessionTransfer is opt-in so existing consumers are unaffe
 });
 
 test("Jira issue session dragging can be controlled by a board without changing local consumers", () => {
+	// The control type lives with the other drag types; the card re-exports it
+	// so every board consumer still imports it from `@/components/blocks/jira-issue`.
+	assert.match(
+		DRAG_SOURCE,
+		/export interface JiraIssueAgentSessionDragControl \{[\s\S]*binding: JiraIssueAgentSessionDragBinding;[\s\S]*dropTarget\?: "attach" \| "unlink" \| null;[\s\S]*sourceActive: boolean;[\s\S]*state: JiraIssueAgentSessionDragState;[\s\S]*\}/u,
+	);
 	assert.match(
 		SOURCE,
-		/export interface JiraIssueAgentSessionDragControl \{[\s\S]*binding: JiraIssueAgentSessionDragBinding;[\s\S]*dropTarget\?: "attach" \| "unlink" \| null;[\s\S]*sourceActive: boolean;[\s\S]*state: JiraIssueAgentSessionDragState;[\s\S]*\}/u,
+		/export type \{ JiraIssueAgentSessionDragControl \} from "@\/components\/blocks\/jira-issue\/agent-session-drag";/u,
 	);
 	assert.match(SOURCE, /agentSessionDragControl\?: JiraIssueAgentSessionDragControl;/u);
 	assert.match(
@@ -556,7 +562,7 @@ test("Jira issue travelling drag pill uses an opaque surface fill", () => {
 	// the shadow, which has no Tailwind mapping, stays inline.
 	assert.match(dragChipSource, /elevated \? "bg-surface" : "bg-bg-neutral"/u);
 	assert.doesNotMatch(dragChipSource, /backgroundColor:/u);
-	assert.match(dragChipSource, /style=\{elevated \? DRAG_CHIP_ELEVATION : undefined\}/u);
+	assert.match(dragChipSource, /data-session-drag-surface=""[\s\S]*elevated \? DRAG_CHIP_ELEVATION : undefined/u);
 });
 
 test("Jira issue chin unlink unlinks without nesting a button in the drag handle", () => {
@@ -619,8 +625,9 @@ test("Jira issue drag pill floats on overlay elevation, not a dead utility", () 
 		dragChipSource,
 		/boxShadow: token\("elevation\.shadow\.overlay"\),/u,
 	);
-	// The Figma pill is the agent hexagon with the human tucked in its corner.
-	assert.match(dragChipSource, /<AgentListIdentity agent=\{agent\} attributedBy=\{attributedBy\} sizePx=\{32\} \/>/u);
+	// The shared pill forwards its caller-selected attribution order; Jira-owned
+	// work keeps the human-first default while the untracked cohort opts out.
+	assert.match(dragChipSource, /<AgentListIdentity[\s\S]*agent=\{agent\}[\s\S]*attributedBy=\{attributedBy\}[\s\S]*attributionOrder=\{attributionOrder\}[\s\S]*sizePx=\{32\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /attributedBy=\{featuredActivity\?\.invokedBy\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /elevated/u);
 });
@@ -639,7 +646,10 @@ test("Jira issue card hugs its content the moment the chip leaves the chin", () 
 	// The row flags itself; the list closes its gutter off that flag with `:has()`.
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-session-chip-out=\{isDraggedOut \|\| undefined\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row-wrap"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /\(hasActivities \|\| hasAttachPreview\) && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",/u);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?"py-1 has-\[\[data-session-chip-out\]\]:py-0"/u,
+	);
 	assert.match(
 		SOURCE,
 		/has-\[\[data-session-chip-out\]\]:not-has-\[\[data-slot=jira-issue-agent-row-wrap\]:not\(\[data-session-chip-out\]\)\]:pb-1/u,

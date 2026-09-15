@@ -48,6 +48,20 @@ async function readList(list: Locator) {
 	}));
 }
 
+async function readCreateInset(column: Locator, button: Locator) {
+	const [buttonRect, columnRect] = await Promise.all([
+		button.boundingBox(),
+		column.boundingBox(),
+	]);
+	expect(buttonRect).not.toBeNull();
+	expect(columnRect).not.toBeNull();
+	return {
+		left: buttonRect!.x - columnRect!.x,
+		right: columnRect!.x + columnRect!.width - buttonRect!.x - buttonRect!.width,
+		width: buttonRect!.width,
+	};
+}
+
 for (const reducedMotion of ["reduce", "no-preference"] as const) {
 	test(`create target only fills spare space in proximity (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
@@ -92,6 +106,27 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		await expect(page.locator("[data-agent-session-column]").getByTestId(sourceId!)).toHaveCount(0);
 	});
 }
+
+test("empty columns keep the populated create action inset", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 1100 });
+	await page.goto(`${origin}/${project}`);
+	const column = page.locator('[data-jira-kanban-column="To do"]');
+	const button = column.getByRole("button", { name: "Create in To do" });
+	await expect(column.locator("[data-issue-key]")).toHaveCount(4);
+	const populated = await readCreateInset(column, button);
+
+	await page.getByRole("button", { name: "Needs input: 1 agent" }).click();
+	const expand = page.getByRole("button", { name: "Expand To do column" });
+	if (await expand.isVisible()) {
+		await expand.focus();
+		await page.keyboard.press("Enter");
+	}
+	await expect(column.locator("[data-issue-key]")).toHaveCount(0);
+	await expect(button).toBeVisible();
+	await expect.poll(async () => (await column.boundingBox())!.width).toBe(280);
+
+	expect(await readCreateInset(column, button)).toEqual(populated);
+});
 
 test("empty columns fill downward and cancellation restores the resting button", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });

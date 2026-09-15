@@ -172,7 +172,7 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 		assert.equal(opened.timestamp, "25 minutes ago");
 	}
 	assert.equal(
-		detail.activity.find((activity) => activity.actor.name === "Claude Code")?.actor.brandName,
+		detail.activity.find((activity) => activity.actor.name === "Claude")?.actor.brandName,
 		"claude",
 	);
 	const fixPush = detail.activity.find((activity) => activity.id === "fix-commits-pushed");

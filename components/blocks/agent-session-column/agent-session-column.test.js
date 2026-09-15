@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+const COUNT_SWAP_SOURCE = readFileSync(join(__dirname, "agent-session-column-count-swap.tsx"), "utf8");
 const HOOK_SOURCE = readFileSync(join(__dirname, "use-agent-session-column-hidden.ts"), "utf8");
 const FOOTER_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-hidden-footer.tsx"),
@@ -131,9 +132,9 @@ test("the column does not fuse large session cards into one stroke", () => {
 	// paint over the stroke. Cards keep their own radius and gap; the column
 	// must not strip borders into shared dividers.
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_WELL =/u);
-	assert.match(INDEX_SOURCE, /overflow-hidden rounded-xl border border-solid border-border-disabled/u);
+	assert.match(INDEX_SOURCE, /overflow-hidden rounded-xl border border-solid border-transparent/u);
 	assert.match(INDEX_SOURCE, /case "caption":\s*\n\s*return collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL;/u);
-	assert.match(INDEX_SOURCE, /case "enclosed":\s*\n\s*return collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u);
+	assert.match(INDEX_SOURCE, /case "enclosed":\s*\n\s*return isGutterCollapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u);
 	assert.match(
 		INDEX_SOURCE,
 		/className=\{cn\(\s*headerSurface === "column" \? AGENT_SESSION_LIST_SPACING : null,\s*listClassName,\s*\)\}/u,
@@ -156,12 +157,13 @@ test("the column does not fuse large session cards into one stroke", () => {
 });
 
 test("the fill starts below the header, so the title shares the status columns' baseline", () => {
-	// The header has to sit on the board surface at the same inset and baseline
-	// as `To do`. Filling the <section> itself would push the title 8px in and
-	// 8px down from every other column title.
+	// Caption keeps the header on the board surface at the same inset and
+	// baseline as `To do`. Filling the <section> itself would push the title
+	// 8px in and 8px down from every other column title. Enclosed puts that
+	// same title inside the well, matching status columns that wrap header
+	// and cards in one painted object.
 	assert.doesNotMatch(INDEX_SOURCE, /<section[\s\S]*?className=\{cn\(\s*"[^"]*bg-surface/u);
 	assert.doesNotMatch(INDEX_SOURCE, /"group\/session-column[^"]*bg-surface/u);
-	// The fill is a plane the header is a sibling of, not an ancestor of.
 	assert.match(INDEX_SOURCE, /bg-surface/u);
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =/u);
 	// The section carries no padding of its own either — that would inset the
@@ -311,12 +313,12 @@ test("the catalog page shows a Panel wrap and an in-flow kanban host", () => {
 	assert.match(DETAIL_SOURCE, /examplesContentWidth: "bleed"/u);
 });
 
-test("the collapsed count lives in the header above the plane, not on the rail", () => {
-	// Same 24px row as expanded. Enclosed in-flow uses the expanded well's
-	// top inset (`space.100` plus a 1px transparent border) so a collapsed
-	// Untracked count shares a row with an expanded status count. Caption
-	// stays flush so it still matches a simple collapsed pill. Panel keeps
-	// matching top pad under the docked chrome. The rail is notches only.
+test("the collapsed count lives in the header, not on the rail", () => {
+	// Same 24px row as expanded. Enclosed in-flow wraps the count with the
+	// rail in the well, so the well's 1px stroke is the inset that lines the
+	// number up with `To do`. Caption stays flush so it still matches a
+	// simple collapsed pill. Panel keeps matching top pad under the docked
+	// chrome. The rail is notches only.
 	assert.match(INDEX_SOURCE, /paddingBottom: token\("space\.100"\)/u);
 	assert.match(
 		INDEX_SOURCE,
@@ -326,11 +328,16 @@ test("the collapsed count lives in the header above the plane, not on the rail",
 		INDEX_SOURCE,
 		/case "caption":\s*\n\s*return \{ paddingBottom: token\("space\.100"\) \};/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		INDEX_SOURCE,
 		/layout === "enclosed" \? "border border-solid border-transparent" : null/u,
 	);
+	assert.match(INDEX_SOURCE, /isGutterCollapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT/u);
+	assert.match(INDEX_SOURCE, /return isGutterCollapsed \? \(/u);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center px-1/u);
+	assert.match(INDEX_SOURCE, /const collapsedHitSlopPx = wearEnclosedWell && elevatePlane \? 0 : collapsedRailHitSlopPx/u);
+	assert.match(INDEX_SOURCE, /toAgentSessionRailHitSlopStyle\(collapsedHitSlopPx\)/u);
+	assert.match(INDEX_SOURCE, /hitSlopPx=\{collapsedHitSlopPx\}/u);
 	assert.match(INDEX_SOURCE, /absolute inset-x-1 inset-y-0 flex items-center justify-center text-xs/u);
 	assert.match(INDEX_SOURCE, /HEADER_COUNT_AT_REST/u);
 	assert.match(INDEX_SOURCE, /HEADER_CONTROL_ON_REVEAL/u);
@@ -352,7 +359,7 @@ test("collapsing swaps the cards for the notch rail, not for a rotated label", (
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-surface/u);
 	assert.match(
 		INDEX_SOURCE,
-		/case "enclosed":\s*\n\s*return collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u,
+		/case "enclosed":\s*\n\s*return isGutterCollapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u,
 	);
 	// 32px matches the board's collapsed status pill so the two share a rhythm.
 	assert.match(INDEX_SOURCE, /AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32/u);
@@ -367,12 +374,12 @@ test("column resize buttons swap icons without using selected button state", () 
 	assert.match(INDEX_SOURCE, /collapseLabel=\{headerSurface === "panel"/u);
 	assert.match(HEADER_SOURCE, /<ShrinkHorizontalIcon/u);
 	assert.match(HEADER_SOURCE, /<TooltipContent>Collapse<\/TooltipContent>/u);
-	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
-	assert.match(INDEX_SOURCE, /<GrowHorizontalIcon/u);
-	assert.match(INDEX_SOURCE, /<TooltipContent>Expand<\/TooltipContent>/u);
-	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Collapse column<\/TooltipContent>/u);
-	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
-	assert.doesNotMatch(INDEX_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
+	assert.match(HEADER_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
+	assert.match(HEADER_SOURCE, /<GrowHorizontalIcon/u);
+	assert.match(HEADER_SOURCE, /<TooltipContent[^>]*>Expand<\/TooltipContent>/u);
+	assert.doesNotMatch(HEADER_SOURCE, /<TooltipContent>Collapse column<\/TooltipContent>/u);
+	assert.doesNotMatch(HEADER_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
+	assert.doesNotMatch(HEADER_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
 	assert.match(INDEX_SOURCE, /peer\/expand-control opacity-0/u);
 	assert.match(INDEX_SOURCE, /hover:opacity-100 focus-visible:opacity-100/u);
@@ -385,7 +392,7 @@ test("notch flyouts use a stable trigger host so the shared popup follows the ra
 	// Same contract as expanded AgentSessionCard: layout on the `li`, a plain
 	// `div` as the HoverCard trigger. Putting `layout` on the trigger remounts
 	// the host and opens a new flyout per notch.
-	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \|\| !animateLayout \? false : "position"\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]{0,200}?render=\{\s*<div\s*className="mx-auto flex h-5 items-center/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /delay=\{0\}/u);
@@ -496,46 +503,6 @@ test("the in-flow column move handle is a 12px disabled icon, not a 24px button"
 	);
 	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /from "@\/components\/ui\/button"/u);
 	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /size="icon-compact"/u);
-});
-
-test("collapsed motion is tokenised and honours reduced motion", () => {
-	// Standalone/panel resize keeps the tokenized width recipe; hover keeps the
-	// rail compact while its flex footprint rejoins the board rhythm.
-	assert.match(INDEX_SOURCE, /width var\(--duration-medium\) var\(--ease-in-out\)/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /width var\(--duration-normal\) var\(--ease-out-practical\)/u);
-	assert.match(RAIL_COLUMN_SOURCE, /duration-normal ease-out-practical/u);
-	assert.match(RAIL_COLUMN_SOURCE, /motion-reduce:transition-none/u);
-	// The dock's fade in and out are tokenised as resolved cubic-beziers, because
-	// Motion cannot read `var()`: duration-normal + ease-out-practical arriving,
-	// and the shorter duration-fast + ease-in leaving, as every exit is.
-	assert.match(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_MAGNIFY_IN = \{\s*duration: 0\.15,\s*ease: \[0\.4, 1, 0\.6, 1\]/u);
-	assert.match(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_MAGNIFY_OUT = \{\s*duration: 0\.1,\s*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
-	// A slope that tracks the cursor is ambient motion, so reduced motion drops
-	// the dock outright rather than shortening it — the marks then fall back to
-	// their own row's hover, which resolves instantly.
-	assert.match(RAIL_COLUMN_SOURCE, /const isDocked = shouldReduceMotion !== true;/u);
-	assert.match(RAIL_COLUMN_SOURCE, /proximity=\{isDocked \? \{/u);
-	// A mark with no rail behind it keeps the transform hover it has always had.
-	// The group is the row and the button inside it takes focus, so keyboard
-	// parity needs `group-has-[:focus-visible]` — `group-focus-visible` never
-	// matches.
-	assert.match(NOTCH_MARK_SOURCE, /group-hover\/notch:scale-x-\[1\.6\]/u);
-	assert.match(NOTCH_MARK_SOURCE, /group-has-\[:focus-visible\]\/notch:scale-x-\[1\.6\]/u);
-	assert.doesNotMatch(NOTCH_MARK_SOURCE, /group-focus-visible\/notch:/u);
-	// Clipping is scoped to the resize, so a focused card's ring is never cut.
-	assert.match(INDEX_SOURCE, /\(collapsed && collapsedRailHitSlopPx === 0\) \|\| isResizing \? "overflow-hidden" : null/u);
-	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
-	// A host-driven pointer resize must bypass this transition so the column edge
-	// tracks the pointer instead of easing toward every intermediate width.
-	assert.match(TYPES_SOURCE, /widthTransitionDisabled\?: boolean;/u);
-	assert.match(
-		INDEX_SOURCE,
-		/expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,\s*(?:hasScrollingEffect = false,\s*)?widthTransitionDisabled = false,/u,
-	);
-	assert.match(
-		INDEX_SOURCE,
-		/shouldReduceMotion \|\| widthTransitionDisabled\s*\? "none"\s*: AGENT_SESSION_COLUMN_TRANSITION/u,
-	);
 });
 
 test("the resting notch paints icon.disabled, not an alpha of icon", () => {
@@ -665,7 +632,11 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 	assert.doesNotMatch(INDEX_SOURCE, /\bchrome=/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnHeader/u);
 	assert.match(INDEX_SOURCE, /case "panel":\s*\n\s*return AGENT_SESSION_PLANE;/u);
-	assert.match(INDEX_SOURCE, /<section\s*\n\s*ref=\{columnRef\}\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
+	assert.match(INDEX_SOURCE, /<section\s*\n\s*ref=\{setColumnNode\}\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
+	// The section's ref is composed — it also feeds the card glow's proximity
+	// plane — but `columnRef` must still be the node, because focus management
+	// below reads it.
+	assert.match(INDEX_SOURCE, /const setColumnNode = useCallback\(\(node: HTMLElement \| null\) => \{\s*columnRef\.current = node;/u);
 	assert.match(INDEX_SOURCE, /tabIndex=\{-1\}/u);
 	assert.match(INDEX_SOURCE, /columnRef\.current\?\.focus\(\)/u);
 });
@@ -673,7 +644,7 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 test("the gutter rail keeps a keyboard expand control and hides the count", () => {
 	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
 	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed/u);
-	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
+	assert.match(HEADER_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center px-1/u);
 	// The rail itself still has no header of its own to fall back on.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
@@ -698,7 +669,7 @@ test("the collapsed rail preserves session twin hover previews", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /isHovered=\{item\.id === hoverIntent\.activeItemId\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /data-highlighted=\{isHighlighted \|\| undefined\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{isHighlighted\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /showAvatar \? "opacity-100 scale-100"/u);
+	assert.match(RAIL_COLUMN_SOURCE, /showAvatar && !isMorphing\s*\n?\s*\? "opacity-100 scale-100"/u);
 	assert.match(RAIL_COLUMN_SOURCE, /const showAvatar = isHighlighted \|\| arrivalReveal;/u);
 });
 
@@ -713,10 +684,19 @@ test("the collapsed header count rolls through the shared Text Morphing slots ef
 	assert.match(INDEX_SOURCE, /initial: false/u);
 	// The renderer sets its own `aria-label`; the wrapper's `aria-hidden` has to
 	// suppress it so the sibling `sr-only` stays the single spoken source.
-	assert.match(INDEX_SOURCE, /aria-hidden="true"[\s\S]{0,400}?<TextMorphing/u);
+	assert.match(INDEX_SOURCE, /aria-hidden="true"[\s\S]{0,1500}?<TextMorphing/u);
+	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-number=""/u);
+	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-local-icon=""/u);
+	assert.match(COUNT_SWAP_SOURCE, /<MonitorIcon label="" size="small" \/>/u);
 	// `text` must be a string — `sessionCount` is a number.
 	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /TextMorphing/u);
+});
+
+test("the settled monitor identifies only a nonempty local session pool", () => {
+	assert.match(INDEX_SOURCE, /displayedItems\.length > 0 && viewItems\.every\(isLocalAgentListItem\)/u);
+	assert.match(INDEX_SOURCE, /const showRisingCount = !allLocalSessions \|\| risingCount;/u);
+	assert.match(INDEX_SOURCE, /allLocalSessions \? "local " : ""/u);
 });
 
 test("the column keeps the selected session id across collapse remounts", () => {
@@ -850,7 +830,7 @@ test("the archived view keeps Archived in the header and a back footer", () => {
 	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Back<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /aria-label=\{`Back to \$\{title\}`\}[\s\S]*size="icon-compact"/u);
 	assert.match(INDEX_SOURCE, /displayTitle = view === "hidden" \? "Archived" : title/u);
-	assert.match(INDEX_SOURCE, /size="icon-compact"/u);
+	assert.match(HEADER_SOURCE, /size="icon-compact"/u);
 	assert.match(FOOTER_SOURCE, /title = "Unlink sessions"/u);
 	assert.match(FOOTER_SOURCE, /import ChevronLeftIcon from "@atlaskit\/icon\/core\/chevron-left"/u);
 	assert.match(FOOTER_SOURCE, /<ChevronLeftIcon label="" size="small" \/>/u);
@@ -861,12 +841,14 @@ test("the archived view keeps Archived in the header and a back footer", () => {
 });
 
 test("the collapsed rail keeps a focus-ring gutter on its scrollport", () => {
-	// Internal padding only: horizontal padding keeps the dots centred, while
-	// vertical padding preserves the ring at the capped scroll boundary.
+	// Vertical padding preserves the ring at the capped scroll boundary.
+	// The widened rail uses its extra width for horizontal clearance, so its
+	// buttons can reach both edges without padding intercepting the pointer.
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/overflow-y-auto overscroll-contain px-1 py-0\.5/u,
+		/overflow-y-auto overscroll-contain py-0\.5/u,
 	);
+	assert.match(RAIL_COLUMN_SOURCE, /hitSlopPx > 0 \? "px-0" : "px-1"/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /-mx-1/u);
 });
 

@@ -13,7 +13,10 @@ import {
 	type JiraIssueAgentSessionDragBinding,
 	type JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue/agent-activity";
-import { JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE } from "@/components/blocks/jira-issue/agent-session-drag";
+import {
+	JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
+	type JiraIssueAgentSessionDragControl,
+} from "@/components/blocks/jira-issue/agent-session-drag";
 import { JiraIssueDetachedSessionTransferSlot } from "@/components/blocks/jira-issue/attach-chin";
 import {
 	linkAgentSessionChinCopy,
@@ -25,6 +28,7 @@ import {
 	resolveJiraIssueAttachNearness,
 } from "@/components/blocks/jira-issue/attach-proximity";
 import { isJiraIssueSessionAttachPreview } from "@/components/blocks/jira-issue/agent-session-transfer-model";
+import { JiraIssueAttachTraceOverlay } from "@/components/blocks/jira-issue/attach-trace-overlay";
 import {
 	JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS,
 	JiraIssueAgentSessionTransfer,
@@ -103,6 +107,7 @@ export type {
 	JiraIssueAgentSessionDragBinding,
 	JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue/agent-activity";
+export type { JiraIssueAgentSessionDragControl } from "@/components/blocks/jira-issue/agent-session-drag";
 export type { JiraIssueAgentSessionTransferConfig } from "@/components/blocks/jira-issue/agent-session-transfer";
 export type {
 	JiraIssueCompletedAgentRun,
@@ -134,28 +139,6 @@ export interface JiraIssueParticipant {
 	name: string;
 	avatarSrc: string;
 	avatarShape?: NonNullable<AvatarProps["shape"]>;
-}
-
-/**
- * Optional board ownership for a session drag. Shared Jira issue demos keep
- * their local transfer state when this is absent.
- */
-export interface JiraIssueAgentSessionDragControl {
-	/**
-	 * 0..1 approach ramp for the travelling session. Drives only the grey
-	 * backdrop's opacity continuously; the chin and shell switch at a threshold.
-	 */
-	attachNearness?: number;
-	binding: JiraIssueAgentSessionDragBinding;
-	/**
-	 * Sessions in the current drag transfer. Needed on receiving cards (their
-	 * `state` stays idle) and during fusion after pointer-up. Falls back to
-	 * `state.transfer.members.length` on a live source drag.
-	 */
-	dragCount?: number;
-	dropTarget?: "attach" | "unlink" | null;
-	sourceActive: boolean;
-	state: JiraIssueAgentSessionDragState;
 }
 
 export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"article">, "children"> {
@@ -839,7 +822,12 @@ function JiraIssueDefault({
 							? { ...agentActivitySurfaceStyle, ...agentActivitySurfaceAnimation }
 							: agentActivitySurfaceStyle}
 						transition={layoutTransition}
-					/>
+					>
+						<JiraIssueAttachTraceOverlay
+							nearness={attachNearness}
+							trace={agentSessionDragControl?.attachTrace}
+						/>
+					</motion.div>
 					{richIssueContent}
 				</motion.div>
 				{/* Running sessions already occupy the chin; attach copy takes the last

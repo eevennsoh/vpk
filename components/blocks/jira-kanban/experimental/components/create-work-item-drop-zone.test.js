@@ -12,7 +12,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const FOOTER = readFileSync(join(__dirname, "create-work-item-drop-zone.tsx"), "utf8");
-const BOARD = readFileSync(join(__dirname, "../experimental-jira-kanban.tsx"), "utf8");
+const BOARD = readFileSync(join(__dirname, "board-column.tsx"), "utf8");
 const CARD_LIST = readFileSync(join(__dirname, "board-column-card-list.tsx"), "utf8");
 const DROPZONE = readFileSync(
 	join(__dirname, "../../../jira-dropzone/jira-dropzone.tsx"),
@@ -74,6 +74,14 @@ test("empty columns keep the create well at the top and always visible", () => {
 	assert.match(CARD_LIST, /order: isEmpty \? 1 : 0/u);
 	assert.match(CARD_LIST, /data-jira-kanban-card-list=""/u);
 	assert.match(BOARD, /order: isEmptyColumn \? 0 : 1/u);
+});
+
+test("empty columns keep the same create action inset as populated columns", () => {
+	assert.match(
+		BOARD,
+		/style=\{\{ order: isEmptyColumn \? 0 : 1, \.\.\.chrome\.footer \}\}/u,
+	);
+	assert.doesNotMatch(BOARD, /!isEmptyColumn \? chrome\.footer : \{\}/u);
 });
 
 test("drop receipts land in the geometric center of the well", () => {

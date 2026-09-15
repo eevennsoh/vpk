@@ -18,6 +18,7 @@ import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 import {
+	IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX,
 	IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX,
 	IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX,
 	resolveInFlowAgentSessionColumnGapPx,
@@ -31,9 +32,12 @@ import { useInFlowGutterScrollMask } from "./use-in-flow-gutter-scroll-mask";
 import { InFlowAgentSessionColumnCollapsedMenu } from "./in-flow-agent-session-column-collapsed-menu";
 import { useSessionColumnReposition } from "./use-session-column-reposition";
 
-// Extend the preview's 24px session targets to 56px, within the empty gutter.
+// Widen the preview's session targets into the empty gutter.
 // The 32px column footprint and marker axis stay fixed; To do remains clickable.
 const IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX = 16;
+// The compact Expand button begins 13px after the page separator; fill that
+// header-row gap while its trailing edge stays clear of To do.
+const IN_FLOW_AGENT_SESSION_COLUMN_EXPAND_LEADING_HIT_SLOP_PX = 13;
 const IN_FLOW_AGENT_SESSION_COLUMN_TITLE = "Unlink sessions";
 // Centers the rail's 16px dot axis in the 26px visible gutter (24px inset + border).
 const IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX = -5;
@@ -65,6 +69,8 @@ export interface InFlowAgentSessionColumnProps {
 	/** Whether the expanded column exposes its width-resize separator. */
 	resizable?: boolean;
 	sessionFlyoutsSuspended: boolean;
+	/** Elevates the column well above horizontally scrolled board content. */
+	showTrailingShadow?: boolean;
 	untrackedDropArmed: boolean;
 }
 
@@ -320,6 +326,7 @@ function InFlowAgentSessionColumnSurface({
 	paddingTop,
 	playGutterIntro,
 	shouldReduceMotion,
+	showTrailingShadow,
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps & {
 	advancedTimeline: boolean;
@@ -357,12 +364,11 @@ function InFlowAgentSessionColumnSurface({
 	return (
 		<div
 			className={cn(
-				"group/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",
+				"group/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 items-start border-2 border-r-0",
 				isEmbedded
-					? "pointer-events-auto bg-surface"
-					: "pointer-events-none bg-transparent [&_[data-agent-session-notch]]:pointer-events-auto [&_[data-agent-session-column-expand-control]]:pointer-events-auto",
+					? "pointer-events-auto"
+					: "pointer-events-none [&_[data-agent-session-notch]]:pointer-events-auto [&_[data-agent-session-column-expand-control]]:pointer-events-auto",
 				untrackedDropArmed ? "border-ring" : "border-transparent",
-				agentSessionColumn.isRepositioning && !isFullWidth ? "bg-transparent" : null,
 				className,
 			)}
 			data-board-agent-session-drop-zone="untracked"
@@ -371,18 +377,23 @@ function InFlowAgentSessionColumnSurface({
 				paddingTop,
 				paddingBottom,
 				willChange: shouldReduceMotion ? undefined : "transform",
-				transform: `translateX(${isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX : IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX}px)`,
+				transform: `translateX(${isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX : IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX}px)`,
 				transition: shouldReduceMotion ? "none" : IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_TRANSITION,
 			}}
 		>
 			<AgentSessionColumn
 				{...agentSessionColumn}
+				animateLayout={false}
+				className={cn("max-h-full", agentSessionColumn.className)}
 				collapsed={!isFullWidth}
 				collapsedMenu={collapsedMenu}
 				hasScrollingEffect={hasScrollingEffect}
 				collapsedPresentation={isEmbedded ? "column" : "gutter"}
 				collapsedRailHitSlopPx={isEmbedded && !isFullWidth
 					? IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX
+					: 0}
+				collapsedExpandLeadingHitSlopPx={isEmbedded && !isFullWidth
+					? IN_FLOW_AGENT_SESSION_COLUMN_EXPAND_LEADING_HIT_SLOP_PX
 					: 0}
 				columnFrame={columnFrame}
 				expandedWidthPx={expandedWidthPx}
@@ -392,6 +403,7 @@ function InFlowAgentSessionColumnSurface({
 				onPinnedChange={advancedOnPinnedChange}
 				pinned={pinned}
 				playGutterIntro={playGutterIntro}
+				showTrailingShadow={Boolean(showTrailingShadow && isEmbedded)}
 				toggleChangesWidth={expanded}
 			/>
 			<InFlowAgentSessionColumnResizeHandle
@@ -543,6 +555,7 @@ export function InFlowAgentSessionColumn({
 	paddingTop,
 	resizable = true,
 	sessionFlyoutsSuspended,
+	showTrailingShadow,
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps>): ReactNode {
 	const {
@@ -589,6 +602,9 @@ export function InFlowAgentSessionColumn({
 				className={cn(
 					"z-30 flex min-h-0 shrink-0 self-stretch",
 					reposition.shifted ? "pointer-events-none absolute inset-y-0 left-0" : "relative",
+					// Only the compact default Expand button crosses the sidebar's resize
+					// seam. Lift its host, but leave empty footprint space pointer-inert.
+					!advancedTimeline && !isFullWidth ? "z-[60] pointer-events-none" : null,
 					reposition.enabled
 						? "[&_[data-agent-session-column-options]]:cursor-grab [&_[data-agent-session-column-options]]:touch-pan-y"
 						: null,
@@ -635,6 +651,7 @@ export function InFlowAgentSessionColumn({
 					playGutterIntro={playGutterIntro}
 					sessionFlyoutsSuspended={sessionFlyoutsSuspended}
 					shouldReduceMotion={shouldReduceMotion}
+					showTrailingShadow={showTrailingShadow}
 					untrackedDropArmed={untrackedDropArmed}
 				/>
 			</div>

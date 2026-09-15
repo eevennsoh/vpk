@@ -4,10 +4,10 @@ const { join } = require("node:path");
 const test = require("node:test");
 
 const {
-	measureSessionDragIdentityOrigin,
-	SESSION_DRAG_CHIP_ENTER_TARGET,
+	measureSessionDragGeometry,
+	resolveSessionDragMorph,
+	sessionDragGeometryRelativeToPointer,
 	SESSION_DRAG_CHIP_ENTER_TRANSITION,
-	SESSION_DRAG_CHIP_REDUCED_TRANSITION,
 	SESSION_DRAG_IDENTITY_SELECTOR,
 } = require("./agent-session-drag-motion.ts");
 
@@ -26,37 +26,41 @@ function hostWithIdentity(rect) {
 	};
 }
 
-test("the chip's origin is the centre of the grabbed row's identity mark", () => {
-	assert.deepEqual(
-		measureSessionDragIdentityOrigin(
-			hostWithIdentity({ height: 32, left: 100, top: 200, width: 32 }),
-		),
-		{ x: 116, y: 216 },
-	);
+test("the morph starts the avatar at its source box, rather than centring the whole pill there", () => {
+	const source = {
+		surface: { left: 349, top: 280, width: 270, height: 60 },
+		identity: { left: 361, top: 294, width: 32, height: 32 },
+	};
+	const target = {
+		surface: { left: -79, top: -22, width: 158, height: 44 },
+		identity: { left: -71, top: -16, width: 32, height: 32 },
+	};
+	// A coalesced first move can publish far from pointerdown.
+	for (const pointer of [{ x: 520, y: 310 }, { x: 720, y: 380 }]) {
+		const morph = resolveSessionDragMorph(sessionDragGeometryRelativeToPointer(source, pointer), target);
+		assert.equal(pointer.x + target.identity.left + morph.x + morph.identityX, source.identity.left);
+		assert.equal(pointer.y + target.identity.top + morph.y + morph.identityY, source.identity.top);
+		assert.equal(target.surface.width * morph.scaleX, source.surface.width);
+		assert.ok(Math.abs(target.surface.height * morph.scaleY - source.surface.height) < 0.001);
+	}
 });
 
-test("an unmarked or already-collapsed row degrades to a plain fade", () => {
-	// The row is animating to `h-0` on exactly the frames the chip mounts, so a
-	// zero box is a real state, not a defect — both branches must return null so
-	// the chip falls back to `x: 0, y: 0` instead of flying from the viewport
-	// corner.
-	assert.equal(measureSessionDragIdentityOrigin({ querySelector: () => null }), null);
-	assert.equal(
-		measureSessionDragIdentityOrigin(
-			hostWithIdentity({ height: 0, left: 100, top: 200, width: 32 }),
-		),
-		null,
-	);
-	assert.equal(
-		measureSessionDragIdentityOrigin(
-			hostWithIdentity({ height: 32, left: 100, top: 200, width: 0 }),
-		),
-		null,
-	);
+test("surface and identity measurements reject missing or collapsed geometry", () => {
+	const rect = { left: 10, top: 20, width: 32, height: 32 };
+	const host = { ...hostWithIdentity(rect), getBoundingClientRect: () => rect };
+	assert.deepEqual(measureSessionDragGeometry(host), { surface: rect, identity: rect });
+	assert.equal(measureSessionDragGeometry({ ...host, querySelector: () => null }), null);
+	assert.equal(measureSessionDragGeometry({ ...host, getBoundingClientRect: () => ({ ...rect, width: 0 }) }), null);
+	for (const dimension of ["width", "height"]) {
+		assert.equal(measureSessionDragGeometry({
+			...host,
+			...hostWithIdentity({ ...rect, [dimension]: 0 }),
+		}), null);
+	}
 });
 
 test("both drag hosts mark an identity for the chip to fly out of", () => {
-	// `measureSessionDragIdentityOrigin` returns null when this marker is
+	// `measureSessionDragGeometry` returns null when this marker is
 	// missing and the chip then fades in place with no error and no warning, so
 	// the marker itself is the contract.
 	assert.equal(SESSION_DRAG_IDENTITY_SELECTOR, "[data-session-drag-identity]");
@@ -76,9 +80,6 @@ test("the enter transition is the popup-family token pair, resolved once", () =>
 		duration: 0.15,
 		ease: [0.4, 1, 0.6, 1],
 	});
-	assert.deepEqual(SESSION_DRAG_CHIP_ENTER_TARGET, { opacity: 1, x: 0, y: 0 });
-	// VPK duration tokens resolve to literal ms and never collapse themselves.
-	assert.deepEqual(SESSION_DRAG_CHIP_REDUCED_TRANSITION, { duration: 0 });
 });
 
 test("the origin is captured on pointerdown and cleared on both drag endings", () => {
@@ -88,7 +89,7 @@ test("the origin is captured on pointerdown and cleared on both drag endings", (
 	// below for why pointerdown is the wrong place to subtract.
 	assert.match(
 		MEDIUM_DRAG_SOURCE,
-		/setSourceHeight\(event\.currentTarget\.getBoundingClientRect\(\)\.height\);\s*\n\s*identityOriginRef\.current = measureSessionDragIdentityOrigin\(event\.currentTarget\);/u,
+		/setSourceHeight\(event\.currentTarget\.getBoundingClientRect\(\)\.height\);\s*\n\s*sourceGeometryRef\.current = measureSessionDragGeometry\(event\.currentTarget\);/u,
 	);
 	// A stale origin would make the next gesture's chip fly from the previous
 	// row, so both endSessionDrag and cancelSessionDrag clear it.
@@ -97,11 +98,6 @@ test("the origin is captured on pointerdown and cleared on both drag endings", (
 		2,
 		"endSessionDrag and cancelSessionDrag must both clear the origin",
 	);
-	assert.equal(
-		MEDIUM_DRAG_SOURCE.match(/setChipSettled\(false\);/gu)?.length,
-		2,
-		"endSessionDrag and cancelSessionDrag must both re-arm the entrance",
-	);
 });
 
 test("reduced motion zeroes the chip entrance instead of just shortening it", () => {
@@ -109,24 +105,10 @@ test("reduced motion zeroes the chip entrance instead of just shortening it", ()
 	// pinned so neither can start honouring reduced motion on its own.
 	assert.match(MEDIUM_DRAG_SOURCE, /const reduceChipMotion = Boolean\(shouldReduceMotion\);/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /reduceMotion=\{reduceChipMotion\}/u);
-	// `initial={false}` is what stops the FLIP from playing at all; a zero
-	// duration alone would still snap the chip in from the measured origin.
-	assert.match(
-		OVERLAY_SOURCE,
-		/initial=\{reduceMotion\s*\n\s*\? false/u,
-	);
-	assert.match(
-		OVERLAY_SOURCE,
-		/transition=\{reduceMotion\s*\n\s*\? SESSION_DRAG_CHIP_REDUCED_TRANSITION\s*\n\s*: SESSION_DRAG_CHIP_ENTER_TRANSITION\}/u,
-	);
-	// No compositor promotion for an animation that is not going to run, and
-	// none once the entrance has settled either.
-	assert.match(
-		OVERLAY_SOURCE,
-		/willChange: reduceMotion \|\| settled \? undefined : "opacity, transform"/u,
-	);
-	assert.match(OVERLAY_SOURCE, /onAnimationComplete=\{onEntranceSettled\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /onEntranceSettled=\{\(\) => setChipSettled\(true\)\}/u);
+	assert.match(OVERLAY_SOURCE, /if \(!follower \|\| reduceMotion\) return;/u);
+	assert.match(OVERLAY_SOURCE, /for \(const animation of animations\) animation\.stop\(\);/u);
+	assert.match(OVERLAY_SOURCE, /element\.style\.willChange = ""/u);
+
 	// Timing comes from the shared token module, never inlined at the callsite.
 	assert.match(OVERLAY_SOURCE, /from "\.\/agent-session-drag-motion"/u);
 	assert.doesNotMatch(OVERLAY_SOURCE, /duration: 0\.15/u);
@@ -141,7 +123,7 @@ test("the chip entrance anchors to the pointer that publishes, not to pointerdow
 	// coalesced touch and stylus moves that clear the 2px threshold in one step.
 	assert.match(
 		MEDIUM_DRAG_SOURCE,
-		/identityOriginRef\.current = measureSessionDragIdentityOrigin\(event\.currentTarget\);/u,
+		/sourceGeometryRef\.current = measureSessionDragGeometry\(event\.currentTarget\);/u,
 	);
 
 	const pointerDownBlock = MEDIUM_DRAG_SOURCE.slice(
@@ -158,14 +140,14 @@ test("the chip entrance anchors to the pointer that publishes, not to pointerdow
 	// The publishing move resolves it, once, against its own client position.
 	assert.match(
 		MEDIUM_DRAG_SOURCE,
-		/if \(!didPublishDragRef\.current\) \{\s*\n\s*const identityOrigin = identityOriginRef\.current;/u,
+		/if \(!didPublishDragRef\.current\) \{\s*\n\s*const sourceGeometry = sourceGeometryRef\.current;/u,
 	);
-	assert.match(MEDIUM_DRAG_SOURCE, /x: identityOrigin\.x - event\.clientX,/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /y: identityOrigin\.y - event\.clientY,/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragGeometryRelativeToPointer\(sourceGeometry, \{ x: event\.clientX, y: event\.clientY \}\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /chipPointer\.snapToPointer\(\{ x: event\.clientX, y: event\.clientY \}\);/u);
 
 	// A stale origin must not survive into the next gesture.
 	assert.equal(
-		(MEDIUM_DRAG_SOURCE.match(/identityOriginRef\.current = null;/gu) ?? []).length,
+		(MEDIUM_DRAG_SOURCE.match(/sourceGeometryRef\.current = null;/gu) ?? []).length,
 		2,
 		"both end and cancel clear the identity origin",
 	);

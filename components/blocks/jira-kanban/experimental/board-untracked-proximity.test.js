@@ -18,6 +18,7 @@ const PAGE_SOURCE = [
 	readFileSync(join(EXPERIMENTAL_DIR, "experimental-page-types.ts"), "utf8"),
 	readFileSync(join(EXPERIMENTAL_DIR, "hooks", "use-page-content-model.ts"), "utf8"),
 	readFileSync(join(EXPERIMENTAL_DIR, "hooks", "use-agent-session-review.ts"), "utf8"),
+	readFileSync(join(EXPERIMENTAL_DIR, "hooks", "use-agent-filter-sessions.ts"), "utf8"),
 ].join("\n");
 const BOARD_SOURCE = [
 	readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8"),
@@ -57,7 +58,8 @@ function withoutComments(source) {
 }
 
 test("the experimental page groups Pulse sessions onto the board when Untracked is on", () => {
-	assert.match(PAGE_SOURCE, /import \{\s*collectBoardIssueKeys,\s*groupBoardUntrackedSessions,\s*selectBoardUntrackedSessions,\s*\} from "\.\/lib\/board-untracked-sessions"/u);
+	assert.match(PAGE_SOURCE, /import \{\s*collectBoardIssueKeys,\s*groupBoardUntrackedSessions,\s*\} from "\.\/lib\/board-untracked-sessions"/u);
+	assert.match(PAGE_SOURCE, /import \{\s*selectBoardUntrackedSessions\s*\} from "\.\.\/lib\/board-untracked-sessions"/u);
 	assert.match(PAGE_SOURCE, /defaultShowUntracked\?: boolean;/u);
 	assert.match(PAGE_SOURCE, /defaultShowUntracked = true,/u);
 	assert.match(PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(defaultShowUntracked\)/u);
@@ -77,9 +79,9 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 test("the Untracked column follows card session link and unlink state", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const untrackedAgentSessionItems = useMemo\([\s\S]*selectBoardUntrackedSessions\(\{[\s\S]*archivedItemIds: archivedLooseWorkIds,[\s\S]*capturedItemIds: capturedLooseWorkIds,[\s\S]*detachedByCard: detachedAgentSessionsByCard,[\s\S]*sessions: agentSessionItems,/u,
+		/const displayedUntrackedAgentSessionItems = useAgentFilterSessions\(\{[\s\S]*archivedItemIds: archivedLooseWorkIds,[\s\S]*capturedItemIds: capturedLooseWorkIds,[\s\S]*detachedByCard: detachedAgentSessionsByCard,[\s\S]*sessions: agentSessionItems,/u,
 	);
-	assert.match(PAGE_SOURCE, /items: untrackedAgentSessionItems/u);
+	assert.match(PAGE_SOURCE, /items: displayedUntrackedAgentSessionItems/u);
 	assert.match(
 		PAGE_SOURCE,
 		/const handleCardAgentSessionLink:[\s\S]*setCapturedLooseWorkIds\([\s\S]*new Set\(current\)\.add\(session\.id\)/u,

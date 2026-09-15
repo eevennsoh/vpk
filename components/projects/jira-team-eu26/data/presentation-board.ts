@@ -25,6 +25,11 @@ import { getJiraTeamEu26PullRequestPreview } from "./presentation-pull-requests"
 
 export { JIRA_TEAM_EU26_PAY_CURRENT_USER };
 
+const JIRA_TEAM_EU26_PAY_CURRENT_USER_INVOKER = {
+	avatarSrc: JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+	name: JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+} as const satisfies NonNullable<JiraIssueAgentActivity["invokedBy"]>;
+
 const PAY_AVATARS = {
 	releaseAgent: "/avatar-agent/strategy-agents/strategic-insight.svg",
 	reviewAgent: "/avatar-agent/teamwork-agents/decision-director.svg",
@@ -69,7 +74,7 @@ export const JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID = {
 export const JIRA_TEAM_EU26_PAY_BOARD_AGENTS = [
 	{
 		id: "claude-code",
-		name: "Claude Code",
+		name: "Claude",
 		byline: "Coding agent by Anthropic",
 		brandName: "claude",
 	},
@@ -148,7 +153,7 @@ export function toJiraTeamEu26DetachedAgentSession(
 export const JIRA_TEAM_EU26_PAY_COMPOSER_AGENTS = [
 	{
 		id: "claude-code",
-		name: "Claude Code",
+		name: "Claude",
 		byline: "Coding agent by Anthropic",
 		brandName: "claude",
 	},
@@ -279,6 +284,10 @@ function createActivity({
 	state: "working" | "awaiting-input";
 	timeLabel: string;
 }>): JiraIssueAgentActivity {
+	const resolvedInvoker = role === "owner"
+		? JIRA_TEAM_EU26_PAY_CURRENT_USER_INVOKER
+		: invokedBy;
+
 	return {
 		id,
 		name: agentName,
@@ -296,7 +305,7 @@ function createActivity({
 		state,
 		timeLabel,
 		...(host !== undefined ? { host } : {}),
-		...(invokedBy ? { invokedBy } : {}),
+		...(resolvedInvoker ? { invokedBy: resolvedInvoker } : {}),
 		...(question ? { question } : {}),
 		...(role !== undefined ? { role } : {}),
 	};
@@ -386,6 +395,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 	},
 	{
 		title: "In progress",
+		statuses: ["In progress", "Paused"],
 		count: 4,
 		cards: [
 			createCard({
@@ -420,7 +430,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				title: "Move retry and backoff out of LegacyGatewayAdapter",
 				agentActivities: [createActivity({
 					id: "PAY-107:claude-code",
-					agentName: "Claude Code",
+					agentName: "Claude",
 					agentBrandName: "claude",
 					cycleIntervalJitterMs: 2200,
 					cycleIntervalMs: 3100,
@@ -462,7 +472,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					}),
 					createActivity({
 						id: "PAY-123:claude-code",
-						agentName: "Claude Code",
+						agentName: "Claude",
 						agentBrandName: "claude",
 						cycleIntervalJitterMs: 2100,
 						cycleIntervalMs: 2400,
@@ -595,7 +605,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				agentActivityMode: "completed",
 				agentDoneRuns: [createCompletedRun({
 					id: JIRA_TEAM_EU26_PAY_101_SESSION_ID,
-					agentName: "Claude Code",
+					agentName: "Claude",
 					agentBrandName: "claude",
 					issueKey: "PAY-101",
 					issueSummary: "Inventory every v1 call site across services and name an owner for each",

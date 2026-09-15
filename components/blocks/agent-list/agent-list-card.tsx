@@ -30,6 +30,7 @@ import {
 	createHoverCardHandle,
 } from "@/components/ui/hover-card";
 import { IconTile } from "@/components/ui/icon-tile";
+import { toCompactRelativeTimeLabel } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 import { AgentListIdentity } from "./agent-list-identity";
@@ -49,7 +50,7 @@ import type {
 export { AgentListIdentity } from "./agent-list-identity";
 
 /**
- * State → title-line + lifecycle treatment. `running` shows a solid title with a
+ * State → title-line + lifecycle treatment. `running` shimmers the work title with a
  * trailing pixel loader; `needs-input` swaps the title for "Needs input"
  * (see {@link getSessionTitle}), adds animated dots, and shows a trailing info
  * icon; `attention` keeps the row's own title — it is already the news — and
@@ -73,7 +74,7 @@ const STATE_META: Record<
 	}
 > = {
 	running: {
-		shimmerTitle: false,
+		shimmerTitle: true,
 		showDots: false,
 		showLifecycle: true,
 	},
@@ -123,14 +124,15 @@ const PR_STATUS_META: Record<
 };
 
 export function AgentListPrStatusIcon({
+	className,
 	status,
-}: Readonly<{ status: AgentListPrStatus }>) {
+}: Readonly<{ className?: string; status: AgentListPrStatus }>) {
 	const { Icon: PrIcon, colorClass, label } = PR_STATUS_META[status];
 
 	return (
 		<span
 			aria-label={label}
-			className={cn("grid size-4 shrink-0 place-items-center", colorClass)}
+			className={cn("grid size-4 shrink-0 place-items-center", colorClass, className)}
 			role="img"
 			title={label}
 		>
@@ -251,7 +253,7 @@ export function AgentListTime({
 	);
 
 	if (item.timeLabel !== undefined) {
-		return <span>{item.timeLabel}</span>;
+		return <span>{toCompactRelativeTimeLabel(item.timeLabel)}</span>;
 	}
 
 	const isLive = !isLocalAgentListItem(item)
@@ -774,8 +776,9 @@ export function AgentListRow({
 						>
 							{lifecycleNode ? (
 								<div
-								className={cn(
-									overlayHoverActions
+									className={cn(
+										"flex items-center leading-none",
+										overlayHoverActions
 											? "group-hover/agent-row:pointer-events-none group-hover/agent-row:invisible group-has-[[data-agent-list-card-actions]:focus-within]/agent-row:pointer-events-none group-has-[[data-agent-list-card-actions]:focus-within]/agent-row:invisible group-has-[[aria-expanded=true]]/agent-row:pointer-events-none group-has-[[aria-expanded=true]]/agent-row:invisible"
 											: "pointer-events-none",
 										overlayHoverActions && hoverActions?.pinned && "pointer-events-none invisible",

@@ -10,6 +10,14 @@ export const SIMPLE_STATUS_COLUMN_CONTENT_INSET_PX = 4;
 export const IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24;
 /** `border-2` on the leading edge of the absolute Untracked surface. */
 export const IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX = 2;
+/**
+ * Embedded translate so the well's 1px rest stroke sits on the header's 24px
+ * line. The drop-zone's 2px leading border would otherwise push the well
+ * past Search board.
+ */
+export const IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX =
+	IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX
+	- IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX;
 
 /**
  * Width reserved when Untracked moves between status columns. The surface
@@ -80,7 +88,8 @@ export function resolveStatusColumnVisualGutterPx(
  *
  * Untracked's well has no trailing drop/content chrome, so the shell gap is
  * the visual gutter minus the first status column's leading chrome. The
- * spacer then undoes translate, leading border, and the status row inset.
+ * spacer then undoes the embedded translate, leading border, and the status
+ * row inset.
  */
 export function resolveInFlowAgentSessionColumnGapPx(
 	columnFrame: AgentSessionColumnFrame,
@@ -89,7 +98,7 @@ export function resolveInFlowAgentSessionColumnGapPx(
 	const shellGapPx = resolveStatusColumnVisualGutterPx(columnFrame) - leadingChromePx;
 	return shellGapPx
 		- resolveStatusColumnRowPaddingPx(columnFrame)
-		+ IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX
+		+ IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX
 		+ IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX;
 }
 

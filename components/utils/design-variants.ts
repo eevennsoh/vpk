@@ -38,8 +38,13 @@ export const DESIGN_VARIANTS = [
 	{ id: "panel", label: "Panel" },
 	{ id: "simple-views", label: "Simple views" },
 	{ id: "simpleKanban", label: "Simple kanban" },
+	{ id: "kanbanBackground", label: "Background color" },
 	{ id: "advancedTimeline", label: "Advanced timeline" },
 	{ id: "agentSessionColumnResizing", label: "Dragging" },
+	{ id: "manualLink", label: "Manual link" },
+	{ id: "sessionStroke", label: "Stroke tracing" },
+	{ id: "sessionBloom", label: "Card glow" },
+	{ id: "sessionProximity", label: "Proximity sensor" },
 ] as const;
 
 export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
@@ -60,17 +65,37 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * Simple kanban starts on: expanded columns drop the sunken well unless the
  * user turns it off to restore the default column chrome.
  *
+ * Kanban background starts off: routes opt into the subtlest grey board plane
+ * while foreground surfaces, including Agent Sessions, remain white.
+ *
  * Advanced timeline starts off: Team EU keeps its compact session timeline
  * embedded with only expand/collapse until the user opts into unpinning and
  * cross-column repositioning.
  *
  * Agent Session column resizing starts off: Team EU omits the width drag
  * handle until the user explicitly enables Dragging.
+ *
+ * Manual link starts off: Team EU hides the Link work item session-menu row
+ * until the user explicitly enables it.
+ *
+ * Card glow starts on; Stroke tracing and Proximity sensor start off.
+ * Each layer remains independently configurable in Settings:
+ *
+ * - Stroke tracing — the accent border traced along the card edge.
+ * - Card glow — the soft accent wash behind the row.
+ * - Proximity sensor — the column-wide pointer plane that starts the other two
+ *   before the cursor reaches a row. With both layers off it drives nothing, so
+ *   it is the only one whose effect depends on another.
  */
 const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	advancedTimeline: false,
 	agentSessionColumnResizing: false,
+	kanbanBackground: false,
+	manualLink: false,
 	panel: false,
+	sessionBloom: true,
+	sessionProximity: false,
+	sessionStroke: false,
 	"simple-views": true,
 	simpleKanban: true,
 });

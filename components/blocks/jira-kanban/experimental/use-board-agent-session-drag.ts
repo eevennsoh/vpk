@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import {
+	AGENT_BRAND_TINT_FALLBACK,
+	resolveAgentBrandTintColor,
+} from "@/components/blocks/agent-session/agent-brand-tint";
 import { toSessionTransferMember } from "@/components/blocks/agent-session/agent-session-transfer-member";
 import { createSessionCohort } from "@/components/blocks/agent-session/session-cohort";
 import type {
@@ -13,6 +17,10 @@ import type {
 import {
 	JIRA_ISSUE_LINK_FLASH_DURATION_MS,
 } from "@/components/blocks/jira-issue/agent-link-flash";
+import {
+	toJiraIssueAttachTracePointer,
+	type JiraIssueAttachTrace,
+} from "@/components/blocks/jira-issue/attach-proximity";
 import {
 	JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	type JiraIssueAgentSessionDragBinding,
@@ -770,6 +778,27 @@ export function useBoardAgentSessionDrag({
 		const attachNearness = isFusionDropFlight
 			? 1
 			: proximity?.cardCode === card.code ? proximity.nearness : 0;
+		// Only the card the session is actually heading for traces a stroke, and
+		// it traces the cohort lead's colour — the same member, resolved by the
+		// same expression, that the drop flash will sweep across the chin row a
+		// moment later. A drop flight has no live pointer left, so it stops
+		// tracing and hands over to that flash.
+		const traceMembers = transaction?.cohort.members;
+		const traceRect = proximity?.surfaceRect ?? proximity?.bounds;
+		const tracePointer = !isFusionDropFlight
+			&& proximity?.cardCode === card.code
+			&& transaction
+			&& traceRect
+			? toJiraIssueAttachTracePointer(transaction.pointer, traceRect)
+			: null;
+		const attachTrace: JiraIssueAttachTrace | null = tracePointer
+			? {
+				accent: resolveAgentBrandTintColor(traceMembers?.[0]?.tintSeed)
+					?? AGENT_BRAND_TINT_FALLBACK,
+				pointerX: tracePointer.pointerX,
+				pointerY: tracePointer.pointerY,
+			}
+			: null;
 		const attachedBinding = createBinding(
 			{ kind: "attached", sourceCardCode: card.code },
 			(session) => {
@@ -784,6 +813,7 @@ export function useBoardAgentSessionDrag({
 		const control: JiraIssueAgentSessionDragControl | undefined = enablement.attached
 			? {
 				attachNearness,
+				attachTrace,
 				binding: attachedBinding,
 				dragCount,
 				dropTarget,

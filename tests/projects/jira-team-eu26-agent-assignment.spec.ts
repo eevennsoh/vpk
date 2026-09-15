@@ -2,7 +2,77 @@ import { expect, test } from "@playwright/test";
 
 test.use({ viewport: { width: 1800, height: 1100 } });
 
+test("List session identities align with Assign agent and working uses the experimental spinner", async ({ page }) => {
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.getByRole("tab", { name: "List" }).click();
+	const emptyCell = page.locator('[data-issue-key="PAY-125"] td').nth(4);
+	const emptyLabel = emptyCell.getByText("Assign agent", { exact: true });
+	await expect(emptyLabel).toBeVisible();
+	const emptyBox = await emptyLabel.boundingBox();
+	expect(emptyBox).not.toBeNull();
+	if (!emptyBox) return;
+
+	for (const issueKey of ["PAY-105", "PAY-123", "PAY-112", "PAY-101"]) {
+		const cell = page.locator(`[data-issue-key="${issueKey}"] td`).nth(4);
+		const identity = cell.locator('[data-slot="jira-issue-agent-row"] button > div > span:first-child');
+		await expect(identity).toBeVisible();
+		const identityBox = await identity.boundingBox();
+		expect(identityBox).not.toBeNull();
+		if (identityBox) expect(Math.abs(identityBox.x - emptyBox.x)).toBeLessThan(1);
+	}
+
+	for (const issueKey of ["PAY-105", "PAY-123"]) {
+		const spinner = page.locator(`[data-issue-key="${issueKey}"] td`).nth(4).locator('[data-slot="spinner"]');
+		await expect(spinner).toHaveAttribute("data-iconic-orb", "");
+	}
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.reload();
+	await page.getByRole("tab", { name: "List" }).click();
+	const reducedSpinner = page.locator('[data-issue-key="PAY-105"] td').nth(4).locator('[data-slot="spinner"]');
+	await expect(reducedSpinner).toHaveAttribute("data-iconic-orb", "");
+	await expect(reducedSpinner.locator("g")).not.toHaveClass(/spinner-experimental-orb-rotator-motion/u);
+});
+
+for (const { issueKey, state, agent } of [
+	{ issueKey: "PAY-105", state: "Working", agent: "Cursor" },
+	{ issueKey: "PAY-112", state: "Needs input", agent: "Codex" },
+	{ issueKey: "PAY-101", state: "Finished", agent: "Claude" },
+]) {
+	test(`${state} session rows share the assignment flyout`, async ({ page }) => {
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		const row = page.locator(`[data-issue-key="${issueKey}"] [data-slot="jira-issue-agent-row"]`);
+		const trigger = row.getByRole("button", { name: `Open ${agent} in Rovo chat: ${state}`, exact: true });
+		await trigger.hover();
+		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+		await expect(flyout).toBeVisible();
+		await expect(trigger).toHaveAttribute("aria-expanded", "true");
+		await expect(flyout).toContainText(agent);
+		const assign = flyout.getByRole("button", { name: "Assign agent", exact: true });
+		await assign.hover();
+		await expect(flyout).toBeVisible();
+		await assign.click();
+		await expect(page.getByRole("option").filter({ hasText: "Readiness Checker" })).toBeVisible();
+	});
+}
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`Finished session flyout supports keyboard access (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.getByRole("button", { name: "More actions for PAY-101", exact: true }).focus();
+		await page.keyboard.press("Tab");
+		const trigger = page.getByRole("button", { name: "Open Claude in Rovo chat: Finished", exact: true });
+		await expect(trigger).toBeFocused();
+		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+		await expect(flyout).toBeVisible();
+		await expect(trigger).toHaveAttribute("aria-expanded", "true");
+		await expect(flyout).toHaveCSS("opacity", "1");
+		await page.screenshot({ path: `output/agent-browser/finished-flyout-${reducedMotion}.png` });
+		await page.keyboard.press("Escape");
+		await expect(flyout).toBeHidden();
+		await expect(trigger).toHaveAttribute("aria-expanded", "false");
+	});
+
 	test(`manual assignment keeps card content inside its shell (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);

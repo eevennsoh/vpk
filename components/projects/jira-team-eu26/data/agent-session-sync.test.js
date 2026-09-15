@@ -77,6 +77,13 @@ test("every queued Jira v5 session has a unique stable identity", async () => {
 	assert.ok(sessions.every((session) => session.detail.length > 0));
 	assert.ok(sessions.every((session) => session.machineName.length > 0));
 	assert.ok(sessions.every((session) => session.memberIds.length > 0));
+	assert.ok(sessions.every((session) => session.state !== undefined));
+	assert.deepEqual(
+		new Set(sessions.map((session) => session.state)),
+		new Set(["running", "needs-input", "complete"]),
+	);
+	assert.equal(sessions.at(-1)?.state, "running");
+	assert.equal(sessions.at(-2)?.state, "needs-input");
 	assert.equal(
 		sessions.find((session) => session.sourceTitle === "PAY-132")?.issueStatus,
 		"In review",
@@ -109,6 +116,12 @@ test("every queued Jira v5 pull request carries the full Smart Link payload", as
 		.filter((pullRequest) => pullRequest !== undefined);
 
 	assert.ok(pullRequests.length > 0, "no PR-bearing sessions left to check");
+	assert.equal(
+		new Set(pullRequests.map((pullRequest) => pullRequest.title)).size,
+		pullRequests.length,
+		"every queued PR should have distinct placeholder title copy",
+	);
+	assert.ok(pullRequests.every((pullRequest) => pullRequest.title !== "High confidence to link"));
 
 	for (const pullRequest of pullRequests) {
 		const where = `PR #${pullRequest.number}`;

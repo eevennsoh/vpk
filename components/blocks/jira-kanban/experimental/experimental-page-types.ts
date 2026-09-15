@@ -1,6 +1,7 @@
 import type { ReactNode, Ref, RefObject } from "react";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { AgentSessionColumnProps } from "@/components/blocks/agent-session-column/agent-session-column-types";
 import type { JiraDropzoneBouncePlayback } from "@/components/blocks/jira-dropzone";
 import type {
 	JiraListAgentSessionDropIntent,
@@ -44,6 +45,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 }
 
 export interface ExperimentalJiraKanbanPageProps {
+	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	activeView?: ExperimentalJiraKanbanView;
 	activeCardCode?: string;
 	/** Extra local sessions discovered after the static Pulse fixture loaded. */
@@ -103,6 +105,17 @@ export interface ExperimentalJiraKanbanPageProps {
 	 * keyboard. Defaults to true so existing boards retain their width control.
 	 */
 	agentSessionColumnResizable?: boolean;
+	/**
+	 * Overrides for the session column's accent chrome, spread straight into its
+	 * config. `glowStroke` is the traced border, `glowBloom` the soft wash
+	 * behind the row, and `glowReach` the column-wide pointer plane that starts
+	 * them before the cursor arrives. All default on in the column, so omit this
+	 * to keep them.
+	 *
+	 * One grouped prop rather than two booleans: this file is at its size
+	 * ceiling, and a spreadable override costs it two lines instead of four.
+	 */
+	agentSessionColumnGlow?: Pick<AgentSessionColumnProps, "glowBloom" | "glowReach" | "glowStroke">;
 	/**
 	 * Whether the unattached sessions column supports additive/range selection
 	 * and multi-session drag cohorts. Defaults to true. `false` also disables
@@ -208,6 +221,12 @@ export interface ExperimentalJiraKanbanPageProps {
 	 * feature, so the row shows no link affordance at all.
 	 */
 	showAgentSessionLinkAction?: boolean;
+	/**
+	 * Whether an unattached session's more menu offers Link work item.
+	 * Defaults to true; routes can hide this manual path independently from
+	 * drag-to-link and other linking capabilities.
+	 */
+	showAgentSessionLinkWorkItemMenuItem?: boolean;
 	/**
 	 * Whether the unattached sessions column shows the overflow (ellipsis)
 	 * menu. Collapse remains when this is off. Defaults to true.

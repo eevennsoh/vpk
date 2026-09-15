@@ -44,7 +44,7 @@ function thirdPartyAgentLogo(name: ThirdPartyLogoName): ReactNode {
  * marks as {@link ContextTitleActions}.
  */
 const OPEN_IN_MENU_AGENTS: readonly OpenInAgent[] = [
-	{ id: "claude-code", label: "Claude Code", logo: thirdPartyAgentLogo("claude") },
+	{ id: "claude-code", label: "Claude", logo: thirdPartyAgentLogo("claude") },
 	{ id: "codex", label: "Codex", logo: thirdPartyAgentLogo("openai-codex") },
 	{ id: "cursor", label: "Cursor", logo: thirdPartyAgentLogo("cursor") },
 	{ id: "github-copilot", label: "GitHub Copilot", logo: thirdPartyAgentLogo("github-copilot") },

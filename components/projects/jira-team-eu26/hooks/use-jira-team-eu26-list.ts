@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import { mergeJiraKanbanAgentCatalog } from "@/components/blocks/jira-kanban/lib/agent-catalog";
-import { linkJiraKanbanAgentSession, moveJiraKanbanCardsToColumn } from "@/components/blocks/jira-kanban/state";
+import { linkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
+import { moveJiraKanbanCardsToStatus } from "@/components/blocks/jira-kanban/card-drop";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import type {
 	JiraListAssignedAgent,
@@ -210,11 +211,7 @@ export function useJiraTeamEu26List({
 	}, []);
 
 	const handleStatusChange = useCallback((issueKey: string, status: JiraListStatusOption) => {
-		setBoardColumns((columns) => (
-			columns.some((column) => column.title === status.status)
-				? moveJiraKanbanCardsToColumn(columns, [issueKey], status.status)
-				: columns
-		));
+		setBoardColumns((columns) => moveJiraKanbanCardsToStatus(columns, [issueKey], status.status));
 	}, [setBoardColumns]);
 
 	const handleAssignedAgentIdsChange = useCallback((

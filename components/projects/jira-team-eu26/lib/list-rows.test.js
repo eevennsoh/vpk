@@ -80,7 +80,16 @@ const COLUMNS = [
 				title: "Third",
 				priority: "minor",
 				tags: [],
-				agentActivities: [{ id: "claude", name: "Claude Code", state: "working" }],
+				agentActivities: [{
+					id: "claude",
+					invokedBy: {
+						avatarSrc: JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+						name: JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+					},
+					name: "Claude Code",
+					role: "owner",
+					state: "working",
+				}],
 			agentDoneRuns: [{ agentName: "Codex", state: "done" }],
 			},
 		],
@@ -100,8 +109,13 @@ test("createListRows flattens board columns and maps agent sessions", () => {
 			id: "claude-code",
 			name: "Claude Code",
 			byline: "Coding agent by Anthropic",
-			brandName: "claude",
-			statusKind: "working",
+				brandName: "claude",
+				invokedBy: {
+					avatarSrc: JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+					name: JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+				},
+				role: "owner",
+				statusKind: "working",
 			statusLabel: "Working",
 		},
 		{
@@ -247,6 +261,11 @@ test("applyAssignedAgentIdsToColumns archives and assigns against board columns"
 	assert.equal(assignedCard?.agentActivities?.[0]?.state, "working");
 	assert.equal(assignedCard?.agentActivities?.[0]?.startupSequence, "jira-work-item-start");
 	assert.equal(typeof assignedCard?.agentActivities?.[0]?.startedAtMs, "number");
+	assert.deepEqual(assignedCard?.agentActivities?.[0]?.invokedBy, {
+		avatarSrc: JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc,
+		name: JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
+	});
+	assert.equal(assignedCard?.agentActivities?.[0]?.role, "owner");
 
 	const keptFromSessionIds = applyAssignedAgentIdsToColumns(
 		COLUMNS,

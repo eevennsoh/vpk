@@ -2,8 +2,14 @@
 
 import type { CSSProperties } from "react";
 
-import type { AgentListAgent, AgentListInvoker } from "@/components/blocks/agent-list";
-import { AgentListIdentity } from "@/components/blocks/agent-list/agent-list-identity";
+import type {
+	AgentListAgent,
+	AgentListInvoker,
+} from "@/components/blocks/agent-list";
+import {
+	AgentListIdentity,
+	type AgentListAttributionOrder,
+} from "@/components/blocks/agent-list/agent-list-identity";
 import { Badge } from "@/components/ui/badge";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -58,9 +64,9 @@ function sessionCohortLabel(total: number): string {
 }
 
 /**
- * One travelling session, drawn as the Figma drag pill: an elevated white
- * surface holding the agent hexagon with the human invoker tucked into its
- * corner, then "Claude with Annie".
+ * One travelling session, drawn as the drag pill: an elevated white surface
+ * holding the human invoker followed by the agent hexagon, then "Claude with
+ * Annie".
  *
  * `AgentListIdentity` already draws that composite at `sizePx={32}` — the same
  * footprint the resting medium card uses — so the avatar can morph 1:1 out of
@@ -69,11 +75,13 @@ function sessionCohortLabel(total: number): string {
 export function AgentSessionDragPill({
 	agent,
 	attributedBy,
+	attributionOrder = "human-first",
 	elevated = false,
 	isFusionSource = false,
 }: Readonly<{
 	agent: AgentListAgent;
 	attributedBy?: AgentListInvoker;
+	attributionOrder?: AgentListAttributionOrder;
 	/** Overlay copies paint an opaque surface + shadow; resting copies stay flat. */
 	elevated?: boolean;
 	/** Only a travelling lead pill is measured by the Jira fusion overlay. */
@@ -92,15 +100,27 @@ export function AgentSessionDragPill({
 				// because the composite's own avatar ring already reads as inset,
 				// while the trailing edge needs the full 12px to keep the label off
 				// the corner radius.
-				"flex w-fit max-w-full items-center gap-1.5 rounded-lg py-1.5 pl-2 pr-3",
-				elevated ? "bg-surface" : "bg-bg-neutral",
+				"relative isolate flex w-fit max-w-full items-center gap-1.5 rounded-lg py-1.5 pl-2 pr-3",
 			)}
 			data-session-drag-pill=""
 			data-session-fusion-chip={isFusionSource ? "" : undefined}
-			style={elevated ? DRAG_CHIP_ELEVATION : undefined}
 		>
-			<AgentListIdentity agent={agent} attributedBy={attributedBy} sizePx={32} />
-			<span className="truncate text-xs text-text">
+			{/* Independent surface lets the row contract without scaling its avatars. */}
+			<span
+				aria-hidden="true"
+				className={cn("absolute inset-0 -z-10 rounded-lg", elevated ? "bg-surface" : "bg-bg-neutral")}
+				data-session-drag-surface=""
+				style={{ ...(elevated ? DRAG_CHIP_ELEVATION : undefined), transformOrigin: "0 0" }}
+			/>
+			<span className="block shrink-0" data-session-drag-identity="">
+				<AgentListIdentity
+					agent={agent}
+					attributedBy={attributedBy}
+					attributionOrder={attributionOrder}
+					sizePx={32}
+				/>
+			</span>
+			<span className="truncate text-xs text-text" data-session-drag-label="">
 				{agentIdentityLabel(agent, attributedBy)}
 			</span>
 		</div>
@@ -138,6 +158,7 @@ export function AgentSessionDragChip({
 			<AgentSessionDragPill
 				agent={lead.agent}
 				attributedBy={lead.invokedBy}
+				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}
 			/>
@@ -188,6 +209,7 @@ export function AgentSessionDragChip({
 			<AgentSessionDragPill
 				agent={lead.agent}
 				attributedBy={lead.invokedBy}
+				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}
 			/>

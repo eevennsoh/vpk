@@ -13,6 +13,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/jira-kanban/card-drop.test.js",
 		"components/blocks/agent-session-column/use-agent-session-arrivals.test.ts",
 		".agents/skills/vpk-html/scripts/evals.test.js",
 		"twg-install.test.js",
@@ -266,6 +267,9 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-verify/scripts/verify-feature-map.test.js",
 	],
 	"source-contract": [
+		"components/visual/card-glow/card-glow.test.js",
+		"components/blocks/agent-session/agent-session-glow.test.js",
+		"components/blocks/jira-issue/attach-trace.test.js",
 		"components/blocks/jira-kanban/experimental/agent-session-review.test.js",
 		"components/arts/rovo-p5/index.test.js",
 		"components/blocks/agent-evaluation/agent-evaluation.test.js",
@@ -288,6 +292,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-session-column/agent-session-column-overflow.test.js",
 		"components/blocks/agent-session-column/agent-session-column-arrival.test.js",
 		"components/blocks/agent-session-column/agent-session-column.test.js",
+		"components/blocks/agent-session-column/agent-session-column-well.test.js",
 		"components/blocks/agent-session-column/agent-session-column-frame.test.js",
 		"components/blocks/artifact-pane/artifact-pane.test.js",
 		"components/blocks/chatgpt/create-project-form.test.js",

@@ -1,6 +1,9 @@
 import type { ComponentProps, RefObject } from "react";
 
-import type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment";
+import type {
+	AgentAssignmentAgent,
+	AgentAssignmentStatusKind,
+} from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { JiraIssuePriority, JiraIssueTag } from "@/components/blocks/jira-issue";
 import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
@@ -42,7 +45,7 @@ export interface JiraListGoal {
 	emphasis?: "default" | "warning";
 }
 
-export interface JiraListAssignedAgent {
+export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "invokedBy" | "role"> {
 	id: string;
 	name: string;
 	byline?: string;
