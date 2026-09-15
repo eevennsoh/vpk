@@ -392,7 +392,7 @@ test("notch flyouts use a stable trigger host so the shared popup follows the ra
 	// Same contract as expanded AgentSessionCard: layout on the `li`, a plain
 	// `div` as the HoverCard trigger. Putting `layout` on the trigger remounts
 	// the host and opens a new flyout per notch.
-	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \|\| !animateLayout \? false : "position"\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]{0,200}?render=\{\s*<div\s*className="mx-auto flex h-5 items-center/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /delay=\{0\}/u);

@@ -62,6 +62,7 @@ import {
 import { useAgentSessionMenu } from "./use-agent-session-menu";
 
 export function AgentSessionCard({
+	animateLayout = true,
 	arrivalDelaySeconds,
 	captured = false,
 	density = "short",
@@ -100,6 +101,7 @@ export function AgentSessionCard({
 	visibilityLabel = "Archive",
 	workItemOptions,
 }: Readonly<{
+	animateLayout?: boolean;
 	arrivalDelaySeconds?: number;
 	captured?: boolean;
 	/** Row shape — see {@link AgentSessionDensity}. Defaults to the avatar-led short row. */
@@ -411,9 +413,9 @@ export function AgentSessionCard({
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
 			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
-			// Siblings slide down to make room instead of jumping. `"position"` so a
-			// displaced card is never scaled, only moved.
-			layout={shouldReduceMotion ? false : "position"}
+			// Standalone lists move siblings for arrivals. The in-flow column opts
+			// out so board filter changes place sessions immediately.
+			layout={shouldReduceMotion || !animateLayout ? false : "position"}
 			style={{
 				...(glow ? cardGlowSurfaceStyle(agentSessionAccentColor(item)) : null),
 				willChange: shouldPlayArrival ? "opacity, transform" : undefined,

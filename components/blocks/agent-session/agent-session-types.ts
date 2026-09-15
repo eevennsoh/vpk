@@ -134,6 +134,8 @@ export interface AgentSessionTriageRow {
 export interface AgentSessionProps {
 	className?: string;
 	style?: CSSProperties;
+	/** Animate sibling position changes; the in-flow session column keeps filter changes instant. */
+	animateLayout?: boolean;
 	/** Card footprint. Defaults to the full large uncaptured-work card. */
 	variant?: AgentSessionVariant;
 	/**

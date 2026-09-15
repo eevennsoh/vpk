@@ -465,6 +465,7 @@ function AgentSessionUserNotch({
  * reflows the rail under the pointer.
  */
 function AgentSessionNotch({
+	animateLayout,
 	flyoutHandle,
 	flyoutSession,
 	hitSlopPx,
@@ -482,6 +483,7 @@ function AgentSessionNotch({
 	proximity,
 	sessionDrag,
 }: Readonly<{
+	animateLayout: boolean;
 	flyoutHandle: JiraSessionFlyoutHandle;
 	flyoutSession: JiraSidebarSessionItem;
 	hitSlopPx: number;
@@ -508,8 +510,8 @@ function AgentSessionNotch({
 		<motion.li
 			className="group/notch flex h-6 w-full shrink-0 items-center"
 			data-hovered={isHovered || undefined}
-			layout={shouldReduceMotion ? false : "position"}
-			// Animate session-order changes, not the rail's scrolling or board placement.
+			layout={shouldReduceMotion || !animateLayout ? false : "position"}
+			// Standalone rails animate order; the in-flow column keeps filters instant.
 			layoutDependency={introIndex}
 			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 		>
@@ -589,6 +591,7 @@ function AgentSessionNotch({
 }
 
 export function AgentSessionColumnRail({
+	animateLayout = true,
 	arrivingItemIds,
 	capturedItemIds,
 	getSuggestedWorkItemKey,
@@ -611,6 +614,7 @@ export function AgentSessionColumnRail({
 	sessionDrag,
 	showUntrackedWorkFooter,
 }: Readonly<{
+	animateLayout?: boolean;
 	/** Subset of `newItemIds` whose arrival beat has not played yet. */
 	arrivingItemIds?: ReadonlySet<string>;
 	capturedItemIds?: ReadonlySet<string>;
@@ -715,7 +719,7 @@ export function AgentSessionColumnRail({
 			    Gutter rest still caps the
 			    viewport at ten notches; a hover-scaled hit area and column
 			    presentation omit that cap so every session can show inside the
-			    column height. Arrival layout stays on each `motion.li`. */}
+			    column height. Standalone rails retain per-notch arrival layout. */}
 			<ul
 				className="scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto overscroll-contain px-1 py-0.5"
 				data-agent-session-column-rail=""
@@ -734,6 +738,7 @@ export function AgentSessionColumnRail({
 			>
 				{items.map((item: AgentSessionItem, index: number) => (
 					<AgentSessionNotch
+						animateLayout={animateLayout}
 						flyoutHandle={flyoutHandle}
 						hitSlopPx={hitSlopPx}
 						flyoutSession={toAgentSessionUntrackedWorkFlyoutItem(
