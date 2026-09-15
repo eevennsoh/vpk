@@ -385,6 +385,7 @@ function InFlowAgentSessionColumnSurface({
 				{...agentSessionColumn}
 				animateLayout={false}
 				className={cn("max-h-full", agentSessionColumn.className)}
+				showWorkingSpinner
 				collapsed={!isFullWidth}
 				collapsedMenu={collapsedMenu}
 				hasScrollingEffect={hasScrollingEffect}

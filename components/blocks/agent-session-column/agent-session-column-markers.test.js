@@ -42,7 +42,7 @@ test("collapsed markers default to circles and can retain the previous line trea
 
 test("the increment count keeps the default collapsed-count color", () => {
 	assert.match(INDEX_SOURCE, /hideGutterCount = isGutterCollapsed/u);
-	assert.match(INDEX_SOURCE, /text=\{String\(sessionCount\)\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnCountMorph count=\{sessionCount\} \/>/u);
 	assert.match(INDEX_SOURCE, /"text-text-subtlest",/u);
 	assert.doesNotMatch(INDEX_SOURCE, /text-text-discovery/u);
 });
@@ -52,7 +52,7 @@ test("collapsed rails increment the pool total instead of flashing +N", () => {
 		INDEX_SOURCE,
 		/const hideGutterCount = isGutterCollapsed/u,
 	);
-	assert.match(INDEX_SOURCE, /text=\{String\(sessionCount\)\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnCountMorph count=\{sessionCount\} \/>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);
 	assert.match(INDEX_SOURCE, /text-xs font-normal/u);
 	assert.doesNotMatch(INDEX_SOURCE, /showCollapsedUnreadIncrement \? "font-medium"/u);

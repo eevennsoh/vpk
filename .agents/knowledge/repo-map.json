@@ -5419,7 +5419,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 445,
+			"manifestEntryCount": 446,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7513,7 +7513,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 105,
+				"entryCount": 106,
 				"entries": [
 					{
 						"category": "visual",
@@ -7976,6 +7976,12 @@
 						"slug": "pattern-tile",
 						"name": "Pattern Tile",
 						"importPath": "@/components/website/demos/visual/pattern-tile"
+					},
+					{
+						"category": "visual",
+						"slug": "peel",
+						"name": "Peel",
+						"importPath": "@/components/visual/peel"
 					},
 					{
 						"category": "visual",
