@@ -255,7 +255,7 @@ test("deck sheets paint a solid fill instead of fading into the page", async () 
 	}
 
 	// Sheets carry the lead pill's own fill, so the stack is one material.
-	const leadFill = /bg-surface/u.test(openTag(markup, "data-session-drag-pill"));
+	const leadFill = /bg-surface/u.test(openTag(markup, "data-session-drag-surface"));
 	assert.ok(leadFill, "elevated lead pill paints bg-surface");
 	assert.match(openTag(markup, "data-session-deck-layer"), /bg-surface/u);
 });
