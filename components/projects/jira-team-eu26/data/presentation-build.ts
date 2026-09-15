@@ -20,7 +20,7 @@ const PAY_REPOSITORY = "payments-platform/payments";
 
 export const PAY_101_INVENTORY_PR_ARTIFACT: ArtifactListItem = {
 	id: "pay-101-inventory-pr-1839",
-	title: "Call-site inventory across four services",
+	title: "Map v1 call sites",
 	source: "Pull request",
 	owner: "Maya Ferreira",
 	logoName: "github",
