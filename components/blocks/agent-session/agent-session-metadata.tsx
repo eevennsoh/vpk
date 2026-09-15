@@ -122,7 +122,7 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 			<AgentListAttributionAvatarGroup
 				agent={item.agent}
 				attributedBy={item.invokedBy}
-				attributionOrder="agent-first"
+				attributionOrder="human-first"
 				sizePx={16}
 			/>
 		);
