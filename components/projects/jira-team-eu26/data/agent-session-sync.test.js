@@ -51,12 +51,36 @@ test("the Jira v5 demo syncs one, two, or three new sessions per batch", async (
 	assert.equal(finalBatch.nextIndex, sync.JIRA_TEAM_EU26_SYNC_SESSIONS.length);
 });
 
-test("the Jira v5 demo chooses a fresh delay inside the one-to-three-second window", async () => {
+test("the Jira v5 demo pauses exactly three times so the local icon can return", async () => {
+	const sync = await loadSyncModule();
+	const pauseAfter = [8, 16, 24];
+	let nextIndex = 0;
+	const observedPauses = [];
+
+	while (nextIndex < sync.JIRA_TEAM_EU26_SYNC_SESSIONS.length) {
+		const delay = sync.getJiraTeamEu26SyncDelayMs(nextIndex, () => 0.999_999);
+		if (delay > 3_000) {
+			observedPauses.push(nextIndex);
+			assert.ok(delay >= 7_000, "the four-second counter window must finish before syncing resumes");
+		}
+		const batch = sync.takeJiraTeamEu26SyncBatch(nextIndex, () => 0.999);
+		assert.ok(batch.sessions.length > 0);
+		nextIndex = batch.nextIndex;
+	}
+
+	assert.deepEqual(observedPauses, pauseAfter);
+	assert.equal(nextIndex, 32);
+	assert.equal(sync.takeJiraTeamEu26SyncBatch(7, () => 0.999).nextIndex, 8);
+	assert.equal(sync.takeJiraTeamEu26SyncBatch(15, () => 0.999).nextIndex, 16);
+	assert.equal(sync.takeJiraTeamEu26SyncBatch(23, () => 0.999).nextIndex, 24);
+});
+
+test("the Jira v5 demo chooses a fresh delay inside the one-to-three-second window between pauses", async () => {
 	const sync = await loadSyncModule();
 
-	assert.equal(sync.getJiraTeamEu26SyncDelayMs(() => 0), 1_000);
-	assert.equal(sync.getJiraTeamEu26SyncDelayMs(() => 0.5), 2_000);
-	assert.equal(sync.getJiraTeamEu26SyncDelayMs(() => 0.999_999), 3_000);
+	assert.equal(sync.getJiraTeamEu26SyncDelayMs(0, () => 0), 1_000);
+	assert.equal(sync.getJiraTeamEu26SyncDelayMs(1, () => 0.5), 2_000);
+	assert.equal(sync.getJiraTeamEu26SyncDelayMs(9, () => 0.999_999), 3_000);
 });
 
 test("state changes use a quieter three-to-five-second delay", async () => {

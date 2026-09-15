@@ -145,7 +145,7 @@ export function useJiraTeamEu26AgentSessionSync({
 				});
 			}, changingState
 				? getJiraTeamEu26StateChangeDelayMs()
-				: getJiraTeamEu26SyncDelayMs());
+				: getJiraTeamEu26SyncDelayMs(syncState.nextIndex));
 		};
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === "visible") {
