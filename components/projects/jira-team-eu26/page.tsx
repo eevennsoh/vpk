@@ -415,7 +415,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 						boardColumns={boardColumns}
-						defaultAgentSessionColumnCollapsed
+						defaultAgentSessionColumnCollapsed={false}
 						defaultShowUntracked={false}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES}
