@@ -374,12 +374,12 @@ test("column resize buttons swap icons without using selected button state", () 
 	assert.match(INDEX_SOURCE, /collapseLabel=\{headerSurface === "panel"/u);
 	assert.match(HEADER_SOURCE, /<ShrinkHorizontalIcon/u);
 	assert.match(HEADER_SOURCE, /<TooltipContent>Collapse<\/TooltipContent>/u);
-	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
-	assert.match(INDEX_SOURCE, /<GrowHorizontalIcon/u);
-	assert.match(INDEX_SOURCE, /<TooltipContent[^>]*>Expand<\/TooltipContent>/u);
-	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Collapse column<\/TooltipContent>/u);
-	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
-	assert.doesNotMatch(INDEX_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
+	assert.match(HEADER_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
+	assert.match(HEADER_SOURCE, /<GrowHorizontalIcon/u);
+	assert.match(HEADER_SOURCE, /<TooltipContent[^>]*>Expand<\/TooltipContent>/u);
+	assert.doesNotMatch(HEADER_SOURCE, /<TooltipContent>Collapse column<\/TooltipContent>/u);
+	assert.doesNotMatch(HEADER_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
+	assert.doesNotMatch(HEADER_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
 	assert.match(INDEX_SOURCE, /peer\/expand-control opacity-0/u);
 	assert.match(INDEX_SOURCE, /hover:opacity-100 focus-visible:opacity-100/u);
@@ -644,7 +644,7 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 test("the gutter rail keeps a keyboard expand control and hides the count", () => {
 	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
 	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed/u);
-	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
+	assert.match(HEADER_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center px-1/u);
 	// The rail itself still has no header of its own to fall back on.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
@@ -830,7 +830,7 @@ test("the archived view keeps Archived in the header and a back footer", () => {
 	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Back<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /aria-label=\{`Back to \$\{title\}`\}[\s\S]*size="icon-compact"/u);
 	assert.match(INDEX_SOURCE, /displayTitle = view === "hidden" \? "Archived" : title/u);
-	assert.match(INDEX_SOURCE, /size="icon-compact"/u);
+	assert.match(HEADER_SOURCE, /size="icon-compact"/u);
 	assert.match(FOOTER_SOURCE, /title = "Unlink sessions"/u);
 	assert.match(FOOTER_SOURCE, /import ChevronLeftIcon from "@atlaskit\/icon\/core\/chevron-left"/u);
 	assert.match(FOOTER_SOURCE, /<ChevronLeftIcon label="" size="small" \/>/u);

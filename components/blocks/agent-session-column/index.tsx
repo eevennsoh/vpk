@@ -11,16 +11,11 @@ import {
 } from "react";
 import { useReducedMotion, type Transition } from "motion/react";
 
-import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
-
 import { isCodingAgentListItem, isLocalAgentListItem } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ITEMS, AgentSession } from "@/components/blocks/agent-session";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { Button } from "@/components/ui/button";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { Icon } from "@/components/ui/icon";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	CardGlowSurfaceContext,
 	useCardGlowProximityPlane,
@@ -33,7 +28,7 @@ import { cn } from "@/lib/utils";
 
 import { AgentSessionColumnFilterMenu } from "./agent-session-column-filter-menu";
 import { AgentSessionColumnCountSwap, useRisingSessionCount } from "./agent-session-column-count-swap";
-import { AgentSessionColumnHeader } from "./agent-session-column-header";
+import { AgentSessionColumnCollapsedExpandControl, AgentSessionColumnHeader } from "./agent-session-column-header";
 import { AgentSessionColumnEndState } from "./agent-session-column-end-state";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
@@ -722,51 +717,14 @@ export function AgentSessionColumn({
 		: isGutterCollapsed ? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL;
 	const collapsedExpandControl = collapsedMenu === undefined
 		? (
-			<TooltipProvider>
-				<Tooltip
-					animate={!isRepositioning}
-					disabled={isRepositioning}
-				>
-					<TooltipTrigger
-						render={
-							<Button
-								aria-label={`Expand ${title} column`}
-								aria-description={headerDragHandle ? "Drag horizontally to move the column, or use Alt with the arrow keys." : undefined}
-								className={cn(
-									collapsedControlClassName,
-									!isRepositioning
-										? "bg-transparent hover:bg-transparent active:bg-transparent aria-pressed:bg-transparent aria-expanded:bg-transparent focus-visible:border-transparent focus-visible:ring-0"
-										: null,
-								)}
-								data-agent-session-column-expand-control=""
-								onClick={handleToggleCollapsed}
-								size="icon-compact"
-								style={!isRepositioning && collapsedExpandLeadingHitSlopPx > 0
-									? {
-										marginInlineStart: -collapsedExpandLeadingHitSlopPx,
-										paddingInlineStart: collapsedExpandLeadingHitSlopPx,
-										width: `calc(100% + ${collapsedExpandLeadingHitSlopPx}px)`,
-									}
-									: { width: "100%" }}
-								type="button"
-								variant={isRepositioning ? "outline" : "ghost"}
-							/>
-						}
-					>
-					{isRepositioning ? (
-						<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
-					) : (
-						<span
-							className="pointer-events-none flex size-6 shrink-0 items-center justify-center rounded-md border border-transparent transition-colors duration-normal ease-out-practical group-hover/button:bg-bg-neutral-subtle-hovered group-active/button:bg-bg-neutral-subtle-pressed group-focus-visible/button:border-ring group-focus-visible/button:ring-3 group-focus-visible/button:ring-ring/50 motion-reduce:transition-none"
-							data-agent-session-column-expand-visual=""
-						>
-							<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
-						</span>
-					)}
-				</TooltipTrigger>
-				<TooltipContent alignOffset={collapsedExpandLeadingHitSlopPx / 2}>Expand</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
+			<AgentSessionColumnCollapsedExpandControl
+				canReposition={Boolean(headerDragHandle)}
+				className={collapsedControlClassName}
+				isRepositioning={isRepositioning}
+				leadingHitSlopPx={collapsedExpandLeadingHitSlopPx}
+				onExpand={handleToggleCollapsed}
+				title={title}
+			/>
 		)
 		: collapsedMenu({ className: collapsedControlClassName, dragging: isRepositioning });
 	const collapsedHeader = (
