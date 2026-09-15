@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useId, useMemo, useState } from "react";
+import { useReducedMotion } from "motion/react";
 
 import { isCodingAgentListItem } from "@/components/blocks/agent-list";
 import {
@@ -15,6 +16,7 @@ import { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS } from "./data";
 import { AgentSessionCard } from "./agent-session-card";
 import { resolveAgentSessionGlow } from "./agent-session-glow";
 import { useAgentSessionScrollPreview } from "./use-agent-session-scroll-preview";
+import { useAgentSessionStatusDeparture } from "./use-agent-session-status-departure";
 import {
 	AgentSessionAttachedCard,
 	AgentSessionCompactCard,
@@ -85,6 +87,8 @@ export function AgentSession({
 	className,
 	items: itemsProp,
 	arrivingItemIds,
+	stateChangedItemIds,
+	stateChangeVersions,
 	assignment,
 	canViewItem,
 	capturedItemIds,
@@ -104,6 +108,7 @@ export function AgentSession({
 	onCreateWorkItem,
 	onCreateWorkItemFromDraft,
 	onArrivalComplete,
+	onStateChangeComplete,
 	onDeleteSession,
 	onLinkWorkItem,
 	onRenameSession,
@@ -118,6 +123,7 @@ export function AgentSession({
 	draggingIds,
 	showUntrackedWorkFooter,
 	showLinkWorkItemMenuItem = true,
+	showWorkingSpinner = false,
 	style,
 	variant = "large",
 	visibilityLabel,
@@ -129,7 +135,16 @@ export function AgentSession({
 	// them. One declaration for the list rather than one per card.
 	const cardGlow = resolveAgentSessionGlow({ bloom: glowBloom, stroke: glowStroke, variant });
 	const showUntrackedWorkFlyout = !isAttached && !isLongDensity;
-	const items = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
+	const shouldReduceMotion = useReducedMotion();
+	const sourceItems = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
+	const departure = useAgentSessionStatusDeparture({
+		items: sourceItems,
+		stateChangeVersions,
+		stateChangedItemIds: variant === "large" ? stateChangedItemIds : undefined,
+		reduceMotion: shouldReduceMotion === true,
+	});
+	const items = departure.items;
+	const isDeparturePhase = departure.exitingItemIds.size > 0;
 	const isSelectionControlled = selectedItemIdProp !== undefined;
 	const [uncontrolledSelectedItemId, setUncontrolledSelectedItemId] = useState<string | null>(
 		null,
@@ -248,9 +263,11 @@ export function AgentSession({
 								flyoutHandle={isLongDensity ? undefined : flyoutHandle}
 								flyoutSession={flyoutSession}
 								getResumeCommand={getResumeCommand}
-							glowBloom={cardGlow.bloom}
-							glowStroke={cardGlow.stroke}
-								isArriving={beatItemIds?.has(item.id) ?? false}
+								glowBloom={cardGlow.bloom}
+								glowStroke={cardGlow.stroke}
+								isArriving={!isDeparturePhase && (beatItemIds?.has(item.id) ?? false)}
+								isDeparting={departure.exitingItemIds.has(item.id)}
+								isStateChanged={!isDeparturePhase && (stateChangedItemIds?.has(item.id) ?? false)}
 								isFlyoutActive={item.id === scrollPreview.activeItemId}
 								isHighlighted={item.id === highlightedItemId}
 								isNew={newItemIds?.has(item.id) ?? false}
@@ -265,6 +282,10 @@ export function AgentSession({
 								onArrivalComplete={onArrivalComplete === undefined
 									? undefined
 									: () => onArrivalComplete(item.id)}
+								onDepartureComplete={() => departure.onDepartureComplete(item.id)}
+								onStateChangeComplete={onStateChangeComplete === undefined
+									? undefined
+									: () => onStateChangeComplete(item.id)}
 								onItemHover={onItemHover}
 								onLinkWorkItem={onLinkWorkItem}
 								onRenameSession={onRenameSession}
@@ -272,6 +293,7 @@ export function AgentSession({
 								onView={itemOnView}
 								sessionDrag={sessionDrag}
 								showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
+								showWorkingSpinner={showWorkingSpinner}
 								triageRow={rowTriage?.get(item.id)}
 								draggingIds={draggingIds}
 								visibilityLabel={visibilityLabel}

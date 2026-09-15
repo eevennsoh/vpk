@@ -42,6 +42,7 @@ test("the collapsed local session icon yields to a rising count and returns when
 
 test("the collapsed counter returns to the monitor three times while new sessions sync", async ({ page }) => {
 	test.setTimeout(120_000);
+	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.clock.install();
 	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
@@ -70,7 +71,9 @@ test("the collapsed counter returns to the monitor three times while new session
 		await expect(number).toHaveCSS("opacity", "0");
 		const resumedAt = await page.evaluate(() => Date.now());
 		await page.clock.pauseAt(new Date(resumedAt + 1_000));
-		await page.clock.runFor(2_000);
+		for (let step = 0; step < 20 && await getUntrackedSessionCount(page) === milestoneCount; step += 1) {
+			await page.clock.runFor(1_000);
+		}
 		expect(await getUntrackedSessionCount(page)).toBeGreaterThan(milestoneCount);
 	}
 });

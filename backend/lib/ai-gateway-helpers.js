@@ -463,7 +463,7 @@ function extractGatewayTextDelta(parsedChunk) {
 	return typeof content === "string" ? content : null;
 }
 
-async function streamBedrockGatewayManualSse({ gatewayUrl, envVars, system, prompt, messages, maxOutputTokens, onTextDelta }) {
+async function streamBedrockGatewayManualSse({ gatewayUrl, envVars, system, prompt, messages, maxOutputTokens, onTextDelta, signal }) {
 	const token = await getAuthToken();
 
 	const resolvedMessages = [];
@@ -498,6 +498,7 @@ async function streamBedrockGatewayManualSse({ gatewayUrl, envVars, system, prom
 		method: "POST",
 		headers: getGatewayHeaders(envVars, token, true),
 		body: JSON.stringify(payload),
+		signal,
 	};
 	const response = await fetchGatewayWithRateLimitRetry(() => fetch(gatewayUrl, requestInit));
 

@@ -1,6 +1,16 @@
-import type { PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
+import { PULSE_LOOSE_WORK } from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-loose-work";
+import {
+	isPulseAgentSession,
+	type PulseAgentSession,
+	type PulseLooseWork,
+} from "@/components/blocks/jira-kanban/experimental/pulse/types";
 
 type JiraTeamEu26SyncSession = Extract<PulseLooseWork, { kind: "agent-session" }>;
+export type JiraTeamEu26SessionCohort =
+	| "always-working"
+	| "needs-input-terminal"
+	| "finished-initially"
+	| "full-path";
 
 const SYNC_DELAY_MIN_MS = 1_000;
 const SYNC_DELAY_MAX_MS = 3_000;
@@ -8,6 +18,8 @@ const SYNC_DELAY_MAX_MS = 3_000;
 // local monitor return and stay visible before the next group arrives.
 const SYNC_BREAK_MS = 7_000;
 const SYNC_BREAK_AFTER_SESSION_COUNTS = [8, 16, 24] as const;
+const STATE_CHANGE_DELAY_MIN_MS = 3_000;
+const STATE_CHANGE_DELAY_MAX_MS = 5_000;
 
 const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 	{
@@ -626,27 +638,88 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 	},
 ] as const satisfies readonly JiraTeamEu26SyncSession[];
 
-function resolveJiraTeamEu26SyncSessionState(
-	session: JiraTeamEu26SyncSession,
-	index: number,
-): NonNullable<JiraTeamEu26SyncSession["state"]> {
-	if (session.state !== undefined) {
-		return session.state;
-	}
-	if (session.issueStatus === "In progress") {
-		return "running";
-	}
-	if (session.pullRequest?.status === "failed" || index % 5 === 0) {
-		return "needs-input";
-	}
-	return "complete";
+export const JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID: ReadonlyMap<string, JiraTeamEu26SessionCohort> = new Map([
+	// Five replay both state changes; the first arrives early enough to see the full path.
+	["lw-sync-webhook-gap", "full-path"],
+	["lw-sync-kill-switch-rollout", "full-path"],
+	["lw-sync-merchant-mapping", "full-path"],
+	["lw-sync-auth-fallback", "full-path"],
+	["lw-sync-final-readiness", "full-path"],
+	// Twelve stop at Needs input until a person acts.
+	["lw-sync-sandbox-root-cause", "needs-input-terminal"],
+	["lw-sync-retry-telemetry", "needs-input-terminal"],
+	["lw-sync-release-gate", "needs-input-terminal"],
+	["lw-sync-timeout-budget", "needs-input-terminal"],
+	["lw-sync-settlement-schema", "needs-input-terminal"],
+	["lw-sync-ledger-replay", "needs-input-terminal"],
+	["lw-sync-refund-audit", "needs-input-terminal"],
+	["lw-sync-cutover-runbook", "needs-input-terminal"],
+	["lw-sync-rollback-metrics", "needs-input-terminal"],
+	["lw-sync-payout-recovery", "needs-input-terminal"],
+	["lw-sync-decline-parity", "needs-input-terminal"],
+	["lw-sync-capture-metrics", "needs-input-terminal"],
+	// Eight finished before the viewer sees them.
+	["lw-sync-replay-blast-radius", "finished-initially"],
+	["lw-sync-deprecation-copy", "finished-initially"],
+	["lw-sync-token-rotation", "finished-initially"],
+	["lw-sync-currency-rounding", "finished-initially"],
+	["lw-sync-rate-limit-sampling", "finished-initially"],
+	["lw-sync-chargeback-replay", "finished-initially"],
+	["lw-sync-account-locks", "finished-initially"],
+	["lw-sync-fee-rounding", "finished-initially"],
+	// Seven keep working throughout the demo.
+	["lw-sync-contract-test-gaps", "always-working"],
+	["lw-sync-idempotency-race", "always-working"],
+	["lw-sync-reconciliation-alerts", "always-working"],
+	["lw-sync-webhook-ordering", "always-working"],
+	["lw-sync-support-diagnostics", "always-working"],
+	["lw-sync-traffic-ramp", "always-working"],
+	["lw-sync-retry-headers", "always-working"],
+]);
+
+const JIRA_TEAM_EU26_SEEDED_FINISHED_IDS = new Set([
+	"lw-scope-thread",
+	"lw-spike-session",
+	"lw-night-suite-session",
+	"lw-ship-p95-session",
+]);
+
+function getSessionDetailPrefix(session: PulseAgentSession): string {
+	return session.detail.split(" · ").slice(0, 2).join(" · ");
 }
 
-export const JIRA_TEAM_EU26_SYNC_SESSIONS = JIRA_TEAM_EU26_SYNC_SESSION_SOURCE.map(
-	(session, index) => ({
-		...session,
-		state: resolveJiraTeamEu26SyncSessionState(session, index),
+function toFinishedSessionCopy(session: PulseAgentSession): Pick<PulseAgentSession, "title" | "detail"> {
+	return {
+		title: `${session.shortTitle} finished in a local agent session`,
+		detail: `${getSessionDetailPrefix(session)} · session finished and findings are ready to review`,
+	};
+}
+
+export const JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES: ReadonlyMap<string, PulseAgentSession> = new Map(
+	PULSE_LOOSE_WORK.filter(isPulseAgentSession).map((session) => {
+		const finished = JIRA_TEAM_EU26_SEEDED_FINISHED_IDS.has(session.id);
+		const copy = finished
+			? toFinishedSessionCopy(session)
+			: session.state === "needs-input"
+				? {
+					title: `${session.shortTitle} is in progress in a local agent session`,
+					detail: `${getSessionDetailPrefix(session)} · work is underway in this session`,
+				}
+				: {};
+		return [session.id, { ...session, ...copy, state: finished ? "complete" : "running" }] as const;
 	}),
+);
+
+export const JIRA_TEAM_EU26_SYNC_SESSIONS = JIRA_TEAM_EU26_SYNC_SESSION_SOURCE.map(
+	(session) => {
+		const cohort = JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID.get(session.id);
+		const finished = cohort === "finished-initially";
+		return {
+			...session,
+			...(finished ? toFinishedSessionCopy(session) : {}),
+			state: finished ? "complete" : "running",
+		};
+	},
 ) satisfies readonly JiraTeamEu26SyncSession[];
 
 export function getJiraTeamEu26SyncDelayMs(
@@ -657,6 +730,70 @@ export function getJiraTeamEu26SyncDelayMs(
 		return SYNC_BREAK_MS;
 	}
 	return SYNC_DELAY_MIN_MS + Math.round(random() * (SYNC_DELAY_MAX_MS - SYNC_DELAY_MIN_MS));
+}
+
+export function getJiraTeamEu26StateChangeDelayMs(
+	random: () => number = Math.random,
+): number {
+	return STATE_CHANGE_DELAY_MIN_MS + Math.round(random() * (STATE_CHANGE_DELAY_MAX_MS - STATE_CHANGE_DELAY_MIN_MS));
+}
+
+export function addJiraTeamEu26SyncSessionInitialVersions(
+	stateChangeVersions: ReadonlyMap<string, number>,
+	sessions: readonly JiraTeamEu26SyncSession[],
+): ReadonlyMap<string, number> {
+	const nextVersions = new Map(stateChangeVersions);
+	for (const session of sessions) {
+		if (!nextVersions.has(session.id)) {
+			nextVersions.set(session.id, 0);
+		}
+	}
+	return nextVersions;
+}
+
+export function advanceJiraTeamEu26SyncSession(
+	sessions: readonly JiraTeamEu26SyncSession[],
+	stateChangeVersions: ReadonlyMap<string, number>,
+	sessionId: string,
+): Readonly<{
+	sessions: readonly JiraTeamEu26SyncSession[];
+	stateChangeVersions: ReadonlyMap<string, number>;
+	nextState: JiraTeamEu26SyncSession["state"] | undefined;
+}> {
+	const sessionIndex = sessions.findIndex((session) => session.id === sessionId);
+	const session = sessions[sessionIndex];
+	const cohort = JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID.get(sessionId);
+	if (
+		(cohort !== "needs-input-terminal" && cohort !== "full-path")
+		|| (session?.state !== "running" && session?.state !== "needs-input")
+		|| (session.state === "needs-input" && cohort !== "full-path")
+	) {
+		return { sessions, stateChangeVersions, nextState: undefined };
+	}
+
+	const nextState = session.state === "running" ? "needs-input" : "complete";
+	const detailPrefix = getSessionDetailPrefix(session);
+	const updatedSession = {
+		...session,
+		state: nextState,
+		timeLabel: "Just now",
+		title: nextState === "needs-input"
+			? `${session.shortTitle} needs input`
+			: `${session.shortTitle} finished`,
+		detail: nextState === "needs-input"
+			? cohort === "full-path"
+				? `${detailPrefix} · waiting for a teammate to unblock this session`
+				: `${detailPrefix} · a decision is needed before this session can finish`
+			: `${detailPrefix} · a teammate unblocked the session; findings are ready to review`,
+	} satisfies JiraTeamEu26SyncSession;
+	const nextVersions = new Map(stateChangeVersions);
+	nextVersions.set(sessionId, (nextVersions.get(sessionId) ?? 0) + 1);
+
+	return {
+		sessions: [updatedSession, ...sessions.slice(0, sessionIndex), ...sessions.slice(sessionIndex + 1)],
+		stateChangeVersions: nextVersions,
+		nextState,
+	};
 }
 
 export function takeJiraTeamEu26SyncBatch(

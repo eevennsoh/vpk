@@ -92,12 +92,13 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 	// Reduced motion drops the beat and keeps the mark. The beat is keyed on
 	// `isArriving`, never on `isNew` — see the one-shot test below.
-	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
+	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !isDeparting && !shouldReduceMotion;/u);
 	assert.match(ARRIVAL_HOOK_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_HIDE_MS/u);
 	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_COMPLETE_MS/u);
 	// A settled card must not replay its entrance on an unrelated re-render.
-	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
+	assert.match(CARD_SOURCE, /initial: shouldPlayArrival && !isStateChanged \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false/u);
+	assert.match(CARD_SOURCE, /initial=\{rowMotion\.initial\}/u);
 });
 
 test("settled rail avatars reveal immediately while arrival morphing stays animated", () => {
@@ -137,19 +138,18 @@ test("the rest disc is already under the face when the morph starts", () => {
 		/setArrivalReveal\(false\);\s*setArrivalExiting\(true\);/u,
 	);
 	assert.match(ARRIVAL_HOOK_SOURCE, /arrivalPending/u);
+	assert.match(RAIL_COLUMN_SOURCE, /const hasArrivalVisual = Boolean\(avatarSrc\) \|\| hasStateGlyph;/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/const hideRestDisc = Boolean\(avatarSrc\) && \(/u,
+		/const hideRestDisc = hasArrivalVisual && \(/u,
 	);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
 		/\(arrivalPending && !arrivalReveal\) \|\| isHighlighted/u,
 	);
 	// The morph must never be able to hide its own destination again.
-	const hideRestDiscExpression = RAIL_COLUMN_SOURCE.slice(
-		RAIL_COLUMN_SOURCE.indexOf("const hideRestDisc"),
-		RAIL_COLUMN_SOURCE.indexOf("const arrivalMorphScale"),
-	);
+	const hideRestDiscExpression = RAIL_COLUMN_SOURCE.split("const hideRestDisc =")[1]?.split(";")[0];
+	assert.ok(hideRestDiscExpression, "the lifecycle owner must keep the resting disc available during the morph");
 	assert.doesNotMatch(hideRestDiscExpression, /arrivalExiting/u);
 	assert.match(RAIL_COLUMN_SOURCE, /hideRestDisc \? "opacity-0" : null/u);
 	assert.match(RAIL_COLUMN_SOURCE, /data-arrival-rest-hidden=\{hideRestDisc \|\| undefined\}/u);
@@ -251,7 +251,7 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	// Standalone arriving notches push the ones below them down.
 	// The scrollport stays a plain `ul` so mask-image can fade the marks;
 	// layout lives on each notch, while the board column disables reflow travel.
-	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \|\| !animateLayout \? false : "position"\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \|\| !animateLayout \|\| isLeaving \|\| isStatusReentering \? false : "position"\}/u);
 	assert.match(INDEX_SOURCE, /animateLayout = true,/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /layoutScroll/u);
 });
@@ -281,7 +281,7 @@ test("the arrival target survives until Motion finishes, then stays one-shot", (
 	// card's animate target one effect after mount and strands it at opacity 0.
 	assert.doesNotMatch(INDEX_SOURCE, /new Set<string>\(newItemIds\)/u);
 	assert.match(INDEX_SOURCE, /onArrivalComplete: handleArrivalComplete/u);
-	assert.match(CARD_SOURCE, /onAnimationComplete=\{handleArrivalComplete\}/u);
+	assert.match(CARD_SOURCE, /onAnimationComplete=\{shouldPlayDeparture \? onDepartureComplete : handleArrivalComplete\}/u);
 	assert.match(NOTCH_MARK_SOURCE, /onAnimationComplete=\{handleArrivalComplete\}/u);
 	// Both branches report completion and keep the beat set distinct from the mark.
 	assert.match(

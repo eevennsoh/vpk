@@ -254,6 +254,7 @@ function createAIGatewayProvider(options = {}) {
 				messages: toBedrockMessages(messages),
 				maxOutputTokens,
 				onTextDelta,
+				signal,
 			});
 			return (result.text || "").trim();
 		}

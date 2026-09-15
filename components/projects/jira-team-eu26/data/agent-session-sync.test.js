@@ -83,6 +83,62 @@ test("the Jira v5 demo chooses a fresh delay inside the one-to-three-second wind
 	assert.equal(sync.getJiraTeamEu26SyncDelayMs(9, () => 0.999_999), 3_000);
 });
 
+test("state changes use a quieter three-to-five-second delay", async () => {
+	const sync = await loadSyncModule();
+
+	assert.equal(sync.getJiraTeamEu26StateChangeDelayMs(() => 0), 3_000);
+	assert.equal(sync.getJiraTeamEu26StateChangeDelayMs(() => 0.5), 4_000);
+	assert.equal(sync.getJiraTeamEu26StateChangeDelayMs(() => 0.999_999), 5_000);
+});
+
+test("a synced session keeps its identity and returns to the top on both state changes", async () => {
+	const sync = await loadSyncModule();
+	const working = sync.JIRA_TEAM_EU26_SYNC_SESSIONS[0];
+	const other = sync.JIRA_TEAM_EU26_SYNC_SESSIONS[1];
+	const initialSessions = [other, working];
+	const initialVersions = sync.addJiraTeamEu26SyncSessionInitialVersions(
+		new Map(),
+		initialSessions,
+	);
+	assert.equal(initialVersions.get(working.id), 0);
+	assert.equal(initialVersions.get(other.id), 0);
+
+	const needsInput = sync.advanceJiraTeamEu26SyncSession(
+		initialSessions,
+		initialVersions,
+		working.id,
+	);
+	assert.equal(needsInput.nextState, "needs-input");
+	assert.deepEqual(needsInput.sessions.map((session) => session.id), [working.id, other.id]);
+	assert.equal(needsInput.sessions[0].state, "needs-input");
+	assert.match(needsInput.sessions[0].title, /needs input$/u);
+	assert.match(needsInput.sessions[0].detail, /waiting for a teammate to unblock this session$/u);
+	assert.equal(needsInput.stateChangeVersions.get(working.id), 1);
+	assert.equal(initialVersions.get(working.id), 0, "the previous revision map remains unchanged");
+
+	const finished = sync.advanceJiraTeamEu26SyncSession(
+		[other, ...needsInput.sessions.filter((session) => session.id !== other.id)],
+		needsInput.stateChangeVersions,
+		working.id,
+	);
+	assert.equal(finished.nextState, "complete");
+	assert.deepEqual(finished.sessions.map((session) => session.id), [working.id, other.id]);
+	assert.equal(finished.sessions[0].state, "complete");
+	assert.match(finished.sessions[0].title, /finished$/u);
+	assert.match(finished.sessions[0].detail, /a teammate unblocked the session; findings are ready to review$/u);
+	assert.equal(finished.stateChangeVersions.get(working.id), 2);
+	assert.equal(finished.sessions.length, initialSessions.length, "no new identity is created");
+
+	const terminal = sync.advanceJiraTeamEu26SyncSession(
+		finished.sessions,
+		finished.stateChangeVersions,
+		working.id,
+	);
+	assert.equal(terminal.nextState, undefined);
+	assert.equal(terminal.sessions, finished.sessions);
+	assert.equal(terminal.stateChangeVersions, finished.stateChangeVersions);
+});
+
 test("every queued Jira v5 session has a unique stable identity", async () => {
 	const sync = await loadSyncModule();
 	const sessions = sync.JIRA_TEAM_EU26_SYNC_SESSIONS;
@@ -104,14 +160,83 @@ test("every queued Jira v5 session has a unique stable identity", async () => {
 	assert.ok(sessions.every((session) => session.state !== undefined));
 	assert.deepEqual(
 		new Set(sessions.map((session) => session.state)),
-		new Set(["running", "needs-input", "complete"]),
+		new Set(["running", "complete"]),
 	);
 	assert.equal(sessions.at(-1)?.state, "running");
-	assert.equal(sessions.at(-2)?.state, "needs-input");
+	assert.equal(sessions.at(-2)?.state, "running");
 	assert.equal(
 		sessions.find((session) => session.sourceTitle === "PAY-132")?.issueStatus,
 		"In review",
 	);
+});
+
+test("all 48 visible Team EU26 placeholders belong to the requested four cohorts", async () => {
+	const sync = await loadSyncModule();
+	const seeds = [...sync.JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES.values()];
+	const arrivals = sync.JIRA_TEAM_EU26_SYNC_SESSIONS;
+	const cohorts = sync.JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID;
+
+	assert.equal(seeds.length, 16);
+	assert.equal(arrivals.length, 32);
+	assert.equal(cohorts.size, arrivals.length);
+	assert.equal(new Set([...seeds, ...arrivals].map((session) => session.id)).size, 48);
+	assert.ok(seeds.every((session) => session.kind === "agent-session"));
+	assert.ok(seeds.every((session) => session.id === sync.JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES.get(session.id)?.id));
+	assert.ok(arrivals.every((session) => cohorts.has(session.id)));
+
+	const cohortCounts = {
+		"always-working": seeds.filter((session) => session.state === "running").length,
+		"needs-input-terminal": 0,
+		"finished-initially": seeds.filter((session) => session.state === "complete").length,
+		"full-path": 0,
+	};
+	for (const session of arrivals) {
+		const cohort = cohorts.get(session.id);
+		cohortCounts[cohort] += 1;
+		assert.equal(session.state, cohort === "finished-initially" ? "complete" : "running");
+	}
+	assert.deepEqual(cohortCounts, {
+		"always-working": 19,
+		"needs-input-terminal": 12,
+		"finished-initially": 12,
+		"full-path": 5,
+	});
+	assert.equal(cohorts.get("lw-sync-retry-headers"), "always-working");
+	assert.equal(arrivals.find((session) => session.id === "lw-sync-retry-headers")?.state, "running");
+	assert.ok(seeds.filter((session) => session.state === "complete").every((session) => /finished/u.test(session.title)));
+	assert.ok(arrivals.filter((session) => session.state === "complete").every((session) => /finished/u.test(session.title)));
+});
+
+test("permanent Working and initially Finished sessions never revise, while terminal Needs input stops after one change", async () => {
+	const sync = await loadSyncModule();
+	const cohorts = sync.JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID;
+	const choose = (cohort) => sync.JIRA_TEAM_EU26_SYNC_SESSIONS.find((session) => cohorts.get(session.id) === cohort);
+	const alwaysWorking = choose("always-working");
+	const initiallyFinished = choose("finished-initially");
+	const terminalNeedsInput = choose("needs-input-terminal");
+	const initialSessions = [alwaysWorking, initiallyFinished, terminalNeedsInput];
+	const versions = sync.addJiraTeamEu26SyncSessionInitialVersions(new Map(), initialSessions);
+
+	for (const unchanged of [alwaysWorking, initiallyFinished]) {
+		const next = sync.advanceJiraTeamEu26SyncSession(initialSessions, versions, unchanged.id);
+		assert.equal(next.nextState, undefined);
+		assert.equal(next.sessions, initialSessions);
+		assert.equal(next.stateChangeVersions.get(unchanged.id), 0);
+	}
+
+	const needsInput = sync.advanceJiraTeamEu26SyncSession(initialSessions, versions, terminalNeedsInput.id);
+	assert.equal(needsInput.nextState, "needs-input");
+	assert.equal(needsInput.sessions[0].id, terminalNeedsInput.id);
+	assert.equal(needsInput.sessions[0].state, "needs-input");
+	assert.equal(needsInput.stateChangeVersions.get(terminalNeedsInput.id), 1);
+	const terminal = sync.advanceJiraTeamEu26SyncSession(
+		needsInput.sessions,
+		needsInput.stateChangeVersions,
+		terminalNeedsInput.id,
+	);
+	assert.equal(terminal.nextState, undefined);
+	assert.equal(terminal.sessions, needsInput.sessions);
+	assert.equal(terminal.stateChangeVersions.get(terminalNeedsInput.id), 1);
 });
 
 test("half of the queued Jira v5 sessions arrive with linked PR metadata", async () => {
@@ -178,12 +303,17 @@ test("the route periodically syncs one to three new agent sessions into Untracke
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/const \{\s*reviewAgentSessions,\s*newAgentSessionIds,\s*syncedAgentSessions,\s*\} = useJiraTeamEu26AgentSessionSync\(\{\s*active: showBoardContent,\s*paused: agentSessionColumnInteracting,\s*\}\);/u,
+		/const \{\s*reviewAgentSessions,\s*newAgentSessionIds,\s*stateChangeVersions,\s*syncedAgentSessions,\s*\} = useJiraTeamEu26AgentSessionSync\(\{\s*active: showBoardContent,\s*paused: agentSessionColumnInteracting,\s*\}\);/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/<ExperimentalJiraKanbanPage[\s\S]*additionalAgentSessions=\{syncedAgentSessions\}[\s\S]*newAgentSessionIds=\{newAgentSessionIds\}[\s\S]*onAgentSessionColumnInteractionChange=\{setAgentSessionColumnInteracting\}[\s\S]*onAgentSessionsReviewed=\{reviewAgentSessions\}/u,
+		/<ExperimentalJiraKanbanPage[\s\S]*additionalAgentSessions=\{syncedAgentSessions\}[\s\S]*newAgentSessionIds=\{newAgentSessionIds\}[\s\S]*stateChangeVersions=\{stateChangeVersions\}[\s\S]*onAgentSessionColumnInteractionChange=\{setAgentSessionColumnInteracting\}[\s\S]*onAgentSessionsReviewed=\{reviewAgentSessions\}/u,
 	);
-	assert.match(HOOK_SOURCE, /if \(!active \|\| paused[\s\S]*return undefined;/u);
+	assert.match(HOOK_SOURCE, /!active \|\| paused[\s\S]*return undefined;/u);
 	assert.match(HOOK_SOURCE, /removeReviewedJiraTeamEu26AgentSessionIds/u);
+	assert.match(HOOK_SOURCE, /advanceJiraTeamEu26SyncSession/u);
+	assert.match(HOOK_SOURCE, /addJiraTeamEu26SyncSessionInitialVersions/u);
+	assert.match(HOOK_SOURCE, /JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID/u);
+	assert.match(HOOK_SOURCE, /document\.visibilityState !== "visible"/u);
+	assert.match(PAGE_SOURCE, /agentSessionSeedOverrides=\{JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES\}/u);
 });
