@@ -209,10 +209,10 @@ test("the expanded pinned session column reuses the accessible sidebar resize co
 
 test("Untracked trailing geometry matches painted status-column gutters", () => {
 	assert.equal(resolveStatusColumnVisualGutterPx("caption"), 20);
-	assert.equal(resolveInFlowAgentSessionColumnGapPx("caption"), 22);
+	assert.equal(resolveInFlowAgentSessionColumnGapPx("caption"), 20);
 	assert.equal(resolveInFlowResizeHandleOffsetPx("caption"), 10);
 	assert.equal(resolveStatusColumnVisualGutterPx("enclosed"), 12);
-	assert.equal(resolveInFlowAgentSessionColumnGapPx("enclosed"), 12);
+	assert.equal(resolveInFlowAgentSessionColumnGapPx("enclosed"), 10);
 	assert.equal(resolveInFlowResizeHandleOffsetPx("enclosed"), 6);
 });
 

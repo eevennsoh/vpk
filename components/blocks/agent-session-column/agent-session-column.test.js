@@ -131,9 +131,9 @@ test("the column does not fuse large session cards into one stroke", () => {
 	// paint over the stroke. Cards keep their own radius and gap; the column
 	// must not strip borders into shared dividers.
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_WELL =/u);
-	assert.match(INDEX_SOURCE, /overflow-hidden rounded-xl border border-solid border-border-disabled/u);
+	assert.match(INDEX_SOURCE, /overflow-hidden rounded-xl border border-solid border-transparent/u);
 	assert.match(INDEX_SOURCE, /case "caption":\s*\n\s*return collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL;/u);
-	assert.match(INDEX_SOURCE, /case "enclosed":\s*\n\s*return collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u);
+	assert.match(INDEX_SOURCE, /case "enclosed":\s*\n\s*return isGutterCollapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u);
 	assert.match(
 		INDEX_SOURCE,
 		/className=\{cn\(\s*headerSurface === "column" \? AGENT_SESSION_LIST_SPACING : null,\s*listClassName,\s*\)\}/u,
@@ -156,12 +156,13 @@ test("the column does not fuse large session cards into one stroke", () => {
 });
 
 test("the fill starts below the header, so the title shares the status columns' baseline", () => {
-	// The header has to sit on the board surface at the same inset and baseline
-	// as `To do`. Filling the <section> itself would push the title 8px in and
-	// 8px down from every other column title.
+	// Caption keeps the header on the board surface at the same inset and
+	// baseline as `To do`. Filling the <section> itself would push the title
+	// 8px in and 8px down from every other column title. Enclosed puts that
+	// same title inside the well, matching status columns that wrap header
+	// and cards in one painted object.
 	assert.doesNotMatch(INDEX_SOURCE, /<section[\s\S]*?className=\{cn\(\s*"[^"]*bg-surface/u);
 	assert.doesNotMatch(INDEX_SOURCE, /"group\/session-column[^"]*bg-surface/u);
-	// The fill is a plane the header is a sibling of, not an ancestor of.
 	assert.match(INDEX_SOURCE, /bg-surface/u);
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =/u);
 	// The section carries no padding of its own either — that would inset the
@@ -311,12 +312,12 @@ test("the catalog page shows a Panel wrap and an in-flow kanban host", () => {
 	assert.match(DETAIL_SOURCE, /examplesContentWidth: "bleed"/u);
 });
 
-test("the collapsed count lives in the header above the plane, not on the rail", () => {
-	// Same 24px row as expanded. Enclosed in-flow uses the expanded well's
-	// top inset (`space.100` plus a 1px transparent border) so a collapsed
-	// Untracked count shares a row with an expanded status count. Caption
-	// stays flush so it still matches a simple collapsed pill. Panel keeps
-	// matching top pad under the docked chrome. The rail is notches only.
+test("the collapsed count lives in the header, not on the rail", () => {
+	// Same 24px row as expanded. Enclosed in-flow wraps the count with the
+	// rail in the well, so the well's 1px stroke is the inset that lines the
+	// number up with `To do`. Caption stays flush so it still matches a
+	// simple collapsed pill. Panel keeps matching top pad under the docked
+	// chrome. The rail is notches only.
 	assert.match(INDEX_SOURCE, /paddingBottom: token\("space\.100"\)/u);
 	assert.match(
 		INDEX_SOURCE,
@@ -326,11 +327,16 @@ test("the collapsed count lives in the header above the plane, not on the rail",
 		INDEX_SOURCE,
 		/case "caption":\s*\n\s*return \{ paddingBottom: token\("space\.100"\) \};/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		INDEX_SOURCE,
 		/layout === "enclosed" \? "border border-solid border-transparent" : null/u,
 	);
+	assert.match(INDEX_SOURCE, /isGutterCollapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT/u);
+	assert.match(INDEX_SOURCE, /return isGutterCollapsed \? \(/u);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center px-1/u);
+	assert.match(INDEX_SOURCE, /const collapsedHitSlopPx = wearEnclosedWell && elevatePlane \? 0 : collapsedRailHitSlopPx/u);
+	assert.match(INDEX_SOURCE, /toAgentSessionRailHitSlopStyle\(collapsedHitSlopPx\)/u);
+	assert.match(INDEX_SOURCE, /hitSlopPx=\{collapsedHitSlopPx\}/u);
 	assert.match(INDEX_SOURCE, /absolute inset-x-1 inset-y-0 flex items-center justify-center text-xs/u);
 	assert.match(INDEX_SOURCE, /HEADER_COUNT_AT_REST/u);
 	assert.match(INDEX_SOURCE, /HEADER_CONTROL_ON_REVEAL/u);
@@ -343,6 +349,25 @@ test("the collapsed count lives in the header above the plane, not on the rail",
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /group\/session-rail/u);
 });
 
+test("the enclosed well keeps collapsed hit slop wide at rest and contained during underlap", () => {
+	// Rest: the 16px in-flow band makes the expand control easy to hit beside
+	// the 32px rail, even if that rect sits outside the painted well.
+	// Underlap: the well is the elevated container, so the band must shrink
+	// or the trigger hangs off the column.
+	assert.match(INDEX_SOURCE, /const elevatePlane = showTrailingShadow && !isGutterCollapsed/u);
+	assert.match(INDEX_SOURCE, /const collapsedHitSlopPx = wearEnclosedWell && elevatePlane \? 0 : collapsedRailHitSlopPx/u);
+	assert.match(INDEX_SOURCE, /toAgentSessionRailHitSlopStyle\(collapsedHitSlopPx\)/u);
+	assert.match(INDEX_SOURCE, /hitSlopPx=\{collapsedHitSlopPx\}/u);
+	assert.doesNotMatch(
+		INDEX_SOURCE,
+		/const collapsedHitSlopPx = wearEnclosedWell \? 0 : collapsedRailHitSlopPx/u,
+	);
+	assert.doesNotMatch(
+		INDEX_SOURCE,
+		/toAgentSessionRailHitSlopStyle\(collapsedRailHitSlopPx\)/u,
+	);
+});
+
 test("collapsing swaps the cards for the notch rail, not for a rotated label", () => {
 	// A status column collapses into a `writing-mode: vertical-rl` title. This
 	// one must not: its contents are live sessions, so it collapses into the rail.
@@ -352,7 +377,7 @@ test("collapsing swaps the cards for the notch rail, not for a rotated label", (
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-surface/u);
 	assert.match(
 		INDEX_SOURCE,
-		/case "enclosed":\s*\n\s*return collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u,
+		/case "enclosed":\s*\n\s*return isGutterCollapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u,
 	);
 	// 32px matches the board's collapsed status pill so the two share a rhythm.
 	assert.match(INDEX_SOURCE, /AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32/u);
@@ -523,18 +548,39 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	assert.match(NOTCH_MARK_SOURCE, /group-has-\[:focus-visible\]\/notch:scale-x-\[1\.6\]/u);
 	assert.doesNotMatch(NOTCH_MARK_SOURCE, /group-focus-visible\/notch:/u);
 	// Clipping is scoped to the resize, so a focused card's ring is never cut.
-	assert.match(INDEX_SOURCE, /\(collapsed && collapsedRailHitSlopPx === 0\) \|\| isResizing \? "overflow-hidden" : null/u);
+	assert.match(
+		INDEX_SOURCE,
+		/!elevatePlane && \(\(collapsed && collapsedRailHitSlopPx === 0\) \|\| isResizing\)\s*\n\s*\? "overflow-hidden"\s*\n\s*: null/u,
+	);
 	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
 	// A host-driven pointer resize must bypass this transition so the column edge
 	// tracks the pointer instead of easing toward every intermediate width.
 	assert.match(TYPES_SOURCE, /widthTransitionDisabled\?: boolean;/u);
 	assert.match(
 		INDEX_SOURCE,
-		/expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,\s*(?:hasScrollingEffect = false,\s*)?widthTransitionDisabled = false,/u,
+		/expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,\s*(?:hasScrollingEffect = false,\s*)?(?:showTrailingShadow = false,\s*)?widthTransitionDisabled = false,/u,
 	);
 	assert.match(
 		INDEX_SOURCE,
 		/shouldReduceMotion \|\| widthTransitionDisabled\s*\? "none"\s*: AGENT_SESSION_COLUMN_TRANSITION/u,
+	);
+	assert.match(INDEX_SOURCE, /from "motion\/react"/u);
+	assert.match(INDEX_SOURCE, /animate=\{\{\s*boxShadow,\s*marginBottom: marginBlock,\s*marginTop: marginBlock,\s*\}\}/u);
+	assert.match(INDEX_SOURCE, /style=\{\{ borderColor \}\}/u);
+	assert.match(INDEX_SOURCE, /AGENT_SESSION_WELL_STROKE = token\("color\.border\.disabled"\)/u);
+	assert.match(INDEX_SOURCE, /paintWellStroke = wearEnclosedWell && !collapsed && !elevatePlane/u);
+	assert.match(INDEX_SOURCE, /paintWellStroke \? AGENT_SESSION_WELL_STROKE : "transparent"/u);
+	assert.match(INDEX_SOURCE, /paintWellStroke \? "border-border-disabled" : "border-transparent"/u);
+	assert.doesNotMatch(INDEX_SOURCE, /const planeBorderColor = "transparent"/u);
+	assert.doesNotMatch(INDEX_SOURCE, /elevatePlane \? AGENT_SESSION_WELL_STROKE/u);
+	assert.doesNotMatch(INDEX_SOURCE, /animate=\{\{\s*borderColor/u);
+	assert.match(INDEX_SOURCE, /AGENT_SESSION_UNDERLAP_SHADOW_ENTER: Transition = \{\s*\n\s*duration: 0\.15,/u);
+	assert.match(INDEX_SOURCE, /AGENT_SESSION_UNDERLAP_SHADOW_EXIT: Transition = \{\s*\n\s*duration: 0\.1,/u);
+	assert.match(INDEX_SOURCE, /shouldReduceMotion\s*\n\s*\? AGENT_SESSION_UNDERLAP_SHADOW_REDUCED/u);
+	assert.match(INDEX_SOURCE, /AGENT_SESSION_UNDERLAP_GROW_PX = 8/u);
+	assert.match(
+		INDEX_SOURCE,
+		/elevatePlane && wearEnclosedWell\s*\n\s*\? -AGENT_SESSION_UNDERLAP_GROW_PX\s*\n\s*: 0/u,
 	);
 });
 

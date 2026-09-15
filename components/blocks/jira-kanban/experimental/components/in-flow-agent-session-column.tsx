@@ -16,9 +16,9 @@ import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { token } from "@/lib/tokens";
 
 import {
+	IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX,
 	IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX,
 	IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX,
 	resolveInFlowAgentSessionColumnGapPx,
@@ -42,7 +42,7 @@ const IN_FLOW_AGENT_SESSION_COLUMN_MAX_WIDTH_PX = 560;
 const IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION =
 	"width var(--duration-normal) var(--ease-out-practical)";
 const IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_TRANSITION =
-	"transform var(--duration-normal) var(--ease-out-practical), box-shadow var(--duration-normal) var(--ease-out-practical)";
+	"transform var(--duration-normal) var(--ease-out-practical)";
 const IN_FLOW_AGENT_SESSION_COLUMN_EXPANSION_TRANSITION =
 	"width var(--duration-medium) var(--ease-in-out)";
 const IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME = [
@@ -66,7 +66,7 @@ export interface InFlowAgentSessionColumnProps {
 	/** Whether the expanded column exposes its width-resize separator. */
 	resizable?: boolean;
 	sessionFlyoutsSuspended: boolean;
-	/** Elevates the white column above horizontally scrolled board content. */
+	/** Elevates the column well above horizontally scrolled board content. */
 	showTrailingShadow?: boolean;
 	untrackedDropArmed: boolean;
 }
@@ -363,24 +363,20 @@ function InFlowAgentSessionColumnSurface({
 			className={cn(
 				"group/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",
 				isEmbedded
-					? "pointer-events-auto bg-surface"
-					: "pointer-events-none bg-transparent [&_[data-agent-session-notch]]:pointer-events-auto [&_[data-agent-session-column-expand-control]]:pointer-events-auto",
+					? "pointer-events-auto"
+					: "pointer-events-none [&_[data-agent-session-notch]]:pointer-events-auto [&_[data-agent-session-column-expand-control]]:pointer-events-auto",
 				untrackedDropArmed ? "border-ring" : "border-transparent",
-				agentSessionColumn.isRepositioning && !isFullWidth ? "bg-transparent" : null,
 				className,
 			)}
 			data-board-agent-session-drop-zone="untracked"
 			data-board-agent-session-target={untrackedDropArmed ? "untracked" : undefined}
 			style={{
-				borderRadius: token("radius.xlarge"),
-				boxShadow: showTrailingShadow && isEmbedded ? token("elevation.shadow.overlay") : "none",
 				paddingTop,
 				paddingBottom,
 				willChange: shouldReduceMotion ? undefined : "transform",
-				transform: `translateX(${isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX : IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX}px)`,
+				transform: `translateX(${isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX : IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX}px)`,
 				transition: shouldReduceMotion ? "none" : IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_TRANSITION,
 			}}
-			data-agent-session-column-surface=""
 		>
 			<AgentSessionColumn
 				{...agentSessionColumn}
@@ -399,6 +395,7 @@ function InFlowAgentSessionColumnSurface({
 				onPinnedChange={advancedOnPinnedChange}
 				pinned={pinned}
 				playGutterIntro={playGutterIntro}
+				showTrailingShadow={Boolean(showTrailingShadow && isEmbedded)}
 				toggleChangesWidth={expanded}
 			/>
 			<InFlowAgentSessionColumnResizeHandle

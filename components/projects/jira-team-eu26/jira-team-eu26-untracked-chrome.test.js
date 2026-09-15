@@ -331,18 +331,90 @@ test("the white Agent Session surface gains overlay elevation only after Kanban 
 	);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
+		/isEmbedded\s*\? "pointer-events-auto"/u,
+	);
+	assert.doesNotMatch(
+		IN_FLOW_COLUMN_SOURCE,
 		/isEmbedded\s*\? "pointer-events-auto bg-surface"/u,
 	);
-	assert.match(
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /borderRadius: token\("radius\.xlarge"\)/u);
+	assert.doesNotMatch(
 		IN_FLOW_COLUMN_SOURCE,
-		/showTrailingShadow && isEmbedded \? token\("elevation\.shadow\.overlay"\) : "none"/u,
+		/showTrailingShadow && isEmbedded \? token\("elevation\.shadow\.overlay"\)/u,
 	);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /borderRadius: token\("radius\.xlarge"\)/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/box-shadow var\(--duration-normal\) var\(--ease-out-practical\)/u,
+		/showTrailingShadow=\{Boolean\(showTrailingShadow && isEmbedded\)\}/u,
 	);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /transition: shouldReduceMotion \? "none"/u);
+	assert.match(AGENT_SESSION_COLUMN_SOURCE, /showTrailingShadow = false/u);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/data-agent-session-column-surface=""/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/elevatePlane \? AGENT_SESSION_OVERLAY_SHADOW : "none"/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/AGENT_SESSION_OVERLAY_SHADOW = token\("elevation\.shadow\.overlay"\)/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/AGENT_SESSION_WELL_STROKE = token\("color\.border\.disabled"\)/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/paintWellStroke = wearEnclosedWell && !collapsed && !elevatePlane/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/paintWellStroke \? AGENT_SESSION_WELL_STROKE : "transparent"/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/paintWellStroke \? "border-border-disabled" : "border-transparent"/u,
+	);
+	assert.doesNotMatch(AGENT_SESSION_COLUMN_SOURCE, /const planeBorderColor = "transparent"/u);
+	assert.match(AGENT_SESSION_COLUMN_SOURCE, /style=\{\{ borderColor \}\}/u);
+	assert.doesNotMatch(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/elevatePlane \? AGENT_SESSION_WELL_STROKE/u,
+	);
+	assert.doesNotMatch(AGENT_SESSION_COLUMN_SOURCE, /animate=\{\{\s*borderColor/u);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/AGENT_SESSION_UNDERLAP_GROW_PX = 8/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/\? -AGENT_SESSION_UNDERLAP_GROW_PX/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/animate=\{\{\s*boxShadow,\s*marginBottom: marginBlock,\s*marginTop: marginBlock,\s*\}\}/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/duration: 0\.15,\s*\n\s*ease: \[0\.4, 1, 0\.6, 1\]/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/duration: 0\.1,\s*\n\s*ease: \[0\.6, 0, 0\.8, 0\.6\]/u,
+	);
+	assert.match(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/AGENT_SESSION_UNDERLAP_SHADOW_REDUCED: Transition = \{\s*\n\s*duration: 0,/u,
+	);
+	assert.doesNotMatch(
+		AGENT_SESSION_COLUMN_SOURCE,
+		/box-shadow var\(--duration-normal\) var\(--ease-out-practical\)/u,
+	);
+	assert.doesNotMatch(
+		IN_FLOW_COLUMN_SOURCE,
+		/"group\/in-flow-agent-session-column[^"]*bg-surface"/u,
+	);
 });
 
 test("the board's AI entry point is the floating Rovo button, not the Omnibar", () => {
