@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 interface MorphFrame {
+	agentSize: number;
 	identity: { x: number; y: number; width: number; height: number };
 	surface: { x: number; y: number; width: number; height: number };
 }
@@ -41,6 +42,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 						const identityRect = identityNode.getBoundingClientRect();
 						const surfaceRect = surfaceNode.getBoundingClientRect();
 						frames.push({
+							agentSize: identityNode.querySelector('[data-avatar-role="agent"]')?.getBoundingClientRect().width ?? 0,
 							identity: { x: identityRect.x, y: identityRect.y, width: identityRect.width, height: identityRect.height },
 							surface: { x: surfaceRect.x, y: surfaceRect.y, width: surfaceRect.width, height: surfaceRect.height },
 						});
@@ -73,6 +75,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				expect(frame.identity.height).toBeCloseTo(32, 1);
 			}
 			if (reducedMotion === "no-preference") {
+				expect(frames.some((frame) => frame.agentSize > 16.2 && frame.agentSize < 23.8)).toBe(true);
 				expect(Math.abs(first.identity.x - identity.x)).toBeLessThan(2);
 				expect(Math.abs(first.identity.y - identity.y)).toBeLessThan(2);
 				expect(first.surface.width).toBeCloseTo(source.width, 0);
@@ -83,6 +86,23 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				expect(first.identity.x).toBeCloseTo(last.identity.x, 1);
 			}
 			expect(last.surface.height).toBeCloseTo(44, 1);
+			const avatar = overlay.locator('[data-slot="human-agent-avatar"]');
+			await expect(avatar).toHaveAttribute("data-composition", "group");
+			const group = avatar.locator('[data-slot="avatar-group"]');
+			await expect(overlay.locator("[data-session-drag-label]")).toHaveText("Priya Raman");
+			await expect.poll(() => group.locator('[data-avatar-role]').evaluateAll((nodes) =>
+				nodes.map((node) => {
+					const rect = node.getBoundingClientRect();
+					return { role: (node as HTMLElement).dataset.avatarRole, width: rect.width, height: rect.height };
+				}),
+			)).toEqual([
+				{ role: "human", width: 16, height: 16 },
+				{ role: "agent", width: 16, height: 16 },
+			]);
+			// The destination holds for the gesture beyond the demo's repeat pause.
+			await page.waitForTimeout(1_600);
+			await expect(avatar).toHaveAttribute("data-composition", "group");
+			await expect(overlay.locator('[data-avatar-role]')).toHaveCount(2);
 			await page.screenshot({ path: `output/agent-browser/session-drag-morph-${reducedMotion}-${firstMove}.png` });
 			await expect.poll(() => overlay.locator("[data-session-drag-surface]").evaluate((node) => (
 				(node as HTMLElement).style.willChange

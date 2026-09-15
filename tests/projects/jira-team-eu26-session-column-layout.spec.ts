@@ -117,7 +117,7 @@ for (const collapsed of [true, false]) {
 		await expect(row).toBeAttached({ timeout: 10_000 });
 		if (!collapsed) await expect(row.locator(".shimmer")).toHaveCount(0);
 		const trace = await page.evaluateHandle(({ id, collapsed }) => {
-			const samples: { leaving: boolean; index: number; opacity: number; translateY: number; glow: boolean; accent: string; state: string | null; shownState: string | null; rotating: boolean; humanTransform: string | null; avatarWidth: number }[] = [];
+			const samples: { leaving: boolean; index: number; opacity: number; translateY: number; height: number; glow: boolean; accent: string; state: string | null; shownState: string | null; rotating: boolean; humanTransform: string | null; avatarWidth: number }[] = [];
 			let stopped = false;
 			const sample = () => {
 				const element = document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
@@ -133,6 +133,7 @@ for (const collapsed of [true, false]) {
 						index: Array.from(host.parentElement?.children ?? []).indexOf(host),
 						opacity: Number(style.opacity),
 						translateY: transform?.m42 ?? 0,
+						height: host.getBoundingClientRect().height,
 						glow: glow !== null,
 						accent: getComputedStyle(host).getPropertyValue("--card-glow-tile-accent").trim(),
 						state: host.querySelector("[data-agent-session-lifecycle-current]")?.getAttribute("data-agent-session-lifecycle-current") ?? null,
@@ -174,7 +175,9 @@ for (const collapsed of [true, false]) {
 		const revision = samples.slice(departure);
 		expect(revision.some((sample) => sample.leaving && sample.opacity < 0.5)).toBe(true);
 		expect(revision.some((sample) => !sample.leaving && sample.index === 0 && sample.opacity > 0.8)).toBe(true);
-		expect(revision.every((sample) => Math.abs(sample.translateY) <= 16.1)).toBe(true);
+		// Expanded arrivals now enter from one full row above; compact notches
+		// retain their shorter travel. Keep the bound tied to rendered geometry.
+		expect(revision.every((sample) => Math.abs(sample.translateY) <= (collapsed ? 16 : sample.height) + 0.1)).toBe(true);
 		if (!collapsed) {
 			const rotation = revision.filter((sample) => sample.rotating);
 			expect(rotation.length).toBeGreaterThan(3);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 
@@ -42,7 +43,7 @@ export function AgentSessionMediumCard({
 	onView?: (item: AgentSessionItem) => void;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 }>) {
-	const shouldReduceMotion = useReducedMotion();
+	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 	const onItemHoverRef = useRef(onItemHover);
 	const isHoveredRef = useRef(false);

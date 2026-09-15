@@ -625,9 +625,9 @@ test("Jira issue drag pill floats on overlay elevation, not a dead utility", () 
 		dragChipSource,
 		/boxShadow: token\("elevation\.shadow\.overlay"\),/u,
 	);
-	// The shared pill forwards its caller-selected attribution order; Jira-owned
-	// work keeps the human-first default while the untracked cohort opts out.
-	assert.match(dragChipSource, /<AgentListIdentity[\s\S]*agent=\{agent\}[\s\S]*attributedBy=\{attributedBy\}[\s\S]*attributionOrder=\{attributionOrder\}[\s\S]*sizePx=\{32\}/u);
+	// Preserve the source's attribution order for the compact start; the shared
+	// avatar opens and holds its human-first group within the stable 32px frame.
+	assert.match(dragChipSource, /<HumanAgentAvatar[\s\S]*agent=\{agent\}[\s\S]*human=\{attributedBy\}[\s\S]*animate=\{isFusionSource\}[\s\S]*composition="horizontal-group"[\s\S]*attributionOrder=\{attributionOrder\}[\s\S]*sizePx=\{32\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /attributedBy=\{featuredActivity\?\.invokedBy\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /elevated/u);
 });

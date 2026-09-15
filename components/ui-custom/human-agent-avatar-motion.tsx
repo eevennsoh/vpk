@@ -11,7 +11,33 @@ import {
 
 import type { HumanAgentAvatarMotionOptions } from "@/components/ui-custom/human-agent-avatar-motion-config";
 
-export function HumanAgentAvatarMotion({
+import { HumanAgentAvatarGroupMotion } from "@/components/ui-custom/human-agent-avatar-group-motion";
+
+export type HumanAgentAvatarMotionProps = Readonly<{
+	agent: (sizePx?: number) => ReactNode;
+	human: (outline: AvatarProps["outline"]) => ReactNode;
+	agentFirst: boolean;
+	frameSize: number;
+	agentSize: number;
+	humanSize: number;
+	className: string;
+	label: string;
+	options?: Partial<HumanAgentAvatarMotionOptions>;
+	animate?: boolean;
+	composition?: "compact" | "horizontal-group";
+	onAnimationComplete?: () => void;
+}>;
+
+export function HumanAgentAvatarMotion(props: HumanAgentAvatarMotionProps) {
+	return props.composition !== undefined ||
+		props.options?.variant === "horizontal-group" ? (
+		<HumanAgentAvatarGroupMotion {...props} />
+	) : (
+		<HumanAgentAvatarOrbitMotion {...props} />
+	);
+}
+
+function HumanAgentAvatarOrbitMotion({
 	agent,
 	human,
 	agentFirst,
@@ -22,18 +48,7 @@ export function HumanAgentAvatarMotion({
 	label,
 	options,
 	onAnimationComplete,
-}: Readonly<{
-	agent: ReactNode;
-	human: (outline: AvatarProps["outline"]) => ReactNode;
-	agentFirst: boolean;
-	frameSize: number;
-	agentSize: number;
-	humanSize: number;
-	className: string;
-	label: string;
-	options?: Partial<HumanAgentAvatarMotionOptions>;
-	onAnimationComplete?: () => void;
-}>) {
+}: HumanAgentAvatarMotionProps) {
 	const ref = useRef<HTMLSpanElement>(null);
 	const inView = useInView(ref);
 	const motionConfig = createHumanAgentAvatarOrbitMotion(options);
@@ -87,7 +102,7 @@ export function HumanAgentAvatarMotion({
 				}}
 				transition={active ? motionConfig.transition : { duration: 0 }}
 			>
-				{agent}
+				{agent()}
 			</motion.span>
 			<motion.span
 				key={`human:${motionConfig.key}`}

@@ -20,6 +20,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
   human={human}
   animate
   motion={{
+    variant: "orbit",
     durationMs: 300,
     initialDelayMs: 0,
     betweenTurnsMs: 50,
@@ -56,10 +57,16 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 				"Rotate clockwise to exchange the 24px and 16px slots, hold, then continue in the same direction to return. Stops offscreen and falls back to static under reduced motion.",
 		},
 		{
+			name: "composition",
+			type: '"compact" | "horizontal-group"',
+			description:
+				"Controlled destination for one-shot transitions. Set horizontal-group to open and hold the equal-size human-first group; animate enables the transition. Reduced motion shows the destination immediately.",
+		},
+		{
 			name: "motion",
 			type: "Partial<HumanAgentAvatarMotionOptions>",
 			description:
-				"Live motion options: shared turn duration, initial delay, pause between turns, pause after returning, repeats, cubic-bezier easing, direction, curvature, size swap amount, foreground timing, and offscreen pausing. All timing values use milliseconds. The Animated example exposes every option through GUI controls, with Replay, Reset, and Copy JSON.",
+				"Live motion options: orbit or horizontal-group variation, shared turn duration, initial delay, pause between turns, pause after returning, repeats, cubic-bezier easing, direction, curvature, size swap amount, foreground timing, and offscreen pausing. All timing values use milliseconds. The Animated example exposes every option through GUI controls, with Replay, Reset, and Copy JSON.",
 		},
 		{
 			name: "attributionOrder",
@@ -87,6 +94,12 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			description:
 				"Tune the motion properties below. Both turns share their duration and easing, with a short 50ms pause between them. The human border and separation ring keep a constant thickness. Copy the values as JSON to reuse them through the motion prop.",
 			demoSlug: "human-agent-avatar-demo-animated",
+		},
+		{
+			title: "Horizontal group",
+			description:
+				"The compact identity becomes the shared 16px AvatarGroup, with the human first and agent second, then returns. Uses the same timing controls and respects reduced motion.",
+			demoSlug: "human-agent-avatar-demo-horizontal-group",
 		},
 		{
 			title: "Human first",

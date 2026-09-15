@@ -58,7 +58,7 @@ test("the optional swap exchanges sizes, stays inside its frame, and returns", a
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar`);
 	const avatar = page.locator(
-		'[data-slot="human-agent-avatar"][data-animated="true"]',
+		'[data-human-agent-avatar-playground] [data-slot="human-agent-avatar"][data-animated="true"]',
 	);
 	await avatar.scrollIntoViewIfNeeded();
 	await expect(avatar).toHaveCount(1);
@@ -136,7 +136,7 @@ test("the optional swap exchanges sizes, stays inside its frame, and returns", a
 test("both turns complete in 300ms with matching easing", async ({ page }) => {
 	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar`);
 	const avatar = page.locator(
-		'[data-slot="human-agent-avatar"][data-animated="true"]',
+		'[data-human-agent-avatar-playground] [data-slot="human-agent-avatar"][data-animated="true"]',
 	);
 	await avatar.scrollIntoViewIfNeeded();
 	await expect
@@ -193,7 +193,7 @@ test("each turn keeps moving smoothly through its midpoint", async ({
 }) => {
 	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar`);
 	const avatar = page.locator(
-		'[data-slot="human-agent-avatar"][data-animated="true"]',
+		'[data-human-agent-avatar-playground] [data-slot="human-agent-avatar"][data-animated="true"]',
 	);
 	await avatar.scrollIntoViewIfNeeded();
 	await expect
@@ -259,7 +259,7 @@ test("the human outline keeps its painted thickness when enlarged", async ({
 }) => {
 	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar`);
 	const avatar = page.locator(
-		'[data-slot="human-agent-avatar"][data-animated="true"]',
+		'[data-human-agent-avatar-playground] [data-slot="human-agent-avatar"][data-animated="true"]',
 	);
 	await avatar.scrollIntoViewIfNeeded();
 	await expect
@@ -344,7 +344,7 @@ test("the offscreen animated identity stops and restores its starting compositio
 }) => {
 	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar`);
 	const avatar = page.locator(
-		'[data-slot="human-agent-avatar"][data-animated="true"]',
+		'[data-human-agent-avatar-playground] [data-slot="human-agent-avatar"][data-animated="true"]',
 	);
 	await avatar.scrollIntoViewIfNeeded();
 	await expect
@@ -354,7 +354,9 @@ test("the offscreen animated identity stops and restores its starting compositio
 		.getByRole("heading", { name: "Human Agent Avatar", exact: true })
 		.scrollIntoViewIfNeeded();
 	await expect(avatar).not.toBeInViewport();
-	await expect.poll(async () => (await geometry(avatar)).human.size, { intervals: [16] }).toBe(16);
+	await expect
+		.poll(async () => (await geometry(avatar)).human.size, { intervals: [16] })
+		.toBe(16);
 	expect(
 		await avatar.evaluate(
 			(el) =>
@@ -369,7 +371,8 @@ test("pause and live reduced motion restore the static layout before restarting"
 	page,
 }) => {
 	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar`);
-	const pause = page.getByRole("button", {
+	const playground = page.locator("[data-human-agent-avatar-playground]");
+	const pause = playground.getByRole("button", {
 		name: "Pause animation",
 		exact: true,
 	});
@@ -377,22 +380,24 @@ test("pause and live reduced motion restore the static layout before restarting"
 	await pause.focus();
 	await page.keyboard.press("Enter");
 	await expect(
-		page.getByRole("button", { name: "Animate avatar", exact: true }),
+		playground.getByRole("button", { name: "Animate avatar", exact: true }),
 	).toBeFocused();
-	await expect(page.locator('[data-animated="true"]')).toHaveCount(0);
-	await page
+	await expect(playground.locator('[data-animated="true"]')).toHaveCount(0);
+	await playground
 		.getByRole("button", { name: "Animate avatar", exact: true })
 		.press("Enter");
 	const animated = page.locator(
-		'[data-slot="human-agent-avatar"][data-animated="true"]',
+		'[data-human-agent-avatar-playground] [data-slot="human-agent-avatar"][data-animated="true"]',
 	);
 	await expect(animated).toHaveCount(1);
 	await expect
-		.poll(async () => (await geometry(animated)).human.size, { intervals: [16] })
+		.poll(async () => (await geometry(animated)).human.size, {
+			intervals: [16],
+		})
 		.toBeGreaterThan(16.5);
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await expect(animated).toHaveCount(0);
-	const avatar = page
+	const avatar = playground
 		.getByRole("button", { name: "Pause animation", exact: true })
 		.locator("..")
 		.locator('[data-slot="human-agent-avatar"]');
@@ -560,4 +565,117 @@ test("controls preserve edits across collapse and repeat modes, then reset and r
 		.getByRole("button", { name: "Replay avatar animation", exact: true })
 		.click();
 	await expect(playground.locator('[data-animated="true"]')).toHaveCount(1);
+});
+
+test("horizontal-group variation morphs into the shared human-first 16px group", async ({
+	page,
+}) => {
+	await page.goto(
+		`${BASE_URL}/components/ui-custom/human-agent-avatar#horizontal-group`,
+	);
+	const playground = page.locator("[data-human-agent-avatar-group-playground]");
+	await playground
+		.getByRole("textbox", { name: "Pause between turns", exact: true })
+		.fill("1200");
+	const frame = playground.locator('[data-slot="human-agent-avatar"]');
+	await frame.scrollIntoViewIfNeeded();
+	await playground
+		.getByRole("button", { name: "Replay avatar animation", exact: true })
+		.click();
+	const widths = await frame.evaluate(async (el) => {
+		const widths: number[] = [];
+		const start = performance.now();
+		while (performance.now() - start < 1_100) {
+			const agent = el.querySelector(
+				'[data-slot="avatar-group"] [data-avatar-role="agent"] [data-slot="avatar"]',
+			);
+			if (agent) widths.push(agent.getBoundingClientRect().width);
+			await new Promise(requestAnimationFrame);
+		}
+		return widths;
+	});
+	expect(widths.some((width) => width > 16.2 && width < 23.8)).toBe(true);
+	const group = playground.getByRole("group", {
+		name: "Cursor, used by Jordan Okafor",
+		exact: true,
+	});
+	await expect(group).toHaveAttribute("data-slot", "avatar-group");
+	await expect(async () => {
+		const position = await geometry(group);
+		expect(position).toEqual({
+			size: 28,
+			human: { x: 0, y: 0, size: 16 },
+			agent: { x: 12, y: 0, size: 16 },
+		});
+	}).toPass({ timeout: 10_000 });
+	const avatarSizes = await group
+		.locator('[data-slot="avatar"]')
+		.evaluateAll((avatars) =>
+			avatars.map((avatar) => {
+				const { width, height } = avatar.getBoundingClientRect();
+				return { width, height };
+			}),
+		);
+	expect(avatarSizes).toEqual([
+		{ width: 16, height: 16 },
+		{ width: 16, height: 16 },
+	]);
+	expect(
+		await group
+			.locator("[data-avatar-role]")
+			.evaluateAll((avatars) =>
+				avatars.map((el) => el.getAttribute("data-avatar-role")),
+			),
+	).toEqual(["human", "agent"]);
+	expect(await frame.evaluate((el) => el.getBoundingClientRect().width)).toBe(
+		32,
+	);
+	await group.screenshot({
+		path: "output/agent-browser/human-agent-avatar/horizontal-group.png",
+	});
+
+	await playground
+		.getByRole("button", { name: "Pause animation", exact: true })
+		.click();
+	await expect(playground.locator('[data-animated="true"]')).toHaveCount(0);
+	const compact = playground.locator('[data-slot="human-agent-avatar"]');
+	expect(await geometry(compact)).toEqual({
+		size: 32,
+		agent: { x: 0, y: 0, size: 24 },
+		human: { x: 16, y: 16, size: 16 },
+	});
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await playground
+		.getByRole("button", { name: "Animate avatar", exact: true })
+		.click();
+	await expect(playground.locator('[data-animated="true"]')).toHaveCount(0);
+	expect(await geometry(compact)).toEqual({
+		size: 32,
+		agent: { x: 0, y: 0, size: 24 },
+		human: { x: 16, y: 16, size: 16 },
+	});
+});
+
+test("the original playground can select the horizontal-group variation", async ({
+	page,
+}) => {
+	await page.goto(
+		`${BASE_URL}/components/ui-custom/human-agent-avatar#animated`,
+	);
+	const playground = page.locator("[data-human-agent-avatar-playground]");
+	await playground
+		.getByRole("button", { name: "Horizontal group", exact: true })
+		.click();
+	const frame = playground.locator('[data-slot="human-agent-avatar"]');
+	await expect(frame).toHaveAttribute(
+		"data-animation-variant",
+		"horizontal-group",
+	);
+	await expect(
+		playground.getByRole("textbox", { name: "Orbit curvature", exact: true }),
+	).toHaveCount(0);
+	await playground.getByRole("button", { name: "Orbit", exact: true }).click();
+	await expect(
+		playground.getByRole("textbox", { name: "Orbit curvature", exact: true }),
+	).toHaveValue("2");
 });

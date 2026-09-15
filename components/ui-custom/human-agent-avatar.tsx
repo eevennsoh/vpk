@@ -29,6 +29,8 @@ export interface HumanAgentAvatarProps {
 	human: { name: string; avatarSrc?: string };
 	/** Swap the human and agent, hold, then return. Static by default. */
 	animate?: boolean;
+	/** Controlled destination; horizontal groups hold instead of looping. */
+	composition?: "compact" | "horizontal-group";
 	/** Called after a finite animation, or immediately when reduced motion skips it. */
 	onAnimationComplete?: () => void;
 	motion?: Partial<HumanAgentAvatarMotionOptions>;
@@ -67,6 +69,7 @@ export function HumanAgentAvatar({
 	agent,
 	human,
 	animate = false,
+	composition,
 	onAnimationComplete,
 	motion,
 	attributionOrder = "agent-first",
@@ -105,19 +108,16 @@ export function HumanAgentAvatar({
 			</AvatarFallback>
 		</Avatar>
 	);
-	const agentAvatar = (
-		<AgentAvatarVisual
-			{...agent}
-			animate={false}
-			label=""
-			sizePx={agentSizePx}
-		/>
+	const agentAvatar = (sizePx = agentSizePx) => (
+		<AgentAvatarVisual {...agent} animate={false} label="" sizePx={sizePx} />
 	);
 
-	if (shouldAnimate) {
+	if (shouldAnimate || composition === "horizontal-group") {
 		return (
 			<HumanAgentAvatarMotion
 				options={motion}
+				animate={shouldAnimate}
+				composition={composition}
 				onAnimationComplete={onAnimationComplete}
 				agent={agentAvatar}
 				human={humanAvatar}
@@ -154,7 +154,7 @@ export function HumanAgentAvatar({
 			data-avatar-role="agent"
 			key="agent"
 		>
-			{agentAvatar}
+			{agentAvatar()}
 		</span>
 	);
 

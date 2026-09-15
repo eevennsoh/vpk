@@ -11,10 +11,11 @@ import {
 	type AgentListAttributionOrder,
 } from "@/components/blocks/agent-list/agent-list-identity";
 import { Badge } from "@/components/ui/badge";
+import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-import { agentIdentityLabel } from "./agent-session-identity-label";
+import { agentDragIdentityLabel } from "./agent-session-identity-label";
 import type { AgentSessionItem } from "./agent-session-types";
 import type { SessionCohort } from "./session-cohort";
 
@@ -65,12 +66,9 @@ function sessionCohortLabel(total: number): string {
 
 /**
  * One travelling session, drawn as the drag pill: an elevated white surface
- * holding the human invoker followed by the agent hexagon, then "Claude with
- * Annie".
- *
- * `AgentListIdentity` already draws that composite at `sizePx={32}` — the same
- * footprint the resting medium card uses — so the avatar can morph 1:1 out of
- * the card instead of resizing mid-flight.
+ * holding equal-size human and agent avatars, then the human's name.
+ * The 32px identity footprint stays stable as the travelling copy opens into
+ * its horizontal group, preserving the card-to-chip pointer geometry.
  */
 export function AgentSessionDragPill({
 	agent,
@@ -113,15 +111,21 @@ export function AgentSessionDragPill({
 				style={{ ...(elevated ? DRAG_CHIP_ELEVATION : undefined), transformOrigin: "0 0" }}
 			/>
 			<span className="block shrink-0" data-session-drag-identity="">
-				<AgentListIdentity
-					agent={agent}
-					attributedBy={attributedBy}
-					attributionOrder={attributionOrder}
-					sizePx={32}
-				/>
+				{attributedBy ? (
+					<HumanAgentAvatar
+						agent={agent}
+						human={attributedBy}
+						animate={isFusionSource}
+						composition="horizontal-group"
+						attributionOrder={attributionOrder}
+						sizePx={32}
+					/>
+				) : (
+					<AgentListIdentity agent={agent} sizePx={32} />
+				)}
 			</span>
 			<span className="truncate text-xs text-text" data-session-drag-label="">
-				{agentIdentityLabel(agent, attributedBy)}
+				{agentDragIdentityLabel(agent, attributedBy)}
 			</span>
 		</div>
 	);
