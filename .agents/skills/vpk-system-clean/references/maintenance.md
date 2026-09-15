@@ -28,7 +28,11 @@ The top of `scripts/vpk-system-clean.sh` defines:
   stopping them. The primary checkout (`vpk-dev-main`, resolved from Git),
   attached sessions, and worktrees that still have a process named exactly
   `claude`, `caffeinate`, `lazygit`, `cursor-agent`, or `codex` whose cwd is
-  that directory are always kept. Worktree folder names are ignored.
+  that directory are always kept. The unattended idle-stack pass also keeps
+  Codex Desktop worktrees because task activity is not visible through process
+  cwd. Use the task-aware ports-only workflow in `SKILL.md` to stop one
+  deliberately.
+  Worktree folder names are ignored.
 
 Do not replace the Next memory measure with `ps` RSS. The observed arm64
 `MAP_JIT` leak lives in JIT/native mappings: an 11.1 GB physical-footprint
@@ -112,8 +116,9 @@ user asks for deeper proof.
 ## What the sweep is allowed to affect
 
 The sweep may act on sustained-hot or settled-bloated `next-server`, its
-`next dev` parent, leftover unattached `vpk-dev-*` stacks (via that worktree's
-`dev-tmux-plain.sh stop`), qualifying inactive `.next` caches, orphaned
+`next dev` parent, leftover unattached `vpk-dev-*` stacks (through the
+worktree launcher on the private socket, or SIGINT and an exact session stop
+on tmux's legacy default socket), qualifying inactive `.next` caches, orphaned
 unattached `vpk-dev-*` tmux sessions on their discovered socket, old
 sustained-hot exact `/usr/local/bin/almd`, and over-threshold `fseventsd` with
 the sudoers guard.
@@ -125,6 +130,10 @@ osquery, Apple `ecosystem*` services, or merely similar process names. The sweep
 resolves the primary checkout from `VPK_REPO_ROOT` or the current Git checkout,
 then enumerates registered worktrees through `git worktree list`. Superset
 worktrees remain an additional discovered cache family.
+
+The idle-stack pass additionally keeps Codex Desktop worktrees until a
+task-aware manual check confirms the port stack is unused. Other sweep guards,
+such as proven runaway or bloated `next-server`, still apply to their servers.
 
 ## Uninstall
 

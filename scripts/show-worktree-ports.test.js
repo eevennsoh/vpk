@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { execFileSync } = require("node:child_process");
+const { execFileSync, spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const net = require("node:net");
 const os = require("node:os");
@@ -212,6 +212,67 @@ test("ports CLI shows a mix of alive and dead pool ports as only the alive ones"
 		assert.doesNotMatch(output, new RegExp(`\\b${deadPort}\\b`));
 	} finally {
 		await closeServer(alive);
+		fixture.cleanup();
+	}
+});
+
+test("ports kill resolves a legacy private session and rejects an unsafe default-socket stop", () => {
+	const fixture = createGitWorktreeFixture();
+	const fakeTmuxPath = path.join(fixture.repoPath, "fake-tmux");
+	const stopScriptPath = path.join(fixture.worktreePath, "scripts", "dev-tmux-plain.sh");
+	const stopResultPath = path.join(fixture.worktreePath, "stop-result");
+
+	try {
+		fs.mkdirSync(path.dirname(stopScriptPath), { recursive: true });
+		fs.writeFileSync(
+			fakeTmuxPath,
+			`#!/usr/bin/env node\nif (process.argv[2] === "-L" && process.argv[3] === "vpk-dev") {\n\tprocess.stdout.write(${JSON.stringify(`vpk-dev-cursor-legacy|${fixture.worktreePath}\n`)});\n\tprocess.exit(0);\n}\nprocess.exit(1);\n`,
+			"utf8",
+		);
+		fs.chmodSync(fakeTmuxPath, 0o755);
+		fs.writeFileSync(
+			stopScriptPath,
+			'#!/bin/bash\nprintf "%s|%s\\n" "$VPK_DEV_TMUX_SESSION" "$VPK_TMUX_SOCKET" > stop-result\n',
+			"utf8",
+		);
+
+		execFileSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT, "kill", "feature-pool"], {
+			cwd: fixture.repoPath,
+			env: { ...process.env, VPK_TMUX_BIN: fakeTmuxPath },
+			encoding: "utf8",
+		});
+
+		assert.equal(fs.readFileSync(stopResultPath, "utf8"), "vpk-dev-cursor-legacy|vpk-dev\n");
+
+		fs.unlinkSync(stopResultPath);
+		fs.writeFileSync(
+			fakeTmuxPath,
+			`#!/usr/bin/env node\nif (process.argv[2] === "list-sessions") {\n\tprocess.stdout.write(${JSON.stringify(`vpk-dev-cursor-legacy|${fixture.worktreePath}\n`)});\n\tprocess.exit(0);\n}\nprocess.exit(1);\n`,
+			"utf8",
+		);
+		const legacyResult = spawnSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT, "kill", "feature-pool"], {
+			cwd: fixture.repoPath,
+			env: { ...process.env, VPK_TMUX_BIN: fakeTmuxPath },
+			encoding: "utf8",
+		});
+		assert.equal(legacyResult.status, 2);
+		assert.match(legacyResult.stderr, /default socket/);
+		assert.equal(fs.existsSync(stopResultPath), false);
+
+		fs.writeFileSync(
+			fakeTmuxPath,
+			'#!/usr/bin/env node\nprocess.stderr.write("Operation not permitted\\n");\nprocess.exit(1);\n',
+			"utf8",
+		);
+		const deniedResult = spawnSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT, "kill", "feature-pool"], {
+			cwd: fixture.repoPath,
+			env: { ...process.env, VPK_TMUX_BIN: fakeTmuxPath },
+			encoding: "utf8",
+		});
+		assert.equal(deniedResult.status, 2);
+		assert.match(deniedResult.stderr, /Could not inspect tmux/);
+		assert.equal(fs.existsSync(stopResultPath), false);
+	} finally {
 		fixture.cleanup();
 	}
 });

@@ -425,6 +425,73 @@ function printKillCandidates(worktrees) {
 	}
 }
 
+function standaloneTmuxBinary() {
+	for (const candidate of [
+		process.env.VPK_TMUX_BIN,
+		"/opt/homebrew/bin/tmux",
+		"/usr/local/bin/tmux",
+		"/usr/bin/tmux",
+	]) {
+		if (!candidate || candidate.includes(".cmuxterm")) continue;
+		try {
+			fs.accessSync(candidate, fs.constants.X_OK);
+			return candidate;
+		} catch {
+			// Try the next standalone binary.
+		}
+	}
+	return "tmux";
+}
+
+function sameWorktreePath(left, right) {
+	try {
+		return fs.realpathSync(left) === fs.realpathSync(right);
+	} catch {
+		return path.resolve(left) === path.resolve(right);
+	}
+}
+
+// Older launchers can name a session from a Cursor worktree hash rather than
+// today's branch/display name. Match the live session by its exact worktree
+// path so the target stop script sends SIGINT to the right Portless owner.
+function runningSessionForWorktree(worktree) {
+	const matches = [];
+	const tmuxBinary = standaloneTmuxBinary();
+	for (const socket of ["vpk-dev", "default"]) {
+		const args = socket === "default" ? [] : ["-L", socket];
+		const result = spawnSync(tmuxBinary, [...args, "list-sessions", "-F", "#{session_name}|#{session_path}"], {
+			encoding: "utf8",
+		});
+		if (result.error) {
+			throw new Error(`Could not inspect tmux's ${socket} socket: ${result.error.message}`);
+		}
+		if (result.status !== 0) {
+			const message = String(result.stderr ?? "");
+			if (/operation not permitted|permission denied|broken pipe/i.test(message)) {
+				throw new Error(`Could not inspect tmux's ${socket} socket: ${message.trim()}`);
+			}
+			continue;
+		}
+		for (const line of result.stdout.split("\n")) {
+			const separator = line.indexOf("|");
+			if (separator < 0) continue;
+			const name = line.slice(0, separator);
+			const sessionPath = line.slice(separator + 1);
+			if (name.startsWith("vpk-dev-") && sessionPath && sameWorktreePath(sessionPath, worktree.path)) {
+				matches.push({ name, socket });
+			}
+		}
+	}
+
+	if (matches.length === 1) return matches[0];
+	if (matches.length > 1) {
+		throw new Error(
+			`Multiple dev sessions belong to ${worktree.path}: ${matches.map((session) => session.name).join(", ")}. Inspect them before stopping this worktree.`,
+		);
+	}
+	return null;
+}
+
 // Stop one worktree's dev session. Delegate to the target worktree's OWN
 // launcher so its cwd-scoped cleanup (SIGINT so portless removes its route,
 // kill-session, listener backstop, port-file removal) runs against the right
@@ -433,8 +500,26 @@ function printKillCandidates(worktrees) {
 function stopWorktree(worktree) {
 	const scriptPath = path.join(worktree.path, "scripts", "dev-tmux-plain.sh");
 	console.log(`🔪 Stopping ${describeWorktree(worktree)}\n`);
+	let runningSession;
+	try {
+		runningSession = runningSessionForWorktree(worktree);
+	} catch (error) {
+		console.error(error.message);
+		return 2;
+	}
+	if (runningSession?.socket === "default") {
+		console.error(`The live session is on tmux's default socket. Use the vpk-system-clean sweep for this legacy stack.`);
+		return 2;
+	}
 	const { status, error } = spawnSync("bash", [scriptPath, "stop"], {
 		cwd: worktree.path,
+		env: runningSession
+			? {
+					...process.env,
+					VPK_DEV_TMUX_SESSION: runningSession.name,
+					VPK_TMUX_SOCKET: runningSession.socket,
+				}
+			: process.env,
 		stdio: "inherit",
 	});
 	if (error) {
