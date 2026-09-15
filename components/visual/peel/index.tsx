@@ -150,7 +150,12 @@ export function Peel({
 	// EVERY render and throws the result away — React only keeps the first — so
 	// it would allocate a model and its impulse ring on each pass for nothing.
 	const stateRef = useRef<PeelState | null>(null);
-	const state = (stateRef.current ??= createPeelState(resolvedTuning));
+	// The null-guarded form specifically: `??=` is still a ref write during
+	// render, and React may replay or discard render work.
+	if (stateRef.current === null) {
+		stateRef.current = createPeelState(resolvedTuning);
+	}
+	const state = stateRef.current;
 	useEffect(() => {
 		state.tuning = resolvedTuning;
 	}, [resolvedTuning, state]);
