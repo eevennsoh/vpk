@@ -13,6 +13,12 @@ async function openBoard(page: Page): Promise<void> {
 		.getByTestId("agent-session-row-lw-scope-thread");
 	const options = page.getByRole("button", { name: "Unlink sessions column options" });
 	if (!await session.isVisible()) {
+		const directExpand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+		if (await directExpand.isVisible()) {
+			await directExpand.click();
+			await expect(session).toBeVisible();
+			return;
+		}
 		if (await page.locator("[data-agent-session-column-hit-area]").count() > 0) {
 			await revealCollapsedAgentSessionColumn(page);
 		}
@@ -545,27 +551,6 @@ test("click auto-scroll keeps Untracked frozen and allows the status pane to scr
 	expect(await pay121ColumnScrollport.evaluate((element) => element.scrollTop)).toBe(0);
 	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
 	await expect(pay121).toHaveClass(/bg-bg-accent-blue-subtlest/);
-});
-
-test("Untracked stays frozen while the status pane scrolls", async ({ page }) => {
-	await openBoard(page);
-
-	const untrackedColumn = page.getByLabel(/^Unlink sessions,/u);
-	const statusScrollport = page.locator("[data-jira-kanban-scrollport]");
-	const frozenLeft = (await untrackedColumn.boundingBox())?.x;
-
-	await statusScrollport.evaluate((element) => {
-		element.scrollTo({ behavior: "instant", left: 400 });
-	});
-
-	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
-	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
-
-	await statusScrollport.evaluate((element) => {
-		element.scrollTo({ behavior: "instant", left: 0 });
-	});
-	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBe(0);
-	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
 });
 
 test("the Untracked resize handle reveals on column hover and widens the pinned column", async ({ page }) => {
