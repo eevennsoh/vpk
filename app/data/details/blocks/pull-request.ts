@@ -18,7 +18,7 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
   additions={86}
   deletions={21}
   filesChanged={6}
-  relativeTime="1h ago"
+  relativeTime="1h"
 />`,
 	demoLayout: {
 		previewContentWidth: "full",

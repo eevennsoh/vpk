@@ -100,20 +100,27 @@ export function AgentSessionDragPill({
 				// because the composite's own avatar ring already reads as inset,
 				// while the trailing edge needs the full 12px to keep the label off
 				// the corner radius.
-				"flex w-fit max-w-full items-center gap-1.5 rounded-lg py-1.5 pl-2 pr-3",
-				elevated ? "bg-surface" : "bg-bg-neutral",
+				"relative isolate flex w-fit max-w-full items-center gap-1.5 rounded-lg py-1.5 pl-2 pr-3",
 			)}
 			data-session-drag-pill=""
 			data-session-fusion-chip={isFusionSource ? "" : undefined}
-			style={elevated ? DRAG_CHIP_ELEVATION : undefined}
 		>
-			<AgentListIdentity
-				agent={agent}
-				attributedBy={attributedBy}
-				attributionOrder={attributionOrder}
-				sizePx={32}
+			{/* Independent surface lets the row contract without scaling its avatars. */}
+			<span
+				aria-hidden="true"
+				className={cn("absolute inset-0 -z-10 rounded-lg", elevated ? "bg-surface" : "bg-bg-neutral")}
+				data-session-drag-surface=""
+				style={{ ...(elevated ? DRAG_CHIP_ELEVATION : undefined), transformOrigin: "0 0" }}
 			/>
-			<span className="truncate text-xs text-text">
+			<span className="block shrink-0" data-session-drag-identity="">
+				<AgentListIdentity
+					agent={agent}
+					attributedBy={attributedBy}
+					attributionOrder={attributionOrder}
+					sizePx={32}
+				/>
+			</span>
+			<span className="truncate text-xs text-text" data-session-drag-label="">
 				{agentIdentityLabel(agent, attributedBy)}
 			</span>
 		</div>
