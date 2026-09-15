@@ -78,9 +78,8 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * Manual link starts off: Team EU hides the Link work item session-menu row
  * until the user explicitly enables it.
  *
- * All three session-chrome variants start on, so the shipped behaviour is what
- * you see unless you deliberately turn a layer off. They are separate because
- * they are separate layers, and each is worth judging alone:
+ * Card glow starts on; Stroke tracing and Proximity sensor start off.
+ * Each layer remains independently configurable in Settings:
  *
  * - Stroke tracing — the accent border traced along the card edge.
  * - Card glow — the soft accent wash behind the row.
@@ -95,8 +94,8 @@ const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	manualLink: false,
 	panel: false,
 	sessionBloom: true,
-	sessionProximity: true,
-	sessionStroke: true,
+	sessionProximity: false,
+	sessionStroke: false,
 	"simple-views": true,
 	simpleKanban: true,
 });
