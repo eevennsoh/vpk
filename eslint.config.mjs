@@ -125,6 +125,26 @@ const eslintConfig = defineConfig([
 		},
 	},
 	{
+		files: ["components/blocks/agent-session-column/agent-session-column-header.tsx"],
+		rules: {
+			"shadcn/no-restyle": ["warn", {
+				...designSystemRestyleOptions,
+				contracts: [
+					{
+						...buttonRestyleContract,
+						// The collapsed Expand control's gutter hit area stays
+						// transparent; its 24px child owns hover and focus paint.
+						allow: [
+							...buttonRestyleContract.allow,
+							"bg-transparent", "focus-visible:border-transparent", "focus-visible:ring-0",
+						],
+					},
+					badgeRestyleContract,
+				],
+			}],
+		},
+	},
+	{
 		files: ["components/ui/**/*.{js,jsx,ts,tsx}"],
 		rules: { "shadcn/no-restyle": "off" },
 	},

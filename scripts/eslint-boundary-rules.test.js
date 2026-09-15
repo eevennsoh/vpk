@@ -168,6 +168,20 @@ export const Fixture = () => <Button className="px-2 bg-bg-danger h-12" />;
 `, "components/blocks/agent-session-column/index.tsx")).length, 3);
 });
 
+test("collapsed Expand keeps the gutter hit area transparent with focus paint on its visual child", async () => {
+	const headerFile = "components/blocks/agent-session-column/agent-session-column-header.tsx";
+	const source = `
+import { Button } from "@/components/ui/button";
+export const Fixture = () => <Button size="icon-compact" className="bg-transparent hover:bg-transparent active:bg-transparent aria-pressed:bg-transparent aria-expanded:bg-transparent focus-visible:border-transparent focus-visible:ring-0" />;
+`;
+	assert.deepEqual(await designSystemFindings(source, headerFile), []);
+	assert.equal((await designSystemFindings(source)).length, 7);
+	assert.equal((await designSystemFindings(`
+import { Button } from "@/components/ui/button";
+export const Fixture = () => <Button className="px-2 bg-bg-danger h-12" />;
+`, headerFile)).length, 3);
+});
+
 test("the CI pilot command rejects warnings and accepts valid component usage", () => {
 	const lintCommand = require("../package.json").scripts["lint:design-system"];
 	assert.ok(lintCommand, "the design-system CI command must exist");
