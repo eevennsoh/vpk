@@ -17,6 +17,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { Shimmer } from "@/components/ui-custom/shimmer";
 import { cn } from "@/lib/utils";
 
 import type { JiraSidebarSessionItem } from "./jira";
@@ -167,6 +168,15 @@ export function JiraSessionUntrackedWorkCard({
 	const hasIssueKey = session.issueKey.length > 0;
 	const hasPullRequest = session.pullRequestNumber !== undefined;
 	const lifecycleState = JIRA_SESSION_FLYOUT_STATE[session.status];
+	// Jira's sidebar payload uses `src`; the shared agent-list attribution
+	// primitive uses `avatarSrc`. Normalize at this feature boundary so the
+	// human face is preserved alongside the agent mark in every flyout.
+	const invokedBy = session.invokedBy === undefined
+		? undefined
+		: {
+			avatarSrc: session.invokedBy.src,
+			name: session.invokedBy.name,
+		};
 	const agentIdentity = {
 		avatarSrc: session.agentAvatarSrc,
 		brandName: session.brandName,
@@ -222,11 +232,11 @@ export function JiraSessionUntrackedWorkCard({
 			}
 			meta={
 				<div className="flex h-4 min-w-0 items-center gap-1">
-					{session.invokedBy ? (
+					{invokedBy ? (
 						<AgentListAttributionAvatarGroup
 							agent={agentIdentity}
 							animate={animateAvatars}
-							attributedBy={session.invokedBy}
+							attributedBy={invokedBy}
 							sizePx={16}
 						/>
 					) : (
@@ -245,9 +255,20 @@ export function JiraSessionUntrackedWorkCard({
 					)}
 					<p className="min-w-0 truncate text-xs leading-4 text-text-subtlest">{session.agentName}</p>
 					<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">·</span>
-					<p className="shrink-0 text-xs leading-4 text-text-subtlest">
-						{JIRA_SESSION_FLYOUT_STATE_LABEL[lifecycleState]}
-					</p>
+					{lifecycleState === "working" ? (
+						<Shimmer
+							as="span"
+							className="shrink-0 text-xs leading-4 text-text-subtlest"
+							duration={1.4}
+							spread={2}
+						>
+							{JIRA_SESSION_FLYOUT_STATE_LABEL[lifecycleState]}
+						</Shimmer>
+					) : (
+						<p className="shrink-0 text-xs leading-4 text-text-subtlest">
+							{JIRA_SESSION_FLYOUT_STATE_LABEL[lifecycleState]}
+						</p>
+					)}
 					<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">·</span>
 					<p className="shrink-0 text-xs leading-4 text-text-subtlest">
 						{JIRA_SESSION_UPDATED_LABEL[session.status]}

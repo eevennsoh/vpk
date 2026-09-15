@@ -120,7 +120,11 @@ export interface JiraSidebarSessionItem {
 	/** PR summary shown on the pull-request Smart Link hover card. */
 	pullRequestDescription?: string;
 	pullRequestNumber?: number;
+	/** Number of reviewers shown in the untracked-work PR summary. */
+	pullRequestReviewerCount?: number;
 	pullRequestTitle?: string;
+	/** Preformatted relative PR update time, for example `1h ago`. */
+	pullRequestUpdatedLabel?: string;
 	pullRequestUrl?: string;
 	repository?: string;
 	status: JiraSidebarSessionStatus;
