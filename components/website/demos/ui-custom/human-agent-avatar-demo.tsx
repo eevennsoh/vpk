@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
 	DEFAULT_HUMAN_AGENT_AVATAR_MOTION,
 	resolveHumanAgentAvatarMotion,
+	type HumanAgentAvatarMotionOptions,
 } from "@/components/ui-custom/human-agent-avatar-motion-config";
 import { HumanAgentAvatarMotionControls } from "./human-agent-avatar-motion-controls";
 
@@ -20,22 +21,36 @@ export default function HumanAgentAvatarDemo() {
 	return <HumanAgentAvatar agent={AGENT} human={HUMAN} />;
 }
 
-export function HumanAgentAvatarDemoAnimated() {
+export function HumanAgentAvatarDemoAnimated({
+	variant = "orbit",
+	human = HUMAN,
+}: Readonly<{
+	variant?: HumanAgentAvatarMotionOptions["variant"];
+	human?: { name: string; avatarSrc: string };
+}> = {}) {
 	const [animate, setAnimate] = useState(true);
-	const [config, setConfig] = useState(DEFAULT_HUMAN_AGENT_AVATAR_MOTION);
+	const [config, setConfig] = useState(() => ({
+		...DEFAULT_HUMAN_AGENT_AVATAR_MOTION,
+		variant,
+	}));
 	const [runId, setRunId] = useState(0);
 	const [resetId, setResetId] = useState(0);
 
 	return (
 		<div
 			className="flex w-full flex-col gap-4"
-			data-human-agent-avatar-playground
+			data-human-agent-avatar-playground={
+				variant === "orbit" ? true : undefined
+			}
+			data-human-agent-avatar-group-playground={
+				variant === "horizontal-group" ? true : undefined
+			}
 		>
 			<div className="flex items-center justify-center gap-4">
 				<HumanAgentAvatar
 					key={runId}
 					agent={AGENT}
-					human={HUMAN}
+					human={human}
 					animate={animate}
 					motion={config}
 				/>
@@ -51,7 +66,7 @@ export function HumanAgentAvatarDemoAnimated() {
 					size="compact"
 					variant="outline"
 					onClick={() => {
-						setConfig(DEFAULT_HUMAN_AGENT_AVATAR_MOTION);
+						setConfig({ ...DEFAULT_HUMAN_AGENT_AVATAR_MOTION, variant });
 						setRunId((current) => current + 1);
 						setResetId((current) => current + 1);
 					}}
@@ -82,6 +97,18 @@ export function HumanAgentAvatarDemoHumanFirst() {
 			agent={AGENT}
 			human={HUMAN}
 			attributionOrder="human-first"
+		/>
+	);
+}
+
+export function HumanAgentAvatarDemoHorizontalGroup() {
+	return (
+		<HumanAgentAvatarDemoAnimated
+			variant="horizontal-group"
+			human={{
+				name: "Jordan Okafor",
+				avatarSrc: "/avatar-user/issac-varghese/color/asow-dev-lime.png",
+			}}
 		/>
 	);
 }

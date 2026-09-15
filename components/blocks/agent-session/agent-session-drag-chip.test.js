@@ -5,6 +5,7 @@ const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
 const {
+	agentDragIdentityLabel,
 	agentIdentityLabel,
 	agentSessionIdentityLabel,
 } = require("./agent-session-identity-label.ts");
@@ -95,22 +96,28 @@ test("the label names the agent and the human who invoked it", () => {
 	assert.equal(agentSessionIdentityLabel(session("lw-a")), "Claude");
 });
 
+test("the visible drag label is the person name with an agent-only fallback", () => {
+	assert.equal(agentDragIdentityLabel({ name: "Claude" }, ANNIE), "Annie Chen");
+	assert.equal(agentDragIdentityLabel({ name: "Claude" }), "Claude");
+});
+
 test("a single session is one pill carrying the agent, its invoker, and the label", async () => {
 	const harness = await loadDragChipHarness();
 	const markup = harness.renderChip({ cohort: cohort(session("lw-a", ANNIE)), elevated: true });
 
 	assert.equal(countMatches(markup, "data-session-drag-pill"), 1);
-	// The Figma composite: agent hexagon with the human tucked into its corner.
+	// Static/reduced-motion copies show the human-first horizontal destination.
 	assert.match(markup, /aria-label="Claude, used by Annie Chen"/u);
-	assert.match(markup, /role="img"/u);
-	assert.match(markup, />Claude with Annie Chen</u);
+	assert.match(markup, /data-slot="avatar-group"/u);
+	assert.match(markup, />Annie Chen</u);
+	assert.doesNotMatch(markup, />Claude with Annie Chen</u);
 	// One session is one pill: no deck, no count badge, no cohort wrapper.
 	assert.doesNotMatch(markup, /data-session-deck-layer/u);
 	assert.doesNotMatch(markup, /data-slot="badge"/u);
 	assert.doesNotMatch(markup, /data-session-cohort-chip/u);
 });
 
-test("untracked drag chips put the agent before the human while tracked pills keep the shared default", async () => {
+test("untracked and tracked chips share the equal-size human-first group", async () => {
 	const harness = await loadDragChipHarness();
 	const untracked = harness.renderChip({ cohort: cohort(session("lw-a", ANNIE)) });
 	const tracked = harness.renderPill({
@@ -119,13 +126,17 @@ test("untracked drag chips put the agent before the human while tracked pills ke
 	});
 
 	assert.ok(
-		untracked.indexOf('data-shape="hexagon"') < untracked.indexOf('data-shape="circle"'),
-		"untracked work leads with the agent mark",
+		untracked.indexOf('data-shape="circle"') < untracked.indexOf('data-shape="hexagon"'),
+		"untracked drag groups lead with the person",
 	);
 	assert.ok(
 		tracked.indexOf('data-shape="circle"') < tracked.indexOf('data-shape="hexagon"'),
-		"tracked work keeps the human-first default",
+		"tracked drag groups lead with the person",
 	);
+	for (const markup of [untracked, tracked]) {
+		assert.equal(countMatches(markup, 'data-size="xs"'), 2);
+		assert.doesNotMatch(markup, /data-size="sm"/u);
+	}
 });
 
 test("an elevated pill paints the overlay surface; a resting one stays flat", async () => {
@@ -170,7 +181,7 @@ test("the pill can be drawn from a raw agent, as the Jira chin row does", async 
 
 	assert.equal(countMatches(markup, "data-session-drag-pill"), 1);
 	assert.equal(countMatches(markup, "data-session-fusion-chip"), 1);
-	assert.match(markup, />Claude with Annie Chen</u);
+	assert.match(markup, />Annie Chen</u);
 });
 
 test("a pill is only a fusion source when the caller says so", async () => {
@@ -210,7 +221,7 @@ test("five marked sessions stack three sheets behind a badge carrying the total"
 	assert.match(markup, /data-slot="badge"[^>]*>5<\/span>/u);
 
 	// Only the lead pill draws a label; the layers are inert artwork.
-	assert.equal(countMatches(markup, ">Claude with Annie Chen<"), 1);
+	assert.equal(countMatches(markup, ">Annie Chen<"), 1);
 	assert.equal(countMatches(markup, "aria-label=\"Claude, used by Annie Chen\""), 1);
 });
 

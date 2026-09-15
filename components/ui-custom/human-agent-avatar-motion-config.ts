@@ -1,6 +1,7 @@
 export type HumanAgentAvatarEasing = readonly [number, number, number, number];
 
 export interface HumanAgentAvatarMotionOptions {
+	variant: "orbit" | "horizontal-group";
 	durationMs: number;
 	initialDelayMs: number;
 	betweenTurnsMs: number;
@@ -16,6 +17,7 @@ export interface HumanAgentAvatarMotionOptions {
 
 export const DEFAULT_HUMAN_AGENT_AVATAR_MOTION: Readonly<HumanAgentAvatarMotionOptions> =
 	{
+		variant: "orbit",
 		durationMs: 300, // User preset, shared by both turns.
 		initialDelayMs: 0,
 		betweenTurnsMs: 50,
@@ -47,6 +49,7 @@ export function resolveHumanAgentAvatarMotion(
 	const defaults = DEFAULT_HUMAN_AGENT_AVATAR_MOTION;
 	const curve = options.ease ?? defaults.ease;
 	return {
+		variant: options.variant ?? defaults.variant,
 		durationMs: bounded(options.durationMs, defaults.durationMs, 50, 2_000),
 		initialDelayMs: bounded(
 			options.initialDelayMs,

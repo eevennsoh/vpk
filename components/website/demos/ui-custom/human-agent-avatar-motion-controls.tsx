@@ -132,6 +132,10 @@ export function HumanAgentAvatarMotionControls({
 					onChange({ [control.key]: value / (control.factor ?? 1) })
 				}
 				valueKeys={control.key}
+				disabled={
+					config.variant === "horizontal-group" &&
+					ORBIT_CONTROLS.some((item) => item.key === control.key)
+				}
 			/>
 		));
 
@@ -142,6 +146,18 @@ export function HumanAgentAvatarMotionControls({
 			onPlay={onReplay}
 			playLabel="Replay avatar animation"
 		>
+			<GUI.Select
+				id={`${id}-variant`}
+				label="Animation variation"
+				value={config.variant}
+				defaultValue="orbit"
+				options={[
+					{ value: "orbit", label: "Orbit" },
+					{ value: "horizontal-group", label: "Horizontal group" },
+				]}
+				valueKeys="variant"
+				onChange={(variant) => onChange({ variant })}
+			/>
 			<GUI.Section title="Timing" borderTop={false}>
 				{numbers(TIMING_CONTROLS)}
 			</GUI.Section>
@@ -184,21 +200,23 @@ export function HumanAgentAvatarMotionControls({
 						))
 					: null}
 			</GUI.Section>
-			<GUI.Section title="Orbit">
-				<GUI.Select
-					id={`${id}-direction`}
-					label="Rotation direction"
-					value={config.direction}
-					defaultValue="clockwise"
-					options={[
-						{ value: "clockwise", label: "Clockwise" },
-						{ value: "counter-clockwise", label: "Counter-clockwise" },
-					]}
-					valueKeys="direction"
-					onChange={(direction) => onChange({ direction })}
-				/>
-				{numbers(ORBIT_CONTROLS)}
-			</GUI.Section>
+			{config.variant === "orbit" ? (
+				<GUI.Section title="Orbit">
+					<GUI.Select
+						id={`${id}-direction`}
+						label="Rotation direction"
+						value={config.direction}
+						defaultValue="clockwise"
+						options={[
+							{ value: "clockwise", label: "Clockwise" },
+							{ value: "counter-clockwise", label: "Counter-clockwise" },
+						]}
+						valueKeys="direction"
+						onChange={(direction) => onChange({ direction })}
+					/>
+					{numbers(ORBIT_CONTROLS)}
+				</GUI.Section>
+			) : null}
 			<GUI.Section title="Playback">
 				<GUI.Toggle
 					id={`${id}-loop`}

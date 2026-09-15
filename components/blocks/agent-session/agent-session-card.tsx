@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import {
@@ -383,7 +384,7 @@ export function AgentSessionCard({
 	/** Work items the menu's Link work item submenu offers. */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
-	const shouldReduceMotion = useReducedMotion();
+	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	// The glow reads the pointer on the list item, not the article: the article
 	// spreads the drag binding, which owns `onPointerMove`. Custom properties
 	// inherit, so the layers inside still see what the item writes.
