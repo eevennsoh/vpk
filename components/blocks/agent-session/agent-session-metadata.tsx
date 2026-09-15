@@ -208,7 +208,10 @@ function LongMetadataSegment({
 		case "artifact":
 			return (
 				<span className="flex min-w-0 shrink items-center gap-1">
-					<AgentListPrStatusIcon status={segment.prStatus ?? "created"} />
+					<AgentListPrStatusIcon
+						className="text-icon-subtlest"
+						status={segment.prStatus ?? "created"}
+					/>
 					<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
 						{segment.label}
 					</span>
@@ -297,7 +300,10 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 				<>
 					<MetadataDot />
 					<span className="flex shrink-0 items-center gap-1">
-						<AgentListPrStatusIcon status={item.prStatus ?? "created"} />
+						<AgentListPrStatusIcon
+							className="text-icon-subtlest"
+							status={item.prStatus ?? "created"}
+						/>
 						<span
 							className="text-nowrap text-text-subtlest underline-offset-2 hover:underline"
 							title={toArtifactLabel(item)}
