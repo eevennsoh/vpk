@@ -36,9 +36,10 @@ const PANEL_SOURCE = readProjectFile(
 const IN_FLOW_COLUMN_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/in-flow-agent-session-column.tsx",
 );
-const AGENT_SESSION_COLUMN_SOURCE = readProjectFile(
-	"components/blocks/agent-session-column/index.tsx",
-);
+const AGENT_SESSION_COLUMN_SOURCE = [
+	readProjectFile("components/blocks/agent-session-column/index.tsx"),
+	readProjectFile("components/blocks/agent-session-column/agent-session-column-surface.tsx"),
+].join("\n");
 const AGENT_SESSION_COLUMN_RAIL_SOURCE = readProjectFile(
 	"components/blocks/agent-session-column/agent-session-column-rail.tsx",
 );

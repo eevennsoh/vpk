@@ -143,6 +143,17 @@ export interface AgentSessionProps {
 	density?: AgentSessionDensity;
 	/** Sessions to render; defaults to relationship-appropriate built-in sample data. */
 	items?: readonly AgentSessionItem[];
+	/**
+	 * Wash each agent's accent behind its row on hover. `variant="large"` only.
+	 * Opt-in per host, and independent of {@link glowStroke}.
+	 */
+	glowBloom?: boolean;
+	/**
+	 * Trace each agent's accent along its card edge on hover. `variant="large"`
+	 * only. Opt-in per host, and independent of {@link glowBloom} — the two are
+	 * separate layers so either can be judged on its own.
+	 */
+	glowStroke?: boolean;
 	/** Ids whose card should read as captured (solid border, still hoverable). */
 	capturedItemIds?: ReadonlySet<string>;
 	/**

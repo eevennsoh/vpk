@@ -54,3 +54,57 @@ export function resolveJiraIssueAttachNearness(
 export function isJiraIssueAttachChinArmed(attachNearness: number): boolean {
 	return attachNearness >= JIRA_ISSUE_ATTACH_CHIN_NEARNESS;
 }
+
+/**
+ * Where the approaching session is, relative to the card it is approaching.
+ *
+ * The session card traces its agent's accent along its own edge while the
+ * pointer is on it. This carries the same reading to the other end of the
+ * gesture, so the stroke appears to travel with the session from the column
+ * onto the card it is about to land on, rather than the card lighting up in an
+ * unrelated way.
+ *
+ * `pointerX`/`pointerY` are the shared card-glow normalisation: 0 at the
+ * centre, ±1 at the edges, and beyond ±1 while the pointer is still outside —
+ * which is the whole approach, so the stroke enters from the side the session
+ * is actually coming from.
+ */
+export interface JiraIssueAttachTrace {
+	/**
+	 * The cohort lead's brand colour, resolved by the same expression the drop
+	 * flash uses. Hover, approach, and flash are one colour or the continuity
+	 * breaks at the seam.
+	 */
+	accent: string;
+	pointerX: number;
+	pointerY: number;
+}
+
+/** Rect in the same client coordinate space as the drag pointer. */
+export interface JiraIssueAttachTraceRect {
+	bottom: number;
+	left: number;
+	right: number;
+	top: number;
+}
+
+/**
+ * Normalises a client-space pointer against the card box the stroke is painted
+ * on. Returns `null` for a degenerate rect so a card that has not been measured
+ * draws nothing rather than dividing by zero.
+ */
+export function toJiraIssueAttachTracePointer(
+	pointer: Readonly<{ x: number; y: number }>,
+	rect: Readonly<JiraIssueAttachTraceRect>,
+): { pointerX: number; pointerY: number } | null {
+	const halfWidth = (rect.right - rect.left) / 2;
+	const halfHeight = (rect.bottom - rect.top) / 2;
+	if (halfWidth <= 0 || halfHeight <= 0) {
+		return null;
+	}
+
+	return {
+		pointerX: (pointer.x - (rect.left + halfWidth)) / halfWidth,
+		pointerY: (pointer.y - (rect.top + halfHeight)) / halfHeight,
+	};
+}

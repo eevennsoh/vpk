@@ -9,7 +9,7 @@ import {
 	type ReactNode,
 	type RefCallback,
 } from "react";
-import { motion, useReducedMotion, type Transition } from "motion/react";
+import { useReducedMotion } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 
@@ -21,6 +21,10 @@ import { Button } from "@/components/ui/button";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	CardGlowSurfaceContext,
+	useCardGlowProximityPlane,
+} from "@/components/visual/card-glow";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import TextMorphing from "@/components/visual/text-morphing";
 import type { TextMorphConfig } from "@/components/visual/text-morphing/data";
@@ -42,6 +46,12 @@ import {
 	resolveAgentSessionColumnLayout,
 	type AgentSessionColumnLayout,
 } from "./agent-session-column-frame";
+import {
+	AgentSessionColumnSurface,
+	AGENT_SESSION_UNDERLAP_SHADOW_ENTER,
+	AGENT_SESSION_UNDERLAP_SHADOW_EXIT,
+	AGENT_SESSION_UNDERLAP_SHADOW_REDUCED,
+} from "./agent-session-column-surface";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
 import {
 	AGENT_SESSION_DECK_END_SPACE_PX,
@@ -145,22 +155,6 @@ const AGENT_SESSION_WELL_STROKE = token("color.border.disabled");
  */
 const AGENT_SESSION_UNDERLAP_GROW_PX = 8;
 
-/** duration-normal + ease-out-practical — shadow arriving as columns underlap. */
-const AGENT_SESSION_UNDERLAP_SHADOW_ENTER: Transition = {
-	duration: 0.15,
-	ease: [0.4, 1, 0.6, 1],
-};
-
-/** duration-fast + ease-in — shadow leaving as scroll returns to rest. */
-const AGENT_SESSION_UNDERLAP_SHADOW_EXIT: Transition = {
-	duration: 0.1,
-	ease: [0.6, 0, 0.8, 0.6],
-};
-
-const AGENT_SESSION_UNDERLAP_SHADOW_REDUCED: Transition = {
-	duration: 0,
-};
-
 function resolveAgentSessionPlaneClassName(
 	layout: AgentSessionColumnLayout,
 	collapsed: boolean,
@@ -178,43 +172,6 @@ function resolveAgentSessionPlaneClassName(
 			return exhaustive;
 		}
 	}
-}
-
-function AgentSessionColumnSurface({
-	borderColor,
-	boxShadow,
-	children,
-	className,
-	hidden = false,
-	marginBlock,
-	transition,
-}: Readonly<{
-	borderColor: string;
-	boxShadow: string;
-	children: ReactNode;
-	className: string;
-	hidden?: boolean;
-	marginBlock: number;
-	transition: Transition;
-}>) {
-	return (
-		<motion.div
-			aria-hidden={hidden || undefined}
-			className={className}
-			data-agent-session-column-surface=""
-			inert={hidden || undefined}
-			animate={{
-				boxShadow,
-				marginBottom: marginBlock,
-				marginTop: marginBlock,
-			}}
-			initial={false}
-			style={{ borderColor }}
-			transition={transition}
-		>
-			{children}
-		</motion.div>
-	);
 }
 
 function renderAgentSessionColumnFrame({
@@ -432,6 +389,9 @@ export function AgentSessionColumn({
 	defaultCollapsed = false,
 	emptyLabel = "No sessions to unlink",
 	expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,
+	glowBloom = true,
+	glowReach = true,
+	glowStroke = true,
 	hasScrollingEffect = false,
 	showTrailingShadow = false,
 	widthTransitionDisabled = false,
@@ -466,6 +426,31 @@ export function AgentSessionColumn({
 	const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(defaultCollapsed);
 	const collapsed = collapsedProp ?? uncontrolledCollapsed;
 	const columnRef = useRef<HTMLElement>(null);
+	// The column is the glow's pointer plane. Rows register with it and are all
+	// driven from one window-level pointer, so the accent stroke is already
+	// tracing as the cursor approaches the column instead of snapping on at each
+	// row's own edge — the continuity the agent bento gets from a wide grid, on
+	// a narrow column that has no gutter to spare.
+	//
+	// Collapsed the rows are not rendered at all (the rail replaces them), and
+	// under reduced motion a column-wide sweep is exactly the large-area motion
+	// that setting rules out. In both cases the plane must also stop advertising
+	// itself: a row that sees a plane hands its pointer tracking over, so
+	// leaving the context populated while the plane is switched off would leave
+	// the glow with no driver at all.
+	//
+	// Reach also requires a layer to drive: the plane exists only to start the
+	// accent tracing early, so with both layers off it would drive nothing.
+	const glowPlaneEnabled = (glowStroke || glowBloom)
+		&& glowReach
+		&& !collapsed
+		&& shouldReduceMotion !== true;
+	const { registerSurface: registerGlowSurface, setPlaneRef: setGlowPlaneRef } =
+		useCardGlowProximityPlane({ enabled: glowPlaneEnabled });
+	const setColumnNode = useCallback((node: HTMLElement | null) => {
+		columnRef.current = node;
+		setGlowPlaneRef(node);
+	}, [setGlowPlaneRef]);
 	const {
 		handleColumnBlurCapture,
 		handleColumnFocusCapture,
@@ -868,6 +853,8 @@ export function AgentSessionColumn({
 							items={displayedItems}
 							onArrivalComplete={handleArrivalComplete}
 							{...sessionProps}
+							glowBloom={glowBloom}
+							glowStroke={glowStroke}
 							onArchiveSession={handleArchiveSession}
 							onSelectedItemIdChange={multiSelect ? handleSelectedItemIdChange : undefined}
 							onToggleVisibility={handleToggleVisibility}
@@ -920,7 +907,7 @@ export function AgentSessionColumn({
 
 	return (
 		<section
-			ref={columnRef}
+			ref={setColumnNode}
 			aria-label={`${displayTitle}, ${sessionCount} sessions`}
 			className={cn(
 				"group/session-column relative flex min-h-0 shrink-0 flex-col",
@@ -950,7 +937,11 @@ export function AgentSessionColumn({
 			}}
 		>
 			{renderAgentSessionColumnFrame({
-				body,
+				body: (
+					<CardGlowSurfaceContext value={glowPlaneEnabled ? registerGlowSurface : undefined}>
+						{body}
+					</CardGlowSurfaceContext>
+				),
 				bodyHidden: collapsed && isRepositioning,
 				borderColor: planeBorderColor,
 				boxShadow: planeBoxShadow,

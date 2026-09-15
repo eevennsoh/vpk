@@ -27,7 +27,7 @@ import {
 	resolveAgentBrandTint,
 	resolveAgentBrandTintColor,
 	resolveAgentBrandTintVariable,
-} from "@/components/blocks/jira-kanban/experimental/lib/agent-brand-tint";
+} from "@/components/blocks/agent-session/agent-brand-tint";
 import {
 	JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	sessionTransferTintSeed,

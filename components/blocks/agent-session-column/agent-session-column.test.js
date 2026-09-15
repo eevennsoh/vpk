@@ -631,7 +631,11 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 	assert.doesNotMatch(INDEX_SOURCE, /\bchrome=/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnHeader/u);
 	assert.match(INDEX_SOURCE, /case "panel":\s*\n\s*return AGENT_SESSION_PLANE;/u);
-	assert.match(INDEX_SOURCE, /<section\s*\n\s*ref=\{columnRef\}\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
+	assert.match(INDEX_SOURCE, /<section\s*\n\s*ref=\{setColumnNode\}\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
+	// The section's ref is composed — it also feeds the card glow's proximity
+	// plane — but `columnRef` must still be the node, because focus management
+	// below reads it.
+	assert.match(INDEX_SOURCE, /const setColumnNode = useCallback\(\(node: HTMLElement \| null\) => \{\s*columnRef\.current = node;/u);
 	assert.match(INDEX_SOURCE, /tabIndex=\{-1\}/u);
 	assert.match(INDEX_SOURCE, /columnRef\.current\?\.focus\(\)/u);
 });

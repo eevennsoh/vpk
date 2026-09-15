@@ -3,7 +3,10 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
-const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+const INDEX_SOURCE = [
+	readFileSync(join(__dirname, "index.tsx"), "utf8"),
+	readFileSync(join(__dirname, "agent-session-column-surface.tsx"), "utf8"),
+].join("\n");
 const RAIL_COLUMN_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-column-types.ts"), "utf8");
 const NOTCH_MARK_SOURCE = readFileSync(
@@ -71,10 +74,8 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	// A host-driven pointer resize must bypass this transition so the column edge
 	// tracks the pointer instead of easing toward every intermediate width.
 	assert.match(TYPES_SOURCE, /widthTransitionDisabled\?: boolean;/u);
-	assert.match(
-		INDEX_SOURCE,
-		/expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,\s*(?:hasScrollingEffect = false,\s*)?(?:showTrailingShadow = false,\s*)?widthTransitionDisabled = false,/u,
-	);
+	assert.match(INDEX_SOURCE, /expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,/u);
+	assert.match(INDEX_SOURCE, /widthTransitionDisabled = false,/u);
 	assert.match(
 		INDEX_SOURCE,
 		/shouldReduceMotion \|\| widthTransitionDisabled\s*\? "none"\s*: AGENT_SESSION_COLUMN_TRANSITION/u,
