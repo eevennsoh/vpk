@@ -79,6 +79,7 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * Manual link starts off: Team EU hides the Link work item session-menu row
  * until the user explicitly enables it.
  *
+ * Peel visual starts on where the route supplies the session preview capability.
  * Card glow starts on; Stroke tracing and Proximity sensor start off.
  * Each layer remains independently configurable in Settings:
  *

@@ -100,7 +100,7 @@ test("Claude's avatar-coloured flash passes through the card face and fades with
 	expect(sustainedPixels.face).toBeGreaterThan(30);
 	expect(sustainedPixels.exterior).toBe(0);
 	expect((await countFlashPixels(faded)).face).toBeLessThan(litPixels.face / 4);
-	await expect(overlay).toContainText("Claude with Venn");
+	await expect(overlay).toContainText("Venn");
 	await page.mouse.up();
 	await expect(overlay).toHaveCount(0);
 });
@@ -289,7 +289,7 @@ test("the standalone Claude drag bends its real preview and links with the glow 
 	await page.mouse.down();
 	await page.mouse.move(box.x + box.width / 2 + 90, box.y + box.height / 2 + 45, { steps: 8 });
 	const overlay = page.locator("[data-session-drag-overlay]");
-	await expect(overlay).toContainText("Claude with Venn");
+	await expect(overlay).toContainText("Venn");
 	await expect(overlay.locator("[data-peel-ready=true]")).toBeAttached();
 	// The paper handoff happens after the compact-card morph has completed.
 	expect(await overlay.locator("[data-peel-native-source] [data-session-drag-surface]").evaluate((element) => getComputedStyle(element).transform)).toBe("matrix(1, 0, 0, 1, 0, 0)");
@@ -394,7 +394,7 @@ test("a real touch drag drops Claude at mobile size", async ({ browser }) => {
 		const input = await context.newCDPSession(page);
 		await input.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
 		await input.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + 40, y: y + 40 }] });
-		await expect(page.locator("[data-session-drag-overlay]")).toContainText("Claude with Venn");
+		await expect(page.locator("[data-session-drag-overlay]")).toContainText("Venn");
 		const target = (await page.getByTestId("peel-work-item").boundingBox())!;
 		await input.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: target.x + target.width / 2, y: target.y + target.height / 2 }] });
 		await input.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
@@ -417,7 +417,7 @@ test("the normal Team EU26 session drag keeps its existing DOM preview", async (
 	await page.mouse.down();
 	await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 30);
 	const overlay = page.locator("[data-session-drag-overlay]");
-	await expect(overlay).toContainText("Claude with");
+	await expect(overlay).toContainText("Priya Raman");
 	await expect(overlay.locator("[data-peel-surface], canvas")).toHaveCount(0);
 	await page.mouse.up();
 	await expect(overlay).toHaveCount(0);
@@ -433,7 +433,7 @@ test("reduced motion keeps the native Claude drag and still commits the work ite
 	await page.mouse.down();
 	await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2 + 40);
 	const overlay = page.locator("[data-session-drag-overlay]");
-	await expect(overlay).toContainText("Claude with Venn");
+	await expect(overlay).toContainText("Venn");
 	await expect(overlay.locator("canvas")).toHaveCount(0);
 	const target = page.getByTestId("peel-work-item");
 	const receiver = (await target.boundingBox())!;
