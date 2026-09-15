@@ -84,6 +84,8 @@ export interface AgentSessionColumnProps extends Omit<
 	 * without moving its markers.
 	 */
 	collapsedRailHitSlopPx?: number;
+	/** Extra leading reach for the default collapsed Expand button, beyond its rail-sized target. */
+	collapsedExpandLeadingHitSlopPx?: number;
 	/** Plays the collapsed gutter rail's one-time staggered dot introduction. */
 	playGutterIntro?: boolean;
 	/** Called after the final dot finishes the gutter introduction. */
