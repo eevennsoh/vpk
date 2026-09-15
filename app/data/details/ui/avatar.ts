@@ -43,6 +43,11 @@ export const AVATAR_DETAIL: ComponentDetail = {
         description:
           "Applies disabled styling (reduced opacity and grayscale).",
       },
+		{
+			name: "outline",
+			type: "{ scale: number | readonly number[]; transition?: Pick<AnimationOptions, 'duration' | 'ease' | 'times' | 'repeat' | 'delay'>; ring?: boolean }",
+			description: "For circular avatars, supply an ancestor's scale and transition to keep the border at 1px and the optional separation ring at 2px during motion.",
+		},
     ],
     subComponents: [
       { name: "AvatarImage", description: "Profile image element." },
