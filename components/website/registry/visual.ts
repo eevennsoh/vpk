@@ -116,6 +116,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"liquid-metal": dynamic(() => import("../demos/visual/liquid-metal-demo"), {
 		ssr: false,
 	}),
+	peel: dynamic(() => import("../demos/visual/peel-demo"), {
+		ssr: false,
+	}),
 	"magnify-lens": dynamic(() => import("../demos/visual/magnify-lens-demo"), {
 		ssr: false,
 	}),
