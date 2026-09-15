@@ -562,7 +562,7 @@ test("Jira issue travelling drag pill uses an opaque surface fill", () => {
 	// the shadow, which has no Tailwind mapping, stays inline.
 	assert.match(dragChipSource, /elevated \? "bg-surface" : "bg-bg-neutral"/u);
 	assert.doesNotMatch(dragChipSource, /backgroundColor:/u);
-	assert.match(dragChipSource, /style=\{elevated \? DRAG_CHIP_ELEVATION : undefined\}/u);
+	assert.match(dragChipSource, /data-session-drag-surface=""[\s\S]*elevated \? DRAG_CHIP_ELEVATION : undefined/u);
 });
 
 test("Jira issue chin unlink unlinks without nesting a button in the drag handle", () => {
