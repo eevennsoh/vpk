@@ -139,7 +139,7 @@ export const CODE_PLANNER = {
 
 export const CLAUDE_CODE = {
 	id: "claude-code",
-	name: "Claude Code",
+	name: "Claude",
 	avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
 	brandName: "claude",
 } satisfies JiraAgentsStoryAgent;

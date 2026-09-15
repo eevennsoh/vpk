@@ -55,7 +55,7 @@ const PAY_ASSIGNEES = {
 export const JIRA_GOLDEN_JOURNEYS_V3_PAY_BOARD_AGENTS = [
 	{
 		id: "claude-code",
-		name: "Claude Code",
+		name: "Claude",
 		byline: "Coding agent by Anthropic",
 		brandName: "claude",
 	},
@@ -82,7 +82,7 @@ export const JIRA_GOLDEN_JOURNEYS_V3_PAY_BOARD_AGENTS = [
 export const JIRA_GOLDEN_JOURNEYS_V3_PAY_COMPOSER_AGENTS = [
 	{
 		id: "claude-code",
-		name: "Claude Code",
+		name: "Claude",
 		byline: "Coding agent by Anthropic",
 		brandName: "claude",
 	},
@@ -321,7 +321,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				title: "Move retry and backoff out of LegacyGatewayAdapter",
 				agentActivities: [createActivity({
 					id: "PAY-107:claude-code",
-					agentName: "Claude Code",
+					agentName: "Claude",
 					agentBrandName: "claude",
 					cycleIntervalJitterMs: 2200,
 					cycleIntervalMs: 3100,
@@ -349,7 +349,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					}),
 					createActivity({
 						id: "PAY-123:claude-code",
-						agentName: "Claude Code",
+						agentName: "Claude",
 						agentBrandName: "claude",
 						cycleIntervalJitterMs: 2100,
 						cycleIntervalMs: 2400,
@@ -471,7 +471,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				agentActivityMode: "completed",
 				agentDoneRuns: [createCompletedRun({
 					id: JIRA_GOLDEN_JOURNEYS_V3_PAY_101_SESSION_ID,
-					agentName: "Claude Code",
+					agentName: "Claude",
 					agentBrandName: "claude",
 					issueKey: "PAY-101",
 					issueSummary: "Inventory every v1 call site across services and name an owner for each",

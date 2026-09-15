@@ -247,7 +247,8 @@ test("Team EU26 header and empty Development share Open in and the board agent s
 	assert.match(developmentSource, /<OpenInMenu[\s\S]*Start local session/u);
 
 	assert.match(openInSource, /Copy prompt for/u);
-	assert.match(openInSource, /Claude Code/u);
+	assert.match(openInSource, /label: "Claude"/u);
+	assert.doesNotMatch(openInSource, /Claude Code/u);
 	assert.match(openInSource, /Codex/u);
 	assert.match(openInSource, /Cursor/u);
 	assert.match(openInSource, /GitHub Copilot/u);

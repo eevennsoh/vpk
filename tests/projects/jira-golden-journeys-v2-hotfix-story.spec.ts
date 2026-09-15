@@ -303,7 +303,7 @@ test("Plan shows the working agent mentions followed by a Started working label"
 
 	const leadActivity = page.locator('[data-jira-activity-entry-id="story-lead-delegated"]');
 	await expect(leadActivity.locator("[data-jira-activity-agent-mention]")).toHaveCount(2);
-	for (const name of ["Claude Code", "Code Planner"]) {
+	for (const name of ["Claude", "Code Planner"]) {
 		await expect(leadActivity.getByText(name, { exact: true })).toBeVisible();
 	}
 	await expect(leadActivity).toContainText("Started working");
@@ -316,7 +316,7 @@ test("Build broadcasts channel context without resolving the agent wait and rese
 
 	const workingPill = page.getByRole("button", { name: /^1 agents? working$/u });
 	await workingPill.click();
-	await expect(page.getByText("Claude Code", { exact: true }).first()).toBeVisible();
+	await expect(page.getByText("Claude", { exact: true }).first()).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(workingPill).toBeFocused();
 
@@ -342,7 +342,7 @@ test("Intake requires Improve description before the complete team can advance t
 	const rawDescription = await workItemDescription.innerText();
 	await submitSharedComposer(
 		page,
-		"@Claude Code lead the implementation and consult @Code Planner on the secure contract.",
+		"@Claude lead the implementation and consult @Code Planner on the secure contract.",
 	);
 	await expect(chapterButton(page, "Intake")).toHaveAttribute("aria-pressed", "true");
 
@@ -394,7 +394,7 @@ test("Intake requires Improve description before the complete team can advance t
 
 	await submitSharedComposer(
 		page,
-		"@Claude Code lead the implementation and consult @Code Planner on the secure contract.",
+		"@Claude lead the implementation and consult @Code Planner on the secure contract.",
 	);
 
 	await expect(chapterButton(page, "Plan")).toHaveAttribute("aria-pressed", "true");
