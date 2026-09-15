@@ -76,6 +76,14 @@ test("empty columns keep the create well at the top and always visible", () => {
 	assert.match(BOARD, /order: isEmptyColumn \? 0 : 1/u);
 });
 
+test("empty columns keep the same create action inset as populated columns", () => {
+	assert.match(
+		BOARD,
+		/style=\{\{ order: isEmptyColumn \? 0 : 1, \.\.\.chrome\.footer \}\}/u,
+	);
+	assert.doesNotMatch(BOARD, /!isEmptyColumn \? chrome\.footer : \{\}/u);
+});
+
 test("drop receipts land in the geometric center of the well", () => {
 	assert.match(DROPZONE, /resolveJiraDropzoneLandingPoint\(rect\)/u);
 	assert.doesNotMatch(DROPZONE, /JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u);

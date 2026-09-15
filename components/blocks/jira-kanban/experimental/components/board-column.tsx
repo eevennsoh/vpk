@@ -211,7 +211,7 @@ export function BoardColumn({
 						{children}
 					</BoardColumnCardList>
 
-					<div style={{ order: isEmptyColumn ? 0 : 1, ...(!isEmptyColumn ? chrome.footer : {}) }}>{createAction}</div>
+					<div style={{ order: isEmptyColumn ? 0 : 1, ...chrome.footer }}>{createAction}</div>
 				</div>
 				<BoardIssueTransitionOverlay issueDrop={issueDrop} title={title} />
 			</div>
