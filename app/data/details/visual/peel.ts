@@ -4,7 +4,7 @@ export const PEEL_DETAIL: ComponentDetail = {
 		description: "A printed stamp you can lift off the page, copied from the photo stamps at jaksenc.com/about. Click it and it peels — the corner you clicked comes up first, the sheet keeps flexing for as long as it is up, and the contact shadow detaches and spreads. Click again and it sets back down with a landing ripple. While it is up you can also drag it, and it stays where you leave it. One WebGL plane carries the die-cut, the print, the flex and the foil, so the sheen bends over the fold instead of floating above it. The term that makes the flex legible is in-plane gather: paper does not stretch, so a bowing sheet contracts its footprint and the outline itself ripples — displacing only in z on a plane viewed face-on is very nearly invisible. Geometry, lift and shadow are all measured off the reference rather than chosen by eye; the constants carry their numbers.",
 		importStatement: `import { Peel, PEEL_STAMP_RATIO, type PeelTuning } from "@/components/visual/peel";`,
 		usage: `<Peel
-	src="/3p/stamps/jaksenc-bagel.webp"
+	src="/illustration/jaksenc-bagel-stamp.webp"
 	alt="Engraved postage stamp. Click to lift it off the page."
 	width={98}
 	finish="foil"

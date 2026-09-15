@@ -17,7 +17,7 @@ import {
  * Third-party artwork, kept because the point of this component is to match
  * that page exactly. Swap it for your own before anything ships.
  */
-const STAMP_SRC = "/3p/stamps/jaksenc-bagel.webp";
+const STAMP_SRC = "/illustration/jaksenc-bagel-stamp.webp";
 const STAMP_ALT =
 	"Engraved postage stamp reading A Nice Bagel. Click to lift it off the page, click again to set it down.";
 
