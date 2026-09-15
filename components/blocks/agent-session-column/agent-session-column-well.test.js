@@ -6,6 +6,7 @@ const { test } = require("node:test");
 const INDEX_SOURCE = [
 	readFileSync(join(__dirname, "index.tsx"), "utf8"),
 	readFileSync(join(__dirname, "agent-session-column-surface.tsx"), "utf8"),
+	readFileSync(join(__dirname, "agent-session-column-underlap.ts"), "utf8"),
 ].join("\n");
 const RAIL_COLUMN_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-column-types.ts"), "utf8");

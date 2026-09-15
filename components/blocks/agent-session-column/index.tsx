@@ -46,12 +46,12 @@ import {
 	resolveAgentSessionColumnLayout,
 	type AgentSessionColumnLayout,
 } from "./agent-session-column-frame";
+import { AgentSessionColumnSurface } from "./agent-session-column-surface";
 import {
-	AgentSessionColumnSurface,
 	AGENT_SESSION_UNDERLAP_SHADOW_ENTER,
 	AGENT_SESSION_UNDERLAP_SHADOW_EXIT,
 	AGENT_SESSION_UNDERLAP_SHADOW_REDUCED,
-} from "./agent-session-column-surface";
+} from "./agent-session-column-underlap";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
 import {
 	AGENT_SESSION_DECK_END_SPACE_PX,

@@ -39,6 +39,7 @@ const IN_FLOW_COLUMN_SOURCE = readProjectFile(
 const AGENT_SESSION_COLUMN_SOURCE = [
 	readProjectFile("components/blocks/agent-session-column/index.tsx"),
 	readProjectFile("components/blocks/agent-session-column/agent-session-column-surface.tsx"),
+	readProjectFile("components/blocks/agent-session-column/agent-session-column-underlap.ts"),
 ].join("\n");
 const AGENT_SESSION_COLUMN_RAIL_SOURCE = readProjectFile(
 	"components/blocks/agent-session-column/agent-session-column-rail.tsx",
