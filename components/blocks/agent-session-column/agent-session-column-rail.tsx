@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
+import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefCallback } from "react";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "motion/react";
 
@@ -41,10 +43,14 @@ import {
 	type JiraSessionFlyoutHandle,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { Icon } from "@/components/ui/icon";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
 import {
+	advanceAgentSessionRailOrder,
+	releaseAgentSessionRailOrder,
+	settleAgentSessionRailOrder,
 	toAgentSessionRailHitSlopStyle,
 	toAgentSessionRailViewportMaxHeight,
 } from "./agent-session-column-rail-viewport";
@@ -65,13 +71,14 @@ export { AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS } from "./agent-session-column-rai
  * column header, not on the rail.
  *
  * Circular markers are the default and are the compact form of the same human
- * avatar shown on the expanded card. The dock grows nearby dots from 4px toward
- * a 12px cap; the dot under the pointer or keyboard focus reveals that person's
- * face. An arriving session flashes that same face, holds, then morphs — the
- * face collapses 12→4 onto the rest disc already sitting beneath it and
- * crossfades into `icon.subtle` at matched size. Reviewed sessions rest at 4px
- * `icon.disabled`. Line markers retain the original horizontal treatment
- * and falloff.
+ * avatar shown on the expanded card. Running sessions dock as dots that grow
+ * from 4px toward a 12px cap; pointer or keyboard focus reveals the face. An
+ * arriving running session shows that face, then morphs it onto its 4px rest
+ * disc. Needs-input and complete arrivals use the same reveal, hold, and morph
+ * for a 12px question or filled check icon. All three settle onto the 4px dot;
+ * a status revision can replay its icon inside the stable notch row without
+ * replacing the flyout or drag target. Line markers retain the original
+ * horizontal treatment and falloff.
  *
  * Circle unread uses `color.icon.subtle`; reviewed dots stay `icon.disabled`. Size
  * carries proximity and the face carries direct interest. Lifecycle remains
@@ -110,7 +117,7 @@ const AGENT_SESSION_GUTTER_INTRO_VARIANTS: Variants = {
 /** Spoken state, so the rail still names a lifecycle it no longer paints. */
 const NOTCH_STATE_LABEL: Record<AgentListState, string> = {
 	attention: "needs attention",
-	complete: "complete",
+	complete: "finished",
 	"needs-input": "needs input",
 	running: "running",
 };
@@ -306,7 +313,7 @@ function AgentSessionGutterIntro({
 	);
 }
 
-/** Resting dot that reveals the expanded card's human avatar on interest. */
+/** Arrival face or lifecycle glyph morphs onto the same resting dot. */
 function AgentSessionUserNotch({
 	avatarSrc,
 	introIndex,
@@ -317,6 +324,7 @@ function AgentSessionUserNotch({
 	onIntroComplete,
 	playIntro,
 	proximity,
+	state,
 }: Readonly<{
 	avatarSrc?: string;
 	introIndex: number;
@@ -327,15 +335,31 @@ function AgentSessionUserNotch({
 	onIntroComplete?: () => void;
 	playIntro: boolean;
 	proximity?: AgentSessionNotchProximity;
+	state: AgentSessionItem["state"];
 }>) {
 	const shouldReduceMotion = useReducedMotion();
+	const hasStateGlyph = state === "needs-input" || state === "complete";
+	const hasArrivalVisual = Boolean(avatarSrc) || hasStateGlyph;
+	const reducedArrivalStateRef = useRef<AgentSessionItem["state"] | null>(null);
+	const finishReducedArrival = useEffectEvent(() => onArrivalComplete?.());
+	useEffect(() => {
+		if (!isArriving) {
+			reducedArrivalStateRef.current = null;
+			return;
+		}
+		if (hasStateGlyph && shouldReduceMotion === true && reducedArrivalStateRef.current !== state) {
+			reducedArrivalStateRef.current = state;
+			finishReducedArrival();
+		}
+	}, [hasStateGlyph, isArriving, shouldReduceMotion, state]);
 	const { arrivalExiting, arrivalPending, arrivalReveal, shouldPlayScaleArrival } = useAgentSessionUserNotchArrival({
-		hasAvatar: Boolean(avatarSrc),
+		hasAvatar: hasArrivalVisual,
 		isArriving,
 		onArrivalComplete,
 		shouldReduceMotion,
 	});
-	const showAvatar = isHighlighted || arrivalReveal;
+	const showAvatar = isHighlighted || (!hasStateGlyph && arrivalReveal);
+	const showStateGlyph = hasStateGlyph && arrivalReveal && !isHighlighted;
 	const isMorphing = arrivalExiting && !isHighlighted;
 	// The rest disc is the morph's destination, so it has to be under the face
 	// before the face starts collapsing — otherwise the photo dissolves to bare
@@ -344,7 +368,7 @@ function AgentSessionUserNotch({
 	// from reveal onward an opaque 12px face covers it, so its own 150ms fade-in
 	// plays out unseen during the hold and it is solid by the time the morph
 	// starts. Hover keeps its own crossfade.
-	const hideRestDisc = Boolean(avatarSrc) && (
+	const hideRestDisc = hasArrivalVisual && (
 		(arrivalPending && !arrivalReveal) || isHighlighted
 	);
 	const arrivalMorphScale = AGENT_SESSION_USER_NOTCH_DIAMETER.rest
@@ -411,6 +435,39 @@ function AgentSessionUserNotch({
 							: dotScale,
 					}}
 				/>
+				{hasStateGlyph ? (
+					<span
+						aria-hidden="true"
+						className={cn(
+							// The filled icons have transparent cutouts. This plane-colored
+							// disc occludes the 4px rest beneath them until the matched-size
+							// morph lets that dot take over again.
+							"absolute inset-0 grid size-3 place-items-center rounded-full bg-surface motion-reduce:transition-none",
+							avatarSrc ? "group-data-[hovered]/notch:opacity-0 group-has-[:focus-visible]/notch:opacity-0" : null,
+							showStateGlyph && !isMorphing
+								? "opacity-100 scale-100"
+								: "scale-[var(--agent-session-user-notch-morph)] opacity-0",
+						)}
+						data-agent-session-state-mark={state}
+						style={{
+							"--agent-session-user-notch-morph": String(arrivalMorphScale),
+							transition: isMorphing
+								? AGENT_SESSION_USER_NOTCH_MORPH_TRANSITION
+								: undefined,
+						} as CSSProperties}
+					>
+						<Icon
+							aria-hidden
+							className={cn(
+								"size-3 [&>span]:size-3! [&_svg]:size-3!",
+								state === "needs-input" ? "text-icon-information" : "text-icon-success",
+							)}
+							render={state === "needs-input"
+								? <QuestionCircleFilledIcon color="currentColor" label="" size="small" />
+								: <StatusSuccessIcon color="currentColor" label="" size="small" />}
+						/>
+					</span>
+				) : null}
 				{avatarSrc ? (
 					<Image
 						alt=""
@@ -473,7 +530,9 @@ function AgentSessionNotch({
 	isArriving,
 	isHighlighted,
 	isHovered,
+	isLeaving,
 	isNew,
+	isStatusReentering,
 	item,
 	notchShape,
 	onArrivalComplete,
@@ -491,7 +550,9 @@ function AgentSessionNotch({
 	isArriving: boolean;
 	isHighlighted: boolean;
 	isHovered: boolean;
+	isLeaving: boolean;
 	isNew: boolean;
+	isStatusReentering: boolean;
 	item: AgentSessionItem;
 	notchShape: AgentSessionColumnNotchShape;
 	onArrivalComplete?: () => void;
@@ -508,11 +569,23 @@ function AgentSessionNotch({
 	// rail, and a notch that is still unreviewed stays lit without regrowing.
 	return (
 		<motion.li
-			className="group/notch flex h-6 w-full shrink-0 items-center"
+			aria-hidden={isLeaving || undefined}
+			className={cn(
+				"group/notch flex h-6 w-full shrink-0 items-center",
+				isLeaving ? "opacity-0" : "opacity-100",
+			)}
 			data-hovered={isHovered || undefined}
-			layout={shouldReduceMotion || !animateLayout ? false : "position"}
+			data-agent-session-status-exit={isLeaving || undefined}
+			data-agent-session-status-reentry={isStatusReentering || undefined}
+			inert={isLeaving || undefined}
+			layout={shouldReduceMotion || !animateLayout || isLeaving || isStatusReentering ? false : "position"}
 			// Standalone rails animate order; the in-flow column keeps filters instant.
 			layoutDependency={introIndex}
+			style={{
+				transition: isLeaving
+					? "opacity var(--duration-fast) var(--ease-in)"
+					: undefined,
+			}}
 			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 		>
 			{/* The drag host is a block child rather than the flex item itself, so
@@ -575,10 +648,12 @@ function AgentSessionNotch({
 										isArriving={isArriving}
 										isHighlighted={isHighlighted}
 										isNew={isNew}
+										key={item.state}
 										onArrivalComplete={onArrivalComplete}
 										onIntroComplete={onIntroComplete}
 										playIntro={playIntro}
 										proximity={proximity}
+										state={item.state}
 									/>
 								)}
 							</button>
@@ -601,6 +676,7 @@ export function AgentSessionColumnRail({
 	items,
 	maxVisibleItems,
 	newItemIds,
+	stateChangeVersions,
 	notchShape = "circle",
 	onArrivalComplete,
 	onArchiveSession,
@@ -630,6 +706,8 @@ export function AgentSessionColumnRail({
 	 */
 	maxVisibleItems?: number;
 	newItemIds?: ReadonlySet<string>;
+	/** Revision increases retire the previous marker in place before the updated marker enters from the top. */
+	stateChangeVersions?: ReadonlyMap<string, number>;
 	notchShape?: AgentSessionColumnNotchShape;
 	onArrivalComplete?: (itemId: string) => void;
 	onArchiveSession?: (item: AgentSessionItem) => void;
@@ -670,8 +748,54 @@ export function AgentSessionColumnRail({
 		[capturedItemIds, items, onArchiveSession, onCreateWorkItem, onLinkWorkItem, onSubtasks],
 	);
 	const shouldReduceMotion = useReducedMotion();
+	const [orderState, setOrderState] = useState(() => advanceAgentSessionRailOrder(
+		undefined,
+		items,
+		stateChangeVersions,
+		shouldReduceMotion === true,
+	));
+	let order = orderState;
+	if (
+		orderState.inputItems !== items
+		|| orderState.inputVersions !== stateChangeVersions
+		|| (shouldReduceMotion === true && orderState.phase !== "rest")
+	) {
+		// Resolve before painting children: an effect would flash the updated
+		// notch at the top before its old-position exit could be seen.
+		order = advanceAgentSessionRailOrder(
+			orderState,
+			items,
+			stateChangeVersions,
+			shouldReduceMotion === true,
+		);
+		setOrderState(order);
+	}
+	useEffect(() => {
+		if (order.phase === "exit") {
+			const timeout = window.setTimeout(() => {
+				setOrderState(releaseAgentSessionRailOrder);
+			}, 100); // duration-fast
+			return () => window.clearTimeout(timeout);
+		}
+		if (order.phase === "enter") {
+			// Keep projection disabled for the frame that moves this stable row to
+			// the top, then let later unrelated arrivals move it normally.
+			let settleFrame = 0;
+			const paintFrame = window.requestAnimationFrame(() => {
+				settleFrame = window.requestAnimationFrame(() => {
+					setOrderState(settleAgentSessionRailOrder);
+				});
+			});
+			return () => {
+				window.cancelAnimationFrame(paintFrame);
+				window.cancelAnimationFrame(settleFrame);
+			};
+		}
+		return undefined;
+	}, [order.phase, order.changingItemId]);
+	const visibleItems = order.visibleItems;
 	const railViewportMaxHeight = toAgentSessionRailViewportMaxHeight(
-		items.length,
+		visibleItems.length,
 		maxVisibleItems,
 	);
 	// Under reduced motion the rail keeps its dock switched off entirely and the
@@ -679,7 +803,7 @@ export function AgentSessionColumnRail({
 	// instantly. A slope that follows the cursor is exactly the kind of ambient
 	// motion the setting asks us to drop.
 	const isDocked = shouldReduceMotion !== true;
-	const dock = useNotchDock(items.length, isDocked);
+	const dock = useNotchDock(visibleItems.length, isDocked);
 	const {
 		ref: overflowRef,
 		showBottomScrollMask,
@@ -741,7 +865,7 @@ export function AgentSessionColumnRail({
 					maxHeight: railViewportMaxHeight,
 				}}
 			>
-				{items.map((item: AgentSessionItem, index: number) => (
+				{visibleItems.map((item: AgentSessionItem, index: number) => (
 					<AgentSessionNotch
 						animateLayout={animateLayout}
 						flyoutHandle={flyoutHandle}
@@ -755,17 +879,20 @@ export function AgentSessionColumnRail({
 							),
 						)}
 						introIndex={index}
-						isArriving={(arrivingItemIds ?? newItemIds)?.has(item.id) ?? false}
+						isArriving={!(order.phase === "exit" && order.changingItemId === item.id)
+							&& ((arrivingItemIds ?? newItemIds)?.has(item.id) ?? false)}
 						isHighlighted={item.id === highlightedItemId}
 						isHovered={item.id === hoverIntent.activeItemId}
+						isLeaving={order.phase === "exit" && order.changingItemId === item.id}
 						isNew={newItemIds?.has(item.id) ?? false}
+						isStatusReentering={order.phase === "enter" && order.changingItemId === item.id}
 						item={item}
 						key={item.id}
 						notchShape={notchShape}
 						onArrivalComplete={onArrivalComplete === undefined
 							? undefined
 							: () => onArrivalComplete(item.id)}
-						onIntroComplete={index === items.length - 1
+						onIntroComplete={index === visibleItems.length - 1
 							? onIntroComplete
 							: undefined}
 						onView={onView}

@@ -405,6 +405,7 @@ export function AgentSessionColumn({
 	listClassName,
 	multiSelect = true,
 	newItemIds,
+	stateChangeVersions,
 	notchShape = "circle",
 	onCollapsedChange,
 	onGutterIntroComplete,
@@ -622,9 +623,15 @@ export function AgentSessionColumn({
 		: visibleItems.reduce((total: number, item: AgentSessionItem) => (
 			newItemIds.has(item.id) ? total + 1 : total
 		), 0);
-	const { arrivingItemIds, onArrivalComplete: handleArrivalComplete } = useAgentSessionArrivals({
+	const {
+		arrivingItemIds,
+		stateChangedItemIds,
+		onArrivalComplete: handleArrivalComplete,
+		onStateChangeComplete: handleStateChangeComplete,
+	} = useAgentSessionArrivals({
 		items: displayedItems,
 		newItemIds,
+		stateChangeVersions,
 		presentation: collapsed ? notchShape : `expanded:${sessionProps.variant ?? "large"}:${sessionProps.density ?? "short"}`,
 		reduceMotion: shouldReduceMotion === true,
 	});
@@ -814,6 +821,7 @@ export function AgentSessionColumn({
 				? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS
 				: undefined}
 			newItemIds={newItemIds}
+			stateChangeVersions={stateChangeVersions}
 			notchShape={notchShape}
 			onArrivalComplete={handleArrivalComplete}
 			onArchiveSession={handleArchiveSession}
@@ -850,12 +858,15 @@ export function AgentSessionColumn({
 						<AgentSession
 							animateLayout={animateLayout}
 							arrivingItemIds={arrivingItemIds}
+							stateChangedItemIds={stateChangedItemIds}
+							stateChangeVersions={stateChangeVersions}
 							className={cn(
 								headerSurface === "column" ? AGENT_SESSION_LIST_SPACING : null,
 								listClassName,
 							)}
 							items={displayedItems}
 							onArrivalComplete={handleArrivalComplete}
+							onStateChangeComplete={handleStateChangeComplete}
 							{...sessionProps}
 							glowBloom={glowBloom}
 							glowStroke={glowStroke}

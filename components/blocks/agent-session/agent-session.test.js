@@ -132,9 +132,9 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.match(LIST_CARD_SOURCE, /\{metadata === undefined \? \(/u);
 	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|QuestionCircleFilledIcon|StatusSuccessIcon/u);
-	assert.match(LIFECYCLE_SOURCE, /export function AgentSessionShortLifecycleIcon[\s\S]*case "needs-input":[\s\S]*aria-label="Needs input"[\s\S]*text-icon-information[\s\S]*case "complete":[\s\S]*aria-label="Finished"[\s\S]*text-icon-success[\s\S]*case "running":[\s\S]*return null;/u);
-	assert.equal((LIFECYCLE_SOURCE.match(/className="grid size-6 shrink-0 place-items-center text-icon-(?:information|success)"/gu) ?? []).length, 2);
-	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity[\s\S]*: item\.state === "needs-input" \|\| item\.state === "complete"\s*\? <AgentSessionShortLifecycleIcon state=\{item\.state\} \/>\s*: null;/u);
+	assert.match(LIFECYCLE_SOURCE, /export function AgentSessionShortLifecycleIcon/u);
+	assert.match(LIFECYCLE_SOURCE, /data-agent-session-lifecycle-current=\{accessibleState\}/u);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity[\s\S]*: <AgentSessionShortLifecycleIcon[\s\S]*state=\{shownLifecycleState\}/u);
 	assert.match(METADATA_SOURCE, /import ScreenIcon from "@atlaskit\/icon\/core\/screen";/u);
 	assert.match(METADATA_SOURCE, /export function AgentSessionHostSegment[\s\S]*isLocal \? \(\s*<ScreenIcon color="currentColor" label="" size="small" \/>\s*\) : \(\s*<CloudIcon color="currentColor" label="" size="small" \/>\s*\)/u);
 	assert.match(METADATA_SOURCE, /const label = isLocal \? "Local session" : "Cloud session";/u);
@@ -179,7 +179,7 @@ test("large remains the default while every card receives the selected size vari
 	);
 	assert.match(TYPES_SOURCE, /variant\?: AgentSessionVariant;/u);
 	assert.match(INDEX_SOURCE, /variant = "large"/u);
-	assert.match(INDEX_SOURCE, /const items = itemsProp \?\? \(isAttached \? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS\);/u);
+	assert.match(INDEX_SOURCE, /const sourceItems = itemsProp \?\? \(isAttached \? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS\);/u);
 	assert.match(INDEX_SOURCE, /data-variant=\{variant\}/u);
 	assert.match(INDEX_SOURCE, /variant === "large"/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionCard/u);
@@ -231,8 +231,8 @@ test("medium detached is a 276px stroked white chip with the 32px combo identity
 
 test("drag-source ghosts leave the grid accessibility tree while inert", () => {
 	assert.match(CARD_SOURCE, /const isTransferSource = Boolean\(draggingIds\?\.has\(item\.id\)\);/u);
-	assert.match(CARD_SOURCE, /aria-hidden=\{isTransferSource \|\| undefined\}/u);
-	assert.match(CARD_SOURCE, /inert=\{isTransferSource \|\| undefined\}/u);
+	assert.match(CARD_SOURCE, /aria-hidden=\{isTransferSource \|\| isDeparting \|\| undefined\}/u);
+	assert.match(CARD_SOURCE, /inert=\{isTransferSource \|\| isDeparting \|\| undefined\}/u);
 });
 
 test("medium drag publishes the attach transfer only after the pointer moves", () => {
@@ -636,7 +636,8 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /const hideIdentity = isLongDensity && mark == null;/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hideIdentity=\{hideIdentity\}/u);
 	assert.match(CARD_SOURCE, /lifecycle=\{lifecycleIndicator\}/u);
-	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity\s*\? role === "expired"\s*\? <AgentSessionExpiredHint \/>\s*: <AgentSessionLifecycle showLabel=\{showLifecycleLabel\} state=\{item\.state\} \/>\s*: item\.state === "needs-input" \|\| item\.state === "complete"\s*\? <AgentSessionShortLifecycleIcon state=\{item\.state\} \/>\s*: null;/u);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity[\s\S]*<AgentSessionLifecycle[\s\S]*state=\{shownLifecycleState\}/u);
+	assert.match(CARD_SOURCE, /: <AgentSessionShortLifecycleIcon[\s\S]*state=\{shownLifecycleState\}/u);
 	assert.match(CARD_SOURCE, /<AgentSessionLongMetadata item=\{item\} \/>/u);
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 cursor-default rounded-lg/u);
 	assert.match(
@@ -681,9 +682,9 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 		/const lifecycleNode = lifecycle === undefined\s*\? \(stateMeta\.showLifecycle \? <LifecycleIndicator state=\{item\.state\} \/> : null\)\s*: lifecycle;/u,
 	);
 	assert.match(LIST_CARD_SOURCE, /\{hideIdentity \? null : \(/u);
-	// Agent Session cards always keep the authored work title. Every density keeps
-	// lifecycle outside the byline in its trailing control slot.
-	assert.match(CARD_SOURCE, /stateAwareTitle=\{false\}/u);
+	// The in-flow column opts Working into the shared shimmer while blocked and
+	// finished rows retain their authored title without the shared state title.
+	assert.match(CARD_SOURCE, /stateAwareTitle=\{showWorkingSpinner && item\.state === "running" && !shouldReduceMotion\}/u);
 	assert.match(TYPES_SOURCE, /export type AgentSessionRole = "owner" \| "viewer" \| "expired"/u);
 	assert.match(CARD_SOURCE, /const viewSession = role === "owner" \? onView : undefined/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
@@ -788,13 +789,13 @@ test("a working long row breathes with the experimental spinner, not the pixel l
 		LIFECYCLE_SOURCE,
 		/exit=\{shouldReduceMotion[\s\S]*\? undefined[\s\S]*: \{ opacity: 0, scale: 0\.6, transition: INDICATOR_EXIT \}\}/u,
 	);
-	assert.match(LIFECYCLE_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">/u);
+	assert.match(LIFECYCLE_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	// Shimmer and the presence transition both retain reduced-motion treatments.
 	assert.match(LIFECYCLE_SOURCE, /initial=\{shouldReduceMotion \? false : \{ opacity: 0, scale: 0\.6 \}\}/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /const glyph = shouldReduceMotion \?/u);
 	assert.match(LIFECYCLE_SOURCE, /<div className="flex shrink-0 items-center gap-1 text-xs text-text-subtle">/u);
 	assert.match(LIFECYCLE_SOURCE, /<motion\.div/u);
-	assert.doesNotMatch(LIFECYCLE_SOURCE, /<motion\.span/u);
+	assert.match(LIFECYCLE_SOURCE, /<motion\.span/u);
 	// The shared row consumes the card width while its trailing slot reserves the
 	// full label-and-icon width at the far edge.
 	assert.match(LIST_CARD_SOURCE, /"flex w-full min-w-0 gap-0"/u);

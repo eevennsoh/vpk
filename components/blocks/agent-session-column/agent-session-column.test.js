@@ -392,7 +392,7 @@ test("notch flyouts use a stable trigger host so the shared popup follows the ra
 	// Same contract as expanded AgentSessionCard: layout on the `li`, a plain
 	// `div` as the HoverCard trigger. Putting `layout` on the trigger remounts
 	// the host and opens a new flyout per notch.
-	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \|\| !animateLayout \? false : "position"\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \|\| !animateLayout \|\| isLeaving \|\| isStatusReentering \? false : "position"\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]{0,200}?render=\{\s*<div\s*className="mx-auto flex h-5 items-center/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /delay=\{0\}/u);
@@ -406,10 +406,9 @@ test("a notch is a drag handle, so a session leaves the collapsed rail too", () 
 	// The column inherits the binding from AgentSessionProps, so the rail is
 	// reached with the prop the expanded cards already take.
 	assert.match(SESSION_TYPES_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
-	assert.match(
-		TYPES_SOURCE,
-		/extends Omit<\s*AgentSessionProps,\s*"arrivingItemIds" \| "className" \| "onArrivalComplete" \| "rowTriage"\s*>/u,
-	);
+	const inheritedSessionProps = TYPES_SOURCE.match(/extends Omit<\s*AgentSessionProps,[\s\S]*?>/u)?.[0] ?? "";
+	assert.match(inheritedSessionProps, /"stateChangeVersions"/u);
+	assert.doesNotMatch(inheritedSessionProps, /"sessionDrag"/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,1600}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
@@ -670,7 +669,7 @@ test("the collapsed rail preserves session twin hover previews", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /data-highlighted=\{isHighlighted \|\| undefined\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{isHighlighted\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /showAvatar && !isMorphing\s*\n?\s*\? "opacity-100 scale-100"/u);
-	assert.match(RAIL_COLUMN_SOURCE, /const showAvatar = isHighlighted \|\| arrivalReveal;/u);
+	assert.match(RAIL_COLUMN_SOURCE, /const showAvatar = isHighlighted \|\| \(!hasStateGlyph && arrivalReveal\);/u);
 });
 
 test("the collapsed header count rolls through the shared Text Morphing slots effect", () => {
@@ -881,7 +880,8 @@ test("the gutter-collapsed rail shows at most ten dots before it scrolls under t
 	assert.match(RAIL_COLUMN_SOURCE, /maxHeight: railViewportMaxHeight/u);
 	assert.match(RAIL_COLUMN_SOURCE, /w-full flex-1 flex-col/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /w-full flex-none flex-col/u);
-	assert.match(RAIL_COLUMN_SOURCE, /items\.map\(/u);
+	assert.match(RAIL_COLUMN_SOURCE, /const visibleItems = order\.visibleItems;/u);
+	assert.match(RAIL_COLUMN_SOURCE, /visibleItems\.map\(/u);
 });
 
 test("the embedded column rail does not cap the viewport to ten notches", () => {

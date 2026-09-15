@@ -470,7 +470,7 @@ test("session flyout status resolves from the unscoped work-item collection", as
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(agentSessionLooseWork, agentSessionMemberId\),\s*agentSessionMembers,\s*PULSE_TIMELINE\.workItems,/u,
+		/useAgentSessionItems\(\s*agentSessionLooseWork,\s*agentSessionMemberId,\s*agentSessionMembers,\s*PULSE_TIMELINE\.workItems,/u,
 	);
 	assert.match(SOURCES.shell, /workItems=\{sourceTimeline\.workItems\}/u);
 	assert.doesNotMatch(SOURCES.shell, /workItems=\{pulse\.workItems\}/u);

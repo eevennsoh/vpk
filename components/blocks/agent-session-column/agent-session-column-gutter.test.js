@@ -340,7 +340,8 @@ test("the entire visible gutter is a hover target without covering To do", () =>
 		IN_FLOW_COLUMN_SOURCE,
 		/className="absolute inset-y-0 start-0 z-30 bg-surface"/u,
 	);
-	assert.match(RAIL_SOURCE, /className="group\/notch flex h-6 w-full shrink-0 items-center"/u);
+	assert.match(RAIL_SOURCE, /"group\/notch flex h-6 w-full shrink-0 items-center"/u);
+	assert.match(RAIL_SOURCE, /isLeaving \? "opacity-0" : "opacity-100"/u);
 	assert.match(
 		RAIL_SOURCE,
 		/className="flex h-6 shrink-0 items-center justify-center[\s\S]{0,120}?data-agent-session-notch=""/u,
@@ -534,7 +535,7 @@ test("the first collapsed gutter mount plays a reduced-motion-safe staggered sca
 	);
 	assert.match(
 		RAIL_SOURCE,
-		/onIntroComplete=\{index === items\.length - 1\s*\?\s*onIntroComplete\s*:\s*undefined\}/u,
+		/onIntroComplete=\{index === visibleItems\.length - 1\s*\?\s*onIntroComplete\s*:\s*undefined\}/u,
 	);
 	assert.match(
 		INDEX_SOURCE,

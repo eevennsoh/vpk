@@ -149,7 +149,8 @@ test("layers paint below in-flow content, so consumers do not lift every child",
 	assert.ok(negativeLayers.length >= 3, "bloom, base ring and glow ring all paint at -z-[1]");
 	// A negative z-index child escapes to the nearest stacking context, so every
 	// host has to make one.
-	assert.match(SESSION_CARD_SOURCE, /glow && "isolate"/u);
+	assert.match(SESSION_CARD_SOURCE, /paintsGlow && "isolate"/u);
+	assert.match(SESSION_CARD_SOURCE, /const paintsGlow = glow \|\| shouldPlayStateChangeGlow;/u);
 	// Either layer needs the stacking context, so the union is what mounts it.
 	assert.match(SESSION_CARD_SOURCE, /const glow = glowStroke \|\| glowBloom;/u);
 });
@@ -389,7 +390,8 @@ test("a row hands pointer tracking to its plane, and keeps its own when there is
 	assert.match(SESSION_CARD_SOURCE, /const isOnGlowPlane = glow && glowPlaneSurface !== undefined;/u);
 	assert.match(SESSION_CARD_SOURCE, /const tracksOwnPointer = glow && !isOnGlowPlane;/u);
 	assert.match(SESSION_CARD_SOURCE, /onPointerMove=\{tracksOwnPointer \? cardGlow\.onPointerMove : undefined\}/u);
-	assert.match(SESSION_CARD_SOURCE, /ref=\{isOnGlowPlane \? glowPlaneSurface : undefined\}/u);
+	assert.match(SESSION_CARD_SOURCE, /glowPlaneSurface\?\.\(node\)/u);
+	assert.match(SESSION_CARD_SOURCE, /ref=\{setRowNode\}/u);
 });
 
 test("a switched-off plane stops advertising itself so rows keep a driver", () => {

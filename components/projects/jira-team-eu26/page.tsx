@@ -57,6 +57,7 @@ import {
 	JIRA_TEAM_EU26_PAY_SESSION_MEMBERS,
 } from "./data/presentation-story";
 import { useJiraTeamEu26AgentSessionSync } from "./hooks/use-jira-team-eu26-agent-session-sync";
+import { JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES } from "./data/agent-session-sync";
 import { useJiraTeamEu26GenerativeActions } from "./hooks/use-jira-team-eu26-generative-actions";
 import { useJiraTeamEu26List } from "./hooks/use-jira-team-eu26-list";
 
@@ -154,6 +155,7 @@ function JiraTeamEu26App(): React.ReactElement {
 	const {
 		reviewAgentSessions,
 		newAgentSessionIds,
+		stateChangeVersions,
 		syncedAgentSessions,
 	} = useJiraTeamEu26AgentSessionSync({
 		active: showBoardContent,
@@ -388,6 +390,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						activeView={activeView}
 						retainWorkItemViews
 						additionalAgentSessions={syncedAgentSessions}
+						agentSessionSeedOverrides={JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES}
 						agentActivityLayout="merged"
 						agentSessionMembers={JIRA_TEAM_EU26_PAY_SESSION_MEMBERS}
 						agentSessionMultiSelect={false}
@@ -419,6 +422,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						insightsEnabled={false}
 						isLooseWorkResumable={isJiraTeamEu26LooseWorkResumable}
 						newAgentSessionIds={newAgentSessionIds}
+						stateChangeVersions={stateChangeVersions}
 						onAgentSessionColumnInteractionChange={setAgentSessionColumnInteracting}
 						onAgentSessionsReviewed={reviewAgentSessions}
 						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
