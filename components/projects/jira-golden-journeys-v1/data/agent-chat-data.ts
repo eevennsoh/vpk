@@ -35,7 +35,7 @@ export interface JgpAgentChatPlayback {
 const JGP_AGENT_PROFILES = [
 	{
 		id: "claude-code",
-		name: "Claude Code",
+		name: "Claude",
 			byline: "Coding agent by Anthropic",
 			brandName: "claude",
 			description: "Claude Code is an agentic coding tool that reads your codebase, edits files, runs commands, and integrates with your development tools.",

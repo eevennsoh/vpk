@@ -160,7 +160,7 @@ const JGP_247_BASE = createCard({
 const JGP_247_REVIEW_RUN: JiraIssueCompletedAgentRun = {
 	id: "JGP-247:claude-code",
 	agentBrandName: "claude",
-	agentName: "Claude Code",
+	agentName: "Claude",
 	description: "Opened pull request #247 with assignee focus mode. It is ready for your review.",
 	elapsedSeconds: 312,
 	issueKey: "JGP-247",
@@ -306,7 +306,7 @@ const LOCAL_TEAM_REVIEW: readonly JiraKanbanCardData[] = [
 		[
 			createCompletedRun({
 				agentBrandName: "claude",
-				agentName: "Claude Code",
+				agentName: "Claude",
 				description: "Resolved the facepile overflow at narrow board widths and prepared the change for review.",
 				elapsedSeconds: 226,
 				issueKey: "JGP-239",
@@ -383,7 +383,7 @@ const LOCAL_TEAM_REVIEW: readonly JiraKanbanCardData[] = [
 		}),
 		[createCompletedRun({
 			agentBrandName: "claude",
-			agentName: "Claude Code",
+			agentName: "Claude",
 			description: "Preserved keyboard focus across filter changes and prepared the result for review.",
 			elapsedSeconds: 171,
 			issueKey: "JGP-234",

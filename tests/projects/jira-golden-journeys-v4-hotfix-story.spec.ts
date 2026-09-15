@@ -55,9 +55,9 @@ test("keyboard unlink keeps the focused session beneath its card across Board to
 		has: page.getByText("PAY-123", { exact: true }),
 	});
 	const claudeSession = card.locator("[data-slot='jira-issue-agent-row-wrap']", {
-		has: page.getByRole("button", { name: "Open Claude Code in Rovo chat: Working" }),
+		has: page.getByRole("button", { name: "Open Claude in Rovo chat: Working" }),
 	});
-	await claudeSession.getByRole("button", { name: "Open Claude Code in Rovo chat: Working" }).focus();
+	await claudeSession.getByRole("button", { name: "Open Claude in Rovo chat: Working" }).focus();
 	await page.keyboard.press("Tab");
 	await expect(claudeSession.getByRole("button", { name: "Unlink", exact: true })).toBeFocused();
 	await page.keyboard.press("Enter");
@@ -68,7 +68,7 @@ test("keyboard unlink keeps the focused session beneath its card across Board to
 	const detachedSession = board.getByTestId("agent-session-row-PAY-123:claude-code");
 	await expect(detachedSession).toContainText("Wiring recorded fixtures into the v2 client");
 	await expect(card.getByRole("button", {
-		name: "Open Claude Code in Rovo chat: Working",
+		name: "Open Claude in Rovo chat: Working",
 	})).toHaveCount(0);
 
 	const workItemTabs = page.getByRole("tablist", { name: "Work items view" });

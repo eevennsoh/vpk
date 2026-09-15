@@ -5,7 +5,7 @@ test.use({ viewport: { width: 1800, height: 1100 } });
 for (const { issueKey, state, agent } of [
 	{ issueKey: "PAY-105", state: "Working", agent: "Cursor" },
 	{ issueKey: "PAY-112", state: "Needs input", agent: "Codex" },
-	{ issueKey: "PAY-101", state: "Finished", agent: "Claude Code" },
+	{ issueKey: "PAY-101", state: "Finished", agent: "Claude" },
 ]) {
 	test(`${state} session rows share the assignment flyout`, async ({ page }) => {
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
@@ -30,7 +30,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 		await page.getByRole("button", { name: "More actions for PAY-101", exact: true }).focus();
 		await page.keyboard.press("Tab");
-		const trigger = page.getByRole("button", { name: "Open Claude Code in Rovo chat: Finished", exact: true });
+		const trigger = page.getByRole("button", { name: "Open Claude in Rovo chat: Finished", exact: true });
 		await expect(trigger).toBeFocused();
 		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
 		await expect(flyout).toBeVisible();
