@@ -9,7 +9,7 @@ import {
 	type ReactNode,
 	type RefCallback,
 } from "react";
-import { useReducedMotion } from "motion/react";
+import { useReducedMotion, type Transition } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 
