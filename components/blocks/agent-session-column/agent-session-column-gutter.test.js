@@ -411,7 +411,10 @@ test("the gutter preview and footprint share CSS hover timing in both directions
 	assert.match(IN_FLOW_GEOMETRY_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX = -5/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /transform: `translateX\(\$\{isEmbedded \? IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX : IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX\}px\)`/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /"transform var\(--duration-normal\) var\(--ease-out-practical\)"/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/"transform var\(--duration-normal\) var\(--ease-out-practical\), box-shadow var\(--duration-normal\) var\(--ease-out-practical\)"/u,
+	);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /transition: columnWidthPx === AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX \? transition : expansionTransition/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /transition: shouldReduceMotion \? "none" : IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_TRANSITION/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /willChange: shouldReduceMotion \? undefined : "transform"/u);
@@ -464,7 +467,11 @@ test("Board and List give the in-flow column identical geometry props", () => {
 		inFlowColumn,
 		/paddingTop=\{withKanbanDropContentGutter\(0, columnChromeStyles\)\.paddingTop\}/u,
 	);
-	assert.doesNotMatch(inFlowColumn, /isListContent/u);
+	assert.doesNotMatch(inFlowColumn, /(?:paddingTop|columnFrame)=\{[^}]*isListContent/u);
+	assert.match(
+		inFlowColumn,
+		/showTrailingShadow=\{!isListContent && boardContentUnderlapsSessionColumn\}/u,
+	);
 });
 
 test("the first collapsed gutter mount plays a reduced-motion-safe staggered scale wave", () => {

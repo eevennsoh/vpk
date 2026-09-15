@@ -33,6 +33,9 @@ const EXPERIMENTAL_CARD_SOURCE = readProjectFile(
 const PANEL_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/agent-session-panel.tsx",
 );
+const IN_FLOW_COLUMN_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/components/in-flow-agent-session-column.tsx",
+);
 const AGENT_SESSION_COLUMN_SOURCE = readProjectFile(
 	"components/blocks/agent-session-column/index.tsx",
 );
@@ -315,6 +318,31 @@ test("the route locks untracked work to the in-flow column", () => {
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /relative z-50 bg-surface/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /listAgentSessionPanelInset/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /paddingInline(?:Start|End)/u);
+});
+
+test("the white Agent Session surface gains overlay elevation only after Kanban underlap", () => {
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onScrollUnderlapChange=\{setBoardContentUnderlapsSessionColumn\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/showTrailingShadow=\{!isListContent && boardContentUnderlapsSessionColumn\}/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/isEmbedded\s*\? "pointer-events-auto bg-surface"/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/showTrailingShadow && isEmbedded \? token\("elevation\.shadow\.overlay"\) : "none"/u,
+	);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /borderRadius: token\("radius\.xlarge"\)/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/box-shadow var\(--duration-normal\) var\(--ease-out-practical\)/u,
+	);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /transition: shouldReduceMotion \? "none"/u);
 });
 
 test("the board's AI entry point is the floating Rovo button, not the Omnibar", () => {

@@ -114,6 +114,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * reserve dead space instead and defeat the overlay.
 	 */
 	scrollEndInset?: number;
+	/** Reports whether horizontally scrolled content sits beneath a fixed leading surface. */
+	onScrollUnderlapChange?: (hasUnderlap: boolean) => void;
 	/** Detached sessions keyed by the Jira card they should remain beneath. */
 	detachedAgentSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
 	/**
@@ -358,6 +360,7 @@ function ExperimentalJiraKanbanView({
 	onCreateAgent,
 	onCreatedCardArrivalComplete,
 	onCollapsedColumnsChange,
+	onScrollUnderlapChange,
 	onToggleColumnAgent,
 	boardSessionDrag,
 	proximityAgentSession,
@@ -385,6 +388,7 @@ function ExperimentalJiraKanbanView({
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
+	const boardContentUnderlapsRef = useRef(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
 	const handleCreatedCardArrivalComplete = useCreatedCardArrivalCompletion(
 		onCreatedCardArrivalComplete,
@@ -593,6 +597,12 @@ function ExperimentalJiraKanbanView({
 		}
 		onCollapsedColumnsChange?.(nextCollapsedColumns);
 	};
+	const handleBoardScroll = (event: React.UIEvent<HTMLElement>) => {
+		const hasUnderlap = event.currentTarget.scrollLeft > 0;
+		if (boardContentUnderlapsRef.current === hasUnderlap) return;
+		boardContentUnderlapsRef.current = hasUnderlap;
+		onScrollUnderlapChange?.(hasUnderlap);
+	};
 	const sessionFlyoutsSuspended = boardSessionDrag.transaction !== null || draggedCardCode !== null;
 	const untrackedDropArmed = boardSessionDrag.transaction?.target?.kind === "untracked";
 
@@ -630,6 +640,7 @@ function ExperimentalJiraKanbanView({
 					tabIndex={0}
 					aria-label={ariaLabel}
 					className="flex min-h-0 min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+					onScroll={handleBoardScroll}
 					style={{
 						flex: 1,
 						paddingTop: scrollportPaddingTop,
