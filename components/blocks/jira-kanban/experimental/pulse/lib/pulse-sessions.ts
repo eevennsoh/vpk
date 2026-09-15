@@ -102,10 +102,10 @@ export function toPulseSessionPullRequestDetails(
 	const repository = pullRequest.repository ?? PULSE_SPACE_REPOSITORY;
 	const reviewerCount = pullRequest.status === "merged" ? 3 : 2;
 	const updatedLabel = pullRequest.status === "merged"
-		? "5h ago"
+		? "5h"
 		: pullRequest.status === "failed"
-			? "2h ago"
-			: "1h ago";
+			? "2h"
+			: "1h";
 
 	return {
 		additions: pullRequest.additions,

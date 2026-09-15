@@ -23,7 +23,7 @@ export const DEMO_PULL_REQUESTS: readonly (PullRequestProps & { repository: stri
 		additions: 86,
 		deletions: 21,
 		filesChanged: 6,
-		relativeTime: "1h ago",
+		relativeTime: "1h",
 	},
 	{
 		number: 1847,
