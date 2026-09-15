@@ -59,6 +59,7 @@ import { useAgentSessionArrivals } from "./use-agent-session-arrivals";
 import { useAgentSessionColumnFilter } from "./use-agent-session-column-filter";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
 import { useAgentSessionColumnInteraction } from "./use-agent-session-column-interaction";
+import { useAgentSessionColumnEndSpace } from "./use-agent-session-column-end-space";
 import { useUntrackedSelection } from "./use-untracked-selection";
 import { focusAgentSessionRow } from "./untracked-selection-keyboard";
 
@@ -379,6 +380,7 @@ const AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE = `${AGENT_SESSION_DECK_END_SPACE_PX}
  * `columnFrame` is in-flow only; panel ignores it.
  */
 export function AgentSessionColumn({
+	animateLayout = true,
 	headerSurface = "column",
 	columnFrame = DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	className,
@@ -495,6 +497,7 @@ export function AgentSessionColumn({
 		getSuggestedWorkItemKeys: sessionProps.getSuggestedWorkItemKeys,
 		viewItems,
 	});
+	const displayedItems = showFilter ? filteredViewItems : viewItems;
 	// Header Archive, the untracked-work flyout Archive, and the rail flyout
 	// all hide into the column-owned well the footer reads. In the archived
 	// view the same control Unarchives, matching the row.
@@ -529,7 +532,11 @@ export function AgentSessionColumn({
 	// overflow has to be clipped for the duration of the width transition. Any
 	// longer and it would clip the 4px focus rings on the cards inside.
 	const [isResizing, setIsResizing] = useState(false);
-	const deck = hasScrollingEffect
+	const { ref: endSpaceRef, showEndSpace } = useAgentSessionColumnEndSpace(
+		hasScrollingEffect,
+		displayedItems,
+	);
+	const deck = hasScrollingEffect && showEndSpace
 		? AGENT_SESSION_DECK_STACKED
 		: AGENT_SESSION_DECK_FLAT;
 	const deckListRef = useAgentSessionDeck(deck);
@@ -542,11 +549,11 @@ export function AgentSessionColumn({
 	const listRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
 		overflowListRef(node);
 		deckListRef(node);
-	}, [deckListRef, overflowListRef]);
+		endSpaceRef(node);
+	}, [deckListRef, endSpaceRef, overflowListRef]);
 	const untrackedCount = count ?? visibleItems.length;
 	const showWellFooter = view === "hidden" || hiddenCount > 0;
 	const hasActiveFilters = showFilter && selectedFilterCount > 0;
-	const displayedItems = showFilter ? filteredViewItems : viewItems;
 	const sessionCount = hasActiveFilters
 		? displayedItems.length
 		: (view === "hidden" ? hiddenItems.length : untrackedCount);
@@ -795,6 +802,7 @@ export function AgentSessionColumn({
 	);
 	const body = collapsed ? (
 		<AgentSessionColumnRail
+			animateLayout={animateLayout}
 			arrivingItemIds={arrivingItemIds}
 			capturedItemIds={sessionProps.capturedItemIds}
 			getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
@@ -840,6 +848,7 @@ export function AgentSessionColumn({
 					>
 						{/* Omit newItemIds so expanded rows skip the unreviewed blue dot; arrival still uses arrivingItemIds. */}
 						<AgentSession
+							animateLayout={animateLayout}
 							arrivingItemIds={arrivingItemIds}
 							className={cn(
 								headerSurface === "column" ? AGENT_SESSION_LIST_SPACING : null,
@@ -857,7 +866,7 @@ export function AgentSessionColumn({
 							selectedItemId={selectedItemId}
 							visibilityLabel={view === "hidden" ? "Unarchive" : "Archive"}
 						/>
-						{hasScrollingEffect ? (
+						{showEndSpace ? (
 							<AgentSessionColumnEndState
 								count={sessionCount}
 								visible={view === "active" && hasScrolledToBottom}

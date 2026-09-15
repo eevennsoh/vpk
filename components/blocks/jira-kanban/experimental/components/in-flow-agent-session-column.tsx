@@ -364,7 +364,7 @@ function InFlowAgentSessionColumnSurface({
 	return (
 		<div
 			className={cn(
-				"group/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",
+				"group/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 items-start border-2 border-r-0",
 				isEmbedded
 					? "pointer-events-auto"
 					: "pointer-events-none [&_[data-agent-session-notch]]:pointer-events-auto [&_[data-agent-session-column-expand-control]]:pointer-events-auto",
@@ -383,6 +383,8 @@ function InFlowAgentSessionColumnSurface({
 		>
 			<AgentSessionColumn
 				{...agentSessionColumn}
+				animateLayout={false}
+				className={cn("max-h-full", agentSessionColumn.className)}
 				collapsed={!isFullWidth}
 				collapsedMenu={collapsedMenu}
 				hasScrollingEffect={hasScrollingEffect}

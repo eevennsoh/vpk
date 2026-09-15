@@ -66,24 +66,80 @@ async function openHeightComparisonBoard(page: Page): Promise<void> {
 		.toHaveAttribute("data-agent-session-column-expansion", "expanded");
 }
 
-test("the expanded session column matches the Kanban column height", async ({ page }) => {
+test("the expanded session well hugs a short filtered list and caps a long list", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await openHeightComparisonBoard(page);
 	const sessionColumn = page.locator("[data-agent-session-column]");
-	const kanbanColumn = page.locator('[data-jira-kanban-column="To do"] > .group\\/board-column');
+	const scrollport = sessionColumn.locator("[data-agent-session-column-scrollport]");
+	await expect.poll(() => scrollport.evaluate((element) => element.scrollHeight - element.clientHeight))
+		.toBeGreaterThan(100);
+	const fullHeight = (await sessionColumn.boundingBox())?.height ?? 0;
 
-	await expect.poll(async () => {
-		const [sessionBox, kanbanBox] = await Promise.all([
-			sessionColumn.boundingBox(),
-			kanbanColumn.boundingBox(),
-		]);
-		return sessionBox && kanbanBox
-			? {
-				heightDelta: Math.abs(sessionBox.height - kanbanBox.height),
-				topDelta: Math.abs(sessionBox.y - kanbanBox.y),
-			}
-			: null;
-	}).toEqual({ heightDelta: 0, topDelta: 0 });
+	await page.getByRole("button", { name: "Needs input: 1 agent" }).click();
+	const filteredRows = sessionColumn.locator('[data-testid^="agent-session-row-"]');
+	await expect.poll(() => filteredRows.count()).toBeLessThan(6);
+	await expect.poll(() => filteredRows.count()).toBeGreaterThan(0);
+	const columnBox = await sessionColumn.boundingBox();
+	const lastRowBox = await filteredRows.last().boundingBox();
+	expect(columnBox && lastRowBox ? columnBox.y + columnBox.height - lastRowBox.y - lastRowBox.height : Infinity)
+		.toBeLessThan(32);
+	expect(fullHeight - (columnBox?.height ?? fullHeight)).toBeGreaterThan(100);
+});
+
+test("Needs input switches session positions without travel", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await openHeightComparisonBoard(page);
+	const rows = page.locator('[data-agent-session-column] [data-testid^="agent-session-row-"]');
+	await expect.poll(() => rows.count()).toBeGreaterThan(4);
+	await page.waitForTimeout(1_200); // Finish one-time sync arrivals before measuring the filter.
+	const needsInput = page.getByRole("button", { name: "Needs input: 1 agent" });
+
+	for (const filtered of [true, false]) {
+		await needsInput.click();
+		if (filtered) {
+			await expect.poll(() => rows.count()).toBeLessThan(6);
+			await expect.poll(() => rows.count()).toBeGreaterThan(0);
+		} else {
+			await expect.poll(() => rows.count()).toBeGreaterThan(4);
+		}
+		const transforms = await rows.evaluateAll(async (elements) => {
+			await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+			return elements.map((element) => getComputedStyle(element).transform);
+		});
+		expect(transforms.every((transform) => transform === "none" || transform === "matrix(1, 0, 0, 1, 0, 0)"))
+			.toBe(true);
+	}
+});
+
+test("Advanced timeline omits its scroll ending when filtered sessions fit", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	await page.getByRole("button", { name: "Settings" }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Advanced timeline" }).click();
+	await page.getByRole("button", { name: "Settings" }).click();
+	await page.getByRole("button", { name: "Unlink sessions column options" }).click();
+	await page.getByRole("menuitem", { name: "Expand" }).click();
+	await page.getByRole("button", { name: "Needs input: 1 agent" }).click();
+
+	const column = page.locator("[data-agent-session-column]");
+	const rows = column.locator('[data-testid^="agent-session-row-"]');
+	await expect.poll(() => rows.count()).toBeLessThan(6);
+	await expect.poll(() => rows.count()).toBeGreaterThan(0);
+	await expect(column.getByText("Nice work")).toHaveCount(0);
+	const columnBox = await column.boundingBox();
+	const lastRowBox = await rows.last().boundingBox();
+	expect(columnBox && lastRowBox ? columnBox.y + columnBox.height - lastRowBox.y - lastRowBox.height : Infinity)
+		.toBeLessThan(32);
+
+	await page.getByRole("button", { name: "Needs input: 1 agent" }).click();
+	await expect.poll(() => rows.count()).toBeGreaterThan(6);
+	const scrollport = column.locator("[data-agent-session-column-scrollport]");
+	await expect.poll(() => scrollport.evaluate((element) => element.scrollHeight - element.clientHeight))
+		.toBeGreaterThan(100);
+	await scrollport.hover();
+	await page.mouse.wheel(0, 5_000);
+	await expect(column.getByText("Nice work").first()).toBeVisible();
 });
 
 test("the expanded session plane follows overlay elevation as board columns underlap", async ({ page }) => {

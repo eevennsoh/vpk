@@ -81,6 +81,7 @@ function buildArrivalDelays(
  * is already the card. Small is the collapsed-column identity notch.
  */
 export function AgentSession({
+	animateLayout = true,
 	className,
 	items: itemsProp,
 	arrivingItemIds,
@@ -240,6 +241,7 @@ export function AgentSession({
 							);
 						return (
 							<AgentSessionCard
+								animateLayout={animateLayout}
 								arrivalDelaySeconds={arrivalDelays.get(item.id)}
 								captured={capturedItemIds?.has(item.id) ?? false}
 								density={density}

@@ -27,7 +27,7 @@ test("the scrolling effect is an optional boolean capability", () => {
 	assert.match(INDEX_SOURCE, /hasScrollingEffect = false/u);
 	assert.match(
 		INDEX_SOURCE,
-		/const deck = hasScrollingEffect\s*\? AGENT_SESSION_DECK_STACKED\s*: AGENT_SESSION_DECK_FLAT/u,
+		/const deck = hasScrollingEffect && showEndSpace\s*\? AGENT_SESSION_DECK_STACKED\s*: AGENT_SESSION_DECK_FLAT/u,
 	);
 	assert.match(BOARD_PAGE_SOURCE, /hasScrollingEffect: true/u);
 	assert.match(PANEL_DEMO_SOURCE, /\bhasScrollingEffect\b/u);
@@ -36,7 +36,7 @@ test("the scrolling effect is an optional boolean capability", () => {
 	assert.doesNotMatch(TYPES_SOURCE, /deck\?: AgentSessionDeck/u);
 });
 
-test("the in-flow timeline enables deck depth and its end-state only in advanced mode", () => {
+test("the in-flow timeline enables deck depth and its end-state only when rows overflow", () => {
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
 		/function resolveInFlowAgentSessionColumnAdvancedCapabilities[\s\S]*hasScrollingEffect: false,[\s\S]*hasScrollingEffect: true,/u,
@@ -47,7 +47,7 @@ test("the in-flow timeline enables deck depth and its end-state only in advanced
 	);
 	assert.match(
 		INDEX_SOURCE,
-		/\{hasScrollingEffect \? \(\s*<AgentSessionColumnEndState/u,
+		/\{showEndSpace \? \(\s*<AgentSessionColumnEndState/u,
 	);
 });
 

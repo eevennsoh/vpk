@@ -248,10 +248,11 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.doesNotMatch(DETAIL_SOURCE, /fade to a 4px rest in default icon color/u);
 	assert.doesNotMatch(USER_NOTCH_SOURCE, /scale: \[/u);
 	assert.doesNotMatch(USER_NOTCH_SOURCE, /times:/u);
-	// Arriving notches push the ones below them down instead of teleporting.
+	// Standalone arriving notches push the ones below them down.
 	// The scrollport stays a plain `ul` so mask-image can fade the marks;
-	// layout lives on each notch, not on a Motion scroll host.
-	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
+	// layout lives on each notch, while the board column disables reflow travel.
+	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \|\| !animateLayout \? false : "position"\}/u);
+	assert.match(INDEX_SOURCE, /animateLayout = true,/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /layoutScroll/u);
 });
 
