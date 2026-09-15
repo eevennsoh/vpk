@@ -280,6 +280,8 @@ export function JiraListAgentSessionsCell({
 		<div>
 			<AgentAssignment
 				agents={agents}
+				activityIconScale="comfortable"
+				activityRowFlush
 				assignedAgents={assignedAgents}
 				maxVisibleAgents={LIST_ASSIGNED_AGENT_MAX_VISIBLE}
 				onAgentAssign={onAgentAssign}

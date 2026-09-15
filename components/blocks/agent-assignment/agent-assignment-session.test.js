@@ -28,7 +28,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(source, /onRenameSession=\{onRenameAssignedAgent/u);
 	assert.match(source, /onToggleVisibility=\{onAssignedAgentIdsChange/u);
 	assert.match(source, /variant === "default"[\s\S]*view === "assigned"[\s\S]*reason === "focus-out"/u);
-	assert.match(source, /<AgentAssignmentDefaultField assignedAgents=\{assignedAgents\} \/>/u);
+	assert.match(source, /<AgentAssignmentDefaultField[\s\S]*?assignedAgents=\{assignedAgents\}[\s\S]*?\/>/u);
 	assert.match(source, /aria-label=\{shown\.length === 0 \? "Assign agent" : triggerLabel\}/u);
 
 	assert.match(field, /<JiraIssueAgentActivityRows/u);

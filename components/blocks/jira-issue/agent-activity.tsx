@@ -501,6 +501,7 @@ function JiraIssueAgentActivityRow({
 	activities,
 	assignment,
 	avatarLayout,
+	flushContent = false,
 	iconScale = "compact",
 	linkFlash,
 	onOpenChange,
@@ -515,6 +516,7 @@ function JiraIssueAgentActivityRow({
 	activities: readonly JiraIssueAgentActivity[];
 	assignment?: JiraIssueAgentAssignment;
 	avatarLayout: JiraIssueAgentActivityAvatarLayout;
+	flushContent?: boolean;
 	iconScale?: JiraIssueIconScale;
 	/** Rest shows the parent well; hover still paints only this row. */
 	inheritChinSurface?: boolean;
@@ -692,6 +694,7 @@ function JiraIssueAgentActivityRow({
 				activities={activities}
 				assignedRowHandle={assignedRowHandle}
 				featuredActivity={featuredActivity}
+				flushContent={flushContent}
 				iconScale={iconScale}
 				inheritChinSurface={inheritChinSurface}
 				isDraggedOut={isDraggedOut}
@@ -711,6 +714,7 @@ export function JiraIssueAgentActivityRows({
 	assignment,
 	attachPreviewCopy,
 	avatarLayout = "animated",
+	flushContent = false,
 	iconScale = "compact",
 	instantSessionTransfer = false,
 	linkFlash,
@@ -730,6 +734,8 @@ export function JiraIssueAgentActivityRows({
 	attachPreviewCopy?: string;
 	/** Multiple-agent identity treatment. */
 	avatarLayout?: JiraIssueAgentActivityAvatarLayout;
+	/** Remove the horizontal gutters when a parent cell owns its left alignment. */
+	flushContent?: boolean;
 	iconScale?: JiraIssueIconScale;
 	/** Rest shows the parent well; hover still paints only this row. */
 	inheritChinSurface?: boolean;
@@ -778,7 +784,10 @@ export function JiraIssueAgentActivityRows({
 				// the card hugs what remains instead of trailing an empty band. The
 				// dragged row flags itself with `data-session-chip-out`, so this
 				// resolves in the same commit rather than through a state round-trip.
-				(hasActivities || hasAttachPreview) && "px-1 py-1 has-[[data-session-chip-out]]:py-0",
+				(hasActivities || hasAttachPreview) && cn(
+					flushContent ? "px-0" : "px-1",
+					"py-1 has-[[data-session-chip-out]]:py-0",
+				),
 			)}
 			layout={rowLayout}
 			data-session-attach-growth={!hasActivities && hasAttachPreview ? "" : undefined}
@@ -799,6 +808,7 @@ export function JiraIssueAgentActivityRows({
 							activities={rowGroup.activities}
 							assignment={assignment}
 							avatarLayout={avatarLayout}
+							flushContent={flushContent}
 							iconScale={iconScale}
 							inheritChinSurface={inheritChinSurface}
 							linkFlash={linkFlash}
