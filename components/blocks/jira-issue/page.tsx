@@ -520,7 +520,7 @@ const EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW: JiraIssuePullRequestPreview = {
 	branch: "feat/pd-40-date-range-filter",
 	deletions: 21,
 	filesChanged: 6,
-	relativeTime: "1h ago",
+	relativeTime: "1h",
 	repository: "acme/storefront",
 	targetBranch: "main",
 	title: "Add date-range filter query params",
