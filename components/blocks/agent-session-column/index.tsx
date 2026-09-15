@@ -11,16 +11,11 @@ import {
 } from "react";
 import { useReducedMotion, type Transition } from "motion/react";
 
-import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
-
 import { isCodingAgentListItem, isLocalAgentListItem } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ITEMS, AgentSession } from "@/components/blocks/agent-session";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { Button } from "@/components/ui/button";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { Icon } from "@/components/ui/icon";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	CardGlowSurfaceContext,
 	useCardGlowProximityPlane,
@@ -33,7 +28,7 @@ import { cn } from "@/lib/utils";
 
 import { AgentSessionColumnFilterMenu } from "./agent-session-column-filter-menu";
 import { AgentSessionColumnCountSwap, useRisingSessionCount } from "./agent-session-column-count-swap";
-import { AgentSessionColumnHeader } from "./agent-session-column-header";
+import { AgentSessionColumnCollapsedExpandControl, AgentSessionColumnHeader } from "./agent-session-column-header";
 import { AgentSessionColumnEndState } from "./agent-session-column-end-state";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
@@ -115,8 +110,9 @@ const AGENT_SESSION_PLANE =
 	"relative flex min-h-0 min-w-0 flex-1 flex-col bg-surface";
 
 /**
- * Transparent 1px keeps To-do count alignment. Expanded rest paints
- * `border-border-disabled` over this; underlap and collapsed leave it unpainted.
+ * The 1px well inset keeps To-do count alignment. Expanded rest paints a
+ * `border-border-disabled` stroke; collapsed and elevated states use padding
+ * for the same inset without retaining a transparent border.
  */
 const AGENT_SESSION_WELL_PAINT = cn(
 	AGENT_SESSION_PLANE,
@@ -137,19 +133,21 @@ const AGENT_SESSION_LIST_SPACING = "gap-1 p-1";
 
 /**
  * Enclosed clips the list/footer region instead of the well, so the clip is a
- * plain rectangle inset 1px inside the stroke. The straight runs of the border
- * survive that, but `radius.xlarge` curves *inward* from the bottom corners:
- * the arc and the last ~12px of each side stroke fall inside the rectangle,
+ * plain rectangle inside the 1px inset (stroke at rest, padding otherwise).
+ * At rest, straight border runs survive the clip, but `radius.xlarge` curves
+ * inward from the bottom corners. The arc and the last ~12px of each side
+ * stroke fall inside the rectangle,
  * where the opaque end of the bottom scroll fade paints over them and the
  * corner reads as clipped. Matching the well's radius on the clip keeps the
- * fade off the arc. The clip is 1px inside the stroke, so its true inner curve
- * is 11px; rounding to the full 12px only ever clips further from the border,
- * and the well paints its own `bg-surface` behind that hairline.
+ * fade off the arc. The clip's true inner curve is 11px; rounding to the full
+ * 12px only ever clips further from the edge, and the well paints behind it.
  */
 const AGENT_SESSION_ENCLOSED_BODY =
 	"flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-b-xl";
 
-const AGENT_SESSION_OVERLAY_SHADOW = token("elevation.shadow.overlay");
+/** ADS overlay depth layer, omitting its two perimeter layers. */
+const AGENT_SESSION_UNDERLAP_DEPTH_SHADOW =
+	"0px 8px 12px light-dark(#1E1F2126, #0104045C)";
 const AGENT_SESSION_WELL_STROKE = token("color.border.disabled");
 /**
  * space.100 — the painted well grows this far above and below its slot
@@ -177,6 +175,7 @@ function resolveAgentSessionPlaneClassName(
 }
 
 function renderAgentSessionColumnFrame({
+	allowCollapsedRailOverflow,
 	body,
 	bodyHidden,
 	borderColor,
@@ -188,6 +187,7 @@ function renderAgentSessionColumnFrame({
 	planeClassName,
 	shadowTransition,
 }: Readonly<{
+	allowCollapsedRailOverflow: boolean;
 	body: ReactNode;
 	bodyHidden: boolean;
 	borderColor: string;
@@ -239,6 +239,7 @@ function renderAgentSessionColumnFrame({
 						aria-hidden={bodyHidden || undefined}
 						className={cn(
 							AGENT_SESSION_ENCLOSED_BODY,
+							allowCollapsedRailOverflow ? "overflow-visible" : null,
 							bodyHidden ? "invisible" : null,
 						)}
 						inert={bodyHidden || undefined}
@@ -331,7 +332,7 @@ const HEAD_COUNT_MORPH: TextMorphConfig = {
 	autoSize: true,
 };
 
-/** Matches `bg-surface` so edge fades dissolve into the plane. */
+/** The edge fades follow the plane's base surface color. */
 const AGENT_SESSION_PLANE_FADE_COLOR = "var(--color-surface)";
 
 const AGENT_SESSION_PLANE_TOP_FADE_SIZE = "3rem";
@@ -348,7 +349,8 @@ const AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE = `${AGENT_SESSION_DECK_END_SPACE_PX}
  * inset and a baseline with the status titles. Enclosed framing (default
  * board chrome) moves that same title row inside the well, matching the
  * status columns that wrap header and cards in one painted object. The well
- * stays `bg-surface`, not sunken: Untracked is outside the workflow.
+ * rests on `bg-surface` and becomes `bg-surface-overlay` with its shadow when
+ * Kanban content scrolls beneath it. Untracked never uses a sunken surface.
  * Everything below the header is the Agent Session block verbatim, so a card's
  * untracked-work flyout, captured state, and resume gating behave identically
  * here and in the standalone block.
@@ -388,6 +390,7 @@ export function AgentSessionColumn({
 	collapsedPresentation = "column",
 	collapsedMenu,
 	collapsedRailHitSlopPx = 0,
+	collapsedExpandLeadingHitSlopPx = 0,
 	count,
 	defaultCollapsed = false,
 	emptyLabel = "No sessions to unlink",
@@ -689,6 +692,8 @@ export function AgentSessionColumn({
 	// never paints a stroke. The color snaps (transparent ↔ token does not
 	// interpolate); Motion still tweens the shadow and grow.
 	const paintWellStroke = wearEnclosedWell && !collapsed && !elevatePlane;
+	const replaceWellBorderWithInset = !paintWellStroke
+		&& (wearEnclosedWell || (layout === "caption" && elevatePlane && !collapsed));
 	// Rest keeps the in-flow hover band so the expand control is easy to hit
 	// beside the 32px rail — that rect may sit outside the painted well.
 	// Underlap elevates the well into the container; the same band would hang
@@ -697,13 +702,16 @@ export function AgentSessionColumn({
 	const planeClassName = cn(
 		resolveAgentSessionPlaneClassName(layout, collapsed, isGutterCollapsed),
 		isGutterCollapsed ? "bg-transparent" : null,
-		wearEnclosedWell
-			? paintWellStroke ? "border-border-disabled" : "border-transparent"
-			: null,
+		"transition-[background-color] motion-reduce:transition-none",
+		elevatePlane
+			? "bg-surface-overlay duration-normal ease-out-practical"
+			: "duration-fast ease-in",
+		paintWellStroke ? "border-border-disabled" : null,
+		replaceWellBorderWithInset ? "border-0 p-px" : null,
 		collapsed && isRepositioning && !wearEnclosedWell ? "invisible" : null,
 	);
 	const planeBorderColor = paintWellStroke ? AGENT_SESSION_WELL_STROKE : "transparent";
-	const planeBoxShadow = elevatePlane ? AGENT_SESSION_OVERLAY_SHADOW : "none";
+	const planeBoxShadow = elevatePlane ? AGENT_SESSION_UNDERLAP_DEPTH_SHADOW : "none";
 	const planeMarginBlock = elevatePlane && wearEnclosedWell
 		? -AGENT_SESSION_UNDERLAP_GROW_PX
 		: 0;
@@ -725,31 +733,14 @@ export function AgentSessionColumn({
 		: isGutterCollapsed ? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL;
 	const collapsedExpandControl = collapsedMenu === undefined
 		? (
-			<TooltipProvider>
-				<Tooltip
-					animate={!isRepositioning}
-					disabled={isRepositioning}
-				>
-					<TooltipTrigger
-						render={
-							<Button
-								aria-label={`Expand ${title} column`}
-								aria-description={headerDragHandle ? "Drag horizontally to move the column, or use Alt with the arrow keys." : undefined}
-								className={collapsedControlClassName}
-								data-agent-session-column-expand-control=""
-								onClick={handleToggleCollapsed}
-								size="icon-compact"
-								style={{ width: "100%" }}
-								type="button"
-								variant={isRepositioning ? "outline" : "ghost"}
-							/>
-						}
-					>
-						<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
-					</TooltipTrigger>
-					<TooltipContent>Expand</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
+			<AgentSessionColumnCollapsedExpandControl
+				canReposition={Boolean(headerDragHandle)}
+				className={collapsedControlClassName}
+				isRepositioning={isRepositioning}
+				leadingHitSlopPx={collapsedExpandLeadingHitSlopPx}
+				onExpand={handleToggleCollapsed}
+				title={title}
+			/>
 		)
 		: collapsedMenu({ className: collapsedControlClassName, dragging: isRepositioning });
 	const collapsedHeader = (
@@ -886,18 +877,22 @@ export function AgentSessionColumn({
 				{showTopScrollMask || showBottomScrollMask ? (
 					<div
 						aria-hidden="true"
-						className="pointer-events-none absolute inset-0 z-10"
+						className={cn(
+							"pointer-events-none absolute inset-0 z-10 transition-[color] motion-reduce:transition-none",
+							elevatePlane ? "duration-normal ease-out-practical" : "duration-fast ease-in",
+						)}
+						style={{ color: elevatePlane ? "var(--color-surface-overlay)" : AGENT_SESSION_PLANE_FADE_COLOR }}
 					>
 						{showTopScrollMask ? (
 							<ScrollMaskEdgeOverlay
-								color={AGENT_SESSION_PLANE_FADE_COLOR}
+								color="currentColor"
 								edge="top"
 								fadeSize={AGENT_SESSION_PLANE_TOP_FADE_SIZE}
 							/>
 						) : null}
 						{showBottomScrollMask ? (
 							<ScrollMaskEdgeOverlay
-								color={AGENT_SESSION_PLANE_FADE_COLOR}
+								color="currentColor"
 								edge="bottom"
 								fadeSize={hasScrollingEffect
 									? AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE
@@ -950,6 +945,7 @@ export function AgentSessionColumn({
 			}}
 		>
 			{renderAgentSessionColumnFrame({
+				allowCollapsedRailOverflow: collapsed && collapsedHitSlopPx > 0,
 				body: (
 					<CardGlowSurfaceContext value={glowPlaneEnabled ? registerGlowSurface : undefined}>
 						{body}

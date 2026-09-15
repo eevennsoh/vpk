@@ -715,13 +715,18 @@ export function AgentSessionColumnRail({
 			    sits 2px inside each 24px button, so py-0.5 leaves its focus ring
 			    the same clearance and preserves the original marker centers.
 			    Hosts can add equal hit slop with a wider list and matching negative
-			    margins; those hosts must allow the rail past the section edges.
+			    margins; the widened buttons then fill the whole list width, with the
+			    extra width preserving focus-ring clearance. Those hosts must allow
+			    the rail past the section edges.
 			    Gutter rest still caps the
 			    viewport at ten notches; a hover-scaled hit area and column
 			    presentation omit that cap so every session can show inside the
 			    column height. Standalone rails retain per-notch arrival layout. */}
 			<ul
-				className="scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto overscroll-contain px-1 py-0.5"
+				className={cn(
+					"scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto overscroll-contain py-0.5",
+					hitSlopPx > 0 ? "px-0" : "px-1",
+				)}
 				data-agent-session-column-rail=""
 				onPointerDown={isDocked ? dock.resetPointer : undefined}
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}

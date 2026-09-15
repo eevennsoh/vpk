@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+const HEADER_SOURCE = readFileSync(join(__dirname, "agent-session-column-header.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-column-types.ts"), "utf8");
 const RAIL_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
 const IN_FLOW_COLUMN_SOURCE = readFileSync(
@@ -225,7 +226,7 @@ test("collapsed drag paints the outlined overlay chip and keeps the same button 
 		INDEX_SOURCE,
 		/const collapsedControlClassName = isRepositioning\s*\? COLLAPSED_REPOSITION_CHIP_CLASS_NAME\s*: isGutterCollapsed \? HEADER_CONTROL_IN_GUTTER : HEADER_CONTROL_ON_REVEAL/u,
 	);
-	assert.match(INDEX_SOURCE, /variant=\{isRepositioning \? "outline" : "ghost"\}/u);
+	assert.match(HEADER_SOURCE, /variant=\{isRepositioning \? "outline" : "ghost"\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /border-transparent! bg-transparent!/u);
 	assert.doesNotMatch(
 		INDEX_SOURCE,
@@ -279,7 +280,7 @@ test("gutter rest keeps the overlay and rail visually transparent", () => {
 });
 
 test("gutter rest keeps its exposed expand control pointer-enabled", () => {
-	assert.match(INDEX_SOURCE, /data-agent-session-column-expand-control=""/u);
+	assert.match(HEADER_SOURCE, /data-agent-session-column-expand-control=""/u);
 	assert.match(IN_FLOW_MENU_SOURCE, /data-agent-session-column-expand-control=""/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
