@@ -55,6 +55,12 @@ test("the focus row control is wired to that handler, not the raw setter", () =>
 	assert.doesNotMatch(PAGE_SOURCE, /onAgentFilterIdChange=\{setAgentFilterId\}/u);
 });
 
+test("Needs input scopes unlink sessions with the same focus the board uses", () => {
+	assert.match(PAGE_SOURCE, /useAgentFilterSessions\(\{/u);
+	assert.match(PAGE_SOURCE, /items: displayedUntrackedAgentSessionItems,/u);
+	assert.match(PAGE_SOURCE, /members: agentSessionMembers,/u);
+});
+
 test("the assignee filter still clears the same state, so both paths agree", () => {
 	const body = handlerBody(PAGE_SOURCE, "handleAssigneeFilterChange");
 

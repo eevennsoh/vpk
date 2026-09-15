@@ -62,7 +62,6 @@ import { SessionColumnPlacementProvider } from "./components/session-column-plac
 import {
 	collectBoardIssueKeys,
 	groupBoardUntrackedSessions,
-	selectBoardUntrackedSessions,
 } from "./lib/board-untracked-sessions";
 import {
 	locateBoardUntrackedTarget,
@@ -76,6 +75,7 @@ import type { ExperimentalJiraKanbanPageProps } from "./experimental-page-types"
 import { useBoardCreatedCardArrival } from "./hooks/use-created-card-arrival";
 import { useBoardMenuWorkItem } from "./hooks/use-board-menu-work-item";
 import { useAgentFilterDisplay } from "./hooks/use-agent-filter-display";
+import { useAgentFilterSessions } from "./hooks/use-agent-filter-sessions";
 import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
 import {
 	isExperimentalJiraListContent,
@@ -491,15 +491,14 @@ function ExperimentalJiraKanbanPageContent({
 		),
 		[agentSessionLooseWork, agentSessionMemberId, agentSessionMembers],
 	);
-	const untrackedAgentSessionItems = useMemo(
-		() => selectBoardUntrackedSessions({
-			archivedItemIds: archivedLooseWorkIds,
-			capturedItemIds: capturedLooseWorkIds,
-			detachedByCard: detachedAgentSessionsByCard,
-			sessions: agentSessionItems,
-		}),
-		[agentSessionItems, archivedLooseWorkIds, capturedLooseWorkIds, detachedAgentSessionsByCard],
-	);
+	const displayedUntrackedAgentSessionItems = useAgentFilterSessions({
+		agentFilterId,
+		archivedItemIds: archivedLooseWorkIds,
+		capturedItemIds: capturedLooseWorkIds,
+		detachedByCard: detachedAgentSessionsByCard,
+		members: agentSessionMembers,
+		sessions: agentSessionItems,
+	});
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
 			isLooseWorkResumable,
@@ -583,7 +582,7 @@ function ExperimentalJiraKanbanPageContent({
 		// fighting the column's own post-mount state.
 		collapsed: displayedAgentSessionColumnCollapsed,
 		hasScrollingEffect: true,
-		items: untrackedAgentSessionItems,
+		items: displayedUntrackedAgentSessionItems,
 		multiSelect: agentSessionMultiSelect,
 		newItemIds: newAgentSessionIds,
 		onCollapsedChange: handleAgentSessionColumnCollapsedChange,

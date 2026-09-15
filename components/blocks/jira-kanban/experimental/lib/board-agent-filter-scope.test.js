@@ -3,7 +3,10 @@ const test = require("node:test");
 
 const {
 	cardMatchesAgentFilter,
+	filterAgentSessionsByAgentFilter,
 	filterJiraKanbanColumnsByAgentFilter,
+	resolveAgentFilterViewer,
+	sessionMatchesAgentFilter,
 } = require("./board-agent-filter.ts");
 const { filterJiraKanbanColumnsByAssignee } = require("../../state.ts");
 
@@ -176,4 +179,99 @@ test("the matcher reads the same awaiting-input state the pill counts", () => {
 		false,
 	);
 	assert.equal(cardMatchesAgentFilter(card(), "needs-input"), false);
+});
+
+const VENN_VIEWER = {
+	avatarSrc: "/avatar-user/venn/venn.png",
+	id: "venn",
+	name: "Venn",
+};
+
+function session(id, overrides = {}) {
+	return {
+		agent: { brandName: "claude", id: "claude", kind: "agent", name: "Claude" },
+		host: "local",
+		id,
+		state: "complete",
+		title: `${id} title`,
+		...overrides,
+	};
+}
+
+test("Needs input keeps the viewer's waiting unlink sessions and drops the rest", () => {
+	const items = [
+		session("venn-waiting", {
+			invokedBy: { avatarSrc: VENN_VIEWER.avatarSrc, name: VENN_VIEWER.name },
+			state: "needs-input",
+		}),
+		session("venn-attention", {
+			invokedBy: { avatarSrc: VENN_VIEWER.avatarSrc, name: VENN_VIEWER.name },
+			state: "attention",
+		}),
+		session("venn-running", {
+			invokedBy: { avatarSrc: VENN_VIEWER.avatarSrc, name: VENN_VIEWER.name },
+			state: "running",
+		}),
+		session("maya-waiting", {
+			invokedBy: { avatarSrc: "/maya.png", name: "Maya Ferreira" },
+			state: "needs-input",
+		}),
+		session("unowned-waiting", { role: "owner", state: "needs-input" }),
+		session("viewer-waiting", { role: "viewer", state: "needs-input" }),
+	];
+
+	assert.deepEqual(
+		filterAgentSessionsByAgentFilter(items, "needs-input", VENN_VIEWER).map((item) => item.id),
+		["venn-waiting", "venn-attention", "unowned-waiting"],
+	);
+});
+
+test("Needs input without a viewer keeps every waiting unlink session", () => {
+	const items = [
+		session("maya-waiting", {
+			invokedBy: { name: "Maya Ferreira" },
+			state: "needs-input",
+		}),
+		session("running", { state: "running" }),
+	];
+
+	assert.deepEqual(
+		filterAgentSessionsByAgentFilter(items, "needs-input").map((item) => item.id),
+		["maya-waiting"],
+	);
+});
+
+test("clearing the Agents focus returns every unlink session", () => {
+	const items = [session("a"), session("b", { state: "needs-input" })];
+
+	assert.equal(filterAgentSessionsByAgentFilter(items, null), items);
+});
+
+test("the session matcher reads the same lifecycle the board cards use", () => {
+	assert.equal(
+		sessionMatchesAgentFilter(session("waiting", { state: "needs-input" }), "needs-input"),
+		true,
+	);
+	assert.equal(
+		sessionMatchesAgentFilter(session("running", { state: "running" }), "working"),
+		true,
+	);
+	assert.equal(
+		sessionMatchesAgentFilter(session("done", { state: "complete" }), "finished"),
+		true,
+	);
+	assert.equal(
+		sessionMatchesAgentFilter(session("waiting", { state: "needs-input" }), "working"),
+		false,
+	);
+});
+
+test("the prototype viewer resolves from the Pulse roster id", () => {
+	const viewer = resolveAgentFilterViewer([
+		{ avatarSrc: "/maya.png", id: "maya", name: "Maya Ferreira" },
+		{ avatarSrc: VENN_VIEWER.avatarSrc, id: "venn", name: "Venn" },
+	]);
+
+	assert.deepEqual(viewer, VENN_VIEWER);
+	assert.equal(resolveAgentFilterViewer([{ id: "maya", name: "Maya Ferreira" }]), null);
 });

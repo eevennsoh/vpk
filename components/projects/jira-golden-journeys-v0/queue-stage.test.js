@@ -366,5 +366,5 @@ test("ASX Queue seeds a perpetual running session with an in-progress thinking t
 	assert.match(QUEUE_SESSIONS_SOURCE, /issueKey: "RFP-104",/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /status: "running",/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /data-thinking-event/u);
-	assert.match(JIRA_SESSION_FLYOUT_DATA_SOURCE, /running: "3m ago"/u);
+	assert.match(JIRA_SESSION_FLYOUT_DATA_SOURCE, /running: toCompactRelativeTimeLabel\("3m ago"\)/u);
 });

@@ -285,6 +285,10 @@ test("details hover card uses Figma chrome without panel property rows", () => {
 	);
 	assert.match(detailsSource, /JIRA_SESSION_UPDATED_LABEL\[session\.status\]/u);
 	assert.match(
+		readRepoFile(FLYOUT_HANDLE_PATH),
+		/import \{ toCompactRelativeTimeLabel \} from "@\/lib\/elapsed-time";[\s\S]*merged: toCompactRelativeTimeLabel\("5h ago"\)/u,
+	);
+	assert.match(
 		detailsSource,
 		/session\.status === "awaiting-input" \? \(\s*<Lozenge className="shrink-0" variant="information">Needs input<\/Lozenge>/u,
 	);
