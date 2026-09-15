@@ -131,7 +131,7 @@ test("short uncaptured-work rows restore the owner byline", () => {
 	assert.match(METADATA_SOURCE, /export function AgentSessionShortMetadata/u);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.match(LIST_CARD_SOURCE, /\{metadata === undefined \? \(/u);
-	assert.match(METADATA_SOURCE, /import CloudIcon from "@atlaskit\/icon-lab\/core\/cloud";/u);
+	assert.match(METADATA_SOURCE, /import CloudIcon from "@atlaskit\/icon-lab\/core\/cloud";[\s\S]*import QuestionCircleFilledIcon[\s\S]*import StatusSuccessIcon[\s\S]*function AgentSessionShortLifecycleIcon[\s\S]*case "needs-input":[\s\S]*aria-label="Needs input"[\s\S]*text-icon-information[\s\S]*case "complete":[\s\S]*aria-label="Finished"[\s\S]*text-icon-success[\s\S]*case "running":[\s\S]*return null;[\s\S]*<AgentSessionShortLifecycleIcon state=\{item\.state\} \/>/u);
 	assert.match(METADATA_SOURCE, /import ScreenIcon from "@atlaskit\/icon\/core\/screen";/u);
 	assert.match(
 		METADATA_SOURCE,
@@ -684,9 +684,9 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 		/const lifecycleNode = lifecycle === undefined\s*\? \(stateMeta\.showLifecycle \? <LifecycleIndicator state=\{item\.state\} \/> : null\)\s*: lifecycle;/u,
 	);
 	assert.match(LIST_CARD_SOURCE, /\{hideIdentity \? null : \(/u);
-	// Long metadata no longer says "Needs input", but the trailing icon does, so
-	// the title still keeps the work name.
-	assert.match(CARD_SOURCE, /stateAwareTitle=\{!isLongDensity\}/u);
+	// Agent Session cards always keep the authored work title. Short rows carry
+	// settled lifecycle state in metadata; long rows keep their trailing control.
+	assert.match(CARD_SOURCE, /stateAwareTitle=\{false\}/u);
 	assert.match(TYPES_SOURCE, /export type AgentSessionRole = "owner" \| "viewer" \| "expired"/u);
 	assert.match(CARD_SOURCE, /const viewSession = role === "owner" \? onView : undefined/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
