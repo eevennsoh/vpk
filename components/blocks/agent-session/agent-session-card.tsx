@@ -31,8 +31,8 @@ import {
 import { cn } from "@/lib/utils";
 
 import {
-	AGENT_SESSION_ARRIVAL_OFFSET_PX,
-	AGENT_SESSION_ARRIVAL_TRANSITION,
+	AGENT_SESSION_TOP_ARRIVAL_TRANSFORM,
+	AGENT_SESSION_TOP_ARRIVAL_TRANSITION,
 } from "./agent-session-arrival-motion";
 import { approveActionLabel } from "./agent-session-approve";
 import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
@@ -138,15 +138,20 @@ function resolveAgentSessionCardMotion({
 	return {
 		animate: shouldPlayDeparture ? { opacity: 0 }
 			: shouldPlayStatusReentry
-				? { opacity: [0, 1], y: [AGENT_SESSION_ARRIVAL_OFFSET_PX, 0] }
-				: shouldPlayArrival ? { opacity: 1, y: 0 } : undefined,
+				? { opacity: [0, 1], transform: [AGENT_SESSION_TOP_ARRIVAL_TRANSFORM, "translateY(0%)"] }
+				: shouldPlayArrival ? { opacity: 1, transform: "translateY(0%)" } : undefined,
 		ariaHidden: isTransferSource || isDeparting || undefined,
 		departing: isDeparting || undefined,
-		initial: shouldPlayArrival && !isStateChanged ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false,
-		layout: shouldReduceMotion || !animateLayout || isDeparting || isStateChanged ? false : "position" as const,
-		transition: shouldPlayDeparture
+		initial: shouldPlayArrival && !isStateChanged ? { opacity: 0, transform: AGENT_SESSION_TOP_ARRIVAL_TRANSFORM } : false,
+		// Keep measuring settled rows even when filtering places them immediately.
+		layout: shouldReduceMotion || isDeparting || isStateChanged ? false : "position" as const,
+		transition: shouldReduceMotion ? { duration: 0 } : shouldPlayDeparture
 			? STATUS_DEPARTURE_TRANSITION
-			: { ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 },
+			: {
+				...AGENT_SESSION_TOP_ARRIVAL_TRANSITION,
+				delay: arrivalDelaySeconds ?? 0,
+				layout: animateLayout ? AGENT_SESSION_TOP_ARRIVAL_TRANSITION : { duration: 0 },
+			},
 		willChange: shouldPlayDeparture ? "opacity" : shouldPlayArrival ? "opacity, transform" : undefined,
 	};
 }
@@ -611,8 +616,8 @@ export function AgentSessionCard({
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
 			initial={rowMotion.initial}
-			// Standalone lists move siblings for arrivals. The in-flow column opts
-			// out so board filter changes place sessions immediately.
+			// Track positions continuously; the layout transition decides whether
+			// this update makes room for an arrival or places filtered rows instantly.
 			layout={rowMotion.layout}
 			style={{
 				...(glow ? cardGlowSurfaceStyle(agentSessionAccentColor(item)) : null),
