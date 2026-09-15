@@ -47,6 +47,7 @@ export function JiraDropzone({
 	label,
 	measuredRef,
 	openMinHeight,
+	proximityRef,
 	renderResting,
 	title,
 }: Readonly<{
@@ -57,13 +58,15 @@ export function JiraDropzone({
 	measuredRef?: RefObject<HTMLDivElement | null>;
 	/** Available space used only in proximity or while receiving a drop. */
 	openMinHeight?: number;
+	/** Stable detection footprint, independent of the visible well's size. */
+	proximityRef?: RefObject<HTMLDivElement | null>;
 	renderResting: () => ReactElement;
 	title: string;
 }>): ReactElement {
 	const localRef = useRef<HTMLDivElement>(null);
 	const targetRef = measuredRef ?? localRef;
 	const { channel, onLanded, profile, receiving } = useJiraDropzoneChannel(title);
-	const magnet = useMagneticProximity(targetRef, {
+	const magnet = useMagneticProximity(proximityRef ?? targetRef, {
 		hoverArea: JIRA_DROPZONE_HOVER_AREA_PX,
 	});
 	const [rawProximity, setRawProximity] = useState<MagneticPointerRelation>("outside");

@@ -35,7 +35,8 @@ export function BoardColumnCreateAction({
 	title: string;
 }>) {
 	const targetRef = useRef<HTMLDivElement>(null);
-	const isExclusiveWinner = useExclusiveCreateWellProximity(title, targetRef);
+	const proximityRef = useRef<HTMLDivElement>(null);
+	const isExclusiveWinner = useExclusiveCreateWellProximity(title, proximityRef);
 	const drag: JiraDropzoneDragState = resolveBoardCreateDropzoneDrag(
 		sessionDragTransaction,
 		title,
@@ -48,6 +49,16 @@ export function BoardColumnCreateAction({
 		<div className="relative h-8 w-full">
 			<div ref={anchorRef} className={cn("absolute inset-x-0 z-10", placement === "top" ? "top-1" : "bottom-1")}>
 				{dropZoneLabel ? (
+					// Detect the future well footprint before its visible chrome grows.
+					// This stays anchored when the magnetic surface leans or expands.
+					<div
+						aria-hidden="true"
+						className={cn("pointer-events-none absolute inset-x-0 h-6", placement === "top" ? "top-0" : "bottom-0")}
+						ref={proximityRef}
+						style={{ minHeight: drag !== "idle" ? minimumHeight : undefined }}
+					/>
+				) : null}
+				{dropZoneLabel ? (
 					<JiraDropzone
 						ants={ants}
 						drag={drag}
@@ -55,6 +66,7 @@ export function BoardColumnCreateAction({
 						label={dropZoneLabel}
 						measuredRef={targetRef}
 						openMinHeight={minimumHeight}
+						proximityRef={proximityRef}
 						renderResting={() => <BoardColumnAddButton reveal={reveal} title={title} />}
 						title={title}
 					/>
