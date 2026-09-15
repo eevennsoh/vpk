@@ -14,6 +14,19 @@ export function formatElapsedTime(totalSeconds: number): string {
 	return parts.join(" ");
 }
 
+const RELATIVE_AGO_SUFFIX = / ago$/u;
+/** Bare `5h` only — leaves `5hr` and `5mo` alone so minutes stay `m`. */
+const BARE_HOUR_UNIT = /(?<![A-Za-z])(\d+)h(?![A-Za-z])/gu;
+
+/**
+ * Display form for authored or formatted relative stamps: drop a trailing
+ * `" ago"` and spell hours as `hr` so `5hr` cannot be read as months next to `5m`.
+ * Named periods (`Just now`, `Yesterday`, `Last week`) pass through.
+ */
+export function toCompactRelativeTimeLabel(label: string): string {
+	return label.replace(RELATIVE_AGO_SUFFIX, "").replace(BARE_HOUR_UNIT, "$1hr");
+}
+
 /** Compact relative stamp: `"Just now"`, `"32m ago"`, `"1hr ago"`, `"Yesterday"`, `"3d ago"`. */
 export function formatRelativeTime(totalSecondsAgo: number): string {
 	const normalizedSeconds = Number.isFinite(totalSecondsAgo)

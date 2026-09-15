@@ -5,6 +5,7 @@ import {
 } from "@/components/blocks/smart-link";
 import type { LozengeProps } from "@/components/ui/lozenge";
 import { createHoverCardHandle } from "@/components/ui/hover-card-handle";
+import { toCompactRelativeTimeLabel } from "@/lib/elapsed-time";
 import type {
 	JiraSidebarSessionChecks,
 	JiraSidebarSessionItem,
@@ -17,11 +18,11 @@ export function createJiraSessionFlyoutHandle() {
 
 /** Stable relative "updated" label per session state (demo data only). */
 export const JIRA_SESSION_UPDATED_LABEL: Record<JiraSidebarSessionStatus, string> = {
-	"awaiting-input": "2d ago",
-	running: "3m ago",
-	"pr-open": "1h ago",
-	merged: "5h ago",
-	stopped: "1d ago",
+	"awaiting-input": toCompactRelativeTimeLabel("2d ago"),
+	running: toCompactRelativeTimeLabel("3m ago"),
+	"pr-open": toCompactRelativeTimeLabel("1h ago"),
+	merged: toCompactRelativeTimeLabel("5h ago"),
+	stopped: toCompactRelativeTimeLabel("1d ago"),
 };
 
 export type JiraSessionFlyoutState = "needs-input" | "working" | "finished";
