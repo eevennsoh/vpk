@@ -175,6 +175,7 @@ function resolveAgentSessionPlaneClassName(
 }
 
 function renderAgentSessionColumnFrame({
+	allowCollapsedRailOverflow,
 	body,
 	bodyHidden,
 	borderColor,
@@ -186,6 +187,7 @@ function renderAgentSessionColumnFrame({
 	planeClassName,
 	shadowTransition,
 }: Readonly<{
+	allowCollapsedRailOverflow: boolean;
 	body: ReactNode;
 	bodyHidden: boolean;
 	borderColor: string;
@@ -237,6 +239,7 @@ function renderAgentSessionColumnFrame({
 						aria-hidden={bodyHidden || undefined}
 						className={cn(
 							AGENT_SESSION_ENCLOSED_BODY,
+							allowCollapsedRailOverflow ? "overflow-visible" : null,
 							bodyHidden ? "invisible" : null,
 						)}
 						inert={bodyHidden || undefined}
@@ -385,6 +388,7 @@ export function AgentSessionColumn({
 	collapsedPresentation = "column",
 	collapsedMenu,
 	collapsedRailHitSlopPx = 0,
+	collapsedExpandLeadingHitSlopPx = 0,
 	count,
 	defaultCollapsed = false,
 	emptyLabel = "No sessions to unlink",
@@ -724,19 +728,39 @@ export function AgentSessionColumn({
 							<Button
 								aria-label={`Expand ${title} column`}
 								aria-description={headerDragHandle ? "Drag horizontally to move the column, or use Alt with the arrow keys." : undefined}
-								className={collapsedControlClassName}
+								className={cn(
+									collapsedControlClassName,
+									!isRepositioning
+										? "bg-transparent hover:bg-transparent active:bg-transparent aria-pressed:bg-transparent aria-expanded:bg-transparent focus-visible:border-transparent focus-visible:ring-0"
+										: null,
+								)}
 								data-agent-session-column-expand-control=""
 								onClick={handleToggleCollapsed}
 								size="icon-compact"
-								style={{ width: "100%" }}
+								style={!isRepositioning && collapsedExpandLeadingHitSlopPx > 0
+									? {
+										marginInlineStart: -collapsedExpandLeadingHitSlopPx,
+										paddingInlineStart: collapsedExpandLeadingHitSlopPx,
+										width: `calc(100% + ${collapsedExpandLeadingHitSlopPx}px)`,
+									}
+									: { width: "100%" }}
 								type="button"
 								variant={isRepositioning ? "outline" : "ghost"}
 							/>
 						}
 					>
+					{isRepositioning ? (
 						<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
-					</TooltipTrigger>
-					<TooltipContent>Expand</TooltipContent>
+					) : (
+						<span
+							className="pointer-events-none flex size-6 shrink-0 items-center justify-center rounded-md border border-transparent transition-colors duration-normal ease-out-practical group-hover/button:bg-bg-neutral-subtle-hovered group-active/button:bg-bg-neutral-subtle-pressed group-focus-visible/button:border-ring group-focus-visible/button:ring-3 group-focus-visible/button:ring-ring/50 motion-reduce:transition-none"
+							data-agent-session-column-expand-visual=""
+						>
+							<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
+						</span>
+					)}
+				</TooltipTrigger>
+				<TooltipContent alignOffset={collapsedExpandLeadingHitSlopPx / 2}>Expand</TooltipContent>
 				</Tooltip>
 			</TooltipProvider>
 		)
@@ -937,6 +961,7 @@ export function AgentSessionColumn({
 			}}
 		>
 			{renderAgentSessionColumnFrame({
+				allowCollapsedRailOverflow: collapsed && collapsedHitSlopPx > 0,
 				body: (
 					<CardGlowSurfaceContext value={glowPlaneEnabled ? registerGlowSurface : undefined}>
 						{body}

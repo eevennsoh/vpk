@@ -24,8 +24,9 @@ test("the enclosed body clip carries the well radius, so the fade cannot wash th
 	);
 	assert.match(
 		INDEX_SOURCE,
-		/className=\{cn\(\s*\n\s*AGENT_SESSION_ENCLOSED_BODY,\s*\n\s*bodyHidden \? "invisible" : null,\s*\n\s*\)\}[\s\S]{0,80}\{body\}/u,
+		/className=\{cn\(\s*\n\s*AGENT_SESSION_ENCLOSED_BODY,\s*\n\s*allowCollapsedRailOverflow \? "overflow-visible" : null,\s*\n\s*bodyHidden \? "invisible" : null,\s*\n\s*\)\}[\s\S]{0,80}\{body\}/u,
 	);
+	assert.match(INDEX_SOURCE, /allowCollapsedRailOverflow: collapsed && collapsedHitSlopPx > 0/u);
 	// The old rectangular clip must not come back alongside the rounded one.
 	assert.doesNotMatch(
 		INDEX_SOURCE,

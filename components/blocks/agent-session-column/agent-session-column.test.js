@@ -375,7 +375,7 @@ test("column resize buttons swap icons without using selected button state", () 
 	assert.match(HEADER_SOURCE, /<TooltipContent>Collapse<\/TooltipContent>/u);
 	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
 	assert.match(INDEX_SOURCE, /<GrowHorizontalIcon/u);
-	assert.match(INDEX_SOURCE, /<TooltipContent>Expand<\/TooltipContent>/u);
+	assert.match(INDEX_SOURCE, /<TooltipContent[^>]*>Expand<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Collapse column<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
@@ -831,12 +831,14 @@ test("the archived view keeps Archived in the header and a back footer", () => {
 });
 
 test("the collapsed rail keeps a focus-ring gutter on its scrollport", () => {
-	// Internal padding only: horizontal padding keeps the dots centred, while
-	// vertical padding preserves the ring at the capped scroll boundary.
+	// Vertical padding preserves the ring at the capped scroll boundary.
+	// The widened rail uses its extra width for horizontal clearance, so its
+	// buttons can reach both edges without padding intercepting the pointer.
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/overflow-y-auto overscroll-contain px-1 py-0\.5/u,
+		/overflow-y-auto overscroll-contain py-0\.5/u,
 	);
+	assert.match(RAIL_COLUMN_SOURCE, /hitSlopPx > 0 \? "px-0" : "px-1"/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /-mx-1/u);
 });
 
