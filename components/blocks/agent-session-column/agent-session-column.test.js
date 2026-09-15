@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+const COUNT_SWAP_SOURCE = readFileSync(join(__dirname, "agent-session-column-count-swap.tsx"), "utf8");
 const HOOK_SOURCE = readFileSync(join(__dirname, "use-agent-session-column-hidden.ts"), "utf8");
 const FOOTER_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-hidden-footer.tsx"),
@@ -683,10 +684,19 @@ test("the collapsed header count rolls through the shared Text Morphing slots ef
 	assert.match(INDEX_SOURCE, /initial: false/u);
 	// The renderer sets its own `aria-label`; the wrapper's `aria-hidden` has to
 	// suppress it so the sibling `sr-only` stays the single spoken source.
-	assert.match(INDEX_SOURCE, /aria-hidden="true"[\s\S]{0,400}?<TextMorphing/u);
+	assert.match(INDEX_SOURCE, /aria-hidden="true"[\s\S]{0,1500}?<TextMorphing/u);
+	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-number=""/u);
+	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-local-icon=""/u);
+	assert.match(COUNT_SWAP_SOURCE, /<MonitorIcon label="" size="small" \/>/u);
 	// `text` must be a string — `sessionCount` is a number.
 	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /TextMorphing/u);
+});
+
+test("the settled monitor identifies only a nonempty local session pool", () => {
+	assert.match(INDEX_SOURCE, /displayedItems\.length > 0 && viewItems\.every\(isLocalAgentListItem\)/u);
+	assert.match(INDEX_SOURCE, /const showRisingCount = !allLocalSessions \|\| risingCount;/u);
+	assert.match(INDEX_SOURCE, /allLocalSessions \? "local " : ""/u);
 });
 
 test("the column keeps the selected session id across collapse remounts", () => {

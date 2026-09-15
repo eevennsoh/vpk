@@ -349,10 +349,10 @@ test("every session pull request maps to a complete Smart Link payload", async (
 		assert.equal(
 			details.pullRequestUpdatedLabel,
 			pullRequest.status === "merged"
-				? "5h ago"
+				? "5h"
 				: pullRequest.status === "failed"
-					? "2h ago"
-					: "1h ago",
+					? "2h"
+					: "1h",
 			where,
 		);
 		assert.equal(details.files, pullRequest.files, where);

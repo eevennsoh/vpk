@@ -20,8 +20,8 @@ export function createJiraSessionFlyoutHandle() {
 export const JIRA_SESSION_UPDATED_LABEL: Record<JiraSidebarSessionStatus, string> = {
 	"awaiting-input": toCompactRelativeTimeLabel("2d ago"),
 	running: toCompactRelativeTimeLabel("3m ago"),
-	"pr-open": toCompactRelativeTimeLabel("1h ago"),
-	merged: toCompactRelativeTimeLabel("5h ago"),
+	"pr-open": toCompactRelativeTimeLabel("1h"),
+	merged: toCompactRelativeTimeLabel("5h"),
 	stopped: toCompactRelativeTimeLabel("1d ago"),
 };
 
