@@ -8,6 +8,7 @@ The **decision layer**: which `--duration-*` / `--ease-*` token to pick for a gi
 
 - Token table + Tailwind aliases: `token-priority.md`
 - Animating Base UI surfaces (popups, menus, dialogs) on exit: `motion-base-ui.md`
+- Reference-video UI recreation and sequence proof: [Recreate reference motion](../docs/playbooks/recreate-reference-motion.md)
 
 ## Should-I-animate gate
 

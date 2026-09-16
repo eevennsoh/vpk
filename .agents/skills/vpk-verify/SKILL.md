@@ -7,7 +7,7 @@ description: Drive the VPK web app (catalog, docs, theme, Studio shell) in a rea
 
 VPK (Venn Prototype Kit) is a Next.js 16 catalog and prototype host with an Express `/api/*` backend. A user browses component and project surfaces in the browser. This skill is the scripted way to launch this worktree's app, drive it as a user would, and keep evidence.
 
-Read [features/README.md](features/README.md) before a run. Drive from the matching feature file. Other surfaces exist (Express APIs, Rovo Serve chat, Playwright specs under `tests/**/*.spec.ts`); they are not the primary user path. Do not send a Studio/Rovo chat message unless the feature file says to and `control-vpk doctor --require-backend` passes.
+Read [features/README.md](features/README.md) before a run. For component, block or project debugging, resolve the exact object route before opening the browser and start directly there on this worktree's origin. Use the supplied path/query/hash or current route/catalog metadata, not a guessed slug or a homepage detour. Drive from the matching feature file; a missing recipe does not require browsing home. Other surfaces exist (Express APIs, Rovo Serve chat, Playwright specs under `tests/**/*.spec.ts`); they are not the primary user path. Do not send a Studio/Rovo chat message unless the feature file says to and `control-vpk doctor --require-backend` passes.
 
 ## Launch
 
@@ -46,7 +46,7 @@ Two worktrees can run side by side (deterministic ports, unique Portless origins
 
 ## Drive
 
-Harness: `agent-browser` via `control-vpk browser`, which injects a worktree-scoped session (`agent-browser session id --scope worktree --prefix vpk-verify`). Load `agent-browser skills get core` once per session if you are unsure of flags. After a Next.js code edit, also follow `next-dev-loop` (`/_next/mcp` plus this same browser).
+Harness: `agent-browser` via `control-vpk open-target` for the first object navigation, then `control-vpk browser` for interactions. Both inject a worktree-scoped session (`agent-browser session id --scope worktree --prefix vpk-verify`). Load `agent-browser skills get core` once per session if you are unsure of flags. After a Next.js code edit, also follow `next-dev-loop` (`/_next/mcp` plus this same browser).
 
 Every browser subprocess is bounded to 35 seconds by default. Set
 `VPK_VERIFY_BROWSER_TIMEOUT_MS` to an integer from 1000 through 300000 only
@@ -60,8 +60,10 @@ revalidate its route marker before retrying.
 SESSION="$(.agents/skills/vpk-verify/scripts/control-vpk session)"
 export AGENT_BROWSER_SESSION="$SESSION"
 export AGENT_BROWSER_RESTORE="$SESSION"
-.agents/skills/vpk-verify/scripts/control-vpk browser open --headed "$ORIGIN/"
+.agents/skills/vpk-verify/scripts/control-vpk open-target /jira-team-eu26 --headed
 ```
+
+Replace the example route with the requested object route. `open-target` validates an explicit mapped repository path, preserves query/hash, and derives this worktree's origin. It rejects root/category landing pages and unmapped paths before browser launch. Confirm the resulting URL and route marker before debugging. When a runtime check requires other browser launch flags, use `control-vpk browser open` with the full target URL and those flags. Raw home/category opens are for explicitly requested catalog or entry-path verification; a direct URL does not prove a catalog title link works.
 
 Prefer ARIA roles, accessible names, and `id` / `href` handles from the feature map. Do not use click coordinates. `find` requires an action (`click`, `fill`, `check`, `hover`, `text`). Presence checks use `find role … text --name`. A bare `find role … --name` fails as `assertion_failure`. Stable handles:
 
@@ -100,10 +102,10 @@ to Playwright or curl. Report the classification and evidence boundary.
 Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump.
 
 ```bash
-EVIDENCE="$(.agents/skills/vpk-verify/scripts/control-vpk evidence-dir)/browse-catalog"
+EVIDENCE="$(.agents/skills/vpk-verify/scripts/control-vpk evidence-dir)/jira-team-eu26"
 mkdir -p "$EVIDENCE"
-.agents/skills/vpk-verify/scripts/control-vpk browser snapshot -i --compact --depth 8 > "$EVIDENCE/home.aria.txt"
-.agents/skills/vpk-verify/scripts/control-vpk browser screenshot "$EVIDENCE/home.png"
+.agents/skills/vpk-verify/scripts/control-vpk browser snapshot -i --compact --depth 8 > "$EVIDENCE/state.aria.txt"
+.agents/skills/vpk-verify/scripts/control-vpk browser screenshot "$EVIDENCE/state.png"
 .agents/skills/vpk-verify/scripts/control-vpk browser get url > "$EVIDENCE/url.txt"
 .agents/skills/vpk-verify/scripts/control-vpk browser eval --stdin <<'JS'
 document.documentElement.getAttribute("data-color-mode")
@@ -140,7 +142,7 @@ All invocations are from the worktree root. The script is executable.
 .agents/skills/vpk-verify/scripts/control-vpk url
 .agents/skills/vpk-verify/scripts/control-vpk session
 .agents/skills/vpk-verify/scripts/control-vpk evidence-dir
-.agents/skills/vpk-verify/scripts/control-vpk browser open "$ORIGIN/ui"
+.agents/skills/vpk-verify/scripts/control-vpk open-target /components/ui/accordion
 .agents/skills/vpk-verify/scripts/control-vpk cleanup
 pnpm run verify:vpk-feature-map
 ```

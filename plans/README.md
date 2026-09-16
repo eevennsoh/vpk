@@ -2,9 +2,9 @@
 
 Prepared 12 September 2026 for the `/jira-team-eu26` route.
 
-**Implementation update:** the fixes are now implemented and verified in this worktree. See [measured results and validation](IMPLEMENTATION.md). List switching median improved from 188 to 136 ms; Board from 152 to 128 ms in the controlled development comparison. Production/field measurements remain pending.
+**Implementation update:** the fixes were implemented, verified and delivered through [PR #1730](https://github.com/eevennsoh/vpk/pull/1730) on 13 September 2026 (Australia/Sydney). See [measured results and validation](IMPLEMENTATION.md). List switching median improved from 188 to 136 ms; Board from 152 to 128 ms in the controlled development comparison. Production/field measurements remain pending.
 
-Make Board, List, agent sessions and Rovo feel immediate by reducing the work on their interaction paths. Start with reproducible measurements, then make one measured change at a time. This is a plan, not an implementation or a claim of achieved speedups.
+The original plans below aimed to make Board, List, agent sessions and Rovo feel immediate by reducing the work on their interaction paths. They preserve the audit's proposed sequence and acceptance criteria; the subsequent implementation, measurements and delivery are recorded in IMPLEMENTATION.md.
 
 ## Scope and evidence
 

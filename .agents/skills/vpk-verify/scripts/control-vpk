@@ -53,6 +53,7 @@ if (require.main === module && process.env.VPK_VERIFY_PROXY_BYPASS_READY !== "1"
 const { loadPortlessRoutes, findPortlessUrl } = require(
 	path.join(REPO_ROOT, "scripts/lib/portless-routes.js"),
 );
+const { resolvableRoutes, dynamicRouteMatchers } = require("./verify-feature-map.js");
 
 function usage(exitCode = 1) {
 	process.stderr.write(`Usage: control-vpk <command>
@@ -67,6 +68,8 @@ Commands:
   session             Print the worktree-scoped agent-browser session id.
   evidence-dir        Print the proof artifact directory.
   browser [--] <args> Run agent-browser with the vpk-verify session injected.
+  open-target <route> [--headed]
+                      First open an exact mapped object route on this worktree.
 
 `);
 	process.exit(exitCode);
@@ -231,6 +234,33 @@ function classifyAgentBrowserFailure(failure) {
 
 function isBrowserSessionStarter(forwarded) {
 	return forwarded[0] === "open" || forwarded[0] === "connect";
+}
+
+function targetBrowserArguments(route, {
+	headed = false,
+	origin = resolveOrigin(readTrimmed(FRONTEND_PORT_FILE)),
+	repoMap = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, ".agents/knowledge/repo-map.json"), "utf8")),
+} = {}) {
+	if (typeof route !== "string" || !route.startsWith("/") || route.startsWith("//")) {
+		throw new Error("Target route must be an explicit repository path, not an external URL.");
+	}
+	const parsed = new URL(route, "https://target.invalid");
+	if (parsed.pathname !== route.split(/[?#]/u)[0]) {
+		throw new Error("Target route must not contain traversal or normalized path segments.");
+	}
+	const landingRoutes = new Set([
+		"/", "/components",
+		...(repoMap.components?.categories ?? []).map((entry) => `/${entry.category}`),
+	]);
+	if (landingRoutes.has(parsed.pathname)) {
+		throw new Error("Object target must name a component or project, not a catalog landing page.");
+	}
+	if (!resolvableRoutes(repoMap).has(parsed.pathname)
+		&& !dynamicRouteMatchers(repoMap).some((pattern) => pattern.test(parsed.pathname))) {
+		throw new Error(`Unknown target route: ${parsed.pathname}. Inspect the generated repo map before opening an object.`);
+	}
+	if (!origin) throw new Error("No worktree origin. Run `control-vpk doctor` and repair this worktree's stack.");
+	return ["open", ...(headed ? ["--headed"] : []), new URL(route, origin).href];
 }
 
 function inspectBrowserSession(runCommand, runOptions, session) {
@@ -545,8 +575,13 @@ async function main() {
 		return;
 	}
 
-	if (command === "browser") {
-		const forwarded = argv.slice(1).filter((arg) => arg !== "--");
+	if (command === "browser" || command === "open-target") {
+		if (command === "open-target" && (argv.length < 2 || argv.slice(2).some((arg) => arg !== "--headed"))) {
+			throw new Error("Usage: control-vpk open-target <route> [--headed]");
+		}
+		const forwarded = command === "open-target"
+			? targetBrowserArguments(argv[1], { headed: argv.includes("--headed") })
+			: argv.slice(1).filter((arg) => arg !== "--");
 		if (forwarded.length === 0) {
 			process.stderr.write("control-vpk browser requires agent-browser arguments.\n");
 			process.exit(1);
@@ -594,5 +629,6 @@ module.exports = {
 	parseLaunchReadyTimeoutMs,
 	resolveAgentBrowserBin,
 	runAgentBrowser,
+	targetBrowserArguments,
 	waitForDoctorReady,
 };

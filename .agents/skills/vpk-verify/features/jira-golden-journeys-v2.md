@@ -22,7 +22,7 @@ Preconditions:
 - `control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `control-vpk url`.
 - Set `EVIDENCE="$(control-vpk evidence-dir)/jira-golden-journeys-v2"` and create it before capture.
 
-- **Open and identify.** Start the scoped browser with `control-vpk browser open --headed "$ORIGIN/"`, run `control-vpk browser goto "$ORIGIN/jira-golden-journeys-v2"`, and wait for text `Jira Golden Journeys v2` before taking an interactive snapshot. Find the chapter control and region `Add guest checkout to the storefront` by role and name.
+- **Open and identify.** Start directly with `control-vpk open-target /jira-golden-journeys-v2 --headed` and wait for text `Jira Golden Journeys v2` before taking an interactive snapshot. Find the chapter control and region `Add guest checkout to the storefront` by role and name.
 - **Prove keyboard chapters.** Focus `Intake`, press Tab, and confirm focus reaches `Plan`; press Enter and confirm Plan is pressed. This proves chapter focus order and activation without pointer coordinates.
 - **Prove Details and Activity.** Run `control-vpk browser find role button click --name Activity`, then snapshot and confirm activity actions are present. Click `Details`, snapshot again, and confirm the `Work item details` region. Reopen Activity for the next step. Do not use a text wait as the proof; browser text waits can miss content that the accessibility snapshot exposes.
 - **Prove guided PR detail.** Choose `Review`. The in-app region `Pull request #1847: Implement guest checkout without account creation` becomes visible. Capture it; do not follow an external GitHub link as substitute proof.
