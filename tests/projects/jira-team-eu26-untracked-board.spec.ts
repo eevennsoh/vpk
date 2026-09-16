@@ -44,9 +44,11 @@ async function openCollapsedBoard(page: Page): Promise<void> {
 	await expect(page.getByRole("button", { name: "Unlink sessions column options" })).toBeVisible();
 }
 
-test("the session column is labelled Unlink sessions", async ({ page }) => {
-	await openCollapsedBoard(page);
+test("the session column keeps its action name and shows the unlinked header label", async ({ page }) => {
+	await openBoard(page);
 	await expect(page.getByLabel(/^Unlink sessions, \d+ sessions$/u)).toBeVisible();
+	await expect(page.locator("[data-agent-session-column-header]")
+		.getByText("Unlinked agent sessions", { exact: true })).toBeVisible();
 	await expect(page.getByText("Unattached sessions", { exact: true })).toHaveCount(0);
 });
 
