@@ -92,6 +92,26 @@ async function openBoard(page: Page): Promise<void> {
 	await expect(session).toBeVisible();
 }
 
+test("untracked card hover keeps its border inset and aligns its trailing slot with the header", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openBoard(page);
+	const column = page.locator("[data-agent-session-column]");
+	const row = column.locator('[data-variant="uncaptured-work"]').first();
+	await row.hover();
+	const geometry = await column.evaluate((element) => {
+		const article = element.querySelector<HTMLElement>('[data-variant="uncaptured-work"]')!;
+		const menu = article.querySelector<HTMLElement>('[aria-label^="More actions for"]')!;
+		const collapse = element.querySelector<HTMLElement>('[aria-label="Collapse Unlink sessions column"]')!;
+		return {
+			hoverGap: element.getBoundingClientRect().right - article.getBoundingClientRect().right,
+			slotOffset: menu.getBoundingClientRect().x - collapse.getBoundingClientRect().x,
+		};
+	});
+	expect(geometry.hoverGap).toBeGreaterThanOrEqual(4);
+	expect(Math.abs(geometry.slotOffset)).toBeLessThanOrEqual(1);
+});
+
 async function openCollapsedBoard(page: Page): Promise<void> {
 	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({

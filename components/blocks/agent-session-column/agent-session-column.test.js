@@ -111,13 +111,14 @@ test("the session list sits flush in the plane with no gutter wrapper", () => {
 	// The old `-m-1 p-1` scrollport painted a 4px gap around the cards and
 	// clipped the scrollbar against the plane's radius. The list is the
 	// scrollport now; the plane stays unpadded so edge fades span it. The
-	// The 4px leading inset lives on the `<ul>` via `listClassName`, not a
-	// column wrapper; the trailing slot stays aligned with the header action.
+	// 4px side inset lives on the `<ul>` via `listClassName`, not a
+	// column wrapper. Only untracked articles tighten their end padding so
+	// the hover fill keeps that inset while their actions align to the header.
 	assert.match(INDEX_SOURCE, /min-h-0 min-w-0 flex-1 overflow-y-auto/u);
 	assert.doesNotMatch(INDEX_SOURCE, /-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1/u);
 	assert.match(INDEX_SOURCE, /overflow-y-auto has-\[:focus-visible\]:overflow-visible/u);
 	assert.doesNotMatch(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*overflow-hidden/u);
-	assert.match(INDEX_SOURCE, /const AGENT_SESSION_LIST_SPACING = "gap-1 py-1 ps-1"/u);
+	assert.match(INDEX_SOURCE, /const AGENT_SESSION_LIST_SPACING = "gap-1 p-1 \[&_\[data-variant=uncaptured-work\]\]:pe-2"/u);
 	assert.match(
 		INDEX_SOURCE,
 		/className=\{cn\(\s*headerSurface === "column" \? AGENT_SESSION_LIST_SPACING : null,\s*listClassName,\s*\)\}/u,
