@@ -20,7 +20,7 @@ export const PEEL_DETAIL: ComponentDetail = {
 				{ name: "captureChildren", type: "ReactNode", description: "Optional stable version of the preview to capture while its visible copy morphs." },
 				{ name: "active", type: "boolean", required: true, description: "Starts the peel after the preview's existing entrance morph. False or reduced motion shows the native DOM preview." },
 				{ name: "contentKey", type: "string", required: true, description: "Stable object identity; changing it starts a fresh capture and fold." },
-				{ name: "flashColor", type: "string", description: "Optional avatar accent as a hex, rgb color or CSS variable. A broad flash sweeps through the card's face over 1.8 seconds." },
+				{ name: "flashColor", type: "string", description: "Optional avatar accent as a hex, rgb color or CSS variable. A broad flash sweeps through the card's face over 1 second." },
 				{ name: "pointerX", type: "MotionValue<number>", required: true, description: "Viewport-space drag follower x, sampled once per frame to drive the paper flex." },
 				{ name: "pointerY", type: "MotionValue<number>", required: true, description: "Viewport-space drag follower y." },
 				{ name: "tuning", type: "Partial<PeelTuning>", description: "Optional curl, ripple and billow overrides. Defaults to a gentle wave suitable for a compact card." },
