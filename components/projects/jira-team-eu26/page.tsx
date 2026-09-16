@@ -375,7 +375,7 @@ function JiraTeamEu26App(): React.ReactElement {
 				chatContextBar={chatContextBar}
 				chatPanelFlush
 				sidebarChatMount="on-first-open"
-				defaultSidebarOpen={true}
+				defaultSidebarOpen={false}
 				hideFloatingRovo
 				product="jira"
 				settingsDesignVariantIds={JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
