@@ -358,8 +358,8 @@ test("the Agent Session surface gains overlay elevation only after Kanban underl
 		AGENT_SESSION_COLUMN_SOURCE,
 		/elevatePlane \? AGENT_SESSION_UNDERLAP_DEPTH_SHADOW : "none"/u,
 	);
-	assert.match(AGENT_SESSION_COLUMN_SOURCE, /bg-surface-overlay duration-normal ease-out-practical/u);
-	assert.match(AGENT_SESSION_COLUMN_SOURCE, /transition-\[background-color\] motion-reduce:transition-none/u);
+	assert.match(AGENT_SESSION_COLUMN_SOURCE, /elevatePlane \? "bg-surface-overlay" : null/u);
+	assert.doesNotMatch(AGENT_SESSION_COLUMN_SOURCE, /transition-\[background-color\]|transition-\[color\]/u);
 	assert.match(
 		AGENT_SESSION_COLUMN_SOURCE,
 		/AGENT_SESSION_UNDERLAP_DEPTH_SHADOW =\s*"0px 8px 12px light-dark\(#1E1F2126, #0104045C\)"/u,

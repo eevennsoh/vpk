@@ -362,6 +362,14 @@ test("the expanded session plane follows overlay elevation as board columns unde
 		return [surface, overlay];
 	});
 	expect(surfaceColor).not.toBe(overlayColor);
+	expect(await plane.evaluate((element) => getComputedStyle(element).transitionProperty))
+		.not.toContain("background-color");
+	expect(await plane.evaluate((element) => Number.parseFloat(getComputedStyle(element).transitionDuration)))
+		.toBeLessThan(0.001);
+	expect(await fade.evaluate((element) => getComputedStyle(element).transitionProperty))
+		.not.toContain("color");
+	expect(await fade.evaluate((element) => Number.parseFloat(getComputedStyle(element).transitionDuration)))
+		.toBeLessThan(0.001);
 	await expect(plane).toHaveCSS("background-color", surfaceColor);
 	await board.evaluate((element) => { element.scrollLeft = 120; });
 	await expect(plane).toHaveCSS("background-color", overlayColor);

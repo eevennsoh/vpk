@@ -682,13 +682,11 @@ export function AgentSessionColumn({
 	// Underlap elevates the well into the container; the same band would hang
 	// the trigger off that container, so the hit area shrinks to the well.
 	const collapsedHitSlopPx = wearEnclosedWell && elevatePlane ? 0 : collapsedRailHitSlopPx;
+	// Theme colors snap with the board; underlap still animates its shadow and footprint.
 	const planeClassName = cn(
 		resolveAgentSessionPlaneClassName(layout, collapsed, isGutterCollapsed),
 		isGutterCollapsed ? "bg-transparent" : null,
-		"transition-[background-color] motion-reduce:transition-none",
-		elevatePlane
-			? "bg-surface-overlay duration-normal ease-out-practical"
-			: "duration-fast ease-in",
+		elevatePlane ? "bg-surface-overlay" : null,
 		paintWellStroke ? "border-border-disabled" : null,
 		replaceWellBorderWithInset ? "border-0 p-px" : null,
 		collapsed && isRepositioning && !wearEnclosedWell ? "invisible" : null,
@@ -864,10 +862,7 @@ export function AgentSessionColumn({
 				{showTopScrollMask || showBottomScrollMask ? (
 					<div
 						aria-hidden="true"
-						className={cn(
-							"pointer-events-none absolute inset-0 z-10 transition-[color] motion-reduce:transition-none",
-							elevatePlane ? "duration-normal ease-out-practical" : "duration-fast ease-in",
-						)}
+						className="pointer-events-none absolute inset-0 z-10"
 						style={{ color: elevatePlane ? "var(--color-surface-overlay)" : AGENT_SESSION_PLANE_FADE_COLOR }}
 					>
 						{showTopScrollMask ? (
