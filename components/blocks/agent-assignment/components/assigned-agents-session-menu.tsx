@@ -18,6 +18,7 @@ export function AssignedAgentsSessionMenu({
 	onDeleteSession,
 	onMoreMenuOpenChange,
 	onRenameSession,
+	onSelectAgent,
 	onToggleVisibility,
 	rows,
 }: Readonly<{
@@ -26,6 +27,7 @@ export function AssignedAgentsSessionMenu({
 	onDeleteSession?: (item: AgentSessionItem) => void;
 	onMoreMenuOpenChange?: (open: boolean) => void;
 	onRenameSession?: (item: AgentSessionItem) => void;
+	onSelectAgent: (agent: AgentAssignmentAgent) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	rows: readonly AgentAssignmentAgent[];
 }>) {
@@ -56,6 +58,7 @@ export function AssignedAgentsSessionMenu({
 							onMoreMenuOpenChange={onMoreMenuOpenChange}
 							onRenameSession={onRenameSession}
 							onToggleVisibility={onToggleVisibility}
+							onView={() => onSelectAgent(row)}
 							padding="compact"
 							showLifecycleLabel={false}
 						/>
