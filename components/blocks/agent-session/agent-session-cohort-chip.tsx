@@ -16,17 +16,21 @@ export function AgentSessionCohortChip({
 	cohort,
 	elevated = false,
 	isFusionSource = false,
+	animateIdentity,
 }: Readonly<{
 	cohort: SessionCohort<AgentSessionItem>;
 	elevated?: boolean;
 	/** Only the travelling copy inside a drag overlay is measured by the goo. */
 	isFusionSource?: boolean;
+	/** Prepared previews draw the identity immediately instead of replaying its entrance. */
+	animateIdentity?: boolean;
 }>) {
 	return (
 		<AgentSessionDragChip
 			cohort={cohort}
 			elevated={elevated}
 			isFusionSource={isFusionSource}
+			animateIdentity={animateIdentity}
 		/>
 	);
 }

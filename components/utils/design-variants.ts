@@ -45,6 +45,7 @@ export const DESIGN_VARIANTS = [
 	{ id: "sessionStroke", label: "Stroke tracing" },
 	{ id: "sessionBloom", label: "Card glow" },
 	{ id: "sessionProximity", label: "Proximity sensor" },
+	{ id: "sessionPeel", label: "Peel visual" },
 ] as const;
 
 export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
@@ -78,6 +79,7 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * Manual link starts off: Team EU hides the Link work item session-menu row
  * until the user explicitly enables it.
  *
+ * Peel visual starts on where the route supplies the session preview capability.
  * Card glow starts on; Stroke tracing and Proximity sensor start off.
  * Each layer remains independently configurable in Settings:
  *
@@ -94,6 +96,7 @@ const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	manualLink: false,
 	panel: false,
 	sessionBloom: true,
+	sessionPeel: true,
 	sessionProximity: false,
 	sessionStroke: false,
 	"simple-views": true,

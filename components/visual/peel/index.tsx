@@ -8,9 +8,8 @@
  *   - at rest it lies flat under a tight contact shadow;
  *   - on hover an iridescent spot-gloss follows the cursor across the printed
  *     ink, the way UV varnish catches a light as you move your head;
- *   - on drag it peels — the grabbed corner comes up first, a ripple crosses
- *     the sheet, and releasing drops it where you let go with a second ripple
- *     from the same point.
+ *   - clicking sweeps a diagonal curl across the sheet from the grabbed
+ *     corner; clicking again reverses the curl and lays the paper back down.
  *
  * The silhouette is a perforated postage stamp, matching the reference at
  * jaksenc.com/about. Peel draws the paper margin, the die-cut and the stock
@@ -35,6 +34,7 @@ import {
 	useState,
 	type CSSProperties,
 	type KeyboardEvent,
+	type MouseEvent,
 	type PointerEvent,
 	type Ref,
 } from "react";
@@ -123,10 +123,10 @@ export function Peel({
 }: Readonly<PeelProps>) {
 	const rootRef = useRef<HTMLDivElement>(null);
 	const liftRef = useRef<HTMLDivElement>(null);
-	const hitRef = useRef<HTMLDivElement>(null);
+	const hitRef = useRef<HTMLButtonElement>(null);
 	const pointerRef = useRef<PeelPointerSample>({ clientX: 0, clientY: 0, valid: false });
 	/** Pointer/sheet offset captured when the sheet came up, so it hangs from the click point. */
-	const carryRef = useRef({ clientX: 0, clientY: 0, x: 0, y: 0, viaPointer: false });
+	const carryRef = useRef({ clientX: 0, clientY: 0, x: 0, y: 0 });
 
 	const reducedMotion = useReducedMotion() ?? false;
 	const [inView, setInView] = useState(false);
@@ -155,7 +155,8 @@ export function Peel({
 	const [state] = useState(() => createPeelState(resolvedTuning));
 	useEffect(() => {
 		state.tuning = resolvedTuning;
-	}, [resolvedTuning, state]);
+		state.reducedMotion = reducedMotion;
+	}, [resolvedTuning, reducedMotion, state]);
 
 	const box = useMemo<PeelBox>(
 		() => ({ width, height: sheetHeight, rotation: (rotation * Math.PI) / 180 }),
@@ -181,124 +182,112 @@ export function Peel({
 	const handleIdleChange = useCallback((idle: boolean) => setActive(!idle), []);
 
 	const handlePointerEnter = useCallback(
-		(event: PointerEvent<HTMLDivElement>) => {
-			pointerRef.current = { clientX: event.clientX, clientY: event.clientY, valid: true };
+		(event: PointerEvent<HTMLButtonElement>) => {
+			const sample = pointerRef.current;
+			sample.clientX = event.clientX;
+			sample.clientY = event.clientY;
+			sample.valid = true;
 			hoverPeel(state, true);
 			wake();
 		},
 		[state, wake],
 	);
 
-	const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
+	const handlePointerMove = useCallback((event: PointerEvent<HTMLButtonElement>) => {
 		const sample = pointerRef.current;
 		sample.clientX = event.clientX;
 		sample.clientY = event.clientY;
 		sample.valid = true;
-	}, []);
+		wake();
+	}, [wake]);
 
 	const handlePointerLeave = useCallback(() => {
 		pointerRef.current.valid = false;
 		hoverPeel(state, false);
-	}, [state]);
+		wake();
+	}, [state, wake]);
 
-	// While the sheet is up it follows the cursor with no button held, and the
-	// next click — anywhere — puts it down.
-	//
-	// Both listeners are on the window rather than on the sheet. There is no
-	// button held, so there is no pointer capture to ride on; and the sheet
-	// trails the cursor on a spring, so a listener bound to the sheet would
-	// stop receiving moves and clicks exactly while it is catching up, which is
-	// when the user is most likely to click.
-	//
-	// The drop is ARMED by the lifting gesture's own pointerup, not attached
-	// live. React flushes this effect synchronously during the discrete
-	// pointerdown that lifted the sheet, so the listener is already on the
-	// window while that same event is still bubbling — attach it unguarded and
-	// one click lifts and instantly drops, which looks exactly like the click
-	// doing nothing at all. A keyboard lift has no pointerup to wait for, so it
-	// arms immediately.
+	const togglePeel = useCallback((u = state.pointerU, v = state.pointerV) => {
+		if (!draggable) {
+			return;
+		}
+		if (state.held) {
+			releasePeel(state);
+			setLifted(false);
+			onLand?.();
+		} else {
+			const sample = pointerRef.current;
+			carryRef.current = { clientX: sample.clientX, clientY: sample.clientY, x: state.targetX, y: state.targetY };
+			grabPeel(state, u, v);
+			setLifted(true);
+			onPeel?.();
+		}
+		wake();
+	}, [draggable, onLand, onPeel, state, wake]);
+
+	// The reference lets the detached sheet follow the pointer without holding
+	// a button. The next click on the sheet lays it down; Escape cancels a carry.
 	useEffect(() => {
 		if (!lifted || !draggable) {
 			return;
 		}
-
-		let armed = !carryRef.current.viaPointer;
-		const arm = () => {
-			armed = true;
-		};
-
 		const follow = (event: globalThis.PointerEvent) => {
 			const anchor = carryRef.current;
 			const sample = pointerRef.current;
 			sample.clientX = event.clientX;
 			sample.clientY = event.clientY;
 			sample.valid = true;
-			// Arithmetic only. Turning this into sheet UV needs a geometry
-			// read, which the scene does once per frame after the model steps.
-			dragPeel(
-				state,
-				anchor.x + (event.clientX - anchor.clientX),
-				anchor.y + (event.clientY - anchor.clientY),
-			);
+			dragPeel(state, anchor.x + event.clientX - anchor.clientX, anchor.y + event.clientY - anchor.clientY);
 			wake();
 		};
-
-		const drop = () => {
-			if (!armed) {
-				return;
-			}
-			releasePeel(state);
-			setLifted(false);
-			onLand?.();
-			wake();
-		};
-
-		window.addEventListener("pointerup", arm, { once: true });
-		window.addEventListener("pointermove", follow);
-		window.addEventListener("pointerdown", drop);
-		return () => {
-			window.removeEventListener("pointerup", arm);
-			window.removeEventListener("pointermove", follow);
-			window.removeEventListener("pointerdown", drop);
-		};
-	}, [lifted, draggable, onLand, state, wake]);
-
-	const handlePointerDown = useCallback(
-		(event: PointerEvent<HTMLDivElement>) => {
-			if (!draggable || !hitRef.current) {
-				return;
-			}
-
+		const cancel = () => {
 			if (state.held) {
-				// Already up and following the cursor — the window listener
-				// owns the second click. Doing it here as well would drop the
-				// sheet twice and fire onLand twice.
-				return;
+				togglePeel();
 			}
+		};
+		const escape = (event: globalThis.KeyboardEvent) => {
+			if (event.key === "Escape") {
+				event.preventDefault();
+				cancel();
+			}
+		};
+		window.addEventListener("pointermove", follow);
+		window.addEventListener("pointercancel", cancel);
+		window.addEventListener("blur", cancel);
+		window.addEventListener("keydown", escape);
+		return () => {
+			window.removeEventListener("pointermove", follow);
+			window.removeEventListener("pointercancel", cancel);
+			window.removeEventListener("blur", cancel);
+			window.removeEventListener("keydown", escape);
+		};
+	}, [lifted, draggable, state, togglePeel, wake]);
 
-			// The anchor is the pointer's offset from the sheet at the moment
-			// it comes up, so the sheet hangs from where it was clicked rather
-			// than snapping its centre under the cursor.
-			const uv = resolvePeelUv(hitRef.current, box, event.clientX, event.clientY);
-			carryRef.current = {
-				clientX: event.clientX,
-				clientY: event.clientY,
-				x: state.targetX,
-				y: state.targetY,
-				viaPointer: true,
-			};
+	const handlePointerDown = useCallback((event: PointerEvent<HTMLButtonElement>) => {
+		if (!draggable || event.button !== 0 || !event.isPrimary || !hitRef.current) {
+			return;
+		}
+		event.currentTarget.focus({ preventScroll: true });
+		pointerRef.current = { clientX: event.clientX, clientY: event.clientY, valid: true };
+		const uv = resolvePeelUv(hitRef.current, box, event.clientX, event.clientY);
+		togglePeel(uv.u, uv.v);
+	}, [box, draggable, togglePeel]);
 
-			grabPeel(state, uv.u, uv.v);
-			setLifted(true);
-			onPeel?.();
-			wake();
-		},
-		[box, draggable, onPeel, state, wake],
-	);
+	const handleClick = useCallback((event: MouseEvent<HTMLButtonElement>) => {
+		// Keyboard and assistive technology activation use native button clicks.
+		// Pointer activation already began the fold on pointerdown.
+		if (event.detail === 0) {
+			togglePeel();
+		}
+	}, [togglePeel]);
 
 	const handleKeyDown = useCallback(
-		(event: KeyboardEvent<HTMLDivElement>) => {
+		(event: KeyboardEvent<HTMLButtonElement>) => {
 			if (!draggable) {
+				return;
+			}
+			if (event.repeat && (event.key === "Enter" || event.key === " ")) {
+				event.preventDefault();
 				return;
 			}
 			const step = event.shiftKey ? PEEL_NUDGE_STEP * 4 : PEEL_NUDGE_STEP;
@@ -316,33 +305,6 @@ export function Peel({
 				case "ArrowDown":
 					nudgePeel(state, 0, step);
 					break;
-				case "Enter":
-				case " ": {
-					// The same toggle the pointer gets, so a keyboard user can
-					// lift the sheet, move it with the arrows, and set it down.
-					if (state.held) {
-						releasePeel(state);
-						setLifted(false);
-						onLand?.();
-					} else {
-						// Anchor the carry to wherever the pointer currently
-						// is, even though the keyboard lifted it. Without this
-						// the sheet keeps a stale anchor and jumps the moment
-						// the mouse is nudged afterwards.
-						const sample = pointerRef.current;
-						carryRef.current = {
-							clientX: sample.clientX,
-							clientY: sample.clientY,
-							x: state.targetX,
-							y: state.targetY,
-							viaPointer: false,
-						};
-						grabPeel(state, state.pointerU, state.pointerV);
-						setLifted(true);
-						onPeel?.();
-					}
-					break;
-				}
 				default:
 					return;
 			}
@@ -350,7 +312,7 @@ export function Peel({
 			event.preventDefault();
 			wake();
 		},
-		[draggable, onLand, onPeel, state, wake],
+		[draggable, state, wake],
 	);
 
 	const handleFocus = useCallback(() => {
@@ -361,7 +323,10 @@ export function Peel({
 		wake();
 	}, [state, wake]);
 
-	const handleBlur = useCallback(() => hoverPeel(state, false), [state]);
+	const handleBlur = useCallback(() => {
+		hoverPeel(state, false);
+		wake();
+	}, [state, wake]);
 
 	// The caller's ref and the observer's ref are the same node, so they have
 	// to be merged rather than chosen between — forwarding only the caller's
@@ -430,20 +395,23 @@ export function Peel({
 				{/* The hit area, not the canvas, owns input: the sheet is
 				    displaced in a vertex shader, so scene-space picking would
 				    disagree with what is on screen. */}
-				<div
+				<button
+					type="button"
 					ref={hitRef}
-					role="img"
+					disabled={!draggable}
+					aria-pressed={lifted}
 					aria-label={alt}
 					tabIndex={draggable ? 0 : undefined}
 					className={cn(
-						"absolute inset-0 touch-none rounded-xs outline-none",
+						"absolute inset-0 touch-none rounded-xs border-0 bg-transparent p-0 outline-none",
 						"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focused",
-						draggable && (lifted ? "cursor-grabbing" : "cursor-grab"),
+						draggable ? (lifted ? "cursor-grabbing" : "cursor-grab") : null,
 					)}
 					onPointerEnter={handlePointerEnter}
 					onPointerMove={handlePointerMove}
 					onPointerLeave={handlePointerLeave}
 					onPointerDown={handlePointerDown}
+					onClick={handleClick}
 					onKeyDown={handleKeyDown}
 					onFocus={handleFocus}
 					onBlur={handleBlur}
@@ -455,6 +423,7 @@ export function Peel({
 }
 
 export {
+	PEEL_STAMP_RATIO,
 	PEEL_FINISHES,
 	PEEL_FINISH_PRESETS,
 	PEEL_TUNING_DEFAULTS,
@@ -464,3 +433,5 @@ export {
 } from "./data";
 
 export default Peel;
+
+export { PeelSurface, type PeelSurfaceProps } from "./peel-surface";

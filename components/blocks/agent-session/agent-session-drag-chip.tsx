@@ -76,6 +76,7 @@ export function AgentSessionDragPill({
 	attributionOrder = "human-first",
 	elevated = false,
 	isFusionSource = false,
+	animateIdentity,
 }: Readonly<{
 	agent: AgentListAgent;
 	attributedBy?: AgentListInvoker;
@@ -84,6 +85,7 @@ export function AgentSessionDragPill({
 	elevated?: boolean;
 	/** Only a travelling lead pill is measured by the Jira fusion overlay. */
 	isFusionSource?: boolean;
+	animateIdentity?: boolean;
 }>) {
 	return (
 		<div
@@ -115,13 +117,13 @@ export function AgentSessionDragPill({
 					<HumanAgentAvatar
 						agent={agent}
 						human={attributedBy}
-						animate={isFusionSource}
+						animate={animateIdentity ?? isFusionSource}
 						composition="horizontal-group"
 						attributionOrder={attributionOrder}
 						sizePx={32}
 					/>
 				) : (
-					<AgentListIdentity agent={agent} sizePx={32} />
+					<AgentListIdentity agent={agent} animate={animateIdentity} sizePx={32} />
 				)}
 			</span>
 			<span className="truncate text-xs text-text" data-session-drag-label="">
@@ -144,6 +146,7 @@ export function AgentSessionDragChip({
 	cohort,
 	elevated = false,
 	isFusionSource = false,
+	animateIdentity,
 }: Readonly<{
 	cohort: SessionCohort<AgentSessionItem>;
 	elevated?: boolean;
@@ -153,6 +156,7 @@ export function AgentSessionDragChip({
 	 * finds a page chip before the travelling one.
 	 */
 	isFusionSource?: boolean;
+	animateIdentity?: boolean;
 }>) {
 	const [lead] = cohort.members;
 	const total = cohort.members.length;
@@ -165,6 +169,7 @@ export function AgentSessionDragChip({
 				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}
+				animateIdentity={animateIdentity}
 			/>
 		);
 	}
@@ -216,6 +221,7 @@ export function AgentSessionDragChip({
 				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}
+				animateIdentity={animateIdentity}
 			/>
 			{/* The shared VPK Badge, unrestyled: its own `neutral` fill, 16px
 			    height, and `rounded-xs` corners are the count treatment, and its
