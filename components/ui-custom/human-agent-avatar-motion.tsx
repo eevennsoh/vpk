@@ -10,7 +10,7 @@ import {
 	createHumanAgentAvatarOrbitMotion,
 } from "@/components/ui-custom/human-agent-avatar-orbit";
 
-import type { HumanAgentAvatarMotionOptions } from "@/components/ui-custom/human-agent-avatar-motion-config";
+import { resolveHumanAgentAvatarTargets, type HumanAgentAvatarMotionOptions } from "@/components/ui-custom/human-agent-avatar-motion-config";
 
 import { HumanAgentAvatarGroupMotion } from "@/components/ui-custom/human-agent-avatar-group-motion";
 
@@ -59,11 +59,12 @@ function HumanAgentAvatarOrbitMotion({
 	const inView = useInView(ref);
 	const motionConfig = createHumanAgentAvatarOrbitMotion(options);
 	const active = !motionConfig.config.pauseWhenOffscreen || inView;
-	const humanTargetSize = Math.max(humanSize, Math.min(24, agentSize));
-	const sizeChange = (humanTargetSize - humanSize) * motionConfig.config.scaleAmount;
-	const agentTargetSize = agentSize - (humanTargetSize - humanSize);
+	const { humanSize: humanTargetSize, agentSize: agentTargetSize } = resolveHumanAgentAvatarTargets(
+		{ frameSize, agentSize, humanSize }, motionConfig.config,
+	);
+	const relativeSizeChange = ((humanTargetSize - humanSize) - (agentTargetSize - agentSize)) * motionConfig.config.scaleAmount;
 	// Handoff when the actual sizes cross, as in main's original 24px/16px swap.
-	const sizeSwapAt = sizeChange > 0 ? (agentSize - humanSize) / (2 * sizeChange) : Infinity;
+	const sizeSwapAt = relativeSizeChange > 0 ? (agentSize - humanSize) / relativeSizeChange : Infinity;
 	const agentOrbit = humanAgentAvatarOrbit(
 		frameSize,
 		agentSize,

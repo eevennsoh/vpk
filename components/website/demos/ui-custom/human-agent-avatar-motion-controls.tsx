@@ -5,8 +5,10 @@ import { useId, useState } from "react";
 import { GUI } from "@/components/utils/gui";
 import {
 	resolveHumanAgentAvatarMotion,
+	resolveHumanAgentAvatarTargets,
 	type HumanAgentAvatarMotionOptions,
 } from "@/components/ui-custom/human-agent-avatar-motion-config";
+import { humanAgentAvatarGeometry } from "@/components/ui-custom/human-agent-avatar-geometry";
 
 type NumericKey =
 	| "durationMs"
@@ -86,13 +88,18 @@ export function HumanAgentAvatarMotionControls({
 	config,
 	onChange,
 	onReplay,
+	sizePx,
 }: Readonly<{
 	config: HumanAgentAvatarMotionOptions;
 	onChange: (patch: Partial<HumanAgentAvatarMotionOptions>) => void;
 	onReplay: () => void;
+	sizePx: 24 | 32;
 }>) {
 	const id = useId();
 	const defaults = resolveHumanAgentAvatarMotion({ variant: config.variant });
+	const geometry = humanAgentAvatarGeometry(sizePx);
+	const targets = resolveHumanAgentAvatarTargets(geometry, config);
+	const defaultTargets = resolveHumanAgentAvatarTargets(geometry);
 	const [easingChoice, setEasingChoice] = useState<EasingChoice>(() =>
 		EASING_PRESETS.find(preset => preset.curve.every((value, index) => value === config.ease[index]))?.value ?? "custom",
 	);
@@ -127,7 +134,7 @@ export function HumanAgentAvatarMotionControls({
 	return (
 		<GUI.Panel
 			title="Motion properties"
-			values={{ ...config }}
+			values={{ ...config, agentTargetSizePx: targets.agentSize, humanTargetSizePx: targets.humanSize }}
 			onPlay={onReplay}
 			playLabel="Replay avatar animation"
 		>
@@ -200,6 +207,18 @@ export function HumanAgentAvatarMotionControls({
 						onChange={(direction) => onChange({ direction })}
 					/>
 					{numbers(ORBIT_CONTROLS)}
+					{(["agent", "human"] as const).map((role) => {
+						const key = role === "agent" ? "agentTargetSizePx" : "humanTargetSizePx";
+						const sizeKey = role === "agent" ? "agentSize" : "humanSize";
+						return (
+							<GUI.Control key={key} id={`${id}-${key}`}
+								label={role === "agent" ? "Agent target size" : "Human target size"}
+								value={targets[sizeKey]} defaultValue={defaultTargets[sizeKey]}
+								min={8} max={geometry.frameSize} step={1} unit="px"
+								valueKeys={key} onChange={(value) => onChange({ [key]: value })}
+							/>
+						);
+					})}
 				</GUI.Section>
 			) : null}
 			<GUI.Section title="Playback">

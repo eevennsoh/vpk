@@ -20,6 +20,39 @@ async function geometry(avatar: Locator) {
 	});
 }
 
+test("target size controls change the swapped pose and preserve resting sizes", async ({ page }) => {
+	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#animated`);
+	const playground = page.locator('[data-human-agent-avatar-playground]');
+	const avatar = playground.locator('[data-slot="human-agent-avatar"]');
+	const agentTarget = playground.getByRole('textbox', { name: 'Agent target size', exact: true });
+	const humanTarget = playground.getByRole('textbox', { name: 'Human target size', exact: true });
+	for (const variant of [
+		{ frame: 32, agent: 30, human: 16, defaultAgentTarget: 22, agentTarget: 18, humanTarget: 20 },
+		{ frame: 24, agent: 24, human: 12, defaultAgentTarget: 12, agentTarget: 14, humanTarget: 18 },
+	]) {
+		await playground.getByRole('button', { name: `${variant.frame}×${variant.frame}`, exact: true }).click();
+		await playground.getByRole('button', { name: 'Reset motion', exact: true }).click();
+		await expect(agentTarget).toHaveValue(String(variant.defaultAgentTarget));
+		await expect(humanTarget).toHaveValue('24');
+		await agentTarget.fill(String(variant.agentTarget));
+		await humanTarget.fill(String(variant.humanTarget));
+		await avatar.scrollIntoViewIfNeeded();
+		await expect.poll(() => avatar.evaluate(el => el.getAnimations({ subtree: true }).length)).toBe(3);
+		for (const time of [0, 300, 650]) {
+			await avatar.evaluate(async (frame, time) => {
+				frame.getAnimations({ subtree: true }).forEach(animation => { animation.pause(); animation.currentTime = time; });
+				await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+			}, time);
+			const pose = await geometry(avatar);
+			expect(pose.agent.size).toBeCloseTo(time === 300 ? variant.agentTarget : variant.agent, 1);
+			expect(pose.human.size).toBeCloseTo(time === 300 ? variant.humanTarget : variant.human, 1);
+		}
+		await playground.getByRole('button', { name: 'Reset motion', exact: true }).click();
+		await expect(agentTarget).toHaveValue(String(variant.defaultAgentTarget));
+		await expect(humanTarget).toHaveValue('24');
+	}
+});
+
 test("12px human initials fit when the photo cannot load", async ({ page }) => {
 	await page.route("**/avatar-user/ting-chen/color/asow-strategy-orange-64.png", route => route.abort());
 	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#sizes`);

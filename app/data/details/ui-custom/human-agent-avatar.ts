@@ -100,7 +100,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 		{
 			title: "Animated",
 			description:
-				"Choose 24×24 or 32×32 and tune the original swap motion. The human grows to at most 24px while the agent shrinks by the same amount: 30→22px and 16→24px in the 32px variant, or 24→12px and 12→24px in the 24px variant. Both turns share their easing and duration, with a short 50ms pause between them. The human's 2px white stroke keeps a constant thickness through the swap. Copy the values as JSON to reuse them through the motion prop.",
+				"Choose 24×24 or 32×32 and tune the original swap motion. By default, the human grows to 24px while the agent shrinks by the same amount: 30→22px and 16→24px in the 32px variant, or 24→12px and 12→24px in the 24px variant. Use Agent target size and Human target size to adjust their animated destinations. Both return to their original resting sizes. Both turns share their easing and duration, with a short 50ms pause between them. The human's 2px white stroke keeps a constant thickness through the swap. Copy the values as JSON to reuse them through the motion prop.",
 			demoSlug: "human-agent-avatar-demo-animated",
 		},
 		{

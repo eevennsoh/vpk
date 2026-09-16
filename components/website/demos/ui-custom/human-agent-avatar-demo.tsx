@@ -81,6 +81,7 @@ export function HumanAgentAvatarDemoAnimated({
 				</Button>
 			</div>
 			<HumanAgentAvatarMotionControls
+				sizePx={sizePx}
 				key={resetId}
 				config={config}
 				onChange={(patch) =>
