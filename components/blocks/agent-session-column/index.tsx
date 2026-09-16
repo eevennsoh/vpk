@@ -124,11 +124,12 @@ const AGENT_SESSION_WELL = cn(
 );
 
 /**
- * Row gap and side inset share `space.050` (`gap-1 p-1`, 4px). Adjacent
- * marked cards close that gap (`-mt-1`) and flatten the shared corners.
+ * Row gap and leading inset share `space.050` (4px). The trailing edge
+ * stays flush with the header action slot after the row's own padding.
+ * Adjacent marked cards close the row gap (`-mt-1`) and flatten the shared corners.
  * Panel hosts pass the same class via `listClassName`.
  */
-const AGENT_SESSION_LIST_SPACING = "gap-1 p-1";
+const AGENT_SESSION_LIST_SPACING = "gap-1 py-1 ps-1";
 const AGENT_SESSION_LIST_GAP_PX = 4;
 
 /**
