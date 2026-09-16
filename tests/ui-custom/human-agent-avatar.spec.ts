@@ -27,13 +27,13 @@ test("target size controls change the swapped pose and preserve resting sizes", 
 	const agentTarget = playground.getByRole('textbox', { name: 'Agent target size', exact: true });
 	const humanTarget = playground.getByRole('textbox', { name: 'Human target size', exact: true });
 	for (const variant of [
-		{ frame: 32, agent: 30, human: 16, defaultAgentTarget: 22, agentTarget: 18, humanTarget: 20 },
-		{ frame: 24, agent: 24, human: 12, defaultAgentTarget: 12, agentTarget: 14, humanTarget: 18 },
+		{ frame: 32, agent: 30, human: 16, defaultAgentTarget: 24, agentTarget: 18, humanTarget: 22 },
+		{ frame: 24, agent: 24, human: 12, defaultAgentTarget: 24, agentTarget: 14, humanTarget: 18 },
 	]) {
 		await playground.getByRole('button', { name: `${variant.frame}×${variant.frame}`, exact: true }).click();
 		await playground.getByRole('button', { name: 'Reset motion', exact: true }).click();
 		await expect(agentTarget).toHaveValue(String(variant.defaultAgentTarget));
-		await expect(humanTarget).toHaveValue('24');
+		await expect(humanTarget).toHaveValue('20');
 		await agentTarget.fill(String(variant.agentTarget));
 		await humanTarget.fill(String(variant.humanTarget));
 		await avatar.scrollIntoViewIfNeeded();
@@ -49,7 +49,7 @@ test("target size controls change the swapped pose and preserve resting sizes", 
 		}
 		await playground.getByRole('button', { name: 'Reset motion', exact: true }).click();
 		await expect(agentTarget).toHaveValue(String(variant.defaultAgentTarget));
-		await expect(humanTarget).toHaveValue('24');
+		await expect(humanTarget).toHaveValue('20');
 	}
 });
 
@@ -70,10 +70,10 @@ test("12px human initials fit when the photo cannot load", async ({ page }) => {
 });
 
 for (const variant of [
-	{ frame: 24, agent: 24, human: 12, agentTarget: 12, inset: 0, badge: 14 },
-	{ frame: 32, agent: 30, human: 16, agentTarget: 22, inset: 1, badge: 18 },
+	{ frame: 24, agent: 24, human: 12, agentTarget: 24, inset: 0, badge: 14 },
+	{ frame: 32, agent: 30, human: 16, agentTarget: 24, inset: 1, badge: 18 },
 ] as const) {
-	test(`${variant.frame}px original swap caps the human at 24px and matches the agent downscale`, async ({ page }) => {
+	test(`${variant.frame}px default swap reaches a 24px agent and 20px human, then restores resting sizes`, async ({ page }) => {
 		await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#animated`);
 		const playground = page.locator('[data-human-agent-avatar-playground]');
 		await playground.getByRole('button', { name: `${variant.frame}×${variant.frame}`, exact: true }).click();
@@ -89,9 +89,10 @@ for (const variant of [
 			}, time);
 			const pose = await geometry(avatar);
 			expect(pose.size).toBe(variant.frame);
-			expect(pose.human.size).toBeLessThanOrEqual(24.1);
+			expect(pose.human.size).toBeLessThanOrEqual(20.1);
 			expect(pose.human.size).toBeGreaterThanOrEqual(variant.human - 0.1);
-			expect(pose.agent.size + pose.human.size).toBeCloseTo(variant.agent + variant.human, 1);
+			expect(pose.agent.size).toBeGreaterThanOrEqual(variant.agentTarget - 0.1);
+			expect(pose.agent.size).toBeLessThanOrEqual(variant.agent + 0.1);
 			if (time <= 300) {
 				expect(pose.human.size).toBeGreaterThanOrEqual(previousHuman - 0.1);
 				expect(pose.agent.size).toBeLessThanOrEqual(previousAgent + 0.1);
@@ -104,7 +105,7 @@ for (const variant of [
 			if (time === 0 || time === 300 || time === 650) {
 				const swapped = time === 300;
 				expect(pose.agent.size).toBeCloseTo(swapped ? variant.agentTarget : variant.agent, 1);
-				expect(pose.human.size).toBeCloseTo(swapped ? 24 : variant.human, 1);
+				expect(pose.human.size).toBeCloseTo(swapped ? 20 : variant.human, 1);
 				expect(pose.agent.x).toBeCloseTo(swapped ? variant.frame - variant.agentTarget + 2 : variant.inset, 1);
 				expect(pose.human.x).toBeCloseTo(swapped ? variant.inset : variant.badge, 1);
 				const box = (await avatar.boundingBox())!;
@@ -245,7 +246,7 @@ test("the optional swap exchanges sizes, stays inside its frame, and returns", a
 	});
 	const swapped = samples.findIndex(
 		(sample) =>
-			Math.abs(sample.human - 24) < 0.1 && Math.abs(sample.agent - 22) < 0.1,
+			Math.abs(sample.human - 20) < 0.1 && Math.abs(sample.agent - 24) < 0.1,
 	);
 	expect(swapped).toBeGreaterThan(-1);
 	expect(
@@ -293,11 +294,11 @@ test("both turns complete in 300ms with matching easing", async ({ page }) => {
 				);
 				samples.push({
 					human: returning
-						? (24 - size("human")) / 8
-						: (size("human") - 16) / 8,
+						? (20 - size("human")) / 4
+						: (size("human") - 16) / 4,
 					agent: returning
-						? (size("agent") - 22) / 8
-						: (30 - size("agent")) / 8,
+						? (size("agent") - 24) / 6
+						: (30 - size("agent")) / 6,
 				});
 			}
 			return samples;
@@ -492,7 +493,7 @@ test("pause and live reduced motion restore the static layout before restarting"
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await expect(animated).toHaveCount(1);
 	expect((await geometry(animated)).human.size).toBeGreaterThanOrEqual(16);
-	expect((await geometry(animated)).human.size).toBeLessThanOrEqual(24);
+	expect((await geometry(animated)).human.size).toBeLessThanOrEqual(20);
 });
 
 test("motion controls update the real timeline, orbit, and reusable JSON", async ({
@@ -565,7 +566,7 @@ test("motion controls update the real timeline, orbit, and reusable JSON", async
 			requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
 		);
 	});
-	expect((await geometry(avatar)).human.size).toBeCloseTo(22.4, 1);
+	expect((await geometry(avatar)).human.size).toBeCloseTo(19.2, 1);
 
 	let copied = "";
 	await page.exposeFunction(
