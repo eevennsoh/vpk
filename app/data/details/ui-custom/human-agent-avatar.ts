@@ -83,7 +83,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			type: "number",
 			default: "32",
 			description:
-				"Figma variants: 24×24 with a 24px agent and 12px human, or 32×32 with a 30px agent and 16px human. The original 2px separation ring overhangs the bottom right; the human photo stays inside the footprint. Legacy 40px and 48px footprints remain supported.",
+				"Figma variants: 24×24 with a 24px agent and 12px human, or 32×32 with a 30px agent and 16px human. The human badge extends 2px beyond the bottom right, with the original border and separation ring around it. Legacy 40px and 48px footprints remain supported.",
 		},
 		{
 			name: "className",

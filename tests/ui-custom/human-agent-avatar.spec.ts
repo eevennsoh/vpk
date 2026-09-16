@@ -37,8 +37,8 @@ test("12px human initials fit when the photo cannot load", async ({ page }) => {
 });
 
 for (const variant of [
-	{ frame: 24, agent: 24, human: 12, agentTarget: 12, inset: 0, badge: 12 },
-	{ frame: 32, agent: 30, human: 16, agentTarget: 22, inset: 1, badge: 16 },
+	{ frame: 24, agent: 24, human: 12, agentTarget: 12, inset: 0, badge: 14 },
+	{ frame: 32, agent: 30, human: 16, agentTarget: 22, inset: 1, badge: 18 },
 ] as const) {
 	test(`${variant.frame}px original swap caps the human at 24px and matches the agent downscale`, async ({ page }) => {
 		await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#animated`);
@@ -72,7 +72,7 @@ for (const variant of [
 				const swapped = time === 300;
 				expect(pose.agent.size).toBeCloseTo(swapped ? variant.agentTarget : variant.agent, 1);
 				expect(pose.human.size).toBeCloseTo(swapped ? 24 : variant.human, 1);
-				expect(pose.agent.x).toBeCloseTo(swapped ? variant.frame - variant.agentTarget : variant.inset, 1);
+				expect(pose.agent.x).toBeCloseTo(swapped ? variant.frame - variant.agentTarget + 2 : variant.inset, 1);
 				expect(pose.human.x).toBeCloseTo(swapped ? variant.inset : variant.badge, 1);
 				const box = (await avatar.boundingBox())!;
 				await page.screenshot({ path: `output/agent-browser/human-agent-avatar/capped-original-${variant.frame}-${time}.png`, clip: { x: box.x-4, y: box.y-4, width: box.width+8, height: box.height+8 } });
@@ -86,8 +86,8 @@ for (const variant of [
 }
 
 for (const variant of [
-	{ size: 24, agent: 24, human: 12, inset: 0, badge: 12 },
-	{ size: 32, agent: 30, human: 16, inset: 1, badge: 16 },
+	{ size: 24, agent: 24, human: 12, inset: 0, badge: 14 },
+	{ size: 32, agent: 30, human: 16, inset: 1, badge: 18 },
 ] as const) {
 	test(`${variant.size}px variant uses the existing agent avatar on desktop and mobile`, async ({ page }) => {
 		await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#sizes`);
@@ -123,7 +123,7 @@ test("24px horizontal group uses two 12px avatars and restores the compact footp
 		expect(await geometry(group)).toEqual({ size: 20, human: { x: 0, y: 0, size: 12 }, agent: { x: 8, y: 0, size: 12 } });
 	}).toPass({ timeout: 10000 });
 	await playground.getByRole('button', { name: 'Pause animation', exact: true }).click();
-	expect(await geometry(playground.locator('[data-slot="human-agent-avatar"]'))).toEqual({ size: 24, agent: { x: 0, y: 0, size: 24 }, human: { x: 12, y: 12, size: 12 } });
+	expect(await geometry(playground.locator('[data-slot="human-agent-avatar"]'))).toEqual({ size: 24, agent: { x: 0, y: 0, size: 24 }, human: { x: 14, y: 14, size: 12 } });
 });
 
 
@@ -139,7 +139,7 @@ test("the default identity preserves the 32px static agent-first composition", a
 	expect(await geometry(avatar)).toEqual({
 		size: 32,
 		agent: { x: 1, y: 1, size: 30 },
-		human: { x: 16, y: 16, size: 16 },
+		human: { x: 18, y: 18, size: 16 },
 	});
 	await expect(avatar.locator('[data-shape="hexagon"]')).toHaveCount(1);
 	await expect(avatar.locator('[data-shape="circle"]')).toHaveCount(1);
@@ -379,7 +379,7 @@ for (const size of [24, 32] as const) {
 		const style = await staticHuman.evaluate(el => {
 			const frame = el.closest('[data-slot="human-agent-avatar"]')!.getBoundingClientRect();
 			const photo = el.getBoundingClientRect();
-			return { border: getComputedStyle(el, "::after").borderTopWidth, ring: getComputedStyle(el).boxShadow, overhangX: photo.right + 2 - frame.right, overhangY: photo.bottom + 2 - frame.bottom };
+			return { border: getComputedStyle(el, "::after").borderTopWidth, ring: getComputedStyle(el).boxShadow, overhangX: photo.right - frame.right, overhangY: photo.bottom - frame.bottom };
 		});
 		expect(style.border).toBe("1px");
 		expect(style.ring).toContain("0px 0px 0px 2px");
@@ -453,7 +453,7 @@ test("pause and live reduced motion restore the static layout before restarting"
 	expect(await geometry(avatar)).toEqual({
 		size: 32,
 		agent: { x: 1, y: 1, size: 30 },
-		human: { x: 16, y: 16, size: 16 },
+		human: { x: 18, y: 18, size: 16 },
 	});
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await expect(animated).toHaveCount(1);
@@ -691,7 +691,7 @@ test("horizontal-group variation morphs into the shared human-first 16px group",
 	expect(await geometry(compact)).toEqual({
 		size: 32,
 		agent: { x: 1, y: 1, size: 30 },
-		human: { x: 16, y: 16, size: 16 },
+		human: { x: 18, y: 18, size: 16 },
 	});
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await playground
@@ -701,7 +701,7 @@ test("horizontal-group variation morphs into the shared human-first 16px group",
 	expect(await geometry(compact)).toEqual({
 		size: 32,
 		agent: { x: 1, y: 1, size: 30 },
-		human: { x: 16, y: 16, size: 16 },
+		human: { x: 18, y: 18, size: 16 },
 	});
 });
 
