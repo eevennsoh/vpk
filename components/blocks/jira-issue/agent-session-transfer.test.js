@@ -358,8 +358,8 @@ test("Jira issue agentSessionTransfer is opt-in so existing consumers are unaffe
 		SOURCE,
 		/const agentSessionTransferRevealed = Boolean\(agentSessionTransfer\)[\s\S]*resolvedAgentSessionDragState\.dragging/u,
 	);
-	// No binding -> the chin row keeps its plain click behaviour and skips the
-	// drag wrapper entirely.
+	// No binding -> the chin row keeps its assignment flyout trigger and skips
+	// the drag wrapper entirely.
 	assert.match(AGENT_ACTIVITY_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
@@ -371,7 +371,7 @@ test("Jira issue agentSessionTransfer is opt-in so existing consumers are unaffe
 		AGENT_ACTIVITY_SOURCE,
 		/function createJiraIssueSessionDragBind\([\s\S]*if \(!sessionDrag\) \{\s*return undefined;[\s\S]*onPointerUp:/u,
 	);
-	assert.match(AGENT_ACTIVITY_SOURCE, /\{\.\.\.\(sessionDragBind \?\? \{ onClick: handleOpenChat \}\)\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /\{\.\.\.\(sessionDragBind \?\? \{\}\)\}/u);
 	// The demo only opts in for the experimental variant's transfer phases.
 	assert.match(PAGE_SOURCE, /agentSessionTransfer=\{agentSessionTransfer\}/u);
 });
