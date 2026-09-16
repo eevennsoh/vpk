@@ -19,7 +19,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -198,7 +198,7 @@ function rewriteShadcnCssImport(css) {
  * alphabetical order (the order contextFiles came out of the trace);
  * if a provider needs to be inside another, the user reorders manually.
  */
-function composeLayout({ targetName, routeSlug, providers }) {
+function composeLayout({ targetName, routeSlug, providers, includeDemoGoogleFonts }) {
 	const providerImports = providers
 		.map(p => `import { ${p.name} } from "${p.importPath}";`)
 		.join("\n");
@@ -210,6 +210,10 @@ function composeLayout({ targetName, routeSlug, providers }) {
 		body = `<${name}>\n\t\t\t\t\t${body}\n\t\t\t\t</${name}>`;
 	}
 	body = `<ThemeWrapper>\n\t\t\t\t${body}\n\t\t\t</ThemeWrapper>`;
+	const demoGoogleFontLinks = includeDemoGoogleFonts ? `
+				<link rel="preconnect" href="https://fonts.googleapis.com" />
+				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+				<link href="https://fonts.googleapis.com/css2?family=BBH+Bartle&family=Bitcount+Grid+Single:wght@100..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />` : "";
 
 	// Client-side FeatureGates shim is rendered inside <body> as a trivial
 	// component. Its module-level side effect installs the resolver on the
@@ -293,13 +297,7 @@ export default async function RootLayout({
 				<link rel="preconnect" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net" />
 				<link rel="preload" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net/assets/fonts/atlassian-sans/v3/AtlassianSans-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
 				<link rel="preload stylesheet" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net/assets/font-rules/v5/atlassian-fonts.css" as="style" crossOrigin="anonymous" />
-				{/* Google Fonts used by various VPK demos (BBH Bartle, Bitcount Grid,
-					DotGothic16, JetBrains Mono). If your route doesn't use these you
-					can delete these <link> tags — they don't hurt, but they're a few
-					KB of network you don't need. */}
-				<link rel="preconnect" href="https://fonts.googleapis.com" />
-				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-				<link href="https://fonts.googleapis.com/css2?family=BBH+Bartle&family=Bitcount+Grid+Single:wght@100..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+				${demoGoogleFontLinks}
 			</head>
 			<body className={cn("min-h-svh bg-bg-neutral text-text antialiased font-sans", geist.variable, arkEsSolidLight.variable)}>
 				<FeatureFlagsShim />
@@ -309,6 +307,24 @@ export default async function RootLayout({
 	);
 }
 `;
+}
+
+function routeUsesDemoGoogleFonts(repoRoot, files) {
+	const fontFamily = /BBH Bartle|Bitcount Grid Single|DotGothic16|JetBrains Mono/;
+	const queued = new Set(files), seen = new Set();
+	while (queued.size > 0) {
+		const rel = queued.values().next().value;
+		queued.delete(rel);
+		if (seen.has(rel)) continue;
+		seen.add(rel);
+		const abs = path.join(repoRoot, rel);
+		if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) continue;
+		const source = fs.readFileSync(abs, "utf8");
+		if (fontFamily.test(source)) return true;
+		if (!rel.endsWith(".css")) continue;
+		for (const imported of collectLocalCssImportsFromText(source, path.posix.dirname(rel))) queued.add(imported);
+	}
+	return false;
 }
 
 // -------- CSS pipeline --------------------------------------------------
@@ -668,7 +684,12 @@ export function FeatureFlagsShim() {
 	}
 	writeFileEnsuring(
 		path.join(targetDir, "app", "layout.tsx"),
-		composeLayout({ targetName, routeSlug, providers }),
+		composeLayout({
+			targetName, routeSlug, providers,
+			includeDemoGoogleFonts: routeUsesDemoGoogleFonts(
+				repoRoot, [...plan.files, ...(plan.cssImports || []), "app/globals.css", "app/tailwind-theme.css"]
+			),
+		}),
 	);
 
 	// ---- 4. CSS pipeline: copy tailwind-theme + shadcn-theme verbatim,
@@ -799,11 +820,7 @@ export function FeatureFlagsShim() {
 		copyTreeVerbatim(MICROS_DIR, targetDir);
 	}
 	if (args.backendBacked) {
-		for (const directory of ["backend", "lib", "rovo", "scripts/lib"]) {
-			const sourceDir = path.join(repoRoot, directory);
-			if (!fs.existsSync(sourceDir)) continue;
-			copyRuntimeTreeVerbatim(sourceDir, path.join(targetDir, directory));
-		}
+		copyTrackedRuntimeFiles(repoRoot, targetDir);
 		const devTemplate = fs.readFileSync(
 			path.join(SCAFFOLD_DIR, "backend-backed-dev.mjs"), "utf8",
 		);
@@ -954,20 +971,16 @@ function copyTreeVerbatim(srcDir, destDir) {
 	}
 }
 
-function copyRuntimeTreeVerbatim(srcDir, destDir) {
-	for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
-		if (["node_modules", ".next", "public"].includes(entry.name) || entry.isSymbolicLink()) {
-			continue;
-		}
-		if (/\.(ts|tsx|mts|cts)$/.test(entry.name)) continue;
-		const srcAbs = path.join(srcDir, entry.name);
-		const destAbs = path.join(destDir, entry.name);
-		if (entry.isDirectory()) {
-			ensureDir(destAbs);
-			copyRuntimeTreeVerbatim(srcAbs, destAbs);
-		} else {
-			copyFileVerbatim(srcAbs, destAbs);
-		}
+function copyTrackedRuntimeFiles(repoRoot, targetDir) {
+	const files = execFileSync("git", ["ls-files", "-z", "--", "backend", "lib", "rovo", "scripts/lib"], {
+		cwd: repoRoot, encoding: "utf8",
+	}).split("\0");
+	for (const rel of files) {
+		if (!rel || /\.(ts|tsx|mts|cts)$/.test(rel)) continue;
+		if (rel.split("/").some((part) => ["node_modules", ".next", "public"].includes(part))) continue;
+		const srcAbs = path.join(repoRoot, rel);
+		if (!fs.existsSync(srcAbs) || !fs.statSync(srcAbs).isFile()) continue;
+		copyFileVerbatim(srcAbs, path.join(targetDir, rel));
 	}
 }
 

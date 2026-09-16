@@ -3,6 +3,9 @@ node_modules/
 # Next build output
 .next/
 out/
+output/
+backend/public/
+backend/data/
 
 # Environment and deploy secrets
 *.local

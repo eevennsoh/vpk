@@ -157,6 +157,7 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(layout, /const themeStyles = await getThemeStyles\(THEME_STATE\);/);
 		assert.doesNotMatch(layout, /next\/script/);
 		assert.doesNotMatch(layout, /clientShim/);
+		assert.doesNotMatch(layout, /fonts\.googleapis\.com\/css2/);
 
 		assert.match(featureFlagsShim, /__PLATFORM_FEATURE_FLAGS__/);
 		assert.match(featureFlagsShim, /booleanResolver: \(\) => false/);
@@ -190,6 +191,10 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(nextConfig, /root: process\.cwd\(\),/);
 		assert.doesNotMatch(nextConfig, /root:\s*fileURLToPath\(/);
 		assert.match(nextConfig, /allowedDevOrigins:\s*\[\s*"127\.0\.2\.2",\s*"localhost"\s*\]/);
+		const tsconfig = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "tsconfig.json"), "utf8"));
+		assert.ok(tsconfig.include.includes(".next/dev/types/**/*.ts"));
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, ".gitignore"), "utf8"), /^output\/$/m);
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, ".gitignore"), "utf8"), /^backend\/data\/$/m);
 
 		const nextEnv = fs.readFileSync(path.join(fixture.targetDir, "next-env.d.ts"), "utf8");
 		assert.match(nextEnv, /\/\/\/ <reference types="next" \/>/);
@@ -333,7 +338,8 @@ allowBuilds:
 		writeFile(path.join(repoRoot, "app", "tailwind-theme-agent-loading.css"),
 			".agent-loading { opacity: 1; }\n");
 		writeFile(path.join(repoRoot, "app", "dash-4-2.css"), "/* dash */\n");
-		writeFile(path.join(repoRoot, "app", "typeset.css"), "/* typeset */\n");
+		writeFile(path.join(repoRoot, "app", "typeset.css"),
+			"code { font-family: \"JetBrains Mono\"; }\n");
 		writeFile(
 			path.join(repoRoot, "components", "projects", "shared", "components", "chat-messages.module.css"),
 			".chat { display: flex; }\n",
@@ -430,6 +436,8 @@ export function WorkItemModalProvider({
 			),
 		);
 		initGitRepo(repoRoot);
+		writeFile(path.join(repoRoot, "backend", "data", "rovo-app", "threads", "local", "thread.json"),
+			"{\"local\":true}\n");
 		return {
 			targetDir,
 			planPath,
@@ -484,8 +492,10 @@ test("scaffold-target copies local CSS and never strips shadcn", () => {
 		);
 		assert.equal(
 			fs.readFileSync(path.join(fixture.targetDir, "app", "typeset.css"), "utf8"),
-			"/* typeset */\n",
+			"code { font-family: \"JetBrains Mono\"; }\n",
 		);
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, "app", "layout.tsx"), "utf8"),
+			/fonts\.googleapis\.com\/css2/);
 		assert.equal(
 			fs.readFileSync(path.join(fixture.targetDir, "app", "tailwind-theme-agent-loading.css"), "utf8"),
 			".agent-loading { opacity: 1; }\n",
@@ -550,6 +560,7 @@ test("backend-backed scaffold preserves source backend and generates proxy/deplo
 		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "pnpm-workspace.yaml"), "utf8"),
 			"allowBuilds:\n  protobufjs: true\n  better-sqlite3: false\n");
 		assert.equal(fs.existsSync(path.join(fixture.targetDir, "backend", "node_modules")), false);
+		assert.equal(fs.existsSync(path.join(fixture.targetDir, "backend", "data")), false);
 		assert.equal(fs.existsSync(path.join(fixture.targetDir, "lib", "untraced-source.ts")), false);
 		const layout = fs.readFileSync(path.join(fixture.targetDir, "app", "layout.tsx"), "utf8");
 		assert.doesNotMatch(layout, /RequiredInlineProvider/);
