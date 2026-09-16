@@ -60,7 +60,7 @@ function HumanAgentAvatarOrbitMotion({
 	const motionConfig = createHumanAgentAvatarOrbitMotion(options);
 	const active = !motionConfig.config.pauseWhenOffscreen || inView;
 	const { humanSize: humanTargetSize, agentSize: agentTargetSize } = resolveHumanAgentAvatarTargets(
-		{ frameSize, agentSize, humanSize }, motionConfig.config,
+		{ frameSize }, motionConfig.config,
 	);
 	const relativeSizeChange = ((humanTargetSize - humanSize) - (agentTargetSize - agentSize)) * motionConfig.config.scaleAmount;
 	// Handoff when the actual sizes cross, as in main's original 24px/16px swap.
