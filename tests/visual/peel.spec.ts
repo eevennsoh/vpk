@@ -163,7 +163,7 @@ test("the prepared Claude wave joins the completed card and avatar within two fr
 					return { x: box.x - origin.x, y: box.y - origin.y, width: box.width, height: box.height };
 				});
 			};
-			if (probe.sawCompact && avatar?.dataset.composition === "group" && captured) {
+			if (probe.morphEnd > 0 && probe.sawCompact && avatar?.dataset.composition === "group" && captured) {
 				const native = positions(avatar);
 				const print = positions(captured);
 				probe.settledFrames = native.length === 2 && print.length === 2 && native.every((box, index) => (["x", "y", "width", "height"] as const).every((key) => Math.abs(box[key] - print[index][key]) < 0.5)) ? probe.settledFrames + 1 : 0;
