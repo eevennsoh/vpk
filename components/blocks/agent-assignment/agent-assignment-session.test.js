@@ -51,6 +51,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(sessionMenu, /padding="compact"/u);
 	assert.doesNotMatch(sessionMenu, /showMoreMenu=\{false\}/u);
 	assert.match(sessionMenu, /onContinueInAgent=\{onContinueInAgent\}/u);
+	assert.doesNotMatch(sessionMenu, /onView=/u);
 	assert.match(sessionMenu, /onDeleteSession=\{onDeleteSession\}/u);
 	assert.match(sessionMenu, /onRenameSession=\{onRenameSession\}/u);
 	assert.match(sessionMenu, /onToggleVisibility=\{onToggleVisibility\}/u);

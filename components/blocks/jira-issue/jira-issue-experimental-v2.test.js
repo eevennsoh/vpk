@@ -98,7 +98,7 @@ test("Jira issue agent activity experimental v2 duplicates the playground with l
 	assert.match(COMPLETED_RUNS_MODEL_SOURCE, /export function toJiraIssueAgentActivityFromCompletedRun/u);
 	assert.match(COMPLETED_RUNS_MODEL_SOURCE, /label: run\.state === "failed" \? "Failed" : "Finished"/u);
 	assert.match(COMPLETED_RUNS_MODEL_SOURCE, /export function resolveComfortableCompletedRunViewChat/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /Open \$\{activities\[0\]\?\.name \?\? "agent"\} in Rovo chat: \$\{rowLabel\}/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /Open \$\{activities\[0\]\?\.name \?\? "agent"\} in Rovo chat: \$\{rowLabel\}/u);
 });
 
 test("Jira issue renders expandable subtasks with nested subtask cards", () => {

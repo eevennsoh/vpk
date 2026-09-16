@@ -377,7 +377,6 @@ export function AgentAssignment({
 			onRenameSession={onRenameAssignedAgent
 				? (item) => runAssignedSessionAction(assignedAgents, item.id, onRenameAssignedAgent)
 				: undefined}
-			onSelectAgent={handleAssignedAgentSelect}
 			onToggleVisibility={onAssignedAgentIdsChange
 				? (item) => runAssignedSessionAction(assignedAgents, item.id, handleArchiveAgent)
 				: undefined}
