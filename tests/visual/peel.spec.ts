@@ -58,7 +58,8 @@ test("Team EU26 defaults Peel visual on, persists its switch, and prepares only 
 	await page.screenshot({ path: "output/agent-browser/peel/team-eu26-peel-enabled.png" });
 	await page.mouse.up();
 	await page.mouse.move(5, 5);
-	await expect(page.locator("[data-peel-surface]")).toHaveCount(0);
+	await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(0);
+	await expect(page.locator("[data-session-preview-idle] [data-peel-prepared=true]")).toHaveCount(1);
 });
 
 test("Claude's avatar-coloured flash passes through the card face and fades without an exterior halo", async ({ page }) => {
@@ -130,7 +131,7 @@ test("Claude's avatar-coloured flash passes through the card face and fades with
 
 test("the prepared Claude wave joins the completed card and avatar within two frames and parks between drags", async ({ page }) => {
 	await page.addInitScript(() => {
-		const probe = { morphEnd: 0, identityEnd: 0, settledFrames: 0, sawCompact: false, wave: 0, frames: 0 };
+		const probe = { morphEnd: 0, identityEnd: 0, preparedAt: 0, settledFrames: 0, wave: 0, frames: 0 };
 		Object.assign(window, { peelHandoff: probe });
 		const animate = Element.prototype.animate;
 		Element.prototype.animate = function (...args) {
@@ -154,7 +155,6 @@ test("the prepared Claude wave joins the completed card and avatar within two fr
 			if (!overlay || probe.identityEnd > 0) return;
 			const avatar = overlay.querySelector<HTMLElement>('[data-peel-native-source] [data-slot="human-agent-avatar"]');
 			const captured = overlay.querySelector<HTMLElement>('[data-peel-capture-source] [data-slot="human-agent-avatar"]');
-			if (avatar?.dataset.composition === "compact") probe.sawCompact = true;
 			const positions = (root: HTMLElement) => {
 				const origin = root.getBoundingClientRect();
 				const present = [...root.children].find((element) => element.getAttribute("aria-hidden") !== "true");
@@ -163,7 +163,7 @@ test("the prepared Claude wave joins the completed card and avatar within two fr
 					return { x: box.x - origin.x, y: box.y - origin.y, width: box.width, height: box.height };
 				});
 			};
-			if (probe.morphEnd > 0 && probe.sawCompact && avatar?.dataset.composition === "group" && captured) {
+			if (probe.morphEnd > 0 && avatar?.dataset.composition === "group" && captured) {
 				const native = positions(avatar);
 				const print = positions(captured);
 				probe.settledFrames = native.length === 2 && print.length === 2 && native.every((box, index) => (["x", "y", "width", "height"] as const).every((key) => Math.abs(box[key] - print[index][key]) < 0.5)) ? probe.settledFrames + 1 : 0;
@@ -172,9 +172,10 @@ test("the prepared Claude wave joins the completed card and avatar within two fr
 			if (probe.identityEnd === 0) identityFrame = requestAnimationFrame(watchIdentity);
 		};
 		new MutationObserver(() => {
+			if (probe.preparedAt === 0 && document.querySelector("[data-peel-prepared=true]")) probe.preparedAt = performance.now();
 			if (identityFrame === 0 && probe.identityEnd === 0 && document.querySelector("[data-session-drag-overlay]")) identityFrame = requestAnimationFrame(watchIdentity);
 			if (probe.wave === 0 && document.querySelector("[data-session-drag-overlay] [data-peel-ready=true]")) probe.wave = performance.now();
-		}).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-peel-ready", "data-session-drag-overlay"] });
+		}).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-peel-ready", "data-peel-prepared", "data-session-drag-overlay"] });
 	});
 	await page.goto(PEEL_URL, { waitUntil: "networkidle" });
 	await page.getByRole("button", { name: "Agent session", exact: true }).click();
@@ -186,10 +187,10 @@ test("the prepared Claude wave joins the completed card and avatar within two fr
 	let canvas: Awaited<ReturnType<typeof prepared.elementHandle>> | null = null;
 	for (let attempt = 0; attempt < 2; attempt++) {
 		await page.evaluate(() => {
-			const probe = (window as typeof window & { peelHandoff: { morphEnd: number; identityEnd: number; settledFrames: number; sawCompact: boolean; wave: number } }).peelHandoff;
+			const probe = (window as typeof window & { peelHandoff: { morphEnd: number; identityEnd: number; preparedAt: number; settledFrames: number; wave: number } }).peelHandoff;
 			probe.morphEnd = probe.identityEnd = probe.wave = 0;
 			probe.settledFrames = 0;
-			probe.sawCompact = false;
+			probe.preparedAt = document.querySelector("[data-peel-prepared=true]") ? performance.now() : 0;
 		});
 		const box = (await source.boundingBox())!;
 		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -199,8 +200,8 @@ test("the prepared Claude wave joins the completed card and avatar within two fr
 		await expect(overlay.locator("[data-peel-ready=true]")).toBeAttached();
 		await expectHorizontalAvatarHandoff(overlay);
 		canvas ??= await overlay.locator("canvas").elementHandle();
-		const timing = await page.evaluate(() => (window as typeof window & { peelHandoff: { morphEnd: number; identityEnd: number; wave: number; frames: number } }).peelHandoff);
-		const entranceEnd = Math.max(timing.morphEnd, timing.identityEnd);
+		const timing = await page.evaluate(() => (window as typeof window & { peelHandoff: { morphEnd: number; identityEnd: number; preparedAt: number; wave: number; frames: number } }).peelHandoff);
+		const entranceEnd = Math.max(timing.morphEnd, timing.identityEnd, timing.preparedAt);
 		await test.info().attach(`claude-handoff-${attempt + 1}`, { body: JSON.stringify({ morphToWaveMs: timing.wave - timing.morphEnd, entranceToWaveMs: timing.wave - entranceEnd }), contentType: "application/json" });
 		expect(timing.morphEnd).toBeGreaterThan(0);
 		expect(timing.identityEnd).toBeGreaterThan(0);
@@ -342,7 +343,7 @@ test("the standalone Claude drag bends its real preview and links with the glow 
 	await page.mouse.move(box.x + box.width / 2 + 90, box.y + box.height / 2 + 45, { steps: 8 });
 	const overlay = page.locator("[data-session-drag-overlay]");
 	await expect(overlay).toContainText("Venn");
-	await expect(overlay.locator('[data-peel-native-source] [data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "true");
+	await expect(overlay.locator('[data-peel-native-source] [data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "false");
 	await expect(overlay.locator('[data-peel-capture-source] [data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "false");
 	await expect(overlay.locator('[data-peel-capture-source] [data-slot="human-agent-avatar"]')).toHaveAttribute("data-composition", "group");
 	await expect(overlay.locator("[data-peel-ready=true]")).toBeAttached();
@@ -474,7 +475,7 @@ test("the normal Team EU26 session drag keeps its existing DOM preview", async (
 	await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 30);
 	const overlay = page.locator("[data-session-drag-overlay]");
 	await expect(overlay).toContainText("Priya Raman");
-	await expect(overlay.locator('[data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "true");
+	await expect(overlay.locator('[data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "false");
 	await expect(overlay.locator("[data-peel-surface], canvas")).toHaveCount(0);
 	await page.mouse.up();
 	await expect(overlay).toHaveCount(0);

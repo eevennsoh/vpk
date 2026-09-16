@@ -13,6 +13,12 @@ export const SESSION_DRAG_CHIP_ENTER_TRANSITION = {
 	ease: [0.4, 1, 0.6, 1],
 } satisfies Transition; // duration-normal + ease-out-practical
 
+/** Paper joins the compact avatar at duration-fast, before the normal entrance. */
+export const SESSION_PEEL_CHIP_ENTER_TRANSITION = {
+	...SESSION_DRAG_CHIP_ENTER_TRANSITION,
+	duration: 0.1,
+} satisfies Transition; // duration-fast + ease-out-practical
+
 /** Marks the row's identity mark so the chip can fly out of the grabbed avatar. */
 export const SESSION_DRAG_IDENTITY_SELECTOR = "[data-session-drag-identity]";
 

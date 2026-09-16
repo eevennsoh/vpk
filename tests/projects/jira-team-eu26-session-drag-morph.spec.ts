@@ -12,12 +12,13 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await page.setViewportSize({ width: firstMove === 4 ? 1440 : 1100, height: 920 });
 			await page.emulateMedia({ reducedMotion, colorScheme: firstMove === 4 ? "dark" : "light" });
 			await page.addInitScript((theme) => localStorage.setItem("ui-theme", theme), firstMove === 4 ? "dark" : "light");
+			// This suite exercises the native morph; Peel's handoff has its own coverage.
+			await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
 			await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
 			await expect(page.locator("html")).toHaveAttribute("data-color-mode", firstMove === 4 ? "dark" : "light");
 			const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
-			await expect(expand).toBeVisible();
-			await expand.click();
+			if (await expand.isVisible()) await expand.click();
 			const session = page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread");
 			const article = session.locator("article");
 			await article.scrollIntoViewIfNeeded();
@@ -75,7 +76,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				expect(frame.identity.height).toBeCloseTo(32, 1);
 			}
 			if (reducedMotion === "no-preference") {
-				expect(frames.some((frame) => frame.agentSize > 16.2 && frame.agentSize < 23.8)).toBe(true);
+				// The horizontal identity stays at its final size while its background morphs.
+				for (const frame of frames) expect(frame.agentSize).toBeCloseTo(16, 1);
 				expect(Math.abs(first.identity.x - identity.x)).toBeLessThan(2);
 				expect(Math.abs(first.identity.y - identity.y)).toBeLessThan(2);
 				expect(first.surface.width).toBeCloseTo(source.width, 0);

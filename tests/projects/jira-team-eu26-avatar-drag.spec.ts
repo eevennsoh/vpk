@@ -4,6 +4,32 @@ import { mkdir, writeFile } from "node:fs/promises";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 const evidence = "output/agent-browser/avatar-drag";
 
+test("one inert paper context survives repeat intent and retires for the next row", async ({ page }) => {
+	test.setTimeout(60_000);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: true })));
+	await page.goto(`${baseURL}/jira-team-eu26`, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	const rows = page.locator("[data-agent-session-column] article");
+	if (!await rows.first().isVisible()) await page.getByRole("button", { name: "Expand Unlink sessions column", exact: true }).click();
+	await rows.first().hover();
+	const idle = page.locator("[data-session-preview-idle]");
+	await expect(idle.locator("[data-peel-prepared=true]")).toHaveCount(1);
+	await idle.evaluate((element) => { (window as typeof window & { preparedCanvas?: Element | null }).preparedCanvas = element.querySelector("canvas"); });
+	await page.mouse.move(700, 140);
+	await expect(idle).toHaveAttribute("aria-hidden", "true");
+	await expect(idle).toHaveAttribute("inert", "");
+	await rows.first().hover();
+	expect(await idle.evaluate((element) => element.querySelector("canvas") === (window as typeof window & { preparedCanvas?: Element | null }).preparedCanvas)).toBe(true);
+	for (const index of [1, 2, 0]) {
+		await rows.nth(index).hover();
+		await expect(idle).toHaveCount(1);
+		await expect(page.locator("[data-peel-surface] canvas")).toHaveCount(1);
+		await expect(idle.locator("[data-peel-prepared=true]")).toHaveCount(1);
+	}
+});
+
 for (const peel of [false, true]) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		test(`avatars stay on the painted card during first and repeated drags (peel=${peel}, motion=${reducedMotion})`, async ({ page }) => {
