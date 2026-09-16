@@ -11,11 +11,13 @@ export interface HumanAgentAvatarMotionOptions {
 	direction: "clockwise" | "counter-clockwise";
 	curvature: number;
 	scaleAmount: number;
-	/** Optional destination sizes; omitted values preserve the original capped swap. */
+	/** Optional destination sizes; defaults are a 24px agent and 20px human. */
 	agentTargetSizePx?: number;
 	humanTargetSizePx?: number;
 	pauseWhenOffscreen: boolean;
 }
+
+const DEFAULT_TARGET_SIZES = { agent: 24, human: 20 } as const;
 
 export const DEFAULT_HUMAN_AGENT_AVATAR_MOTION: Readonly<HumanAgentAvatarMotionOptions> =
 	{
@@ -29,6 +31,8 @@ export const DEFAULT_HUMAN_AGENT_AVATAR_MOTION: Readonly<HumanAgentAvatarMotionO
 		direction: "clockwise",
 		curvature: 2,
 		scaleAmount: 1,
+		agentTargetSizePx: DEFAULT_TARGET_SIZES.agent,
+		humanTargetSizePx: DEFAULT_TARGET_SIZES.human,
 		pauseWhenOffscreen: true,
 	};
 
@@ -83,20 +87,18 @@ export function resolveHumanAgentAvatarMotion(
 		direction: options.direction ?? defaults.direction,
 		curvature: bounded(options.curvature, defaults.curvature, 2, 8),
 		scaleAmount: bounded(options.scaleAmount, defaults.scaleAmount, 0, 1),
-		agentTargetSizePx: Number.isFinite(options.agentTargetSizePx)
-			? bounded(options.agentTargetSizePx, 22, 8, 48) : undefined,
-		humanTargetSizePx: Number.isFinite(options.humanTargetSizePx)
-			? bounded(options.humanTargetSizePx, 24, 8, 48) : undefined,
+		agentTargetSizePx: bounded(options.agentTargetSizePx, DEFAULT_TARGET_SIZES.agent, 8, 48),
+		humanTargetSizePx: bounded(options.humanTargetSizePx, DEFAULT_TARGET_SIZES.human, 8, 48),
 		pauseWhenOffscreen:
 			options.pauseWhenOffscreen ?? defaults.pauseWhenOffscreen,
 	};
 }
 
 export function resolveHumanAgentAvatarTargets(
-	{ frameSize, agentSize, humanSize }: { frameSize: number; agentSize: number; humanSize: number },
+	{ frameSize }: { frameSize: number; agentSize: number; humanSize: number },
 	options: Pick<HumanAgentAvatarMotionOptions, "agentTargetSizePx" | "humanTargetSizePx"> = {},
 ) {
-	const humanTarget = Math.min(frameSize, options.humanTargetSizePx ?? Math.max(humanSize, Math.min(24, agentSize)));
-	const agentTarget = Math.min(frameSize, options.agentTargetSizePx ?? agentSize - (humanTarget - humanSize));
+	const humanTarget = Math.min(frameSize, options.humanTargetSizePx ?? DEFAULT_TARGET_SIZES.human);
+	const agentTarget = Math.min(frameSize, options.agentTargetSizePx ?? DEFAULT_TARGET_SIZES.agent);
 	return { agentSize: agentTarget, humanSize: humanTarget };
 }

@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 	description:
-		"A human photo and an agent hexagon in a 24×24 or 32×32 identity. Static by default, with the original clockwise size-and-position swap. The human grows to at most 24px while the agent shrinks by the same amount, then both return to their original sizes and positions.",
+		"A human photo and an agent hexagon in a 24×24 or 32×32 identity. Static by default, with the original clockwise size-and-position swap. Animated targets default to a 24px agent and 20px human, then both return to their original sizes and positions.",
 	demoLayout: { examplesContentWidth: "full" },
 	usage: `import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 
@@ -57,7 +57,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			type: "boolean",
 			default: "false",
 			description:
-				"Use the original eased swap and return, with the human capped at 24px and the agent shrinking by the matching amount. The 32px variant swaps 30px/16px to 22px/24px; the 24px variant swaps 24px/12px to 12px/24px. Stops offscreen and falls back to static under reduced motion.",
+				"Use the original eased swap and return, with animated targets of a 24px agent and 20px human. Both variants restore their original resting sizes afterward. Stops offscreen and falls back to static under reduced motion.",
 		},
 		{
 			name: "composition",
@@ -100,7 +100,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 		{
 			title: "Animated",
 			description:
-				"Choose 24×24 or 32×32 and tune the original swap motion. By default, the human grows to 24px while the agent shrinks by the same amount: 30→22px and 16→24px in the 32px variant, or 24→12px and 12→24px in the 24px variant. Use Agent target size and Human target size to adjust their animated destinations. Both return to their original resting sizes. Both turns share their easing and duration, with a short 50ms pause between them. The human's 2px white stroke keeps a constant thickness through the swap. Copy the values as JSON to reuse them through the motion prop.",
+				"Choose 24×24 or 32×32 and tune the original swap motion. Animated targets default to a 24px agent and 20px human. Use Agent target size and Human target size to adjust their animated destinations. Both return to their original resting sizes. Both turns share their easing and duration, with a short 50ms pause between them. The human's 2px white stroke keeps a constant thickness through the swap. Copy the values as JSON to reuse them through the motion prop.",
 			demoSlug: "human-agent-avatar-demo-animated",
 		},
 		{
