@@ -17,10 +17,12 @@ test("the face flash outlasts the ripple, fades by its own deadline, and replays
 	assert.equal(peelFlashEnergy(state), 1);
 	assert.equal(peelFlashProgress(state), 0);
 	run(state, PEEL_DURATIONS.flash / 2);
-	assert.ok(peelFlashEnergy(state) > 0.9, "the light remains visible after the paper's initial ripple");
-	assert.ok(state.impulses.every((impulse) => !Number.isFinite(impulse.age)), "the original ripple still retires at its unchanged deadline");
+	assert.ok(peelFlashEnergy(state) > 0.9, "the broad light remains bright through its middle");
 	assert.ok(Math.abs(peelFlashProgress(state) - 0.5) < 0.01);
-	run(state, PEEL_DURATIONS.flash / 2 + 1 / 60);
+	run(state, PEEL_DURATIONS.wave - PEEL_DURATIONS.flash / 2 + 1 / 60);
+	assert.ok(state.impulses.every((impulse) => !Number.isFinite(impulse.age)), "the original ripple still retires at its unchanged deadline");
+	assert.ok(peelFlashEnergy(state) > 0.1, "the face light briefly outlasts the ripple");
+	run(state, PEEL_DURATIONS.flash - PEEL_DURATIONS.wave + 1 / 60);
 	assert.equal(peelFlashEnergy(state), 0, "the face sweep fades out while the paper remains held");
 	assert.equal(peelFlashProgress(state), 1);
 	releasePeel(state);
