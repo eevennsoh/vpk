@@ -20,6 +20,22 @@ async function geometry(avatar: Locator) {
 	});
 }
 
+test("12px human initials fit when the photo cannot load", async ({ page }) => {
+	await page.route("**/avatar-user/ting-chen/color/asow-strategy-orange-64.png", route => route.abort());
+	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#sizes`);
+	const fallback = page.locator('[data-human-agent-avatar-sizes] [data-avatar-size="24"] [data-avatar-role="human"] [data-slot="avatar-fallback"]');
+	await expect(fallback).toHaveText("PR");
+	await expect(fallback).toHaveCSS("font-size", "6px");
+	const text = await fallback.evaluate(el => {
+		const range = document.createRange();
+		range.selectNodeContents(el);
+		const rect = range.getBoundingClientRect();
+		return { width: rect.width, height: rect.height };
+	});
+	expect(text.width).toBeLessThanOrEqual(12);
+	expect(text.height).toBeLessThanOrEqual(12);
+});
+
 for (const variant of [
 	{ frame: 24, agent: 24, human: 12, agentTarget: 12, inset: 0, badge: 12 },
 	{ frame: 32, agent: 30, human: 16, agentTarget: 22, inset: 1, badge: 16 },
