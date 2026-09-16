@@ -97,7 +97,7 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_HIDE_MS/u);
 	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_COMPLETE_MS/u);
 	// A settled card must not replay its entrance on an unrelated re-render.
-	assert.match(CARD_SOURCE, /initial: shouldPlayArrival && !isStateChanged \? \{ opacity: 0, transform: AGENT_SESSION_TOP_ARRIVAL_TRANSFORM \} : false/u);
+	assert.match(CARD_SOURCE, /initial: shouldPlayArrival && !isStateChanged \? \{ opacity: 0, transform: arrivalStartTransform \} : false/u);
 	assert.match(CARD_SOURCE, /initial=\{rowMotion\.initial\}/u);
 });
 
