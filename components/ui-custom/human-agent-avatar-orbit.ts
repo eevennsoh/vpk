@@ -46,12 +46,14 @@ export function createHumanAgentAvatarOrbitMotion(
 export function humanAgentAvatarOrbit(
 	frameSize: number,
 	baseSize: number,
-	otherSize: number,
+	targetSizePx: number,
 	startsTopLeft: boolean,
 	motion: ReturnType<typeof createHumanAgentAvatarOrbitMotion>,
+	topLeftInset = 0,
+	bottomRightInset = 0,
 ) {
 	const targetSize =
-		baseSize + (otherSize - baseSize) * motion.config.scaleAmount;
+		baseSize + (targetSizePx - baseSize) * motion.config.scaleAmount;
 	const point = (progress: number, returning: boolean) => {
 		const size = returning
 			? targetSize + (baseSize - targetSize) * progress
@@ -63,8 +65,8 @@ export function humanAgentAvatarOrbit(
 		const opposite = 1 - (1 - progress) ** motion.config.curvature;
 		const x = motion.config.direction === "clockwise" ? opposite : bend;
 		const y = motion.config.direction === "clockwise" ? bend : opposite;
-		const offset = frameSize - size;
-		return `translate(${(topLeft ? x : 1 - x) * offset}px, ${(topLeft ? y : 1 - y) * offset}px) scale(${size / baseSize})`;
+		const offset = frameSize - size - topLeftInset - bottomRightInset;
+		return `translate(${topLeftInset + (topLeft ? x : 1 - x) * offset}px, ${topLeftInset + (topLeft ? y : 1 - y) * offset}px) scale(${size / baseSize})`;
 	};
 	const initial = point(0, false);
 	const swapped = point(1, false);

@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"human-agent-avatar-demo-sizes": dynamic(() => import("../../demos/ui-custom/human-agent-avatar-demo").then((mod) => ({ default: mod.HumanAgentAvatarDemoSizes })), { ssr: false }),
 	"human-agent-avatar-demo-horizontal-group": dynamic(() => import("../../demos/ui-custom/human-agent-avatar-demo").then((mod) => ({ default: mod.HumanAgentAvatarDemoHorizontalGroup })), { ssr: false }),
 	"human-agent-avatar-demo-animated": dynamic(
 		() => import("../../demos/ui-custom/human-agent-avatar-demo").then((mod) => ({ default: mod.HumanAgentAvatarDemoAnimated })),

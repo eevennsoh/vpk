@@ -41,6 +41,7 @@ const avatarVariants = cva(
 	{
 		variants: {
 			size: {
+				xxs: "size-3",
 				xs: "size-4",
 				sm: "size-6",
 				default: "size-8",
@@ -331,6 +332,7 @@ function AvatarFallback({
 }
 
 const avatarUnassignedIconSizeMap: Record<AvatarSize, NewCoreIconProps["size"]> = {
+	xxs: "small",
 	xs: "small",
 	sm: "small",
 	default: "medium",
@@ -719,7 +721,7 @@ function AvatarGroup({ children, className, label, size, ...props }: Readonly<Av
 					role="group"
 					aria-label={label}
 					className={cn(
-						"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
+						"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 has-data-[size=xxs]:-space-x-1 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
 						className
 					)}
 					{...props}

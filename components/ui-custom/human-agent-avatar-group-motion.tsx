@@ -21,43 +21,39 @@ function GroupComposition({
 	human,
 	agentFirst,
 	humanSize,
+	positions,
 	label,
 	transition,
 }: Readonly<
 	Pick<
 		HumanAgentAvatarMotionProps,
-		"agent" | "human" | "agentFirst" | "humanSize" | "label"
+		"agent" | "human" | "agentFirst" | "humanSize" | "label" | "positions"
 	> & { grouped: boolean; transition: Transition }
 >) {
 	const present = useIsPresent();
-	const positions = grouped
-		? {}
-		: agentFirst
-			? { human: "absolute bottom-0 right-0", agent: "absolute left-0 top-0" }
-			: { human: "absolute left-0 top-0", agent: "absolute bottom-0 right-0" };
 	const willChange = transition.duration === 0 ? undefined : "transform";
 	const humanAvatar = (
 		<motion.span
 			aria-hidden="true"
-			className={positions.human}
+			className={grouped ? undefined : "absolute"}
 			data-avatar-role="human"
 			key="human"
 			layoutId="human"
 			transition={{ layout: transition }}
-			style={{ willChange }}
+			style={{ ...(!grouped ? positions.human : {}), willChange }}
 		>
-			{human(undefined)}
+			{human()}
 		</motion.span>
 	);
 	const agentAvatar = (
 		<motion.span
 			aria-hidden="true"
-			className={positions.agent}
+			className={grouped ? undefined : "absolute"}
 			data-avatar-role="agent"
 			key="agent"
 			layoutId="agent"
 			transition={{ layout: transition }}
-			style={{ willChange }}
+			style={{ ...(!grouped ? positions.agent : {}), willChange }}
 		>
 			{agent(grouped ? humanSize : undefined)}
 		</motion.span>
@@ -77,7 +73,7 @@ function GroupComposition({
 			}}
 		>
 			{grouped ? (
-				<AvatarGroup label={label} size={humanSize === 24 ? "sm" : "xs"}>
+				<AvatarGroup label={label} size={humanSize === 24 ? "sm" : humanSize === 12 ? "xxs" : "xs"}>
 					{avatars}
 				</AvatarGroup>
 			) : (

@@ -11,7 +11,6 @@ export interface HumanAgentAvatarMotionOptions {
 	direction: "clockwise" | "counter-clockwise";
 	curvature: number;
 	scaleAmount: number;
-	foregroundSwapAt: number;
 	pauseWhenOffscreen: boolean;
 }
 
@@ -27,7 +26,6 @@ export const DEFAULT_HUMAN_AGENT_AVATAR_MOTION: Readonly<HumanAgentAvatarMotionO
 		direction: "clockwise",
 		curvature: 2,
 		scaleAmount: 1,
-		foregroundSwapAt: 0.5,
 		pauseWhenOffscreen: true,
 	};
 
@@ -82,12 +80,6 @@ export function resolveHumanAgentAvatarMotion(
 		direction: options.direction ?? defaults.direction,
 		curvature: bounded(options.curvature, defaults.curvature, 2, 8),
 		scaleAmount: bounded(options.scaleAmount, defaults.scaleAmount, 0, 1),
-		foregroundSwapAt: bounded(
-			options.foregroundSwapAt,
-			defaults.foregroundSwapAt,
-			0,
-			1,
-		),
 		pauseWhenOffscreen:
 			options.pauseWhenOffscreen ?? defaults.pauseWhenOffscreen,
 	};

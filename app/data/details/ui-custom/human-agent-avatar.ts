@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 	description:
-		"A human photo and an agent hexagon in one 32×32 identity. Static by default, with an optional clockwise animation that exchanges their positions and sizes, then continues rotating to the original composition.",
+		"A human photo and an agent hexagon in a 24×24 or 32×32 identity. Static by default, with the original clockwise size-and-position swap. The human grows to at most 24px while the agent shrinks by the same amount, then both return to their original sizes and positions.",
 	demoLayout: { examplesContentWidth: "full" },
 	usage: `import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 
@@ -14,11 +14,15 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
   }}
 />
 
-// Optional repeating swap, with a static reduced-motion fallback.
+// Compact 24×24 variant. Omit sizePx for the default 32×32 variant.
+<HumanAgentAvatar agent={agent} human={human} sizePx={24} />
+
+// Optional repeating swap at either size, with a static reduced-motion fallback.
 <HumanAgentAvatar
   agent={agent}
   human={human}
   animate
+  sizePx={24}
   motion={{
     variant: "orbit",
     durationMs: 300,
@@ -30,7 +34,6 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
     direction: "clockwise",
     curvature: 2,
     scaleAmount: 1,
-    foregroundSwapAt: 0.5,
     pauseWhenOffscreen: true,
   }}
 />`,
@@ -54,7 +57,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			type: "boolean",
 			default: "false",
 			description:
-				"Rotate clockwise to exchange the 24px and 16px slots, hold, then continue in the same direction to return. Stops offscreen and falls back to static under reduced motion.",
+				"Use the original eased swap and return, with the human capped at 24px and the agent shrinking by the matching amount. The 32px variant swaps 30px/16px to 22px/24px; the 24px variant swaps 24px/12px to 12px/24px. Stops offscreen and falls back to static under reduced motion.",
 		},
 		{
 			name: "composition",
@@ -66,7 +69,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			name: "motion",
 			type: "Partial<HumanAgentAvatarMotionOptions>",
 			description:
-				"Live motion options: orbit or horizontal-group variation, shared turn duration, initial delay, pause between turns, pause after returning, repeats, cubic-bezier easing, direction, curvature, size swap amount, foreground timing, and offscreen pausing. All timing values use milliseconds. The Animated example exposes every option through GUI controls, with Replay, Reset, and Copy JSON.",
+				"Live motion options: orbit or horizontal-group variation, shared turn duration, initial delay, pause between turns, pause after returning, repeats, cubic-bezier easing, direction, curvature, capped size-swap amount, and offscreen pausing. Layer handoff follows the size crossover. All timing values use milliseconds. The Animated example exposes every option through GUI controls, with Replay, Reset, and Copy JSON.",
 		},
 		{
 			name: "attributionOrder",
@@ -80,7 +83,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			type: "number",
 			default: "32",
 			description:
-				"Identity footprint in pixels. Also preserves AgentListIdentity’s existing size variants.",
+				"Figma variants: 24×24 with a 24px agent and 12px human, or 32×32 with a 30px agent and 16px human. The original 2px separation ring overhangs the bottom right; the human photo stays inside the footprint. Legacy 40px and 48px footprints remain supported.",
 		},
 		{
 			name: "className",
@@ -90,15 +93,20 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 	],
 	examples: [
 		{
+			title: "Sizes",
+			description: "24×24 and 32×32 variants use the Figma agent proportions and human-badge overlap.",
+			demoSlug: "human-agent-avatar-demo-sizes",
+		},
+		{
 			title: "Animated",
 			description:
-				"Tune the motion properties below. Both turns share their duration and easing, with a short 50ms pause between them. The human border and separation ring keep a constant thickness. Copy the values as JSON to reuse them through the motion prop.",
+				"Choose 24×24 or 32×32 and tune the original swap motion. The human grows to at most 24px while the agent shrinks by the same amount: 30→22px and 16→24px in the 32px variant, or 24→12px and 12→24px in the 24px variant. Both turns share their easing and duration, with a short 50ms pause between them. The original 1px avatar border and 2px separation ring keep a constant thickness through the swap. Copy the values as JSON to reuse them through the motion prop.",
 			demoSlug: "human-agent-avatar-demo-animated",
 		},
 		{
 			title: "Horizontal group",
 			description:
-				"The compact identity becomes the shared 16px AvatarGroup, with the human first and agent second, then returns. Uses the same timing controls and respects reduced motion.",
+				"The compact identity becomes an equal-size AvatarGroup, with the human first and agent second, then returns. Supports both sizes, uses the same timing controls, and respects reduced motion.",
 			demoSlug: "human-agent-avatar-demo-horizontal-group",
 		},
 		{

@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useRef, type ReactNode, type CSSProperties } from "react";
 import type { AvatarProps } from "@/components/ui/avatar";
 import { motion, useInView } from "motion/react";
+import { cn } from "@/lib/utils";
 
 import {
 	humanAgentAvatarOrbit,
@@ -15,11 +16,14 @@ import { HumanAgentAvatarGroupMotion } from "@/components/ui-custom/human-agent-
 
 export type HumanAgentAvatarMotionProps = Readonly<{
 	agent: (sizePx?: number) => ReactNode;
-	human: (outline: AvatarProps["outline"]) => ReactNode;
+	human: (outline?: AvatarProps["outline"]) => ReactNode;
 	agentFirst: boolean;
 	frameSize: number;
 	agentSize: number;
 	humanSize: number;
+	positions: { agent: CSSProperties; human: CSSProperties };
+	topLeftInset: number;
+	bottomRightInset: number;
 	className: string;
 	label: string;
 	options?: Partial<HumanAgentAvatarMotionOptions>;
@@ -44,6 +48,8 @@ function HumanAgentAvatarOrbitMotion({
 	frameSize,
 	agentSize,
 	humanSize,
+	topLeftInset,
+	bottomRightInset,
 	className,
 	label,
 	options,
@@ -53,26 +59,35 @@ function HumanAgentAvatarOrbitMotion({
 	const inView = useInView(ref);
 	const motionConfig = createHumanAgentAvatarOrbitMotion(options);
 	const active = !motionConfig.config.pauseWhenOffscreen || inView;
+	const humanTargetSize = Math.max(humanSize, Math.min(24, agentSize));
+	const sizeChange = (humanTargetSize - humanSize) * motionConfig.config.scaleAmount;
+	const agentTargetSize = agentSize - (humanTargetSize - humanSize);
+	// Handoff when the actual sizes cross, as in main's original 24px/16px swap.
+	const sizeSwapAt = sizeChange > 0 ? (agentSize - humanSize) / (2 * sizeChange) : Infinity;
 	const agentOrbit = humanAgentAvatarOrbit(
 		frameSize,
 		agentSize,
-		humanSize,
+		agentTargetSize,
 		agentFirst,
 		motionConfig,
+		topLeftInset,
+		bottomRightInset,
 	);
 	const humanOrbit = humanAgentAvatarOrbit(
 		frameSize,
 		humanSize,
-		agentSize,
+		humanTargetSize,
 		!agentFirst,
 		motionConfig,
+		topLeftInset,
+		bottomRightInset,
 	);
 	const agentStartZIndex = agentFirst ? 0 : 2;
 	const agentEndZIndex = agentFirst ? 2 : 0;
 	return (
 		<span
 			aria-label={label}
-			className={className}
+			className={cn(className, "isolate")}
 			data-animated="true"
 			data-slot="human-agent-avatar"
 			ref={ref}
@@ -85,7 +100,7 @@ function HumanAgentAvatarOrbitMotion({
 						? {
 								transform: agentOrbit.transforms,
 								zIndex: motionConfig.progress.map((progress) =>
-									progress < motionConfig.config.foregroundSwapAt
+									progress < sizeSwapAt
 										? agentStartZIndex
 										: agentEndZIndex,
 								),
