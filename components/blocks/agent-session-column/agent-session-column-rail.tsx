@@ -80,7 +80,7 @@ export { AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS } from "./agent-session-column-rai
  * replacing the flyout or drag target. Line markers retain the original
  * horizontal treatment and falloff.
  *
- * Circle unread uses `color.icon.subtle`; reviewed dots stay `icon.disabled`. Size
+ * Circle dots stay `icon.disabled`, including newly synced sessions. Size
  * carries proximity and the face carries direct interest. Lifecycle remains
  * spoken, while line mode retains its previous selected/new tone treatment.
  *
@@ -419,7 +419,6 @@ function AgentSessionUserNotch({
 	introIndex,
 	isArriving,
 	isHighlighted,
-	isNew,
 	onArrivalComplete,
 	onIntroComplete,
 	playIntro,
@@ -430,7 +429,6 @@ function AgentSessionUserNotch({
 	introIndex: number;
 	isArriving: boolean;
 	isHighlighted: boolean;
-	isNew: boolean;
 	onArrivalComplete?: () => void;
 	onIntroComplete?: () => void;
 	playIntro: boolean;
@@ -500,9 +498,7 @@ function AgentSessionUserNotch({
 					)}
 					data-arrival-rest-hidden={hideRestDisc || undefined}
 					style={{
-						backgroundColor: isNew
-							? AGENT_SESSION_NOTCH_TONE.unread
-							: AGENT_SESSION_NOTCH_TONE.rest,
+						backgroundColor: AGENT_SESSION_NOTCH_TONE.rest,
 						transform: proximity === undefined
 							? `scale(${restingScale})`
 							: dotScale,
@@ -694,7 +690,6 @@ function AgentSessionNotch({
 										introIndex={introIndex}
 										isArriving={isArriving}
 										isHighlighted={isHighlighted}
-										isNew={isNew}
 										key={item.state}
 										onArrivalComplete={onArrivalComplete}
 										onIntroComplete={onIntroComplete}

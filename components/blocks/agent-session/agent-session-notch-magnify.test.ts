@@ -75,7 +75,7 @@ test("user dots grow from four pixels to a twelve pixel avatar without exceeding
 	assert.equal(toAgentSessionUserNotchDiameter(Number.NaN), AGENT_SESSION_USER_NOTCH_DIAMETER.rest);
 });
 
-test("a newly synced user dot rests at four pixels; newness is color, not size", () => {
+test("circle dots rest at four pixels while line markers retain their new-state tone", () => {
 	assert.equal(toAgentSessionUserNotchDiameter(0), AGENT_SESSION_USER_NOTCH_DIAMETER.rest);
 	assert.equal(toAgentSessionUserNotchDiameter(1), AGENT_SESSION_USER_NOTCH_DIAMETER.peak);
 	assert.equal(toAgentSessionUserNotchDiameter(0.5), 8);
@@ -97,7 +97,6 @@ test("colour is the named icon tokens, never an alpha mix", () => {
 	// resting grey over the old plane; that mix is a third grey on `bg-surface`.
 	assert.equal(AGENT_SESSION_NOTCH_TONE.rest, "var(--color-icon-disabled)");
 	assert.equal(AGENT_SESSION_NOTCH_TONE.selected, "var(--color-icon)");
-	assert.equal(AGENT_SESSION_NOTCH_TONE.unread, "var(--color-icon-subtle)");
 	assert.equal(toAgentSessionNotchTone(false, false), AGENT_SESSION_NOTCH_TONE.rest);
 	assert.equal(toAgentSessionNotchTone(true, false), AGENT_SESSION_NOTCH_TONE.selected);
 	// Newly synced notches stay on `color.icon` whether or not they are nearest.
