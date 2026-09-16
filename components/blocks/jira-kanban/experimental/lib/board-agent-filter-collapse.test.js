@@ -234,10 +234,10 @@ test("assignee scope changes which focused columns stay expanded", () => {
 });
 
 test("Untracked and Needs input overlays expand the session column without writing viewer collapse", () => {
-	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("untracked", true), false);
-	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("needs-input", true), false);
-	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("working", false), true);
-	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter(null, true), true);
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("untracked", true, 1), false);
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("needs-input", true, 1), false);
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("working", false, 1), true);
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter(null, true, 1), true);
 });
 
 test("shown session ids for a focus row are a singleton, or empty for Untracked", () => {
@@ -245,4 +245,13 @@ test("shown session ids for a focus row are a singleton, or empty for Untracked"
 	assert.deepEqual([...shownSessionStateIdsForAgentFilter("needs-input")], ["needs-input"]);
 	assert.deepEqual([...shownSessionStateIdsForAgentFilter("finished")], ["finished"]);
 	assert.equal(shownSessionStateIdsForAgentFilter("untracked").size, 0);
+});
+
+test("an empty focused session pool collapses without changing the viewer layout", () => {
+	for (const filterId of ["untracked", "needs-input", "working", "finished"]) {
+		assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter(filterId, false, 0), true);
+	}
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("needs-input", false, 1), false);
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter(null, false, 0), false);
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter(null, true, 0), true);
 });
