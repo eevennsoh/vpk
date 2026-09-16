@@ -68,7 +68,7 @@ test("Claude's avatar-coloured flash passes through the card face and fades with
 	// Capture the rendered frame directly: locator screenshots wait for the
 	// pointer spring to become stationary, which can outlast this short flash.
 	const glowing = await page.screenshot({ clip: canvasBox, path: "output/agent-browser/peel/claude-peel-flash.png" });
-	await page.waitForTimeout(1_300);
+	await page.waitForTimeout(950);
 	const faded = await page.screenshot({ clip: canvasBox, path: "output/agent-browser/peel/claude-peel-flash-faded.png" });
 	const countFlashPixels = async (png: Buffer) => page.evaluate(async ({ png, pill, identity, canvasBox }) => {
 		const image = new Image();

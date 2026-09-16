@@ -41,8 +41,8 @@ export const PEEL_DURATIONS = {
 	 * board for most of the interaction.
 	 */
 	wave: 0.85,
-	/** One-second face sweep, independent of the paper's ripple. */
-	flash: 1,
+	/** Face sweep matched to the paper's 0.85-second ripple. */
+	flash: 0.85,
 	/** Sheen catching up to the cursor — `--duration-normal`. */
 	sheen: 0.15,
 	/** Drag follow, deliberately the shortest — `--duration-fast`. */
@@ -464,7 +464,7 @@ export function peelFlashEnergy(state: PeelState): number {
 	return tail * tail * (3 - 2 * tail);
 }
 
-/** The face sweep shares the frame clock while travelling more slowly than the ripple. */
+/** The face sweep shares the frame clock and finishes with the ripple. */
 export function peelFlashProgress(state: PeelState): number {
 	return clamp(state.flashAge / PEEL_DURATIONS.flash, 0, 1);
 }
