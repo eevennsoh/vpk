@@ -276,7 +276,6 @@ function mergeJiraIssueAgentCatalog(
 function resolveJiraIssueAgentRowPresentation(
 	activities: readonly JiraIssueAgentActivity[],
 	linkFlash: JiraIssueAgentLinkFlash | undefined,
-	hasViewChat: boolean,
 ) {
 	const summary = summarizeJiraIssueAgentActivities(activities);
 	const isCompletedRow = activities.length > 0
@@ -295,37 +294,24 @@ function resolveJiraIssueAgentRowPresentation(
 	const rowLabel = isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
-	const canOpenChat = isSingleAgent && hasViewChat
-		&& (featuredActivity?.role ?? "owner") === "owner";
 	const activityKey = activities.map((activity) => activity.id).join("\n");
 	const startupSequenceKey = isSingleAgent && featuredActivity?.startupSequence === "jira-work-item-start"
 		? activityKey
 		: null;
-	const openChatAriaLabel = canOpenChat
-		? `Open ${activities[0]?.name ?? "agent"} in Rovo chat: ${rowLabel}`
-		: isSingleAgent
+	const rowAriaLabel = isSingleAgent
 			? `${activities[0]?.name ?? "Agent"}: ${rowLabel}`
 			: `${summary.activityCount} agents: ${rowLabel}`;
 
 	return {
-		canOpenChat,
 		featuredActivity,
 		isAwaitingInput,
 		isCompletedRow,
 		isFailedRow,
-		openChatAriaLabel,
+		rowAriaLabel,
 		rowLabel,
 		rowLinkFlash,
 		startupSequenceKey,
 	};
-}
-
-function createOpenChatHandler(
-	activities: readonly JiraIssueAgentActivity[],
-	onViewChat: ((activity: JiraIssueAgentActivity) => void) | undefined,
-	canOpenChat: boolean,
-) {
-	return canOpenChat ? () => onViewChat?.(activities[0]) : undefined;
 }
 
 function resolveJiraIssueSessionDragPresentation(
@@ -540,16 +526,15 @@ function JiraIssueAgentActivityRow({
 	// row — its count just went up — so skipping it would leave the one place
 	// the link actually landed as the only place that never acknowledged it.
 	const {
-		canOpenChat,
 		featuredActivity,
 		isAwaitingInput,
 		isCompletedRow,
 		isFailedRow,
-		openChatAriaLabel,
+		rowAriaLabel,
 		rowLabel,
 		rowLinkFlash,
 		startupSequenceKey,
-	} = resolveJiraIssueAgentRowPresentation(activities, linkFlash, Boolean(onViewChat));
+	} = resolveJiraIssueAgentRowPresentation(activities, linkFlash);
 	const startupPhase = useJiraIssueAgentStartupPhase(
 		startupSequenceKey,
 		shouldReduceMotion,
@@ -561,12 +546,8 @@ function JiraIssueAgentActivityRow({
 	);
 	const assignedAgents = assignment?.assignedAgents ?? activities.map(toAgentAssignmentAgent);
 
-	const handleOpenChat = createOpenChatHandler(activities, onViewChat, canOpenChat);
 	const [dragOffset, setDragOffset] = useState<PointerDragPosition>(JIRA_ISSUE_SESSION_DRAG_ORIGIN);
-	// `onActivate` (not a sibling `onClick`) is how the row keeps its open-chat
-	// behaviour: the hook owns `bind.onClick` and swallows exactly one click
-	// after a >2px drag, so a transfer gesture never opens the chat.
-	const drag = usePointerDrag(dragOffset, setDragOffset, sessionDrag?.bounds, handleOpenChat);
+	const drag = usePointerDrag(dragOffset, setDragOffset, sessionDrag?.bounds);
 	// The pointer offset feeds motion values, and the springs are what the tag
 	// actually renders — so it trails the cursor instead of pinning to it.
 	// Reduced motion reads the raw values, giving an exact 1:1 follow.
@@ -639,8 +620,8 @@ function JiraIssueAgentActivityRow({
 	const rowHandle = (
 		<button
 			type="button"
-			aria-label={openChatAriaLabel}
-			{...(sessionDragBind ?? { onClick: handleOpenChat })}
+			aria-label={rowAriaLabel}
+			{...(sessionDragBind ?? {})}
 			{...(sessionDragBind
 				? {
 					"aria-roledescription": "Draggable agent session",

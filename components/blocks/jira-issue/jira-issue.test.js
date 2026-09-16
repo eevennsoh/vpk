@@ -348,14 +348,10 @@ test("Jira issue keeps activity rows composer-free and uses one shared assignmen
 	assert.match(AGENT_ACTIVITY_SOURCE, /inheritChinSurface \? "bg-transparent" : "bg-bg-neutral"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
-	// The open-chat handler is hoisted so the drag hook can own `bind.onClick`
-	// and swallow the click that ends a transfer gesture; without a session-drag
-	// binding the row falls back to a plain `onClick`.
-	assert.match(AGENT_ACTIVITY_SOURCE, /return canOpenChat \? \(\) => onViewChat\?\.\(activities\[0\]\) : undefined;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /\{\.\.\.\(sessionDragBind \?\? \{ onClick: handleOpenChat \}\)\}/u);
-	// A click on a linked session is activation, not the start of a transfer.
-	// Publishing on pointerdown reveals and can arm the adjacent unlink well,
-	// so pointerup detaches the session before the click can open Rovo chat.
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /handleOpenChat|createOpenChatHandler|canOpenChat/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /\{\.\.\.\(sessionDragBind \?\? \{\}\)\}/u);
+	// A click on a linked session can open the assignment flyout. Publishing on
+	// pointerdown would arm the adjacent unlink well before an actual drag.
 	assert.match(AGENT_ACTIVITY_SOURCE, /JIRA_ISSUE_SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /pointerOriginRef\.current = \{ x: event\.clientX, y: event\.clientY \}/u);
 	assert.doesNotMatch(
@@ -409,7 +405,7 @@ test("Jira issue keeps activity rows composer-free and uses one shared assignmen
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /activities\.map\(\(activity, index\)/u);
 });
 
-test("Jira issue split completed rows preserve Rovo chat activation", () => {
+test("Jira issue split completed rows preserve per-agent presentation", () => {
 	assert.match(COMPLETED_RUNS_SOURCE, /onView\?: \(run: JiraIssueCompletedAgentRun\) => void;/u);
 	assert.match(
 		COMPLETED_RUNS_SOURCE,
@@ -989,12 +985,13 @@ test("Jira issue agent activity chin splits into one row per agent only when ask
 	assert.match(AGENT_ACTIVITY_SOURCE, /layout\?: JiraIssueAgentActivityLayout;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const rowGroups = groupJiraIssueAgentActivityRows\(activities, layout\);/u);
 	// Split rows reuse the single-agent row verbatim, which is what makes each
-	// row show its own avatar, cycling status, and click-through to Rovo chat.
+	// row show its own avatar and cycling status.
 	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentActivityRow\s*\n\s*activities=\{rowGroup\.activities\}/u);
 	assert.match(MODEL_SOURCE, /export type JiraIssueAgentActivityLayout = "merged" \| "split";/u);
 	assert.match(MODEL_SOURCE, /if \(layout === "split"\) \{[\s\S]*activeActivities\.map\(\(activity\) => \(\{ activities: \[activity\], key: activity\.id \}\)\)/u);
 });
 
-test("single viewer and expired session chins cannot open Rovo chat", () => {
-	assert.match(AGENT_ACTIVITY_SOURCE, /const canOpenChat = isSingleAgent && hasViewChat\s*&& \(featuredActivity\?\.role \?\? "owner"\) === "owner";/u);
+test("agent session chins never open Rovo chat directly", () => {
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /Open \$\{activities\[0\]\?\.name \?\? "agent"\} in Rovo chat/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /onClick: handleOpenChat|sessionDrag\?\.bounds, handleOpenChat/u);
 });
