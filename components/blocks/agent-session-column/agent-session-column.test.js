@@ -510,7 +510,6 @@ test("the resting notch paints icon.disabled, not an alpha of icon", () => {
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-surface/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /rest: "var\(--color-icon-disabled\)"/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /selected: "var\(--color-icon\)"/u);
-	assert.match(NOTCH_MAGNIFY_SOURCE, /unread: "var\(--color-icon-subtle\)"/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /export function toAgentSessionNotchTone\(/u);
 	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_OPACITY|rest: 0\.6[68]/u);
 	assert.doesNotMatch(NOTCH_MARK_SOURCE, /toAgentSessionNotchOpacity|transition-opacity/u);

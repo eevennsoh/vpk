@@ -67,14 +67,12 @@ export const AGENT_SESSION_USER_NOTCH_DIAMETER = {
  * plane. A 0.66–0.68 opacity used to approximate a subtler grey over the old
  * fill; once the plane became `bg-surface` that mix was a third grey, and a
  * 1px hairline has no weight to spare on a wrong one. Line-mode new
- * notches stay on `color.icon` — already lit. Circle unread rest uses
- * `color.icon.subtle`, a step quieter than default icon and still
- * distinct from reviewed `icon.disabled`.
+ * notches stay on `color.icon` — already lit. Circle dots rest in
+ * `color.icon.disabled` regardless of whether they are newly synced.
  */
 export const AGENT_SESSION_NOTCH_TONE = {
 	rest: "var(--color-icon-disabled)",
 	selected: "var(--color-icon)",
-	unread: "var(--color-icon-subtle)",
 } as const;
 
 /** Swell in at the list-item interaction profile; out faster, as every exit is. */

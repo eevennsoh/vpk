@@ -16,7 +16,7 @@ import {
  * destination already there. `arrivalReveal` stays true through the morph.
  * `arrivalExiting` is the morph itself. A missing face still grows in with the
  * shared scale beat. Reduced motion skips both and leaves the rest disc, which
- * stays in default icon color while unread.
+ * stays in `icon.disabled` regardless of unread state.
  */
 export function useAgentSessionUserNotchArrival({
 	hasAvatar,

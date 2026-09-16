@@ -84,7 +84,7 @@ export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 			type: '"circle" | "line"',
 			default: '"circle"',
 			description:
-				'Collapsed marker treatment. "circle" renders 4px human-avatar dots; reviewed rest in `icon.disabled` and newly synced rest in `color.icon.subtle`; they grow with gradual neighbor falloff to a 12px maximum and reveal the face on hover or focus. "line" preserves the original horizontal marks, length falloff, and tone treatment.',
+				'Collapsed marker treatment. "circle" renders 4px human-avatar dots; all rest in `icon.disabled` regardless of unread state; they grow with gradual neighbor falloff to a 12px maximum and reveal the face on hover or focus. "line" preserves the original horizontal marks, length falloff, and tone treatment.',
 		},
 		{
 			name: "collapsedPresentation",
@@ -168,7 +168,7 @@ export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 			name: "newItemIds",
 			type: "ReadonlySet<string>",
 			description:
-				"Ids that arrived in the last sync and have not been reviewed. Each one plays a one-shot arrival beat and carries a persistent unreviewed mark: expanded, the card steps in from above and its dashed border recolours to discovery with an information-colored leading dot; collapsed, circle markers reveal the same human avatar used by the expanded card, hold, then morph — the face collapses 12→4 onto the rest disc already waiting beneath it and crossfades into `color.icon.subtle` at matched size, never dissolving to bare plane first — while the markers below slide down to make room, and the rail's head stays count-hidden in the gutter, including the hover-scaled hit area. Once the rail is out of the gutter (column presentation), that total stays visible. Circle mode paints unread rests with `color.icon.subtle` and reviewed rests with `icon.disabled`. Line mode retains its original new-state tone and grows from its centre. The mark is the load-bearing half — it survives a backgrounded tab, a collapsed column, and prefers-reduced-motion, where the beat does not.",
+				"Ids that arrived in the last sync and have not been reviewed. Each one plays a one-shot arrival beat and carries a persistent unreviewed mark: expanded, the card steps in from above and its dashed border recolours to discovery with an information-colored leading dot; collapsed, circle markers reveal the same human avatar used by the expanded card, hold, then morph — the face collapses 12→4 onto the rest disc already waiting beneath it and crossfades into `icon.disabled` at matched size, never dissolving to bare plane first — while the markers below slide down to make room, and the rail's head stays count-hidden in the gutter, including the hover-scaled hit area. Once the rail is out of the gutter (column presentation), that total stays visible. Circle mode paints every resting dot with `icon.disabled`, with no persistent unread color. Line mode retains its original new-state tone and grows from its centre. The mark is the load-bearing half — it survives a backgrounded tab, a collapsed column, and prefers-reduced-motion, where the beat does not.",
 		},
 		{
 			name: "onLinkWorkItem",
