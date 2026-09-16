@@ -10,10 +10,16 @@ import {
 	type Transition,
 } from "motion/react";
 
-import { AvatarGroup } from "@/components/ui/avatar";
+import { AvatarGroup, type AvatarGroupProps } from "@/components/ui/avatar";
 import type { HumanAgentAvatarMotionProps } from "@/components/ui-custom/human-agent-avatar-motion";
 import { resolveHumanAgentAvatarMotion } from "@/components/ui-custom/human-agent-avatar-motion-config";
 import { useHumanAgentAvatarGroupCycle } from "@/components/ui-custom/use-human-agent-avatar-group-cycle";
+
+const PX_TO_GROUP_SIZE: Record<number, NonNullable<AvatarGroupProps["size"]>> = {
+	12: "xxs",
+	16: "xs",
+	24: "sm",
+};
 
 function GroupComposition({
 	grouped,
@@ -21,43 +27,41 @@ function GroupComposition({
 	human,
 	agentFirst,
 	humanSize,
+	positions,
 	label,
 	transition,
 }: Readonly<
 	Pick<
 		HumanAgentAvatarMotionProps,
-		"agent" | "human" | "agentFirst" | "humanSize" | "label"
+		"agent" | "human" | "agentFirst" | "humanSize" | "label" | "positions"
 	> & { grouped: boolean; transition: Transition }
 >) {
 	const present = useIsPresent();
-	const positions = grouped
-		? {}
-		: agentFirst
-			? { human: "absolute bottom-0 right-0", agent: "absolute left-0 top-0" }
-			: { human: "absolute left-0 top-0", agent: "absolute bottom-0 right-0" };
+	const positionClassName = grouped ? undefined : "absolute";
+	const slotPositions: Partial<HumanAgentAvatarMotionProps["positions"]> = grouped ? {} : positions;
 	const willChange = transition.duration === 0 ? undefined : "transform";
 	const humanAvatar = (
 		<motion.span
 			aria-hidden="true"
-			className={positions.human}
+			className={positionClassName}
 			data-avatar-role="human"
 			key="human"
 			layoutId="human"
 			transition={{ layout: transition }}
-			style={{ willChange }}
+			style={{ ...slotPositions.human, willChange }}
 		>
-			{human(undefined)}
+			{human()}
 		</motion.span>
 	);
 	const agentAvatar = (
 		<motion.span
 			aria-hidden="true"
-			className={positions.agent}
+			className={positionClassName}
 			data-avatar-role="agent"
 			key="agent"
 			layoutId="agent"
 			transition={{ layout: transition }}
-			style={{ willChange }}
+			style={{ ...slotPositions.agent, willChange }}
 		>
 			{agent(grouped ? humanSize : undefined)}
 		</motion.span>
@@ -77,7 +81,7 @@ function GroupComposition({
 			}}
 		>
 			{grouped ? (
-				<AvatarGroup label={label} size={humanSize === 24 ? "sm" : "xs"}>
+				<AvatarGroup label={label} size={PX_TO_GROUP_SIZE[humanSize]}>
 					{avatars}
 				</AvatarGroup>
 			) : (

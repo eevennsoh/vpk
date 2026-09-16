@@ -41,6 +41,7 @@ const avatarVariants = cva(
 	{
 		variants: {
 			size: {
+				xxs: "size-3",
 				xs: "size-4",
 				sm: "size-6",
 				default: "size-8",
@@ -94,6 +95,8 @@ interface AvatarOutlineMotion {
 	scale: number | readonly number[]
 	transition?: Pick<AnimationOptions, "duration" | "ease" | "times" | "repeat" | "delay">
 	ring?: boolean
+	color?: "default" | "inverse"
+	strokeWidth?: number
 }
 
 interface AvatarProps
@@ -118,7 +121,7 @@ function avatarScaleAnimation(element: Element | null): Animation | undefined {
 	return undefined
 }
 
-function AvatarCircleOutline({ scale, transition, ring = false }: Readonly<AvatarOutlineMotion>) {
+function AvatarCircleOutline({ scale, transition, ring = false, color = "default", strokeWidth = 1 }: Readonly<AvatarOutlineMotion>) {
 	const [scope, animateOutline] = useAnimate<HTMLSpanElement>()
 	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true)
 	React.useEffect(() => {
@@ -126,7 +129,7 @@ function AvatarCircleOutline({ scale, transition, ring = false }: Readonly<Avata
 		const scales = reducedMotion ? values.slice(0, 1) : values
 		const { duration, ease, times, repeat, delay } = transition ?? {}
 		const timing = reducedMotion ? { duration: 0 } : { duration, ease, times, repeat, delay }
-		const border = animateOutline('[data-slot="avatar-circle-border"] circle', { strokeWidth: scales.map((value) => 1 / value) }, timing)
+		const border = animateOutline('[data-slot="avatar-circle-border"] circle', { strokeWidth: scales.map((value) => strokeWidth / value) }, timing)
 		const separator = ring ? animateOutline('[data-slot="avatar-circle-ring"] circle', { strokeWidth: scales.map((value) => 4 / value) }, timing) : undefined
 		const currentTime = avatarScaleAnimation(scope.current)?.currentTime
 		if (typeof currentTime === "number") {
@@ -137,7 +140,7 @@ function AvatarCircleOutline({ scale, transition, ring = false }: Readonly<Avata
 			border.stop()
 			separator?.stop()
 		}
-	}, [scope, animateOutline, scale, transition, ring, reducedMotion])
+	}, [scope, animateOutline, scale, transition, ring, color, strokeWidth, reducedMotion])
 	return (
 		<span className="contents" ref={scope}>
 			{ring ? (
@@ -157,14 +160,14 @@ function AvatarCircleOutline({ scale, transition, ring = false }: Readonly<Avata
 			) : null}
 			<svg
 				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 z-[1] size-full overflow-visible text-border! mix-blend-darken dark:mix-blend-lighten"
+				className={cn("pointer-events-none absolute inset-0 z-[1] size-full overflow-visible", color === "inverse" ? "text-border-inverse" : "text-border! mix-blend-darken dark:mix-blend-lighten")}
 				data-slot="avatar-circle-border"
 				focusable="false"
 				viewBox="0 0 100 100"
 			>
 				<circle
 					cx="50" cy="50" r="50" fill="none"
-					stroke="currentColor" strokeWidth="1"
+					stroke="currentColor" strokeWidth={strokeWidth}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</svg>
@@ -321,7 +324,7 @@ function AvatarFallback({
 		<AvatarPrimitive.Fallback
 			data-slot="avatar-fallback"
 			className={cn(
-				"bg-muted text-foreground rounded-full flex size-full items-center justify-center text-sm group-data-[size=xs]/avatar:text-[8px] group-data-[size=sm]/avatar:text-xs group-data-[size=xl]/avatar:text-lg group-data-[size=2xl]/avatar:text-3xl group-data-[shape=square]/avatar:rounded-[6px]",
+				"bg-muted text-foreground rounded-full flex size-full items-center justify-center text-sm group-data-[size=xxs]/avatar:text-[6px] group-data-[size=xs]/avatar:text-[8px] group-data-[size=sm]/avatar:text-xs group-data-[size=xl]/avatar:text-lg group-data-[size=2xl]/avatar:text-3xl group-data-[shape=square]/avatar:rounded-[6px]",
 				`group-data-[shape=hexagon]/avatar:rounded-none group-data-[shape=hexagon]/avatar:${HEXAGON_CLIP}`,
 				className
 			)}
@@ -331,6 +334,7 @@ function AvatarFallback({
 }
 
 const avatarUnassignedIconSizeMap: Record<AvatarSize, NewCoreIconProps["size"]> = {
+	xxs: "small",
 	xs: "small",
 	sm: "small",
 	default: "medium",
@@ -719,7 +723,7 @@ function AvatarGroup({ children, className, label, size, ...props }: Readonly<Av
 					role="group"
 					aria-label={label}
 					className={cn(
-						"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
+						"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 has-data-[size=xxs]:-space-x-1 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
 						className
 					)}
 					{...props}

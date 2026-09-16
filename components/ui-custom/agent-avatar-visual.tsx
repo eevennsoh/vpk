@@ -20,9 +20,11 @@ const PX_TO_LOGO_SIZE: Record<number, LogoProps["size"]> = {
 
 /** Maps a square pixel size to the nearest Avatar size token. */
 const PX_TO_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>> = {
+	12: "xxs",
 	16: "xs",
 	20: "sm",
 	24: "sm",
+	30: "default",
 	32: "default",
 	40: "lg",
 	48: "xl",
@@ -33,6 +35,7 @@ const PX_TO_INSET_LOGO_SIZE: Record<number, LogoProps["size"]> = {
 	16: "xxsmall",
 	20: "xxsmall",
 	24: "xsmall",
+	30: "xsmall",
 	32: "xsmall",
 	40: "xsmall",
 	48: "small",
@@ -43,18 +46,26 @@ const PX_TO_EXTERNAL_LOGO_SIZE: Record<number, LogoProps["size"]> = {
 	16: "xxsmall",
 	20: "xxsmall",
 	24: "small",
+	30: "small",
 	32: "small",
 	40: "small",
 	48: "small",
 };
 
 const PX_TO_INSET_IMAGE_CLASS_NAME: Record<number, string> = {
+	12: "size-2",
 	16: "size-3",
 	20: "size-3",
 	24: "size-5",
+	30: "size-5",
 	32: "size-5",
 	40: "size-5",
 	48: "size-5",
+};
+
+/** Pixel footprints between Avatar tokens retain their exact outer frame. */
+const PX_TO_AVATAR_FRAME_CLASS_NAME: Partial<Record<number, string>> = {
+	30: "size-7.5",
 };
 
 const avatarSizeFromPx = (px: number): NonNullable<AvatarProps["size"]> => PX_TO_AVATAR_SIZE[px] ?? "sm";
@@ -147,7 +158,7 @@ export function AgentAvatarVisual({
 	return (
 		<Avatar
 			animate={animate}
-			className={avatarClassName}
+			className={cn(PX_TO_AVATAR_FRAME_CLASS_NAME[sizePx], avatarClassName)}
 			label={label}
 			shape="hexagon"
 			size={avatarSizeFromPx(sizePx)}

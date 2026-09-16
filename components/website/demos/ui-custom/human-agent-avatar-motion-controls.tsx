@@ -4,9 +4,11 @@ import { useId, useState } from "react";
 
 import { GUI } from "@/components/utils/gui";
 import {
-	DEFAULT_HUMAN_AGENT_AVATAR_MOTION,
+	resolveHumanAgentAvatarMotion,
+	resolveHumanAgentAvatarTargets,
 	type HumanAgentAvatarMotionOptions,
 } from "@/components/ui-custom/human-agent-avatar-motion-config";
+import { humanAgentAvatarGeometry } from "@/components/ui-custom/human-agent-avatar-geometry";
 
 type NumericKey =
 	| "durationMs"
@@ -14,8 +16,7 @@ type NumericKey =
 	| "betweenTurnsMs"
 	| "repeatDelayMs"
 	| "curvature"
-	| "scaleAmount"
-	| "foregroundSwapAt";
+	| "scaleAmount";
 interface NumberControl {
 	key: NumericKey;
 	label: string;
@@ -62,24 +63,7 @@ const TIMING_CONTROLS: readonly NumberControl[] = [
 ];
 const ORBIT_CONTROLS: readonly NumberControl[] = [
 	{ key: "curvature", label: "Orbit curvature", min: 2, max: 8, step: 0.25 },
-	{
-		key: "scaleAmount",
-		label: "Size swap",
-		min: 0,
-		max: 100,
-		step: 5,
-		factor: 100,
-		unit: "%",
-	},
-	{
-		key: "foregroundSwapAt",
-		label: "Foreground swap point",
-		min: 0,
-		max: 100,
-		step: 5,
-		factor: 100,
-		unit: "%",
-	},
+	{ key: "scaleAmount", label: "Size swap", min: 0, max: 100, step: 5, factor: 100, unit: "%" },
 ];
 const EASING_PRESETS = [
 	{ value: "in-out", label: "Ease in out", curve: [0.4, 0, 0, 1] },
@@ -104,13 +88,21 @@ export function HumanAgentAvatarMotionControls({
 	config,
 	onChange,
 	onReplay,
+	sizePx,
 }: Readonly<{
 	config: HumanAgentAvatarMotionOptions;
 	onChange: (patch: Partial<HumanAgentAvatarMotionOptions>) => void;
 	onReplay: () => void;
+	sizePx: 24 | 32;
 }>) {
 	const id = useId();
-	const [easingChoice, setEasingChoice] = useState<EasingChoice>("in-out");
+	const defaults = resolveHumanAgentAvatarMotion({ variant: config.variant });
+	const geometry = humanAgentAvatarGeometry(sizePx);
+	const targets = resolveHumanAgentAvatarTargets(geometry, config);
+	const defaultTargets = resolveHumanAgentAvatarTargets(geometry);
+	const [easingChoice, setEasingChoice] = useState<EasingChoice>(() =>
+		EASING_PRESETS.find(preset => preset.curve.every((value, index) => value === config.ease[index]))?.value ?? "custom",
+	);
 	const [lastRepeatCount, setLastRepeatCount] = useState(0);
 	const repeatCount =
 		typeof config.repeat === "number" ? config.repeat : lastRepeatCount;
@@ -122,7 +114,7 @@ export function HumanAgentAvatarMotionControls({
 				label={control.label}
 				value={config[control.key] * (control.factor ?? 1)}
 				defaultValue={
-					DEFAULT_HUMAN_AGENT_AVATAR_MOTION[control.key] * (control.factor ?? 1)
+					defaults[control.key] * (control.factor ?? 1)
 				}
 				min={control.min}
 				max={control.max}
@@ -142,7 +134,7 @@ export function HumanAgentAvatarMotionControls({
 	return (
 		<GUI.Panel
 			title="Motion properties"
-			values={{ ...config }}
+			values={{ ...config, agentTargetSizePx: targets.agentSize, humanTargetSizePx: targets.humanSize }}
 			onPlay={onReplay}
 			playLabel="Replay avatar animation"
 		>
@@ -184,7 +176,7 @@ export function HumanAgentAvatarMotionControls({
 								key={label}
 								label={label}
 								value={config.ease[index]}
-								defaultValue={DEFAULT_HUMAN_AGENT_AVATAR_MOTION.ease[index]}
+								defaultValue={defaults.ease[index]}
 								min={0}
 								max={1}
 								step={0.01}
@@ -215,6 +207,18 @@ export function HumanAgentAvatarMotionControls({
 						onChange={(direction) => onChange({ direction })}
 					/>
 					{numbers(ORBIT_CONTROLS)}
+					{(["agent", "human"] as const).map((role) => {
+						const key = role === "agent" ? "agentTargetSizePx" : "humanTargetSizePx";
+						const sizeKey = role === "agent" ? "agentSize" : "humanSize";
+						return (
+							<GUI.Control key={key} id={`${id}-${key}`}
+								label={role === "agent" ? "Agent target size" : "Human target size"}
+								value={targets[sizeKey]} defaultValue={defaultTargets[sizeKey]}
+								min={8} max={geometry.frameSize} step={1} unit="px"
+								valueKeys={key} onChange={(value) => onChange({ [key]: value })}
+							/>
+						);
+					})}
 				</GUI.Section>
 			) : null}
 			<GUI.Section title="Playback">

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { humanAgentAvatarGeometry, humanAgentAvatarPositions } from "@/components/ui-custom/human-agent-avatar-geometry";
 
 import type { HumanAgentAvatarMotionOptions } from "@/components/ui-custom/human-agent-avatar-motion-config";
 
@@ -35,7 +36,7 @@ export interface HumanAgentAvatarProps {
 	onAnimationComplete?: () => void;
 	motion?: Partial<HumanAgentAvatarMotionOptions>;
 	attributionOrder?: HumanAgentAvatarOrder;
-	/** Default footprint: 32px, containing a 24px agent and a 16px human. */
+	/** Figma variants: 24px (24px agent / 12px human) and 32px (30px / 16px). */
 	sizePx?: number;
 	className?: string;
 }
@@ -48,22 +49,6 @@ const PX_TO_IDENTITY_FRAME_CLASS_NAME: Record<number, string> = {
 	40: "size-10",
 	48: "size-12",
 };
-const PX_TO_ATTRIBUTED_AGENT_SIZE: Record<number, number> = {
-	24: 16,
-	32: 24,
-	40: 32,
-	48: 40,
-};
-const PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE: Record<
-	number,
-	NonNullable<AvatarProps["size"]>
-> = {
-	24: "xs",
-	32: "xs",
-	40: "sm",
-	48: "sm",
-};
-
 /** A human photo and agent hexagon sharing one stable, accessible footprint. */
 export function HumanAgentAvatar({
 	agent,
@@ -83,17 +68,19 @@ export function HumanAgentAvatar({
 			onAnimationComplete?.();
 		}
 	}, [animate, reducedMotion, onAnimationComplete]);
-	const frameClassName = PX_TO_IDENTITY_FRAME_CLASS_NAME[sizePx] ?? "size-8";
-	const agentSizePx = PX_TO_ATTRIBUTED_AGENT_SIZE[sizePx] ?? sizePx;
-	const personAvatarSize = PX_TO_ATTRIBUTED_PERSON_AVATAR_SIZE[sizePx] ?? "xs";
+	const geometry = humanAgentAvatarGeometry(sizePx);
+	const { frameSize, agentSize: agentSizePx, humanSize } = geometry;
+	const frameClassName = PX_TO_IDENTITY_FRAME_CLASS_NAME[frameSize];
+	const personAvatarSize = humanSize === 24 ? "sm" : humanSize === 12 ? "xxs" : "xs";
 	const agentFirst = attributionOrder === "agent-first";
+	const positions = humanAgentAvatarPositions(geometry, agentFirst);
 	const label = `${agent.name}, used by ${human.name}`;
 	const frameClass = cn("relative block shrink-0", frameClassName, className);
 	const humanAvatar = (outline?: AvatarProps["outline"]) => (
 		<Avatar
 			animate={false}
-			outline={outline}
-			className={outline ? undefined : "ring-2 ring-background"}
+			outline={outline ? { ...outline, color: "inverse", strokeWidth: 2 } : undefined}
+			className={outline ? undefined : "after:border-2 after:border-border-inverse after:mix-blend-normal dark:after:mix-blend-normal"}
 			label=""
 			size={personAvatarSize}
 		>
@@ -108,7 +95,7 @@ export function HumanAgentAvatar({
 			</AvatarFallback>
 		</Avatar>
 	);
-	const agentAvatar = (sizePx = agentSizePx) => (
+	const agentAvatar = (sizePx: number = agentSizePx) => (
 		<AgentAvatarVisual {...agent} animate={false} label="" sizePx={sizePx} />
 	);
 
@@ -122,25 +109,23 @@ export function HumanAgentAvatar({
 				agent={agentAvatar}
 				human={humanAvatar}
 				agentFirst={agentFirst}
-				frameSize={PX_TO_IDENTITY_FRAME_CLASS_NAME[sizePx] ? sizePx : 32}
+				frameSize={frameSize}
 				agentSize={agentSizePx}
-				humanSize={personAvatarSize === "sm" ? 24 : 16}
+				humanSize={humanSize}
+				positions={positions}
+				topLeftInset={agentFirst ? geometry.agentInset : 0}
+				bottomRightInset={agentFirst ? geometry.humanInset : geometry.agentInset}
 				className={frameClass}
 				label={label}
 			/>
 		);
 	}
 
-	const personPositionClassName = agentFirst
-		? "absolute bottom-0 right-0"
-		: "absolute left-0 top-0";
-	const agentPositionClassName = agentFirst
-		? "absolute left-0 top-0"
-		: "absolute bottom-0 right-0";
 	const humanSlot = (
 		<span
 			aria-hidden="true"
-			className={personPositionClassName}
+			className="absolute"
+			style={positions.human}
 			data-avatar-role="human"
 			key="human"
 		>
@@ -150,7 +135,8 @@ export function HumanAgentAvatar({
 	const agentSlot = (
 		<span
 			aria-hidden="true"
-			className={agentPositionClassName}
+			className="absolute"
+			style={positions.agent}
 			data-avatar-role="agent"
 			key="agent"
 		>

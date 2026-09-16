@@ -11,7 +11,9 @@ export interface HumanAgentAvatarMotionOptions {
 	direction: "clockwise" | "counter-clockwise";
 	curvature: number;
 	scaleAmount: number;
-	foregroundSwapAt: number;
+	/** Optional destination sizes; omitted values preserve the original capped swap. */
+	agentTargetSizePx?: number;
+	humanTargetSizePx?: number;
 	pauseWhenOffscreen: boolean;
 }
 
@@ -27,7 +29,6 @@ export const DEFAULT_HUMAN_AGENT_AVATAR_MOTION: Readonly<HumanAgentAvatarMotionO
 		direction: "clockwise",
 		curvature: 2,
 		scaleAmount: 1,
-		foregroundSwapAt: 0.5,
 		pauseWhenOffscreen: true,
 	};
 
@@ -82,13 +83,20 @@ export function resolveHumanAgentAvatarMotion(
 		direction: options.direction ?? defaults.direction,
 		curvature: bounded(options.curvature, defaults.curvature, 2, 8),
 		scaleAmount: bounded(options.scaleAmount, defaults.scaleAmount, 0, 1),
-		foregroundSwapAt: bounded(
-			options.foregroundSwapAt,
-			defaults.foregroundSwapAt,
-			0,
-			1,
-		),
+		agentTargetSizePx: Number.isFinite(options.agentTargetSizePx)
+			? bounded(options.agentTargetSizePx, 22, 8, 48) : undefined,
+		humanTargetSizePx: Number.isFinite(options.humanTargetSizePx)
+			? bounded(options.humanTargetSizePx, 24, 8, 48) : undefined,
 		pauseWhenOffscreen:
 			options.pauseWhenOffscreen ?? defaults.pauseWhenOffscreen,
 	};
+}
+
+export function resolveHumanAgentAvatarTargets(
+	{ frameSize, agentSize, humanSize }: { frameSize: number; agentSize: number; humanSize: number },
+	options: Pick<HumanAgentAvatarMotionOptions, "agentTargetSizePx" | "humanTargetSizePx"> = {},
+) {
+	const humanTarget = Math.min(frameSize, options.humanTargetSizePx ?? Math.max(humanSize, Math.min(24, agentSize)));
+	const agentTarget = Math.min(frameSize, options.agentTargetSizePx ?? agentSize - (humanTarget - humanSize));
+	return { agentSize: agentTarget, humanSize: humanTarget };
 }
