@@ -68,8 +68,8 @@ function sessionCohortLabel(total: number): string {
 /**
  * One travelling session, drawn as the drag pill: an elevated white surface
  * holding equal-size human and agent avatars, then the human's name.
- * The 32px identity footprint stays stable as the travelling copy opens into
- * its horizontal group, preserving the card-to-chip pointer geometry.
+ * The 32px identity footprint starts in its horizontal group, preserving
+ * the card-to-chip pointer geometry without a second avatar entrance.
  */
 export function AgentSessionDragPill({
 	agent,
@@ -120,7 +120,7 @@ export function AgentSessionDragPill({
 					<HumanAgentAvatar
 						agent={agent}
 						human={attributedBy}
-						animate={animateIdentity ?? isFusionSource}
+						animate={false}
 						motion={identityMotion}
 						composition="horizontal-group"
 						attributionOrder={attributionOrder}
