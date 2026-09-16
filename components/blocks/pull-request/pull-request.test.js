@@ -83,7 +83,7 @@ test("PullRequest card reuses Avatar, Lozenge, BrandLogoMark, and ArrowRight", (
 	assert.match(COMPONENT_SOURCE, /case "Open":[\s\S]*return "success"/u);
 	assert.match(COMPONENT_SOURCE, /case "Merged":[\s\S]*return "discovery"/u);
 	assert.match(COMPONENT_SOURCE, /const _exhaustive: never = status/u);
-	assert.doesNotMatch(COMPONENT_SOURCE, /RelativeTime|from "@\/components\/ui\/elapsed-time"|BranchIcon|IconTile/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /\bRelativeTime\b|from "@\/components\/ui\/elapsed-time"|BranchIcon|IconTile/u);
 });
 
 test("PullRequest GitHub mark does not add an inline line-box wrapper", () => {
@@ -240,6 +240,8 @@ test("PullRequest flyout variant matches the overlay summary card", () => {
 		/<span className="min-w-0 truncate">\{author\.name\}<\/span>/u,
 	);
 	assert.match(COMPONENT_SOURCE, /relativeTime \? \(\s*<>\s*<span className="shrink-0">·<\/span>/u);
+	assert.match(COMPONENT_SOURCE, /import \{ toCompactRelativeTimeLabel \} from "@\/lib\/elapsed-time";/u);
+	assert.equal(COMPONENT_SOURCE.match(/\{toCompactRelativeTimeLabel\(relativeTime\)\}/gu)?.length, 2);
 	assert.doesNotMatch(COMPONENT_SOURCE, /Created by \{author\.name\}/u);
 	assert.match(
 		COMPONENT_SOURCE,

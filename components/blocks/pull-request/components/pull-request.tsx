@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { toCompactRelativeTimeLabel } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -359,12 +360,12 @@ function PullRequestFlyoutBody({
 			{relativeTime ? (
 				<>
 					<span className="shrink-0">·</span>
-					<span className="shrink-0">{relativeTime}</span>
+					<span className="shrink-0">{toCompactRelativeTimeLabel(relativeTime)}</span>
 				</>
 			) : null}
 		</span>
 	) : relativeTime ? (
-		<span className="text-xs leading-4 text-text-subtlest">{relativeTime}</span>
+		<span className="text-xs leading-4 text-text-subtlest">{toCompactRelativeTimeLabel(relativeTime)}</span>
 	) : null;
 
 	return (

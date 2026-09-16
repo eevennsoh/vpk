@@ -108,7 +108,8 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(pullRequestSectionSource, /\{pullRequestDescription\(session\)\}/u);
 	assert.match(pullRequestSectionSource, /import PeopleGroupIcon from "@atlaskit\/icon\/core\/people-group";/u);
 	assert.match(pullRequestSectionSource, /session\.pullRequestReviewerCount/u);
-	assert.match(pullRequestSectionSource, /session\.pullRequestUpdatedLabel/u);
+	assert.match(pullRequestSectionSource, /import \{ toCompactRelativeTimeLabel \} from "@\/lib\/elapsed-time";/u);
+	assert.match(pullRequestSectionSource, /\{toCompactRelativeTimeLabel\(session\.pullRequestUpdatedLabel\)\}/u);
 	assert.match(pullRequestSectionSource, />Reviewers: <\/span>/u);
 	assert.match(pullRequestSectionSource, />Updated <\/span>/u);
 	assert.match(cardSource, /import \{ AgentListAttributionAvatarGroup \}/u);

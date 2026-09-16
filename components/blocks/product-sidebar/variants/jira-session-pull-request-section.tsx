@@ -1,6 +1,8 @@
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 
+import { toCompactRelativeTimeLabel } from "@/lib/elapsed-time";
+
 import type { JiraSidebarSessionItem } from "./jira";
 
 const PULL_REQUEST_SUMMARY_PREFIX = /^#{1,6}\s*summary\s*[-–—:]\s*/iu;
@@ -66,7 +68,7 @@ export function JiraSessionPullRequestSection({
 						<span aria-hidden="true">·</span>
 					) : null}
 					{session.pullRequestUpdatedLabel !== undefined ? (
-						<span><span className="sr-only">Updated </span>{session.pullRequestUpdatedLabel}</span>
+						<span><span className="sr-only">Updated </span>{toCompactRelativeTimeLabel(session.pullRequestUpdatedLabel)}</span>
 					) : null}
 				</div>
 			) : null}
