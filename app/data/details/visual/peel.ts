@@ -1,12 +1,13 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PEEL_DETAIL: ComponentDetail = {
-		description: "A reversible paper peel adapted from jaksenc.com/about. The Stamp object curls off the page on click and lays back down on the next click. Switch Object to Agent session for one standalone Claude card beside a Jira work item. Dragging keeps the existing compact card and adds a paper wave with an avatar-colored flash glow; approaching the work item traces its border, and dropping links Claude with a flash across the new activity row. Reset repeats the gesture. Reduced motion keeps the native card and drop behavior without the wave or flash.",
-		importStatement: `import { Peel, PEEL_STAMP_RATIO, type PeelTuning } from "@/components/visual/peel";`,
+		description: "A reversible paper peel adapted from jaksenc.com/about. The Illustration object shows an ambient communication illustration that curls off the page on click and lays back down on the next click. Switch Object to Agent session for one standalone Claude card beside a Jira work item. Dragging keeps the existing compact card and adds a paper wave with an avatar-colored flash glow; approaching the work item traces its border, and dropping links Claude with a flash across the new activity row. Reset repeats the gesture. Reduced motion keeps the native card and drop behavior without the wave or flash.",
+		importStatement: `import { Peel } from "@/components/visual/peel";`,
 		usage: `<Peel
-	src="/illustration/jaksenc-bagel-stamp.webp"
-	alt="Engraved postage stamp. Click to lift it off the page."
-	width={98}
+	src="/ambient/atlassian/pictorial/communication/primary/blue.svg"
+	alt="Blue illustration of overlapping speech bubbles. Click to lift it off the page."
+	width={240}
+	height={135}
 	finish="foil"
 />`,
 		demoLayout: {

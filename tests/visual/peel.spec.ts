@@ -3,7 +3,7 @@ import { expect, test, type Locator } from "@playwright/test";
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${readFileSync(".dev-frontend-port", "utf8").trim()}`;
 const PEEL_URL = `${BASE_URL}/preview/visual/peel`;
-const STAMP_NAME = /Engraved postage stamp reading A Nice Bagel/;
+const ILLUSTRATION_NAME = /Blue illustration of overlapping speech bubbles/;
 
 async function expectHorizontalAvatarHandoff(overlay: Locator) {
 	const pose = await overlay.evaluate((root) => {
@@ -220,7 +220,7 @@ test("the prepared Claude wave joins the completed card and avatar within two fr
 		await page.waitForTimeout(200);
 		expect(await page.evaluate(() => (window as typeof window & { peelHandoff: { frames: number } }).peelHandoff.frames)).toBe(parkedFrames);
 	}
-	await page.getByRole("button", { name: "Stamp", exact: true }).click();
+	await page.getByRole("button", { name: "Illustration", exact: true }).click();
 	await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(0);
 	await expect(page.locator('[data-peel-session-visibility="hidden"][aria-hidden="true"][inert]')).toHaveCount(1);
 	await expect(page.locator('[data-peel-session-visibility="hidden"] .shimmer')).toHaveCount(0);
@@ -267,7 +267,7 @@ test("the font stylesheet stays readable and drag capture logs no CSSOM security
 
 test("clicking peels once, the paper settles, and clicking it again lays it down", async ({ page }) => {
 	await page.goto(PEEL_URL, { waitUntil: "networkidle" });
-	const stamp = page.getByRole("button", { name: STAMP_NAME });
+	const stamp = page.getByRole("button", { name: ILLUSTRATION_NAME });
 	const canvas = page.locator("main canvas");
 	await expect(canvas).toBeVisible();
 	await expect(stamp).toHaveAttribute("aria-pressed", "false");
@@ -293,7 +293,7 @@ test("clicking peels once, the paper settles, and clicking it again lays it down
 
 test("native keyboard activation toggles the peel and arrow keys move the paper", async ({ page }) => {
 	await page.goto(PEEL_URL, { waitUntil: "networkidle" });
-	const stamp = page.getByRole("button", { name: STAMP_NAME });
+	const stamp = page.getByRole("button", { name: ILLUSTRATION_NAME });
 	await stamp.focus();
 	await stamp.press("Enter");
 	await expect(stamp).toHaveAttribute("aria-pressed", "true");
@@ -313,7 +313,7 @@ test("touch toggles the stamp at mobile size and live reduced motion leaves a st
 	const page = await context.newPage();
 	try {
 		await page.goto(PEEL_URL, { waitUntil: "networkidle" });
-		const stamp = page.getByRole("button", { name: STAMP_NAME });
+		const stamp = page.getByRole("button", { name: ILLUSTRATION_NAME });
 		await stamp.tap();
 		await expect(stamp).toHaveAttribute("aria-pressed", "true");
 		await page.emulateMedia({ reducedMotion: "reduce" });

@@ -3,6 +3,7 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 
 import { GUI } from "@/components/utils/gui";
+import { cn } from "@/lib/utils";
 import {
 	PEEL_TUNING_DEFAULTS,
 	Peel,
@@ -12,15 +13,9 @@ import {
 } from "@/components/visual/peel";
 const PeelSessionDemo = lazy(() => import("./peel-session-demo").then((module) => ({ default: module.PeelSessionDemo })));
 
-/**
- * The reference stamp from jaksenc.com/about — `display-05`, "A Nice Bagel".
- *
- * Third-party artwork, kept because the point of this component is to match
- * that page exactly. Swap it for your own before anything ships.
- */
-const STAMP_SRC = "/illustration/jaksenc-bagel-stamp.webp";
-const STAMP_ALT =
-	"Engraved postage stamp reading A Nice Bagel. Click to lift it off the page, click again to set it down.";
+const ILLUSTRATION_SRC = "/ambient/atlassian/pictorial/communication/primary/blue.svg";
+const ILLUSTRATION_ALT =
+	"Blue illustration of overlapping speech bubbles. Click to lift it off the page, click again to set it down.";
 
 /** Only the parameters worth dialling live; the rest are better left at preset. */
 const CONTROLS: readonly {
@@ -129,7 +124,7 @@ const FINISH_OPTIONS: readonly { value: PeelFinish; label: string }[] = [
 ];
 
 export default function PeelDemo() {
-	const [object, setObject] = useState("stamp");
+	const [object, setObject] = useState("illustration");
 	const [finish, setFinish] = useState<PeelFinish>("foil");
 	const [overrides, setOverrides] = useState<Partial<PeelTuning>>({});
 
@@ -142,32 +137,25 @@ export default function PeelDemo() {
 
 	return (
 		<div className="flex w-full flex-col items-center gap-6">
-			{/* The reference page is a near-white sheet, not pure white — the
-			    stamp's contact shadow needs something to sit on. */}
-			<div className={object === "stamp" ? "relative flex min-h-[420px] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-[#f9f9f9] p-10" : "relative flex min-h-[420px] w-full items-center justify-center rounded-2xl border border-border bg-surface p-6"}>
-				{object === "stamp" ? <Peel
+			<div className={cn("relative flex min-h-[420px] w-full items-center justify-center rounded-2xl border border-border bg-surface p-6", object === "illustration" ? "overflow-hidden" : null)}>
+				{object === "illustration" ? <Peel
 					key={finish}
-					src={STAMP_SRC}
-					alt={STAMP_ALT}
+					src={ILLUSTRATION_SRC}
+					alt={ILLUSTRATION_ALT}
+					width={240}
+					height={135}
 					finish={finish}
-					// The reference stamp does not sit square: measured -5.87 deg
-					// (counter-clockwise) across three disjoint quiet windows of
-					// stamp.mov, which agree to 0.05 deg, and it returns to the
-					// same angle after every put-down. The component's own
-					// default stays 0 — a generic sheet should not ship one
-					// stamp's placement.
-					rotation={-5.9}
 					tuning={overrides}
 				/> : null}
-				<div data-peel-session-visibility={object === "stamp" ? "hidden" : "visible"} aria-hidden={object === "stamp" ? true : undefined} inert={object === "stamp" ? true : undefined} className={object === "stamp" ? "pointer-events-none absolute inset-6 opacity-0" : "w-full"}>
+				<div data-peel-session-visibility={object === "illustration" ? "hidden" : "visible"} aria-hidden={object === "illustration" ? true : undefined} inert={object === "illustration" ? true : undefined} className={object === "illustration" ? "pointer-events-none absolute inset-6 opacity-0" : "w-full"}>
 					<Suspense fallback={null}><PeelSessionDemo active={object === "agent-session"} /></Suspense>
 				</div>
 			</div>
 
 			<div className="w-full">
-				<GUI.Panel title="Peel" values={object === "stamp" ? { ...tuning, finish, object } : { object }}>
-					<GUI.SegmentedControl id="peel-object" label="Object" value={object} options={[{ value: "stamp", label: "Stamp" }, { value: "agent-session", label: "Agent session" }]} onChange={setObject} />
-					{object === "stamp" ? <>
+				<GUI.Panel title="Peel" values={object === "illustration" ? { ...tuning, finish, object } : { object }}>
+					<GUI.SegmentedControl id="peel-object" label="Object" value={object} options={[{ value: "illustration", label: "Illustration" }, { value: "agent-session", label: "Agent session" }]} onChange={setObject} />
+					{object === "illustration" ? <>
 					<GUI.SegmentedControl
 						id="peel-finish"
 						label="Finish"
