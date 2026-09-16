@@ -19,6 +19,7 @@ const {
 	toChinFreeBoardCardBounds,
 	toListSessionDropIntent,
 	updateBoardAgentSessionDragTransaction,
+	shouldPublishBoardAgentSessionDrag,
 } = require("./board-agent-session-drag.ts");
 
 const SOURCE_ISSUE = {
@@ -54,6 +55,21 @@ function session(id = "review-agent") {
 function cohortOf(member = session()) {
 	return { key: member.id, members: [member] };
 }
+
+test("pointer travel within the untracked rail does not republish unchanged board chrome", () => {
+	const current = createBoardAgentSessionDragTransaction(cohortOf(), { kind: "detached", sourceCardCode: "PAY-121" }, { x: 500, y: 80 }, [UNTRACKED]);
+	const next = updateBoardAgentSessionDragTransaction(current, { x: 550, y: 90 }, [UNTRACKED]);
+	assert.equal(shouldPublishBoardAgentSessionDrag(null, current), true);
+	assert.equal(shouldPublishBoardAgentSessionDrag(current, next), false);
+	assert.deepEqual(next.pointer, { x: 550, y: 90 });
+	assert.equal(shouldPublishBoardAgentSessionDrag(current, { ...next, target: { kind: "untracked" } }), true);
+	const outside = { ...next, target: null };
+	assert.equal(shouldPublishBoardAgentSessionDrag(outside, { ...outside, pointer: { x: 1000, y: 700 } }), false);
+	assert.equal(shouldPublishBoardAgentSessionDrag(outside, { ...outside, target: { kind: "attach", cardCode: "PAY-128" } }), true);
+	assert.equal(shouldPublishBoardAgentSessionDrag(outside, { ...outside, cohort: cohortOf(session("other")) }), true);
+	const approaching = { ...outside, proximity: { cardCode: "PAY-128", nearness: 0.2 } };
+	assert.equal(shouldPublishBoardAgentSessionDrag(approaching, { ...approaching, pointer: { x: 230, y: 100 } }), true);
+});
 
 test("moving an attached session atomically preserves the exact activity and derives both card modes", () => {
 	const movingActivity = {

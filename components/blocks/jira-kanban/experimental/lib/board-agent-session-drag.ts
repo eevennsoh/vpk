@@ -158,6 +158,17 @@ export interface BoardAgentSessionDragTransaction<
 	target: BoardAgentSessionDropTarget | null;
 }
 
+/** Pointer-only travel has no board chrome until a target or approach changes. */
+export function shouldPublishBoardAgentSessionDrag(
+	previous: BoardAgentSessionDragTransaction | null,
+	next: BoardAgentSessionDragTransaction,
+): boolean {
+	if (!previous || previous.cohort.key !== next.cohort.key || previous.origin !== next.origin) return true;
+	if (previous.proximity || next.proximity) return true;
+	const idleTarget = (target: BoardAgentSessionDropTarget | null) => target === null || target.kind === "untracked";
+	return !idleTarget(previous.target) || !idleTarget(next.target) || previous.target?.kind !== next.target?.kind;
+}
+
 export type BoardAgentSessionDropAction =
 	| { kind: "none" }
 	| { kind: "create"; sessionIds: readonly [string, ...string[]]; columnTitle: string }

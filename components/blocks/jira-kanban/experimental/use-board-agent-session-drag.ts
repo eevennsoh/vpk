@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
+import { createLatestAnimationFrame } from "@/lib/latest-animation-frame";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import {
@@ -48,6 +49,7 @@ import {
 	toChinFreeBoardCardBounds,
 	toListSessionDropIntent,
 	updateBoardAgentSessionDragTransaction,
+	shouldPublishBoardAgentSessionDrag,
 	type BoardAgentSessionDragOrigin,
 	type BoardAgentSessionDragTransaction,
 	type BoardAgentSessionDropBounds,
@@ -689,8 +691,13 @@ export function useBoardAgentSessionDrag({
 				? updateBoardAgentSessionDragTransaction(current, state.pointer, zones)
 				: createBoardAgentSessionDragTransaction(cohort, origin, state.pointer, zones);
 			transactionRef.current = next;
-			setTransaction(next);
-			setDragState(state);
+			// The ref always carries the latest drop coordinates. Only publish
+			// pointer changes when they change visible board chrome; the chip's
+			// motion values already own continuous travel through the rail.
+			if (shouldPublishBoardAgentSessionDrag(current, next)) {
+				setTransaction(next);
+				setDragState(state);
+			}
 			return;
 		}
 
@@ -745,13 +752,31 @@ export function useBoardAgentSessionDrag({
 		);
 	}, [armFusionRelease, armLinkFlash, cardGapsEnabled, commitDrop, flushPendingAttach, linkingVariant, shouldReduceMotion]);
 
+	const dragScheduler = useMemo(() => createLatestAnimationFrame<{
+		origin: BoardAgentSessionDragOrigin;
+		state: JiraIssueAgentSessionDragState;
+	}>({
+		requestFrame: (callback) => requestAnimationFrame(callback),
+		cancelFrame: (id) => cancelAnimationFrame(id),
+		onFrame: ({ origin, state }) => onDragStateChange(origin, state),
+	}), [onDragStateChange]);
+	// Cancel rather than retire: Strict Mode replays effect setup on this instance.
+	useEffect(() => () => dragScheduler.cancel(), [dragScheduler]);
+
 	function createBinding(
 		origin: BoardAgentSessionDragOrigin,
 		bindingOnUnlink?: JiraIssueAgentSessionDragBinding["onUnlink"],
 	): JiraIssueAgentSessionDragBinding {
 		return {
 			previewEffect,
-			onDragStateChange: (state) => onDragStateChange(origin, state),
+			onDragStateChange: (state) => {
+				if (!state.dragging || transactionRef.current === null) {
+					// Acknowledge immediately; release resolves fresh final geometry
+					// synchronously and must never resurrect a queued pointer move.
+					dragScheduler.cancel();
+					onDragStateChange(origin, state);
+				} else dragScheduler.schedule({ origin, state });
+			},
 			onFocusedActivitiesChange: () => {},
 			onUnlink: bindingOnUnlink,
 		};

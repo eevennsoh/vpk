@@ -13,6 +13,7 @@ import {
 	resolveSessionDragMorph,
 	sessionDragGeometryRelativeToPointer,
 	SESSION_DRAG_CHIP_ENTER_TRANSITION,
+	SESSION_PEEL_CHIP_ENTER_TRANSITION,
 	type SessionDragGeometry,
 } from "./agent-session-drag-motion";
 import type { AgentSessionItem } from "./agent-session-types";
@@ -74,7 +75,7 @@ export function AgentSessionDragOverlay({
 				y: pointerRect.top,
 			}))
 			: null;
-		const options = SESSION_DRAG_CHIP_ENTER_TRANSITION;
+		const options = previewEffect === "peel" ? SESSION_PEEL_CHIP_ENTER_TRANSITION : SESSION_DRAG_CHIP_ENTER_TRANSITION;
 		const animations = morph ? [
 			animate(traveller, { transform: [`translate(${morph.x}px, ${morph.y}px)`, "translate(0px, 0px)"] }, options),
 			animate(surface, { transform: [`scale(${morph.scaleX}, ${morph.scaleY})`, "scale(1, 1)"] }, options),

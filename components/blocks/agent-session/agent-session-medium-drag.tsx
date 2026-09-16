@@ -5,7 +5,6 @@ import {
 	useRef,
 	useState,
 	type MouseEvent as ReactMouseEvent,
-	type FocusEvent as ReactFocusEvent,
 	type PointerEvent as ReactPointerEvent,
 	type ReactElement,
 } from "react";
@@ -13,6 +12,7 @@ import {
 import {
 	type JiraIssueAgentSessionDragBinding,
 	type JiraIssueAgentSessionDragSource,
+	type JiraIssueAgentSessionTransfer,
 } from "@/components/blocks/jira-issue/agent-session-drag";
 import { useSessionDragChipPointer } from "@/components/blocks/jira-issue/use-session-drag-chip-pointer";
 import {
@@ -36,7 +36,7 @@ import { toSessionTransferMember } from "./agent-session-transfer-member";
 import { toJiraIssueAgentActivityFromSession } from "./agent-session-work-item";
 import { singletonSessionCohort, type SessionCohort } from "./session-cohort";
 import type { AgentSessionItem } from "./agent-session-types";
-import { useSessionPeelSurface } from "./use-session-peel-surface";
+import { useSessionPeelPreparation, useSessionPeelSurface } from "./use-session-peel-surface";
 
 const SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
 /** Same 2px threshold as `usePointerDrag` — publish/arm only after a real move. */
@@ -70,8 +70,13 @@ export function AgentSessionMediumDrag({
 	// Where the chip starts, as an offset from the pointer that published the
 	// drag. Stored as the resolved delta so nothing has to read a ref at render.
 	const [chipOrigin, setChipOrigin] = useState<SessionDragGeometry | null>(null);
-	const [peelIntent, setPeelIntent] = useState(false);
-	const drag = usePointerDrag(dragOffset, setDragOffset, sessionDrag?.bounds);
+	const { prepared: peelIntent, prepare: preparePeelIntent } = useSessionPeelPreparation(sessionDrag?.previewEffect === "peel" && !shouldReduceMotion);
+	const drag = usePointerDrag(dragOffset, (next) => {
+		// The row only consumes the out-of-row threshold. Pointer motion lives
+		// in motion values, so later coordinates do not require row renders.
+		setDragOffset((previous) => (Math.hypot(previous.x, previous.y) >= SESSION_DRAG_CHIP_DISTANCE_PX)
+			=== (Math.hypot(next.x, next.y) >= SESSION_DRAG_CHIP_DISTANCE_PX) ? previous : next);
+	}, sessionDrag?.bounds);
 	const chipPointer = useSessionDragChipPointer(shouldReduceMotion);
 	const isDragging = Boolean(sessionDrag) && drag.dragging && publishedDragging;
 	const isFollower = cohortFollower && !isDragging;
@@ -83,6 +88,7 @@ export function AgentSessionMediumDrag({
 	// move. A coalesced move must not offset the avatars from their source box.
 	const sourceGeometryRef = useRef<SessionDragGeometry | null>(null);
 	const didPublishDragRef = useRef(false);
+	const transferRef = useRef<JiraIssueAgentSessionTransfer | null>(null);
 	const dragTargetRef = useRef<HTMLElement | null>(null);
 	const peelSurface = useSessionPeelSurface(sessionDrag?.previewEffect === "peel");
 
@@ -92,22 +98,24 @@ export function AgentSessionMediumDrag({
 		cancelled = false,
 	) {
 		if (dragging && event) {
-			const next = cohort?.() ?? singletonSessionCohort(item);
-			const [first, ...rest] = next.members;
-			setGhostCohort(next);
+			// Membership is a gesture snapshot. Rebuilding the capture subtree on
+			// every move invalidates its paper print and restarts preparation.
+			if (transferRef.current === null) {
+				const next = cohort?.() ?? singletonSessionCohort(item);
+				const [first, ...rest] = next.members;
+				setGhostCohort(next);
+				transferRef.current = {
+					key: next.key,
+					members: [toSessionTransferMember(first), ...rest.map(toSessionTransferMember)],
+				};
+			}
 			sessionDrag?.onDragStateChange({
 				activities: [activity],
 				cancelled: false,
 				dragging: true,
 				pointer: { x: event.clientX, y: event.clientY },
 				source: source,
-				transfer: {
-					key: next.key,
-					members: [
-						toSessionTransferMember(first),
-						...rest.map(toSessionTransferMember),
-					],
-				},
+				transfer: transferRef.current,
 			});
 			return;
 		}
@@ -135,6 +143,7 @@ export function AgentSessionMediumDrag({
 		setChipOrigin(null);
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, event);
+		transferRef.current = null;
 	}
 
 	function cancelSessionDrag(event: ReactPointerEvent<HTMLElement>) {
@@ -153,6 +162,7 @@ export function AgentSessionMediumDrag({
 		setChipOrigin(null);
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, undefined, true);
+		transferRef.current = null;
 	}
 
 	const endSessionDragRef = useRef(endSessionDrag);
@@ -202,19 +212,13 @@ export function AgentSessionMediumDrag({
 		? {
 			...dragBindWithoutKeyboard,
 			onFocus: () => {
-				if (sessionDrag.previewEffect === "peel") setPeelIntent(true);
+				preparePeelIntent();
 				sessionDrag.onFocusedActivitiesChange([activity]);
-			},
-			onBlur: (event: ReactFocusEvent<HTMLElement>) => {
-				if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setPeelIntent(false);
 			},
 			onPointerEnter: () => {
 				if (sessionDrag.previewEffect !== "peel") return;
 				setGhostCohort(cohort?.() ?? singletonSessionCohort(item));
-				setPeelIntent(true);
-			},
-			onPointerLeave: (event: ReactPointerEvent<HTMLElement>) => {
-				if (!event.currentTarget.matches(":focus-within")) setPeelIntent(false);
+				preparePeelIntent();
 			},
 			onMouseDown: (event: ReactMouseEvent<HTMLElement>) => {
 				const interactiveTarget = event.target instanceof Element
@@ -243,6 +247,7 @@ export function AgentSessionMediumDrag({
 					return;
 				}
 				didPublishDragRef.current = false;
+				preparePeelIntent();
 				dragTargetRef.current = event.currentTarget;
 				setSourceHeight(event.currentTarget.getBoundingClientRect().height);
 				sourceGeometryRef.current = measureSessionDragGeometry(event.currentTarget);

@@ -9,6 +9,7 @@ const {
 	resolveSessionDragMorph,
 	sessionDragGeometryRelativeToPointer,
 	SESSION_DRAG_CHIP_ENTER_TRANSITION,
+	SESSION_PEEL_CHIP_ENTER_TRANSITION,
 	SESSION_DRAG_IDENTITY_SELECTOR,
 } = require("./agent-session-drag-motion.ts");
 
@@ -102,6 +103,12 @@ test("the enter transition is the popup-family token pair, resolved once", () =>
 		duration: 0.15,
 		ease: [0.4, 1, 0.6, 1],
 	});
+});
+
+test("paper reaches its matching print 50ms earlier using duration-fast", () => {
+	assert.equal(SESSION_PEEL_CHIP_ENTER_TRANSITION.duration, 0.1);
+	assert.deepEqual(SESSION_PEEL_CHIP_ENTER_TRANSITION.ease, SESSION_DRAG_CHIP_ENTER_TRANSITION.ease);
+	assert.equal(SESSION_DRAG_CHIP_ENTER_TRANSITION.duration, 0.15);
 });
 
 test("the origin is captured on pointerdown and cleared on both drag endings", () => {

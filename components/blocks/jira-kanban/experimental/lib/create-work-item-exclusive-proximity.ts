@@ -1,3 +1,8 @@
+import {
+	createLatestAnimationFrame,
+	// @ts-expect-error Node's strip-types runner requires the explicit .ts extension.
+} from "../../../../../lib/latest-animation-frame.ts";
+
 /** Padding around the resting well that still counts as near. */
 export const CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX = 120;
 
@@ -41,17 +46,10 @@ export function createExclusiveProximityScheduler({
 	onPointer: (pointer: Readonly<ExclusiveProximityPointer>) => void;
 	onClear: () => void;
 }>) {
-	let frameId: number | null = null;
-	let latestPointer: Readonly<ExclusiveProximityPointer> | null = null;
 	let disposed = false;
-
-	const cancel = () => {
-		if (frameId !== null) cancelFrame(frameId);
-		frameId = null;
-		latestPointer = null;
-	};
+	const scheduler = createLatestAnimationFrame({ requestFrame, cancelFrame, onFrame: onPointer });
 	const clear = () => {
-		cancel();
+		scheduler.cancel();
 		if (!disposed) onClear();
 	};
 
@@ -62,19 +60,12 @@ export function createExclusiveProximityScheduler({
 				clear();
 				return;
 			}
-			latestPointer = pointer;
-			if (frameId !== null) return;
-			frameId = requestFrame(() => {
-				frameId = null;
-				const pointerToResolve = latestPointer;
-				latestPointer = null;
-				if (!disposed && pointerToResolve) onPointer(pointerToResolve);
-			});
+			scheduler.schedule(pointer);
 		},
 		clear,
 		dispose() {
 			disposed = true;
-			cancel();
+			scheduler.dispose();
 		},
 	};
 }
