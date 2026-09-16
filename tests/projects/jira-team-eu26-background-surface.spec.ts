@@ -163,3 +163,52 @@ test("Background color paints the board grey and keeps Agent Sessions white", as
 	await expect.poll(() => surface.evaluate((element) => getComputedStyle(element).backgroundColor))
 		.toBe(agentSurfaceColor);
 });
+
+test("the Jira shell stays anchored while the board scrolls horizontally", async ({ page }) => {
+	await page.setViewportSize({ width: 1155, height: 768 });
+	await openBoard(page);
+	const shell = page.locator('[data-slot="sidebar-wrapper"]');
+	const create = page.getByRole("button", { name: "Create", exact: true });
+	const initialNavTop = (await create.boundingBox())?.y;
+	if (initialNavTop === undefined) throw new Error("Expected the top navigation Create button");
+
+	// Offscreen chrome can enlarge the shell's scroll extent. It must not make
+	// the shell itself a scroll owner, even when a focus scroll targets it.
+	const forcedScroll = await shell.evaluate((element) => {
+		const root = element as HTMLElement;
+		const previousPosition = root.style.position;
+		root.style.position = "relative";
+		const offscreenChrome = document.createElement("div");
+		offscreenChrome.style.cssText = "position:absolute;left:200vw;top:200vh;width:1px;height:1px;pointer-events:none";
+		root.append(offscreenChrome);
+		root.scrollTo({ left: 96, top: 56, behavior: "instant" });
+		const createButton = Array.from(root.querySelectorAll("button"))
+			.find((button) => button.textContent?.trim() === "Create");
+		const result = {
+			offscreenX: offscreenChrome.getBoundingClientRect().left > root.getBoundingClientRect().right,
+			offscreenY: offscreenChrome.getBoundingClientRect().top > root.getBoundingClientRect().bottom,
+			scrollLeft: root.scrollLeft,
+			scrollTop: root.scrollTop,
+			navTop: createButton?.getBoundingClientRect().top,
+		};
+		offscreenChrome.remove();
+		root.style.position = previousPosition;
+		root.scrollTo({ left: 0, top: 0, behavior: "instant" });
+		return result;
+	});
+	expect(forcedScroll.offscreenX).toBe(true);
+	expect(forcedScroll.offscreenY).toBe(true);
+	expect(forcedScroll.scrollLeft).toBe(0);
+	expect(forcedScroll.scrollTop).toBe(0);
+	expect(forcedScroll.navTop).toBeCloseTo(initialNavTop, 0);
+
+	const board = page.locator("[data-jira-kanban-scrollport]");
+	const boardScroll = await board.evaluate((element) => {
+		element.scrollLeft = element.scrollWidth;
+		return element.scrollLeft;
+	});
+	expect(boardScroll).toBeGreaterThan(0);
+	expect(await shell.evaluate((element) => ({ left: element.scrollLeft, top: element.scrollTop })))
+		.toEqual({ left: 0, top: 0 });
+	expect((await create.boundingBox())?.y).toBeCloseTo(initialNavTop, 0);
+});

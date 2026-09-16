@@ -441,7 +441,7 @@ export default function TopNavigation({
 	return (
 		<SidebarProvider
 			className={cn(
-				"overflow-hidden",
+				"overflow-clip",
 				shellHeight === "parent" ? "h-full! min-h-0!" : "h-svh",
 			)}
 			defaultOpen={defaultSidebarOpen}
@@ -503,7 +503,7 @@ export default function TopNavigation({
 				<div
 					ref={setNavigationContainer}
 					className={cn(
-						"relative flex shrink-0 items-center gap-2 border-b px-3 transition-[padding] duration-medium ease-in-out",
+						"sticky top-0 z-50 flex shrink-0 items-center gap-2 border-b px-3 transition-[padding] duration-medium ease-in-out",
 						centerSearch && "justify-end",
 					)}
 					style={{
