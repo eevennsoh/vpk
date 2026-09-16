@@ -106,6 +106,18 @@ test("the canvas is explicitly opted out of pointer events", () => {
 });
 
 /**
+ * Peel's width and height feed its WebGL aspect, pointer geometry and canvas
+ * overscan as well as the outer layout box. Letting the forwarded style win
+ * only on the DOM node would make those two coordinate systems disagree.
+ */
+test("Peel keeps style overrides from desynchronizing its owned dimensions", () => {
+	const source = readProjectFile("components/visual/peel/index.tsx");
+
+	assert.match(source, /style\?: CSSProperties;/u);
+	assert.match(source, /style=\{\{ \.\.\.style, width, height: sheetHeight \}\}/u);
+});
+
+/**
  * Peel has exactly one silhouette: the stamp die-cut. It has carried a plain
  * square, a three-shape switch and a Jira agent-session card at various points;
  * this pins the current shape so none of them creep back.
