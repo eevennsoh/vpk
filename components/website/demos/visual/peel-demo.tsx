@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 
 import { GUI } from "@/components/utils/gui";
 import {
@@ -10,6 +10,7 @@ import {
 	type PeelFinish,
 	type PeelTuning,
 } from "@/components/visual/peel";
+const PeelSessionDemo = lazy(() => import("./peel-session-demo").then((module) => ({ default: module.PeelSessionDemo })));
 
 /**
  * The reference stamp from jaksenc.com/about — `display-05`, "A Nice Bagel".
@@ -64,8 +65,8 @@ const CONTROLS: readonly {
 	},
 	{
 		key: "peelPivot",
-		label: "Peel rock",
-		description: "Grabbed corner up, far corner down. 0 makes a lifted sheet just float.",
+		label: "Peel curl",
+		description: "How far the paper curls as the fold crosses the sheet. Radians.",
 		min: 0,
 		max: 0.5,
 		step: 0.005,
@@ -73,7 +74,7 @@ const CONTROLS: readonly {
 	{
 		key: "waveAmplitude",
 		label: "Wave height",
-		description: "Peak flex of the lift and landing ripples.",
+		description: "Optional small ripple accents during lift and landing.",
 		min: 0,
 		max: 0.25,
 		step: 0.002,
@@ -105,7 +106,7 @@ const CONTROLS: readonly {
 	{
 		key: "flutter",
 		label: "Billow",
-		description: "The undulation that runs for as long as the sheet is up.",
+		description: "Optional continuous billow while lifted. 0 lets the paper settle flat.",
 		min: 0,
 		max: 0.12,
 		step: 0.002,
@@ -128,6 +129,7 @@ const FINISH_OPTIONS: readonly { value: PeelFinish; label: string }[] = [
 ];
 
 export default function PeelDemo() {
+	const [object, setObject] = useState("stamp");
 	const [finish, setFinish] = useState<PeelFinish>("foil");
 	const [overrides, setOverrides] = useState<Partial<PeelTuning>>({});
 
@@ -142,8 +144,8 @@ export default function PeelDemo() {
 		<div className="flex w-full flex-col items-center gap-6">
 			{/* The reference page is a near-white sheet, not pure white — the
 			    stamp's contact shadow needs something to sit on. */}
-			<div className="relative flex min-h-[420px] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-[#f9f9f9] p-10">
-				<Peel
+			<div className={object === "stamp" ? "relative flex min-h-[420px] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-[#f9f9f9] p-10" : "relative flex min-h-[420px] w-full items-center justify-center rounded-2xl border border-border bg-surface p-6"}>
+				{object === "stamp" ? <Peel
 					key={finish}
 					src={STAMP_SRC}
 					alt={STAMP_ALT}
@@ -156,11 +158,16 @@ export default function PeelDemo() {
 					// stamp's placement.
 					rotation={-5.9}
 					tuning={overrides}
-				/>
+				/> : null}
+				<div data-peel-session-visibility={object === "stamp" ? "hidden" : "visible"} aria-hidden={object === "stamp" ? true : undefined} inert={object === "stamp" ? true : undefined} className={object === "stamp" ? "pointer-events-none absolute inset-6 opacity-0" : "w-full"}>
+					<Suspense fallback={null}><PeelSessionDemo active={object === "agent-session"} /></Suspense>
+				</div>
 			</div>
 
 			<div className="w-full">
-				<GUI.Panel title="Peel" values={{ ...tuning, finish }}>
+				<GUI.Panel title="Peel" values={object === "stamp" ? { ...tuning, finish, object } : { object }}>
+					<GUI.SegmentedControl id="peel-object" label="Object" value={object} options={[{ value: "stamp", label: "Stamp" }, { value: "agent-session", label: "Agent session" }]} onChange={setObject} />
+					{object === "stamp" ? <>
 					<GUI.SegmentedControl
 						id="peel-finish"
 						label="Finish"
@@ -188,6 +195,7 @@ export default function PeelDemo() {
 							onChange={set(control.key)}
 						/>
 					))}
+					</> : null}
 				</GUI.Panel>
 			</div>
 		</div>

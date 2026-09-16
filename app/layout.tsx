@@ -247,7 +247,7 @@ ${devStylesheetGuardScript}
 				{/* Bitcount Grid Single + DotGothic16 + BBH Bartle + JetBrains Mono */}
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
 				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-				<link href="https://fonts.googleapis.com/css2?family=BBH+Bartle&family=Bitcount+Grid+Single:wght@100..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+				<link href="https://fonts.googleapis.com/css2?family=BBH+Bartle&family=Bitcount+Grid+Single:wght@100..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" crossOrigin="anonymous" />
 			</head>
 			<body suppressHydrationWarning className="antialiased">
 				<PreHydrationScript id="vpk-pre-hydration" html={preHydrationScript} />

@@ -194,6 +194,7 @@ function ExperimentalJiraKanbanPageContent({
 	agentSessionPresentation = "column",
 	advancedAgentSessionTimeline = true,
 	agentSessionColumnGlow,
+	agentSessionPreviewEffect,
 	agentSessionColumnResizable = true,
 	agentSessionMultiSelect = true,
 	agents = BOARD_AGENTS,
@@ -867,6 +868,7 @@ function ExperimentalJiraKanbanPageContent({
 		receiveCreateWellRaw({ ...receipt, bounce: createWellBounce })
 	), [createWellBounce, receiveCreateWellRaw]);
 	const boardSessionDrag = useBoardAgentSessionDrag({
+		previewEffect: agentSessionPreviewEffect,
 		boardColumns: filteredBoardColumns,
 		detachedSessionsByCard: proximityAgentSessionsByCard,
 		linkingVariant: agentSessionLinkingVariant,

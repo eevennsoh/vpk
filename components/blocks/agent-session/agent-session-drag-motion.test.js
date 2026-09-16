@@ -107,7 +107,7 @@ test("reduced motion zeroes the chip entrance instead of just shortening it", ()
 	assert.match(CARD_SOURCE, /useMediaQuery\("\(prefers-reduced-motion: reduce\)", true\)/u);
 	assert.match(MEDIUM_CARD_SOURCE, /useMediaQuery\("\(prefers-reduced-motion: reduce\)", true\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /reduceMotion=\{reduceChipMotion\}/u);
-	assert.match(OVERLAY_SOURCE, /if \(!follower \|\| reduceMotion\) return;/u);
+	assert.match(OVERLAY_SOURCE, /if \(!dragging \|\| !follower \|\| reduceMotion\) return;/u);
 	assert.match(OVERLAY_SOURCE, /for \(const animation of animations\) animation\.cancel\(\);/u);
 	assert.match(OVERLAY_SOURCE, /element\.style\.willChange = ""/u);
 

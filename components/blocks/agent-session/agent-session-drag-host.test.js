@@ -33,7 +33,11 @@ test("the drag overlay portals the shared cohort chip with overlay elevation", (
 	// the portal and the chip. Keeping the portal out of the host is what stops
 	// the gesture component from growing a second concern.
 	assert.match(MEDIUM_DRAG_SOURCE, /\{children\(sessionDragBind\)\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /isDragging \? \(\s*\n\s*<AgentSessionDragOverlay/u);
+	// Normal previews mount for the gesture. Preparation is explicitly limited
+	// to the optional peel renderer and disabled for reduced motion.
+	assert.match(MEDIUM_DRAG_SOURCE, /isDragging \|\| preparePeel \? \(\s*\n\s*<AgentSessionDragOverlay/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /const preparePeel = sessionDrag\.previewEffect === "peel"[\s\S]*previewPreparation === "eager" \|\| peelIntent[\s\S]*!reduceChipMotion;/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /dragging=\{isDragging\}/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /useSessionDragChipPointer/u);
 	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /createPortal/u);
 
@@ -47,8 +51,9 @@ test("the drag overlay portals the shared cohort chip with overlay elevation", (
 	assert.match(DRAG_OVERLAY_SOURCE, /sessionDragChipViewportStyle\(true\)/u);
 	assert.match(
 		DRAG_OVERLAY_SOURCE,
-		/createPortal\([\s\S]*data-session-drag-overlay=""[\s\S]*document\.body/u,
+		/createPortal\([\s\S]*data-session-drag-overlay=\{dragging \? "" : undefined\}[\s\S]*document\.body/u,
 	);
+	assert.match(DRAG_OVERLAY_SOURCE, /data-session-dragging=\{dragging \? "" : undefined\}/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /chipPointer\.snapToPointer\(\s*\{ x: event\.clientX, y: event\.clientY \},?\s*\);/u);
 	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /chipPointer\.(?:snapToPointer|followPointer)\([\s\S]{0,100}event\.currentTarget/u);
 	assert.match(DRAG_OVERLAY_SOURCE, /-translate-x-1\/2 -translate-y-1\/2/u);

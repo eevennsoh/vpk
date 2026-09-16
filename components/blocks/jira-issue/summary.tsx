@@ -181,6 +181,7 @@ export function JiraIssueSummary({
 				usesStrokeChrome ? (
 					<span
 						aria-label={`${priority} priority`}
+						role="img"
 						className={cn(
 							buttonVariants({ size: "icon-compact", variant: "ghost" }),
 							"[&_svg]:text-current",

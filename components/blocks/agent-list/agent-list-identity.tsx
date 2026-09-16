@@ -125,6 +125,7 @@ export function AgentListIdentity({
 	if (agent.kind === "person") {
 		return (
 			<Avatar
+				animate={animate}
 				className={className}
 				label={agent.name}
 				size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
@@ -137,6 +138,7 @@ export function AgentListIdentity({
 
 	return (
 		<AgentAvatarVisual
+			animate={animate}
 			avatarClassName={className}
 			avatarSrc={agent.avatarSrc}
 			brandName={agent.brandName}
