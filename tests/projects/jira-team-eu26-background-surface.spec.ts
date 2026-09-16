@@ -164,13 +164,22 @@ test("Background color paints the board grey and keeps Agent Sessions white", as
 		.toBe(agentSurfaceColor);
 });
 
-test("the Jira shell stays anchored while the board scrolls horizontally", async ({ page }) => {
+test("the Jira shell stays anchored with visible left chrome while the board scrolls", async ({ page }) => {
 	await page.setViewportSize({ width: 1155, height: 768 });
 	await openBoard(page);
 	const shell = page.locator('[data-slot="sidebar-wrapper"]');
 	const create = page.getByRole("button", { name: "Create", exact: true });
 	const initialNavTop = (await create.boundingBox())?.y;
 	if (initialNavTop === undefined) throw new Error("Expected the top navigation Create button");
+	for (const name of ["Expand sidebar", "Open Jira"]) {
+		const control = page.getByRole("button", { name, exact: true });
+		const receivesPointer = await control.evaluate((element) => {
+			const rect = element.getBoundingClientRect();
+			const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+			return element.contains(hit);
+		});
+		expect(receivesPointer, `${name} must paint above the sticky header`).toBe(true);
+	}
 
 	// Offscreen chrome can enlarge the shell's scroll extent. It must not make
 	// the shell itself a scroll owner, even when a focus scroll targets it.
