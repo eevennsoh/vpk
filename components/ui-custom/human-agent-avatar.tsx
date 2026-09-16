@@ -79,8 +79,8 @@ export function HumanAgentAvatar({
 	const humanAvatar = (outline?: AvatarProps["outline"]) => (
 		<Avatar
 			animate={false}
-			outline={outline}
-			className={outline ? undefined : "ring-2 ring-background"}
+			outline={outline ? { ...outline, color: "inverse", strokeWidth: 2 } : undefined}
+			className={outline ? undefined : "after:border-2 after:border-border-inverse after:mix-blend-normal dark:after:mix-blend-normal"}
 			label=""
 			size={personAvatarSize}
 		>

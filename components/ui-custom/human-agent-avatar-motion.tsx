@@ -140,7 +140,6 @@ function HumanAgentAvatarOrbitMotion({
 				{human({
 					scale: active ? humanOrbit.scales : 1,
 					transition: active ? motionConfig.transition : { duration: 0 },
-					ring: true,
 				})}
 			</motion.span>
 		</span>

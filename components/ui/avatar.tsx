@@ -95,6 +95,8 @@ interface AvatarOutlineMotion {
 	scale: number | readonly number[]
 	transition?: Pick<AnimationOptions, "duration" | "ease" | "times" | "repeat" | "delay">
 	ring?: boolean
+	color?: "default" | "inverse"
+	strokeWidth?: number
 }
 
 interface AvatarProps
@@ -119,7 +121,7 @@ function avatarScaleAnimation(element: Element | null): Animation | undefined {
 	return undefined
 }
 
-function AvatarCircleOutline({ scale, transition, ring = false }: Readonly<AvatarOutlineMotion>) {
+function AvatarCircleOutline({ scale, transition, ring = false, color = "default", strokeWidth = 1 }: Readonly<AvatarOutlineMotion>) {
 	const [scope, animateOutline] = useAnimate<HTMLSpanElement>()
 	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true)
 	React.useEffect(() => {
@@ -127,7 +129,7 @@ function AvatarCircleOutline({ scale, transition, ring = false }: Readonly<Avata
 		const scales = reducedMotion ? values.slice(0, 1) : values
 		const { duration, ease, times, repeat, delay } = transition ?? {}
 		const timing = reducedMotion ? { duration: 0 } : { duration, ease, times, repeat, delay }
-		const border = animateOutline('[data-slot="avatar-circle-border"] circle', { strokeWidth: scales.map((value) => 1 / value) }, timing)
+		const border = animateOutline('[data-slot="avatar-circle-border"] circle', { strokeWidth: scales.map((value) => strokeWidth / value) }, timing)
 		const separator = ring ? animateOutline('[data-slot="avatar-circle-ring"] circle', { strokeWidth: scales.map((value) => 4 / value) }, timing) : undefined
 		const currentTime = avatarScaleAnimation(scope.current)?.currentTime
 		if (typeof currentTime === "number") {
@@ -138,7 +140,7 @@ function AvatarCircleOutline({ scale, transition, ring = false }: Readonly<Avata
 			border.stop()
 			separator?.stop()
 		}
-	}, [scope, animateOutline, scale, transition, ring, reducedMotion])
+	}, [scope, animateOutline, scale, transition, ring, color, strokeWidth, reducedMotion])
 	return (
 		<span className="contents" ref={scope}>
 			{ring ? (
@@ -158,14 +160,14 @@ function AvatarCircleOutline({ scale, transition, ring = false }: Readonly<Avata
 			) : null}
 			<svg
 				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 z-[1] size-full overflow-visible text-border! mix-blend-darken dark:mix-blend-lighten"
+				className={cn("pointer-events-none absolute inset-0 z-[1] size-full overflow-visible", color === "inverse" ? "text-border-inverse" : "text-border! mix-blend-darken dark:mix-blend-lighten")}
 				data-slot="avatar-circle-border"
 				focusable="false"
 				viewBox="0 0 100 100"
 			>
 				<circle
 					cx="50" cy="50" r="50" fill="none"
-					stroke="currentColor" strokeWidth="1"
+					stroke="currentColor" strokeWidth={strokeWidth}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</svg>

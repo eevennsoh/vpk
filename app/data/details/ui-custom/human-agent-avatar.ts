@@ -83,7 +83,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			type: "number",
 			default: "32",
 			description:
-				"Figma variants: 24×24 with a 24px agent and 12px human, or 32×32 with a 30px agent and 16px human. The human badge extends 2px beyond the bottom right, with the original border and separation ring around it. Legacy 40px and 48px footprints remain supported.",
+				"Figma variants: 24×24 with a 24px agent and 12px human, or 32×32 with a 30px agent and 16px human. The human badge extends 2px beyond the bottom right and has a 2px white stroke. Legacy 40px and 48px footprints remain supported.",
 		},
 		{
 			name: "className",
@@ -100,7 +100,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 		{
 			title: "Animated",
 			description:
-				"Choose 24×24 or 32×32 and tune the original swap motion. The human grows to at most 24px while the agent shrinks by the same amount: 30→22px and 16→24px in the 32px variant, or 24→12px and 12→24px in the 24px variant. Both turns share their easing and duration, with a short 50ms pause between them. The original 1px avatar border and 2px separation ring keep a constant thickness through the swap. Copy the values as JSON to reuse them through the motion prop.",
+				"Choose 24×24 or 32×32 and tune the original swap motion. The human grows to at most 24px while the agent shrinks by the same amount: 30→22px and 16→24px in the 32px variant, or 24→12px and 12→24px in the 24px variant. Both turns share their easing and duration, with a short 50ms pause between them. The human's 2px white stroke keeps a constant thickness through the swap. Copy the values as JSON to reuse them through the motion prop.",
 			demoSlug: "human-agent-avatar-demo-animated",
 		},
 		{
