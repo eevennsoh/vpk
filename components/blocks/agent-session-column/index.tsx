@@ -129,6 +129,7 @@ const AGENT_SESSION_WELL = cn(
  * Panel hosts pass the same class via `listClassName`.
  */
 const AGENT_SESSION_LIST_SPACING = "gap-1 p-1";
+const AGENT_SESSION_LIST_GAP_PX = 4;
 
 /**
  * Enclosed clips the list/footer region instead of the well, so the clip is a
@@ -833,6 +834,7 @@ export function AgentSessionColumn({
 						{/* Omit newItemIds so expanded rows skip the unreviewed blue dot; arrival still uses arrivingItemIds. */}
 						<AgentSession
 							animateLayout={animateLayout}
+							arrivalRowGapPx={AGENT_SESSION_LIST_GAP_PX}
 							arrivingItemIds={arrivingItemIds}
 							stateChangedItemIds={stateChangedItemIds}
 							stateChangeVersions={stateChangeVersions}

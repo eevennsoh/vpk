@@ -16,6 +16,13 @@ export const AGENT_SESSION_TOP_ARRIVAL_TRANSITION = {
 /** Enter a full row from above so its lower edge follows the opening space. */
 export const AGENT_SESSION_TOP_ARRIVAL_TRANSFORM = "translateY(-100%)";
 
+/** Prepend a whole batch above the old first row before its siblings move down. */
+export function toAgentSessionTopArrivalTransform(batchSize: number, rowGapPx: number): string {
+	return batchSize <= 1
+		? AGENT_SESSION_TOP_ARRIVAL_TRANSFORM
+		: `translateY(calc(-${batchSize * 100}% - ${batchSize * rowGapPx}px))`;
+}
+
 /**
  * Circle-rail arrival: the face pops in on the avatar recipe, holds, then
  * morphs down onto the 4px rest disc it will become. The rest disc is already
