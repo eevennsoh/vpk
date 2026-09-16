@@ -41,8 +41,8 @@ export const PEEL_DURATIONS = {
 	 * board for most of the interaction.
 	 */
 	wave: 0.85,
-	/** Broad face sweep — three `--duration-slowest` periods, independent of the paper's ripple. */
-	flash: 1.8,
+	/** One-second face sweep, independent of the paper's ripple. */
+	flash: 1,
 	/** Sheen catching up to the cursor — `--duration-normal`. */
 	sheen: 0.15,
 	/** Drag follow, deliberately the shortest — `--duration-fast`. */
