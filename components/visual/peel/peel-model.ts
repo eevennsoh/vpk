@@ -41,8 +41,8 @@ export const PEEL_DURATIONS = {
 	 * board for most of the interaction.
 	 */
 	wave: 0.85,
-	/** Face sweep matched to the paper's 0.85-second ripple. */
-	flash: 0.85,
+	/** Brief face sweep, shorter than the paper's 0.85-second ripple. */
+	flash: 0.55,
 	/** Sheen catching up to the cursor — `--duration-normal`. */
 	sheen: 0.15,
 	/** Drag follow, deliberately the shortest — `--duration-fast`. */
@@ -457,14 +457,14 @@ export function startPeelFlash(state: PeelState): void {
 	state.flashAge = state.reducedMotion ? Number.POSITIVE_INFINITY : 0;
 }
 
-/** Sustain the broad avatar-coloured pass, then ease its trailing light away. */
+/** Sustain a brief avatar-coloured pass, then ease its trailing light away. */
 export function peelFlashEnergy(state: PeelState): number {
 	if (state.reducedMotion || !Number.isFinite(state.flashAge)) return 0;
 	const tail = clamp((1 - peelFlashProgress(state)) / 0.55, 0, 1);
 	return tail * tail * (3 - 2 * tail);
 }
 
-/** The face sweep shares the frame clock and finishes with the ripple. */
+/** The face sweep shares the frame clock but finishes before the ripple. */
 export function peelFlashProgress(state: PeelState): number {
 	return clamp(state.flashAge / PEEL_DURATIONS.flash, 0, 1);
 }

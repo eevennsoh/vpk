@@ -8,9 +8,9 @@ import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, resolvePeelTuning
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { deformPeelSheet } from "./peel-geometry.ts";
 
-test("the face flash shares the ripple's deadline and replays when requested", () => {
+test("the brief face flash fades before the ripple and replays when requested", () => {
 	const state = createPeelState(resolvePeelTuning("uv-gloss", { waveAmplitude: 0.1 }));
-	assert.equal(PEEL_DURATIONS.flash, PEEL_DURATIONS.wave);
+	assert.ok(PEEL_DURATIONS.flash < PEEL_DURATIONS.wave, "the face pass is shorter than the paper ripple");
 	assert.equal(peelFlashEnergy(state), 0, "preparation never spends a flash");
 	grabPeel(state, 0.25, 0.1);
 	assert.equal(peelFlashEnergy(state), 0, "ordinary stamps do not start a face flash");
@@ -18,15 +18,17 @@ test("the face flash shares the ripple's deadline and replays when requested", (
 	assert.equal(peelFlashEnergy(state), 1);
 	assert.equal(peelFlashProgress(state), 0);
 	run(state, PEEL_DURATIONS.flash / 2);
-	assert.ok(peelFlashEnergy(state) > 0.9, "the broad light remains bright through its middle");
-	assert.ok(Math.abs(peelFlashProgress(state) - 0.5) < 0.01);
+	assert.ok(peelFlashEnergy(state) > 0.9, "the beam remains visible through its middle");
+	assert.ok(Math.abs(peelFlashProgress(state) - 0.5) <= 1 / (120 * PEEL_DURATIONS.flash) + 1e-6, "halfway progress is within half a 60Hz frame");
 	run(state, PEEL_DURATIONS.flash / 4);
 	assert.ok(peelFlashEnergy(state) > 0, "the face light is still visible before its deadline");
 	assert.ok(state.impulses.some((impulse) => Number.isFinite(impulse.age)), "the ripple is still active before the shared deadline");
 	run(state, PEEL_DURATIONS.flash / 4 + 1 / 60);
 	assert.equal(peelFlashEnergy(state), 0, "the face sweep fades out while the paper remains held");
 	assert.equal(peelFlashProgress(state), 1);
-	assert.ok(state.impulses.every((impulse) => !Number.isFinite(impulse.age)), "the original ripple retires at the shared deadline");
+	assert.ok(state.impulses.some((impulse) => Number.isFinite(impulse.age)), "the paper ripple continues after the flash");
+	run(state, PEEL_DURATIONS.wave - PEEL_DURATIONS.flash + 1 / 60);
+	assert.ok(state.impulses.every((impulse) => !Number.isFinite(impulse.age)), "the unchanged ripple retires at its own deadline");
 	releasePeel(state);
 	grabPeel(state, 0.25, 0.1);
 	startPeelFlash(state);

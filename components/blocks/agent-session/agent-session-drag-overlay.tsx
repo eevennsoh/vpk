@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type ComponentType } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
 import { animate, motion, type MotionValue } from "motion/react";
 
@@ -8,6 +8,7 @@ import { sessionDragChipViewportStyle } from "@/components/blocks/jira-issue/age
 
 import { AgentSessionCohortChip } from "./agent-session-cohort-chip";
 import {
+	isSessionDragIdentitySettled,
 	measureSessionDragGeometry,
 	resolveSessionDragMorph,
 	sessionDragGeometryRelativeToPointer,
@@ -18,6 +19,9 @@ import type { AgentSessionItem } from "./agent-session-types";
 import { agentSessionAccentColor } from "./agent-session-transfer-member";
 import type { SessionCohort } from "./session-cohort";
 import type { PeelSurfaceProps } from "@/components/visual/peel/peel-surface";
+
+// duration-fast: keep the shared avatar move brief; its final pose gates the paper handoff.
+const PEEL_IDENTITY_MOTION = { durationMs: 100, pauseWhenOffscreen: false };
 
 /** The pointer follower and one-shot layout morph own separate transforms. */
 export function AgentSessionDragOverlay({
@@ -30,7 +34,6 @@ export function AgentSessionDragOverlay({
 	reduceMotion,
 	previewEffect,
 	peelSurface: PeelSurface,
-	stableCapture = false,
 }: Readonly<{
 	/** Only an opted-in peel preview stays mounted while idle to prepare its pixels. */
 	dragging?: boolean;
@@ -43,11 +46,12 @@ export function AgentSessionDragOverlay({
 	reduceMotion: boolean;
 	previewEffect?: "peel";
 	peelSurface?: ComponentType<PeelSurfaceProps> | null;
-	/** Collections may begin preparation during a gesture; keep that print free of morph transforms. */
-	stableCapture?: boolean;
 }>) {
 	const followerRef = useRef<HTMLDivElement>(null);
 	const [peelReady, setPeelReady] = useState(false);
+	// Readiness changes must not restart Motion's avatar layout projection.
+	const visiblePeelChip = useMemo(() => <AgentSessionCohortChip cohort={cohort} elevated isFusionSource={dragging} identityMotion={PEEL_IDENTITY_MOTION} />, [cohort, dragging]);
+	const capturedPeelChip = useMemo(() => <AgentSessionCohortChip cohort={cohort} elevated animateIdentity={false} />, [cohort]);
 
 	useLayoutEffect(() => {
 		const follower = followerRef.current;
@@ -82,14 +86,28 @@ export function AgentSessionDragOverlay({
 			element.style.willChange = element === label || !morph ? "opacity" : "transform";
 		}
 		let active = true;
+		let handoffFrame = 0;
 		void Promise.all(animations.map((animation) => animation.finished)).then(() => {
 			if (active) {
 				for (const element of moving) element.style.willChange = "";
-				if (previewEffect === "peel") setPeelReady(true);
+				if (previewEffect === "peel") {
+					const capturedIdentity = follower.querySelector<HTMLElement>('[data-peel-capture-source] [data-session-drag-identity]');
+					const deadline = performance.now() + PEEL_IDENTITY_MOTION.durationMs * 4;
+					let settledFrames = 0;
+					const handoff = () => {
+						if (!active) return;
+						settledFrames = isSessionDragIdentitySettled(identity, capturedIdentity) ? settledFrames + 1 : 0;
+						// Motion can expose its target pose for one frame before projection starts.
+						if (settledFrames >= 2) setPeelReady(true);
+						else if (performance.now() < deadline) handoffFrame = requestAnimationFrame(handoff);
+					};
+					handoffFrame = requestAnimationFrame(handoff);
+				}
 			}
 		});
 		return () => {
 			active = false;
+			cancelAnimationFrame(handoffFrame);
 			// stop() commits a motion value and queues a render after this cleanup;
 			// cancellation removes the effect without restoring a stale transform.
 			for (const animation of animations) animation.cancel();
@@ -122,8 +140,8 @@ export function AgentSessionDragOverlay({
 				data-session-chip-centered=""
 			>
 				{previewEffect === "peel" && PeelSurface ? (
-					<PeelSurface active={dragging && peelReady} captureChildren={stableCapture ? <AgentSessionCohortChip cohort={cohort} elevated animateIdentity={false} /> : undefined} contentKey={JSON.stringify(cohort.members.map(({ id, agent, invokedBy }) => ({ id, agent, invokedBy })))} flashColor={agentSessionAccentColor(cohort.members[0])} pointerX={pointerX} pointerY={pointerY}>
-						<AgentSessionCohortChip cohort={cohort} elevated isFusionSource={dragging} animateIdentity={false} />
+					<PeelSurface active={dragging && peelReady} captureChildren={capturedPeelChip} contentKey={JSON.stringify(cohort.members.map(({ id, agent, invokedBy }) => ({ id, agent, invokedBy })))} flashColor={agentSessionAccentColor(cohort.members[0])} pointerX={pointerX} pointerY={pointerY}>
+						{visiblePeelChip}
 					</PeelSurface>
 				) : <AgentSessionCohortChip cohort={cohort} elevated isFusionSource />}
 			</div>

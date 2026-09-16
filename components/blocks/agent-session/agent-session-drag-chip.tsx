@@ -12,6 +12,7 @@ import {
 } from "@/components/blocks/agent-list/agent-list-identity";
 import { Badge } from "@/components/ui/badge";
 import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
+import type { HumanAgentAvatarMotionOptions } from "@/components/ui-custom/human-agent-avatar-motion-config";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -77,6 +78,7 @@ export function AgentSessionDragPill({
 	elevated = false,
 	isFusionSource = false,
 	animateIdentity,
+	identityMotion,
 }: Readonly<{
 	agent: AgentListAgent;
 	attributedBy?: AgentListInvoker;
@@ -86,6 +88,7 @@ export function AgentSessionDragPill({
 	/** Only a travelling lead pill is measured by the Jira fusion overlay. */
 	isFusionSource?: boolean;
 	animateIdentity?: boolean;
+	identityMotion?: Partial<HumanAgentAvatarMotionOptions>;
 }>) {
 	return (
 		<div
@@ -118,6 +121,7 @@ export function AgentSessionDragPill({
 						agent={agent}
 						human={attributedBy}
 						animate={animateIdentity ?? isFusionSource}
+						motion={identityMotion}
 						composition="horizontal-group"
 						attributionOrder={attributionOrder}
 						sizePx={32}
@@ -147,6 +151,7 @@ export function AgentSessionDragChip({
 	elevated = false,
 	isFusionSource = false,
 	animateIdentity,
+	identityMotion,
 }: Readonly<{
 	cohort: SessionCohort<AgentSessionItem>;
 	elevated?: boolean;
@@ -157,6 +162,7 @@ export function AgentSessionDragChip({
 	 */
 	isFusionSource?: boolean;
 	animateIdentity?: boolean;
+	identityMotion?: Partial<HumanAgentAvatarMotionOptions>;
 }>) {
 	const [lead] = cohort.members;
 	const total = cohort.members.length;
@@ -170,6 +176,7 @@ export function AgentSessionDragChip({
 				elevated={elevated}
 				isFusionSource={isFusionSource}
 				animateIdentity={animateIdentity}
+				identityMotion={identityMotion}
 			/>
 		);
 	}
@@ -222,6 +229,7 @@ export function AgentSessionDragChip({
 				elevated={elevated}
 				isFusionSource={isFusionSource}
 				animateIdentity={animateIdentity}
+				identityMotion={identityMotion}
 			/>
 			{/* The shared VPK Badge, unrestyled: its own `neutral` fill, 16px
 			    height, and `rounded-xs` corners are the count treatment, and its

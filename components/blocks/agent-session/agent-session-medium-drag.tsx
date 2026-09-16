@@ -333,7 +333,6 @@ export function AgentSessionMediumDrag({
 					reduceMotion={reduceChipMotion}
 					previewEffect={sessionDrag.previewEffect}
 					peelSurface={peelSurface}
-					stableCapture={sessionDrag.previewPreparation !== "eager"}
 				/>
 			) : null}
 		</div>

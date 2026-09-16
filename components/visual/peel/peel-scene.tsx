@@ -92,6 +92,8 @@ export function PeelScene({
 	const capabilities = useThree((root) => root.gl.capabilities);
 	const sheetRef = useRef<THREE.Mesh>(null);
 	const idleRef = useRef(true);
+	// A dark captured face needs less linear-space tint to read as light instead of a colour block.
+	const flashGainScale = useMemo(() => print && typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? 0.22 : 1, [print]);
 
 	const sheetGeometry = useMemo(
 		() => new THREE.PlaneGeometry(aspect, 1, SHEET_SEGMENTS, SHEET_SEGMENTS),
@@ -232,7 +234,7 @@ export function PeelScene({
 		sheet.uPointer.value.set(state.pointerU, state.pointerV);
 		sheet.uSheen.value = state.sheen;
 		sheet.uTime.value = state.time;
-		sheet.uFlashGain.value = flashColor ? peelFlashEnergy(state) : 0;
+		sheet.uFlashGain.value = flashColor ? peelFlashEnergy(state) * flashGainScale : 0;
 		sheet.uFlashProgress.value = peelFlashProgress(state);
 		sheet.uWave.value.set(tuning.waveAmplitude, tuning.waveLength, tuning.waveSpeed);
 		sheet.uShear.value = tuning.waveShear;

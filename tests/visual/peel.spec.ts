@@ -1,9 +1,31 @@
 import { readFileSync } from "node:fs";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${readFileSync(".dev-frontend-port", "utf8").trim()}`;
 const PEEL_URL = `${BASE_URL}/preview/visual/peel`;
 const STAMP_NAME = /Engraved postage stamp reading A Nice Bagel/;
+
+async function expectHorizontalAvatarHandoff(overlay: Locator) {
+	const pose = await overlay.evaluate((root) => {
+		const measure = (selector: string) => {
+			const avatar = root.querySelector(selector)!;
+			const present = [...avatar.children].find((element) => element.getAttribute("aria-hidden") !== "true")!;
+			const origin = avatar.getBoundingClientRect();
+			return [...present.querySelectorAll('[data-avatar-role]')].map((element) => {
+				const box = element.getBoundingClientRect();
+				return { x: box.x + box.width / 2 - origin.x, y: box.y + box.height / 2 - origin.y, width: box.width };
+			});
+		};
+		return { native: measure('[data-peel-native-source] [data-slot="human-agent-avatar"]'), capture: measure('[data-peel-capture-source] [data-slot="human-agent-avatar"]') };
+	});
+	expect(pose.native).toHaveLength(2);
+	expect(Math.abs(pose.native[0].y - pose.native[1].y)).toBeLessThan(0.5);
+	for (let index = 0; index < pose.native.length; index++) {
+		for (const dimension of ["x", "y", "width"] as const) {
+			expect(Math.abs(pose.native[index][dimension] - pose.capture[index][dimension])).toBeLessThan(0.5);
+		}
+	}
+}
 
 test("Team EU26 defaults Peel visual on, persists its switch, and prepares only an intended session", async ({ page }) => {
 	await page.addInitScript(() => {
@@ -68,7 +90,7 @@ test("Claude's avatar-coloured flash passes through the card face and fades with
 	// Capture the rendered frame directly: locator screenshots wait for the
 	// pointer spring to become stationary, which can outlast this short flash.
 	const glowing = await page.screenshot({ clip: canvasBox, path: "output/agent-browser/peel/claude-peel-flash.png" });
-	await page.waitForTimeout(950);
+	await page.waitForTimeout(700);
 	const faded = await page.screenshot({ clip: canvasBox, path: "output/agent-browser/peel/claude-peel-flash-faded.png" });
 	const countFlashPixels = async (png: Buffer) => page.evaluate(async ({ png, pill, identity, canvasBox }) => {
 		const image = new Image();
@@ -98,7 +120,7 @@ test("Claude's avatar-coloured flash passes through the card face and fades with
 		return { face, exterior };
 	}, { png: png.toString("base64"), pill, identity, canvasBox });
 	const litPixels = await countFlashPixels(glowing);
-	expect(litPixels.face).toBeGreaterThan(30);
+	expect(litPixels.face).toBeGreaterThan(10);
 	expect(litPixels.exterior).toBe(0);
 	expect((await countFlashPixels(faded)).face).toBeLessThan(litPixels.face / 4);
 	await expect(overlay).toContainText("Venn");
@@ -106,9 +128,9 @@ test("Claude's avatar-coloured flash passes through the card face and fades with
 	await expect(overlay).toHaveCount(0);
 });
 
-test("the prepared Claude wave joins the morph within two frames and parks between drags", async ({ page }) => {
+test("the prepared Claude wave joins the completed card and avatar within two frames and parks between drags", async ({ page }) => {
 	await page.addInitScript(() => {
-		const probe = { morphEnd: 0, wave: 0, frames: 0 };
+		const probe = { morphEnd: 0, identityEnd: 0, settledFrames: 0, sawCompact: false, wave: 0, frames: 0 };
 		Object.assign(window, { peelHandoff: probe });
 		const animate = Element.prototype.animate;
 		Element.prototype.animate = function (...args) {
@@ -125,9 +147,34 @@ test("the prepared Claude wave joins the morph within two frames and parks betwe
 				return draw.apply(this, args);
 			};
 		}
+		let identityFrame = 0;
+		const watchIdentity = () => {
+			identityFrame = 0;
+			const overlay = document.querySelector("[data-session-drag-overlay]");
+			if (!overlay || probe.identityEnd > 0) return;
+			const avatar = overlay.querySelector<HTMLElement>('[data-peel-native-source] [data-slot="human-agent-avatar"]');
+			const captured = overlay.querySelector<HTMLElement>('[data-peel-capture-source] [data-slot="human-agent-avatar"]');
+			if (avatar?.dataset.composition === "compact") probe.sawCompact = true;
+			const positions = (root: HTMLElement) => {
+				const origin = root.getBoundingClientRect();
+				const present = [...root.children].find((element) => element.getAttribute("aria-hidden") !== "true");
+				return [...present?.querySelectorAll('[data-avatar-role]') ?? []].map((element) => {
+					const box = element.getBoundingClientRect();
+					return { x: box.x - origin.x, y: box.y - origin.y, width: box.width, height: box.height };
+				});
+			};
+			if (probe.sawCompact && avatar?.dataset.composition === "group" && captured) {
+				const native = positions(avatar);
+				const print = positions(captured);
+				probe.settledFrames = native.length === 2 && print.length === 2 && native.every((box, index) => (["x", "y", "width", "height"] as const).every((key) => Math.abs(box[key] - print[index][key]) < 0.5)) ? probe.settledFrames + 1 : 0;
+				if (probe.settledFrames >= 2) probe.identityEnd = performance.now();
+			}
+			if (probe.identityEnd === 0) identityFrame = requestAnimationFrame(watchIdentity);
+		};
 		new MutationObserver(() => {
+			if (identityFrame === 0 && probe.identityEnd === 0 && document.querySelector("[data-session-drag-overlay]")) identityFrame = requestAnimationFrame(watchIdentity);
 			if (probe.wave === 0 && document.querySelector("[data-session-drag-overlay] [data-peel-ready=true]")) probe.wave = performance.now();
-		}).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-peel-ready"] });
+		}).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-peel-ready", "data-session-drag-overlay"] });
 	});
 	await page.goto(PEEL_URL, { waitUntil: "networkidle" });
 	await page.getByRole("button", { name: "Agent session", exact: true }).click();
@@ -139,8 +186,10 @@ test("the prepared Claude wave joins the morph within two frames and parks betwe
 	let canvas: Awaited<ReturnType<typeof prepared.elementHandle>> | null = null;
 	for (let attempt = 0; attempt < 2; attempt++) {
 		await page.evaluate(() => {
-			const probe = (window as typeof window & { peelHandoff: { morphEnd: number; wave: number } }).peelHandoff;
-			probe.morphEnd = probe.wave = 0;
+			const probe = (window as typeof window & { peelHandoff: { morphEnd: number; identityEnd: number; settledFrames: number; sawCompact: boolean; wave: number } }).peelHandoff;
+			probe.morphEnd = probe.identityEnd = probe.wave = 0;
+			probe.settledFrames = 0;
+			probe.sawCompact = false;
 		});
 		const box = (await source.boundingBox())!;
 		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -148,15 +197,17 @@ test("the prepared Claude wave joins the morph within two frames and parks betwe
 		await page.mouse.move(box.x + box.width / 2 + 90, box.y + box.height / 2 + 45, { steps: 8 });
 		const overlay = page.locator("[data-session-drag-overlay]");
 		await expect(overlay.locator("[data-peel-ready=true]")).toBeAttached();
+		await expectHorizontalAvatarHandoff(overlay);
 		canvas ??= await overlay.locator("canvas").elementHandle();
-		const timing = await page.evaluate(() => (window as typeof window & { peelHandoff: { morphEnd: number; wave: number; frames: number } }).peelHandoff);
-		await test.info().attach(`claude-handoff-${attempt + 1}`, { body: JSON.stringify({ morphToWaveMs: timing.wave - timing.morphEnd }), contentType: "application/json" });
+		const timing = await page.evaluate(() => (window as typeof window & { peelHandoff: { morphEnd: number; identityEnd: number; wave: number; frames: number } }).peelHandoff);
+		const entranceEnd = Math.max(timing.morphEnd, timing.identityEnd);
+		await test.info().attach(`claude-handoff-${attempt + 1}`, { body: JSON.stringify({ morphToWaveMs: timing.wave - timing.morphEnd, entranceToWaveMs: timing.wave - entranceEnd }), contentType: "application/json" });
 		expect(timing.morphEnd).toBeGreaterThan(0);
+		expect(timing.identityEnd).toBeGreaterThan(0);
 		expect(timing.frames).toBeGreaterThan(0);
-		expect(timing.wave - timing.morphEnd).toBeGreaterThanOrEqual(0);
-		// A little scheduler tolerance beyond two 60 Hz frames; the old capture
-		// after the morph missed this by hundreds of milliseconds.
-		expect(timing.wave - timing.morphEnd).toBeLessThan(50);
+		expect(timing.wave - entranceEnd).toBeGreaterThanOrEqual(0);
+		// The wave immediately follows both completed entrance animations.
+		expect(timing.wave - entranceEnd).toBeLessThan(50);
 		expect(await canvas!.evaluate((element) => element === document.querySelector("[data-session-drag-overlay] canvas"))).toBe(true);
 		await page.mouse.up();
 		await expect(overlay).toHaveCount(0);
@@ -291,8 +342,12 @@ test("the standalone Claude drag bends its real preview and links with the glow 
 	await page.mouse.move(box.x + box.width / 2 + 90, box.y + box.height / 2 + 45, { steps: 8 });
 	const overlay = page.locator("[data-session-drag-overlay]");
 	await expect(overlay).toContainText("Venn");
+	await expect(overlay.locator('[data-peel-native-source] [data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "true");
+	await expect(overlay.locator('[data-peel-capture-source] [data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "false");
+	await expect(overlay.locator('[data-peel-capture-source] [data-slot="human-agent-avatar"]')).toHaveAttribute("data-composition", "group");
 	await expect(overlay.locator("[data-peel-ready=true]")).toBeAttached();
 	// The paper handoff happens after the compact-card morph has completed.
+	await expectHorizontalAvatarHandoff(overlay);
 	expect(await overlay.locator("[data-peel-native-source] [data-session-drag-surface]").evaluate((element) => getComputedStyle(element).transform)).toBe("matrix(1, 0, 0, 1, 0, 0)");
 	expect(await overlay.locator("[data-peel-native-source] [data-session-drag-label]").evaluate((element) => getComputedStyle(element).opacity)).toBe("1");
 	const canvas = overlay.locator("canvas");
@@ -419,6 +474,7 @@ test("the normal Team EU26 session drag keeps its existing DOM preview", async (
 	await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 30);
 	const overlay = page.locator("[data-session-drag-overlay]");
 	await expect(overlay).toContainText("Priya Raman");
+	await expect(overlay.locator('[data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "true");
 	await expect(overlay.locator("[data-peel-surface], canvas")).toHaveCount(0);
 	await page.mouse.up();
 	await expect(overlay).toHaveCount(0);

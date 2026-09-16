@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const test = require("node:test");
 
 const {
+	isSessionDragIdentitySettled,
 	measureSessionDragGeometry,
 	resolveSessionDragMorph,
 	sessionDragGeometryRelativeToPointer,
@@ -25,6 +26,27 @@ function hostWithIdentity(rect) {
 				: null,
 	};
 }
+
+test("paper handoff waits for the visible avatar to match its horizontal print", () => {
+	const positions = [{ x: 2, y: 8, width: 16, height: 16 }, { x: 14, y: 8, width: 16, height: 16 }];
+	const identity = (composition, boxes, origin = { x: 100, y: 200 }) => ({
+		querySelector: () => ({
+			dataset: { composition },
+			getBoundingClientRect: () => origin,
+			children: [{
+				getAttribute: () => null,
+				querySelectorAll: () => boxes.map((box) => ({ getBoundingClientRect: () => ({ ...box, x: box.x + origin.x, y: box.y + origin.y }) })),
+			}],
+		}),
+	});
+	const captured = identity("group", positions, { x: 600, y: 400 });
+	assert.equal(isSessionDragIdentitySettled(identity("group", positions), captured), true);
+	assert.equal(isSessionDragIdentitySettled(identity("compact", positions), captured), false);
+	assert.equal(isSessionDragIdentitySettled(identity("group", [positions[0], { ...positions[1], y: 11 }]), captured), false);
+	assert.equal(isSessionDragIdentitySettled(identity("group", []), captured), false);
+	assert.equal(isSessionDragIdentitySettled(identity("group", positions), null), false);
+	assert.equal(isSessionDragIdentitySettled({ querySelector: () => null }, null), true);
+});
 
 test("the morph starts the avatar at its source box, rather than centring the whole pill there", () => {
 	const source = {

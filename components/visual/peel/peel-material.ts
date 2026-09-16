@@ -430,12 +430,12 @@ void main() {
 		vec3 light = normalize(vec3(-0.4, 0.6, 1.0));
 		float diffuse = dot(normalize(vNormalV), light) / light.z;
 		vec3 stock = surface.rgb * clamp(diffuse, 0.62, 1.08);
-		float beamCenter = mix(0.3, 0.95, uFlashProgress);
-		float beam = exp(-pow((vUv.x - beamCenter) / 0.42, 2.0));
+		float beamCenter = mix(0.55, 0.95, uFlashProgress);
+		float beam = exp(-pow((vUv.x - beamCenter) / 0.24, 2.0));
 		float face = smoothstep(0.85, 0.99, surface.a);
 		// A soft pass through the face. The original alpha remains unchanged,
 		// keeping the light inside the card and its drop shadow unchanged.
-		stock = mix(stock, uFlashColor, uFlashGain * beam * face * 0.28);
+		stock = mix(stock, uFlashColor, uFlashGain * beam * face * 0.18);
 		gl_FragColor = vec4(stock, surface.a);
 		#include <colorspace_fragment>
 		return;

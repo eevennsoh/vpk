@@ -18,9 +18,9 @@ export const PEEL_DETAIL: ComponentDetail = {
 			props: [
 				{ name: "children", type: "ReactNode", required: true, description: "Existing drag card or other visual to bend, including its original colors, type and rounded silhouette." },
 				{ name: "captureChildren", type: "ReactNode", description: "Optional stable version of the preview to capture while its visible copy morphs." },
-				{ name: "active", type: "boolean", required: true, description: "Starts the peel after the preview's existing entrance morph. False or reduced motion shows the native DOM preview." },
+				{ name: "active", type: "boolean", required: true, description: "Starts the peel as soon as the preview's card and avatar entrance finish. False or reduced motion shows the native DOM preview." },
 				{ name: "contentKey", type: "string", required: true, description: "Stable object identity; changing it starts a fresh capture and fold." },
-				{ name: "flashColor", type: "string", description: "Optional avatar accent as a hex, rgb color or CSS variable. A broad flash sweeps through the card's face over the paper ripple's 0.85 seconds." },
+				{ name: "flashColor", type: "string", description: "Optional avatar accent as a hex, rgb color or CSS variable. A narrow, translucent flash crosses the card's face over 0.55 seconds while the paper ripple continues." },
 				{ name: "pointerX", type: "MotionValue<number>", required: true, description: "Viewport-space drag follower x, sampled once per frame to drive the paper flex." },
 				{ name: "pointerY", type: "MotionValue<number>", required: true, description: "Viewport-space drag follower y." },
 				{ name: "tuning", type: "Partial<PeelTuning>", description: "Optional curl, ripple and billow overrides. Defaults to a gentle wave suitable for a compact card." },

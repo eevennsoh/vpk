@@ -1,6 +1,7 @@
 "use client";
 
 import { AgentSessionDragChip } from "./agent-session-drag-chip";
+import type { HumanAgentAvatarMotionOptions } from "@/components/ui-custom/human-agent-avatar-motion-config";
 import type { AgentSessionItem } from "./agent-session-types";
 import type { SessionCohort } from "./session-cohort";
 
@@ -17,6 +18,7 @@ export function AgentSessionCohortChip({
 	elevated = false,
 	isFusionSource = false,
 	animateIdentity,
+	identityMotion,
 }: Readonly<{
 	cohort: SessionCohort<AgentSessionItem>;
 	elevated?: boolean;
@@ -24,6 +26,8 @@ export function AgentSessionCohortChip({
 	isFusionSource?: boolean;
 	/** Prepared previews draw the identity immediately instead of replaying its entrance. */
 	animateIdentity?: boolean;
+	/** An overlay may fit the shared avatar motion inside its card entrance. */
+	identityMotion?: Partial<HumanAgentAvatarMotionOptions>;
 }>) {
 	return (
 		<AgentSessionDragChip
@@ -31,6 +35,7 @@ export function AgentSessionCohortChip({
 			elevated={elevated}
 			isFusionSource={isFusionSource}
 			animateIdentity={animateIdentity}
+			identityMotion={identityMotion}
 		/>
 	);
 }

@@ -20,7 +20,7 @@ export interface PeelSurfaceProps {
 	active: boolean;
 	/** Stable visual identity; a changed identity invalidates the previous print. */
 	contentKey: string;
-	/** Optional avatar accent for the broad face flash. */
+	/** Optional avatar accent for the brief face flash. */
 	flashColor?: string;
 	pointerX: MotionValue<number>;
 	pointerY: MotionValue<number>;
