@@ -691,7 +691,7 @@ test("collapsed and expanded browsing counts share the Text Morphing slots effec
 	assert.match(HEADER_SOURCE, /aria-hidden="true"[\s\S]{0,300}?<AgentSessionColumnCountMorph/u);
 	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-number=""/u);
 	assert.match(COUNT_SWAP_SOURCE, /data-agent-session-column-local-icon=""/u);
-	assert.match(COUNT_SWAP_SOURCE, /<MonitorIcon label="" size="small" \/>/u);
+	assert.match(COUNT_SWAP_SOURCE, /<MonitorIcon className="text-icon-subtle" label="" size="small" \/>/u);
 	// `text` must be a string — the shared renderer converts the numeric count.
 	assert.match(COUNT_SWAP_SOURCE, /text=\{String\(count\)\}/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /TextMorphing/u);

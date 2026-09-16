@@ -79,12 +79,12 @@ export function AgentSessionColumnCountSwap({
 					opacity: rising ? 0 : 1,
 					transform: reducedMotion ? "none" : rising ? "translateY(4px)" : "translateY(0px)",
 				}}
-				className="col-start-1 row-start-1 flex items-center justify-center text-icon-subtle"
+				className="col-start-1 row-start-1 flex items-center justify-center"
 				data-agent-session-column-local-icon=""
 				initial={false}
 				transition={reducedMotion ? SWAP_REDUCED : rising ? SWAP_EXIT : SWAP_ENTER}
 			>
-				<MonitorIcon label="" size="small" />
+				<MonitorIcon className="text-icon-subtle" label="" size="small" />
 			</motion.span>
 		</span>
 	);
