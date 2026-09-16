@@ -452,21 +452,6 @@ function ExperimentalJiraKanbanPageContent({
 		agentSessionMemberIds,
 		agentSessionAssigneeIdAliases,
 	);
-	const {
-		displayedAgentSessionColumnCollapsed,
-		displayedCollapsedColumns,
-		displayedShowUntracked,
-		filteredBoardColumns,
-	} = useAgentFilterDisplay({
-		agentFilterId,
-		boardColumns,
-		focusedCollapsedColumns,
-		selectedAssigneeIds,
-		viewerAgentSessionColumnCollapsed: agentSessionColumnCollapsed,
-		viewerCollapsedColumns: collapsedColumns,
-		viewerShowUntracked: showUntracked,
-		viewerShownSessionStateIds: shownSessionStateIds,
-	});
 	// Days first, then scope. Both narrow the same timeline and both come from
 	// the same control, so they compose rather than competing: a sprint scope
 	// inside a "last 3 days" window is a legitimate thing to ask for.
@@ -496,6 +481,22 @@ function ExperimentalJiraKanbanPageContent({
 		detachedByCard: detachedAgentSessionsByCard,
 		members: agentSessionMembers,
 		sessions: agentSessionItems,
+	});
+	const {
+		displayedAgentSessionColumnCollapsed,
+		displayedCollapsedColumns,
+		displayedShowUntracked,
+		filteredBoardColumns,
+	} = useAgentFilterDisplay({
+		agentFilterId,
+		boardColumns,
+		focusedCollapsedColumns,
+		selectedAssigneeIds,
+		untrackedSessionCount: displayedUntrackedAgentSessionItems.length,
+		viewerAgentSessionColumnCollapsed: agentSessionColumnCollapsed,
+		viewerCollapsedColumns: collapsedColumns,
+		viewerShowUntracked: showUntracked,
+		viewerShownSessionStateIds: shownSessionStateIds,
 	});
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({

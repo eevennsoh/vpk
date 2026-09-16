@@ -8,7 +8,7 @@ const JIRA_TEAM_EU26_EMBEDDED_URL = (
 ) + "/preview/projects/jira-team-eu26?embedded=1";
 
 for (const width of [1440, 1024]) {
-	test(`empty collapsed unlink sessions shares the status pill geometry at ${width}px`, async ({ page }) => {
+	test(`empty unlink sessions automatically collapses to the status pill geometry at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: 900 });
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.clock.install();
@@ -19,8 +19,9 @@ for (const width of [1440, 1024]) {
 		await needsInput.click();
 		const column = page.getByRole("region", { name: "Unlink sessions, 0 sessions", exact: true });
 		await expect(column).toBeVisible();
-		await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
 		await expect(column).toHaveCSS("width", "32px");
+		await expect(column).toHaveAttribute("data-collapsed", "true");
+		await expect(column.getByText("No sessions to unlink", { exact: true })).toHaveCount(0);
 		const title = column.getByText("Unlink sessions", { exact: true });
 		await expect(title).toBeVisible();
 		await expect(title).toHaveCSS("writing-mode", "vertical-rl");
@@ -50,6 +51,7 @@ for (const width of [1440, 1024]) {
 		expect(geometry.stroke).not.toBe("rgba(0, 0, 0, 0)");
 		expect(geometry.height).toBeLessThan(200);
 		expect(geometry.countTop).toBeCloseTo(geometry.statusCountTop, 0);
+		await page.screenshot({ path: `output/agent-browser/empty-unlinked-sessions-${width}.png` });
 		await page.getByRole("button", { name: "Expand Unlink sessions column" }).focus();
 		await page.keyboard.press("Enter");
 		await expect(column).toHaveCSS("width", "280px");

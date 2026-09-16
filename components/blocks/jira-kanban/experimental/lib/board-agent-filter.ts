@@ -247,11 +247,13 @@ export function displayedCollapsedColumnsForAgentFilter({
 		: focusedOverride ?? collapsedColumnsForAgentFilter({ columns, filterId });
 }
 
+/** Empty focused pools share the status columns' automatic collapse; clearing restores the viewer. */
 export function displayedAgentSessionColumnCollapsedForAgentFilter(
 	filterId: BoardAgentFilterId | null,
 	viewerCollapsed: boolean,
+	matchingSessionCount: number,
 ): boolean {
 	return filterId === null
 		? viewerCollapsed
-		: agentSessionColumnCollapsedForAgentFilter(filterId);
+		: matchingSessionCount === 0 || agentSessionColumnCollapsedForAgentFilter(filterId);
 }

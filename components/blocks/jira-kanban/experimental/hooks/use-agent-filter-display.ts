@@ -26,6 +26,7 @@ export function useAgentFilterDisplay({
 	boardColumns,
 	focusedCollapsedColumns,
 	selectedAssigneeIds,
+	untrackedSessionCount,
 	viewerAgentSessionColumnCollapsed,
 	viewerCollapsedColumns,
 	viewerShowUntracked,
@@ -35,6 +36,7 @@ export function useAgentFilterDisplay({
 	boardColumns: readonly JiraKanbanColumnData[];
 	focusedCollapsedColumns: CollapsedBoardColumns | null;
 	selectedAssigneeIds: ReadonlySet<string>;
+	untrackedSessionCount: number;
 	viewerAgentSessionColumnCollapsed: boolean;
 	viewerCollapsedColumns: CollapsedBoardColumns;
 	viewerShowUntracked: boolean;
@@ -83,6 +85,7 @@ export function useAgentFilterDisplay({
 		displayedAgentSessionColumnCollapsed: displayedAgentSessionColumnCollapsedForAgentFilter(
 			agentFilterId,
 			viewerAgentSessionColumnCollapsed,
+			untrackedSessionCount,
 		),
 		displayedCollapsedColumns,
 		displayedShowUntracked,
