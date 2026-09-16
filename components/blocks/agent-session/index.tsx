@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS } from "./data";
 import { AgentSessionCard } from "./agent-session-card";
+import { toAgentSessionTopArrivalTransform } from "./agent-session-arrival-motion";
 import { resolveAgentSessionGlow } from "./agent-session-glow";
 import { useAgentSessionScrollPreview } from "./use-agent-session-scroll-preview";
 import { useAgentSessionStatusDeparture } from "./use-agent-session-status-departure";
@@ -84,6 +85,7 @@ function buildArrivalDelays(
  */
 export function AgentSession({
 	animateLayout = true,
+	arrivalRowGapPx = 0,
 	className,
 	items: itemsProp,
 	arrivingItemIds,
@@ -167,6 +169,12 @@ export function AgentSession({
 	// The beat runs for arrivals the viewer has not seen yet; the mark stays on
 	// every unreviewed id. A host that never unmounts the list can pass one set.
 	const beatItemIds = arrivingItemIds ?? newItemIds;
+	const leadingBatchIds = new Set<string>();
+	for (const item of items) {
+		if (!beatItemIds?.has(item.id) || stateChangedItemIds?.has(item.id)) break;
+		leadingBatchIds.add(item.id);
+	}
+	const leadingBatchTransform = toAgentSessionTopArrivalTransform(leadingBatchIds.size, arrivalRowGapPx);
 	// In-flow columns skip filter motion but still make room for real entries.
 	const moveRowsForArrival = !isDeparturePhase && (beatItemIds?.size ?? 0) > 0;
 	const arrivalDelays = useMemo(
@@ -259,7 +267,8 @@ export function AgentSession({
 						return (
 							<AgentSessionCard
 								animateLayout={animateLayout || moveRowsForArrival}
-								arrivalDelaySeconds={arrivalDelays.get(item.id)}
+								arrivalDelaySeconds={leadingBatchIds.size > 1 && leadingBatchIds.has(item.id) ? 0 : arrivalDelays.get(item.id)}
+								arrivalStartTransform={density === "short" && leadingBatchIds.has(item.id) ? leadingBatchTransform : undefined}
 								captured={capturedItemIds?.has(item.id) ?? false}
 								density={density}
 								flyoutHandle={isLongDensity ? undefined : flyoutHandle}

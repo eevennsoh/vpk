@@ -229,13 +229,16 @@ for (const collapsed of [true, false]) {
 		const revision = samples.slice(departure);
 		expect(revision.some((sample) => sample.leaving && sample.opacity < 0.5)).toBe(true);
 		expect(revision.some((sample) => !sample.leaving && sample.index === 0 && sample.opacity > 0.8)).toBe(true);
-		// Expanded arrivals now enter from one full row above; compact notches
-		// retain their shorter travel. Keep the bound tied to rendered geometry.
-		expect(revision.every((sample) => Math.abs(sample.translateY) <= (collapsed ? 16 : sample.height) + 0.1)).toBe(true);
+		// A later sync can insert rows above this revision while its avatar rotates.
+		// Its layout projection may then move by each inserted row plus the 4px gap.
+		const excessTravel = revision.filter((sample) => Math.abs(sample.translateY) > (
+			collapsed ? 16 : Math.max(1, sample.index) * (sample.height + 4)
+		) + 0.1);
+		expect(excessTravel.length, JSON.stringify(excessTravel.slice(0, 3))).toBe(0);
 		if (!collapsed) {
 			const rotation = revision.filter((sample) => sample.rotating);
 			expect(rotation.length).toBeGreaterThan(3);
-			expect(rotation.every((sample) => !sample.leaving && sample.index === 0 && sample.opacity > 0.99)).toBe(true);
+			expect(rotation.every((sample) => !sample.leaving && sample.opacity > 0.99)).toBe(true);
 			expect(rotation.every((sample) => sample.state === "complete" && sample.shownState === "needs-input" && !sample.glow)).toBe(true);
 			expect(new Set(rotation.map((sample) => sample.humanTransform)).size).toBeGreaterThan(3);
 			expect(rotation.every((sample) => Math.abs(sample.avatarWidth - 32) < 0.1)).toBe(true);

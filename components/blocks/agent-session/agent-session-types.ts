@@ -136,6 +136,8 @@ export interface AgentSessionProps {
 	style?: CSSProperties;
 	/** Animate sibling position changes; the in-flow session column keeps filter changes instant. */
 	animateLayout?: boolean;
+	/** Gap between short rows, used to stage a whole prepended batch above the old first row. */
+	arrivalRowGapPx?: number;
 	/** Card footprint. Defaults to the full large uncaptured-work card. */
 	variant?: AgentSessionVariant;
 	/**
