@@ -25,20 +25,19 @@ colors:
   information: "var(--ds-background-information)"
 typography:
   display:
-    fontFamily: "var(--ds-font-family-body)"
-    fontWeight: "var(--ds-font-weight-semibold)"
-    lineHeight: "var(--ds-font-lineHeight-100)"
+    font: "var(--ds-font-heading-xxlarge)"
   body:
     fontFamily: "var(--ds-font-family-body)"
-    fontSize: "var(--ds-font-size-100)"
+    fontSize: "var(--text-sm)"
     fontWeight: "var(--ds-font-weight-regular)"
-    lineHeight: "var(--ds-font-lineHeight-200)"
+    lineHeight: "var(--text-sm--line-height)"
   label:
     fontFamily: "var(--ds-font-family-body)"
-    fontSize: "var(--ds-font-size-075)"
+    fontSize: "var(--text-xs)"
     fontWeight: "var(--ds-font-weight-medium)"
+    lineHeight: "var(--text-xs--line-height)"
   code:
-    fontFamily: "var(--ds-font-family-code)"
+    font: "var(--ds-font-code)"
 rounded:
   xs: "var(--ds-radius-xsmall)"
   sm: "var(--ds-radius-small)"
@@ -69,7 +68,8 @@ components:
     backgroundColor: "{colors.surface-raised}"
     textColor: "{colors.text}"
     rounded: "{rounded.xl}"
-    padding: "16px"
+    paddingBlock: "16px"
+    shadow: "var(--ds-shadow-raised)"
   input:
     backgroundColor: "var(--ds-background-input)"
     textColor: "{colors.text}"
@@ -86,6 +86,12 @@ not a single product identity. Product and art surfaces can add a more specific
 the nearest nested file owns that surface's visual direction while this root
 file continues to define the common implementation contract.
 
+This document and its frontmatter guide contributors and agents; they do not
+generate or override runtime styles. Before editing a surface, read the nearest
+applicable nested `DESIGN.md`, if present. Otherwise, use this file and the
+existing surface. Component recipes summarize defaults; shared component source
+owns supported variants, states, and slot geometry.
+
 ## 1. Overview
 
 VPK is a prototyping toolkit for product surfaces, agent workflows, and
@@ -100,9 +106,9 @@ classes that map to ADS semantic tokens, then decorative Tailwind accent
 classes, and only then raw `token()` or `var(--ds-...)` values for dynamic
 values or unmapped edge cases.
 
-The root contract optimizes for prototypes that feel deliberate on first load:
-dense enough for repeated work, legible enough for review, and flexible enough
-for each nested project or art piece to carry its own atmosphere.
+The root contract optimizes for prototypes that feel deliberate on first load
+and responsive during repeated work: dense enough for frequent use, legible
+enough for review, and flexible enough for each nested surface's atmosphere.
 
 **Key characteristics:**
 
@@ -114,6 +120,22 @@ for each nested project or art piece to carry its own atmosphere.
 - Nested project and art identities take priority for mood, palette emphasis,
   and visual storytelling.
 
+### Sources of truth
+
+- [Token priority and authoring](.agents/rules/token-priority.md): semantic
+  aliases, font shorthand, and CSS conventions.
+- [Component ownership](.agents/rules/component-architecture.md): shared
+  variants, real interaction capabilities, and scoped design-system lint.
+- [Motion decisions](.agents/rules/motion-decisions.md) and
+  [Base UI motion](.agents/rules/motion-base-ui.md): role-specific timing,
+  reduced motion, and overlay lifecycle.
+- [UI performance](.agents/docs/playbooks/improve-ui-performance.md): interaction
+  measurement and deliberate state lifetime.
+- Runtime styling lives in [globals.css](app/globals.css),
+  [tailwind-theme.css](app/tailwind-theme.css), and
+  [shadcn-theme.css](app/shadcn-theme.css). [ThemeWrapper](components/utils/theme-wrapper.tsx)
+  applies ADS color, spacing, typography, and shape through `setGlobalTheme()`.
+
 ## 2. Colors
 
 VPK colors resolve through ADS CSS variables and Tailwind semantic aliases.
@@ -123,7 +145,7 @@ theme mode and ADS token resolution can change the final values.
 ### Primary
 
 - **Brand Bold** (`bg-primary`, `var(--ds-background-brand-bold)`): Use for
-  primary actions, selected affordances, and user-originated chat surfaces.
+  primary actions and user-originated chat surfaces.
   Keep it rare enough that it remains an action signal.
 - **Selected State** (`bg-bg-selected`, `text-text-selected`,
   `border-border-selected`): Use for pressed, expanded, selected, or active
@@ -184,9 +206,12 @@ system unless the surface is intentionally experimental.
 **Code font:** Atlassian Mono through `var(--ds-font-family-code)`.
 
 Typography should feel functional and composed. Use ADS font shorthand tokens
-for headings when a semantic heading token exists, and use Tailwind utility
-classes for ordinary size, weight, and color. Avoid viewport-scaled type for
-fixed tool surfaces because it makes compact controls unpredictable.
+such as `font.heading.*`, `font.body`, `font.body.small`, and `font.code` when
+applying composite typography. The frontmatter's `font` entries represent CSS
+font shorthand. For ordinary UI text, `text-sm` pairs 14px type with 20px line
+height and `text-xs` pairs 12px with 16px; use mapped utilities for weight and
+color. Avoid viewport-scaled type for fixed tool surfaces because it makes
+compact controls unpredictable.
 
 ### Hierarchy
 
@@ -236,6 +261,11 @@ step obvious without adding explanatory chrome.
 - **Translation:** Leave room for strings to grow and avoid concatenating
   sentence fragments in UI code. Longer translated labels must not break fixed
   controls.
+- **Inclusive language:** Prefer plain words and gender-neutral language. Avoid
+  idioms or cultural metaphors that obscure the meaning across locales.
+- **Tone during friction:** Keep errors, destructive confirmations, and billing
+  copy direct and calm. Reserve playful copy for appropriate success or welcome
+  moments.
 
 ## 5. Layout, shape, and focus
 
@@ -253,9 +283,9 @@ repo's semantic Tailwind classes whenever a class exists.
   first. Buttons and nav items stay in the medium radius family, inputs in the
   large family, cards in the shared `rounded-xl` contract, avatars and pills in
   the full radius family, and tile components in the tile radius family.
-- **Focus anatomy:** Focusable controls must keep a visible focused treatment:
-  a 2px focused border or ring, a small offset or gap from the component box,
-  and a ring radius that follows the component's own radius.
+- **Focus anatomy:** Preserve shared Button, Input, and Textarea focused borders
+  and 3px rings. Native controls and links use the global 2px outline with a 2px
+  offset. Keep the applicable treatment visible and shaped to the control.
 - **Focus clearance:** No scrollport, clipping ancestor, animated reveal slot,
   or adjacent control may cut off that treatment. Reserve at least 4px around
   VPK's outward focus indicators. When layout geometry must stay fixed, expand
@@ -265,6 +295,16 @@ repo's semantic Tailwind classes whenever a class exists.
   `z-index` solves sibling overlap only—it cannot repair ancestor clipping.
 - **Touch targets:** Interactive controls should keep at least a 32px target in
   touch contexts, even when the visible glyph is smaller.
+
+### Responsive behavior
+
+- Reflow multi-column content and collapse navigation as space narrows. Keep
+  critical actions available; let wide tables scroll within their own region.
+- Prefer logical inline/block properties or start/end utilities where layout
+  should mirror in right-to-left locales.
+- Check narrow, tablet, and desktop layouts, 200% zoom, and longer labels. Use
+  320px, 768px, and 1280px as starting viewports, then include the target surface's
+  relevant sizes. Preserve usable touch targets when using compact variants.
 
 ## 6. Elevation
 
@@ -300,13 +340,31 @@ mix overlay shadow into ordinary inline content.
 ## 7. Components
 
 Shared components should feel compact, predictable, and stateful. Product and
-art surfaces can style their own composition, but they should reuse these
-component expectations unless a nested design file says otherwise.
+art surfaces own their composition and visual direction; shared components retain
+their implementation contract. Search the existing surface and `components/ui/`,
+`components/ui-custom/`, and `components/ui-audio/` before building. Use supported
+variants and slots; shared primitives own appearance and geometry. Preserve
+supplied reference copy and layout when reproducing a specific product state.
+
+### Interaction states
+
+- Cover applicable hover, focus, pressed, selected, disabled, loading, error,
+  and empty states. Persistent selection differs from a transient press.
+- Loading feedback should preserve control geometry, hit targets, and accessible
+  names. Use the shared loading appearance; consumers must guard pending actions
+  against repeated pointer and keyboard activation. `isLoading` alone does not
+  disable keyboard activation.
+- Only enable an action when its consumer supplies the real capability. Missing
+  callbacks should produce display-only, disabled, or omitted UI.
+- Associate field errors with their fields; use page-level notices for request
+  failures. Empty states should explain the situation and offer a real next step.
 
 ### Buttons
 
-- **Shape:** Default buttons use `rounded-md` and a 32px height. Small and icon
-  variants stay on the same radius family.
+- **Shape and size:** `size="default"` and `size="icon"` use 32px targets and
+  16px glyphs. `compact` and `icon-compact` use 24px targets and 12px glyphs.
+  Buttons use `rounded-md`; `shape="circle"` uses the shared full-radius variant.
+  Reserve compact sizes for dense surfaces and preserve touch targets.
 - **Primary:** Use `bg-primary`, `text-primary-foreground`,
   `hover:bg-primary-hovered`, and pressed or expanded selected-state classes.
   Do not use primary styling for more than one action in the same section.
@@ -316,8 +374,9 @@ component expectations unless a nested design file says otherwise.
   backgrounds.
 - **Focus:** Preserve `focus-visible:border-ring` and
   `focus-visible:ring-ring/50` behavior.
-- **Icons:** Leading and trailing icons inherit `currentColor`; do not hardcode
-  their color apart from the button text role.
+- **Icons:** Let the shared variant own icon color, including separate semantic
+  icon roles for neutral, selected, and disclosure states. Glyphs use
+  `currentColor`; consumer overrides must not break state styling.
 
 ### Cards and containers
 
@@ -325,22 +384,26 @@ component expectations unless a nested design file says otherwise.
   not nest inside other cards.
 - **Background:** Use `bg-card` or `bg-surface-raised` for framed content. Use
   full-width bands or unframed layouts for page sections.
-- **Padding:** Shared card padding starts at 16px, with compact variants at
-  12px.
-- **Shadow:** Use `shadow-sm` only when a card needs separation. Prefer borders
-  or tonal surfaces for dense operational layouts.
+- **Padding:** Compose Card with Header, Content, and Footer slots. The root owns
+  vertical padding; slots own horizontal and footer padding. Default spacing is
+  16px; `size="sm"` uses 12px. Image and footer slots adjust edge padding.
+- **Shadow:** The shared Card supplies `shadow-sm` by default. Choose an
+  unframed layout or existing container variant when content needs flatter
+  grouping.
 
 ### Inputs and fields
 
 - **Shape:** Inputs use `rounded-lg`, 32px height, and compact horizontal
-  padding.
+  padding. `isCompact` uses 28px height.
 - **Default:** Use semantic input background and border classes, not raw
   background colors.
 - **Subtle:** Subtle inputs can reveal border and background on hover or focus.
+  Subtle or borderless fields still need a visible affordance of editability.
 - **Focus:** Preserve focused border and ring styles. Do not remove focus rings
   for visual quietness.
-- **Disabled and read-only:** Disabled controls reduce opacity and block
-  pointer interaction. Read-only controls should stay calm and non-interactive.
+- **Disabled and read-only:** Disabled controls block interaction and use their
+  primitive's disabled treatment. Read-only fields prevent editing but may remain
+  focusable, selectable, copyable, and scrollable; they are not disabled controls.
 - **Labels:** Every editable field needs a visible label. Placeholder text is a
   hint, not a label.
 
@@ -361,10 +424,12 @@ component expectations unless a nested design file says otherwise.
 - **Source:** Use Atlaskit icons first, icon-lab icons second, and product logos
   from `@/components/ui/logo`. Avoid Unicode arrows, HTML entities, emoji, or
   handwritten glyphs for controls.
-- **Size:** Product UI icons default to 16px glyphs. For stronger emphasis,
-  place the glyph in a larger tile or button rather than scaling the glyph.
-- **Color:** Icons inherit `currentColor` from a semantic text or icon role.
-  Pair `text-text-subtle` with subtle icons and danger text with danger icons.
+- **Size:** Product UI icons default to 16px glyphs; compact buttons use 12px.
+  For stronger emphasis, place the glyph in a larger tile or button rather than
+  scaling the glyph.
+- **Color:** Standalone icons inherit `currentColor` from a semantic icon role.
+  Pair `text-icon-subtle` with `text-text-subtle` and `text-icon-danger` with
+  `text-text-danger`; matching roles can resolve to different colors.
 - **Accessibility:** Icon-only buttons need an accessible name. Decorative icons
   sitting beside visible text should be hidden from assistive technology.
 
@@ -392,16 +457,24 @@ component expectations unless a nested design file says otherwise.
 - **Duration:** Use `duration-instant`, `duration-xxshort`, `duration-fast`,
   `duration-normal`, `duration-medium`, `duration-slow`, `duration-slower`,
   and `duration-slowest`.
-- **Easing:** Use `ease-out` for entry and hover feedback, `ease-in` for exit,
-  `ease-out-practical` for compact fade/slide entrances, and `ease-in-out` for
-  panels that move together.
+- **Easing:** Use `ease-out-practical` for hover/press and small, frequent popup
+  entrances. Reserve `ease-out` for prominent entrances; use `ease-in` for exit
+  and `ease-in-out` for in-place transforms. Follow the role-specific recipes in
+  [Motion decisions](.agents/rules/motion-decisions.md), including faster exits.
 - **Animated properties:** Animate opacity and transforms before layout
   properties. Avoid motion that changes layout in ways that break scanning.
-- **Reduced motion:** Respect `prefers-reduced-motion` by disabling
-  non-essential transitions or replacing them with instant state changes.
+- **Reduced motion:** Duration and easing aliases do not automatically respect
+  `prefers-reduced-motion`. Add explicit CSS guards or `useReducedMotion()` to
+  disable non-essential motion or replace it with instant state changes.
 - **Focus of motion:** Use one focal animation when multiple elements change.
   Dense dashboards and repeated work surfaces should not run idle decorative
   loops.
+
+Responsiveness includes typing, switching views, dragging, and repeated opening.
+Measure acknowledgement and usable-content completion separately, distinguish
+rendering work from network/model wait, and compare the same conditions before
+and after a change. Preserve drafts, focus, and scroll when choosing view lifetime;
+follow the [UI performance playbook](.agents/docs/playbooks/improve-ui-performance.md).
 
 ### Signature surfaces
 
@@ -435,45 +508,20 @@ feature code.
 
 ### Do:
 
-- **Do** read the nearest nested `DESIGN.md` before editing a project or art
-  surface. If none exists, use this root file and the existing code around the
-  target surface.
-- **Do** use semantic Tailwind classes before raw CSS variables:
-  `bg-surface-raised`, `text-text-subtle`, `border-border-bold`,
-  `bg-bg-neutral`, and related classes.
-- **Do** keep controls compact, stateful, keyboard-accessible, and visibly
-  focused.
+- **Do** reuse shared components and their supported variants, sizes, and slots.
+- **Do** use semantic tokens for meaning and mapped accents for decoration.
+- **Do** verify applicable states, keyboard focus, reduced motion, and responsive
+  behavior on the target surface.
 - **Do** use `next/image` with explicit `width` and `height` for images.
-- **Do** keep page sections unframed unless the content is an actual repeated
-  item, modal, preview, tool, or overlay.
 - **Do** map Figma values to ADS spacing, radius, typography, shadow, and
   semantic color tokens during implementation.
-- **Do** use sentence case, descriptive links, visible field labels, accessible
-  icon-only buttons, and reason-plus-action error messages.
-- **Do** use section messages for page-level notices, lozenges for semantic
-  status, tags for decorative classification, badges for counts, and chart
-  tokens with non-color cues for data visualization.
-- **Do** let nested projects and art pieces carry their own mood while keeping
-  the shared implementation contract intact.
 
 ### Don't:
 
-- **Don't** create one global product personality for VPK. The root is a
-  toolkit baseline, not a product brand.
 - **Don't** introduce new `bg-[var(--ds-...)]`, `text-[var(--ds-...)]`, or
   arbitrary token utilities when a semantic class already exists.
-- **Don't** use cards as the default answer for every section, and don't nest
-  cards inside cards.
+- **Don't** default every page section to a card or nest cards inside cards.
 - **Don't** use decorative side-stripe borders, gradient text, generic
   glassmorphism, or repeated identical icon-heading-text card grids.
-- **Don't** use hardcoded duration values such as `duration-200` when a shared
-  motion token class exists.
-- **Don't** hide focus rings, remove disabled states, or rely on color alone to
-  communicate state.
-- **Don't** use `surface-sunken` as the page background, use accent ramps as
-  semantic status, use placeholders as labels, or use "Learn more" as a link
-  when the destination can be named.
-- **Don't** substitute Unicode arrows, emoji, HTML entities, or one-off SVG
-  glyphs for Atlaskit control icons.
 - **Don't** let one art surface's palette, shader, or motion language become a
   shared primitive unless it is intentionally extracted into the toolkit.
