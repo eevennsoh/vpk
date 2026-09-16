@@ -465,7 +465,9 @@ function renderColumnChrome({
 				onAction={onAction}
 			/>
 			<span className="min-w-0 truncate text-xs font-medium leading-4 text-text-subtle">
-				{model.kind === "selecting" ? "Selected" : model.title}
+				{model.kind === "selecting"
+					? "Selected"
+					: model.title === "Unlink sessions" ? "Unlinked agent sessions" : model.title}
 			</span>
 			<span
 				aria-live={isSelecting ? "polite" : undefined}
