@@ -5,6 +5,7 @@ import {
 	useRef,
 	useState,
 	type MouseEvent as ReactMouseEvent,
+	type FocusEvent as ReactFocusEvent,
 	type PointerEvent as ReactPointerEvent,
 	type ReactElement,
 } from "react";
@@ -35,6 +36,7 @@ import { toSessionTransferMember } from "./agent-session-transfer-member";
 import { toJiraIssueAgentActivityFromSession } from "./agent-session-work-item";
 import { singletonSessionCohort, type SessionCohort } from "./session-cohort";
 import type { AgentSessionItem } from "./agent-session-types";
+import { useSessionPeelSurface } from "./use-session-peel-surface";
 
 const SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
 /** Same 2px threshold as `usePointerDrag` — publish/arm only after a real move. */
@@ -68,6 +70,7 @@ export function AgentSessionMediumDrag({
 	// Where the chip starts, as an offset from the pointer that published the
 	// drag. Stored as the resolved delta so nothing has to read a ref at render.
 	const [chipOrigin, setChipOrigin] = useState<SessionDragGeometry | null>(null);
+	const [peelIntent, setPeelIntent] = useState(false);
 	const drag = usePointerDrag(dragOffset, setDragOffset, sessionDrag?.bounds);
 	const chipPointer = useSessionDragChipPointer(shouldReduceMotion);
 	const isDragging = Boolean(sessionDrag) && drag.dragging && publishedDragging;
@@ -81,6 +84,7 @@ export function AgentSessionMediumDrag({
 	const sourceGeometryRef = useRef<SessionDragGeometry | null>(null);
 	const didPublishDragRef = useRef(false);
 	const dragTargetRef = useRef<HTMLElement | null>(null);
+	const peelSurface = useSessionPeelSurface(sessionDrag?.previewEffect === "peel");
 
 	function publishSessionDrag(
 		dragging: boolean,
@@ -197,7 +201,21 @@ export function AgentSessionMediumDrag({
 	const sessionDragBind = sessionDrag
 		? {
 			...dragBindWithoutKeyboard,
-			onFocus: () => sessionDrag.onFocusedActivitiesChange([activity]),
+			onFocus: () => {
+				if (sessionDrag.previewEffect === "peel") setPeelIntent(true);
+				sessionDrag.onFocusedActivitiesChange([activity]);
+			},
+			onBlur: (event: ReactFocusEvent<HTMLElement>) => {
+				if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setPeelIntent(false);
+			},
+			onPointerEnter: () => {
+				if (sessionDrag.previewEffect !== "peel") return;
+				setGhostCohort(cohort?.() ?? singletonSessionCohort(item));
+				setPeelIntent(true);
+			},
+			onPointerLeave: (event: ReactPointerEvent<HTMLElement>) => {
+				if (!event.currentTarget.matches(":focus-within")) setPeelIntent(false);
+			},
 			onMouseDown: (event: ReactMouseEvent<HTMLElement>) => {
 				const interactiveTarget = event.target instanceof Element
 					? event.target.closest(SESSION_DRAG_INTERACTIVE_SELECTOR)
@@ -275,6 +293,9 @@ export function AgentSessionMediumDrag({
 	// VPK duration tokens do not collapse themselves. Card `shouldPlayArrival`
 	// reads `shouldReduceMotion` permissively, so the chip matches it.
 	const reduceChipMotion = Boolean(shouldReduceMotion);
+	const preparePeel = sessionDrag.previewEffect === "peel"
+		&& (sessionDrag.previewPreparation === "eager" || peelIntent)
+		&& peelSurface !== null && !reduceChipMotion;
 	const layoutState = {
 		hasDragBind: sessionDragBind !== undefined,
 		isDragging,
@@ -301,14 +322,18 @@ export function AgentSessionMediumDrag({
 			>
 				{children(sessionDragBind)}
 			</div>
-			{isDragging ? (
+			{isDragging || preparePeel ? (
 				<AgentSessionDragOverlay
+					dragging={isDragging}
 					chipOrigin={chipOrigin}
 					cohort={ghostCohort ?? singletonSessionCohort(item)}
 					isDraggedOut={isDraggedOut}
 					pointerX={chipPointer.x}
 					pointerY={chipPointer.y}
 					reduceMotion={reduceChipMotion}
+					previewEffect={sessionDrag.previewEffect}
+					peelSurface={peelSurface}
+					stableCapture={sessionDrag.previewPreparation !== "eager"}
 				/>
 			) : null}
 		</div>

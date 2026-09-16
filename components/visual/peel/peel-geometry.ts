@@ -22,6 +22,60 @@ export interface PeelBox {
 	rotation: number;
 }
 
+function smoothstep(value: number): number {
+	const t = Math.max(0, Math.min(1, value));
+	return t * t * (3 - 2 * t);
+}
+
+/**
+ * Sweep a cylindrical fold from the grabbed corner to the opposite corner.
+ * Adapted from jaksenc.com/about's photo-stamp scene: travel ends at 78%,
+ * then the curl relaxes and the detached sheet rises. Arc length is preserved
+ * through both the curved section and its tangent flap. UVs never change.
+ * All distances are in sheet-heights; buffers are reused on every frame.
+ */
+export function deformPeelSheet(
+	original: Float32Array,
+	positions: Float32Array,
+	normals: Float32Array,
+	aspect: number,
+	progress: number,
+	angle: number,
+	curlAngle: number,
+	liftHeight: number,
+): void {
+	const dx = Math.cos(angle);
+	const dy = Math.sin(angle);
+	const span = Math.abs(dx) * aspect + Math.abs(dy);
+	const crease = span * (0.5 - smoothstep(progress / 0.78));
+	const relaxation = 1 - smoothstep((progress - 0.78) / 0.22);
+	const lift = liftHeight * smoothstep((progress - 0.78) / 0.16);
+	const radius = span * 0.22;
+	const bendLimit = radius * Math.max(0, Math.min(curlAngle, Math.PI / 2));
+
+	for (let i = 0; i < original.length; i += 3) {
+		const x = original[i];
+		const y = original[i + 1];
+		const travel = Math.max(0, x * dx + y * dy - crease);
+		const curved = Math.min(travel, bendLimit);
+		const flap = travel - curved;
+		const turn = (curved / radius) * relaxation;
+		const sin = Math.sin(turn);
+		const cos = Math.cos(turn);
+		const arcRadius = radius / Math.max(relaxation, 1e-6);
+		const projected = relaxation < 1e-6 ? travel : arcRadius * sin + flap * cos;
+		const height = relaxation < 1e-6 ? 0 : arcRadius * (1 - cos) + flap * sin;
+		const gather = projected - travel;
+
+		positions[i] = x + dx * gather;
+		positions[i + 1] = y + dy * gather + lift * 0.5;
+		positions[i + 2] = height + lift;
+		normals[i] = -dx * sin;
+		normals[i + 1] = -dy * sin;
+		normals[i + 2] = cos;
+	}
+}
+
 /**
  * Maps client coordinates to sheet UV, shared by hover and grab so both derive
  * the same point.

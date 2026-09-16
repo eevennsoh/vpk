@@ -94,16 +94,27 @@ test("exposes all design variants with stable labels and defaults", async (t) =>
 			["sessionStroke", "Stroke tracing"],
 			["sessionBloom", "Card glow"],
 			["sessionProximity", "Proximity sensor"],
+			["sessionPeel", "Peel visual"],
 		],
 	);
 	assert.equal(harness.DESIGN_VARIANTS_STORAGE_KEY, "ui-design-variants");
 	assert.equal(harness.DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION, 2);
-	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 	assert.equal(harness.isDesignVariantId("panel"), true);
 	assert.equal(harness.isDesignVariantId("simple-views"), true);
 	assert.equal(harness.isDesignVariantId("simpleKanban"), true);
 	assert.equal(harness.isDesignVariantId("pane"), false);
 	assert.equal(harness.isDesignVariantId(undefined), false);
+});
+
+test("Peel visual defaults on for old preferences and preserves an explicit off choice", async (t) => {
+	const harness = await loadDesignVariantsHarness(t);
+	globalThis.localStorage.setItem("ui-design-variants", JSON.stringify({ sessionBloom: false, schemaVersion: 2 }));
+	assert.equal(harness.readStoredDesignVariants().sessionPeel, true);
+	assert.equal(harness.readStoredDesignVariants().sessionBloom, false);
+	harness.setDesignVariant("sessionPeel", false);
+	assert.equal(harness.getDesignVariants().sessionPeel, false);
+	assert.equal(harness.readStoredDesignVariants().sessionPeel, false);
 });
 
 test("exposes Advanced timeline off by default", async (t) => {
@@ -216,7 +227,7 @@ test("snapshot getters keep a stable identity for useSyncExternalStore", async (
 	// Only a real change swaps the reference, and the new one is stable too.
 	assert.notEqual(harness.getDesignVariants(), harness.getDefaultDesignVariants());
 	assert.equal(harness.getDesignVariants(), harness.getDesignVariants());
-	assert.deepEqual(harness.getDefaultDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.getDefaultDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 });
 
 test("toggling a variant persists it and notifies subscribers exactly once", async (t) => {
@@ -230,20 +241,20 @@ test("toggling a variant persists it and notifies subscribers exactly once", asy
 
 	harness.setDesignVariant("panel", true);
 
-	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
-	assert.deepEqual(seen, [{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true }]);
+	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(seen, [{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true }]);
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true, schemaVersion: 2 },
+		{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true, schemaVersion: 2 },
 	);
 
 	harness.setDesignVariant("panel", false);
 
-	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 	assert.equal(seen.length, 2);
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true, schemaVersion: 2 },
+		{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true, schemaVersion: 2 },
 	);
 });
 
@@ -262,7 +273,7 @@ test("no-op writes and no-op hydrations never notify subscribers", async (t) => 
 	assert.equal(notifications, 0);
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true, schemaVersion: 2 },
+		{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true, schemaVersion: 2 },
 	);
 
 	harness.setDesignVariant("panel", true);
@@ -271,7 +282,7 @@ test("no-op writes and no-op hydrations never notify subscribers", async (t) => 
 	// Hydration compares by value, not identity — a freshly built but equal
 	// object must not push a new snapshot to every subscriber.
 	const before = harness.getDesignVariants();
-	harness.hydrateDesignVariants({ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	harness.hydrateDesignVariants({ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 	assert.equal(notifications, 1);
 	assert.equal(harness.getDesignVariants(), before);
 });
@@ -281,12 +292,12 @@ test("hydration adopts a stored state without rewriting storage", async (t) => {
 	localStorage.setItem("ui-design-variants", JSON.stringify({ panel: true }));
 	const harness = await loadDesignVariantsHarness(t, { localStorage });
 
-	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 
 	localStorage.entries.clear();
-	harness.hydrateDesignVariants({ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	harness.hydrateDesignVariants({ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 
-	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 	assert.equal(localStorage.getItem("ui-design-variants"), null);
 });
 
@@ -309,33 +320,33 @@ test("normalises unknown keys and non-boolean values in stored payloads", async 
 
 	// Unknown keys are dropped; every known id is always present.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ retired: true, panel: true }));
-	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 
 	// A payload from an older build that predates a variant still yields a
 	// complete state object rather than one with a missing key, and absent
 	// keys keep the store default.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ retired: true }));
-	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 
 	// An explicit off must beat the on default, or turning Panel / Simple views
 	// off could not survive a reload.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ panel: false }));
-	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 
 	localStorage.setItem("ui-design-variants", JSON.stringify({ "simple-views": false }));
-	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": false, simpleKanban: true });
+	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": false, simpleKanban: true });
 
 	// Schema 1 (or missing) Simple kanban values are incidental: toggling a
 	// sibling persisted the whole map while the default was still off, so they
 	// must not block the on-default rollout.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ simpleKanban: false }));
-	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 
 	localStorage.setItem(
 		"ui-design-variants",
-		JSON.stringify({ panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: false }),
+		JSON.stringify({ panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: false }),
 	);
-	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 
 	// A current-schema explicit off must beat the on default, or turning Simple
 	// kanban off could not survive a reload.
@@ -343,19 +354,19 @@ test("normalises unknown keys and non-boolean values in stored payloads", async 
 		"ui-design-variants",
 		JSON.stringify({ simpleKanban: false, schemaVersion: 2 }),
 	);
-	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: false });
+	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: false });
 
 	// An explicit on must beat the off default, or turning Panel on could not
 	// survive a reload.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ panel: true }));
-	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.readStoredDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 
 	// Truthy-but-not-`true` values coerce to off rather than leaking through.
 	for (const value of ["true", 1, {}, [], null]) {
 		localStorage.setItem("ui-design-variants", JSON.stringify({ panel: value }));
 		assert.deepEqual(
 			harness.readStoredDesignVariants(),
-			{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true },
+			{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true },
 			`expected panel off for ${JSON.stringify(value)}`,
 		);
 	}
@@ -368,7 +379,7 @@ test("a throwing localStorage never breaks selection", async (t) => {
 
 	assert.equal(harness.readStoredDesignVariants(), null);
 	harness.setDesignVariant("panel", true);
-	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: true, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 });
 
 test("toggling Simple kanban preserves Panel and Simple views", async (t) => {
@@ -377,13 +388,13 @@ test("toggling Simple kanban preserves Panel and Simple views", async (t) => {
 
 	harness.setDesignVariant("simpleKanban", false);
 
-	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: false });
+	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: false });
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: false, schemaVersion: 2 },
+		{ advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: false, schemaVersion: 2 },
 	);
 
 	harness.setDesignVariant("simpleKanban", true);
 
-	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, agentSessionColumnResizing: false, kanbanBackground: false, manualLink: false, panel: false, sessionBloom: true, sessionPeel: true, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
 });

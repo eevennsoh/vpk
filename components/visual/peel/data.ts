@@ -42,17 +42,9 @@ export interface PeelTuning {
 	/** Ambient sheen present without a cursor, so a touch device is not left flat. */
 	restSheen: number;
 
-	/** World-unit height the grabbed corner rises to. See `PEEL_LIFT_HEIGHT`. */
+	/** World-unit rise of the detached sheet. See `PEEL_LIFT_HEIGHT`. */
 	liftHeight: number;
-	/**
-	 * Corner-to-corner rock when the sheet is grabbed, in world units.
-	 *
-	 * This is the peel, and it is separate from `liftHeight` on purpose. Lift
-	 * translates the whole sheet toward the camera, which scales it up; the
-	 * reference barely scales at all. The pivot instead takes the grabbed
-	 * corner up and the far corner down, so the sheet tilts in 3D while its
-	 * footprint stays put. Set it to 0 and a grabbed sheet just floats.
-	 */
+	/** Maximum curl angle in radians as the fold crosses the sheet. */
 	peelPivot: number;
 	/** Peak z displacement of a travelling ripple, in world units. */
 	waveAmplitude: number;
@@ -81,7 +73,7 @@ export interface PeelTuning {
 	 */
 	swing: number;
 
-		/** Opacity of the contact shadow at rest. */
+	/** Opacity of the contact shadow at rest. */
 	shadowStrength: number;
 }
 
@@ -205,89 +197,26 @@ export const PEEL_PAPER_MARGIN = 0.0236;
 export const PEEL_PAPER_COLOUR = "#F0E0BA";
 
 /**
- * Perspective field of view, in degrees. Wide enough that lifting the sheet
- * toward the camera reads as depth, narrow enough that a stamp sitting near the
- * edge of a scattered layout does not visibly keystone.
- */
-export const PEEL_CAMERA_FOV = 28;
-
-/**
- * Canvas overscan as a fraction of the sheet's height, on every side. The wave
- * throws geometry past the sheet's rest bounds and the lifted shadow spreads
- * further still, so the drawing surface has to be larger than the sheet. It
- * also supplies the 4px focus-ring gutter the house a11y rule asks for.
- *
- * Budget, in sheet-heights, at full lift:
- *   shadow   ~0.10  (cast offset 0.039 + its 0.062 penumbra, straight down)
- *   wave     ~0.26  (waveAmplitude, at a crest on the edge)
- *   gather   ~0.12  (the in-plane clamp in peel-material.ts)
- *
- * 0.9 clears the worst case with room to spare. It is generous on purpose: the
- * card is only 44px tall, so a fraction of *height* buys very few pixels here —
- * at the old 0.45 this was 20px of margin against an 18px shadow, and a crest
- * landing on the edge sheared straight off. Raising it costs a slightly larger
- * canvas and nothing else, because the camera distance is derived from it and
- * the sheet's on-screen size is unchanged.
+ * Canvas overscan on each side, in sheet-heights: about 32px on the reference
+ * stamp. Gives the curled paper, detached shadow and focus ring room to draw.
  */
 export const PEEL_OVERSCAN = 0.25;
 
 /** The sheet is one world unit tall; width follows the source image's aspect. */
 export const PEEL_SHEET_HEIGHT = 1;
 
-/**
- * Camera distance that makes the overscanned viewport exactly
- * `1 + 2 * PEEL_OVERSCAN` world units tall at z = 0, so one world unit of sheet
- * lands on `stampPx` device pixels no matter what size the caller asks for.
- */
-export const PEEL_CAMERA_DISTANCE =
-	(PEEL_SHEET_HEIGHT * (1 + 2 * PEEL_OVERSCAN)) /
-	(2 * Math.tan((PEEL_CAMERA_FOV * Math.PI) / 360));
+const REFERENCE_SHEET_HEIGHT = 128.66666666666669;
 
-/**
- * Lift height, as the z translation of the grabbed end of the sheet. Because
- * the camera is perspective, the growth comes free from that translation: scale
- * is `D / (D - L)`, so `L = D * (1 - 1 / scale)`.
- *
- * READ THIS WITH `peelPivot` — the two are solved together and neither is
- * meaningful alone. peel-material.ts displaces every vertex by
- * `uLift * (uLiftHeight * lifted + uPivot * (lifted - 0.55))`, where `lifted`
- * runs 0.12 at the far corner to 1.0 under the hand. So this constant is the
- * rise of the grabbed END, not of the sheet, and the sheet's mean rise — which
- * is what its projected size answers to — is about half of it.
- *
- * That is why the naming here misled three rounds of tuning. At 1.03 the whole
- * sheet grew by a mean linear 1.0107, i.e. 2.2% of area, not 6%. A blind
- * comparison of a carry frame against a rest frame put the reference at +5.4%
- * of area and ours at +2.6%, which matches that arithmetic to a third of a
- * point. Meanwhile our shadow was doing the full lift's worth of spreading, so
- * the transform said "barely lifted" while the shadow said "lifted high" — the
- * loudest single tell in the carry frame.
- *
- * 1.070 is the solution of that, jointly with dropping `peelPivot` from 0.16 to
- * 0.05. The sum `L + peelPivot` is what sets the sheet's corner-to-corner z
- * spread, and it is held at its previous 0.2476 to the fourth decimal: the
- * corner scales go from 0.981..1.056 to 1.001..1.079, a spread of 0.2176
- * against 0.2175. So the sheet lifts further without rocking any harder — the
- * far corner stops dipping below the page and the mean linear scale comes to
- * 1.0317, i.e. 6.5% of area by the same integral.
- *
- * Measured on the live route rather than left at the integral, because the
- * in-plane gather contracts the held sheet's footprint by about 1.2 points that
- * the integral does not know about: warm-pixel area rest to carry reads +3.7%
- * at 1.056 and +5.2% at 1.070, against the reference's +5.4%.
- *
- * The prior number came from tracking the warm paper pixels of the jaksenc
- * stamp through an unclipped, IN-PLACE peel (0.70-1.70s of stamp.mov), which is
- * a partial lift and reads 1.025 of area; a full carry is roughly twice that.
- * An earlier pass used 1.18, from a bounding box measured over a window the
- * stamp travelled and rotated through with its neutral shadow inside the
- * threshold — that one was an artefact of the measurement rather than motion.
- *
- * If this changes, `contactField`'s lift dilation in shadow-material.ts has to
- * change with it: the contact seam is glued to the sheet's projected edge, so
- * it dilates by half the mean linear growth, 0.0159 sheet-heights here.
- */
-export const PEEL_LIFT_HEIGHT = PEEL_CAMERA_DISTANCE * (1 - 1 / 1.070);
+/** Reference camera: 16-degree lens with 160px of framing, in sheet-heights. */
+export const PEEL_CAMERA_DISTANCE =
+	(1 + 160 / REFERENCE_SHEET_HEIGHT) / (2 * Math.tan((8 * Math.PI) / 180));
+
+/** Crop the reference lens to our overscan while preserving the resting size. */
+export const PEEL_CAMERA_FOV =
+	(2 * Math.atan((PEEL_SHEET_HEIGHT * (1 + 2 * PEEL_OVERSCAN)) / (2 * PEEL_CAMERA_DISTANCE)) * 180) / Math.PI;
+
+/** Detached-sheet rise: 8 CSS px on the reference's 128.67px paper. */
+export const PEEL_LIFT_HEIGHT = 8 / REFERENCE_SHEET_HEIGHT;
 
 /**
  * Visual durations, damping ratios and the spring helper live in
@@ -305,20 +234,9 @@ export const PEEL_TUNING_DEFAULTS: PeelTuning = {
 	restSheen: 0.06,
 
 	liftHeight: PEEL_LIFT_HEIGHT,
-	// The rock, solved jointly with PEEL_LIFT_HEIGHT above: their sum sets the
-	// sheet's corner-to-corner z spread and is held at 0.2476, so cutting this
-	// from 0.16 buys the lift the room to grow without the sheet rocking any
-	// harder. Two things get better and nothing gets worse: the measured area
-	// growth from rest to carry goes from +2.2% to +5.2% against the reference's
-	// +5.4%, and the far corner stops dipping below the page plane (z -0.048 to
-	// +0.002). Note the visible half of this knob is the keystone and only the
-	// keystone — `bulk` is a pure z displacement, the shading reads the flex
-	// term instead, so what the rock does on screen is the perspective divide.
-	// The reference's carried sheet has almost none of it (0.19 deg of left/right
-	// edge divergence against our 2.6), which is the standing argument for
-	// cutting this rather than the lift whenever the pair has to give.
-	peelPivot: 0.05,
-	waveAmplitude: 0.062,
+	// Reference cylindrical curl: 0.32 radians, with a radius of 22% of its diagonal.
+	peelPivot: 0.32,
+	waveAmplitude: 0.006,
 	// About one wave across the sheet. The reference bows its whole outline
 	// rather than running a train of ripples down it, and shorter wavelengths
 	// read as vibration instead of as paper bending.
@@ -330,7 +248,7 @@ export const PEEL_TUNING_DEFAULTS: PeelTuning = {
 	// reference: enough that the edge visibly bends, little enough that the
 	// paper margin stays an even border instead of rippling like cloth.
 	waveShear: 1.1,
-	flutter: 0.034,
+	flutter: 0,
 	// Out-of-plane lean from drag velocity, all but switched off. Measured: the
 	// reference's silhouette keystone changes by 0.0 +- 0.2 percentage points
 	// between held-still and held-moving, i.e. it does not tilt out of plane
@@ -426,9 +344,7 @@ export const PEEL_REDUCED_MOTION_TUNING: Partial<PeelTuning> = {
 	tilt: 0,
 	swing: 0,
 	liftHeight: PEEL_LIFT_HEIGHT * 0.45,
-	// Held at the same 0.44 fraction of the default rock it always was, now that
-	// the default is 0.05 rather than 0.16.
-	peelPivot: 0.022,
+	peelPivot: 0,
 	sheenGain: 0.6,
 };
 
@@ -440,7 +356,7 @@ export function resolvePeelTuning(
 	return {
 		...PEEL_TUNING_DEFAULTS,
 		...PEEL_FINISH_PRESETS[finish],
-		...(reducedMotion ? PEEL_REDUCED_MOTION_TUNING : null),
 		...overrides,
+		...(reducedMotion ? PEEL_REDUCED_MOTION_TUNING : null),
 	};
 }

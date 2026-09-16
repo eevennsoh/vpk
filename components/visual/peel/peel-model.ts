@@ -41,6 +41,8 @@ export const PEEL_DURATIONS = {
 	 * board for most of the interaction.
 	 */
 	wave: 0.85,
+	/** Broad face sweep — three `--duration-slowest` periods, independent of the paper's ripple. */
+	flash: 1.8,
 	/** Sheen catching up to the cursor — `--duration-normal`. */
 	sheen: 0.15,
 	/** Drag follow, deliberately the shortest — `--duration-fast`. */
@@ -303,6 +305,12 @@ export interface PeelImpulse {
 }
 
 export interface PeelState {
+	/** Monotonic fold travel, separate from the contact-shadow spring. */
+	fold: number;
+	foldVelocity: number;
+	foldAngle: number;
+	foldAngleVelocity: number;
+	reducedMotion: boolean;
 	tuning: PeelTuning;
 
 	/** True between `grabPeel` and `releasePeel`. */
@@ -358,6 +366,8 @@ export interface PeelState {
 	sheen: number;
 
 	impulses: PeelImpulse[];
+	/** Opt-in face flash age. Infinity until its preview owner starts one. */
+	flashAge: number;
 	/** Seconds since the state was created. Drives the idle flutter phase. */
 	time: number;
 }
@@ -368,6 +378,11 @@ function createImpulse(): PeelImpulse {
 
 export function createPeelState(tuning: PeelTuning): PeelState {
 	return {
+		fold: 0,
+		foldVelocity: 0,
+		foldAngle: Math.PI / 4,
+		foldAngleVelocity: 0,
+		reducedMotion: false,
 		tuning,
 		held: false,
 		hovered: false,
@@ -396,6 +411,7 @@ export function createPeelState(tuning: PeelTuning): PeelState {
 		pointerTargetV: 0.5,
 		sheen: 0,
 		impulses: Array.from({ length: PEEL_IMPULSE_SLOTS }, createImpulse),
+		flashAge: Number.POSITIVE_INFINITY,
 		time: 0,
 	};
 }
@@ -434,6 +450,23 @@ export function peelImpulseEnergy(impulse: PeelImpulse): number {
 		return 0;
 	}
 	return impulse.amplitude * Math.exp((-2.2 * impulse.age) / PEEL_DURATIONS.wave);
+}
+
+/** Start only for a preview that supplies a face flash; ordinary stamps keep their existing lifetime. */
+export function startPeelFlash(state: PeelState): void {
+	state.flashAge = state.reducedMotion ? Number.POSITIVE_INFINITY : 0;
+}
+
+/** Sustain the broad avatar-coloured pass, then ease its trailing light away. */
+export function peelFlashEnergy(state: PeelState): number {
+	if (state.reducedMotion || !Number.isFinite(state.flashAge)) return 0;
+	const tail = clamp((1 - peelFlashProgress(state)) / 0.55, 0, 1);
+	return tail * tail * (3 - 2 * tail);
+}
+
+/** The face sweep shares the frame clock while travelling more slowly than the ripple. */
+export function peelFlashProgress(state: PeelState): number {
+	return clamp(state.flashAge / PEEL_DURATIONS.flash, 0, 1);
 }
 
 /**
@@ -583,8 +616,24 @@ function approach(value: number, target: number, duration: number, dt: number): 
 	return value + (target - value) * (1 - Math.exp(-dt / Math.max(duration, 1e-4)));
 }
 
+/** Exact critically damped spring, matching the reference's fold rates. */
+function stepFold(value: number, velocity: number, target: number, rate: number, dt: number): [number, number] {
+	const offset = value - target;
+	const carry = velocity + rate * offset;
+	const decay = Math.exp(-rate * dt);
+	const next = target + (offset + carry * dt) * decay;
+	const nextVelocity = (velocity - rate * carry * dt) * decay;
+	return Math.abs(next - target) < 0.0005 && Math.abs(nextVelocity) < 0.006
+		? [target, 0]
+		: [next, nextVelocity];
+}
+
 function stepOnce(state: PeelState, dt: number): void {
 	state.time += dt;
+	if (Number.isFinite(state.flashAge)) {
+		state.flashAge += dt;
+		if (state.flashAge >= PEEL_DURATIONS.flash) state.flashAge = Number.POSITIVE_INFINITY;
+	}
 
 	for (const impulse of state.impulses) {
 		if (!Number.isFinite(impulse.age)) {
@@ -606,6 +655,17 @@ function stepOnce(state: PeelState, dt: number): void {
 	}
 
 	const lifted = state.held || state.pulseRemaining > 0;
+	const foldTarget = lifted ? 1 : 0;
+	// The curl sweeps across the sheet in ~400ms (duration-slower), then relaxes.
+	// Rates 7 on lift and 9 on landing come from the reference's scene module.
+	[state.fold, state.foldVelocity] = state.reducedMotion
+		? [foldTarget, 0]
+		: stepFold(state.fold, state.foldVelocity, foldTarget, lifted ? 7 : 9, dt);
+	const angleTarget = Math.atan2(state.grabV < 0.5 ? -1 : 1, state.grabU < 0.5 ? -1 : 1);
+	const angleDelta = Math.atan2(Math.sin(angleTarget - state.foldAngle), Math.cos(angleTarget - state.foldAngle));
+	[state.foldAngle, state.foldAngleVelocity] = state.reducedMotion || state.fold < 0.015 || state.fold > 0.985
+		? [angleTarget, 0]
+		: stepFold(state.foldAngle, state.foldAngleVelocity, state.foldAngle + angleDelta, 24, dt);
 
 	const liftSpring = peelSpring(
 		lifted ? PEEL_DURATIONS.lift : PEEL_DURATIONS.land,
@@ -734,6 +794,13 @@ export function stepPeel(state: PeelState, dt: number): void {
 		stepOnce(state, step);
 		remaining -= step;
 	}
+	if (state.reducedMotion) {
+		state.lift = state.held ? 1 : 0;
+		state.liftVelocity = 0;
+		state.x = state.targetX;
+		state.y = state.targetY;
+		state.velocityX = state.velocityY = 0;
+	}
 }
 
 /**
@@ -809,7 +876,8 @@ export function peelPivotOffset(
  * cost no frames at all.
  */
 export function isPeelIdle(state: PeelState): boolean {
-	if (state.held || state.hovered || state.pulseRemaining > 0) {
+	if (!state.reducedMotion && Number.isFinite(state.flashAge)) return false;
+	if (state.pulseRemaining > 0 || (state.tuning.flutter > 0 && state.held)) {
 		return false;
 	}
 	if (state.impulses.some((impulse) => Number.isFinite(impulse.age))) {
@@ -817,9 +885,13 @@ export function isPeelIdle(state: PeelState): boolean {
 	}
 
 	const settled =
-		Math.abs(state.lift) < 1e-3 &&
+		Math.abs(state.fold - (state.held ? 1 : 0)) < 1e-4 &&
+		Math.abs(state.foldVelocity) < 1e-3 &&
+		Math.abs(state.lift - (state.held ? 1 : 0)) < 1e-3 &&
 		Math.abs(state.liftVelocity) < 1e-3 &&
-		Math.abs(state.sheen) < 1e-3 &&
+		Math.abs(state.sheen - (state.hovered || state.held ? 1 : 0)) < 1e-3 &&
+		Math.abs(state.pointerU - state.pointerTargetU) < 1e-4 &&
+		Math.abs(state.pointerV - state.pointerTargetV) < 1e-4 &&
 		Math.abs(state.tiltX) < 1e-4 &&
 		Math.abs(state.tiltY) < 1e-4 &&
 		// The swing needs 0.29s to reach 5% and is visually parked by ~0.35s;

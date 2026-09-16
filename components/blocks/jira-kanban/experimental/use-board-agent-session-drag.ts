@@ -367,6 +367,7 @@ function findBoardCard(
 }
 
 export function useBoardAgentSessionDrag({
+	previewEffect,
 	boardColumns,
 	detachedSessionsByCard,
 	linkingVariant = "fuse",
@@ -379,6 +380,7 @@ export function useBoardAgentSessionDrag({
 	onUnlink,
 	untrackedSessions,
 }: Readonly<{
+	previewEffect?: JiraIssueAgentSessionDragBinding["previewEffect"];
 	boardColumns: readonly JiraKanbanColumnData[];
 	detachedSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
 	/**
@@ -748,6 +750,7 @@ export function useBoardAgentSessionDrag({
 		bindingOnUnlink?: JiraIssueAgentSessionDragBinding["onUnlink"],
 	): JiraIssueAgentSessionDragBinding {
 		return {
+			previewEffect,
 			onDragStateChange: (state) => onDragStateChange(origin, state),
 			onFocusedActivitiesChange: () => {},
 			onUnlink: bindingOnUnlink,

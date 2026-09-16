@@ -74,6 +74,7 @@ const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
 	"sessionStroke",
 	"sessionBloom",
 	"sessionProximity",
+	"sessionPeel",
 ] as const;
 const isJiraTeamEu26LooseWorkResumable = () => true;
 
@@ -402,6 +403,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 						agentSessionAssigneeIdAliases={JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
 						agentSessionLinkingVariant="glow"
+						agentSessionPreviewEffect={designVariants.sessionPeel ? "peel" : undefined}
 						suggestSessionBoardLinkOnHover={false}
 						agentSessionPresentation="column"
 						advancedAgentSessionTimeline={designVariants.advancedTimeline}

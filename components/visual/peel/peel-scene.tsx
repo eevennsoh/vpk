@@ -14,7 +14,8 @@
  */
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import type { MotionValue } from "motion/react";
+import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
 
 import type { PeelTuning } from "./data";
@@ -24,11 +25,13 @@ import {
 	PEEL_TILT_REFERENCE_SPEED,
 	isPeelIdle,
 	peelImpulseEnergy,
+	peelFlashEnergy,
+	peelFlashProgress,
 	peelPivotOffset,
 	stepPeel,
 	type PeelState,
 } from "./peel-model";
-import { resolvePeelUv, type PeelBox, type PeelPointerSample } from "./peel-geometry";
+import { deformPeelSheet, resolvePeelUv, type PeelBox, type PeelPointerSample } from "./peel-geometry";
 import { PEEL_SHADOW_PAD, createPeelShadowMaterial } from "./shadow-material";
 
 /**
@@ -53,8 +56,18 @@ export interface PeelSceneProps {
 	surfaceColor: string;
 	/** Artwork printed on the sheet, edge to edge. */
 	src?: string;
+	/** A captured live component, drawn full bleed with its original alpha. */
+	print?: HTMLCanvasElement;
+	/** The existing avatar accent, resolved to a literal CSS colour by the surface. */
+	flashColor?: string;
+	shape?: "stamp" | "surface";
+	/** External drag follower; sampled once per frame, never during render. */
+	pointerPosition?: { x: MotionValue<number>; y: MotionValue<number> };
+	onReady?: () => void;
+	/** After a frame draws, for a prepared preview's visibility handoff. */
+	onRender?: () => void;
 	/** Fires when the model settles or wakes, so the canvas can stop rendering. */
-	onIdleChange: (idle: boolean) => void;
+	onIdleChange?: (idle: boolean) => void;
 }
 
 export function PeelScene({
@@ -67,6 +80,12 @@ export function PeelScene({
 	aspect,
 	surfaceColor,
 	src,
+	print,
+	flashColor,
+	shape = "stamp",
+	pointerPosition,
+	onReady,
+	onRender,
 	onIdleChange,
 }: Readonly<PeelSceneProps>) {
 	const invalidate = useThree((root) => root.invalidate);
@@ -78,6 +97,11 @@ export function PeelScene({
 		() => new THREE.PlaneGeometry(aspect, 1, SHEET_SEGMENTS, SHEET_SEGMENTS),
 		[aspect],
 	);
+	const originalPositions = useMemo(
+		() => (sheetGeometry.attributes.position.array as Float32Array).slice(),
+		[sheetGeometry],
+	);
+	const foldPoseRef = useRef({ progress: NaN, angle: NaN, curl: NaN, lift: NaN, geometry: sheetGeometry });
 	const shadowGeometry = useMemo(
 		() =>
 			new THREE.PlaneGeometry(
@@ -87,13 +111,17 @@ export function PeelScene({
 		[aspect],
 	);
 	const sheetMaterial = useMemo(
-		() => createPeelMaterial({ aspect, surfaceColor }),
-		[aspect, surfaceColor],
+		() => createPeelMaterial({ aspect, surfaceColor, shape }),
+		[aspect, surfaceColor, shape],
 	);
 	const shadowMaterial = useMemo(
 		() => createPeelShadowMaterial({ aspect }),
 		[aspect],
 	);
+
+	// Redraw a parked canvas when its finish or motion preference changes.
+	// The frame reports whether the updated model needs continuous rendering.
+	useEffect(() => invalidate(), [tuning, invalidate]);
 
 	useEffect(
 		() => () => {
@@ -110,6 +138,16 @@ export function PeelScene({
 	// image never unmounts the canvas: the sheet renders as bare stock and the
 	// print appears when it arrives.
 	useEffect(() => {
+		if (print) {
+			const texture = new THREE.CanvasTexture(print);
+			texture.colorSpace = THREE.SRGBColorSpace;
+			texture.anisotropy = capabilities.getMaxAnisotropy();
+			sheetMaterial.uniforms.uArt.value?.dispose();
+			sheetMaterial.uniforms.uArt.value = texture;
+			sheetMaterial.uniforms.uArtReady.value = 1;
+			invalidate();
+			return;
+		}
 		if (!src) {
 			sheetMaterial.uniforms.uArtReady.value = 0;
 			invalidate();
@@ -146,20 +184,56 @@ export function PeelScene({
 		return () => {
 			cancelled = true;
 		};
-	}, [src, sheetMaterial, capabilities, invalidate]);
+	}, [src, print, sheetMaterial, capabilities, invalidate]);
+	useEffect(() => {
+		if (flashColor) sheetMaterial.uniforms.uFlashColor.value.set(flashColor);
+		invalidate();
+	}, [flashColor, sheetMaterial, invalidate]);
+	const readyRef = useRef(false);
+	const handleAfterRender = useCallback(() => {
+		if (sheetMaterial.uniforms.uArtReady.value !== 1) return;
+		if (!readyRef.current) {
+			readyRef.current = true;
+			onReady?.();
+		} else onRender?.();
+	}, [sheetMaterial, onReady, onRender]);
 
 	useFrame((_, delta) => {
+		if (pointerPosition) {
+			state.targetX = pointerPosition.x.get();
+			state.targetY = pointerPosition.y.get();
+		}
 		readPointer(state, pointerRef.current, hitRef.current, box);
 		stepPeel(state, delta);
 
+		const pose = foldPoseRef.current;
+		if (pose.geometry !== sheetGeometry || pose.progress !== state.fold || pose.angle !== state.foldAngle || pose.curl !== tuning.peelPivot || pose.lift !== tuning.liftHeight) {
+			deformPeelSheet(
+				originalPositions,
+				sheetGeometry.attributes.position.array as Float32Array,
+				sheetGeometry.attributes.normal.array as Float32Array,
+				aspect,
+				state.fold,
+				state.foldAngle,
+				state.reducedMotion ? 0 : tuning.peelPivot,
+				tuning.liftHeight,
+			);
+			sheetGeometry.attributes.position.needsUpdate = true;
+			sheetGeometry.attributes.normal.needsUpdate = true;
+			pose.geometry = sheetGeometry;
+			pose.progress = state.fold;
+			pose.angle = state.foldAngle;
+			pose.curl = tuning.peelPivot;
+			pose.lift = tuning.liftHeight;
+		}
+
 		const sheet = sheetMaterial.uniforms;
 		sheet.uLift.value = state.lift;
-		sheet.uLiftHeight.value = tuning.liftHeight;
-		sheet.uPivot.value = tuning.peelPivot;
-		sheet.uGrab.value.set(state.grabU, state.grabV);
 		sheet.uPointer.value.set(state.pointerU, state.pointerV);
 		sheet.uSheen.value = state.sheen;
 		sheet.uTime.value = state.time;
+		sheet.uFlashGain.value = flashColor ? peelFlashEnergy(state) : 0;
+		sheet.uFlashProgress.value = peelFlashProgress(state);
 		sheet.uWave.value.set(tuning.waveAmplitude, tuning.waveLength, tuning.waveSpeed);
 		sheet.uShear.value = tuning.waveShear;
 		sheet.uFlutter.value = tuning.flutter;
@@ -187,21 +261,19 @@ export function PeelScene({
 		}
 
 		const shadow = shadowMaterial.uniforms;
-		shadow.uLift.value = state.lift;
+		shadow.uLift.value = state.fold;
 		shadow.uStrength.value = tuning.shadowStrength;
-		// The same three the sheet's vertex displacement reads, so the shadow's
-		// seam can be put under the sheet's projected outline instead of under a
-		// sheet-wide average of it. A sheet held by one corner is magnified 1.079
-		// there and 1.001 at the far end, and a single dilation is wrong at both.
+		// The fold owns the paper's shape; the shadow follows its travel and
+		// final rise without adding the previous corner-to-corner rock.
 		shadow.uLiftHeight.value = tuning.liftHeight;
-		shadow.uPivot.value = tuning.peelPivot;
+		shadow.uPivot.value = 0;
 		shadow.uGrab.value.set(state.grabU, state.grabV);
 
 		if (sheetRef.current) {
 			// The sheet is never square to the camera, even lying flat — see
 			// PEEL_REST_TILT_Y. Carrying it adds to that pose rather than
 			// replacing it, so the keystone survives the drag.
-			sheetRef.current.rotation.set(state.tiltX, state.tiltY + PEEL_REST_TILT_Y, 0);
+			sheetRef.current.rotation.set(state.tiltX, state.tiltY + (shape === "stamp" ? PEEL_REST_TILT_Y : 0), 0);
 		}
 
 		const lift = liftRef.current;
@@ -237,20 +309,22 @@ export function PeelScene({
 		}
 
 		const idle = isPeelIdle(state);
-		if (idle !== idleRef.current) {
+		// A tuning change can wake an already-idle model. Report idle on that
+		// first frame as well, so the canvas returns to demand rendering.
+		if (idle || idle !== idleRef.current) {
 			idleRef.current = idle;
-			onIdleChange(idle);
+			onIdleChange?.(idle);
 		}
 	});
 
 	return (
 		<>
-			<mesh
+			{shape === "stamp" ? <mesh
 				geometry={shadowGeometry}
 				material={shadowMaterial}
 				position={[0, 0, -0.002]}
-			/>
-			<mesh ref={sheetRef} geometry={sheetGeometry} material={sheetMaterial} />
+			/> : null}
+			<mesh ref={sheetRef} geometry={sheetGeometry} material={sheetMaterial} onAfterRender={handleAfterRender} />
 		</>
 	);
 }
