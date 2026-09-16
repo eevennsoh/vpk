@@ -28,16 +28,17 @@ const MICROS_DIR = path.join(SKILL_ROOT, "references", "micros");
 // -------- CLI ------------------------------------------------------------
 
 function parseArgs(argv) {
-	const args = { plan: null, target: null, force: false };
+	const args = { plan: null, target: null, force: false, backendBacked: false };
 	for (let i = 0; i < argv.length; i++) {
 		const a = argv[i];
 		if (a === "--target") args.target = argv[++i];
 		else if (a === "--force") args.force = true;
+		else if (a === "--backend-backed") args.backendBacked = true;
 		else if (a.startsWith("--")) throw new Error(`Unknown flag: ${a}`);
 		else if (!args.plan) args.plan = a;
 	}
 	if (!args.plan) {
-		throw new Error("Usage: scaffold-target.mjs <plan.json> [--target <dir>] [--force]");
+		throw new Error("Usage: scaffold-target.mjs <plan.json> [--target <dir>] [--backend-backed] [--force]");
 	}
 	return args;
 }
@@ -109,14 +110,23 @@ const PROVIDERS_REQUIRING_INSTANCE_PROPS = new Set(["WorkItemModalProvider"]);
  */
 function providerNeedsInstanceProps(source, name) {
 	if (PROVIDERS_REQUIRING_INSTANCE_PROPS.has(name)) return true;
+	const inlineRe = new RegExp(
+		`export\\s+function\\s+${name}\\s*\\(\\s*\\{[^}]*\\}\\s*:\\s*(?:Readonly\\s*<\\s*)?\\{([\\s\\S]*?)\\}\\s*>?\\s*\\)`,
+	);
+	const inline = source.match(inlineRe);
+	if (inline && hasRequiredNonChildrenProp(inline[1])) return true;
 	const ifaceRe = new RegExp(
 		`(?:interface|type)\\s+${name}Props\\b[^{]*\\{([\\s\\S]*?)\\n\\}`,
 	);
 	const iface = source.match(ifaceRe);
 	if (!iface) return false;
+	return hasRequiredNonChildrenProp(iface[1]);
+}
+
+function hasRequiredNonChildrenProp(typeBody) {
 	const propRe = /^\s*([A-Za-z0-9_]+)(\?)?\s*:/gm;
 	let match;
-	while ((match = propRe.exec(iface[1])) !== null) {
+	while ((match = propRe.exec(typeBody)) !== null) {
 		if (match[1] === "children") continue;
 		if (!match[2]) return true;
 	}
@@ -139,6 +149,17 @@ function readPnpmCatalog(repoRoot) {
 		if (match) catalog[match[1].trim()] = match[2].trim();
 	}
 	return catalog;
+}
+
+function readPnpmYamlSection(repoRoot, sectionName) {
+	const yamlPath = path.join(repoRoot, "pnpm-workspace.yaml");
+	if (!fs.existsSync(yamlPath)) return "";
+	const lines = fs.readFileSync(yamlPath, "utf8").split("\n");
+	const start = lines.findIndex((line) => line === `${sectionName}:`);
+	if (start < 0) return "";
+	let end = start + 1;
+	while (end < lines.length && (lines[end] === "" || /^\s/.test(lines[end]))) end += 1;
+	return `${lines.slice(start, end).join("\n").trimEnd()}\n`;
 }
 
 function resolveCatalogSpecifier(pkgName, version, catalog) {
@@ -429,6 +450,21 @@ function resolveExtractedDependencies({ planPackages, sourceManifest, catalog })
 	return resolved;
 }
 
+function resolveBackendDependencies({ sourceManifest, backendManifest, catalog }) {
+	const dependencies = {};
+	for (const [name, version] of Object.entries({
+		...sourceManifest.dependencies,
+		...backendManifest.dependencies,
+	})) {
+		const resolved = resolveCatalogSpecifier(name, version, catalog);
+		if (resolved === "catalog:") {
+			throw new Error(`Backend dependency ${name} has no catalog version`);
+		}
+		dependencies[name] = resolved;
+	}
+	return dependencies;
+}
+
 function writeTargetPackageJson({ targetDir, tmpl, targetName, dependencies }) {
 	const runtimeDeps = {};
 	const typeDeps = {};
@@ -463,11 +499,21 @@ function copyLocalCssGraph({ repoRoot, targetDir, cssImports, globalsCss }) {
 	for (const rel of collectLocalCssImportsFromText(globalsCss, "app")) {
 		queued.add(rel);
 	}
-	for (const rel of queued) {
+	const copied = new Set();
+	while (queued.size > 0) {
+		const rel = queued.values().next().value;
+		queued.delete(rel);
+		if (copied.has(rel)) continue;
+		copied.add(rel);
 		if (rel.includes("node_modules")) continue;
 		const srcAbs = path.join(repoRoot, rel);
 		if (!fs.existsSync(srcAbs) || !fs.statSync(srcAbs).isFile()) continue;
 		copyFileVerbatim(srcAbs, path.join(targetDir, rel));
+		for (const imported of collectLocalCssImportsFromText(
+			fs.readFileSync(srcAbs, "utf8"), path.posix.dirname(rel)
+		)) {
+			if (!copied.has(imported)) queued.add(imported);
+		}
 	}
 }
 
@@ -655,6 +701,17 @@ export function FeatureFlagsShim() {
 		sourceManifest,
 		catalog,
 	});
+	if (args.backendBacked) {
+		const backendManifestPath = path.join(repoRoot, "backend", "package.json");
+		if (!fs.existsSync(backendManifestPath)) {
+			throw new Error("Backend-backed extraction requires source backend/package.json");
+		}
+		Object.assign(augmentedNpm, resolveBackendDependencies({
+			sourceManifest,
+			backendManifest: readJSON(backendManifestPath),
+			catalog,
+		}));
+	}
 	const availablePackages = new Set(Object.keys(augmentedNpm));
 	const generatedGlobalsCss = buildGlobalsCssFromSource(sourceGlobalsCss, availablePackages);
 	writeFileEnsuring(
@@ -713,6 +770,18 @@ export function FeatureFlagsShim() {
 		targetName,
 		dependencies: augmentedNpm,
 	});
+	if (args.backendBacked) {
+		const packagePath = path.join(targetDir, "package.json");
+		const targetPackage = readJSON(packagePath);
+		targetPackage.scripts.dev = "node scripts/dev-backend-backed.mjs";
+		targetPackage.scripts.start = "node backend/extracted-server.js";
+		fs.writeFileSync(packagePath, `${JSON.stringify(targetPackage, null, "\t")}\n`);
+		const buildPolicy = readPnpmYamlSection(repoRoot, "allowBuilds");
+		if (!buildPolicy) {
+			throw new Error("Backend-backed extraction requires source pnpm allowBuilds policy");
+		}
+		writeFileEnsuring(path.join(targetDir, "pnpm-workspace.yaml"), buildPolicy);
+	}
 
 	// ---- 8. Fill and write README.md from template ----
 	const sha = safeGitSha(repoRoot);
@@ -728,6 +797,55 @@ export function FeatureFlagsShim() {
 	// ---- 9. Copy Micros deploy scaffold ----
 	if (fs.existsSync(MICROS_DIR)) {
 		copyTreeVerbatim(MICROS_DIR, targetDir);
+	}
+	if (args.backendBacked) {
+		for (const directory of ["backend", "lib", "rovo", "scripts/lib"]) {
+			const sourceDir = path.join(repoRoot, directory);
+			if (!fs.existsSync(sourceDir)) continue;
+			copyRuntimeTreeVerbatim(sourceDir, path.join(targetDir, directory));
+		}
+		const devTemplate = fs.readFileSync(
+			path.join(SCAFFOLD_DIR, "backend-backed-dev.mjs"), "utf8",
+		);
+		writeFileEnsuring(
+			path.join(targetDir, "scripts", "dev-backend-backed.mjs"),
+			substituteTemplate(devTemplate, {
+				SOURCE_RELATIVE_PATH: JSON.stringify(path.relative(targetDir, repoRoot)),
+			}),
+		);
+		copyFileVerbatim(
+			path.join(SCAFFOLD_DIR, "backend-backed.Dockerfile"),
+			path.join(targetDir, "backend", "Dockerfile"),
+		);
+		copyFileVerbatim(
+			path.join(SCAFFOLD_DIR, "backend-backed-cross-route-redirects.js"),
+			path.join(targetDir, "backend", "extracted-cross-route-redirects.js"),
+		);
+		const sourceServer = fs.readFileSync(path.join(repoRoot, "backend", "server.js"), "utf8");
+		const staticServingCall = "\tregisterStaticExportServing(runtime.app, {";
+		if (!sourceServer.includes(staticServingCall)) {
+			throw new Error("Source backend/server.js no longer has the static-serving insertion point");
+		}
+		const extractedServer = sourceServer
+			.replace(
+				"const express = require(\"express\");",
+				"const { registerCrossRouteRedirects } = require(\"./extracted-cross-route-redirects\");\nconst express = require(\"express\");",
+			)
+			.replace(staticServingCall,
+				"\tregisterCrossRouteRedirects(runtime.app);\n" + staticServingCall);
+		writeFileEnsuring(path.join(targetDir, "backend", "extracted-server.js"), extractedServer);
+		fs.appendFileSync(path.join(targetDir, "README.md"), `
+## Backend-backed runtime
+
+\`pnpm dev\` serves the extracted route at \`http://localhost:3001\` and proxies
+\`/api/*\` to the source VPK backend. The adjacent source checkout is discovered
+automatically; set \`VPK_ROOT\` (or legacy \`VPK_ROVO_ROOT\`) if it moves. The
+launcher starts \`pnpm run dev:backend\` in the source when no healthy backend
+is running. \`VPK_ORIGIN\` points cross-route Create actions to the source app;
+locally it falls back to the source frontend port file. Set \`VPK_ORIGIN\` and
+\`ALLOWED_ORIGINS\` to the public hosts before deployment. The production image
+runs the copied source Express backend, including API and WebSocket routes.
+`);
 	}
 
 	// ---- 9b. Wire VPK skill access ----
@@ -830,6 +948,23 @@ function copyTreeVerbatim(srcDir, destDir) {
 		if (entry.isDirectory()) {
 			ensureDir(destAbs);
 			copyTreeVerbatim(srcAbs, destAbs);
+		} else {
+			copyFileVerbatim(srcAbs, destAbs);
+		}
+	}
+}
+
+function copyRuntimeTreeVerbatim(srcDir, destDir) {
+	for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+		if (["node_modules", ".next", "public"].includes(entry.name) || entry.isSymbolicLink()) {
+			continue;
+		}
+		if (/\.(ts|tsx|mts|cts)$/.test(entry.name)) continue;
+		const srcAbs = path.join(srcDir, entry.name);
+		const destAbs = path.join(destDir, entry.name);
+		if (entry.isDirectory()) {
+			ensureDir(destAbs);
+			copyRuntimeTreeVerbatim(srcAbs, destAbs);
 		} else {
 			copyFileVerbatim(srcAbs, destAbs);
 		}

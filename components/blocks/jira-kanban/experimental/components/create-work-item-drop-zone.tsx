@@ -10,7 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { JIRA_DROPZONE_OPEN_HEIGHT_PX } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-motion";
 
+import { CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX } from "../lib/create-work-item-exclusive-proximity";
 import { resolveBoardCreateDropzoneDrag } from "../lib/board-agent-session-drag";
 import { useCreateDropzoneHeight } from "../hooks/use-create-dropzone-height";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
@@ -53,9 +55,10 @@ export function BoardColumnCreateAction({
 					// This stays anchored when the magnetic surface leans or expands.
 					<div
 						aria-hidden="true"
+						data-create-work-item-proximity=""
 						className={cn("pointer-events-none absolute inset-x-0 h-6", placement === "top" ? "top-0" : "bottom-0")}
 						ref={proximityRef}
-						style={{ minHeight: drag !== "idle" ? minimumHeight : undefined }}
+						style={{ minHeight: drag !== "idle" ? Math.max(JIRA_DROPZONE_OPEN_HEIGHT_PX, minimumHeight) : undefined }}
 					/>
 				) : null}
 				{dropZoneLabel ? (
@@ -63,6 +66,7 @@ export function BoardColumnCreateAction({
 						ants={ants}
 						drag={drag}
 						exclusiveWinner={isExclusiveWinner}
+						hoverArea={CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX}
 						label={dropZoneLabel}
 						measuredRef={targetRef}
 						openMinHeight={minimumHeight}

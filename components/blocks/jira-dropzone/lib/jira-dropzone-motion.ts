@@ -18,6 +18,8 @@ export const JIRA_DROPZONE_DURATION_TOKEN_MS = {
 export type JiraDropzoneDurationToken = keyof typeof JIRA_DROPZONE_DURATION_TOKEN_MS;
 
 export const JIRA_DROPZONE_HOVER_AREA_PX = 120;
+/** Standard h-16 expanded target when a host has no spare space. */
+export const JIRA_DROPZONE_OPEN_HEIGHT_PX = 64;
 
 /** Compact well pop-in while a session drag is active. */
 export const JIRA_DROPZONE_WELL_ENTER = {

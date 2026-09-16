@@ -267,11 +267,38 @@ function createContractFixture() {
 			),
 		);
 		writeFile(
+			path.join(repoRoot, "backend", "package.json"),
+			JSON.stringify({ dependencies: { express: "^5.2.1", cors: "^2.8.5" } }),
+		);
+		writeFile(
+			path.join(repoRoot, "backend", "server.js"),
+			`const express = require("express");
+function start(runtime) {
+\tregisterStaticExportServing(runtime.app, {
+\t\texpressImpl: express,
+\t});
+}
+`,
+		);
+		writeFile(path.join(repoRoot, "backend", "node_modules", "cors", "sentinel"), "installed\n");
+		writeFile(path.join(repoRoot, "lib", "untraced-source.ts"), "export const hidden = true;\n");
+		writeFile(path.join(repoRoot, "app", "contexts", "context-required-inline.tsx"),
+			`export function RequiredInlineProvider({ value, children }: Readonly<{
+\tvalue: string;
+\tchildren: unknown;
+}>) { return children; }
+`);
+		writeFile(path.join(repoRoot, "rovo", "config.js"), "module.exports = {};\n");
+		writeFile(path.join(repoRoot, "scripts", "lib", "worktree-ports.js"), "module.exports = {};\n");
+		writeFile(
 			path.join(repoRoot, "pnpm-workspace.yaml"),
 			`packages:
   - .
 catalog:
   '@tiptap/core': 3.30.0
+allowBuilds:
+  protobufjs: true
+  better-sqlite3: false
 `,
 		);
 		writeFile(
@@ -299,7 +326,12 @@ catalog:
 @import "../node_modules/@excalidraw/excalidraw/dist/prod/index.css";
 `,
 		);
-		writeFile(path.join(repoRoot, "app", "tailwind-theme.css"), ":root { --fixture-color: #fff; }\n");
+		writeFile(path.join(repoRoot, "app", "tailwind-theme.css"),
+			`@import "./tailwind-theme-agent-loading.css";
+:root { --fixture-color: #fff; }
+`);
+		writeFile(path.join(repoRoot, "app", "tailwind-theme-agent-loading.css"),
+			".agent-loading { opacity: 1; }\n");
 		writeFile(path.join(repoRoot, "app", "dash-4-2.css"), "/* dash */\n");
 		writeFile(path.join(repoRoot, "app", "typeset.css"), "/* typeset */\n");
 		writeFile(
@@ -374,6 +406,7 @@ export function WorkItemModalProvider({
 						"lib/studio-agent-data-flow.js",
 						"app/contexts/context-creation-mode.tsx",
 						"app/contexts/context-work-item-modal.tsx",
+						"app/contexts/context-required-inline.tsx",
 					],
 					assets: [],
 					cssImports: [
@@ -389,6 +422,7 @@ export function WorkItemModalProvider({
 					contextFiles: [
 						"app/contexts/context-creation-mode.tsx",
 						"app/contexts/context-work-item-modal.tsx",
+						"app/contexts/context-required-inline.tsx",
 					],
 				},
 				null,
@@ -453,6 +487,10 @@ test("scaffold-target copies local CSS and never strips shadcn", () => {
 			"/* typeset */\n",
 		);
 		assert.equal(
+			fs.readFileSync(path.join(fixture.targetDir, "app", "tailwind-theme-agent-loading.css"), "utf8"),
+			".agent-loading { opacity: 1; }\n",
+		);
+		assert.equal(
 			fs.readFileSync(
 				path.join(
 					fixture.targetDir,
@@ -489,6 +527,49 @@ test("scaffold-target wraps children-only providers and copies ambient dts", () 
 			fs.readFileSync(path.join(fixture.targetDir, "types", "speech-recognition.d.ts"), "utf8"),
 			"interface SpeechRecognition {}\n",
 		);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+test("backend-backed scaffold preserves source backend and generates proxy/deployment harness", () => {
+	const fixture = createContractFixture();
+	try {
+		execFileSync(process.execPath, [
+			SCAFFOLD_TARGET_PATH,
+			fixture.planPath,
+			"--target",
+			fixture.targetDir,
+			"--backend-backed",
+		], { env: GIT_TEST_ENV, stdio: "pipe" });
+		const targetPackage = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "package.json"), "utf8"));
+		assert.equal(targetPackage.dependencies.express, "^5.2.1");
+		assert.equal(targetPackage.dependencies.cors, "^2.8.5");
+		assert.equal(targetPackage.scripts.dev, "node scripts/dev-backend-backed.mjs");
+		assert.equal(targetPackage.scripts.start, "node backend/extracted-server.js");
+		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "pnpm-workspace.yaml"), "utf8"),
+			"allowBuilds:\n  protobufjs: true\n  better-sqlite3: false\n");
+		assert.equal(fs.existsSync(path.join(fixture.targetDir, "backend", "node_modules")), false);
+		assert.equal(fs.existsSync(path.join(fixture.targetDir, "lib", "untraced-source.ts")), false);
+		const layout = fs.readFileSync(path.join(fixture.targetDir, "app", "layout.tsx"), "utf8");
+		assert.doesNotMatch(layout, /RequiredInlineProvider/);
+		assert.equal(
+			fs.readFileSync(path.join(fixture.targetDir, "backend", "server.js"), "utf8"),
+			fs.readFileSync(path.join(path.dirname(fixture.planPath), "repo", "backend", "server.js"), "utf8"),
+		);
+		const extractedServer = fs.readFileSync(path.join(fixture.targetDir, "backend", "extracted-server.js"), "utf8");
+		assert.match(extractedServer, /registerCrossRouteRedirects\(runtime\.app\)/);
+		assert.match(extractedServer, /registerStaticExportServing\(runtime\.app/);
+		const dev = fs.readFileSync(path.join(fixture.targetDir, "scripts", "dev-backend-backed.mjs"), "utf8");
+		assert.match(dev, /\/api\/health/);
+		assert.match(dev, /proxyUpgrade/);
+		assert.match(dev, /api\/realtime\/ws-url/);
+		assert.doesNotMatch(dev, /\{\{SOURCE_RELATIVE_PATH\}\}/);
+		execFileSync(process.execPath, ["--check", path.join(fixture.targetDir, "scripts", "dev-backend-backed.mjs")]);
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, "backend", "Dockerfile"), "utf8"),
+			/CMD \["node", "backend\/extracted-server\.js"\]/);
+		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "rovo", "config.js"), "utf8"),
+			"module.exports = {};\n");
 	} finally {
 		fixture.cleanup();
 	}

@@ -2,6 +2,8 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 
+import { MAGNETIC_PROXIMITY_DISTANCE } from "@/components/ui-custom/hooks/use-magnetic-proximity";
+
 /** Measure unused column space without resizing the card scrollport. */
 export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bottom") {
 	const anchorRef = useRef<HTMLDivElement>(null);
@@ -19,16 +21,15 @@ export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bot
 			const anchorRect = anchor.getBoundingClientRect();
 			const listRect = list.getBoundingClientRect();
 			const lastCard = list.lastElementChild;
-			// Attachment chrome expands on hover; it must not push the create
-			// target away from a pointer that is already entering the free space.
-			const chinHeight = lastCard?.querySelector('[data-slot="jira-issue-attach-chin"]')
-				?.getBoundingClientRect().height ?? 0;
 			const listStyle = getComputedStyle(list);
 			const gap = Math.max(parseFloat(listStyle.rowGap) || 0, parseFloat(listStyle.paddingBottom) || 0);
-			const contentBottom = Math.max(listRect.top, (lastCard?.getBoundingClientRect().bottom ?? listRect.top) - chinHeight);
+			// The attachment footer is occupied card content too. Grow only
+			// into real free space below the entire last card.
+			const contentBottom = Math.max(listRect.top, lastCard?.getBoundingClientRect().bottom ?? listRect.top);
 			const available = placement === "top"
 				? listRect.bottom - anchorRect.top
-				: anchorRect.bottom - contentBottom - gap;
+				// Leave room for the bounded magnetic lean without covering a card.
+				: anchorRect.bottom - contentBottom - gap - MAGNETIC_PROXIMITY_DISTANCE;
 			setMinimumHeight(Math.max(0, Math.floor(available)));
 		};
 		const schedule = () => {

@@ -44,6 +44,7 @@ export function JiraDropzone({
 	ants = true,
 	drag,
 	exclusiveWinner = true,
+	hoverArea = JIRA_DROPZONE_HOVER_AREA_PX,
 	label,
 	measuredRef,
 	openMinHeight,
@@ -54,6 +55,8 @@ export function JiraDropzone({
 	ants?: boolean;
 	drag: JiraDropzoneDragState;
 	exclusiveWinner?: boolean;
+	/** Padding beyond the detection footprint; board hosts use a small approach margin. */
+	hoverArea?: number;
 	label: string;
 	measuredRef?: RefObject<HTMLDivElement | null>;
 	/** Available space used only in proximity or while receiving a drop. */
@@ -67,7 +70,7 @@ export function JiraDropzone({
 	const targetRef = measuredRef ?? localRef;
 	const { channel, onLanded, profile, receiving } = useJiraDropzoneChannel(title);
 	const magnet = useMagneticProximity(proximityRef ?? targetRef, {
-		hoverArea: JIRA_DROPZONE_HOVER_AREA_PX,
+		hoverArea,
 	});
 	const [rawProximity, setRawProximity] = useState<MagneticPointerRelation>("outside");
 	useMotionValueEvent(magnet.proximity, "change", setRawProximity);

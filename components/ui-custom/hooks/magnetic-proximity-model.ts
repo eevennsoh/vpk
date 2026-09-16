@@ -12,6 +12,11 @@ interface MagneticTargetRect {
 	top: number;
 }
 
+/** Keep the approach halo from amplifying the target's peak magnetic distance. */
+export function resolveMagneticAxisOffset(delta: number, halfSize: number, distance: number): number {
+	return halfSize > 0 ? Math.max(-1, Math.min(1, delta / halfSize)) * distance : 0;
+}
+
 export function resolveMagneticPointerRelation(
 	pointer: Readonly<MagneticPointerPoint>,
 	rect: Readonly<MagneticTargetRect>,
