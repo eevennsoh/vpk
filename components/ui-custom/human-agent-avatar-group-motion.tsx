@@ -10,10 +10,16 @@ import {
 	type Transition,
 } from "motion/react";
 
-import { AvatarGroup } from "@/components/ui/avatar";
+import { AvatarGroup, type AvatarGroupProps } from "@/components/ui/avatar";
 import type { HumanAgentAvatarMotionProps } from "@/components/ui-custom/human-agent-avatar-motion";
 import { resolveHumanAgentAvatarMotion } from "@/components/ui-custom/human-agent-avatar-motion-config";
 import { useHumanAgentAvatarGroupCycle } from "@/components/ui-custom/use-human-agent-avatar-group-cycle";
+
+const PX_TO_GROUP_SIZE: Record<number, NonNullable<AvatarGroupProps["size"]>> = {
+	12: "xxs",
+	16: "xs",
+	24: "sm",
+};
 
 function GroupComposition({
 	grouped,
@@ -31,16 +37,18 @@ function GroupComposition({
 	> & { grouped: boolean; transition: Transition }
 >) {
 	const present = useIsPresent();
+	const positionClassName = grouped ? undefined : "absolute";
+	const slotPositions: Partial<HumanAgentAvatarMotionProps["positions"]> = grouped ? {} : positions;
 	const willChange = transition.duration === 0 ? undefined : "transform";
 	const humanAvatar = (
 		<motion.span
 			aria-hidden="true"
-			className={grouped ? undefined : "absolute"}
+			className={positionClassName}
 			data-avatar-role="human"
 			key="human"
 			layoutId="human"
 			transition={{ layout: transition }}
-			style={{ ...(!grouped ? positions.human : {}), willChange }}
+			style={{ ...slotPositions.human, willChange }}
 		>
 			{human()}
 		</motion.span>
@@ -48,12 +56,12 @@ function GroupComposition({
 	const agentAvatar = (
 		<motion.span
 			aria-hidden="true"
-			className={grouped ? undefined : "absolute"}
+			className={positionClassName}
 			data-avatar-role="agent"
 			key="agent"
 			layoutId="agent"
 			transition={{ layout: transition }}
-			style={{ ...(!grouped ? positions.agent : {}), willChange }}
+			style={{ ...slotPositions.agent, willChange }}
 		>
 			{agent(grouped ? humanSize : undefined)}
 		</motion.span>
@@ -73,7 +81,7 @@ function GroupComposition({
 			}}
 		>
 			{grouped ? (
-				<AvatarGroup label={label} size={humanSize === 24 ? "sm" : humanSize === 12 ? "xxs" : "xs"}>
+				<AvatarGroup label={label} size={PX_TO_GROUP_SIZE[humanSize]}>
 					{avatars}
 				</AvatarGroup>
 			) : (

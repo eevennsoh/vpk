@@ -63,6 +63,11 @@ const PX_TO_INSET_IMAGE_CLASS_NAME: Record<number, string> = {
 	48: "size-5",
 };
 
+/** Pixel footprints between Avatar tokens retain their exact outer frame. */
+const PX_TO_AVATAR_FRAME_CLASS_NAME: Partial<Record<number, string>> = {
+	30: "size-7.5",
+};
+
 const avatarSizeFromPx = (px: number): NonNullable<AvatarProps["size"]> => PX_TO_AVATAR_SIZE[px] ?? "sm";
 
 export interface AgentAvatarVisualProps {
@@ -153,7 +158,7 @@ export function AgentAvatarVisual({
 	return (
 		<Avatar
 			animate={animate}
-			className={cn(sizePx === 30 ? "size-7.5" : undefined, avatarClassName)}
+			className={cn(PX_TO_AVATAR_FRAME_CLASS_NAME[sizePx], avatarClassName)}
 			label={label}
 			shape="hexagon"
 			size={avatarSizeFromPx(sizePx)}
