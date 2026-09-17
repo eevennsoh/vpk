@@ -20,16 +20,20 @@ export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bot
 			frame = 0;
 			const anchorRect = anchor.getBoundingClientRect();
 			const listRect = list.getBoundingClientRect();
-			const lastCard = list.lastElementChild;
+			const cards = list.querySelectorAll<HTMLElement>("[data-issue-key]");
+			const lastCard = cards[cards.length - 1];
 			const listStyle = getComputedStyle(list);
-			const gap = Math.max(parseFloat(listStyle.rowGap) || 0, parseFloat(listStyle.paddingBottom) || 0);
-			// The attachment footer is occupied card content too. Grow only
-			// into real free space below the entire last card.
-			const contentBottom = Math.max(listRect.top, lastCard?.getBoundingClientRect().bottom ?? listRect.top);
+			const contentTop = listRect.top + (parseFloat(listStyle.paddingTop) || 0);
+			// The hidden hover-create row is free space during a drag. Protect the
+			// actual issues, including their agent footers, and fill an empty list.
+			const contentBottom = Math.max(contentTop, lastCard?.getBoundingClientRect().bottom ?? contentTop);
+			const clearance = lastCard
+				? Math.max(parseFloat(listStyle.rowGap) || 0, parseFloat(listStyle.paddingBottom) || 0) + MAGNETIC_PROXIMITY_DISTANCE
+				: 0;
 			const available = placement === "top"
 				? listRect.bottom - anchorRect.top
 				// Leave room for the bounded magnetic lean without covering a card.
-				: anchorRect.bottom - contentBottom - gap - MAGNETIC_PROXIMITY_DISTANCE;
+				: anchorRect.bottom - contentBottom - clearance;
 			setMinimumHeight(Math.max(0, Math.floor(available)));
 		};
 		const schedule = () => {

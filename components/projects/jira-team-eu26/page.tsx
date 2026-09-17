@@ -144,7 +144,7 @@ function JiraTeamEu26App(): React.ReactElement {
 	// tabs, untracked work remains an in-flow column, and standard kanban chrome
 	// stays on. Only the timeline interaction model is user-configurable.
 	const tabs = JIRA_TEAM_EU26_TABS;
-	const createWorkItemDropZoneLabel = "Create new work item";
+	const createWorkItemDropZoneLabel = "Drop to create work item";
 	const [workItemView, setWorkItemView] = useState<JiraWorkItemView>(DEFAULT_JIRA_WORK_ITEM_VIEW);
 	const [selectedTabLabel, setSelectedTabLabel] = useState(JIRA_TEAM_EU26_DEFAULT_TAB_LABEL);
 	const startInstantTransition = useInstantTransition();

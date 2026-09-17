@@ -1044,6 +1044,7 @@ function ExperimentalJiraKanbanPageContent({
 								detachedAgentSessionsByCard={proximityAgentSessionsByCard}
 								onCollapsedColumnsChange={handleCollapsedColumnsChange}
 								onCreatedCardArrivalComplete={handleCreatedCardArrivalComplete}
+								onCreateWorkItem={boardMenuWorkItem.onCreateColumnWorkItem}
 								draggedCardCode={draggedCard?.card.code ?? null}
 								issueDragTransitions={issueDragTransitions}
 								selectedCardCodes={selection.selectedCardCodes}

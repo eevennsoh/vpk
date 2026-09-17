@@ -19,6 +19,7 @@ import { useBoardIssueDrop, type BoardIssueDragSource } from "../hooks/use-board
 import type { JiraKanbanCardDropTarget } from "../../card-drop";
 import { BoardCardInsertionLine } from "./board-card-insertion-line";
 import { Lozenge } from "@/components/ui/lozenge";
+import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
 
 type BoardIssueDropState = ReturnType<typeof useBoardIssueDrop>;
 
@@ -132,6 +133,7 @@ export function BoardColumn({
 	createWorkItemDropZoneLabel,
 	onCollapse,
 	onCreateAgent,
+	onCreateWorkItem,
 	onToggleAgent,
 	sessionDragTransaction,
 	title,
@@ -150,6 +152,7 @@ export function BoardColumn({
 	createWorkItemDropZoneLabel?: string;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
+	onCreateWorkItem?: (columnTitle: string, draft: AgentSessionWorkItemDraft) => void;
 	onToggleAgent?: (agentId: string) => void;
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
@@ -162,8 +165,7 @@ export function BoardColumn({
 	const isEmptyColumn = count === 0;
 	const createAction = <BoardColumnCreateAction
 		dropZoneLabel={createWorkItemDropZoneLabel}
-		placement={isEmptyColumn ? "top" : "bottom"}
-		reveal={isEmptyColumn ? "always" : "column-hover"}
+		placement="bottom"
 		sessionDragTransaction={sessionDragTransaction}
 		title={title}
 	/>;
@@ -207,11 +209,13 @@ export function BoardColumn({
 						createdCardArrival={createdCardArrival}
 						insertionArmed={insertionArmed}
 						isEmpty={isEmptyColumn}
+						isSessionDragging={sessionDragTransaction !== null}
+						onCreateWorkItem={onCreateWorkItem ? (draft) => onCreateWorkItem(title, draft) : undefined}
 					>
 						{children}
 					</BoardColumnCardList>
 
-					<div style={{ order: isEmptyColumn ? 0 : 1, ...chrome.footer }}>{createAction}</div>
+					<div style={chrome.footer}>{createAction}</div>
 				</div>
 				<BoardIssueTransitionOverlay issueDrop={issueDrop} title={title} />
 			</div>

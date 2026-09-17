@@ -13,9 +13,10 @@ import {
 	createBoardCardFromDraft,
 	linkBoardCardToSession,
 } from "../lib/board-menu-work-item";
-import { toAgentSessionWorkItemOptions, boardHasWorkItem } from "../lib/board-work-item-options";
+import { appendBoardCardFromDraft, toAgentSessionWorkItemOptions, boardHasWorkItem } from "../lib/board-work-item-options";
 
 export interface BoardMenuWorkItem {
+	readonly onCreateColumnWorkItem: (columnTitle: string, draft: AgentSessionWorkItemDraft) => void;
 	readonly workItemOptions: readonly AgentSessionWorkItemOption[];
 	readonly onLinkWorkItem: (item: AgentSessionItem, workItemKey?: string) => void;
 	readonly onCreateWorkItemFromDraft: (
@@ -68,6 +69,9 @@ export function useBoardMenuWorkItem({
 	);
 
 	return {
+		onCreateColumnWorkItem: (columnTitle, draft) => {
+			updateBoardColumns((columns) => appendBoardCardFromDraft(columns, draft, columnTitle).columns);
+		},
 		onCreateWorkItemFromDraft: (item, draft) => {
 			if (hostCreate !== undefined) {
 				hostCreate(item, draft);

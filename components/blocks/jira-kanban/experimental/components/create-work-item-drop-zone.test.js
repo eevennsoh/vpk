@@ -19,18 +19,11 @@ const DROPZONE = readFileSync(
 	"utf8",
 );
 
-test("create button and dropzone share dashed well chrome", () => {
-	assert.match(
-		FOOTER,
-		/const CREATE_WORK_ITEM_WELL_CHROME_CLASS = "rounded-lg border border-dashed";/u,
-	);
+test("normal create rests dashed and becomes solid on button hover", () => {
+	assert.match(FOOTER, /"w-full border-dashed hover:border-solid"/u);
 	assert.match(
 		DROPZONE,
 		/export const JIRA_DROPZONE_WELL_CHROME_CLASS = "rounded-lg border border-dashed";/u,
-	);
-	assert.match(
-		FOOTER,
-		/<Button[\s\S]*aria-label=\{`Create in \$\{title\}`\}[\s\S]*CREATE_WORK_ITEM_WELL_CHROME_CLASS/u,
 	);
 	assert.match(
 		DROPZONE,
@@ -41,7 +34,7 @@ test("create button and dropzone share dashed well chrome", () => {
 test("session drag pops the create well in on every column", () => {
 	assert.match(
 		DROPZONE,
-		/initial=\{shouldReduceMotion[\s\S]*false[\s\S]*opacity: 0, scale: JIRA_DROPZONE_WELL_ENTER_SCALE[\s\S]*JIRA_DROPZONE_WELL_ENTER/u,
+		/initial=\{shouldReduceMotion[\s\S]*false[\s\S]*JIRA_DROPZONE_WELL_HIDDEN[\s\S]*JIRA_DROPZONE_WELL_ENTER/u,
 	);
 	assert.match(
 		DROPZONE,
@@ -53,9 +46,7 @@ test("session drag pops the create well in on every column", () => {
 	);
 });
 
-test("empty columns keep the create well at the top and always visible", () => {
-	// The ordering contract now spans two files: the board declares the action,
-	// renders the list, then the action; the list owns its own `order` and marker.
+test("columns keep drag targets at the bottom and creation in the card list", () => {
 	const createAction = BOARD.indexOf("const createAction = <BoardColumnCreateAction");
 	const cardList = BOARD.indexOf("<BoardColumnCardList");
 	const cards = BOARD.indexOf("{children}", cardList);
@@ -66,20 +57,18 @@ test("empty columns keep the create well at the top and always visible", () => {
 	assert.ok(cards > cardList);
 	assert.ok(actionRender > cards);
 	assert.equal((BOARD.match(/\{createAction\}/gu) ?? []).length, 1);
-	assert.match(
-		BOARD,
-		/reveal=\{isEmptyColumn \? "always" : "column-hover"\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}/u,
-	);
+	assert.match(FOOTER, /renderResting=\{\(\) => <span aria-hidden className="block h-8 w-full" \/>\}/u);
+	assert.match(CARD_LIST, /\{children\}[\s\S]*data-board-work-item-create[\s\S]*<BoardColumnAddButton/u);
 	assert.match(BOARD, /isEmpty=\{isEmptyColumn\}/u);
-	assert.match(CARD_LIST, /order: isEmpty \? 1 : 0/u);
+	assert.doesNotMatch(CARD_LIST, /order: isEmpty/u);
 	assert.match(CARD_LIST, /data-jira-kanban-card-list=""/u);
-	assert.match(BOARD, /order: isEmptyColumn \? 0 : 1/u);
+	assert.match(BOARD, /placement="bottom"/u);
 });
 
 test("empty columns keep the same create action inset as populated columns", () => {
 	assert.match(
 		BOARD,
-		/style=\{\{ order: isEmptyColumn \? 0 : 1, \.\.\.chrome\.footer \}\}/u,
+		/style=\{chrome\.footer\}/u,
 	);
 	assert.doesNotMatch(BOARD, /!isEmptyColumn \? chrome\.footer : \{\}/u);
 });
@@ -136,13 +125,7 @@ test("card arrival suppresses the inline create seam until its entrance complete
 	);
 });
 
-test("create button rests icon-subtlest and solidifies on hover", () => {
-	assert.match(
-		FOOTER,
-		/<Button[\s\S]*aria-label=\{`Create in \$\{title\}`\}[\s\S]*\[&_\[data-slot=icon\]\]:text-icon-subtlest \[&_svg\]:text-icon-subtlest/u,
-	);
-	assert.match(
-		FOOTER,
-		/<Button[\s\S]*aria-label=\{`Create in \$\{title\}`\}[\s\S]*hover:border-solid hover:\[&_\[data-slot=icon\]\]:text-icon-subtle hover:\[&_svg\]:text-icon-subtle/u,
-	);
+test("normal create uses the full-width compact button and the shared creation field", () => {
+	assert.match(FOOTER, /aria-label=\{`Create in \$\{title\}`\}[\s\S]*"w-full border-dashed hover:border-solid"[\s\S]*size="compact"[\s\S]*variant="outline"/u);
+	assert.match(FOOTER, /<CreateWorkItemField/u);
 });

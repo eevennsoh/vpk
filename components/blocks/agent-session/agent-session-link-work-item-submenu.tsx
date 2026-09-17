@@ -129,7 +129,7 @@ function IssueTypePicker({
  * The chip is a real submit button: a decorative return glyph would promise the
  * pointer path an action only the keyboard path actually has.
  */
-function CreateWorkItemField({
+export function CreateWorkItemField({
 	issueType,
 	onIssueTypeChange,
 	onSubmit,
