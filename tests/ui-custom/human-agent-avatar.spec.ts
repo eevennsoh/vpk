@@ -414,12 +414,29 @@ for (const size of [24, 32] as const) {
 		const style = await staticHuman.evaluate(el => {
 			const frame = el.closest('[data-slot="human-agent-avatar"]')!.getBoundingClientRect();
 			const photo = el.getBoundingClientRect();
-			return { border: getComputedStyle(el, "::after").borderTopWidth, color: getComputedStyle(el, "::after").borderTopColor, overhangX: photo.right - frame.right, overhangY: photo.bottom - frame.bottom };
+			const circle = el.querySelector('[data-slot="avatar-circle-border"] circle');
+			const border = circle ? parseFloat(getComputedStyle(circle).strokeWidth) : parseFloat(getComputedStyle(el, "::after").borderTopWidth);
+			return {
+				border,
+				color: circle ? getComputedStyle(circle).stroke : getComputedStyle(el, "::after").borderTopColor,
+				// A centered stroke covers half its width inside the photo and half outside.
+				paintedDiameter: photo.width + (circle ? border : 0),
+				visiblePhotoDiameter: photo.width - (circle ? border : 2 * border),
+				overhangX: photo.right - frame.right,
+				overhangY: photo.bottom - frame.bottom,
+			};
 		});
-		expect(style.border).toBe("2px");
+		const humanSize = size === 24 ? 12 : 16;
+		expect(style.border).toBe(2);
 		expect(style.color).toBe("rgb(255, 255, 255)");
+		expect(style.paintedDiameter).toBe(humanSize + 2);
+		expect(style.visiblePhotoDiameter).toBe(humanSize - 2);
 		expect(style.overhangX).toBe(2);
 		expect(style.overhangY).toBe(2);
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await playground.getByRole('button', { name: 'Animate avatar', exact: true }).click();
+		await expect(avatar).toHaveAttribute('data-animated', 'false');
+		await expect(staticHuman.locator('[data-slot="avatar-circle-border"] circle')).toHaveCSS('stroke-width', '2px');
 	});
 }
 

@@ -20,6 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { execFileSync, execSync } from "node:child_process";
+import { writeBackendDeploymentHarness } from "./backend-deploy-harness.mjs";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -472,6 +473,8 @@ function resolveBackendDependencies({ sourceManifest, backendManifest, catalog }
 		...sourceManifest.dependencies,
 		...backendManifest.dependencies,
 	})) {
+		// Frontend-only libraries are retained only when the route trace uses them.
+		if (["motion-plus", "ansi-to-react"].includes(name)) continue;
 		const resolved = resolveCatalogSpecifier(name, version, catalog);
 		if (resolved === "catalog:") {
 			throw new Error(`Backend dependency ${name} has no catalog version`);
@@ -792,16 +795,10 @@ export function FeatureFlagsShim() {
 		dependencies: augmentedNpm,
 	});
 	if (args.backendBacked) {
-		const packagePath = path.join(targetDir, "package.json");
-		const targetPackage = readJSON(packagePath);
-		targetPackage.scripts.dev = "node scripts/dev-backend-backed.mjs";
-		targetPackage.scripts.start = "node backend/extracted-server.js";
-		fs.writeFileSync(packagePath, `${JSON.stringify(targetPackage, null, "\t")}\n`);
-		const buildPolicy = readPnpmYamlSection(repoRoot, "allowBuilds");
-		if (!buildPolicy) {
-			throw new Error("Backend-backed extraction requires source pnpm allowBuilds policy");
-		}
-		writeFileEnsuring(path.join(targetDir, "pnpm-workspace.yaml"), buildPolicy);
+		writeBackendDeploymentHarness({
+			repoRoot, targetDir, packageManager: sourceManifest.packageManager,
+			buildPolicy: readPnpmYamlSection(repoRoot, "overrides") + readPnpmYamlSection(repoRoot, "allowBuilds"),
+		});
 	}
 
 	// ---- 8. Fill and write README.md from template ----

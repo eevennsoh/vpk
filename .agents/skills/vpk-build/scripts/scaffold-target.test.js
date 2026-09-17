@@ -252,6 +252,7 @@ function createContractFixture() {
 			path.join(repoRoot, "package.json"),
 			JSON.stringify(
 				{
+					packageManager: "pnpm@11.25.0",
 					dependencies: {
 						next: "16.3.0",
 						react: "19.2.8",
@@ -260,6 +261,8 @@ function createContractFixture() {
 						leaflet: "^1.9.4",
 						three: "^0.185.1",
 						"tw-animate-css": "^1.4.0",
+						"motion-plus": "2.11.2",
+						"ansi-to-react": "^6.2.6",
 					},
 					devDependencies: {
 						shadcn: "^4.16.2",
@@ -295,12 +298,16 @@ function start(runtime) {
 `);
 		writeFile(path.join(repoRoot, "rovo", "config.js"), "module.exports = {};\n");
 		writeFile(path.join(repoRoot, "scripts", "lib", "worktree-ports.js"), "module.exports = {};\n");
+		writeFile(path.join(repoRoot, "scripts", "build-static-export.mjs"), "// export wrapper\n");
+		writeFile(path.join(repoRoot, "scripts", "dev-deploy-fast.sh"), "#!/bin/bash\n# canonical deploy\n");
 		writeFile(
 			path.join(repoRoot, "pnpm-workspace.yaml"),
 			`packages:
   - .
 catalog:
   '@tiptap/core': 3.30.0
+overrides:
+  lodash-es: ^4.18.1
 allowBuilds:
   protobufjs: true
   better-sqlite3: false
@@ -555,10 +562,17 @@ test("backend-backed scaffold preserves source backend and generates proxy/deplo
 		const targetPackage = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "package.json"), "utf8"));
 		assert.equal(targetPackage.dependencies.express, "^5.2.1");
 		assert.equal(targetPackage.dependencies.cors, "^2.8.5");
+		assert.equal(targetPackage.dependencies["motion-plus"], undefined);
+		assert.equal(targetPackage.dependencies["ansi-to-react"], undefined);
 		assert.equal(targetPackage.scripts.dev, "node scripts/dev-backend-backed.mjs");
 		assert.equal(targetPackage.scripts.start, "node backend/extracted-server.js");
+		assert.equal(targetPackage.packageManager, "pnpm@11.25.0");
+		assert.equal(targetPackage.scripts["build:export"], "node scripts/build-static-export.mjs");
+		assert.equal(targetPackage.scripts["deploy:micros"], "./scripts/dev-deploy-fast.sh");
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, "next.config.ts"), "utf8"), /NEXT_OUTPUT/);
+		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "scripts", "build-static-export.mjs"), "utf8"), "// export wrapper\n");
 		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "pnpm-workspace.yaml"), "utf8"),
-			"allowBuilds:\n  protobufjs: true\n  better-sqlite3: false\n");
+			"overrides:\n  lodash-es: ^4.18.1\nallowBuilds:\n  protobufjs: true\n  better-sqlite3: false\n");
 		assert.equal(fs.existsSync(path.join(fixture.targetDir, "backend", "node_modules")), false);
 		assert.equal(fs.existsSync(path.join(fixture.targetDir, "backend", "data")), false);
 		assert.equal(fs.existsSync(path.join(fixture.targetDir, "lib", "untraced-source.ts")), false);

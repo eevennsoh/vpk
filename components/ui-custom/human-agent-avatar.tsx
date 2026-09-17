@@ -79,8 +79,8 @@ export function HumanAgentAvatar({
 	const humanAvatar = (outline?: AvatarProps["outline"]) => (
 		<Avatar
 			animate={false}
-			outline={outline ? { ...outline, color: "inverse", strokeWidth: 2 } : undefined}
-			className={outline ? undefined : "after:border-2 after:border-border-inverse after:mix-blend-normal dark:after:mix-blend-normal"}
+			// Keep the same centered stroke when motion hands back to the resting pose.
+			outline={{ scale: 1, transition: { duration: 0 }, ...outline, color: "inverse", strokeWidth: 2 }}
 			label=""
 			size={personAvatarSize}
 		>
