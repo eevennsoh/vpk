@@ -88,6 +88,7 @@ import {
  * shared so both variants remain interchangeable inside an owning surface.
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
+	addAgentLabel?: string;
 	/** Issue-only previews, grouped workflow targets and ordered drops. */
 	issueDragTransitions?: boolean;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
@@ -323,6 +324,7 @@ function BoardColumnShell({
 
 function ExperimentalJiraKanbanView({
 	activeCardCode,
+	addAgentLabel,
 	agentActivityLayout = "merged",
 	agentSessionColumn,
 	agents,
@@ -763,7 +765,8 @@ function ExperimentalJiraKanbanView({
 												onArrivalComplete={handleCreatedCardArrivalComplete}
 												shouldAnimateCardMoves={shouldAnimateCardMoves}
 											>
-												<ExperimentalJiraKanbanCard
+								<ExperimentalJiraKanbanCard
+									addAgentLabel={addAgentLabel}
 												active={isActive}
 													agents={agents}
 													agentActivityLayout={agentActivityLayout}

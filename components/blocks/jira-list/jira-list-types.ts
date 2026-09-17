@@ -113,6 +113,7 @@ export interface JiraListRowFlash {
 
 export interface JiraListProps {
 	rows: readonly JiraListRowData[];
+	addAgentLabel?: string;
 	activeIssueKey?: string;
 	ariaLabel?: string;
 	className?: string;

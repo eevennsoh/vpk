@@ -710,7 +710,7 @@ test("the Team EU26 Agents details row opens the assigned menu first and swaps t
 	assert.doesNotMatch(detailsEditorsSource, /launchSession|onOpenAgentChat/u);
 });
 
-test("the Team EU26 assigned-agents menu lists live agent state and ends in an Assign agent row", () => {
+test("the Team EU26 assigned-agents menu lists live agent state and ends in a configurable add-agent row", () => {
 	const detailsEditorsSource = readBlockFile("team-eu26/components/detail-field-editors.tsx");
 	const menuSource = fs.readFileSync(
 		path.join(process.cwd(), "components/blocks/agent-assignment/components/assigned-agents-menu.tsx"),
@@ -731,7 +731,7 @@ test("the Team EU26 assigned-agents menu lists live agent state and ends in an A
 	);
 	assert.match(
 		menuSource,
-		/<Button[\s\S]*onClick=\{onAddAgent\}[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*Assign agent/u,
+		/<Button[\s\S]*onClick=\{onAddAgent\}[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*\{addAgentLabel\}/u,
 	);
 	assert.doesNotMatch(menuSource, /window\.addEventListener|keepMounted|AnimatePresence/u);
 });

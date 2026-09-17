@@ -2,12 +2,13 @@ import { expect, test } from "@playwright/test";
 
 test.use({ viewport: { width: 1800, height: 1100 } });
 
-test("List session identities align with Assign agent and working uses the experimental spinner", async ({ page }) => {
+test("List session identities align with Add agent and working uses the experimental spinner", async ({ page }) => {
 	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 	await page.getByRole("tab", { name: "List" }).click();
 	const emptyCell = page.locator('[data-issue-key="PAY-125"] td').nth(4);
-	const emptyLabel = emptyCell.getByText("Assign agent", { exact: true });
+	const emptyLabel = emptyCell.getByText("Add agent", { exact: true });
 	await expect(emptyLabel).toBeVisible();
+	await expect(emptyCell.getByRole("button", { name: "Add agent", exact: true })).toBeVisible();
 	const emptyBox = await emptyLabel.boundingBox();
 	expect(emptyBox).not.toBeNull();
 	if (!emptyBox) return;
@@ -33,6 +34,17 @@ test("List session identities align with Assign agent and working uses the exper
 	await expect(reducedSpinner.locator("g")).not.toHaveClass(/spinner-experimental-orb-rotator-motion/u);
 });
 
+test("List assigned menu uses Add agent and opens the selector", async ({ page }) => {
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.getByRole("tab", { name: "List" }).click();
+	const assignedCell = page.locator('[data-issue-key="PAY-105"] td').nth(4);
+	await assignedCell.getByRole("button", { name: "Edit agents", exact: true }).click();
+	const menu = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
+	await expect(menu).toBeVisible();
+	await menu.getByRole("button", { name: "Add agent", exact: true }).click();
+	await expect(menu.getByRole("textbox", { name: "Search agents" })).toBeVisible();
+});
+
 for (const { issueKey, state, agent } of [
 	{ issueKey: "PAY-105", state: "Working", agent: "Cursor" },
 	{ issueKey: "PAY-112", state: "Needs input", agent: "Codex" },
@@ -41,13 +53,13 @@ for (const { issueKey, state, agent } of [
 	test(`${state} session rows share the assignment flyout`, async ({ page }) => {
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 		const row = page.locator(`[data-issue-key="${issueKey}"] [data-slot="jira-issue-agent-row"]`);
-		const trigger = row.getByRole("button", { name: `Open ${agent} in Rovo chat: ${state}`, exact: true });
+		const trigger = row.getByRole("button", { name: `${agent}: ${state}`, exact: true });
 		await trigger.hover();
 		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
 		await expect(flyout).toBeVisible();
 		await expect(trigger).toHaveAttribute("aria-expanded", "true");
 		await expect(flyout).toContainText(agent);
-		const assign = flyout.getByRole("button", { name: "Assign agent", exact: true });
+		const assign = flyout.getByRole("button", { name: "Add agent", exact: true });
 		await assign.hover();
 		await expect(flyout).toBeVisible();
 		await assign.click();
@@ -61,7 +73,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 		await page.getByRole("button", { name: "More actions for PAY-101", exact: true }).focus();
 		await page.keyboard.press("Tab");
-		const trigger = page.getByRole("button", { name: "Open Claude in Rovo chat: Finished", exact: true });
+		const trigger = page.getByRole("button", { name: "Claude: Finished", exact: true });
 		await expect(trigger).toBeFocused();
 		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
 		await expect(flyout).toBeVisible();
