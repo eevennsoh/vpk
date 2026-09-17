@@ -50,6 +50,7 @@ export function ExperimentalSpinner({
 						className={cn(
 							"spinner-experimental-orb-dot",
 							dot.className,
+							pulse && "spinner-experimental-orb-dot-inner",
 							canAnimate && pulse && "spinner-experimental-orb-dot-motion",
 						)}
 						cx="10"

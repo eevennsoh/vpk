@@ -19,11 +19,17 @@
 
 /* Iconic orb: 9.78s prototype loop maps to 16 × duration-slowest (9.6s). */
 @keyframes spinner-experimental-orb-morph {
-	0%, 5% { transform: translate(0, 0); }
+	0%, 5% { transform: translate(var(--orb-inner-x), var(--orb-inner-y)); }
 	25%, 40% { transform: translate(var(--orb-outer-x), var(--orb-outer-y)); }
-	50%, 55% { transform: translate(0, 0); }
+	50%, 55% { transform: translate(var(--orb-inner-x), var(--orb-inner-y)); }
 	75%, 90% { transform: translate(var(--orb-outer-x), var(--orb-outer-y)); }
-	100% { transform: translate(0, 0); }
+	100% { transform: translate(var(--orb-inner-x), var(--orb-inner-y)); }
+}
+
+@keyframes spinner-experimental-orb-opacity {
+	0%, 5%, 50%, 55%, 100% { opacity: 1; }
+	25%, 40%, 75%, 90% { opacity: var(--orb-expanded-opacity); }
+	32%, 82% { opacity: var(--orb-pulse-opacity); }
 }
 
 @utility spinner-experimental-orb-rotator {
@@ -44,37 +50,76 @@
 	transform: translate(var(--orb-outer-x), var(--orb-outer-y));
 }
 
+@utility spinner-experimental-orb-dot-inner {
+	transform: translate(var(--orb-inner-x), var(--orb-inner-y));
+}
+
 @utility spinner-experimental-orb-dot-motion {
-	animation: spinner-experimental-orb-morph calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both;
-	animation-delay: calc(var(--duration-slowest) * -6.4);
+	animation:
+		spinner-experimental-orb-morph calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both,
+		spinner-experimental-orb-opacity calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both;
+	animation-delay:
+		calc(var(--duration-slowest) * -6.4),
+		calc(var(--duration-slowest) * -6.4);
 }
 
 @utility spinner-experimental-orb-dot-top {
+	--orb-inner-x: 0px;
+	--orb-inner-y: -1.3px;
 	--orb-outer-x: 0px;
 	--orb-outer-y: -5.5px;
+	--orb-expanded-opacity: 0.82;
+	--orb-pulse-opacity: 0.66;
 }
 
 @utility spinner-experimental-orb-dot-top-right {
+	--orb-inner-x: 1.126px;
+	--orb-inner-y: -0.65px;
 	--orb-outer-x: 4.763px;
 	--orb-outer-y: -2.75px;
+	--orb-expanded-opacity: 0.62;
+	--orb-pulse-opacity: 0.78;
 }
 
 @utility spinner-experimental-orb-dot-bottom-right {
+	--orb-inner-x: 1.126px;
+	--orb-inner-y: 0.65px;
 	--orb-outer-x: 4.763px;
 	--orb-outer-y: 2.75px;
+	--orb-expanded-opacity: 0.78;
+	--orb-pulse-opacity: 0.6;
 }
 
 @utility spinner-experimental-orb-dot-bottom {
+	--orb-inner-x: 0px;
+	--orb-inner-y: 1.3px;
 	--orb-outer-x: 0px;
 	--orb-outer-y: 5.5px;
+	--orb-expanded-opacity: 0.58;
+	--orb-pulse-opacity: 0.72;
 }
 
 @utility spinner-experimental-orb-dot-bottom-left {
+	--orb-inner-x: -1.126px;
+	--orb-inner-y: 0.65px;
 	--orb-outer-x: -4.763px;
 	--orb-outer-y: 2.75px;
+	--orb-expanded-opacity: 0.8;
+	--orb-pulse-opacity: 0.66;
 }
 
 @utility spinner-experimental-orb-dot-top-left {
+	--orb-inner-x: -1.126px;
+	--orb-inner-y: -0.65px;
 	--orb-outer-x: -4.763px;
 	--orb-outer-y: -2.75px;
+	--orb-expanded-opacity: 0.6;
+	--orb-pulse-opacity: 0.76;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.spinner-experimental-orb-rotator-motion,
+	.spinner-experimental-orb-dot-motion {
+		animation: none;
+	}
 }

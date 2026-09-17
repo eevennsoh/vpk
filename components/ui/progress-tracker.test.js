@@ -78,7 +78,7 @@ test("Spinner preserves the CodePen chasing-tail motion without competing rotati
 });
 
 test("Spinner exposes the Jira prototype iconic orb only as an experimental variant", () => {
-	assert.match(SPINNER_SOURCE, /experimental: "text-icon-subtlest!"/u);
+	assert.match(SPINNER_SOURCE, /experimental: "text-icon!"/u);
 	assert.match(SPINNER_SOURCE, /variant === "experimental"/u);
 	assert.match(SPINNER_SOURCE, /<ExperimentalSpinner/u);
 	assert.match(SPINNER_SOURCE, /pulse\?: boolean/u);
@@ -87,6 +87,7 @@ test("Spinner exposes the Jira prototype iconic orb only as an experimental vari
 	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /data-iconic-orb=""/u);
 	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /pulse = false/u);
 	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-rotator-motion/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /pulse && "spinner-experimental-orb-dot-inner"/u);
 	assert.match(
 		EXPERIMENTAL_SPINNER_SOURCE,
 		/canAnimate && pulse && "spinner-experimental-orb-dot-motion"/u,
@@ -98,14 +99,17 @@ test("Spinner exposes the Jira prototype iconic orb only as an experimental vari
 	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-dot-top-right/u);
 	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /ORB_DOTS/u);
 	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-morph/u);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /0%, 5% \{ transform: translate\(0, 0\); \}/u);
-	assert.doesNotMatch(EXPERIMENTAL_SPINNER_STYLES, /--orb-inner-/u);
-	assert.doesNotMatch(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-opacity/u);
-	assert.doesNotMatch(EXPERIMENTAL_SPINNER_STYLES, /--orb-expanded-opacity|--orb-pulse-opacity/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /0%, 5% \{ transform: translate\(var\(--orb-inner-x\), var\(--orb-inner-y\)\); \}/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-opacity/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /25%, 40%, 75%, 90% \{ opacity: var\(--orb-expanded-opacity\); \}/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /32%, 82% \{ opacity: var\(--orb-pulse-opacity\); \}/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /--orb-expanded-opacity: 0\.82/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /--orb-expanded-opacity: 0\.58/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@utility spinner-experimental-orb-dot-inner/u);
 	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@utility spinner-experimental-orb-dot-motion/u);
 	assert.match(
 		EXPERIMENTAL_SPINNER_STYLES,
-		/animation: spinner-experimental-orb-morph calc\(var\(--duration-slowest\) \* 16\) var\(--ease-in-out\) infinite both;/u,
+		/spinner-experimental-orb-morph calc\(var\(--duration-slowest\) \* 16\) var\(--ease-in-out\) infinite both,[\s\S]*spinner-experimental-orb-opacity calc\(var\(--duration-slowest\) \* 16\) var\(--ease-in-out\) infinite both;/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SPINNER_STYLES,
@@ -113,6 +117,7 @@ test("Spinner exposes the Jira prototype iconic orb only as an experimental vari
 	);
 	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-rotate/u);
 	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@utility spinner-experimental-orb-rotator-pulse-delay/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*\.spinner-experimental-orb-dot-motion \{[\s\S]*animation: none;/u);
 	assert.doesNotMatch(EXPERIMENTAL_SPINNER_SOURCE, /const HEX =/u);
 	assert.doesNotMatch(EXPERIMENTAL_SPINNER_SOURCE, /const SPARKLE =/u);
 	assert.match(SPINNER_DETAIL_SOURCE, /six-dot iconic orb/u);

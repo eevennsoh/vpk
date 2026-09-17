@@ -20,7 +20,7 @@ const spinnerVariants = cva(
 			},
 			variant: {
 				default: "text-icon-subtlest",
-				experimental: "text-icon-subtlest!",
+				experimental: "text-icon!",
 				inherit: "",
 				invert: "text-background",
 				rainbow: "",
@@ -39,7 +39,7 @@ interface SpinnerProps
 	label?: string
 	/** Deterministic offset into the animation loop, used to desynchronise nearby spinners. */
 	phaseOffsetMs?: number
-	/** Experimental only. Converges the six dots to one center dot, then grows them back into the ring. */
+	/** Experimental only. Contracts the six dots to a small inner ring, then expands them with varied opacity. */
 	pulse?: boolean
 	style?: React.CSSProperties
 }
