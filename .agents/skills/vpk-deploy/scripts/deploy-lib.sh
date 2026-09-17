@@ -2,7 +2,7 @@
 
 # Shared, Bash 3-compatible deployment safety helpers.
 
-VPK_DEPLOY_REQUIRED_STASHES="AI_GATEWAY_URL AI_GATEWAY_USE_CASE_ID AI_GATEWAY_CLOUD_ID AI_GATEWAY_USER_ID ASAP_KID ASAP_ISSUER ASAP_PRIVATE_KEY OPENAI_REALTIME_MODEL OPENAI_REALTIME_WS_URL OPENAI_REALTIME_VOICE VPK_RUNTIME_ADMIN_TOKEN"
+VPK_DEPLOY_REQUIRED_STASHES="AI_GATEWAY_URL AI_GATEWAY_USE_CASE_ID AI_GATEWAY_CLOUD_ID AI_GATEWAY_USER_ID ASAP_KID ASAP_ISSUER ASAP_PRIVATE_KEY OPENAI_REALTIME_MODEL OPENAI_REALTIME_WS_URL OPENAI_REALTIME_VOICE ALLOWED_ORIGINS VPK_RUNTIME_ADMIN_TOKEN"
 VPK_DEPLOY_GUIDE=".agents/skills/vpk-deploy/references/guide-deployment.md"
 VPK_DEPLOY_MANUAL_GUIDE=".agents/skills/vpk-deploy/references/guide-manual-deployment.md"
 
@@ -126,7 +126,7 @@ vpk_validate_descriptor_identity() {
     fi
   done
 
-  for origin_name in ALLOWED_ORIGINS VPK_ORIGIN; do
+  for origin_name in VPK_ORIGIN; do
     origin_mapping=$(awk -v key="$origin_name:" '$1 == key { print $2; exit }' "$descriptor_path")
     if [ -n "$origin_mapping" ] && [ "$origin_mapping" != "((ssm:/$descriptor_service/$origin_name))" ]; then
       descriptor_missing="$descriptor_missing $origin_name"

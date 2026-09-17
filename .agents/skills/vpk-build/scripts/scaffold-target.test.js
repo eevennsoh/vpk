@@ -572,6 +572,12 @@ test("backend-backed scaffold preserves source backend and generates proxy/deplo
 		assert.equal(targetPackage.scripts["build:export"], "node scripts/build-static-export.mjs");
 		assert.equal(targetPackage.scripts["deploy:micros"], "./scripts/dev-deploy-fast.sh");
 		assert.match(fs.readFileSync(path.join(fixture.targetDir, "next.config.ts"), "utf8"), /NEXT_OUTPUT/);
+		const descriptorPath = path.join(fixture.targetDir, "service-descriptor.yml");
+		const descriptor = fs.readFileSync(descriptorPath, "utf8");
+		assert.match(descriptor, /ALLOWED_ORIGINS: \(\(ssm:\/YOUR-SERVICE-NAME\/ALLOWED_ORIGINS\)\)/);
+		fs.writeFileSync(descriptorPath, descriptor.replaceAll("YOUR-SERVICE-NAME", "example-service"));
+		execFileSync("/bin/bash", ["-c", 'source "$1"; vpk_validate_descriptor_identity example-service "$2"', "validate-generated-descriptor",
+			path.resolve(__dirname, "../../vpk-deploy/scripts/deploy-lib.sh"), descriptorPath], { stdio: "pipe" });
 		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "scripts", "build-static-export.mjs"), "utf8"), "// export wrapper\n");
 		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "pnpm-workspace.yaml"), "utf8"),
 			"overrides:\n  lodash-es: ^4.18.1\nallowBuilds:\n  protobufjs: true\n  better-sqlite3: false\n");

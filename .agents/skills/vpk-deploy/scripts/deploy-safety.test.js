@@ -25,6 +25,7 @@ const REQUIRED_STASHES = [
 	"OPENAI_REALTIME_MODEL",
 	"OPENAI_REALTIME_WS_URL",
 	"OPENAI_REALTIME_VOICE",
+	"ALLOWED_ORIGINS",
 	"VPK_RUNTIME_ADMIN_TOKEN",
 ];
 
@@ -514,12 +515,34 @@ test("both deploy paths reject duplicate hot-swap flags and extra positional arg
 	}
 });
 
-test("declared origin settings must use SSM mappings and exist in the selected stash", () => {
+test("both deploy paths require the backend origin mapping and stash before mutation", () => {
+	for (const [scriptPath, args] of [
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3"]],
+		["scripts/dev-deploy-fast.sh", ["1.2.3"]],
+	]) {
+		for (const missing of ["mapping", "stash"]) {
+			withFixture({ stashes: missing === "stash" ? REQUIRED_STASHES.filter((key) => key !== "ALLOWED_ORIGINS") : REQUIRED_STASHES }, (fixture) => {
+				if (missing === "mapping") {
+					const descriptor = path.join(fixture.root, "service-descriptor.yml");
+					writeFileSync(descriptor, readFileSync(descriptor, "utf8").replace(/^ +ALLOWED_ORIGINS:.*\n/mu, ""));
+				}
+				const result = runFixture(fixture, scriptPath, args);
+				assert.notEqual(result.status, 0, result.stdout + result.stderr);
+				assert.match(result.stdout + result.stderr, /ALLOWED_ORIGINS/u);
+				assert.doesNotMatch(callsFor(fixture), /corepack pnpm run build:export/u);
+				assertNoMutationCalls(callsFor(fixture));
+			});
+		}
+	}
+});
+
+test("origin settings must use SSM mappings and exist in the selected stash", () => {
 	for (const name of ["ALLOWED_ORIGINS", "VPK_ORIGIN"]) {
 		for (const mapping of ["https://example.localhost", `((ssm:/example-service/${name}))`]) {
-			withFixture({}, (fixture) => {
+			withFixture({ stashes: REQUIRED_STASHES.filter((key) => key !== name) }, (fixture) => {
 				const descriptor = path.join(fixture.root, "service-descriptor.yml");
-				writeFileSync(descriptor, readFileSync(descriptor, "utf8") + `      ${name}: ${mapping}\n`);
+				const original = readFileSync(descriptor, "utf8").replace(new RegExp(`^ +${name}:.*\\n`, "mu"), "");
+				writeFileSync(descriptor, original + `      ${name}: ${mapping}\n`);
 				const result = runFixture(fixture, ".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2"]);
 				assert.notEqual(result.status, 0);
 				assert.match(result.stdout + result.stderr, new RegExp(name, "u"));
@@ -536,11 +559,10 @@ test("both deploy paths require additional declared provider stashes without req
 		["scripts/dev-deploy-fast.sh", ["1.2.3"]],
 	]) {
 		for (const present of [false, true]) {
-			withFixture({ stashes: present ? [...REQUIRED_STASHES, "AI_GATEWAY_URL_GOOGLE", "ALLOWED_ORIGINS"] : REQUIRED_STASHES }, (fixture) => {
+			withFixture({ stashes: present ? [...REQUIRED_STASHES, "AI_GATEWAY_URL_GOOGLE"] : REQUIRED_STASHES }, (fixture) => {
 				const descriptor = path.join(fixture.root, "service-descriptor.yml");
 				writeFileSync(descriptor, readFileSync(descriptor, "utf8") + [
 					"      AI_GATEWAY_URL_GOOGLE: ((ssm:/example-service/AI_GATEWAY_URL_GOOGLE))",
-					"      ALLOWED_ORIGINS: ((ssm:/example-service/ALLOWED_ORIGINS))",
 					"",
 				].join("\n"));
 				const result = runFixture(fixture, scriptPath, args);

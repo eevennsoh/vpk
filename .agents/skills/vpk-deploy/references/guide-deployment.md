@@ -119,6 +119,7 @@ ASAP_PRIVATE_KEY
 OPENAI_REALTIME_MODEL
 OPENAI_REALTIME_WS_URL
 OPENAI_REALTIME_VOICE
+ALLOWED_ORIGINS
 VPK_RUNTIME_ADMIN_TOKEN
 ```
 
@@ -135,14 +136,15 @@ unset VPK_RUNTIME_ADMIN_TOKEN
 Realtime model, URL, and voice defaults may exist in local development, but
 stash explicit production values so the deployment is reproducible.
 
-For backend-backed extracts, also stash `ALLOWED_ORIGINS` with the deployed
+The full-backend paths require `ALLOWED_ORIGINS` even when it was omitted from
+the descriptor. Stash it with the deployed
 HTTPS origin and bind it through `((ssm:/<service>/ALLOWED_ORIGINS))`. Bind
 `VPK_ORIGIN` the same way when Create actions open the source VPK app. Verify
 these settings with browser-shaped Origin requests; descriptor-only literal
 values are not proof that the running backend received them.
 
-Descriptor declarations of `ALLOWED_ORIGINS` or `VPK_ORIGIN` must use the
-matching service's SSM mapping. The scripts also require every additional
+`ALLOWED_ORIGINS` must use the matching service's SSM mapping. `VPK_ORIGIN`
+remains conditional and must use that mapping when declared. The scripts also require every additional
 SSM-backed variable declared in the descriptor to exist in the chosen stash.
 For example, include `AI_GATEWAY_URL_GOOGLE` when that provider is configured;
 it is not a universal prerequisite. The canonical scripts retain the full VPK

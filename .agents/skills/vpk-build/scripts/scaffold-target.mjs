@@ -20,7 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { execFileSync, execSync } from "node:child_process";
-import { writeBackendDeploymentHarness } from "./backend-deploy-harness.mjs";
+import { writeBackendDeploymentHarness, writeBackendServiceDescriptor } from "./backend-deploy-harness.mjs";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -819,6 +819,7 @@ export function FeatureFlagsShim() {
 	}
 	if (args.backendBacked) {
 		copyTrackedRuntimeFiles(repoRoot, targetDir);
+		writeBackendServiceDescriptor(targetDir);
 		const devTemplate = fs.readFileSync(
 			path.join(SCAFFOLD_DIR, "backend-backed-dev.mjs"), "utf8",
 		);

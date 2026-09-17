@@ -129,6 +129,7 @@ ASAP_PRIVATE_KEY
 OPENAI_REALTIME_MODEL
 OPENAI_REALTIME_WS_URL
 OPENAI_REALTIME_VOICE
+ALLOWED_ORIGINS
 VPK_RUNTIME_ADMIN_TOKEN
 ```
 
@@ -161,6 +162,8 @@ Stash the deployed HTTPS origin and bind `ALLOWED_ORIGINS` through the matching
 the app uses it. Reconcile through the guarded manual config-only path, then
 rerun browser-shaped font/token requests. Preserve CORS/authentication logic;
 do not accept arbitrary Origins to hide the configuration problem.
+The full-backend deployment guards reject an omitted origin mapping or stash
+before building or changing registry/deployment state. `VPK_ORIGIN` remains optional.
 
 ### Font CSP and actual font use
 

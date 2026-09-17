@@ -21,4 +21,5 @@ compose:
       OPENAI_REALTIME_WS_URL: ((ssm:/vpk-rovo/OPENAI_REALTIME_WS_URL))
       OPENAI_REALTIME_VOICE: ((ssm:/vpk-rovo/OPENAI_REALTIME_VOICE))
       VPK_RUNTIME_ADMIN_TOKEN: ((ssm:/vpk-rovo/VPK_RUNTIME_ADMIN_TOKEN))
+      ALLOWED_ORIGINS: ((ssm:/vpk-rovo/ALLOWED_ORIGINS))
       PORT: "8080"

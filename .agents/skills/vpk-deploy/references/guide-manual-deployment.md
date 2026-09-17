@@ -48,10 +48,11 @@ ASAP_PRIVATE_KEY
 OPENAI_REALTIME_MODEL
 OPENAI_REALTIME_WS_URL
 OPENAI_REALTIME_VOICE
+ALLOWED_ORIGINS
 VPK_RUNTIME_ADMIN_TOKEN
 ```
 
-Backend-backed extracts also need `ALLOWED_ORIGINS` set to their deployed HTTPS
+The full-backend paths require `ALLOWED_ORIGINS` set to their deployed HTTPS
 origin. Bind it through `((ssm:/<service>/ALLOWED_ORIGINS))`; use the equivalent
 mapping for `VPK_ORIGIN` when external Create actions need it. Include additional
 provider settings only when configured. Every descriptor SSM reference must
@@ -71,6 +72,8 @@ than copying secrets into shell history:
 "$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_MODEL -v "$OPENAI_REALTIME_MODEL"
 "$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_WS_URL -v "$OPENAI_REALTIME_WS_URL"
 "$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_VOICE -v "$OPENAI_REALTIME_VOICE"
+ALLOWED_ORIGINS="https://$SERVICE_NAME.$REGION.platdev.atl-paas.net"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k ALLOWED_ORIGINS -v "$ALLOWED_ORIGINS"
 ```
 
 Preserve the multiline private key through JSON:

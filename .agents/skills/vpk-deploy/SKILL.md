@@ -40,7 +40,8 @@ voice, or chat prototype is healthy from static export or `/api/health` alone.
   need the full backend and security/static-serving behavior.
 - Stashes are environment-specific. Verify required variables in the chosen
   environment and never print secret values.
-- Backend-backed extracts need the deployed HTTPS `ALLOWED_ORIGINS`; use an
+- The full-backend deploy paths require the deployed HTTPS `ALLOWED_ORIGINS`;
+  its mapping and stash are mandatory even when omitted from the descriptor. Use an
   SSM mapping. Bind `VPK_ORIGIN` likewise when the app opens the source VPK.
   Verify actual Origin behavior after deployment, not descriptor presence alone.
 - Build Docker images for `linux/amd64`; verify the deployed browser/runtime,
