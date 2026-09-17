@@ -19,8 +19,9 @@ const DROPZONE = readFileSync(
 	"utf8",
 );
 
-test("normal create rests dashed and becomes solid on button hover", () => {
-	assert.match(FOOTER, /"w-full border-dashed hover:border-solid"/u);
+test("normal create rests dashed and becomes solid on column hover", () => {
+	assert.match(FOOTER, /"w-full border-dashed group-hover\/board-column:border-solid"/u);
+	assert.match(FOOTER, /control\?\.active \? "group-hover\/board-column:border-dashed" : null/u);
 	assert.match(
 		DROPZONE,
 		/export const JIRA_DROPZONE_WELL_CHROME_CLASS = "rounded-lg border border-dashed";/u,
@@ -132,6 +133,6 @@ test("card arrival suppresses the inline create seam until its entrance complete
 });
 
 test("normal create uses the full-width compact button and the shared creation field", () => {
-	assert.match(FOOTER, /aria-label=\{control\?\.active \? [^\n]+ : `Create in \$\{title\}`\}[\s\S]*"w-full border-dashed hover:border-solid"[\s\S]*size=\{size\}[\s\S]*variant="outline"/u);
+	assert.match(FOOTER, /aria-label=\{control\?\.active \? [^\n]+ : `Create in \$\{title\}`\}[\s\S]*"w-full border-dashed group-hover\/board-column:border-solid"[\s\S]*size=\{size\}[\s\S]*variant="outline"/u);
 	assert.match(FOOTER, /<CreateWorkItemField/u);
 });

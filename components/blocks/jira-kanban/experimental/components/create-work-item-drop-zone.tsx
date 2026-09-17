@@ -157,10 +157,10 @@ export function BoardColumnAddButton({
 						data-jira-dropzone-control={control ? title : undefined}
 						disabled={control?.active || onCreateWorkItem === undefined}
 						className={cn(
-							"w-full border-dashed hover:border-solid",
-							control?.selected ? null : "text-text-subtlest hover:text-text-subtle [&_svg]:text-icon-subtlest hover:[&_svg]:text-icon-subtle",
+							"w-full border-dashed group-hover/board-column:border-solid",
+							control?.selected ? null : "text-text-subtle [&_[data-slot=icon]]:text-icon-disabled group-hover/board-column:[&_[data-slot=icon]]:text-icon-subtle",
 							control?.className,
-							control?.active ? "hover:border-dashed" : null,
+							control?.active ? "group-hover/board-column:border-dashed" : null,
 							reveal === "column-hover" && !open
 								? cn(
 									"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
