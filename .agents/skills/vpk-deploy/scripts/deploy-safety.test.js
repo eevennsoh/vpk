@@ -65,6 +65,7 @@ function createFixture(options = {}) {
 
 	for (const relativePath of [
 		".agents/skills/vpk-deploy/scripts/deploy.sh",
+		".agents/skills/vpk-deploy/scripts/verify-initial-theme.mjs",
 		"scripts/dev-deploy-fast.sh",
 	]) {
 		cpSync(path.join(REPO_ROOT, relativePath), path.join(root, relativePath));
@@ -109,6 +110,15 @@ function createFixture(options = {}) {
 		[
 			"#!/bin/bash",
 			'printf \'atlas %s\\n\' "$*" >> "$FAKE_CALL_LOG"',
+			'if [ "${1:-}" = "micros" ] && [ "${2:-}" = "--help" ]; then',
+			'  if [ "${FAKE_WRONG_ATLAS:-no}" = "yes" ]; then exit 1; fi',
+			'  if [ "${FAKE_HELP_STDERR:-no}" = "yes" ]; then',
+			"    printf 'service stash events\\n' >&2",
+			"  else",
+			"    printf 'service stash events\\n'",
+			"  fi",
+			"  exit 0",
+			"fi",
 			'if [ "${1:-}" = "micros" ] && [ "${2:-}" = "service" ] && [ "${3:-}" = "show" ]; then',
 			'  if [ "${FAKE_SERVICE_EXISTS:-yes}" = "yes" ]; then',
 			'    printf \'{"stacks":{}}\\n\'',
@@ -141,6 +151,9 @@ function createFixture(options = {}) {
 			'printf \'corepack %s\\n\' "$*" >> "$FAKE_CALL_LOG"',
 			"mkdir -p out",
 			": > out/index.html",
+			'if [ "${FAKE_UNSTYLED_EXPORT:-no}" = "yes" ]; then',
+			'  printf \'<html data-color-mode="light"><head><style data-theme="spacing">:root{--ds-space-200:1rem}</style></head></html>\' > out/index.html',
+			"fi",
 			"exit 0",
 			"",
 		].join("\n"),
@@ -159,6 +172,10 @@ function runFixture(fixture, scriptPath, args = [], options = {}) {
 		FAKE_CALL_LOG: fixture.logPath,
 		FAKE_SERVICE_EXISTS: options.serviceExists === false ? "no" : "yes",
 		FAKE_STASH_FILE: fixture.stashPath,
+		FAKE_WRONG_ATLAS: options.wrongAtlas ? "yes" : "no",
+		FAKE_HELP_STDERR: options.helpStderr ? "yes" : "no",
+		FAKE_UNSTYLED_EXPORT: options.unstyledExport ? "yes" : "no",
+		VPK_ATLAS_BIN: path.join(fixture.fakeBin, "atlas"),
 		PATH: `${fixture.fakeBin}${path.delimiter}${process.env.PATH || "/usr/bin:/bin"}`,
 	};
 	if (options.home !== undefined) {
@@ -205,6 +222,19 @@ test("canonical deploy accepts an existing service with no stack yet", () => {
 		assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 		assert.match(callsFor(fixture), /atlas micros service deploy/u);
 	});
+});
+
+test("both deploy paths recognize Micros help written to stderr", () => {
+	for (const [scriptPath, args] of [
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2"]],
+		["scripts/dev-deploy-fast.sh", ["1.2.3"]],
+	]) {
+		withFixture({}, (fixture) => {
+			const result = runFixture(fixture, scriptPath, args, { helpStderr: true });
+			assert.equal(result.status, 0, result.stdout + result.stderr);
+			assert.match(callsFor(fixture), /atlas micros service deploy/u);
+		});
+	}
 });
 
 test("both deploy paths reject descriptor identity drift before mutation", () => {
@@ -401,4 +431,127 @@ test("script diagnostics point to the live deployment guide", () => {
 		/\.agents\/skills\/vpk-deploy\/references\/guide-deployment\.md/u,
 	);
 	assert.doesNotMatch(canonicalScript, /(^|\s)references\/guide-/u);
+});
+
+test("both deploy paths reject an explicitly selected non-Atlassian CLI before building", () => {
+	for (const [scriptPath, args] of [
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2"]],
+		["scripts/dev-deploy-fast.sh", ["1.2.3"]],
+	]) {
+		withFixture({}, (fixture) => {
+			const result = runFixture(fixture, scriptPath, args, { wrongAtlas: true });
+			assert.notEqual(result.status, 0);
+			assert.match(result.stdout + result.stderr, /Atlassian CLI/iu);
+			assert.doesNotMatch(callsFor(fixture), /corepack pnpm run build:export/u);
+			assertNoMutationCalls(callsFor(fixture));
+		});
+	}
+});
+
+test("both deploy paths support explicit hot-swap image deployments", () => {
+	for (const [scriptPath, args] of [
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2", "--hot-swap"]],
+		["scripts/dev-deploy-fast.sh", ["1.2.3", "--hot-swap"]],
+	]) {
+		withFixture({}, (fixture) => {
+			const result = runFixture(fixture, scriptPath, args);
+			assert.equal(result.status, 0, result.stdout + result.stderr);
+			assert.match(callsFor(fixture), /atlas micros service deploy .*--mode=hot-swap/u);
+			assert.match(callsFor(fixture), /docker push .*:app-1\.2\.3/u);
+		});
+	}
+});
+
+test("hot-swap retains remote prerequisite checks before mutation", () => {
+	withFixture({}, (fixture) => {
+		const result = runFixture(fixture, "scripts/dev-deploy-fast.sh", ["1.2.3", "--hot-swap"], { serviceExists: false });
+		assert.notEqual(result.status, 0);
+		assertNoMutationCalls(callsFor(fixture));
+	});
+});
+
+test("hot-swap accepts omitted optional environment or version arguments", () => {
+	for (const [scriptPath, args] of [
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "--hot-swap"]],
+		["scripts/dev-deploy-fast.sh", ["--hot-swap"]],
+	]) {
+		withFixture({}, (fixture) => {
+			const result = runFixture(fixture, scriptPath, args);
+			assert.equal(result.status, 0, result.stdout + result.stderr);
+			assert.match(callsFor(fixture), /atlas micros service deploy .*--env=pdev-west2 .*--mode=hot-swap/u);
+			assert.doesNotMatch(callsFor(fixture), /app---hot-swap/u);
+		});
+	}
+});
+
+test("both deploy paths reject an unstyled ADS export before image build or push", () => {
+	for (const [scriptPath, args] of [
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3"]],
+		["scripts/dev-deploy-fast.sh", ["1.2.3"]],
+	]) {
+		withFixture({}, (fixture) => {
+			const result = runFixture(fixture, scriptPath, args, { unstyledExport: true });
+			assert.equal(result.status, 1, result.stdout + result.stderr);
+			assert.match(result.stdout + result.stderr, /initial HTML does not activate/u);
+			assert.match(callsFor(fixture), /corepack pnpm run build:export/u);
+			assert.doesNotMatch(callsFor(fixture), /docker (?:buildx|push)|atlas micros service deploy/u);
+		});
+	}
+});
+
+test("both deploy paths reject duplicate hot-swap flags and extra positional arguments", () => {
+	for (const [scriptPath, args] of [
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "--hot-swap", "--hot-swap"]],
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2", "extra"]],
+		["scripts/dev-deploy-fast.sh", ["--hot-swap", "--hot-swap"]],
+		["scripts/dev-deploy-fast.sh", ["1.2.3", "extra"]],
+	]) {
+		withFixture({}, (fixture) => {
+			const result = runFixture(fixture, scriptPath, args);
+			assert.equal(result.status, 2, result.stdout + result.stderr);
+			assertNoMutationCalls(callsFor(fixture));
+		});
+	}
+});
+
+test("declared origin settings must use SSM mappings and exist in the selected stash", () => {
+	for (const name of ["ALLOWED_ORIGINS", "VPK_ORIGIN"]) {
+		for (const mapping of ["https://example.localhost", `((ssm:/example-service/${name}))`]) {
+			withFixture({}, (fixture) => {
+				const descriptor = path.join(fixture.root, "service-descriptor.yml");
+				writeFileSync(descriptor, readFileSync(descriptor, "utf8") + `      ${name}: ${mapping}\n`);
+				const result = runFixture(fixture, ".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2"]);
+				assert.notEqual(result.status, 0);
+				assert.match(result.stdout + result.stderr, new RegExp(name, "u"));
+				assert.doesNotMatch(callsFor(fixture), /corepack pnpm run build:export/u);
+				assertNoMutationCalls(callsFor(fixture));
+			});
+		}
+	}
+});
+
+test("both deploy paths require additional declared provider stashes without requiring unused providers", () => {
+	for (const [scriptPath, args] of [
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2"]],
+		["scripts/dev-deploy-fast.sh", ["1.2.3"]],
+	]) {
+		for (const present of [false, true]) {
+			withFixture({ stashes: present ? [...REQUIRED_STASHES, "AI_GATEWAY_URL_GOOGLE", "ALLOWED_ORIGINS"] : REQUIRED_STASHES }, (fixture) => {
+				const descriptor = path.join(fixture.root, "service-descriptor.yml");
+				writeFileSync(descriptor, readFileSync(descriptor, "utf8") + [
+					"      AI_GATEWAY_URL_GOOGLE: ((ssm:/example-service/AI_GATEWAY_URL_GOOGLE))",
+					"      ALLOWED_ORIGINS: ((ssm:/example-service/ALLOWED_ORIGINS))",
+					"",
+				].join("\n"));
+				const result = runFixture(fixture, scriptPath, args);
+				if (present) assert.equal(result.status, 0, result.stdout + result.stderr);
+				else {
+					assert.notEqual(result.status, 0);
+					assert.match(result.stdout + result.stderr, /AI_GATEWAY_URL_GOOGLE/u);
+					assert.doesNotMatch(callsFor(fixture), /corepack pnpm run build:export/u);
+					assertNoMutationCalls(callsFor(fixture));
+				}
+			});
+		}
+	}
 });

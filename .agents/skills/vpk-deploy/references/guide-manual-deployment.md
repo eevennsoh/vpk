@@ -11,6 +11,8 @@ request.
 SERVICE_NAME="your-service-name"
 ENV="pdev-west2"
 VERSION="1.0.1"
+source .agents/skills/vpk-deploy/scripts/deploy-lib.sh
+vpk_resolve_atlas
 ```
 
 Only `pdev-west2` and `pdev-apse2` are supported. Resolve the URL region from
@@ -30,7 +32,7 @@ Create the service only after `atlas micros service show` confirms it does not
 exist:
 
 ```bash
-atlas micros service create --service="$SERVICE_NAME" --no-sd
+"$VPK_ATLAS_BIN" micros service create --service="$SERVICE_NAME" --no-sd
 ```
 
 The descriptor and the selected environment's stash must contain:
@@ -49,19 +51,26 @@ OPENAI_REALTIME_VOICE
 VPK_RUNTIME_ADMIN_TOKEN
 ```
 
+Backend-backed extracts also need `ALLOWED_ORIGINS` set to their deployed HTTPS
+origin. Bind it through `((ssm:/<service>/ALLOWED_ORIGINS))`; use the equivalent
+mapping for `VPK_ORIGIN` when external Create actions need it. Include additional
+provider settings only when configured. Every descriptor SSM reference must
+have a stash in the selected environment. See the deployment guide for runtime
+scope and protected credential provisioning.
+
 Use environment variables loaded from authoritative local configuration rather
 than copying secrets into shell history:
 
 ```bash
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_URL -v "$AI_GATEWAY_URL"
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_USE_CASE_ID -v "$AI_GATEWAY_USE_CASE_ID"
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_CLOUD_ID -v "$AI_GATEWAY_CLOUD_ID"
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_USER_ID -v "$AI_GATEWAY_USER_ID"
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k ASAP_KID -v "$ASAP_KID"
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k ASAP_ISSUER -v "$ASAP_ISSUER"
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_MODEL -v "$OPENAI_REALTIME_MODEL"
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_WS_URL -v "$OPENAI_REALTIME_WS_URL"
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_VOICE -v "$OPENAI_REALTIME_VOICE"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_URL -v "$AI_GATEWAY_URL"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_USE_CASE_ID -v "$AI_GATEWAY_USE_CASE_ID"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_CLOUD_ID -v "$AI_GATEWAY_CLOUD_ID"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_USER_ID -v "$AI_GATEWAY_USER_ID"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k ASAP_KID -v "$ASAP_KID"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k ASAP_ISSUER -v "$ASAP_ISSUER"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_MODEL -v "$OPENAI_REALTIME_MODEL"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_WS_URL -v "$OPENAI_REALTIME_WS_URL"
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_VOICE -v "$OPENAI_REALTIME_VOICE"
 ```
 
 Preserve the multiline private key through JSON:
@@ -74,7 +83,7 @@ Preserve the multiline private key through JSON:
   trap 'rm -f -- "$STASH_FILE"' EXIT
   trap 'exit 1' HUP INT TERM
   jq '{ASAP_PRIVATE_KEY: .privateKey}' .asap-config > "$STASH_FILE"
-  atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -f "$STASH_FILE"
+  "$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -f "$STASH_FILE"
 )
 ```
 
@@ -82,7 +91,7 @@ Generate the production runtime-admin token once, stash it, and unset it:
 
 ```bash
 VPK_RUNTIME_ADMIN_TOKEN="$(openssl rand -hex 32)"
-atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" \
+"$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" \
   -k VPK_RUNTIME_ADMIN_TOKEN -v "$VPK_RUNTIME_ADMIN_TOKEN"
 unset VPK_RUNTIME_ADMIN_TOKEN
 ```
@@ -90,7 +99,7 @@ unset VPK_RUNTIME_ADMIN_TOKEN
 Verify names without reading values:
 
 ```bash
-atlas micros stash list -s "$SERVICE_NAME" -e "$ENV"
+"$VPK_ATLAS_BIN" micros stash list -s "$SERVICE_NAME" -e "$ENV"
 ```
 
 Stop if any required name is missing.
@@ -107,7 +116,7 @@ vpk_validate_version "$VERSION"
 vpk_validate_descriptor_identity "$SERVICE_NAME" service-descriptor.yml
 vpk_require_service_and_stashes "$SERVICE_NAME" "$ENV"
 corepack pnpm run build:export
-test -f out/index.html
+vpk_verify_export
 ```
 
 These identity checks are read-only and must pass before registry login, image
@@ -138,7 +147,7 @@ Deploy the exact pushed version:
 
 ```bash
 export VERSION
-atlas micros service deploy \
+"$VPK_ATLAS_BIN" micros service deploy \
   --service="$SERVICE_NAME" \
   --env="$ENV" \
   --file=service-descriptor.yml
@@ -148,10 +157,55 @@ Follow the returned deployment ID to a final state, then verify the regional
 URL:
 
 ```bash
-atlas micros events -s "$SERVICE_NAME" -e "$ENV" -d "<deployment-id>"
+"$VPK_ATLAS_BIN" micros events -s "$SERVICE_NAME" -e "$ENV" -d "<deployment-id>"
 node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs \
-  "https://$SERVICE_NAME.$REGION.platdev.atl-paas.net"
+  "https://$SERVICE_NAME.$REGION.platdev.atl-paas.net" / --profile full
 ```
 
 For a redeploy, choose a new version and repeat the build, push, deploy, and
 verification sequence. Never deploy a version that was not pushed.
+
+## Hot-swap recovery
+
+Inspect the existing service, running stack, and current image version first.
+Check the installed CLI's `micros service deploy --help`; the supported syntax
+on the Team EU26 run was `--mode=hot-swap`. Do not use hot swap for initial setup
+or pass flags that bypass health, deep, semantic, run-once, or compliance checks.
+
+For code changes, build and push a new version using the steps above, then:
+
+```bash
+export VERSION
+"$VPK_ATLAS_BIN" micros service deploy \
+  --service="$SERVICE_NAME" --env="$ENV" \
+  --file=service-descriptor.yml --mode=hot-swap
+```
+
+For a config-only repair, preserve the exact existing image version. Derive the
+`VERSION` suffix from the verified deployed `app-<version>` tag; do not use an
+auto-generated version, the deployment ID, or a tag that was never pushed.
+After repairing stashes/descriptor mappings, run the same identity and remote
+prerequisite gates without rebuilding or pushing:
+
+```bash
+VERSION="<verified-existing-version-suffix>"
+vpk_validate_service_name "$SERVICE_NAME"
+vpk_validate_version "$VERSION"
+vpk_validate_descriptor_identity "$SERVICE_NAME" service-descriptor.yml
+vpk_require_service_and_stashes "$SERVICE_NAME" "$ENV"
+export VERSION
+"$VPK_ATLAS_BIN" micros service deploy \
+  --service="$SERVICE_NAME" --env="$ENV" \
+  --file=service-descriptor.yml --mode=hot-swap
+```
+
+Follow the returned deployment ID to a final state and confirm the expected
+image/runtime configuration through status plus actual Origin/functional checks.
+For hot swap, service status must show the expected version and
+`UPDATE_COMPLETE`; events for a reused deployment ID may show only the original
+creation. Record the prior successful image version/digest before an update.
+For a runtime regression, the guarded existing-image procedure above can
+restore that version; review any changed stashes/configuration as well.
+If Micros rejects the mode, diagnose its stated preconditions; do not retry with
+check bypasses. The config-only repair in Team EU26 proved origin propagation
+before the later CSP code change needed a new image.

@@ -262,6 +262,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/ui-custom/pixel-loader/pixel-loader.test.js",
 		".agents/skills/vpk-build/scripts/scaffold-target.test.js",
 		".agents/skills/vpk-deploy/scripts/deploy-safety.test.js",
+		".agents/skills/vpk-deploy/scripts/verify-runtime.test.js",
 		".agents/skills/vpk-git-ship/scripts/review-gate-status.test.js",
 		".agents/skills/vpk-setup/scripts/create-env-local.test.js",
 		".agents/skills/vpk-system-clean/scripts/vpk-system-clean.test.js",

@@ -1,7 +1,8 @@
 ---
 name: vpk-deploy
 description: Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros.
-validation_command: corepack pnpm run build:export
+metadata:
+  validation_command: node --test .agents/skills/vpk-deploy/scripts/*.test.js
 ---
 
 # VPK deploy
@@ -21,6 +22,15 @@ voice, or chat prototype is healthy from static export or `/api/health` alone.
 
 - Work from the intended prototype checkout and inspect its current status
   before changing deployment configuration.
+- Establish the absolute checkout, service, environment, regional URL, entry
+  route, runtime capabilities, and source revision or working-tree selection
+  together. Carry forward explicit user corrections and latest-main-only scope.
+- Review relevant local scaffold repairs as part of the build selection. A
+  latest-main-only source selection still needs target harness fixes required
+  for faithful rendering; account for any required fix excluded from the image.
+- Resolve the Atlassian CLI by Micros capabilities using `vpk_resolve_atlas`
+  from `scripts/deploy-lib.sh`; use `"$VPK_ATLAS_BIN"` for every Atlas call.
+  A bare `atlas` may be an unrelated database CLI. See the deployment guide.
 - Treat `.deploy.local` and `service-descriptor.yml` as hints; confirm the
   service and stash state in Micros before choosing initial versus redeploy.
 - Keep service names at 26 characters or fewer and use only the supported pdev
@@ -30,6 +40,9 @@ voice, or chat prototype is healthy from static export or `/api/health` alone.
   need the full backend and security/static-serving behavior.
 - Stashes are environment-specific. Verify required variables in the chosen
   environment and never print secret values.
+- Backend-backed extracts need the deployed HTTPS `ALLOWED_ORIGINS`; use an
+  SSM mapping. Bind `VPK_ORIGIN` likewise when the app opens the source VPK.
+  Verify actual Origin behavior after deployment, not descriptor presence alone.
 - Build Docker images for `linux/amd64`; verify the deployed browser/runtime,
   not only the image push or deployment command.
 
@@ -52,8 +65,10 @@ Read service and environment from `.deploy.local` when present, then query
 Micros without exposing values:
 
 ```bash
-atlas micros service show -s "$SERVICE_NAME" -e "$ENV"
-atlas micros stash list -s "$SERVICE_NAME" -e "$ENV"
+source .agents/skills/vpk-deploy/scripts/deploy-lib.sh
+vpk_resolve_atlas
+"$VPK_ATLAS_BIN" micros service show -s "$SERVICE_NAME" -e "$ENV"
+"$VPK_ATLAS_BIN" micros stash list -s "$SERVICE_NAME" -e "$ENV"
 ```
 
 Report the service, environment, URL, deployed version/state, variable names or
@@ -87,11 +102,12 @@ descriptor image and SSM identity, and checks the service and every required
 stash before any build, push, or deployment. An existing service with no stack
 is a valid initial-deploy state. It then produces and verifies the static export
 through `corepack pnpm run build:export`, builds and pushes the `linux/amd64`
-image, and invokes Micros. Initial deployments commonly take 10–15 minutes.
+image, and invokes Micros. Initial deployment can take 10–20 minutes or longer;
+the Team EU26 run took about 18 minutes. Follow events rather than a fixed timer.
 When a deployment ID is returned, follow events to a final state:
 
 ```bash
-atlas micros events -s <service-name> -e <env> -d <deployment-id>
+"$VPK_ATLAS_BIN" micros events -s <service-name> -e <env> -d <deployment-id>
 ```
 
 Use [manual deployment](references/guide-manual-deployment.md) only when the
@@ -112,18 +128,57 @@ required stashes before registry permission or login.
 Do not run `pnpm deploy`; that is pnpm's unrelated workspace deployment command
 and can fail with `ERR_PNPM_NOTHING_TO_DEPLOY`.
 
+For an existing running deployment, image hot swap is explicit:
+
+```bash
+pnpm run deploy:micros <new-version> --hot-swap
+# Or: .agents/skills/vpk-deploy/scripts/deploy.sh <service-name> <new-version> <env> --hot-swap
+```
+
+The fast command also accepts `pnpm run deploy:micros --hot-swap` with an
+automatically generated version. The canonical command can omit `<env>` and
+resolve it from `.deploy.local` or the default environment.
+
+Both paths still export, build, push, and check identity/stashes. For config-only
+recovery with the existing image, read the manual guide first. Do not use
+health/check bypass flags or hot swap as an initial-deployment shortcut.
+Hot swap can reuse the deployment ID, whose events may show the original
+creation. Confirm the expected image version and `UPDATE_COMPLETE` through
+service status, then check the runtime. See the guide for rollback and timing.
+
 ## Verify
 
 Run the export/build validation appropriate to the project, then verify the
 deployed URL:
 
 ```bash
-node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs "https://<service-name>.<region>.platdev.atl-paas.net"
+node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs \
+  "https://<service-name>.<region>.platdev.atl-paas.net" / --profile full
 ```
 
 Confirm the service reaches a stable stack, the main route and `/api/health`
 succeed, browser-shaped static/font requests return `200`, and every changed
 backend-backed interaction works. The service URL requires Atlassian VPN.
+
+Pass the intended routes explicitly; the default is `/`, with no assumed
+`/studio/`. Select `static`, `backend`, `chat`, or `full` for the app's runtime
+capabilities; see the guide. A verifier pass proves HTTP checks only. Use a
+real browser to prove font use/CSP, desktop and narrow geometry, console,
+accessibility, and interactions. Verify a bounded tool-free chat turn and
+authenticated WSS when applicable; a 101 upgrade does not prove working audio.
+
+For tokenized VPK apps, also pass `--check-ads-theme`. The verifier checks raw
+HTML theme activation and CSS/JavaScript/font content types. Both deploy scripts
+reject incomplete inline ADS themes before image packaging. Prove the initial
+render in a fresh browser with app JavaScript blocked, then check normal
+hydration; a styled screenshot after hydration can hide an unstyled first paint.
+See the deployment guide's browser evidence procedure.
+
+Report unavailable external actions separately, including Create agent/skill
+when their configured source VPK has no active deployment. Do not deploy that
+separate service without authorization. Finish with the correct URL, VPN
+requirement, verified version/state, tested capabilities, and remaining gaps;
+do not claim local commits or source shipping unless completed.
 
 ## Failures
 
@@ -134,6 +189,10 @@ verify the condition before switching to `pdev-apse2`, then restash every
 required variable in that environment.
 
 ## References
+
+For changes to this skill's scripts, run
+`node --test .agents/skills/vpk-deploy/scripts/*.test.js`; an export build alone
+does not exercise deployment guards or runtime verification.
 
 - [guide-deployment.md](references/guide-deployment.md): prerequisites,
   configuration, initial deployment, runtime contracts, and full command detail.

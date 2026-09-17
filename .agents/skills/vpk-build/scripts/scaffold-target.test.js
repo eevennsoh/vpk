@@ -155,6 +155,8 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(layout, /const geist = Geist\(\{ subsets: \["latin"\], variable: "--font-sans" \}\);/);
 		assert.match(layout, /src: "\.\.\/public\/fonts\/ark-es\/ARK-ES-SolidLight\.woff"/);
 		assert.match(layout, /const themeStyles = await getThemeStyles\(THEME_STATE\);/);
+		assert.match(layout, /import \{ getThemeHtmlAttrs \} from "@atlaskit\/tokens\/get-theme-html-attrs";/);
+		assert.match(layout, /<html[^>]*\{\.\.\.getThemeHtmlAttrs\(THEME_STATE\)\}/);
 		assert.doesNotMatch(layout, /next\/script/);
 		assert.doesNotMatch(layout, /clientShim/);
 		assert.doesNotMatch(layout, /fonts\.googleapis\.com\/css2/);

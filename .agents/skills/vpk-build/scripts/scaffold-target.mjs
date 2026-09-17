@@ -235,6 +235,7 @@ import "./feature-flags-shim";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import localFont from "next/font/local";
+import { getThemeHtmlAttrs } from "@atlaskit/tokens/get-theme-html-attrs";
 import { getThemeStyles } from "@atlaskit/tokens/get-theme-styles";
 
 // globals.css orchestrates the CSS pipeline:
@@ -285,7 +286,7 @@ export default async function RootLayout({
 	const themeStyles = await getThemeStyles(THEME_STATE);
 
 	return (
-		<html lang="en" className="light" data-color-mode="light" suppressHydrationWarning>
+		<html lang="en" className="light" {...getThemeHtmlAttrs(THEME_STATE)} suppressHydrationWarning>
 			<head>
 				{themeStyles.map((style) => (
 					<style

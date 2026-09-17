@@ -7,6 +7,7 @@ until its prerequisite is repaired.
 
 | Symptom | Check |
 | --- | --- |
+| `atlas` shows database commands | Resolve Atlassian Micros capabilities; use `VPK_ATLAS_BIN` |
 | `ERR_PNPM_NOTHING_TO_DEPLOY` | Use `pnpm run deploy:micros`, not `pnpm deploy` |
 | Missing or stale `out/` | Run `corepack pnpm run build:export`; require `out/index.html` |
 | Docker cannot copy `out/` | Confirm the export completed before `docker buildx build` |
@@ -19,6 +20,32 @@ until its prerequisite is repaired.
 | `stash get` is unavailable | Use `atlas micros stash list`; do not print values |
 | ALB reports insufficient IP space | Measure subnet capacity before considering `pdev-apse2` |
 | Micros remains `CREATE_IN_PROGRESS` | Follow deployment events; allow reconciliation lag |
+| Same-origin browser requests fail but localhost Origin works | Check running origin settings and SSM mappings, not descriptor literals alone |
+| Font fetch succeeds but fallback font renders | Inspect CSP events, external stylesheet, and the used font face |
+| Page is unstyled until JavaScript runs | Check initial HTML theme activation; prove rendering with app scripts blocked |
+| CSS/JS/font request returns HTML with 200 | Check asset content types and static-serving fallback behavior |
+| Extract verification leaves the app through `/studio/` | Pass `/` explicitly; check external navigation separately |
+| Health/token endpoint returns HTML with 200 | Use JSON/content/readiness checks and the correct runtime profile |
+| Create agent/skill opens an unavailable VPK | Inspect the configured external source service and URL |
+
+## Wrong CLI or authentication boundary
+
+```bash
+source .agents/skills/vpk-deploy/scripts/deploy-lib.sh
+vpk_resolve_atlas
+"$VPK_ATLAS_BIN" micros service deploy --help
+```
+
+An executable named `atlas` is not sufficient: Team EU26 found an unrelated
+database CLI on PATH. The helper checks Micros service/stash/events support and
+tries the known Atlassian install when PATH is wrong. An explicit invalid
+`VPK_ATLAS_BIN` fails without falling back. Use the resolved executable for every
+Atlas operation. When Okta sign-in is required, let the user complete it and
+resume the original operation after their reply; do not reset credentials
+speculatively.
+The resolver reads both output streams: Atlassian's `micros --help` can succeed
+while writing all its capability help to stderr. If an older copied helper
+rejects the verified CLI, sync the helper rather than bypassing CLI validation.
 
 ## Preflight or export failure
 
@@ -46,6 +73,21 @@ named source and backup before changing either one.
 For file-casing errors that only appear in Linux, compare import spelling with
 the tracked filename exactly. Do not add duplicate case variants on macOS.
 
+### Unstyled initial render
+
+On Team EU26, the exported head included ADS theme CSS, but `<html>` lacked
+`data-theme`. CSS selectors stayed inactive until `ThemeWrapper` hydrated.
+The local fix had also been left out of the deployed image. HTTP 200 checks and
+screenshots taken after hydration missed this failure.
+
+Run `verify-initial-theme.mjs out/index.html` locally and `verify-runtime.mjs`
+with `--check-ads-theme` against the deployed route. Generated layouts must use
+`getThemeHtmlAttrs(THEME_STATE)` alongside `getThemeStyles(THEME_STATE)`; fix the
+generator in `vpk-build` and include the corrected frontend export in the image.
+Use the deployment guide's script-blocked browser check to prove initial
+rendering, then reload normally. Theme attributes alone do not prove Tailwind
+utilities, font delivery, or the full CSS pipeline.
+
 ## Docker dependency or registry failure
 
 `backend/Dockerfile` installs production dependencies from:
@@ -64,8 +106,8 @@ For a push 401, refresh both local credentials and server-side permission:
 
 ```bash
 source .deploy.local
-atlas packages secrets -t docker -i "$DOCKER_PASSWORD"
-atlas packages permission grant
+"$VPK_ATLAS_BIN" packages secrets -t docker -i "$DOCKER_PASSWORD"
+"$VPK_ATLAS_BIN" packages permission grant
 ```
 
 `atlas packages secrets` repairs the local keychain entry.
@@ -93,11 +135,46 @@ VPK_RUNTIME_ADMIN_TOKEN
 Inspect names without exposing values:
 
 ```bash
-atlas micros stash list -s "$SERVICE_NAME" -e "$ENV"
+"$VPK_ATLAS_BIN" micros stash list -s "$SERVICE_NAME" -e "$ENV"
 ```
 
-Stashes do not cross environments. After changing a stash, deploy a new image
-version so the running container receives the new configuration.
+Stashes do not cross environments. After changing a stash, reconcile the
+running deployment so the container receives the configuration. A verified
+existing image can be reused for a config-only hot swap; code changes need a
+new built/pushed image. See the manual guide's recovery sequence.
+
+Every descriptor SSM reference is checked for stash presence, including
+configured optional provider/origin settings. Presence still does not prove
+runtime propagation. Do not provision unused settings just to satisfy a check.
+
+### Same-origin failures and absent origin settings
+
+On Team EU26, literal `ALLOWED_ORIGINS` and `VPK_ORIGIN` appeared in the
+descriptor but were absent at runtime. Browser-shaped requests with the
+deployed Origin failed with 500, while localhost Origin worked. Compare the
+same request with/without the deployed Origin and inspect configuration
+presence without values. This is a recorded failure, not a claim that all
+literal Micros variables always fail.
+
+Stash the deployed HTTPS origin and bind `ALLOWED_ORIGINS` through the matching
+`((ssm:/<service>/ALLOWED_ORIGINS))` reference. Bind `VPK_ORIGIN` similarly when
+the app uses it. Reconcile through the guarded manual config-only path, then
+rerun browser-shaped font/token requests. Preserve CORS/authentication logic;
+do not accept arbitrary Origins to hide the configuration problem.
+
+### Font CSP and actual font use
+
+HTTP success cannot establish that the browser permits a font stylesheet or
+uses the intended face. Inspect `securitypolicyviolation` events and the exact
+directive/blocked host. Team EU26 needed
+`https://ds-cdn.prod-east.frontend.public.atl-paas.net` in `styleSrc` and
+`fontSrc`; the shared peel renderer also needs its existing `connect-src`
+permission for font embedding. Add only permissions proven necessary for the
+app, test the shared security policy, then deploy the corrected image.
+
+Check the face used by visible text (the Latin Atlassian Sans face loaded in
+this case). Unused Unicode faces remaining unloaded are not a failed check.
+Keep CSP diagnosis distinct from same-origin HTTP/CORS failure.
 
 ### ASAP private-key formatting
 
@@ -111,7 +188,7 @@ Preserve the multiline key through JSON rather than shell newline rewriting:
   trap 'rm -f -- "$STASH_FILE"' EXIT
   trap 'exit 1' HUP INT TERM
   jq '{ASAP_PRIVATE_KEY: .privateKey}' .asap-config > "$STASH_FILE"
-  atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -f "$STASH_FILE"
+  "$VPK_ATLAS_BIN" micros stash set -s "$SERVICE_NAME" -e "$ENV" -f "$STASH_FILE"
 )
 ```
 
@@ -126,7 +203,7 @@ exercise every changed backend-backed interaction:
 
 ```bash
 node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs \
-  "https://$SERVICE_NAME.$REGION.platdev.atl-paas.net"
+  "https://$SERVICE_NAME.$REGION.platdev.atl-paas.net" / --profile full
 ```
 
 If production exits with:
@@ -137,6 +214,35 @@ VPK_RUNTIME_ADMIN_TOKEN is required when runtime admin protection is enabled
 
 ensure the token exists in both the selected environment's stash and
 `service-descriptor.yml`. Never print the token while diagnosing it.
+
+Choose `static`, `backend`, `chat`, or `full` according to the app's capabilities
+(see the deployment guide). Defaults are root `/` and profile `full`; there is
+no implicit `/studio/`. Unexpected external redirects fail before the verifier
+requests their destination. JSON readiness/token failures, timeouts, and static
+request failures are labeled; a pass still does not prove chat or WSS/audio.
+
+For functional proof, use one non-sensitive tool-free chat turn and, when
+applicable, a real token-backed WSS connection with prompt cleanup. Do not log
+tokens, send audio, or exercise mutating tools as part of an unrequested probe.
+A 101 upgrade proves transport only; report untested audio separately.
+
+### External source VPK dependency
+
+Inspect the configured `VPK_ORIGIN` service and URL independently. Team EU26's
+source VPK service was registered but had no active environment/stacks, and its
+URL did not resolve. Create agent/skill redirects therefore remained
+unavailable despite a successful standalone deployment. Report that dependency;
+do not change the destination or deploy a separate service without authorization.
+
+### Browser drag automation
+
+Before changing product code for a failed automated drag, check visibility,
+`elementFromPoint`, and scroll state. In this run `scrollintoview` could leave
+`data-scrolling` active, suppressing row pointer events. Selecting an already
+visible hittable row, hovering the target to reveal Create, and performing an
+atomic drag succeeded. Verify source removal, target count, and dropzone cleanup,
+then reload to reset synthetic state. Record fresh console/accessibility checks
+and inspect desktop/narrow screenshots under ignored `output/agent-browser/`.
 
 ## ALB subnet exhaustion
 
@@ -167,10 +273,13 @@ The deploy command can return before Micros finishes reconciling the stack.
 Follow the deployment ID:
 
 ```bash
-atlas micros events -s "$SERVICE_NAME" -e "$ENV" -d "<deployment-id>"
-atlas micros service show -s "$SERVICE_NAME" -e "$ENV"
+"$VPK_ATLAS_BIN" micros events -s "$SERVICE_NAME" -e "$ENV" -d "<deployment-id>"
+"$VPK_ATLAS_BIN" micros service show -s "$SERVICE_NAME" -e "$ENV"
 ```
 
 Wait for a final state. If direct AWS inspection is authorized and necessary,
 assume the service role for the same service/environment and inspect the
 matching region; do not infer success from the image push alone.
+For hot swap, confirm the expected version and `UPDATE_COMPLETE` through
+service status. Events for a reused ID may contain only the original creation;
+those old success events are not evidence of the current update.
