@@ -22,7 +22,7 @@ Preconditions:
 - `control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `control-vpk url`.
 - Set `EVIDENCE="$(control-vpk evidence-dir)/jira-golden-journeys-v4"` and create it before capture.
 
-- **Open and identify.** Start the scoped browser with `control-vpk browser open --headed "$ORIGIN/"`, run `control-vpk browser goto "$ORIGIN/jira-golden-journeys-v4"`, and wait for heading `Jira Design`. Confirm there is no chapter group and no `Reset` button. Region `Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses.` is present.
+- **Open and identify.** Start directly with `control-vpk open-target /jira-golden-journeys-v4 --headed` and wait for heading `Jira Design`. Confirm there is no chapter group and no `Reset` button. Region `Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses.` is present.
 - **Prove Board markers.** Snapshot and confirm tab `Board` selected, region `Unlink sessions, N sessions`, card `PAY-101`, and a pull-request control whose name includes `#1839`.
 - **Prove List.** Run `control-vpk browser find role tab click --name List`. Region `Payments SDK v2 migration work items list` is present. Return with `control-vpk browser find role tab click --name Board`.
 - **Prove view chrome.** Run `control-vpk browser find role button click --name "Configure board view"` and confirm menuitem `Agent`. Press Escape until the menu closes before another tab click — a leftover menu covers Summary / Work items.

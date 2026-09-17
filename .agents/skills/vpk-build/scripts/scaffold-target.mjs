@@ -19,7 +19,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
+import { writeBackendDeploymentHarness, writeBackendServiceDescriptor } from "./backend-deploy-harness.mjs";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -28,16 +29,17 @@ const MICROS_DIR = path.join(SKILL_ROOT, "references", "micros");
 // -------- CLI ------------------------------------------------------------
 
 function parseArgs(argv) {
-	const args = { plan: null, target: null, force: false };
+	const args = { plan: null, target: null, force: false, backendBacked: false };
 	for (let i = 0; i < argv.length; i++) {
 		const a = argv[i];
 		if (a === "--target") args.target = argv[++i];
 		else if (a === "--force") args.force = true;
+		else if (a === "--backend-backed") args.backendBacked = true;
 		else if (a.startsWith("--")) throw new Error(`Unknown flag: ${a}`);
 		else if (!args.plan) args.plan = a;
 	}
 	if (!args.plan) {
-		throw new Error("Usage: scaffold-target.mjs <plan.json> [--target <dir>] [--force]");
+		throw new Error("Usage: scaffold-target.mjs <plan.json> [--target <dir>] [--backend-backed] [--force]");
 	}
 	return args;
 }
@@ -109,14 +111,23 @@ const PROVIDERS_REQUIRING_INSTANCE_PROPS = new Set(["WorkItemModalProvider"]);
  */
 function providerNeedsInstanceProps(source, name) {
 	if (PROVIDERS_REQUIRING_INSTANCE_PROPS.has(name)) return true;
+	const inlineRe = new RegExp(
+		`export\\s+function\\s+${name}\\s*\\(\\s*\\{[^}]*\\}\\s*:\\s*(?:Readonly\\s*<\\s*)?\\{([\\s\\S]*?)\\}\\s*>?\\s*\\)`,
+	);
+	const inline = source.match(inlineRe);
+	if (inline && hasRequiredNonChildrenProp(inline[1])) return true;
 	const ifaceRe = new RegExp(
 		`(?:interface|type)\\s+${name}Props\\b[^{]*\\{([\\s\\S]*?)\\n\\}`,
 	);
 	const iface = source.match(ifaceRe);
 	if (!iface) return false;
+	return hasRequiredNonChildrenProp(iface[1]);
+}
+
+function hasRequiredNonChildrenProp(typeBody) {
 	const propRe = /^\s*([A-Za-z0-9_]+)(\?)?\s*:/gm;
 	let match;
-	while ((match = propRe.exec(iface[1])) !== null) {
+	while ((match = propRe.exec(typeBody)) !== null) {
 		if (match[1] === "children") continue;
 		if (!match[2]) return true;
 	}
@@ -139,6 +150,17 @@ function readPnpmCatalog(repoRoot) {
 		if (match) catalog[match[1].trim()] = match[2].trim();
 	}
 	return catalog;
+}
+
+function readPnpmYamlSection(repoRoot, sectionName) {
+	const yamlPath = path.join(repoRoot, "pnpm-workspace.yaml");
+	if (!fs.existsSync(yamlPath)) return "";
+	const lines = fs.readFileSync(yamlPath, "utf8").split("\n");
+	const start = lines.findIndex((line) => line === `${sectionName}:`);
+	if (start < 0) return "";
+	let end = start + 1;
+	while (end < lines.length && (lines[end] === "" || /^\s/.test(lines[end]))) end += 1;
+	return `${lines.slice(start, end).join("\n").trimEnd()}\n`;
 }
 
 function resolveCatalogSpecifier(pkgName, version, catalog) {
@@ -177,7 +199,7 @@ function rewriteShadcnCssImport(css) {
  * alphabetical order (the order contextFiles came out of the trace);
  * if a provider needs to be inside another, the user reorders manually.
  */
-function composeLayout({ targetName, routeSlug, providers }) {
+function composeLayout({ targetName, routeSlug, providers, includeDemoGoogleFonts }) {
 	const providerImports = providers
 		.map(p => `import { ${p.name} } from "${p.importPath}";`)
 		.join("\n");
@@ -189,6 +211,10 @@ function composeLayout({ targetName, routeSlug, providers }) {
 		body = `<${name}>\n\t\t\t\t\t${body}\n\t\t\t\t</${name}>`;
 	}
 	body = `<ThemeWrapper>\n\t\t\t\t${body}\n\t\t\t</ThemeWrapper>`;
+	const demoGoogleFontLinks = includeDemoGoogleFonts ? `
+				<link rel="preconnect" href="https://fonts.googleapis.com" />
+				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+				<link href="https://fonts.googleapis.com/css2?family=BBH+Bartle&family=Bitcount+Grid+Single:wght@100..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />` : "";
 
 	// Client-side FeatureGates shim is rendered inside <body> as a trivial
 	// component. Its module-level side effect installs the resolver on the
@@ -209,6 +235,7 @@ import "./feature-flags-shim";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import localFont from "next/font/local";
+import { getThemeHtmlAttrs } from "@atlaskit/tokens/get-theme-html-attrs";
 import { getThemeStyles } from "@atlaskit/tokens/get-theme-styles";
 
 // globals.css orchestrates the CSS pipeline:
@@ -259,7 +286,7 @@ export default async function RootLayout({
 	const themeStyles = await getThemeStyles(THEME_STATE);
 
 	return (
-		<html lang="en" className="light" data-color-mode="light" suppressHydrationWarning>
+		<html lang="en" className="light" {...getThemeHtmlAttrs(THEME_STATE)} suppressHydrationWarning>
 			<head>
 				{themeStyles.map((style) => (
 					<style
@@ -272,13 +299,7 @@ export default async function RootLayout({
 				<link rel="preconnect" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net" />
 				<link rel="preload" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net/assets/fonts/atlassian-sans/v3/AtlassianSans-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
 				<link rel="preload stylesheet" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net/assets/font-rules/v5/atlassian-fonts.css" as="style" crossOrigin="anonymous" />
-				{/* Google Fonts used by various VPK demos (BBH Bartle, Bitcount Grid,
-					DotGothic16, JetBrains Mono). If your route doesn't use these you
-					can delete these <link> tags — they don't hurt, but they're a few
-					KB of network you don't need. */}
-				<link rel="preconnect" href="https://fonts.googleapis.com" />
-				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-				<link href="https://fonts.googleapis.com/css2?family=BBH+Bartle&family=Bitcount+Grid+Single:wght@100..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+				${demoGoogleFontLinks}
 			</head>
 			<body className={cn("min-h-svh bg-bg-neutral text-text antialiased font-sans", geist.variable, arkEsSolidLight.variable)}>
 				<FeatureFlagsShim />
@@ -288,6 +309,24 @@ export default async function RootLayout({
 	);
 }
 `;
+}
+
+function routeUsesDemoGoogleFonts(repoRoot, files) {
+	const fontFamily = /BBH Bartle|Bitcount Grid Single|DotGothic16|JetBrains Mono/;
+	const queued = new Set(files), seen = new Set();
+	while (queued.size > 0) {
+		const rel = queued.values().next().value;
+		queued.delete(rel);
+		if (seen.has(rel)) continue;
+		seen.add(rel);
+		const abs = path.join(repoRoot, rel);
+		if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) continue;
+		const source = fs.readFileSync(abs, "utf8");
+		if (fontFamily.test(source)) return true;
+		if (!rel.endsWith(".css")) continue;
+		for (const imported of collectLocalCssImportsFromText(source, path.posix.dirname(rel))) queued.add(imported);
+	}
+	return false;
 }
 
 // -------- CSS pipeline --------------------------------------------------
@@ -429,6 +468,23 @@ function resolveExtractedDependencies({ planPackages, sourceManifest, catalog })
 	return resolved;
 }
 
+function resolveBackendDependencies({ sourceManifest, backendManifest, catalog }) {
+	const dependencies = {};
+	for (const [name, version] of Object.entries({
+		...sourceManifest.dependencies,
+		...backendManifest.dependencies,
+	})) {
+		// Frontend-only libraries are retained only when the route trace uses them.
+		if (["motion-plus", "ansi-to-react"].includes(name)) continue;
+		const resolved = resolveCatalogSpecifier(name, version, catalog);
+		if (resolved === "catalog:") {
+			throw new Error(`Backend dependency ${name} has no catalog version`);
+		}
+		dependencies[name] = resolved;
+	}
+	return dependencies;
+}
+
 function writeTargetPackageJson({ targetDir, tmpl, targetName, dependencies }) {
 	const runtimeDeps = {};
 	const typeDeps = {};
@@ -463,11 +519,21 @@ function copyLocalCssGraph({ repoRoot, targetDir, cssImports, globalsCss }) {
 	for (const rel of collectLocalCssImportsFromText(globalsCss, "app")) {
 		queued.add(rel);
 	}
-	for (const rel of queued) {
+	const copied = new Set();
+	while (queued.size > 0) {
+		const rel = queued.values().next().value;
+		queued.delete(rel);
+		if (copied.has(rel)) continue;
+		copied.add(rel);
 		if (rel.includes("node_modules")) continue;
 		const srcAbs = path.join(repoRoot, rel);
 		if (!fs.existsSync(srcAbs) || !fs.statSync(srcAbs).isFile()) continue;
 		copyFileVerbatim(srcAbs, path.join(targetDir, rel));
+		for (const imported of collectLocalCssImportsFromText(
+			fs.readFileSync(srcAbs, "utf8"), path.posix.dirname(rel)
+		)) {
+			if (!copied.has(imported)) queued.add(imported);
+		}
 	}
 }
 
@@ -622,7 +688,12 @@ export function FeatureFlagsShim() {
 	}
 	writeFileEnsuring(
 		path.join(targetDir, "app", "layout.tsx"),
-		composeLayout({ targetName, routeSlug, providers }),
+		composeLayout({
+			targetName, routeSlug, providers,
+			includeDemoGoogleFonts: routeUsesDemoGoogleFonts(
+				repoRoot, [...plan.files, ...(plan.cssImports || []), "app/globals.css", "app/tailwind-theme.css"]
+			),
+		}),
 	);
 
 	// ---- 4. CSS pipeline: copy tailwind-theme + shadcn-theme verbatim,
@@ -655,6 +726,17 @@ export function FeatureFlagsShim() {
 		sourceManifest,
 		catalog,
 	});
+	if (args.backendBacked) {
+		const backendManifestPath = path.join(repoRoot, "backend", "package.json");
+		if (!fs.existsSync(backendManifestPath)) {
+			throw new Error("Backend-backed extraction requires source backend/package.json");
+		}
+		Object.assign(augmentedNpm, resolveBackendDependencies({
+			sourceManifest,
+			backendManifest: readJSON(backendManifestPath),
+			catalog,
+		}));
+	}
 	const availablePackages = new Set(Object.keys(augmentedNpm));
 	const generatedGlobalsCss = buildGlobalsCssFromSource(sourceGlobalsCss, availablePackages);
 	writeFileEnsuring(
@@ -713,6 +795,12 @@ export function FeatureFlagsShim() {
 		targetName,
 		dependencies: augmentedNpm,
 	});
+	if (args.backendBacked) {
+		writeBackendDeploymentHarness({
+			repoRoot, targetDir, packageManager: sourceManifest.packageManager,
+			buildPolicy: readPnpmYamlSection(repoRoot, "overrides") + readPnpmYamlSection(repoRoot, "allowBuilds"),
+		});
+	}
 
 	// ---- 8. Fill and write README.md from template ----
 	const sha = safeGitSha(repoRoot);
@@ -728,6 +816,52 @@ export function FeatureFlagsShim() {
 	// ---- 9. Copy Micros deploy scaffold ----
 	if (fs.existsSync(MICROS_DIR)) {
 		copyTreeVerbatim(MICROS_DIR, targetDir);
+	}
+	if (args.backendBacked) {
+		copyTrackedRuntimeFiles(repoRoot, targetDir);
+		writeBackendServiceDescriptor(targetDir);
+		const devTemplate = fs.readFileSync(
+			path.join(SCAFFOLD_DIR, "backend-backed-dev.mjs"), "utf8",
+		);
+		writeFileEnsuring(
+			path.join(targetDir, "scripts", "dev-backend-backed.mjs"),
+			substituteTemplate(devTemplate, {
+				SOURCE_RELATIVE_PATH: JSON.stringify(path.relative(targetDir, repoRoot)),
+			}),
+		);
+		copyFileVerbatim(
+			path.join(SCAFFOLD_DIR, "backend-backed.Dockerfile"),
+			path.join(targetDir, "backend", "Dockerfile"),
+		);
+		copyFileVerbatim(
+			path.join(SCAFFOLD_DIR, "backend-backed-cross-route-redirects.js"),
+			path.join(targetDir, "backend", "extracted-cross-route-redirects.js"),
+		);
+		const sourceServer = fs.readFileSync(path.join(repoRoot, "backend", "server.js"), "utf8");
+		const staticServingCall = "\tregisterStaticExportServing(runtime.app, {";
+		if (!sourceServer.includes(staticServingCall)) {
+			throw new Error("Source backend/server.js no longer has the static-serving insertion point");
+		}
+		const extractedServer = sourceServer
+			.replace(
+				"const express = require(\"express\");",
+				"const { registerCrossRouteRedirects } = require(\"./extracted-cross-route-redirects\");\nconst express = require(\"express\");",
+			)
+			.replace(staticServingCall,
+				"\tregisterCrossRouteRedirects(runtime.app);\n" + staticServingCall);
+		writeFileEnsuring(path.join(targetDir, "backend", "extracted-server.js"), extractedServer);
+		fs.appendFileSync(path.join(targetDir, "README.md"), `
+## Backend-backed runtime
+
+\`pnpm dev\` serves the extracted route at \`http://localhost:3001\` and proxies
+\`/api/*\` to the source VPK backend. The adjacent source checkout is discovered
+automatically; set \`VPK_ROOT\` (or legacy \`VPK_ROVO_ROOT\`) if it moves. The
+launcher starts \`pnpm run dev:backend\` in the source when no healthy backend
+is running. \`VPK_ORIGIN\` points cross-route Create actions to the source app;
+locally it falls back to the source frontend port file. Set \`VPK_ORIGIN\` and
+\`ALLOWED_ORIGINS\` to the public hosts before deployment. The production image
+runs the copied source Express backend, including API and WebSocket routes.
+`);
 	}
 
 	// ---- 9b. Wire VPK skill access ----
@@ -833,6 +967,19 @@ function copyTreeVerbatim(srcDir, destDir) {
 		} else {
 			copyFileVerbatim(srcAbs, destAbs);
 		}
+	}
+}
+
+function copyTrackedRuntimeFiles(repoRoot, targetDir) {
+	const files = execFileSync("git", ["ls-files", "-z", "--", "backend", "lib", "rovo", "scripts/lib"], {
+		cwd: repoRoot, encoding: "utf8",
+	}).split("\0");
+	for (const rel of files) {
+		if (!rel || /\.(ts|tsx|mts|cts)$/.test(rel)) continue;
+		if (rel.split("/").some((part) => ["node_modules", ".next", "public"].includes(part))) continue;
+		const srcAbs = path.join(repoRoot, rel);
+		if (!fs.existsSync(srcAbs) || !fs.statSync(srcAbs).isFile()) continue;
+		copyFileVerbatim(srcAbs, path.join(targetDir, rel));
 	}
 }
 

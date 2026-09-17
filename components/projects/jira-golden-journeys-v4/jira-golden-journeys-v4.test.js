@@ -262,7 +262,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
-		/expanded \? "h-16 text-sm leading-5" : "h-6 text-xs leading-4"/u,
+		/expanded \? "h-16 text-sm leading-5" : "h-8 text-sm leading-5"/u,
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
@@ -292,7 +292,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE,
-		/export const CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX = 120;/u,
+		/export const CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX = 24;/u,
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
@@ -304,7 +304,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
-		/const magnet = useMagneticProximity\(proximityRef \?\? targetRef, \{\s*hoverArea: JIRA_DROPZONE_HOVER_AREA_PX,\s*\}\);/u,
+		/const magnet = useMagneticProximity\(proximityRef \?\? targetRef, \{\s*hoverArea,\s*\}\);/u,
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
@@ -340,9 +340,10 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
-		/<motion\.div[\s\S]*x: pinMagnet \? 0 : magnet\.x,[\s\S]*ref=\{targetRef\}[\s\S]*<motion\.span[\s\S]*x: pinMagnet \? 0 : magnet\.labelX,/u,
+		/<motion\.div[\s\S]*x: pinMagnet \? 0 : magnet\.x,[\s\S]*<motion\.span[\s\S]*x: pinMagnet \? 0 : magnet\.labelX,/u,
 	);
-	assert.match(JIRA_DROPZONE_SOURCE, /data-board-agent-session-drop-zone="create"/u);
+	assert.match(JIRA_DROPZONE_SOURCE, /className="grid w-full items-end" ref=\{targetRef\}/u);
+	assert.match(JIRA_DROPZONE_SOURCE, /const dropTargetAttributes = isPresent \? \{[\s\S]*"data-board-agent-session-drop-zone": "create",[\s\S]*\} : \{\};/u);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
 		/data-board-agent-session-column-title=\{title\}/u,

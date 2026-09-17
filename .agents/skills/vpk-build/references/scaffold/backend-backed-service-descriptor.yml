@@ -1,0 +1,27 @@
+# Replace all instances of YOUR-SERVICE-NAME before deploying.
+# Provision each SSM variable in the selected Micros environment.
+description: "Backend-backed VPK prototype"
+organization: Engineering Services
+notifications:
+  email: your-email@atlassian.com
+buildNumber: ${VERSION}
+compose:
+  app:
+    image: docker.atl-paas.net/YOUR-SERVICE-NAME
+    tag: app-${VERSION}
+    ports:
+      - "8080:8080"
+    environment:
+      AI_GATEWAY_URL: ((ssm:/YOUR-SERVICE-NAME/AI_GATEWAY_URL))
+      AI_GATEWAY_USE_CASE_ID: ((ssm:/YOUR-SERVICE-NAME/AI_GATEWAY_USE_CASE_ID))
+      AI_GATEWAY_CLOUD_ID: ((ssm:/YOUR-SERVICE-NAME/AI_GATEWAY_CLOUD_ID))
+      AI_GATEWAY_USER_ID: ((ssm:/YOUR-SERVICE-NAME/AI_GATEWAY_USER_ID))
+      ASAP_PRIVATE_KEY: ((ssm:/YOUR-SERVICE-NAME/ASAP_PRIVATE_KEY))
+      ASAP_KID: ((ssm:/YOUR-SERVICE-NAME/ASAP_KID))
+      ASAP_ISSUER: ((ssm:/YOUR-SERVICE-NAME/ASAP_ISSUER))
+      OPENAI_REALTIME_MODEL: ((ssm:/YOUR-SERVICE-NAME/OPENAI_REALTIME_MODEL))
+      OPENAI_REALTIME_WS_URL: ((ssm:/YOUR-SERVICE-NAME/OPENAI_REALTIME_WS_URL))
+      OPENAI_REALTIME_VOICE: ((ssm:/YOUR-SERVICE-NAME/OPENAI_REALTIME_VOICE))
+      ALLOWED_ORIGINS: ((ssm:/YOUR-SERVICE-NAME/ALLOWED_ORIGINS))
+      VPK_RUNTIME_ADMIN_TOKEN: ((ssm:/YOUR-SERVICE-NAME/VPK_RUNTIME_ADMIN_TOKEN))
+      PORT: "8080"

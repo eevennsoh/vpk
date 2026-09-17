@@ -155,8 +155,11 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(layout, /const geist = Geist\(\{ subsets: \["latin"\], variable: "--font-sans" \}\);/);
 		assert.match(layout, /src: "\.\.\/public\/fonts\/ark-es\/ARK-ES-SolidLight\.woff"/);
 		assert.match(layout, /const themeStyles = await getThemeStyles\(THEME_STATE\);/);
+		assert.match(layout, /import \{ getThemeHtmlAttrs \} from "@atlaskit\/tokens\/get-theme-html-attrs";/);
+		assert.match(layout, /<html[^>]*\{\.\.\.getThemeHtmlAttrs\(THEME_STATE\)\}/);
 		assert.doesNotMatch(layout, /next\/script/);
 		assert.doesNotMatch(layout, /clientShim/);
+		assert.doesNotMatch(layout, /fonts\.googleapis\.com\/css2/);
 
 		assert.match(featureFlagsShim, /__PLATFORM_FEATURE_FLAGS__/);
 		assert.match(featureFlagsShim, /booleanResolver: \(\) => false/);
@@ -190,6 +193,10 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(nextConfig, /root: process\.cwd\(\),/);
 		assert.doesNotMatch(nextConfig, /root:\s*fileURLToPath\(/);
 		assert.match(nextConfig, /allowedDevOrigins:\s*\[\s*"127\.0\.2\.2",\s*"localhost"\s*\]/);
+		const tsconfig = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "tsconfig.json"), "utf8"));
+		assert.ok(tsconfig.include.includes(".next/dev/types/**/*.ts"));
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, ".gitignore"), "utf8"), /^output\/$/m);
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, ".gitignore"), "utf8"), /^backend\/data\/$/m);
 
 		const nextEnv = fs.readFileSync(path.join(fixture.targetDir, "next-env.d.ts"), "utf8");
 		assert.match(nextEnv, /\/\/\/ <reference types="next" \/>/);
@@ -247,6 +254,7 @@ function createContractFixture() {
 			path.join(repoRoot, "package.json"),
 			JSON.stringify(
 				{
+					packageManager: "pnpm@11.25.0",
 					dependencies: {
 						next: "16.3.0",
 						react: "19.2.8",
@@ -255,6 +263,8 @@ function createContractFixture() {
 						leaflet: "^1.9.4",
 						three: "^0.185.1",
 						"tw-animate-css": "^1.4.0",
+						"motion-plus": "2.11.2",
+						"ansi-to-react": "^6.2.6",
 					},
 					devDependencies: {
 						shadcn: "^4.16.2",
@@ -267,11 +277,42 @@ function createContractFixture() {
 			),
 		);
 		writeFile(
+			path.join(repoRoot, "backend", "package.json"),
+			JSON.stringify({ dependencies: { express: "^5.2.1", cors: "^2.8.5" } }),
+		);
+		writeFile(
+			path.join(repoRoot, "backend", "server.js"),
+			`const express = require("express");
+function start(runtime) {
+\tregisterStaticExportServing(runtime.app, {
+\t\texpressImpl: express,
+\t});
+}
+`,
+		);
+		writeFile(path.join(repoRoot, "backend", "node_modules", "cors", "sentinel"), "installed\n");
+		writeFile(path.join(repoRoot, "lib", "untraced-source.ts"), "export const hidden = true;\n");
+		writeFile(path.join(repoRoot, "app", "contexts", "context-required-inline.tsx"),
+			`export function RequiredInlineProvider({ value, children }: Readonly<{
+\tvalue: string;
+\tchildren: unknown;
+}>) { return children; }
+`);
+		writeFile(path.join(repoRoot, "rovo", "config.js"), "module.exports = {};\n");
+		writeFile(path.join(repoRoot, "scripts", "lib", "worktree-ports.js"), "module.exports = {};\n");
+		writeFile(path.join(repoRoot, "scripts", "build-static-export.mjs"), "// export wrapper\n");
+		writeFile(path.join(repoRoot, "scripts", "dev-deploy-fast.sh"), "#!/bin/bash\n# canonical deploy\n");
+		writeFile(
 			path.join(repoRoot, "pnpm-workspace.yaml"),
 			`packages:
   - .
 catalog:
   '@tiptap/core': 3.30.0
+overrides:
+  lodash-es: ^4.18.1
+allowBuilds:
+  protobufjs: true
+  better-sqlite3: false
 `,
 		);
 		writeFile(
@@ -299,9 +340,15 @@ catalog:
 @import "../node_modules/@excalidraw/excalidraw/dist/prod/index.css";
 `,
 		);
-		writeFile(path.join(repoRoot, "app", "tailwind-theme.css"), ":root { --fixture-color: #fff; }\n");
+		writeFile(path.join(repoRoot, "app", "tailwind-theme.css"),
+			`@import "./tailwind-theme-agent-loading.css";
+:root { --fixture-color: #fff; }
+`);
+		writeFile(path.join(repoRoot, "app", "tailwind-theme-agent-loading.css"),
+			".agent-loading { opacity: 1; }\n");
 		writeFile(path.join(repoRoot, "app", "dash-4-2.css"), "/* dash */\n");
-		writeFile(path.join(repoRoot, "app", "typeset.css"), "/* typeset */\n");
+		writeFile(path.join(repoRoot, "app", "typeset.css"),
+			"code { font-family: \"JetBrains Mono\"; }\n");
 		writeFile(
 			path.join(repoRoot, "components", "projects", "shared", "components", "chat-messages.module.css"),
 			".chat { display: flex; }\n",
@@ -374,6 +421,7 @@ export function WorkItemModalProvider({
 						"lib/studio-agent-data-flow.js",
 						"app/contexts/context-creation-mode.tsx",
 						"app/contexts/context-work-item-modal.tsx",
+						"app/contexts/context-required-inline.tsx",
 					],
 					assets: [],
 					cssImports: [
@@ -389,6 +437,7 @@ export function WorkItemModalProvider({
 					contextFiles: [
 						"app/contexts/context-creation-mode.tsx",
 						"app/contexts/context-work-item-modal.tsx",
+						"app/contexts/context-required-inline.tsx",
 					],
 				},
 				null,
@@ -396,6 +445,8 @@ export function WorkItemModalProvider({
 			),
 		);
 		initGitRepo(repoRoot);
+		writeFile(path.join(repoRoot, "backend", "data", "rovo-app", "threads", "local", "thread.json"),
+			"{\"local\":true}\n");
 		return {
 			targetDir,
 			planPath,
@@ -450,7 +501,13 @@ test("scaffold-target copies local CSS and never strips shadcn", () => {
 		);
 		assert.equal(
 			fs.readFileSync(path.join(fixture.targetDir, "app", "typeset.css"), "utf8"),
-			"/* typeset */\n",
+			"code { font-family: \"JetBrains Mono\"; }\n",
+		);
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, "app", "layout.tsx"), "utf8"),
+			/fonts\.googleapis\.com\/css2/);
+		assert.equal(
+			fs.readFileSync(path.join(fixture.targetDir, "app", "tailwind-theme-agent-loading.css"), "utf8"),
+			".agent-loading { opacity: 1; }\n",
 		);
 		assert.equal(
 			fs.readFileSync(
@@ -489,6 +546,63 @@ test("scaffold-target wraps children-only providers and copies ambient dts", () 
 			fs.readFileSync(path.join(fixture.targetDir, "types", "speech-recognition.d.ts"), "utf8"),
 			"interface SpeechRecognition {}\n",
 		);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+test("backend-backed scaffold preserves source backend and generates proxy/deployment harness", () => {
+	const fixture = createContractFixture();
+	try {
+		execFileSync(process.execPath, [
+			SCAFFOLD_TARGET_PATH,
+			fixture.planPath,
+			"--target",
+			fixture.targetDir,
+			"--backend-backed",
+		], { env: GIT_TEST_ENV, stdio: "pipe" });
+		const targetPackage = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "package.json"), "utf8"));
+		assert.equal(targetPackage.dependencies.express, "^5.2.1");
+		assert.equal(targetPackage.dependencies.cors, "^2.8.5");
+		assert.equal(targetPackage.dependencies["motion-plus"], undefined);
+		assert.equal(targetPackage.dependencies["ansi-to-react"], undefined);
+		assert.equal(targetPackage.scripts.dev, "node scripts/dev-backend-backed.mjs");
+		assert.equal(targetPackage.scripts.start, "node backend/extracted-server.js");
+		assert.equal(targetPackage.packageManager, "pnpm@11.25.0");
+		assert.equal(targetPackage.scripts["build:export"], "node scripts/build-static-export.mjs");
+		assert.equal(targetPackage.scripts["deploy:micros"], "./scripts/dev-deploy-fast.sh");
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, "next.config.ts"), "utf8"), /NEXT_OUTPUT/);
+		const descriptorPath = path.join(fixture.targetDir, "service-descriptor.yml");
+		const descriptor = fs.readFileSync(descriptorPath, "utf8");
+		assert.match(descriptor, /ALLOWED_ORIGINS: \(\(ssm:\/YOUR-SERVICE-NAME\/ALLOWED_ORIGINS\)\)/);
+		fs.writeFileSync(descriptorPath, descriptor.replaceAll("YOUR-SERVICE-NAME", "example-service"));
+		execFileSync("/bin/bash", ["-c", 'source "$1"; vpk_validate_descriptor_identity example-service "$2"', "validate-generated-descriptor",
+			path.resolve(__dirname, "../../vpk-deploy/scripts/deploy-lib.sh"), descriptorPath], { stdio: "pipe" });
+		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "scripts", "build-static-export.mjs"), "utf8"), "// export wrapper\n");
+		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "pnpm-workspace.yaml"), "utf8"),
+			"overrides:\n  lodash-es: ^4.18.1\nallowBuilds:\n  protobufjs: true\n  better-sqlite3: false\n");
+		assert.equal(fs.existsSync(path.join(fixture.targetDir, "backend", "node_modules")), false);
+		assert.equal(fs.existsSync(path.join(fixture.targetDir, "backend", "data")), false);
+		assert.equal(fs.existsSync(path.join(fixture.targetDir, "lib", "untraced-source.ts")), false);
+		const layout = fs.readFileSync(path.join(fixture.targetDir, "app", "layout.tsx"), "utf8");
+		assert.doesNotMatch(layout, /RequiredInlineProvider/);
+		assert.equal(
+			fs.readFileSync(path.join(fixture.targetDir, "backend", "server.js"), "utf8"),
+			fs.readFileSync(path.join(path.dirname(fixture.planPath), "repo", "backend", "server.js"), "utf8"),
+		);
+		const extractedServer = fs.readFileSync(path.join(fixture.targetDir, "backend", "extracted-server.js"), "utf8");
+		assert.match(extractedServer, /registerCrossRouteRedirects\(runtime\.app\)/);
+		assert.match(extractedServer, /registerStaticExportServing\(runtime\.app/);
+		const dev = fs.readFileSync(path.join(fixture.targetDir, "scripts", "dev-backend-backed.mjs"), "utf8");
+		assert.match(dev, /\/api\/health/);
+		assert.match(dev, /proxyUpgrade/);
+		assert.match(dev, /api\/realtime\/ws-url/);
+		assert.doesNotMatch(dev, /\{\{SOURCE_RELATIVE_PATH\}\}/);
+		execFileSync(process.execPath, ["--check", path.join(fixture.targetDir, "scripts", "dev-backend-backed.mjs")]);
+		assert.match(fs.readFileSync(path.join(fixture.targetDir, "backend", "Dockerfile"), "utf8"),
+			/CMD \["node", "backend\/extracted-server\.js"\]/);
+		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "rovo", "config.js"), "utf8"),
+			"module.exports = {};\n");
 	} finally {
 		fixture.cleanup();
 	}

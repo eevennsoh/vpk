@@ -14,6 +14,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 - Validate every change with `pnpm run lint` and `pnpm run typecheck`; UI changes also need visual and accessibility checks.
 - UI feedback and recurring component misuse: assess lint prevention before handoff. Read the **Design-system lint maintenance** section in `.agents/rules/component-architecture.md`; tighten established policy in the narrowest contract and add executable lint cases. Propose uncertain new policy rather than enforcing it globally. Run `pnpm run lint:design-system` and `node --test scripts/eslint-boundary-rules.test.js` when changing those contracts.
 - For browser verification after editing code served by the local Next.js app, load and follow `next-dev-loop`; it owns the `/_next/mcp` plus `agent-browser` runtime cross-check. For browser work that is not verifying a Next.js edit, default to `agent-browser` (`npx agent-browser`) and load its skill first. Keep artifacts under ignored `output/agent-browser/`. If `agent-browser` is unavailable or blocked, use Playwright CLI after loading its skill.
+- Browser entry: resolve the requested component, block, or project's exact route before opening a browser. Use the supplied route or the current route/catalog map, then navigate directly on this worktree's origin (`control-vpk open-target <route>`). Do not start at the bare origin, `localhost:3000`, or a category landing page and browse for the object. Start at home only when the task explicitly verifies catalog navigation or that entry point; confirm the target URL and route marker before debugging.
 - Symphony browser evidence is the exception: use `vpk-symphony` so issue evidence lands under ignored `output/playwright/` per `WORKFLOW.md` and `.agents/docs/symphony.md`.
 
 ## Documentation Index
@@ -23,6 +24,8 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 | When you need...                       | Read                                                        |
 | -------------------------------------- | ----------------------------------------------------------- |
 | UI performance decisions and shared mechanisms | `.agents/docs/playbooks/improve-ui-performance.md`          |
+| Maintained upstream runtime-library adoption | `.agents/docs/playbooks/adopt-upstream-runtime.md`         |
+| Reference-video motion acceptance and replay | `.agents/docs/playbooks/recreate-reference-motion.md`      |
 | Component architecture rules           | `.agents/skills/vpk-tidy/SKILL.md`                          |
 | Design-system lint contracts and maintenance | `eslint.config.mjs`, `.agents/rules/component-architecture.md`, `scripts/eslint-boundary-rules.test.js` |
 | React patterns reference (1000+ lines) | `.agents/skills/vpk-tidy/references/patterns.md`            |

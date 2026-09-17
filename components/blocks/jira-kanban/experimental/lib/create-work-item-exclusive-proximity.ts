@@ -3,8 +3,8 @@ import {
 	// @ts-expect-error Node's strip-types runner requires the explicit .ts extension.
 } from "../../../../../lib/latest-animation-frame.ts";
 
-/** Padding around the resting well that still counts as near. */
-export const CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX = 120;
+/** A small approach margin around the future well, rather than the former 120px reach. */
+export const CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX = 24;
 
 function isWithinHoverArea(
 	pointer: Readonly<ExclusiveProximityPointer>,

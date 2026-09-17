@@ -13,19 +13,23 @@ import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-s
 import { Button } from "@/components/ui/button";
 
 export function AssignedAgentsSessionMenu({
+	addAgentLabel,
 	onAddAgent,
 	onContinueInAgent,
 	onDeleteSession,
 	onMoreMenuOpenChange,
 	onRenameSession,
+	onSelectAgent,
 	onToggleVisibility,
 	rows,
 }: Readonly<{
+	addAgentLabel: string;
 	onAddAgent?: () => void;
 	onContinueInAgent?: (item: AgentSessionItem) => void;
 	onDeleteSession?: (item: AgentSessionItem) => void;
 	onMoreMenuOpenChange?: (open: boolean) => void;
 	onRenameSession?: (item: AgentSessionItem) => void;
+	onSelectAgent: (agent: AgentAssignmentAgent) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	rows: readonly AgentAssignmentAgent[];
 }>) {
@@ -56,6 +60,7 @@ export function AssignedAgentsSessionMenu({
 							onMoreMenuOpenChange={onMoreMenuOpenChange}
 							onRenameSession={onRenameSession}
 							onToggleVisibility={onToggleVisibility}
+							onView={() => onSelectAgent(row)}
 							padding="compact"
 							showLifecycleLabel={false}
 						/>
@@ -73,7 +78,7 @@ export function AssignedAgentsSessionMenu({
 						<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">
 							<AiAgentAddIcon label="" />
 						</span>
-						<span className="text-text-subtle">Assign agent</span>
+						<span className="text-text-subtle">{addAgentLabel}</span>
 					</Button>
 				</div>
 			) : null}

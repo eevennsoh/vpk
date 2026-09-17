@@ -2,7 +2,9 @@
 
 Implemented in a linked worktree on `codex/eu26-performance`.
 Previewed on that worktree's Portless URL at `/jira-team-eu26`.
-The persistent main checkout and its Portless route were not updated or shipped.
+At the initial measurement stage, the persistent main checkout and its Portless route had not been updated or shipped.
+
+**Delivery update — 13 September 2026 (Australia/Sydney):** [PR #1730](https://github.com/eevennsoh/vpk/pull/1730) merged as `e1118f72f`, delivering the implementation and shared adoption described below. The original development measurements and their limitations remain historical evidence; this note does not represent a new benchmark.
 
 ## Measured result
 
@@ -41,7 +43,7 @@ Evidence and screenshots are under ignored `output/agent-browser/eu26-performanc
 
 ## Remaining measurement work
 
-Production static-export bundle/route budgets, representative slower-device runs, large 100/500-item fixtures, long-running heap measurements, and field INP are still future measurement work. No new production byte threshold was invented from development assets. No deployment, PR or push was performed. Existing unrelated accessibility findings were not expanded into this performance patch.
+Production static-export bundle/route budgets, representative slower-device runs, large 100/500-item fixtures, long-running heap measurements, and field INP are still future measurement work. No new production byte threshold was invented from development assets. The planning and measurement stages did not deploy or push; the later PR merge is recorded in the delivery update above. Existing unrelated accessibility findings were not expanded into this performance patch.
 
 ## Shared adoption — 13 September 2026
 
@@ -49,6 +51,6 @@ The shared Jira List rendering, experimental Kanban pointer handling, optional P
 
 A syntax-aware inventory found 20 additional `useRovoChat` consumers that read only fields already supported by the narrow controls API. They now use `useRovoChatControls`, exposed through `@/app/contexts`. This covers shared top navigation, Agent List, Confluence header/floating controls, original Golden Journeys playback/overlay, Rovo Button, and supported work-item/floating-session variants. Message readers retain the full context. No equivalent latency improvement is claimed for these other routes without measuring them individually.
 
-The approach is now recorded in the repository's `AGENTS.md`, `.agents/rules/component-architecture.md`, and `.agents/docs/playbooks/improve-ui-performance.md`. Existing global Codex and Claude instructions (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`) were updated with framework-independent performance principles. Existing preferences were preserved. The global files are outside this repository and apply to future sessions; the repository changes still need the normal shipping workflow to reach persistent main.
+The approach is now recorded in the repository's `AGENTS.md`, `.agents/rules/component-architecture.md`, and `.agents/docs/playbooks/improve-ui-performance.md`. Existing global Codex and Claude instructions (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`) were updated with framework-independent performance principles. Existing preferences were preserved. The global files are outside this repository and apply to future sessions; the repository changes were subsequently delivered through PR #1730.
 
 Shared adoption validation: 6,264 unit tests passed. Browser regressions passed for Jira and Confluence sidebar open/close/draft preservation and original Golden Journeys floating chat open/close. The first browser attempt included cold compilation in its overall timeout and incorrectly assumed the original gallery opened on a Jira navigation screen; the corrected tests use its actual Kanban gallery entry and retain the original behavior assertions. Typecheck, lint (existing warnings), documented command references, and agent-file validation passed.

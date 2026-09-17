@@ -21,7 +21,6 @@ import {
 } from "../hooks/use-created-card-arrival";
 import {
 	parseBoardCardGapZones,
-	parseBoardEmptyColumnGapZone,
 	toChinFreeBoardCardBounds,
 	type BoardAgentSessionDropBounds,
 	type BoardCardInsertion,
@@ -32,6 +31,8 @@ import {
 } from "../lib/board-card-insertion";
 import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
 import { BoardEmptyColumnInsertionSlot } from "./board-card-insertion-line";
+import { BoardColumnAddButton } from "./create-work-item-drop-zone";
+import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
 
 function toDropBounds(rect: DOMRectReadOnly): BoardAgentSessionDropBounds {
 	return {
@@ -44,15 +45,6 @@ function toDropBounds(rect: DOMRectReadOnly): BoardAgentSessionDropBounds {
 
 function collectHoverGapZones(cardList: HTMLElement) {
 	const clip = toDropBounds(cardList.getBoundingClientRect());
-	const emptySlot = cardList.querySelector<HTMLElement>(
-		'[data-board-agent-session-drop-zone="card-gap"]',
-	);
-	const emptyZones = emptySlot
-		? parseBoardEmptyColumnGapZone(
-			emptySlot.dataset.boardColumnTitle,
-			toDropBounds(emptySlot.getBoundingClientRect()),
-		)
-		: [];
 	const cardZones = Array.from(
 		cardList.querySelectorAll<HTMLElement>('[data-board-agent-session-drop-zone="issue"]'),
 	).flatMap((node) => {
@@ -70,7 +62,7 @@ function collectHoverGapZones(cardList: HTMLElement) {
 		);
 	});
 
-	return [...emptyZones, ...cardZones].flatMap((zone) => {
+	return cardZones.flatMap((zone) => {
 		const top = Math.max(zone.bounds.top, clip.top);
 		const bottom = Math.min(zone.bounds.bottom, clip.bottom);
 		return bottom > top ? [{ ...zone, bounds: { ...zone.bounds, bottom, top } }] : [];
@@ -94,6 +86,8 @@ export function BoardColumnCardList({
 	createdCardArrival,
 	insertionArmed,
 	isEmpty,
+	isSessionDragging = false,
+	onCreateWorkItem,
 }: Readonly<{
 	children: ReactNode;
 	chrome: KanbanColumnChromeStyles;
@@ -102,6 +96,8 @@ export function BoardColumnCardList({
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
 	insertionArmed: boolean;
 	isEmpty: boolean;
+	isSessionDragging?: boolean;
+	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
 }>) {
 	const { ref, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const [hoverInsertion, setHoverInsertion] = useState<BoardCardInsertion | null>(null);
@@ -164,7 +160,7 @@ export function BoardColumnCardList({
 				data-created-card-arrival-id={createdCardArrival?.id}
 				data-jira-kanban-card-list=""
 				className={cn(
-					"min-w-0 overflow-y-auto has-[[data-session-dragging]]:overflow-visible",
+					"min-h-0 min-w-0 overflow-y-auto overscroll-y-contain",
 					// The mask fades the top and bottom 3rem, which would wash out a line
 					// drawn near a scrolled edge. Stand down the mask only — dropping
 					// `overflow-y-auto` would make the browser discard the scroll offset.
@@ -173,10 +169,8 @@ export function BoardColumnCardList({
 				onPointerLeave={handlePointerLeave}
 				onPointerMove={handlePointerMove}
 				style={{
-					// An empty column puts its create action first, so the always-visible
-					// well reads as the column's content rather than sitting under a void.
-					order: isEmpty ? 1 : 0,
 					flexGrow: 1,
+					flexBasis: 0,
 					display: "flex",
 					flexDirection: "column",
 					gap: token("space.100"),
@@ -187,10 +181,16 @@ export function BoardColumnCardList({
 					"--board-card-gap": chrome.cardList.gap ?? token("space.100"),
 				} as CSSProperties}
 			>
-				{isEmpty ? (
-					<BoardEmptyColumnInsertionSlot armed={insertionArmed} columnTitle={columnTitle} />
-				) : null}
 				{children}
+				<div
+					aria-hidden={isSessionDragging || undefined}
+					inert={isSessionDragging || undefined}
+					className={cn("shrink-0 justify-center py-1", isSessionDragging ? "hidden" : "flex")}
+					data-board-work-item-create=""
+				>
+					<BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} title={columnTitle} />
+				</div>
+				{isEmpty ? <BoardEmptyColumnInsertionSlot columnTitle={columnTitle} /> : null}
 			</div>
 		</BoardCardHoverInsertionContext>
 	);

@@ -716,7 +716,7 @@ test("the v3 Agents details row opens the assigned menu first and swaps to the p
 	assert.doesNotMatch(detailsEditorsSource, /launchSession|onOpenAgentChat/u);
 });
 
-test("the v3 assigned-agents menu lists live agent state and ends in an Assign agent row", () => {
+test("the v3 assigned-agents menu lists live agent state and ends in a configurable agent action", () => {
 	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
 	const menuSource = fs.readFileSync(
 		path.join(process.cwd(), "components/blocks/agent-assignment/components/assigned-agents-menu.tsx"),
@@ -737,7 +737,7 @@ test("the v3 assigned-agents menu lists live agent state and ends in an Assign a
 	);
 	assert.match(
 		menuSource,
-		/<Button[\s\S]*onClick=\{onAddAgent\}[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*Assign agent/u,
+		/<Button[\s\S]*onClick=\{onAddAgent\}[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*\{addAgentLabel\}/u,
 	);
 	assert.doesNotMatch(menuSource, /window\.addEventListener|keepMounted|AnimatePresence/u);
 });

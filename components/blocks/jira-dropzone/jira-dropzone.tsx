@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState, type ReactElement, type RefObject } from "react";
-import { arc, motion, useMotionValueEvent, useReducedMotion } from "motion/react";
+import { AnimatePresence, arc, motion, useIsPresent, useMotionValueEvent, useReducedMotion } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
 
 import { Icon } from "@/components/ui/icon";
@@ -17,7 +17,9 @@ import {
 	JIRA_DROPZONE_HOVER_AREA_PX,
 	JIRA_DROPZONE_WELL_ENTER,
 	JIRA_DROPZONE_WELL_ENTER_REDUCED,
-	JIRA_DROPZONE_WELL_ENTER_SCALE,
+	JIRA_DROPZONE_WELL_EXIT,
+	JIRA_DROPZONE_WELL_HIDDEN,
+	JIRA_DROPZONE_WELL_VISIBLE,
 	resolveJiraDropzoneArcOptions,
 	resolveJiraDropzoneLandingPoint,
 } from "./lib/jira-dropzone-motion";
@@ -36,7 +38,6 @@ import type {
 	SessionFlight,
 	ViewportPoint,
 } from "./lib/jira-dropzone-types";
-import { useJiraDropzoneCollapseHold } from "./use-jira-dropzone-collapse-hold";
 
 export const JIRA_DROPZONE_WELL_CHROME_CLASS = "rounded-lg border border-dashed";
 
@@ -44,6 +45,7 @@ export function JiraDropzone({
 	ants = true,
 	drag,
 	exclusiveWinner = true,
+	hoverArea = JIRA_DROPZONE_HOVER_AREA_PX,
 	label,
 	measuredRef,
 	openMinHeight,
@@ -54,6 +56,8 @@ export function JiraDropzone({
 	ants?: boolean;
 	drag: JiraDropzoneDragState;
 	exclusiveWinner?: boolean;
+	/** Padding beyond the detection footprint; board hosts use a small approach margin. */
+	hoverArea?: number;
 	label: string;
 	measuredRef?: RefObject<HTMLDivElement | null>;
 	/** Available space used only in proximity or while receiving a drop. */
@@ -67,7 +71,7 @@ export function JiraDropzone({
 	const targetRef = measuredRef ?? localRef;
 	const { channel, onLanded, profile, receiving } = useJiraDropzoneChannel(title);
 	const magnet = useMagneticProximity(proximityRef ?? targetRef, {
-		hoverArea: JIRA_DROPZONE_HOVER_AREA_PX,
+		hoverArea,
 	});
 	const [rawProximity, setRawProximity] = useState<MagneticPointerRelation>("outside");
 	useMotionValueEvent(magnet.proximity, "change", setRawProximity);
@@ -77,8 +81,7 @@ export function JiraDropzone({
 		proximate: proximity !== "outside",
 		receiving,
 	});
-	const holdingOpen = useJiraDropzoneCollapseHold(phase);
-	const surface = resolveJiraDropzoneSurface(phase, holdingOpen);
+	const surface = resolveJiraDropzoneSurface(phase, false);
 	const copy = resolveJiraDropzoneCopy(phase);
 	const flyPath = useMemo(
 		() => arc(resolveJiraDropzoneArcOptions(profile)),
@@ -88,14 +91,6 @@ export function JiraDropzone({
 		const rect = targetRef.current?.getBoundingClientRect();
 		return rect ? resolveJiraDropzoneLandingPoint(rect) : null;
 	}, [targetRef]);
-
-	if (surface === "resting") {
-		return (
-			<div className="w-full" ref={targetRef}>
-				{renderResting()}
-			</div>
-		);
-	}
 
 	const expanded = receiving || proximity !== "outside";
 	const selected = phase === "armed" || phase === "receiving";
@@ -112,30 +107,40 @@ export function JiraDropzone({
 		: null;
 
 	return (
-		<JiraDropzoneOpenSurface
-			ants={ants}
-			bounce={bounce}
-			bouncePlayback={bouncePlayback}
-			channel={channel}
-			copy={copy}
-			drop={drop}
-			expanded={expanded}
-			exclusiveWinner={exclusiveWinner}
-			flyPath={flyPath}
-			label={label}
-			magnet={magnet}
-			onLanded={onLanded}
-			openMinHeight={openMinHeight}
-			phase={phase}
-			pinMagnet={pinMagnet}
-			profile={profile}
-			proximity={proximity}
-			receiving={receiving}
-			resolveLandingPoint={resolveLandingPoint}
-			selected={selected}
-			targetRef={targetRef}
-			title={title}
-		/>
+		<div className="grid w-full items-end" ref={targetRef}>
+			<AnimatePresence initial={false}>
+				{surface === "open" ? (
+					<JiraDropzoneOpenSurface
+						key="open"
+						ants={ants}
+						bounce={bounce}
+						bouncePlayback={bouncePlayback}
+						channel={channel}
+						copy={copy}
+						drop={drop}
+						expanded={expanded}
+						exclusiveWinner={exclusiveWinner}
+						flyPath={flyPath}
+						label={label}
+						magnet={magnet}
+						onLanded={onLanded}
+						openMinHeight={openMinHeight}
+						phase={phase}
+						pinMagnet={pinMagnet}
+						profile={profile}
+						proximity={proximity}
+						receiving={receiving}
+						resolveLandingPoint={resolveLandingPoint}
+						selected={selected}
+						title={title}
+					/>
+				) : (
+					<div className="col-start-1 row-start-1 w-full" key="resting">
+						{renderResting()}
+					</div>
+				)}
+			</AnimatePresence>
+		</div>
 	);
 }
 
@@ -160,7 +165,6 @@ type JiraDropzoneOpenSurfaceProps = Readonly<{
 	receiving: boolean;
 	resolveLandingPoint: () => ViewportPoint | null;
 	selected: boolean;
-	targetRef: RefObject<HTMLDivElement | null>;
 	title: string;
 }>;
 
@@ -185,7 +189,6 @@ function JiraDropzoneOpenSurface({
 	receiving,
 	resolveLandingPoint,
 	selected,
-	targetRef,
 	title,
 }: JiraDropzoneOpenSurfaceProps): ReactElement {
 	const impacts = channel?.impacts ?? 0;
@@ -209,7 +212,6 @@ function JiraDropzoneOpenSurface({
 				proximity={proximity}
 				receiving={receiving}
 				selected={selected}
-				targetRef={targetRef}
 				title={title}
 			/>
 			{channel ? channel.flights.map((flight) => (
@@ -242,7 +244,6 @@ type JiraDropzoneWellProps = Pick<
 	| "proximity"
 	| "receiving"
 	| "selected"
-	| "targetRef"
 	| "title"
 > & {
 	bounce: FlightProfile["impact"];
@@ -266,61 +267,72 @@ function JiraDropzoneWell({
 	proximity,
 	receiving,
 	selected,
-	targetRef,
 	title,
 }: JiraDropzoneWellProps): ReactElement {
 	const shouldReduceMotion = useReducedMotion();
+	const isPresent = useIsPresent();
+	const hidden = !isPresent || undefined;
+	const dropTargetAttributes = isPresent ? {
+		"data-armed": selected || undefined,
+		"data-board-agent-session-create-work-item-drop-zone": title,
+		"data-board-agent-session-drop-zone": "create",
+	} : {};
 	const marching = ants && !shouldReduceMotion;
-	// Exit is the existing collapse-hold height shrink; this pop-in only runs when
-	// the open well mounts at drag start.
 	return (
 		<motion.div
-			animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
-			className="w-full will-change-[opacity,transform]"
+			animate={JIRA_DROPZONE_WELL_VISIBLE}
+			aria-hidden={hidden}
+			className={cn("col-start-1 row-start-1 w-full", !isPresent ? "pointer-events-none" : null)}
+			data-jira-dropzone-column={title}
+			data-jira-dropzone-presence={isPresent ? "present" : "exiting"}
+			data-jira-dropzone-well=""
+			exit={{
+				...(shouldReduceMotion ? { opacity: 0, transform: "translateY(0px)" } : JIRA_DROPZONE_WELL_HIDDEN),
+				transition: shouldReduceMotion ? JIRA_DROPZONE_WELL_ENTER_REDUCED : JIRA_DROPZONE_WELL_EXIT,
+			}}
 			initial={shouldReduceMotion
 				? false
-				: { opacity: 0, scale: JIRA_DROPZONE_WELL_ENTER_SCALE }}
-			style={{
-				x: pinMagnet ? 0 : magnet.x,
-				y: pinMagnet ? 0 : magnet.y,
-			}}
+				: JIRA_DROPZONE_WELL_HIDDEN}
+			inert={hidden}
 			transition={shouldReduceMotion
 				? JIRA_DROPZONE_WELL_ENTER_REDUCED
 				: JIRA_DROPZONE_WELL_ENTER}
 		>
-			<div
-				aria-label={`${label} in ${title}${selected ? ", selected drop target" : ""}`}
-				className="relative w-full overflow-visible"
-				data-armed={selected || undefined}
-				data-board-agent-session-column-title={title}
-				data-board-agent-session-create-work-item-drop-zone={title}
-				data-board-agent-session-drop-zone="create"
-				data-exclusive-winner={exclusiveWinner || undefined}
-				data-jira-dropzone-ants={ants ? "on" : "off"}
-				data-jira-dropzone-collapsing={phase === "resting" || undefined}
-				data-jira-dropzone-copy={copy}
-				data-jira-dropzone-bounce={bouncePlayback}
-				data-jira-dropzone-drop={drop}
-				data-jira-dropzone-impacts={String(impacts)}
-				data-proximity={proximity}
-				data-receiving={receiving || undefined}
-				ref={targetRef}
-				role="img"
-			>
-				<JiraDropzoneWellChrome
-					bounce={bounce}
-					copy={copy}
-					expanded={expanded}
-					impacts={impacts}
-					label={label}
-					magnet={magnet}
-					openMinHeight={openMinHeight}
-					marching={marching}
-					phase={phase}
-					pinMagnet={pinMagnet}
-					selected={selected}
-				/>
-			</div>
+			<motion.div className="w-full will-change-transform" style={{
+				x: pinMagnet ? 0 : magnet.x,
+				y: pinMagnet ? 0 : magnet.y,
+			}}>
+				<div
+					aria-label={`${label} in ${title}${selected ? ", selected drop target" : ""}`}
+					className="relative w-full overflow-visible"
+					{...dropTargetAttributes}
+					data-board-agent-session-column-title={title}
+					data-exclusive-winner={exclusiveWinner || undefined}
+					data-jira-dropzone-ants={ants ? "on" : "off"}
+					data-jira-dropzone-collapsing={phase === "resting" || undefined}
+					data-jira-dropzone-copy={copy}
+					data-jira-dropzone-bounce={bouncePlayback}
+					data-jira-dropzone-drop={drop}
+					data-jira-dropzone-impacts={String(impacts)}
+					data-proximity={proximity}
+					data-receiving={receiving || undefined}
+					role="img"
+				>
+					<JiraDropzoneWellChrome
+						bounce={bounce}
+						copy={copy}
+						expanded={expanded}
+						impacts={impacts}
+						label={label}
+						magnet={magnet}
+						openMinHeight={openMinHeight}
+						marching={marching}
+						phase={phase}
+						pinMagnet={pinMagnet}
+						selected={selected}
+					/>
+				</div>
+			</motion.div>
 		</motion.div>
 	);
 }
@@ -358,11 +370,11 @@ function JiraDropzoneWellChrome({
 		<motion.div
 			animate={{ x: 0, y: 0 }}
 			className={cn(
-				"flex w-full select-none items-center justify-center px-3 text-center will-change-transform",
-				expanded ? "h-16 text-sm leading-5" : "h-6 text-xs leading-4",
-				phase === "resting" ? "h-6 text-xs leading-4" : null,
+				"flex w-full select-none items-center justify-center px-3 text-center font-medium will-change-transform",
+				expanded ? "h-16 text-sm leading-5" : "h-8 text-sm leading-5",
+				phase === "resting" ? "h-8 text-sm leading-5" : null,
 				JIRA_DROPZONE_WELL_CHROME_CLASS,
-				// Colour is the only transitional feedback here. The h-6 -> h-16
+				// Colour is the only transitional feedback here. The h-8 -> h-16
 				// swap lands instantly: `height` is a layout property, and
 				// `.agents/rules/motion-decisions.md` limits transitions to fade,
 				// slide, scale, and colour. The spatial cue is already carried by

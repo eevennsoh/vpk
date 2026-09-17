@@ -76,15 +76,16 @@ export function boardHasWorkItem(
 /**
  * Appends a card built from what the viewer typed, and reports its new key.
  *
- * The first column is the landing spot because the menu, unlike a drag, names no
- * column — new work starts at the top of the board's flow.
+ * The session menu defaults to the first column; column create controls name
+ * their own destination.
  */
 export function appendBoardCardFromDraft(
 	columns: readonly JiraKanbanColumnData[],
 	draft: AgentSessionWorkItemDraft,
+	columnTitle?: string,
 ): Readonly<{ columns: readonly JiraKanbanColumnData[]; issueKey: string | undefined }> {
-	const [firstColumn] = columns;
-	if (firstColumn === undefined) {
+	const targetColumn = columnTitle === undefined ? columns[0] : columns.find((column) => column.title === columnTitle);
+	if (targetColumn === undefined) {
 		return { columns, issueKey: undefined };
 	}
 
@@ -100,7 +101,7 @@ export function appendBoardCardFromDraft(
 
 	return {
 		columns: columns.map((column) => (
-			column === firstColumn
+			column === targetColumn
 				? { ...column, cards: [...column.cards, card], count: column.count + 1 }
 				: column
 		)),

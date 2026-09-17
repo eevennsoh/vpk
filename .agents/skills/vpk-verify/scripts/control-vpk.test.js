@@ -23,8 +23,85 @@ const {
 	parseLaunchReadyTimeoutMs,
 	resolveAgentBrowserBin,
 	runAgentBrowser,
+	targetBrowserArguments,
 	waitForDoctorReady,
 } = require(CONTROL_VPK);
+
+const TARGET_REPO_MAP = {
+	appPages: { pages: [{ routePath: "/jira-team-eu26" }] },
+	components: {
+		categories: [{
+			category: "visual",
+			entries: [{ category: "visual", slug: "peel" }],
+		}],
+	},
+};
+
+test("object proof first opens the exact mapped project or component on this worktree", () => {
+	for (const route of ["/jira-team-eu26", "/components/visual/peel?example=card#drag"]) {
+		const calls = [];
+		const args = targetBrowserArguments(route, {
+			headed: true,
+			origin: "https://fixture.localhost",
+			repoMap: TARGET_REPO_MAP,
+		});
+		const outcome = executeBrowserCommand(args, {
+			runCommand: (forwarded) => {
+				calls.push(forwarded);
+				return { status: 0, stdout: "Target page", stderr: "" };
+			},
+			session: "vpk-verify-target",
+		});
+		assert.equal(outcome.classification, null);
+		assert.deepEqual(calls, [[
+			"--session", "vpk-verify-target", "open", "--headed", `https://fixture.localhost${route}`,
+		]]);
+	}
+});
+
+test("object entry rejects root, category detours, guessed routes and external targets before browser launch", () => {
+	for (const route of [
+		"/", "/visual", "/missing-project", "/components/visual/missing",
+		"https://other.localhost/jira-team-eu26", "//other.localhost/jira-team-eu26",
+		"/visual/../jira-team-eu26", "/%2e%2e/jira-team-eu26",
+	]) {
+		let invoked = false;
+		assert.throws(() => {
+			const args = targetBrowserArguments(route, {
+				origin: "https://fixture.localhost",
+				repoMap: TARGET_REPO_MAP,
+			});
+			executeBrowserCommand(args, {
+				runCommand: () => { invoked = true; },
+				session: "vpk-verify-target",
+			});
+		}, /Object target|Unknown target|Target route/iu);
+		assert.equal(invoked, false, route);
+	}
+});
+
+test("open-target CLI rejects a root detour before resolving or starting a browser session", () => {
+	const result = spawnSync(process.execPath, [CONTROL_VPK, "open-target", "/"], { encoding: "utf8" });
+	assert.equal(result.status, 1);
+	assert.match(result.stderr, /Object target must name a component or project/iu);
+	assert.doesNotMatch(result.stderr, /agent-browser|session id failed/iu);
+});
+
+test("object entry requires a discovered origin and keeps explicit catalog opens available", () => {
+	assert.throws(() => targetBrowserArguments("/jira-team-eu26", {
+		origin: "",
+		repoMap: TARGET_REPO_MAP,
+	}), /origin/iu);
+	const calls = [];
+	executeBrowserCommand(["open", "https://fixture.localhost/"], {
+		runCommand: (args) => {
+			calls.push(args);
+			return { status: 0, stdout: "Catalog", stderr: "" };
+		},
+		session: "vpk-verify-catalog",
+	});
+	assert.deepEqual(calls, [["--session", "vpk-verify-catalog", "open", "https://fixture.localhost/"]]);
+});
 
 test("health and browser commands bypass proxies for localhost origins", () => {
 	const env = {

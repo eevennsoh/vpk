@@ -29,7 +29,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(source, /onToggleVisibility=\{onAssignedAgentIdsChange/u);
 	assert.match(source, /variant === "default"[\s\S]*view === "assigned"[\s\S]*reason === "focus-out"/u);
 	assert.match(source, /<AgentAssignmentDefaultField[\s\S]*?assignedAgents=\{assignedAgents\}[\s\S]*?\/>/u);
-	assert.match(source, /aria-label=\{shown\.length === 0 \? "Assign agent" : triggerLabel\}/u);
+	assert.match(source, /aria-label=\{shown\.length === 0 \? addAgentLabel : triggerLabel\}/u);
 
 	assert.match(field, /<JiraIssueAgentActivityRows/u);
 	assert.match(field, /showAssignmentFlyout=\{false\}/u);
@@ -51,7 +51,8 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(sessionMenu, /padding="compact"/u);
 	assert.doesNotMatch(sessionMenu, /showMoreMenu=\{false\}/u);
 	assert.match(sessionMenu, /onContinueInAgent=\{onContinueInAgent\}/u);
-	assert.doesNotMatch(sessionMenu, /onView=/u);
+	assert.match(sessionMenu, /onView=\{\(\) => onSelectAgent\(row\)\}/u);
+	assert.match(source, /<AssignedAgentsSessionMenu[\s\S]*onSelectAgent=\{handleAssignedAgentSelect\}/u);
 	assert.match(sessionMenu, /onDeleteSession=\{onDeleteSession\}/u);
 	assert.match(sessionMenu, /onRenameSession=\{onRenameSession\}/u);
 	assert.match(sessionMenu, /onToggleVisibility=\{onToggleVisibility\}/u);
@@ -90,7 +91,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	);
 	assert.match(sessionMenu, /toAssignmentSessionItem\(row\)/u);
 	assert.doesNotMatch(sessionMenu, /density="short"/u);
-	assert.match(sessionMenu, /Assign agent/u);
+	assert.match(sessionMenu, /\{addAgentLabel\}/u);
 	assert.match(
 		sessionMenu,
 		/className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1"/u,

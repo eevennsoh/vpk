@@ -30,6 +30,7 @@ test("security middleware preserves CSP and cross-origin options", () => {
 		connectSrc: [
 			"'self'",
 			"https://ai-gateway.us-east-1.staging.atl-paas.net",
+			"https://ds-cdn.prod-east.frontend.public.atl-paas.net",
 			"wss:",
 			"ws:",
 		],
@@ -39,12 +40,14 @@ test("security middleware preserves CSP and cross-origin options", () => {
 			"'self'",
 			"'unsafe-inline'",
 			"https://fonts.googleapis.com",
+			"https://ds-cdn.prod-east.frontend.public.atl-paas.net",
 		],
 		fontSrc: [
 			"'self'",
 			"data:",
 			"https://fonts.gstatic.com",
 			"https://*.atlassian.com",
+			"https://ds-cdn.prod-east.frontend.public.atl-paas.net",
 		],
 		workerSrc: ["'self'", "blob:"],
 		frameSrc: ["'self'", "https:"],

@@ -15,7 +15,7 @@ import { isCodingAgentListItem, isLocalAgentListItem } from "@/components/blocks
 import { AGENT_SESSION_ITEMS, AgentSession } from "@/components/blocks/agent-session";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import {
 	CardGlowSurfaceContext,
 	useCardGlowProximityPlane,
@@ -371,7 +371,7 @@ export function AgentSessionColumn({
 	collapsedExpandLeadingHitSlopPx = 0,
 	count,
 	defaultCollapsed = false,
-	emptyLabel = "No sessions to unlink",
+	emptyLabel = "No unlinked sessions",
 	expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,
 	glowBloom = true,
 	glowReach = true,
@@ -819,11 +819,18 @@ export function AgentSessionColumn({
 					hasActiveFilters ? (
 						<Empty width="narrow">
 							<EmptyHeader>
-								<EmptyTitle headingSize="xsmall">No matching sessions</EmptyTitle>
+								<EmptyTitle headingSize="xsmall" aria-level={2}>No matching sessions</EmptyTitle>
 							</EmptyHeader>
 						</Empty>
 					) : (
-						<p className="text-xs text-text-subtlest">{emptyLabel}</p>
+						<Empty width="narrow" className="w-full px-6">
+							<EmptyHeader>
+								<EmptyTitle headingSize="xsmall" aria-level={2}>{emptyLabel}</EmptyTitle>
+								<EmptyDescription>
+									Sessions without a linked work item will appear here.
+								</EmptyDescription>
+							</EmptyHeader>
+						</Empty>
 					)
 				) : (
 					<div

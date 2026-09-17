@@ -40,6 +40,7 @@ export type JiraIssueAgentAssignment = Partial<
 	Pick<
 		AgentAssignmentProps,
 		| "agents"
+		| "addAgentLabel"
 		| "assignedAgents"
 		| "defaultPinnedAgentIds"
 		| "onAgentAssign"
@@ -373,6 +374,7 @@ export function JiraIssueAgentAssignmentHandle({
 	return (
 		<div className="flex h-full min-w-0 flex-1 items-center">
 			<AgentAssignment
+				addAgentLabel={assignment?.addAgentLabel}
 				agents={agents}
 				assignedAgents={assignedAgents}
 				defaultPinnedAgentIds={assignment?.defaultPinnedAgentIds}

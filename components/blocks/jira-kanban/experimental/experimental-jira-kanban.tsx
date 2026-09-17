@@ -7,7 +7,7 @@ import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode }
 import { SessionColumnSlot, SessionColumnDropMarker } from "./components/session-column-placement";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
-import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { AgentSessionItem, AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
 import { resolveAgentSessionWorkItemKey } from "@/components/blocks/agent-session/agent-session-work-item";
 import {
 	type JiraIssueAgentActivityLayout,
@@ -88,6 +88,7 @@ import {
  * shared so both variants remain interchangeable inside an owning surface.
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
+	addAgentLabel?: string;
 	/** Issue-only previews, grouped workflow targets and ordered drops. */
 	issueDragTransitions?: boolean;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
@@ -96,11 +97,12 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	/** Called once after the final card in the current arrival finishes entering. */
 	onCreatedCardArrivalComplete?: (arrivalId: number) => void;
 	/**
-	 * Replaces each status column's resting create button with a visible drop
-	 * target while an agent session is being dragged. The owning route supplies
-	 * the copy so this shared board stays variation-agnostic.
+	 * Reveals a separate bottom drop target while an agent session is dragged.
+	 * The owning route supplies the copy.
 	 */
 	createWorkItemDropZoneLabel?: string;
+	/** Creates a named work item without attaching or capturing an agent session. */
+	onCreateWorkItem?: (columnTitle: string, draft: AgentSessionWorkItemDraft) => void;
 	/**
 	 * Trailing scroll inset in px, added to the scrollable content rather than to
 	 * the scrollport.
@@ -322,6 +324,7 @@ function BoardColumnShell({
 
 function ExperimentalJiraKanbanView({
 	activeCardCode,
+	addAgentLabel,
 	agentActivityLayout = "merged",
 	agentSessionColumn,
 	agents,
@@ -358,6 +361,7 @@ function ExperimentalJiraKanbanView({
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
 	onCreateAgent,
+	onCreateWorkItem,
 	onCreatedCardArrivalComplete,
 	onCollapsedColumnsChange,
 	onScrollUnderlapChange,
@@ -686,6 +690,7 @@ function ExperimentalJiraKanbanView({
 								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
+								onCreateWorkItem={onCreateWorkItem}
 								onToggleAgent={
 									onToggleColumnAgent
 										? (agentId) => onToggleColumnAgent(column.title, agentId)
@@ -760,7 +765,8 @@ function ExperimentalJiraKanbanView({
 												onArrivalComplete={handleCreatedCardArrivalComplete}
 												shouldAnimateCardMoves={shouldAnimateCardMoves}
 											>
-												<ExperimentalJiraKanbanCard
+								<ExperimentalJiraKanbanCard
+									addAgentLabel={addAgentLabel}
 												active={isActive}
 													agents={agents}
 													agentActivityLayout={agentActivityLayout}

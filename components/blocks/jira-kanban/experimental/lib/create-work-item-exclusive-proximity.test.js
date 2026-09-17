@@ -19,8 +19,11 @@ const RIGHT = {
 	rect: { bottom: 624, left: 376, right: 636, top: 600 },
 };
 
-test("create-well hover pad stays 120px so adjacent columns can overlap", () => {
-	assert.equal(CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX, 120);
+test("board create targets retain a small approach halo without the former long reach", () => {
+	assert.equal(CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX, 24);
+	assert.equal(resolveExclusiveProximityWinner({ x: 60, y: 612 }, [LEFT, RIGHT]), null);
+	assert.equal(resolveExclusiveProximityWinner({ x: 200, y: 503 }, [LEFT, RIGHT]), null);
+	assert.equal(resolveExclusiveProximityWinner({ x: 200, y: 580 }, [LEFT, RIGHT]), "To do");
 });
 
 test("distance to a rect is zero inside and Euclidean to the nearest edge outside", () => {
@@ -29,25 +32,25 @@ test("distance to a rect is zero inside and Euclidean to the nearest edge outsid
 	assert.equal(distanceFromPointToRect({ x: 368, y: 612 }, LEFT.rect), 8);
 });
 
-test("a pointer near only one well selects that well", () => {
+test("a pointer inside only one well selects that well", () => {
 	assert.equal(
-		resolveExclusiveProximityWinner({ x: 200, y: 500 }, [LEFT, RIGHT]),
+		resolveExclusiveProximityWinner({ x: 200, y: 612 }, [LEFT, RIGHT]),
 		"To do",
 	);
 	assert.equal(
-		resolveExclusiveProximityWinner({ x: 500, y: 500 }, [LEFT, RIGHT]),
+		resolveExclusiveProximityWinner({ x: 500, y: 612 }, [LEFT, RIGHT]),
 		"In progress",
 	);
 });
 
-test("exclusive candidates match the shared magnetic outside/near/target halo", () => {
-	const pointer = { x: 200, y: 500 };
-	assert.equal(resolveMagneticPointerRelation(pointer, LEFT.rect, 120), "near");
-	assert.equal(resolveMagneticPointerRelation(pointer, RIGHT.rect, 120), "outside");
+test("exclusive candidates match the shared magnetic relation with the small halo", () => {
+	const pointer = { x: 200, y: 580 };
+	assert.equal(resolveMagneticPointerRelation(pointer, LEFT.rect, 24), "near");
+	assert.equal(resolveMagneticPointerRelation(pointer, RIGHT.rect, 24), "outside");
 	assert.equal(resolveExclusiveProximityWinner(pointer, [LEFT, RIGHT]), "To do");
 });
 
-test("a pointer outside every 120px halo selects none", () => {
+test("a pointer outside every footprint selects none", () => {
 	assert.equal(
 		resolveExclusiveProximityWinner({ x: 200, y: 400 }, [LEFT, RIGHT]),
 		null,
@@ -58,11 +61,11 @@ test("overlapping halos pick the well whose actual rect is closer", () => {
 	// Midway between the two resting wells is 8px from each edge; the 120px
 	// pads overlap. Nudge toward the right well so it must win.
 	assert.equal(
-		resolveExclusiveProximityWinner({ x: 370, y: 612 }, [LEFT, RIGHT]),
+		resolveExclusiveProximityWinner({ x: 370, y: 612 }, [LEFT, RIGHT], 120),
 		"In progress",
 	);
 	assert.equal(
-		resolveExclusiveProximityWinner({ x: 366, y: 612 }, [LEFT, RIGHT]),
+		resolveExclusiveProximityWinner({ x: 366, y: 612 }, [LEFT, RIGHT], 120),
 		"To do",
 	);
 });
@@ -71,7 +74,7 @@ test("equal distance prefers the leftmost well, then first registered", () => {
 	const midpoint = { x: 368, y: 612 };
 	assert.equal(distanceFromPointToRect(midpoint, LEFT.rect), 8);
 	assert.equal(distanceFromPointToRect(midpoint, RIGHT.rect), 8);
-	assert.equal(resolveExclusiveProximityWinner(midpoint, [RIGHT, LEFT]), "To do");
+	assert.equal(resolveExclusiveProximityWinner(midpoint, [RIGHT, LEFT], 120), "To do");
 
 	const stacked = {
 		id: "Later",

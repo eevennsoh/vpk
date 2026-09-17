@@ -6,6 +6,7 @@ import { useEffect, useMemo } from "react";
 import type { RefObject } from "react";
 
 import {
+	resolveMagneticAxisOffset,
 	resolveMagneticPointerRelation,
 	type MagneticPointerRelation,
 } from "./magnetic-proximity-model";
@@ -126,8 +127,8 @@ export function useMagneticProximity(
 			if (nextProximity !== "outside" && !shouldReduceMotion) {
 				const dx = event.clientX - (rect.left + rect.width / 2);
 				const dy = event.clientY - (rect.top + rect.height / 2);
-				magnetX.set((dx / (rect.width / 2)) * distance);
-				magnetY.set((dy / (rect.height / 2)) * distance);
+				magnetX.set(resolveMagneticAxisOffset(dx, rect.width / 2, distance));
+				magnetY.set(resolveMagneticAxisOffset(dy, rect.height / 2, distance));
 				return;
 			}
 

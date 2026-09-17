@@ -2,7 +2,9 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 
-/** Measure unused column space without resizing the card scrollport. */
+import { MAGNETIC_PROXIMITY_DISTANCE } from "@/components/ui-custom/hooks/use-magnetic-proximity";
+
+/** Measure spare space from issue content; independent of the footer's reserved height. */
 export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bottom") {
 	const anchorRef = useRef<HTMLDivElement>(null);
 	const [minimumHeight, setMinimumHeight] = useState(0);
@@ -18,17 +20,20 @@ export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bot
 			frame = 0;
 			const anchorRect = anchor.getBoundingClientRect();
 			const listRect = list.getBoundingClientRect();
-			const lastCard = list.lastElementChild;
-			// Attachment chrome expands on hover; it must not push the create
-			// target away from a pointer that is already entering the free space.
-			const chinHeight = lastCard?.querySelector('[data-slot="jira-issue-attach-chin"]')
-				?.getBoundingClientRect().height ?? 0;
+			const cards = list.querySelectorAll<HTMLElement>("[data-issue-key]");
+			const lastCard = cards[cards.length - 1];
 			const listStyle = getComputedStyle(list);
-			const gap = Math.max(parseFloat(listStyle.rowGap) || 0, parseFloat(listStyle.paddingBottom) || 0);
-			const contentBottom = Math.max(listRect.top, (lastCard?.getBoundingClientRect().bottom ?? listRect.top) - chinHeight);
+			const contentTop = listRect.top + (parseFloat(listStyle.paddingTop) || 0);
+			// Protect actual issues, including their agent footers, and fill an empty list.
+			const contentBottom = Math.max(contentTop, lastCard?.getBoundingClientRect().bottom ?? contentTop);
+			const clearance = lastCard
+				? Math.max(parseFloat(listStyle.rowGap) || 0, parseFloat(listStyle.paddingBottom) || 0) + MAGNETIC_PROXIMITY_DISTANCE
+				// Even an empty scrollport retains its padding when the footer grows.
+				: (parseFloat(listStyle.paddingBottom) || 0) + 8;
 			const available = placement === "top"
 				? listRect.bottom - anchorRect.top
-				: anchorRect.bottom - contentBottom - gap;
+				// Leave room for the bounded magnetic lean without covering a card.
+				: anchorRect.bottom - contentBottom - clearance;
 			setMinimumHeight(Math.max(0, Math.floor(available)));
 		};
 		const schedule = () => {

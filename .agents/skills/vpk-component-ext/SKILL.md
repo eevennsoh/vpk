@@ -20,6 +20,10 @@ Atlaskit, shadcn, Base UI, or `@shadcn/react` component is the parity target.
 Use the normal component workflow for local layout, styling, motion, or bug
 fixes that do not translate an external implementation.
 
+When the requested result retains a maintained upstream package as the runtime
+owner, use [Adopt a maintained upstream runtime](../../docs/playbooks/adopt-upstream-runtime.md).
+This translation skill's no-import/no-vendor invariant still applies to VPK-owned migrations.
+
 ## Hard invariants
 
 - Reuse an existing VPK primitive before creating a wrapper or new component.
@@ -92,9 +96,8 @@ at least one stateful interaction, inspect console/hydration output, and run the
 relevant ADS accessibility analysis. Finish with a residual import search for
 the removed source component or package.
 
-`components/ui-custom/**` is excluded from the repository TypeScript check, so
-read its source and validate call-site props manually. `components/ui-audio/**`
-and `components/ui/**` remain type-checked normally.
+All project directories, including `components/ui-custom/**`, are type-checked;
+the repository TypeScript configuration excludes only `node_modules`.
 
 ## References
 

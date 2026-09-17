@@ -20,7 +20,7 @@ echo ""
 # usage help when the user runs the script with no arguments.
 if [ -z "${1:-}" ]; then
   echo "❌ Service name is required"
-  echo "Usage: $0 <service-name> <version> [env]"
+  echo "Usage: $0 <service-name> <version> [env] [--hot-swap]"
   echo "Example: $0 my-prototype 1.0.1 pdev-west2"
   echo ""
   echo "⚠️  Service name must be ≤26 characters"
@@ -29,28 +29,39 @@ fi
 
 if [ -z "${2:-}" ]; then
   echo "❌ Deployment version is required"
-  echo "Usage: $0 <service-name> <version> [env]"
+  echo "Usage: $0 <service-name> <version> [env] [--hot-swap]"
   exit 1
-fi
-
-if [ -n "${4:-}" ]; then
-  echo "❌ Unexpected argument: $4"
-  echo "Usage: $0 <service-name> <version> [env]"
-  exit 2
 fi
 
 SERVICE_NAME=$1
 VERSION=$2
 REQUESTED_SERVICE_NAME=$SERVICE_NAME
 REQUESTED_VERSION=$VERSION
+shift 2
+HOT_SWAP=false
+REQUESTED_ENV=""
+for deploy_arg in "$@"; do
+  case "$deploy_arg" in
+    --hot-swap)
+      if [ "$HOT_SWAP" = true ]; then echo "❌ Duplicate --hot-swap"; exit 2; fi
+      HOT_SWAP=true ;;
+    --*) echo "❌ Unexpected argument: $deploy_arg"; exit 2 ;;
+    *)
+      if [ -n "$REQUESTED_ENV" ]; then
+        echo "❌ Usage: $0 <service-name> <version> [env] [--hot-swap]"
+        exit 2
+      fi
+      REQUESTED_ENV=$deploy_arg ;;
+  esac
+done
 
 # Resolve ENV with the following precedence (highest first):
 #   1. 3rd positional arg               (./deploy.sh <svc> <ver> <env>)
 #   2. ENV from .deploy.local           (sourced if file exists)
 #   3. Default: pdev-west2
 # Valid pdev environments: pdev-west2, pdev-apse2 (only two exist)
-if [ -n "${3:-}" ]; then
-  ENV=$3
+if [ -n "$REQUESTED_ENV" ]; then
+  ENV=$REQUESTED_ENV
 elif [ -f ".deploy.local" ] && grep -q '^ENV=' .deploy.local; then
   # shellcheck disable=SC1091
   source .deploy.local
@@ -94,10 +105,7 @@ fi
 echo ""
 echo "🏗️  Building static export..."
 corepack pnpm run build:export
-if [ ! -f out/index.html ]; then
-  echo "❌ Static export did not produce out/index.html"
-  exit 1
-fi
+vpk_verify_export
 
 # Build Docker image
 echo ""
@@ -116,10 +124,12 @@ docker push "docker.atl-paas.net/${SERVICE_NAME}:app-${VERSION}"
 echo ""
 echo "🚀 Deploying..."
 export VERSION=$VERSION
-atlas micros service deploy \
+set --
+if [ "$HOT_SWAP" = true ]; then set -- --mode=hot-swap; fi
+"$VPK_ATLAS_BIN" micros service deploy \
   --service=$SERVICE_NAME \
   --env=$ENV \
-  --file=service-descriptor.yml
+  --file=service-descriptor.yml "$@"
 
 echo ""
 echo "✅ Deployment initiated!"
@@ -134,6 +144,8 @@ echo "Your service URL will be (internal — needs Atlassian VPN):"
 echo "  https://$SERVICE_NAME.$REGION.platdev.atl-paas.net"
 echo ""
 echo "Note: Micros API may show CREATE_IN_PROGRESS for 1–3 min after CFN finishes."
-echo "If you want ground truth, check AWS directly:"
-echo "  aws cloudformation describe-stacks --region $REGION \\"
-echo "    --stack-name vpk-awake--$ENV--... --query 'Stacks[].StackStatus'"
+echo "Follow the returned deployment ID to a final state, then verify the exact route:"
+echo "  $VPK_ATLAS_BIN micros events -s $SERVICE_NAME -e $ENV -d <deployment-id>"
+echo "  $VPK_ATLAS_BIN micros service show -s $SERVICE_NAME -e $ENV"
+echo "For hot swap, confirm the expected version and UPDATE_COMPLETE; events may show the original creation."
+echo "  node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs https://$SERVICE_NAME.$REGION.platdev.atl-paas.net /"

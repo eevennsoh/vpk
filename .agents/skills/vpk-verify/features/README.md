@@ -7,13 +7,14 @@ This directory is the maintained source for verifying the user-facing behavior o
 - Launch from this worktree with `.agents/skills/vpk-verify/scripts/control-vpk launch`.
 - Set `ORIGIN` from `.agents/skills/vpk-verify/scripts/control-vpk url` (Portless `https://…localhost` when present).
 - Run `.agents/skills/vpk-verify/scripts/control-vpk doctor` and require `"ok": true` for this worktree path.
-- Drive only through `.agents/skills/vpk-verify/scripts/control-vpk browser`.
+- Open named objects through `.agents/skills/vpk-verify/scripts/control-vpk open-target <route>`, then drive through `control-vpk browser`.
 - Never open another worktree's Portless URL from `pnpm ports`.
 - Never drive an instance whose frontend port is not this checkout's `.dev-frontend-port`.
 
 ## Driving conventions
 
-- Start every recipe from the home origin unless its preconditions say otherwise.
+- For component, block or project debugging, resolve the exact route before opening the browser and first navigate directly there with `control-vpk open-target <route>`. Preserve requested query/hash; confirm URL and route marker.
+- Start at home or a category only when explicitly verifying that catalog/entry path. A direct URL does not prove a title link works. If the object has no recipe, resolve its route from current metadata instead of browsing the landing page.
 - Prefer `#home-category-tab-*`, `href`, and ARIA names listed in the skill. Do not click a tab by the substring `UI`.
 - Treat every command as literal. Keep quoted names and flags unchanged.
 - Restore theme through the same user-facing control until its original accessible name returns; never write storage or theme attributes directly.
@@ -46,7 +47,7 @@ After changing this index or a feature file, run `pnpm run verify:vpk-feature-ma
 ## Features
 
 - [Browse the catalog](./browse-catalog.md) covers home projects, category tabs, and returning via the VPK logo.
-- [Open a component doc](./open-component-doc.md) covers opening Accordion docs from the UI catalog and the breadcrumb.
+- [Open a component doc](./open-component-doc.md) covers direct Accordion docs, explicit catalog-title entry checks, and the breadcrumb.
 - [Switch theme](./switch-theme.md) covers cycling light, dark, and system from the header.
 - [Search the sidebar](./sidebar-search.md) covers filtering the component browser and clearing the query.
 - [Open Studio](./studio-shell.md) covers loading the Studio shell without sending a chat message.
@@ -55,3 +56,4 @@ After changing this index or a feature file, run `pnpm run verify:vpk-feature-ma
 - [Jira Golden Journeys v2](./jira-golden-journeys-v2.md) covers story chapters, Details/Activity, guided pull-request detail, keyboard focus, and narrow layout.
 - [Jira Golden Journeys v3](./jira-golden-journeys-v3.md) covers Track/Learn/Build/Terminal, PAY-101 sections, PR #1839, and narrow `Jump to chapter`.
 - [Jira Golden Journeys v4](./jira-golden-journeys-v4.md) covers the Payments SDK board/list in Jira chrome, Unlink sessions, and view controls.
+- [Jira Team EU26](./jira-team-eu26.md) covers direct project entry, Board/List, current settings, session filters and column states, drag/drop/cancel, and narrow motion-off proof.
