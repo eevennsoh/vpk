@@ -160,10 +160,10 @@ export function BoardGroupByMenu() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
-				render={<Button aria-label="Group by" variant="outline" />}
+				render={<Button aria-label="Group" variant="outline" />}
 			>
 				<Icon data-icon="inline-start" render={<GroupIcon label="" />} />
-				Group by
+				Group
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="min-w-56">
 				<DropdownMenuRadioGroup
