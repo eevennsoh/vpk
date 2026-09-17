@@ -65,13 +65,9 @@ export function useBoardSessionDragScroll({ active, rootRef, transactionRef, onG
 			paused = false;
 			schedule();
 		};
-		const handlePointerOut = (event: PointerEvent) => {
-			if (event.relatedTarget === null) pause();
-		};
 		const resize = new ResizeObserver(schedule);
 		for (const list of root.querySelectorAll("[data-jira-kanban-card-list]")) resize.observe(list);
 		document.addEventListener("pointermove", handlePointerMove, { passive: true });
-		document.addEventListener("pointerout", handlePointerOut, { passive: true });
 		window.addEventListener("blur", pause);
 		root.addEventListener("scroll", schedule, true);
 		schedule();
@@ -79,7 +75,6 @@ export function useBoardSessionDragScroll({ active, rootRef, transactionRef, onG
 			cancelAnimationFrame(frame);
 			resize.disconnect();
 			document.removeEventListener("pointermove", handlePointerMove);
-			document.removeEventListener("pointerout", handlePointerOut);
 			window.removeEventListener("blur", pause);
 			root.removeEventListener("scroll", schedule, true);
 		};
