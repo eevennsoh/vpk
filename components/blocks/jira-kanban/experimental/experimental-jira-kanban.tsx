@@ -317,7 +317,7 @@ function BoardColumnShell({
 					aria-hidden
 					data-jira-kanban-column-backdrop=""
 					className={cn(
-						"pointer-events-none absolute inset-0 -z-10",
+						"pointer-events-none absolute inset-0 -z-10 transition-none",
 						chrome.columnClassName,
 					)}
 					style={{ borderRadius: token("radius.xlarge"), clipPath: "inset(0 0 100% 0)" }}
