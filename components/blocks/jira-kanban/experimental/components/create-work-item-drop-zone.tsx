@@ -42,7 +42,7 @@ export function BoardColumnCreateAction({
 }>) {
 	const targetRef = useRef<HTMLDivElement>(null);
 	const proximityRef = useRef<HTMLDivElement>(null);
-	const { startBackdrop, finishBackdrop } = useCreateDropzoneBackdrop(targetRef, columnSizing);
+	useCreateDropzoneBackdrop(targetRef, columnSizing);
 	const isExclusiveWinner = useExclusiveCreateWellProximity(title, proximityRef);
 	const drag: JiraDropzoneDragState = resolveBoardCreateDropzoneDrag(
 		sessionDragTransaction,
@@ -93,8 +93,6 @@ export function BoardColumnCreateAction({
 							proximityRef={proximityRef}
 							renderControl={columnSizing === "content" ? (control) => <BoardColumnAddButton
 								control={control}
-								onLayoutAnimationStart={startBackdrop}
-								onLayoutAnimationComplete={finishBackdrop}
 								onCreateWorkItem={onCreateWorkItem}
 								reveal="always"
 								size={control.active ? "default" : "compact"}
@@ -117,16 +115,12 @@ export function BoardColumnCreateAction({
 export function BoardColumnAddButton({
 	control,
 	onCreateWorkItem,
-	onLayoutAnimationStart,
-	onLayoutAnimationComplete,
 	reveal = "column-hover",
 	size = "compact",
 	title,
 }: Readonly<{
 	control?: JiraDropzoneControlProps;
 	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
-	onLayoutAnimationStart?: () => void;
-	onLayoutAnimationComplete?: () => void;
 	reveal?: "always" | "column-hover";
 	size?: ButtonProps["size"];
 	title: string;
@@ -178,8 +172,6 @@ export function BoardColumnAddButton({
 						onClick={(event) => { if (control?.active) event.preventDefault(); }}
 						render={control ? <motion.button
 							layout={control.layout}
-							onLayoutAnimationStart={onLayoutAnimationStart}
-							onLayoutAnimationComplete={onLayoutAnimationComplete}
 							transition={{ layout: JIRA_DROPZONE_WELL_ENTER }}
 						/> : undefined}
 						size={size}

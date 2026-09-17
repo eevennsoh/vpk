@@ -55,7 +55,7 @@ test("board session creation is route-owned and reveals the created cards once",
 test("the created-card arrival scrolls its column to the last card's bottom and leaves the landing to the create entrance", () => {
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/useCreatedCardArrivalScroll\(\{[\s\S]*arrival: createdCardArrival,[\s\S]*cardCount: count,[\s\S]*onCardListRef: ref,[\s\S]*title: columnTitle,/u,
+		/useCreatedCardArrivalScroll\(\{[\s\S]*arrival: createdCardArrival,[\s\S]*cardCount: count,[\s\S]*onCardListRef: setOverflowRef,[\s\S]*title: columnTitle,/u,
 	);
 	assert.match(
 		ARRIVAL_HOOK_SOURCE,

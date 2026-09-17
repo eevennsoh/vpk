@@ -595,14 +595,10 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`filtered dropzone keeps one copy inside its shape on every frame (${reducedMotion})`, async ({ page }) => {
 		test.setTimeout(90_000);
 		await page.emulateMedia({ reducedMotion });
-		if (reducedMotion === "reduce") await page.clock.install();
 		await openBoard(page);
-		if (reducedMotion === "reduce") {
-			await page.clock.runFor(45_000);
-		} else {
-			// Keep Motion's animation clock native while the finite arrival queue settles.
-			await page.waitForTimeout(45_000);
-		}
+		// Keep MutationObserver and Motion on the native clock in both modes.
+		// Virtual frame timers can sample before native observer microtasks run.
+		await page.waitForTimeout(45_000);
 		await page.getByRole("button", { name: /^Needs input:/ }).click();
 		const expandTodo = page.getByRole("button", { name: "Expand To do column" });
 		if (await expandTodo.isVisible()) {
@@ -621,7 +617,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const source = page.locator('[data-agent-session-column] [data-testid^="agent-session-row-"]').first();
 		await source.scrollIntoViewIfNeeded();
 		await page.evaluate(() => {
-			const trace = { stage: "enter", running: true, frames: [] as { stage: string; column: string; overhang: number; copies: number; delta: number; backdropGap: number; buttonTransform: string; copyTransform: string }[] };
+			const trace = { stage: "enter", running: true, frames: [] as { stage: string; column: string; overhang: number; copies: number; delta: number; backdropGap: number; backdropDetails: string; buttonTransform: string; copyTransform: string }[] };
 			Object.assign(window, { containedDropzoneTrace: trace });
 			const started = performance.now();
 			function sample() {
@@ -645,13 +641,14 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 						copies: copies.length,
 						delta: Math.abs((content.top + content.bottom - shape.top - shape.bottom) / 2),
 						backdropGap: Math.abs(backgroundRect.bottom - bottomClip - expectedBottom),
+						backdropDetails: JSON.stringify({ clip: getComputedStyle(background).clipPath, background: backgroundRect.bottom, bottomClip, expectedBottom, naturalBottom: natural.bottom, shapeBottom: shape.bottom }),
 						buttonTransform: getComputedStyle(button).transform,
 						copyTransform: getComputedStyle(viewport).transform,
 					});
 				}
-				if (trace.running && performance.now() - started < 6000) requestAnimationFrame(sample);
+				if (trace.running && performance.now() - started < 6000) requestAnimationFrame(() => setTimeout(sample, 0));
 			}
-			requestAnimationFrame(sample);
+			requestAnimationFrame(() => setTimeout(sample, 0));
 		});
 		const box = (await source.boundingBox())!;
 		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -680,7 +677,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.mouse.up();
 		await page.waitForTimeout(280);
 		const frames = await page.evaluate(() => {
-			const trace = (window as typeof window & { containedDropzoneTrace: { running: boolean; frames: { stage: string; column: string; overhang: number; copies: number; delta: number; backdropGap: number; buttonTransform: string; copyTransform: string }[] } }).containedDropzoneTrace;
+			const trace = (window as typeof window & { containedDropzoneTrace: { running: boolean; frames: { stage: string; column: string; overhang: number; copies: number; delta: number; backdropGap: number; backdropDetails: string; buttonTransform: string; copyTransform: string }[] } }).containedDropzoneTrace;
 			trace.running = false;
 			return trace.frames;
 		});
@@ -720,9 +717,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 						offset: style.transform === "none" ? 0 : new DOMMatrixReadOnly(style.transform).m42,
 					});
 				}
-				if (trace.running && performance.now() - started < 5000) requestAnimationFrame(sample);
+				if (trace.running && performance.now() - started < 5000) requestAnimationFrame(() => setTimeout(sample, 0));
 			}
-			requestAnimationFrame(sample);
+			requestAnimationFrame(() => setTimeout(sample, 0));
 		});
 		const sourceBox = (await source.boundingBox())!;
 		await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
