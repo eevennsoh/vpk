@@ -245,7 +245,7 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	// inset keeps visible simple-column content on the 24px header line.
 	assert.match(
 		BOARD_SOURCE,
-		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
 	);
 
 	// The expand control's focus ring extends 3px past a 24px button, which is

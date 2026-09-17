@@ -178,9 +178,10 @@ test("buildScrollMaskStyle fades only the edges with content scrolled past them"
 		"linear-gradient(to bottom, black 0, black calc(100% - var(--scroll-mask-fade-size)), transparent 100%), linear-gradient(black, black)",
 	);
 
-	// At rest (nothing scrolled past either edge) the content mask is fully opaque — no fade.
+	// Fitting content should not have a mask or its extra stacking context.
 	const none = buildScrollMaskStyle({ fadeTop: false, fadeBottom: false });
-	assert.equal(none.maskImage, "linear-gradient(to bottom, black 0, black 100%), linear-gradient(black, black)");
+	assert.equal(none.maskImage, "none");
+	assert.equal(none.WebkitMaskImage, "none");
 });
 
 test("buildScrollMaskOverlayStyle fades visually without clipping hit-testing", () => {

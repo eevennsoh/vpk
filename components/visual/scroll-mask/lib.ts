@@ -125,6 +125,14 @@ export function buildScrollMaskStyle({
 }: ScrollMaskStyleOptions = {}): VerticalScrollMaskCssProperties {
 	const resolvedFadeSize = toCssLength(fadeSize);
 	const resolvedScrollbarWidth = toCssLength(scrollbarWidth);
+	if (!fadeTop && !fadeBottom) {
+		return {
+			"--scroll-mask-fade-size": resolvedFadeSize,
+			"--scroll-mask-scrollbar-width": resolvedScrollbarWidth,
+			maskImage: "none",
+			WebkitMaskImage: "none",
+		};
+	}
 	const preservesScrollbarTrack = resolvedScrollbarWidth !== "0px";
 	// Only fade an edge that has content scrolled past it, so a menu at rest (or one that
 	// does not overflow) shows no fade. Both default true to preserve the full both-edge mask.

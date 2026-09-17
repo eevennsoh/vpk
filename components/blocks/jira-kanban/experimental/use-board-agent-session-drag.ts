@@ -277,7 +277,12 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 		root.querySelectorAll<HTMLElement>("[data-board-agent-session-drop-zone]"),
 	).flatMap((node): BoardAgentSessionDropZone[] => {
 		const kind = node.dataset.boardAgentSessionDropZone;
-		const rect = node.getBoundingClientRect();
+		// Content-sized footers grow into a stable sensor footprint. Magnetic
+		// chrome can lean without moving the actual interactive target.
+		const createSensor = kind === "create"
+			? node.closest('[data-board-column-create-action="content"]')?.querySelector("[data-create-work-item-proximity]")
+			: null;
+		const rect = (createSensor ?? node).getBoundingClientRect();
 		if (kind === "create") {
 			const columnTitle = node.dataset.boardAgentSessionColumnTitle;
 			return columnTitle ? [{

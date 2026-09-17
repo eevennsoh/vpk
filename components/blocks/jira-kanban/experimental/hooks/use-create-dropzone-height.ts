@@ -1,11 +1,12 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { token } from "@/lib/tokens";
 
 import { MAGNETIC_PROXIMITY_DISTANCE } from "@/components/ui-custom/hooks/use-magnetic-proximity";
 
 /** Measure spare space from issue content; independent of the footer's reserved height. */
-export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bottom") {
+export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bottom", columnSizing: "fill" | "content" = "fill") {
 	const anchorRef = useRef<HTMLDivElement>(null);
 	const [minimumHeight, setMinimumHeight] = useState(0);
 
@@ -19,6 +20,13 @@ export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bot
 		const measure = () => {
 			frame = 0;
 			const anchorRect = anchor.getBoundingClientRect();
+			if (columnSizing === "content") {
+				const columnRect = column.getBoundingClientRect();
+				const columnStyle = getComputedStyle(column);
+				const bottom = columnRect.bottom - (parseFloat(columnStyle.borderBottomWidth) || 0) - 8;
+				setMinimumHeight(Math.max(0, Math.floor(bottom - anchorRect.top)));
+				return;
+			}
 			const listRect = list.getBoundingClientRect();
 			const cards = list.querySelectorAll<HTMLElement>("[data-issue-key]");
 			const lastCard = cards[cards.length - 1];
@@ -60,9 +68,44 @@ export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bot
 			mutations.disconnect();
 			list.removeEventListener("scroll", schedule);
 		};
-	}, [active, placement]);
+	}, [active, placement, columnSizing]);
 
 	// Keep the last drag's size during receipt playback; the new card must not
 	// move the landing target while sessions are still flying into it.
 	return { anchorRef, minimumHeight };
+}
+
+/** Follow the rendered shape after projection without a second animation clock. */
+export function useCreateDropzoneBackdrop(targetRef: RefObject<HTMLDivElement | null>, columnSizing: "fill" | "content") {
+	useLayoutEffect(() => {
+		const target = targetRef.current;
+		const column = target?.closest<HTMLElement>("[data-jira-kanban-column]");
+		const backdrop = column?.querySelector<HTMLElement>("[data-jira-kanban-column-backdrop]");
+		const content = column?.querySelector<HTMLElement>("[data-jira-kanban-column-content]");
+		const button = target?.querySelector<HTMLElement>("[data-jira-dropzone-control]");
+		if (columnSizing !== "content" || !target || !backdrop || !content || !button) return;
+		const syncBackdrop = () => {
+			// Finish geometry reads before writing the decorative clip.
+			const backdropRect = backdrop.getBoundingClientRect();
+			const contentRect = content.getBoundingClientRect();
+			const shapeRect = button.getBoundingClientRect();
+			const targetRect = target.getBoundingClientRect();
+			const inset = Math.max(0, targetRect.left - contentRect.left);
+			const extent = Math.max(contentRect.height, shapeRect.bottom - backdropRect.top + inset);
+			const bottom = Math.max(0, backdropRect.height - extent);
+			backdrop.style.clipPath = `inset(0 0 ${bottom}px 0 round ${token("radius.xlarge")})`;
+		};
+		// Motion writes projection and magnetic transforms once per frame.
+		// Observe the small control subtree, including its positioned wrapper,
+		// so the final rendered bounds reach the backdrop before paint.
+		const mutations = new MutationObserver(syncBackdrop);
+		mutations.observe(target.parentElement ?? target, { attributes: true, subtree: true, attributeFilter: ["style", "class"] });
+		const resize = new ResizeObserver(syncBackdrop);
+		for (const element of [target, column!, content, button]) resize.observe(element);
+		syncBackdrop();
+		return () => {
+			mutations.disconnect();
+			resize.disconnect();
+		};
+	}, [columnSizing, targetRef]);
 }

@@ -266,7 +266,7 @@ test("Experimental kanban collapse control is not padded by column chrome", () =
 test("Experimental kanban card gap matches the column gutter", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -862,7 +862,7 @@ test("Experimental kanban column agent assignment uses the compact trigger and w
 test("Experimental kanban variant owns its own tree without touching the default variant", () => {
 	// The fork renders its own board/header so experimental changes cannot leak
 	// into the standard variant.
-	assert.match(EXPERIMENTAL_SOURCE, /export function ExperimentalJiraKanban\(\{/u);
+	assert.match(EXPERIMENTAL_SOURCE, /export function ExperimentalJiraKanban\(props: Readonly<ExperimentalJiraKanbanProps>\)/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /export function ExperimentalJiraKanbanBoardHeader\(\{/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /export default function ExperimentalJiraKanbanPage\(\{/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /from "\.\/experimental-jira-kanban"/u);
@@ -972,7 +972,7 @@ test("Experimental kanban keeps its column or session-rail gutter on the scroll 
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,

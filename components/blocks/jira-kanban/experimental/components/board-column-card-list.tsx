@@ -2,7 +2,9 @@
 
 import {
 	useCallback,
+	useLayoutEffect,
 	useMemo,
+	useRef,
 	useState,
 	type CSSProperties,
 	type PointerEvent as ReactPointerEvent,
@@ -82,6 +84,7 @@ export function BoardColumnCardList({
 	children,
 	chrome,
 	columnTitle,
+	columnSizing = "fill",
 	count,
 	createdCardArrival,
 	insertionArmed,
@@ -92,6 +95,7 @@ export function BoardColumnCardList({
 	children: ReactNode;
 	chrome: KanbanColumnChromeStyles;
 	columnTitle: string;
+	columnSizing?: "fill" | "content";
 	count: number;
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
 	insertionArmed: boolean;
@@ -99,12 +103,26 @@ export function BoardColumnCardList({
 	isSessionDragging?: boolean;
 	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
 }>) {
-	const { ref, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>({ trackAnimatedOverflow: true });
+	const cardListRef = useRef<HTMLDivElement | null>(null);
+	const setOverflowRef = useCallback((node: HTMLDivElement | null) => {
+		cardListRef.current = node;
+		ref(node);
+	}, [ref]);
+	useLayoutEffect(() => {
+		const list = cardListRef.current;
+		if (columnSizing !== "content" || !isSessionDragging || !list) return;
+		// Proximity previews may grow a card's attach chin. Keep the natural
+		// footer position stable for this drag; flex shrink still fits the viewport.
+		const previousHeight = list.style.height;
+		list.style.height = `${list.offsetHeight}px`;
+		return () => { list.style.height = previousHeight; };
+	}, [columnSizing, isSessionDragging]);
 	const [hoverInsertion, setHoverInsertion] = useState<BoardCardInsertion | null>(null);
 	const setCardListRef = useCreatedCardArrivalScroll({
 		arrival: createdCardArrival,
 		cardCount: count,
-		onCardListRef: ref,
+		onCardListRef: setOverflowRef,
 		title: columnTitle,
 	});
 	const scrollMaskStyle = useMemo(
@@ -169,28 +187,34 @@ export function BoardColumnCardList({
 				onPointerLeave={handlePointerLeave}
 				onPointerMove={handlePointerMove}
 				style={{
-					flexGrow: 1,
-					flexBasis: 0,
+					flexGrow: columnSizing === "fill" ? 1 : 0,
+					flexBasis: columnSizing === "fill" ? 0 : "auto",
 					display: "flex",
 					flexDirection: "column",
 					gap: token("space.100"),
 					...scrollMaskStyle,
 					...chrome.cardList,
+					// Share the focus-ring gutter with the footer's top inset so
+					// the card-to-create gap matches the well's outer insets.
+					...(columnSizing === "content" && chrome.headerFrame === "enclosed" ? {
+						paddingBottom: token("space.050"),
+						marginBottom: `calc(${token("border.width")} - ${token("space.050")})`,
+					} : {}),
 					// A child cannot read its parent's `gap`, and the value is chrome
 					// dependent, so an insertion line is handed the track it centres in.
 					"--board-card-gap": chrome.cardList.gap ?? token("space.100"),
 				} as CSSProperties}
 			>
 				{children}
-				<div
+				{columnSizing === "fill" ? <div
 					aria-hidden={isSessionDragging || undefined}
 					inert={isSessionDragging || undefined}
 					className={cn("shrink-0 justify-center py-1", isSessionDragging ? "hidden" : "flex")}
 					data-board-work-item-create=""
 				>
 					<BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} title={columnTitle} />
-				</div>
-				{isEmpty ? <BoardEmptyColumnInsertionSlot columnTitle={columnTitle} /> : null}
+				</div> : null}
+				{isEmpty && columnSizing === "fill" ? <BoardEmptyColumnInsertionSlot columnTitle={columnTitle} /> : null}
 			</div>
 		</BoardCardHoverInsertionContext>
 	);

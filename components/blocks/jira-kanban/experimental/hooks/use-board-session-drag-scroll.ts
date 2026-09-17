@@ -21,6 +21,9 @@ export function useBoardSessionDragScroll({ active, rootRef, transactionRef, onG
 			const transaction = transactionRef.current;
 			if (!transaction || paused) return;
 			onGeometryChange();
+			// A content-sized create well can extend upward over the scrollport.
+			// Its stable target owns the pointer until it leaves the well.
+			if (transaction.target?.kind === "create") return;
 			const { x, y } = transaction.pointer;
 			const board = root.querySelector<HTMLElement>("[data-jira-kanban-scrollport]")?.getBoundingClientRect();
 			// Keep velocity consistent across slower frames, but bound catch-up after a stall.

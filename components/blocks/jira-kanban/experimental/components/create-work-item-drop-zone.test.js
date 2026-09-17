@@ -46,7 +46,7 @@ test("session drag pops the create well in on every column", () => {
 	);
 });
 
-test("columns keep drag targets at the bottom and creation in the card list", () => {
+test("columns keep drag targets at the bottom and select one creation owner", () => {
 	const createAction = BOARD.indexOf("const createAction = <BoardColumnCreateAction");
 	const cardList = BOARD.indexOf("<BoardColumnCardList");
 	const cards = BOARD.indexOf("{children}", cardList);
@@ -57,7 +57,8 @@ test("columns keep drag targets at the bottom and creation in the card list", ()
 	assert.ok(cards > cardList);
 	assert.ok(actionRender > cards);
 	assert.equal((BOARD.match(/\{createAction\}/gu) ?? []).length, 1);
-	assert.match(FOOTER, /renderResting=\{\(\) => <span aria-hidden className="block h-8 w-full" \/>\}/u);
+	assert.match(FOOTER, /renderControl=\{columnSizing === "content"[\s\S]*<BoardColumnAddButton[\s\S]*reveal="always"/u);
+	assert.match(CARD_LIST, /columnSizing === "fill" \? <div/u);
 	assert.match(CARD_LIST, /\{children\}[\s\S]*data-board-work-item-create[\s\S]*<BoardColumnAddButton/u);
 	assert.match(BOARD, /isEmpty=\{isEmptyColumn\}/u);
 	assert.doesNotMatch(CARD_LIST, /order: isEmpty/u);
@@ -131,6 +132,6 @@ test("card arrival suppresses the inline create seam until its entrance complete
 });
 
 test("normal create uses the full-width compact button and the shared creation field", () => {
-	assert.match(FOOTER, /aria-label=\{`Create in \$\{title\}`\}[\s\S]*"w-full border-dashed hover:border-solid"[\s\S]*size="compact"[\s\S]*variant="outline"/u);
+	assert.match(FOOTER, /aria-label=\{control\?\.active \? [^\n]+ : `Create in \$\{title\}`\}[\s\S]*"w-full border-dashed hover:border-solid"[\s\S]*size=\{size\}[\s\S]*variant="outline"/u);
 	assert.match(FOOTER, /<CreateWorkItemField/u);
 });

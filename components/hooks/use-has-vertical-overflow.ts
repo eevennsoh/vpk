@@ -28,6 +28,11 @@ export interface HasVerticalOverflowResult<T extends HTMLElement> {
 	showBottomScrollMask: boolean;
 }
 
+export interface VerticalOverflowOptions {
+	/** Track projected scroll bounds for hosts with animated descendants. */
+	trackAnimatedOverflow?: boolean;
+}
+
 const EMPTY_VERTICAL_OVERFLOW_STATE: VerticalOverflowState = {
 	hasReachedVerticalLimit: false,
 	hasScrolledFromTop: false,
@@ -100,18 +105,27 @@ export function getVerticalOverflowResizeTargets(element: Element): Element[] {
 	return resizeTargets;
 }
 
-function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void): () => void {
-	element.addEventListener("scroll", updateScrollState, { passive: true });
+export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void, { trackAnimatedOverflow = false }: VerticalOverflowOptions = {}): () => void {
+	let measurementFrame = 0;
+	const measure = () => {
+		measurementFrame = 0;
+		updateScrollState();
+	};
+	const scheduleMeasurement = () => {
+		if (!measurementFrame) measurementFrame = window.requestAnimationFrame(measure);
+	};
+	element.addEventListener("scroll", scheduleMeasurement, { passive: true });
 
 	if (typeof ResizeObserver === "undefined") {
-		window.addEventListener("resize", updateScrollState);
+		window.addEventListener("resize", scheduleMeasurement);
 		return () => {
-			element.removeEventListener("scroll", updateScrollState);
-			window.removeEventListener("resize", updateScrollState);
+			window.cancelAnimationFrame(measurementFrame);
+			element.removeEventListener("scroll", scheduleMeasurement);
+			window.removeEventListener("resize", scheduleMeasurement);
 		};
 	}
 
-	const resizeObserver = new ResizeObserver(updateScrollState);
+	const resizeObserver = new ResizeObserver(scheduleMeasurement);
 	const observedResizeTargets = new Set<Element>();
 	const syncResizeTargets = () => {
 		const nextResizeTargets = new Set(getVerticalOverflowResizeTargets(element));
@@ -137,20 +151,25 @@ function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: ()
 
 	const mutationObserver = typeof MutationObserver === "undefined"
 		? null
-		: new MutationObserver(() => {
-				syncResizeTargets();
-				updateScrollState();
+		: new MutationObserver((records) => {
+				if (records.some((record) => record.type === "childList" || record.attributeName === "class")) {
+					syncResizeTargets();
+				}
+				scheduleMeasurement();
 			});
-	mutationObserver?.observe(element, { childList: true, subtree: true });
+	// Layout projection changes scrollable bounds through transforms without
+	// resizing the observed boxes. Remeasure when those styles settle too.
+	mutationObserver?.observe(element, { attributes: trackAnimatedOverflow, attributeFilter: trackAnimatedOverflow ? ["style", "class"] : undefined, childList: true, subtree: true });
 
 	return () => {
-		element.removeEventListener("scroll", updateScrollState);
+		window.cancelAnimationFrame(measurementFrame);
+		element.removeEventListener("scroll", scheduleMeasurement);
 		resizeObserver.disconnect();
 		mutationObserver?.disconnect();
 	};
 }
 
-export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOverflowResult<T> {
+export function useHasVerticalOverflow<T extends HTMLElement>({ trackAnimatedOverflow = false }: VerticalOverflowOptions = {}): HasVerticalOverflowResult<T> {
 	const elementRef = useRef<T | null>(null);
 	const [element, setElement] = useState<T | null>(null);
 	const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false);
@@ -183,8 +202,8 @@ export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOver
 
 	useEffect(() => {
 		if (!element) return undefined;
-		return subscribeToVerticalOverflow(element, updateScrollState);
-	}, [element, updateScrollState]);
+		return subscribeToVerticalOverflow(element, updateScrollState, { trackAnimatedOverflow });
+	}, [element, updateScrollState, trackAnimatedOverflow]);
 
 	return {
 		hasVerticalOverflow,

@@ -61,6 +61,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;
 	createWorkItemDropZoneLabel?: ExperimentalJiraKanbanProps["createWorkItemDropZoneLabel"];
+	columnSizing?: ExperimentalJiraKanbanProps["columnSizing"];
 	/**
 	 * Bounce when a session lands in the create well. Defaults to `"once"` so
 	 * other boards keep the gobble; jira-team-eu26 passes `"off"`.
