@@ -437,7 +437,8 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		const compact = (await well.boundingBox())!;
 		expect(compact.y).toBeCloseTo(buttonBox.y, 0);
 		const backdrop = column.locator("[data-jira-kanban-column-backdrop]");
-		await expect(backdrop).toHaveCSS("opacity", "0");
+		await expect(backdrop).toHaveCSS("opacity", "1");
+		expect(await backdrop.evaluate((node) => getComputedStyle(node).clipPath)).not.toBe("none");
 		const sensor = column.locator("[data-create-work-item-proximity]");
 		const sensorBox = (await sensor.boundingBox())!;
 		expect(sensorBox.y).toBeCloseTo(compact.y, 0);
@@ -620,7 +621,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const source = page.locator('[data-agent-session-column] [data-testid^="agent-session-row-"]').first();
 		await source.scrollIntoViewIfNeeded();
 		await page.evaluate(() => {
-			const trace = { stage: "enter", running: true, frames: [] as { stage: string; column: string; overhang: number; copies: number; delta: number; buttonTransform: string; copyTransform: string }[] };
+			const trace = { stage: "enter", running: true, frames: [] as { stage: string; column: string; overhang: number; copies: number; delta: number; backdropGap: number; buttonTransform: string; copyTransform: string }[] };
 			Object.assign(window, { containedDropzoneTrace: trace });
 			const started = performance.now();
 			function sample() {
@@ -630,12 +631,20 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 					if (!viewport) continue;
 					const shape = button.getBoundingClientRect();
 					const content = viewport.getBoundingClientRect();
+					const column = button.closest("[data-jira-kanban-column]")!;
+					const background = column.querySelector<HTMLElement>("[data-jira-kanban-column-backdrop]")!;
+					const backgroundRect = background.getBoundingClientRect();
+					const natural = column.querySelector("[data-jira-kanban-column-content]")!.getBoundingClientRect();
+					const targetRect = column.querySelector("[data-create-work-item-proximity]")!.getBoundingClientRect();
+					const bottomClip = parseFloat(getComputedStyle(background).clipPath.split("round")[0].replace("inset(", "").trim().split(/\s+/)[2]) || 0;
+					const expectedBottom = Math.min(backgroundRect.bottom, Math.max(natural.bottom, shape.bottom + targetRect.left - natural.left));
 					trace.frames.push({
 						stage: trace.stage,
 						column: button.dataset.jiraDropzoneControl!,
 						overhang: Math.max(0, shape.left - content.left, content.right - shape.right, shape.top - content.top, content.bottom - shape.bottom),
 						copies: copies.length,
 						delta: Math.abs((content.top + content.bottom - shape.top - shape.bottom) / 2),
+						backdropGap: Math.abs(backgroundRect.bottom - bottomClip - expectedBottom),
 						buttonTransform: getComputedStyle(button).transform,
 						copyTransform: getComputedStyle(viewport).transform,
 					});
@@ -671,7 +680,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.mouse.up();
 		await page.waitForTimeout(280);
 		const frames = await page.evaluate(() => {
-			const trace = (window as typeof window & { containedDropzoneTrace: { running: boolean; frames: { stage: string; column: string; overhang: number; copies: number; delta: number; buttonTransform: string; copyTransform: string }[] } }).containedDropzoneTrace;
+			const trace = (window as typeof window & { containedDropzoneTrace: { running: boolean; frames: { stage: string; column: string; overhang: number; copies: number; delta: number; backdropGap: number; buttonTransform: string; copyTransform: string }[] } }).containedDropzoneTrace;
 			trace.running = false;
 			return trace.frames;
 		});
@@ -683,6 +692,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		expect(Math.max(...frames.map((frame) => frame.overhang)), JSON.stringify(frames.filter((frame) => frame.overhang > 1.5).slice(0, 4))).toBeLessThanOrEqual(1.5);
 		expect(Math.max(...frames.map((frame) => frame.copies))).toBeLessThanOrEqual(1);
 		expect(Math.max(...frames.map((frame) => frame.delta))).toBeLessThanOrEqual(1.5);
+		expect(Math.max(...frames.map((frame) => frame.backdropGap)), JSON.stringify(frames.filter((frame) => frame.backdropGap > 1.5).slice(0, 3))).toBeLessThanOrEqual(1.5);
 	});
 
 	test(`one button grows from 24px to 32px at drag start and returns (${reducedMotion})`, async ({ page }) => {

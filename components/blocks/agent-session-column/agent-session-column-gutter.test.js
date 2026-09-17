@@ -438,7 +438,7 @@ test("Board visible cards and List share the header's 24px leading alignment", (
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_BOARD_SOURCE,

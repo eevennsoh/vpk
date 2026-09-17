@@ -103,7 +103,7 @@ export function BoardColumnCardList({
 	isSessionDragging?: boolean;
 	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
 }>) {
-	const { ref, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>({ trackAnimatedOverflow: true });
 	const cardListRef = useRef<HTMLDivElement | null>(null);
 	const setOverflowRef = useCallback((node: HTMLDivElement | null) => {
 		cardListRef.current = node;

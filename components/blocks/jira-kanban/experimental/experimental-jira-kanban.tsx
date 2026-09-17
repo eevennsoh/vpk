@@ -317,11 +317,10 @@ function BoardColumnShell({
 					aria-hidden
 					data-jira-kanban-column-backdrop=""
 					className={cn(
-						"pointer-events-none absolute inset-0 -z-10 opacity-0",
+						"pointer-events-none absolute inset-0 -z-10",
 						chrome.columnClassName,
-						"group-has-[[data-board-agent-session-drop-zone=create]:is([data-proximity=near],[data-proximity=target],[data-receiving])]/board-column-shell:opacity-100",
 					)}
-					style={{ borderRadius: token("radius.xlarge") }}
+					style={{ borderRadius: token("radius.xlarge"), clipPath: "inset(0 0 100% 0)" }}
 				/>
 			) : null}
 			{collapsed ? (

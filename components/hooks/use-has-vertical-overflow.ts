@@ -28,6 +28,11 @@ export interface HasVerticalOverflowResult<T extends HTMLElement> {
 	showBottomScrollMask: boolean;
 }
 
+export interface VerticalOverflowOptions {
+	/** Track projected scroll bounds for hosts with animated descendants. */
+	trackAnimatedOverflow?: boolean;
+}
+
 const EMPTY_VERTICAL_OVERFLOW_STATE: VerticalOverflowState = {
 	hasReachedVerticalLimit: false,
 	hasScrolledFromTop: false,
@@ -100,7 +105,7 @@ export function getVerticalOverflowResizeTargets(element: Element): Element[] {
 	return resizeTargets;
 }
 
-export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void): () => void {
+export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void, { trackAnimatedOverflow = false }: VerticalOverflowOptions = {}): () => void {
 	let measurementFrame = 0;
 	const measure = () => {
 		measurementFrame = 0;
@@ -154,7 +159,7 @@ export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollSt
 			});
 	// Layout projection changes scrollable bounds through transforms without
 	// resizing the observed boxes. Remeasure when those styles settle too.
-	mutationObserver?.observe(element, { attributes: true, attributeFilter: ["style", "class"], childList: true, subtree: true });
+	mutationObserver?.observe(element, { attributes: trackAnimatedOverflow, attributeFilter: trackAnimatedOverflow ? ["style", "class"] : undefined, childList: true, subtree: true });
 
 	return () => {
 		window.cancelAnimationFrame(measurementFrame);
@@ -164,7 +169,7 @@ export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollSt
 	};
 }
 
-export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOverflowResult<T> {
+export function useHasVerticalOverflow<T extends HTMLElement>({ trackAnimatedOverflow = false }: VerticalOverflowOptions = {}): HasVerticalOverflowResult<T> {
 	const elementRef = useRef<T | null>(null);
 	const [element, setElement] = useState<T | null>(null);
 	const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false);
@@ -197,8 +202,8 @@ export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOver
 
 	useEffect(() => {
 		if (!element) return undefined;
-		return subscribeToVerticalOverflow(element, updateScrollState);
-	}, [element, updateScrollState]);
+		return subscribeToVerticalOverflow(element, updateScrollState, { trackAnimatedOverflow });
+	}, [element, updateScrollState, trackAnimatedOverflow]);
 
 	return {
 		hasVerticalOverflow,

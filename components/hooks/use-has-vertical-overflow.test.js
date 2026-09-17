@@ -184,8 +184,11 @@ test("overflow masks refresh after style-only animation changes and cancel queue
 		}
 	};
 	try {
-		stop = subscribeToVerticalOverflow(element, () => { measurements += 1; state = read(); });
-		const mutation = mutations[0];
+		const stopDefault = subscribeToVerticalOverflow(element, () => {});
+		assert.equal(mutations[0].options.attributes, false, "ordinary consumers do not track every animated style");
+		stopDefault();
+		stop = subscribeToVerticalOverflow(element, () => { measurements += 1; state = read(); }, { trackAnimatedOverflow: true });
+		const mutation = mutations[1];
 		assert.equal(state.showBottomScrollMask, true);
 		// A translated descendant settles without changing either observed layout box.
 		element.scrollHeight = 80;
