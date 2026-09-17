@@ -342,6 +342,10 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 		JIRA_DROPZONE_SOURCE,
 		/<motion\.div[\s\S]*x: pinMagnet \? 0 : magnet\.x,[\s\S]*<motion\.span[\s\S]*x: pinMagnet \? 0 : magnet\.labelX,/u,
 	);
+	assert.match(
+		JIRA_DROPZONE_SOURCE,
+		/<div className="grid w-full items-end" ref=\{targetRef\}>[\s\S]*<AnimatePresence initial=\{false\}>/u,
+	);
 	assert.match(JIRA_DROPZONE_SOURCE, /const dropTargetAttributes = isPresent \? \{[\s\S]*"data-board-agent-session-drop-zone": "create",[\s\S]*\} : \{\};/u);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
