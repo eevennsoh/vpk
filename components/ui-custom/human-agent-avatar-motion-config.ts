@@ -95,7 +95,7 @@ export function resolveHumanAgentAvatarMotion(
 }
 
 export function resolveHumanAgentAvatarTargets(
-	{ frameSize }: { frameSize: number; agentSize: number; humanSize: number },
+	{ frameSize }: { frameSize: number },
 	options: Pick<HumanAgentAvatarMotionOptions, "agentTargetSizePx" | "humanTargetSizePx"> = {},
 ) {
 	const humanTarget = Math.min(frameSize, options.humanTargetSizePx ?? DEFAULT_TARGET_SIZES.human);

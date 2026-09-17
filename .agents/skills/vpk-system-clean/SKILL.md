@@ -55,6 +55,12 @@ repository root:
 | Install or repair launchd/sudoers guidance | `scripts/install.sh` |
 | Preview or remove the setup | `scripts/uninstall.sh --dry-run` / `scripts/uninstall.sh` |
 
+For a bare interactive `vpk-system-clean` request, run the installed sweep,
+then inspect the remaining worktree ports and complete the task-aware manual
+pass below. The scheduled automation and an explicit request to run only the
+installed script stop after the sweep and its proof; they keep Codex Desktop
+worktrees because task activity cannot be inferred from process cwd alone.
+
 For thresholds, schedules, record formats, launchd/sudoers repair, tuning, and
 uninstall details, read [maintenance.md](references/maintenance.md).
 
@@ -73,22 +79,30 @@ uninstall details, read [maintenance.md](references/maintenance.md).
 
 ## Unused worktree ports
 
-The full sweep already stops eligible idle `vpk-dev-*` stacks and closes their
-frontend/backend listeners and worktree Portless routes. Its unattended
-idle-stack pass keeps Codex Desktop worktrees because task activity is not
-reliably visible through a process-cwd check. For a ports-only request, use
-`pnpm ports once` to inventory
-and `scripts/status.sh` to screen candidates before using
-`pnpm ports kill <unique worktree identifier>`. A status "idle candidate"
-is provisional: confirm no guarded tool process has that worktree as its cwd.
-For a Codex Desktop worktree, check its live task status with
-`mcp__codex_app__list_threads` when available; keep it if active, recently used,
-or status is unavailable.
-Keep the primary checkout, attached sessions, stacks under the 30-minute grace
-window, and operator-owned worktrees. `pnpm ports` probes recorded port numbers
-for liveness; a stale port file can point at another worktree's listener, so
-confirm the listener's cwd before treating a row as a separate server. After a
-stop, rerun `pnpm ports once` and verify the selected listeners are gone.
+The unattended sweep closes eligible idle `vpk-dev-*` stacks, but keeps Codex
+Desktop worktrees because process cwd does not show their task activity. For a
+ports-only request, or after a bare interactive full sweep, use `pnpm ports once`
+and `scripts/status.sh` to screen the remaining live stacks. Complete this
+manual pass for each candidate:
+
+1. Keep the primary checkout, attached sessions, stacks under the 30-minute
+   grace window, and worktrees with a guarded tool process whose cwd is there.
+2. For a Codex Desktop worktree, use `mcp__codex_app__list_threads` to match
+   tasks by exact cwd. Keep it if any matching task is active, needs attention,
+   was updated in the past 24 hours, or its status is unavailable. For
+   `notLoaded` or idle tasks older than 24 hours, use
+   `mcp__codex_app__read_thread` when available to confirm the
+   last turn completed. If the task is missing from the available listing or
+   completion cannot be confirmed, keep the stack.
+3. Confirm each live frontend/backend listener's cwd is that worktree. A stale
+   port file can name a port now owned by another worktree; do not stop that
+   row as a separate server.
+4. Stop a confirmed unused private-socket stack with the exact `pnpm ports
+   kill <identifier>` printed by `pnpm ports once`, one target at a time. If
+   its identifier no longer matches, refresh the inventory and verify its
+   ports rather than using raw process kills. Rerun `pnpm ports once` and
+   verify the selected listeners and tmux session are gone.
+
 If `pnpm ports kill` reports a legacy default-socket session, leave that
 ports-only stop unchanged; the full sweep owns its exact SIGINT/session-stop
 path.
@@ -108,11 +122,11 @@ tmux sessions whose worktree path is gone. It also samples old exact-path
 `almd` before TERM and guarded KILL, and restarts oversized `fseventsd` only
   when the least-privilege sudoers rule exists.
 
-Silent exit zero is a valid successful run. Do not improvise extra remediation
-after it. For a script-only handoff, report status, the log path
-`~/Library/Logs/vpk-system-clean.log`, and only actionable warnings. If the
-command is still running quietly, wait for it rather than branching into other
-cleanup.
+Silent exit zero is a valid successful run. Wait for a quiet running command
+to finish. For a bare interactive invocation, continue with the documented
+task-aware worktree-port pass above; do not improvise other remediation. For a
+script-only handoff, report status, the log path
+`~/Library/Logs/vpk-system-clean.log`, and only actionable warnings.
 
 ## Safety notes
 
@@ -144,5 +158,6 @@ Use status for launchd/sudoers state, `fseventsd`, live Next servers, tmux
 sessions, idle-stack candidates, and cache sizes. Use records or the log for
 runs, servers restarted, caches removed, space reclaimed, idle stack/session/
 almd/fseventsd resets, and warnings.
-Report only the operation requested and its evidence; do not widen a script-only
-run into configuration changes.
+For an interactive cleanup, also verify each manually stopped worktree's
+listeners and tmux session. Report only the operation requested and its
+evidence; do not widen a script-only run into configuration changes.
