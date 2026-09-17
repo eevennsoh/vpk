@@ -57,6 +57,7 @@ import {
 	type BoardCardInsertion,
 } from "./lib/board-agent-session-drag";
 import { BOARD_CARD_INSERTION_BAND_PX } from "./lib/board-card-insertion";
+import { useBoardSessionDragScroll } from "./hooks/use-board-session-drag-scroll";
 import { toSessionDropReceipt } from "./lib/session-drop-receipt";
 import {
 	executeSessionTransferPlan,
@@ -180,7 +181,7 @@ function clipBoundsToScrollport(
 	rect: DOMRect,
 	clipCache: Map<HTMLElement, ListScrollportClip>,
 ): BoardAgentSessionDropBounds | null {
-	const scrollport = node.closest<HTMLElement>("[data-testid='jira-list-table-scroll']");
+	const scrollport = node.closest<HTMLElement>("[data-testid='jira-list-table-scroll'], [data-jira-kanban-card-list]");
 	if (!scrollport) {
 		return {
 			bottom: rect.bottom,
@@ -334,15 +335,10 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 				kind,
 			}];
 		}
-		const bounds = {
-			bottom: rect.bottom,
-			left: rect.left,
-			right: rect.right,
-			top: rect.top,
-		};
-		// The card's own zone is unchanged; the seams are additional zones on the
-		// same node, so attached and detached drags see exactly the board they
-		// saw before. The resolver drops them for any origin but Untracked.
+		const bounds = clipBoundsToScrollport(node, rect, listScrollportClipCache);
+		if (!bounds) return [];
+		// Hit-test only visible card content. Seams use the full card geometry
+		// before subtracting preview growth, then clip themselves to the list.
 		return [
 			{
 				bounds,
@@ -352,7 +348,7 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 				landRect: resolveIssueLandRect(node),
 				surfaceRect: resolveIssueSurfaceRect(node),
 			},
-			...collectCardGapZones(node, issueKey, bounds),
+			...collectCardGapZones(node, issueKey, rect),
 		];
 	});
 }
@@ -762,6 +758,21 @@ export function useBoardAgentSessionDrag({
 	}), [onDragStateChange]);
 	// Cancel rather than retire: Strict Mode replays effect setup on this instance.
 	useEffect(() => () => dragScheduler.cancel(), [dragScheduler]);
+
+	const refreshDragGeometry = useCallback(() => {
+		const current = transactionRef.current;
+		if (!current) return;
+		const next = updateBoardAgentSessionDragTransaction(current, current.pointer,
+			gateCardGapZones(collectDropZones(boardRootRef.current), cardGapsEnabled));
+		transactionRef.current = next;
+		if (shouldPublishBoardAgentSessionDrag(current, next)) setTransaction(next);
+	}, [cardGapsEnabled]);
+	useBoardSessionDragScroll({
+		active: transaction !== null,
+		rootRef: boardRootRef,
+		transactionRef,
+		onGeometryChange: refreshDragGeometry,
+	});
 
 	function createBinding(
 		origin: BoardAgentSessionDragOrigin,

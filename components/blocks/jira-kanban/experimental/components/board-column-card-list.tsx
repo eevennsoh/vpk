@@ -160,7 +160,7 @@ export function BoardColumnCardList({
 				data-created-card-arrival-id={createdCardArrival?.id}
 				data-jira-kanban-card-list=""
 				className={cn(
-					"min-w-0 overflow-y-auto has-[[data-session-dragging]]:overflow-visible",
+					"min-h-0 min-w-0 overflow-y-auto overscroll-y-contain has-[[data-session-dragging]]:overflow-visible",
 					// The mask fades the top and bottom 3rem, which would wash out a line
 					// drawn near a scrolled edge. Stand down the mask only — dropping
 					// `overflow-y-auto` would make the browser discard the scroll offset.
@@ -170,6 +170,7 @@ export function BoardColumnCardList({
 				onPointerMove={handlePointerMove}
 				style={{
 					flexGrow: 1,
+					flexBasis: 0,
 					display: "flex",
 					flexDirection: "column",
 					gap: token("space.100"),
@@ -184,7 +185,7 @@ export function BoardColumnCardList({
 				<div
 					aria-hidden={isSessionDragging || undefined}
 					inert={isSessionDragging || undefined}
-					className={cn("flex shrink-0 justify-center py-1", isSessionDragging ? "pointer-events-none opacity-0" : null)}
+					className={cn("shrink-0 justify-center py-1", isSessionDragging ? "hidden" : "flex")}
 					data-board-work-item-create=""
 				>
 					<BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} title={columnTitle} />
