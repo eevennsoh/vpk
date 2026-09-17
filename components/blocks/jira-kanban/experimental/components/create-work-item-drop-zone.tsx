@@ -1,7 +1,7 @@
 "use client";
 
 import AddIcon from "@atlaskit/icon/core/add";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
 import { CreateWorkItemField } from "@/components/blocks/agent-session/agent-session-link-work-item-submenu";
 
@@ -42,10 +42,20 @@ export function BoardColumnCreateAction({
 		title,
 	);
 	const { anchorRef, minimumHeight } = useCreateDropzoneHeight(Boolean(dropZoneLabel) && drag !== "idle", placement);
+	const [footprint, setFootprint] = useState(40);
+	useLayoutEffect(() => {
+		const target = targetRef.current;
+		if (!target) return;
+		const measure = () => setFootprint(Math.max(40, Math.ceil(target.offsetHeight) + 8));
+		const resize = new ResizeObserver(measure);
+		resize.observe(target);
+		measure();
+		return () => resize.disconnect();
+	}, [dropZoneLabel]);
 
 	return (
-		// A stable bottom footprint keeps the card viewport unchanged during drag.
-		<div className="relative h-10 w-full">
+		// Reserve the well's actual height so overflowing issues scroll above it.
+		<div className="relative w-full shrink-0" style={{ height: footprint }}>
 			<div ref={anchorRef} className={cn("absolute inset-x-0 z-10", placement === "top" ? "top-1" : "bottom-1")}>
 				{dropZoneLabel ? (
 					// Detect the future well footprint before its visible chrome grows.

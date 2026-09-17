@@ -36,7 +36,7 @@ test("empty columns never show an inline create border during a session drag", a
 
 async function openBoard(page: Page) {
 	await page.setViewportSize({ width: 1440, height: 1100 });
-	await page.goto(`${origin}/preview/projects/${project}`);
+	await page.goto(`${origin}/${project}`);
 	await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
 	await expect(page.locator("[data-agent-session-column-expansion]")).toBeVisible();
 	const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
@@ -107,6 +107,16 @@ async function readList(list: Locator) {
 	});
 }
 
+async function measureDragScrollSpeed(list: Locator) {
+	return list.evaluate(async (element) => {
+		const started = performance.now();
+		const before = element.scrollTop;
+		// Measure actual scrolling over the same window in the development browser.
+		await new Promise((resolve) => setTimeout(resolve, 250));
+		return Math.abs(element.scrollTop - before) * 1000 / (performance.now() - started);
+	});
+}
+
 async function readCreateInset(column: Locator, button: Locator) {
 	const [buttonRect, columnRect] = await Promise.all([
 		button.boundingBox(),
@@ -145,7 +155,230 @@ test("compact create adds a named issue in its own column without capturing sess
 	await expect(page.locator('[data-board-agent-session-drop-zone="create"]')).toHaveCount(0);
 });
 
+test("edge scrolling pauses when the drag window loses focus and resumes on pointer movement", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	const source = await openBoard(page);
+	await page.setViewportSize({ width: 1440, height: 760 });
+	const list = page.locator('[data-jira-kanban-column="In review"] [data-jira-kanban-card-list]');
+	await startDrag(page, source);
+	const box = (await list.boundingBox())!;
+	const x = box.x + box.width / 2;
+	const y = box.y + box.height - 110;
+	await page.mouse.move(x, y, { steps: 8 });
+	await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(40);
+	await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+	const paused = await list.evaluate((element) => element.scrollTop);
+	await page.waitForTimeout(200);
+	expect(await list.evaluate((element) => element.scrollTop)).toBe(paused);
+	await page.mouse.move(x + 1, y);
+	await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(paused + 40);
+	await page.mouse.move(900, 100);
+	await page.mouse.up();
+});
+
 for (const reducedMotion of ["reduce", "no-preference"] as const) {
+	test(`an attached session scrolls its source column and moves to a later issue (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await openBoard(page);
+		await page.setViewportSize({ width: 1440, height: 760 });
+		const column = page.locator('[data-jira-kanban-column="In review"]');
+		const list = column.locator("[data-jira-kanban-card-list]");
+		const sourceIssue = column.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-112"]');
+		const source = sourceIssue.locator('[data-slot="jira-issue-agent-row"]');
+		const box = (await source.boundingBox())!;
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2 + 20, { steps: 5 });
+		await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(1);
+		await expect(list).toHaveCSS("overflow-y", "auto");
+		const viewport = (await list.boundingBox())!;
+		await page.mouse.move(viewport.x + viewport.width / 2, viewport.y + viewport.height - 110, { steps: 8 });
+		await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(120);
+		const target = column.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-128"]');
+		await expect.poll(async () => {
+			const card = (await target.boundingBox())!;
+			return card.y + 40 < viewport.y + viewport.height - 8;
+		}).toBe(true);
+		const targetBox = (await target.boundingBox())!;
+		await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + 40, { steps: 8 });
+		await expect(target).toHaveAttribute("data-board-agent-session-target", "attach");
+		await page.screenshot({ path: `output/agent-browser/attached-session-source-scroll-${reducedMotion}.png` });
+		await page.mouse.up();
+		await expect(sourceIssue.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(0);
+		await expect(target.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(1);
+		await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(0);
+	});
+
+	test(`dragging between cards creates an issue at that slot (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		const source = await openBoard(page);
+		const sourceId = await source.getAttribute("data-testid");
+		const column = page.locator('[data-jira-kanban-column="To do"]');
+		const cards = column.locator('[data-board-agent-session-drop-zone="issue"]');
+		const first = cards.nth(0);
+		const second = cards.nth(1);
+		const firstBox = (await first.boundingBox())!;
+		const secondBox = (await second.boundingBox())!;
+		const x = firstBox.x + firstBox.width / 2;
+		const y = (firstBox.y + firstBox.height + secondBox.y) / 2;
+		const line = column.locator("[data-insertion-line]");
+		await startDrag(page, source);
+		await page.mouse.move(x, y, { steps: 8 });
+		await expect(second.locator("[data-insertion-line]")).toBeVisible();
+		for (const offset of [-2, 1, -1, 2, 0]) {
+			await page.mouse.move(x + offset, y + offset);
+			await expect(line).toHaveCount(1);
+			await expect(first).not.toHaveAttribute("data-board-agent-session-target", "attach");
+			await expect(second).not.toHaveAttribute("data-board-agent-session-target", "attach");
+		}
+		await page.screenshot({ path: `output/agent-browser/restored-inline-create-${reducedMotion}.png` });
+		await page.mouse.up();
+		await expect(cards).toHaveCount(5);
+		await expect(cards.nth(0)).toHaveAttribute("data-issue-key", "PAY-118");
+		await expect(cards.nth(2)).toHaveAttribute("data-issue-key", "PAY-124");
+		await expect(cards.nth(1).locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(1);
+		await expect(page.locator("[data-agent-session-column]").getByTestId(sourceId!)).toHaveCount(0);
+		await expect(line).toHaveCount(0);
+	});
+
+	test(`inline creation still works after edge scrolling (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		const source = await openBoard(page);
+		const sourceId = await source.getAttribute("data-testid");
+		await page.setViewportSize({ width: 1440, height: 760 });
+		const column = page.locator('[data-jira-kanban-column="In review"]');
+		const list = column.locator("[data-jira-kanban-card-list]");
+		const cards = column.locator('[data-board-agent-session-drop-zone="issue"]');
+		await startDrag(page, source);
+		const viewport = (await list.boundingBox())!;
+		await page.mouse.move(viewport.x + viewport.width / 2, viewport.y + viewport.height - 110, { steps: 8 });
+		await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(200);
+		await page.mouse.move(900, 100, { steps: 8 });
+		await expect.poll(() => list.evaluate((element) => element.getAnimations({ subtree: true })
+			.filter((animation) => animation.playState === "running" && animation.effect?.getTiming().iterations !== Infinity).length)).toBe(0);
+		// Place the desired seam in the neutral middle before releasing the drag.
+		await list.evaluate((element) => {
+			const before = element.querySelector('[data-issue-key="PAY-119"]')!.getBoundingClientRect();
+			const after = element.querySelector('[data-issue-key="PAY-132"]')!.getBoundingClientRect();
+			const clip = element.getBoundingClientRect();
+			element.scrollTop += (before.bottom + after.top) / 2 - (clip.top + clip.bottom) / 2;
+		});
+		const next = column.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-132"]');
+		const box = (await next.boundingBox())!;
+		// Enter horizontally so crossing the top scroll zone cannot move the measured seam.
+		await page.mouse.move(viewport.x - 24, box.y - 2, { steps: 8 });
+		await page.mouse.move(box.x + box.width / 2, box.y - 2, { steps: 8 });
+		await expect(next.locator("[data-insertion-line]")).toBeVisible();
+		await page.screenshot({ path: `output/agent-browser/inline-create-after-scroll-${reducedMotion}.png` });
+		await page.mouse.up();
+		await expect(cards).toHaveCount(9);
+		await expect(cards.nth(2)).toHaveAttribute("data-issue-key", "PAY-119");
+		await expect(cards.nth(4)).toHaveAttribute("data-issue-key", "PAY-132");
+		await expect(cards.nth(3).locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(1);
+		await expect(page.locator("[data-agent-session-column]").getByTestId(sourceId!)).toHaveCount(0);
+	});
+
+	test(`session drag accelerates toward both scroll edges (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		const source = await openBoard(page);
+		await page.setViewportSize({ width: 1440, height: 760 });
+		const column = page.locator('[data-jira-kanban-column="In review"]');
+		const list = column.locator("[data-jira-kanban-card-list]");
+		await startDrag(page, source);
+		const box = (await list.boundingBox())!;
+		const centerX = box.x + box.width / 2;
+		await page.mouse.move(centerX, box.y + box.height - 110, { steps: 8 });
+		await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(10);
+		const approachDown = await measureDragScrollSpeed(list);
+		await page.mouse.move(centerX, box.y + box.height - 48, { steps: 8 });
+		const well = column.locator('[data-board-agent-session-drop-zone="create"]');
+		await expect.poll(async () => (await well.boundingBox())!.height).toBeGreaterThanOrEqual(64);
+		await list.evaluate((element) => { element.scrollTop = 100; });
+		const edgeDown = await measureDragScrollSpeed(list);
+		expect(edgeDown).toBeGreaterThan(approachDown * 2);
+		await page.mouse.move(centerX, box.y + box.height / 2, { steps: 8 });
+		await expect.poll(async () => (await well.boundingBox())!.height).toBe(32);
+		await list.evaluate((element) => { element.scrollTop = 500; });
+		const parked = await list.evaluate((element) => element.scrollTop);
+		await page.mouse.move(centerX, box.y + 110, { steps: 8 });
+		await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeLessThan(parked - 10);
+		const approachUp = await measureDragScrollSpeed(list);
+		await page.mouse.move(centerX, box.y + 16, { steps: 8 });
+		// Pointer travel can consume the remaining scroll distance before sampling.
+		await list.evaluate((element) => { element.scrollTop = 500; });
+		const edgeUp = await measureDragScrollSpeed(list);
+		expect(edgeUp).toBeGreaterThan(approachUp * 2);
+		await test.info().attach(`development-scroll-speeds-${reducedMotion}`, {
+			body: JSON.stringify({ approachDown, edgeDown, approachUp, edgeUp }),
+			contentType: "application/json",
+		});
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+	});
+
+	test(`session links to an issue reached by dragging and scrolling (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		const source = await openBoard(page);
+		const sourceId = await source.getAttribute("data-testid");
+		await page.setViewportSize({ width: 1440, height: 760 });
+		const column = page.locator('[data-jira-kanban-column="In review"]');
+		const list = column.locator("[data-jira-kanban-card-list]");
+		const issue = list.locator('[data-issue-key="PAY-128"]');
+		await startDrag(page, source);
+		const box = (await list.boundingBox())!;
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height - 48, { steps: 8 });
+		await expect.poll(() => list.evaluate((element) => (
+			element.scrollHeight - element.clientHeight - element.scrollTop
+		)), { timeout: 10_000 }).toBeLessThan(2);
+		const card = (await issue.boundingBox())!;
+		const viewport = (await list.boundingBox())!;
+		await page.mouse.move(card.x + card.width / 2, viewport.y + viewport.height / 2, { steps: 8 });
+		const parked = await list.evaluate((element) => element.scrollTop);
+		await page.mouse.wheel(0, -40);
+		await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeLessThan(parked - 20);
+		const movedCard = (await issue.boundingBox())!;
+		await page.mouse.move(movedCard.x + movedCard.width / 2, movedCard.y + 40, { steps: 8 });
+		await page.mouse.up();
+		await expect(page.locator("[data-agent-session-column]").getByTestId(sourceId!)).toHaveCount(0);
+		await expect(issue.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(1);
+		await page.screenshot({ path: `output/agent-browser/session-scroll-linked-issue-${reducedMotion}.png` });
+	});
+
+	test(`session drag scrolls overflowing issues above the expanding footer (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		const source = await openBoard(page);
+		await page.setViewportSize({ width: 1440, height: 760 });
+		const column = page.locator('[data-jira-kanban-column="In review"]');
+		const list = column.locator("[data-jira-kanban-card-list]");
+		const initialHeight = await list.evaluate((element) => element.clientHeight);
+		await startDrag(page, source);
+		const box = (await list.boundingBox())!;
+		// Start well away from the edge; the former 56px band did not scroll here.
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height - 110, { steps: 8 });
+		await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(120);
+		const scrolled = await list.evaluate((element) => element.scrollTop);
+		await page.mouse.move(box.x + box.width / 2, box.y + 110, { steps: 8 });
+		await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeLessThan(scrolled - 80);
+		const well = column.locator('[data-board-agent-session-drop-zone="create"]');
+		const footer = (await well.boundingBox())!;
+		await page.mouse.move(footer.x + footer.width / 2, footer.y + footer.height - 8, { steps: 8 });
+		await expect.poll(async () => (await well.boundingBox())!.height).toBeGreaterThanOrEqual(64);
+		await expect.poll(() => list.evaluate((element) => element.clientHeight)).toBeLessThan(initialHeight - 20);
+		const expanded = (await well.boundingBox())!;
+		const viewport = (await list.boundingBox())!;
+		expect(viewport.y + viewport.height).toBeLessThanOrEqual(expanded.y + 12);
+		const stopped = await list.evaluate((element) => element.scrollTop);
+		await page.waitForTimeout(200);
+		expect(await list.evaluate((element) => element.scrollTop)).toBe(stopped);
+		await page.screenshot({ path: `output/agent-browser/session-drag-scroll-footer-${reducedMotion}.png` });
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect.poll(() => list.evaluate((element) => element.clientHeight)).toBe(initialHeight);
+		const afterCancel = await list.evaluate((element) => element.scrollTop);
+		await page.waitForTimeout(200);
+		expect(await list.evaluate((element) => element.scrollTop)).toBe(afterCancel);
+	});
+
 	test(`create target only fills spare space in proximity (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		const source = await openBoard(page);
@@ -186,8 +419,8 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		expect(expandedBox.x).toBeCloseTo(compactBox.x, 0);
 		expect(Math.abs(expandedBox.y + expandedBox.height - compactBox.y - compactBox.height)).toBeLessThanOrEqual(10.5);
 		const during = await readList(list);
-		expect({ height: during.height, scrollTop: during.scrollTop })
-			.toEqual({ height: before.height, scrollTop: before.scrollTop });
+		expect(during.height).toBeLessThan(before.height);
+		expect(during.scrollTop).toBe(before.scrollTop);
 		await expect.poll(() => wells.evaluateAll((elements) => elements.slice(1).map((element) => (
 			Math.round(element.getBoundingClientRect().height)
 		)))).toEqual([32, 32, 32]);
@@ -302,14 +535,14 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		const box = (await well.boundingBox())!;
 		expect(Math.abs(box.y + box.height - compactBox.y - compactBox.height)).toBeLessThanOrEqual(10.5);
 		await expect.poll(async () => {
-			const contentTop = await column.locator("[data-jira-kanban-card-list]").evaluate((element) => (
-				element.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(element).paddingTop || "0")
+			const viewportBottom = await column.locator("[data-jira-kanban-card-list]").evaluate((element) => (
+				element.getBoundingClientRect().bottom
 			));
 			const translateY = await well.evaluate((element) => {
 				const transform = getComputedStyle(element.parentElement!).transform;
 				return transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42;
 			});
-			return Math.abs((await well.boundingBox())!.y - translateY - contentTop);
+			return Math.abs((await well.boundingBox())!.y - translateY - viewportBottom - 4);
 		}).toBeLessThanOrEqual(1);
 		await page.mouse.move(compactBox.x + compactBox.width * 0.75, box.y + 100, { steps: 8 });
 		if (reducedMotion === "no-preference") {
@@ -371,7 +604,9 @@ test("spare-space target starts below the last card's agent footer", async ({ pa
 	const box = (await well.boundingBox())!;
 	expect(box.y).toBeGreaterThanOrEqual(before.lastBottom);
 	expect(box.y + box.height).toBeCloseTo(compactBox.y + compactBox.height, 0);
-	expect(await readList(list)).toEqual(before);
+	const expandedList = await readList(list);
+	expect(expandedList.height).toBeLessThan(before.height);
+	expect(expandedList.scrollTop).toBe(before.scrollTop);
 	await page.screenshot({ path: "output/agent-browser/dropzone-below-agent-footer.png" });
 	await page.mouse.move(900, 100, { steps: 8 });
 	await page.mouse.up();
@@ -415,12 +650,16 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 			expect(box.height).toBeCloseTo(64, 0);
 			expect(await sensor.boundingBox()).toEqual(sensorBox);
 		}
-		expect(await readList(list)).toEqual(before);
+		const expandedList = await readList(list);
+		expect(expandedList.height).toBeLessThan(before.height);
+		// Approaching through the issue edge may scroll; entering the well parks it.
+		await page.waitForTimeout(200);
+		expect((await readList(list)).scrollTop).toBe(expandedList.scrollTop);
 		await page.screenshot({ path: `output/agent-browser/anchored-full-dropzone-${reducedMotion}.png` });
 		await page.mouse.move(900, 100, { steps: 8 });
 		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(32);
 		await page.mouse.up();
-		expect(await readList(list)).toEqual(before);
+		await expect.poll(() => list.evaluate((element) => element.clientHeight)).toBe(before.height);
 	});
 }
 
