@@ -158,6 +158,7 @@ export function BoardColumnAddButton({
 						disabled={control?.active || onCreateWorkItem === undefined}
 						className={cn(
 							"w-full border-dashed hover:border-solid",
+							control?.selected ? null : "text-text-subtlest hover:text-text-subtle [&_svg]:text-icon-subtlest hover:[&_svg]:text-icon-subtle",
 							control?.className,
 							control?.active ? "hover:border-dashed" : null,
 							reveal === "column-hover" && !open
