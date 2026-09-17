@@ -414,6 +414,7 @@ function JiraTeamEu26App(): React.ReactElement {
 							glowStroke: designVariants.sessionStroke,
 						}}
 						columnChrome="default"
+						columnSizing="content"
 						agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 						boardColumns={boardColumns}

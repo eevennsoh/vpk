@@ -100,6 +100,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * The owning route supplies the copy.
 	 */
 	createWorkItemDropZoneLabel?: string;
+	/** Content-sized columns with a persistent create footer. */
+	columnSizing?: "fill" | "content";
 	/** Creates a named work item without attaching or capturing an agent session. */
 	onCreateWorkItem?: (columnTitle: string, draft: AgentSessionWorkItemDraft) => void;
 	/**
@@ -243,6 +245,7 @@ function BoardColumnShell({
 	chrome,
 	collapsed,
 	columnChrome,
+	columnSizing,
 	count,
 	onDragLeave,
 	onDragOver,
@@ -255,6 +258,7 @@ function BoardColumnShell({
 	chrome: KanbanColumnChromeStyles;
 	collapsed: boolean;
 	columnChrome: KanbanColumnChrome;
+	columnSizing: "fill" | "content";
 	count: number;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -290,6 +294,7 @@ function BoardColumnShell({
 			className={cn(
 				chrome.dropShellClassName,
 				"min-w-0",
+				columnSizing === "content" ? "group/board-column-shell relative isolate flex min-h-0 flex-col" : null,
 				collapsed || isResizing ? "overflow-hidden" : "overflow-visible",
 			)}
 			onDragOver={onDragOver}
@@ -304,6 +309,20 @@ function BoardColumnShell({
 				transition: shouldReduceMotion ? "none" : BOARD_COLUMN_SHELL_TRANSITION,
 			}}
 		>
+			{columnSizing === "content" && !collapsed ? (
+				// Grow only the paint into the spare column space. The card stack,
+				// create anchor and proximity footprint keep their settled geometry.
+				<div
+					aria-hidden
+					data-jira-kanban-column-backdrop=""
+					className={cn(
+						"pointer-events-none absolute inset-0 -z-10 opacity-0",
+						chrome.columnClassName,
+						"group-has-[[data-board-agent-session-drop-zone=create]:is([data-proximity=near],[data-proximity=target],[data-receiving])]/board-column-shell:opacity-100",
+					)}
+					style={{ borderRadius: token("radius.xlarge") }}
+				/>
+			) : null}
 			{collapsed ? (
 				<div style={{ paddingTop: chrome.dropContentPadding?.paddingTop }}>
 					<CollapsedBoardColumn
@@ -338,6 +357,7 @@ function ExperimentalJiraKanbanView({
 	issueDragTransitions = false,
 	collapsedColumns: controlledCollapsedColumns,
 	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
+	columnSizing = "fill",
 	createdCardArrival,
 	createWorkItemDropZoneLabel,
 	detachedAgentSessionsByCard,
@@ -654,7 +674,7 @@ function ExperimentalJiraKanbanView({
 				>
 				<LayoutGroup id={cardLayoutGroupId}>
 						<div
-							className="flex min-h-full w-max min-w-full items-stretch"
+							className={cn("flex w-max items-stretch", columnSizing === "fill" ? "min-h-full min-w-full" : "h-full")}
 							style={{ paddingInlineStart: resolvedColumnRowPaddingInlineStart }}
 						>
 						<ExclusiveCreateWellProximityProvider>
@@ -666,6 +686,7 @@ function ExperimentalJiraKanbanView({
 							chrome={chrome}
 							collapsed={isBoardColumnCollapsed(collapsedColumns, column.title)}
 							columnChrome={columnChrome}
+							columnSizing={columnSizing}
 							count={column.cards.length}
 							key={column.title}
 							onDragOver={issueDragTransitions && (column.statuses?.length ?? 0) > 1 ? undefined : handleColumnDragOver}
@@ -681,6 +702,7 @@ function ExperimentalJiraKanbanView({
 								cardInsertion={boardSessionDrag.cardInsertion}
 								chrome={chrome}
 								columnChrome={columnChrome}
+								columnSizing={columnSizing}
 								count={column.cards.length}
 								createdCardArrival={createdCardArrival?.columnTitle === column.title
 									? createdCardArrival

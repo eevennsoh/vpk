@@ -3,6 +3,40 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 const project = process.env.PLAYWRIGHT_JIRA_PROJECT ?? "jira-team-eu26";
 
+test("columns hug their cards and keep creation visible outside the scrollport", async ({ page }) => {
+	await openBoard(page);
+	await page.setViewportSize({ width: 1720, height: 1100 });
+	const rowWidth = await page.locator("[data-jira-kanban-scrollport]").evaluate((node) => ({
+		content: node.firstElementChild!.getBoundingClientRect().width,
+		viewport: node.getBoundingClientRect().width,
+	}));
+	expect(rowWidth.content).toBeLessThan(rowWidth.viewport);
+	await page.getByRole("heading", { name: "Jira Design", exact: true }).hover();
+	for (const title of ["To do", "In progress", "In review", "Done"]) {
+		const column = page.locator(`[data-jira-kanban-column="${title}"]`);
+		const list = column.locator("[data-jira-kanban-card-list]");
+		const button = column.getByRole("button", { name: `Create in ${title}` });
+		await expect(button).toBeVisible();
+		await expect(button).toHaveCSS("height", "24px");
+		await expect(button).toHaveCSS("opacity", "1");
+		expect(await button.evaluate((node) => node.closest("[data-jira-kanban-card-list]") === null)).toBe(true);
+		const geometry = await readList(list);
+		const box = (await button.boundingBox())!;
+		const insets = await button.evaluate((node) => {
+			const buttonRect = node.getBoundingClientRect();
+			const columnRect = node.closest("[data-kanban-column-chrome]")!.getBoundingClientRect();
+			return { left: buttonRect.left - columnRect.left, right: columnRect.right - buttonRect.right, bottom: columnRect.bottom - buttonRect.bottom };
+		});
+		expect(insets.bottom).toBe(insets.left);
+		expect(insets.bottom).toBe(insets.right);
+		if (geometry.scrollHeight <= geometry.height) {
+			expect(box.y - geometry.lastBottom).toBeLessThanOrEqual(20);
+		}
+		await list.evaluate((node) => { node.scrollTop = node.scrollHeight; });
+		expect(await button.boundingBox()).toEqual(box);
+	}
+});
+
 test("empty columns never show an inline create border during a session drag", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1440, height: 1100 });
@@ -24,9 +58,9 @@ test("empty columns never show an inline create border during a session drag", a
 	await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 20, sourceBox.y + 32, { steps: 5 });
 	await expect(column.locator('[data-board-agent-session-drop-zone="create"]')).toHaveCount(1);
 	const slot = column.locator('[data-board-agent-session-drop-zone="card-gap"]');
-	await expect(slot).toHaveCount(1);
-	const slotBox = (await slot.boundingBox())!;
-	await page.mouse.move(slotBox.x + slotBox.width / 2, slotBox.y + 80);
+	await expect(slot).toHaveCount(0);
+	const sensorBox = (await column.locator("[data-create-work-item-proximity]").boundingBox())!;
+	await page.mouse.move(sensorBox.x + sensorBox.width / 2, sensorBox.y + 80);
 	await expect(column.locator("[data-insertion-line], [data-board-insertion-marker]")).toHaveCount(0);
 	await expect(column.locator('[data-board-agent-session-drop-zone="create"]')).toHaveCount(1);
 	await page.mouse.move(900, 100);
@@ -83,7 +117,7 @@ async function startDrag(page: Page, source: Locator, createTargetCount = 4) {
 			}
 		}
 	});
-	await expect(page.locator('button[aria-label^="Create in "]')).toHaveCount(createTargetCount);
+	await expect(page.locator('button[aria-label^="Create in "]')).toHaveCount(0);
 	await expect(page.locator("[data-board-work-item-create]:not([inert])")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: /^Create in / })).toHaveCount(0);
 	const wells = page.locator('[data-board-agent-session-drop-zone="create"]');
@@ -101,6 +135,7 @@ async function readList(list: Locator) {
 		const cards = element.querySelectorAll("[data-issue-key]");
 		return {
 			height: element.clientHeight,
+			scrollHeight: element.scrollHeight,
 			scrollTop: element.scrollTop,
 			lastBottom: cards[cards.length - 1]?.getBoundingClientRect().bottom ?? element.getBoundingClientRect().top,
 		};
@@ -351,7 +386,10 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		const column = page.locator('[data-jira-kanban-column="In review"]');
 		const list = column.locator("[data-jira-kanban-card-list]");
 		const initialHeight = await list.evaluate((element) => element.clientHeight);
+		const initialCardCount = await list.locator("[data-issue-key]").count();
 		await startDrag(page, source);
+		const dragHeight = await list.evaluate((element) => element.clientHeight);
+		expect(dragHeight).toBe(initialHeight - 8);
 		const box = (await list.boundingBox())!;
 		// Start well away from the edge; the former 56px band did not scroll here.
 		await page.mouse.move(box.x + box.width / 2, box.y + box.height - 110, { steps: 8 });
@@ -363,103 +401,85 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		const footer = (await well.boundingBox())!;
 		await page.mouse.move(footer.x + footer.width / 2, footer.y + footer.height - 8, { steps: 8 });
 		await expect.poll(async () => (await well.boundingBox())!.height).toBeGreaterThanOrEqual(64);
-		await expect.poll(() => list.evaluate((element) => element.clientHeight)).toBeLessThan(initialHeight - 20);
+		await expect.poll(() => list.evaluate((element) => element.clientHeight)).toBe(dragHeight);
 		const expanded = (await well.boundingBox())!;
 		const viewport = (await list.boundingBox())!;
-		expect(viewport.y + viewport.height).toBeLessThanOrEqual(expanded.y + 12);
+		expect(viewport.y + viewport.height - expanded.y).toBeLessThanOrEqual(40);
 		const stopped = await list.evaluate((element) => element.scrollTop);
 		await page.waitForTimeout(200);
 		expect(await list.evaluate((element) => element.scrollTop)).toBe(stopped);
 		await page.screenshot({ path: `output/agent-browser/session-drag-scroll-footer-${reducedMotion}.png` });
-		await page.keyboard.press("Escape");
+		await page.mouse.move(900, 100, { steps: 8 });
 		await page.mouse.up();
 		await expect.poll(() => list.evaluate((element) => element.clientHeight)).toBe(initialHeight);
 		const afterCancel = await list.evaluate((element) => element.scrollTop);
 		await page.waitForTimeout(200);
+
 		expect(await list.evaluate((element) => element.scrollTop)).toBe(afterCancel);
+		await expect(list.locator("[data-issue-key]")).toHaveCount(initialCardCount);
+		await expect(source).toBeVisible();
 	});
 
-	test(`create target only fills spare space in proximity (${reducedMotion})`, async ({ page }) => {
+	test(`create target fills downward from the persistent button in proximity (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		const source = await openBoard(page);
 		const sourceId = await source.getAttribute("data-testid");
 		const column = page.locator('[data-jira-kanban-column="To do"]');
 		const list = column.locator("[data-jira-kanban-card-list]");
-		await expect.poll(() => list.evaluate((element) => element.getAnimations({ subtree: true })
-			.filter((animation) => animation.playState === "running" && animation.effect?.getTiming().iterations !== Infinity).length))
-			.toBe(0);
+		const button = column.getByRole("button", { name: "Create in To do" });
+		const buttonBox = (await button.boundingBox())!;
 		const before = await readList(list);
-		const initialCount = await list.locator('[data-issue-key]').count();
+		const initialCount = await list.locator("[data-issue-key]").count();
 		await startDrag(page, source);
 		const well = column.locator('[data-board-agent-session-drop-zone="create"]');
 		await page.mouse.move(900, 100, { steps: 8 });
-		const wells = page.locator('[data-board-agent-session-drop-zone="create"]');
-		await expect.poll(() => wells.evaluateAll((elements) => elements.map((element) => (
-			Math.round(element.getBoundingClientRect().height)
-		)))).toEqual([32, 32, 32, 32]);
-		await expect.poll(() => list.evaluate((element) => element.getAnimations({ subtree: true })
-			.filter((animation) => animation.playState === "running" && animation.effect?.getTiming().iterations !== Infinity).length))
-			.toBe(0);
-		const occupiedAfterDrag = await readList(list);
-		await page.screenshot({ path: `output/agent-browser/compact-dropzones-${reducedMotion}.png` });
-		const compactBox = (await well.boundingBox())!;
-		const approachY = (occupiedAfterDrag.lastBottom + compactBox.y) / 2;
-		expect(compactBox.y - approachY).toBeGreaterThan(120);
-		// A neighboring column and the last card's occupied footer are not
-		// part of the create target, even at the same vertical position.
-		await page.mouse.move(compactBox.x - 40, approachY, { steps: 8 });
 		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(32);
-		await page.mouse.move(compactBox.x + compactBox.width / 2, before.lastBottom - 40, { steps: 8 });
-		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(32);
-		await page.mouse.move(compactBox.x + compactBox.width / 2, approachY, { steps: 12 });
-		await expect.poll(async () => (await well.boundingBox())!.height).toBeGreaterThan(200);
-		await expect.poll(async () => (await well.boundingBox())!.y).toBeLessThan(approachY);
-		const expandedBox = (await well.boundingBox())!;
-		expect(expandedBox.y).toBeGreaterThanOrEqual(occupiedAfterDrag.lastBottom);
-		expect(expandedBox.x).toBeCloseTo(compactBox.x, 0);
-		expect(Math.abs(expandedBox.y + expandedBox.height - compactBox.y - compactBox.height)).toBeLessThanOrEqual(10.5);
-		const during = await readList(list);
-		expect(during.height).toBeLessThan(before.height);
-		expect(during.scrollTop).toBe(before.scrollTop);
-		await expect.poll(() => wells.evaluateAll((elements) => elements.slice(1).map((element) => (
-			Math.round(element.getBoundingClientRect().height)
-		)))).toEqual([32, 32, 32]);
-		await page.mouse.move(900, 100, { steps: 8 });
-		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(32);
-		await page.mouse.move(compactBox.x + compactBox.width / 2, approachY, { steps: 12 });
-		await expect.poll(async () => (await well.boundingBox())!.height).toBeGreaterThan(200);
-
-		// The target also follows a viewport change while the pointer is held.
-		const initialHeight = (await well.boundingBox())!.height;
+		const compact = (await well.boundingBox())!;
+		expect(compact.y).toBeCloseTo(buttonBox.y, 0);
+		const backdrop = column.locator("[data-jira-kanban-column-backdrop]");
+		await expect(backdrop).toHaveCSS("opacity", "0");
+		const sensor = column.locator("[data-create-work-item-proximity]");
+		const sensorBox = (await sensor.boundingBox())!;
+		expect(sensorBox.y).toBeCloseTo(compact.y, 0);
+		expect(sensorBox.height).toBeGreaterThan(200);
+		const centerX = compact.x + compact.width / 2;
+		await page.mouse.move(centerX, compact.y - 12, { steps: 8 });
+		await expect(well).toHaveAttribute("data-proximity", "near");
+		await expect.poll(async () => (await well.boundingBox())!.height).toBeCloseTo(sensorBox.height, 0);
+		await expect(backdrop).toHaveCSS("opacity", "1");
+		const columnBox = (await column.boundingBox())!;
+		const backdropBox = (await backdrop.boundingBox())!;
+		expect(backdropBox.y + backdropBox.height).toBeCloseTo(columnBox.y + columnBox.height - 2, 0);
+		expect(backdropBox.y + backdropBox.height).toBeGreaterThan(compact.y + compact.height);
+		await page.mouse.move(centerX, compact.y + 100, { steps: 8 });
+		await expect(well).toHaveAttribute("data-armed", "true");
+		const expanded = (await well.boundingBox())!;
+		expect(Math.abs(expanded.y - compact.y)).toBeLessThanOrEqual(10.5);
+		expect(Math.abs(expanded.y + expanded.height - sensorBox.y - sensorBox.height)).toBeLessThanOrEqual(10.5);
+		expect(await sensor.boundingBox()).toEqual(sensorBox);
+		expect(await readList(list)).toEqual(before);
+		await expect.poll(() => page.locator('[data-board-agent-session-drop-zone="create"]').evaluateAll((elements) => elements.slice(1).map((element) => Math.round(element.getBoundingClientRect().height))))
+			.toEqual([32, 32, 32]);
+		const height = expanded.height;
 		await page.setViewportSize({ width: 1440, height: 1200 });
-		await expect.poll(async () => (await well.boundingBox())!.height).toBeGreaterThan(initialHeight + 90);
-		const box = (await well.boundingBox())!;
-		// Aim below the stationary cards, independent of the magnetic offset.
-		await page.mouse.move(box.x + box.width / 2, Math.max(before.lastBottom + 35, box.y + 35), { steps: 12 });
+		await expect.poll(async () => (await well.boundingBox())!.height).toBeGreaterThan(height + 90);
+		const resized = (await sensor.boundingBox())!;
+		await page.mouse.move(centerX, resized.y + resized.height / 2, { steps: 8 });
 		await expect(well).toHaveAttribute("data-armed", "true");
 		await page.screenshot({ path: `output/agent-browser/reactive-dropzone-${reducedMotion}.png` });
 		await page.mouse.up();
-		await expect(list.locator('[data-issue-key]')).toHaveCount(initialCount + 1);
+		await expect(list.locator("[data-issue-key]")).toHaveCount(initialCount + 1);
 		await expect(page.locator("[data-agent-session-column]").getByTestId(sourceId!)).toHaveCount(0);
 	});
 }
 
-test("compact create actions follow the cards and move to the top when empty", async ({ page }) => {
-	await page.setViewportSize({ width: 1440, height: 1100 });
-	await page.goto(`${origin}/preview/projects/${project}`);
+test("empty columns keep the persistent create button directly below the header", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openBoard(page);
 	const column = page.locator('[data-jira-kanban-column="To do"]');
 	const button = column.getByRole("button", { name: "Create in To do" });
-	await expect(column.locator("[data-issue-key]")).toHaveCount(4);
 	const populated = await readCreateInset(column, button);
-	const lastCardBox = (await column.locator("[data-issue-key]").last().boundingBox())!;
-	expect(populated.width).toBe(lastCardBox.width);
-	const populatedButtonBox = (await button.boundingBox())!;
-	expect(populatedButtonBox.height).toBe(24);
-	expect(populatedButtonBox.x).toBe(lastCardBox.x);
-	expect(populatedButtonBox.y - lastCardBox.y - lastCardBox.height).toBeGreaterThanOrEqual(4);
-	expect(populatedButtonBox.y - lastCardBox.y - lastCardBox.height).toBeLessThanOrEqual(12);
-
-	await page.getByRole("button", { name: "Needs input: 1 agent" }).click();
+	await page.getByRole("button", { name: "Filter board by Codex" }).click();
 	const expand = page.getByRole("button", { name: "Expand To do column" });
 	if (await expand.isVisible()) {
 		await expand.focus();
@@ -467,259 +487,282 @@ test("compact create actions follow the cards and move to the top when empty", a
 	}
 	await expect(column.locator("[data-issue-key]")).toHaveCount(0);
 	await page.getByRole("heading", { name: "Jira Design", exact: true }).hover();
-	await page.locator(":focus").evaluateAll((elements) => {
-		for (const element of elements) (element as HTMLElement).blur();
-	});
-	await expect(button).toHaveCSS("opacity", "0");
-	await expect(button).toHaveCSS("pointer-events", "none");
-	await column.locator("[data-jira-kanban-card-list]").hover();
 	await expect(button).toHaveCSS("opacity", "1");
 	await expect(button).toHaveCSS("pointer-events", "auto");
-	await expect(column.locator("[data-board-insertion-marker]")).toHaveCount(0);
-	await expect.poll(async () => {
-		const listBox = (await column.locator("[data-jira-kanban-card-list]").boundingBox())!;
-		const buttonBox = (await button.boundingBox())!;
-		return buttonBox.y - listBox.y;
-	}).toBeLessThanOrEqual(12);
-	await page.getByRole("heading", { name: "Jira Design", exact: true }).hover();
-	await expect(button).toHaveCSS("opacity", "0");
+	const box = (await button.boundingBox())!;
+	const columnBox = (await column.boundingBox())!;
+	expect(box.y - columnBox.y).toBeLessThan(60);
+	expect(await readCreateInset(column, button)).toEqual(populated);
 	await column.getByRole("button", { name: "Collapse To do column" }).focus();
 	await page.keyboard.press("Tab");
 	await expect(button).toBeFocused();
-	await expect(button).toHaveCSS("opacity", "1");
-	await expect.poll(async () => (await column.boundingBox())!.width).toBe(280);
-
-	expect(await readCreateInset(column, button)).toEqual(populated);
 });
 
 for (const reducedMotion of ["reduce", "no-preference"] as const) {
-	test(`empty columns fill upward with magnetic feedback (${reducedMotion})`, async ({ page }) => {
-		test.setTimeout(60_000);
+	test(`empty columns fill downward and restore creation after cancellation (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		let source: Locator;
-		if (reducedMotion === "reduce") {
-			await page.clock.install();
-			await openBoard(page);
-			await page.clock.runFor(45_000);
-			await page.getByRole("button", { name: "Needs input: 1 agent" }).click();
-			source = page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-sync-release-gate");
-		} else {
-			// Use a real filter and native animation time for the magnetic check.
-			await openBoard(page);
-			await page.getByRole("button", { name: "Filter board by Codex" }).click();
-			const firstSource = page.locator('[data-agent-session-column] [data-testid^="agent-session-row-"]').first();
-			const sourceId = await firstSource.getAttribute("data-testid");
-			if (!sourceId) throw new Error("Filtered session has no identity");
-			source = page.getByTestId(sourceId);
-		}
+		await openBoard(page);
+		await page.getByRole("button", { name: "Filter board by Codex" }).click();
 		const expand = page.getByRole("button", { name: "Expand To do column" });
 		if (await expand.isVisible()) {
 			await expand.focus();
 			await page.keyboard.press("Enter");
 		}
+		const source = page.locator('[data-agent-session-column] [data-testid^="agent-session-row-"]').first();
 		const column = page.locator('[data-jira-kanban-column="To do"]');
 		await expect(column.locator("[data-issue-key]")).toHaveCount(0);
 		const button = column.getByRole("button", { name: "Create in To do" });
-		const before = await button.boundingBox();
-		await source.hover();
-		const targetCount = await page.locator("[data-jira-kanban-card-list]").count();
-		await startDrag(page, source, targetCount);
+		await expect.poll(() => button.evaluate((node) => {
+			const transform = getComputedStyle(node).transform;
+			return transform === "none" || new DOMMatrixReadOnly(transform).isIdentity;
+		})).toBe(true);
+		const before = (await button.boundingBox())!;
+		await startDrag(page, source, await page.locator("[data-jira-kanban-card-list]").count());
 		const well = column.locator('[data-board-agent-session-drop-zone="create"]');
 		await page.mouse.move(900, 100, { steps: 8 });
-		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(32);
-		const compactBox = (await well.boundingBox())!;
-		const columnBox = (await column.boundingBox())!;
-		expect(columnBox.y + columnBox.height - compactBox.y - compactBox.height).toBeLessThanOrEqual(12);
-		await page.mouse.move(compactBox.x + compactBox.width / 2, compactBox.y - 360, { steps: 8 });
+		const compact = (await well.boundingBox())!;
+		const sensor = column.locator("[data-create-work-item-proximity]");
+		const sensorBox = (await sensor.boundingBox())!;
+		await page.mouse.move(compact.x + compact.width * 0.75, compact.y + 100, { steps: 8 });
 		await expect.poll(async () => (await well.boundingBox())!.height).toBeGreaterThan(700);
 		const box = (await well.boundingBox())!;
-		expect(Math.abs(box.y + box.height - compactBox.y - compactBox.height)).toBeLessThanOrEqual(10.5);
-		await expect.poll(async () => {
-			const viewportBottom = await column.locator("[data-jira-kanban-card-list]").evaluate((element) => (
-				element.getBoundingClientRect().bottom
-			));
-			const translateY = await well.evaluate((element) => {
-				const transform = getComputedStyle(element.parentElement!).transform;
-				return transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42;
-			});
-			return Math.abs((await well.boundingBox())!.y - translateY - viewportBottom - 4);
-		}).toBeLessThanOrEqual(1);
-		await page.mouse.move(compactBox.x + compactBox.width * 0.75, box.y + 100, { steps: 8 });
+		expect(Math.abs(box.y - compact.y)).toBeLessThanOrEqual(10.5);
+		expect(Math.abs(box.y + box.height - sensorBox.y - sensorBox.height)).toBeLessThanOrEqual(10.5);
 		if (reducedMotion === "no-preference") {
-			await expect.poll(async () => (await well.boundingBox())!.x - compactBox.x).toBeGreaterThan(1);
+			await expect.poll(async () => (await well.boundingBox())!.x - compact.x).toBeGreaterThan(1);
 		}
-		expect(Math.abs((await well.boundingBox())!.x - compactBox.x)).toBeLessThanOrEqual(10.5);
+		expect(Math.abs((await well.boundingBox())!.x - compact.x)).toBeLessThanOrEqual(10.5);
+		expect(await sensor.boundingBox()).toEqual(sensorBox);
 		await expect(well).toHaveAttribute("data-armed", "true");
 		await page.mouse.move(900, 100, { steps: 8 });
 		await page.mouse.up();
 		await expect(well).toHaveCount(0);
 		await expect(button).toBeVisible();
-		// Bringing the source back into view can scroll the board horizontally.
-		const after = (await button.boundingBox())!;
-		expect({ height: after.height, width: after.width, y: after.y })
-			.toEqual({ height: before!.height, width: before!.width, y: before!.y });
+		await expect.poll(() => button.boundingBox()).toEqual(before);
 		await expect(source).toBeVisible();
 	});
-}
 
-test("overflowing cards retain their scroll viewport during a create drag", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	const source = await openBoard(page);
-	const column = page.locator('[data-jira-kanban-column="In review"]');
-	const list = column.locator("[data-jira-kanban-card-list]");
-	await list.evaluate((element) => { element.scrollTop = 100; });
-	const before = await readList(list);
-	await startDrag(page, source);
-	const well = column.locator('[data-board-agent-session-drop-zone="create"]');
-	expect((await well.boundingBox())!.height).toBeLessThanOrEqual(64);
-	expect(await readList(list)).toEqual(before);
-	await page.mouse.move(900, 100, { steps: 8 });
-	await page.mouse.up();
-	await expect(well).toHaveCount(0);
-	expect(await readList(list)).toEqual(before);
-});
-
-test("spare-space target starts below the last card's agent footer", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.clock.install();
-	await openBoard(page);
-	await page.clock.runFor(45_000);
-	await page.getByRole("button", { name: "Needs input: 1 agent" }).click();
-	const source = page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-sync-release-gate");
-	const column = page.locator('[data-jira-kanban-column="In review"]');
-	const list = column.locator("[data-jira-kanban-card-list]");
-	await expect(list.locator("[data-issue-key]")).toHaveCount(1);
-	const footer = list.locator('[data-slot="jira-issue-agent-row"]');
-	await expect(footer).toBeVisible();
-	const before = await readList(list);
-	await startDrag(page, source, 1);
-	const well = column.locator('[data-board-agent-session-drop-zone="create"]');
-	await page.mouse.move(900, 100, { steps: 8 });
-	const compactBox = (await well.boundingBox())!;
-	const centerX = compactBox.x + compactBox.width / 2;
-	await page.mouse.move(centerX, before.lastBottom - 24, { steps: 8 });
-	await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(32);
-	await page.mouse.move(centerX, before.lastBottom + 32, { steps: 8 });
-	await expect.poll(async () => (await well.boundingBox())!.height).toBeGreaterThan(500);
-	const box = (await well.boundingBox())!;
-	expect(box.y).toBeGreaterThanOrEqual(before.lastBottom);
-	expect(box.y + box.height).toBeCloseTo(compactBox.y + compactBox.height, 0);
-	const expandedList = await readList(list);
-	expect(expandedList.height).toBeLessThan(before.height);
-	expect(expandedList.scrollTop).toBe(before.scrollTop);
-	await page.screenshot({ path: "output/agent-browser/dropzone-below-agent-footer.png" });
-	await page.mouse.move(900, 100, { steps: 8 });
-	await page.mouse.up();
-});
-
-for (const reducedMotion of ["reduce", "no-preference"] as const) {
-	test(`full-column target keeps proximity and bounded magnetic lean near the bottom (${reducedMotion})`, async ({ page }) => {
+	test(`small bottom gaps fill down then extend up to the 64px minimum (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		const source = await openBoard(page);
+		await page.setViewportSize({ width: 1440, height: 760 });
 		const column = page.locator('[data-jira-kanban-column="In review"]');
 		const list = column.locator("[data-jira-kanban-card-list]");
+		await list.evaluate((element) => { element.scrollTop = 100; });
 		const before = await readList(list);
+		const button = column.getByRole("button", { name: "Create in In review" });
+		const buttonBox = (await button.boundingBox())!;
 		await startDrag(page, source);
-		const well = column.locator('[data-board-agent-session-drop-zone="create"]');
 		await page.mouse.move(900, 100, { steps: 8 });
-		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(32);
-		const compactBox = (await well.boundingBox())!;
-		const bottom = compactBox.y + compactBox.height;
-		const centerX = compactBox.x + compactBox.width / 2;
+		const well = column.locator('[data-board-agent-session-drop-zone="create"]');
 		const sensor = column.locator("[data-create-work-item-proximity]");
 		const sensorBox = (await sensor.boundingBox())!;
-		await page.mouse.move(centerX, compactBox.y - 97, { steps: 8 });
-		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(32);
-		// The nearby pointer still attracts and opens the well before entering it.
-		await page.mouse.move(centerX, bottom - 64 - 12, { steps: 8 });
+		const columnBox = (await column.boundingBox())!;
+		const bottom = columnBox.y + columnBox.height - 10;
+		const available = bottom - buttonBox.y;
+		expect(available).toBeGreaterThan(0);
+		expect(available).toBeLessThan(64);
+		expect(sensorBox.height).toBe(64);
+		expect(sensorBox.y + sensorBox.height).toBeCloseTo(bottom, 0);
+		const x = sensorBox.x + sensorBox.width / 2;
+		await page.mouse.move(x, sensorBox.y - 12, { steps: 8 });
 		await expect(well).toHaveAttribute("data-proximity", "near");
-		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(64);
-		if (reducedMotion === "no-preference") {
-			await expect.poll(async () => (await well.boundingBox())!.y).toBeLessThan(bottom - 64 - 5);
-		}
-		expect(Math.abs((await well.boundingBox())!.y - (bottom - 64))).toBeLessThanOrEqual(10.5);
-		// Enter the fixed 64px footprint before the chrome has expanded.
-		await page.mouse.move(centerX, bottom - 50, { steps: 8 });
-		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(64);
-		for (const y of [bottom - 60, bottom - 12, bottom - 40]) {
-			await page.mouse.move(centerX, y, { steps: 4 });
+		await expect.poll(async () => (await well.boundingBox())!.height).toBe(64);
+		for (const y of [bottom - 12, bottom - 40, bottom - 60]) {
+			await page.mouse.move(x, y, { steps: 4 });
 			await expect(well).toHaveAttribute("data-armed", "true");
 			const box = (await well.boundingBox())!;
-			expect(box.x).toBeCloseTo(compactBox.x, 0);
-			expect(Math.abs(box.y - (bottom - 64))).toBeLessThanOrEqual(10.5);
-			expect(box.height).toBeCloseTo(64, 0);
+			expect(Math.abs(box.y + box.height - bottom)).toBeLessThanOrEqual(10.5);
+			expect(box.y).toBeLessThan(buttonBox.y);
 			expect(await sensor.boundingBox()).toEqual(sensorBox);
 		}
-		const expandedList = await readList(list);
-		expect(expandedList.height).toBeLessThan(before.height);
-		// Approaching through the issue edge may scroll; entering the well parks it.
+		expect((await readList(list)).height).toBe(before.height - 8);
 		await page.waitForTimeout(200);
-		expect((await readList(list)).scrollTop).toBe(expandedList.scrollTop);
+		const parked = await list.evaluate((element) => element.scrollTop);
+		await page.waitForTimeout(200);
+		expect(await list.evaluate((element) => element.scrollTop)).toBe(parked);
 		await page.screenshot({ path: `output/agent-browser/anchored-full-dropzone-${reducedMotion}.png` });
-		await page.mouse.move(900, 100, { steps: 8 });
-		await expect.poll(async () => Math.round((await well.boundingBox())!.height)).toBe(32);
+		await page.keyboard.press("Escape");
 		await page.mouse.up();
-		await expect.poll(() => list.evaluate((element) => element.clientHeight)).toBe(before.height);
+
+		await expect(button).toBeVisible();
+		await expect.poll(() => button.boundingBox()).toEqual(buttonBox);
 	});
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
-	test(`bottom dashed targets animate in and out (${reducedMotion})`, async ({ page }) => {
+	test(`filtered dropzone keeps one copy inside its shape on every frame (${reducedMotion})`, async ({ page }) => {
+		test.setTimeout(90_000);
 		await page.emulateMedia({ reducedMotion });
-		await page.setViewportSize({ width: 1440, height: 1100 });
-		await page.goto(`${origin}/${project}`);
-		await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
-		const source = page.getByTestId("agent-session-row-lw-scope-thread");
+		if (reducedMotion === "reduce") await page.clock.install();
+		await openBoard(page);
+		if (reducedMotion === "reduce") {
+			await page.clock.runFor(45_000);
+		} else {
+			// Keep Motion's animation clock native while the finite arrival queue settles.
+			await page.waitForTimeout(45_000);
+		}
+		await page.getByRole("button", { name: /^Needs input:/ }).click();
+		const expandTodo = page.getByRole("button", { name: "Expand To do column" });
+		if (await expandTodo.isVisible()) {
+			await expandTodo.focus();
+			await page.keyboard.press("Enter");
+		}
+		const todo = page.locator('[data-jira-kanban-column="In review"]');
+		await expect(todo.locator("[data-issue-key]")).toHaveCount(1);
+		await expect(todo.locator('[data-slot="jira-issue-agent-row"]')).toBeVisible();
+		const expandProgress = page.getByRole("button", { name: "Expand In progress column" });
+		if (await expandProgress.isVisible()) {
+			await expandProgress.focus();
+			await page.keyboard.press("Enter");
+		}
+		await page.getByRole("heading", { name: "Jira Design", exact: true }).hover();
+		const source = page.locator('[data-agent-session-column] [data-testid^="agent-session-row-"]').first();
 		await source.scrollIntoViewIfNeeded();
-		const sourceBox = (await source.boundingBox())!;
 		await page.evaluate(() => {
-			const trace = { stage: "enter", frames: [] as { stage: string; opacity: number; offset: number; targets: number }[], running: true };
-			Object.assign(window, { dashedMotionTrace: trace });
+			const trace = { stage: "enter", running: true, frames: [] as { stage: string; column: string; overhang: number; copies: number; delta: number; buttonTransform: string; copyTransform: string }[] };
+			Object.assign(window, { containedDropzoneTrace: trace });
 			const started = performance.now();
 			function sample() {
-				const well = document.querySelector('[data-jira-dropzone-well][data-jira-dropzone-column="To do"]')
-					?? document.querySelector('[data-board-agent-session-create-work-item-drop-zone="To do"]')?.parentElement;
-				if (well) {
-					const style = getComputedStyle(well);
+				for (const button of document.querySelectorAll<HTMLElement>("[data-jira-dropzone-control]")) {
+					const copies = [...button.querySelectorAll<HTMLElement>("[data-jira-dropzone-copy-motion]")];
+					const viewport = copies[0]?.parentElement;
+					if (!viewport) continue;
+					const shape = button.getBoundingClientRect();
+					const content = viewport.getBoundingClientRect();
 					trace.frames.push({
 						stage: trace.stage,
-						opacity: Number(style.opacity),
-						offset: style.transform === "none" ? 0 : new DOMMatrixReadOnly(style.transform).m42,
-						targets: document.querySelectorAll('[data-board-agent-session-drop-zone="create"]').length,
+						column: button.dataset.jiraDropzoneControl!,
+						overhang: Math.max(0, shape.left - content.left, content.right - shape.right, shape.top - content.top, content.bottom - shape.bottom),
+						copies: copies.length,
+						delta: Math.abs((content.top + content.bottom - shape.top - shape.bottom) / 2),
+						buttonTransform: getComputedStyle(button).transform,
+						copyTransform: getComputedStyle(viewport).transform,
 					});
 				}
-				if (trace.running && performance.now() - started < 3000) requestAnimationFrame(sample);
+				if (trace.running && performance.now() - started < 6000) requestAnimationFrame(sample);
 			}
 			requestAnimationFrame(sample);
 		});
-		await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+		const box = (await source.boundingBox())!;
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 		await page.mouse.down();
-		await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 20, sourceBox.y + sourceBox.height / 2 + 20, { steps: 5 });
-		const target = page.locator('[data-board-agent-session-create-work-item-drop-zone="To do"]');
-		await expect(target).toHaveCount(1);
-		await expect.poll(() => target.evaluate((node) => getComputedStyle(node.closest("[data-jira-dropzone-well]") ?? node.parentElement!).opacity)).toBe("1");
-		await page.screenshot({ path: `output/agent-browser/dropzone-motion-side/entered-${reducedMotion}.png` });
-		await page.mouse.move(900, 100);
-		await page.evaluate(() => {
-			const trace = (window as typeof window & { dashedMotionTrace: { stage: string } }).dashedMotionTrace;
-			trace.stage = "exit";
-		});
+		await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2 + 20, { steps: 5 });
+		await expect(page.locator('[data-board-agent-session-drop-zone="create"]')).toHaveCount(3);
+		await page.mouse.move(900, 100, { steps: 4 });
+		await page.waitForTimeout(280);
+		const dragButton = todo.getByRole("button", { name: /^Drop to create work item/ });
+		await expect(dragButton).toHaveCSS("height", "32px");
+		const sensor = todo.locator("[data-create-work-item-proximity]");
+		const sensorBox = (await sensor.boundingBox())!;
+		const stage = async (value: string) => page.evaluate((next) => {
+			(window as typeof window & { containedDropzoneTrace: { stage: string } }).containedDropzoneTrace.stage = next;
+		}, value);
+		for (let index = 0; index < 2; index += 1) {
+			await stage("expand");
+			await page.mouse.move(sensorBox.x + sensorBox.width / 2, sensorBox.y + sensorBox.height / 2, { steps: 4 });
+			await page.waitForTimeout(220);
+			await expect.poll(async () => (await dragButton.boundingBox())!.height).toBeCloseTo(sensorBox.height, 0);
+			await stage("collapse");
+			await page.mouse.move(900, 100, { steps: 4 });
+			await page.waitForTimeout(220);
+		}
+		await stage("exit");
 		await page.mouse.up();
-		await expect(page.locator('[data-board-agent-session-drop-zone="create"]')).toHaveCount(0);
-		await page.waitForTimeout(180);
+		await page.waitForTimeout(280);
 		const frames = await page.evaluate(() => {
-			const trace = (window as typeof window & { dashedMotionTrace: { running: boolean; frames: { stage: string; opacity: number; offset: number; targets: number }[] } }).dashedMotionTrace;
+			const trace = (window as typeof window & { containedDropzoneTrace: { running: boolean; frames: { stage: string; column: string; overhang: number; copies: number; delta: number; buttonTransform: string; copyTransform: string }[] } }).containedDropzoneTrace;
 			trace.running = false;
 			return trace.frames;
 		});
 		const { writeFile } = await import("node:fs/promises");
-		await writeFile(`output/agent-browser/dropzone-motion-side/frames-${reducedMotion}.json`, JSON.stringify(frames, null, 2));
-		await expect(page.locator("[data-jira-dropzone-well]")).toHaveCount(0);
+		await writeFile(`output/agent-browser/dropzone-motion-side/contained-copy-${reducedMotion}.json`, JSON.stringify(frames, null, 2));
+		await page.screenshot({ path: `output/agent-browser/dropzone-motion-side/contained-copy-${reducedMotion}.png` });
+		expect(frames.length).toBeGreaterThan(20);
+		if (reducedMotion === "no-preference") expect(frames.some((frame) => frame.buttonTransform !== "none")).toBe(true);
+		expect(Math.max(...frames.map((frame) => frame.overhang)), JSON.stringify(frames.filter((frame) => frame.overhang > 1.5).slice(0, 4))).toBeLessThanOrEqual(1.5);
+		expect(Math.max(...frames.map((frame) => frame.copies))).toBeLessThanOrEqual(1);
+		expect(Math.max(...frames.map((frame) => frame.delta))).toBeLessThanOrEqual(1.5);
+	});
+
+	test(`one button grows from 24px to 32px at drag start and returns (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion, colorScheme: "light" });
+		const source = await openBoard(page);
+		const column = page.locator('[data-jira-kanban-column="To do"]');
+		const button = column.getByRole("button", { name: "Create in To do" });
+		await expect(button).toHaveCSS("height", "24px");
+		const original = (await button.elementHandle())!;
+		await page.evaluate(() => {
+			const trace = { stage: "enter", frames: [] as { stage: string; kind: string; opacity: number; offset: number; height: number; nativeHeight: number; stale: boolean }[], running: true };
+			Object.assign(window, { sharedControlTrace: trace });
+			const started = performance.now();
+			function sample() {
+				for (const copy of document.querySelectorAll('[data-jira-dropzone-control="To do"] [data-jira-dropzone-copy-motion]')) {
+					const style = getComputedStyle(copy);
+					const control = document.querySelector<HTMLElement>('[data-jira-dropzone-control="To do"]')!;
+					trace.frames.push({
+						stage: trace.stage,
+						kind: copy.getAttribute("data-jira-dropzone-copy-motion")!,
+						height: control.getBoundingClientRect().height,
+						nativeHeight: control.offsetHeight,
+						stale: copy.getAttribute("data-jira-dropzone-copy-motion") !== (control.getAttribute("aria-label")?.startsWith("Drop to create work item") ? "label" : "add"),
+						opacity: Number(style.opacity),
+						offset: style.transform === "none" ? 0 : new DOMMatrixReadOnly(style.transform).m42,
+					});
+				}
+				if (trace.running && performance.now() - started < 5000) requestAnimationFrame(sample);
+			}
+			requestAnimationFrame(sample);
+		});
+		const sourceBox = (await source.boundingBox())!;
+		await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 20, sourceBox.y + sourceBox.height / 2 + 20, { steps: 5 });
+		const target = column.getByRole("button", { name: /^Drop to create work item in To do/ });
+		await expect(target).toBeVisible();
+		expect(await original.evaluate((node) => node === document.querySelector('[data-jira-dropzone-control="To do"]'))).toBe(true);
+		await page.mouse.move(900, 100, { steps: 8 });
+		await expect(target).toHaveCSS("height", "32px");
+		await expect(target).toHaveCSS("background-color", "rgb(255, 255, 255)");
+		await expect(target).toHaveAttribute("aria-disabled", "true");
+		await page.waitForTimeout(180);
+		await expect(target.locator('[data-jira-dropzone-copy-motion="add"]')).toHaveCount(0);
+		await page.screenshot({ path: `output/agent-browser/dropzone-motion-side/shared-control-${reducedMotion}.png` });
+		const sensor = column.locator("[data-create-work-item-proximity]");
+		const sensorBox = (await sensor.boundingBox())!;
+		await page.evaluate(() => {
+			(window as typeof window & { sharedControlTrace: { stage: string } }).sharedControlTrace.stage = "expand";
+		});
+		await page.mouse.move(sensorBox.x + sensorBox.width / 2, sensorBox.y + sensorBox.height / 2, { steps: 8 });
+		await expect.poll(async () => (await target.boundingBox())!.height).toBeCloseTo(sensorBox.height, 0);
+		expect(await sensor.boundingBox()).toEqual(sensorBox);
+		await expect(target).toHaveCSS("background-color", "rgb(233, 242, 254)");
+		await page.mouse.move(900, 100, { steps: 8 });
+		await expect(target).toHaveCSS("height", "32px");
+
+		await page.evaluate(() => {
+			(window as typeof window & { sharedControlTrace: { stage: string } }).sharedControlTrace.stage = "exit";
+		});
+		await page.mouse.up();
+		await expect(button).toBeVisible();
+		await expect(button).toHaveCSS("height", "24px");
+		expect(await original.evaluate((node) => node === document.querySelector('[data-jira-dropzone-control="To do"]'))).toBe(true);
+		await page.waitForTimeout(180);
+		await expect(button.locator('[data-jira-dropzone-copy-motion="label"]')).toHaveCount(0);
+		await expect(button.locator('[data-jira-dropzone-copy-motion="add"]')).toHaveCSS("opacity", "1");
+		const frames = await page.evaluate(() => {
+			const trace = (window as typeof window & { sharedControlTrace: { running: boolean; frames: { stage: string; kind: string; opacity: number; offset: number; height: number; nativeHeight: number; stale: boolean }[] } }).sharedControlTrace;
+			trace.running = false;
+			return trace.frames;
+		});
+		const { writeFile } = await import("node:fs/promises");
+		await writeFile(`output/agent-browser/dropzone-motion-side/shared-control-frames-${reducedMotion}.json`, JSON.stringify(frames, null, 2));
+		expect(frames.filter((frame) => frame.stale)).toEqual([]);
 		if (reducedMotion === "reduce") {
 			expect(frames.every((frame) => Math.abs(frame.offset) < 0.01)).toBe(true);
 		} else {
-			expect(frames.some((frame) => frame.stage === "enter" && frame.offset > 0.01 && frame.opacity > 0 && frame.opacity < 1)).toBe(true);
-			expect(frames.some((frame) => frame.stage === "exit" && frame.targets === 0 && frame.offset > 0 && frame.opacity > 0 && frame.opacity < 1)).toBe(true);
+			expect(frames.some((frame) => frame.stage === "expand" && frame.height > 33 && frame.height < frame.nativeHeight - 1)).toBe(true);
+			expect(frames.every((frame) => frame.opacity === 1 && Math.abs(frame.offset) < 0.01)).toBe(true);
 		}
 	});
 }

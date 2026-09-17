@@ -5,7 +5,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { MAGNETIC_PROXIMITY_DISTANCE } from "@/components/ui-custom/hooks/use-magnetic-proximity";
 
 /** Measure spare space from issue content; independent of the footer's reserved height. */
-export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bottom") {
+export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bottom", columnSizing: "fill" | "content" = "fill") {
 	const anchorRef = useRef<HTMLDivElement>(null);
 	const [minimumHeight, setMinimumHeight] = useState(0);
 
@@ -19,6 +19,13 @@ export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bot
 		const measure = () => {
 			frame = 0;
 			const anchorRect = anchor.getBoundingClientRect();
+			if (columnSizing === "content") {
+				const columnRect = column.getBoundingClientRect();
+				const columnStyle = getComputedStyle(column);
+				const bottom = columnRect.bottom - (parseFloat(columnStyle.borderBottomWidth) || 0) - 8;
+				setMinimumHeight(Math.max(0, Math.floor(bottom - anchorRect.top)));
+				return;
+			}
 			const listRect = list.getBoundingClientRect();
 			const cards = list.querySelectorAll<HTMLElement>("[data-issue-key]");
 			const lastCard = cards[cards.length - 1];
@@ -60,7 +67,7 @@ export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bot
 			mutations.disconnect();
 			list.removeEventListener("scroll", schedule);
 		};
-	}, [active, placement]);
+	}, [active, placement, columnSizing]);
 
 	// Keep the last drag's size during receipt playback; the new card must not
 	// move the landing target while sessions are still flying into it.

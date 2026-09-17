@@ -128,6 +128,7 @@ export function BoardColumn({
 	children,
 	chrome,
 	columnChrome,
+	columnSizing = "fill",
 	count,
 	createdCardArrival,
 	createWorkItemDropZoneLabel,
@@ -147,6 +148,7 @@ export function BoardColumn({
 	children: ReactNode;
 	chrome: KanbanColumnChromeStyles;
 	columnChrome: KanbanColumnChrome;
+	columnSizing?: "fill" | "content";
 	count: number;
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
 	createWorkItemDropZoneLabel?: string;
@@ -164,14 +166,16 @@ export function BoardColumn({
 	const insertionArmed = cardInsertion?.columnTitle === title;
 	const isEmptyColumn = count === 0;
 	const createAction = <BoardColumnCreateAction
+		columnSizing={columnSizing}
 		dropZoneLabel={createWorkItemDropZoneLabel}
+		onCreateWorkItem={onCreateWorkItem ? (draft) => onCreateWorkItem(title, draft) : undefined}
 		placement="bottom"
 		sessionDragTransaction={sessionDragTransaction}
 		title={title}
 	/>;
 	return (
 		<div
-			className={cn("group/board-column min-w-0 overflow-visible", chrome.columnClassName)}
+			className={cn("group/board-column min-h-0 min-w-0 overflow-visible", chrome.columnClassName)}
 			data-kanban-column-chrome={columnChrome}
 			style={{
 				display: "flex",
@@ -180,7 +184,7 @@ export function BoardColumn({
 				// Pin the layout width so the column never reflows while the shell
 				// animates back open from the collapsed pill.
 				minWidth: `${BOARD_COLUMN_WIDTH_PX}px`,
-				height: "100%",
+				height: columnSizing === "fill" ? "100%" : undefined,
 				borderRadius: token("radius.xlarge"),
 				...chrome.dropContentPadding,
 			}}
@@ -196,15 +200,16 @@ export function BoardColumn({
 					onToggleAgent={onToggleAgent}
 					title={title}
 				/>
-			<div ref={issueDrop.rootRef} {...issueDrop.handlers} className="relative flex min-h-0 flex-1 flex-col" data-issue-drop-entered={issueDrop.current?.entered ? issueDrop.current.status : undefined}>
+			<div ref={issueDrop.rootRef} {...issueDrop.handlers} className={cn("relative flex min-h-0 flex-col", columnSizing === "fill" ? "flex-1" : null)} data-issue-drop-entered={issueDrop.current?.entered ? issueDrop.current.status : undefined}>
 				<div
 					aria-hidden={issueDrop.choosing || undefined}
 					inert={issueDrop.choosing || undefined}
-					className={cn("flex min-h-0 flex-1 flex-col", issueDrop.choosing ? "pointer-events-none opacity-0" : null)}
+					className={cn("flex min-h-0 flex-col", columnSizing === "fill" ? "flex-1" : null, issueDrop.choosing ? "pointer-events-none opacity-0" : null)}
 				>
 					<BoardColumnCardList
 						chrome={chrome}
 						columnTitle={title}
+						columnSizing={columnSizing}
 						count={count}
 						createdCardArrival={createdCardArrival}
 						insertionArmed={insertionArmed}

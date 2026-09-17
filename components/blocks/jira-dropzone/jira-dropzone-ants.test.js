@@ -38,7 +38,7 @@ test("ants keep the existing dashed well chrome and only move the stroke", () =>
 	);
 	assert.match(DROPZONE, /marching \? JIRA_DROPZONE_ANTS_CLASS : null/u);
 	assert.match(DROPZONE, /marching \? <JiraDropzoneAntsStroke selected=\{selected\} \/> : null/u);
-	assert.match(DROPZONE, /const marching = ants && !shouldReduceMotion;/u);
+	assert.match(DROPZONE, /const marching = active && ants && !shouldReduceMotion;/u);
 	assert.doesNotMatch(DROPZONE, /border-transparent|jiraDropzoneAntsChromeClass/u);
 	assert.doesNotMatch(STROKE, /strokeWidth="2"|filter=|glow/u);
 });

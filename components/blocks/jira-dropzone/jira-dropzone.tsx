@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type ReactElement, type RefObject } from "react";
+import { useCallback, useMemo, useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
 import { AnimatePresence, arc, motion, useIsPresent, useMotionValueEvent, useReducedMotion } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
 
@@ -15,6 +15,7 @@ import { JiraDropzoneFlight } from "./jira-dropzone-flight";
 import { JIRA_DROPZONE_ANTS_CLASS } from "./lib/jira-dropzone-ants";
 import {
 	JIRA_DROPZONE_HOVER_AREA_PX,
+	JIRA_DROPZONE_OPEN_HEIGHT_PX,
 	JIRA_DROPZONE_WELL_ENTER,
 	JIRA_DROPZONE_WELL_ENTER_REDUCED,
 	JIRA_DROPZONE_WELL_EXIT,
@@ -41,6 +42,16 @@ import type {
 
 export const JIRA_DROPZONE_WELL_CHROME_CLASS = "rounded-lg border border-dashed";
 
+export interface JiraDropzoneControlProps {
+	active: boolean;
+	children: ReactNode;
+	className: string;
+	label: string;
+	layout: boolean;
+	minHeight: number;
+	selected: boolean;
+}
+
 export function JiraDropzone({
 	ants = true,
 	drag,
@@ -50,7 +61,9 @@ export function JiraDropzone({
 	measuredRef,
 	openMinHeight,
 	proximityRef,
+	renderControl,
 	renderResting,
+	size = "default",
 	title,
 }: Readonly<{
 	ants?: boolean;
@@ -64,7 +77,11 @@ export function JiraDropzone({
 	openMinHeight?: number;
 	/** Stable detection footprint, independent of the visible well's size. */
 	proximityRef?: RefObject<HTMLDivElement | null>;
+	/** A persistent button adapter shares one border across resting and drag states. */
+	renderControl?: (props: JiraDropzoneControlProps) => ReactElement;
 	renderResting: () => ReactElement;
+	/** Compact matches a 24px create button; expanded targets retain h-16. */
+	size?: "default" | "compact";
 	title: string;
 }>): ReactElement {
 	const localRef = useRef<HTMLDivElement>(null);
@@ -106,45 +123,53 @@ export function JiraDropzone({
 		? profile.impact
 		: null;
 
+	const openSurface = (
+		<JiraDropzoneOpenSurface
+			key="open"
+			active={surface === "open"}
+			ants={ants}
+			bounce={bounce}
+			bouncePlayback={bouncePlayback}
+			channel={channel}
+			copy={copy}
+			drop={drop}
+			expanded={expanded}
+			exclusiveWinner={exclusiveWinner}
+			flyPath={flyPath}
+			label={label}
+			magnet={magnet}
+			onLanded={onLanded}
+			openMinHeight={openMinHeight}
+			phase={phase}
+			pinMagnet={pinMagnet}
+			profile={profile}
+			proximity={proximity}
+			receiving={receiving}
+			renderControl={renderControl}
+			resolveLandingPoint={resolveLandingPoint}
+			selected={selected}
+			size={size}
+			title={title}
+		/>
+	);
+
 	return (
 		<div className="grid w-full items-end" ref={targetRef}>
-			<AnimatePresence initial={false}>
+			{renderControl ? openSurface : <AnimatePresence initial={false}>
 				{surface === "open" ? (
-					<JiraDropzoneOpenSurface
-						key="open"
-						ants={ants}
-						bounce={bounce}
-						bouncePlayback={bouncePlayback}
-						channel={channel}
-						copy={copy}
-						drop={drop}
-						expanded={expanded}
-						exclusiveWinner={exclusiveWinner}
-						flyPath={flyPath}
-						label={label}
-						magnet={magnet}
-						onLanded={onLanded}
-						openMinHeight={openMinHeight}
-						phase={phase}
-						pinMagnet={pinMagnet}
-						profile={profile}
-						proximity={proximity}
-						receiving={receiving}
-						resolveLandingPoint={resolveLandingPoint}
-						selected={selected}
-						title={title}
-					/>
+					openSurface
 				) : (
 					<div className="col-start-1 row-start-1 w-full" key="resting">
 						{renderResting()}
 					</div>
 				)}
-			</AnimatePresence>
+			</AnimatePresence>}
 		</div>
 	);
 }
 
 type JiraDropzoneOpenSurfaceProps = Readonly<{
+	active: boolean;
 	ants: boolean;
 	bounce: FlightProfile["impact"];
 	bouncePlayback: ReturnType<typeof resolveJiraDropzoneBounce>;
@@ -163,12 +188,15 @@ type JiraDropzoneOpenSurfaceProps = Readonly<{
 	profile: FlightProfile;
 	proximity: MagneticPointerRelation;
 	receiving: boolean;
+	renderControl?: (props: JiraDropzoneControlProps) => ReactElement;
 	resolveLandingPoint: () => ViewportPoint | null;
 	selected: boolean;
+	size: "default" | "compact";
 	title: string;
 }>;
 
 function JiraDropzoneOpenSurface({
+	active,
 	ants,
 	bounce,
 	bouncePlayback,
@@ -187,8 +215,10 @@ function JiraDropzoneOpenSurface({
 	profile,
 	proximity,
 	receiving,
+	renderControl,
 	resolveLandingPoint,
 	selected,
+	size,
 	title,
 }: JiraDropzoneOpenSurfaceProps): ReactElement {
 	const impacts = channel?.impacts ?? 0;
@@ -196,22 +226,25 @@ function JiraDropzoneOpenSurface({
 	return (
 		<>
 			<JiraDropzoneWell
+				active={active}
 				ants={ants}
 				bounce={bounce}
 				bouncePlayback={bouncePlayback}
 				copy={copy}
 				drop={drop}
-				expanded={expanded}
+				expanded={active && expanded}
 				exclusiveWinner={exclusiveWinner}
 				impacts={impacts}
 				label={label}
 				magnet={magnet}
 				openMinHeight={openMinHeight}
 				phase={phase}
-				pinMagnet={pinMagnet}
+				pinMagnet={pinMagnet || !active}
 				proximity={proximity}
 				receiving={receiving}
+				renderControl={renderControl}
 				selected={selected}
+				size={size}
 				title={title}
 			/>
 			{channel ? channel.flights.map((flight) => (
@@ -230,6 +263,7 @@ function JiraDropzoneOpenSurface({
 
 type JiraDropzoneWellProps = Pick<
 	JiraDropzoneOpenSurfaceProps,
+	| "active"
 	| "ants"
 	| "bouncePlayback"
 	| "copy"
@@ -243,7 +277,9 @@ type JiraDropzoneWellProps = Pick<
 	| "pinMagnet"
 	| "proximity"
 	| "receiving"
+	| "renderControl"
 	| "selected"
+	| "size"
 	| "title"
 > & {
 	bounce: FlightProfile["impact"];
@@ -251,6 +287,7 @@ type JiraDropzoneWellProps = Pick<
 };
 
 function JiraDropzoneWell({
+	active,
 	ants,
 	bounce,
 	bouncePlayback,
@@ -266,18 +303,20 @@ function JiraDropzoneWell({
 	pinMagnet,
 	proximity,
 	receiving,
+	renderControl,
 	selected,
+	size,
 	title,
 }: JiraDropzoneWellProps): ReactElement {
 	const shouldReduceMotion = useReducedMotion();
 	const isPresent = useIsPresent();
 	const hidden = !isPresent || undefined;
-	const dropTargetAttributes = isPresent ? {
+	const dropTargetAttributes = isPresent && active ? {
 		"data-armed": selected || undefined,
 		"data-board-agent-session-create-work-item-drop-zone": title,
 		"data-board-agent-session-drop-zone": "create",
 	} : {};
-	const marching = ants && !shouldReduceMotion;
+	const marching = active && ants && !shouldReduceMotion;
 	return (
 		<motion.div
 			animate={JIRA_DROPZONE_WELL_VISIBLE}
@@ -285,12 +324,12 @@ function JiraDropzoneWell({
 			className={cn("col-start-1 row-start-1 w-full", !isPresent ? "pointer-events-none" : null)}
 			data-jira-dropzone-column={title}
 			data-jira-dropzone-presence={isPresent ? "present" : "exiting"}
-			data-jira-dropzone-well=""
+			data-jira-dropzone-well={active ? "" : undefined}
 			exit={{
 				...(shouldReduceMotion ? { opacity: 0, transform: "translateY(0px)" } : JIRA_DROPZONE_WELL_HIDDEN),
 				transition: shouldReduceMotion ? JIRA_DROPZONE_WELL_ENTER_REDUCED : JIRA_DROPZONE_WELL_EXIT,
 			}}
-			initial={shouldReduceMotion
+			initial={shouldReduceMotion || renderControl
 				? false
 				: JIRA_DROPZONE_WELL_HIDDEN}
 			inert={hidden}
@@ -303,7 +342,7 @@ function JiraDropzoneWell({
 				y: pinMagnet ? 0 : magnet.y,
 			}}>
 				<div
-					aria-label={`${label} in ${title}${selected ? ", selected drop target" : ""}`}
+					aria-label={renderControl ? undefined : `${label} in ${title}${selected ? ", selected drop target" : ""}`}
 					className="relative w-full overflow-visible"
 					{...dropTargetAttributes}
 					data-board-agent-session-column-title={title}
@@ -316,9 +355,22 @@ function JiraDropzoneWell({
 					data-jira-dropzone-impacts={String(impacts)}
 					data-proximity={proximity}
 					data-receiving={receiving || undefined}
-					role="img"
+					role={renderControl ? undefined : "img"}
 				>
-					<JiraDropzoneWellChrome
+					{renderControl ? (
+						<JiraDropzoneButtonChrome
+							active={active}
+							copy={copy}
+							expanded={expanded && phase !== "resting"}
+							label={label}
+							magnet={magnet}
+							marching={marching}
+							openMinHeight={openMinHeight}
+							pinMagnet={pinMagnet}
+							renderControl={renderControl}
+							selected={selected}
+						/>
+					) : <JiraDropzoneWellChrome
 						bounce={bounce}
 						copy={copy}
 						expanded={expanded}
@@ -330,7 +382,8 @@ function JiraDropzoneWell({
 						phase={phase}
 						pinMagnet={pinMagnet}
 						selected={selected}
-					/>
+						size={size}
+					/>}
 				</div>
 			</motion.div>
 		</motion.div>
@@ -349,9 +402,64 @@ type JiraDropzoneWellChromeProps = Pick<
 	| "phase"
 	| "pinMagnet"
 	| "selected"
+	| "size"
 > & {
 	marching: boolean;
 };
+
+function JiraDropzoneButtonChrome({
+	active,
+	copy,
+	expanded,
+	label,
+	magnet,
+	marching,
+	openMinHeight,
+	pinMagnet,
+	renderControl,
+	selected,
+}: Readonly<Pick<JiraDropzoneWellProps,
+	"active" | "copy" | "expanded" | "label" | "magnet" | "openMinHeight" | "pinMagnet" | "selected"
+> & {
+	marching: boolean;
+	renderControl: (props: JiraDropzoneControlProps) => ReactElement;
+}>): ReactElement {
+	const shouldReduceMotion = useReducedMotion();
+	const showLabel = active && copy === "label";
+	return renderControl({
+		active,
+		className: cn(
+			"relative w-full overflow-hidden transition-colors duration-normal ease-out-practical motion-reduce:transition-none",
+			JIRA_DROPZONE_WELL_CHROME_CLASS,
+			active ? "bg-surface hover:bg-surface active:bg-surface disabled:opacity-100" : null,
+			selected ? "border-border-selected bg-bg-selected hover:bg-bg-selected active:bg-bg-selected text-text-selected" : null,
+			marching ? JIRA_DROPZONE_ANTS_CLASS : null,
+		),
+		label,
+		layout: !shouldReduceMotion,
+		minHeight: expanded ? Math.max(JIRA_DROPZONE_OPEN_HEIGHT_PX, openMinHeight ?? 0) : active ? 32 : 0,
+		selected,
+		children: <>
+			{marching ? <JiraDropzoneAntsStroke selected={selected} /> : null}
+			<motion.span
+				className="relative grid h-5 w-full place-items-center overflow-hidden"
+				layout={shouldReduceMotion ? false : "position"}
+				transition={{ layout: shouldReduceMotion ? JIRA_DROPZONE_WELL_ENTER_REDUCED : JIRA_DROPZONE_WELL_ENTER }}
+			>
+				{/* The copy shares the shape's layout clock and swaps atomically. */}
+				<span
+					className="col-start-1 row-start-1 inline-flex w-full items-center justify-center"
+					data-jira-dropzone-copy-motion={showLabel ? "label" : "add"}
+				>
+					{showLabel ? <motion.span
+						className="inline-block will-change-transform"
+						style={{ x: pinMagnet ? 0 : magnet.labelX, y: pinMagnet ? 0 : magnet.labelY }}
+					>{label}</motion.span> : <Icon render={<AddIcon label="" size="small" />} />}
+				</span>
+			</motion.span>
+		</>,
+	});
+}
 
 function JiraDropzoneWellChrome({
 	bounce,
@@ -365,6 +473,7 @@ function JiraDropzoneWellChrome({
 	phase,
 	pinMagnet,
 	selected,
+	size,
 }: JiraDropzoneWellChromeProps): ReactElement {
 	return (
 		<motion.div
@@ -373,6 +482,7 @@ function JiraDropzoneWellChrome({
 				"flex w-full select-none items-center justify-center px-3 text-center font-medium will-change-transform",
 				expanded ? "h-16 text-sm leading-5" : "h-8 text-sm leading-5",
 				phase === "resting" ? "h-8 text-sm leading-5" : null,
+				size === "compact" && (!expanded || phase === "resting") ? "h-6" : null,
 				JIRA_DROPZONE_WELL_CHROME_CLASS,
 				// Colour is the only transitional feedback here. The h-8 -> h-16
 				// swap lands instantly: `height` is a layout property, and

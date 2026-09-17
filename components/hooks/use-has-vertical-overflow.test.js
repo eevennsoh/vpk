@@ -134,3 +134,75 @@ test("VerticalOverflowState requires a finite max height before reporting a reac
 		true,
 	);
 });
+
+test("overflow masks refresh after style-only animation changes and cancel queued measurement on cleanup", async () => {
+	const { getVerticalOverflowState, subscribeToVerticalOverflow } = await loadOverflowHarness();
+	const originals = {
+		window: globalThis.window,
+		ResizeObserver: globalThis.ResizeObserver,
+		MutationObserver: globalThis.MutationObserver,
+	};
+	const frames = new Map();
+	let nextFrame = 0;
+	const mutations = [];
+	globalThis.window = {
+		getComputedStyle: () => ({ display: "block" }),
+		requestAnimationFrame(callback) { frames.set(++nextFrame, callback); return nextFrame; },
+		cancelAnimationFrame(id) { frames.delete(id); },
+	};
+	globalThis.ResizeObserver = class {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+	globalThis.MutationObserver = class {
+		constructor(callback) { this.callback = callback; mutations.push(this); }
+		observe(_element, options) { this.options = options; }
+		disconnect() { this.disconnected = true; }
+		emit(attributeName) {
+			if (!this.disconnected && this.options.attributes && this.options.attributeFilter.includes(attributeName)) {
+				this.callback([{ type: "attributes", attributeName }]);
+			}
+		}
+	};
+	const element = {
+		children: [{ children: [] }],
+		clientHeight: 80,
+		scrollHeight: 160,
+		scrollTop: 0,
+		addEventListener() {},
+		removeEventListener() {},
+	};
+	const read = () => getVerticalOverflowState({ ...element, maxHeight: 80 });
+	let state = read();
+	let measurements = 0;
+	let stop;
+	const flush = () => {
+		for (const [id, callback] of frames) {
+			frames.delete(id);
+			callback();
+		}
+	};
+	try {
+		stop = subscribeToVerticalOverflow(element, () => { measurements += 1; state = read(); });
+		const mutation = mutations[0];
+		assert.equal(state.showBottomScrollMask, true);
+		// A translated descendant settles without changing either observed layout box.
+		element.scrollHeight = 80;
+		mutation.emit("style");
+		mutation.emit("style");
+		mutation.emit("class");
+		flush();
+		assert.equal(state.showBottomScrollMask, false);
+		assert.equal(state.showTopScrollMask, false);
+		assert.equal(measurements, 1, "a burst of geometry changes needs one measurement");
+		element.scrollHeight = 160;
+		mutation.emit("style");
+		stop();
+		flush();
+		assert.equal(measurements, 1, "cleanup cancels queued reads and state updates");
+	} finally {
+		stop?.();
+		Object.assign(globalThis, originals);
+	}
+});

@@ -200,7 +200,7 @@ function ExperimentalJiraKanbanPageContent({
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
-	columnChrome,
+	columnChrome, columnSizing,
 	compactHeader = false,
 	headerAssignees,
 	insightsEnabled = true,
@@ -1036,7 +1036,7 @@ function ExperimentalJiraKanbanPageContent({
 								cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale}
 								collapsedColumns={displayedCollapsedColumns}
-								columnChrome={columnChrome}
+								columnChrome={columnChrome} columnSizing={columnSizing}
 								createdCardArrival={createdCardArrival ?? undefined}
 								createWorkItemDropZoneLabel={onBoardAgentSessionCreate
 									? createWorkItemDropZoneLabel
