@@ -155,6 +155,8 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(layout, /const geist = Geist\(\{ subsets: \["latin"\], variable: "--font-sans" \}\);/);
 		assert.match(layout, /src: "\.\.\/public\/fonts\/ark-es\/ARK-ES-SolidLight\.woff"/);
 		assert.match(layout, /const themeStyles = await getThemeStyles\(THEME_STATE\);/);
+		assert.match(layout, /import \{ getThemeHtmlAttrs \} from "@atlaskit\/tokens\/get-theme-html-attrs";/);
+		assert.match(layout, /<html[^>]*\{\.\.\.getThemeHtmlAttrs\(THEME_STATE\)\}/);
 		assert.doesNotMatch(layout, /next\/script/);
 		assert.doesNotMatch(layout, /clientShim/);
 		assert.doesNotMatch(layout, /fonts\.googleapis\.com\/css2/);
@@ -570,6 +572,12 @@ test("backend-backed scaffold preserves source backend and generates proxy/deplo
 		assert.equal(targetPackage.scripts["build:export"], "node scripts/build-static-export.mjs");
 		assert.equal(targetPackage.scripts["deploy:micros"], "./scripts/dev-deploy-fast.sh");
 		assert.match(fs.readFileSync(path.join(fixture.targetDir, "next.config.ts"), "utf8"), /NEXT_OUTPUT/);
+		const descriptorPath = path.join(fixture.targetDir, "service-descriptor.yml");
+		const descriptor = fs.readFileSync(descriptorPath, "utf8");
+		assert.match(descriptor, /ALLOWED_ORIGINS: \(\(ssm:\/YOUR-SERVICE-NAME\/ALLOWED_ORIGINS\)\)/);
+		fs.writeFileSync(descriptorPath, descriptor.replaceAll("YOUR-SERVICE-NAME", "example-service"));
+		execFileSync("/bin/bash", ["-c", 'source "$1"; vpk_validate_descriptor_identity example-service "$2"', "validate-generated-descriptor",
+			path.resolve(__dirname, "../../vpk-deploy/scripts/deploy-lib.sh"), descriptorPath], { stdio: "pipe" });
 		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "scripts", "build-static-export.mjs"), "utf8"), "// export wrapper\n");
 		assert.equal(fs.readFileSync(path.join(fixture.targetDir, "pnpm-workspace.yaml"), "utf8"),
 			"overrides:\n  lodash-es: ^4.18.1\nallowBuilds:\n  protobufjs: true\n  better-sqlite3: false\n");

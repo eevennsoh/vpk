@@ -15,6 +15,7 @@ const CONTENT_SECURITY_POLICY_DIRECTIVES = {
 	connectSrc: [
 		"'self'",
 		"https://ai-gateway.us-east-1.staging.atl-paas.net",
+		"https://ds-cdn.prod-east.frontend.public.atl-paas.net",
 		"wss:",
 		"ws:",
 	],

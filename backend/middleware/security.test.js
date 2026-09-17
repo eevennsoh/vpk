@@ -30,6 +30,7 @@ test("security middleware preserves CSP and cross-origin options", () => {
 		connectSrc: [
 			"'self'",
 			"https://ai-gateway.us-east-1.staging.atl-paas.net",
+			"https://ds-cdn.prod-east.frontend.public.atl-paas.net",
 			"wss:",
 			"ws:",
 		],

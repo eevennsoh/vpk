@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 
+export function writeBackendServiceDescriptor(targetDir) {
+	fs.copyFileSync(new URL("../references/scaffold/backend-backed-service-descriptor.yml", import.meta.url), path.join(targetDir, "service-descriptor.yml"));
+}
+
 /** Add the canonical deploy inputs without replacing extracted application source. */
 export function writeBackendDeploymentHarness({ repoRoot, targetDir, packageManager, buildPolicy }) {
 	if (!packageManager?.startsWith("pnpm@") || !buildPolicy) {

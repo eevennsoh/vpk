@@ -20,7 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { execFileSync, execSync } from "node:child_process";
-import { writeBackendDeploymentHarness } from "./backend-deploy-harness.mjs";
+import { writeBackendDeploymentHarness, writeBackendServiceDescriptor } from "./backend-deploy-harness.mjs";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -235,6 +235,7 @@ import "./feature-flags-shim";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import localFont from "next/font/local";
+import { getThemeHtmlAttrs } from "@atlaskit/tokens/get-theme-html-attrs";
 import { getThemeStyles } from "@atlaskit/tokens/get-theme-styles";
 
 // globals.css orchestrates the CSS pipeline:
@@ -285,7 +286,7 @@ export default async function RootLayout({
 	const themeStyles = await getThemeStyles(THEME_STATE);
 
 	return (
-		<html lang="en" className="light" data-color-mode="light" suppressHydrationWarning>
+		<html lang="en" className="light" {...getThemeHtmlAttrs(THEME_STATE)} suppressHydrationWarning>
 			<head>
 				{themeStyles.map((style) => (
 					<style
@@ -818,6 +819,7 @@ export function FeatureFlagsShim() {
 	}
 	if (args.backendBacked) {
 		copyTrackedRuntimeFiles(repoRoot, targetDir);
+		writeBackendServiceDescriptor(targetDir);
 		const devTemplate = fs.readFileSync(
 			path.join(SCAFFOLD_DIR, "backend-backed-dev.mjs"), "utf8",
 		);
