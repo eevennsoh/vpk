@@ -175,6 +175,7 @@ export default function ExperimentalJiraKanbanPage({
 
 function ExperimentalJiraKanbanPageContent({
 	activeView = "board",
+	addAgentLabel,
 	activeCardCode,
 	additionalAgentSessions,
 	agentSessionSeedOverrides,
@@ -1009,6 +1010,7 @@ function ExperimentalJiraKanbanPageContent({
 						</RetainedView>
 						<RetainedView active={!isListContent} retain={retainWorkItemViews}>
 							<ExperimentalJiraKanban
+								addAgentLabel={addAgentLabel}
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
 								boardAgentSessionDrag={boardSessionDrag}

@@ -388,6 +388,7 @@ function JiraTeamEu26App(): React.ReactElement {
 					data-jira-team-eu26-board-surface=""
 				>
 					<ExperimentalJiraKanbanPage
+						addAgentLabel="Add agent"
 						activeView={activeView}
 						retainWorkItemViews
 						additionalAgentSessions={syncedAgentSessions}
