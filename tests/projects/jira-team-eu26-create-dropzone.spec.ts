@@ -230,10 +230,11 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		await page.mouse.move(viewport.x + viewport.width / 2, viewport.y + viewport.height - 110, { steps: 8 });
 		await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(120);
 		const target = column.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-128"]');
+		// A gentle edge position needs time to traverse the eight-card column.
 		await expect.poll(async () => {
 			const card = (await target.boundingBox())!;
 			return card.y + 40 < viewport.y + viewport.height - 8;
-		}).toBe(true);
+		}, { timeout: 15_000 }).toBe(true);
 		const targetBox = (await target.boundingBox())!;
 		await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + 40, { steps: 8 });
 		await expect(target).toHaveAttribute("data-board-agent-session-target", "attach");
