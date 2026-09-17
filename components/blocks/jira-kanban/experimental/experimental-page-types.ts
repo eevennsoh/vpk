@@ -45,6 +45,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 }
 
 export interface ExperimentalJiraKanbanPageProps {
+	addAgentLabel?: ExperimentalJiraKanbanProps["addAgentLabel"];
 	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	activeView?: ExperimentalJiraKanbanView;
 	activeCardCode?: string;

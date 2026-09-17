@@ -80,6 +80,8 @@ export interface AgentAssignmentProps {
 	allowArchive?: boolean;
 	/** Comfortable scale uses the experimental working spinner; compact keeps the shared default. */
 	activityIconScale?: JiraIssueIconScale;
+	/** Copy for the empty field and the action in the assigned-agents menu. */
+	addAgentLabel?: string;
 	/** Let attached activity identities begin at the empty Assign agent label's edge. */
 	activityRowFlush?: boolean;
 	className?: string;
@@ -134,6 +136,7 @@ export function AgentAssignment({
 	assignedAgents,
 	allowArchive = true,
 	activityIconScale,
+	addAgentLabel = "Assign agent",
 	activityRowFlush,
 	className,
 	defaultPinnedAgentIds = [],
@@ -359,6 +362,7 @@ export function AgentAssignment({
 
 	const assignedMenu = variant === "simple" ? (
 		<AssignedAgentsMenu
+			addAgentLabel={addAgentLabel}
 			onAddAgent={onAssignedAgentIdsChange ? handleShowSelector : undefined}
 			onArchiveAgent={allowArchive && onAssignedAgentIdsChange ? handleArchiveAgent : undefined}
 			onSelectAgent={handleAssignedAgentSelect}
@@ -366,6 +370,7 @@ export function AgentAssignment({
 		/>
 	) : (
 		<AssignedAgentsSessionMenu
+			addAgentLabel={addAgentLabel}
 			onAddAgent={onAssignedAgentIdsChange ? handleShowSelector : undefined}
 			onContinueInAgent={onContinueExistingSession
 				? (item) => runAssignedSessionAction(assignedAgents, item.id, onContinueExistingSession)
@@ -469,13 +474,14 @@ export function AgentAssignment({
 						<PopoverTrigger
 							render={
 								<button
-									aria-label={shown.length === 0 ? "Assign agent" : triggerLabel}
+									aria-label={shown.length === 0 ? addAgentLabel : triggerLabel}
 									className="absolute inset-0 z-0 rounded-md outline-none"
 									type="button"
 								/>
 							}
 						/>
 						<AgentAssignmentDefaultField
+							addAgentLabel={addAgentLabel}
 							activityIconScale={activityIconScale}
 							activityRowFlush={activityRowFlush}
 							assignedAgents={assignedAgents}
@@ -486,7 +492,7 @@ export function AgentAssignment({
 						<PopoverTrigger
 							render={
 								<button
-									aria-label={shown.length === 0 ? "Assign agent" : triggerLabel}
+									aria-label={shown.length === 0 ? addAgentLabel : triggerLabel}
 									className="absolute inset-0 z-0 rounded-md outline-none"
 									type="button"
 								/>
@@ -494,7 +500,7 @@ export function AgentAssignment({
 						/>
 						{shown.length === 0 ? (
 							<span className="pointer-events-none relative z-10 text-sm text-text-subtlest">
-								Assign agent
+								{addAgentLabel}
 							</span>
 						) : shown.map((agent, index) => {
 							const statusKind = resolveAssignedAgentStatusKind(agent);

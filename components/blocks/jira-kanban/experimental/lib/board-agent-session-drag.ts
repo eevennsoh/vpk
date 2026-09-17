@@ -331,13 +331,15 @@ export function toChinFreeBoardCardBounds(
 	bounds: BoardAgentSessionDropBounds,
 	chinHeight: number,
 ): BoardAgentSessionDropBounds {
-	if (!Number.isFinite(chinHeight) || chinHeight <= 0) {
-		return bounds;
-	}
-
 	return {
-		...bounds,
-		bottom: Math.max(bounds.bottom - chinHeight, bounds.top),
+		// Browser DOMRect coordinates are inherited accessors; copy each value
+		// explicitly so downstream gap-band copies retain all four edges.
+		bottom: Number.isFinite(chinHeight) && chinHeight > 0
+			? Math.max(bounds.bottom - chinHeight, bounds.top)
+			: bounds.bottom,
+		left: bounds.left,
+		right: bounds.right,
+		top: bounds.top,
 	};
 }
 

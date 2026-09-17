@@ -218,11 +218,13 @@ test("edge fades sit on the column plane so they span the full backdrop width", 
 
 test("an empty column says so rather than rendering an empty list", () => {
 	assert.match(INDEX_SOURCE, /displayedItems\.length === 0/u);
-	assert.match(INDEX_SOURCE, /emptyLabel = "No sessions to unlink"/u);
+	assert.match(INDEX_SOURCE, /emptyLabel = "No unlinked sessions"/u);
 	assert.match(INDEX_SOURCE, /from "@\/components\/ui\/empty"/u);
 	assert.match(INDEX_SOURCE, /<Empty width="narrow">/u);
-	assert.match(INDEX_SOURCE, /<EmptyTitle headingSize="xsmall">No matching sessions<\/EmptyTitle>/u);
-	assert.match(INDEX_SOURCE, /<p className="text-xs text-text-subtlest">\{emptyLabel\}<\/p>/u);
+	assert.match(INDEX_SOURCE, /<EmptyTitle headingSize="xsmall" aria-level=\{2\}>No matching sessions<\/EmptyTitle>/u);
+	assert.match(INDEX_SOURCE, /<Empty width="narrow" className="w-full px-6">/u);
+	assert.match(INDEX_SOURCE, /<EmptyTitle headingSize="xsmall" aria-level=\{2\}>\{emptyLabel\}<\/EmptyTitle>/u);
+	assert.match(INDEX_SOURCE, /Sessions without a linked work item will appear here\./u);
 	assert.doesNotMatch(INDEX_SOURCE, /hasActiveFilters \? "No matching sessions" : emptyLabel/u);
 });
 

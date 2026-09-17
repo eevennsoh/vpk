@@ -69,7 +69,7 @@ export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 		{
 			name: "emptyLabel",
 			type: "string",
-			default: '"No sessions to unlink"',
+			default: '"No unlinked sessions"',
 			description: "Copy shown in place of the list when there are no sessions.",
 		},
 		{

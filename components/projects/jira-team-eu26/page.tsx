@@ -66,6 +66,7 @@ const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-d
 
 const JIRA_TEAM_EU26_TABS = getJiraTabs(false);
 const JIRA_TEAM_EU26_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(JIRA_TEAM_EU26_TABS);
+const JIRA_TEAM_EU26_ADD_AGENT_LABEL = "Add agent";
 const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
 	"kanbanBackground",
 	"advancedTimeline",
@@ -144,7 +145,7 @@ function JiraTeamEu26App(): React.ReactElement {
 	// tabs, untracked work remains an in-flow column, and standard kanban chrome
 	// stays on. Only the timeline interaction model is user-configurable.
 	const tabs = JIRA_TEAM_EU26_TABS;
-	const createWorkItemDropZoneLabel = "Create new work item";
+	const createWorkItemDropZoneLabel = "Drop to create work item";
 	const [workItemView, setWorkItemView] = useState<JiraWorkItemView>(DEFAULT_JIRA_WORK_ITEM_VIEW);
 	const [selectedTabLabel, setSelectedTabLabel] = useState(JIRA_TEAM_EU26_DEFAULT_TAB_LABEL);
 	const startInstantTransition = useInstantTransition();
@@ -388,6 +389,7 @@ function JiraTeamEu26App(): React.ReactElement {
 					data-jira-team-eu26-board-surface=""
 				>
 					<ExperimentalJiraKanbanPage
+						addAgentLabel={JIRA_TEAM_EU26_ADD_AGENT_LABEL}
 						activeView={activeView}
 						retainWorkItemViews
 						additionalAgentSessions={syncedAgentSessions}
@@ -446,6 +448,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						onViewChange={tabOwnsView ? undefined : setWorkItemView}
 						renderListContent={(columns, layout) => (
 							<JiraTeamEu26List
+								addAgentLabel={JIRA_TEAM_EU26_ADD_AGENT_LABEL}
 								columns={columns}
 								getProps={getListProps}
 								onVisibleRowsChange={onVisibleRowsChange}

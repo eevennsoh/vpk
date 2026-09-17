@@ -104,6 +104,23 @@ test("appending a draft does not mutate the columns it was given", () => {
 	assert.equal(columns[0].count, 1);
 });
 
+test("column create appends an unlinked task to the named column", () => {
+	const columns = [column("To do", [{ code: "PAY-101", title: "One" }]), column("In review", [])];
+	const result = appendBoardCardFromDraft(columns, { issueType: "task", summary: "Review follow-up" }, "In review");
+	assert.equal(result.columns[0], columns[0]);
+	assert.equal(result.columns[1].count, 1);
+	assert.equal(result.columns[1].cards[0].title, "Review follow-up");
+	assert.equal(result.columns[1].cards[0].code, "PAY-102");
+	assert.equal(result.columns[1].cards[0].agentActivities, undefined);
+});
+
+test("column create declines an unknown destination without changing the board", () => {
+	const columns = [column("To do", [])];
+	const result = appendBoardCardFromDraft(columns, { issueType: "task", summary: "No destination" }, "Missing");
+	assert.equal(result.columns, columns);
+	assert.equal(result.issueKey, undefined);
+});
+
 test("a draft against an empty board reports no key rather than inventing a column", () => {
 	const result = appendBoardCardFromDraft([], { issueType: "task", summary: "Nowhere to land" });
 

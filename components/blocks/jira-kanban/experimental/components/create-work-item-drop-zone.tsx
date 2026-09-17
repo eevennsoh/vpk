@@ -1,7 +1,9 @@
 "use client";
 
 import AddIcon from "@atlaskit/icon/core/add";
-import { useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
+import { CreateWorkItemField } from "@/components/blocks/agent-session/agent-session-link-work-item-submenu";
 
 import {
 	JiraDropzone,
@@ -9,6 +11,7 @@ import {
 } from "@/components/blocks/jira-dropzone";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { JIRA_DROPZONE_OPEN_HEIGHT_PX } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-motion";
 
@@ -18,21 +21,16 @@ import { useCreateDropzoneHeight } from "../hooks/use-create-dropzone-height";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
 import { useExclusiveCreateWellProximity } from "./create-work-item-exclusive-proximity-context";
 
-/** Dashed well chrome shared by the create button and the session-drag dropzone. */
-const CREATE_WORK_ITEM_WELL_CHROME_CLASS = "rounded-lg border border-dashed";
-
 export function BoardColumnCreateAction({
 	ants = true,
 	dropZoneLabel,
 	placement = "bottom",
-	reveal,
 	sessionDragTransaction,
 	title,
 }: Readonly<{
 	ants?: boolean;
 	dropZoneLabel?: string;
 	placement?: "top" | "bottom";
-	reveal?: "always" | "column-hover";
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
@@ -44,11 +42,20 @@ export function BoardColumnCreateAction({
 		title,
 	);
 	const { anchorRef, minimumHeight } = useCreateDropzoneHeight(Boolean(dropZoneLabel) && drag !== "idle", placement);
+	const [footprint, setFootprint] = useState(40);
+	useLayoutEffect(() => {
+		const target = targetRef.current;
+		if (!target) return;
+		const measure = () => setFootprint(Math.max(40, Math.ceil(target.offsetHeight) + 8));
+		const resize = new ResizeObserver(measure);
+		resize.observe(target);
+		measure();
+		return () => resize.disconnect();
+	}, [dropZoneLabel]);
 
 	return (
-		// Reserve only the resting button footprint. The expanded well overlays
-		// the card list so arrival scrolling always measures the same viewport.
-		<div className="relative h-8 w-full">
+		// Reserve the well's actual height so overflowing issues scroll above it.
+		<div className="relative w-full shrink-0" style={{ height: footprint }}>
 			<div ref={anchorRef} className={cn("absolute inset-x-0 z-10", placement === "top" ? "top-1" : "bottom-1")}>
 				{dropZoneLabel ? (
 					// Detect the future well footprint before its visible chrome grows.
@@ -56,7 +63,7 @@ export function BoardColumnCreateAction({
 					<div
 						aria-hidden="true"
 						data-create-work-item-proximity=""
-						className={cn("pointer-events-none absolute inset-x-0 h-6", placement === "top" ? "top-0" : "bottom-0")}
+						className={cn("pointer-events-none absolute inset-x-0 h-8", placement === "top" ? "top-0" : "bottom-0")}
 						ref={proximityRef}
 						style={{ minHeight: drag !== "idle" ? Math.max(JIRA_DROPZONE_OPEN_HEIGHT_PX, minimumHeight) : undefined }}
 					/>
@@ -71,11 +78,11 @@ export function BoardColumnCreateAction({
 						measuredRef={targetRef}
 						openMinHeight={minimumHeight}
 						proximityRef={proximityRef}
-						renderResting={() => <BoardColumnAddButton reveal={reveal} title={title} />}
+						renderResting={() => <span aria-hidden className="block h-8 w-full" />}
 						title={title}
 					/>
 				) : (
-					<BoardColumnAddButton reveal={reveal} title={title} />
+					<span aria-hidden className="block h-8 w-full" />
 				)}
 			</div>
 		</div>
@@ -83,34 +90,69 @@ export function BoardColumnCreateAction({
 }
 
 export function BoardColumnAddButton({
+	onCreateWorkItem,
 	reveal = "column-hover",
 	title,
 }: Readonly<{
+	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
 	reveal?: "always" | "column-hover";
 	title: string;
 }>) {
+	const [open, setOpen] = useState(false);
+	const [summary, setSummary] = useState("");
+	const [issueType, setIssueType] = useState<AgentSessionWorkItemDraft["issueType"]>("task");
+
+	function handleOpenChange(next: boolean) {
+		setOpen(next);
+		if (!next) {
+			setSummary("");
+			setIssueType("task");
+		}
+	}
+
+	function handleSubmit() {
+		const trimmedSummary = summary.trim();
+		if (!onCreateWorkItem || trimmedSummary.length === 0) return;
+		onCreateWorkItem({ issueType, summary: trimmedSummary });
+		handleOpenChange(false);
+	}
+
 	return (
-		<Button
-			aria-label={`Create in ${title}`}
-			className={cn(
-				"w-full",
-				CREATE_WORK_ITEM_WELL_CHROME_CLASS,
-				"[&_[data-slot=icon]]:text-icon-subtlest [&_svg]:text-icon-subtlest",
-				"hover:border-solid hover:[&_[data-slot=icon]]:text-icon-subtle hover:[&_svg]:text-icon-subtle",
-				"focus-visible:border-solid focus-visible:[&_[data-slot=icon]]:text-icon-subtle focus-visible:[&_[data-slot=icon]]:text-icon-subtle",
-				reveal === "column-hover"
-					? cn(
-						"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
-						"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
-						"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
-						"motion-reduce:transition-none",
-					)
-					: null,
-			)}
-			size="compact"
-			variant="outline"
-		>
-			<Icon render={<AddIcon label="" size="small" />} />
-		</Button>
+		<DropdownMenu onOpenChange={handleOpenChange} open={open}>
+			<DropdownMenuTrigger
+				aria-haspopup="dialog"
+				disabled={onCreateWorkItem === undefined}
+				render={
+					<Button
+						aria-label={`Create in ${title}`}
+						disabled={onCreateWorkItem === undefined}
+						className={cn(
+							"w-full border-dashed hover:border-solid",
+							reveal === "column-hover" && !open
+								? cn(
+									"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
+									"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
+									"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
+									"motion-reduce:transition-none",
+								)
+								: null,
+						)}
+						size="compact"
+						variant="outline"
+					>
+						<Icon render={<AddIcon label="" size="small" />} />
+					</Button>
+				}
+			/>
+			<DropdownMenuContent aria-label={`Create work item in ${title}`} className="w-[22rem] p-2.5" role="dialog">
+				<CreateWorkItemField
+					issueType={issueType}
+					onIssueTypeChange={setIssueType}
+					onSummaryChange={setSummary}
+					onSubmit={handleSubmit}
+					summary={summary}
+				/>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

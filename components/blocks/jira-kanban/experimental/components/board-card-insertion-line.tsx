@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useId, type CSSProperties } from "react";
+import { useId, type CSSProperties } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 
 import { Icon } from "@/components/ui/icon";
@@ -9,31 +9,25 @@ import { cn } from "@/lib/utils";
 
 import type { BoardCardInsertion } from "../lib/board-agent-session-drag";
 import type { BoardCardInsertionSeam } from "../lib/board-card-insertion";
-import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
 
 /**
- * The single insertion seam of a column that holds no cards.
+ * The drop geometry of a column that holds no cards.
  *
  * Card seams normally ride the per-card wrappers, so a column emptied by the
  * assignee filter — or one that simply has nothing in it — would emit no gap at
- * all and swallow the drop. This stand-in fills the card list, publishes the
- * one gap the column has, and draws the line for it.
+ * all and swallow the drop. This stand-in fills the card list and publishes
+ * its single drop gap. Empty columns leave visible drag feedback to the
+ * column dropzone instead of drawing an inline insertion control.
  */
 export function BoardEmptyColumnInsertionSlot({
-	armed,
 	columnTitle,
-}: Readonly<{ armed: boolean; columnTitle: string }>) {
-	const hoverInsertion = use(BoardCardHoverInsertionContext);
-	const showLine = armed || hoverInsertion?.columnTitle === columnTitle;
-
+}: Readonly<{ columnTitle: string }>) {
 	return (
 		<div
 			className="relative min-h-8 flex-1"
 			data-board-agent-session-drop-zone="card-gap"
 			data-board-column-title={columnTitle}
-		>
-			{showLine ? <BoardCardInsertionLine position="before" seam="edge" /> : null}
-		</div>
+		/>
 	);
 }
 

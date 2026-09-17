@@ -101,6 +101,7 @@ export interface PeelProps {
 	/** Fires as it is set back down. */
 	onLand?: () => void;
 	className?: string;
+	/** Additional layout styles. The dedicated props still own the rendered size. */
 	style?: CSSProperties;
 	ref?: Ref<HTMLDivElement>;
 }
@@ -347,7 +348,7 @@ export function Peel({
 		<div
 			ref={setRootNode}
 			className={cn("relative inline-block align-top", className)}
-			style={{ width, height: sheetHeight, ...style }}
+			style={{ ...style, width, height: sheetHeight }}
 		>
 			{/* Kept separate from the layout slot so the drag transform never
 			    moves the box that surrounding content is flowing around. */}

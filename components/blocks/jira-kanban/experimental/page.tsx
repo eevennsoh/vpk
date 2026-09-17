@@ -174,7 +174,7 @@ export default function ExperimentalJiraKanbanPage({
 }
 
 function ExperimentalJiraKanbanPageContent({
-	activeView = "board",
+	activeView = "board", addAgentLabel,
 	activeCardCode,
 	additionalAgentSessions,
 	agentSessionSeedOverrides,
@@ -1008,7 +1008,7 @@ function ExperimentalJiraKanbanPageContent({
 							) : null}
 						</RetainedView>
 						<RetainedView active={!isListContent} retain={retainWorkItemViews}>
-							<ExperimentalJiraKanban
+							<ExperimentalJiraKanban addAgentLabel={addAgentLabel}
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
 								boardAgentSessionDrag={boardSessionDrag}
@@ -1044,6 +1044,7 @@ function ExperimentalJiraKanbanPageContent({
 								detachedAgentSessionsByCard={proximityAgentSessionsByCard}
 								onCollapsedColumnsChange={handleCollapsedColumnsChange}
 								onCreatedCardArrivalComplete={handleCreatedCardArrivalComplete}
+								onCreateWorkItem={boardMenuWorkItem.onCreateColumnWorkItem}
 								draggedCardCode={draggedCard?.card.code ?? null}
 								issueDragTransitions={issueDragTransitions}
 								selectedCardCodes={selection.selectedCardCodes}

@@ -13,6 +13,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/agent-session/agent-session-short-metadata.test.js",
 		"components/blocks/jira-kanban/card-drop.test.js",
 		"components/blocks/agent-session-column/use-agent-session-arrivals.test.ts",
 		"components/blocks/agent-session/use-agent-session-status-departure.test.ts",
@@ -262,6 +263,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/ui-custom/pixel-loader/pixel-loader.test.js",
 		".agents/skills/vpk-build/scripts/scaffold-target.test.js",
 		".agents/skills/vpk-deploy/scripts/deploy-safety.test.js",
+		".agents/skills/vpk-deploy/scripts/verify-runtime.test.js",
 		".agents/skills/vpk-git-ship/scripts/review-gate-status.test.js",
 		".agents/skills/vpk-setup/scripts/create-env-local.test.js",
 		".agents/skills/vpk-system-clean/scripts/vpk-system-clean.test.js",

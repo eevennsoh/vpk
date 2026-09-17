@@ -21,13 +21,19 @@ export const JIRA_DROPZONE_HOVER_AREA_PX = 120;
 /** Standard h-16 expanded target when a host has no spare space. */
 export const JIRA_DROPZONE_OPEN_HEIGHT_PX = 64;
 
-/** Compact well pop-in while a session drag is active. */
+/** Compact bottom-target entrance: duration-normal + ease-out-practical. */
 export const JIRA_DROPZONE_WELL_ENTER = {
 	duration: 0.15,
 	ease: [0.4, 1, 0.6, 1],
 } as const; // duration-normal + ease-out-practical
 export const JIRA_DROPZONE_WELL_ENTER_REDUCED = { duration: 0 } as const;
-export const JIRA_DROPZONE_WELL_ENTER_SCALE = 0.95;
+/** Faster matching dismissal: duration-fast + ease-in. */
+export const JIRA_DROPZONE_WELL_EXIT = {
+	duration: 0.1,
+	ease: [0.6, 0, 0.8, 0.6],
+} as const;
+export const JIRA_DROPZONE_WELL_VISIBLE = { opacity: 1, transform: "translateY(0px)" } as const;
+export const JIRA_DROPZONE_WELL_HIDDEN = { opacity: 0, transform: "translateY(8px)" } as const; // space.100
 
 /**
  * Shared flight recipe for create-well and card-link drops.

@@ -76,6 +76,7 @@ echo "⚙️  Checking static-export wrapper..."
 require_file scripts/build-static-export.mjs
 require_file next.config.ts
 require_file .agents/skills/vpk-deploy/scripts/deploy-lib.sh
+require_file .agents/skills/vpk-deploy/scripts/verify-initial-theme.mjs
 if grep -q 'NEXT_OUTPUT' next.config.ts 2>/dev/null; then
   pass "next.config.ts supports wrapper-controlled static export"
 else
