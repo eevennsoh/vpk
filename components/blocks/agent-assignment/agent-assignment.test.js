@@ -126,10 +126,11 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	);
 	assert.doesNotMatch(source, /w-\[360px\]/u);
 	assert.match(source, /className="absolute inset-0 z-0 rounded-md outline-none"/u);
-	assert.match(source, /aria-label=\{shown\.length === 0 \? "Assign agent" : triggerLabel\}/u);
+	assert.match(source, /addAgentLabel = "Assign agent"/u);
+	assert.match(source, /aria-label=\{shown\.length === 0 \? addAgentLabel : triggerLabel\}/u);
 	assert.match(
 		source,
-		/shown\.length === 0 \? \(\s*<span className="pointer-events-none relative z-10 text-sm text-text-subtlest">\s*Assign agent\s*<\/span>/u,
+		/shown\.length === 0 \? \(\s*<span className="pointer-events-none relative z-10 text-sm text-text-subtlest">\s*\{addAgentLabel\}\s*<\/span>/u,
 	);
 	assert.doesNotMatch(source, /PlusIcon/u);
 	assert.match(
@@ -139,7 +140,7 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(source, /<AssignedAgentsMenu[\s\S]*onAddAgent=\{onAssignedAgentIdsChange \? handleShowSelector : undefined\}[\s\S]*onArchiveAgent=\{allowArchive && onAssignedAgentIdsChange \? handleArchiveAgent : undefined\}/u);
 	assert.match(menu, /onAddAgent\?: \(\) => void;[\s\S]*onArchiveAgent\?: \(agent: AgentAssignmentAgent\) => void;/u);
 	assert.match(menu, /hoverActions: onArchiveAgent \? \{[\s\S]*secondaryLabel: "Archive",[\s\S]*\} : undefined,/u);
-	assert.match(menu, /\{onAddAgent \? \([\s\S]*Assign agent[\s\S]*\) : null\}/u);
+	assert.match(menu, /\{onAddAgent \? \([\s\S]*\{addAgentLabel\}[\s\S]*\) : null\}/u);
 	assert.match(source, /if \(usedAgentIds\.includes\(agentId\)\) \{\s*retainPopoverOpenRef\.current = true;\s*menuRootRef\.current\?\.focus\(\);\s*setPendingSessionAgent\(agent\);\s*setView\("session"\);/u);
 	assert.match(source, /<AgentSessionTargetMenu[\s\S]*onChoose=\{\(choice\) => handleSessionChoice\(pendingSessionAgent, choice\)\}/u);
 	assert.match(source, /<AgentSelector[\s\S]*searchVariant="palette"[\s\S]*selectionMode="single"/u);
@@ -226,7 +227,7 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(menu, /selectedIndex === -1\s*\? \(step > 0 \? 0 : items\.length - 1\)/u);
 	assert.match(
 		menu,
-		/<Button[\s\S]*className="h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal"[\s\S]*onClick=\{onAddAgent\}[\s\S]*variant="ghost"[\s\S]*<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*<span className="text-text-subtle">Assign agent<\/span>/u,
+		/<Button[\s\S]*className="h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal"[\s\S]*onClick=\{onAddAgent\}[\s\S]*variant="ghost"[\s\S]*<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*<span className="text-text-subtle">\{addAgentLabel\}<\/span>/u,
 	);
 	assert.doesNotMatch(menu, /disabled:/u);
 

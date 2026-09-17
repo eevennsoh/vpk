@@ -229,6 +229,7 @@ export function JiraList({
 	draftWorkItem = null,
 	extraColumns = EMPTY_EXTRA_COLUMNS,
 	agentCatalog,
+	addAgentLabel,
 	statusOptions = EMPTY_STATUS_OPTIONS,
 	onAssignedAgentIdsChange,
 	onAssignedAgentSelect,
@@ -359,6 +360,7 @@ export function JiraList({
 	};
 	const baseColumns = useMemo(() => createJiraListBaseColumns({
 		agentCatalog,
+		addAgentLabel,
 		copiedIssueKey,
 		onAgentAssign,
 		onAssignedAgentIdsChange,
@@ -372,7 +374,7 @@ export function JiraList({
 		setOpenCopyTooltipIssueKey,
 		statusOptions,
 	}), [
-		agentCatalog, copiedIssueKey, onAgentAssign, onAssignedAgentIdsChange,
+		agentCatalog, addAgentLabel, copiedIssueKey, onAgentAssign, onAssignedAgentIdsChange,
 		onAssignedAgentSelect, onCopyLink, onIssueClick, onIssueKeyClick,
 		onStatusChange, onToggleExpand, openCopyTooltipIssueKey, statusOptions,
 	]);

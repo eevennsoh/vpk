@@ -6,6 +6,7 @@ import { JiraList, type JiraListProps, type JiraListRowData } from "@/components
 import { cn } from "@/lib/utils";
 
 interface JiraTeamEu26ListProps {
+	addAgentLabel: string;
 	columns: readonly JiraKanbanColumnData[];
 	getProps: (columns: readonly JiraKanbanColumnData[]) => JiraListProps;
 	onVisibleRowsChange: (rows: readonly JiraListRowData[]) => void;
@@ -19,6 +20,7 @@ interface JiraTeamEu26ListProps {
 const PANEL_END_GAP_PX = 24;
 
 export function JiraTeamEu26List({
+	addAgentLabel,
 	columns,
 	getProps,
 	onVisibleRowsChange,
@@ -38,6 +40,7 @@ export function JiraTeamEu26List({
 			<JiraList
 				{...listProps}
 				{...layout}
+				addAgentLabel={addAgentLabel}
 				scrollEndInset={scrollEndInset > 0 ? scrollEndInset + PANEL_END_GAP_PX : 0}
 			/>
 		</div>

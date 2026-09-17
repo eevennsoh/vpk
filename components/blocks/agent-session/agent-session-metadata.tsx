@@ -279,39 +279,43 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
 }
 
 /**
- * Owner short byline: `Claude · #1306 · ☁ Last week`.
+ * Owner short byline: `Claude · ☁ Last week` or `#1306 Add guest checkout · ☁ Last week`.
  *
  * The leading 32px identity already shows the agent (and invoker). This line
- * names who ran it, the linked pull request when one exists, and pairs the host
- * icon with when. Lifecycle stays outside the byline in the trailing control
+ * names who ran it until a pull request exists, then leads with the PR. It pairs
+ * the host icon with when. Lifecycle stays outside the byline in the trailing control
  * slot shared with the more-actions button.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- Short and long metadata stay together so the two densities cannot drift apart.
 export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessionItem }>) {
 	const declaredHost = item.host ?? item.sessionDetails?.host;
 	const pullRequestLabel = toPullRequestNumberLabel(item);
+	const pullRequestTitle = item.sessionDetails?.pullRequestTitle;
 
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
-			<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
-				{item.agent.name}
-			</span>
-			{pullRequestLabel === undefined ? null : (
-				<>
-					<MetadataDot />
-					<span className="flex shrink-0 items-center gap-1">
-						<AgentListPrStatusIcon
-							className="text-icon-subtlest"
-							status={item.prStatus ?? "created"}
-						/>
-						<span
-							className="text-nowrap text-text-subtlest underline-offset-2 hover:underline"
-							title={toArtifactLabel(item)}
-						>
-							{pullRequestLabel}
+			{pullRequestLabel === undefined ? (
+				<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
+					{item.agent.name}
+				</span>
+			) : (
+				<span className="flex min-w-0 shrink items-center gap-1">
+					<AgentListPrStatusIcon
+						className="text-icon-subtlest"
+						status={item.prStatus ?? "created"}
+					/>
+					<span
+						className="flex min-w-0 items-center gap-1 text-text-subtlest underline-offset-2 hover:underline"
+						title={pullRequestTitle === undefined ? pullRequestLabel : `${pullRequestLabel} ${pullRequestTitle}`}
+					>
+						<span className="shrink-0 text-nowrap">
+							{pullRequestLabel}{pullRequestTitle === undefined ? null : " "}
 						</span>
+						{pullRequestTitle === undefined ? null : (
+							<span className="min-w-0 truncate text-nowrap">{pullRequestTitle}</span>
+						)}
 					</span>
-				</>
+				</span>
 			)}
 			<MetadataDot />
 			<span className="flex shrink-0 items-center gap-1 text-nowrap">

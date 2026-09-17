@@ -101,6 +101,7 @@ function resolveKanbanCardAssignment(
 	card: JiraKanbanCardData,
 	catalog: readonly JiraKanbanAgentData[] | undefined,
 	onAssignedAgentIdsChange?: (issueKey: string, agentIds: readonly string[]) => void,
+	addAgentLabel?: string,
 ): JiraIssueAgentAssignment | undefined {
 	if (!onAssignedAgentIdsChange) {
 		return undefined;
@@ -137,6 +138,7 @@ function resolveKanbanCardAssignment(
 	));
 
 	return {
+		addAgentLabel,
 		...(assignmentAgents.length > 0 ? { agents: assignmentAgents } : {}),
 		assignedAgents,
 		defaultPinnedAgentIds: pinnedAgentIds,
@@ -172,6 +174,7 @@ function assignedAgentsFromKanbanCard(card: JiraKanbanCardData): AgentAssignment
 
 interface ExperimentalJiraKanbanCardProps {
 	active: boolean;
+	addAgentLabel?: string;
 	agentActivityLayout: JiraIssueAgentActivityLayout;
 	/** One-shot brand sweep across the chin rows a drop just added. */
 	agentLinkFlash?: JiraIssueAgentLinkFlash;
@@ -239,6 +242,7 @@ function getCardAssigneeAvatarShape(card: JiraKanbanCardData) {
 
 export function ExperimentalJiraKanbanCard({
 	active,
+	addAgentLabel,
 	agents,
 	agentActivityLayout,
 	agentLinkFlash,
@@ -315,7 +319,7 @@ export function ExperimentalJiraKanbanCard({
 			active={active}
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
-			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange)}
+			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel)}
 			agentLinkFlash={agentLinkFlash}
 			agentActivityMode={agentActivityMode}
 			agentSessionDragControl={agentSessionDragControl}
