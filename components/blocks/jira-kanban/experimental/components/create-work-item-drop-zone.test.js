@@ -73,6 +73,11 @@ test("empty columns keep the same create action inset as populated columns", () 
 	assert.doesNotMatch(BOARD, /!isEmptyColumn \? chrome\.footer : \{\}/u);
 });
 
+test("session previews keep their source card list vertically scrollable", () => {
+	assert.match(CARD_LIST, /overflow-y-auto overscroll-y-contain/u);
+	assert.doesNotMatch(CARD_LIST, /has-\[\[data-session-dragging\]\]:overflow-visible/u);
+});
+
 test("drop receipts land in the geometric center of the well", () => {
 	assert.match(DROPZONE, /resolveJiraDropzoneLandingPoint\(rect\)/u);
 	assert.doesNotMatch(DROPZONE, /JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u);

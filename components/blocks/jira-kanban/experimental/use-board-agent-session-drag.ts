@@ -223,12 +223,9 @@ function clipBoundsToScrollport(
  *   so standing in one closes the chin; measuring the band off the live bottom
  *   edge would then move the band out from under the pointer and strobe the
  *   chin open and shut. See `toChinFreeBoardCardBounds`.
- * - The clip is not optional. The card list is a real scrollport, and its
- *   `has-[[data-session-dragging]]:overflow-visible` escape only fires for a
- *   drag that started inside this column — an Untracked-rail drag, the only
- *   origin a gap can serve, leaves every card list scrolling. Without the clip
- *   a card scrolled out of sight would still arm an insertion line nobody can
- *   see, and the first visible card's band would reach up into the header.
+	 * - Every card list stays a real scrollport throughout dragging. Clip the
+	 *   seams so offscreen cards cannot arm invisible insertion lines and the
+	 *   first visible card's band cannot reach up into the column header.
  */
 function collectCardGapZones(
 	node: HTMLElement,

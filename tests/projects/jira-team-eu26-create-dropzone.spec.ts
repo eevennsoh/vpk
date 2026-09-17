@@ -177,6 +177,38 @@ test("edge scrolling pauses when the drag window loses focus and resumes on poin
 });
 
 for (const reducedMotion of ["reduce", "no-preference"] as const) {
+	test(`an attached session scrolls its source column and moves to a later issue (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await openBoard(page);
+		await page.setViewportSize({ width: 1440, height: 760 });
+		const column = page.locator('[data-jira-kanban-column="In review"]');
+		const list = column.locator("[data-jira-kanban-card-list]");
+		const sourceIssue = column.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-112"]');
+		const source = sourceIssue.locator('[data-slot="jira-issue-agent-row"]');
+		const box = (await source.boundingBox())!;
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2 + 20, { steps: 5 });
+		await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(1);
+		await expect(list).toHaveCSS("overflow-y", "auto");
+		const viewport = (await list.boundingBox())!;
+		await page.mouse.move(viewport.x + viewport.width / 2, viewport.y + viewport.height - 110, { steps: 8 });
+		await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(120);
+		const target = column.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-128"]');
+		await expect.poll(async () => {
+			const card = (await target.boundingBox())!;
+			return card.y + 40 < viewport.y + viewport.height - 8;
+		}).toBe(true);
+		const targetBox = (await target.boundingBox())!;
+		await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + 40, { steps: 8 });
+		await expect(target).toHaveAttribute("data-board-agent-session-target", "attach");
+		await page.screenshot({ path: `output/agent-browser/attached-session-source-scroll-${reducedMotion}.png` });
+		await page.mouse.up();
+		await expect(sourceIssue.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(0);
+		await expect(target.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(1);
+		await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(0);
+	});
+
 	test(`dragging between cards creates an issue at that slot (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		const source = await openBoard(page);

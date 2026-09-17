@@ -160,7 +160,7 @@ export function BoardColumnCardList({
 				data-created-card-arrival-id={createdCardArrival?.id}
 				data-jira-kanban-card-list=""
 				className={cn(
-					"min-h-0 min-w-0 overflow-y-auto overscroll-y-contain has-[[data-session-dragging]]:overflow-visible",
+					"min-h-0 min-w-0 overflow-y-auto overscroll-y-contain",
 					// The mask fades the top and bottom 3rem, which would wash out a line
 					// drawn near a scrolled edge. Stand down the mask only — dropping
 					// `overflow-y-auto` would make the browser discard the scroll offset.
