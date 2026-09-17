@@ -9,11 +9,13 @@ import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { cn } from "@/lib/utils";
 
 export function AgentAssignmentDefaultField({
+	addAgentLabel,
 	assignedAgents,
 	activityIconScale,
 	activityRowFlush,
 	className,
 }: Readonly<{
+	addAgentLabel: string;
 	assignedAgents: readonly AgentAssignmentAgent[];
 	activityIconScale?: JiraIssueIconScale;
 	activityRowFlush?: boolean;
@@ -25,7 +27,7 @@ export function AgentAssignmentDefaultField({
 	if (assignedAgents.length === 0) {
 		return (
 			<span className={cn("pointer-events-none relative z-10 text-sm text-text-subtlest", className)}>
-				Assign agent
+				{addAgentLabel}
 			</span>
 		);
 	}

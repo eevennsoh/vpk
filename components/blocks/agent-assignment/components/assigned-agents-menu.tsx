@@ -23,6 +23,7 @@ import {
 } from "@/components/ui-custom/rich-text-editor";
 
 interface AssignedAgentsMenuProps {
+	addAgentLabel: string;
 	onAddAgent?: () => void;
 	onArchiveAgent?: (agent: AgentAssignmentAgent) => void;
 	onSelectAgent: (agent: AgentAssignmentAgent) => void;
@@ -205,6 +206,7 @@ function toAgentItem(
 }
 
 export function AssignedAgentsMenu({
+	addAgentLabel,
 	onAddAgent,
 	onArchiveAgent,
 	onSelectAgent,
@@ -304,7 +306,7 @@ export function AssignedAgentsMenu({
 							<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">
 								<AiAgentAddIcon label="" />
 							</span>
-							<span className="text-text-subtle">Assign agent</span>
+							<span className="text-text-subtle">{addAgentLabel}</span>
 						</Button>
 					</div>
 				) : null}

@@ -225,12 +225,14 @@ function toListAssignedAgent(agent: AgentAssignmentAgent): JiraListAssignedAgent
 }
 
 export function JiraListAgentSessionsCell({
+	addAgentLabel,
 	agentCatalog = ROVO_AGENT_SELECTOR_AGENTS,
 	agentSessions,
 	onAgentAssign,
 	onAssignedAgentIdsChange,
 	onAssignedAgentSelect,
 }: Readonly<{
+	addAgentLabel?: string;
 	agentCatalog?: readonly AgentSelectorAgent[];
 	agentSessions: readonly JiraListAssignedAgent[] | undefined;
 	onAgentAssign?: (agent: AgentSelectorAgent) => void;
@@ -279,6 +281,7 @@ export function JiraListAgentSessionsCell({
 	return (
 		<div>
 			<AgentAssignment
+				addAgentLabel={addAgentLabel}
 				agents={agents}
 				activityIconScale="comfortable"
 				activityRowFlush
