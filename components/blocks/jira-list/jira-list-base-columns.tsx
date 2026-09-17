@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 
 export function createJiraListBaseColumns({
 	agentCatalog,
+	addAgentLabel,
 	copiedIssueKey,
 	onAgentAssign,
 	onAssignedAgentIdsChange,
@@ -51,6 +52,7 @@ export function createJiraListBaseColumns({
 	statusOptions,
 }: Readonly<{
 	agentCatalog?: readonly AgentSelectorAgent[];
+	addAgentLabel?: string;
 	copiedIssueKey: string | null;
 	onAgentAssign?: JiraListProps["onAgentAssign"];
 	onAssignedAgentIdsChange?: JiraListProps["onAssignedAgentIdsChange"];
@@ -252,6 +254,7 @@ export function createJiraListBaseColumns({
 			widthClassName: "w-[247px]",
 			renderCell: (row) => (
 				<JiraListAgentSessionsCell
+					addAgentLabel={addAgentLabel}
 					agentCatalog={agentCatalog}
 					agentSessions={row.agentSessions}
 					onAgentAssign={

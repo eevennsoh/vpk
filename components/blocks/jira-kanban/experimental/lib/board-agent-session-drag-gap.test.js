@@ -256,6 +256,26 @@ test("a gap band is measured from the card's chin-free bottom, so arming one can
 	);
 });
 
+test("browser rectangle accessors preserve horizontal gap bounds with and without preview growth", () => {
+	for (const chinHeight of [0, 32]) {
+		// DOMRect coordinates are inherited accessors, so spreading the rect loses them.
+		const browserRect = Object.create({
+			get bottom() { return 100 + chinHeight; },
+			get left() { return 0; },
+			get right() { return 200; },
+			get top() { return 0; },
+		});
+		assert.deepEqual(Object.keys(browserRect), []);
+		const zones = parseBoardCardGapZones(GAP_COLUMN, "PAY-118", "0", "2",
+			toChinFreeBoardCardBounds(browserRect, chinHeight), GAP_BAND_PX);
+		assert.deepEqual(zones[0].bounds, { bottom: 112, left: 0, right: 200, top: 88 });
+		assert.deepEqual(resolveBoardAgentSessionDropTarget({ kind: "untracked" }, { x: 100, y: 104 }, zones), {
+			insertion: zones[0].insertion,
+			kind: "create-board-gap",
+		});
+	}
+});
+
 test("an empty column publishes its one gap and creates at index 0", () => {
 	const bounds = { bottom: 300, left: 0, right: 200, top: 0 };
 	const zones = parseBoardEmptyColumnGapZone("Done", bounds);
