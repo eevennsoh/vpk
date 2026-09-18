@@ -97,6 +97,7 @@ function JiraLinkingFuse(props: Readonly<JiraLinkingProps>) {
 				drop={props.release.drop}
 				key={props.release.id}
 				onSettled={props.onFuseSettled}
+				resolveTarget={props.release.resolveTarget}
 				target={props.release.target}
 			/>
 		);

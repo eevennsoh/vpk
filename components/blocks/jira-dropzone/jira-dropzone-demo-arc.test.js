@@ -3,6 +3,7 @@ const { test } = require("node:test");
 
 const {
 	JIRA_DROPZONE_FULL_MOTION_PROFILE,
+	JIRA_DROPZONE_DURATION_TOKEN_MS,
 } = require("./lib/jira-dropzone-motion.ts");
 const {
 	JIRA_DROPZONE_DEMO_ARC_DEFAULTS,
@@ -35,7 +36,7 @@ test("arc is an opt-in override that keeps bounce unless it is turned off", () =
 			arcPeak: JIRA_DROPZONE_DEMO_ARC_DEFAULTS.peak,
 			arcRotate: JIRA_DROPZONE_DEMO_ARC_DEFAULTS.rotate,
 			arcStrength: JIRA_DROPZONE_DEMO_ARC_DEFAULTS.strength,
-			durationMs: JIRA_DROPZONE_FULL_MOTION_PROFILE.durationMs,
+			durationMs: JIRA_DROPZONE_DURATION_TOKEN_MS["duration-slower"],
 			travel: "arc",
 		},
 	);

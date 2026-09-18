@@ -1,21 +1,15 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import { createPortal } from "react-dom";
-import { arc, motion } from "motion/react";
+import { useCallback, useLayoutEffect, useMemo, useRef, type ReactElement } from "react";
+import { arc } from "motion/react";
 
-import { AgentSessionCohortChip } from "@/components/blocks/agent-session/agent-session-cohort-chip";
-import { resolveFlightTravelTransition } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-motion";
-import { sessionDragChipViewportStyle } from "@/components/blocks/jira-issue/agent-session-drag";
+import { JiraDropzoneFlight } from "@/components/blocks/jira-dropzone/jira-dropzone-flight";
 
-import { toJiraLinkingCohort } from "./drop-cohort";
 import {
 	flightsFromLinkingDrop,
 	JIRA_LINKING_FULL_DROP_PROFILE,
 	resolveJiraLinkingArcOptions,
 	type JiraLinkingDrop,
-	type JiraLinkingDropProfile,
-	type JiraLinkingFlight,
 	type JiraLinkingFlightKey,
 	type JiraLinkingPoint,
 } from "./drop";
@@ -24,10 +18,12 @@ import type { JiraLinkingTarget } from "./lifecycle";
 export function JiraLinkingDropFlights({
 	drop,
 	onSettled,
+	resolveTarget,
 	target,
 }: Readonly<{
 	drop: JiraLinkingDrop;
 	onSettled?: () => void;
+	resolveTarget?: () => JiraLinkingTarget | null;
 	target: JiraLinkingTarget | null;
 }>): ReactElement | null {
 	const profile = JIRA_LINKING_FULL_DROP_PROFILE;
@@ -41,8 +37,8 @@ export function JiraLinkingDropFlights({
 	);
 	const landing = target?.anchor ?? null;
 	const resolveLandingPoint = useCallback(
-		(): JiraLinkingPoint | null => landing,
-		[landing],
+		(): JiraLinkingPoint | null => resolveTarget ? resolveTarget()?.anchor ?? null : landing,
+		[landing, resolveTarget],
 	);
 	const landedRef = useRef(new Set<JiraLinkingFlightKey>());
 	const settledRef = useRef(false);
@@ -71,105 +67,16 @@ export function JiraLinkingDropFlights({
 	return (
 		<>
 			{flights.map((flight) => (
-				<JiraLinkingFlight
+				<JiraDropzoneFlight
 					flyPath={flyPath}
 					flight={flight}
 					key={flight.key}
+					kind="link"
 					onLanded={onLanded}
 					profile={profile}
 					resolveLandingPoint={resolveLandingPoint}
 				/>
 			))}
 		</>
-	);
-}
-
-function JiraLinkingFlight({
-	flyPath,
-	flight,
-	onLanded,
-	profile,
-	resolveLandingPoint,
-}: Readonly<{
-	flyPath: ReturnType<typeof arc>;
-	flight: JiraLinkingFlight;
-	onLanded: (key: JiraLinkingFlightKey) => void;
-	profile: JiraLinkingDropProfile;
-	resolveLandingPoint: () => JiraLinkingPoint | null;
-}>): ReactElement | null {
-	const [landing, setLanding] = useState<JiraLinkingPoint | null | undefined>(undefined);
-	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
-
-	useLayoutEffect(() => {
-		setPortalRoot(document.body);
-		let cancelled = false;
-		const tryMeasure = (): boolean => {
-			const point = resolveLandingPoint();
-			if (!point || cancelled) {
-				return false;
-			}
-			setLanding(point);
-			return true;
-		};
-		if (tryMeasure()) {
-			return () => {
-				cancelled = true;
-			};
-		}
-		const frame = window.requestAnimationFrame(() => {
-			if (cancelled) {
-				return;
-			}
-			if (!tryMeasure()) {
-				onLanded(flight.key);
-				setLanding(null);
-			}
-		});
-		return () => {
-			cancelled = true;
-			window.cancelAnimationFrame(frame);
-		};
-	}, [flight.key, onLanded, resolveLandingPoint]);
-
-	if (portalRoot === null || landing === undefined || landing === null) {
-		return null;
-	}
-
-	const transition = resolveFlightTravelTransition(
-		profile.travel,
-		{
-			delay: flight.delayMs / 1000,
-			duration: profile.durationMs / 1000,
-			ease: profile.ease,
-		},
-		flyPath,
-	);
-
-	return createPortal(
-		<motion.div
-			animate={{ opacity: 1, x: landing.x, y: landing.y }}
-			aria-hidden
-			className="pointer-events-none left-0 top-0 z-[400] w-fit will-change-transform"
-			data-jira-linking-flight=""
-			data-jira-linking-flight-members={String(flight.members.length)}
-			initial={{
-				opacity: profile.travel === "none" ? 0 : 1,
-				x: flight.from.x,
-				y: flight.from.y,
-			}}
-			onAnimationComplete={() => {
-				onLanded(flight.key);
-			}}
-			style={sessionDragChipViewportStyle(true)}
-			transition={transition}
-		>
-			<div className="pointer-events-none flex w-fit max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-start">
-				<AgentSessionCohortChip
-					cohort={toJiraLinkingCohort(flight.members)}
-					elevated
-				/>
-			</div>
-		</motion.div>,
-		portalRoot,
 	);
 }

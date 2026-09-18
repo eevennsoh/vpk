@@ -71,6 +71,8 @@ import {
 	toAssignedAgentTransferMember,
 	toSessionFusionAssignmentRelease,
 	toSessionFusionDrop,
+	toSessionFusionGlowLandTarget,
+	toSessionFusionLandTarget,
 	type BoardAgentSessionLinkFlash,
 	type PendingSessionLinkFlash,
 } from "./lib/session-fusion-overlay-state";
@@ -566,7 +568,21 @@ export function useBoardAgentSessionDrag({
 		setFusionDrop({
 			members: input.members,
 			proximity: input.proximity,
-			release: input.release,
+			release: {
+				...input.release,
+				resolveTarget: () => {
+					const issue = boardRootRef.current?.querySelector<HTMLElement>(`[data-issue-key="${CSS.escape(input.proximity.cardCode)}"]`);
+					if (!issue) return null;
+					const bounds = linkingVariant === "glow" ? resolveIssueSurfaceRect(issue) : resolveIssueLandRect(issue);
+					const proximity = {
+						...input.proximity,
+						dockRect: bounds ? null : toDropBounds(issue),
+						landRect: linkingVariant === "fuse" ? bounds : null,
+						surfaceRect: linkingVariant === "glow" ? bounds : null,
+					};
+					return linkingVariant === "glow" ? toSessionFusionGlowLandTarget(proximity) : toSessionFusionLandTarget(proximity);
+				},
+			},
 		});
 	}, [flushPendingAttach, linkingVariant, shouldReduceMotion]);
 
