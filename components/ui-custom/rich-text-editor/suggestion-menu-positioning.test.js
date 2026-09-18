@@ -7,6 +7,17 @@ function readProjectFile(filePath) {
 	return fs.readFileSync(path.join(process.cwd(), filePath), "utf8");
 }
 
+test("editor palettes use the shared shorter top fade without a duplicate CSS mask", () => {
+	const hookSource = readProjectFile("components/ui-custom/rich-text-editor/command-menu-scroll-mask.ts");
+	const css = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.css");
+
+	assert.match(hookSource, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
+	assert.match(hookSource, /style: buildScrollMaskStyle\(\{[\s\S]*?fadeBottom: false,[\s\S]*?fadeTop: hasScrolledList,/u);
+	assert.match(hookSource, /fadeSize: "var\(--rich-text-command-menu-scroll-mask-fade-size\)"/u);
+	assert.match(hookSource, /scrollbarWidth: "var\(--rich-text-command-menu-scrollbar-width\)"/u);
+	assert.doesNotMatch(css, /\.rich-text-command-menu\[data-list-scrolled="true"\]/u);
+});
+
 test("prompt input exposes an internal root marker for suggestion popover anchoring", () => {
 	const source = readProjectFile("components/ui-custom/prompt-input.tsx");
 

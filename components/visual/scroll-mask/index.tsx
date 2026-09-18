@@ -11,6 +11,7 @@ import {
 	buildScrollMaskOverlayStyle,
 	buildScrollMaskStyle,
 	resolveFadeSize,
+	resolveTopFadeSize,
 	type ScrollMaskOverlayEdge,
 } from "./lib";
 
@@ -28,6 +29,7 @@ export interface ScrollMaskProps
 	viewportStyle?: CSSProperties;
 	headerClassName?: string;
 	footerClassName?: string;
+	/** Bottom fade depth. The top fade and blur bands are always half as deep. */
 	fadeSize?: number | string;
 	scrollbarWidth?: number | string;
 	/**
@@ -89,7 +91,7 @@ export function StickyRowScrollFade({
 			{...props}
 			aria-hidden="true"
 			className={cn(
-				"pointer-events-none absolute inset-x-0 top-full h-8 opacity-0",
+				"pointer-events-none absolute inset-x-0 top-full h-4 opacity-0",
 				className,
 			)}
 			data-sticky-row-scroll-fade=""
@@ -125,6 +127,7 @@ export function ScrollMask({
 		fadeBottom: showBottomScrollMask,
 	});
 	const resolvedFadeSize = resolveFadeSize(fadeSize);
+	const resolvedTopFadeSize = resolveTopFadeSize(fadeSize);
 
 	return (
 		<div
@@ -169,7 +172,7 @@ export function ScrollMask({
 						data-slot="scroll-mask-blur"
 						data-edge="top"
 						className="pointer-events-none absolute inset-x-0 top-0"
-						style={{ height: resolvedFadeSize }}
+						style={{ height: resolvedTopFadeSize }}
 					>
 						{TOP_BLUR_LAYERS.map((layerStyle, index) => (
 							<div key={index} style={layerStyle} />

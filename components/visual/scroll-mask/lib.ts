@@ -4,6 +4,7 @@ export const SCROLL_MASK_DEFAULT_FADE_SIZE = "var(--ds-space-400)";
 export const SCROLL_MASK_DEFAULT_SCROLLBAR_WIDTH = "10px";
 
 export interface ScrollMaskStyleOptions {
+	/** Bottom fade depth. The top fade is always half as deep for a crisper exit. */
 	fadeSize?: number | string;
 	scrollbarWidth?: number | string;
 	fadeTop?: boolean;
@@ -22,6 +23,7 @@ type ScrollMaskCssProperties = CSSProperties & {
 };
 
 type VerticalScrollMaskCssProperties = ScrollMaskCssProperties & {
+	"--scroll-mask-top-fade-size": string;
 	"--scroll-mask-scrollbar-width": string;
 };
 
@@ -31,6 +33,11 @@ function toCssLength(value: number | string): string {
 
 export function resolveFadeSize(fadeSize: number | string = SCROLL_MASK_DEFAULT_FADE_SIZE): string {
 	return toCssLength(fadeSize);
+}
+
+/** Always make the top fade shorter so items disappear more abruptly and naturally. */
+export function resolveTopFadeSize(fadeSize: number | string = SCROLL_MASK_DEFAULT_FADE_SIZE): string {
+	return typeof fadeSize === "number" ? toCssLength(fadeSize / 2) : `calc(${fadeSize} / 2)`;
 }
 
 // Stacked, feathered backdrop-blur layers = progressive (variable) blur. Each layer blurs
@@ -78,6 +85,7 @@ export type ScrollMaskOverlayEdge = "top" | "right" | "bottom" | "left";
 
 export interface ScrollMaskOverlayStyleOptions {
 	edge: ScrollMaskOverlayEdge;
+	/** Base fade depth. Top overlays use half this depth; other edges use it in full. */
 	fadeSize?: number | string;
 	/**
 	 * Fade color. Defaults to the page surface so overlays match a `bg-surface`
@@ -100,7 +108,7 @@ export function buildScrollMaskOverlayStyle({
 	fadeSize = SCROLL_MASK_DEFAULT_FADE_SIZE,
 	color = SCROLL_MASK_OVERLAY_DEFAULT_COLOR,
 }: ScrollMaskOverlayStyleOptions): ScrollMaskCssProperties {
-	const resolvedFadeSize = toCssLength(fadeSize);
+	const resolvedFadeSize = edge === "top" ? resolveTopFadeSize(fadeSize) : resolveFadeSize(fadeSize);
 	const gradientDirection = {
 		top: "to bottom",
 		right: "to left",
@@ -124,10 +132,12 @@ export function buildScrollMaskStyle({
 	fadeBottom = true,
 }: ScrollMaskStyleOptions = {}): VerticalScrollMaskCssProperties {
 	const resolvedFadeSize = toCssLength(fadeSize);
+	const resolvedTopFadeSize = resolveTopFadeSize(fadeSize);
 	const resolvedScrollbarWidth = toCssLength(scrollbarWidth);
 	if (!fadeTop && !fadeBottom) {
 		return {
 			"--scroll-mask-fade-size": resolvedFadeSize,
+			"--scroll-mask-top-fade-size": resolvedTopFadeSize,
 			"--scroll-mask-scrollbar-width": resolvedScrollbarWidth,
 			maskImage: "none",
 			WebkitMaskImage: "none",
@@ -138,7 +148,7 @@ export function buildScrollMaskStyle({
 	// does not overflow) shows no fade. Both default true to preserve the full both-edge mask.
 	// `fadeTop` uses mask-image and can clip hit-testing; prefer
 	// `buildScrollMaskOverlayStyle` when the faded band contains controls.
-	const topStops = fadeTop ? "transparent 0, black var(--scroll-mask-fade-size)" : "black 0";
+	const topStops = fadeTop ? "transparent 0, black var(--scroll-mask-top-fade-size)" : "black 0";
 	const bottomStops = fadeBottom
 		? "black calc(100% - var(--scroll-mask-fade-size)), transparent 100%"
 		: "black 100%";
@@ -154,6 +164,7 @@ export function buildScrollMaskStyle({
 
 	return {
 		"--scroll-mask-fade-size": resolvedFadeSize,
+		"--scroll-mask-top-fade-size": resolvedTopFadeSize,
 		"--scroll-mask-scrollbar-width": resolvedScrollbarWidth,
 		maskImage,
 		WebkitMaskImage: maskImage,
