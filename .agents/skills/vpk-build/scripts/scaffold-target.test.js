@@ -7,6 +7,12 @@ const path = require("node:path");
 
 const SCAFFOLD_TARGET_PATH = path.resolve(__dirname, "scaffold-target.mjs");
 
+function writeDeliveryInputs(repoRoot) {
+	for (const relative of ["backend/lib/static-export-serving.js", "backend/lib/static-asset-delivery.js", "scripts/prepare-static-export.mjs"]) {
+		writeFile(path.join(repoRoot, relative), fs.readFileSync(path.resolve(__dirname, "../../../..", relative), "utf8"));
+	}
+}
+
 function writeFile(filePath, contents) {
 	fs.mkdirSync(path.dirname(filePath), { recursive: true });
 	fs.writeFileSync(filePath, contents, "utf8");
@@ -19,6 +25,7 @@ function createFixture() {
 	const planPath = path.join(tempDir, "plan.json");
 
 	try {
+		writeDeliveryInputs(repoRoot);
 		writeFile(
 			path.join(repoRoot, "app", "awake", "page.tsx"),
 			`import { createElement, use } from "react";
@@ -316,6 +323,7 @@ function createContractFixture() {
 	const planPath = path.join(tempDir, "plan.json");
 
 	try {
+		writeDeliveryInputs(repoRoot);
 		writeFile(
 			path.join(repoRoot, "package.json"),
 			JSON.stringify(

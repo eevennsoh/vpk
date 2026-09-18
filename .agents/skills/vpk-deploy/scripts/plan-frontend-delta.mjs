@@ -2,6 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { brotliDecompressSync, gunzipSync } from "node:zlib";
 
 const usage = "Usage: plan-frontend-delta.mjs <target-root> <prior-image-root> --base-image docker.atl-paas.net/<service>@sha256:<digest> [--out <overlay-dir> --apply] [--accept-prior-dependencies]";
 // Match backend/Dockerfile's application source COPY inputs, excluding dependencies.
@@ -109,6 +110,18 @@ try {
 	for (const [relative, absolute] of targetStatic) {
 		const underOut = path.relative("out", relative);
 		const previous = priorStatic.get(path.join("backend/public", underOut));
+		if (/\.(?:html|css|m?js|json|svg|txt|xml)$/iu.test(relative)) {
+			for (const [extension, decode] of [["gz", gunzipSync], ["br", brotliDecompressSync]]) {
+				const sibling = `${relative}.${extension}`;
+				const prepared = targetStatic.get(sibling);
+				if (prepared && !decode(fs.readFileSync(prepared)).equals(fs.readFileSync(absolute))) {
+					throw new Error(`Stale compression sibling: ${path.relative("out", sibling)}; prepare the selected export again`);
+				}
+				if (!prepared && priorStatic.has(path.join("backend/public", `${underOut}.${extension}`)) && !sameFile(absolute, previous)) {
+					throw new Error(`Changed source would retain prior ${extension} sibling: ${underOut}; run prepare-static-export.mjs out --compress`);
+				}
+			}
+		}
 		if (!sameFile(absolute, previous)) changed.push({ relative: underOut, absolute, bytes: fs.statSync(absolute).size });
 	}
 	const oldOnly = [...priorStatic.keys()].map((relative) => path.relative("backend/public", relative))
