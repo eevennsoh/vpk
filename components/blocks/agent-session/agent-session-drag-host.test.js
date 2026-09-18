@@ -54,7 +54,7 @@ test("the drag overlay portals the shared cohort chip with overlay elevation", (
 		/createPortal\([\s\S]*data-session-drag-overlay=\{dragging \? "" : undefined\}[\s\S]*document\.body/u,
 	);
 	assert.match(DRAG_OVERLAY_SOURCE, /data-session-dragging=\{dragging \? "" : undefined\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /chipPointer\.snapToPointer\(\s*\{ x: event\.clientX, y: event\.clientY \},?\s*\);/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /chipPointer\.beginGesture\(\s*\{ x: event\.clientX, y: event\.clientY \},?\s*\);/u);
 	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /chipPointer\.(?:snapToPointer|followPointer)\([\s\S]{0,100}event\.currentTarget/u);
 	assert.match(DRAG_OVERLAY_SOURCE, /-translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(DRAG_OVERLAY_SOURCE, /data-session-chip-centered=""/u);
