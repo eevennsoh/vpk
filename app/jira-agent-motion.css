@@ -97,12 +97,20 @@
 }
 
 @utility session-drag-face-flash {
-	background: linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--session-drag-flash-color) 7%, transparent 93%) 31%, color-mix(in oklab, var(--session-drag-flash-color) 14%, transparent 86%) 43%, color-mix(in oklab, var(--session-drag-flash-color) 18%, transparent 82%) 55%, color-mix(in oklab, var(--session-drag-flash-color) 14%, transparent 86%) 67%, color-mix(in oklab, var(--session-drag-flash-color) 7%, transparent 93%) 79%, transparent 100%);
+	--session-drag-flash-outer-alpha: 7%;
+	--session-drag-flash-inner-alpha: 14%;
+	--session-drag-flash-peak-alpha: 18%;
+	background: linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--session-drag-flash-color) var(--session-drag-flash-outer-alpha), transparent) 31%, color-mix(in oklab, var(--session-drag-flash-color) var(--session-drag-flash-inner-alpha), transparent) 43%, color-mix(in oklab, var(--session-drag-flash-color) var(--session-drag-flash-peak-alpha), transparent) 55%, color-mix(in oklab, var(--session-drag-flash-color) var(--session-drag-flash-inner-alpha), transparent) 67%, color-mix(in oklab, var(--session-drag-flash-color) var(--session-drag-flash-outer-alpha), transparent) 79%, transparent 100%);
 	animation: session-drag-face-flash var(--duration-slower) linear both;
 }
 
-html.dark [data-session-drag-flash-layer] {
-	opacity: 0.22;
+/* The shader's 0.22 dark multiplier was applied on top of this already
+   translucent CSS beam, leaving only ~4% tint. Keep its profile and path,
+   but let the dark DOM card carry a clearly visible face light. */
+html.dark [data-session-drag-flash-layer] .session-drag-face-flash {
+	--session-drag-flash-outer-alpha: 16%;
+	--session-drag-flash-inner-alpha: 31%;
+	--session-drag-flash-peak-alpha: 42%;
 }
 
 @media (prefers-reduced-motion: reduce) {
