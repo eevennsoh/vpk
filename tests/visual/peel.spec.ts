@@ -611,7 +611,7 @@ test("the flat dragged card keeps its face flash visible in dark mode", async ({
 		layerOpacity: getComputedStyle(element.parentElement!).opacity,
 	}));
 	expect(face.image).not.toBe("none");
-	expect(face.peakAlpha).toBeGreaterThanOrEqual(38);
+	expect(face.peakAlpha).toBeGreaterThanOrEqual(45);
 	expect(face.layerOpacity).toBe("1");
 	await expect(overlay.locator("[data-peel-surface], canvas")).toHaveCount(0);
 	await beam.evaluate((element) => {
@@ -621,6 +621,7 @@ test("the flat dragged card keeps its face flash visible in dark mode", async ({
 		animation.currentTime = 200;
 	});
 	await page.screenshot({ path: "output/agent-browser/peel/team-eu26-flat-drag-dark-flash.png" });
+	await overlay.locator("[data-session-drag-pill]").screenshot({ path: "output/agent-browser/peel/team-eu26-flat-drag-dark-flash-chip.png" });
 	await page.mouse.up();
 });
 
