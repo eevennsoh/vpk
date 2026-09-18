@@ -63,7 +63,7 @@ test("the created-card arrival scrolls its column to the last card's bottom and 
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/<CreatedCardArrivalMotion[\s\S]*arrival=\{createdCardArrival\?\.columnTitle === column\.title[\s\S]*cardCode=\{card\.code\}/u,
+		/<CreatedCardArrivalMotion[\s\S]*arrival=\{presentedCardArrival\?\.columnTitle === column\.title[\s\S]*cardCode=\{card\.code\}/u,
 	);
 	// Arrivals no longer slide: the create entrance owns the whole landing, so
 	// the wrapper must not re-add a y-offset or a competing arrive transition.
@@ -88,7 +88,7 @@ test("every created card — create well or mid-column gap drop — enters throu
 	// any arriving card — `appended` no longer picks an entrance.
 	assert.match(
 		ARRIVAL_MOTION_SOURCE,
-		/<JiraCreateEntrance\s*active=\{cardArrival\.entering\}\s*enterDelayS=\{enterDelayS\}\s*onAnimationComplete=\{handleArrivalComplete\}/u,
+		/<JiraCreateEntrance\s*active=\{cardArrival\.entering\}\s*deferred=\{waiting\}\s*enterDelayS=\{enterDelayS\}\s*onAnimationComplete=\{handleArrivalComplete\}/u,
 	);
 	// The wrapper must stay mounted at rest; swapping it for a fragment would
 	// remount the card and wipe state opened during its entrance.

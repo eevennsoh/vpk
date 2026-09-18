@@ -258,7 +258,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
-		/const expanded = receiving \|\| proximity !== "outside";/u,
+		/const expanded = phase === "receiving" \|\| proximity !== "outside";/u,
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,

@@ -23,6 +23,8 @@ export interface JiraKanbanCreatedCardArrival {
 	 * the column away.
 	 */
 	readonly appended: boolean;
+	/** Keep the new card's entrance pending until the create-well receipt finishes. */
+	readonly deferred?: boolean;
 }
 
 export function useBoardCreatedCardArrival({
@@ -102,6 +104,7 @@ export function useCreatedCardArrivalScroll({
 	useLayoutEffect(() => {
 		if (
 			arrival === undefined
+			|| arrival.deferred
 			|| arrival.columnTitle !== title
 			|| arrival.cardCodes.length === 0
 			// A gap drop lands where the pointer already is; following the new

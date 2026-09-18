@@ -7,7 +7,17 @@ const {
 	JIRA_DROPZONE_REDUCED_MOTION_PROFILE,
 	resolveFlightProfile,
 	resolveJiraDropzoneArcOptions,
+	createSessionChipDropKeyframes,
 } = require("./lib/jira-dropzone-motion.ts");
+
+test("creation drops absorb chips even at the target center and converge fanned chips", () => {
+	const centered = createSessionChipDropKeyframes({ x: 30, y: 100 }, { x: 30, y: 100 }, "landing");
+	assert.equal(centered[0].opacity, 1);
+	assert.match(centered[24].transform, /translate3d\(30px, 80px, 0\)/u);
+	assert.equal(centered.at(-1).opacity, 0);
+	const fanned = createSessionChipDropKeyframes({ x: -150, y: 100 }, { x: 30, y: 200 }, "landing");
+	assert.equal(fanned.at(-1).transform, "translate3d(30px, 208px, 0) scale(0.65)");
+});
 
 test("the production well drop is a straight tween; arc options stay on the profile for overrides", () => {
 	assert.equal(JIRA_DROPZONE_FULL_MOTION_PROFILE.travel, "linear");

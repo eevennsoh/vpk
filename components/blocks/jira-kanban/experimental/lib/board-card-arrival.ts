@@ -17,6 +17,8 @@ export interface BoardCardArrival {
 	readonly arrivalId: number | undefined;
 	/** Play the jira-creating entrance for this card. */
 	readonly entering: boolean;
+	/** A receipt still owns the landing geometry; the card must not open its slot yet. */
+	readonly deferred: boolean;
 	/** This card closes the arrival and owns the completion callback. */
 	readonly final: boolean;
 }
@@ -24,6 +26,7 @@ export interface BoardCardArrival {
 const CARD_AT_REST: BoardCardArrival = {
 	arrivalId: undefined,
 	entering: false,
+	deferred: false,
 	final: false,
 };
 
@@ -38,6 +41,7 @@ export function resolveBoardCardArrival(
 	return {
 		arrivalId: arrival.id,
 		entering: true,
+		deferred: arrival.deferred === true,
 		final: arrival.cardCodes.at(-1) === cardCode,
 	};
 }

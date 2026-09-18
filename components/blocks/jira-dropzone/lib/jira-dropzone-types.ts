@@ -45,6 +45,8 @@ export type JiraDropzonePhase = "active" | "armed" | "proximate" | "receiving" |
 
 export interface JiraDropzonePhaseInput {
 	readonly drag: JiraDropzoneDragState;
+	/** Optional immediate-collapse policy; normal drop targets stay open through receipt playback. */
+	readonly holdOpenWhileReceiving?: boolean;
 	readonly proximate: boolean;
 	readonly receiving: boolean;
 }

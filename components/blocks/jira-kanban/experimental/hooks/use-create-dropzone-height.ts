@@ -84,6 +84,7 @@ export function useCreateDropzoneBackdrop(targetRef: RefObject<HTMLDivElement | 
 		const content = column?.querySelector<HTMLElement>("[data-jira-kanban-column-content]");
 		const button = target?.querySelector<HTMLElement>("[data-jira-dropzone-control]");
 		if (columnSizing !== "content" || !target || !backdrop || !content || !button) return;
+		const action = target.closest<HTMLElement>("[data-board-column-create-action]");
 		const syncBackdrop = () => {
 			// Finish geometry reads before writing the decorative clip.
 			const backdropRect = backdrop.getBoundingClientRect();
@@ -95,11 +96,11 @@ export function useCreateDropzoneBackdrop(targetRef: RefObject<HTMLDivElement | 
 			const bottom = Math.max(0, backdropRect.height - extent);
 			backdrop.style.clipPath = `inset(0 0 ${bottom}px 0 round ${token("radius.xlarge")})`;
 		};
-		// Motion writes projection and magnetic transforms once per frame.
-		// Observe the small control subtree, including its positioned wrapper,
-		// so the final rendered bounds reach the backdrop before paint.
+		// Motion writes height and magnetic transforms once per frame.
+		// Include the footer's reserved height: it can reposition the control
+		// after the button's native height write and before the next frame.
 		const mutations = new MutationObserver(syncBackdrop);
-		mutations.observe(target.parentElement ?? target, { attributes: true, subtree: true, attributeFilter: ["style", "class"] });
+		mutations.observe(action ?? target.parentElement ?? target, { attributes: true, subtree: true, attributeFilter: ["style", "class"] });
 		const resize = new ResizeObserver(syncBackdrop);
 		for (const element of [target, column!, content, button]) resize.observe(element);
 		syncBackdrop();

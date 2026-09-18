@@ -558,6 +558,35 @@ test("resting keeps the open well while collapse is holding", () => {
 	assert.equal(resolveJiraDropzoneSurface("active", false), "open");
 });
 
+test("an immediate-collapse consumer returns to resting while its drop receipt is still playing", () => {
+	for (const proximate of [false, true]) {
+		const phase = resolveJiraDropzonePhase({
+			drag: "idle",
+			holdOpenWhileReceiving: false,
+			proximate,
+			receiving: true,
+		});
+		assert.equal(phase, "resting");
+		assert.equal(resolveJiraDropzoneSurface(phase, false), "resting");
+		assert.equal(resolveJiraDropzoneCopy(phase), "none");
+	}
+});
+
+test("a new drag can reopen an immediate-collapse consumer during receipt playback", () => {
+	assert.equal(resolveJiraDropzonePhase({
+		drag: "active",
+		holdOpenWhileReceiving: false,
+		proximate: false,
+		receiving: true,
+	}), "active");
+	assert.equal(resolveJiraDropzonePhase({
+		drag: "armed",
+		holdOpenWhileReceiving: false,
+		proximate: true,
+		receiving: true,
+	}), "armed");
+});
+
 test("collapse hold matches duration-normal unless motion is reduced", () => {
 	assert.equal(resolveJiraDropzoneCollapseMs(false), 150);
 	assert.equal(resolveJiraDropzoneCollapseMs(null), 150);
