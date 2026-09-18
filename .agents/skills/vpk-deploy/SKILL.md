@@ -207,7 +207,7 @@ Docker authentication, missing packages, ASAP formatting, health failures,
 EC2 SSM timeouts, verification lag, and ALB subnet exhaustion. For a full-image
 EC2 timeout, inspect the failed SSM command, node disk, and registered images.
 A compact frontend recovery image needs byte parity of the prior image's
-`backend/`, `lib/`, `rovo/`, and `scripts/lib/` with the selected target and a
+`backend/`, `lib/`, `rovo/`, and `scripts/lib/worktree-ports.js` with the selected target and a
 reviewed export-file diff. Run `plan-frontend-delta.mjs` to enforce that parity,
 service identity, and prior dependency-input comparison. A different
 `pnpm-lock.yaml` or workspace policy means the compact image keeps the previous

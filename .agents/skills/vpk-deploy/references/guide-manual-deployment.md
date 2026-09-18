@@ -222,14 +222,14 @@ before the later CSP code change needed a new image.
 
 Follow [EC2 timeout diagnosis](troubleshooting.md#ec2-hot-swap-timeout-and-compact-recovery)
 first. This path applies only when the selected target's `backend/`, `lib/`,
-`rovo/`, and `scripts/lib/` files are byte-identical to the previous verified
+`rovo/`, and `scripts/lib/worktree-ports.js` files are byte-identical to the previous verified
 image and the requested change is in the exported frontend. Compare the entire
 runtime file set, excluding the image's static `backend/public/` and test/data
 files. If runtime code differs, use the full backend build and review those
 changes instead.
 
 Extract only the verified prior image's `/app/backend`, `/app/lib`,
-`/app/rovo`, `/app/scripts/lib`, and root `package.json`, `pnpm-lock.yaml`,
+`/app/rovo`, `/app/scripts/lib/worktree-ports.js`, and root `package.json`, `pnpm-lock.yaml`,
 `pnpm-workspace.yaml`, and `.npmrc` into a temporary prior-image root. The
 backend copy includes its static `backend/public/`. Review the immutable prior
 registry digest, then run the dry plan:
