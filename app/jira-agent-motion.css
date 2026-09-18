@@ -78,3 +78,36 @@
 	--orb-outer-x: -4.763px;
 	--orb-outer-y: -2.75px;
 }
+
+/* Keep the peel card's accent and soft face light. On a morphing card,
+   start its peak at the left edge and carry it past the right edge before
+   fading. The full-width pass completes with the 400ms card contraction. */
+@keyframes session-drag-face-flash {
+	0% {
+		opacity: 1;
+		transform: translateX(-55%);
+	}
+	85% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: translateX(65%);
+	}
+}
+
+@utility session-drag-face-flash {
+	background: linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--session-drag-flash-color) 7%, transparent 93%) 31%, color-mix(in oklab, var(--session-drag-flash-color) 14%, transparent 86%) 43%, color-mix(in oklab, var(--session-drag-flash-color) 18%, transparent 82%) 55%, color-mix(in oklab, var(--session-drag-flash-color) 14%, transparent 86%) 67%, color-mix(in oklab, var(--session-drag-flash-color) 7%, transparent 93%) 79%, transparent 100%);
+	animation: session-drag-face-flash var(--duration-slower) linear both;
+}
+
+html.dark [data-session-drag-flash-layer] {
+	opacity: 0.22;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.session-drag-face-flash {
+		animation: none;
+		opacity: 0;
+	}
+}

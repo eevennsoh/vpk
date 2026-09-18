@@ -29,6 +29,16 @@ test("a marked origin publishes every visible marked session in list order", () 
 	assert.deepEqual(sessionCohortIds(cohort), ["lw-a", "lw-c"]);
 });
 
+test("the grabbed session leads the cohort even when another marked card appears first", () => {
+	const visible = [session("lw-a"), session("lw-b"), session("lw-c")];
+	const selected = { markedIds: new Set(["lw-a", "lw-c"]) };
+	const fromFirst = selectDragCohort("lw-a", selected, visible);
+	const fromLast = selectDragCohort("lw-c", selected, visible);
+	assert.deepEqual(sessionCohortIds(fromLast), ["lw-c", "lw-a"]);
+	assert.equal(fromLast.members[0], visible[2]);
+	assert.equal(fromLast.key, fromFirst.key);
+});
+
 test("an unmarked origin among marks publishes that session only", () => {
 	const visible = [session("lw-a"), session("lw-b"), session("lw-c")];
 	const cohort = selectDragCohort("lw-b", {

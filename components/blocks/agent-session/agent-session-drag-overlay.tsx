@@ -11,6 +11,7 @@ import {
 	isSessionDragIdentitySettled,
 	measureSessionDragGeometry,
 	resolveSessionDragMorph,
+	resolveSessionDragAvatarMorph,
 	sessionDragGeometryRelativeToPointer,
 	SESSION_DRAG_CHIP_ENTER_TRANSITION,
 	SESSION_PEEL_CHIP_ENTER_TRANSITION,
@@ -60,6 +61,7 @@ export function AgentSessionDragOverlay({
 		setPeelReady(false);
 		const pill = follower.querySelector<HTMLElement>("[data-session-drag-pill]");
 		const surface = pill?.querySelector<HTMLElement>("[data-session-drag-surface]");
+		const flashLayer = pill?.querySelector<HTMLElement>("[data-session-drag-flash-layer]");
 		const identity = pill?.querySelector<HTMLElement>("[data-session-drag-identity]");
 		const label = pill?.querySelector<HTMLElement>("[data-session-drag-label]");
 		if (!pill || !surface || !identity || !label) return;
@@ -69,20 +71,37 @@ export function AgentSessionDragOverlay({
 		// pointer coordinate space; source list projection cannot affect it.
 		const geometry = measureSessionDragGeometry(pill);
 		const pointerRect = follower.getBoundingClientRect();
-		const morph = chipOrigin && geometry
-			? resolveSessionDragMorph(chipOrigin, sessionDragGeometryRelativeToPointer(geometry, {
+		const target = geometry ? sessionDragGeometryRelativeToPointer(geometry, {
 				x: pointerRect.left,
 				y: pointerRect.top,
-			}))
-			: null;
+			}) : null;
+		const morph = chipOrigin && target ? resolveSessionDragMorph(chipOrigin, target) : null;
+		const avatarMoves = morph && previewEffect !== "peel" ? (["human", "agent"] as const).flatMap((role) => {
+			const from = chipOrigin?.avatars?.[role];
+			const to = target?.avatars?.[role];
+			const element = identity.querySelector<HTMLElement>(`[data-avatar-role="${role}"]`);
+			if (!from || !to || !element) return [];
+			const avatar = resolveSessionDragAvatarMorph(from, to, morph);
+			return [{ element, transform: `translate(${avatar.x}px, ${avatar.y}px) scale(${avatar.scaleX}, ${avatar.scaleY})` }];
+		}) : [];
 		const options = previewEffect === "peel" ? SESSION_PEEL_CHIP_ENTER_TRANSITION : SESSION_DRAG_CHIP_ENTER_TRANSITION;
+		const move = (element: HTMLElement, from: string, to = "translate(0px, 0px)") => {
+			// WAAPI's first keyframe is applied asynchronously. Set the captured
+			// pose before paint so a preview never flashes at the pointer first.
+			element.style.transform = from;
+			return animate(element, { transform: [from, to] }, options);
+		};
+		label.style.opacity = morph ? "0" : "";
+		for (const { element } of avatarMoves) element.style.transformOrigin = "0 0";
 		const animations = morph ? [
-			animate(traveller, { transform: [`translate(${morph.x}px, ${morph.y}px)`, "translate(0px, 0px)"] }, options),
-			animate(surface, { transform: [`scale(${morph.scaleX}, ${morph.scaleY})`, "scale(1, 1)"] }, options),
-			animate(identity, { transform: [`translate(${morph.identityX}px, ${morph.identityY}px)`, "translate(0px, 0px)"] }, options),
+			move(traveller, `translate(${morph.x}px, ${morph.y}px)`),
+			move(surface, `scale(${morph.scaleX}, ${morph.scaleY})`, "scale(1, 1)"),
+			...(flashLayer ? [move(flashLayer, `scale(${morph.scaleX}, ${morph.scaleY})`, "scale(1, 1)")] : []),
+			move(identity, `translate(${morph.identityX}px, ${morph.identityY}px)`),
+			...avatarMoves.map(({ element, transform }) => move(element, transform, "translate(0px, 0px) scale(1, 1)")),
 			animate(label, { opacity: [0, 1] }, options),
 		] : [animate(traveller, { opacity: [0, 1] }, options)];
-		const moving = morph ? [traveller, surface, identity, label] : [traveller];
+		const moving = morph ? [traveller, surface, ...(flashLayer ? [flashLayer] : []), identity, label, ...avatarMoves.map(({ element }) => element)] : [traveller];
 		for (const element of moving) {
 			element.style.willChange = element === label || !morph ? "opacity" : "transform";
 		}
@@ -112,6 +131,7 @@ export function AgentSessionDragOverlay({
 			// stop() commits a motion value and queues a render after this cleanup;
 			// cancellation removes the effect without restoring a stale transform.
 			for (const animation of animations) animation.cancel();
+			for (const { element } of avatarMoves) element.style.transformOrigin = "";
 			for (const element of moving) {
 				element.style.willChange = "";
 				element.style.transform = "";
@@ -144,7 +164,15 @@ export function AgentSessionDragOverlay({
 					<PeelSurface active={dragging && peelReady} captureChildren={capturedPeelChip} contentKey={JSON.stringify(cohort.members.map(({ id, agent, invokedBy }) => ({ id, agent, invokedBy })))} flashColor={agentSessionAccentColor(cohort.members[0])} pointerX={pointerX} pointerY={pointerY}>
 						{visiblePeelChip}
 					</PeelSurface>
-				) : <AgentSessionCohortChip cohort={cohort} elevated isFusionSource />}
+				) : (
+					<AgentSessionCohortChip
+						cohort={cohort}
+						elevated
+						isFusionSource
+						animateIdentity={false}
+						flashColor={dragging && !reduceMotion ? agentSessionAccentColor(cohort.members[0]) : undefined}
+					/>
+				)}
 			</div>
 		</motion.div>,
 		document.body,
