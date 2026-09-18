@@ -524,7 +524,7 @@ test("the normal glow fills the source card while it contracts to the drag chip"
 	await source.hover();
 	const sourceBox = (await source.boundingBox())!;
 	await page.evaluate(() => {
-		const probe = { frames: [] as { t: number; x: number; y: number; width: number; height: number; opacity: number; beamX: number }[], complete: false };
+		const probe = { frames: [] as { t: number; x: number; y: number; width: number; height: number; opacity: number; beamX: number; beamCenter: number; surfaceGap: number }[], complete: false };
 		Object.assign(window, { dragFlashProbe: probe });
 		const observer = new MutationObserver(() => {
 			const layer = document.querySelector<HTMLElement>("[data-session-drag-overlay] [data-session-drag-flash-layer]");
@@ -536,7 +536,14 @@ test("the normal glow fills the source card while it contracts to the drag chip"
 				const style = getComputedStyle(beam);
 				const t = performance.now() - start;
 				const box = layer.getBoundingClientRect();
-				probe.frames.push({ t, x: box.x, y: box.y, width: box.width, height: box.height, opacity: Number(style.opacity), beamX: style.transform === "none" ? 0 : new DOMMatrixReadOnly(style.transform).m41 });
+				const surface = document.querySelector<HTMLElement>("[data-session-drag-overlay] [data-session-drag-surface]")?.getBoundingClientRect();
+				const beamX = style.transform === "none" ? 0 : new DOMMatrixReadOnly(style.transform).m41;
+				probe.frames.push({
+					t, x: box.x, y: box.y, width: box.width, height: box.height,
+					opacity: Number(style.opacity), beamX,
+					beamCenter: 0.55 + beamX / beam.offsetWidth,
+					surfaceGap: surface ? Math.max(Math.abs(box.x - surface.x), Math.abs(box.y - surface.y), Math.abs(box.width - surface.width), Math.abs(box.height - surface.height)) : Number.POSITIVE_INFINITY,
+				});
 				if (t < 650) requestAnimationFrame(sample);
 				else probe.complete = true;
 			};
@@ -556,7 +563,7 @@ test("the normal glow fills the source card while it contracts to the drag chip"
 	await expect.poll(() => page.evaluate(() => (window as unknown as { dragFlashProbe: { frames: { t: number }[] } }).dragFlashProbe.frames.some(({ t }) => t > 200))).toBe(true);
 	await page.screenshot({ path: "output/agent-browser/peel/team-eu26-normal-drag-glow-mid-transition.png" });
 	await expect.poll(() => page.evaluate(() => (window as unknown as { dragFlashProbe: { complete: boolean } }).dragFlashProbe.complete)).toBe(true);
-	const frames = await page.evaluate(() => (window as unknown as { dragFlashProbe: { frames: { t: number; x: number; y: number; width: number; height: number; opacity: number; beamX: number }[] } }).dragFlashProbe.frames);
+	const frames = await page.evaluate(() => (window as unknown as { dragFlashProbe: { frames: { t: number; x: number; y: number; width: number; height: number; opacity: number; beamX: number; beamCenter: number; surfaceGap: number }[] } }).dragFlashProbe.frames);
 	const first = frames[0];
 	const last = frames.at(-1)!;
 	expect(first.width).toBeGreaterThan(sourceBox.width * 0.85);
@@ -565,8 +572,16 @@ test("the normal glow fills the source card while it contracts to the drag chip"
 	expect(Math.abs(first.y - sourceBox.y)).toBeLessThan(15);
 	expect(first.width).toBeGreaterThan(last.width * 1.5);
 	expect(frames.some(({ t, opacity }) => t < 250 && opacity > 0.8)).toBe(true);
+	expect(frames.every(({ surfaceGap }) => surfaceGap < 1.5)).toBe(true);
+	expect(first.beamCenter).toBeGreaterThan(-0.08);
+	expect(first.beamCenter).toBeLessThan(0.1);
+	expect(frames.some(({ t, beamCenter, opacity }) => t > 380 && t < 480 && beamCenter > 0.85 && opacity > 0.8)).toBe(true);
+	expect(last.beamCenter).toBeGreaterThan(1.15);
 	expect(last.opacity).toBeLessThan(0.05);
 	expect(last.beamX).toBeGreaterThan(first.beamX + 30);
+	for (let index = 1; index < frames.length; index += 1) {
+		expect(frames[index].beamCenter).toBeGreaterThanOrEqual(frames[index - 1].beamCenter - 0.02);
+	}
 	await page.mouse.up();
 });
 
