@@ -21,6 +21,8 @@ backend behavior.
 ## Hard invariants
 
 - Run the trace before scaffolding and inspect every warning or decision point.
+- Record the selected source Git SHA and clean/dirty state before tracing; recheck them before copying and deployment. Preserve work that appears after the selection.
+- For an existing Git checkout or configured deployment, scaffold into a disposable staging directory and review file contents before refreshing the target. Preserve its credentials, descriptor, README, Git state, and backend launcher.
 - Ask for confirmation after the read-only plan and before creating the sibling
   target.
 - Preserve repo-relative source paths and copy source files verbatim where
@@ -72,8 +74,10 @@ node .agents/skills/vpk-build/scripts/trace-imports.mjs <route-path> \
   --out .agents/skills/vpk-build/.cache/<route-slug>.plan.json
 ```
 
-Review file, package, asset, backend-route, dynamic-import, cross-route-link,
-and skipped-dispatcher findings. Stop for a decision when:
+Review file, package, asset, backend-route, runtime `/api/*` fetch, dynamic-import,
+cross-route-link, and skipped-dispatcher findings. A plan can report live API
+fetches while `backendRouteCount` is zero; select the backend-backed contract
+when those calls belong to the exported route. Stop for a decision when:
 
 - backend routes are present but no backend-backed export was requested;
 - a dynamic import is not statically resolvable;
@@ -89,7 +93,7 @@ Show the plan summary and receive confirmation before continuing.
 ```bash
 node .agents/skills/vpk-build/scripts/scaffold-target.mjs \
   .agents/skills/vpk-build/.cache/<route-slug>.plan.json \
-  [--target <custom-dir>] [--force]
+  [--target <custom-dir>] [--backend-backed] [--force]
 ```
 
 The script creates the sibling project, preserves repo-relative paths, copies
@@ -102,6 +106,17 @@ only the approved setup and deploy skills.
 Static scaffold inputs live under [scaffold references](references/scaffold/).
 Micros templates live under [Micros references](references/micros/). Do not edit
 the source route to compensate for an extraction-only concern.
+
+### Refresh an existing sibling
+
+The scaffold rejects `--force` for an existing Git checkout or configured
+service. Generate the latest plan in a disposable staging directory, compare
+bytes/file contents with the sibling, then copy reviewed source and harness
+changes. Preserve `.deploy.local`, `service-descriptor.yml`, the sibling README,
+`.dockerignore`, Git metadata, and local overrides. The staged
+`scripts/dev-backend-backed.mjs` points at the staging path; keep or regenerate
+the launcher for the actual sibling path. Review backend changes separately and
+retain the full public asset tree. See [extraction guide](references/extraction-guide.md).
 
 ### 3. Verify the target
 
@@ -120,7 +135,16 @@ interaction.
 
 Backend-backed extracts must also prove the source backend starts, API proxies
 work, `/api/realtime/ws-url` resolves correctly, WebSocket upgrades succeed,
-and copied behavior remains source-compatible.
+and copied behavior remains source-compatible. For an extracted localhost
+preview, run:
+
+```bash
+node .agents/skills/vpk-deploy/scripts/verify-wss.mjs \
+  http://localhost:3001 --discovery --allow-tokenless-dev
+```
+
+This verifies the target's URL discovery and upgrade proxy. The deployed HTTPS
+check requires a scoped token; follow `vpk-deploy` for that proof.
 
 ### 4. Hand off deployment
 

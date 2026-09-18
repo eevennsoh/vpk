@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { execFileSync } = require("node:child_process");
+const { execFileSync, spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -210,6 +210,28 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(jsxNamespace, /type Element = ReactJSX\.Element/);
 	} finally {
 		fixture.cleanup();
+	}
+});
+
+test("--force refuses to overwrite an owned checkout or configured deployment", () => {
+	for (const signal of [".git", ".deploy.local", "service-descriptor.yml"]) {
+		const fixture = createFixture();
+		try {
+			const marker = path.join(fixture.targetDir, "README.md");
+			writeFile(marker, "preserve target notes\n");
+			if (signal === ".git") fs.mkdirSync(path.join(fixture.targetDir, ".git"));
+			else if (signal === ".deploy.local") writeFile(path.join(fixture.targetDir, signal), "SERVICE_NAME=example\n");
+			else writeFile(path.join(fixture.targetDir, signal), "image: docker.atl-paas.net/example-service\n");
+
+			const result = spawnSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir, "--force"], {
+				encoding: "utf8",
+			});
+			assert.notEqual(result.status, 0, `${signal} must protect the target`);
+			assert.match(result.stderr, /existing checkout or configured deployment/u);
+			assert.equal(fs.readFileSync(marker, "utf8"), "preserve target notes\n");
+		} finally {
+			fixture.cleanup();
+		}
 	}
 });
 

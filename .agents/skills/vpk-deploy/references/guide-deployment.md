@@ -280,9 +280,11 @@ Follow the deployment ID returned by Micros until it reaches a final state:
 ```
 
 For hot swap, the ID can remain unchanged and events can show only the original
-creation. Query service status and confirm the selected environment's stack has
-the expected `sd.buildNumber` and final `UPDATE_COMPLETE` status. An old
-`CREATE_COMPLETE` event does not establish that the new image is running.
+creation. Query `micros service show -o json` and confirm
+`stacks[env][0].sd.buildNumber` and final `UPDATE_COMPLETE`. An old
+`CREATE_COMPLETE` event does not establish that the new image is running. After
+`UPDATE_FAILED`, the previous image can still return healthy HTTP responses;
+verify selected image content before claiming the requested release.
 
 Map the environment to its region and verify the deployed runtime:
 
@@ -315,6 +317,10 @@ Supply route arguments such as `/` or `/studio/` explicitly. Extracted root apps
 must not inherit an assumed `/studio/`. Cross-origin redirects fail without
 following their destination; verify intentional external navigation separately.
 Each request has a timeout, adjustable through `--timeout-ms` (default 15000).
+For an extracted root served directly from the local static export, add
+`--expect-html-file out/index.html`; the verifier compares live HTML bytes with
+the selected export without printing either body. This distinguishes a newly
+selected release from an older healthy image after an EC2 update failure.
 Response bodies and tokens are not printed.
 Routes must serve HTML; CSS, JavaScript, and font assets must have compatible
 content types. This catches static requests that incorrectly return an HTML
@@ -347,14 +353,28 @@ The HTTP verifier cannot establish usable chat, audio, or fonts permitted by CSP
    use, and geometry, and capture a screenshot. Remove the route interception
    and reload to verify normal hydration. Intentional script-blocking errors in
    the diagnostic run are separate from fresh errors after the normal reload.
+   If `agent-browser` opens the deployed route but repeatedly falls back to
+   `about:blank`, run its doctor and retry one isolated session, then use
+   Playwright CLI. Keep its session name short on macOS: a long name can make
+   the Unix socket fail with `listen EINVAL`. For a Playwright script-blocked
+   check, `run-code` takes an `async (page) => { ... }` function; register
+   `page.route(...)` and call `page.goto(...)` in that same invocation. Save
+   fallback screenshots under ignored `output/playwright/`.
 2. For chat, send one non-sensitive, tool-free prompt and verify an assistant turn.
-   For realtime, obtain a real scoped token and connect to the app's documented
-   WSS endpoint; close promptly without printing the token. A 101 upgrade proves
-   transport only. Test microphone/playback separately before claiming audio works.
+   For realtime, run the `verify-wss.mjs` command in `SKILL.md` against the
+   deployed HTTPS origin; it obtains the scoped token, sends the correct Origin,
+   checks the `101` upgrade, and closes without printing the token or sending
+   audio. For an extracted localhost preview add `--discovery` and
+   `--allow-tokenless-dev`. A 101 upgrade proves transport only. Test
+   microphone/playback separately before claiming audio works.
 3. Record accessibility violations and incomplete checks accurately; an inherited
-   finding does not justify claiming a clean scan. Save screenshots under ignored
-   `output/agent-browser/` and inspect them. Reset synthetic UI state and close
-   only this task's browser session when finished.
+   finding does not justify claiming a clean scan. A one-command
+   `agent-browser a11y <exact-url> --json` can audit the route even when later
+   browser commands lose their tab. Save and inspect screenshots. Reset synthetic
+   UI state and remove only chats created by the probe. A completed run's
+   `/api/rovo/runs/<id>/detach` can return a transient 404 during New chat;
+   report it separately from errors on a fresh page load. Close only this
+   task's browser session when finished.
 4. Inspect external dependencies such as `VPK_ORIGIN` independently. A source
    service with no active stack/unresolvable URL leaves Create agent/skill actions
    unavailable; report that limitation without deploying the separate service.
