@@ -36,7 +36,7 @@ export function sessionReceiptId(parts: SessionReceiptIdParts): SessionReceiptId
 }
 
 export function resolveJiraDropzonePhase(input: JiraDropzonePhaseInput): JiraDropzonePhase {
-	if (input.receiving) {
+	if (input.receiving && input.holdOpenWhileReceiving !== false) {
 		return "receiving";
 	}
 	if (input.drag === "armed") {

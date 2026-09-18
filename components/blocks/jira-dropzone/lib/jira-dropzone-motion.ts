@@ -38,7 +38,7 @@ export const JIRA_DROPZONE_WELL_HIDDEN = { opacity: 0, transform: "translateY(8p
 /**
  * Shared flight recipe for create-well and card-link drops.
  *
- * Default travel is a straight tween — the Team EU26 board drop. `durationMs`
+ * Default travel uses the shared chip lift, fall, and absorption recipe. `durationMs`
  * is duration-slower so a button-launched catalog drop can still be tracked;
  * on the board the pointer is already on the well, so the same budget is a
  * short slide to centre. Arc path, peak, rotate, and strength stay on the
@@ -150,4 +150,40 @@ export function resolveJiraDropzoneLandingPoint(
 		x: rect.left + rect.width / 2,
 		y: rect.top + rect.height / 2,
 	};
+}
+
+export interface SessionChipDropKeyframe extends Keyframe {
+	offset: number;
+	transform: string;
+	opacity: number;
+}
+
+/** Shared reference recipe from agentic-jira-board's animateUnattachedSessionDropToCard. */
+export function createSessionChipDropKeyframes(
+	from: ViewportPoint,
+	landing: ViewportPoint,
+	horizontal: "fixed" | "landing" = "fixed",
+): SessionChipDropKeyframe[] {
+	const apexFraction = 0.4;
+	const steps = 60;
+	return Array.from({ length: steps + 1 }, (_, index) => {
+		const progress = index / steps;
+		const collapse = progress * progress * (3 - 2 * progress);
+		let y: number;
+		if (progress <= apexFraction) {
+			const upward = progress / apexFraction;
+			const incoming = Math.pow(upward, 1.5);
+			const outgoing = Math.pow(1 - upward, 1.2);
+			y = from.y - 20 * incoming / (incoming + outgoing);
+		} else {
+			const downward = (progress - apexFraction) / (1 - apexFraction);
+			const gravity = Math.pow(downward, 1.2) * (0.4326 + downward * (0.7348 - 0.1674 * downward));
+			y = from.y + (landing.y + 8 - from.y) * gravity - 20 * (1 - gravity);
+		}
+		return {
+			offset: progress,
+			transform: `translate3d(${horizontal === "landing" ? from.x + (landing.x - from.x) * collapse : from.x}px, ${y}px, 0) scale(${1 + (0.65 - 1) * collapse})`,
+			opacity: 1 - collapse,
+		};
+	});
 }

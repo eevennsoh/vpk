@@ -15,6 +15,8 @@ export interface JiraCreateEntranceProps {
 	/** Play the insert-and-push entrance. Off keeps the slot at rest so callers can keep children mounted. */
 	active?: boolean;
 	children: ReactNode;
+	/** Hold the existing entrance at its hidden start until the prerequisite completes. */
+	deferred?: boolean;
 	className?: string;
 	enterDelayS?: number;
 	itemId?: string;
@@ -25,6 +27,7 @@ export function JiraCreateEntrance({
 	active = true,
 	children,
 	className,
+	deferred = false,
 	enterDelayS = 0,
 	itemId,
 	onAnimationComplete,
@@ -33,25 +36,28 @@ export function JiraCreateEntrance({
 	const motionVariants = getJiraCreateMotion(shouldReduceMotion, enterDelayS);
 	const slotTransition = getJiraCreateSlotTransition(shouldReduceMotion, enterDelayS);
 	const playEntrance = active && !shouldReduceMotion;
+	const waiting = active && deferred;
 
 	return (
 		<motion.div
-			animate={{ height: "auto" }}
+			animate={{ height: waiting ? 0 : "auto" }}
+			aria-hidden={waiting || undefined}
 			className={cn("w-full min-w-0 shrink-0", active ? "overflow-hidden" : null)}
 			data-jira-creating-item-id={itemId}
 			data-slot="jira-creating-slot"
 			exit={shouldReduceMotion ? { height: "auto" } : { height: 0 }}
 			initial={playEntrance ? { height: 0 } : false}
+			inert={waiting || undefined}
 			style={{ boxSizing: "border-box" }}
 			transition={slotTransition}
 		>
 			<motion.div
-				animate="show"
+				animate={waiting ? "hidden" : "show"}
 				className={cn("w-full min-w-0", className)}
 				data-slot="jira-creating-card"
 				exit="exit"
 				initial={active ? "hidden" : false}
-				onAnimationComplete={active ? onAnimationComplete : undefined}
+				onAnimationComplete={active && !waiting ? onAnimationComplete : undefined}
 				style={{
 					...(active ? JIRA_CREATE_MOTION_STYLE : undefined),
 					transformOrigin: "top center",

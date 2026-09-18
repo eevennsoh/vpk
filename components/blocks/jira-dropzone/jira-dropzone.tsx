@@ -47,8 +47,8 @@ export interface JiraDropzoneControlProps {
 	children: ReactNode;
 	className: string;
 	label: string;
-	layout: boolean;
 	minHeight: number;
+	reducedMotion: boolean;
 	selected: boolean;
 }
 
@@ -109,7 +109,7 @@ export function JiraDropzone({
 		return rect ? resolveJiraDropzoneLandingPoint(rect) : null;
 	}, [targetRef]);
 
-	const expanded = receiving || proximity !== "outside";
+	const expanded = phase === "receiving" || proximity !== "outside";
 	const selected = phase === "armed" || phase === "receiving";
 	const drop = resolveJiraDropzoneDrop(channel?.lastReceipt);
 	const bouncePlayback = resolveJiraDropzoneBounce(channel?.lastReceipt);
@@ -426,6 +426,7 @@ function JiraDropzoneButtonChrome({
 }>): ReactElement {
 	const shouldReduceMotion = useReducedMotion();
 	const showLabel = active && copy === "label";
+	const copyTransition = shouldReduceMotion ? JIRA_DROPZONE_WELL_ENTER_REDUCED : JIRA_DROPZONE_WELL_ENTER;
 	return renderControl({
 		active,
 		className: cn(
@@ -436,27 +437,43 @@ function JiraDropzoneButtonChrome({
 			marching ? JIRA_DROPZONE_ANTS_CLASS : null,
 		),
 		label,
-		layout: !shouldReduceMotion,
 		minHeight: expanded ? Math.max(JIRA_DROPZONE_OPEN_HEIGHT_PX, openMinHeight ?? 0) : active ? 32 : 0,
+		reducedMotion: Boolean(shouldReduceMotion),
 		selected,
 		children: <>
 			{marching ? <JiraDropzoneAntsStroke selected={selected} /> : null}
-			<motion.span
+			<span
 				className="relative grid h-5 w-full place-items-center overflow-hidden"
-				layout={shouldReduceMotion ? false : "position"}
-				transition={{ layout: shouldReduceMotion ? JIRA_DROPZONE_WELL_ENTER_REDUCED : JIRA_DROPZONE_WELL_ENTER }}
 			>
-				{/* The copy shares the shape's layout clock and swaps atomically. */}
+				{/* Both visual layers share one centered slot and the height animation's clock. */}
 				<span
-					className="col-start-1 row-start-1 inline-flex w-full items-center justify-center"
+					aria-hidden
+					className="col-start-1 row-start-1 grid w-full place-items-center"
 					data-jira-dropzone-copy-motion={showLabel ? "label" : "add"}
 				>
-					{showLabel ? <motion.span
-						className="inline-block will-change-transform"
-						style={{ x: pinMagnet ? 0 : magnet.labelX, y: pinMagnet ? 0 : magnet.labelY }}
-					>{label}</motion.span> : <Icon render={<AddIcon label="" size="small" />} />}
+					<motion.span
+						animate={{ opacity: showLabel ? 0 : 1 }}
+						className="col-start-1 row-start-1 inline-flex items-center justify-center"
+						data-jira-dropzone-copy-layer="add"
+						initial={false}
+						transition={copyTransition}
+					>
+						<Icon render={<AddIcon label="" size="small" />} />
+					</motion.span>
+					<motion.span
+						animate={{ opacity: showLabel ? 1 : 0 }}
+						className="col-start-1 row-start-1 inline-flex w-full items-center justify-center"
+						data-jira-dropzone-copy-layer="label"
+						initial={false}
+						transition={copyTransition}
+					>
+						<motion.span
+							className={cn("inline-block will-change-transform", selected ? "text-text-selected" : null)}
+							style={{ x: pinMagnet ? 0 : magnet.labelX, y: pinMagnet ? 0 : magnet.labelY }}
+						>{label}</motion.span>
+					</motion.span>
 				</span>
-			</motion.span>
+			</span>
 		</>,
 	});
 }

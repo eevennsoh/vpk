@@ -360,7 +360,7 @@ test("Jira cards animate surrounding reflow when a session attach chin opens", (
 	);
 	assert.match(
 		BOARD_SOURCE,
-		/layout=\{shouldAnimateCardLayout \? "position" : false\}/u,
+		/layout: shouldAnimateCardLayout \? "position" : false/u,
 	);
 	assert.doesNotMatch(
 		BOARD_SOURCE,
@@ -368,7 +368,7 @@ test("Jira cards animate surrounding reflow when a session attach chin opens", (
 	);
 	assert.match(
 		BOARD_SOURCE,
-		/transition=\{shouldAnimateCardPosition \? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT\}/u,
+		/transition: shouldAnimateCardPosition \? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT/u,
 	);
 	assert.match(CARD_SOURCE, /parentOwnsLayout/u);
 	assert.match(JIRA_ISSUE_SOURCE, /parentOwnsLayout\?: boolean;/u);
