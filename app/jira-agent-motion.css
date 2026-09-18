@@ -105,14 +105,14 @@
 	animation: session-drag-face-flash var(--duration-slower) linear both;
 }
 
-/* The shader's 0.22 dark multiplier was applied on top of this already
-   translucent CSS beam, leaving only ~4% tint. On the dark DOM card, lighten
-   the accent and lift the same soft profile so the pass reads as face light. */
+/* The captured Peel face reaches roughly 24 red-channel levels above its dark
+   resting surface. Keep the flat beam at that same visible lift: its 13% peak
+   replaces the earlier 32% peak that made the card noticeably brighter. */
 html.dark [data-session-drag-flash-layer] .session-drag-face-flash {
 	--session-drag-flash-beam-color: color-mix(in oklab, var(--session-drag-flash-color) 70%, white 30%);
-	--session-drag-flash-outer-alpha: 12%;
-	--session-drag-flash-inner-alpha: 24%;
-	--session-drag-flash-peak-alpha: 32%;
+	--session-drag-flash-outer-alpha: 5%;
+	--session-drag-flash-inner-alpha: 10%;
+	--session-drag-flash-peak-alpha: 13%;
 }
 
 @media (prefers-reduced-motion: reduce) {
