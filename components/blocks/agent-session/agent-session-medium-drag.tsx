@@ -253,7 +253,7 @@ export function AgentSessionMediumDrag({
 				sourceGeometryRef.current = measureSessionDragGeometry(event.currentTarget);
 				drag.bind.onPointerDown(event);
 				pointerOriginRef.current = { x: event.clientX, y: event.clientY };
-				chipPointer.snapToPointer(
+				chipPointer.beginGesture(
 					{ x: event.clientX, y: event.clientY },
 				);
 			},
@@ -335,7 +335,8 @@ export function AgentSessionMediumDrag({
 					isDraggedOut={isDraggedOut}
 					pointerX={chipPointer.x}
 					pointerY={chipPointer.y}
-					pointerInputX={chipPointer.inputX}
+					pointerDirection={chipPointer.direction}
+					pointerOriginX={chipPointer.originX}
 					reduceMotion={reduceChipMotion}
 					previewEffect={sessionDrag.previewEffect}
 					peelSurface={peelSurface}

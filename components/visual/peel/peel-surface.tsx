@@ -8,6 +8,7 @@ import { parseColor } from "@/components/ui-custom/lib/shimmer-colors";
 import { cn } from "@/lib/utils";
 import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, PEEL_PAPER_COLOUR, resolvePeelTuning, type PeelTuning } from "./data";
 import { createPeelState, grabPeel, startPeelFlash } from "./peel-model";
+import { peelSurfacePointer } from "./peel-geometry";
 import { PeelScene } from "./peel-scene";
 import type { PeelPointerSample } from "./peel-geometry";
 
@@ -24,8 +25,9 @@ export interface PeelSurfaceProps {
 	flashColor?: string;
 	pointerX: MotionValue<number>;
 	pointerY: MotionValue<number>;
-	/** Actual horizontal input; spring follower recoil must not change the lit edge. */
-	pointerInputX: MotionValue<number>;
+	/** Retained input intent from the gesture owner, available before capture finishes. */
+	pointerDirection: MotionValue<number>;
+	pointerOriginX: MotionValue<number>;
 	tuning?: Partial<PeelTuning>;
 	className?: string;
 }
@@ -40,13 +42,13 @@ export function PeelSurface({ active, ...props }: Readonly<PeelSurfaceProps>) {
 			    remounting it would restart its avatars at opacity zero. */}
 			<div ref={props.captureChildren === undefined ? sourceRef : undefined} data-peel-native-source="" className="w-fit p-6 group-data-[peel-ready=true]/peel:opacity-0">{props.children}</div>
 			{props.captureChildren !== undefined ? <div ref={sourceRef} data-peel-capture-source="" className="pointer-events-none absolute left-0 top-0 w-fit p-6 opacity-0">{props.captureChildren}</div> : null}
-			{!reducedMotion ? <PeelCapturedSurface key={JSON.stringify([props.contentKey, props.flashColor])} active={active} sourceRef={sourceRef} pointerX={props.pointerX} pointerY={props.pointerY} pointerInputX={props.pointerInputX} tuning={props.tuning} /> : null}
+			{!reducedMotion ? <PeelCapturedSurface key={JSON.stringify([props.contentKey, props.flashColor])} active={active} sourceRef={sourceRef} pointerX={props.pointerX} pointerY={props.pointerY} pointerDirection={props.pointerDirection} pointerOriginX={props.pointerOriginX} tuning={props.tuning} /> : null}
 		</div>
 	);
 }
 
 /** One prepared print/context per opted-in preview; the frame loop parks between drags. */
-function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, pointerInputX, tuning }: Readonly<Pick<PeelSurfaceProps, "active" | "pointerX" | "pointerY" | "pointerInputX" | "tuning"> & { sourceRef: RefObject<HTMLDivElement | null> }>) {
+function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, pointerDirection, pointerOriginX, tuning }: Readonly<Pick<PeelSurfaceProps, "active" | "pointerX" | "pointerY" | "pointerDirection" | "pointerOriginX" | "tuning"> & { sourceRef: RefObject<HTMLDivElement | null> }>) {
 	const emptyElementRef = useRef<HTMLElement | null>(null);
 	const pointerRef = useRef<PeelPointerSample>({ clientX: 0, clientY: 0, valid: false });
 	const reducedMotion = useReducedMotion() ?? false;
@@ -65,18 +67,19 @@ function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, pointerInp
 		...tuning,
 	}, reducedMotion), [tuning, reducedMotion]);
 	const [state] = useState(() => createPeelState(resolvedTuning));
-	const pointerPosition = useMemo(() => ({ x: pointerX, y: pointerY, inputX: pointerInputX }), [pointerX, pointerY, pointerInputX]);
+	const pointerPosition = useMemo(() => ({ x: pointerX, y: pointerY, direction: pointerDirection, originX: pointerOriginX }), [pointerX, pointerY, pointerDirection, pointerOriginX]);
 	const startPeel = useCallback(() => {
 		if (!activeRef.current || !preparedRef.current) return;
-		// Reset travel and ripple time at the handoff, not during preparation.
+		// Reset paper motion at handoff; the gesture owner retains input history.
 		Object.assign(state, createPeelState(resolvedTuning));
 		state.x = state.targetX = pointerX.get();
 		state.y = state.targetY = pointerY.get();
 		grabPeel(state, 0.25, 0.1);
+		state.pointerU = state.pointerTargetU = peelSurfacePointer(state.targetX - pointerOriginX.get());
 		if (capture?.flashColor) startPeelFlash(state);
 		rootRef.current?.setFrameloop("always");
 		rootRef.current?.invalidate();
-	}, [state, resolvedTuning, pointerX, pointerY, capture?.flashColor]);
+	}, [state, resolvedTuning, pointerX, pointerY, pointerOriginX, capture?.flashColor]);
 	useLayoutEffect(() => {
 		activeRef.current = active;
 		if (active) startPeel();

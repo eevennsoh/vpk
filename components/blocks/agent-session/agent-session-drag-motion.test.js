@@ -21,7 +21,7 @@ const MEDIUM_CARD_SOURCE = readFileSync(join(__dirname, "agent-session-medium-ca
 const MEDIUM_DRAG_SOURCE = readFileSync(join(__dirname, "agent-session-medium-drag.tsx"), "utf8");
 const OVERLAY_SOURCE = readFileSync(join(__dirname, "agent-session-drag-overlay.tsx"), "utf8");
 
-test("drag lighting receives actual pointer input independently of follower spring recoil", () => {
+test("drag lighting retains gesture origin and direction through preparation and spring recoil", () => {
 	const source = readFileSync(join(__dirname, "../jira-issue/use-session-drag-chip-pointer.ts"), "utf8");
 	const motionValue = (initial) => {
 		let value = initial;
@@ -36,6 +36,7 @@ test("drag lighting receives actual pointer input independently of follower spri
 			module: loaded,
 			exports: loaded.exports,
 			require: (name) => {
+				if (name === "react") return { useRef: (initial) => ({ current: initial }) };
 				if (name === "motion/react") return {
 					useMotionValue: motionValue,
 					useSpring: (input) => {
@@ -45,21 +46,32 @@ test("drag lighting receives actual pointer input independently of follower spri
 					},
 				};
 				if (name === "@/components/blocks/jira-issue/agent-session-drag") return {};
+				if (name === "@/components/visual/peel/peel-geometry") return require("../../visual/peel/peel-geometry.ts");
 				throw new Error(`Unexpected import ${name}`);
 			},
 		});
 		const pointer = loaded.exports.useSessionDragChipPointer(false);
-		pointer.snapToPointer({ x: 400, y: 200 });
+		pointer.beginGesture({ x: 400, y: 200 });
 		const destination = 400 + direction * 100;
 		pointer.followPointer({ x: destination, y: 200 });
+		pointer.snapToPointer({ x: destination, y: 200 });
+		assert.equal(pointer.originX.get(), 400, "the publishing snap cannot discard the pointerdown origin");
+		assert.equal(pointer.direction.get(), direction, "a quick coalesced move remains available to a later capture handoff");
 		for (const recoil of [1, 0.2, 0.001, 0]) {
 			springs[0].jump(destination + direction * recoil);
-			assert.equal(pointer.inputX.get(), destination, "spring overshoot never changes lighting's pointer input");
+			assert.equal(pointer.direction.get(), direction, "spring overshoot never changes lighting's gesture direction");
 			assert.equal(pointer.x.get(), destination + direction * recoil, "the visual follower keeps its existing spring");
 		}
+		pointer.followPointer({ x: destination - direction * 2, y: 200 });
+		assert.equal(pointer.direction.get(), direction, "a tiny correction during preparation keeps the intended edge");
 		pointer.followPointer({ x: destination - direction * 20, y: 200 });
-		assert.equal(pointer.inputX.get(), destination - direction * 20, "real pointer reversal arrives without waiting for the spring");
+		assert.equal(pointer.direction.get(), -direction, "real pointer reversal arrives without waiting for the spring or capture");
+		assert.equal(pointer.originX.get(), 400, "reversal preserves the original gesture displacement");
 		assert.equal(pointer.x.get(), destination, "the follower has not yet caught up with the reversal");
+		pointer.beginGesture({ x: 800, y: 300 });
+		assert.equal(pointer.direction.get(), 0, "the next gesture clears the previous direction");
+		assert.equal(pointer.originX.get(), 800);
+		assert.equal(pointer.x.get(), 800);
 	}
 });
 

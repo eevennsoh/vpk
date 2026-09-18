@@ -33,7 +33,8 @@ export function AgentSessionDragOverlay({
 	isDraggedOut,
 	pointerX,
 	pointerY,
-	pointerInputX,
+	pointerDirection,
+	pointerOriginX,
 	reduceMotion,
 	previewEffect,
 	peelSurface: PeelSurface,
@@ -46,8 +47,9 @@ export function AgentSessionDragOverlay({
 	isDraggedOut: boolean;
 	pointerX: MotionValue<number>;
 	pointerY: MotionValue<number>;
-	/** Actual pointer input, independent of the follower's spring recoil. */
-	pointerInputX: MotionValue<number>;
+	/** Gesture direction survives preparation and ignores follower spring recoil. */
+	pointerDirection: MotionValue<number>;
+	pointerOriginX: MotionValue<number>;
 	reduceMotion: boolean;
 	previewEffect?: "peel";
 	peelSurface?: ComponentType<PeelSurfaceProps> | null;
@@ -164,7 +166,7 @@ export function AgentSessionDragOverlay({
 				data-session-chip-centered=""
 			>
 				{previewEffect === "peel" && PeelSurface ? (
-					<PeelSurface active={dragging && peelReady} captureChildren={capturedPeelChip} contentKey={JSON.stringify(cohort.members.map(({ id, agent, invokedBy }) => ({ id, agent, invokedBy })))} flashColor={agentSessionAccentColor(cohort.members[0])} pointerX={pointerX} pointerY={pointerY} pointerInputX={pointerInputX}>
+					<PeelSurface active={dragging && peelReady} captureChildren={capturedPeelChip} contentKey={JSON.stringify(cohort.members.map(({ id, agent, invokedBy }) => ({ id, agent, invokedBy })))} flashColor={agentSessionAccentColor(cohort.members[0])} pointerX={pointerX} pointerY={pointerY} pointerDirection={pointerDirection} pointerOriginX={pointerOriginX}>
 						{visiblePeelChip}
 					</PeelSurface>
 				) : (

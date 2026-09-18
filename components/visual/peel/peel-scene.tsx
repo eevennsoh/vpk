@@ -31,7 +31,7 @@ import {
 	stepPeel,
 	type PeelState,
 } from "./peel-model";
-import { deformPeelSheet, peelSurfaceEdgeGlow, peelSurfacePointer, peelSurfaceTilt, resolvePeelUv, stepPeelSurfaceTravel, type PeelBox, type PeelPointerSample, type PeelSurfaceTravel } from "./peel-geometry";
+import { deformPeelSheet, peelSurfaceEdgeGlow, peelSurfacePointer, peelSurfaceTilt, resolvePeelUv, type PeelBox, type PeelPointerSample } from "./peel-geometry";
 import { PEEL_SHADOW_PAD, createPeelShadowMaterial } from "./shadow-material";
 
 /**
@@ -64,7 +64,7 @@ export interface PeelSceneProps {
 	surfaceInset?: readonly [number, number];
 	shape?: "stamp" | "surface";
 	/** External drag follower; sampled once per frame, never during render. */
-	pointerPosition?: { x: MotionValue<number>; y: MotionValue<number>; inputX: MotionValue<number> };
+	pointerPosition?: { x: MotionValue<number>; y: MotionValue<number>; direction: MotionValue<number>; originX: MotionValue<number> };
 	onReady?: () => void;
 	/** After a frame draws, for a prepared preview's visibility handoff. */
 	onRender?: () => void;
@@ -95,8 +95,6 @@ export function PeelScene({
 	const capabilities = useThree((root) => root.gl.capabilities);
 	const sheetRef = useRef<THREE.Mesh>(null);
 	const idleRef = useRef(true);
-	const carryOrigin = useRef(0);
-	const carryTravel = useRef<PeelSurfaceTravel>({ direction: 0, extremeX: 0 });
 	// A dark captured face needs less linear-space tint to read as light instead of a colour block.
 	const flashGainScale = useMemo(() => print && typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? 0.22 : 1, [print]);
 	// A localized edge can carry more accent than the full-face pickup sweep.
@@ -212,15 +210,7 @@ export function PeelScene({
 		if (pointerPosition) {
 			state.targetX = pointerPosition.x.get();
 			state.targetY = pointerPosition.y.get();
-			const inputX = pointerPosition.inputX.get();
-			if (state.time === 0) {
-				carryOrigin.current = state.targetX;
-				carryTravel.current.extremeX = inputX;
-				carryTravel.current.direction = 0;
-			} else {
-				stepPeelSurfaceTravel(carryTravel.current, inputX);
-			}
-			state.pointerTargetU = peelSurfacePointer(state.targetX - carryOrigin.current);
+			state.pointerTargetU = peelSurfacePointer(state.targetX - pointerPosition.originX.get());
 			state.pointerTargetV = 0.5;
 		}
 		readPointer(state, pointerRef.current, hitRef.current, box);
@@ -257,7 +247,7 @@ export function PeelScene({
 		sheet.uFlashGain.value = flashColor ? peelFlashEnergy(state) * flashGainScale : 0;
 		sheet.uFlashProgress.value = peelFlashProgress(state);
 		sheet.uEdgeGlow.value = shape === "surface" && flashColor && !state.reducedMotion
-			? peelSurfaceEdgeGlow(surfaceTilt, surfaceRoll, tuning.tilt, tuning.swing, carryTravel.current.direction) * edgeGainScale
+			? peelSurfaceEdgeGlow(surfaceTilt, surfaceRoll, tuning.tilt, tuning.swing, pointerPosition?.direction.get() ?? 0) * edgeGainScale
 			: 0;
 		sheet.uWave.value.set(tuning.waveAmplitude, tuning.waveLength, tuning.waveSpeed);
 		sheet.uShear.value = tuning.waveShear;
