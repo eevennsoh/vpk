@@ -384,7 +384,7 @@ test("the scene applies the resting out-of-plane tilt and the landing shear", ()
 	assert.match(model, /export const PEEL_REST_TILT_Y = 0\.0617;/u);
 	assert.match(
 		scene,
-		/rotation\.set\(state\.tiltX, state\.tiltY \+ \(shape === "stamp" \? PEEL_REST_TILT_Y : 0\), 0\)/u,
+		/if \(shape === "surface"\) \{[\s\S]*\} else \{\s*\/\/[^\n]*\s*sheetRef\.current\.rotation\.set\(state\.tiltX, state\.tiltY \+ PEEL_REST_TILT_Y, 0\)/u,
 		"stamps keep their resting keystone; captured DOM surfaces begin flat so their original pixels stay aligned",
 	);
 

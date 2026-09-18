@@ -6,7 +6,37 @@ import { PEEL_DURATIONS, PEEL_MAX_DELTA, PEEL_PULSE_DURATION, PEEL_SWING_LIMIT, 
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, resolvePeelTuning } from "./data.ts";
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
-import { deformPeelSheet } from "./peel-geometry.ts";
+import { deformPeelSheet, peelSurfacePointer, peelSurfaceTilt } from "./peel-geometry.ts";
+
+test("a carried surface combines position and speed without exceeding its tilt", () => {
+	assert.equal(peelSurfacePointer(0), 0.5, "each gesture starts centred");
+	assert.equal(peelSurfacePointer(280), 1);
+	assert.equal(peelSurfacePointer(-280), 0);
+	assert.equal(peelSurfaceTilt(0, 0.5, 0.19), 0);
+	assert.equal(peelSurfaceTilt(0, 1, 0.19), 0.0475, "a stopped card keeps only a small positional lean");
+	for (const direction of [-1, 1]) {
+		const carry = (speed: number) => {
+			const state = createPeelState(resolvePeelTuning("uv-gloss", { tilt: 0.19, swing: 0.075 }));
+			grabPeel(state, 0.25, 0.1);
+			for (let frame = 0; frame < 60; frame++) {
+				dragPeel(state, direction * speed * (frame + 1) / 60, 0);
+				state.pointerTargetU = peelSurfacePointer(state.targetX);
+				stepPeel(state, 1 / 60);
+			}
+			return state;
+		};
+		const slow = carry(90);
+		const fast = carry(900);
+		assert.ok(direction * fast.tiltY > 0 && fast.tiltX === 0, "horizontal travel drives the sideways tilt");
+		assert.ok(Math.abs(fast.tiltY) > Math.abs(slow.tiltY) * 5, "faster travel adds more lean");
+		assert.ok(direction * fast.swing > 0, "roll follows the horizontal direction");
+		assert.ok(Math.abs(peelSurfaceTilt(fast.tiltY, fast.pointerU, 0.19)) <= 0.19);
+		run(fast, 2);
+		assert.ok(Math.abs(fast.tiltX) < 1e-4 && Math.abs(fast.tiltY) < 1e-4 && Math.abs(fast.swing) < 1e-4, "velocity motion settles when the pointer stops");
+		assert.ok(Math.abs(peelSurfaceTilt(fast.tiltY, fast.pointerU, 0.19)) <= 0.048);
+	}
+	assert.equal(peelSurfaceTilt(0, 1, 0), 0, "reduced-motion tuning removes positional lean too");
+});
 
 test("the brief face flash fades before the ripple and replays when requested", () => {
 	const state = createPeelState(resolvePeelTuning("uv-gloss", { waveAmplitude: 0.1 }));

@@ -7,6 +7,16 @@
  * wrapper and the scene both need.
  */
 
+/** Keep a carried card's light and lean relative to where this gesture began. */
+export function peelSurfacePointer(displacement: number): number {
+	return Math.max(0, Math.min(1, 0.5 + displacement / 560));
+}
+
+/** Combine the existing velocity spring with a small, bounded position bias. */
+export function peelSurfaceTilt(velocityTilt: number, pointer: number, maximum: number): number {
+	return Math.max(-maximum, Math.min(maximum, velocityTilt + (pointer - 0.5) * maximum * 0.5));
+}
+
 /** Raw pointer sample, written by the DOM handlers and read once per frame. */
 export interface PeelPointerSample {
 	clientX: number;
