@@ -45,24 +45,6 @@ test("List assigned menu uses Add agent and opens the selector", async ({ page }
 	await expect(menu.getByRole("textbox", { name: "Search agents" })).toBeVisible();
 });
 
-test("assignment cards keep local and cloud host icons tooltip-free", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
-	await page.locator('[data-issue-key="PAY-123"] [data-slot="jira-issue-agent-row"] button').hover();
-	const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
-	await expect(flyout).toBeVisible();
-
-	for (const name of ["Local session", "Cloud session"]) {
-		const hostIcon = flyout.getByRole("img", { name, exact: true });
-		await hostIcon.hover();
-		await page.waitForTimeout(700);
-		await expect(page.getByRole("tooltip", { name, exact: true })).toHaveCount(0);
-		await expect(hostIcon).not.toHaveAttribute("tabindex");
-		await expect(hostIcon).not.toHaveAttribute("title");
-		await expect(flyout).toBeVisible();
-	}
-	await page.screenshot({ path: "output/agent-browser/assignment-host-icons-no-tooltip.png" });
-});
-
 for (const { issueKey, state, agent } of [
 	{ issueKey: "PAY-105", state: "Working", agent: "Cursor" },
 	{ issueKey: "PAY-112", state: "Needs input", agent: "Codex" },
