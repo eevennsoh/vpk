@@ -21,6 +21,7 @@ import path from "node:path";
 import process from "node:process";
 import { execFileSync, execSync } from "node:child_process";
 import { writeBackendDeploymentHarness, writeBackendServiceDescriptor } from "./backend-deploy-harness.mjs";
+import { validateScaffoldTarget } from "./scaffold-target-safety.mjs";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -588,16 +589,7 @@ function main() {
 		? path.resolve(args.target)
 		: path.resolve(repoRoot, "..", targetName);
 
-	// Refuse to clobber unless --force, but only if the target already has
-	// content. An empty directory is fine to reuse.
-	if (fs.existsSync(targetDir)) {
-		const contents = fs.readdirSync(targetDir);
-		if (contents.length > 0 && !args.force) {
-			throw new Error(
-				`Target directory ${targetDir} is not empty. Pass --force to overwrite.`,
-			);
-		}
-	}
+	validateScaffoldTarget(targetDir, args.force);
 	ensureDir(targetDir);
 
 	console.error(`Scaffolding ${targetName} at ${targetDir}`);

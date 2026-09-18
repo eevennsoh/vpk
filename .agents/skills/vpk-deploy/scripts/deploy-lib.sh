@@ -32,8 +32,12 @@ EOF
 }
 
 # Additional SSM-backed variables are required only when declared in the descriptor.
+vpk_base_required_stashes() {
+  printf '%s\n' "$VPK_DEPLOY_REQUIRED_STASHES" | tr ' ' '\n'
+}
+
 vpk_required_stashes() {
-  printf '%s\n' "$VPK_DEPLOY_REQUIRED_STASHES"
+  vpk_base_required_stashes
   grep -Eo '\(\(ssm:/[a-z0-9-]+/[A-Z][A-Z0-9_]*\)\)' "${1:-service-descriptor.yml}" \
     | sed -e 's#.*\/##' -e 's#))$##' || true
 }
@@ -109,22 +113,28 @@ vpk_validate_descriptor_identity() {
 	descriptor_ssm_services=$(grep -Eo '\(\(ssm:/[a-z0-9-]+/' "$descriptor_path" 2>/dev/null \
 		| sed -e 's#((ssm:/##' -e 's#/$##' \
 		| sort -u || true)
-	for mapped_service in $descriptor_ssm_services; do
+	while IFS= read -r mapped_service; do
+		[ -n "$mapped_service" ] || continue
 		if [ "$mapped_service" != "$descriptor_service" ]; then
 			echo "❌ Deployment descriptor contains foreign SSM service prefix '$mapped_service'; expected only '$descriptor_service'"
 			echo "   Repair $descriptor_path using $VPK_DEPLOY_GUIDE"
 			return 1
 		fi
-	done
+	done <<EOF
+$descriptor_ssm_services
+EOF
 
 	descriptor_missing=""
-  for stash_name in $VPK_DEPLOY_REQUIRED_STASHES; do
+  while IFS= read -r stash_name; do
+    [ -n "$stash_name" ] || continue
     expected_stash="((ssm:/$descriptor_service/$stash_name))"
     actual_stash=$(awk -v key="$stash_name:" '$1 == key { print $2; exit }' "$descriptor_path")
     if [ "$actual_stash" != "$expected_stash" ]; then
       descriptor_missing="$descriptor_missing $stash_name"
     fi
-  done
+  done <<EOF
+$(vpk_base_required_stashes)
+EOF
 
   for origin_name in VPK_ORIGIN; do
     origin_mapping=$(awk -v key="$origin_name:" '$1 == key { print $2; exit }' "$descriptor_path")
@@ -164,11 +174,14 @@ vpk_require_service_and_stashes() {
   fi
 
   missing_stashes=""
-  for stash_name in $(vpk_required_stashes); do
+  while IFS= read -r stash_name; do
+    [ -n "$stash_name" ] || continue
     if ! vpk_stash_list_contains "$stashed_names" "$stash_name"; then
       missing_stashes="$missing_stashes $stash_name"
     fi
-  done
+  done <<EOF
+$(vpk_required_stashes)
+EOF
 
   if [ -n "$missing_stashes" ]; then
     echo "❌ Missing required stashes in $remote_env:$missing_stashes"

@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
+const fs = require("node:fs");
 const http = require("node:http");
+const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
@@ -50,6 +52,27 @@ test("static profile skips backend endpoints", async (t) => {
 	assert.equal(result.status, 0, result.output);
 	assert.deepEqual(result.requests.map((req) => req.path), ["/"]);
 });
+
+for (const [name, expectedHtml, status] of [
+	["current export", "<html><body>Current release</body></html>", 0],
+	["older live image", "<html><body>Older release</body></html>", 1],
+]) {
+	test(`runtime ${status ? "rejects" : "accepts"} ${name} with an expected HTML file`, async (t) => {
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-deploy-html-"));
+		t.after(() => fs.rmSync(tempDir, { recursive: true, force: true }));
+		const expectedPath = path.join(tempDir, "index.html");
+		fs.writeFileSync(expectedPath, expectedHtml);
+		const result = await verify(t, (req, res) => {
+			if (req.url !== "/") return false;
+			res.setHeader("Content-Type", "text/html");
+			res.end("<html><body>Current release</body></html>");
+			return true;
+		}, ["--profile", "static", "--expect-html-file", expectedPath]);
+		assert.equal(result.status, status, result.output);
+		assert.match(result.output, status ? /live HTML differs from expected export file/u : /matches expected export HTML/u);
+		assert.doesNotMatch(result.output, /Older release/u);
+	});
+}
 
 test("backend profile does not require AI or realtime", async (t) => {
 	const result = await verify(t, (req, res) => {

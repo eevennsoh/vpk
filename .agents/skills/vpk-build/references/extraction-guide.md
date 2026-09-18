@@ -7,6 +7,7 @@ Use this reference after selecting a route and before approving the scaffold.
 - [Plan interpretation](#plan-interpretation)
 - [Backend-backed exports](#backend-backed-exports)
 - [Scaffold behavior](#scaffold-behavior)
+- [Existing sibling refresh](#existing-sibling-refresh)
 - [Verification and failures](#verification-and-failures)
 - [Ports and local runtime](#ports-and-local-runtime)
 - [Deployment handoff](#deployment-handoff)
@@ -29,7 +30,10 @@ If `backendRouteCount` is nonzero, choose explicitly:
 - Create local fake APIs only when the user asks for a mocked presentation demo.
 
 Non-literal dynamic imports, unresolved dependencies, and cross-route navigation
-also require review before scaffold approval.
+also require review before scaffold approval. A zero `backendRouteCount` does
+not clear runtime `/api/*` fetch warnings: trace can discover calls behind
+shared components without linking backend routes. Check whether the selected
+route reaches those calls and preserve the full backend when it does.
 
 ## Backend-backed exports
 
@@ -114,6 +118,34 @@ The linked skills use relative paths back to VPK and will break if the
 source checkout moves independently. Re-run the scaffold or repair the symlinks
 after such a move.
 
+## Existing sibling refresh
+
+Freeze the selected source Git SHA and checkout state before tracing. Recheck
+both before copying; work that appears later is a separate source selection.
+Inspect the sibling's Git status, `.deploy.local` presence, descriptor identity,
+and local launcher before editing. The scaffold refuses `--force` on an existing
+Git checkout or configured service.
+
+Scaffold the plan into a disposable staging directory with `--backend-backed`
+when the route has live API, chat, or realtime behavior. Compare file contents
+or hashes with the sibling; modification times can mark thousands of identical
+files as changed. Copy only reviewed source, CSS, type, asset, dependency-policy,
+and deploy-launcher updates. Preserve the sibling's `.deploy.local`,
+`service-descriptor.yml`, README, `.dockerignore`, `.gitignore`, Git state,
+provider skill links, and unrelated target work. The staging harness generates
+`scripts/dev-backend-backed.mjs` relative to the staging directory; retain or
+regenerate the sibling's own launcher rather than copying that path. Keep the
+full `public/` tree and list old-only files for review before any deletion.
+
+For backend-backed refreshes, compare `backend/`, `lib/`, `rovo/`, and
+`scripts/lib/` against the selected source. Review any changed backend owner
+and security/static-serving behavior before copying it. Run `verify-target.sh`
+in the sibling, then prove its live route, API proxy, URL discovery, and
+WebSocket upgrade. `pnpm install` may update the sibling lockfile after a source
+workspace-policy change; include that reviewed lockfile in the local handoff.
+Update the sibling's existing provenance notes after verification rather than
+replacing them with the staging README.
+
 ## Verification and failures
 
 `verify-target.sh` runs install, typecheck, and build. Diagnose failures at the
@@ -138,6 +170,7 @@ narrowest owner:
 | Feature-gate console warning | Client shim missing or not mounted |
 | Broken logos/product icons | Full `public` tree not copied |
 | API 404 or mutation 405 | Static server lacks source backend proxy |
+| `pnpm run lint` reports `eslint: command not found` | The minimal target currently has no bundled ESLint binary/config. Run VPK source lint on verbatim copied files; record the target limitation until standalone lint is added to the scaffold contract. |
 | AI works but chat/tour fails | Realtime URL or WebSocket upgrade missing |
 | Agent output diverges | Local fallback/shim or copied source drift |
 | Browser font returns 500 | Same-host CORS rejects browser-shaped request |

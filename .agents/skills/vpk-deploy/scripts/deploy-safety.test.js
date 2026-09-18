@@ -3,6 +3,7 @@ const { spawnSync } = require("node:child_process");
 const {
 	chmodSync,
 	cpSync,
+	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -210,6 +211,35 @@ function withFixture(options, callback) {
 		rmSync(fixture.root, { recursive: true, force: true });
 	}
 }
+
+test("manual identity and stash guards also work when sourced from zsh", { skip: !existsSync("/bin/zsh") }, () => {
+	withFixture({}, (fixture) => {
+		const result = spawnSync("/bin/zsh", ["-c",
+			"set -e; source .agents/skills/vpk-deploy/scripts/deploy-lib.sh; " +
+			"vpk_validate_descriptor_identity example-service; " +
+			"vpk_require_service_and_stashes example-service pdev-west2",
+		], {
+			cwd: fixture.root,
+			encoding: "utf8",
+			env: {
+				...process.env,
+				VPK_ATLAS_BIN: path.join(fixture.fakeBin, "atlas"),
+				FAKE_CALL_LOG: fixture.logPath,
+				FAKE_STASH_FILE: fixture.stashPath,
+			},
+		});
+		assert.equal(result.status, 0, result.stdout + result.stderr);
+		assert.match(result.stdout, /all required stashes are present/u);
+	});
+	withFixture({ extraSsmService: "foreign-service" }, (fixture) => {
+		const result = spawnSync("/bin/zsh", ["-c",
+			"set -e; source .agents/skills/vpk-deploy/scripts/deploy-lib.sh; " +
+			"vpk_validate_descriptor_identity example-service",
+		], { cwd: fixture.root, encoding: "utf8" });
+		assert.notEqual(result.status, 0);
+		assert.match(result.stdout, /foreign SSM service prefix/u);
+	});
+});
 
 test("canonical deploy accepts an existing service with no stack yet", () => {
 	withFixture({}, (fixture) => {
