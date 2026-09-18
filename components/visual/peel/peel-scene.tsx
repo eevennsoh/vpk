@@ -31,7 +31,7 @@ import {
 	stepPeel,
 	type PeelState,
 } from "./peel-model";
-import { deformPeelSheet, resolvePeelUv, type PeelBox, type PeelPointerSample } from "./peel-geometry";
+import { deformPeelSheet, peelSurfacePointer, peelSurfaceTilt, resolvePeelUv, type PeelBox, type PeelPointerSample } from "./peel-geometry";
 import { PEEL_SHADOW_PAD, createPeelShadowMaterial } from "./shadow-material";
 
 /**
@@ -92,6 +92,7 @@ export function PeelScene({
 	const capabilities = useThree((root) => root.gl.capabilities);
 	const sheetRef = useRef<THREE.Mesh>(null);
 	const idleRef = useRef(true);
+	const carryOrigin = useRef(0);
 	// A dark captured face needs less linear-space tint to read as light instead of a colour block.
 	const flashGainScale = useMemo(() => print && typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? 0.22 : 1, [print]);
 
@@ -204,6 +205,9 @@ export function PeelScene({
 		if (pointerPosition) {
 			state.targetX = pointerPosition.x.get();
 			state.targetY = pointerPosition.y.get();
+			if (state.time === 0) carryOrigin.current = state.targetX;
+			state.pointerTargetU = peelSurfacePointer(state.targetX - carryOrigin.current);
+			state.pointerTargetV = 0.5;
 		}
 		readPointer(state, pointerRef.current, hitRef.current, box);
 		stepPeel(state, delta);
@@ -272,10 +276,20 @@ export function PeelScene({
 		shadow.uGrab.value.set(state.grabU, state.grabV);
 
 		if (sheetRef.current) {
-			// The sheet is never square to the camera, even lying flat — see
-			// PEEL_REST_TILT_Y. Carrying it adds to that pose rather than
-			// replacing it, so the keystone survives the drag.
-			sheetRef.current.rotation.set(state.tiltX, state.tiltY + (shape === "stamp" ? PEEL_REST_TILT_Y : 0), 0);
+			if (shape === "surface") {
+				// Only the captured pixels rotate. The native chip's measured box
+				// and its host's pointer translation stay stable for drop/fusion.
+				// Mesh Z has the opposite sign to CSS's clockwise swing. The
+				// compact card caps roll at its tuning gain to keep labels readable.
+				sheetRef.current.rotation.set(
+					0,
+					peelSurfaceTilt(state.tiltY, state.pointerU, tuning.tilt),
+					-Math.max(-tuning.swing, Math.min(tuning.swing, state.swing)),
+				);
+			} else {
+				// The illustration keeps its reference keystone through the drag.
+				sheetRef.current.rotation.set(state.tiltX, state.tiltY + PEEL_REST_TILT_Y, 0);
+			}
 		}
 
 		const lift = liftRef.current;

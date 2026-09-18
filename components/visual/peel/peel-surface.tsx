@@ -53,10 +53,13 @@ function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, tuning }: 
 	const preparedRef = useRef(false);
 	const rootRef = useRef<RootState | null>(null);
 	const resolvedTuning = useMemo(() => resolvePeelTuning("uv-gloss", {
-		waveAmplitude: 0.11,
+		waveAmplitude: 0.13,
 		waveLength: 1.4,
 		waveShear: 1.4,
-		flutter: 0.06,
+		flutter: 0.067,
+		// Cards need a clearer carry pose than the reference illustration.
+		tilt: 0.19,
+		swing: 0.075,
 		...tuning,
 	}, reducedMotion), [tuning, reducedMotion]);
 	const [state] = useState(() => createPeelState(resolvedTuning));

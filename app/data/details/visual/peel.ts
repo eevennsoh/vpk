@@ -24,7 +24,7 @@ export const PEEL_DETAIL: ComponentDetail = {
 				{ name: "flashColor", type: "string", description: "Optional avatar accent as a hex, rgb color or CSS variable. A narrow, translucent flash crosses the card's face over 0.55 seconds while the paper ripple continues." },
 				{ name: "pointerX", type: "MotionValue<number>", required: true, description: "Viewport-space drag follower x, sampled once per frame to drive the paper flex." },
 				{ name: "pointerY", type: "MotionValue<number>", required: true, description: "Viewport-space drag follower y." },
-				{ name: "tuning", type: "Partial<PeelTuning>", description: "Optional curl, ripple and billow overrides. Defaults to a gentle wave suitable for a compact card." },
+				{ name: "tuning", type: "Partial<PeelTuning>", description: "Optional curl, ripple, billow, tilt and swing overrides. The carried card tilts sideways with horizontal pointer displacement from pickup and movement speed, with a bounded in-plane roll. Up/down movement does not pitch the card forward/back. Velocity motion settles when the pointer stops." },
 			],
 		}],
 		props: [
