@@ -39,7 +39,8 @@ export function useSessionDragChipPointer(shouldReduceMotion: boolean | null) {
 		pointerY.set(next.y);
 	}
 
-	return { followPointer, snapToPointer, x, y };
+	// Lighting follows user travel; the visual follower may recoil after input stops.
+	return { followPointer, snapToPointer, inputX: pointerX, x, y };
 }
 
 function sessionDragPointerInContainingBlock(

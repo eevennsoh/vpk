@@ -335,6 +335,7 @@ export function AgentSessionMediumDrag({
 					isDraggedOut={isDraggedOut}
 					pointerX={chipPointer.x}
 					pointerY={chipPointer.y}
+					pointerInputX={chipPointer.inputX}
 					reduceMotion={reduceChipMotion}
 					previewEffect={sessionDrag.previewEffect}
 					peelSurface={peelSurface}

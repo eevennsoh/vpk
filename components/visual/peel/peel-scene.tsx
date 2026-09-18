@@ -31,7 +31,7 @@ import {
 	stepPeel,
 	type PeelState,
 } from "./peel-model";
-import { deformPeelSheet, peelSurfacePointer, peelSurfaceTilt, resolvePeelUv, type PeelBox, type PeelPointerSample } from "./peel-geometry";
+import { deformPeelSheet, peelSurfaceEdgeGlow, peelSurfacePointer, peelSurfaceTilt, resolvePeelUv, stepPeelSurfaceTravel, type PeelBox, type PeelPointerSample, type PeelSurfaceTravel } from "./peel-geometry";
 import { PEEL_SHADOW_PAD, createPeelShadowMaterial } from "./shadow-material";
 
 /**
@@ -60,9 +60,11 @@ export interface PeelSceneProps {
 	print?: HTMLCanvasElement;
 	/** The existing avatar accent, resolved to a literal CSS colour by the surface. */
 	flashColor?: string;
+	/** Normalized padding around a captured card's face. */
+	surfaceInset?: readonly [number, number];
 	shape?: "stamp" | "surface";
 	/** External drag follower; sampled once per frame, never during render. */
-	pointerPosition?: { x: MotionValue<number>; y: MotionValue<number> };
+	pointerPosition?: { x: MotionValue<number>; y: MotionValue<number>; inputX: MotionValue<number> };
 	onReady?: () => void;
 	/** After a frame draws, for a prepared preview's visibility handoff. */
 	onRender?: () => void;
@@ -82,6 +84,7 @@ export function PeelScene({
 	src,
 	print,
 	flashColor,
+	surfaceInset,
 	shape = "stamp",
 	pointerPosition,
 	onReady,
@@ -93,8 +96,11 @@ export function PeelScene({
 	const sheetRef = useRef<THREE.Mesh>(null);
 	const idleRef = useRef(true);
 	const carryOrigin = useRef(0);
+	const carryTravel = useRef<PeelSurfaceTravel>({ direction: 0, extremeX: 0 });
 	// A dark captured face needs less linear-space tint to read as light instead of a colour block.
 	const flashGainScale = useMemo(() => print && typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? 0.22 : 1, [print]);
+	// A localized edge can carry more accent than the full-face pickup sweep.
+	const edgeGainScale = flashGainScale === 1 ? 1 : 0.5;
 
 	const sheetGeometry = useMemo(
 		() => new THREE.PlaneGeometry(aspect, 1, SHEET_SEGMENTS, SHEET_SEGMENTS),
@@ -190,8 +196,9 @@ export function PeelScene({
 	}, [src, print, sheetMaterial, capabilities, invalidate]);
 	useEffect(() => {
 		if (flashColor) sheetMaterial.uniforms.uFlashColor.value.set(flashColor);
+		sheetMaterial.uniforms.uSurfaceInset.value.set(surfaceInset?.[0] ?? 0, surfaceInset?.[1] ?? 0);
 		invalidate();
-	}, [flashColor, sheetMaterial, invalidate]);
+	}, [flashColor, surfaceInset, sheetMaterial, invalidate]);
 	const readyRef = useRef(false);
 	const handleAfterRender = useCallback(() => {
 		if (sheetMaterial.uniforms.uArtReady.value !== 1) return;
@@ -205,7 +212,14 @@ export function PeelScene({
 		if (pointerPosition) {
 			state.targetX = pointerPosition.x.get();
 			state.targetY = pointerPosition.y.get();
-			if (state.time === 0) carryOrigin.current = state.targetX;
+			const inputX = pointerPosition.inputX.get();
+			if (state.time === 0) {
+				carryOrigin.current = state.targetX;
+				carryTravel.current.extremeX = inputX;
+				carryTravel.current.direction = 0;
+			} else {
+				stepPeelSurfaceTravel(carryTravel.current, inputX);
+			}
 			state.pointerTargetU = peelSurfacePointer(state.targetX - carryOrigin.current);
 			state.pointerTargetV = 0.5;
 		}
@@ -234,12 +248,17 @@ export function PeelScene({
 		}
 
 		const sheet = sheetMaterial.uniforms;
+		const surfaceTilt = peelSurfaceTilt(state.tiltY, state.pointerU, tuning.tilt);
+		const surfaceRoll = Math.max(-tuning.swing, Math.min(tuning.swing, state.swing));
 		sheet.uLift.value = state.lift;
 		sheet.uPointer.value.set(state.pointerU, state.pointerV);
 		sheet.uSheen.value = state.sheen;
 		sheet.uTime.value = state.time;
 		sheet.uFlashGain.value = flashColor ? peelFlashEnergy(state) * flashGainScale : 0;
 		sheet.uFlashProgress.value = peelFlashProgress(state);
+		sheet.uEdgeGlow.value = shape === "surface" && flashColor && !state.reducedMotion
+			? peelSurfaceEdgeGlow(surfaceTilt, surfaceRoll, tuning.tilt, tuning.swing, carryTravel.current.direction) * edgeGainScale
+			: 0;
 		sheet.uWave.value.set(tuning.waveAmplitude, tuning.waveLength, tuning.waveSpeed);
 		sheet.uShear.value = tuning.waveShear;
 		sheet.uFlutter.value = tuning.flutter;
@@ -283,8 +302,8 @@ export function PeelScene({
 				// compact card caps roll at its tuning gain to keep labels readable.
 				sheetRef.current.rotation.set(
 					0,
-					peelSurfaceTilt(state.tiltY, state.pointerU, tuning.tilt),
-					-Math.max(-tuning.swing, Math.min(tuning.swing, state.swing)),
+					surfaceTilt,
+					-surfaceRoll,
 				);
 			} else {
 				// The illustration keeps its reference keystone through the drag.

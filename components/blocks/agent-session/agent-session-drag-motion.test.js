@@ -2,6 +2,8 @@ const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const test = require("node:test");
+const { runInNewContext } = require("node:vm");
+const ts = require("typescript");
 
 const {
 	isSessionDragIdentitySettled,
@@ -18,6 +20,48 @@ const CARD_SOURCE = readFileSync(join(__dirname, "agent-session-card.tsx"), "utf
 const MEDIUM_CARD_SOURCE = readFileSync(join(__dirname, "agent-session-medium-card.tsx"), "utf8");
 const MEDIUM_DRAG_SOURCE = readFileSync(join(__dirname, "agent-session-medium-drag.tsx"), "utf8");
 const OVERLAY_SOURCE = readFileSync(join(__dirname, "agent-session-drag-overlay.tsx"), "utf8");
+
+test("drag lighting receives actual pointer input independently of follower spring recoil", () => {
+	const source = readFileSync(join(__dirname, "../jira-issue/use-session-drag-chip-pointer.ts"), "utf8");
+	const motionValue = (initial) => {
+		let value = initial;
+		return { get: () => value, set: (next) => { value = next; }, jump: (next) => { value = next; } };
+	};
+	for (const direction of [-1, 1]) {
+		const springs = [];
+		const loaded = { exports: {} };
+		runInNewContext(ts.transpileModule(source, {
+			compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+		}).outputText, {
+			module: loaded,
+			exports: loaded.exports,
+			require: (name) => {
+				if (name === "motion/react") return {
+					useMotionValue: motionValue,
+					useSpring: (input) => {
+						const spring = motionValue(input.get());
+						springs.push(spring);
+						return spring;
+					},
+				};
+				if (name === "@/components/blocks/jira-issue/agent-session-drag") return {};
+				throw new Error(`Unexpected import ${name}`);
+			},
+		});
+		const pointer = loaded.exports.useSessionDragChipPointer(false);
+		pointer.snapToPointer({ x: 400, y: 200 });
+		const destination = 400 + direction * 100;
+		pointer.followPointer({ x: destination, y: 200 });
+		for (const recoil of [1, 0.2, 0.001, 0]) {
+			springs[0].jump(destination + direction * recoil);
+			assert.equal(pointer.inputX.get(), destination, "spring overshoot never changes lighting's pointer input");
+			assert.equal(pointer.x.get(), destination + direction * recoil, "the visual follower keeps its existing spring");
+		}
+		pointer.followPointer({ x: destination - direction * 20, y: 200 });
+		assert.equal(pointer.inputX.get(), destination - direction * 20, "real pointer reversal arrives without waiting for the spring");
+		assert.equal(pointer.x.get(), destination, "the follower has not yet caught up with the reversal");
+	}
+});
 
 /** A host whose marked identity measures to the given box. */
 function hostWithIdentity(rect) {
