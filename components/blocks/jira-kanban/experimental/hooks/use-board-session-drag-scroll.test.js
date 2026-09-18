@@ -23,12 +23,12 @@ function scrollHarness(pointerY = 288.5) {
 		addEventListener() {},
 		removeEventListener() {},
 	};
-	const module = { exports: {} };
+	const loadedModule = { exports: {} };
 	const source = fs.readFileSync(path.join(__dirname, "use-board-session-drag-scroll.ts"), "utf8");
 	const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
 	vm.runInNewContext(compiled, {
-		module,
-		exports: module.exports,
+		module: loadedModule,
+		exports: loadedModule.exports,
 		require(name) {
 			assert.equal(name, "react");
 			return { useEffect: (effect) => { cleanup = effect(); } };
@@ -39,7 +39,7 @@ function scrollHarness(pointerY = 288.5) {
 		document: { addEventListener() {}, removeEventListener() {} },
 		window: { addEventListener() {}, removeEventListener() {} },
 	});
-	module.exports.useBoardSessionDragScroll({
+	loadedModule.exports.useBoardSessionDragScroll({
 		active: true,
 		rootRef: { current: root },
 		transactionRef: { current: { pointer: { x: 100, y: pointerY }, target: { kind: "attach" } } },
