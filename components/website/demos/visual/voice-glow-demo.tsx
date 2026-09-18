@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GUI } from "@/components/utils/gui";
 import { useTheme } from "@/components/utils/theme-wrapper";
-import VoiceGlow, { voicePalettes, type VoiceBeamType } from "@/components/visual/voice-glow";
+import VoiceGlow, { type MicrophoneState, type VoiceBeamProps, type VoiceBeamType } from "@/components/visual/voice-glow";
 import { resolveVoiceGlowNumbers, VOICE_GLOW_DEFAULTS, type VoiceGlowConfig } from "@/components/visual/voice-glow/data";
 import { VoiceGlowControls } from "@/components/website/demos/visual/voice-glow-controls";
+import { VoiceGlowColors } from "@/components/website/demos/visual/voice-glow-colors";
 import { useVoiceGlowMicrophone } from "@/components/website/demos/visual/use-voice-glow-microphone";
 import { useVoiceGlowSimulation } from "@/components/website/demos/visual/use-voice-glow-simulation";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,10 @@ const SHAPES: Record<VoiceBeamType, string> = {
 const WRAPPERS: Record<VoiceBeamType, string> = {
 	default: "w-full max-w-[350px]", pill: "w-full max-w-[150px]", mobile: "w-full max-w-[280px]",
 };
-const BAND_COLORS = { core: "#c58bff", above: "#ff7ab6", mid: "#7ec4ff", below: "#2dffab" };
+const MICROPHONE_LABELS: Record<MicrophoneState, string> = {
+	idle: "Use microphone", requesting: "Requesting microphone…", live: "Stop microphone",
+	denied: "Use microphone", unsupported: "Use microphone", error: "Use microphone",
+};
 
 function VoiceGlowSurface({ type, theme }: Readonly<{ type: VoiceBeamType; theme: "dark" | "light" }>) {
 	return <div aria-hidden className={cn("border border-border", SHAPES[type])} style={{ background: theme === "dark" ? "#1d1d1d" : "#ffffff" }} />;
@@ -28,7 +32,7 @@ function VoiceGlowSurface({ type, theme }: Readonly<{ type: VoiceBeamType; theme
 export default function VoiceGlowDemo() {
 	const [config, setConfig] = useState<VoiceGlowConfig>(VOICE_GLOW_DEFAULTS);
 	const [colors, setColors] = useState<string[] | undefined>();
-	const [bandColors, setBandColors] = useState<typeof BAND_COLORS | undefined>();
+	const [bandColors, setBandColors] = useState<VoiceBeamProps["bandColors"]>();
 	const [simulateVoice, setSimulateVoice] = useState(true);
 	const { actualTheme } = useTheme();
 	const theme = config.theme === "auto" ? actualTheme : config.theme;
@@ -62,7 +66,7 @@ export default function VoiceGlowDemo() {
 			</div>
 			<div className="flex flex-wrap items-center gap-2">
 				<Button variant="secondary" onClick={() => update("paused", !config.paused)} aria-pressed={config.paused}>{config.paused ? "Resume glow" : "Pause glow"}</Button>
-				<Button variant="secondary" disabled={!mic.supported || mic.state === "requesting"} onClick={mic.state === "live" ? mic.stop : () => { setSimulateVoice(false); void mic.start(); }}>{mic.state === "requesting" ? "Requesting microphone…" : mic.state === "live" ? "Stop microphone" : "Use microphone"}</Button>
+				<Button variant="secondary" disabled={!mic.supported || mic.state === "requesting"} onClick={mic.state === "live" ? mic.stop : () => { setSimulateVoice(false); void mic.start(); }}>{MICROPHONE_LABELS[mic.state]}</Button>
 				<Button variant="ghost" onClick={reset}>Reset</Button>
 			</div>
 			<p className="text-sm text-text-subtle" role="status">
@@ -70,12 +74,7 @@ export default function VoiceGlowDemo() {
 			</p>
 			<GUI.Panel title="Voice Glow controls" values={{ ...defaults, ...config, colors, bandColors }}>
 				<VoiceGlowControls config={config} defaults={defaults} update={update} simulateVoice={simulateVoice} onSimulateVoiceChange={changeSimulation} />
-				<GUI.Section title="Custom colors" defaultOpen={false}>
-					<GUI.Toggle id="voice-glow-custom-colors" label="Custom lobe colors" checked={colors !== undefined} onChange={(enabled) => setColors(enabled ? [...voicePalettes[config.colorVariant][theme]] : undefined)} />
-					{colors ? <GUI.ColorList id="voice-glow-colors" label="Lobe colors" value={colors} onChange={setColors} allowAddRemove maxColors={7} valueKeys="colors" /> : null}
-					<GUI.Toggle id="voice-glow-custom-band" label="Custom band colors" checked={bandColors !== undefined} onChange={(enabled) => setBandColors(enabled ? { ...BAND_COLORS } : undefined)} />
-					{bandColors ? Object.entries(bandColors).map(([key, value]) => <GUI.ColorInput key={key} id={`voice-glow-band-${key}`} label={`Band ${key}`} value={value} onChange={(next) => setBandColors((current) => current ? { ...current, [key]: next } : undefined)} valueKeys="bandColors" />) : null}
-				</GUI.Section>
+				<VoiceGlowColors colors={colors} setColors={setColors} bandColors={bandColors} setBandColors={setBandColors} palette={config.colorVariant} theme={theme} />
 			</GUI.Panel>
 		</div>
 	);
