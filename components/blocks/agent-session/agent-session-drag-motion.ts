@@ -3,20 +3,19 @@ import type { Transition } from "motion/react";
 import type { PointerDragPosition } from "@/components/ui-custom/hooks/use-pointer-drag";
 
 /**
- * The travelling drag chip is popup family: small, pointer-anchored, and
- * triggered dozens of times a session, so `.agents/rules/motion-decisions.md`
- * gives it `duration-normal` + `ease-out-practical` on enter. Motion cannot
- * read `var()`, so the token values are resolved here once and annotated.
+ * Keep the source-card-to-group transformation visible with duration-slower
+ * + ease-in-out. Pointer following uses separate motion values and stays
+ * responsive. Motion cannot read `var()`, so token values resolve here once.
  */
 export const SESSION_DRAG_CHIP_ENTER_TRANSITION = {
-	duration: 0.15,
-	ease: [0.4, 1, 0.6, 1],
-} satisfies Transition; // duration-normal + ease-out-practical
+	duration: 0.4,
+	ease: [0.4, 0, 0, 1],
+} satisfies Transition; // duration-slower + ease-in-out
 
-/** Paper joins the compact avatar at duration-fast, before the normal entrance. */
+/** Paper keeps its existing fast popup-family entrance. */
 export const SESSION_PEEL_CHIP_ENTER_TRANSITION = {
-	...SESSION_DRAG_CHIP_ENTER_TRANSITION,
 	duration: 0.1,
+	ease: [0.4, 1, 0.6, 1],
 } satisfies Transition; // duration-fast + ease-out-practical
 
 /** Marks the row's identity mark so the chip can fly out of the grabbed avatar. */
@@ -44,26 +43,40 @@ export function isSessionDragIdentitySettled(identity: HTMLElement, capturedIden
 }
 
 /** The narrow slice of `HTMLElement` the measurement needs, so it stays testable. */
+interface SessionDragMeasuredElement {
+	getBoundingClientRect: () => DOMRect;
+	querySelector?: (selector: string) => SessionDragMeasuredElement | null;
+}
+
 interface SessionDragIdentityHost {
-	querySelector: (selector: string) => { getBoundingClientRect: () => DOMRect } | null;
+	querySelector: (selector: string) => SessionDragMeasuredElement | null;
 }
 
 type SessionDragRect = Readonly<Pick<DOMRect, "left" | "top" | "width" | "height">>;
 
+export type SessionDragAvatarRole = "human" | "agent";
+
 export interface SessionDragGeometry {
 	readonly surface: SessionDragRect;
 	readonly identity: SessionDragRect;
+	readonly avatars?: Partial<Record<SessionDragAvatarRole, SessionDragRect>>;
 }
 
 /** Read both boxes before the source dims or leaves flow. */
 export function measureSessionDragGeometry(
 	host: SessionDragIdentityHost & { getBoundingClientRect: () => DOMRect },
 ): SessionDragGeometry | null {
-	const identity = host.querySelector(SESSION_DRAG_IDENTITY_SELECTOR)?.getBoundingClientRect();
+	const identityElement = host.querySelector(SESSION_DRAG_IDENTITY_SELECTOR);
+	const identity = identityElement?.getBoundingClientRect();
 	const surface = host.getBoundingClientRect();
-	return identity && identity.width > 0 && identity.height > 0 && surface.width > 0 && surface.height > 0
-		? { surface, identity }
-		: null;
+	if (!identity || identity.width <= 0 || identity.height <= 0 || surface.width <= 0 || surface.height <= 0) return null;
+	const avatars: Partial<Record<SessionDragAvatarRole, SessionDragRect>> = {};
+	for (const role of ["human", "agent"] as const) {
+		const element = identityElement?.querySelector?.(`[data-avatar-role="${role}"]`);
+		const box = element?.getBoundingClientRect();
+		if (box && box.width > 0 && box.height > 0) avatars[role] = box;
+	}
+	return { surface, identity, ...(Object.keys(avatars).length ? { avatars } : {}) };
 }
 
 /** Both the source and portal measure in the pointer's coordinate space. */
@@ -77,7 +90,21 @@ export function sessionDragGeometryRelativeToPointer(
 		width: rect.width,
 		height: rect.height,
 	});
-	return { surface: relative(geometry.surface), identity: relative(geometry.identity) };
+	return {
+		surface: relative(geometry.surface),
+		identity: relative(geometry.identity),
+		...(geometry.avatars ? { avatars: Object.fromEntries(Object.entries(geometry.avatars).map(([role, box]) => [role, relative(box)])) } : {}),
+	};
+}
+
+/** One local transform per existing avatar; moving parents do not remeasure a layout projection. */
+export function resolveSessionDragAvatarMorph(source: SessionDragRect, target: SessionDragRect, parent: { x: number; y: number; identityX: number; identityY: number }) {
+	return {
+		x: source.left - target.left - parent.x - parent.identityX,
+		y: source.top - target.top - parent.y - parent.identityY,
+		scaleX: source.width / target.width,
+		scaleY: source.height / target.height,
+	};
 }
 
 /** Scale only the background; the shared avatar moves without deformation. */

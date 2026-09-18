@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { ScrollAreaContent, ScrollAreaRoot, ScrollAreaViewport, ScrollBar } from "@/components/ui/scroll-area";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -173,49 +174,66 @@ export function BoardColumnCardList({
 
 	return (
 		<BoardCardHoverInsertionContext value={suppressCardInsertion ? null : hoverInsertion}>
-			<div
-				ref={setCardListRef}
-				data-created-card-arrival-id={createdCardArrival?.id}
-				data-jira-kanban-card-list=""
-				className={cn(
-					"min-h-0 min-w-0 overflow-y-auto overscroll-y-contain",
-					// The mask fades the top and bottom 3rem, which would wash out a line
-					// drawn near a scrolled edge. Stand down the mask only — dropping
-					// `overflow-y-auto` would make the browser discard the scroll offset.
-					paintInsertion && "[mask-image:none]! [-webkit-mask-image:none]!",
-				)}
-				onPointerLeave={handlePointerLeave}
-				onPointerMove={handlePointerMove}
+			<ScrollAreaRoot
+				className="flex min-h-0 min-w-0 flex-col"
 				style={{
 					flexGrow: columnSizing === "fill" ? 1 : 0,
 					flexBasis: columnSizing === "fill" ? 0 : "auto",
-					display: "flex",
-					flexDirection: "column",
-					gap: token("space.100"),
-					...scrollMaskStyle,
-					...chrome.cardList,
-					// Share the focus-ring gutter with the footer's top inset so
-					// the card-to-create gap matches the well's outer insets.
-					...(columnSizing === "content" && chrome.headerFrame === "enclosed" ? {
-						paddingBottom: token("space.050"),
-						marginBottom: `calc(${token("border.width")} - ${token("space.050")})`,
-					} : {}),
-					// A child cannot read its parent's `gap`, and the value is chrome
-					// dependent, so an insertion line is handed the track it centres in.
-					"--board-card-gap": chrome.cardList.gap ?? token("space.100"),
-				} as CSSProperties}
+				}}
 			>
-				{children}
-				{columnSizing === "fill" ? <div
-					aria-hidden={isSessionDragging || undefined}
-					inert={isSessionDragging || undefined}
-					className={cn("shrink-0 justify-center py-1", isSessionDragging ? "hidden" : "flex")}
-					data-board-work-item-create=""
+				<ScrollAreaViewport
+					ref={setCardListRef}
+					role="region"
+					aria-label={`${columnTitle} work items`}
+					data-created-card-arrival-id={createdCardArrival?.id}
+					data-jira-kanban-card-list=""
+					className={cn(
+						"min-h-0 min-w-0 overflow-y-auto overscroll-y-contain",
+						// Keep the viewport and card focus rings out of the edge fade.
+						"focus-visible:[mask-image:none]! focus-visible:[-webkit-mask-image:none]! has-[:focus-visible]:[mask-image:none]! has-[:focus-visible]:[-webkit-mask-image:none]!",
+						// The mask fades the top and bottom 3rem, which would wash out a line
+						// drawn near a scrolled edge. Stand down the mask only — dropping
+						// `overflow-y-auto` would make the browser discard the scroll offset.
+						paintInsertion && "[mask-image:none]! [-webkit-mask-image:none]!",
+					)}
+					onPointerLeave={handlePointerLeave}
+					onPointerMove={handlePointerMove}
+					style={{
+						flexGrow: columnSizing === "fill" ? 1 : 0,
+						flexBasis: columnSizing === "fill" ? 0 : "auto",
+						display: "flex",
+						flexDirection: "column",
+						...scrollMaskStyle,
+						...chrome.cardList,
+						// Share the focus-ring gutter with the footer's top inset so
+						// the card-to-create gap matches the well's outer insets.
+						...(columnSizing === "content" && chrome.headerFrame === "enclosed" ? {
+							paddingBottom: token("space.050"),
+							marginBottom: `calc(${token("border.width")} - ${token("space.050")})`,
+						} : {}),
+						// A child cannot read its parent's `gap`, and the value is chrome
+						// dependent, so an insertion line is handed the track it centres in.
+						"--board-card-gap": chrome.cardList.gap ?? token("space.100"),
+					} as CSSProperties}
 				>
-					<BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} title={columnTitle} />
-				</div> : null}
-				{isEmpty && columnSizing === "fill" ? <BoardEmptyColumnInsertionSlot columnTitle={columnTitle} /> : null}
-			</div>
+					<ScrollAreaContent
+						className="flex min-w-0 shrink-0 flex-col"
+						style={{ minWidth: 0, gap: chrome.cardList.gap ?? token("space.100") }}
+					>
+						{children}
+						{columnSizing === "fill" ? <div
+							aria-hidden={isSessionDragging || undefined}
+							inert={isSessionDragging || undefined}
+							className={cn("shrink-0 justify-center py-1", isSessionDragging ? "hidden" : "flex")}
+							data-board-work-item-create=""
+						>
+							<BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} title={columnTitle} />
+						</div> : null}
+						{isEmpty && columnSizing === "fill" ? <BoardEmptyColumnInsertionSlot columnTitle={columnTitle} /> : null}
+					</ScrollAreaContent>
+				</ScrollAreaViewport>
+				<ScrollBar visibility="auto" />
+			</ScrollAreaRoot>
 		</BoardCardHoverInsertionContext>
 	);
 }

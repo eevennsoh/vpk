@@ -19,6 +19,7 @@ export function AgentSessionCohortChip({
 	isFusionSource = false,
 	animateIdentity,
 	identityMotion,
+	flashColor,
 }: Readonly<{
 	cohort: SessionCohort<AgentSessionItem>;
 	elevated?: boolean;
@@ -28,6 +29,7 @@ export function AgentSessionCohortChip({
 	animateIdentity?: boolean;
 	/** An overlay may fit the shared avatar motion inside its card entrance. */
 	identityMotion?: Partial<HumanAgentAvatarMotionOptions>;
+	flashColor?: string;
 }>) {
 	return (
 		<AgentSessionDragChip
@@ -36,6 +38,7 @@ export function AgentSessionCohortChip({
 			isFusionSource={isFusionSource}
 			animateIdentity={animateIdentity}
 			identityMotion={identityMotion}
+			flashColor={flashColor}
 		/>
 	);
 }

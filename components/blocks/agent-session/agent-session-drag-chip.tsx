@@ -68,8 +68,8 @@ function sessionCohortLabel(total: number): string {
 /**
  * One travelling session, drawn as the drag pill: an elevated white surface
  * holding equal-size human and agent avatars, then the human's name.
- * The 32px identity footprint starts in its horizontal group, preserving
- * the card-to-chip pointer geometry without a second avatar entrance.
+ * The 32px footprint stays fixed. The overlay moves these same group slots
+ * from the grabbed card's captured avatars instead of projecting a second layout.
  */
 export function AgentSessionDragPill({
 	agent,
@@ -79,6 +79,7 @@ export function AgentSessionDragPill({
 	isFusionSource = false,
 	animateIdentity,
 	identityMotion,
+	flashColor,
 }: Readonly<{
 	agent: AgentListAgent;
 	attributedBy?: AgentListInvoker;
@@ -89,6 +90,8 @@ export function AgentSessionDragPill({
 	isFusionSource?: boolean;
 	animateIdentity?: boolean;
 	identityMotion?: Partial<HumanAgentAvatarMotionOptions>;
+	/** The normal preview's face light; its layer scales with the source card. */
+	flashColor?: string;
 }>) {
 	return (
 		<div
@@ -115,6 +118,16 @@ export function AgentSessionDragPill({
 				data-session-drag-surface=""
 				style={{ ...(elevated ? DRAG_CHIP_ELEVATION : undefined), transformOrigin: "0 0" }}
 			/>
+			{flashColor ? (
+				<span
+					aria-hidden="true"
+					className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-lg"
+					data-session-drag-flash-layer=""
+					style={{ "--session-drag-flash-color": flashColor, transformOrigin: "0 0" } as CSSProperties}
+				>
+					<span className="session-drag-face-flash absolute inset-0" data-session-drag-flash-beam="" />
+				</span>
+			) : null}
 			<span className="block shrink-0" data-session-drag-identity="">
 				{attributedBy ? (
 					<HumanAgentAvatar
@@ -152,6 +165,7 @@ export function AgentSessionDragChip({
 	isFusionSource = false,
 	animateIdentity,
 	identityMotion,
+	flashColor,
 }: Readonly<{
 	cohort: SessionCohort<AgentSessionItem>;
 	elevated?: boolean;
@@ -163,6 +177,7 @@ export function AgentSessionDragChip({
 	isFusionSource?: boolean;
 	animateIdentity?: boolean;
 	identityMotion?: Partial<HumanAgentAvatarMotionOptions>;
+	flashColor?: string;
 }>) {
 	const [lead] = cohort.members;
 	const total = cohort.members.length;
@@ -177,6 +192,7 @@ export function AgentSessionDragChip({
 				isFusionSource={isFusionSource}
 				animateIdentity={animateIdentity}
 				identityMotion={identityMotion}
+				flashColor={flashColor}
 			/>
 		);
 	}
@@ -230,6 +246,7 @@ export function AgentSessionDragChip({
 				isFusionSource={isFusionSource}
 				animateIdentity={animateIdentity}
 				identityMotion={identityMotion}
+				flashColor={flashColor}
 			/>
 			{/* The shared VPK Badge, unrestyled: its own `neutral` fill, 16px
 			    height, and `rounded-xs` corners are the count treatment, and its

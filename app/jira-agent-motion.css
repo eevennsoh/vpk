@@ -78,3 +78,42 @@
 	--orb-outer-x: -4.763px;
 	--orb-outer-y: -2.75px;
 }
+
+/* Match the peel card's 550ms face pass: the same agent accent, Gaussian-like
+   softness, 55%-to-95% beam path, and fading tail. The drag overlay scales
+   the clipped light layer with the card's measured source-to-chip transform. */
+@keyframes session-drag-face-flash {
+	0%,
+	45% {
+		opacity: 1;
+	}
+	55% {
+		opacity: 0.91;
+	}
+	72.5% {
+		opacity: 0.5;
+	}
+	86% {
+		opacity: 0.16;
+	}
+	100% {
+		opacity: 0;
+		transform: translateX(40%);
+	}
+}
+
+@utility session-drag-face-flash {
+	background: linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--session-drag-flash-color) 7%, transparent 93%) 31%, color-mix(in oklab, var(--session-drag-flash-color) 14%, transparent 86%) 43%, color-mix(in oklab, var(--session-drag-flash-color) 18%, transparent 82%) 55%, color-mix(in oklab, var(--session-drag-flash-color) 14%, transparent 86%) 67%, color-mix(in oklab, var(--session-drag-flash-color) 7%, transparent 93%) 79%, transparent 100%);
+	animation: session-drag-face-flash calc(var(--duration-slowest) - var(--duration-xxshort)) linear both;
+}
+
+html.dark [data-session-drag-flash-layer] {
+	opacity: 0.22;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.session-drag-face-flash {
+		animation: none;
+		opacity: 0;
+	}
+}
