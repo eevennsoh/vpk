@@ -166,6 +166,9 @@ export function createSessionChipDropKeyframes(
 	horizontal: "fixed" | "landing" = "fixed",
 ): SessionChipDropKeyframe[] {
 	const apexFraction = 0.4;
+	// Bottom-half releases must clear the destination too; otherwise the
+	// absorption leg keeps travelling upward and the toss loses its arc.
+	const apexY = Math.min(from.y, landing.y) - 20;
 	const steps = 60;
 	return Array.from({ length: steps + 1 }, (_, index) => {
 		const progress = index / steps;
@@ -175,11 +178,11 @@ export function createSessionChipDropKeyframes(
 			const upward = progress / apexFraction;
 			const incoming = Math.pow(upward, 1.5);
 			const outgoing = Math.pow(1 - upward, 1.2);
-			y = from.y - 20 * incoming / (incoming + outgoing);
+			y = from.y + (apexY - from.y) * incoming / (incoming + outgoing);
 		} else {
 			const downward = (progress - apexFraction) / (1 - apexFraction);
 			const gravity = Math.pow(downward, 1.2) * (0.4326 + downward * (0.7348 - 0.1674 * downward));
-			y = from.y + (landing.y - from.y) * gravity - 20 * (1 - gravity);
+			y = apexY + (landing.y - apexY) * gravity;
 		}
 		return {
 			offset: progress,

@@ -26,6 +26,25 @@ test("creation drops absorb chips even at the target center and converge fanned 
 	assert.equal(fanned.at(-1).transform, "translate3d(30px, 200px, 0) scale(0.65)");
 });
 
+test("all six release positions lift above both cursor and landing before falling into the center", () => {
+	const landing = { x: 200, y: 200 };
+	for (const y of [140, 260]) {
+		for (const x of [120, 200, 280]) {
+			const from = { x, y };
+			const frames = createSessionChipDropKeyframes(from, landing, "landing");
+			const positions = frames.map((frame) => {
+				const match = frame.transform.match(/translate3d\(([\d.-]+)px, ([\d.-]+)px/);
+				return { x: Number(match[1]), y: Number(match[2]) };
+			});
+			assert.equal(positions[24].y, Math.min(from.y, landing.y) - 20, `release ${x},${y} keeps a visible apex`);
+			assert.ok(positions[23].y > positions[24].y);
+			assert.ok(positions[25].y > positions[24].y, "the second half falls instead of continuing upward");
+			assert.deepEqual(positions.at(-1), landing);
+			assert.ok(Math.abs(frames[24].opacity - 0.648) < 1e-12);
+		}
+	}
+});
+
 test("a moving landing point updates the flight without restarting its clock", (t) => {
 	const { animateSessionChipDrop } = require("./lib/session-chip-drop-flight.ts");
 	const queued = new Map();
