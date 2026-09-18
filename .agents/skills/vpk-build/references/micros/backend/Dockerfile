@@ -16,9 +16,10 @@ COPY components ./components
 COPY lib ./lib
 COPY hooks ./hooks
 COPY public ./public
+COPY scripts/prepare-static-export.mjs ./scripts/prepare-static-export.mjs
 
 # Produce ./out/ (static export).
-RUN NEXT_OUTPUT=export pnpm run build
+RUN NEXT_OUTPUT=export pnpm run build && node scripts/prepare-static-export.mjs out --compress
 
 # ---- Production image ----
 FROM node:20-alpine
@@ -28,6 +29,7 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
 COPY backend/server.js ./
+COPY backend/lib ./lib
 COPY --from=builder /build/out ./public
 
 EXPOSE 8080

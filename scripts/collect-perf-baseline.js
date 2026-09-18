@@ -322,7 +322,7 @@ function sumAssetBytes({ assetPaths, cwd, nextDir }) {
 	for (const assetPath of assetPaths) {
 		const absoluteAssetPath = resolveNextAssetPath({ assetPath, cwd, nextDir });
 		if (!existsSync(absoluteAssetPath)) {
-			continue;
+			throw new Error(`Incomplete manifest measurement: missing asset ${assetPath}`);
 		}
 		bytes += statSync(absoluteAssetPath).size;
 	}

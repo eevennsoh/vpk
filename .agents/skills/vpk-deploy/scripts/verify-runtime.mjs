@@ -1,14 +1,19 @@
 #!/usr/bin/env node
 
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { verifyInitialTheme } from "./verify-initial-theme.mjs";
+import { verifyStaticDelivery } from "./verify-static-delivery.mjs";
 
-const usage = "Usage: verify-runtime.mjs <base-url> [route ...] [--profile static|backend|chat|full] [--check-ads-theme] [--expect-html-file path] [--timeout-ms 15000]";
+const usage = "Usage: verify-runtime.mjs <base-url> [route ...] [--profile static|backend|chat|full] [--check-ads-theme] [--check-static-delivery] [--report path] [--expect-html-file path] [--timeout-ms 15000]";
 let baseUrl;
 let profile = "full";
 let timeoutMs = 15000;
 let checkAdsTheme = false;
 let expectHtmlFile;
+let checkStaticDelivery = false;
+let reportFile;
+const responses = [];
 const routes = [];
 try {
 	baseUrl = new URL(process.argv[2] || process.env.VPK_DEPLOY_URL);
@@ -20,6 +25,11 @@ try {
 		if (arg === "--profile") profile = process.argv[++index];
 		else if (arg === "--timeout-ms") timeoutMs = Number(process.argv[++index]);
 		else if (arg === "--check-ads-theme") checkAdsTheme = true;
+		else if (arg === "--check-static-delivery") checkStaticDelivery = true;
+		else if (arg === "--report") {
+			reportFile = process.argv[++index];
+			if (!reportFile || reportFile.startsWith("--")) throw new Error("Report path is required");
+		}
 		else if (arg === "--expect-html-file") {
 			expectHtmlFile = process.argv[++index];
 			if (!expectHtmlFile || expectHtmlFile.startsWith("--")) throw new Error("Expected HTML file path is required");
@@ -64,7 +74,10 @@ async function request(pathname, label, headers = {}, json = false, media) {
 	try {
 		if (url.origin !== baseUrl.origin) throw new Error("cross-origin request rejected");
 		for (let redirects = 0; redirects <= 5; redirects += 1) {
-			const response = await fetch(url, { headers, signal, redirect: "manual" });
+			const response = await fetch(url, {
+				headers: checkStaticDelivery && media ? { "Accept-Encoding": "br, gzip", ...headers } : headers,
+				signal, redirect: "manual",
+			});
 			if ([301, 302, 303, 307, 308].includes(response.status)) {
 				const location = response.headers.get("location");
 				await response.body?.cancel();
@@ -88,11 +101,23 @@ async function request(pathname, label, headers = {}, json = false, media) {
 				await response.body?.cancel();
 				throw new Error(`expected ${media.name} Content-Type`);
 			}
+			const body = Buffer.from(await response.arrayBuffer());
+			const contentLength = response.headers.get("content-length");
+			responses.push({
+				url: safeUrl(url), status: response.status,
+				decodedBodyBytes: body.length,
+				reportedEncodedContentLengthBytes: contentLength === null ? null : Number(contentLength),
+				contentEncoding: response.headers.get("content-encoding") || "identity",
+				cacheControl: response.headers.get("cache-control"),
+			});
+			if (checkStaticDelivery && media) {
+				for (const error of verifyStaticDelivery(response.headers, url.pathname, body.length, media.name)) failures.push(`${label}: ${error}`);
+			}
 			let payload;
 			if (json) {
-				try { payload = await response.json(); }
+				try { payload = JSON.parse(body.toString("utf8")); }
 				catch { throw new Error("invalid JSON response"); }
-			} else payload = await response.text();
+			} else payload = body.toString("utf8");
 			console.log(`${label}: ${response.status}, final=${safeUrl(url)}`);
 			return payload;
 		}
@@ -108,6 +133,10 @@ for (const route of routes) {
 	const routeLabel = route.split(/[?#]/u)[0];
 	const html = await request(route, `route ${routeLabel}`, {}, false, { pattern: /^text\/html\b/iu, name: "HTML" });
 	if (html === undefined) continue;
+	if (checkStaticDelivery && Buffer.byteLength(html) >= 1024) {
+		const gzipHtml = await request(route, `route ${routeLabel} gzip`, { "Accept-Encoding": "gzip" }, false, { pattern: /^text\/html\b/iu, name: "HTML" });
+		if (gzipHtml !== undefined && gzipHtml !== html) failures.push(`route ${routeLabel}: gzip representation differs from negotiated HTML`);
+	}
 	if (expectedHtmlBytes) {
 		if (Buffer.from(html, "utf8").equals(expectedHtmlBytes)) console.log(`route ${routeLabel}: matches expected export HTML`);
 		else failures.push(`route ${routeLabel}: live HTML differs from expected export file`);
@@ -145,6 +174,10 @@ if (profile === "full") {
 	if (token !== undefined && (typeof token?.token !== "string" || !token.token.trim() || !Number.isFinite(token.expiresInMs) || token.expiresInMs <= 0)) {
 		failures.push("realtime-token: expected nonempty token and positive expiresInMs");
 	}
+}
+if (reportFile) {
+	await mkdir(path.dirname(path.resolve(reportFile)), { recursive: true });
+	await writeFile(reportFile, `${JSON.stringify({ schemaVersion: 1, origin: baseUrl.origin, profile, checkStaticDelivery, responses, failures, byteMeaning: "decoded body bytes plus Content-Length reported by the server; absent encoded lengths stay null" }, null, 2)}\n`);
 }
 if (failures.length) {
 	console.error("\nRuntime verification failed:");

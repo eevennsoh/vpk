@@ -20,7 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { execFileSync, execSync } from "node:child_process";
-import { writeBackendDeploymentHarness, writeBackendServiceDescriptor } from "./backend-deploy-harness.mjs";
+import { writeBackendDeploymentHarness, writeBackendServiceDescriptor, writeStaticDeliveryHarness } from "./backend-deploy-harness.mjs";
 import { wireScaffoldSkills } from "./scaffold-skill-access.mjs";
 import { validateScaffoldTarget } from "./scaffold-target-safety.mjs";
 
@@ -876,6 +876,8 @@ locally it falls back to the source frontend port file. Set \`VPK_ORIGIN\` and
 runs the copied source Express backend, including API and WebSocket routes.
 `);
 	}
+
+	writeStaticDeliveryHarness(repoRoot, targetDir);
 
 	// ---- 9b. Wire the approved VPK skills into the extracted app ----
 	wireScaffoldSkills({ repoRoot, targetDir });

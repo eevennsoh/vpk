@@ -5,6 +5,7 @@ const http = require("node:http");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+const zlib = require("node:zlib");
 
 async function verify(t, handler, args = []) {
 	const requests = [];
@@ -51,6 +52,47 @@ test("static profile skips backend endpoints", async (t) => {
 	const result = await verify(t, undefined, ["--profile", "static", "/"]);
 	assert.equal(result.status, 0, result.output);
 	assert.deepEqual(result.requests.map((req) => req.path), ["/"]);
+});
+
+test("static delivery verifies compression and caching and reports lengths without query secrets", async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-delivery-report-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const report = path.join(root, "report.json");
+	const html = '<script src="/_next/static/chunks/test.12345678.js"></script>' + "<p>Repeated text</p>".repeat(200);
+	const result = await verify(t, (req, res) => {
+		const isHtml = req.url.startsWith("/?");
+		const content = isHtml ? html : "const repeated = 123;\n".repeat(200);
+		const encoding = req.headers["accept-encoding"].includes("br") ? "br" : "gzip";
+		const compressed = encoding === "br" ? zlib.brotliCompressSync(content) : zlib.gzipSync(content);
+		res.setHeader("Content-Type", isHtml ? "text/html" : "text/javascript");
+		res.setHeader("Content-Encoding", encoding);
+		res.setHeader("Vary", "Accept-Encoding");
+		res.setHeader("Cache-Control", isHtml ? "public, max-age=0" : "public, max-age=31536000, immutable");
+		res.setHeader("Content-Length", compressed.length);
+		res.end(compressed);
+		return true;
+	}, ["--profile", "static", "/?token=hidden-query-value", "--check-static-delivery", "--report", report]);
+	assert.equal(result.status, 0, result.output);
+	assert.doesNotMatch(result.output, /hidden-query-value/u);
+	const artifact = JSON.parse(fs.readFileSync(report, "utf8"));
+	assert.deepEqual(artifact.failures, []);
+	assert.equal(artifact.responses[0].decodedBodyBytes, Buffer.byteLength(html));
+	assert.equal(artifact.responses[0].contentEncoding, "br");
+	assert.equal(artifact.responses[1].contentEncoding, "gzip");
+	assert.ok(artifact.responses[0].reportedEncodedContentLengthBytes < artifact.responses[0].decodedBodyBytes);
+	assert.doesNotMatch(JSON.stringify(artifact), /hidden-query-value/u);
+});
+
+test("static delivery reports uncompressed text and wrong immutable cache policy", async (t) => {
+	const result = await verify(t, (req, res) => {
+		res.setHeader("Content-Type", req.url === "/" ? "text/html" : "text/javascript");
+		res.setHeader("Cache-Control", "public, max-age=0");
+		res.end(req.url === "/" ? '<script src="/_next/static/chunks/test.12345678.js"></script>' : "x".repeat(2000));
+		return true;
+	}, ["--profile", "static", "--check-static-delivery"]);
+	assert.equal(result.status, 1);
+	assert.match(result.output, /not compressed/u);
+	assert.match(result.output, /immutable caching/u);
 });
 
 for (const [name, expectedHtml, status] of [
