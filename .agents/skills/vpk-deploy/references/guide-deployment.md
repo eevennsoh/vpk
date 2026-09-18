@@ -68,6 +68,11 @@ Record the absolute checkout, service/environment, entry route, capabilities,
 and source revision or dirty-tree selection together. A user correction takes
 precedence over an earlier project path. Preserve a latest-main-only selection
 through deployment; do not pull separate worktree edits into the image.
+
+If VPK switches branches after the reviewed target was staged, use the frozen
+staged source and recorded SHA for this release. A new checkout is a new source
+selection, even when the target refresh is still in progress.
+
 Review relevant target harness repairs separately from source selection. A
 latest-main-only extract can still need generated-layout fixes to render
 faithfully. Include reviewed fixes needed for the requested result, preserve
@@ -370,11 +375,14 @@ The HTTP verifier cannot establish usable chat, audio, or fonts permitted by CSP
 3. Record accessibility violations and incomplete checks accurately; an inherited
    finding does not justify claiming a clean scan. A one-command
    `agent-browser a11y <exact-url> --json` can audit the route even when later
-   browser commands lose their tab. Save and inspect screenshots. Reset synthetic
-   UI state and remove only chats created by the probe. A completed run's
-   `/api/rovo/runs/<id>/detach` can return a transient 404 during New chat;
-   report it separately from errors on a fresh page load. Close only this
-   task's browser session when finished.
+   browser commands lose their tab. If the default-timeout audit fails once,
+   retry one fresh audit with `AGENT_BROWSER_DEFAULT_TIMEOUT=60000`; if that
+   retry is still incomplete, report the incomplete scan. Save and inspect
+   screenshots. Reset synthetic UI state and remove only chats created by the
+   probe. A completed run's `/api/rovo/runs/<id>/detach` can return a transient
+   404 during New chat or chat deletion; inspect the normal console on a fresh
+   page and report the transient request separately. Close only this task's
+   browser session when finished.
 4. Inspect external dependencies such as `VPK_ORIGIN` independently. A source
    service with no active stack/unresolvable URL leaves Create agent/skill actions
    unavailable; report that limitation without deploying the separate service.

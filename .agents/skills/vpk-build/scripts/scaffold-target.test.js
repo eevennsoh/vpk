@@ -61,6 +61,9 @@ export default function AwakePage() {
 			path.join(repoRoot, "public", "3p", "google-drive", "16-borderless.svg"),
 			"<svg />\n",
 		);
+		for (const favicon of ["favicon-fallback.svg", "favicon-dark.svg", "favicon-light.svg"]) {
+			writeFile(path.join(repoRoot, "public", "website", favicon), "<svg width=\"32\" />\n");
+		}
 		writeFile(
 			planPath,
 			JSON.stringify(
@@ -157,6 +160,9 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(layout, /const themeStyles = await getThemeStyles\(THEME_STATE\);/);
 		assert.match(layout, /import \{ getThemeHtmlAttrs \} from "@atlaskit\/tokens\/get-theme-html-attrs";/);
 		assert.match(layout, /<html[^>]*\{\.\.\.getThemeHtmlAttrs\(THEME_STATE\)\}/);
+		assert.match(layout, /href="\/website\/favicon-fallback\.svg"/);
+		assert.match(layout, /media="\(prefers-color-scheme: light\)" href="\/website\/favicon-dark\.svg"/);
+		assert.match(layout, /media="\(prefers-color-scheme: dark\)" href="\/website\/favicon-light\.svg"/);
 		assert.doesNotMatch(layout, /next\/script/);
 		assert.doesNotMatch(layout, /clientShim/);
 		assert.doesNotMatch(layout, /fonts\.googleapis\.com\/css2/);
@@ -184,6 +190,10 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 				"utf8",
 			),
 			"<svg />\n",
+		);
+		assert.equal(
+			fs.readFileSync(path.join(fixture.targetDir, "public", "website", "favicon-fallback.svg"), "utf8"),
+			"<svg width=\"32\" />\n",
 		);
 		assert.equal(
 			fs.readFileSync(path.join(fixture.targetDir, "app", "tailwind-theme.css"), "utf8"),
@@ -232,6 +242,24 @@ test("--force refuses to overwrite an owned checkout or configured deployment", 
 		} finally {
 			fixture.cleanup();
 		}
+	}
+});
+
+test("scaffold refuses a trace plan from a different source Git revision before writing", () => {
+	const fixture = createFixture();
+	try {
+		const plan = JSON.parse(fs.readFileSync(fixture.planPath, "utf8"));
+		plan.sourceRevision = "0".repeat(40);
+		plan.sourceWasDirty = false;
+		fs.writeFileSync(fixture.planPath, JSON.stringify(plan));
+		const result = spawnSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir], {
+			encoding: "utf8",
+		});
+		assert.notEqual(result.status, 0);
+		assert.match(result.stderr, /Source Git revision changed since tracing/u);
+		assert.equal(fs.existsSync(fixture.targetDir), false);
+	} finally {
+		fixture.cleanup();
 	}
 });
 

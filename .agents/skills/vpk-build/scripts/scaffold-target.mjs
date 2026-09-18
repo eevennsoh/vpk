@@ -289,6 +289,9 @@ export default async function RootLayout({
 	return (
 		<html lang="en" className="light" {...getThemeHtmlAttrs(THEME_STATE)} suppressHydrationWarning>
 			<head>
+				<link rel="icon" type="image/svg+xml" sizes="any" href="/website/favicon-fallback.svg" />
+				<link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: light)" href="/website/favicon-dark.svg" />
+				<link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: dark)" href="/website/favicon-light.svg" />
 				{themeStyles.map((style) => (
 					<style
 						key={style.id}
@@ -582,6 +585,23 @@ function main() {
 	const args = parseArgs(process.argv.slice(2));
 	const plan = readJSON(path.resolve(args.plan));
 	const repoRoot = plan.repoRoot;
+	if (plan.sourceRevision) {
+		let currentRevision;
+		let currentDirty;
+		try {
+			const gitOptions = { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
+			currentRevision = execFileSync("git", ["rev-parse", "HEAD"], gitOptions).trim();
+			currentDirty = Boolean(execFileSync("git", ["status", "--porcelain"], gitOptions).trim());
+		} catch {
+			throw new Error("Could not verify the source Git revision recorded by the trace plan");
+		}
+		if (currentRevision !== plan.sourceRevision) {
+			throw new Error("Source Git revision changed since tracing. Re-run the trace before scaffolding.");
+		}
+		if (typeof plan.sourceWasDirty === "boolean" && currentDirty !== plan.sourceWasDirty) {
+			console.error("Source working-tree state changed since tracing; review that change before using this extract.");
+		}
+	}
 	const route = plan.route;
 	const routeSlug = route.replace(/^\//, "").replace(/\//g, "-");
 	const targetName = `vpk-${routeSlug}`;

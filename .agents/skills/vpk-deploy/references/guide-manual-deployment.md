@@ -220,13 +220,15 @@ before the later CSP code change needed a new image.
 
 ### Compact frontend image after a full-image EC2 timeout
 
-Follow [EC2 timeout diagnosis](troubleshooting.md#ec2-hot-swap-timeout-and-compact-recovery)
-first. This path applies only when the selected target's `backend/`, `lib/`,
-`rovo/`, and `scripts/lib/worktree-ports.js` files are byte-identical to the previous verified
-image and the requested change is in the exported frontend. Compare the entire
-runtime file set, excluding the image's static `backend/public/` and test/data
-files. If runtime code differs, use the full backend build and review those
-changes instead.
+For a new timeout, follow [EC2 timeout diagnosis](troubleshooting.md#ec2-hot-swap-timeout-and-compact-recovery)
+first. When the same service has a documented prior full-image timeout, a
+reviewed frontend-only release can use this guarded path before another full
+image attempt. This path applies only when the selected target's `backend/`,
+`lib/`, `rovo/`, and `scripts/lib/worktree-ports.js` files are byte-identical to
+the previous verified image and the requested change is in the exported
+frontend. Compare the entire runtime file set, excluding the image's static
+`backend/public/` and test/data files. If runtime code differs, use the full
+backend build and review those changes instead.
 
 Extract only the verified prior image's `/app/backend`, `/app/lib`,
 `/app/rovo`, `/app/scripts/lib/worktree-ports.js`, and root `package.json`, `pnpm-lock.yaml`,

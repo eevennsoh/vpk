@@ -150,6 +150,13 @@ resolve it from `.deploy.local` or the default environment.
 Both paths still export, build, push, and check identity/stashes. For config-only
 recovery with the existing image, read the manual guide first. Do not use
 health/check bypass flags or hot swap as an initial-deployment shortcut.
+
+If this service has a documented prior full-image EC2 hot-swap timeout and the
+selected release changes only reviewed frontend export files, consider the
+guarded compact image as the first update attempt. Require a verified prior
+digest, byte parity from `plan-frontend-delta.mjs`, and an explicit decision on
+any inherited dependency layer; follow the manual guide's compact-image path.
+
 Hot swap can reuse the deployment ID, whose events may show the original
 creation. Confirm the expected image version and `UPDATE_COMPLETE` through
 service status, then check the runtime. If the stack is `UPDATE_FAILED`, stop:

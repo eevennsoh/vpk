@@ -1,7 +1,8 @@
 ---
 name: vpk-build
 description: Extract a VPK route into a standalone, minimal Next.js app with traced imports, source-compatible paths, and Micros-ready scaffolding. Use when asked to invoke vpk-build, extract a route, create a standalone prototype, or hand a VPK route off as an independently deployable app.
-validation_command: node --test .agents/skills/vpk-build/scripts/*.test.js
+metadata:
+  validation_command: node --test .agents/skills/vpk-build/scripts/*.test.js
 ---
 
 # VPK build
@@ -22,6 +23,10 @@ backend behavior.
 
 - Run the trace before scaffolding and inspect every warning or decision point.
 - Record the selected source Git SHA and clean/dirty state before tracing; recheck them before copying and deployment. Preserve work that appears after the selection.
+- The trace plan records the source SHA before walking files, and scaffolding
+  rejects a different HEAD before writing. If the checkout changes branch after
+  staging, use the reviewed staged files and their provenance for that release.
+  A dirty tree can change without a new SHA; review its contents before copying.
 - For an existing Git checkout or configured deployment, scaffold into a disposable staging directory and review file contents before refreshing the target. Preserve its credentials, descriptor, README, Git state, and backend launcher.
 - Ask for confirmation after the read-only plan and before creating the sibling
   target.
@@ -42,6 +47,8 @@ backend behavior.
 - Import `getThemeStyles` from `@atlaskit/tokens/get-theme-styles`. Skip
   providers whose required props are not children-only
   (`WorkItemModalProvider` at minimum).
+- Carry VPK's fallback and light/dark SVG favicon links into the generated
+  layout; the full `public/website/` asset tree supplies their files.
 - Set `allowedDevOrigins: ["127.0.2.2", "localhost"]` in generated
   `next.config`. Preview via `http://localhost:3001`.
 - Do not treat a successful static build as proof that API, SSE, WebSocket,
@@ -165,6 +172,10 @@ For an actual extraction, the required proof is a passing `verify-target.sh`
 run plus live browser verification of the extracted route, including computed
 layout in a headed/narrow viewport. Successful typecheck/build can still hide
 missing `shadcn` variants.
+
+After stopping a target `next dev` preview, compare its ignored `next-env.d.ts`
+with the scaffold's minimal version and restore it if Next added a `.next/dev`
+reference. That reference can break a later standalone typecheck.
 
 ## Scripts and references
 
