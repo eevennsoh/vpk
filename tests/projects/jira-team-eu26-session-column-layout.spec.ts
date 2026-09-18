@@ -914,7 +914,7 @@ test("scrolling the session column dismisses the active flyout", async ({ page }
 	await expect(popup).toHaveCount(0);
 });
 
-test("wheel input over a session host tooltip scrolls the session column", async ({ page }) => {
+test("session host icons stay tooltip-free and wheel input scrolls the session column", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await openBoard(page);
 	const column = page.locator("[data-agent-session-column]");
@@ -922,15 +922,9 @@ test("wheel input over a session host tooltip scrolls the session column", async
 	const hostIcon = column.getByRole("img", { name: "Local session" }).first();
 
 	await hostIcon.hover();
-	const tooltip = page.locator('[data-slot="tooltip-content"]', {
-		hasText: "Local session",
-	});
-	await expect(tooltip).toBeVisible();
-	await expect.poll(() => tooltip.evaluate((element) => Number(getComputedStyle(element).opacity))).toBe(1);
-	const tooltipBox = await tooltip.boundingBox();
-	expect(tooltipBox).not.toBeNull();
-	if (!tooltipBox) return;
-	await page.mouse.move(tooltipBox.x + tooltipBox.width / 2, tooltipBox.y + tooltipBox.height / 2);
+	await page.waitForTimeout(700);
+	await expect(page.getByRole("tooltip", { name: "Local session", exact: true })).toHaveCount(0);
+	await expect(hostIcon).not.toHaveAttribute("tabindex");
 	await page.mouse.wheel(0, 450);
 
 	await expect.poll(() => scrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(200);
