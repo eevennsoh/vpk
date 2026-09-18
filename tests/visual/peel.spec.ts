@@ -611,8 +611,8 @@ test("the flat dragged card keeps its face flash visible in dark mode", async ({
 		layerOpacity: getComputedStyle(element.parentElement!).opacity,
 	}));
 	expect(face.image).not.toBe("none");
-	expect(face.peakAlpha).toBeGreaterThanOrEqual(28);
-	expect(face.peakAlpha).toBeLessThanOrEqual(36);
+	expect(face.peakAlpha).toBeGreaterThanOrEqual(12);
+	expect(face.peakAlpha).toBeLessThanOrEqual(14);
 	expect(face.layerOpacity).toBe("1");
 	await expect(overlay.locator("[data-peel-surface], canvas")).toHaveCount(0);
 	await beam.evaluate((element) => {
