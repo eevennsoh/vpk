@@ -64,6 +64,9 @@ export default function AwakePage() {
 		for (const favicon of ["favicon-fallback.svg", "favicon-dark.svg", "favicon-light.svg"]) {
 			writeFile(path.join(repoRoot, "public", "website", favicon), "<svg width=\"32\" />\n");
 		}
+		for (const skill of ["vpk-setup", "vpk-deploy"]) {
+			writeFile(path.join(repoRoot, ".agents", "skills", skill, "SKILL.md"), `name: ${skill}\n`);
+		}
 		writeFile(
 			planPath,
 			JSON.stringify(
@@ -102,6 +105,7 @@ export default function AwakePage() {
 		execFileSync("git", ["commit", "-m", "init"], { cwd: repoRoot, stdio: "ignore" });
 
 		return {
+			repoRoot,
 			targetDir,
 			planPath,
 			cleanup() {
@@ -195,6 +199,18 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 			fs.readFileSync(path.join(fixture.targetDir, "public", "website", "favicon-fallback.svg"), "utf8"),
 			"<svg width=\"32\" />\n",
 		);
+		for (const skill of ["vpk-setup", "vpk-deploy"]) {
+			assert.equal(
+				fs.realpathSync(path.join(fixture.targetDir, ".agents", "skills", skill)),
+				fs.realpathSync(path.join(fixture.repoRoot, ".agents", "skills", skill)),
+			);
+		}
+		for (const provider of [".claude", ".cursor", ".codex"]) {
+			assert.equal(fs.readlinkSync(path.join(fixture.targetDir, provider, "skills")), "../.agents/skills");
+		}
+		const deployWrapper = path.join(fixture.targetDir, "scripts", "deploy.sh");
+		assert.match(fs.readFileSync(deployWrapper, "utf8"), /\.agents\/skills\/vpk-deploy\/scripts\/deploy\.sh/);
+		assert.notEqual(fs.statSync(deployWrapper).mode & 0o111, 0);
 		assert.equal(
 			fs.readFileSync(path.join(fixture.targetDir, "app", "tailwind-theme.css"), "utf8"),
 			":root { --fixture-color: #fff; }\n",

@@ -62,7 +62,9 @@ export function selectDragCohort(
 	}
 
 	return createSessionCohort(
-		visibleItems.filter((item) => marks.markedIds.has(item.id)),
+		// The preview's lead avatars and captured geometry must describe the
+		// same grabbed session. Other marked members retain their visible order.
+		[origin, ...visibleItems.filter((item) => item.id !== originId && marks.markedIds.has(item.id))],
 	) ?? singletonSessionCohort(origin);
 }
 

@@ -7,6 +7,7 @@ const {
 	isSessionDragIdentitySettled,
 	measureSessionDragGeometry,
 	resolveSessionDragMorph,
+	resolveSessionDragAvatarMorph,
 	sessionDragGeometryRelativeToPointer,
 	SESSION_DRAG_CHIP_ENTER_TRANSITION,
 	SESSION_PEEL_CHIP_ENTER_TRANSITION,
@@ -82,6 +83,35 @@ test("surface and identity measurements reject missing or collapsed geometry", (
 	}
 });
 
+test("each avatar starts at its own captured source box for every grab point", () => {
+	const source = {
+		surface: { left: 29, top: 280, width: 270, height: 60 },
+		identity: { left: 41, top: 294, width: 32, height: 32 },
+		avatars: {
+			agent: { left: 42, top: 295, width: 30, height: 30 },
+			human: { left: 59, top: 312, width: 16, height: 16 },
+		},
+	};
+	const target = {
+		surface: { left: -66, top: -22, width: 132, height: 44 },
+		identity: { left: -58, top: -16, width: 32, height: 32 },
+		avatars: {
+			human: { left: -56, top: -8, width: 16, height: 16 },
+			agent: { left: -44, top: -8, width: 16, height: 16 },
+		},
+	};
+	for (const pointer of [{ x: 118, y: 345 }, { x: 282, y: 333 }, { x: 282, y: 363 }]) {
+		const captured = sessionDragGeometryRelativeToPointer(source, pointer);
+		const parent = resolveSessionDragMorph(captured, target);
+		for (const role of ["human", "agent"]) {
+			const avatar = resolveSessionDragAvatarMorph(captured.avatars[role], target.avatars[role], parent);
+			assert.equal(pointer.x + target.avatars[role].left + parent.x + parent.identityX + avatar.x, source.avatars[role].left);
+			assert.equal(pointer.y + target.avatars[role].top + parent.y + parent.identityY + avatar.y, source.avatars[role].top);
+			assert.equal(target.avatars[role].width * avatar.scaleX, source.avatars[role].width);
+		}
+	}
+});
+
 test("both drag hosts mark an identity for the chip to fly out of", () => {
 	// `measureSessionDragGeometry` returns null when this marker is
 	// missing and the chip then fades in place with no error and no warning, so
@@ -97,18 +127,18 @@ test("both drag hosts mark an identity for the chip to fly out of", () => {
 	);
 });
 
-test("the enter transition is the popup-family token pair, resolved once", () => {
-	// duration-normal + ease-out-practical, per `.agents/rules/motion-decisions.md`.
+test("the normal avatar transformation uses the slower in-place token pair", () => {
+	// duration-slower + ease-in-out keeps the requested composition change readable.
 	assert.deepEqual(SESSION_DRAG_CHIP_ENTER_TRANSITION, {
-		duration: 0.15,
-		ease: [0.4, 1, 0.6, 1],
+		duration: 0.4,
+		ease: [0.4, 0, 0, 1],
 	});
 });
 
-test("paper reaches its matching print 50ms earlier using duration-fast", () => {
+test("paper keeps its fast entrance independent of the slower avatar transformation", () => {
 	assert.equal(SESSION_PEEL_CHIP_ENTER_TRANSITION.duration, 0.1);
-	assert.deepEqual(SESSION_PEEL_CHIP_ENTER_TRANSITION.ease, SESSION_DRAG_CHIP_ENTER_TRANSITION.ease);
-	assert.equal(SESSION_DRAG_CHIP_ENTER_TRANSITION.duration, 0.15);
+	assert.deepEqual(SESSION_PEEL_CHIP_ENTER_TRANSITION.ease, [0.4, 1, 0.6, 1]);
+	assert.equal(SESSION_DRAG_CHIP_ENTER_TRANSITION.duration, 0.4);
 });
 
 test("the origin is captured on pointerdown and cleared on both drag endings", () => {

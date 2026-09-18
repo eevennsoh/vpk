@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { expect, test, type Locator } from "@playwright/test";
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${readFileSync(".dev-frontend-port", "utf8").trim()}`;
@@ -54,6 +54,7 @@ test("Team EU26 defaults Peel visual on, persists its switch, and prepares only 
 	await page.mouse.down();
 	await page.mouse.move(box.x + box.width / 2 + 65, box.y + box.height / 2 + 40, { steps: 8 });
 	await expect(page.locator("[data-session-drag-overlay] [data-peel-ready=true]")).toBeAttached();
+	await expect(page.locator('[data-session-drag-overlay] [data-peel-native-source] [data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "false");
 	await expect(page.locator("[data-session-fusion-chip]")).toHaveCount(1);
 	await page.screenshot({ path: "output/agent-browser/peel/team-eu26-peel-enabled.png" });
 	await page.mouse.up();
@@ -462,24 +463,189 @@ test("a real touch drag drops Claude at mobile size", async ({ browser }) => {
 	}
 });
 
-test("the normal Team EU26 session drag keeps its existing DOM preview", async ({ page }) => {
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`the normal Team EU26 drag forms a horizontal avatar group (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ sessionPeel: false, schemaVersion: 2 })));
+		await page.goto(`${BASE_URL}/jira-team-eu26`, { waitUntil: "networkidle" });
+		const expand = page.getByRole("button", { name: "Expand Unlink sessions column", exact: true });
+		if (await expand.isVisible()) await expand.click();
+		const source = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
+		await expect(source).toBeVisible();
+		await source.hover();
+		await page.evaluate(() => {
+			const frames: { composition: string | undefined; verticalGap: number; agentWidth: number }[] = [];
+			Object.assign(window, { normalDragFrames: frames });
+			const deadline = performance.now() + 2_000;
+			const sample = () => {
+				const avatar = document.querySelector<HTMLElement>('[data-session-drag-overlay] [data-slot="human-agent-avatar"]');
+				const present = avatar ? [...avatar.children].find((element) => element.getAttribute("aria-hidden") !== "true") : undefined;
+				const human = present?.querySelector('[data-avatar-role="human"]')?.getBoundingClientRect();
+				const agent = present?.querySelector('[data-avatar-role="agent"]')?.getBoundingClientRect();
+				if (human && agent) frames.push({ composition: avatar?.dataset.composition, verticalGap: Math.abs(human.y + human.height / 2 - agent.y - agent.height / 2), agentWidth: agent.width });
+				if (performance.now() < deadline) requestAnimationFrame(sample);
+			};
+			requestAnimationFrame(sample);
+		});
+		const box = (await source.boundingBox())!;
+		await page.mouse.down();
+		await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 30);
+		const overlay = page.locator("[data-session-drag-overlay]");
+		await expect(overlay).toContainText("Priya Raman");
+		const avatar = overlay.locator('[data-slot="human-agent-avatar"]');
+		// The shared group holds its pose; the drag owner moves these same slots from the captured card.
+		await expect(avatar).toHaveAttribute("data-animated", "false");
+		await expect(avatar).toHaveAttribute("data-composition", "group");
+		await expect.poll(async () => avatar.evaluate((root) => {
+			const present = [...root.children].find((element) => element.getAttribute("aria-hidden") !== "true")!;
+			const human = present.querySelector('[data-avatar-role="human"]')!.getBoundingClientRect();
+			const agent = present.querySelector('[data-avatar-role="agent"]')!.getBoundingClientRect();
+			return Math.max(Math.abs(human.y + human.height / 2 - agent.y - agent.height / 2), Math.abs(human.width - agent.width));
+		})).toBeLessThan(0.5);
+		const frames = await page.evaluate(() => (window as unknown as { normalDragFrames: { composition?: string; verticalGap: number; agentWidth: number }[] }).normalDragFrames);
+		if (reducedMotion === "no-preference") {
+			expect(frames.some(({ agentWidth }) => agentWidth > 29)).toBe(true);
+			expect(frames.some(({ composition, agentWidth }) => composition === "group" && agentWidth > 17 && agentWidth < 29)).toBe(true);
+		} else {
+			expect(frames.every(({ composition, verticalGap }) => composition === "group" && verticalGap < 0.5)).toBe(true);
+		}
+		await expect(overlay.locator("[data-peel-surface], canvas")).toHaveCount(0);
+		await expect(overlay.locator("[data-session-drag-flash-layer]")).toHaveCount(reducedMotion === "no-preference" ? 1 : 0);
+		await page.screenshot({ path: `output/agent-browser/peel/team-eu26-horizontal-drag-${reducedMotion}.png` });
+		await page.mouse.up();
+		await expect(overlay).toHaveCount(0);
+	});
+}
+
+test("the normal glow fills the source card while it contracts to the drag chip", async ({ page }) => {
 	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ sessionPeel: false, schemaVersion: 2 })));
 	await page.goto(`${BASE_URL}/jira-team-eu26`, { waitUntil: "networkidle" });
-	const expand = page.getByRole("button", { name: "Expand Unlink sessions column", exact: true });
-	if (await expand.isVisible()) await expand.click();
 	const source = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
-	await expect(source).toBeVisible();
-	const box = (await source.boundingBox())!;
-	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await source.hover();
+	const sourceBox = (await source.boundingBox())!;
+	await page.evaluate(() => {
+		const probe = { frames: [] as { t: number; x: number; y: number; width: number; height: number; opacity: number; beamX: number; beamCenter: number; surfaceGap: number }[], complete: false };
+		Object.assign(window, { dragFlashProbe: probe });
+		const observer = new MutationObserver(() => {
+			const layer = document.querySelector<HTMLElement>("[data-session-drag-overlay] [data-session-drag-flash-layer]");
+			const beam = layer?.querySelector<HTMLElement>("[data-session-drag-flash-beam]");
+			if (!layer || !beam) return;
+			observer.disconnect();
+			const start = performance.now();
+			const sample = () => {
+				const style = getComputedStyle(beam);
+				const t = performance.now() - start;
+				const box = layer.getBoundingClientRect();
+				const surface = document.querySelector<HTMLElement>("[data-session-drag-overlay] [data-session-drag-surface]")?.getBoundingClientRect();
+				const beamX = style.transform === "none" ? 0 : new DOMMatrixReadOnly(style.transform).m41;
+				probe.frames.push({
+					t, x: box.x, y: box.y, width: box.width, height: box.height,
+					opacity: Number(style.opacity), beamX,
+					beamCenter: 0.55 + beamX / beam.offsetWidth,
+					surfaceGap: surface ? Math.max(Math.abs(box.x - surface.x), Math.abs(box.y - surface.y), Math.abs(box.width - surface.width), Math.abs(box.height - surface.height)) : Number.POSITIVE_INFINITY,
+				});
+				if (t < 500) requestAnimationFrame(sample);
+				else probe.complete = true;
+			};
+			requestAnimationFrame(sample);
+		});
+		observer.observe(document.body, { childList: true, subtree: true });
+	});
+	await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
 	await page.mouse.down();
-	await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 30);
-	const overlay = page.locator("[data-session-drag-overlay]");
-	await expect(overlay).toContainText("Priya Raman");
-	await expect(overlay.locator('[data-slot="human-agent-avatar"]')).toHaveAttribute("data-animated", "false");
-	await expect(overlay.locator("[data-peel-surface], canvas")).toHaveCount(0);
+	await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 65, sourceBox.y + sourceBox.height / 2 + 35);
+	const layer = page.locator("[data-session-drag-overlay] [data-session-drag-flash-layer]");
+	await expect(layer).toBeAttached();
+	const beam = layer.locator("[data-session-drag-flash-beam]");
+	await expect(beam).toHaveCSS("animation-name", "session-drag-face-flash");
+	await expect(beam).toHaveCSS("animation-duration", "0.4s");
+	await expect(beam).not.toHaveCSS("background-image", "none");
+	await expect.poll(() => page.evaluate(() => (window as unknown as { dragFlashProbe: { frames: { t: number }[] } }).dragFlashProbe.frames.some(({ t }) => t > 200))).toBe(true);
+	await page.screenshot({ path: "output/agent-browser/peel/team-eu26-normal-drag-glow-mid-transition.png" });
+	await expect.poll(() => page.evaluate(() => (window as unknown as { dragFlashProbe: { complete: boolean } }).dragFlashProbe.complete)).toBe(true);
+	const frames = await page.evaluate(() => (window as unknown as { dragFlashProbe: { frames: { t: number; x: number; y: number; width: number; height: number; opacity: number; beamX: number; beamCenter: number; surfaceGap: number }[] } }).dragFlashProbe.frames);
+	const first = frames[0];
+	const last = frames.at(-1)!;
+	expect(first.width).toBeGreaterThan(sourceBox.width * 0.85);
+	expect(first.height).toBeGreaterThan(sourceBox.height * 0.85);
+	expect(Math.abs(first.x - sourceBox.x)).toBeLessThan(15);
+	expect(Math.abs(first.y - sourceBox.y)).toBeLessThan(15);
+	expect(first.width).toBeGreaterThan(last.width * 1.5);
+	expect(frames.some(({ t, opacity }) => t < 250 && opacity > 0.8)).toBe(true);
+	expect(frames.every(({ surfaceGap }) => surfaceGap < 1.5)).toBe(true);
+	expect(first.beamCenter).toBeGreaterThan(-0.08);
+	expect(first.beamCenter).toBeLessThan(0.1);
+	expect(frames.some(({ t, beamCenter, opacity }) => t > 260 && t < 345 && beamCenter > 0.85 && opacity > 0.8)).toBe(true);
+	expect(last.beamCenter).toBeGreaterThan(1.15);
+	expect(last.opacity).toBeLessThan(0.05);
+	expect(last.beamX).toBeGreaterThan(first.beamX + 30);
+	for (let index = 1; index < frames.length; index += 1) {
+		expect(frames[index].beamCenter).toBeGreaterThanOrEqual(frames[index - 1].beamCenter - 0.02);
+	}
 	await page.mouse.up();
-	await expect(overlay).toHaveCount(0);
 });
+
+for (const grab of [{ name: "avatar", x: 0.09, y: 0.5 }, { name: "title", x: 0.7, y: 0.3 }, { name: "byline", x: 0.7, y: 0.8 }]) {
+	test(`dragged avatars stay on their own session's path when grabbed at the ${grab.name}`, async ({ page }) => {
+		await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ sessionPeel: false, schemaVersion: 2 })));
+		await page.goto(`${BASE_URL}/jira-team-eu26`, { waitUntil: "networkidle" });
+		const source = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
+		await source.hover();
+		await page.evaluate(() => {
+			// Slots are decorative; filter the exiting composition, rather than their own aria-hidden.
+			const pose = (avatar: Element) => {
+				const composition = [...avatar.children].find((element) => element.getAttribute("aria-hidden") !== "true");
+				return [...(composition ?? avatar).querySelectorAll<HTMLElement>('[data-avatar-role]')].map((element) => {
+					const box = element.getBoundingClientRect();
+					return { role: element.dataset.avatarRole!, x: box.x + box.width / 2, y: box.y + box.height / 2, width: box.width };
+				});
+			};
+			const sourceAvatar = document.querySelector('[data-testid="agent-session-row-lw-scope-thread"] [data-slot="human-agent-avatar"]')!;
+			const probe = { source: pose(sourceAvatar), frames: [] as ReturnType<typeof pose>[], timestamps: [] as number[], complete: false };
+			Object.assign(window, { avatarDragProbe: probe });
+			let started = 0;
+			const observer = new MutationObserver(() => {
+				const avatar = document.querySelector('[data-session-drag-overlay] [data-slot="human-agent-avatar"]');
+				if (!avatar || started) return;
+				started = performance.now();
+				observer.disconnect();
+				const sample = () => {
+					probe.timestamps.push(performance.now() - started);
+					probe.frames.push(pose(avatar));
+					if (performance.now() - started < 500) requestAnimationFrame(sample);
+					else probe.complete = true;
+				};
+				sample();
+			});
+			observer.observe(document.body, { childList: true, subtree: true });
+		});
+		const box = (await source.boundingBox())!;
+		await page.mouse.move(box.x + box.width * grab.x, box.y + box.height * grab.y);
+		await page.mouse.down();
+		await page.mouse.move(box.x + box.width * grab.x + 65, box.y + box.height * grab.y + 35);
+		await expect(page.locator("[data-session-drag-overlay]")).toContainText("Priya Raman");
+		await expect.poll(() => page.evaluate(() => (window as unknown as { avatarDragProbe: { complete: boolean } }).avatarDragProbe.complete)).toBe(true);
+		const probe = await page.evaluate(() => (window as unknown as { avatarDragProbe: { source: { role: string; x: number; y: number; width: number }[]; frames: { role: string; x: number; y: number; width: number }[][]; timestamps: number[] } }).avatarDragProbe);
+		// The diagonal-to-horizontal transformation stays visibly in progress beyond the old 150ms entrance.
+		expect(probe.frames.some((frame, index) => probe.timestamps[index] > 180 && probe.timestamps[index] < 300 && frame.some(({ role, width }) => role === "agent" && width > 17 && width < 29))).toBe(true);
+		writeFileSync(`output/agent-browser/peel/avatar-origin-${grab.name}.json`, JSON.stringify(probe, null, 2));
+		await page.screenshot({ path: `output/agent-browser/peel/avatar-origin-${grab.name}.png` });
+		for (const start of probe.source) {
+			const first = probe.frames[0].find(({ role }) => role === start.role)!;
+			for (const dimension of ["x", "y", "width"] as const) expect(Math.abs(first[dimension] - start[dimension])).toBeLessThan(0.5);
+			const end = probe.frames.at(-1)!.find(({ role }) => role === start.role)!;
+			for (const frame of probe.frames) {
+				const point = frame.find(({ role }) => role === start.role)!;
+				for (const dimension of ["x", "y", "width"] as const) {
+					expect(point[dimension], `${grab.name}: ${start.role} ${dimension}`).toBeGreaterThanOrEqual(Math.min(start[dimension], end[dimension]) - 2);
+					expect(point[dimension], `${grab.name}: ${start.role} ${dimension}`).toBeLessThanOrEqual(Math.max(start[dimension], end[dimension]) + 2);
+				}
+			}
+		}
+		await page.mouse.up();
+		await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(0);
+	});
+}
 
 test("reduced motion keeps the native Claude drag and still commits the work item drop", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
