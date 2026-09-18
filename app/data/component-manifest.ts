@@ -665,6 +665,7 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	visualComponent("shadow-overlay", "Shadow Overlay", "@/components/website/demos/visual/shadow-overlay"),
 	visualComponent("card-glow", "Card Glow", "@/components/website/demos/visual/card-glow-demo"),
 	visualComponent("border-beam", "Border Beam", "@/components/visual/border-beam"),
+	visualComponent("voice-glow", "Voice Glow", "@/components/visual/voice-glow"),
 	visualComponent("dropzone-effect", "Dropzone Effect", "@/components/visual/dropzone-effect"),
 	visualComponent("heatmap", "Heatmap", "@/components/visual/heatmap"),
 	visualComponent("scribbles", "Scribbles", "@/components/website/demos/visual/scribbles"),
