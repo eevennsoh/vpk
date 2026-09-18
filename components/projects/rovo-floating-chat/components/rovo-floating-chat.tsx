@@ -21,6 +21,7 @@ import FloatingChatHeader from "./floating-chat-header";
 interface RovoFloatingChatProps {
 	placement?: "embedded" | "floating";
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
+	autoFocusComposer?: boolean;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	composerPrefillRequest?: { mention: RichTextMentionItem; requestKey: number };
 	onComposerPrefillConsumed?: (requestKey: number) => void;
@@ -53,6 +54,7 @@ interface RovoFloatingChatProps {
 export default function RovoFloatingChat({
 	placement = "floating",
 	onSurfaceSwitch,
+	autoFocusComposer = false,
 	chatContextBar,
 	composerPrefillRequest,
 	onComposerPrefillConsumed,
@@ -114,6 +116,7 @@ export default function RovoFloatingChat({
 			<div className={embedded ? "min-h-0 min-w-0 flex-1 overflow-visible" : "min-h-0 min-w-0 overflow-hidden"}>
 				<ChatPanel
 					onClose={closeChat}
+					autoFocusComposer={autoFocusComposer}
 					hideHeader
 					abortOnUnmount={false}
 					containerClassName={embedded ? "h-full min-h-0 min-w-0 overflow-visible" : "min-h-0 min-w-0"}

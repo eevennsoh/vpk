@@ -45,6 +45,26 @@ test("List assigned menu uses Add agent and opens the selector", async ({ page }
 	await expect(menu.getByRole("textbox", { name: "Search agents" })).toBeVisible();
 });
 
+test("keyboard session selection moves focus into the opened chat", async ({ page }) => {
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	const trigger = page.getByRole("button", { name: "Cursor: Working", exact: true });
+	await trigger.focus();
+	await page.keyboard.press("Enter");
+
+	const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+	await expect(flyout).toBeVisible();
+	await page.keyboard.press("Tab");
+	const session = flyout.getByRole("button", {
+		name: /^Cursor Cursor, used by Venn Cursor Local session/u,
+	});
+	await expect(session).toBeFocused();
+	await page.keyboard.press("Enter");
+
+	const composer = page.getByRole("textbox", { name: "Chat message input" });
+	await expect(composer).toBeVisible();
+	await expect(composer).toBeFocused();
+});
+
 for (const { issueKey, state, agent } of [
 	{ issueKey: "PAY-105", state: "Working", agent: "Cursor" },
 	{ issueKey: "PAY-112", state: "Needs input", agent: "Codex" },

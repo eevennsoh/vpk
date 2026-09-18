@@ -106,6 +106,7 @@ export function JgpRovoOverlay({
 				{showFloatingChat ? (
 					<RovoFloatingChat
 						key="floating-chat"
+						autoFocusComposer
 						chatContextBar={chatContextBar}
 						composerPrefillRequest={composerPrefillRequest}
 						onComposerPrefillConsumed={onComposerPrefillConsumed}
