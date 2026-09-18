@@ -1,6 +1,9 @@
+import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
+const origin = (process.env.PLAYWRIGHT_BASE_URL
+	?? execFileSync(process.execPath, [".agents/skills/vpk-verify/scripts/control-vpk", "url"], { encoding: "utf8" }).trim())
+	.replace(/\/$/u, "");
 
 interface EntryFrame {
 	height: number;

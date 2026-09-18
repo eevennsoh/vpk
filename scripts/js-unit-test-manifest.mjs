@@ -41,6 +41,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-kanban/experimental/lib/board-agent-session-drag-gap.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-card-insertion.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-card-arrival.test.js",
+		"components/blocks/jira-kanban/experimental/hooks/use-board-session-drag-scroll.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-work-item-options.test.ts",
 		"components/blocks/jira-linking/field.test.js",
 		"components/blocks/jira-linking/uniforms.test.js",
