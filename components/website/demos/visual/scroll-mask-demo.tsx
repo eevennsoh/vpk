@@ -31,6 +31,10 @@ export default function ScrollMaskDemo() {
 				maxWidth: `calc(${token("space.600")} * 9)`,
 			}}
 		>
+			<p className="w-full text-sm leading-relaxed text-text-subtle">
+				<strong className="font-medium text-text">Always make the top fade shorter.</strong>{" "}
+				Items disappear more abruptly, making the transition feel crisper and more natural.
+			</p>
 			<ScrollMask
 				aria-label="Workspace menu"
 				className="w-full"

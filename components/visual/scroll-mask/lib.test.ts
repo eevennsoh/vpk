@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { buildHorizontalScrollMaskStyle, buildScrollMaskBlurLayerStyles, buildScrollMaskOverlayStyle, buildScrollMaskStyle, resolveFadeSize } from "./lib.ts";
+import { buildHorizontalScrollMaskStyle, buildScrollMaskBlurLayerStyles, buildScrollMaskOverlayStyle, buildScrollMaskStyle, resolveFadeSize, resolveTopFadeSize } from "./lib.ts";
 import { createRequire } from "node:module";
 
 const requireRegistrySource = createRequire(import.meta.url);
@@ -23,7 +23,7 @@ test("buildScrollMaskStyle preserves the scrollbar gutter as an opaque mask trac
 	assert.equal(style["--scroll-mask-scrollbar-width"], "10px");
 	assert.equal(
 		style.maskImage,
-		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black calc(100% - var(--scroll-mask-fade-size)), transparent 100%), linear-gradient(black, black)",
+		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-top-fade-size), black calc(100% - var(--scroll-mask-fade-size)), transparent 100%), linear-gradient(black, black)",
 	);
 	assert.equal(style.WebkitMaskImage, style.maskImage);
 	assert.equal(style.maskRepeat, "no-repeat, no-repeat");
@@ -42,13 +42,30 @@ test("buildScrollMaskStyle resolves numeric fade and scrollbar values to pixels"
 	assert.equal(style.maskSize, "calc(100% - 12px) 100%, 12px 100%");
 });
 
+test("vertical masks and overlays always make the top fade half as deep", () => {
+	for (const [fadeSize, topSize, bottomSize] of [
+		[48, "24px", "48px"],
+		["3rem", "calc(3rem / 2)", "3rem"],
+		["var(--ds-space-400)", "calc(var(--ds-space-400) / 2)", "var(--ds-space-400)"],
+	] as const) {
+		const mask = buildScrollMaskStyle({ fadeSize });
+		assert.equal(mask["--scroll-mask-top-fade-size"], topSize);
+		assert.equal(mask["--scroll-mask-fade-size"], bottomSize);
+		assert.match(mask.maskImage as string, /black var\(--scroll-mask-top-fade-size\)/u);
+		assert.equal(resolveTopFadeSize(fadeSize), topSize);
+		assert.equal(buildScrollMaskOverlayStyle({ edge: "top", fadeSize }).height, topSize);
+		assert.equal(buildScrollMaskOverlayStyle({ edge: "bottom", fadeSize }).height, bottomSize);
+		assert.equal(buildHorizontalScrollMaskStyle({ fadeSize })["--scroll-mask-fade-size"], bottomSize);
+	}
+});
+
 test("buildScrollMaskStyle can fade the full width without reserving a scrollbar track", () => {
 	const style = buildScrollMaskStyle({ fadeSize: 48, scrollbarWidth: 0 });
 
 	assert.equal(style["--scroll-mask-scrollbar-width"], "0px");
 	assert.equal(
 		style.maskImage,
-		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black calc(100% - var(--scroll-mask-fade-size)), transparent 100%)",
+		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-top-fade-size), black calc(100% - var(--scroll-mask-fade-size)), transparent 100%)",
 	);
 	assert.equal(style.WebkitMaskImage, style.maskImage);
 	assert.equal(style.maskPosition, "0 0");
@@ -123,6 +140,7 @@ test("sticky row fades reuse the standard surface fade without progressive blur"
 	assert.notEqual(stickyFadeStart, -1);
 	assert.notEqual(stickyFadeEnd, -1);
 	const stickyFadeSource = SCROLL_MASK_SOURCE.slice(stickyFadeStart, stickyFadeEnd);
+	assert.match(stickyFadeSource, /top-full h-4 opacity-0/u);
 	assert.doesNotMatch(stickyFadeSource, /TOP_BLUR_LAYERS/u);
 	assert.doesNotMatch(stickyFadeSource, /backdropFilter|WebkitBackdropFilter/u);
 });
@@ -153,7 +171,7 @@ test("resolveFadeSize coerces numbers to pixels and defaults to the fade-size to
 test("ScrollMask renders opt-in progressive blur overlays behind a pinned region", () => {
 	assert.match(SCROLL_MASK_SOURCE, /edgeBlur = false/);
 	assert.match(SCROLL_MASK_SOURCE, /data-slot="scroll-mask-blur"/);
-	assert.match(SCROLL_MASK_SOURCE, /data-edge="top"[\s\S]*data-edge="bottom"/);
+	assert.match(SCROLL_MASK_SOURCE, /data-edge="top"[\s\S]*height: resolvedTopFadeSize[\s\S]*data-edge="bottom"[\s\S]*height: resolvedFadeSize/u);
 });
 
 test("ScrollMask gates the edge fade and blur on real scroll overflow state", () => {
@@ -169,7 +187,7 @@ test("buildScrollMaskStyle fades only the edges with content scrolled past them"
 	const topOnly = buildScrollMaskStyle({ fadeTop: true, fadeBottom: false });
 	assert.equal(
 		topOnly.maskImage,
-		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black 100%), linear-gradient(black, black)",
+		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-top-fade-size), black 100%), linear-gradient(black, black)",
 	);
 
 	const bottomOnly = buildScrollMaskStyle({ fadeTop: false, fadeBottom: true });
@@ -186,8 +204,8 @@ test("buildScrollMaskStyle fades only the edges with content scrolled past them"
 
 test("buildScrollMaskOverlayStyle fades visually without clipping hit-testing", () => {
 	const top = buildScrollMaskOverlayStyle({ edge: "top", fadeSize: "3rem" });
-	assert.equal(top["--scroll-mask-fade-size"], "3rem");
-	assert.equal(top.height, "3rem");
+	assert.equal(top["--scroll-mask-fade-size"], "calc(3rem / 2)");
+	assert.equal(top.height, "calc(3rem / 2)");
 	assert.equal(top.pointerEvents, "none");
 	assert.equal(
 		top.backgroundImage,
