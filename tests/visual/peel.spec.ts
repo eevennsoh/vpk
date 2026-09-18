@@ -544,7 +544,7 @@ test("the normal glow fills the source card while it contracts to the drag chip"
 					beamCenter: 0.55 + beamX / beam.offsetWidth,
 					surfaceGap: surface ? Math.max(Math.abs(box.x - surface.x), Math.abs(box.y - surface.y), Math.abs(box.width - surface.width), Math.abs(box.height - surface.height)) : Number.POSITIVE_INFINITY,
 				});
-				if (t < 650) requestAnimationFrame(sample);
+				if (t < 500) requestAnimationFrame(sample);
 				else probe.complete = true;
 			};
 			requestAnimationFrame(sample);
@@ -558,7 +558,7 @@ test("the normal glow fills the source card while it contracts to the drag chip"
 	await expect(layer).toBeAttached();
 	const beam = layer.locator("[data-session-drag-flash-beam]");
 	await expect(beam).toHaveCSS("animation-name", "session-drag-face-flash");
-	await expect(beam).toHaveCSS("animation-duration", "0.55s");
+	await expect(beam).toHaveCSS("animation-duration", "0.4s");
 	await expect(beam).not.toHaveCSS("background-image", "none");
 	await expect.poll(() => page.evaluate(() => (window as unknown as { dragFlashProbe: { frames: { t: number }[] } }).dragFlashProbe.frames.some(({ t }) => t > 200))).toBe(true);
 	await page.screenshot({ path: "output/agent-browser/peel/team-eu26-normal-drag-glow-mid-transition.png" });
@@ -575,7 +575,7 @@ test("the normal glow fills the source card while it contracts to the drag chip"
 	expect(frames.every(({ surfaceGap }) => surfaceGap < 1.5)).toBe(true);
 	expect(first.beamCenter).toBeGreaterThan(-0.08);
 	expect(first.beamCenter).toBeLessThan(0.1);
-	expect(frames.some(({ t, beamCenter, opacity }) => t > 380 && t < 480 && beamCenter > 0.85 && opacity > 0.8)).toBe(true);
+	expect(frames.some(({ t, beamCenter, opacity }) => t > 260 && t < 345 && beamCenter > 0.85 && opacity > 0.8)).toBe(true);
 	expect(last.beamCenter).toBeGreaterThan(1.15);
 	expect(last.opacity).toBeLessThan(0.05);
 	expect(last.beamX).toBeGreaterThan(first.beamX + 30);
