@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const VISUAL_DEMOS: Record<string, ComponentType> = {
+	"voice-glow": dynamic(() => import("../demos/visual/voice-glow-demo"), { ssr: false }),
 	gooey: dynamic(() => import("../demos/visual/gooey-demo"), { ssr: false }),
 	typography: dynamic(() => import("../demos/visual/typography-demo"), {
 		ssr: false,
@@ -315,6 +316,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 };
 
 export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"voice-glow-pill": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowPillExample })), { ssr: false }),
+	"voice-glow-mobile": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowMobileExample })), { ssr: false }),
+	"voice-glow-processing": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowProcessingExample })), { ssr: false }),
 	"gooey-morph-menu": dynamic(
 		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphMenuExample })),
 		{ ssr: false },
