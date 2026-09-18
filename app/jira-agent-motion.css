@@ -110,9 +110,9 @@
    the accent and lift the same soft profile so the pass reads as face light. */
 html.dark [data-session-drag-flash-layer] .session-drag-face-flash {
 	--session-drag-flash-beam-color: color-mix(in oklab, var(--session-drag-flash-color) 70%, white 30%);
-	--session-drag-flash-outer-alpha: 20%;
-	--session-drag-flash-inner-alpha: 38%;
-	--session-drag-flash-peak-alpha: 50%;
+	--session-drag-flash-outer-alpha: 12%;
+	--session-drag-flash-inner-alpha: 24%;
+	--session-drag-flash-peak-alpha: 32%;
 }
 
 @media (prefers-reduced-motion: reduce) {
