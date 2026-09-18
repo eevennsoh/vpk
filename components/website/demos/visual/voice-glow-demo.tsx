@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { GUI } from "@/components/utils/gui";
 import { useTheme } from "@/components/utils/theme-wrapper";
 import VoiceGlow, { type MicrophoneState, type VoiceBeamProps, type VoiceBeamType } from "@/components/visual/voice-glow";
-import { resolveVoiceGlowNumbers, VOICE_GLOW_DEFAULTS, type VoiceGlowConfig } from "@/components/visual/voice-glow/data";
+import { getVoiceGlowStatus, resolveVoiceGlowNumbers, VOICE_GLOW_DEFAULTS, type VoiceGlowConfig } from "@/components/visual/voice-glow/data";
 import { VoiceGlowControls } from "@/components/website/demos/visual/voice-glow-controls";
 import { VoiceGlowColors } from "@/components/website/demos/visual/voice-glow-colors";
 import { useVoiceGlowMicrophone } from "@/components/website/demos/visual/use-voice-glow-microphone";
@@ -38,7 +38,6 @@ export default function VoiceGlowDemo() {
 	const theme = config.theme === "auto" ? actualTheme : config.theme;
 	const defaults = resolveVoiceGlowNumbers(config, actualTheme);
 	const mic = useVoiceGlowMicrophone();
-	const microphoneError = mic.state === "denied" || mic.state === "error" ? mic.error : null;
 	const simulation = useVoiceGlowSimulation(simulateVoice, config.level ?? 0.5);
 	const changeSimulation = (enabled: boolean) => {
 		mic.stop();
@@ -70,7 +69,7 @@ export default function VoiceGlowDemo() {
 				<Button variant="ghost" onClick={reset}>Reset</Button>
 			</div>
 			<p className="text-sm text-text-subtle" role="status">
-				{microphoneError ? microphoneError.message : mic.state === "live" ? "Microphone active. Speak to drive the glow; manual intensity is ignored." : simulateVoice ? "Simulated voice input. The glow rises and settles with speech-like bursts." : "Adjust manual intensity to preview the glow, or enable simulated voice."}
+				{getVoiceGlowStatus(mic, simulateVoice)}
 			</p>
 			<GUI.Panel title="Voice Glow controls" values={{ ...defaults, ...config, colors, bandColors }}>
 				<VoiceGlowControls config={config} defaults={defaults} update={update} simulateVoice={simulateVoice} onSimulateVoiceChange={changeSimulation} />

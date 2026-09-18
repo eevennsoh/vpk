@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { resolveVoiceDefaults } from "voice-glow";
 // @ts-expect-error Node's strip-types runner requires the explicit extension.
-import { resolveVoiceGlowNumbers, VOICE_GLOW_CONTROLS, VOICE_GLOW_DEFAULTS } from "./data.ts";
+import { getVoiceGlowStatus, resolveVoiceGlowNumbers, VOICE_GLOW_CONTROLS, VOICE_GLOW_DEFAULTS } from "./data.ts";
 // @ts-expect-error Node's strip-types runner requires the explicit extension.
 import { requestVoiceGlowMicrophone } from "./microphone-request.ts";
 // @ts-expect-error Node's strip-types runner requires the explicit extension.
@@ -19,6 +19,16 @@ test("shape and page theme resolve the upstream tuning without retaining another
 	assert.equal(light.coreLight, 1.8);
 	assert.equal(light.bandStrength, 1.7);
 	assert.deepEqual(light, resolveVoiceGlowNumbers({ ...VOICE_GLOW_DEFAULTS, theme: "light" }, "dark"));
+});
+
+test("only current microphone failures override simulated or manual input status", () => {
+	const error = new Error("Permission denied");
+	for (const state of ["denied", "error"] as const) assert.equal(getVoiceGlowStatus({ state, error }, true), error.message);
+	for (const state of ["idle", "requesting", "unsupported"] as const) {
+		assert.match(getVoiceGlowStatus({ state, error }, true), /Simulated voice input/);
+		assert.match(getVoiceGlowStatus({ state, error }, false), /manual intensity/);
+	}
+	assert.match(getVoiceGlowStatus({ state: "live", error: null }, true), /Microphone active/);
 });
 
 test("simulated voice has phrases and silence, stays bounded, and repeats without a jump", () => {

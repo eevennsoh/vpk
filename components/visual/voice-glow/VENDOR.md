@@ -75,7 +75,7 @@ Remove the demo guard once upstream cancels late requests itself.
 - Full `pnpm run ci:pr` passed with the new unit suite discovered by the
   unfiltered runner. Final responsive adjustments passed targeted ESLint and
   `pnpm run typecheck` again.
-- Five unit tests cover the bounded speech signal, clock/reset, preset/theme defaults, complete control coverage,
+- Six unit tests cover current microphone status, the bounded speech signal, clock/reset, preset/theme defaults, complete control coverage,
   GUI bounds, and release of late microphone results.
 - `tests/visual/voice-glow.spec.ts`: rendered tests check simulated voice without
   microphone access, manual-mode/reset switching, and every

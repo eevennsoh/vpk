@@ -4,6 +4,7 @@ import {
 	themePresets,
 	type VoiceBeamProps,
 	type VoiceGeometry,
+	type UseMicrophoneResult,
 } from "voice-glow";
 
 export type VoiceGlowNumbers = VoiceGeometry & {
@@ -29,6 +30,14 @@ export const VOICE_GLOW_PALETTES = [
 export const VOICE_GLOW_THEMES = [
 	{ value: "auto", label: "Follow page" }, { value: "dark", label: "Dark" }, { value: "light", label: "Light" },
 ] as const;
+
+export function getVoiceGlowStatus(mic: Pick<UseMicrophoneResult, "state" | "error">, simulated: boolean): string {
+	if ((mic.state === "denied" || mic.state === "error") && mic.error) return mic.error.message;
+	if (mic.state === "live") return "Microphone active. Speak to drive the glow; manual intensity is ignored.";
+	return simulated
+		? "Simulated voice input. The glow rises and settles with speech-like bursts."
+		: "Adjust manual intensity to preview the glow, or enable simulated voice.";
+}
 
 export function resolveVoiceGlowNumbers(config: VoiceGlowConfig, pageTheme: "dark" | "light"): VoiceGlowNumbers {
 	const theme = config.theme === "auto" ? pageTheme : config.theme;
