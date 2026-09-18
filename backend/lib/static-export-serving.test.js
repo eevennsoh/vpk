@@ -93,6 +93,25 @@ test("compressed HTML fallback revalidates and stale siblings never replace newe
 	}
 });
 
+test("all identity fallback HTML representations explicitly revalidate", async () => {
+	const publicPath = createTempPublicDir();
+	try {
+		const file = path.join(publicPath, "index.html");
+		writeFile(file, "<main>Fresh content</main>".repeat(100));
+		writeFile(`${file}.gz`, zlib.gzipSync(fs.readFileSync(file)));
+		fs.utimesSync(`${file}.gz`, new Date(0), new Date(0));
+		await withStaticServer(publicPath, async (baseUrl) => {
+			for (const headers of [{}, { "Accept-Encoding": "identity" }, { "Accept-Encoding": "gzip" }, { Range: "bytes=0-4" }]) {
+				const response = await rawRequest(`${baseUrl}/projects/rovo`, headers);
+				assert.equal(response.headers["content-encoding"], undefined);
+				assert.equal(response.headers["cache-control"], "public, max-age=0");
+			}
+		});
+	} finally {
+		fs.rmSync(publicPath, { force: true, recursive: true });
+	}
+});
+
 async function withStaticServer(publicPath, run) {
 	const app = express();
 	registerStaticExportServing(app, {

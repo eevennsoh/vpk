@@ -136,6 +136,7 @@ function createStaticExportFallbackHandler({
 		}
 
 		const indexPath = pathModule.join(publicPath, "index.html");
+		setStaticCacheHeaders(res, indexPath, pathModule.resolve(publicPath));
 		try {
 			if (await sendPrecompressedFile(req, res, indexPath, pathModule.resolve(publicPath))) return;
 		} catch (error) {
