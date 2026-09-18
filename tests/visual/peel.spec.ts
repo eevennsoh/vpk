@@ -585,6 +585,53 @@ test("the normal glow fills the source card while it contracts to the drag chip"
 	await page.mouse.up();
 });
 
+test("the flat dragged card keeps its face flash visible in dark mode", async ({ page }) => {
+	await page.addInitScript(() => {
+		localStorage.setItem("ui-theme", "dark");
+		localStorage.setItem("ui-design-variants", JSON.stringify({ sessionPeel: false, schemaVersion: 2 }));
+	});
+	await page.goto(`${BASE_URL}/jira-team-eu26`, { waitUntil: "networkidle" });
+	await expect(page.locator("html")).toHaveClass(/dark/);
+	const expand = page.getByRole("button", { name: "Expand Unlink sessions column", exact: true });
+	if (await expand.isVisible()) await expand.click();
+	const source = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
+	await source.hover();
+	const box = (await source.boundingBox())!;
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(box.x + box.width / 2 + 65, box.y + box.height / 2 + 35);
+	const overlay = page.locator("[data-session-drag-overlay]");
+	const layer = overlay.locator("[data-session-drag-flash-layer]");
+	const beam = layer.locator("[data-session-drag-flash-beam]");
+	await expect(layer).toBeAttached();
+	await expect(beam).toHaveCSS("animation-name", "session-drag-face-flash");
+	const face = await beam.evaluate((element) => ({
+		image: getComputedStyle(element).backgroundImage,
+		peakAlpha: parseFloat(getComputedStyle(element).getPropertyValue("--session-drag-flash-peak-alpha")),
+		layerOpacity: getComputedStyle(element.parentElement!).opacity,
+	}));
+	expect(face.image).not.toBe("none");
+	expect(face.peakAlpha).toBeGreaterThanOrEqual(28);
+	expect(face.peakAlpha).toBeLessThanOrEqual(36);
+	expect(face.layerOpacity).toBe("1");
+	await expect(overlay.locator("[data-peel-surface], canvas")).toHaveCount(0);
+	await beam.evaluate((element) => {
+		const animation = element.getAnimations()[0];
+		if (!animation) throw new Error("The face flash did not start");
+		animation.pause();
+		animation.currentTime = 200;
+	});
+	await page.screenshot({ path: "output/agent-browser/peel/team-eu26-flat-drag-dark-flash.png" });
+	await overlay.locator("[data-session-drag-pill]").screenshot({ path: "output/agent-browser/peel/team-eu26-flat-drag-dark-flash-chip.png" });
+	await beam.evaluate((element) => {
+		const animation = element.getAnimations()[0];
+		if (!animation) throw new Error("The face flash stopped before comparison");
+		animation.currentTime = 400;
+	});
+	await overlay.locator("[data-session-drag-pill]").screenshot({ path: "output/agent-browser/peel/team-eu26-flat-drag-dark-flash-chip-faded.png" });
+	await page.mouse.up();
+});
+
 for (const grab of [{ name: "avatar", x: 0.09, y: 0.5 }, { name: "title", x: 0.7, y: 0.3 }, { name: "byline", x: 0.7, y: 0.8 }]) {
 	test(`dragged avatars stay on their own session's path when grabbed at the ${grab.name}`, async ({ page }) => {
 		await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ sessionPeel: false, schemaVersion: 2 })));
