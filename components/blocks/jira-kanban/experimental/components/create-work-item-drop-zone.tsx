@@ -15,7 +15,7 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { JIRA_DROPZONE_OPEN_HEIGHT_PX, JIRA_DROPZONE_WELL_ENTER } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-motion";
+import { JIRA_DROPZONE_OPEN_HEIGHT_PX, JIRA_DROPZONE_WELL_ENTER, JIRA_DROPZONE_WELL_ENTER_REDUCED } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-motion";
 
 import { CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX } from "../lib/create-work-item-exclusive-proximity";
 import { resolveBoardCreateDropzoneDrag } from "../lib/board-agent-session-drag";
@@ -52,19 +52,19 @@ export function BoardColumnCreateAction({
 	const [targetHeight, setTargetHeight] = useState(columnSizing === "content" ? 24 : 32);
 	useLayoutEffect(() => {
 		const target = targetRef.current;
-		if (!target) return;
+		if (columnSizing === "content" || !target) return;
 		const measure = () => setTargetHeight(Math.ceil(target.offsetHeight));
 		const resize = new ResizeObserver(measure);
 		resize.observe(target);
 		measure();
 		return () => resize.disconnect();
-	}, [dropZoneLabel]);
+	}, [columnSizing, dropZoneLabel]);
 
 	return (
-		// Content-sized columns keep a stable footer while the well fills the
-		// unused shell below it. Fill columns reserve the well's actual height.
-		<div data-board-column-create-action={columnSizing} className="relative w-full shrink-0" style={{ height: columnSizing === "content" ? Math.max(32, Math.min(40, targetHeight + 8)) : Math.max(40, targetHeight + 8) }}>
-			<div ref={anchorRef} className={cn("absolute inset-x-0 z-10", columnSizing === "content" ? "top-1 h-8" : placement === "top" ? "top-1" : "bottom-1")}>
+		// Native flow reserves the compact footer in the same layout pass as its
+		// animated height. Expanded chrome can overflow the bounded slot above it.
+		<div data-board-column-create-action={columnSizing} className={cn("relative w-full shrink-0", columnSizing === "content" ? "min-h-8 max-h-10 py-1" : null)} style={{ height: columnSizing === "content" ? undefined : Math.max(40, targetHeight + 8) }}>
+			<div ref={anchorRef} className={cn("z-10", columnSizing === "content" ? "relative w-full" : cn("absolute inset-x-0", placement === "top" ? "top-1" : "bottom-1"))}>
 				{dropZoneLabel ? (
 					// Detect the future well footprint before its visible chrome grows.
 					// This stays anchored when the magnetic surface leans or expands.
@@ -81,7 +81,7 @@ export function BoardColumnCreateAction({
 					/>
 				) : null}
 				{dropZoneLabel ? (
-					<div className="relative w-full" style={{ top: columnSizing === "content" && targetHeight > 32 && minimumHeight > 0 ? Math.min(0, minimumHeight - targetHeight) : undefined }}>
+					<div className="relative grid w-full grid-rows-1 items-end" style={{ maxHeight: columnSizing === "content" ? Math.max(32, minimumHeight) : undefined }}>
 						<JiraDropzone
 							ants={ants}
 							drag={drag}
@@ -172,11 +172,14 @@ export function BoardColumnAddButton({
 						)}
 						onClick={(event) => { if (control?.active) event.preventDefault(); }}
 						render={control ? <motion.button
-							layout={control.layout}
-							transition={{ layout: JIRA_DROPZONE_WELL_ENTER }}
+							// Resize the geometry so neither CSS dashes nor SVG strokes are scaled.
+							animate={{ height: Math.max(size === "compact" ? 24 : 32, control.minHeight) }}
+							initial={false}
+							// The footer already anchors each height frame; projecting its position adds a second movement.
+							layout={false}
+							transition={control.reducedMotion ? JIRA_DROPZONE_WELL_ENTER_REDUCED : JIRA_DROPZONE_WELL_ENTER}
 						/> : undefined}
 						size={size}
-						style={control ? { minHeight: control.minHeight } : undefined}
 						variant="outline"
 					>
 						{control ? control.children : <Icon render={<AddIcon label="" size="small" />} />}

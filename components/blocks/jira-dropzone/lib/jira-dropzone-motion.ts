@@ -21,6 +21,9 @@ export const JIRA_DROPZONE_HOVER_AREA_PX = 120;
 /** Standard h-16 expanded target when a host has no spare space. */
 export const JIRA_DROPZONE_OPEN_HEIGHT_PX = 64;
 
+/** Shared reference drop timing; preserves the board's existing linking pace. */
+export const SESSION_CHIP_DROP_DURATION_MS = 260;
+
 /** Compact bottom-target entrance: duration-normal + ease-out-practical. */
 export const JIRA_DROPZONE_WELL_ENTER = {
 	duration: 0.15,
@@ -38,10 +41,8 @@ export const JIRA_DROPZONE_WELL_HIDDEN = { opacity: 0, transform: "translateY(8p
 /**
  * Shared flight recipe for create-well and card-link drops.
  *
- * Default travel is a straight tween — the Team EU26 board drop. `durationMs`
- * is duration-slower so a button-launched catalog drop can still be tracked;
- * on the board the pointer is already on the well, so the same budget is a
- * short slide to centre. Arc path, peak, rotate, and strength stay on the
+ * Default travel uses the shared chip lift, fall, and absorption recipe and
+ * the same release duration as card linking. Arc path, peak, rotate, and strength stay on the
  * profile so a catalog or host override can opt back into Motion `arc()`
  * without re-seeding the rest of the recipe. `staggerMs` is duration-normal
  * so each chip is visibly queued before the next leaves. `launchSpreadPx` is
@@ -53,7 +54,7 @@ export const JIRA_DROPZONE_FULL_MOTION_PROFILE: FlightProfile = {
 	arcPeak: 0.5,
 	arcRotate: 0,
 	arcStrength: 0.42,
-	durationMs: JIRA_DROPZONE_DURATION_TOKEN_MS["duration-slower"],
+	durationMs: SESSION_CHIP_DROP_DURATION_MS,
 	ease: [0.4, 1, 0.6, 1],
 	impact: {
 		damping: 12,
@@ -150,4 +151,43 @@ export function resolveJiraDropzoneLandingPoint(
 		x: rect.left + rect.width / 2,
 		y: rect.top + rect.height / 2,
 	};
+}
+
+export interface SessionChipDropKeyframe extends Keyframe {
+	offset: number;
+	transform: string;
+	opacity: number;
+}
+
+/** Shared reference recipe from agentic-jira-board's animateUnattachedSessionDropToCard. */
+export function createSessionChipDropKeyframes(
+	from: ViewportPoint,
+	landing: ViewportPoint,
+	horizontal: "fixed" | "landing" = "fixed",
+): SessionChipDropKeyframe[] {
+	const apexFraction = 0.4;
+	// Bottom-half releases must clear the destination too; otherwise the
+	// absorption leg keeps travelling upward and the toss loses its arc.
+	const apexY = Math.min(from.y, landing.y) - 20;
+	const steps = 60;
+	return Array.from({ length: steps + 1 }, (_, index) => {
+		const progress = index / steps;
+		const collapse = progress * progress * (3 - 2 * progress);
+		let y: number;
+		if (progress <= apexFraction) {
+			const upward = progress / apexFraction;
+			const incoming = Math.pow(upward, 1.5);
+			const outgoing = Math.pow(1 - upward, 1.2);
+			y = from.y + (apexY - from.y) * incoming / (incoming + outgoing);
+		} else {
+			const downward = (progress - apexFraction) / (1 - apexFraction);
+			const gravity = Math.pow(downward, 1.2) * (0.4326 + downward * (0.7348 - 0.1674 * downward));
+			y = apexY + (landing.y - apexY) * gravity;
+		}
+		return {
+			offset: progress,
+			transform: `translate3d(${horizontal === "landing" ? from.x + (landing.x - from.x) * collapse : from.x}px, ${y}px, 0) scale(${1 + (0.65 - 1) * collapse})`,
+			opacity: 1 - collapse,
+		};
+	});
 }

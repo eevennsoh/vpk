@@ -1,12 +1,15 @@
 import type { JiraLinkingPoint } from "./drop";
+import {
+	createSessionChipDropKeyframes,
+	SESSION_CHIP_DROP_DURATION_MS,
+	// @ts-expect-error Node's strip-types runner requires the explicit .ts extension.
+} from "../jira-dropzone/lib/jira-dropzone-motion.ts";
 
 /** Exact recipe from agentic-jira-board's animateUnattachedSessionDropToCard. */
-export const JIRA_LINKING_GLOW_DROP_DURATION_MS = 260;
+export const JIRA_LINKING_GLOW_DROP_DURATION_MS = SESSION_CHIP_DROP_DURATION_MS;
 export const JIRA_LINKING_GLOW_FADE_DURATION_MS = 420;
 export const JIRA_LINKING_GLOW_PULSE_DURATION_MS = 800;
 export const JIRA_LINKING_GLOW_DEFAULT_COLOR = "var(--ds-border-focused)";
-const DROP_APEX_FRACTION = 0.4;
-const DROP_KEYFRAME_STEPS = 60;
 
 /**
  * How long Glow waits before reporting settled.
@@ -25,31 +28,12 @@ export function resolveJiraLinkingGlowSettleMs(
 	return JIRA_LINKING_GLOW_DROP_DURATION_MS;
 }
 
-/** Centers are viewport coordinates. X stays at release, matching the source. */
+/** Centers are viewport coordinates; converge from the released cursor in both axes. */
 export function createJiraLinkingGlowDropKeyframes(
 	from: JiraLinkingPoint,
 	landing: JiraLinkingPoint,
 ): Keyframe[] {
-	return Array.from({ length: DROP_KEYFRAME_STEPS + 1 }, (_, index) => {
-		const progress = index / DROP_KEYFRAME_STEPS;
-		const collapse = progress * progress * (3 - 2 * progress);
-		let y: number;
-		if (progress <= DROP_APEX_FRACTION) {
-			const upward = progress / DROP_APEX_FRACTION;
-			const incoming = Math.pow(upward, 1.5);
-			const outgoing = Math.pow(1 - upward, 1.2);
-			y = from.y - 20 * incoming / (incoming + outgoing);
-		} else {
-			const downward = (progress - DROP_APEX_FRACTION) / (1 - DROP_APEX_FRACTION);
-			const gravity = Math.pow(downward, 1.2) * (0.4326 + downward * (0.7348 - 0.1674 * downward));
-			y = from.y + (landing.y + 8 - from.y) * gravity - 20 * (1 - gravity);
-		}
-		return {
-			offset: progress,
-			transform: `translate3d(${from.x}px, ${y}px, 0) scale(${1 + (0.65 - 1) * collapse})`,
-			opacity: 1 - collapse,
-		};
-	});
+	return createSessionChipDropKeyframes(from, landing, "landing");
 }
 
 function clampChannel(channel: number): number {

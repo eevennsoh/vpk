@@ -27,6 +27,7 @@ export function useBoardSessionDragScroll({ active, rootRef, transactionRef, onG
 			const { x, y } = transaction.pointer;
 			const board = root.querySelector<HTMLElement>("[data-jira-kanban-scrollport]")?.getBoundingClientRect();
 			// Keep velocity consistent across slower frames, but bound catch-up after a stall.
+			const previousFrameTime = previousTime;
 			const elapsed = previousTime ? Math.min(100, time - previousTime) : 16;
 			previousTime = time;
 			let target: HTMLElement | null = null;
@@ -43,14 +44,17 @@ export function useBoardSessionDragScroll({ active, rootRef, transactionRef, onG
 				const speed = nearness === 0 ? 0 : Math.sign(nearness) * (120 + 600 * nearness ** 2);
 				const limit = Math.max(0, list.scrollHeight - list.clientHeight);
 				nextScroll = Math.max(0, Math.min(limit, list.scrollTop + speed * elapsed / 1000));
-				if (Math.abs(nextScroll - list.scrollTop) >= 1) target = list;
+				if (nextScroll !== list.scrollTop) target = list;
 				break;
 			}
-			// All geometry reads precede the scroll write. Continue only while scrolling advances.
+			// All geometry reads precede the scroll write. Stop at neutral positions or boundaries.
 			if (target) {
 				const previousScroll = target.scrollTop;
 				target.scrollTop = nextScroll;
-				if (target.scrollTop !== previousScroll) frame = requestAnimationFrame(update);
+				// Fast frames can request less than one pixel. Keep their time when
+				// the scroll container rounds away the write, then try the next frame.
+				if (target.scrollTop === previousScroll) previousTime = previousFrameTime;
+				frame = requestAnimationFrame(update);
 			}
 		};
 		const schedule = () => {

@@ -46,6 +46,10 @@ voice, or chat prototype is healthy from static export or `/api/health` alone.
   Verify actual Origin behavior after deployment, not descriptor presence alone.
 - Build Docker images for `linux/amd64`; verify the deployed browser/runtime,
   not only the image push or deployment command.
+- Record the previous verified image version/digest before an update. A failed
+  EC2 hot swap can leave that image serving healthy HTTP responses.
+- Run manual deployment guard blocks under Bash with `set -euo pipefail` so a
+  failed identity or stash check stops before deployment.
 
 ## Choose the path
 
@@ -73,8 +77,11 @@ vpk_resolve_atlas
 ```
 
 Report the service, environment, URL, deployed version/state, variable names or
-count, and missing configuration. `No such service` or `Unknown service` means
-the Micros service must be created even when local files contain a name.
+count, and missing configuration. Use `micros service show -o json` to verify
+`stacks[env][0].status` and `stacks[env][0].sd.buildNumber`; a reused deployment
+ID's events can describe an older creation. `No such service` or `Unknown
+service` means the Micros service must be created even when local files contain
+a name.
 
 ## Happy path
 
@@ -143,9 +150,18 @@ resolve it from `.deploy.local` or the default environment.
 Both paths still export, build, push, and check identity/stashes. For config-only
 recovery with the existing image, read the manual guide first. Do not use
 health/check bypass flags or hot swap as an initial-deployment shortcut.
+
+If this service has a documented prior full-image EC2 hot-swap timeout and the
+selected release changes only reviewed frontend export files, consider the
+guarded compact image as the first update attempt. Require a verified prior
+digest, byte parity from `plan-frontend-delta.mjs`, and an explicit decision on
+any inherited dependency layer; follow the manual guide's compact-image path.
+
 Hot swap can reuse the deployment ID, whose events may show the original
 creation. Confirm the expected image version and `UPDATE_COMPLETE` through
-service status, then check the runtime. See the guide for rollback and timing.
+service status, then check the runtime. If the stack is `UPDATE_FAILED`, stop:
+the older image can still pass `/api/health` and the HTTP runtime profile. See
+the guide for rollback and timing.
 
 ## Verify
 
@@ -163,10 +179,20 @@ backend-backed interaction works. The service URL requires Atlassian VPN.
 
 Pass the intended routes explicitly; the default is `/`, with no assumed
 `/studio/`. Select `static`, `backend`, `chat`, or `full` for the app's runtime
-capabilities; see the guide. A verifier pass proves HTTP checks only. Use a
-real browser to prove font use/CSP, desktop and narrow geometry, console,
-accessibility, and interactions. Verify a bounded tool-free chat turn and
-authenticated WSS when applicable; a 101 upgrade does not prove working audio.
+capabilities; see the guide. For an extracted root served byte for byte from
+`out/index.html`, add `--expect-html-file out/index.html`; it catches an older
+image still answering after an update failure. A verifier pass proves HTTP
+checks only. Use a real browser to prove font use/CSP, desktop and narrow
+geometry, console, accessibility, and interactions. Verify a bounded tool-free
+chat turn and authenticated WSS when applicable:
+
+```bash
+node .agents/skills/vpk-deploy/scripts/verify-wss.mjs \
+  "https://<service-name>.<region>.platdev.atl-paas.net"
+```
+
+The verifier closes the socket and never prints its scoped token. A 101 upgrade
+does not prove working audio.
 
 For tokenized VPK apps, also pass `--check-ads-theme`. The verifier checks raw
 HTML theme activation and CSS/JavaScript/font content types. Both deploy scripts
@@ -185,9 +211,17 @@ do not claim local commits or source shipping unless completed.
 
 Do not retry blindly. Read [troubleshooting](references/troubleshooting.md) for
 Docker authentication, missing packages, ASAP formatting, health failures,
-verification lag, and ALB subnet exhaustion. If west2 lacks subnet capacity,
-verify the condition before switching to `pdev-apse2`, then restash every
-required variable in that environment.
+EC2 SSM timeouts, verification lag, and ALB subnet exhaustion. For a full-image
+EC2 timeout, inspect the failed SSM command, node disk, and registered images.
+A compact frontend recovery image needs byte parity of the prior image's
+`backend/`, `lib/`, `rovo/`, and `scripts/lib/worktree-ports.js` with the selected target and a
+reviewed export-file diff. Run `plan-frontend-delta.mjs` to enforce that parity,
+service identity, and prior dependency-input comparison. A different
+`pnpm-lock.yaml` or workspace policy means the compact image keeps the previous
+installed packages; choose a full image for a requested dependency refresh, or
+explicitly accept and report the prior dependency layer for a frontend-only
+release. If west2 lacks subnet capacity, verify the condition before switching
+to `pdev-apse2`, then restash every required variable in that environment.
 
 ## References
 
@@ -201,3 +235,7 @@ does not exercise deployment guards or runtime verification.
   manual command sequence.
 - [troubleshooting.md](references/troubleshooting.md): error messages,
   diagnosis, environment fallback, and recovery.
+- [verify-wss.mjs](scripts/verify-wss.mjs): scoped-token or localhost-development
+  WebSocket transport proof without audio or token logging.
+- [plan-frontend-delta.mjs](scripts/plan-frontend-delta.mjs): dry-run runtime,
+  dependency, service, and export parity guard before a compact recovery image.

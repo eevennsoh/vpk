@@ -5,7 +5,7 @@
 
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { SessionColumnSlot, SessionColumnDropMarker } from "./components/session-column-placement";
-import { LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { LayoutGroup, useReducedMotion } from "motion/react";
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import type { AgentSessionItem, AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
 import { resolveAgentSessionWorkItemKey } from "@/components/blocks/agent-session/agent-session-work-item";
@@ -25,6 +25,7 @@ import {
 	mapSkillToMentionItem,
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
+import { useJiraDropzoneReceiving } from "@/components/blocks/jira-dropzone";
 import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -410,6 +411,10 @@ function ExperimentalJiraKanbanView({
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
+	const receivingCreatedCards = useJiraDropzoneReceiving(createdCardArrival?.columnTitle);
+	const presentedCardArrival = useMemo(() => createdCardArrival
+		? { ...createdCardArrival, deferred: receivingCreatedCards }
+		: undefined, [createdCardArrival, receivingCreatedCards]);
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const boardContentUnderlapsRef = useRef(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
@@ -705,8 +710,8 @@ function ExperimentalJiraKanbanView({
 								columnChrome={columnChrome}
 								columnSizing={columnSizing}
 								count={column.cards.length}
-								createdCardArrival={createdCardArrival?.columnTitle === column.title
-									? createdCardArrival
+								createdCardArrival={presentedCardArrival?.columnTitle === column.title
+									? presentedCardArrival
 									: undefined}
 								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 								onCollapse={handleCollapseColumn}
@@ -761,16 +766,15 @@ function ExperimentalJiraKanbanView({
 										onCardClick?.(card.title, card.code, card, column.title);
 									};
 									return (
-										<motion.div
-											key={card.code}
-											className="w-full min-w-0 max-w-[280px]"
-											layout={shouldAnimateCardLayout ? "position" : false}
-											layoutId={shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined}
-											transition={shouldAnimateCardPosition ? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT}
-										>
 											<CreatedCardArrivalMotion
-												arrival={createdCardArrival?.columnTitle === column.title
-													? createdCardArrival
+												key={card.code}
+												positionMotion={{
+													layout: shouldAnimateCardLayout ? "position" : false,
+													layoutId: shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined,
+													transition: shouldAnimateCardPosition ? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT,
+												}}
+												arrival={presentedCardArrival?.columnTitle === column.title
+													? presentedCardArrival
 													: undefined}
 												cardCode={card.code}
 												cardCount={column.cards.length}
@@ -831,7 +835,6 @@ function ExperimentalJiraKanbanView({
 												subtaskChrome={subtaskChrome}
 											/>
 											</CreatedCardArrivalMotion>
-										</motion.div>
 									);
 								})}
 							</BoardColumn>

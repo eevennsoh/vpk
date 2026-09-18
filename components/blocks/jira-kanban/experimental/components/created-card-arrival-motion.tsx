@@ -1,6 +1,6 @@
 "use client";
 
-import { use, type ReactNode } from "react";
+import { use, useLayoutEffect, useState, type ReactNode } from "react";
 import { motion, type MotionProps } from "motion/react";
 
 import { JiraCreateEntrance } from "@/components/blocks/jira-creating/components/jira-creating-entrance";
@@ -37,6 +37,7 @@ interface CreatedCardArrivalMotionProps {
 	/** The board-wide armed insertion; this card resolves whether it owns a seam. */
 	cardInsertion: BoardCardInsertion | null | undefined;
 	onArrivalComplete: (arrivalId: number) => void;
+	positionMotion?: Readonly<Pick<MotionProps, "layout" | "layoutId" | "transition">>;
 	shouldAnimateCardMoves: boolean;
 }
 
@@ -88,6 +89,7 @@ export function CreatedCardArrivalMotion({
 	columnTitle,
 	dropTarget,
 	onArrivalComplete,
+	positionMotion,
 	shouldAnimateCardMoves,
 }: Readonly<CreatedCardArrivalMotionProps>) {
 	const hoverInsertion = use(BoardCardHoverInsertionContext);
@@ -96,6 +98,11 @@ export function CreatedCardArrivalMotion({
 		columnTitle,
 	});
 	const cardArrival = resolveBoardCardArrival(arrival, cardCode);
+	const [entranceStarted, setEntranceStarted] = useState(!cardArrival.deferred);
+	const waiting = cardArrival.deferred && !entranceStarted;
+	useLayoutEffect(() => {
+		if (!cardArrival.deferred) setEntranceStarted(true);
+	}, [cardArrival.deferred]);
 	const cardMoveAnimation = getCardMoveAnimation(shouldAnimateCardMoves, cardMovePhase);
 	const handleArrivalComplete = getArrivalCompletionHandler(
 		arrival,
@@ -114,41 +121,52 @@ export function CreatedCardArrivalMotion({
 
 	return (
 		<motion.div
-			animate={cardArrival.entering ? undefined : cardMoveAnimation}
-			className={cn(
-				"flex w-full min-w-0 max-w-[280px] flex-col gap-2 rounded-lg",
-				"transition-[background-color,opacity] duration-normal ease-out-practical motion-reduce:transition-none",
-				getBoardCardInsertionAnchorClassName(insertionPosition),
-				className,
-			)}
-			data-board-agent-session-drop-zone="issue"
-			data-board-agent-session-target={dropTarget ?? undefined}
-			data-board-card-count={cardCount}
-			data-board-card-index={cardIndex}
-			data-board-column-title={columnTitle}
-			data-created-card-arrival-id={cardArrival.arrivalId}
-			data-created-card-arrival-last={cardArrival.final || undefined}
-			data-jira-creating-arrival={cardArrival.entering || undefined}
-			data-issue-key={cardCode}
-			initial={false}
-			style={getCardMoveStyle(cardMovePhase)}
-			transition={getCardMoveTransition(cardMovePhase)}
+			aria-hidden={waiting || undefined}
+			className={cn("w-full min-w-0 max-w-[280px]", waiting ? "hidden" : null)}
+			data-created-card-pending={waiting || undefined}
+			inert={waiting || undefined}
+			layout={cardArrival.entering ? false : positionMotion?.layout}
+			layoutId={cardArrival.entering ? undefined : positionMotion?.layoutId}
+			transition={positionMotion?.transition}
 		>
-			{/*
-			 * The entrance wrapper stays mounted at rest rather than being swapped
-			 * for a fragment when the arrival clears. Changing the child's element
-			 * type would unmount and remount the card, discarding any menu,
-			 * expansion, drag, or focus state the user opened on the brand-new card
-			 * during its entrance.
-			 */}
-			<JiraCreateEntrance
-				active={cardArrival.entering}
-				enterDelayS={enterDelayS}
-				onAnimationComplete={handleArrivalComplete}
+			<motion.div
+				animate={cardArrival.entering ? undefined : cardMoveAnimation}
+				className={cn(
+					"flex w-full min-w-0 max-w-[280px] flex-col gap-2 rounded-lg",
+					"transition-[background-color,opacity] duration-normal ease-out-practical motion-reduce:transition-none",
+					getBoardCardInsertionAnchorClassName(insertionPosition),
+					className,
+				)}
+				data-board-agent-session-drop-zone="issue"
+				data-board-agent-session-target={dropTarget ?? undefined}
+				data-board-card-count={cardCount}
+				data-board-card-index={cardIndex}
+				data-board-column-title={columnTitle}
+				data-created-card-arrival-id={cardArrival.arrivalId}
+				data-created-card-arrival-last={cardArrival.final || undefined}
+				data-jira-creating-arrival={cardArrival.entering || undefined}
+				data-issue-key={cardCode}
+				initial={false}
+				style={getCardMoveStyle(cardMovePhase)}
+				transition={getCardMoveTransition(cardMovePhase)}
 			>
-				{insertionLine}
-				{children}
-			</JiraCreateEntrance>
+				{/*
+				 * The entrance wrapper stays mounted at rest rather than being swapped
+				 * for a fragment when the arrival clears. Changing the child's element
+				 * type would unmount and remount the card, discarding any menu,
+				 * expansion, drag, or focus state the user opened on the brand-new card
+				 * during its entrance.
+				 */}
+				<JiraCreateEntrance
+					active={cardArrival.entering}
+					deferred={waiting}
+					enterDelayS={enterDelayS}
+					onAnimationComplete={handleArrivalComplete}
+				>
+					{insertionLine}
+					{children}
+				</JiraCreateEntrance>
+			</motion.div>
 		</motion.div>
 	);
 }

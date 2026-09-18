@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
+import { readFile } from "node:fs/promises";
 import { verifyInitialTheme } from "./verify-initial-theme.mjs";
 
-const usage = "Usage: verify-runtime.mjs <base-url> [route ...] [--profile static|backend|chat|full] [--check-ads-theme] [--timeout-ms 15000]";
+const usage = "Usage: verify-runtime.mjs <base-url> [route ...] [--profile static|backend|chat|full] [--check-ads-theme] [--expect-html-file path] [--timeout-ms 15000]";
 let baseUrl;
 let profile = "full";
 let timeoutMs = 15000;
 let checkAdsTheme = false;
+let expectHtmlFile;
 const routes = [];
 try {
 	baseUrl = new URL(process.argv[2] || process.env.VPK_DEPLOY_URL);
@@ -18,17 +20,30 @@ try {
 		if (arg === "--profile") profile = process.argv[++index];
 		else if (arg === "--timeout-ms") timeoutMs = Number(process.argv[++index]);
 		else if (arg === "--check-ads-theme") checkAdsTheme = true;
+		else if (arg === "--expect-html-file") {
+			expectHtmlFile = process.argv[++index];
+			if (!expectHtmlFile || expectHtmlFile.startsWith("--")) throw new Error("Expected HTML file path is required");
+		}
 		else if (arg.startsWith("/") && !arg.startsWith("//")) routes.push(arg);
 		else throw new Error("Expected a route starting with / or a supported option");
 	}
 	if (!["static", "backend", "chat", "full"].includes(profile)) throw new Error("Unknown runtime profile");
 	if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 120000) throw new Error("Timeout must be 1–120000 ms");
+	if (expectHtmlFile && routes.length > 1) throw new Error("Expected HTML file can verify only one route");
 } catch (error) {
 	console.error(`${usage}\n${error.message}`);
 	process.exit(2);
 }
 if (!routes.length) routes.push("/");
 const failures = [];
+let expectedHtmlBytes;
+if (expectHtmlFile) {
+	try { expectedHtmlBytes = await readFile(expectHtmlFile); }
+	catch {
+		console.error(`${usage}\nExpected HTML file is unreadable`);
+		process.exit(2);
+	}
+}
 
 // Keep response bodies and URL query strings out of logs: either may contain credentials.
 function safeUrl(url) {
@@ -93,6 +108,10 @@ for (const route of routes) {
 	const routeLabel = route.split(/[?#]/u)[0];
 	const html = await request(route, `route ${routeLabel}`, {}, false, { pattern: /^text\/html\b/iu, name: "HTML" });
 	if (html === undefined) continue;
+	if (expectedHtmlBytes) {
+		if (Buffer.from(html, "utf8").equals(expectedHtmlBytes)) console.log(`route ${routeLabel}: matches expected export HTML`);
+		else failures.push(`route ${routeLabel}: live HTML differs from expected export file`);
+	}
 	const initialTheme = verifyInitialTheme(html, checkAdsTheme);
 	for (const error of initialTheme.errors) failures.push(`route ${routeLabel}: ${error}`);
 	if (initialTheme.checked && !initialTheme.errors.length) console.log(`route ${routeLabel}: initial ADS theme HTML passed`);

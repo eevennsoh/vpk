@@ -52,6 +52,12 @@ test("JiraDropzone defaults ants on and the create well inherits that default", 
 	);
 });
 
+test("the persistent well resizes without projecting its anchored position or scaling its border", () => {
+	assert.match(CREATE_WELL, /layout=\{false\}/u);
+	assert.doesNotMatch(CREATE_WELL, /layout=\{control\.layout\}/u);
+	assert.match(DROPZONE, /reducedMotion: Boolean\(shouldReduceMotion\)/u);
+});
+
 test("the catalog switch defaults ants on and can turn them off", () => {
 	assert.match(PAGE, /const \[ants, setAnts\] = useState\(true\)/u);
 	assert.match(PAGE, /id="jira-dropzone-ants"/u);

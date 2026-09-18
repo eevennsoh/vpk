@@ -4,10 +4,10 @@ import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore } 
 import { createPortal } from "react-dom";
 
 import { AgentSessionCohortChip } from "@/components/blocks/agent-session/agent-session-cohort-chip";
+import { animateSessionChipDrop } from "@/components/blocks/jira-dropzone/lib/session-chip-drop-flight";
 
 import { toJiraLinkingCohort } from "./drop-cohort";
 import {
-	createJiraLinkingGlowDropKeyframes,
 	JIRA_LINKING_GLOW_DEFAULT_COLOR,
 	JIRA_LINKING_GLOW_DROP_DURATION_MS,
 	JIRA_LINKING_GLOW_FADE_DURATION_MS,
@@ -74,7 +74,7 @@ export function JiraLinkingGlow({ identities, release, onFuseSettled, zIndex = 2
 	useLayoutEffect(() => {
 		if (release && release.id !== lastReleaseId.current) {
 			lastReleaseId.current = release.id;
-			const backdrop = release.fromTarget ?? release.target;
+			const backdrop = release.resolveTarget?.() ?? release.fromTarget ?? release.target;
 			const roots = backdrop
 				? resolveJiraIssueGlowRoots(backdrop.anchor)
 				: { backdropRoot: null, haloRoot: null };
@@ -131,6 +131,7 @@ function GlowRelease({ backdropRoot, glowColor, haloRoot, portalRoot, release, s
 	const backdrop = release.fromTarget ?? release.target;
 	const landing = release.target;
 	const drop = release.drop;
+	const resolveTarget = release.resolveTarget;
 
 	useLayoutEffect(() => {
 		if (shouldReduceMotion || !landing || !backdrop) {
@@ -182,41 +183,23 @@ function GlowRelease({ backdropRoot, glowColor, haloRoot, portalRoot, release, s
 			}
 			onSettled(release.id);
 		};
-		const cancelFlight = () => {
-			if (cancelled) return;
-			onSettled(release.id);
-			finish();
-		};
-		if (!drop || !flight) {
-			playGlow();
-			return () => {
-				cancelled = true;
-				haloAnimation?.removeEventListener("finish", finish);
-				haloAnimation?.removeEventListener("cancel", finish);
-				pulseAnimation?.removeEventListener("finish", finish);
-				pulseAnimation?.removeEventListener("cancel", finish);
-				for (const running of animations) running.cancel();
-			};
-		}
-		const animation = flight.animate(createJiraLinkingGlowDropKeyframes(drop.from, landing.anchor), {
-			duration: JIRA_LINKING_GLOW_DROP_DURATION_MS,
-			easing: "linear",
-			fill: "forwards",
-		});
-		animations.push(animation);
-		animation.addEventListener("finish", playGlow, { once: true });
-		animation.addEventListener("cancel", cancelFlight, { once: true });
+		const stopFlight = drop && flight ? animateSessionChipDrop(flight, {
+			durationMs: JIRA_LINKING_GLOW_DROP_DURATION_MS,
+			from: drop.from,
+			onLanded: playGlow,
+			resolveLandingPoint: () => resolveTarget ? resolveTarget()?.anchor ?? null : landing.anchor,
+		}) : null;
+		if (!stopFlight) playGlow();
 		return () => {
 			cancelled = true;
-			animation.removeEventListener("finish", playGlow);
-			animation.removeEventListener("cancel", cancelFlight);
+			stopFlight?.();
 			haloAnimation?.removeEventListener("finish", finish);
 			haloAnimation?.removeEventListener("cancel", finish);
 			pulseAnimation?.removeEventListener("finish", finish);
 			pulseAnimation?.removeEventListener("cancel", finish);
 			for (const running of animations) running.cancel();
 		};
-	}, [backdrop, drop, landing, onComplete, onSettled, release.id, shouldReduceMotion]);
+	}, [backdrop, drop, landing, onComplete, onSettled, release.id, resolveTarget, shouldReduceMotion]);
 
 	if (shouldReduceMotion || !backdrop || !landing) return null;
 	const haloStyle = {

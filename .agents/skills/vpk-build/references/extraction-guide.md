@@ -7,6 +7,7 @@ Use this reference after selecting a route and before approving the scaffold.
 - [Plan interpretation](#plan-interpretation)
 - [Backend-backed exports](#backend-backed-exports)
 - [Scaffold behavior](#scaffold-behavior)
+- [Existing sibling refresh](#existing-sibling-refresh)
 - [Verification and failures](#verification-and-failures)
 - [Ports and local runtime](#ports-and-local-runtime)
 - [Deployment handoff](#deployment-handoff)
@@ -29,7 +30,10 @@ If `backendRouteCount` is nonzero, choose explicitly:
 - Create local fake APIs only when the user asks for a mocked presentation demo.
 
 Non-literal dynamic imports, unresolved dependencies, and cross-route navigation
-also require review before scaffold approval.
+also require review before scaffold approval. A zero `backendRouteCount` does
+not clear runtime `/api/*` fetch warnings: trace can discover calls behind
+shared components without linking backend routes. Check whether the selected
+route reaches those calls and preserve the full backend when it does.
 
 ## Backend-backed exports
 
@@ -114,6 +118,42 @@ The linked skills use relative paths back to VPK and will break if the
 source checkout moves independently. Re-run the scaffold or repair the symlinks
 after such a move.
 
+## Existing sibling refresh
+
+Freeze the selected source Git SHA and checkout state before tracing. Recheck
+both before copying; work that appears later is a separate source selection. The
+trace plan records the Git SHA and dirty state. `scaffold-target.mjs` refuses a
+plan when HEAD differs before it writes the staging target. If the source remains
+dirty, inspect the selected files again because an edit can change their bytes
+without changing the SHA or dirty flag. If the VPK checkout switches branch
+after a staging extract, refresh the sibling from those reviewed staged files
+and keep the selected SHA in its provenance; trace the new branch only when it
+is the intended new release source.
+
+Inspect the sibling's Git status, `.deploy.local` presence, descriptor identity,
+and local launcher before editing. The scaffold refuses `--force` on an existing
+Git checkout or configured service.
+
+Scaffold the plan into a disposable staging directory with `--backend-backed`
+when the route has live API, chat, or realtime behavior. Compare file contents
+or hashes with the sibling; modification times can mark thousands of identical
+files as changed. Copy only reviewed source, CSS, type, asset, dependency-policy,
+and deploy-launcher updates. Preserve the sibling's `.deploy.local`,
+`service-descriptor.yml`, README, `.dockerignore`, `.gitignore`, Git state,
+provider skill links, and unrelated target work. The staging harness generates
+`scripts/dev-backend-backed.mjs` relative to the staging directory; retain or
+regenerate the sibling's own launcher rather than copying that path. Keep the
+full `public/` tree and list old-only files for review before any deletion.
+
+For backend-backed refreshes, compare `backend/`, `lib/`, `rovo/`, and
+`scripts/lib/` against the selected source. Review any changed backend owner
+and security/static-serving behavior before copying it. Run `verify-target.sh`
+in the sibling, then prove its live route, API proxy, URL discovery, and
+WebSocket upgrade. `pnpm install` may update the sibling lockfile after a source
+workspace-policy change; include that reviewed lockfile in the local handoff.
+Update the sibling's existing provenance notes after verification rather than
+replacing them with the staging README.
+
 ## Verification and failures
 
 `verify-target.sh` runs install, typecheck, and build. Diagnose failures at the
@@ -135,9 +175,11 @@ narrowest owner:
 | `JSX.Element` / missing ambient types | Copy `types/*.d.ts`, sibling `lib/*.d.ts`, generate `next-env.d.ts` (no `.next/dev`) and `types/jsx-namespace.d.ts` |
 | `leaflet` / `three` type or runtime miss | Add `leaflet` + `@types/leaflet` with `react-leaflet`, and `@types/three` with `three` |
 | Named fonts fall back | Generated layout lacks the font link |
+| Browser requests `/favicon.ico` with 404 | Generated layout omitted VPK's SVG icon links. Keep the fallback and light/dark links in the extraction harness and copy `public/website/` rather than adding a fake icon file. |
 | Feature-gate console warning | Client shim missing or not mounted |
 | Broken logos/product icons | Full `public` tree not copied |
 | API 404 or mutation 405 | Static server lacks source backend proxy |
+| `pnpm run lint` reports `eslint: command not found` | The minimal target currently has no bundled ESLint binary/config. Run VPK source lint on verbatim copied files; record the target limitation until standalone lint is added to the scaffold contract. |
 | AI works but chat/tour fails | Realtime URL or WebSocket upgrade missing |
 | Agent output diverges | Local fallback/shim or copied source drift |
 | Browser font returns 500 | Same-host CORS rejects browser-shaped request |
@@ -162,6 +204,11 @@ existing frontend or select another port. Preview via `http://localhost:3001`.
 Next may advertise a Network URL on `127.0.2.2`; that origin needs
 `allowedDevOrigins` or `/_next/*` is blocked. Backend-backed `pnpm run dev` must
 start or reuse the source backend as well as the extracted frontend.
+
+After stopping Next dev, inspect the target's ignored `next-env.d.ts`. Next may
+rewrite it with a `.next/dev` reference that the standalone scaffold does not
+need. Restore the two-reference version generated by `scaffold-target.mjs`
+before the final target typecheck or refresh diff.
 
 ## Deployment handoff
 

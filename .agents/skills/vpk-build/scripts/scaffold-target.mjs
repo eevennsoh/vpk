@@ -21,6 +21,7 @@ import path from "node:path";
 import process from "node:process";
 import { execFileSync, execSync } from "node:child_process";
 import { writeBackendDeploymentHarness, writeBackendServiceDescriptor } from "./backend-deploy-harness.mjs";
+import { validateScaffoldTarget } from "./scaffold-target-safety.mjs";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -288,6 +289,9 @@ export default async function RootLayout({
 	return (
 		<html lang="en" className="light" {...getThemeHtmlAttrs(THEME_STATE)} suppressHydrationWarning>
 			<head>
+				<link rel="icon" type="image/svg+xml" sizes="any" href="/website/favicon-fallback.svg" />
+				<link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: light)" href="/website/favicon-dark.svg" />
+				<link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: dark)" href="/website/favicon-light.svg" />
 				{themeStyles.map((style) => (
 					<style
 						key={style.id}
@@ -581,6 +585,23 @@ function main() {
 	const args = parseArgs(process.argv.slice(2));
 	const plan = readJSON(path.resolve(args.plan));
 	const repoRoot = plan.repoRoot;
+	if (plan.sourceRevision) {
+		let currentRevision;
+		let currentDirty;
+		try {
+			const gitOptions = { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
+			currentRevision = execFileSync("git", ["rev-parse", "HEAD"], gitOptions).trim();
+			currentDirty = Boolean(execFileSync("git", ["status", "--porcelain"], gitOptions).trim());
+		} catch {
+			throw new Error("Could not verify the source Git revision recorded by the trace plan");
+		}
+		if (currentRevision !== plan.sourceRevision) {
+			throw new Error("Source Git revision changed since tracing. Re-run the trace before scaffolding.");
+		}
+		if (typeof plan.sourceWasDirty === "boolean" && currentDirty !== plan.sourceWasDirty) {
+			console.error("Source working-tree state changed since tracing; review that change before using this extract.");
+		}
+	}
 	const route = plan.route;
 	const routeSlug = route.replace(/^\//, "").replace(/\//g, "-");
 	const targetName = `vpk-${routeSlug}`;
@@ -588,16 +609,7 @@ function main() {
 		? path.resolve(args.target)
 		: path.resolve(repoRoot, "..", targetName);
 
-	// Refuse to clobber unless --force, but only if the target already has
-	// content. An empty directory is fine to reuse.
-	if (fs.existsSync(targetDir)) {
-		const contents = fs.readdirSync(targetDir);
-		if (contents.length > 0 && !args.force) {
-			throw new Error(
-				`Target directory ${targetDir} is not empty. Pass --force to overwrite.`,
-			);
-		}
-	}
+	validateScaffoldTarget(targetDir, args.force);
 	ensureDir(targetDir);
 
 	console.error(`Scaffolding ${targetName} at ${targetDir}`);

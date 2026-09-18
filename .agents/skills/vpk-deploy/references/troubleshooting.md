@@ -20,6 +20,7 @@ until its prerequisite is repaired.
 | `stash get` is unavailable | Use `atlas micros stash list`; do not print values |
 | ALB reports insufficient IP space | Measure subnet capacity before considering `pdev-apse2` |
 | Micros remains `CREATE_IN_PROGRESS` | Follow deployment events; allow reconciliation lag |
+| EC2 hot swap times out after a successful image push | Inspect the failed SSM command, current compute node, disk, and registered images before selecting a smaller image or retrying |
 | Same-origin browser requests fail but localhost Origin works | Check running origin settings and SSM mappings, not descriptor literals alone |
 | Font fetch succeeds but fallback font renders | Inspect CSP events, external stylesheet, and the used font face |
 | Page is unstyled until JavaScript runs | Check initial HTML theme activation; prove rendering with app scripts blocked |
@@ -225,9 +226,13 @@ requests their destination. JSON readiness/token failures, timeouts, and static
 request failures are labeled; a pass still does not prove chat or WSS/audio.
 
 For functional proof, use one non-sensitive tool-free chat turn and, when
-applicable, a real token-backed WSS connection with prompt cleanup. Do not log
-tokens, send audio, or exercise mutating tools as part of an unrequested probe.
-A 101 upgrade proves transport only; report untested audio separately.
+applicable, a real token-backed WSS connection with prompt cleanup. Run
+`verify-wss.mjs <deployed-HTTPS-origin>`; it obtains the scoped token without
+printing it and closes after the upgrade. For an extracted localhost preview,
+use `--discovery --allow-tokenless-dev` to prove the URL and upgrade proxy when
+local runtime-admin tokens are disabled. Do not send audio or exercise mutating
+tools as part of an unrequested probe. A 101 upgrade proves transport only;
+report untested audio separately.
 
 ### External source VPK dependency
 
@@ -246,6 +251,63 @@ visible hittable row, hovering the target to reveal Create, and performing an
 atomic drag succeeded. Verify source removal, target count, and dropzone cleanup,
 then reload to reset synthetic state. Record fresh console/accessibility checks
 and inspect desktop/narrow screenshots under ignored `output/agent-browser/`.
+
+## EC2 hot-swap timeout and compact recovery
+
+A successful Docker push and `sd.buildNumber` update do not prove that the new
+image runs. In the 2026-09-18 Team EU26 refresh, the full image was pushed,
+then Micros returned `EC2 hot-swap failed` for an SSM command. The stack became
+`UPDATE_FAILED`, while the previous image still served `/`, `/api/health`, fonts,
+and the full HTTP profile. The failed command reported `ExecutionTimedOut`; the
+node had free disk and had not registered the new image. Timeout alone did not
+prove a disk-full cause. The subsequent 6.7 MB frontend layer succeeded and
+retained the prior installed dependency layer.
+
+Read the command ID from the Micros error, then use the Micros CLI's read-only
+views and built-in diagnostics before assuming a broader AWS role:
+
+```bash
+"$VPK_ATLAS_BIN" micros compute command show -s "$SERVICE_NAME" -e "$ENV" -c <command-id> -o json
+"$VPK_ATLAS_BIN" micros compute show -s "$SERVICE_NAME" -e "$ENV"
+"$VPK_ATLAS_BIN" micros compute command docs -s "$SERVICE_NAME" -e "$ENV" -d MICROS-df
+"$VPK_ATLAS_BIN" micros compute command run -s "$SERVICE_NAME" -e "$ENV" \
+  --document MICROS-df -i <current-instance-id> -y -t 120
+"$VPK_ATLAS_BIN" micros compute command run -s "$SERVICE_NAME" -e "$ENV" \
+  --document MICROS-docker-daemon-images -i <current-instance-id> -y -t 120
+```
+
+Both documents read state; run them only on an instance currently returned by
+`compute show`. A transient rollout node can disappear after failure and make
+an SSM probe time out. The Team EU26 service role lacked AWS
+`ssm:GetCommandInvocation`; use owner-level Micros diagnostics first. If those
+checks cannot identify the boundary, seek the required read-only role access
+rather than treating a timed-out SSM command as proof of one cause.
+
+Use `plan-frontend-delta.mjs` before a compact frontend recovery. Extract
+the prior verified image's runtime, static files, and root package/lockfile
+inputs to a temporary directory. The planner compares `backend/`, `lib/`,
+`rovo/`, and `scripts/lib/worktree-ports.js` file contents, target descriptor service identity,
+root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.npmrc`, and new
+`out/` files. It refuses a frontend-only candidate when runtime files differ.
+A dependency-input difference means the candidate inherits prior installed
+packages. Build the full image when the selected release requires new packages;
+for a reviewed frontend-only release, explicitly accept and report the prior
+layer with `--accept-prior-dependencies`. The Team EU26 target's lockfile and
+workspace policy differed from its compact image's prior base in this run.
+
+The planner's `--apply` mode writes only changed/new export files, an immutable
+prior-digest Dockerfile, and a manifest for review. Keep source paths, list
+old-only files, and inspect candidate HTML/new chunks against `out/`. Do not
+copy a staging checkout's descriptor or backend launcher into the image.
+Build/push a new `linux/amd64` tag and use the
+[guarded manual hot-swap path](guide-manual-deployment.md#compact-frontend-image-after-a-full-image-ec2-timeout).
+
+After Micros reports success, require `UPDATE_COMPLETE` and the expected
+`sd.buildNumber` from `micros service show -o json`. For an extracted static
+root, run `verify-runtime.mjs <origin> / --expect-html-file out/index.html`
+before browser checks. This catches the older healthy image that remained live
+after the failed attempt. Events for a reused deployment ID can show only the
+original creation and cannot prove the new image state.
 
 ## ALB subnet exhaustion
 

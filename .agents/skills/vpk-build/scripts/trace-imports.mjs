@@ -14,9 +14,10 @@
  *   node trace-imports.mjs /awake --out .cache/awake.plan.json
  *
  * Output (JSON): { route, entry, files, npmPackages, assets, cssImports,
- *                  backendRoutes, warnings }
+ *                  backendRoutes, sourceRevision, sourceWasDirty, warnings }
  */
 
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -83,6 +84,18 @@ function findRepoRoot(startDir) {
 		dir = path.dirname(dir);
 	}
 	throw new Error(`Could not find VPK repo root from ${startDir}`);
+}
+
+function sourceGitState(repoRoot) {
+	try {
+		const options = { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
+		return {
+			revision: execFileSync("git", ["rev-parse", "HEAD"], options).trim(),
+			dirty: Boolean(execFileSync("git", ["status", "--porcelain"], options).trim()),
+		};
+	} catch {
+		return { revision: null, dirty: null };
+	}
 }
 
 // -------- Path resolution -----------------------------------------------
@@ -465,7 +478,7 @@ function collectLocalCssImportsFromText(cssText, fromDir) {
 	return found;
 }
 
-function buildPlan({ route, repoRoot, trace: t }) {
+function buildPlan({ route, repoRoot, trace: t, gitState }) {
 	const manifest = readJSON(path.join(repoRoot, "package.json"));
 	const catalog = readPnpmCatalog(repoRoot);
 
@@ -551,6 +564,8 @@ function buildPlan({ route, repoRoot, trace: t }) {
 	return {
 		route,
 		repoRoot,
+		sourceRevision: gitState.revision,
+		sourceWasDirty: gitState.dirty,
 		entry: path.relative(repoRoot, t.pagePath),
 		layout: t.layoutPath ? path.relative(repoRoot, t.layoutPath) : null,
 		files: allFiles,
@@ -581,8 +596,16 @@ function buildPlan({ route, repoRoot, trace: t }) {
 function main() {
 	const args = parseArgs(process.argv.slice(2));
 	const repoRoot = args.repo ? path.resolve(args.repo) : findRepoRoot(process.cwd());
+	const selectedGitState = sourceGitState(repoRoot);
 	const result = trace({ route: args.route, repoRoot });
-	const plan = buildPlan({ route: args.route, repoRoot, trace: result });
+	const plan = buildPlan({ route: args.route, repoRoot, trace: result, gitState: selectedGitState });
+	const finalGitState = sourceGitState(repoRoot);
+	if (selectedGitState.revision && finalGitState.revision !== selectedGitState.revision) {
+		throw new Error("Source Git revision changed while tracing. Re-run the trace from the intended checkout.");
+	}
+	if (selectedGitState.dirty !== finalGitState.dirty) {
+		console.error("Source working-tree state changed while tracing; review the selected files before scaffolding.");
+	}
 
 	const json = JSON.stringify(plan, null, 2);
 	if (args.out) {

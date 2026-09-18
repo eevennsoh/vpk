@@ -109,6 +109,12 @@ export function useJiraDropzoneReceive(): (receipt: SessionDropReceipt) => JiraD
 	return useJiraDropzoneField().receive;
 }
 
+/** Read playback without registering a second owner for the target channel. */
+export function useJiraDropzoneReceiving(title: string | undefined): boolean {
+	const context = use(JiraDropzoneFieldContext);
+	return context && title !== undefined ? isReceiving(context.state.channels.get(title)) : false;
+}
+
 export function useJiraDropzoneField(): JiraDropzoneFieldContextValue {
 	const context = use(JiraDropzoneFieldContext);
 	if (!context) {

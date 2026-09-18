@@ -360,7 +360,7 @@ test("Jira cards animate surrounding reflow when a session attach chin opens", (
 	);
 	assert.match(
 		BOARD_SOURCE,
-		/layout=\{shouldAnimateCardLayout \? "position" : false\}/u,
+		/layout: shouldAnimateCardLayout \? "position" : false/u,
 	);
 	assert.doesNotMatch(
 		BOARD_SOURCE,
@@ -368,7 +368,7 @@ test("Jira cards animate surrounding reflow when a session attach chin opens", (
 	);
 	assert.match(
 		BOARD_SOURCE,
-		/transition=\{shouldAnimateCardPosition \? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT\}/u,
+		/transition: shouldAnimateCardPosition \? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT/u,
 	);
 	assert.match(CARD_SOURCE, /parentOwnsLayout/u);
 	assert.match(JIRA_ISSUE_SOURCE, /parentOwnsLayout\?: boolean;/u);
@@ -531,5 +531,6 @@ test("the assign menu only acknowledges on glow, and never asks for a sweep", ()
 		/if \(shouldReduceMotion \|\| !drop \|\| !landing \|\| !backdrop\)/,
 		"a click-to-assign release omits drop and must still play the halo",
 	);
-	assert.match(GLOW_SOURCE, /if \(!drop \|\| !flight\) \{\s*playGlow\(\);/u);
+	assert.match(GLOW_SOURCE, /const stopFlight = drop && flight \? animateSessionChipDrop\(/u);
+	assert.match(GLOW_SOURCE, /if \(!stopFlight\) playGlow\(\);/u);
 });

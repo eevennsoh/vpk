@@ -40,11 +40,13 @@ test("a card outside the live arrival stays at rest", async () => {
 	assert.deepEqual(resolveBoardCardArrival(undefined, "PAY-1"), {
 		arrivalId: undefined,
 		entering: false,
+		deferred: false,
 		final: false,
 	});
 	assert.deepEqual(resolveBoardCardArrival(arrival(), "PAY-9"), {
 		arrivalId: undefined,
 		entering: false,
+		deferred: false,
 		final: false,
 	});
 });
@@ -77,4 +79,13 @@ test("the last card of an arrival owns the completion handshake", async () => {
 	assert.equal(resolveBoardCardArrival(batch, "PAY-1").final, false);
 	assert.equal(resolveBoardCardArrival(batch, "PAY-1").entering, true);
 	assert.equal(resolveBoardCardArrival(batch, "PAY-2").final, true);
+});
+
+test("a receipt defers only its arriving cards and preserves their completion ownership", async () => {
+	const { resolveBoardCardArrival } = await loadArrivalHarness();
+	const pending = arrival({ deferred: true });
+	assert.equal(resolveBoardCardArrival(pending, "PAY-1").deferred, true);
+	assert.equal(resolveBoardCardArrival(pending, "PAY-1").final, true);
+	assert.equal(resolveBoardCardArrival(pending, "PAY-9").deferred, false);
+	assert.equal(resolveBoardCardArrival({ ...pending, deferred: false }, "PAY-1").deferred, false);
 });

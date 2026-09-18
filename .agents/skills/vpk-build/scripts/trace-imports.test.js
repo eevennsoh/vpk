@@ -240,6 +240,27 @@ export default function Page() {
 	}
 }
 
+test("trace plan records the selected Git revision and working-tree state", () => {
+	const fixture = createMinimalRepo();
+	try {
+		execFileSync("git", ["init", "-q"], { cwd: fixture.repoRoot });
+		execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: fixture.repoRoot });
+		execFileSync("git", ["config", "user.name", "Test User"], { cwd: fixture.repoRoot });
+		execFileSync("git", ["add", "-A"], { cwd: fixture.repoRoot });
+		execFileSync("git", ["commit", "-q", "-m", "initial"], { cwd: fixture.repoRoot });
+		const revision = execFileSync("git", ["rev-parse", "HEAD"], { cwd: fixture.repoRoot, encoding: "utf8" }).trim();
+		const cleanPlan = runTrace(fixture.repoRoot, "/demo", fixture.planPath);
+		assert.equal(cleanPlan.sourceRevision, revision);
+		assert.equal(cleanPlan.sourceWasDirty, false);
+		writeFile(path.join(fixture.repoRoot, "app", "demo", "panel.module.css"), ".panel { display: grid; }\n");
+		const dirtyPlan = runTrace(fixture.repoRoot, "/demo", fixture.planPath);
+		assert.equal(dirtyPlan.sourceRevision, revision);
+		assert.equal(dirtyPlan.sourceWasDirty, true);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
 test("trace-imports resolves catalog: versions and host-package peers", () => {
 	const fixture = createMinimalRepo();
 

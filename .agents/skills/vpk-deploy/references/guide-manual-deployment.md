@@ -3,11 +3,13 @@
 Use the canonical deploy script unless it cannot cover the requested operation.
 These commands expose the same current contract for diagnosis or a controlled
 manual run. They mutate registry and Micros state; do not run them for a status
-request.
+request. Run the manual blocks in Bash with `set -euo pipefail`; a failed
+identity/stash guard must stop the operation before image or Micros mutation.
 
 ## Inputs
 
 ```bash
+set -euo pipefail
 SERVICE_NAME="your-service-name"
 ENV="pdev-west2"
 VERSION="1.0.1"
@@ -206,9 +208,70 @@ Follow the returned deployment ID to a final state and confirm the expected
 image/runtime configuration through status plus actual Origin/functional checks.
 For hot swap, service status must show the expected version and
 `UPDATE_COMPLETE`; events for a reused deployment ID may show only the original
-creation. Record the prior successful image version/digest before an update.
+creation. For an extracted static root, also run `verify-runtime.mjs` with
+`--expect-html-file out/index.html`; the prior image can still answer healthy
+HTTP checks after an `UPDATE_FAILED` attempt. Record the prior successful image
+version/digest before an update.
 For a runtime regression, the guarded existing-image procedure above can
 restore that version; review any changed stashes/configuration as well.
 If Micros rejects the mode, diagnose its stated preconditions; do not retry with
 check bypasses. The config-only repair in Team EU26 proved origin propagation
 before the later CSP code change needed a new image.
+
+### Compact frontend image after a full-image EC2 timeout
+
+For a new timeout, follow [EC2 timeout diagnosis](troubleshooting.md#ec2-hot-swap-timeout-and-compact-recovery)
+first. When the same service has a documented prior full-image timeout, a
+reviewed frontend-only release can use this guarded path before another full
+image attempt. This path applies only when the selected target's `backend/`,
+`lib/`, `rovo/`, and `scripts/lib/worktree-ports.js` files are byte-identical to
+the previous verified image and the requested change is in the exported
+frontend. Compare the entire runtime file set, excluding the image's static
+`backend/public/` and test/data files. If runtime code differs, use the full
+backend build and review those changes instead.
+
+Extract only the verified prior image's `/app/backend`, `/app/lib`,
+`/app/rovo`, `/app/scripts/lib/worktree-ports.js`, and root `package.json`, `pnpm-lock.yaml`,
+`pnpm-workspace.yaml`, and `.npmrc` into a temporary prior-image root. The
+backend copy includes its static `backend/public/`. Review the immutable prior
+registry digest, then run the dry plan:
+
+```bash
+node .agents/skills/vpk-deploy/scripts/plan-frontend-delta.mjs \
+  <target-root> <prior-image-root> \
+  --base-image docker.atl-paas.net/<service>@sha256:<verified-prior-digest>
+```
+
+The planner checks service identity, full runtime file parity, root dependency
+inputs, and changed/new `out/` files by content. It lists old-only files for
+review; old Next chunks may remain when the new HTML no longer references them.
+If the dependency inputs differ, a frontend layer retains the previous installed
+packages. Use a full image for a requested dependency refresh. For an approved
+frontend-only release, record that inherited dependency layer and explicitly
+add `--accept-prior-dependencies` when writing the candidate:
+
+```bash
+node .agents/skills/vpk-deploy/scripts/plan-frontend-delta.mjs \
+  <target-root> <prior-image-root> \
+  --base-image docker.atl-paas.net/<service>@sha256:<verified-prior-digest> \
+  --out <empty-overlay-dir> --apply
+```
+
+Add `--accept-prior-dependencies` only after that review. The planner writes a
+context containing changed export files, a plan JSON beside it, and a Dockerfile
+beside it. Build and push that exact context with a new Docker-tag-safe version:
+
+```bash
+docker buildx build --platform linux/amd64 \
+  -f <empty-overlay-dir>.Dockerfile \
+  -t "docker.atl-paas.net/$SERVICE_NAME:app-$VERSION" \
+  --load <empty-overlay-dir>
+docker push "docker.atl-paas.net/$SERVICE_NAME:app-$VERSION"
+```
+
+Inspect the candidate image's `backend/public/index.html` and representative
+new chunks against the selected `out/` before deployment. Run the
+service/descriptor/stash guards under Bash before the manual `--mode=hot-swap`
+command above. Confirm `UPDATE_COMPLETE`, expected `sd.buildNumber`, and exact
+live export HTML. A `101` WebSocket upgrade and a tool-free chat turn are
+separate runtime checks.

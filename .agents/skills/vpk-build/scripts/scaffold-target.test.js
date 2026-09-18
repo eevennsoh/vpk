@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { execFileSync } = require("node:child_process");
+const { execFileSync, spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -61,6 +61,9 @@ export default function AwakePage() {
 			path.join(repoRoot, "public", "3p", "google-drive", "16-borderless.svg"),
 			"<svg />\n",
 		);
+		for (const favicon of ["favicon-fallback.svg", "favicon-dark.svg", "favicon-light.svg"]) {
+			writeFile(path.join(repoRoot, "public", "website", favicon), "<svg width=\"32\" />\n");
+		}
 		writeFile(
 			planPath,
 			JSON.stringify(
@@ -157,6 +160,9 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(layout, /const themeStyles = await getThemeStyles\(THEME_STATE\);/);
 		assert.match(layout, /import \{ getThemeHtmlAttrs \} from "@atlaskit\/tokens\/get-theme-html-attrs";/);
 		assert.match(layout, /<html[^>]*\{\.\.\.getThemeHtmlAttrs\(THEME_STATE\)\}/);
+		assert.match(layout, /href="\/website\/favicon-fallback\.svg"/);
+		assert.match(layout, /media="\(prefers-color-scheme: light\)" href="\/website\/favicon-dark\.svg"/);
+		assert.match(layout, /media="\(prefers-color-scheme: dark\)" href="\/website\/favicon-light\.svg"/);
 		assert.doesNotMatch(layout, /next\/script/);
 		assert.doesNotMatch(layout, /clientShim/);
 		assert.doesNotMatch(layout, /fonts\.googleapis\.com\/css2/);
@@ -186,6 +192,10 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 			"<svg />\n",
 		);
 		assert.equal(
+			fs.readFileSync(path.join(fixture.targetDir, "public", "website", "favicon-fallback.svg"), "utf8"),
+			"<svg width=\"32\" />\n",
+		);
+		assert.equal(
 			fs.readFileSync(path.join(fixture.targetDir, "app", "tailwind-theme.css"), "utf8"),
 			":root { --fixture-color: #fff; }\n",
 		);
@@ -208,6 +218,46 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		);
 		assert.match(jsxNamespace, /namespace JSX/);
 		assert.match(jsxNamespace, /type Element = ReactJSX\.Element/);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+test("--force refuses to overwrite an owned checkout or configured deployment", () => {
+	for (const signal of [".git", ".deploy.local", "service-descriptor.yml"]) {
+		const fixture = createFixture();
+		try {
+			const marker = path.join(fixture.targetDir, "README.md");
+			writeFile(marker, "preserve target notes\n");
+			if (signal === ".git") fs.mkdirSync(path.join(fixture.targetDir, ".git"));
+			else if (signal === ".deploy.local") writeFile(path.join(fixture.targetDir, signal), "SERVICE_NAME=example\n");
+			else writeFile(path.join(fixture.targetDir, signal), "image: docker.atl-paas.net/example-service\n");
+
+			const result = spawnSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir, "--force"], {
+				encoding: "utf8",
+			});
+			assert.notEqual(result.status, 0, `${signal} must protect the target`);
+			assert.match(result.stderr, /existing checkout or configured deployment/u);
+			assert.equal(fs.readFileSync(marker, "utf8"), "preserve target notes\n");
+		} finally {
+			fixture.cleanup();
+		}
+	}
+});
+
+test("scaffold refuses a trace plan from a different source Git revision before writing", () => {
+	const fixture = createFixture();
+	try {
+		const plan = JSON.parse(fs.readFileSync(fixture.planPath, "utf8"));
+		plan.sourceRevision = "0".repeat(40);
+		plan.sourceWasDirty = false;
+		fs.writeFileSync(fixture.planPath, JSON.stringify(plan));
+		const result = spawnSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir], {
+			encoding: "utf8",
+		});
+		assert.notEqual(result.status, 0);
+		assert.match(result.stderr, /Source Git revision changed since tracing/u);
+		assert.equal(fs.existsSync(fixture.targetDir), false);
 	} finally {
 		fixture.cleanup();
 	}

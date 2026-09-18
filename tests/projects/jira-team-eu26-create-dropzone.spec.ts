@@ -1,7 +1,28 @@
+import { execFileSync } from "node:child_process";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+const origin = (process.env.PLAYWRIGHT_BASE_URL
+	?? execFileSync(process.execPath, [".agents/skills/vpk-verify/scripts/control-vpk", "url"], { encoding: "utf8" }).trim())
+	.replace(/\/$/u, "");
 const project = process.env.PLAYWRIGHT_JIRA_PROJECT ?? "jira-team-eu26";
+
+interface CreateFlightFrame {
+	chipY: number;
+	copy: string | null;
+	distanceToTarget: number;
+	opacity: number;
+	pendingCardSafe: boolean;
+	projectionY: number;
+	scale: number;
+	targetHeight: number;
+}
+
+interface CreatedCardEntranceFrame {
+	deferred: boolean;
+	opacity: number;
+	scale: number;
+	slotHeight: number;
+}
 
 test("columns hug their cards and keep creation visible outside the scrollport", async ({ page }) => {
 	await openBoard(page);
@@ -95,6 +116,165 @@ async function openBoard(page: Page) {
 	await expect(source).toBeVisible();
 	return source;
 }
+
+for (const [reducedMotion, columnState] of [
+	["no-preference", "filled"],
+	["reduce", "filled"],
+	["no-preference", "empty"],
+	["reduce", "empty"],
+	["no-preference", "center"],
+] as const) {
+	test(`a dropped session flies into an open well before restoring creation (${columnState}, ${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		const source = await openBoard(page);
+		await page.setViewportSize({ width: 1440, height: columnState === "empty" ? 1100 : 760 });
+		const column = page.locator('[data-jira-kanban-column="To do"]');
+		const cards = column.locator("[data-issue-key]");
+		if (columnState === "empty") {
+			await page.getByRole("button", { name: "Filter board by Venn", exact: true }).click();
+			const expand = page.getByRole("button", { name: "Expand To do column", exact: true });
+			if (await expand.isVisible()) {
+				await expand.focus();
+				await page.keyboard.press("Enter");
+			}
+			await expect(cards).toHaveCount(0);
+		}
+		const initialCount = await cards.count();
+		const initialKeys = await cards.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-issue-key")));
+		const button = column.locator('[data-jira-dropzone-control="To do"]');
+		const resting = (await button.boundingBox())!;
+		await startDrag(page, source, await page.locator("[data-jira-kanban-card-list]").count());
+		const sensor = (await column.locator("[data-create-work-item-proximity]").boundingBox())!;
+		await page.mouse.move(sensor.x + sensor.width / 2, sensor.y + (columnState === "center" ? sensor.height / 2 : sensor.height - 8), { steps: 5 });
+		await expect(column.locator('[data-board-agent-session-drop-zone="create"]')).toHaveAttribute("data-armed", "true");
+		const openHeight = Math.max(64, sensor.height);
+		await expect.poll(async () => (await button.boundingBox())!.height).toBeCloseTo(openHeight, 0);
+		await page.evaluate(() => {
+			const trace = { running: true, frames: [] as CreateFlightFrame[], cards: [] as CreatedCardEntranceFrame[] };
+			Object.assign(window, { completeCreateFlightTrace: trace });
+			const started = performance.now();
+			function sample() {
+				const button = document.querySelector('[data-jira-dropzone-control="To do"]')!;
+				const target = button.getBoundingClientRect();
+				const transform = getComputedStyle(button).transform;
+				const card = document.querySelector('[data-jira-kanban-column="To do"] [data-jira-creating-arrival="true"]');
+				const pending = card?.closest("[data-created-card-pending]");
+				if (card) {
+					const content = card.querySelector('[data-slot="jira-creating-card"]')!;
+					const cardTransform = getComputedStyle(content).transform;
+					trace.cards.push({
+						deferred: pending !== null,
+						opacity: Number(getComputedStyle(content).opacity),
+						scale: cardTransform === "none" ? 1 : new DOMMatrixReadOnly(cardTransform).m11,
+						slotHeight: card.querySelector('[data-slot="jira-creating-slot"]')!.getBoundingClientRect().height,
+					});
+				}
+				for (const flight of document.querySelectorAll('[data-jira-dropzone-flight]')) {
+					const chip = flight.firstElementChild!.getBoundingClientRect();
+					const flightTransform = getComputedStyle(flight).transform;
+					trace.frames.push({
+						chipY: (chip.top + chip.bottom) / 2,
+						copy: button.querySelector("[data-jira-dropzone-copy-motion]")!.getAttribute("data-jira-dropzone-copy-motion"),
+						distanceToTarget: Math.hypot((chip.left + chip.right - target.left - target.right) / 2, (chip.top + chip.bottom - target.top - target.bottom) / 2),
+						opacity: Number(getComputedStyle(flight).opacity),
+						pendingCardSafe: Boolean(pending && getComputedStyle(pending).display === "none" && pending.hasAttribute("inert") && pending.getAttribute("aria-hidden") === "true"),
+						projectionY: transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42,
+						scale: flightTransform === "none" ? 1 : new DOMMatrixReadOnly(flightTransform).m11,
+						targetHeight: target.height,
+					});
+				}
+				if (trace.running && performance.now() - started < 5000) requestAnimationFrame(sample);
+			}
+			requestAnimationFrame(sample);
+		});
+		await page.mouse.up();
+		if (columnState === "center") {
+			const flights = page.locator("[data-jira-dropzone-flight]");
+			await flights.evaluateAll((roots) => roots.forEach((root) => root.getAnimations().forEach((animation) => {
+				animation.pause();
+				animation.currentTime = 120;
+			})));
+			await page.screenshot({ path: "output/agent-browser/dropzone-motion-side/create-drop-in-progress.png" });
+			const box = (await button.boundingBox())!;
+			await page.screenshot({ path: "output/agent-browser/dropzone-motion-side/create-drop-chip.png", clip: { x: box.x - 12, y: box.y - 44, width: box.width + 24, height: box.height + 60 } });
+			await flights.evaluateAll((roots) => roots.forEach((root) => root.getAnimations().forEach((animation) => animation.play())));
+		}
+		await expect(cards).toHaveCount(initialCount + 1);
+		await expect(source).toHaveCount(0);
+		await expect(page.locator("[data-jira-dropzone-flight]")).toHaveCount(0);
+		const createdKey = (await cards.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-issue-key"))))
+			.find((key) => !initialKeys.includes(key));
+		expect(createdKey).toBeTruthy();
+		const created = column.locator(`[data-issue-key="${createdKey}"]`);
+		await expect(created).toBeVisible();
+		await expect(created).not.toHaveAttribute("data-jira-creating-arrival", "true");
+		expect(await created.evaluate((node) => node.closest('[inert], [aria-hidden="true"]') === null)).toBe(true);
+		await expect(button).toHaveCSS("height", "24px");
+		await expect(button).toHaveAttribute("aria-label", "Create in To do");
+		const trace = await page.evaluate(() => {
+			const trace = (window as typeof window & { completeCreateFlightTrace: { running: boolean; frames: CreateFlightFrame[]; cards: CreatedCardEntranceFrame[] } }).completeCreateFlightTrace;
+			trace.running = false;
+			return { frames: trace.frames, cards: trace.cards };
+		});
+		const { frames } = trace;
+		const { mkdir, writeFile } = await import("node:fs/promises");
+		await mkdir("output/agent-browser/dropzone-motion-side", { recursive: true });
+		await writeFile(`output/agent-browser/dropzone-motion-side/complete-create-flight-${columnState}-${reducedMotion}.json`, JSON.stringify(trace, null, 2));
+		if (reducedMotion === "no-preference") {
+			expect(frames.length).toBeGreaterThan(2);
+			const visibleFrames = frames.filter((frame) => frame.opacity > 0.01);
+			expect(visibleFrames.length).toBeGreaterThan(2);
+			expect(visibleFrames.every((frame) => frame.copy === "label" && frame.targetHeight >= openHeight - 0.5 && frame.pendingCardSafe && Math.abs(frame.projectionY) <= 0.1)).toBe(true);
+			if (columnState !== "center") expect(frames[0].distanceToTarget).toBeGreaterThan(4);
+			expect(Math.min(...frames.map((frame) => frame.chipY))).toBeLessThan(frames[0].chipY - 12);
+			expect(frames.some((frame) => frame.opacity > 0.01 && frame.opacity < 0.99 && frame.scale < 0.99)).toBe(true);
+			expect(frames.at(-1)!.distanceToTarget).toBeLessThan(10);
+			expect(trace.cards.some((card) => !card.deferred && card.slotHeight > 0 && card.scale > 0.8 && card.scale < 1)).toBe(true);
+			expect(trace.cards.some((card) => !card.deferred && card.opacity > 0 && card.opacity < 1)).toBe(true);
+		}
+		if (columnState !== "empty") {
+			await expect.poll(async () => (await button.boundingBox())!.y + 24).toBeCloseTo(resting.y + resting.height, 0);
+		} else {
+			expect((await button.boundingBox())!.y).toBeGreaterThan(resting.y);
+		}
+	});
+}
+
+test("a second creation drop preserves a card whose entrance already started", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	const source = await openBoard(page);
+	await page.setViewportSize({ width: 1440, height: 760 });
+	const column = page.locator('[data-jira-kanban-column="To do"]');
+	const cards = column.locator("[data-issue-key]");
+	const before = await cards.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-issue-key")));
+	const drop = async (row: Locator) => {
+		await startDrag(page, row);
+		const sensor = (await column.locator("[data-create-work-item-proximity]").boundingBox())!;
+		await page.mouse.move(sensor.x + sensor.width / 2, sensor.y + sensor.height - 8, { steps: 5 });
+		await expect(column.locator('[data-jira-dropzone-control="To do"]')).toHaveCSS("height", "64px");
+		await page.mouse.up();
+	};
+	await drop(source);
+	await expect(page.locator("[data-jira-dropzone-flight]")).toHaveCount(0);
+	const key = (await cards.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-issue-key"))))
+		.find((value) => !before.includes(value));
+	const first = column.locator(`[data-issue-key="${key}"]`);
+	await expect(first).toBeVisible();
+	const content = first.locator('[data-slot="jira-creating-card"]');
+	await content.evaluate((node) => node.getAnimations().forEach((animation) => { animation.pause(); animation.currentTime = 80; }));
+	await expect(first).toHaveAttribute("data-jira-creating-arrival", "true");
+	await drop(page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-kickoff-killswitch-session"));
+	await expect(page.locator("[data-jira-dropzone-flight]")).toHaveCount(1);
+	const stayedVisible = await first.isVisible();
+	const stayedReachable = await first.evaluate((node) => node.closest('[inert], [aria-hidden="true"]') === null);
+	await content.evaluate((node) => node.getAnimations().forEach((animation) => animation.play()));
+	await expect(page.locator("[data-jira-dropzone-flight]")).toHaveCount(0);
+	await expect(cards).toHaveCount(before.length + 2);
+	await expect(column.locator('[data-created-card-pending]')).toHaveCount(0);
+	await expect(column.getByRole("button", { name: "Create in To do" })).toHaveCSS("height", "24px");
+		expect(stayedVisible).toBe(true);
+		expect(stayedReachable).toBe(true);
+});
 
 async function startDrag(page: Page, source: Locator, createTargetCount = 4) {
 	await source.scrollIntoViewIfNeeded();
@@ -567,6 +747,18 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		expect(sensorBox.height).toBe(64);
 		expect(sensorBox.y + sensorBox.height).toBeCloseTo(bottom, 0);
 		const x = sensorBox.x + sensorBox.width / 2;
+		await page.evaluate(() => {
+			const trace = { running: true, projectionY: [] as number[] };
+			Object.assign(window, { bottomAnchoredWellTrace: trace });
+			const started = performance.now();
+			function sample() {
+				const button = document.querySelector('[data-jira-dropzone-control="In review"]')!;
+				const transform = getComputedStyle(button).transform;
+				trace.projectionY.push(transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42);
+				if (trace.running && performance.now() - started < 10000) requestAnimationFrame(sample);
+			}
+			requestAnimationFrame(sample);
+		});
 		await page.mouse.move(x, sensorBox.y - 12, { steps: 8 });
 		await expect(well).toHaveAttribute("data-proximity", "near");
 		await expect.poll(async () => (await well.boundingBox())!.height).toBe(64);
@@ -589,6 +781,13 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 
 		await expect(button).toBeVisible();
 		await expect.poll(() => button.boundingBox()).toEqual(buttonBox);
+		const projectionY = await page.evaluate(() => {
+			const trace = (window as typeof window & { bottomAnchoredWellTrace: { running: boolean; projectionY: number[] } }).bottomAnchoredWellTrace;
+			trace.running = false;
+			return trace.projectionY;
+		});
+		expect(projectionY.length).toBeGreaterThan(10);
+		expect(Math.max(...projectionY.map(Math.abs))).toBeLessThanOrEqual(0.1);
 	});
 }
 
@@ -686,7 +885,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await writeFile(`output/agent-browser/dropzone-motion-side/contained-copy-${reducedMotion}.json`, JSON.stringify(frames, null, 2));
 		await page.screenshot({ path: `output/agent-browser/dropzone-motion-side/contained-copy-${reducedMotion}.png` });
 		expect(frames.length).toBeGreaterThan(20);
-		if (reducedMotion === "no-preference") expect(frames.some((frame) => frame.buttonTransform !== "none")).toBe(true);
+		expect(frames.every((frame) => frame.buttonTransform === "none")).toBe(true);
 		expect(Math.max(...frames.map((frame) => frame.overhang)), JSON.stringify(frames.filter((frame) => frame.overhang > 1.5).slice(0, 4))).toBeLessThanOrEqual(1.5);
 		expect(Math.max(...frames.map((frame) => frame.copies))).toBeLessThanOrEqual(1);
 		expect(Math.max(...frames.map((frame) => frame.delta))).toBeLessThanOrEqual(1.5);
@@ -701,12 +900,14 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(button).toHaveCSS("height", "24px");
 		const original = (await button.elementHandle())!;
 		await page.evaluate(() => {
-			const trace = { stage: "enter", frames: [] as { stage: string; kind: string; opacity: number; offset: number; height: number; nativeHeight: number; stale: boolean }[], running: true };
+			const trace = { stage: "enter", frames: [] as { stage: string; kind: string; opacity: number; offset: number; height: number; nativeHeight: number; stale: boolean; addOpacity: number; labelOpacity: number }[], running: true };
 			Object.assign(window, { sharedControlTrace: trace });
 			const started = performance.now();
 			function sample() {
 				for (const copy of document.querySelectorAll('[data-jira-dropzone-control="To do"] [data-jira-dropzone-copy-motion]')) {
 					const style = getComputedStyle(copy);
+					const add = copy.querySelector('[data-jira-dropzone-copy-layer="add"]');
+					const label = copy.querySelector('[data-jira-dropzone-copy-layer="label"]');
 					const control = document.querySelector<HTMLElement>('[data-jira-dropzone-control="To do"]')!;
 					trace.frames.push({
 						stage: trace.stage,
@@ -714,11 +915,13 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 						height: control.getBoundingClientRect().height,
 						nativeHeight: control.offsetHeight,
 						stale: copy.getAttribute("data-jira-dropzone-copy-motion") !== (control.getAttribute("aria-label")?.startsWith("Drop to create work item") ? "label" : "add"),
-						opacity: Number(style.opacity),
+							opacity: Number(style.opacity),
+							addOpacity: add ? Number(getComputedStyle(add).opacity) : 0,
+							labelOpacity: label ? Number(getComputedStyle(label).opacity) : 0,
 						offset: style.transform === "none" ? 0 : new DOMMatrixReadOnly(style.transform).m42,
 					});
 				}
-				if (trace.running && performance.now() - started < 5000) requestAnimationFrame(() => setTimeout(sample, 0));
+				if (trace.running && performance.now() - started < 10000) requestAnimationFrame(() => setTimeout(sample, 0));
 			}
 			requestAnimationFrame(() => setTimeout(sample, 0));
 		});
@@ -759,7 +962,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(button.locator('[data-jira-dropzone-copy-motion="label"]')).toHaveCount(0);
 		await expect(button.locator('[data-jira-dropzone-copy-motion="add"]')).toHaveCSS("opacity", "1");
 		const frames = await page.evaluate(() => {
-			const trace = (window as typeof window & { sharedControlTrace: { running: boolean; frames: { stage: string; kind: string; opacity: number; offset: number; height: number; nativeHeight: number; stale: boolean }[] } }).sharedControlTrace;
+			const trace = (window as typeof window & { sharedControlTrace: { running: boolean; frames: { stage: string; kind: string; opacity: number; offset: number; height: number; nativeHeight: number; stale: boolean; addOpacity: number; labelOpacity: number }[] } }).sharedControlTrace;
 			trace.running = false;
 			return trace.frames;
 		});
@@ -769,7 +972,13 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		if (reducedMotion === "reduce") {
 			expect(frames.every((frame) => Math.abs(frame.offset) < 0.01)).toBe(true);
 		} else {
-			expect(frames.some((frame) => frame.stage === "expand" && frame.height > 33 && frame.height < frame.nativeHeight - 1)).toBe(true);
+			expect(frames.some((frame) => frame.stage === "enter" && frame.height > 24 && frame.height < 32)).toBe(true);
+			expect(frames.some((frame) => frame.stage === "expand" && frame.height > 32.1 && frame.height < sensorBox.height - 0.1)).toBe(true);
+			expect(frames.some((frame) => frame.stage === "exit" && frame.height > 24 && frame.height < 32)).toBe(true);
+			for (const stage of ["enter", "exit"]) {
+				expect(frames.some((frame) => frame.stage === stage && frame.addOpacity > 0.01 && frame.addOpacity < 0.99 && frame.labelOpacity > 0.01 && frame.labelOpacity < 0.99)).toBe(true);
+			}
+			expect(frames.every((frame) => Math.abs(frame.height - frame.nativeHeight) < 0.6)).toBe(true);
 			expect(frames.every((frame) => frame.opacity === 1 && Math.abs(frame.offset) < 0.01)).toBe(true);
 		}
 	});
