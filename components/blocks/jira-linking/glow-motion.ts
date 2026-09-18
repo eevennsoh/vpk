@@ -1,11 +1,12 @@
 import type { JiraLinkingPoint } from "./drop";
 import {
 	createSessionChipDropKeyframes,
+	SESSION_CHIP_DROP_DURATION_MS,
 	// @ts-expect-error Node's strip-types runner requires the explicit .ts extension.
 } from "../jira-dropzone/lib/jira-dropzone-motion.ts";
 
 /** Exact recipe from agentic-jira-board's animateUnattachedSessionDropToCard. */
-export const JIRA_LINKING_GLOW_DROP_DURATION_MS = 260;
+export const JIRA_LINKING_GLOW_DROP_DURATION_MS = SESSION_CHIP_DROP_DURATION_MS;
 export const JIRA_LINKING_GLOW_FADE_DURATION_MS = 420;
 export const JIRA_LINKING_GLOW_PULSE_DURATION_MS = 800;
 export const JIRA_LINKING_GLOW_DEFAULT_COLOR = "var(--ds-border-focused)";
@@ -27,12 +28,12 @@ export function resolveJiraLinkingGlowSettleMs(
 	return JIRA_LINKING_GLOW_DROP_DURATION_MS;
 }
 
-/** Centers are viewport coordinates. X stays at release, matching the source. */
+/** Centers are viewport coordinates; converge from the released cursor in both axes. */
 export function createJiraLinkingGlowDropKeyframes(
 	from: JiraLinkingPoint,
 	landing: JiraLinkingPoint,
 ): Keyframe[] {
-	return createSessionChipDropKeyframes(from, landing);
+	return createSessionChipDropKeyframes(from, landing, "landing");
 }
 
 function clampChannel(channel: number): number {

@@ -8,12 +8,12 @@ const {
 	resolveJiraLinkingGlowSettleMs,
 } = require("./glow-motion.ts");
 
-test("Glow samples the reference drop at 60 steps with fixed release X", () => {
+test("Glow flies from the released cursor to the target center", () => {
 	const frames = createJiraLinkingGlowDropKeyframes({ x: 30, y: 100 }, { x: 200, y: 300 });
 	assert.equal(frames.length, 61);
 	assert.deepEqual(frames[0], { offset: 0, transform: "translate3d(30px, 100px, 0) scale(1)", opacity: 1 });
-	assert.deepEqual(frames[60], { offset: 1, transform: "translate3d(30px, 308px, 0) scale(0.65)", opacity: 0 });
-	for (const frame of frames) assert.match(frame.transform, /^translate3d\(30px,/);
+	assert.deepEqual(frames[60], { offset: 1, transform: "translate3d(200px, 300px, 0) scale(0.65)", opacity: 0 });
+	assert.ok(Number(frames[30].transform.match(/translate3d\(([\d.-]+)px/)[1]) > 30);
 });
 
 test("Glow reaches its 20px lift at 40 percent, then accelerates down", () => {

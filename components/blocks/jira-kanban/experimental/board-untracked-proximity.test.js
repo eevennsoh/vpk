@@ -531,5 +531,6 @@ test("the assign menu only acknowledges on glow, and never asks for a sweep", ()
 		/if \(shouldReduceMotion \|\| !drop \|\| !landing \|\| !backdrop\)/,
 		"a click-to-assign release omits drop and must still play the halo",
 	);
-	assert.match(GLOW_SOURCE, /if \(!drop \|\| !flight\) \{\s*playGlow\(\);/u);
+	assert.match(GLOW_SOURCE, /const stopFlight = drop && flight \? animateSessionChipDrop\(/u);
+	assert.match(GLOW_SOURCE, /if \(!stopFlight\) playGlow\(\);/u);
 });

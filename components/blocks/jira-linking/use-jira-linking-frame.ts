@@ -79,6 +79,8 @@ export interface JiraLinkingRelease {
 	/** Monotonic, so a second drop on the same target restarts the fuse. */
 	id: number;
 	target: JiraLinkingTarget | null;
+	/** Live destination geometry after layout or scrolling moves the target. */
+	resolveTarget?: () => JiraLinkingTarget | null;
 	/**
 	 * Shape the fuse starts from, when the landing shape differs from the one the
 	 * approach grew into.
