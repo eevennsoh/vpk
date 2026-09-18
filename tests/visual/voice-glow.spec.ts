@@ -4,6 +4,28 @@ import { expect, test } from "@playwright/test";
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${readFileSync(".dev-frontend-port", "utf8").trim()}`;
 test.use({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
 
+test("reset and switching to simulation clear stale microphone denial messages", async ({ page }) => {
+	await page.addInitScript(() => {
+		navigator.mediaDevices.getUserMedia = () => new Promise((_resolve, reject) => {
+			Object.defineProperty(window, "rejectVoiceGlowPermission", { value: reject, configurable: true });
+		});
+	});
+	await page.goto(`${BASE_URL}/preview/visual/voice-glow`);
+	const demo = page.locator("[data-voice-glow-demo]");
+	const rejectPermission = () => page.evaluate(() => Reflect.get(window, "rejectVoiceGlowPermission")(new DOMException("Permission denied", "NotAllowedError")));
+	await demo.getByRole("button", { name: "Use microphone", exact: true }).click();
+	await expect(demo.getByRole("button", { name: "Requesting microphone…", exact: true })).toBeVisible();
+	await demo.getByRole("button", { name: "Reset", exact: true }).click();
+	await rejectPermission();
+	await expect(demo.getByRole("status")).toContainText("Simulated voice input");
+	await expect(demo.getByRole("button", { name: "Use microphone", exact: true })).toBeEnabled();
+	await demo.getByRole("button", { name: "Use microphone", exact: true }).click();
+	await rejectPermission();
+	await expect(demo.getByRole("status")).toHaveText("Permission denied");
+	await demo.getByRole("switch", { name: "Simulated voice", exact: true }).click();
+	await expect(demo.getByRole("status")).toContainText("Simulated voice input");
+});
+
 test("simulated voice rises and settles by default without requesting microphone access", async ({ page }) => {
 	await page.addInitScript(() => {
 		navigator.mediaDevices.getUserMedia = async () => { throw new Error("Unexpected microphone request"); };

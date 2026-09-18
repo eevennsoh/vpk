@@ -63,6 +63,10 @@ Reproduction: start with a pending prompt, reset or navigate away, then grant
 permission. Upstream retains the late stream. The demo’s
 `use-voice-glow-microphone.ts` invalidates that request and stops every track
 on resolution, with focused asynchronous coverage in `data.test.ts`. The
+demo only displays microphone errors while denied/error states are current;
+reset and switching back to simulation hide errors from cancelled requests.
+The browser suite covers delayed denial after reset as well as a current
+denial followed by simulation. The
 original upstream hook remains exported unchanged for API compatibility.
 Remove the demo guard once upstream cancels late requests itself.
 

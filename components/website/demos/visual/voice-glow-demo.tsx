@@ -34,6 +34,7 @@ export default function VoiceGlowDemo() {
 	const theme = config.theme === "auto" ? actualTheme : config.theme;
 	const defaults = resolveVoiceGlowNumbers(config, actualTheme);
 	const mic = useVoiceGlowMicrophone();
+	const microphoneError = mic.state === "denied" || mic.state === "error" ? mic.error : null;
 	const simulation = useVoiceGlowSimulation(simulateVoice, config.level ?? 0.5);
 	const changeSimulation = (enabled: boolean) => {
 		mic.stop();
@@ -65,7 +66,7 @@ export default function VoiceGlowDemo() {
 				<Button variant="ghost" onClick={reset}>Reset</Button>
 			</div>
 			<p className="text-sm text-text-subtle" role="status">
-				{mic.error ? mic.error.message : mic.state === "live" ? "Microphone active. Speak to drive the glow; manual intensity is ignored." : simulateVoice ? "Simulated voice input. The glow rises and settles with speech-like bursts." : "Adjust manual intensity to preview the glow, or enable simulated voice."}
+				{microphoneError ? microphoneError.message : mic.state === "live" ? "Microphone active. Speak to drive the glow; manual intensity is ignored." : simulateVoice ? "Simulated voice input. The glow rises and settles with speech-like bursts." : "Adjust manual intensity to preview the glow, or enable simulated voice."}
 			</p>
 			<GUI.Panel title="Voice Glow controls" values={{ ...defaults, ...config, colors, bandColors }}>
 				<VoiceGlowControls config={config} defaults={defaults} update={update} simulateVoice={simulateVoice} onSimulateVoiceChange={changeSimulation} />
