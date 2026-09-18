@@ -286,7 +286,7 @@ rather than treating a timed-out SSM command as proof of one cause.
 Use `plan-frontend-delta.mjs` before a compact frontend recovery. Extract
 the prior verified image's runtime, static files, and root package/lockfile
 inputs to a temporary directory. The planner compares `backend/`, `lib/`,
-`rovo/`, and `scripts/lib/` file contents, target descriptor service identity,
+`rovo/`, and `scripts/lib/worktree-ports.js` file contents, target descriptor service identity,
 root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.npmrc`, and new
 `out/` files. It refuses a frontend-only candidate when runtime files differ.
 A dependency-input difference means the candidate inherits prior installed

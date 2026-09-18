@@ -4,7 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const usage = "Usage: plan-frontend-delta.mjs <target-root> <prior-image-root> --base-image docker.atl-paas.net/<service>@sha256:<digest> [--out <overlay-dir> --apply] [--accept-prior-dependencies]";
-const runtimeRoots = ["backend", "lib", "rovo", "scripts/lib"];
+// Match backend/Dockerfile's application source COPY inputs, excluding dependencies.
+const runtimeRoots = ["backend", "lib", "rovo", "scripts/lib/worktree-ports.js"];
 const dependencyInputs = ["package.json", "backend/package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc"];
 let targetRoot;
 let priorRoot;
@@ -48,7 +49,12 @@ try {
 function collect(root, relativeRoot, excluded = () => false) {
 	const files = new Map();
 	const start = path.join(root, relativeRoot);
-	if (!fs.existsSync(start) || !fs.statSync(start).isDirectory()) return files;
+	if (!fs.existsSync(start)) return files;
+	if (fs.statSync(start).isFile()) {
+		files.set(relativeRoot, start);
+		return files;
+	}
+	if (!fs.statSync(start).isDirectory()) return files;
 	function walk(directory, relativeDirectory) {
 		for (const entry of fs.readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
 			const relative = path.join(relativeDirectory, entry.name);
@@ -71,7 +77,8 @@ function sameFile(left, right) {
 
 function excludedRuntime(relative) {
 	const normalized = relative.split(path.sep).join("/");
-	return normalized === "backend/public" || normalized.startsWith("backend/public/")
+	return normalized.split("/").some((part) => ["node_modules", ".git", ".next", ".pnpm-store", ".venv", "output"].includes(part))
+		|| normalized === "backend/public" || normalized.startsWith("backend/public/")
 		|| normalized === "backend/data" || normalized.startsWith("backend/data/")
 		|| /\.test\.[cm]?[jt]s$/u.test(path.basename(relative))
 		|| path.basename(relative).endsWith(".tsbuildinfo");

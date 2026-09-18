@@ -21,7 +21,7 @@ function fixture(t) {
 	const prior = path.join(root, "prior");
 	const overlay = path.join(root, "overlay");
 	write(target, "service-descriptor.yml", "image: docker.atl-paas.net/example-service\n");
-	for (const relative of ["backend/app.js", "lib/util.js", "rovo/config.js", "scripts/lib/port.js",
+	for (const relative of ["backend/app.js", "lib/util.js", "rovo/config.js", "scripts/lib/worktree-ports.js",
 		"package.json", "backend/package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc"]) {
 		write(target, relative, `${relative}: same\n`);
 		write(prior, relative, `${relative}: same\n`);
@@ -63,6 +63,20 @@ test("blocks frontend-only recovery when runtime files differ", (t) => {
 	assert.equal(result.status, 1, result.stdout + result.stderr);
 	assert.match(result.stderr, /Runtime file parity failed/u);
 	assert.ok(!fs.existsSync(f.overlay));
+});
+
+test("compares the Docker runtime copy set and ignores installed dependency trees", (t) => {
+	const f = fixture(t);
+	write(f.target, "scripts/lib/checkout-only.js", "not copied by backend/Dockerfile\n");
+	write(f.target, "backend/node_modules/example/index.js", "installed dependency\n");
+	fs.symlinkSync("example", path.join(f.target, "backend/node_modules/package-link"));
+	const result = run(f);
+	assert.equal(result.status, 0, result.stdout + result.stderr);
+	assert.match(result.stdout, /"runtimeFilesChecked": 5/u);
+	write(f.target, "scripts/lib/worktree-ports.js", "changed copied runtime helper\n");
+	const blocked = run(f);
+	assert.equal(blocked.status, 1);
+	assert.match(blocked.stderr, /Runtime file parity failed/u);
 });
 
 test("requires explicit review when the prior dependency layer differs", (t) => {
