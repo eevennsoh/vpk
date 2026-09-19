@@ -309,3 +309,25 @@ test("the between-card create marker escapes the card-list clip", async ({ page 
 		await page.mouse.up();
 	}
 });
+
+for (const flag of ["jiraWorkItemOpen", "jiraPulseOpen"] as const) {
+	test(`temporarily hidden chat preserves host focus on ${flag} remount`, async ({ page }) => {
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
+		const composer = page.getByRole("textbox", { name: "Chat message input" });
+		await expect(composer).toBeFocused();
+		await page.evaluate((key) => { document.documentElement.dataset[key] = "true"; }, flag);
+		await expect(composer).toBeHidden();
+		const restored = page.getByRole("button", { name: "Settings", exact: true });
+		await restored.focus();
+		await page.evaluate((key) => { delete document.documentElement.dataset[key]; }, flag);
+		await expect(composer).toBeVisible();
+		await expect(restored).toBeFocused();
+		await page.waitForTimeout(250);
+		await expect(restored).toBeFocused();
+		await page.locator('[data-rovo-chat-placement="floating"]').getByRole("button", { name: "Close", exact: true }).click();
+		await expect(composer).toBeHidden();
+		await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
+		await expect(composer).toBeFocused();
+	});
+}
