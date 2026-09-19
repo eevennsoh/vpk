@@ -5,6 +5,7 @@
 
 const express = require("express");
 const path = require("node:path");
+const { registerStaticExportServing } = require("./lib/static-export-serving");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -14,12 +15,9 @@ app.get("/api/health", (_req, res) => {
 	res.json({ status: "ok", time: new Date().toISOString() });
 });
 
-app.use(express.static(STATIC_DIR));
-
-// SPA-ish fallback: any unmatched GET returns the root index.html so the
-// static export's client-side routing can take over.
-app.get(/.*/, (_req, res) => {
-	res.sendFile(path.join(STATIC_DIR, "index.html"));
+registerStaticExportServing(app, {
+	expressImpl: express,
+	publicPath: STATIC_DIR,
 });
 
 app.listen(PORT, () => {

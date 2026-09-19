@@ -69,6 +69,7 @@ function createFixture(options = {}) {
 		".agents/skills/vpk-deploy/scripts/deploy.sh",
 		".agents/skills/vpk-deploy/scripts/verify-initial-theme.mjs",
 		"scripts/dev-deploy-fast.sh",
+		"scripts/prepare-static-export.mjs",
 	]) {
 		cpSync(path.join(REPO_ROOT, relativePath), path.join(root, relativePath));
 	}

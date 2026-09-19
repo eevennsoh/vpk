@@ -1,9 +1,11 @@
 "use client";
 
 import { useMotionValue, useSpring } from "motion/react";
+import { useRef } from "react";
 
 import { measureSessionDragChipPointer } from "@/components/blocks/jira-issue/agent-session-drag";
 import type { PointerDragPosition } from "@/components/ui-custom/hooks/use-pointer-drag";
+import { stepPeelSurfaceTravel, type PeelSurfaceTravel } from "@/components/visual/peel/peel-geometry";
 
 const SESSION_DRAG_CHIP_POINTER_SPRING = {
 	damping: 26,
@@ -20,26 +22,45 @@ const SESSION_DRAG_CHIP_POINTER_SPRING = {
 export function useSessionDragChipPointer(shouldReduceMotion: boolean | null) {
 	const pointerX = useMotionValue(0);
 	const pointerY = useMotionValue(0);
+	const originX = useMotionValue(0);
+	const direction = useMotionValue(0);
+	const travel = useRef<PeelSurfaceTravel>({ direction: 0, extremeX: 0 });
 	const springX = useSpring(pointerX, SESSION_DRAG_CHIP_POINTER_SPRING);
 	const springY = useSpring(pointerY, SESSION_DRAG_CHIP_POINTER_SPRING);
 	const x = shouldReduceMotion ? pointerX : springX;
 	const y = shouldReduceMotion ? pointerY : springY;
 
-	function snapToPointer(pointer: PointerDragPosition, host?: HTMLElement | null) {
-		const next = sessionDragPointerInContainingBlock(pointer, host);
+	function snapResolvedPointer(next: PointerDragPosition) {
 		pointerX.jump(next.x);
 		pointerY.jump(next.y);
 		springX.jump(next.x);
 		springY.jump(next.y);
 	}
 
+	function beginGesture(pointer: PointerDragPosition, host?: HTMLElement | null) {
+		const next = sessionDragPointerInContainingBlock(pointer, host);
+		originX.jump(next.x);
+		direction.jump(0);
+		travel.current.direction = 0;
+		travel.current.extremeX = next.x;
+		snapResolvedPointer(next);
+	}
+
+	function snapToPointer(pointer: PointerDragPosition, host?: HTMLElement | null) {
+		const next = sessionDragPointerInContainingBlock(pointer, host);
+		direction.set(stepPeelSurfaceTravel(travel.current, next.x));
+		snapResolvedPointer(next);
+	}
+
 	function followPointer(pointer: PointerDragPosition, host?: HTMLElement | null) {
 		const next = sessionDragPointerInContainingBlock(pointer, host);
+		direction.set(stepPeelSurfaceTravel(travel.current, next.x));
 		pointerX.set(next.x);
 		pointerY.set(next.y);
 	}
 
-	return { followPointer, snapToPointer, x, y };
+	// Lighting follows user travel; the visual follower may recoil after input stops.
+	return { beginGesture, followPointer, snapToPointer, originX, direction, x, y };
 }
 
 function sessionDragPointerInContainingBlock(

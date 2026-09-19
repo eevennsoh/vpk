@@ -202,7 +202,12 @@ vpk_verify_export() {
     echo "❌ Missing $theme_verifier; sync the deployment helpers from the intended VPK checkout"
     return 1
   fi
-  node "$theme_verifier" out/index.html --if-present
+  node "$theme_verifier" out/index.html --if-present || return 1
+  if [ ! -f scripts/prepare-static-export.mjs ]; then
+    echo "❌ Missing scripts/prepare-static-export.mjs; refresh the extraction harness before packaging"
+    return 1
+  fi
+  node scripts/prepare-static-export.mjs out --compress --report output/export-inventory.json
 }
 
 vpk_build_image() {

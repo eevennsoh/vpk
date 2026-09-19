@@ -5,6 +5,15 @@ export function writeBackendServiceDescriptor(targetDir) {
 	fs.copyFileSync(new URL("../references/scaffold/backend-backed-service-descriptor.yml", import.meta.url), path.join(targetDir, "service-descriptor.yml"));
 }
 
+/** Both deployment shapes use the canonical static delivery implementation. */
+export function writeStaticDeliveryHarness(repoRoot, targetDir) {
+	for (const relative of ["backend/lib/static-export-serving.js", "backend/lib/static-asset-delivery.js", "scripts/prepare-static-export.mjs"]) {
+		const destination = path.join(targetDir, relative);
+		fs.mkdirSync(path.dirname(destination), { recursive: true });
+		fs.copyFileSync(path.join(repoRoot, relative), destination);
+	}
+}
+
 /** Add the canonical deploy inputs without replacing extracted application source. */
 export function writeBackendDeploymentHarness({ repoRoot, targetDir, packageManager, buildPolicy }) {
 	if (!packageManager?.startsWith("pnpm@") || !buildPolicy) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type WheelEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInView } from "motion/react";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
@@ -14,7 +14,6 @@ import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +35,7 @@ function MetadataDot() {
 }
 
 /**
- * Where the session runs — icon only. The tooltip names the host; the
+ * Where the session runs — icon only, with an accessible host label. The
  * timestamp sits beside this mark so the byline never prints "Cloud" or
  * "Local".
  *
@@ -48,46 +47,19 @@ function MetadataDot() {
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean }>) {
 	const label = isLocal ? "Local session" : "Cloud session";
-	const triggerRef = useRef<HTMLSpanElement>(null);
-
-	const handleTooltipWheel = (event: WheelEvent<HTMLDivElement>) => {
-		// The popup is portalled outside the column, so native wheel bubbling cannot
-		// reach the scroll owner. Keep the tooltip hoverable and forward only when
-		// this particular trigger belongs to an Agent Session column.
-		const scrollport = triggerRef.current?.closest<HTMLElement>(
-			"[data-agent-session-column-scrollport]",
-		);
-		if (scrollport === undefined || scrollport === null) {
-			return;
-		}
-
-		event.preventDefault();
-		scrollport.scrollBy({ left: event.deltaX, top: event.deltaY });
-	};
 
 	return (
-		<Tooltip>
-			<TooltipTrigger
-				render={
-					<span
-						aria-label={label}
-						className="grid size-4 shrink-0 place-items-center text-icon-subtlest"
-						ref={triggerRef}
-						role="img"
-						tabIndex={0}
-					/>
-				}
-			>
-				{isLocal ? (
-					<ScreenIcon color="currentColor" label="" size="small" />
-				) : (
-					<CloudIcon color="currentColor" label="" size="small" />
-				)}
-			</TooltipTrigger>
-			<TooltipContent onWheel={handleTooltipWheel} positionerClassName="z-[600]">
-				{label}
-			</TooltipContent>
-		</Tooltip>
+		<span
+			aria-label={label}
+			className="grid size-4 shrink-0 place-items-center text-icon-subtlest"
+			role="img"
+		>
+			{isLocal ? (
+				<ScreenIcon color="currentColor" label="" size="small" />
+			) : (
+				<CloudIcon color="currentColor" label="" size="small" />
+			)}
+		</span>
 	);
 }
 

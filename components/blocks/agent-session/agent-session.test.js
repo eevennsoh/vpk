@@ -138,12 +138,11 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.match(METADATA_SOURCE, /import ScreenIcon from "@atlaskit\/icon\/core\/screen";/u);
 	assert.match(METADATA_SOURCE, /export function AgentSessionHostSegment[\s\S]*isLocal \? \(\s*<ScreenIcon color="currentColor" label="" size="small" \/>\s*\) : \(\s*<CloudIcon color="currentColor" label="" size="small" \/>\s*\)/u);
 	assert.match(METADATA_SOURCE, /const label = isLocal \? "Local session" : "Cloud session";/u);
-	assert.match(METADATA_SOURCE, /triggerRef\.current\?\.closest<HTMLElement>[\s\S]*scrollport\.scrollBy\([\s\S]*<TooltipContent onWheel=\{handleTooltipWheel\}/u);
 	assert.match(
 		METADATA_SOURCE,
-		/<TooltipTrigger[\s\S]*render=\{\s*<span[\s\S]*aria-label=\{label\}[\s\S]*className="grid size-4 shrink-0 place-items-center text-icon-subtlest"[\s\S]*role="img"[\s\S]*tabIndex=\{0\}/u,
+		/<span\s+aria-label=\{label\}\s+className="grid size-4 shrink-0 place-items-center text-icon-subtlest"\s+role="img"/u,
 	);
-	assert.doesNotMatch(METADATA_SOURCE, /<TooltipTrigger[\s\S]*<button/u);
+	assert.doesNotMatch(METADATA_SOURCE, /Tooltip|tabIndex|handleTooltipWheel/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "host"/u);
 	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`[\s\S]*export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*underline-offset-2 hover:underline[\s\S]*\{pullRequestLabel\}/u);

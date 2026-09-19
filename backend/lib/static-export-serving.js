@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { createPrecompressedMiddleware, sendPrecompressedFile, setStaticCacheHeaders } = require("./static-asset-delivery");
 
 const FALLBACK_HTML = `<!DOCTYPE html>
 <html>
@@ -121,7 +122,7 @@ function createStaticExportFallbackHandler({
 	publicPath,
 } = {}) {
 	requirePublicPath(publicPath);
-	return function staticExportFallbackHandler(req, res) {
+	return async function staticExportFallbackHandler(req, res, next) {
 		logger.log?.(`[STATIC] Request for route: ${req.path}`);
 
 		if (req.path.startsWith("/api/")) {
@@ -135,6 +136,12 @@ function createStaticExportFallbackHandler({
 		}
 
 		const indexPath = pathModule.join(publicPath, "index.html");
+		setStaticCacheHeaders(res, indexPath, pathModule.resolve(publicPath));
+		try {
+			if (await sendPrecompressedFile(req, res, indexPath, pathModule.resolve(publicPath))) return;
+		} catch (error) {
+			return next(error);
+		}
 		res.sendFile(indexPath, (err) => {
 			if (err) {
 				logger.log?.(`[STATIC] index.html not found at ${indexPath}`);
@@ -167,7 +174,10 @@ function registerStaticExportServing(app, {
 		logger.log?.(`[STARTUP] Preload Link header: ${preloadLinkHeader}`);
 	}
 
-	app.use(expressImpl.static(publicPath));
+	app.use(createPrecompressedMiddleware(publicPath));
+	app.use(expressImpl.static(publicPath, {
+		setHeaders: (res, filePath) => setStaticCacheHeaders(res, filePath, pathModule.resolve(publicPath)),
+	}));
 	app.get("/{*splat}", createStaticExportFallbackHandler({
 		logger,
 		pathModule,

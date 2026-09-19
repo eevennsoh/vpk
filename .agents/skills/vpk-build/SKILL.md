@@ -33,6 +33,8 @@ backend behavior.
 - Preserve repo-relative source paths and copy source files verbatim where
   possible; put extraction-specific behavior in the target harness.
 - Copy the full `public/` tree because runtime data can reference untraced assets.
+- Preserve optional UI loading boundaries. Fix shared runtime/interaction hot
+  paths in VPK source; extraction reports and packages the selected behavior.
 - Resolve `catalog:` against the source `pnpm-workspace.yaml` catalog when
   writing the target `package.json`. The sibling is not a pnpm workspace.
 - Copy the source token-free `.npmrc` so `@atlassian/*` registry routing works.
@@ -131,7 +133,13 @@ retain the full public asset tree. See [extraction guide](references/extraction-
 .agents/skills/vpk-build/scripts/verify-target.sh <target-dir>
 ```
 
-This runs install, typecheck, and build in the extracted project. Resolve
+This runs install, typecheck, the supported static export build, and an export
+inventory in the extracted project. The report under `output/export-inventory.json`
+lists HTML-referenced Next.js JS/CSS/fonts and largest assets separately from
+all packaged files. Missing referenced assets fail verification. These are file
+sizes, not browser transfer or latency measurements. Preserve the full public
+tree and dynamic-import boundaries; use the trace for dependency provenance and
+profile the real route before pruning or changing optional surfaces. Resolve
 failures at their owner: dependency versions in target `package.json`, missing
 graph edges in the plan/trace, source parity in copied files, and CSS/runtime
 setup in the generated harness. If a copied CSS file exists and the bundler
@@ -159,6 +167,14 @@ After verification passes, enter the sibling project and invoke
 `vpk-deploy --initial`. Subsequent deployments use `pnpm run deploy:micros` once
 `.deploy.local` exists. Use the full backend deployment shape for any app with
 live API, SSE, or WebSocket dependencies.
+
+Both deployment shapes carry the canonical static-serving modules and
+`scripts/prepare-static-export.mjs`. Build verification reports the raw export;
+deployment prepares compression and verifies actual delivery. Keep development
+compilation/Fast Refresh measurements separate from warm UI interactions and
+production load measurements. Use the shared
+[UI performance workflow](../../docs/playbooks/improve-ui-performance.md) for
+repeatable baseline/treatment conditions and keep/neutral/revert decisions.
 
 ## Validation
 
