@@ -68,7 +68,8 @@ function git(root, args) {
 function tree(root, revision) {
 	return new Map(git(root, ["ls-tree", "-r", "-z", revision]).split("\0").filter(Boolean).map((row) => {
 		const separator = row.indexOf("\t");
-		return [row.slice(separator + 1), row.slice(0, separator).split(" ")[2]];
+		const [mode, , blob] = row.slice(0, separator).split(" ");
+		return [row.slice(separator + 1), { blob, mode: parseInt(mode, 8) & 0o777 }];
 	}));
 }
 
@@ -101,18 +102,20 @@ function planRefresh(planFile, stageDir, targetDir, baseline) {
 		if (preserved.has(relative)) { manifest.preserved.push(relative); continue; }
 		const next = fingerprint(stagedFile);
 		const current = target.has(relative) ? fingerprint(target.get(relative)) : null;
-		if (next.sha256 === current?.sha256) continue;
-		if (!copyable(relative) || fingerprint(stagedFile, objectFormat).blob !== selected.get(relative)) {
+		if (next.sha256 === current?.sha256 && next.mode === current.mode) continue;
+		const selectedFile = selected.get(relative);
+		const previousFile = previous.get(relative);
+		if (!copyable(relative) || fingerprint(stagedFile, objectFormat).blob !== selectedFile?.blob || next.mode !== selectedFile.mode) {
 			manifest.manualReview.push(relative);
 			continue;
 		}
-		if (selected.get(relative) === previous.get(relative)) {
+		if (selectedFile.blob === previousFile?.blob && selectedFile.mode === previousFile.mode) {
 			if (current) manifest.localOverrides.push(relative);
 			else manifest.manualReview.push(relative);
 			continue;
 		}
-		const item = { path: relative, bytes: next.bytes, mode: next.mode, stageSha256: next.sha256, targetSha256: current?.sha256 ?? null };
-		if (current ? fingerprint(target.get(relative), objectFormat).blob === previous.get(relative) : !previous.has(relative)) {
+		const item = { path: relative, bytes: next.bytes, mode: next.mode, stageSha256: next.sha256, targetSha256: current?.sha256 ?? null, targetMode: current?.mode ?? null };
+		if (current ? (fingerprint(target.get(relative), objectFormat).blob === previousFile?.blob && current.mode === previousFile.mode) : !previous.has(relative)) {
 			manifest.copy.push(item);
 		} else manifest.overlaps.push(item);
 	}
@@ -139,8 +142,10 @@ function applyRefresh(manifestFile) {
 		if (!Number.isInteger(item.mode) || item.mode < 0 || item.mode > 0o777) throw new Error("Invalid staged file mode");
 		checkAncestorLinks(stageRoot, item.path);
 		checkAncestorLinks(targetRoot, item.path);
-		if (fingerprint(path.join(stageRoot, item.path))?.sha256 !== item.stageSha256
-			|| (fingerprint(path.join(targetRoot, item.path))?.sha256 ?? null) !== item.targetSha256) {
+		const staged = fingerprint(path.join(stageRoot, item.path));
+		const target = fingerprint(path.join(targetRoot, item.path));
+		if (staged?.sha256 !== item.stageSha256 || staged?.mode !== item.mode
+			|| (target?.sha256 ?? null) !== item.targetSha256 || (target?.mode ?? null) !== item.targetMode) {
 			throw new Error(`Source or target changed after review: ${item.path}`);
 		}
 	};

@@ -129,3 +129,31 @@ test("generated harness differences are left for review", (t) => {
 	assert.equal(f.apply().status, 0);
 	assert.equal(fs.readFileSync(path.join(f.target, "app/page.tsx"), "utf8"), "custom target entry\n");
 });
+
+for (const localMode of [false, true]) {
+	test(`mode-only upstream changes ${localMode ? "preserve overlapping local modes" : "refresh executable bits"}`, (t) => {
+		const f = fixture(t);
+		const relative = "components/local.tsx";
+		fs.copyFileSync(path.join(f.source, relative), path.join(f.target, relative));
+		fs.chmodSync(path.join(f.source, relative), 0o755);
+		fs.chmodSync(path.join(f.stage, relative), 0o755);
+		if (localMode) fs.chmodSync(path.join(f.target, relative), 0o700);
+		f.git("add", relative); f.git("commit", "-qm", "make executable");
+		fs.writeFileSync(f.plan, JSON.stringify({ repoRoot: f.source, sourceRevision: f.git("rev-parse", "HEAD") }));
+		assert.equal(f.planning().status, 0);
+		const manifest = JSON.parse(fs.readFileSync(f.manifest));
+		assert.ok((localMode ? manifest.overlaps : manifest.copy).some((item) => item.path === relative));
+		assert.equal(f.apply().status, localMode ? 1 : 0);
+		assert.equal(fs.statSync(path.join(f.target, relative)).mode & 0o777, localMode ? 0o700 : 0o755);
+	});
+}
+
+for (const owner of ["stage", "target"]) {
+	test(`a ${owner} mode edit after review stops before writes`, (t) => {
+		const f = fixture(t);
+		assert.equal(f.planning().status, 0);
+		fs.chmodSync(path.join(f[owner], "public/asset.bin"), 0o700);
+		assert.equal(f.apply().status, 1);
+		assert.equal(fs.readFileSync(path.join(f.target, "app/card.css"), "utf8"), ".card { color: red; }\n");
+	});
+}
