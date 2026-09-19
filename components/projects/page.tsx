@@ -3,6 +3,7 @@
 // oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { AnimatePresence } from "motion/react";
 import { token } from "@/lib/tokens";
 import TopNavigation from "@/components/blocks/top-navigation/page";
@@ -12,10 +13,10 @@ import type {
 	FloatingRovoButtonOnboardingConfig,
 	FloatingRovoButtonSuggestion,
 } from "@/components/projects/shared/components/floating-rovo-button";
-import ChatPanel from "@/components/projects/sidebar-chat/page";
+const ChatPanel = dynamic(() => import("@/components/projects/sidebar-chat/page"));
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { ChatPanelCustomAgentTabs, ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
-import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
+const RovoFloatingChat = dynamic(() => import("@/components/projects/rovo-floating-chat/components/rovo-floating-chat"));
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";

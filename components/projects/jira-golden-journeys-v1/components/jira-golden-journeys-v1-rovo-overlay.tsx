@@ -5,7 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
-import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
+import dynamic from "next/dynamic";
+
+const RovoFloatingChat = dynamic(() => import("@/components/projects/rovo-floating-chat/components/rovo-floating-chat"));
 import type { ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type { FloatingRovoButtonInsightsConfig } from "@/components/projects/shared/components/floating-rovo-button";

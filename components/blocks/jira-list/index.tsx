@@ -33,7 +33,9 @@ import CalendarIcon from "@atlaskit/icon/core/calendar";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
-import { EditorPaletteAssigneePicker } from "@/components/blocks/editor-palette/page";
+import dynamic from "next/dynamic";
+
+const EditorPaletteAssigneePicker = dynamic(() => import("@/components/blocks/editor-palette/page").then((module) => module.EditorPaletteAssigneePicker));
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import {
