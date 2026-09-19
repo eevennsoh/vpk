@@ -386,3 +386,19 @@ test("EU26 frame-batched resize preserves keyboard bounds, release, and cancella
 	await handle.dblclick();
 	await expect(handle).toHaveAttribute("aria-valuenow", "280");
 });
+
+
+test("shared shell keeps eager chat lifetime and draft on Golden Journeys v4", async ({ page }) => {
+	await page.goto(`${worktreeOrigin()}/jira-golden-journeys-v4`, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 30_000 });
+	await expect(page.locator("[contenteditable=true]")).toHaveCount(1);
+	const composer = page.getByRole("textbox", { name: "Chat message input" });
+	await expect(composer).toHaveCount(0);
+	await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
+	await expect(composer).toBeVisible();
+	await composer.fill("Keep the eager shell draft");
+	await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
+	await expect(composer).not.toBeVisible();
+	await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
+	await expect(composer).toContainText("Keep the eager shell draft");
+});
