@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension.
-import { selectInteractionSample, summarizeInteractionSamples, type EventTimingRecord, type SampleAction } from "../tests/helpers/interaction-performance.ts";
+import { selectInteractionSample, summarizeInteractionSamples, selectJourneyTiming, summarizeJourneyTimings, type EventTimingRecord, type SampleAction } from "../tests/helpers/interaction-performance.ts";
 
 const action: SampleAction = {
 	armedAtMs: 100,
@@ -117,4 +117,27 @@ test("a wholly missing summary has null statistics and an empty input has no gro
 	assert.equal(summary.durationMs, null);
 	assert.equal(summary.inputDelayMs, null);
 	assert.deepEqual(summarizeInteractionSamples([]), []);
+});
+
+
+test("journey markers distinguish acknowledgement from usable content and preserve missing data", () => {
+	assert.deepEqual(selectJourneyTiming({ clickedAtMs: 100, acknowledgedAtMs: 110, usableAtMs: 140 }), {
+		status: "valid", reason: null, acknowledgementMs: 10, usableContentMs: 40,
+	});
+	assert.equal(selectJourneyTiming({ clickedAtMs: 100, acknowledgedAtMs: 110, usableAtMs: null }).usableContentMs, null);
+	assert.equal(selectJourneyTiming({ clickedAtMs: 100, acknowledgedAtMs: 110, usableAtMs: null }).acknowledgementMs, 10);
+	assert.equal(selectJourneyTiming({ clickedAtMs: 100, acknowledgedAtMs: 90, usableAtMs: 140 }).reason, "invalid-journey-markers");
+	assert.equal(selectJourneyTiming({ clickedAtMs: 100, acknowledgedAtMs: 110, usableAtMs: Number.NaN }).status, "missing");
+});
+
+test("journey summaries separate first and repeat use and ignore missing markers", () => {
+	const summaries = summarizeJourneyTimings([
+		{ ...selectJourneyTiming({ clickedAtMs: 100, acknowledgedAtMs: 110, usableAtMs: 140 }), view: "List", visit: "cold" },
+		{ ...selectJourneyTiming({ clickedAtMs: 100, acknowledgedAtMs: 120, usableAtMs: 160 }), view: "List", visit: "cold" },
+		{ ...selectJourneyTiming({ clickedAtMs: 100, acknowledgedAtMs: null, usableAtMs: null }), view: "List", visit: "cold" },
+		{ ...selectJourneyTiming({ clickedAtMs: 100, acknowledgedAtMs: 105, usableAtMs: 120 }), view: "List", visit: "warm" },
+	]);
+	assert.equal(summaries[0].usableContentMs?.median, 50);
+	assert.equal(summaries[0].missingCount, 1);
+	assert.equal(summaries[1].acknowledgementMs?.median, 5);
 });

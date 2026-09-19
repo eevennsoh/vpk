@@ -40,6 +40,7 @@ export function useJiraTeamEu26AgentSessionSync({
 	active,
 	paused = false,
 }: Readonly<{ active: boolean; paused?: boolean }>): Readonly<{
+	settled: boolean;
 	newAgentSessionIds: ReadonlySet<string>;
 	reviewAgentSessions: (sessionIds?: readonly string[]) => void;
 	stateChangeVersions: ReadonlyMap<string, number>;
@@ -165,6 +166,7 @@ export function useJiraTeamEu26AgentSessionSync({
 	}, [active, paused, syncState.lastAction, syncState.nextIndex, syncState.transitionQueue]);
 
 	return {
+		settled: syncState.nextIndex >= JIRA_TEAM_EU26_SYNC_SESSIONS.length && syncState.transitionQueue.length === 0,
 		newAgentSessionIds: syncState.newAgentSessionIds,
 		reviewAgentSessions,
 		stateChangeVersions: syncState.stateChangeVersions,

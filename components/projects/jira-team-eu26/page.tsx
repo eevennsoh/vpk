@@ -155,6 +155,7 @@ function JiraTeamEu26App(): React.ReactElement {
 	const showBoardContent = activeTab?.hasContent === true;
 	const [agentSessionColumnInteracting, setAgentSessionColumnInteracting] = useState(false);
 	const {
+		settled: agentSessionsSettled,
 		reviewAgentSessions,
 		newAgentSessionIds,
 		stateChangeVersions,
@@ -387,6 +388,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						designVariants.kanbanBackground ? "bg-bg-accent-gray-subtlest" : "bg-surface",
 					)}
 					data-jira-team-eu26-board-surface=""
+					data-agent-session-sync={agentSessionsSettled ? "settled" : "pending"}
 				>
 					<ExperimentalJiraKanbanPage
 						addAgentLabel={JIRA_TEAM_EU26_ADD_AGENT_LABEL}

@@ -156,3 +156,51 @@ export function summarizeInteractionSamples(samples: readonly InteractionSample[
 		};
 	});
 }
+
+
+export type JourneyMarkers = Readonly<{
+	clickedAtMs: number | null;
+	acknowledgedAtMs: number | null;
+	usableAtMs: number | null;
+}>;
+
+export function selectJourneyTiming(markers: JourneyMarkers) {
+	const { clickedAtMs, acknowledgedAtMs, usableAtMs } = markers;
+	const observed = [clickedAtMs, acknowledgedAtMs, usableAtMs].filter((value) => value !== null);
+	const invalid = observed.some((value) => !Number.isFinite(value) || value < 0)
+		|| (clickedAtMs !== null && acknowledgedAtMs !== null && acknowledgedAtMs < clickedAtMs)
+		|| (acknowledgedAtMs !== null && usableAtMs !== null && usableAtMs < acknowledgedAtMs);
+	if (invalid) {
+		return { status: "missing" as const, reason: "invalid-journey-markers", acknowledgementMs: null, usableContentMs: null };
+	}
+	const acknowledgementMs = clickedAtMs !== null && acknowledgedAtMs !== null
+		? acknowledgedAtMs - clickedAtMs : null;
+	const usableContentMs = acknowledgementMs !== null && usableAtMs !== null && clickedAtMs !== null
+		? usableAtMs - clickedAtMs : null;
+	return {
+		status: usableContentMs === null ? "missing" as const : "valid" as const,
+		reason: usableContentMs === null ? "journey-marker-not-observed" : null,
+		acknowledgementMs,
+		usableContentMs,
+	};
+}
+
+export function summarizeJourneyTimings(journeys: readonly (ReturnType<typeof selectJourneyTiming> & { view: string; visit: "cold" | "warm" })[]) {
+	const groups = new Map<string, typeof journeys[number][]>();
+	for (const journey of journeys) {
+		const key = JSON.stringify([journey.view, journey.visit]);
+		const group = groups.get(key) ?? [];
+		group.push(journey);
+		groups.set(key, group);
+	}
+	return [...groups.values()].map((group) => {
+		const valid = group.filter((journey) => journey.status === "valid");
+		return {
+			view: group[0].view, visit: group[0].visit,
+			totalCount: group.length, validCount: valid.length, missingCount: group.length - valid.length,
+			acknowledgementCount: group.filter((journey) => journey.acknowledgementMs !== null).length,
+			acknowledgementMs: statistics(group.flatMap((journey) => journey.acknowledgementMs === null ? [] : [journey.acknowledgementMs])),
+			usableContentMs: statistics(valid.map((journey) => journey.usableContentMs!)),
+		};
+	});
+}

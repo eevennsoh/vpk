@@ -303,7 +303,7 @@ test("the route periodically syncs one to three new agent sessions into Untracke
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/const \{\s*reviewAgentSessions,\s*newAgentSessionIds,\s*stateChangeVersions,\s*syncedAgentSessions,\s*\} = useJiraTeamEu26AgentSessionSync\(\{\s*active: showBoardContent,\s*paused: agentSessionColumnInteracting,\s*\}\);/u,
+		/const \{\s*settled: agentSessionsSettled,\s*reviewAgentSessions,\s*newAgentSessionIds,\s*stateChangeVersions,\s*syncedAgentSessions,\s*\} = useJiraTeamEu26AgentSessionSync\(\{\s*active: showBoardContent,\s*paused: agentSessionColumnInteracting,\s*\}\);/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
