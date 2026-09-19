@@ -196,8 +196,11 @@ function useAgentSessionCardTransition({
 	const shouldPlayArrival = isArriving && !isDeparting && !shouldReduceMotion;
 	const shouldPlayDeparture = isDeparting && !shouldReduceMotion;
 	const shouldPlayStatusReentry = shouldPlayArrival && isStateChanged && phase === "arrival";
-	const shouldRotateAvatar = phase === "avatar" && !isDeparting && !shouldReduceMotion;
-	// A first-place change has no card arrival; swap its lifecycle glyph in place.
+	// A first-place revision has no arrival callback to start the avatar beat.
+	const shouldRotateAvatar = !isDeparting && !shouldReduceMotion && (
+		phase === "avatar" || (isStateChanged && !isArriving && hasAnimatedIdentity && lifecycleState !== item.state)
+	);
+	// Both in-place revisions and reentries hold the old glyph until the beat ends.
 	const shownLifecycleState = shouldPlayStatusReentry || shouldRotateAvatar ? lifecycleState : item.state;
 	const handleArrivalComplete = () => {
 		if (shouldPlayArrival && phase === "arrival") {

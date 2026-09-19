@@ -4,6 +4,71 @@ const BOARD_URL = (process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000") +
 
 for (const reducedMotion of [false, true]) {
 	test(reducedMotion
+		? "reduced motion releases first-place and returning statuses without an avatar beat"
+		: "first-place and returning statuses wait for the human-agent avatar beat", async ({ page }, testInfo) => {
+		await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
+		// One-session batches exercise the first-place change, then a lower-row return.
+		await page.addInitScript(() => { Math.random = () => 0; });
+		await page.goto(BOARD_URL, { waitUntil: "domcontentloaded" });
+		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+		const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+		if (await expand.count()) await expand.press("Enter");
+		await page.getByRole("heading", { name: "Jira Design" }).hover();
+		const row = page.getByTestId("agent-session-row-lw-sync-webhook-gap");
+		await expect(row).toBeAttached();
+		const samples = await row.evaluate(async (initialRow) => {
+			const traces: {
+				elapsed: number; current: string; shown: string; animated: boolean;
+				humanTransform: string; top: number; sameRow: boolean;
+			}[] = [];
+			const started = performance.now();
+			while (performance.now() - started < 12_000) {
+				await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+				const currentRow = document.querySelector<HTMLElement>('[data-testid="agent-session-row-lw-sync-webhook-gap"]');
+				if (!currentRow) continue;
+				const lifecycle = currentRow.querySelector<HTMLElement>("[data-agent-session-lifecycle-current]");
+				const avatar = currentRow.querySelector<HTMLElement>('[data-slot="human-agent-avatar"]');
+				const human = avatar?.querySelector<HTMLElement>('[data-avatar-role="human"]');
+				const sample = {
+					elapsed: performance.now() - started,
+					current: lifecycle?.dataset.agentSessionLifecycleCurrent ?? "running",
+					shown: lifecycle?.dataset.agentSessionLifecycleShown ?? "running",
+					animated: avatar?.dataset.animated === "true",
+					humanTransform: human ? getComputedStyle(human).transform : "none",
+					top: currentRow.getBoundingClientRect().top,
+					sameRow: currentRow === initialRow,
+				};
+				traces.push(sample);
+				if (sample.current === "complete" && sample.shown === "complete" && !sample.animated) break;
+			}
+			return traces;
+		});
+		await testInfo.attach("avatar-status-sequence", { body: JSON.stringify(samples), contentType: "application/json" });
+		for (const [current, previous] of [["needs-input", "running"], ["complete", "needs-input"]]) {
+			const revision = samples.filter((sample) => sample.current === current);
+			expect(revision.length, `${current} must be exercised`).toBeGreaterThan(0);
+			expect(revision.at(-1)?.shown).toBe(current);
+			if (reducedMotion) {
+				expect(revision.every((sample) => !sample.animated && sample.shown === current)).toBe(true);
+				continue;
+			}
+			expect(revision[0].shown, `${current} must retain the previous status before the avatar beat`).toBe(previous);
+			const avatarBeat = revision.filter((sample) => sample.animated);
+			expect(avatarBeat.length, `${current} must play the avatar beat`).toBeGreaterThan(5);
+			expect(avatarBeat.every((sample) => sample.shown === previous)).toBe(true);
+			expect(new Set(avatarBeat.map((sample) => sample.humanTransform)).size).toBeGreaterThan(5);
+			expect(avatarBeat.at(-1)!.elapsed - avatarBeat[0].elapsed).toBeGreaterThan(500);
+			if (current === "needs-input") {
+				const inPlaceBeat = revision.slice(0, revision.findIndex((sample) => sample.shown === current) + 1);
+				expect(inPlaceBeat.every((sample) => sample.sameRow)).toBe(true);
+				expect(Math.max(...inPlaceBeat.map((sample) => sample.top)) - Math.min(...inPlaceBeat.map((sample) => sample.top))).toBeLessThan(0.5);
+			}
+		}
+	});
+}
+
+for (const reducedMotion of [false, true]) {
+	test(reducedMotion
 		? "reduced motion places new and returning sessions immediately"
 		: "top arrivals and returning sessions ease the existing rows down", async ({ page }) => {
 		test.setTimeout(60_000);

@@ -184,6 +184,9 @@ for (const collapsed of [true, false]) {
 		if (collapsed) {
 			await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
 			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+			const collapse = page.getByRole("button", { name: "Collapse Unlink sessions column" });
+			if (await collapse.count()) await collapse.click();
+			await page.getByRole("heading", { name: "Jira Design" }).click();
 		} else {
 			await openBoard(page);
 			await page.getByRole("heading", { name: "Jira Design" }).click();
