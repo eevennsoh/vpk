@@ -5419,7 +5419,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 446,
+			"manifestEntryCount": 447,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7513,7 +7513,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 106,
+				"entryCount": 107,
 				"entries": [
 					{
 						"category": "visual",
@@ -8138,6 +8138,12 @@
 						"slug": "visual-tracing",
 						"name": "Visual Tracing",
 						"importPath": "@/components/visual/visual-tracing"
+					},
+					{
+						"category": "visual",
+						"slug": "voice-glow",
+						"name": "Voice Glow",
+						"importPath": "@/components/visual/voice-glow"
 					},
 					{
 						"category": "visual",

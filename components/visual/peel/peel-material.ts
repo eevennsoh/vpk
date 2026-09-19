@@ -372,6 +372,10 @@ uniform float uSurfaceMode;
 uniform vec3 uFlashColor;
 uniform float uFlashGain;
 uniform float uFlashProgress;
+/** Signed carried pose: negative lights the left edge, positive the right. */
+uniform float uEdgeGlow;
+/** Captured padding, in UV, keeps the light on the card instead of its shadow. */
+uniform vec2 uSurfaceInset;
 
 uniform float uFilm;
 uniform float uGloss;
@@ -436,6 +440,13 @@ void main() {
 		// A soft pass through the face. The original alpha remains unchanged,
 		// keeping the light inside the card and its drop shadow unchanged.
 		stock = mix(stock, uFlashColor, uFlashGain * beam * face * 0.18);
+		float edgeX = uEdgeGlow < 0.0 ? uSurfaceInset.x : 1.0 - uSurfaceInset.x;
+		float edgeDistance = abs(vUv.x - edgeX) * uAspect;
+		// Spread through the leading side of the face, with negligible light at the opposite edge.
+		float edgeWidth = max((1.0 - 2.0 * uSurfaceInset.x) * uAspect * 0.2, 0.001);
+		float edge = exp(-pow(edgeDistance / edgeWidth, 2.0));
+		// Original face alpha supplies full-height rounded clipping, without a vertical fade.
+		stock = mix(stock, uFlashColor, abs(uEdgeGlow) * edge * face * 0.24);
 		gl_FragColor = vec4(stock, surface.a);
 		#include <colorspace_fragment>
 		return;
@@ -657,6 +668,8 @@ export function createPeelMaterial({
 			uFlashColor: { value: new THREE.Color() },
 			uFlashGain: { value: 0 },
 			uFlashProgress: { value: 0 },
+			uEdgeGlow: { value: 0 },
+			uSurfaceInset: { value: new THREE.Vector2() },
 
 			uLift: { value: 0 },
 			uImpulses: {

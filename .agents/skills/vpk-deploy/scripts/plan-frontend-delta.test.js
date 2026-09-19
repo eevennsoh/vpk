@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+const zlib = require("node:zlib");
 
 const SCRIPT = path.join(__dirname, "plan-frontend-delta.mjs");
 const BASE_IMAGE = `docker.atl-paas.net/example-service@sha256:${"a".repeat(64)}`;
@@ -63,6 +64,25 @@ test("blocks frontend-only recovery when runtime files differ", (t) => {
 	assert.equal(result.status, 1, result.stdout + result.stderr);
 	assert.match(result.stderr, /Runtime file parity failed/u);
 	assert.ok(!fs.existsSync(f.overlay));
+});
+
+test("delta packages matching codecs and rejects retained or stale compression siblings", (t) => {
+	const f = fixture(t);
+	write(f.prior, "backend/public/index.html.gz", zlib.gzipSync("<html>Old</html>"));
+	const retained = run(f, ["--out", f.overlay, "--apply"]);
+	assert.equal(retained.status, 1);
+	assert.match(retained.stderr, /retain prior gz sibling/u);
+	assert.equal(fs.existsSync(f.overlay), false);
+	write(f.target, "out/index.html.gz", zlib.gzipSync("<html>Old</html>"));
+	const stale = run(f);
+	assert.equal(stale.status, 1);
+	assert.match(stale.stderr, /Stale compression sibling/u);
+	write(f.target, "out/index.html.gz", zlib.gzipSync("<html>New</html>"));
+	write(f.target, "out/index.html.br", zlib.brotliCompressSync("<html>New</html>"));
+	const accepted = run(f, ["--out", f.overlay, "--apply"]);
+	assert.equal(accepted.status, 0, accepted.stdout + accepted.stderr);
+	assert.equal(zlib.gunzipSync(fs.readFileSync(path.join(f.overlay, "index.html.gz"))).toString(), "<html>New</html>");
+	assert.equal(zlib.brotliDecompressSync(fs.readFileSync(path.join(f.overlay, "index.html.br"))).toString(), "<html>New</html>");
 });
 
 test("compares the Docker runtime copy set and ignores installed dependency trees", (t) => {

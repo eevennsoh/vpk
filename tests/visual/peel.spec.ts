@@ -27,6 +27,103 @@ async function expectHorizontalAvatarHandoff(overlay: Locator) {
 	}
 }
 
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`the carried session follows later pointer moves while its source is inert (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(PEEL_URL, { waitUntil: "networkidle" });
+		await page.getByRole("button", { name: "Agent session", exact: true }).click();
+		const source = page.getByTestId("agent-session-row-peel-claude").locator("article");
+		const box = (await source.boundingBox())!;
+		const pickup = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+		await page.mouse.move(pickup.x, pickup.y);
+		await page.mouse.down();
+		await page.mouse.move(pickup.x + 60, pickup.y + 100);
+		const overlay = page.locator("[data-session-drag-overlay]");
+		await expect(overlay).toBeAttached();
+		expect(await source.evaluate((element) => Boolean(element.closest("[inert]")))).toBe(true);
+		if (reducedMotion === "no-preference") await expect(overlay.locator("[data-peel-ready=true]")).toBeAttached();
+		// Continue after the one-shot entrance/ripple, without installing any
+		// pointer listeners in the test that could mask inert-source delivery.
+		await page.waitForTimeout(1_100);
+		for (const destination of [
+			{ x: pickup.x + 240, y: pickup.y + 180 },
+			{ x: pickup.x - 100, y: pickup.y + 240 },
+		]) {
+			await page.mouse.move(destination.x, destination.y, { steps: 12 });
+			await expect.poll(async () => overlay.evaluate((element, pointer) => {
+				const pose = new DOMMatrixReadOnly(getComputedStyle(element).transform);
+				return Math.hypot(pose.m41 - pointer.x, pose.m42 - pointer.y);
+			}, destination)).toBeLessThan(3);
+		}
+		await expect(overlay.locator("canvas")).toHaveCount(reducedMotion === "reduce" ? 0 : 1);
+		await page.mouse.up();
+		await expect(overlay).toHaveCount(0);
+		await expect(source).toBeVisible();
+	});
+}
+
+test("pure vertical movement keeps the rendered card free of forward/back pitch", async ({ page }) => {
+	await page.addInitScript(() => {
+		const probe = { request: 0, frame: null as { id: number; pitch: number; height: number } | null };
+		Object.assign(window, { peelPitchPixels: probe });
+		for (const prototype of [WebGLRenderingContext.prototype, WebGL2RenderingContext.prototype]) {
+			const draw = prototype.drawElements;
+			prototype.drawElements = function (...args) {
+				draw.apply(this, args);
+				if (probe.request === 0 || probe.frame?.id === probe.request || !(this.canvas instanceof HTMLCanvasElement) || !this.canvas.closest("[data-session-drag-overlay] [data-peel-surface]")) return;
+				const program = this.getParameter(this.CURRENT_PROGRAM);
+				const poseLocation = program && this.getUniformLocation(program, "modelViewMatrix");
+				if (!poseLocation) return;
+				const pose = this.getUniform(program, poseLocation) as Float32Array;
+				const width = this.drawingBufferWidth;
+				const height = this.drawingBufferHeight;
+				const pixels = new Uint8Array(width * height * 4);
+				this.readPixels(0, 0, width, height, this.RGBA, this.UNSIGNED_BYTE, pixels);
+				let top = height;
+				let bottom = -1;
+				// Measure the printed face, excluding its translucent drop shadow.
+				for (let y = 0; y < height; y++) {
+					if (pixels[(y * width + Math.floor(width / 2)) * 4 + 3] < 245) continue;
+					top = Math.min(top, y);
+					bottom = Math.max(bottom, y);
+				}
+				probe.frame = { id: probe.request, pitch: Math.atan2(-pose[9], pose[10]), height: (bottom - top + 1) * this.canvas.getBoundingClientRect().height / height };
+			};
+		}
+	});
+	await page.goto(PEEL_URL, { waitUntil: "networkidle" });
+	await page.getByRole("button", { name: "Agent session", exact: true }).click();
+	const box = (await page.getByTestId("agent-session-row-peel-claude").locator("article").boundingBox())!;
+	const x = box.x + 100;
+	let y = box.y + 30;
+	await page.mouse.move(x, y);
+	await page.mouse.down();
+	y += 90;
+	await page.mouse.move(x, y);
+	await expect(page.locator("[data-session-drag-overlay] [data-peel-ready=true]")).toBeAttached();
+	await page.waitForTimeout(1_200);
+	const sample = async () => {
+		const id = await page.evaluate(() => ++(window as unknown as { peelPitchPixels: { request: number } }).peelPitchPixels.request);
+		await expect.poll(() => page.evaluate(() => (window as unknown as { peelPitchPixels: { frame: { id: number } | null } }).peelPitchPixels.frame?.id)).toBe(id);
+		return (await page.evaluate(() => (window as unknown as { peelPitchPixels: { frame: { pitch: number; height: number } } }).peelPitchPixels.frame))!;
+	};
+	const flat = await sample();
+	expect(flat.height).toBeGreaterThan(40);
+	for (const direction of [-1, 1]) {
+		for (let frame = 0; frame < 14; frame++) {
+			y += direction * 10;
+			await page.mouse.move(x, y);
+			await page.waitForTimeout(16);
+		}
+		const tilted = await sample();
+		expect(Math.abs(tilted.pitch)).toBeLessThan(0.001);
+		expect(Math.abs(tilted.height - flat.height)).toBeLessThanOrEqual(2);
+		await test.info().attach(direction < 0 ? "vertical-up-pixels" : "vertical-down-pixels", { body: JSON.stringify({ flat, tilted }), contentType: "application/json" });
+	}
+	await page.mouse.up();
+	await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(0);
+});
+
 test("Team EU26 defaults Peel visual on, persists its switch, and prepares only an intended session", async ({ page }) => {
 	await page.addInitScript(() => {
 		if (!localStorage.getItem("ui-design-variants")) localStorage.setItem("ui-design-variants", JSON.stringify({ sessionBloom: true, schemaVersion: 2 }));
@@ -611,8 +708,8 @@ test("the flat dragged card keeps its face flash visible in dark mode", async ({
 		layerOpacity: getComputedStyle(element.parentElement!).opacity,
 	}));
 	expect(face.image).not.toBe("none");
-	expect(face.peakAlpha).toBeGreaterThanOrEqual(28);
-	expect(face.peakAlpha).toBeLessThanOrEqual(36);
+	expect(face.peakAlpha).toBeGreaterThanOrEqual(12);
+	expect(face.peakAlpha).toBeLessThanOrEqual(14);
 	expect(face.layerOpacity).toBe("1");
 	await expect(overlay.locator("[data-peel-surface], canvas")).toHaveCount(0);
 	await beam.evaluate((element) => {

@@ -6,7 +6,74 @@ import { PEEL_DURATIONS, PEEL_MAX_DELTA, PEEL_PULSE_DURATION, PEEL_SWING_LIMIT, 
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, resolvePeelTuning } from "./data.ts";
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
-import { deformPeelSheet } from "./peel-geometry.ts";
+import { deformPeelSheet, peelSurfaceEdgeGlow, peelSurfacePointer, peelSurfaceTilt, stepPeelSurfaceTravel } from "./peel-geometry.ts";
+
+test("edge direction ignores stop corrections and changes after deliberate reverse travel", () => {
+	for (const direction of [-1, 1]) {
+		const travel = { direction: 0, extremeX: 400 };
+		assert.equal(stepPeelSurfaceTravel(travel, 400), 0, "stationary pickup has no edge direction");
+		assert.equal(stepPeelSurfaceTravel(travel, 400 + direction * 0.5), direction, "initial travel lights the corresponding edge immediately");
+		assert.equal(stepPeelSurfaceTravel(travel, 400 + direction * 100), direction);
+		for (const correction of [0.5, 1, 2, 3, 1, 0]) {
+			assert.equal(stepPeelSurfaceTravel(travel, 400 + direction * (100 - correction)), direction, "tiny pointer corrections cannot switch the glow");
+		}
+		for (let distance = 1; distance <= 3; distance++) {
+			assert.equal(stepPeelSurfaceTravel(travel, 400 + direction * (100 - distance)), direction, "slow reverse travel accumulates from the furthest position");
+		}
+		assert.equal(stepPeelSurfaceTravel(travel, 400 + direction * 94), -direction, "a genuine reversal switches edge without crossing the original grab point");
+		assert.equal(stepPeelSurfaceTravel(travel, 400 + direction * 60), -direction);
+		for (const correction of [1, 2, 3, 0]) {
+			assert.equal(stepPeelSurfaceTravel(travel, 400 + direction * (60 + correction)), -direction, "corrections after reversing are also ignored");
+		}
+		assert.equal(stepPeelSurfaceTravel(travel, 400 + direction * 66), direction, "a deliberate second reversal still works");
+	}
+});
+
+test("carried edge light scales with pose and follows the current drag direction", () => {
+	assert.equal(peelSurfaceEdgeGlow(0, 0, 0.19, 0.075, 1), 0);
+	for (const direction of [-1, 1]) {
+		for (const strength of [0.1, 0.5, 1]) {
+			const glow = peelSurfaceEdgeGlow(direction * strength * 0.19, direction * strength * 0.075, 0.19, 0.075, direction);
+			assert.ok(Math.abs(glow - direction * strength) < 1e-10, "direction chooses one edge; strength follows the pose linearly");
+		}
+		assert.equal(peelSurfaceEdgeGlow(direction, direction, 0.19, 0.075, direction), direction, "overshoot never exceeds full light");
+	}
+	assert.equal(peelSurfaceEdgeGlow(0.19, -0.075, 0.19, 0.075, -1), -1, "leftward reversal lights the left edge even while lean and roll oppose");
+	assert.equal(peelSurfaceEdgeGlow(0.0475, -0.01875, 0.19, 0.075, -1), -0.25, "positional lean cannot cancel a gentle leftward return");
+	assert.equal(peelSurfaceEdgeGlow(-0.19, -0.075, 0.19, 0.075, 1), 1, "a rightward reversal switches edge before the pose finishes catching up");
+	assert.equal(peelSurfaceEdgeGlow(0.19, 0.075, 0, 0, 1), 0, "reduced-motion tuning cannot produce edge light");
+	assert.equal(peelSurfaceEdgeGlow(0.19, 0.075, 0.19, 0.075, 0), 0, "a new gesture has no directional glow before travel");
+});
+
+test("a carried surface combines position and speed without exceeding its tilt", () => {
+	assert.equal(peelSurfacePointer(0), 0.5, "each gesture starts centred");
+	assert.equal(peelSurfacePointer(280), 1);
+	assert.equal(peelSurfacePointer(-280), 0);
+	assert.equal(peelSurfaceTilt(0, 0.5, 0.19), 0);
+	assert.equal(peelSurfaceTilt(0, 1, 0.19), 0.0475, "a stopped card keeps only a small positional lean");
+	for (const direction of [-1, 1]) {
+		const carry = (speed: number) => {
+			const state = createPeelState(resolvePeelTuning("uv-gloss", { tilt: 0.19, swing: 0.075 }));
+			grabPeel(state, 0.25, 0.1);
+			for (let frame = 0; frame < 60; frame++) {
+				dragPeel(state, direction * speed * (frame + 1) / 60, 0);
+				state.pointerTargetU = peelSurfacePointer(state.targetX);
+				stepPeel(state, 1 / 60);
+			}
+			return state;
+		};
+		const slow = carry(90);
+		const fast = carry(900);
+		assert.ok(direction * fast.tiltY > 0 && fast.tiltX === 0, "horizontal travel drives the sideways tilt");
+		assert.ok(Math.abs(fast.tiltY) > Math.abs(slow.tiltY) * 5, "faster travel adds more lean");
+		assert.ok(direction * fast.swing > 0, "roll follows the horizontal direction");
+		assert.ok(Math.abs(peelSurfaceTilt(fast.tiltY, fast.pointerU, 0.19)) <= 0.19);
+		run(fast, 2);
+		assert.ok(Math.abs(fast.tiltX) < 1e-4 && Math.abs(fast.tiltY) < 1e-4 && Math.abs(fast.swing) < 1e-4, "velocity motion settles when the pointer stops");
+		assert.ok(Math.abs(peelSurfaceTilt(fast.tiltY, fast.pointerU, 0.19)) <= 0.048);
+	}
+	assert.equal(peelSurfaceTilt(0, 1, 0), 0, "reduced-motion tuning removes positional lean too");
+});
 
 test("the brief face flash fades before the ripple and replays when requested", () => {
 	const state = createPeelState(resolvePeelTuning("uv-gloss", { waveAmplitude: 0.1 }));

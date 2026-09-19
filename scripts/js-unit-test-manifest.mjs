@@ -13,6 +13,9 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		".agents/skills/vpk-build/scripts/verify-target.test.js",
+		".agents/skills/vpk-deploy/scripts/plan-frontend-delta.test.js",
+		"components/visual/voice-glow/data.test.ts",
 		"components/blocks/agent-session/agent-session-short-metadata.test.js",
 		"components/blocks/jira-kanban/card-drop.test.js",
 		"components/blocks/agent-session-column/use-agent-session-arrivals.test.ts",
@@ -272,6 +275,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-verify/scripts/verify-feature-map.test.js",
 	],
 	"source-contract": [
+		"components/visual/scroll-mask/lib.test.ts",
 		"components/visual/card-glow/card-glow.test.js",
 		"components/blocks/agent-session/agent-session-glow.test.js",
 		"components/blocks/jira-issue/attach-trace.test.js",

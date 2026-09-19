@@ -7,6 +7,46 @@
  * wrapper and the scene both need.
  */
 
+/** Keep a carried card's light and lean relative to where this gesture began. */
+export function peelSurfacePointer(displacement: number): number {
+	return Math.max(0, Math.min(1, 0.5 + displacement / 560));
+}
+
+/** Combine the existing velocity spring with a small, bounded position bias. */
+export function peelSurfaceTilt(velocityTilt: number, pointer: number, maximum: number): number {
+	return Math.max(-maximum, Math.min(maximum, velocityTilt + (pointer - 0.5) * maximum * 0.5));
+}
+
+export interface PeelSurfaceTravel {
+	direction: number;
+	extremeX: number;
+}
+
+/** Small stop corrections must not count as an intentional reversal. CSS pixels. */
+const PEEL_GLOW_REVERSE_DISTANCE_PX = 4;
+
+/** Track furthest input travel so slow reversals accumulate without reacting to jitter. */
+export function stepPeelSurfaceTravel(travel: PeelSurfaceTravel, pointerX: number): number {
+	const displacement = pointerX - travel.extremeX;
+	if (travel.direction === 0 && displacement !== 0) {
+		travel.direction = displacement > 0 ? 1 : -1;
+		travel.extremeX = pointerX;
+	} else if (travel.direction * displacement > 0) {
+		travel.extremeX = pointerX;
+	} else if (travel.direction * displacement <= -PEEL_GLOW_REVERSE_DISTANCE_PX) {
+		travel.direction = -travel.direction;
+		travel.extremeX = pointerX;
+	}
+	return travel.direction;
+}
+
+/** Travel chooses the edge; pose magnitude sets brightness without reversal cancellation. */
+export function peelSurfaceEdgeGlow(tilt: number, roll: number, maximumTilt: number, maximumRoll: number, direction: number): number {
+	const lean = maximumTilt > 0 ? Math.min(1, Math.abs(tilt) / maximumTilt) : 0;
+	const swing = maximumRoll > 0 ? Math.min(1, Math.abs(roll) / maximumRoll) : 0;
+	return Math.sign(direction) * (lean + swing) * 0.5;
+}
+
 /** Raw pointer sample, written by the DOM handlers and read once per frame. */
 export interface PeelPointerSample {
 	clientX: number;

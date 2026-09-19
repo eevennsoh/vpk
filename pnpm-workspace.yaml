@@ -3,6 +3,9 @@ packages:
   - backend
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
+  # Explicitly requested Voice Glow visual; first published 2026-09-17.
+  # Scope the exception to the inspected release, preserving future age checks.
+  - "voice-glow@0.2.0"
   # Explicitly requested design-system lint pilot, published 2026-09-14.
   # Exact version so the seven-day maturity gate applies to future updates.
   - "@shadcn/lint@0.1.0"

@@ -172,6 +172,19 @@ test("parseClientReferenceManifest extracts manifest key and payload", () => {
 	assert.deepEqual(parsed.manifest, manifestPayload);
 });
 
+test("manifest measurement rejects missing referenced assets instead of reporting smaller totals", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-perf-incomplete-"));
+	try {
+		const directory = path.join(cwd, ".next/server/app");
+		mkdirSync(directory, { recursive: true });
+		writeFileSync(path.join(directory, "page_client-reference-manifest.js"),
+			`globalThis.__RSC_MANIFEST["/page"]=${JSON.stringify({ clientModules: { page: { chunks: ["static/chunks/missing.js"] } } })};`);
+		assert.throws(() => collectManifestRoutes({ cwd }), /Incomplete manifest measurement: missing asset/u);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
 test("collectManifestRoutes measures client assets and aliases optional catch-all roots", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-perf-manifest-"));
 	try {

@@ -8,6 +8,7 @@ import { parseColor } from "@/components/ui-custom/lib/shimmer-colors";
 import { cn } from "@/lib/utils";
 import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, PEEL_PAPER_COLOUR, resolvePeelTuning, type PeelTuning } from "./data";
 import { createPeelState, grabPeel, startPeelFlash } from "./peel-model";
+import { peelSurfacePointer } from "./peel-geometry";
 import { PeelScene } from "./peel-scene";
 import type { PeelPointerSample } from "./peel-geometry";
 
@@ -24,6 +25,9 @@ export interface PeelSurfaceProps {
 	flashColor?: string;
 	pointerX: MotionValue<number>;
 	pointerY: MotionValue<number>;
+	/** Retained input intent from the gesture owner, available before capture finishes. */
+	pointerDirection: MotionValue<number>;
+	pointerOriginX: MotionValue<number>;
 	tuning?: Partial<PeelTuning>;
 	className?: string;
 }
@@ -38,40 +42,44 @@ export function PeelSurface({ active, ...props }: Readonly<PeelSurfaceProps>) {
 			    remounting it would restart its avatars at opacity zero. */}
 			<div ref={props.captureChildren === undefined ? sourceRef : undefined} data-peel-native-source="" className="w-fit p-6 group-data-[peel-ready=true]/peel:opacity-0">{props.children}</div>
 			{props.captureChildren !== undefined ? <div ref={sourceRef} data-peel-capture-source="" className="pointer-events-none absolute left-0 top-0 w-fit p-6 opacity-0">{props.captureChildren}</div> : null}
-			{!reducedMotion ? <PeelCapturedSurface key={JSON.stringify([props.contentKey, props.flashColor])} active={active} sourceRef={sourceRef} pointerX={props.pointerX} pointerY={props.pointerY} tuning={props.tuning} /> : null}
+			{!reducedMotion ? <PeelCapturedSurface key={JSON.stringify([props.contentKey, props.flashColor])} active={active} sourceRef={sourceRef} pointerX={props.pointerX} pointerY={props.pointerY} pointerDirection={props.pointerDirection} pointerOriginX={props.pointerOriginX} tuning={props.tuning} /> : null}
 		</div>
 	);
 }
 
 /** One prepared print/context per opted-in preview; the frame loop parks between drags. */
-function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, tuning }: Readonly<Pick<PeelSurfaceProps, "active" | "pointerX" | "pointerY" | "tuning"> & { sourceRef: RefObject<HTMLDivElement | null> }>) {
+function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, pointerDirection, pointerOriginX, tuning }: Readonly<Pick<PeelSurfaceProps, "active" | "pointerX" | "pointerY" | "pointerDirection" | "pointerOriginX" | "tuning"> & { sourceRef: RefObject<HTMLDivElement | null> }>) {
 	const emptyElementRef = useRef<HTMLElement | null>(null);
 	const pointerRef = useRef<PeelPointerSample>({ clientX: 0, clientY: 0, valid: false });
 	const reducedMotion = useReducedMotion() ?? false;
-	const [capture, setCapture] = useState<{ canvas: HTMLCanvasElement; width: number; height: number; generation: number; flashColor?: string } | null>(null);
+	const [capture, setCapture] = useState<{ canvas: HTMLCanvasElement; width: number; height: number; generation: number; flashColor?: string; surfaceInset: readonly [number, number] } | null>(null);
 	const activeRef = useRef(false);
 	const preparedRef = useRef(false);
 	const rootRef = useRef<RootState | null>(null);
 	const resolvedTuning = useMemo(() => resolvePeelTuning("uv-gloss", {
-		waveAmplitude: 0.11,
+		waveAmplitude: 0.13,
 		waveLength: 1.4,
 		waveShear: 1.4,
-		flutter: 0.06,
+		flutter: 0.067,
+		// Cards need a clearer carry pose than the reference illustration.
+		tilt: 0.19,
+		swing: 0.075,
 		...tuning,
 	}, reducedMotion), [tuning, reducedMotion]);
 	const [state] = useState(() => createPeelState(resolvedTuning));
-	const pointerPosition = useMemo(() => ({ x: pointerX, y: pointerY }), [pointerX, pointerY]);
+	const pointerPosition = useMemo(() => ({ x: pointerX, y: pointerY, direction: pointerDirection, originX: pointerOriginX }), [pointerX, pointerY, pointerDirection, pointerOriginX]);
 	const startPeel = useCallback(() => {
 		if (!activeRef.current || !preparedRef.current) return;
-		// Reset travel and ripple time at the handoff, not during preparation.
+		// Reset paper motion at handoff; the gesture owner retains input history.
 		Object.assign(state, createPeelState(resolvedTuning));
 		state.x = state.targetX = pointerX.get();
 		state.y = state.targetY = pointerY.get();
 		grabPeel(state, 0.25, 0.1);
+		state.pointerU = state.pointerTargetU = peelSurfacePointer(state.targetX - pointerOriginX.get());
 		if (capture?.flashColor) startPeelFlash(state);
 		rootRef.current?.setFrameloop("always");
 		rootRef.current?.invalidate();
-	}, [state, resolvedTuning, pointerX, pointerY, capture?.flashColor]);
+	}, [state, resolvedTuning, pointerX, pointerY, pointerOriginX, capture?.flashColor]);
 	useLayoutEffect(() => {
 		activeRef.current = active;
 		if (active) startPeel();
@@ -102,7 +110,9 @@ function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, tuning }: 
 				const height = source.offsetHeight;
 				// Computed custom properties resolve theme variables too, keeping
 				// near-black agent marks consistent with their rendered avatars.
-				const accent = parseColor(getComputedStyle(source).getPropertyValue("--peel-flash-color"));
+				const sourceStyle = getComputedStyle(source);
+				const accent = parseColor(sourceStyle.getPropertyValue("--peel-flash-color"));
+				const surfaceInset = [parseFloat(sourceStyle.paddingLeft) / width, parseFloat(sourceStyle.paddingTop) / height] as const;
 				const flashColor = accent ? `rgb(${accent.r}, ${accent.g}, ${accent.b})` : undefined;
 				const canvas = await toCanvas(source, {
 					pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
@@ -116,7 +126,7 @@ function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, tuning }: 
 					delete source.parentElement.dataset.peelPrepared;
 					delete source.parentElement.dataset.peelReady;
 				}
-				setCapture({ canvas, width, height, generation: current, flashColor });
+				setCapture({ canvas, width, height, generation: current, flashColor, surfaceInset });
 			} catch (error: unknown) {
 				// The canonical DOM preview remains visible if capture is unavailable.
 				if (!disposed && current === generation) source.dataset.peelCaptureError = error instanceof Error ? error.message : String(error);
@@ -173,7 +183,7 @@ function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, tuning }: 
 	return drawSurface ? (
 		<div className="pointer-events-none absolute opacity-0 group-data-[peel-ready=true]/peel:opacity-100" style={{ inset: -overscan }}>
 			<Canvas frameloop={active ? "always" : "demand"} onCreated={(root) => { rootRef.current = root; }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }} style={{ pointerEvents: "none" }} camera={{ fov: PEEL_CAMERA_FOV, position: [0, 0, PEEL_CAMERA_DISTANCE], near: 0.1, far: 20 }}>
-				<PeelScene key={capture.generation} state={state} tuning={resolvedTuning} print={capture.canvas} flashColor={capture.flashColor} shape="surface" pointerPosition={pointerPosition} liftRef={emptyElementRef} hitRef={emptyElementRef} pointerRef={pointerRef} box={{ width: capture.width, height: capture.height, rotation: 0 }} aspect={capture.width / capture.height} surfaceColor={PEEL_PAPER_COLOUR} onReady={handleReady} onRender={handleRender} />
+				<PeelScene key={capture.generation} state={state} tuning={resolvedTuning} print={capture.canvas} flashColor={capture.flashColor} surfaceInset={capture.surfaceInset} shape="surface" pointerPosition={pointerPosition} liftRef={emptyElementRef} hitRef={emptyElementRef} pointerRef={pointerRef} box={{ width: capture.width, height: capture.height, rotation: 0 }} aspect={capture.width / capture.height} surfaceColor={PEEL_PAPER_COLOUR} onReady={handleReady} onRender={handleRender} />
 			</Canvas>
 		</div>
 	) : null;
