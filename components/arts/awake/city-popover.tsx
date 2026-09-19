@@ -1,5 +1,7 @@
 "use client";
 
+import { DecorativeFonts } from "@/components/visual/decorative-fonts";
+
 // oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
 // oxlint-disable react-doctor/no-pass-live-state-to-parent -- Callbacks in this file intentionally stream live interaction state to the parent owner.
 
@@ -564,6 +566,7 @@ export function CityRailEditor({
 				setIsOpen(true);
 			}}
 		>
+			<DecorativeFonts />
 			{!isOpen ? (
 				<div className="absolute inset-y-0 left-0 z-30" style={{ width: railWidth }}>
 					<GlassSlider

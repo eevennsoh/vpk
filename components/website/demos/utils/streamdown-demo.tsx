@@ -1,5 +1,7 @@
 "use client";
 
+import "katex/dist/katex.min.css";
+
 import { MessageResponse } from "@/components/ui-custom/message";
 import { Button } from "@/components/ui/button";
 import { renderLinkSafetyModal } from "@/components/ui-custom/link-safety-dialog";

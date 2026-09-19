@@ -1,5 +1,7 @@
 "use client";
 
+import { DecorativeFonts } from "@/components/visual/decorative-fonts";
+
 import { useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from "react";
 
 import {
@@ -1688,10 +1690,13 @@ export default function Ascii({
 	}, []);
 
 	return (
-		<canvas
-			ref={canvasRef}
-			className={className}
-			style={{ width: "100%", height: "100%", display: "block", ...style }}
-		/>
+		<>
+			<DecorativeFonts />
+			<canvas
+				ref={canvasRef}
+				className={className}
+				style={{ width: "100%", height: "100%", display: "block", ...style }}
+			/>
+		</>
 	);
 }

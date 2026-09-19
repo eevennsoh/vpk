@@ -6,7 +6,7 @@ const { readWebsiteRegistrySource } = require(process.cwd() + "/components/websi
 
 const PAGE_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
 const LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "layout.tsx"), "utf8");
-const ROOT_LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "../../layout.tsx"), "utf8");
+const FONT_SOURCE = fs.readFileSync(path.join(__dirname, "../../../components/arts/personal-graph/fonts.ts"), "utf8");
 const TAILWIND_THEME_SOURCE = fs.readFileSync(path.join(__dirname, "../../tailwind-theme.css"), "utf8");
 const COMPONENTS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../data/components.ts"),
@@ -252,11 +252,11 @@ test("Personal Graph exposes the capture queue inside the control flyout", () =>
 });
 
 test("Personal Graph header uses the display font lockup", () => {
-	assert.match(ROOT_LAYOUT_SOURCE, /Affigere-Regular\.woff2/);
-	assert.match(ROOT_LAYOUT_SOURCE, /DepartureMono-Regular\.woff2/);
+	assert.match(FONT_SOURCE, /Affigere-Regular\.woff2/);
+	assert.match(FONT_SOURCE, /DepartureMono-Regular\.woff2/);
 	assert.match(SURFACE_SOURCE, /PERSONAL_GRAPH_TITLE_FONT_STYLE/);
-	assert.match(SURFACE_SOURCE, /var\(--font-affigere\)/);
-	assert.match(SURFACE_SOURCE, /var\(--font-departure-mono\)/);
+	assert.match(SURFACE_SOURCE, /affigere\.style\.fontFamily/);
+	assert.match(SURFACE_SOURCE, /departureMono\.style\.fontFamily/);
 	assert.match(SURFACE_SOURCE, /PERSONAL_GRAPH_SETTLED_TITLE_SCRAMBLE_LINE_CHAR_COUNT = 8/);
 	assert.match(SURFACE_SOURCE, /PERSONAL_GRAPH_TITLE_LINE_COUNT = 2/);
 	assert.match(SURFACE_SOURCE, /PERSONAL_GRAPH_TITLE_LINE_HEIGHT = 0\.8/);

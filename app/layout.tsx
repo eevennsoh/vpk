@@ -1,9 +1,6 @@
-/* eslint-disable @next/next/no-page-custom-font -- App Router root layout applies these fonts globally. */
 import type { Metadata } from "next";
 import "./globals.css";
-import "katex/dist/katex.min.css";
 import "streamdown/styles.css";
-import "leaflet/dist/leaflet.css";
 import { getSSRAutoScript } from "@atlaskit/tokens/get-ssr-auto-script";
 import { getThemeStyles } from "@atlaskit/tokens/get-theme-styles";
 import { PROJECT_COMPONENTS } from "@/app/data/component-manifest";
@@ -11,26 +8,7 @@ import { Providers } from "@/app/providers";
 import { DevRootTools } from "@/components/utils/dev-root-tools";
 import { DocumentTitlePrefix } from "@/components/utils/document-title-prefix";
 import { PreHydrationScript } from "@/components/utils/pre-hydration-script";
-import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
-
-const arkEsSolidLight = localFont({
-	src: "../public/fonts/ark-es/ARK-ES-SolidLight.woff",
-	variable: "--font-ark-es",
-	display: "swap",
-});
-
-const affigere = localFont({
-	src: "../public/fonts/affigere/Affigere-Regular.woff2",
-	variable: "--font-affigere",
-	display: "swap",
-});
-
-const departureMono = localFont({
-	src: "../public/fonts/DepartureMono/DepartureMono-Regular.woff2",
-	variable: "--font-departure-mono",
-	display: "swap",
-});
 
 // Prevent @atlaskit/tokens from falling back to uninitialized FeatureGates client.
 // Sets the resolver on the same global that @atlaskit/platform-feature-flags uses internally.
@@ -211,9 +189,6 @@ ${devStylesheetGuardScript}
 			className={cn(
 				colorMode,
 				"font-sans",
-				arkEsSolidLight.variable,
-				affigere.variable,
-				departureMono.variable,
 			)}
 			data-theme={themeData}
 			data-color-mode={colorMode}
@@ -244,10 +219,7 @@ ${devStylesheetGuardScript}
 				<link rel="preload" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net/assets/font-rules/v5/atlassian-fonts.css" as="style" fetchPriority="high" crossOrigin="anonymous" />
 				{/* oxlint-disable-next-line react-doctor/nextjs-no-css-link -- Atlassian DS font CSS is served by the design-system CDN and must load before first paint. */}
 				<link rel="stylesheet" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net/assets/font-rules/v5/atlassian-fonts.css" fetchPriority="high" crossOrigin="anonymous" />
-				{/* Bitcount Grid Single + DotGothic16 + BBH Bartle + JetBrains Mono */}
-				<link rel="preconnect" href="https://fonts.googleapis.com" />
-				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-				<link href="https://fonts.googleapis.com/css2?family=BBH+Bartle&family=Bitcount+Grid+Single:wght@100..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" crossOrigin="anonymous" />
+
 			</head>
 			<body suppressHydrationWarning className="antialiased">
 				<PreHydrationScript id="vpk-pre-hydration" html={preHydrationScript} />

@@ -2,13 +2,6 @@
 	"version": 1,
 	"items": [
 		{
-			"filePath": "app/layout.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable @next/next/no-page-custom-font -- App Router root layout applies these fonts globally. */",
-			"type": "eslint-disable"
-		},
-		{
 			"filePath": "backend/lib/rovo-app-background-streams.js",
 			"occurrence": 1,
 			"reason": "existing baseline",
@@ -797,6 +790,13 @@
 			"occurrence": 1,
 			"reason": "existing baseline",
 			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps",
+			"type": "eslint-disable"
+		},
+		{
+			"filePath": "components/visual/decorative-fonts.tsx",
+			"occurrence": 1,
+			"reason": "Moved the existing App Router font exception to the display-font resource owner; React hoists and deduplicates the stylesheet only for consumers that need these fonts.",
+			"text": "/* eslint-disable @next/next/no-page-custom-font -- Display fonts are deliberately scoped to their art/demo consumers through React stylesheet resources. */",
 			"type": "eslint-disable"
 		},
 		{

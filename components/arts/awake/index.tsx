@@ -11,6 +11,8 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
 import * as React from "react";
+import { arkEsSolidLight } from "./font";
+import { DecorativeFonts } from "@/components/visual/decorative-fonts";
 
 import { useTheme } from "@/components/utils/theme-wrapper";
 import Bands from "@/components/website/demos/visual/shaders/bands";
@@ -996,7 +998,7 @@ function WeatherTimeCard({
 							style={{
 								color: cutoutFillColor,
 								lineHeight: 0.92,
-								fontFamily: "var(--font-ark-es)",
+								fontFamily: arkEsSolidLight.style.fontFamily,
 								fontSize: sizes.timeFontPx,
 								textShadow: cutoutTextShadow,
 							}}
@@ -1009,7 +1011,7 @@ function WeatherTimeCard({
 							style={{
 								color: cutoutFillColor,
 								lineHeight: 0.92,
-								fontFamily: "var(--font-ark-es)",
+								fontFamily: arkEsSolidLight.style.fontFamily,
 								fontSize: sizes.timeFontPx,
 								textShadow: cutoutTextShadow,
 							}}
@@ -1716,6 +1718,7 @@ export default function Weather({
 				className,
 			)}
 		>
+			<DecorativeFonts />
 			<ThemeControl
 				mode={weatherMode}
 				onChange={updateWeatherMode}

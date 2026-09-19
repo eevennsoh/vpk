@@ -1,5 +1,7 @@
 "use client";
 
+import { DecorativeFonts } from "./decorative-fonts";
+
 import { motion, useMotionValueEvent } from "motion/react";
 import {
 	useCallback,
@@ -150,6 +152,7 @@ export function GlassTabs<TValue extends string>({
 			className="inline-flex"
 			style={{ x: parentSpringX, y: parentSpringY }}
 		>
+			<DecorativeFonts />
 			<div
 				ref={containerRef}
 				role="radiogroup"

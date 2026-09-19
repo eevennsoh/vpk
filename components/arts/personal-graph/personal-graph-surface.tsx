@@ -11,6 +11,7 @@
 /* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { affigere, departureMono } from "./fonts";
 import { motion, useMotionValue, useMotionValueEvent, useReducedMotion, useSpring } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CopyIcon from "@atlaskit/icon/core/copy";
@@ -89,12 +90,12 @@ import { GraphNodeMarker } from "./personal-graph-surface-helpers";
 type PersonalGraphSurfaceProps = React.ComponentProps<"main">;
 
 const PERSONAL_GRAPH_TITLE_FONT_STYLE = {
-	fontFamily: "var(--font-affigere), Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
+	fontFamily: `${affigere.style.fontFamily}, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif`,
 	fontWeight: 400,
 } satisfies React.CSSProperties;
 
 const PERSONAL_GRAPH_META_FONT_STYLE = {
-	fontFamily: "var(--font-departure-mono), 'Courier New', monospace",
+	fontFamily: `${departureMono.style.fontFamily}, 'Courier New', monospace`,
 } satisfies React.CSSProperties;
 
 const PERSONAL_GRAPH_SETTLED_TITLE_SCRAMBLE_LINE_CHAR_COUNT = 8;
