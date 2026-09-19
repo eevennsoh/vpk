@@ -233,6 +233,7 @@ function collectCardGapZones(
 	node: HTMLElement,
 	cardCode: string,
 	bounds: BoardAgentSessionDropBounds,
+	clipCache: ReadonlyMap<HTMLElement, ListScrollportClip>,
 ): BoardAgentSessionDropZone[] {
 	const cardList = node.closest<HTMLElement>("[data-jira-kanban-card-list]");
 	if (!cardList) return [];
@@ -241,7 +242,7 @@ function collectCardGapZones(
 	// slots replace existing rows, so subtracting those would move a stable seam.
 	// Measure the whole growth container, including its vertical padding.
 	const growth = node.querySelector("[data-session-attach-growth]");
-	const clip = cardList.getBoundingClientRect();
+	const clip = clipCache.get(cardList)?.clip ?? cardList.getBoundingClientRect();
 	return parseBoardCardGapZones(
 		node.dataset.boardColumnTitle,
 		cardCode,
@@ -352,7 +353,7 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 				landRect: resolveIssueLandRect(node),
 				surfaceRect: resolveIssueSurfaceRect(node),
 			},
-			...collectCardGapZones(node, issueKey, rect),
+			...collectCardGapZones(node, issueKey, rect, listScrollportClipCache),
 		];
 	});
 }

@@ -5,6 +5,7 @@ import type {
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { clamp } from "@/lib/utils";
+import { createLatestAnimationFrame } from "@/lib/latest-animation-frame";
 
 const COLLAPSE_THRESHOLD_OFFSET = 40;
 const COLLAPSE_VISUAL_MIN_WIDTH = 80;
@@ -156,39 +157,48 @@ export function useSidebarResize({
 		}
 
 		const getPointerWidth = (clientX: number) => {
-			const delta = (clientX - startXRef.current) * deltaSign;
-			const rawWidth = startWidthRef.current + delta;
-			const nextWidth = minWidthResistance
-				? getResistedMinimumWidth(rawWidth, startWidthRef.current, minWidth)
-				: rawWidth;
-			return clamp(Math.round(nextWidth), minWidth, maxWidth);
-		};
+				const delta = (clientX - startXRef.current) * deltaSign;
+				const rawWidth = startWidthRef.current + delta;
+				const nextWidth = minWidthResistance
+					? getResistedMinimumWidth(rawWidth, startWidthRef.current, minWidth)
+					: rawWidth;
+				return clamp(Math.round(nextWidth), minWidth, maxWidth);
+			};
 
+			const resizeFrame = createLatestAnimationFrame<number>({
+				requestFrame: (callback) => requestAnimationFrame(callback),
+				cancelFrame: (id) => cancelAnimationFrame(id),
+				onFrame: (clientX) => {
+				const delta = (clientX - startXRef.current) * deltaSign;
+				const rawWidth = startWidthRef.current + delta;
+				if (minWidthResistance) {
+					setSidebarWidth(getPointerWidth(clientX));
+					return;
+				}
+
+				const shouldCollapse = rawWidth < collapseThreshold;
+				willCollapseRef.current = shouldCollapse;
+				setWillCollapse(shouldCollapse);
+
+				if (shouldCollapse) {
+					setSidebarWidth(Math.max(rawWidth, COLLAPSE_VISUAL_MIN_WIDTH));
+				} else {
+					setSidebarWidth(clamp(rawWidth, minWidth, maxWidth));
+				}
+			},
+		});
 		const handlePointerMove = (event: PointerEvent) => {
-			const delta = (event.clientX - startXRef.current) * deltaSign;
-			const rawWidth = startWidthRef.current + delta;
-			if (minWidthResistance) {
-				setSidebarWidth(getPointerWidth(event.clientX));
-				return;
-			}
-
-			const shouldCollapse = rawWidth < collapseThreshold;
-			willCollapseRef.current = shouldCollapse;
-			setWillCollapse(shouldCollapse);
-
-			if (shouldCollapse) {
-				setSidebarWidth(Math.max(rawWidth, COLLAPSE_VISUAL_MIN_WIDTH));
-			} else {
-				setSidebarWidth(clamp(rawWidth, minWidth, maxWidth));
-			}
+			resizeFrame.schedule(event.clientX);
 		};
 
 		const handlePointerUp = (event: PointerEvent) => {
+			resizeFrame.cancel();
+			const rawWidth = startWidthRef.current + (event.clientX - startXRef.current) * deltaSign;
 			if (minWidthResistance) {
 				const finalWidth = getPointerWidth(event.clientX);
 				lastValidWidthRef.current = finalWidth;
 				setSidebarWidth(finalWidth);
-			} else if (willCollapseRef.current && onCollapse) {
+			} else if (rawWidth < collapseThreshold && onCollapse) {
 				setSidebarWidth(lastValidWidthRef.current);
 				onCollapse();
 			} else {
@@ -202,6 +212,7 @@ export function useSidebarResize({
 			setIsResizing(false);
 		};
 		const handlePointerCancel = () => {
+			resizeFrame.cancel();
 			setSidebarWidth(lastValidWidthRef.current);
 			willCollapseRef.current = false;
 			setWillCollapse(false);
@@ -212,6 +223,7 @@ export function useSidebarResize({
 		document.addEventListener("pointerup", handlePointerUp);
 		document.addEventListener("pointercancel", handlePointerCancel);
 		return () => {
+			resizeFrame.dispose();
 			document.removeEventListener("pointermove", handlePointerMove);
 			document.removeEventListener("pointerup", handlePointerUp);
 			document.removeEventListener("pointercancel", handlePointerCancel);

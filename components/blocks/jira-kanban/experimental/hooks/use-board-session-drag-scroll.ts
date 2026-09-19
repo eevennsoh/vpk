@@ -16,11 +16,15 @@ export function useBoardSessionDragScroll({ active, rootRef, transactionRef, onG
 		let frame = 0;
 		let previousTime = 0;
 		let paused = false;
+		let geometryInvalidated = true;
 		const update = (time: number) => {
 			frame = 0;
 			const transaction = transactionRef.current;
 			if (!transaction || paused) return;
-			onGeometryChange();
+			if (geometryInvalidated) {
+				geometryInvalidated = false;
+				onGeometryChange();
+			}
 			// A content-sized create well can extend upward over the scrollport.
 			// Its stable target owns the pointer until it leaves the well.
 			if (transaction.target?.kind === "create") return;
@@ -54,6 +58,7 @@ export function useBoardSessionDragScroll({ active, rootRef, transactionRef, onG
 				// Fast frames can request less than one pixel. Keep their time when
 				// the scroll container rounds away the write, then try the next frame.
 				if (target.scrollTop === previousScroll) previousTime = previousFrameTime;
+				else geometryInvalidated = true;
 				frame = requestAnimationFrame(update);
 			}
 		};
@@ -72,18 +77,24 @@ export function useBoardSessionDragScroll({ active, rootRef, transactionRef, onG
 			paused = false;
 			schedule();
 		};
-		const resize = new ResizeObserver(schedule);
+		// Pointer geometry is already owned by the drag scheduler. Refresh here
+		// only after actual scroll/resize invalidation, including stationary drags.
+		const invalidateGeometry = () => {
+			geometryInvalidated = true;
+			schedule();
+		};
+		const resize = new ResizeObserver(invalidateGeometry);
 		for (const list of root.querySelectorAll("[data-jira-kanban-card-list]")) resize.observe(list);
 		document.addEventListener("pointermove", handlePointerMove, { passive: true });
 		window.addEventListener("blur", pause);
-		root.addEventListener("scroll", schedule, true);
+		root.addEventListener("scroll", invalidateGeometry, true);
 		schedule();
 		return () => {
 			cancelAnimationFrame(frame);
 			resize.disconnect();
 			document.removeEventListener("pointermove", handlePointerMove);
 			window.removeEventListener("blur", pause);
-			root.removeEventListener("scroll", schedule, true);
+			root.removeEventListener("scroll", invalidateGeometry, true);
 		};
 	}, [active, rootRef, transactionRef, onGeometryChange]);
 }

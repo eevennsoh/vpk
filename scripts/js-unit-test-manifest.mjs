@@ -13,6 +13,8 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/projects/rovo-core/hooks/use-sidebar-resize.test.js",
+		"components/blocks/jira-kanban/experimental/hooks/use-board-session-drag-scroll.test.js",
 		"components/ui-custom/code-block-cache-key.test.js",
 		".agents/skills/vpk-build/scripts/verify-target.test.js",
 		".agents/skills/vpk-deploy/scripts/plan-frontend-delta.test.js",
