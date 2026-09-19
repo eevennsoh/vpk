@@ -11,6 +11,7 @@ function readProjectFile(relativePath) {
 
 const SCREEN = "components/blocks/agent-insights/components/agent-insights.tsx";
 const INDEX = "components/blocks/agent-insights/index.ts";
+const RETIRED_STUDIO_FORWARDER = "components/projects/studio/components/agent-insights-panel.tsx";
 
 test("Agent Insights is exposed as a website block", () => {
 	assert.match(
@@ -56,4 +57,8 @@ test("Agent Insights index re-exports the public API", () => {
 	const index = readProjectFile(INDEX);
 	assert.match(index, /export \{ AgentInsights \}/u);
 	assert.match(index, /AgentInsightsProps/u);
+});
+
+test("Agent Insights has no retired Studio forwarding module", () => {
+	assert.equal(fs.existsSync(path.join(process.cwd(), RETIRED_STUDIO_FORWARDER)), false);
 });
