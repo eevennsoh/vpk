@@ -68,6 +68,16 @@ function staticContentType(ref) {
 	return undefined;
 }
 
+async function verifyAssets(tasks) {
+	let next = 0;
+	await Promise.all(Array.from({ length: Math.min(6, tasks.length) }, async () => {
+		while (next < tasks.length) {
+			const task = tasks[next++];
+			await request(...task);
+		}
+	}));
+}
+
 async function request(pathname, label, headers = {}, json = false, media) {
 	const signal = AbortSignal.timeout(timeoutMs);
 	let url = new URL(pathname, baseUrl);
@@ -145,19 +155,21 @@ for (const route of routes) {
 	for (const error of initialTheme.errors) failures.push(`route ${routeLabel}: ${error}`);
 	if (initialTheme.checked && !initialTheme.errors.length) console.log(`route ${routeLabel}: initial ADS theme HTML passed`);
 	const refs = [...new Set([...html.matchAll(/["'](\/_next\/static\/[^"']+)/g)].map((match) => match[1].replace(/\\$/u, "")))];
+	const assetChecks = [];
 	for (const ref of refs) {
 		const label = new URL(ref, baseUrl).pathname;
 		const media = staticContentType(ref);
-		await request(ref, `static ${label}`, {}, false, media);
+		assetChecks.push([ref, `static ${label}`, {}, false, media]);
 		if (/\.(?:woff2?|ttf|otf)(?:[?#].*)?$/iu.test(ref)) {
-			await request(ref, `browser-font ${label}`, {
+			assetChecks.push([ref, `browser-font ${label}`, {
 				Origin: baseUrl.origin,
 				Referer: new URL(route, baseUrl).toString(),
 				"Sec-Fetch-Dest": "font",
 				"Sec-Fetch-Mode": "cors",
-			}, false, media);
+			}, false, media]);
 		}
 	}
+	await verifyAssets(assetChecks);
 }
 
 if (profile !== "static") {

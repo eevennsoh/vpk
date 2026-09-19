@@ -85,6 +85,18 @@ a name.
 
 ## Happy path
 
+For recurring releases, begin read-only Micros inspection/authentication while
+local tracing and export work proceeds. Authenticate once, retain the selected
+source/export provenance, and reuse a verified prior-image extraction only when
+its recorded immutable digest matches the currently serving image.
+
+When `vpk-build` has verified the export in this run, consume those unchanged
+bytes through the guarded manual image path. For reviewed frontend-only changes
+on a service with a prior full-image timeout, prefer the compact path below.
+Full runtime builds reuse Docker cache by default; Docker invalidates affected
+layers when package, lockfile, policy, Dockerfile, or source inputs change. Set
+`VPK_DOCKER_NO_CACHE=1` for an explicit clean rebuild with a fresh base pull.
+
 ### Initial deploy or recovered configuration
 
 1. Read [deployment guide](references/guide-deployment.md) and collect the
@@ -132,6 +144,11 @@ pnpm run deploy:micros
 The fast path generates a collision-resistant, Docker-tag-safe version when
 one is omitted. It validates descriptor identity, remote service existence, and
 required stashes before registry permission or login.
+
+Registry permission grant and login are part of the fast path. Keep them in
+manual compact runs too; a cached pull credential can lack upload permission.
+Use `docker push --quiet` to reduce progress noise, then capture the pushed
+digest with image inspection; quiet output can contain only the tag.
 
 Do not run `pnpm deploy`; that is pnpm's unrelated workspace deployment command
 and can fail with `ERR_PNPM_NOTHING_TO_DEPLOY`.
@@ -211,6 +228,13 @@ node .agents/skills/vpk-deploy/scripts/verify-wss.mjs \
 
 The verifier closes the socket and never prints its scoped token. A 101 upgrade
 does not prove working audio.
+
+Static and browser-font HTTP checks use a bounded pool of six requests, keeping
+all content-type, Origin, redirect, readiness, and token checks. Use one focused
+local regression matrix and deployed capability smokes after exact HTML/new-chunk
+parity; repeat deeper tests for a deployment-specific risk or changed evidence.
+Carry forward documented findings tied to unchanged owners, inspect the new
+release, and investigate new or changed findings.
 
 For tokenized VPK apps, also pass `--check-ads-theme`. The verifier checks raw
 HTML theme activation and CSS/JavaScript/font content types. Both deploy scripts

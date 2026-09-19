@@ -124,6 +124,11 @@ corepack pnpm run build:export
 vpk_verify_export
 ```
 
+When `vpk-build` already exported and verified these exact inputs in the current
+run, reuse its `out/` and run `vpk_verify_export` without another build. Recheck
+the selected source/target inputs; an older directory's presence is insufficient.
+The canonical deploy scripts build their own export when used independently.
+
 These identity checks are read-only and must pass before registry login, image
 build or push, and Micros deployment. `service show` success is sufficient for
 an initial deployment even when that new service has no stack yet.
@@ -131,22 +136,15 @@ an initial deployment even when that new service has no stack yet.
 Build the Node 24 runtime image from the pnpm workspace and prebuilt `out/`:
 
 ```bash
-if [ -n "${HOME:-}" ] && [ -f "$HOME/.npmrc" ]; then
-  docker buildx build --platform linux/amd64 --no-cache \
-    --secret "id=npmrc,src=$HOME/.npmrc" \
-    -t "docker.atl-paas.net/$SERVICE_NAME:app-$VERSION" \
-    -f backend/Dockerfile . --load
-else
-  docker buildx build --platform linux/amd64 --no-cache \
-    -t "docker.atl-paas.net/$SERVICE_NAME:app-$VERSION" \
-    -f backend/Dockerfile . --load
-fi
-docker push "docker.atl-paas.net/$SERVICE_NAME:app-$VERSION"
+vpk_build_image "$SERVICE_NAME" "$VERSION"
+docker push --quiet "docker.atl-paas.net/$SERVICE_NAME:app-$VERSION"
 ```
 
-The Dockerfile consumes the optional `npmrc` BuildKit secret only for the
-dependency-install layer. This branch is compatible with the macOS system Bash
-3 even when `HOME` is unset.
+The helper reuses valid Docker layers and mounts the optional npmrc secret for
+the dependency-install layer. It supports macOS Bash 3 with `HOME` unset. For
+an explicit clean rebuild with a fresh base pull, use
+`VPK_DOCKER_NO_CACHE=1 vpk_build_image "$SERVICE_NAME" "$VERSION"`. Record the
+pushed repository digest.
 
 Deploy the exact pushed version:
 
@@ -266,7 +264,7 @@ docker buildx build --platform linux/amd64 \
   -f <empty-overlay-dir>.Dockerfile \
   -t "docker.atl-paas.net/$SERVICE_NAME:app-$VERSION" \
   --load <empty-overlay-dir>
-docker push "docker.atl-paas.net/$SERVICE_NAME:app-$VERSION"
+docker push --quiet "docker.atl-paas.net/$SERVICE_NAME:app-$VERSION"
 ```
 
 Inspect the candidate image's `backend/public/index.html` and representative

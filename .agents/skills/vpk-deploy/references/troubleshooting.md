@@ -234,6 +234,12 @@ local runtime-admin tokens are disabled. Do not send audio or exercise mutating
 tools as part of an unrequested probe. A 101 upgrade proves transport only;
 report untested audio separately.
 
+When HTTP/token discovery works but a sandboxed WSS probe returns only a
+transport error, retry that read-only verifier once outside the sandbox network
+path before investigating or redeploying the service. Team EU26 passed an
+authenticated `101` on that retry. Preserve scoped-token/Origin checks and never
+print the socket URL's token.
+
 ### External source VPK dependency
 
 Inspect the configured `VPK_ORIGIN` service and URL independently. Team EU26's
