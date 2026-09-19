@@ -145,10 +145,17 @@ provider skill links, and unrelated target work. The staging harness generates
 regenerate the sibling's own launcher rather than copying that path. Keep the
 full `public/` tree and list old-only files for review before any deletion.
 
+For repeated updates use [fast refresh](fast-refresh.md): the refresh planner
+compares against the previous verified source Git tree, includes copied CSS and
+types, and guards reviewed preimages. This replaces rebuilding comparison
+scripts and retaining a full previous stage. Staging copies request filesystem
+clones with an ordinary-copy fallback and avoid duplicate traced-asset writes.
+
 For backend-backed refreshes, compare `backend/`, `lib/`, `rovo/`, and
 `scripts/lib/` against the selected source. Review any changed backend owner
-and security/static-serving behavior before copying it. Run `verify-target.sh`
-in the sibling, then prove its live route, API proxy, URL discovery, and
+and security/static-serving behavior before copying it. Run
+`verify-target.sh <target-dir> --export` in a backend-backed sibling to produce
+its export once, then prove its live route, API proxy, URL discovery, and
 WebSocket upgrade. `pnpm install` may update the sibling lockfile after a source
 workspace-policy change; include that reviewed lockfile in the local handoff.
 Update the sibling's existing provenance notes after verification rather than
@@ -156,7 +163,8 @@ replacing them with the staging README.
 
 ## Verification and failures
 
-`verify-target.sh` runs install, typecheck, and build. Diagnose failures at the
+`verify-target.sh` runs install, typecheck, and one build; `--export` selects
+`build:export` for the backend-backed deployment harness. Diagnose failures at the
 narrowest owner:
 
 | Symptom | Likely owner |

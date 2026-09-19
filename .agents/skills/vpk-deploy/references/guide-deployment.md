@@ -347,6 +347,14 @@ appropriate first-render check for that mechanism.
 
 ### Functional and browser evidence
 
+Complete one local regression matrix for the changed capabilities. After exact
+export HTML and representative new-chunk parity, use focused deployed smokes;
+repeat the deeper matrix when production CSP/origins/fonts/auth, production-only
+behavior, or discrepant evidence requires it. Keep source/target bytes and build
+inputs unchanged when reusing evidence. Known finding records tied to unchanged
+owners can be carried forward; inspect the new release and diagnose changed
+counts, messages, or behavior rather than repeating an old baseline investigation.
+
 The HTTP verifier cannot establish usable chat, audio, or fonts permitted by CSP:
 
 1. Open the exact deployed route in a scoped real browser and confirm its route
@@ -366,6 +374,12 @@ The HTTP verifier cannot establish usable chat, audio, or fonts permitted by CSP
    `page.route(...)` and call `page.goto(...)` in that same invocation. Save
    fallback screenshots under ignored `output/playwright/`.
 2. For chat, send one non-sensitive, tool-free prompt and verify an assistant turn.
+   Embedded Rovo headers can omit history/reset controls, and Full screen can
+   leave an extracted route. Identify the thread created by this probe from its
+   own POST/PUT request log, validate its exact prompt/messages with
+   `GET /api/rovo/threads/<id>`, and delete only that thread with the corresponding
+   DELETE endpoint. Confirm removal and return to a fresh root; preserve all
+   other history. This avoids navigating unsupported source routes for cleanup.
    For realtime, run the `verify-wss.mjs` command in `SKILL.md` against the
    deployed HTTPS origin; it obtains the scoped token, sends the correct Origin,
    checks the `101` upgrade, and closes without printing the token or sending

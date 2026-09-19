@@ -28,8 +28,9 @@ backend behavior.
   staging, use the reviewed staged files and their provenance for that release.
   A dirty tree can change without a new SHA; review its contents before copying.
 - For an existing Git checkout or configured deployment, scaffold into a disposable staging directory and review file contents before refreshing the target. Preserve its credentials, descriptor, README, Git state, and backend launcher.
-- Ask for confirmation after the read-only plan and before creating the sibling
-  target.
+- Present the read-only plan and resolve missing source/runtime choices before
+  writing. Carry forward authorization for the same target and runtime contract;
+  an explicit refresh request does not need another confirmation.
 - Preserve repo-relative source paths and copy source files verbatim where
   possible; put extraction-specific behavior in the target harness.
 - Copy the full `public/` tree because runtime data can reference untraced assets.
@@ -95,7 +96,8 @@ when those calls belong to the exported route. Stop for a decision when:
 
 For an intentional Studio/chat/Rovo/wiki/realtime export, use the full
 backend-backed contract in [extraction guide](references/extraction-guide.md).
-Show the plan summary and receive confirmation before continuing.
+Show the plan summary, resolve decision points, and continue within the user's
+authorized scope.
 
 ### 2. Scaffold and copy
 
@@ -127,13 +129,25 @@ changes. Preserve `.deploy.local`, `service-descriptor.yml`, the sibling README,
 the launcher for the actual sibling path. Review backend changes separately and
 retain the full public asset tree. See [extraction guide](references/extraction-guide.md).
 
+For recurring releases, follow [fast refresh](references/fast-refresh.md).
+Use `plan-target-refresh.mjs` with the previous verified VPK source SHA to plan
+and apply only reviewed file changes. It includes copied CSS/types/assets,
+preserves local overrides and configured harness files, and rejects overlapping
+edits or changed file bytes after review. When the verified baseline Git commit
+is available, a previous full staging tree is not needed.
+
 ### 3. Verify the target
 
+Choose one verification mode. For the backend-backed deployment harness:
+
 ```bash
-.agents/skills/vpk-build/scripts/verify-target.sh <target-dir>
+.agents/skills/vpk-build/scripts/verify-target.sh <target-dir> --export
 ```
 
-This runs install, typecheck, the supported static export build, and an export
+The default command selects `build:export` when available and otherwise runs the
+minimal static scaffold's `build`, which already exports. `--export` explicitly
+selects the canonical wrapper. Both modes run install, typecheck, one build,
+require `out/index.html`, and then verify an export
 inventory in the extracted project. The report under `output/export-inventory.json`
 lists HTML-referenced Next.js JS/CSS/fonts and largest assets separately from
 all packaged files. Missing referenced assets fail verification. These are file
@@ -176,6 +190,11 @@ production load measurements. Use the shared
 [UI performance workflow](../../docs/playbooks/improve-ui-performance.md) for
 repeatable baseline/treatment conditions and keep/neutral/revert decisions.
 
+For a chained build/deploy, carry the freshly verified export into the guarded
+manual packaging path. Keep its source, dependency, harness, asset, and build
+inputs unchanged; build that export once. Standalone deploy scripts still build
+their own export.
+
 ## Validation
 
 When changing this skill's documentation or extraction contract, run:
@@ -200,6 +219,10 @@ reference. That reference can break a later standalone typecheck.
 - [scaffold-target.mjs](scripts/scaffold-target.mjs): plan-driven copier and
   target generator.
 - [verify-target.sh](scripts/verify-target.sh): install/typecheck/build gate.
+- [plan-target-refresh.mjs](scripts/plan-target-refresh.mjs): Git-baseline file
+  comparison and checksum-guarded source refresh.
+- [fast-refresh.md](references/fast-refresh.md): recurring release sequence,
+  export reuse, and focused browser handoff.
 - [extraction-guide.md](references/extraction-guide.md): detailed contracts and
   troubleshooting.
 - [scaffold/](references/scaffold/): target project templates.

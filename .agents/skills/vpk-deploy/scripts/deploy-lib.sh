@@ -215,14 +215,18 @@ vpk_build_image() {
   image_version=$2
   image_registry=${3:-docker.atl-paas.net}
   npmrc_home=${HOME:-}
+  local build_options=(--platform linux/amd64)
+  if [ "${VPK_DOCKER_NO_CACHE:-0}" = "1" ]; then
+    build_options+=(--pull --no-cache)
+  fi
 
   if [ -n "$npmrc_home" ] && [ -f "$npmrc_home/.npmrc" ]; then
-    docker buildx build --platform linux/amd64 --no-cache \
+    docker buildx build "${build_options[@]}" \
       --secret "id=npmrc,src=$npmrc_home/.npmrc" \
       -t "$image_registry/${image_service}:app-${image_version}" \
       -f backend/Dockerfile . --load
   else
-    docker buildx build --platform linux/amd64 --no-cache \
+    docker buildx build "${build_options[@]}" \
       -t "$image_registry/${image_service}:app-${image_version}" \
       -f backend/Dockerfile . --load
   fi

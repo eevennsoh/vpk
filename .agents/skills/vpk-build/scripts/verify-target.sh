@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # verify-target.sh
 #
-# Runs the three verification steps inside an extracted sibling project:
+# Runs four verification steps inside an extracted sibling project:
 #   1. pnpm install  — confirms deps are resolvable
 #   2. pnpm typecheck — catches missing imports
-#   3. static export — uses build:export when the target has that wrapper
-#   4. inventory     — verifies referenced assets and reports packaged sizes
+#   3. one build    — selects build:export when available or explicitly requested
+#   4. inventory    — verifies referenced assets and reports packaged sizes
 #
 # Usage:
-#   verify-target.sh <target-dir>
+#   verify-target.sh <target-dir> [--export]
 #
 # Exits 0 on success; non-zero (with the failing step's exit code) on failure.
 # Each step's output is streamed to stdout so the caller sees progress live.
@@ -16,8 +16,15 @@
 set -euo pipefail
 
 TARGET="${1:-}"
+BUILD_SCRIPT="build"
+if [[ "${2:-}" == "--export" && "$#" == 2 ]]; then
+	BUILD_SCRIPT="build:export"
+elif [[ "$#" != 1 ]]; then
+	echo "Usage: verify-target.sh <target-dir> [--export]" >&2
+	exit 2
+fi
 if [[ -z "$TARGET" ]]; then
-	echo "Usage: verify-target.sh <target-dir>" >&2
+	echo "Usage: verify-target.sh <target-dir> [--export]" >&2
 	exit 2
 fi
 if [[ ! -d "$TARGET" ]]; then
@@ -35,11 +42,14 @@ echo "━━━━ 2/4  pnpm typecheck ━━━━"
 pnpm run typecheck
 
 echo ""
-echo "━━━━ 3/4  static export ━━━━"
-if node -e 'process.exit(JSON.parse(require("node:fs").readFileSync("package.json", "utf8")).scripts?.["build:export"] ? 0 : 1)'; then
-	pnpm run build:export
-else
-	pnpm run build
+if [[ "$BUILD_SCRIPT" == "build" ]] && node -e 'process.exit(JSON.parse(require("node:fs").readFileSync("package.json", "utf8")).scripts?.["build:export"] ? 0 : 1)'; then
+	BUILD_SCRIPT="build:export"
+fi
+echo "━━━━ 3/4  pnpm $BUILD_SCRIPT ━━━━"
+pnpm run "$BUILD_SCRIPT"
+if [[ ! -f out/index.html ]]; then
+	echo "Static export did not produce out/index.html" >&2
+	exit 1
 fi
 
 echo ""
