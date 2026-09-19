@@ -178,6 +178,7 @@ function runFixture(fixture, scriptPath, args = [], options = {}) {
 		FAKE_WRONG_ATLAS: options.wrongAtlas ? "yes" : "no",
 		FAKE_HELP_STDERR: options.helpStderr ? "yes" : "no",
 		FAKE_UNSTYLED_EXPORT: options.unstyledExport ? "yes" : "no",
+		VPK_DOCKER_NO_CACHE: options.noCache ? "1" : "0",
 		VPK_ATLAS_BIN: path.join(fixture.fakeBin, "atlas"),
 		PATH: `${fixture.fakeBin}${path.delimiter}${process.env.PATH || "/usr/bin:/bin"}`,
 	};
@@ -202,6 +203,19 @@ function assertNoMutationCalls(calls) {
 	assert.doesNotMatch(calls, /docker buildx/u);
 	assert.doesNotMatch(calls, /docker push/u);
 	assert.doesNotMatch(calls, /atlas micros service deploy/u);
+}
+
+for (const noCache of [false, true]) {
+	test(`runtime Docker builds ${noCache ? "honor an explicit clean rebuild" : "reuse cache by default"}`, () => {
+		withFixture({}, (fixture) => {
+			const result = runFixture(fixture, "scripts/dev-deploy-fast.sh", ["1.0.1"], { home: "", noCache });
+			assert.equal(result.status, 0, result.stdout + result.stderr);
+			const build = callsFor(fixture).split("\n").find((line) => line.startsWith("docker buildx build"));
+			assert.match(build, /--platform linux\/amd64/u);
+			assert.equal(build.includes("--no-cache"), noCache);
+			assert.equal(build.includes("--pull"), noCache);
+		});
+	});
 }
 
 function withFixture(options, callback) {

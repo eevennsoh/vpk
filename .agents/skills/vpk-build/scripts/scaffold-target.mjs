@@ -415,7 +415,9 @@ function ensureDir(dir) {
 
 function copyFileVerbatim(srcAbs, destAbs) {
 	ensureDir(path.dirname(destAbs));
-	fs.copyFileSync(srcAbs, destAbs);
+	// Clone bytes on supported filesystems; Node falls back to a normal copy.
+	// Each destination remains independent when either checkout is edited.
+	fs.copyFileSync(srcAbs, destAbs, fs.constants.COPYFILE_FICLONE);
 }
 
 function writeFileEnsuring(destAbs, contents) {
@@ -771,14 +773,15 @@ export function FeatureFlagsShim() {
 	// and data records. A traced asset allow-list is too brittle for those
 	// routes, so standalone builds carry the source public tree verbatim.
 	const publicDir = path.join(repoRoot, "public");
-	if (fs.existsSync(publicDir)) {
+	const copiedPublicTree = fs.existsSync(publicDir);
+	if (copiedPublicTree) {
 		copyTreeVerbatim(publicDir, path.join(targetDir, "public"));
 	}
 
 	// ---- 5. Copy traced public assets ----
 	// Kept for older plans and for source repos that do not have a complete
-	// public tree. If public/ was copied above these writes are no-ops.
-	for (const assetPath of plan.assets) {
+	// public tree. A complete copy already includes these assets.
+	for (const assetPath of copiedPublicTree ? [] : plan.assets) {
 		const rel = assetPath.startsWith("/") ? assetPath.slice(1) : assetPath;
 		const srcAbs = path.join(repoRoot, "public", rel);
 		if (!fs.existsSync(srcAbs)) continue; // Asset might have been a regex false-positive

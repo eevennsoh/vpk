@@ -36,6 +36,7 @@ export default function AwakePage() {
 
 	return createElement(Demo);
 }
+
 `,
 		);
 		writeFile(
@@ -124,6 +125,21 @@ export default function AwakePage() {
 		throw error;
 	}
 }
+
+test("staged public assets remain independent from the source when either copy is edited", () => {
+	const fixture = createFixture();
+	try {
+		const relative = "public/runtime asset.bin";
+		const original = Buffer.alloc(8192, 37);
+		fs.writeFileSync(path.join(fixture.repoRoot, relative), original);
+		execFileSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir], { stdio: "pipe" });
+		assert.deepEqual(fs.readFileSync(path.join(fixture.targetDir, relative)), original);
+		fs.writeFileSync(path.join(fixture.targetDir, relative), "target edit");
+		assert.deepEqual(fs.readFileSync(path.join(fixture.repoRoot, relative)), original);
+		fs.writeFileSync(path.join(fixture.repoRoot, relative), "source edit");
+		assert.equal(fs.readFileSync(path.join(fixture.targetDir, relative), "utf8"), "target edit");
+	} finally { fixture.cleanup(); }
+});
 
 test("scaffold-target emits the updated layout, shim, config, and fonts for extracted routes", () => {
 	const fixture = createFixture();

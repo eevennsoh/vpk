@@ -40,6 +40,28 @@ async function verify(t, handler, args = []) {
 	return { status, output, requests, baseUrl };
 }
 
+test("static asset verification overlaps requests with a bounded worker count and retains font Origin checks", async (t) => {
+	let active = 0, peak = 0;
+	const assets = Array.from({ length: 12 }, (_, index) => `/_next/static/asset-${index}.js`);
+	assets.push("/_next/static/font.woff2");
+	const result = await verify(t, (req, res) => {
+		if (req.url === "/") {
+			res.setHeader("Content-Type", "text/html");
+			res.end(assets.map((asset) => `<link href="${asset}">`).join(""));
+			return true;
+		}
+		active++; peak = Math.max(peak, active);
+		res.setHeader("Content-Type", req.url.endsWith("woff2") ? "font/woff2" : "text/javascript");
+		setTimeout(() => { active--; res.end("fixture"); }, 40);
+		return true;
+	}, ["--profile", "static"]);
+	assert.equal(result.status, 0, result.output);
+	assert.ok(peak > 1, "asset requests must overlap rather than run serially");
+	assert.ok(peak <= 6, "the verifier must not send an unbounded burst");
+	assert.equal(result.requests.length, 15);
+	assert.equal(result.requests.filter((req) => req.path.endsWith("woff2") && req.origin === result.baseUrl).length, 1);
+});
+
 test("full runtime verifies only the default root and never exposes tokens", async (t) => {
 	const result = await verify(t);
 	assert.equal(result.status, 0, result.output);
