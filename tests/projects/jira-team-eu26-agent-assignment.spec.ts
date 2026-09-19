@@ -45,6 +45,26 @@ test("List assigned menu uses Add agent and opens the selector", async ({ page }
 	await expect(menu.getByRole("textbox", { name: "Search agents" })).toBeVisible();
 });
 
+test("keyboard session selection moves focus into the opened chat", async ({ page }) => {
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	const trigger = page.getByRole("button", { name: "Cursor: Working", exact: true });
+	await trigger.focus();
+	await page.keyboard.press("Enter");
+
+	const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+	await expect(flyout).toBeVisible();
+	await page.keyboard.press("Tab");
+	const session = flyout.getByRole("button", {
+		name: /^Cursor Cursor, used by Venn Cursor Local session/u,
+	});
+	await expect(session).toBeFocused();
+	await page.keyboard.press("Enter");
+
+	const composer = page.getByRole("textbox", { name: "Chat message input" });
+	await expect(composer).toBeVisible();
+	await expect(composer).toBeFocused();
+});
+
 for (const { issueKey, state, agent } of [
 	{ issueKey: "PAY-105", state: "Working", agent: "Cursor" },
 	{ issueKey: "PAY-112", state: "Needs input", agent: "Codex" },
@@ -289,3 +309,25 @@ test("the between-card create marker escapes the card-list clip", async ({ page 
 		await page.mouse.up();
 	}
 });
+
+for (const flag of ["jiraWorkItemOpen", "jiraPulseOpen"] as const) {
+	test(`temporarily hidden chat preserves host focus on ${flag} remount`, async ({ page }) => {
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
+		const composer = page.getByRole("textbox", { name: "Chat message input" });
+		await expect(composer).toBeFocused();
+		await page.evaluate((key) => { document.documentElement.dataset[key] = "true"; }, flag);
+		await expect(composer).toBeHidden();
+		const restored = page.getByRole("button", { name: "Settings", exact: true });
+		await restored.focus();
+		await page.evaluate((key) => { delete document.documentElement.dataset[key]; }, flag);
+		await expect(composer).toBeVisible();
+		await expect(restored).toBeFocused();
+		await page.waitForTimeout(250);
+		await expect(restored).toBeFocused();
+		await page.locator('[data-rovo-chat-placement="floating"]').getByRole("button", { name: "Close", exact: true }).click();
+		await expect(composer).toBeHidden();
+		await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
+		await expect(composer).toBeFocused();
+	});
+}

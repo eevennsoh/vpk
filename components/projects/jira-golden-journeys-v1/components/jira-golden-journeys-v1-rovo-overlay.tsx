@@ -52,6 +52,10 @@ export function JgpRovoOverlay({
 	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 	const [isRovoCanvasOpen, setIsRovoCanvasOpen] = useState(false);
 	const [isEmbeddedHostOpen, setIsEmbeddedHostOpen] = useState(false);
+	const [composerFocusState, setComposerFocusState] = useState({
+		surface: chatSurface,
+		autoFocus: false,
+	});
 
 	useEffect(() => {
 		setPortalRoot(document.body);
@@ -89,6 +93,15 @@ export function JgpRovoOverlay({
 		&& chatSurface === "floating"
 		&& !isEmbeddedHostOpen;
 
+	// Autofocus belongs to a genuine chat open; host visibility changes must
+	// preserve their own focus restoration when floating chat remounts.
+	if (composerFocusState.surface !== chatSurface || (composerFocusState.autoFocus && !showFloatingChat)) {
+		setComposerFocusState({
+			surface: chatSurface,
+			autoFocus: composerFocusState.surface === null && showFloatingChat,
+		});
+	}
+
 	if (!portalRoot) return null;
 
 	return createPortal(
@@ -106,6 +119,7 @@ export function JgpRovoOverlay({
 				{showFloatingChat ? (
 					<RovoFloatingChat
 						key="floating-chat"
+						autoFocusComposer={composerFocusState.autoFocus}
 						chatContextBar={chatContextBar}
 						composerPrefillRequest={composerPrefillRequest}
 						onComposerPrefillConsumed={onComposerPrefillConsumed}

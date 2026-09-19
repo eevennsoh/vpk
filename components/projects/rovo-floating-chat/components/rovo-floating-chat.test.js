@@ -101,6 +101,7 @@ async function loadRovoFloatingChatHarness() {
 							"data-testid": "shared-chat-panel",
 							"data-hide-header": String(props.hideHeader),
 							"data-abort-on-unmount": String(props.abortOnUnmount),
+							"data-auto-focus-composer": String(props.autoFocusComposer),
 							"data-context-label": props.chatContextBar?.label ?? "",
 							"data-context-icon": props.chatContextBar?.iconName ?? "",
 							"data-greeting-labels": props.greeting?.suggestions?.map((suggestion) => suggestion.label).join("|") ?? "",
@@ -165,6 +166,12 @@ async function loadRovoFloatingChatHarness() {
 							iconName: "work-item",
 							signature: "agents-work-item:RFP-101",
 						},
+					}));
+				}
+
+				export function renderFloatingChatWithAutoFocus() {
+					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
+						autoFocusComposer: true,
 					}));
 				}
 
@@ -372,6 +379,15 @@ test("RovoFloatingChat forwards context bar descriptor to the shared chat panel"
 
 	assert.match(markup, /data-context-label="RFP-101: Prepare for bid recommendation for ESM RFP"/);
 	assert.match(markup, /data-context-icon="work-item"/);
+});
+
+test("RovoFloatingChat forwards opt-in composer autofocus to the shared chat panel", async () => {
+	const harness = await loadRovoFloatingChatHarness();
+	const defaultMarkup = harness.renderFloatingChat();
+	const autoFocusMarkup = harness.renderFloatingChatWithAutoFocus();
+
+	assert.match(defaultMarkup, /data-auto-focus-composer="false"/u);
+	assert.match(autoFocusMarkup, /data-auto-focus-composer="true"/u);
 });
 
 test("RovoFloatingChat forwards composer source and model control visibility to the shared chat panel", async () => {
