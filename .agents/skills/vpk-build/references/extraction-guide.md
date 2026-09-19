@@ -240,3 +240,21 @@ serving.
 - Generating a replacement backend from detected API calls.
 - Inferring provider dependency ordering beyond the scaffold's generated order;
   reorder the target layout when a real cross-provider dependency requires it.
+
+
+## Release provenance and packaging measurements
+
+New scaffolds and reviewed refreshes record `.vpk-source.json` with the selected
+source SHA, dirty-state selection and route. A new scaffold also records route
+and conservatively retained backend dependency provenance. Do not interpret
+those retained packages as proven server imports or proven unused dependencies.
+
+`verify-target.sh` prepares the export once and writes a receipt under ignored
+`output/`. The receipt checks all current build inputs and export representations,
+so it may be reused only while those bytes and recorded build settings match.
+Do not use `out/` presence, timestamps or Git SHA alone as a freshness shortcut.
+
+For an existing target without metadata, give the trace plan to the packaging
+report. The report distinguishes original asset bytes from gzip/Brotli overhead,
+shows largest original assets, and lists retained dependencies needing a backend
+import/runtime audit. It never removes assets or dependencies.

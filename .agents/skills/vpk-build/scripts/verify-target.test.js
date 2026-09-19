@@ -17,6 +17,8 @@ function verify(t, args = [], options = {}) {
 		build: "fixture", typecheck: "fixture",
 		...(args.includes("--export") ? { "build:export": "fixture" } : {}),
 	} }));
+		fs.mkdirSync(path.join(target, "app"));
+	fs.writeFileSync(path.join(target, "app/page.tsx"), "original source");
 	const calls = path.join(root, "calls.log");
 	fs.writeFileSync(calls, "");
 	fs.writeFileSync(path.join(bin, "pnpm"), `#!/bin/bash
@@ -24,6 +26,7 @@ printf '%s\\n' "$*" >> "$VERIFY_CALLS"
 if [ "$*" = "$VERIFY_FAIL" ]; then exit 7; fi
 case "$*" in
 "run build"|"run build:export")
+	if [ "$VERIFY_MUTATE" = yes ]; then printf "later edit" >> app/page.tsx; fi
 	if [ "$VERIFY_OUTPUT" = yes ]; then
 		mkdir -p out
 		printf '%s' "$VERIFY_HTML" > out/index.html
@@ -32,9 +35,22 @@ case "$*" in
 esac
 `);
 	fs.chmodSync(path.join(bin, "pnpm"), 0o755);
-	const result = spawnSync("bash", [path.join(__dirname, "verify-target.sh"), target, ...args], {
+	let script = path.join(__dirname, "verify-target.sh");
+	let workingDirectory;
+	if (options.relativeInvocation) {
+		workingDirectory = path.join(root, "source");
+		const buildScripts = path.join(workingDirectory, ".agents/skills/vpk-build/scripts");
+		const deployScripts = path.join(workingDirectory, ".agents/skills/vpk-deploy/scripts");
+		fs.mkdirSync(buildScripts, { recursive: true }); fs.mkdirSync(deployScripts, { recursive: true });
+		fs.copyFileSync(path.join(__dirname, "verify-target.sh"), path.join(buildScripts, "verify-target.sh"));
+		fs.copyFileSync(path.resolve(__dirname, "../../vpk-deploy/scripts/release-receipt.mjs"), path.join(deployScripts, "release-receipt.mjs"));
+		script = ".agents/skills/vpk-build/scripts/verify-target.sh";
+	}
+	const result = spawnSync("bash", [script, target, ...args], {
+		cwd: workingDirectory,
 		encoding: "utf8",
 		env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, VERIFY_CALLS: calls, VERIFY_FAIL: options.fail || "", VERIFY_OUTPUT: options.output === false ? "no" : "yes",
+			VERIFY_MUTATE: options.mutateDuringBuild ? "yes" : "no",
 			VERIFY_HTML: options.missingAsset ? '<html><script src="/_next/static/missing.js"></script></html>' : "<html></html>",
 		},
 	});
@@ -46,6 +62,7 @@ test("normal verification retains install, typecheck, and one build", (t) => {
 	assert.equal(result.status, 0, result.stderr);
 	assert.deepEqual(result.calls, ["install", "run typecheck", "run build"]);
 	assert.ok(fs.existsSync(path.join(result.target, "output/export-inventory.json")));
+	assert.ok(fs.existsSync(path.join(result.target, "output/release-receipt.json")));
 });
 
 test("explicit export verification builds once and records the inventory", (t) => {
@@ -53,6 +70,7 @@ test("explicit export verification builds once and records the inventory", (t) =
 	assert.equal(result.status, 0, result.stderr);
 	assert.deepEqual(result.calls, ["install", "run typecheck", "run build:export"]);
 	assert.ok(fs.existsSync(path.join(result.target, "output/export-inventory.json")));
+	assert.ok(fs.existsSync(path.join(result.target, "output/release-receipt.json")));
 });
 
 test("export verification fails when its deliverable is missing", (t) => {
@@ -90,15 +108,32 @@ for (const wrapper of [false, true]) {
 		fs.copyFileSync(path.resolve(__dirname, "../../../../scripts/prepare-static-export.mjs"), path.join(root, "scripts/prepare-static-export.mjs"));
 		fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ scripts: wrapper ? { "build:export": "fixture" } : {} }));
 		const fakePnpm = path.join(root, "bin/pnpm");
-		fs.writeFileSync(fakePnpm, '#!/bin/sh\nprintf "%s\\n" "$*" >> calls.log\ncase "$*" in\n"run build"|"run build:export") mkdir -p out; printf "<html>Exported</html>" > out/index.html;;\nesac\n');
+		fs.writeFileSync(fakePnpm, '#!/bin/sh\nmkdir -p output\nprintf "%s\\n" "$*" >> output/calls.log\ncase "$*" in\n"run build"|"run build:export") mkdir -p out; printf "<html>Exported</html>" > out/index.html;;\nesac\n');
 		fs.chmodSync(fakePnpm, 0o755);
 		const result = spawnSync("bash", [path.join(__dirname, "verify-target.sh"), root], {
 			encoding: "utf8", env: { ...process.env, PATH: `${root}/bin${path.delimiter}${process.env.PATH}` },
 		});
 		assert.equal(result.status, 0, result.stdout + result.stderr);
-		assert.equal(fs.readFileSync(path.join(root, "calls.log"), "utf8"), `install\nrun typecheck\nrun ${wrapper ? "build:export" : "build"}\n`);
+		assert.equal(fs.readFileSync(path.join(root, "output/calls.log"), "utf8"), `install\nrun typecheck\nrun ${wrapper ? "build:export" : "build"}\n`);
 		const inventory = JSON.parse(fs.readFileSync(path.join(root, "output/export-inventory.json"), "utf8"));
 		assert.equal(inventory.routes[0].html.rawBytes, 21);
-		assert.equal(fs.existsSync(path.join(root, "out/index.html.gz")), false);
+		assert.equal(fs.existsSync(path.join(root, "out/index.html.gz")), true);
+		assert.equal(fs.existsSync(path.join(root, "output/release-receipt.json")), true);
 	});
 }
+
+
+test("documented relative invocation resolves the receipt helper before changing target directories", t => {
+	const result = verify(t, ["--export"], { relativeInvocation: true });
+	assert.equal(result.status, 0, result.stdout + result.stderr);
+	assert.deepEqual(result.calls, ["install", "run typecheck", "run build:export"]);
+	assert.ok(fs.existsSync(path.join(result.target, "output/release-receipt.json")));
+});
+
+
+test("an edit during compilation cannot be blessed by a post-build receipt", t => {
+	const result = verify(t, ["--export"], { mutateDuringBuild: true });
+	assert.equal(result.status, 2, result.stdout + result.stderr);
+	assert.match(result.stderr, /changed/u);
+	assert.equal(fs.existsSync(path.join(result.target, "output/release-receipt.json")), false);
+});

@@ -66,3 +66,35 @@ test("inventory supports URL-encoded names and serialized Next references", asyn
 	const inventory = inspectExport(root);
 	assert.equal(inventory.routes[0].jsBytes, 4);
 });
+
+
+test("packaging reports identity, codec overhead, and largest original assets without deleting assets", async (t) => {
+	const { prepareExport } = await exportModule;
+	const root = fixture(t);
+	fs.writeFileSync(path.join(root, "unused.svg"), "<svg>" + "asset".repeat(1000) + "</svg>");
+	const result = await prepareExport(root);
+	assert.ok(result.representationBytes.identity > 0);
+	assert.ok(result.representationBytes.gzip > 0);
+	assert.ok(result.representationBytes.brotli > 0);
+	assert.equal(result.packagedBytes, Object.values(result.representationBytes).reduce((sum, bytes) => sum + bytes, 0));
+	assert.equal(result.compressionOverheadBytes, result.representationBytes.gzip + result.representationBytes.brotli);
+	assert.equal(result.largestPackagedAssets[0].path, "unused.svg");
+	assert.equal(fs.existsSync(path.join(root, "unused.svg")), true);
+});
+
+
+test("packaging dependency reporting is conservative and sanitizes malformed metadata", async t => {
+	const root = fixture(t);
+	fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ dependencies: { react: "1", express: "1", retained: "1" } }));
+	fs.mkdirSync(path.join(root, "backend"));
+	fs.writeFileSync(path.join(root, "backend/package.json"), JSON.stringify({ dependencies: { express: "1" } }));
+	fs.mkdirSync(path.join(root, "out"));
+	fs.renameSync(path.join(root, "index.html"), path.join(root, "out/index.html"));
+	fs.renameSync(path.join(root, "_next"), path.join(root, "out/_next"));
+	const { inspectPackaging } = await import("../.agents/skills/vpk-deploy/scripts/packaging-report.mjs");
+	const report = inspectPackaging(root, { npmPackages: { react: "1" } });
+	assert.deepEqual(report.dependencies.conservativeUnclassified, ["retained"]);
+	assert.match(report.dependencies.note, /not proven unused/u);
+	fs.writeFileSync(path.join(root, "package.json"), '{"private":"fixture-secret" invalid}');
+	assert.throws(() => inspectPackaging(root), error => error.message === "Invalid packaging metadata JSON");
+});

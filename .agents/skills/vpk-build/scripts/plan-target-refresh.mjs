@@ -95,7 +95,8 @@ function planRefresh(planFile, stageDir, targetDir, baseline) {
 	const staged = collect(stageRoot);
 	const target = collect(targetRoot);
 	const manifest = {
-		version: 1, sourceRoot, sourceRevision: plan.sourceRevision, baselineRevision, stageRoot, targetRoot,
+		version: 1, sourceRoot, sourceRevision: plan.sourceRevision, sourceWasDirty: Boolean(plan.sourceWasDirty), route: plan.route, baselineRevision, stageRoot, targetRoot,
+		sourceMetadataSha256: fingerprint(path.join(targetRoot, ".vpk-source.json"))?.sha256 ?? null,
 		copy: [], overlaps: [], localOverrides: [], manualReview: [], preserved: [], oldOnly: [],
 	};
 	for (const [relative, stagedFile] of staged) {
@@ -136,6 +137,11 @@ function applyRefresh(manifestFile) {
 	if (manifest.version !== 1 || !Array.isArray(manifest.copy) || !Array.isArray(manifest.overlaps)) throw new Error("Unsupported refresh manifest");
 	const [, stageRoot, targetRoot] = roots(manifest.sourceRoot, manifest.stageRoot, manifest.targetRoot);
 	if (manifest.overlaps.length) throw new Error("Resolve overlapping local edits before applying the refresh");
+	const sourceMetadata = path.join(targetRoot, ".vpk-source.json");
+	checkAncestorLinks(targetRoot, ".vpk-source.json");
+	if ((fingerprint(sourceMetadata)?.sha256 ?? null) !== manifest.sourceMetadataSha256) throw new Error("Source metadata changed after review");
+	const previousMetadata = fs.existsSync(sourceMetadata) ? JSON.parse(fs.readFileSync(sourceMetadata, "utf8")) : {};
+	if (previousMetadata.version !== undefined && previousMetadata.version !== 1) throw new Error("Unknown source metadata requires manual review");
 	const seen = new Set();
 	const check = (item) => {
 		if (!copyable(item.path)) throw new Error("Refresh manifest contains a protected or invalid path");
@@ -161,6 +167,8 @@ function applyRefresh(manifestFile) {
 		fs.copyFileSync(path.join(stageRoot, item.path), destination, fs.constants.COPYFILE_FICLONE);
 		fs.chmodSync(destination, item.mode);
 	}
+	if ((fingerprint(sourceMetadata)?.sha256 ?? null) !== manifest.sourceMetadataSha256) throw new Error("Source metadata changed during refresh");
+	fs.writeFileSync(sourceMetadata, `${JSON.stringify({ ...previousMetadata, version: 1, sourceRevision: manifest.sourceRevision, sourceWasDirty: Boolean(manifest.sourceWasDirty), route: manifest.route }, null, 2)}\n`);
 	console.log(JSON.stringify({ sourceRevision: manifest.sourceRevision, copied: manifest.copy.length, localOverrides: manifest.localOverrides, preserved: manifest.preserved, manualReview: manifest.manualReview, oldOnly: manifest.oldOnly }, null, 2));
 }
 

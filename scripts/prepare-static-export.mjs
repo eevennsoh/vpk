@@ -72,6 +72,14 @@ export function inspectExport(exportDirectory) {
 			largestAssets: [...assets].sort((a, b) => b.rawBytes - a.rawBytes).slice(0, 5),
 		});
 	}
+	const representationBytes = { identity: 0, gzip: 0, brotli: 0 };
+	const originalAssets = [];
+	for (const absolute of files) {
+		const bytes = fs.statSync(absolute).size;
+		const codec = absolute.endsWith(".gz") ? "gzip" : absolute.endsWith(".br") ? "brotli" : null;
+		if (codec && fs.existsSync(absolute.slice(0, -3))) representationBytes[codec] += bytes;
+		else { representationBytes.identity += bytes; originalAssets.push({ path: path.relative(root, absolute).split(path.sep).join("/"), rawBytes: bytes }); }
+	}
 	return {
 		schemaVersion: 1,
 		kind: "static-export-inventory",
@@ -79,6 +87,9 @@ export function inspectExport(exportDirectory) {
 		packagedFiles: files.length,
 		packagedBytes: files.reduce((sum, file) => sum + fs.statSync(file).size, 0),
 		routes,
+		representationBytes,
+		compressionOverheadBytes: representationBytes.gzip + representationBytes.brotli,
+		largestPackagedAssets: originalAssets.sort((a, b) => b.rawBytes - a.rawBytes).slice(0, 10),
 	};
 }
 

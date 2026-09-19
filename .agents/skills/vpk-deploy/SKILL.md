@@ -77,8 +77,9 @@ vpk_resolve_atlas
 ```
 
 Report the service, environment, URL, deployed version/state, variable names or
-count, and missing configuration. Use `micros service show -o json` to verify
-`stacks[env][0].status` and `stacks[env][0].sd.buildNumber`; a reused deployment
+count, and missing configuration. Resolve `environments[env].stable.deploymentId` to exactly one stack with
+`deployment-status.mjs`; track a requested deployment ID separately during
+rollout. Array order and build number alone do not identify the serving release; a reused deployment
 ID's events can describe an older creation. `No such service` or `Unknown
 service` means the Micros service must be created even when local files contain
 a name.
@@ -90,8 +91,10 @@ local tracing and export work proceeds. Authenticate once, retain the selected
 source/export provenance, and reuse a verified prior-image extraction only when
 its recorded immutable digest matches the currently serving image.
 
-When `vpk-build` has verified the export in this run, consume those unchanged
-bytes through the guarded manual image path. For reviewed frontend-only changes
+When `vpk-build` has verified the export in this run, pass
+`--receipt output/release-receipt.json` to consume those prepared bytes without
+rebuilding. Receipt guards run before registry/Micros mutations; no bare
+`--skip-build` or directory-presence shortcut is supported. For reviewed frontend-only changes
 on a service with a prior full-image timeout, prefer the compact path below.
 Full runtime builds reuse Docker cache by default; Docker invalidates affected
 layers when package, lockfile, policy, Dockerfile, or source inputs change. Set
@@ -138,7 +141,7 @@ canonical script cannot cover the requested operation.
 When `.deploy.local` is valid and the existing service is confirmed:
 
 ```bash
-pnpm run deploy:micros
+pnpm run deploy:micros --mode=cutover
 ```
 
 The fast path generates a collision-resistant, Docker-tag-safe version when
@@ -153,7 +156,13 @@ digest with image inspection; quiet output can contain only the tag.
 Do not run `pnpm deploy`; that is pnpm's unrelated workspace deployment command
 and can fail with `ERR_PNPM_NOTHING_TO_DEPLOY`.
 
-For an existing running deployment, image hot swap is explicit:
+Both supported deploy scripts always pass a resolved mode. `cutover` is the
+default; `VPK_DEPLOY_MODE` in local configuration can select `hot-swap`, and an
+explicit `--mode=cutover|hot-swap` overrides that configuration. Cutover creates
+replacement infrastructure and may encounter subnet capacity limits. Do not
+change regions or retry a failed rollout automatically.
+
+For an existing running deployment, request image hot swap explicitly:
 
 ```bash
 pnpm run deploy:micros <new-version> --hot-swap
@@ -178,7 +187,7 @@ Hot swap can reuse the deployment ID, whose events may show the original
 creation. Confirm the expected image version and `UPDATE_COMPLETE` through
 service status, then check the runtime. If the stack is `UPDATE_FAILED`, stop:
 the older image can still pass `/api/health` and the HTTP runtime profile. See
-the guide for rollback and timing.
+the guide for diagnostics, rollback, and deliberate full-image cutover recovery.
 
 ## Verify
 
@@ -217,7 +226,11 @@ Pass the intended routes explicitly; the default is `/`, with no assumed
 capabilities; see the guide. For an extracted root served byte for byte from
 `out/index.html`, add `--expect-html-file out/index.html`; it catches an older
 image still answering after an update failure. A verifier pass proves HTTP
-checks only. Use a real browser to prove font use/CSP, desktop and narrow
+checks only. Use `verify-browser.mjs` for bounded first-paint, exact heading,
+font, desktop/narrow motion-off and optional owned-thread chat smokes. The
+helper defaults to agent-browser and can fall back to Playwright before a chat
+starts; it never duplicates a started chat. Pass `--a11y` to record audit findings.
+Keep route-specific regressions and use a real browser to prove font use/CSP, desktop and narrow
 geometry, console, accessibility, and interactions. Verify a bounded tool-free
 chat turn and authenticated WSS when applicable:
 
@@ -284,6 +297,10 @@ does not exercise deployment guards or runtime verification.
   manual command sequence.
 - [troubleshooting.md](references/troubleshooting.md): error messages,
   diagnosis, environment fallback, and recovery.
+- [deployment-status.mjs](scripts/deployment-status.mjs): stable/requested deployment resolution without credential output.
+- [release-receipt.mjs](scripts/release-receipt.mjs): verified export handoff with input/environment/export hashes.
+- [verify-browser.mjs](scripts/verify-browser.mjs): bounded UI and optional tool-free chat proof with scoped cleanup.
+- [packaging-report.mjs](scripts/packaging-report.mjs): original/codec bytes and conservative dependency provenance.
 - [verify-wss.mjs](scripts/verify-wss.mjs): scoped-token or localhost-development
   WebSocket transport proof without audio or token logging.
 - [plan-frontend-delta.mjs](scripts/plan-frontend-delta.mjs): dry-run runtime,

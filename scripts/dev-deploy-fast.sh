@@ -58,16 +58,24 @@ VERSION=""
 ENV="${ENV:-pdev-west2}"  # Use ENV from config or default to pdev-west2
 REGISTRY="docker.atl-paas.net"
 
-HOT_SWAP=false
-for deploy_arg in "$@"; do
+REQUESTED_MODE=""
+RECEIPT_FILE=""
+while [ "$#" -gt 0 ]; do
+  deploy_arg=$1
+  shift
   case "$deploy_arg" in
-    --hot-swap)
-      if [ "$HOT_SWAP" = true ]; then echo "❌ Duplicate --hot-swap"; exit 2; fi
-      HOT_SWAP=true ;;
+    --hot-swap|--mode=*)
+      if [ -n "$REQUESTED_MODE" ]; then echo "❌ Duplicate or conflicting deployment modes"; exit 2; fi
+      if [ "$deploy_arg" = "--hot-swap" ]; then REQUESTED_MODE=hot-swap; else REQUESTED_MODE=${deploy_arg#--mode=}; fi
+      vpk_validate_deploy_mode "$REQUESTED_MODE" ;;
+    --receipt)
+      if [ -n "$RECEIPT_FILE" ] || [ -z "${1:-}" ] || [[ "$1" == --* ]]; then echo "❌ A single receipt path is required"; exit 2; fi
+      RECEIPT_FILE=$1
+      shift ;;
     --*) echo "❌ Unexpected argument: $deploy_arg"; exit 2 ;;
     *)
       if [ -n "$VERSION" ]; then
-        echo "❌ Usage: pnpm run deploy:micros [version] [--hot-swap]"
+        echo "❌ Usage: pnpm run deploy:micros [version] [--mode=cutover|hot-swap] [--receipt path]"
         exit 2
       fi
       VERSION=$deploy_arg ;;
@@ -87,6 +95,10 @@ esac
 
 vpk_validate_service_name "$SERVICE_NAME"
 vpk_validate_version "$VERSION"
+DEPLOY_MODE=${REQUESTED_MODE:-${VPK_DEPLOY_MODE:-cutover}}
+vpk_validate_deploy_mode "$DEPLOY_MODE"
+if [ -n "$RECEIPT_FILE" ]; then vpk_verify_receipt "$RECEIPT_FILE"; fi
+echo "Deployment mode: $DEPLOY_MODE"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -160,7 +172,7 @@ print_header "🚀 Deploying $SERVICE_NAME version $VERSION to $ENV"
 
 # Step 1: Build the static export consumed by backend/Dockerfile
 print_step "Step 1/4: Building static export..."
-if corepack pnpm run build:export && vpk_verify_export; then
+if { [ -n "$RECEIPT_FILE" ] || corepack pnpm run build:export; } && vpk_verify_export "$RECEIPT_FILE"; then
   print_success "Static export built successfully"
 else
   print_error "Static export did not produce out/index.html"
@@ -194,8 +206,7 @@ fi
 # Step 4: Deploy to Micros
 print_step "Step 4/4: Deploying to Micros..."
 export VERSION=$VERSION
-set --
-if [ "$HOT_SWAP" = true ]; then set -- --mode=hot-swap; fi
+set -- "--mode=$DEPLOY_MODE"
 if "$VPK_ATLAS_BIN" micros service deploy \
   --service=$SERVICE_NAME \
   --env=$ENV \

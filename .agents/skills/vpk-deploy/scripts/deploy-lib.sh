@@ -193,6 +193,11 @@ EOF
 }
 
 vpk_verify_export() {
+  if [ -n "${1:-}" ]; then
+    vpk_verify_receipt "$1" || return 1
+    node .agents/skills/vpk-deploy/scripts/verify-initial-theme.mjs out/index.html --if-present
+    return $?
+  fi
   if [ ! -f out/index.html ]; then
     echo "❌ Static export did not produce out/index.html"
     return 1
@@ -230,4 +235,25 @@ vpk_build_image() {
       -t "$image_registry/${image_service}:app-${image_version}" \
       -f backend/Dockerfile . --load
   fi
+}
+
+# Always pass a mode: Micros may otherwise inherit a previous hot-swap mode.
+vpk_validate_deploy_mode() {
+  case "$1" in
+    cutover|hot-swap) ;;
+    *) echo "❌ Unsupported deployment mode: use cutover or hot-swap"; return 2 ;;
+  esac
+}
+
+vpk_verify_receipt() {
+  node .agents/skills/vpk-deploy/scripts/release-receipt.mjs verify --target "$PWD" --receipt "$1"
+}
+
+# Sanitize remote status; never print descriptor environment/credential values.
+vpk_deployment_status() {
+  status_service=$1
+  status_env=$2
+  shift 2
+  "$VPK_ATLAS_BIN" micros service show -s "$status_service" -e "$status_env" -o json \
+    | node .agents/skills/vpk-deploy/scripts/deployment-status.mjs --env "$status_env" "$@"
 }

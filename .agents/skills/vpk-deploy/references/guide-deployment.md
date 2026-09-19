@@ -286,7 +286,9 @@ Follow the deployment ID returned by Micros until it reaches a final state:
 
 For hot swap, the ID can remain unchanged and events can show only the original
 creation. Query `micros service show -o json` and confirm
-`stacks[env][0].sd.buildNumber` and final `UPDATE_COMPLETE`. An old
+the stable/requested deployment IDs, matching version, and final success state
+with `deployment-status.mjs`. Failed old stacks can appear first, and a failed
+update and successful cutover can share the same build number. An old
 `CREATE_COMPLETE` event does not establish that the new image is running. After
 `UPDATE_FAILED`, the previous image can still return healthy HTTP responses;
 verify selected image content before claiming the requested release.
@@ -357,6 +359,30 @@ counts, messages, or behavior rather than repeating an old baseline investigatio
 
 The HTTP verifier cannot establish usable chat, audio, or fonts permitted by CSP:
 
+Use the bounded helper for common smoke coverage:
+
+```bash
+node .agents/skills/vpk-deploy/scripts/verify-browser.mjs "$DEPLOYED_URL" \
+  --marker "Jira Design" --check-ads-theme --expected-font "Atlassian Sans" \
+  --headed --a11y --out-dir output/agent-browser/release-proof
+```
+
+Supply the exact route and heading for this export; the example marker belongs
+to Jira Team EU26. Add `--chat` only when a synthetic tool-free turn is authorized.
+The shared Rovo defaults are `Open Rovo chat`, `Chat message input` and `Submit`;
+other hosts can supply `--chat-open-label`, `--composer-label` and `--submit-label`.
+The helper checks persisted assistant role/text plus actual assistant DOM, so
+matching the user's echoed prompt cannot pass. It validates its own captured
+thread's prompt again before deleting it and confirms 404 afterward. Ambiguous
+ownership is preserved and reported. A started chat is never automatically
+repeated through browser fallback. The narrow smoke changes reduced motion after
+normal hydration; keep separate startup/reduced-motion regressions when relevant.
+
+The helper records accessibility violations/incomplete checks, not a clean-scan
+claim. The API/WebSocket verifiers and changed route-specific interactions remain
+separate checks. Use the manual procedure below when the helper's supported
+surface does not match the export.
+
 1. Open the exact deployed route in a scoped real browser and confirm its route
    marker. Check fresh console errors and CSP events, the font face actually
    used by visible text, desktop/narrow geometry, and representative interactions.
@@ -404,3 +430,68 @@ The HTTP verifier cannot establish usable chat, audio, or fonts permitted by CSP
 Finish by reporting URL/VPN, stable service state and image version, capabilities
 actually tested, known unavailable actions, and unverified checks. Local commit
 and source shipping are separate outcomes from a live image.
+
+
+## Resolve serving and requested deployment status
+
+Never choose `stacks[env][0]`, sort by time, or choose any successful stack.
+Resolve the stable deployment reference and, during rollout, the requested ID:
+
+```bash
+source .agents/skills/vpk-deploy/scripts/deploy-lib.sh
+vpk_resolve_atlas
+source .deploy.local
+vpk_deployment_status "$SERVICE_NAME" "$ENV" \
+  --deployment-id "$DEPLOYMENT_ID" --version "$VERSION" --require-ready
+```
+
+For an already captured snapshot, use the offline form instead of sourcing
+configuration or contacting Micros:
+
+```bash
+node .agents/skills/vpk-deploy/scripts/deployment-status.mjs \
+  --snapshot "$SNAPSHOT_FILE" --env "$ENV" \
+  --deployment-id "$DEPLOYMENT_ID" --version "$VERSION" --require-ready
+```
+
+The helper prints only environment, stable/requested IDs, states and versions.
+It excludes descriptor variables and credential values; do not dump `.deploy.local`.
+`--require-ready` exits 2 unless the requested successful deployment is the stable
+one with the selected version. Missing/duplicate references also stop rather than
+falling back to array position. For read-only status without a release selection,
+omit deployment ID, version and `--require-ready`. A new service with no stack has
+no ready release.
+
+## Consume a verified export receipt
+
+From the target after `vpk-build` verification:
+
+```bash
+pnpm run deploy:micros "$VERSION" --receipt output/release-receipt.json --mode=cutover
+```
+
+The build verifier captures `output/build-inputs.json` before typecheck/export
+and compares it after preparation; a post-build capture alone cannot establish
+source/export correspondence. Receipt validation runs before registry login/permission changes, image push or
+Micros deployment, then again before packaging. It verifies target identity,
+source/harness/dependency/assets/environment-file hashes, selected public build
+settings, export representations and inventory. A changed selection requires
+another actual verification run. Deployment credentials and generated caches are
+not build inputs. The receipt carries compiler/export checks; HTTP/browser/WSS
+and actual runtime state still determine release success.
+
+## Measure packaging before trimming
+
+```bash
+node .agents/skills/vpk-deploy/scripts/packaging-report.mjs \
+  --target "$TARGET_DIR" --report output/packaging/report.json
+```
+
+For a legacy target, add `--plan "$PLAN_FILE"`. The report separates original
+bytes from gzip/Brotli overhead and lists largest original assets and retained
+unclassified packages. These are packaged bytes, not browser transfer latency,
+container disk usage, or proof that dependencies are unused. Preserve the full
+public tree, dynamic loading boundaries and optional backend capabilities. A
+codec-policy change must refresh or explicitly retire old representations in
+full and compact image paths; never leave stale inherited siblings. Dependency
+removal needs a backend import/runtime audit and capability regression evidence.

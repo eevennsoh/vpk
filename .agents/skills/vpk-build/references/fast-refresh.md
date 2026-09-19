@@ -72,9 +72,16 @@ while source, local overrides, dependency policy, harness, public assets, and
 build environment remain unchanged. `out/` presence or a Git SHA alone is not
 freshness proof.
 
-Pass the freshly verified `out/` to `vpk-deploy`'s guarded manual image path.
-The standalone deploy command owns an export build when invoked on its own;
-running it after this verifier would repeat that build.
+The verifier prepares compression and writes `output/release-receipt.json`.
+Consume it with `pnpm run deploy:micros <version> --receipt
+output/release-receipt.json --mode=cutover` from the target. Receipt validation
+compares the actual target, environment-file hashes, public build settings,
+source/harness/dependency/assets and prepared export bytes before any registry or
+Micros mutation. Without a receipt, the deploy command owns its export build.
+
+The refresh also records `.vpk-source.json` after checking its preimage. Keep this
+metadata with the selected source; the target's older Git HEAD is not a VPK
+release baseline.
 
 ## Keep verification focused
 

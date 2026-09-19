@@ -282,12 +282,19 @@ views and built-in diagnostics before assuming a broader AWS role:
   --document MICROS-docker-daemon-images -i <current-instance-id> -y -t 120
 ```
 
-Both documents read state; run them only on an instance currently returned by
-`compute show`. A transient rollout node can disappear after failure and make
+Both documents read state; inspect the instance ID named by the failed command,
+then confirm it is currently returned by `compute show` for that deployment.
+A different healthy node does not establish the failed node's disk/image state. A transient rollout node can disappear after failure and make
 an SSM probe time out. The Team EU26 service role lacked AWS
 `ssm:GetCommandInvocation`; use owner-level Micros diagnostics first. If those
 checks cannot identify the boundary, seek the required read-only role access
 rather than treating a timed-out SSM command as proof of one cause.
+
+If the release changes runtime files or dependencies, use the guarded
+[full-image cutover recovery](guide-manual-deployment.md#full-image-cutover-recovery)
+after diagnostics and a deliberate mode decision. It reuses the selected pushed
+image on a fresh stack and requires the new stable deployment ID plus live byte
+parity. This is an alternative to in-place updating, not an automatic retry.
 
 Use `plan-frontend-delta.mjs` before a compact frontend recovery. Extract
 the prior verified image's runtime, static files, and root package/lockfile
@@ -308,8 +315,9 @@ copy a staging checkout's descriptor or backend launcher into the image.
 Build/push a new `linux/amd64` tag and use the
 [guarded manual hot-swap path](guide-manual-deployment.md#compact-frontend-image-after-a-full-image-ec2-timeout).
 
-After Micros reports success, require `UPDATE_COMPLETE` and the expected
-`sd.buildNumber` from `micros service show -o json`. For an extracted static
+After Micros reports success, resolve the stable/requested deployment IDs with
+`deployment-status.mjs` and require the expected build plus `UPDATE_COMPLETE` or
+`CREATE_COMPLETE`. Array order and build number alone are insufficient. For an extracted static
 root, run `verify-runtime.mjs <origin> / --expect-html-file out/index.html`
 before browser checks. This catches the older healthy image that remained live
 after the failed attempt. Events for a reused deployment ID can show only the

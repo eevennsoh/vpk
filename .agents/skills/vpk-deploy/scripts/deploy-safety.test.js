@@ -508,6 +508,68 @@ test("both deploy paths support explicit hot-swap image deployments", () => {
 	}
 });
 
+for (const [label, flags, mode] of [
+	["default", [], "cutover"],
+	["explicit cutover", ["--mode=cutover"], "cutover"],
+	["explicit hot swap", ["--mode=hot-swap"], "hot-swap"],
+]) {
+	test(`both deploy paths pass an explicit ${mode} mode for ${label} selection`, () => {
+		for (const [scriptPath, args] of [
+			[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2", ...flags]],
+			["scripts/dev-deploy-fast.sh", ["1.2.3", ...flags]],
+		]) {
+			withFixture({}, (fixture) => {
+				const result = runFixture(fixture, scriptPath, args);
+				assert.equal(result.status, 0, result.stdout + result.stderr);
+				const command = callsFor(fixture).split("\n").find((line) => line.startsWith("atlas micros service deploy "));
+				assert.equal(command.split(" ").filter((arg) => arg === `--mode=${mode}`).length, 1, command);
+				assert.match(command, /--env=pdev-west2/u);
+			});
+		}
+	});
+}
+
+test("explicit deployment modes retain omitted optional environment and version arguments", () => {
+	for (const [scriptPath, args] of [
+		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "--mode=cutover"]],
+		["scripts/dev-deploy-fast.sh", ["--mode=cutover"]],
+	]) {
+		withFixture({}, (fixture) => {
+			const result = runFixture(fixture, scriptPath, args);
+			assert.equal(result.status, 0, result.stdout + result.stderr);
+			assert.match(callsFor(fixture), /atlas micros service deploy .*--env=pdev-west2 .*--mode=cutover/u);
+			assert.doesNotMatch(callsFor(fixture), /app---mode=/u);
+		});
+	}
+});
+
+test("both deploy paths reject duplicate, conflicting, empty, and unsupported modes before mutation", () => {
+	for (const flags of [
+		["--mode=cutover", "--mode=cutover"],
+		["--mode=hot-swap", "--mode=hot-swap"],
+		["--mode=cutover", "--mode=hot-swap"],
+		["--mode=hot-swap", "--mode=cutover"],
+		["--hot-swap", "--mode=hot-swap"],
+		["--mode=hot-swap", "--hot-swap"],
+		["--hot-swap", "--mode=cutover"],
+		["--mode=cutover", "--hot-swap"],
+		["--mode=debug"],
+		["--mode=manual-progressive"],
+		["--mode="],
+	]) {
+		for (const [scriptPath, args] of [
+			[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", ...flags]],
+			["scripts/dev-deploy-fast.sh", ["1.2.3", ...flags]],
+		]) {
+			withFixture({}, (fixture) => {
+				const result = runFixture(fixture, scriptPath, args);
+				assert.equal(result.status, 2, `${scriptPath} ${flags.join(" ")}: ${result.stdout}${result.stderr}`);
+				assertNoMutationCalls(callsFor(fixture));
+			});
+		}
+	}
+});
+
 test("hot-swap retains remote prerequisite checks before mutation", () => {
 	withFixture({}, (fixture) => {
 		const result = runFixture(fixture, "scripts/dev-deploy-fast.sh", ["1.2.3", "--hot-swap"], { serviceExists: false });
@@ -620,5 +682,18 @@ test("both deploy paths require additional declared provider stashes without req
 				}
 			});
 		}
+	}
+});
+
+
+test("configured deployment mode is loaded with explicit ENV and CLI mode overrides it", () => {
+	for (const flags of [[], ["--mode=cutover"]]) {
+		withFixture({}, fixture => {
+			const config = path.join(fixture.root, ".deploy.local");
+			writeFileSync(config, readFileSync(config, "utf8") + '\nVPK_DEPLOY_MODE="hot-swap"\n');
+			const result = runFixture(fixture, ".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2", ...flags]);
+			assert.equal(result.status, 0, result.stdout + result.stderr);
+			assert.match(callsFor(fixture), new RegExp(`--mode=${flags.length ? "cutover" : "hot-swap"}`));
+		});
 	}
 });

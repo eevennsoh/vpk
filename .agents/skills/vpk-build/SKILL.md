@@ -147,7 +147,7 @@ Choose one verification mode. For the backend-backed deployment harness:
 The default command selects `build:export` when available and otherwise runs the
 minimal static scaffold's `build`, which already exports. `--export` explicitly
 selects the canonical wrapper. Both modes run install, typecheck, one build,
-require `out/index.html`, and then verify an export
+require `out/index.html`, prepare gzip/Brotli once, and verify an export
 inventory in the extracted project. The report under `output/export-inventory.json`
 lists HTML-referenced Next.js JS/CSS/fonts and largest assets separately from
 all packaged files. Missing referenced assets fail verification. These are file
@@ -177,23 +177,45 @@ check requires a scoped token; follow `vpk-deploy` for that proof.
 
 ### 4. Hand off deployment
 
-After verification passes, enter the sibling project and invoke
+After verification passes, keep `output/release-receipt.json` with the selected
+source. The verifier snapshots inputs after installation and before typecheck/export,
+then compares them before creating a receipt. Edits during verification reject
+the receipt. It hashes build inputs (including environment files), selected
+public build variables, prepared export files, and the inventory. Cache/type
+outputs and credential-only deployment configuration are excluded. It records
+the extraction SHA from `.vpk-source.json`; legacy checkouts are labelled with
+their actual checkout revision instead of claiming a VPK source revision.
+
+Enter the sibling project and invoke
 `vpk-deploy --initial`. Subsequent deployments use `pnpm run deploy:micros` once
 `.deploy.local` exists. Use the full backend deployment shape for any app with
 live API, SSE, or WebSocket dependencies.
 
 Both deployment shapes carry the canonical static-serving modules and
-`scripts/prepare-static-export.mjs`. Build verification reports the raw export;
-deployment prepares compression and verifies actual delivery. Keep development
+`scripts/prepare-static-export.mjs`. Build verification reports original and codec bytes separately and prepares
+one export for receipt consumption; deployment verifies actual delivery. Keep development
 compilation/Fast Refresh measurements separate from warm UI interactions and
 production load measurements. Use the shared
 [UI performance workflow](../../docs/playbooks/improve-ui-performance.md) for
 repeatable baseline/treatment conditions and keep/neutral/revert decisions.
 
-For a chained build/deploy, carry the freshly verified export into the guarded
-manual packaging path. Keep its source, dependency, harness, asset, and build
-inputs unchanged; build that export once. Standalone deploy scripts still build
-their own export.
+For a chained build/deploy, consume the verifier's receipt:
+
+```bash
+pnpm run deploy:micros <version> --receipt output/release-receipt.json --mode=cutover
+```
+
+Deployment rejects changed source, dependency, harness, environment, assets or
+export bytes before registry/Micros mutation. It consumes the prepared export
+without rebuilding or recompressing it. Standalone deployments without a receipt
+still build their own export. A receipt is local verification evidence, not an
+approval to deploy or proof of browser behavior.
+
+Use [the browser verifier](../vpk-deploy/references/guide-deployment.md#functional-and-browser-evidence)
+for first paint, route marker, fonts and viewport smokes; keep the route-specific
+interaction regression matrix. Read packaging measurements before changing
+codec or dependency policy. Preserve the full public tree and optional runtime
+capabilities; unclassified dependencies are not proven unused.
 
 ## Validation
 

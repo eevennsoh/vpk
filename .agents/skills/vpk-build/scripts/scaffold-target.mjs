@@ -885,6 +885,12 @@ runs the copied source Express backend, including API and WebSocket routes.
 	// ---- 9b. Wire the approved VPK skills into the extracted app ----
 	wireScaffoldSkills({ repoRoot, targetDir });
 
+	// Keep source selection independent of the target's older Git history.
+	writeFileEnsuring(path.join(targetDir, ".vpk-source.json"), `${JSON.stringify({
+		version: 1, sourceRevision: plan.sourceRevision, sourceWasDirty: Boolean(plan.sourceWasDirty), route: plan.route,
+		dependencyProvenance: { route: Object.keys(plan.npmPackages).sort(), conservativeBackend: args.backendBacked ? Object.keys(augmentedNpm).filter(name => !Object.hasOwn(plan.npmPackages, name)).sort() : [] },
+	}, null, 2)}\n`);
+
 	// ---- 10. git init + initial commit ----
 	try {
 		execSync("git init -q", { cwd: targetDir, stdio: "inherit" });

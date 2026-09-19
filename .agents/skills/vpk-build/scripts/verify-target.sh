@@ -32,10 +32,12 @@ if [[ ! -d "$TARGET" ]]; then
 	exit 2
 fi
 
+RECEIPT_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../vpk-deploy/scripts" && pwd)/release-receipt.mjs"
 cd "$TARGET"
 
 echo "━━━━ 1/4  pnpm install ━━━━"
 pnpm install
+node "$RECEIPT_SCRIPT" inputs --target "$PWD" --receipt "$PWD/output/build-inputs.json"
 
 echo ""
 echo "━━━━ 2/4  pnpm typecheck ━━━━"
@@ -54,7 +56,9 @@ fi
 
 echo ""
 echo "━━━━ 4/4  export inventory ━━━━"
-node scripts/prepare-static-export.mjs out --report output/export-inventory.json
+node scripts/prepare-static-export.mjs out --compress --report output/export-inventory.json
+node "$RECEIPT_SCRIPT" capture --target "$PWD" --receipt "$PWD/output/release-receipt.json" \
+  --inputs-file "$PWD/output/build-inputs.json" --build-script "$BUILD_SCRIPT" --checks install,typecheck,export,inventory,compression
 
 echo ""
 echo "✅ Verification passed. Try: cd $TARGET && pnpm dev"

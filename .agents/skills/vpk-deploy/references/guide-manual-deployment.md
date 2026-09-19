@@ -273,3 +273,37 @@ service/descriptor/stash guards under Bash before the manual `--mode=hot-swap`
 command above. Confirm `UPDATE_COMPLETE`, expected `sd.buildNumber`, and exact
 live export HTML. A `101` WebSocket upgrade and a tool-free chat turn are
 separate runtime checks.
+
+
+## Full-image cutover recovery
+
+When an in-place update fails and the selected release needs changed runtime or
+dependencies, compact frontend recovery does not apply. Inspect the failed command
+and its actual current node's disk/image state first. After choosing replacement
+infrastructure, reuse the already pushed, byte-verified image; do not rebuild it,
+retag an unknown image, bypass checks, or change environments blindly.
+
+Both supported scripts accept `--mode=cutover`; without a receipt they still
+build and push. To recover with the existing verified image, use this guarded
+manual block from the selected target:
+
+```bash
+set -euo pipefail
+source .agents/skills/vpk-deploy/scripts/deploy-lib.sh
+vpk_resolve_atlas
+vpk_validate_service_name "$SERVICE_NAME"
+vpk_validate_version "$VERSION"
+vpk_validate_descriptor_identity "$SERVICE_NAME" service-descriptor.yml
+vpk_require_service_and_stashes "$SERVICE_NAME" "$ENV"
+export VERSION
+"$VPK_ATLAS_BIN" micros service deploy \
+  --service="$SERVICE_NAME" --env="$ENV" \
+  --file=service-descriptor.yml --mode=cutover
+```
+
+Run under Bash. Retain the prior successful digest and verify available subnet
+capacity when Micros reports a capacity problem. Capture the new deployment ID,
+resolve its final state and the stable reference with `deployment-status.mjs`,
+then require exact live export parity plus capability/browser checks. A cutover
+can take 10–20 minutes or longer. Failure leaves the verified image available;
+stop and diagnose rather than repeating automatically.

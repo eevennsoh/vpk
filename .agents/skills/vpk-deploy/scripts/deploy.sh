@@ -20,7 +20,7 @@ echo ""
 # usage help when the user runs the script with no arguments.
 if [ -z "${1:-}" ]; then
   echo "❌ Service name is required"
-  echo "Usage: $0 <service-name> <version> [env] [--hot-swap]"
+  echo "Usage: $0 <service-name> <version> [env] [--mode=cutover|hot-swap] [--receipt path]"
   echo "Example: $0 my-prototype 1.0.1 pdev-west2"
   echo ""
   echo "⚠️  Service name must be ≤26 characters"
@@ -29,7 +29,7 @@ fi
 
 if [ -z "${2:-}" ]; then
   echo "❌ Deployment version is required"
-  echo "Usage: $0 <service-name> <version> [env] [--hot-swap]"
+  echo "Usage: $0 <service-name> <version> [env] [--mode=cutover|hot-swap] [--receipt path]"
   exit 1
 fi
 
@@ -38,39 +38,39 @@ VERSION=$2
 REQUESTED_SERVICE_NAME=$SERVICE_NAME
 REQUESTED_VERSION=$VERSION
 shift 2
-HOT_SWAP=false
+REQUESTED_MODE=""
+RECEIPT_FILE=""
 REQUESTED_ENV=""
-for deploy_arg in "$@"; do
+while [ "$#" -gt 0 ]; do
+  deploy_arg=$1
+  shift
   case "$deploy_arg" in
-    --hot-swap)
-      if [ "$HOT_SWAP" = true ]; then echo "❌ Duplicate --hot-swap"; exit 2; fi
-      HOT_SWAP=true ;;
+    --hot-swap|--mode=*)
+      if [ -n "$REQUESTED_MODE" ]; then echo "❌ Duplicate or conflicting deployment modes"; exit 2; fi
+      if [ "$deploy_arg" = "--hot-swap" ]; then REQUESTED_MODE=hot-swap; else REQUESTED_MODE=${deploy_arg#--mode=}; fi
+      vpk_validate_deploy_mode "$REQUESTED_MODE" ;;
+    --receipt)
+      if [ -n "$RECEIPT_FILE" ] || [ -z "${1:-}" ] || [[ "$1" == --* ]]; then echo "❌ A single receipt path is required"; exit 2; fi
+      RECEIPT_FILE=$1
+      shift ;;
     --*) echo "❌ Unexpected argument: $deploy_arg"; exit 2 ;;
     *)
-      if [ -n "$REQUESTED_ENV" ]; then
-        echo "❌ Usage: $0 <service-name> <version> [env] [--hot-swap]"
-        exit 2
-      fi
+      if [ -n "$REQUESTED_ENV" ]; then echo "❌ Only one environment is supported"; exit 2; fi
       REQUESTED_ENV=$deploy_arg ;;
   esac
 done
 
-# Resolve ENV with the following precedence (highest first):
-#   1. 3rd positional arg               (./deploy.sh <svc> <ver> <env>)
-#   2. ENV from .deploy.local           (sourced if file exists)
-#   3. Default: pdev-west2
-# Valid pdev environments: pdev-west2, pdev-apse2 (only two exist)
-if [ -n "$REQUESTED_ENV" ]; then
-  ENV=$REQUESTED_ENV
-elif [ -f ".deploy.local" ] && grep -q '^ENV=' .deploy.local; then
-  # shellcheck disable=SC1091
+# ENV: explicit argument, local configuration, then pdev-west2.
+# Load mode configuration even when ENV is supplied explicitly.
+if [ -f ".deploy.local" ]; then
   source .deploy.local
-  ENV=${ENV:-pdev-west2}
   SERVICE_NAME=$REQUESTED_SERVICE_NAME
   VERSION=$REQUESTED_VERSION
+  ENV=${ENV:-pdev-west2}
 else
-  ENV="pdev-west2"
+  ENV=pdev-west2
 fi
+if [ -n "$REQUESTED_ENV" ]; then ENV=$REQUESTED_ENV; fi
 
 # Validate environment is one of the two pdev envs
 case "$ENV" in
@@ -84,6 +84,10 @@ esac
 
 vpk_validate_service_name "$SERVICE_NAME"
 vpk_validate_version "$VERSION"
+DEPLOY_MODE=${REQUESTED_MODE:-${VPK_DEPLOY_MODE:-cutover}}
+vpk_validate_deploy_mode "$DEPLOY_MODE"
+if [ -n "$RECEIPT_FILE" ]; then vpk_verify_receipt "$RECEIPT_FILE"; fi
+echo "Deployment mode: $DEPLOY_MODE"
 
 echo "Service: $SERVICE_NAME"
 echo "Version: $VERSION"
@@ -104,8 +108,8 @@ fi
 # Build the static export consumed by backend/Dockerfile.
 echo ""
 echo "🏗️  Building static export..."
-corepack pnpm run build:export
-vpk_verify_export
+if [ -z "$RECEIPT_FILE" ]; then corepack pnpm run build:export; fi
+vpk_verify_export "$RECEIPT_FILE"
 
 # Build Docker image
 echo ""
@@ -124,8 +128,7 @@ docker push "docker.atl-paas.net/${SERVICE_NAME}:app-${VERSION}"
 echo ""
 echo "🚀 Deploying..."
 export VERSION=$VERSION
-set --
-if [ "$HOT_SWAP" = true ]; then set -- --mode=hot-swap; fi
+set -- "--mode=$DEPLOY_MODE"
 "$VPK_ATLAS_BIN" micros service deploy \
   --service=$SERVICE_NAME \
   --env=$ENV \

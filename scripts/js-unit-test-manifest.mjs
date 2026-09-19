@@ -13,6 +13,9 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		".agents/skills/vpk-deploy/scripts/deployment-status.test.js",
+		".agents/skills/vpk-deploy/scripts/release-receipt.test.js",
+		".agents/skills/vpk-deploy/scripts/verify-browser.test.js",
 		".agents/skills/vpk-build/scripts/plan-target-refresh.test.js",
 		".agents/skills/vpk-build/scripts/verify-target.test.js",
 		".agents/skills/vpk-deploy/scripts/plan-frontend-delta.test.js",
