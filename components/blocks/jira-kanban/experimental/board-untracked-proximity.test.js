@@ -257,6 +257,25 @@ test("list-row hit testing reads shared scrollport geometry once per drag evalua
 	);
 });
 
+test("board card-gap hit testing reuses the shared card-list clip", () => {
+	assert.match(
+		DRAG_HOOK_SOURCE,
+		/function getListScrollportClip\([\s\S]*clipCache\.set\(scrollport, scrollportClip\);[\s\S]*return scrollportClip;/u,
+	);
+	assert.match(
+		DRAG_HOOK_SOURCE,
+		/collectCardGapZones\(node, issueKey, rect, listScrollportClipCache\)/u,
+	);
+	assert.match(
+		DRAG_HOOK_SOURCE,
+		/const \{ clip \} = getListScrollportClip\(cardList, clipCache\);/u,
+	);
+	assert.doesNotMatch(
+		DRAG_HOOK_SOURCE,
+		/const clip = cardList\.getBoundingClientRect\(\);/u,
+	);
+});
+
 test("card-link drops commit the transfer before decorative flights start", () => {
 	const source = withoutComments(DRAG_HOOK_SOURCE);
 	assert.match(
