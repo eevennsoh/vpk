@@ -10,8 +10,9 @@ function matchStack(stacks, id, label) {
 	const matches = stacks.filter(stack => stack.deploymentId === id);
 	if (matches.length !== 1) throw new Error(`${label} deployment reference is missing or ambiguous`);
 	const stack = matches[0];
-	const version = stack.sd?.buildNumber ?? stack.version ?? null;
-	if (typeof stack.status !== "string" || (version !== null && !["string", "number"].includes(typeof version))) throw new Error("Invalid deployment status metadata");
+	const rawVersion = stack.sd?.buildNumber ?? stack.version ?? null;
+	if (typeof stack.status !== "string" || (rawVersion !== null && !["string", "number"].includes(typeof rawVersion))) throw new Error("Invalid deployment status metadata");
+	const version = rawVersion === null ? null : String(rawVersion);
 	return { deploymentId: id, status: stack.status, version };
 }
 

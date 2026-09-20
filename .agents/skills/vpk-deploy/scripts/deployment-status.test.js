@@ -90,6 +90,12 @@ test("a stable successful deployment with the wrong requested version is not rea
 	assert.equal(result.ready, false);
 });
 
+test("a numeric Micros build number matches the CLI version string", (t) => {
+	const result = runCli(t, snapshot([stack("new", "CREATE_COMPLETE", 123)]), ["--version", "123", "--require-ready"]);
+	assert.equal(result.status, 0, result.stderr);
+	assert.deepEqual(JSON.parse(result.stdout).requested, summary("new", "CREATE_COMPLETE", "123"));
+});
+
 test("an initial environment with no stable reference or stacks is not ready", async () => {
 	assert.deepEqual(await resolve(snapshot([], null)), { environment: ENVIRONMENT, stable: null, requested: null, ready: false });
 });
