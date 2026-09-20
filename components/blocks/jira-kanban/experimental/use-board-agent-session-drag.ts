@@ -105,6 +105,23 @@ interface ListScrollportClip {
 	headerBottom: number;
 }
 
+function getListScrollportClip(
+	scrollport: HTMLElement,
+	clipCache: Map<HTMLElement, ListScrollportClip>,
+): ListScrollportClip {
+	let scrollportClip = clipCache.get(scrollport);
+	if (scrollportClip === undefined) {
+		const clip = scrollport.getBoundingClientRect();
+		const header = scrollport.querySelector("thead");
+		scrollportClip = {
+			clip,
+			headerBottom: header?.getBoundingClientRect().bottom ?? clip.top,
+		};
+		clipCache.set(scrollport, scrollportClip);
+	}
+	return scrollportClip;
+}
+
 /**
  * The card's agent shell rect, so the fusion field knows what shape it is
  * becoming. The shell is the whole card surface — the grey backdrop, the card
@@ -193,17 +210,7 @@ function clipBoundsToScrollport(
 		};
 	}
 
-	let scrollportClip = clipCache.get(scrollport);
-	if (scrollportClip === undefined) {
-		const clip = scrollport.getBoundingClientRect();
-		const header = scrollport.querySelector("thead");
-		scrollportClip = {
-			clip,
-			headerBottom: header?.getBoundingClientRect().bottom ?? clip.top,
-		};
-		clipCache.set(scrollport, scrollportClip);
-	}
-	const { clip, headerBottom } = scrollportClip;
+	const { clip, headerBottom } = getListScrollportClip(scrollport, clipCache);
 	const top = Math.max(rect.top, headerBottom, clip.top);
 	const bottom = Math.min(rect.bottom, clip.bottom);
 	const left = Math.max(rect.left, clip.left);
@@ -233,6 +240,7 @@ function collectCardGapZones(
 	node: HTMLElement,
 	cardCode: string,
 	bounds: BoardAgentSessionDropBounds,
+	clipCache: Map<HTMLElement, ListScrollportClip>,
 ): BoardAgentSessionDropZone[] {
 	const cardList = node.closest<HTMLElement>("[data-jira-kanban-card-list]");
 	if (!cardList) return [];
@@ -241,7 +249,7 @@ function collectCardGapZones(
 	// slots replace existing rows, so subtracting those would move a stable seam.
 	// Measure the whole growth container, including its vertical padding.
 	const growth = node.querySelector("[data-session-attach-growth]");
-	const clip = cardList.getBoundingClientRect();
+	const { clip } = getListScrollportClip(cardList, clipCache);
 	return parseBoardCardGapZones(
 		node.dataset.boardColumnTitle,
 		cardCode,
@@ -352,7 +360,7 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 				landRect: resolveIssueLandRect(node),
 				surfaceRect: resolveIssueSurfaceRect(node),
 			},
-			...collectCardGapZones(node, issueKey, rect),
+			...collectCardGapZones(node, issueKey, rect, listScrollportClipCache),
 		];
 	});
 }
