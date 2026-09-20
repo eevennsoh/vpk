@@ -11,7 +11,7 @@ function matchStack(stacks, id, label) {
 	if (matches.length !== 1) throw new Error(`${label} deployment reference is missing or ambiguous`);
 	const stack = matches[0];
 	const rawVersion = stack.sd?.buildNumber ?? stack.version ?? null;
-	if (typeof stack.status !== "string" || (rawVersion !== null && !["string", "number"].includes(typeof rawVersion))) throw new Error("Invalid deployment status metadata");
+	if (typeof stack.status !== "string" || (rawVersion !== null && typeof rawVersion !== "string")) throw new Error("Invalid deployment status metadata");
 	const version = rawVersion === null ? null : String(rawVersion);
 	return { deploymentId: id, status: stack.status, version };
 }
@@ -42,7 +42,15 @@ export function main(args) {
 		else throw new Error("Unsupported deployment status option");
 	}
 	let snapshot;
-	try { snapshot = JSON.parse(fs.readFileSync(snapshotPath === "-" ? 0 : snapshotPath, "utf8")); }
+	try {
+		snapshot = JSON.parse(fs.readFileSync(snapshotPath === "-" ? 0 : snapshotPath, "utf8"), (key, value, context) => {
+			if ((key === "buildNumber" || key === "version") && typeof value === "number") {
+				if (typeof context?.source !== "string") throw new Error("Numeric deployment version source is unavailable");
+				return context.source;
+			}
+			return value;
+		});
+	}
 	catch { throw new Error("Invalid Micros service snapshot JSON"); }
 	const status = resolveDeploymentStatus(snapshot, { environment, deploymentId, version });
 	console.log(JSON.stringify(status, null, 2));
