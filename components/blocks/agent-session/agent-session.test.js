@@ -136,7 +136,7 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.match(LIFECYCLE_SOURCE, /data-agent-session-lifecycle-current=\{accessibleState\}/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity[\s\S]*: <AgentSessionShortLifecycleIcon[\s\S]*state=\{shownLifecycleState\}/u);
 	assert.match(METADATA_SOURCE, /import ScreenIcon from "@atlaskit\/icon\/core\/screen";/u);
-	assert.match(METADATA_SOURCE, /export function AgentSessionHostSegment[\s\S]*isLocal \? \(\s*<ScreenIcon color="currentColor" label="" size="small" \/>\s*\) : \(\s*<CloudIcon color="currentColor" label="" size="small" \/>\s*\)/u);
+	assert.match(METADATA_SOURCE, /export function AgentSessionHostSegment[\s\S]*const HostIcon = isLocal \? ScreenIcon : CloudIcon;[\s\S]*<HostIcon color="currentColor" label="" size="small" \/>/u);
 	assert.match(METADATA_SOURCE, /const label = isLocal \? "Local session" : "Cloud session";/u);
 	assert.match(
 		METADATA_SOURCE,
