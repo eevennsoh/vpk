@@ -27,7 +27,7 @@ export interface AgentActivityEntry {
 // Cap the list so a long conversation can't grow the timeline unbounded.
 const MAX_ACTIVITY_ENTRIES = 12
 
-// Locale pinned (per CLAUDE.md) so the formatted string is identical on the
+// Locale pinned (per AGENTS.md) so the formatted string is identical on the
 // server and client and never triggers a hydration mismatch.
 const activityDateFormatter = new Intl.DateTimeFormat("en-US", {
 	dateStyle: "medium",

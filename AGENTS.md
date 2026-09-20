@@ -1,7 +1,7 @@
 # VPK (Venn Prototype Kit)
 
 > Provider-neutral project context for AI coding assistants (Cursor, Claude Code, Codex, and others).
-> Canonical source: `AGENTS.md`. `CLAUDE.md` symlinks here. Provider dirs (`.cursor/`, `.claude/`, `.codex/`, `.rovo/`) contain provider-specific config plus symlinks back to `.agents/`.
+> Canonical source: `AGENTS.md`. There is deliberately no `CLAUDE.md` — Claude Code loads `AGENTS.md` as project instructions by default (`instructionFiles: "claude-md-or-agents-md"`); do not recreate one. Provider dirs (`.cursor/`, `.claude/`, `.codex/`, `.rovo/`) contain provider-specific config plus symlinks back to `.agents/`.
 
 Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), AI Gateway, and Rovo Serve integration.
 
