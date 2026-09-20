@@ -47,6 +47,7 @@ function MetadataDot() {
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean }>) {
 	const label = isLocal ? "Local session" : "Cloud session";
+	const HostIcon = isLocal ? ScreenIcon : CloudIcon;
 
 	return (
 		<span
@@ -54,11 +55,7 @@ export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean
 			className="grid size-4 shrink-0 place-items-center text-icon-subtlest"
 			role="img"
 		>
-			{isLocal ? (
-				<ScreenIcon color="currentColor" label="" size="small" />
-			) : (
-				<CloudIcon color="currentColor" label="" size="small" />
-			)}
+			<HostIcon color="currentColor" label="" size="small" />
 		</span>
 	);
 }
