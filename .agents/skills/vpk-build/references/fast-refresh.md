@@ -98,6 +98,10 @@ production-only behavior, or a discrepancy creates a remaining risk. Keep live
 browser/chat/WSS checks even when static parity passes.
 
 When adapting an existing source browser suite, supply the extracted `/` route.
+Keep its expectations tied to the frozen source selection: for a clean source,
+read the suite with `git show <recorded-source-SHA>:<suite-path>` before adapting.
+For a dirty selection, retain the reviewed test snapshot alongside the staged
+source. Later working-tree edits must not change this release's expectations.
 A disposable spec under ignored `output/` needs an explicit Playwright config
 with `testDir` pointing there and an exact `testMatch`; default discovery may
 ignore it and report `No tests found`. This is a test-discovery issue, not an app

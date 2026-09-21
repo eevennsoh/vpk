@@ -871,7 +871,7 @@ export function FeatureFlagsShim() {
 
 \`pnpm dev\` serves the extracted route at \`http://localhost:3001\` and proxies
 \`/api/*\` to the source VPK backend. The adjacent source checkout is discovered
-automatically; set \`VPK_ROOT\` (or legacy \`VPK_ROVO_ROOT\`) if it moves. The
+automatically; set \`VPK_ROOT\` if it moves. The
 launcher starts \`pnpm run dev:backend\` in the source when no healthy backend
 is running. \`VPK_ORIGIN\` points cross-route Create actions to the source app;
 locally it falls back to the source frontend port file. Set \`VPK_ORIGIN\` and

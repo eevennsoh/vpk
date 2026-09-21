@@ -15,7 +15,7 @@ export const DEVELOPMENT_REPOSITORIES: readonly DevelopmentRepositoryOption[] = 
 	{ id: "symphony-explainer", name: "symphony-explainer", provider: "github", url: "https://github.com/eevensoh/symphony-explainer" },
 	{ id: "proximity", name: "proximity", provider: "github", url: "https://github.com/eevensoh/proximity" },
 	{ id: "storefront", name: "storefront", provider: "bitbucket", url: "https://bitbucket.org/acme/storefront" },
-	{ id: "vpk-rovodev", name: "vpk-rovodev", provider: "bitbucket", url: "https://bitbucket.org/eevensoh/vpk-rovodev" },
+	{ id: "vpk", name: "vpk", provider: "bitbucket", url: "https://bitbucket.org/atlassian/vpk" },
 ];
 
 /** Connected-repo tally for the Repositories disclosure header (`· N`). */

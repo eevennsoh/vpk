@@ -168,6 +168,46 @@ node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs \
 For a redeploy, choose a new version and repeat the build, push, deploy, and
 verification sequence. Never deploy a version that was not pushed.
 
+## Host-proxy upload recovery
+
+Use this path after proving that authenticated host registry access works while
+the Docker daemon's transport fails; complete the [network diagnosis and trusted
+uploader setup](troubleshooting.md#docker-daemon-network-failure-with-a-working-host-proxy)
+first. Preserve the already-built image and selected version. This recovers an
+upload failure before any Micros mutation; it does not retry a failed rollout.
+
+From the intended prototype checkout, restore the selected service/environment
+and the original deployment mode, then recheck identity, stashes and the current
+export receipt before registry mutation:
+
+```bash
+set -euo pipefail
+source .deploy.local
+source .agents/skills/vpk-deploy/scripts/deploy-lib.sh
+vpk_resolve_atlas
+VERSION="<already-built-selected-version>"
+VPK_RECOVERY_MODE="cutover" # Use the originally selected mode.
+vpk_validate_service_name "$SERVICE_NAME"
+vpk_validate_version "$VERSION"
+vpk_validate_deploy_mode "$VPK_RECOVERY_MODE"
+vpk_validate_descriptor_identity "$SERVICE_NAME" service-descriptor.yml
+vpk_require_service_and_stashes "$SERVICE_NAME" "$ENV"
+vpk_verify_export output/release-receipt.json
+vpk_require_push_tool crane
+"$VPK_ATLAS_BIN" packages permission grant
+printf '%s' "$DOCKER_PASSWORD" | docker login docker.atl-paas.net --username "$DOCKER_USERNAME" --password-stdin
+vpk_push_image "$SERVICE_NAME" "$VERSION" docker.atl-paas.net crane
+export VERSION
+"$VPK_ATLAS_BIN" micros service deploy --service="$SERVICE_NAME" --env="$ENV" --file=service-descriptor.yml --mode="$VPK_RECOVERY_MODE"
+```
+
+The upload helper records the verified registry digest and image configuration
+under ignored `output/` and removes its temporary archive. It does not rebuild
+the export or image. Stop on any failed command. Confirm the selected deployment
+becomes stable with that version, then complete the usual exact HTML/chunk,
+browser, HTTP, chat and WebSocket checks. Keep global Docker proxy changes out of
+this application-level recovery.
+
 ## Hot-swap recovery
 
 Inspect the existing service, running stack, and current image version first.

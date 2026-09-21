@@ -5,21 +5,21 @@ notifications:
 buildNumber: ${VERSION}
 compose:
   app:
-    image: docker.atl-paas.net/vpk-rovo
+    image: docker.atl-paas.net/vpk
     tag: app-${VERSION}
     ports:
       - "8080:8080"
     environment:
-      AI_GATEWAY_URL: ((ssm:/vpk-rovo/AI_GATEWAY_URL))
-      AI_GATEWAY_USE_CASE_ID: ((ssm:/vpk-rovo/AI_GATEWAY_USE_CASE_ID))
-      AI_GATEWAY_CLOUD_ID: ((ssm:/vpk-rovo/AI_GATEWAY_CLOUD_ID))
-      AI_GATEWAY_USER_ID: ((ssm:/vpk-rovo/AI_GATEWAY_USER_ID))
-      ASAP_PRIVATE_KEY: ((ssm:/vpk-rovo/ASAP_PRIVATE_KEY))
-      ASAP_KID: ((ssm:/vpk-rovo/ASAP_KID))
-      ASAP_ISSUER: ((ssm:/vpk-rovo/ASAP_ISSUER))
-      OPENAI_REALTIME_MODEL: ((ssm:/vpk-rovo/OPENAI_REALTIME_MODEL))
-      OPENAI_REALTIME_WS_URL: ((ssm:/vpk-rovo/OPENAI_REALTIME_WS_URL))
-      OPENAI_REALTIME_VOICE: ((ssm:/vpk-rovo/OPENAI_REALTIME_VOICE))
-      VPK_RUNTIME_ADMIN_TOKEN: ((ssm:/vpk-rovo/VPK_RUNTIME_ADMIN_TOKEN))
-      ALLOWED_ORIGINS: ((ssm:/vpk-rovo/ALLOWED_ORIGINS))
+      AI_GATEWAY_URL: ((ssm:/vpk/AI_GATEWAY_URL))
+      AI_GATEWAY_USE_CASE_ID: ((ssm:/vpk/AI_GATEWAY_USE_CASE_ID))
+      AI_GATEWAY_CLOUD_ID: ((ssm:/vpk/AI_GATEWAY_CLOUD_ID))
+      AI_GATEWAY_USER_ID: ((ssm:/vpk/AI_GATEWAY_USER_ID))
+      ASAP_PRIVATE_KEY: ((ssm:/vpk/ASAP_PRIVATE_KEY))
+      ASAP_KID: ((ssm:/vpk/ASAP_KID))
+      ASAP_ISSUER: ((ssm:/vpk/ASAP_ISSUER))
+      OPENAI_REALTIME_MODEL: ((ssm:/vpk/OPENAI_REALTIME_MODEL))
+      OPENAI_REALTIME_WS_URL: ((ssm:/vpk/OPENAI_REALTIME_WS_URL))
+      OPENAI_REALTIME_VOICE: ((ssm:/vpk/OPENAI_REALTIME_VOICE))
+      VPK_RUNTIME_ADMIN_TOKEN: ((ssm:/vpk/VPK_RUNTIME_ADMIN_TOKEN))
+      ALLOWED_ORIGINS: ((ssm:/vpk/ALLOWED_ORIGINS))
       PORT: "8080"

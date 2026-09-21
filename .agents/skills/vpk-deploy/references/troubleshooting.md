@@ -14,6 +14,7 @@ until its prerequisite is repaired.
 | Package install fails in Docker | Check root `pnpm-lock.yaml`, workspace files, and npm registry credentials |
 | `exec format error` | Build with `--platform linux/amd64` |
 | Docker push returns 401 | Refresh local Docker credentials and registry permissions |
+| Docker push blob HEAD returns EOF while authenticated host access works | Diagnose daemon networking; use the explicit host uploader recovery below |
 | Production exits before listening | Verify `VPK_RUNTIME_ADMIN_TOKEN` is in the descriptor and selected environment's stash |
 | AI/voice route returns 401 or 403 | Verify AI Gateway and ASAP variables and authorization |
 | Health or runtime shows missing variables | Restash in the selected environment, then deploy a new version |
@@ -114,6 +115,58 @@ source .deploy.local
 `atlas packages secrets` repairs the local keychain entry.
 `atlas packages permission grant` updates registry authorization. A successful
 Docker login alone does not prove push access.
+
+### Docker daemon network failure with a working host proxy
+
+An EOF on a registry blob request is not proof of bad credentials or a missing
+proxy. Compare host and daemon access before choosing recovery: check the host's
+registry `/v2/` response (401 is a normal unauthenticated challenge), inspect
+Docker's proxy configuration, and inspect relevant daemon errors. Report proxy
+host/port or presence only; URLs can contain credentials. Confirm authenticated
+host access by resolving the previous verified image digest and comparing it
+with the recorded digest. Stop if that probe fails or its identity differs.
+
+In the Team EU26 release, the host network proxy worked, Docker reported no
+HTTP/HTTPS proxy, and daemon blob HEAD requests closed with EOF. The host uploader
+transferred the same saved image successfully. This diagnoses that run; other
+EOF failures still require evidence. Keep Docker Desktop's global settings
+unchanged unless the user has authorized a machine-level proxy repair.
+
+Use a trusted installed `crane`, or download the official release for the host
+and verify its filename-specific checksum before executing it. The proven run
+used [go-containerregistry v0.22.1](https://github.com/google/go-containerregistry/releases/tag/v0.22.1).
+For this Darwin arm64 example (select the matching official asset elsewhere):
+
+```bash
+set -euo pipefail
+VPK_CRANE_VERSION=v0.22.1
+VPK_CRANE_ASSET=go-containerregistry_Darwin_arm64.tar.gz
+VPK_CRANE_DIR="$PWD/output/deploy-tools/crane-$VPK_CRANE_VERSION"
+mkdir -p "$VPK_CRANE_DIR"
+curl -fL "https://github.com/google/go-containerregistry/releases/download/$VPK_CRANE_VERSION/$VPK_CRANE_ASSET" -o "$VPK_CRANE_DIR/$VPK_CRANE_ASSET"
+curl -fL "https://github.com/google/go-containerregistry/releases/download/$VPK_CRANE_VERSION/checksums.txt" -o "$VPK_CRANE_DIR/checksums.txt"
+node -e '
+const fs = require("node:fs"), crypto = require("node:crypto");
+const [directory, name] = process.argv.slice(1);
+const expected = fs.readFileSync(`${directory}/checksums.txt`, "utf8").split("\n").find(line => line.endsWith(` ${name}`))?.trim().split(/\s+/)[0];
+const actual = crypto.createHash("sha256").update(fs.readFileSync(`${directory}/${name}`)).digest("hex");
+if (!expected || actual !== expected) throw new Error("Uploader checksum mismatch");
+' "$VPK_CRANE_DIR" "$VPK_CRANE_ASSET"
+tar -xzf "$VPK_CRANE_DIR/$VPK_CRANE_ASSET" -C "$VPK_CRANE_DIR" crane
+export VPK_CRANE_BIN="$VPK_CRANE_DIR/crane"
+```
+
+`crane` uses Docker's existing credential store and the host's proxy environment;
+do not put tokens in its command arguments. Before a new build/deploy, select
+`--push-via=crane` explicitly. For a failed upload whose exact image is already
+built, follow [host-proxy upload recovery](guide-manual-deployment.md#host-proxy-upload-recovery).
+The helper saves only linux/amd64, verifies the registry configuration digest and
+layer count against the saved image, writes `output/image-upload-<version>.json`,
+and cleans its temporary archive on success or failure. Its registry manifest
+digest can differ from Docker's local multi-platform index; record the pushed
+digest. A failed host transfer or verification stops before Micros deployment;
+do not retry blindly, rebuild, retag, trim assets, or change regions for this
+transport failure.
 
 ## Missing production variables
 

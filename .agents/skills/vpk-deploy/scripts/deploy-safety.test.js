@@ -30,6 +30,12 @@ const REQUIRED_STASHES = [
 	"VPK_RUNTIME_ADMIN_TOKEN",
 ];
 
+test("repository deployment descriptor uses the canonical VPK service identity", () => {
+	const result = spawnSync("/bin/bash", ["-c", 'source "$1"; vpk_validate_descriptor_identity vpk "$2"', "validate-vpk-identity",
+		path.join(REPO_ROOT, ".agents/skills/vpk-deploy/scripts/deploy-lib.sh"), path.join(REPO_ROOT, "service-descriptor.yml")], { encoding: "utf8" });
+	assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
 function writeExecutable(filePath, source) {
 	writeFileSync(filePath, source);
 	chmodSync(filePath, 0o755);

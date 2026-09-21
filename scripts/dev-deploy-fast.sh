@@ -59,11 +59,16 @@ ENV="${ENV:-pdev-west2}"  # Use ENV from config or default to pdev-west2
 REGISTRY="docker.atl-paas.net"
 
 REQUESTED_MODE=""
+REQUESTED_PUSH_VIA=""
 RECEIPT_FILE=""
 while [ "$#" -gt 0 ]; do
   deploy_arg=$1
   shift
   case "$deploy_arg" in
+    --push-via=*)
+      if [ -n "$REQUESTED_PUSH_VIA" ]; then echo "❌ Duplicate upload transport"; exit 2; fi
+      REQUESTED_PUSH_VIA=${deploy_arg#--push-via=}
+      vpk_validate_push_via "$REQUESTED_PUSH_VIA" ;;
     --hot-swap|--mode=*)
       if [ -n "$REQUESTED_MODE" ]; then echo "❌ Duplicate or conflicting deployment modes"; exit 2; fi
       if [ "$deploy_arg" = "--hot-swap" ]; then REQUESTED_MODE=hot-swap; else REQUESTED_MODE=${deploy_arg#--mode=}; fi
@@ -75,7 +80,7 @@ while [ "$#" -gt 0 ]; do
     --*) echo "❌ Unexpected argument: $deploy_arg"; exit 2 ;;
     *)
       if [ -n "$VERSION" ]; then
-        echo "❌ Usage: pnpm run deploy:micros [version] [--mode=cutover|hot-swap] [--receipt path]"
+        echo "❌ Usage: pnpm run deploy:micros [version] [--mode=cutover|hot-swap] [--receipt path] [--push-via=docker|crane]"
         exit 2
       fi
       VERSION=$deploy_arg ;;
@@ -97,6 +102,8 @@ vpk_validate_service_name "$SERVICE_NAME"
 vpk_validate_version "$VERSION"
 DEPLOY_MODE=${REQUESTED_MODE:-${VPK_DEPLOY_MODE:-cutover}}
 vpk_validate_deploy_mode "$DEPLOY_MODE"
+PUSH_VIA=${REQUESTED_PUSH_VIA:-${VPK_PUSH_VIA:-docker}}
+vpk_require_push_tool "$PUSH_VIA"
 if [ -n "$RECEIPT_FILE" ]; then vpk_verify_receipt "$RECEIPT_FILE"; fi
 echo "Deployment mode: $DEPLOY_MODE"
 
@@ -190,15 +197,14 @@ fi
 
 # Step 3: Push to registry
 print_step "Step 3/4: Pushing Docker image to registry..."
-if docker push "$REGISTRY/${SERVICE_NAME}:app-${VERSION}"; then
+if vpk_push_image "$SERVICE_NAME" "$VERSION" "$REGISTRY" "$PUSH_VIA"; then
   print_success "Docker image pushed successfully"
 else
   print_error "Docker push failed"
   echo ""
-  echo "Troubleshooting tips:"
-  echo "  1. Check if API token is still valid at https://packages.atlassian.com/"
-  echo "  2. Try running: $VPK_ATLAS_BIN packages permission grant"
-  echo "  3. Try manual login: docker logout $REGISTRY && docker login $REGISTRY"
+  echo "Diagnose the first failing registry boundary before retrying."
+  echo "See .agents/skills/vpk-deploy/references/troubleshooting.md."
+  echo "Use --push-via=crane only after proving host access works and daemon networking fails."
   echo ""
   exit 1
 fi
