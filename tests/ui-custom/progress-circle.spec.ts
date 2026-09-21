@@ -114,3 +114,11 @@ test("reduced motion keeps dashes static and controls fit a narrow viewport", as
 	await page.getByRole("button", { name: "100%", exact: true }).click();
 	await expect(progress.locator('svg[viewBox="0 0 16 16"] .text-icon-success')).toBeVisible();
 });
+
+test("live reduced-motion changes stop indeterminate spinners", async ({ page }) => {
+	await page.goto(URL);
+	const spinner = page.locator('[role="progressbar"]:not([aria-valuenow]) svg').first();
+	await expect(spinner).toHaveCSS("animation-name", "spin");
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await expect(spinner).toHaveCSS("animation-name", "none");
+});

@@ -44,12 +44,12 @@ test("ProgressCircle segmented mode is an explicit toggle (default off)", () => 
 	);
 });
 
-test("ProgressCircle spins the indeterminate arc in both outline and filled variants", () => {
+test("ProgressCircle spins indeterminate variants only when motion is safe", () => {
 	// Indeterminate draws a partial arc in both variants; without the spin the filled
-	// wedge renders as a frozen 25% pie, visually identical to `value={25}`.
+	// wedge renders as a frozen 25% pie, while reduced motion must disable the loop.
 	assert.match(SOURCE, /const INDETERMINATE_ARC = 0\.25/u);
 	const filledBranch = SOURCE.slice(SOURCE.indexOf('key="filled"'), SOURCE.indexOf('key="ring"'));
-	assert.match(filledBranch, /className=\{cn\("size-full", isIndeterminate && "animate-spin"\)\}/u);
+	assert.match(filledBranch, /className=\{cn\("size-full", isIndeterminate && "motion-safe:animate-spin"\)\}/u);
 	const ringBranch = SOURCE.slice(SOURCE.indexOf('key="ring"'));
-	assert.match(ringBranch, /isIndeterminate && "animate-spin"/u);
+	assert.match(ringBranch, /isIndeterminate && "motion-safe:animate-spin"/u);
 });
