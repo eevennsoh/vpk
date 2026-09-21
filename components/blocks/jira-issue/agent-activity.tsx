@@ -95,6 +95,7 @@ export interface JiraIssueAgentActivity {
 	name: string;
 	avatarSrc?: string;
 	agentBrandName?: ThirdPartyLogoName;
+	agentVpkLogo?: "rovo";
 	label: string;
 	labels?: readonly string[];
 	message?: string;
@@ -201,6 +202,7 @@ function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentAssignme
 		byline: "",
 		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+		...(activity.agentVpkLogo ? { vpkLogo: activity.agentVpkLogo } : {}),
 		status: activity.label,
 		statusKind: toAssignedAgentStatusKind(activity.state),
 		statusSequence: activity.state === "working" ? getJiraIssueAgentWorkingLabels(activity) : undefined,
@@ -226,6 +228,7 @@ function toSelectorAgent(activity: JiraIssueAgentActivity): AgentSelectorAgent {
 		byline: "",
 		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+		...(activity.agentVpkLogo ? { vpkLogo: activity.agentVpkLogo } : {}),
 	};
 }
 
@@ -498,6 +501,7 @@ function JiraIssueAgentActivityRow({
 	inheritChinSurface = false,
 	showAssignmentFlyout = true,
 	shouldReduceMotion,
+	workingSpinnerVariant,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	assignment?: JiraIssueAgentAssignment;
@@ -520,6 +524,7 @@ function JiraIssueAgentActivityRow({
 	/** Hover assignment menu for every session lifecycle state. */
 	showAssignmentFlyout?: boolean;
 	shouldReduceMotion: boolean | null;
+	workingSpinnerVariant?: "default" | "experimental";
 }>) {
 	// Any row that gained one of the linked sessions sweeps, including a merged
 	// "N Working" row. Dropping onto a card that is already busy changes that
@@ -598,6 +603,7 @@ function JiraIssueAgentActivityRow({
 				agent={{
 					avatarSrc: featuredActivity?.avatarSrc,
 					brandName: featuredActivity?.agentBrandName,
+					vpkLogo: featuredActivity?.agentVpkLogo,
 					name: featuredActivity?.name ?? "Agent",
 				}}
 				attributedBy={featuredActivity?.invokedBy}
@@ -615,6 +621,7 @@ function JiraIssueAgentActivityRow({
 			isFailedRow={isFailedRow}
 			renderAgentActivityIndicator={renderAgentActivityIndicator}
 			startupPhase={startupPhase}
+			workingSpinnerVariant={workingSpinnerVariant}
 		/>
 	);
 	const rowHandle = (
@@ -707,6 +714,7 @@ export function JiraIssueAgentActivityRows({
 	inheritChinSurface = false,
 	showAssignmentFlyout = true,
 	shouldReduceMotion,
+	workingSpinnerVariant,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	/** Full assignment menu (Assign agent footer) when the host supplies edit capability. */
@@ -735,6 +743,8 @@ export function JiraIssueAgentActivityRows({
 	showAssignmentFlyout?: boolean;
 	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;
+	/** Selects only the Working spinner; iconScale still owns row spacing. */
+	workingSpinnerVariant?: "default" | "experimental";
 }>) {
 	const [sessionDragging, setSessionDragging] = useState(false);
 	const [assignmentHoverOpen, setAssignmentHoverOpen] = useState(false);
@@ -791,6 +801,7 @@ export function JiraIssueAgentActivityRows({
 							avatarLayout={avatarLayout}
 							flushContent={flushContent}
 							iconScale={iconScale}
+							workingSpinnerVariant={workingSpinnerVariant}
 							inheritChinSurface={inheritChinSurface}
 							linkFlash={linkFlash}
 							onOpenChange={(open) => {
@@ -816,6 +827,7 @@ export function JiraIssueAgentActivityRows({
 												name: activity.name,
 												tintSeed: sessionTransferTintSeed(
 													activity.agentBrandName,
+													activity.agentVpkLogo,
 													activity.name,
 												),
 											}],

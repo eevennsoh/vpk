@@ -581,6 +581,7 @@ export function AgentListRow({
 	renderIdentity,
 	showHoverActionsWhenSelected = false,
 	stateAwareTitle = true,
+	trailingAlign = "center",
 }: Readonly<{
 	/**
 	 * Drop the leading identity column entirely. A title-led row puts the agent
@@ -615,6 +616,8 @@ export function AgentListRow({
 	 * twice and the actual work name is nowhere on the card.
 	 */
 	stateAwareTitle?: boolean;
+	/** Align the lifecycle and its replacement actions with a title-led metadata line. */
+	trailingAlign?: "center" | "metadata";
 	/**
 	 * Keep Resume / Hide visible on a selected row. Agent List leaves this off
 	 * because a selected list row is already the destination; session cards still
@@ -768,6 +771,8 @@ export function AgentListRow({
 						<div
 							className={cn(
 								"relative ml-3 flex min-h-6 min-w-6 shrink-0 items-center justify-end overflow-visible",
+								// The 24px control is 4px taller than the metadata's 16px line.
+								trailingAlign === "metadata" && "self-end -mb-1",
 								!overlayHoverActions && "pointer-events-none",
 								!overlayHoverActions && showHoverActions &&
 									"group-hover/agent-row:hidden group-has-[:focus-visible]/agent-row:hidden",

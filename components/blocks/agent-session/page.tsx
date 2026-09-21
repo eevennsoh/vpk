@@ -128,6 +128,7 @@ function toDemoAssignedAgentFromSession(item: AgentSessionItem): AgentAssignment
 		byline: "",
 		...(item.agent.avatarSrc ? { avatarSrc: item.agent.avatarSrc } : {}),
 		...(item.agent.brandName ? { brandName: item.agent.brandName } : {}),
+		...(item.agent.vpkLogo ? { vpkLogo: item.agent.vpkLogo } : {}),
 		status: item.title,
 		statusKind,
 		statusLabel: item.title,

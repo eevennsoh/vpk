@@ -260,7 +260,7 @@ export const SCROLLING_ITEMS: readonly AgentSessionItem[] = [
 		},
 		shortTitle: "Sandbox key rotation",
 		state: "needs-input",
-		timeLabel: "2hr ago",
+		timeLabel: "2h ago",
 		title: "Sandbox key rotation is waiting on a confirmed retention window",
 	},
 	{

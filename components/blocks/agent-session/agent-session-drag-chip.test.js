@@ -106,7 +106,7 @@ test("a single session is one pill carrying the agent, its invoker, and the labe
 	const markup = harness.renderChip({ cohort: cohort(session("lw-a", ANNIE)), elevated: true });
 
 	assert.equal(countMatches(markup, "data-session-drag-pill"), 1);
-	// Static/reduced-motion copies show the human-first horizontal destination.
+	// Static/reduced-motion copies show the agent-first horizontal destination.
 	assert.match(markup, /aria-label="Claude, used by Annie Chen"/u);
 	assert.match(markup, /data-slot="avatar-group"/u);
 	assert.match(markup, />Annie Chen</u);
@@ -117,7 +117,7 @@ test("a single session is one pill carrying the agent, its invoker, and the labe
 	assert.doesNotMatch(markup, /data-session-cohort-chip/u);
 });
 
-test("untracked and tracked chips share the equal-size human-first group", async () => {
+test("untracked and tracked chips share the equal-size agent-first group", async () => {
 	const harness = await loadDragChipHarness();
 	const untracked = harness.renderChip({ cohort: cohort(session("lw-a", ANNIE)) });
 	const tracked = harness.renderPill({
@@ -126,12 +126,12 @@ test("untracked and tracked chips share the equal-size human-first group", async
 	});
 
 	assert.ok(
-		untracked.indexOf('data-shape="circle"') < untracked.indexOf('data-shape="hexagon"'),
-		"untracked drag groups lead with the person",
+		untracked.indexOf('data-shape="hexagon"') < untracked.indexOf('data-shape="circle"'),
+		"untracked drag groups lead with the agent",
 	);
 	assert.ok(
-		tracked.indexOf('data-shape="circle"') < tracked.indexOf('data-shape="hexagon"'),
-		"tracked drag groups lead with the person",
+		tracked.indexOf('data-shape="hexagon"') < tracked.indexOf('data-shape="circle"'),
+		"tracked drag groups lead with the agent",
 	);
 	for (const markup of [untracked, tracked]) {
 		assert.equal(countMatches(markup, 'data-size="xs"'), 2);

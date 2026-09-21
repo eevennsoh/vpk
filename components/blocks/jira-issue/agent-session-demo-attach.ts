@@ -15,6 +15,7 @@ export interface JiraIssueDemoAttachableSession {
 		name: string;
 		avatarSrc?: string;
 		brandName?: JiraIssueAgentActivity["agentBrandName"];
+		vpkLogo?: JiraIssueAgentActivity["agentVpkLogo"];
 	};
 	/**
 	 * Attaching a session must not cost it its face. Without this the chin row
@@ -42,6 +43,7 @@ export function toJiraIssueDemoAttachedActivity(
 			: "working",
 		...(session.agent.avatarSrc ? { avatarSrc: session.agent.avatarSrc } : {}),
 		...(session.agent.brandName ? { agentBrandName: session.agent.brandName } : {}),
+		...(session.agent.vpkLogo ? { agentVpkLogo: session.agent.vpkLogo } : {}),
 		...(session.invokedBy ? { invokedBy: session.invokedBy } : {}),
 		...(session.host !== undefined ? { host: session.host } : {}),
 		...(session.role !== undefined ? { role: session.role } : {}),

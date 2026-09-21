@@ -35,6 +35,8 @@ export interface AgentSelectorAgent {
 	logoName?: AtlassianLogoName;
 	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
 	brandName?: ThirdPartyLogoName;
+	/** When set, renders a VPK product mark through the shared agent avatar. */
+	vpkLogo?: "rovo";
 }
 
 export interface AgentSelectorAction {
@@ -200,6 +202,7 @@ function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): 
 			avatarClassName="shrink-0"
 			avatarSrc={agent.avatarSrc}
 			brandName={agent.brandName}
+			vpkLogo={agent.vpkLogo}
 			fallbackText={agent.name.slice(0, 2).toUpperCase()}
 			label={agent.name}
 			logoName={agent.logoName}

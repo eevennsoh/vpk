@@ -37,7 +37,7 @@ export function AgentListAttributionAvatarGroup({
 	agent,
 	animate,
 	attributedBy,
-	attributionOrder = "human-first",
+	attributionOrder = "agent-first",
 	className,
 	sizePx,
 }: Readonly<{
@@ -87,9 +87,9 @@ export function AgentListAttributionAvatarGroup({
  * The row's leading identity. Agents keep the shared hexagon agent visual;
  * people get the circular photo avatar the rest of Jira uses, so a mixed list —
  * agents waiting on an answer beside teammates who @mentioned you — is
- * separable at a glance without reading a word. Attributed identities default
- * to human-first for owned work; callers representing untracked work can
- * explicitly restore the agent-first composition.
+ * separable at a glance without reading a word. Attributed compact identities
+ * keep their human-first composition; horizontal attribution groups lead
+ * with the agent.
  */
 export function AgentListIdentity({
 	agent,

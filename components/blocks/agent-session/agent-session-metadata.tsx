@@ -91,7 +91,7 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 			<AgentListAttributionAvatarGroup
 				agent={item.agent}
 				attributedBy={item.invokedBy}
-				attributionOrder="human-first"
+				attributionOrder="agent-first"
 				sizePx={16}
 			/>
 		);
@@ -141,10 +141,11 @@ function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly stri
 			<CyclingByline
 				className="text-xs leading-4 text-text-subtle"
 				contentKey={toolCall}
+				slide={false}
 			>
 				<Shimmer
 					as="span"
-					className="max-w-full truncate text-text-subtle"
+					className="max-w-full truncate align-top text-text-subtle"
 					data-agent-session-tool-call=""
 					duration={1.4}
 					spread={2}
@@ -228,14 +229,16 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 			{segments.map((segment, index) => (
-				// Artifact and agent names yield width so the trailing lifecycle
-				// icon stays clear. Time and host stay shrink-0 so separators hold.
+				// Keep the agent name visible; tool calls and artifacts yield width
+				// before the fixed host/time and trailing lifecycle control.
 				<span
 					className={cn(
 						"flex items-center gap-1",
-						segment.kind === "artifact" || segment.kind === "agent"
-							? "min-w-0 shrink"
-							: "shrink-0",
+						segment.kind === "agent"
+							? "shrink-0"
+							: segment.kind === "artifact" || segment.kind === "tool-call"
+								? "min-w-0 shrink"
+								: "shrink-0",
 					)}
 					key={segment.kind}
 				>

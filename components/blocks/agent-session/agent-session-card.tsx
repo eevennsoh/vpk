@@ -271,6 +271,7 @@ export function AgentSessionCard({
 	onToggleVisibility,
 	onView,
 	padding = "default",
+	trailingAlign,
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
@@ -341,6 +342,8 @@ export function AgentSessionCard({
 	 * vertical) so stacked menu rows sit tighter than catalog cards.
 	 */
 	padding?: "default" | "compact";
+	/** Place the trailing status and actions at row center in compact menu rows. */
+	trailingAlign?: "center" | "metadata";
 	/**
 	 * Overlay stacking for the owner more-menu. Assignment's picker sits above
 	 * the default dropdown tier, so it passes a higher `z-` or the menu opens
@@ -752,6 +755,7 @@ export function AgentSessionCard({
 								}}
 								showHoverActionsWhenSelected
 								stateAwareTitle={false}
+								trailingAlign={trailingAlign ?? (isLongDensity ? "metadata" : "center")}
 							/>
 						</article>
 					);

@@ -176,7 +176,7 @@ test("people render a circular photo beside the hexagon agents in the same list"
 test("agent identities delegate attributed avatars to the shared Human Agent Avatar", () => {
 	assert.match(IDENTITY_SOURCE, /attributedBy\?: AgentListInvoker;/u);
 	assert.match(IDENTITY_SOURCE, /export type AgentListAttributionOrder = HumanAgentAvatarOrder;/u);
-	assert.match(IDENTITY_SOURCE, /attributionOrder = "human-first"/u);
+	assert.match(IDENTITY_SOURCE, /export function AgentListIdentity[\s\S]*attributionOrder = "human-first"/u);
 	assert.match(IDENTITY_SOURCE, /<HumanAgentAvatar\s+agent=\{agent\}\s+human=\{attributedBy\}\s+attributionOrder=\{attributionOrder\}\s+className=\{className\}\s+sizePx=\{sizePx\}/u);
 	assert.doesNotMatch(IDENTITY_SOURCE, /PX_TO_ATTRIBUTED_AGENT_SIZE|personPositionClassName|agentPositionClassName/u);
 });

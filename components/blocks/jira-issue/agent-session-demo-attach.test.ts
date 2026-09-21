@@ -41,6 +41,15 @@ test("attaching a complete detached session produces a working chin activity", (
 	assert.equal(activity.agentBrandName, "claude");
 });
 
+test("attaching a Rovo session retains its product mark", () => {
+	const activity = toJiraIssueDemoAttachedActivity({
+		...CLAUDE,
+		agent: { name: "Rovo", vpkLogo: "rovo" },
+	});
+
+	assert.equal(activity.agentVpkLogo, "rovo");
+});
+
 test("needs-input detached sessions stay awaiting input after attach", () => {
 	const activity = toJiraIssueDemoAttachedActivity({
 		...CURSOR,

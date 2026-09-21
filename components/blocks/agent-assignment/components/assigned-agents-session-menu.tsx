@@ -63,6 +63,7 @@ export function AssignedAgentsSessionMenu({
 							onView={() => onSelectAgent(row)}
 							padding="compact"
 							showLifecycleLabel={false}
+							trailingAlign="center"
 						/>
 					))}
 				</ul>

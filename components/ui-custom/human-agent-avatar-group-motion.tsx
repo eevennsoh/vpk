@@ -66,10 +66,9 @@ function GroupComposition({
 			{agent(grouped ? humanSize : undefined)}
 		</motion.span>
 	);
-	const avatars =
-		grouped || !agentFirst
-			? [humanAvatar, agentAvatar]
-			: [agentAvatar, humanAvatar];
+	const avatars = agentFirst
+		? [agentAvatar, humanAvatar]
+		: [humanAvatar, agentAvatar];
 	return (
 		<motion.span
 			aria-hidden={present ? undefined : true}

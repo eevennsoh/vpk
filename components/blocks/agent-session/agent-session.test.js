@@ -645,7 +645,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(
 		METADATA_SOURCE,
-		/segment\.kind === "artifact" \|\| segment\.kind === "agent"\s*\? "min-w-0 shrink"\s*: "shrink-0"/u,
+		/segment\.kind === "agent"\s*\? "shrink-0"\s*: segment\.kind === "artifact" \|\| segment\.kind === "tool-call"\s*\? "min-w-0 shrink"\s*: "shrink-0"/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
@@ -660,7 +660,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(METADATA_SOURCE, /<CyclingByline[\s\S]*contentKey=\{toolCall\}[\s\S]*<Shimmer[\s\S]*case "tool-call":[\s\S]*<AgentSessionToolCall toolCalls=\{segment\.toolCalls \?\? \[\]\} \/>/u);
 	assert.match(
 		METADATA_SOURCE,
-		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{item\.invokedBy\}\s+attributionOrder="human-first"\s+sizePx=\{16\}/u,
+		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{item\.invokedBy\}\s+attributionOrder="agent-first"\s+sizePx=\{16\}/u,
 	);
 	assert.match(
 		IDENTITY_SOURCE,

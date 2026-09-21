@@ -654,7 +654,7 @@ function formatArtifactVersionHistoryTimestamp(createdAt: string): string {
 
 	if (absoluteDiffMs < 24 * 60 * 60_000) {
 		const hours = Math.max(1, Math.round(absoluteDiffMs / (60 * 60_000)));
-		return `${hours} hr ago`;
+		return `${hours}h ago`;
 	}
 
 	return ARTIFACT_VERSION_HISTORY_TIMESTAMP_FORMATTER.format(date);

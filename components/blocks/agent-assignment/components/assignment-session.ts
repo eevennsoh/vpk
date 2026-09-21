@@ -68,7 +68,7 @@ function assignmentActivityLabel(kind: AgentAssignmentStatusKind, agent: AgentAs
 export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessionItem {
 	const statusKind = resolveAssignedAgentStatusKind(agent);
 	const role = assignmentSessionRole(statusKind, agent.role);
-	const invokedBy = role === "viewer" || role === "expired" ? undefined : agent.invokedBy;
+	const invokedBy = agent.invokedBy;
 
 	return {
 		agent: {
@@ -92,7 +92,7 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 export function toAssignmentActivity(agent: AgentAssignmentAgent): JiraIssueAgentActivity {
 	const statusKind = resolveAssignedAgentStatusKind(agent);
 	const role = assignmentSessionRole(statusKind, agent.role);
-	const invokedBy = role === "viewer" || role === "expired" ? undefined : agent.invokedBy;
+	const invokedBy = agent.invokedBy;
 
 	return {
 		id: agent.id,

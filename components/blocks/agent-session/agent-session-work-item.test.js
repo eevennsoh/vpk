@@ -82,6 +82,18 @@ test("the invoker passes through by reference, not by reconstruction", async () 
 	assert.equal(toJiraIssueAgentActivityFromSession(session({ invokedBy: invoker })).invokedBy, invoker);
 });
 
+test("the Rovo product mark survives conversion to an attached activity", async () => {
+	const { toJiraIssueAgentActivityFromSession } = await loadWorkItemModule();
+	const activity = toJiraIssueAgentActivityFromSession(session({
+		agent: { id: "rovo-dev", kind: "agent", name: "Rovo", vpkLogo: "rovo" },
+		state: "running",
+	}));
+
+	assert.equal(activity.agentVpkLogo, "rovo");
+	assert.equal(activity.avatarSrc, undefined);
+	assert.equal(activity.agentBrandName, undefined);
+});
+
 test("a session with no invoker degrades to an agent-only activity", async () => {
 	const { toJiraIssueAgentActivityFromSession } = await loadWorkItemModule();
 	const activity = toJiraIssueAgentActivityFromSession(session());

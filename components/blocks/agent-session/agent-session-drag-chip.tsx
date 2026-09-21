@@ -74,7 +74,7 @@ function sessionCohortLabel(total: number): string {
 export function AgentSessionDragPill({
 	agent,
 	attributedBy,
-	attributionOrder = "human-first",
+	attributionOrder = "agent-first",
 	elevated = false,
 	isFusionSource = false,
 	animateIdentity,

@@ -135,18 +135,19 @@ test("role omission keeps the default owner attribution", async () => {
 	}
 });
 
-test("non-owner sessions preserve their role without showing owner attribution", async () => {
+test("all access roles retain human attribution through every lifecycle state", async () => {
 	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
-	for (const role of ["viewer", "expired"]) {
-		const agent = assignmentAgent({
-			role,
-			statusKind: "needs-input",
-			invokedBy: { name: "Jordan", avatarSrc: "/avatars/jordan.svg" },
-		});
-		for (const result of [toAssignmentActivity(agent), toAssignmentSessionItem(agent)]) {
-			assert.equal(result.role, role);
-			assert.equal(result.invokedBy, undefined);
-			assert.ok(!("invokedBy" in result));
+	for (const role of ["owner", "viewer", "expired"]) {
+		for (const statusKind of ["working", "needs-input", "finished", "idle"]) {
+			const agent = assignmentAgent({
+				role,
+				statusKind,
+				invokedBy: { name: "Jordan", avatarSrc: "/avatars/jordan.svg" },
+			});
+			for (const result of [toAssignmentActivity(agent), toAssignmentSessionItem(agent)]) {
+				assert.equal(result.role, role);
+				assert.deepEqual(result.invokedBy, agent.invokedBy);
+			}
 		}
 	}
 });

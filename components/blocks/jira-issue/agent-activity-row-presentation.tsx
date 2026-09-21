@@ -67,6 +67,7 @@ function toAgentLoadingAgent(activity: JiraIssueAgentActivity): AgentLoadingAgen
 		avatar: {
 			...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 			...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+			...(activity.agentVpkLogo ? { vpkLogo: activity.agentVpkLogo } : {}),
 			fallbackText: getAgentInitial(activity.name),
 		},
 	};
@@ -130,10 +131,12 @@ function JiraIssueActiveAgentStatusIcon({
 	iconScale,
 	isAwaitingInput,
 	renderAgentActivityIndicator,
+	workingSpinnerVariant,
 }: Readonly<{
 	iconScale: JiraIssueIconScale;
 	isAwaitingInput: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
+	workingSpinnerVariant?: "default" | "experimental";
 }>): ReactElement {
 	if (renderAgentActivityIndicator) {
 		return (
@@ -152,12 +155,14 @@ function JiraIssueActiveAgentStatusIcon({
 		);
 	}
 
+	const spinnerVariant = workingSpinnerVariant ?? (iconScale === "comfortable" ? "experimental" : "default");
+
 	return (
 		<span
 			aria-hidden="true"
 			className="grid size-6 shrink-0 place-items-center text-icon"
 		>
-			{iconScale === "comfortable" ? (
+			{spinnerVariant === "experimental" ? (
 				<Spinner label="" pulse size="xl" variant="experimental" />
 			) : (
 				<Spinner label="" />
@@ -173,6 +178,7 @@ export function JiraIssueAgentStatusIcon({
 	isFailedRow,
 	renderAgentActivityIndicator,
 	startupPhase,
+	workingSpinnerVariant,
 }: Readonly<{
 	iconScale: JiraIssueIconScale;
 	isAwaitingInput: boolean;
@@ -180,6 +186,7 @@ export function JiraIssueAgentStatusIcon({
 	isFailedRow: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	startupPhase: ReturnType<typeof useJiraIssueAgentStartupPhase>;
+	workingSpinnerVariant?: "default" | "experimental";
 }>): ReactElement {
 	if (isCompletedRow) {
 		return (
@@ -207,6 +214,7 @@ export function JiraIssueAgentStatusIcon({
 			iconScale={iconScale}
 			isAwaitingInput={isAwaitingInput}
 			renderAgentActivityIndicator={renderAgentActivityIndicator}
+			workingSpinnerVariant={workingSpinnerVariant}
 		/>
 	);
 }
@@ -293,6 +301,7 @@ export function JiraIssueAgentRowContent({
 					avatarClassName="shrink-0"
 					avatarSrc={featuredActivity.avatarSrc}
 					brandName={featuredActivity.agentBrandName}
+					vpkLogo={featuredActivity.agentVpkLogo}
 					fallbackText={getAgentInitial(featuredActivity.name)}
 					label={featuredActivity.name}
 					sizePx={24}
@@ -311,6 +320,7 @@ export function JiraIssueAgentRowContent({
 						animate={false}
 						avatarSrc={activity.avatarSrc}
 						brandName={activity.agentBrandName}
+						vpkLogo={activity.agentVpkLogo}
 						fallbackText={getAgentInitial(activity.name)}
 						key={activity.id}
 						label=""

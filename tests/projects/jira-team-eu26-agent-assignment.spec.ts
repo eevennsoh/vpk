@@ -45,6 +45,57 @@ test("List assigned menu uses Add agent and opens the selector", async ({ page }
 	await expect(menu.getByRole("textbox", { name: "Search agents" })).toBeVisible();
 });
 
+test("compact assignment flyout centers status and more actions in each row", async ({ page }) => {
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.locator('[data-issue-key="PAY-123"] [data-slot="jira-issue-agent-row"] button[aria-label="2 agents: 2 Working"]').hover();
+	const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+	await expect(flyout).toBeVisible();
+
+	const cursor = flyout.getByTestId("agent-session-row-test-agent");
+	const claude = flyout.getByTestId("agent-session-row-claude-code");
+	for (const { row, label } of [
+		{ row: cursor, label: "Cursor, used by Jordan Okafor" },
+		{ row: claude, label: "Claude, used by Venn" },
+	]) {
+		const identity = row.getByRole("group", { name: label, exact: true });
+		await expect(identity).toBeVisible();
+		expect(await identity.locator('[data-slot="avatar"]').evaluateAll((avatars) => (
+			avatars.map((avatar) => avatar.getAttribute("data-shape"))
+		))).toEqual(["hexagon", "circle"]);
+		const agent = await identity.locator('[data-shape="hexagon"]').boundingBox();
+		const human = await identity.locator('[data-shape="circle"]').boundingBox();
+		if (agent === null || human === null) throw new Error("Session avatars are not laid out");
+		expect(agent.x).toBeLessThan(human.x);
+	}
+	await expect(cursor.getByRole("button", {
+		name: "A team member is collaborating with an agent on this work. Only they have access.",
+	})).toBeVisible();
+	const loader = page.locator('[data-issue-key="PAY-123"] .agent-loading');
+	await expect(loader).toBeVisible();
+	await expect(loader.locator('[data-slot="human-agent-avatar"]')).toHaveCount(0);
+	for (const issueKey of ["PAY-105", "PAY-107", "PAY-112", "PAY-101"]) {
+		const indicator = page.locator(`[data-issue-key="${issueKey}"] [data-slot="jira-issue-agent-row"]`);
+		await expect(indicator).toBeVisible();
+		await expect(indicator.locator('[data-slot="human-agent-avatar"]')).toHaveCount(0);
+	}
+	await claude.hover();
+	const controls = [
+		{ row: cursor, control: cursor.getByRole("button", { name: "Working" }) },
+		{ row: claude, control: claude.getByRole("button", { name: "More actions for Claude" }) },
+	];
+	for (const { row, control } of controls) {
+		await expect(control).toBeVisible();
+		const article = await row.locator("article").boundingBox();
+		const trailing = await control.boundingBox();
+		expect(article).not.toBeNull();
+		expect(trailing).not.toBeNull();
+		if (article === null || trailing === null) throw new Error("Assignment row is not laid out");
+		expect(Math.abs(
+			trailing.y + trailing.height / 2 - article.y - article.height / 2,
+		)).toBeLessThanOrEqual(1);
+	}
+});
+
 test("keyboard session selection moves focus into the opened chat", async ({ page }) => {
 	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 	const trigger = page.getByRole("button", { name: "Cursor: Working", exact: true });
