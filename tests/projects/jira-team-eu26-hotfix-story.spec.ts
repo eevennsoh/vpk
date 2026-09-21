@@ -143,8 +143,8 @@ for (const hostLabel of ["Cloud session", "Local session"]) {
 		const card = page.locator("article", {
 			has: page.getByText("PAY-123", { exact: true }),
 		});
-		await card.locator('[data-slot="jira-issue-agent-row"] button').hover();
-		const assignment = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+		await card.locator('[data-slot="jira-issue-agent-row"] button').click();
+		const assignment = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 		await expect(assignment).toBeVisible();
 
 		const hostIcon = assignment.getByRole("img", { name: hostLabel, exact: true });
@@ -157,7 +157,7 @@ for (const hostLabel of ["Cloud session", "Local session"]) {
 		await expect(assignment).toBeVisible();
 		await page.screenshot({ path: `output/agent-browser/${hostLabel.replace(" ", "-").toLowerCase()}-no-tooltip.png` });
 
-		await page.getByRole("heading", { name: "Jira Design" }).hover();
+		await page.getByRole("heading", { name: "Jira Design" }).click();
 		await expect(assignment).toBeHidden();
 	});
 }

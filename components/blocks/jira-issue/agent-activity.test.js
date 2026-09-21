@@ -21,7 +21,7 @@ test("assignment flyout access is independent of the session lifecycle", () => {
 		AGENT_ACTIVITY_PRESENTATION_SOURCE.indexOf("export function JiraIssueAgentRowSurface"),
 	);
 	assert.match(assignmentHandle, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;/u);
-	assert.match(assignmentHandle, /<AgentAssignment[\s\S]*openMode="hover"[\s\S]*trigger=\{rowHandle\}/u);
+	assert.match(assignmentHandle, /<AgentAssignment[\s\S]*openMode="click"[\s\S]*side="right"[\s\S]*trigger=\{rowHandle\}/u);
 	assert.doesNotMatch(assignmentHandle, /isCompletedRow|\.state\s*===|\.state\s*!==/u);
 });
 

@@ -14,6 +14,7 @@ function PopoverTrigger(props: PopoverPrimitive.Trigger.Props) {
 }
 
 function PopoverContent({
+	anchor,
   className,
   positionerClassName,
   align = "center",
@@ -24,13 +25,14 @@ function PopoverContent({
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
-    "align" | "alignOffset" | "side" | "sideOffset"
+		"anchor" | "align" | "alignOffset" | "side" | "sideOffset"
   > & {
     positionerClassName?: string
   }) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
+				anchor={anchor}
         align={align}
         alignOffset={alignOffset}
         side={side}

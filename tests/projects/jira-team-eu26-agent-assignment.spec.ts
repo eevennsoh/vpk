@@ -49,8 +49,8 @@ test("compact assignment flyout centers status and more actions in each row", as
 	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 	const workingRow = page.locator('[data-issue-key="PAY-123"] [data-slot="jira-issue-agent-row"] button[aria-label="2 agents: Working"]');
 	await expect(workingRow).toHaveText("Working");
-	await workingRow.hover();
-	const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+	await workingRow.click();
+	const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 	await expect(flyout).toBeVisible();
 
 	const cursor = flyout.getByTestId("agent-session-row-test-agent");
@@ -102,7 +102,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`finished assignment shows the human invoker (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
-		await page.getByRole("button", { name: "Claude: Finished", exact: true }).hover();
+		await page.getByRole("button", { name: "Claude: Finished", exact: true }).click();
 		const row = page.getByTestId("agent-session-row-pay-101-inventory-claude-session");
 		const identity = row.getByRole("group", { name: "Claude, used by Maya Ferreira", exact: true });
 		await expect(identity).toBeVisible();
@@ -117,11 +117,11 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`assignment flyouts align with the activity row (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
-		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 
 		for (const issueKey of ["PAY-123", "PAY-105", "PAY-112", "PAY-101"]) {
 			const row = page.locator(`[data-issue-key="${issueKey}"] [data-slot="jira-issue-agent-row"]`);
-			await row.locator('[data-slot="hover-card-trigger"]').hover();
+			await row.locator('[data-slot="popover-trigger"]').click();
 			await expect(flyout).toBeVisible();
 			await expect(flyout).toHaveAttribute("data-side", /^(right|left)$/u);
 			await expect.poll(async () => {
@@ -142,7 +142,7 @@ test("keyboard cloud session selection moves focus into the opened chat", async 
 	await trigger.focus();
 	await page.keyboard.press("Enter");
 
-	const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+	const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 	await expect(flyout).toBeVisible();
 	await page.keyboard.press("Tab");
 	const session = flyout.getByRole("button", {
@@ -160,8 +160,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`local assignment separates Continue in from Dismiss (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
-		await page.getByRole("button", { name: "2 agents: Working", exact: true }).hover();
-		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+		await page.getByRole("button", { name: "2 agents: Working", exact: true }).click();
+		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 		const row = flyout.getByTestId("agent-session-row-claude-code");
 		const session = row.getByRole("button", { name: /^Claude Claude, used by Venn Claude Local session/u });
 		await session.click();
@@ -189,7 +189,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(menu).not.toContainText("Continue in");
 		await page.screenshot({ path: `output/agent-browser/local-assignment-dismiss-${reducedMotion}.png` });
 		await menu.getByRole("menuitem", { name: "Dismiss", exact: true }).click();
-		await expect(page.locator('[data-issue-key="PAY-123"]').getByRole("button", { name: "Cursor: Working", exact: true })).toBeVisible();
+		await expect(page.locator('[data-issue-key="PAY-123"]').getByRole("button", { name: "Cursor with Jordan Okafor", exact: true })).toBeVisible();
 		await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
 	});
 }
@@ -207,8 +207,8 @@ test("List local sessions use Continue in and menus fit a narrow viewport", asyn
 	await page.getByRole("tab", { name: "Board" }).click();
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.getByRole("button", { name: "2 agents: Working", exact: true }).hover();
-	const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+	await page.getByRole("button", { name: "2 agents: Working", exact: true }).click();
+	const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 	await flyout.getByRole("button", { name: /^Claude Claude, used by Venn Claude Local session/u }).click();
 	const menu = page.getByRole("menu");
 	await expect(menu).toContainText("Continue in");
@@ -273,11 +273,23 @@ for (const { issueKey, state, agent } of [
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 		const row = page.locator(`[data-issue-key="${issueKey}"] [data-slot="jira-issue-agent-row"]`);
 		const trigger = row.getByRole("button", { name: `${agent}: ${state}`, exact: true });
+		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 		await trigger.hover();
-		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+		// Allow the former 120ms hover delay to elapse before asserting absence.
+		await page.waitForTimeout(300);
+		await expect(flyout).toBeHidden();
+		await expect(trigger).toHaveAttribute("aria-expanded", "false");
+		await trigger.click();
 		await expect(flyout).toBeVisible();
 		await expect(trigger).toHaveAttribute("aria-expanded", "true");
 		await expect(flyout).toContainText(agent);
+		await page.getByRole("heading", { name: "Jira Design", exact: true }).hover();
+		await expect(flyout).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(flyout).toBeHidden();
+		await expect(trigger).toBeFocused();
+		await page.keyboard.press("Enter");
+		await expect(flyout).toBeVisible();
 		const assign = flyout.getByRole("button", { name: "Add agent", exact: true });
 		await assign.hover();
 		await expect(flyout).toBeVisible();
@@ -285,6 +297,56 @@ for (const { issueKey, state, agent } of [
 		await expect(page.getByRole("option").filter({ hasText: "Readiness Checker" })).toBeVisible();
 	});
 }
+
+test("Jira issue playground opens owner and viewer session lists on click", async ({ page }) => {
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/components/blocks/jira-issue#agent-activity-states-experimental-v2`);
+	const demo = page.locator('#agent-activity-states-experimental-v2 [data-slot="jira-issue-agent-row"]');
+	const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
+	for (const label of ["1 agent as owner", "1 agent, not owner"]) {
+		await page.getByRole("button", { name: label, exact: true }).click();
+		const trigger = demo.locator('[data-slot="popover-trigger"]');
+		await trigger.hover();
+		await page.waitForTimeout(300);
+		await expect(flyout).toBeHidden();
+		await trigger.click();
+		await expect(flyout).toBeVisible();
+		await expect(flyout.getByRole("button", {
+			name: label === "1 agent as owner"
+				? "More actions for Claude"
+				: "A team member is collaborating with an agent on this work. Only they have access.",
+		})).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(flyout).toBeHidden();
+	}
+});
+
+test("activity clicks preserve linking and cancelled drags do not open the assignment list", async ({ page }) => {
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	const trigger = page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-agent-row"]')
+		.getByRole("button", { name: "Cursor: Working", exact: true });
+	const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
+	await trigger.click();
+	await expect(flyout).toBeVisible();
+	await expect(trigger).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(flyout).toBeHidden();
+	const origin = await trigger.boundingBox();
+	const target = await page.getByRole("heading", { name: "Jira Design", exact: true }).boundingBox();
+	if (!origin || !target) throw new Error("Drag source or cancellation target is not laid out");
+	await page.mouse.move(origin.x + origin.width / 2, origin.y + origin.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(origin.x + origin.width / 2 + 20, origin.y + origin.height / 2, { steps: 4 });
+	await expect(trigger).toHaveAttribute("data-session-dragging", "true");
+	await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
+	await page.mouse.up();
+	await expect(trigger).toBeVisible();
+	await expect(trigger).toHaveAttribute("aria-expanded", "false");
+	await expect(flyout).toBeHidden();
+	await trigger.click();
+	await expect(flyout).toBeVisible();
+	await trigger.click();
+	await expect(flyout).toBeHidden();
+});
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Finished session flyout supports keyboard access (${reducedMotion})`, async ({ page }) => {
@@ -294,7 +356,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.keyboard.press("Tab");
 		const trigger = page.getByRole("button", { name: "Claude: Finished", exact: true });
 		await expect(trigger).toBeFocused();
-		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+		await page.keyboard.press("Enter");
+		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 		await expect(flyout).toBeVisible();
 		await expect(trigger).toHaveAttribute("aria-expanded", "true");
 		await expect(flyout).toHaveCSS("opacity", "1");

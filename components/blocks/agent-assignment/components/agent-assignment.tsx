@@ -84,7 +84,7 @@ export interface AgentAssignmentProps {
 	addAgentLabel?: string;
 	/** Let attached activity identities begin at the empty Assign agent label's edge. */
 	activityRowFlush?: boolean;
-	/** Override the hover flyout's anchor when its trigger is inset within a row. */
+	/** Override the flyout's anchor when its trigger is inset within a row. */
 	hoverAnchor?: ComponentProps<typeof HoverCardContent>["anchor"];
 	className?: string;
 	defaultPinnedAgentIds?: readonly string[];
@@ -455,6 +455,7 @@ export function AgentAssignment({
 						alignOffset={0}
 						anchor={hoverAnchor}
 						aria-label="Agent assignment"
+						role="group"
 						className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-visible rounded-xl p-0 shadow-none"
 						positionerClassName={overlayPositionerClassName}
 						ref={hoverPopupRef}
@@ -529,6 +530,7 @@ export function AgentAssignment({
 				)}
 				<PopoverContent
 					align="start"
+					anchor={hoverAnchor}
 					aria-label="Agent assignment"
 					className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-hidden rounded-xl p-0"
 					positionerClassName={positionerClassName}
