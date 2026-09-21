@@ -42,6 +42,7 @@ import {
 	type JiraKanbanCreatedCardArrival,
 } from "./hooks/use-created-card-arrival";
 import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
+import { createIssueDragPreview } from "./lib/issue-drag-preview";
 import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
@@ -418,6 +419,7 @@ function ExperimentalJiraKanbanView({
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const boardContentUnderlapsRef = useRef(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
+	const issueDragImageRef = useRef<HTMLElement | null>(null);
 	const handleCreatedCardArrivalComplete = useCreatedCardArrivalCompletion(
 		onCreatedCardArrivalComplete,
 	);
@@ -540,6 +542,7 @@ function ExperimentalJiraKanbanView({
 		return () => {
 			node.remove();
 			dragImageRef.current = null;
+			issueDragImageRef.current?.remove();
 		};
 	}, []);
 	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
@@ -550,6 +553,8 @@ function ExperimentalJiraKanbanView({
 		event: React.DragEvent<HTMLButtonElement>,
 	) => {
 		const isMultiDrag = Boolean(selectedCardCodes?.has(card.code) && selectedCardCodes.size > 1);
+		issueDragImageRef.current?.remove();
+		issueDragImageRef.current = null;
 		event.dataTransfer.effectAllowed = "move";
 		event.dataTransfer.dropEffect = "move";
 		event.dataTransfer.setData("text/plain", card.code);
@@ -562,12 +567,16 @@ function ExperimentalJiraKanbanView({
 		} else if (issueDragTransitions) {
 			const surface = event.currentTarget.querySelector<HTMLElement>('[data-slot="jira-issue-card"]') ?? event.currentTarget;
 			const bounds = surface.getBoundingClientRect();
-			event.dataTransfer.setDragImage(surface, event.clientX - bounds.left, event.clientY - bounds.top);
+			const preview = createIssueDragPreview(surface);
+			issueDragImageRef.current = preview === surface ? null : preview;
+			event.dataTransfer.setDragImage(preview, event.clientX - bounds.left, event.clientY - bounds.top);
 		}
 		onCardDragStart?.(card, columnTitle);
 	};
 
 	const handleCardDragEndInternal = () => {
+		issueDragImageRef.current?.remove();
+		issueDragImageRef.current = null;
 		onCardDragEnd?.();
 	};
 

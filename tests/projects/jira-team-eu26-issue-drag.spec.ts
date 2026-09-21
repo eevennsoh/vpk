@@ -36,17 +36,42 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			DataTransfer.prototype.setDragImage = function (node, x, y) {
 				document.documentElement.dataset.dragPreviewSlot = (node as HTMLElement).dataset.slot;
 				document.documentElement.dataset.dragPreviewText = (node as HTMLElement).innerText;
+				const bounds = node.getBoundingClientRect();
+				const surface = node.querySelector('[data-slot="jira-issue-surface"]')?.getBoundingClientRect();
+				if (surface) {
+					document.documentElement.dataset.dragPreviewGaps = JSON.stringify({
+						top: surface.top - bounds.top,
+						left: surface.left - bounds.left,
+						right: bounds.right - surface.right,
+						bottom: bounds.bottom - surface.bottom,
+					});
+				}
+				const moreSelector = '[aria-label="More actions for PAY-105"]';
+				const sourceMore = document.querySelector(`[data-issue-key="PAY-105"] ${moreSelector}`);
+				const previewMore = node.querySelector(moreSelector);
+				if (sourceMore && previewMore) {
+					document.documentElement.dataset.dragSourceMoreOpacity = getComputedStyle(sourceMore).opacity;
+					document.documentElement.dataset.dragPreviewMoreOpacity = getComputedStyle(previewMore).opacity;
+				}
 				original.call(this, node, x, y);
 			};
 		});
+		const sourceHeight = await issue(page, "PAY-105").evaluate((node) => node.getBoundingClientRect().height);
 		await startDrag(page, "PAY-105");
-		await expect(page.locator("html")).toHaveAttribute("data-drag-preview-slot", "jira-issue-card");
+		await expect(page.locator("html")).toHaveAttribute("data-drag-preview-gaps", JSON.stringify({ top: 4, left: 4, right: 4, bottom: 4 }));
 		await expect(page.locator("html")).not.toHaveAttribute("data-drag-preview-text", /Working|Needs input/);
+		const sourceMoreOpacity = await page.locator("html").getAttribute("data-drag-source-more-opacity");
+		await expect(page.locator("html")).toHaveAttribute("data-drag-preview-more-opacity", sourceMoreOpacity ?? "1");
+		await expect.poll(() => issue(page, "PAY-105").evaluate((node) => node.getBoundingClientRect().height)).toBe(sourceHeight);
+		await expect(page.locator("[data-issue-drag-preview]")).toHaveAttribute("aria-hidden", "true");
+		await expect(page.locator("[data-issue-drag-preview]")).toHaveAttribute("inert", "");
 		await page.keyboard.press("Escape");
 		await page.mouse.up();
+		await expect(page.locator("[data-issue-drag-preview]")).toHaveCount(0);
 		await expect(page.locator("[data-issue-status-zone]")).toHaveCount(0);
 
 		await startDrag(page, "PAY-118");
+		await expect(page.locator("[data-issue-drag-preview]")).toHaveCount(0);
 		const transitionHeader = column(page, "To do").locator("[data-transitioning]");
 		await expect(transitionHeader).toHaveText("Transition to...");
 		await expect(transitionHeader).toHaveCSS("justify-content", "center");
