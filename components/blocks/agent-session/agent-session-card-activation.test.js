@@ -130,8 +130,8 @@ function loadHarness() {
 			["utils", `export function cn(...classes) { return classes.flat().filter(Boolean).join(" "); }`],
 			["icon", `export function Icon() { return null; }`],
 			["agent-session-select-mark", `export function AgentSessionSelectMark() { return null; }`],
-			["agent-session-expired-hint", `export function AgentSessionExpiredHint() { return null; }`],
-			["agent-session-viewer-hint", `export function AgentSessionViewerHint() { return null; }`],
+			["agent-session-expired-hint", `export function AgentSessionExpiredHint({ children }) { return children; }`],
+			["agent-session-viewer-hint", `export function AgentSessionViewerHint() { return null; } export function AgentSessionViewerTooltip({ children }) { return children; }`],
 			["agent-session-metadata", `export function AgentSessionLongMetadata() { return null; } export function AgentSessionShortMetadata() { return null; }`],
 			["agent-session-lifecycle", `export function AgentSessionLifecycle() { return null; } export function AgentSessionShortLifecycleIcon() { return null; }`],
 		]);
@@ -206,7 +206,7 @@ test("local cards retain their hover preview and open Continue in on click", asy
 	});
 });
 
-test("cloud and local cards without Continue in retain their hover session preview", async () => {
+test("owner cards retain their hover session preview while viewer cards keep it private", async () => {
 	for (const props of [
 		{ item: { ...LOCAL_ITEM, host: "cloud" } },
 		{ item: { ...LOCAL_ITEM, role: "viewer" } },
@@ -217,7 +217,7 @@ test("cloud and local cards without Continue in retain their hover session previ
 			...props, sessionDrag: {}, flyoutHandle: {},
 			flyoutSession: { id: LOCAL_ITEM.id, title: LOCAL_ITEM.title },
 		}, async ({ document }) => {
-			assert.ok(document.querySelector("[data-session-preview-trigger]"));
+			assert.equal(document.querySelector("[data-session-preview-trigger]") !== null, props.item.role !== "viewer");
 		});
 	}
 });
@@ -323,6 +323,22 @@ test("the real local more menu contains only Dismiss even when linking is availa
 		}));
 		const { document } = parseHTML(html);
 		assert.deepEqual([...document.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent), isCloud ? ["Rename", "Delete", "Link work item", "Dismiss"] : ["Dismiss"]);
+	}
+});
+
+test("expired session menus offer only Delete and require the delete capability", async () => {
+	const { renderToStaticMarkup } = require("react-dom/server");
+	const { AgentSessionMoreMenu } = await loadHarness();
+	for (const canDelete of [false, true]) {
+		const html = renderToStaticMarkup(React.createElement(AgentSessionMoreMenu, {
+			actions: { onRename() {}, onLinkWorkItem() {}, onDismiss() {}, ...(canDelete ? { onDelete() {} } : {}) },
+			item: { ...LOCAL_ITEM, host: "cloud", role: "expired" }, open: true,
+			onOpenChange() {}, isCloud: true, showLinkWorkItemMenuItem: true,
+		}));
+		const { document } = parseHTML(html);
+		const items = [...document.querySelectorAll('[role="menuitem"]')];
+		assert.deepEqual(items.map((item) => item.textContent), ["Delete"]);
+		assert.equal(items[0].disabled, !canDelete);
 	}
 });
 

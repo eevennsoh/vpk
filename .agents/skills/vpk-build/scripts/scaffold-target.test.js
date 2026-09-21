@@ -687,6 +687,9 @@ test("backend-backed scaffold preserves source backend and generates proxy/deplo
 		assert.match(dev, /\/api\/health/);
 		assert.match(dev, /proxyUpgrade/);
 		assert.match(dev, /api\/realtime\/ws-url/);
+		assert.match(dev, /process\.env\.VPK_ROOT/);
+		assert.doesNotMatch(dev, /VPK_ROVO_ROOT/);
+		assert.doesNotMatch(fs.readFileSync(path.join(fixture.targetDir, "README.md"), "utf8"), /VPK_ROVO_ROOT/);
 		assert.doesNotMatch(dev, /\{\{SOURCE_RELATIVE_PATH\}\}/);
 		execFileSync(process.execPath, ["--check", path.join(fixture.targetDir, "scripts", "dev-backend-backed.mjs")]);
 		assert.match(fs.readFileSync(path.join(fixture.targetDir, "backend", "Dockerfile"), "utf8"),

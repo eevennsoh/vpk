@@ -149,6 +149,18 @@ test("private session titles identify the agent and owner without changing owner
 	assert.equal(toAssignmentSessionItem({ ...agent, role: undefined }).title, "Claude");
 });
 
+test("expired session titles identify expiry while retaining the agent and elapsed stamp", async () => {
+	const { toAssignmentSessionItem } = await loadAssignmentSessionMapper();
+	const session = toAssignmentSessionItem(assignmentAgent({
+		name: "Claude", role: "expired", host: "cloud", timeLabel: "29d", statusKind: "finished",
+	}));
+	assert.equal(session.title, "Claude session expired");
+	assert.equal(session.agent.name, "Claude");
+	assert.equal(session.role, "expired");
+	assert.equal(session.timeLabel, "29d");
+	assert.equal(session.state, "complete");
+});
+
 test("all access roles retain human attribution through every lifecycle state", async () => {
 	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
 	for (const role of ["owner", "viewer", "expired"]) {

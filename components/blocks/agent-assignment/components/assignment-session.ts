@@ -82,7 +82,9 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 		id: agent.id,
 		...(invokedBy ? { invokedBy } : {}),
 		state: assignmentSessionState(statusKind),
-		title: role === "viewer" ? agentIdentityLabel(agent, invokedBy) : agent.name,
+		title: role === "expired"
+			? `${agent.name} session expired`
+			: role === "viewer" ? agentIdentityLabel(agent, invokedBy) : agent.name,
 		...(agent.host !== undefined ? { host: agent.host } : {}),
 		...(role !== undefined ? { role } : {}),
 		...(agent.timeLabel ? { timeLabel: agent.timeLabel } : {}),

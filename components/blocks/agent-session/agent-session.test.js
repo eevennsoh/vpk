@@ -135,7 +135,7 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|QuestionCircleFilledIcon|StatusSuccessIcon/u);
 	assert.match(LIFECYCLE_SOURCE, /export function AgentSessionShortLifecycleIcon/u);
 	assert.match(LIFECYCLE_SOURCE, /data-agent-session-lifecycle-current=\{accessibleState\}/u);
-	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity[\s\S]*: <AgentSessionShortLifecycleIcon[\s\S]*state=\{shownLifecycleState\}/u);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator =[\s\S]*isLongDensity[\s\S]*: <AgentSessionShortLifecycleIcon[\s\S]*state=\{shownLifecycleState\}/u);
 	assert.match(METADATA_SOURCE, /import ScreenIcon from "@atlaskit\/icon\/core\/screen";/u);
 	assert.match(METADATA_SOURCE, /export function AgentSessionHostSegment[\s\S]*const HostIcon = isLocal \? ScreenIcon : CloudIcon;[\s\S]*<HostIcon color="currentColor" label="" size="small" \/>/u);
 	assert.match(METADATA_SOURCE, /const label = isLocal \? "Local session" : "Cloud session";/u);
@@ -339,7 +339,7 @@ test("the row reveals one … menu where Agent List puts its hover pair", () => 
 	);
 	assert.match(CARD_SOURCE, /const hoverActions: AgentListRowHoverActions = \{/u);
 	assert.match(CARD_SOURCE, /showMoreMenu = true/u);
-	assert.match(CARD_SOURCE, /if \(!showMoreMenu\) \{\s*return undefined;/u);
+	assert.match(CARD_SOURCE, /if \(!showMoreMenu && role !== "viewer"\) \{\s*return undefined;/u);
 	assert.match(CARD_SOURCE, /<AgentSessionMoreMenu[\s\S]*actions=\{menu\.actions\}/u);
 	assert.match(CARD_SOURCE, /<AgentSessionContinueMenu[\s\S]*copied=\{menu\.copied\}/u);
 	assert.match(CARD_SOURCE, /<AgentSessionMoreMenu[\s\S]*isCloud=\{isCloudSession\}/u);
@@ -349,7 +349,7 @@ test("the row reveals one … menu where Agent List puts its hover pair", () => 
 	assert.doesNotMatch(CARD_SOURCE, /secondary:/u);
 	// Approve is a triage decision the column surfaces inline, not a session
 	// action, so it keeps the primary button slot.
-	assert.match(CARD_SOURCE, /primary: approve\s*\?\s*\{/u);
+	assert.match(CARD_SOURCE, /primary: approve && role !== "viewer"\s*\?\s*\{/u);
 	assert.match(CARD_SOURCE, /<CheckMarkIcon label="" size="small" \/>/u);
 	assert.match(CARD_SOURCE, /approveActionLabel\(approve\.target\)/u);
 	// The archived view reuses the same capability, so the shared row renames
@@ -564,8 +564,8 @@ test("the prototype menu keeps host-appropriate actions enabled without callback
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DeleteIcon label="" size="small" \/>[\s\S]*variant="destructive"[\s\S]*Delete/u);
 	// Order below the separator: work-item picker, then Dismiss. The picker's own contract lives in agent-session-link-work-item.test.js.
 	assert.match(SESSION_MORE_MENU_SOURCE, /\{isCloud \? <DropdownMenuSeparator \/> : null\}\s*\{isCloud && showLinkWorkItemMenuItem && canPickWorkItem \?[\s\S]*<DropdownMenuItem[\s\S]*\{dismissLabel\}/u);
-	// Missing callbacks must never dim or disable prototype menu rows.
-	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /disabled[= >]/u);
+	// Active prototype menus stay enabled; expired Delete requires a capability.
+	assert.match(SESSION_MORE_MENU_SOURCE, /disabled=\{isExpired && actions\.onDelete === undefined\}/u);
 	// The trigger must not start a card drag, and the card's click guard already
 	// exempts buttons and menu items from activating the row.
 	assert.match(SESSION_MORE_MENU_SOURCE, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/u);
@@ -586,7 +586,7 @@ test("copying the prompt confirms with a green check the reveal cannot swallow",
 	// hover that produced it; both would collapse the reveal without a pin.
 	assert.match(
 		CARD_SOURCE,
-		/pinned: isHoverStateActive \|\| \(showMoreMenu && role === "owner" && menu\.copied\),/u,
+		/pinned: role !== "owner" \|\| isHoverStateActive \|\| \(showMoreMenu && role === "owner" && menu\.copied\),/u,
 	);
 	assert.match(LIST_CARD_SOURCE, /pinned\?: boolean;/u);
 	assert.match(LIST_CARD_ACTIONS_SOURCE, /pinned && "grid-cols-\[1fr\]"/u);
@@ -635,7 +635,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /const hideIdentity = isLongDensity && mark == null;/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hideIdentity=\{hideIdentity\}/u);
 	assert.match(CARD_SOURCE, /lifecycle=\{lifecycleIndicator\}/u);
-	assert.match(CARD_SOURCE, /const lifecycleIndicator = isLongDensity[\s\S]*<AgentSessionLifecycle[\s\S]*state=\{shownLifecycleState\}/u);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator =[\s\S]*isLongDensity[\s\S]*<AgentSessionLifecycle[\s\S]*state=\{shownLifecycleState\}/u);
 	assert.match(CARD_SOURCE, /: <AgentSessionShortLifecycleIcon[\s\S]*state=\{shownLifecycleState\}/u);
 	assert.match(CARD_SOURCE, /<AgentSessionLongMetadata item=\{item\} \/>/u);
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 rounded-lg/u);
@@ -645,7 +645,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(
 		METADATA_SOURCE,
-		/segment\.kind === "agent"\s*\? "min-w-0 shrink"\s*: segment\.kind === "artifact" \|\| segment\.kind === "tool-call"\s*\? "min-w-0 flex-1"\s*: "shrink-0"/u,
+		/segment\.kind === "agent"\s*\? "min-w-0 shrink"\s*: segment\.kind === "time"\s*\? "shrink-0"\s*: "min-w-0 max-w-28 flex-initial"/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
@@ -687,9 +687,8 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /const canOpenLocalMenu = role === "owner" && !isCloudSession/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
 	assert.match(CARD_SOURCE, /case "viewer":\s*return <AgentSessionViewerHint \/>;/u);
-	// An expired short row has no resting slot, so its hint joins the hover column.
-	assert.match(CARD_SOURCE, /case "expired":\s*(?:\/\/[^\n]*\n\s*)*return isLongDensity \? undefined : <AgentSessionExpiredHint \/>;/u);
-	assert.match(CARD_SOURCE, /role === "expired"\s*\? <AgentSessionExpiredHint \/>/u);
+	assert.match(CARD_SOURCE, /case "expired":\s*case "owner":\s*return \(\s*<AgentSessionMoreMenu/u);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired" \|\| role === "viewer"\s*\? null/u);
 	assert.match(INDEX_SOURCE, /const isLongDensity = variant === "large" && density === "long";/u);
 	assert.match(INDEX_SOURCE, /const showUntrackedWorkFlyout = !isAttached && !isLongDensity;/u);
 	assert.match(
@@ -706,19 +705,18 @@ test("long density large rows have no untracked-work flyout", () => {
 	assert.doesNotMatch(INDEX_SOURCE, /\{isAttached \? null : \(\s*<JiraSessionFlyoutSurface/u);
 });
 
-test("expired cloud-long rows keep only an X with the 28-day history tooltip", () => {
+test("expired rows explain retention across the row and keep their Delete menu visible", () => {
 	const expiredSource = readFileSync(join(__dirname, "agent-session-expired-hint.tsx"), "utf8");
-	assert.match(expiredSource, /import CrossIcon from "@atlaskit\/icon\/core\/cross";/u);
 	assert.match(
 		expiredSource,
-		/Agent session history is only kept for 28 days\. This session can no longer be resumed\./u,
+		/Agent sessions are only kept for 28 days\. This session can't be resumed\./u,
 	);
-	assert.match(expiredSource, /className="text-icon-subtle"/u);
-	assert.match(expiredSource, /iconSize="medium"/u);
-	assert.match(expiredSource, /size="small"/u);
-	assert.match(expiredSource, /variant="transparent"/u);
-	assert.doesNotMatch(expiredSource, /Spinner|QuestionCircle|StatusSuccess/u);
+	assert.match(expiredSource, /<Tooltip disabled=\{disabled\}>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
+	assert.match(CARD_SOURCE, /pinned: role !== "owner" \|\|/u);
+	assert.match(CARD_SOURCE, /if \(role === "expired"\) \{\s*return <AgentSessionExpiredHint disabled=\{menu\.isOpen\}>\{card\}<\/AgentSessionExpiredHint>;/u);
+	assert.doesNotMatch(expiredSource, /CrossIcon|IconTile|Spinner/u);
 	assert.match(PAGE_SOURCE, /withSessionRole\(items\.slice\(-1\), "expired"\)/u);
+	assert.match(PAGE_SOURCE, /items=\{withSessionRole\(items\.slice\(-1\), "expired"\)\}[\s\S]*onDeleteSession=\{handleRemove\}/u);
 	assert.doesNotMatch(
 		/host === "local"[\s\S]*expired/u.exec(PAGE_SOURCE)?.[0] ?? "host === \"local\" expired",
 		/withSessionRole\([\s\S]*expired/u,
@@ -732,7 +730,9 @@ test("viewer rows use the outline information circle, not the filled status icon
 	);
 	assert.doesNotMatch(VIEWER_HINT_SOURCE, /status-information|StatusInformationIcon/u);
 	assert.match(VIEWER_HINT_SOURCE, /className="\[&_svg:not\(\[class\*='size-'\]\)\]:size-4! \[&_svg\]:text-icon-subtlest"[\s\S]*className="text-icon-subtlest"/u);
-	assert.match(VIEWER_HINT_SOURCE, /const \[open, setOpen\] = useState\(false\);[\s\S]*<Tooltip onOpenChange=\{setOpen\} open=\{open\}>[\s\S]*variant="ghost"/u);
+	assert.match(VIEWER_HINT_SOURCE, /variant="ghost"/u);
+	assert.match(VIEWER_HINT_SOURCE, /<Tooltip>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
+	assert.match(CARD_SOURCE, /if \(role === "viewer"\) \{\s*return <AgentSessionViewerTooltip>\{card\}<\/AgentSessionViewerTooltip>;/u);
 	assert.doesNotMatch(VIEWER_HINT_SOURCE, /aria-expanded/u);
 	assert.match(
 		VIEWER_HINT_SOURCE,
@@ -743,7 +743,7 @@ test("viewer rows use the outline information circle, not the filled status icon
 	assert.match(VIEWER_HINT_SOURCE, /variant="transparent"/u);
 	assert.match(
 		VIEWER_HINT_SOURCE,
-		/A team member is collaborating with an agent on this work\. Only they have access\./u,
+		/Someone is using an agent\. Only they can see the work\./u,
 	);
 });
 

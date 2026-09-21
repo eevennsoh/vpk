@@ -15,6 +15,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
 		"components/blocks/agent-session/agent-session-card-activation.test.js",
 		".agents/skills/vpk-deploy/scripts/deployment-status.test.js",
+		".agents/skills/vpk-deploy/scripts/image-upload.test.js",
 		".agents/skills/vpk-deploy/scripts/release-receipt.test.js",
 		".agents/skills/vpk-deploy/scripts/verify-browser.test.js",
 		".agents/skills/vpk-build/scripts/plan-target-refresh.test.js",

@@ -304,6 +304,7 @@ export default function AgentSessionPage({
 								className="w-[520px]"
 								density={density}
 								items={withSessionRole(items.slice(-1), "expired")}
+								onDeleteSession={handleRemove}
 								variant={variant}
 							/>
 						</section>

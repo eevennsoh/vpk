@@ -57,6 +57,11 @@ export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
 			description: "Called with the next assignment whenever an agent is added or removed.",
 		},
 		{
+			name: "onDeleteAssignedAgent",
+			type: "(agent: AgentAssignmentAgent) => void",
+			description: "Deletes a cloud session record from the Default picker. This capability is separate from changing assignments. Expired rows offer only Delete, disabled when this callback is omitted.",
+		},
+		{
 			name: "variant",
 			type: '"default" | "simple"',
 			default: '"default"',

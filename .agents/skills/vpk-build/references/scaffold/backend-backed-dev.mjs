@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 
 const targetRoot = process.cwd();
 const sourceRoot = path.resolve(
-	process.env.VPK_ROOT ?? process.env.VPK_ROVO_ROOT ??
+	process.env.VPK_ROOT ??
 		path.join(targetRoot, {{SOURCE_RELATIVE_PATH}}),
 );
 const proxyPort = Number(process.env.PORT ?? 3001);

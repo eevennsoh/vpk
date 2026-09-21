@@ -237,6 +237,78 @@ vpk_build_image() {
   fi
 }
 
+# Select a transport deliberately; an EOF alone is not a reason to retry.
+vpk_validate_push_via() {
+  case "$1" in
+    docker|crane) ;;
+    *) echo "❌ Unsupported upload transport: use --push-via=docker or --push-via=crane"; return 2 ;;
+  esac
+}
+
+vpk_require_push_tool() {
+  vpk_validate_push_via "$1" || return $?
+  if [ "$1" = docker ]; then return 0; fi
+  VPK_CRANE_BIN=$(command -v "${VPK_CRANE_BIN:-crane}" 2>/dev/null) || {
+    echo "❌ Host uploader crane not found; set VPK_CRANE_BIN to a trusted executable."
+    echo "   See .agents/skills/vpk-deploy/references/troubleshooting.md#docker-daemon-network-failure-with-a-working-host-proxy"
+    return 1
+  }
+  [ -x "$VPK_CRANE_BIN" ] || return 1
+  export VPK_CRANE_BIN
+}
+
+# A subshell keeps archive cleanup from replacing the caller's traps.
+vpk_push_image() (
+  upload_service=$1
+  upload_version=$2
+  upload_registry=${3:-docker.atl-paas.net}
+  upload_via=${4:-docker}
+  vpk_validate_service_name "$upload_service" || exit $?
+  vpk_validate_version "$upload_version" || exit $?
+  vpk_require_push_tool "$upload_via" || exit $?
+  upload_image="$upload_registry/$upload_service:app-$upload_version"
+  if [ "$upload_via" = docker ]; then
+    docker push --quiet "$upload_image"
+    exit $?
+  fi
+
+  upload_dir=$(mktemp -d "${TMPDIR:-/tmp}/vpk-image-upload.XXXXXX") || exit 1
+  trap 'rm -rf -- "$upload_dir"' EXIT
+  trap 'exit 1' HUP INT TERM
+  upload_archive="$upload_dir/image.tar"
+  docker image save --platform linux/amd64 --output "$upload_archive" "$upload_image" || exit 1
+  "$VPK_CRANE_BIN" push "$upload_archive" "$upload_image" || exit 1
+  node - "$upload_archive" "$upload_image" "$VPK_CRANE_BIN" "$upload_version" <<'NODE'
+const fs = require("node:fs");
+const { execFileSync } = require("node:child_process");
+const { createHash } = require("node:crypto");
+const [archive, reference, crane, version] = process.argv.slice(2);
+const run = (binary, args) => execFileSync(binary, args, { encoding: "utf8", maxBuffer: 16 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+try {
+	const saved = JSON.parse(run("tar", ["-xOf", archive, "manifest.json"]));
+	if (saved.length !== 1) throw new Error();
+	const configPath = saved[0].Config;
+	if (typeof configPath !== "string" || configPath.startsWith("/") || configPath.includes("\\") || configPath.split("/").some(part => !part || part === "..")) throw new Error();
+	const configBytes = run("tar", ["-xOf", archive, configPath]);
+	const config = JSON.parse(configBytes);
+	const configDigest = `sha256:${createHash("sha256").update(configBytes).digest("hex")}`;
+	const digest = run(crane, ["digest", reference]).trim();
+	if (!/^sha256:[a-f0-9]{64}$/u.test(digest)) throw new Error();
+	const immutableReference = `${reference.slice(0, reference.lastIndexOf(":"))}@${digest}`;
+	const remote = JSON.parse(run(crane, ["manifest", immutableReference]));
+	if (config.os !== "linux" || config.architecture !== "amd64" || remote.config?.digest !== configDigest || !Array.isArray(remote.layers) || remote.layers.length !== config.rootfs?.diff_ids?.length || run(crane, ["digest", reference]).trim() !== digest) throw new Error();
+	const report = { reference, immutableReference, digest, configDigest, platform: "linux/amd64", transport: "crane" };
+	fs.mkdirSync("output", { recursive: true });
+	fs.writeFileSync(`output/image-upload-${version}.json`, JSON.stringify(report, null, 2) + "\n");
+	console.log(JSON.stringify(report));
+} catch {
+	// Metadata or credential-helper output must never enter diagnostics.
+	console.error("❌ Host upload verification failed: could not confirm saved linux/amd64 configuration and registry digest. Stop before Micros deployment.");
+	process.exitCode = 1;
+}
+NODE
+)
+
 # Always pass a mode: Micros may otherwise inherit a previous hot-swap mode.
 vpk_validate_deploy_mode() {
   case "$1" in

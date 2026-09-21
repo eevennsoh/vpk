@@ -221,6 +221,9 @@ export function AgentSessionMediumDrag({
 				preparePeelIntent();
 			},
 			onMouseDown: (event: ReactMouseEvent<HTMLElement>) => {
+				// Portalled menus/backdrops bubble through React's row owner, but
+				// their presses do not belong to this DOM drag surface.
+				if (!event.currentTarget.contains(event.target as Node)) return;
 				const interactiveTarget = event.target instanceof Element
 					? event.target.closest(SESSION_DRAG_INTERACTIVE_SELECTOR)
 					: null;
@@ -240,6 +243,7 @@ export function AgentSessionMediumDrag({
 			},
 			onPointerCancel: cancelSessionDrag,
 			onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
+				if (!event.currentTarget.contains(event.target as Node)) return;
 				const interactiveTarget = event.target instanceof Element
 					? event.target.closest(SESSION_DRAG_INTERACTIVE_SELECTOR)
 					: null;
