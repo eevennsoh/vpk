@@ -317,6 +317,7 @@ function createCompletedRun({
 	avatarSrc,
 	description,
 	id,
+	invokedBy,
 	issueKey,
 	issueSummary,
 	outputs,
@@ -329,6 +330,7 @@ function createCompletedRun({
 	avatarSrc?: string;
 	description: string;
 	id: string;
+	invokedBy?: JiraIssueCompletedAgentRun["invokedBy"];
 	issueKey: string;
 	issueSummary: string;
 	outputs?: readonly ArtifactListItem[];
@@ -341,6 +343,7 @@ function createCompletedRun({
 		agentName,
 		agentBrandName,
 		agentAvatarSrc: avatarSrc,
+		...(invokedBy ? { invokedBy } : {}),
 		description,
 		elapsedSeconds: 486,
 		issueKey,
@@ -605,6 +608,10 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				agentActivityMode: "completed",
 				agentDoneRuns: [createCompletedRun({
 					id: JIRA_TEAM_EU26_PAY_101_SESSION_ID,
+					invokedBy: {
+						name: PAY_STORY_PEOPLE.maya.name,
+						avatarSrc: PAY_STORY_PEOPLE.maya.avatarSrc,
+					},
 					agentName: "Claude",
 					agentBrandName: "claude",
 					issueKey: "PAY-101",

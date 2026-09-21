@@ -765,12 +765,12 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 	assert.match(COMPLETED_RUNS_SOURCE, /import \{[\s\S]*AgentList,[\s\S]*type AgentListItem,[\s\S]*toAgentSessionFlyoutItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /function toCompletedAgentListItem\(run: JiraIssueCompletedAgentRun\): AgentListItem \{[\s\S]*state: "complete",[\s\S]*title: run\.summary,/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /const finishedLabel = `\$\{runs\.length\} Finished`;/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /const finishedLabel = "Finished";/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /if \(props\.runs\.length === 1\) \{[\s\S]*label=\{run\.state === "failed" \? "Failed" : "Finished"\}[\s\S]*showFlyout=\{false\}/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /const hasFailedRun = runs\.some\(\(run\) => run\.state === "failed"\);/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<section aria-label="Agent review" className="flex w-full min-w-0 flex-col overflow-hidden px-1 py-1">/u);
 	// One finished agent reuses the split chin (avatar + "Finished") and
-	// skips the aggregate flyout. Two or more stay on the Team EU "N Finished"
+	// skips the aggregate flyout. Two or more stay on the Team EU "Finished"
 	// chin: generic agent mark, host-owned trailing glyph, HoverCard list.
 	// Failed aggregates keep the trailing error so success never paints over
 	// a failure.
@@ -978,7 +978,7 @@ test("Jira issue agent activity demo has an experimental stroke-chrome duplicate
 
 test("Jira issue agent activity chin splits into one row per agent only when asked", () => {
 	// Merged stays the default so every existing consumer keeps the aggregated
-	// "2 Working" row; only an explicit split opt-in fans the agents out.
+	// "Working" row; only an explicit split opt-in fans the agents out.
 	assert.match(SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/);
 	assert.match(SOURCE, /agentActivityLayout = "merged",/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*layout=\{agentActivityLayout\}/);

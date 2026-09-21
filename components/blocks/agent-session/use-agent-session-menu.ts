@@ -10,6 +10,7 @@ import type {
 
 /** How long the Terminal row keeps its copied check after the clipboard write. */
 export const AGENT_SESSION_COPIED_RESET_MS = 2000;
+type AgentSessionOpenMenu = "more" | "continue";
 
 async function copyResumeCommand(command: string): Promise<void> {
 	if (typeof navigator === "undefined" || navigator.clipboard?.writeText === undefined) {
@@ -28,15 +29,18 @@ export interface AgentSessionMenuState {
 	/** Whether the Terminal row is showing the copy confirmation check. */
 	readonly copied: boolean;
 	readonly isOpen: boolean;
+	readonly isContinueOpen: boolean;
 	readonly setIsOpen: (open: boolean) => void;
+	readonly setIsContinueOpen: (open: boolean) => void;
+	readonly toggleContinue: () => void;
 }
 
 /**
- * The session row's single trailing affordance, as state rather than markup.
+ * Shared capabilities and exclusive open state for the row's two menus.
  *
  * Which actions exist is a function of where the session runs and which
  * capabilities the host supplied, and both answers are needed in two places —
- * the menu itself and the row's `pinned` reveal. Keeping that resolution here
+ * the menus themselves and the row's `pinned` reveal. Keeping that resolution here
  * leaves the card deciding layout instead of policy.
  *
  * An action resolves to `undefined` when its capability is missing or does not
@@ -73,15 +77,28 @@ export function useAgentSessionMenu({
 	resumeCommand: string;
 }>): AgentSessionMenuState {
 	const [copied, setCopied] = useState(false);
-	const [isOpen, setIsOpenState] = useState(false);
+	const [openMenu, setOpenMenu] = useState<AgentSessionOpenMenu | null>(null);
+	const openMenuRef = useRef<AgentSessionOpenMenu | null>(null);
+	const menuOpenChangeRef = useRef(onMoreMenuOpenChange);
 	const resetRef = useRef<number | undefined>(undefined);
-	const setIsOpen = useCallback((open: boolean) => {
-		setIsOpenState(open);
-		onMoreMenuOpenChange?.(open);
+	const setMenuOpen = useCallback((kind: AgentSessionOpenMenu, open: boolean) => {
+		if (!open && openMenuRef.current !== kind) return;
+		const nextMenu = open ? kind : null;
+		openMenuRef.current = nextMenu;
+		setOpenMenu(nextMenu);
+		onMoreMenuOpenChange?.(nextMenu !== null);
+	}, [onMoreMenuOpenChange]);
+	const setIsOpen = useCallback((open: boolean) => setMenuOpen("more", open), [setMenuOpen]);
+	const setIsContinueOpen = useCallback((open: boolean) => setMenuOpen("continue", open), [setMenuOpen]);
+	const toggleContinue = useCallback(() => setMenuOpen("continue", openMenuRef.current !== "continue"), [setMenuOpen]);
+
+	useEffect(() => {
+		menuOpenChangeRef.current = onMoreMenuOpenChange;
 	}, [onMoreMenuOpenChange]);
 
 	useEffect(() => () => {
 		window.clearTimeout(resetRef.current);
+		if (openMenuRef.current !== null) menuOpenChangeRef.current?.(false);
 	}, []);
 
 	const handleCopyPrompt = useCallback(() => {
@@ -122,5 +139,5 @@ export function useAgentSessionMenu({
 			: () => onRenameSession(item),
 	};
 
-	return { actions, copied, isOpen, setIsOpen };
+	return { actions, copied, isOpen: openMenu === "more", isContinueOpen: openMenu === "continue", setIsOpen, setIsContinueOpen, toggleContinue };
 }

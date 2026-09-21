@@ -19,7 +19,7 @@ export function resolveRelatedJiraIssueAgentActivityMode(
 
 /**
  * `merged` collapses every active agent into one prioritized chin row
- * (`2 Working`). `split` gives each active agent its own row.
+ * (`Working`). `split` gives each active agent its own row.
  */
 export type JiraIssueAgentActivityLayout = "merged" | "split";
 
@@ -74,8 +74,8 @@ export function summarizeJiraIssueAgentActivities(
 			? awaitingInputActivities[0]?.index ?? null
 			: null;
 	const label = priorityState === "awaiting-input"
-		? priorityCount > 1 ? `${priorityCount} Need input` : "Needs input"
-		: priorityCount > 1 ? `${priorityCount} Working` : "Working";
+		? "Needs input"
+		: "Working";
 
 	return {
 		activityCount: activeActivities.length,

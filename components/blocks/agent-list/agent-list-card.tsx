@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactElement, type ReactNode } from "react";
 
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import DevicesIcon from "@atlaskit/icon/core/devices";
@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { AgentListIdentity } from "./agent-list-identity";
 import { InvokerBy } from "./agent-list-invoker";
 import { AgentListCardActions } from "./agent-list-card-actions";
+import { AgentListRowBody } from "./agent-list-row-body";
 import type { AgentListRowAction } from "./agent-list-row-action";
 import { isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
@@ -498,38 +499,6 @@ export function AgentListActivityHeader({
 	);
 }
 
-/**
- * The row's title/metadata column: a button when the consumer gave it somewhere
- * to go, a plain box otherwise. Keeping the choice here means the two branches
- * cannot drift in layout, and a read-only list adds nothing to the tab order.
- */
-function RowBody({
-	children,
-	className,
-	isSelected,
-	onView,
-}: Readonly<{
-	children: ReactNode;
-	className: string;
-	isSelected: boolean;
-	onView?: () => void;
-}>) {
-	if (onView === undefined) {
-		return <div className={className}>{children}</div>;
-	}
-
-	return (
-		<button
-			aria-pressed={isSelected}
-			className={className}
-			onClick={onView}
-			type="button"
-		>
-			{children}
-		</button>
-	);
-}
-
 export type { AgentListRowAction };
 
 /**
@@ -579,6 +548,7 @@ export function AgentListRow({
 	metadata,
 	onView,
 	renderIdentity,
+	renderViewTrigger,
 	showHoverActionsWhenSelected = false,
 	stateAwareTitle = true,
 	trailingAlign = "center",
@@ -604,6 +574,8 @@ export function AgentListRow({
 	/** Caller-owned metadata. Pass `null` to omit the default metadata line. */
 	metadata?: ReactNode;
 	onView?: (item: AgentListItem) => void;
+	/** Let the owner turn the existing row button into an anchored menu trigger. */
+	renderViewTrigger?: (trigger: ReactElement) => ReactNode;
 	/**
 	 * Wrap the row's leading identity. Agent List never passes it.
 	 */
@@ -701,10 +673,11 @@ export function AgentListRow({
 					 * without `onView` — a read-out of comments and @mentions, say —
 					 * would otherwise put one focusable no-op in the tab order per row.
 					 */}
-					<RowBody
+					<AgentListRowBody
 						className="flex min-w-0 flex-1 flex-col items-start justify-center rounded-xs text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
 						isSelected={isSelected}
 						onView={viewItem}
+						renderViewTrigger={renderViewTrigger}
 					>
 						<span
 							className={cn(
@@ -762,7 +735,7 @@ export function AgentListRow({
 								</span>
 							</span>
 						) : metadata}
-					</RowBody>
+					</AgentListRowBody>
 					{lifecycleNode ? (
 						// A `div`, not a `span`: every non-running indicator is an
 						// `IconTile`, whose root is a block element. Phrasing content

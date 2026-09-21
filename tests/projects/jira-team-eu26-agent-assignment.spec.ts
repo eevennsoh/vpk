@@ -47,7 +47,9 @@ test("List assigned menu uses Add agent and opens the selector", async ({ page }
 
 test("compact assignment flyout centers status and more actions in each row", async ({ page }) => {
 	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
-	await page.locator('[data-issue-key="PAY-123"] [data-slot="jira-issue-agent-row"] button[aria-label="2 agents: 2 Working"]').hover();
+	const workingRow = page.locator('[data-issue-key="PAY-123"] [data-slot="jira-issue-agent-row"] button[aria-label="2 agents: Working"]');
+	await expect(workingRow).toHaveText("Working");
+	await workingRow.hover();
 	const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
 	await expect(flyout).toBeVisible();
 
@@ -96,9 +98,47 @@ test("compact assignment flyout centers status and more actions in each row", as
 	}
 });
 
-test("keyboard session selection moves focus into the opened chat", async ({ page }) => {
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`finished assignment shows the human invoker (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Claude: Finished", exact: true }).hover();
+		const row = page.getByTestId("agent-session-row-pay-101-inventory-claude-session");
+		const identity = row.getByRole("group", { name: "Claude, used by Maya Ferreira", exact: true });
+		await expect(identity).toBeVisible();
+		expect(await identity.locator('[data-slot="avatar"]').evaluateAll((avatars) => (
+			avatars.map((avatar) => avatar.getAttribute("data-shape"))
+		))).toEqual(["hexagon", "circle"]);
+		await expect(identity.locator('[data-shape="circle"] img')).toHaveAttribute(
+			"src", /chloe-lee\/color\/asow-teamwork-blue-64\.png/u,
+		);
+	});
+
+	test(`assignment flyouts align with the activity row (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+
+		for (const issueKey of ["PAY-123", "PAY-105", "PAY-112", "PAY-101"]) {
+			const row = page.locator(`[data-issue-key="${issueKey}"] [data-slot="jira-issue-agent-row"]`);
+			await row.locator('[data-slot="hover-card-trigger"]').hover();
+			await expect(flyout).toBeVisible();
+			await expect(flyout).toHaveAttribute("data-side", /^(right|left)$/u);
+			await expect.poll(async () => {
+				const activityBounds = await row.boundingBox();
+				const menuBounds = await flyout.boundingBox();
+				if (activityBounds === null || menuBounds === null) return Number.POSITIVE_INFINITY;
+				return Math.abs(menuBounds.y - activityBounds.y);
+			}).toBeLessThanOrEqual(1);
+			await page.keyboard.press("Escape");
+			await expect(flyout).toBeHidden();
+		}
+	});
+}
+
+test("keyboard cloud session selection moves focus into the opened chat", async ({ page }) => {
 	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
-	const trigger = page.getByRole("button", { name: "Cursor: Working", exact: true });
+	const trigger = page.getByRole("button", { name: "GitHub Copilot: Working", exact: true });
 	await trigger.focus();
 	await page.keyboard.press("Enter");
 
@@ -106,7 +146,7 @@ test("keyboard session selection moves focus into the opened chat", async ({ pag
 	await expect(flyout).toBeVisible();
 	await page.keyboard.press("Tab");
 	const session = flyout.getByRole("button", {
-		name: /^Cursor Cursor, used by Venn Cursor Local session/u,
+		name: /^GitHub Copilot GitHub Copilot, used by Venn GitHub Copilot Cloud session/u,
 	});
 	await expect(session).toBeFocused();
 	await page.keyboard.press("Enter");
@@ -115,6 +155,114 @@ test("keyboard session selection moves focus into the opened chat", async ({ pag
 	await expect(composer).toBeVisible();
 	await expect(composer).toBeFocused();
 });
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`local assignment separates Continue in from Dismiss (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.getByRole("button", { name: "2 agents: Working", exact: true }).hover();
+		const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+		const row = flyout.getByTestId("agent-session-row-claude-code");
+		const session = row.getByRole("button", { name: /^Claude Claude, used by Venn Claude Local session/u });
+		await session.click();
+		const menu = page.getByRole("menu");
+		await expect(menu).toContainText("Continue in");
+		await expect(menu.getByRole("menuitem", { name: "Claude", exact: true })).toBeVisible();
+		await expect(menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true })).toBeVisible();
+		await expect(menu.getByRole("menuitem", { name: "Dismiss", exact: true })).toHaveCount(0);
+		await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
+		await menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true }).click();
+		await expect(menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true })).toHaveAttribute("data-selected", "true");
+		await page.keyboard.press("Escape");
+		await expect(session).toBeFocused();
+		await expect(flyout).toBeVisible();
+		await row.locator("article").click({ position: { x: 4, y: 4 } });
+		await expect(menu).toContainText("Continue in");
+		await page.keyboard.press("Escape");
+		await expect(session).toBeFocused();
+		await page.keyboard.press("Enter");
+		await expect(menu).toContainText("Continue in");
+		await page.keyboard.press("Escape");
+		await row.hover();
+		await row.getByRole("button", { name: "More actions for Claude", exact: true }).click();
+		await expect(menu.getByRole("menuitem")).toHaveText(["Dismiss"]);
+		await expect(menu).not.toContainText("Continue in");
+		await page.screenshot({ path: `output/agent-browser/local-assignment-dismiss-${reducedMotion}.png` });
+		await menu.getByRole("menuitem", { name: "Dismiss", exact: true }).click();
+		await expect(page.locator('[data-issue-key="PAY-123"]').getByRole("button", { name: "Cursor: Working", exact: true })).toBeVisible();
+		await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
+	});
+}
+
+test("List local sessions use Continue in and menus fit a narrow viewport", async ({ page }) => {
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.getByRole("tab", { name: "List" }).click();
+	await page.locator('[data-issue-key="PAY-105"] td').nth(4).getByRole("button", { name: "Edit agents", exact: true }).click();
+	const assignment = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
+	await assignment.getByRole("button", { name: /^Cursor Cursor, used by Venn Cursor Local session/u }).click();
+	await expect(page.getByRole("menu")).toContainText("Continue in");
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await page.keyboard.press("Escape");
+	await page.getByRole("tab", { name: "Board" }).click();
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.getByRole("button", { name: "2 agents: Working", exact: true }).hover();
+	const flyout = page.locator('[data-slot="hover-card-content"][aria-label="Agent assignment"]');
+	await flyout.getByRole("button", { name: /^Claude Claude, used by Venn Claude Local session/u }).click();
+	const menu = page.getByRole("menu");
+	await expect(menu).toContainText("Continue in");
+	const bounds = await menu.boundingBox();
+	if (bounds === null) throw new Error("Continue in menu is not laid out");
+	expect(bounds.x).toBeGreaterThanOrEqual(0);
+	expect(bounds.y).toBeGreaterThanOrEqual(0);
+	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+	expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
+	await page.screenshot({ path: "output/agent-browser/local-assignment-narrow.png" });
+});
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`untracked local cards separate continuation and dismissal (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+		const row = page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread");
+		await row.scrollIntoViewIfNeeded();
+		const article = row.locator("article");
+		await article.hover();
+		await expect(page.locator('[data-slot="hover-card-content"]:visible')).toHaveCount(1);
+		await article.click();
+		const menu = page.getByRole("menu");
+		await expect(menu).toContainText("Continue in");
+		await article.hover();
+		await expect(page.locator('[data-slot="hover-card-content"]:visible')).toHaveCount(0);
+		await article.click();
+		await expect(menu).toBeHidden();
+		await article.click();
+		await expect(menu).toContainText("Continue in");
+		await page.getByRole("heading", { name: "Jira Design" }).click();
+		await expect(menu).toBeHidden();
+		await article.hover();
+		await expect(page.locator('[data-slot="hover-card-content"]:visible')).toHaveCount(1);
+		await article.click();
+		await expect(menu).toContainText("Continue in");
+		await expect(menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true })).toBeEnabled();
+		await expect(menu.getByRole("menuitem", { name: "Dismiss", exact: true })).toHaveCount(0);
+		await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
+		await expect(page.getByText(/^Resume command copied for/u)).toHaveCount(0);
+		await menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true }).click();
+		await expect(menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true })).toHaveAttribute("data-selected", "true");
+		await page.keyboard.press("Escape");
+		await expect(article).toBeFocused();
+		await page.keyboard.press("Enter");
+		await expect(menu).toContainText("Continue in");
+		await page.keyboard.press("Escape");
+		await row.hover();
+		await row.getByRole("button", { name: /^More actions for/u }).click();
+		await expect(menu.getByRole("menuitem")).toHaveText(["Dismiss"]);
+		await expect(menu).not.toContainText("Continue in");
+	});
+}
 
 for (const { issueKey, state, agent } of [
 	{ issueKey: "PAY-105", state: "Working", agent: "Cursor" },

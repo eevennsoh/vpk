@@ -76,15 +76,9 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 		EXPERIMENTAL_PAGE_SOURCE,
 		/onContinue: onContinueLooseWork,/u,
 	);
-	assert.match(PAGE_SOURCE, /onContinueLooseWork=\{handleContinueLooseWork\}/u);
-	assert.match(
-		PAGE_SOURCE,
-		/const handleContinueLooseWork = useCallback\(\(item: PulseLooseWork\) => \{[\s\S]*openAgentChat\(\{/u,
-	);
-	assert.match(
-		PAGE_SOURCE,
-		/case "claude":\s*\n\s*return \{ agentId: "claude-code", agentName: "Claude" \};/u,
-	);
+	// Local continuation belongs to the shared card menu; it cannot open Rovo.
+	assert.doesNotMatch(PAGE_SOURCE, /onContinueLooseWork=|handleContinueLooseWork/u);
+	assert.match(PAGE_SOURCE, /onResumeLooseWork=\{handleResumeLooseWork\}/u);
 
 	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<InFlowAgentSessionColumn");
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");

@@ -90,6 +90,7 @@ function toAssignedAgentFromDoneRun(
 		byline: "",
 		...(run.agentAvatarSrc ? { avatarSrc: run.agentAvatarSrc } : {}),
 		...(run.agentBrandName ? { brandName: run.agentBrandName } : {}),
+		...(run.invokedBy ? { invokedBy: run.invokedBy } : {}),
 		status: run.summary,
 		statusKind: "finished",
 		statusLabel: run.summary,

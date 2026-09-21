@@ -122,9 +122,10 @@ export function JiraSessionFlyoutSuspensionProvider({
 	suspended: boolean;
 }>) {
 	const [inactiveHandle] = useState(createJiraSessionFlyoutHandle);
+	const ancestorHandle = use(JiraSessionFlyoutSuspensionContext);
 
 	return (
-		<JiraSessionFlyoutSuspensionContext value={suspended ? inactiveHandle : null}>
+		<JiraSessionFlyoutSuspensionContext value={suspended ? inactiveHandle : ancestorHandle}>
 			{children}
 		</JiraSessionFlyoutSuspensionContext>
 	);

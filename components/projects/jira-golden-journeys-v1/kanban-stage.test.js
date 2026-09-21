@@ -133,7 +133,7 @@ test("JGP Kanban reuses the Jira Issue aggregate row for working agents", () => 
 });
 
 test("completed Jira agent rows aggregate finished and failed states without hiding hover artifacts", () => {
-	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /const finishedLabel = `\$\{runs\.length\} Finished`;/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /const finishedLabel = "Finished";/u);
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /const hasFailedRun = runs\.some\(\(run\) => run\.state === "failed"\);/u);
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /<StatusErrorIcon color="currentColor" label="" size="small" \/>/u);
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /<AgentList[\s\S]*flyout="session"[\s\S]*items=\{completedItems\}/u);

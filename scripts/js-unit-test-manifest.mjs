@@ -13,6 +13,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/agent-session/agent-session-card-activation.test.js",
 		".agents/skills/vpk-deploy/scripts/deployment-status.test.js",
 		".agents/skills/vpk-deploy/scripts/release-receipt.test.js",
 		".agents/skills/vpk-deploy/scripts/verify-browser.test.js",

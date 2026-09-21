@@ -178,10 +178,16 @@ test("the board disables Insights while keeping card agent chat in the Jira shel
 	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*insights=/u);
 });
 
+test("local sessions cannot use the board's Rovo View or continuation paths", () => {
+	assert.match(PAGE_SOURCE, /if \(activity\.host === "local"\) return;/u);
+	assert.match(PAGE_SOURCE, /if \(agent\.host === "local"\) return;/u);
+	assert.doesNotMatch(PAGE_SOURCE, /handleContinueLooseWork|onContinueLooseWork=|Continue the local/u);
+});
+
 test("the route imports the Pulse session guard used by its resume callback", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/import \{\s*isPulseAgentSession,\s*type PulseCodingAgentId,\s*type PulseLooseWork,\s*\} from "@\/components\/blocks\/jira-kanban\/experimental\/pulse\/types";/u,
+		/import \{\s*isPulseAgentSession,\s*type PulseLooseWork,\s*\} from "@\/components\/blocks\/jira-kanban\/experimental\/pulse\/types";/u,
 	);
 	assert.match(PAGE_SOURCE, /if \(!isPulseAgentSession\(item\)\) return;/u);
 });

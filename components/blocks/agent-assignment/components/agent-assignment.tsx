@@ -1,6 +1,6 @@
 "use client";
 
-import { cloneElement, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { cloneElement, useRef, useState, type ComponentProps, type ReactElement, type ReactNode } from "react";
 
 import type { AgentListHost, AgentListInvoker } from "@/components/blocks/agent-list/agent-list-types";
 import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
@@ -84,6 +84,8 @@ export interface AgentAssignmentProps {
 	addAgentLabel?: string;
 	/** Let attached activity identities begin at the empty Assign agent label's edge. */
 	activityRowFlush?: boolean;
+	/** Override the hover flyout's anchor when its trigger is inset within a row. */
+	hoverAnchor?: ComponentProps<typeof HoverCardContent>["anchor"];
 	className?: string;
 	defaultPinnedAgentIds?: readonly string[];
 	maxVisibleAgents?: number;
@@ -138,6 +140,7 @@ export function AgentAssignment({
 	activityIconScale,
 	addAgentLabel = "Assign agent",
 	activityRowFlush,
+	hoverAnchor,
 	className,
 	defaultPinnedAgentIds = [],
 	maxVisibleAgents = 4,
@@ -449,6 +452,8 @@ export function AgentAssignment({
 					/>
 					<HoverCardContent
 						align="start"
+						alignOffset={0}
+						anchor={hoverAnchor}
 						aria-label="Agent assignment"
 						className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-visible rounded-xl p-0 shadow-none"
 						positionerClassName={overlayPositionerClassName}

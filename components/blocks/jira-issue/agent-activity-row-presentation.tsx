@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useCallback, useRef, type ReactElement } from "react";
 import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
@@ -376,18 +376,25 @@ export function JiraIssueAgentAssignmentHandle({
 	rowHandle: ReactElement<{ "aria-expanded"?: boolean }>;
 	showAssignmentFlyout: boolean;
 }>): ReactElement {
+	const assignmentHandleRef = useRef<HTMLDivElement>(null);
+	const resolveAssignmentAnchor = useCallback(() => (
+		assignmentHandleRef.current?.closest<HTMLElement>('[data-slot="jira-issue-agent-row"]')
+			?? assignmentHandleRef.current
+	), []);
+
 	// Session lifecycle changes the row's status, never access to its flyout.
 	if (!showAssignmentFlyout) {
 		return rowHandle;
 	}
 
 	return (
-		<div className="flex h-full min-w-0 flex-1 items-center">
+		<div className="flex h-full min-w-0 flex-1 items-center" ref={assignmentHandleRef}>
 			<AgentAssignment
 				addAgentLabel={assignment?.addAgentLabel}
 				agents={agents}
 				assignedAgents={assignedAgents}
 				defaultPinnedAgentIds={assignment?.defaultPinnedAgentIds}
+				hoverAnchor={resolveAssignmentAnchor}
 				onAgentAssign={assignment?.onAgentAssign}
 				onAssignedAgentIdsChange={assignment?.onAssignedAgentIdsChange}
 				onAssignedAgentSelect={(agent) => {

@@ -7,6 +7,7 @@ const CARD_SOURCE = readFileSync(
 	join(__dirname, "agent-list-card.tsx"),
 	"utf8",
 );
+const ROW_BODY_SOURCE = readFileSync(join(__dirname, "agent-list-row-body.tsx"), "utf8");
 const CARD_ACTIONS_SOURCE = readFileSync(
 	join(__dirname, "agent-list-card-actions.tsx"),
 	"utf8",
@@ -315,7 +316,7 @@ test("the list exposes generic selected-item state to its native card", () => {
 	);
 	assert.match(CARD_SOURCE, /isSelected\?: boolean;/u);
 	assert.match(CARD_SOURCE, /aria-current=\{isSelected \? "true" : undefined\}/u);
-	assert.match(CARD_SOURCE, /aria-pressed=\{isSelected\}/u);
+	assert.match(ROW_BODY_SOURCE, /aria-pressed=\{renderViewTrigger === undefined \? isSelected : undefined\}/u);
 	assert.match(CARD_SOURCE, /isSelected && "bg-bg-selected hover:bg-bg-selected-hovered"/u);
 });
 
@@ -479,7 +480,7 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	// The body is a button only when the consumer gave it somewhere to go; a
 	// read-only list must not add one focusable no-op to the tab order per row.
 	assert.match(
-		CARD_SOURCE,
+		ROW_BODY_SOURCE,
 		/if \(onView === undefined\) \{\s*return <div className=\{className\}>\{children\}<\/div>;/u,
 	);
 	assert.match(

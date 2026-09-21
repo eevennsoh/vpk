@@ -10,6 +10,7 @@ export function toJiraIssueAgentActivityFromCompletedRun(
 		name: run.agentName,
 		avatarSrc: run.agentAvatarSrc,
 		agentBrandName: run.agentBrandName,
+		...(run.invokedBy ? { invokedBy: run.invokedBy } : {}),
 		label: run.state === "failed" ? "Failed" : "Finished",
 		state: "completed",
 	};
