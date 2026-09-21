@@ -62,6 +62,7 @@ import {
 	JiraIssueAgentAssignmentHandle,
 	JiraIssueAgentRowContent,
 	JiraIssueAgentRowSurface,
+	JiraIssueAgentStatusAffordance,
 	JiraIssueAgentStatusIcon,
 	type JiraIssueAgentAssignment,
 } from "./agent-activity-row-presentation";
@@ -196,7 +197,7 @@ function toAssignedAgentStatusKind(
 	}
 }
 
-function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentAssignmentAgent {
+export function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentAssignmentAgent {
 	return {
 		id: activity.id,
 		name: activity.name,
@@ -629,14 +630,19 @@ function JiraIssueAgentActivityRow({
 	);
 
 	const statusIcon = (
-		<JiraIssueAgentStatusIcon
-			iconScale={iconScale}
-			isAwaitingInput={isAwaitingInput}
-			isCompletedRow={isCompletedRow}
-			isFailedRow={isFailedRow}
-			renderAgentActivityIndicator={renderAgentActivityIndicator}
-			startupPhase={startupPhase}
-			workingSpinnerVariant={workingSpinnerVariant}
+		<JiraIssueAgentStatusAffordance
+			interactive={showAssignmentFlyout}
+			statusIcon={isViewerRow ? undefined : (
+				<JiraIssueAgentStatusIcon
+					iconScale={iconScale}
+					isAwaitingInput={isAwaitingInput}
+					isCompletedRow={isCompletedRow}
+					isFailedRow={isFailedRow}
+					renderAgentActivityIndicator={renderAgentActivityIndicator}
+					startupPhase={startupPhase}
+					workingSpinnerVariant={workingSpinnerVariant}
+				/>
+			)}
 		/>
 	);
 	const rowHandle = (

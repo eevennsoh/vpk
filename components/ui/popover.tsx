@@ -13,8 +13,25 @@ function PopoverTrigger(props: PopoverPrimitive.Trigger.Props) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
 }
 
+function PopoverAnchorVisibility({
+	anchorHidden,
+	open,
+	onAnchorHidden,
+}: Readonly<{
+	anchorHidden: boolean
+	open: boolean
+	onAnchorHidden: () => void
+}>) {
+	const dismiss = React.useEffectEvent(onAnchorHidden)
+	React.useEffect(() => {
+		if (open && anchorHidden) dismiss()
+	}, [open, anchorHidden])
+	return null
+}
+
 function PopoverContent({
 	anchor,
+	onAnchorHidden,
   className,
   positionerClassName,
   align = "center",
@@ -27,6 +44,8 @@ function PopoverContent({
     PopoverPrimitive.Positioner.Props,
 		"anchor" | "align" | "alignOffset" | "side" | "sideOffset"
   > & {
+		/** Called when the anchor is fully clipped by its scroll ancestors or viewport. */
+		onAnchorHidden?: () => void
     positionerClassName?: string
   }) {
   return (
@@ -38,6 +57,16 @@ function PopoverContent({
         side={side}
         sideOffset={sideOffset}
         className={cn("isolate z-[200]", positionerClassName)}
+				render={onAnchorHidden ? (positionerProps, state) => (
+					<div {...positionerProps}>
+						<PopoverAnchorVisibility
+							anchorHidden={state.anchorHidden}
+							open={state.open}
+							onAnchorHidden={onAnchorHidden}
+						/>
+						{positionerProps.children}
+					</div>
+				) : undefined}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"

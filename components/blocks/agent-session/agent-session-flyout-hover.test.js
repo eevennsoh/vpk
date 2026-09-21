@@ -28,7 +28,7 @@ test("an open session overlay keeps its source row in the complete hover state",
 	assert.match(CARD_SOURCE, /isHighlighted \|\| isHoverStateActive/u);
 	assert.match(
 		CARD_SOURCE,
-		/pinned: isHoverStateActive \|\| \(showMoreMenu && role === "owner" && menu\.copied\),/u,
+		/pinned: [^\n]*\bisHoverStateActive \|\| \(showMoreMenu && role === "owner" && menu\.copied\),/u,
 	);
 	assert.match(CARD_SOURCE, /data-session-id=\{item\.id\}/u);
 	assert.match(INDEX_SOURCE, /isFlyoutActive=\{item\.id === scrollPreview\.activeItemId\}/u);

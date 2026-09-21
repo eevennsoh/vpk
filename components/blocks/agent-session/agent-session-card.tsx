@@ -48,7 +48,7 @@ import {
 import { AgentSessionMoreMenu } from "./agent-session-more-menu";
 import { AgentSessionContinueMenu } from "./agent-session-continue-menu";
 import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
-import { AgentSessionViewerHint } from "./agent-session-viewer-hint";
+import { AgentSessionViewerHint, AgentSessionViewerTooltip } from "./agent-session-viewer-hint";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
 import { selectionGestureFromModifierKeys } from "./agent-session-selection-gesture";
 import { agentSessionAccentColor } from "./agent-session-transfer-member";
@@ -272,7 +272,7 @@ export function AgentSessionCard({
 	onToggleVisibility,
 	onView,
 	padding = "default",
-	trailingAlign,
+	trailingAlign = "center",
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
@@ -343,7 +343,7 @@ export function AgentSessionCard({
 	 * vertical) so stacked menu rows sit tighter than catalog cards.
 	 */
 	padding?: "default" | "compact";
-	/** Place the trailing status and actions at row center in compact menu rows. */
+	/** Keep status and replacement actions centered beside the shared title/metadata column. */
 	trailingAlign?: "center" | "metadata";
 	/**
 	 * Overlay stacking for the owner more-menu. Assignment's picker sits above
@@ -497,6 +497,8 @@ export function AgentSessionCard({
 	const handleArticleClick = activateCard === undefined
 		? undefined
 		: (event: MouseEvent<HTMLElement>) => {
+			// A menu's portalled backdrop is a React descendant, not a card click.
+			if (!event.currentTarget.contains(event.target as Node)) return;
 			if (
 				event.target instanceof Element
 				&& event.target.closest(SESSION_DRAG_INTERACTIVE_SELECTOR) !== null
@@ -528,18 +530,14 @@ export function AgentSessionCard({
 	// replaces; long rows keep their full trailing progression control.
 	const isLongDensity = density === "long";
 	const trailingControl = (() => {
-		if (!showMoreMenu) {
+		if (!showMoreMenu && role !== "viewer") {
 			return undefined;
 		}
 
 		switch (role) {
-			case "expired":
-				// Long rows keep the hint in the resting lifecycle slot it shares with
-				// the status glyph. A short row has no resting slot, so its one control
-				// moves into the hover-revealed column beside "…" and the viewer hint.
-				return isLongDensity ? undefined : <AgentSessionExpiredHint />;
 			case "viewer":
 				return <AgentSessionViewerHint />;
+			case "expired":
 			case "owner":
 				return (
 					<AgentSessionMoreMenu
@@ -565,27 +563,27 @@ export function AgentSessionCard({
 	})();
 	// `null`, not `undefined`: the shared row treats `undefined` as "no opinion"
 	// and falls back to its own `STATE_META` indicator.
-	const lifecycleIndicator = isLongDensity
-		? role === "expired"
-			? <AgentSessionExpiredHint />
-			: <AgentSessionLifecycle
+	const lifecycleIndicator = role === "expired" || role === "viewer"
+		? null
+		: isLongDensity
+			? <AgentSessionLifecycle
 				accessibleState={item.state}
 				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
 				showLabel={showLifecycleLabel}
 				state={shownLifecycleState}
 			/>
-		: <AgentSessionShortLifecycleIcon
-			accessibleState={item.state}
-			animateTransition={isStateChanged}
-			onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
-			showWorkingSpinner={showWorkingSpinner}
-			state={shownLifecycleState}
-		/>;
+			: <AgentSessionShortLifecycleIcon
+				accessibleState={item.state}
+				animateTransition={isStateChanged}
+				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
+				showWorkingSpinner={showWorkingSpinner}
+				state={shownLifecycleState}
+			/>;
 	const hoverActions: AgentListRowHoverActions = {
 		// The reveal must outlive the pointer: a portalled popup and a post-click
 		// confirmation both take the cursor off the row.
-		pinned: isHoverStateActive || (showMoreMenu && role === "owner" && menu.copied),
-		primary: approve
+		pinned: role !== "owner" || isHoverStateActive || (showMoreMenu && role === "owner" && menu.copied),
+		primary: approve && role !== "viewer"
 			? {
 				disabled: approve.target.kind === "unavailable",
 				icon: <Icon render={<CheckMarkIcon label="" size="small" />} />,
@@ -772,11 +770,18 @@ export function AgentSessionCard({
 								}}
 								showHoverActionsWhenSelected
 								stateAwareTitle={false}
-								trailingAlign={trailingAlign ?? (isLongDensity ? "metadata" : "center")}
+								trailingAlign={trailingAlign}
 							/>
 							{bind !== undefined && mark == null && canOpenLocalMenu ? renderLocalContinuation() : null}
 						</article>
 					);
+
+					if (role === "expired") {
+						return <AgentSessionExpiredHint disabled={menu.isOpen}>{card}</AgentSessionExpiredHint>;
+					}
+					if (role === "viewer") {
+						return <AgentSessionViewerTooltip>{card}</AgentSessionViewerTooltip>;
+					}
 
 					if (isLongDensity || flyoutHandle === undefined || flyoutSession === undefined) {
 						return card;

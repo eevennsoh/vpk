@@ -229,16 +229,16 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 			{segments.map((segment, index) => (
-				// Tool calls and artifacts yield width first. Long agent names can
-				// then truncate before the fixed host/time and lifecycle control.
+				// Keep clauses content-sized, with text yielding to the fixed
+				// host/time and lifecycle control when the row is narrow.
 				<span
 					className={cn(
 						"flex items-center gap-1",
 						segment.kind === "agent"
 							? "min-w-0 shrink"
-							: segment.kind === "artifact" || segment.kind === "tool-call"
-								? "min-w-0 flex-1"
-								: "shrink-0",
+							: segment.kind === "time"
+								? "shrink-0"
+								: "min-w-0 max-w-28 flex-initial",
 					)}
 					key={segment.kind}
 				>

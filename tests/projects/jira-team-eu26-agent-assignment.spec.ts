@@ -2,6 +2,81 @@ import { expect, test } from "@playwright/test";
 
 test.use({ viewport: { width: 1800, height: 1100 } });
 
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`attached session flyout dismisses when its row leaves the column (${reducedMotion})`, async ({ page }) => {
+		await page.setViewportSize({ width: 1340, height: 760 });
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		const column = page.getByRole("region", { name: "In review work items", exact: true });
+		const row = column.locator('[data-issue-key="PAY-112"] [data-slot="jira-issue-agent-row"]');
+		const trigger = row.getByRole("button", { name: "Codex: Needs input", exact: true });
+		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
+		await trigger.click();
+		await expect(flyout).toBeVisible();
+
+		// Leave half the attached row visible: ordinary scrolling must keep it open.
+		const partialScroll = await row.evaluate((element) => {
+			const viewport = element.closest<HTMLElement>('[data-jira-kanban-card-list]')!;
+			const bounds = element.getBoundingClientRect();
+			const scrollTop = viewport.scrollTop + bounds.top - viewport.getBoundingClientRect().top + bounds.height / 2;
+			viewport.scrollTop = scrollTop;
+			return scrollTop;
+		});
+		await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(partialScroll);
+		await expect(trigger).toHaveAttribute("aria-expanded", "true");
+		await expect(flyout).toBeVisible();
+
+		const hiddenScroll = await row.evaluate((element) => {
+			const viewport = element.closest<HTMLElement>('[data-jira-kanban-card-list]')!;
+			viewport.scrollTop += element.getBoundingClientRect().bottom - viewport.getBoundingClientRect().top + 8;
+			return viewport.scrollTop;
+		});
+		await expect(trigger).toHaveAttribute("aria-expanded", "false");
+		await expect(flyout).toBeHidden();
+		// Closing must not restore focus by scrolling the hidden trigger back into view.
+		await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(hiddenScroll);
+		await column.evaluate((element) => { element.scrollTop = 0; });
+		await expect(flyout).toBeHidden();
+		await trigger.click();
+		await expect(flyout).toBeVisible();
+	});
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`viewer agent chin reveals a small chevron on hover and focus (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		const row = page.locator('[data-issue-key="PAY-107"] [data-slot="jira-issue-agent-row"]');
+		const trigger = row.getByRole("button", { name: "Claude with Maya Ferreira", exact: true });
+		const chevron = row.locator('[data-slot="jira-issue-agent-chevron"]');
+		await expect(trigger).toHaveText("Claude with Maya Ferreira");
+		await page.mouse.move(0, 0);
+		await expect(chevron).toBeHidden();
+		await expect(row.locator('[data-slot="spinner"]')).toHaveCount(0);
+		await row.hover();
+		await expect(chevron).toBeVisible();
+		await expect(chevron.locator("svg")).toHaveCSS("width", "12px");
+		await page.mouse.move(0, 0);
+		await expect(chevron).toBeHidden();
+		await trigger.focus();
+		await page.keyboard.press("Shift+Tab");
+		await page.keyboard.press("Tab");
+		await expect(trigger).toBeFocused();
+		await expect(chevron).toBeVisible();
+		await page.keyboard.press("Enter");
+		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
+		await expect(flyout).toBeVisible();
+		await expect.soft(flyout.getByRole("button", { name: "Add agent", exact: true }).locator("svg")).toHaveCount(1, { timeout: 1000 });
+		const session = flyout.locator("article");
+		await page.mouse.move(0, 0);
+		await expect.soft(session).toHaveCSS("background-color", "rgba(0, 0, 0, 0)", { timeout: 1000 });
+		await session.hover();
+		await expect(session).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+		await page.mouse.move(0, 0);
+		await expect.soft(session).toHaveCSS("background-color", "rgba(0, 0, 0, 0)", { timeout: 1000 });
+	});
+}
+
 test("List session identities align with Add agent and working uses the experimental spinner", async ({ page }) => {
 	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 	await page.getByRole("tab", { name: "List" }).click();
@@ -69,9 +144,18 @@ test("compact assignment flyout centers status and more actions in each row", as
 		if (agent === null || human === null) throw new Error("Session avatars are not laid out");
 		expect(agent.x).toBeLessThan(human.x);
 	}
-	await expect(cursor.getByRole("button", {
-		name: "A team member is collaborating with an agent on this work. Only they have access.",
-	})).toBeVisible();
+	const viewerHint = cursor.getByRole("button", {
+		name: "Someone is using an agent. Only they can see the work.",
+	});
+	await expect(viewerHint).toBeVisible();
+	await cursor.hover();
+	await viewerHint.hover();
+	const tooltip = page.locator('[data-slot="tooltip-content"]');
+	await expect(tooltip).toBeVisible();
+	await expect(tooltip).toHaveText("Someone is using an agent. Only they can see the work.");
+	await expect(tooltip).toHaveCSS("width", "240px");
+	await expect(tooltip).toHaveCSS("white-space", "normal");
+	await expect(tooltip).toHaveJSProperty("textContent", "Someone is using an agent. Only they can see the work.");
 	const loader = page.locator('[data-issue-key="PAY-123"] .agent-loading');
 	await expect(loader).toBeVisible();
 	await expect(loader.locator('[data-slot="human-agent-avatar"]')).toHaveCount(0);
@@ -82,7 +166,7 @@ test("compact assignment flyout centers status and more actions in each row", as
 	}
 	await claude.hover();
 	const controls = [
-		{ row: cursor, control: cursor.getByRole("button", { name: "Working" }) },
+		{ row: cursor, control: viewerHint },
 		{ row: claude, control: claude.getByRole("button", { name: "More actions for Claude" }) },
 	];
 	for (const { row, control } of controls) {
@@ -222,6 +306,52 @@ test("List local sessions use Continue in and menus fit a narrow viewport", asyn
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`outside dismissal of untracked more actions returns to rest (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		const row = page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread");
+		await row.scrollIntoViewIfNeeded();
+		await row.hover();
+		await row.getByRole("button", { name: /^More actions for/u }).click();
+		await expect(page.getByRole("menu").getByRole("menuitem")).toHaveText(["Dismiss"]);
+		await expect(page.locator('[data-slot="hover-card-content"]:visible')).toHaveCount(0);
+		// Observe every frame: a final-state assertion alone misses the preview flash.
+		await page.evaluate(() => {
+			const samples: string[] = [];
+			Object.assign(window, { sessionDismissSamples: samples });
+			const start = performance.now();
+			function sample() {
+				if (document.querySelector('[role="menu"][data-open][aria-label^="Continue "]')) samples.push("continue");
+				if (document.querySelector('[data-slot="hover-card-content"][data-open]')) samples.push("preview");
+				if (performance.now() - start < 800) requestAnimationFrame(sample);
+			}
+			sample();
+		});
+		const outside = await page.getByRole("heading", { name: "Jira Design" }).boundingBox();
+		if (outside === null) throw new Error("Outside dismissal target is not laid out");
+		// Press the modal backdrop at this point, without forcing a click through it.
+		await page.mouse.click(outside.x + outside.width / 2, outside.y + outside.height / 2);
+		await expect(page.locator('[role="menu"]:visible')).toHaveCount(0);
+		await page.waitForTimeout(850);
+		expect(await page.evaluate(() => Reflect.get(window, "sessionDismissSamples"))).toEqual([]);
+		await expect(row.locator("article")).not.toHaveAttribute("data-hovered", "true");
+		await expect(row.locator("article")).not.toHaveAttribute("data-highlighted", "true");
+		expect(await row.evaluate((element) => element.contains(document.activeElement))).toBe(false);
+		// A fresh hover and explicit click must still work after dismissing.
+		await row.hover();
+		await expect(page.locator('[data-slot="hover-card-content"]:visible')).toHaveCount(1);
+		await row.locator("article").click();
+		await expect(page.getByRole("menu")).toContainText("Continue in");
+		await page.keyboard.press("Escape");
+		const more = row.getByRole("button", { name: /^More actions for/u });
+		await more.focus();
+		await page.keyboard.press("Enter");
+		await expect(page.getByRole("menu").getByRole("menuitem")).toHaveText(["Dismiss"]);
+		await page.keyboard.press("Escape");
+		await expect(more).toBeFocused();
+		await expect(page.locator('[role="menu"]:visible')).toHaveCount(0);
+	});
+
 	test(`untracked local cards separate continuation and dismissal (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
@@ -313,7 +443,7 @@ test("Jira issue playground opens owner and viewer session lists on click", asyn
 		await expect(flyout.getByRole("button", {
 			name: label === "1 agent as owner"
 				? "More actions for Claude"
-				: "A team member is collaborating with an agent on this work. Only they have access.",
+				: "Someone is using an agent. Only they can see the work.",
 		})).toBeVisible();
 		await page.keyboard.press("Escape");
 		await expect(flyout).toBeHidden();

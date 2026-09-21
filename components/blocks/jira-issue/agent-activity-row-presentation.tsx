@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, type ReactElement } from "react";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
@@ -48,6 +49,7 @@ export type JiraIssueAgentAssignment = Partial<
 		| "onBrowseAgents"
 		| "onContinueExistingSession"
 		| "onCreateAgent"
+		| "onDeleteAssignedAgent"
 		| "onRenameAssignedAgent"
 		| "onStartNewSession"
 		| "pinnedItemsLabel"
@@ -219,6 +221,27 @@ export function JiraIssueAgentStatusIcon({
 	);
 }
 
+export function JiraIssueAgentStatusAffordance({
+	interactive,
+	statusIcon,
+}: Readonly<{
+	interactive: boolean;
+	statusIcon?: ReactElement;
+}>): ReactElement | null {
+	if (!interactive) return statusIcon ?? null;
+
+	return (
+		<span aria-hidden="true" className="grid size-6 shrink-0 place-items-center" data-slot="jira-issue-agent-status-affordance">
+			<span className="col-start-1 row-start-1 grid size-6 place-items-center group-hover/agent-chin-row:invisible group-has-[:focus-visible]/agent-chin-row:invisible" data-slot="jira-issue-agent-status-icon">
+				{statusIcon}
+			</span>
+			<span className="invisible col-start-1 row-start-1 grid size-6 place-items-center text-icon-subtle group-hover/agent-chin-row:visible group-has-[:focus-visible]/agent-chin-row:visible" data-slot="jira-issue-agent-chevron">
+				<ChevronRightIcon color="currentColor" label="" size="small" />
+			</span>
+		</span>
+	);
+}
+
 function JiraIssueAgentRowLabel({
 	isAwaitingInput,
 	isWorking,
@@ -354,7 +377,7 @@ export function JiraIssueAgentRowContent({
 					startupPhase={startupPhase}
 				/>
 			</div>
-			{showUnlinkControl || isViewerRow ? null : statusIcon}
+			{showUnlinkControl ? null : statusIcon}
 		</>
 	);
 }
@@ -396,6 +419,7 @@ export function JiraIssueAgentAssignmentHandle({
 				agents={agents}
 				assignedAgents={assignedAgents}
 				defaultPinnedAgentIds={assignment?.defaultPinnedAgentIds}
+				dismissWhenAnchorHidden
 				hoverAnchor={resolveAssignmentAnchor}
 				onAgentAssign={assignment?.onAgentAssign}
 				onAssignedAgentIdsChange={assignment?.onAssignedAgentIdsChange}
@@ -410,6 +434,7 @@ export function JiraIssueAgentAssignmentHandle({
 				onBrowseAgents={assignment?.onBrowseAgents}
 				onContinueExistingSession={assignment?.onContinueExistingSession}
 				onCreateAgent={assignment?.onCreateAgent}
+				onDeleteAssignedAgent={assignment?.onDeleteAssignedAgent}
 				onRenameAssignedAgent={assignment?.onRenameAssignedAgent}
 				onOpenChange={onOpenChange}
 				onStartNewSession={assignment?.onStartNewSession}

@@ -19,6 +19,7 @@ import {
 	type JiraIssuePullRequestStatus,
 } from "@/components/blocks/jira-issue";
 import { AGENT_SESSION_ITEMS, AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
+import { toAgentAssignmentAgent } from "@/components/blocks/jira-issue/agent-activity";
 import {
 	nextJiraIssueDemoLinkedIds,
 	splitJiraIssueDemoSessionsById,
@@ -282,6 +283,7 @@ type JiraIssueAgentActivityDemoState =
 	| "multiple-agents-working"
 	| "single-agent-working-viewer"
 	| "multiple-agents-working-viewer"
+	| "agent-session-expired"
 	| "awaiting-user-input"
 	| "agent-completed-work"
 	| "agent-dismissed-work"
@@ -313,6 +315,7 @@ const JIRA_ISSUE_AGENT_ACTIVITY_V2_DEMO_STATES = [
 	{ value: "single-agent-working-viewer", label: "1 agent, not owner" },
 	{ value: "multiple-agents-working-viewer", label: "1-n agents, not owner" },
 	...JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES.slice(3),
+	{ value: "agent-session-expired", label: "Expired" },
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
 
 function isSessionTransferDemoState(state: JiraIssueAgentActivityDemoState): boolean {
@@ -357,6 +360,51 @@ function getDemoAgentActivities(
 	state: JiraIssueAgentActivityDemoState,
 ): readonly JiraIssueAgentActivity[] | undefined {
 	switch (state) {
+		case "agent-session-expired":
+			return [
+				{
+					...JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES[0],
+					name: "Claude",
+					avatarSrc: undefined,
+					agentBrandName: "claude",
+					host: "cloud",
+					role: "owner",
+					timeLabel: "2m",
+					invokedBy: { name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" },
+				},
+				{
+					...JIRA_ISSUE_AGENT_ACTIVITIES[1],
+					name: "Claude",
+					avatarSrc: undefined,
+					agentBrandName: "claude",
+					host: "local",
+					role: "owner",
+					timeLabel: "2m",
+					invokedBy: { name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" },
+				},
+				{
+					id: "cursor-viewer-session",
+					name: "Cursor",
+					agentBrandName: "cursor",
+					label: "Working",
+					state: "working",
+					host: "local",
+					role: "viewer",
+					timeLabel: "2m",
+					invokedBy: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[1],
+				},
+				{
+					id: "claude-expired-session",
+					name: "Claude",
+					agentBrandName: "claude",
+					label: "Expired",
+					state: "completed",
+					host: "cloud",
+					role: "expired",
+					timeLabel: "29d",
+					invokedBy: { name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" },
+				},
+			];
 		case "single-agent-working-viewer":
 		case "single-agent-working":
 		case "agent-session-link":
@@ -390,7 +438,7 @@ function getDemoAgentActivityMode(
 		return "none";
 	}
 
-	return state === "awaiting-user-input" ? "awaiting-input" : "working";
+	return state === "awaiting-user-input" || state === "agent-session-expired" ? "awaiting-input" : "working";
 }
 
 function getExperimentalDemoPullRequest(
@@ -408,6 +456,7 @@ function getExperimentalDemoPullRequest(
 		case "multiple-agents-working":
 		case "single-agent-working-viewer":
 		case "multiple-agents-working-viewer":
+		case "agent-session-expired":
 		case "agent-session-unlink":
 		case "agent-session-running-unlink":
 		case "agent-session-link":
@@ -606,7 +655,7 @@ function JiraIssueAgentActivityStatesDemo({
 			: "owner"
 		: undefined;
 	const fixtureActivities = assignedDemoActivities ?? getDemoAgentActivities(agentActivityState)?.map<JiraIssueAgentActivity>((activity, index) => (
-		demoSessionRole ? {
+		demoSessionRole && agentActivityState !== "agent-session-expired" ? {
 			...activity,
 			name: index === 0 ? "Claude" : "Cursor",
 			avatarSrc: undefined,
@@ -781,7 +830,11 @@ function JiraIssueAgentActivityStatesDemo({
 						key={isTransferPhase ? agentActivityState : "base"}
 						agentActivities={agentActivities}
 						assignment={demoSessionRole ? {
-							addAgentLabel: demoSessionRole === "viewer" ? "New session" : "Add agent",
+							assignedAgents: agentActivityState === "agent-session-expired" ? agentActivities?.map(toAgentAssignmentAgent) : undefined,
+							addAgentLabel: demoSessionRole === "viewer" || agentActivityState === "agent-session-expired" ? "New session" : "Add agent",
+							onDeleteAssignedAgent: (agent) => {
+								setAssignedDemoActivities((current) => (current ?? agentActivities ?? []).filter((activity) => activity.id !== agent.id));
+							},
 							onAgentAssign: (agent) => {
 								const activity = toJiraIssueDemoAttachedActivity({
 									id: agent.id,

@@ -88,6 +88,8 @@ export interface AgentAssignmentProps {
 	hoverAnchor?: ComponentProps<typeof HoverCardContent>["anchor"];
 	className?: string;
 	defaultPinnedAgentIds?: readonly string[];
+	/** Dismiss a click flyout when its anchor leaves the visible scroll area. */
+	dismissWhenAnchorHidden?: boolean;
 	maxVisibleAgents?: number;
 	onAgentAssign?: (agent: AgentSelectorAgent) => void;
 	/** Enables assignment and archive controls. Omit for a display-only session list. */
@@ -95,6 +97,8 @@ export interface AgentAssignmentProps {
 	onAssignedAgentSelect: (agent: AgentAssignmentAgent) => void;
 	onBrowseAgents?: () => void;
 	onContinueExistingSession?: (agent: AgentSelectorAgent) => void;
+	/** Delete a cloud session record; separate from removing its assignment. */
+	onDeleteAssignedAgent?: (agent: AgentAssignmentAgent) => void;
 	/** Rename a cloud assigned session from the Default picker more-menu. */
 	onRenameAssignedAgent?: (agent: AgentAssignmentAgent) => void;
 	onCreateAgent?: () => void;
@@ -143,12 +147,14 @@ export function AgentAssignment({
 	hoverAnchor,
 	className,
 	defaultPinnedAgentIds = [],
+	dismissWhenAnchorHidden = false,
 	maxVisibleAgents = 4,
 	onAgentAssign,
 	onAssignedAgentIdsChange,
 	onAssignedAgentSelect,
 	onBrowseAgents,
 	onContinueExistingSession,
+	onDeleteAssignedAgent,
 	onRenameAssignedAgent,
 	onCreateAgent,
 	onOpenChange,
@@ -378,7 +384,9 @@ export function AgentAssignment({
 			onContinueInAgent={onContinueExistingSession
 				? (item) => runAssignedSessionAction(assignedAgents, item.id, onContinueExistingSession)
 				: undefined}
-			onDeleteSession={undefined}
+			onDeleteSession={onDeleteAssignedAgent
+				? (item) => runAssignedSessionAction(assignedAgents, item.id, onDeleteAssignedAgent)
+				: undefined}
 			onMoreMenuOpenChange={(open) => {
 				moreMenuOpenRef.current = open;
 			}}
@@ -531,6 +539,7 @@ export function AgentAssignment({
 				<PopoverContent
 					align="start"
 					anchor={hoverAnchor}
+					onAnchorHidden={dismissWhenAnchorHidden ? () => handleOpenChange(false) : undefined}
 					aria-label="Agent assignment"
 					className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-hidden rounded-xl p-0"
 					positionerClassName={positionerClassName}

@@ -23,7 +23,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(source, /<AssignedAgentsMenu/u);
 	assert.match(source, /<AssignedAgentsSessionMenu/u);
 	assert.match(source, /onContinueInAgent=\{onContinueExistingSession/u);
-	assert.match(source, /onDeleteSession=\{undefined\}/u);
+	assert.match(source, /onDeleteSession=\{onDeleteAssignedAgent[\s\S]*runAssignedSessionAction\(assignedAgents, item\.id, onDeleteAssignedAgent\)/u);
 	assert.doesNotMatch(source, /onDeleteSession=\{onAssignedAgentIdsChange/u);
 	assert.match(source, /onRenameSession=\{onRenameAssignedAgent/u);
 	assert.match(source, /onToggleVisibility=\{onAssignedAgentIdsChange/u);
