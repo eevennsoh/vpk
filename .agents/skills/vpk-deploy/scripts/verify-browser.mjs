@@ -231,4 +231,4 @@ async function main(args) {
 	console.log(JSON.stringify({ verified: true, url: result.url, engine: result.engine, chat: result.chat, evidence: options.outputDirectory }));
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2)).catch(error => { console.error(error.message); process.exitCode = 2; });
+if (process.argv[1] && await fs.realpath(process.argv[1]).catch(() => null) === fileURLToPath(import.meta.url)) main(process.argv.slice(2)).catch(error => { console.error(error.message); process.exitCode = 2; });
