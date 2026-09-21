@@ -255,9 +255,33 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true })).toBeVisible();
 		await expect(menu.getByRole("menuitem", { name: "Dismiss", exact: true })).toHaveCount(0);
 		await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
-		await menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true }).click();
-		await expect(menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true })).toHaveAttribute("data-selected", "true");
+		const copyPrompt = menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true });
+		const success = copyPrompt.locator('[data-agent-session-copy-success]');
+		await expect(success).toHaveCount(0);
+		await expect(page.getByRole("tooltip", { name: "Copied prompt", exact: true })).toHaveCount(0);
+		const restingBounds = await copyPrompt.boundingBox();
+		await copyPrompt.click();
+		await expect(copyPrompt).toHaveAttribute("data-selected", "true");
+		await expect(success).toHaveCSS("opacity", "1");
+		await expect(success.locator("svg")).toHaveCSS("color", "rgb(106, 154, 35)");
+		await expect(page.getByRole("tooltip", { name: "Copied prompt", exact: true })).toBeVisible();
+		await expect(copyPrompt).toHaveAccessibleDescription("Copied prompt");
+		const copiedBounds = await copyPrompt.boundingBox();
+		expect(copiedBounds?.width).toBe(restingBounds?.width);
+		expect(copiedBounds?.height).toBe(restingBounds?.height);
+		await page.screenshot({ path: `output/agent-browser/agent-session-copied-prompt-${reducedMotion}.png` });
+		await expect(success).toHaveCount(0);
+		await expect(page.getByRole("tooltip", { name: "Copied prompt", exact: true })).toHaveCount(0);
+		// Keyboard activation shows the same feedback and Escape still returns focus.
+		// A preference changed after loading must take effect on the next copy.
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await copyPrompt.focus();
+		await page.keyboard.press("Enter");
+		await expect(success).toBeVisible();
+		expect(await success.evaluate((element) => ({ opacity: getComputedStyle(element).opacity, animations: element.getAnimations().length }))).toEqual({ opacity: "1", animations: 0 });
+		await expect(page.getByRole("tooltip", { name: "Copied prompt", exact: true })).toBeVisible();
 		await page.keyboard.press("Escape");
+		await expect(page.getByRole("tooltip", { name: "Copied prompt", exact: true })).toBeHidden();
 		await expect(session).toBeFocused();
 		await expect(flyout).toBeVisible();
 		await row.locator("article").click({ position: { x: 4, y: 4 } });
@@ -382,7 +406,10 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(page.getByText(/^Resume command copied for/u)).toHaveCount(0);
 		await menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true }).click();
 		await expect(menu.getByRole("menuitem", { name: "Terminal Copy prompt", exact: true })).toHaveAttribute("data-selected", "true");
+		await expect(menu.locator('[data-agent-session-copy-success]')).toBeVisible();
+		await expect(page.getByRole("tooltip", { name: "Copied prompt", exact: true })).toBeVisible();
 		await page.keyboard.press("Escape");
+		await expect(page.getByRole("tooltip", { name: "Copied prompt", exact: true })).toBeHidden();
 		await expect(article).toBeFocused();
 		await page.keyboard.press("Enter");
 		await expect(menu).toContainText("Continue in");
