@@ -360,7 +360,7 @@ test("Jira issue keeps activity rows composer-free and uses one shared assignmen
 	);
 	assert.match(AGENT_ACTIVITY_SOURCE, /if \(moved\) \{\s*\n\s*publishSessionDrag\(true, event\);/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /from "@\/components\/blocks\/agent-assignment"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="hover"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="click"/u);
 	// The drag wrapper is applied around the row shell. AgentAssignment still
 	// clones only the drag handle so the hover card keeps `aria-expanded`.
 	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;[\s\S]*<AgentAssignment/u);
@@ -706,7 +706,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*iconScale=\{iconScale\}/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*inheritChinSurface/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;[\s\S]*<AgentAssignment[\s\S]*openMode="hover"[\s\S]*trigger=\{rowHandle\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(!showAssignmentFlyout\) \{\s*return rowHandle;[\s\S]*<AgentAssignment[\s\S]*openMode="click"[\s\S]*trigger=\{rowHandle\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /inheritChinSurface \? "bg-transparent" : "bg-bg-neutral"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
 	assert.match(SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
@@ -921,7 +921,7 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	// session bookkeeping to unwind first.
 	assert.match(
 		PAGE_SOURCE,
-		/onClick=\{\(\) => \{\s*\n\s*setUnlinkedSessionIds\(\[\]\);\s*\n\s*setLinkedDetachedIds\(\[\]\);\s*\n\s*setAgentActivityState\(state\.value\);\s*\n\s*\}\}/u,
+		/onClick=\{\(\) => \{\s*\n\s*setUnlinkedSessionIds\(\[\]\);\s*\n\s*setLinkedDetachedIds\(\[\]\);\s*\n\s*setAssignedDemoActivities\(null\);\s*\n\s*setAgentActivityState\(state\.value\);\s*\n\s*\}\}/u,
 	);
 	assert.match(PAGE_SOURCE, /function getExperimentalDemoPullRequest\(/);
 	assert.match(PAGE_SOURCE, /const experimentalPullRequest = compact\s*\n\t\t\? getExperimentalDemoPullRequest\(agentActivityState\)\s*\n\t\t: \{\};/);

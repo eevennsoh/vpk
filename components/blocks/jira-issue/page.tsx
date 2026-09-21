@@ -280,6 +280,8 @@ type JiraIssueAgentActivityDemoState =
 	| "default"
 	| "single-agent-working"
 	| "multiple-agents-working"
+	| "single-agent-working-viewer"
+	| "multiple-agents-working-viewer"
 	| "awaiting-user-input"
 	| "agent-completed-work"
 	| "agent-dismissed-work"
@@ -301,6 +303,16 @@ const JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES = [
 	{ value: "agent-session-unlink", label: "Unlink" },
 	{ value: "agent-session-running-unlink", label: "1 running + 2 unlink" },
 	{ value: "agent-session-link", label: "Link" },
+] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
+
+const JIRA_ISSUE_AGENT_ACTIVITY_V2_DEMO_STATES = [
+	...JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES.slice(0, 3).map((state) => ({
+		...state,
+		label: state.value === "default" ? state.label : `${state.label} as owner`,
+	})),
+	{ value: "single-agent-working-viewer", label: "1 agent, not owner" },
+	{ value: "multiple-agents-working-viewer", label: "1-n agents, not owner" },
+	...JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES.slice(3),
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
 
 function isSessionTransferDemoState(state: JiraIssueAgentActivityDemoState): boolean {
@@ -345,10 +357,12 @@ function getDemoAgentActivities(
 	state: JiraIssueAgentActivityDemoState,
 ): readonly JiraIssueAgentActivity[] | undefined {
 	switch (state) {
+		case "single-agent-working-viewer":
 		case "single-agent-working":
 		case "agent-session-link":
 		case "agent-session-running-unlink":
 			return JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 1);
+		case "multiple-agents-working-viewer":
 		case "multiple-agents-working":
 			return JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 2);
 		case "awaiting-user-input":
@@ -392,6 +406,8 @@ function getExperimentalDemoPullRequest(
 		case "default":
 		case "single-agent-working":
 		case "multiple-agents-working":
+		case "single-agent-working-viewer":
+		case "multiple-agents-working-viewer":
 		case "agent-session-unlink":
 		case "agent-session-running-unlink":
 		case "agent-session-link":
@@ -580,10 +596,29 @@ function JiraIssueAgentActivityStatesDemo({
 		: {};
 	const [unlinkedSessionIds, setUnlinkedSessionIds] = useState<readonly string[]>([]);
 	const [linkedDetachedIds, setLinkedDetachedIds] = useState<readonly string[]>([]);
+	const [assignedDemoActivities, setAssignedDemoActivities] = useState<readonly JiraIssueAgentActivity[] | null>(null);
 	const isTransferPhase = showSessionTransferStates && isSessionTransferDemoState(agentActivityState);
 	const isUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-unlink";
 	const isRunningUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-running-unlink";
-	const fixtureActivities = getDemoAgentActivities(agentActivityState);
+	const demoSessionRole = iconScale === "comfortable"
+		? agentActivityState === "single-agent-working-viewer" || agentActivityState === "multiple-agents-working-viewer"
+			? "viewer"
+			: "owner"
+		: undefined;
+	const fixtureActivities = assignedDemoActivities ?? getDemoAgentActivities(agentActivityState)?.map<JiraIssueAgentActivity>((activity, index) => (
+		demoSessionRole ? {
+			...activity,
+			name: index === 0 ? "Claude" : "Cursor",
+			avatarSrc: undefined,
+			agentBrandName: index === 0 ? "claude" : "cursor",
+			role: demoSessionRole,
+			host: index === 0 ? "cloud" : "local",
+			timeLabel: "12m",
+			invokedBy: demoSessionRole === "owner"
+				? { name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" }
+				: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[index % JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS.length],
+		} : activity
+	));
 	const remainingFixtureActivities = fixtureActivities?.filter((activity) => !unlinkedSessionIds.includes(activity.id));
 	const unlinkedSessions = (fixtureActivities ?? [])
 		.filter((activity) => unlinkedSessionIds.includes(activity.id))
@@ -605,7 +640,9 @@ function JiraIssueAgentActivityStatesDemo({
 	const detachedSessions = [...unlinkedSessions, ...remainingFixtureDetached];
 	const demoStates = showSessionTransferStates
 		? [...JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES, ...JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES]
-		: JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES;
+		: iconScale === "comfortable"
+			? JIRA_ISSUE_AGENT_ACTIVITY_V2_DEMO_STATES
+			: JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES;
 	const hasChinToUnlink = Boolean(agentActivities?.length);
 	const showDetachedSessions = detachedSessions.length > 0;
 	// Tabs pick the fixture. A drop or chin-minus unlink keeps that fixture and
@@ -707,6 +744,7 @@ function JiraIssueAgentActivityStatesDemo({
 							onClick={() => {
 								setUnlinkedSessionIds([]);
 								setLinkedDetachedIds([]);
+								setAssignedDemoActivities(null);
 								setAgentActivityState(state.value);
 							}}
 							size="compact"
@@ -742,6 +780,24 @@ function JiraIssueAgentActivityStatesDemo({
 					<JiraIssue
 						key={isTransferPhase ? agentActivityState : "base"}
 						agentActivities={agentActivities}
+						assignment={demoSessionRole ? {
+							addAgentLabel: demoSessionRole === "viewer" ? "New session" : "Add agent",
+							onAgentAssign: (agent) => {
+								const activity = toJiraIssueDemoAttachedActivity({
+									id: agent.id,
+									title: "Working",
+									state: "running",
+									agent,
+									host: "cloud",
+									role: "owner",
+									invokedBy: { name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" },
+								});
+								setAssignedDemoActivities((current) => [...(current ?? agentActivities ?? []), activity]);
+							},
+							onAssignedAgentIdsChange: (ids) => {
+								setAssignedDemoActivities((current) => (current ?? agentActivities ?? []).filter((activity) => ids.includes(activity.id)));
+							},
+						} : undefined}
 						agentActivityLayout={agentActivityLayout}
 						agentActivityMode={getDemoAgentActivityMode(agentActivityState, agentActivities)}
 						agentDoneRuns={agentActivityState === "agent-completed-work" ? JIRA_ISSUE_COMPLETED_AGENT_RUNS : undefined}

@@ -135,6 +135,20 @@ test("role omission keeps the default owner attribution", async () => {
 	}
 });
 
+test("private session titles identify the agent and owner without changing owner titles", async () => {
+	const { toAssignmentSessionItem } = await loadAssignmentSessionMapper();
+	const agent = assignmentAgent({
+		name: "Claude",
+		invokedBy: { name: "Annie" },
+		role: "viewer",
+		statusKind: "working",
+	});
+	assert.equal(toAssignmentSessionItem(agent).title, "Claude with Annie");
+	assert.equal(toAssignmentSessionItem({ ...agent, invokedBy: undefined }).title, "Claude");
+	assert.equal(toAssignmentSessionItem({ ...agent, role: "owner" }).title, "Claude");
+	assert.equal(toAssignmentSessionItem({ ...agent, role: undefined }).title, "Claude");
+});
+
 test("all access roles retain human attribution through every lifecycle state", async () => {
 	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
 	for (const role of ["owner", "viewer", "expired"]) {

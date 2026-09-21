@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
 import {
 	type AgentAssignmentAgent,
@@ -52,6 +53,7 @@ export function AssignedAgentsSessionMenu({
 						<AgentSessionCard
 							density="long"
 							item={toAssignmentSessionItem(row)}
+							isFlyoutActive={rows.length === 1 && row.role === "viewer"}
 							key={row.id}
 							moreMenuPortalled={true}
 							moreMenuPositionerClassName="z-[600]"
@@ -80,6 +82,11 @@ export function AssignedAgentsSessionMenu({
 							<AiAgentAddIcon label="" />
 						</span>
 						<span className="text-text-subtle">{addAgentLabel}</span>
+						{rows.length > 0 && rows.every((row) => row.role === "viewer") ? (
+							<span className="ml-auto text-icon-subtle">
+								<ChevronRightIcon label="" size="small" />
+							</span>
+						) : null}
 					</Button>
 				</div>
 			) : null}

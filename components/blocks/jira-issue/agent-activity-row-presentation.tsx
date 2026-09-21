@@ -279,6 +279,7 @@ export function JiraIssueAgentRowContent({
 	isWorking,
 	rowLabel,
 	showUnlinkControl,
+	isViewerRow = false,
 	startupPhase,
 	statusIcon,
 }: Readonly<{
@@ -289,6 +290,7 @@ export function JiraIssueAgentRowContent({
 	isWorking: boolean;
 	rowLabel: string;
 	showUnlinkControl: boolean;
+	isViewerRow?: boolean;
 	startupPhase: ReturnType<typeof useJiraIssueAgentStartupPhase>;
 	statusIcon: ReactElement;
 }>): ReactElement {
@@ -311,7 +313,7 @@ export function JiraIssueAgentRowContent({
 	} else if (avatarLayout === "horizontal-group") {
 		avatar = (
 			<AvatarGroup
-				className="shrink-0 gap-1 space-x-0"
+				className={cn("shrink-0", isViewerRow ? null : "gap-1 space-x-0")}
 				label={`${activities.length} agents: ${rowLabel}`}
 				size="sm"
 			>
@@ -352,7 +354,7 @@ export function JiraIssueAgentRowContent({
 					startupPhase={startupPhase}
 				/>
 			</div>
-			{showUnlinkControl ? null : statusIcon}
+			{showUnlinkControl || isViewerRow ? null : statusIcon}
 		</>
 	);
 }
@@ -390,7 +392,7 @@ export function JiraIssueAgentAssignmentHandle({
 	return (
 		<div className="flex h-full min-w-0 flex-1 items-center" ref={assignmentHandleRef}>
 			<AgentAssignment
-				addAgentLabel={assignment?.addAgentLabel}
+				addAgentLabel={assignment?.addAgentLabel ?? (activities.every((activity) => activity.role === "viewer") ? "New session" : undefined)}
 				agents={agents}
 				assignedAgents={assignedAgents}
 				defaultPinnedAgentIds={assignment?.defaultPinnedAgentIds}
@@ -411,9 +413,10 @@ export function JiraIssueAgentAssignmentHandle({
 				onRenameAssignedAgent={assignment?.onRenameAssignedAgent}
 				onOpenChange={onOpenChange}
 				onStartNewSession={assignment?.onStartNewSession}
-				openMode="hover"
+				openMode="click"
 				pinnedItemsLabel={assignment?.pinnedItemsLabel}
 				positionerClassName="z-[575]"
+				side="right"
 				trigger={rowHandle}
 				usedAgentIds={assignment?.usedAgentIds}
 			/>

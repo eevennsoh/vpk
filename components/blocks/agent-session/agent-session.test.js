@@ -645,7 +645,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(
 		METADATA_SOURCE,
-		/segment\.kind === "agent"\s*\? "shrink-0"\s*: segment\.kind === "artifact" \|\| segment\.kind === "tool-call"\s*\? "min-w-0 shrink"\s*: "shrink-0"/u,
+		/segment\.kind === "agent"\s*\? "min-w-0 shrink"\s*: segment\.kind === "artifact" \|\| segment\.kind === "tool-call"\s*\? "min-w-0 flex-1"\s*: "shrink-0"/u,
 	);
 	assert.match(
 		METADATA_SOURCE,

@@ -28,8 +28,10 @@ function clampPosition(
  *   element, and releases it on `pointerup` / `pointercancel`.
  * - Movement past 2px on either axis marks the gesture as a drag, which
  *   swallows exactly one following `click` so a drag never activates the
- *   element. Call `onActivate` for the click behaviour instead of wiring your
- *   own `onClick` — spreading `bind` would overwrite it.
+ *   element. `bind.onClick` returns false for that swallowed click so a host
+ *   can also cancel its own composed activation handler. Call `onActivate`
+ *   for the click behaviour instead of wiring your own `onClick` — spreading
+ *   `bind` would overwrite it.
  * - Arrow keys nudge by 2px (10px with Shift) through the same clamp.
  *
  * `position` is fully controlled: the hook never stores it, it only reports
@@ -81,9 +83,10 @@ export function usePointerDrag(
 	function onClick() {
 		if (movedRef.current) {
 			movedRef.current = false;
-			return;
+			return false;
 		}
 		onActivate?.();
+		return true;
 	}
 
 	function onKeyDown(event: KeyboardEvent<HTMLElement>) {

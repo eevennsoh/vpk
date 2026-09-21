@@ -6,6 +6,7 @@ import {
 import { assignmentSessionRole } from "@/components/blocks/agent-assignment/components/assignment-session-role";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agent-activity";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
+import { agentIdentityLabel } from "@/components/blocks/agent-session/agent-session-identity-label";
 
 export { assignmentSessionRole } from "@/components/blocks/agent-assignment/components/assignment-session-role";
 
@@ -81,7 +82,7 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 		id: agent.id,
 		...(invokedBy ? { invokedBy } : {}),
 		state: assignmentSessionState(statusKind),
-		title: agent.name,
+		title: role === "viewer" ? agentIdentityLabel(agent, invokedBy) : agent.name,
 		...(agent.host !== undefined ? { host: agent.host } : {}),
 		...(role !== undefined ? { role } : {}),
 		...(agent.timeLabel ? { timeLabel: agent.timeLabel } : {}),

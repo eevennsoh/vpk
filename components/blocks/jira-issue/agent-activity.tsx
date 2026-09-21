@@ -31,6 +31,7 @@ import {
 import type { AgentListHost, AgentListInvoker } from "@/components/blocks/agent-list";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
+import { agentIdentityLabel } from "@/components/blocks/agent-session/agent-session-identity-label";
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
 import {
 	groupJiraIssueAgentActivityRows,
@@ -286,6 +287,7 @@ function resolveJiraIssueAgentRowPresentation(
 	const isFailedRow = isCompletedRow
 		&& activities.some((activity) => activity.label === "Failed");
 	const isSingleAgent = summary.activityCount === 1;
+	const isViewerRow = activities.length > 0 && activities.every((activity) => activity.role === "viewer");
 	const rowLinkFlash = linkFlash
 		&& activities.some((activity) => linkFlash.activityIds.includes(activity.id))
 		? linkFlash
@@ -294,14 +296,18 @@ function resolveJiraIssueAgentRowPresentation(
 	const featuredActivity = summary.featuredActivityIndex !== null
 		? activities[summary.featuredActivityIndex]
 		: undefined;
-	const rowLabel = isCompletedRow
+	const rowLabel = isViewerRow
+		? isSingleAgent
+			? agentIdentityLabel(activities[0], activities[0].invokedBy)
+			: "Agent sessions"
+		: isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
 	const activityKey = activities.map((activity) => activity.id).join("\n");
 	const startupSequenceKey = isSingleAgent && featuredActivity?.startupSequence === "jira-work-item-start"
 		? activityKey
 		: null;
-	const rowAriaLabel = isSingleAgent
+	const rowAriaLabel = isViewerRow ? rowLabel : isSingleAgent
 			? `${activities[0]?.name ?? "Agent"}: ${rowLabel}`
 			: `${summary.activityCount} agents: ${rowLabel}`;
 
@@ -310,6 +316,7 @@ function resolveJiraIssueAgentRowPresentation(
 		isAwaitingInput,
 		isCompletedRow,
 		isFailedRow,
+		isViewerRow,
 		rowAriaLabel,
 		rowLabel,
 		rowLinkFlash,
@@ -374,6 +381,13 @@ function createJiraIssueSessionDragBind({
 
 	return {
 		...dragBindWithoutKeyboard,
+		onClick: (event: ReactMouseEvent<HTMLElement> & { preventBaseUIHandler?: () => void }) => {
+			if (!drag.bind.onClick()) {
+				event.preventDefault();
+				event.stopPropagation();
+				event.preventBaseUIHandler?.();
+			}
+		},
 		onFocus: () => sessionDrag.onFocusedActivitiesChange(activities),
 		// The card `<article>` is `draggable`, so a plain pointerdown would hand
 		// the gesture to native HTML5 drag. Cancelling the compatibility
@@ -535,6 +549,7 @@ function JiraIssueAgentActivityRow({
 		isAwaitingInput,
 		isCompletedRow,
 		isFailedRow,
+		isViewerRow,
 		rowAriaLabel,
 		rowLabel,
 		rowLinkFlash,
@@ -645,13 +660,14 @@ function JiraIssueAgentActivityRow({
 			<JiraIssueAgentRowContent
 				activities={activities}
 				avatarLayout={avatarLayout}
-				featuredActivity={featuredActivity}
-				isAwaitingInput={isAwaitingInput}
-				isWorking={!isCompletedRow && !isAwaitingInput}
+				featuredActivity={isViewerRow && activities.length > 1 ? undefined : featuredActivity}
+				isAwaitingInput={!isViewerRow && isAwaitingInput}
+				isWorking={!isViewerRow && !isCompletedRow && !isAwaitingInput}
 				rowLabel={rowLabel}
 				showUnlinkControl={showUnlinkControl}
-				startupPhase={startupPhase}
+				startupPhase={isViewerRow ? "working" : startupPhase}
 				statusIcon={statusIcon}
+				isViewerRow={isViewerRow}
 			/>
 		</button>
 	);
