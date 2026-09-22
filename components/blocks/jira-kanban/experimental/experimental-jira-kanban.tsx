@@ -298,6 +298,7 @@ function BoardColumnShell({
 				chrome.dropShellClassName,
 				// The shell includes the empty space beneath content-sized columns.
 				"group/board-column min-w-0",
+				collapsed ? "group/collapsed-column" : null,
 				columnSizing === "content" ? "group/board-column-shell relative isolate flex min-h-0 flex-col" : null,
 				isResizing ? "overflow-hidden" : "overflow-visible",
 			)}

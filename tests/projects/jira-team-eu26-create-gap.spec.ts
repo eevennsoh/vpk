@@ -35,6 +35,61 @@ for (const width of [1720, 1440]) {
 
 for (const width of [1720, 1440]) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		test(`collapsed column empty space reveals expand at ${width}px (${reducedMotion})`, async ({ page }) => {
+			await page.emulateMedia({ reducedMotion });
+			await page.setViewportSize({ width, height: 1100 });
+			await page.goto(`${origin}/jira-team-eu26`);
+			const heading = page.getByRole("heading", { name: "Jira Design", exact: true });
+			await expect(heading).toBeVisible();
+			const column = page.locator('[data-jira-kanban-column="Done"]');
+			const collapse = column.getByRole("button", { name: "Collapse Done column", exact: true });
+			await collapse.press("Enter");
+			await expect(column).toHaveAttribute("data-collapsed", "true");
+			const expand = column.getByRole("button", { name: "Expand Done column", exact: true });
+			const count = expand.locator("..").locator(":scope > span");
+			await heading.hover();
+			await expect(expand).toHaveCSS("opacity", "0");
+			await expect(count).toHaveCSS("opacity", "1");
+			const pill = column.locator(":scope > div").first();
+			await pill.hover();
+			await expect(expand).toHaveCSS("opacity", "1");
+			await expect(count).toHaveCSS("opacity", "0");
+			await heading.hover();
+			await expect(expand).toHaveCSS("opacity", "0");
+			const shellBox = (await column.boundingBox())!;
+			const pillBox = (await pill.boundingBox())!;
+			const buttonBox = await expand.boundingBox();
+			const emptyY = (pillBox.y + pillBox.height + shellBox.y + shellBox.height) / 2;
+			expect(emptyY).toBeGreaterThan(pillBox.y + pillBox.height + 4);
+			await page.mouse.move(shellBox.x + shellBox.width / 2, emptyY);
+			await expect(expand).toHaveCSS("opacity", "1");
+			await expect(expand).toHaveCSS("pointer-events", "auto");
+			await expect(count).toHaveCSS("opacity", "0");
+			expect(await expand.boundingBox()).toEqual(buttonBox);
+			await expect(page.getByRole("button", { name: "Collapse To do column", exact: true })).toHaveCSS("opacity", "0");
+			if (reducedMotion === "reduce") {
+				const duration = await expand.evaluate((node) => parseFloat(getComputedStyle(node).transitionDuration));
+				expect(duration).toBeLessThanOrEqual(0.001);
+			}
+			await page.screenshot({ path: `output/agent-browser/column-hover/collapsed-empty-space-${width}-${reducedMotion}.png` });
+			await expand.click();
+			await expect(column).not.toHaveAttribute("data-collapsed", "true");
+			await expect(collapse).toBeVisible();
+			await collapse.press("Enter");
+			await heading.hover();
+			await expand.focus();
+			await page.keyboard.press("Shift+Tab");
+			await expect(expand).toHaveCSS("opacity", "0");
+			await expect(count).toHaveCSS("opacity", "1");
+			await page.keyboard.press("Tab");
+			await expect(expand).toBeFocused();
+			await expect(expand).toHaveCSS("opacity", "1");
+			await expect(count).toHaveCSS("opacity", "0");
+			await page.keyboard.press("Enter");
+			await expect(column).not.toHaveAttribute("data-collapsed", "true");
+			await expect(collapse).toBeVisible();
+		});
+
 		test(`empty column space hovers its create and header actions at ${width}px (${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
 			await page.setViewportSize({ width, height: 1100 });

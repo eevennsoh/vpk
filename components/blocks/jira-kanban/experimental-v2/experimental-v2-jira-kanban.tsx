@@ -474,6 +474,7 @@ function BoardColumnShell({
 			className={cn(
 				chrome.dropShellClassName,
 				"min-w-0",
+				collapsed ? "group/collapsed-column" : null,
 				collapsed || isResizing ? "overflow-hidden" : "overflow-visible",
 			)}
 			onDragOver={onDragOver}
