@@ -299,7 +299,7 @@ function BoardColumnShell({
 				// The shell includes the empty space beneath content-sized columns.
 				"group/board-column min-w-0",
 				columnSizing === "content" ? "group/board-column-shell relative isolate flex min-h-0 flex-col" : null,
-				collapsed || isResizing ? "overflow-hidden" : "overflow-visible",
+				isResizing ? "overflow-hidden" : "overflow-visible",
 			)}
 			onDragOver={onDragOver}
 			onDragLeave={onDragLeave}
@@ -327,7 +327,16 @@ function BoardColumnShell({
 				/>
 			) : null}
 			{collapsed ? (
-				<div style={{ paddingTop: chrome.dropContentPadding?.paddingTop }}>
+				<div className="relative" style={{ paddingTop: chrome.dropContentPadding?.paddingTop }}>
+					<div
+						aria-hidden
+						data-jira-kanban-collapsed-drop-ring=""
+						className={cn("pointer-events-none absolute -inset-0.5", chrome.dropShellClassName)}
+						style={{
+							borderRadius: token("radius.xlarge"),
+							transition: shouldReduceMotion ? "none" : BOARD_COLUMN_SHELL_TRANSITION,
+						}}
+					/>
 					<CollapsedBoardColumn
 						chrome={chrome.collapsed}
 						count={count}
@@ -492,19 +501,24 @@ function ExperimentalJiraKanbanView({
 	);
 
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- the drag preview node is measured/allocated against the live DOM.
+	const setColumnDropArmed = (element: HTMLDivElement, armed: boolean) => {
+		const ring = element.querySelector<HTMLElement>("[data-jira-kanban-collapsed-drop-ring]") ?? element;
+		setKanbanColumnDropArmed(ring, chrome, armed);
+	};
+
 	const handleColumnDragOver = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		event.dataTransfer.dropEffect = "move";
-		setKanbanColumnDropArmed(event.currentTarget, chrome, true);
+		setColumnDropArmed(event.currentTarget, true);
 	};
 
 	const handleColumnDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-		setKanbanColumnDropArmed(event.currentTarget, chrome, false);
+		setColumnDropArmed(event.currentTarget, false);
 	};
 
 	const handleColumnDrop = (event: React.DragEvent<HTMLDivElement>, targetColumnTitle: string) => {
 		event.preventDefault();
-		setKanbanColumnDropArmed(event.currentTarget, chrome, false);
+		setColumnDropArmed(event.currentTarget, false);
 		onCardDrop?.(targetColumnTitle);
 	};
 
@@ -578,6 +592,10 @@ function ExperimentalJiraKanbanView({
 	const handleCardDragEndInternal = () => {
 		issueDragImageRef.current?.remove();
 		issueDragImageRef.current = null;
+		// Native cancellation does not reliably send dragleave to the target.
+		for (const column of boardScrollportRef.current?.querySelectorAll<HTMLDivElement>("[data-jira-kanban-column]") ?? []) {
+			setColumnDropArmed(column, false);
+		}
 		onCardDragEnd?.();
 	};
 
@@ -705,9 +723,9 @@ function ExperimentalJiraKanbanView({
 							columnSizing={columnSizing}
 							count={column.cards.length}
 							key={column.title}
-							onDragOver={issueDragTransitions && (column.statuses?.length ?? 0) > 1 ? undefined : handleColumnDragOver}
+							onDragOver={issueDragTransitions && (column.statuses?.length ?? 0) > 1 && !isBoardColumnCollapsed(collapsedColumns, column.title) ? undefined : handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
-							onDrop={issueDragTransitions && (column.statuses?.length ?? 0) > 1 ? undefined : (event) => handleColumnDrop(event, column.title)}
+							onDrop={issueDragTransitions && (column.statuses?.length ?? 0) > 1 && !isBoardColumnCollapsed(collapsedColumns, column.title) ? undefined : (event) => handleColumnDrop(event, column.title)}
 							onToggleCollapsed={() => handleToggleColumnCollapsed(column.title)}
 							title={column.title}
 						>

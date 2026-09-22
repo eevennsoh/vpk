@@ -27,6 +27,59 @@ async function enterStatus(page: Page, status: string) {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`collapsed drop border hugs the visible cell (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.setViewportSize({ width: 1440, height: 800 });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await column(page, "To do").hover({ position: { x: 20, y: 15 } });
+		await page.getByRole("button", { name: "Collapse To do column", exact: true }).click();
+		const collapsed = column(page, "To do");
+		await expect(collapsed).toHaveAttribute("data-collapsed", "true");
+		await startDrag(page, "PAY-112");
+		const cell = await collapsed.locator(":scope > div").boundingBox();
+		const shell = await collapsed.boundingBox();
+		if (!cell || !shell) throw new Error("Missing collapsed cell");
+		// Empty space remains a drop target; its feedback still hugs the cell.
+		await page.mouse.move(shell.x + shell.width / 2, cell.y + cell.height + 100, { steps: 5 });
+		await page.mouse.move(shell.x + shell.width / 2, cell.y + cell.height + 100);
+		await expect.poll(() => collapsed.evaluate((node) => {
+			const armed = node.matches(".border-ring, .outline-ring") ? node : node.querySelector(".border-ring, .outline-ring");
+			return armed?.getBoundingClientRect().height ?? Infinity;
+		})).toBeLessThanOrEqual(cell.height + 4);
+		await expect.poll(() => collapsed.locator(".border-ring, .outline-ring").evaluate((node) =>
+			node.getAnimations().some((animation) => animation.playState === "running"),
+		)).toBe(false);
+		await page.screenshot({ path: `output/agent-browser/dnd/collapsed-border-${reducedMotion}.png` });
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect(issue(page, "PAY-112")).toHaveAttribute("data-board-column-title", "In review");
+		await expect(collapsed.locator(".border-ring, .outline-ring")).toHaveCount(0);
+	});
+
+	test(`collapsed In progress accepts an issue drop (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await column(page, "In progress").hover({ position: { x: 20, y: 15 } });
+		await page.getByRole("button", { name: "Collapse In progress column", exact: true }).click();
+		const progress = column(page, "In progress");
+		await expect(progress).toHaveAttribute("data-collapsed", "true");
+		await startDrag(page, "PAY-112");
+		const cell = await progress.locator(":scope > div").boundingBox();
+		if (!cell) throw new Error("Missing collapsed In progress cell");
+		await page.mouse.move(cell.x + cell.width / 2, cell.y + cell.height / 2, { steps: 5 });
+		await page.mouse.move(cell.x + cell.width / 2, cell.y + cell.height / 2);
+		await page.mouse.up();
+		await expect(progress).toHaveAttribute("data-collapsed", "true");
+		const expand = page.getByRole("button", { name: "Expand In progress column", exact: true });
+		await expand.focus();
+		await page.keyboard.press("Enter");
+		await expect(issue(page, "PAY-112")).toHaveAttribute("data-board-column-title", "In progress");
+		await page.getByRole("tab", { name: "List", exact: true }).click();
+		await expect(page.getByRole("row").filter({ hasText: "Confirm the sandbox key retention window before replay" })).toContainText("In progress");
+	});
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`issue-only preview and two-stage status drop (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);

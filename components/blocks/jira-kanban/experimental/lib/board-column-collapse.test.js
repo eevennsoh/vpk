@@ -256,7 +256,7 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	assert.match(pillSource, /min-h-0 truncate/u);
 	// The shell still clips for the width transition, which is what that
 	// `overflow-hidden` was ever needed for.
-	assert.match(BOARD_SOURCE, /collapsed \|\| isResizing \? "overflow-hidden" : "overflow-visible"/u);
+	assert.match(BOARD_SOURCE, /isResizing \? "overflow-hidden" : "overflow-visible"/u);
 });
 
 test("caption chrome keeps the collapsed count above the pill border", () => {
@@ -327,7 +327,7 @@ test("enclosed chrome puts the collapsed count inside the framed box", () => {
 	assert.match(readFileSync(join(__dirname, "../components/board-column.tsx"), "utf8"), /\.\.\.chrome\.dropContentPadding,/u);
 	assert.match(
 		BOARD_SOURCE,
-		/collapsed \? \(\s*<div style=\{\{ paddingTop: chrome\.dropContentPadding\?\.paddingTop \}\}>/u,
+		/collapsed \? \(\s*<div className="relative" style=\{\{ paddingTop: chrome\.dropContentPadding\?\.paddingTop \}\}>/u,
 	);
 });
 
