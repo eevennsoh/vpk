@@ -23,6 +23,7 @@ function loadHarness() {
 				import React from "react";
 				function host(tag) { return function Host({ children, animate, initial, exit, layout, layoutRoot, transition, onAnimationComplete, ...props }) { return React.createElement(tag, props, children); }; }
 				export const motion = { li: host("li"), span: host("span"), div: host("div") };
+				export function AnimatePresence({ children }) { return children; }
 				export function useReducedMotion() { return true; }
 			`],
 			["agent-list-card", `
@@ -72,6 +73,12 @@ function loadHarness() {
 				export function DropdownMenuSeparator() { return null; }
 			`],
 			["button", `import React from "react"; export function Button({ children, ...props }) { return React.createElement("button", props, children); }`],
+			["tooltip", `
+				import React from "react";
+				export function Tooltip({ children }) { return children; }
+				export function TooltipTrigger({ children, render }) { return render ? React.cloneElement(render, null, children) : children; }
+				export function TooltipContent({ children }) { return React.createElement("div", { role: "tooltip" }, children); }
+			`],
 			["agent-avatar-visual", `export function AgentAvatarVisual() { return null; }`],
 			["logo-third-party", `export function LogoThirdParty() { return null; } export function GithubLogo() { return null; }`],
 			["agent-session-link-work-item-submenu", `import React from "react"; export function AgentSessionLinkWorkItemSubmenu() { return React.createElement("div", { role: "menuitem" }, "Link work item"); }`],
