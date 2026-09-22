@@ -753,7 +753,7 @@ test("the Work items header switches between Board and List views with their ico
 	);
 	assert.match(
 		LIST_VIEW_SOURCE,
-		/"min-h-0 flex-1 overflow-hidden pb-4 ps-6 md:pb-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
+		/"min-h-0 flex-1 overflow-hidden pb-6 ps-6 pt-0\.5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	assert.doesNotMatch(
 		LIST_VIEW_SOURCE,
@@ -781,7 +781,7 @@ test("the Work items header switches between Board and List views with their ico
 		EXPERIMENTAL_PAGE_SOURCE,
 		/renderListContent\?: \(\s*columns: readonly JiraKanbanColumnData\[\],\s*context: ExperimentalJiraKanbanListRenderContext,\s*\) => ReactNode;/u,
 	);
-	assert.match(LIST_VIEW_SOURCE, /pb-4 ps-6 md:pb-5/u);
+	assert.match(LIST_VIEW_SOURCE, /className=\{cn\(listProps\.className, "h-full max-h-full"\)\}/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: onBoardAgentSessionCreate \? handleBoardAgentSessionCreate : undefined/u);

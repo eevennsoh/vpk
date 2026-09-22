@@ -9,6 +9,15 @@ async function openBoard(page: Page): Promise<void> {
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 }
 
+test("finished agent sessions show their Cloud metadata in the assignment flyout", async ({ page }) => {
+	await openBoard(page);
+	const doneItems = page.getByRole("region", { name: "Done work items" });
+	await doneItems.getByRole("button", { name: "Claude: Finished", exact: true }).click();
+	const flyout = page.locator("[data-slot='popover-content']").filter({ hasText: "This week" });
+	await expect(flyout.getByRole("img", { name: "Cloud session", exact: true })).toBeVisible();
+	await expect(flyout.getByText("This week", { exact: true })).toBeVisible();
+});
+
 test("the Payments board is the only Golden Journeys content inside Jira chrome", async ({ page }) => {
 	await openBoard(page);
 

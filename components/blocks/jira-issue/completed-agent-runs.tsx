@@ -35,6 +35,8 @@ export interface JiraIssueCompletedAgentRun {
 	agentName: string;
 	agentAvatarSrc?: string;
 	agentBrandName?: ThirdPartyLogoName;
+	/** Where the finished session ran. Legacy runs default to cloud. */
+	host?: AgentListItem["host"];
 	invokedBy?: AgentListItem["invokedBy"];
 	issueKey: string;
 	issueSummary: string;
@@ -68,7 +70,7 @@ function toCompletedAgentListItem(run: JiraIssueCompletedAgentRun): AgentListIte
 			branch: `rovo/${run.issueKey.toLowerCase()}-completed-run`,
 			checks: { failed: run.state === "failed" ? 1 : 0, passed: 12 },
 			commit: "8c2f4e1",
-			host: "cloud",
+			host: run.host ?? "cloud",
 			issueKey: run.issueKey,
 			issueSummary: run.issueSummary,
 			pullRequestNumber: run.pullRequestNumber,

@@ -158,6 +158,9 @@ export function BoardColumnAddButton({
 						disabled={control?.active || onCreateWorkItem === undefined}
 						className={cn(
 							"w-full border-dashed group-hover/board-column:border-solid",
+							control?.active || open || onCreateWorkItem === undefined
+								? null
+								: "group-hover/board-column:not-active:bg-bg-neutral-subtle-hovered",
 							control?.selected ? null : "text-text-subtle [&_[data-slot=icon]]:text-icon-disabled group-hover/board-column:[&_[data-slot=icon]]:text-icon-subtle",
 							control?.className,
 							control?.active ? "group-hover/board-column:border-dashed" : null,

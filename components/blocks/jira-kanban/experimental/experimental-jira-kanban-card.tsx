@@ -94,6 +94,7 @@ function toAssignedAgentFromDoneRun(
 		status: run.summary,
 		statusKind: "finished",
 		statusLabel: run.summary,
+		host: run.host ?? "cloud",
 		...(run.relativeTime ? { timeLabel: run.relativeTime } : {}),
 	};
 }

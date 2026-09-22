@@ -175,7 +175,7 @@ export function BoardColumn({
 	/>;
 	return (
 		<div
-			className={cn("group/board-column min-h-0 min-w-0 overflow-visible", chrome.columnClassName, columnSizing === "content" ? "bg-transparent" : null)}
+			className={cn("min-h-0 min-w-0 overflow-visible", chrome.columnClassName, columnSizing === "content" ? "bg-transparent" : null)}
 			data-jira-kanban-column-content=""
 			data-kanban-column-chrome={columnChrome}
 			style={{
