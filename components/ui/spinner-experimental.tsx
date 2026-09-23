@@ -14,6 +14,7 @@ const ORB_DOTS = [
 ] as const;
 
 interface ExperimentalSpinnerProps {
+	avatar?: boolean;
 	className?: string;
 	label: string;
 	pulse?: boolean;
@@ -21,6 +22,7 @@ interface ExperimentalSpinnerProps {
 }
 
 export function ExperimentalSpinner({
+	avatar = false,
 	className,
 	label,
 	pulse = false,
@@ -34,6 +36,7 @@ export function ExperimentalSpinner({
 			aria-label={label}
 			className={cn("pointer-events-none shrink-0 overflow-visible", className)}
 			data-iconic-orb=""
+			data-iconic-orb-avatar={avatar ? "" : undefined}
 			data-slot="spinner"
 			fill="none"
 			role="status"
@@ -50,7 +53,10 @@ export function ExperimentalSpinner({
 						className={cn(
 							"spinner-experimental-orb-dot",
 							dot.className,
-							canAnimate && pulse && "spinner-experimental-orb-dot-motion",
+							avatar && "spinner-experimental-avatar-dot",
+							canAnimate && pulse && (avatar
+								? "spinner-experimental-avatar-dot-motion"
+								: "spinner-experimental-orb-dot-motion"),
 						)}
 						cx="10"
 						cy="10"

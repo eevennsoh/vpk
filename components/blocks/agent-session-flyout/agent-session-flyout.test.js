@@ -243,7 +243,7 @@ test("untracked work shows lifecycle state in metadata and a matching corner ind
 	);
 	assert.match(cardSource, /trailing=\{<JiraSessionStatusIndicator state=\{lifecycleState\} \/>\}/u);
 	assert.match(indicatorSource, /case "needs-input":[\s\S]*text-icon-information[\s\S]*QuestionCircleFilledIcon[\s\S]*size="medium"/u);
-	assert.match(indicatorSource, /case "working":[\s\S]*text-icon-subtlest[\s\S]*<Spinner label="" size="default" variant="experimental" \/>/u);
+	assert.match(indicatorSource, /case "working":[\s\S]*text-icon-subtlest[\s\S]*<Spinner label="" size="default" variant="experimental-avatar" \/>/u);
 	assert.match(indicatorSource, /case "finished":[\s\S]*text-icon-success[\s\S]*StatusSuccessIcon[\s\S]*size="medium"/u);
 	assert.equal(indicatorSource.match(/<span aria-hidden="true"/gu)?.length, 3);
 	assert.equal(

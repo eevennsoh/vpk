@@ -145,9 +145,22 @@ export function SpinnerDemoRainbow() {
 
 export function SpinnerDemoExperimental() {
 	const [pulse, setPulse] = useState(false);
+	const [avatar, setAvatar] = useState(false);
+	const variant = avatar ? "experimental-avatar" : "experimental";
 
 	return (
 		<div className="flex flex-col items-center gap-4">
+			<Field orientation="horizontal">
+				<Switch
+					checked={avatar}
+					id="spinner-experimental-avatar"
+					onCheckedChange={(checked) => {
+						setAvatar(checked);
+						if (checked) setPulse(true);
+					}}
+				/>
+				<FieldLabel htmlFor="spinner-experimental-avatar">Avatar spinner</FieldLabel>
+			</Field>
 			<Field orientation="horizontal">
 				<Switch
 					checked={pulse}
@@ -157,10 +170,10 @@ export function SpinnerDemoExperimental() {
 				<FieldLabel htmlFor="spinner-experimental-pulse">Grow in/out</FieldLabel>
 			</Field>
 			<div className="flex items-center gap-4">
-				<Spinner pulse={pulse} size="sm" variant="experimental" />
-				<Spinner pulse={pulse} variant="experimental" />
-				<Spinner pulse={pulse} size="lg" variant="experimental" />
-				<Spinner pulse={pulse} size="xl" variant="experimental" />
+				<Spinner pulse={pulse} size="sm" variant={variant} />
+				<Spinner pulse={pulse} variant={variant} />
+				<Spinner pulse={pulse} size="lg" variant={variant} />
+				<Spinner pulse={pulse} size="xl" variant={variant} />
 			</div>
 		</div>
 	);

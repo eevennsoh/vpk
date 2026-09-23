@@ -138,7 +138,7 @@ function JiraIssueActiveAgentStatusIcon({
 	iconScale: JiraIssueIconScale;
 	isAwaitingInput: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
-	workingSpinnerVariant?: "default" | "experimental";
+	workingSpinnerVariant?: "default" | "experimental-avatar";
 }>): ReactElement {
 	if (renderAgentActivityIndicator) {
 		return (
@@ -157,15 +157,15 @@ function JiraIssueActiveAgentStatusIcon({
 		);
 	}
 
-	const spinnerVariant = workingSpinnerVariant ?? (iconScale === "comfortable" ? "experimental" : "default");
+	const spinnerVariant = workingSpinnerVariant ?? (iconScale === "comfortable" ? "experimental-avatar" : "default");
 
 	return (
 		<span
 			aria-hidden="true"
 			className="grid size-6 shrink-0 place-items-center text-icon"
 		>
-			{spinnerVariant === "experimental" ? (
-				<Spinner label="" pulse size="xl" variant="experimental" />
+			{spinnerVariant === "experimental-avatar" ? (
+				<Spinner label="" pulse size="xl" variant="experimental-avatar" />
 			) : (
 				<Spinner label="" />
 			)}
@@ -188,7 +188,7 @@ export function JiraIssueAgentStatusIcon({
 	isFailedRow: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	startupPhase: ReturnType<typeof useJiraIssueAgentStartupPhase>;
-	workingSpinnerVariant?: "default" | "experimental";
+	workingSpinnerVariant?: "default" | "experimental-avatar";
 }>): ReactElement {
 	if (isCompletedRow) {
 		return (

@@ -34,6 +34,6 @@ export const renderJiraTeamEu26AgentActivityIndicator: JiraIssueAgentActivityInd
 	return state === "awaiting-input" ? (
 		<QuestionCircleFilledIcon color={token("color.icon.information")} label="" size="medium" />
 	) : (
-		<Spinner label="" pulse size="xl" variant="experimental" />
+		<Spinner label="" pulse size="xl" variant="experimental-avatar" />
 	);
 };
