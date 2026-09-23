@@ -56,6 +56,28 @@ function cohortOf(member = session()) {
 	return { key: member.id, members: [member] };
 }
 
+test("a nearby cluster traces while only one card owns the attach target", () => {
+	const neighbour = { ...TARGET_ISSUE, cardCode: "PAY-129", bounds: { ...TARGET_ISSUE.bounds, top: 212, bottom: 412 } };
+	const transaction = createBoardAgentSessionDragTransaction(cohortOf(), { kind: "attached", sourceCardCode: "PAY-121" }, { x: 320, y: 170 }, [...ZONES, neighbour]);
+	assert.deepEqual(transaction.target, { kind: "attach", cardCode: "PAY-128" });
+	assert.equal(transaction.proximity.cardCode, "PAY-128");
+	assert.deepEqual(transaction.traces.map((trace) => trace.cardCode), ["PAY-128", "PAY-129"]);
+	assert.ok(transaction.traces[0].nearness > transaction.traces[1].nearness);
+	assert.ok(transaction.traces[1].nearness > 0);
+	assert.deepEqual(resolveBoardAgentSessionDropAction(transaction), { kind: "move", sessionIds: ["review-agent"], sourceCardCode: "PAY-121", targetCardCode: "PAY-128" });
+	const cancelled = cancelBoardAgentSessionDragTransaction(transaction);
+	assert.deepEqual(cancelled.traces, []);
+	const far = updateBoardAgentSessionDragTransaction(transaction, { x: 2000, y: 1000 }, [...ZONES, neighbour]);
+	assert.deepEqual(far.traces, []);
+	const outskirts = updateBoardAgentSessionDragTransaction(transaction, { x: 550, y: 170 }, [...ZONES, neighbour]);
+	assert.equal(outskirts.proximity, null);
+	assert.ok(outskirts.traces.length > 0, "faint arcs appear before the attach chin is armed");
+	assert.equal(shouldPublishBoardAgentSessionDrag(far, outskirts), true);
+	assert.equal(shouldPublishBoardAgentSessionDrag(outskirts, far), true);
+	const covered = updateBoardAgentSessionDragTransaction(transaction, { x: 500, y: 80 }, [...ZONES, neighbour, UNTRACKED]);
+	assert.deepEqual(covered.traces, []);
+});
+
 const COLLAPSED_COLUMN = {
 	bounds: { bottom: 600, left: 300, right: 336, top: 20 },
 	columnTitle: "To do",

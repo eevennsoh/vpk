@@ -119,25 +119,62 @@ test("the stroke rides the surface's own border instead of doubling it", () => {
 	// as a second line just inside it.
 	assert.match(
 		TRACE_OVERLAY_SOURCE,
-		/absolute -inset-px isolate rounded-\[inherit\]"\s*\n\s*data-slot="jira-issue-attach-trace"/u,
+		/absolute -inset-px isolate rounded-\[inherit\][^"]*"\s*\n\s*data-slot="jira-issue-attach-trace"/u,
 	);
 });
 
 test("nearness fades the stroke in, and reduced motion removes it", () => {
-	// `attachNearness` is already zeroed by `resolveJiraIssueAttachNearness`
+	// Decorative nearness is zeroed by `resolveJiraIssueAttachNearness`
 	// under reduced motion, so gating the trace on it is the reduced-motion
 	// guard too — no second branch to keep in sync.
 	assert.match(TRACE_OVERLAY_SOURCE, /if \(!trace \|\| nearness <= 0\) \{\s*return null;/u);
 	assert.match(TRACE_OVERLAY_SOURCE, /opacity: nearness,/u);
+	assert.match(TRACE_OVERLAY_SOURCE, /motion-reduce:hidden motion-reduce:transition-none/u);
 	// The card still owns the ramp and feeds it in.
 	assert.match(ISSUE_SOURCE, /resolveJiraIssueAttachNearness\(/u);
-	assert.match(ISSUE_SOURCE, /nearness=\{attachNearness\}/u);
+	assert.match(ISSUE_SOURCE, /nearness=\{resolveJiraIssueAttachNearness\(agentSessionDragControl\?\.attachTrace\?\.nearness \?\? attachNearness, shouldReduceMotion\)\}/u);
 });
 
-test("only the card the session is heading for traces, and a drop hands over to the flash", () => {
-	// A second lit card would make the target ambiguous mid-drag.
-	assert.match(BOARD_DRAG_SOURCE, /proximity\?\.cardCode === card\.code/u);
+test("nearby cards share the trace and a drop hands over to the flash", () => {
+	assert.match(BOARD_DRAG_SOURCE, /transaction\?\.traces\?\.find\(\(trace\) => trace\.cardCode === card\.code\)/u);
 	// After pointer-up there is no pointer to trace, and the flash owns the
 	// acknowledgement from that moment.
 	assert.match(BOARD_DRAG_SOURCE, /const tracePointer = !isFusionDropFlight/u);
+});
+
+test("the decorative neighbourhood is bounded and keeps an approaching arc visible", async () => {
+	const { resolveBoardAgentSessionTraces } = await loadBundled("components/blocks/jira-kanban/experimental/lib/board-agent-session-trace.ts");
+	const zones = Array.from({ length: 7 }, (_, index) => ({
+		kind: "issue", cardCode: `PAY-${index}`,
+		bounds: { left: index * 30, right: index * 30 + 20, top: 0, bottom: 100 },
+	}));
+	const traces = resolveBoardAgentSessionTraces({ kind: "untracked" }, { x: 10, y: 50 }, zones, "PAY-0");
+	assert.equal(traces.length, 4);
+	assert.equal(traces[0].cardCode, "PAY-0");
+	assert.equal(traces[0].nearness, 1);
+	for (const trace of traces.slice(1)) {
+		assert.ok(trace.nearness > 0 && trace.nearness < 0.45);
+		// A point far outside the card's box still paints within the shared
+		// gradient's 120px spread, facing the side the session approaches from.
+		const distanceOutside = (-trace.pointerX - 1) * 10;
+		assert.ok(distanceOutside > 0 && distanceOutside <= 24);
+	}
+	assert.deepEqual(resolveBoardAgentSessionTraces({ kind: "untracked" }, { x: 2000, y: 50 }, zones, "PAY-0"), []);
+	assert.deepEqual(resolveBoardAgentSessionTraces({ kind: "untracked" }, { x: 0, y: 0 }, [{ kind: "issue", cardCode: "empty", bounds: { left: 0, right: 0, top: 0, bottom: 0 } }], "empty"), []);
+});
+
+test("the closest visible border stays fully opaque outside the card and neighbours fade more steeply", async () => {
+	const { resolveBoardAgentSessionTraces } = await loadBundled("components/blocks/jira-kanban/experimental/lib/board-agent-session-trace.ts");
+	const zones = [20, 60, 110].map((left, index) => ({
+		kind: "issue", cardCode: `PAY-${index}`,
+		// A larger hit box must not override distance to the painted border.
+		bounds: { left: 0, right: 200, top: 0, bottom: 100 },
+		surfaceRect: { left, right: left + 20, top: 0, bottom: 100 },
+	}));
+	const traces = resolveBoardAgentSessionTraces({ kind: "untracked" }, { x: 0, y: 50 }, zones, "PAY-2");
+	assert.equal(traces[0].cardCode, "PAY-0");
+	assert.equal(traces[0].nearness, 1);
+	assert.ok(traces[1].nearness < 0.3);
+	assert.ok(traces[2].nearness < 0.1);
+	assert.ok(traces[1].nearness > traces[2].nearness);
 });

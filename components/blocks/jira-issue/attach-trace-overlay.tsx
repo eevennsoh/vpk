@@ -20,8 +20,10 @@ import type { JiraIssueAttachTrace } from "./attach-proximity";
  * hover in the column, approach here, flash on release — rather than each
  * surface lighting up on its own.
  *
- * Nearness fades it in. `resolveJiraIssueAttachNearness` already returns 0 under
- * reduced motion, so that setting removes the stroke without a second guard.
+ * Decorative nearness fades it in independently of the target's chin.
+ * `resolveJiraIssueAttachNearness` already returns 0 under
+ * reduced motion. The CSS guard also hides an already-mounted arc immediately
+ * when the preference changes during a gesture.
  *
  * Stroke only, no bloom: the grey backdrop behind the card is already the
  * approach's fill feedback, and a second accent wash on top would fight it.
@@ -34,7 +36,7 @@ export function JiraIssueAttachTraceOverlay({
 	/** 0..1 approach ramp. At or below 0 the overlay renders nothing. */
 	nearness: number;
 	ref?: Ref<HTMLSpanElement>;
-	/** Accent and pointer for the nearest card. Absent on every other card. */
+	/** Accent and pointer for this card's distance-weighted arc. */
 	trace: JiraIssueAttachTrace | null | undefined;
 }>) {
 	if (!trace || nearness <= 0) {
@@ -56,7 +58,7 @@ export function JiraIssueAttachTraceOverlay({
 		// negative z-index from escaping behind the surface.
 		<span
 			aria-hidden="true"
-			className="pointer-events-none absolute -inset-px isolate rounded-[inherit]"
+			className="pointer-events-none absolute -inset-px isolate rounded-[inherit] transition-opacity duration-fast ease-out-practical motion-reduce:hidden motion-reduce:transition-none"
 			data-slot="jira-issue-attach-trace"
 			ref={ref}
 			style={style}

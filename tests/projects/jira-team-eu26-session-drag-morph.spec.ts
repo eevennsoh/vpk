@@ -1,11 +1,62 @@
 import { expect, test } from "@playwright/test";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 
 interface MorphFrame {
 	time: number;
 	agentSize: number;
 	identity: { x: number; y: number; width: number; height: number };
 	surface: { x: number; y: number; width: number; height: number };
+}
+
+for (const theme of ["light", "dark"] as const) {
+	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		test(`nearby work items share distance-weighted traces (${theme}, ${reducedMotion})`, async ({ page }) => {
+			const baseURL = process.env.PLAYWRIGHT_BASE_URL;
+			if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
+			await page.setViewportSize({ width: 1800, height: 1100 });
+			// Verify the drag preference on a mounted board, independently of
+			// theme/reduced-motion startup behavior elsewhere in the app shell.
+			await page.emulateMedia({ reducedMotion: "no-preference", colorScheme: theme });
+			await page.addInitScript((mode) => {
+				localStorage.setItem("ui-theme", mode);
+				localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false }));
+			}, theme);
+			await page.goto(`${baseURL}/jira-team-eu26`);
+			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+			await page.emulateMedia({ reducedMotion, colorScheme: theme });
+			const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+			if (await expand.isVisible()) await expand.click();
+			const article = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
+			await article.scrollIntoViewIfNeeded();
+			const source = await article.boundingBox();
+			const left = await page.locator('[data-issue-key="PAY-118"]').boundingBox();
+			const right = await page.locator('[data-issue-key="PAY-105"]').boundingBox();
+			if (!source || !left || !right) throw new Error("Missing drag geometry");
+			await page.mouse.move(source.x + source.width * 0.65, source.y + source.height / 2);
+			await page.mouse.down();
+			await page.mouse.move(source.x + source.width * 0.65 + 20, source.y + source.height / 2);
+			await page.mouse.move((left.x + left.width + right.x) / 2, left.y + left.height - 14, { steps: 8 });
+			const traces = page.locator('[data-slot="jira-issue-attach-trace"]');
+			if (reducedMotion === "reduce") {
+				for (const trace of await traces.all()) await expect(trace).toBeHidden();
+			} else {
+				await expect(traces).toHaveCount(4);
+				const strengths = await traces.evaluateAll((elements) => elements.map((element) => Number(getComputedStyle(element).opacity)));
+				await expect.poll(async () => Math.max(...await traces.evaluateAll((elements) => elements.map((element) => Number(getComputedStyle(element).opacity))))).toBe(1);
+				expect(strengths.filter((value) => value > 0 && value <= 0.45)).toHaveLength(3);
+				await expect(page.getByText("Link agent session", { exact: true })).toHaveCount(1);
+				for (const trace of await traces.all()) {
+					await expect(trace).toHaveAttribute("aria-hidden", "true");
+					await expect(trace).toHaveCSS("pointer-events", "none");
+				}
+			}
+			await mkdir("output/agent-browser/proximity-trace", { recursive: true });
+			await page.screenshot({ path: `output/agent-browser/proximity-trace/cluster-${theme}-${reducedMotion}.png` });
+			await page.keyboard.press("Escape");
+			await page.mouse.up();
+			await expect(traces).toHaveCount(0);
+		});
+	}
 }
 
 for (const grab of [0.3, 0.8]) {
