@@ -1,5 +1,7 @@
 "use client";
 
+import type { Ref } from "react";
+
 import {
 	CARD_GLOW_EFFECT_STYLE,
 	CardGlowLayers,
@@ -26,10 +28,12 @@ import type { JiraIssueAttachTrace } from "./attach-proximity";
  */
 export function JiraIssueAttachTraceOverlay({
 	nearness,
+	ref,
 	trace,
 }: Readonly<{
 	/** 0..1 approach ramp. At or below 0 the overlay renders nothing. */
 	nearness: number;
+	ref?: Ref<HTMLSpanElement>;
 	/** Accent and pointer for the nearest card. Absent on every other card. */
 	trace: JiraIssueAttachTrace | null | undefined;
 }>) {
@@ -54,6 +58,7 @@ export function JiraIssueAttachTraceOverlay({
 			aria-hidden="true"
 			className="pointer-events-none absolute -inset-px isolate rounded-[inherit]"
 			data-slot="jira-issue-attach-trace"
+			ref={ref}
 			style={style}
 		>
 			<CardGlowLayers baseBorder={false} bloom={false} />

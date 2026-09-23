@@ -766,7 +766,13 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 			await page.mouse.move(x, y, { steps: 4 });
 			await expect(well).toHaveAttribute("data-armed", "true");
 			const box = (await well.boundingBox())!;
-			expect(Math.abs(box.y + box.height - bottom)).toBeLessThanOrEqual(10.5);
+			const paintedGap = await column.evaluate((node) => {
+				const backdrop = node.querySelector("[data-jira-kanban-column-backdrop]")!;
+				const clip = getComputedStyle(backdrop).clipPath.split("round")[0].replace("inset(", "").trim().split(/\s+/);
+				const rect = backdrop.getBoundingClientRect();
+				return { bottom: rect.bottom - (parseFloat(clip[2]) || 0) - node.querySelector("[data-jira-dropzone-control]")!.getBoundingClientRect().bottom, side: node.querySelector("[data-create-work-item-proximity]")!.getBoundingClientRect().left - rect.left };
+			});
+			expect(paintedGap.bottom).toBeCloseTo(paintedGap.side, 0);
 			expect(box.y).toBeLessThan(buttonBox.y);
 			expect(await sensor.boundingBox()).toEqual(sensorBox);
 		}
@@ -854,7 +860,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 		await page.mouse.down();
 		await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2 + 20, { steps: 5 });
-		await expect(page.locator('[data-board-agent-session-drop-zone="create"]')).toHaveCount(3);
+		await expect(page.locator('[data-board-agent-session-drop-zone="create"]')).toHaveCount(4);
 		await page.mouse.move(900, 100, { steps: 4 });
 		await page.waitForTimeout(280);
 		const dragButton = todo.getByRole("button", { name: /^Drop to create work item/ });

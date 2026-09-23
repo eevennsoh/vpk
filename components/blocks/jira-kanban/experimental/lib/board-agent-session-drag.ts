@@ -99,6 +99,8 @@ export type BoardAgentSessionDropZone =
 		bounds: BoardAgentSessionDropBounds;
 		columnTitle: string;
 		kind: "create";
+		/** Collapsed cell used for approach feedback; the lane retains the drop bounds. */
+		surfaceRect?: BoardAgentSessionDropBounds | null;
 	}
 	| {
 		bounds: BoardAgentSessionDropBounds;
@@ -152,6 +154,7 @@ export interface BoardAgentSessionDragTransaction<
 	TSession extends Readonly<{ id: string }> = Readonly<{ id: string }>,
 > {
 	cohort: SessionCohort<TSession>;
+	collapsedColumnProximity?: BoardCollapsedColumnProximity | null;
 	origin: BoardAgentSessionDragOrigin;
 	pointer: BoardAgentSessionDragPointer;
 	proximity: BoardAgentSessionAttachProximity | null;
@@ -165,6 +168,7 @@ export function shouldPublishBoardAgentSessionDrag(
 ): boolean {
 	if (!previous || previous.cohort.key !== next.cohort.key || previous.origin !== next.origin) return true;
 	if (previous.proximity || next.proximity) return true;
+	if (previous.collapsedColumnProximity || next.collapsedColumnProximity) return true;
 	const idleTarget = (target: BoardAgentSessionDropTarget | null) => target === null || target.kind === "untracked";
 	return !idleTarget(previous.target) || !idleTarget(next.target) || previous.target?.kind !== next.target?.kind;
 }
@@ -564,6 +568,13 @@ export interface BoardAgentSessionAttachProximity {
 	nearness: number;
 }
 
+export interface BoardCollapsedColumnProximity {
+	bounds: BoardAgentSessionDropBounds;
+	columnTitle: string;
+	distance: number;
+	nearness: number;
+}
+
 function attachNearnessFromDistance(distance: number): number {
 	return resolveJiraLinkingNearness(distance, SESSION_ATTACH_PROXIMITY_RANGE_PX);
 }
@@ -656,6 +667,49 @@ export function resolveBoardAgentSessionAttachProximity(
 	return winner;
 }
 
+/** Cards and collapsed cells share one nearest-surface approach and distance ramp. */
+function resolveBoardAgentSessionApproach(
+	origin: BoardAgentSessionDragOrigin,
+	pointer: BoardAgentSessionDragPointer,
+	zones: readonly BoardAgentSessionDropZone[],
+	target: BoardAgentSessionDropTarget | null,
+): {
+	collapsedColumnProximity: BoardCollapsedColumnProximity | null;
+	proximity: BoardAgentSessionAttachProximity | null;
+} {
+	const proximity = target?.kind === "create-board-gap"
+		? null
+		: resolveBoardAgentSessionAttachProximity(origin, pointer, zones);
+	let collapsedColumnProximity: BoardCollapsedColumnProximity | null = null;
+	if (isCreateZoneEligible(origin) && (!target || target.kind === "create")) {
+		for (const zone of zones) {
+			if (zone.kind !== "create" || !zone.surfaceRect || (target && target.columnTitle !== zone.columnTitle)) continue;
+			// Empty space below the cell still selects this lane at full strength.
+			const distance = target ? 0 : distanceFromPointToRect(pointer, {
+				...zone.surfaceRect,
+				bottom: Math.max(zone.bounds.bottom, zone.surfaceRect.bottom),
+			});
+			if (distance >= SESSION_ATTACH_PROXIMITY_RANGE_PX) continue;
+			if (collapsedColumnProximity === null
+				|| distance < collapsedColumnProximity.distance
+				|| (distance === collapsedColumnProximity.distance && zone.surfaceRect.left < collapsedColumnProximity.bounds.left)) {
+				collapsedColumnProximity = {
+					bounds: zone.surfaceRect,
+					columnTitle: zone.columnTitle,
+					distance,
+					nearness: attachNearnessFromDistance(distance),
+				};
+			}
+		}
+	}
+	if (collapsedColumnProximity && (!proximity
+		|| collapsedColumnProximity.distance < proximity.distance
+		|| (collapsedColumnProximity.distance === proximity.distance && collapsedColumnProximity.bounds.left < proximity.bounds.left))) {
+		return { collapsedColumnProximity, proximity: null };
+	}
+	return { collapsedColumnProximity: null, proximity };
+}
+
 /**
  * One named card as a link target, with no pointer involved.
  *
@@ -696,12 +750,13 @@ export function createBoardAgentSessionDragTransaction<
 	pointer: BoardAgentSessionDragPointer,
 	zones: readonly BoardAgentSessionDropZone[],
 ): BoardAgentSessionDragTransaction<TSession> {
+	const target = resolveBoardAgentSessionDropTarget(origin, pointer, zones);
 	return {
 		cohort,
 		origin,
 		pointer,
-		proximity: resolveBoardAgentSessionAttachProximity(origin, pointer, zones),
-		target: resolveBoardAgentSessionDropTarget(origin, pointer, zones),
+		...resolveBoardAgentSessionApproach(origin, pointer, zones, target),
+		target,
 	};
 }
 
@@ -735,9 +790,7 @@ export function updateBoardAgentSessionDragTransaction<
 	return {
 		...transaction,
 		pointer,
-		proximity: target?.kind === "create-board-gap"
-			? null
-			: resolveBoardAgentSessionAttachProximity(transaction.origin, pointer, zones),
+		...resolveBoardAgentSessionApproach(transaction.origin, pointer, zones, target),
 		target,
 	};
 }
@@ -749,8 +802,8 @@ export function cancelBoardAgentSessionDragTransaction<
 ): BoardAgentSessionDragTransaction<TSession> {
 	// Proximity has to clear alongside the target, otherwise cancelling an
 	// approach that never armed a target leaves the card's backdrop lit.
-	return transaction.target || transaction.proximity
-		? { ...transaction, proximity: null, target: null }
+	return transaction.target || transaction.proximity || transaction.collapsedColumnProximity
+		? { ...transaction, collapsedColumnProximity: null, proximity: null, target: null }
 		: transaction;
 }
 

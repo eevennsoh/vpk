@@ -90,6 +90,7 @@ export function BoardColumnCreateAction({
 							label={dropZoneLabel}
 							measuredRef={targetRef}
 							openMinHeight={minimumHeight}
+							pinVerticalMagnet={columnSizing === "content"}
 							proximityRef={proximityRef}
 							renderControl={columnSizing === "content" ? (control) => <BoardColumnAddButton
 								control={control}

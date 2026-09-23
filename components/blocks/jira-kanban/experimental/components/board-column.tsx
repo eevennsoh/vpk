@@ -201,7 +201,14 @@ export function BoardColumn({
 					onToggleAgent={onToggleAgent}
 					title={title}
 				/>
-			<div ref={issueDrop.rootRef} {...issueDrop.handlers} className={cn("relative flex min-h-0 flex-col", columnSizing === "fill" ? "flex-1" : null)} data-issue-drop-entered={issueDrop.current?.entered ? issueDrop.current.status : undefined}>
+			<div
+				ref={issueDrop.rootRef}
+				{...issueDrop.handlers}
+				className={cn("relative flex min-h-0 flex-col", columnSizing === "fill" ? "flex-1" : null)}
+				// Reserve space per status throughout the drag, including after selection.
+				style={{ minHeight: issueDrop.offeringChoices ? `${issueDrop.choices.length * 8}rem` : undefined }}
+				data-issue-drop-entered={issueDrop.current?.entered ? issueDrop.current.status : undefined}
+			>
 				<div
 					aria-hidden={issueDrop.choosing || undefined}
 					inert={issueDrop.choosing || undefined}

@@ -27,6 +27,51 @@ async function enterStatus(page: Page, status: string) {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`empty In progress keeps both status targets usable (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.setViewportSize({ width: 1440, height: 800 });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await expect(issue(page, "PAY-112")).toBeVisible();
+		await expect(issue(page, "PAY-112").getByRole("button", { name: "Codex: Needs input", exact: true })).toBeVisible({ timeout: 55_000 });
+		await page.getByRole("button", { name: /^Needs input:/ }).click();
+		const progress = column(page, "In progress");
+		await expect(progress.locator("[data-issue-key]")).toHaveCount(0);
+		const expand = page.getByRole("button", { name: "Expand In progress column", exact: true });
+		await expand.focus();
+		await page.keyboard.press("Enter");
+		const restingHeight = await progress.locator("[data-jira-kanban-column-content]").evaluate((node) => node.getBoundingClientRect().height);
+		await startDrag(page, "PAY-112");
+		const choices = progress.getByRole("group", { name: "Choose a status in In progress" });
+		await expect(choices).toBeVisible();
+		for (const status of ["In progress", "Paused"]) {
+			const zone = progress.locator(`[data-issue-status-zone="${status}"]`);
+			const box = await zone.boundingBox();
+			if (!box) throw new Error(`Missing zone ${status}`);
+			expect(box.height).toBeGreaterThanOrEqual(120);
+			for (const child of await zone.locator(":scope > *").all()) {
+				const childBox = await child.boundingBox();
+				if (!childBox) throw new Error(`Missing content in ${status}`);
+				expect(childBox.y).toBeGreaterThanOrEqual(box.y);
+				expect(childBox.y + childBox.height).toBeLessThanOrEqual(box.y + box.height);
+			}
+		}
+		await page.screenshot({ path: `output/agent-browser/dnd/empty-status-choices-${reducedMotion}.png` });
+		const body = progress.locator('[aria-label="Choose a status in In progress"]').locator("..");
+		const choosingHeight = await body.evaluate((node) => node.getBoundingClientRect().height);
+		await enterStatus(page, "Paused");
+		await expect.poll(() => body.evaluate((node) => node.getBoundingClientRect().height)).toBe(choosingHeight);
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect.poll(() => progress.locator("[data-jira-kanban-column-content]").evaluate((node) => node.getBoundingClientRect().height)).toBe(restingHeight);
+		await startDrag(page, "PAY-112");
+		await enterStatus(page, "Paused");
+		await page.mouse.up();
+		await page.getByRole("button", { name: /^Needs input:/ }).click();
+		await expect(issue(page, "PAY-112")).toHaveAttribute("data-board-column-title", "In progress");
+		await page.getByRole("tab", { name: "List", exact: true }).click();
+		await expect(page.getByRole("row").filter({ hasText: "Confirm the sandbox key retention window before replay" })).toContainText("Paused");
+	});
+
 	test(`collapsed drop border hugs the visible cell (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: 1440, height: 800 });

@@ -34,6 +34,8 @@ import {
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
 import { BoardColumn } from "./components/board-column";
+import { CollapsedColumnSessionDrop } from "./components/collapsed-column-session-drop";
+import { resolveBoardCreateDropzoneDrag } from "./lib/board-agent-session-drag";
 import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
@@ -250,10 +252,12 @@ function BoardColumnShell({
 	columnChrome,
 	columnSizing,
 	count,
+	createWorkItemDropZoneLabel,
 	onDragLeave,
 	onDragOver,
 	onDrop,
 	onToggleCollapsed,
+	sessionDragTransaction,
 	title,
 }: Readonly<{
 	/** Receives the collapse handler so the column header can render the control. */
@@ -263,10 +267,12 @@ function BoardColumnShell({
 	columnChrome: KanbanColumnChrome;
 	columnSizing: "fill" | "content";
 	count: number;
+	createWorkItemDropZoneLabel?: string;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDrop?: (event: React.DragEvent<HTMLDivElement>) => void;
 	onToggleCollapsed: () => void;
+	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -275,6 +281,9 @@ function BoardColumnShell({
 	// it any longer would clip the 4px focus rings on the cards inside.
 	const [isResizing, setIsResizing] = useState(false);
 	const outerWidth = `${getBoardColumnOuterWidthPx(collapsed)}px`;
+	const sessionDrop = collapsed && createWorkItemDropZoneLabel
+		? resolveBoardCreateDropzoneDrag(sessionDragTransaction, title)
+		: "idle";
 
 	const handleToggleCollapsed = () => {
 		if (!shouldReduceMotion) {
@@ -294,6 +303,9 @@ function BoardColumnShell({
 			data-jira-kanban-column={title}
 			data-kanban-column-chrome={columnChrome}
 			data-collapsed={collapsed || undefined}
+			data-board-agent-session-drop-zone={sessionDrop !== "idle" ? "create" : undefined}
+			data-board-agent-session-column-title={sessionDrop !== "idle" ? title : undefined}
+			data-armed={sessionDrop === "armed" || undefined}
 			className={cn(
 				chrome.dropShellClassName,
 				// The shell includes the empty space beneath content-sized columns.
@@ -345,6 +357,7 @@ function BoardColumnShell({
 						onExpand={handleToggleCollapsed}
 						title={title}
 					/>
+					<CollapsedColumnSessionDrop chrome={chrome} label={createWorkItemDropZoneLabel} transaction={sessionDragTransaction} title={title} />
 				</div>
 			) : (
 				children(handleToggleCollapsed)
@@ -723,6 +736,8 @@ function ExperimentalJiraKanbanView({
 							columnChrome={columnChrome}
 							columnSizing={columnSizing}
 							count={column.cards.length}
+							createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
+							sessionDragTransaction={boardSessionDrag.transaction}
 							key={column.title}
 							onDragOver={issueDragTransitions && (column.statuses?.length ?? 0) > 1 && !isBoardColumnCollapsed(collapsedColumns, column.title) ? undefined : handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}

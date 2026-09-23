@@ -295,6 +295,7 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 		const rect = (createSensor ?? node).getBoundingClientRect();
 		if (kind === "create") {
 			const columnTitle = node.dataset.boardAgentSessionColumnTitle;
+			const collapsedSurface = node.querySelector("[data-collapsed-session-drop-surface]");
 			return columnTitle ? [{
 				bounds: {
 					bottom: rect.bottom,
@@ -304,6 +305,7 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 				},
 				columnTitle,
 				kind: "create",
+				surfaceRect: collapsedSurface ? toDropBounds(collapsedSurface) : null,
 			}] : [];
 		}
 		if (kind === "untracked") {

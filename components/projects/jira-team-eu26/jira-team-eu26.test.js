@@ -486,7 +486,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
-		/const magnet = useMagneticProximity\(proximityRef \?\? targetRef, \{\s*hoverArea,\s*\}\);/u,
+		/const magnet = useMagneticProximity\(proximityRef \?\? targetRef, \{\s*distance: 8,\s*hoverArea,\s*labelRatio: 6 \/ 8,/u,
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
