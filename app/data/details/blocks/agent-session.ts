@@ -26,7 +26,7 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 		{
 			title: "Cloud — long",
 			description:
-				"Hosted owner, viewer, and expired sessions in the title-led density — no hover flyout. Owners show Working, Needs input, or Finished. Tool calls cycle with shimmering text; the owner's Working label also shimmers beside the experimental spinner, while settled lifecycle labels stay still. Viewers show only a permanent information icon and a private-access tooltip across the row. Expired rows show a 24×24 more-actions button offering Delete. Hovering the expired row explains the 28-day retention window and that the session cannot be resumed.",
+				"Hosted owner, viewer, and expired sessions in the title-led density — no hover flyout. Owners show Working, Needs input, or Finished. Tool calls cycle with shimmering text; the owner's Working label also shimmers beside the Avatar spinner, while settled lifecycle labels stay still. Viewers show only a permanent information icon and a private-access tooltip across the row. Expired rows show a 24×24 more-actions button offering Delete. Hovering the expired row explains the 28-day retention window and that the session cannot be resumed.",
 			demoSlug: "agent-session-demo-cloud-long",
 		},
 		{

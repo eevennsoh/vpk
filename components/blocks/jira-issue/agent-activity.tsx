@@ -539,7 +539,7 @@ function JiraIssueAgentActivityRow({
 	/** Hover assignment menu for every session lifecycle state. */
 	showAssignmentFlyout?: boolean;
 	shouldReduceMotion: boolean | null;
-	workingSpinnerVariant?: "default" | "experimental";
+	workingSpinnerVariant?: "default" | "experimental-avatar";
 }>) {
 	// Any row that gained one of the linked sessions sweeps, including a merged
 	// "N Working" row. Dropping onto a card that is already busy changes that
@@ -766,7 +766,7 @@ export function JiraIssueAgentActivityRows({
 	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;
 	/** Selects only the Working spinner; iconScale still owns row spacing. */
-	workingSpinnerVariant?: "default" | "experimental";
+	workingSpinnerVariant?: "default" | "experimental-avatar";
 }>) {
 	const [sessionDragging, setSessionDragging] = useState(false);
 	const [assignmentHoverOpen, setAssignmentHoverOpen] = useState(false);

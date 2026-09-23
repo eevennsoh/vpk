@@ -747,14 +747,14 @@ test("viewer rows use the outline information circle, not the filled status icon
 	);
 });
 
-test("a working long row breathes with the experimental spinner, not the pixel loader", () => {
+test("a working long row breathes with the Avatar spinner", () => {
 	assert.match(
 		LIFECYCLE_SOURCE,
 		/<Button[\s\S]*aria-label=\{label\}[\s\S]*aria-pressed=\{pressed\}[\s\S]*size="icon-compact"[\s\S]*variant="ghost"/u,
 	);
 	assert.match(
 		LIFECYCLE_SOURCE,
-		/<Spinner[\s\S]*className=\{cn\("group-aria-pressed\/button:text-icon-selected!", compact && "size-\[16\.75px\]"\)\}[\s\S]*label=""[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="experimental"/u,
+		/<Spinner[\s\S]*className=\{cn\("group-aria-pressed\/button:text-icon-selected!", compact && "size-\[16\.75px\]"\)\}[\s\S]*label=""[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="experimental-avatar"/u,
 	);
 	assert.match(LIFECYCLE_SOURCE, /QuestionCircleFilledIcon/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /PixelLoader/u);

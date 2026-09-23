@@ -77,7 +77,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	});
 }
 
-test("List session identities align with Add agent and working uses the experimental spinner", async ({ page }) => {
+test("List session identities align with Add agent and working uses the Avatar spinner", async ({ page }) => {
 	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 	await page.getByRole("tab", { name: "List" }).click();
 	const emptyCell = page.locator('[data-issue-key="PAY-125"] td').nth(4);
@@ -100,14 +100,30 @@ test("List session identities align with Add agent and working uses the experime
 	for (const issueKey of ["PAY-105", "PAY-123"]) {
 		const spinner = page.locator(`[data-issue-key="${issueKey}"] td`).nth(4).locator('[data-slot="spinner"]');
 		await expect(spinner).toHaveAttribute("data-iconic-orb", "");
+		await expect(spinner).toHaveAttribute("data-iconic-orb-avatar", "");
 	}
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.reload();
 	await page.getByRole("tab", { name: "List" }).click();
 	const reducedSpinner = page.locator('[data-issue-key="PAY-105"] td').nth(4).locator('[data-slot="spinner"]');
 	await expect(reducedSpinner).toHaveAttribute("data-iconic-orb", "");
+	await expect(reducedSpinner).toHaveAttribute("data-iconic-orb-avatar", "");
 	await expect(reducedSpinner.locator("g")).not.toHaveClass(/spinner-experimental-orb-rotator-motion/u);
 });
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`Board working indicators use the Avatar spinner (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		const chin = page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-agent-row"]');
+		const spinner = chin.locator('[data-slot="spinner"]');
+		await expect(spinner).toHaveAttribute("data-iconic-orb-avatar", "");
+		await expect(spinner.locator("circle")).toHaveCount(6);
+		await expect(spinner.locator("circle").first()).toHaveCSS("animation-name", reducedMotion === "reduce"
+			? "none"
+			: "spinner-experimental-avatar-morph, spinner-experimental-avatar-opacity");
+	});
+}
 
 test("List assigned menu uses Add agent and opens the selector", async ({ page }) => {
 	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);

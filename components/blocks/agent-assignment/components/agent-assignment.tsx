@@ -78,7 +78,7 @@ export interface AgentAssignmentProps {
 	/** Whether assigned rows expose Archive. Disable when the owning state model
 	 * cannot remove a session-backed assignment without immediately restoring it. */
 	allowArchive?: boolean;
-	/** Comfortable scale uses the experimental working spinner; compact keeps the shared default. */
+	/** Comfortable scale uses the Avatar working spinner; compact keeps the shared default. */
 	activityIconScale?: JiraIssueIconScale;
 	/** Copy for the empty field and the action in the assigned-agents menu. */
 	addAgentLabel?: string;
