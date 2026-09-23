@@ -76,7 +76,7 @@ export function JiraDropzone({
 	measuredRef?: RefObject<HTMLDivElement | null>;
 	/** Available space used only in proximity or while receiving a drop. */
 	openMinHeight?: number;
-	/** Keep bottom-anchored surfaces on their baseline while retaining horizontal lean. */
+	/** Pin the surface vertically; the label retains its 4px lean on both axes. */
 	pinVerticalMagnet?: boolean;
 	/** Stable detection footprint, independent of the visible well's size. */
 	proximityRef?: RefObject<HTMLDivElement | null>;
@@ -93,7 +93,7 @@ export function JiraDropzone({
 	const magnet = useMagneticProximity(proximityRef ?? targetRef, {
 		distance: 8,
 		hoverArea,
-		labelRatio: 6 / 8, // Preserve the label's additional 6px travel.
+		labelRatio: 0.5, // The label travels 4px: half of the surface's 8px lean.
 	});
 	const [rawProximity, setRawProximity] = useState<MagneticPointerRelation>("outside");
 	useMotionValueEvent(magnet.proximity, "change", setRawProximity);
@@ -454,7 +454,7 @@ function JiraDropzoneButtonChrome({
 		children: <>
 			{marching ? <JiraDropzoneAntsStroke selected={selected} /> : null}
 			<span
-				className="relative grid h-5 w-full place-items-center overflow-hidden"
+				className="relative grid h-5 w-full place-items-center"
 			>
 				{/* Both visual layers share one centered slot and the height animation's clock. */}
 				<span

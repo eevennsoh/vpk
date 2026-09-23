@@ -4,9 +4,23 @@ import test from "node:test";
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { PEEL_DURATIONS, PEEL_MAX_DELTA, PEEL_PULSE_DURATION, PEEL_SWING_LIMIT, PEEL_TILT_REFERENCE_SPEED, createPeelState, dragPeel, firePeelImpulse, grabPeel, hoverPeel, isPeelIdle, nudgePeel, peelFlashEnergy, peelFlashProgress, peelImpulseEnergy, peelRecoilRate, peelPivotOffset, pulsePeel, releasePeel, startPeelFlash, stepPeel, type PeelState } from "./peel-model.ts";
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
-import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, resolvePeelTuning } from "./data.ts";
+import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, resolvePeelSurfaceTuning, resolvePeelTuning } from "./data.ts";
 // @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
-import { deformPeelSheet, peelSurfaceEdgeGlow, peelSurfacePointer, peelSurfaceTilt, stepPeelSurfaceTravel } from "./peel-geometry.ts";
+import { deformPeelSheet, peelSurfaceEdgeGlow, peelSurfacePointer, peelSurfaceRoll, peelSurfaceTilt, stepPeelSurfaceTravel } from "./peel-geometry.ts";
+
+test("DOM and paper surfaces share the carried-card tuning and bounded roll", () => {
+	assert.deepEqual(resolvePeelSurfaceTuning(), resolvePeelTuning("uv-gloss", {
+		waveAmplitude: 0.13, waveLength: 1.4, waveShear: 1.4, flutter: 0.067, tilt: 0.19, swing: 0.075,
+	}));
+	const reduced = resolvePeelSurfaceTuning({ tilt: 1, swing: 1 }, true);
+	assert.equal(reduced.tilt, 0);
+	assert.equal(reduced.swing, 0);
+	for (const direction of [-1, 1]) {
+		assert.equal(peelSurfaceRoll(direction, 0.075), direction * 0.075);
+		assert.equal(peelSurfaceRoll(direction * 0.02, 0.075), direction * 0.02);
+	}
+	assert.equal(peelSurfaceRoll(1, 0), 0);
+});
 
 test("edge direction ignores stop corrections and changes after deliberate reverse travel", () => {
 	for (const direction of [-1, 1]) {

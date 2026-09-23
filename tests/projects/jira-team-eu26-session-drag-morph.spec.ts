@@ -1,9 +1,81 @@
 import { expect, test } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
 
 interface MorphFrame {
+	time: number;
 	agentSize: number;
 	identity: { x: number; y: number; width: number; height: number };
 	surface: { x: number; y: number; width: number; height: number };
+}
+
+for (const grab of [0.3, 0.8]) {
+	test(`pickup stays continuous from the ${grab < 0.5 ? "left" : "right"} half`, async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 920 });
+		await page.emulateMedia({ reducedMotion: "no-preference" });
+		await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+		const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+		if (await expand.isVisible()) await expand.click();
+		const article = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
+		await article.scrollIntoViewIfNeeded();
+		await article.hover();
+		const source = await article.boundingBox();
+		if (!source) throw new Error("Missing session source");
+		await page.evaluate(() => {
+			const frames: { time: number; x: number; y: number; width: number; height: number; lightWidth: number; lightHeight: number; transform: string; parentTransform: string; animations: { kind: string; time: number | null; progress: number | null }[] }[] = [];
+			(window as typeof window & { pickupFrames: typeof frames }).pickupFrames = frames;
+			let started: number | undefined;
+			const sample = (time: number) => {
+				const surface = document.querySelector<HTMLElement>("[data-session-drag-overlay] [data-session-drag-surface]");
+				if (!surface) return;
+				started ??= time;
+				const box = surface.getBoundingClientRect();
+				const light = document.querySelector("[data-session-drag-overlay] [data-session-carry-light-surface]")?.getBoundingClientRect();
+				frames.push({ time: time - started, x: box.x, y: box.y, width: box.width, height: box.height,
+					lightWidth: light?.width ?? 0, lightHeight: light?.height ?? 0,
+					transform: getComputedStyle(surface).transform,
+					parentTransform: getComputedStyle(surface.parentElement!.parentElement!).transform,
+					animations: surface.getAnimations().map((a) => ({ kind: a.constructor.name, time: typeof a.currentTime === "number" ? a.currentTime : null, progress: a.effect!.getComputedTiming().progress ?? null })),
+				});
+				if (time - started < 1300) requestAnimationFrame(sample);
+			};
+			const observer = new MutationObserver(() => {
+				if (document.querySelector("[data-session-drag-overlay]")) {
+					observer.disconnect();
+					requestAnimationFrame(sample);
+				}
+			});
+			observer.observe(document.body, { childList: true, subtree: true });
+		});
+		const x = source.x + source.width * grab;
+		const y = source.y + source.height / 2;
+		await page.mouse.move(x, y);
+		await page.mouse.down();
+		await page.mouse.move(x + 20, y);
+		await expect.poll(() => page.evaluate(() => (window as typeof window & { pickupFrames: { time: number }[] }).pickupFrames.at(-1)?.time ?? 0)).toBeGreaterThanOrEqual(1300);
+		const frames = await page.evaluate(() => (window as typeof window & { pickupFrames: { time: number; x: number; y: number; width: number; height: number; lightWidth: number; lightHeight: number; transform: string; parentTransform: string; animations: { kind: string }[] }[] }).pickupFrames);
+		await writeFile(`output/agent-browser/compact-drag/pickup-${grab}.json`, JSON.stringify({ source, pointer: { x: x + 20, y }, frames }, null, 2));
+		await page.screenshot({ path: `output/agent-browser/compact-drag/pickup-${grab}.png` });
+		await page.mouse.move(700, 150);
+		await page.mouse.up();
+		const first = frames[0];
+		for (const frame of frames) {
+			expect(frame.lightWidth, `light width at ${frame.time}ms`).toBeCloseTo(frame.width, 1);
+			expect(frame.lightHeight, `light height at ${frame.time}ms`).toBeCloseTo(frame.height, 1);
+		}
+		expect(frames.some((frame) => frame.animations.some((animation) => animation.kind === "Animation"))).toBe(true);
+		expect(frames.every((frame) => frame.animations.every((animation) => animation.kind !== "CSSTransition"))).toBe(true);
+		// Pickup starts up to 40% larger, but the compact container must already
+		// surround the pointer instead of travelling across from the row avatar.
+		expect(first.x + first.width / 2).toBeCloseTo(x + 20, 1);
+		expect(first.y + first.height / 2).toBeCloseTo(y, 1);
+		for (let i = 1; i < frames.length; i++) {
+			expect(frames[i].width, `width at ${frames[i].time}ms`).toBeLessThanOrEqual(frames[i - 1].width + 0.5);
+			expect(frames[i].x + frames[i].width / 2, `center x at ${frames[i].time}ms`).toBeCloseTo(first.x + first.width / 2, 1);
+			expect(frames[i].y + frames[i].height / 2, `center y at ${frames[i].time}ms`).toBeCloseTo(first.y + first.height / 2, 1);
+		}
+	});
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
@@ -35,19 +107,22 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				const frames: MorphFrame[] = [];
 				(window as Window & { dragMorphFrames?: MorphFrame[] }).dragMorphFrames = frames;
 				let sampling = false;
-				const sample = () => {
+				let started: number | undefined;
+				const sample = (time: number) => {
 					const overlay = document.querySelector("[data-session-drag-overlay]");
 					const identityNode = overlay?.querySelector("[data-session-drag-identity]");
 					const surfaceNode = overlay?.querySelector("[data-session-drag-surface]");
 					if (identityNode && surfaceNode) {
+						started ??= time;
 						const identityRect = identityNode.getBoundingClientRect();
 						const surfaceRect = surfaceNode.getBoundingClientRect();
 						frames.push({
+							time: time - started,
 							agentSize: identityNode.querySelector('[data-avatar-role="agent"]')?.getBoundingClientRect().width ?? 0,
 							identity: { x: identityRect.x, y: identityRect.y, width: identityRect.width, height: identityRect.height },
 							surface: { x: surfaceRect.x, y: surfaceRect.y, width: surfaceRect.width, height: surfaceRect.height },
 						});
-						if (frames.length < 24) requestAnimationFrame(sample);
+						if (time - started < 750) requestAnimationFrame(sample);
 					}
 				};
 				const observer = new MutationObserver(() => {
@@ -65,8 +140,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await expect(overlay).toHaveAttribute("aria-hidden", "true");
 			expect(await overlay.evaluate((node) => node.parentElement === document.body)).toBe(true);
 			await expect.poll(() => page.evaluate(() => (
-				(window as Window & { dragMorphFrames?: MorphFrame[] }).dragMorphFrames?.length ?? 0
-			))).toBeGreaterThan(12);
+				(window as Window & { dragMorphFrames?: MorphFrame[] }).dragMorphFrames?.at(-1)?.time ?? 0
+			))).toBeGreaterThanOrEqual(750);
 			const frames = await page.evaluate(() => (window as Window & { dragMorphFrames?: MorphFrame[] }).dragMorphFrames ?? []);
 			const first = frames[0];
 			const last = frames[frames.length - 1];
@@ -76,30 +151,35 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				expect(frame.identity.height).toBeCloseTo(32, 1);
 			}
 			if (reducedMotion === "no-preference") {
-				// The horizontal identity stays at its final size while its background morphs.
-				for (const frame of frames) expect(frame.agentSize).toBeCloseTo(16, 1);
-				expect(Math.abs(first.identity.x - identity.x)).toBeLessThan(2);
-				expect(Math.abs(first.identity.y - identity.y)).toBeLessThan(2);
-				expect(first.surface.width).toBeCloseTo(source.width, 0);
-				expect(first.surface.height).toBeCloseTo(source.height, 0);
-				expect(last.surface.width).toBeLessThan(first.surface.width - 40);
+				// The agent moves from its source size into the horizontal group.
+				expect(first.agentSize).toBeCloseTo(30, 0);
+				expect(last.agentSize).toBeCloseTo(16, 1);
+				expect(first.identity.x).toBeCloseTo(last.identity.x, 1);
+				expect(first.identity.y).toBeCloseTo(last.identity.y, 1);
+				for (const frame of frames) {
+					expect(frame.surface.width).toBeLessThanOrEqual(last.surface.width * 1.4 + 0.5);
+					expect(frame.surface.height).toBeLessThanOrEqual(last.surface.height * 1.4 + 0.5);
+				}
+				expect(first.surface.width).toBeLessThan(source.width - 40);
 			} else {
 				expect(first.surface.width).toBeCloseTo(last.surface.width, 1);
 				expect(first.identity.x).toBeCloseTo(last.identity.x, 1);
 			}
-			expect(last.surface.height).toBeCloseTo(44, 1);
+			// The independent carry tilt projects viewport boxes by fractions of a
+			// pixel. Verify the resting dimensions in the surface's own plane.
+			expect(await overlay.locator("[data-session-drag-surface]").evaluate((node) => (node as HTMLElement).offsetHeight)).toBe(44);
 			const avatar = overlay.locator('[data-slot="human-agent-avatar"]');
 			await expect(avatar).toHaveAttribute("data-composition", "group");
 			const group = avatar.locator('[data-slot="avatar-group"]');
 			await expect(overlay.locator("[data-session-drag-label]")).toHaveText("Priya Raman");
 			await expect.poll(() => group.locator('[data-avatar-role]').evaluateAll((nodes) =>
 				nodes.map((node) => {
-					const rect = node.getBoundingClientRect();
-					return { role: (node as HTMLElement).dataset.avatarRole, width: rect.width, height: rect.height };
+					const matrix = new DOMMatrixReadOnly(getComputedStyle(node).transform);
+					return { role: (node as HTMLElement).dataset.avatarRole, width: (node as HTMLElement).offsetWidth * matrix.a, height: (node as HTMLElement).offsetHeight * matrix.d };
 				}),
 			)).toEqual([
-				{ role: "human", width: 16, height: 16 },
 				{ role: "agent", width: 16, height: 16 },
+				{ role: "human", width: 16, height: 16 },
 			]);
 			// The destination holds for the gesture beyond the demo's repeat pause.
 			await page.waitForTimeout(1_600);

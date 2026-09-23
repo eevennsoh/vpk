@@ -116,14 +116,14 @@ export function AgentSessionDragPill({
 				aria-hidden="true"
 				className={cn("absolute inset-0 -z-10 rounded-lg", elevated ? "bg-surface" : "bg-bg-neutral")}
 				data-session-drag-surface=""
-				style={{ ...(elevated ? DRAG_CHIP_ELEVATION : undefined), transformOrigin: "0 0" }}
+				style={{ ...(elevated ? DRAG_CHIP_ELEVATION : undefined), transformOrigin: "center" }}
 			/>
 			{flashColor ? (
 				<span
 					aria-hidden="true"
 					className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-lg"
 					data-session-drag-flash-layer=""
-					style={{ "--session-drag-flash-color": flashColor, transformOrigin: "0 0" } as CSSProperties}
+					style={{ "--session-drag-flash-color": flashColor, transformOrigin: "center" } as CSSProperties}
 				>
 					<span className="session-drag-face-flash absolute inset-0" data-session-drag-flash-beam="" />
 				</span>

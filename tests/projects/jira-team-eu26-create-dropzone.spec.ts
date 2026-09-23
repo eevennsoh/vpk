@@ -762,10 +762,15 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		await page.mouse.move(x, sensorBox.y - 12, { steps: 8 });
 		await expect(well).toHaveAttribute("data-proximity", "near");
 		await expect.poll(async () => (await well.boundingBox())!.height).toBe(64);
+		const fixedTop = (await well.boundingBox())!.y;
+		const label = column.locator('[data-jira-dropzone-copy-layer="label"] > span');
 		for (const y of [bottom - 12, bottom - 40, bottom - 60]) {
 			await page.mouse.move(x, y, { steps: 4 });
 			await expect(well).toHaveAttribute("data-armed", "true");
 			const box = (await well.boundingBox())!;
+			expect(box.y).toBeCloseTo(fixedTop, 0);
+			const expectedY = reducedMotion === "reduce" ? 0 : ((y - sensorBox.y) / sensorBox.height * 2 - 1) * 4;
+			await expect.poll(() => label.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).m42)).toBeCloseTo(expectedY, 1);
 			const paintedGap = await column.evaluate((node) => {
 				const backdrop = node.querySelector("[data-jira-kanban-column-backdrop]")!;
 				const clip = getComputedStyle(backdrop).clipPath.split("round")[0].replace("inset(", "").trim().split(/\s+/);
@@ -774,6 +779,23 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 			});
 			expect(paintedGap.bottom).toBeCloseTo(paintedGap.side, 0);
 			expect(box.y).toBeLessThan(buttonBox.y);
+			expect(await sensor.boundingBox()).toEqual(sensorBox);
+		}
+		// The surface stays anchored while the label reaches +/-4px on each axis,
+		// including diagonal approaches just beyond the stable sensor's edges.
+		for (const direction of [{ x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: -1 }, { x: 1, y: 1 }]) {
+			await page.mouse.move(
+				x + direction.x * (sensorBox.width / 2 + 1),
+				sensorBox.y + sensorBox.height / 2 + direction.y * (sensorBox.height / 2 + 1),
+				{ steps: 4 },
+			);
+			for (const axis of ["x", "y"] as const) {
+				await expect.poll(() => label.evaluate((node, axis) => {
+					const transform = new DOMMatrixReadOnly(getComputedStyle(node).transform);
+					return axis === "x" ? transform.m41 : transform.m42;
+				}, axis)).toBeCloseTo(reducedMotion === "reduce" ? 0 : direction[axis] * 4, 1);
+			}
+			expect((await well.boundingBox())!.y).toBeCloseTo(fixedTop, 0);
 			expect(await sensor.boundingBox()).toEqual(sensorBox);
 		}
 		expect((await readList(list)).height).toBe(before.height - 8);

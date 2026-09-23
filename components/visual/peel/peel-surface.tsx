@@ -6,7 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { parseColor } from "@/components/ui-custom/lib/shimmer-colors";
 import { cn } from "@/lib/utils";
-import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, PEEL_PAPER_COLOUR, resolvePeelTuning, type PeelTuning } from "./data";
+import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, PEEL_PAPER_COLOUR, resolvePeelSurfaceTuning, type PeelTuning } from "./data";
 import { createPeelState, grabPeel, startPeelFlash } from "./peel-model";
 import { peelSurfacePointer } from "./peel-geometry";
 import { PeelScene } from "./peel-scene";
@@ -56,16 +56,7 @@ function PeelCapturedSurface({ active, sourceRef, pointerX, pointerY, pointerDir
 	const activeRef = useRef(false);
 	const preparedRef = useRef(false);
 	const rootRef = useRef<RootState | null>(null);
-	const resolvedTuning = useMemo(() => resolvePeelTuning("uv-gloss", {
-		waveAmplitude: 0.13,
-		waveLength: 1.4,
-		waveShear: 1.4,
-		flutter: 0.067,
-		// Cards need a clearer carry pose than the reference illustration.
-		tilt: 0.19,
-		swing: 0.075,
-		...tuning,
-	}, reducedMotion), [tuning, reducedMotion]);
+	const resolvedTuning = useMemo(() => resolvePeelSurfaceTuning(tuning, reducedMotion), [tuning, reducedMotion]);
 	const [state] = useState(() => createPeelState(resolvedTuning));
 	const pointerPosition = useMemo(() => ({ x: pointerX, y: pointerY, direction: pointerDirection, originX: pointerOriginX }), [pointerX, pointerY, pointerDirection, pointerOriginX]);
 	const startPeel = useCallback(() => {
