@@ -69,11 +69,11 @@ test("a nearby cluster traces while only one card owns the attach target", () =>
 	assert.deepEqual(cancelled.traces, []);
 	const far = updateBoardAgentSessionDragTransaction(transaction, { x: 2000, y: 1000 }, [...ZONES, neighbour]);
 	assert.deepEqual(far.traces, []);
-	const outskirts = updateBoardAgentSessionDragTransaction(transaction, { x: 550, y: 170 }, [...ZONES, neighbour]);
+	const outskirts = updateBoardAgentSessionDragTransaction(transaction, { x: 580, y: 170 }, [...ZONES, neighbour]);
 	assert.equal(outskirts.proximity, null);
-	assert.ok(outskirts.traces.length > 0, "faint arcs appear before the attach chin is armed");
-	assert.equal(shouldPublishBoardAgentSessionDrag(far, outskirts), true);
-	assert.equal(shouldPublishBoardAgentSessionDrag(outskirts, far), true);
+	assert.deepEqual(outskirts.traces, [], "the decoration stays quiet beyond its smaller sensor");
+	assert.equal(shouldPublishBoardAgentSessionDrag(far, outskirts), false);
+	assert.equal(shouldPublishBoardAgentSessionDrag(outskirts, far), false);
 	const covered = updateBoardAgentSessionDragTransaction(transaction, { x: 500, y: 80 }, [...ZONES, neighbour, UNTRACKED]);
 	assert.deepEqual(covered.traces, []);
 });

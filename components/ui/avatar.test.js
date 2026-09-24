@@ -368,6 +368,11 @@ test("avatar group overflow count uses 12px text and 14px text for large groups"
 	assert.doesNotMatch(AVATAR_SOURCE, /rounded-full text-sm/);
 });
 
+test("avatar groups own descending face stacking without changing DOM order", () => {
+	assert.match(AVATAR_SOURCE, /isolate \[&>\*\]:relative \[&>\*\]:\[z-index:calc\(sibling-count\(\)-sibling-index\(\)\+1\)\]/);
+	assert.match(AVATAR_SOURCE, /isInAvatarGroup \? \{\} : \{ zIndex: 10 \}/);
+});
+
 test("avatar groups give hexagon agents a shape-aware background separator", () => {
 	assert.match(AVATAR_SOURCE, /const AvatarGroupContext = React\.createContext\(false\)/);
 	assert.match(AVATAR_SOURCE, /const isInAvatarGroup = React\.use\(AvatarGroupContext\)/);

@@ -824,6 +824,7 @@ function JiraIssueDefault({
 						transition={layoutTransition}
 					>
 						<JiraIssueAttachTraceOverlay
+							active={agentSessionDragControl?.attachTraceActive}
 							nearness={resolveJiraIssueAttachNearness(agentSessionDragControl?.attachTrace?.nearness ?? attachNearness, shouldReduceMotion)}
 							trace={agentSessionDragControl?.attachTrace}
 						/>

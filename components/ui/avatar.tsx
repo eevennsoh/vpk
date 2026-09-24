@@ -234,7 +234,7 @@ function Avatar({
 					initial: { scale: 0.8, opacity: 0 },
 					animate: { scale: 1, opacity: 1, transition: AVATAR_ENTER_TRANSITION },
 					exit: { scale: 0.8, opacity: 0, transition: AVATAR_EXIT_TRANSITION },
-					whileHover: { scale: 1.12, zIndex: 10, transition: AVATAR_HOVER_SPRING },
+					whileHover: { scale: 1.12, ...(isInAvatarGroup ? {} : { zIndex: 10 }), transition: AVATAR_HOVER_SPRING },
 					style: { willChange: "transform, opacity" },
 				}
 
@@ -724,6 +724,8 @@ function AvatarGroup({ children, className, label, size, ...props }: Readonly<Av
 					aria-label={label}
 					className={cn(
 						"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 has-data-[size=xxs]:-space-x-1 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
+						// Keep DOM/tab order left-to-right while each following face sits behind.
+						"isolate [&>*]:relative [&>*]:[z-index:calc(sibling-count()-sibling-index()+1)]",
 						className
 					)}
 					{...props}
