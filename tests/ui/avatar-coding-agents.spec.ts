@@ -40,8 +40,8 @@ for (const width of [1440, 390]) {
 				}
 			}
 			await expect(codex.locator("img")).toHaveCSS("filter", "none");
-			await expect(codex.locator("img")).toHaveCSS("scale", /1\.25/);
-			await expect(tiers.getByRole("img", { name: "Codex agent", exact: true }).locator("img")).toHaveCSS("scale", /1\.25/);
+			await expect(codex.locator('[data-slot="logo-third-party-local"]')).toHaveCSS("scale", /1\.25/);
+			await expect(tiers.getByRole("img", { name: "Codex agent", exact: true }).locator('[data-slot="logo-third-party-local"]')).toHaveCSS("scale", /1\.25/);
 			await expect(cursor.locator("img")).toHaveCSS("filter", "none");
 			await expect(copilot.locator("img")).toHaveCSS("filter", "brightness(0) invert(1)");
 			await expect(claude.locator('svg:not([data-slot="avatar-hexagon-border"])')).toHaveCSS("filter", "brightness(0) invert(1)");

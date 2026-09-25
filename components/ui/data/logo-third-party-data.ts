@@ -221,7 +221,8 @@ export function isLocalFallbackThirdPartyLogoName(
  * Local asset path consumed by `CustomLogo` for `public/3p` assets. Restricted
  * to local-asset ids so package-only brands cannot produce a 404ing path.
  */
-export function thirdPartyLogoSrc(name: LocalAssetThirdPartyLogoName): string {
+export function thirdPartyLogoSrc(name: LocalAssetThirdPartyLogoName, variant: "standard" | "glyph" = "standard"): string {
+	if (name === "openai-codex" && variant === "glyph") return "/3p/openai-codex/glyph.svg";
 	const cacheVersion = name === "github-copilot" ? "?v=transparent-bg" : "";
 
 	return `/3p/${name}/24.svg${cacheVersion}`;

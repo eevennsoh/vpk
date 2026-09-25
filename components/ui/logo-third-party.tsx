@@ -1,10 +1,13 @@
 "use client";
 
+import Image from "next/image";
+
 // oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates the generated per-brand logo components alongside the base wrapper.
 
 import { CUSTOM_LOGO_SIZES } from "@/components/ui/data/logo-data";
 import {
 	isLocalFallbackThirdPartyLogoName,
+	isLocalAssetThirdPartyLogoName,
 	THIRD_PARTY_LOGO_LABELS,
 	THIRD_PARTY_LOGO_NAMES,
 	thirdPartyLogoSrc,
@@ -37,6 +40,10 @@ export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg"
 	name: ThirdPartyLogoName;
 	/** Tile/logo size shared with `components/ui/tile`, including `xxsmall` (16x16). */
 	size?: LogoSize;
+	/** Opt into owned, bare local artwork; glyph uses the unpadded Codex mark. */
+	artwork?: "package" | "local" | "glyph";
+	/** Exact local-artwork footprint when an avatar needs a size between logo tokens. */
+	sizePx?: number;
 	/**
 	 * Render the bare brand glyph without the upstream package's white tile +
 	 * 1px border. The package always wraps each mark in `<Tile hasBorder
@@ -115,6 +122,28 @@ function tileChromeOverride(
 const DARK_GLYPH_INVERT =
 	"dark:[&>span>span]:invert [[data-color-mode=dark]_&]:[&>span>span]:invert";
 
+function LocalThirdPartyArtwork({ src, sizePx, label, wordmark, className }: Readonly<{
+	src: string;
+	sizePx: number;
+	label: string;
+	wordmark?: string;
+	className?: string;
+}>) {
+	return (
+		<span
+			aria-label={label || undefined}
+			className={cn("inline-flex items-center gap-1", className)}
+			data-slot="logo-third-party-local"
+			role={label ? "img" : undefined}
+		>
+			<Image alt="" aria-hidden className="object-contain" height={sizePx} src={src}
+				style={{ width: sizePx, height: sizePx }} unoptimized width={sizePx} />
+			{wordmark ? <span className="font-semibold leading-none text-text" style={{ fontSize: Math.max(12, sizePx * 0.6) }}>{wordmark}</span> : null}
+		</span>
+	);
+}
+
+
 /**
  * Renders a third-party brand logo from the upstream `@atlassian/logo-third-party`
  * package (Atlassian Platform Labs), which draws each mark full-bleed inside an
@@ -128,10 +157,13 @@ const DARK_GLYPH_INVERT =
  * not follow the theme. Pass `tileBackground="surface"` for a themeable fill, or
  * `borderless` to drop the tile chrome entirely.
  */
+
 export function LogoThirdParty({
 	name,
 	label,
 	size,
+	artwork = "package",
+	sizePx,
 	wordmark,
 	className,
 	borderless = false,
@@ -139,6 +171,18 @@ export function LogoThirdParty({
 }: Readonly<LogoThirdPartyProps>) {
 	const accessibleLabel = label ?? THIRD_PARTY_LOGO_LABELS[name];
 	const Icon = THIRD_PARTY_LOGO_ICONS[name];
+	const resolvedSize = toThirdPartyLogoTileSize(size);
+	if (artwork !== "package" && isLocalAssetThirdPartyLogoName(name)) {
+		return (
+			<LocalThirdPartyArtwork
+				className={className}
+				label={accessibleLabel}
+				sizePx={sizePx ?? CUSTOM_LOGO_SIZES[resolvedSize] ?? CUSTOM_LOGO_SIZES.small}
+				src={thirdPartyLogoSrc(name, artwork === "glyph" ? "glyph" : "standard")}
+				wordmark={wordmark}
+			/>
+		);
+	}
 
 	if (!Icon) {
 		// No package icon: only manifest-declared local fallback brands render
@@ -159,7 +203,6 @@ export function LogoThirdParty({
 
 	// The package tile already encapsulates the accessible label and sizing. When
 	// a treatment is requested, wrap it so the Tile's fill/border can be overridden.
-	const resolvedSize = toThirdPartyLogoTileSize(size);
 	const rawIcon = <Icon label={wordmark ? "" : accessibleLabel} size={resolvedSize} />;
 	const chromeOverride = tileChromeOverride(borderless, tileBackground);
 	// A chrome override is exactly the set of treatments that remove the upstream

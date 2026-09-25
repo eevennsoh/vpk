@@ -7,6 +7,7 @@ const { isAvatarOverlayType } = require("./avatar-overlay.ts");
 const { AVATAR_HEXAGON_REFERENCE_SIZE, AVATAR_HEXAGON_REFERENCE_RADIUS, avatarHexagonCornerRadius, avatarHexagonPoints, avatarHexagonClip, avatarHexagonBorderClip } = require("./avatar-hexagon.ts");
 const { humanAgentAvatarSizeSwapProgress } = require("../ui-custom/human-agent-avatar-motion-config.ts");
 const { getCodingAgentLogoFrame, getCodingAgentVisual } = require("../ui-custom/agent-avatar-coding-appearance.ts");
+const { thirdPartyLogoSrc } = require("./data/logo-third-party-data.ts");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 
@@ -24,14 +25,14 @@ const AGENT_AVATAR_VISUAL_SOURCE = fs.readFileSync(
 
 test("coding agent appearance preserves local artwork and the requested brand canvases", () => {
 	assert.deepEqual(getCodingAgentVisual("claude"), { backgroundColor: "#d97757", whiteGlyph: true });
-	assert.deepEqual(getCodingAgentVisual("openai-codex"), { logoSrc: "/3p/openai-codex/24.svg", logoClassName: "scale-125" });
-	assert.deepEqual(getCodingAgentVisual("openai-codex", 20), { logoSrc: "/3p/openai-codex/glyph.svg", logoFrameClassName: "size-3" });
-	assert.deepEqual(getCodingAgentVisual("cursor"), { logoSrc: "/3p/cursor/24.svg", backgroundColor: "#14120B" });
+	assert.deepEqual(getCodingAgentVisual("openai-codex"), { artwork: "local", logoClassName: "scale-125" });
+	assert.deepEqual(getCodingAgentVisual("openai-codex", 20), { artwork: "glyph", logoFrameSizePx: 12 });
+	assert.deepEqual(getCodingAgentVisual("cursor"), { artwork: "local", backgroundColor: "#14120B" });
 	assert.deepEqual(getCodingAgentVisual("github-copilot"), { backgroundColor: "#000000", whiteGlyph: true });
 	assert.equal(getCodingAgentVisual("slack"), undefined);
 	assert.equal(getCodingAgentVisual(undefined), undefined);
 	for (const name of ["cursor", "openai-codex"]) {
-		assert.ok(fs.existsSync(path.join(process.cwd(), "public", getCodingAgentVisual(name).logoSrc)));
+		assert.ok(fs.existsSync(path.join(process.cwd(), "public", thirdPartyLogoSrc(name))));
 	}
 });
 
@@ -47,10 +48,10 @@ test("coding agents have a registered avatar demo and opt into the coding appear
 });
 
 test("coding logo frames enlarge the marks without changing compact avatar sizes", () => {
-	assert.deepEqual(getCodingAgentLogoFrame(20), { size: "xxsmall", className: "size-4" });
-	assert.deepEqual(getCodingAgentLogoFrame(32), { size: "small", className: "size-6" });
-	assert.deepEqual(getCodingAgentLogoFrame(40), { size: "medium", className: "size-8" });
-	assert.deepEqual(getCodingAgentLogoFrame(48), { size: "large", className: "size-10" });
+	assert.deepEqual(getCodingAgentLogoFrame(20), { size: "xxsmall" });
+	assert.deepEqual(getCodingAgentLogoFrame(32), { size: "small" });
+	assert.deepEqual(getCodingAgentLogoFrame(40), { size: "medium" });
+	assert.deepEqual(getCodingAgentLogoFrame(48), { size: "large" });
 	for (const size of [12, 16, 24, 30]) assert.equal(getCodingAgentLogoFrame(size), undefined);
 });
 
