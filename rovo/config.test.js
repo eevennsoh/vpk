@@ -8,7 +8,6 @@ const {
 	buildAIGatewaySystemPrompt,
 	buildUserMessage,
 	DEEP_PLAN_INSTRUCTION,
-	HERMES_SKILL_DISCOVERABILITY_INSTRUCTION,
 } = require("./config");
 
 test("buildUserMessage plain-chat profile omits heavy protocol blocks", () => {
@@ -181,27 +180,6 @@ test("buildUserMessage omits GenUI protocol during plan-mode context", () => {
 	assert.doesNotMatch(message, /\[Interactive Visual UI Protocol\]/);
 });
 
-test("buildUserMessage includes durable memory protocol in default profile", () => {
-	const message = buildUserMessage("Save this to durable memory.", [], undefined);
-
-	assert.match(message, /\[Durable Memory Protocol\]/);
-	assert.match(message, /durable memory means wiki-backed Hermes persistent memory/i);
-	assert.match(message, /persists durable memories through the llm-wiki flow after the turn/i);
-	assert.match(message, /do not say that you lack a memory write tool/i);
-	assert.match(message, /repo lesson logging only for repo\/operator corrections/i);
-});
-
-test("buildUserMessage includes Hermes skill discoverability protocol in default profile", () => {
-	const message = buildUserMessage("Can you use llm-wiki?", [], undefined);
-
-	assert.match(message, /\[Hermes Skill Discoverability Protocol\]/);
-	assert.match(message, /source of truth for which Hermes skills are installed/i);
-	assert.match(message, /installed but not currently selected for this thread/i);
-	assert.match(message, /proactively load that skill/i);
-	assert.match(message, /prefer loading it directly with the `get_skill` tool/i);
-	assert.match(message, /Treat skill loading as the default response/i);
-});
-
 test("buildUserMessage keeps ask_user_questions options and bylines compact", () => {
 	const message = buildUserMessage("Help me choose an implementation path.", [], undefined);
 
@@ -340,13 +318,6 @@ test("buildUserMessage still ends with the question when there is no context or 
 	assert.doesNotMatch(message, /Previous conversation context:/);
 });
 
-test("Hermes skill discoverability protocol distinguishes discoverable skills from active skills", () => {
-	assert.match(HERMES_SKILL_DISCOVERABILITY_INSTRUCTION, /\[Hermes Skills Catalog\]/);
-	assert.match(HERMES_SKILL_DISCOVERABILITY_INSTRUCTION, /\[Hermes Skills\]/);
-	assert.match(HERMES_SKILL_DISCOVERABILITY_INSTRUCTION, /get_skill/i);
-	assert.match(HERMES_SKILL_DISCOVERABILITY_INSTRUCTION, /next turn/i);
-});
-
 it("buildUserMessage plain-chat profile limits conversation history", () => {
 	const history = [
 		{ type: "user", content: "one" },
@@ -450,4 +421,19 @@ describe("DEEP_PLAN_INSTRUCTION — Test Case 11: Q&A ordering rules", () => {
 			/switch you back to `default` mode before implementation/i,
 		);
 	});
+});
+
+
+test("system prompt no longer promises persistent memory or Hermes skill discovery", () => {
+	const message = buildUserMessage("Hello", [], undefined);
+	assert.doesNotMatch(message, /Hermes|llm-wiki|Durable Memory Protocol/u);
+});
+
+
+test("system prompt ignores retired persistent-memory options", () => {
+	const prompt = buildAIGatewaySystemPrompt({
+		profileMemory: "retired-profile-sentinel",
+		collectionMemory: "retired-collection-sentinel",
+	});
+	assert.doesNotMatch(prompt, /retired-profile-sentinel|retired-collection-sentinel/);
 });

@@ -3,7 +3,7 @@
 ## Build and Run
 
 - Build: `pnpm run build`
-- Build the static export used in production: `pnpm run build:export` (never run `NEXT_OUTPUT=export pnpm run build` directly — the wrapper temporarily moves runtime-only App Router API and skills detail routes before invoking the export build)
+- Build the static export used in production: `pnpm run build:export` (never run `NEXT_OUTPUT=export pnpm run build` directly — the wrapper temporarily moves runtime-only App Router API routes before invoking the export build)
 - Start frontend + backend for browser verification: `pnpm run dev:tmux:start` (runs the dev stack through `portless run`, so it prints a stable `.localhost` URL)
 - Start frontend + backend in the foreground when tmux is unavailable: `pnpm run dev`
 - Discover actual worktree URLs/ports: `pnpm ports` (prefer the Portless `🌐 https://…` URL), with `.dev-frontend-port` and `.dev-backend-port` as fallback

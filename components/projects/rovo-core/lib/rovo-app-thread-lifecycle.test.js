@@ -22,7 +22,6 @@ function createThread(overrides = {}) {
 		realtimeMessages: [],
 		visibility: "private",
 		activeDocumentId: null,
-		hermesContext: null,
 		activeRun: null,
 		createdAt: "2026-07-04T00:00:00.000Z",
 		updatedAt: "2026-07-04T00:00:00.000Z",

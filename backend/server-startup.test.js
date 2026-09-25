@@ -21,11 +21,7 @@ function createLogger() {
 function createBaseDependencies(overrides = {}) {
 	const { logger, logs, errors } = createLogger();
 	const calls = [];
-	const hermesJobsProvider = {
-		startJobTicker: () => calls.push(["startJobTicker"]),
-	};
 	return {
-		areHermesJobsEnabled: () => true,
 		buildLlmRoutingStatus: (input) => {
 			calls.push(["buildLlmRoutingStatus", input]);
 			return {
@@ -40,10 +36,6 @@ function createBaseDependencies(overrides = {}) {
 		describeChatBackend: (llmRouting) => {
 			calls.push(["describeChatBackend", llmRouting.chatSdk.backend]);
 			return llmRouting.chatSdk.backend;
-		},
-		ensureWikiJobs: async (provider) => {
-			calls.push(["ensureWikiJobs", provider]);
-			return { existing: 1, created: 2 };
 		},
 		errors,
 		getEnvVars: () => {
@@ -63,7 +55,6 @@ function createBaseDependencies(overrides = {}) {
 			}),
 		}),
 		hasGatewayUrlConfigured: (envVars) => Boolean(envVars.AI_GATEWAY_URL),
-		hermesJobsProvider,
 		interactiveChatForcePortRecoveryMaxAttempts: 2,
 		interactiveChatForcePortRecoveryTimeoutMs: 3000,
 		logger,
@@ -81,7 +72,7 @@ function flattenedLogText(logs) {
 	return logs.map((entry) => entry.join(" ")).join("\n");
 }
 
-test("logBackendServerReady refreshes Rovo, provisions wiki jobs, and reports routing", async () => {
+test("logBackendServerReady refreshes Rovo and reports routing", async () => {
 	const dependencies = createBaseDependencies({
 		debugMode: true,
 		env: {
@@ -97,8 +88,6 @@ test("logBackendServerReady refreshes Rovo, provisions wiki jobs, and reports ro
 
 	assert.deepEqual(dependencies.calls.map(([name]) => name), [
 		"refreshRovoAvailability",
-		"ensureWikiJobs",
-		"startJobTicker",
 		"getEnvVars",
 		"buildLlmRoutingStatus",
 		"describeChatBackend",
@@ -107,7 +96,6 @@ test("logBackendServerReady refreshes Rovo, provisions wiki jobs, and reports ro
 	assert.equal(result.aiGatewayConfigured, true);
 	assert.equal(result.realtimeConfigured, true);
 	assert.match(text, /Server ready for connections/u);
-	assert.match(text, /WIKI_JOBS: 1 existing, 2 created/u);
 	assert.match(text, /Chat Backend: rovo/u);
 	assert.match(text, /ROVO_POOL: 2 ports \(4100, 4101\)/u);
 	assert.match(text, /AI_GATEWAY_ASSISTED_FEATURES: CONFIGURED/u);
@@ -115,9 +103,8 @@ test("logBackendServerReady refreshes Rovo, provisions wiki jobs, and reports ro
 	assert.match(text, /\[DEBUG MODE ENABLED\]/u);
 });
 
-test("logBackendServerReady logs disabled jobs and unavailable Realtime without starting ticker", async () => {
+test("logBackendServerReady reports unavailable chat and Realtime", async () => {
 	const dependencies = createBaseDependencies({
-		areHermesJobsEnabled: () => false,
 		env: {},
 		getEnvVars: () => ({}),
 		getRovoPool: () => null,
@@ -127,31 +114,12 @@ test("logBackendServerReady logs disabled jobs and unavailable Realtime without 
 	const result = await logBackendServerReady(dependencies);
 	const text = flattenedLogText(dependencies.logs);
 
-	assert.equal(dependencies.calls.some(([name]) => name === "ensureWikiJobs"), false);
-	assert.equal(dependencies.calls.some(([name]) => name === "startJobTicker"), false);
 	assert.equal(result.rovoReady, false);
 	assert.equal(result.aiGatewayConfigured, false);
 	assert.equal(result.realtimeConfigured, false);
-	assert.match(text, /HERMES_JOBS: disabled/u);
 	assert.match(text, /Chat Backend: ai-gateway/u);
 	assert.match(text, /AI_GATEWAY_ASSISTED_FEATURES: NOT CONFIGURED/u);
 	assert.match(text, /OpenAI Realtime: NOT CONFIGURED/u);
-});
-
-test("logBackendServerReady logs wiki job provisioning failures and continues", async () => {
-	const dependencies = createBaseDependencies({
-		ensureWikiJobs: async () => {
-			throw new Error("wiki job failed");
-		},
-	});
-
-	const result = await logBackendServerReady(dependencies);
-
-	assert.equal(result.rovoReady, true);
-	assert.deepEqual(dependencies.errors, [
-		["[STARTUP] Failed to ensure wiki jobs", "wiki job failed"],
-	]);
-	assert.equal(dependencies.calls.some(([name]) => name === "startJobTicker"), true);
 });
 
 test("logBackendServerReady validates required dependencies", async () => {

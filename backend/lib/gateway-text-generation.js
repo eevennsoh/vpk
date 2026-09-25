@@ -7,7 +7,7 @@ const {
 } = require("./rovo-gateway");
 const {
 	compressConversation: defaultCompressConversation,
-} = require("./hermes-context-compression");
+} = require("./conversation-compression");
 const { getGenuiSystemPrompt: defaultGetGenuiSystemPrompt } = require("./genui-system-prompt");
 const {
 	analyzeGeneratedText: defaultAnalyzeGeneratedText,

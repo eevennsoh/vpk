@@ -163,20 +163,6 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/projects/control-plane/memories-surface.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps -- generation should only follow active view and explorer selection state",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/projects/control-plane/skills-surface.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps",
-			"type": "eslint-disable"
-		},
-		{
 			"filePath": "components/projects/jira/page.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",

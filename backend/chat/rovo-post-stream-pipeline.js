@@ -72,8 +72,6 @@ async function runRovoPostStreamPipeline({
 		resolveGoogleImageGatewayConfig:
 			options.resolveGoogleImageGatewayConfig,
 		setAssistantText: options.setAssistantText,
-		shouldSuppressHermesKnowledgeDirectSpecCard:
-			options.shouldSuppressHermesKnowledgeDirectSpecCard,
 		shouldSurfaceMissingStudioAgentResultFailure:
 			options.shouldSurfaceMissingStudioAgentResultFailure,
 		streamGoogleGatewayManualSse: options.streamGoogleGatewayManualSse,

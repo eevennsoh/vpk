@@ -244,3 +244,23 @@ test("registerStaticExportServing validates required dependencies", () => {
 		expressImpl: express,
 	}), /publicPath/u);
 });
+
+test("retired control-plane paths return 404 before stale static pages or app fallback", async () => {
+	const publicPath = createTempPublicDir();
+	try {
+		writeFile(path.join(publicPath, "index.html"), "<main>App</main>");
+		writeFile(path.join(publicPath, "rovo/jobs/index.html"), "<main>Stale jobs</main>");
+		await withStaticServer(publicPath, async (baseUrl) => {
+			for (const retired of ["/rovo/jobs", "/rovo/%6aobs", "/studio/%73kills/local/test", "/rovo/%", "/rovo/jobs/", "/studio/memories", "/rovo/skills/local/test", "/studio/settings", "/jobs", "/memories", "/settings"]) {
+				const response = await fetch(`${baseUrl}${retired}`);
+				assert.equal(response.status, 404, retired);
+				assert.equal(await response.text(), "Not found");
+			}
+			for (const retained of ["/rovo", "/rovo/real-thread", "/studio", "/skills"]) {
+				assert.equal((await fetch(`${baseUrl}${retained}`)).status, 200, retained);
+			}
+		});
+	} finally {
+		fs.rmSync(publicPath, { force: true, recursive: true });
+	}
+});

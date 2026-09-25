@@ -195,7 +195,7 @@ test("buildChatSdkPrompt compresses history, builds the prompt, and marks trace 
 		originalLength: 3,
 	});
 	assert.deepEqual(logs, [
-		"[HERMES] Compressed prompt conversation history: 3 → 1 messages",
+		"[CHAT] Compressed prompt conversation history: 3 → 1 messages",
 	]);
 	assert.deepEqual(marks, []);
 	assert.deepEqual(result.promptBuiltTraceData, {

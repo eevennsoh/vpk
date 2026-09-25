@@ -1,5 +1,4 @@
 import type {
-	RovoAppHermesContext,
 	RovoAppThread,
 	RovoAppVisibility,
 } from "@/lib/rovo-app-types";
@@ -29,7 +28,6 @@ export interface RovoAppThreadPersistenceUpdateInput {
 }
 
 export interface RovoAppThreadPersistencePlan {
-	currentHermesContext: RovoAppHermesContext | null;
 	nextPersistKey: string;
 	nextThreadUpdate: RovoAppThreadPersistenceUpdateInput;
 	recoveryState: RecoverableRovoAppThreadState & { threadId: string };
@@ -99,7 +97,6 @@ export function buildRovoAppThreadPersistencePlan(input: {
 		currentThread?.title && currentThread.title.trim() !== "New chat"
 			? currentThread.title
 			: deriveThreadTitle(getMessageText(firstUserMessage ?? { parts: [] }));
-	const currentHermesContext = currentThread?.hermesContext ?? null;
 	const nextThreadUpdate: RovoAppThreadPersistenceUpdateInput = {
 		messages: input.normalizedMessages,
 		realtimeMessages: input.realtimeMessages,
@@ -116,13 +113,11 @@ export function buildRovoAppThreadPersistencePlan(input: {
 	}
 
 	return {
-		currentHermesContext,
 		nextPersistKey: buildRovoAppThreadPersistKey({
 			messages: input.normalizedMessages,
 			realtimeMessages: input.realtimeMessages,
 			visibility: input.threadVisibility,
 			activeDocumentId: input.activeDocumentId,
-			hermesContext: currentHermesContext,
 			title,
 		}),
 		nextThreadUpdate,
@@ -140,18 +135,13 @@ export function buildRovoAppThreadPersistencePlan(input: {
 
 export function buildRovoAppPersistedThreadKey(
 	thread: Readonly<RovoAppThread>,
-	options: { includeHermesContext?: boolean } = {},
 ): string {
-	const includeHermesContext = options.includeHermesContext ?? true;
 
 	return buildRovoAppThreadPersistKey({
 		messages: thread.messages,
 		realtimeMessages: thread.realtimeMessages ?? [],
 		visibility: thread.visibility,
 		activeDocumentId: thread.activeDocumentId,
-		...(includeHermesContext
-			? { hermesContext: thread.hermesContext ?? null }
-			: {}),
 		title: thread.title,
 	});
 }
@@ -208,7 +198,6 @@ export function runRovoAppThreadPersistenceLifecycle({
 					realtimeMessages,
 					visibility: threadVisibility,
 					activeDocumentId,
-					hermesContext: persistencePlan.currentHermesContext,
 					title: resolvedThread.title,
 				})
 			) {
@@ -263,7 +252,6 @@ export function runRovoAppThreadPersistenceLifecycle({
 						const resolvedThread = reconcileThreadWithLocalTitle(thread);
 						lastPersistedKeyRef.current = buildRovoAppPersistedThreadKey(
 							resolvedThread,
-							{ includeHermesContext: false },
 						);
 						setThreads((previousThreads) =>
 							upsertRovoAppThreadRecord(previousThreads, resolvedThread, {

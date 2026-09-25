@@ -48,32 +48,12 @@ function getLatestRovoAppMessageDisplayDataPart(
 	return null;
 }
 
-export function isRovoAppHermesContextTranscriptMessage(
-	message: Pick<RovoUIMessage, "id" | "role" | "parts">,
-): boolean {
-	if (message.role !== "assistant") {
-		return false;
-	}
-
-	if (message.id.startsWith("hermes-memory-") || message.id.startsWith("hermes-skill-")) {
-		return true;
-	}
-
-	const widgetType = getLatestRovoAppMessageDisplayDataPart(message, "data-widget-data")?.data?.type;
-	if (widgetType === "hermes-memory" || widgetType === "hermes-skill") {
-		return true;
-	}
-
-	return getLatestRovoAppMessageDisplayDataPart(message, "data-route-decision")?.data?.reason === "hermes_context_widget";
-}
-
 export function getVisibleRovoAppMessages(
 	messages: ReadonlyArray<RovoUIMessage>,
 ): RovoUIMessage[] {
 	return messages.filter((message) =>
 		(message.role === "user" || message.role === "assistant")
 		&& message.metadata?.visibility !== "hidden"
-		&& !isRovoAppHermesContextTranscriptMessage(message)
 	);
 }
 

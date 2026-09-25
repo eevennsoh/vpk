@@ -4,12 +4,10 @@ const { getAiSdk } = require("../lib/ai-sdk-runtime");
 const {
 	WORK_ITEM_REPORT_REQUEST_START,
 	buildWorkItemReportRequestContext,
-	mergeHermesSkillIds,
 	resolveWorkItemReportRequest,
 } = require("../../lib/work-item-report-intent");
-const { classifyCommand, extractCommandFromArgs } = require("../lib/hermes-command-approval");
-const { redactSecrets, detectSecrets } = require("../lib/hermes-secret-redaction");
-const { buildRovoAppHermesContextDescription } = require("../lib/hermes-rovo-context");
+const { classifyCommand, extractCommandFromArgs } = require("../lib/command-approval");
+const { redactSecrets, detectSecrets } = require("../lib/secret-redaction");
 const {
 	pipeWebResponseToExpressResponse,
 } = require("../lib/in-process-http");
@@ -21,9 +19,6 @@ const { isLocalModelRequest, streamLocalModel } = require("../lib/local-model-pr
 const { buildFallbackGenuiSpecFromText } = require("../lib/genui-fallback-spec");
 const { extractDirectSpec } = require("../lib/genui-spec-utils");
 const { shouldAttemptPostToolGenui } = require("../lib/genui-post-tool-eligibility");
-const {
-	shouldSuppressHermesKnowledgeDirectSpecCard,
-} = require("../lib/hermes-direct-spec-suppression");
 const { buildDirectSpecWidgetParts } = require("../lib/direct-spec-widget-parts");
 const { withCanonicalPreviewBody } = require("../lib/widget-preview-payload");
 const { resolveAutomaticGenuiOutcome } = require("../lib/automatic-genui-outcome");
@@ -365,7 +360,6 @@ function buildChatSdkHandlerCompositionDependencies(dependencies = {}) {
 		generateTextViaGateway,
 		getListeningPidsForPort,
 		handleRovoAppArtifactToolRequest,
-		listHermesSkills,
 		mapUiMessagesToConversation,
 		persistRovoAppBrowserScreenshotBuffer,
 		refreshRovoAvailability,
@@ -438,7 +432,6 @@ function buildChatSdkHandlerCompositionDependencies(dependencies = {}) {
 		buildQuestionCardPayloadFromRequestUserInput,
 		buildQuestionMetaFromQuestionCardPayload,
 		buildRouteDecisionResolvedTraceData,
-		buildRovoAppHermesContextDescription,
 		buildRovoPreprocessingTraceData,
 		buildRovoTurnRoutingTelemetry,
 		buildSmartGenerationGatewayOptions,
@@ -534,13 +527,11 @@ function buildChatSdkHandlerCompositionDependencies(dependencies = {}) {
 		isToolNameRelevant,
 		isUnsupportedModalitiesError,
 		isWorkSummaryTurn,
-		listHermesSkills,
 		looksLikeClarificationResponse,
 		looksLikeInabilityResponse,
 		looksLikeWriteBlockedTurn,
 		mapUiMessagesToConversation,
 		mapUiMessagesToRoleContent,
-		mergeHermesSkillIds,
 		normalizeApprovalSubmission,
 		normalizeClarificationSubmission: dependencies.normalizeClarificationSubmission,
 		normalizeClientTimeZone,
@@ -598,7 +589,6 @@ function buildChatSdkHandlerCompositionDependencies(dependencies = {}) {
 		shouldRejectExpiredDeferredClarification,
 		shouldRestorePlanModeOnResume,
 		shouldRetryInteractiveStuckPortRecovery,
-		shouldSuppressHermesKnowledgeDirectSpecCard,
 		shouldSuppressToolFirstIntentStatus,
 		shouldSurfaceMissingStudioAgentResultFailure,
 		splitDirectMediaTextForStreaming,

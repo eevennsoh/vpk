@@ -98,7 +98,6 @@ test("syncWorkspaceRovoConfig creates a workspace-scoped config and MCP file", (
 	try {
 		const result = syncWorkspaceRovoConfig({
 			cwd: workspaceDir,
-			isQmdRovoMcpServerAvailableImpl: () => true,
 		});
 
 		assert.equal(result.exists, true);
@@ -113,26 +112,17 @@ test("syncWorkspaceRovoConfig creates a workspace-scoped config and MCP file", (
 		assert.deepEqual(extractYamlListEntries(workspaceConfig, "allowedMcpServers"), [
 			"url:https://example.com/one",
 			"stdio:npx:base-mcp",
-			"stdio:pnpm:exec qmd mcp",
 			`stdio:node:${path.join(workspaceDir, "scripts", "browser-workspace-mcp.js")}`,
-			`stdio:node:${path.join(workspaceDir, "scripts", "wiki-capture-mcp.js")}`,
 		]);
 
 		const workspaceMcp = JSON.parse(fs.readFileSync(workspaceMcpPath, "utf8"));
 		assert.ok(workspaceMcp.mcpServers["base-server"]);
 		assert.ok(workspaceMcp.mcpServers["browser-workspace"]);
-		assert.ok(workspaceMcp.mcpServers["wiki-capture"]);
+		assert.equal(workspaceMcp.mcpServers["wiki-capture"], undefined);
 		assert.ok(workspaceMcp.mcpServers["local-only"]);
 		assert.equal(workspaceMcp.mcpServers.playwright, undefined);
 		assert.equal(workspaceMcp.mcpServers["chrome-devtools"], undefined);
-		assert.deepEqual(workspaceMcp.mcpServers.qmd, {
-			args: ["exec", "qmd", "mcp"],
-			command: "pnpm",
-			env: {
-				INDEX_PATH: path.join(workspaceDir, ".cache", "qmd", "wiki.sqlite"),
-			},
-			type: "stdio",
-		});
+		assert.equal(workspaceMcp.mcpServers.qmd, undefined);
 		assert.deepEqual(workspaceMcp.mcpServers["browser-workspace"], {
 			args: [path.join(workspaceDir, "scripts", "browser-workspace-mcp.js")],
 			command: "node",
@@ -141,21 +131,14 @@ test("syncWorkspaceRovoConfig creates a workspace-scoped config and MCP file", (
 			},
 			type: "stdio",
 		});
-		assert.deepEqual(workspaceMcp.mcpServers["wiki-capture"], {
-			args: [path.join(workspaceDir, "scripts", "wiki-capture-mcp.js")],
-			command: "node",
-			env: {
-				REPO_ROOT: workspaceDir,
-			},
-			type: "stdio",
-		});
-		assert.equal(Object.keys(workspaceMcp.mcpServers).length, 5);
+
+		assert.equal(Object.keys(workspaceMcp.mcpServers).length, 3);
 	} finally {
 		osModule.homedir = originalHomeDir;
 	}
 });
 
-test("syncWorkspaceRovoConfig skips unavailable optional qmd MCP wiring", () => {
+test("syncWorkspaceRovoConfig removes retired wiki MCP wiring from source and prior generated config", () => {
 	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "rovo-config-optional-mcp-test-"));
 	const homeDir = path.join(tmpDir, "home");
 	const workspaceDir = path.join(tmpDir, "workspace");
@@ -178,6 +161,7 @@ test("syncWorkspaceRovoConfig skips unavailable optional qmd MCP wiring", () => 
 		"  allowedMcpServers:",
 		"  - stdio:npx:base-mcp",
 		"  - stdio:pnpm:exec qmd mcp",
+		"  - stdio:node:/old/scripts/wiki-capture-mcp.js",
 		"  disabledMcpServers: []",
 		"",
 	].join("\n"));
@@ -189,6 +173,7 @@ test("syncWorkspaceRovoConfig skips unavailable optional qmd MCP wiring", () => 
 				args: ["base-mcp"],
 				type: "stdio",
 			},
+			"wiki-capture": { command: "node", args: ["/old/scripts/wiki-capture-mcp.js"], type: "stdio" },
 			qmd: {
 				command: "pnpm",
 				args: ["exec", "qmd", "mcp"],
@@ -202,12 +187,14 @@ test("syncWorkspaceRovoConfig skips unavailable optional qmd MCP wiring", () => 
 		`  mcpConfigPath: ${workspaceMcpPath}`,
 		"  allowedMcpServers:",
 		"  - stdio:pnpm:exec qmd mcp",
+		"  - stdio:node:/old/scripts/wiki-capture-mcp.js",
 		"  disabledMcpServers: []",
 		"",
 	].join("\n"));
 	fs.writeFileSync(workspaceMcpPath, JSON.stringify({
 		inputs: [],
 		mcpServers: {
+			"wiki-capture": { command: "node", args: ["/old/scripts/wiki-capture-mcp.js"], type: "stdio" },
 			qmd: {
 				command: "pnpm",
 				args: ["exec", "qmd", "mcp"],
@@ -221,20 +208,18 @@ test("syncWorkspaceRovoConfig skips unavailable optional qmd MCP wiring", () => 
 	try {
 		syncWorkspaceRovoConfig({
 			cwd: workspaceDir,
-			isQmdRovoMcpServerAvailableImpl: () => false,
 		});
 
 		const workspaceConfig = fs.readFileSync(workspaceConfigPath, "utf8");
 		assert.deepEqual(extractYamlListEntries(workspaceConfig, "allowedMcpServers"), [
 			"stdio:npx:base-mcp",
 			`stdio:node:${path.join(workspaceDir, "scripts", "browser-workspace-mcp.js")}`,
-			`stdio:node:${path.join(workspaceDir, "scripts", "wiki-capture-mcp.js")}`,
 		]);
 
 		const workspaceMcp = JSON.parse(fs.readFileSync(workspaceMcpPath, "utf8"));
 		assert.equal(workspaceMcp.mcpServers.qmd, undefined);
 		assert.ok(workspaceMcp.mcpServers["browser-workspace"]);
-		assert.ok(workspaceMcp.mcpServers["wiki-capture"]);
+		assert.equal(workspaceMcp.mcpServers["wiki-capture"], undefined);
 	} finally {
 		osModule.homedir = originalHomeDir;
 	}

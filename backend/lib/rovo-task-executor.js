@@ -1,7 +1,6 @@
 "use strict";
 
 const { createAIGatewayProvider } = require("./ai-gateway-provider");
-const { buildRovoAppHermesContextDescription } = require("./hermes-rovo-context");
 const {
 	WAIT_FOR_TURN_TIMEOUT_MS,
 	generateTextViaRovo,
@@ -11,24 +10,8 @@ const { getNonEmptyString, parseMaybeJson } = require("./shared-utils");
 
 const aiGatewayProvider = createAIGatewayProvider({ logger: console });
 
-function buildCombinedSystemPrompt({ system, hermesContextDescription }) {
-	return [system, hermesContextDescription]
-		.map((value) => getNonEmptyString(value))
-		.filter(Boolean)
-		.join("\n\n") || undefined;
-}
-
-async function buildHermesContextDescription(selectedSkillIds) {
-	try {
-		return await buildRovoAppHermesContextDescription({ selectedSkillIds });
-	} catch {
-		return null;
-	}
-}
-
 async function executeRovoTask({
 	prompt,
-	selectedSkillIds = [],
 	signal,
 	system,
 	timeoutMs = WAIT_FOR_TURN_TIMEOUT_MS,
@@ -40,21 +23,16 @@ async function executeRovoTask({
 		throw error;
 	}
 
-	const hermesContextDescription = await buildHermesContextDescription(selectedSkillIds);
 	const text = await generateTextViaRovo({
 		conflictPolicy: "wait-for-turn",
 		prompt: normalizedPrompt,
 		signal,
-		system: buildCombinedSystemPrompt({
-			system,
-			hermesContextDescription,
-		}),
+		system: getNonEmptyString(system) ?? undefined,
 		timeoutMs,
 	});
 
 	return {
 		backend: "rovo",
-		hermesContextDescription,
 		text: getNonEmptyString(text) ?? "",
 	};
 }
@@ -105,7 +83,6 @@ async function runRovoBackgroundTask({
 	generateTextImpl = generateTextViaRovo,
 	parseStructuredResult,
 	prompt,
-	selectedSkillIds = [],
 	signal,
 	system,
 	timeoutMs = WAIT_FOR_TURN_TIMEOUT_MS,
@@ -117,15 +94,11 @@ async function runRovoBackgroundTask({
 		throw error;
 	}
 
-	const hermesContextDescription = await buildHermesContextDescription(selectedSkillIds);
 	const executionInput = {
 		conflictPolicy,
 		prompt: normalizedPrompt,
 		signal,
-		system: buildCombinedSystemPrompt({
-			system,
-			hermesContextDescription,
-		}),
+		system: getNonEmptyString(system) ?? undefined,
 		timeoutMs,
 	};
 

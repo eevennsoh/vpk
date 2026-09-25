@@ -11,7 +11,7 @@ Rules section of `AGENTS.md`). Source of truth is `backend/routes/route-manifest
 <!-- generated:begin -->
 <!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->
 
-Generated from `backend/routes/route-manifest.json`. Backend routes: 164; runtime-admin routes: 41; Next API routes: 140.
+Generated from `backend/routes/route-manifest.json`. Backend routes: 122; runtime-admin routes: 18; Next API routes: 103.
 
 ### Backend Routes
 
@@ -19,12 +19,12 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 164; runtim
 | --- | --- | --- | --- |
 | `GET` | `/api/agent-mode` | no | `backend/routes/agent-mode.js:70` |
 | `POST` | `/api/agent-mode` | no | `backend/routes/agent-mode.js:42` |
-| `POST` | `/api/agents/rfp-demo/agent/apply` | no | `backend/routes/demos.js:200` |
-| `POST` | `/api/agents/rfp-demo/events/ticket-entered-column` | no | `backend/routes/demos.js:214` |
-| `POST` | `/api/agents/rfp-demo/reset` | no | `backend/routes/demos.js:184` |
-| `GET` | `/api/agents/rfp-demo/state` | no | `backend/routes/demos.js:156` |
-| `POST` | `/api/agents/rfp-demo/state` | no | `backend/routes/demos.js:168` |
-| `POST` | `/api/agents/rfp-demo/vpk-html-report` | no | `backend/routes/demos.js:67` |
+| `POST` | `/api/agents/rfp-demo/agent/apply` | no | `backend/routes/demos.js:186` |
+| `POST` | `/api/agents/rfp-demo/events/ticket-entered-column` | no | `backend/routes/demos.js:200` |
+| `POST` | `/api/agents/rfp-demo/reset` | no | `backend/routes/demos.js:174` |
+| `GET` | `/api/agents/rfp-demo/state` | no | `backend/routes/demos.js:146` |
+| `POST` | `/api/agents/rfp-demo/state` | no | `backend/routes/demos.js:158` |
+| `POST` | `/api/agents/rfp-demo/vpk-html-report` | no | `backend/routes/demos.js:57` |
 | `GET` | `/api/browser-workspaces` | yes | `backend/routes/browser-workspaces.js:126` |
 | `POST` | `/api/browser-workspaces` | yes | `backend/routes/browser-workspaces.js:142` |
 | `DELETE` | `/api/browser-workspaces/:workspaceId` | yes | `backend/routes/browser-workspaces.js:182` |
@@ -41,10 +41,10 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 164; runtim
 | `POST` | `/api/chat-sdk` | no | `backend/routes/chat-sdk.js:17` |
 | `POST` | `/api/chat-sdk/skip-question` | no | `backend/routes/chat-skip-question.js:60` |
 | `POST` | `/api/chat-title` | no | `backend/routes/ai-utilities.js:181` |
-| `GET` | `/api/checkpoints` | no | `backend/routes/rovo-app.js:267` |
-| `POST` | `/api/checkpoints` | yes | `backend/routes/rovo-app.js:280` |
-| `DELETE` | `/api/checkpoints/:id` | yes | `backend/routes/rovo-app.js:313` |
-| `POST` | `/api/checkpoints/:id/rollback` | yes | `backend/routes/rovo-app.js:299` |
+| `GET` | `/api/checkpoints` | no | `backend/routes/rovo-app.js:264` |
+| `POST` | `/api/checkpoints` | yes | `backend/routes/rovo-app.js:277` |
+| `DELETE` | `/api/checkpoints/:id` | yes | `backend/routes/rovo-app.js:310` |
+| `POST` | `/api/checkpoints/:id/rollback` | yes | `backend/routes/rovo-app.js:296` |
 | `GET` | `/api/chromium-preview` | no | `backend/routes/chromium-preview.js:57` |
 | `POST` | `/api/chromium-preview` | no | `backend/routes/chromium-preview.js:83` |
 | `POST` | `/api/chromium-preview/back` | no | `backend/routes/chromium-preview.js:116` |
@@ -64,24 +64,16 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 164; runtim
 | `POST` | `/api/chromium-preview/type-ref` | no | `backend/routes/chromium-preview.js:227` |
 | `POST` | `/api/chromium-preview/viewport` | no | `backend/routes/chromium-preview.js:102` |
 | `POST` | `/api/chromium-preview/wheel` | no | `backend/routes/chromium-preview.js:302` |
-| `DELETE` | `/api/claim-test` | no | `backend/routes/demos.js:124` |
-| `GET` | `/api/claim-test` | no | `backend/routes/demos.js:98` |
-| `POST` | `/api/claim-test` | no | `backend/routes/demos.js:111` |
+| `DELETE` | `/api/claim-test` | no | `backend/routes/demos.js:114` |
+| `GET` | `/api/claim-test` | no | `backend/routes/demos.js:88` |
+| `POST` | `/api/claim-test` | no | `backend/routes/demos.js:101` |
 | `POST` | `/api/genui-chat` | no | `backend/routes/genui.js:33` |
 | `POST` | `/api/genui-description-summary` | no | `backend/routes/ai-utilities.js:246` |
 | `POST` | `/api/genui-export` | no | `backend/routes/genui.js:39` |
-| `GET` | `/api/health` | no | `backend/routes/status.js:205` |
+| `GET` | `/api/health` | no | `backend/routes/status.js:168` |
 | `POST` | `/api/html-selector/dispatch` | no | `backend/routes/html-selector.js:99` |
 | `GET` | `/api/html-selector/tokens` | no | `backend/routes/html-selector.js:168` |
 | `GET` | `/api/image-proxy` | no | `backend/routes/media.js:184` |
-| `GET` | `/api/jobs` | no | `backend/routes/jobs.js:66` |
-| `POST` | `/api/jobs` | yes | `backend/routes/jobs.js:83` |
-| `DELETE` | `/api/jobs/:id` | yes | `backend/routes/jobs.js:126` |
-| `GET` | `/api/jobs/:id` | no | `backend/routes/jobs.js:98` |
-| `PATCH` | `/api/jobs/:id` | yes | `backend/routes/jobs.js:108` |
-| `POST` | `/api/jobs/:id/pause` | yes | `backend/routes/jobs.js:146` |
-| `POST` | `/api/jobs/:id/resume` | yes | `backend/routes/jobs.js:156` |
-| `POST` | `/api/jobs/:id/run` | yes | `backend/routes/jobs.js:136` |
 | `DELETE` | `/api/orchestrator/log` | yes | `backend/routes/orchestrator.js:72` |
 | `GET` | `/api/orchestrator/log` | no | `backend/routes/orchestrator.js:46` |
 | `GET` | `/api/orchestrator/timeline` | no | `backend/routes/orchestrator.js:59` |
@@ -105,82 +97,48 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 164; runtim
 | `POST` | `/api/personal-graph/vault/select` | no | `backend/routes/personal-graph.js:152` |
 | `POST` | `/api/plan-title` | no | `backend/routes/ai-utilities.js:213` |
 | `GET` | `/api/realtime/audio-conversation-token` | no | `backend/routes/realtime.js:26` |
-| `GET` | `/api/rovo/background-streams` | no | `backend/routes/rovo-app.js:480` |
+| `GET` | `/api/rovo/background-streams` | no | `backend/routes/rovo-app.js:472` |
 | `POST` | `/api/rovo/cancel-deferred-tool` | no | `backend/routes/chat-control.js:52` |
 | `POST` | `/api/rovo/chat` | no | `backend/routes/rovo-chat-proxy.js:21` |
-| `POST` | `/api/rovo/detach` | no | `backend/routes/rovo-app.js:458` |
-| `DELETE` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:773` |
-| `GET` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:697` |
-| `POST` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:720` |
-| `GET` | `/api/rovo/files/:fileId` | no | `backend/routes/rovo-app.js:818` |
-| `POST` | `/api/rovo/files/upload` | no | `backend/routes/rovo-app.js:789` |
-| `GET` | `/api/rovo/generated-media` | no | `backend/routes/rovo-app.js:838` |
-| `GET` | `/api/rovo/messages` | no | `backend/routes/rovo-app.js:171` |
-| `POST` | `/api/rovo/messages` | no | `backend/routes/rovo-app.js:189` |
-| `POST` | `/api/rovo/runs/:threadId/cancel` | no | `backend/routes/rovo-app.js:540` |
-| `POST` | `/api/rovo/runs/:threadId/detach` | no | `backend/routes/rovo-app.js:516` |
-| `GET` | `/api/rovo/runs/:threadId/stream` | no | `backend/routes/rovo-app.js:490` |
+| `POST` | `/api/rovo/detach` | no | `backend/routes/rovo-app.js:450` |
+| `DELETE` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:765` |
+| `GET` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:689` |
+| `POST` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:712` |
+| `GET` | `/api/rovo/files/:fileId` | no | `backend/routes/rovo-app.js:810` |
+| `POST` | `/api/rovo/files/upload` | no | `backend/routes/rovo-app.js:781` |
+| `GET` | `/api/rovo/generated-media` | no | `backend/routes/rovo-app.js:830` |
+| `GET` | `/api/rovo/messages` | no | `backend/routes/rovo-app.js:169` |
+| `POST` | `/api/rovo/messages` | no | `backend/routes/rovo-app.js:187` |
+| `POST` | `/api/rovo/runs/:threadId/cancel` | no | `backend/routes/rovo-app.js:532` |
+| `POST` | `/api/rovo/runs/:threadId/detach` | no | `backend/routes/rovo-app.js:508` |
+| `GET` | `/api/rovo/runs/:threadId/stream` | no | `backend/routes/rovo-app.js:482` |
 | `POST` | `/api/rovo/suggestions` | no | `backend/routes/ai-utilities.js:99` |
-| `DELETE` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:370` |
-| `GET` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:225` |
-| `POST` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:328` |
-| `DELETE` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:627` |
-| `GET` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:396` |
-| `PUT` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:415` |
-| `DELETE` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:612` |
-| `GET` | `/api/rovo/threads/:threadId/browser-workspace` | no | `backend/routes/rovo-app.js:566` |
-| `POST` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:585` |
-| `GET` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:660` |
-| `PATCH` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:676` |
-| `GET` | `/api/sessions/search` | no | `backend/routes/rovo-app.js:246` |
-| `GET` | `/api/skills` | no | `backend/routes/skills.js:58` |
-| `GET` | `/api/skills/:category/:name` | no | `backend/routes/skills.js:248` |
-| `GET` | `/api/skills/:category/:name/bundle` | no | `backend/routes/skills.js:265` |
-| `POST` | `/api/skills/:category/:name/toggle` | yes | `backend/routes/skills.js:282` |
-| `GET` | `/api/skills/drafts` | yes | `backend/lib/hermes-skill-draft-routes.js:8` |
-| `DELETE` | `/api/skills/drafts/:id` | yes | `backend/lib/hermes-skill-draft-routes.js:80` |
-| `GET` | `/api/skills/drafts/:id` | yes | `backend/lib/hermes-skill-draft-routes.js:27` |
-| `POST` | `/api/skills/drafts/:id/approve` | yes | `backend/lib/hermes-skill-draft-routes.js:42` |
-| `POST` | `/api/skills/drafts/:id/reject` | yes | `backend/lib/hermes-skill-draft-routes.js:63` |
-| `GET` | `/api/skills/hub/browse` | no | `backend/routes/skills.js:90` |
-| `GET` | `/api/skills/hub/check` | no | `backend/routes/skills.js:188` |
-| `GET` | `/api/skills/hub/inspect/*identifier` | no | `backend/routes/skills.js:105` |
-| `POST` | `/api/skills/hub/install` | yes | `backend/routes/skills.js:133` |
-| `POST` | `/api/skills/hub/install-by-id` | yes | `backend/routes/skills.js:151` |
-| `GET` | `/api/skills/hub/installed` | no | `backend/routes/skills.js:121` |
-| `GET` | `/api/skills/hub/search` | no | `backend/routes/skills.js:72` |
-| `GET` | `/api/skills/hub/taps` | no | `backend/routes/skills.js:201` |
-| `POST` | `/api/skills/hub/taps` | yes | `backend/routes/skills.js:213` |
-| `DELETE` | `/api/skills/hub/taps/*repo` | yes | `backend/routes/skills.js:229` |
-| `DELETE` | `/api/skills/hub/uninstall/*name` | yes | `backend/routes/skills.js:169` |
+| `DELETE` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:365` |
+| `GET` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:223` |
+| `POST` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:325` |
+| `DELETE` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:619` |
+| `GET` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:391` |
+| `PUT` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:409` |
+| `DELETE` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:604` |
+| `GET` | `/api/rovo/threads/:threadId/browser-workspace` | no | `backend/routes/rovo-app.js:558` |
+| `POST` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:577` |
+| `GET` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:652` |
+| `PATCH` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:668` |
+| `GET` | `/api/sessions/search` | no | `backend/routes/rovo-app.js:243` |
 | `POST` | `/api/sound-generation` | no | `backend/routes/media.js:91` |
 | `POST` | `/api/speech-transcription` | no | `backend/routes/media.js:133` |
-| `POST` | `/api/standup` | no | `backend/routes/demos.js:137` |
-| `GET` | `/api/status` | no | `backend/routes/status.js:99` |
-| `GET` | `/api/status/hermes` | no | `backend/routes/status.js:81` |
-| `GET` | `/api/status/rovo` | no | `backend/routes/status.js:64` |
+| `POST` | `/api/standup` | no | `backend/routes/demos.js:127` |
+| `GET` | `/api/status` | no | `backend/routes/status.js:68` |
+| `GET` | `/api/status/rovo` | no | `backend/routes/status.js:50` |
 | `POST` | `/api/studio/agent-data-flow` | no | `backend/routes/ai-utilities.js:144` |
-| `POST` | `/api/ticket-classify` | no | `backend/routes/demos.js:79` |
+| `POST` | `/api/ticket-classify` | no | `backend/routes/demos.js:69` |
 | `GET` | `/api/vpk-html` | no | `backend/routes/vpk-html.js:417` |
 | `GET` | `/api/vpk-html/*assetPath` | no | `backend/routes/vpk-html.js:418` |
 | `POST` | `/api/vpk-html/apply-tokens` | no | `backend/routes/vpk-html.js:310` |
 | `GET` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:335` |
 | `PUT` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:356` |
 | `POST` | `/api/vpk-html/publish-gist` | no | `backend/routes/vpk-html.js:383` |
-| `POST` | `/api/wiki/captures` | yes | `backend/routes/wiki.js:20` |
-| `GET` | `/api/wiki/memories` | no | `backend/routes/wiki.js:23` |
-| `DELETE` | `/api/wiki/memories/:scope/blocks/:blockId` | yes | `backend/routes/wiki.js:28` |
-| `DELETE` | `/api/wiki/memories/proposals/:proposalId` | yes | `backend/routes/wiki.js:29` |
-| `POST` | `/api/wiki/memories/reset` | yes | `backend/routes/wiki.js:30` |
-| `GET` | `/api/wiki/memory-explorer` | no | `backend/routes/wiki.js:24` |
-| `POST` | `/api/wiki/memory-explorer/brief` | no | `backend/routes/wiki.js:26` |
-| `POST` | `/api/wiki/memory-explorer/deck` | no | `backend/routes/wiki.js:27` |
-| `GET` | `/api/wiki/memory-explorer/export` | no | `backend/routes/wiki.js:25` |
-| `GET` | `/api/wiki/search` | no | `backend/routes/wiki.js:21` |
-| `GET` | `/api/wiki/status` | no | `backend/routes/wiki.js:19` |
-| `POST` | `/api/wiki/sync` | yes | `backend/routes/wiki.js:31` |
-| `POST` | `/api/wiki/synthesis` | yes | `backend/routes/wiki.js:22` |
-| `GET` | `/healthcheck` | no | `backend/routes/status.js:204` |
+| `GET` | `/healthcheck` | no | `backend/routes/status.js:167` |
 
 ### Next API Proxy Routes
 
@@ -226,14 +184,6 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 164; runtim
 | `GET` | `/api/health` | `GET /api/health` | `app/api/health/route.ts:3` |
 | `POST` | `/api/html-selector/dispatch` | `POST /api/html-selector/dispatch` | `app/api/html-selector/dispatch/route.ts:5` |
 | `GET` | `/api/html-selector/tokens` | `GET /api/html-selector/tokens` | `app/api/html-selector/tokens/route.ts:3` |
-| `GET` | `/api/jobs` | `GET /api/jobs` | `app/api/jobs/route.ts:5` |
-| `POST` | `/api/jobs` | `POST /api/jobs` | `app/api/jobs/route.ts:12` |
-| `DELETE` | `/api/jobs/:id` | `DELETE /api/jobs/:id` | `app/api/jobs/[id]/route.ts:33` |
-| `GET` | `/api/jobs/:id` | `GET /api/jobs/:id` | `app/api/jobs/[id]/route.ts:11` |
-| `PATCH` | `/api/jobs/:id` | `PATCH /api/jobs/:id` | `app/api/jobs/[id]/route.ts:19` |
-| `POST` | `/api/jobs/:id/pause` | `POST /api/jobs/:id/pause` | `app/api/jobs/[id]/pause/route.ts:11` |
-| `POST` | `/api/jobs/:id/resume` | `POST /api/jobs/:id/resume` | `app/api/jobs/[id]/resume/route.ts:11` |
-| `POST` | `/api/jobs/:id/run` | `POST /api/jobs/:id/run` | `app/api/jobs/[id]/run/route.ts:11` |
 | `DELETE` | `/api/orchestrator/log` | `DELETE /api/orchestrator/log` | `app/api/orchestrator/log/route.ts:21` |
 | `GET` | `/api/orchestrator/log` | `GET /api/orchestrator/log` | `app/api/orchestrator/log/route.ts:4` |
 | `GET` | `/api/orchestrator/timeline` | `GET /api/orchestrator/timeline` | `app/api/orchestrator/timeline/route.ts:4` |
@@ -283,29 +233,11 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 164; runtim
 | `GET` | `/api/rovo/votes` | `GET /api/rovo/votes` | `app/api/rovo/votes/route.ts:6` |
 | `PATCH` | `/api/rovo/votes` | `PATCH /api/rovo/votes` | `app/api/rovo/votes/route.ts:18` |
 | `GET` | `/api/sessions/search` | `GET /api/sessions/search` | `app/api/sessions/search/route.ts:4` |
-| `GET` | `/api/skills` | `GET /api/skills` | `app/api/skills/route.ts:4` |
-| `GET` | `/api/skills/:category/:name` | `GET /api/skills/:category/:name` | `app/api/skills/[category]/[name]/route.ts:11` |
-| `GET` | `/api/skills/:category/:name/bundle` | `GET /api/skills/:category/:name/bundle` | `app/api/skills/[category]/[name]/bundle/route.ts:11` |
-| `POST` | `/api/skills/:category/:name/toggle` | `POST /api/skills/:category/:name/toggle` | `app/api/skills/[category]/[name]/toggle/route.ts:11` |
-| `GET` | `/api/skills/drafts` | `GET /api/skills/drafts` | `app/api/skills/drafts/route.ts:4` |
-| `DELETE` | `/api/skills/drafts/:id` | `DELETE /api/skills/drafts/:id` | `app/api/skills/drafts/[id]/route.ts:18` |
-| `GET` | `/api/skills/drafts/:id` | `GET /api/skills/drafts/:id` | `app/api/skills/drafts/[id]/route.ts:10` |
-| `POST` | `/api/skills/drafts/:id/approve` | `POST /api/skills/drafts/:id/approve` | `app/api/skills/drafts/[id]/approve/route.ts:10` |
-| `POST` | `/api/skills/drafts/:id/reject` | `POST /api/skills/drafts/:id/reject` | `app/api/skills/drafts/[id]/reject/route.ts:10` |
-| `GET` | `/api/skills/hub` | `GET /api/skills/hub/browse`<br>`GET /api/skills/hub/inspect/*identifier`<br>`GET /api/skills/hub/installed`<br>`GET /api/skills/hub/search` | `app/api/skills/hub/route.ts:5` |
-| `POST` | `/api/skills/hub` | `POST /api/skills/hub/install`<br>`POST /api/skills/hub/install-by-id` | `app/api/skills/hub/route.ts:36` |
-| `GET` | `/api/skills/hub/browse` | `GET /api/skills/hub/browse` | `app/api/skills/hub/browse/route.ts:4` |
-| `GET` | `/api/skills/hub/inspect/*identifier` | `GET /api/skills/hub/inspect/*identifier` | `app/api/skills/hub/inspect/[...identifier]/route.ts:9` |
-| `POST` | `/api/skills/hub/install` | `POST /api/skills/hub/install` | `app/api/skills/hub/install/route.ts:5` |
-| `POST` | `/api/skills/hub/install-by-id` | `POST /api/skills/hub/install-by-id` | `app/api/skills/hub/install-by-id/route.ts:5` |
-| `GET` | `/api/skills/hub/installed` | `GET /api/skills/hub/installed` | `app/api/skills/hub/installed/route.ts:3` |
-| `GET` | `/api/skills/hub/search` | `GET /api/skills/hub/search` | `app/api/skills/hub/search/route.ts:4` |
 | `POST` | `/api/sound-generation` | `POST /api/sound-generation` | `app/api/sound-generation/route.ts:5` |
 | `POST` | `/api/speech-transcription` | `POST /api/speech-transcription` | `app/api/speech-transcription/route.ts:5` |
 | `POST` | `/api/sprint-board/tasks` |  | `app/api/sprint-board/tasks/route.ts:20` |
 | `POST` | `/api/standup` | `POST /api/standup` | `app/api/standup/route.ts:5` |
 | `GET` | `/api/status` | `GET /api/status` | `app/api/status/route.ts:3` |
-| `GET` | `/api/status/hermes` | `GET /api/status/hermes` | `app/api/status/hermes/route.ts:3` |
 | `GET` | `/api/status/rovo` | `GET /api/status/rovo` | `app/api/status/rovo/route.ts:3` |
 | `POST` | `/api/studio/agent-data-flow` | `POST /api/studio/agent-data-flow` | `app/api/studio/agent-data-flow/route.ts:6` |
 | `POST` | `/api/ticket-classify` | `POST /api/ticket-classify` | `app/api/ticket-classify/route.ts:5` |
@@ -315,16 +247,5 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 164; runtim
 | `GET` | `/api/vpk-html/notes` | `GET /api/vpk-html/notes` | `app/api/vpk-html/notes/route.ts:5` |
 | `PUT` | `/api/vpk-html/notes` | `PUT /api/vpk-html/notes` | `app/api/vpk-html/notes/route.ts:14` |
 | `POST` | `/api/vpk-html/publish-gist` | `POST /api/vpk-html/publish-gist` | `app/api/vpk-html/publish-gist/route.ts:5` |
-| `DELETE` | `/api/wiki/memories` | `DELETE /api/wiki/memories/proposals/:proposalId` | `app/api/wiki/memories/route.ts:11` |
-| `GET` | `/api/wiki/memories` | `GET /api/wiki/memories` | `app/api/wiki/memories/route.ts:4` |
-| `DELETE` | `/api/wiki/memories/:scope/blocks/:blockId` | `DELETE /api/wiki/memories/:scope/blocks/:blockId` | `app/api/wiki/memories/[scope]/blocks/[blockId]/route.ts:12` |
-| `POST` | `/api/wiki/memories/reset` | `POST /api/wiki/memories/reset` | `app/api/wiki/memories/reset/route.ts:3` |
-| `GET` | `/api/wiki/memory-explorer` | `GET /api/wiki/memory-explorer` | `app/api/wiki/memory-explorer/route.ts:3` |
-| `POST` | `/api/wiki/memory-explorer/brief` | `POST /api/wiki/memory-explorer/brief` | `app/api/wiki/memory-explorer/brief/route.ts:4` |
-| `POST` | `/api/wiki/memory-explorer/deck` | `POST /api/wiki/memory-explorer/deck` | `app/api/wiki/memory-explorer/deck/route.ts:4` |
-| `GET` | `/api/wiki/memory-explorer/export` | `GET /api/wiki/memory-explorer/export` | `app/api/wiki/memory-explorer/export/route.ts:3` |
-| `GET` | `/api/wiki/search` | `GET /api/wiki/search` | `app/api/wiki/search/route.ts:4` |
-| `GET` | `/api/wiki/status` | `GET /api/wiki/status` | `app/api/wiki/status/route.ts:3` |
-| `POST` | `/api/wiki/sync` | `POST /api/wiki/sync` | `app/api/wiki/sync/route.ts:5` |
 
 <!-- generated:end -->

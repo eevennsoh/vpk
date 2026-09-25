@@ -35,8 +35,6 @@ test("AI cost rate-limit route table preserves exact protected paths", () => {
 		"/api/sound-generation",
 		"/api/speech-transcription",
 		"/api/rovo/files/upload",
-		"/api/skills/hub/install",
-		"/api/skills/hub/install-by-id",
 	]);
 	assert.equal(AI_COST_RATE_LIMIT_MAX, 60);
 	assert.equal(AI_COST_RATE_LIMIT_WINDOW_MS, 60_000);

@@ -69,8 +69,8 @@ function requireObject(name, value) {
 function createRovoAppRuntimeComposition({
 	activeRequests,
 	agentsRfpDemoStateManager,
+	updateAgentsRfpDemoState,
 	aiGatewayProvider,
-	areHermesCompanionsEnabled,
 	compressUiConversationHistory,
 	createStageTrace,
 	dispatchChatSdkRequestInProcess,
@@ -78,9 +78,7 @@ function createRovoAppRuntimeComposition({
 	generateTextViaGateway,
 	getCurrentRovoSession,
 	hasGatewayUrlConfigured,
-	hermesSkillDraftManager,
 	isRovoAvailable,
-	listHermesSkills,
 	logger = console,
 	mapUiMessagesToConversation,
 	requestUserInputQuestionMetaStore,
@@ -121,8 +119,8 @@ function createRovoAppRuntimeComposition({
 	requireObject("rovoAppRunManager", rovoAppRunManager);
 	requireObject("rovoAppThreadManager", rovoAppThreadManager);
 	requireObject("rovoAppUploadManager", rovoAppUploadManager);
-	requireFunction("areHermesCompanionsEnabled", areHermesCompanionsEnabled);
 	requireFunction("compressUiConversationHistory", compressUiConversationHistory);
+	requireFunction("updateAgentsRfpDemoState", updateAgentsRfpDemoState);
 	requireFunction("createStageTrace", createStageTrace);
 	requireFunction("dispatchChatSdkRequestInProcess", dispatchChatSdkRequestInProcess);
 	requireFunction("ensureRovoSession", ensureRovoSession);
@@ -130,7 +128,6 @@ function createRovoAppRuntimeComposition({
 	requireFunction("getCurrentRovoSession", getCurrentRovoSession);
 	requireFunction("hasGatewayUrlConfigured", hasGatewayUrlConfigured);
 	requireFunction("isRovoAvailable", isRovoAvailable);
-	requireFunction("listHermesSkills", listHermesSkills);
 	requireFunction("mapUiMessagesToConversation", mapUiMessagesToConversation);
 	requireFunction("resolveRovoAppPortAvailability", resolveRovoAppPortAvailability);
 	requireFunction("rovoCancelChat", rovoCancelChat);
@@ -223,9 +220,7 @@ function createRovoAppRuntimeComposition({
 	const {
 		consumeRovoAppManagedResponse,
 	} = createRovoAppManagedResponseConsumer({
-		areHermesCompanionsEnabled,
 		finalizeRovoAppRun,
-		hermesSkillDraftManager,
 		mapUiMessagesToConversation,
 		persistRovoAppRunMessagesSnapshot,
 		persistRovoAppRunState,
@@ -238,7 +233,6 @@ function createRovoAppRuntimeComposition({
 		prepareRovoAppManagedRunRequest,
 	} = createRovoAppManagedRunRequestPreparer({
 		compressUiConversationHistory,
-		listHermesSkills,
 		mapUiMessagesToConversation,
 		rovoAppDocumentManager,
 		rovoAppThreadManager,
@@ -304,6 +298,7 @@ function createRovoAppRuntimeComposition({
 
 	const agentsRfpDemoChatStreamOwner = createAgentsRfpDemoChatStreamOwner({
 		agentsRfpDemoStateManager,
+		updateAgentsRfpDemoState,
 		generateTextViaGateway,
 		requestUserInputQuestionMetaStore,
 		rovoAppDocumentManager,

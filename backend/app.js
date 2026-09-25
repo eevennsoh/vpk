@@ -12,9 +12,6 @@ const {
 	registerSecurityMiddleware,
 } = require("./middleware/security");
 const {
-	registerWikiRoutes,
-} = require("./routes/wiki");
-const {
 	registerPersonalGraphRoutes,
 } = require("./routes/personal-graph");
 const {
@@ -26,12 +23,6 @@ const {
 const {
 	registerHtmlSelectorRoutes,
 } = require("./routes/html-selector");
-const {
-	registerJobsRoutes,
-} = require("./routes/jobs");
-const {
-	registerSkillsRoutes,
-} = require("./routes/skills");
 const {
 	registerMediaRoutes,
 } = require("./routes/media");
@@ -116,7 +107,6 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		advanceAgentsRfpDemoProcessing,
 		agentsRfpDemoStateManager,
 		appendRuntimeSocketToken,
-		archiveHermesSkill,
 		browserWorkspaceManager,
 		buildLlmRoutingStatus,
 		buildQuestionCardSkipNotification,
@@ -131,12 +121,10 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		clearPlanSession,
 		clearRunState,
 		collectUploadIdsFromMessages,
-		createHermesSkillFromBundle,
 		createRovoUnavailableError,
 		createRuntimeSocketToken,
 		debugLog,
 		debugMode,
-		deleteAgentsRfpDemoHermesJobs,
 		deleteAgentsRfpDemoThread,
 		deleteThreadBrowserWorkspace,
 		destroyMirrorBrowser,
@@ -150,26 +138,15 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		getAiGatewayConfigReport,
 		getAgentMode,
 		getEnvVars,
-		getHermesRuntimeStatus,
-		getHermesSkill,
-		getHermesSkillBundle,
-		getMergedHermesJob,
 		getMirrorBrowser,
 		getThreadBrowserWorkspace,
 		handleChatSdkRequest,
 		hasGatewayUrlConfigured,
-		hermesJobLinkManager,
-		hermesJobsProvider,
-		hermesSkillDraftManager,
 		isBrowserWorkspaceNotFoundError,
 		isRovoAvailable,
-		listHermesSkills,
-		listMergedHermesJobs,
 		logger = console,
 		maybeMigratePersistedThreadBrowserScreenshots,
 		orchestratorLog,
-		parseOptionalBoolean,
-		persistHermesJobLink,
 		persistMessageFiles,
 		persistRunState,
 		proxyRovoAppChatRequest,
@@ -184,20 +161,15 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		runtimePort,
 		runtimeSocketTokenTtlMs,
 		runAgentsRfpDemoJob,
+		resetAgentsRfpDemo,
+		saveAgentsRfpDemoState,
+		handleAgentsRfpDemoTicketEvent,
 		searchThreads,
 		sendGatewayErrorResponse,
-		sendHermesUnavailableResponse,
 		setAgentMode,
-		skillsHubClient,
 		startNextQueuedRun,
 		streamChatViaRovo,
-		syncHermesJobResultsToRovoThreads,
-		syncHermesJobsForRovoThreads,
-		syncThreadPendingSkillDraftIds,
-		toggleHermesSkill,
-		updateHermesSkillFromBundle,
 		waitForReady,
-		wikiRouteHandlers,
 	} = dependencies;
 
 	registerAiUtilitiesRoutes(app, {
@@ -214,11 +186,12 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 	registerDemosRoutes(app, {
 		advanceAgentsRfpDemoProcessing,
 		agentsRfpDemoStateManager,
-		deleteAgentsRfpDemoHermesJobs,
 		deleteAgentsRfpDemoThread,
 		generateAgentsRfpDemoReportPreview,
-		getMergedHermesJob,
 		runAgentsRfpDemoJob,
+		resetAgentsRfpDemo,
+		saveAgentsRfpDemoState,
+		handleAgentsRfpDemoTicketEvent,
 	});
 
 	registerChatSdkRoutes(app, {
@@ -300,7 +273,6 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		rovoAppVoteManager,
 		searchThreads,
 		startNextQueuedRun,
-		syncHermesJobsForRovoThreads,
 	});
 
 	registerOrchestratorRoutes(app, {
@@ -315,46 +287,14 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		debugMode,
 		getAiGatewayConfigReport,
 		getEnvVars,
-		getHermesRuntimeStatus,
-		hermesJobsProvider,
 		hasGatewayUrlConfigured,
 		isRovoAvailable,
 	});
 
-	registerJobsRoutes(app, {
-		advanceAgentsRfpDemoProcessing,
-		getMergedHermesJob,
-		hermesJobLinkManager,
-		hermesJobsProvider,
-		listMergedHermesJobs,
-		persistHermesJobLink,
-		requireRuntimeAdmin,
-		rovoAppThreadManager,
-		sendHermesUnavailableResponse,
-		syncHermesJobResultsToRovoThreads,
-	});
 
-	registerWikiRoutes(app, {
-		requireRuntimeAdmin,
-		wikiRouteHandlers,
-	});
 
 	registerPersonalGraphRoutes(app);
 
-	registerSkillsRoutes(app, {
-		archiveHermesSkill,
-		createHermesSkillFromBundle,
-		getHermesSkill,
-		getHermesSkillBundle,
-		hermesSkillDraftManager,
-		listHermesSkills,
-		parseOptionalBoolean,
-		requireRuntimeAdmin,
-		skillsHubClient,
-		syncThreadPendingSkillDraftIds,
-		toggleHermesSkill,
-		updateHermesSkillFromBundle,
-	});
 
 	registerRealtimeRoutes(app, {
 		createRuntimeSocketToken,

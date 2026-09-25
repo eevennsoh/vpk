@@ -52,81 +52,6 @@ function getTimestamp(value) {
 	return Date.parse(value);
 }
 
-function getRealtimeWidgetType(message) {
-	for (const part of message.parts) {
-		if (part?.type !== "data-widget-data") {
-			continue;
-		}
-
-		const widgetType = typeof part.data?.type === "string"
-			? part.data.type.trim()
-			: "";
-		if (widgetType) {
-			return widgetType;
-		}
-	}
-
-	return null;
-}
-
-function getRealtimeRouteDecisionReason(message) {
-	for (const part of message.parts) {
-		if (part?.type !== "data-route-decision") {
-			continue;
-		}
-
-		const reason = typeof part.data?.reason === "string"
-			? part.data.reason.trim()
-			: "";
-		if (reason) {
-			return reason;
-		}
-	}
-
-	return null;
-}
-
-function isLegacyHermesRealtimeMessage(message) {
-	if (!message || typeof message !== "object") {
-		return false;
-	}
-
-	if (
-		typeof message.id === "string"
-		&& (message.id.startsWith("hermes-memory-") || message.id.startsWith("hermes-skill-"))
-	) {
-		return true;
-	}
-
-	const widgetType = getRealtimeWidgetType(message);
-	if (widgetType === "hermes-memory" || widgetType === "hermes-skill") {
-		return true;
-	}
-
-	return getRealtimeRouteDecisionReason(message) === "hermes_context_widget";
-}
-
-function normalizeRealtimeMessage(message) {
-	if (!isLegacyHermesRealtimeMessage(message)) {
-		return message;
-	}
-
-	const metadata = message.metadata && typeof message.metadata === "object"
-		? message.metadata
-		: {};
-	if (metadata.visibility === "hidden") {
-		return message;
-	}
-
-	return {
-		...message,
-		metadata: {
-			...metadata,
-			visibility: "hidden",
-		},
-	};
-}
-
 function normalizeRealtimeMessages(rawMessages) {
 	if (!Array.isArray(rawMessages)) {
 		return [];
@@ -141,54 +66,11 @@ function normalizeRealtimeMessages(rawMessages) {
 			(message.role === "user" || message.role === "assistant") &&
 			Array.isArray(message.parts)
 		) {
-			return [normalizeRealtimeMessage(message)];
+			return [message];
 		}
 
 		return [];
 	});
-}
-
-function normalizeHermesContext(rawHermesContext) {
-	if (!rawHermesContext || typeof rawHermesContext !== "object") {
-		return null;
-	}
-
-	const selectedSkillIds = Array.isArray(rawHermesContext.selectedSkillIds)
-		? rawHermesContext.selectedSkillIds.filter(
-			(skillId) => typeof skillId === "string" && skillId.trim().length > 0,
-		)
-		: [];
-	const autoSelectedSkillIds = Array.isArray(rawHermesContext.autoSelectedSkillIds)
-		? rawHermesContext.autoSelectedSkillIds.filter(
-			(skillId) => typeof skillId === "string" && skillId.trim().length > 0,
-		)
-		: [];
-	const pendingDraftIds = Array.isArray(rawHermesContext.pendingDraftIds)
-		? rawHermesContext.pendingDraftIds.filter(
-			(draftId) => typeof draftId === "string" && draftId.trim().length > 0,
-		)
-		: [];
-	const recentMemoryProposalIds = Array.isArray(rawHermesContext.recentMemoryProposalIds)
-		? rawHermesContext.recentMemoryProposalIds.filter(
-			(proposalId) => typeof proposalId === "string" && proposalId.trim().length > 0,
-		)
-		: [];
-
-	const normalizedContext = {
-		selectedSkillIds: Array.from(new Set(selectedSkillIds.map((skillId) => skillId.trim()))),
-		autoSelectedSkillIds: Array.from(
-			new Set(autoSelectedSkillIds.map((skillId) => skillId.trim())),
-		),
-		pendingDraftIds: Array.from(new Set(pendingDraftIds.map((draftId) => draftId.trim()))),
-	};
-
-	if (recentMemoryProposalIds.length > 0) {
-		normalizedContext.recentMemoryProposalIds = Array.from(
-			new Set(recentMemoryProposalIds.map((proposalId) => proposalId.trim())),
-		);
-	}
-
-	return normalizedContext;
 }
 
 function omitUndefinedFields(fields) {
@@ -315,7 +197,6 @@ function normalizeThreadRecord(rawThread) {
 				typeof rawThread.activeDocumentId === "string" && rawThread.activeDocumentId.trim()
 					? rawThread.activeDocumentId.trim()
 					: null,
-			hermesContext: normalizeHermesContext(rawThread.hermesContext),
 			sessionId,
 		sessionMode: normalizeSessionMode(
 			rawThread.sessionMode ?? rawThread.session_mode,
@@ -426,37 +307,8 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		await fs.rm(threadDir, { recursive: true, force: true });
 	};
 
-	const mergeHermesContextFields = (currentHermesContext, nextHermesContext) => {
-		if (!nextHermesContext || typeof nextHermesContext !== "object") {
-			return nextHermesContext;
-		}
-
-		return {
-			selectedSkillIds:
-				nextHermesContext.selectedSkillIds ?? currentHermesContext?.selectedSkillIds,
-			autoSelectedSkillIds:
-				nextHermesContext.autoSelectedSkillIds ?? currentHermesContext?.autoSelectedSkillIds,
-			pendingDraftIds:
-				nextHermesContext.pendingDraftIds ?? currentHermesContext?.pendingDraftIds,
-			recentMemoryProposalIds:
-				nextHermesContext.recentMemoryProposalIds ??
-				currentHermesContext?.recentMemoryProposalIds,
-		};
-	};
-
-	const prepareThreadUpdateFields = (currentThread, fields) => {
-		const definedFields = omitUndefinedFields(fields);
-		if (Object.hasOwn(definedFields, "hermesContext")) {
-			definedFields.hermesContext = mergeHermesContextFields(
-				currentThread.hermesContext,
-				definedFields.hermesContext,
-			);
-		}
-		return definedFields;
-	};
-
 	const persistUpdatedThread = async (threadId, currentThread, fields = {}) => {
-		const definedFields = prepareThreadUpdateFields(currentThread, fields);
+		const definedFields = omitUndefinedFields(fields);
 		const nextThread = normalizeThreadRecord({
 			...currentThread,
 			...definedFields,
@@ -513,7 +365,6 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		modelId,
 		provider,
 		activeDocumentId,
-		hermesContext,
 		sessionId,
 		sessionMode,
 		activeRun,
@@ -532,7 +383,6 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 			modelId,
 			provider,
 			activeDocumentId,
-			hermesContext,
 			sessionId,
 			sessionMode,
 			activeRun,
