@@ -85,6 +85,15 @@ test("drop receipts land in the geometric center of the well", () => {
 	assert.doesNotMatch(DROPZONE, /JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u);
 });
 
+test("vertical pinning keeps every dropzone layer on its baseline", () => {
+	assert.match(FOOTER, /pinVerticalMagnet=\{columnSizing === "content"\}/u);
+	assert.equal(
+		(DROPZONE.match(/y: pinMagnet \|\| pinVerticalMagnet \? 0 : magnet\.(?:y|labelY)/gu) ?? []).length,
+		3,
+	);
+	assert.equal((DROPZONE.match(/x: pinMagnet \? 0 : magnet\.(?:x|labelX)/gu) ?? []).length, 3);
+});
+
 test("board insertion marker avoids clipped paint before its anchor resolves", () => {
 	const lineSource = readFileSync(join(__dirname, "board-card-insertion-line.tsx"), "utf8");
 	const contextSource = readFileSync(
