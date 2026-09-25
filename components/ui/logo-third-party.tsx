@@ -166,23 +166,35 @@ export function LogoThirdParty({
 	sizePx,
 	wordmark,
 	className,
-	borderless = false,
-	tileBackground = "white",
+	...packageProps
 }: Readonly<LogoThirdPartyProps>) {
-	const accessibleLabel = label ?? THIRD_PARTY_LOGO_LABELS[name];
-	const Icon = THIRD_PARTY_LOGO_ICONS[name];
 	const resolvedSize = toThirdPartyLogoTileSize(size);
 	if (artwork !== "package" && isLocalAssetThirdPartyLogoName(name)) {
 		return (
 			<LocalThirdPartyArtwork
 				className={className}
-				label={accessibleLabel}
+				label={label ?? THIRD_PARTY_LOGO_LABELS[name]}
 				sizePx={sizePx ?? CUSTOM_LOGO_SIZES[resolvedSize] ?? CUSTOM_LOGO_SIZES.small}
 				src={thirdPartyLogoSrc(name, artwork === "glyph" ? "glyph" : "standard")}
 				wordmark={wordmark}
 			/>
 		);
 	}
+	return <PackageThirdPartyArtwork {...packageProps} name={name} label={label} size={size} wordmark={wordmark} className={className} />;
+}
+
+function PackageThirdPartyArtwork({
+	name,
+	label,
+	size,
+	wordmark,
+	className,
+	borderless = false,
+	tileBackground = "white",
+}: Readonly<LogoThirdPartyProps>) {
+	const accessibleLabel = label ?? THIRD_PARTY_LOGO_LABELS[name];
+	const Icon = THIRD_PARTY_LOGO_ICONS[name];
+	const resolvedSize = toThirdPartyLogoTileSize(size);
 
 	if (!Icon) {
 		// No package icon: only manifest-declared local fallback brands render

@@ -150,12 +150,10 @@ export function AgentAvatarVisual({
 		<RovoColorIcon label="" size="xxsmall" />
 	) : logoName ? (
 		<AtlassianLogo label="" name={logoName} size={insetLogoSize} themeAware />
-	) : codingVisual?.artwork && brandName ? (
-		<LogoThirdParty artwork={codingVisual.artwork} borderless label="" name={brandName}
-			size={externalLogoSize} sizePx={codingVisual.logoFrameSizePx}
-			className={sizePx >= 32 ? codingVisual.logoClassName : undefined} />
 	) : brandName ? (
-		<LogoThirdParty borderless label="" name={brandName} size={externalLogoSize} />
+		<LogoThirdParty borderless label="" name={brandName} size={externalLogoSize}
+			artwork={codingVisual?.artwork} sizePx={codingVisual?.logoFrameSizePx}
+			className={sizePx >= 32 ? codingVisual?.logoClassName : undefined} />
 	) : avatarSrc ? (
 		<>
 			<AvatarImage
