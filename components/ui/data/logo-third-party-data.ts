@@ -31,7 +31,7 @@ export const THIRD_PARTY_LOGO_MANIFEST = [
 	{ name: "clickup", label: "ClickUp", packageIcon: { entrypoint: "clickup", exportName: "ClickupIcon" }, localAsset: true },
 	{ name: "cloudflare", label: "Cloudflare", packageIcon: { entrypoint: "cloudflare", exportName: "CloudflareIcon" } },
 	{ name: "coupa", label: "Coupa", localAsset: true },
-	{ name: "cursor", label: "Cursor", packageIcon: { entrypoint: "cursor", exportName: "CursorIcon" } },
+	{ name: "cursor", label: "Cursor", packageIcon: { entrypoint: "cursor", exportName: "CursorIcon" }, localAsset: true },
 	{ name: "daloopa", label: "Daloopa", packageIcon: { entrypoint: "daloopa", exportName: "DaloopaIcon" } },
 	{ name: "databricks", label: "Databricks", packageIcon: { entrypoint: "databricks", exportName: "DatabricksIcon" }, localAsset: true },
 	{ name: "datadog", label: "Datadog", packageIcon: { entrypoint: "datadog", exportName: "DataDogIcon" }, localAsset: true },
