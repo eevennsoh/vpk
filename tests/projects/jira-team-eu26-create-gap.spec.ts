@@ -2,6 +2,66 @@ import { expect, test } from "@playwright/test";
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 
+test.describe("dropzone label clipping", () => {
+	test.use({ ignoreHTTPSErrors: true });
+	for (const width of [1720, 1100]) {
+		for (const reducedMotion of ["no-preference", "reduce"] as const) {
+			test(`dropzone label stays fully painted at ${width}px (${reducedMotion})`, async ({ page }) => {
+				await page.emulateMedia({ reducedMotion });
+				await page.setViewportSize({ width, height: 760 });
+				await page.goto(`${origin}/jira-team-eu26`);
+				await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
+				const expand = page.getByRole("button", { name: "Expand Unlink sessions column", exact: true });
+				if (await expand.isVisible()) await expand.click();
+				const source = page.locator('[data-agent-session-column] [data-testid^="agent-session-row-"]').first();
+				const sourceBox = (await source.boundingBox())!;
+				await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+				await page.mouse.down();
+				await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 20, sourceBox.y + sourceBox.height / 2 + 20, { steps: 2 });
+				const column = page.locator('[data-jira-kanban-column="To do"]');
+				const button = column.locator('[data-jira-dropzone-control="To do"]');
+				await expect(button).toHaveAttribute("aria-label", /^Drop to create work item in To do/u);
+				const label = button.locator('[data-jira-dropzone-copy-layer="label"] > span');
+				for (const edge of ["top", "bottom"] as const) {
+					await page.mouse.move(900, 100);
+					await expect(button).toHaveCSS("height", "32px");
+					const sensor = (await column.locator("[data-create-work-item-proximity]").boundingBox())!;
+					await page.mouse.move(sensor.x + sensor.width / 2, sensor.y + (edge === "top" ? 6 : sensor.height - 6));
+					await expect.poll(async () => (await button.boundingBox())!.height).toBeGreaterThanOrEqual(64);
+					const offset = () => label.evaluate((node) => {
+						const transform = getComputedStyle(node).transform;
+						return transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42;
+					});
+					if (reducedMotion === "reduce") {
+						await expect.poll(offset).toBe(0);
+					} else {
+						await expect.poll(async () => (await offset()) * (edge === "top" ? -1 : 1)).toBeGreaterThan(3);
+					}
+					// Compare actual glyph bounds with every ancestor that can clip them.
+					const clippedPixels = await label.evaluate((node) => {
+						const range = document.createRange();
+						range.selectNodeContents(node);
+						const text = range.getBoundingClientRect();
+						let clipped = 0;
+						for (let ancestor = node.parentElement; ancestor; ancestor = ancestor.parentElement) {
+							if (getComputedStyle(ancestor).overflowY === "visible") continue;
+							const rect = ancestor.getBoundingClientRect();
+							clipped = Math.max(clipped, rect.top - text.top, text.bottom - rect.bottom);
+						}
+						return clipped;
+					});
+					expect(clippedPixels).toBeLessThanOrEqual(0.5);
+					await page.screenshot({ path: `output/agent-browser/dropzone-text/label-${width}-${reducedMotion}-${edge}.png` });
+				}
+				await page.mouse.move(900, 100);
+				await page.mouse.up();
+				await expect(button).toHaveAttribute("aria-label", "Create in To do");
+				await expect(button).toHaveCSS("height", "24px");
+			});
+		}
+	}
+});
+
 for (const width of [1720, 1440]) {
 	test(`create button matches all four column gaps at ${width}px`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: "reduce" });

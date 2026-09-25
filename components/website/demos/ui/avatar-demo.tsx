@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { avatarHexagonCornerRadius } from "@/components/ui/avatar-hexagon";
 
 const PRIMARY_AVATAR_SRC = "/avatar-user/venn/venn.png";
 const BADGE_ICON_AVATAR_SRC = "/avatar-user/ali/color/asow-teamwork-blue.png";
@@ -22,6 +23,11 @@ const AVATAR_GROUP_SIZES = [
 	{ label: "24px", size: "sm", sizePx: 24 },
 	{ label: "32px", size: "default", sizePx: 32 },
 	{ label: "40px", size: "lg", sizePx: 40 },
+] as const;
+const ALL_AVATAR_SIZES = [
+	...AVATAR_GROUP_SIZES,
+	{ size: "xl", sizePx: 48 },
+	{ size: "2xl", sizePx: 96 },
 ] as const;
 const HUMAN_GROUP_AVATARS = [
 	{ alt: "Team member", fallback: "CN", src: PRIMARY_AVATAR_SRC },
@@ -53,7 +59,7 @@ export default function AvatarDemo() {
 
 export function AvatarDemoBadgeWithIcon() {
 	return (
-		<>
+		<div className="flex flex-col items-start gap-6">
 			<div className="flex flex-wrap items-center gap-2">
 				<Avatar size="sm">
 					<AvatarImage
@@ -106,13 +112,13 @@ export function AvatarDemoBadgeWithIcon() {
 					</AvatarBadge>
 				</Avatar>
 			</div>
-		</>
+		</div>
 	);
 }
 
 export function AvatarDemoBadge() {
 	return (
-		<>
+		<div className="flex flex-col items-start gap-6">
 			<div className="flex flex-wrap items-center gap-2">
 				<Avatar size="sm">
 					<AvatarImage
@@ -153,7 +159,7 @@ export function AvatarDemoBadge() {
 					<AvatarBadge />
 				</Avatar>
 			</div>
-		</>
+		</div>
 	);
 }
 
@@ -183,7 +189,7 @@ export function AvatarDemoUnassigned() {
 
 export function AvatarDemoGroupWithCount() {
 	return (
-		<>
+		<div className="flex flex-col items-start gap-6">
 			<AvatarGroup>
 				<Avatar size="sm">
 					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />
@@ -247,13 +253,13 @@ export function AvatarDemoGroupWithCount() {
 				</Avatar>
 				<AvatarGroupCount>+3</AvatarGroupCount>
 			</AvatarGroup>
-		</>
+		</div>
 	);
 }
 
 export function AvatarDemoGroupWithIconCount() {
 	return (
-		<>
+		<div className="flex flex-col items-start gap-6">
 			<AvatarGroup size="sm">
 				<Avatar size="sm">
 					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />
@@ -349,13 +355,13 @@ export function AvatarDemoGroupWithIconCount() {
 					<PlusIcon />
 				</AvatarGroupCount>
 			</AvatarGroup>
-		</>
+		</div>
 	);
 }
 
 export function AvatarDemoGroup() {
 	return (
-		<div className="flex flex-wrap items-end gap-6">
+		<div className="flex flex-col items-start gap-6">
 			{AVATAR_GROUP_SIZES.map(({ label, size }) => (
 				<div className="flex flex-col items-center gap-1.5" key={size}>
 					<AvatarGroup label={`${label} human avatar group`}>
@@ -485,23 +491,39 @@ export function AvatarDemoShapes() {
 
 export function AvatarDemoAgentTiers() {
 	return (
-		<div className="flex items-center gap-6">
+		<div className="flex flex-wrap items-center gap-6" data-agent-avatar-tiers>
 			{[
 				{
 					label: "Rovo",
-					avatar: <AgentAvatarVisual label="Rovo agent" sizePx={40} vpkLogo="rovo" />,
+					avatar: <AgentAvatarVisual label="Rovo agent" sizePx={32} vpkLogo="rovo" />,
 				},
 				{
 					label: "1P",
-					avatar: <AgentAvatarVisual avatarSrc="/avatar-agent/teamwork-agents/customer-insights.svg" label="Atlassian agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual avatarSrc="/avatar-agent/teamwork-agents/customer-insights.svg" label="Atlassian agent" sizePx={32} />,
 				},
 				{
 					label: "2P",
-					avatar: <AgentAvatarVisual avatarSrc="/2p/appfire.png" label="Appfire agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual avatarSrc="/2p/appfire.png" label="Appfire agent" sizePx={32} />,
 				},
 				{
 					label: "3P",
-					avatar: <AgentAvatarVisual brandName="slack" label="Slack agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual brandName="slack" label="Slack agent" sizePx={32} />,
+				},
+				{
+					label: "Claude",
+					avatar: <AgentAvatarVisual appearance="coding" brandName="claude" label="Claude agent" sizePx={32} />,
+				},
+				{
+					label: "Cursor",
+					avatar: <AgentAvatarVisual appearance="coding" brandName="cursor" label="Cursor agent" sizePx={32} />,
+				},
+				{
+					label: "Codex",
+					avatar: <AgentAvatarVisual appearance="coding" brandName="openai-codex" label="Codex agent" sizePx={32} />,
+				},
+				{
+					label: "GitHub Copilot",
+					avatar: <AgentAvatarVisual appearance="coding" brandName="github-copilot" label="GitHub Copilot agent" sizePx={32} />,
 				},
 			].map(({ avatar, label }) => (
 				<div className="flex flex-col items-center gap-1.5" key={label}>
@@ -513,9 +535,27 @@ export function AvatarDemoAgentTiers() {
 	);
 }
 
+export function AvatarDemoCodingAgents() {
+	return (
+		<div className="flex flex-wrap items-center justify-center gap-6" data-coding-agent-avatars>
+			{([
+				{ name: "Claude", brandName: "claude" },
+				{ name: "Codex", brandName: "openai-codex" },
+				{ name: "GitHub Copilot", brandName: "github-copilot" },
+				{ name: "Cursor", brandName: "cursor" },
+			] as const).map(({ name, brandName }) => (
+				<div className="flex flex-col items-center gap-1.5" key={brandName}>
+					<AgentAvatarVisual appearance="coding" brandName={brandName} label={`${name} coding agent`} sizePx={32} />
+					<span className="text-xs text-text-subtle">{name}</span>
+				</div>
+			))}
+		</div>
+	);
+}
+
 export function AvatarDemoAgentGroup() {
 	return (
-		<div className="flex flex-wrap items-end gap-6">
+		<div className="flex flex-col items-start gap-6">
 			{AVATAR_GROUP_SIZES.map(({ label, size, sizePx }) => (
 					<div className="flex flex-col items-center gap-1.5" key={size}>
 						<AvatarGroup label={`${label} agent avatar group`}>
@@ -585,48 +625,29 @@ export function AvatarDemoProject() {
 
 export function AvatarDemoAllSizes() {
 	return (
-		<div className="flex flex-wrap items-end gap-3">
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="xs">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="xs" />
-					<AvatarFallback>XS</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">xs</span>
+		<div className="flex w-full flex-col items-center gap-8">
+			<div className="flex flex-wrap items-end justify-center gap-6" role="group" aria-label="Human avatar sizes">
+				{ALL_AVATAR_SIZES.map(({ size, sizePx }) => (
+					<div className="flex flex-col items-center gap-1" key={size}>
+						<Avatar size={size}>
+							<AvatarImage src={PRIMARY_AVATAR_SRC} alt={`Human avatar, ${size}, ${sizePx}px`} />
+							<AvatarFallback>{size === "default" ? "DF" : size === "2xl" ? "2X" : size.toUpperCase()}</AvatarFallback>
+						</Avatar>
+						<span className="text-xs text-text-subtle">{size} · {sizePx}px</span>
+					</div>
+				))}
 			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="sm">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="sm" />
-					<AvatarFallback>SM</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">sm</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="default">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="default" />
-					<AvatarFallback>DF</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">default</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="lg">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="lg" />
-					<AvatarFallback>LG</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">lg</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="xl">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="xl" />
-					<AvatarFallback>XL</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">xl</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="2xl">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="2xl" />
-					<AvatarFallback>2X</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">2xl</span>
+			<div className="flex flex-wrap items-end justify-center gap-6" role="group" aria-label="Agent avatar sizes and corner radii">
+				{ALL_AVATAR_SIZES.map(({ size, sizePx }) => (
+					<div className="flex flex-col items-center gap-1" key={size}>
+						<Avatar shape="hexagon" size={size} label={`Agent avatar, ${size}, ${sizePx}px`}>
+							<AvatarImage src={AGENT_AVATAR_SRC} alt="" />
+							<AvatarFallback>CP</AvatarFallback>
+						</Avatar>
+						<span className="text-xs text-text-subtle">{size} · {sizePx}px</span>
+						<span className="text-xs text-text-subtlest">Corner radius {avatarHexagonCornerRadius(sizePx)}px</span>
+					</div>
+				))}
 			</div>
 		</div>
 	);

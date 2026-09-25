@@ -1,4 +1,9 @@
 import type { SessionCohort } from "@/components/blocks/agent-session/session-cohort";
+import {
+	resolveBoardAgentSessionTraces,
+	type BoardAgentSessionTrace,
+	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
+} from "./board-agent-session-trace.ts";
 import type {
 	JiraListAgentSessionDropIntent,
 	JiraListInsertion,
@@ -158,6 +163,8 @@ export interface BoardAgentSessionDragTransaction<
 	origin: BoardAgentSessionDragOrigin;
 	pointer: BoardAgentSessionDragPointer;
 	proximity: BoardAgentSessionAttachProximity | null;
+	/** Nearby decorative arcs, independent of the exclusive attach affordance. */
+	traces?: readonly BoardAgentSessionTrace[];
 	target: BoardAgentSessionDropTarget | null;
 }
 
@@ -167,6 +174,7 @@ export function shouldPublishBoardAgentSessionDrag(
 	next: BoardAgentSessionDragTransaction,
 ): boolean {
 	if (!previous || previous.cohort.key !== next.cohort.key || previous.origin !== next.origin) return true;
+	if (previous.traces?.length || next.traces?.length) return true;
 	if (previous.proximity || next.proximity) return true;
 	if (previous.collapsedColumnProximity || next.collapsedColumnProximity) return true;
 	const idleTarget = (target: BoardAgentSessionDropTarget | null) => target === null || target.kind === "untracked";
@@ -676,6 +684,7 @@ function resolveBoardAgentSessionApproach(
 ): {
 	collapsedColumnProximity: BoardCollapsedColumnProximity | null;
 	proximity: BoardAgentSessionAttachProximity | null;
+	traces: readonly BoardAgentSessionTrace[];
 } {
 	const proximity = target?.kind === "create-board-gap"
 		? null
@@ -705,9 +714,12 @@ function resolveBoardAgentSessionApproach(
 	if (collapsedColumnProximity && (!proximity
 		|| collapsedColumnProximity.distance < proximity.distance
 		|| (collapsedColumnProximity.distance === proximity.distance && collapsedColumnProximity.bounds.left < proximity.bounds.left))) {
-		return { collapsedColumnProximity, proximity: null };
+		return { collapsedColumnProximity, proximity: null, traces: [] };
 	}
-	return { collapsedColumnProximity: null, proximity };
+	const traces = target?.kind === "create-board-gap" || hasOutrankingDropZone(origin, pointer, zones)
+		? []
+		: resolveBoardAgentSessionTraces(origin, pointer, zones, proximity?.cardCode ?? null);
+	return { collapsedColumnProximity: null, proximity, traces };
 }
 
 /**
@@ -802,8 +814,8 @@ export function cancelBoardAgentSessionDragTransaction<
 ): BoardAgentSessionDragTransaction<TSession> {
 	// Proximity has to clear alongside the target, otherwise cancelling an
 	// approach that never armed a target leaves the card's backdrop lit.
-	return transaction.target || transaction.proximity || transaction.collapsedColumnProximity
-		? { ...transaction, collapsedColumnProximity: null, proximity: null, target: null }
+	return transaction.target || transaction.proximity || transaction.collapsedColumnProximity || transaction.traces?.length
+		? { ...transaction, collapsedColumnProximity: null, proximity: null, traces: [], target: null }
 		: transaction;
 }
 

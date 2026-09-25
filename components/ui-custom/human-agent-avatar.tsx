@@ -25,7 +25,7 @@ export type HumanAgentAvatarOrder = "agent-first" | "human-first";
 export interface HumanAgentAvatarProps {
 	agent: Pick<
 		AgentAvatarVisualProps,
-		"avatarSrc" | "brandName" | "logoName" | "vpkLogo" | "fallbackText"
+		"avatarSrc" | "brandName" | "logoName" | "vpkLogo" | "fallbackText" | "appearance"
 	> & { name: string };
 	human: { name: string; avatarSrc?: string };
 	/** Swap the human and agent, hold, then return. Static by default. */
@@ -42,12 +42,23 @@ export interface HumanAgentAvatarProps {
 }
 
 const PX_TO_IDENTITY_FRAME_CLASS_NAME: Record<number, string> = {
+	12: "size-3",
 	16: "size-4",
 	20: "size-5",
 	24: "size-6",
+	30: "size-7.5",
 	32: "size-8",
 	40: "size-10",
 	48: "size-12",
+};
+const PX_TO_HUMAN_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>> = {
+	12: "xxs",
+	16: "xs",
+	20: "sm",
+	24: "sm",
+	30: "default",
+	32: "default",
+	40: "lg",
 };
 /** A human photo and agent hexagon sharing one stable, accessible footprint. */
 export function HumanAgentAvatar({
@@ -68,21 +79,21 @@ export function HumanAgentAvatar({
 			onAnimationComplete?.();
 		}
 	}, [animate, reducedMotion, onAnimationComplete]);
-	const geometry = humanAgentAvatarGeometry(sizePx);
+	const agentFirst = attributionOrder === "agent-first";
+	const geometry = humanAgentAvatarGeometry(sizePx, agentFirst);
 	const { frameSize, agentSize: agentSizePx, humanSize } = geometry;
 	const frameClassName = PX_TO_IDENTITY_FRAME_CLASS_NAME[frameSize];
-	const personAvatarSize = humanSize === 24 ? "sm" : humanSize === 12 ? "xxs" : "xs";
-	const agentFirst = attributionOrder === "agent-first";
 	const positions = humanAgentAvatarPositions(geometry, agentFirst);
 	const label = `${agent.name}, used by ${human.name}`;
 	const frameClass = cn("relative block shrink-0", frameClassName, className);
-	const humanAvatar = (outline?: AvatarProps["outline"]) => (
+	const humanAvatar = (outline?: AvatarProps["outline"], sizePx: number = humanSize) => (
 		<Avatar
 			animate={false}
+			className={PX_TO_IDENTITY_FRAME_CLASS_NAME[sizePx]}
 			// Keep the same centered stroke when motion hands back to the resting pose.
 			outline={{ scale: 1, transition: { duration: 0 }, ...outline, color: "inverse", strokeWidth: 2 }}
 			label=""
-			size={personAvatarSize}
+			size={PX_TO_HUMAN_AVATAR_SIZE[sizePx]}
 		>
 			{human.avatarSrc ? <AvatarImage alt="" src={human.avatarSrc} /> : null}
 			<AvatarFallback>
@@ -95,8 +106,8 @@ export function HumanAgentAvatar({
 			</AvatarFallback>
 		</Avatar>
 	);
-	const agentAvatar = (sizePx: number = agentSizePx) => (
-		<AgentAvatarVisual {...agent} animate={false} label="" sizePx={sizePx} />
+	const agentAvatar = (sizePx: number = agentSizePx, separator = agentSizePx < humanSize) => (
+		<AgentAvatarVisual {...agent} animate={false} label="" sizePx={sizePx} separator={separator} />
 	);
 
 	if (shouldAnimate || composition === "horizontal-group") {
@@ -113,7 +124,7 @@ export function HumanAgentAvatar({
 				agentSize={agentSizePx}
 				humanSize={humanSize}
 				positions={positions}
-				topLeftInset={agentFirst ? geometry.agentInset : 0}
+				topLeftInset={agentFirst ? geometry.agentInset : geometry.humanInset}
 				bottomRightInset={agentFirst ? geometry.humanInset : geometry.agentInset}
 				className={frameClass}
 				label={label}

@@ -109,6 +109,7 @@ export function AgentSessionMediumCard({
 						) : null}
 						<span className="block" data-session-drag-identity="">
 							<AgentListIdentity
+								appearance="coding"
 								agent={item.agent}
 								attributedBy={item.invokedBy}
 								attributionOrder="agent-first"

@@ -139,7 +139,14 @@ for (const variant of [
 			expect(leaf!.height).toBe(variant.agent);
 			expect(await avatar.locator('[data-slot="avatar-hexagon-artwork"]').evaluate(el => getComputedStyle(el).clipPath)).toMatch(/^polygon\(/);
 			await expect(avatar.locator("clipPath")).toHaveCount(0);
-			await expect(avatar.locator('[data-avatar-role="agent"] polygon')).toHaveCount(1);
+			await expect(avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-border"]')).toHaveCount(1);
+			await expect(avatar.locator('[data-slot="avatar-hexagon-separator"]')).toHaveCount(0);
+			await expect(avatar.locator('[data-avatar-role="human"] [data-slot="avatar-circle-border"] circle')).toHaveCSS("stroke-width", "2px");
+			const border = avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-border"]');
+			await expect(border).toHaveCSS("padding", "0px");
+			await expect(border.locator("..")).toHaveAttribute("data-slot", "avatar-hexagon-artwork");
+			await expect(border).toHaveCSS("clip-path", /^polygon\(evenodd,/);
+			expect(await border.boundingBox()).toEqual(leaf);
 			await avatar.screenshot({ path: `output/agent-browser/human-agent-avatar/figma-${variant.size}-${viewport.width}.png` });
 		}
 	});
@@ -160,6 +167,25 @@ test("24px horizontal group uses two 12px avatars and restores the compact footp
 	expect(await geometry(playground.locator('[data-slot="human-agent-avatar"]'))).toEqual({ size: 24, agent: { x: 0, y: 0, size: 24 }, human: { x: 14, y: 14, size: 12 } });
 });
 
+
+test("human-first gives the human the main footprint and the agent the badge footprint", async ({ page }) => {
+	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#human-first`);
+	const avatar = page.locator('[data-slot="human-agent-avatar"]').last();
+	for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
+		await page.setViewportSize(viewport);
+		await avatar.scrollIntoViewIfNeeded();
+		const separator = avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-separator"]');
+		await expect(separator).toHaveCount(1);
+		await expect(separator).toHaveCSS("clip-path", /^polygon\(/);
+		await expect(separator).toHaveCSS("color", "rgb(255, 255, 255)");
+		expect(await geometry(avatar)).toEqual({
+			size: 32,
+			human: { x: 1, y: 1, size: 30 },
+			agent: { x: 18, y: 18, size: 16 },
+		});
+		await avatar.screenshot({ path: `output/agent-browser/human-agent-avatar/human-first-${viewport.width}.png` });
+	}
+});
 
 test("the default identity preserves the 32px static agent-first composition", async ({
 	page,
@@ -389,7 +415,7 @@ test("each turn keeps moving smoothly through its midpoint", async ({
 });
 
 for (const size of [24, 32] as const) {
-	test(`${size}px capped swap keeps the thicker white stroke at 2px`, async ({ page }) => {
+	test(`${size}px capped swap keeps the white stroke at 2px`, async ({ page }) => {
 		await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#animated`);
 		const playground = page.locator('[data-human-agent-avatar-playground]');
 		await playground.getByRole('button', { name: `${size}×${size}`, exact: true }).click();

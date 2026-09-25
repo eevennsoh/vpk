@@ -77,7 +77,7 @@ export function AgentSessionMediumDrag({
 		setDragOffset((previous) => (Math.hypot(previous.x, previous.y) >= SESSION_DRAG_CHIP_DISTANCE_PX)
 			=== (Math.hypot(next.x, next.y) >= SESSION_DRAG_CHIP_DISTANCE_PX) ? previous : next);
 	}, sessionDrag?.bounds);
-	const chipPointer = useSessionDragChipPointer(shouldReduceMotion);
+	const chipPointer = useSessionDragChipPointer(shouldReduceMotion, sessionDrag?.previewEffect === "peel" ? "spring" : "direct");
 	const isDragging = Boolean(sessionDrag) && drag.dragging && publishedDragging;
 	const isFollower = cohortFollower && !isDragging;
 	const isDraggedOut = isDragging

@@ -2,15 +2,11 @@ import type { Transition } from "motion/react";
 
 import type { PointerDragPosition } from "@/components/ui-custom/hooks/use-pointer-drag";
 
-/**
- * Keep the source-card-to-group transformation visible with duration-slower
- * + ease-in-out. Pointer following uses separate motion values and stays
- * responsive. Motion cannot read `var()`, so token values resolve here once.
- */
+/** Standalone parity: duration-slower + ease-in-out, independent of pointer travel. */
 export const SESSION_DRAG_CHIP_ENTER_TRANSITION = {
 	duration: 0.4,
 	ease: [0.4, 0, 0, 1],
-} satisfies Transition; // duration-slower + ease-in-out
+} satisfies Transition;
 
 /** Paper keeps its existing fast popup-family entrance. */
 export const SESSION_PEEL_CHIP_ENTER_TRANSITION = {
@@ -97,24 +93,53 @@ export function sessionDragGeometryRelativeToPointer(
 	};
 }
 
-/** One local transform per existing avatar; moving parents do not remeasure a layout projection. */
-export function resolveSessionDragAvatarMorph(source: SessionDragRect, target: SessionDragRect, parent: { x: number; y: number; identityX: number; identityY: number }) {
+/** Preserve the source avatar composition inside the pointer-anchored identity. */
+export function resolveSessionDragAvatarMorph(
+	source: SessionDragRect,
+	target: SessionDragRect,
+	sourceIdentity: SessionDragRect,
+	targetIdentity: SessionDragRect,
+) {
 	return {
-		x: source.left - target.left - parent.x - parent.identityX,
-		y: source.top - target.top - parent.y - parent.identityY,
+		x: source.left - sourceIdentity.left - (target.left - targetIdentity.left),
+		y: source.top - sourceIdentity.top - (target.top - targetIdentity.top),
 		scaleX: source.width / target.width,
 		scaleY: source.height / target.height,
 	};
 }
 
-/** Scale only the background; the shared avatar moves without deformation. */
-export function resolveSessionDragMorph(source: SessionDragGeometry, target: SessionDragGeometry) {
+/** Compact pickup stays at the pointer; paper retains its captured source pose. */
+export function resolveSessionDragMorph(
+	source: SessionDragGeometry,
+	target: SessionDragGeometry,
+	surfaceMode: "source" | "compact" = "source",
+) {
+	if (surfaceMode === "compact") {
+		return {
+			x: 0,
+			y: 0,
+			scaleX: Math.min(source.surface.width / target.surface.width, 1.4),
+			scaleY: Math.min(source.surface.height / target.surface.height, 1.4),
+			identityX: 0,
+			identityY: 0,
+		};
+	}
+	const surface = source.surface;
+	// Center scaling grows on both sides. Compensate the paper's traveller
+	// while its identity keeps the same captured position in viewport space.
+	const surfaceOffsetX = (surface.width - target.surface.width) / 2;
+	const surfaceOffsetY = (surface.height - target.surface.height) / 2;
 	return {
-		x: source.surface.left - target.surface.left,
-		y: source.surface.top - target.surface.top,
-		scaleX: source.surface.width / target.surface.width,
-		scaleY: source.surface.height / target.surface.height,
-		identityX: source.identity.left - source.surface.left - (target.identity.left - target.surface.left),
-		identityY: source.identity.top - source.surface.top - (target.identity.top - target.surface.top),
+		x: surface.left - target.surface.left + surfaceOffsetX,
+		y: surface.top - target.surface.top + surfaceOffsetY,
+		scaleX: surface.width / target.surface.width,
+		scaleY: surface.height / target.surface.height,
+		identityX: source.identity.left - surface.left - (target.identity.left - target.surface.left) - surfaceOffsetX,
+		identityY: source.identity.top - surface.top - (target.identity.top - target.surface.top) - surfaceOffsetY,
 	};
+}
+
+/** Pickup starts with corrected corners, then settles to the resting radius. */
+export function resolveSessionDragSurfaceStart(scaleX: number, scaleY: number, radius: number) {
+	return { transform: `scale(${scaleX}, ${scaleY})`, radiusX: radius / scaleX, radiusY: radius / scaleY };
 }

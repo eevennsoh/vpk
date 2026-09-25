@@ -382,10 +382,10 @@ export function AgentCard({
 		return () => resizeObserver.disconnect();
 	}, [variant]);
 	const projectBadgeAvatarSrc = getProjectBadgeAvatarSrc(`${publisher}:${name}`);
-	const renderAvatarBadge = (badgeClassName?: string) => {
+	const renderAvatarBadge = () => {
 		if (attributionKind === "company") {
 			return (
-				<AvatarCompanyBadge className={badgeClassName}>
+				<AvatarCompanyBadge>
 					{publisherBrandName ? (
 						<LogoThirdParty label="" name={publisherBrandName} size="xsmall" />
 					) : publisherLogoSrc ? (
@@ -407,7 +407,7 @@ export function AgentCard({
 
 		if (attributionKind === "team") {
 			return (
-				<AvatarProjectBadge className={badgeClassName}>
+				<AvatarProjectBadge>
 					<img alt="" aria-hidden src={publisherLogoSrc ?? projectBadgeAvatarSrc} />
 				</AvatarProjectBadge>
 			);
@@ -634,7 +634,7 @@ export function AgentCard({
 								>
 									<path d={BANNER_HEXAGON_PATH} fill="none" strokeWidth={1} vectorEffect="non-scaling-stroke" />
 								</svg>
-								{renderAvatarBadge("ring-[var(--agent-card-cover-color)]")}
+								{renderAvatarBadge()}
 							</div>
 							<div className="min-w-0 flex-1">
 								<h3 className={cn("truncate", EXPERIMENTAL_COVER_TEXT_CLASS_NAME)} style={{ font: token("font.heading.xsmall") }}>

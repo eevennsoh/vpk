@@ -31,7 +31,7 @@ import {
 	stepPeel,
 	type PeelState,
 } from "./peel-model";
-import { deformPeelSheet, peelSurfaceEdgeGlow, peelSurfacePointer, peelSurfaceTilt, resolvePeelUv, type PeelBox, type PeelPointerSample } from "./peel-geometry";
+import { deformPeelSheet, peelSurfaceEdgeGlow, peelSurfacePointer, peelSurfaceRoll, peelSurfaceTilt, resolvePeelUv, type PeelBox, type PeelPointerSample } from "./peel-geometry";
 import { PEEL_SHADOW_PAD, createPeelShadowMaterial } from "./shadow-material";
 
 /**
@@ -239,7 +239,7 @@ export function PeelScene({
 
 		const sheet = sheetMaterial.uniforms;
 		const surfaceTilt = peelSurfaceTilt(state.tiltY, state.pointerU, tuning.tilt);
-		const surfaceRoll = Math.max(-tuning.swing, Math.min(tuning.swing, state.swing));
+		const surfaceRoll = peelSurfaceRoll(state.swing, tuning.swing);
 		sheet.uLift.value = state.lift;
 		sheet.uPointer.value.set(state.pointerU, state.pointerV);
 		sheet.uSheen.value = state.sheen;

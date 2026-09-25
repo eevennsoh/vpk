@@ -19,16 +19,20 @@ const SESSION_DRAG_CHIP_POINTER_SPRING = {
  * (a collapsing row, a growing attach chin) must not move the pill off the
  * cursor — only the pointer itself should.
  */
-export function useSessionDragChipPointer(shouldReduceMotion: boolean | null) {
+export function useSessionDragChipPointer(
+	shouldReduceMotion: boolean | null,
+	tracking: "spring" | "direct" = "spring",
+) {
 	const pointerX = useMotionValue(0);
 	const pointerY = useMotionValue(0);
 	const originX = useMotionValue(0);
 	const direction = useMotionValue(0);
 	const travel = useRef<PeelSurfaceTravel>({ direction: 0, extremeX: 0 });
-	const springX = useSpring(pointerX, SESSION_DRAG_CHIP_POINTER_SPRING);
-	const springY = useSpring(pointerY, SESSION_DRAG_CHIP_POINTER_SPRING);
-	const x = shouldReduceMotion ? pointerX : springX;
-	const y = shouldReduceMotion ? pointerY : springY;
+	const springX = useSpring(0, SESSION_DRAG_CHIP_POINTER_SPRING);
+	const springY = useSpring(0, SESSION_DRAG_CHIP_POINTER_SPRING);
+	const followsDirectly = shouldReduceMotion || tracking === "direct";
+	const x = followsDirectly ? pointerX : springX;
+	const y = followsDirectly ? pointerY : springY;
 
 	function snapResolvedPointer(next: PointerDragPosition) {
 		pointerX.jump(next.x);
@@ -55,11 +59,19 @@ export function useSessionDragChipPointer(shouldReduceMotion: boolean | null) {
 	function followPointer(pointer: PointerDragPosition, host?: HTMLElement | null) {
 		const next = sessionDragPointerInContainingBlock(pointer, host);
 		direction.set(stepPeelSurfaceTravel(travel.current, next.x));
-		pointerX.set(next.x);
-		pointerY.set(next.y);
+		if (followsDirectly) {
+			// A direct preview also stops unused springs instead of running their
+			// animation frames invisibly behind the pointer's raw coordinates.
+			snapResolvedPointer(next);
+		} else {
+			pointerX.set(next.x);
+			pointerY.set(next.y);
+			springX.set(next.x);
+			springY.set(next.y);
+		}
 	}
 
-	// Lighting follows user travel; the visual follower may recoil after input stops.
+	// Lighting follows user travel; opted-in direct previews never spring behind it.
 	return { beginGesture, followPointer, snapToPointer, originX, direction, x, y };
 }
 
