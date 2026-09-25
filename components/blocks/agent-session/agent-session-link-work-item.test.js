@@ -172,7 +172,7 @@ test("motion in the panel honours reduced motion", () => {
 	}
 });
 
-test("the menu renders the picker only when the host supplied a capability", () => {
+test("the cloud menu renders the picker only when the host supplied a capability", () => {
 	assert.match(
 		MORE_MENU_SOURCE,
 		/const canPickWorkItem = actions\.onLinkWorkItem !== undefined\s*\|\| actions\.onCreateWorkItem !== undefined;/u,
@@ -180,7 +180,7 @@ test("the menu renders the picker only when the host supplied a capability", () 
 	assert.match(MORE_MENU_SOURCE, /onRequestClose=\{\(\) => onOpenChange\(false\)\}/u);
 	assert.match(
 		MORE_MENU_SOURCE,
-		/\{showLinkWorkItemMenuItem && canPickWorkItem \?\s*\(\s*<AgentSessionLinkWorkItemSubmenu/u,
+		/\{isCloud && showLinkWorkItemMenuItem && canPickWorkItem \?\s*\(\s*<AgentSessionLinkWorkItemSubmenu/u,
 	);
 	assert.match(MORE_MENU_SOURCE, /workItemOptions=\{workItemOptions\}\s*\/>\s*\) : null\}/u);
 	assert.doesNotMatch(MORE_MENU_SOURCE, /<DropdownMenuItem[^>]*>\{AGENT_SESSION_LINK_WORK_ITEM_LABEL\}/u);
@@ -190,7 +190,7 @@ test("the host can hide only the Link work item menu row", () => {
 	assert.match(MORE_MENU_SOURCE, /showLinkWorkItemMenuItem = true,/u);
 	assert.match(
 		MORE_MENU_SOURCE,
-		/\{showLinkWorkItemMenuItem && canPickWorkItem \?/u,
+		/\{isCloud && showLinkWorkItemMenuItem && canPickWorkItem \?/u,
 	);
 	assert.match(CARD_SOURCE, /showLinkWorkItemMenuItem=\{showLinkWorkItemMenuItem\}/u);
 	assert.match(LIST_SOURCE, /showLinkWorkItemMenuItem=\{showLinkWorkItemMenuItem\}/u);

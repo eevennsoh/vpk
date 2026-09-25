@@ -20,7 +20,6 @@ import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/bloc
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import {
 	isPulseAgentSession,
-	type PulseCodingAgentId,
 	type PulseLooseWork,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
@@ -78,25 +77,6 @@ const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
 	"sessionPeel",
 ] as const;
 const isJiraTeamEu26LooseWorkResumable = () => true;
-
-function resolveJiraTeamEu26ContinueChatAgent(
-	agentId: PulseCodingAgentId,
-): Readonly<{ agentId: string; agentName: string }> {
-	switch (agentId) {
-		case "claude":
-			return { agentId: "claude-code", agentName: "Claude" };
-		case "codex":
-			return { agentId: "review-agent", agentName: "Codex" };
-		case "copilot":
-			return { agentId: "github-copilot", agentName: "GitHub Copilot" };
-		case "cursor":
-			return { agentId: "cursor", agentName: "Cursor" };
-		default: {
-			const exhaustive: never = agentId;
-			return exhaustive;
-		}
-	}
-}
 
 export default function JiraTeamEu26Page(): React.ReactElement {
 	return (
@@ -188,19 +168,8 @@ function JiraTeamEu26App(): React.ReactElement {
 			`Resume command copied for ${item.title}. Paste it in a terminal on ${item.machineName} to continue the session.`,
 		);
 	}, []);
-	const handleContinueLooseWork = useCallback((item: PulseLooseWork) => {
-		if (!isPulseAgentSession(item)) return;
-		const agent = resolveJiraTeamEu26ContinueChatAgent(item.agentId);
-		openAgentChat({
-			agentId: agent.agentId,
-			agentName: agent.agentName,
-			issueKey: item.sourceTitle,
-			issueSummary: item.title,
-			intro: item.title,
-			request: `Continue the local ${agent.agentName} session on ${item.sourceTitle}.`,
-		});
-	}, [openAgentChat]);
 	const handleViewChat = useCallback((activity: JiraIssueAgentActivity, card: JiraKanbanCardData) => {
+		if (activity.host === "local") return;
 		openAgentChat({
 			agentId: activity.id.includes(":")
 				? activity.id.slice(activity.id.lastIndexOf(":") + 1)
@@ -225,6 +194,7 @@ function JiraTeamEu26App(): React.ReactElement {
 		issueKey: string,
 		agent: JiraListAssignedAgent,
 	) => {
+		if (agent.host === "local") return;
 		const card = boardColumns
 			.flatMap((column) => column.cards)
 			.find((candidate) => candidate.code === issueKey);
@@ -444,7 +414,6 @@ function JiraTeamEu26App(): React.ReactElement {
 						onListAgentSessionCreate={handleListAgentSessionCreate}
 						showAgentSessionUnlinkWell={false}
 						subtaskChrome="stroke"
-						onContinueLooseWork={handleContinueLooseWork}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={tabOwnsView ? undefined : setWorkItemView}
 						renderListContent={(columns, layout) => (

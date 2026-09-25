@@ -43,9 +43,8 @@ source byte-for-byte where possible and place export behavior in the harness.
 
 The target `pnpm run dev` must start both the extracted frontend and source VPK
 backend. Discover an adjacent source checkout when possible and accept a
-`VPK_ROOT=/path/to/repository` override; generated harnesses should continue to
-accept the deprecated `VPK_ROVO_ROOT` name as a fallback during migration. A
-common harness builds and serves the static frontend on port 3001 while invoking
+`VPK_ROOT=/path/to/repository` override. A common harness builds and serves the
+static frontend on port 3001 while invoking
 `pnpm run dev:backend` in the source checkout.
 
 Proxy real routes rather than recreating them. Depending on the app, this

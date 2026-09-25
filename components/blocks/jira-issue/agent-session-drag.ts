@@ -41,9 +41,8 @@ export interface JiraIssueAgentSessionTransferMember {
  *
  * Brand ids come first because they are the identity that survives the
  * attach/detach round trip. Lowercasing is what makes the two drag sources
- * agree: a detached Rovo session carries `vpkLogo: "rovo"`, while the same
- * session dragged back off a chin row has lost every brand field to
- * `toJiraIssueAgentActivityFromSession` and only still knows `name: "Rovo"`.
+ * agree: a detached Rovo session carries `vpkLogo: "rovo"`, and the chin row
+ * carries the same mark through its agent activity.
  */
 export function sessionTransferTintSeed(
 	...candidates: readonly (string | undefined)[]
@@ -100,9 +99,11 @@ export interface JiraIssueAgentSessionDragControl {
 	attachNearness?: number;
 	/**
 	 * Accent and pointer for the approach stroke traced along this card's edge.
-	 * Only the nearest card gets one; omit it to draw no stroke.
+	 * Nearby cards may share a fainter trace; omit it to draw no stroke.
 	 */
 	attachTrace?: JiraIssueAttachTrace | null;
+	/** Whole live gesture, including time outside this card's sensor. */
+	attachTraceActive?: boolean;
 	binding: JiraIssueAgentSessionDragBinding;
 	/**
 	 * Sessions in the current drag transfer. Needed on receiving cards (their

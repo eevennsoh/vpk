@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
 import { motion } from "motion/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -46,8 +46,9 @@ import {
 	AgentSessionShortMetadata,
 } from "./agent-session-metadata";
 import { AgentSessionMoreMenu } from "./agent-session-more-menu";
+import { AgentSessionContinueMenu } from "./agent-session-continue-menu";
 import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
-import { AgentSessionViewerHint } from "./agent-session-viewer-hint";
+import { AgentSessionViewerHint, AgentSessionViewerTooltip } from "./agent-session-viewer-hint";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
 import { selectionGestureFromModifierKeys } from "./agent-session-selection-gesture";
 import { agentSessionAccentColor } from "./agent-session-transfer-member";
@@ -271,6 +272,7 @@ export function AgentSessionCard({
 	onToggleVisibility,
 	onView,
 	padding = "default",
+	trailingAlign = "center",
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
@@ -341,6 +343,8 @@ export function AgentSessionCard({
 	 * vertical) so stacked menu rows sit tighter than catalog cards.
 	 */
 	padding?: "default" | "compact";
+	/** Keep status and replacement actions centered beside the shared title/metadata column. */
+	trailingAlign?: "center" | "metadata";
 	/**
 	 * Overlay stacking for the owner more-menu. Assignment's picker sits above
 	 * the default dropdown tier, so it passes a higher `z-` or the menu opens
@@ -411,6 +415,23 @@ export function AgentSessionCard({
 	// must not render an enabled control, because the button copies the command to
 	// the clipboard before `onCopyResume` ever runs.
 	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
+	const cardAnchorRef = useRef<HTMLElement>(null);
+	const isCloudSession = !isLocalAgentListItem(item);
+	const menu = useAgentSessionMenu({
+		canResume,
+		isCloud: isCloudSession,
+		item,
+		onContinueInAgent,
+		onCopyResume,
+		onCreateWorkItemFromDraft,
+		onDeleteSession,
+		onItemHover,
+		onLinkWorkItem,
+		onMoreMenuOpenChange,
+		onRenameSession,
+		onToggleVisibility,
+		resumeCommand,
+	});
 
 	const approve = triageRow?.approve;
 	const mark = triageRow?.mark;
@@ -447,7 +468,23 @@ export function AgentSessionCard({
 	// path so selection is not avatar-only. Hover actions stay buttons so they
 	// can stop the article from changing the selection.
 	const role = getAgentSessionRole(item);
-	const viewSession = role === "owner" ? onView : undefined;
+	const canOpenLocalMenu = role === "owner" && !isCloudSession && (canResume || onContinueInAgent !== undefined);
+	const viewSession: typeof onView = role === "owner"
+		? isCloudSession ? onView : canOpenLocalMenu ? menu.toggleContinue : undefined
+		: undefined;
+	function renderLocalContinuation(trigger?: ReactElement) {
+		return (
+			<AgentSessionContinueMenu
+				actions={menu.actions}
+				copied={menu.copied}
+				item={item}
+				onOpenChange={menu.setIsContinueOpen}
+				open={menu.isContinueOpen}
+				positionerClassName={moreMenuPositionerClassName ?? "z-[600]"}
+				{...(trigger === undefined ? { anchor: cardAnchorRef } : { trigger })}
+			/>
+		);
+	}
 	const activateCard = viewSession === undefined && mark == null
 		? undefined
 		: (gesture: AgentSessionSelectionGesture) => {
@@ -460,6 +497,8 @@ export function AgentSessionCard({
 	const handleArticleClick = activateCard === undefined
 		? undefined
 		: (event: MouseEvent<HTMLElement>) => {
+			// A menu's portalled backdrop is a React descendant, not a card click.
+			if (!event.currentTarget.contains(event.target as Node)) return;
 			if (
 				event.target instanceof Element
 				&& event.target.closest(SESSION_DRAG_INTERACTIVE_SELECTOR) !== null
@@ -482,52 +521,27 @@ export function AgentSessionCard({
 	const articleRole = mark == null ? undefined : "gridcell";
 	const articleTabIndex = mark == null ? undefined : isLead ? 0 : -1;
 
-	// One trailing affordance instead of a Resume/Archive pair: everything a row
-	// can do now lives behind "…". Approve is the exception — it is a triage
-	// decision the column surfaces inline, not a session action, so it keeps its
-	// own button.
-	const isCloudSession = !isLocalAgentListItem(item);
-	const menu = useAgentSessionMenu({
-		canResume,
-		isCloud: isCloudSession,
-		item,
-		onContinueInAgent,
-		onCopyResume,
-		onCreateWorkItemFromDraft,
-		onDeleteSession,
-		onItemHover,
-		onLinkWorkItem,
-		onMoreMenuOpenChange,
-		onRenameSession,
-		onToggleVisibility,
-		resumeCommand,
-	});
 	// The more-actions popup is portalled, so moving into it ends CSS `:hover`
 	// on the article. Keep the row's complete hover treatment tied to the
 	// controlled overlay state until that popup closes.
-	const isHoverStateActive = isFlyoutActive || menu.isOpen;
+	const isHoverStateActive = isFlyoutActive || menu.isOpen || menu.isContinueOpen;
 	// Every density keeps lifecycle state outside the authored title and byline.
 	// Short rows use a settled-state glyph in the same slot the hover/focus menu
 	// replaces; long rows keep their full trailing progression control.
 	const isLongDensity = density === "long";
 	const trailingControl = (() => {
-		if (!showMoreMenu) {
+		if (!showMoreMenu && role !== "viewer") {
 			return undefined;
 		}
 
 		switch (role) {
-			case "expired":
-				// Long rows keep the hint in the resting lifecycle slot it shares with
-				// the status glyph. A short row has no resting slot, so its one control
-				// moves into the hover-revealed column beside "…" and the viewer hint.
-				return isLongDensity ? undefined : <AgentSessionExpiredHint />;
 			case "viewer":
 				return <AgentSessionViewerHint />;
+			case "expired":
 			case "owner":
 				return (
 					<AgentSessionMoreMenu
 						actions={menu.actions}
-						copied={menu.copied}
 						// Only the legacy "Archive" default becomes "Dismiss". Any other
 						// label is caller-authored copy for this row and passes through.
 						dismissLabel={visibilityLabel === "Archive" ? "Dismiss" : visibilityLabel}
@@ -549,27 +563,27 @@ export function AgentSessionCard({
 	})();
 	// `null`, not `undefined`: the shared row treats `undefined` as "no opinion"
 	// and falls back to its own `STATE_META` indicator.
-	const lifecycleIndicator = isLongDensity
-		? role === "expired"
-			? <AgentSessionExpiredHint />
-			: <AgentSessionLifecycle
+	const lifecycleIndicator = role === "expired" || role === "viewer"
+		? null
+		: isLongDensity
+			? <AgentSessionLifecycle
 				accessibleState={item.state}
 				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
 				showLabel={showLifecycleLabel}
 				state={shownLifecycleState}
 			/>
-		: <AgentSessionShortLifecycleIcon
-			accessibleState={item.state}
-			animateTransition={isStateChanged}
-			onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
-			showWorkingSpinner={showWorkingSpinner}
-			state={shownLifecycleState}
-		/>;
+			: <AgentSessionShortLifecycleIcon
+				accessibleState={item.state}
+				animateTransition={isStateChanged}
+				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
+				showWorkingSpinner={showWorkingSpinner}
+				state={shownLifecycleState}
+			/>;
 	const hoverActions: AgentListRowHoverActions = {
 		// The reveal must outlive the pointer: a portalled popup and a post-click
 		// confirmation both take the cursor off the row.
-		pinned: isFlyoutActive || (showMoreMenu && role === "owner" && (menu.isOpen || menu.copied)),
-		primary: approve
+		pinned: role !== "owner" || isHoverStateActive || (showMoreMenu && role === "owner" && menu.copied),
+		primary: approve && role !== "viewer"
 			? {
 				disabled: approve.target.kind === "unavailable",
 				icon: <Icon render={<CheckMarkIcon label="" size="small" />} />,
@@ -649,10 +663,13 @@ export function AgentSessionCard({
 					const card = (
 						<article
 							{...bind}
+							ref={cardAnchorRef}
+							aria-haspopup={bind !== undefined && mark == null && canOpenLocalMenu ? "menu" : undefined}
 							aria-current={isSelected ? "true" : undefined}
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
-						"group/agent-row relative flex w-full min-w-0 cursor-default rounded-lg text-left text-text",
+						"group/agent-row relative flex w-full min-w-0 rounded-lg text-left text-text",
+						activateCard === undefined ? "cursor-default" : "cursor-pointer",
 						// The glow layers sit at `-z-[1]`; without a stacking context
 						// here they would escape behind the list surface.
 						glow && "isolate",
@@ -719,9 +736,11 @@ export function AgentSessionCard({
 										: <AgentSessionShortMetadata item={item} />
 								}
 								onView={mark == null && bind === undefined ? viewSession : undefined}
+								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
 								renderIdentity={() => {
 									const sessionIdentity = (
 										<AgentListIdentity
+											appearance="coding"
 											agent={item.agent}
 											attributedBy={item.invokedBy}
 											attributionOrder="agent-first"
@@ -752,9 +771,18 @@ export function AgentSessionCard({
 								}}
 								showHoverActionsWhenSelected
 								stateAwareTitle={false}
+								trailingAlign={trailingAlign}
 							/>
+							{bind !== undefined && mark == null && canOpenLocalMenu ? renderLocalContinuation() : null}
 						</article>
 					);
+
+					if (role === "expired") {
+						return <AgentSessionExpiredHint disabled={menu.isOpen}>{card}</AgentSessionExpiredHint>;
+					}
+					if (role === "viewer") {
+						return <AgentSessionViewerTooltip>{card}</AgentSessionViewerTooltip>;
+					}
 
 					if (isLongDensity || flyoutHandle === undefined || flyoutSession === undefined) {
 						return card;

@@ -1,7 +1,7 @@
 # VPK (Venn Prototype Kit)
 
 > Provider-neutral project context for AI coding assistants (Cursor, Claude Code, Codex, and others).
-> Canonical source: `AGENTS.md`. `CLAUDE.md` symlinks here. Provider dirs (`.cursor/`, `.claude/`, `.codex/`, `.rovo/`) contain provider-specific config plus symlinks back to `.agents/`.
+> Canonical source: `AGENTS.md`. There is deliberately no `CLAUDE.md` — Claude Code loads `AGENTS.md` as project instructions by default (`instructionFiles: "claude-md-or-agents-md"`); do not recreate one. Provider dirs (`.cursor/`, `.claude/`, `.codex/`, `.rovo/`) contain provider-specific config plus symlinks back to `.agents/`.
 
 Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), AI Gateway, and Rovo Serve integration.
 
@@ -178,12 +178,13 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, typecheck, and tests. It is required by branch protection on `main` — `/vpk-git-ship` auto-merge waits for it.
 - Validation freshness:
   <!-- validation-freshness:begin -->
-  Last validated: 2026-09-06
+  Last validated: 2026-09-21
   Commands: `pnpm run validate:preflight`, `pnpm run verify:route-manifest`,
   `pnpm run verify:api-surfaces`, `pnpm run verify:repo-map`,
   `pnpm run verify:vpk-feature-map`, `pnpm run verify:file-size`, `pnpm run verify:catalog`,
   `pnpm run verify:lazy-load`, `pnpm run verify:source-guardrails`,
-  `pnpm run verify:doc-scripts`, `pnpm run lint`, `pnpm run typecheck`.
+  `pnpm run verify:doc-scripts`, `pnpm run lint`, `pnpm run lint:design-system`,
+  `pnpm run typecheck`.
   Reference docs: `.agents/docs/architecture-overview.md`,
   `.agents/docs/workflows-extended.md`, `.agents/rules/api-surfaces.md`,
   `.agents/rules/token-priority.md`,

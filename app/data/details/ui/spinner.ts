@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const SPINNER_DETAIL: ComponentDetail = {
     description:
-      "A loading spinner with an icon-subtlest default arc that sweeps around the circle. Supports `inherit`, `invert`, and `rainbow` treatments plus an explicit `experimental` six-dot iconic orb ported from Jira's agent status prototype.",
+      "A loading spinner with an icon-subtlest default arc that sweeps around the circle. Supports `inherit`, `invert`, and `rainbow` treatments plus an explicit `experimental` six-dot iconic orb and an `experimental-avatar` treatment from Jira's agent status prototype.",
     adsUrl: "https://atlassian.design/components/spinner",
     usage: `import { Spinner } from "@/components/ui/spinner";
 
@@ -10,7 +10,8 @@ export const SPINNER_DETAIL: ComponentDetail = {
 <Spinner size="xl" />
 <Spinner variant="rainbow" />
 <Spinner variant="experimental" />
-<Spinner variant="experimental" pulse />`,
+<Spinner variant="experimental" pulse />
+<Spinner variant="experimental-avatar" pulse />`,
     props: [
       {
         name: "size",
@@ -20,17 +21,17 @@ export const SPINNER_DETAIL: ComponentDetail = {
       },
       {
         name: "variant",
-        type: `"default" | "experimental" | "inherit" | "invert" | "rainbow"`,
+        type: `"default" | "experimental" | "experimental-avatar" | "inherit" | "invert" | "rainbow"`,
         default: `"default"`,
         description:
-          "Treatment. `default` uses icon subtlest, `experimental` keeps a six-dot orb at full ring size and rotates it using icon subtlest, `inherit` follows currentColor, `invert` paints the background token, and `rainbow` uses the Rovo brand gradient.",
+          "Treatment. `default` uses icon subtlest, `experimental` rotates a uniform six-dot orb, `experimental-avatar` gives each dot a different opacity and collapses to a compact hexagonal avatar cluster when pulsing, `inherit` follows currentColor, `invert` paints the background token, and `rainbow` uses the Rovo brand gradient.",
       },
       {
         name: "pulse",
         type: "boolean",
         default: "false",
         description:
-          "Experimental only. When true, the six dots converge to one center dot and grow back out into a uniform icon-subtlest ring. Default stays at full ring size and rotates.",
+          "Experimental variants only. When true, dots converge to one center dot (`experimental`) or a compact hexagonal avatar cluster (`experimental-avatar`) and grow back into the ring. Default stays at full ring size and rotates.",
       },
       {
         name: "className",
@@ -52,7 +53,7 @@ export const SPINNER_DETAIL: ComponentDetail = {
       },
       {
         title: "Experimental",
-        description: "Six-dot iconic orb from the Jira agent status prototype. Toggle grow in/out to restore the original pulse.",
+        description: "Six-dot iconic orb from the Jira agent status prototype. Toggle Avatar spinner for varied dot opacity and a compact hexagonal collapse; enabling it also turns on Grow in/out. Turn Grow in/out off to keep the ring expanded.",
         demoSlug: "spinner-demo-experimental",
       },
       { title: "Basic", demoSlug: "spinner-demo-basic" },

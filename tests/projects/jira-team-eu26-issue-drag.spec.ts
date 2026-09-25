@@ -27,6 +27,104 @@ async function enterStatus(page: Page, status: string) {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`empty In progress keeps both status targets usable (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.setViewportSize({ width: 1440, height: 800 });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await expect(issue(page, "PAY-112")).toBeVisible();
+		await expect(issue(page, "PAY-112").getByRole("button", { name: "Codex: Needs input", exact: true })).toBeVisible({ timeout: 55_000 });
+		await page.getByRole("button", { name: /^Needs input:/ }).click();
+		const progress = column(page, "In progress");
+		await expect(progress.locator("[data-issue-key]")).toHaveCount(0);
+		const expand = page.getByRole("button", { name: "Expand In progress column", exact: true });
+		await expand.focus();
+		await page.keyboard.press("Enter");
+		const restingHeight = await progress.locator("[data-jira-kanban-column-content]").evaluate((node) => node.getBoundingClientRect().height);
+		await startDrag(page, "PAY-112");
+		const choices = progress.getByRole("group", { name: "Choose a status in In progress" });
+		await expect(choices).toBeVisible();
+		for (const status of ["In progress", "Paused"]) {
+			const zone = progress.locator(`[data-issue-status-zone="${status}"]`);
+			const box = await zone.boundingBox();
+			if (!box) throw new Error(`Missing zone ${status}`);
+			expect(box.height).toBeGreaterThanOrEqual(120);
+			for (const child of await zone.locator(":scope > *").all()) {
+				const childBox = await child.boundingBox();
+				if (!childBox) throw new Error(`Missing content in ${status}`);
+				expect(childBox.y).toBeGreaterThanOrEqual(box.y);
+				expect(childBox.y + childBox.height).toBeLessThanOrEqual(box.y + box.height);
+			}
+		}
+		await page.screenshot({ path: `output/agent-browser/dnd/empty-status-choices-${reducedMotion}.png` });
+		const body = progress.locator('[aria-label="Choose a status in In progress"]').locator("..");
+		const choosingHeight = await body.evaluate((node) => node.getBoundingClientRect().height);
+		await enterStatus(page, "Paused");
+		await expect.poll(() => body.evaluate((node) => node.getBoundingClientRect().height)).toBe(choosingHeight);
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect.poll(() => progress.locator("[data-jira-kanban-column-content]").evaluate((node) => node.getBoundingClientRect().height)).toBe(restingHeight);
+		await startDrag(page, "PAY-112");
+		await enterStatus(page, "Paused");
+		await page.mouse.up();
+		await page.getByRole("button", { name: /^Needs input:/ }).click();
+		await expect(issue(page, "PAY-112")).toHaveAttribute("data-board-column-title", "In progress");
+		await page.getByRole("tab", { name: "List", exact: true }).click();
+		await expect(page.getByRole("row").filter({ hasText: "Confirm the sandbox key retention window before replay" })).toContainText("Paused");
+	});
+
+	test(`collapsed drop border hugs the visible cell (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.setViewportSize({ width: 1440, height: 800 });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await column(page, "To do").hover({ position: { x: 20, y: 15 } });
+		await page.getByRole("button", { name: "Collapse To do column", exact: true }).click();
+		const collapsed = column(page, "To do");
+		await expect(collapsed).toHaveAttribute("data-collapsed", "true");
+		await startDrag(page, "PAY-112");
+		const cell = await collapsed.locator(":scope > div").boundingBox();
+		const shell = await collapsed.boundingBox();
+		if (!cell || !shell) throw new Error("Missing collapsed cell");
+		// Empty space remains a drop target; its feedback still hugs the cell.
+		await page.mouse.move(shell.x + shell.width / 2, cell.y + cell.height + 100, { steps: 5 });
+		await page.mouse.move(shell.x + shell.width / 2, cell.y + cell.height + 100);
+		await expect.poll(() => collapsed.evaluate((node) => {
+			const armed = node.matches(".border-ring, .outline-ring") ? node : node.querySelector(".border-ring, .outline-ring");
+			return armed?.getBoundingClientRect().height ?? Infinity;
+		})).toBeLessThanOrEqual(cell.height + 4);
+		await expect.poll(() => collapsed.locator(".border-ring, .outline-ring").evaluate((node) =>
+			node.getAnimations().some((animation) => animation.playState === "running"),
+		)).toBe(false);
+		await page.screenshot({ path: `output/agent-browser/dnd/collapsed-border-${reducedMotion}.png` });
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect(issue(page, "PAY-112")).toHaveAttribute("data-board-column-title", "In review");
+		await expect(collapsed.locator(".border-ring, .outline-ring")).toHaveCount(0);
+	});
+
+	test(`collapsed In progress accepts an issue drop (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await column(page, "In progress").hover({ position: { x: 20, y: 15 } });
+		await page.getByRole("button", { name: "Collapse In progress column", exact: true }).click();
+		const progress = column(page, "In progress");
+		await expect(progress).toHaveAttribute("data-collapsed", "true");
+		await startDrag(page, "PAY-112");
+		const cell = await progress.locator(":scope > div").boundingBox();
+		if (!cell) throw new Error("Missing collapsed In progress cell");
+		await page.mouse.move(cell.x + cell.width / 2, cell.y + cell.height / 2, { steps: 5 });
+		await page.mouse.move(cell.x + cell.width / 2, cell.y + cell.height / 2);
+		await page.mouse.up();
+		await expect(progress).toHaveAttribute("data-collapsed", "true");
+		const expand = page.getByRole("button", { name: "Expand In progress column", exact: true });
+		await expand.focus();
+		await page.keyboard.press("Enter");
+		await expect(issue(page, "PAY-112")).toHaveAttribute("data-board-column-title", "In progress");
+		await page.getByRole("tab", { name: "List", exact: true }).click();
+		await expect(page.getByRole("row").filter({ hasText: "Confirm the sandbox key retention window before replay" })).toContainText("In progress");
+	});
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`issue-only preview and two-stage status drop (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
@@ -36,17 +134,42 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			DataTransfer.prototype.setDragImage = function (node, x, y) {
 				document.documentElement.dataset.dragPreviewSlot = (node as HTMLElement).dataset.slot;
 				document.documentElement.dataset.dragPreviewText = (node as HTMLElement).innerText;
+				const bounds = node.getBoundingClientRect();
+				const surface = node.querySelector('[data-slot="jira-issue-surface"]')?.getBoundingClientRect();
+				if (surface) {
+					document.documentElement.dataset.dragPreviewGaps = JSON.stringify({
+						top: surface.top - bounds.top,
+						left: surface.left - bounds.left,
+						right: bounds.right - surface.right,
+						bottom: bounds.bottom - surface.bottom,
+					});
+				}
+				const moreSelector = '[aria-label="More actions for PAY-105"]';
+				const sourceMore = document.querySelector(`[data-issue-key="PAY-105"] ${moreSelector}`);
+				const previewMore = node.querySelector(moreSelector);
+				if (sourceMore && previewMore) {
+					document.documentElement.dataset.dragSourceMoreOpacity = getComputedStyle(sourceMore).opacity;
+					document.documentElement.dataset.dragPreviewMoreOpacity = getComputedStyle(previewMore).opacity;
+				}
 				original.call(this, node, x, y);
 			};
 		});
+		const sourceHeight = await issue(page, "PAY-105").evaluate((node) => node.getBoundingClientRect().height);
 		await startDrag(page, "PAY-105");
-		await expect(page.locator("html")).toHaveAttribute("data-drag-preview-slot", "jira-issue-card");
+		await expect(page.locator("html")).toHaveAttribute("data-drag-preview-gaps", JSON.stringify({ top: 4, left: 4, right: 4, bottom: 4 }));
 		await expect(page.locator("html")).not.toHaveAttribute("data-drag-preview-text", /Working|Needs input/);
+		const sourceMoreOpacity = await page.locator("html").getAttribute("data-drag-source-more-opacity");
+		await expect(page.locator("html")).toHaveAttribute("data-drag-preview-more-opacity", sourceMoreOpacity ?? "1");
+		await expect.poll(() => issue(page, "PAY-105").evaluate((node) => node.getBoundingClientRect().height)).toBe(sourceHeight);
+		await expect(page.locator("[data-issue-drag-preview]")).toHaveAttribute("aria-hidden", "true");
+		await expect(page.locator("[data-issue-drag-preview]")).toHaveAttribute("inert", "");
 		await page.keyboard.press("Escape");
 		await page.mouse.up();
+		await expect(page.locator("[data-issue-drag-preview]")).toHaveCount(0);
 		await expect(page.locator("[data-issue-status-zone]")).toHaveCount(0);
 
 		await startDrag(page, "PAY-118");
+		await expect(page.locator("[data-issue-drag-preview]")).toHaveCount(0);
 		const transitionHeader = column(page, "To do").locator("[data-transitioning]");
 		await expect(transitionHeader).toHaveText("Transition to...");
 		await expect(transitionHeader).toHaveCSS("justify-content", "center");

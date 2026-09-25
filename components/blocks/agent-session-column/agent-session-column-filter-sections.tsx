@@ -126,8 +126,8 @@ export function SessionOwnerFilterRow({
 	const hiddenCount = owners.length - visibleOwners.length;
 
 	return (
-		<AvatarGroup className="isolate items-center -space-x-1.5 [&>*]:relative" label="Session owners">
-			{visibleOwners.map((owner, index) => {
+		<AvatarGroup className="items-center -space-x-1.5" label="Session owners">
+			{visibleOwners.map((owner) => {
 				const selected = selectedOwnerIds.has(owner.id);
 				const muted = hasSelection && !selected;
 				const avatar = owner.id === UNASSIGNED_OWNER_ID ? (
@@ -165,7 +165,6 @@ export function SessionOwnerFilterRow({
 						onClick={() => {
 							onToggle(owner.id);
 						}}
-						style={{ zIndex: visibleOwners.length - index }}
 						type="button"
 					>
 						{avatar}
@@ -204,8 +203,9 @@ export function AgentFilterRow({
 						type="button"
 					>
 						<AgentAvatarVisual
+							appearance="coding"
 							avatarClassName={cn(
-								selected && "[&>svg]:text-border-selected!",
+								selected && "[&_[data-slot=avatar-hexagon-border]]:text-border-selected!",
 								hasSelection && !selected && "opacity-(--opacity-disabled)",
 							)}
 							brandName={agent.brandName}

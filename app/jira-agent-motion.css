@@ -50,33 +50,93 @@
 }
 
 @utility spinner-experimental-orb-dot-top {
+	--avatar-inner-x: 0px;
+	--avatar-inner-y: -1.3px;
+	--avatar-expanded-opacity: 0.82;
+	--avatar-pulse-opacity: 0.66;
 	--orb-outer-x: 0px;
 	--orb-outer-y: -5.5px;
 }
 
 @utility spinner-experimental-orb-dot-top-right {
+	--avatar-inner-x: 1.126px;
+	--avatar-inner-y: -0.65px;
+	--avatar-expanded-opacity: 0.62;
+	--avatar-pulse-opacity: 0.78;
 	--orb-outer-x: 4.763px;
 	--orb-outer-y: -2.75px;
 }
 
 @utility spinner-experimental-orb-dot-bottom-right {
+	--avatar-inner-x: 1.126px;
+	--avatar-inner-y: 0.65px;
+	--avatar-expanded-opacity: 0.78;
+	--avatar-pulse-opacity: 0.6;
 	--orb-outer-x: 4.763px;
 	--orb-outer-y: 2.75px;
 }
 
 @utility spinner-experimental-orb-dot-bottom {
+	--avatar-inner-x: 0px;
+	--avatar-inner-y: 1.3px;
+	--avatar-expanded-opacity: 0.58;
+	--avatar-pulse-opacity: 0.72;
 	--orb-outer-x: 0px;
 	--orb-outer-y: 5.5px;
 }
 
 @utility spinner-experimental-orb-dot-bottom-left {
+	--avatar-inner-x: -1.126px;
+	--avatar-inner-y: 0.65px;
+	--avatar-expanded-opacity: 0.8;
+	--avatar-pulse-opacity: 0.66;
 	--orb-outer-x: -4.763px;
 	--orb-outer-y: 2.75px;
 }
 
 @utility spinner-experimental-orb-dot-top-left {
+	--avatar-inner-x: -1.126px;
+	--avatar-inner-y: -0.65px;
+	--avatar-expanded-opacity: 0.6;
+	--avatar-pulse-opacity: 0.76;
 	--orb-outer-x: -4.763px;
 	--orb-outer-y: -2.75px;
+}
+
+/* Jira board reference: overlapping dots form a compact hexagonal avatar
+   cluster, rather than all six converging to the same center point. */
+@keyframes spinner-experimental-avatar-morph {
+	0%, 5%, 50%, 55%, 100% {
+		transform: translate(var(--avatar-inner-x), var(--avatar-inner-y));
+	}
+	25%, 42%, 75%, 92% {
+		transform: translate(var(--orb-outer-x), var(--orb-outer-y));
+	}
+}
+
+@keyframes spinner-experimental-avatar-opacity {
+	0%, 5%, 50%, 55%, 100% { opacity: 1; }
+	25%, 40%, 75%, 90% { opacity: var(--avatar-expanded-opacity); }
+	32%, 82% { opacity: var(--avatar-pulse-opacity); }
+}
+
+@utility spinner-experimental-avatar-dot {
+	opacity: var(--avatar-expanded-opacity);
+}
+
+@utility spinner-experimental-avatar-dot-motion {
+	animation:
+		spinner-experimental-avatar-morph calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both,
+		spinner-experimental-avatar-opacity calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both;
+	animation-delay: calc(var(--duration-slowest) * -6.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.spinner-experimental-orb-rotator-motion,
+	.spinner-experimental-orb-dot-motion,
+	.spinner-experimental-avatar-dot-motion {
+		animation: none;
+	}
 }
 
 /* Keep the peel card's accent and soft face light. On a morphing card,

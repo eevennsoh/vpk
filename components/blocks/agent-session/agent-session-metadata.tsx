@@ -47,6 +47,7 @@ function MetadataDot() {
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean }>) {
 	const label = isLocal ? "Local session" : "Cloud session";
+	const HostIcon = isLocal ? ScreenIcon : CloudIcon;
 
 	return (
 		<span
@@ -54,11 +55,7 @@ export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean
 			className="grid size-4 shrink-0 place-items-center text-icon-subtlest"
 			role="img"
 		>
-			{isLocal ? (
-				<ScreenIcon color="currentColor" label="" size="small" />
-			) : (
-				<CloudIcon color="currentColor" label="" size="small" />
-			)}
+			<HostIcon color="currentColor" label="" size="small" />
 		</span>
 	);
 }
@@ -94,8 +91,9 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 			<AgentListAttributionAvatarGroup
 				agent={item.agent}
 				attributedBy={item.invokedBy}
-				attributionOrder="human-first"
+				attributionOrder="agent-first"
 				sizePx={16}
+				appearance="coding"
 			/>
 		);
 	}
@@ -103,6 +101,7 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 	return (
 		<span className="flex size-4 shrink-0 items-center justify-center">
 			<AgentAvatarVisual
+				appearance="coding"
 				avatarClassName="after:border-0"
 				avatarSrc={item.agent.avatarSrc}
 				brandName={item.agent.brandName}
@@ -144,10 +143,11 @@ function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly stri
 			<CyclingByline
 				className="text-xs leading-4 text-text-subtle"
 				contentKey={toolCall}
+				slide={false}
 			>
 				<Shimmer
 					as="span"
-					className="max-w-full truncate text-text-subtle"
+					className="max-w-full truncate align-top text-text-subtle"
 					data-agent-session-tool-call=""
 					duration={1.4}
 					spread={2}
@@ -231,14 +231,16 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 			{segments.map((segment, index) => (
-				// Artifact and agent names yield width so the trailing lifecycle
-				// icon stays clear. Time and host stay shrink-0 so separators hold.
+				// Keep clauses content-sized, with text yielding to the fixed
+				// host/time and lifecycle control when the row is narrow.
 				<span
 					className={cn(
 						"flex items-center gap-1",
-						segment.kind === "artifact" || segment.kind === "agent"
+						segment.kind === "agent"
 							? "min-w-0 shrink"
-							: "shrink-0",
+							: segment.kind === "time"
+								? "shrink-0"
+								: "min-w-0 max-w-28 flex-initial",
 					)}
 					key={segment.kind}
 				>

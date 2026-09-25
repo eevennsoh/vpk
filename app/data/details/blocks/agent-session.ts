@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Agent sessions in four footprints and relationship states. Large is the default detached, solid uncaptured-work card, and it comes in two densities: `short` leads with a 32px identity and a `agent · PR · host · time` byline (PR is omitted when the session has none), while `long` drops the leading avatar, gives the title its own line, and spends the room on `agent · cycling tool call · artifact · session type/timestamp` plus a trailing lifecycle label and icon. Progression stays at the far right, not in the byline; tool calls shimmer and cycle, Working also shimmers, and Needs input and Finished remain still. Owner rows reveal a `…` menu; viewer rows show an outline information-circle tooltip instead; expired cloud-long rows show an X because history is only kept for 28 days. A local owner menu offers Continue in — the agent itself or Terminal — while a cloud owner menu offers Rename and Delete. Both end in a dismiss row. Medium detached is a 276px stroked white chip (Jira issue width, 10px corners): the same 32px agent+human identity as a short row, the session title, and a trailing up-arrow key, still with the untracked-work flyout. Medium attached is the Jira Issue activity row (24px identity, h-8 chin, trailing 24×24 status) already connected to work. Small becomes the collapsed Agent Session Column notch. Short, medium, and small detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; long density does not. Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume disable the Terminal row.',
+		'Agent sessions in four footprints and relationship states. Large is the default detached, solid uncaptured-work card, and it comes in two densities: `short` leads with a 32px identity and a `agent · PR · host · time` byline (PR is omitted when the session has none), while `long` drops the leading avatar, gives the title its own line, and spends the room on `agent · cycling tool call · artifact · session type/timestamp` plus a trailing lifecycle label and icon. Progression stays at the far right, not in the byline; tool calls shimmer and cycle, Working also shimmers, and Needs input and Finished remain still. Owner rows reveal a `…` menu; viewer rows show an outline information-circle tooltip instead; expired cloud-long rows show a 24×24 `…` menu with Delete and explain the 28-day retention window in a tooltip across the row. A local owner menu offers Continue in — the agent itself or Terminal — while a cloud owner menu offers Rename and Delete. Both end in a dismiss row. Medium detached is a 276px stroked white chip (Jira issue width, 10px corners): the same 32px agent+human identity as a short row, the session title, and a trailing up-arrow key, still with the untracked-work flyout. Medium attached is the Jira Issue activity row (24px identity, h-8 chin, trailing 24×24 status) already connected to work. Small becomes the collapsed Agent Session Column notch. Short, medium, and small detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; long density does not. Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume disable the Terminal row.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
@@ -14,19 +14,19 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 		{
 			title: "Local — long",
 			description:
-				"Title-led owner and viewer rows with the provenance metadata line (agent, cycling tool call, artifact, session type/time) and a trailing lifecycle label and icon. No hover flyout — progression stays at the far right, not in the byline.",
+				"Title-led owner and viewer rows with the provenance metadata line (agent, cycling tool call, artifact, session type/time). Owners show the trailing lifecycle label and icon. Viewers show only a permanent information icon; hovering anywhere on their row explains private access. No hover flyout.",
 			demoSlug: "agent-session-demo-local-long",
 		},
 		{
 			title: "Cloud — short",
 			description:
-				"The same compact owner and viewer rows for a hosted session. A cloud owner cannot resume in a terminal, so its menu swaps the Continue in group for Rename and Delete. A viewer keeps the information-icon tooltip.",
+				"The same compact owner and viewer rows for a hosted session. A cloud owner cannot resume in a terminal, so its menu swaps the Continue in group for Rename and Delete. A viewer shows only a permanent information icon, with the private-access tooltip available across the row.",
 			demoSlug: "agent-session-demo-cloud-short",
 		},
 		{
 			title: "Cloud — long",
 			description:
-				"Hosted owner, viewer, and expired sessions in the title-led density across Working, Needs input, and Finished — no hover flyout. Tool calls cycle with shimmering text; the Working label also shimmers beside the experimental spinner, while settled lifecycle labels stay still. Expired rows replace that trailing control with an X: history is only kept for 28 days.",
+				"Hosted owner, viewer, and expired sessions in the title-led density — no hover flyout. Owners show Working, Needs input, or Finished. Tool calls cycle with shimmering text; the owner's Working label also shimmers beside the Avatar spinner, while settled lifecycle labels stay still. Viewers show only a permanent information icon and a private-access tooltip across the row. Expired rows show a 24×24 more-actions button offering Delete. Hovering the expired row explains the 28-day retention window and that the session cannot be resumed.",
 			demoSlug: "agent-session-demo-cloud-long",
 		},
 		{

@@ -17,6 +17,11 @@ export function peelSurfaceTilt(velocityTilt: number, pointer: number, maximum: 
 	return Math.max(-maximum, Math.min(maximum, velocityTilt + (pointer - 0.5) * maximum * 0.5));
 }
 
+/** Keep the same readable roll in both the mesh and DOM carry renderers. */
+export function peelSurfaceRoll(swing: number, maximum: number): number {
+	return Math.max(-maximum, Math.min(maximum, swing));
+}
+
 export interface PeelSurfaceTravel {
 	direction: number;
 	extremeX: number;

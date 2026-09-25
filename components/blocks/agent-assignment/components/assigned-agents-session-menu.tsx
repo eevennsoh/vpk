@@ -60,9 +60,10 @@ export function AssignedAgentsSessionMenu({
 							onMoreMenuOpenChange={onMoreMenuOpenChange}
 							onRenameSession={onRenameSession}
 							onToggleVisibility={onToggleVisibility}
-							onView={() => onSelectAgent(row)}
+							onView={row.host === "local" ? undefined : () => onSelectAgent(row)}
 							padding="compact"
 							showLifecycleLabel={false}
+							trailingAlign="center"
 						/>
 					))}
 				</ul>

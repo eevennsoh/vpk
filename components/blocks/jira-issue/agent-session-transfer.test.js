@@ -58,7 +58,7 @@ test("Jira issue agent session transfer adds demo phases gated to the experiment
 	assert.match(PAGE_SOURCE, /showSessionTransferStates = false,/u);
 	assert.match(
 		PAGE_SOURCE,
-		/const demoStates = showSessionTransferStates\s*\n\s*\? \[\.\.\.JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES, \.\.\.JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES\]\s*\n\s*: JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES;/u,
+		/const demoStates = showSessionTransferStates\s*\n\s*\? \[\.\.\.JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES, \.\.\.JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES\]\s*\n\s*: iconScale === "comfortable"\s*\n\s*\? JIRA_ISSUE_AGENT_ACTIVITY_V2_DEMO_STATES\s*\n\s*: JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES;/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
@@ -320,7 +320,7 @@ test("Jira issue agent activity demo runs no background timers", () => {
 	assert.doesNotMatch(PAGE_SOURCE, /setTimeout|setInterval/u);
 	assert.match(
 		PAGE_SOURCE,
-		/onClick=\{\(\) => \{\s*\n\s*setUnlinkedSessionIds\(\[\]\);\s*\n\s*setLinkedDetachedIds\(\[\]\);\s*\n\s*setAgentActivityState\(state\.value\);\s*\n\s*\}\}/u,
+		/onClick=\{\(\) => \{\s*\n\s*setUnlinkedSessionIds\(\[\]\);\s*\n\s*setLinkedDetachedIds\(\[\]\);\s*\n\s*setAssignedDemoActivities\(null\);\s*\n\s*setAgentActivityState\(state\.value\);\s*\n\s*\}\}/u,
 	);
 });
 
@@ -626,7 +626,7 @@ test("Jira issue drag pill floats on overlay elevation, not a dead utility", () 
 		/boxShadow: token\("elevation\.shadow\.overlay"\),/u,
 	);
 	// The horizontal identity holds its final pose inside the stable 32px frame.
-	assert.match(dragChipSource, /<HumanAgentAvatar[\s\S]*agent=\{agent\}[\s\S]*human=\{attributedBy\}[\s\S]*animate=\{false\}[\s\S]*composition="horizontal-group"[\s\S]*attributionOrder=\{attributionOrder\}[\s\S]*sizePx=\{32\}/u);
+	assert.match(dragChipSource, /<HumanAgentAvatar[\s\S]*agent=\{\{ \.\.\.agent, appearance: "coding" \}\}[\s\S]*human=\{attributedBy\}[\s\S]*animate=\{false\}[\s\S]*composition="horizontal-group"[\s\S]*attributionOrder=\{attributionOrder\}[\s\S]*sizePx=\{32\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /attributedBy=\{featuredActivity\?\.invokedBy\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /elevated/u);
 });

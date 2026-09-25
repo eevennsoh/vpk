@@ -20,6 +20,17 @@ const DETAILS_SOURCE = readFileSync(join(__dirname, "../../../app/data/details/b
 const VARIANT_REGISTRY_SOURCE = readFileSync(join(__dirname, "../../website/registry/blocks-variants.ts"), "utf8");
 const SUBTASKS_BLOCK = SUBTASKS_SOURCE.slice(SUBTASKS_SOURCE.indexOf("export function JiraIssueSubtasks"));
 
+test("finished activity preserves the run's human attribution", () => {
+	const { toJiraIssueAgentActivityFromCompletedRun } = require("./completed-agent-runs-model.ts");
+	const invokedBy = { name: "Maya Ferreira", avatarSrc: "/maya.png" };
+	const run = { id: "inventory", agentName: "Claude", invokedBy, state: "done" };
+	const activity = toJiraIssueAgentActivityFromCompletedRun(run);
+	assert.deepEqual(activity.invokedBy, invokedBy);
+	assert.equal(activity.state, "completed");
+	assert.equal(activity.label, "Finished");
+	assert.equal(toJiraIssueAgentActivityFromCompletedRun({ ...run, invokedBy: undefined }).invokedBy, undefined);
+});
+
 test("Jira issue agent activity experimental v2 duplicates the playground with larger icons and stroke nested cards", () => {
 	assert.match(TYPES_SOURCE, /export type JiraIssueIconScale = "compact" \| "comfortable";/u);
 	assert.match(SOURCE, /iconScale\?: JiraIssueIconScale;/u);

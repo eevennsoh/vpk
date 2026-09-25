@@ -14,7 +14,7 @@ import type { SessionCohort } from "./session-cohort";
  * `owner` is the person who started the session and can act on it. `viewer` is
  * a teammate who can see that the work exists but cannot open its controls.
  * `expired` is a cloud session past the 28-day history window: it can no
- * longer be resumed, so the row keeps an X instead of a menu or lifecycle icon.
+ * longer be resumed, so the row offers only a Delete menu and an expiry tooltip.
  */
 export type AgentSessionRole = "owner" | "viewer" | "expired";
 

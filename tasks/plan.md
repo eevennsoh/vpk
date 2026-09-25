@@ -10,8 +10,8 @@ Migrate the current Venn Prototype Kit repository from `vpk-rovo` to `vpk` acros
 - Use `VPK` for product prose and `vpk` for package, repository, directory, hostname, and machine identifiers.
 - Treat `VPK` as the stable product brand, but derive mutable repository slugs, checkout directories, remotes, and development hosts from Git, package metadata, or the current working tree whenever possible. Use neutral wording such as "this repository" in prose.
 - Introduce read-old/write-new compatibility for persisted local state and protocol headers.
-- Keep the distinct `vpk-rovodev` repository unchanged.
-- Rename the Bitbucket repository to `atlassian/vpk` and update its remote. Keep Docker `vpk-rovo` and SSM `/vpk-rovo/*` as documented transitional deployment identifiers until replacement infrastructure is verified.
+- Connected-repository fixtures now use `vpk` and `https://bitbucket.org/atlassian/vpk`.
+- Rename the Bitbucket repository to `atlassian/vpk` and update its remote. Micros service/image identity is `vpk`, with settings under SSM `/vpk/*`; new deployments use this canonical identity.
 - Edit canonical `.agents` sources and regenerate symlinked/generated views rather than editing provider views independently.
 
 ## Task List

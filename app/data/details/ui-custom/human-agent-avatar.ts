@@ -63,7 +63,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			name: "composition",
 			type: '"compact" | "horizontal-group"',
 			description:
-				"Controlled destination for one-shot transitions. Set horizontal-group to open and hold the equal-size human-first group; animate enables the transition. Reduced motion shows the destination immediately.",
+				"Controlled destination for one-shot transitions. Set horizontal-group to open and hold the equal-size group in attributionOrder; animate enables the transition. Reduced motion shows the destination immediately.",
 		},
 		{
 			name: "motion",
@@ -76,7 +76,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			type: '"agent-first" | "human-first"',
 			default: '"agent-first"',
 			description:
-				"Initial composition: agent at the top left or human at the top left.",
+				"The first identity owns the larger top-left footprint; the other becomes the smaller bottom-right badge. Horizontal groups preserve this order.",
 		},
 		{
 			name: "sizePx",
@@ -106,13 +106,13 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 		{
 			title: "Horizontal group",
 			description:
-				"The compact identity becomes an equal-size AvatarGroup, with the human first and agent second, then returns. Supports both sizes, uses the same timing controls, and respects reduced motion.",
+				"The compact identity becomes an equal-size AvatarGroup, with the agent first and human second by default, then returns. Supports both sizes, uses the same timing controls, and respects reduced motion.",
 			demoSlug: "human-agent-avatar-demo-horizontal-group",
 		},
 		{
 			title: "Human first",
 			description:
-				"The same static identity with the human at the top left, as used by tracked Agent List work.",
+				"The human takes the larger top-left footprint, and the agent becomes the smaller bottom-right badge.",
 			demoSlug: "human-agent-avatar-demo-human-first",
 		},
 	],

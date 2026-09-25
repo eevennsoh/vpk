@@ -114,7 +114,7 @@ interface DropdownMenuContentProps
     MenuPrimitive.Popup.Props,
     Pick<
       MenuPrimitive.Positioner.Props,
-      "align" | "alignOffset" | "side" | "sideOffset"
+			"align" | "alignOffset" | "anchor" | "collisionAvoidance" | "side" | "sideOffset"
     > {
   portalled?: boolean;
   portalContainer?: MenuPrimitive.Portal.Props["container"];
@@ -131,6 +131,8 @@ interface DropdownMenuContentProps
 function DropdownMenuContent({
   align = "start",
   alignOffset = 0,
+	anchor,
+	collisionAvoidance,
   side = "bottom",
   sideOffset = 4,
   portalled = true,
@@ -145,6 +147,8 @@ function DropdownMenuContent({
       className={cn("z-[200] outline-none", positionerClassName)}
       align={align}
       alignOffset={alignOffset}
+			anchor={anchor}
+			collisionAvoidance={collisionAvoidance}
       side={side}
       sideOffset={sideOffset}
 		>

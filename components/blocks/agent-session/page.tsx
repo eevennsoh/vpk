@@ -128,6 +128,7 @@ function toDemoAssignedAgentFromSession(item: AgentSessionItem): AgentAssignment
 		byline: "",
 		...(item.agent.avatarSrc ? { avatarSrc: item.agent.avatarSrc } : {}),
 		...(item.agent.brandName ? { brandName: item.agent.brandName } : {}),
+		...(item.agent.vpkLogo ? { vpkLogo: item.agent.vpkLogo } : {}),
 		status: item.title,
 		statusKind,
 		statusLabel: item.title,
@@ -303,6 +304,7 @@ export default function AgentSessionPage({
 								className="w-[520px]"
 								density={density}
 								items={withSessionRole(items.slice(-1), "expired")}
+								onDeleteSession={handleRemove}
 								variant={variant}
 							/>
 						</section>

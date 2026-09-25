@@ -21,6 +21,7 @@ const spinnerVariants = cva(
 			variant: {
 				default: "text-icon-subtlest",
 				experimental: "text-icon-subtlest!",
+				"experimental-avatar": "text-icon-subtlest!",
 				inherit: "",
 				invert: "text-background",
 				rainbow: "",
@@ -39,7 +40,7 @@ interface SpinnerProps
 	label?: string
 	/** Deterministic offset into the animation loop, used to desynchronise nearby spinners. */
 	phaseOffsetMs?: number
-	/** Experimental only. Converges the six dots to one center dot, then grows them back into the ring. */
+	/** Experimental only. Collapses to a dot or avatar cluster, then grows back into the ring. */
 	pulse?: boolean
 	style?: React.CSSProperties
 }
@@ -108,9 +109,10 @@ function Spinner({
 		</>
 	)
 
-	if (variant === "experimental") {
+	if (variant === "experimental" || variant === "experimental-avatar") {
 		return (
 			<ExperimentalSpinner
+				avatar={variant === "experimental-avatar"}
 				className={cn(spinnerVariants({ size, variant }), className)}
 				label={label}
 				pulse={pulse}

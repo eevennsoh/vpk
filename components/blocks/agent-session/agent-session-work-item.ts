@@ -38,6 +38,7 @@ export function resolveAgentSessionWorkItemKey(
 export function toJiraIssueAgentActivityFromSession(item: AgentSessionItem): JiraIssueAgentActivity {
 	return {
 		agentBrandName: item.agent.brandName,
+		...(item.agent.vpkLogo ? { agentVpkLogo: item.agent.vpkLogo } : {}),
 		avatarSrc: item.agent.avatarSrc,
 		id: item.id,
 		label: item.title,

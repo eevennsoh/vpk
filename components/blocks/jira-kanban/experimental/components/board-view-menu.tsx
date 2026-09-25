@@ -80,11 +80,11 @@ interface GlyphStateIcon {
 	color: NewCoreIconProps["color"];
 }
 
-interface ExperimentalSpinnerStateIcon {
-	spinner: "experimental";
+interface AvatarSpinnerStateIcon {
+	spinner: "experimental-avatar";
 }
 
-type StateIcon = GlyphStateIcon | ExperimentalSpinnerStateIcon;
+type StateIcon = GlyphStateIcon | AvatarSpinnerStateIcon;
 
 type StateIcons = Readonly<Record<string, StateIcon>>;
 
@@ -95,7 +95,7 @@ const MENU_LEADING_SPINNER_CLASS_NAME = "origin-center scale-[1.49]";
 function MenuLeadingIcon({ icon }: Readonly<{ icon: StateIcon }>) {
 	if ("spinner" in icon) {
 		switch (icon.spinner) {
-			case "experimental":
+			case "experimental-avatar":
 				return (
 					<Icon
 						className={cn(
@@ -107,7 +107,7 @@ function MenuLeadingIcon({ icon }: Readonly<{ icon: StateIcon }>) {
 								className={MENU_LEADING_SPINNER_CLASS_NAME}
 								label=""
 								size="xs"
-								variant="experimental"
+								variant="experimental-avatar"
 							/>
 						)}
 					/>
@@ -200,7 +200,7 @@ const PR_STATE_ICONS = {
 } as const satisfies Record<BoardPrStateId, StateIcon>;
 
 const AGENT_STATE_ICONS = {
-	working: { spinner: "experimental" },
+	working: { spinner: "experimental-avatar" },
 	"needs-input": { glyph: QuestionCircleFilledIcon, color: token("color.icon.information") },
 	finished: { glyph: StatusSuccessIcon, color: token("color.icon.success") },
 	untracked: { glyph: PriorityTrivialIcon, color: token("color.icon.subtlest") },

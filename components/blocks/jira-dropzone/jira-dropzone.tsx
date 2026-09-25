@@ -60,6 +60,7 @@ export function JiraDropzone({
 	label,
 	measuredRef,
 	openMinHeight,
+	pinVerticalMagnet = false,
 	proximityRef,
 	renderControl,
 	renderResting,
@@ -75,6 +76,8 @@ export function JiraDropzone({
 	measuredRef?: RefObject<HTMLDivElement | null>;
 	/** Available space used only in proximity or while receiving a drop. */
 	openMinHeight?: number;
+	/** Pin the surface vertically; the label retains its 4px lean on both axes. */
+	pinVerticalMagnet?: boolean;
 	/** Stable detection footprint, independent of the visible well's size. */
 	proximityRef?: RefObject<HTMLDivElement | null>;
 	/** A persistent button adapter shares one border across resting and drag states. */
@@ -88,7 +91,9 @@ export function JiraDropzone({
 	const targetRef = measuredRef ?? localRef;
 	const { channel, onLanded, profile, receiving } = useJiraDropzoneChannel(title);
 	const magnet = useMagneticProximity(proximityRef ?? targetRef, {
+		distance: 8,
 		hoverArea,
+		labelRatio: 0.5, // The label travels 4px: half of the surface's 8px lean.
 	});
 	const [rawProximity, setRawProximity] = useState<MagneticPointerRelation>("outside");
 	useMotionValueEvent(magnet.proximity, "change", setRawProximity);
@@ -142,6 +147,7 @@ export function JiraDropzone({
 			openMinHeight={openMinHeight}
 			phase={phase}
 			pinMagnet={pinMagnet}
+			pinVerticalMagnet={pinVerticalMagnet}
 			profile={profile}
 			proximity={proximity}
 			receiving={receiving}
@@ -185,6 +191,7 @@ type JiraDropzoneOpenSurfaceProps = Readonly<{
 	openMinHeight?: number;
 	phase: ReturnType<typeof resolveJiraDropzonePhase>;
 	pinMagnet: boolean;
+	pinVerticalMagnet: boolean;
 	profile: FlightProfile;
 	proximity: MagneticPointerRelation;
 	receiving: boolean;
@@ -212,6 +219,7 @@ function JiraDropzoneOpenSurface({
 	openMinHeight,
 	phase,
 	pinMagnet,
+	pinVerticalMagnet,
 	profile,
 	proximity,
 	receiving,
@@ -240,6 +248,7 @@ function JiraDropzoneOpenSurface({
 				openMinHeight={openMinHeight}
 				phase={phase}
 				pinMagnet={pinMagnet || !active}
+				pinVerticalMagnet={pinVerticalMagnet}
 				proximity={proximity}
 				receiving={receiving}
 				renderControl={renderControl}
@@ -275,6 +284,7 @@ type JiraDropzoneWellProps = Pick<
 	| "openMinHeight"
 	| "phase"
 	| "pinMagnet"
+	| "pinVerticalMagnet"
 	| "proximity"
 	| "receiving"
 	| "renderControl"
@@ -301,6 +311,7 @@ function JiraDropzoneWell({
 	openMinHeight,
 	phase,
 	pinMagnet,
+	pinVerticalMagnet,
 	proximity,
 	receiving,
 	renderControl,
@@ -339,7 +350,7 @@ function JiraDropzoneWell({
 		>
 			<motion.div className="w-full will-change-transform" style={{
 				x: pinMagnet ? 0 : magnet.x,
-				y: pinMagnet ? 0 : magnet.y,
+				y: pinMagnet || pinVerticalMagnet ? 0 : magnet.y,
 			}}>
 				<div
 					aria-label={renderControl ? undefined : `${label} in ${title}${selected ? ", selected drop target" : ""}`}
@@ -443,7 +454,7 @@ function JiraDropzoneButtonChrome({
 		children: <>
 			{marching ? <JiraDropzoneAntsStroke selected={selected} /> : null}
 			<span
-				className="relative grid h-5 w-full place-items-center overflow-hidden"
+				className="relative grid h-5 w-full place-items-center"
 			>
 				{/* Both visual layers share one centered slot and the height animation's clock. */}
 				<span

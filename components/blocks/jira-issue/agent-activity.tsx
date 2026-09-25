@@ -31,6 +31,7 @@ import {
 import type { AgentListHost, AgentListInvoker } from "@/components/blocks/agent-list";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
+import { agentIdentityLabel } from "@/components/blocks/agent-session/agent-session-identity-label";
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
 import {
 	groupJiraIssueAgentActivityRows,
@@ -61,6 +62,7 @@ import {
 	JiraIssueAgentAssignmentHandle,
 	JiraIssueAgentRowContent,
 	JiraIssueAgentRowSurface,
+	JiraIssueAgentStatusAffordance,
 	JiraIssueAgentStatusIcon,
 	type JiraIssueAgentAssignment,
 } from "./agent-activity-row-presentation";
@@ -95,6 +97,7 @@ export interface JiraIssueAgentActivity {
 	name: string;
 	avatarSrc?: string;
 	agentBrandName?: ThirdPartyLogoName;
+	agentVpkLogo?: "rovo";
 	label: string;
 	labels?: readonly string[];
 	message?: string;
@@ -194,13 +197,14 @@ function toAssignedAgentStatusKind(
 	}
 }
 
-function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentAssignmentAgent {
+export function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentAssignmentAgent {
 	return {
 		id: activity.id,
 		name: activity.name,
 		byline: "",
 		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+		...(activity.agentVpkLogo ? { vpkLogo: activity.agentVpkLogo } : {}),
 		status: activity.label,
 		statusKind: toAssignedAgentStatusKind(activity.state),
 		statusSequence: activity.state === "working" ? getJiraIssueAgentWorkingLabels(activity) : undefined,
@@ -226,6 +230,7 @@ function toSelectorAgent(activity: JiraIssueAgentActivity): AgentSelectorAgent {
 		byline: "",
 		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+		...(activity.agentVpkLogo ? { vpkLogo: activity.agentVpkLogo } : {}),
 	};
 }
 
@@ -283,6 +288,7 @@ function resolveJiraIssueAgentRowPresentation(
 	const isFailedRow = isCompletedRow
 		&& activities.some((activity) => activity.label === "Failed");
 	const isSingleAgent = summary.activityCount === 1;
+	const isViewerRow = activities.length > 0 && activities.every((activity) => activity.role === "viewer");
 	const rowLinkFlash = linkFlash
 		&& activities.some((activity) => linkFlash.activityIds.includes(activity.id))
 		? linkFlash
@@ -291,14 +297,18 @@ function resolveJiraIssueAgentRowPresentation(
 	const featuredActivity = summary.featuredActivityIndex !== null
 		? activities[summary.featuredActivityIndex]
 		: undefined;
-	const rowLabel = isCompletedRow
+	const rowLabel = isViewerRow
+		? isSingleAgent
+			? agentIdentityLabel(activities[0], activities[0].invokedBy)
+			: "Agent sessions"
+		: isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
 	const activityKey = activities.map((activity) => activity.id).join("\n");
 	const startupSequenceKey = isSingleAgent && featuredActivity?.startupSequence === "jira-work-item-start"
 		? activityKey
 		: null;
-	const rowAriaLabel = isSingleAgent
+	const rowAriaLabel = isViewerRow ? rowLabel : isSingleAgent
 			? `${activities[0]?.name ?? "Agent"}: ${rowLabel}`
 			: `${summary.activityCount} agents: ${rowLabel}`;
 
@@ -307,6 +317,7 @@ function resolveJiraIssueAgentRowPresentation(
 		isAwaitingInput,
 		isCompletedRow,
 		isFailedRow,
+		isViewerRow,
 		rowAriaLabel,
 		rowLabel,
 		rowLinkFlash,
@@ -371,6 +382,13 @@ function createJiraIssueSessionDragBind({
 
 	return {
 		...dragBindWithoutKeyboard,
+		onClick: (event: ReactMouseEvent<HTMLElement> & { preventBaseUIHandler?: () => void }) => {
+			if (!drag.bind.onClick()) {
+				event.preventDefault();
+				event.stopPropagation();
+				event.preventBaseUIHandler?.();
+			}
+		},
 		onFocus: () => sessionDrag.onFocusedActivitiesChange(activities),
 		// The card `<article>` is `draggable`, so a plain pointerdown would hand
 		// the gesture to native HTML5 drag. Cancelling the compatibility
@@ -498,6 +516,7 @@ function JiraIssueAgentActivityRow({
 	inheritChinSurface = false,
 	showAssignmentFlyout = true,
 	shouldReduceMotion,
+	workingSpinnerVariant,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	assignment?: JiraIssueAgentAssignment;
@@ -520,6 +539,7 @@ function JiraIssueAgentActivityRow({
 	/** Hover assignment menu for every session lifecycle state. */
 	showAssignmentFlyout?: boolean;
 	shouldReduceMotion: boolean | null;
+	workingSpinnerVariant?: "default" | "experimental-avatar";
 }>) {
 	// Any row that gained one of the linked sessions sweeps, including a merged
 	// "N Working" row. Dropping onto a card that is already busy changes that
@@ -530,6 +550,7 @@ function JiraIssueAgentActivityRow({
 		isAwaitingInput,
 		isCompletedRow,
 		isFailedRow,
+		isViewerRow,
 		rowAriaLabel,
 		rowLabel,
 		rowLinkFlash,
@@ -598,6 +619,7 @@ function JiraIssueAgentActivityRow({
 				agent={{
 					avatarSrc: featuredActivity?.avatarSrc,
 					brandName: featuredActivity?.agentBrandName,
+					vpkLogo: featuredActivity?.agentVpkLogo,
 					name: featuredActivity?.name ?? "Agent",
 				}}
 				attributedBy={featuredActivity?.invokedBy}
@@ -608,13 +630,19 @@ function JiraIssueAgentActivityRow({
 	);
 
 	const statusIcon = (
-		<JiraIssueAgentStatusIcon
-			iconScale={iconScale}
-			isAwaitingInput={isAwaitingInput}
-			isCompletedRow={isCompletedRow}
-			isFailedRow={isFailedRow}
-			renderAgentActivityIndicator={renderAgentActivityIndicator}
-			startupPhase={startupPhase}
+		<JiraIssueAgentStatusAffordance
+			interactive={showAssignmentFlyout}
+			statusIcon={isViewerRow ? undefined : (
+				<JiraIssueAgentStatusIcon
+					iconScale={iconScale}
+					isAwaitingInput={isAwaitingInput}
+					isCompletedRow={isCompletedRow}
+					isFailedRow={isFailedRow}
+					renderAgentActivityIndicator={renderAgentActivityIndicator}
+					startupPhase={startupPhase}
+					workingSpinnerVariant={workingSpinnerVariant}
+				/>
+			)}
 		/>
 	);
 	const rowHandle = (
@@ -638,13 +666,14 @@ function JiraIssueAgentActivityRow({
 			<JiraIssueAgentRowContent
 				activities={activities}
 				avatarLayout={avatarLayout}
-				featuredActivity={featuredActivity}
-				isAwaitingInput={isAwaitingInput}
-				isWorking={!isCompletedRow && !isAwaitingInput}
+				featuredActivity={isViewerRow && activities.length > 1 ? undefined : featuredActivity}
+				isAwaitingInput={!isViewerRow && isAwaitingInput}
+				isWorking={!isViewerRow && !isCompletedRow && !isAwaitingInput}
 				rowLabel={rowLabel}
 				showUnlinkControl={showUnlinkControl}
-				startupPhase={startupPhase}
+				startupPhase={isViewerRow ? "working" : startupPhase}
 				statusIcon={statusIcon}
+				isViewerRow={isViewerRow}
 			/>
 		</button>
 	);
@@ -707,6 +736,7 @@ export function JiraIssueAgentActivityRows({
 	inheritChinSurface = false,
 	showAssignmentFlyout = true,
 	shouldReduceMotion,
+	workingSpinnerVariant,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	/** Full assignment menu (Assign agent footer) when the host supplies edit capability. */
@@ -735,6 +765,8 @@ export function JiraIssueAgentActivityRows({
 	showAssignmentFlyout?: boolean;
 	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;
+	/** Selects only the Working spinner; iconScale still owns row spacing. */
+	workingSpinnerVariant?: "default" | "experimental-avatar";
 }>) {
 	const [sessionDragging, setSessionDragging] = useState(false);
 	const [assignmentHoverOpen, setAssignmentHoverOpen] = useState(false);
@@ -791,6 +823,7 @@ export function JiraIssueAgentActivityRows({
 							avatarLayout={avatarLayout}
 							flushContent={flushContent}
 							iconScale={iconScale}
+							workingSpinnerVariant={workingSpinnerVariant}
 							inheritChinSurface={inheritChinSurface}
 							linkFlash={linkFlash}
 							onOpenChange={(open) => {
@@ -816,6 +849,7 @@ export function JiraIssueAgentActivityRows({
 												name: activity.name,
 												tintSeed: sessionTransferTintSeed(
 													activity.agentBrandName,
+													activity.agentVpkLogo,
 													activity.name,
 												),
 											}],

@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useCallback, useRef, type ReactElement } from "react";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
@@ -35,6 +36,7 @@ import type {
 	JiraIssueAgentActivityAvatarLayout,
 	JiraIssueAgentActivityIndicatorRenderer,
 } from "./agent-activity";
+import { getJiraIssueAgentAvatarSize } from "./agent-activity-avatar";
 
 export type JiraIssueAgentAssignment = Partial<
 	Pick<
@@ -48,6 +50,7 @@ export type JiraIssueAgentAssignment = Partial<
 		| "onBrowseAgents"
 		| "onContinueExistingSession"
 		| "onCreateAgent"
+		| "onDeleteAssignedAgent"
 		| "onRenameAssignedAgent"
 		| "onStartNewSession"
 		| "pinnedItemsLabel"
@@ -65,8 +68,10 @@ function toAgentLoadingAgent(activity: JiraIssueAgentActivity): AgentLoadingAgen
 		name: activity.name,
 		status: activity.state === "completed" ? "finished" : "working",
 		avatar: {
+			appearance: "coding",
 			...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 			...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+			...(activity.agentVpkLogo ? { vpkLogo: activity.agentVpkLogo } : {}),
 			fallbackText: getAgentInitial(activity.name),
 		},
 	};
@@ -130,10 +135,12 @@ function JiraIssueActiveAgentStatusIcon({
 	iconScale,
 	isAwaitingInput,
 	renderAgentActivityIndicator,
+	workingSpinnerVariant,
 }: Readonly<{
 	iconScale: JiraIssueIconScale;
 	isAwaitingInput: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
+	workingSpinnerVariant?: "default" | "experimental-avatar";
 }>): ReactElement {
 	if (renderAgentActivityIndicator) {
 		return (
@@ -152,13 +159,15 @@ function JiraIssueActiveAgentStatusIcon({
 		);
 	}
 
+	const spinnerVariant = workingSpinnerVariant ?? (iconScale === "comfortable" ? "experimental-avatar" : "default");
+
 	return (
 		<span
 			aria-hidden="true"
 			className="grid size-6 shrink-0 place-items-center text-icon"
 		>
-			{iconScale === "comfortable" ? (
-				<Spinner label="" pulse size="xl" variant="experimental" />
+			{spinnerVariant === "experimental-avatar" ? (
+				<Spinner label="" pulse size="xl" variant="experimental-avatar" />
 			) : (
 				<Spinner label="" />
 			)}
@@ -173,6 +182,7 @@ export function JiraIssueAgentStatusIcon({
 	isFailedRow,
 	renderAgentActivityIndicator,
 	startupPhase,
+	workingSpinnerVariant,
 }: Readonly<{
 	iconScale: JiraIssueIconScale;
 	isAwaitingInput: boolean;
@@ -180,6 +190,7 @@ export function JiraIssueAgentStatusIcon({
 	isFailedRow: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	startupPhase: ReturnType<typeof useJiraIssueAgentStartupPhase>;
+	workingSpinnerVariant?: "default" | "experimental-avatar";
 }>): ReactElement {
 	if (isCompletedRow) {
 		return (
@@ -207,7 +218,29 @@ export function JiraIssueAgentStatusIcon({
 			iconScale={iconScale}
 			isAwaitingInput={isAwaitingInput}
 			renderAgentActivityIndicator={renderAgentActivityIndicator}
+			workingSpinnerVariant={workingSpinnerVariant}
 		/>
+	);
+}
+
+export function JiraIssueAgentStatusAffordance({
+	interactive,
+	statusIcon,
+}: Readonly<{
+	interactive: boolean;
+	statusIcon?: ReactElement;
+}>): ReactElement | null {
+	if (!interactive) return statusIcon ?? null;
+
+	return (
+		<span aria-hidden="true" className="grid size-6 shrink-0 place-items-center" data-slot="jira-issue-agent-status-affordance">
+			<span className="col-start-1 row-start-1 grid size-6 place-items-center group-hover/agent-chin-row:invisible group-has-[:focus-visible]/agent-chin-row:invisible" data-slot="jira-issue-agent-status-icon">
+				{statusIcon}
+			</span>
+			<span className="invisible col-start-1 row-start-1 grid size-6 place-items-center text-icon-subtle group-hover/agent-chin-row:visible group-has-[:focus-visible]/agent-chin-row:visible" data-slot="jira-issue-agent-chevron">
+				<ChevronRightIcon color="currentColor" label="" size="small" />
+			</span>
+		</span>
 	);
 }
 
@@ -271,6 +304,7 @@ export function JiraIssueAgentRowContent({
 	isWorking,
 	rowLabel,
 	showUnlinkControl,
+	isViewerRow = false,
 	startupPhase,
 	statusIcon,
 }: Readonly<{
@@ -281,6 +315,7 @@ export function JiraIssueAgentRowContent({
 	isWorking: boolean;
 	rowLabel: string;
 	showUnlinkControl: boolean;
+	isViewerRow?: boolean;
 	startupPhase: ReturnType<typeof useJiraIssueAgentStartupPhase>;
 	statusIcon: ReactElement;
 }>): ReactElement {
@@ -289,32 +324,36 @@ export function JiraIssueAgentRowContent({
 		avatar = (
 			<span className="grid size-6 shrink-0 place-items-center">
 				<AgentAvatarVisual
+					appearance="coding"
 					animate={false}
 					avatarClassName="shrink-0"
 					avatarSrc={featuredActivity.avatarSrc}
 					brandName={featuredActivity.agentBrandName}
+					vpkLogo={featuredActivity.agentVpkLogo}
 					fallbackText={getAgentInitial(featuredActivity.name)}
 					label={featuredActivity.name}
-					sizePx={24}
+					sizePx={getJiraIssueAgentAvatarSize(featuredActivity.agentBrandName)}
 				/>
 			</span>
 		);
 	} else if (avatarLayout === "horizontal-group") {
 		avatar = (
 			<AvatarGroup
-				className="shrink-0 gap-1 space-x-0"
+				className={cn("shrink-0", isViewerRow ? null : "gap-1 space-x-0")}
 				label={`${activities.length} agents: ${rowLabel}`}
 				size="sm"
 			>
 				{activities.map((activity) => (
 					<AgentAvatarVisual
+						appearance="coding"
 						animate={false}
 						avatarSrc={activity.avatarSrc}
 						brandName={activity.agentBrandName}
+						vpkLogo={activity.agentVpkLogo}
 						fallbackText={getAgentInitial(activity.name)}
 						key={activity.id}
 						label=""
-						sizePx={24}
+						sizePx={getJiraIssueAgentAvatarSize(activity.agentBrandName)}
 					/>
 				))}
 			</AvatarGroup>
@@ -366,18 +405,26 @@ export function JiraIssueAgentAssignmentHandle({
 	rowHandle: ReactElement<{ "aria-expanded"?: boolean }>;
 	showAssignmentFlyout: boolean;
 }>): ReactElement {
+	const assignmentHandleRef = useRef<HTMLDivElement>(null);
+	const resolveAssignmentAnchor = useCallback(() => (
+		assignmentHandleRef.current?.closest<HTMLElement>('[data-slot="jira-issue-agent-row"]')
+			?? assignmentHandleRef.current
+	), []);
+
 	// Session lifecycle changes the row's status, never access to its flyout.
 	if (!showAssignmentFlyout) {
 		return rowHandle;
 	}
 
 	return (
-		<div className="flex h-full min-w-0 flex-1 items-center">
+		<div className="flex h-full min-w-0 flex-1 items-center" ref={assignmentHandleRef}>
 			<AgentAssignment
-				addAgentLabel={assignment?.addAgentLabel}
+				addAgentLabel={assignment?.addAgentLabel ?? (activities.every((activity) => activity.role === "viewer") ? "New session" : undefined)}
 				agents={agents}
 				assignedAgents={assignedAgents}
 				defaultPinnedAgentIds={assignment?.defaultPinnedAgentIds}
+				dismissWhenAnchorHidden
+				hoverAnchor={resolveAssignmentAnchor}
 				onAgentAssign={assignment?.onAgentAssign}
 				onAssignedAgentIdsChange={assignment?.onAssignedAgentIdsChange}
 				onAssignedAgentSelect={(agent) => {
@@ -391,12 +438,14 @@ export function JiraIssueAgentAssignmentHandle({
 				onBrowseAgents={assignment?.onBrowseAgents}
 				onContinueExistingSession={assignment?.onContinueExistingSession}
 				onCreateAgent={assignment?.onCreateAgent}
+				onDeleteAssignedAgent={assignment?.onDeleteAssignedAgent}
 				onRenameAssignedAgent={assignment?.onRenameAssignedAgent}
 				onOpenChange={onOpenChange}
 				onStartNewSession={assignment?.onStartNewSession}
-				openMode="hover"
+				openMode="click"
 				pinnedItemsLabel={assignment?.pinnedItemsLabel}
 				positionerClassName="z-[575]"
+				side="right"
 				trigger={rowHandle}
 				usedAgentIds={assignment?.usedAgentIds}
 			/>

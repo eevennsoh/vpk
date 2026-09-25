@@ -288,7 +288,7 @@ test("JiraList agent sessions reuse AgentAssignment instead of a custom menu", (
 	assert.doesNotMatch(agentSessionsRendererSource, /AgentSessionTag|OverflowMenu|MAX_AGENT_AVATARS/u);
 	assert.match(
 		TYPES_SOURCE,
-		/export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "invokedBy" \| "role">/u,
+		/export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "host" \| "invokedBy" \| "role">/u,
 	);
 	assert.match(TYPES_SOURCE, /agentSessions\?: readonly JiraListAssignedAgent\[\];/u);
 	assert.match(CELLS_SOURCE, /\.\.\.\(assigned\.invokedBy \? \{ invokedBy: assigned\.invokedBy \} : \{\}\)/u);

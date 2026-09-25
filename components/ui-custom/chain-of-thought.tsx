@@ -100,6 +100,16 @@ export type ChainOfThoughtHeaderProps = ComponentProps<
 };
 
 const BYLINE_TRANSITION = { duration: 0.2, ease: "easeOut" } as const;
+const BYLINE_SLIDE = {
+	enter: { opacity: 0, y: -4 },
+	active: { opacity: 1, y: 0 },
+	exit: { opacity: 0, y: 4 },
+} as const;
+const BYLINE_FADE = {
+	enter: { opacity: 0 },
+	active: { opacity: 1 },
+	exit: { opacity: 0 },
+} as const;
 
 /**
  * Renders a step byline that animates smoothly between three transitions:
@@ -114,15 +124,19 @@ export function CyclingByline({
 	children,
 	className,
 	contentKey,
+	slide = true,
 }: Readonly<{
 	children: ReactNode;
 	className?: string;
 	/** Explicit transition key when composed children carry cycling text. */
 	contentKey?: string;
+	/** Keep compact bylines on their text line while content changes. */
+	slide?: boolean;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const hasContent = children != null && children !== false;
 	const textKey = contentKey ?? (typeof children === "string" ? children : "byline");
+	const transitionStates = slide ? BYLINE_SLIDE : BYLINE_FADE;
 
 	return (
 		<motion.span
@@ -140,9 +154,9 @@ export function CyclingByline({
 						<motion.span
 							key={textKey}
 							className="block truncate"
-							initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
-							animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-							exit={shouldReduceMotion ? undefined : { opacity: 0, y: 4 }}
+							initial={shouldReduceMotion ? false : transitionStates.enter}
+							animate={shouldReduceMotion ? undefined : transitionStates.active}
+							exit={shouldReduceMotion ? undefined : transitionStates.exit}
 							transition={BYLINE_TRANSITION}
 						>
 							{children}

@@ -197,6 +197,7 @@ function toAgentItem(
 				avatarClassName="shrink-0"
 				avatarSrc={row.avatarSrc}
 				brandName={row.brandName}
+				vpkLogo={row.vpkLogo}
 				fallbackText={row.name.slice(0, 2).toUpperCase()}
 				logoName={row.logoName}
 				sizePx={24}

@@ -132,6 +132,27 @@ test("createListRows flattens board columns and maps agent sessions", () => {
 	assert.deepEqual(rows[0]?.agentSessions, []);
 });
 
+test("createListRows preserves local and cloud session hosts", () => {
+	const cards = ["local", "cloud"].map((host, index) => ({
+		code: `PAY-${200 + index}`,
+		title: "Session host",
+		agentActivities: [{ id: "test-agent", name: "Cursor", state: "working", host }],
+	}));
+	const rows = createListRows([{ title: "In progress", cards }], PAY_BOARD_CATALOG);
+	assert.deepEqual(rows.map((row) => row.agentSessions[0].host), ["local", "cloud"]);
+});
+
+test("finished list sessions preserve the human who invoked the run", () => {
+	const invokedBy = { name: "Maya Ferreira", avatarSrc: "/maya.png" };
+	const rows = createListRows([{ title: "Done", cards: [{
+		code: "PAY-101",
+		title: "Inventory",
+		agentDoneRuns: [{ id: "inventory", agentName: "Claude Code", state: "done", invokedBy }],
+	}] }], PAY_BOARD_CATALOG);
+	assert.deepEqual(rows[0].agentSessions[0].invokedBy, invokedBy);
+	assert.equal(rows[0].agentSessions[0].statusKind, "finished");
+});
+
 test("applyListOrder keeps a custom rank and appends new keys", () => {
 	const rows = createListRows(COLUMNS, PAY_BOARD_CATALOG);
 

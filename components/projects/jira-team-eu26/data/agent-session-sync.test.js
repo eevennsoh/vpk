@@ -142,7 +142,7 @@ test("a synced session keeps its identity and returns to the top on both state c
 test("every queued Jira v5 session has a unique stable identity", async () => {
 	const sync = await loadSyncModule();
 	const sessions = sync.JIRA_TEAM_EU26_SYNC_SESSIONS;
-	const codingAgentIds = new Set(["claude", "codex", "copilot", "cursor"]);
+	const codingAgentIds = new Set(["claude", "codex", "cursor"]);
 
 	assert.equal(sessions.length, 32);
 	assert.equal(new Set(sessions.map((session) => session.id)).size, sessions.length);
@@ -181,6 +181,10 @@ test("all 48 visible Team EU26 placeholders belong to the requested four cohorts
 	assert.equal(cohorts.size, arrivals.length);
 	assert.equal(new Set([...seeds, ...arrivals].map((session) => session.id)).size, 48);
 	assert.ok(seeds.every((session) => session.kind === "agent-session"));
+	for (const session of [...seeds, ...arrivals]) {
+		assert.ok(["claude", "cursor", "codex"].includes(session.agentId), session.id);
+		assert.doesNotMatch(session.title, /copilot/iu, session.id);
+	}
 	assert.ok(seeds.every((session) => session.id === sync.JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES.get(session.id)?.id));
 	assert.ok(arrivals.every((session) => cohorts.has(session.id)));
 

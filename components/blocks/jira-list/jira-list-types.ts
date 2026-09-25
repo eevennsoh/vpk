@@ -45,7 +45,7 @@ export interface JiraListGoal {
 	emphasis?: "default" | "warning";
 }
 
-export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "invokedBy" | "role"> {
+export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "host" | "invokedBy" | "role"> {
 	id: string;
 	name: string;
 	byline?: string;

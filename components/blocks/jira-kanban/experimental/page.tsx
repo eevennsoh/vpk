@@ -35,7 +35,7 @@ import type {
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanColumnData,
 } from "../index";
-import { resolveKanbanColumnChrome, withKanbanDropContentGutter } from "../column-chrome";
+import { KANBAN_WORK_ITEM_BOTTOM_PADDING, resolveKanbanColumnChrome, withKanbanDropContentGutter } from "../column-chrome";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import {
 	AGENT_SESSION_PANEL_WIDTH_PX,
@@ -989,8 +989,8 @@ function ExperimentalJiraKanbanPageContent({
 										: undefined,
 									sessionDrag: boardSessionDrag.untrackedBinding,
 								}}
-								className="pb-3"
 								columnFrame={columnChromeStyles.headerFrame}
+								paddingBottom={KANBAN_WORK_ITEM_BOTTOM_PADDING}
 								paddingTop={withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
 								showTrailingShadow={!isListContent && boardContentUnderlapsSessionColumn}
@@ -1071,7 +1071,7 @@ function ExperimentalJiraKanbanPageContent({
 								onScrollUnderlapChange={setBoardContentUnderlapsSessionColumn}
 								onToggleColumnAgent={handleToggleColumnAgent}
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
-								paddingTop={0}
+								paddingTop={0} paddingBottom={KANBAN_WORK_ITEM_BOTTOM_PADDING}
 								selectionToolbar={{
 									onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
 									onClearSelection: () => setSelection(createJiraKanbanSelectionState()),

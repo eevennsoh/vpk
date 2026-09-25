@@ -135,18 +135,45 @@ test("role omission keeps the default owner attribution", async () => {
 	}
 });
 
-test("non-owner sessions preserve their role without showing owner attribution", async () => {
+test("private session titles identify the agent and owner without changing owner titles", async () => {
+	const { toAssignmentSessionItem } = await loadAssignmentSessionMapper();
+	const agent = assignmentAgent({
+		name: "Claude",
+		invokedBy: { name: "Annie" },
+		role: "viewer",
+		statusKind: "working",
+	});
+	assert.equal(toAssignmentSessionItem(agent).title, "Claude with Annie");
+	assert.equal(toAssignmentSessionItem({ ...agent, invokedBy: undefined }).title, "Claude");
+	assert.equal(toAssignmentSessionItem({ ...agent, role: "owner" }).title, "Claude");
+	assert.equal(toAssignmentSessionItem({ ...agent, role: undefined }).title, "Claude");
+});
+
+test("expired session titles identify expiry while retaining the agent and elapsed stamp", async () => {
+	const { toAssignmentSessionItem } = await loadAssignmentSessionMapper();
+	const session = toAssignmentSessionItem(assignmentAgent({
+		name: "Claude", role: "expired", host: "cloud", timeLabel: "29d", statusKind: "finished",
+	}));
+	assert.equal(session.title, "Claude session expired");
+	assert.equal(session.agent.name, "Claude");
+	assert.equal(session.role, "expired");
+	assert.equal(session.timeLabel, "29d");
+	assert.equal(session.state, "complete");
+});
+
+test("all access roles retain human attribution through every lifecycle state", async () => {
 	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
-	for (const role of ["viewer", "expired"]) {
-		const agent = assignmentAgent({
-			role,
-			statusKind: "needs-input",
-			invokedBy: { name: "Jordan", avatarSrc: "/avatars/jordan.svg" },
-		});
-		for (const result of [toAssignmentActivity(agent), toAssignmentSessionItem(agent)]) {
-			assert.equal(result.role, role);
-			assert.equal(result.invokedBy, undefined);
-			assert.ok(!("invokedBy" in result));
+	for (const role of ["owner", "viewer", "expired"]) {
+		for (const statusKind of ["working", "needs-input", "finished", "idle"]) {
+			const agent = assignmentAgent({
+				role,
+				statusKind,
+				invokedBy: { name: "Jordan", avatarSrc: "/avatars/jordan.svg" },
+			});
+			for (const result of [toAssignmentActivity(agent), toAssignmentSessionItem(agent)]) {
+				assert.equal(result.role, role);
+				assert.deepEqual(result.invokedBy, agent.invokedBy);
+			}
 		}
 	}
 });

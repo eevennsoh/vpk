@@ -13,7 +13,10 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/agent-session/agent-session-card-activation.test.js",
 		".agents/skills/vpk-deploy/scripts/deployment-status.test.js",
+		".agents/skills/vpk-deploy/scripts/image-upload.test.js",
+		".agents/skills/vpk-deploy/scripts/cli-entrypoints.test.js",
 		".agents/skills/vpk-deploy/scripts/release-receipt.test.js",
 		".agents/skills/vpk-deploy/scripts/verify-browser.test.js",
 		".agents/skills/vpk-build/scripts/plan-target-refresh.test.js",
@@ -227,6 +230,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-assignment/components/use-assigned-agent-attention.test.js",
 		"components/blocks/agent-assignment/assignment-session-mapping.test.js",
 		"components/blocks/agent-states/agent-states.test.js",
+		"components/blocks/jira-issue/agent-activity-assignment-mapping.test.js",
 		"components/blocks/jira-issue/agent-activity-model.test.ts",
 		"components/blocks/jira-issue/lib.test.ts",
 		"components/blocks/jira-issue/agent-session-drag.test.ts",

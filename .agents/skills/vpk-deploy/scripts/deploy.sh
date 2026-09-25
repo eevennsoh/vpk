@@ -20,7 +20,7 @@ echo ""
 # usage help when the user runs the script with no arguments.
 if [ -z "${1:-}" ]; then
   echo "❌ Service name is required"
-  echo "Usage: $0 <service-name> <version> [env] [--mode=cutover|hot-swap] [--receipt path]"
+  echo "Usage: $0 <service-name> <version> [env] [--mode=cutover|hot-swap] [--receipt path] [--push-via=docker|crane]"
   echo "Example: $0 my-prototype 1.0.1 pdev-west2"
   echo ""
   echo "⚠️  Service name must be ≤26 characters"
@@ -29,7 +29,7 @@ fi
 
 if [ -z "${2:-}" ]; then
   echo "❌ Deployment version is required"
-  echo "Usage: $0 <service-name> <version> [env] [--mode=cutover|hot-swap] [--receipt path]"
+  echo "Usage: $0 <service-name> <version> [env] [--mode=cutover|hot-swap] [--receipt path] [--push-via=docker|crane]"
   exit 1
 fi
 
@@ -39,12 +39,17 @@ REQUESTED_SERVICE_NAME=$SERVICE_NAME
 REQUESTED_VERSION=$VERSION
 shift 2
 REQUESTED_MODE=""
+REQUESTED_PUSH_VIA=""
 RECEIPT_FILE=""
 REQUESTED_ENV=""
 while [ "$#" -gt 0 ]; do
   deploy_arg=$1
   shift
   case "$deploy_arg" in
+    --push-via=*)
+      if [ -n "$REQUESTED_PUSH_VIA" ]; then echo "❌ Duplicate upload transport"; exit 2; fi
+      REQUESTED_PUSH_VIA=${deploy_arg#--push-via=}
+      vpk_validate_push_via "$REQUESTED_PUSH_VIA" ;;
     --hot-swap|--mode=*)
       if [ -n "$REQUESTED_MODE" ]; then echo "❌ Duplicate or conflicting deployment modes"; exit 2; fi
       if [ "$deploy_arg" = "--hot-swap" ]; then REQUESTED_MODE=hot-swap; else REQUESTED_MODE=${deploy_arg#--mode=}; fi
@@ -86,6 +91,8 @@ vpk_validate_service_name "$SERVICE_NAME"
 vpk_validate_version "$VERSION"
 DEPLOY_MODE=${REQUESTED_MODE:-${VPK_DEPLOY_MODE:-cutover}}
 vpk_validate_deploy_mode "$DEPLOY_MODE"
+PUSH_VIA=${REQUESTED_PUSH_VIA:-${VPK_PUSH_VIA:-docker}}
+vpk_require_push_tool "$PUSH_VIA"
 if [ -n "$RECEIPT_FILE" ]; then vpk_verify_receipt "$RECEIPT_FILE"; fi
 echo "Deployment mode: $DEPLOY_MODE"
 
@@ -122,7 +129,11 @@ fi
 # Push image
 echo ""
 echo "📤 Pushing Docker image..."
-docker push "docker.atl-paas.net/${SERVICE_NAME}:app-${VERSION}"
+if ! vpk_push_image "$SERVICE_NAME" "$VERSION" docker.atl-paas.net "$PUSH_VIA"; then
+  echo "❌ Image upload failed; diagnose the registry boundary before retrying."
+  echo "   See .agents/skills/vpk-deploy/references/troubleshooting.md"
+  exit 1
+fi
 
 # Deploy
 echo ""

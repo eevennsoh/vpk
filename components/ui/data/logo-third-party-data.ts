@@ -31,7 +31,7 @@ export const THIRD_PARTY_LOGO_MANIFEST = [
 	{ name: "clickup", label: "ClickUp", packageIcon: { entrypoint: "clickup", exportName: "ClickupIcon" }, localAsset: true },
 	{ name: "cloudflare", label: "Cloudflare", packageIcon: { entrypoint: "cloudflare", exportName: "CloudflareIcon" } },
 	{ name: "coupa", label: "Coupa", localAsset: true },
-	{ name: "cursor", label: "Cursor", packageIcon: { entrypoint: "cursor", exportName: "CursorIcon" } },
+	{ name: "cursor", label: "Cursor", packageIcon: { entrypoint: "cursor", exportName: "CursorIcon" }, localAsset: true },
 	{ name: "daloopa", label: "Daloopa", packageIcon: { entrypoint: "daloopa", exportName: "DaloopaIcon" } },
 	{ name: "databricks", label: "Databricks", packageIcon: { entrypoint: "databricks", exportName: "DatabricksIcon" }, localAsset: true },
 	{ name: "datadog", label: "Datadog", packageIcon: { entrypoint: "datadog", exportName: "DataDogIcon" }, localAsset: true },
@@ -221,7 +221,8 @@ export function isLocalFallbackThirdPartyLogoName(
  * Local asset path consumed by `CustomLogo` for `public/3p` assets. Restricted
  * to local-asset ids so package-only brands cannot produce a 404ing path.
  */
-export function thirdPartyLogoSrc(name: LocalAssetThirdPartyLogoName): string {
+export function thirdPartyLogoSrc(name: LocalAssetThirdPartyLogoName, variant: "standard" | "glyph" = "standard"): string {
+	if (name === "openai-codex" && variant === "glyph") return "/3p/openai-codex/glyph.svg";
 	const cacheVersion = name === "github-copilot" ? "?v=transparent-bg" : "";
 
 	return `/3p/${name}/24.svg${cacheVersion}`;

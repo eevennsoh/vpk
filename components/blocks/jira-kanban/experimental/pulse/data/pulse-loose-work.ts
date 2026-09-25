@@ -293,7 +293,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-112",
 		"host local · worktree .worktrees/pay-112-replay-risk · retention window still unknown",
 		["jordan", "priya"],
-		{ agentId: "cursor", machineName: "DESKTOP-7K2M9Q1", shortTitle: "Key replay blast radius", state: "needs-input", timeLabel: "5hr ago" },
+		{ agentId: "cursor", machineName: "DESKTOP-7K2M9Q1", shortTitle: "Key replay blast radius", state: "needs-input", timeLabel: "5h ago" },
 	),
 	pullRequest(
 		"lw-regression-reject-pr",
@@ -355,7 +355,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 				description: "Overnight run that turns the 3-D Secure challenge matrix into 214 contract assertions, including the three decline codes the manual suite never covered.",
 			},
 			shortTitle: "3-D Secure suite run",
-			timeLabel: "2hr ago",
+			timeLabel: "2h ago",
 		},
 	),
 	session(
@@ -364,7 +364,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-per-account · read out of PAY-112, never filed",
 		["release-agent", "priya"],
-		{ agentId: "codex", machineName: "esoh-mbp", shortTitle: "Per-account kill switch", state: "running", timeLabel: "1hr ago" },
+		{ agentId: "codex", machineName: "esoh-mbp", shortTitle: "Per-account kill switch", state: "running", timeLabel: "1h ago" },
 	),
 	pullRequest(
 		"lw-night-reject-pr",

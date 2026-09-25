@@ -89,7 +89,7 @@ test("Spinner exposes the Jira prototype iconic orb only as an experimental vari
 	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-rotator-motion/u);
 	assert.match(
 		EXPERIMENTAL_SPINNER_SOURCE,
-		/canAnimate && pulse && "spinner-experimental-orb-dot-motion"/u,
+		/canAnimate && pulse && \(avatar[\s\S]*: "spinner-experimental-orb-dot-motion"\)/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SPINNER_SOURCE,
@@ -120,8 +120,8 @@ test("Spinner exposes the Jira prototype iconic orb only as an experimental vari
 	assert.match(SPINNER_DETAIL_SOURCE, /spinner-demo-experimental/u);
 	assert.match(SPINNER_DEMO_SOURCE, /id="spinner-experimental-pulse"/u);
 	assert.match(SPINNER_DEMO_SOURCE, /<Switch[\s\S]*onCheckedChange=\{setPulse\}/u);
-	assert.match(SPINNER_DEMO_SOURCE, /pulse=\{pulse\}[\s\S]*variant="experimental"/u);
-	assert.match(BOARD_VIEW_MENU_SOURCE, /variant="experimental"/u);
+	assert.match(SPINNER_DEMO_SOURCE, /pulse=\{pulse\}[\s\S]*variant=\{variant\}/u);
+	assert.match(BOARD_VIEW_MENU_SOURCE, /variant="experimental-avatar"/u);
 	assert.doesNotMatch(BOARD_VIEW_MENU_SOURCE, /pulse/u);
 });
 

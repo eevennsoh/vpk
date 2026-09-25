@@ -35,6 +35,9 @@ export interface JiraIssueCompletedAgentRun {
 	agentName: string;
 	agentAvatarSrc?: string;
 	agentBrandName?: ThirdPartyLogoName;
+	/** Where the finished session ran. Legacy runs default to cloud. */
+	host?: AgentListItem["host"];
+	invokedBy?: AgentListItem["invokedBy"];
 	issueKey: string;
 	issueSummary: string;
 	/** Legacy preformatted fallback when no completion timestamp is available. */
@@ -61,12 +64,13 @@ function toCompletedAgentListItem(run: JiraIssueCompletedAgentRun): AgentListIte
 		completedSecondsAgo: run.completedSecondsAgo,
 		elapsedSeconds: run.elapsedSeconds,
 		id: run.id,
+		...(run.invokedBy ? { invokedBy: run.invokedBy } : {}),
 		state: "complete",
 		sessionDetails: {
 			branch: `rovo/${run.issueKey.toLowerCase()}-completed-run`,
 			checks: { failed: run.state === "failed" ? 1 : 0, passed: 12 },
 			commit: "8c2f4e1",
-			host: "cloud",
+			host: run.host ?? "cloud",
 			issueKey: run.issueKey,
 			issueSummary: run.issueSummary,
 			pullRequestNumber: run.pullRequestNumber,
@@ -235,7 +239,7 @@ function JiraIssueAgentDoneMerged({
 	onOpenChange?: (open: boolean) => void;
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
 	/**
-	 * Host-owned finished glyph for the aggregate "N Finished" chin. It paints
+	 * Host-owned finished glyph for the aggregate "Finished" chin. It paints
 	 * in the trailing status slot, same as working/awaiting-input. Without it
 	 * the slot stays empty; a failed aggregate still uses the trailing error
 	 * so success never paints over a failure.
@@ -245,7 +249,7 @@ function JiraIssueAgentDoneMerged({
 	usesStrokeChrome: boolean;
 }>) {
 	const [aggregateOpen, setAggregateOpen] = useState(false);
-	const finishedLabel = `${runs.length} Finished`;
+	const finishedLabel = "Finished";
 	const hasFailedRun = runs.some((run) => run.state === "failed");
 	const finishedIndicator = !hasFailedRun && renderAgentActivityIndicator
 		? renderAgentActivityIndicator("finished")

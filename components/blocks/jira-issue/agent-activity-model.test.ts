@@ -17,7 +17,7 @@ test("single working agent uses the direct Working label", () => {
 	);
 });
 
-test("multiple working agents show the count in the Working label", () => {
+test("multiple working agents use the direct Working label", () => {
 	assert.deepEqual(
 		summarizeJiraIssueAgentActivities([
 			{ state: "working" },
@@ -26,7 +26,7 @@ test("multiple working agents show the count in the Working label", () => {
 		{
 			activityCount: 2,
 			featuredActivityIndex: null,
-			label: "2 Working",
+			label: "Working",
 			priorityCount: 2,
 			priorityState: "working",
 		},
@@ -52,7 +52,7 @@ test("one agent needing input takes priority over every working agent", () => {
 	);
 });
 
-test("multiple agents needing input use the prioritized count", () => {
+test("multiple agents needing input use the direct Needs input label", () => {
 	assert.deepEqual(
 		summarizeJiraIssueAgentActivities([
 			{ state: "awaiting-input" },
@@ -62,7 +62,7 @@ test("multiple agents needing input use the prioritized count", () => {
 		{
 			activityCount: 3,
 			featuredActivityIndex: null,
-			label: "2 Need input",
+			label: "Needs input",
 			priorityCount: 2,
 			priorityState: "awaiting-input",
 		},

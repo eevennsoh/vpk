@@ -153,6 +153,15 @@ manual compact runs too; a cached pull credential can lack upload permission.
 Use `docker push --quiet` to reduce progress noise, then capture the pushed
 digest with image inspection; quiet output can contain only the tag.
 
+For a diagnosed Docker-daemon network failure with working authenticated host
+access, both deploy scripts accept `--push-via=crane` (or configured
+`VPK_PUSH_VIA=crane`). This explicit option uses a trusted host uploader,
+verifies the saved linux/amd64 image configuration against the registry, and
+records the registry digest. Read the [network diagnosis and uploader setup](references/troubleshooting.md#docker-daemon-network-failure-with-a-working-host-proxy).
+To recover an already-built image without rebuilding, use the
+[guarded upload recovery](references/guide-manual-deployment.md#host-proxy-upload-recovery).
+The default Docker path stops on failure; it does not automatically switch tools.
+
 Do not run `pnpm deploy`; that is pnpm's unrelated workspace deployment command
 and can fail with `ERR_PNPM_NOTHING_TO_DEPLOY`.
 

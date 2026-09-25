@@ -74,6 +74,7 @@ export function AgentSessionAttachedCard({
 					}}
 				shouldReduceMotion={shouldReduceMotion}
 				usesStrokeChrome
+				workingSpinnerVariant="experimental-avatar"
 			/>
 		</motion.div>
 	);

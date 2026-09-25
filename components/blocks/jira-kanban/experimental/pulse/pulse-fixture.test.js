@@ -426,7 +426,7 @@ test("Pulse uncaptured work is only GitHub PRs, branches, commits, or local codi
 	const sessionMachines = new Set(sessions.map((item) => item.machineName));
 	const sessionAgents = new Set(sessions.map((item) => item.agentId));
 	const calendarStamp = /Aug|Mon |Tue |Wed |Thu |Fri /u;
-	const relativeStamp = /^(Just now|\d+m ago|\d+hr ago|Yesterday|\d+d ago|Last week)$/u;
+	const relativeStamp = /^(Just now|\d+m ago|\d+h ago|Yesterday|\d+d ago|Last week)$/u;
 	for (const item of sessions) {
 		assert.doesNotMatch(item.timeLabel, calendarStamp, `${item.id} must not use a calendar stamp`);
 		assert.match(item.timeLabel, relativeStamp, `${item.id} timeLabel "${item.timeLabel}" is not relative`);

@@ -7,6 +7,7 @@ import { isCodingAgentListItem } from "@/components/blocks/agent-list";
 import {
 	createJiraSessionFlyoutHandle,
 	JiraSessionFlyoutSurface,
+	JiraSessionFlyoutSuspensionProvider,
 	JiraSessionFlyoutTrigger,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { token } from "@/lib/tokens";
@@ -185,6 +186,11 @@ export function AgentSession({
 	// Agent Session flyout block do: the popup stays mounted and follows the
 	// hovered card, so sliding down the list crossfades instead of remounting.
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
+	const [menuOwnerId, setMenuOwnerId] = useState<string | null>(null);
+	const handleSessionMenuOpenChange = useCallback((itemId: string, open: boolean) => {
+		if (open) flyoutHandle.close();
+		setMenuOwnerId((current) => open ? itemId : current === itemId ? null : current);
+	}, [flyoutHandle]);
 	const scrollPreview = useAgentSessionScrollPreview(flyoutHandle);
 	const flyoutActions = useMemo(
 		() => bindAgentSessionFlyoutActions(items, {
@@ -202,7 +208,7 @@ export function AgentSession({
 	const selectionHintId = useId();
 
 	return (
-		<>
+		<JiraSessionFlyoutSuspensionProvider suspended={menuOwnerId !== null}>
 			{isMultiSelectList ? (
 				<p className="sr-only" id={selectionHintId}>
 					Click additional sessions to add or remove them. Shift-click selects
@@ -298,6 +304,7 @@ export function AgentSession({
 									? undefined
 									: () => onStateChangeComplete(item.id)}
 								onItemHover={onItemHover}
+								onMoreMenuOpenChange={(open) => handleSessionMenuOpenChange(item.id, open)}
 								onLinkWorkItem={onLinkWorkItem}
 								onRenameSession={onRenameSession}
 								onToggleVisibility={onToggleVisibility}
@@ -389,7 +396,7 @@ export function AgentSession({
 					showUntrackedWorkFooter={showUntrackedWorkFooter}
 				/>
 			) : null}
-		</>
+		</JiraSessionFlyoutSuspensionProvider>
 	);
 }
 

@@ -41,6 +41,18 @@ test("the presentation chapters follow the manager journey from Track to Termina
 	);
 });
 
+test("PAY-101 finished run retains the human from its original prompt", async () => {
+	const story = await loadPresentationModule();
+	const card = story.createJiraTeamEu26PayBoardColumns()
+		.flatMap((column) => column.cards).find((item) => item.code === "PAY-101");
+	const prompt = story.createJiraTeamEu26Pay101BuildState().sessions[0].messages
+		.find((message) => message.role === "human");
+	assert.deepEqual(card.agentDoneRuns[0].invokedBy, {
+		name: prompt.authorName,
+		avatarSrc: prompt.authorAvatarSrc,
+	});
+});
+
 test("the PAY board fills every existing status with coding work and the full state matrix", async () => {
 	const story = await loadPresentationModule();
 	const columns = story.createJiraTeamEu26PayBoardColumns();

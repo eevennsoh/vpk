@@ -22,6 +22,11 @@ function snapshot(stacks, stableId = "new") {
 	};
 }
 
+function snapshotWithRawVersion(versionToken) {
+	return JSON.stringify(snapshot([stack("new", "CREATE_COMPLETE", "raw-version-sentinel")]))
+		.replace('"raw-version-sentinel"', versionToken);
+}
+
 function summary(deploymentId, status, version = VERSION) {
 	return { deploymentId, status, version };
 }
@@ -35,7 +40,7 @@ function runCli(t, data, args = []) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-deployment-status-"));
 	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
 	const file = path.join(root, "snapshot with spaces.json");
-	fs.writeFileSync(file, JSON.stringify(data));
+	fs.writeFileSync(file, typeof data === "string" ? data : JSON.stringify(data));
 	return spawnSync(process.execPath, [SCRIPT, "--snapshot", file, "--env", ENVIRONMENT, ...args], { encoding: "utf8" });
 }
 
@@ -88,6 +93,30 @@ test("a stable successful deployment with the wrong requested version is not rea
 	const result = await resolve(snapshot([stack("new", "CREATE_COMPLETE")]), { version: "release-2" });
 	assert.equal(result.requested.version, VERSION);
 	assert.equal(result.ready, false);
+});
+
+test("a numeric Micros build number matches the CLI version string", (t) => {
+	const result = runCli(t, snapshot([stack("new", "CREATE_COMPLETE", 123)]), ["--version", "123", "--require-ready"]);
+	assert.equal(result.status, 0, result.stderr);
+	assert.deepEqual(JSON.parse(result.stdout).requested, summary("new", "CREATE_COMPLETE", "123"));
+});
+
+for (const versionToken of ["1.0", "9007199254740993"]) {
+	test(`numeric Micros build number ${versionToken} preserves its exact spelling`, (t) => {
+		const data = snapshotWithRawVersion(versionToken);
+		const wrongVersion = versionToken === "1.0" ? "1" : "9007199254740992";
+		const wrong = runCli(t, data, ["--version", wrongVersion, "--require-ready"]);
+		assert.equal(wrong.status, 2, wrong.stderr);
+		assert.equal(JSON.parse(wrong.stdout).requested.version, versionToken);
+		assert.equal(JSON.parse(wrong.stdout).ready, false);
+		const exact = runCli(t, data, ["--version", versionToken, "--require-ready"]);
+		assert.equal(exact.status, 0, exact.stderr);
+		assert.equal(JSON.parse(exact.stdout).requested.version, versionToken);
+	});
+}
+
+test("an already parsed numeric version cannot prove its original spelling", async () => {
+	await assert.rejects(resolve(snapshot([stack("new", "CREATE_COMPLETE", 1)])), /Invalid deployment status metadata/u);
 });
 
 test("an initial environment with no stable reference or stacks is not ready", async () => {

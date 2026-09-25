@@ -34,6 +34,8 @@ import {
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
 import { BoardColumn } from "./components/board-column";
+import { CollapsedColumnSessionDrop } from "./components/collapsed-column-session-drop";
+import { resolveBoardCreateDropzoneDrag } from "./lib/board-agent-session-drag";
 import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
@@ -42,6 +44,7 @@ import {
 	type JiraKanbanCreatedCardArrival,
 } from "./hooks/use-created-card-arrival";
 import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
+import { createIssueDragPreview } from "./lib/issue-drag-preview";
 import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
@@ -249,10 +252,12 @@ function BoardColumnShell({
 	columnChrome,
 	columnSizing,
 	count,
+	createWorkItemDropZoneLabel,
 	onDragLeave,
 	onDragOver,
 	onDrop,
 	onToggleCollapsed,
+	sessionDragTransaction,
 	title,
 }: Readonly<{
 	/** Receives the collapse handler so the column header can render the control. */
@@ -262,10 +267,12 @@ function BoardColumnShell({
 	columnChrome: KanbanColumnChrome;
 	columnSizing: "fill" | "content";
 	count: number;
+	createWorkItemDropZoneLabel?: string;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDrop?: (event: React.DragEvent<HTMLDivElement>) => void;
 	onToggleCollapsed: () => void;
+	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -274,6 +281,9 @@ function BoardColumnShell({
 	// it any longer would clip the 4px focus rings on the cards inside.
 	const [isResizing, setIsResizing] = useState(false);
 	const outerWidth = `${getBoardColumnOuterWidthPx(collapsed)}px`;
+	const sessionDrop = collapsed && createWorkItemDropZoneLabel
+		? resolveBoardCreateDropzoneDrag(sessionDragTransaction, title)
+		: "idle";
 
 	const handleToggleCollapsed = () => {
 		if (!shouldReduceMotion) {
@@ -293,11 +303,16 @@ function BoardColumnShell({
 			data-jira-kanban-column={title}
 			data-kanban-column-chrome={columnChrome}
 			data-collapsed={collapsed || undefined}
+			data-board-agent-session-drop-zone={sessionDrop !== "idle" ? "create" : undefined}
+			data-board-agent-session-column-title={sessionDrop !== "idle" ? title : undefined}
+			data-armed={sessionDrop === "armed" || undefined}
 			className={cn(
 				chrome.dropShellClassName,
-				"min-w-0",
+				// The shell includes the empty space beneath content-sized columns.
+				"group/board-column min-w-0",
+				collapsed ? "group/collapsed-column" : null,
 				columnSizing === "content" ? "group/board-column-shell relative isolate flex min-h-0 flex-col" : null,
-				collapsed || isResizing ? "overflow-hidden" : "overflow-visible",
+				isResizing ? "overflow-hidden" : "overflow-visible",
 			)}
 			onDragOver={onDragOver}
 			onDragLeave={onDragLeave}
@@ -325,7 +340,16 @@ function BoardColumnShell({
 				/>
 			) : null}
 			{collapsed ? (
-				<div style={{ paddingTop: chrome.dropContentPadding?.paddingTop }}>
+				<div className="relative" style={{ paddingTop: chrome.dropContentPadding?.paddingTop }}>
+					<div
+						aria-hidden
+						data-jira-kanban-collapsed-drop-ring=""
+						className={cn("pointer-events-none absolute -inset-0.5", chrome.dropShellClassName)}
+						style={{
+							borderRadius: token("radius.xlarge"),
+							transition: shouldReduceMotion ? "none" : BOARD_COLUMN_SHELL_TRANSITION,
+						}}
+					/>
 					<CollapsedBoardColumn
 						chrome={chrome.collapsed}
 						count={count}
@@ -333,6 +357,7 @@ function BoardColumnShell({
 						onExpand={handleToggleCollapsed}
 						title={title}
 					/>
+					<CollapsedColumnSessionDrop chrome={chrome} label={createWorkItemDropZoneLabel} transaction={sessionDragTransaction} title={title} />
 				</div>
 			) : (
 				children(handleToggleCollapsed)
@@ -418,6 +443,7 @@ function ExperimentalJiraKanbanView({
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const boardContentUnderlapsRef = useRef(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
+	const issueDragImageRef = useRef<HTMLElement | null>(null);
 	const handleCreatedCardArrivalComplete = useCreatedCardArrivalCompletion(
 		onCreatedCardArrivalComplete,
 	);
@@ -489,19 +515,24 @@ function ExperimentalJiraKanbanView({
 	);
 
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- the drag preview node is measured/allocated against the live DOM.
+	const setColumnDropArmed = (element: HTMLDivElement, armed: boolean) => {
+		const ring = element.querySelector<HTMLElement>("[data-jira-kanban-collapsed-drop-ring]") ?? element;
+		setKanbanColumnDropArmed(ring, chrome, armed);
+	};
+
 	const handleColumnDragOver = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		event.dataTransfer.dropEffect = "move";
-		setKanbanColumnDropArmed(event.currentTarget, chrome, true);
+		setColumnDropArmed(event.currentTarget, true);
 	};
 
 	const handleColumnDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-		setKanbanColumnDropArmed(event.currentTarget, chrome, false);
+		setColumnDropArmed(event.currentTarget, false);
 	};
 
 	const handleColumnDrop = (event: React.DragEvent<HTMLDivElement>, targetColumnTitle: string) => {
 		event.preventDefault();
-		setKanbanColumnDropArmed(event.currentTarget, chrome, false);
+		setColumnDropArmed(event.currentTarget, false);
 		onCardDrop?.(targetColumnTitle);
 	};
 
@@ -540,6 +571,7 @@ function ExperimentalJiraKanbanView({
 		return () => {
 			node.remove();
 			dragImageRef.current = null;
+			issueDragImageRef.current?.remove();
 		};
 	}, []);
 	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
@@ -550,6 +582,8 @@ function ExperimentalJiraKanbanView({
 		event: React.DragEvent<HTMLButtonElement>,
 	) => {
 		const isMultiDrag = Boolean(selectedCardCodes?.has(card.code) && selectedCardCodes.size > 1);
+		issueDragImageRef.current?.remove();
+		issueDragImageRef.current = null;
 		event.dataTransfer.effectAllowed = "move";
 		event.dataTransfer.dropEffect = "move";
 		event.dataTransfer.setData("text/plain", card.code);
@@ -562,12 +596,20 @@ function ExperimentalJiraKanbanView({
 		} else if (issueDragTransitions) {
 			const surface = event.currentTarget.querySelector<HTMLElement>('[data-slot="jira-issue-card"]') ?? event.currentTarget;
 			const bounds = surface.getBoundingClientRect();
-			event.dataTransfer.setDragImage(surface, event.clientX - bounds.left, event.clientY - bounds.top);
+			const preview = createIssueDragPreview(surface);
+			issueDragImageRef.current = preview === surface ? null : preview;
+			event.dataTransfer.setDragImage(preview, event.clientX - bounds.left, event.clientY - bounds.top);
 		}
 		onCardDragStart?.(card, columnTitle);
 	};
 
 	const handleCardDragEndInternal = () => {
+		issueDragImageRef.current?.remove();
+		issueDragImageRef.current = null;
+		// Native cancellation does not reliably send dragleave to the target.
+		for (const column of boardScrollportRef.current?.querySelectorAll<HTMLDivElement>("[data-jira-kanban-column]") ?? []) {
+			setColumnDropArmed(column, false);
+		}
 		onCardDragEnd?.();
 	};
 
@@ -694,10 +736,12 @@ function ExperimentalJiraKanbanView({
 							columnChrome={columnChrome}
 							columnSizing={columnSizing}
 							count={column.cards.length}
+							createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
+							sessionDragTransaction={boardSessionDrag.transaction}
 							key={column.title}
-							onDragOver={issueDragTransitions && (column.statuses?.length ?? 0) > 1 ? undefined : handleColumnDragOver}
+							onDragOver={issueDragTransitions && (column.statuses?.length ?? 0) > 1 && !isBoardColumnCollapsed(collapsedColumns, column.title) ? undefined : handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
-							onDrop={issueDragTransitions && (column.statuses?.length ?? 0) > 1 ? undefined : (event) => handleColumnDrop(event, column.title)}
+							onDrop={issueDragTransitions && (column.statuses?.length ?? 0) > 1 && !isBoardColumnCollapsed(collapsedColumns, column.title) ? undefined : (event) => handleColumnDrop(event, column.title)}
 							onToggleCollapsed={() => handleToggleColumnCollapsed(column.title)}
 							title={column.title}
 						>

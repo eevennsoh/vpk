@@ -102,6 +102,7 @@ export function AssignmentAvatar({
 						avatarClassName="shrink-0 overflow-visible"
 						avatarSrc={agent.avatarSrc}
 						brandName={agent.brandName}
+						vpkLogo={agent.vpkLogo}
 						fallbackText={agent.name.slice(0, 2).toUpperCase()}
 						label={`${agent.name}. ${tooltipLabel}`}
 						logoName={agent.logoName}

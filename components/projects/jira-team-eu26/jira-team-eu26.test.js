@@ -178,10 +178,16 @@ test("the board disables Insights while keeping card agent chat in the Jira shel
 	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*insights=/u);
 });
 
+test("local sessions cannot use the board's Rovo View or continuation paths", () => {
+	assert.match(PAGE_SOURCE, /if \(activity\.host === "local"\) return;/u);
+	assert.match(PAGE_SOURCE, /if \(agent\.host === "local"\) return;/u);
+	assert.doesNotMatch(PAGE_SOURCE, /handleContinueLooseWork|onContinueLooseWork=|Continue the local/u);
+});
+
 test("the route imports the Pulse session guard used by its resume callback", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/import \{\s*isPulseAgentSession,\s*type PulseCodingAgentId,\s*type PulseLooseWork,\s*\} from "@\/components\/blocks\/jira-kanban\/experimental\/pulse\/types";/u,
+		/import \{\s*isPulseAgentSession,\s*type PulseLooseWork,\s*\} from "@\/components\/blocks\/jira-kanban\/experimental\/pulse\/types";/u,
 	);
 	assert.match(PAGE_SOURCE, /if \(!isPulseAgentSession\(item\)\) return;/u);
 });
@@ -267,7 +273,7 @@ test("chin-row layout uses Team EU's merged grouping", () => {
 	);
 	assert.match(AGENT_ACTIVITY_SOURCE, /sessionDrag=\{rowSessionDrag\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const assignedRowHandle = \(\s*<JiraIssueAgentAssignmentHandle/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="hover"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="click"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /rowSessionFlyout|JiraSessionFlyoutTrigger/u);
 	assert.match(
 		PAGE_SOURCE,
@@ -325,7 +331,7 @@ test("chin-row agent activity indicators use the Team EU renderer", () => {
 	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		INDICATORS_SOURCE,
-		/renderJiraTeamEu26AgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="medium" \/>\s*\) : \(\s*<Spinner label="" pulse size="xl" variant="experimental" \/>\s*\)/u,
+		/renderJiraTeamEu26AgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="medium" \/>\s*\) : \(\s*<Spinner label="" pulse size="xl" variant="experimental-avatar" \/>\s*\)/u,
 	);
 	// A finished run gets the filled success status in the ADS success green,
 	// pairing with the filled error status a failed run already shows. The
@@ -480,7 +486,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
-		/const magnet = useMagneticProximity\(proximityRef \?\? targetRef, \{\s*hoverArea,\s*\}\);/u,
+		/const magnet = useMagneticProximity\(proximityRef \?\? targetRef, \{\s*distance: 8,\s*hoverArea,\s*labelRatio: 0\.5,/u,
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
@@ -747,7 +753,7 @@ test("the Work items header switches between Board and List views with their ico
 	);
 	assert.match(
 		LIST_VIEW_SOURCE,
-		/"min-h-0 flex-1 overflow-hidden pb-4 ps-6 md:pb-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
+		/"min-h-0 flex-1 overflow-hidden pb-6 ps-6 pt-0\.5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	assert.doesNotMatch(
 		LIST_VIEW_SOURCE,
@@ -775,7 +781,7 @@ test("the Work items header switches between Board and List views with their ico
 		EXPERIMENTAL_PAGE_SOURCE,
 		/renderListContent\?: \(\s*columns: readonly JiraKanbanColumnData\[\],\s*context: ExperimentalJiraKanbanListRenderContext,\s*\) => ReactNode;/u,
 	);
-	assert.match(LIST_VIEW_SOURCE, /pb-4 ps-6 md:pb-5/u);
+	assert.match(LIST_VIEW_SOURCE, /className=\{cn\(listProps\.className, "h-full max-h-full"\)\}/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: onBoardAgentSessionCreate \? handleBoardAgentSessionCreate : undefined/u);

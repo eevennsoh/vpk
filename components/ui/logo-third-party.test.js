@@ -48,6 +48,14 @@ test("THIRD_PARTY_LOGO_NAMES derives from the manifest", async () => {
 	);
 });
 
+test("the owned local resolver preserves standard marks and selects the compact Codex glyph", async () => {
+	const { thirdPartyLogoSrc } = await loadLogoThirdPartyData();
+	assert.equal(thirdPartyLogoSrc("openai-codex"), "/3p/openai-codex/24.svg");
+	assert.equal(thirdPartyLogoSrc("openai-codex", "glyph"), "/3p/openai-codex/glyph.svg");
+	assert.equal(thirdPartyLogoSrc("cursor"), "/3p/cursor/24.svg");
+	assert.match(LOGO_THIRD_PARTY_SOURCE, /artwork = "package"/u);
+});
+
 /**
  * Brand marks are now sourced primarily from `@atlassian/logo-third-party`, so
  * `THIRD_PARTY_LOGO_NAMES` is a superset of the on-disk `public/3p` folders. The

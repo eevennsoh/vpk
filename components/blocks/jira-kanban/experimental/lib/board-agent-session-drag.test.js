@@ -56,6 +56,81 @@ function cohortOf(member = session()) {
 	return { key: member.id, members: [member] };
 }
 
+test("a nearby cluster traces while only one card owns the attach target", () => {
+	const neighbour = { ...TARGET_ISSUE, cardCode: "PAY-129", bounds: { ...TARGET_ISSUE.bounds, top: 212, bottom: 412 } };
+	const transaction = createBoardAgentSessionDragTransaction(cohortOf(), { kind: "attached", sourceCardCode: "PAY-121" }, { x: 320, y: 170 }, [...ZONES, neighbour]);
+	assert.deepEqual(transaction.target, { kind: "attach", cardCode: "PAY-128" });
+	assert.equal(transaction.proximity.cardCode, "PAY-128");
+	assert.deepEqual(transaction.traces.map((trace) => trace.cardCode), ["PAY-128", "PAY-129"]);
+	assert.ok(transaction.traces[0].nearness > transaction.traces[1].nearness);
+	assert.ok(transaction.traces[1].nearness > 0);
+	assert.deepEqual(resolveBoardAgentSessionDropAction(transaction), { kind: "move", sessionIds: ["review-agent"], sourceCardCode: "PAY-121", targetCardCode: "PAY-128" });
+	const cancelled = cancelBoardAgentSessionDragTransaction(transaction);
+	assert.deepEqual(cancelled.traces, []);
+	const far = updateBoardAgentSessionDragTransaction(transaction, { x: 2000, y: 1000 }, [...ZONES, neighbour]);
+	assert.deepEqual(far.traces, []);
+	const outskirts = updateBoardAgentSessionDragTransaction(transaction, { x: 580, y: 170 }, [...ZONES, neighbour]);
+	assert.equal(outskirts.proximity, null);
+	assert.deepEqual(outskirts.traces, [], "the decoration stays quiet beyond its smaller sensor");
+	assert.equal(shouldPublishBoardAgentSessionDrag(far, outskirts), false);
+	assert.equal(shouldPublishBoardAgentSessionDrag(outskirts, far), false);
+	const covered = updateBoardAgentSessionDragTransaction(transaction, { x: 500, y: 80 }, [...ZONES, neighbour, UNTRACKED]);
+	assert.deepEqual(covered.traces, []);
+});
+
+const COLLAPSED_COLUMN = {
+	bounds: { bottom: 600, left: 300, right: 336, top: 20 },
+	columnTitle: "To do",
+	kind: "create",
+	surfaceRect: { bottom: 110, left: 300, right: 332, top: 20 },
+};
+
+test("collapsed columns use the issue proximity ramp before becoming drop targets", () => {
+	const origin = { kind: "untracked" };
+	const far = createBoardAgentSessionDragTransaction(cohortOf(), origin, { x: 160, y: 60 }, [COLLAPSED_COLUMN]);
+	assert.equal(far.collapsedColumnProximity, null);
+	const halfway = updateBoardAgentSessionDragTransaction(far, { x: 240, y: 60 }, [COLLAPSED_COLUMN]);
+	assert.equal(halfway.collapsedColumnProximity.columnTitle, "To do");
+	assert.equal(halfway.collapsedColumnProximity.nearness, 0.5);
+	assert.equal(halfway.target, null);
+	assert.equal(shouldPublishBoardAgentSessionDrag(far, halfway), true);
+	assert.deepEqual(resolveBoardAgentSessionDropAction(halfway), { kind: "none" });
+	const belowCell = updateBoardAgentSessionDragTransaction(halfway, { x: 240, y: 400 }, [COLLAPSED_COLUMN]);
+	assert.equal(belowCell.collapsedColumnProximity.nearness, 0.5);
+	assert.equal(belowCell.target, null);
+	const near = updateBoardAgentSessionDragTransaction(halfway, { x: 288, y: 60 }, [COLLAPSED_COLUMN]);
+	assert.ok(near.collapsedColumnProximity.nearness > halfway.collapsedColumnProximity.nearness);
+	assert.equal(shouldPublishBoardAgentSessionDrag(halfway, near), true);
+	const armed = updateBoardAgentSessionDragTransaction(near, { x: 316, y: 400 }, [COLLAPSED_COLUMN]);
+	assert.equal(armed.collapsedColumnProximity.nearness, 1);
+	assert.deepEqual(armed.target, { columnTitle: "To do", kind: "create" });
+	const cancelled = cancelBoardAgentSessionDragTransaction(near);
+	assert.equal(cancelled.collapsedColumnProximity, null);
+	assert.equal(cancelled.target, null);
+	const outside = updateBoardAgentSessionDragTransaction(near, { x: 160, y: 60 }, [COLLAPSED_COLUMN]);
+	assert.equal(outside.collapsedColumnProximity, null);
+	assert.equal(shouldPublishBoardAgentSessionDrag(near, outside), true);
+});
+
+test("collapsed proximity follows the nearest eligible surface and honors occupied targets", () => {
+	const second = { ...COLLAPSED_COLUMN, columnTitle: "Done", bounds: { ...COLLAPSED_COLUMN.bounds, left: 350, right: 386 }, surfaceRect: { ...COLLAPSED_COLUMN.surfaceRect, left: 350, right: 382 } };
+	const pointer = { x: 340, y: 60 };
+	const transaction = createBoardAgentSessionDragTransaction(cohortOf(), { kind: "untracked" }, pointer, [second, COLLAPSED_COLUMN]);
+	assert.equal(transaction.collapsedColumnProximity.columnTitle, "To do");
+	for (const origin of [{ kind: "attached", sourceCardCode: "PAY-121" }, { kind: "detached", sourceCardCode: "PAY-121" }]) {
+		assert.equal(createBoardAgentSessionDragTransaction(cohortOf(), origin, pointer, [COLLAPSED_COLUMN]).collapsedColumnProximity, null);
+	}
+	const well = { bounds: { bottom: 100, left: 220, right: 290, top: 20 }, columnTitle: "In review", kind: "create" };
+	assert.equal(createBoardAgentSessionDragTransaction(cohortOf(), { kind: "untracked" }, { x: 260, y: 60 }, [COLLAPSED_COLUMN, well]).collapsedColumnProximity, null);
+	const issue = { bounds: { bottom: 110, left: 380, right: 500, top: 20 }, cardCode: "PAY-128", kind: "issue" };
+	const nearerColumn = createBoardAgentSessionDragTransaction(cohortOf(), { kind: "untracked" }, pointer, [COLLAPSED_COLUMN, issue]);
+	assert.equal(nearerColumn.collapsedColumnProximity.columnTitle, "To do");
+	assert.equal(nearerColumn.proximity, null);
+	const nearerIssue = updateBoardAgentSessionDragTransaction(nearerColumn, { x: 370, y: 60 }, [COLLAPSED_COLUMN, issue]);
+	assert.equal(nearerIssue.collapsedColumnProximity, null);
+	assert.equal(nearerIssue.proximity.cardCode, "PAY-128");
+});
+
 test("pointer travel within the untracked rail does not republish unchanged board chrome", () => {
 	const current = createBoardAgentSessionDragTransaction(cohortOf(), { kind: "detached", sourceCardCode: "PAY-121" }, { x: 500, y: 80 }, [UNTRACKED]);
 	const next = updateBoardAgentSessionDragTransaction(current, { x: 550, y: 90 }, [UNTRACKED]);

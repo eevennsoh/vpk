@@ -29,7 +29,7 @@ export function verifyInitialTheme(html, required = false) {
 	return { checked: true, errors };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && fs.existsSync(process.argv[1]) && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href) {
 	try {
 		const [htmlPath, option, ...extra] = process.argv.slice(2);
 		if (!htmlPath || (option && option !== "--if-present") || extra.length) {

@@ -131,6 +131,7 @@ function toAssignedAgent(
 		brandName?: JiraListAssignedAgent["brandName"];
 		catalog: readonly JiraKanbanAgentData[];
 		fallbackStatusKind: JiraListAssignedAgent["statusKind"];
+		host?: JiraListAssignedAgent["host"];
 		idHint?: string;
 		invokedBy?: JiraListAssignedAgent["invokedBy"];
 		name: string;
@@ -153,6 +154,7 @@ function toAssignedAgent(
 			? { brandName: catalogAgent?.brandName ?? input.brandName }
 			: {}),
 		...(input.invokedBy ? { invokedBy: input.invokedBy } : {}),
+		...(input.host !== undefined ? { host: input.host } : {}),
 		...(input.role ? { role: input.role } : {}),
 		statusKind: status.statusKind,
 		statusLabel: status.statusLabel,
@@ -172,6 +174,7 @@ export function assignedAgentsFromCard(
 			brandName: activity.agentBrandName,
 			catalog,
 			fallbackStatusKind: "working",
+			host: activity.host,
 			idHint: activity.id,
 			invokedBy: activity.invokedBy,
 			name: activity.name,
@@ -192,6 +195,7 @@ export function assignedAgentsFromCard(
 			catalog,
 			fallbackStatusKind: "finished",
 			idHint: run.id,
+			invokedBy: run.invokedBy,
 			name: run.agentName,
 			state: run.state,
 		});

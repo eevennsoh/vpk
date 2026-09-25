@@ -34,13 +34,15 @@ export function JiraTeamEu26List({
 
 	return (
 		<div className={cn(
-			"min-h-0 flex-1 overflow-hidden pb-4 ps-6 md:pb-5",
+			// Keep the bottom and leading gutters equal; align with the 2px drop frame.
+			"min-h-0 flex-1 overflow-hidden pb-6 ps-6 pt-0.5",
 			scrollEndInset > 0 ? "pe-0" : "pe-4 md:pe-5",
 		)}>
 			<JiraList
 				{...listProps}
 				{...layout}
 				addAgentLabel={addAgentLabel}
+				className={cn(listProps.className, "h-full max-h-full")}
 				scrollEndInset={scrollEndInset > 0 ? scrollEndInset + PANEL_END_GAP_PX : 0}
 			/>
 		</div>

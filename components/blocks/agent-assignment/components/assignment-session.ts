@@ -6,6 +6,7 @@ import {
 import { assignmentSessionRole } from "@/components/blocks/agent-assignment/components/assignment-session-role";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agent-activity";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
+import { agentIdentityLabel } from "@/components/blocks/agent-session/agent-session-identity-label";
 
 export { assignmentSessionRole } from "@/components/blocks/agent-assignment/components/assignment-session-role";
 
@@ -68,7 +69,7 @@ function assignmentActivityLabel(kind: AgentAssignmentStatusKind, agent: AgentAs
 export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessionItem {
 	const statusKind = resolveAssignedAgentStatusKind(agent);
 	const role = assignmentSessionRole(statusKind, agent.role);
-	const invokedBy = role === "viewer" || role === "expired" ? undefined : agent.invokedBy;
+	const invokedBy = agent.invokedBy;
 
 	return {
 		agent: {
@@ -81,7 +82,9 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 		id: agent.id,
 		...(invokedBy ? { invokedBy } : {}),
 		state: assignmentSessionState(statusKind),
-		title: agent.name,
+		title: role === "expired"
+			? `${agent.name} session expired`
+			: role === "viewer" ? agentIdentityLabel(agent, invokedBy) : agent.name,
 		...(agent.host !== undefined ? { host: agent.host } : {}),
 		...(role !== undefined ? { role } : {}),
 		...(agent.timeLabel ? { timeLabel: agent.timeLabel } : {}),
@@ -92,7 +95,7 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 export function toAssignmentActivity(agent: AgentAssignmentAgent): JiraIssueAgentActivity {
 	const statusKind = resolveAssignedAgentStatusKind(agent);
 	const role = assignmentSessionRole(statusKind, agent.role);
-	const invokedBy = role === "viewer" || role === "expired" ? undefined : agent.invokedBy;
+	const invokedBy = agent.invokedBy;
 
 	return {
 		id: agent.id,
