@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 const { humanAgentAvatarGeometry, humanAgentAvatarPositions } = require("../ui-custom/human-agent-avatar-geometry.ts");
 const { isAvatarOverlayType } = require("./avatar-overlay.ts");
-const { AVATAR_HEXAGON_REFERENCE_SIZE, AVATAR_HEXAGON_REFERENCE_RADIUS, avatarHexagonCornerRadius, avatarHexagonPoints, avatarHexagonClip, avatarHexagonBorderClip } = require("./avatar-hexagon.ts");
+const { AVATAR_HEXAGON_REFERENCE_SIZE, AVATAR_HEXAGON_REFERENCE_RADIUS, avatarHexagonCornerRadius, avatarHexagonPoints, avatarHexagonClip, avatarHexagonBorderClip, avatarHexagonStatusAnchor } = require("./avatar-hexagon.ts");
 const { humanAgentAvatarSizeSwapProgress } = require("../ui-custom/human-agent-avatar-motion-config.ts");
 const { getCodingAgentLogoFrame, getCodingAgentVisual } = require("../ui-custom/agent-avatar-coding-appearance.ts");
 const { thirdPartyLogoSrc } = require("./data/logo-third-party-data.ts");
@@ -181,6 +181,17 @@ test("hexagon corners scale through 4px at 24px and 6px at 32px while borders re
 	assert.match(avatarHexagonBorderClip(), /^polygon\(evenodd,/);
 });
 
+test("hexagon status anchor derives from the rounded top-right corner geometry", () => {
+	const point = avatarHexagonPoints()[8];
+	const anchor = avatarHexagonStatusAnchor();
+	assert.deepEqual(
+		{ xPercent: anchor.xPercent, xPixels: anchor.xPixels, yPercent: anchor.yPercent, yPixels: anchor.yPixels },
+		point,
+	);
+	assert.match(AVATAR_SOURCE, /--avatar-hexagon-status-left/);
+	assert.match(AVATAR_SOURCE, /--avatar-hexagon-status-top/);
+});
+
 test("AvatarGroupCount maps plus icon size from the group size", () => {
 	assert.match(AVATAR_SOURCE, /function avatarGroupCountIconSize\(size: AvatarSize \| undefined\): "small" \| "medium"/);
 	assert.match(AVATAR_SOURCE, /if \(size === "xs" \|\| size === "sm"\) \{\s*return "small"/);
@@ -226,9 +237,9 @@ test("avatar status indicator anchors to the top-right corner", () => {
 	);
 	assert.match(
 		AVATAR_SOURCE,
-		/const HEXAGON_STATUS_POSITION_CLASS_NAME =\n\t"group-data-\[shape=hexagon\]\/avatar:top-\[21\.34%\] group-data-\[shape=hexagon\]\/avatar:right-auto group-data-\[shape=hexagon\]\/avatar:left-\[89\.64%\] group-data-\[shape=hexagon\]\/avatar:-translate-x-1\/2 group-data-\[shape=hexagon\]\/avatar:-translate-y-1\/2"/,
+		/"group-data-\[shape=hexagon\]\/avatar:top-\(--avatar-hexagon-status-top\) group-data-\[shape=hexagon\]\/avatar:right-auto group-data-\[shape=hexagon\]\/avatar:left-\(--avatar-hexagon-status-left\) group-data-\[shape=hexagon\]\/avatar:-translate-x-1\/2 group-data-\[shape=hexagon\]\/avatar:-translate-y-1\/2"/,
 	);
-	assert.match(AVATAR_SOURCE, /HEXAGON_STATUS_POSITION_CLASS_NAME,/);
+	assert.match(AVATAR_SOURCE, /avatarHexagonStatusAnchor\(\)/);
 	assert.doesNotMatch(
 		AVATAR_SOURCE,
 		/data-slot="avatar-status"[\s\S]*absolute right-0 bottom-0/,
