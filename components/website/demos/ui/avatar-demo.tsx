@@ -53,7 +53,7 @@ export default function AvatarDemo() {
 
 export function AvatarDemoBadgeWithIcon() {
 	return (
-		<>
+		<div className="flex flex-col items-start gap-6">
 			<div className="flex flex-wrap items-center gap-2">
 				<Avatar size="sm">
 					<AvatarImage
@@ -106,13 +106,13 @@ export function AvatarDemoBadgeWithIcon() {
 					</AvatarBadge>
 				</Avatar>
 			</div>
-		</>
+		</div>
 	);
 }
 
 export function AvatarDemoBadge() {
 	return (
-		<>
+		<div className="flex flex-col items-start gap-6">
 			<div className="flex flex-wrap items-center gap-2">
 				<Avatar size="sm">
 					<AvatarImage
@@ -153,7 +153,7 @@ export function AvatarDemoBadge() {
 					<AvatarBadge />
 				</Avatar>
 			</div>
-		</>
+		</div>
 	);
 }
 
@@ -183,7 +183,7 @@ export function AvatarDemoUnassigned() {
 
 export function AvatarDemoGroupWithCount() {
 	return (
-		<>
+		<div className="flex flex-col items-start gap-6">
 			<AvatarGroup>
 				<Avatar size="sm">
 					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />
@@ -247,13 +247,13 @@ export function AvatarDemoGroupWithCount() {
 				</Avatar>
 				<AvatarGroupCount>+3</AvatarGroupCount>
 			</AvatarGroup>
-		</>
+		</div>
 	);
 }
 
 export function AvatarDemoGroupWithIconCount() {
 	return (
-		<>
+		<div className="flex flex-col items-start gap-6">
 			<AvatarGroup size="sm">
 				<Avatar size="sm">
 					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />
@@ -349,13 +349,13 @@ export function AvatarDemoGroupWithIconCount() {
 					<PlusIcon />
 				</AvatarGroupCount>
 			</AvatarGroup>
-		</>
+		</div>
 	);
 }
 
 export function AvatarDemoGroup() {
 	return (
-		<div className="flex flex-wrap items-end gap-6">
+		<div className="flex flex-col items-start gap-6">
 			{AVATAR_GROUP_SIZES.map(({ label, size }) => (
 				<div className="flex flex-col items-center gap-1.5" key={size}>
 					<AvatarGroup label={`${label} human avatar group`}>
@@ -485,7 +485,7 @@ export function AvatarDemoShapes() {
 
 export function AvatarDemoAgentTiers() {
 	return (
-		<div className="flex items-center gap-6">
+		<div className="flex flex-wrap items-center gap-6">
 			{[
 				{
 					label: "Rovo",
@@ -503,6 +503,22 @@ export function AvatarDemoAgentTiers() {
 					label: "3P",
 					avatar: <AgentAvatarVisual brandName="slack" label="Slack agent" sizePx={40} />,
 				},
+				{
+					label: "Claude",
+					avatar: <AgentAvatarVisual brandName="claude" label="Claude agent" sizePx={40} />,
+				},
+				{
+					label: "Cursor",
+					avatar: <AgentAvatarVisual brandName="cursor" label="Cursor agent" sizePx={40} />,
+				},
+				{
+					label: "Codex",
+					avatar: <AgentAvatarVisual brandName="openai-codex" label="Codex agent" sizePx={40} />,
+				},
+				{
+					label: "GitHub Copilot",
+					avatar: <AgentAvatarVisual brandName="github-copilot" label="GitHub Copilot agent" sizePx={40} />,
+				},
 			].map(({ avatar, label }) => (
 				<div className="flex flex-col items-center gap-1.5" key={label}>
 					{avatar}
@@ -515,7 +531,7 @@ export function AvatarDemoAgentTiers() {
 
 export function AvatarDemoAgentGroup() {
 	return (
-		<div className="flex flex-wrap items-end gap-6">
+		<div className="flex flex-col items-start gap-6">
 			{AVATAR_GROUP_SIZES.map(({ label, size, sizePx }) => (
 					<div className="flex flex-col items-center gap-1.5" key={size}>
 						<AvatarGroup label={`${label} agent avatar group`}>

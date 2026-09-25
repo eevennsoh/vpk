@@ -102,3 +102,16 @@ export function resolveHumanAgentAvatarTargets(
 	const agentTarget = Math.min(frameSize, options.agentTargetSizePx ?? DEFAULT_TARGET_SIZES.agent);
 	return { agentSize: agentTarget, humanSize: humanTarget };
 }
+
+/** Switch stacking only when the two sizes actually cross during this turn. */
+export function humanAgentAvatarSizeSwapProgress(
+	agentSize: number,
+	humanSize: number,
+	agentTargetSize: number,
+	humanTargetSize: number,
+	scaleAmount: number,
+) {
+	const relativeChange = ((humanTargetSize - humanSize) - (agentTargetSize - agentSize)) * scaleAmount;
+	const progress = relativeChange === 0 ? Infinity : (agentSize - humanSize) / relativeChange;
+	return progress >= 0 && progress <= 1 ? progress : Infinity;
+}

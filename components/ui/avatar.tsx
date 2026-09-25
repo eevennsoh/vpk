@@ -17,6 +17,7 @@ import PersonIcon from "@atlaskit/icon/core/person"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { Icon } from "@/components/ui/icon"
+import { isAvatarOverlayType } from "@/components/ui/avatar-overlay"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
@@ -107,6 +108,8 @@ interface AvatarProps
 	label?: string
 	/** Match an ancestor scale animation while keeping circular outline strokes constant. */
 	outline?: AvatarOutlineMotion
+	/** Add a 2px inverse separator outside a hexagon badge's normal border. */
+	separator?: boolean
 	/** Rendered as an unclipped sibling of hex artwork so the badge can hang past the tile. */
 	status?: AvatarStatus
 }
@@ -180,11 +183,13 @@ function avatarOutline(shape: AvatarProps["shape"], outline: AvatarProps["outlin
 	return { motion, className: motion ? "isolate after:border-0" : undefined }
 }
 
-function AvatarHexagonBorder() {
+function AvatarHexagonBorder({ separator = false }: Readonly<{ separator?: boolean }>) {
 	return (
 		<svg
 			aria-hidden="true"
-			className="pointer-events-none absolute inset-0 z-[1] size-full overflow-visible p-px text-border! mix-blend-darken dark:mix-blend-lighten"
+			className={cn("pointer-events-none absolute inset-0 size-full overflow-visible",
+				separator ? "-z-10 text-border-inverse" : "z-[1] text-border! mix-blend-darken dark:mix-blend-lighten")}
+			data-slot={separator ? "avatar-hexagon-separator" : "avatar-hexagon-border"}
 			focusable="false"
 			viewBox="0 0 100 100"
 		>
@@ -192,7 +197,8 @@ function AvatarHexagonBorder() {
 				fill="none"
 				points={HEXAGON_POINTS}
 				stroke="currentColor"
-				strokeWidth="1"
+				// The separator extends 2px outside; the clipped border paints 1px inside.
+				strokeWidth={separator ? 4 : 2}
 				vectorEffect="non-scaling-stroke"
 			/>
 		</svg>
@@ -209,6 +215,7 @@ function Avatar({
 	label,
 	status,
 	outline: outlineMotion,
+	separator = false,
 	...props
 }: Readonly<AvatarProps>) {
 	const isInAvatarGroup = React.use(AvatarGroupContext)
@@ -245,7 +252,7 @@ function Avatar({
 	if (shape === "hexagon") {
 		const childArray = React.Children.toArray(children)
 		const isOverlay = (child: React.ReactNode) =>
-			React.isValidElement(child) && AVATAR_OVERLAY_TYPES.has(child.type)
+			React.isValidElement(child) && isAvatarOverlayType(child.type)
 
 		return (
 			<AvatarPrimitive.Root
@@ -266,13 +273,14 @@ function Avatar({
 						data-slot="avatar-hexagon-group-border"
 					/>
 				) : null}
+				{separator ? <AvatarHexagonBorder separator /> : null}
 				<span
 					className={cn("relative flex size-full items-center justify-center overflow-hidden", HEXAGON_CLIP)}
 					data-slot="avatar-hexagon-artwork"
 				>
 					{childArray.filter((child) => !isOverlay(child))}
+					<AvatarHexagonBorder />
 				</span>
-				<AvatarHexagonBorder />
 				{status ? <AvatarStatusIndicator status={status} /> : null}
 				{childArray.filter(isOverlay)}
 			</AvatarPrimitive.Root>
@@ -403,7 +411,7 @@ const presenceColorMap: Record<AvatarPresence, string> = {
 
 // Glyphs match ADS / Figma Avatar Presence: solid online, slash busy, target focus, hollow offline.
 // Focus: thick discovery rim (parent fill) + large white disk + small discovery center dot.
-// Cutouts use bg-background so they stay in sync with the outer ring-background separator.
+// Cutouts use bg-background; the outside badge separator stays white in both themes.
 function AvatarPresenceGlyph({ presence }: Readonly<{ presence: AvatarPresence }>) {
 	switch (presence) {
 		case "online":
@@ -453,7 +461,7 @@ function AvatarPresenceIndicator({
 			aria-label={presence}
 			className={cn(
 				// overflow-hidden keeps busy/focus/offline glyphs inside the circular fill + ring.
-				"ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-full ring-2",
+				"ring-[#FFFFFF] absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-full ring-2",
 				"group-data-[size=xs]/avatar:size-1.5",
 				"group-data-[size=sm]/avatar:size-2",
 				"group-data-[size=default]/avatar:size-2.5",
@@ -477,7 +485,7 @@ function AvatarBadge({ className, ...props }: Readonly<AvatarBadgeProps>) {
 		<span
 			data-slot="avatar-badge"
 			className={cn(
-				"bg-primary text-primary-foreground ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-blend-color ring-2 select-none",
+				"bg-primary text-primary-foreground ring-[#FFFFFF] absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-blend-color ring-2 select-none",
 				"group-data-[size=xs]/avatar:size-1.5 group-data-[size=xs]/avatar:[&>svg]:hidden group-data-[size=xs]/avatar:[&>[data-slot=icon]]:scale-[0.375]",
 				"group-data-[size=sm]/avatar:size-2 group-data-[size=sm]/avatar:[&>svg]:hidden group-data-[size=sm]/avatar:[&>[data-slot=icon]]:scale-50",
 				"group-data-[size=default]/avatar:size-2.5 group-data-[size=default]/avatar:[&>svg]:size-2 group-data-[size=default]/avatar:[&>[data-slot=icon]]:scale-75",
@@ -503,7 +511,7 @@ function AvatarCompanyBadge({
 			data-slot="avatar-company-badge"
 			className={cn(
 				"absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-lg ring-2 select-none",
-				"bg-[#0C66E4] text-white ring-white",
+				"bg-[#0C66E4] text-white ring-[#FFFFFF]",
 				"group-data-[size=xs]/avatar:size-2 group-data-[size=xs]/avatar:[&_svg]:hidden",
 				"group-data-[size=sm]/avatar:size-3 group-data-[size=sm]/avatar:[&_svg]:size-2",
 				"group-data-[size=default]/avatar:size-3.5 group-data-[size=default]/avatar:[&_svg]:size-2",
@@ -531,7 +539,7 @@ function AvatarProjectBadge({
 		<span
 			data-slot="avatar-project-badge"
 			className={cn(
-				"bg-muted ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-xs ring-2 select-none [&_img]:size-full [&_img]:object-cover",
+				"bg-muted ring-[#FFFFFF] absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-xs ring-2 select-none [&_img]:size-full [&_img]:object-cover",
 				"group-data-[size=xs]/avatar:size-2 group-data-[size=xs]/avatar:[&_svg]:hidden",
 				"group-data-[size=sm]/avatar:size-3 group-data-[size=sm]/avatar:[&_svg]:size-2",
 				"group-data-[size=default]/avatar:size-3.5 group-data-[size=default]/avatar:[&_svg]:size-2",
@@ -661,7 +669,7 @@ const statusConfig: Record<
 		iconClassName: STATUS_ICON_CLASS_NAME,
 		label: "Needs input",
 	},
-	// Agent alias of approved — same green fill, white check, and ring-background cutout.
+	// Agent alias of approved — same green fill, white check, and 2px white separator.
 	finished: { icon: CheckMarkIcon, className: "bg-success text-success-foreground", iconClassName: STATUS_ICON_CLASS_NAME, label: "Finished" },
 }
 
@@ -683,9 +691,8 @@ function AvatarStatusIndicator({
 			role="img"
 			aria-label={config.label}
 			className={cn(
-				// Same ring treatment as AvatarPresenceIndicator; overflow-hidden keeps glyphs
-				// from painting over ring-2 (which made status borders look thinner).
-				"ring-background absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2",
+				// Keep glyphs inside the fill so the 2px outside separator stays visible.
+				"ring-[#FFFFFF] absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2",
 				"inline-flex items-center justify-center",
 				HEXAGON_STATUS_POSITION_CLASS_NAME,
 				config.className,
@@ -764,13 +771,12 @@ function AvatarGroupCount({
 	)
 }
 
-const AVATAR_OVERLAY_TYPES: ReadonlySet<unknown> = new Set([
-	AvatarBadge,
-	AvatarCompanyBadge,
-	AvatarProjectBadge,
-	AvatarPresenceIndicator,
-	AvatarStatusIndicator,
-])
+// Stable names survive minification and old element types retained by Fast Refresh.
+AvatarBadge.displayName = "AvatarBadge"
+AvatarCompanyBadge.displayName = "AvatarCompanyBadge"
+AvatarProjectBadge.displayName = "AvatarProjectBadge"
+AvatarPresenceIndicator.displayName = "AvatarPresenceIndicator"
+AvatarStatusIndicator.displayName = "AvatarStatusIndicator"
 
 export {
 	Avatar,
