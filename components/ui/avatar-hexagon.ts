@@ -37,6 +37,16 @@ function coordinate(percent: number, pixels: number) {
 	return pixels === 0 ? `${percent}%` : `calc(${percent}% ${pixels < 0 ? "-" : "+"} ${Math.abs(pixels)}px)`;
 }
 
+/** The upper-right curve sample that keeps a status dot flush with the hexagon. */
+export function avatarHexagonStatusAnchor() {
+	const point = avatarHexagonPoints()[8]!;
+	return {
+		...point,
+		left: coordinate(point.xPercent, point.xPixels),
+		top: coordinate(point.yPercent, point.yPixels),
+	};
+}
+
 function polygonPoints(inset = 0, outset = 0) {
 	return avatarHexagonPoints(inset, outset).map(({ xPercent, yPercent, xPixels, yPixels }) =>
 		`${coordinate(xPercent, xPixels)} ${coordinate(yPercent, yPixels)}`);

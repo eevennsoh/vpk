@@ -18,18 +18,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { Icon } from "@/components/ui/icon"
 import { isAvatarOverlayType } from "@/components/ui/avatar-overlay"
-import { avatarHexagonBorderClip, avatarHexagonClip } from "@/components/ui/avatar-hexagon"
+import { avatarHexagonBorderClip, avatarHexagonClip, avatarHexagonStatusAnchor } from "@/components/ui/avatar-hexagon"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 const HEXAGON_CLIP = avatarHexagonClip()
 const HEXAGON_BORDER_CLIP = avatarHexagonBorderClip()
 const HEXAGON_SEPARATOR_CLIP = avatarHexagonClip(2)
-
-// Top-right hex vertex (89.64%, 21.34%). Circle/square status stays at the box corner;
-// hexagon status centers on this vertex so the badge sits on the tile, not in empty space.
-const HEXAGON_STATUS_POSITION_CLASS_NAME =
-	"group-data-[shape=hexagon]/avatar:top-[21.34%] group-data-[shape=hexagon]/avatar:right-auto group-data-[shape=hexagon]/avatar:left-[89.64%] group-data-[shape=hexagon]/avatar:-translate-x-1/2 group-data-[shape=hexagon]/avatar:-translate-y-1/2"
 
 // motion.avatar.* recipe expressed in vpk tokens (Motion for React can't read var(), so use the resolved values — see motion-decisions.md).
 const AVATAR_ENTER_TRANSITION: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] } // duration-normal + ease-out-practical
@@ -205,10 +200,19 @@ function Avatar({
 	status,
 	outline: outlineMotion,
 	separator = false,
+	style: styleProp,
 	...props
 }: Readonly<AvatarProps>) {
 	const isInAvatarGroup = React.use(AvatarGroupContext)
 	const outline = avatarOutline(shape, outlineMotion)
+	const hexagonStatusAnchor = shape === "hexagon" ? avatarHexagonStatusAnchor() : undefined
+	const rootStyle = hexagonStatusAnchor
+		? {
+				...styleProp,
+				"--avatar-hexagon-status-left": hexagonStatusAnchor.left,
+				"--avatar-hexagon-status-top": hexagonStatusAnchor.top,
+			}
+		: styleProp
 	const rootClassName = cn(
 		avatarVariants({ size, shape }),
 		outline.className,
@@ -253,6 +257,7 @@ function Avatar({
 				aria-disabled={disabled || undefined}
 				className={rootClassName}
 				render={<motion.span {...motionProps} />}
+				style={rootStyle}
 				{...props}
 			>
 				{isInAvatarGroup ? (
@@ -288,6 +293,7 @@ function Avatar({
 			aria-disabled={disabled || undefined}
 			className={rootClassName}
 			render={<motion.span {...motionProps} />}
+			style={rootStyle}
 			{...props}
 		>
 			{children}
@@ -685,7 +691,7 @@ function AvatarStatusIndicator({
 				// Keep glyphs inside the fill so the 2px outside separator stays visible.
 				"ring-[#FFFFFF] absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2",
 				"inline-flex items-center justify-center",
-				HEXAGON_STATUS_POSITION_CLASS_NAME,
+				"group-data-[shape=hexagon]/avatar:top-(--avatar-hexagon-status-top) group-data-[shape=hexagon]/avatar:right-auto group-data-[shape=hexagon]/avatar:left-(--avatar-hexagon-status-left) group-data-[shape=hexagon]/avatar:-translate-x-1/2 group-data-[shape=hexagon]/avatar:-translate-y-1/2",
 				config.className,
 				"group-data-[size=xs]/avatar:size-1.5",
 				"group-data-[size=sm]/avatar:size-2",
