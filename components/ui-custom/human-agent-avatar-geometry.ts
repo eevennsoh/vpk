@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-/** The human badge keeps its original 2px overhang, independent of its outline. */
+/** The secondary badge keeps its original 2px overhang, independent of its outline. */
 const GEOMETRY = {
 	16: { frameSize: 16, agentSize: 16, humanSize: 16, agentInset: 0, humanInset: 0 },
 	20: { frameSize: 20, agentSize: 20, humanSize: 16, agentInset: 0, humanInset: 0 },
@@ -10,8 +10,15 @@ const GEOMETRY = {
 	48: { frameSize: 48, agentSize: 40, humanSize: 24, agentInset: 0, humanInset: 0 },
 } as const;
 
-export function humanAgentAvatarGeometry(sizePx: number) {
-	return GEOMETRY[sizePx as keyof typeof GEOMETRY] ?? GEOMETRY[32];
+export function humanAgentAvatarGeometry(sizePx: number, agentFirst = true) {
+	const geometry = GEOMETRY[sizePx as keyof typeof GEOMETRY] ?? GEOMETRY[32];
+	return agentFirst ? geometry : {
+		...geometry,
+		agentSize: geometry.humanSize,
+		humanSize: geometry.agentSize,
+		agentInset: geometry.humanInset,
+		humanInset: geometry.agentInset,
+	};
 }
 
 export function humanAgentAvatarPositions(
@@ -24,6 +31,6 @@ export function humanAgentAvatarPositions(
 			: { right: geometry.agentInset, bottom: geometry.agentInset },
 		human: agentFirst
 			? { right: geometry.humanInset, bottom: geometry.humanInset }
-			: { left: 0, top: 0 },
+			: { left: geometry.humanInset, top: geometry.humanInset },
 	};
 }

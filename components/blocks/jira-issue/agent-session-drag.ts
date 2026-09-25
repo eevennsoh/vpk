@@ -99,9 +99,11 @@ export interface JiraIssueAgentSessionDragControl {
 	attachNearness?: number;
 	/**
 	 * Accent and pointer for the approach stroke traced along this card's edge.
-	 * Only the nearest card gets one; omit it to draw no stroke.
+	 * Nearby cards may share a fainter trace; omit it to draw no stroke.
 	 */
 	attachTrace?: JiraIssueAttachTrace | null;
+	/** Whole live gesture, including time outside this card's sensor. */
+	attachTraceActive?: boolean;
 	binding: JiraIssueAgentSessionDragBinding;
 	/**
 	 * Sessions in the current drag transfer. Needed on receiving cards (their

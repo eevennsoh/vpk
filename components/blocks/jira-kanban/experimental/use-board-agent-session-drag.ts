@@ -19,7 +19,6 @@ import {
 	JIRA_ISSUE_LINK_FLASH_DURATION_MS,
 } from "@/components/blocks/jira-issue/agent-link-flash";
 import {
-	toJiraIssueAttachTracePointer,
 	type JiraIssueAttachTrace,
 } from "@/components/blocks/jira-issue/attach-proximity";
 import {
@@ -845,18 +844,11 @@ export function useBoardAgentSessionDrag({
 		const attachNearness = isFusionDropFlight
 			? 1
 			: proximity?.cardCode === card.code ? proximity.nearness : 0;
-		// Only the card the session is actually heading for traces a stroke, and
-		// it traces the cohort lead's colour — the same member, resolved by the
-		// same expression, that the drop flash will sweep across the chin row a
-		// moment later. A drop flight has no live pointer left, so it stops
-		// tracing and hands over to that flash.
+		// Nearby cards share the lead's accent. Only the winner opens its chin;
+		// release retires the whole neighbourhood and hands over to the flash.
 		const traceMembers = transaction?.cohort.members;
-		const traceRect = proximity?.surfaceRect ?? proximity?.bounds;
 		const tracePointer = !isFusionDropFlight
-			&& proximity?.cardCode === card.code
-			&& transaction
-			&& traceRect
-			? toJiraIssueAttachTracePointer(transaction.pointer, traceRect)
+			? transaction?.traces?.find((trace) => trace.cardCode === card.code)
 			: null;
 		const attachTrace: JiraIssueAttachTrace | null = tracePointer
 			? {
@@ -864,6 +856,7 @@ export function useBoardAgentSessionDrag({
 					?? AGENT_BRAND_TINT_FALLBACK,
 				pointerX: tracePointer.pointerX,
 				pointerY: tracePointer.pointerY,
+				nearness: tracePointer.nearness,
 			}
 			: null;
 		const attachedBinding = createBinding(
@@ -881,6 +874,7 @@ export function useBoardAgentSessionDrag({
 			? {
 				attachNearness,
 				attachTrace,
+				attachTraceActive: transaction !== null,
 				binding: attachedBinding,
 				dragCount,
 				dropTarget,

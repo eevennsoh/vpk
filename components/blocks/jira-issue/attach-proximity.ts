@@ -70,6 +70,8 @@ export function isJiraIssueAttachChinArmed(attachNearness: number): boolean {
  * is actually coming from.
  */
 export interface JiraIssueAttachTrace {
+	/** Decorative falloff independent of the target's backdrop/chin ramp. */
+	nearness?: number;
 	/**
 	 * The cohort lead's brand colour, resolved by the same expression the drop
 	 * flash uses. Hover, approach, and flash are one colour or the continuity

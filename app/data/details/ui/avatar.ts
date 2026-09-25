@@ -104,6 +104,11 @@ export const AVATAR_DETAIL: ComponentDetail = {
         description: "Overlapping 16, 24, 32, and 40px hexagon avatars with shape-aware separators.",
         demoSlug: "avatar-demo-agent-group",
       },
+		{
+			title: "Coding agents",
+			description: "Claude, Codex, GitHub Copilot, and Cursor with coding-brand backgrounds and local Codex/Cursor artwork.",
+			demoSlug: "avatar-demo-coding-agents",
+		},
       {
         title: "Unassigned",
         description: "Grey person and agent placeholder states.",

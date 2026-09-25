@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 
 interface MorphFrame {
 	time: number;
@@ -7,6 +7,257 @@ interface MorphFrame {
 	identity: { x: number; y: number; width: number; height: number };
 	surface: { x: number; y: number; width: number; height: number };
 }
+
+for (const theme of ["light", "dark"] as const) {
+	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		test(`nearby work items share distance-weighted traces (${theme}, ${reducedMotion})`, async ({ page }) => {
+			const baseURL = process.env.PLAYWRIGHT_BASE_URL;
+			if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
+			await page.setViewportSize({ width: 1800, height: 1100 });
+			// Verify the drag preference on a mounted board, independently of
+			// theme/reduced-motion startup behavior elsewhere in the app shell.
+			await page.emulateMedia({ reducedMotion: "no-preference", colorScheme: theme });
+			await page.addInitScript((mode) => {
+				localStorage.setItem("ui-theme", mode);
+				localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false }));
+			}, theme);
+			await page.goto(`${baseURL}/jira-team-eu26`);
+			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+			await page.emulateMedia({ reducedMotion, colorScheme: theme });
+			const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
+			if (await expand.isVisible()) await expand.click();
+			const article = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
+			await article.scrollIntoViewIfNeeded();
+			const source = await article.boundingBox();
+			const left = await page.locator('[data-issue-key="PAY-118"]').boundingBox();
+			const right = await page.locator('[data-issue-key="PAY-105"]').boundingBox();
+			if (!source || !left || !right) throw new Error("Missing drag geometry");
+			await page.mouse.move(source.x + source.width * 0.65, source.y + source.height / 2);
+			await page.mouse.down();
+			await page.mouse.move(source.x + source.width * 0.65 + 20, source.y + source.height / 2);
+			await expect.poll(async () => Math.max(0, ...await page.locator('[data-slot="jira-issue-attach-trace"]').evaluateAll((elements) => elements.map((element) => Number(getComputedStyle(element).opacity))))).toBeLessThan(0.5);
+			await page.mouse.move((left.x + left.width + right.x) / 2, left.y + left.height - 14, { steps: 8 });
+			const traces = page.locator('[data-slot="jira-issue-attach-trace"][data-trace-active="true"]');
+			if (reducedMotion === "reduce") {
+				for (const trace of await traces.all()) await expect(trace).toBeHidden();
+			} else {
+				await expect.poll(() => traces.count()).toBeGreaterThanOrEqual(2);
+				expect(await traces.count()).toBeLessThanOrEqual(4);
+				await expect.poll(async () => Math.max(...await traces.evaluateAll((elements) => elements.map((element) => Number(getComputedStyle(element).opacity))))).toBe(1);
+				await expect.poll(async () => {
+					const strengths = await traces.evaluateAll((elements) => elements.map((element) => Number(getComputedStyle(element).opacity)));
+					return strengths.some((value) => value === 1)
+						&& strengths.every((value) => value > 0 && value <= 1)
+						&& strengths.some((value) => value < 0.95);
+				}).toBe(true);
+				await expect(page.getByText("Link agent session", { exact: true })).toHaveCount(1);
+				for (const trace of await traces.all()) {
+					await expect(trace).toHaveAttribute("aria-hidden", "true");
+					await expect(trace).toHaveCSS("pointer-events", "none");
+				}
+			}
+			await mkdir("output/agent-browser/proximity-trace", { recursive: true });
+			await page.screenshot({ path: `output/agent-browser/proximity-trace/cluster-${theme}-${reducedMotion}.png` });
+			await page.keyboard.press("Escape");
+			await page.mouse.up();
+			await expect(traces).toHaveCount(0);
+		});
+	}
+}
+
+test("trace stays subtle at pickup and fades through intermediate brightness on approach", async ({ page }) => {
+	const baseURL = process.env.PLAYWRIGHT_BASE_URL;
+	if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
+	await page.goto(`${baseURL}/jira-team-eu26`);
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	const article = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
+	await article.scrollIntoViewIfNeeded();
+	const source = await article.boundingBox();
+	const card = await page.locator('[data-issue-key="PAY-118"]').boundingBox();
+	if (!source || !card) throw new Error("Missing approach geometry");
+	await page.mouse.move(source.x + source.width * 0.65, source.y + source.height / 2);
+	const traces = page.locator('[data-slot="jira-issue-attach-trace"]');
+	await page.evaluate(() => {
+		const result = { done: false, frames: [] as { time: number; opacity: number }[] };
+		(window as typeof window & { traceReveal: typeof result }).traceReveal = result;
+		const observer = new MutationObserver(() => {
+			const trace = document.querySelector('[data-issue-key="PAY-118"] [data-slot="jira-issue-attach-trace"]');
+			if (!trace) return;
+			observer.disconnect();
+			const started = performance.now();
+			const sample = () => {
+				result.frames.push({ time: performance.now() - started, opacity: Number(getComputedStyle(trace).opacity) });
+				if (performance.now() - started < 280) requestAnimationFrame(sample);
+				else result.done = true;
+			};
+			sample();
+		});
+		observer.observe(document.body, { childList: true, subtree: true });
+	});
+	await page.mouse.down();
+	await page.mouse.move(source.x + source.width * 0.65 + 20, source.y + source.height / 2);
+	await page.mouse.move(card.x - 65, card.y + 30);
+	await expect.poll(() => page.evaluate(() => (window as typeof window & { traceReveal: { done: boolean } }).traceReveal.done)).toBe(true);
+	const frames = await page.evaluate(() => (window as typeof window & { traceReveal: { frames: { time: number; opacity: number }[] } }).traceReveal.frames);
+	const settled = frames.at(-1)!.opacity;
+	expect(frames[0].opacity).toBeLessThan(0.1);
+	expect(settled).toBeGreaterThan(0.1);
+	expect(settled).toBeLessThan(0.9);
+	expect(frames.some((frame) => frame.opacity > 0.01 && frame.opacity < settled * 0.9)).toBe(true);
+	await mkdir("output/agent-browser/proximity-trace", { recursive: true });
+	await writeFile("output/agent-browser/proximity-trace/reveal-frames.json", JSON.stringify(frames, null, 2));
+	await page.mouse.move(card.x + 8, card.y + 30);
+	await expect.poll(async () => Math.max(...await traces.evaluateAll((elements) => elements.map((element) => Number(getComputedStyle(element).opacity))))).toBe(1);
+	await page.evaluate(() => {
+		const trace = document.querySelector('[data-issue-key="PAY-118"] [data-slot="jira-issue-attach-trace"]')!;
+		const result = { done: false, frames: [] as number[] };
+		(window as typeof window & { traceTravel: typeof result }).traceTravel = result;
+		const started = performance.now();
+		const sample = () => {
+			result.frames.push(Number(getComputedStyle(trace).getPropertyValue("--card-glow-pointer-y")));
+			if (performance.now() - started < 180) requestAnimationFrame(sample);
+			else result.done = true;
+		};
+		sample();
+	});
+	await page.mouse.move(card.x + 8, card.y + 90);
+	await expect.poll(() => page.evaluate(() => (window as typeof window & { traceTravel: { done: boolean } }).traceTravel.done)).toBe(true);
+	const travel = await page.evaluate(() => (window as typeof window & { traceTravel: { frames: number[] } }).traceTravel.frames);
+	const [start, end] = [travel[0], travel.at(-1)!];
+	expect(end).toBeGreaterThan(start + 0.5);
+	expect(travel.every((value) => value >= start - 0.01 && value <= end + 0.01)).toBe(true);
+	await writeFile("output/agent-browser/proximity-trace/gradient-travel-frames.json", JSON.stringify(travel, null, 2));
+	const firstTrace = page.locator('[data-issue-key="PAY-118"] [data-slot="jira-issue-attach-trace"]');
+	await expect(firstTrace).toHaveAttribute("data-trace-phase", "track");
+	await firstTrace.evaluate((element) => { (window as typeof window & { revealedTrace?: Element }).revealedTrace = element; });
+	await page.mouse.move(card.x - 180, card.y + 30);
+	for (const trace of await traces.all()) await expect(trace).toHaveCSS("opacity", "0");
+	await page.mouse.move(card.x + 8, card.y + 30);
+	await expect(firstTrace).toHaveCSS("opacity", "1");
+	await expect(firstTrace).toHaveAttribute("data-trace-phase", "track");
+	expect(await firstTrace.evaluate((element) => element === (window as typeof window & { revealedTrace?: Element }).revealedTrace)).toBe(true);
+	await page.keyboard.press("Escape");
+	await page.mouse.up();
+	await expect(firstTrace).toHaveCount(0);
+});
+
+test("nearby borders stay stable during subpixel nearest-card handoffs", async ({ page }) => {
+	const baseURL = process.env.PLAYWRIGHT_BASE_URL;
+	if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
+	await page.setViewportSize({ width: 1440, height: 920 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
+	await page.goto(`${baseURL}/jira-team-eu26`);
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	const article = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
+	await article.scrollIntoViewIfNeeded();
+	const source = await article.boundingBox();
+	const first = page.locator('[data-issue-key="PAY-118"] [data-slot="jira-issue-surface"]');
+	const second = page.locator('[data-issue-key="PAY-124"] [data-slot="jira-issue-surface"]');
+	const box = await first.boundingBox();
+	if (!source || !box) throw new Error("Missing handoff geometry");
+	await page.mouse.move(source.x + source.width * 0.65, source.y + source.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(box.x + 8, box.y + 90, { steps: 8 });
+	const traceA = first.locator('[data-slot="jira-issue-attach-trace"]');
+	const traceB = second.locator('[data-slot="jira-issue-attach-trace"]');
+	await expect(traceA).toHaveCSS("opacity", "1");
+	const a = (await first.boundingBox())!;
+	const b = (await second.boundingBox())!;
+	const x = Math.min(a.x, b.x) - 12;
+	const gap = b.y - a.y - a.height;
+	const y = a.y + a.height + gap / 2 + ((b.x - x) ** 2 - (a.x - x) ** 2) / (2 * gap);
+	await page.mouse.move(x, y);
+	for (const trace of [traceA, traceB]) {
+		await expect.poll(async () => Number(await trace.evaluate((element) => getComputedStyle(element).opacity))).toBeGreaterThan(0.8);
+	}
+	await page.evaluate(() => {
+		const nodes = ["PAY-118", "PAY-124"].map((key) => document.querySelector(`[data-issue-key="${key}"] [data-slot="jira-issue-attach-trace"]`)!);
+		const result = { running: true, frames: [] as number[][] };
+		(window as typeof window & { handoffFrames: typeof result }).handoffFrames = result;
+		const sample = () => {
+			result.frames.push(nodes.map((node) => Number(getComputedStyle(node).opacity)));
+			if (result.running) requestAnimationFrame(sample);
+		};
+		sample();
+	});
+	for (let index = 0; index < 30; index++) {
+		await page.mouse.move(x, y + (index % 2 === 0 ? -0.2 : 0.2));
+		// Deliberate 60Hz input cadence for the frame-by-frame handoff check.
+		await page.waitForTimeout(16);
+	}
+	const frames = await page.evaluate(() => {
+		const result = (window as typeof window & { handoffFrames: { running: boolean; frames: number[][] } }).handoffFrames;
+		result.running = false;
+		return result.frames;
+	});
+	expect(frames.length).toBeGreaterThan(10);
+	for (const [index, values] of frames.entries()) {
+		for (const [cardIndex, opacity] of values.entries()) {
+			expect(opacity).toBeGreaterThan(0.75);
+			if (index > 0) expect(Math.abs(opacity - frames[index - 1][cardIndex])).toBeLessThan(0.1);
+		}
+	}
+	await mkdir("output/agent-browser/proximity-trace", { recursive: true });
+	await writeFile("output/agent-browser/proximity-trace/handoff-frames.json", JSON.stringify(frames, null, 2));
+	await page.keyboard.press("Escape");
+	await page.mouse.up();
+	await expect(traceA).toHaveCount(0);
+	await expect(traceB).toHaveCount(0);
+});
+
+test("horizontal tracing does not jump when brightness retargets across columns", async ({ page }) => {
+	const baseURL = process.env.PLAYWRIGHT_BASE_URL;
+	if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
+	await page.setViewportSize({ width: 1440, height: 920 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
+	await page.goto(`${baseURL}/jira-team-eu26`);
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	const article = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
+	await article.scrollIntoViewIfNeeded();
+	const source = await article.boundingBox();
+	const box = await page.locator('[data-issue-key="PAY-118"]').boundingBox();
+	if (!source || !box) throw new Error("Missing horizontal drag geometry");
+	await page.mouse.move(source.x + source.width * 0.65, source.y + source.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(box.x - 180, box.y + 62);
+	await expect(page.locator('[data-issue-key="PAY-118"] [data-slot="jira-issue-attach-trace"][data-trace-active="true"]')).toHaveCount(0);
+	await page.evaluate(() => {
+		const result = { running: true, frames: [] as { time: number; opacity: number; strength: number; phase: string }[] };
+		(window as typeof window & { horizontalFrames: typeof result }).horizontalFrames = result;
+		const sample = () => {
+			const trace = document.querySelector('[data-issue-key="PAY-118"] [data-slot="jira-issue-attach-trace"]');
+			result.frames.push({ time: performance.now(), opacity: trace ? Number(getComputedStyle(trace).opacity) : 0,
+				strength: trace ? Number((trace as HTMLElement).dataset.traceStrength) : 0,
+				phase: trace ? (trace as HTMLElement).dataset.tracePhase ?? "none" : "none" });
+			if (result.running) requestAnimationFrame(sample);
+		};
+		sample();
+	});
+	for (let x = box.x - 130; x <= box.x + box.width + 78; x += 6) {
+		await page.mouse.move(x, box.y + 62);
+		// Replay continuous horizontal input at a deliberate 60Hz cadence.
+		await page.waitForTimeout(16);
+	}
+	const frames = await page.evaluate(() => {
+		const result = (window as typeof window & { horizontalFrames: { running: boolean; frames: { time: number; opacity: number; strength: number; phase: string }[] } }).horizontalFrames;
+		result.running = false;
+		return result.frames;
+	});
+	await mkdir("output/agent-browser/proximity-trace", { recursive: true });
+	await writeFile("output/agent-browser/proximity-trace/horizontal-regression-frames.json", JSON.stringify(frames, null, 2));
+	const tracking = frames.filter((frame) => frame.phase === "track");
+	expect(tracking.length).toBeGreaterThan(10);
+	expect(tracking.filter((frame) => Math.abs(frame.opacity - frame.strength) > 0.01), "revealed borders follow proximity without a new tween").toEqual([]);
+	expect(Math.max(...frames.map((frame) => frame.opacity))).toBeGreaterThan(0.9);
+	await page.keyboard.press("Escape");
+	await page.mouse.up();
+	await expect(page.locator('[data-issue-key="PAY-118"] [data-slot="jira-issue-attach-trace"]')).toHaveCount(0);
+});
 
 for (const grab of [0.3, 0.8]) {
 	test(`pickup stays continuous from the ${grab < 0.5 ? "left" : "right"} half`, async ({ page }) => {

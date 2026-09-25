@@ -306,10 +306,6 @@ function BoardHeaderDefaultFacepile({
 
 	return (
 		<>
-			{/* Facepile stacks leftmost-on-top: keep DOM order (so tab order matches
-		    left→right visual order) and assign descending z-index instead. `isolate`
-		    contains these low z-indexes; `[&>*]:relative` is required because the
-		    face <button> wrappers are position:static, where z-index is inert. */}
 			<AvatarGroup
 				className={JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME}
 				label={`${surfaceTitle} assignees`}

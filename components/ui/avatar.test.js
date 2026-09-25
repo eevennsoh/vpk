@@ -2,6 +2,12 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { humanAgentAvatarGeometry, humanAgentAvatarPositions } = require("../ui-custom/human-agent-avatar-geometry.ts");
+const { isAvatarOverlayType } = require("./avatar-overlay.ts");
+const { AVATAR_HEXAGON_REFERENCE_SIZE, AVATAR_HEXAGON_REFERENCE_RADIUS, avatarHexagonCornerRadius, avatarHexagonPoints, avatarHexagonClip, avatarHexagonBorderClip } = require("./avatar-hexagon.ts");
+const { humanAgentAvatarSizeSwapProgress } = require("../ui-custom/human-agent-avatar-motion-config.ts");
+const { getCodingAgentLogoFrame, getCodingAgentVisual } = require("../ui-custom/agent-avatar-coding-appearance.ts");
+const { thirdPartyLogoSrc } = require("./data/logo-third-party-data.ts");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 
@@ -16,6 +22,71 @@ const AGENT_AVATAR_VISUAL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "ui-custom", "agent-avatar-visual.tsx"),
 	"utf8",
 );
+
+test("coding agent appearance preserves local artwork and the requested brand canvases", () => {
+	assert.deepEqual(getCodingAgentVisual("claude"), { backgroundColor: "#d97757", whiteGlyph: true });
+	assert.deepEqual(getCodingAgentVisual("openai-codex"), { artwork: "local", logoClassName: "scale-125" });
+	assert.deepEqual(getCodingAgentVisual("openai-codex", 20), { artwork: "glyph", logoFrameSizePx: 12 });
+	assert.deepEqual(getCodingAgentVisual("cursor"), { artwork: "local", backgroundColor: "#14120B" });
+	assert.deepEqual(getCodingAgentVisual("github-copilot"), { backgroundColor: "#000000", whiteGlyph: true });
+	assert.equal(getCodingAgentVisual("slack"), undefined);
+	assert.equal(getCodingAgentVisual(undefined), undefined);
+	for (const name of ["cursor", "openai-codex"]) {
+		assert.ok(fs.existsSync(path.join(process.cwd(), "public", thirdPartyLogoSrc(name))));
+	}
+});
+
+test("coding agents have a registered avatar demo and opt into the coding appearance", () => {
+	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoCodingAgents\(\)/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AgentAvatarVisual appearance="coding" brandName=\{brandName\}/);
+	assert.match(AVATAR_DETAILS_SOURCE, /title: "Coding agents"/);
+	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-coding-agents"/);
+	assert.match(REGISTRY_SOURCE, /default: mod\.AvatarDemoCodingAgents/);
+	for (const brand of ["claude", "openai-codex", "github-copilot", "cursor"]) {
+		assert.ok(AVATAR_DEMO_SOURCE.includes(`<AgentAvatarVisual appearance="coding" brandName="${brand}"`));
+	}
+});
+
+test("coding logo frames enlarge the marks without changing compact avatar sizes", () => {
+	assert.deepEqual(getCodingAgentLogoFrame(20), { size: "xxsmall" });
+	assert.deepEqual(getCodingAgentLogoFrame(32), { size: "small" });
+	assert.deepEqual(getCodingAgentLogoFrame(40), { size: "medium" });
+	assert.deepEqual(getCodingAgentLogoFrame(48), { size: "large" });
+	for (const size of [12, 16, 24, 30]) assert.equal(getCodingAgentLogoFrame(size), undefined);
+});
+
+test("avatar overlay recognition survives refreshed function identities and minification", () => {
+	for (const name of ["AvatarBadge", "AvatarCompanyBadge", "AvatarProjectBadge", "AvatarPresenceIndicator", "AvatarStatusIndicator"]) {
+		const oldType = { [name]: function () {} }[name];
+		const refreshedType = Object.assign(function a() {}, { displayName: name });
+		assert.notEqual(oldType, refreshedType);
+		assert.equal(isAvatarOverlayType(oldType), true);
+		assert.equal(isAvatarOverlayType(refreshedType), true);
+	}
+	assert.equal(isAvatarOverlayType("span"), false);
+	assert.equal(isAvatarOverlayType(function AvatarImage() {}), false);
+	assert.equal(isAvatarOverlayType(function AvatarFallback() {}), false);
+	assert.equal(isAvatarOverlayType(null), false);
+});
+
+test("avatar stacking switches only for a size crossover inside the turn", () => {
+	assert.equal(humanAgentAvatarSizeSwapProgress(30, 16, 32, 12, 1), Infinity);
+	assert.equal(humanAgentAvatarSizeSwapProgress(30, 16, 24, 20, 1), Infinity);
+	assert.equal(humanAgentAvatarSizeSwapProgress(30, 16, 16, 30, 0), Infinity);
+	assert.equal(humanAgentAvatarSizeSwapProgress(30, 16, 16, 30, 1), 0.5);
+	assert.equal(humanAgentAvatarSizeSwapProgress(16, 30, 30, 16, 1), 0.5);
+});
+
+test("human-first compact geometry swaps primary and badge footprints at both authored sizes", () => {
+	for (const [frameSize, humanSize, agentSize, inset] of [[24, 24, 12, 0], [32, 30, 16, 1]]) {
+		const geometry = humanAgentAvatarGeometry(frameSize, false);
+		assert.deepEqual(geometry, { frameSize, humanSize, agentSize, humanInset: inset, agentInset: -2 });
+		assert.deepEqual(humanAgentAvatarPositions(geometry, false), {
+			human: { left: inset, top: inset },
+			agent: { right: -2, bottom: -2 },
+		});
+	}
+});
 const ENTITY_CARD_AGENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "ui-custom", "entity-card", "agent.tsx"),
 	"utf8",
@@ -67,21 +138,47 @@ test("AvatarUnassigned exposes grey person and agent avatar states", () => {
 });
 
 test("hexagon avatars clip an inner frame so corner overlays render unclipped", () => {
-	assert.match(AVATAR_SOURCE, /const HEXAGON_POINTS =/);
+	assert.equal(AVATAR_HEXAGON_REFERENCE_SIZE, 24);
+	assert.equal(AVATAR_HEXAGON_REFERENCE_RADIUS, 4);
+	assert.match(AVATAR_SOURCE, /const HEXAGON_CLIP = avatarHexagonClip\(\)/);
 	assert.match(AVATAR_SOURCE, /hexagon: "isolate overflow-visible after:border-0"/);
 	assert.doesNotMatch(AVATAR_SOURCE, /hexagon: `\$\{HEXAGON_CLIP\} after:border-0`/);
 	assert.match(
 		AVATAR_SOURCE,
-		/<span\s+className=\{cn\("relative flex size-full items-center justify-center overflow-hidden", HEXAGON_CLIP\)\}\s+data-slot="avatar-hexagon-artwork"/,
+		/<span\s+className="relative flex size-full items-center justify-center overflow-hidden"\s+style=\{\{ clipPath: HEXAGON_CLIP \}\}\s+data-slot="avatar-hexagon-artwork"/,
 	);
 	assert.match(AVATAR_SOURCE, /\{status \? <AvatarStatusIndicator status=\{status\} \/> : null\}/);
 	assert.doesNotMatch(AVATAR_SOURCE, /isAgent && HEXAGON_CLIP/);
 	assert.match(AVATAR_SOURCE, /isAgent && "size-full bg-muted"/);
-	assert.match(AVATAR_SOURCE, /const AVATAR_OVERLAY_TYPES: ReadonlySet<unknown> = new Set\(\[/);
-	assert.match(AVATAR_SOURCE, /function AvatarHexagonBorder\(\)/);
+	assert.match(AVATAR_SOURCE, /React\.isValidElement\(child\) && isAvatarOverlayType\(child\.type\)/);
+	assert.match(AVATAR_SOURCE, /function AvatarHexagonBorder\(/);
 	assert.match(AVATAR_SOURCE, /text-border!/);
-	assert.match(AVATAR_SOURCE, /<polygon[\s\S]*points=\{HEXAGON_POINTS\}[\s\S]*stroke="currentColor"/);
+	assert.match(AVATAR_SOURCE, /style=\{\{ clipPath: separator \? HEXAGON_SEPARATOR_CLIP : HEXAGON_BORDER_CLIP \}\}/);
 	assert.match(AVATAR_SOURCE, /<AvatarHexagonBorder \/>/);
+	assert.match(AVATAR_SOURCE, /const HEXAGON_SEPARATOR_CLIP = avatarHexagonClip\(2\)/);
+	assert.match(AVATAR_SOURCE, /data-slot="avatar-hexagon-artwork"[\s\S]*?<AvatarHexagonBorder \/>\s*<\/span>/);
+});
+
+test("hexagon corners scale through 4px at 24px and 6px at 32px while borders remain 1px inset", () => {
+	for (const [size, radius] of [[12, 1], [16, 2], [20, 3], [24, 4], [30, 5.5], [32, 6], [40, 8], [48, 10], [96, 22]]) {
+		assert.equal(avatarHexagonCornerRadius(size), radius);
+		for (const inset of [0, 1]) {
+			const points = avatarHexagonPoints(inset);
+			const resolved = points.map(p => ({ x: p.xPercent * size / 100 + p.xPixels, y: p.yPercent * size / 100 + p.yPixels }));
+			for (const p of resolved.slice(0, 7)) {
+				assert.ok(Math.abs(Math.hypot(p.x - size / 2, p.y - radius) - (radius - inset)) < 0.00001);
+			}
+			assert.ok(Math.abs(Math.min(...resolved.map(p => p.y)) - inset) < 0.00001);
+			assert.ok(Math.abs(Math.max(...resolved.map(p => p.y)) - (size - inset)) < 0.00001);
+			assert.ok(resolved.every(p => p.x >= 0 && p.x <= size));
+		}
+		const expanded = avatarHexagonPoints(0, 2).slice(0, 7).map(p => ({ x: p.xPercent * (size + 4) / 100 + p.xPixels, y: p.yPercent * (size + 4) / 100 + p.yPixels }));
+		for (const p of expanded) {
+			assert.ok(Math.abs(Math.hypot(p.x - (size + 4) / 2, p.y - radius - 2) - radius - 2) < 0.00001);
+		}
+	}
+	assert.match(avatarHexagonClip(), /^polygon\(/);
+	assert.match(avatarHexagonBorderClip(), /^polygon\(evenodd,/);
 });
 
 test("AvatarGroupCount maps plus icon size from the group size", () => {
@@ -125,7 +222,7 @@ test("group-with-icon-count demo plus size comes from AvatarGroup, not a global 
 test("avatar status indicator anchors to the top-right corner", () => {
 	assert.match(
 		AVATAR_SOURCE,
-		/data-slot="avatar-status"[\s\S]*"ring-background absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2"/,
+		/data-slot="avatar-status"[\s\S]*"ring-\[#FFFFFF\] absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2"/,
 	);
 	assert.match(
 		AVATAR_SOURCE,
@@ -204,14 +301,14 @@ test("avatar status indicators use simple glyphs on presence-style circular fill
 	assert.doesNotMatch(AVATAR_SOURCE, /STATUS_ICON_CLASS_NAME =[\s\S]*scale-50/);
 	assert.doesNotMatch(AVATAR_SOURCE, /dangerouslySetInnerHTML|createElement\("svg"/);
 	assert.match(AVATAR_SOURCE, /<Icon[\s\S]*className=\{config\.iconClassName\}[\s\S]*render=\{<StatusIcon/);
-	// Status ring matches presence (ring-background + ring-2); overflow-hidden preserves thickness.
+	// Status ring matches presence (fixed white + ring-2); overflow-hidden preserves thickness.
 	assert.match(
 		AVATAR_SOURCE,
-		/data-slot="avatar-presence"[\s\S]*"ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-full ring-2"/,
+		/data-slot="avatar-presence"[\s\S]*"ring-\[#FFFFFF\] absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-full ring-2"/,
 	);
 	assert.match(
 		AVATAR_SOURCE,
-		/data-slot="avatar-status"[\s\S]*"ring-background absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2"/,
+		/data-slot="avatar-status"[\s\S]*"ring-\[#FFFFFF\] absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2"/,
 	);
 });
 
@@ -234,7 +331,7 @@ test("avatar presence indicators use ADS glyph treatments per variant", () => {
 	);
 	assert.match(
 		AVATAR_SOURCE,
-		/data-slot="avatar-presence"[\s\S]*"ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-full ring-2"/,
+		/data-slot="avatar-presence"[\s\S]*"ring-\[#FFFFFF\] absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-full ring-2"/,
 	);
 	assert.match(
 		AVATAR_SOURCE,
@@ -318,7 +415,7 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	// exact class because a literal color here is exactly the regression.
 	assert.match(
 		AGENT_AVATAR_VISUAL_SOURCE,
-		/className="flex size-full items-center justify-center bg-surface"/u,
+		/className=\{cn\("flex size-full items-center justify-center bg-surface"/u,
 	);
 	assert.doesNotMatch(
 		AGENT_AVATAR_VISUAL_SOURCE,
@@ -336,7 +433,7 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	);
 	assert.match(
 		AGENT_AVATAR_VISUAL_SOURCE,
-		/bg-surface">\{visual\}<\/span>/u,
+		/bg-surface",[\s\S]*?\)\}>\{visual\}<\/span>/u,
 		"the themed backdrop wraps the visual directly, with no inverting wrapper in between",
 	);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc \? \([\s\S]*<AvatarImage[\s\S]*fallbackText \? <AvatarFallback>\{fallbackText\}<\/AvatarFallback> : null/);
@@ -348,7 +445,7 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 
 test("avatar docs demonstrate Rovo, 1P, 2P, and 3P agent tiers", () => {
 	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoAgentTiers\(\)/);
-	assert.match(AVATAR_DEMO_SOURCE, /label: "Rovo"[\s\S]*<AgentAvatarVisual label="Rovo agent" sizePx=\{40\} vpkLogo="rovo"/);
+	assert.match(AVATAR_DEMO_SOURCE, /label: "Rovo"[\s\S]*<AgentAvatarVisual label="Rovo agent" sizePx=\{32\} vpkLogo="rovo"/);
 	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/avatar-agent\/teamwork-agents\/customer-insights\.svg"/);
 	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/2p\/appfire\.png"/);
 	assert.match(AVATAR_DEMO_SOURCE, /brandName="slack"/);
@@ -368,12 +465,17 @@ test("avatar group overflow count uses 12px text and 14px text for large groups"
 	assert.doesNotMatch(AVATAR_SOURCE, /rounded-full text-sm/);
 });
 
+test("avatar groups own descending face stacking without changing DOM order", () => {
+	assert.match(AVATAR_SOURCE, /isolate \[&>\*\]:relative \[&>\*\]:\[z-index:calc\(sibling-count\(\)-sibling-index\(\)\+1\)\]/);
+	assert.match(AVATAR_SOURCE, /isInAvatarGroup \? \{\} : \{ zIndex: 10 \}/);
+});
+
 test("avatar groups give hexagon agents a shape-aware background separator", () => {
 	assert.match(AVATAR_SOURCE, /const AvatarGroupContext = React\.createContext\(false\)/);
 	assert.match(AVATAR_SOURCE, /const isInAvatarGroup = React\.use\(AvatarGroupContext\)/);
 	assert.match(
 		AVATAR_SOURCE,
-		/isInAvatarGroup \? \(\s*<span[\s\S]*bg-background[\s\S]*HEXAGON_CLIP[\s\S]*data-slot="avatar-hexagon-group-border"/,
+		/isInAvatarGroup \? \(\s*<span[\s\S]*bg-background[\s\S]*HEXAGON_SEPARATOR_CLIP[\s\S]*data-slot="avatar-hexagon-group-border"/,
 	);
 	assert.match(AVATAR_SOURCE, /<AvatarGroupContext value>/);
 	assert.match(
@@ -425,7 +527,7 @@ test("avatar docs include only the base unassigned demo states", () => {
 test("AvatarCompanyBadge exposes a size-aware company-logo dot for agent avatars", () => {
 	assert.match(AVATAR_SOURCE, /function AvatarCompanyBadge\(/);
 	assert.match(AVATAR_SOURCE, /data-slot="avatar-company-badge"/);
-	assert.match(AVATAR_SOURCE, /"bg-primary text-primary-foreground ring-background/);
+	assert.match(AVATAR_SOURCE, /"bg-primary text-primary-foreground ring-\[#FFFFFF\]/);
 	assert.match(AVATAR_SOURCE, /group-data-\[size=2xl\]\/avatar:\[&_svg\]:size-4/);
 	assert.match(AVATAR_SOURCE, /\tAvatarCompanyBadge,/);
 	assert.match(AVATAR_SOURCE, /type AvatarCompanyBadgeProps,/);
