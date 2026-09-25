@@ -4,6 +4,19 @@ const AGENT_LOADING_URL = `${
 	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
 }/components/ui-custom/agent-loading`;
 
+test("Claude avatars use the brand background and a white starburst", async ({ page }) => {
+	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });
+	await page.getByRole("button", { name: "4 agents", exact: true }).click();
+	const claude = page.locator('[data-agent-id="claude"] [data-slot="avatar-hexagon-artwork"]').first();
+	for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
+		await page.setViewportSize(viewport);
+		await expect(claude.locator(":scope > span")).toHaveCSS("background-color", "rgb(217, 119, 87)");
+		await expect(claude.locator("svg")).toHaveCSS("filter", "brightness(0) invert(1)");
+		const cursor = page.locator('[data-agent-id="cursor"] [data-slot="avatar-hexagon-artwork"]').first();
+		await expect(cursor.locator(":scope > span")).not.toHaveCSS("background-color", "rgb(217, 119, 87)");
+	}
+});
+
 test("the live demo can cycle two, three, and four agents", async ({ page }) => {
 	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });
 

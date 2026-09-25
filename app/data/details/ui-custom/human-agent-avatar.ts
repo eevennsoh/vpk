@@ -76,7 +76,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 			type: '"agent-first" | "human-first"',
 			default: '"agent-first"',
 			description:
-				"Initial composition: agent at the top left or human at the top left. Horizontal groups preserve this order.",
+				"The first identity owns the larger top-left footprint; the other becomes the smaller bottom-right badge. Horizontal groups preserve this order.",
 		},
 		{
 			name: "sizePx",
@@ -112,7 +112,7 @@ export const HUMAN_AGENT_AVATAR_DETAIL: ComponentDetail = {
 		{
 			title: "Human first",
 			description:
-				"The same static identity with the human at the top left when explicitly requested.",
+				"The human takes the larger top-left footprint, and the agent becomes the smaller bottom-right badge.",
 			demoSlug: "human-agent-avatar-demo-human-first",
 		},
 	],

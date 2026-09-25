@@ -10,13 +10,13 @@ import {
 	createHumanAgentAvatarOrbitMotion,
 } from "@/components/ui-custom/human-agent-avatar-orbit";
 
-import { resolveHumanAgentAvatarTargets, type HumanAgentAvatarMotionOptions } from "@/components/ui-custom/human-agent-avatar-motion-config";
+import { humanAgentAvatarSizeSwapProgress, resolveHumanAgentAvatarTargets, type HumanAgentAvatarMotionOptions } from "@/components/ui-custom/human-agent-avatar-motion-config";
 
 import { HumanAgentAvatarGroupMotion } from "@/components/ui-custom/human-agent-avatar-group-motion";
 
 export type HumanAgentAvatarMotionProps = Readonly<{
-	agent: (sizePx?: number) => ReactNode;
-	human: (outline?: AvatarProps["outline"]) => ReactNode;
+	agent: (sizePx?: number, separator?: boolean) => ReactNode;
+	human: (outline?: AvatarProps["outline"], sizePx?: number) => ReactNode;
 	agentFirst: boolean;
 	frameSize: number;
 	agentSize: number;
@@ -62,9 +62,8 @@ function HumanAgentAvatarOrbitMotion({
 	const { humanSize: humanTargetSize, agentSize: agentTargetSize } = resolveHumanAgentAvatarTargets(
 		{ frameSize }, motionConfig.config,
 	);
-	const relativeSizeChange = ((humanTargetSize - humanSize) - (agentTargetSize - agentSize)) * motionConfig.config.scaleAmount;
 	// Handoff when the actual sizes cross, as in main's original 24px/16px swap.
-	const sizeSwapAt = relativeSizeChange > 0 ? (agentSize - humanSize) / relativeSizeChange : Infinity;
+	const sizeSwapAt = humanAgentAvatarSizeSwapProgress(agentSize, humanSize, agentTargetSize, humanTargetSize, motionConfig.config.scaleAmount);
 	const agentOrbit = humanAgentAvatarOrbit(
 		frameSize,
 		agentSize,
