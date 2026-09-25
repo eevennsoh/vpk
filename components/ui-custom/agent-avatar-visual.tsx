@@ -153,7 +153,7 @@ export function AgentAvatarVisual({
 	) : brandName ? (
 		<LogoThirdParty borderless label="" name={brandName} size={externalLogoSize}
 			artwork={codingVisual?.artwork} sizePx={codingVisual?.logoFrameSizePx}
-			className={sizePx >= 32 ? codingVisual?.logoClassName : undefined} />
+			className={sizePx >= 30 ? codingVisual?.logoClassName : undefined} />
 	) : avatarSrc ? (
 		<>
 			<AvatarImage

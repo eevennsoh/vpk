@@ -216,6 +216,7 @@ test("compact Codex artwork does not inherit the larger demo enlargement", async
 	assert.equal(harness.agentImageWidth({ ...props, sizePx: 16 }), 16);
 	assert.equal(harness.agentImageWidth({ ...props, sizePx: 32 }), 24);
 	assert.equal(harness.agentLogoClassName({ ...props, sizePx: 20 }), undefined);
+	assert.equal(harness.agentLogoClassName({ ...props, sizePx: 30 }), "scale-125");
 	assert.equal(harness.agentLogoClassName({ ...props, sizePx: 32 }), "scale-125");
 });
 
