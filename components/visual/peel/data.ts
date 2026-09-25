@@ -360,3 +360,16 @@ export function resolvePeelTuning(
 		...(reducedMotion ? PEEL_REDUCED_MOTION_TUNING : null),
 	};
 }
+
+/** The shared carry pose for captured paper and ordinary DOM drag previews. */
+export function resolvePeelSurfaceTuning(overrides?: Partial<PeelTuning>, reducedMotion = false): PeelTuning {
+	return resolvePeelTuning("uv-gloss", {
+		waveAmplitude: 0.13,
+		waveLength: 1.4,
+		waveShear: 1.4,
+		flutter: 0.067,
+		tilt: 0.19,
+		swing: 0.075,
+		...overrides,
+	}, reducedMotion);
+}

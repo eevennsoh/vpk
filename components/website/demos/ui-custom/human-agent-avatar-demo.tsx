@@ -110,7 +110,7 @@ export function HumanAgentAvatarDemoHumanFirst() {
 
 export function HumanAgentAvatarDemoSizes() {
 	return (
-		<div className="flex items-center gap-8" data-human-agent-avatar-sizes>
+		<div className="flex w-full items-center justify-center gap-8" data-human-agent-avatar-sizes>
 			{([24, 32] as const).map((sizePx) => (
 				<div key={sizePx} className="flex flex-col items-center gap-3" data-avatar-size={sizePx}>
 					<HumanAgentAvatar

@@ -203,11 +203,7 @@ function PulseStoryContributors({
 					<AvatarGroup
 						label="By contributors in this window"
 						size="xs"
-						// Leftmost-on-top, matching the board header's facepile: DOM order is
-						// tab order, so the stacking is done with z-index. The shared group
-						// also gives hexagon avatars their shape-aware separator. Overlap
-						// comes from AvatarGroup's xs `-space-x-1`.
-						className="isolate -mx-0.5 min-w-0 items-center px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
+						className="-mx-0.5 min-w-0 items-center px-0.5"
 					>
 						{contributors.map((member) => (
 							<span

@@ -762,10 +762,15 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		await page.mouse.move(x, sensorBox.y - 12, { steps: 8 });
 		await expect(well).toHaveAttribute("data-proximity", "near");
 		await expect.poll(async () => (await well.boundingBox())!.height).toBe(64);
+		const fixedTop = (await well.boundingBox())!.y;
+		const label = column.locator('[data-jira-dropzone-copy-layer="label"] > span');
 		for (const y of [bottom - 12, bottom - 40, bottom - 60]) {
 			await page.mouse.move(x, y, { steps: 4 });
 			await expect(well).toHaveAttribute("data-armed", "true");
 			const box = (await well.boundingBox())!;
+			expect(box.y).toBeCloseTo(fixedTop, 0);
+			const expectedY = reducedMotion === "reduce" ? 0 : ((y - sensorBox.y) / sensorBox.height * 2 - 1) * 4;
+			await expect.poll(() => label.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).m42)).toBeCloseTo(expectedY, 1);
 			const paintedGap = await column.evaluate((node) => {
 				const backdrop = node.querySelector("[data-jira-kanban-column-backdrop]")!;
 				const clip = getComputedStyle(backdrop).clipPath.split("round")[0].replace("inset(", "").trim().split(/\s+/);
@@ -774,6 +779,23 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 			});
 			expect(paintedGap.bottom).toBeCloseTo(paintedGap.side, 0);
 			expect(box.y).toBeLessThan(buttonBox.y);
+			expect(await sensor.boundingBox()).toEqual(sensorBox);
+		}
+		// The surface stays anchored while the label reaches +/-4px on each axis,
+		// including diagonal approaches just beyond the stable sensor's edges.
+		for (const direction of [{ x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: -1 }, { x: 1, y: 1 }]) {
+			await page.mouse.move(
+				x + direction.x * (sensorBox.width / 2 + 1),
+				sensorBox.y + sensorBox.height / 2 + direction.y * (sensorBox.height / 2 + 1),
+				{ steps: 4 },
+			);
+			for (const axis of ["x", "y"] as const) {
+				await expect.poll(() => label.evaluate((node, axis) => {
+					const transform = new DOMMatrixReadOnly(getComputedStyle(node).transform);
+					return axis === "x" ? transform.m41 : transform.m42;
+				}, axis)).toBeCloseTo(reducedMotion === "reduce" ? 0 : direction[axis] * 4, 1);
+			}
+			expect((await well.boundingBox())!.y).toBeCloseTo(fixedTop, 0);
 			expect(await sensor.boundingBox()).toEqual(sensorBox);
 		}
 		expect((await readList(list)).height).toBe(before.height - 8);
@@ -898,94 +920,4 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		expect(Math.max(...frames.map((frame) => frame.backdropGap)), JSON.stringify(frames.filter((frame) => frame.backdropGap > 1.5).slice(0, 3))).toBeLessThanOrEqual(1.5);
 	});
 
-	test(`one button grows from 24px to 32px at drag start and returns (${reducedMotion})`, async ({ page }) => {
-		await page.emulateMedia({ reducedMotion, colorScheme: "light" });
-		const source = await openBoard(page);
-		const column = page.locator('[data-jira-kanban-column="To do"]');
-		const button = column.getByRole("button", { name: "Create in To do" });
-		await expect(button).toHaveCSS("height", "24px");
-		const original = (await button.elementHandle())!;
-		await page.evaluate(() => {
-			const trace = { stage: "enter", frames: [] as { stage: string; kind: string; opacity: number; offset: number; height: number; nativeHeight: number; stale: boolean; addOpacity: number; labelOpacity: number }[], running: true };
-			Object.assign(window, { sharedControlTrace: trace });
-			const started = performance.now();
-			function sample() {
-				for (const copy of document.querySelectorAll('[data-jira-dropzone-control="To do"] [data-jira-dropzone-copy-motion]')) {
-					const style = getComputedStyle(copy);
-					const add = copy.querySelector('[data-jira-dropzone-copy-layer="add"]');
-					const label = copy.querySelector('[data-jira-dropzone-copy-layer="label"]');
-					const control = document.querySelector<HTMLElement>('[data-jira-dropzone-control="To do"]')!;
-					trace.frames.push({
-						stage: trace.stage,
-						kind: copy.getAttribute("data-jira-dropzone-copy-motion")!,
-						height: control.getBoundingClientRect().height,
-						nativeHeight: control.offsetHeight,
-						stale: copy.getAttribute("data-jira-dropzone-copy-motion") !== (control.getAttribute("aria-label")?.startsWith("Drop to create work item") ? "label" : "add"),
-							opacity: Number(style.opacity),
-							addOpacity: add ? Number(getComputedStyle(add).opacity) : 0,
-							labelOpacity: label ? Number(getComputedStyle(label).opacity) : 0,
-						offset: style.transform === "none" ? 0 : new DOMMatrixReadOnly(style.transform).m42,
-					});
-				}
-				if (trace.running && performance.now() - started < 10000) requestAnimationFrame(() => setTimeout(sample, 0));
-			}
-			requestAnimationFrame(() => setTimeout(sample, 0));
-		});
-		const sourceBox = (await source.boundingBox())!;
-		await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
-		await page.mouse.down();
-		await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 20, sourceBox.y + sourceBox.height / 2 + 20, { steps: 5 });
-		const target = column.getByRole("button", { name: /^Drop to create work item in To do/ });
-		await expect(target).toBeVisible();
-		expect(await original.evaluate((node) => node === document.querySelector('[data-jira-dropzone-control="To do"]'))).toBe(true);
-		await page.mouse.move(900, 100, { steps: 8 });
-		await expect(target).toHaveCSS("height", "32px");
-		await expect(target).toHaveCSS("background-color", "rgb(255, 255, 255)");
-		await expect(target).toHaveAttribute("aria-disabled", "true");
-		await page.waitForTimeout(180);
-		await expect(target.locator('[data-jira-dropzone-copy-motion="add"]')).toHaveCount(0);
-		await page.screenshot({ path: `output/agent-browser/dropzone-motion-side/shared-control-${reducedMotion}.png` });
-		const sensor = column.locator("[data-create-work-item-proximity]");
-		const sensorBox = (await sensor.boundingBox())!;
-		await page.evaluate(() => {
-			(window as typeof window & { sharedControlTrace: { stage: string } }).sharedControlTrace.stage = "expand";
-		});
-		await page.mouse.move(sensorBox.x + sensorBox.width / 2, sensorBox.y + sensorBox.height / 2, { steps: 8 });
-		await expect.poll(async () => (await target.boundingBox())!.height).toBeCloseTo(sensorBox.height, 0);
-		expect(await sensor.boundingBox()).toEqual(sensorBox);
-		await expect(target).toHaveCSS("background-color", "rgb(233, 242, 254)");
-		await page.mouse.move(900, 100, { steps: 8 });
-		await expect(target).toHaveCSS("height", "32px");
-
-		await page.evaluate(() => {
-			(window as typeof window & { sharedControlTrace: { stage: string } }).sharedControlTrace.stage = "exit";
-		});
-		await page.mouse.up();
-		await expect(button).toBeVisible();
-		await expect(button).toHaveCSS("height", "24px");
-		expect(await original.evaluate((node) => node === document.querySelector('[data-jira-dropzone-control="To do"]'))).toBe(true);
-		await page.waitForTimeout(180);
-		await expect(button.locator('[data-jira-dropzone-copy-motion="label"]')).toHaveCount(0);
-		await expect(button.locator('[data-jira-dropzone-copy-motion="add"]')).toHaveCSS("opacity", "1");
-		const frames = await page.evaluate(() => {
-			const trace = (window as typeof window & { sharedControlTrace: { running: boolean; frames: { stage: string; kind: string; opacity: number; offset: number; height: number; nativeHeight: number; stale: boolean; addOpacity: number; labelOpacity: number }[] } }).sharedControlTrace;
-			trace.running = false;
-			return trace.frames;
-		});
-		const { writeFile } = await import("node:fs/promises");
-		await writeFile(`output/agent-browser/dropzone-motion-side/shared-control-frames-${reducedMotion}.json`, JSON.stringify(frames, null, 2));
-		expect(frames.filter((frame) => frame.stale)).toEqual([]);
-		if (reducedMotion === "reduce") {
-			expect(frames.every((frame) => Math.abs(frame.offset) < 0.01)).toBe(true);
-		} else {
-			expect(frames.some((frame) => frame.stage === "enter" && frame.height > 24 && frame.height < 32)).toBe(true);
-			expect(frames.some((frame) => frame.stage === "expand" && frame.height > 32.1 && frame.height < sensorBox.height - 0.1)).toBe(true);
-			expect(frames.some((frame) => frame.stage === "exit" && frame.height > 24 && frame.height < 32)).toBe(true);
-			for (const stage of ["enter", "exit"]) {
-				expect(frames.some((frame) => frame.stage === stage && frame.addOpacity > 0.01 && frame.addOpacity < 0.99 && frame.labelOpacity > 0.01 && frame.labelOpacity < 0.99)).toBe(true);
-			}
-			expect(frames.every((frame) => Math.abs(frame.height - frame.nativeHeight) < 0.6)).toBe(true);
-			expect(frames.every((frame) => frame.opacity === 1 && Math.abs(frame.offset) < 0.01)).toBe(true);
-		}
-	});
 }

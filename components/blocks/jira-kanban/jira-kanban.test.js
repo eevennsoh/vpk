@@ -945,7 +945,7 @@ test("Insights keeps the seven-item header facepile at one reserved width", () =
 	assert.match(EXPERIMENTAL_HEADER_FACEPILE_SOURCE, /JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS = 7/u);
 	assert.match(
 		EXPERIMENTAL_HEADER_FACEPILE_SOURCE,
-		/JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME =\s*\n?\s*"w-33 shrink-0 isolate items-center -space-x-1\.5/u,
+		/JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME =\s*\n?\s*"w-33 shrink-0 items-center -space-x-1\.5/u,
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,

@@ -10,6 +10,7 @@ const {
 	measureSessionDragGeometry,
 	resolveSessionDragMorph,
 	resolveSessionDragAvatarMorph,
+	resolveSessionDragSurfaceStart,
 	sessionDragGeometryRelativeToPointer,
 	SESSION_DRAG_CHIP_ENTER_TRANSITION,
 	SESSION_PEEL_CHIP_ENTER_TRANSITION,
@@ -20,14 +21,36 @@ const CARD_SOURCE = readFileSync(join(__dirname, "agent-session-card.tsx"), "utf
 const MEDIUM_CARD_SOURCE = readFileSync(join(__dirname, "agent-session-medium-card.tsx"), "utf8");
 const MEDIUM_DRAG_SOURCE = readFileSync(join(__dirname, "agent-session-medium-drag.tsx"), "utf8");
 const OVERLAY_SOURCE = readFileSync(join(__dirname, "agent-session-drag-overlay.tsx"), "utf8");
+const PICKUP_SOURCE = readFileSync(join(__dirname, "agent-session-motion-pickup.ts"), "utf8");
+const GLOW_SOURCE = readFileSync(join(__dirname, "../../../app/jira-agent-motion.css"), "utf8");
 
-test("drag lighting retains gesture origin and direction through preparation and spring recoil", () => {
+test("the glow sweep keeps its shared 400ms timing independently of pickup geometry", () => {
+	assert.match(GLOW_SOURCE, /animation: session-drag-face-flash var\(--duration-slower\) linear both;/u);
+	assert.doesNotMatch(PICKUP_SOURCE, /data-session-drag-flash-beam|animationDuration/u);
+});
+
+test("pickup starts with corrected corners and keeps their visible radius within a quarter pixel", () => {
+	// At 140%, linear radius interpolation differs from the exact inverse
+	// by at most 0.23px mid-flight; both endpoint radii remain exactly 8px.
+	for (const [scaleX, scaleY] of [[1.4, 1.4], [0.9, 0.95]]) {
+		const pose = resolveSessionDragSurfaceStart(scaleX, scaleY, 8);
+		assert.equal(pose.transform, `scale(${scaleX}, ${scaleY})`);
+		for (let progress = 0; progress <= 1; progress += 0.05) {
+			const x = scaleX + (1 - scaleX) * progress;
+			const y = scaleY + (1 - scaleY) * progress;
+			assert.ok(Math.abs((pose.radiusX + (8 - pose.radiusX) * progress) * x - 8) < 0.25);
+			assert.ok(Math.abs((pose.radiusY + (8 - pose.radiusY) * progress) * y - 8) < 0.25);
+		}
+	}
+});
+
+test("drag lighting retains gesture origin and direction with immediate tracking and spring recoil", () => {
 	const source = readFileSync(join(__dirname, "../jira-issue/use-session-drag-chip-pointer.ts"), "utf8");
 	const motionValue = (initial) => {
 		let value = initial;
 		return { get: () => value, set: (next) => { value = next; }, jump: (next) => { value = next; } };
 	};
-	for (const direction of [-1, 1]) {
+	for (const tracking of ["spring", "direct"]) for (const direction of [-1, 1]) {
 		const springs = [];
 		const loaded = { exports: {} };
 		runInNewContext(ts.transpileModule(source, {
@@ -40,7 +63,9 @@ test("drag lighting retains gesture origin and direction through preparation and
 				if (name === "motion/react") return {
 					useMotionValue: motionValue,
 					useSpring: (input) => {
-						const spring = motionValue(input.get());
+						const spring = motionValue(typeof input === "number" ? input : input.get());
+						// Setting a spring changes its target; painted motion arrives later.
+						spring.set = () => {};
 						springs.push(spring);
 						return spring;
 					},
@@ -50,7 +75,7 @@ test("drag lighting retains gesture origin and direction through preparation and
 				throw new Error(`Unexpected import ${name}`);
 			},
 		});
-		const pointer = loaded.exports.useSessionDragChipPointer(false);
+		const pointer = loaded.exports.useSessionDragChipPointer(false, tracking === "direct" ? tracking : undefined);
 		pointer.beginGesture({ x: 400, y: 200 });
 		const destination = 400 + direction * 100;
 		pointer.followPointer({ x: destination, y: 200 });
@@ -60,14 +85,14 @@ test("drag lighting retains gesture origin and direction through preparation and
 		for (const recoil of [1, 0.2, 0.001, 0]) {
 			springs[0].jump(destination + direction * recoil);
 			assert.equal(pointer.direction.get(), direction, "spring overshoot never changes lighting's gesture direction");
-			assert.equal(pointer.x.get(), destination + direction * recoil, "the visual follower keeps its existing spring");
+			assert.equal(pointer.x.get(), tracking === "direct" ? destination : destination + direction * recoil, "direct tracking cannot lag behind the input or recoil after it stops");
 		}
 		pointer.followPointer({ x: destination - direction * 2, y: 200 });
 		assert.equal(pointer.direction.get(), direction, "a tiny correction during preparation keeps the intended edge");
 		pointer.followPointer({ x: destination - direction * 20, y: 200 });
 		assert.equal(pointer.direction.get(), -direction, "real pointer reversal arrives without waiting for the spring or capture");
 		assert.equal(pointer.originX.get(), 400, "reversal preserves the original gesture displacement");
-		assert.equal(pointer.x.get(), destination, "the follower has not yet caught up with the reversal");
+		assert.equal(pointer.x.get(), tracking === "direct" ? destination - direction * 20 : destination, "direct tracking acknowledges a reversal immediately");
 		pointer.beginGesture({ x: 800, y: 300 });
 		assert.equal(pointer.direction.get(), 0, "the next gesture clears the previous direction");
 		assert.equal(pointer.originX.get(), 800);
@@ -122,6 +147,30 @@ test("the morph starts the avatar at its source box, rather than centring the wh
 		assert.equal(pointer.y + target.identity.top + morph.y + morph.identityY, source.identity.top);
 		assert.equal(target.surface.width * morph.scaleX, source.surface.width);
 		assert.ok(Math.abs(target.surface.height * morph.scaleY - source.surface.height) < 0.001);
+		assert.equal(pointer.x + target.surface.left + morph.x - (source.surface.width - target.surface.width) / 2, source.surface.left);
+		assert.equal(pointer.y + target.surface.top + morph.y - (source.surface.height - target.surface.height) / 2, source.surface.top);
+	}
+});
+
+test("compact pickup stays near the final size at the pointer for every grab point", () => {
+	const target = {
+		surface: { left: -66, top: -22, width: 132, height: 44 },
+		identity: { left: -58, top: -16, width: 32, height: 32 },
+	};
+	for (const [width, height] of [[270, 60], [560, 160], [120, 40]]) {
+		const source = {
+			surface: { left: 29, top: 280, width, height },
+			identity: { left: 41, top: 294, width: 32, height: 32 },
+		};
+		for (const pointer of [{ x: 100, y: 310 }, { x: 600, y: 380 }]) {
+			const morph = resolveSessionDragMorph(sessionDragGeometryRelativeToPointer(source, pointer), target, "compact");
+			assert.equal(morph.x, 0, "right-side pickups cannot slide the whole chip across from the source avatar");
+			assert.equal(morph.y, 0);
+			assert.ok(Math.abs(target.surface.width * morph.scaleX - Math.min(width, target.surface.width * 1.4)) < 0.001);
+			assert.ok(Math.abs(target.surface.height * morph.scaleY - Math.min(height, target.surface.height * 1.4)) < 0.001);
+			assert.equal(morph.identityX, 0, "the smaller surface starts with the identity already inset");
+			assert.equal(morph.identityY, 0);
+		}
 	}
 });
 
@@ -139,7 +188,7 @@ test("surface and identity measurements reject missing or collapsed geometry", (
 	}
 });
 
-test("each avatar starts at its own captured source box for every grab point", () => {
+test("each avatar preserves its captured source composition inside the chip for every grab point", () => {
 	const source = {
 		surface: { left: 29, top: 280, width: 270, height: 60 },
 		identity: { left: 41, top: 294, width: 32, height: 32 },
@@ -158,11 +207,10 @@ test("each avatar starts at its own captured source box for every grab point", (
 	};
 	for (const pointer of [{ x: 118, y: 345 }, { x: 282, y: 333 }, { x: 282, y: 363 }]) {
 		const captured = sessionDragGeometryRelativeToPointer(source, pointer);
-		const parent = resolveSessionDragMorph(captured, target);
 		for (const role of ["human", "agent"]) {
-			const avatar = resolveSessionDragAvatarMorph(captured.avatars[role], target.avatars[role], parent);
-			assert.equal(pointer.x + target.avatars[role].left + parent.x + parent.identityX + avatar.x, source.avatars[role].left);
-			assert.equal(pointer.y + target.avatars[role].top + parent.y + parent.identityY + avatar.y, source.avatars[role].top);
+			const avatar = resolveSessionDragAvatarMorph(captured.avatars[role], target.avatars[role], captured.identity, target.identity);
+			assert.equal(target.avatars[role].left + avatar.x - target.identity.left, source.avatars[role].left - source.identity.left);
+			assert.equal(target.avatars[role].top + avatar.y - target.identity.top, source.avatars[role].top - source.identity.top);
 			assert.equal(target.avatars[role].width * avatar.scaleX, source.avatars[role].width);
 		}
 	}
@@ -183,18 +231,62 @@ test("both drag hosts mark an identity for the chip to fly out of", () => {
 	);
 });
 
-test("the normal avatar transformation uses the slower in-place token pair", () => {
-	// duration-slower + ease-in-out keeps the requested composition change readable.
-	assert.deepEqual(SESSION_DRAG_CHIP_ENTER_TRANSITION, {
-		duration: 0.4,
-		ease: [0.4, 0, 0, 1],
-	});
+test("Motion pickup shares one 400ms timeline and restores styles on completion and cancellation", async () => {
+	for (const cancelEarly of [false, true]) {
+		const style = () => ({ transform: "", borderRadius: "", transformOrigin: "center", opacity: "", willChange: "opacity" });
+		const element = (rect) => ({ style: style(), getBoundingClientRect: () => rect });
+		const faces = [element({}), element({}), element({})];
+		const label = element({});
+		const agent = element({ left: 122, top: 214, width: 16, height: 16 });
+		const human = element({ left: 110, top: 214, width: 16, height: 16 });
+		const identity = { ...element({ left: 108, top: 206, width: 32, height: 32 }), querySelector: (selector) => selector.includes('"agent"') ? agent : human };
+		const pill = { ...element({ left: 100, top: 200, width: 132, height: 44 }), querySelector: (selector) => selector.includes("surface") ? faces[0] : selector.includes("identity") ? identity : label };
+		const follower = { ...element({ left: 166, top: 222 }), querySelector: () => pill, querySelectorAll: () => faces };
+		const source = { surface: { left: 0, top: 0, width: 270, height: 60 }, identity: { left: 12, top: 14, width: 32, height: 32 },
+			avatars: { agent: { left: 13, top: 15, width: 30, height: 30 }, human: { left: 30, top: 32, width: 16, height: 16 } } };
+		const moving = [...faces, agent, human, label];
+		const previous = moving.map((node) => ({ ...node.style }));
+		let resolveFinished;
+		let cancelled = 0;
+		let completed = 0;
+		const calls = [];
+		const playback = { finished: new Promise((resolve) => { resolveFinished = resolve; }), cancel: () => { cancelled++; } };
+		const loaded = { exports: {} };
+		runInNewContext(ts.transpileModule(PICKUP_SOURCE, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, {
+			module: loaded, exports: loaded.exports, getComputedStyle: () => ({ borderTopLeftRadius: "8px" }),
+			require: (name) => {
+				if (name === "motion") return { animate: (sequence, options) => { calls.push({ sequence, options }); return playback; } };
+				if (name === "./agent-session-drag-motion") return require("./agent-session-drag-motion.ts");
+				throw new Error(`Unexpected import ${name}`);
+			},
+		});
+		const cleanup = loaded.exports.startSessionDragMotionPickup(follower, source, () => { completed++; });
+		assert.equal(completed, 0, "carry cannot start before playback finishes");
+		assert.equal(calls.length, 1);
+		const { sequence, options } = calls[0];
+		assert.equal(sequence.length, 4);
+		assert.deepEqual([...sequence[0][0]], faces, "every background/light face belongs to the same segment");
+		for (const segment of sequence) assert.equal(segment[2].at, 0);
+		assert.deepEqual(options.defaultTransition, { duration: 0.4, ease: [0.4, 0, 0, 1] });
+		for (const face of faces) assert.equal(face.style.transform, "scale(1.4, 1.3636363636363635)");
+		if (cancelEarly) cleanup();
+		resolveFinished();
+		await Promise.resolve();
+		assert.equal(completed, cancelEarly ? 0 : 1, "a cancelled pickup cannot enable carry later");
+		if (!cancelEarly) {
+			for (const node of moving) assert.equal(node.style.willChange, "");
+			cleanup();
+		}
+		assert.equal(cancelled, 1);
+		moving.forEach((node, index) => assert.deepEqual(node.style, previous[index]));
+	}
+	assert.doesNotMatch(PICKUP_SOURCE + OVERLAY_SOURCE, /setKeyframes|updateTiming|resolveSessionDragSurfaceRadii/u);
 });
 
 test("paper keeps its fast entrance independent of the slower avatar transformation", () => {
 	assert.equal(SESSION_PEEL_CHIP_ENTER_TRANSITION.duration, 0.1);
 	assert.deepEqual(SESSION_PEEL_CHIP_ENTER_TRANSITION.ease, [0.4, 1, 0.6, 1]);
-	assert.equal(SESSION_DRAG_CHIP_ENTER_TRANSITION.duration, 0.4);
+	assert.deepEqual(SESSION_DRAG_CHIP_ENTER_TRANSITION, { duration: 0.4, ease: [0.4, 0, 0, 1] });
 });
 
 test("the origin is captured on pointerdown and cleared on both drag endings", () => {

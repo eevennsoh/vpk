@@ -130,12 +130,8 @@ export function JiraKanbanBoardHeader({
 					<InputGroupInput aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
 				</InputGroup>
 
-				{/* Facepile stacks leftmost-on-top: keep DOM order (so tab order matches
-				    left→right visual order) and assign descending z-index instead. `isolate`
-				    contains these low z-indexes; `[&>*]:relative` is required because the
-				    face <button> wrappers are position:static, where z-index is inert. */}
 				<AvatarGroup
-					className="ml-1 -space-x-1.5 isolate [&>*]:relative [&>*:nth-child(1)]:z-[7] [&>*:nth-child(2)]:z-[6] [&>*:nth-child(3)]:z-[5] [&>*:nth-child(4)]:z-[4] [&>*:nth-child(5)]:z-[3] [&>*:nth-child(6)]:z-[2] [&>*:nth-child(7)]:z-[1]"
+					className="ml-1 -space-x-1.5"
 					label={`${surfaceTitle} assignees`}
 				>
 					<AvatarUnassigned kind="person" label="Unassigned" size="sm" />

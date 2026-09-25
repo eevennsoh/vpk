@@ -4,6 +4,42 @@ const JIRA_TEAM_EU26_URL = (
 	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
 ) + "/jira-team-eu26";
 
+test.use({ ignoreHTTPSErrors: true });
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`avatar groups keep the leftmost face in front (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+		const row = page.locator("[data-agent-session-column] article")
+			.filter({ hasText: "Keep or delete the adapter finished in a local agent session" }).first();
+		if (!await row.isVisible()) {
+			await page.getByRole("button", { name: "Expand Unlink sessions column", exact: true }).click();
+		}
+		await row.locator("[data-agent-list-title]").hover();
+		const sessionGroup = page.getByRole("group", { name: "Claude, used by Priya Raman", exact: true }).last();
+		await expect(sessionGroup).toBeVisible();
+
+		for (const group of [sessionGroup, page.getByRole("group", { name: "Board assignees", exact: true })]) {
+			await group.locator('[data-slot="avatar"]').last().hover();
+			await expect.poll(() => group.evaluate((element) => {
+				const faces = Array.from(element.children);
+				return faces.slice(0, -1).every((face, index) => {
+					const left = face.getBoundingClientRect();
+					const right = faces[index + 1].getBoundingClientRect();
+					const x = (right.left + left.right) / 2;
+					const y = left.top + left.height / 2;
+					const topFace = document.elementsFromPoint(x, y).find((hit) =>
+						faces.some((candidate) => candidate === hit || candidate.contains(hit)),
+					);
+					return left.left < right.left && right.left < left.right
+						&& topFace !== undefined && (topFace === face || face.contains(topFace));
+				});
+			})).toBe(true);
+		}
+	});
+}
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`session row backgrounds follow rapid hover without fading (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
