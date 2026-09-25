@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Avatar, AvatarFallback, AvatarImage, type AvatarProps, type AvatarStatus } from "@/components/ui/avatar";
 import { AtlassianLogo, RovoColorIcon, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import { getCodingAgentLogoFrame, getCodingAgentVisual } from "@/components/ui-custom/agent-avatar-coding-appearance";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ const PX_TO_INSET_IMAGE_CLASS_NAME: Record<number, string> = {
 
 /** Pixel footprints between Avatar tokens retain their exact outer frame. */
 const PX_TO_AVATAR_FRAME_CLASS_NAME: Partial<Record<number, string>> = {
+	20: "size-5",
 	30: "size-7.5",
 };
 
@@ -80,6 +82,8 @@ export interface AgentAvatarVisualProps {
 	logoName?: AtlassianLogoName;
 	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
 	brandName?: ThirdPartyLogoName;
+	/** Opt into coding-brand canvases and the local Codex/Cursor artwork. */
+	appearance?: "default" | "coding";
 	label?: string;
 	/** Square pixel size for both the image and the logo. */
 	sizePx: number;
@@ -106,8 +110,8 @@ export interface AgentAvatarVisualProps {
  * External marks sit on a themed `--ds-surface` backdrop rather than a hardcoded
  * white one, so the hexagon follows light/dark. Monochrome near-black glyphs are
  * inverted for contrast by the logo components themselves — this file must NOT
- * add its own inversion, because CSS filters on nested elements compose and a
- * second `invert` would return the glyph to near-black.
+ * add a wrapper inversion, because nested filters compose. The coding appearance
+ * paints fixed brand canvases and recolors only glyph leaves when white is needed.
  */
 export function AgentAvatarVisual({
 	avatarSrc,
@@ -115,6 +119,7 @@ export function AgentAvatarVisual({
 	vpkLogo,
 	logoName,
 	brandName,
+	appearance = "default",
 	label,
 	sizePx,
 	inset = false,
@@ -133,15 +138,20 @@ export function AgentAvatarVisual({
 	const isExternalAgent = isSecondPartyAgent || isThirdPartyAgent;
 	const hasWhiteBackdrop = isExternalAgent || logoName === "atlassian" || Boolean(vpkLogo);
 	const shouldInsetImage = inset || isExternalAgent;
-	const insetImageClassName = PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
+	// Keep partner marks at the previous 50% ratio when the avatar is 32px.
+	const insetImageClassName = isSecondPartyAgent && sizePx === 32 ? "size-4" : PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
 	const insetLogoSize = PX_TO_INSET_LOGO_SIZE[sizePx] ?? PX_TO_LOGO_SIZE[sizePx] ?? "xxsmall";
-	const externalLogoSize = PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
+	const codingVisual = appearance === "coding" ? getCodingAgentVisual(brandName) : undefined;
+	const codingLogoFrame = codingVisual ? getCodingAgentLogoFrame(sizePx) : undefined;
+	const externalLogoSize = codingLogoFrame?.size ?? PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
 	// The Rovo gem is authored at 16×16 (`ROVO_LOGO_VIEWBOX`). Hexagon avatars
 	// keep that native mark so a tile/circle size token cannot enlarge it.
 	const visual = vpkLogo === "rovo" ? (
 		<RovoColorIcon label="" size="xxsmall" />
 	) : logoName ? (
 		<AtlassianLogo label="" name={logoName} size={insetLogoSize} themeAware />
+	) : codingVisual?.logoSrc ? (
+		<AvatarImage alt="" className={cn(codingLogoFrame?.className ?? (externalLogoSize === "xxsmall" ? "size-4" : "size-6"), codingVisual.logoClassName, "object-contain")} src={codingVisual.logoSrc} />
 	) : brandName ? (
 		<LogoThirdParty borderless label="" name={brandName} size={externalLogoSize} />
 	) : avatarSrc ? (
@@ -170,10 +180,11 @@ export function AgentAvatarVisual({
 		>
 			{hasWhiteBackdrop ? (
 				<span
-					// Claude's upstream starburst fill becomes its avatar background.
-					style={brandName === "claude" ? { backgroundColor: "#d97757" } : undefined}
+					aria-hidden="true"
+					// Fixed brand canvases are independent of the surrounding theme.
+					style={{ backgroundColor: codingVisual?.backgroundColor ?? (brandName === "claude" ? "#d97757" : undefined) }}
 					className={cn("flex size-full items-center justify-center bg-surface",
-						brandName === "claude" ? "[&_svg]:brightness-0 [&_svg]:invert" : undefined)}>{visual}</span>
+						brandName === "claude" || codingVisual?.whiteGlyph ? "[&_svg]:brightness-0 [&_svg]:invert [&_img]:brightness-0 [&_img]:invert" : undefined)}>{visual}</span>
 			) : (
 				visual
 			)}

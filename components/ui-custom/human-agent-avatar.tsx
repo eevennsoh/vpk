@@ -25,7 +25,7 @@ export type HumanAgentAvatarOrder = "agent-first" | "human-first";
 export interface HumanAgentAvatarProps {
 	agent: Pick<
 		AgentAvatarVisualProps,
-		"avatarSrc" | "brandName" | "logoName" | "vpkLogo" | "fallbackText"
+		"avatarSrc" | "brandName" | "logoName" | "vpkLogo" | "fallbackText" | "appearance"
 	> & { name: string };
 	human: { name: string; avatarSrc?: string };
 	/** Swap the human and agent, hold, then return. Static by default. */

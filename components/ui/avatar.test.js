@@ -5,6 +5,7 @@ const test = require("node:test");
 const { humanAgentAvatarGeometry, humanAgentAvatarPositions } = require("../ui-custom/human-agent-avatar-geometry.ts");
 const { isAvatarOverlayType } = require("./avatar-overlay.ts");
 const { humanAgentAvatarSizeSwapProgress } = require("../ui-custom/human-agent-avatar-motion-config.ts");
+const { getCodingAgentLogoFrame, getCodingAgentVisual } = require("../ui-custom/agent-avatar-coding-appearance.ts");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 
@@ -19,6 +20,36 @@ const AGENT_AVATAR_VISUAL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "ui-custom", "agent-avatar-visual.tsx"),
 	"utf8",
 );
+
+test("coding agent appearance preserves local artwork and the requested brand canvases", () => {
+	assert.deepEqual(getCodingAgentVisual("claude"), { backgroundColor: "#d97757", whiteGlyph: true });
+	assert.deepEqual(getCodingAgentVisual("openai-codex"), { logoSrc: "/3p/openai-codex/24.svg", logoClassName: "scale-125" });
+	assert.deepEqual(getCodingAgentVisual("cursor"), { logoSrc: "/3p/cursor/24.svg", backgroundColor: "#14120B" });
+	assert.deepEqual(getCodingAgentVisual("github-copilot"), { backgroundColor: "#000000", whiteGlyph: true });
+	assert.equal(getCodingAgentVisual("slack"), undefined);
+	assert.equal(getCodingAgentVisual(undefined), undefined);
+	for (const name of ["cursor", "openai-codex"]) {
+		assert.ok(fs.existsSync(path.join(process.cwd(), "public", getCodingAgentVisual(name).logoSrc)));
+	}
+});
+
+test("coding agents have a registered avatar demo and opt into the coding appearance", () => {
+	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoCodingAgents\(\)/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AgentAvatarVisual appearance="coding" brandName=\{brandName\}/);
+	assert.match(AVATAR_DETAILS_SOURCE, /title: "Coding agents"/);
+	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-coding-agents"/);
+	assert.match(REGISTRY_SOURCE, /default: mod\.AvatarDemoCodingAgents/);
+	for (const brand of ["claude", "openai-codex", "github-copilot", "cursor"]) {
+		assert.ok(AVATAR_DEMO_SOURCE.includes(`<AgentAvatarVisual appearance="coding" brandName="${brand}"`));
+	}
+});
+
+test("coding logo frames enlarge the marks without changing compact avatar sizes", () => {
+	assert.deepEqual(getCodingAgentLogoFrame(32), { size: "small", className: "size-6" });
+	assert.deepEqual(getCodingAgentLogoFrame(40), { size: "medium", className: "size-8" });
+	assert.deepEqual(getCodingAgentLogoFrame(48), { size: "large", className: "size-10" });
+	for (const size of [12, 16, 20, 24, 30]) assert.equal(getCodingAgentLogoFrame(size), undefined);
+});
 
 test("avatar overlay recognition survives refreshed function identities and minification", () => {
 	for (const name of ["AvatarBadge", "AvatarCompanyBadge", "AvatarProjectBadge", "AvatarPresenceIndicator", "AvatarStatusIndicator"]) {
@@ -386,7 +417,7 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 
 test("avatar docs demonstrate Rovo, 1P, 2P, and 3P agent tiers", () => {
 	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoAgentTiers\(\)/);
-	assert.match(AVATAR_DEMO_SOURCE, /label: "Rovo"[\s\S]*<AgentAvatarVisual label="Rovo agent" sizePx=\{40\} vpkLogo="rovo"/);
+	assert.match(AVATAR_DEMO_SOURCE, /label: "Rovo"[\s\S]*<AgentAvatarVisual label="Rovo agent" sizePx=\{32\} vpkLogo="rovo"/);
 	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/avatar-agent\/teamwork-agents\/customer-insights\.svg"/);
 	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/2p\/appfire\.png"/);
 	assert.match(AVATAR_DEMO_SOURCE, /brandName="slack"/);

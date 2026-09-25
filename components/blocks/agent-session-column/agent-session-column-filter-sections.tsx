@@ -203,6 +203,7 @@ export function AgentFilterRow({
 						type="button"
 					>
 						<AgentAvatarVisual
+							appearance="coding"
 							avatarClassName={cn(
 								selected && "[&>svg]:text-border-selected!",
 								hasSelection && !selected && "opacity-(--opacity-disabled)",

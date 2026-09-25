@@ -25,6 +25,19 @@ function loadDragChipHarness() {
 						AgentSessionDragPill,
 					} from "./components/blocks/agent-session/agent-session-drag-chip.tsx";
 					import { AgentSessionCohortChip } from "./components/blocks/agent-session/agent-session-cohort-chip.tsx";
+					import { AgentListIdentity } from "./components/blocks/agent-list/agent-list-identity.tsx";
+					import { AgentAvatarVisual } from "./components/ui-custom/agent-avatar-visual.tsx";
+
+					export function agentImageClassName(props) {
+						const avatar = AgentAvatarVisual(props);
+						const backdrop = React.Children.toArray(avatar.props.children)[0];
+						const imageAndFallback = backdrop.props.children;
+						return React.Children.toArray(imageAndFallback.props.children)[0].props.className;
+					}
+
+					export function renderIdentity(props) {
+						return renderToStaticMarkup(React.createElement(AgentListIdentity, props));
+					}
 
 					export function renderChip(props) {
 						return renderToStaticMarkup(React.createElement(AgentSessionDragChip, props));
@@ -146,15 +159,36 @@ test("an elevated pill paints the overlay surface; a resting one stays flat", as
 
 	// The fill is the semantic class, per `.agents/rules/token-priority.md`;
 	// only the shadow has no Tailwind mapping and stays inline.
-	assert.match(elevated, /bg-surface/u);
-	assert.match(elevated, /box-shadow:/u);
-	assert.doesNotMatch(elevated, /background-color:/u);
-	assert.doesNotMatch(elevated, /bg-bg-neutral/u);
+	const elevatedSurface = openTag(elevated, "data-session-drag-surface");
+	assert.match(elevatedSurface, /bg-surface/u);
+	assert.match(elevatedSurface, /box-shadow:/u);
+	assert.doesNotMatch(elevatedSurface, /background-color:/u);
+	assert.doesNotMatch(elevatedSurface, /bg-bg-neutral/u);
 
 	// jira-dropzone's in-flow chip is not travelling, so it must not sprout an
 	// overlay shadow on the page.
-	assert.match(resting, /bg-bg-neutral/u);
-	assert.doesNotMatch(resting, /box-shadow:/u);
+	const restingSurface = openTag(resting, "data-session-drag-surface");
+	assert.match(restingSurface, /bg-bg-neutral/u);
+	assert.doesNotMatch(restingSurface, /box-shadow:/u);
+});
+
+test("coding appearance reaches both plain and human-attributed session identities", async () => {
+	const harness = await loadDragChipHarness();
+	for (const attributedBy of [undefined, ANNIE]) {
+		const props = { agent: { name: "Cursor", brandName: "cursor" }, attributedBy, attributionOrder: "agent-first", sizePx: 32 };
+		const coding = harness.renderIdentity({ ...props, appearance: "coding" });
+		const standard = harness.renderIdentity(props);
+		assert.match(coding, /background-color:#14120B/u);
+		assert.doesNotMatch(standard, /background-color:#14120B/u);
+		if (attributedBy) assert.match(coding, /data-slot="human-agent-avatar"/u);
+	}
+});
+
+test("32px partner avatars retain the previous balanced 50 percent image inset", async () => {
+	const harness = await loadDragChipHarness();
+	// Base UI delays images until they load; inspect the real image props before that lifecycle.
+	assert.equal(harness.agentImageClassName({ avatarSrc: "/2p/appfire.png", sizePx: 32 }), "size-4 object-contain");
+	assert.equal(harness.agentImageClassName({ avatarSrc: "/2p/appfire.png", sizePx: 40 }), "size-5 object-contain");
 });
 
 test("a session with no invoker degrades to the agent mark and its name alone", async () => {

@@ -2,6 +2,14 @@ const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
+const { getJiraIssueAgentAvatarSize } = require("./agent-activity-avatar.ts");
+
+test("the Claude chin restores a compact footprint without resizing other brands", () => {
+	assert.equal(getJiraIssueAgentAvatarSize("claude"), 20);
+	for (const brand of ["cursor", "openai-codex", "github-copilot", undefined]) {
+		assert.equal(getJiraIssueAgentAvatarSize(brand), 24);
+	}
+});
 
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
 const AGENT_ACTIVITY_PRESENTATION_SOURCE = readFileSync(

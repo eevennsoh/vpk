@@ -36,6 +36,7 @@ import type {
 	JiraIssueAgentActivityAvatarLayout,
 	JiraIssueAgentActivityIndicatorRenderer,
 } from "./agent-activity";
+import { getJiraIssueAgentAvatarSize } from "./agent-activity-avatar";
 
 export type JiraIssueAgentAssignment = Partial<
 	Pick<
@@ -329,7 +330,7 @@ export function JiraIssueAgentRowContent({
 					vpkLogo={featuredActivity.agentVpkLogo}
 					fallbackText={getAgentInitial(featuredActivity.name)}
 					label={featuredActivity.name}
-					sizePx={24}
+					sizePx={getJiraIssueAgentAvatarSize(featuredActivity.agentBrandName)}
 				/>
 			</span>
 		);
@@ -349,7 +350,7 @@ export function JiraIssueAgentRowContent({
 						fallbackText={getAgentInitial(activity.name)}
 						key={activity.id}
 						label=""
-						sizePx={24}
+						sizePx={getJiraIssueAgentAvatarSize(activity.agentBrandName)}
 					/>
 				))}
 			</AvatarGroup>

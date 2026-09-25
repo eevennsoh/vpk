@@ -485,44 +485,62 @@ export function AvatarDemoShapes() {
 
 export function AvatarDemoAgentTiers() {
 	return (
-		<div className="flex flex-wrap items-center gap-6">
+		<div className="flex flex-wrap items-center gap-6" data-agent-avatar-tiers>
 			{[
 				{
 					label: "Rovo",
-					avatar: <AgentAvatarVisual label="Rovo agent" sizePx={40} vpkLogo="rovo" />,
+					avatar: <AgentAvatarVisual label="Rovo agent" sizePx={32} vpkLogo="rovo" />,
 				},
 				{
 					label: "1P",
-					avatar: <AgentAvatarVisual avatarSrc="/avatar-agent/teamwork-agents/customer-insights.svg" label="Atlassian agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual avatarSrc="/avatar-agent/teamwork-agents/customer-insights.svg" label="Atlassian agent" sizePx={32} />,
 				},
 				{
 					label: "2P",
-					avatar: <AgentAvatarVisual avatarSrc="/2p/appfire.png" label="Appfire agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual avatarSrc="/2p/appfire.png" label="Appfire agent" sizePx={32} />,
 				},
 				{
 					label: "3P",
-					avatar: <AgentAvatarVisual brandName="slack" label="Slack agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual brandName="slack" label="Slack agent" sizePx={32} />,
 				},
 				{
 					label: "Claude",
-					avatar: <AgentAvatarVisual brandName="claude" label="Claude agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual appearance="coding" brandName="claude" label="Claude agent" sizePx={32} />,
 				},
 				{
 					label: "Cursor",
-					avatar: <AgentAvatarVisual brandName="cursor" label="Cursor agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual appearance="coding" brandName="cursor" label="Cursor agent" sizePx={32} />,
 				},
 				{
 					label: "Codex",
-					avatar: <AgentAvatarVisual brandName="openai-codex" label="Codex agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual appearance="coding" brandName="openai-codex" label="Codex agent" sizePx={32} />,
 				},
 				{
 					label: "GitHub Copilot",
-					avatar: <AgentAvatarVisual brandName="github-copilot" label="GitHub Copilot agent" sizePx={40} />,
+					avatar: <AgentAvatarVisual appearance="coding" brandName="github-copilot" label="GitHub Copilot agent" sizePx={32} />,
 				},
 			].map(({ avatar, label }) => (
 				<div className="flex flex-col items-center gap-1.5" key={label}>
 					{avatar}
 					<span className="text-xs text-text-subtle">{label}</span>
+				</div>
+			))}
+		</div>
+	);
+}
+
+export function AvatarDemoCodingAgents() {
+	return (
+		<div className="flex flex-wrap items-center justify-center gap-6" data-coding-agent-avatars>
+			{([
+				{ name: "Claude", brandName: "claude" },
+				{ name: "Codex", brandName: "openai-codex" },
+				{ name: "GitHub Copilot", brandName: "github-copilot" },
+				{ name: "Cursor", brandName: "cursor" },
+			] as const).map(({ name, brandName }) => (
+				<div className="flex flex-col items-center gap-1.5" key={brandName}>
+					<AgentAvatarVisual appearance="coding" brandName={brandName} label={`${name} coding agent`} sizePx={32} />
+					<span className="text-xs text-text-subtle">{name}</span>
 				</div>
 			))}
 		</div>
