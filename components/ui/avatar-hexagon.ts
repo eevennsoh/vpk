@@ -1,9 +1,11 @@
 export const AVATAR_HEXAGON_REFERENCE_SIZE = 24;
-export const AVATAR_HEXAGON_REFERENCE_RADIUS = 6;
-const RADIUS_RATIO = AVATAR_HEXAGON_REFERENCE_RADIUS / AVATAR_HEXAGON_REFERENCE_SIZE;
+export const AVATAR_HEXAGON_REFERENCE_RADIUS = 4;
+// The 24px / 4px and 32px / 6px anchors add 2px of radius per 8px of size.
+const RADIUS_RATIO = (6 - AVATAR_HEXAGON_REFERENCE_RADIUS) / (32 - AVATAR_HEXAGON_REFERENCE_SIZE);
+const RADIUS_OFFSET = AVATAR_HEXAGON_REFERENCE_RADIUS - AVATAR_HEXAGON_REFERENCE_SIZE * RADIUS_RATIO;
 
 export function avatarHexagonCornerRadius(sizePx: number) {
-	return sizePx * RADIUS_RATIO;
+	return sizePx * RADIUS_RATIO + RADIUS_OFFSET;
 }
 
 const CORNERS = [
@@ -17,11 +19,11 @@ const CORNERS = [
 
 const round = (value: number) => Math.round(value * 1_000_000) / 1_000_000;
 
-/** Corners scale with the square; pixel terms preserve border and separator widths. */
+/** Percent and pixel terms preserve both radius anchors, borders, and separators. */
 export function avatarHexagonPoints(inset = 0, outset = 0) {
 	return CORNERS.flatMap(([x, y, start]) => Array.from({ length: 7 }, (_, step) => {
 		const angle = (start + step * 10) * Math.PI / 180;
-		const correction = outset * (1 - 2 * RADIUS_RATIO);
+		const correction = RADIUS_OFFSET + outset * (1 - 2 * RADIUS_RATIO);
 		return {
 			xPercent: round((0.5 + x * (1 - 2 * RADIUS_RATIO) + Math.cos(angle) * RADIUS_RATIO) * 100),
 			yPercent: round((0.5 + y * (1 - 2 * RADIUS_RATIO) + Math.sin(angle) * RADIUS_RATIO) * 100),

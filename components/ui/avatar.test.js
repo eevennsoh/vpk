@@ -139,7 +139,7 @@ test("AvatarUnassigned exposes grey person and agent avatar states", () => {
 
 test("hexagon avatars clip an inner frame so corner overlays render unclipped", () => {
 	assert.equal(AVATAR_HEXAGON_REFERENCE_SIZE, 24);
-	assert.equal(AVATAR_HEXAGON_REFERENCE_RADIUS, 6);
+	assert.equal(AVATAR_HEXAGON_REFERENCE_RADIUS, 4);
 	assert.match(AVATAR_SOURCE, /const HEXAGON_CLIP = avatarHexagonClip\(\)/);
 	assert.match(AVATAR_SOURCE, /hexagon: "isolate overflow-visible after:border-0"/);
 	assert.doesNotMatch(AVATAR_SOURCE, /hexagon: `\$\{HEXAGON_CLIP\} after:border-0`/);
@@ -159,9 +159,8 @@ test("hexagon avatars clip an inner frame so corner overlays render unclipped", 
 	assert.match(AVATAR_SOURCE, /data-slot="avatar-hexagon-artwork"[\s\S]*?<AvatarHexagonBorder \/>\s*<\/span>/);
 });
 
-test("hexagon corners scale from 6px at 24px while borders remain 1px inset", () => {
-	for (const size of [12, 16, 20, 24, 30, 32, 40, 48, 96]) {
-		const radius = size / 4;
+test("hexagon corners scale through 4px at 24px and 6px at 32px while borders remain 1px inset", () => {
+	for (const [size, radius] of [[12, 1], [16, 2], [20, 3], [24, 4], [30, 5.5], [32, 6], [40, 8], [48, 10], [96, 22]]) {
 		assert.equal(avatarHexagonCornerRadius(size), radius);
 		for (const inset of [0, 1]) {
 			const points = avatarHexagonPoints(inset);
