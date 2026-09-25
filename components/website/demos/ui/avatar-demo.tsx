@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { avatarHexagonCornerRadius } from "@/components/ui/avatar-hexagon";
 
 const PRIMARY_AVATAR_SRC = "/avatar-user/venn/venn.png";
 const BADGE_ICON_AVATAR_SRC = "/avatar-user/ali/color/asow-teamwork-blue.png";
@@ -22,6 +23,11 @@ const AVATAR_GROUP_SIZES = [
 	{ label: "24px", size: "sm", sizePx: 24 },
 	{ label: "32px", size: "default", sizePx: 32 },
 	{ label: "40px", size: "lg", sizePx: 40 },
+] as const;
+const ALL_AVATAR_SIZES = [
+	...AVATAR_GROUP_SIZES,
+	{ size: "xl", sizePx: 48 },
+	{ size: "2xl", sizePx: 96 },
 ] as const;
 const HUMAN_GROUP_AVATARS = [
 	{ alt: "Team member", fallback: "CN", src: PRIMARY_AVATAR_SRC },
@@ -619,48 +625,29 @@ export function AvatarDemoProject() {
 
 export function AvatarDemoAllSizes() {
 	return (
-		<div className="flex flex-wrap items-end gap-3">
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="xs">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="xs" />
-					<AvatarFallback>XS</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">xs</span>
+		<div className="flex w-full flex-col items-center gap-8">
+			<div className="flex flex-wrap items-end justify-center gap-6" role="group" aria-label="Human avatar sizes">
+				{ALL_AVATAR_SIZES.map(({ size, sizePx }) => (
+					<div className="flex flex-col items-center gap-1" key={size}>
+						<Avatar size={size}>
+							<AvatarImage src={PRIMARY_AVATAR_SRC} alt={`Human avatar, ${size}, ${sizePx}px`} />
+							<AvatarFallback>{size === "default" ? "DF" : size === "2xl" ? "2X" : size.toUpperCase()}</AvatarFallback>
+						</Avatar>
+						<span className="text-xs text-text-subtle">{size} · {sizePx}px</span>
+					</div>
+				))}
 			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="sm">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="sm" />
-					<AvatarFallback>SM</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">sm</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="default">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="default" />
-					<AvatarFallback>DF</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">default</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="lg">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="lg" />
-					<AvatarFallback>LG</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">lg</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="xl">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="xl" />
-					<AvatarFallback>XL</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">xl</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar size="2xl">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="2xl" />
-					<AvatarFallback>2X</AvatarFallback>
-				</Avatar>
-				<span className="text-xs text-text-subtle">2xl</span>
+			<div className="flex flex-wrap items-end justify-center gap-6" role="group" aria-label="Agent avatar sizes and corner radii">
+				{ALL_AVATAR_SIZES.map(({ size, sizePx }) => (
+					<div className="flex flex-col items-center gap-1" key={size}>
+						<Avatar shape="hexagon" size={size} label={`Agent avatar, ${size}, ${sizePx}px`}>
+							<AvatarImage src={AGENT_AVATAR_SRC} alt="" />
+							<AvatarFallback>CP</AvatarFallback>
+						</Avatar>
+						<span className="text-xs text-text-subtle">{size} · {sizePx}px</span>
+						<span className="text-xs text-text-subtlest">Corner radius {avatarHexagonCornerRadius(sizePx)}px</span>
+					</div>
+				))}
 			</div>
 		</div>
 	);
