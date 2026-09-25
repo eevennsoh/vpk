@@ -283,6 +283,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-verify/scripts/verify-feature-map.test.js",
 	],
 	"source-contract": [
+		"components/website/registry/blocks-variants.test.js",
 		"components/blocks/agent-insights/agent-insights.test.js",
 		"components/visual/scroll-mask/lib.test.ts",
 		"components/visual/card-glow/card-glow.test.js",
