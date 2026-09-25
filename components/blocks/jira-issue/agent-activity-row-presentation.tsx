@@ -68,6 +68,7 @@ function toAgentLoadingAgent(activity: JiraIssueAgentActivity): AgentLoadingAgen
 		name: activity.name,
 		status: activity.state === "completed" ? "finished" : "working",
 		avatar: {
+			appearance: "coding",
 			...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 			...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
 			...(activity.agentVpkLogo ? { vpkLogo: activity.agentVpkLogo } : {}),
@@ -323,6 +324,7 @@ export function JiraIssueAgentRowContent({
 		avatar = (
 			<span className="grid size-6 shrink-0 place-items-center">
 				<AgentAvatarVisual
+					appearance="coding"
 					animate={false}
 					avatarClassName="shrink-0"
 					avatarSrc={featuredActivity.avatarSrc}
@@ -343,6 +345,7 @@ export function JiraIssueAgentRowContent({
 			>
 				{activities.map((activity) => (
 					<AgentAvatarVisual
+						appearance="coding"
 						animate={false}
 						avatarSrc={activity.avatarSrc}
 						brandName={activity.agentBrandName}

@@ -139,13 +139,13 @@ for (const variant of [
 			expect(leaf!.height).toBe(variant.agent);
 			expect(await avatar.locator('[data-slot="avatar-hexagon-artwork"]').evaluate(el => getComputedStyle(el).clipPath)).toMatch(/^polygon\(/);
 			await expect(avatar.locator("clipPath")).toHaveCount(0);
-			await expect(avatar.locator('[data-avatar-role="agent"] polygon')).toHaveCount(1);
+			await expect(avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-border"]')).toHaveCount(1);
 			await expect(avatar.locator('[data-slot="avatar-hexagon-separator"]')).toHaveCount(0);
 			await expect(avatar.locator('[data-avatar-role="human"] [data-slot="avatar-circle-border"] circle')).toHaveCSS("stroke-width", "2px");
-			const border = avatar.locator('[data-avatar-role="agent"] polygon').locator('..');
+			const border = avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-border"]');
 			await expect(border).toHaveCSS("padding", "0px");
 			await expect(border.locator("..")).toHaveAttribute("data-slot", "avatar-hexagon-artwork");
-			await expect(border.locator("polygon")).toHaveAttribute("stroke-width", "2");
+			await expect(border).toHaveCSS("clip-path", /^polygon\(evenodd,/);
 			expect(await border.boundingBox()).toEqual(leaf);
 			await avatar.screenshot({ path: `output/agent-browser/human-agent-avatar/figma-${variant.size}-${viewport.width}.png` });
 		}
@@ -176,7 +176,7 @@ test("human-first gives the human the main footprint and the agent the badge foo
 		await avatar.scrollIntoViewIfNeeded();
 		const separator = avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-separator"]');
 		await expect(separator).toHaveCount(1);
-		await expect(separator.locator("polygon")).toHaveAttribute("stroke-width", "4");
+		await expect(separator).toHaveCSS("clip-path", /^polygon\(/);
 		await expect(separator).toHaveCSS("color", "rgb(255, 255, 255)");
 		expect(await geometry(avatar)).toEqual({
 			size: 32,

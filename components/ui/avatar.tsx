@@ -18,14 +18,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { Icon } from "@/components/ui/icon"
 import { isAvatarOverlayType } from "@/components/ui/avatar-overlay"
+import { avatarHexagonBorderClip, avatarHexagonClip } from "@/components/ui/avatar-hexagon"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
-const HEXAGON_CLIP =
-	"[clip-path:polygon(45%_1.34%,46.58%_0.6%,48.26%_0.15%,50%_0%,51.74%_0.15%,53.42%_0.6%,55%_1.34%,89.64%_21.34%,91.07%_22.34%,92.3%_23.57%,93.3%_25%,94.04%_26.58%,94.49%_28.26%,94.64%_30%,94.64%_70%,94.49%_71.74%,94.04%_73.42%,93.3%_75%,92.3%_76.43%,91.07%_77.66%,89.64%_78.66%,55%_98.66%,53.42%_99.4%,51.74%_99.85%,50%_100%,48.26%_99.85%,46.58%_99.4%,45%_98.66%,10.36%_78.66%,8.93%_77.66%,7.7%_76.43%,6.7%_75%,5.96%_73.42%,5.51%_71.74%,5.36%_70%,5.36%_30%,5.51%_28.26%,5.96%_26.58%,6.7%_25%,7.7%_23.57%,8.93%_22.34%,10.36%_21.34%)]"
-
-const HEXAGON_POINTS =
-	"45,1.34 46.58,0.6 48.26,0.15 50,0 51.74,0.15 53.42,0.6 55,1.34 89.64,21.34 91.07,22.34 92.3,23.57 93.3,25 94.04,26.58 94.49,28.26 94.64,30 94.64,70 94.49,71.74 94.04,73.42 93.3,75 92.3,76.43 91.07,77.66 89.64,78.66 55,98.66 53.42,99.4 51.74,99.85 50,100 48.26,99.85 46.58,99.4 45,98.66 10.36,78.66 8.93,77.66 7.7,76.43 6.7,75 5.96,73.42 5.51,71.74 5.36,70 5.36,30 5.51,28.26 5.96,26.58 6.7,25 7.7,23.57 8.93,22.34 10.36,21.34"
+const HEXAGON_CLIP = avatarHexagonClip()
+const HEXAGON_BORDER_CLIP = avatarHexagonBorderClip()
+const HEXAGON_SEPARATOR_CLIP = avatarHexagonClip(2)
 
 // Top-right hex vertex (89.64%, 21.34%). Circle/square status stays at the box corner;
 // hexagon status centers on this vertex so the badge sits on the tile, not in empty space.
@@ -185,23 +184,13 @@ function avatarOutline(shape: AvatarProps["shape"], outline: AvatarProps["outlin
 
 function AvatarHexagonBorder({ separator = false }: Readonly<{ separator?: boolean }>) {
 	return (
-		<svg
+		<span
 			aria-hidden="true"
-			className={cn("pointer-events-none absolute inset-0 size-full overflow-visible",
-				separator ? "-z-10 text-border-inverse" : "z-[1] text-border! mix-blend-darken dark:mix-blend-lighten")}
+			className={cn("pointer-events-none absolute bg-current",
+				separator ? "-inset-0.5 -z-10 text-border-inverse" : "inset-0 z-[1] text-border! mix-blend-darken dark:mix-blend-lighten")}
 			data-slot={separator ? "avatar-hexagon-separator" : "avatar-hexagon-border"}
-			focusable="false"
-			viewBox="0 0 100 100"
-		>
-			<polygon
-				fill="none"
-				points={HEXAGON_POINTS}
-				stroke="currentColor"
-				// The separator extends 2px outside; the clipped border paints 1px inside.
-				strokeWidth={separator ? 4 : 2}
-				vectorEffect="non-scaling-stroke"
-			/>
-		</svg>
+			style={{ clipPath: separator ? HEXAGON_SEPARATOR_CLIP : HEXAGON_BORDER_CLIP }}
+		/>
 	)
 }
 
@@ -269,13 +258,15 @@ function Avatar({
 				{isInAvatarGroup ? (
 					<span
 						aria-hidden="true"
-						className={cn("pointer-events-none absolute -inset-0.5 -z-10 bg-background", HEXAGON_CLIP)}
+						className="pointer-events-none absolute -inset-0.5 -z-10 bg-background"
+						style={{ clipPath: HEXAGON_SEPARATOR_CLIP }}
 						data-slot="avatar-hexagon-group-border"
 					/>
 				) : null}
 				{separator ? <AvatarHexagonBorder separator /> : null}
 				<span
-					className={cn("relative flex size-full items-center justify-center overflow-hidden", HEXAGON_CLIP)}
+					className="relative flex size-full items-center justify-center overflow-hidden"
+					style={{ clipPath: HEXAGON_CLIP }}
 					data-slot="avatar-hexagon-artwork"
 				>
 					{childArray.filter((child) => !isOverlay(child))}
@@ -314,7 +305,7 @@ function AvatarImage({ className, ...props }: Readonly<AvatarImageProps>) {
 			data-slot="avatar-image"
 			className={cn(
 				"rounded-full aspect-square size-full object-cover group-data-[shape=square]/avatar:rounded-[6px]",
-				`group-data-[shape=hexagon]/avatar:rounded-none group-data-[shape=hexagon]/avatar:${HEXAGON_CLIP}`,
+				"group-data-[shape=hexagon]/avatar:rounded-none",
 				className
 			)}
 			{...props}
@@ -333,7 +324,7 @@ function AvatarFallback({
 			data-slot="avatar-fallback"
 			className={cn(
 				"bg-muted text-foreground rounded-full flex size-full items-center justify-center text-sm group-data-[size=xxs]/avatar:text-[6px] group-data-[size=xs]/avatar:text-[8px] group-data-[size=sm]/avatar:text-xs group-data-[size=xl]/avatar:text-lg group-data-[size=2xl]/avatar:text-3xl group-data-[shape=square]/avatar:rounded-[6px]",
-				`group-data-[shape=hexagon]/avatar:rounded-none group-data-[shape=hexagon]/avatar:${HEXAGON_CLIP}`,
+				"group-data-[shape=hexagon]/avatar:rounded-none",
 				className
 			)}
 			{...props}

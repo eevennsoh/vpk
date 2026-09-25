@@ -141,7 +141,7 @@ export function AgentAvatarVisual({
 	// Keep partner marks at the previous 50% ratio when the avatar is 32px.
 	const insetImageClassName = isSecondPartyAgent && sizePx === 32 ? "size-4" : PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
 	const insetLogoSize = PX_TO_INSET_LOGO_SIZE[sizePx] ?? PX_TO_LOGO_SIZE[sizePx] ?? "xxsmall";
-	const codingVisual = appearance === "coding" ? getCodingAgentVisual(brandName) : undefined;
+	const codingVisual = appearance === "coding" ? getCodingAgentVisual(brandName, sizePx) : undefined;
 	const codingLogoFrame = codingVisual ? getCodingAgentLogoFrame(sizePx) : undefined;
 	const externalLogoSize = codingLogoFrame?.size ?? PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
 	// The Rovo gem is authored at 16×16 (`ROVO_LOGO_VIEWBOX`). Hexagon avatars
@@ -151,7 +151,7 @@ export function AgentAvatarVisual({
 	) : logoName ? (
 		<AtlassianLogo label="" name={logoName} size={insetLogoSize} themeAware />
 	) : codingVisual?.logoSrc ? (
-		<AvatarImage alt="" className={cn(codingLogoFrame?.className ?? (externalLogoSize === "xxsmall" ? "size-4" : "size-6"), codingVisual.logoClassName, "object-contain")} src={codingVisual.logoSrc} />
+		<AvatarImage alt="" className={cn(codingVisual.logoFrameClassName ?? codingLogoFrame?.className ?? (externalLogoSize === "xxsmall" ? "size-4" : "size-6"), sizePx >= 32 ? codingVisual.logoClassName : undefined, "group-data-[shape=hexagon]/avatar:[clip-path:none] object-contain")} src={codingVisual.logoSrc} />
 	) : brandName ? (
 		<LogoThirdParty borderless label="" name={brandName} size={externalLogoSize} />
 	) : avatarSrc ? (

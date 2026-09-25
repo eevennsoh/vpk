@@ -205,7 +205,7 @@ export function AgentFilterRow({
 						<AgentAvatarVisual
 							appearance="coding"
 							avatarClassName={cn(
-								selected && "[&>svg]:text-border-selected!",
+								selected && "[&_[data-slot=avatar-hexagon-border]]:text-border-selected!",
 								hasSelection && !selected && "opacity-(--opacity-disabled)",
 							)}
 							brandName={agent.brandName}

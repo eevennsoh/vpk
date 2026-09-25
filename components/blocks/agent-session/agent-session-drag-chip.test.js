@@ -28,12 +28,17 @@ function loadDragChipHarness() {
 					import { AgentListIdentity } from "./components/blocks/agent-list/agent-list-identity.tsx";
 					import { AgentAvatarVisual } from "./components/ui-custom/agent-avatar-visual.tsx";
 
-					export function agentImageClassName(props) {
+					function agentImageProps(props) {
 						const avatar = AgentAvatarVisual(props);
 						const backdrop = React.Children.toArray(avatar.props.children)[0];
 						const imageAndFallback = backdrop.props.children;
-						return React.Children.toArray(imageAndFallback.props.children)[0].props.className;
+						const image = imageAndFallback.type === React.Fragment
+							? React.Children.toArray(imageAndFallback.props.children)[0]
+							: imageAndFallback;
+						return image.props;
 					}
+					export function agentImageClassName(props) { return agentImageProps(props).className; }
+					export function agentImageSource(props) { return agentImageProps(props).src; }
 
 					export function renderIdentity(props) {
 						return renderToStaticMarkup(React.createElement(AgentListIdentity, props));
@@ -189,6 +194,16 @@ test("32px partner avatars retain the previous balanced 50 percent image inset",
 	// Base UI delays images until they load; inspect the real image props before that lifecycle.
 	assert.equal(harness.agentImageClassName({ avatarSrc: "/2p/appfire.png", sizePx: 32 }), "size-4 object-contain");
 	assert.equal(harness.agentImageClassName({ avatarSrc: "/2p/appfire.png", sizePx: 40 }), "size-5 object-contain");
+});
+
+test("compact Codex artwork does not inherit the larger demo enlargement", async () => {
+	const harness = await loadDragChipHarness();
+	const props = { brandName: "openai-codex", appearance: "coding" };
+	assert.equal(harness.agentImageClassName({ ...props, sizePx: 20 }), "size-3 group-data-[shape=hexagon]/avatar:[clip-path:none] object-contain");
+	assert.equal(harness.agentImageSource({ ...props, sizePx: 20 }), "/3p/openai-codex/glyph.svg");
+	assert.equal(harness.agentImageSource({ ...props, sizePx: 32 }), "/3p/openai-codex/24.svg");
+	assert.equal(harness.agentImageClassName({ ...props, sizePx: 16 }), "size-4 group-data-[shape=hexagon]/avatar:[clip-path:none] object-contain");
+	assert.equal(harness.agentImageClassName({ ...props, sizePx: 32 }), "size-6 scale-125 group-data-[shape=hexagon]/avatar:[clip-path:none] object-contain");
 });
 
 test("a session with no invoker degrades to the agent mark and its name alone", async () => {
