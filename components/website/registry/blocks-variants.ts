@@ -408,13 +408,6 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"agent-card-demo-experimental": dynamic(
-		() =>
-			import("../demos/blocks/agent-card-demo").then((mod) => ({
-				default: mod.AgentCardDemoExperimental,
-			})),
-		{ ssr: false },
-	),
 	"agent-card-demo-experimental-template": dynamic(
 		() =>
 			import("../demos/blocks/agent-card-demo").then((mod) => ({

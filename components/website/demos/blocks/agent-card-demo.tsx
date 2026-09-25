@@ -152,11 +152,6 @@ export function AgentCardDemoExperimentalProfile() {
 	);
 }
 
-/** Backwards-compatible experimental demo export. */
-export function AgentCardDemoExperimental() {
-	return <AgentCardDemoExperimentalTemplate />;
-}
-
 /** Simple variant — flat icon + name header, description, "Works with", "Skills". */
 export function AgentCardDemoSimple() {
 	return (
