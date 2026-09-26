@@ -18,6 +18,7 @@ const DROPZONE = readFileSync(
 	join(__dirname, "../../../jira-dropzone/jira-dropzone.tsx"),
 	"utf8",
 );
+const MAGNETIC_LABEL = readFileSync(join(__dirname, "../../../jira-dropzone/jira-dropzone-magnetic-label.tsx"), "utf8");
 
 test("normal create rests dashed and becomes solid on column hover", () => {
 	assert.match(FOOTER, /"w-full border-dashed group-hover\/board-column:border-solid"/u);
@@ -84,11 +85,12 @@ test("drop receipts land in the geometric center of the well", () => {
 
 test("vertical pinning keeps every dropzone layer on its baseline", () => {
 	assert.match(FOOTER, /pinVerticalMagnet=\{columnSizing === "content"\}/u);
-	assert.equal(
-		(DROPZONE.match(/y: pinMagnet \|\| pinVerticalMagnet \? 0 : magnet\.(?:y|labelY)/gu) ?? []).length,
-		3,
-	);
-	assert.equal((DROPZONE.match(/x: pinMagnet \? 0 : magnet\.(?:x|labelX)/gu) ?? []).length, 3);
+	assert.match(DROPZONE, /y: pinMagnet \|\| pinVerticalMagnet \? 0 : magnet\.y/u);
+	assert.match(DROPZONE, /x: pinMagnet \? 0 : magnet\.x/u);
+	assert.equal((DROPZONE.match(/<JiraDropzoneMagneticLabel\b[^>]*pinVertical=\{pinVerticalMagnet\}/gu) ?? []).length, 2);
+	assert.match(MAGNETIC_LABEL, /const stationary = pinned \|\| shouldReduceMotion;/u);
+	assert.match(MAGNETIC_LABEL, /y: stationary \|\| pinVertical \? 0 : magnet\.labelY/u);
+	assert.match(MAGNETIC_LABEL, /x: stationary \? 0 : magnet\.labelX/u);
 });
 
 test("board insertion marker avoids clipped paint before its anchor resolves", () => {
