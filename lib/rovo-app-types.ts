@@ -11,13 +11,6 @@ export type RovoAppRunBackend = "ai-gateway" | "rovo";
 export type RovoAppPromptMode = "default" | "plan";
 export type RovoAppCreationMode = "agent" | "skill";
 
-export interface RovoAppHermesContext {
-	selectedSkillIds: string[];
-	autoSelectedSkillIds?: string[];
-	pendingDraftIds?: string[];
-	recentMemoryProposalIds?: string[];
-}
-
 /**
  * Artifact panel state:
  * - `closed`: panel hidden, normal chat mode (GenUI cards)
@@ -43,7 +36,6 @@ export interface RovoAppThread {
 	modelId: string | null;
 	provider: string | null;
 	activeDocumentId: string | null;
-	hermesContext?: RovoAppHermesContext | null;
 	sessionId: string | null;
 	sessionMode: "persistent" | "ephemeral" | null;
 	activeRun?: RovoAppActiveRun | null;
@@ -109,7 +101,6 @@ export interface RovoAppQueuedPromptAction
 	files: ReadonlyArray<FileUIPart>;
 	contextDescription?: string;
 	creationMode?: RovoAppCreationMode;
-	hermesContext?: RovoAppHermesContext;
 	/** Snapshotted composer mode for this specific prompt. */
 	mode: RovoAppPromptMode;
 	messageMetadata?: RovoMessageMetadata;
@@ -119,7 +110,6 @@ export interface RovoAppQueuedDelegationAction
 	extends RovoAppQueuedActionBase {
 	kind: "delegation";
 	contextDescription?: string;
-	hermesContext?: RovoAppHermesContext;
 	conversationSummary?: string;
 	delegatedMessageId: string;
 	existingRealtimeMessageId?: string | null;

@@ -102,9 +102,9 @@ test("shared chat prompt path auto-routes Work Item vpk-html artifact intents fo
 		ROVO_CHAT_HELPERS_SOURCE,
 		/buildWorkItemReportRequestContext\(\{[\s\S]*skillId: VPK_HTML_SKILL_ID/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		ROVO_CHAT_HELPERS_SOURCE,
-		/selectedSkillIds: mergeHermesSkillIds\([\s\S]*VPK_HTML_SKILL_ID/u,
+		/mergeHermesSkillIds|hermesContext/u,
 	);
 	assert.match(
 		SIDEBAR_SUBMIT_SOURCE,

@@ -740,6 +740,7 @@ export function AgentSessionCard({
 								renderIdentity={() => {
 									const sessionIdentity = (
 										<AgentListIdentity
+											appearance="coding"
 											agent={item.agent}
 											attributedBy={item.invokedBy}
 											attributionOrder="agent-first"

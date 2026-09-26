@@ -91,10 +91,6 @@ test("mergeSendPromptOptions merges prompt context without dropping nested metad
 	const merged = mergeSendPromptOptions(
 		{
 			contextDescription: "Default context",
-			hermesContext: {
-				selectedSkillIds: ["vpk-html"],
-				autoSelectedSkillIds: ["a"],
-			},
 			messageMetadata: {
 				source: "default",
 			},
@@ -105,10 +101,6 @@ test("mergeSendPromptOptions merges prompt context without dropping nested metad
 		},
 		{
 			contextDescription: "Local context",
-			hermesContext: {
-				selectedSkillIds: ["vpk-html", "browser"],
-				pendingDraftIds: ["draft-1"],
-			},
 			messageMetadata: {
 				urgency: "high",
 			},
@@ -118,9 +110,6 @@ test("mergeSendPromptOptions merges prompt context without dropping nested metad
 		},
 	);
 
-	assert.deepEqual(merged.hermesContext.selectedSkillIds, ["vpk-html", "browser"]);
-	assert.deepEqual(merged.hermesContext.autoSelectedSkillIds, ["a"]);
-	assert.deepEqual(merged.hermesContext.pendingDraftIds, ["draft-1"]);
 	assert.equal(merged.messageMetadata.source, "default");
 	assert.equal(merged.messageMetadata.urgency, "high");
 	assert.equal(merged.smartGeneration.enabled, true);
@@ -193,7 +182,6 @@ test("chat request body and payload errors stay normalized", () => {
 			creationMode: "agent",
 			deferredToolResponse: undefined,
 			hasQueuedPrompts: true,
-			hermesContext: undefined,
 			planRequestId: undefined,
 			smartGeneration: undefined,
 			userName: undefined,
@@ -308,4 +296,10 @@ test("assistant completion matches the active queued prompt by nearest user text
 		}),
 		false,
 	);
+});
+
+
+test("chat transport discards retired context metadata supplied by older clients", () => {
+	const body = buildSendMessageBody({ hermesContext: { selectedSkillIds: ["old-skill"] } }, false);
+	assert.equal(Object.hasOwn(body, "hermesContext"), false);
 });

@@ -90,6 +90,14 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewContentWidth: "full",
 		},
 	},
+	"jira-team-eu26-end": {
+		description: "A Team ’26 EU keynote board with thirteen story cards organized into Context, Collaboration, and Confidence columns, a Done destination, and a retained agent-session rail.",
+		importStatement: `import JiraTeamEu26EndPage from "@/components/projects/jira-team-eu26-end";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
 	"rovo": {
 		description: "A Vercel-style AI chat workspace with persistent thread history, local attachments, artifact editing, and Rovo-backed streaming.",
 		importStatement: `import Rovo from "@/components/projects/rovo";`,

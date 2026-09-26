@@ -1,0 +1,858 @@
+import { PULSE_LOOSE_WORK } from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-loose-work";
+import {
+	isPulseAgentSession,
+	type PulseAgentSession,
+	type PulseLooseWork,
+} from "@/components/blocks/jira-kanban/experimental/pulse/types";
+import { JIRA_TEAM_EU26_END_PRESENTERS } from "./keynote-presenters";
+import { JIRA_TEAM_EU26_END_SESSION_MEMBER_ID_BY_LEGACY_ID } from "./presentation-people";
+
+type JiraTeamEu26SyncSession = Extract<PulseLooseWork, { kind: "agent-session" }>;
+export type JiraTeamEu26SessionCohort =
+	| "always-working"
+	| "needs-input-terminal"
+	| "finished-initially"
+	| "full-path";
+
+const SYNC_DELAY_MIN_MS = 1_000;
+const SYNC_DELAY_MAX_MS = 3_000;
+// The counter settles after four seconds. Three seven-second breaks let the
+// local monitor return and stay visible before the next group arrives.
+const SYNC_BREAK_MS = 7_000;
+const SYNC_BREAK_AFTER_SESSION_COUNTS = [8, 16, 24] as const;
+const STATE_CHANGE_DELAY_MIN_MS = 3_000;
+const STATE_CHANGE_DELAY_MAX_MS = 5_000;
+
+const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
+	{
+		agentId: "cursor",
+		detail: "host local · worktree .worktrees/pay-107-webhook-gap · findings have not been linked yet",
+		host: "local",
+		id: "lw-sync-webhook-gap",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "MacBook-Pro.local",
+		memberIds: ["maya", "venn"],
+		pullRequest: {
+			number: 1856,
+			status: "created",
+			title: "Extract retry policy",
+			files: 7,
+			additions: 163,
+			deletions: 88,
+			branch: "pay-107-retry-backoff-extract",
+			description: "Lift retry and exponential backoff into a shared policy the v2 client owns, so deleting the adapter does not take the retry semantics with it.",
+		},
+		shortTitle: "Challenge webhook gap",
+		sourceTitle: "PAY-107",
+		state: "running",
+		timeLabel: "Just now",
+		title: "Challenge webhook gap notes just landed from a local Cursor session",
+	},
+	{
+		agentId: "codex",
+		detail: "host local · worktree .worktrees/pay-112-sandbox-401 · the root cause is still untracked",
+		host: "local",
+		id: "lw-sync-sandbox-root-cause",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "H13XSGKLS1",
+		memberIds: ["jordan", "venn"],
+		pullRequest: {
+			number: 1858,
+			status: "failed",
+			title: "Set key retention",
+			files: 4,
+			additions: 97,
+			deletions: 12,
+			branch: "pay-112-sandbox-key-retention",
+			description: "Pin the sandbox key retention window so replayed requests stop 401ing. Checks are red: the retention probe needs a credential the CI runner does not hold yet.",
+		},
+		shortTitle: "Sandbox 401 root cause",
+		sourceTitle: "PAY-112",
+		state: "needs-input",
+		timeLabel: "Just now",
+		title: "Sandbox 401 root cause just arrived from a local Codex session",
+	},
+	{
+		agentId: "copilot",
+		detail: "host local · worktree .worktrees/pay-118-replay-risk · the blast radius is not on the item",
+		host: "local",
+		id: "lw-sync-replay-blast-radius",
+		issueStatus: "To do",
+		kind: "agent-session",
+		machineName: "DESKTOP-7K2M9Q1",
+		memberIds: ["priya", "jordan"],
+		pullRequest: {
+			number: 1871,
+			status: "merged",
+			title: "Measure card latency",
+			files: 8,
+			additions: 204,
+			deletions: 57,
+			branch: "pay-118-saved-card-latency",
+			description: "Instrument the saved-card path end to end and publish the p95 round trip, so the replay-risk blast radius is argued from a number rather than a hunch.",
+		},
+		shortTitle: "Replay-risk blast radius",
+		sourceTitle: "PAY-118",
+		timeLabel: "Just now",
+		title: "Replay-risk blast radius just synced from a local GitHub Copilot session",
+	},
+	{
+		agentId: "claude",
+		detail: "host local · worktree .worktrees/pay-121-kill-switch · rollout notes still need a work item link",
+		host: "local",
+		id: "lw-sync-kill-switch-rollout",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "Venn’s MacBook",
+		memberIds: ["venn", "jordan"],
+		pullRequest: {
+			number: 1866,
+			status: "created",
+			title: "Add kill switch",
+			files: 6,
+			additions: 142,
+			deletions: 16,
+			branch: "pay-121-account-targeting-kill-switch",
+			description: "Target the v2 rollout per account and add a kill switch that reverts to the v1 path in one call, with the armed state readable from the rollout dashboard.",
+		},
+		shortTitle: "Kill switch rollout notes",
+		sourceTitle: "PAY-121",
+		state: "running",
+		timeLabel: "Just now",
+		title: "Kill switch rollout notes just appeared from a local Claude session",
+	},
+	{
+		agentId: "codex",
+		detail: "host local · worktree .worktrees/pay-115-retry-telemetry · the verification summary is still local",
+		host: "local",
+		id: "lw-sync-retry-telemetry",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "Maya’s Studio",
+		memberIds: ["maya", "priya"],
+		shortTitle: "Retry telemetry review",
+		sourceTitle: "PAY-115",
+		state: "needs-input",
+		timeLabel: "Just now",
+		title: "Retry telemetry review just synced from a local Codex session",
+	},
+	{
+		agentId: "cursor",
+		detail: "host local · worktree .worktrees/pay-119-contract-tests · uncovered cases have not been captured",
+		host: "local",
+		id: "lw-sync-contract-test-gaps",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "MacBook-Pro.local",
+		memberIds: ["jordan", "maya"],
+		shortTitle: "Contract test gaps",
+		sourceTitle: "PAY-119",
+		state: "running",
+		timeLabel: "Just now",
+		title: "Contract test gaps just landed from a local Cursor session",
+	},
+	{
+		agentId: "cursor",
+		detail: "host local · worktree .worktrees/pay-104-deprecation-copy · the migration copy is still untracked",
+		host: "local",
+		id: "lw-sync-deprecation-copy",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "DESKTOP-7K2M9Q1",
+		memberIds: ["priya", "venn"],
+		shortTitle: "Deprecation copy pass",
+		sourceTitle: "PAY-104",
+		timeLabel: "Just now",
+		title: "Deprecation copy pass just arrived from a local Cursor session",
+	},
+	{
+		agentId: "claude",
+		detail: "host local · worktree .worktrees/pay-132-release-gate · the final gate decision is not linked",
+		host: "local",
+		id: "lw-sync-release-gate",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "Venn’s MacBook",
+		memberIds: ["venn", "priya"],
+		shortTitle: "Release gate decision",
+		sourceTitle: "PAY-132",
+		state: "needs-input",
+		timeLabel: "Just now",
+		title: "Release gate decision just synced from a local Claude session",
+	},
+	{
+		agentId: "copilot",
+		detail: "host local · worktree .worktrees/pay-133-timeout-budget · the timeout budget analysis is still detached",
+		host: "local",
+		id: "lw-sync-timeout-budget",
+		issueStatus: "To do",
+		kind: "agent-session",
+		machineName: "DESKTOP-7K2M9Q1",
+		memberIds: ["priya", "jordan"],
+		pullRequest: {
+			number: 1875,
+			status: "created",
+			title: "Set timeout budgets",
+			files: 5,
+			additions: 118,
+			deletions: 24,
+			branch: "pay-133-timeout-budget-map",
+			description: "Map the effective timeout and retry budget for every payments endpoint so the migration can preserve existing failure semantics without inheriting legacy constants.",
+		},
+		shortTitle: "Timeout budget map",
+		sourceTitle: "PAY-133",
+		timeLabel: "Just now",
+		title: "Timeout budget map just synced from a local GitHub Copilot session",
+	},
+	{
+		agentId: "codex",
+		detail: "host local · worktree .worktrees/pay-134-idempotency-race · the race reproduction is not linked yet",
+		host: "local",
+		id: "lw-sync-idempotency-race",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "H13XSGKLS1",
+		memberIds: ["jordan", "venn"],
+		pullRequest: {
+			number: 1877,
+			status: "failed",
+			title: "Reproduce capture race",
+			files: 9,
+			additions: 231,
+			deletions: 46,
+			branch: "pay-134-idempotency-race",
+			description: "Add a deterministic concurrent-capture harness that reproduces duplicate writes before the v2 idempotency key is reserved; one stress assertion remains red in CI.",
+		},
+		shortTitle: "Idempotency race",
+		sourceTitle: "PAY-134",
+		timeLabel: "Just now",
+		title: "Idempotency race reproduction just arrived from a local Codex session",
+	},
+	{
+		agentId: "cursor",
+		detail: "host local · worktree .worktrees/pay-135-settlement-schema · schema comparison notes remain untracked",
+		host: "local",
+		id: "lw-sync-settlement-schema",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "MacBook-Pro.local",
+		memberIds: ["maya", "priya"],
+		pullRequest: {
+			number: 1880,
+			status: "merged",
+			title: "Align settlement data",
+			files: 11,
+			additions: 286,
+			deletions: 73,
+			branch: "pay-135-settlement-schema-parity",
+			description: "Normalize the settlement payload at the adapter boundary and prove v1 and v2 emit the same currency, fee, and reconciliation fields for the golden fixtures.",
+		},
+		shortTitle: "Settlement schema parity",
+		sourceTitle: "PAY-135",
+		timeLabel: "Just now",
+		title: "Settlement schema parity notes just landed from a local Cursor session",
+	},
+	{
+		agentId: "claude",
+		detail: "host local · worktree .worktrees/pay-136-reconciliation-alerts · alert threshold findings need a Jira link",
+		host: "local",
+		id: "lw-sync-reconciliation-alerts",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "Venn’s MacBook",
+		memberIds: ["venn", "maya"],
+		pullRequest: {
+			number: 1882,
+			status: "created",
+			title: "Tune recon alerts",
+			files: 6,
+			additions: 154,
+			deletions: 31,
+			branch: "pay-136-reconciliation-alerts",
+			description: "Set warning and page thresholds from the last ninety days of reconciliation volume, with separate bands for delayed files and true balance mismatches.",
+		},
+		shortTitle: "Reconciliation alerts",
+		sourceTitle: "PAY-136",
+		timeLabel: "Just now",
+		title: "Reconciliation alert calibration just appeared from a local Claude session",
+	},
+	{
+		agentId: "copilot",
+		detail: "host local · worktree .worktrees/pay-137-ledger-replay · the ledger replay checklist is still local",
+		host: "local",
+		id: "lw-sync-ledger-replay",
+		issueStatus: "To do",
+		kind: "agent-session",
+		machineName: "DESKTOP-7K2M9Q1",
+		memberIds: ["priya", "venn"],
+		pullRequest: {
+			number: 1885,
+			status: "created",
+			title: "Add replay dry run",
+			files: 7,
+			additions: 172,
+			deletions: 28,
+			branch: "pay-137-ledger-replay-dry-run",
+			description: "Add a dry-run report that lists every ledger mutation, skipped duplicate, and unresolved account before replay can write to the v2 settlement store.",
+		},
+		shortTitle: "Ledger replay checklist",
+		sourceTitle: "PAY-137",
+		timeLabel: "Just now",
+		title: "Ledger replay checklist just synced from a local GitHub Copilot session",
+	},
+	{
+		agentId: "codex",
+		detail: "host local · worktree .worktrees/pay-138-token-rotation · the token rotation evidence is not attached",
+		host: "local",
+		id: "lw-sync-token-rotation",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "Maya’s Studio",
+		memberIds: ["maya", "jordan"],
+		pullRequest: {
+			number: 1888,
+			status: "merged",
+			title: "Rotate payment tokens",
+			files: 10,
+			additions: 249,
+			deletions: 64,
+			branch: "pay-138-token-rotation-drill",
+			description: "Run both signing keys through a staged rotation drill and retain request-level evidence that in-flight payments continue while the active key changes.",
+		},
+		shortTitle: "Token rotation drill",
+		sourceTitle: "PAY-138",
+		timeLabel: "Just now",
+		title: "Token rotation drill evidence just arrived from a local Codex session",
+	},
+	{
+		agentId: "cursor",
+		detail: "host local · worktree .worktrees/pay-139-webhook-ordering · the ordering matrix has not been linked",
+		host: "local",
+		id: "lw-sync-webhook-ordering",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "MacBook-Pro.local",
+		memberIds: ["jordan", "maya"],
+		pullRequest: {
+			number: 1890,
+			status: "failed",
+			title: "Keep webhook order",
+			files: 8,
+			additions: 193,
+			deletions: 39,
+			branch: "pay-139-webhook-ordering",
+			description: "Hold account-scoped webhook order across the primary-to-secondary queue handoff; the cross-region soak test still exposes one inverted delivery pair.",
+		},
+		shortTitle: "Webhook ordering matrix",
+		sourceTitle: "PAY-139",
+		timeLabel: "Just now",
+		title: "Webhook ordering matrix just landed from a local Cursor session",
+	},
+	{
+		agentId: "claude",
+		detail: "host local · worktree .worktrees/pay-140-refund-audit · refund audit notes still need a work item link",
+		host: "local",
+		id: "lw-sync-refund-audit",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "Venn’s MacBook",
+		memberIds: ["venn", "priya"],
+		pullRequest: {
+			number: 1893,
+			status: "created",
+			title: "Log refund decisions",
+			files: 6,
+			additions: 137,
+			deletions: 19,
+			branch: "pay-140-refund-audit-metadata",
+			description: "Persist the initiating actor, policy decision, and upstream request reference for every v2 refund so support can reconstruct the full approval path.",
+		},
+		shortTitle: "Refund audit metadata",
+		sourceTitle: "PAY-140",
+		timeLabel: "Just now",
+		title: "Refund audit metadata just appeared from a local Claude session",
+	},
+	{
+		agentId: "codex",
+		detail: "host local · worktree .worktrees/pay-141-currency-rounding · rounding fixture findings are still untracked",
+		host: "local",
+		id: "lw-sync-currency-rounding",
+		issueStatus: "To do",
+		kind: "agent-session",
+		machineName: "H13XSGKLS1",
+		memberIds: ["jordan", "priya"],
+		shortTitle: "Currency rounding fixtures",
+		sourceTitle: "PAY-141",
+		timeLabel: "Just now",
+		title: "Currency rounding fixtures just synced from a local Codex session",
+	},
+	{
+		agentId: "cursor",
+		detail: "host local · worktree .worktrees/pay-142-merchant-mapping · merchant mapping exceptions are not linked yet",
+		host: "local",
+		id: "lw-sync-merchant-mapping",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "MacBook-Pro.local",
+		memberIds: ["maya", "venn"],
+		shortTitle: "Merchant mapping exceptions",
+		sourceTitle: "PAY-142",
+		timeLabel: "Just now",
+		title: "Merchant mapping exceptions just landed from a local Cursor session",
+	},
+	{
+		agentId: "copilot",
+		detail: "host local · worktree .worktrees/pay-143-rate-limit · rate-limit sampling notes remain detached",
+		host: "local",
+		id: "lw-sync-rate-limit-sampling",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "DESKTOP-7K2M9Q1",
+		memberIds: ["priya", "maya"],
+		shortTitle: "Rate-limit sampling",
+		sourceTitle: "PAY-143",
+		timeLabel: "Just now",
+		title: "Rate-limit sampling notes just synced from a local GitHub Copilot session",
+	},
+	{
+		agentId: "claude",
+		detail: "host local · worktree .worktrees/pay-144-chargeback-replay · the replay comparison is not attached",
+		host: "local",
+		id: "lw-sync-chargeback-replay",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "Venn’s MacBook",
+		memberIds: ["venn", "jordan"],
+		shortTitle: "Chargeback replay comparison",
+		sourceTitle: "PAY-144",
+		timeLabel: "Just now",
+		title: "Chargeback replay comparison just appeared from a local Claude session",
+	},
+	{
+		agentId: "codex",
+		detail: "host local · worktree .worktrees/pay-145-cutover-runbook · the cutover checklist is still local",
+		host: "local",
+		id: "lw-sync-cutover-runbook",
+		issueStatus: "To do",
+		kind: "agent-session",
+		machineName: "Maya’s Studio",
+		memberIds: ["maya", "venn"],
+		shortTitle: "Cutover runbook gaps",
+		sourceTitle: "PAY-145",
+		timeLabel: "Just now",
+		title: "Cutover runbook gaps just arrived from a local Codex session",
+	},
+	{
+		agentId: "cursor",
+		detail: "host local · worktree .worktrees/pay-146-support-diagnostics · diagnostic payload notes need a Jira link",
+		host: "local",
+		id: "lw-sync-support-diagnostics",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "MacBook-Pro.local",
+		memberIds: ["jordan", "priya"],
+		shortTitle: "Support diagnostic payload",
+		sourceTitle: "PAY-146",
+		timeLabel: "Just now",
+		title: "Support diagnostic payload notes just landed from a local Cursor session",
+	},
+	{
+		agentId: "copilot",
+		detail: "host local · worktree .worktrees/pay-147-rollback-metrics · rollback metric findings remain untracked",
+		host: "local",
+		id: "lw-sync-rollback-metrics",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "DESKTOP-7K2M9Q1",
+		memberIds: ["priya", "venn"],
+		shortTitle: "Rollback metric thresholds",
+		sourceTitle: "PAY-147",
+		timeLabel: "Just now",
+		title: "Rollback metric thresholds just synced from a local GitHub Copilot session",
+	},
+	{
+		agentId: "claude",
+		detail: "host local · worktree .worktrees/pay-148-traffic-ramp · traffic ramp observations are not linked yet",
+		host: "local",
+		id: "lw-sync-traffic-ramp",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "Venn’s MacBook",
+		memberIds: ["venn", "maya"],
+		shortTitle: "Traffic ramp observations",
+		sourceTitle: "PAY-148",
+		timeLabel: "Just now",
+		title: "Traffic ramp observations just appeared from a local Claude session",
+	},
+	{
+		agentId: "cursor",
+		detail: "host local · worktree .worktrees/pay-149-auth-fallback · fallback trace findings have not been linked yet",
+		host: "local",
+		id: "lw-sync-auth-fallback",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "MacBook-Pro.local",
+		memberIds: ["maya", "jordan"],
+		pullRequest: {
+			number: 1897,
+			status: "created",
+			title: "Trace auth fallback",
+			files: 7,
+			additions: 184,
+			deletions: 33,
+			branch: "pay-149-auth-fallback-trace",
+			description: "Trace every issuer authentication fallback through the v2 client and record the final challenge outcome so support can distinguish recovery from silent downgrade.",
+		},
+		shortTitle: "Authentication fallback trace",
+		sourceTitle: "PAY-149",
+		timeLabel: "Just now",
+		title: "Authentication fallback trace just landed from a local Cursor session",
+	},
+	{
+		agentId: "codex",
+		detail: "host local · worktree .worktrees/pay-150-payout-recovery · payout recovery evidence is still detached",
+		host: "local",
+		id: "lw-sync-payout-recovery",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "H13XSGKLS1",
+		memberIds: ["jordan", "venn"],
+		pullRequest: {
+			number: 1901,
+			status: "merged",
+			title: "Recover payout batches",
+			files: 12,
+			additions: 315,
+			deletions: 81,
+			branch: "pay-150-payout-batch-recovery",
+			description: "Checkpoint payout batches by merchant and resume only uncommitted transfers, with reconciliation proof that recovery never duplicates an already accepted payout.",
+		},
+		shortTitle: "Payout batch recovery",
+		sourceTitle: "PAY-150",
+		timeLabel: "Just now",
+		title: "Payout batch recovery evidence just arrived from a local Codex session",
+	},
+	{
+		agentId: "copilot",
+		detail: "host local · worktree .worktrees/pay-151-decline-parity · decline parity results still need a Jira link",
+		host: "local",
+		id: "lw-sync-decline-parity",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "DESKTOP-7K2M9Q1",
+		memberIds: ["priya", "maya"],
+		pullRequest: {
+			number: 1904,
+			status: "failed",
+			title: "Compare decline codes",
+			files: 9,
+			additions: 227,
+			deletions: 52,
+			branch: "pay-151-decline-response-parity",
+			description: "Replay the production decline corpus against both clients and compare codes, retry hints, and customer messages; one issuer-specific timeout case remains different.",
+		},
+		shortTitle: "Decline response parity",
+		sourceTitle: "PAY-151",
+		timeLabel: "Just now",
+		title: "Decline response parity results just synced from a local GitHub Copilot session",
+	},
+	{
+		agentId: "claude",
+		detail: "host local · worktree .worktrees/pay-152-account-locks · account-lock rollout notes are not attached",
+		host: "local",
+		id: "lw-sync-account-locks",
+		issueStatus: "To do",
+		kind: "agent-session",
+		machineName: "Venn’s MacBook",
+		memberIds: ["venn", "priya"],
+		pullRequest: {
+			number: 1907,
+			status: "created",
+			title: "Lock account migration",
+			files: 6,
+			additions: 149,
+			deletions: 21,
+			branch: "pay-152-account-migration-locks",
+			description: "Acquire short-lived account-scoped locks during migration and expose contention metrics so concurrent payment requests wait without blocking unrelated merchants.",
+		},
+		shortTitle: "Account migration locks",
+		sourceTitle: "PAY-152",
+		timeLabel: "Just now",
+		title: "Account migration lock notes just appeared from a local Claude session",
+	},
+	{
+		agentId: "cursor",
+		detail: "host local · worktree .worktrees/pay-153-fee-rounding · fee rounding edge cases remain untracked",
+		host: "local",
+		id: "lw-sync-fee-rounding",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "MacBook-Pro.local",
+		memberIds: ["maya", "venn"],
+		shortTitle: "Fee rounding edge cases",
+		sourceTitle: "PAY-153",
+		timeLabel: "Just now",
+		title: "Fee rounding edge cases just landed from a local Cursor session",
+	},
+	{
+		agentId: "codex",
+		detail: "host local · worktree .worktrees/pay-154-retry-headers · retry header observations are still local",
+		host: "local",
+		id: "lw-sync-retry-headers",
+		issueStatus: "In review",
+		kind: "agent-session",
+		machineName: "Maya’s Studio",
+		memberIds: ["maya", "jordan"],
+		shortTitle: "Retry header audit",
+		sourceTitle: "PAY-154",
+		timeLabel: "Just now",
+		title: "Retry header audit just arrived from a local Codex session",
+	},
+	{
+		agentId: "copilot",
+		detail: "host local · worktree .worktrees/pay-155-capture-metrics · capture metric findings need a work item link",
+		host: "local",
+		id: "lw-sync-capture-metrics",
+		issueStatus: "To do",
+		kind: "agent-session",
+		machineName: "DESKTOP-7K2M9Q1",
+		memberIds: ["priya", "venn"],
+		shortTitle: "Capture metric coverage",
+		sourceTitle: "PAY-155",
+		timeLabel: "Just now",
+		title: "Capture metric coverage just synced from a local GitHub Copilot session",
+	},
+	{
+		agentId: "claude",
+		detail: "host local · worktree .worktrees/pay-156-final-readiness · final readiness observations are not linked yet",
+		host: "local",
+		id: "lw-sync-final-readiness",
+		issueStatus: "In progress",
+		kind: "agent-session",
+		machineName: "Venn’s MacBook",
+		memberIds: ["venn", "jordan"],
+		shortTitle: "Final readiness observations",
+		sourceTitle: "PAY-156",
+		timeLabel: "Just now",
+		title: "Final readiness observations just appeared from a local Claude session",
+	},
+] as const satisfies readonly JiraTeamEu26SyncSession[];
+
+export const JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID: ReadonlyMap<string, JiraTeamEu26SessionCohort> = new Map([
+	// Five replay both state changes; the first arrives early enough to see the full path.
+	["lw-sync-webhook-gap", "full-path"],
+	["lw-sync-kill-switch-rollout", "full-path"],
+	["lw-sync-merchant-mapping", "full-path"],
+	["lw-sync-auth-fallback", "full-path"],
+	["lw-sync-final-readiness", "full-path"],
+	// Twelve stop at Needs input until a person acts.
+	["lw-sync-sandbox-root-cause", "needs-input-terminal"],
+	["lw-sync-retry-telemetry", "needs-input-terminal"],
+	["lw-sync-release-gate", "needs-input-terminal"],
+	["lw-sync-timeout-budget", "needs-input-terminal"],
+	["lw-sync-settlement-schema", "needs-input-terminal"],
+	["lw-sync-ledger-replay", "needs-input-terminal"],
+	["lw-sync-refund-audit", "needs-input-terminal"],
+	["lw-sync-cutover-runbook", "needs-input-terminal"],
+	["lw-sync-rollback-metrics", "needs-input-terminal"],
+	["lw-sync-payout-recovery", "needs-input-terminal"],
+	["lw-sync-decline-parity", "needs-input-terminal"],
+	["lw-sync-capture-metrics", "needs-input-terminal"],
+	// Eight finished before the viewer sees them.
+	["lw-sync-replay-blast-radius", "finished-initially"],
+	["lw-sync-deprecation-copy", "finished-initially"],
+	["lw-sync-token-rotation", "finished-initially"],
+	["lw-sync-currency-rounding", "finished-initially"],
+	["lw-sync-rate-limit-sampling", "finished-initially"],
+	["lw-sync-chargeback-replay", "finished-initially"],
+	["lw-sync-account-locks", "finished-initially"],
+	["lw-sync-fee-rounding", "finished-initially"],
+	// Seven keep working throughout the demo.
+	["lw-sync-contract-test-gaps", "always-working"],
+	["lw-sync-idempotency-race", "always-working"],
+	["lw-sync-reconciliation-alerts", "always-working"],
+	["lw-sync-webhook-ordering", "always-working"],
+	["lw-sync-support-diagnostics", "always-working"],
+	["lw-sync-traffic-ramp", "always-working"],
+	["lw-sync-retry-headers", "always-working"],
+]);
+
+const JIRA_TEAM_EU26_SEEDED_FINISHED_IDS = new Set([
+	"lw-scope-thread",
+	"lw-spike-session",
+	"lw-night-suite-session",
+	"lw-ship-p95-session",
+]);
+
+function getSessionDetailPrefix(session: PulseAgentSession): string {
+	return session.detail.split(" · ").slice(0, 2).join(" · ");
+}
+
+function toFinishedSessionCopy(session: PulseAgentSession): Pick<PulseAgentSession, "title" | "detail"> {
+	return {
+		title: `${session.shortTitle} finished in a local agent session`,
+		detail: `${getSessionDetailPrefix(session)} · session finished and findings are ready to review`,
+	};
+}
+
+const KEYNOTE_SESSION_PERSON_NAMES: Readonly<Record<string, string>> = {
+	Venn: JIRA_TEAM_EU26_END_PRESENTERS.mcb.name,
+	Maya: JIRA_TEAM_EU26_END_PRESENTERS.sherif.name,
+	Jordan: JIRA_TEAM_EU26_END_PRESENTERS.tamar.name,
+	Priya: JIRA_TEAM_EU26_END_PRESENTERS.taroon.name,
+	Diego: JIRA_TEAM_EU26_END_PRESENTERS.mcb.name,
+};
+
+function toKeynoteSessionAttribution<T extends PulseAgentSession>(session: T): T {
+	const adaptName = (text: string) => text.replace(/\b(Venn|Maya|Jordan|Priya|Diego)\b/gu, (name) => KEYNOTE_SESSION_PERSON_NAMES[name]);
+	return {
+		...session,
+		memberIds: [...new Set(session.memberIds.map((id) => JIRA_TEAM_EU26_END_SESSION_MEMBER_ID_BY_LEGACY_ID[id] ?? id))],
+		machineName: adaptName(session.machineName),
+		title: adaptName(session.title),
+		detail: adaptName(session.detail),
+		shortTitle: adaptName(session.shortTitle),
+	};
+}
+
+export const JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES: ReadonlyMap<string, PulseAgentSession> = new Map(
+	PULSE_LOOSE_WORK.filter(isPulseAgentSession).map((session) => {
+		const attributedSession = toKeynoteSessionAttribution(session);
+		const finished = JIRA_TEAM_EU26_SEEDED_FINISHED_IDS.has(session.id);
+		const copy = finished
+			? toFinishedSessionCopy(attributedSession)
+			: session.state === "needs-input"
+				? {
+					title: `${attributedSession.shortTitle} is in progress in a local agent session`,
+					detail: `${getSessionDetailPrefix(attributedSession)} · work is underway in this session`,
+				}
+				: {};
+		return [session.id, { ...attributedSession, ...copy, state: finished ? "complete" : "running" }] as const;
+	}),
+);
+
+export const JIRA_TEAM_EU26_SYNC_SESSIONS = JIRA_TEAM_EU26_SYNC_SESSION_SOURCE.map(
+	(session) => {
+		const attributedSession = toKeynoteSessionAttribution(session);
+		const cohort = JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID.get(session.id);
+		const finished = cohort === "finished-initially";
+		return {
+			...attributedSession,
+			...(finished ? toFinishedSessionCopy(attributedSession) : {}),
+			state: finished ? "complete" : "running",
+		};
+	},
+) satisfies readonly JiraTeamEu26SyncSession[];
+
+export function getJiraTeamEu26SyncDelayMs(
+	nextIndex: number,
+	random: () => number = Math.random,
+): number {
+	if (SYNC_BREAK_AFTER_SESSION_COUNTS.some((count) => count === nextIndex)) {
+		return SYNC_BREAK_MS;
+	}
+	return SYNC_DELAY_MIN_MS + Math.round(random() * (SYNC_DELAY_MAX_MS - SYNC_DELAY_MIN_MS));
+}
+
+export function getJiraTeamEu26StateChangeDelayMs(
+	random: () => number = Math.random,
+): number {
+	return STATE_CHANGE_DELAY_MIN_MS + Math.round(random() * (STATE_CHANGE_DELAY_MAX_MS - STATE_CHANGE_DELAY_MIN_MS));
+}
+
+export function addJiraTeamEu26SyncSessionInitialVersions(
+	stateChangeVersions: ReadonlyMap<string, number>,
+	sessions: readonly JiraTeamEu26SyncSession[],
+): ReadonlyMap<string, number> {
+	const nextVersions = new Map(stateChangeVersions);
+	for (const session of sessions) {
+		if (!nextVersions.has(session.id)) {
+			nextVersions.set(session.id, 0);
+		}
+	}
+	return nextVersions;
+}
+
+export function advanceJiraTeamEu26SyncSession(
+	sessions: readonly JiraTeamEu26SyncSession[],
+	stateChangeVersions: ReadonlyMap<string, number>,
+	sessionId: string,
+): Readonly<{
+	sessions: readonly JiraTeamEu26SyncSession[];
+	stateChangeVersions: ReadonlyMap<string, number>;
+	nextState: JiraTeamEu26SyncSession["state"] | undefined;
+}> {
+	const sessionIndex = sessions.findIndex((session) => session.id === sessionId);
+	const session = sessions[sessionIndex];
+	const cohort = JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID.get(sessionId);
+	if (
+		(cohort !== "needs-input-terminal" && cohort !== "full-path")
+		|| (session?.state !== "running" && session?.state !== "needs-input")
+		|| (session.state === "needs-input" && cohort !== "full-path")
+	) {
+		return { sessions, stateChangeVersions, nextState: undefined };
+	}
+
+	const nextState = session.state === "running" ? "needs-input" : "complete";
+	const detailPrefix = getSessionDetailPrefix(session);
+	const updatedSession = {
+		...session,
+		state: nextState,
+		timeLabel: "Just now",
+		title: nextState === "needs-input"
+			? `${session.shortTitle} needs input`
+			: `${session.shortTitle} finished`,
+		detail: nextState === "needs-input"
+			? cohort === "full-path"
+				? `${detailPrefix} · waiting for a teammate to unblock this session`
+				: `${detailPrefix} · a decision is needed before this session can finish`
+			: `${detailPrefix} · a teammate unblocked the session; findings are ready to review`,
+	} satisfies JiraTeamEu26SyncSession;
+	const nextVersions = new Map(stateChangeVersions);
+	nextVersions.set(sessionId, (nextVersions.get(sessionId) ?? 0) + 1);
+
+	return {
+		sessions: [updatedSession, ...sessions.slice(0, sessionIndex), ...sessions.slice(sessionIndex + 1)],
+		stateChangeVersions: nextVersions,
+		nextState,
+	};
+}
+
+export function takeJiraTeamEu26SyncBatch(
+	nextIndex: number,
+	random: () => number = Math.random,
+): Readonly<{
+	nextIndex: number;
+	sessions: readonly JiraTeamEu26SyncSession[];
+}> {
+	const batchSize = 1 + Math.min(2, Math.floor(random() * 3));
+	const nextBreak = SYNC_BREAK_AFTER_SESSION_COUNTS.find((count) => count > nextIndex)
+		?? JIRA_TEAM_EU26_SYNC_SESSIONS.length;
+	const sessions = JIRA_TEAM_EU26_SYNC_SESSIONS.slice(
+		nextIndex,
+		Math.min(nextIndex + batchSize, nextBreak),
+	);
+
+	return {
+		nextIndex: nextIndex + sessions.length,
+		sessions,
+	};
+}
+
+export function removeReviewedJiraTeamEu26AgentSessionIds(
+	currentIds: ReadonlySet<string>,
+	reviewedIds?: readonly string[],
+): ReadonlySet<string> {
+	if (currentIds.size === 0) {
+		return currentIds;
+	}
+	if (reviewedIds === undefined) {
+		return new Set();
+	}
+
+	const reviewed = new Set(reviewedIds);
+	const nextIds = new Set([...currentIds].filter((id) => !reviewed.has(id)));
+	return nextIds.size === currentIds.size ? currentIds : nextIds;
+}

@@ -21,6 +21,7 @@ import { token } from "@/lib/tokens";
 import NotificationIcon from "@atlaskit/icon/core/notification";
 import QuestionCircleIcon from "@atlaskit/icon/core/question-circle";
 import SettingsIcon from "@atlaskit/icon/core/settings";
+import { DEFAULT_TOP_NAVIGATION_CURRENT_USER, type TopNavigationCurrentUser } from "../data/current-user";
 
 export interface RightNavigationSettingsMenuItem {
 	description?: string;
@@ -33,6 +34,7 @@ export interface RightNavigationSettingsMenuItem {
 }
 
 interface RightNavigationActionsProps {
+	currentUser?: TopNavigationCurrentUser;
 	showRovoAction: boolean;
 	isChatOpen: boolean;
 	onToggleChat: () => void;
@@ -45,6 +47,7 @@ interface RightNavigationActionsProps {
 // and inside the "…" overflow popover (narrow widths). Returns a fragment so the
 // caller owns the flex container in either context.
 export function RightNavigationActions({
+	currentUser = DEFAULT_TOP_NAVIGATION_CURRENT_USER,
 	showRovoAction,
 	isChatOpen,
 	onToggleChat,
@@ -54,9 +57,9 @@ export function RightNavigationActions({
 }: Readonly<RightNavigationActionsProps>) {
 	const hasSettingsMenu = Boolean(settingsMenuItems && settingsMenuItems.length > 0);
 	const { designVariants, setDesignVariant } = useDesignVariants();
-	const settingsDesignVariants = settingsDesignVariantIds === undefined
-		? DESIGN_VARIANTS
-		: DESIGN_VARIANTS.filter((variant) => settingsDesignVariantIds.includes(variant.id));
+	// Demo properties are opt-in; only Jira Team EU26 supplies this list.
+	const settingsDesignVariants = DESIGN_VARIANTS.filter((variant) => settingsDesignVariantIds?.includes(variant.id));
+	const hasSettingsProperties = settingsDesignVariants.length > 0;
 
 	return (
 		<>
@@ -83,9 +86,8 @@ export function RightNavigationActions({
 				<QuestionCircleIcon label="" color={token("color.icon.subtle")} />
 			</Button>
 
-			{/* Fixed-presentation routes retain the visual chrome without exposing
-			    a control that cannot do anything. */}
-			{settingsIconOnly ? (
+			{/* Retain visual chrome without exposing an empty settings control. */}
+			{settingsIconOnly || (!hasSettingsProperties && !hasSettingsMenu) ? (
 				<span
 					aria-hidden="true"
 					className="inline-flex size-8 shrink-0 items-center justify-center text-icon-subtle [&_svg]:size-4 [&_svg]:shrink-0"
@@ -109,26 +111,27 @@ export function RightNavigationActions({
 						<SettingsIcon label="" color="currentColor" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-64">
-						<DropdownMenuGroup>
-							{/* Base UI requires group parts (the label) to live inside the
-							    group that owns them, so the label is nested here. */}
-							<DropdownMenuLabel>Properties</DropdownMenuLabel>
-							{settingsDesignVariants.map((variant) => (
-								<DropdownMenuCheckboxItem
-									indicatorPlacement="end"
-									checked={designVariants[variant.id]}
-									key={variant.id}
-									onCheckedChange={(checked) => {
-										setDesignVariant(variant.id, checked);
-									}}
-								>
-									{variant.label}
-								</DropdownMenuCheckboxItem>
-							))}
-						</DropdownMenuGroup>
+						{hasSettingsProperties ? (
+							<DropdownMenuGroup>
+								{/* Base UI requires the label to live inside its group. */}
+								<DropdownMenuLabel>Properties</DropdownMenuLabel>
+								{settingsDesignVariants.map((variant) => (
+									<DropdownMenuCheckboxItem
+										indicatorPlacement="end"
+										checked={designVariants[variant.id]}
+										key={variant.id}
+										onCheckedChange={(checked) => {
+											setDesignVariant(variant.id, checked);
+										}}
+									>
+										{variant.label}
+									</DropdownMenuCheckboxItem>
+								))}
+							</DropdownMenuGroup>
+						) : null}
 						{hasSettingsMenu ? (
 							<>
-								<DropdownMenuSeparator />
+								{hasSettingsProperties ? <DropdownMenuSeparator /> : null}
 								<DropdownMenuGroup>
 									{settingsMenuItems?.map((item) => (
 										<DropdownMenuItem
@@ -153,10 +156,10 @@ export function RightNavigationActions({
 			<ThemeToggle />
 
 			{/* Profile */}
-			<div className="flex size-8 items-center justify-center">
-				<Avatar size="sm">
-					<AvatarImage src="/avatar-user/venn/venn.png" alt="Venn avatar" />
-					<AvatarFallback>VN</AvatarFallback>
+			<div className="flex size-8 items-center justify-center" data-current-user-id={currentUser.id}>
+				<Avatar label={currentUser.name} size="sm">
+					<AvatarImage src={currentUser.avatarSrc} alt={`${currentUser.name} avatar`} />
+					<AvatarFallback>{currentUser.initials ?? currentUser.name.slice(0, 3)}</AvatarFallback>
 				</Avatar>
 			</div>
 		</>

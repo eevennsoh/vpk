@@ -102,6 +102,8 @@ export interface JiraIssueAgentSessionDragControl {
 	 * Nearby cards may share a fainter trace; omit it to draw no stroke.
 	 */
 	attachTrace?: JiraIssueAttachTrace | null;
+	/** Whole live gesture, including time outside this card's sensor. */
+	attachTraceActive?: boolean;
 	binding: JiraIssueAgentSessionDragBinding;
 	/**
 	 * Sessions in the current drag transfer. Needed on receiving cards (their

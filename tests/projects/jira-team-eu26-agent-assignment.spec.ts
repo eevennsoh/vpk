@@ -3,6 +3,33 @@ import { expect, test } from "@playwright/test";
 test.use({ viewport: { width: 1800, height: 1100 } });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`assignment metadata keeps Claude in front of Maya (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Claude with Maya Ferreira", exact: true }).click();
+		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
+		const identity = flyout.getByRole("group", { name: "Claude, used by Maya Ferreira", exact: true });
+		const faces = identity.locator('[data-slot="avatar"]');
+		await expect(identity).toBeVisible();
+		await expect(faces).toHaveCount(2);
+		expect(await faces.evaluateAll((avatars) => avatars.map((avatar) => avatar.getAttribute("data-shape"))))
+			.toEqual(["hexagon", "circle"]);
+
+		for (const hoverPerson of [false, true]) {
+			if (hoverPerson) await faces.last().hover();
+			await expect.poll(() => identity.evaluate((element) => {
+				const [agent, person] = Array.from(element.children);
+				const left = agent.getBoundingClientRect();
+				const right = person.getBoundingClientRect();
+				const topFace = document.elementsFromPoint((right.left + left.right) / 2, left.top + left.height / 2)
+					.find((hit) => agent.contains(hit) || person.contains(hit));
+				return left.left < right.left && right.left < left.right
+					&& topFace !== undefined && agent.contains(topFace);
+			})).toBe(true);
+		}
+		await page.screenshot({ path: `output/agent-browser/assignment-avatar-stacking-${reducedMotion}.png` });
+	});
+
 	test(`attached session flyout dismisses when its row leaves the column (${reducedMotion})`, async ({ page }) => {
 		await page.setViewportSize({ width: 1340, height: 760 });
 		await page.emulateMedia({ reducedMotion });

@@ -11,8 +11,14 @@ export const ROVO_AGENT_RESULT_SELECT_EVENT = "rovo:select-agent-result";
 
 export type AgentResult = RovoDataParts["agent-result"];
 
+export interface AgentResultCreator {
+	name: string;
+	avatarSrc: string;
+}
+
 interface AgentResultCardProps {
 	agent: AgentResult;
+	creator?: AgentResultCreator;
 	className?: string;
 	onSelectAgent?: (agent: AgentResult) => void;
 }
@@ -23,6 +29,10 @@ const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";
 // owner identity used by the studio session storage and custom-agents table.
 const AGENT_CREATOR_NAME = "Venn Soh";
 const AGENT_CREATOR_AVATAR_SRC = "/avatar-user/venn/venn.png";
+const DEFAULT_AGENT_CREATOR: AgentResultCreator = {
+	name: AGENT_CREATOR_NAME,
+	avatarSrc: AGENT_CREATOR_AVATAR_SRC,
+};
 
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function isGeneratedAgentResult(
@@ -60,6 +70,7 @@ function getAgentAvatarSrc(agent: AgentResult): string {
 
 export function AgentResultCard({
 	agent,
+	creator = DEFAULT_AGENT_CREATOR,
 	className,
 	onSelectAgent,
 }: Readonly<AgentResultCardProps>): ReactNode {
@@ -93,8 +104,8 @@ export function AgentResultCard({
 				onEditAction={handleSelectAgent}
 				onPreviewAction={handleSelectAgent}
 				onSwapAction={handleSelectAgent}
-				partnerLogoSrc={AGENT_CREATOR_AVATAR_SRC}
-				partnerName={AGENT_CREATOR_NAME}
+				partnerLogoSrc={creator.avatarSrc}
+				partnerName={creator.name}
 				previewActionLabel={`View ${displayName}`}
 				swapActionLabel="Chat with agent"
 				variant="preview"

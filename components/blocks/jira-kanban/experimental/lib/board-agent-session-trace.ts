@@ -11,7 +11,8 @@ export interface BoardAgentSessionTrace {
 	pointerY: number;
 }
 
-const TRACE_REACH_PX = 180;
+const TRACE_REACH_PX = 160;
+const TRACE_FULL_STRENGTH_DISTANCE_PX = 16;
 const TRACE_MAX_CARDS = 4;
 // Keep the tight shared gradient visible from outside a card without widening
 // it into a full ring. Distance still controls opacity; the arc faces the drag.
@@ -45,10 +46,13 @@ export function resolveBoardAgentSessionTraces(
 	candidates.sort((a, b) => a.distance - b.distance
 		|| Number(b.trace.cardCode === winnerCardCode) - Number(a.trace.cardCode === winnerCardCode));
 	const closestDistance = candidates[0]?.distance ?? 0;
-	return candidates.slice(0, TRACE_MAX_CARDS).map(({ distance, trace }, index) => {
-		// One unmistakable focal card. Secondary arcs fade quadratically from
-		// 45% to zero as their painted borders get farther from the cursor.
-		const progress = 1 - (distance - closestDistance) / (TRACE_REACH_PX - closestDistance);
-		return { ...trace, nearness: index === 0 ? 1 : 0.45 * progress * progress };
+	return candidates.slice(0, TRACE_MAX_CARDS).map(({ distance, trace }) => {
+		// Enter softly at the sensor boundary, reaching full strength only near
+		// the card. Distance from the closest border dims neighbours continuously;
+		// a rank-based ceiling would jump whenever two cards exchange places.
+		const progress = Math.min(1, (TRACE_REACH_PX - distance) / (TRACE_REACH_PX - TRACE_FULL_STRENGTH_DISTANCE_PX));
+		const approach = progress * progress * (3 - 2 * progress);
+		const relativeStrength = Math.exp(-(distance - closestDistance) / (TRACE_FULL_STRENGTH_DISTANCE_PX * 2));
+		return { ...trace, nearness: approach * relativeStrength };
 	});
 }

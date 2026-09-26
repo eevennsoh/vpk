@@ -6,7 +6,12 @@ const origin = (process.env.PLAYWRIGHT_BASE_URL
 
 test.use({ viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true });
 
-async function openBoard(page: Page, title: string, needsInput = false) {
+async function openBoard(
+	page: Page,
+	title: string,
+	needsInput = false,
+	beforeDrag?: () => Promise<void>,
+) {
 	await page.goto(`${origin}/jira-team-eu26`);
 	await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
 	const options = page.getByRole("button", { name: "Unlink sessions column options" });
@@ -28,6 +33,7 @@ async function openBoard(page: Page, title: string, needsInput = false) {
 		await page.keyboard.press("Enter");
 	}
 	await expect(column).toHaveAttribute("data-collapsed", "true");
+	await beforeDrag?.();
 	const source = page.locator("[data-agent-session-column]").getByTestId(needsInput ? "agent-session-row-lw-sync-release-gate" : "agent-session-row-lw-scope-thread");
 	await expect(source).toBeVisible({ timeout: needsInput ? 55_000 : 5000 });
 	await source.hover();
@@ -37,6 +43,22 @@ async function openBoard(page: Page, title: string, needsInput = false) {
 	await page.mouse.move(box.x + box.width / 2 + 20, box.y + 32, { steps: 5 });
 	return { column, source };
 }
+
+test("live reduced-motion changes replace the collapsed trace with static feedback", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	const { column, source } = await openBoard(page, "To do", false, async () => {
+		await page.emulateMedia({ reducedMotion: "reduce" });
+	});
+	const cell = column.locator("[data-collapsed-session-drop-surface]");
+	const box = (await cell.boundingBox())!;
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+	await expect(column).toHaveAttribute("data-armed", "true");
+	await expect(cell.locator("[data-collapsed-session-drop-static]")).toBeVisible();
+	await expect(cell.locator('[data-slot="jira-issue-attach-trace"]')).toHaveCount(0);
+	await page.evaluate(() => window.dispatchEvent(new PointerEvent("pointercancel", { pointerId: 1, pointerType: "mouse" })));
+	await page.mouse.up();
+	await expect(source).toBeVisible();
+});
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`collapsed trace follows the issue proximity ramp before hover (${reducedMotion})`, async ({ page }) => {

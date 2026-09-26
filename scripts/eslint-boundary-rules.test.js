@@ -70,6 +70,16 @@ export const Fixture = () => <SaveButton className="hover:rounded-full md:h-12 b
 	assert.ok(findings.every((finding) => finding.ruleId === "shadcn/no-restyle"));
 });
 
+test("the copied Team EU26 End project retains the Button contract", async () => {
+	const invalid = `import { Button } from "@/components/ui/button";
+export const Fixture = () => <Button className="px-2 h-12" />;`;
+	const valid = `import { Button } from "@/components/ui/button";
+export const Fixture = () => <Button size="compact" className="w-full" />;`;
+	const filePath = "components/projects/jira-team-eu26-end/lint-contract-fixture.tsx";
+	assert.equal((await designSystemFindings(invalid, filePath)).length, 2);
+	assert.deepEqual(await designSystemFindings(valid, filePath), []);
+});
+
 test("the normal column consumers receive the same Button contract", async () => {
 	const findings = await designSystemFindings(`
 import { Button } from "@/components/ui/button";
@@ -188,6 +198,7 @@ test("the CI pilot command rejects warnings and accepts valid component usage", 
 	const [command, ...args] = lintCommand.split(/\s+/u);
 	assert.equal(command, "eslint");
 	assert.ok(args.includes("components/projects/jira-team-eu26"));
+	assert.ok(args.includes("components/projects/jira-team-eu26-end"));
 	assert.ok(args.includes("components/blocks/agent-session-column"));
 	const eslintBin = path.join(path.dirname(require.resolve("eslint/package.json")), "bin/eslint.js");
 	const run = (classes) => spawnSync(process.execPath, [

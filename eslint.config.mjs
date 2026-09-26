@@ -90,6 +90,7 @@ const eslintConfig = defineConfig([
 		// Expand this pilot only after reviewing each consumer's customization.
 		files: [
 			"components/projects/jira-team-eu26/**/*.{ts,tsx}",
+			"components/projects/jira-team-eu26-end/**/*.{ts,tsx}",
 			"components/blocks/agent-session-column/**/*.{ts,tsx}",
 		],
 		settings: {

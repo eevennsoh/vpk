@@ -12,27 +12,22 @@ function requireFunction(name, value) {
 }
 
 async function logBackendServerReady({
-	areHermesJobsEnabled,
 	buildLlmRoutingStatus,
 	debugMode = false,
 	describeChatBackend,
 	env = process.env,
-	ensureWikiJobs,
 	getEnvVars,
 	getRealtimeConfig,
 	getRovoPool,
 	hasGatewayUrlConfigured,
-	hermesJobsProvider,
 	interactiveChatForcePortRecoveryMaxAttempts,
 	interactiveChatForcePortRecoveryTimeoutMs,
 	logger = console,
 	port,
 	refreshRovoAvailability,
 } = {}) {
-	requireFunction("areHermesJobsEnabled", areHermesJobsEnabled);
 	requireFunction("buildLlmRoutingStatus", buildLlmRoutingStatus);
 	requireFunction("describeChatBackend", describeChatBackend);
-	requireFunction("ensureWikiJobs", ensureWikiJobs);
 	requireFunction("getEnvVars", getEnvVars);
 	requireFunction("getRealtimeConfig", getRealtimeConfig);
 	requireFunction("getRovoPool", getRovoPool);
@@ -55,22 +50,6 @@ async function logBackendServerReady({
 	logger.log(`  ASAP_PRIVATE_KEY: ${env.ASAP_PRIVATE_KEY ? "SET" : "MISSING"}`);
 
 	const rovoReady = await refreshRovoAvailability();
-	if (areHermesJobsEnabled()) {
-		try {
-			const wikiJobProvisioning = await ensureWikiJobs(hermesJobsProvider);
-			logger.log(
-				`  WIKI_JOBS: ${wikiJobProvisioning.existing} existing, ${wikiJobProvisioning.created} created`
-			);
-		} catch (error) {
-			logger.error(
-				"[STARTUP] Failed to ensure wiki jobs",
-				error instanceof Error ? error.message : error,
-			);
-		}
-		hermesJobsProvider.startJobTicker?.();
-	} else {
-		logger.log("  HERMES_JOBS: disabled (set HERMES_JOBS_ENABLED=true to enable background jobs)");
-	}
 
 	const envVars = getEnvVars();
 	const aiGatewayConfigured = hasGatewayUrlConfigured(envVars);

@@ -40,7 +40,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 | AI Gateway helpers                     | `backend/lib/ai-gateway-helpers.js`                         |
 | Rovo Serve gateway (agent loop)        | `backend/lib/rovo-gateway.js`, `backend/lib/rovo-client.js` |
 | UI message types and data parts        | `lib/rovo-ui-messages.ts`                                   |
-| Hermes control plane and Rovo skills   | `components/projects/control-plane/`, `backend/lib/hermes-*.js`, `scripts/verify-hermes-control-plane.js`, `scripts/sync-rovo-skills.js` |
+| Repository skills for Rovo            | `scripts/sync-rovo-skills.js`, `backend/lib/rovo-skills-overlay.js` |
 | Architecture overview                  | `.agents/docs/architecture-overview.md`                     |
 | Extended workflows                     | `.agents/docs/workflows-extended.md`                        |
 | cmux inter-agent messaging             | `.agents/docs/cmux-messaging.md`                            |
@@ -159,13 +159,13 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - Local dev/browser verification: `pnpm run dev:tmux:start` is worktree-aware, detached, and survives turns; stop only this worktree with `pnpm run dev:tmux:stop`. Navigate to the stable Portless `🌐 https://…` URL from `pnpm ports`; use `.dev-frontend-port` only if no Portless route exists, and never assume a default port.
 - Foreground fallback: `pnpm run dev`; Rovo-selected flows still require Rovo Serve.
 - Symphony: `pnpm run symphony` (requires `LINEAR_API_KEY`, `SYMPHONY_LINEAR_PROJECT_SLUG`, and `mise`).
-- After backend startup run `pnpm run verify:hermes`; repair the overlay with `pnpm run sync:rovo:skills`.
+- Repair the repository skills symlink with `pnpm run sync:rovo:skills`.
 - Full launcher matrix (Rovo tmux variants, service-only launchers, attach/status, and Portless): `.agents/docs/workflows-extended.md`.
 
 ### Build and deploy
 
 - Verify the Next.js build locally: `pnpm run build`
-- Build the static export used in production deployment: `pnpm run build:export` (do not run `NEXT_OUTPUT=export pnpm run build` directly; the wrapper temporarily moves runtime-only App Router API and skills detail routes before invoking the export build)
+- Build the static export used in production deployment: `pnpm run build:export` (do not run `NEXT_OUTPUT=export pnpm run build` directly; the wrapper temporarily moves runtime-only App Router API routes before invoking the export build)
 - Fast redeploy to Micros after `.deploy.local` exists: `pnpm run deploy:micros`
 
 ### Testing

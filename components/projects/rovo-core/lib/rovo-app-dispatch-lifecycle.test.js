@@ -103,7 +103,6 @@ function createPromptNowInput(overrides = {}) {
 		flushQueuedStreamingArtifactDeltaNow: () => {
 			calls.push(["flush-streaming"]);
 		},
-		hermesContext: undefined,
 		lastUseChatBusyAtRef: { current: 0 },
 		markLocalThreadRunPending: (threadId) => {
 			calls.push(["mark-run", threadId]);
@@ -202,7 +201,6 @@ test("submitRovoAppPromptDispatch queues busy queue-mode prompts and kicks proce
 			files: [],
 			contextDescription: undefined,
 			creationMode: undefined,
-			hermesContext: undefined,
 			messageMetadata: { submittedMode: "plan" },
 			mode: "plan",
 			threadId: "thread-1",
@@ -276,7 +274,6 @@ test("dispatchRovoAppPromptNow sends Studio creation mode through metadata and b
 	const { calls, getDismissedKeys, getPlanningSession, input } = createPromptNowInput({
 		contextDescription: "Use the Studio context",
 		creationMode: "agent",
-		hermesContext: { source: "studio" },
 		messageMetadata: { source: "composer" },
 		mode: "plan",
 		text: "  Build an agent  ",
@@ -301,7 +298,6 @@ test("dispatchRovoAppPromptNow sends Studio creation mode through metadata and b
 		artifactContext: undefined,
 		contextDescription: "Use the Studio context",
 		creationMode: "agent",
-		hermesContext: { source: "studio" },
 		isPlanMode: true,
 		streamingArtifact: undefined,
 	});

@@ -96,16 +96,6 @@ const DEFAULT_HEAVY_IMPORT_RULES = [
 	},
 	{
 		match: "exact",
-		source: "graphology",
-		reason: "graph runtime",
-	},
-	{
-		match: "exact",
-		source: "graphology-layout-forceatlas2",
-		reason: "graph layout runtime",
-	},
-	{
-		match: "exact",
 		source: "leaflet",
 		reason: "map runtime",
 	},
@@ -128,11 +118,6 @@ const DEFAULT_HEAVY_IMPORT_RULES = [
 		match: "exact",
 		source: "shiki",
 		reason: "syntax-highlighting runtime",
-	},
-	{
-		match: "exact",
-		source: "sigma",
-		reason: "graph rendering runtime",
 	},
 	{
 		match: "exact",

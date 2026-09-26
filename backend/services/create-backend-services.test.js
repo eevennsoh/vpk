@@ -12,9 +12,6 @@ const SERVICE_FACTORY_NAMES = [
 	"createAIGatewayProvider",
 	"createAgentsRfpDemoStateManager",
 	"createCheckpointManager",
-	"createHermesJobLinkManager",
-	"createHermesJobsProvider",
-	"createHermesSkillDraftManager",
 	"createOrchestratorLog",
 	"createRovoAppDocumentManager",
 	"createRovoAppGeneratedFilesManager",
@@ -22,7 +19,6 @@ const SERVICE_FACTORY_NAMES = [
 	"createRovoAppThreadManager",
 	"createRovoAppUploadManager",
 	"createRovoAppVoteManager",
-	"createSkillsHubClient",
 ];
 
 function createFactoryHarness() {
@@ -56,21 +52,15 @@ test("createBackendServices creates the backend service graph with shared paths 
 	const logger = { log() {} };
 	const services = createBackendServices({
 		baseDir: "/tmp/backend-data",
-		executeHermesJobTask: async () => ({ ok: true }),
 		factories: harness.factories,
 		logger,
-		onHermesJobSettled: async () => {},
 		projectRoot: "/repo",
-		skillsDir: "/repo/.agents/skills",
 	});
 
 	assert.deepEqual(Object.keys(services).sort(), [
 		"agentsRfpDemoStateManager",
 		"aiGatewayProvider",
 		"checkpointManager",
-		"hermesJobLinkManager",
-		"hermesJobsProvider",
-		"hermesSkillDraftManager",
 		"orchestratorLog",
 		"rovoAppDocumentManager",
 		"rovoAppGeneratedFilesManager",
@@ -78,7 +68,6 @@ test("createBackendServices creates the backend service graph with shared paths 
 		"rovoAppThreadManager",
 		"rovoAppUploadManager",
 		"rovoAppVoteManager",
-		"skillsHubClient",
 	]);
 
 	assert.deepEqual(harness.getCall("createRovoAppThreadManager").options, {
@@ -88,9 +77,6 @@ test("createBackendServices creates the backend service graph with shared paths 
 	assert.deepEqual(harness.getCall("createCheckpointManager").options, {
 		baseDir: "/tmp/backend-data",
 		maxCheckpoints: DEFAULT_CHECKPOINT_LIMIT,
-	});
-	assert.deepEqual(harness.getCall("createSkillsHubClient").options, {
-		skillsDir: "/repo/.agents/skills",
 	});
 	assert.deepEqual(harness.getCall("createRovoAppGeneratedFilesManager").options, {
 		baseDir: "/tmp/backend-data",
@@ -110,8 +96,6 @@ test("createBackendServices creates the backend service graph with shared paths 
 
 	for (const name of [
 		"createAgentsRfpDemoStateManager",
-		"createHermesJobLinkManager",
-		"createHermesSkillDraftManager",
 		"createRovoAppDocumentManager",
 		"createRovoAppUploadManager",
 		"createRovoAppVoteManager",
@@ -122,66 +106,29 @@ test("createBackendServices creates the backend service graph with shared paths 
 	}
 });
 
-test("createBackendServices wires Hermes job callbacks with the created services", async () => {
+
+test("factory creates retained services without background-job lifecycle callbacks", () => {
 	const harness = createFactoryHarness();
-	const jobTaskCalls = [];
-	const settledCalls = [];
-	const executeHermesJobTask = async (payload) => {
-		jobTaskCalls.push(payload);
-		return { result: "done" };
-	};
-	const onHermesJobSettled = async (job, services) => {
-		settledCalls.push({
-			job,
-			threadManager: services.rovoAppThreadManager,
-		});
-	};
-
-	const services = createBackendServices({
-		baseDir: "/tmp/backend-data",
-		executeHermesJobTask,
-		factories: harness.factories,
-		onHermesJobSettled,
-		skillsDir: "/repo/.agents/skills",
-	});
-	const jobsOptions = harness.getCall("createHermesJobsProvider").options;
-
-	assert.equal(jobsOptions.baseDir, "/tmp/backend-data");
-	assert.equal(jobsOptions.executeTask, executeHermesJobTask);
-	assert.equal(typeof jobsOptions.onJobSettled, "function");
-
-	assert.deepEqual(await jobsOptions.executeTask({ job: { id: "job-1" } }), {
-		result: "done",
-	});
-	assert.deepEqual(jobTaskCalls, [{ job: { id: "job-1" } }]);
-
-	await jobsOptions.onJobSettled({ id: "job-1" });
-
-	assert.deepEqual(settledCalls, [{
-		job: { id: "job-1" },
-		threadManager: services.rovoAppThreadManager,
-	}]);
+	const services = createBackendServices({ factories: harness.factories });
+	assert.equal(services.checkpointManager, harness.getCall("createCheckpointManager").service);
+	assert.equal(Object.keys(services).length, SERVICE_FACTORY_NAMES.length);
 });
 
-test("createBackendServices requires Hermes job lifecycle callbacks", () => {
-	const harness = createFactoryHarness();
-	const baseOptions = {
-		factories: harness.factories,
-		skillsDir: "/repo/.agents/skills",
-	};
-
-	assert.throws(
-		() => createBackendServices({
-			...baseOptions,
-			onHermesJobSettled: async () => {},
-		}),
-		/executeHermesJobTask/u,
-	);
-	assert.throws(
-		() => createBackendServices({
-			...baseOptions,
-			executeHermesJobTask: async () => {},
-		}),
-		/onHermesJobSettled/u,
-	);
+test("fresh storage recreates ordinary chat and RFP state without external integration data", async () => {
+	const fs = require("node:fs/promises");
+	const os = require("node:os");
+	const path = require("node:path");
+	const baseDir = await fs.mkdtemp(path.join(os.tmpdir(), "vpk-fresh-services-"));
+	try {
+		const services = createBackendServices({ baseDir, logger: { log() {}, warn() {}, error() {} } });
+		const state = await services.agentsRfpDemoStateManager.readState();
+		assert.equal(state.agent, null);
+		const thread = await services.rovoAppThreadManager.createThread({ title: "Fresh chat", messages: [] });
+		assert.equal((await services.rovoAppThreadManager.getThread(thread.id)).title, "Fresh chat");
+		const files = await fs.readdir(baseDir);
+		assert.equal(files.some((name) => /hermes|wiki|skill-draft|job-link/u.test(name)), false);
+		assert.deepEqual(await services.checkpointManager.list(), []);
+	} finally {
+		await fs.rm(baseDir, { recursive: true, force: true });
+	}
 });

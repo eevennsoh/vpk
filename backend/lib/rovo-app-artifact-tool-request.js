@@ -1,6 +1,6 @@
 "use strict";
 
-const { compressConversation } = require("./hermes-context-compression");
+const { compressConversation } = require("./conversation-compression");
 const {
 	buildRovoAppArtifactContext,
 } = require("./rovo-app-artifact-generation");
@@ -70,7 +70,7 @@ function createRovoAppArtifactToolRequestHandler({
 		const conversationHistory = compressionResult.messages;
 		if (compressionResult.compressed) {
 			logger.info(
-				`[HERMES] Compressed conversation history: ${rawConversationHistory.length} -> ${conversationHistory.length} messages`,
+				`[CHAT] Compressed conversation history: ${rawConversationHistory.length} -> ${conversationHistory.length} messages`,
 			);
 		}
 

@@ -12,10 +12,12 @@ import {
 	type RightNavigationSettingsMenuItem,
 } from "./right-navigation-actions";
 import { TOP_NAV_OVERFLOW_BREAKPOINT_PX } from "../layout-constants";
+import type { TopNavigationCurrentUser } from "../data/current-user";
 
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
 
 interface RightNavigationProps {
+	currentUser?: TopNavigationCurrentUser;
 	product: Product;
 	windowWidth: number;
 	hideRovoAction?: boolean;
@@ -34,6 +36,7 @@ interface RightNavigationProps {
 }
 
 export function RightNavigation({
+	currentUser,
 	product,
 	windowWidth,
 	hideRovoAction = false,
@@ -74,6 +77,7 @@ export function RightNavigation({
 
 	const actions = (
 		<RightNavigationActions
+			currentUser={currentUser}
 			settingsDesignVariantIds={settingsDesignVariantIds}
 			settingsIconOnly={settingsIconOnly}
 			showRovoAction={showRovoAction}

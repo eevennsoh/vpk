@@ -378,6 +378,7 @@ function JiraDropzoneWell({
 							marching={marching}
 							openMinHeight={openMinHeight}
 							pinMagnet={pinMagnet}
+							pinVerticalMagnet={pinVerticalMagnet}
 							renderControl={renderControl}
 							selected={selected}
 						/>
@@ -392,6 +393,7 @@ function JiraDropzoneWell({
 						marching={marching}
 						phase={phase}
 						pinMagnet={pinMagnet}
+						pinVerticalMagnet={pinVerticalMagnet}
 						selected={selected}
 						size={size}
 					/>}
@@ -412,6 +414,7 @@ type JiraDropzoneWellChromeProps = Pick<
 	| "openMinHeight"
 	| "phase"
 	| "pinMagnet"
+	| "pinVerticalMagnet"
 	| "selected"
 	| "size"
 > & {
@@ -427,10 +430,11 @@ function JiraDropzoneButtonChrome({
 	marching,
 	openMinHeight,
 	pinMagnet,
+	pinVerticalMagnet,
 	renderControl,
 	selected,
 }: Readonly<Pick<JiraDropzoneWellProps,
-	"active" | "copy" | "expanded" | "label" | "magnet" | "openMinHeight" | "pinMagnet" | "selected"
+	"active" | "copy" | "expanded" | "label" | "magnet" | "openMinHeight" | "pinMagnet" | "pinVerticalMagnet" | "selected"
 > & {
 	marching: boolean;
 	renderControl: (props: JiraDropzoneControlProps) => ReactElement;
@@ -480,7 +484,7 @@ function JiraDropzoneButtonChrome({
 					>
 						<motion.span
 							className={cn("inline-block will-change-transform", selected ? "text-text-selected" : null)}
-							style={{ x: pinMagnet ? 0 : magnet.labelX, y: pinMagnet ? 0 : magnet.labelY }}
+							style={{ x: pinMagnet ? 0 : magnet.labelX, y: pinMagnet || pinVerticalMagnet ? 0 : magnet.labelY }}
 						>{label}</motion.span>
 					</motion.span>
 				</span>
@@ -500,6 +504,7 @@ function JiraDropzoneWellChrome({
 	marching,
 	phase,
 	pinMagnet,
+	pinVerticalMagnet,
 	selected,
 	size,
 }: JiraDropzoneWellChromeProps): ReactElement {
@@ -538,6 +543,7 @@ function JiraDropzoneWellChrome({
 				label={label}
 				magnet={magnet}
 				pinMagnet={pinMagnet}
+				pinVerticalMagnet={pinVerticalMagnet}
 			/>
 		</motion.div>
 	);
@@ -548,13 +554,14 @@ function JiraDropzoneWellCopy({
 	label,
 	magnet,
 	pinMagnet,
-}: Pick<JiraDropzoneWellProps, "copy" | "label" | "magnet" | "pinMagnet">): ReactElement {
+	pinVerticalMagnet,
+}: Pick<JiraDropzoneWellProps, "copy" | "label" | "magnet" | "pinMagnet" | "pinVerticalMagnet">): ReactElement {
 	return copy === "label" ? (
 		<motion.span
 			className="inline-block will-change-transform"
 			style={{
 				x: pinMagnet ? 0 : magnet.labelX,
-				y: pinMagnet ? 0 : magnet.labelY,
+				y: pinMagnet || pinVerticalMagnet ? 0 : magnet.labelY,
 			}}
 		>
 			{label}

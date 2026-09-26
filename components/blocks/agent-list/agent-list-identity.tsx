@@ -1,6 +1,6 @@
 "use client";
 
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
 import { HumanAgentAvatar, type HumanAgentAvatarOrder, type HumanAgentAvatarProps } from "@/components/ui-custom/human-agent-avatar";
 import {
 	Avatar,
@@ -35,6 +35,7 @@ const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>>
 
 export function AgentListAttributionAvatarGroup({
 	agent,
+	appearance,
 	animate,
 	attributedBy,
 	attributionOrder = "agent-first",
@@ -42,6 +43,7 @@ export function AgentListAttributionAvatarGroup({
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
+	appearance?: AgentAvatarVisualProps["appearance"];
 	animate?: boolean;
 	attributedBy: AgentListInvoker;
 	attributionOrder?: AgentListAttributionOrder;
@@ -62,6 +64,7 @@ export function AgentListAttributionAvatarGroup({
 	);
 	const agentAvatar = (
 		<AgentAvatarVisual
+			appearance={appearance}
 			animate={animate}
 			key="agent"
 			avatarSrc={agent.avatarSrc}
@@ -93,6 +96,7 @@ export function AgentListAttributionAvatarGroup({
  */
 export function AgentListIdentity({
 	agent,
+	appearance,
 	animate,
 	attributedBy,
 	attributionOrder = "human-first",
@@ -102,6 +106,7 @@ export function AgentListIdentity({
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
+	appearance?: AgentAvatarVisualProps["appearance"];
 	attributedBy?: AgentListInvoker;
 	attributionOrder?: AgentListAttributionOrder;
 	className?: string;
@@ -110,7 +115,7 @@ export function AgentListIdentity({
 	if (attributedBy !== undefined && agent.kind !== "person") {
 		return (
 			<HumanAgentAvatar
-				agent={agent}
+				agent={appearance ? { ...agent, appearance } : agent}
 				human={attributedBy}
 				attributionOrder={attributionOrder}
 				className={className}
@@ -138,6 +143,7 @@ export function AgentListIdentity({
 
 	return (
 		<AgentAvatarVisual
+			appearance={appearance}
 			animate={animate}
 			avatarClassName={className}
 			avatarSrc={agent.avatarSrc}

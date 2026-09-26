@@ -5,15 +5,6 @@ const {
 	getBrowserWorkspaceAllowedRovoMcpServerSignature,
 	getBrowserWorkspaceRovoMcpServerConfig,
 } = require("../../backend/lib/browser-workspace-mcp");
-const {
-	getWikiCaptureAllowedRovoMcpServerSignature,
-	getWikiCaptureRovoMcpServerConfig,
-} = require("../../backend/lib/wiki-capture-mcp");
-const {
-	getQmdAllowedRovoMcpServerSignature,
-	getQmdRovoMcpServerConfig,
-	isQmdRovoMcpServerAvailable,
-} = require("../../backend/lib/qmd");
 
 const resolveRovoConfigPath = () => {
 	const ymlPath = path.join(os.homedir(), ".rovo", "config.yml");
@@ -214,10 +205,7 @@ const dedupeAllowedMcpServersInConfig = (configPath = resolveRovoConfigPath()) =
 	};
 };
 
-function syncWorkspaceRovoConfig({
-	cwd = process.cwd(),
-	isQmdRovoMcpServerAvailableImpl = isQmdRovoMcpServerAvailable,
-} = {}) {
+function syncWorkspaceRovoConfig({ cwd = process.cwd() } = {}) {
 	const sourceConfigPath = resolveRovoConfigPath();
 	const workspaceConfigPath = resolveWorkspaceRovoGeneratedConfigPath(cwd);
 	const workspaceMcpConfigPath = resolveWorkspaceRovoGeneratedMcpPath(cwd);
@@ -239,7 +227,6 @@ function syncWorkspaceRovoConfig({
 	const existingWorkspaceConfigText = fs.existsSync(workspaceConfigPath)
 		? fs.readFileSync(workspaceConfigPath, "utf8")
 		: "";
-	const qmdMcpEnabled = isQmdRovoMcpServerAvailableImpl({ repoRoot: cwd });
 
 	const mergedAllowedServers = mergeUniqueStrings(
 		extractYamlListEntries(sourceConfigText, "allowedMcpServers").filter(
@@ -252,25 +239,11 @@ function syncWorkspaceRovoConfig({
 				!isWorkspaceGeneratedMcpSignature(entry) &&
 				!isRepoLocalBrowserAutomationSignature(entry),
 		),
-			[
-				...(qmdMcpEnabled ? [getQmdAllowedRovoMcpServerSignature()] : []),
-				getBrowserWorkspaceAllowedRovoMcpServerSignature({ repoRoot: cwd }),
-				getWikiCaptureAllowedRovoMcpServerSignature({ repoRoot: cwd }),
-			],
-		);
-	const qmdMcpServers = qmdMcpEnabled
-		? getQmdRovoMcpServerConfig({ repoRoot: cwd })
-		: {};
+		[getBrowserWorkspaceAllowedRovoMcpServerSignature({ repoRoot: cwd })],
+	);
 	const browserWorkspaceMcpServers = getBrowserWorkspaceRovoMcpServerConfig({
 		repoRoot: cwd,
 	});
-	const wikiCaptureMcpServers = getWikiCaptureRovoMcpServerConfig({
-		repoRoot: cwd,
-	});
-	const qmdIndexPath = qmdMcpServers.qmd?.env?.INDEX_PATH;
-	if (typeof qmdIndexPath === "string" && qmdIndexPath.trim()) {
-		fs.mkdirSync(path.dirname(qmdIndexPath), { recursive: true });
-	}
 
 	let nextWorkspaceConfigText = replaceYamlScalar(
 		sourceConfigText,
@@ -316,23 +289,21 @@ function syncWorkspaceRovoConfig({
 			: {};
 	delete sourceMcpServers.playwright;
 	delete existingWorkspaceMcpServers.playwright;
-	if (!qmdMcpEnabled) {
-		delete sourceMcpServers.qmd;
-		delete existingWorkspaceMcpServers.qmd;
-	}
+	delete sourceMcpServers.qmd;
+	delete existingWorkspaceMcpServers.qmd;
+	delete sourceMcpServers["wiki-capture"];
+	delete existingWorkspaceMcpServers["wiki-capture"];
 	delete sourceMcpServers["chrome-devtools"];
 	delete existingWorkspaceMcpServers["chrome-devtools"];
 
 	const nextWorkspaceMcpConfig = {
 		...sourceMcpConfig,
 		...existingWorkspaceMcpConfig,
-			mcpServers: {
-				...sourceMcpServers,
-					...existingWorkspaceMcpServers,
-					...qmdMcpServers,
-					...browserWorkspaceMcpServers,
-					...wikiCaptureMcpServers,
-				},
+		mcpServers: {
+			...sourceMcpServers,
+			...existingWorkspaceMcpServers,
+			...browserWorkspaceMcpServers,
+		},
 		inputs: Array.isArray(existingWorkspaceMcpConfig.inputs)
 			? existingWorkspaceMcpConfig.inputs
 			: Array.isArray(sourceMcpConfig.inputs)

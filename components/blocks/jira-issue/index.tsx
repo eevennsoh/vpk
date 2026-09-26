@@ -56,6 +56,7 @@ import { JiraIssueUncapturedWork } from "@/components/blocks/jira-issue/uncaptur
 import { JiraIssueSummary } from "@/components/blocks/jira-issue/summary";
 import type {
 	JiraIssueChrome,
+	JiraIssueCoverImage,
 	JiraIssueIconScale,
 	JiraIssuePriority,
 	JiraIssuePullRequestPreview,
@@ -90,6 +91,7 @@ const AGENT_ACTIVITY_SURFACE_STYLE: CSSProperties = {
 
 export type {
 	JiraIssueChrome,
+	JiraIssueCoverImage,
 	JiraIssueIconScale,
 	JiraIssuePriority,
 	JiraIssuePullRequestPreview,
@@ -167,6 +169,7 @@ export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"artic
 
 export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "children"> {
 	variant?: "default";
+	coverImage?: JiraIssueCoverImage;
 	/** Issue summary shown as the primary card text. */
 	summary: string;
 	/** Jira issue key, e.g. RFP-101. */
@@ -270,6 +273,7 @@ function JiraIssueDefault({
 	chrome = "raised",
 	compact = false, iconScale = "compact", parentOwnsLayout = false,
 	className,
+	coverImage,
 	defaultSubtasksExpanded = false,
 	dragging = false,
 	draggable = true,
@@ -667,6 +671,7 @@ function JiraIssueDefault({
 			assigneeAvatarSrc={assigneeAvatarSrc}
 			assigneePulse={assigneePulse}
 			assigneeUnassignedKind={assigneeUnassignedKind}
+			coverImage={coverImage}
 			iconScale={iconScale}
 			issueKey={issueKey}
 			issueTypeLabel={issueTypeLabel}
@@ -824,6 +829,7 @@ function JiraIssueDefault({
 						transition={layoutTransition}
 					>
 						<JiraIssueAttachTraceOverlay
+							active={agentSessionDragControl?.attachTraceActive}
 							nearness={resolveJiraIssueAttachNearness(agentSessionDragControl?.attachTrace?.nearness ?? attachNearness, shouldReduceMotion)}
 							trace={agentSessionDragControl?.attachTrace}
 						/>

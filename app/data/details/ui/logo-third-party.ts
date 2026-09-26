@@ -34,6 +34,17 @@ export const LOGO_THIRD_PARTY_DETAIL: ComponentDetail = {
         type: "string",
         description: "Optional text displayed beside the icon for a lockup layout.",
       },
+			{
+				name: "artwork",
+				type: '"package" | "local" | "glyph"',
+				default: '"package"',
+				description: "Use the upstream package by default, owned local artwork for coding avatars, or the unpadded Codex glyph. Local variants render bare and preserve their authored colors.",
+			},
+			{
+				name: "sizePx",
+				type: "number",
+				description: "Exact pixel footprint for local or glyph artwork, such as the 12px Codex mark inside a compact avatar. Package artwork uses the size token.",
+			},
       {
         name: "borderless",
         type: "boolean",

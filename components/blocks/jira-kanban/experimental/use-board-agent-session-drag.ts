@@ -874,6 +874,7 @@ export function useBoardAgentSessionDrag({
 			? {
 				attachNearness,
 				attachTrace,
+				attachTraceActive: transaction !== null,
 				binding: attachedBinding,
 				dragCount,
 				dropTarget,

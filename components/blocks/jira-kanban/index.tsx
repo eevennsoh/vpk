@@ -14,6 +14,7 @@ import {
 	type JiraIssueAgentActivity,
 	type JiraIssueAgentActivityMode,
 	type JiraIssueCompletedAgentRun,
+	type JiraIssueCoverImage,
 	type JiraIssueGenerativeActionRequest,
 	type JiraIssuePriority,
 	type JiraIssuePullRequestPreview,
@@ -80,6 +81,7 @@ export interface JiraKanbanCardData {
 	status?: string;
 	title: string;
 	code: string;
+	coverImage?: JiraIssueCoverImage;
 	tags: JiraKanbanCardTag[];
 	priority: JiraKanbanPriority;
 	avatarSrc?: string;
@@ -98,6 +100,8 @@ export interface JiraKanbanCardData {
 }
 
 export interface JiraKanbanColumnData {
+	/** People presenting this section; independent from work-item assignees. */
+	presenters?: readonly JiraKanbanAssigneeData[];
 	/** Workflow destinations grouped into this column. Defaults to its title. */
 	statuses?: readonly string[];
 	title: string;
@@ -722,6 +726,7 @@ export function JiraKanban({
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
 											<JiraIssue
+												coverImage={card.coverImage}
 												active={isActive}
 												chrome={chrome.cardChrome}
 												summary={card.title}

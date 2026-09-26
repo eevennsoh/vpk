@@ -128,7 +128,6 @@ export async function persistRovoAppPlanWidgetMetadata({
 			realtimeMessages: resolvedThread.realtimeMessages ?? [],
 			visibility: resolvedThread.visibility,
 			activeDocumentId: resolvedThread.activeDocumentId,
-			hermesContext: resolvedThread.hermesContext ?? null,
 			title: resolvedThread.title,
 		});
 		lastPersistedKeyRef.current = persistedKey;

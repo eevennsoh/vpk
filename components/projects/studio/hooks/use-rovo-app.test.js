@@ -24,7 +24,7 @@ function assertIncludesAll(source, snippets) {
 test("Studio useRovoApp remains a thin route adapter over shared Rovo core", () => {
 	assertIncludesAll(STUDIO_ROUTE_HOOK_SOURCE, [
 		/import \{ useRovoAppQueue \} from "@\/app\/studio\/rovo-queue-provider";/u,
-		/import \{ usePersistentState \} from "@\/components\/projects\/control-plane\/lib\/use-persistent-state";/u,
+		/import \{ usePersistentState \} from "@\/lib\/use-persistent-state";/u,
 		/import \{ studioAppAdapter \} from "@\/components\/projects\/studio\/studio-app-adapter";/u,
 		/import \{[\s\S]*useRovoAppCore,[\s\S]*type RovoAppHookOptions,[\s\S]*type RovoAppHookResult,[\s\S]*\} from "@\/components\/projects\/rovo-core\/hooks\/use-rovo-app-core";/u,
 		/const STUDIO_CLARIFICATION_BEHAVIOR = \{[\s\S]*dismissUsesPlanMode: true,[\s\S]*includeDeferredToolPlanMode: false,[\s\S]*rollbackFailedSend: true,[\s\S]*\} as const;/u,
