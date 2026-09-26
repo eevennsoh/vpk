@@ -273,7 +273,6 @@ function BoardColumnShell({
 	columnWidth,
 	count,
 	createWorkItemDropZoneLabel,
-	issueMoveVisual,
 	onDragLeave,
 	onDragOver,
 	onDrop,
@@ -290,7 +289,6 @@ function BoardColumnShell({
 	columnSizing: "fill" | "content";
 	columnWidth: BoardColumnWidth;
 	count: number;
-	issueMoveVisual: boolean;
 	createWorkItemDropZoneLabel?: string;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -339,9 +337,8 @@ function BoardColumnShell({
 				columnSizing === "content" ? "group/board-column-shell relative isolate flex min-h-0 flex-col" : null,
 				isResizing ? "overflow-hidden" : "overflow-visible",
 			)}
-			onDragEnterCapture={issueMoveVisual ? onDragOver : undefined}
-			onDragOverCapture={issueMoveVisual ? onDragOver : undefined}
-			onDragOver={issueMoveVisual ? undefined : onDragOver}
+			onDragEnterCapture={onDragOver}
+			onDragOverCapture={onDragOver}
 			onDragLeave={onDragLeave}
 			onDrop={onDrop}
 			onTransitionEnd={handleTransitionEnd}
@@ -549,7 +546,10 @@ function ExperimentalJiraKanbanView({
 	const setColumnDropArmed = (element: HTMLDivElement, armed: boolean) => {
 		const ring = element.querySelector<HTMLElement>("[data-jira-kanban-column-drop-ring]") ?? element;
 		const choosingStatus = element.querySelector("[data-issue-status-choices]") !== null;
-		setKanbanColumnDropArmed(ring, chrome, armed && (!issueMoveVisual || element.dataset.collapsed === "true" || choosingStatus || element.dataset.jiraKanbanCardCount === "0"));
+		const showRing = element.dataset.collapsed === "true"
+			|| (!choosingStatus && element.dataset.jiraKanbanCardCount === "0")
+			|| (issueMoveVisual && choosingStatus);
+		setKanbanColumnDropArmed(ring, chrome, armed && showRing);
 	};
 
 	const handleColumnDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -784,7 +784,6 @@ function ExperimentalJiraKanbanView({
 							columnSizing={columnSizing}
 							columnWidth={columnWidth}
 							count={column.cards.length}
-							issueMoveVisual={issueMoveVisual}
 							createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 							sessionDragTransaction={boardSessionDrag.transaction}
 							key={column.title}

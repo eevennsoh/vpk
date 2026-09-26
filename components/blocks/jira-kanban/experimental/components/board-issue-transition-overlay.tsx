@@ -41,29 +41,40 @@ function BoardIssueStatusDropZone({ selected, status }: Readonly<{ selected: boo
 	</div>;
 }
 
-export function BoardIssueTransitionOverlay({ issueDrop, title, moveVisual = true }: Readonly<{ issueDrop: ReturnType<typeof useBoardIssueDrop>; title: string; moveVisual?: boolean }>) {
+function DefaultBoardIssueStatusDropZone({ selected, status }: Readonly<{ selected: boolean; status: string }>) {
+	return (
+		<div data-issue-status-zone={status} className={cn("flex min-h-0 flex-1 flex-col items-center justify-center gap-2 border-border-selected text-sm text-text last:border-t-2", selected ? "bg-bg-selected-hovered" : null)}>
+			<span>Transition to</span>
+			<Icon aria-hidden className="text-icon-subtle" data-issue-transition-arrow="" render={<ArrowDownIcon color="currentColor" label="" size="small" />} />
+			<Lozenge variant="information">{status}</Lozenge>
+		</div>
+	);
+}
+
+type TransitionOverlayProps = Readonly<{ issueDrop: ReturnType<typeof useBoardIssueDrop>; title: string; moveVisual?: boolean }>;
+
+function BoardIssueStatusChoices({ issueDrop, title, moveVisual }: TransitionOverlayProps) {
+	const StatusDropZone = moveVisual ? BoardIssueStatusDropZone : DefaultBoardIssueStatusDropZone;
+	const choices = issueDrop.choosing ? issueDrop.choices : [];
+	return (
+		<div
+			className={cn("absolute inset-0 z-20 flex flex-col", moveVisual ? "p-1" : "overflow-hidden rounded-lg border-2 border-border-selected bg-bg-selected", !issueDrop.choosing ? "opacity-0" : null)}
+			style={{ gap: moveVisual ? token("space.050") : undefined }}
+			aria-hidden={!issueDrop.choosing || undefined}
+			role="group"
+			aria-label={`Choose a status in ${title}`}
+		>
+			{choices.map((status) => <StatusDropZone key={status} selected={issueDrop.current?.status === status} status={status} />)}
+		</div>
+	);
+}
+
+export function BoardIssueTransitionOverlay({ issueDrop, title, moveVisual = true }: TransitionOverlayProps) {
+	const insertion = issueDrop.choosing ? null : issueDrop.current;
 	return <>
-		{issueDrop.offeringChoices || issueDrop.current?.entered ? (
-			<div
-				className={cn("absolute inset-0 z-20 flex flex-col", moveVisual ? "p-1" : "overflow-hidden rounded-lg border-2 border-border-selected bg-bg-selected", !issueDrop.choosing ? "opacity-0" : null)}
-				style={{ gap: moveVisual ? token("space.050") : undefined }}
-				aria-hidden={!issueDrop.choosing || undefined}
-				role="group"
-				aria-label={`Choose a status in ${title}`}
-			>
-				{issueDrop.choosing ? issueDrop.choices.map((status) => moveVisual ? (
-					<BoardIssueStatusDropZone key={status} selected={issueDrop.current?.status === status} status={status} />
-				) : (
-					<div key={status} data-issue-status-zone={status} className={cn("flex min-h-0 flex-1 flex-col items-center justify-center gap-2 border-border-selected text-sm text-text last:border-t-2", issueDrop.current?.status === status ? "bg-bg-selected-hovered" : null)}>
-						<span>Transition to</span>
-						<Icon aria-hidden className="text-icon-subtle" data-issue-transition-arrow="" render={<ArrowDownIcon color="currentColor" label="" size="small" />} />
-						<Lozenge variant="information">{status}</Lozenge>
-					</div>
-				)) : null}
-			</div>
-		) : null}
-		{!issueDrop.choosing && issueDrop.current?.lineTop !== undefined ? (
-			<div className="pointer-events-none absolute inset-x-1 z-30" style={{ top: issueDrop.current.lineTop }} data-issue-drop-before={issueDrop.current.beforeCardCode ?? "end"}>
+		{issueDrop.offeringChoices || issueDrop.current?.entered ? <BoardIssueStatusChoices issueDrop={issueDrop} title={title} moveVisual={moveVisual} /> : null}
+		{insertion?.lineTop !== undefined ? (
+			<div className="pointer-events-none absolute inset-x-1 z-30" style={{ top: insertion.lineTop }} data-issue-drop-before={insertion.beforeCardCode ?? "end"}>
 				<BoardCardInsertionLine position="before" seam="edge" marker={moveVisual ? "none" : "circle"} />
 			</div>
 		) : null}

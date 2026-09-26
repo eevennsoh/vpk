@@ -77,6 +77,7 @@ test("dragging playground exposes both variants without resetting moved cards", 
 	await startDrag(page, "PAY-105");
 	const done = (await page.locator('[data-jira-kanban-column="Done"]').boundingBox())!;
 	await page.mouse.move(done.x + 80, done.y + 60, { steps: 5 });
+	await expect(page.locator('[data-jira-kanban-column="Done"] [data-jira-kanban-column-drop-ring]')).toHaveClass(/\bborder-border-selected\b/);
 	await page.mouse.up();
 	await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key="PAY-105"]')).toBeVisible();
 	await startDrag(page, "PAY-107");

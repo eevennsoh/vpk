@@ -21,6 +21,14 @@ interface DropState {
 	lineTop?: number;
 }
 
+function resolveIssueDropHeader(active: BoardIssueDragSource | undefined, current: DropState | null, title: string, choices: readonly string[], choosing: boolean, moveVisual: boolean): string {
+	if (!active) return title;
+	if (active.columnTitle === title) return "Transition to...";
+	if (!moveVisual) return current?.entered ? `${active.status} → ${current.status}` : title;
+	if (choosing && !current) return `${active.status} →`;
+	return `${active.status} → ${current?.status ?? choices[0] ?? title}`;
+}
+
 /** A status choice is latched until the pointer leaves the column. */
 export function useBoardIssueDrop({
 	source, title, statuses, onDrop, moveVisual = true,
@@ -173,10 +181,7 @@ export function useBoardIssueDrop({
 
 	return {
 		rootRef, active, choosing, offeringChoices, choices, current,
-		header: active?.columnTitle === title ? "Transition to..."
-			: !moveVisual ? current?.entered ? `${active?.status} → ${current.status}` : title
-			: active && choosing && !current ? `${active.status} →`
-			: active ? `${active.status} → ${current?.status ?? choices[0] ?? title}` : title,
+		header: resolveIssueDropHeader(active, current, title, choices, choosing, moveVisual),
 		handlers: { onDragEnter: over, onDragOver: over, onDragLeave: leave, onDrop: drop },
 	};
 }
