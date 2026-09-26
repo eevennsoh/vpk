@@ -60,7 +60,8 @@ for (const action of ["Archive", "Delete"]) {
 }
 
 async function startDrag(page: Page, code: string) {
-	const card = issue(page, code).locator('[draggable="true"]').first();
+	// Pointer transport temporarily disables native draggable during pickup.
+	const card = issue(page, code).locator("[draggable]").first();
 	await card.scrollIntoViewIfNeeded();
 	const box = await card.boundingBox();
 	if (!box) throw new Error(`Missing card ${code}`);
