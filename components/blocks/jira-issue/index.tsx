@@ -325,6 +325,7 @@ function JiraIssueDefault({
 	const [internalSubtasksExpanded, setInternalSubtasksExpanded] = useState(defaultSubtasksExpanded);
 	const {
 		generativeActionPointerActive, generativeActionFocusActive, generativeActionRevealSuppressed,
+		setGenerativeActionPointerActive, setGenerativeActionFocusActive,
 		setGenerativeActionRevealSuppressed, handleGenerativeActionPointerOver, handleGenerativeActionPointerOut,
 		handleGenerativeActionFocusCapture, handleGenerativeActionBlurCapture,
 	} = useJiraIssueGenerativeActionReveal();

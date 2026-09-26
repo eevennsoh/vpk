@@ -471,6 +471,7 @@ export function useJiraIssueGenerativeActionReveal() {
 
 	return {
 		generativeActionPointerActive, generativeActionFocusActive, generativeActionRevealSuppressed,
+		setGenerativeActionPointerActive, setGenerativeActionFocusActive,
 		setGenerativeActionRevealSuppressed, handleGenerativeActionPointerOver, handleGenerativeActionPointerOut,
 		handleGenerativeActionFocusCapture, handleGenerativeActionBlurCapture,
 	};
