@@ -14,44 +14,13 @@ async function withServer(overrides, run) {
 	const app = express();
 	app.use(express.json());
 	const calls = {
-		advance: 0,
-		classify: [],
-		deleteHermesJobs: [],
-		deleteThread: [],
-		getClaim: [],
-		getDemoCreatedThreadIds: [],
-		getMergedHermesJob: [],
-		htmlReport: [],
-		moveTicketToColumn: [],
-		postClaim: [],
-		deleteClaim: [],
-		resetState: 0,
-		runJob: [],
-		standup: [],
-		updateState: 0,
-		writeState: [],
+		advance: 0, events: [], classify: [], getClaim: [], htmlReport: [], postClaim: [], deleteClaim: [], resetState: 0, runJob: [], standup: [], writeState: [],
 	};
 	const stateManager = {
-		readState: async () => ({
-			agent: {
-				jobId: "job-1",
-				trigger: { type: "jira" },
-			},
-			threads: ["thread-1"],
-		}),
-		resetState: async () => {
-			calls.resetState += 1;
-			return { reset: true };
-		},
-		updateState: async (updater) => {
-			calls.updateState += 1;
-			const nextState = updater({ agent: { jobId: "job-1", trigger: null } });
-			return nextState;
-		},
-		writeState: async (state) => {
-			calls.writeState.push(state);
-			return { ...state, persisted: true };
-		},
+		readState: async () => ({}),
+		resetState: async () => { calls.resetState += 1; return { reset: true }; },
+		updateState: async (updater) => updater({}),
+		writeState: async (state) => { calls.writeState.push(state); return { ...state, persisted: true }; },
 	};
 
 	registerDemosRoutes(app, {
@@ -64,12 +33,6 @@ async function withServer(overrides, run) {
 			calls.classify.push(input);
 			return { tickets: [{ key: "RFP-1" }] };
 		},
-		deleteAgentsRfpDemoHermesJobs: async (state) => {
-			calls.deleteHermesJobs.push(state);
-		},
-		deleteAgentsRfpDemoThread: async (threadId) => {
-			calls.deleteThread.push(threadId);
-		},
 		generateAgentsRfpDemoReportPreview: async (input) => {
 			calls.htmlReport.push(input);
 			return { html: "<main>Report</main>", skill: "vpk-html", variant: "initial" };
@@ -77,14 +40,6 @@ async function withServer(overrides, run) {
 		generateStandupSummaryFn: async (input) => {
 			calls.standup.push(input);
 			return { summary: "Standup" };
-		},
-		getDemoCreatedThreadIdsFn: (state) => {
-			calls.getDemoCreatedThreadIds.push(state);
-			return ["thread-1", "thread-2"];
-		},
-		getMergedHermesJob: async (jobId) => {
-			calls.getMergedHermesJob.push(jobId);
-			return { id: jobId, merged: true };
 		},
 		handleDeleteClaimTestFn: async (query) => {
 			calls.deleteClaim.push(Object.fromEntries(Object.entries(query)));
@@ -98,11 +53,15 @@ async function withServer(overrides, run) {
 			calls.postClaim.push(body);
 			return { body: { posted: true }, status: 201 };
 		},
-		moveTicketToColumnFn: (state, ticketCode, targetColumn) => {
-			calls.moveTicketToColumn.push({ state, targetColumn, ticketCode });
-			return { ...state, moved: { targetColumn, ticketCode } };
+		resetAgentsRfpDemo: async () => stateManager.resetState(),
+		saveAgentsRfpDemoState: async (state) => stateManager.writeState(state),
+		handleAgentsRfpDemoTicketEvent: async ({ ticketCode, targetColumn, runId }) => {
+			calls.events.push({ ticketCode, targetColumn, runId });
+			if (targetColumn !== "Drafting") {
+				return { job: { id: "job-1" }, state: { moved: { ticketCode, targetColumn } } };
+			}
+			return { job: { id: "job-1" }, state: { processed: true } };
 		},
-		rfpDraftingEventTrigger: { column: "Drafting" },
 		runAgentsRfpDemoJob: async (input) => {
 			calls.runJob.push(input);
 			return {
@@ -137,7 +96,7 @@ test("demos router validates required dependencies", () => {
 	assert.throws(() => createDemosRouter(), /advanceAgentsRfpDemoProcessing/u);
 	assert.throws(() => createDemosRouter({
 		advanceAgentsRfpDemoProcessing: async () => ({}),
-	}), /deleteAgentsRfpDemoHermesJobs/u);
+	}), /generateAgentsRfpDemoReportPreview/u);
 });
 
 test("ticket classification, claim-test, and standup routes preserve request mapping", async () => {
@@ -258,9 +217,6 @@ test("RFP demo state routes preserve persisted state and reset cleanup behavior"
 		assert.equal(resetResponse.status, 200);
 		assert.deepEqual(await resetResponse.json(), { state: { reset: true } });
 		assert.equal(calls.resetState, 1);
-		assert.deepEqual(calls.deleteThread, ["thread-1", "thread-2"]);
-		assert.equal(calls.deleteHermesJobs.length, 1);
-		assert.equal(calls.getDemoCreatedThreadIds.length, 1);
 	});
 });
 
@@ -279,7 +235,7 @@ test("RFP demo agent apply route runs the manual demo job", async () => {
 	});
 });
 
-test("RFP demo ticket event validates input and returns merged job for non-trigger moves", async () => {
+test("RFP demo ticket event validates input and delegates non-trigger moves", async () => {
 	await withServer({}, async (baseUrl, calls) => {
 		const invalidResponse = await fetch(`${baseUrl}/api/agents/rfp-demo/events/ticket-entered-column`, {
 			body: JSON.stringify({ ticketCode: "RFP-1" }),
@@ -301,17 +257,11 @@ test("RFP demo ticket event validates input and returns merged job for non-trigg
 		});
 		assert.equal(response.status, 200);
 		assert.deepEqual(await response.json(), {
-			job: { id: "job-1", merged: true },
+			job: { id: "job-1" },
 			state: {
-				agent: { jobId: "job-1", trigger: null },
 				moved: { targetColumn: "Review", ticketCode: "RFP-1" },
 			},
 		});
-		assert.deepEqual(calls.moveTicketToColumn.map(({ targetColumn, ticketCode }) => ({ targetColumn, ticketCode })), [{
-			targetColumn: "Review",
-			ticketCode: "RFP-1",
-		}]);
-		assert.deepEqual(calls.getMergedHermesJob, ["job-1"]);
 		assert.deepEqual(calls.runJob, []);
 	});
 });
@@ -344,10 +294,7 @@ test("RFP demo ticket event runs the job when a ticket enters the trigger column
 			job: { id: "job-1" },
 			state: { processed: true },
 		});
-		assert.deepEqual(calls.runJob, [{
-			source: "jira-column-entered",
-			ticketCodes: ["RFP-2"],
-		}]);
+		assert.deepEqual(calls.events, [{ targetColumn: "Drafting", ticketCode: "RFP-2", runId: null }]);
 	});
 });
 

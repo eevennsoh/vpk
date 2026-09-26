@@ -53,11 +53,12 @@ import { useIssueCohortPreview } from "./hooks/use-issue-cohort-preview";
 import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
-	getBoardColumnOuterWidthPx,
+	resolveBoardColumnShellSizing,
 	isBoardColumnCollapsed,
 	toggleCollapsedBoardColumn,
 	resolveBoardColumnRowPaddingInlineStart,
 	type CollapsedBoardColumns,
+	type BoardColumnWidth,
 } from "./lib/board-column-collapse";
 import { ExperimentalJiraKanbanCard, type JiraKanbanCardMoreMenuActions } from "./experimental-jira-kanban-card";
 import { SessionFusionOverlay } from "./components/session-fusion-overlay";
@@ -114,6 +115,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	createWorkItemDropZoneLabel?: string;
 	/** Content-sized columns with a persistent create footer. */
 	columnSizing?: "fill" | "content";
+	/** Expanded columns share available horizontal space; fixed remains the default. */
+	columnWidth?: BoardColumnWidth;
 	/** Creates a named work item without attaching or capturing an agent session. */
 	onCreateWorkItem?: (columnTitle: string, draft: AgentSessionWorkItemDraft) => void;
 	/**
@@ -259,6 +262,7 @@ function BoardColumnShell({
 	collapsed,
 	columnChrome,
 	columnSizing,
+	columnWidth,
 	count,
 	createWorkItemDropZoneLabel,
 	onDragLeave,
@@ -274,6 +278,7 @@ function BoardColumnShell({
 	collapsed: boolean;
 	columnChrome: KanbanColumnChrome;
 	columnSizing: "fill" | "content";
+	columnWidth: BoardColumnWidth;
 	count: number;
 	createWorkItemDropZoneLabel?: string;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -288,13 +293,13 @@ function BoardColumnShell({
 	// overflow has to be clipped for the duration of the width transition. Doing
 	// it any longer would clip the 4px focus rings on the cards inside.
 	const [isResizing, setIsResizing] = useState(false);
-	const outerWidth = `${getBoardColumnOuterWidthPx(collapsed)}px`;
+	const sizingStyle = resolveBoardColumnShellSizing(collapsed, columnWidth);
 	const sessionDrop = collapsed && createWorkItemDropZoneLabel
 		? resolveBoardCreateDropzoneDrag(sessionDragTransaction, title)
 		: "idle";
 
 	const handleToggleCollapsed = () => {
-		if (!shouldReduceMotion) {
+		if (!shouldReduceMotion && columnWidth === "fixed") {
 			setIsResizing(true);
 		}
 		onToggleCollapsed();
@@ -329,11 +334,9 @@ function BoardColumnShell({
 			onDrop={onDrop}
 			onTransitionEnd={handleTransitionEnd}
 			style={{
-				flex: "1 1 0",
-				minWidth: outerWidth,
-				maxWidth: outerWidth,
+				...sizingStyle,
 				borderRadius: token("radius.xlarge"),
-				transition: shouldReduceMotion ? "none" : BOARD_COLUMN_SHELL_TRANSITION,
+				transition: shouldReduceMotion || columnWidth === "fluid" ? "none" : BOARD_COLUMN_SHELL_TRANSITION,
 			}}
 		>
 			{columnSizing === "content" && !collapsed ? (
@@ -389,6 +392,7 @@ function ExperimentalJiraKanbanView({
 	collapsedColumns: controlledCollapsedColumns,
 	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
 	columnSizing = "fill",
+	columnWidth = "fixed",
 	createdCardArrival,
 	createWorkItemDropZoneLabel,
 	detachedAgentSessionsByCard,
@@ -745,7 +749,7 @@ function ExperimentalJiraKanbanView({
 				<LayoutGroup id={cardLayoutGroupId}>
 						<div
 							className={cn("flex w-max items-stretch", columnSizing === "fill" ? "min-h-full min-w-full" : "h-full")}
-							style={{ paddingInlineStart: resolvedColumnRowPaddingInlineStart }}
+							style={{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" ? "100%" : undefined }}
 						>
 						<ExclusiveCreateWellProximityProvider>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
@@ -757,6 +761,7 @@ function ExperimentalJiraKanbanView({
 							collapsed={isBoardColumnCollapsed(collapsedColumns, column.title)}
 							columnChrome={columnChrome}
 							columnSizing={columnSizing}
+							columnWidth={columnWidth}
 							count={column.cards.length}
 							createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 							sessionDragTransaction={boardSessionDrag.transaction}
@@ -855,6 +860,7 @@ function ExperimentalJiraKanbanView({
 													spotlightIssueKey !== null && spotlightIssueKey !== card.code && "opacity-40",
 												)}
 												columnTitle={column.title}
+												columnWidth={columnWidth}
 												dropTarget={cardDropTarget}
 												onArrivalComplete={handleCreatedCardArrivalComplete}
 												shouldAnimateCardMoves={shouldAnimateCardMoves}

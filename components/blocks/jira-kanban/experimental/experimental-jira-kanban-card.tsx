@@ -363,6 +363,7 @@ export function ExperimentalJiraKanbanCard({
 			assigneeUnassignedKind={card.avatarUnassignedKind}
 			chrome={chrome}
 			compact
+			coverImage={card.coverImage}
 			dragging={dragging}
 			// Opted-in boards let the source ghost own the content fade.
 			style={selectionBackdrop === undefined ? undefined : { opacity: 1 }}

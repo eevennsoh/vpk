@@ -73,7 +73,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		title: "Sandbox 401 root cause just arrived from a local Codex session",
 	},
 	{
-		agentId: "copilot",
+		agentId: "claude",
 		detail: "host local · worktree .worktrees/pay-118-replay-risk · the blast radius is not on the item",
 		host: "local",
 		id: "lw-sync-replay-blast-radius",
@@ -94,7 +94,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		shortTitle: "Replay-risk blast radius",
 		sourceTitle: "PAY-118",
 		timeLabel: "Just now",
-		title: "Replay-risk blast radius just synced from a local GitHub Copilot session",
+		title: "Replay-risk blast radius just synced from a local Claude session",
 	},
 	{
 		agentId: "claude",
@@ -181,7 +181,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		title: "Release gate decision just synced from a local Claude session",
 	},
 	{
-		agentId: "copilot",
+		agentId: "cursor",
 		detail: "host local · worktree .worktrees/pay-133-timeout-budget · the timeout budget analysis is still detached",
 		host: "local",
 		id: "lw-sync-timeout-budget",
@@ -202,7 +202,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		shortTitle: "Timeout budget map",
 		sourceTitle: "PAY-133",
 		timeLabel: "Just now",
-		title: "Timeout budget map just synced from a local GitHub Copilot session",
+		title: "Timeout budget map just synced from a local Cursor session",
 	},
 	{
 		agentId: "codex",
@@ -277,7 +277,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		title: "Reconciliation alert calibration just appeared from a local Claude session",
 	},
 	{
-		agentId: "copilot",
+		agentId: "codex",
 		detail: "host local · worktree .worktrees/pay-137-ledger-replay · the ledger replay checklist is still local",
 		host: "local",
 		id: "lw-sync-ledger-replay",
@@ -298,7 +298,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		shortTitle: "Ledger replay checklist",
 		sourceTitle: "PAY-137",
 		timeLabel: "Just now",
-		title: "Ledger replay checklist just synced from a local GitHub Copilot session",
+		title: "Ledger replay checklist just synced from a local Codex session",
 	},
 	{
 		agentId: "codex",
@@ -401,7 +401,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		title: "Merchant mapping exceptions just landed from a local Cursor session",
 	},
 	{
-		agentId: "copilot",
+		agentId: "claude",
 		detail: "host local · worktree .worktrees/pay-143-rate-limit · rate-limit sampling notes remain detached",
 		host: "local",
 		id: "lw-sync-rate-limit-sampling",
@@ -412,7 +412,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		shortTitle: "Rate-limit sampling",
 		sourceTitle: "PAY-143",
 		timeLabel: "Just now",
-		title: "Rate-limit sampling notes just synced from a local GitHub Copilot session",
+		title: "Rate-limit sampling notes just synced from a local Claude session",
 	},
 	{
 		agentId: "claude",
@@ -457,7 +457,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		title: "Support diagnostic payload notes just landed from a local Cursor session",
 	},
 	{
-		agentId: "copilot",
+		agentId: "cursor",
 		detail: "host local · worktree .worktrees/pay-147-rollback-metrics · rollback metric findings remain untracked",
 		host: "local",
 		id: "lw-sync-rollback-metrics",
@@ -468,7 +468,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		shortTitle: "Rollback metric thresholds",
 		sourceTitle: "PAY-147",
 		timeLabel: "Just now",
-		title: "Rollback metric thresholds just synced from a local GitHub Copilot session",
+		title: "Rollback metric thresholds just synced from a local Cursor session",
 	},
 	{
 		agentId: "claude",
@@ -533,7 +533,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		title: "Payout batch recovery evidence just arrived from a local Codex session",
 	},
 	{
-		agentId: "copilot",
+		agentId: "codex",
 		detail: "host local · worktree .worktrees/pay-151-decline-parity · decline parity results still need a Jira link",
 		host: "local",
 		id: "lw-sync-decline-parity",
@@ -554,7 +554,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		shortTitle: "Decline response parity",
 		sourceTitle: "PAY-151",
 		timeLabel: "Just now",
-		title: "Decline response parity results just synced from a local GitHub Copilot session",
+		title: "Decline response parity results just synced from a local Codex session",
 	},
 	{
 		agentId: "claude",
@@ -609,7 +609,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		title: "Retry header audit just arrived from a local Codex session",
 	},
 	{
-		agentId: "copilot",
+		agentId: "claude",
 		detail: "host local · worktree .worktrees/pay-155-capture-metrics · capture metric findings need a work item link",
 		host: "local",
 		id: "lw-sync-capture-metrics",
@@ -620,7 +620,7 @@ const JIRA_TEAM_EU26_SYNC_SESSION_SOURCE = [
 		shortTitle: "Capture metric coverage",
 		sourceTitle: "PAY-155",
 		timeLabel: "Just now",
-		title: "Capture metric coverage just synced from a local GitHub Copilot session",
+		title: "Capture metric coverage just synced from a local Claude session",
 	},
 	{
 		agentId: "claude",
@@ -698,7 +698,7 @@ function toFinishedSessionCopy(session: PulseAgentSession): Pick<PulseAgentSessi
 export const JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES: ReadonlyMap<string, PulseAgentSession> = new Map(
 	PULSE_LOOSE_WORK.filter(isPulseAgentSession).map((session) => {
 		const finished = JIRA_TEAM_EU26_SEEDED_FINISHED_IDS.has(session.id);
-		const copy = finished
+		const copy: Partial<Pick<PulseAgentSession, "title" | "detail">> = finished
 			? toFinishedSessionCopy(session)
 			: session.state === "needs-input"
 				? {
@@ -706,7 +706,13 @@ export const JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES: ReadonlyMap<string, 
 					detail: `${getSessionDetailPrefix(session)} · work is underway in this session`,
 				}
 				: {};
-		return [session.id, { ...session, ...copy, state: finished ? "complete" : "running" }] as const;
+		return [session.id, {
+			...session,
+			...copy,
+			agentId: session.agentId === "copilot" ? "cursor" : session.agentId,
+			title: (copy.title ?? session.title).replace("GitHub Copilot", "Cursor"),
+			state: finished ? "complete" : "running",
+		}] as const;
 	}),
 );
 

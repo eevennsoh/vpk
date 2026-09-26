@@ -82,8 +82,15 @@ export function resolveStatusColumnVisualGutterPx(
 	return STATUS_COLUMN_GAP_PX + resolveStatusColumnLeadingChromePx(columnFrame) * 2;
 }
 
+/** Keep the session-to-content gutter at least `space.200` (16px). */
+function resolveInFlowAgentSessionColumnVisualGutterPx(
+	columnFrame: AgentSessionColumnFrame,
+): number {
+	return Math.max(16, resolveStatusColumnVisualGutterPx(columnFrame));
+}
+
 /**
- * Left footprint spacer that leaves `resolveStatusColumnVisualGutterPx` between
+ * Left footprint spacer that leaves the session visual gutter between
  * the Untracked well and the first status column's painted content.
  *
  * Untracked's well has no trailing drop/content chrome, so the shell gap is
@@ -95,7 +102,7 @@ export function resolveInFlowAgentSessionColumnGapPx(
 	columnFrame: AgentSessionColumnFrame,
 ): number {
 	const leadingChromePx = resolveStatusColumnLeadingChromePx(columnFrame);
-	const shellGapPx = resolveStatusColumnVisualGutterPx(columnFrame) - leadingChromePx;
+	const shellGapPx = resolveInFlowAgentSessionColumnVisualGutterPx(columnFrame) - leadingChromePx;
 	return shellGapPx
 		- resolveStatusColumnRowPaddingPx(columnFrame)
 		+ IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX
@@ -106,5 +113,5 @@ export function resolveInFlowAgentSessionColumnGapPx(
 export function resolveInFlowResizeHandleOffsetPx(
 	columnFrame: AgentSessionColumnFrame,
 ): number {
-	return resolveStatusColumnVisualGutterPx(columnFrame) / 2;
+	return resolveInFlowAgentSessionColumnVisualGutterPx(columnFrame) / 2;
 }

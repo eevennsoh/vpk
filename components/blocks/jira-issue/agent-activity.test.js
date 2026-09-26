@@ -2,6 +2,16 @@ const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
+const { getJiraIssueAgentAvatarSize } = require("./agent-activity-avatar.ts");
+
+test("coding-agent chins retain Claude's compact size without resizing other brands", () => {
+	for (const brand of ["claude", "cursor", "openai-codex", "github-copilot"]) {
+		assert.equal(getJiraIssueAgentAvatarSize(brand), 20);
+	}
+	for (const brand of ["slack", "github", undefined]) {
+		assert.equal(getJiraIssueAgentAvatarSize(brand), 24);
+	}
+});
 
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
 const AGENT_ACTIVITY_PRESENTATION_SOURCE = readFileSync(
@@ -14,6 +24,15 @@ const GENERATIVE_ACTIONS_SOURCE = readFileSync(
 	join(__dirname, "../../projects/jira-golden-journeys-v4/hooks/use-jira-golden-journeys-v4-generative-actions.ts"),
 	"utf8",
 );
+
+test("all Jira chin identity paths use the coding appearance", () => {
+	const rowContent = AGENT_ACTIVITY_PRESENTATION_SOURCE.slice(
+		AGENT_ACTIVITY_PRESENTATION_SOURCE.indexOf("export function JiraIssueAgentRowContent"),
+		AGENT_ACTIVITY_PRESENTATION_SOURCE.indexOf("export function JiraIssueAgentRowSurface"),
+	);
+	assert.equal((rowContent.match(/<AgentAvatarVisual\s+appearance="coding"/gu) ?? []).length, 2);
+	assert.match(AGENT_ACTIVITY_PRESENTATION_SOURCE, /function toAgentLoadingAgent[\s\S]*?avatar: \{\s*appearance: "coding"/u);
+});
 
 test("assignment flyout access is independent of the session lifecycle", () => {
 	const assignmentHandle = AGENT_ACTIVITY_PRESENTATION_SOURCE.slice(

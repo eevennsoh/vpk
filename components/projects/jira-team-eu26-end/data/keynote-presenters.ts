@@ -1,0 +1,21 @@
+import type { JiraKanbanAssigneeData } from "@/components/blocks/jira-kanban";
+
+export const JIRA_TEAM_EU26_END_PRESENTERS = {
+	mcb: { id: "mcb", name: "MCB", avatarSrc: "/avatar-user/mcb.png", initials: "MCB" },
+	tamar: { id: "tamar", name: "Tamar", avatarSrc: "/avatar-user/tamar.png", initials: "TY" },
+	sherif: { id: "sherif", name: "Sherif", avatarSrc: "/avatar-user/sherif.png", initials: "SM" },
+	taroon: { id: "taroon", name: "Taroon", avatarSrc: "/avatar-user/taroon.png", initials: "TM" },
+} as const satisfies Record<string, JiraKanbanAssigneeData & { initials: string }>;
+
+export const JIRA_TEAM_EU26_END_HEADER_ASSIGNEES = [
+	JIRA_TEAM_EU26_END_PRESENTERS.mcb,
+	JIRA_TEAM_EU26_END_PRESENTERS.tamar,
+	JIRA_TEAM_EU26_END_PRESENTERS.sherif,
+	JIRA_TEAM_EU26_END_PRESENTERS.taroon,
+] as const;
+
+export const JIRA_TEAM_EU26_END_SECTION_PRESENTERS = {
+	Context: [JIRA_TEAM_EU26_END_PRESENTERS.mcb, JIRA_TEAM_EU26_END_PRESENTERS.tamar],
+	Collaboration: [JIRA_TEAM_EU26_END_PRESENTERS.mcb, JIRA_TEAM_EU26_END_PRESENTERS.sherif],
+	Confidence: [JIRA_TEAM_EU26_END_PRESENTERS.mcb, JIRA_TEAM_EU26_END_PRESENTERS.taroon],
+} as const;

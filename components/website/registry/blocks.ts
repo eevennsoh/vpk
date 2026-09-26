@@ -122,6 +122,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-insights-demo"),
 		{ ssr: false },
 	),
+	"agent-lanyard": dynamic(
+		() => import("../demos/blocks/agent-lanyard-demo"),
+		{ ssr: false },
+	),
 	"agent-test": dynamic(() => import("../demos/blocks/agent-test-demo"), {
 		ssr: false,
 	}),

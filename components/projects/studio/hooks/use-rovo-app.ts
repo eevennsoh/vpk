@@ -1,7 +1,7 @@
 "use client";
 
 import { useRovoAppQueue } from "@/app/studio/rovo-queue-provider";
-import { usePersistentState } from "@/components/projects/control-plane/lib/use-persistent-state";
+import { usePersistentState } from "@/lib/use-persistent-state";
 import { studioAppAdapter } from "@/components/projects/studio/studio-app-adapter";
 import {
 	useRovoAppCore,

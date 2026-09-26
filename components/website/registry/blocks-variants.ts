@@ -5,6 +5,18 @@ import { BLOCK_VARIANT_CATALOG_DEMO_ENTRIES } from "./blocks-variants-catalog";
 
 export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	...BLOCK_VARIANT_CATALOG_DEMO_ENTRIES,
+	"agent-lanyard-demo-custom-first-party": dynamic(
+		() => import("../demos/blocks/agent-lanyard-first-party-demo"),
+		{ ssr: false },
+	),
+	"agent-lanyard-demo-named-first-party": dynamic(
+		() => import("../demos/blocks/agent-lanyard-first-party-demo").then((mod) => ({ default: mod.AgentLanyardNamedFirstPartyDemo })),
+		{ ssr: false },
+	),
+	"agent-lanyard-demo-template": dynamic(
+		() => import("../demos/blocks/agent-lanyard-template-demo"),
+		{ ssr: false },
+	),
 	"agent-assignment-demo-default": dynamic(
 		() =>
 			import("../demos/blocks/agent-assignment-demo").then((mod) => ({
@@ -405,13 +417,6 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 		() =>
 			import("../demos/blocks/agent-card-demo").then((mod) => ({
 				default: mod.AgentCardDemoExpanded,
-			})),
-		{ ssr: false },
-	),
-	"agent-card-demo-experimental": dynamic(
-		() =>
-			import("../demos/blocks/agent-card-demo").then((mod) => ({
-				default: mod.AgentCardDemoExperimental,
 			})),
 		{ ssr: false },
 	),

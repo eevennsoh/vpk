@@ -101,7 +101,7 @@ export function PulseRosterFacepile({
 								"duration-normal ease-out-practical transition-opacity motion-reduce:transition-none",
 								member.kind === "human" ? "ring-2 ring-surface" : null,
 								member.kind === "human" && isSelected ? "ring-border-selected!" : null,
-								member.kind === "agent" && isSelected ? "[&>svg]:text-border-selected!" : null,
+								member.kind === "agent" && isSelected ? "[&_[data-slot=avatar-hexagon-border]]:text-border-selected!" : null,
 								selectedMemberId !== null && !isSelected ? "opacity-(--opacity-disabled)" : null,
 							)}
 							label={member.name}

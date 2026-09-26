@@ -22,18 +22,11 @@ The user is located in {{ user.location_info }}.
 {% if user.organisation is not empty %}
 The user works at {{ user.organisation }}.
 {% endif %}
-{% if profile_memory is not empty %}
-{{ profile_memory }}
-{% endif %}
 {% if user_preferences is not empty %}
 {{ user_preferences }}
 {% endif %}
 {% if browsing_context is not null %}
 {{ browsing_context }}
-{% endif %}
-{% if collection_memory is not empty %}
-## Relevant Past Memories
-{{ collection_memory }}
 {% endif %}
 
 {% if previous_attempt.response != "" and previous_attempt.judgement != "" %}

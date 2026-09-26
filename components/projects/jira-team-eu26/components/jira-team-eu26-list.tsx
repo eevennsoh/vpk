@@ -34,8 +34,8 @@ export function JiraTeamEu26List({
 
 	return (
 		<div className={cn(
-			// Keep the bottom and leading gutters equal; align with the 2px drop frame.
-			"min-h-0 flex-1 overflow-hidden pb-6 ps-6 pt-0.5",
+			// Add the board's transparent 2px drop border to match its painted gutter.
+			"min-h-0 flex-1 overflow-hidden pb-6 ps-6.5 pt-0.5",
 			scrollEndInset > 0 ? "pe-0" : "pe-4 md:pe-5",
 		)}>
 			<JiraList

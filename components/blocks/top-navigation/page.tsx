@@ -40,6 +40,8 @@ import {
 	TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX,
 } from "./layout-constants";
 import SearchIcon from "@atlaskit/icon/core/search";
+import type { TopNavigationCurrentUser } from "./data/current-user";
+export type { TopNavigationCurrentUser } from "./data/current-user";
 
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
 
@@ -58,6 +60,7 @@ export interface ShellSidebarSlotState {
 }
 
 interface TopNavigationProps {
+	currentUser?: TopNavigationCurrentUser;
 	product?: Product;
 	showSearch?: boolean;
 	/** Initial pinned-sidebar state before the user takes control. */
@@ -152,6 +155,7 @@ function useMeasuredWidth(): readonly [(node: HTMLElement | null) => void, numbe
  * fluidly and collapses to an icon button below `TOP_NAV_SEARCH_ICON_BREAKPOINT_PX`.
  */
 export default function TopNavigation({
+	currentUser,
 	product = "studio",
 	showSearch = true,
 	defaultSidebarOpen = true,
@@ -351,6 +355,7 @@ export default function TopNavigation({
 
 	const rightCluster = (
 		<RightNavigation
+			currentUser={currentUser}
 			ref={setRightClusterNode}
 			product={product}
 			windowWidth={responsiveWidth}

@@ -19,6 +19,19 @@ const MESSAGE_TURNS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../shared/message-turns.tsx"),
 	"utf8",
 );
+const APP_LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "../../page.tsx"), "utf8");
+const FLOATING_CHAT_SOURCE = fs.readFileSync(path.join(__dirname, "../../rovo-floating-chat/components/rovo-floating-chat.tsx"), "utf8");
+
+test("route viewer identity attributes generated agents on both chat surfaces while defaulting to Venn", () => {
+	assert.match(AGENT_RESULT_CARD_SOURCE, /creator\?: AgentResultCreator;/u);
+	assert.match(AGENT_RESULT_CARD_SOURCE, /creator = DEFAULT_AGENT_CREATOR/u);
+	assert.match(AGENT_RESULT_CARD_SOURCE, /const DEFAULT_AGENT_CREATOR: AgentResultCreator = \{\s*name: AGENT_CREATOR_NAME,\s*avatarSrc: AGENT_CREATOR_AVATAR_SRC,/u);
+	assert.match(CHAT_PANEL_SOURCE, /agentCreator\?: AgentResultCreator;/u);
+	assert.equal((CHAT_PANEL_SOURCE.match(/<AgentResultCard creator=\{agentCreator\}/gu) ?? []).length, 2);
+	assert.equal((APP_LAYOUT_SOURCE.match(/agentCreator=\{currentUser\}/gu) ?? []).length, 2);
+	assert.match(FLOATING_CHAT_SOURCE, /agentCreator\?: AgentResultCreator;/u);
+	assert.match(FLOATING_CHAT_SOURCE, /<ChatPanel\s*agentCreator=\{agentCreator\}/u);
+});
 
 test("AgentResultCard renders created agent profile description", () => {
 	assert.match(
@@ -41,7 +54,7 @@ test("AgentResultCard renders created agent profile description", () => {
 	assert.match(AGENT_RESULT_CARD_SOURCE, /const AGENT_CREATOR_AVATAR_SRC = "\/avatar-user\/venn\/venn\.png";/u);
 	assert.match(
 		AGENT_RESULT_CARD_SOURCE,
-		/<AgentProfileCard[\s\S]*attributionKind="person"[\s\S]*avatarSrc=\{avatarSrc\}[\s\S]*coverSrc=\{avatarSrc\}[\s\S]*description=\{description\}[\s\S]*name=\{displayName\}[\s\S]*editActionLabel=\{`Edit \$\{displayName\}`\}[\s\S]*onEditAction=\{handleSelectAgent\}[\s\S]*onPreviewAction=\{handleSelectAgent\}[\s\S]*onSwapAction=\{handleSelectAgent\}[\s\S]*partnerLogoSrc=\{AGENT_CREATOR_AVATAR_SRC\}[\s\S]*partnerName=\{AGENT_CREATOR_NAME\}[\s\S]*previewActionLabel=\{`View \$\{displayName\}`\}[\s\S]*swapActionLabel="Chat with agent"[\s\S]*variant="preview"[\s\S]*verified=\{false\}[\s\S]*\/>/u,
+		/<AgentProfileCard[\s\S]*attributionKind="person"[\s\S]*avatarSrc=\{avatarSrc\}[\s\S]*coverSrc=\{avatarSrc\}[\s\S]*description=\{description\}[\s\S]*name=\{displayName\}[\s\S]*editActionLabel=\{`Edit \$\{displayName\}`\}[\s\S]*onEditAction=\{handleSelectAgent\}[\s\S]*onPreviewAction=\{handleSelectAgent\}[\s\S]*onSwapAction=\{handleSelectAgent\}[\s\S]*partnerLogoSrc=\{creator\.avatarSrc\}[\s\S]*partnerName=\{creator\.name\}[\s\S]*previewActionLabel=\{`View \$\{displayName\}`\}[\s\S]*swapActionLabel="Chat with agent"[\s\S]*variant="preview"[\s\S]*verified=\{false\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /onInputAction/u);
 	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /onVoiceInput/u);
@@ -76,7 +89,7 @@ test("ChatPanel renders generated result cards after the turn container", () => 
 	assert.match(CHAT_PANEL_SOURCE, /getMessageArtifactResult/u);
 	assert.match(CHAT_PANEL_SOURCE, /hasTurnCompleteSignal/u);
 	assert.match(CHAT_PANEL_SOURCE, /import \{ ArtifactResultCard, type ArtifactResult \} from "\.\/components\/artifact-result-card";/u);
-	assert.match(CHAT_PANEL_SOURCE, /import \{ AgentResultCard, isGeneratedAgentResult \} from "\.\/components\/agent-result-card";/u);
+	assert.match(CHAT_PANEL_SOURCE, /import \{ AgentResultCard, isGeneratedAgentResult, type AgentResultCreator \} from "\.\/components\/agent-result-card";/u);
 	assert.match(CHAT_PANEL_SOURCE, /const handleAgentResultSelect = useCallback\(\(agent: RovoDataParts\["agent-result"\]\) => \{[\s\S]*selectableAgents\.some\(\(selectableAgent\) => selectableAgent\.id === agent\.agentId\)[\s\S]*selectAgent\(agent\.agentId\);/u);
 	assert.match(
 		CHAT_PANEL_SOURCE,

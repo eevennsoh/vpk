@@ -9,8 +9,8 @@ function createRequiredDependencies(overrides = {}) {
 	return {
 		activeRequests: new Map(),
 		agentsRfpDemoStateManager: { name: "agents-rfp-demo-state" },
+		updateAgentsRfpDemoState: async (updater) => updater({}),
 		aiGatewayProvider: { generateText: async () => "gateway text" },
-		areHermesCompanionsEnabled: () => false,
 		compressUiConversationHistory: () => [],
 		createStageTrace: () => ({ mark() {} }),
 		dispatchChatSdkRequestInProcess: async () => ({ status: 200 }),
@@ -18,9 +18,7 @@ function createRequiredDependencies(overrides = {}) {
 		generateTextViaGateway: async () => "generated text",
 		getCurrentRovoSession: () => ({ port: 4100 }),
 		hasGatewayUrlConfigured: () => true,
-		hermesSkillDraftManager: { name: "skill-drafts" },
 		isRovoAvailable: () => true,
-		listHermesSkills: () => [],
 		logger: {
 			error() {},
 			info() {},
@@ -209,6 +207,7 @@ test("createRovoAppRuntimeComposition wires managed-run callbacks through the li
 	assert.equal(captured.artifactToolResponseStreamer.generateSuggestedQuestions, values.generateSuggestedQuestions);
 	assert.equal(captured.artifactToolRequestHandler.streamRovoAppArtifactToolResponse, values.streamRovoAppArtifactToolResponse);
 	assert.equal(captured.threadSessionSync.ensureRovoSession, dependencies.ensureRovoSession);
+	assert.equal(captured.agentsRfpDemoChatStreamOwner.updateAgentsRfpDemoState, dependencies.updateAgentsRfpDemoState);
 	assert.equal(captured.threadSessionSync.getCurrentRovoSession, dependencies.getCurrentRovoSession);
 	assert.equal(captured.managedResponseConsumer.syncRovoAppThreadSession, values.syncRovoAppThreadSession);
 	assert.equal(captured.managedRunChatDispatcher.dispatchChatSdkRequestInProcess, dependencies.dispatchChatSdkRequestInProcess);

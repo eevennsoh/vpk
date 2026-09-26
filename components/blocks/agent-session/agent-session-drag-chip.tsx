@@ -102,7 +102,7 @@ export function AgentSessionDragPill({
 			<span className="block shrink-0" data-session-drag-identity="">
 				{attributedBy ? (
 					<HumanAgentAvatar
-						agent={agent}
+						agent={{ ...agent, appearance: "coding" }}
 						human={attributedBy}
 						animate={false}
 						motion={identityMotion}
@@ -111,7 +111,7 @@ export function AgentSessionDragPill({
 						sizePx={32}
 					/>
 				) : (
-					<AgentListIdentity agent={agent} animate={animateIdentity} sizePx={32} />
+					<AgentListIdentity agent={agent} appearance="coding" animate={animateIdentity} sizePx={32} />
 				)}
 			</span>
 			<span className="truncate text-xs text-text" data-session-drag-label="">

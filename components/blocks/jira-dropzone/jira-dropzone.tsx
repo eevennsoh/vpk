@@ -381,6 +381,7 @@ function JiraDropzoneWell({
 							marching={marching}
 							openMinHeight={openMinHeight}
 							pinMagnet={pinMagnet}
+							pinVerticalMagnet={pinVerticalMagnet}
 							renderControl={renderControl}
 							selected={selected}
 						/>
@@ -395,6 +396,7 @@ function JiraDropzoneWell({
 						marching={marching}
 						phase={phase}
 						pinMagnet={pinMagnet}
+						pinVerticalMagnet={pinVerticalMagnet}
 						selected={selected}
 						size={size}
 					/>}
@@ -415,6 +417,7 @@ type JiraDropzoneWellChromeProps = Pick<
 	| "openMinHeight"
 	| "phase"
 	| "pinMagnet"
+	| "pinVerticalMagnet"
 	| "selected"
 	| "size"
 > & {
@@ -430,10 +433,11 @@ function JiraDropzoneButtonChrome({
 	marching,
 	openMinHeight,
 	pinMagnet,
+	pinVerticalMagnet,
 	renderControl,
 	selected,
 }: Readonly<Pick<JiraDropzoneWellProps,
-	"active" | "copy" | "expanded" | "label" | "magnet" | "openMinHeight" | "pinMagnet" | "selected"
+	"active" | "copy" | "expanded" | "label" | "magnet" | "openMinHeight" | "pinMagnet" | "pinVerticalMagnet" | "selected"
 > & {
 	marching: boolean;
 	renderControl: (props: JiraDropzoneControlProps) => ReactElement;
@@ -457,7 +461,7 @@ function JiraDropzoneButtonChrome({
 		children: <>
 			{marching ? <JiraDropzoneAntsStroke selected={selected} /> : null}
 			<JiraDropzoneCopyReveal ariaHidden revealed={showLabel} resting={<Icon render={<AddIcon label="" size="small" />} />}>
-				<JiraDropzoneMagneticLabel className={selected ? "text-text-selected" : undefined} magnet={magnet} pinned={pinMagnet}>{label}</JiraDropzoneMagneticLabel>
+				<JiraDropzoneMagneticLabel className={selected ? "text-text-selected" : undefined} magnet={magnet} pinned={pinMagnet} pinVertical={pinVerticalMagnet}>{label}</JiraDropzoneMagneticLabel>
 			</JiraDropzoneCopyReveal>
 		</>,
 	});
@@ -474,6 +478,7 @@ function JiraDropzoneWellChrome({
 	marching,
 	phase,
 	pinMagnet,
+	pinVerticalMagnet,
 	selected,
 	size,
 }: JiraDropzoneWellChromeProps): ReactElement {
@@ -510,6 +515,7 @@ function JiraDropzoneWellChrome({
 				label={label}
 				magnet={magnet}
 				pinMagnet={pinMagnet}
+				pinVerticalMagnet={pinVerticalMagnet}
 			/>
 		</motion.div>
 	);
@@ -520,9 +526,10 @@ function JiraDropzoneWellCopy({
 	label,
 	magnet,
 	pinMagnet,
-}: Pick<JiraDropzoneWellProps, "copy" | "label" | "magnet" | "pinMagnet">): ReactElement {
+	pinVerticalMagnet,
+}: Pick<JiraDropzoneWellProps, "copy" | "label" | "magnet" | "pinMagnet" | "pinVerticalMagnet">): ReactElement {
 	return copy === "label" ? (
-		<JiraDropzoneMagneticLabel magnet={magnet} pinned={pinMagnet}>{label}</JiraDropzoneMagneticLabel>
+		<JiraDropzoneMagneticLabel magnet={magnet} pinned={pinMagnet} pinVertical={pinVerticalMagnet}>{label}</JiraDropzoneMagneticLabel>
 	) : (
 		<Icon
 			className="text-icon-subtlest"

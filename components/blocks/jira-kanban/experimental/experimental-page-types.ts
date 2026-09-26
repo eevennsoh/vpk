@@ -25,6 +25,11 @@ import type { ExperimentalJiraKanbanView } from "./experimental-board-header";
 import type { ExperimentalJiraKanbanMode } from "./pulse/components/pulse-mode-controls";
 import type { PulseAgentSession, PulseLooseWork, PulseMember, PulseWorkItem } from "./pulse/types";
 
+export interface DraggedCardState {
+	card: JiraKanbanCardData;
+	sourceColumnTitle: string;
+}
+
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
 	/**
@@ -62,6 +67,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	iconScale?: JiraIssueIconScale;
 	createWorkItemDropZoneLabel?: ExperimentalJiraKanbanProps["createWorkItemDropZoneLabel"];
 	columnSizing?: ExperimentalJiraKanbanProps["columnSizing"];
+	columnWidth?: ExperimentalJiraKanbanProps["columnWidth"];
 	/**
 	 * Bounce when a session lands in the create well. Defaults to `"once"` so
 	 * other boards keep the gobble; jira-team-eu26 passes `"off"`.
@@ -131,6 +137,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
+	boardTitle?: string;
 	columnChrome?: JiraKanbanProps["columnChrome"];
 	compactHeader?: boolean;
 	defaultAgentSessionColumnCollapsed?: boolean;
@@ -144,6 +151,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	 */
 	defaultShowUntracked?: boolean;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
+	showUnassignedHeaderAvatar?: boolean;
 	insightsEnabled?: boolean;
 	insightsDefaultAssigneeIds?: readonly string[];
 	isInsightsWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;

@@ -117,33 +117,6 @@ const WEB_SEARCH_INSTRUCTION = [
 	"[End Web Search Protocol]",
 ].join("\n");
 
-const DURABLE_MEMORY_INSTRUCTION = [
-	"[Durable Memory Protocol]",
-	"In Rovo, durable memory means wiki-backed Hermes persistent memory.",
-	"When the user asks you to remember, save, or store something for future conversations, treat that as Hermes memory unless they explicitly ask for a repo lesson or rule.",
-	"The backend reviews completed turns and persists durable memories through the llm-wiki flow after the turn when appropriate, even if no memory tool is listed in your current toolset.",
-	"Do not say that you lack a memory write tool, cannot write memory mid-conversation, or that the user must use the Memory panel for normal remember/save requests.",
-	"If the request could instead mean a reminder, scheduled action, or one-off task, infer that intent from the full request instead of forcing it into memory.",
-	"Acknowledge durable-memory requests plainly and let the backend persistence flow handle the save unless the user asks about implementation details.",
-	"Use repo lesson logging only for repo/operator corrections or explicit requests to save a lesson, rule, or prevention note.",
-	"Do not describe durable memory as a lesson or skill unless the user explicitly asked for that kind of record.",
-	"[End Durable Memory Protocol]",
-].join("\n");
-
-const HERMES_SKILL_DISCOVERABILITY_INSTRUCTION = [
-	"[Hermes Skill Discoverability Protocol]",
-	"When context includes a [Hermes Skills Catalog] section, treat it as the source of truth for which Hermes skills are installed in this environment.",
-	"Skills listed in [Hermes Skills Catalog] are discoverable, even if they are not active in the current turn.",
-	"Only skills included in the [Hermes Skills] section are fully loaded as procedural memory for the current turn.",
-	"If the user's request clearly matches an installed Hermes skill in the catalog, proactively load that skill instead of waiting for the user to name it exactly.",
-	"Do not say a listed skill is unavailable just because it is missing from [Hermes Skills]. Instead, explain that it is installed but not currently selected for this thread.",
-	"If a relevant installed skill is not active, prefer loading it directly with the `get_skill` tool when that tool is available.",
-	"When multiple installed skills are relevant, load the most directly applicable one first and only mention alternatives when they materially change the outcome.",
-	"Treat skill loading as the default response to a relevant installed skill, not as an optional extra.",
-	"Use the Rovo Skills picker only when direct loading is unavailable or when the user wants the skill to stay active as procedural context for future turns. Picker activation applies starting on the next turn.",
-	"[End Hermes Skill Discoverability Protocol]",
-].join("\n");
-
 const DEEP_PLAN_INSTRUCTION = [
 	"[Deep Plan Protocol]",
 	"When plan mode is active, you are in the serve planning workflow:",
@@ -334,8 +307,6 @@ function getInstructionBlocksForProfile(profile, contextDescription, message) {
 		SHELL_CHROME_AVOIDANCE_INSTRUCTION,
 		mentionsFigmaContext(contextDescription, message) ? FIGMA_CLARIFICATION_INSTRUCTION : null,
 		WEB_SEARCH_INSTRUCTION,
-		DURABLE_MEMORY_INSTRUCTION,
-		HERMES_SKILL_DISCOVERABILITY_INSTRUCTION,
 	];
 }
 
@@ -519,7 +490,6 @@ function buildAIGatewaySystemPrompt(options = {}) {
 			location_info: getNonEmptyPromptString(options.userLocation),
 			organisation: getNonEmptyPromptString(options.userOrganisation),
 		},
-		profile_memory: getNonEmptyPromptString(options.profileMemory),
 		user_preferences: getNonEmptyPromptString(options.userPreferences),
 		current_date:
 			getNonEmptyPromptString(options.currentDate) ||
@@ -528,7 +498,6 @@ function buildAIGatewaySystemPrompt(options = {}) {
 			options.browsingContext === null
 				? null
 				: getNonEmptyPromptString(options.browsingContext),
-		collection_memory: getNonEmptyPromptString(options.collectionMemory),
 		previous_attempt: {
 			response: getNonEmptyPromptString(previousAttempt.response),
 			judgement: getNonEmptyPromptString(previousAttempt.judgement),
@@ -541,7 +510,6 @@ function buildAIGatewaySystemPrompt(options = {}) {
 		templateContext.user.user_name,
 		templateContext.user.location_info,
 		templateContext.user.organisation,
-		templateContext.profile_memory,
 		templateContext.user_preferences,
 		templateContext.browsing_context,
 	].some((value) => typeof value === "string" && value.trim().length > 0)
@@ -607,7 +575,6 @@ module.exports = {
 	buildUserMessage,
 	buildQuestionCardSkipNotification,
 	DEEP_PLAN_INSTRUCTION,
-	HERMES_SKILL_DISCOVERABILITY_INSTRUCTION,
 	AI_GATEWAY_DEFERRED_TOOLS_INSTRUCTION,
 	QUESTION_CARD_INSTRUCTION,
 };

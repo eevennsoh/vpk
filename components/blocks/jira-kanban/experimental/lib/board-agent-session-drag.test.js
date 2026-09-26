@@ -78,6 +78,21 @@ test("a nearby cluster traces while only one card owns the attach target", () =>
 	assert.deepEqual(covered.traces, []);
 });
 
+test("trace-only approach updates publish before a card becomes a drop target", () => {
+	const origin = { kind: "attached", sourceCardCode: "PAY-121" };
+	const far = createBoardAgentSessionDragTransaction(cohortOf(), origin, { x: 580, y: 170 }, ZONES);
+	const approaching = updateBoardAgentSessionDragTransaction(far, { x: 550, y: 170 }, ZONES);
+
+	assert.equal(approaching.target, null);
+	assert.equal(approaching.proximity, null);
+	assert.deepEqual(approaching.traces.map((trace) => trace.cardCode), ["PAY-128"]);
+	assert.equal(shouldPublishBoardAgentSessionDrag(far, approaching), true);
+
+	const departing = updateBoardAgentSessionDragTransaction(approaching, { x: 580, y: 170 }, ZONES);
+	assert.deepEqual(departing.traces, []);
+	assert.equal(shouldPublishBoardAgentSessionDrag(approaching, departing), true);
+});
+
 const COLLAPSED_COLUMN = {
 	bounds: { bottom: 600, left: 300, right: 336, top: 20 },
 	columnTitle: "To do",

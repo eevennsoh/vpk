@@ -1,11 +1,11 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
-import { useReducedMotion } from "motion/react";
 
 import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
 import { toJiraIssueAttachTracePointer } from "@/components/blocks/jira-issue/attach-proximity";
 import { JiraIssueAttachTraceOverlay } from "@/components/blocks/jira-issue/attach-trace-overlay";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 import type { KanbanColumnChromeStyles } from "../../column-chrome";
 import { resolveBoardCreateDropzoneDrag } from "../lib/board-agent-session-drag";
@@ -23,7 +23,7 @@ export function CollapsedColumnSessionDrop({
 	transaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
-	const shouldReduceMotion = useReducedMotion();
+	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const traceRef = useRef<HTMLSpanElement>(null);
 	const armed = Boolean(label) && resolveBoardCreateDropzoneDrag(transaction, title) === "armed";
 	const proximity = transaction?.collapsedColumnProximity;

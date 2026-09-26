@@ -6,6 +6,8 @@ import {
 	useMemo,
 	useState,
 	type CSSProperties,
+	type FocusEvent,
+	type PointerEvent,
 	type ReactElement,
 } from "react";
 
@@ -408,4 +410,68 @@ export function JiraIssueGenerativeActionMenu({
 			triggerPortalContainer={hasTriggerElement ? null : portalContainer}
 		/>
 	);
+}
+
+/** Keep the issue surface reveal state and its pointer/focus lifecycle together. */
+export function useJiraIssueGenerativeActionReveal() {
+	const [generativeActionPointerActive, setGenerativeActionPointerActive] = useState(false);
+	const [generativeActionFocusActive, setGenerativeActionFocusActive] = useState(false);
+	const [generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed] = useState(false);
+	function handleGenerativeActionPointerOver(event: PointerEvent<HTMLElement>) {
+		if (
+			event.target instanceof Element
+			&& event.target.closest("[data-slot='jira-issue-agent-row'], [data-slot='jira-issue-session-transfer']")
+		) {
+			setGenerativeActionRevealSuppressed(true);
+			setGenerativeActionPointerActive(false);
+			return;
+		}
+
+		if (event.currentTarget.contains(event.target as Node)) {
+			setGenerativeActionRevealSuppressed(false);
+			setGenerativeActionPointerActive(true);
+		}
+	}
+
+	function handleGenerativeActionPointerOut(event: PointerEvent<HTMLElement>) {
+		if (!event.currentTarget.contains(event.target as Node)) {
+			return;
+		}
+
+		const nextTarget = event.relatedTarget as Node | null;
+		if (event.currentTarget.contains(nextTarget)) {
+			return;
+		}
+
+		setGenerativeActionPointerActive(false);
+	}
+
+	function handleGenerativeActionFocusCapture(event: FocusEvent<HTMLElement>) {
+		if (
+			event.target instanceof Element
+			&& event.currentTarget.contains(event.target)
+		) {
+			setGenerativeActionRevealSuppressed(false);
+			setGenerativeActionFocusActive(event.target.matches(":focus-visible"));
+		}
+	}
+
+	function handleGenerativeActionBlurCapture(event: FocusEvent<HTMLElement>) {
+		if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) {
+			return;
+		}
+
+		const nextTarget = event.relatedTarget as Node | null;
+		if (event.currentTarget.contains(nextTarget)) {
+			return;
+		}
+
+		setGenerativeActionFocusActive(false);
+	}
+
+	return {
+		generativeActionPointerActive, generativeActionFocusActive, generativeActionRevealSuppressed,
+		setGenerativeActionRevealSuppressed, handleGenerativeActionPointerOver, handleGenerativeActionPointerOut,
+		handleGenerativeActionFocusCapture, handleGenerativeActionBlurCapture,
+	};
 }

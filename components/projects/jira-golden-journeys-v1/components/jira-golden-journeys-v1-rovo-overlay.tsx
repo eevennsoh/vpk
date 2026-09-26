@@ -7,12 +7,14 @@ import { createPortal } from "react-dom";
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
+import type { AgentResultCreator } from "@/components/projects/sidebar-chat/components/agent-result-card";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type { FloatingRovoButtonInsightsConfig } from "@/components/projects/shared/components/floating-rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 
 interface JgpRovoOverlayProps {
+	agentCreator?: AgentResultCreator;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	composerPrefillRequest?: { mention: RichTextMentionItem; requestKey: number };
 	onComposerPrefillConsumed?: (requestKey: number) => void;
@@ -37,6 +39,7 @@ interface JgpRovoOverlayProps {
 
 /** Keeps JGP Rovo surfaces in the viewport stacking context above the Gallery dock. */
 export function JgpRovoOverlay({
+	agentCreator,
 	chatContextBar,
 	composerPrefillRequest,
 	onComposerPrefillConsumed,
@@ -118,6 +121,7 @@ export function JgpRovoOverlay({
 			<AnimatePresence>
 				{showFloatingChat ? (
 					<RovoFloatingChat
+						agentCreator={agentCreator}
 						key="floating-chat"
 						autoFocusComposer={composerFocusState.autoFocus}
 						chatContextBar={chatContextBar}

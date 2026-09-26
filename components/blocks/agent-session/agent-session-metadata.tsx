@@ -93,6 +93,7 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 				attributedBy={item.invokedBy}
 				attributionOrder="agent-first"
 				sizePx={16}
+				appearance="coding"
 			/>
 		);
 	}
@@ -100,6 +101,7 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 	return (
 		<span className="flex size-4 shrink-0 items-center justify-center">
 			<AgentAvatarVisual
+				appearance="coding"
 				avatarClassName="after:border-0"
 				avatarSrc={item.agent.avatarSrc}
 				brandName={item.agent.brandName}

@@ -10,6 +10,43 @@ const {
 } = require("./board-agent-filter.ts");
 const { filterJiraKanbanColumnsByAssignee } = require("../../state.ts");
 
+test("section presenters own unassigned cards while explicit assignees keep the Context split", () => {
+	const mcb = { id: "mcb", name: "MCB", avatarSrc: "/avatar-user/mcb.png" };
+	const tamar = { id: "tamar", name: "Tamar", avatarSrc: "/avatar-user/tamar.png" };
+	const sherif = { id: "sherif", name: "Sherif", avatarSrc: "/avatar-user/sherif.png" };
+	const taroon = { id: "taroon", name: "Taroon", avatarSrc: "/avatar-user/taroon.png" };
+	const card = (code, assignee) => ({ code, title: code, tags: [], priority: "medium", ...(assignee ? { assignee } : {}) });
+	const columns = [
+		{ title: "Context", count: 4, presenters: [mcb, tamar], cards: [card("search", mcb), card("code", mcb), card("work", tamar), card("artifacts", tamar)] },
+		{ title: "Collaboration", count: 2, presenters: [mcb, sherif], cards: [card("jira"), card("confluence")] },
+		{ title: "Confidence", count: 2, presenters: [mcb, taroon], cards: [card("dx"), card("guard")] },
+	];
+	const matchingCodes = (...ids) => filterJiraKanbanColumnsByAssignee(columns, new Set(ids)).map((column) => column.cards.map((item) => item.code));
+	assert.deepEqual(matchingCodes("mcb"), [["search", "code"], ["jira", "confluence"], ["dx", "guard"]]);
+	assert.deepEqual(matchingCodes("tamar"), [["work", "artifacts"], [], []]);
+	assert.deepEqual(matchingCodes("sherif"), [[], ["jira", "confluence"], []]);
+	assert.deepEqual(matchingCodes("taroon"), [[], [], ["dx", "guard"]]);
+	assert.deepEqual(matchingCodes("tamar", "sherif"), [["work", "artifacts"], ["jira", "confluence"], []]);
+	assert.deepEqual(matchingCodes("missing"), [[], [], []]);
+	const filtered = filterJiraKanbanColumnsByAssignee(columns, new Set(["sherif"]));
+	assert.deepEqual(filtered.map((column) => column.count), [0, 2, 0]);
+	assert.equal(filtered[1].presenters, columns[1].presenters);
+	assert.deepEqual(columns.map((column) => column.count), [4, 2, 2]);
+	assert.deepEqual(filterJiraKanbanColumnsByAssignee(columns, new Set()), columns);
+});
+
+test("boards without section presenters still filter only by explicit work-item assignees", () => {
+	const maya = { id: "maya", name: "Maya", avatarSrc: "/maya.png" };
+	const columns = [{ title: "In progress", count: 2, cards: [
+		{ code: "assigned", title: "Assigned", tags: [], priority: "medium", assignee: maya },
+		{ code: "unassigned", title: "Unassigned", tags: [], priority: "medium" },
+	] }];
+	const filtered = filterJiraKanbanColumnsByAssignee(columns, new Set(["maya"]));
+	assert.deepEqual(filtered[0].cards.map((card) => card.code), ["assigned"]);
+	assert.equal(filtered[0].count, 1);
+	assert.equal(columns[0].cards.length, 2);
+});
+
 function activity(id, state) {
 	return { id, label: id, name: id, state };
 }

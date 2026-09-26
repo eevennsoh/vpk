@@ -15,7 +15,6 @@ export function extractWorkItemReportTitle(contextDescription?: string | null): 
 export function findVpkHtmlSkillId(skills?: unknown[]): string;
 export function hasActiveWorkItemContext(contextDescription?: string | null): boolean;
 export function isWorkItemReportIntent(promptText?: string | null): boolean;
-export function mergeHermesSkillIds(existingIds?: string[], skillId?: string): string[];
 export function resolveWorkItemReportRequest(input?: {
 	contextDescription?: string | null;
 	promptText?: string | null;

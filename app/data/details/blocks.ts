@@ -23,6 +23,7 @@ import { CONVERSATION_STARTERS_DETAIL } from "./blocks/conversation-starters";
 import { AGENT_ACCESS_DETAIL } from "./blocks/agent-access";
 import { AGENT_EVALUATION_DETAIL } from "./blocks/agent-evaluation";
 import { AGENT_INSIGHTS_DETAIL } from "./blocks/agent-insights";
+import { AGENT_LANYARD_DETAIL } from "./blocks/agent-lanyard";
 import { AGENT_TEST_DETAIL } from "./blocks/agent-test";
 import { AGENT_SURFACES_DETAIL } from "./blocks/agent-surfaces";
 import { MERMAID_DIAGRAM_DETAIL } from "./blocks/mermaid-diagram";
@@ -139,6 +140,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-access": AGENT_ACCESS_DETAIL,
 	"agent-evaluation": AGENT_EVALUATION_DETAIL,
 	"agent-insights": AGENT_INSIGHTS_DETAIL,
+	"agent-lanyard": AGENT_LANYARD_DETAIL,
 	"agent-test": AGENT_TEST_DETAIL,
 	"agent-surfaces": AGENT_SURFACES_DETAIL,
 	"mermaid-diagram": MERMAID_DIAGRAM_DETAIL,

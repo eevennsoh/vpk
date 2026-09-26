@@ -266,7 +266,7 @@ test("Experimental kanban collapse control is not padded by column chrome", () =
 test("Experimental kanban card gap matches the column gutter", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -949,7 +949,7 @@ test("Insights keeps the seven-item header facepile at one reserved width", () =
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/<AvatarGroup\s+className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}[\s\S]*<AvatarUnassigned[\s\S]*assignees\.slice\(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS - 1\)/u,
+		/<AvatarGroup\s+className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}[\s\S]*showUnassignedAvatar \? <AvatarUnassigned[\s\S]*assignees\.slice\(0, getHeaderFacepileAssigneeLimit\(showUnassignedAvatar\)\)/u,
 	);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /shape=\{isAgent \? "hexagon" : "circle"\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /headerAssignees\?: readonly JiraKanbanAssigneeData\[\];/u);
@@ -972,7 +972,7 @@ test("Experimental kanban keeps its column or session-rail gutter on the scroll 
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,

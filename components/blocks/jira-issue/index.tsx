@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type ComponentProps, type CSSProperties, type FocusEvent, type PointerEvent, type ReactNode } from "react";
+import { useId, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 export type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
 import type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
@@ -49,6 +49,7 @@ import {
 import { JiraIssueSeparator, JiraIssueSubtasks } from "@/components/blocks/jira-issue/subtasks";
 import {
 	JiraIssueGenerativeActionMenu,
+	useJiraIssueGenerativeActionReveal,
 	type JiraIssueGenerativeActionConfig,
 } from "@/components/blocks/jira-issue/generative-action-menu";
 import { JiraIssueMoreMenu, type JiraIssueMoreAction, type JiraIssueMoreMenuActions } from "@/components/blocks/jira-issue/more-menu";
@@ -56,6 +57,7 @@ import { JiraIssueUncapturedWork } from "@/components/blocks/jira-issue/uncaptur
 import { JiraIssueSummary } from "@/components/blocks/jira-issue/summary";
 import type {
 	JiraIssueChrome,
+	JiraIssueCoverImage,
 	JiraIssueIconScale,
 	JiraIssuePriority,
 	JiraIssuePullRequestPreview,
@@ -87,6 +89,7 @@ const AGENT_ACTIVITY_SURFACE_STYLE: CSSProperties = {
 
 export type {
 	JiraIssueChrome,
+	JiraIssueCoverImage,
 	JiraIssueIconScale,
 	JiraIssuePriority,
 	JiraIssuePullRequestPreview,
@@ -164,6 +167,7 @@ export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"artic
 
 export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "children"> {
 	variant?: "default";
+	coverImage?: JiraIssueCoverImage;
 	/** Issue summary shown as the primary card text. */
 	summary: string;
 	/** Jira issue key, e.g. RFP-101. */
@@ -271,6 +275,7 @@ function JiraIssueDefault({
 	chrome = "raised",
 	compact = false, iconScale = "compact", parentOwnsLayout = false,
 	className,
+	coverImage,
 	defaultSubtasksExpanded = false,
 	dragging = false,
 	draggable = true,
@@ -318,9 +323,11 @@ function JiraIssueDefault({
 	const agentActivityLayoutGroupId = useId();
 	const [generativeActionAnchor, setGenerativeActionAnchor] = useState<HTMLElement | null>(null);
 	const [internalSubtasksExpanded, setInternalSubtasksExpanded] = useState(defaultSubtasksExpanded);
-	const [generativeActionPointerActive, setGenerativeActionPointerActive] = useState(false);
-	const [generativeActionFocusActive, setGenerativeActionFocusActive] = useState(false);
-	const [generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed] = useState(false);
+	const {
+		generativeActionPointerActive, generativeActionFocusActive, generativeActionRevealSuppressed,
+		setGenerativeActionRevealSuppressed, handleGenerativeActionPointerOver, handleGenerativeActionPointerOut,
+		handleGenerativeActionFocusCapture, handleGenerativeActionBlurCapture,
+	} = useJiraIssueGenerativeActionReveal();
 	const [agentActivityHoverOpen, setAgentActivityHoverOpen] = useState(false);
 	const [moreActionMenuOpen, setMoreActionMenuOpen] = useState(false);
 	const [internalAgentSessionDragState, setInternalAgentSessionDragState] = useState<JiraIssueAgentSessionDragState>(
@@ -616,58 +623,6 @@ function JiraIssueDefault({
 		onAgentActivityOpenChange?.(open);
 	}
 
-	function handleGenerativeActionPointerOver(event: PointerEvent<HTMLElement>) {
-		if (
-			event.target instanceof Element
-			&& event.target.closest("[data-slot='jira-issue-agent-row'], [data-slot='jira-issue-session-transfer']")
-		) {
-			setGenerativeActionRevealSuppressed(true);
-			setGenerativeActionPointerActive(false);
-			return;
-		}
-
-		if (event.currentTarget.contains(event.target as Node)) {
-			setGenerativeActionRevealSuppressed(false);
-			setGenerativeActionPointerActive(true);
-		}
-	}
-
-	function handleGenerativeActionPointerOut(event: PointerEvent<HTMLElement>) {
-		if (!event.currentTarget.contains(event.target as Node)) {
-			return;
-		}
-
-		const nextTarget = event.relatedTarget as Node | null;
-		if (event.currentTarget.contains(nextTarget)) {
-			return;
-		}
-
-		setGenerativeActionPointerActive(false);
-	}
-
-	function handleGenerativeActionFocusCapture(event: FocusEvent<HTMLElement>) {
-		if (
-			event.target instanceof Element
-			&& event.currentTarget.contains(event.target)
-		) {
-			setGenerativeActionRevealSuppressed(false);
-			setGenerativeActionFocusActive(event.target.matches(":focus-visible"));
-		}
-	}
-
-	function handleGenerativeActionBlurCapture(event: FocusEvent<HTMLElement>) {
-		if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) {
-			return;
-		}
-
-		const nextTarget = event.relatedTarget as Node | null;
-		if (event.currentTarget.contains(nextTarget)) {
-			return;
-		}
-
-		setGenerativeActionFocusActive(false);
-	}
-
 	const summaryContent = (
 		<JiraIssueSummary
 			assigneeAvatarLabel={assigneeAvatarLabel}
@@ -675,6 +630,7 @@ function JiraIssueDefault({
 			assigneeAvatarSrc={assigneeAvatarSrc}
 			assigneePulse={assigneePulse}
 			assigneeUnassignedKind={assigneeUnassignedKind}
+			coverImage={coverImage}
 			iconScale={iconScale}
 			issueKey={issueKey}
 			issueTypeLabel={issueTypeLabel}

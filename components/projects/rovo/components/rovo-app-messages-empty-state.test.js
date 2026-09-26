@@ -109,7 +109,7 @@ test("Rovo app selected custom agent context is merged into fullscreen submissio
 	assert.match(SHELL_SOURCE, /contextDescription: resolvedContextDescription/u);
 	assert.match(SHELL_SOURCE, /function mergeContextDescriptions/u);
 	assert.match(SHELL_SOURCE, /const handleRovoAppSuggestionSelect = useCallback/u);
-	assert.match(SHELL_SOURCE, /try \{[\s\S]*await chat\.submitPrompt\(\{[\s\S]*buildHermesPromptOptions\(contextDescription\)[\s\S]*files: \[\],[\s\S]*text: prompt/u);
+	assert.match(SHELL_SOURCE, /try \{[\s\S]*await chat\.submitPrompt\(\{[\s\S]*buildPromptOptions\(contextDescription\)[\s\S]*files: \[\],[\s\S]*text: prompt/u);
 	assert.match(SHELL_SOURCE, /catch \{[\s\S]*submitPrompt already sets a user-visible error state\./u);
 	assert.match(SHELL_SOURCE, /onSelectSuggestion=\{handleRovoAppSuggestionSelect\}/u);
 });
