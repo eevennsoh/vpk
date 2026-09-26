@@ -10,12 +10,12 @@ const ISSUE = '[data-board-agent-session-drop-zone="issue"]';
 const EDITOR = 'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]';
 const POPUP = '[role="menu"], [role="dialog"], [role="listbox"], [data-slot="popover-content"], [aria-haspopup][aria-expanded="true"]';
 
-export function visibleJiraDraggingCards(root: HTMLElement | null): HTMLElement[] {
+export function visibleJiraIssueCards(root: HTMLElement | null): HTMLElement[] {
 	return root ? [...root.querySelectorAll<HTMLElement>(ISSUE)].filter((node) =>
 		!node.closest('[inert], [aria-hidden="true"], [data-collapsed="true"]') && node.getClientRects().length > 0) : [];
 }
 
-export interface JiraDraggingKeyboardRange extends JiraKanbanSelectionAnchor {
+export interface JiraIssueSelectionKeyboardRange extends JiraKanbanSelectionAnchor {
 	indexInColumn: number;
 	fallbackAnchor: JiraKanbanSelectionAnchor;
 }
@@ -28,14 +28,15 @@ function hasVisiblePopup(document: Document): boolean {
 }
 
 /** Only this board's card controls/surfaces own navigation and selection keys. */
-export function useJiraDraggingKeyboard({
-	rootRef, dragging, onCancelDrag, onClearSelection, onRangeSelect, onSelectAll,
+export function useJiraIssueSelectionKeyboard({
+	rootRef, enabled = true, dragging, onCancelDrag, onClearSelection, onRangeSelect, onSelectAll,
 }: Readonly<{
 	rootRef: RefObject<HTMLDivElement | null>;
+	enabled?: boolean;
 	dragging: boolean;
 	onCancelDrag: () => void;
 	onClearSelection: () => void;
-	onRangeSelect: (range: JiraDraggingKeyboardRange) => void;
+	onRangeSelect: (range: JiraIssueSelectionKeyboardRange) => void;
 	onSelectAll: () => void;
 }>) {
 	const actions = useRef({ dragging, onCancelDrag, onClearSelection, onRangeSelect, onSelectAll });
@@ -44,7 +45,7 @@ export function useJiraDraggingKeyboard({
 	}, [dragging, onCancelDrag, onClearSelection, onRangeSelect, onSelectAll]);
 	useEffect(() => {
 		const root = rootRef.current;
-		if (!root) return;
+		if (!enabled || !root) return;
 		const document = root.ownerDocument;
 		let scrollFrame = 0;
 		const focusCard = (issue: HTMLElement, rangeSelection: boolean) => {
@@ -83,7 +84,7 @@ export function useJiraDraggingKeyboard({
 			const source = cardControl.closest<HTMLElement>(ISSUE);
 			if (!source?.dataset.issueKey || !source.dataset.boardColumnTitle) return;
 			const columnTitle = source.dataset.boardColumnTitle;
-			const cards = visibleJiraDraggingCards(root).filter((node) => node.dataset.boardColumnTitle === columnTitle);
+			const cards = visibleJiraIssueCards(root).filter((node) => node.dataset.boardColumnTitle === columnTitle);
 			const index = cards.indexOf(source);
 			if (index < 0) return;
 			const next = cards[Math.max(0, Math.min(cards.length - 1, index + (event.key === "ArrowDown" ? 1 : -1)))];
@@ -110,5 +111,5 @@ export function useJiraDraggingKeyboard({
 			document.removeEventListener("keydown", handleKeyDown, true);
 			root.removeEventListener("click", handleClick);
 		};
-	}, [rootRef]);
+	}, [enabled, rootRef]);
 }

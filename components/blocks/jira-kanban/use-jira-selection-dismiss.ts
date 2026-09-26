@@ -39,15 +39,16 @@ function preservesSelection(
 
 /** An ordinary outside press dismisses this board's selection, never its actions. */
 export function useJiraSelectionDismiss({
-	rootRef, boardColumns, selectedCardCodes, dragging, onClearSelection,
+	rootRef, enabled = true, boardColumns, selectedCardCodes, dragging, onClearSelection,
 }: Readonly<{
 	rootRef: RefObject<HTMLDivElement | null>;
+	enabled?: boolean;
 	boardColumns: readonly JiraKanbanColumnData[];
 	selectedCardCodes: ReadonlySet<string>;
 	dragging: boolean;
 	onClearSelection: () => void;
 }>) {
-	const active = selectedCardCodes.size > 0 && !dragging;
+	const active = enabled && selectedCardCodes.size > 0 && !dragging;
 	const handleOutsidePress = useEffectEvent((event: PointerEvent) => {
 		if (event.button !== 0 || event.shiftKey || event.metaKey || event.ctrlKey || dragging || selectedCardCodes.size === 0) return;
 		const root = rootRef.current;

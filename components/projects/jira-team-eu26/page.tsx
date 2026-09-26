@@ -374,6 +374,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
+						issueSelectionAppearance="fused-backdrop"
 						issueDragTransitions
 						createWellBounce="off"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
