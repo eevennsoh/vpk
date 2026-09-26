@@ -13,6 +13,10 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/jira-kanban/experimental/hooks/use-board-auto-arrange.test.js",
+		"components/blocks/jira-kanban/experimental/hooks/use-issue-card-drop-arrival.test.js",
+		"components/blocks/jira-kanban/experimental/hooks/use-board-issue-pointer-drag.test.js",
+		"components/blocks/jira-kanban/experimental/lib/board-auto-arrange.test.js",
 		"components/blocks/agent-lanyard/agent-lanyard.test.js",
 		"components/blocks/agent-session/agent-session-card-activation.test.js",
 		".agents/skills/vpk-deploy/scripts/deployment-status.test.js",
