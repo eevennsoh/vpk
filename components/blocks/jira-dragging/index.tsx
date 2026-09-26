@@ -4,7 +4,7 @@ import { ExperimentalJiraKanban } from "@/components/blocks/jira-kanban/experime
 import { JIRA_TEAM_EU26_PAY_BOARD_AGENTS } from "@/components/projects/jira-team-eu26/data/presentation-story";
 import { cn } from "@/lib/utils";
 import { useJiraDragging } from "./use-jira-dragging";
-import { useJiraSelectionDismiss } from "./use-jira-selection-dismiss";
+import { useJiraSelectionDismiss } from "@/components/blocks/jira-kanban/use-jira-selection-dismiss";
 
 export interface JiraDraggingProps {
 	className?: string;
