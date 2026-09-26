@@ -22,6 +22,9 @@ interface AgentLanyardCardProps {
 	showGrid?: boolean;
 	perspectiveTilt?: boolean;
 	animateGrid?: boolean;
+	/** Play the finite grid wave when mounted by a preview instead of on card hover. */
+	gridAnimationTrigger?: "hover" | "reveal";
+	headingLevel?: 2 | 3;
 	className?: string;
 }
 
@@ -32,8 +35,9 @@ const EXIT = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] as const }; // duration-f
 
 export function AgentLanyardCard({
 	id, name, byline, description, variant, avatar, footer, verified = false,
-	accentColor, showGrid = true, perspectiveTilt = true, animateGrid = true, className,
+	accentColor, showGrid = true, perspectiveTilt = true, animateGrid = true, gridAnimationTrigger = "hover", headingLevel = 3, className,
 }: Readonly<AgentLanyardCardProps>) {
+	const Title = headingLevel === 2 ? "h2" : "h3";
 	const [hovered, setHovered] = useState(false);
 	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	const tiltEnabled = perspectiveTilt && !reducedMotion;
@@ -61,7 +65,7 @@ export function AgentLanyardCard({
 				transition={tiltEnabled ? (hovered ? ENTER : EXIT) : { duration: 0 }}
 			>
 				<div className={cn("relative h-[108px] shrink-0 overflow-hidden rounded-t-xl", showGrid ? "bg-bg-neutral" : "bg-surface-sunken")} aria-hidden="true">
-					{showGrid ? <AgentLanyardGrid active={hovered && gridEnabled} color={accentColor} /> : null}
+					{showGrid ? <AgentLanyardGrid key={id} active={gridEnabled && (gridAnimationTrigger === "reveal" || hovered)} color={accentColor} /> : null}
 					<span data-slot="agent-lanyard-cutout" className="pointer-events-none absolute top-[7px] left-1/2 z-10 h-1.5 w-10 -translate-x-1/2 rounded-[3.75px]">
 						<span className="absolute inset-0 rounded-[inherit] bg-surface" />
 						<span
@@ -76,7 +80,7 @@ export function AgentLanyardCard({
 				<div className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-4">
 					<div>
 						<div className="flex min-w-0 items-center gap-1.5">
-							<h3 className="min-w-0 truncate text-base leading-6 font-medium text-text" title={name}>{name}</h3>
+							<Title className="min-w-0 truncate text-base leading-6 font-medium text-text" title={name}>{name}</Title>
 							{verified ? <Icon label="Verified by your org" className="shrink-0 text-icon-information" render={<StatusVerifiedIcon label="" size="small" color="currentColor" />} /> : null}
 						</div>
 						<p className="text-xs leading-4 font-medium text-text-subtle">{byline}</p>

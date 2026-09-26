@@ -29,6 +29,9 @@ import {
 	type JiraListInsertion,
 } from "@/components/blocks/jira-list";
 
+import { HeaderLanyards } from "./components/header-lanyards";
+import { renderEu26HeaderAssignee } from "./components/header-assignee";
+
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
@@ -342,6 +345,7 @@ function JiraTeamEu26App(): React.ReactElement {
 
 	return (
 		<>
+			<HeaderLanyards>
 			<AppLayout
 				chatContextBar={chatContextBar}
 				chatPanelFlush
@@ -394,6 +398,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						defaultShowUntracked={false}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES}
+						renderHeaderAssignee={renderEu26HeaderAssignee}
 						insightsEnabled={false}
 						isLooseWorkResumable={isJiraTeamEu26LooseWorkResumable}
 						newAgentSessionIds={newAgentSessionIds}
@@ -450,6 +455,7 @@ function JiraTeamEu26App(): React.ReactElement {
 					/>
 				</div>
 			</AppLayout>
+			</HeaderLanyards>
 			{/* Resume swaps the button label to "Copied" — colour and text alone,
 			    which a screen reader on the row never hears. Announce it instead. */}
 			<span aria-live="polite" className="sr-only" role="status">

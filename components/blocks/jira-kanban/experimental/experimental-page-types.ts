@@ -21,7 +21,7 @@ import type {
 	JiraKanbanProps,
 } from "../index";
 import type { ExperimentalJiraKanbanProps } from "./experimental-jira-kanban";
-import type { ExperimentalJiraKanbanView } from "./experimental-board-header";
+import type { HeaderAssigneeRenderer, ExperimentalJiraKanbanView } from "./experimental-board-header";
 import type { ExperimentalJiraKanbanMode } from "./pulse/components/pulse-mode-controls";
 import type { PulseAgentSession, PulseLooseWork, PulseMember, PulseWorkItem } from "./pulse/types";
 
@@ -145,6 +145,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	 * back to that starting point.
 	 */
 	defaultShowUntracked?: boolean;
+	/** Route-owned avatar presentation and hover details; filtering stays in the board. */
+	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
 	showUnassignedHeaderAvatar?: boolean;
 	insightsEnabled?: boolean;

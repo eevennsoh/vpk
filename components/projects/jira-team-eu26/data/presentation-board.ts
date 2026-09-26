@@ -30,12 +30,6 @@ const JIRA_TEAM_EU26_PAY_CURRENT_USER_INVOKER = {
 	name: JIRA_TEAM_EU26_PAY_CURRENT_USER.name,
 } as const satisfies NonNullable<JiraIssueAgentActivity["invokedBy"]>;
 
-const PAY_AVATARS = {
-	releaseAgent: "/avatar-agent/strategy-agents/strategic-insight.svg",
-	reviewAgent: "/avatar-agent/teamwork-agents/decision-director.svg",
-	testAgent: "/avatar-agent/service-agents/rca-agent.svg",
-} as const;
-
 /** Codex pauses PAY-112 until a human picks the sandbox retention call. */
 export const JIRA_TEAM_EU26_PAY_112_RETENTION_QUESTION = {
 	id: "pay-112-sandbox-retention",
@@ -179,21 +173,9 @@ export const JIRA_TEAM_EU26_PAY_COMPOSER_AGENTS = [
 
 export const JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES = [
 	JIRA_TEAM_EU26_PAY_CURRENT_USER,
-	{
-		id: "review-agent",
-		name: "Codex",
-		avatarSrc: PAY_AVATARS.reviewAgent,
-	},
-	{
-		id: "test-agent",
-		name: "Cursor",
-		avatarSrc: PAY_AVATARS.testAgent,
-	},
-	{
-		id: "release-agent",
-		name: "GitHub Copilot",
-		avatarSrc: PAY_AVATARS.releaseAgent,
-	},
+	{ id: "claude-code", name: "Claude", avatarSrc: "/illustration/agent-lanyard/claude.svg" },
+	{ id: "review-agent", name: "Jira Coding Agent", avatarSrc: "/1p/agent-lanyard/glyph-jira-coding.svg" },
+	{ id: "test-agent", name: "Cursor", avatarSrc: "/illustration/agent-lanyard/cursor.svg" },
 ] as const satisfies readonly JiraKanbanAssigneeData[];
 
 function attachPullRequestPreview(

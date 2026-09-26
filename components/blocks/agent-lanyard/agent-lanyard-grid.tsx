@@ -10,8 +10,8 @@ interface AgentLanyardGridProps {
 	color?: string;
 }
 
-// duration-normal + ease-out-practical: one finite wave per hover interaction.
-const WAVE_TRANSITION = { duration: 0.15, ease: [0.4, 1, 0.6, 1] as const, times: GRID_WAVE_TIMES };
+// duration-slowest: preserve the original finite linear wave on hover or reveal.
+const WAVE_TRANSITION = { duration: 0.6, ease: "linear" as const, times: GRID_WAVE_TIMES };
 
 export function AgentLanyardGrid({ active, color }: Readonly<AgentLanyardGridProps>) {
 	const maskId = `lanyard-wave-${useId().replaceAll(":", "")}`;
@@ -21,7 +21,7 @@ export function AgentLanyardGrid({ active, color }: Readonly<AgentLanyardGridPro
 				<mask id={maskId}>
 					<motion.circle
 						cx="126" cy="54" fill="none" stroke="white" strokeWidth="42"
-						initial={false}
+						initial={{ r: 0, opacity: 0 }}
 						animate={active ? { r: [0, 18.48, 47.74, 81.62, 118.58, 154], opacity: [0, 1, 1, 0.9, 0.45, 0] } : { r: 0, opacity: 0 }}
 						transition={active ? WAVE_TRANSITION : { duration: 0 }}
 					/>
@@ -30,12 +30,12 @@ export function AgentLanyardGrid({ active, color }: Readonly<AgentLanyardGridPro
 			<motion.path
 				data-slot="agent-lanyard-grid-lines"
 				d={STATIC_GRID_PATH} fill="none" stroke="currentColor" strokeOpacity="0.6" strokeDasharray="0.01 3" strokeLinecap="round"
-				initial={false} animate={{ d: active ? GRID_WAVE_PATHS : STATIC_GRID_PATH }}
+				initial={{ d: STATIC_GRID_PATH }} animate={{ d: active ? GRID_WAVE_PATHS : STATIC_GRID_PATH }}
 				transition={active ? WAVE_TRANSITION : { duration: 0 }}
 			/>
 			<motion.path
 				d={STATIC_GRID_PATH} fill="none" mask={`url(#${maskId})`} stroke={color ?? "currentColor"} strokeDasharray="0.01 3" strokeLinecap="round"
-				initial={false} animate={{ d: active ? GRID_WAVE_PATHS : STATIC_GRID_PATH }}
+				initial={{ d: STATIC_GRID_PATH }} animate={{ d: active ? GRID_WAVE_PATHS : STATIC_GRID_PATH }}
 				transition={active ? WAVE_TRANSITION : { duration: 0 }}
 			/>
 		</svg>

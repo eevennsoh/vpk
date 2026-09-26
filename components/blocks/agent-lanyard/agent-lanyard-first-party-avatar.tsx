@@ -5,7 +5,7 @@ import type { AgentLanyardFirstPartyBadge } from "./first-party-badges";
 export function AgentLanyardFirstPartyAvatar({ badge, backgroundColor }: Readonly<{ badge: AgentLanyardFirstPartyBadge; backgroundColor?: string }>) {
 	return (
 		<div className="absolute top-6.5 left-1/2 z-10 size-15 -translate-x-1/2" data-slot="agent-lanyard-first-party-avatar">
-			<Avatar shape="hexagon" size="2xl" animate={false} className="size-full">
+			<Avatar shape="hexagon" size="2xl" animate={false} className="size-full [&>[data-slot=avatar-hexagon-group-border]]:hidden">
 				<span className="flex size-full items-center justify-center bg-bg-accent-blue-subtle" style={{ backgroundColor }}>
 					{/* Preserve the logo's Figma frame; the shared Avatar owns the shape. */}
 					<span className="relative size-14">
