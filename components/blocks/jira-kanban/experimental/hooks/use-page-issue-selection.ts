@@ -38,6 +38,7 @@ export function usePageIssueSelection({
 		indexInColumn: number,
 		modifiers: JiraKanbanCardSelectModifiers,
 	) => {
+		if (enabled && !modifiers.shiftKey && !modifiers.metaOrCtrlKey && modifiers.source !== "selection-control") return;
 		handleCardDragEnd();
 		setSelection((current) => selectJiraKanbanCard(current, filteredBoardColumns, {
 			cardCode,
@@ -50,7 +51,8 @@ export function usePageIssueSelection({
 	// An owning workspace uses a plain click for activation, so clear any bulk
 	// selection before opening it. Shift/⌘ clicks bypass this handler in
 	// `JiraKanban` and continue through `onCardSelect` for range/toggle selection.
-	// The standalone block keeps its original plain-click selection behavior.
+	// Fused selection follows Jira Dragging: an unmodified click never selects.
+	// Other standalone boards keep their original plain-click selection behavior.
 	const handleCardClick = (
 		_title: string,
 		cardCode: string,
@@ -62,6 +64,7 @@ export function usePageIssueSelection({
 			onCardClick(card, columnTitle);
 			return;
 		}
+		if (enabled) return;
 
 		const indexInColumn = filteredBoardColumns
 			.find((column) => column.title === columnTitle)
@@ -113,6 +116,15 @@ export function usePageIssueSelection({
 		updateBoardColumns(() => columns);
 		setSelection((current) => reconcileJiraKanbanSelection(current, columns));
 	};
+	const handleCardRemove = (card: JiraKanbanCardData) => {
+		handleCardDragEnd();
+		const columns = boardColumns.map((column) => {
+			const cards = column.cards.filter((candidate) => candidate.code !== card.code);
+			return cards.length === column.cards.length ? column : { ...column, cards, count: cards.length };
+		});
+		updateBoardColumns(() => columns);
+		setSelection((current) => reconcileJiraKanbanSelection(current, columns));
+	};
 	useJiraIssueSelectionKeyboard({
 		rootRef, enabled, dragging: draggedCard !== null, onCancelDrag: handleCardDragEnd, onClearSelection, onSelectAll,
 		onRangeSelect: (range) => {
@@ -123,5 +135,5 @@ export function usePageIssueSelection({
 		},
 	});
 	useJiraSelectionDismiss({ rootRef, enabled, boardColumns: filteredBoardColumns, selectedCardCodes: selection.selectedCardCodes, dragging: draggedCard !== null, onClearSelection });
-	return { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleSelectedCardsStatusChange, onSelectAll, onClearSelection };
+	return { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleCardRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection };
 }
