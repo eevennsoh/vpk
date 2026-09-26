@@ -81,6 +81,18 @@ test("the route renders the keynote board directly inside Jira app chrome", () =
 	assert.match(PAGE_SOURCE, /h-full min-h-0 min-w-0 overflow-hidden \[&>div\]:min-h-0/u);
 });
 
+test("the keynote floating chat retains MCB creator attribution through its active overlay", () => {
+	const overlay = readProjectFile("components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx");
+	assert.match(PAGE_SOURCE, /<JgpRovoOverlay\s+agentCreator=\{JIRA_TEAM_EU26_END_PRESENTERS\.mcb\}/u);
+	assert.match(overlay, /agentCreator\?: AgentResultCreator;/u);
+	assert.match(overlay, /<RovoFloatingChat\s+agentCreator=\{agentCreator\}/u);
+});
+
+test("the list announces the keynote workspace instead of its copied Payments fixture", () => {
+	assert.match(LIST_HOOK_SOURCE, /ariaLabel: "Team ’26 EU keynote work items list"/u);
+	assert.doesNotMatch(LIST_HOOK_SOURCE, /ariaLabel: "Payments SDK v2 migration work items list"/u);
+});
+
 test("the settings property controls the advanced session timeline", () => {
 	assert.match(PAGE_SOURCE, /import \{ useDesignVariants \} from "@\/components\/hooks\/use-design-variants"/u);
 	assert.match(PAGE_SOURCE, /const \{ designVariants \} = useDesignVariants\(\);/u);

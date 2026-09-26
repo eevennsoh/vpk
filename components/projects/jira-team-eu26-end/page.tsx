@@ -482,6 +482,7 @@ function JiraTeamEu26App(): React.ReactElement {
 				/>
 			</MountOnFirstUse>
 			<JgpRovoOverlay
+				agentCreator={JIRA_TEAM_EU26_END_PRESENTERS.mcb}
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}

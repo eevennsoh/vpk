@@ -329,7 +329,7 @@ export function useJiraTeamEu26List({
 
 		return {
 			agentCatalog: JIRA_TEAM_EU26_AGENT_CATALOG,
-			ariaLabel: "Payments SDK v2 migration work items list",
+			ariaLabel: "Team ’26 EU keynote work items list",
 			className: "max-h-full",
 			copiedIssueKey,
 			draftWorkItem: draftWorkItem
