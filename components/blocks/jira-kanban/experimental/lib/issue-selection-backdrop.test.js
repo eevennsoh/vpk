@@ -14,10 +14,10 @@ test("only adjacent selected issues share a backdrop", () => {
 	assert.equal(issueSelectionBackdrop([{ code: "D" }], new Set(["A", "D"]), 0), "single");
 });
 
-test("every opted-in issue gets a well; standard card selection stays unchanged", () => {
+test("resting selection does not activate an agent well; selected issues do", () => {
 	assert.equal(resolveJiraIssueSelectionBackdrop().active, false);
 	const resting = resolveJiraIssueSelectionBackdrop("rest");
-	assert.equal(resting.active, true);
+	assert.equal(resting.active, false);
 	assert.equal(resting.selected, false);
 	assert.equal(resting.top, 0);
 	assert.equal(resolveJiraIssueSelectionBackdrop("single").selected, true);

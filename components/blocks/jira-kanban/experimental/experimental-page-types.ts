@@ -52,6 +52,8 @@ export interface ExperimentalJiraKanbanPageHandle {
 export interface ExperimentalJiraKanbanPageProps {
 	addAgentLabel?: ExperimentalJiraKanbanProps["addAgentLabel"];
 	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
+	/** Fused selection also enables board keyboard navigation and outside-press dismissal. */
+	issueSelectionAppearance?: ExperimentalJiraKanbanProps["issueSelectionAppearance"];
 	activeView?: ExperimentalJiraKanbanView;
 	activeCardCode?: string;
 	/** Extra local sessions discovered after the static Pulse fixture loaded. */

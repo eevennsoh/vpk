@@ -238,7 +238,14 @@ export function JiraIssueSummary({
 
 	return (
 		<div className="flex min-w-0 flex-col gap-2">
-			{coverImage ? <JiraIssueCover image={coverImage} /> : null}
+			{coverImage ? (
+				<div
+					className="-mx-[calc(var(--spacing)*3+1px)] -mt-[calc(var(--spacing)*3+1px)] mb-1"
+					data-slot="jira-issue-cover-bleed"
+				>
+					<JiraIssueCover image={coverImage} />
+				</div>
+			) : null}
 			<div className="flex min-w-0 items-start gap-2">
 				<span className={cn("min-w-0 flex-1", usesStrokeChrome ? "line-clamp-2 text-sm leading-5" : "text-sm")}>{summary}</span>
 				<div className="size-6 shrink-0" data-slot="jira-issue-more-action" />

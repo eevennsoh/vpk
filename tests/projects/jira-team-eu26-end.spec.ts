@@ -15,7 +15,7 @@ const issueTitles = storySections.flatMap((section) => section.stories);
 test.use({ viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true });
 
 async function openBoard(page: Page) {
-	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await page.goto(`${origin}/preview/projects/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	await expect(page.getByRole("heading", { name: "Team ’26 EU keynote", exact: true })).toBeVisible();
 }
 
@@ -50,17 +50,35 @@ for (const width of [1440, 1920]) {
 		}
 		await expect(page.locator('[data-jira-kanban-column="Coherence"]')).toHaveCount(0);
 		await expect(column(page, "Done").locator("[data-issue-key]")).toHaveCount(0);
+		const coverColors = new Set<string>();
 		for (const [index, title] of issueTitles.entries()) {
 			const card = issue(page, `TEU-${index + 1}`);
 			await expect(card).toContainText(title);
 			await card.scrollIntoViewIfNeeded();
-			const cover = card.locator('[data-slot="jira-issue-cover"] img');
+			const cover = card.locator('[data-slot="jira-issue-cover"]');
 			await expect(cover).toHaveCount(1);
-			await expect.poll(() => cover.evaluate((node) => (node as HTMLImageElement).complete && (node as HTMLImageElement).naturalWidth > 0)).toBe(true);
-			const height = await cover.evaluate((node) => node.getBoundingClientRect().height);
-			expect(height).toBeGreaterThan(0);
-			expect(height).toBeLessThanOrEqual(120);
+			await expect(cover.locator("img")).toHaveCount(0);
+			await expect(cover).toHaveAttribute("aria-hidden", "true");
+			await expect(cover).toHaveClass(/\bbg-bg-accent-gray-subtler\b/u);
+			const geometry = await cover.evaluate((node) => {
+				const coverBounds = node.getBoundingClientRect();
+				const cardBounds = node.closest("article,button")!.getBoundingClientRect();
+				return {
+					height: coverBounds.height,
+					leftGap: coverBounds.left - cardBounds.left,
+					rightGap: cardBounds.right - coverBounds.right,
+					topGap: coverBounds.top - cardBounds.top,
+					color: getComputedStyle(node).backgroundColor,
+				};
+			});
+			expect(geometry.height).toBe(120);
+			expect(geometry.leftGap).toBe(0);
+			expect(geometry.rightGap).toBe(0);
+			expect(geometry.topGap).toBe(0);
+			expect(geometry.color).not.toBe("rgba(0, 0, 0, 0)");
+			coverColors.add(geometry.color);
 		}
+		expect(coverColors.size).toBe(1);
 		const geometry = await page.locator("[data-jira-kanban-scrollport]").evaluate((node) => {
 			const columns = [...node.querySelectorAll<HTMLElement>("[data-jira-kanban-column]")];
 			return {
@@ -132,7 +150,7 @@ test("existing single-card and selected-cohort drag moves work items into Done",
 	await expect(issue(page, "TEU-2")).toHaveAttribute("data-board-column-title", "Done");
 	await expect(issue(page, "TEU-3")).toHaveAttribute("data-board-column-title", "Done");
 	for (const code of ["TEU-1", "TEU-2", "TEU-3"]) {
-		const coverHeight = await issue(page, code).locator('[data-slot="jira-issue-cover"] img').evaluate((node) => node.getBoundingClientRect().height);
+		const coverHeight = await issue(page, code).locator('[data-slot="jira-issue-cover"]').evaluate((node) => node.getBoundingClientRect().height);
 		expect(coverHeight).toBeGreaterThan(0);
 		expect(coverHeight).toBeLessThanOrEqual(120);
 	}
