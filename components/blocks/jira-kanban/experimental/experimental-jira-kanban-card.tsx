@@ -20,8 +20,10 @@ import {
 	type JiraIssueGenerativeActionConfig,
 	type JiraIssueGenerativeActionPresentation,
 	type JiraIssueIconScale,
+	type JiraIssueMoreMenuActions,
 } from "@/components/blocks/jira-issue";
 import { resolveRelatedJiraIssueAgentActivityMode } from "@/components/blocks/jira-issue/agent-activity-model";
+import type { JiraIssueSelectionBackdrop } from "@/components/blocks/jira-issue/selection-backdrop";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import {
@@ -33,12 +35,18 @@ import {
 	WORK_ITEM_PINNED_ITEMS_LABEL,
 } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 import { token } from "@/lib/tokens";
+import { BoardIssueSourceGhost } from "@/components/blocks/jira-kanban/experimental/components/board-issue-source-ghost";
 
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanCardData,
 	JiraKanbanProps,
 } from "../index";
+
+export interface JiraKanbanCardMoreMenuActions {
+	readonly onArchive?: (card: JiraKanbanCardData) => void;
+	readonly onDelete?: (card: JiraKanbanCardData) => void;
+}
 
 function canonicalizeAssignedAgentId(issueKey: string, agentId: string): string {
 	const prefix = `${issueKey}:`;
@@ -228,6 +236,9 @@ interface ExperimentalJiraKanbanCardProps {
 	showUntrackedWorkFooter?: boolean;
 	onSubtasks?: (item: AgentSessionItem) => void;
 	selected: boolean;
+	onSelectionToggle?: () => void;
+	moreMenuActions?: JiraIssueMoreMenuActions;
+	selectionBackdrop?: JiraIssueSelectionBackdrop;
 	subtaskChrome?: JiraIssueChrome;
 }
 
@@ -280,6 +291,9 @@ export function ExperimentalJiraKanbanCard({
 	onSessionUnlink,
 	onSubtasks,
 	selected,
+	onSelectionToggle,
+	moreMenuActions,
+	selectionBackdrop,
 	showUnlinkWell = true,
 	showUntrackedWorkFooter,
 	subtaskChrome,
@@ -316,8 +330,9 @@ export function ExperimentalJiraKanbanCard({
 		onLinkWorkItem?.(item, workItemKey);
 	}
 
-	return (
+	const issue = (
 		<JiraIssue
+			selectionBackdrop={selectionBackdrop}
 			active={active}
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
@@ -350,6 +365,8 @@ export function ExperimentalJiraKanbanCard({
 			compact
 			coverImage={card.coverImage}
 			dragging={dragging}
+			// Opted-in boards let the source ghost own the content fade.
+			style={selectionBackdrop === undefined ? undefined : { opacity: 1 }}
 			iconScale={iconScale}
 			parentOwnsLayout
 			generativeAction={{
@@ -382,6 +399,8 @@ export function ExperimentalJiraKanbanCard({
 			pullRequestPreview={card.pullRequestPreview}
 			pullRequestStatus={card.pullRequestStatus}
 			selected={selected}
+			onSelectionToggle={onSelectionToggle}
+			moreMenuActions={moreMenuActions}
 			renderAgentActivityIndicator={renderAgentActivityIndicator}
 			sessionTransferAfter={detachedAgentSessions.length > 0
 				? (localSessionDrag) => (
@@ -421,4 +440,5 @@ export function ExperimentalJiraKanbanCard({
 			tags={card.tags}
 		/>
 	);
+	return <BoardIssueSourceGhost dragging={dragging} enabled={selectionBackdrop !== undefined}>{issue}</BoardIssueSourceGhost>;
 }

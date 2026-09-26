@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { agentDragIdentityLabel } from "./agent-session-identity-label";
 import type { AgentSessionItem } from "./agent-session-types";
 import type { SessionCohort } from "./session-cohort";
+import { DECK_LAYERS, DECK_LAYER_FALLBACK, DECK_VISIBLE_MAX } from "./session-drag-deck";
 
 /**
  * Overlay elevation lives on the pill itself, never on a wrapper behind it —
@@ -29,36 +30,6 @@ import type { SessionCohort } from "./session-cohort";
 const DRAG_CHIP_ELEVATION: CSSProperties = {
 	boxShadow: token("elevation.shadow.overlay"),
 };
-
-/** Pills drawn behind the lead before the count badge takes over. */
-const DECK_VISIBLE_MAX = 3;
-
-/**
- * Placement for each sheet behind the lead pill, front to back.
- *
- * Deliberately irregular. Equal steps along one diagonal read as a machine-cut
- * drop shadow; mismatched angles and directions read as a handful of cards
- * picked up at once, which is what the gesture actually is. Both sheets fan
- * downward so neither corner climbs into the count badge at the top right.
- *
- * The lead pill stays upright on purpose. It carries the label the drag has to
- * keep legible, and it is the `data-session-fusion-chip` node the Jira goo
- * overlay measures every frame — rotating it would inflate that rect and pull
- * the effect off the chip it is supposed to sit under.
- *
- * Sheets paint the same solid fill as the lead. Fading them let the page show
- * through, which read as a smudge under the stack rather than as cards. Elevated
- * copies get their edge from overlay shadow; a border on top of that shadow
- * reads as a thick outline. Resting in-flow copies have no shadow, so they keep
- * a border so the sheets still read as separate cards.
- */
-const DECK_LAYERS = [
-	{ rotateDeg: 2.4, xPx: 4, yPx: 3 },
-	{ rotateDeg: -3.2, xPx: -3, yPx: 6 },
-] as const;
-
-/** Fallback placement, so a deeper deck never renders an untransformed sheet. */
-const DECK_LAYER_FALLBACK = { rotateDeg: 4, xPx: 6, yPx: 9 } as const;
 
 /** The cohort sentence, owned here so every caller reads identically. */
 function sessionCohortLabel(total: number): string {

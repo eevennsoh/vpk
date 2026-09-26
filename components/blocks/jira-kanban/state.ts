@@ -42,8 +42,13 @@ export function filterJiraKanbanColumnsByAssignee(
 	});
 }
 
+export interface JiraKanbanSelectionAnchor {
+	cardCode: string;
+	columnTitle: string;
+}
+
 export interface JiraKanbanSelectionState {
-	lastSelectedByColumn: Readonly<Record<string, number>>;
+	anchor: Readonly<JiraKanbanSelectionAnchor> | null;
 	selectedCardCodes: Set<string>;
 }
 
@@ -52,13 +57,28 @@ interface SelectJiraKanbanCardInput {
 	columnTitle: string;
 	indexInColumn: number;
 	modifiers: JiraKanbanCardSelectModifiers;
+	/** Keyboard ranges start from focus when no valid anchor exists. */
+	fallbackAnchor?: Readonly<JiraKanbanSelectionAnchor>;
 }
 
 export function createJiraKanbanSelectionState(): JiraKanbanSelectionState {
 	return {
-		lastSelectedByColumn: {},
+		anchor: null,
 		selectedCardCodes: new Set(),
 	};
+}
+
+/** A hidden, moved or deselected card cannot silently remain the range anchor. */
+export function reconcileJiraKanbanSelection<T extends JiraKanbanSelectionState>(
+	state: T,
+	columns: readonly JiraKanbanColumnData[],
+): T {
+	if (!state.anchor) return state;
+	const anchor = state.anchor;
+	const valid = state.selectedCardCodes.has(anchor.cardCode)
+		&& columns.some((column) => column.title === anchor.columnTitle
+			&& column.cards.some((card) => card.code === anchor.cardCode));
+	return valid ? state : { ...state, anchor: null };
 }
 
 export function selectJiraKanbanCard(
@@ -66,34 +86,31 @@ export function selectJiraKanbanCard(
 	columns: readonly JiraKanbanColumnData[],
 	input: SelectJiraKanbanCardInput,
 ): JiraKanbanSelectionState {
-	const nextSelection = new Set(state.selectedCardCodes);
+	const current = reconcileJiraKanbanSelection(state, columns);
 	const column = columns.find((candidate) => candidate.title === input.columnTitle);
-	const previousIndex = state.lastSelectedByColumn[input.columnTitle];
+	const targetIndex = column?.cards.findIndex((card) => card.code === input.cardCode) ?? -1;
+	if (!column || targetIndex < 0) return current;
+	const target = { cardCode: input.cardCode, columnTitle: input.columnTitle };
 
-	if (input.modifiers.shiftKey && column && previousIndex !== undefined) {
-		const start = Math.min(previousIndex, input.indexInColumn);
-		const end = Math.max(previousIndex, input.indexInColumn);
-		for (const card of column.cards.slice(start, end + 1)) {
-			nextSelection.add(card.code);
-		}
-	} else if (input.modifiers.metaOrCtrlKey) {
+	if (input.modifiers.shiftKey) {
+		const candidate = current.anchor?.columnTitle === column.title ? current.anchor : input.fallbackAnchor;
+		const anchorIndex = candidate?.columnTitle === column.title
+			? column.cards.findIndex((card) => card.code === candidate.cardCode) : -1;
+		const anchor = anchorIndex >= 0 && candidate ? candidate : target;
+		const start = Math.min(anchorIndex >= 0 ? anchorIndex : targetIndex, targetIndex);
+		const end = Math.max(anchorIndex >= 0 ? anchorIndex : targetIndex, targetIndex);
+		return { anchor, selectedCardCodes: new Set(column.cards.slice(start, end + 1).map((card) => card.code)) };
+	}
+	if (input.modifiers.metaOrCtrlKey) {
+		const nextSelection = new Set(current.selectedCardCodes);
 		if (nextSelection.has(input.cardCode)) {
 			nextSelection.delete(input.cardCode);
-		} else {
-			nextSelection.add(input.cardCode);
+			return { anchor: current.anchor?.cardCode === input.cardCode ? null : current.anchor, selectedCardCodes: nextSelection };
 		}
-	} else {
-		nextSelection.clear();
 		nextSelection.add(input.cardCode);
+		return { anchor: target, selectedCardCodes: nextSelection };
 	}
-
-	return {
-		lastSelectedByColumn: {
-			...state.lastSelectedByColumn,
-			[input.columnTitle]: input.indexInColumn,
-		},
-		selectedCardCodes: nextSelection,
-	};
+	return { anchor: target, selectedCardCodes: new Set([input.cardCode]) };
 }
 
 export function moveJiraKanbanCardsToColumn(

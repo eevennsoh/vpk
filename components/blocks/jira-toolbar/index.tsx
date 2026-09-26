@@ -10,14 +10,15 @@ import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
-import SkillIcon from "@atlaskit/icon-lab/core/skill";
+import PresenterModeIcon from "@atlaskit/icon/core/presenter-mode";
+import RovoIcon from "@atlaskit/icon-lab/core/rovo";
+import { useRouter } from "next/navigation";
+import { useOptionalRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 
 import {
 	AgentSelector,
 	type AgentSelectorAgent,
 } from "@/components/blocks/agent-selector";
-import { SkillSelector } from "@/components/blocks/skill-selector";
-import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,43 +78,45 @@ const TOOLBAR_HORIZONTAL_PADDING = 16;
 const FLYOUT_SIDE_OFFSET = 16;
 
 export interface JiraToolbarProps {
+	/** Disable when the owning board handles scoped keyboard dismissal. */
+	dismissOnEscape?: boolean;
 	agents: readonly AgentSelectorAgent[];
 	className?: string;
 	defaultPinnedAgentIds?: readonly string[];
-	defaultPinnedSkillIds?: readonly string[];
+	onAskRovo?: () => void;
+	onSelectAll?: () => void;
 	onAgentAssignmentChange: (agentId: string, assigned: boolean) => void;
 	onBrowseAgents?: () => void;
 	onClearSelection: () => void;
 	onCreateAgent?: () => void;
 	onDelete?: () => void;
 	onEditFields?: () => void;
-	onBrowseSkills?: () => void;
-	onCreateSkill?: () => void;
 	onMerge?: () => void;
-	onSkillSelect?: (skillId: string) => void;
 	onStatusChange: (status: string) => void;
 	onWatchOptions?: () => void;
 	pinnedItemsLabel?: string;
 	selectedAgentIds?: readonly string[];
 	selectedCount: number;
 	selectedStatus?: string | null;
-	skills?: readonly SkillsDirectorySkill[];
 	statusOptions: readonly string[];
 }
 
 interface JiraToolbarActionProps {
 	children: ReactNode;
 	icon: ReactNode;
+	disabled?: boolean;
 	onClick?: () => void;
 }
 
 function JiraToolbarAction({
 	children,
 	icon,
+	disabled,
 	onClick,
 }: Readonly<JiraToolbarActionProps>) {
 	return (
 		<Button
+			disabled={disabled}
 			className={ACTION_BUTTON_CLASS}
 			onClick={onClick}
 			type="button"
@@ -126,7 +129,7 @@ function JiraToolbarAction({
 }
 
 function ToolbarSeparator() {
-	return <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-border" />;
+	return <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-border-bold opacity-50" />;
 }
 
 // A middle action is described once and rendered in three forms: a hidden
@@ -136,7 +139,7 @@ function ToolbarSeparator() {
 interface ToolbarAction {
 	id: string;
 	label: string;
-	/** Bare @atlaskit icon element, wrapped in `<Icon>` at each render site. */
+	/** Icon or logo element, wrapped in `<Icon>` for measurement. */
 	icon: ReactElement;
 	/** Inline toolbar node (button or dropdown). */
 	renderInline: () => ReactNode;
@@ -152,34 +155,32 @@ interface ToolbarAction {
 }
 
 export function JiraToolbar({
+	dismissOnEscape = true,
 	agents,
 	className,
 	defaultPinnedAgentIds,
-	defaultPinnedSkillIds,
+	onAskRovo,
+	onSelectAll,
 	onAgentAssignmentChange,
 	onBrowseAgents,
 	onClearSelection,
 	onCreateAgent,
 	onDelete,
 	onEditFields,
-	onBrowseSkills,
-	onCreateSkill,
 	onMerge,
-	onSkillSelect,
 	onStatusChange,
 	onWatchOptions,
 	pinnedItemsLabel,
 	selectedAgentIds = [],
 	selectedCount,
 	selectedStatus,
-	skills,
 	statusOptions,
 }: Readonly<JiraToolbarProps>) {
 	const shouldReduceMotion = useReducedMotion();
+	const router = useRouter();
+	const rovoChat = useOptionalRovoChatControls();
 	const [agentSelectorOpen, setAgentSelectorOpen] = useState(false);
 	const [agentQuery, setAgentQuery] = useState("");
-	const [skillSelectorOpen, setSkillSelectorOpen] = useState(false);
-	const [skillQuery, setSkillQuery] = useState("");
 	const selectedAgentIdSet = useMemo(
 		() => new Set(selectedAgentIds),
 		[selectedAgentIds],
@@ -193,33 +194,25 @@ export function JiraToolbar({
 		}
 	};
 
-	const handleSkillSelectorOpenChange = (open: boolean) => {
-		setSkillSelectorOpen(open);
-		if (!open) {
-			setSkillQuery("");
-		}
-	};
-
-	const handleSkillToggle = (skillId: string) => {
-		onSkillSelect?.(skillId);
-		setSkillSelectorOpen(false);
-		setSkillQuery("");
-	};
+	const handleAskRovo = onAskRovo ?? (() => {
+		if (rovoChat) rovoChat.openChat("sidebar");
+		else router.push("/rovo");
+	});
 
 	useEffect(() => {
-		if (selectedCount === 0) {
+		if (selectedCount === 0 || !dismissOnEscape) {
 			return;
 		}
 
 		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") {
+			if (event.key === "Escape" && !event.defaultPrevented) {
 				onClearSelection();
 			}
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [onClearSelection, selectedCount]);
+	}, [dismissOnEscape, onClearSelection, selectedCount]);
 
 	// Status submenu is reused verbatim inside the standalone dropdown and the
 	// overflow menu so the option list stays identical in both places.
@@ -236,6 +229,22 @@ export function JiraToolbar({
 			<Lozenge variant={statusLozengeVariant(status)}>{status}</Lozenge>
 		</DropdownMenuItem>
 	));
+	const agentPicker = (
+		<AgentSelector
+			agents={agents}
+			defaultPinnedAgentIds={defaultPinnedAgentIds}
+			onAgentToggle={(agentId) => {
+				onAgentAssignmentChange(agentId, !selectedAgentIdSet.has(agentId));
+			}}
+			onBrowseAgents={() => onBrowseAgents?.()}
+			onCreateAgent={() => onCreateAgent?.()}
+			onQueryChange={setAgentQuery}
+			pinnedItemsLabel={pinnedItemsLabel}
+			query={agentQuery}
+			selectedAgentIds={selectedAgentIds}
+			selectionMode="single"
+		/>
+	);
 
 	// Middle actions, in priority order (left = highest priority, collapses last).
 	// Merge only exists for multi-selection, so it drops out of the list entirely
@@ -243,7 +252,7 @@ export function JiraToolbar({
 	const actions: ToolbarAction[] = [
 		{
 			id: "assign",
-			label: "Assign agents",
+			label: "Add agent",
 			icon: <AiAgentIcon label="" size="small" />,
 			renderInline: () => (
 				<DropdownMenu open={agentSelectorOpen} onOpenChange={handleAgentSelectorOpenChange}>
@@ -251,7 +260,7 @@ export function JiraToolbar({
 						render={<Button className={ACTION_BUTTON_CLASS} type="button" variant="ghost" />}
 					>
 						<Icon render={<AiAgentIcon label="" size="small" />} />
-						Assign agents
+						Add agent
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="start"
@@ -265,75 +274,35 @@ export function JiraToolbar({
 						side="top"
 						sideOffset={FLYOUT_SIDE_OFFSET}
 					>
-						<AgentSelector
-							agents={agents}
-							defaultPinnedAgentIds={defaultPinnedAgentIds}
-							onAgentToggle={(agentId) => {
-								onAgentAssignmentChange(agentId, !selectedAgentIdSet.has(agentId));
-							}}
-							onBrowseAgents={() => onBrowseAgents?.()}
-							onCreateAgent={() => onCreateAgent?.()}
-							onQueryChange={setAgentQuery}
-							pinnedItemsLabel={pinnedItemsLabel}
-							query={agentQuery}
-							selectedAgentIds={selectedAgentIds}
-							selectionMode="single"
-						/>
+						{agentPicker}
 					</DropdownMenuContent>
 				</DropdownMenu>
 			),
-			// In the overflow menu, reuse the standalone agent selector by opening it.
+			// Overflow owns a real submenu; the inline dropdown is absent here.
 			renderMenu: () => (
-				<DropdownMenuItem
-					elemBefore={<Icon render={<AiAgentIcon label="" size="small" />} />}
-					onSelect={() => setAgentSelectorOpen(true)}
-				>
-					Assign agents
-				</DropdownMenuItem>
+				<DropdownMenuSub onOpenChange={(open) => { if (!open) setAgentQuery(""); }}>
+					<DropdownMenuSubTrigger aria-label="Add agent">
+						<Icon render={<AiAgentIcon label="" size="small" />} />
+						Add agent
+					</DropdownMenuSubTrigger>
+					<DropdownMenuSubContent className="w-[360px] max-w-[calc(100vw-2rem)] max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" positionerClassName="z-[502]">
+						{agentPicker}
+					</DropdownMenuSubContent>
+				</DropdownMenuSub>
 			),
 		},
 		{
-			id: "use-skills",
-			label: "Use skills",
-			icon: <SkillIcon label="" size="small" />,
+			id: "ask-rovo",
+			label: "Ask Rovo",
+			icon: <RovoIcon label="" size="small" />,
 			renderInline: () => (
-				<DropdownMenu open={skillSelectorOpen} onOpenChange={handleSkillSelectorOpenChange}>
-					<DropdownMenuTrigger
-						render={<Button className={ACTION_BUTTON_CLASS} type="button" variant="ghost" />}
-					>
-						<Icon render={<SkillIcon label="" size="small" />} />
-						Use skills
-					</DropdownMenuTrigger>
-					<DropdownMenuContent
-						align="start"
-						// Bottom-anchored like Assign agents: bound the height by the space
-						// above the trigger and let the SkillSelector's own list scroll.
-						className="w-[360px] max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0"
-						positionerClassName="z-[501]"
-						side="top"
-						sideOffset={FLYOUT_SIDE_OFFSET}
-					>
-						<SkillSelector
-							defaultPinnedSkillIds={defaultPinnedSkillIds}
-							onBrowseSkills={() => onBrowseSkills?.()}
-							onCreateSkill={() => onCreateSkill?.()}
-							onQueryChange={setSkillQuery}
-							onSkillToggle={handleSkillToggle}
-							pinnedItemsLabel={pinnedItemsLabel}
-							query={skillQuery}
-							selectionMode="single"
-							skills={skills}
-						/>
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<JiraToolbarAction icon={<Icon render={<RovoIcon label="" size="small" />} />} onClick={handleAskRovo}>
+					Ask Rovo
+				</JiraToolbarAction>
 			),
-			// In the overflow menu, reuse the standalone skill selector by opening it.
 			renderMenu: () => (
-				<DropdownMenuItem
-					elemBefore={<Icon render={<SkillIcon label="" size="small" />} />}
-					onSelect={() => setSkillSelectorOpen(true)}
-				>
-					Use skills
+				<DropdownMenuItem elemBefore={<Icon render={<RovoIcon label="" size="small" />} />} onSelect={handleAskRovo}>
+					Ask Rovo
 				</DropdownMenuItem>
 			),
 		},
@@ -361,6 +330,7 @@ export function JiraToolbar({
 		},
 		{
 			id: "change-status",
+			alwaysOverflow: true,
 			label: "Change status",
 			icon: <ProjectStatusIcon label="" size="small" />,
 			renderInline: () => (
@@ -383,7 +353,7 @@ export function JiraToolbar({
 			),
 			renderMenu: () => (
 				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>
+					<DropdownMenuSubTrigger aria-label="Change status">
 						<Icon render={<ProjectStatusIcon label="" size="small" />} />
 						Change status
 					</DropdownMenuSubTrigger>
@@ -443,6 +413,7 @@ export function JiraToolbar({
 		},
 		{
 			id: "delete",
+			alwaysOverflow: true,
 			label: "Delete",
 			icon: <DeleteIcon label="" size="small" />,
 			renderInline: () => (
@@ -488,8 +459,10 @@ export function JiraToolbar({
 		inlineEligibleActions.length,
 	);
 	const inlineActionCount = inlineEligibleActions.length;
+	const hasSelection = selectedCount > 0;
 
 	useLayoutEffect(() => {
+		if (!hasSelection) return;
 		const positioner = positionerRef.current;
 		const measure = measureRef.current;
 		const leading = leadingRef.current;
@@ -534,7 +507,7 @@ export function JiraToolbar({
 		observer.observe(leading);
 		observer.observe(trailing);
 		return () => observer.disconnect();
-	}, [inlineActionCount, pinnedOverflowActions.length]);
+	}, [hasSelection, inlineActionCount, pinnedOverflowActions.length]);
 
 	// Inline-eligible actions that fit render inline; the rest collapse into the
 	// "⋯" menu. Pinned overflow actions are always appended to the hidden set so
@@ -600,6 +573,9 @@ export function JiraToolbar({
 									<Badge max={false}>{selectedCount}</Badge>
 									<span>selected</span>
 								</div>
+								<JiraToolbarAction disabled={!onSelectAll} icon={<Icon render={<PresenterModeIcon label="" size="small" />} />} onClick={onSelectAll}>
+									Select all
+								</JiraToolbarAction>
 								<ToolbarSeparator />
 							</div>
 

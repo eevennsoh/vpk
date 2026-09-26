@@ -4,6 +4,28 @@ const test = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
+test("shared ranges shrink, clear resets the anchor, and moves invalidate it", async () => {
+	const { jgpKanbanReducer, createInitialJgpKanbanState } = await loadHarness();
+	let state = createInitialJgpKanbanState();
+	const intake = state.columns.find((candidate) => candidate.cards.length >= 3);
+	const choose = (cardCode) => {
+		state = jgpKanbanReducer(state, {
+			type: "select", cardCode, columnTitle: intake.title, indexInColumn: 0,
+			modifiers: { shiftKey: true, metaOrCtrlKey: false },
+		});
+	};
+	choose(intake.cards[0].code);
+	choose(intake.cards[2].code);
+	choose(intake.cards[1].code);
+	assert.deepEqual([...state.selectedCardCodes], intake.cards.slice(0, 2).map((card) => card.code));
+	state = jgpKanbanReducer(state, { type: "clear-selection" });
+	assert.equal(state.anchor, null);
+	choose(intake.cards[0].code);
+	const destination = state.columns.find((candidate) => candidate.title !== intake.title);
+	state = jgpKanbanReducer(state, { type: "set-status", targetColumnTitle: destination.title });
+	assert.equal(state.anchor, null);
+});
+
 async function loadHarness() {
 	const result = await esbuild.build({
 		stdin: {

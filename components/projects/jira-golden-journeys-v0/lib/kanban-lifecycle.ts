@@ -1,5 +1,8 @@
 import type { JiraKanbanCardSelectModifiers, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import {
+	createJiraKanbanSelectionState,
+	reconcileJiraKanbanSelection,
+	type JiraKanbanSelectionState,
 	moveJiraKanbanCardsToColumn,
 	selectJiraKanbanCard,
 } from "@/components/blocks/jira-kanban/state";
@@ -29,12 +32,10 @@ export interface AsxKanbanDragState {
 	sourceColumnTitle: string;
 }
 
-export interface AsxKanbanState {
+export interface AsxKanbanState extends JiraKanbanSelectionState {
 	columns: JiraKanbanColumnData[];
 	dragged: AsxKanbanDragState | null;
-	lastSelectedByColumn: Record<string, number>;
 	lifecycleByCode: Record<string, AsxKanbanLifecycle>;
-	selectedCardCodes: Set<string>;
 }
 
 export type AsxKanbanAction =
@@ -113,9 +114,8 @@ export function createInitialAsxKanbanState(): AsxKanbanState {
 	return {
 		columns: createAsxKanbanColumns(),
 		dragged: null,
-		lastSelectedByColumn: {},
+		...createJiraKanbanSelectionState(),
 		lifecycleByCode: {},
-		selectedCardCodes: new Set(),
 	};
 }
 
@@ -167,6 +167,11 @@ export function resolveAsxKanbanColumns(state: AsxKanbanState): JiraKanbanColumn
 }
 
 export function asxKanbanReducer(state: AsxKanbanState, action: AsxKanbanAction): AsxKanbanState {
+	const next = reduceAsxKanbanAction(state, action);
+	return reconcileJiraKanbanSelection(next, next.columns);
+}
+
+function reduceAsxKanbanAction(state: AsxKanbanState, action: AsxKanbanAction): AsxKanbanState {
 	switch (action.type) {
 		case "assign-agent":
 			return {
@@ -260,6 +265,6 @@ export function asxKanbanReducer(state: AsxKanbanState, action: AsxKanbanAction)
 			};
 		}
 		case "clear-selection":
-			return { ...state, selectedCardCodes: new Set() };
+			return { ...state, ...createJiraKanbanSelectionState() };
 	}
 }

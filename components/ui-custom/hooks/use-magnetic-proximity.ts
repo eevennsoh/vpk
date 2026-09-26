@@ -1,9 +1,10 @@
 "use client";
 
-import { useMotionValue, useReducedMotion, useSpring, useTransform } from "motion/react";
+import { useMotionValue, useSpring, useTransform } from "motion/react";
 import type { MotionValue, SpringOptions } from "motion/react";
 import { useEffect, useMemo } from "react";
 import type { RefObject } from "react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 import {
 	resolveMagneticAxisOffset,
@@ -30,6 +31,8 @@ export interface MagneticProximityOptions {
 	labelRatio?: number;
 	/** Padding in px around the target rect that still counts as hovered. */
 	hoverArea?: number;
+	/** Also follow native dragover events when pointermove stops during a drag. */
+	trackDrag?: boolean;
 	spring?: SpringOptions;
 }
 
@@ -65,11 +68,12 @@ export function useMagneticProximity(
 	targetRef: RefObject<HTMLElement | null>,
 	options?: Readonly<MagneticProximityOptions>,
 ): MagneticProximityValues {
-	const shouldReduceMotion = useReducedMotion();
+	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 
 	const distance = options?.distance ?? MAGNETIC_PROXIMITY_DISTANCE;
 	const labelRatio = options?.labelRatio ?? MAGNETIC_PROXIMITY_LABEL_RATIO;
 	const hoverArea = options?.hoverArea ?? MAGNETIC_PROXIMITY_HOVER_AREA;
+	const trackDrag = options?.trackDrag ?? false;
 
 	const {
 		damping = MAGNETIC_PROXIMITY_SPRING.damping,
@@ -102,8 +106,8 @@ export function useMagneticProximity(
 		};
 		if (shouldReduceMotion) reset();
 
-		const handleMove = (event: PointerEvent) => {
-			if (event.pointerType === "touch") {
+		const handleMove = (event: PointerEvent | DragEvent) => {
+			if ("pointerType" in event && event.pointerType === "touch") {
 				reset();
 				return;
 			}
@@ -136,12 +140,25 @@ export function useMagneticProximity(
 			magnetY.set(0);
 		};
 
+		let dragFrame = 0;
+		let latestDrag: DragEvent | null = null;
+		const handleDrag = (event: DragEvent) => {
+			latestDrag = event;
+			if (dragFrame) return;
+			dragFrame = requestAnimationFrame(() => {
+				dragFrame = 0;
+				if (latestDrag) handleMove(latestDrag);
+			});
+		};
 		document.addEventListener("pointermove", handleMove, { passive: true });
+		if (trackDrag) document.addEventListener("dragover", handleDrag, { capture: true, passive: true });
 		return () => {
+			cancelAnimationFrame(dragFrame);
+			if (trackDrag) document.removeEventListener("dragover", handleDrag, true);
 			document.removeEventListener("pointermove", handleMove);
 			reset();
 		};
-	}, [distance, hoverArea, magnetX, magnetY, proximity, shouldReduceMotion, targetRef]);
+	}, [distance, hoverArea, magnetX, magnetY, proximity, shouldReduceMotion, targetRef, trackDrag]);
 
 	return { x, y, labelX, labelY, proximity };
 }

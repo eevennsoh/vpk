@@ -244,7 +244,7 @@ test("Jira issue distinguishes an active card background from bulk selection", (
 });
 
 test("Jira issue reserves a stable title action slot and opens the built-in actions menu", () => {
-	assert.match(SOURCE, /import \{ JiraIssueMoreMenu, type JiraIssueMoreAction \} from "@\/components\/blocks\/jira-issue\/more-menu";/u);
+	assert.match(SOURCE, /import \{ JiraIssueMoreMenu, type JiraIssueMoreAction, type JiraIssueMoreMenuActions \} from "@\/components\/blocks\/jira-issue\/more-menu";/u);
 	assert.match(SOURCE, /showMoreAction\?: boolean;/u);
 	assert.match(SOURCE, /onMoreActionSelect\?: \(action: JiraIssueMoreAction\) => void;/u);
 	assert.match(SUMMARY_SOURCE, /<div className="size-6 shrink-0" data-slot="jira-issue-more-action" \/>/u);
@@ -471,7 +471,7 @@ test("Jira issue uses the 8px large radius token", () => {
 
 test("Jira issue switches rich variants to an article with internal controls", () => {
 	assert.match(SOURCE, /const hasAgentActivityPresentation = agentActivityMode !== undefined \|\| Boolean\(agentActivities\?\.length\) \|\| hasCompletedAgentChin;/);
-	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| agentActivityShellMounted \|\| Boolean\(generativeAction\) \|\| Boolean\(agentSessionTransfer\) \|\| usesCompactVisual \|\| Boolean\(agentSessionTargetPreview\);/);
+	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| agentActivityShellMounted \|\| selectionBackdropState.active \|\| Boolean\(generativeAction\) \|\| Boolean\(agentSessionTransfer\) \|\| usesCompactVisual \|\| Boolean\(agentSessionTargetPreview\);/);
 	assert.match(SOURCE, /const shouldRenderIssueClickButton = Boolean\(props\.onClick && !parentEpicControl\);/);
 	assert.match(SOURCE, /<article[\s\S]*data-selected=\{selected \|\| undefined\}/);
 	assert.match(SOURCE, /draggable=\{draggable\}/);
@@ -506,7 +506,7 @@ test("Jira issue keeps its agent shell mounted throughout a session-target previ
 	);
 	assert.match(
 		SOURCE,
-		/const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| agentActivityShellMounted\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined\s*\n\t\t\|\| Boolean\(agentSessionTargetPreview\);/u,
+		/const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| agentActivityShellMounted\s*\n\t\t\|\| selectionBackdropState.active\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined\s*\n\t\t\|\| Boolean\(agentSessionTargetPreview\);/u,
 	);
 	assert.match(
 		SOURCE,
@@ -519,7 +519,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(SOURCE, /generativeAction,/);
 	assert.doesNotMatch(SOURCE, /DEFAULT_JIRA_ISSUE_GENERATIVE_ACTION|onSubmit: \(\) => undefined/u);
 	assert.match(SOURCE, /const generativeActionMenu = generativeAction && \(generativeActionPresentation === "sparkle" \|\| !showMoreAction\) \? \([\s\S]*<JiraIssueGenerativeActionMenu[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{\{ issueKey, summary \}\}[\s\S]*revealActive=\{generativeActionRevealActive\}[\s\S]*\/>[\s\S]*\) : null;/);
-	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| agentActivityShellMounted \|\| Boolean\(generativeAction\) \|\| Boolean\(agentSessionTransfer\) \|\| usesCompactVisual \|\| Boolean\(agentSessionTargetPreview\);/);
+	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| agentActivityShellMounted \|\| selectionBackdropState.active \|\| Boolean\(generativeAction\) \|\| Boolean\(agentSessionTransfer\) \|\| usesCompactVisual \|\| Boolean\(agentSessionTargetPreview\);/);
 	assert.match(SOURCE, /\{generativeActionMenu\}/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
 
@@ -531,9 +531,9 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(GENERATIVE_SOURCE, /export type JiraIssueGenerativeActionSelectedItem = RovoSparkleSelectedItem;/);
 	assert.match(GENERATIVE_SOURCE, /agents=\{action\.agents \?\? JIRA_ISSUE_GENERATIVE_AGENTS\}/u);
 	assert.match(GENERATIVE_SOURCE, /skills=\{action\.skills \?\? JIRA_ISSUE_GENERATIVE_SKILLS\}/u);
-	assert.match(SOURCE, /const \[generativeActionPointerActive, setGenerativeActionPointerActive\] = useState\(false\);/);
-	assert.match(SOURCE, /const \[generativeActionFocusActive, setGenerativeActionFocusActive\] = useState\(false\);/);
-	assert.match(SOURCE, /const \[generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed\] = useState\(false\);/);
+	assert.match(GENERATIVE_SOURCE, /const \[generativeActionPointerActive, setGenerativeActionPointerActive\] = useState\(false\);/);
+	assert.match(GENERATIVE_SOURCE, /const \[generativeActionFocusActive, setGenerativeActionFocusActive\] = useState\(false\);/);
+	assert.match(GENERATIVE_SOURCE, /const \[generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed\] = useState\(false\);/);
 	assert.match(SOURCE, /const \[agentActivityHoverOpen, setAgentActivityHoverOpen\] = useState\(false\);/u);
 	assert.match(SOURCE, /const generativeActionRevealActive = !agentActivityHoverOpen[\s\S]*&& !generativeActionRevealSuppressed[\s\S]*&& \(generativeActionPointerActive \|\| generativeActionFocusActive\);/);
 	assert.match(SOURCE, /function handleAgentActivityOpenChange\(open: boolean\) \{[\s\S]*setAgentActivityHoverOpen\(open\);[\s\S]*onAgentActivityOpenChange\?\.\(open\);/u);
@@ -543,24 +543,24 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(SOURCE, /onPointerOver=\{handleGenerativeActionPointerOver\}/);
 	assert.match(SOURCE, /onPointerOut=\{handleGenerativeActionPointerOut\}/);
 	assert.match(
-		SOURCE,
+		GENERATIVE_SOURCE,
 		/function handleGenerativeActionPointerOver\(event: PointerEvent<HTMLElement>\) \{[\s\S]*event\.target instanceof Element[\s\S]*event\.target\.closest\("\[data-slot='jira-issue-agent-row'\], \[data-slot='jira-issue-session-transfer'\]"\)[\s\S]*setGenerativeActionRevealSuppressed\(true\);[\s\S]*setGenerativeActionPointerActive\(false\);[\s\S]*return;/,
 		"agent rows and the transfer region should suppress the portaled sparkle before their own surfaces open",
 	);
 	assert.match(SOURCE, /onFocusCapture=\{handleGenerativeActionFocusCapture\}/);
 	assert.match(SOURCE, /onBlurCapture=\{handleGenerativeActionBlurCapture\}/);
 	assert.match(
-		SOURCE,
+		GENERATIVE_SOURCE,
 		/function handleGenerativeActionFocusCapture\(event: FocusEvent<HTMLElement>\) \{[\s\S]*event\.target instanceof Element[\s\S]*event\.currentTarget\.contains\(event\.target\)[\s\S]*setGenerativeActionFocusActive\(event\.target\.matches\(":focus-visible"\)\);/,
 		"pointer-acquired focus should not pin the sparkle after an agent-row click",
 	);
 	assert.match(
-		SOURCE,
+		GENERATIVE_SOURCE,
 		/function handleGenerativeActionBlurCapture\(event: FocusEvent<HTMLElement>\) \{[\s\S]*event\.target instanceof Node[\s\S]*event\.currentTarget\.contains\(event\.target\)[\s\S]*setGenerativeActionFocusActive\(false\);/,
 		"portaled focus events should not masquerade as card focus",
 	);
 	assert.match(
-		SOURCE,
+		GENERATIVE_SOURCE,
 		/function handleGenerativeActionPointerOut\(event: PointerEvent<HTMLElement>\) \{[\s\S]*!event\.currentTarget\.contains\(event\.target as Node\)[\s\S]*const nextTarget = event\.relatedTarget as Node \| null;[\s\S]*event\.currentTarget\.contains\(nextTarget\)[\s\S]*setGenerativeActionPointerActive\(false\);/,
 		"the real DOM pointer boundary should win over portaled React descendants",
 	);
@@ -718,13 +718,13 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome: boolean;/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden has-\[:focus-visible\]:overflow-visible",[\s\S]*\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?"py-1 has-\[\[data-session-chip-out\]\]:py-0",[\s\S]*?\),\s*\)\}/u,
+		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden has-\[:focus-visible\]:overflow-visible",[\s\S]*\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?flushBottom \? "pt-1 pb-0" : "py-1",[\s\S]*?"has-\[\[data-session-chip-out\]\]:py-0",[\s\S]*?\),\s*\)\}/u,
 	);
 	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
 	assert.match(SOURCE, /const hasCompletedAgentChin = resolvedAgentActivityMode === "completed" && agentDoneRuns\.length > 0;/);
 	assert.match(SOURCE, /const hasAgentDoneNotification = iconScale !== "comfortable" && hasCompletedAgentChin;/);
-	assert.match(SOURCE, /const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"[\s\S]*\|\| resolvedAgentActivityMode === "awaiting-input"[\s\S]*\|\| hasCompletedAgentChin;/);
+	assert.match(SOURCE, /const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"[\s\S]*\|\| resolvedAgentActivityMode === "awaiting-input"[\s\S]*\|\| hasCompletedAgentChin[\s\S]*\|\| isAttachingSession[\s\S]*\|\| agentSessionTargetHighlighted[\s\S]*\|\| selectionBackdropState.active;/);
 	assert.match(SOURCE, /const agentActivitySurfaceInset = hasActiveAgentActivityShell \? 4 : 0;/);
 	assert.match(
 		SOURCE,
@@ -819,19 +819,19 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);
-	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| agentActivityShellMounted\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined\s*\n\t\t\|\| Boolean\(agentSessionTargetPreview\);/);
-	assert.match(SOURCE, /const agentActivityBackdropAnimation = \{[\s\S]*left: 0,[\s\S]*opacity: hasActiveAgentActivityShell \? 1 : attachNearness,[\s\S]*right: 0,[\s\S]*top: 0/);
+	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| agentActivityShellMounted\s*\n\t\t\|\| selectionBackdropState.active\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined\s*\n\t\t\|\| Boolean\(agentSessionTargetPreview\);/);
+	assert.match(SOURCE, /const agentActivityBackdropAnimation = \{[\s\S]*left: 0,[\s\S]*opacity: hasActiveAgentActivityShell \? 1 : attachNearness,[\s\S]*right: 0,[\s\S]*top: selectionBackdropState.top/);
 	assert.match(SOURCE, /an inset of 4\s*\n\t\/\/ puts them 4px from the article edge, flush with the `px-1` gutter the chin/);
 	assert.match(SOURCE, /const agentActivitySurfacePosition = agentActivitySurfaceInset - 1;/);
 	assert.match(
 		SOURCE,
-		/const agentActivitySurfaceAnimation = getJiraIssueAgentSurfaceOffsets\(\s*\n\s*agentActivitySurfacePosition,\s*\n\s*insetsAgentActivitySurfaceBottom,\s*\n\s*\);/u,
+		/const agentActivitySurfaceAnimation = \{\s*\.\.\.getJiraIssueAgentSurfaceOffsets\(agentActivitySurfacePosition, insetsAgentActivitySurfaceBottom\),[\s\S]*selectionBackdropState\.joinsBefore \? \{ top: -1 \} : \{\}/u,
 	);
 	assert.match(SOURCE, /<article[\s\S]*className=\{agentActivityArticleClassName\}[\s\S]*data-agent-activity-mode=\{resolvedAgentActivityMode\}/);
 	assert.match(SOURCE, /<motion\.div[\s\S]*className=\{agentActivityShellClassName\}[\s\S]*initial=\{false\}[\s\S]*layout=\{!\(shouldReduceMotion \|\| agentActivityHoverOpen \|\| parentOwnsLayout\)\}[\s\S]*layoutRoot=\{!parentOwnsLayout\}/);
 	assert.match(
 		SOURCE,
-		/className=\{cn\(\s*"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",\s*agentSessionTargetHighlighted \? "bg-bg-neutral-hovered" : "bg-bg-neutral",\s*\)\}/u,
+		/className=\{cn\(\s*"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",\s*selectionBackdropState.selected \? "bg-bg-selected" : agentSessionTargetHighlighted \? "bg-bg-neutral-hovered" : "bg-bg-neutral",\s*\)\}/u,
 	);
 	assert.match(SOURCE, /<motion\.div[\s\S]*animate=\{shouldReduceMotion \? undefined : agentActivitySurfaceAnimation\}[\s\S]*className=\{agentActivitySurfaceClassName\}[\s\S]*data-slot="jira-issue-surface"/);
 	assert.doesNotMatch(SOURCE, /padding: shouldReduceMotion/);

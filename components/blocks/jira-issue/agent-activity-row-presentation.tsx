@@ -490,6 +490,8 @@ export function JiraIssueAgentRowSurface({
 					? "h-auto w-fit max-w-full justify-start bg-transparent p-0"
 					: cn(
 						"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered has-[[aria-expanded=true]]:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
+						// Outline paints on the full surface without shrinking its content box.
+						"outline-1 outline-transparent has-[[data-jira-issue-agent-row-handle]:focus-visible]:outline-ring has-[[data-jira-issue-agent-row-handle]:focus-visible]:ring-3 has-[[data-jira-issue-agent-row-handle]:focus-visible]:ring-ring/50 transition-shadow duration-fast ease-out-practical motion-reduce:transition-none",
 						flushContent ? "px-0" : iconScale === "comfortable" ? "pr-2 pl-1" : "px-2",
 						inheritChinSurface ? "bg-transparent" : "bg-bg-neutral",
 					),

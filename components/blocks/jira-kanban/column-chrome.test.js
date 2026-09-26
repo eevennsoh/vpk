@@ -194,12 +194,12 @@ test("simple paints an offset gutter outline and keeps the 2px layout border idl
 			"motion-reduce:transition-none",
 		].join(" "),
 	);
-	assert.equal(simple.dropArmedClassName, "outline-ring");
+	assert.equal(simple.dropArmedClassName, "outline-border-selected");
 	assert.equal(simple.dropIdleClassName, "outline-transparent");
 	assert.match(simple.dropShellClassName, /outline-offset-2/u);
 	assert.match(simple.dropShellClassName, /border-2 border-transparent/u);
 	assert.doesNotMatch(simple.dropShellClassName, /border-ring/u);
-	assert.equal(namedDefault.dropArmedClassName, "border-ring");
+	assert.equal(namedDefault.dropArmedClassName, "border-border-selected");
 	assert.equal(namedDefault.dropIdleClassName, "border-transparent");
 	assert.doesNotMatch(namedDefault.dropShellClassName, /outline-offset-2/u);
 	assert.equal(simple.dropRingClipGutter, harness.SIMPLE_KANBAN_DROP_RING_CLIP_GUTTER);

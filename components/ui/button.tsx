@@ -10,6 +10,8 @@ const defaultButtonSize =
 	"h-8 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2"
 const compactIconSize =
 	"[&_[data-slot=icon]:not([class*='size-'])]:size-3! [&_[data-slot=icon]:not([class*='size-'])>span]:size-3! [&_svg:not([class*='size-'])]:size-3!"
+const defaultIconSize =
+	"[&_[data-slot=icon]:not([class*='size-'])]:size-4! [&_[data-slot=icon]:not([class*='size-'])>span]:size-4! [&_svg:not([class*='size-'])]:size-4!"
 const compactButtonSize =
 	`h-6 gap-1.5 rounded-md px-3 in-data-[slot=button-group]:rounded-md ${compactIconSize}`
 const defaultIconButtonSize = "size-8"
@@ -25,6 +27,10 @@ const buttonVariants = cva(
 	`${selectedButtonState} focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive rounded-md border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-3 aria-invalid:ring-3 [&_svg:not([class*='size-'])]:size-4 inline-flex items-center justify-center whitespace-nowrap transition-[background-color,border-color,box-shadow,color,opacity] [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none`,
 	{
 		variants: {
+			selectedAppearance: {
+				default: "",
+				"icon-only": "aria-pressed:bg-transparent aria-pressed:border-transparent aria-pressed:focus-visible:border-ring aria-pressed:hover:bg-bg-neutral-subtle-hovered aria-pressed:active:bg-bg-neutral-subtle-pressed [&_svg]:text-inherit",
+			},
 			variant: {
 				default:
 					"bg-primary text-primary-foreground hover:bg-primary-hovered active:bg-primary-pressed disabled:pointer-events-none disabled:bg-bg-disabled disabled:text-text-disabled",
@@ -48,12 +54,17 @@ const buttonVariants = cva(
 				icon: defaultIconButtonSize,
 				"icon-compact": compactIconButtonSize,
 			},
+			iconSize: {
+				default: defaultIconSize,
+				compact: compactIconSize,
+			},
 			shape: {
 				square: "",
 				circle: "rounded-full!",
 			},
 		},
 		defaultVariants: {
+			selectedAppearance: "default",
 			variant: "default",
 			size: "default",
 			shape: "square",
@@ -71,7 +82,9 @@ function Button({
 	className,
 	variant,
 	size,
+	iconSize,
 	shape,
+	selectedAppearance,
 	isLoading = false,
 	children,
 	...props
@@ -82,7 +95,7 @@ function Button({
 			data-variant={variant ?? "default"}
 			aria-busy={isLoading || undefined}
 			className={cn(
-				buttonVariants({ variant, size, shape }),
+				buttonVariants({ variant, size, iconSize, shape, selectedAppearance }),
 				isLoading && "pointer-events-none opacity-(--opacity-loading)",
 				className
 			)}

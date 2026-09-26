@@ -108,6 +108,7 @@ import { JIRA_LINKING_DETAIL } from "./blocks/jira-linking";
 import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
 import { JIRA_KANBAN_DETAIL } from "./blocks/jira-kanban";
 import { JIRA_CREATE_DETAIL } from "./blocks/jira-creating";
+import { JIRA_DRAGGING_DETAIL } from "./blocks/jira-dragging";
 import { JIRA_DROPZONE_DETAIL } from "./blocks/jira-dropzone";
 import { JIRA_TOOLBAR_DETAIL } from "./blocks/jira-toolbar";
 import { GENERATIVE_DETAIL } from "./blocks/generative";
@@ -224,6 +225,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-list": JIRA_LIST_DETAIL,
 	"jira-kanban": JIRA_KANBAN_DETAIL,
 	"jira-creating": JIRA_CREATE_DETAIL,
+	"jira-dragging": JIRA_DRAGGING_DETAIL,
 	"jira-dropzone": JIRA_DROPZONE_DETAIL,
 	"jira-toolbar": JIRA_TOOLBAR_DETAIL,
 	generative: GENERATIVE_DETAIL,

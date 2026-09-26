@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import type { JiraKanbanCardDropTarget } from "../../card-drop";
+import { getBoardIssueInsertionLineTop } from "../lib/board-card-insertion";
+
+const STATUS_CHOICE_DWELL_MS = 500;
 
 export interface BoardIssueDragSource {
 	code: string;
@@ -58,17 +61,24 @@ export function useBoardIssueDrop({
 		if (!active || !root) return null;
 		const bounds = root.getBoundingClientRect();
 		const list = root.querySelector<HTMLElement>("[data-jira-kanban-card-list]");
-		const cards = Array.from(root.querySelectorAll<HTMLElement>('[data-board-agent-session-drop-zone="issue"]'))
-			.filter((node) => !active.codes.has(node.dataset.issueKey ?? ""))
+		const allCards = Array.from(root.querySelectorAll<HTMLElement>('[data-board-agent-session-drop-zone="issue"]'))
 			.map((node) => ({ node, rect: node.getBoundingClientRect() }));
+		const cards = allCards.filter(({ node }) => !active.codes.has(node.dataset.issueKey ?? ""));
 		const following = cards.find(({ rect }) => y < rect.top + rect.height / 2);
 		const last = cards.at(-1);
 		const clip = list?.getBoundingClientRect() ?? bounds;
-		const top = following ? following.rect.top - 2 : last ? last.rect.bottom + 2 : clip.top + 2;
+		// Dragged cards stay in the source stack. They still bound the visible gap
+		// even though the insertion transaction excludes them from its candidates.
+		const previous = following ? allCards[allCards.indexOf(following) - 1] : last;
+		const next = following ?? (last ? allCards[allCards.indexOf(last) + 1] : undefined);
+		const gap = list ? parseFloat(getComputedStyle(list).getPropertyValue("--board-card-gap")) || 4 : 4;
+		const top = next
+			? getBoardIssueInsertionLineTop(previous?.rect.bottom ?? clip.top, next.rect.top)
+			: previous ? getBoardIssueInsertionLineTop(previous.rect.bottom, previous.rect.bottom + gap) : clip.top + 2;
 		return {
 			sourceCode: active.code, status, entered: true,
 			beforeCardCode: following?.node.dataset.issueKey ?? null,
-			lineTop: Math.max(clip.top, Math.min(top, clip.bottom - 2)) - bounds.top,
+			lineTop: allCards.length > 0 ? Math.max(clip.top, Math.min(top, clip.bottom - 2)) - bounds.top : undefined,
 		};
 	}
 
@@ -81,7 +91,12 @@ export function useBoardIssueDrop({
 		if (choosing) {
 			const zone = (event.target as Element).closest<HTMLElement>("[data-issue-status-zone]");
 			const status = zone?.dataset.issueStatusZone;
-			if (!status) return;
+			if (!status) {
+				event.dataTransfer.dropEffect = "none";
+				clearWork();
+				setState(null);
+				return;
+			}
 			if (pending.current?.status === status) {
 				pointer.current = { y, status };
 				return;
@@ -97,7 +112,7 @@ export function useBoardIssueDrop({
 				const entered = resolveAt(pointer.current?.y ?? y, status);
 				pending.current = entered;
 				setState(entered);
-			}, 250);
+			}, STATUS_CHOICE_DWELL_MS);
 			return;
 		}
 		const status = current?.status ?? (active.columnTitle === title ? active.status : choices[0]);
@@ -129,7 +144,8 @@ export function useBoardIssueDrop({
 	function leave(event: DragEvent<HTMLDivElement>) {
 		if (!active) return;
 		event.stopPropagation();
-		const bounds = event.currentTarget.getBoundingClientRect();
+		const column = event.currentTarget.closest<HTMLElement>("[data-jira-kanban-column]");
+		const bounds = (choosing ? event.currentTarget : column ?? event.currentTarget).getBoundingClientRect();
 		if (event.clientX > bounds.left && event.clientX < bounds.right && event.clientY > bounds.top && event.clientY < bounds.bottom) return;
 		clearWork();
 		setState(null);
@@ -140,6 +156,12 @@ export function useBoardIssueDrop({
 		event.preventDefault();
 		event.stopPropagation();
 		const zoneStatus = choosing ? (event.target as Element).closest<HTMLElement>("[data-issue-status-zone]")?.dataset.issueStatusZone : undefined;
+		if (choosing && !zoneStatus) {
+			event.dataTransfer.dropEffect = "none";
+			clearWork();
+			setState(null);
+			return;
+		}
 		const status = zoneStatus ?? pending.current?.status ?? current?.status
 			?? (active.columnTitle === title ? active.status : choices[0]);
 		const target = choosing ? { status, beforeCardCode: null } : resolveAt(event.clientY, status);
@@ -151,7 +173,8 @@ export function useBoardIssueDrop({
 	return {
 		rootRef, active, choosing, offeringChoices, choices, current,
 		header: active?.columnTitle === title ? "Transition to..."
-			: current?.entered ? `${active?.status} → ${current.status}` : title,
+			: active && choosing && !current ? `${active.status} →`
+			: active ? `${active.status} → ${current?.status ?? choices[0] ?? title}` : title,
 		handlers: { onDragEnter: over, onDragOver: over, onDragLeave: leave, onDrop: drop },
 	};
 }
