@@ -649,6 +649,7 @@ function JiraIssueAgentActivityRow({
 		<button
 			type="button"
 			aria-label={rowAriaLabel}
+			data-jira-issue-agent-row-handle=""
 			{...(sessionDragBind ?? {})}
 			{...(sessionDragBind
 				? {
@@ -658,7 +659,7 @@ function JiraIssueAgentActivityRow({
 				}
 				: {})}
 			className={cn(
-				"flex min-w-0 items-center gap-2 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
+				"flex min-w-0 items-center gap-2 rounded-md border border-transparent text-left outline-none",
 				cn("h-full min-w-0 flex-1", showUnlinkControl ? "justify-start" : "justify-between"),
 				sessionDragBind && "touch-none select-none",
 			)}
@@ -725,6 +726,7 @@ export function JiraIssueAgentActivityRows({
 	attachPreviewCopy,
 	avatarLayout = "animated",
 	flushContent = false,
+	flushBottom = false,
 	iconScale = "compact",
 	instantSessionTransfer = false,
 	linkFlash,
@@ -747,6 +749,8 @@ export function JiraIssueAgentActivityRows({
 	avatarLayout?: JiraIssueAgentActivityAvatarLayout;
 	/** Remove the horizontal gutters when a parent cell owns its left alignment. */
 	flushContent?: boolean;
+	/** A fused following card owns the bottom gutter. */
+	flushBottom?: boolean;
 	iconScale?: JiraIssueIconScale;
 	/** Rest shows the parent well; hover still paints only this row. */
 	inheritChinSurface?: boolean;
@@ -799,7 +803,8 @@ export function JiraIssueAgentActivityRows({
 				// resolves in the same commit rather than through a state round-trip.
 				(hasActivities || hasAttachPreview) && cn(
 					flushContent ? "px-0" : "px-1",
-					"py-1 has-[[data-session-chip-out]]:py-0",
+					flushBottom ? "pt-1 pb-0" : "py-1",
+					"has-[[data-session-chip-out]]:py-0",
 				),
 			)}
 			layout={rowLayout}

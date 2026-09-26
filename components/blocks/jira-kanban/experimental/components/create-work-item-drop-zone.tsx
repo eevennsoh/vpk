@@ -105,7 +105,9 @@ export function BoardColumnCreateAction({
 					</div>
 				) : (
 					columnSizing === "content"
-						? <BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} reveal="always" size="compact" title={title} />
+						? <div ref={targetRef} className="relative w-full">
+							<BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} reveal="always" size="compact" title={title} />
+						</div>
 						: <span aria-hidden className="block h-8 w-full" />
 				)}
 			</div>

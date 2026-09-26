@@ -25,6 +25,10 @@ export interface JiraKanbanCreatedCardArrival {
 	readonly appended: boolean;
 	/** Keep the new card's entrance pending until the create-well receipt finishes. */
 	readonly deferred?: boolean;
+	/** Move flights own this capped entrance order; remaining moved cards appear at rest. */
+	readonly animatedCardCodes?: readonly string[];
+	/** Reserve moved-card slots while their flight still owns the visible face. */
+	readonly pendingCardCodes?: readonly string[];
 }
 
 export function useBoardCreatedCardArrival({

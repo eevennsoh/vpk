@@ -1073,6 +1073,7 @@ function ExperimentalJiraKanbanPageContent({
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								paddingTop={0} paddingBottom={KANBAN_WORK_ITEM_BOTTOM_PADDING}
 								selectionToolbar={{
+									onSelectAll: () => setSelection({ ...createJiraKanbanSelectionState(), selectedCardCodes: new Set(boardIssueKeys) }),
 									onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
 									onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
 									onStatusChange: handleSelectedCardsStatusChange,

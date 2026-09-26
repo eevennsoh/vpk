@@ -52,7 +52,7 @@ export function BoardCardInsertionLine({
 	position,
 	seam,
 	marker = "add",
-}: Readonly<{ position: BoardCardInsertion["position"]; seam: BoardCardInsertionSeam; marker?: "add" | "circle" }>) {
+}: Readonly<{ position: BoardCardInsertion["position"]; seam: BoardCardInsertionSeam; marker?: "add" | "none" }>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const anchorName = `--board-insertion-${insertionAnchorId}`;
 
@@ -60,7 +60,7 @@ export function BoardCardInsertionLine({
 		<div
 			aria-hidden
 			className={cn(
-				"pointer-events-none absolute inset-x-0 z-30 h-0.5 bg-border-selected",
+				"pointer-events-none absolute inset-x-0 z-30 h-0.5 rounded-full bg-border-selected",
 				seam === "edge" ? EDGE_POSITION_CLASS_NAME[position] : undefined,
 			)}
 			data-insertion-line={position}
@@ -91,7 +91,7 @@ export function BoardCardInsertionLine({
 			 * half-outside marker would be clipped — the same reason the list
 			 * column controls use `fixed`.
 			 */}
-			{marker === "circle" ? <span className="absolute left-0 top-1/2 size-2 -translate-y-1/2 rounded-full border-2 border-border-selected bg-surface" /> : <span
+			{marker === "add" ? <span
 				className="fixed z-30 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-surface-overlay text-icon-subtle"
 				data-board-insertion-marker={position}
 				style={{
@@ -111,7 +111,7 @@ export function BoardCardInsertionLine({
 				 * icon's own prop.
 				 */}
 				<Icon render={<AddIcon color={token("color.icon.subtle")} label="" size="small" />} />
-			</span>}
+			</span> : null}
 		</div>
 	);
 }

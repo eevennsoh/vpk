@@ -368,7 +368,7 @@ function InFlowAgentSessionColumnSurface({
 				isEmbedded
 					? "pointer-events-auto"
 					: "pointer-events-none [&_[data-agent-session-notch]]:pointer-events-auto [&_[data-agent-session-column-expand-control]]:pointer-events-auto",
-				untrackedDropArmed ? "border-ring" : "border-transparent",
+				untrackedDropArmed ? "border-border-selected" : "border-transparent",
 				className,
 			)}
 			data-board-agent-session-drop-zone="untracked"

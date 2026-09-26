@@ -107,6 +107,8 @@ test("created card arrivals never add a blue agent backdrop or completion hold",
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/useCreatedCardArrivalCompletion\(\s*onCreatedCardArrivalComplete,\s*\)/u,
+		/useCreatedCardArrivalCompletion\(\s*issueDropArrival\.handleComplete,\s*\)/u,
 	);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /onCreatedComplete: onCreatedCardArrivalComplete/u);
+	assert.match(readProjectFile("components/blocks/jira-kanban/experimental/hooks/use-issue-card-drop-arrival.ts"), /else onCreatedComplete\?\.\(id\);/u);
 });

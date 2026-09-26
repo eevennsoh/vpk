@@ -22,13 +22,10 @@ const DROPZONE = readFileSync(
 test("normal create rests dashed and becomes solid on column hover", () => {
 	assert.match(FOOTER, /"w-full border-dashed group-hover\/board-column:border-solid"/u);
 	assert.match(FOOTER, /control\?\.active \? "group-hover\/board-column:border-dashed" : null/u);
+	assert.equal(require("../../../jira-dropzone/lib/jira-dropzone-chrome.ts").JIRA_DROPZONE_WELL_CHROME_CLASS, "rounded-lg border border-dashed bg-clip-padding");
 	assert.match(
 		DROPZONE,
-		/export const JIRA_DROPZONE_WELL_CHROME_CLASS = "rounded-lg border border-dashed";/u,
-	);
-	assert.match(
-		DROPZONE,
-		/className=\{cn\([\s\S]*JIRA_DROPZONE_WELL_CHROME_CLASS[\s\S]*selected\s*\n\t\t\t\t\t\? "border-border-selected bg-bg-selected text-text-selected"\n\t\t\t\t\t: "border-border bg-surface text-text-subtlest"[\s\S]*marching \? JIRA_DROPZONE_ANTS_CLASS/u,
+		/className=\{cn\([\s\S]*JIRA_DROPZONE_WELL_CHROME_CLASS[\s\S]*resolveJiraDropzoneWellColors\(selected\)[\s\S]*marching \? JIRA_DROPZONE_ANTS_CLASS/u,
 	);
 });
 

@@ -12,6 +12,11 @@ import type {
  */
 export const BOARD_CARD_INSERTION_BAND_PX = 12;
 
+/** Centre the 2px rule in the measured gap, rather than against either card. */
+export function getBoardIssueInsertionLineTop(previousBottom: number, followingTop: number): number {
+	return (previousBottom + followingTop) / 2 - 1;
+}
+
 export function pickBoardCardInsertionAtPoint(
 	pointer: BoardAgentSessionDragPointer,
 	zones: readonly Readonly<{

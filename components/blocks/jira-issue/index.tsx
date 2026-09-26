@@ -51,7 +51,7 @@ import {
 	JiraIssueGenerativeActionMenu,
 	type JiraIssueGenerativeActionConfig,
 } from "@/components/blocks/jira-issue/generative-action-menu";
-import { JiraIssueMoreMenu, type JiraIssueMoreAction } from "@/components/blocks/jira-issue/more-menu";
+import { JiraIssueMoreMenu, type JiraIssueMoreAction, type JiraIssueMoreMenuActions } from "@/components/blocks/jira-issue/more-menu";
 import { JiraIssueUncapturedWork } from "@/components/blocks/jira-issue/uncaptured-work";
 import { JiraIssueSummary } from "@/components/blocks/jira-issue/summary";
 import type {
@@ -69,12 +69,9 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { resolveJiraIssueChrome } from "./chrome";
+import { resolveJiraIssueSelectionBackdrop, type JiraIssueSelectionBackdrop } from "./selection-backdrop";
 
 const AGENT_ACTIVITY_SHELL_STYLE: CSSProperties = {
-	borderRadius: "10px",
-	transformOrigin: "top center",
-};
-const AGENT_ACTIVITY_BACKDROP_STYLE: CSSProperties = {
 	borderRadius: "10px",
 	transformOrigin: "top center",
 };
@@ -120,7 +117,7 @@ export type {
 	JiraIssueGenerativeActionRequest,
 	JiraIssueGenerativeActionSelectedItem,
 } from "@/components/blocks/jira-issue/generative-action-menu";
-export type { JiraIssueMoreAction } from "@/components/blocks/jira-issue/more-menu";
+export type { JiraIssueMoreAction, JiraIssueMoreMenuActions } from "@/components/blocks/jira-issue/more-menu";
 
 export type JiraIssueGenerativeActionPresentation = "sparkle" | "more-actions";
 
@@ -194,6 +191,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	/** Nested subtask cards inherit the parent chrome unless set. Compact cards default to stroke so Raised/Stroke only changes the parent. */
 	subtaskChrome?: JiraIssueChrome;
 	selected?: boolean;
+	onSelectionToggle?: () => void;
+	selectionBackdrop?: JiraIssueSelectionBackdrop;
 	dragging?: boolean;
 	showPriorityIndicator?: boolean;
 	showAutomationIndicator?: boolean;
@@ -225,6 +224,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	showMoreAction?: boolean;
 	/** Called after an item is selected from the issue actions menu. */
 	onMoreActionSelect?: (action: JiraIssueMoreAction) => void;
+	/** Host-owned Archive, Select and Delete capabilities for the actions menu. */
+	moreMenuActions?: JiraIssueMoreMenuActions;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 	/** Chooses whether the agent/skill action appears as a sparkle or within More actions. */
 	generativeActionPresentation?: JiraIssueGenerativeActionPresentation;
@@ -285,6 +286,7 @@ function JiraIssueDefault({
 	onAgentDoneRunReview,
 	onAgentDoneRunView,
 	onMoreActionSelect,
+	moreMenuActions,
 	parentEpicControl,
 	priority = "major",
 	pullRequestNumber,
@@ -292,6 +294,8 @@ function JiraIssueDefault({
 	pullRequestStatus,
 	pullRequestTitle,
 	selected = false,
+	onSelectionToggle,
+	selectionBackdrop,
 	sessionTransferAfter,
 	showAutomationIndicator = false,
 	showMoreAction = true,
@@ -417,11 +421,13 @@ function JiraIssueDefault({
 	const replaceDetachedTransfer = Boolean(attachChinCopy && sessionTransferAfter);
 	// Unlink keeps `working` with an empty chin so the grey backdrop stays
 	// around the issue. The shell keys off mode, not a mounted row.
+	const selectionBackdropState = resolveJiraIssueSelectionBackdrop(selectionBackdrop);
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
 		|| resolvedAgentActivityMode === "awaiting-input"
 		|| hasCompletedAgentChin
 		|| isAttachingSession
-		|| agentSessionTargetHighlighted;
+		|| agentSessionTargetHighlighted
+		|| selectionBackdropState.active;
 	const hasAgentActivityChin = activeAgentActivities.length > 0
 		|| hasCompletedAgentChin
 		|| isAttachingSession;
@@ -459,13 +465,14 @@ function JiraIssueDefault({
 	// passed within the proximity range.
 	const usesAgentActivityShell = hasAgentActivityPresentation
 		|| agentActivityShellMounted
+		|| selectionBackdropState.active
 		|| Boolean(agentSessionTransfer)
 		|| agentSessionDragControl !== undefined
 		|| Boolean(agentSessionTargetPreview);
 	const chromeStyles = resolveJiraIssueChrome(chrome);
 	const usesStrokeChrome = chrome === "stroke";
 	const usesCompactVisual = compact || usesStrokeChrome;
-	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || agentActivityShellMounted || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesCompactVisual || Boolean(agentSessionTargetPreview);
+	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || agentActivityShellMounted || selectionBackdropState.active || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesCompactVisual || Boolean(agentSessionTargetPreview);
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
@@ -504,7 +511,7 @@ function JiraIssueDefault({
 		"group/jira-issue relative w-full min-w-0 border outline-none focus-visible:border-ring",
 		usesAgentActivityShell
 			? "group/jira-issue-card border-transparent bg-transparent"
-			: selected
+			: selected && !selectionBackdropState.active
 				? "border-border-selected bg-bg-selected"
 				: active
 					? cn(
@@ -515,11 +522,11 @@ function JiraIssueDefault({
 					: cn(issueChromeClassName, "bg-surface"),
 		"transition-[opacity,background-color,border-color] duration-normal ease-out",
 		"data-starting-style:opacity-0 data-starting-style:-translate-y-1",
-		!usesAgentActivityShell && className,
+		!usesAgentActivityShell && cn("has-[[data-jira-issue-activation-control]:focus-visible]:border-ring has-[[data-jira-issue-activation-control]:focus-visible]:outline-3 has-[[data-jira-issue-activation-control]:focus-visible]:outline-ring/50", className),
 	);
 	const agentActivitySurfaceClassName = cn(
-		"pointer-events-none absolute border",
-		selected
+		"pointer-events-none absolute border", "group-has-[[data-jira-issue-activation-control]:focus-visible]/jira-issue-card:border-ring group-has-[[data-jira-issue-activation-control]:focus-visible]/jira-issue-card:outline-3 group-has-[[data-jira-issue-activation-control]:focus-visible]/jira-issue-card:outline-ring/50",
+		selected && !selectionBackdropState.active
 			? "border-border-selected bg-bg-selected"
 			: active
 				? cn(
@@ -572,7 +579,7 @@ function JiraIssueDefault({
 		left: 0,
 		opacity: hasActiveAgentActivityShell ? 1 : attachNearness,
 		right: 0,
-		top: 0,
+		top: selectionBackdropState.top,
 	};
 	// Opacity is the one value here that chases a pointer, so it gets its own
 	// per-value timing. The reduced-motion branch keeps the object plain numbers
@@ -586,10 +593,11 @@ function JiraIssueDefault({
 	// instead would grow the shell by 4px the moment a hovered agent session
 	// highlighted the card and shove every card below it down.
 	const insetsAgentActivitySurfaceBottom = hasActiveAgentActivityShell && !hasAgentActivityChin;
-	const agentActivitySurfaceAnimation = getJiraIssueAgentSurfaceOffsets(
-		agentActivitySurfacePosition,
-		insetsAgentActivitySurfaceBottom,
-	);
+	const agentActivitySurfaceAnimation = {
+		...getJiraIssueAgentSurfaceOffsets(agentActivitySurfacePosition, insetsAgentActivitySurfaceBottom),
+		// The preceding chin supplies the gutter at a fused join.
+		...(selectionBackdropState.joinsBefore ? { top: -1 } : {}),
+	};
 	const agentActivitySurfaceStyle: CSSProperties = {
 		...AGENT_ACTIVITY_SURFACE_STYLE,
 		boxShadow: chromeStyles.boxShadow,
@@ -687,9 +695,11 @@ function JiraIssueDefault({
 	const moreActionMenu = showMoreAction ? (
 		<div className="absolute right-3 top-3 z-20 size-6">
 			<JiraIssueMoreMenu
+				selected={selected} onSelectionToggle={onSelectionToggle}
 				generativeAction={generativeActionPresentation === "more-actions" ? generativeAction : undefined}
 				generativeActionIssue={{ issueKey, summary }}
 				issueKey={issueKey}
+				moreMenuActions={moreMenuActions}
 				onActionSelect={onMoreActionSelect}
 				onOpenChange={setMoreActionMenuOpen}
 			/>
@@ -699,10 +709,11 @@ function JiraIssueDefault({
 		<div className="relative z-10 flex flex-col">
 			{shouldRenderIssueClickButton ? (
 				usesCompactVisual ? (
-					<div className="relative w-full px-3 pt-3 pb-2 text-left outline-none transition-colors duration-normal ease-out has-[:focus-visible]:border-ring has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50">
+					<div className="relative w-full px-3 pt-3 pb-2 text-left outline-none transition-colors duration-normal ease-out">
 						<button
 							aria-pressed={ariaPressed ?? selected}
 							className="sr-only"
+							data-jira-issue-activation-control=""
 							disabled={props.disabled}
 							onClick={props.onClick}
 							type={type}
@@ -718,8 +729,9 @@ function JiraIssueDefault({
 				) : (
 					<button
 						type={type}
+						data-jira-issue-activation-control=""
 						aria-pressed={ariaPressed ?? selected}
-						className="w-full p-3 text-left outline-none transition-colors duration-normal ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+						className="w-full p-3 text-left outline-none transition-colors duration-normal ease-out"
 						disabled={props.disabled}
 						onClick={props.onClick}
 					>
@@ -797,11 +809,11 @@ function JiraIssueDefault({
 				animate={shouldReduceMotion ? undefined : agentActivityBackdropAnimation}
 				className={cn(
 					"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",
-					agentSessionTargetHighlighted ? "bg-bg-neutral-hovered" : "bg-bg-neutral",
+					selectionBackdropState.selected ? "bg-bg-selected" : agentSessionTargetHighlighted ? "bg-bg-neutral-hovered" : "bg-bg-neutral",
 				)}
 				data-slot="jira-issue-agent-backdrop"
 				initial={false}
-				style={shouldReduceMotion ? { ...AGENT_ACTIVITY_BACKDROP_STYLE, ...agentActivityBackdropAnimation } : AGENT_ACTIVITY_BACKDROP_STYLE}
+				style={shouldReduceMotion ? { ...selectionBackdropState.style, ...agentActivityBackdropAnimation } : selectionBackdropState.style}
 				transition={agentActivityBackdropTransition}
 			/>
 			<LayoutGroup id={agentActivityLayoutGroupId}>

@@ -26,6 +26,7 @@ import {
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import { AgentSelector } from "@/components/blocks/agent-selector";
 import type { JiraKanbanCardDropTarget } from "./card-drop";
+import { hasJiraSelectionToggleModifier } from "./selection-modifiers";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
@@ -115,6 +116,8 @@ export interface JiraKanbanAgentData {
 }
 
 export interface JiraKanbanCardSelectModifiers {
+	/** Explicit selection controls can toggle without a card-click modifier. */
+	source?: "card" | "selection-control";
 	shiftKey: boolean;
 	metaOrCtrlKey: boolean;
 }
@@ -133,6 +136,10 @@ function getJiraKanbanCardScale(
 }
 
 export interface JiraKanbanSelectionToolbarConfig {
+	/** A board-owned keyboard handler can take precedence over global dismissal. */
+	dismissOnEscape?: boolean;
+	onSelectAll?: () => void;
+	onAskRovo?: () => void;
 	agents?: readonly JiraKanbanAgentData[];
 	className?: string;
 	defaultPinnedAgentIds?: readonly string[];
@@ -693,7 +700,7 @@ export function JiraKanban({
 									const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
-											metaOrCtrlKey: event.metaKey || event.ctrlKey,
+											metaOrCtrlKey: hasJiraSelectionToggleModifier(event),
 										};
 										if (modifiers.shiftKey || modifiers.metaOrCtrlKey) {
 											event.preventDefault();
@@ -789,8 +796,10 @@ export function JiraKanban({
 					<JiraToolbar
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
+						dismissOnEscape={selectionToolbar.dismissOnEscape}
 						defaultPinnedAgentIds={selectionToolbar.defaultPinnedAgentIds}
-						defaultPinnedSkillIds={selectionToolbar.defaultPinnedSkillIds}
+						onSelectAll={selectionToolbar.onSelectAll}
+						onAskRovo={selectionToolbar.onAskRovo}
 						onAgentAssignmentChange={selectionToolbar.onAgentAssignmentChange}
 						onBrowseAgents={selectionToolbar.onBrowseAgents}
 						onClearSelection={selectionToolbar.onClearSelection}
@@ -804,7 +813,6 @@ export function JiraKanban({
 						selectedAgentIds={selectionToolbar.selectedAgentIds}
 						selectedCount={selectedCount}
 						selectedStatus={selectedStatus}
-						skills={selectionToolbar.skills}
 						statusOptions={boardColumns.map((column) => column.title)}
 					/>
 				) : null}

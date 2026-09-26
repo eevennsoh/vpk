@@ -1,5 +1,8 @@
 import type { JiraKanbanCardSelectModifiers, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import {
+	createJiraKanbanSelectionState,
+	reconcileJiraKanbanSelection,
+	type JiraKanbanSelectionState,
 	moveJiraKanbanCardsToColumn,
 	selectJiraKanbanCard,
 } from "@/components/blocks/jira-kanban/state";
@@ -31,13 +34,11 @@ export interface JgpKanbanDragState {
 	sourceColumnTitle: string;
 }
 
-export interface JgpKanbanState {
+export interface JgpKanbanState extends JiraKanbanSelectionState {
 	agentCompletionMode: JgpKanbanCompletionMode;
 	columns: JiraKanbanColumnData[];
 	dragged: JgpKanbanDragState | null;
-	lastSelectedByColumn: Record<string, number>;
 	lifecycleByCode: Record<string, JgpKanbanLifecycle>;
-	selectedCardCodes: Set<string>;
 }
 
 export type JgpKanbanAction =
@@ -117,9 +118,8 @@ export function createInitialJgpKanbanState(scenario: JgpKanbanScenario = "local
 		agentCompletionMode: scenario === "global-assignment" ? "stay-active" : "complete",
 		columns: createJgpKanbanColumns(scenario),
 		dragged: null,
-		lastSelectedByColumn: {},
+		...createJiraKanbanSelectionState(),
 		lifecycleByCode: {},
-		selectedCardCodes: new Set(),
 	};
 }
 
@@ -170,6 +170,11 @@ export function resolveJgpKanbanColumns(state: JgpKanbanState): JiraKanbanColumn
 }
 
 export function jgpKanbanReducer(state: JgpKanbanState, action: JgpKanbanAction): JgpKanbanState {
+	const next = reduceJgpKanbanAction(state, action);
+	return reconcileJiraKanbanSelection(next, next.columns);
+}
+
+function reduceJgpKanbanAction(state: JgpKanbanState, action: JgpKanbanAction): JgpKanbanState {
 	switch (action.type) {
 		case "assign-agent":
 			return {
@@ -273,6 +278,6 @@ export function jgpKanbanReducer(state: JgpKanbanState, action: JgpKanbanAction)
 			};
 		}
 		case "clear-selection":
-			return { ...state, selectedCardCodes: new Set() };
+			return { ...state, ...createJiraKanbanSelectionState() };
 	}
 }
