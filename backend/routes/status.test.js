@@ -22,9 +22,6 @@ async function withServer(dependencies, run) {
 	registerStatusRoutes(app, {
 		buildRuntimeStatusSnapshot,
 		getRovoPort: () => "9001",
-		hermesJobsProvider: {
-			getProviderStatus: () => ({ available: true, mode: "embedded" }),
-		},
 		...dependencies,
 	});
 
@@ -50,18 +47,12 @@ async function withServer(dependencies, run) {
 
 function createStatusDependencies(overrides = {}) {
 	return {
-		getHermesRuntimeStatus: async ({ jobsProvider }) => ({
-			available: jobsProvider?.getProviderStatus?.().available === true,
-			baseUrl: "http://localhost:7777",
-			message: "Hermes embedded capabilities are ready.",
-			status: "embedded",
-		}),
 		isRovoAvailable: async () => true,
 		...overrides,
 	};
 }
 
-test("status router returns aggregate Rovo and Hermes status", async () => {
+test("status router returns aggregate Rovo status", async () => {
 	await withServer(createStatusDependencies(), async (baseUrl) => {
 		const response = await fetch(`${baseUrl}/api/status`);
 		assert.equal(response.status, 200);
@@ -70,8 +61,6 @@ test("status router returns aggregate Rovo and Hermes status", async () => {
 		assert.equal(payload.status, "ok");
 		assert.equal(payload.surfaces.rovo.available, true);
 		assert.equal(payload.surfaces.rovo.url, "http://localhost:9001");
-		assert.equal(payload.surfaces.hermes.available, true);
-		assert.equal(payload.surfaces.hermes.url, "http://localhost:7777");
 	});
 });
 
@@ -82,8 +71,7 @@ test("status router exposes individual surface endpoints", async () => {
 		assert.equal((await rovoResponse.json()).name, "rovo");
 
 		const hermesResponse = await fetch(`${baseUrl}/api/status/hermes`);
-		assert.equal(hermesResponse.status, 200);
-		assert.equal((await hermesResponse.json()).name, "hermes");
+		assert.equal(hermesResponse.status, 404);
 	});
 });
 
@@ -146,10 +134,6 @@ test("status router validates required dependencies", () => {
 	assert.throws(() => createStatusRouter(), /buildRuntimeStatusSnapshot/u);
 	assert.throws(() => createStatusRouter({
 		buildRuntimeStatusSnapshot,
-	}), /getHermesRuntimeStatus/u);
-	assert.throws(() => createStatusRouter({
-		buildRuntimeStatusSnapshot,
-		getHermesRuntimeStatus: async () => ({}),
 	}), /isRovoAvailable/u);
 	assert.equal(typeof createHealthcheckHandler(), "function");
 	assert.throws(() => createApiHealthHandler(), /isRovoAvailable/u);

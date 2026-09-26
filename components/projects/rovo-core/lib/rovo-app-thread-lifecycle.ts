@@ -440,7 +440,6 @@ export function hydrateRovoAppThreadStateWithLifecycle({
 		realtimeMessages: thread.realtimeMessages ?? [],
 		visibility: thread.visibility,
 		activeDocumentId: thread.activeDocumentId,
-		hermesContext: thread.hermesContext ?? null,
 		title: thread.title,
 	});
 	clearPendingPlanMetadataGeneration();
@@ -588,7 +587,6 @@ export function resetRovoAppToBlankThreadState({
 		realtimeMessages: [],
 		visibility: "private",
 		activeDocumentId: null,
-		hermesContext: null,
 		title: "New chat",
 	});
 	pendingRouteThreadIdRef.current = null;
@@ -928,7 +926,6 @@ export function ensureRovoAppThreadWithLifecycle({
 				realtimeMessages: nextThread.realtimeMessages ?? [],
 				visibility: nextThread.visibility,
 				activeDocumentId: nextThread.activeDocumentId,
-				hermesContext: nextThread.hermesContext ?? null,
 				title: nextThread.title,
 			});
 			if (!embedded) {

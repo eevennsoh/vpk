@@ -24,7 +24,6 @@ import type {
 	RovoAppActiveRun,
 	RovoAppCreationMode,
 	RovoAppDocument,
-	RovoAppHermesContext,
 	RovoAppPromptMode,
 	RovoAppQueuedAction,
 	RovoAppRunStatus,
@@ -38,7 +37,6 @@ interface SubmitRovoAppPromptInput {
 	contextDescription?: string;
 	creationMode?: RovoAppCreationMode;
 	files: FileUIPart[];
-	hermesContext?: RovoAppHermesContext;
 	text: string;
 }
 
@@ -158,7 +156,6 @@ export function useRovoAppPromptActions({
 			files,
 			contextDescription,
 			creationMode,
-			hermesContext,
 			messageMetadata,
 			mode,
 		}: RovoAppPromptDispatchLifecyclePayload) => {
@@ -175,7 +172,6 @@ export function useRovoAppPromptActions({
 				ensureThread,
 				files,
 				flushQueuedStreamingArtifactDeltaNow,
-				hermesContext,
 				lastUseChatBusyAtRef,
 				markLocalThreadRunPending,
 				messageMetadata,
@@ -238,7 +234,6 @@ export function useRovoAppPromptActions({
 		({
 			contextDescription,
 			creationMode,
-			hermesContext,
 			files,
 			messageMetadata,
 			mode,
@@ -249,7 +244,6 @@ export function useRovoAppPromptActions({
 				contextDescription,
 				creationMode,
 				files,
-				hermesContext,
 				messageMetadata,
 				mode,
 				text,
@@ -266,7 +260,6 @@ export function useRovoAppPromptActions({
 			files,
 			contextDescription,
 			creationMode,
-			hermesContext,
 		}: SubmitRovoAppPromptInput) => {
 			await submitRovoAppPromptDispatch({
 				activeThreadId: activeThreadIdRef.current,
@@ -284,7 +277,6 @@ export function useRovoAppPromptActions({
 						attachedRunStatus,
 						status: statusRef.current,
 					}),
-				hermesContext,
 				immediateDispatch: immediateDispatchLifecycle,
 				isPlanModeActive: isPlanModeRef.current,
 				isQueueProcessorRunning: queueProcessorRunningRef.current,

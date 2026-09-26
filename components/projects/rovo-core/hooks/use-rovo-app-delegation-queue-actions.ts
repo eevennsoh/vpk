@@ -32,7 +32,6 @@ import type { RovoAppStreamingArtifact } from "@/components/projects/rovo-core/l
 import type {
 	RovoAppActiveRun,
 	RovoAppDocument,
-	RovoAppHermesContext,
 	RovoAppQueuedAction,
 	RovoAppRunStatus,
 	RovoAppVisibility,
@@ -55,7 +54,6 @@ type MutateRealtimeMessagesState = (
 
 interface DelegateToRovoOptions {
 	contextDescription?: string;
-	hermesContext?: RovoAppHermesContext;
 	conversationSummary?: string;
 	existingRealtimeMessageId?: string | null;
 	intentType?: string;
@@ -267,7 +265,6 @@ export function useRovoAppDelegationQueueActions({
 		) => {
 			const queuedAction = buildRovoAppQueuedDelegationAction({
 				contextDescription: options.contextDescription,
-				hermesContext: options.hermesContext,
 				conversationSummary: options.conversationSummary,
 				delegatedMessageId,
 				existingRealtimeMessageId: options.existingRealtimeMessageId,

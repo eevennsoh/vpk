@@ -13,16 +13,6 @@ const {
 function createHarness(overrides = {}) {
 	const calls = [];
 	const dependencies = {
-		buildRovoAppHermesContextDescription: async (input) => {
-			calls.push(["buildRovoAppHermesContextDescription", input]);
-			return input.autoSelectedSkillIds.length > 0
-				? `[Hermes Skills]\n${input.autoSelectedSkillIds.join(",")}`
-				: null;
-		},
-		buildWikiQueryContextDescription: async (prompt) => {
-			calls.push(["buildWikiQueryContextDescription", prompt]);
-			return prompt ? "[Wiki Context]\nSaved note" : null;
-		},
 		compressUiConversationHistory: (conversationHistory) => {
 			calls.push(["compressUiConversationHistory", conversationHistory]);
 			return {
@@ -31,13 +21,6 @@ function createHarness(overrides = {}) {
 				length: conversationHistory.length,
 				originalLength: conversationHistory.length,
 			};
-		},
-		listHermesSkills: async () => {
-			calls.push(["listHermesSkills"]);
-			return [
-				{ id: "vpk-html", name: "vpk-html", title: "vpk-html" },
-				{ id: "jira", name: "Jira", title: "Jira" },
-			];
 		},
 		logger: {
 			info: (...args) => calls.push(["info", args]),
@@ -53,10 +36,6 @@ function createHarness(overrides = {}) {
 					content: message.content || message.parts?.[0]?.text || "",
 				})),
 			};
-		},
-		resolveAmbiguousAutoSelectedSkillIds: async (input) => {
-			calls.push(["resolveAmbiguousAutoSelectedSkillIds", input]);
-			return ["jira"];
 		},
 		rovoAppDocumentManager: {
 			getDocument: async (documentId) => {
@@ -195,27 +174,10 @@ test("prepareRovoAppManagedRunRequest routes Work Item report intents into HTML 
 	assert.equal(requestBody.futureArtifactKind, "html");
 	assert.equal(prepared.workItemReportRequest.shouldCreateArtifact, true);
 	assert.equal(prepared.workItemReportRequest.artifactBackendPreference, "ai-gateway");
-	assert.match(prepared.effectiveBaseContextDescription, /\[Hermes Skills\]/u);
-	assert.match(prepared.effectiveBaseContextDescription, /\[Wiki Context\]/u);
+	assert.doesNotMatch(prepared.effectiveBaseContextDescription, /Hermes|Wiki Context/u);
 	assert.match(prepared.effectiveBaseContextDescription, new RegExp(`\\${WORK_ITEM_REPORT_REQUEST_START}`));
-	assert.deepEqual(
-		calls.find((call) => call[0] === "buildRovoAppHermesContextDescription")[1],
-		{
-			autoSelectedSkillIds: ["vpk-html"],
-			selectedSkillIds: ["pinned-skill"],
-		},
-	);
-	assert.deepEqual(
-		calls.find((call) => call[0] === "updateThread").slice(1),
-		[
-			"thread-1",
-			{
-				hermesContext: {
-					autoSelectedSkillIds: ["vpk-html"],
-				},
-			},
-		],
-	);
+	assert.equal(calls.some((call) => call[0] === "updateThread"), false);
+
 });
 
 test("prepareRovoAppManagedRunRequest throws when delegated message is missing", async () => {

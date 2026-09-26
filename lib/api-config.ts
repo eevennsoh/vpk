@@ -36,12 +36,6 @@ export const API_ENDPOINTS = {
 	HEALTH: `${API_BASE_URL}/api/health`,
 	STATUS: `${API_BASE_URL}/api/status`,
 	STATUS_ROVO: `${API_BASE_URL}/api/status/rovo`,
-	STATUS_HERMES: `${API_BASE_URL}/api/status/hermes`,
-	WIKI_STATUS: `${API_BASE_URL}/api/wiki/status`,
-	WIKI_MEMORIES: `${API_BASE_URL}/api/wiki/memories`,
-	WIKI_MEMORIES_RESET: `${API_BASE_URL}/api/wiki/memories/reset`,
-	WIKI_MEMORY_EXPLORER: `${API_BASE_URL}/api/wiki/memory-explorer`,
-	WIKI_SYNC: `${API_BASE_URL}/api/wiki/sync`,
 	ROVO_APP_CHAT: `${API_BASE_URL}/api/rovo/chat`,
 	ROVO_APP_SUGGESTIONS: `${API_BASE_URL}/api/rovo/suggestions`,
 	ROVO_APP_MESSAGES: `${API_BASE_URL}/api/rovo/messages`,
@@ -53,107 +47,12 @@ export const API_ENDPOINTS = {
 	ROVO_APP_RUNS: `${API_BASE_URL}/api/rovo/runs`,
 	ROVO_APP_FILE_UPLOAD: `${API_BASE_URL}/api/rovo/files/upload`,
 	AGENT_MODE: `${API_BASE_URL}/api/agent-mode`,
-	JOBS: `${API_BASE_URL}/api/jobs`,
-	SKILLS: `${API_BASE_URL}/api/skills`,
-	SKILL_DRAFTS: `${API_BASE_URL}/api/skills/drafts`,
 	SESSION_SEARCH: `${API_BASE_URL}/api/sessions/search`,
 	CHECKPOINTS: `${API_BASE_URL}/api/checkpoints`,
-	SKILLS_HUB: `${API_BASE_URL}/api/skills/hub`,
 	checkpoint: (id: string) =>
 		`${API_BASE_URL}/api/checkpoints/${encodeURIComponent(id)}`,
 	checkpointRollback: (id: string) =>
 		`${API_BASE_URL}/api/checkpoints/${encodeURIComponent(id)}/rollback`,
-	SKILLS_HUB_SEARCH: `${API_BASE_URL}/api/skills/hub`,
-	SKILLS_HUB_INSTALLED: `${API_BASE_URL}/api/skills/hub?installed=true`,
-	SKILLS_HUB_INSTALL: `${API_BASE_URL}/api/skills/hub`,
-	SKILLS_HUB_BROWSE: `${API_BASE_URL}/api/skills/hub`,
-	SKILLS_HUB_INSTALL_BY_ID: `${API_BASE_URL}/api/skills/hub`,
-	SKILLS_HUB_TAPS: `${API_BASE_URL}/api/skills/hub/taps`,
-	skillsHubSearch: (query: string, source?: string, limit?: number) => {
-		const params = new URLSearchParams({ q: query });
-		if (source) params.set("source", source);
-		if (typeof limit === "number") params.set("limit", String(limit));
-		return `${API_BASE_URL}/api/skills/hub?${params.toString()}`;
-	},
-	skillsHubBrowse: (page?: number, pageSize?: number, source?: string) => {
-		const params = new URLSearchParams();
-		if (typeof page === "number") params.set("page", String(page));
-		if (typeof pageSize === "number") params.set("pageSize", String(pageSize));
-		if (source) params.set("source", source);
-		const query = params.toString();
-		return `${API_BASE_URL}/api/skills/hub${query ? `?${query}` : ""}`;
-	},
-	skillsHubInspect: (identifier: string) =>
-		`${API_BASE_URL}/api/skills/hub?identifier=${encodeURIComponent(identifier)}`,
-	wikiMemoryBlock: (scope: string, blockId: string) =>
-		`${API_BASE_URL}/api/wiki/memories/${encodeURIComponent(scope)}/blocks/${encodeURIComponent(blockId)}`,
-	wikiMemoryProposal: (proposalId: string) =>
-		`${API_BASE_URL}/api/wiki/memories?proposalId=${encodeURIComponent(proposalId)}`,
-	wikiMemoryExplorer: (options?: {
-		includeLinkedKnowledge?: boolean;
-		kind?: string | null;
-		scope?: string | null;
-		status?: string | null;
-		tag?: string | null;
-		threadId?: string | null;
-	}) => {
-		const params = new URLSearchParams();
-		if (options?.includeLinkedKnowledge === false) {
-			params.set("includeLinkedKnowledge", "false");
-		}
-		if (options?.kind) {
-			params.set("kind", options.kind);
-		}
-		if (options?.scope) {
-			params.set("scope", options.scope);
-		}
-		if (options?.status) {
-			params.set("status", options.status);
-		}
-		if (options?.tag) {
-			params.set("tag", options.tag);
-		}
-		if (options?.threadId) {
-			params.set("threadId", options.threadId);
-		}
-		const query = params.toString();
-		return `${API_BASE_URL}/api/wiki/memory-explorer${query ? `?${query}` : ""}`;
-	},
-	wikiMemoryExplorerExport: (
-		format: "csv" | "json",
-		options?: {
-			includeLinkedKnowledge?: boolean;
-			kind?: string | null;
-			scope?: string | null;
-			status?: string | null;
-			tag?: string | null;
-			threadId?: string | null;
-		},
-	) => {
-		const params = new URLSearchParams({ format });
-		if (options?.includeLinkedKnowledge === false) {
-			params.set("includeLinkedKnowledge", "false");
-		}
-		if (options?.kind) {
-			params.set("kind", options.kind);
-		}
-		if (options?.scope) {
-			params.set("scope", options.scope);
-		}
-		if (options?.status) {
-			params.set("status", options.status);
-		}
-		if (options?.tag) {
-			params.set("tag", options.tag);
-		}
-		if (options?.threadId) {
-			params.set("threadId", options.threadId);
-		}
-		return `${API_BASE_URL}/api/wiki/memory-explorer/export?${params.toString()}`;
-	},
-	WIKI_MEMORY_EXPLORER_BRIEF: `${API_BASE_URL}/api/wiki/memory-explorer/brief`,
-	WIKI_MEMORY_EXPLORER_DECK: `${API_BASE_URL}/api/wiki/memory-explorer/deck`,
-	wikiSync: `${API_BASE_URL}/api/wiki/sync`,
 	sessionSearch: (query: string, limit?: number) => {
 		const params = new URLSearchParams({ q: query });
 		if (typeof limit === "number") {
@@ -177,27 +76,8 @@ export const API_ENDPOINTS = {
 		`${API_BASE_URL}/api/rovo/runs/${encodeURIComponent(threadId)}/cancel`,
 	rovoAppFile: (fileId: string) =>
 		`${API_BASE_URL}/api/rovo/files/${encodeURIComponent(fileId)}`,
-	statusRuntime: (runtime: "rovo" | "hermes") =>
+	statusRuntime: (runtime: "rovo") =>
 		`${API_BASE_URL}/api/status/${encodeURIComponent(runtime)}`,
-	job: (jobId: string) =>
-		`${API_BASE_URL}/api/jobs/${encodeURIComponent(jobId)}`,
-	jobAction: (
-		jobId: string,
-		action: "run" | "pause" | "resume",
-	) =>
-		`${API_BASE_URL}/api/jobs/${encodeURIComponent(jobId)}/${action}`,
-	skill: (category: string, name: string) =>
-		`${API_BASE_URL}/api/skills/${encodeURIComponent(category)}/${encodeURIComponent(name)}`,
-	skillBundle: (category: string, name: string) =>
-		`${API_BASE_URL}/api/skills/${encodeURIComponent(category)}/${encodeURIComponent(name)}/bundle`,
-	skillDraft: (draftId: string) =>
-		`${API_BASE_URL}/api/skills/drafts/${encodeURIComponent(draftId)}`,
-	skillDraftApprove: (draftId: string) =>
-		`${API_BASE_URL}/api/skills/drafts/${encodeURIComponent(draftId)}/approve`,
-	skillDraftReject: (draftId: string) =>
-		`${API_BASE_URL}/api/skills/drafts/${encodeURIComponent(draftId)}/reject`,
-	skillToggle: (category: string, name: string) =>
-		`${API_BASE_URL}/api/skills/${encodeURIComponent(category)}/${encodeURIComponent(name)}/toggle`,
 	SPEECH_TRANSCRIPTION: `${API_BASE_URL}/api/speech-transcription`,
 	CHROMIUM_PREVIEW: `${API_BASE_URL}/api/chromium-preview`,
 	CHROMIUM_PREVIEW_STREAM: `${API_BASE_URL}/api/chromium-preview/stream`,

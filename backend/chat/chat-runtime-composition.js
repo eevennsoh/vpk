@@ -18,8 +18,8 @@ function createChatRuntimeComposition({
 	_pausedRovoToolCallStore,
 	activeRequests,
 	agentsRfpDemoStateManager,
+	updateAgentsRfpDemoState,
 	aiGatewayProvider,
-	areHermesCompanionsEnabled,
 	buildAIGatewaySystemPrompt,
 	buildUserMessage,
 	clearActiveDeferredToolCall,
@@ -36,9 +36,7 @@ function createChatRuntimeComposition({
 	getCurrentRovoSession,
 	getListeningPidsForPort,
 	hasGatewayUrlConfigured,
-	hermesSkillDraftManager,
 	isRovoAvailable,
-	listHermesSkills,
 	logger = console,
 	mapUiMessagesToConversation,
 	refreshRovoAvailability,
@@ -65,6 +63,7 @@ function createChatRuntimeComposition({
 	takePausedRovoToolCall,
 } = {}) {
 	requireFunction("createChatSdkHandler", createChatSdkHandler);
+	requireFunction("updateAgentsRfpDemoState", updateAgentsRfpDemoState);
 	requireFunction("createRovoAppRuntimeComposition", createRovoAppRuntimeComposition);
 	requireFunction("dispatchInProcessHttpRequest", dispatchInProcessHttpRequest);
 	requireFunction("setStartNextQueuedRovoAppRun", setStartNextQueuedRovoAppRun);
@@ -89,8 +88,8 @@ function createChatRuntimeComposition({
 	const rovoAppRuntime = createRovoAppRuntimeComposition({
 		activeRequests,
 		agentsRfpDemoStateManager,
+		updateAgentsRfpDemoState,
 		aiGatewayProvider,
-		areHermesCompanionsEnabled,
 		compressUiConversationHistory,
 		createStageTrace,
 		dispatchChatSdkRequestInProcess,
@@ -98,9 +97,7 @@ function createChatRuntimeComposition({
 		generateTextViaGateway,
 		getCurrentRovoSession,
 		hasGatewayUrlConfigured,
-		hermesSkillDraftManager,
 		isRovoAvailable,
-		listHermesSkills,
 		logger,
 		mapUiMessagesToConversation,
 		requestUserInputQuestionMetaStore,
@@ -132,7 +129,6 @@ function createChatRuntimeComposition({
 		generateTextViaGateway,
 		getListeningPidsForPort,
 		handleRovoAppArtifactToolRequest: rovoAppRuntime.handleRovoAppArtifactToolRequest,
-		listHermesSkills,
 		mapUiMessagesToConversation,
 		persistRovoAppBrowserScreenshotBuffer: rovoAppRuntime.persistRovoAppBrowserScreenshotBuffer,
 		refreshRovoAvailability,

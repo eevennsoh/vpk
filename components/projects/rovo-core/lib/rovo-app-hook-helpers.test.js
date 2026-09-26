@@ -529,7 +529,6 @@ test("queued prompt and prompt send builders preserve route-specific options", (
 		contextDescription: "Use context",
 		creationMode: "agent",
 		files,
-		hermesContext: { selectedSkillIds: ["skill-1"] },
 		messageMetadata: { submittedMode: "default" },
 		mode: "default",
 		text: "Build an agent",
@@ -582,7 +581,6 @@ test("queued prompt and prompt send builders preserve route-specific options", (
 		},
 		contextDescription: "Use context",
 		creationMode: "skill",
-		hermesContext: { selectedSkillIds: ["skill-1"] },
 		isPlanMode: true,
 		streamingArtifact,
 		threadId: "thread-1",
@@ -595,7 +593,6 @@ test("queued prompt and prompt send builders preserve route-specific options", (
 		},
 		contextDescription: "Use context",
 		creationMode: "skill",
-		hermesContext: { selectedSkillIds: ["skill-1"] },
 		id: "thread-1",
 		isPlanMode: true,
 		streamingArtifact,
@@ -608,7 +605,6 @@ test("queued delegation builder preserves route-hook payload shape", () => {
 		conversationSummary: "Previous answer",
 		delegatedMessageId: "message-1",
 		existingRealtimeMessageId: "realtime-1",
-		hermesContext: { selectedSkillIds: ["skill-1"] },
 		intentType: "handoff",
 		prompt: "Delegate this",
 		referencedFiles: ["file-a.ts"],
@@ -625,7 +621,6 @@ test("queued delegation builder preserves route-hook payload shape", () => {
 	assert.deepEqual(queuedAction.referencedFiles, ["file-a.ts"]);
 	assert.equal(queuedAction.urgency, "high");
 	assert.equal(queuedAction.conversationSummary, "Previous answer");
-	assert.deepEqual(queuedAction.hermesContext, { selectedSkillIds: ["skill-1"] });
 	assert.equal(typeof queuedAction.id, "string");
 	assert.equal(typeof queuedAction.createdAt, "number");
 });
@@ -641,7 +636,6 @@ test("queued action dispatch resolver maps prompt actions into route dispatch pa
 		files,
 		contextDescription: "Use context",
 		creationMode: "skill",
-		hermesContext: { selectedSkillIds: ["skill-1"] },
 		messageMetadata: { displayLabel: "Plan continuation" },
 		mode: "plan",
 	});
@@ -653,7 +647,6 @@ test("queued action dispatch resolver maps prompt actions into route dispatch pa
 			files,
 			contextDescription: "Use context",
 			creationMode: "skill",
-			hermesContext: { selectedSkillIds: ["skill-1"] },
 			messageMetadata: { displayLabel: "Plan continuation" },
 			mode: "plan",
 		},
@@ -672,7 +665,6 @@ test("queued action dispatch resolver maps delegation actions into route dispatc
 		conversationSummary: "Previous answer",
 		delegatedMessageId: "message-1",
 		existingRealtimeMessageId: null,
-		hermesContext: { selectedSkillIds: ["skill-1"] },
 		intentType: "handoff",
 		referencedFiles: ["file-a.ts"],
 		urgency: "high",
@@ -683,7 +675,6 @@ test("queued action dispatch resolver maps delegation actions into route dispatc
 		kind: "delegation",
 		options: {
 			contextDescription: "Use context",
-			hermesContext: { selectedSkillIds: ["skill-1"] },
 			conversationSummary: "Previous answer",
 			existingRealtimeMessageId: undefined,
 			intentType: "handoff",

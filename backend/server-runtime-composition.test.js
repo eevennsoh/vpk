@@ -56,11 +56,6 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 	const backendServices = {
 		agentsRfpDemoStateManager: { owner: "rfp-state" },
 		aiGatewayProvider: { owner: "gateway" },
-		hermesJobsProvider: {
-			owner: "jobs",
-			stopJobTicker: createNamedFunction("stopJobTicker", calls),
-		},
-		hermesSkillDraftManager: { owner: "skill-drafts" },
 		rovoAppDocumentManager: { owner: "documents" },
 		rovoAppGeneratedFilesManager: { owner: "generated-files" },
 		rovoAppRunManager: { owner: "runs" },
@@ -75,16 +70,10 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 		streamTextViaGateway: createNamedFunction("streamTextViaGateway", calls),
 	};
 	const agentsRfpDemoJobOwner = {
+		updateAgentsRfpDemoState: async (updater) => updater({}),
 		advanceAgentsRfpDemoProcessing: createNamedFunction("advanceAgentsRfpDemoProcessing", calls),
-		deleteAgentsRfpDemoHermesJobs: createNamedFunction("deleteAgentsRfpDemoHermesJobs", calls),
 		deleteAgentsRfpDemoThread: createNamedFunction("deleteAgentsRfpDemoThread", calls),
 		runAgentsRfpDemoJob: createNamedFunction("runAgentsRfpDemoJob", calls),
-	};
-	const hermesJobLinks = {
-		getMergedHermesJob: createNamedFunction("getMergedHermesJob", calls),
-		listMergedHermesJobs: createNamedFunction("listMergedHermesJobs", calls),
-		persistHermesJobLink: createNamedFunction("persistHermesJobLink", calls),
-		syncHermesJobsForRovoThreads: createNamedFunction("syncHermesJobsForRovoThreads", calls),
 	};
 	const handleChatSdkRequest = createNamedFunction("handleChatSdkRequest", calls);
 	const rovoAppRuntime = {
@@ -113,9 +102,6 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 		logger,
 		projectRoot,
 	}, {
-		archiveHermesSkill: createNamedFunction("archiveHermesSkill", calls),
-		areHermesCompanionsEnabled: createNamedFunction("areHermesCompanionsEnabled", calls),
-		areHermesJobsEnabled: createNamedFunction("areHermesJobsEnabled", calls),
 		browserWorkspaceManager: { owner: "browser-workspaces" },
 		buildBackendAppDependencies: (input) => {
 			appDependencyInput = input;
@@ -142,9 +128,7 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 			return {
 				agentsRfpDemoJobOwner,
 				gatewayTextGeneration,
-				hermesJobLinks,
 				services: backendServices,
-				syncThreadPendingSkillDraftIds: createNamedFunction("syncThreadPendingSkillDraftIds", calls),
 			};
 		},
 		createChatRuntimeComposition: (input) => {
@@ -161,8 +145,6 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 			requestUserInputQuestionMetaStore: { owner: "question-meta" },
 		}),
 		createGatewayErrorResponseSender: () => createNamedFunction("sendGatewayErrorResponse", calls),
-		createHermesSkillFromBundle: createNamedFunction("createHermesSkillFromBundle", calls),
-		createHermesUnavailableResponseSender: () => createNamedFunction("sendHermesUnavailableResponse", calls),
 		createListeningPidReader: () => createNamedFunction("getListeningPidsForPort", calls),
 		createPreferredBackendResolver: () => createNamedFunction("resolvePreferredBackend", calls),
 		createRovoPool: createNamedFunction("createRovoPool", calls),
@@ -173,22 +155,17 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 		createRovoUnavailableError: createNamedFunction("createRovoUnavailableError", calls),
 		createStageTrace: createNamedFunction("createStageTrace", calls),
 		createStageTraceFromRequestResolver: () => createNamedFunction("resolveStageTraceFromRequest", calls),
-		createWikiRouteHandlerComposition: () => ({ owner: "wiki-route-handlers" }),
 		deleteRovoAppThreadBrowserWorkspace: createNamedFunction("deleteThreadBrowserWorkspace", calls),
 		describeChatBackend: createNamedFunction("describeChatBackend", calls),
 		destroyMirrorBrowser: createNamedFunction("destroyMirrorBrowser", calls),
 		ensureRovoAppThreadBrowserWorkspace: createNamedFunction("ensureThreadBrowserWorkspace", calls),
 		ensureRovoSession: createNamedFunction("ensureRovoSession", calls),
-		ensureWikiJobs: createNamedFunction("ensureWikiJobs", calls),
 		executeRovoTask: createNamedFunction("executeRovoTask", calls),
 		generateTextViaRovo: createNamedFunction("generateTextViaRovo", calls),
 		getAgentMode: createNamedFunction("getAgentMode", calls),
 		getAiGatewayConfigReport: createNamedFunction("getAiGatewayConfigReport", calls),
 		getCurrentRovoSession: createNamedFunction("getCurrentRovoSession", calls),
 		getEnvVars: createNamedFunction("getEnvVars", calls),
-		getHermesRuntimeStatus: createNamedFunction("getHermesRuntimeStatus", calls),
-		getHermesSkill: createNamedFunction("getHermesSkill", calls),
-		getHermesSkillBundle: createNamedFunction("getHermesSkillBundle", calls),
 		getMirrorBrowser: createNamedFunction("getMirrorBrowser", calls),
 		getRealtimeConfig: createNamedFunction("getRealtimeConfig", calls),
 		getRovoAppThreadBrowserWorkspace: createNamedFunction("getThreadBrowserWorkspace", calls),
@@ -197,14 +174,12 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 		initPool: createNamedFunction("initPool", calls),
 		isBrowserWorkspaceNotFoundError: createNamedFunction("isBrowserWorkspaceNotFoundError", calls),
 		isChatInProgressError: createNamedFunction("isChatInProgressError", calls),
-		listHermesSkills: createNamedFunction("listHermesSkills", calls),
 		loadRovoConfigBuilders: () => ({
 			buildAIGatewaySystemPrompt: createNamedFunction("buildAIGatewaySystemPrompt", calls),
 			buildQuestionCardSkipNotification: createNamedFunction("buildQuestionCardSkipNotification", calls),
 			buildUserMessage: createNamedFunction("buildUserMessage", calls),
 		}),
 		normalizeAIGatewayError: createNamedFunction("normalizeAIGatewayError", calls),
-		parseOptionalBoolean: createNamedFunction("parseOptionalBoolean", calls),
 		replayViaRovo: createNamedFunction("replayViaRovo", calls),
 		resolveRovoPorts: createNamedFunction("resolveRovoPorts", calls),
 		rovoCancelChat: createNamedFunction("rovoCancelChat", calls),
@@ -214,9 +189,6 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 		searchThreads: createNamedFunction("searchThreads", calls),
 		setAgentMode: createNamedFunction("setAgentMode", calls),
 		streamViaRovo: createNamedFunction("streamViaRovo", calls),
-		syncHermesJobResultsToRovoThreads: createNamedFunction("syncHermesJobResultsToRovoThreads", calls),
-		toggleHermesSkill: createNamedFunction("toggleHermesSkill", calls),
-		updateHermesSkillFromBundle: createNamedFunction("updateHermesSkillFromBundle", calls),
 		waitForTurnTimeoutMs: 1234,
 	});
 
@@ -225,24 +197,22 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 	assert.equal(result.backendServices, backendServices);
 	assert.equal(result.serverReadyDependencies.port, "9191");
 	assert.equal(result.serverReadyDependencies.debugMode, true);
-	assert.equal(result.serverReadyDependencies.hermesJobsProvider, backendServices.hermesJobsProvider);
 	assert.equal(result.webSocketRelayDependencies.runtimeAdminRequired, true);
 	assert.equal(result.webSocketRelayDependencies.runtimeAdminToken, "runtime-token");
 	assert.equal(createBackendAppInput.dependencyToken, true);
 	assert.equal(serviceInput.baseDir, path.join(backendDir, "data"));
 	assert.equal(chatInput.activeRequests, appDependencyInput.activeRequests);
+	assert.equal(chatInput.updateAgentsRfpDemoState, agentsRfpDemoJobOwner.updateAgentsRfpDemoState);
 	assert.equal(chatInput.rovoAppThreadManager, backendServices.rovoAppThreadManager);
 	assert.equal(appDependencyInput.chatSdk.handleChatSdkRequest, handleChatSdkRequest);
 	assert.equal(appDependencyInput.rovoAppRuntime, rovoAppRuntime);
 	assert.equal(appDependencyInput.runtime.debugMode, true);
 	assert.equal(appDependencyInput.runtime.runtimePort, "9191");
 	assert.equal(appDependencyInput.runtime.logger, logger);
-	assert.equal(appDependencyInput.wikiRouteHandlers.owner, "wiki-route-handlers");
 
 	appDependencyInput.runtime.debugLog("runtime", "composed", { ok: true });
 	result.shutdownRuntime();
 
-	assert.ok(calls.some((call) => call[0] === "stopJobTicker"));
 	assert.ok(calls.some((call) => call[0] === "shutdownRovoPool"));
 	assert.ok(calls.some((call) => {
 		return call[0] === "logger.log" &&

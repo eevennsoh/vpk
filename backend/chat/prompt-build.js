@@ -128,7 +128,7 @@ function buildChatSdkPrompt({
 	);
 	if (compressedPromptHistory.compressed) {
 		logger.info(
-			`[HERMES] Compressed prompt conversation history: ${compressedPromptHistory.originalLength} → ${compressedPromptHistory.length} messages`,
+			`[CHAT] Compressed prompt conversation history: ${compressedPromptHistory.originalLength} → ${compressedPromptHistory.length} messages`,
 		);
 	}
 

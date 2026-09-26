@@ -19,7 +19,6 @@ import {
 	type RovoAppCreationMode,
 	type RovoAppDocument,
 	type RovoAppDocumentKind,
-	type RovoAppHermesContext,
 	type RovoAppPromptMode,
 	type RovoAppQueuedDelegationAction,
 	type RovoAppQueuedPromptAction,
@@ -134,7 +133,6 @@ interface BuildRovoAppQueuedPromptActionInput {
 	contextDescription?: string;
 	creationMode?: RovoAppCreationMode;
 	files: ReadonlyArray<FileUIPart>;
-	hermesContext?: RovoAppHermesContext;
 	messageMetadata?: RovoMessageMetadata;
 	mode: RovoAppPromptMode;
 	text: string;
@@ -146,7 +144,6 @@ interface BuildRovoAppQueuedDelegationActionInput {
 	conversationSummary?: string;
 	delegatedMessageId: string;
 	existingRealtimeMessageId?: string | null;
-	hermesContext?: RovoAppHermesContext;
 	intentType?: string;
 	prompt: string;
 	referencedFiles?: string[];
@@ -158,7 +155,6 @@ interface BuildRovoAppPromptSendBodyInput {
 	artifactContext: RovoAppArtifactContextPayload | null;
 	contextDescription?: string;
 	creationMode?: RovoAppCreationMode;
-	hermesContext?: RovoAppHermesContext;
 	isPlanMode: boolean;
 	streamingArtifact?: RovoAppStreamingArtifactSendPayload;
 	threadId: string;
@@ -199,7 +195,6 @@ export interface RovoAppPromptSendBody extends Record<string, unknown> {
 	artifactContext?: RovoAppArtifactContextPayload;
 	contextDescription?: string;
 	creationMode?: RovoAppCreationMode;
-	hermesContext?: RovoAppHermesContext;
 	id: string;
 	isPlanMode: boolean;
 	streamingArtifact?: RovoAppStreamingArtifactSendPayload;
@@ -460,7 +455,6 @@ export function buildRovoAppQueuedPromptAction({
 	contextDescription,
 	creationMode,
 	files,
-	hermesContext,
 	messageMetadata,
 	mode,
 	text,
@@ -475,7 +469,6 @@ export function buildRovoAppQueuedPromptAction({
 		files: [...files],
 		contextDescription,
 		...(creationMode ? { creationMode } : {}),
-		hermesContext,
 		messageMetadata,
 		mode,
 	};
@@ -486,7 +479,6 @@ export function buildRovoAppQueuedDelegationAction({
 	conversationSummary,
 	delegatedMessageId,
 	existingRealtimeMessageId,
-	hermesContext,
 	intentType,
 	prompt,
 	referencedFiles,
@@ -500,7 +492,6 @@ export function buildRovoAppQueuedDelegationAction({
 		createdAt: Date.now(),
 		kind: "delegation",
 		contextDescription,
-		hermesContext,
 		conversationSummary,
 		delegatedMessageId,
 		existingRealtimeMessageId,
@@ -514,7 +505,6 @@ export function buildRovoAppPromptSendBody({
 	artifactContext,
 	contextDescription,
 	creationMode,
-	hermesContext,
 	isPlanMode,
 	streamingArtifact,
 	threadId,
@@ -524,7 +514,6 @@ export function buildRovoAppPromptSendBody({
 		artifactContext: artifactContext ?? undefined,
 		contextDescription,
 		...(creationMode ? { creationMode } : {}),
-		hermesContext,
 		isPlanMode,
 		streamingArtifact,
 	};

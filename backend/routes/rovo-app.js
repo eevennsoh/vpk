@@ -133,7 +133,6 @@ function createRovoAppRouter({
 	rovoAppVoteManager,
 	searchThreads,
 	startNextQueuedRun,
-	syncHermesJobsForRovoThreads,
 	toThreadId = createRovoAppThreadId,
 } = {}) {
 	validateManager("rovoAppThreadManager", rovoAppThreadManager, REQUIRED_THREAD_MANAGER_METHODS);
@@ -163,7 +162,6 @@ function createRovoAppRouter({
 	requireFunction("resolveGeneratedMediaAbsolutePathFn", resolveGeneratedMediaAbsolutePathFn);
 	requireFunction("searchThreads", searchThreads);
 	requireFunction("startNextQueuedRun", startNextQueuedRun);
-	requireFunction("syncHermesJobsForRovoThreads", syncHermesJobsForRovoThreads);
 	requireFunction("toThreadId", toThreadId);
 
 	const router = express.Router();
@@ -224,7 +222,6 @@ function createRovoAppRouter({
 
 	router.get("/rovo/threads", async (req, res) => {
 		try {
-			await syncHermesJobsForRovoThreads();
 			const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
 			const limit = rawLimit ? Number(rawLimit) : undefined;
 			const threads = (
@@ -336,7 +333,6 @@ function createRovoAppRouter({
 				modelId,
 				provider,
 				activeDocumentId,
-				hermesContext,
 				sessionId,
 				sessionMode,
 				createdAt,
@@ -353,7 +349,6 @@ function createRovoAppRouter({
 				modelId,
 				provider,
 				activeDocumentId,
-				hermesContext,
 				sessionId,
 				sessionMode,
 				createdAt,
@@ -395,7 +390,6 @@ function createRovoAppRouter({
 
 	router.get("/rovo/threads/:threadId", async (req, res) => {
 		try {
-			await syncHermesJobsForRovoThreads(req.params.threadId);
 			const thread = await maybeMigratePersistedThreadBrowserScreenshots(
 				await reconcileOrphanedThread(
 					await rovoAppThreadManager.getThread(req.params.threadId),
@@ -422,7 +416,6 @@ function createRovoAppRouter({
 				modelId,
 				provider,
 				activeDocumentId,
-				hermesContext,
 				sessionId,
 				sessionMode,
 				updatedAt,
@@ -439,7 +432,6 @@ function createRovoAppRouter({
 				modelId,
 				provider,
 				activeDocumentId,
-				hermesContext,
 				sessionId,
 				sessionMode,
 				updatedAt,

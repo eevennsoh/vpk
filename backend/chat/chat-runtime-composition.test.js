@@ -12,8 +12,8 @@ function createDependencies(overrides = {}) {
 		_pausedRovoToolCallStore: new Map(),
 		activeRequests: new Map(),
 		agentsRfpDemoStateManager: { name: "rfp-state" },
+		updateAgentsRfpDemoState: async (updater) => updater({}),
 		aiGatewayProvider: { name: "gateway" },
-		areHermesCompanionsEnabled: () => true,
 		buildAIGatewaySystemPrompt: () => "system",
 		buildUserMessage: () => "user",
 		clearActiveDeferredToolCall: () => {},
@@ -38,9 +38,7 @@ function createDependencies(overrides = {}) {
 		getCurrentRovoSession: () => ({ port: 4100 }),
 		getListeningPidsForPort: () => [],
 		hasGatewayUrlConfigured: () => true,
-		hermesSkillDraftManager: { name: "drafts" },
 		isRovoAvailable: () => true,
-		listHermesSkills: () => [],
 		logger: { error() {}, info() {}, warn() {} },
 		mapUiMessagesToConversation: () => [],
 		refreshRovoAvailability: async () => {},
@@ -105,6 +103,7 @@ test("createChatRuntimeComposition wires the chat and Rovo runtime cycle", async
 	assert.equal(result.handleChatSdkRequest, handler);
 	assert.equal(result.buildArtifactPreviewSummary, runtime.buildArtifactPreviewSummary);
 	assert.equal(captured.startNextQueuedCallback, runtime.startNextQueuedRovoAppRun);
+	assert.equal(captured.createRovoAppRuntimeComposition.updateAgentsRfpDemoState, dependencies.updateAgentsRfpDemoState);
 	assert.equal(
 		captured.createRovoAppRuntimeComposition.dispatchChatSdkRequestInProcess,
 		result.dispatchChatSdkRequestInProcess

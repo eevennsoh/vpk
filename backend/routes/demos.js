@@ -3,15 +3,10 @@
 const express = require("express");
 
 const {
-	RFP_DRAFTING_EVENT_TRIGGER,
-	moveTicketToColumn,
-} = require("../lib/agents-rfp-demo-state");
-const {
 	handleDeleteClaimTest,
 	handleGetClaimTest,
 	handlePostClaimTest,
 } = require("../lib/claim-test-handler");
-const { getDemoCreatedThreadIds } = require("../lib/agents-rfp-demo-state");
 const { getNonEmptyString } = require("../lib/shared-utils");
 const { classifyTickets } = require("../lib/ticket-classifier");
 const { generateStandupSummary } = require("../lib/standup-summary");
@@ -26,34 +21,29 @@ function createDemosRouter({
 	advanceAgentsRfpDemoProcessing,
 	agentsRfpDemoStateManager,
 	classifyTicketsFn = classifyTickets,
-	deleteAgentsRfpDemoHermesJobs,
-	deleteAgentsRfpDemoThread,
 	generateAgentsRfpDemoReportPreview,
 	generateStandupSummaryFn = generateStandupSummary,
-	getDemoCreatedThreadIdsFn = getDemoCreatedThreadIds,
-	getMergedHermesJob,
 	getString = getNonEmptyString,
 	handleDeleteClaimTestFn = handleDeleteClaimTest,
 	handleGetClaimTestFn = handleGetClaimTest,
 	handlePostClaimTestFn = handlePostClaimTest,
-	moveTicketToColumnFn = moveTicketToColumn,
-	rfpDraftingEventTrigger = RFP_DRAFTING_EVENT_TRIGGER,
 	runAgentsRfpDemoJob,
+	resetAgentsRfpDemo,
+	saveAgentsRfpDemoState,
+	handleAgentsRfpDemoTicketEvent,
 } = {}) {
 	requireFunction("advanceAgentsRfpDemoProcessing", advanceAgentsRfpDemoProcessing);
 	requireFunction("classifyTicketsFn", classifyTicketsFn);
-	requireFunction("deleteAgentsRfpDemoHermesJobs", deleteAgentsRfpDemoHermesJobs);
-	requireFunction("deleteAgentsRfpDemoThread", deleteAgentsRfpDemoThread);
 	requireFunction("generateAgentsRfpDemoReportPreview", generateAgentsRfpDemoReportPreview);
 	requireFunction("generateStandupSummaryFn", generateStandupSummaryFn);
-	requireFunction("getDemoCreatedThreadIdsFn", getDemoCreatedThreadIdsFn);
-	requireFunction("getMergedHermesJob", getMergedHermesJob);
 	requireFunction("getString", getString);
 	requireFunction("handleDeleteClaimTestFn", handleDeleteClaimTestFn);
 	requireFunction("handleGetClaimTestFn", handleGetClaimTestFn);
 	requireFunction("handlePostClaimTestFn", handlePostClaimTestFn);
-	requireFunction("moveTicketToColumnFn", moveTicketToColumnFn);
 	requireFunction("runAgentsRfpDemoJob", runAgentsRfpDemoJob);
+	requireFunction("resetAgentsRfpDemo", resetAgentsRfpDemo);
+	requireFunction("saveAgentsRfpDemoState", saveAgentsRfpDemoState);
+	requireFunction("handleAgentsRfpDemoTicketEvent", handleAgentsRfpDemoTicketEvent);
 	if (!agentsRfpDemoStateManager || typeof agentsRfpDemoStateManager !== "object") {
 		throw new Error("createDemosRouter requires agentsRfpDemoStateManager");
 	}
@@ -171,7 +161,7 @@ function createDemosRouter({
 				return res.status(400).json({ error: "state is required." });
 			}
 
-			const state = await agentsRfpDemoStateManager.writeState(req.body.state);
+			const state = await saveAgentsRfpDemoState(req.body.state);
 			return res.json({ state });
 		} catch (error) {
 			return res.status(500).json({
@@ -183,11 +173,7 @@ function createDemosRouter({
 
 	router.post("/agents/rfp-demo/reset", async (_req, res) => {
 		try {
-			const currentState = await agentsRfpDemoStateManager.readState();
-			const threadIds = getDemoCreatedThreadIdsFn(currentState);
-			await deleteAgentsRfpDemoHermesJobs(currentState);
-			await Promise.all(threadIds.map((threadId) => deleteAgentsRfpDemoThread(threadId).catch(() => {})));
-			const state = await agentsRfpDemoStateManager.resetState();
+			const state = await resetAgentsRfpDemo();
 			return res.json({ state });
 		} catch (error) {
 			return res.status(500).json({
@@ -219,22 +205,10 @@ function createDemosRouter({
 				return res.status(400).json({ error: "ticketCode and targetColumn are required." });
 			}
 
-			const state = await agentsRfpDemoStateManager.updateState((currentState) => (
-				moveTicketToColumnFn(currentState, ticketCode, targetColumn)
-			));
-
-			if (targetColumn !== rfpDraftingEventTrigger.column || !state.agent?.trigger) {
-				return res.json({
-					state,
-					job: state.agent?.jobId ? await getMergedHermesJob(state.agent.jobId).catch(() => null) : null,
-				});
-			}
-
-			const { job, state: processedState } = await runAgentsRfpDemoJob({
-				source: "jira-column-entered",
-				ticketCodes: [ticketCode],
+			const result = await handleAgentsRfpDemoTicketEvent({
+				ticketCode, targetColumn, runId: getString(req.body?.runId),
 			});
-			return res.json({ job, state: processedState });
+			return res.json(result);
 		} catch (error) {
 			return res.status(error?.code === "INVALID_INPUT" ? 400 : 500).json({
 				error: "Failed to process Agents RFP demo ticket event",

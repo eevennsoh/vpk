@@ -1509,11 +1509,7 @@ export function parseGenerativeWidget(
 	widgetType: string,
 	widgetData: unknown
 ): ParsedGenerativeWidget | null {
-	if (
-		widgetType === "genui-preview" ||
-		widgetType === "hermes-memory" ||
-		widgetType === "hermes-skill"
-	) {
+	if (widgetType === "genui-preview") {
 		return parseGenuiPreviewWidgetData(widgetData);
 	}
 

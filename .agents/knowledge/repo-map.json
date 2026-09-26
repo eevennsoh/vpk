@@ -10,49 +10,12 @@
 	},
 	"routes": {
 		"summary": {
-			"backendRouteCount": 164,
-			"nextApiRouteCount": 140,
-			"ownerCount": 136,
-			"runtimeAdminRouteCount": 41
+			"backendRouteCount": 122,
+			"nextApiRouteCount": 103,
+			"ownerCount": 101,
+			"runtimeAdminRouteCount": 18
 		},
 		"owners": [
-			{
-				"kind": "backend",
-				"owner": "backend/lib/hermes-skill-draft-routes.js",
-				"routeCount": 5,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills/drafts",
-						"source": "backend/lib/hermes-skill-draft-routes.js:8",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "DELETE",
-						"path": "/api/skills/drafts/:id",
-						"source": "backend/lib/hermes-skill-draft-routes.js:80",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/drafts/:id",
-						"source": "backend/lib/hermes-skill-draft-routes.js:27",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "POST",
-						"path": "/api/skills/drafts/:id/approve",
-						"source": "backend/lib/hermes-skill-draft-routes.js:42",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "POST",
-						"path": "/api/skills/drafts/:id/reject",
-						"source": "backend/lib/hermes-skill-draft-routes.js:63",
-						"runtimeAdmin": true
-					}
-				]
-			},
 			{
 				"kind": "backend",
 				"owner": "backend/routes/agent-mode.js",
@@ -362,67 +325,67 @@
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/agent/apply",
-						"source": "backend/routes/demos.js:200",
+						"source": "backend/routes/demos.js:186",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/events/ticket-entered-column",
-						"source": "backend/routes/demos.js:214",
+						"source": "backend/routes/demos.js:200",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/reset",
-						"source": "backend/routes/demos.js:184",
+						"source": "backend/routes/demos.js:174",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "backend/routes/demos.js:156",
+						"source": "backend/routes/demos.js:146",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "backend/routes/demos.js:168",
+						"source": "backend/routes/demos.js:158",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/vpk-html-report",
-						"source": "backend/routes/demos.js:67",
+						"source": "backend/routes/demos.js:57",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:124",
+						"source": "backend/routes/demos.js:114",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:98",
+						"source": "backend/routes/demos.js:88",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:111",
+						"source": "backend/routes/demos.js:101",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/standup",
-						"source": "backend/routes/demos.js:137",
+						"source": "backend/routes/demos.js:127",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/ticket-classify",
-						"source": "backend/routes/demos.js:79",
+						"source": "backend/routes/demos.js:69",
 						"runtimeAdmin": false
 					}
 				]
@@ -462,61 +425,6 @@
 						"path": "/api/html-selector/tokens",
 						"source": "backend/routes/html-selector.js:168",
 						"runtimeAdmin": false
-					}
-				]
-			},
-			{
-				"kind": "backend",
-				"owner": "backend/routes/jobs.js",
-				"routeCount": 8,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/jobs",
-						"source": "backend/routes/jobs.js:66",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "POST",
-						"path": "/api/jobs",
-						"source": "backend/routes/jobs.js:83",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "DELETE",
-						"path": "/api/jobs/:id",
-						"source": "backend/routes/jobs.js:126",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "GET",
-						"path": "/api/jobs/:id",
-						"source": "backend/routes/jobs.js:98",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "PATCH",
-						"path": "/api/jobs/:id",
-						"source": "backend/routes/jobs.js:108",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "POST",
-						"path": "/api/jobs/:id/pause",
-						"source": "backend/routes/jobs.js:146",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "POST",
-						"path": "/api/jobs/:id/resume",
-						"source": "backend/routes/jobs.js:156",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "POST",
-						"path": "/api/jobs/:id/run",
-						"source": "backend/routes/jobs.js:136",
-						"runtimeAdmin": true
 					}
 				]
 			},
@@ -706,175 +614,175 @@
 					{
 						"method": "GET",
 						"path": "/api/checkpoints",
-						"source": "backend/routes/rovo-app.js:267",
+						"source": "backend/routes/rovo-app.js:264",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/checkpoints",
-						"source": "backend/routes/rovo-app.js:280",
+						"source": "backend/routes/rovo-app.js:277",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/checkpoints/:id",
-						"source": "backend/routes/rovo-app.js:313",
+						"source": "backend/routes/rovo-app.js:310",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/checkpoints/:id/rollback",
-						"source": "backend/routes/rovo-app.js:299",
+						"source": "backend/routes/rovo-app.js:296",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/background-streams",
-						"source": "backend/routes/rovo-app.js:480",
+						"source": "backend/routes/rovo-app.js:472",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/detach",
-						"source": "backend/routes/rovo-app.js:458",
+						"source": "backend/routes/rovo-app.js:450",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/documents",
-						"source": "backend/routes/rovo-app.js:773",
+						"source": "backend/routes/rovo-app.js:765",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/documents",
-						"source": "backend/routes/rovo-app.js:697",
+						"source": "backend/routes/rovo-app.js:689",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/documents",
-						"source": "backend/routes/rovo-app.js:720",
+						"source": "backend/routes/rovo-app.js:712",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/files/:fileId",
-						"source": "backend/routes/rovo-app.js:818",
+						"source": "backend/routes/rovo-app.js:810",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/files/upload",
-						"source": "backend/routes/rovo-app.js:789",
+						"source": "backend/routes/rovo-app.js:781",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/generated-media",
-						"source": "backend/routes/rovo-app.js:838",
+						"source": "backend/routes/rovo-app.js:830",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/messages",
-						"source": "backend/routes/rovo-app.js:171",
+						"source": "backend/routes/rovo-app.js:169",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/messages",
-						"source": "backend/routes/rovo-app.js:189",
+						"source": "backend/routes/rovo-app.js:187",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/cancel",
-						"source": "backend/routes/rovo-app.js:540",
+						"source": "backend/routes/rovo-app.js:532",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/detach",
-						"source": "backend/routes/rovo-app.js:516",
+						"source": "backend/routes/rovo-app.js:508",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/runs/:threadId/stream",
-						"source": "backend/routes/rovo-app.js:490",
+						"source": "backend/routes/rovo-app.js:482",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:370",
+						"source": "backend/routes/rovo-app.js:365",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:225",
+						"source": "backend/routes/rovo-app.js:223",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:328",
+						"source": "backend/routes/rovo-app.js:325",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:627",
+						"source": "backend/routes/rovo-app.js:619",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:396",
+						"source": "backend/routes/rovo-app.js:391",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:415",
+						"source": "backend/routes/rovo-app.js:409",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:612",
+						"source": "backend/routes/rovo-app.js:604",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:566",
+						"source": "backend/routes/rovo-app.js:558",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:585",
+						"source": "backend/routes/rovo-app.js:577",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/votes",
-						"source": "backend/routes/rovo-app.js:660",
+						"source": "backend/routes/rovo-app.js:652",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PATCH",
 						"path": "/api/rovo/votes",
-						"source": "backend/routes/rovo-app.js:676",
+						"source": "backend/routes/rovo-app.js:668",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/sessions/search",
-						"source": "backend/routes/rovo-app.js:246",
+						"source": "backend/routes/rovo-app.js:243",
 						"runtimeAdmin": false
 					}
 				]
@@ -894,134 +802,31 @@
 			},
 			{
 				"kind": "backend",
-				"owner": "backend/routes/skills.js",
-				"routeCount": 15,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills",
-						"source": "backend/routes/skills.js:58",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/:category/:name",
-						"source": "backend/routes/skills.js:248",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/:category/:name/bundle",
-						"source": "backend/routes/skills.js:265",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "POST",
-						"path": "/api/skills/:category/:name/toggle",
-						"source": "backend/routes/skills.js:282",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/browse",
-						"source": "backend/routes/skills.js:90",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/check",
-						"source": "backend/routes/skills.js:188",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/inspect/*identifier",
-						"source": "backend/routes/skills.js:105",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "POST",
-						"path": "/api/skills/hub/install",
-						"source": "backend/routes/skills.js:133",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "POST",
-						"path": "/api/skills/hub/install-by-id",
-						"source": "backend/routes/skills.js:151",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/installed",
-						"source": "backend/routes/skills.js:121",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/search",
-						"source": "backend/routes/skills.js:72",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/taps",
-						"source": "backend/routes/skills.js:201",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "POST",
-						"path": "/api/skills/hub/taps",
-						"source": "backend/routes/skills.js:213",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "DELETE",
-						"path": "/api/skills/hub/taps/*repo",
-						"source": "backend/routes/skills.js:229",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "DELETE",
-						"path": "/api/skills/hub/uninstall/*name",
-						"source": "backend/routes/skills.js:169",
-						"runtimeAdmin": true
-					}
-				]
-			},
-			{
-				"kind": "backend",
 				"owner": "backend/routes/status.js",
-				"routeCount": 5,
+				"routeCount": 4,
 				"routes": [
 					{
 						"method": "GET",
 						"path": "/api/health",
-						"source": "backend/routes/status.js:205",
+						"source": "backend/routes/status.js:168",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/status",
-						"source": "backend/routes/status.js:99",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/status/hermes",
-						"source": "backend/routes/status.js:81",
+						"source": "backend/routes/status.js:68",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/status/rovo",
-						"source": "backend/routes/status.js:64",
+						"source": "backend/routes/status.js:50",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/healthcheck",
-						"source": "backend/routes/status.js:204",
+						"source": "backend/routes/status.js:167",
 						"runtimeAdmin": false
 					}
 				]
@@ -1066,91 +871,6 @@
 						"path": "/api/vpk-html/publish-gist",
 						"source": "backend/routes/vpk-html.js:383",
 						"runtimeAdmin": false
-					}
-				]
-			},
-			{
-				"kind": "backend",
-				"owner": "backend/routes/wiki.js",
-				"routeCount": 13,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/wiki/captures",
-						"source": "backend/routes/wiki.js:20",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "GET",
-						"path": "/api/wiki/memories",
-						"source": "backend/routes/wiki.js:23",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "DELETE",
-						"path": "/api/wiki/memories/:scope/blocks/:blockId",
-						"source": "backend/routes/wiki.js:28",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "DELETE",
-						"path": "/api/wiki/memories/proposals/:proposalId",
-						"source": "backend/routes/wiki.js:29",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "POST",
-						"path": "/api/wiki/memories/reset",
-						"source": "backend/routes/wiki.js:30",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "GET",
-						"path": "/api/wiki/memory-explorer",
-						"source": "backend/routes/wiki.js:24",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "POST",
-						"path": "/api/wiki/memory-explorer/brief",
-						"source": "backend/routes/wiki.js:26",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "POST",
-						"path": "/api/wiki/memory-explorer/deck",
-						"source": "backend/routes/wiki.js:27",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/wiki/memory-explorer/export",
-						"source": "backend/routes/wiki.js:25",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/wiki/search",
-						"source": "backend/routes/wiki.js:21",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "GET",
-						"path": "/api/wiki/status",
-						"source": "backend/routes/wiki.js:19",
-						"runtimeAdmin": false
-					},
-					{
-						"method": "POST",
-						"path": "/api/wiki/sync",
-						"source": "backend/routes/wiki.js:31",
-						"runtimeAdmin": true
-					},
-					{
-						"method": "POST",
-						"path": "/api/wiki/synthesis",
-						"source": "backend/routes/wiki.js:22",
-						"runtimeAdmin": true
 					}
 				]
 			},
@@ -1853,137 +1573,6 @@
 								"method": "GET",
 								"path": "/api/html-selector/tokens",
 								"source": "app/api/html-selector/tokens/route.ts:4"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/jobs/[id]/pause/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/jobs/:id/pause",
-						"source": "app/api/jobs/[id]/pause/route.ts:11",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/jobs/:id/pause",
-								"source": "app/api/jobs/[id]/pause/route.ts:21"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/jobs/[id]/resume/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/jobs/:id/resume",
-						"source": "app/api/jobs/[id]/resume/route.ts:11",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/jobs/:id/resume",
-								"source": "app/api/jobs/[id]/resume/route.ts:21"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/jobs/[id]/route.ts",
-				"routeCount": 3,
-				"routes": [
-					{
-						"method": "DELETE",
-						"path": "/api/jobs/:id",
-						"source": "app/api/jobs/[id]/route.ts:33",
-						"targets": [
-							{
-								"method": "DELETE",
-								"path": "/api/jobs/:id",
-								"source": "app/api/jobs/[id]/route.ts:35"
-							}
-						]
-					},
-					{
-						"method": "GET",
-						"path": "/api/jobs/:id",
-						"source": "app/api/jobs/[id]/route.ts:11",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/jobs/:id",
-								"source": "app/api/jobs/[id]/route.ts:13"
-							}
-						]
-					},
-					{
-						"method": "PATCH",
-						"path": "/api/jobs/:id",
-						"source": "app/api/jobs/[id]/route.ts:19",
-						"targets": [
-							{
-								"method": "PATCH",
-								"path": "/api/jobs/:id",
-								"source": "app/api/jobs/[id]/route.ts:26"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/jobs/[id]/run/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/jobs/:id/run",
-						"source": "app/api/jobs/[id]/run/route.ts:11",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/jobs/:id/run",
-								"source": "app/api/jobs/[id]/run/route.ts:21"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/jobs/route.ts",
-				"routeCount": 2,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/jobs",
-						"source": "app/api/jobs/route.ts:5",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/jobs",
-								"source": "app/api/jobs/route.ts:6"
-							}
-						]
-					},
-					{
-						"method": "POST",
-						"path": "/api/jobs",
-						"source": "app/api/jobs/route.ts:12",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/jobs",
-								"source": "app/api/jobs/route.ts:18"
 							}
 						]
 					}
@@ -2839,335 +2428,6 @@
 			},
 			{
 				"kind": "next-api",
-				"owner": "app/api/skills/[category]/[name]/bundle/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills/:category/:name/bundle",
-						"source": "app/api/skills/[category]/[name]/bundle/route.ts:11",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills/:category/:name/bundle",
-								"source": "app/api/skills/[category]/[name]/bundle/route.ts:13"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/[category]/[name]/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills/:category/:name",
-						"source": "app/api/skills/[category]/[name]/route.ts:11",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills/:category/:name",
-								"source": "app/api/skills/[category]/[name]/route.ts:13"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/[category]/[name]/toggle/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/skills/:category/:name/toggle",
-						"source": "app/api/skills/[category]/[name]/toggle/route.ts:11",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/skills/:category/:name/toggle",
-								"source": "app/api/skills/[category]/[name]/toggle/route.ts:17"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/drafts/[id]/approve/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/skills/drafts/:id/approve",
-						"source": "app/api/skills/drafts/[id]/approve/route.ts:10",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/skills/drafts/:id/approve",
-								"source": "app/api/skills/drafts/[id]/approve/route.ts:12"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/drafts/[id]/reject/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/skills/drafts/:id/reject",
-						"source": "app/api/skills/drafts/[id]/reject/route.ts:10",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/skills/drafts/:id/reject",
-								"source": "app/api/skills/drafts/[id]/reject/route.ts:12"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/drafts/[id]/route.ts",
-				"routeCount": 2,
-				"routes": [
-					{
-						"method": "DELETE",
-						"path": "/api/skills/drafts/:id",
-						"source": "app/api/skills/drafts/[id]/route.ts:18",
-						"targets": [
-							{
-								"method": "DELETE",
-								"path": "/api/skills/drafts/:id",
-								"source": "app/api/skills/drafts/[id]/route.ts:20"
-							}
-						]
-					},
-					{
-						"method": "GET",
-						"path": "/api/skills/drafts/:id",
-						"source": "app/api/skills/drafts/[id]/route.ts:10",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills/drafts/:id",
-								"source": "app/api/skills/drafts/[id]/route.ts:12"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/drafts/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills/drafts",
-						"source": "app/api/skills/drafts/route.ts:4",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills/drafts",
-								"source": "app/api/skills/drafts/route.ts:5"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/hub/browse/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/browse",
-						"source": "app/api/skills/hub/browse/route.ts:4",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills/hub/browse",
-								"source": "app/api/skills/hub/browse/route.ts:5"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/hub/inspect/[...identifier]/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/inspect/*identifier",
-						"source": "app/api/skills/hub/inspect/[...identifier]/route.ts:9",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills/hub/inspect/*identifier",
-								"source": "app/api/skills/hub/inspect/[...identifier]/route.ts:13"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/hub/install-by-id/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/skills/hub/install-by-id",
-						"source": "app/api/skills/hub/install-by-id/route.ts:5",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/skills/hub/install-by-id",
-								"source": "app/api/skills/hub/install-by-id/route.ts:9"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/hub/install/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/skills/hub/install",
-						"source": "app/api/skills/hub/install/route.ts:5",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/skills/hub/install",
-								"source": "app/api/skills/hub/install/route.ts:9"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/hub/installed/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/installed",
-						"source": "app/api/skills/hub/installed/route.ts:3",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills/hub/installed",
-								"source": "app/api/skills/hub/installed/route.ts:4"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/hub/route.ts",
-				"routeCount": 2,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills/hub",
-						"source": "app/api/skills/hub/route.ts:5",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills/hub/browse",
-								"source": "app/api/skills/hub/route.ts:28"
-							},
-							{
-								"method": "GET",
-								"path": "/api/skills/hub/inspect/*identifier",
-								"source": "app/api/skills/hub/route.ts:15"
-							},
-							{
-								"method": "GET",
-								"path": "/api/skills/hub/installed",
-								"source": "app/api/skills/hub/route.ts:22"
-							},
-							{
-								"method": "GET",
-								"path": "/api/skills/hub/search",
-								"source": "app/api/skills/hub/route.ts:28"
-							}
-						]
-					},
-					{
-						"method": "POST",
-						"path": "/api/skills/hub",
-						"source": "app/api/skills/hub/route.ts:36",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/skills/hub/install",
-								"source": "app/api/skills/hub/route.ts:42"
-							},
-							{
-								"method": "POST",
-								"path": "/api/skills/hub/install-by-id",
-								"source": "app/api/skills/hub/route.ts:42"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/hub/search/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills/hub/search",
-						"source": "app/api/skills/hub/search/route.ts:4",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills/hub/search",
-								"source": "app/api/skills/hub/search/route.ts:5"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/skills/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/skills",
-						"source": "app/api/skills/route.ts:4",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/skills",
-								"source": "app/api/skills/route.ts:5"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
 				"owner": "app/api/sound-generation/route.ts",
 				"routeCount": 1,
 				"routes": [
@@ -3231,25 +2491,6 @@
 								"method": "POST",
 								"path": "/api/standup",
 								"source": "app/api/standup/route.ts:9"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/status/hermes/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/status/hermes",
-						"source": "app/api/status/hermes/route.ts:3",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/status/hermes",
-								"source": "app/api/status/hermes/route.ts:4"
 							}
 						]
 					}
@@ -3437,215 +2678,13 @@
 						]
 					}
 				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/memories/[scope]/blocks/[blockId]/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "DELETE",
-						"path": "/api/wiki/memories/:scope/blocks/:blockId",
-						"source": "app/api/wiki/memories/[scope]/blocks/[blockId]/route.ts:12",
-						"targets": [
-							{
-								"method": "DELETE",
-								"path": "/api/wiki/memories/:scope/blocks/:blockId",
-								"source": "app/api/wiki/memories/[scope]/blocks/[blockId]/route.ts:19"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/memories/reset/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/wiki/memories/reset",
-						"source": "app/api/wiki/memories/reset/route.ts:3",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/wiki/memories/reset",
-								"source": "app/api/wiki/memories/reset/route.ts:4"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/memories/route.ts",
-				"routeCount": 2,
-				"routes": [
-					{
-						"method": "DELETE",
-						"path": "/api/wiki/memories",
-						"source": "app/api/wiki/memories/route.ts:11",
-						"targets": [
-							{
-								"method": "DELETE",
-								"path": "/api/wiki/memories/proposals/:proposalId",
-								"source": "app/api/wiki/memories/route.ts:20"
-							}
-						]
-					},
-					{
-						"method": "GET",
-						"path": "/api/wiki/memories",
-						"source": "app/api/wiki/memories/route.ts:4",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/wiki/memories",
-								"source": "app/api/wiki/memories/route.ts:5"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/memory-explorer/brief/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/wiki/memory-explorer/brief",
-						"source": "app/api/wiki/memory-explorer/brief/route.ts:4",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/wiki/memory-explorer/brief",
-								"source": "app/api/wiki/memory-explorer/brief/route.ts:5"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/memory-explorer/deck/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/wiki/memory-explorer/deck",
-						"source": "app/api/wiki/memory-explorer/deck/route.ts:4",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/wiki/memory-explorer/deck",
-								"source": "app/api/wiki/memory-explorer/deck/route.ts:5"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/memory-explorer/export/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/wiki/memory-explorer/export",
-						"source": "app/api/wiki/memory-explorer/export/route.ts:3",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/wiki/memory-explorer/export",
-								"source": "app/api/wiki/memory-explorer/export/route.ts:6"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/memory-explorer/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/wiki/memory-explorer",
-						"source": "app/api/wiki/memory-explorer/route.ts:3",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/wiki/memory-explorer",
-								"source": "app/api/wiki/memory-explorer/route.ts:6"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/search/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/wiki/search",
-						"source": "app/api/wiki/search/route.ts:4",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/wiki/search",
-								"source": "app/api/wiki/search/route.ts:16"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/status/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "GET",
-						"path": "/api/wiki/status",
-						"source": "app/api/wiki/status/route.ts:3",
-						"targets": [
-							{
-								"method": "GET",
-								"path": "/api/wiki/status",
-								"source": "app/api/wiki/status/route.ts:4"
-							}
-						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/wiki/sync/route.ts",
-				"routeCount": 1,
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/wiki/sync",
-						"source": "app/api/wiki/sync/route.ts:5",
-						"targets": [
-							{
-								"method": "POST",
-								"path": "/api/wiki/sync",
-								"source": "app/api/wiki/sync/route.ts:14"
-							}
-						]
-					}
-				]
 			}
 		]
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 93,
-			"pageCount": 69
+			"ownerImportCount": 73,
+			"pageCount": 56
 		},
 		"pages": [
 			{
@@ -4106,22 +3145,6 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/jira-team-eu26/page.tsx"
-			},
-			{
-				"ownerCount": 0,
-				"owners": [],
-				"routePath": "/jobs",
-				"shellOwnerCount": 0,
-				"shellOwners": [],
-				"source": "app/jobs/page.tsx"
-			},
-			{
-				"ownerCount": 0,
-				"owners": [],
-				"routePath": "/memories",
-				"shellOwnerCount": 0,
-				"shellOwners": [],
-				"source": "app/memories/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -4857,196 +3880,6 @@
 				"source": "app/rovo/[[...id]]/page.tsx"
 			},
 			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/jobs-surface",
-						"source": "components/projects/control-plane/jobs-surface",
-						"symbols": [
-							"JobsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/rovo/jobs",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/jobs-surface",
-						"source": "components/projects/control-plane/jobs-surface",
-						"symbols": [
-							"JobsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/rovo/jobs/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/memories-surface",
-						"source": "components/projects/control-plane/memories-surface",
-						"symbols": [
-							"MemoriesSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/rovo/memories",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/memories-surface",
-						"source": "components/projects/control-plane/memories-surface",
-						"symbols": [
-							"MemoriesSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/rovo/memories/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/settings-surface",
-						"source": "components/projects/control-plane/settings-surface",
-						"symbols": [
-							"SettingsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/rovo/settings",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/settings-surface",
-						"source": "components/projects/control-plane/settings-surface",
-						"symbols": [
-							"SettingsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/rovo/settings/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/skills-surface",
-						"source": "components/projects/control-plane/skills-surface",
-						"symbols": [
-							"SkillsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/rovo/skills",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/skills-surface",
-						"source": "components/projects/control-plane/skills-surface",
-						"symbols": [
-							"SkillsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/rovo/skills/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/skills-surface",
-						"source": "components/projects/control-plane/skills-surface",
-						"symbols": [
-							"SkillsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/rovo/skills/[category]/[name]",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/skills-surface",
-						"source": "components/projects/control-plane/skills-surface",
-						"symbols": [
-							"SkillsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/rovo/components/rovo-app-surface-shell",
-						"source": "components/projects/rovo/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/rovo/skills/[category]/[name]/page.tsx"
-			},
-			{
 				"ownerCount": 3,
 				"owners": [
 					{
@@ -5108,14 +3941,6 @@
 				"source": "app/search/page.tsx"
 			},
 			{
-				"ownerCount": 0,
-				"owners": [],
-				"routePath": "/settings",
-				"shellOwnerCount": 0,
-				"shellOwners": [],
-				"source": "app/settings/page.tsx"
-			},
-			{
 				"ownerCount": 1,
 				"owners": [
 					{
@@ -5170,196 +3995,6 @@
 					}
 				],
 				"source": "app/studio/[[...id]]/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/jobs-surface",
-						"source": "components/projects/control-plane/jobs-surface",
-						"symbols": [
-							"JobsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/studio/jobs",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/jobs-surface",
-						"source": "components/projects/control-plane/jobs-surface",
-						"symbols": [
-							"JobsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/studio/jobs/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/memories-surface",
-						"source": "components/projects/control-plane/memories-surface",
-						"symbols": [
-							"MemoriesSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/studio/memories",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/memories-surface",
-						"source": "components/projects/control-plane/memories-surface",
-						"symbols": [
-							"MemoriesSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/studio/memories/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/settings-surface",
-						"source": "components/projects/control-plane/settings-surface",
-						"symbols": [
-							"SettingsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/studio/settings",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/settings-surface",
-						"source": "components/projects/control-plane/settings-surface",
-						"symbols": [
-							"SettingsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/studio/settings/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/skills-surface",
-						"source": "components/projects/control-plane/skills-surface",
-						"symbols": [
-							"SkillsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/studio/skills",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/skills-surface",
-						"source": "components/projects/control-plane/skills-surface",
-						"symbols": [
-							"SkillsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/studio/skills/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/projects/control-plane/skills-surface",
-						"source": "components/projects/control-plane/skills-surface",
-						"symbols": [
-							"SkillsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"routePath": "/studio/skills/[category]/[name]",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/control-plane/skills-surface",
-						"source": "components/projects/control-plane/skills-surface",
-						"symbols": [
-							"SkillsSurfacePage"
-						]
-					},
-					{
-						"importPath": "@/components/projects/studio/components/rovo-app-surface-shell",
-						"source": "components/projects/studio/components/rovo-app-surface-shell",
-						"symbols": [
-							"RovoAppSurfaceShell"
-						]
-					}
-				],
-				"source": "app/studio/skills/[category]/[name]/page.tsx"
 			},
 			{
 				"ownerCount": 3,

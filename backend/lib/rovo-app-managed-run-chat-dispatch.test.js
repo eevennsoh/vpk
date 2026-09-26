@@ -3,7 +3,6 @@ const test = require("node:test");
 
 const {
 	buildBrowserContextBlock,
-	buildWikiCaptureContextBlock,
 	createRovoAppManagedRunChatDispatcher,
 } = require("./rovo-app-managed-run-chat-dispatch");
 
@@ -88,7 +87,6 @@ test("managed run chat dispatch prepares context, persists backend, and marks re
 		[
 			"[ARTIFACT]\nartifact-1",
 			buildBrowserContextBlock("thread-1"),
-			buildWikiCaptureContextBlock("thread-1"),
 			"[BASE CONTEXT]",
 		].join("\n\n"),
 	);
@@ -151,7 +149,7 @@ test("managed run chat dispatch preserves explicit chat SDK source and non-genui
 	assert.equal(requestBody.backendPreference, "ai-gateway");
 	assert.equal(requestBody.resolvedPlanModeActive, false);
 	assert.equal(requestBody.contextDescription.includes("[BROWSER TOOLS]"), true);
-	assert.equal(requestBody.contextDescription.includes("[WIKI TOOLS]"), true);
+	assert.equal(requestBody.contextDescription.includes("[WIKI TOOLS]"), false);
 });
 
 test("managed run chat dispatch throws the response body for failed Chat SDK responses", async () => {

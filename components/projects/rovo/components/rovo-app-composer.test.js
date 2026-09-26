@@ -252,7 +252,7 @@ test("RovoAppShell clears shell-owned prefill sources only after submit succeeds
 	);
 	assert.match(
 		SHELL_SOURCE,
-		/await realtimeChat\.submitRealtimeText\(\{[\s\S]*?\}\);\s*if \(shouldClearHermesSkillSelection\) \{[\s\S]*?\}\s*clearPrefillSources\(\);/u,
+		/await realtimeChat\.submitRealtimeText\(\{[\s\S]*?\}\);\s*clearPrefillSources\(\);/u,
 	);
 	assert.match(
 		SHELL_SOURCE,
@@ -260,6 +260,6 @@ test("RovoAppShell clears shell-owned prefill sources only after submit succeeds
 	);
 	assert.match(
 		SHELL_SOURCE,
-		/await realtimeChat\.submitPrompt\(\{[\s\S]*?\}\);\s*if \(shouldClearHermesSkillSelection\) \{[\s\S]*?\}\s*clearPrefillSources\(\);/u,
+		/await realtimeChat\.submitPrompt\(\{[\s\S]*?\}\);\s*clearPrefillSources\(\);/u,
 	);
 });

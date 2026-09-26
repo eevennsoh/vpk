@@ -98,7 +98,6 @@ function createBaseOptions(overrides = {}) {
 			calls.push(["set-assistant", nextAssistantText]);
 			assistantText = nextAssistantText;
 		},
-		shouldSuppressHermesKnowledgeDirectSpecCard: () => false,
 		shouldSurfaceMissingStudioAgentResultFailure: () => false,
 		streamGoogleGatewayManualSse: async () => {},
 		stripDirectMediaFences: (text) => ({

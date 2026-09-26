@@ -2,7 +2,6 @@ import type { FileUIPart } from "ai";
 import type { RovoMessageMetadata } from "@/lib/rovo-ui-messages";
 import type {
 	RovoAppCreationMode,
-	RovoAppHermesContext,
 	RovoAppPromptMode,
 	RovoAppQueuedAction,
 } from "@/lib/rovo-app-types";
@@ -72,7 +71,6 @@ export interface RovoAppQueuedPromptDispatchPayload {
 	contextDescription?: string;
 	creationMode?: RovoAppCreationMode;
 	files: FileUIPart[];
-	hermesContext?: RovoAppHermesContext;
 	messageMetadata?: RovoMessageMetadata;
 	mode: RovoAppPromptMode;
 	text: string;
@@ -82,7 +80,6 @@ export interface RovoAppQueuedDelegationDispatchOptions {
 	contextDescription?: string;
 	conversationSummary?: string;
 	existingRealtimeMessageId?: string;
-	hermesContext?: RovoAppHermesContext;
 	intentType?: string;
 	prompt: string;
 	referencedFiles?: string[];
@@ -121,7 +118,6 @@ export function resolveRovoAppQueuedActionDispatch(
 			kind: "delegation",
 			options: {
 				contextDescription: action.contextDescription,
-				hermesContext: action.hermesContext,
 				conversationSummary: action.conversationSummary,
 				existingRealtimeMessageId: action.existingRealtimeMessageId ?? undefined,
 				intentType: action.intentType,
@@ -139,7 +135,6 @@ export function resolveRovoAppQueuedActionDispatch(
 			files: [...action.files],
 			contextDescription: action.contextDescription,
 			creationMode: action.creationMode,
-			hermesContext: action.hermesContext,
 			messageMetadata: action.messageMetadata,
 			mode: action.mode,
 		},

@@ -7,7 +7,6 @@ import {
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { getRovoAgentPromptContext } from "@/app/data/directory/agents";
 import {
-	type RovoAppHermesContext,
 	type RovoAppThread,
 } from "@/lib/rovo-app-types";
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
@@ -18,16 +17,13 @@ import {
 } from "@/lib/rovo-ui-messages";
 import {
 	buildWorkItemReportRequestContext,
-	hasActiveWorkItemContext,
 	isWorkItemReportIntent,
-	mergeHermesSkillIds,
 	VPK_HTML_SKILL_ID,
 } from "@/lib/work-item-report-intent";
 
 export interface SendPromptOptions {
 	backendPreference?: "rovo" | "ai-gateway";
 	contextDescription?: string;
-	hermesContext?: RovoAppHermesContext;
 	userName?: string;
 	clientTimeZone?: string;
 	messageMetadata?: RovoMessageMetadata;
@@ -132,7 +128,6 @@ export function buildSendMessageBody(
 	return {
 		backendPreference: options?.backendPreference,
 		contextDescription: options?.contextDescription,
-		hermesContext: options?.hermesContext,
 		userName: options?.userName,
 		clientTimeZone: resolveClientTimeZone(options?.clientTimeZone),
 		clarification: options?.clarification,
@@ -159,46 +154,6 @@ function mergePromptOptionObject<T extends object>(
 	} as T;
 }
 
-function mergeHermesContext(
-	defaultValue: RovoAppHermesContext | undefined,
-	value: RovoAppHermesContext | undefined,
-): RovoAppHermesContext | undefined {
-	if (!defaultValue && !value) {
-		return undefined;
-	}
-
-	return {
-		selectedSkillIds: Array.from(new Set([
-			...(defaultValue?.selectedSkillIds ?? []),
-			...(value?.selectedSkillIds ?? []),
-		])),
-		...(defaultValue?.autoSelectedSkillIds || value?.autoSelectedSkillIds
-			? {
-					autoSelectedSkillIds: Array.from(new Set([
-						...(defaultValue?.autoSelectedSkillIds ?? []),
-						...(value?.autoSelectedSkillIds ?? []),
-					])),
-				}
-			: {}),
-		...(defaultValue?.pendingDraftIds || value?.pendingDraftIds
-			? {
-					pendingDraftIds: Array.from(new Set([
-						...(defaultValue?.pendingDraftIds ?? []),
-						...(value?.pendingDraftIds ?? []),
-					])),
-				}
-			: {}),
-		...(defaultValue?.recentMemoryProposalIds || value?.recentMemoryProposalIds
-			? {
-					recentMemoryProposalIds: Array.from(new Set([
-						...(defaultValue?.recentMemoryProposalIds ?? []),
-						...(value?.recentMemoryProposalIds ?? []),
-					])),
-				}
-			: {}),
-	};
-}
-
 export function resolveWorkItemReportPromptOptions(
 	prompt: string,
 	options?: SendPromptOptions,
@@ -220,25 +175,12 @@ export function resolveWorkItemReportPromptOptions(
 		return options;
 	}
 
-	const shouldLoadSkill = hasActiveWorkItemContext(options?.contextDescription);
-
 	return {
 		...(options ?? {}),
 		contextDescription: mergeRovoContextDescriptions(
 			options?.contextDescription,
 			reportContextBlock,
 		),
-		...(shouldLoadSkill
-			? {
-					hermesContext: {
-						...(options?.hermesContext ?? {}),
-						selectedSkillIds: mergeHermesSkillIds(
-							options?.hermesContext?.selectedSkillIds,
-							VPK_HTML_SKILL_ID,
-						),
-					},
-				}
-			: {}),
 	};
 }
 
@@ -263,10 +205,6 @@ export function mergeSendPromptOptions(
 		smartGeneration: mergePromptOptionObject(
 			defaultOptions.smartGeneration,
 			options.smartGeneration,
-		),
-		hermesContext: mergeHermesContext(
-			defaultOptions.hermesContext,
-			options.hermesContext,
 		),
 	};
 }

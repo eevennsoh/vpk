@@ -12,7 +12,6 @@ import type {
 	RovoAppActiveRun,
 	RovoAppCreationMode,
 	RovoAppDocument,
-	RovoAppHermesContext,
 	RovoAppPromptMode,
 	RovoAppQueuedAction,
 	RovoAppRunStatus,
@@ -97,7 +96,6 @@ export interface RovoAppPromptDispatchLifecyclePayload {
 	contextDescription?: string;
 	creationMode?: RovoAppCreationMode;
 	files: FileUIPart[];
-	hermesContext?: RovoAppHermesContext;
 	messageMetadata?: RovoMessageMetadata;
 	mode: RovoAppPromptMode;
 	text: string;
@@ -112,7 +110,6 @@ export interface SubmitRovoAppPromptDispatchInput {
 	enqueuePromptAction: (payload: RovoAppPromptDispatchLifecyclePayload & { threadId: string }) => void;
 	files: FileUIPart[];
 	getHasBusyTurn: () => boolean;
-	hermesContext?: RovoAppHermesContext;
 	immediateDispatch?: RovoAppImmediateDispatchLifecycle;
 	isPlanModeActive: boolean;
 	isQueueProcessorRunning: boolean;
@@ -259,7 +256,6 @@ export async function submitRovoAppPromptDispatch({
 	enqueuePromptAction,
 	files,
 	getHasBusyTurn,
-	hermesContext,
 	immediateDispatch,
 	isPlanModeActive,
 	isQueueProcessorRunning,
@@ -292,7 +288,6 @@ export async function submitRovoAppPromptDispatch({
 		files,
 		contextDescription,
 		creationMode,
-		hermesContext,
 		messageMetadata: promptDispatch.messageMetadata,
 		mode: promptDispatch.mode,
 	};
@@ -324,7 +319,6 @@ export async function dispatchRovoAppPromptNow({
 	ensureThread,
 	files,
 	flushQueuedStreamingArtifactDeltaNow,
-	hermesContext,
 	lastUseChatBusyAtRef,
 	markLocalThreadRunPending,
 	messageMetadata,
@@ -425,7 +419,6 @@ export async function dispatchRovoAppPromptNow({
 					artifactContext: resolvedArtifactContext,
 					contextDescription,
 					creationMode,
-					hermesContext,
 					isPlanMode: mode === "plan",
 					streamingArtifact: streamingArtifactPayload,
 					threadId,

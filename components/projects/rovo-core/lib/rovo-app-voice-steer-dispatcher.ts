@@ -8,7 +8,6 @@ import {
 } from "@/components/projects/rovo-core/lib/rovo-app-hook-helpers";
 import type {
 	RovoAppDocument,
-	RovoAppHermesContext,
 } from "@/lib/rovo-app-types";
 import type {
 	RovoMessageMetadata,
@@ -21,7 +20,6 @@ interface MutableRef<T> {
 
 export interface RovoAppVoiceSteerPayload {
 	contextDescription?: string;
-	hermesContext?: RovoAppHermesContext;
 	text: string;
 }
 
@@ -37,7 +35,6 @@ interface RovoAppVoiceSteerSendMessageOptions {
 		artifactContext?: unknown;
 		artifactSteering: RovoAppArtifactSteeringPayload;
 		contextDescription?: string;
-		hermesContext?: RovoAppHermesContext;
 		id: string;
 		origin: "voice";
 	};
@@ -71,7 +68,6 @@ export async function dispatchRovoAppVoiceSteer({
 	appendLocalUserMessage,
 	contextDescription,
 	ensureThread,
-	hermesContext,
 	interruptActiveTurn,
 	markLocalThreadRunPending,
 	releaseCompletedUseChatTurnIfNeeded,
@@ -120,7 +116,6 @@ export async function dispatchRovoAppVoiceSteer({
 				body: {
 					id: threadId,
 					contextDescription,
-					hermesContext,
 					origin: "voice",
 					artifactSteering: {
 						preferCurrentArtifact: true,

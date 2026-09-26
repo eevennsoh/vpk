@@ -11,35 +11,14 @@ const {
 	buildBackendAppDependencies: defaultBuildBackendAppDependencies,
 } = require("./app-dependency-composition");
 const {
-	archiveHermesSkill: defaultArchiveHermesSkill,
-	createHermesSkillFromBundle: defaultCreateHermesSkillFromBundle,
-	getHermesSkill: defaultGetHermesSkill,
-	getHermesSkillBundle: defaultGetHermesSkillBundle,
-	listHermesSkills: defaultListHermesSkills,
-	toggleHermesSkill: defaultToggleHermesSkill,
-	updateHermesSkillFromBundle: defaultUpdateHermesSkillFromBundle,
-} = require("./lib/hermes-skills");
-const { getHermesRuntimeStatus: defaultGetHermesRuntimeStatus } = require("./lib/hermes-status");
-const {
-	areHermesCompanionsEnabled: defaultAreHermesCompanionsEnabled,
-	areHermesJobsEnabled: defaultAreHermesJobsEnabled,
-	parseOptionalBoolean: defaultParseOptionalBoolean,
-} = require("./lib/hermes-feature-flags");
-const {
-	createWikiRouteHandlerComposition: defaultCreateWikiRouteHandlerComposition,
-} = require("./services/wiki-route-handler-composition");
-const {
 	executeRovoTask: defaultExecuteRovoTask,
 	runRovoBackgroundTask: defaultRunRovoBackgroundTask,
 } = require("./lib/rovo-task-executor");
 const {
-	syncHermesJobResultsToRovoThreads: defaultSyncHermesJobResultsToRovoThreads,
-} = require("./lib/hermes-rovo-job-sync");
-const {
 	createPreferredBackendResolver: defaultCreatePreferredBackendResolver,
 } = require("./lib/chat-backend-selection");
 const { buildRuntimeStatusSnapshot: defaultBuildRuntimeStatusSnapshot } = require("./lib/runtime-status");
-const { searchThreads: defaultSearchThreads } = require("./lib/hermes-session-search");
+const { searchThreads: defaultSearchThreads } = require("./lib/session-search");
 const {
 	createAbortControllerFromRequest: defaultCreateAbortControllerFromRequest,
 } = require("./lib/http-request-abort");
@@ -52,9 +31,6 @@ const {
 const {
 	loadRovoConfigBuilders: defaultLoadRovoConfigBuilders,
 } = require("./lib/rovo-config-loader");
-const {
-	ensureWikiJobs: defaultEnsureWikiJobs,
-} = require("./lib/wiki-clipper");
 const {
 	createChatSdkServerComposition: defaultCreateChatSdkServerComposition,
 } = require("./chat/chat-sdk-server-composition");
@@ -130,9 +106,6 @@ const {
 	normalizeAIGatewayError: defaultNormalizeAIGatewayError,
 } = require("./chat/error-response");
 const {
-	createHermesUnavailableResponseSender: defaultCreateHermesUnavailableResponseSender,
-} = require("./lib/hermes-error-response");
-const {
 	createStageTrace: defaultCreateStageTrace,
 	createStageTraceFromRequestResolver: defaultCreateStageTraceFromRequestResolver,
 } = require("./lib/stage-trace");
@@ -156,9 +129,6 @@ function createBackendRuntimeComposition({
 	projectRoot = path.join(backendDir, ".."),
 } = {}, implementations = {}) {
 	const {
-		archiveHermesSkill = defaultArchiveHermesSkill,
-		areHermesCompanionsEnabled = defaultAreHermesCompanionsEnabled,
-		areHermesJobsEnabled = defaultAreHermesJobsEnabled,
 		browserWorkspaceManager = defaultBrowserWorkspaceManager,
 		buildBackendAppDependencies = defaultBuildBackendAppDependencies,
 		buildLlmRoutingStatus = defaultBuildLlmRoutingStatus,
@@ -175,8 +145,6 @@ function createBackendRuntimeComposition({
 		createChatRuntimeComposition = defaultCreateChatRuntimeComposition,
 		createChatSdkServerComposition = defaultCreateChatSdkServerComposition,
 		createGatewayErrorResponseSender = defaultCreateGatewayErrorResponseSender,
-		createHermesSkillFromBundle = defaultCreateHermesSkillFromBundle,
-		createHermesUnavailableResponseSender = defaultCreateHermesUnavailableResponseSender,
 		createListeningPidReader = defaultCreateListeningPidReader,
 		createPreferredBackendResolver = defaultCreatePreferredBackendResolver,
 		createRovoPool = defaultCreateRovoPool,
@@ -184,22 +152,17 @@ function createBackendRuntimeComposition({
 		createRovoUnavailableError = defaultCreateRovoUnavailableError,
 		createStageTrace = defaultCreateStageTrace,
 		createStageTraceFromRequestResolver = defaultCreateStageTraceFromRequestResolver,
-		createWikiRouteHandlerComposition = defaultCreateWikiRouteHandlerComposition,
 		deleteRovoAppThreadBrowserWorkspace = defaultDeleteRovoAppThreadBrowserWorkspace,
 		describeChatBackend = defaultDescribeChatBackend,
 		destroyMirrorBrowser = defaultDestroyMirrorBrowser,
 		ensureRovoAppThreadBrowserWorkspace = defaultEnsureRovoAppThreadBrowserWorkspace,
 		ensureRovoSession = defaultEnsureRovoSession,
-		ensureWikiJobs = defaultEnsureWikiJobs,
 		executeRovoTask = defaultExecuteRovoTask,
 		generateTextViaRovo = defaultGenerateTextViaRovo,
 		getAgentMode = defaultGetAgentMode,
 		getAiGatewayConfigReport = defaultGetAIGatewayConfigReport,
 		getCurrentRovoSession = defaultGetCurrentRovoSession,
 		getEnvVars = defaultGetEnvVars,
-		getHermesRuntimeStatus = defaultGetHermesRuntimeStatus,
-		getHermesSkill = defaultGetHermesSkill,
-		getHermesSkillBundle = defaultGetHermesSkillBundle,
 		getMirrorBrowser = defaultGetMirrorBrowser,
 		getRealtimeConfig = defaultGetRealtimeConfig,
 		getRovoAppThreadBrowserWorkspace = defaultGetRovoAppThreadBrowserWorkspace,
@@ -208,10 +171,8 @@ function createBackendRuntimeComposition({
 		initPool = defaultInitPool,
 		isBrowserWorkspaceNotFoundError = defaultIsBrowserWorkspaceNotFoundError,
 		isChatInProgressError = defaultIsChatInProgressError,
-		listHermesSkills = defaultListHermesSkills,
 		loadRovoConfigBuilders = defaultLoadRovoConfigBuilders,
 		normalizeAIGatewayError = defaultNormalizeAIGatewayError,
-		parseOptionalBoolean = defaultParseOptionalBoolean,
 		replayViaRovo = defaultReplayViaRovo,
 		resolveRovoPorts = defaultResolveRovoPorts,
 		rovoCancelChat = defaultRovoCancelChat,
@@ -221,14 +182,10 @@ function createBackendRuntimeComposition({
 		searchThreads = defaultSearchThreads,
 		setAgentMode = defaultSetAgentMode,
 		streamViaRovo = defaultStreamViaRovo,
-		syncHermesJobResultsToRovoThreads = defaultSyncHermesJobResultsToRovoThreads,
-		toggleHermesSkill = defaultToggleHermesSkill,
-		updateHermesSkillFromBundle = defaultUpdateHermesSkillFromBundle,
 		waitForTurnTimeoutMs = DEFAULT_WAIT_FOR_TURN_TIMEOUT_MS,
 	} = implementations;
 	const debugMode = env.DEBUG === "true";
 	const debugLog = createDebugLogger({ debugMode, logger });
-	const wikiRouteHandlers = createWikiRouteHandlerComposition({ logger });
 	const {
 		clearActiveDeferredToolCall,
 		detachPausedRovoToolCall,
@@ -261,7 +218,6 @@ function createBackendRuntimeComposition({
 	const sendGatewayErrorResponse = createGatewayErrorResponseSender({
 		isChatInProgressError,
 	});
-	const sendHermesUnavailableResponse = createHermesUnavailableResponseSender();
 	const activeRequests = new Map();
 	const getListeningPidsForPort = createListeningPidReader();
 	const resolvePreferredBackend = createPreferredBackendResolver({
@@ -285,9 +241,7 @@ function createBackendRuntimeComposition({
 	const {
 		agentsRfpDemoJobOwner,
 		gatewayTextGeneration,
-		hermesJobLinks,
 		services: backendServices,
-		syncThreadPendingSkillDraftIds,
 	} = createBackendServiceComposition({
 		baseDir: path.join(backendDir, "data"),
 		createRovoUnavailableError,
@@ -301,7 +255,6 @@ function createBackendRuntimeComposition({
 		projectRoot,
 		resolvePreferredBackend,
 		streamViaRovo,
-		syncHermesJobResultsToRovoThreads,
 		waitForTurnTimeoutMs,
 	});
 	const {
@@ -314,8 +267,6 @@ function createBackendRuntimeComposition({
 	const {
 		agentsRfpDemoStateManager,
 		aiGatewayProvider,
-		hermesJobsProvider,
-		hermesSkillDraftManager,
 		rovoAppDocumentManager,
 		rovoAppGeneratedFilesManager,
 		rovoAppRunManager,
@@ -332,8 +283,8 @@ function createBackendRuntimeComposition({
 		_pausedRovoToolCallStore,
 		activeRequests,
 		agentsRfpDemoStateManager,
+		updateAgentsRfpDemoState: agentsRfpDemoJobOwner.updateAgentsRfpDemoState,
 		aiGatewayProvider,
-		areHermesCompanionsEnabled,
 		buildAIGatewaySystemPrompt,
 		buildUserMessage,
 		clearActiveDeferredToolCall,
@@ -348,9 +299,7 @@ function createBackendRuntimeComposition({
 		getCurrentRovoSession,
 		getListeningPidsForPort,
 		hasGatewayUrlConfigured,
-		hermesSkillDraftManager,
 		isRovoAvailable,
-		listHermesSkills,
 		logger,
 		mapUiMessagesToConversation,
 		requestUserInputQuestionMetaStore: _requestUserInputQuestionMetaStore,
@@ -412,7 +361,6 @@ function createBackendRuntimeComposition({
 			createRovoUnavailableError,
 			detachPausedRovoToolCall,
 			sendGatewayErrorResponse,
-			sendHermesUnavailableResponse,
 			streamChatViaRovo: streamViaRovo,
 			waitForReady: waitForPortReady,
 		},
@@ -421,20 +369,6 @@ function createBackendRuntimeComposition({
 		},
 		collectUploadIdsFromMessages: collectRovoAppUploadIdsFromMessages,
 		gatewayTextGeneration,
-		hermes: {
-			archiveHermesSkill,
-			createHermesSkillFromBundle,
-			getHermesRuntimeStatus,
-			getHermesSkill,
-			getHermesSkillBundle,
-			listHermesSkills,
-			parseOptionalBoolean,
-			syncHermesJobResultsToRovoThreads,
-			syncThreadPendingSkillDraftIds,
-			toggleHermesSkill,
-			updateHermesSkillFromBundle,
-		},
-		hermesJobLinks,
 		rovoAppRuntime,
 		runtime: {
 			buildLlmRoutingStatus,
@@ -449,7 +383,6 @@ function createBackendRuntimeComposition({
 			runtimePort: port,
 		},
 		searchThreads,
-		wikiRouteHandlers,
 	}));
 
 	return {
@@ -457,19 +390,15 @@ function createBackendRuntimeComposition({
 		app,
 		backendServices,
 		debugMode,
-		hermesJobsProvider,
 		port,
 		serverReadyDependencies: {
-			areHermesJobsEnabled,
 			buildLlmRoutingStatus,
 			debugMode,
 			describeChatBackend,
-			ensureWikiJobs,
 			getEnvVars,
 			getRealtimeConfig,
 			getRovoPool,
 			hasGatewayUrlConfigured,
-			hermesJobsProvider,
 			interactiveChatForcePortRecoveryMaxAttempts,
 			interactiveChatForcePortRecoveryTimeoutMs,
 			logger,
@@ -477,7 +406,6 @@ function createBackendRuntimeComposition({
 			refreshRovoAvailability,
 		},
 		shutdownRuntime: () => {
-			hermesJobsProvider.stopJobTicker?.();
 			shutdownRovoPool();
 		},
 		webSocketRelayDependencies: {

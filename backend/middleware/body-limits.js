@@ -15,10 +15,6 @@ const ROUTE_JSON_BODY_LIMITS = [
 		paths: "/api/rovo/files/upload",
 		limit: "12mb",
 	},
-	{
-		paths: "/api/skills/hub/install",
-		limit: "5mb",
-	},
 ];
 
 const FALLBACK_BODY_LIMIT = "50mb";

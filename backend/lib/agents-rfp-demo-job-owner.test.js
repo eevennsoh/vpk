@@ -2,16 +2,10 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
-	buildAgentsRfpDemoJobLinkMetadata,
+	buildAgentsRfpDemoJob,
 	createAgentsRfpDemoJobOwner,
-	isAgentsRfpDemoJobMetadata,
 } = require("./agents-rfp-demo-job-owner");
 
-function createEnoentError(message = "missing") {
-	const error = new Error(message);
-	error.code = "ENOENT";
-	return error;
-}
 
 function createThreadRecord(id = "thread-1") {
 	return {
@@ -30,19 +24,13 @@ function createThreadRecord(id = "thread-1") {
 function createHarness({
 	advanceRfpDraftingAgentProcessing,
 	collectRovoAppUploadIdsFromMessages,
-	deleteHermesJob,
 	generateWorkItemVpkHtmlReport,
-	listMergedJobs = [],
-	links = [],
-	mergedJobs = [],
 	runRfpDraftingAgent,
 	state = { agent: null },
 	threads = [],
 } = {}) {
 	const calls = [];
 	let currentState = state;
-	const linkRecords = new Map(links);
-	const mergedJobRecords = new Map(mergedJobs);
 	const threadRecords = new Map(threads);
 
 	const owner = createAgentsRfpDemoJobOwner({
@@ -56,6 +44,7 @@ function createHarness({
 				calls.push(["readState"]);
 				return currentState;
 			},
+			resetState: async () => { currentState = { agent: null }; return currentState; },
 			writeState: async (nextState) => {
 				calls.push(["writeState", nextState]);
 				currentState = nextState;
@@ -76,55 +65,6 @@ function createHarness({
 			calls.push(["generateHtmlReport", input]);
 			return { html: "<main>Report</main>", skill: "vpk-html" };
 		}),
-		getMergedHermesJob: async (jobId) => {
-			calls.push(["getMergedHermesJob", jobId]);
-			const record = mergedJobRecords.get(jobId);
-			if (record instanceof Error) {
-				throw record;
-			}
-			if (!record) {
-				throw createEnoentError();
-			}
-			return record;
-		},
-		hermesJobLinkManager: {
-			getLink: async (jobId) => {
-				calls.push(["getLink", jobId]);
-				return linkRecords.get(jobId) ?? null;
-			},
-			removeLink: async (jobId) => {
-				calls.push(["removeLink", jobId]);
-				linkRecords.delete(jobId);
-			},
-		},
-		hermesJobsProvider: {
-			createHermesJob: async (input) => {
-				calls.push(["createHermesJob", input]);
-				const job = { id: "job-created", ...input };
-				mergedJobRecords.set(job.id, job);
-				return job;
-			},
-			deleteHermesJob: deleteHermesJob ?? (async (jobId) => {
-				calls.push(["deleteHermesJob", jobId]);
-			}),
-			runHermesJob: async (jobId, source, context) => {
-				calls.push(["runHermesJob", jobId, source, context]);
-			},
-		},
-		listMergedHermesJobs: async () => {
-			calls.push(["listMergedHermesJobs"]);
-			return listMergedJobs;
-		},
-		persistHermesJobLink: async (jobId, rawInput, metadata = {}, options = {}) => {
-			calls.push(["persistHermesJobLink", jobId, rawInput, metadata, options]);
-			const nextLink = {
-				...(options.mergeExisting ? linkRecords.get(jobId) ?? {} : {}),
-				...(rawInput ?? {}),
-				...(metadata ?? {}),
-			};
-			linkRecords.set(jobId, nextLink);
-			return nextLink;
-		},
 		rovoAppDocumentManager: {
 			deleteDocumentsByThread: async (threadId) => {
 				calls.push(["deleteDocuments", threadId]);
@@ -184,162 +124,10 @@ function createHarness({
 		get state() {
 			return currentState;
 		},
-		linkRecords,
 		owner,
 		threadRecords,
 	};
 }
-
-test("RFP demo job metadata matches only the configured surface and trigger", () => {
-	const metadata = buildAgentsRfpDemoJobLinkMetadata({
-		runHistory: [{ id: "run-1" }],
-	});
-
-	assert.equal(isAgentsRfpDemoJobMetadata(metadata), true);
-	assert.equal(metadata.postResultToThread, false);
-	assert.equal(metadata.threadStrategy, "new-per-run");
-	assert.deepEqual(metadata.runHistory, [{ id: "run-1" }]);
-	assert.equal(isAgentsRfpDemoJobMetadata({
-		...metadata,
-		trigger: { ...metadata.trigger, column: "Review" },
-	}), false);
-	assert.equal(isAgentsRfpDemoJobMetadata({
-		...metadata,
-		surface: "studio",
-	}), false);
-});
-
-test("ensureAgentsRfpDemoHermesJob prefers the valid state job", async () => {
-	const metadata = buildAgentsRfpDemoJobLinkMetadata();
-	const { calls, owner } = createHarness({
-		mergedJobs: [["job-state", { id: "job-state", ...metadata }]],
-		state: { agent: { jobId: " job-state " } },
-	});
-
-	assert.deepEqual(await owner.ensureAgentsRfpDemoHermesJob(), { id: "job-state", ...metadata });
-	assert.deepEqual(calls.map((call) => call[0]), ["readState", "getMergedHermesJob"]);
-});
-
-test("ensureAgentsRfpDemoHermesJob reuses existing demo jobs and creates one when absent", async () => {
-	const metadata = buildAgentsRfpDemoJobLinkMetadata({ runHistory: [{ id: "run-existing" }] });
-	const reusableHarness = createHarness({
-		listMergedJobs: [{ id: "job-existing", ...metadata }],
-		mergedJobs: [
-			["job-state", createEnoentError()],
-			["job-existing", { id: "job-existing", ...metadata, reused: true }],
-		],
-		state: { agent: { jobId: "job-state" } },
-	});
-
-	assert.deepEqual(await reusableHarness.owner.ensureAgentsRfpDemoHermesJob(), {
-		id: "job-existing",
-		...metadata,
-		reused: true,
-	});
-	assert.equal(reusableHarness.calls.some((call) => (
-		call[0] === "persistHermesJobLink" &&
-		call[1] === "job-existing" &&
-		call[2].runHistory?.[0]?.id === "run-existing" &&
-		call[4].mergeExisting === true
-	)), true);
-
-	const createdHarness = createHarness({
-		listMergedJobs: [],
-		state: { agent: null },
-	});
-	const createdJob = await createdHarness.owner.ensureAgentsRfpDemoHermesJob();
-
-	assert.equal(createdJob.id, "job-created");
-	assert.equal(createdJob.name, "RFP Drafter - Enterprise RFP Response");
-	assert.equal(createdJob.surface, "agents-rfp-demo");
-	assert.deepEqual(
-		createdHarness.calls.find((call) => call[0] === "createHermesJob")?.[1].skills,
-		["vpk-html"],
-	);
-});
-
-test("advanceAgentsRfpDemoProcessing persists changed state, threads, and job run history", async () => {
-	const resultState = {
-		agent: {
-			jobId: "job-1",
-			jobRunSummaries: [{ id: "run-next" }],
-		},
-	};
-	const harness = createHarness({
-		advanceRfpDraftingAgentProcessing: async (currentState, { createHtmlReport }) => {
-			const report = await createHtmlReport({
-				contextDescription: "RFP context",
-				fields: { key: "RFP-1" },
-			});
-			harness.calls.push(["createdReport", report]);
-			return {
-				changed: true,
-				state: resultState,
-				threadRecords: [createThreadRecord("thread-new")],
-			};
-		},
-		links: [["job-1", buildAgentsRfpDemoJobLinkMetadata({ runHistory: [{ id: "run-old" }] })]],
-		state: { agent: { jobId: "job-1" } },
-	});
-
-	assert.deepEqual(await harness.owner.advanceAgentsRfpDemoProcessing(), resultState);
-	assert.equal(harness.threadRecords.has("thread-new"), true);
-	assert.deepEqual(harness.calls.find((call) => call[0] === "createdReport")?.[1], {
-		html: "<main>Report</main>",
-		skill: "vpk-html",
-	});
-	const persistedLink = harness.calls.findLast((call) => call[0] === "persistHermesJobLink");
-	assert.equal(persistedLink[1], "job-1");
-	assert.deepEqual(persistedLink[2].runHistory, [{ id: "run-next" }]);
-	assert.deepEqual(persistedLink[4], { mergeExisting: true });
-});
-
-test("executeAgentsRfpDemoHermesJob ignores non-demo links and persists demo run results", async () => {
-	const threadRecord = createThreadRecord("thread-run");
-	const harness = createHarness({
-		links: [["job-1", { surface: "jobs" }]],
-		runRfpDraftingAgent: (currentState, input) => {
-			harness.calls.push(["runRfpDraftingAgent", currentState, input]);
-			return {
-				runSummary: { id: "run-next", summary: "processed RFP-1." },
-				state: { agent: { jobId: "job-1" } },
-				threadRecords: [threadRecord],
-			};
-		},
-		state: { agent: { jobId: "job-1" } },
-	});
-
-	assert.equal(await harness.owner.executeAgentsRfpDemoHermesJob({
-		context: { ticketCodes: ["RFP-1"] },
-		job: { id: "job-1" },
-		source: "manual",
-	}), null);
-	assert.equal(harness.calls.some((call) => call[0] === "runRfpDraftingAgent"), false);
-
-	harness.linkRecords.set("job-1", buildAgentsRfpDemoJobLinkMetadata({
-		runHistory: [{ id: "run-old" }, { id: "run-next" }],
-	}));
-	const result = await harness.owner.executeAgentsRfpDemoHermesJob({
-		context: { runId: " run-explicit ", ticketCodes: ["RFP-1", "", 42] },
-		job: { id: "job-1" },
-		source: " jira-column-entered ",
-	});
-
-	assert.deepEqual(result, {
-		ok: true,
-		text: "RFP Drafter processed RFP-1.",
-	});
-	assert.deepEqual(harness.calls.find((call) => call[0] === "runRfpDraftingAgent")?.[2], {
-		jobId: "job-1",
-		runId: "run-explicit",
-		source: "jira-column-entered",
-		ticketCodes: ["RFP-1"],
-	});
-	const persistedLink = harness.linkRecords.get("job-1");
-	assert.deepEqual(persistedLink.runHistory.map((run) => run.id), ["run-next", "run-old"]);
-	assert.deepEqual(harness.state, { agent: { jobId: "job-1" } });
-	assert.equal(harness.threadRecords.has("thread-run"), true);
-});
 
 test("deleteAgentsRfpDemoThread cleans existing thread resources before deleting the thread", async () => {
 	const thread = {
@@ -390,41 +178,120 @@ test("deleteAgentsRfpDemoThread skips browser cleanup for missing threads", asyn
 	]);
 });
 
-test("deleteAgentsRfpDemoHermesJobs removes state and demo jobs with ENOENT tolerance", async () => {
-	const deleteOrder = [];
+
+
+test("RFP job view is derived only from domain state and retains display name", () => {
+	assert.equal(buildAgentsRfpDemoJob({ agent: null }), null);
+	const job = buildAgentsRfpDemoJob({ agent: { jobId: "agents-rfp-demo", jobRunSummaries: [{ id: "r1", status: "failed", summary: "failed" }] } });
+	assert.equal(job.id, "agents-rfp-demo");
+	assert.equal(job.name, "RFP Drafter - Enterprise RFP Response");
+	assert.equal(job.lastError, "failed");
+	assert.deepEqual(job.runHistory.map((run) => run.id), ["r1"]);
+});
+
+function stateRun(current, options) {
+	const summary = { id: options.runId ?? `run-${(current.agent?.jobRunSummaries?.length ?? 0) + 1}`, status: "completed" };
+	return {
+		state: { ...current, agent: { jobId: options.jobId, jobRunSummaries: [summary, ...(current.agent?.jobRunSummaries ?? [])] } },
+		threadRecords: [],
+		runSummary: summary,
+	};
+}
+
+test("manual RFP runs persist stable identity, cap history and ignore duplicate run IDs", async () => {
+	let runs = 0;
+	const harness = createHarness({ runRfpDraftingAgent: (current, options) => { runs += 1; return stateRun(current, options); } });
+	for (let i = 0; i < 12; i += 1) await harness.owner.runAgentsRfpDemoJob({ runId: `run-${i}` });
+	const result = await harness.owner.runAgentsRfpDemoJob({ runId: "run-11" });
+	assert.equal(runs, 12);
+	assert.equal(result.job.id, "agents-rfp-demo");
+	assert.equal(result.state.agent.jobId, "agents-rfp-demo");
+	assert.equal(result.state.agent.jobRunSummaries.length, 10);
+	assert.equal(result.job.runHistory[0].id, "run-11");
+});
+
+test("run, polling advance and reset execute in one queue without stale state restoration", async () => {
+	let release;
+	const blocked = new Promise((resolve) => { release = resolve; });
+	const order = [];
+	let notifyAdvance;
+	const advanceStarted = new Promise((resolve) => { notifyAdvance = resolve; });
 	const harness = createHarness({
-		deleteHermesJob: async (jobId) => {
-			harness.calls.push(["deleteHermesJob", jobId]);
-			deleteOrder.push(["delete", jobId]);
-			if (jobId === "job-state") {
-				throw createEnoentError();
-			}
+		runRfpDraftingAgent: (current, options) => { order.push("run"); return stateRun(current, options); },
+		advanceRfpDraftingAgentProcessing: async (current) => { order.push("advance-start"); notifyAdvance(); await blocked; order.push("advance-end"); return { changed: true, state: current, threadRecords: [] }; },
+	});
+	const run = harness.owner.runAgentsRfpDemoJob({ runId: "queued-run" });
+	const advance = harness.owner.advanceAgentsRfpDemoProcessing();
+	const reset = harness.owner.resetAgentsRfpDemo();
+	await run;
+	await advanceStarted;
+	assert.deepEqual(order, ["run", "advance-start"]);
+	release();
+	await Promise.all([advance, reset]);
+	assert.deepEqual(harness.state, { agent: null });
+	assert.deepEqual(order, ["run", "advance-start", "advance-end"]);
+});
+
+test("a failed mutation rejects its caller and does not poison later runs", async () => {
+	let fail = true;
+	const harness = createHarness({ runRfpDraftingAgent: (current, options) => { if (fail) { fail = false; throw new Error("failed run"); } return stateRun(current, options); } });
+	await assert.rejects(harness.owner.runAgentsRfpDemoJob({ runId: "retry" }), /failed run/u);
+	assert.equal(harness.state.agent, null);
+	const result = await harness.owner.runAgentsRfpDemoJob({ runId: "retry" });
+	assert.equal(result.job.runHistory[0].id, "retry");
+});
+
+test("advance persists result threads, history and report generation", async () => {
+	const thread = createThreadRecord();
+	const harness = createHarness({
+		state: { agent: { jobId: "agents-rfp-demo", jobRunSummaries: [{ id: "r1", status: "running" }] } },
+		advanceRfpDraftingAgentProcessing: async (current, { createHtmlReport }) => {
+			const report = await createHtmlReport({ contextDescription: "Work item", fields: { title: "RFP" } });
+			assert.equal(report.html, "<main>Report</main>");
+			return { changed: true, state: { ...current, agent: { ...current.agent, jobRunSummaries: [{ id: "r1", status: "completed" }] } }, threadRecords: [thread] };
 		},
-		listMergedJobs: [
-			{ id: "job-demo", ...buildAgentsRfpDemoJobLinkMetadata() },
-			{ id: "job-other", surface: "jobs" },
-		],
 	});
+	const state = await harness.owner.advanceAgentsRfpDemoProcessing();
+	assert.equal(state.agent.jobRunSummaries[0].status, "completed");
+	assert.equal(harness.threadRecords.get("thread-1").title, thread.title);
+	const reportCall = harness.calls.find(([name]) => name === "generateHtmlReport")[1];
+	assert.deepEqual(JSON.parse(await reportCall.generateText()), { title: "RFP" });
+	assert.equal(reportCall.runSkillValidation, false);
+});
 
-	await harness.owner.deleteAgentsRfpDemoHermesJobs({
-		agent: { jobId: "job-state" },
+test("chat state updater waits for advance and reset, then applies to the fresh reset state", async () => {
+	let releaseAdvance;
+	let notifyAdvance;
+	const advanceStarted = new Promise((resolve) => { notifyAdvance = resolve; });
+	const advanceBlocked = new Promise((resolve) => { releaseAdvance = resolve; });
+	const harness = createHarness({
+		state: { agent: { jobId: "agents-rfp-demo", jobRunSummaries: [] }, stale: true },
+		advanceRfpDraftingAgentProcessing: async (state) => {
+			notifyAdvance();
+			await advanceBlocked;
+			return { changed: true, state: { ...state, advanced: true }, threadRecords: [] };
+		},
 	});
+	const advance = harness.owner.advanceAgentsRfpDemoProcessing();
+	await advanceStarted;
+	const reset = harness.owner.resetAgentsRfpDemo();
+	let updaterInput;
+	const update = harness.owner.updateAgentsRfpDemoState(async (state) => {
+		updaterInput = state;
+		return { ...state, qualificationAnswer: "yes" };
+	});
+	assert.equal(updaterInput, undefined);
+	releaseAdvance();
+	await Promise.all([advance, reset]);
+	const updated = await update;
+	assert.deepEqual(updaterInput, { agent: null });
+	assert.deepEqual(updated, { agent: null, qualificationAnswer: "yes" });
+	assert.deepEqual(harness.state, updated);
+});
 
-	assert.deepEqual(harness.calls.filter((call) => call[0] === "deleteHermesJob").map((call) => call[1]).sort(), [
-		"job-demo",
-		"job-state",
-	]);
-	assert.deepEqual(harness.calls.filter((call) => call[0] === "removeLink").map((call) => call[1]).sort(), [
-		"job-demo",
-		"job-state",
-	]);
-	for (const jobId of ["job-state", "job-demo"]) {
-		const deleteIndex = harness.calls.findIndex((call) => call[0] === "deleteHermesJob" && call[1] === jobId);
-		const removeIndex = harness.calls.findIndex((call) => call[0] === "removeLink" && call[1] === jobId);
-		assert.equal(deleteIndex < removeIndex, true, `${jobId} removes its link after delete`);
-	}
-	assert.deepEqual(deleteOrder, [
-		["delete", "job-state"],
-		["delete", "job-demo"],
-	]);
+test("invalid chat updater fails without blocking subsequent mutations", async () => {
+	const harness = createHarness();
+	await assert.rejects(harness.owner.updateAgentsRfpDemoState(null), /updater function/u);
+	const state = await harness.owner.updateAgentsRfpDemoState((current) => ({ ...current, answer: "ok" }));
+	assert.equal(state.answer, "ok");
 });

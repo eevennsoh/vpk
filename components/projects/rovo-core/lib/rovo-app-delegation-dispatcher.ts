@@ -21,7 +21,6 @@ import { API_ENDPOINTS } from "@/lib/api-config";
 import type {
 	RovoAppActiveRun,
 	RovoAppDocument,
-	RovoAppHermesContext,
 	RovoAppRunStatus,
 	RovoAppVisibility,
 } from "@/lib/rovo-app-types";
@@ -57,7 +56,6 @@ type StateSetter<T> = (value: T | ((currentValue: T) => T)) => void;
 
 export interface RovoAppDelegationDispatchOptions {
 	contextDescription?: string;
-	hermesContext?: RovoAppHermesContext;
 	conversationSummary?: string;
 	existingRealtimeMessageId?: string | null;
 	intentType?: string;
@@ -212,7 +210,6 @@ export async function dispatchRovoAppDelegationNow({
 					} satisfies RovoAppArtifactSteeringPayload)
 					: undefined,
 				contextDescription: options?.contextDescription,
-				hermesContext: options?.hermesContext,
 				conversationSummary: options?.conversationSummary,
 				delegatedMessageId: messageId,
 				smartGeneration: smartGenerationRequest,
