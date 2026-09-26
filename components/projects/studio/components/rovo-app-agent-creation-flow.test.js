@@ -338,11 +338,6 @@ test("RovoAppShell settings reset clears Studio state and restores the fresh RFP
 	assert.doesNotMatch(ROVO_CONTEXT_SOURCE, /adoptThreadMessages/u);
 });
 
-test("RovoAppShell does not render the Hermes turn-state card", () => {
-	assert.doesNotMatch(SHELL_SOURCE, /Hermes turn state/u);
-	assert.doesNotMatch(SHELL_SOURCE, /Server-resolved skills and Hermes draft-review state/u);
-	assert.doesNotMatch(SHELL_SOURCE, /Auto-loaded on the last turn/u);
-});
 
 test("Studio landing empty state is title-only by default", () => {
 	assert.match(MESSAGES_SOURCE, /const STUDIO_EMPTY_STATE = \{/u);
@@ -479,7 +474,7 @@ test("Studio composer clears shell-owned prefill sources only after submit succe
 	);
 	assert.match(
 		SHELL_SOURCE,
-		/await realtimeChat\.submitRealtimeText\(\{[\s\S]*?\}\);\s*if \(shouldClearHermesSkillSelection\) \{[\s\S]*?\}\s*clearPrefillSources\(\);/u,
+		/await realtimeChat\.submitRealtimeText\(\{[\s\S]*?\}\);\s*clearPrefillSources\(\);/u,
 	);
 	assert.match(
 		SHELL_SOURCE,
@@ -487,11 +482,11 @@ test("Studio composer clears shell-owned prefill sources only after submit succe
 	);
 	assert.match(
 		SHELL_SOURCE,
-		/if \(shouldClearHermesSkillSelection\) \{[\s\S]*?clearHermesSkillSelection\(\);[\s\S]*?\}\s*clearPrefillSources\(\);\s*return;/u,
+		/clearPrefillSources\(\);\s*return;/u,
 	);
 	assert.match(
 		SHELL_SOURCE,
-		/await submitPrompt\(\{[\s\S]*?\}\);\s*if \(shouldClearHermesSkillSelection\) \{[\s\S]*?\}\s*clearPrefillSources\(\);/u,
+		/await submitPrompt\(\{[\s\S]*?\}\);\s*clearPrefillSources\(\);/u,
 	);
 	assert.match(SHELL_SOURCE, /clearPrefillSources,/u);
 });

@@ -221,7 +221,6 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/studio/lib/studio-realtime-context.test.js",
 		"components/projects/studio/lib/studio-template-prompts.test.js",
 		"components/projects/studio/hooks/use-studio-agent-result-registration.test.js",
-		"components/projects/control-plane/lib/memory-artifact-selection.test.ts",
 		"components/blocks/triggers/components/agent-automation-flow-cover.test.js",
 		"components/blocks/html-selector/lib/core-utils.test.js",
 		"components/blocks/html-selector/lib/prompt-composer.test.js",
@@ -283,6 +282,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-verify/scripts/verify-feature-map.test.js",
 	],
 	"source-contract": [
+		"components/website/registry/blocks-variants.test.js",
+		"components/blocks/top-navigation/top-navigation-chat-state.test.js",
 		"components/blocks/agent-insights/agent-insights.test.js",
 		"components/visual/scroll-mask/lib.test.ts",
 		"components/visual/card-glow/card-glow.test.js",

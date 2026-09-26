@@ -6,8 +6,6 @@ const AI_COST_RATE_LIMIT_PATHS = [
 	"/api/sound-generation",
 	"/api/speech-transcription",
 	"/api/rovo/files/upload",
-	"/api/skills/hub/install",
-	"/api/skills/hub/install-by-id",
 ];
 
 const AI_COST_RATE_LIMIT_MAX = 60;

@@ -82,10 +82,6 @@ test("body limit route table preserves exact scoped parser limits", () => {
 			paths: "/api/rovo/files/upload",
 			limit: "12mb",
 		},
-		{
-			paths: "/api/skills/hub/install",
-			limit: "5mb",
-		},
 	]);
 	assert.equal(FALLBACK_BODY_LIMIT, "50mb");
 });
@@ -96,18 +92,17 @@ test("registerBodyLimitMiddleware mounts scoped parsers before fallback parsers"
 
 	registerBodyLimitMiddleware(app, { expressImpl });
 
-	assert.deepEqual(app.uses.slice(0, 4), [
+	assert.deepEqual(app.uses.slice(0, 3), [
 		[["/api/chat-sdk", "/api/rovo/suggestions"], { parser: "json", options: { limit: "8mb" } }],
 		[["/api/sound-generation", "/api/speech-transcription"], { parser: "json", options: { limit: "12mb" } }],
 		["/api/rovo/files/upload", { parser: "json", options: { limit: "12mb" } }],
-		["/api/skills/hub/install", { parser: "json", options: { limit: "5mb" } }],
 	]);
-	assert.deepEqual(app.uses.slice(4, 7), [
+	assert.deepEqual(app.uses.slice(3, 6), [
 		[{ parser: "json", options: { limit: "50mb" } }],
 		[{ parser: "text", options: { limit: "50mb", type: "text/markdown" } }],
 		[{ parser: "urlencoded", options: { limit: "50mb", extended: true } }],
 	]);
-	assert.equal(typeof app.uses[7][0], "function");
+	assert.equal(typeof app.uses[6][0], "function");
 });
 
 test("registerBodyLimitMiddleware validates app and parser dependencies", () => {

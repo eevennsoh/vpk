@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
 import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
@@ -20,7 +20,6 @@ import {
 	getAgentReferenceKey,
 	hasAgentReferenceValue,
 	mapConfigValuesToMentionItems,
-	mapMemoryToKnowledgeItems,
 	mapSubagentConfigValuesToMentionItems,
 	mergeMentionItems,
 } from "@/components/blocks/agent/lib/agent-reference-mapping";
@@ -35,7 +34,6 @@ import {
 	isRichTextReferenceCategory,
 } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
-import type { WikiMemoryExplorerResponse } from "@/lib/rovo-runtime-types";
 import { useLazyRef } from "@/lib/use-lazy-ref";
 import { cn } from "@/lib/utils";
 
@@ -94,7 +92,6 @@ export function AgentInstructionsComposer({
 	showSectionLabel = true,
 	toolbarBelowSlot,
 }: Readonly<AgentInstructionsComposerProps>) {
-	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
 	const [templatesOpen, setTemplatesOpen] = useState(false);
 	const inlineManagedReferenceKeysRef = useLazyRef(() => new Set<string>());
 	const mentionInventoryCountsRef = useLazyRef(() => new Map<string, {
@@ -121,9 +118,8 @@ export function AgentInstructionsComposer({
 		knowledge: mergeMentionItems(
 			mapConfigValuesToMentionItems("knowledge", config.knowledge),
 			EDITOR_PALETTE_MENTION_SOURCES.knowledge,
-			knowledge,
 		),
-	}), [config.knowledge, config.skills, config.subagents, config.tools, knowledge]);
+	}), [config.knowledge, config.skills, config.subagents, config.tools]);
 	const handleInsertReferenceOption = useCallback((category: RichTextReferenceCategory, label: string): false => {
 		const field = AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY[category];
 		const key = getAgentReferenceKey(field, label);
@@ -190,27 +186,7 @@ export function AgentInstructionsComposer({
 		mentionInventoryCountsRef.current = nextCounts;
 	}, [config, inlineManagedReferenceKeysRef, mentionInventoryCountsRef, onAddListValues, onRemoveReferenceValue]);
 
-	useEffect(() => {
-		const abortController = new AbortController();
 
-		async function loadMentionSources(): Promise<void> {
-			try {
-				const knowledgeResponse = await fetch("/api/wiki/memory-explorer", { signal: abortController.signal });
-				if (knowledgeResponse.ok) {
-					const payload = await knowledgeResponse.json() as WikiMemoryExplorerResponse;
-					setKnowledge(mapMemoryToKnowledgeItems(payload));
-				}
-			} catch (error) {
-				if (error instanceof DOMException && error.name === "AbortError") {
-					return;
-				}
-			}
-		}
-
-		void loadMentionSources();
-
-		return () => abortController.abort();
-	}, []);
 
 	return (
 		<section

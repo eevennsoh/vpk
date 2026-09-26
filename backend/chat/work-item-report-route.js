@@ -6,7 +6,6 @@ async function handleWorkItemReportRoute({
 	latestUserMessage,
 	messages,
 	provider,
-	rawHermesContext,
 	req,
 	requestOrigin,
 	res,
@@ -15,39 +14,21 @@ async function handleWorkItemReportRoute({
 } = {}) {
 	const {
 		WORK_ITEM_REPORT_REQUEST_START,
-		buildRovoAppHermesContextDescription,
 		buildWorkItemReportRequestContext,
 		createAbortControllerFromRequest,
 		createRouteDecisionPart,
 		createRovoAppThreadId,
 		createUIMessageStream,
 		handleRovoAppArtifactToolRequest,
-		listHermesSkills,
-		mergeHermesSkillIds,
 		pipeUIMessageStreamToResponse,
 		pipeWebResponseToExpressResponse,
 		resolveWorkItemReportRequest,
 	} = handlerDependencies;
 
-	let workItemReportRequest = resolveWorkItemReportRequest({
+	const workItemReportRequest = resolveWorkItemReportRequest({
 		contextDescription,
 		promptText: latestUserMessage,
 	});
-	if (workItemReportRequest.isIntent) {
-		try {
-			const installedHermesSkills = await listHermesSkills();
-			workItemReportRequest = resolveWorkItemReportRequest({
-				contextDescription,
-				promptText: latestUserMessage,
-				skills: installedHermesSkills,
-			});
-		} catch (error) {
-			console.warn(
-				"[CHAT-SDK] Failed to resolve installed Hermes skills for Work Item report:",
-				error instanceof Error ? error.message : String(error),
-			);
-		}
-	}
 
 	if (workItemReportRequest.isIntent && !workItemReportRequest.hasContext) {
 		const stream = createUIMessageStream({
@@ -85,16 +66,6 @@ async function handleWorkItemReportRoute({
 	}
 
 	const reportThreadId = threadId || createRovoAppThreadId();
-	const requestHermesContext =
-		rawHermesContext && typeof rawHermesContext === "object"
-			? rawHermesContext
-			: null;
-	const selectedReportSkillIds = workItemReportRequest.shouldLoadSkill
-		? mergeHermesSkillIds(
-				requestHermesContext?.selectedSkillIds,
-				workItemReportRequest.skillId,
-			)
-		: requestHermesContext?.selectedSkillIds;
 	const workItemReportContextDescription =
 		workItemReportRequest.contextBlock ||
 		(contextDescription?.includes(WORK_ITEM_REPORT_REQUEST_START)
@@ -104,19 +75,7 @@ async function handleWorkItemReportRoute({
 					promptText: latestUserMessage,
 					skillId: workItemReportRequest.skillId,
 				}));
-	let reportHermesContextDescription = null;
-	try {
-		reportHermesContextDescription = await buildRovoAppHermesContextDescription({
-			selectedSkillIds: selectedReportSkillIds,
-		});
-	} catch (error) {
-		console.warn(
-			"[CHAT-SDK] Failed to build Hermes context for Work Item report:",
-			error instanceof Error ? error.message : String(error),
-		);
-	}
 	const reportContextDescription = [
-		reportHermesContextDescription,
 		contextDescription,
 		workItemReportContextDescription,
 	]

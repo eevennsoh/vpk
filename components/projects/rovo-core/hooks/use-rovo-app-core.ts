@@ -82,7 +82,6 @@ import {
 	type RovoAppRunStatus,
 	type RovoAppThread,
 	type RovoAppVisibility,
-	type RovoAppHermesContext,
 	type RovoAppPanelState,
 	type VoteValue,
 	createRovoAppId,
@@ -134,7 +133,6 @@ export interface RovoAppHookResult {
 	applyVoiceSteer: (payload: {
 		text: string;
 		contextDescription?: string;
-		hermesContext?: RovoAppHermesContext;
 	}) => Promise<void>;
 	artifactMode: ArtifactMode;
 	artifactDraftContent: string;
@@ -201,7 +199,6 @@ export interface RovoAppHookResult {
 		files: FileUIPart[];
 		contextDescription?: string;
 		creationMode?: RovoAppCreationMode;
-		hermesContext?: RovoAppHermesContext;
 	}) => Promise<void>;
 	suggestedPrompt: (text: string) => Promise<void>;
 	togglePlanMode: () => void;
@@ -238,7 +235,6 @@ export interface RovoAppHookResult {
 		options?: {
 			contextDescription?: string;
 			conversationSummary?: string;
-			hermesContext?: RovoAppHermesContext;
 			intentType?: string;
 			prompt?: string;
 			referencedFiles?: string[];

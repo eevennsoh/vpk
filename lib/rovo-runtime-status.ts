@@ -8,10 +8,6 @@ import type {
 type RuntimeSurfaceKey = keyof RuntimeStatusSnapshot["surfaces"];
 
 const SURFACE_DEFAULTS: Record<RuntimeSurfaceKey, { message: string; name: RuntimeSurfaceName }> = {
-	hermes: {
-		message: "Hermes status unavailable.",
-		name: "hermes",
-	},
 	rovo: {
 		message: "Rovo status unavailable.",
 		name: "rovo",
@@ -29,7 +25,7 @@ function isRuntimeHealth(value: unknown): value is RuntimeHealth {
 }
 
 function isRuntimeSurfaceName(value: unknown): value is RuntimeSurfaceName {
-	return value === "rovo" || value === "hermes";
+	return value === "rovo";
 }
 
 function normalizeRuntimeSurfaceStatus(
@@ -88,7 +84,6 @@ export function normalizeRuntimeStatusSnapshot(payload: unknown): RuntimeStatusS
 		? snapshot.surfaces
 		: {};
 	const surfaces: RuntimeStatusSnapshot["surfaces"] = {
-		hermes: normalizeRuntimeSurfaceStatus("hermes", surfacesPayload.hermes),
 		rovo: normalizeRuntimeSurfaceStatus("rovo", surfacesPayload.rovo),
 	};
 	const derivedStatus = deriveOverallRuntimeHealth(surfaces);

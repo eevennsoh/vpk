@@ -41,7 +41,6 @@ test("handleWorkItemReportRoute streams the missing-context response", async () 
 				streamConfig = config;
 				return { id: "stream", config };
 			},
-			listHermesSkills: async () => [{ id: "vpk-html" }],
 			pipeUIMessageStreamToResponse: (input) => {
 				pipeCalls.push(input);
 			},
@@ -60,7 +59,7 @@ test("handleWorkItemReportRoute streams the missing-context response", async () 
 	});
 
 	assert.equal(handled, true);
-	assert.equal(resolveCalls, 2);
+	assert.equal(resolveCalls, 1);
 	assert.deepEqual(pipeCalls, [
 		{ response: res, stream: { id: "stream", config: streamConfig } },
 	]);
@@ -92,7 +91,7 @@ test("handleWorkItemReportRoute dispatches Work Item artifacts through the Rovo 
 	const artifactCalls = [];
 	const cleanupCalls = [];
 	const contextCalls = [];
-	const hermesCalls = [];
+
 	const pipeCalls = [];
 	const stageMarks = [];
 	const req = {
@@ -107,10 +106,6 @@ test("handleWorkItemReportRoute dispatches Work Item artifacts through the Rovo 
 		contextDescription: "Existing context",
 		handlerDependencies: {
 			WORK_ITEM_REPORT_REQUEST_START: "[Work Item Report Request]",
-			buildRovoAppHermesContextDescription: async (input) => {
-				hermesCalls.push(input);
-				return "Hermes context";
-			},
 			buildWorkItemReportRequestContext: (input) => {
 				contextCalls.push(input);
 				return "Work Item context";
@@ -134,11 +129,6 @@ test("handleWorkItemReportRoute dispatches Work Item artifacts through the Rovo 
 					response: webResponse,
 				};
 			},
-			listHermesSkills: async () => [{ id: "vpk-html" }],
-			mergeHermesSkillIds: (existingSkillIds, skillId) => [
-				...(existingSkillIds || []),
-				skillId,
-			],
 			pipeWebResponseToExpressResponse: async (...args) => {
 				pipeCalls.push(args);
 			},
@@ -171,9 +161,6 @@ test("handleWorkItemReportRoute dispatches Work Item artifacts through the Rovo 
 	});
 
 	assert.equal(handled, true);
-	assert.deepEqual(hermesCalls, [
-		{ selectedSkillIds: ["existing-skill", "vpk-html"] },
-	]);
 	assert.deepEqual(contextCalls, [
 		{
 			contextDescription: "Existing context",
@@ -185,7 +172,7 @@ test("handleWorkItemReportRoute dispatches Work Item artifacts through the Rovo 
 	assert.equal(artifactCalls[0].artifactBackendPreference, "ai-gateway");
 	assert.equal(
 		artifactCalls[0].contextDescription,
-		"Hermes context\n\nExisting context\n\nWork Item context",
+		"Existing context\n\nWork Item context",
 	);
 	assert.equal(artifactCalls[0].requestBody.id, "thread-1");
 	assert.equal(artifactCalls[0].requestBody.futureArtifactKind, "html");
@@ -212,7 +199,6 @@ test("handleWorkItemReportRoute falls through when the artifact handler declines
 	const handled = await handleWorkItemReportRoute({
 		handlerDependencies: {
 			WORK_ITEM_REPORT_REQUEST_START: "[Work Item Report Request]",
-			buildRovoAppHermesContextDescription: async () => null,
 			buildWorkItemReportRequestContext: () => "Work Item context",
 			createAbortControllerFromRequest: () => ({
 				abortController: new AbortController(),
@@ -222,8 +208,6 @@ test("handleWorkItemReportRoute falls through when the artifact handler declines
 			}),
 			createRovoAppThreadId: () => "generated-thread",
 			handleRovoAppArtifactToolRequest: async () => ({ handled: false }),
-			listHermesSkills: async () => [],
-			mergeHermesSkillIds: () => ["vpk-html"],
 			pipeWebResponseToExpressResponse: (...args) => {
 				pipeCalls.push(args);
 			},

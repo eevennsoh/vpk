@@ -46,25 +46,6 @@ function buildBrowserContextBlock(threadId) {
 	].join("\n");
 }
 
-function buildWikiCaptureContextBlock(threadId) {
-	return [
-		"[WIKI TOOLS]",
-		"You can save durable webpage sources and reusable synthesis pages into the llm-wiki.",
-		"For normal answering, you also receive a wiki query context block before each turn whenever relevant canonical pages match the user request.",
-		"Use these wiki tools when the user wants a webpage saved, clipped, remembered, added to the wiki, or when a reusable answer should be saved back into the wiki:",
-		"- wiki_capture_url — save a specific public URL into llm-wiki/raw",
-		"- wiki_capture_active_page — save the current page from the thread-bound browser workspace",
-		"- wiki_save_synthesis — save a reusable answer as a canonical llm-wiki/wiki/synthesis page",
-		`For wiki_capture_active_page calls, pass \`thread_id: \"${threadId}\"\`.`,
-		"Prefer wiki_capture_active_page for requests like 'save this page' after browsing in-thread.",
-		"Prefer wiki_capture_url when the user pasted or mentioned a direct URL.",
-		"When your answer seems broadly reusable, offer to save it to the wiki. If the user confirms, call wiki_save_synthesis with a clear title and markdown body.",
-		"Do not capture search-result pages, localhost/private URLs, login walls, or obviously thin pages.",
-		"After a successful wiki tool call, briefly confirm what was saved, where it went, or why it was skipped.",
-		"[END WIKI TOOLS]",
-	].join("\n");
-}
-
 function createRovoAppManagedRunChatDispatcher({
 	buildRovoAppArtifactContext = defaultBuildRovoAppArtifactContext,
 	dispatchChatSdkRequestInProcess,
@@ -93,12 +74,10 @@ function createRovoAppManagedRunChatDispatcher({
 	}) {
 		const artifactContextBlock = buildRovoAppArtifactContext(activeArtifact);
 		const browserContextBlock = buildBrowserContextBlock(threadId);
-		const wikiCaptureContextBlock = buildWikiCaptureContextBlock(threadId);
 
 		const contextBlocks = [
 			artifactContextBlock,
 			browserContextBlock,
-			wikiCaptureContextBlock,
 			effectiveBaseContextDescription,
 		].filter(Boolean);
 		if (contextBlocks.length > 0) {
@@ -145,6 +124,5 @@ function createRovoAppManagedRunChatDispatcher({
 
 module.exports = {
 	buildBrowserContextBlock,
-	buildWikiCaptureContextBlock,
 	createRovoAppManagedRunChatDispatcher,
 };

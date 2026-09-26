@@ -18,13 +18,11 @@ const {
 	getAgentsRfpDemoToolCallDelayMs,
 } = require("./agents-rfp-demo-chat");
 const { buildQuestionMetaFromQuestionCardPayload: defaultBuildQuestionMetaFromQuestionCardPayload } = require("./ai-gateway-deferred-tools");
-const { buildNextHermesThreadContext } = require("./hermes-thread-context");
 const { createRouteDecisionPart } = require("./route-decision");
 const { getNonEmptyString } = require("./shared-utils");
 const {
 	generateWorkItemVpkHtmlReport: defaultGenerateWorkItemVpkHtmlReport,
 } = require("./work-item-vpk-html-report-generator");
-const { mergeHermesSkillIds } = require("../../lib/work-item-report-intent");
 
 function requireFunction(name, value) {
 	if (typeof value !== "function") {
@@ -126,6 +124,7 @@ function buildAgentsRfpDemoReportPreviewFields(variant) {
 
 function createAgentsRfpDemoChatStreamOwner({
 	agentsRfpDemoStateManager,
+	updateAgentsRfpDemoState,
 	buildQuestionMetaFromQuestionCardPayload = defaultBuildQuestionMetaFromQuestionCardPayload,
 	createUIMessageStream,
 	generateTextViaGateway,
@@ -143,7 +142,7 @@ function createAgentsRfpDemoChatStreamOwner({
 	}
 
 	requireFunction("agentsRfpDemoStateManager.readState", agentsRfpDemoStateManager?.readState);
-	requireFunction("agentsRfpDemoStateManager.writeState", agentsRfpDemoStateManager?.writeState);
+	requireFunction("updateAgentsRfpDemoState", updateAgentsRfpDemoState);
 	requireFunction("buildQuestionMetaFromQuestionCardPayload", buildQuestionMetaFromQuestionCardPayload);
 	requireFunction("createUIMessageStream", createUIMessageStream);
 	requireFunction("generateTextViaGateway", generateTextViaGateway);
@@ -228,16 +227,8 @@ function createAgentsRfpDemoChatStreamOwner({
 			changeLabel: "Generated with vpk-html",
 			sourceMessageId: null,
 		});
-		const currentThread = await rovoAppThreadManager.getThread(threadId);
 		await rovoAppThreadManager.updateThread(threadId, {
 			activeDocumentId: artifactDocument.id,
-			hermesContext: buildNextHermesThreadContext({
-				currentHermesContext: currentThread?.hermesContext,
-				selectedSkillIds: mergeHermesSkillIds(
-					currentThread?.hermesContext?.selectedSkillIds,
-					"vpk-html",
-				),
-			}),
 		});
 
 		return artifactDocument;
@@ -324,14 +315,13 @@ function createAgentsRfpDemoChatStreamOwner({
 				if (turn === "qualification-answer") {
 					const selectedKnowledge = extractAgentsRfpDemoSelectedKnowledge(requestBody);
 					if (selectedKnowledge) {
-						const currentState = await agentsRfpDemoStateManager.readState();
-						await agentsRfpDemoStateManager.writeState({
+						await updateAgentsRfpDemoState((currentState) => ({
 							...currentState,
 							chat: {
 								...currentState.chat,
 								selectedRfpKnowledge: selectedKnowledge,
 							},
-						});
+						}));
 					}
 					await writeAgentsRfpDemoTrace(writer, buildAgentsRfpDemoAnswerTrace());
 					const artifactDocument = await createAgentsRfpDemoReportArtifact(requestBody);

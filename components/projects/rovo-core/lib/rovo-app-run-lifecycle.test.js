@@ -26,7 +26,6 @@ function createThread(overrides = {}) {
 		modelId: null,
 		provider: null,
 		activeDocumentId: null,
-		hermesContext: null,
 		sessionId: null,
 		sessionMode: "persistent",
 		activeRun: null,

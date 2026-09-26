@@ -123,16 +123,10 @@ test("buildRovoAppThreadPersistKey includes title and active artifact state", ()
 		realtimeMessages: [],
 		visibility: "private",
 		activeDocumentId: "doc-1",
-		hermesContext: {
-			selectedSkillIds: ["research/llm-wiki"],
-			autoSelectedSkillIds: ["research/arxiv"],
-			pendingDraftIds: ["draft-1"],
-		},
 		title: "Create a page about apple",
 	});
 
 	assert.match(key, /"activeDocumentId":"doc-1"/u);
-	assert.match(key, /"autoSelectedSkillIds":\["research\/arxiv"\]/u);
 	assert.match(key, /"title":"Create a page about apple"/u);
 });
 

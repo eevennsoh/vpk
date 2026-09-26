@@ -5,7 +5,6 @@ const {
 	getLatestVisibleRovoAppMessageIdByRole,
 	getRovoAppAssistantSuggestionQuestions,
 	getVisibleRovoAppMessages,
-	isRovoAppHermesContextTranscriptMessage,
 	ROVO_APP_ARTIFACT_INTENT_LEAK_FALLBACK,
 	removeRovoAppDirectMediaFences,
 	removeRovoAppSpecFences,
@@ -27,29 +26,14 @@ function createMessage(id, role, parts = [], metadata = undefined) {
 	};
 }
 
-test("filters hidden and Hermes transcript messages from the visible render model", () => {
+test("filters hidden and non-conversation messages from the visible render model", () => {
 	const messages = [
-		createMessage("system-1", "system", [{ type: "text", text: "ignore" }]),
-		createMessage("user-1", "user", [{ type: "text", text: "show me" }]),
-		createMessage("assistant-hidden", "assistant", [{ type: "text", text: "hidden" }], { visibility: "hidden" }),
-		createMessage("hermes-memory-1", "assistant", [{ type: "text", text: "memory" }]),
-		createMessage("assistant-widget", "assistant", [
-			{ type: "data-widget-data", data: { type: "hermes-skill" } },
-		]),
-		createMessage("assistant-route", "assistant", [
-			{ type: "data-route-decision", data: { reason: "hermes_context_widget" } },
-		]),
-		createMessage("assistant-1", "assistant", [{ type: "text", text: "visible" }]),
+		createMessage("system-1", "system"),
+		createMessage("user-1", "user"),
+		createMessage("assistant-hidden", "assistant", [], { visibility: "hidden" }),
+		createMessage("assistant-1", "assistant"),
 	];
-
-	assert.equal(isRovoAppHermesContextTranscriptMessage(messages[0]), false);
-	assert.equal(isRovoAppHermesContextTranscriptMessage(messages[3]), true);
-	assert.equal(isRovoAppHermesContextTranscriptMessage(messages[4]), true);
-	assert.equal(isRovoAppHermesContextTranscriptMessage(messages[5]), true);
-	assert.deepEqual(
-		getVisibleRovoAppMessages(messages).map((message) => message.id),
-		["user-1", "assistant-1"],
-	);
+	assert.deepEqual(getVisibleRovoAppMessages(messages).map((message) => message.id), ["user-1", "assistant-1"]);
 });
 
 test("finds the latest visible message id by role", () => {
@@ -218,12 +202,12 @@ test("sanitizeRovoAppAssistantText falls back for artifact-intent leaks after fe
 
 test("sanitizeRovoAppAssistantText strips persisted spec fences from assistant text", () => {
 	const sanitizedText = sanitizeRovoAppAssistantText(
-		"Based on my Hermes memory, here's what I know about you.\n\n```spec\n{\"op\":\"add\",\"path\":\"/root\",\"value\":\"main\"}\n```\n\nThat's what I've got stored durably so far."
+		"Based on the supplied context, here's what I know about you.\n\n```spec\n{\"op\":\"add\",\"path\":\"/root\",\"value\":\"main\"}\n```\n\nThat's what I've got received so far."
 	);
 
 	assert.equal(
 		sanitizedText,
-		"Based on my Hermes memory, here's what I know about you.\n\nThat's what I've got stored durably so far."
+		"Based on the supplied context, here's what I know about you.\n\nThat's what I've got received so far."
 	);
 });
 

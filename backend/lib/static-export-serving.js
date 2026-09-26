@@ -115,6 +115,23 @@ function buildPreloadLinkHeader({
 	}
 }
 
+function isRetiredControlPlanePath(requestPath) {
+	try {
+		requestPath = decodeURIComponent(requestPath);
+	} catch {
+		return true;
+	}
+	return /^\/(?:rovo|studio)\/(?:jobs|memories|skills|settings)(?:\/|$)/u.test(requestPath)
+		|| /^\/(?:memories|jobs|settings)(?:\/|$)/u.test(requestPath);
+}
+
+function rejectRetiredControlPlaneRoute(req, res, next) {
+	if (isRetiredControlPlanePath(req.path)) {
+		return res.status(404).send("Not found");
+	}
+	return next();
+}
+
 function createStaticExportFallbackHandler({
 	logger = console,
 	pathModule = path,
@@ -124,6 +141,10 @@ function createStaticExportFallbackHandler({
 	requirePublicPath(publicPath);
 	return async function staticExportFallbackHandler(req, res, next) {
 		logger.log?.(`[STATIC] Request for route: ${req.path}`);
+
+		if (isRetiredControlPlanePath(req.path)) {
+			return res.status(404).send("Not found");
+		}
 
 		if (req.path.startsWith("/api/")) {
 			return res.status(404).json({
@@ -174,6 +195,7 @@ function registerStaticExportServing(app, {
 		logger.log?.(`[STARTUP] Preload Link header: ${preloadLinkHeader}`);
 	}
 
+	app.use(rejectRetiredControlPlaneRoute);
 	app.use(createPrecompressedMiddleware(publicPath));
 	app.use(expressImpl.static(publicPath, {
 		setHeaders: (res, filePath) => setStaticCacheHeaders(res, filePath, pathModule.resolve(publicPath)),
@@ -190,6 +212,8 @@ function registerStaticExportServing(app, {
 
 module.exports = {
 	FALLBACK_HTML,
+	isRetiredControlPlanePath,
+	rejectRetiredControlPlaneRoute,
 	buildPreloadLinkHeader,
 	createStaticExportFallbackHandler,
 	registerStaticExportServing,

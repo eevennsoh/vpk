@@ -39,7 +39,6 @@ function createHarness(overrides = {}) {
 		},
 	];
 	const dependencies = {
-		areHermesCompanionsEnabled: () => false,
 		collectUiMessagesFromResponseStream: async (input) => {
 			calls.push(["collectUiMessagesFromResponseStream", {
 				initialMessages: input.initialMessages,
@@ -52,22 +51,10 @@ function createHarness(overrides = {}) {
 		finalizeRovoAppRun: async (threadId, run, messages) => {
 			calls.push(["finalizeRovoAppRun", threadId, { ...run }, messages]);
 		},
-		getLatestAssistantTextFromMessages: () => "Done.",
-		hermesSkillDraftManager: {
-			listPendingDraftIdsForThread: async (threadId) => {
-				calls.push(["listPendingDraftIdsForThread", threadId]);
-				return ["skill-draft-1"];
-			},
-			upsertDraft: async () => null,
-		},
 		logger: {
 			info: (...args) => calls.push(["info", args]),
 			warn: (...args) => calls.push(["warn", args]),
 		},
-		mapUiMessagesToConversation: () => ({
-			conversationHistory: [{ type: "user", content: "Do it" }],
-			message: "Do it",
-		}),
 		messagePersistDebounceMs: 1,
 		persistRovoAppRunMessagesSnapshot: async (threadId, messages) => {
 			calls.push(["persistRovoAppRunMessagesSnapshot", threadId, messages]);
@@ -98,14 +85,6 @@ function createHarness(overrides = {}) {
 				};
 			},
 		},
-		runHermesMemoryCompanionReview: async () => ({
-			didReview: false,
-			structuredMemoryActions: [],
-		}),
-		runHermesSkillCompanionReview: async () => ({
-			didReview: false,
-			structuredSkillActions: [],
-		}),
 		syncRovoAppThreadSession: async (threadId, rovoPort, { thread }) => {
 			calls.push(["syncRovoAppThreadSession", threadId, rovoPort, thread]);
 			return {
@@ -114,8 +93,6 @@ function createHarness(overrides = {}) {
 				sessionMode: "persistent",
 			};
 		},
-		syncWikiBackedMemory: async () => null,
-		syncWikiQmdIndex: async () => null,
 		...overrides,
 	};
 	const { consumeRovoAppManagedResponse } = createRovoAppManagedResponseConsumer(dependencies);
@@ -198,66 +175,6 @@ test("consumeRovoAppManagedResponse persists resolved port, chunks, messages, an
 		},
 		finalMessages,
 	]);
-});
-
-test("consumeRovoAppManagedResponse runs Hermes memory review when companions are enabled", async () => {
-	const { calls, consumeRovoAppManagedResponse, stageTrace } = createHarness({
-		areHermesCompanionsEnabled: () => true,
-		runHermesMemoryCompanionReview: async (input) => {
-			calls.push(["runHermesMemoryCompanionReview", input]);
-			return {
-				didReview: true,
-				responseText: "Memory updated",
-				structuredMemoryActions: [
-					{ proposal: { id: "memory-proposal-1" } },
-				],
-			};
-		},
-		runHermesSkillCompanionReview: async (input) => {
-			calls.push(["runHermesSkillCompanionReview", input]);
-			return {
-				didReview: false,
-				structuredSkillActions: [],
-			};
-		},
-		syncWikiBackedMemory: async (input) => {
-			calls.push(["syncWikiBackedMemory", input]);
-		},
-	});
-
-	await consumeRovoAppManagedResponse({
-		initialMessages: [],
-		response: createStreamResponse(),
-		run: {
-			id: "run-1",
-			rovoPort: 1234,
-		},
-		stageTrace,
-		threadId: "thread-1",
-	});
-
-	const memoryReview = calls.find((call) => call[0] === "runHermesMemoryCompanionReview");
-	assert.equal(memoryReview[1].latestAssistantMessage, "Done.");
-	assert.equal(memoryReview[1].latestUserMessage, "Do it");
-	assert.equal(memoryReview[1].sourceThreadId, "thread-1");
-	assert.deepEqual(
-		calls.filter((call) => call[0] === "updateThread").map((call) => call.slice(1)),
-		[
-			[
-				"thread-1",
-				{
-					hermesContext: {
-						autoSelectedSkillIds: [],
-						pendingDraftIds: [],
-						selectedSkillIds: ["existing-skill"],
-						recentMemoryProposalIds: ["memory-proposal-1"],
-					},
-				},
-			],
-		],
-	);
-	assert.equal(calls.some((call) => call[0] === "syncWikiBackedMemory"), true);
-	assert.equal(calls.some((call) => call[0] === "runHermesSkillCompanionReview"), true);
 });
 
 test("consumeRovoAppManagedResponse rejects non-event-stream responses", async () => {

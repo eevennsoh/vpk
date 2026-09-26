@@ -127,7 +127,7 @@ test("buildRecoverableRovoAppThreadInput preserves realtime messages and active 
 	);
 });
 
-test("buildRovoAppThreadPersistencePlan preserves existing title and Hermes context", () => {
+test("buildRovoAppThreadPersistencePlan preserves existing title", () => {
 	const messages = [createMessage("rovo-1", "user", "Write a launch plan")];
 	const realtimeMessages = [createMessage("realtime-1", "assistant", "Voice reply")];
 	const plan = buildRovoAppThreadPersistencePlan({
@@ -142,19 +142,11 @@ test("buildRovoAppThreadPersistencePlan preserves existing title and Hermes cont
 		threads: [
 			createThread({
 				title: "Existing launch thread",
-				hermesContext: {
-					selectedSkillIds: ["research/llm-wiki"],
-					pendingDraftIds: ["draft-1"],
-				},
 			}),
 		],
 	});
 
 	assert.equal(plan.title, "Existing launch thread");
-	assert.deepEqual(plan.currentHermesContext, {
-		selectedSkillIds: ["research/llm-wiki"],
-		pendingDraftIds: ["draft-1"],
-	});
 	assert.deepEqual(plan.nextThreadUpdate, {
 		activeDocumentId: "doc-1",
 		messages,
@@ -162,7 +154,6 @@ test("buildRovoAppThreadPersistencePlan preserves existing title and Hermes cont
 		title: "Existing launch thread",
 		visibility: "private",
 	});
-	assert.match(plan.nextPersistKey, /"pendingDraftIds":\["draft-1"\]/u);
 	assert.deepEqual(plan.recoveryState, {
 		activeDocumentId: "doc-1",
 		messages,

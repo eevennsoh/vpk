@@ -49,9 +49,7 @@ test("rovo app thread manager persists and lists thread metadata", async () => {
 	assert.equal(createdThread.modelId, "anthropic/claude-4.5-sonnet");
 	assert.equal(createdThread.sessionId, "session-1");
 	assert.equal(createdThread.sessionMode, "persistent");
-	assert.deepEqual(createdThread.hermesContext?.selectedSkillIds, ["research/llm-wiki"]);
-	assert.deepEqual(createdThread.hermesContext?.autoSelectedSkillIds, ["research/arxiv"]);
-	assert.deepEqual(createdThread.hermesContext?.pendingDraftIds, ["draft-1"]);
+	assert.equal(Object.hasOwn(createdThread, "hermesContext"), false);
 	assert.equal(createdThread.activeRun?.backend, "rovo");
 	assert.equal(createdThread.activeRun?.status, "queued");
 	assert.equal(createdThread.activeRun?.rovoPort, 8001);
@@ -72,7 +70,7 @@ test("rovo app thread manager persists and lists thread metadata", async () => {
 	assert.equal(updatedThread?.title, "Updated launch plan");
 	assert.equal(updatedThread?.activeDocumentId, "doc-1");
 	assert.equal(updatedThread?.sessionMode, "ephemeral");
-	assert.deepEqual(updatedThread?.hermesContext?.pendingDraftIds, ["draft-2"]);
+	assert.equal(Object.hasOwn(updatedThread, "hermesContext"), false);
 
 	const listedThreads = await manager.listThreads();
 	assert.equal(listedThreads.length, 1);
@@ -97,61 +95,6 @@ test("rovo app thread manager preserves existing fields when updates omit them",
 
 	assert.equal(updatedThread?.title, "Specific title");
 	assert.equal(updatedThread?.messages.length, 1);
-});
-
-test("rovo app thread manager hides persisted legacy Hermes realtime widgets", async () => {
-	const baseDir = await createTempBaseDir();
-	const threadDir = path.join(baseDir, "rovo-app", "threads", "thread-legacy");
-	await fs.mkdir(threadDir, { recursive: true });
-	await fs.writeFile(
-		path.join(threadDir, "thread.json"),
-		JSON.stringify({
-			id: "thread-legacy",
-			title: "Legacy thread",
-			createdAt: "2026-04-10T00:00:00.000Z",
-			updatedAt: "2026-04-10T00:00:00.000Z",
-			messages: [],
-			realtimeMessages: [
-				{
-					id: "hermes-memory-thread-legacy",
-					role: "assistant",
-					metadata: {
-						createdAt: "2026-04-10T00:00:00.000Z",
-						updatedAt: "2026-04-10T00:00:00.000Z",
-					},
-					parts: [
-						{
-							type: "data-route-decision",
-							data: {
-								intent: "genui",
-								presentation: "genui_card",
-								confidence: 1,
-								reason: "hermes_context_widget",
-								origin: "text",
-							},
-						},
-						{
-							type: "data-widget-data",
-							data: {
-								type: "hermes-memory",
-								payload: {
-									title: "Hermes Memory",
-								},
-							},
-						},
-					],
-				},
-			],
-			visibility: "private",
-		}),
-		"utf8",
-	);
-
-	const manager = createRovoAppThreadManager({ baseDir, logger: console });
-	const thread = await manager.getThread("thread-legacy");
-
-	assert.equal(thread?.realtimeMessages.length, 1);
-	assert.equal(thread?.realtimeMessages[0]?.metadata?.visibility, "hidden");
 });
 
 test("rovo app thread manager preserves ordinary realtime assistant visibility", async () => {

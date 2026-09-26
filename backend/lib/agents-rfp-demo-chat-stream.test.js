@@ -24,6 +24,11 @@ function createHarness({
 	let state = currentState;
 
 	const owner = createAgentsRfpDemoChatStreamOwner({
+		updateAgentsRfpDemoState: async (updater) => {
+			state = await updater(state);
+			calls.push(["writeState", state]);
+			return state;
+		},
 		agentsRfpDemoStateManager: {
 			readState: async () => {
 				calls.push(["readState"]);
@@ -167,7 +172,7 @@ test("generateAgentsRfpDemoReportPreview validates context and uses deterministi
 	assert.match(buildAgentsRfpDemoReportPreviewFields("initial").recommendationText, /Initial recommendation/u);
 });
 
-test("createAgentsRfpDemoReportArtifact creates an html document and selects vpk-html", async () => {
+test("createAgentsRfpDemoReportArtifact creates an html document without adding procedural context", async () => {
 	const harness = createHarness();
 
 	const document = await harness.owner.createAgentsRfpDemoReportArtifact({
@@ -191,8 +196,7 @@ test("createAgentsRfpDemoReportArtifact creates an html document and selects vpk
 	assert.equal(createDocumentInput.previewSummary.includes("PDF-ready one-pager"), true);
 	const updatePatch = harness.calls.find((call) => call[0] === "updateThread")[2];
 	assert.equal(updatePatch.activeDocumentId, "doc-1");
-	assert.deepEqual(updatePatch.hermesContext.selectedSkillIds, ["existing-skill", "vpk-html"]);
-	assert.deepEqual(updatePatch.hermesContext.pendingDraftIds, ["draft-1"]);
+	assert.equal(Object.hasOwn(updatePatch, "hermesContext"), false);
 });
 
 test("qualification question stream stores question metadata and preserves creation mode", async () => {

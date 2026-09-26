@@ -432,7 +432,6 @@ async function finalizeRovoDirectOutputs({
 	requestOrigin,
 	resolveGatewayUrl,
 	resolveGoogleImageGatewayConfig,
-	shouldSuppressHermesKnowledgeDirectSpecCard,
 	streamGoogleGatewayManualSse,
 	stripDirectMediaFences,
 	synthesizeSound,
@@ -467,29 +466,12 @@ async function finalizeRovoDirectOutputs({
 			: null;
 
 	if (directSpecResult?.spec) {
-		const shouldSuppressHermesKnowledgeCard =
-			typeof shouldSuppressHermesKnowledgeDirectSpecCard === "function" &&
-			shouldSuppressHermesKnowledgeDirectSpecCard({
-				assistantText: rawDirectSpecText,
-				genuiHint,
-				latestUserMessage,
-				narrative: directSpecResult.narrative,
-			});
-
 		const elementCount = Object.keys(
 			directSpecResult.spec.elements || {}
 		).length;
 		const narrativeLength = (directSpecResult.narrative || "").length;
 
-		if (shouldSuppressHermesKnowledgeCard) {
-			logger.info(
-				"[DIRECT-SPEC] Suppressed GenUI widget promotion for Hermes knowledge recall",
-				{
-					elementCount,
-					narrativeLength,
-				}
-			);
-		} else if (typeof buildDirectSpecWidgetParts === "function") {
+		if (typeof buildDirectSpecWidgetParts === "function") {
 			const directSpecWidgetId = `widget-direct-spec-${Date.now()}`;
 			for (const part of buildDirectSpecWidgetParts({
 				latestUserMessage,

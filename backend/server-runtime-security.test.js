@@ -19,8 +19,6 @@ const wsRelayPath = path.join(process.cwd(), "backend/realtime/ws-relay.js");
 const wsRelaySource = fs.readFileSync(wsRelayPath, "utf8");
 const realtimeRoutePath = path.join(process.cwd(), "backend/routes/realtime.js");
 const realtimeRouteSource = fs.readFileSync(realtimeRoutePath, "utf8");
-const skillsRoutePath = path.join(process.cwd(), "backend/routes/skills.js");
-const skillsRouteSource = fs.readFileSync(skillsRoutePath, "utf8");
 const {
 	collectRouteManifest,
 } = require("./routes/route-manifest");
@@ -42,22 +40,6 @@ test("runtime-control mutations require runtime admin authorization", () => {
 		["post", "/api/rovo/threads/:threadId/browser-workspace"],
 		["delete", "/api/rovo/threads/:threadId/browser-workspace"],
 		["delete", "/api/orchestrator/log"],
-		["post", "/api/jobs"],
-		["patch", "/api/jobs/:id"],
-		["delete", "/api/jobs/:id"],
-		["post", "/api/jobs/:id/run"],
-		["post", "/api/jobs/:id/pause"],
-		["post", "/api/jobs/:id/resume"],
-		["post", "/api/skills/hub/install"],
-		["post", "/api/skills/hub/install-by-id"],
-		["post", "/api/skills/hub/taps"],
-		["post", "/api/skills/:category/:name/toggle"],
-		["post", "/api/wiki/captures"],
-		["post", "/api/wiki/synthesis"],
-		["delete", "/api/wiki/memories/:scope/blocks/:blockId"],
-		["delete", "/api/wiki/memories/proposals/:proposalId"],
-		["post", "/api/wiki/memories/reset"],
-		["post", "/api/wiki/sync"],
 	]) {
 		assertRouteUsesRuntimeAdmin(method, routePath);
 	}
@@ -70,9 +52,6 @@ test("runtime-control mutations require runtime admin authorization", () => {
 		assert.equal(route.runtimeAdmin, true, `${route.method} ${route.path} should require runtime admin`);
 	}
 
-	assert.match(skillsRouteSource, /app\.use\("\/api\/skills\/drafts", requireRuntimeAdmin\);/u);
-	assert.match(skillsRouteSource, /router\.delete\("\/hub\/uninstall\/\*name", requireRuntimeAdmin/u);
-	assert.match(skillsRouteSource, /router\.delete\("\/hub\/taps\/\*repo", requireRuntimeAdmin/u);
 });
 
 test("realtime token minting is reachable through the runtime socket origin gate", () => {
@@ -119,8 +98,6 @@ test("costly or mutating body routes have route-scoped rate and size limits", ()
 		"/api/sound-generation",
 		"/api/speech-transcription",
 		"/api/rovo/files/upload",
-		"/api/skills/hub/install",
-		"/api/skills/hub/install-by-id",
 	]) {
 		assert.match(rateLimitsSource, new RegExp(routePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u"));
 	}
@@ -138,6 +115,14 @@ test("costly or mutating body routes have route-scoped rate and size limits", ()
 	assert.match(bodyLimitsSource, /paths: \["\/api\/chat-sdk", "\/api\/rovo\/suggestions"\][\s\S]*limit: "8mb"/u);
 	assert.match(bodyLimitsSource, /paths: \["\/api\/sound-generation", "\/api\/speech-transcription"\][\s\S]*limit: "12mb"/u);
 	assert.match(bodyLimitsSource, /paths: "\/api\/rovo\/files\/upload"[\s\S]*limit: "12mb"/u);
-	assert.match(bodyLimitsSource, /paths: "\/api\/skills\/hub\/install"[\s\S]*limit: "5mb"/u);
 	assert.match(bodyLimitsSource, /FALLBACK_BODY_LIMIT = "50mb"/u);
+});
+
+
+test("removed control-plane API routes have no registered handlers", () => {
+	for (const route of [...routeManifest.backendRoutes, ...routeManifest.nextApiRoutes]) {
+		const routePath = route.path ?? route.nextPath;
+		assert.equal(/^\/api\/(?:jobs|skills|wiki)(?:\/|$)/u.test(routePath), false, routePath);
+		assert.notEqual(routePath, "/api/status/hermes");
+	}
 });

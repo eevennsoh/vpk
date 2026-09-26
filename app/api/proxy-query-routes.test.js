@@ -87,12 +87,7 @@ const queryRouteCases = [
 		requestUrl: "http://localhost/api/sessions/search?limit=5&q=planning%20notes&ignored=true",
 		expectedBackendPath: "/api/sessions/search?q=planning+notes&limit=5",
 	},
-	{
-		label: "/api/wiki/search",
-		routePath: "wiki/search/route.ts",
-		requestUrl: "http://localhost/api/wiki/search?limit=8&q=memory%20graph&path=/tmp",
-		expectedBackendPath: "/api/wiki/search?q=memory+graph&limit=8",
-	},
+
 ];
 
 for (const queryRouteCase of queryRouteCases) {
