@@ -4070,7 +4070,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 448,
+			"manifestEntryCount": 449,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -4112,7 +4112,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 113,
+				"entryCount": 114,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4161,6 +4161,12 @@
 						"slug": "agent-insights",
 						"name": "Agent Insights",
 						"importPath": "@/components/blocks/agent-insights"
+					},
+					{
+						"category": "blocks",
+						"slug": "agent-lanyard",
+						"name": "Agent Lanyard",
+						"importPath": "@/components/blocks/agent-lanyard"
 					},
 					{
 						"category": "blocks",
