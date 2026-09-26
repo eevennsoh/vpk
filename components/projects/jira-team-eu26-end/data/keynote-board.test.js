@@ -86,16 +86,17 @@ test("every story has one fixed owner from its section presenter pair", async ()
 	assert.deepEqual(cards.map((card) => card.assignee.id), keynote.createJiraTeamEu26EndKeynoteBoardColumns().flatMap((column) => column.cards.map((card) => card.assignee.id)));
 });
 
-test("every keynote story retains an existing local cover capped at 120px", async () => {
+test("every keynote story has a neutral subtler gray cover capped at 120px", async () => {
 	const keynote = await loadKeynoteModule();
 	const cards = keynote.createJiraTeamEu26EndKeynoteBoardColumns().flatMap((column) => column.cards);
 
 	assert.equal(cards.length, 13);
+	assert.equal(new Set(cards.map((card) => card.coverImage.backgroundClassName)).size, 1);
 	for (const card of cards) {
-		assert.ok(card.coverImage.src.startsWith("/"));
-		assert.ok(card.coverImage.alt.trim().length > 0);
+		assert.equal(card.coverImage.backgroundClassName, "bg-bg-accent-gray-subtler");
+		assert.equal(card.coverImage.src, undefined);
+		assert.equal(card.coverImage.alt, undefined);
 		assert.equal(card.coverImage.maxHeight, 120);
-		assert.ok(fs.existsSync(path.join(process.cwd(), "public", card.coverImage.src)));
 	}
 });
 
@@ -106,7 +107,7 @@ test("separate keynote board instances do not share mutable card or column data"
 	const card = first[0].cards.shift();
 	card.title = "Updated in rehearsal";
 	card.status = "Done";
-	card.coverImage.alt = "Changed cover description";
+	card.coverImage.backgroundClassName = "bg-red-600";
 	card.tags.push({ text: "Updated", color: "blue" });
 	first[3].cards.push(card);
 
@@ -114,6 +115,6 @@ test("separate keynote board instances do not share mutable card or column data"
 	assert.equal(second[3].cards.length, 0);
 	assert.equal(second[0].cards[0].title, "Desktop search & chat");
 	assert.equal(second[0].cards[0].status, "Context");
-	assert.notEqual(second[0].cards[0].coverImage.alt, "Changed cover description");
+	assert.notEqual(second[0].cards[0].coverImage.backgroundClassName, "bg-red-600");
 	assert.deepEqual(second[0].cards[0].tags, []);
 });
