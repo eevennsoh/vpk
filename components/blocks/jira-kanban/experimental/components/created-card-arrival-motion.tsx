@@ -22,6 +22,7 @@ import {
 } from "../lib/card-motion";
 import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
 import { BoardCardInsertionLine } from "./board-card-insertion-line";
+import type { BoardColumnWidth } from "../lib/board-column-collapse";
 
 interface CreatedCardArrivalMotionProps {
 	arrival?: JiraKanbanCreatedCardArrival;
@@ -33,6 +34,7 @@ interface CreatedCardArrivalMotionProps {
 	children: ReactNode;
 	className?: string;
 	columnTitle: string;
+	columnWidth?: BoardColumnWidth;
 	dropTarget: "attach" | "unlink" | null | undefined;
 	/** The board-wide armed insertion; this card resolves whether it owns a seam. */
 	cardInsertion: BoardCardInsertion | null | undefined;
@@ -87,6 +89,7 @@ export function CreatedCardArrivalMotion({
 	children,
 	className,
 	columnTitle,
+	columnWidth = "fixed",
 	dropTarget,
 	onArrivalComplete,
 	positionMotion,
@@ -125,6 +128,7 @@ export function CreatedCardArrivalMotion({
 			className={cn("w-full min-w-0 max-w-[280px]", waiting ? "hidden" : null)}
 			data-created-card-pending={waiting || undefined}
 			inert={waiting || undefined}
+			style={{ maxWidth: columnWidth === "fluid" ? "none" : undefined }}
 			layout={cardArrival.entering ? false : positionMotion?.layout}
 			layoutId={cardArrival.entering ? undefined : positionMotion?.layoutId}
 			transition={positionMotion?.transition}
@@ -147,7 +151,7 @@ export function CreatedCardArrivalMotion({
 				data-jira-creating-arrival={cardArrival.entering || undefined}
 				data-issue-key={cardCode}
 				initial={false}
-				style={getCardMoveStyle(cardMovePhase)}
+				style={{ ...getCardMoveStyle(cardMovePhase), maxWidth: columnWidth === "fluid" ? "none" : undefined }}
 				transition={getCardMoveTransition(cardMovePhase)}
 			>
 				{/*

@@ -17,8 +17,10 @@ import type {
 } from "@/components/projects/sidebar-chat/page";
 import { ChatHistoryDrawer } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
 import FloatingChatHeader from "./floating-chat-header";
+import type { AgentResultCreator } from "@/components/projects/sidebar-chat/components/agent-result-card";
 
 interface RovoFloatingChatProps {
+	agentCreator?: AgentResultCreator;
 	placement?: "embedded" | "floating";
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
 	autoFocusComposer?: boolean;
@@ -52,6 +54,7 @@ interface RovoFloatingChatProps {
 }
 
 export default function RovoFloatingChat({
+	agentCreator,
 	placement = "floating",
 	onSurfaceSwitch,
 	autoFocusComposer = false,
@@ -115,6 +118,7 @@ export default function RovoFloatingChat({
 			/>
 			<div className={embedded ? "min-h-0 min-w-0 flex-1 overflow-visible" : "min-h-0 min-w-0 overflow-hidden"}>
 				<ChatPanel
+					agentCreator={agentCreator}
 					onClose={closeChat}
 					autoFocusComposer={autoFocusComposer}
 					hideHeader

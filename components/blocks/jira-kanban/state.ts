@@ -29,7 +29,9 @@ export function filterJiraKanbanColumnsByAssignee(
 
 	return columns.map((column) => {
 		const cards = column.cards.filter((card) => (
-			card.assignee ? selectedAssigneeIds.has(card.assignee.id) : false
+			card.assignee
+				? selectedAssigneeIds.has(card.assignee.id)
+				: column.presenters?.some((presenter) => selectedAssigneeIds.has(presenter.id)) ?? false
 		));
 
 		return {

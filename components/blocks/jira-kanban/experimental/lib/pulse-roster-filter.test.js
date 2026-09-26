@@ -1,5 +1,12 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { getHeaderFacepileAssigneeLimit } = require("../header-facepile.ts");
+
+test("the facepile retains its default placeholder or uses all seven slots for a complete roster", () => {
+	assert.equal(getHeaderFacepileAssigneeLimit(), 6);
+	assert.equal(getHeaderFacepileAssigneeLimit(true), 6);
+	assert.equal(getHeaderFacepileAssigneeLimit(false), 7);
+});
 
 const {
 	PULSE_PRESENTATION_MEMBER_ID,

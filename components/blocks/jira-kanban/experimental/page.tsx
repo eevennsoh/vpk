@@ -200,9 +200,9 @@ function ExperimentalJiraKanbanPageContent({
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
-	columnChrome, columnSizing,
+	columnChrome, columnSizing, columnWidth, boardTitle,
 	compactHeader = false,
-	headerAssignees,
+	headerAssignees, showUnassignedHeaderAvatar,
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
@@ -899,7 +899,7 @@ function ExperimentalJiraKanbanPageContent({
 			ref={boardSessionDrag.boardRootRef}
 			style={{ [UNTRACKED_PANEL_WIDTH_CSS_VAR]: `${untrackedPanelFabInsetPx}px` } as CSSProperties}
 		>
-			<ExperimentalJiraKanbanBoardHeader
+			<ExperimentalJiraKanbanBoardHeader title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
 				activeView={activeView}
 				assignees={assignees}
 				compact={compactHeader}
@@ -1036,7 +1036,7 @@ function ExperimentalJiraKanbanPageContent({
 								cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale}
 								collapsedColumns={displayedCollapsedColumns}
-								columnChrome={columnChrome} columnSizing={columnSizing}
+								columnChrome={columnChrome} columnSizing={columnSizing} columnWidth={columnWidth}
 								createdCardArrival={createdCardArrival ?? undefined}
 								createWorkItemDropZoneLabel={onBoardAgentSessionCreate
 									? createWorkItemDropZoneLabel

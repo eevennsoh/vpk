@@ -28,6 +28,26 @@ const ROVO_APP_SHELL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "..", "projects", "rovo", "components", "rovo-app-shell.tsx"),
 	"utf8",
 );
+const { DEFAULT_TOP_NAVIGATION_CURRENT_USER } = require("./data/current-user.ts");
+
+test("route-owned viewer identity reaches both responsive profile presentations and preserves Venn by default", () => {
+	assert.deepEqual(DEFAULT_TOP_NAVIGATION_CURRENT_USER, {
+		id: "venn",
+		name: "Venn",
+		avatarSrc: "/avatar-user/venn/venn.png",
+		initials: "VN",
+	});
+	for (const source of [PROJECT_LAYOUT_SOURCE, TOP_NAVIGATION_SOURCE, RIGHT_NAVIGATION_SOURCE]) {
+		assert.match(source, /currentUser\?: TopNavigationCurrentUser;/u);
+		assert.match(source, /currentUser=\{currentUser\}/u);
+	}
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /currentUser = DEFAULT_TOP_NAVIGATION_CURRENT_USER/u);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /data-current-user-id=\{currentUser\.id\}/u);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /src=\{currentUser\.avatarSrc\} alt=\{`\$\{currentUser\.name\} avatar`\}/u);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /currentUser\.initials \?\? currentUser\.name\.slice\(0, 3\)/u);
+	assert.equal((RIGHT_NAVIGATION_SOURCE.match(/<RightNavigationActions/gu) ?? []).length, 1);
+	assert.doesNotMatch(RIGHT_NAVIGATION_ACTIONS_SOURCE, /\/avatar-user\/venn|Venn avatar/u);
+});
 
 test("Ask Rovo button exposes sidebar chat open state as pressed state", () => {
 	assert.match(RIGHT_NAVIGATION_SOURCE, /isChatOpen = false/);

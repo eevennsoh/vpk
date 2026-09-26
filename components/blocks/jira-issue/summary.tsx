@@ -28,7 +28,9 @@ import {
 	resolveJiraIssueIconMetrics,
 } from "@/components/blocks/jira-issue/lib";
 import { JiraIssuePullRequestCluster } from "@/components/blocks/jira-issue/pull-request-cluster";
+import { JiraIssueCover } from "@/components/blocks/jira-issue/cover-image";
 import type {
+	JiraIssueCoverImage,
 	JiraIssueIconScale,
 	JiraIssuePriority,
 	JiraIssuePullRequestPreview,
@@ -106,6 +108,7 @@ export function JiraIssueSummary({
 	assigneeAvatarSrc,
 	assigneePulse,
 	assigneeUnassignedKind,
+	coverImage,
 	iconScale = "compact",
 	issueKey,
 	issueTypeLabel,
@@ -127,6 +130,7 @@ export function JiraIssueSummary({
 	assigneeAvatarSrc?: string;
 	assigneePulse: boolean;
 	assigneeUnassignedKind?: AvatarUnassignedKind;
+	coverImage?: JiraIssueCoverImage;
 	iconScale?: JiraIssueIconScale;
 	issueKey: string;
 	issueTypeLabel: string;
@@ -234,6 +238,7 @@ export function JiraIssueSummary({
 
 	return (
 		<div className="flex min-w-0 flex-col gap-2">
+			{coverImage ? <JiraIssueCover image={coverImage} /> : null}
 			<div className="flex min-w-0 items-start gap-2">
 				<span className={cn("min-w-0 flex-1", usesStrokeChrome ? "line-clamp-2 text-sm leading-5" : "text-sm")}>{summary}</span>
 				<div className="size-6 shrink-0" data-slot="jira-issue-more-action" />
