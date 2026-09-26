@@ -12,7 +12,7 @@ export function resolveJiraIssueSelectionBackdrop(mode?: JiraIssueSelectionBackd
 	const joinsBefore = mode === "middle" || mode === "end";
 	const joinsAfter = mode === "start" || mode === "middle";
 	return {
-		active: mode !== undefined,
+		active: mode !== undefined && mode !== "rest",
 		selected: mode !== undefined && mode !== "rest",
 		joinsBefore,
 		joinsAfter,

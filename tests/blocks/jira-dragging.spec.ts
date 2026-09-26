@@ -539,7 +539,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const backdrop = (code: string) => issue(code).locator('[data-slot="jira-issue-agent-backdrop"]');
 		const card = (code: string) => issue(code).locator('[draggable="true"]').first();
 		const tops = () => page.locator('[data-jira-kanban-column="To do"] [data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
-		for (const code of ["PAY-105", "PAY-107", "PAY-123", "PAY-130"]) await expect(backdrop(code)).toHaveCSS("opacity", "1");
+		for (const code of ["PAY-105", "PAY-107"]) await expect(backdrop(code)).toHaveCSS("opacity", "1");
+		for (const code of ["PAY-123", "PAY-130"]) await expect(backdrop(code)).toHaveCSS("opacity", "0");
 		const restingTops = await tops();
 		for (const code of ["PAY-105", "PAY-107", "PAY-123"]) await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await page.mouse.move(900, 30);
