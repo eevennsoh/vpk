@@ -65,7 +65,7 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" \? "100%" : undefined \}\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_BOARD_SOURCE,

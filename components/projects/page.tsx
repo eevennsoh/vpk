@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import { token } from "@/lib/tokens";
-import TopNavigation from "@/components/blocks/top-navigation/page";
+import TopNavigation, { type TopNavigationCurrentUser } from "@/components/blocks/top-navigation/page";
 import Sidebar from "@/components/blocks/product-sidebar/page";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type {
@@ -26,6 +26,7 @@ import type { DesignVariantId } from "@/components/utils/design-variants";
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
 
 interface AppLayoutProps {
+	currentUser?: TopNavigationCurrentUser;
 	product: Product;
 	children: React.ReactNode;
 	defaultSidebarOpen?: boolean;
@@ -134,6 +135,7 @@ function useIsRovoCanvasOpen(): boolean {
 }
 
 export default function AppLayout({
+	currentUser,
 	product,
 	children,
 	defaultSidebarOpen = true,
@@ -222,6 +224,7 @@ export default function AppLayout({
 				>
 					<MountOnFirstUse active={sidebarChatMount === "eager" || isSidebarChatActive}>
 						<ChatPanel
+							agentCreator={currentUser}
 							onClose={toggleChat}
 							abortOnUnmount={false}
 							onSurfaceSwitch={onChatSurfaceSwitch}
@@ -255,6 +258,7 @@ export default function AppLayout({
 			<AnimatePresence>
 				{showFloatingChat ? (
 					<RovoFloatingChat
+						agentCreator={currentUser}
 						key="floating-chat"
 						onSurfaceSwitch={onChatSurfaceSwitch}
 						chatContextBar={chatContextBar}
@@ -295,6 +299,7 @@ export default function AppLayout({
 	// Use the canonical TopNavigation shell variant
 	return (
 		<TopNavigation
+			currentUser={currentUser}
 			defaultSidebarOpen={defaultSidebarOpen}
 			product={product}
 			shellHeight={shellHeight}

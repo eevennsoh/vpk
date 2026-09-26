@@ -623,6 +623,7 @@ export const PROJECT_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	projectComponent("jira-golden-journeys-v4", "Jira Golden Journeys v4"),
 	projectComponent("jira-queue", "Jira Queue"),
 	projectComponent("jira-team-eu26", "Jira Team EU26"),
+	projectComponent("jira-team-eu26-end", "Jira Team EU26 End"),
 	projectComponent("rovo", "Rovo"),
 	projectComponent("rovo-button", "Rovo Button"),
 	projectComponent("search", "Search"),

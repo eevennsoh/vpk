@@ -348,6 +348,7 @@ export function ExperimentalJiraKanbanCard({
 			assigneeUnassignedKind={card.avatarUnassignedKind}
 			chrome={chrome}
 			compact
+			coverImage={card.coverImage}
 			dragging={dragging}
 			iconScale={iconScale}
 			parentOwnsLayout

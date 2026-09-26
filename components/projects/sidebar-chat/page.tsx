@@ -75,7 +75,7 @@ import ChatComposer from "./components/chat-composer";
 import MessageBubble from "./components/message-bubble";
 import { AgentActivityTimeline } from "./components/agent-activity-timeline";
 import { ArtifactResultCard, type ArtifactResult } from "./components/artifact-result-card";
-import { AgentResultCard, isGeneratedAgentResult } from "./components/agent-result-card";
+import { AgentResultCard, isGeneratedAgentResult, type AgentResultCreator } from "./components/agent-result-card";
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
 import { AwaitingUserResponseIndicator } from "@/components/projects/shared/components/chat-messages";
 import { chatStyles } from "./data/styles";
@@ -245,6 +245,7 @@ interface ChatPanelProps {
 	sendPromptOptions?: SendPromptOptions;
 	enableSmartWidgets?: boolean;
 	cards?: ChatPanelCardsProps;
+	agentCreator?: AgentResultCreator;
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
 	chatHistory?: ChatPanelHistoryController;
@@ -490,8 +491,7 @@ function getViewportPointFromScreenAssistantTarget(
 	};
 }
 
-export default function ChatPanel({
-	onClose,
+export default function ChatPanel({ onClose, agentCreator,
 	onBackToRovo,
 	addMenuItemsBefore,
 	composerToolsAfterAdd,
@@ -1824,7 +1824,7 @@ export default function ChatPanel({
 												onDialogClose={releaseArtifactDialogFloatingPin}
 											/>
 										) : (
-											<AgentResultCard
+											<AgentResultCard creator={agentCreator}
 												key={`agent-${generatedResult.result.agentId}-${generatedResult.result.action}`}
 												agent={generatedResult.result}
 												onSelectAgent={handleAgentResultSelect}
@@ -1838,7 +1838,7 @@ export default function ChatPanel({
 				)}
 				{shouldRenderGeneratedAgentFallbackCard && cards?.generatedAgentResult ? (
 					<div className="w-full px-3" data-testid="rovo-generated-result-group">
-						<AgentResultCard
+						<AgentResultCard creator={agentCreator}
 							agent={cards.generatedAgentResult}
 							onSelectAgent={handleAgentResultSelect}
 						/>

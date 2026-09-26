@@ -6,6 +6,7 @@
  * re-orders, and a column that leaves and returns keeps the state the user set.
  */
 export type CollapsedBoardColumns = ReadonlySet<string>;
+export type BoardColumnWidth = "fixed" | "fluid";
 
 export const EMPTY_COLLAPSED_BOARD_COLUMNS: CollapsedBoardColumns = new Set<string>();
 
@@ -25,6 +26,16 @@ export const BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX = 4;
 /** Outer width in px, including the 2px transparent drop-target border on both edges. */
 export function getBoardColumnOuterWidthPx(isCollapsed: boolean): number {
 	return (isCollapsed ? BOARD_COLUMN_COLLAPSED_WIDTH_PX : BOARD_COLUMN_WIDTH_PX) + 4;
+}
+
+/** Fluid expanded columns share remaining space; collapsed pills stay compact. */
+export function resolveBoardColumnShellSizing(isCollapsed: boolean, columnWidth: BoardColumnWidth = "fixed") {
+	const outerWidth = `${getBoardColumnOuterWidthPx(isCollapsed)}px`;
+	return {
+		flex: isCollapsed && columnWidth === "fluid" ? "0 0 auto" : "1 1 0",
+		minWidth: outerWidth,
+		maxWidth: columnWidth === "fluid" && !isCollapsed ? undefined : outerWidth,
+	};
 }
 
 export function isBoardColumnCollapsed(

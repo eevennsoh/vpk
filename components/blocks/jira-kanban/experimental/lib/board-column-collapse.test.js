@@ -27,6 +27,26 @@ const V2_BOARD_SOURCE = readFileSync(
 	"utf8",
 );
 const PAGE_SOURCE = readFileSync(join(__dirname, "../page.tsx"), "utf8");
+const BOARD_COLUMN_SOURCE = readFileSync(join(__dirname, "../components/board-column.tsx"), "utf8");
+const { getJiraKanbanAssignees, moveJiraKanbanCardsToColumn } = require("../../state.ts");
+
+test("column presenter metadata survives moves without header faces or work-item assignees", () => {
+	const presenters = [
+		{ id: "mcb", name: "MCB", avatarSrc: "/avatar-user/mcb.png" },
+		{ id: "tamar", name: "Tamar", avatarSrc: "/avatar-user/tamar.png" },
+	];
+	const columns = [
+		{ title: "Context", count: 1, presenters, cards: [{ code: "TEAM-1", title: "Search", tags: [], priority: "medium" }] },
+		{ title: "Collaboration", count: 0, cards: [] },
+	];
+	assert.deepEqual(getJiraKanbanAssignees(columns), []);
+	const moved = moveJiraKanbanCardsToColumn(columns, ["TEAM-1"], "Collaboration");
+	assert.equal(moved[0].presenters, presenters);
+	assert.equal(moved[1].presenters, undefined);
+	assert.equal(moved[1].cards[0].assignee, undefined);
+	assert.doesNotMatch(BOARD_SOURCE, /presenters=\{column\.presenters\}/u);
+	assert.doesNotMatch(BOARD_COLUMN_SOURCE, /presenters|AvatarGroup|AvatarImage/u);
+});
 
 const {
 	BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX,
@@ -36,6 +56,7 @@ const {
 	getBoardColumnOuterWidthPx,
 	isBoardColumnCollapsed,
 	resolveBoardColumnRowPaddingInlineStart,
+	resolveBoardColumnShellSizing,
 	toggleCollapsedBoardColumn,
 } = require("./board-column-collapse.ts");
 const {
@@ -75,6 +96,20 @@ test("outer width reserves the transparent drop-target border on both edges", ()
 	assert.equal(getBoardColumnOuterWidthPx(true), BOARD_COLUMN_COLLAPSED_WIDTH_PX + 4);
 	assert.equal(getBoardColumnOuterWidthPx(false), 280);
 	assert.equal(getBoardColumnOuterWidthPx(true), 36);
+});
+
+test("fixed column sizing retains its previous expanded and collapsed widths", () => {
+	assert.deepEqual(resolveBoardColumnShellSizing(false), { flex: "1 1 0", minWidth: "280px", maxWidth: "280px" });
+	assert.deepEqual(resolveBoardColumnShellSizing(true), { flex: "1 1 0", minWidth: "36px", maxWidth: "36px" });
+});
+
+test("fluid expanded columns grow equally while collapsed columns reserve only their pill width", () => {
+	assert.deepEqual(resolveBoardColumnShellSizing(false, "fluid"), { flex: "1 1 0", minWidth: "280px", maxWidth: undefined });
+	assert.deepEqual(resolveBoardColumnShellSizing(true, "fluid"), { flex: "0 0 auto", minWidth: "36px", maxWidth: "36px" });
+	assert.match(BOARD_SOURCE, /columnWidth = "fixed"/u);
+	assert.match(BOARD_SOURCE, /resolveBoardColumnShellSizing\(collapsed, columnWidth\)/u);
+	assert.match(BOARD_SOURCE, /width: columnWidth === "fluid" \? "100%" : undefined/u);
+	assert.match(PAGE_SOURCE, /columnWidth=\{columnWidth\}/u);
 });
 
 test("the first collapsed column restores the simple chrome content inset", () => {
@@ -245,7 +280,7 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	// inset keeps visible simple-column content on the 24px header line.
 	assert.match(
 		BOARD_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
 	);
 
 	// The expand control's focus ring extends 3px past a 24px button, which is

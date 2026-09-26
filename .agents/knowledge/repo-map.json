@@ -2683,8 +2683,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 73,
-			"pageCount": 56
+			"ownerImportCount": 74,
+			"pageCount": 57
 		},
 		"pages": [
 			{
@@ -3145,6 +3145,22 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/jira-team-eu26/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/jira-team-eu26-end",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/jira-team-eu26-end/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -4054,7 +4070,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 447,
+			"manifestEntryCount": 448,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -4780,7 +4796,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 18,
+				"entryCount": 19,
 				"entries": [
 					{
 						"category": "projects",
@@ -4853,6 +4869,12 @@
 						"slug": "jira-team-eu26",
 						"name": "Jira Team EU26",
 						"importPath": "@/components/projects/jira-team-eu26"
+					},
+					{
+						"category": "projects",
+						"slug": "jira-team-eu26-end",
+						"name": "Jira Team EU26 End",
+						"importPath": "@/components/projects/jira-team-eu26-end"
 					},
 					{
 						"category": "projects",

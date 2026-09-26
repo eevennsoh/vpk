@@ -8,6 +8,13 @@ export type JiraIssuePriority = "major" | "medium" | "minor";
 export type JiraIssuePullRequestStatus = "open" | "failed" | "merged";
 export type JiraIssueVariant = "default" | "uncaptured-work";
 
+/** Optional card cover; the host can cap its rendered height in pixels. */
+export interface JiraIssueCoverImage {
+	src: string;
+	alt: string;
+	maxHeight?: number;
+}
+
 /** Dummy or live overlay fields for the Pull Request hover flyout. */
 export interface JiraIssuePullRequestPreview {
 	title: string;
