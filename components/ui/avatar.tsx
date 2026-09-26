@@ -18,7 +18,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { Icon } from "@/components/ui/icon"
 import { isAvatarOverlayType } from "@/components/ui/avatar-overlay"
-import { avatarHexagonBorderClip, avatarHexagonClip, avatarHexagonStatusAnchor } from "@/components/ui/avatar-hexagon"
+import { avatarHexagonBorderClip, avatarHexagonClip, avatarHexagonStyle } from "@/components/ui/avatar-hexagon"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
@@ -205,13 +205,8 @@ function Avatar({
 }: Readonly<AvatarProps>) {
 	const isInAvatarGroup = React.use(AvatarGroupContext)
 	const outline = avatarOutline(shape, outlineMotion)
-	const hexagonStatusAnchor = shape === "hexagon" ? avatarHexagonStatusAnchor() : undefined
-	const rootStyle = hexagonStatusAnchor
-		? {
-				...styleProp,
-				"--avatar-hexagon-status-left": hexagonStatusAnchor.left,
-				"--avatar-hexagon-status-top": hexagonStatusAnchor.top,
-			}
+	const rootStyle = shape === "hexagon"
+		? avatarHexagonStyle<AvatarPrimitive.Root.State>(styleProp)
 		: styleProp
 	const rootClassName = cn(
 		avatarVariants({ size, shape }),

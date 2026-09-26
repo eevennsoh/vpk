@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 const { humanAgentAvatarGeometry, humanAgentAvatarPositions } = require("../ui-custom/human-agent-avatar-geometry.ts");
 const { isAvatarOverlayType } = require("./avatar-overlay.ts");
-const { AVATAR_HEXAGON_REFERENCE_SIZE, AVATAR_HEXAGON_REFERENCE_RADIUS, avatarHexagonCornerRadius, avatarHexagonPoints, avatarHexagonClip, avatarHexagonBorderClip, avatarHexagonStatusAnchor } = require("./avatar-hexagon.ts");
+const { AVATAR_HEXAGON_REFERENCE_SIZE, AVATAR_HEXAGON_REFERENCE_RADIUS, avatarHexagonCornerRadius, avatarHexagonPoints, avatarHexagonClip, avatarHexagonBorderClip, avatarHexagonStatusAnchor, avatarHexagonStyle } = require("./avatar-hexagon.ts");
 const { humanAgentAvatarSizeSwapProgress } = require("../ui-custom/human-agent-avatar-motion-config.ts");
 const { getCodingAgentLogoFrame, getCodingAgentVisual } = require("../ui-custom/agent-avatar-coding-appearance.ts");
 const { thirdPartyLogoSrc } = require("./data/logo-third-party-data.ts");
@@ -239,7 +239,7 @@ test("avatar status indicator anchors to the top-right corner", () => {
 		AVATAR_SOURCE,
 		/"group-data-\[shape=hexagon\]\/avatar:top-\(--avatar-hexagon-status-top\) group-data-\[shape=hexagon\]\/avatar:right-auto group-data-\[shape=hexagon\]\/avatar:left-\(--avatar-hexagon-status-left\) group-data-\[shape=hexagon\]\/avatar:-translate-x-1\/2 group-data-\[shape=hexagon\]\/avatar:-translate-y-1\/2"/,
 	);
-	assert.match(AVATAR_SOURCE, /avatarHexagonStatusAnchor\(\)/);
+	assert.match(AVATAR_SOURCE, /avatarHexagonStyle<AvatarPrimitive\.Root\.State>\(styleProp\)/);
 	assert.doesNotMatch(
 		AVATAR_SOURCE,
 		/data-slot="avatar-status"[\s\S]*absolute right-0 bottom-0/,
@@ -570,4 +570,19 @@ test("primary avatar asset stays sized for rendered avatar slots", () => {
 	assert.equal(dimensions.height, 192);
 	assert.ok(dimensions.bytes < 80_000);
 	assert.match(AVATAR_SOURCE, /"2xl": "size-24"/);
+});
+
+
+test("hexagon styles preserve Base UI callbacks and the original style object", () => {
+	const source = Object.freeze({ opacity: 0.5, color: "red" });
+	const objectStyle = avatarHexagonStyle(source);
+	assert.equal(objectStyle.opacity, 0.5);
+	assert.equal(objectStyle.color, "red");
+	assert.deepEqual(source, { opacity: 0.5, color: "red" });
+	const callbackStyle = avatarHexagonStyle((state) => ({ opacity: state.imageLoadingStatus === "loaded" ? 1 : 0.25 }));
+	assert.equal(callbackStyle({ imageLoadingStatus: "loaded" }).opacity, 1);
+	assert.equal(callbackStyle({ imageLoadingStatus: "loading" }).opacity, 0.25);
+	assert.equal(callbackStyle({ imageLoadingStatus: "loaded" })["--avatar-hexagon-status-left"], avatarHexagonStatusAnchor().left);
+	assert.equal(avatarHexagonStyle(undefined)["--avatar-hexagon-status-top"], avatarHexagonStatusAnchor().top);
+	assert.equal(avatarHexagonStyle(() => undefined)({})["--avatar-hexagon-status-top"], avatarHexagonStatusAnchor().top);
 });
