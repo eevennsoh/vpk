@@ -12,7 +12,7 @@ import {
 	updateJiraKanbanCardAgentAssignment,
 } from "@/components/blocks/jira-kanban/state";
 import { createJiraDraggingColumns } from "./data";
-import { useJiraDraggingKeyboard, visibleJiraDraggingCards } from "./use-jira-dragging-keyboard";
+import { useJiraIssueSelectionKeyboard, visibleJiraIssueCards } from "@/components/blocks/jira-kanban/use-jira-issue-selection-keyboard";
 
 export function useJiraDragging() {
 	const [boardColumns, setBoardColumns] = useState(createJiraDraggingColumns);
@@ -48,9 +48,9 @@ export function useJiraDragging() {
 	const onClearSelection = () => { cancelDrag(); setSelection(createJiraKanbanSelectionState()); };
 	const onSelectAll = () => {
 		cancelDrag();
-		setSelection({ ...createJiraKanbanSelectionState(), selectedCardCodes: new Set(visibleJiraDraggingCards(rootRef.current).flatMap((card) => card.dataset.issueKey ? [card.dataset.issueKey] : [])) });
+		setSelection({ ...createJiraKanbanSelectionState(), selectedCardCodes: new Set(visibleJiraIssueCards(rootRef.current).flatMap((card) => card.dataset.issueKey ? [card.dataset.issueKey] : [])) });
 	};
-	useJiraDraggingKeyboard({
+	useJiraIssueSelectionKeyboard({
 		rootRef, dragging: draggedCardCode !== null, onCancelDrag: cancelDrag, onClearSelection, onSelectAll,
 		onRangeSelect: (range) => {
 			cancelDrag();
