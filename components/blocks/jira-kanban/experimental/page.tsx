@@ -37,6 +37,8 @@ import type {
 } from "../index";
 import { KANBAN_WORK_ITEM_BOTTOM_PADDING, resolveKanbanColumnChrome, withKanbanDropContentGutter } from "../column-chrome";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
+import { withAutoArrangeDestinations } from "./lib/board-auto-arrange";
+import { useBoardAutoArrangeCommit } from "./hooks/use-board-auto-arrange-commit";
 import {
 	AGENT_SESSION_PANEL_WIDTH_PX,
 	AgentSessionPanel,
@@ -247,7 +249,7 @@ function ExperimentalJiraKanbanPageContent({
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
 		() => createJiraKanbanColumns(BOARD_COLUMNS),
 	);
-	const boardColumns = controlledBoardColumns ?? localBoardColumns;
+	const boardColumns = useMemo(() => withAutoArrangeDestinations(controlledBoardColumns ?? localBoardColumns), [controlledBoardColumns, localBoardColumns]);
 	const updateBoardColumns = useCallback((
 		updater: (columns: readonly JiraKanbanColumnData[]) => readonly JiraKanbanColumnData[],
 	) => {
@@ -743,6 +745,7 @@ function ExperimentalJiraKanbanPageContent({
 	const handleCardDragEnd = () => {
 		setDraggedCard(null);
 	};
+	const handleAutoArrange = useBoardAutoArrangeCommit(updateBoardColumns, setSelection, setDraggedCard);
 
 	const handleListAgentSessionCreate = (
 		session: AgentSessionItem,
@@ -1062,6 +1065,7 @@ function ExperimentalJiraKanbanPageContent({
 								onCardDragStart={handleCardDragStart}
 								onCardDrop={handleCardDrop}
 								onCardDragEnd={handleCardDragEnd}
+								onAutoArrange={controlledBoardColumns === undefined || onBoardColumnsChange ? handleAutoArrange : undefined}
 								onCreateAgent={handleCreateColumnAgent}
 								onScrollUnderlapChange={setBoardContentUnderlapsSessionColumn}
 								onToggleColumnAgent={handleToggleColumnAgent}

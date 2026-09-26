@@ -34,8 +34,8 @@ export function resolveIssueDropLandingPoint(root: HTMLElement, title: string, c
 	return { x: bounds.left + bounds.width / 2, y: bounds.top + (face ? face.offsetHeight / 2 : Math.min(40, bounds.height / 2)) };
 }
 
-/** Freeze only the grabbed face; the selection shares one release animation. */
-export function captureIssueCardDropFlights({ root, preview, nativePreview, pointer, grabOffset, grabbed, codes }: Readonly<{
+/** Freeze the held traveller before commit; auto arrange can split its issues across columns. */
+export function captureIssueCardDropFlights({ root, preview, nativePreview, pointer, grabOffset, grabbed, codes, allCards = false }: Readonly<{
 	root: HTMLElement;
 	preview: HTMLElement | null;
 	nativePreview: HTMLElement | null;
@@ -43,23 +43,25 @@ export function captureIssueCardDropFlights({ root, preview, nativePreview, poin
 	grabOffset: IssueDropPoint;
 	grabbed: string;
 	codes: readonly string[];
+	/** Auto arrange sends every issue to its own suggestion. Manual drops keep one cohort flight. */
+	allCards?: boolean;
 }>): IssueCardDropFlight[] {
-	const source = findFace(root, grabbed);
-	if (!source) return [];
-	const surface = source.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]') ?? source;
-	const bounds = surface.getBoundingClientRect();
 	const lead = preview?.querySelector<HTMLElement>("[data-issue-cohort-front]");
-	const width = lead?.offsetWidth || bounds.width;
-	const height = lead?.offsetHeight || bounds.height;
-	const fallback = pointer
-		? { x: pointer.x - grabOffset.x + width / 2, y: pointer.y - grabOffset.y + height / 2 }
-		: { x: bounds.left + width / 2, y: bounds.top + height / 2 };
-	return resolveVisibleIssueDropCodes(codes, grabbed).map((code) => {
-		const rect = lead?.getBoundingClientRect();
-		const from = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-			: fallback;
-		const face = lead ? lead.cloneNode(true) as HTMLElement : createIssueFacePreview(source, nativePreview ?? undefined);
-		const rotation = lead ? new DOMMatrix(getComputedStyle(lead).transform) : new DOMMatrix();
+	const travellerBounds = lead?.getBoundingClientRect();
+	const visible = allCards ? codes : resolveVisibleIssueDropCodes(codes, grabbed);
+	return visible.flatMap((code) => {
+		const source = findFace(root, code);
+		if (!source) return [];
+		const surface = source.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]') ?? source;
+		const bounds = surface.getBoundingClientRect();
+		const width = lead?.offsetWidth || bounds.width;
+		const height = code === grabbed ? lead?.offsetHeight || bounds.height : bounds.height;
+		const from = travellerBounds ? { x: travellerBounds.left + travellerBounds.width / 2, y: travellerBounds.top + travellerBounds.height / 2 }
+			: pointer ? { x: pointer.x - grabOffset.x + width / 2, y: pointer.y - grabOffset.y + height / 2 }
+			: { x: bounds.left + width / 2, y: bounds.top + height / 2 };
+		const useTravellerFace = code === grabbed && lead;
+		const face = useTravellerFace ? lead.cloneNode(true) as HTMLElement : createIssueFacePreview(source, code === grabbed ? nativePreview ?? undefined : undefined);
+		const rotation = useTravellerFace ? new DOMMatrix(getComputedStyle(lead).transform) : new DOMMatrix();
 		rotation.m41 = rotation.m42 = 0;
 		for (const attribute of ["data-issue-drag-preview", "data-issue-cohort-front", "data-issue-deck-layer"]) face.removeAttribute(attribute);
 		Object.assign(face.style, {

@@ -78,6 +78,8 @@ export interface JiraKanbanAssigneeData {
 }
 
 export interface JiraKanbanCardData {
+	/** Demo AI suggestion; stable across selection, filtering and manual moves. */
+	autoArrangeStatus?: string;
 	/** Workflow status when a board column groups several statuses. */
 	status?: string;
 	title: string;
