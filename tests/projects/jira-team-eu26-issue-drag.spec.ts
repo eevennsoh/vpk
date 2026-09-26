@@ -7,7 +7,7 @@ const issue = (page: Page, code: string) => page.locator(`[data-board-agent-sess
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 
 async function startDrag(page: Page, code: string) {
-	const card = issue(page, code).locator('[draggable="true"]').first();
+	const card = issue(page, code).locator('[draggable]').first();
 	await card.scrollIntoViewIfNeeded();
 	const box = await card.boundingBox();
 	if (!box) throw new Error(`Missing card ${code}`);
@@ -262,7 +262,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
-		const card = (code: string) => issue(page, code).locator('[draggable="true"]').first();
+		const card = (code: string) => issue(page, code).locator('[draggable]').first();
 		const backdrop = (code: string) => issue(page, code).locator('[data-slot="jira-issue-agent-backdrop"]');
 		for (const code of ["PAY-118", "PAY-124"]) await expect(backdrop(code)).toHaveCSS("opacity", "0");
 		await expect(backdrop("PAY-105")).toHaveCSS("opacity", "1");

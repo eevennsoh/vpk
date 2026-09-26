@@ -13,7 +13,7 @@ async function setMoveVisual(page: Page, enabled: boolean) {
 }
 
 async function startDrag(page: Page, code: string) {
-	const card = page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+	const card = page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 	await card.scrollIntoViewIfNeeded();
 	const box = (await card.boundingBox())!;
 	await page.mouse.move(box.x + 70, box.y + 30);
