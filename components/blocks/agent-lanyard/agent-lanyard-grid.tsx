@@ -10,8 +10,8 @@ interface AgentLanyardGridProps {
 	color?: string;
 }
 
-// duration-slowest: one finite wave per hover; no idle animation or frame-time geometry work.
-const WAVE_TRANSITION = { duration: 0.6, ease: "linear" as const, times: GRID_WAVE_TIMES };
+// duration-normal + ease-out-practical: one finite wave per hover interaction.
+const WAVE_TRANSITION = { duration: 0.15, ease: [0.4, 1, 0.6, 1] as const, times: GRID_WAVE_TIMES };
 
 export function AgentLanyardGrid({ active, color }: Readonly<AgentLanyardGridProps>) {
 	const maskId = `lanyard-wave-${useId().replaceAll(":", "")}`;
