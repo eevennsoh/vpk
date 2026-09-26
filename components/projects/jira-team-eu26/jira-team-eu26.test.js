@@ -753,7 +753,7 @@ test("the Work items header switches between Board and List views with their ico
 	);
 	assert.match(
 		LIST_VIEW_SOURCE,
-		/"min-h-0 flex-1 overflow-hidden pb-6 ps-6 pt-0\.5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
+		/"min-h-0 flex-1 overflow-hidden pb-6 ps-6\.5 pt-0\.5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	assert.doesNotMatch(
 		LIST_VIEW_SOURCE,
