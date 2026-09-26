@@ -71,7 +71,7 @@ import {
 	BOARD_HEADER_TAB_STRIP_BOTTOM_PX,
 	ExperimentalJiraKanbanBoardHeader,
 } from "./experimental-board-header";
-import type { ExperimentalJiraKanbanPageProps } from "./experimental-page-types";
+import type { DraggedCardState, ExperimentalJiraKanbanPageProps } from "./experimental-page-types";
 import { useBoardCreatedCardArrival } from "./hooks/use-created-card-arrival";
 import { useBoardMenuWorkItem } from "./hooks/use-board-menu-work-item";
 import { useAgentFilterDisplay } from "./hooks/use-agent-filter-display";
@@ -151,11 +151,6 @@ const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";
 
 /** Stable identity, so an unscoped article does not re-render on every tick. */
 const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
-
-interface DraggedCardState {
-	card: JiraKanbanCardData;
-	sourceColumnTitle: string;
-}
 
 export default function ExperimentalJiraKanbanPage({
 	createWellBounce = "once",
@@ -1073,6 +1068,7 @@ function ExperimentalJiraKanbanPageContent({
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								paddingTop={0} paddingBottom={KANBAN_WORK_ITEM_BOTTOM_PADDING}
 								selectionToolbar={{
+									onSelectAll: () => setSelection({ ...createJiraKanbanSelectionState(), selectedCardCodes: new Set(boardIssueKeys) }),
 									onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
 									onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
 									onStatusChange: handleSelectedCardsStatusChange,

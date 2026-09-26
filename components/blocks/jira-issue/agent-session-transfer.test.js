@@ -296,7 +296,7 @@ test("Jira issue session transfer motion honours reduced motion at every layer",
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_BASE_CLASS =[\s\S]*motion-reduce:transition-none"/u);
 	// The magnet hook pins translation to 0 under reduced motion while retaining
 	// pointer relation state for non-motion feedback such as selected colors.
-	assert.match(MAGNETIC_PROXIMITY_SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/u);
+	assert.match(MAGNETIC_PROXIMITY_SOURCE, /const shouldReduceMotion = useMediaQuery\("\(prefers-reduced-motion: reduce\)"\);/u);
 	assert.match(
 		MAGNETIC_PROXIMITY_SOURCE,
 		/const reset = \(\) => \{[\s\S]*magnetX\.set\(0\);\s*\n\s*magnetY\.set\(0\);\s*\n\s*\};[\s\S]*if \(shouldReduceMotion\) reset\(\);/u,
@@ -305,7 +305,7 @@ test("Jira issue session transfer motion honours reduced motion at every layer",
 		MAGNETIC_PROXIMITY_SOURCE,
 		/if \(nextProximity !== "outside" && !shouldReduceMotion\) \{/u,
 	);
-	assert.match(MAGNETIC_PROXIMITY_SOURCE, /shouldReduceMotion,\s*targetRef,?\s*\]\);/u);
+	assert.match(MAGNETIC_PROXIMITY_SOURCE, /shouldReduceMotion,\s*targetRef,\s*trackDrag\]\);/u);
 	// A pointer drag must not fight Motion's layout projection.
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
@@ -647,7 +647,7 @@ test("Jira issue card hugs its content the moment the chip leaves the chin", () 
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row-wrap"/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?"py-1 has-\[\[data-session-chip-out\]\]:py-0"/u,
+		/\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?flushBottom \? "pt-1 pb-0" : "py-1",[\s\S]*?"has-\[\[data-session-chip-out\]\]:py-0"/u,
 	);
 	assert.match(
 		SOURCE,

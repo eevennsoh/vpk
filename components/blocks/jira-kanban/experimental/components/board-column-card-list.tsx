@@ -183,12 +183,15 @@ export function BoardColumnCardList({
 			>
 				<ScrollAreaViewport
 					ref={setCardListRef}
+					tabIndex={-1}
 					role="region"
 					aria-label={`${columnTitle} work items`}
 					data-created-card-arrival-id={createdCardArrival?.id}
 					data-jira-kanban-card-list=""
 					className={cn(
 						"min-h-0 min-w-0 overflow-y-auto overscroll-y-contain",
+						// Issue controls own keyboard focus; the viewport is only a scrolling container.
+						"focus-visible:ring-0 focus-visible:outline-none",
 						// Keep the viewport and card focus rings out of the edge fade.
 						"focus-visible:[mask-image:none]! focus-visible:[-webkit-mask-image:none]! has-[:focus-visible]:[mask-image:none]! has-[:focus-visible]:[-webkit-mask-image:none]!",
 						// The mask fades the top and bottom 3rem, which would wash out a line

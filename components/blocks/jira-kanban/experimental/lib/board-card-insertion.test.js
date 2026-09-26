@@ -2,9 +2,19 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+	getBoardIssueInsertionLineTop,
 	getBoardCardInsertionAnchorClassName,
 	resolveBoardCardInsertionPosition,
 } = require("./board-card-insertion.ts");
+
+test("the issue rule's centre bisects default, wider and fused card gaps", () => {
+	for (const gap of [0, 4, 8, 12]) {
+		const previousBottom = 100;
+		const followingTop = previousBottom + gap;
+		const lineTop = getBoardIssueInsertionLineTop(previousBottom, followingTop);
+		assert.equal(lineTop + 1, (previousBottom + followingTop) / 2);
+	}
+});
 
 const COLUMN = "To do";
 

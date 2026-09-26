@@ -462,10 +462,10 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 		JIRA_DROPZONE_SOURCE,
 		/expanded \? "h-16 text-sm leading-5" : "h-8 text-sm leading-5"/u,
 	);
-	assert.match(
-		JIRA_DROPZONE_SOURCE,
-		/selected\s*\n\t\t\t\t\t\? "border-border-selected bg-bg-selected text-text-selected"\n\t\t\t\t\t: "border-border bg-surface text-text-subtlest"/u,
-	);
+	assert.match(JIRA_DROPZONE_SOURCE, /resolveJiraDropzoneWellColors\(selected\)/u);
+	const { resolveJiraDropzoneWellColors } = require("../../blocks/jira-dropzone/lib/jira-dropzone-chrome.ts");
+	assert.equal(resolveJiraDropzoneWellColors(true), "border-border-selected bg-bg-selected text-text-selected");
+	assert.equal(resolveJiraDropzoneWellColors(false), "border-border bg-surface text-text-subtlest");
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
 		/marching \? JIRA_DROPZONE_ANTS_CLASS : null/u,
@@ -538,7 +538,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
-		/<motion\.div[\s\S]*x: pinMagnet \? 0 : magnet\.x,[\s\S]*<motion\.span[\s\S]*x: pinMagnet \? 0 : magnet\.labelX,/u,
+		/<motion\.div[\s\S]*x: pinMagnet \? 0 : magnet\.x,[\s\S]*<JiraDropzoneMagneticLabel[^>]*magnet=\{magnet\} pinned=\{pinMagnet\}/u,
 	);
 	assert.match(JIRA_DROPZONE_SOURCE, /const dropTargetAttributes = isPresent && active \? \{[\s\S]*"data-board-agent-session-drop-zone": "create",[\s\S]*\} : \{\};/u);
 	assert.match(

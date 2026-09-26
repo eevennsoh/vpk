@@ -169,7 +169,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(page.locator("[data-issue-status-zone]")).toHaveCount(0);
 
 		await startDrag(page, "PAY-118");
-		await expect(page.locator("[data-issue-drag-preview]")).toHaveCount(0);
+		await expect(page.locator("[data-issue-drag-preview]")).toHaveCount(1);
 		const transitionHeader = column(page, "To do").locator("[data-transitioning]");
 		await expect(transitionHeader).toHaveText("Transition to...");
 		await expect(transitionHeader).toHaveCSS("justify-content", "center");
@@ -255,7 +255,7 @@ test("grouped statuses reject header drops and use 2px split-zone strokes", asyn
 	for (const status of ["In progress", "Paused"]) {
 		const zone = progress.locator(`[data-issue-status-zone="${status}"]`);
 		await expect(zone.locator("[data-issue-transition-arrow]")).toBeVisible();
-		await expect(zone.locator("[data-issue-transition-arrow]")).toHaveClass(/text-icon-subtle/);
+		await expect(zone.locator("[data-issue-transition-arrow]")).toHaveClass(/text-text-subtle/);
 	}
 	await page.screenshot({ path: "output/agent-browser/dnd/header-body-only.png" });
 	await page.mouse.up();

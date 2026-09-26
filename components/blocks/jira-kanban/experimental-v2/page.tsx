@@ -618,6 +618,7 @@ export default function ExperimentalV2JiraKanbanPage({
 						onToggleColumnAgent={handleToggleColumnAgent}
 						paddingTop={0}
 						selectionToolbar={{
+							onSelectAll: () => setSelection({ ...createJiraKanbanSelectionState(), selectedCardCodes: new Set(filteredBoardColumns.flatMap((column) => column.cards.map((card) => card.code))) }),
 							onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
 							onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
 							onStatusChange: handleSelectedCardsStatusChange,

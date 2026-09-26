@@ -4070,7 +4070,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 449,
+			"manifestEntryCount": 450,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -4112,7 +4112,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 114,
+				"entryCount": 115,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4389,6 +4389,12 @@
 						"slug": "jira-creating",
 						"name": "Jira Creating",
 						"importPath": "@/components/blocks/jira-creating"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-dragging",
+						"name": "Jira Dragging",
+						"importPath": "@/components/blocks/jira-dragging"
 					},
 					{
 						"category": "blocks",

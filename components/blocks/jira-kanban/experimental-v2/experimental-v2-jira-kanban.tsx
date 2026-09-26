@@ -4,6 +4,7 @@
 // oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { hasJiraSelectionToggleModifier } from "../selection-modifiers";
 import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -767,7 +768,7 @@ export function ExperimentalV2JiraKanban({
 									const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
-											metaOrCtrlKey: event.metaKey || event.ctrlKey,
+											metaOrCtrlKey: hasJiraSelectionToggleModifier(event),
 										};
 										if (modifiers.shiftKey || modifiers.metaOrCtrlKey) {
 											event.preventDefault();
@@ -866,8 +867,10 @@ export function ExperimentalV2JiraKanban({
 					<JiraToolbar
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
+						dismissOnEscape={selectionToolbar.dismissOnEscape}
 						defaultPinnedAgentIds={selectionToolbar.defaultPinnedAgentIds}
-						defaultPinnedSkillIds={selectionToolbar.defaultPinnedSkillIds}
+						onSelectAll={selectionToolbar.onSelectAll}
+						onAskRovo={selectionToolbar.onAskRovo}
 						onAgentAssignmentChange={selectionToolbar.onAgentAssignmentChange}
 						onBrowseAgents={selectionToolbar.onBrowseAgents}
 						onClearSelection={selectionToolbar.onClearSelection}
@@ -881,7 +884,6 @@ export function ExperimentalV2JiraKanban({
 						selectedAgentIds={selectionToolbar.selectedAgentIds}
 						selectedCount={selectedCount}
 						selectedStatus={selectedStatus}
-						skills={selectionToolbar.skills}
 						statusOptions={boardColumns.map((column) => column.title)}
 					/>
 				) : null}

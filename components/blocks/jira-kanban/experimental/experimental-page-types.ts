@@ -25,6 +25,11 @@ import type { HeaderAssigneeRenderer, ExperimentalJiraKanbanView } from "./exper
 import type { ExperimentalJiraKanbanMode } from "./pulse/components/pulse-mode-controls";
 import type { PulseAgentSession, PulseLooseWork, PulseMember, PulseWorkItem } from "./pulse/types";
 
+export interface DraggedCardState {
+	card: JiraKanbanCardData;
+	sourceColumnTitle: string;
+}
+
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
 	/**

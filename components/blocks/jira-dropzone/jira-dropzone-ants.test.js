@@ -9,6 +9,7 @@ const {
 	JIRA_DROPZONE_ANTS_PERIOD_PX,
 	JIRA_DROPZONE_ANTS_STROKE_CLASS,
 } = require("./lib/jira-dropzone-ants.ts");
+const { JIRA_DROPZONE_WELL_CHROME_CLASS, resolveJiraDropzoneWellColors } = require("./lib/jira-dropzone-chrome.ts");
 
 const DROPZONE = readFileSync(path.join(__dirname, "jira-dropzone.tsx"), "utf8");
 const STROKE = readFileSync(path.join(__dirname, "jira-dropzone-ants-stroke.tsx"), "utf8");
@@ -28,14 +29,10 @@ test("ants keep the existing dashed well chrome and only move the stroke", () =>
 	assert.equal(JIRA_DROPZONE_ANTS_STROKE_CLASS, "jira-dropzone-ants-stroke");
 	assert.equal(JIRA_DROPZONE_ANTS_DASHARRAY, "3 3");
 	assert.equal(JIRA_DROPZONE_ANTS_PERIOD_PX, 6);
-	assert.match(
-		DROPZONE,
-		/export const JIRA_DROPZONE_WELL_CHROME_CLASS = "rounded-lg border border-dashed";/u,
-	);
-	assert.match(
-		DROPZONE,
-		/selected\s*\n\t\t\t\t\t\? "border-border-selected bg-bg-selected text-text-selected"\n\t\t\t\t\t: "border-border bg-surface text-text-subtlest"/u,
-	);
+	assert.equal(JIRA_DROPZONE_WELL_CHROME_CLASS, "rounded-lg border border-dashed bg-clip-padding");
+	assert.equal(resolveJiraDropzoneWellColors(true), "border-border-selected bg-bg-selected text-text-selected");
+	assert.equal(resolveJiraDropzoneWellColors(false), "border-border bg-surface text-text-subtlest");
+	assert.match(DROPZONE, /resolveJiraDropzoneWellColors\(selected\)/u);
 	assert.match(DROPZONE, /marching \? JIRA_DROPZONE_ANTS_CLASS : null/u);
 	assert.match(DROPZONE, /marching \? <JiraDropzoneAntsStroke selected=\{selected\} \/> : null/u);
 	assert.match(DROPZONE, /const marching = active && ants && !shouldReduceMotion;/u);
