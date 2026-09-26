@@ -54,7 +54,7 @@ for (const width of [1440, 1920]) {
 			const card = issue(page, `TEU-${index + 1}`);
 			await expect(card).toContainText(title);
 			await card.scrollIntoViewIfNeeded();
-			const cover = card.locator("img");
+			const cover = card.locator('[data-slot="jira-issue-cover"] img');
 			await expect(cover).toHaveCount(1);
 			await expect.poll(() => cover.evaluate((node) => (node as HTMLImageElement).complete && (node as HTMLImageElement).naturalWidth > 0)).toBe(true);
 			const height = await cover.evaluate((node) => node.getBoundingClientRect().height);
@@ -132,7 +132,7 @@ test("existing single-card and selected-cohort drag moves work items into Done",
 	await expect(issue(page, "TEU-2")).toHaveAttribute("data-board-column-title", "Done");
 	await expect(issue(page, "TEU-3")).toHaveAttribute("data-board-column-title", "Done");
 	for (const code of ["TEU-1", "TEU-2", "TEU-3"]) {
-		const coverHeight = await issue(page, code).locator("img").evaluate((node) => node.getBoundingClientRect().height);
+		const coverHeight = await issue(page, code).locator('[data-slot="jira-issue-cover"] img').evaluate((node) => node.getBoundingClientRect().height);
 		expect(coverHeight).toBeGreaterThan(0);
 		expect(coverHeight).toBeLessThanOrEqual(120);
 	}
