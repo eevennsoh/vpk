@@ -3,11 +3,65 @@ import { expect, test, type Page } from "@playwright/test";
 test.setTimeout(60_000);
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 
+test("EU26 plain click does not select; Shift click selects a range", async ({ page }) => {
+	await page.goto(`${origin}/jira-team-eu26`);
+	const control = (code: string) => issue(page, code).locator('[data-jira-issue-activation-control]');
+	const card = (code: string) => issue(page, code).locator('[draggable="true"]').first();
+	await card("PAY-105").click({ position: { x: 70, y: 30 } });
+	await expect(control("PAY-105")).toHaveAttribute("aria-pressed", "false");
+	await expect(page.getByRole("button", { name: "Clear selection", exact: true })).toHaveCount(0);
+	await card("PAY-105").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+	await card("PAY-123").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+	await expect(control("PAY-105")).toHaveAttribute("aria-pressed", "true");
+	await expect(control("PAY-123")).toHaveAttribute("aria-pressed", "true");
+	await expect(control("PAY-107")).toHaveAttribute("aria-pressed", "true");
+	await page.keyboard.press("Escape");
+	await expect(control("PAY-105")).toHaveAttribute("aria-pressed", "false");
+});
+
+test("EU26 menu Select is keyboard accessible and restores card focus", async ({ page }) => {
+	await page.goto(`${origin}/jira-team-eu26`);
+	await issue(page, "PAY-105").hover();
+	await page.getByRole("button", { name: "More actions for PAY-105", exact: true }).click();
+	const menu = page.getByRole("menu").last();
+	for (const action of ["Select", "Archive", "Delete"]) {
+		await expect(menu.getByRole("menuitem", { name: action, exact: true })).toBeEnabled();
+	}
+	const select = menu.getByRole("menuitem", { name: "Select", exact: true });
+	await expect(select).toHaveAttribute("aria-description", "Shift plus click");
+	await page.screenshot({ path: "output/agent-browser/dnd/eu26-card-menu.png" });
+	await select.focus();
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("menu")).toHaveCount(0);
+	const control = issue(page, "PAY-105").locator('[data-jira-issue-activation-control]');
+	await expect(control).toHaveAttribute("aria-pressed", "true");
+	await expect(control).toBeFocused();
+});
+
+for (const action of ["Archive", "Delete"]) {
+	test(`EU26 menu ${action} removes only its issue from board and list`, async ({ page }) => {
+		await page.goto(`${origin}/jira-team-eu26`);
+		await expect(issue(page, "PAY-105")).toBeVisible();
+		const initialCount = await column(page, "In progress").locator("[data-issue-key]").count();
+		await issue(page, "PAY-105").hover();
+		await page.getByRole("button", { name: "More actions for PAY-105", exact: true }).click();
+		await page.getByRole("menuitem", { name: action, exact: true }).click();
+		await expect(issue(page, "PAY-105")).toHaveCount(0);
+		await expect(column(page, "In progress").locator("[data-issue-key]")).toHaveCount(initialCount - 1);
+		await expect(issue(page, "PAY-107")).toBeVisible();
+		await page.getByRole("tab", { name: "List", exact: true }).click();
+		await expect(page.getByRole("row").filter({ hasText: "PAY-105" })).toHaveCount(0);
+		await expect(page.getByRole("row").filter({ hasText: "PAY-107" })).toBeVisible();
+	});
+}
+
 async function startDrag(page: Page, code: string) {
-	const card = issue(page, code).locator('[draggable]').first();
+	// Pointer transport temporarily disables native draggable during pickup.
+	const card = issue(page, code).locator("[draggable]").first();
 	await card.scrollIntoViewIfNeeded();
 	const box = await card.boundingBox();
 	if (!box) throw new Error(`Missing card ${code}`);

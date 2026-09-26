@@ -812,7 +812,7 @@ function ExperimentalJiraKanbanPageContent({
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
 		untrackedSessions: agentSessionColumnConfig?.items,
 	});
-	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
+	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleCardRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
 		rootRef: boardSessionDrag.boardRootRef, enabled: issueSelectionAppearance === "fused-backdrop" && !isListContent,
 		filteredBoardColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
 	});
@@ -958,6 +958,9 @@ function ExperimentalJiraKanbanPageContent({
 								assignedAgentIdsByColumn={columnAgentAssignments}
 								boardColumns={filteredBoardColumns}
 								cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
+								cardMoreMenuActions={issueSelectionAppearance === "fused-backdrop" && (controlledBoardColumns === undefined || onBoardColumnsChange)
+									? { onArchive: handleCardRemove, onDelete: handleCardRemove }
+									: undefined}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale}
 								collapsedColumns={displayedCollapsedColumns}
 								columnChrome={columnChrome} columnSizing={columnSizing} columnWidth={columnWidth}
