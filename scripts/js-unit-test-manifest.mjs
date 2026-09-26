@@ -288,6 +288,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	],
 	"source-contract": [
 		"components/blocks/jira-issue/cover-image.test.js",
+		"components/website/registry/blocks-variants.test.js",
 		"components/blocks/top-navigation/top-navigation-chat-state.test.js",
 		"components/blocks/agent-insights/agent-insights.test.js",
 		"components/visual/scroll-mask/lib.test.ts",
