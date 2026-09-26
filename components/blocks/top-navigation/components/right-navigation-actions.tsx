@@ -57,9 +57,9 @@ export function RightNavigationActions({
 }: Readonly<RightNavigationActionsProps>) {
 	const hasSettingsMenu = Boolean(settingsMenuItems && settingsMenuItems.length > 0);
 	const { designVariants, setDesignVariant } = useDesignVariants();
-	const settingsDesignVariants = settingsDesignVariantIds === undefined
-		? DESIGN_VARIANTS
-		: DESIGN_VARIANTS.filter((variant) => settingsDesignVariantIds.includes(variant.id));
+	// Demo properties are opt-in; only Jira Team EU26 supplies this list.
+	const settingsDesignVariants = DESIGN_VARIANTS.filter((variant) => settingsDesignVariantIds?.includes(variant.id));
+	const hasSettingsProperties = settingsDesignVariants.length > 0;
 
 	return (
 		<>
@@ -86,9 +86,8 @@ export function RightNavigationActions({
 				<QuestionCircleIcon label="" color={token("color.icon.subtle")} />
 			</Button>
 
-			{/* Fixed-presentation routes retain the visual chrome without exposing
-			    a control that cannot do anything. */}
-			{settingsIconOnly ? (
+			{/* Retain visual chrome without exposing an empty settings control. */}
+			{settingsIconOnly || (!hasSettingsProperties && !hasSettingsMenu) ? (
 				<span
 					aria-hidden="true"
 					className="inline-flex size-8 shrink-0 items-center justify-center text-icon-subtle [&_svg]:size-4 [&_svg]:shrink-0"
@@ -112,26 +111,27 @@ export function RightNavigationActions({
 						<SettingsIcon label="" color="currentColor" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-64">
-						<DropdownMenuGroup>
-							{/* Base UI requires group parts (the label) to live inside the
-							    group that owns them, so the label is nested here. */}
-							<DropdownMenuLabel>Properties</DropdownMenuLabel>
-							{settingsDesignVariants.map((variant) => (
-								<DropdownMenuCheckboxItem
-									indicatorPlacement="end"
-									checked={designVariants[variant.id]}
-									key={variant.id}
-									onCheckedChange={(checked) => {
-										setDesignVariant(variant.id, checked);
-									}}
-								>
-									{variant.label}
-								</DropdownMenuCheckboxItem>
-							))}
-						</DropdownMenuGroup>
+						{hasSettingsProperties ? (
+							<DropdownMenuGroup>
+								{/* Base UI requires the label to live inside its group. */}
+								<DropdownMenuLabel>Properties</DropdownMenuLabel>
+								{settingsDesignVariants.map((variant) => (
+									<DropdownMenuCheckboxItem
+										indicatorPlacement="end"
+										checked={designVariants[variant.id]}
+										key={variant.id}
+										onCheckedChange={(checked) => {
+											setDesignVariant(variant.id, checked);
+										}}
+									>
+										{variant.label}
+									</DropdownMenuCheckboxItem>
+								))}
+							</DropdownMenuGroup>
+						) : null}
 						{hasSettingsMenu ? (
 							<>
-								<DropdownMenuSeparator />
+								{hasSettingsProperties ? <DropdownMenuSeparator /> : null}
 								<DropdownMenuGroup>
 									{settingsMenuItems?.map((item) => (
 										<DropdownMenuItem

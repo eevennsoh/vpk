@@ -210,15 +210,12 @@ test("right navigation settings button can render optional dropdown actions", ()
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /interface RightNavigationSettingsMenuItem/);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /settingsMenuItems\?: ReadonlyArray<RightNavigationSettingsMenuItem>/);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /const hasSettingsMenu = Boolean\(settingsMenuItems && settingsMenuItems\.length > 0\);/);
-	// The settings dropdown itself is now unconditional — it owns the
-	// design-variant toggles. What stays gated on hasSettingsMenu is the
-	// caller-supplied block, so an empty settingsMenuItems cannot leave a
-	// dangling separator and empty group hanging off the bottom of the menu.
+	// Caller-supplied settings stay usable without any demo properties.
 	assert.doesNotMatch(RIGHT_NAVIGATION_ACTIONS_SOURCE, /Design variation/);
 	assert.doesNotMatch(RIGHT_NAVIGATION_ACTIONS_SOURCE, /useDesignVariation|design-variation/);
 	assert.match(
 		RIGHT_NAVIGATION_ACTIONS_SOURCE,
-		/hasSettingsMenu \? \([\s\S]*<DropdownMenuSeparator \/>[\s\S]*<DropdownMenuGroup>[\s\S]*onSelect=\{item\.onSelect\}/u,
+		/hasSettingsMenu \? \([\s\S]*hasSettingsProperties \? <DropdownMenuSeparator \/> : null[\s\S]*<DropdownMenuGroup>[\s\S]*onSelect=\{item\.onSelect\}/u,
 	);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /aria-label="Settings"[\s\S]*<DropdownMenuContent align="end" className="w-64">/u);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /onSelect=\{item\.onSelect\}/);
@@ -233,7 +230,7 @@ test("routes can limit Settings properties to supported design variants", () => 
 	);
 	assert.match(
 		RIGHT_NAVIGATION_ACTIONS_SOURCE,
-		/const settingsDesignVariants = settingsDesignVariantIds === undefined\s*\? DESIGN_VARIANTS\s*: DESIGN_VARIANTS\.filter\(\(variant\) => settingsDesignVariantIds\.includes\(variant\.id\)\);/u,
+		/const settingsDesignVariants = DESIGN_VARIANTS\.filter\(\(variant\) => settingsDesignVariantIds\?\.includes\(variant\.id\)\);/u,
 	);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /\{settingsDesignVariants\.map\(\(variant\) => \(/u);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsDesignVariantIds\?: readonly DesignVariantId\[\];/u);
@@ -242,6 +239,13 @@ test("routes can limit Settings properties to supported design variants", () => 
 	assert.match(TOP_NAVIGATION_SOURCE, /settingsDesignVariantIds=\{settingsDesignVariantIds\}/u);
 	assert.match(PROJECT_LAYOUT_SOURCE, /settingsDesignVariantIds\?: readonly DesignVariantId\[\];/u);
 	assert.match(PROJECT_LAYOUT_SOURCE, /settingsDesignVariantIds=\{settingsDesignVariantIds\}/u);
+});
+
+test("Settings properties require an explicit project-owned list", () => {
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /const hasSettingsProperties = settingsDesignVariants\.length > 0;/u);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /settingsIconOnly \|\| \(!hasSettingsProperties && !hasSettingsMenu\) \? \(/u);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /hasSettingsProperties \? \([\s\S]*<DropdownMenuLabel>Properties<\/DropdownMenuLabel>/u);
+	assert.doesNotMatch(RIGHT_NAVIGATION_ACTIONS_SOURCE, /\? DESIGN_VARIANTS\s*:/u);
 });
 
 test("Settings properties put their checkmark in the trailing slot", () => {
@@ -258,7 +262,7 @@ test("top navigation can retain a static settings icon for fixed-presentation ro
 	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsIconOnly=\{settingsIconOnly\}/u);
 	assert.match(
 		RIGHT_NAVIGATION_ACTIONS_SOURCE,
-		/settingsIconOnly \? \([\s\S]*aria-hidden="true"[\s\S]*data-static-settings-icon=""[\s\S]*<SettingsIcon label="" color="currentColor" \/>[\s\S]*\) : \(\s*<DropdownMenu>/u,
+		/settingsIconOnly \|\| \(!hasSettingsProperties && !hasSettingsMenu\) \? \([\s\S]*aria-hidden="true"[\s\S]*data-static-settings-icon=""[\s\S]*<SettingsIcon label="" color="currentColor" \/>[\s\S]*\) : \(\s*<DropdownMenu>/u,
 	);
 });
 
