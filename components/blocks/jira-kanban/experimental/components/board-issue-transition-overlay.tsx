@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef } from "react";
+import ArrowDownIcon from "@atlaskit/icon/core/arrow-down";
+import { Icon } from "@/components/ui/icon";
 import { JiraDropzoneAntsStroke } from "@/components/blocks/jira-dropzone/jira-dropzone-ants-stroke";
 import { JiraDropzoneMagneticLabel } from "@/components/blocks/jira-dropzone/jira-dropzone-magnetic-label";
 import { JIRA_DROPZONE_ANTS_CLASS } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-ants";
@@ -39,16 +41,30 @@ function BoardIssueStatusDropZone({ selected, status }: Readonly<{ selected: boo
 	</div>;
 }
 
-export function BoardIssueTransitionOverlay({ issueDrop, title }: Readonly<{ issueDrop: ReturnType<typeof useBoardIssueDrop>; title: string }>) {
+export function BoardIssueTransitionOverlay({ issueDrop, title, moveVisual = true }: Readonly<{ issueDrop: ReturnType<typeof useBoardIssueDrop>; title: string; moveVisual?: boolean }>) {
 	return <>
 		{issueDrop.offeringChoices || issueDrop.current?.entered ? (
-			<div className={cn("absolute inset-0 z-20 flex flex-col p-1", !issueDrop.choosing ? "opacity-0" : null)} style={{ gap: token("space.050") }} aria-hidden={!issueDrop.choosing || undefined} role="group" aria-label={`Choose a status in ${title}`}>
-				{issueDrop.choosing ? issueDrop.choices.map((status) => <BoardIssueStatusDropZone key={status} selected={issueDrop.current?.status === status} status={status} />) : null}
+			<div
+				className={cn("absolute inset-0 z-20 flex flex-col", moveVisual ? "p-1" : "overflow-hidden rounded-lg border-2 border-border-selected bg-bg-selected", !issueDrop.choosing ? "opacity-0" : null)}
+				style={{ gap: moveVisual ? token("space.050") : undefined }}
+				aria-hidden={!issueDrop.choosing || undefined}
+				role="group"
+				aria-label={`Choose a status in ${title}`}
+			>
+				{issueDrop.choosing ? issueDrop.choices.map((status) => moveVisual ? (
+					<BoardIssueStatusDropZone key={status} selected={issueDrop.current?.status === status} status={status} />
+				) : (
+					<div key={status} data-issue-status-zone={status} className={cn("flex min-h-0 flex-1 flex-col items-center justify-center gap-2 border-border-selected text-sm text-text last:border-t-2", issueDrop.current?.status === status ? "bg-bg-selected-hovered" : null)}>
+						<span>Transition to</span>
+						<Icon aria-hidden className="text-icon-subtle" data-issue-transition-arrow="" render={<ArrowDownIcon color="currentColor" label="" size="small" />} />
+						<Lozenge variant="information">{status}</Lozenge>
+					</div>
+				)) : null}
 			</div>
 		) : null}
 		{!issueDrop.choosing && issueDrop.current?.lineTop !== undefined ? (
 			<div className="pointer-events-none absolute inset-x-1 z-30" style={{ top: issueDrop.current.lineTop }} data-issue-drop-before={issueDrop.current.beforeCardCode ?? "end"}>
-				<BoardCardInsertionLine position="before" seam="edge" marker="none" />
+				<BoardCardInsertionLine position="before" seam="edge" marker={moveVisual ? "none" : "circle"} />
 			</div>
 		) : null}
 	</>;

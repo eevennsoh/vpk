@@ -103,6 +103,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	addAgentLabel?: string;
 	/** Issue-only previews, grouped workflow targets and ordered drops. */
 	issueDragTransitions?: boolean;
+	/** False restores the original issue move visuals without changing drop behavior. */
+	issueMoveVisual?: boolean;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/** One-shot card entrance requested by the host after creating cards from sessions. */
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
@@ -265,6 +267,7 @@ function BoardColumnShell({
 	columnWidth,
 	count,
 	createWorkItemDropZoneLabel,
+	issueMoveVisual,
 	onDragLeave,
 	onDragOver,
 	onDrop,
@@ -280,6 +283,7 @@ function BoardColumnShell({
 	columnSizing: "fill" | "content";
 	columnWidth: BoardColumnWidth;
 	count: number;
+	issueMoveVisual: boolean;
 	createWorkItemDropZoneLabel?: string;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -328,8 +332,9 @@ function BoardColumnShell({
 				columnSizing === "content" ? "group/board-column-shell relative isolate flex min-h-0 flex-col" : null,
 				isResizing ? "overflow-hidden" : "overflow-visible",
 			)}
-			onDragEnterCapture={onDragOver}
-			onDragOverCapture={onDragOver}
+			onDragEnterCapture={issueMoveVisual ? onDragOver : undefined}
+			onDragOverCapture={issueMoveVisual ? onDragOver : undefined}
+			onDragOver={issueMoveVisual ? undefined : onDragOver}
 			onDragLeave={onDragLeave}
 			onDrop={onDrop}
 			onTransitionEnd={handleTransitionEnd}
@@ -388,7 +393,8 @@ function ExperimentalJiraKanbanView({
 	cardMoveAnimation,
 	iconScale = "compact",
 	issueDragTransitions = false,
-	issueSelectionAppearance = "card",
+	issueMoveVisual = true,
+	issueSelectionAppearance: requestedSelectionAppearance = "card",
 	collapsedColumns: controlledCollapsedColumns,
 	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
 	columnSizing = "fill",
@@ -435,6 +441,7 @@ function ExperimentalJiraKanbanView({
 	boardSessionDrag: BoardAgentSessionDrag;
 	captureBoardSessionDragRoot?: boolean;
 }) {
+	const issueSelectionAppearance = issueMoveVisual ? requestedSelectionAppearance : "card";
 	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const scrollportPaddingTop = withKanbanDropRingClipGutter(paddingTop, chrome).paddingTop;
 	const untrackedPaddingTop = withKanbanDropContentGutter(paddingTop, chrome).paddingTop;
@@ -448,7 +455,7 @@ function ExperimentalJiraKanbanView({
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const issueDragImageRef = useRef<HTMLElement | null>(null);
 	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop", draggedCardCode, onCardDragEnd);
-	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onCreatedComplete: onCreatedCardArrivalComplete });
+	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onCreatedComplete: onCreatedCardArrivalComplete });
 	const presentedCardArrival = useMemo(() => createdCardArrival
 		? { ...createdCardArrival, deferred: receivingCreatedCards }
 		: undefined, [createdCardArrival, receivingCreatedCards]);
@@ -529,7 +536,7 @@ function ExperimentalJiraKanbanView({
 	const setColumnDropArmed = (element: HTMLDivElement, armed: boolean) => {
 		const ring = element.querySelector<HTMLElement>("[data-jira-kanban-column-drop-ring]") ?? element;
 		const choosingStatus = element.querySelector("[data-issue-status-choices]") !== null;
-		setKanbanColumnDropArmed(ring, chrome, armed && (choosingStatus || element.dataset.jiraKanbanCardCount === "0"));
+		setKanbanColumnDropArmed(ring, chrome, armed && (!issueMoveVisual || element.dataset.collapsed === "true" || choosingStatus || element.dataset.jiraKanbanCardCount === "0"));
 	};
 
 	const handleColumnDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -763,6 +770,7 @@ function ExperimentalJiraKanbanView({
 							columnSizing={columnSizing}
 							columnWidth={columnWidth}
 							count={column.cards.length}
+							issueMoveVisual={issueMoveVisual}
 							createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 							sessionDragTransaction={boardSessionDrag.transaction}
 							key={column.title}
@@ -798,6 +806,7 @@ function ExperimentalJiraKanbanView({
 								issueDragSource={issueDragSource}
 								statuses={column.statuses}
 								onIssueDrop={issueDropArrival.handleDrop}
+								issueMoveVisual={issueMoveVisual}
 							>
 								{column.cards.map((card, cardIndex) => {
 									const isActive = activeCardCode === card.code;

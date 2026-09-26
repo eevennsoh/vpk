@@ -28,6 +28,7 @@ function BoardColumnHeader({
 	count,
 	headerStyle,
 	issueDrop,
+	issueMoveVisual,
 	onCollapse,
 	onCreateAgent,
 	onToggleAgent,
@@ -38,12 +39,13 @@ function BoardColumnHeader({
 	count: number;
 	headerStyle?: CSSProperties;
 	issueDrop: BoardIssueDropState;
+	issueMoveVisual: boolean;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleAgent?: (agentId: string) => void;
 	title: string;
 }>) {
-	const isTransitioning = Boolean(issueDrop.active);
+	const isTransitioning = Boolean(issueDrop.active && (issueMoveVisual || issueDrop.active.columnTitle === title));
 	const transitionPrefix = issueDrop.active && issueDrop.active.columnTitle !== title ? `${issueDrop.active.status} →` : null;
 	const destination = transitionPrefix ? issueDrop.header.slice(transitionPrefix.length).trimStart() : "";
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
@@ -53,13 +55,13 @@ function BoardColumnHeader({
 			data-transitioning={isTransitioning || undefined}
 			className={cn(
 				"flex min-w-0 items-center gap-2",
-				"justify-between",
+				!issueMoveVisual && isTransitioning ? "justify-center" : "justify-between",
 			)}
 			style={{ paddingBottom: token("space.100"), ...headerStyle }}
 		>
 			{/* Match the compact controls' row height when pickup replaces them with transition copy. */}
-			<div className="flex min-h-6 min-w-0 flex-1 items-center text-xs font-medium leading-4 text-text-subtle">
-				<JiraDropzoneCopyReveal
+			<div className={cn("flex min-h-6 min-w-0 flex-1 items-center text-xs font-medium leading-4 text-text-subtle", !issueMoveVisual && isTransitioning ? "justify-center" : null)}>
+				{issueMoveVisual ? <JiraDropzoneCopyReveal
 					contentKey={transitionPrefix ?? issueDrop.header}
 					dataPrefix="board-column-header"
 					mode="cycle"
@@ -83,7 +85,12 @@ function BoardColumnHeader({
 							>{destination}</JiraDropzoneCopyReveal>
 						</span>
 					</span>
-				) : issueDrop.header}</JiraDropzoneCopyReveal>
+				) : issueDrop.header}</JiraDropzoneCopyReveal> : (
+					<span className="inline-flex min-w-0 items-center gap-1.5">
+						<span className="truncate">{issueDrop.header}</span>
+						{isTransitioning ? null : <span data-board-column-count="" className="shrink-0 font-normal text-text-subtlest">{count}</span>}
+					</span>
+				)}
 			</div>
 			{isTransitioning ? null : (
 				<div className="flex shrink-0 items-center gap-0.5">
@@ -130,6 +137,7 @@ export function BoardColumn({
 	sessionDragTransaction,
 	title,
 	issueDragSource,
+	issueMoveVisual = true,
 	statuses,
 	onIssueDrop,
 }: Readonly<{
@@ -150,15 +158,16 @@ export function BoardColumn({
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 	issueDragSource?: BoardIssueDragSource;
+	issueMoveVisual?: boolean;
 	statuses?: readonly string[];
 	onIssueDrop?: (title: string, target?: JiraKanbanCardDropTarget) => void;
 }>) {
-	const issueDrop = useBoardIssueDrop({ source: issueDragSource, title, statuses, onDrop: onIssueDrop });
+	const issueDrop = useBoardIssueDrop({ source: issueDragSource, title, statuses, onDrop: onIssueDrop, moveVisual: issueMoveVisual });
 	const insertionArmed = cardInsertion?.columnTitle === title;
 	const isEmptyColumn = count === 0;
 	// The moved source can unmount before dragend; settled columns must clear their drag paint.
-	useBoardColumnDropRing(issueDrop.rootRef, chrome, !issueDrop.active ? false : issueDrop.offeringChoices && issueDrop.current?.entered ? isEmptyColumn : undefined);
-	const { minimumHeight: choiceHeight } = useCreateDropzoneHeight(issueDrop.choosing && columnSizing === "content", "bottom", columnSizing, issueDrop.rootRef);
+	useBoardColumnDropRing(issueDrop.rootRef, chrome, !issueDrop.active ? false : issueMoveVisual && issueDrop.offeringChoices && issueDrop.current?.entered ? isEmptyColumn : undefined);
+	const { minimumHeight: choiceHeight } = useCreateDropzoneHeight(issueMoveVisual && issueDrop.choosing && columnSizing === "content", "bottom", columnSizing, issueDrop.rootRef);
 	const createAction = <BoardColumnCreateAction
 		columnSizing={columnSizing}
 		dropZoneLabel={createWorkItemDropZoneLabel}
@@ -190,6 +199,7 @@ export function BoardColumn({
 					count={count}
 					headerStyle={chrome.header}
 					issueDrop={issueDrop}
+					issueMoveVisual={issueMoveVisual}
 					onCollapse={onCollapse}
 					onCreateAgent={onCreateAgent}
 					onToggleAgent={onToggleAgent}
@@ -200,7 +210,10 @@ export function BoardColumn({
 				{...issueDrop.handlers}
 				className={cn("relative flex min-h-0 flex-col", columnSizing === "fill" ? "flex-1" : null)}
 				// Fixed status targets reuse the create well's reserved magnetic clearance.
-				style={{ height: issueDrop.choosing && columnSizing === "content" ? `calc(${choiceHeight}px + ${token("space.100")} - ${token("border.width")})` : undefined }}
+				style={{
+					height: issueMoveVisual && issueDrop.choosing && columnSizing === "content" ? `calc(${choiceHeight}px + ${token("space.100")} - ${token("border.width")})` : undefined,
+					minHeight: !issueMoveVisual && issueDrop.offeringChoices ? `${issueDrop.choices.length * 8}rem` : undefined,
+				}}
 				data-issue-status-choices={issueDrop.choosing || undefined}
 				data-issue-drop-entered={issueDrop.current?.entered ? issueDrop.current.status : undefined}
 			>
@@ -225,9 +238,9 @@ export function BoardColumn({
 
 					<div style={chrome.footer}>{createAction}</div>
 				</div>
-				<BoardIssueTransitionOverlay issueDrop={issueDrop} title={title} />
+				<BoardIssueTransitionOverlay issueDrop={issueDrop} title={title} moveVisual={issueMoveVisual} />
 			</div>
-			{columnSizing === "content" && issueDrop.offeringChoices && issueDrop.current?.entered ? (
+			{issueMoveVisual && columnSizing === "content" && issueDrop.offeringChoices && issueDrop.current?.entered ? (
 				<div aria-hidden data-issue-drop-hit-area="" className="absolute inset-0 z-20" {...issueDrop.handlers} />
 			) : null}
 			{issueDrop.current?.entered ? <span className="sr-only" role="status">{`${issueDrop.header}. Choose a position, then release to move. Escape cancels.`}</span> : null}

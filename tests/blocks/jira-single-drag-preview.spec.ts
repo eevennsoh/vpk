@@ -5,8 +5,11 @@ test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`native card preview leaves all rounded corner cutouts clear (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/jira-team-eu26`);
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/projects/jira-team-eu26`);
 		await page.waitForLoadState("networkidle");
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
+		await page.keyboard.press("Escape");
 		const card = page.locator('[data-issue-key="PAY-118"] [draggable="true"]').first();
 		const surface = card.locator('[data-slot="jira-issue-surface"]');
 		const restingSurfaceColor = await surface.evaluate((node) => getComputedStyle(node).backgroundColor);

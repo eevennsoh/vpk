@@ -27,10 +27,13 @@ async function enterStatus(page: Page, status: string) {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
-	test(`empty In progress keeps both status targets usable (${reducedMotion})`, async ({ page }) => {
+	test(`Default empty In progress keeps both status targets usable (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: 1440, height: 800 });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
+		await page.keyboard.press("Escape");
 		await expect(issue(page, "PAY-112")).toBeVisible();
 		await expect(issue(page, "PAY-112").getByRole("button", { name: "Codex: Needs input", exact: true })).toBeVisible({ timeout: 55_000 });
 		await page.getByRole("button", { name: /^Needs input:/ }).click();
@@ -75,7 +78,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`collapsed drop border hugs the visible cell (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: 1440, height: 800 });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
 		await column(page, "To do").hover({ position: { x: 20, y: 15 } });
 		await page.getByRole("button", { name: "Collapse To do column", exact: true }).click();
 		const collapsed = column(page, "To do");
@@ -87,23 +90,22 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		// Empty space remains a drop target; its feedback still hugs the cell.
 		await page.mouse.move(shell.x + shell.width / 2, cell.y + cell.height + 100, { steps: 5 });
 		await page.mouse.move(shell.x + shell.width / 2, cell.y + cell.height + 100);
-		await expect.poll(() => collapsed.evaluate((node) => {
-			const armed = node.matches(".border-ring, .outline-ring") ? node : node.querySelector(".border-ring, .outline-ring");
-			return armed?.getBoundingClientRect().height ?? Infinity;
-		})).toBeLessThanOrEqual(cell.height + 4);
-		await expect.poll(() => collapsed.locator(".border-ring, .outline-ring").evaluate((node) =>
+		const ring = collapsed.locator("[data-jira-kanban-collapsed-drop-ring]");
+		await expect(ring).toHaveClass(/\bborder-border-selected\b/);
+		expect((await ring.boundingBox())!.height).toBeLessThanOrEqual(cell.height + 4);
+		await expect.poll(() => ring.evaluate((node) =>
 			node.getAnimations().some((animation) => animation.playState === "running"),
 		)).toBe(false);
 		await page.screenshot({ path: `output/agent-browser/dnd/collapsed-border-${reducedMotion}.png` });
 		await page.keyboard.press("Escape");
 		await page.mouse.up();
 		await expect(issue(page, "PAY-112")).toHaveAttribute("data-board-column-title", "In review");
-		await expect(collapsed.locator(".border-ring, .outline-ring")).toHaveCount(0);
+		await expect(ring).not.toHaveClass(/\bborder-border-selected\b/);
 	});
 
 	test(`collapsed In progress accepts an issue drop (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
 		await column(page, "In progress").hover({ position: { x: 20, y: 15 } });
 		await page.getByRole("button", { name: "Collapse In progress column", exact: true }).click();
 		const progress = column(page, "In progress");
@@ -127,7 +129,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`issue-only preview and two-stage status drop (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
 		await expect(issue(page, "PAY-105")).toBeVisible();
 		const sourceHeight = await issue(page, "PAY-105").evaluate((node) => node.getBoundingClientRect().height);
 		await startDrag(page, "PAY-105");
@@ -181,7 +183,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("leaving a chosen zone resets it; a second drag can choose another status", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
 	await startDrag(page, "PAY-118");
 	await enterStatus(page, "Paused");
 	const todo = await column(page, "To do").boundingBox();
@@ -201,7 +203,7 @@ test("leaving a chosen zone resets it; a second drag can choose another status",
 
 test("a running issue reorders in its column and scrolls to the last slot", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 800 });
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
 	await startDrag(page, "PAY-105");
 	const list = column(page, "In progress").locator("[data-jira-kanban-card-list]");
 	const bounds = await list.boundingBox();
@@ -216,8 +218,11 @@ test("a running issue reorders in its column and scrolls to the last slot", asyn
 	await expect(page.locator("[data-issue-drop-entered]")).toHaveCount(0);
 });
 
-test("grouped statuses reject header drops and use 2px split-zone strokes", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+test("Default grouped statuses reject header drops and use 2px split-zone strokes", async ({ page }) => {
+	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
+	await page.keyboard.press("Escape");
 	await startDrag(page, "PAY-127");
 	const progress = column(page, "In progress");
 	const bounds = await progress.boundingBox();
@@ -234,7 +239,7 @@ test("grouped statuses reject header drops and use 2px split-zone strokes", asyn
 	for (const status of ["In progress", "Paused"]) {
 		const zone = progress.locator(`[data-issue-status-zone="${status}"]`);
 		await expect(zone.locator("[data-issue-transition-arrow]")).toBeVisible();
-		await expect(zone.locator("[data-issue-transition-arrow]")).toHaveClass(/text-text-subtle/);
+		await expect(zone.locator("[data-issue-transition-arrow]")).toHaveClass(/text-icon-subtle/);
 	}
 	await page.screenshot({ path: "output/agent-browser/dnd/header-body-only.png" });
 	await page.mouse.up();
@@ -256,7 +261,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`EU26 matches Jira Dragging fused selection and cohort preview (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/jira-team-eu26`);
+		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
 		const card = (code: string) => issue(page, code).locator('[draggable="true"]').first();
 		const backdrop = (code: string) => issue(page, code).locator('[data-slot="jira-issue-agent-backdrop"]');
 		for (const code of ["PAY-105", "PAY-107"]) await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });

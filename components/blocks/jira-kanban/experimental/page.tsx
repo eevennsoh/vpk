@@ -176,6 +176,7 @@ function ExperimentalJiraKanbanPageContent({
 	createWellBounce = "once",
 	createWorkItemDropZoneLabel,
 	issueDragTransitions = false,
+	issueMoveVisual = true,
 	issueSelectionAppearance = "card",
 	defaultAgentSessionColumnCollapsed = false,
 	defaultShowUntracked = true,
@@ -967,6 +968,7 @@ function ExperimentalJiraKanbanPageContent({
 								onCreateWorkItem={boardMenuWorkItem.onCreateColumnWorkItem}
 								draggedCardCode={draggedCard?.card.code ?? null}
 								issueDragTransitions={issueDragTransitions}
+								issueMoveVisual={issueMoveVisual}
 								issueSelectionAppearance={issueSelectionAppearance}
 								selectedCardCodes={selection.selectedCardCodes}
 								onCardClick={handleCardClick}
