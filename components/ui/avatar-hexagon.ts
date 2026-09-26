@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 export const AVATAR_HEXAGON_REFERENCE_SIZE = 24;
 export const AVATAR_HEXAGON_REFERENCE_RADIUS = 4;
 // The 24px / 4px and 32px / 6px anchors add 2px of radius per 8px of size.
@@ -35,6 +37,30 @@ export function avatarHexagonPoints(inset = 0, outset = 0) {
 
 function coordinate(percent: number, pixels: number) {
 	return pixels === 0 ? `${percent}%` : `calc(${percent}% ${pixels < 0 ? "-" : "+"} ${Math.abs(pixels)}px)`;
+}
+
+/** The upper-right curve sample that keeps a status dot flush with the hexagon. */
+export function avatarHexagonStatusAnchor() {
+	const point = avatarHexagonPoints()[8]!;
+	return {
+		...point,
+		left: coordinate(point.xPercent, point.xPixels),
+		top: coordinate(point.yPercent, point.yPixels),
+	};
+}
+
+/** Preserve Base UI state-aware styles while supplying the hexagon anchor. */
+export function avatarHexagonStyle<State>(
+	style: CSSProperties | ((state: State) => CSSProperties | undefined) | undefined,
+) {
+	const anchor = avatarHexagonStatusAnchor();
+	const variables = {
+		"--avatar-hexagon-status-left": anchor.left,
+		"--avatar-hexagon-status-top": anchor.top,
+	};
+	return typeof style === "function"
+		? (state: State) => ({ ...style(state), ...variables })
+		: { ...style, ...variables };
 }
 
 function polygonPoints(inset = 0, outset = 0) {
