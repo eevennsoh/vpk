@@ -9,7 +9,7 @@ const { loadCjsModuleFromText } = require("../../../../../scripts/lib/esbuild-cj
 const arrivalModel = require("../lib/board-card-arrival.ts");
 const autoModel = loadCjsModuleFromText(esbuild.buildSync({ entryPoints: ["components/blocks/jira-kanban/experimental/lib/board-auto-arrange.ts"], bundle: true, format: "cjs", platform: "node", write: false }).outputFiles[0].text);
 
-function harness({ reduced = false, reject = false } = {}) {
+function harness({ reduced = false, reject = false, enabled = true } = {}) {
 	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [];
 	let stateIndex = 0, refIndex = 0, effectIndex = 0, preview = {}, api;
 	let columns = [
@@ -50,12 +50,12 @@ function harness({ reduced = false, reject = false } = {}) {
 	});
 	function render() {
 		stateIndex = refIndex = effectIndex = 0;
-		api = loaded.exports.useIssueCardDropArrival({ boardRef, enabled: true, getPreview, nativePreviewRef, columns, draggedCardCode: "A", selectedCardCodes: new Set(["A", "B"]), onDrop, onAutoArrange });
+		api = loaded.exports.useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, draggedCardCode: "A", selectedCardCodes: new Set(["A", "B"]), onDrop, onAutoArrange });
 		while (scheduled.length) scheduled.shift()();
 		return api;
 	}
 	render();
-	return { render, captures, flights, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop() { api.handleDrop("Review"); preview = null; } };
+	return { render, captures, flights, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop() { api.handleDrop("Review"); preview = null; } };
 }
 
 test("Return captures the held preview before commit and launches arrivals for every destination before paint", () => {
@@ -95,4 +95,29 @@ test("reduced motion and rejected arrangements never launch flights", () => {
 		assert.equal(h.flights.length, 0);
 		if (options.reduced) assert.equal(h.captures.length, 0);
 	}
+});
+
+
+test("disabled move visuals preserve manual drops without starting an arrival", () => {
+	const h = harness({ enabled: false });
+	h.drop();
+	const api = h.render();
+	assert.equal(api.arrivalForColumn("Review"), undefined);
+	assert.equal(h.captures.length, 0);
+	assert.equal(h.flights.length, 0);
+});
+
+test("switching move visuals off cancels flights and clears arrivals before re-enabling", () => {
+	const h = harness();
+	h.arrange();
+	h.render();
+	assert.equal(h.flights.length, 2);
+	h.setEnabled(false);
+	h.render();
+	assert.ok(h.flights.every((flight) => flight.stopped));
+	h.setEnabled(true);
+	const restored = h.render();
+	assert.equal(restored.arrivalForColumn("Review"), undefined);
+	assert.equal(restored.arrivalForColumn("Done"), undefined);
+	assert.equal(h.flights.length, 2);
 });

@@ -118,7 +118,7 @@ test("Background color paints the Kanban plane while preserving the Agent Sessio
 test("the Dragging property controls session-column width resizing", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*"sessionStroke",\s*"sessionBloom",\s*"sessionProximity",\s*"sessionPeel",\s*\] as const;/u,
+		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*"sessionStroke",\s*"sessionBloom",\s*"sessionProximity",\s*"sessionPeel",\s*"moveVisual",\s*\] as const;/u,
 	);
 	// The three chrome layers are separately switchable so the effect can be judged
 	// on the route: stroke alone, stroke plus column-wide reach, or neither.

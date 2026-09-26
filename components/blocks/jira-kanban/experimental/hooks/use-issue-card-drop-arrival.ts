@@ -39,7 +39,13 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	const canDrop = onDrop !== undefined;
 	useLayoutEffect(() => {
 		const root = boardRef.current;
-		if (!enabled || !canDrop || !root) return;
+		if (!enabled) {
+			snapshots.current = [];
+			releasePoint.current = null;
+			setDrop([]);
+			return;
+		}
+		if (!canDrop || !root) return;
 		const captureStart = (event: globalThis.DragEvent) => {
 			if (!(event.target instanceof Element) || !root.contains(event.target)) return;
 			if (snapshots.current.length) setDrop([]);
@@ -72,7 +78,7 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	}, [arrivals]);
 	useLayoutEffect(() => {
 		const root = boardRef.current;
-		if (!hasFlights || !root) return;
+		if (!enabled || !hasFlights || !root) return;
 		const activeIds = new Set(committedArrivals.current.map((arrival) => arrival.id));
 		const cleanups = snapshots.current.filter((captured) => activeIds.has(captured.id)).map((captured) => {
 			if (reduceMotion || captured.flights.length === 0) {
@@ -91,7 +97,7 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 			});
 		});
 		return () => cleanups.forEach((cleanup) => cleanup());
-	}, [boardRef, committedArrivals, flightBatchId, hasFlights, reduceMotion]);
+	}, [boardRef, committedArrivals, enabled, flightBatchId, hasFlights, reduceMotion]);
 	useLayoutEffect(() => {
 		// Once the owner ends the gesture, rejected moves cannot react to later edits.
 		if (drop.length && !draggedCardCode && drop.some((item) => !arrivals.some((arrival) => arrival.id === item.id))) {
@@ -104,6 +110,10 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	}, [arrivals, createdArrival, draggedCardCode, drop, onCreatedComplete]);
 
 	const handleDrop = useCallback<NonNullable<JiraKanbanProps["onCardDrop"]>>((columnTitle, target) => {
+		if (!enabled) {
+			onDrop?.(columnTitle, target);
+			return;
+		}
 		if (draggedCardCode) {
 			const codes = selectedCardCodes?.has(draggedCardCode) ? [...selectedCardCodes] : [draggedCardCode];
 			// Created-card ids are positive; move ids occupy a separate completion namespace.
@@ -144,5 +154,5 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		if (id < 0) setDrop((current) => current.filter((item) => item.id !== id));
 		else onCreatedComplete?.(id);
 	}, [onCreatedComplete]);
-	return { arrivalForColumn: (title: string) => arrivals.find((arrival) => arrival.columnTitle === title), handleDrop: onDrop ? handleDrop : undefined, handleAutoArrange: onAutoArrange ? handleAutoArrange : undefined, handleComplete };
+	return { arrivalForColumn: (title: string) => enabled ? arrivals.find((arrival) => arrival.columnTitle === title) : undefined, handleDrop: onDrop ? handleDrop : undefined, handleAutoArrange: onAutoArrange ? handleAutoArrange : undefined, handleComplete };
 }

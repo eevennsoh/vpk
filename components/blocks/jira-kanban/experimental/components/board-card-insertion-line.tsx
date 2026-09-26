@@ -52,7 +52,7 @@ export function BoardCardInsertionLine({
 	position,
 	seam,
 	marker = "add",
-}: Readonly<{ position: BoardCardInsertion["position"]; seam: BoardCardInsertionSeam; marker?: "add" | "none" }>) {
+}: Readonly<{ position: BoardCardInsertion["position"]; seam: BoardCardInsertionSeam; marker?: "add" | "circle" | "none" }>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const anchorName = `--board-insertion-${insertionAnchorId}`;
 
@@ -91,6 +91,7 @@ export function BoardCardInsertionLine({
 			 * half-outside marker would be clipped — the same reason the list
 			 * column controls use `fixed`.
 			 */}
+			{marker === "circle" ? <span className="absolute left-0 top-1/2 size-2 -translate-y-1/2 rounded-full border-2 border-border-selected bg-surface" /> : null}
 			{marker === "add" ? <span
 				className="fixed z-30 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-surface-overlay text-icon-subtle"
 				data-board-insertion-marker={position}

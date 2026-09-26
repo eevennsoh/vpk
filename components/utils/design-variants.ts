@@ -46,6 +46,7 @@ export const DESIGN_VARIANTS = [
 	{ id: "sessionBloom", label: "Card glow" },
 	{ id: "sessionProximity", label: "Proximity sensor" },
 	{ id: "sessionPeel", label: "Peel visual" },
+	{ id: "moveVisual", label: "Move visual" },
 ] as const;
 
 export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
@@ -80,6 +81,7 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * until the user explicitly enables it.
  *
  * Peel visual starts on where the route supplies the session preview capability.
+ * Move visual starts on for routes that opt into the experimental issue move visuals.
  * Card glow starts on; Stroke tracing and Proximity sensor start off.
  * Each layer remains independently configurable in Settings:
  *
@@ -94,6 +96,7 @@ const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	agentSessionColumnResizing: false,
 	kanbanBackground: false,
 	manualLink: false,
+	moveVisual: true,
 	panel: false,
 	sessionBloom: true,
 	sessionPeel: true,

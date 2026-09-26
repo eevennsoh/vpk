@@ -79,6 +79,7 @@ const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
 	"sessionBloom",
 	"sessionProximity",
 	"sessionPeel",
+	"moveVisual",
 ] as const;
 const isJiraTeamEu26LooseWorkResumable = () => true;
 
@@ -377,6 +378,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
 						issueDragTransitions
+						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 						agentSessionAssigneeIdAliases={JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}

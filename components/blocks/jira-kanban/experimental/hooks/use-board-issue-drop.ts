@@ -21,14 +21,23 @@ interface DropState {
 	lineTop?: number;
 }
 
+function resolveIssueDropHeader(active: BoardIssueDragSource | undefined, current: DropState | null, title: string, choices: readonly string[], choosing: boolean, moveVisual: boolean): string {
+	if (!active) return title;
+	if (active.columnTitle === title) return "Transition to...";
+	if (!moveVisual) return current?.entered ? `${active.status} → ${current.status}` : title;
+	if (choosing && !current) return `${active.status} →`;
+	return `${active.status} → ${current?.status ?? choices[0] ?? title}`;
+}
+
 /** A status choice is latched until the pointer leaves the column. */
 export function useBoardIssueDrop({
-	source, title, statuses, onDrop,
+	source, title, statuses, onDrop, moveVisual = true,
 }: Readonly<{
 	source?: BoardIssueDragSource;
 	title: string;
 	statuses?: readonly string[];
 	onDrop?: (title: string, target?: JiraKanbanCardDropTarget) => void;
+	moveVisual?: boolean;
 }>) {
 	const rootRef = useRef<HTMLDivElement>(null);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,7 +154,7 @@ export function useBoardIssueDrop({
 		if (!active) return;
 		event.stopPropagation();
 		const column = event.currentTarget.closest<HTMLElement>("[data-jira-kanban-column]");
-		const bounds = (choosing ? event.currentTarget : column ?? event.currentTarget).getBoundingClientRect();
+		const bounds = (choosing || !moveVisual ? event.currentTarget : column ?? event.currentTarget).getBoundingClientRect();
 		if (event.clientX > bounds.left && event.clientX < bounds.right && event.clientY > bounds.top && event.clientY < bounds.bottom) return;
 		clearWork();
 		setState(null);
@@ -172,9 +181,7 @@ export function useBoardIssueDrop({
 
 	return {
 		rootRef, active, choosing, offeringChoices, choices, current,
-		header: active?.columnTitle === title ? "Transition to..."
-			: active && choosing && !current ? `${active.status} →`
-			: active ? `${active.status} → ${current?.status ?? choices[0] ?? title}` : title,
+		header: resolveIssueDropHeader(active, current, title, choices, choosing, moveVisual),
 		handlers: { onDragEnter: over, onDragOver: over, onDragLeave: leave, onDrop: drop },
 	};
 }
