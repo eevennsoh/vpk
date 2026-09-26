@@ -264,6 +264,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
 		const card = (code: string) => issue(page, code).locator('[draggable="true"]').first();
 		const backdrop = (code: string) => issue(page, code).locator('[data-slot="jira-issue-agent-backdrop"]');
+		for (const code of ["PAY-118", "PAY-124"]) await expect(backdrop(code)).toHaveCSS("opacity", "0");
+		await expect(backdrop("PAY-105")).toHaveCSS("opacity", "1");
+		await page.screenshot({ path: `output/agent-browser/dnd/eu26-no-session-rest-${reducedMotion}.png` });
 		for (const code of ["PAY-105", "PAY-107"]) await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await expect(page.getByRole("button", { name: "Clear selection", exact: true })).toBeVisible();
 		for (const code of ["PAY-105", "PAY-107"]) {
@@ -311,6 +314,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(page.getByRole("button", { name: "Clear selection", exact: true })).toHaveCount(0);
 		for (const code of ["PAY-118", "PAY-124"]) await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await expect(backdrop("PAY-118")).toHaveClass(/bg-bg-selected/);
+		await expect(backdrop("PAY-118")).toHaveCSS("opacity", "1");
 		await expect(issue(page, "PAY-118").locator('[data-slot="jira-issue-agent-row-wrap"]')).toHaveCount(0);
 		await page.getByRole("button", { name: "Add agent", exact: true }).click();
 		await expect(page.getByRole("button", { name: "Clear selection", exact: true })).toBeVisible();
@@ -319,5 +323,6 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(page.locator('[data-slot="popover-content"]:visible, [role="menu"]:visible, [role="dialog"]:visible')).toHaveCount(0);
 		await page.keyboard.press("Escape");
 		await expect(page.getByRole("button", { name: "Clear selection", exact: true })).toHaveCount(0);
+		await expect(backdrop("PAY-118")).toHaveCSS("opacity", "0");
 	});
 }

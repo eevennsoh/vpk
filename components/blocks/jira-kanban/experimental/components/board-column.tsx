@@ -23,6 +23,7 @@ import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-sessio
 type BoardIssueDropState = ReturnType<typeof useBoardIssueDrop>;
 
 function BoardColumnHeader({
+	headerAccessory,
 	agents,
 	assignedAgentIds,
 	count,
@@ -34,6 +35,7 @@ function BoardColumnHeader({
 	onToggleAgent,
 	title,
 }: Readonly<{
+	headerAccessory?: ReactNode;
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	count: number;
@@ -115,11 +117,13 @@ function BoardColumnHeader({
 					/>
 				</div>
 			)}
+			{headerAccessory}
 		</div>
 	);
 }
 
 export function BoardColumn({
+	headerAccessory,
 	agents,
 	assignedAgentIds,
 	cardInsertion,
@@ -141,6 +145,7 @@ export function BoardColumn({
 	statuses,
 	onIssueDrop,
 }: Readonly<{
+	headerAccessory?: ReactNode;
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	cardInsertion: BoardAgentSessionDrag["cardInsertion"];
@@ -194,6 +199,7 @@ export function BoardColumn({
 			}}
 		>
 			<BoardColumnHeader
+					headerAccessory={headerAccessory}
 					agents={agents}
 					assignedAgentIds={assignedAgentIds}
 					count={count}
