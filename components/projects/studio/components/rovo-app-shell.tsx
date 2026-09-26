@@ -159,7 +159,7 @@ import {
 } from "@/components/projects/rovo-core/lib/screen-assistant";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { useSidebarResize as useStudioAskRovoChatResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
-import ChatPanel, { type ChatPanelGreetingProps, type ChatPanelLocalConversation } from "@/components/projects/sidebar-chat/page";
+import type { ChatPanelGreetingProps, ChatPanelLocalConversation } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 import {
@@ -195,6 +195,10 @@ const RovoAppAgentConfigPanel = dynamic(
 );
 const AgentTestPanel = dynamic(
 	() => import("@/components/blocks/agent-test").then((module) => module.AgentTestPanel),
+	{ ssr: true },
+);
+const ChatPanel = dynamic(
+	() => import("@/components/projects/sidebar-chat/page").then((module) => module.default),
 	{ ssr: true },
 );
 

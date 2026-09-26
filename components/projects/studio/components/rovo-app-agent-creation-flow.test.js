@@ -79,6 +79,11 @@ const STUDIO_AGENT_ONBOARDING_GUIDE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "lib", "studio-agent-onboarding-guide.ts"),
 	"utf8",
 );
+
+test("Studio defers the Ask Rovo chat panel until agent config needs it", () => {
+	assert.match(SHELL_SOURCE, /const ChatPanel = dynamic\([\s\S]*import\("@\/components\/projects\/sidebar-chat\/page"\)[\s\S]*\{ ssr: true \}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /import ChatPanel,/u);
+});
 const STUDIO_DEMO_RESET_HOOK_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "hooks", "use-studio-demo-reset.ts"),
 	"utf8",
