@@ -559,97 +559,93 @@ export function JiraToolbar({
 							data-subtree-theme=""
 							data-theme="dark:dark spacing:spacing typography:typography shape:shape"
 						>
-							{/* Hidden measurement row: intrinsic width of every inline-eligible
-							    middle action, used only to compute how many fit. Pinned
-							    overflow actions are excluded so the widths array aligns with
-							    the fitting math. Never visible. */}
-							{primaryActionOnly ? null : (
-							<div aria-hidden className="pointer-events-none absolute h-0 w-0 overflow-clip">
-								<div className="invisible flex items-center" ref={measureRef}>
-									{inlineEligibleActions.map((action) => (
-										<JiraToolbarAction icon={<Icon render={action.icon} />} key={`measure-${action.id}`}>
-											{action.label}
-										</JiraToolbarAction>
-									))}
-								</div>
-							</div>
-							)}
-
-							{/* Always-visible leading cluster. */}
 							{primaryActionOnly ? primaryAction : (
-							<div className="flex shrink-0 items-center" ref={leadingRef}>
-								<div aria-live="polite" className="flex h-8 items-center gap-2 px-2 text-sm font-medium text-text">
-									<Badge max={false}>{selectedCount}</Badge>
-									<span>selected</span>
-								</div>
-								{primaryAction}
-								<JiraToolbarAction disabled={!onSelectAll} icon={<Icon render={<PresenterModeIcon label="" size="small" />} />} onClick={onSelectAll}>
-									Select all
-								</JiraToolbarAction>
-								<ToolbarSeparator />
-							</div>
-							)}
+								<>
+									{/* Hidden measurement row: intrinsic width of every inline-eligible
+									    middle action, used only to compute how many fit. Pinned
+									    overflow actions are excluded so the widths array aligns with
+									    the fitting math. Never visible. */}
+									<div aria-hidden className="pointer-events-none absolute h-0 w-0 overflow-clip">
+										<div className="invisible flex items-center" ref={measureRef}>
+											{inlineEligibleActions.map((action) => (
+												<JiraToolbarAction icon={<Icon render={action.icon} />} key={`measure-${action.id}`}>
+													{action.label}
+												</JiraToolbarAction>
+											))}
+										</div>
+									</div>
 
-							{/* Middle actions: those that fit render inline; the rest collapse
-							    into the "⋯" menu. */}
-							{primaryActionOnly ? null : (
-							<div className="flex min-w-0 items-center">
-								{visibleActions.map((action) => (
-									<span className="flex items-center" key={action.id}>
-										{action.renderInline()}
-									</span>
-								))}
-							</div>
-							)}
+									{/* Always-visible leading cluster. */}
+									<div className="flex shrink-0 items-center" ref={leadingRef}>
+										<div aria-live="polite" className="flex h-8 items-center gap-2 px-2 text-sm font-medium text-text">
+											<Badge max={false}>{selectedCount}</Badge>
+											<span>selected</span>
+										</div>
+										{primaryAction}
+										<JiraToolbarAction disabled={!onSelectAll} icon={<Icon render={<PresenterModeIcon label="" size="small" />} />} onClick={onSelectAll}>
+											Select all
+										</JiraToolbarAction>
+										<ToolbarSeparator />
+									</div>
 
-							{/* Always-visible trailing cluster (overflow menu + separator + close).
-							    Its width is subtracted from the available space so the fitting
-							    math accounts for the "⋯" button and close affordance. */}
-							{primaryActionOnly ? null : (
-							<div className="flex shrink-0 items-center" ref={trailingRef}>
-								{hiddenActions.length > 0 ? (
-									<DropdownMenu>
-										<DropdownMenuTrigger
-											aria-label="More actions"
-											render={
-												<Button
-													className="size-8"
-													shape="circle"
-													size="icon"
-													type="button"
-													variant="ghost"
-												/>
-											}
+									{/* Middle actions: those that fit render inline; the rest collapse
+									    into the "⋯" menu. */}
+									<div className="flex min-w-0 items-center">
+										{visibleActions.map((action) => (
+											<span className="flex items-center" key={action.id}>
+												{action.renderInline()}
+											</span>
+										))}
+									</div>
+
+									{/* Always-visible trailing cluster (overflow menu + separator + close).
+									    Its width is subtracted from the available space so the fitting
+									    math accounts for the "⋯" button and close affordance. */}
+									<div className="flex shrink-0 items-center" ref={trailingRef}>
+										{hiddenActions.length > 0 ? (
+											<DropdownMenu>
+												<DropdownMenuTrigger
+													aria-label="More actions"
+													render={
+														<Button
+															className="size-8"
+															shape="circle"
+															size="icon"
+															type="button"
+															variant="ghost"
+														/>
+													}
+												>
+													<Icon render={<ShowMoreHorizontalIcon label="" size="small" />} />
+												</DropdownMenuTrigger>
+												<DropdownMenuContent
+													align="end"
+													positionerClassName="z-[501]"
+													side="top"
+													sideOffset={FLYOUT_SIDE_OFFSET}
+												>
+													<DropdownMenuGroup>
+														{hiddenActions.map((action) => (
+															<span key={action.id}>{action.renderMenu()}</span>
+														))}
+													</DropdownMenuGroup>
+												</DropdownMenuContent>
+											</DropdownMenu>
+										) : null}
+										<ToolbarSeparator />
+										<Button
+											aria-label="Clear selection"
+											className="size-8"
+											onClick={onClearSelection}
+											shape="circle"
+											size="icon"
+											type="button"
+											variant="ghost"
 										>
-											<Icon render={<ShowMoreHorizontalIcon label="" size="small" />} />
-										</DropdownMenuTrigger>
-										<DropdownMenuContent
-											align="end"
-											positionerClassName="z-[501]"
-											side="top"
-											sideOffset={FLYOUT_SIDE_OFFSET}
-										>
-											<DropdownMenuGroup>
-												{hiddenActions.map((action) => (
-													<span key={action.id}>{action.renderMenu()}</span>
-												))}
-											</DropdownMenuGroup>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								) : null}
-								<ToolbarSeparator />
-								<Button
-									aria-label="Clear selection"
-									className="size-8"
-									onClick={onClearSelection}
-									shape="circle"
-									size="icon"
-									type="button"
-									variant="ghost"
-								>
-									<Icon render={<CrossIcon label="" size="small" />} />
-								</Button>
-							</div>
+											<Icon render={<CrossIcon label="" size="small" />} />
+										</Button>
+									</div>
+								</>
 							)}
 						</div>
 					</motion.div>

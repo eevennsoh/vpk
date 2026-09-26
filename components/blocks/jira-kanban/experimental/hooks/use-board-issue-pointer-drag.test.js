@@ -12,8 +12,8 @@ function harness({ enabled = true, face = true, nestedControl = false } = {}) {
 	let focused = false;
 	class Element {
 		constructor() { this.listeners = new Map(); this.draggable = true; }
-		addEventListener(type, handler) { this.listeners.set(type, handler); }
-		removeEventListener(type) { this.listeners.delete(type); }
+		addEventListener(type, handler, capture = false) { this.listeners.set(type, [...(this.listeners.get(type) ?? []), { handler, capture }]); }
+		removeEventListener(type, handler, capture = false) { const remaining = (this.listeners.get(type) ?? []).filter((item) => item.handler !== handler || item.capture !== capture); if (remaining.length) this.listeners.set(type, remaining); else this.listeners.delete(type); }
 		dispatchEvent(event) { events.push(event.type); }
 	}
 	const source = new Element();
@@ -45,7 +45,13 @@ function harness({ enabled = true, face = true, nestedControl = false } = {}) {
 		require: () => ({ useRef: (current) => ({ current }), useCallback: (callback) => callback, useEffect: (effect) => { cleanup = effect(); } }),
 	});
 	const api = loaded.exports.useBoardIssuePointerDrag({ current: root }, enabled);
-	const fire = (owner, type, extra = {}) => owner.listeners.get(type)?.({ target, pointerId: 1, isPrimary: true, button: 0, clientX: 100, clientY: 100, preventDefault() {}, stopPropagation() {}, ...extra });
+	const fire = (owner, type, extra = {}) => {
+		let propagationStopped = false;
+		const event = { target, pointerId: 1, isPrimary: true, button: 0, clientX: 100, clientY: 100, preventDefault() {}, ...extra, stopPropagation() { propagationStopped = true; } };
+		const listeners = owner.listeners.get(type) ?? [];
+		for (const listener of listeners.filter((item) => item.capture)) listener.handler(event);
+		if (!propagationStopped) for (const listener of listeners.filter((item) => !item.capture)) listener.handler(event);
+	};
 	return { source, root, doc, win, events, frames, api, focused: () => focused, cleanup: () => cleanup?.(),
 		down: () => fire(root, "pointerdown"), move: (x) => fire(doc, "pointermove", { clientX: x }), up: () => fire(doc, "pointerup"),
 		key: (key) => fire(doc, "keydown", { key }), tick: () => { const callback = frames.get(1); frames.clear(); callback?.(); },
@@ -106,4 +112,16 @@ test("ending an idle transport preserves genuine keyboard focus", () => {
 	h.root.focus();
 	h.api.stop();
 	assert.equal(h.focused(), true);
+});
+
+
+test("Escape still stops pickup when the page keyboard owner stops propagation in capture", () => {
+	const h = harness();
+	h.doc.addEventListener("keydown", (event) => { event.stopPropagation(); }, true);
+	h.down(); h.move(120); h.key("Escape");
+	assert.equal(h.source.draggable, true);
+	assert.equal(h.focused(), false);
+	assert.deepEqual(h.events, ["dragstart", "dragend"]);
+	h.move(200); h.up();
+	assert.deepEqual(h.events, ["dragstart", "dragend"], "cancelled pickup cannot keep dispatching pointer drag events");
 });

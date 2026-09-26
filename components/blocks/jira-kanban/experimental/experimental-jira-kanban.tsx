@@ -955,7 +955,7 @@ function ExperimentalJiraKanbanView({
 				{selectionToolbar ? (
 					<JiraToolbar
 						primaryActionOnly={Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1)}
-						primaryAction={onAutoArrange ? <BoardAutoArrangeAction key={autoArrange.key} ready={autoArrange.ready} onArrange={autoArrange.arrange} /> : undefined}
+						primaryAction={onAutoArrange ? <BoardAutoArrangeAction key={autoArrange.key} ready={autoArrange.ready} available={autoArrange.available} onArrange={autoArrange.arrange} /> : undefined}
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
 						dismissOnEscape={selectionToolbar.dismissOnEscape}

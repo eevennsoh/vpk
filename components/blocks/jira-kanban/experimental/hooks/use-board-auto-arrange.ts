@@ -16,7 +16,8 @@ export function useBoardAutoArrange({ columns, selected, dragged, onArrange, bef
 }>) {
 	const codes = useMemo(() => dragged && !selected?.has(dragged) ? new Set([dragged]) : selected ?? EMPTY_CODES, [dragged, selected]);
 	const plan = onArrange ? getAutoArrangePlan(columns, codes) : [];
-	const key = onArrange && codes.size ? [...codes].sort().join("|") : "";
+	const available = plan.length > 0;
+	const key = onArrange && codes.size && available ? [...codes].sort().join("|") : "";
 	const [readyKey, setReadyKey] = useState("");
 	const ready = Boolean(key && readyKey === key);
 	useEffect(() => {
@@ -42,5 +43,5 @@ export function useBoardAutoArrange({ columns, selected, dragged, onArrange, bef
 		window.addEventListener("keydown", keydown);
 		return () => window.removeEventListener("keydown", keydown);
 	}, [arrange, boardRef, onArrange, ready]);
-	return { codes, key, ready, arrange, incoming: (title: string) => ready ? plan.filter((move) => move.columnTitle === title).length : undefined };
+	return { codes, key, ready, available, arrange, incoming: (title: string) => ready ? plan.filter((move) => move.columnTitle === title).length : undefined };
 }

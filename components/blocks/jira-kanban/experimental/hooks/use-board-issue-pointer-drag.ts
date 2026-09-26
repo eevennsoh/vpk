@@ -102,7 +102,7 @@ export function useBoardIssuePointerDrag(rootRef: RefObject<HTMLElement | null>,
 		doc.addEventListener("pointermove", move);
 		doc.addEventListener("pointerup", up);
 		doc.addEventListener("pointercancel", stop);
-		doc.addEventListener("keydown", escape);
+		doc.addEventListener("keydown", escape, true);
 		doc.addEventListener("click", click, true);
 		window.addEventListener("blur", stop);
 		return () => {
@@ -111,7 +111,7 @@ export function useBoardIssuePointerDrag(rootRef: RefObject<HTMLElement | null>,
 			doc.removeEventListener("pointermove", move);
 			doc.removeEventListener("pointerup", up);
 			doc.removeEventListener("pointercancel", stop);
-			doc.removeEventListener("keydown", escape);
+			doc.removeEventListener("keydown", escape, true);
 			doc.removeEventListener("click", click, true);
 			window.removeEventListener("blur", stop);
 			stop();
