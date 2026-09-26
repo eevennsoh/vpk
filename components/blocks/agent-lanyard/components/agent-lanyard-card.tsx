@@ -65,7 +65,7 @@ export function AgentLanyardCard({
 				transition={tiltEnabled ? (hovered ? ENTER : EXIT) : { duration: 0 }}
 			>
 				<div className={cn("relative h-[108px] shrink-0 overflow-hidden rounded-t-xl", showGrid ? "bg-bg-neutral" : "bg-surface-sunken")} aria-hidden="true">
-					{showGrid ? <AgentLanyardGrid key={id} active={gridEnabled && (gridAnimationTrigger === "reveal" || hovered)} color={accentColor} /> : null}
+					{showGrid ? <AgentLanyardGrid key={id} active={gridEnabled && (gridAnimationTrigger === "reveal" || hovered)} color={accentColor} animationTrigger={gridAnimationTrigger} /> : null}
 					<span data-slot="agent-lanyard-cutout" className="pointer-events-none absolute top-[7px] left-1/2 z-10 h-1.5 w-10 -translate-x-1/2 rounded-[3.75px]">
 						<span className="absolute inset-0 rounded-[inherit] bg-surface" />
 						<span

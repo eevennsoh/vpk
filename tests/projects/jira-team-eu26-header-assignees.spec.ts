@@ -4,6 +4,28 @@ test.use({ ignoreHTTPSErrors: true });
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 const agentNames = ["Claude", "Jira Coding Agent", "Cursor"];
 
+test("standalone lanyard hover retains its existing fast wave", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(`${baseURL}/preview/blocks/agent-lanyard`, { waitUntil: "domcontentloaded" });
+	const card = page.locator('[data-slot="agent-lanyard"][data-agent-id="claude"]');
+	await expect(card).toBeVisible();
+	await card.evaluate((element) => {
+		let startedAt: number | undefined;
+		new MutationObserver((records) => {
+			for (const { target } of records) {
+				if (!(target instanceof SVGCircleElement)) continue;
+				const radius = Number(target.getAttribute("r"));
+				if (radius <= 0) continue;
+				startedAt ??= performance.now();
+				if (radius >= 153) element.setAttribute("data-measured-wave-duration", String(performance.now() - startedAt));
+			}
+		}).observe(element, { subtree: true, attributes: true, attributeFilter: ["r"] });
+	});
+	await card.hover();
+	await expect.poll(async () => Number(await card.getAttribute("data-measured-wave-duration"))).toBeGreaterThan(50);
+	expect(Number(await card.getAttribute("data-measured-wave-duration"))).toBeLessThan(250);
+});
+
 test("an open lanyard swaps content and position without replaying its entrance", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(`${baseURL}/jira-team-eu26`, { waitUntil: "domcontentloaded" });
