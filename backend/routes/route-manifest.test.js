@@ -7,6 +7,7 @@ const { before, test } = require("node:test");
 
 const {
 	collectRuntimeRouteStackRoutes,
+	collectNextRouteEntries,
 	collectRouteManifest,
 	collectProxyHelperBypasses,
 	findUnregisteredServerRouteRegistrars,
@@ -82,7 +83,6 @@ function createRuntimeRouteStackTestDependencies() {
 		advanceAgentsRfpDemoProcessing: noop,
 		agentsRfpDemoStateManager: createMethodBag(["readState", "writeState", "resetState", "updateState"]),
 		appendRuntimeSocketToken: noop,
-		archiveHermesSkill: noop,
 		browserWorkspaceManager: createMethodBag([
 			"activateWorkspaceTab",
 			"clickWorkspace",
@@ -151,12 +151,10 @@ function createRuntimeRouteStackTestDependencies() {
 		clearPlanSession: noop,
 		clearRunState: noop,
 		collectUploadIdsFromMessages: () => [],
-		createHermesSkillFromBundle: noop,
 		createRovoUnavailableError: () => new Error("Rovo unavailable"),
 		createRuntimeSocketToken: () => "runtime-token",
 		debugLog: noop,
 		debugMode: false,
-		deleteAgentsRfpDemoHermesJobs: noop,
 		deleteAgentsRfpDemoThread: noop,
 		deleteThreadBrowserWorkspace: noop,
 		destroyMirrorBrowser: noop,
@@ -170,23 +168,12 @@ function createRuntimeRouteStackTestDependencies() {
 		getAiGatewayConfigReport: () => ({}),
 		getAgentMode: () => null,
 		getEnvVars: () => ({}),
-		getHermesRuntimeStatus: () => ({}),
-		getHermesSkill: noop,
-		getHermesSkillBundle: noop,
-		getMergedHermesJob: noop,
 		getMirrorBrowser: () => null,
 		getThreadBrowserWorkspace: noop,
 		handleChatSdkRequest: noop,
 		hasGatewayUrlConfigured: () => false,
-		hermesJobLinkManager: {
-			removeLink: noop,
-		},
-		hermesJobsProvider: {},
-		hermesSkillDraftManager: createMethodBag(["approveDraft", "deleteDraft", "getDraft", "listDrafts", "rejectDraft"]),
 		isBrowserWorkspaceNotFoundError: () => false,
 		isRovoAvailable: () => false,
-		listHermesSkills: () => [],
-		listMergedHermesJobs: () => [],
 		logger: {
 			error: noop,
 			log: noop,
@@ -199,8 +186,6 @@ function createRuntimeRouteStackTestDependencies() {
 			getStats: () => ({}),
 			toTimeline: () => [],
 		},
-		parseOptionalBoolean: () => null,
-		persistHermesJobLink: noop,
 		persistMessageFiles: noop,
 		persistRunState: noop,
 		proxyRovoAppChatRequest: noop,
@@ -234,34 +219,16 @@ function createRuntimeRouteStackTestDependencies() {
 		runtimePort: 8080,
 		runtimeSocketTokenTtlMs: 1000,
 		runAgentsRfpDemoJob: noop,
+		resetAgentsRfpDemo: noop,
+		saveAgentsRfpDemoState: noop,
+		handleAgentsRfpDemoTicketEvent: noop,
 		searchThreads: noop,
 		sendGatewayErrorResponse: noop,
-		sendHermesUnavailableResponse: noop,
 		setAgentMode: noop,
 		skillsHubClient: {},
 		startNextQueuedRun: noop,
 		streamChatViaRovo: noop,
-		syncHermesJobResultsToRovoThreads: noop,
-		syncHermesJobsForRovoThreads: noop,
-		syncThreadPendingSkillDraftIds: noop,
-		toggleHermesSkill: noop,
-		updateHermesSkillFromBundle: noop,
 		waitForReady: noop,
-		wikiRouteHandlers: createMethodBag([
-			"handleWikiCapture",
-			"handleWikiMemories",
-			"handleWikiMemoryBlockDelete",
-			"handleWikiMemoryBrief",
-			"handleWikiMemoryDeck",
-			"handleWikiMemoryExplorer",
-			"handleWikiMemoryExplorerExport",
-			"handleWikiMemoryProposalDelete",
-			"handleWikiMemoryReset",
-			"handleWikiSearch",
-			"handleWikiStatus",
-			"handleWikiSync",
-			"handleWikiSynthesisSave",
-		]),
 	};
 }
 
@@ -303,25 +270,28 @@ test("normalizes backend target paths before comparison", () => {
 });
 
 test("route path samples make Express dynamic and catch-all paths matchable", () => {
-	assert.equal(getConcreteRoutePath("/api/jobs/:id/run"), "/api/jobs/__id__/run");
+	assert.equal(getConcreteRoutePath("/api/checkpoints/:id/rollback"), "/api/checkpoints/__id__/rollback");
 	assert.equal(getConcreteRoutePath("/api/personal-graph/page/*slug"), "/api/personal-graph/page/__slug__");
 });
 
 test("collector follows route-local proxy helper path arguments", () => {
-	const manifest = collectRouteManifest();
-	const briefRoute = manifest.nextApiRoutes.find((route) => {
-		return route.method === "POST" && route.nextPath === "/api/wiki/memory-explorer/brief";
+	withTempProject((tempDir) => {
+		const routeDir = path.join(tempDir, "app/api/checkpoints");
+		mkdirSync(routeDir, { recursive: true });
+		writeFileSync(path.join(routeDir, "route.ts"), [
+			"export async function POST(request: Request) {",
+			'  return proxyCheckpointRequest(request, "/api/checkpoints");',
+			"}",
+		].join("\n"));
+		const [route] = collectNextRouteEntries(tempDir);
+		assert.equal(route.nextPath, "/api/checkpoints");
+		assert.deepEqual(route.targets.map((target) => `${target.method} ${target.path}`), ["POST /api/checkpoints"]);
 	});
-	const deckRoute = manifest.nextApiRoutes.find((route) => {
-		return route.method === "POST" && route.nextPath === "/api/wiki/memory-explorer/deck";
-	});
+});
 
-	assert.deepEqual(briefRoute?.targets.map((target) => `${target.method} ${target.path}`), [
-		"POST /api/wiki/memory-explorer/brief",
-	]);
-	assert.deepEqual(deckRoute?.targets.map((target) => `${target.method} ${target.path}`), [
-		"POST /api/wiki/memory-explorer/deck",
-	]);
+test("collector excludes removed control-plane proxy routes", () => {
+	const manifest = collectRouteManifest();
+	assert.equal(manifest.nextApiRoutes.some((route) => /^\/api\/(?:jobs|skills|wiki)(?:\/|$)/u.test(route.nextPath)), false);
 });
 
 test("collector flags direct backend fetches inside Next API route handlers", () => {
@@ -581,4 +551,20 @@ test("server route manifest reports exported route registrars missing from SERVE
 			},
 		]);
 	});
+});
+
+test("removed APIs return 404 from the complete backend route stack", async () => {
+	const http = require("node:http");
+	const app = express();
+	registerBackendAppRoutes(app, createRuntimeRouteStackTestDependencies());
+	const server = http.createServer(app);
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	try {
+		const baseUrl = `http://127.0.0.1:${server.address().port}`;
+		for (const [method, routePath] of [["GET", "/api/jobs"], ["POST", "/api/jobs/run-1/run"], ["GET", "/api/skills"], ["POST", "/api/skills/drafts/draft-1/approve"], ["GET", "/api/wiki/memory-explorer"], ["POST", "/api/wiki/sync"], ["GET", "/api/status/hermes"]]) {
+			assert.equal((await fetch(`${baseUrl}${routePath}`, { method })).status, 404, `${method} ${routePath}`);
+		}
+	} finally {
+		await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+	}
 });

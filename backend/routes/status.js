@@ -32,28 +32,14 @@ function createRovoSurface({ available, port }) {
 	};
 }
 
-function createHermesSurface(status) {
-	return {
-		available: status.available,
-		details: status,
-		message: status.message ?? null,
-		status: status.status ?? (status.available ? "ready" : "unavailable"),
-		url: status.baseUrl ?? null,
-	};
-}
 
 function createStatusRouter({
 	buildRuntimeStatusSnapshot,
-	getHermesRuntimeStatus,
 	getRovoPort = () => process.env.ROVO_PORT,
-	hermesJobsProvider,
 	isRovoAvailable,
 } = {}) {
 	if (typeof buildRuntimeStatusSnapshot !== "function") {
 		throw new Error("createStatusRouter requires buildRuntimeStatusSnapshot");
-	}
-	if (typeof getHermesRuntimeStatus !== "function") {
-		throw new Error("createStatusRouter requires getHermesRuntimeStatus");
 	}
 	if (typeof isRovoAvailable !== "function") {
 		throw new Error("createStatusRouter requires isRovoAvailable");
@@ -78,36 +64,13 @@ function createStatusRouter({
 		}
 	});
 
-	router.get("/hermes", async (_req, res) => {
-		try {
-			const status = await getHermesRuntimeStatus({
-				jobsProvider: hermesJobsProvider,
-			});
-			return res.json(
-				buildRuntimeStatusSnapshot({
-					hermes: createHermesSurface(status),
-				}).surfaces.hermes,
-			);
-		} catch (error) {
-			return res.status(500).json({
-				error: "Failed to check Hermes status",
-				details: error instanceof Error ? error.message : String(error),
-			});
-		}
-	});
 
 	router.get("/", async (_req, res) => {
 		try {
-			const [rovoAvailable, hermesStatus] = await Promise.all([
-				isRovoAvailable(),
-				getHermesRuntimeStatus({
-					jobsProvider: hermesJobsProvider,
-				}),
-			]);
+			const rovoAvailable = await isRovoAvailable();
 			const port = parseOptionalInteger(getRovoPort());
 			return res.json(
 				buildRuntimeStatusSnapshot({
-					hermes: createHermesSurface(hermesStatus),
 					rovo: createRovoSurface({ available: rovoAvailable, port }),
 				}),
 			);
@@ -208,7 +171,6 @@ function registerStatusRoutes(app, dependencies) {
 module.exports = {
 	createApiHealthHandler,
 	createHealthcheckHandler,
-	createHermesSurface,
 	createRovoSurface,
 	createStatusRouter,
 	parseOptionalInteger,

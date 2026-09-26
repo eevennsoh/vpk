@@ -1,31 +1,16 @@
 "use strict";
 
 const {
-	buildRovoAppHermesContextDescription: defaultBuildRovoAppHermesContextDescription,
-} = require("./hermes-rovo-context");
-const {
-	rankHermesSkillCandidates,
-	selectHermesSkillIdsFromRankedCandidates,
-	shouldDisambiguateRankedCandidates,
-} = require("./hermes-skill-auto-selection");
-const {
-	resolveAmbiguousAutoSelectedSkillIds: defaultResolveAmbiguousAutoSelectedSkillIds,
-} = require("./hermes-skill-disambiguation");
-const {
 	createHiddenRovoAppUserMessage,
 	resolveRovoAppDelegatedPrompt,
 } = require("./rovo-app-message-helpers");
 const {
 	resolveRovoAppActiveArtifact: defaultResolveRovoAppActiveArtifact,
 } = require("./rovo-app-artifact-routing");
-const {
-	buildWikiQueryContextDescription: defaultBuildWikiQueryContextDescription,
-} = require("./wiki-query-context");
 const { getNonEmptyString } = require("./shared-utils");
 const {
 	WORK_ITEM_REPORT_REQUEST_START,
 	buildWorkItemReportRequestContext,
-	mergeHermesSkillIds,
 	resolveWorkItemReportRequest,
 } = require("../../lib/work-item-report-intent");
 
@@ -37,31 +22,21 @@ function requireFunction(name, value) {
 }
 
 function createRovoAppManagedRunRequestPreparer({
-	buildRovoAppHermesContextDescription = defaultBuildRovoAppHermesContextDescription,
-	buildWikiQueryContextDescription = defaultBuildWikiQueryContextDescription,
 	compressUiConversationHistory,
-	listHermesSkills,
 	logger = console,
 	mapUiMessagesToConversation,
-	resolveAmbiguousAutoSelectedSkillIds = defaultResolveAmbiguousAutoSelectedSkillIds,
 	resolveRovoAppActiveArtifact = defaultResolveRovoAppActiveArtifact,
 	rovoAppDocumentManager,
 	rovoAppThreadManager,
-	runRovoBackgroundTask,
 } = {}) {
-	requireFunction("buildRovoAppHermesContextDescription", buildRovoAppHermesContextDescription);
-	requireFunction("buildWikiQueryContextDescription", buildWikiQueryContextDescription);
 	requireFunction("compressUiConversationHistory", compressUiConversationHistory);
-	requireFunction("listHermesSkills", listHermesSkills);
 	requireFunction("logger.info", logger?.info);
 	requireFunction("logger.warn", logger?.warn);
 	requireFunction("mapUiMessagesToConversation", mapUiMessagesToConversation);
-	requireFunction("resolveAmbiguousAutoSelectedSkillIds", resolveAmbiguousAutoSelectedSkillIds);
 	requireFunction("resolveRovoAppActiveArtifact", resolveRovoAppActiveArtifact);
 	requireFunction("rovoAppDocumentManager.getDocument", rovoAppDocumentManager?.getDocument);
 	requireFunction("rovoAppThreadManager.getThread", rovoAppThreadManager?.getThread);
 	requireFunction("rovoAppThreadManager.updateThread", rovoAppThreadManager?.updateThread);
-	requireFunction("runRovoBackgroundTask", runRovoBackgroundTask);
 
 	async function prepareRovoAppManagedRunRequest({
 		requestBody,
@@ -74,10 +49,6 @@ function createRovoAppManagedRunRequestPreparer({
 			? [...requestBody.messages]
 			: [];
 		const threadForSession = threadId ? await rovoAppThreadManager.getThread(threadId) : null;
-		const requestHermesContext =
-			requestBody.hermesContext && typeof requestBody.hermesContext === "object"
-				? requestBody.hermesContext
-				: null;
 		if (threadForSession?.sessionId) {
 			requestBody.sessionId = threadForSession.sessionId;
 			requestBody.sessionMode = threadForSession.sessionMode ?? "persistent";
@@ -148,94 +119,17 @@ function createRovoAppManagedRunRequestPreparer({
 		const conversationHistory = compressedConversation.conversationHistory;
 		if (compressedConversation.compressed) {
 			logger.info(
-				`[HERMES] Compressed managed conversation history: ${compressedConversation.originalLength} -> ${compressedConversation.length} messages`,
+				`[CHAT] Compressed managed conversation history: ${compressedConversation.originalLength} -> ${compressedConversation.length} messages`,
 			);
 		}
 		const baseContextDescription = getNonEmptyString(requestBody.contextDescription);
-		let workItemReportRequest = resolveWorkItemReportRequest({
+		const workItemReportRequest = resolveWorkItemReportRequest({
 			contextDescription: baseContextDescription,
 			promptText: latestUserMessage,
 		});
-		const requestSelectedHermesSkillIds = Array.isArray(requestHermesContext?.selectedSkillIds)
-			? requestHermesContext.selectedSkillIds
-			: null;
-		const selectedHermesSkillIds = requestSelectedHermesSkillIds
-			? requestSelectedHermesSkillIds
-			: Array.isArray(threadForSession?.hermesContext?.selectedSkillIds)
-				? threadForSession.hermesContext.selectedSkillIds
-				: [];
-		let autoSelectedHermesSkillIds = [];
-		try {
-			const installedHermesSkills = await listHermesSkills();
-			workItemReportRequest = resolveWorkItemReportRequest({
-				contextDescription: baseContextDescription,
-				promptText: latestUserMessage,
-				skills: installedHermesSkills,
-			});
-			const rankedCandidates = rankHermesSkillCandidates({
-				promptText: latestUserMessage,
-				selectedSkillIds: selectedHermesSkillIds,
-				skills: installedHermesSkills,
-			});
-			autoSelectedHermesSkillIds = selectHermesSkillIdsFromRankedCandidates(rankedCandidates);
-			if (!workItemReportRequest.isIntent && shouldDisambiguateRankedCandidates(rankedCandidates)) {
-				try {
-					autoSelectedHermesSkillIds = await resolveAmbiguousAutoSelectedSkillIds({
-						promptText: latestUserMessage,
-						rankedCandidates: rankedCandidates.slice(0, 5),
-						runBackgroundTaskImpl: runRovoBackgroundTask,
-					});
-				} catch (error) {
-					logger.warn("[HERMES] Failed to disambiguate auto-selected Hermes skills:", error instanceof Error ? error.message : String(error));
-				}
-			}
-			if (workItemReportRequest.shouldLoadSkill) {
-				autoSelectedHermesSkillIds = mergeHermesSkillIds(
-					autoSelectedHermesSkillIds,
-					workItemReportRequest.skillId,
-				);
-			}
-		} catch (error) {
-			logger.warn("[HERMES] Failed to auto-select Hermes skills:", error instanceof Error ? error.message : String(error));
-			if (workItemReportRequest.shouldLoadSkill) {
-				autoSelectedHermesSkillIds = mergeHermesSkillIds(
-					autoSelectedHermesSkillIds,
-					workItemReportRequest.skillId,
-				);
-			}
-		}
 		const delegationContextDescription = conversationSummary
 			? `[Voice delegation summary]\n${conversationSummary}`
 			: null;
-		let hermesContextDescription = null;
-		try {
-			hermesContextDescription = await buildRovoAppHermesContextDescription({
-				autoSelectedSkillIds: autoSelectedHermesSkillIds,
-				selectedSkillIds: selectedHermesSkillIds,
-			});
-		} catch (error) {
-			logger.warn("[HERMES] Failed to build Hermes context for Rovo chat:", error instanceof Error ? error.message : String(error));
-		}
-		let wikiQueryContextDescription = null;
-		try {
-			wikiQueryContextDescription = await buildWikiQueryContextDescription(latestUserMessage);
-		} catch (error) {
-			logger.warn("[WIKI] Failed to build per-turn wiki query context:", error instanceof Error ? error.message : String(error));
-		}
-		if (threadId) {
-			const hermesContextPatch = {
-				autoSelectedSkillIds: autoSelectedHermesSkillIds,
-			};
-			if (requestSelectedHermesSkillIds) {
-				hermesContextPatch.selectedSkillIds = requestSelectedHermesSkillIds;
-			}
-
-			void rovoAppThreadManager.updateThread(threadId, {
-				hermesContext: hermesContextPatch,
-			}).catch((error) => {
-				logger.warn("[HERMES] Failed to persist resolved Hermes thread context:", error instanceof Error ? error.message : String(error));
-			});
-		}
 		if (workItemReportRequest.shouldCreateArtifact) {
 			requestBody.futureArtifactMode = "create";
 			requestBody.futureArtifactTitle = workItemReportRequest.title;
@@ -265,8 +159,6 @@ function createRovoAppManagedRunRequestPreparer({
 				}));
 		const effectiveBaseContextDescription = [
 			delegationContextDescription,
-			hermesContextDescription,
-			wikiQueryContextDescription,
 			baseContextDescription,
 			workItemReportContextDescription,
 		]

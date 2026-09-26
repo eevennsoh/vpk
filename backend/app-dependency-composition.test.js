@@ -29,9 +29,6 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 		agentsRfpDemoStateManager: { owner: "agents-rfp-demo-state" },
 		aiGatewayProvider,
 		checkpointManager: { owner: "checkpoints" },
-		hermesJobLinkManager: { owner: "job-links" },
-		hermesJobsProvider: { owner: "jobs" },
-		hermesSkillDraftManager: { owner: "skill-drafts" },
 		orchestratorLog: { owner: "orchestrator-log" },
 		rovoAppDocumentManager: { owner: "documents" },
 		rovoAppGeneratedFilesManager: { owner: "generated-files" },
@@ -39,11 +36,9 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 		rovoAppThreadManager: { owner: "threads" },
 		rovoAppUploadManager: { owner: "uploads" },
 		rovoAppVoteManager: { owner: "votes" },
-		skillsHubClient: { owner: "skills-hub" },
 	};
 	const agentsRfpDemoJobOwner = {
 		advanceAgentsRfpDemoProcessing: createNamedFunction("advanceAgentsRfpDemoProcessing", calls),
-		deleteAgentsRfpDemoHermesJobs: createNamedFunction("deleteAgentsRfpDemoHermesJobs", calls),
 		deleteAgentsRfpDemoThread: createNamedFunction("deleteAgentsRfpDemoThread", calls),
 		runAgentsRfpDemoJob: createNamedFunction("runAgentsRfpDemoJob", calls),
 	};
@@ -65,7 +60,6 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 	const streamChatViaRovo = createNamedFunction("streamChatViaRovo", calls);
 	const collectUploadIdsFromMessages = createNamedFunction("collectUploadIdsFromMessages", calls);
 	const searchThreads = createNamedFunction("searchThreads", calls);
-	const wikiRouteHandlers = { owner: "wiki-route-handlers" };
 
 	const dependencies = buildBackendAppDependencies({
 		activeRequests,
@@ -97,7 +91,6 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 			createRovoUnavailableError: createNamedFunction("createRovoUnavailableError", calls),
 			detachPausedRovoToolCall: createNamedFunction("detachPausedRovoToolCall", calls),
 			sendGatewayErrorResponse: createNamedFunction("sendGatewayErrorResponse", calls),
-			sendHermesUnavailableResponse: createNamedFunction("sendHermesUnavailableResponse", calls),
 			streamChatViaRovo,
 			waitForReady: createNamedFunction("waitForReady", calls),
 		},
@@ -107,25 +100,6 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 		collectUploadIdsFromMessages,
 		gatewayTextGeneration: {
 			generateTextViaGateway: createNamedFunction("generateTextViaGateway", calls),
-		},
-		hermes: {
-			archiveHermesSkill: createNamedFunction("archiveHermesSkill", calls),
-			createHermesSkillFromBundle: createNamedFunction("createHermesSkillFromBundle", calls),
-			getHermesRuntimeStatus: createNamedFunction("getHermesRuntimeStatus", calls),
-			getHermesSkill: createNamedFunction("getHermesSkill", calls),
-			getHermesSkillBundle: createNamedFunction("getHermesSkillBundle", calls),
-			listHermesSkills: createNamedFunction("listHermesSkills", calls),
-			parseOptionalBoolean: createNamedFunction("parseOptionalBoolean", calls),
-			syncHermesJobResultsToRovoThreads: createNamedFunction("syncHermesJobResultsToRovoThreads", calls),
-			syncThreadPendingSkillDraftIds: createNamedFunction("syncThreadPendingSkillDraftIds", calls),
-			toggleHermesSkill: createNamedFunction("toggleHermesSkill", calls),
-			updateHermesSkillFromBundle: createNamedFunction("updateHermesSkillFromBundle", calls),
-		},
-		hermesJobLinks: {
-			getMergedHermesJob: createNamedFunction("getMergedHermesJob", calls),
-			listMergedHermesJobs: createNamedFunction("listMergedHermesJobs", calls),
-			persistHermesJobLink: createNamedFunction("persistHermesJobLink", calls),
-			syncHermesJobsForRovoThreads: createNamedFunction("syncHermesJobsForRovoThreads", calls),
 		},
 		rovoAppRuntime,
 		runtime: {
@@ -141,7 +115,6 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 			runtimePort,
 		},
 		searchThreads,
-		wikiRouteHandlers,
 	});
 
 	assert.deepEqual(calls, []);
@@ -159,7 +132,6 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 	assert.equal(dependencies.proxyRovoAppChatRequest, rovoAppRuntime.proxyRovoAppChatRequest);
 	assert.equal(dependencies.startNextQueuedRun, rovoAppRuntime.startNextQueuedRovoAppRun);
 	assert.equal(dependencies.searchThreads, searchThreads);
-	assert.equal(dependencies.wikiRouteHandlers, wikiRouteHandlers);
 	assert.equal(dependencies.rovoAppThreadManager, backendServices.rovoAppThreadManager);
 	assert.equal(dependencies.runtimePort, runtimePort);
 

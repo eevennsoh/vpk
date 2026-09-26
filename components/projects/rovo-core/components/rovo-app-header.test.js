@@ -18,7 +18,10 @@ test("Rovo app header shares the core header while Studio owns send mode", () =>
 	assert.match(CORE_HEADER_SOURCE, /moreMenuFooter\?: ReactNode;/u);
 	assert.match(CORE_HEADER_SOURCE, /<RovoAgentBackButton \/>/u);
 	assert.match(CORE_HEADER_SOURCE, /<RovoAppBrand \/>/u);
-	assert.match(CORE_HEADER_SOURCE, /CONTROL_PLANE_HEADER_SURFACES\.map/u);
+	assert.doesNotMatch(CORE_HEADER_SOURCE, /CONTROL_PLANE_HEADER_SURFACES|control-plane/u);
+	assert.match(CORE_HEADER_SOURCE, /aria-label="Artifacts"/u);
+	assert.match(CORE_HEADER_SOURCE, /aria-label="New chat"/u);
+	assert.match(CORE_HEADER_SOURCE, /\{moreMenuFooter \? \(/u);
 	assert.match(CORE_HEADER_SOURCE, /\{moreMenuFooter\}/u);
 	assert.doesNotMatch(CORE_HEADER_SOURCE, /Send mode/u);
 

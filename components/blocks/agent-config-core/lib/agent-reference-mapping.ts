@@ -4,7 +4,6 @@ import type {
 	RichTextReferenceCategory,
 	RichTextSlashCategory,
 } from "@/components/ui-custom/rich-text-editor";
-import type { WikiMemoryExplorerResponse } from "@/lib/rovo-runtime-types";
 
 import type {
 	AgentConfigFormValue,
@@ -17,7 +16,6 @@ import {
 	getNormalizedAgentReferenceValue,
 } from "@/components/blocks/agent-config-core/lib/agent-config-model";
 
-const MENTION_SOURCE_LIMIT = 24;
 
 export const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory, AgentConfigReferenceListFieldName> = {
 	knowledge: "knowledge",
@@ -94,18 +92,6 @@ export function mapSubagentConfigValuesToMentionItems(
 	}));
 }
 
-export function mapMemoryToKnowledgeItems(
-	explorer: WikiMemoryExplorerResponse | null,
-): RichTextMentionItem[] {
-	return (explorer?.nodes ?? [])
-		.slice(0, MENTION_SOURCE_LIMIT)
-		.map((node) => ({
-			category: "knowledge",
-			id: toMentionId("knowledge", node.id),
-			label: node.title || node.label || node.id,
-			description: node.summary || node.kind,
-		}));
-}
 
 export function mergeMentionItems(
 	...groups: ReadonlyArray<readonly RichTextMentionItem[] | undefined>

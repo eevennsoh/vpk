@@ -36,7 +36,7 @@ turns to Rovo when available and otherwise falls back to AI Gateway.
 
 - `app/` - Next.js App Router routes, providers, and dev proxy handlers
 - `backend/` - Express production runtime and API handlers
-- `components/projects/` - ADS-themed feature surfaces (admin, agents, confluence, control-plane, jira, rovo, rovo-button, rovo-floating-chat, search, sidebar-chat)
+- `components/projects/` - ADS-themed feature surfaces (admin, agents, confluence, jira, rovo, rovo-button, rovo-floating-chat, search, sidebar-chat)
 - `components/blocks/` - standalone block surfaces (agent-progress, answer-card, approval-card, board, chat, chat-composer, chatbot, chatgpt, cursor, dashboard, data-table, discovery-gallery, figma-demo, generative, generative-card, kanban-sprint, login, make-artifact, make-gallery, make-grid, make-item, make-page, product-sidebar, prompt-gallery, question-card, settings-dialog, sidebar, sidebar-rail, signup, sprint-board, terminal-switch, time-tracker, top-navigation, visual-waveform, work-item-detail, work-item-widget, workflow)
 - `components/charts/` - chart components (area, bar, data, line, pie, radar, radial, tooltip)
 - `components/ui/` - shared shadcn/Base UI primitives
@@ -77,9 +77,6 @@ Common routes:
 - `/` -> `app/page.tsx`
 - `/agents` -> `app/agents/page.tsx` via `components/website/`
 - `/rovo` -> `app/rovo/[[...id]]/page.tsx` via `components/projects/rovo/`
-- `/rovo/jobs` -> `app/rovo/jobs/page.tsx`
-- `/rovo/memories` -> `app/rovo/memories/page.tsx`
-- `/rovo/skills` -> `app/rovo/skills/page.tsx`
 - `/sidebar-chat` -> `components/projects/sidebar-chat/`
 - `/confluence` -> `components/projects/confluence/`
 - `/jira` -> `components/projects/jira/`

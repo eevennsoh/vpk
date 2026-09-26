@@ -74,8 +74,7 @@ const CHAT_SDK_HANDLER_DEPENDENCY_GROUPS = Object.freeze({
 		"rovoAppThreadManager",
 		"withStudioAgentGatewayFallbackTimeout",
 	]),
-	skills: Object.freeze([
-		"listHermesSkills",
+	conversation: Object.freeze([
 		"mapUiMessagesToConversation",
 	]),
 });

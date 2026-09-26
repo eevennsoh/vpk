@@ -495,10 +495,6 @@ function createDirectOutputOptions(overrides = {}) {
 			requestOrigin: "text",
 			resolveGatewayUrl: () => "https://gateway.test",
 			resolveGoogleImageGatewayConfig: () => ({}),
-			shouldSuppressHermesKnowledgeDirectSpecCard: (input) => {
-				calls.suppression.push(input);
-				return false;
-			},
 			streamGoogleGatewayManualSse: async () => {},
 			stripDirectMediaFences: (text) => text,
 			synthesizeSound: async () => null,
@@ -564,28 +560,6 @@ test("finalizeRovoDirectOutputs emits direct spec widgets and still strips media
 		calls.handleDirectRovoMediaFences[0].assistantText,
 		"assistant text",
 	);
-});
-
-test("finalizeRovoDirectOutputs suppresses Hermes direct spec promotion", async () => {
-	const { calls, options, parts } = createDirectOutputOptions({
-		extractDirectSpec: () => ({
-			narrative: "Memory recall",
-			spec: { elements: { one: { type: "text" } } },
-		}),
-		shouldSuppressHermesKnowledgeDirectSpecCard: (input) => {
-			calls.suppression.push(input);
-			return true;
-		},
-	});
-
-	const result = await finalizeRovoDirectOutputs(options);
-
-	assert.equal(result.emittedGenuiWidget, false);
-	assert.deepEqual(parts, []);
-	assert.equal(calls.buildDirectSpecWidgetParts.length, 0);
-	assert.equal(calls.suppression.length, 1);
-	assert.equal(calls.logs[0].message, "[DIRECT-SPEC] Suppressed GenUI widget promotion for Hermes knowledge recall");
-	assert.equal(calls.handleDirectRovoMediaFences.length, 1);
 });
 
 test("finalizeRovoDirectOutputs uses unsuppressed text for direct spec detection", async () => {
