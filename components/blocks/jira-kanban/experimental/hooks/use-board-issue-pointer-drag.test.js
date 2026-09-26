@@ -47,7 +47,7 @@ function harness({ enabled = true, face = true, nestedControl = false } = {}) {
 	const api = loaded.exports.useBoardIssuePointerDrag({ current: root }, enabled);
 	const fire = (owner, type, extra = {}) => {
 		let propagationStopped = false;
-		const event = { target, pointerId: 1, isPrimary: true, button: 0, clientX: 100, clientY: 100, preventDefault() {}, ...extra, stopPropagation() { propagationStopped = true; } };
+		const event = { target, pointerId: 1, isPrimary: true, button: 0, clientX: 100, clientY: 100, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, ...extra, stopPropagation() { propagationStopped = true; } };
 		const listeners = owner.listeners.get(type) ?? [];
 		for (const listener of listeners.filter((item) => item.capture)) listener.handler(event);
 		if (!propagationStopped) for (const listener of listeners.filter((item) => !item.capture)) listener.handler(event);
@@ -124,4 +124,18 @@ test("Escape still stops pickup when the page keyboard owner stops propagation i
 	assert.deepEqual(h.events, ["dragstart", "dragend"]);
 	h.move(200); h.up();
 	assert.deepEqual(h.events, ["dragstart", "dragend"], "cancelled pickup cannot keep dispatching pointer drag events");
+});
+
+test("Escape cancellation consumes the key before a later selection owner can clear the cohort", () => {
+	const h = harness();
+	let selectionCleared = false;
+	h.doc.addEventListener("keydown", (event) => {
+		if (event.key === "Escape" && !event.defaultPrevented) selectionCleared = true;
+	}, true);
+	h.down(); h.move(120); h.key("Escape");
+	assert.equal(selectionCleared, false);
+	assert.equal(h.source.draggable, true);
+	assert.deepEqual(h.events, ["dragstart", "dragend"]);
+	h.key("Escape");
+	assert.equal(selectionCleared, true, "a subsequent Escape remains available to clear selection");
 });

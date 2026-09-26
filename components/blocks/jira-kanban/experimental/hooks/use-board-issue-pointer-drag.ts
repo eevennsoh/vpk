@@ -95,7 +95,12 @@ export function useBoardIssuePointerDrag(rootRef: RefObject<HTMLElement | null>,
 			event.preventDefault();
 			event.stopPropagation();
 		};
-		const escape = (event: KeyboardEvent) => { if (event.key === "Escape" && pickup.current?.active) stop(); };
+		const escape = (event: KeyboardEvent) => {
+			if (event.key !== "Escape" || !pickup.current?.active) return;
+			// Claim cancellation before the selection owner handles the same key.
+			event.preventDefault();
+			stop();
+		};
 		const resetClick = () => { suppressClick.current = false; };
 		doc.addEventListener("pointerdown", resetClick, true);
 		root.addEventListener("pointerdown", down, true);

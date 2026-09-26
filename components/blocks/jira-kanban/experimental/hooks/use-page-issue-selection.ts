@@ -123,7 +123,10 @@ export function usePageIssueSelection({
 			return cards.length === column.cards.length ? column : { ...column, cards, count: cards.length };
 		});
 		updateBoardColumns(() => columns);
-		setSelection((current) => reconcileJiraKanbanSelection(current, columns));
+		setSelection((current) => reconcileJiraKanbanSelection({
+			...current,
+			selectedCardCodes: new Set([...current.selectedCardCodes].filter((code) => code !== card.code)),
+		}, columns));
 	};
 	useJiraIssueSelectionKeyboard({
 		rootRef, enabled, dragging: draggedCard !== null, onCancelDrag: handleCardDragEnd, onClearSelection, onSelectAll,
