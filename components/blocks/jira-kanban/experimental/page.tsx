@@ -197,7 +197,7 @@ function ExperimentalJiraKanbanPageContent({
 	boardColumns: controlledBoardColumns,
 	columnChrome, columnSizing, columnWidth, boardTitle,
 	compactHeader = false,
-	headerAssignees, showUnassignedHeaderAvatar,
+	headerAssignees, showUnassignedHeaderAvatar, renderHeaderAssignee,
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
@@ -895,7 +895,7 @@ function ExperimentalJiraKanbanPageContent({
 			style={{ [UNTRACKED_PANEL_WIDTH_CSS_VAR]: `${untrackedPanelFabInsetPx}px` } as CSSProperties}
 		>
 			<ExperimentalJiraKanbanBoardHeader title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
-				activeView={activeView}
+				activeView={activeView} renderHeaderAssignee={renderHeaderAssignee}
 				assignees={assignees}
 				compact={compactHeader}
 				controlsInsetEnd={boardScrollEndInset}

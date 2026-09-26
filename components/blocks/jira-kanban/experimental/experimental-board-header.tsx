@@ -37,6 +37,16 @@ import {
 	getHeaderFacepileAssigneeLimit,
 } from "./header-facepile";
 
+export interface HeaderAssigneeRenderContext {
+	assignee: JiraKanbanAssigneeData;
+	muted: boolean;
+	selected: boolean;
+	onToggle?: () => void;
+	surfaceLabel: string;
+}
+
+export type HeaderAssigneeRenderer = (context: HeaderAssigneeRenderContext) => ReactNode;
+
 const EMPTY_ASSIGNEE_IDS: ReadonlySet<string> = new Set();
 
 function toggleSelectedAssigneeId(
@@ -63,6 +73,7 @@ function toggleSelectedAssigneeId(
 interface ExperimentalJiraKanbanBoardHeaderProps {
 	activeView?: ExperimentalJiraKanbanView;
 	assignees?: readonly JiraKanbanAssigneeData[];
+	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	showUnassignedAvatar?: boolean;
 	compact?: boolean;
 	/**
@@ -196,6 +207,7 @@ function AssigneeAvatar({
 export function ExperimentalJiraKanbanBoardHeader({
 	activeView = "board",
 	assignees = [],
+	renderHeaderAssignee,
 	showUnassignedAvatar = true,
 	compact = false,
 	controlsInsetEnd = 0,
@@ -231,6 +243,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 				<BoardHeaderControlsRow
 					activeView={activeView}
 					assignees={assignees}
+					renderHeaderAssignee={renderHeaderAssignee}
 					showUnassignedAvatar={showUnassignedAvatar}
 					compact={compact}
 					controlsInsetEnd={controlsInsetEnd}
@@ -295,12 +308,14 @@ function BoardHeaderTitleCluster({
 
 function BoardHeaderDefaultFacepile({
 	assignees,
+	renderHeaderAssignee,
 	showUnassignedAvatar,
 	onSelectedAssigneeIdsChange,
 	selectedAssigneeIds,
 	surfaceLabel,
 }: Readonly<{
 	assignees: readonly JiraKanbanAssigneeData[];
+	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	showUnassignedAvatar: boolean;
 	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
 	selectedAssigneeIds: ReadonlySet<string>;
@@ -319,6 +334,7 @@ function BoardHeaderDefaultFacepile({
 				{assignees.slice(0, getHeaderFacepileAssigneeLimit(showUnassignedAvatar)).map((assignee) => (
 					<BoardHeaderAssigneeFacepileItem
 						assignee={assignee}
+						renderHeaderAssignee={renderHeaderAssignee}
 						key={assignee.id}
 						muted={hasSelection && !selectedAssigneeIds.has(assignee.id)}
 						onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
@@ -334,6 +350,7 @@ function BoardHeaderDefaultFacepile({
 
 function BoardHeaderAssigneeFacepileItem({
 	assignee,
+	renderHeaderAssignee,
 	muted,
 	onSelectedAssigneeIdsChange,
 	selected,
@@ -341,12 +358,22 @@ function BoardHeaderAssigneeFacepileItem({
 	surfaceLabel,
 }: Readonly<{
 	assignee: JiraKanbanAssigneeData;
+	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	muted: boolean;
 	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
 	selected: boolean;
 	selectedAssigneeIds: ReadonlySet<string>;
 	surfaceLabel: string;
 }>) {
+	if (renderHeaderAssignee) {
+		return renderHeaderAssignee({
+			assignee, muted, selected, surfaceLabel,
+			onToggle: onSelectedAssigneeIdsChange
+				? () => toggleSelectedAssigneeId(selectedAssigneeIds, assignee.id, onSelectedAssigneeIdsChange)
+				: undefined,
+		});
+	}
+
 	const avatar = (
 		<AssigneeAvatar assignee={assignee} muted={muted} selected={selected} showGroupStroke />
 	);
@@ -382,6 +409,7 @@ function BoardHeaderControlsRow({
 	activeView,
 	agentFilterId,
 	assignees,
+	renderHeaderAssignee,
 	showUnassignedAvatar,
 	compact,
 	controlsInsetEnd,
@@ -408,6 +436,7 @@ function BoardHeaderControlsRow({
 	activeView: ExperimentalJiraKanbanView;
 	agentFilterId?: BoardAgentFilterId | null;
 	assignees: readonly JiraKanbanAssigneeData[];
+	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	showUnassignedAvatar: boolean;
 	compact: boolean;
 	controlsInsetEnd: number;
@@ -465,6 +494,7 @@ function BoardHeaderControlsRow({
 			{facepile ?? (
 				<BoardHeaderDefaultFacepile
 					assignees={assignees}
+					renderHeaderAssignee={renderHeaderAssignee}
 					showUnassignedAvatar={showUnassignedAvatar}
 					onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
 					selectedAssigneeIds={selectedAssigneeIds}

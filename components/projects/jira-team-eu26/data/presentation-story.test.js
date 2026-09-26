@@ -187,14 +187,14 @@ test("the PAY board fills every existing status with coding work and the full st
 	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc, "/avatar-user/venn/venn.png");
 	assert.deepEqual(
 		story.JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES.map((assignee) => assignee.id),
-		["venn", "review-agent", "test-agent", "release-agent"],
+		["venn", "claude-code", "review-agent", "test-agent"],
 	);
 	assert.deepEqual(
 		story.JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES.map((assignee) => assignee.name),
-		["Venn", "Codex", "Cursor", "GitHub Copilot"],
+		["Venn", "Claude", "Jira Coding Agent", "Cursor"],
 	);
 	assert.ok(story.JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES.every((assignee) => (
-		assignee.id === "venn" || assignee.avatarSrc.startsWith("/avatar-agent/")
+		assignee.id === "venn" || assignee.avatarSrc.includes("/agent-lanyard/")
 	)));
 
 	assert.deepEqual(

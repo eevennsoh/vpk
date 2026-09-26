@@ -16,6 +16,9 @@ interface AgentLanyardAgentProps {
 	agent: AgentLanyardAgent;
 	perspectiveTilt?: boolean;
 	animateGrid?: boolean;
+	/** Play the finite grid wave when mounted by a preview instead of on card hover. */
+	gridAnimationTrigger?: "hover" | "reveal";
+	headingLevel?: 2 | 3;
 	/** Replaces the action row with a consumer-owned footer, such as connected apps. */
 	footer?: ReactNode;
 	/** Optional complete avatar presentation; the default uses agent.avatarSrc. */
@@ -53,12 +56,12 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 		);
 	}
 
-	const { agent, perspectiveTilt, animateGrid, showGrid, avatar, footer, className, ...actions } = props;
+	const { agent, perspectiveTilt, animateGrid, gridAnimationTrigger, headingLevel, showGrid, avatar, footer, className, ...actions } = props;
 	return (
 		<AgentLanyardCard
 			id={agent.id} name={agent.name} byline={agent.publisher} description={agent.description}
 			variant="agent" verified={agent.verified} accentColor={agent.accentColor}
-			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} showGrid={showGrid} className={className}
+			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} className={className}
 			avatar={avatar ?? <Image alt="" className="absolute top-6 left-1/2 z-10 -translate-x-1/2" src={agent.avatarSrc} width={54} height={60} />}
 			footer={footer
 				? <div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack">{footer}</div>
