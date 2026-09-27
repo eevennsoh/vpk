@@ -14,6 +14,7 @@ import type {
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 
 import { JIRA_TEAM_EU26_PAY_CURRENT_USER } from "./current-user";
+import { JIRA_TEAM_EU26_HEADER_AGENT_ASSIGNEES } from "./header-agent-assignees";
 import {
 	JIRA_TEAM_EU26_PAY_101_SESSION_ID,
 	JIRA_TEAM_EU26_PAY_101_PULL_REQUEST_NUMBER,
@@ -173,9 +174,7 @@ export const JIRA_TEAM_EU26_PAY_COMPOSER_AGENTS = [
 
 export const JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES = [
 	JIRA_TEAM_EU26_PAY_CURRENT_USER,
-	{ id: "claude-code", name: "Claude", avatarSrc: "/illustration/agent-lanyard/claude.svg" },
-	{ id: "review-agent", name: "Jira Coding Agent", avatarSrc: "/1p/agent-lanyard/glyph-jira-coding.svg" },
-	{ id: "test-agent", name: "Cursor", avatarSrc: "/illustration/agent-lanyard/cursor.svg" },
+	...JIRA_TEAM_EU26_HEADER_AGENT_ASSIGNEES,
 ] as const satisfies readonly JiraKanbanAssigneeData[];
 
 function attachPullRequestPreview(

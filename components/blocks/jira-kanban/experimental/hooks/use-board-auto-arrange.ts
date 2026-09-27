@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import type { JiraKanbanColumnData } from "../../index";
 import { getAutoArrangePlan } from "../lib/board-auto-arrange";
 
 const EMPTY_CODES = new Set<string>();
+const EMPTY_PREPARATION = { key: "", counts: new Map<string, number>() };
 
 export function useBoardAutoArrange({ columns, selected, dragged, onArrange, beforeArrange, boardRef }: Readonly<{
 	columns: readonly JiraKanbanColumnData[];
@@ -18,13 +20,20 @@ export function useBoardAutoArrange({ columns, selected, dragged, onArrange, bef
 	const plan = onArrange ? getAutoArrangePlan(columns, codes) : [];
 	const available = plan.length > 0;
 	const key = onArrange && codes.size && available ? [...codes].sort().join("|") : "";
-	const [readyKey, setReadyKey] = useState("");
-	const ready = Boolean(key && readyKey === key);
+	const [prepared, setPrepared] = useState(EMPTY_PREPARATION);
+	const ready = Boolean(key && prepared.key === key);
+	const latestPlan = useLatestRef({ key, plan });
 	useEffect(() => {
-		if (!key) { setReadyKey(""); return; }
-		const timer = setTimeout(() => setReadyKey(key), 1000);
+		if (!key) { setPrepared(EMPTY_PREPARATION); return; }
+		const timer = setTimeout(() => {
+			const current = latestPlan.current;
+			if (current.key !== key) return;
+			const counts = new Map<string, number>();
+			for (const move of current.plan) counts.set(move.columnTitle, (counts.get(move.columnTitle) ?? 0) + 1);
+			setPrepared({ key, counts });
+		}, 1000);
 		return () => clearTimeout(timer);
-	}, [key]);
+	}, [key, latestPlan]);
 	const arrange = useCallback(() => {
 		if (!ready) return;
 		onArrange?.(codes);
@@ -48,5 +57,9 @@ export function useBoardAutoArrange({ columns, selected, dragged, onArrange, bef
 		window.addEventListener("keydown", keydown);
 		return () => window.removeEventListener("keydown", keydown);
 	}, [arrange, boardRef, onArrange, ready]);
-	return { codes, key, ready, available, arrange, incoming: (title: string) => ready ? plan.filter((move) => move.columnTitle === title).length : undefined };
+	return { codes, key, ready, available, arrange, incoming: (title: string) => {
+		if (!key) return undefined;
+		const count = plan.filter((move) => move.columnTitle === title).length;
+		return ready ? count : count > 0 ? prepared.counts.get(title) : undefined;
+	} };
 }

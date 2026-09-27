@@ -180,6 +180,7 @@ function ExperimentalJiraKanbanPageContent({
 	issueDragTransitions = false,
 	issueMoveVisual = true,
 	issueSelectionAppearance = "card",
+	getStatusVariant,
 	defaultAgentSessionColumnCollapsed = false,
 	defaultShowUntracked = true,
 	detachedAgentSessionsByCard,
@@ -195,7 +196,7 @@ function ExperimentalJiraKanbanPageContent({
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
-	columnChrome, columnSizing, columnWidth, boardTitle,
+	columnChrome, columnSizing, columnWidth, boardAvatar, boardTitle,
 	compactHeader = false,
 	headerAssignees, showUnassignedHeaderAvatar, renderHeaderAssignee,
 	insightsEnabled = true,
@@ -812,9 +813,9 @@ function ExperimentalJiraKanbanPageContent({
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
 		untrackedSessions: agentSessionColumnConfig?.items,
 	});
-	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleCardRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
+	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
 		rootRef: boardSessionDrag.boardRootRef, enabled: issueSelectionAppearance === "fused-backdrop" && !isListContent,
-		filteredBoardColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
+		filteredBoardColumns, collapsedColumns: isListContent ? EMPTY_COLLAPSED_BOARD_COLUMNS : displayedCollapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
 	});
 
 	return (
@@ -823,7 +824,7 @@ function ExperimentalJiraKanbanPageContent({
 			ref={boardSessionDrag.boardRootRef}
 			style={{ [UNTRACKED_PANEL_WIDTH_CSS_VAR]: `${untrackedPanelFabInsetPx}px` } as CSSProperties}
 		>
-			<ExperimentalJiraKanbanBoardHeader title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
+			<ExperimentalJiraKanbanBoardHeader avatar={boardAvatar} title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
 				activeView={activeView} renderHeaderAssignee={renderHeaderAssignee}
 				assignees={assignees}
 				compact={compactHeader}
@@ -961,6 +962,7 @@ function ExperimentalJiraKanbanPageContent({
 								cardMoreMenuActions={issueSelectionAppearance === "fused-backdrop" && (controlledBoardColumns === undefined || onBoardColumnsChange)
 									? { onArchive: handleCardRemove, onDelete: handleCardRemove }
 									: undefined}
+								onCardsRemove={controlledBoardColumns === undefined || onBoardColumnsChange ? handleCardsRemove : undefined}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale}
 								collapsedColumns={displayedCollapsedColumns}
 								columnChrome={columnChrome} columnSizing={columnSizing} columnWidth={columnWidth}
@@ -1003,6 +1005,7 @@ function ExperimentalJiraKanbanPageContent({
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								paddingTop={0} paddingBottom={KANBAN_WORK_ITEM_BOTTOM_PADDING}
 								selectionToolbar={{
+									getStatusVariant,
 									onSelectAll,
 									dismissOnEscape: issueSelectionAppearance === "fused-backdrop" ? false : undefined,
 									onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,

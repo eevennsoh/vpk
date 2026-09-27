@@ -36,21 +36,7 @@ import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-
-type LozengeVariant = NonNullable<LozengeProps["variant"]>;
-
-// Map Jira workflow statuses to lozenge tones following ADS status conventions:
-// grey (to-do) → blue/yellow (in-progress) → green (done).
-const STATUS_LOZENGE_VARIANTS: Record<string, LozengeVariant> = {
-	Intake: "neutral",
-	Drafting: "information",
-	Review: "warning",
-	Approved: "success",
-};
-
-function statusLozengeVariant(status: string): LozengeVariant {
-	return STATUS_LOZENGE_VARIANTS[status] ?? "neutral";
-}
+import { getWorkflowPhaseLozengeVariant } from "@/lib/workflow-status";
 
 const TOOLBAR_ENTER: Transition = {
 	duration: 0.25,
@@ -103,6 +89,8 @@ export interface JiraToolbarProps {
 	selectedCount: number;
 	selectedStatus?: string | null;
 	statusOptions: readonly string[];
+	/** Optional board-owned status presentation; shared workflow tones are the default. */
+	getStatusVariant?: (status: string, phases: readonly string[]) => NonNullable<LozengeProps["variant"]>;
 }
 
 interface JiraToolbarActionProps {
@@ -181,6 +169,7 @@ export function JiraToolbar({
 	selectedCount,
 	selectedStatus,
 	statusOptions,
+	getStatusVariant = getWorkflowPhaseLozengeVariant,
 }: Readonly<JiraToolbarProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const router = useRouter();
@@ -225,14 +214,10 @@ export function JiraToolbar({
 	const statusItems = statusOptions.map((status) => (
 		<DropdownMenuItem
 			key={status}
-			// The lozenge tone + trailing check mark carry selection meaning, so
-			// keep the default text color and use a subtle blue selected surface
-			// instead of the strong selected tint.
-			className="data-selected:bg-bg-brand-subtlest data-selected:text-text data-selected:data-[highlighted]:bg-bg-brand-subtlest-hovered data-selected:data-[highlighted]:text-text data-selected:active:bg-bg-brand-subtlest-pressed"
 			onSelect={() => onStatusChange(status)}
 			selected={selectedStatus === status}
 		>
-			<Lozenge variant={statusLozengeVariant(status)}>{status}</Lozenge>
+			<Lozenge variant={getStatusVariant(status, statusOptions)}>{status}</Lozenge>
 		</DropdownMenuItem>
 	));
 	const agentPicker = (
@@ -287,8 +272,10 @@ export function JiraToolbar({
 			// Overflow owns a real submenu; the inline dropdown is absent here.
 			renderMenu: () => (
 				<DropdownMenuSub onOpenChange={(open) => { if (!open) setAgentQuery(""); }}>
-					<DropdownMenuSubTrigger aria-label="Add agent">
-						<Icon render={<AiAgentIcon label="" size="small" />} />
+					<DropdownMenuSubTrigger
+						aria-label="Add agent"
+						elemBefore={<Icon render={<AiAgentIcon label="" size="small" />} />}
+					>
 						Add agent
 					</DropdownMenuSubTrigger>
 					<DropdownMenuSubContent className="w-[360px] max-w-[calc(100vw-2rem)] max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" positionerClassName="z-[502]">
@@ -359,8 +346,10 @@ export function JiraToolbar({
 			),
 			renderMenu: () => (
 				<DropdownMenuSub>
-					<DropdownMenuSubTrigger aria-label="Change status">
-						<Icon render={<ProjectStatusIcon label="" size="small" />} />
+					<DropdownMenuSubTrigger
+						aria-label="Change status"
+						elemBefore={<Icon render={<ProjectStatusIcon label="" size="small" />} />}
+					>
 						Change status
 					</DropdownMenuSubTrigger>
 					<DropdownMenuSubContent positionerClassName="z-[501]">
@@ -424,6 +413,7 @@ export function JiraToolbar({
 			icon: <DeleteIcon label="" size="small" />,
 			renderInline: () => (
 				<JiraToolbarAction
+					disabled={!onDelete}
 					icon={<Icon render={<DeleteIcon label="" size="small" />} />}
 					onClick={onDelete}
 				>
@@ -432,6 +422,7 @@ export function JiraToolbar({
 			),
 			renderMenu: () => (
 				<DropdownMenuItem
+					disabled={!onDelete}
 					elemBefore={<Icon render={<DeleteIcon label="" size="small" />} />}
 					onSelect={() => onDelete?.()}
 				>

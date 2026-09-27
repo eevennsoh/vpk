@@ -20,8 +20,9 @@ const DROPZONE = readFileSync(
 );
 const MAGNETIC_LABEL = readFileSync(join(__dirname, "../../../jira-dropzone/jira-dropzone-magnetic-label.tsx"), "utf8");
 
-test("normal create rests dashed and becomes solid on column hover", () => {
+test("normal create becomes solid on column hover without borrowing button hover colors", () => {
 	assert.match(FOOTER, /"w-full border-dashed group-hover\/board-column:border-solid"/u);
+	assert.doesNotMatch(FOOTER, /group-hover\/board-column:[^"\s]*bg-/u);
 	assert.match(FOOTER, /control\?\.active \? "group-hover\/board-column:border-dashed" : null/u);
 	assert.equal(require("../../../jira-dropzone/lib/jira-dropzone-chrome.ts").JIRA_DROPZONE_WELL_CHROME_CLASS, "rounded-lg border border-dashed bg-clip-padding");
 	assert.match(

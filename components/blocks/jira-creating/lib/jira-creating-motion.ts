@@ -18,6 +18,9 @@ const CARD_ENTER: Transition = { duration: 0.4, ease: [0, 0.4, 0, 1] };
 const CARD_ENTER_OPACITY: Transition = { duration: 0.2, ease: [0, 0.4, 0, 1] };
 /** duration-fast + ease-in */
 const CARD_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] };
+/** duration-normal + ease-in — close the slot faster than its entrance. */
+export const JIRA_CREATE_REMOVE_DURATION_S = 0.15;
+const SLOT_EXIT: Transition = { duration: JIRA_CREATE_REMOVE_DURATION_S, ease: [0.6, 0, 0.8, 0.6] };
 const REDUCED_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] };
 const REDUCED_INSTANT: Transition = { duration: 0 };
 
@@ -66,7 +69,7 @@ export function getJiraCreateMotion(
 					opacity: { ...CARD_ENTER_OPACITY, delay: delayS },
 				},
 			},
-			exit: { opacity: 0, scale: 0.9, transition: CARD_EXIT },
+			exit: { opacity: 0, scale: JIRA_CREATE_HIDDEN_SCALE, transition: CARD_EXIT },
 		},
 	};
 }
@@ -80,6 +83,10 @@ export function getJiraCreateSlotTransition(
 	}
 
 	return { ...CARD_ENTER, delay: delayS };
+}
+
+export function getJiraCreateRemovalTransition(shouldReduceMotion: boolean | null): Transition {
+	return shouldReduceMotion ? REDUCED_INSTANT : SLOT_EXIT;
 }
 
 export function getJiraCreateLayoutTransition(

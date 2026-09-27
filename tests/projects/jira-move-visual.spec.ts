@@ -22,11 +22,43 @@ async function startDrag(page: Page, code: string) {
 	await expect(card).toHaveAttribute("data-dragging", "true");
 }
 
-for (const { route, code, targetTitle } of [
-	{ route: "jira-team-eu26", code: "PAY-112", targetTitle: "In progress" },
-	{ route: "jira-team-eu26-end", code: "TEU-1", targetTitle: "Done" },
+for (const { route, code, targetTitle, cohort } of [
+	{ route: "jira-team-eu26", code: "PAY-112", targetTitle: "In progress", cohort: ["PAY-105", "PAY-107"] },
+	{ route: "jira-team-eu26-end", code: "TEU-1", targetTitle: "Done", cohort: ["TEU-1", "TEU-2"] },
 ]) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		test(`${route} uses fused selection and moves the selected cohort (${reducedMotion})`, async ({ page }) => {
+			await page.emulateMedia({ reducedMotion });
+			await page.goto(`${origin}/${route}`);
+			const issue = (key: string) => page.locator(`[data-issue-key="${key}"]`);
+			for (const key of cohort) {
+				await issue(key).locator("[draggable]").first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+				await expect(issue(key).locator("[data-jira-issue-activation-control]")).toHaveAttribute("aria-pressed", "true");
+				await expect(issue(key).locator("[data-issue-source-ghost-frame]")).toHaveCount(1);
+				await expect(issue(key).locator('[data-slot="jira-issue-agent-backdrop"]')).toHaveClass(/\bbg-bg-selected\b/);
+				await expect(issue(key).locator('[data-slot="jira-issue-card"]')).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+			}
+			for (const key of cohort) {
+				const backdrop = issue(key).locator('[data-slot="jira-issue-agent-backdrop"]');
+				await expect(backdrop).toHaveCSS("opacity", "1");
+				await expect.poll(() => backdrop.evaluate((node) => node.getAnimations().filter((animation) => animation.playState === "running").length)).toBe(0);
+			}
+			await page.screenshot({ path: `output/agent-browser/move-visual/${route}-fused-selection-${reducedMotion}.png` });
+			await startDrag(page, cohort[0]);
+			for (const key of cohort) {
+				await expect(issue(key).locator("[data-issue-source-ghost-content]")).toHaveCSS("opacity", "0");
+				await expect(issue(key).locator("[data-issue-source-ghost-placeholder]")).toHaveCSS("opacity", "1");
+			}
+			const done = (await page.locator('[data-jira-kanban-column="Done"]').boundingBox())!;
+			await page.mouse.move(done.x + done.width / 2, done.y + 60, { steps: 5 });
+			await page.screenshot({ path: `output/agent-browser/move-visual/${route}-cohort-drag-${reducedMotion}.png` });
+			await page.mouse.up();
+			for (const key of cohort) {
+				await expect(page.locator(`[data-jira-kanban-column="Done"] [data-issue-key="${key}"]`)).toBeVisible();
+				await expect(issue(key).locator("[data-issue-source-ghost-content]")).toHaveCSS("opacity", "1");
+			}
+		});
+
 		test(`${route} switches move visuals and preserves card movement (${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
 			await page.goto(`${origin}/preview/projects/${route}`);

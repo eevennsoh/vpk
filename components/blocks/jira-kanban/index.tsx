@@ -28,7 +28,7 @@ import {
 import { AgentSelector } from "@/components/blocks/agent-selector";
 import type { JiraKanbanCardDropTarget } from "./card-drop";
 import { hasJiraSelectionToggleModifier } from "./selection-modifiers";
-import { JiraToolbar } from "@/components/blocks/jira-toolbar";
+import { JiraToolbar, type JiraToolbarProps } from "@/components/blocks/jira-toolbar";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -142,6 +142,7 @@ function getJiraKanbanCardScale(
 }
 
 export interface JiraKanbanSelectionToolbarConfig {
+	getStatusVariant?: JiraToolbarProps["getStatusVariant"];
 	/** A board-owned keyboard handler can take precedence over global dismissal. */
 	dismissOnEscape?: boolean;
 	onSelectAll?: () => void;
@@ -804,6 +805,7 @@ export function JiraKanban({
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
 						dismissOnEscape={selectionToolbar.dismissOnEscape}
+						getStatusVariant={selectionToolbar.getStatusVariant}
 						defaultPinnedAgentIds={selectionToolbar.defaultPinnedAgentIds}
 						onSelectAll={selectionToolbar.onSelectAll}
 						onAskRovo={selectionToolbar.onAskRovo}

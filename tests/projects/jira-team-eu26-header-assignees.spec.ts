@@ -4,6 +4,41 @@ test.use({ ignoreHTTPSErrors: true });
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 const agentNames = ["Claude", "Jira Coding Agent", "Cursor"];
 
+for (const route of ["jira-team-eu26", "jira-team-eu26-end"]) {
+	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		test(`${route} header agent buttons open chat and the lanyard menu with motion=${reducedMotion}`, async ({ page }) => {
+			await page.setViewportSize({ width: 1600, height: 1000 });
+			await page.emulateMedia({ reducedMotion });
+			await page.goto(`${baseURL}/${route}`, { waitUntil: "domcontentloaded" });
+			const facepile = page.getByRole("group", { name: "Board assignees", exact: true });
+			for (const name of agentNames) {
+				const preview = facepile.getByRole("button", { name: `Preview ${name}`, exact: true });
+				await preview.hover();
+				const card = page.getByRole("article", { name: `${name} agent`, exact: true });
+				const more = card.getByRole("button", { name: `More actions for ${name}`, exact: true });
+				await expect(more).toBeEnabled();
+				await more.click();
+				const menu = page.getByRole("menu", { name: `More actions for ${name}`, exact: true });
+				await expect(menu).toBeVisible();
+				await expect(menu.getByRole("menuitem")).toHaveText(["View profile", "Star", "Copy link", "Duplicate"]);
+				for (const item of await menu.getByRole("menuitem").all()) await expect(item).toBeEnabled();
+				await menu.getByRole("menuitem", { name: "View profile", exact: true }).click();
+				await expect(menu).toBeHidden();
+				await expect(page.getByRole("dialog", { name: "Browse agents", exact: true })).toHaveCount(0);
+				await expect(page).toHaveURL(`${baseURL}/${route}`);
+				await preview.hover();
+				const chat = card.getByRole("button", { name: `Chat with ${name}`, exact: true });
+				await expect(chat).toBeEnabled();
+				await chat.focus();
+				await page.keyboard.press("Enter");
+				await expect(page.getByRole("button", { name: `Select ${name}`, exact: true })).toBeVisible();
+				await expect(card).toBeHidden();
+				await page.getByRole("button", { name: "Close", exact: true }).click();
+			}
+		});
+	}
+}
+
 test("standalone lanyard hover retains its existing fast wave", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(`${baseURL}/preview/blocks/agent-lanyard`, { waitUntil: "domcontentloaded" });
@@ -121,8 +156,8 @@ for (const width of [1200, 1600]) {
 				await trigger.hover();
 				const card = page.getByRole("article", { name: `${name} agent`, exact: true });
 				await expect(card).toBeVisible();
-				await expect(card.getByRole("button", { name: `Chat with ${name}`, exact: true })).toBeDisabled();
-				await expect(card.getByRole("button", { name: `More actions for ${name}`, exact: true })).toBeDisabled();
+				await expect(card.getByRole("button", { name: `Chat with ${name}`, exact: true })).toBeEnabled();
+				await expect(card.getByRole("button", { name: `More actions for ${name}`, exact: true })).toBeEnabled();
 				const popup = page.locator('[data-slot="hover-card-content"]').filter({ has: card });
 				await expect(popup).toHaveCSS("box-shadow", overlayShadow);
 				await expect(card.locator('[data-slot="agent-lanyard-surface"]')).toHaveCSS("border-top-width", "0px");

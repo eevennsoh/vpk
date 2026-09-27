@@ -94,6 +94,50 @@ test("TWG source icons hide labeled third-party logos when aria-hidden is set", 
 	);
 });
 
+test("Rovo source icons use the app container across sizes and preserve decorative semantics", async () => {
+	const esbuild = require("esbuild");
+	const React = require("react");
+	const { renderToStaticMarkup } = require("react-dom/server");
+	const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
+	const result = await esbuild.build({
+		stdin: {
+			contents: 'export { TwgToolSourceIcon } from "@/components/ui-custom/twg-appstack"; export { ThemeWrapper } from "@/components/utils/theme-wrapper";',
+			resolveDir: process.cwd(),
+		},
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		external: ["react", "react/*", "next/image"],
+		loader: { ".css": "empty" },
+		tsconfig: join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+	const { TwgToolSourceIcon, ThemeWrapper } = loadCjsModuleFromText(result.outputFiles[0].text);
+	const renderIcon = (props) => renderToStaticMarkup(React.createElement(ThemeWrapper, null, React.createElement(TwgToolSourceIcon, props)));
+	const source = { id: "rovo", label: "Rovo", provider: "rovo" };
+	for (const [size, geometry] of [["xxsmall", "size-4"], ["xsmall", "size-5"], ["small", "size-6"], ["medium", "size-8"]]) {
+		const markup = renderIcon({ source, size });
+		assert.match(markup, /bg-bg-neutral-bold/u);
+		assert.ok(markup.includes(geometry));
+		assert.match(markup, /role="img"/u);
+		assert.match(markup, /aria-label="Rovo"/u);
+		assert.match(markup, /<svg/u);
+	}
+	const decorative = renderIcon({ source, "aria-hidden": true });
+	assert.match(decorative, /aria-hidden="true"/u);
+	assert.doesNotMatch(decorative, /aria-label="Rovo"|role="img"/u);
+	const custom = renderIcon({
+		source: { ...source, icon: React.createElement("span", null, "Custom mark") },
+	});
+	assert.match(custom, /Custom mark/u);
+	assert.doesNotMatch(custom, /bg-bg-neutral-bold/u);
+	const jira = renderIcon({
+		source: { id: "jira", label: "Jira", provider: "jira" },
+	});
+	assert.match(jira, /bg-surface/u);
+	assert.doesNotMatch(jira, /bg-bg-neutral-bold/u);
+});
+
 test("TWG Appstack keeps the legacy TwgToolSourceStack adapter", () => {
 	assert.match(SOURCE, /export function TwgToolSourceStack\(props: TWGAppstackProps\)/u);
 	assert.match(SOURCE, /return <TWGAppstack \{\.\.\.props\} \/>/u);

@@ -1,19 +1,17 @@
 import Image from "next/image";
-import type { CSSProperties } from "react";
 
 import type { JiraIssueCoverImage } from "@/components/blocks/jira-issue/types";
 import { TWGAppstack, TwgToolSourceIcon } from "@/components/ui-custom/twg-appstack";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import PatternTile from "@/components/website/demos/visual/pattern-tile";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 const GRID_FADE_STYLE = buildScrollMaskStyle({ fadeTop: false, fadeBottom: true, fadeSize: "4rem", scrollbarWidth: 0 });
 const GRID_STROKE = { style: "dashed", width: 1, dash: 1, gap: 3, lineCap: "round" } as const;
-// App tiles belong to the fixed white artwork, including when the surrounding UI is dark.
-const COVER_APP_THEME = {
-	"--ds-surface": "#ffffff",
-	"--ds-border": "rgba(11, 18, 14, 0.14)",
-} as CSSProperties;
+const COVER_SIDE_INSET = "max(var(--cover-ring-inset, 0px), var(--cover-surface-inset, 0px))";
+const COVER_TOP_INSET = `var(--cover-surface-top-inset, ${COVER_SIDE_INSET})`;
+const COVER_RADIUS = `calc(var(--ds-radius-large) - min(${COVER_SIDE_INSET}, 1px))`;
 
 export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage }>) {
 	const isTextCover = image.heading !== undefined;
@@ -29,14 +27,13 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 				// Reveal the underlying card stroke without reserving space or shifting text.
 				"group-data-[selected=true]/jira-issue:[--cover-ring-inset:1px] group-focus-visible/jira-issue:[--cover-ring-inset:1px] group-has-[[data-jira-issue-activation-control]:focus-visible]/jira-issue:[--cover-ring-inset:1px]",
 				image.backgroundClassName,
-				// Typographic artwork keeps its white/ink palette in either UI theme.
-				isTextCover ? "flex flex-col items-start gap-3 bg-[#ffffff] px-[calc(var(--spacing)*3+1px)] pt-6 pb-4 text-left text-[#101214]" : null,
+				isTextCover ? "flex flex-col items-start gap-3 bg-surface px-[calc(var(--spacing)*3+1px)] pt-4 pb-4 text-left text-text" : null,
 			)}
 			aria-hidden={image.src || isTextCover ? undefined : true}
 			data-slot="jira-issue-cover"
 			style={{
 				maxHeight: image.maxHeight,
-				clipPath: "inset(var(--cover-ring-inset, 0px) var(--cover-ring-inset, 0px) 0px round calc(var(--ds-radius-large) - var(--cover-ring-inset, 0px)) calc(var(--ds-radius-large) - var(--cover-ring-inset, 0px)) 0px 0px)",
+				clipPath: `inset(${COVER_TOP_INSET} ${COVER_SIDE_INSET} 0px round ${COVER_RADIUS} ${COVER_RADIUS} 0px 0px)`,
 			}}
 		>
 			{hasGrid ? (
@@ -46,11 +43,11 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 					data-slot="jira-issue-cover-pattern"
 					style={GRID_FADE_STYLE}
 				>
-					<PatternTile patternType="grid" gridAlignment="balanced" front="rgb(16 18 20 / 14%)" back="transparent" scale={32} stroke={GRID_STROKE} />
+					<PatternTile patternType="grid" gridAlignment="centered" front={token("color.border")} back="transparent" scale={32} stroke={GRID_STROKE} style={{ maskPosition: "left 8px" }} />
 				</div>
 			) : null}
 			{firstApp ? (
-				<div className="relative flex shrink-0 items-center" data-slot="jira-issue-cover-apps" style={COVER_APP_THEME}>
+				<div className="relative flex shrink-0 items-center" data-slot="jira-issue-cover-apps">
 					{appSources.length > 1 ? (
 						<TWGAppstack animated={false} iconSize="small" sources={appSources} data-slot="jira-issue-cover-app-stack" />
 					) : (

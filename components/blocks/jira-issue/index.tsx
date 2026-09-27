@@ -574,6 +574,11 @@ function JiraIssueDefault({
 	// puts them 4px from the article edge, flush with the `px-1` gutter the chin
 	// rows use. (This was 5, which pushed the card 1px narrower than those rows.)
 	const agentActivitySurfaceInset = hasActiveAgentActivityShell ? 4 : 0;
+	const agentActivityInnerStyle = {
+		...AGENT_ACTIVITY_INNER_STYLE,
+		"--cover-surface-inset": `${agentActivitySurfaceInset}px`,
+		"--cover-surface-top-inset": selectionBackdropState.joinsBefore ? "0px" : undefined,
+	};
 	const agentActivityArticleStyle: CSSProperties = {
 		borderRadius: "10px",
 		cursor: rootBaseStyle.cursor,
@@ -778,7 +783,7 @@ function JiraIssueDefault({
 					className={rootClassName}
 					data-slot="jira-issue-card"
 					layout={shouldReduceMotion || agentActivityHoverOpen || parentOwnsLayout ? false : "position"}
-					style={AGENT_ACTIVITY_INNER_STYLE}
+					style={agentActivityInnerStyle}
 					transition={layoutTransition}
 				>
 					<motion.div

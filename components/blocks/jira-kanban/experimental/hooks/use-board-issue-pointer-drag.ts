@@ -90,7 +90,8 @@ export function useBoardIssuePointerDrag(rootRef: RefObject<HTMLElement | null>,
 			stop();
 		};
 		const click = (event: MouseEvent) => {
-			if (!suppressClick.current) return;
+			// Keyboard activation is independent of the drag's compatibility click.
+			if (!suppressClick.current || event.detail === 0) return;
 			suppressClick.current = false;
 			event.preventDefault();
 			event.stopPropagation();

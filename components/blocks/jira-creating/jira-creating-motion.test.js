@@ -19,6 +19,7 @@ async function loadMotionHarness() {
 					getJiraCreateArrivalDelayS,
 					getJiraCreateMotion,
 					getJiraCreateSlotTransition,
+					getJiraCreateRemovalTransition,
 					JIRA_CREATE_CARD_STAGGER_S,
 					JIRA_CREATE_HIDDEN_SCALE,
 				} from "./components/blocks/jira-creating/lib/jira-creating-motion";
@@ -78,6 +79,21 @@ test("an arrival delay applies to the scale and the opacity override alike", asy
 	// A per-value transition replaces the defaults outright, so a delay that is
 	// only set at the top level would leave opacity starting early.
 	assert.equal(motion.card.show.transition.opacity.delay, 0.15);
+});
+
+test("removal reverses the whole-card entrance and closes its slot faster without a stagger", async () => {
+	const harness = await loadMotionHarness();
+	const exit = harness.getJiraCreateMotion(false, 0.3).card.exit;
+	assert.equal(exit.scale, harness.JIRA_CREATE_HIDDEN_SCALE);
+	assert.equal(exit.opacity, 0);
+	assert.equal(exit.transition.duration, 0.1);
+	assert.equal(exit.transition.delay, undefined);
+	const slot = harness.getJiraCreateRemovalTransition(false);
+	assert.equal(slot.duration, 0.15);
+	assert.ok(slot.duration < harness.getJiraCreateSlotTransition(false).duration);
+	assert.deepEqual(slot.ease, [0.6, 0, 0.8, 0.6]);
+	assert.equal(slot.delay, undefined);
+	assert.equal(harness.getJiraCreateRemovalTransition(true).duration, 0);
 });
 
 test("create motion drops travel under reduced motion and keeps a fade", async () => {

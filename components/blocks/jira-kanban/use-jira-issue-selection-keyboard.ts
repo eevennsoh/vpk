@@ -29,7 +29,7 @@ function hasVisiblePopup(document: Document): boolean {
 
 /** Only this board's card controls/surfaces own navigation and selection keys. */
 export function useJiraIssueSelectionKeyboard({
-	rootRef, enabled = true, dragging, onCancelDrag, onClearSelection, onRangeSelect, onSelectAll,
+	rootRef, enabled = true, dragging, onCancelDrag, onClearSelection, onRangeSelect,
 }: Readonly<{
 	rootRef: RefObject<HTMLDivElement | null>;
 	enabled?: boolean;
@@ -37,12 +37,11 @@ export function useJiraIssueSelectionKeyboard({
 	onCancelDrag: () => void;
 	onClearSelection: () => void;
 	onRangeSelect: (range: JiraIssueSelectionKeyboardRange) => void;
-	onSelectAll: () => void;
 }>) {
-	const actions = useRef({ dragging, onCancelDrag, onClearSelection, onRangeSelect, onSelectAll });
+	const actions = useRef({ dragging, onCancelDrag, onClearSelection, onRangeSelect });
 	useLayoutEffect(() => {
-		actions.current = { dragging, onCancelDrag, onClearSelection, onRangeSelect, onSelectAll };
-	}, [dragging, onCancelDrag, onClearSelection, onRangeSelect, onSelectAll]);
+		actions.current = { dragging, onCancelDrag, onClearSelection, onRangeSelect };
+	}, [dragging, onCancelDrag, onClearSelection, onRangeSelect]);
 	useEffect(() => {
 		const root = rootRef.current;
 		if (!enabled || !root) return;
@@ -54,7 +53,7 @@ export function useJiraIssueSelectionKeyboard({
 			scrollFrame = requestAnimationFrame(() => issue.scrollIntoView({ block: "nearest", inline: "nearest" }));
 		};
 		const handleKeyDown = (event: KeyboardEvent) => {
-			const { dragging, onCancelDrag, onClearSelection, onRangeSelect, onSelectAll } = actions.current;
+			const { dragging, onCancelDrag, onClearSelection, onRangeSelect } = actions.current;
 			if (event.defaultPrevented || event.isComposing || event.altKey) return;
 			const target = event.target;
 			if (!(target instanceof HTMLElement) || target.closest(EDITOR) || hasVisiblePopup(document)) return;
@@ -73,11 +72,6 @@ export function useJiraIssueSelectionKeyboard({
 				event.preventDefault();
 				event.stopPropagation();
 				onClearSelection();
-				return;
-			}
-			if (event.key.toLowerCase() === "a" && hasJiraSelectionToggleModifier(event)) {
-				event.preventDefault();
-				if (!event.repeat) onSelectAll();
 				return;
 			}
 			if (!cardControl || event.metaKey || event.ctrlKey || !["ArrowUp", "ArrowDown"].includes(event.key)) return;

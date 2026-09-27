@@ -346,6 +346,8 @@ interface DropdownMenuSubTriggerProps
   extends MenuPrimitive.SubmenuTrigger.Props {
   inset?: boolean;
   allowTextWrap?: boolean;
+	/** Leading content in the same icon slot as DropdownMenuItem. */
+	elemBefore?: ReactNode;
   /** Whether to render the shared trailing right chevron. */
   showChevron?: boolean;
 }
@@ -354,6 +356,7 @@ function DropdownMenuSubTrigger({
   className,
   inset,
   allowTextWrap = false,
+	elemBefore,
   showChevron = true,
   children,
   ...props
@@ -365,11 +368,21 @@ function DropdownMenuSubTrigger({
       className={cn(
         "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-popup-open:bg-bg-neutral-subtle-hovered data-popup-open:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         allowTextWrap ? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName,
+				elemBefore ? "gap-3" : null,
         className,
       )}
       {...props}
     >
-      {children}
+			{elemBefore ? (
+				<>
+					<span className={dropdownMenuFrontSlotClassName}>
+						{elemBefore}
+					</span>
+					<span className={cn("min-w-0 flex-1", allowTextWrap ? "whitespace-normal break-words" : "truncate")}>
+						{children}
+					</span>
+				</>
+			) : children}
       {showChevron ? (
         <Icon
           render={<ChevronRightIcon label="" size="small" />}

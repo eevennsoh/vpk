@@ -30,10 +30,11 @@ import {
 } from "@/components/blocks/jira-list";
 
 import { HeaderLanyards } from "./components/header-lanyards";
+import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { renderEu26HeaderAssignee } from "./components/header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
-import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
+import { JIRA_TEAM_EU26_CHAT_AGENT_PROFILES } from "@/components/projects/jira-team-eu26/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
@@ -84,7 +85,7 @@ const isJiraTeamEu26LooseWorkResumable = () => true;
 
 export default function JiraTeamEu26Page(): React.ReactElement {
 	return (
-		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+		<RovoChatProvider agentProfiles={JIRA_TEAM_EU26_CHAT_AGENT_PROFILES}>
 			<JiraTeamEu26App />
 		</RovoChatProvider>
 	);
@@ -376,6 +377,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
 						issueSelectionAppearance="fused-backdrop"
+						getStatusVariant={statusVariant}
 						issueDragTransitions
 						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"

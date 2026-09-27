@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { createJiraKanbanSelectionState, reconcileJiraKanbanSelection, selectJiraKanbanCard } = require("./state.ts");
+const { createJiraKanbanSelectionState, getSelectableJiraKanbanColumns, reconcileJiraKanbanSelection, selectAllJiraKanbanCardsInSelectedColumns, selectJiraKanbanCard } = require("./state.ts");
 
 const columns = [
 	{ title: "First", cards: ["A", "B", "C", "D"].map((code) => ({ code })) },
@@ -39,12 +39,82 @@ test("the requested A to D to B sequence discards the old tail", () => {
 	assert.deepEqual(codes(click(state, "B")), ["A", "B"]);
 });
 
-test("another column establishes a fresh anchor and replaces all previous cards", () => {
+test("another column extends the fixed anchor across matching card rows", () => {
 	let state = click(click(createJiraKanbanSelectionState(), "A"), "D");
 	state = click(state, "E");
-	assert.deepEqual(codes(state), ["E"]);
-	assert.deepEqual(codes(click(state, "F")), ["E", "F"]);
-	assert.deepEqual(codes(click(state, "C")), ["C"]);
+	assert.deepEqual(codes(state), ["A", "E"]);
+	assert.deepEqual(state.anchor, { columnTitle: "First", cardCode: "A" });
+	assert.deepEqual(codes(click(state, "F")), ["A", "B", "C", "D", "E", "F"]);
+	assert.deepEqual(codes(click(state, "C")), ["A", "B", "C"]);
+});
+
+const grid = [
+	{ title: "Empty start", cards: [] },
+	{ title: "Left", cards: ["A", "B", "C", "D"].map((code) => ({ code })) },
+	{ title: "Middle", cards: ["E", "F", "G"].map((code) => ({ code })) },
+	{ title: "Right", cards: ["H", "I", "J", "K", "L"].map((code) => ({ code })) },
+	{ title: "Empty end", cards: [] },
+];
+
+test("grid rectangles grow, shrink and reverse without moving the anchor", () => {
+	let state = click(createJiraKanbanSelectionState(), "B", shift, grid);
+	state = click(state, "K", shift, grid);
+	assert.deepEqual(codes(state), ["B", "C", "D", "F", "G", "I", "J", "K"]);
+	state = click(state, "J", shift, grid);
+	assert.deepEqual(codes(state), ["B", "C", "F", "G", "I", "J"]);
+	state = click(state, "H", shift, grid);
+	assert.deepEqual(codes(state), ["A", "B", "E", "F", "H", "I"]);
+	assert.equal(state.anchor.cardCode, "B");
+	assert.deepEqual(codes(click(state, "B", shift, grid)), ["B"]);
+	assert.deepEqual(codes(click(click(createJiraKanbanSelectionState(), "K", shift, grid), "B", shift, grid)), ["B", "C", "D", "F", "G", "I", "J", "K"]);
+});
+
+test("either outer diagonal selects every card in either direction on uneven boards", () => {
+	const uneven = [{ title: "Left", cards: ["A", "B"].map((code) => ({ code })) }, grid[2], grid[3]];
+	for (const [anchor, target] of [["A", "L"], ["L", "A"], ["H", "B"], ["B", "H"]]) {
+		const state = click(click(createJiraKanbanSelectionState(), anchor, shift, uneven), target, shift, uneven);
+		assert.deepEqual(codes(state), ["A", "B", "E", "F", "G", "H", "I", "J", "K", "L"]);
+		assert.equal(state.anchor.cardCode, anchor);
+	}
+});
+
+test("a first row across columns is a rectangle, not an outer diagonal", () => {
+	assert.deepEqual(codes(click(click(createJiraKanbanSelectionState(), "A", shift, grid), "H", shift, grid)), ["A", "E", "H"]);
+});
+
+test("cross-column ranges follow current card IDs and column order", () => {
+	const state = click(createJiraKanbanSelectionState(), "B", shift, grid);
+	const reordered = [grid[3], grid[2], { ...grid[1], cards: ["D", "A", "C", "B"].map((code) => ({ code })) }];
+	assert.deepEqual(codes(click(state, "J", shift, reordered, { indexInColumn: 0 })), ["J", "K", "G", "C", "B"]);
+});
+
+test("filtered and collapsed columns do not contribute rows or corner selections", () => {
+	const filtered = [{ ...grid[1], cards: grid[1].cards.slice(1) }, grid[2], grid[3]];
+	const eligible = getSelectableJiraKanbanColumns(filtered, new Set(["Middle"]));
+	assert.deepEqual(eligible.map((column) => column.title), ["Left", "Right"]);
+	assert.deepEqual(codes(click(click(createJiraKanbanSelectionState(), "B", shift, eligible), "L", shift, eligible)), ["B", "C", "D", "H", "I", "J", "K", "L"]);
+	const collapsedAnchor = click(createJiraKanbanSelectionState(), "F", shift, filtered);
+	assert.deepEqual(codes(click(collapsedAnchor, "J", shift, eligible)), ["J"]);
+});
+
+test("toolbar Select all expands only the columns containing selected cards", () => {
+	const single = click(createJiraKanbanSelectionState(), "B", toggle, grid);
+	const allLeft = selectAllJiraKanbanCardsInSelectedColumns(single, grid);
+	assert.deepEqual(codes(allLeft), ["A", "B", "C", "D"]);
+	assert.equal(allLeft.anchor, null);
+	const disjoint = click(single, "J", toggle, grid);
+	assert.deepEqual(codes(selectAllJiraKanbanCardsInSelectedColumns(disjoint, grid)), ["A", "B", "C", "D", "H", "I", "J", "K", "L"]);
+	const deselectedRight = click(disjoint, "J", toggle, grid);
+	assert.deepEqual(codes(selectAllJiraKanbanCardsInSelectedColumns(deselectedRight, grid)), ["A", "B", "C", "D"]);
+});
+
+test("toolbar Select all ignores hidden selections and never invents a scope", () => {
+	const selected = click(click(createJiraKanbanSelectionState(), "B", toggle, grid), "F", toggle, grid);
+	const eligible = getSelectableJiraKanbanColumns(grid, new Set(["Middle"]));
+	assert.deepEqual(codes(selectAllJiraKanbanCardsInSelectedColumns(selected, eligible)), ["A", "B", "C", "D"]);
+	assert.deepEqual(codes(selectAllJiraKanbanCardsInSelectedColumns(createJiraKanbanSelectionState(), grid)), []);
+	const filtered = [{ ...grid[1], cards: grid[1].cards.slice(2) }, grid[2], grid[3]];
+	assert.deepEqual(codes(selectAllJiraKanbanCardsInSelectedColumns(selected, filtered)), ["E", "F", "G"]);
 });
 
 test("individual toggles establish an anchor on add and clear it only on its removal", () => {

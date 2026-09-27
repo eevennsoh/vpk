@@ -22,11 +22,39 @@ function loadKeynoteModule() {
 	return keynoteModulePromise;
 }
 
-test("the toolbar roster contains only the four keynote presenters", async () => {
+test("all keynote items, including retained and newly created ones, auto arrange to Done", async () => {
+	const keynote = await loadKeynoteModule();
+	const { getAutoArrangePlan, autoArrangeCards, withAutoArrangeDestinations } = loadCjsModuleFromText(esbuild.buildSync({
+		entryPoints: ["components/blocks/jira-kanban/experimental/lib/board-auto-arrange.ts"],
+		bundle: true, format: "cjs", platform: "node", write: false,
+	}).outputFiles[0].text);
+	const columns = withAutoArrangeDestinations(keynote.createJiraTeamEu26EndKeynoteBoardColumns());
+	const retained = columns[0].cards.shift();
+	retained.status = "Confidence";
+	retained.autoArrangeStatus = "Collaboration";
+	columns[2].cards.unshift(retained);
+	columns[0].cards.push({ ...columns[0].cards[0], code: "TEU-14", title: "New keynote item", autoArrangeStatus: undefined });
+	const prepared = keynote.withJiraTeamEu26EndDoneDestinations(columns);
+	const codes = new Set(prepared.flatMap((column) => column.cards.map((card) => card.code)));
+	assert.equal(codes.size, 14);
+	assert.ok(prepared.every((column) => column.cards.every((card) => card.autoArrangeStatus === "Done")));
+	const plan = getAutoArrangePlan(prepared, codes);
+	assert.equal(plan.length, 14);
+	assert.ok(plan.every((move) => move.columnTitle === "Done" && move.status === "Done"));
+	const moved = autoArrangeCards(prepared, codes);
+	assert.deepEqual(moved.map((column) => column.cards.length), [0, 0, 0, 14]);
+	assert.equal(moved[3].cards.find((card) => card.code === "TEU-14").title, "New keynote item");
+	assert.deepEqual(getAutoArrangePlan(moved, codes), []);
+	assert.equal(keynote.withJiraTeamEu26EndDoneDestinations(prepared), prepared);
+	assert.equal(retained.autoArrangeStatus, "Collaboration");
+	assert.equal(retained.status, "Confidence");
+});
+
+test("the toolbar roster retains the four keynote presenters and all three coding agents", async () => {
 	const keynote = await loadKeynoteModule();
 	const roster = keynote.JIRA_TEAM_EU26_END_HEADER_ASSIGNEES;
-	assert.deepEqual(roster.map((person) => person.name), ["MCB", "Tamar", "Sherif", "Taroon"]);
-	assert.equal(new Set(roster.map((person) => person.id)).size, 4);
+	assert.deepEqual(roster.map((person) => person.name), ["MCB", "Tamar", "Sherif", "Taroon", "Claude", "Jira Coding Agent", "Cursor"]);
+	assert.equal(new Set(roster.map((person) => person.id)).size, 7);
 	for (const person of roster) {
 		assert.ok(fs.existsSync(path.join(process.cwd(), "public", person.avatarSrc)));
 	}
@@ -97,9 +125,9 @@ test("every keynote story pairs its feature cover heading with a benefit title a
 		["Code context", "Ground AI in your codebase"],
 		["Rovo for Work & Mobile", "Pick up work anywhere"],
 		["Rovo Artifacts", "Turn ideas into outputs"],
-		["Loom desktop recording", "Record. Share. Collaborate."],
+		["Loom desktop recording", "Record Share Collaborate"],
 		["Whiteboard → Figma → Loom", "From ideas to shared outcomes"],
-		["AI Planner", "Humans and agents. One plan."],
+		["AI Planner", "Humans and agents One plan"],
 		["Loom AI overlays", "Make every video clearer"],
 		["Loom PR previews", "Preview code changes in video"],
 		["Jira Agent Sessions", "See agent work as it happens"],
@@ -113,13 +141,19 @@ test("every keynote story pairs its feature cover heading with a benefit title a
 		assert.equal(card.coverImage.src, undefined);
 		assert.equal(card.coverImage.alt, undefined);
 		assert.equal(card.coverImage.backgroundClassName, undefined);
-		assert.equal(card.coverImage.maxHeight, 144);
+		assert.equal(card.coverImage.maxHeight, 120);
 		assert.equal(card.coverImage.backgroundPattern, "grid");
 		assert.ok(card.coverImage.appSources.length > 0);
 	}
 	assert.deepEqual(cards[1].coverImage.appSources.map((app) => app.label), ["Bitbucket", "GitHub", "GitLab"]);
 	assert.deepEqual(cards[8].coverImage.appSources.map((app) => app.label), ["Loom", "Bitbucket"]);
 	assert.deepEqual(cards[11].coverImage.appSources.map((app) => app.label), ["Focus", "Talent"]);
+	assert.deepEqual([cards[0], cards[4], cards[10], cards[12]].map((card) => card.coverImage.heading), [
+		"Desktop\nsearch & chat",
+		"Loom\ndesktop recording",
+		"DX session\nquality & ROI",
+		"Enterprise\ngovernance & Guard",
+	]);
 });
 
 test("separate keynote board instances do not share mutable card or column data", async () => {
@@ -138,7 +172,7 @@ test("separate keynote board instances do not share mutable card or column data"
 	assert.equal(second[3].cards.length, 0);
 	assert.equal(second[0].cards[0].title, "Search across your work");
 	assert.equal(second[0].cards[0].status, "Context");
-	assert.equal(second[0].cards[0].coverImage.heading, "Desktop search\n& chat");
+	assert.equal(second[0].cards[0].coverImage.heading, "Desktop\nsearch & chat");
 	assert.equal(second[0].cards[0].coverImage.appSources[0].label, "Rovo");
 	assert.deepEqual(second[0].cards[0].tags, []);
 });
@@ -180,9 +214,9 @@ test("the original gray placeholder covers upgrade without resetting board edits
 	assert.equal(upgraded.title, "Edited before the cover update");
 	assert.equal(upgraded.status, "Done");
 	assert.equal(upgraded.assignee, card.assignee);
-	assert.equal(upgraded.coverImage.heading, "Desktop search\n& chat");
+	assert.equal(upgraded.coverImage.heading, "Desktop\nsearch & chat");
 	assert.equal(upgraded.coverImage.backgroundPattern, "grid");
-	assert.equal(upgraded.coverImage.maxHeight, 144);
+	assert.equal(upgraded.coverImage.maxHeight, 120);
 	assert.deepEqual(upgraded.coverImage.appSources.map((app) => app.label), ["Rovo"]);
 	assert.deepEqual(card.coverImage, { backgroundClassName: "bg-bg-accent-gray-subtler", maxHeight: 120 });
 	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
@@ -200,23 +234,48 @@ test("cover repair leaves newly created items and supplied image covers untouche
 	assert.equal(columns[0].cards.at(-1), created);
 });
 
+test("retained keynote covers adopt the shorter height without resetting board edits", async () => {
+	const keynote = await loadKeynoteModule();
+	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+	const card = columns[0].cards.shift();
+	card.title = "Edited rehearsal title";
+	card.status = "Done";
+	card.coverImage.heading = "Custom rehearsal cover";
+	card.coverImage.maxHeight = 144;
+	columns[3].cards.push(card);
+
+	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
+	const resized = restored[3].cards[0];
+	assert.equal(resized.coverImage.maxHeight, 120);
+	assert.equal(resized.coverImage.heading, "Custom rehearsal cover");
+	assert.equal(resized.title, "Edited rehearsal title");
+	assert.equal(resized.status, "Done");
+	assert.equal(resized.assignee, card.assignee);
+	assert.equal(resized.coverImage.appSources, card.coverImage.appSources);
+	assert.equal(restored[0], columns[0]);
+	assert.equal(card.coverImage.maxHeight, 144);
+	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
+});
+
 test("authored line breaks reach retained covers without replacing custom cover copy", async () => {
 	const keynote = await loadKeynoteModule();
 	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
-	columns[0].cards[0].coverImage.heading = "Desktop search & chat";
+	columns[0].cards[0].coverImage.heading = "Desktop search\n& chat";
 	columns[0].cards[3].coverImage.heading = "Artifacts";
 	columns[1].cards[0].coverImage.heading = "Loom Desktop\nrecording";
 	columns[2].cards[3].coverImage.heading = "DX: session quality\n& ROI";
+	columns[2].cards[5].coverImage.heading = "Enterprise governance\n& Guard";
 	const custom = columns[0].cards[1];
 	custom.coverImage.heading = "Custom rehearsal cover";
 	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
-	assert.equal(restored[0].cards[0].coverImage.heading, "Desktop search\n& chat");
+	assert.equal(restored[0].cards[0].coverImage.heading, "Desktop\nsearch & chat");
 	assert.equal(restored[0].cards[3].coverImage.heading, "Rovo\nArtifacts");
-	assert.equal(restored[1].cards[0].coverImage.heading, "Loom desktop\nrecording");
-	assert.equal(restored[2].cards[3].coverImage.heading, "DX session quality\n& ROI");
+	assert.equal(restored[1].cards[0].coverImage.heading, "Loom\ndesktop recording");
+	assert.equal(restored[2].cards[3].coverImage.heading, "DX session\nquality & ROI");
+	assert.equal(restored[2].cards[5].coverImage.heading, "Enterprise\ngovernance & Guard");
 	assert.equal(restored[0].cards[1], custom);
 	assert.equal(custom.coverImage.heading, "Custom rehearsal cover");
-	assert.equal(columns[0].cards[0].coverImage.heading, "Desktop search & chat");
+	assert.equal(columns[0].cards[0].coverImage.heading, "Desktop search\n& chat");
 });
 
 test("AI Planner uses one Jira logo and replaces the older retained app stack", async () => {

@@ -7,10 +7,83 @@ const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 
+for (const route of ["/jira-team-eu26", "/preview/blocks/jira-dragging"]) {
+	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		test(`grid selection and column-scoped Select all on ${route} (${reducedMotion})`, async ({ page }) => {
+			await page.emulateMedia({ reducedMotion });
+			await page.goto(`${origin}${route}`);
+			await expect(page.locator('[data-board-agent-session-drop-zone="issue"]').first()).toBeVisible();
+			const readColumns = () => page.locator("[data-jira-kanban-column]").evaluateAll((nodes) => nodes
+				.filter((node) => node.getAttribute("data-collapsed") !== "true")
+				.map((node) => ({
+					title: node.getAttribute("data-jira-kanban-column")!,
+					codes: [...node.querySelectorAll('[data-board-agent-session-drop-zone="issue"]')].map((card) => card.getAttribute("data-issue-key")!),
+				})));
+			const card = (code: string) => issue(page, code).locator('[draggable]').first();
+			const selected = () => page.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes
+				.filter((node) => node.querySelector('[data-jira-issue-activation-control][aria-pressed="true"]'))
+				.map((node) => node.getAttribute("data-issue-key")));
+			let columns = await readColumns();
+			if (columns.filter((item) => item.codes.length > 0).length === 1) {
+				// Populate two other lanes through native drag so this playground exercises a grid.
+				for (const destination of [columns.at(-1)!, columns[1]]) {
+					const code = (await readColumns())[0].codes.at(-1)!;
+					const source = (await card(code).boundingBox())!;
+					const target = (await column(page, destination.title).boundingBox())!;
+					await page.mouse.move(source.x + 70, source.y + 30);
+					await page.mouse.down();
+					await page.mouse.move(source.x + 95, source.y + 35, { steps: 5 });
+					await page.mouse.move(target.x + 90, target.y + 100, { steps: 5 });
+					await page.mouse.move(target.x + 91, target.y + 100);
+					await page.mouse.up();
+					await expect(column(page, destination.title).locator(`[data-issue-key="${code}"]`)).toHaveCount(1);
+				}
+				columns = await readColumns();
+			}
+			const populated = columns.filter((item) => item.codes.length > 0);
+			const [left, middle] = populated;
+			const right = populated.at(-1)!;
+			const click = (code: string, modifiers: ("Shift" | "ControlOrMeta")[] = ["Shift"]) => card(code).click({ position: { x: 70, y: 30 }, modifiers });
+			await click(left.codes[0]);
+			await click(middle.codes[0]);
+			await expect.poll(selected).toEqual([left.codes[0], middle.codes[0]]);
+			await click(left.codes[0]);
+			await expect.poll(selected).toEqual([left.codes[0]]);
+			await page.getByRole("button", { name: "Select all", exact: true }).click();
+			await expect.poll(selected).toEqual(left.codes);
+			await click(middle.codes[0], ["ControlOrMeta"]);
+			await page.getByRole("button", { name: "Select all", exact: true }).click();
+			await expect.poll(selected).toEqual([...left.codes, ...middle.codes]);
+			await page.keyboard.press("Escape");
+			await click(left.codes[0]);
+			await click(right.codes.at(-1)!);
+			await expect.poll(selected).toEqual(populated.flatMap((item) => item.codes));
+			await page.screenshot({ path: `output/agent-browser/grid-selection/${route.includes("preview") ? "dragging" : "eu26"}-${reducedMotion}.png` });
+			await page.keyboard.press("Escape");
+			await click(middle.codes[0]);
+			for (const modifier of ["Meta", "Control"]) {
+				const intercepted = await issue(page, middle.codes[0]).locator('[data-jira-issue-activation-control]').evaluate((node, key) => {
+					const event = new KeyboardEvent("keydown", { key: "a", bubbles: true, cancelable: true, metaKey: key === "Meta", ctrlKey: key === "Control" });
+					node.dispatchEvent(event);
+					return event.defaultPrevented;
+				}, modifier);
+				expect(intercepted).toBe(false);
+				await page.keyboard.press(`${modifier}+a`);
+				await expect.poll(selected).toEqual([middle.codes[0]]);
+			}
+			await page.keyboard.press("Escape");
+			await page.getByRole("button", { name: `Collapse ${middle.title} column`, exact: true }).click();
+			await click(left.codes[0]);
+			await click(right.codes.at(-1)!);
+			await expect.poll(selected).toEqual(populated.filter((item) => item.title !== middle.title).flatMap((item) => item.codes));
+		});
+	}
+}
+
 test("EU26 plain click does not select; Shift click selects a range", async ({ page }) => {
 	await page.goto(`${origin}/jira-team-eu26`);
 	const control = (code: string) => issue(page, code).locator('[data-jira-issue-activation-control]');
-	const card = (code: string) => issue(page, code).locator('[draggable="true"]').first();
+	const card = (code: string) => issue(page, code).locator('[draggable]').first();
 	await card("PAY-105").click({ position: { x: 70, y: 30 } });
 	await expect(control("PAY-105")).toHaveAttribute("aria-pressed", "false");
 	await expect(page.getByRole("button", { name: "Clear selection", exact: true })).toHaveCount(0);
@@ -262,8 +335,10 @@ test("a running issue reorders in its column and scrolls to the last slot", asyn
 	const list = column(page, "In progress").locator("[data-jira-kanban-card-list]");
 	const bounds = await list.boundingBox();
 	if (!bounds) throw new Error("Missing card scrollport");
-	await page.mouse.move(bounds.x + 100, bounds.y + bounds.height - 5, { steps: 5 });
-	await page.mouse.move(bounds.x + 100, bounds.y + bounds.height - 5);
+	// Use the exposed right gutter; the floating bulk toolbar covers the middle.
+	const dropX = bounds.x + bounds.width - 16;
+	await page.mouse.move(dropX, bounds.y + bounds.height - 5, { steps: 5 });
+	await page.mouse.move(dropX, bounds.y + bounds.height - 5);
 	await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
 	await expect(column(page, "In progress").locator('[data-issue-drop-before="end"]')).toHaveCount(1);
 	await page.mouse.up();

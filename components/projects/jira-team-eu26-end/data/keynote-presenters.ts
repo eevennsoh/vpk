@@ -1,4 +1,5 @@
 import type { JiraKanbanAssigneeData } from "@/components/blocks/jira-kanban";
+import { JIRA_TEAM_EU26_HEADER_AGENT_ASSIGNEES } from "@/components/projects/jira-team-eu26/data/header-agent-assignees";
 
 export const JIRA_TEAM_EU26_END_PRESENTERS = {
 	mcb: { id: "mcb", name: "MCB", avatarSrc: "/avatar-user/mcb.png", initials: "MCB" },
@@ -12,6 +13,7 @@ export const JIRA_TEAM_EU26_END_HEADER_ASSIGNEES = [
 	JIRA_TEAM_EU26_END_PRESENTERS.tamar,
 	JIRA_TEAM_EU26_END_PRESENTERS.sherif,
 	JIRA_TEAM_EU26_END_PRESENTERS.taroon,
+	...JIRA_TEAM_EU26_HEADER_AGENT_ASSIGNEES,
 ] as const;
 
 export const JIRA_TEAM_EU26_END_SECTION_PRESENTERS = {

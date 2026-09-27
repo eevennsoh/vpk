@@ -18,9 +18,6 @@ const USE_JIRA_TABS_SOURCE = readProjectFile("components/projects/jira/hooks/use
 const EXPERIMENTAL_HEADER_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
 );
-const BOARD_VIEW_MENU_SOURCE = readProjectFile(
-	"components/blocks/jira-kanban/experimental/components/board-view-menu.tsx",
-);
 const EXPERIMENTAL_PAGE_SOURCE = [
 	readProjectFile("components/blocks/jira-kanban/experimental/page.tsx"),
 	readProjectFile("components/blocks/jira-kanban/experimental/experimental-page-types.ts"),
@@ -71,7 +68,7 @@ test("the route renders the keynote board directly inside Jira app chrome", () =
 	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{false\}[\s\S]*product="jira"/u);
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
 	assert.match(PAGE_SOURCE, /createJiraTeamEu26EndKeynoteBoardColumns/u);
-	assert.match(PAGE_SOURCE, /boardColumns=\{restoreJiraTeamEu26EndKeynoteCoverArtwork\(boardColumns\)\}/u);
+	assert.match(PAGE_SOURCE, /boardColumns=\{withJiraTeamEu26EndDoneDestinations\(restoreJiraTeamEu26EndKeynoteCoverArtwork\(boardColumns\)\)\}/u);
 	assert.match(PAGE_SOURCE, /boardTitle=\{JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE\}/u);
 	assert.match(PAGE_SOURCE, /columnWidth="fluid"/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_BOARD_AGENTS/u);
@@ -80,6 +77,15 @@ test("the route renders the keynote board directly inside Jira app chrome", () =
 	assert.match(PAGE_SOURCE, /showUnassignedHeaderAvatar=\{false\}/u);
 	assert.match(PAGE_SOURCE, /agentSessionMembers=\{JIRA_TEAM_EU26_PAY_SESSION_MEMBERS\}/u);
 	assert.match(PAGE_SOURCE, /h-full min-h-0 min-w-0 overflow-hidden \[&>div\]:min-h-0/u);
+});
+
+test("the keynote uses the same card movement presentation as Team EU26", () => {
+	const reference = readProjectFile("components/projects/jira-team-eu26/page.tsx");
+	for (const source of [reference, PAGE_SOURCE]) {
+		assert.match(source, /issueSelectionAppearance="fused-backdrop"/u);
+		assert.match(source, /issueDragTransitions\s/u);
+		assert.match(source, /issueMoveVisual=\{designVariants\.moveVisual\}/u);
+	}
 });
 
 test("the keynote floating chat retains MCB creator attribution through its active overlay", () => {
@@ -884,61 +890,6 @@ test("the Work items header switches between Board and List views with their ico
 	assert.doesNotMatch(
 		EXPERIMENTAL_HEADER_SOURCE,
 		/<div className="flex items-center gap-1">\s*<BoardViewMenu/u,
-	);
-});
-
-test("the board keeps matching 24px gaps above and below the filter controls", () => {
-	// The control row's opening tag is multi-line (it carries `controlsInsetEnd`
-	// as a style), so match the className string rather than the whole tag —
-	// `mt-6` after the tabs must match the header's `pb-6` below the row.
-	assert.match(
-		EXPERIMENTAL_HEADER_SOURCE,
-		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*className="mt-6 flex flex-wrap items-center gap-2 px-6"/u,
-	);
-	assert.match(
-		EXPERIMENTAL_HEADER_SOURCE,
-		/className=\{cn\("shrink-0 pt-3", showBoardControls \? "pb-6" : "pb-0"\)\}/u,
-	);
-	assert.match(
-		EXPERIMENTAL_HEADER_SOURCE,
-		/paddingInlineEnd: `calc\(\$\{controlsInsetEnd\}px \+ \$\{token\("space\.300"\)\}\)`/u,
-	);
-});
-
-test("Team EU26 replaces View with Needs input and a dedicated Group by control", () => {
-	assert.match(
-		PAGE_SOURCE,
-		/needsInputCount=\{needsInputCount\}/u,
-		"the Team EU26 route owns the live Needs input count",
-	);
-	assert.match(
-		PAGE_SOURCE,
-		/agentActivities\?\.filter\(\s*\(activity\) =>\s*activity\.state === "awaiting-input",?\s*\)\.length/u,
-		"the route counts every awaiting-input agent activity",
-	);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /needsInputCount\?: number;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /needsInputCount=\{needsInputCount\}/u);
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /needsInputCount\?: number;/u);
-	assert.match(
-		EXPERIMENTAL_HEADER_SOURCE,
-		/<BoardGroupByMenu[\s\S]*<BoardNeedsInputButton/u,
-	);
-	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardNeedsInputButton/u);
-	assert.match(BOARD_VIEW_MENU_SOURCE, /Needs input/u);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/import QuestionCircleIcon from "@atlaskit\/icon\/core\/question-circle";/u,
-	);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>\s*Needs input\s*<\/Button>/u,
-		"the Needs input control shows its label without a visible count badge",
-	);
-	assert.doesNotMatch(BOARD_VIEW_MENU_SOURCE, /StatusInformationIcon/u);
-	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardGroupByMenu/u);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/<DropdownMenuRadioGroup[\s\S]*aria-label="Group by"[\s\S]*BOARD_GROUP_OPTIONS/u,
 	);
 });
 

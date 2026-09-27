@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { issueSelectionBackdrop } = require("./issue-selection-backdrop.ts");
+const { issueRemovalSpacing, issueSelectionBackdrop } = require("./issue-selection-backdrop.ts");
 const { resolveJiraIssueSelectionBackdrop } = require("../../../jira-issue/selection-backdrop.ts");
 const { DECK_LAYERS, DECK_VISIBLE_MAX } = require("../../../agent-session/session-drag-deck.ts");
 const { createIssueCohortDeckLayers, createIssueCohortGatherKeyframes, ISSUE_COHORT_DECK_LAYERS, ISSUE_COHORT_GATHER_TIMING } = require("./issue-cohort-gather.ts");
@@ -12,6 +12,33 @@ test("only adjacent selected issues share a backdrop", () => {
 	assert.deepEqual(modes(["A", "B", "C"]), ["start", "middle", "end", "rest"]);
 	assert.deepEqual(modes(["A", "C"]), ["single", "rest", "single", "rest"]);
 	assert.equal(issueSelectionBackdrop([{ code: "D" }], new Set(["A", "D"]), 0), "single");
+});
+
+test("adjacent removals subtract their shared gap once and an empty column has no trailing seam", () => {
+	const selected = new Set(["A", "B"]), removing = new Set(["A", "B"]);
+	assert.deepEqual(issueRemovalSpacing(cards, selected, removing, 0), { gaps: 2, fusedGaps: 1 });
+	assert.deepEqual(issueRemovalSpacing(cards, selected, removing, 1), { gaps: 0, fusedGaps: 0 });
+	assert.equal(issueRemovalSpacing(cards, selected, removing, 2), undefined);
+	assert.deepEqual(issueRemovalSpacing([{ code: "A" }], selected, new Set(["A"]), 0), { gaps: 0, fusedGaps: 0 });
+});
+
+test("removal spacing exactly matches surviving geometry for every selection and removal subset", () => {
+	const spacing = (items, selected, gap) => Math.max(0, items.length - 1) * gap
+		- items.slice(1).filter((card, index) => selected.has(items[index].code) && selected.has(card.code)).length * 4;
+	for (const gap of [4, 8]) {
+		for (let selectionMask = 0; selectionMask < 16; selectionMask++) {
+			const selected = new Set(cards.filter((_, index) => selectionMask & (1 << index)).map(card => card.code));
+			for (let removalMask = 1; removalMask < 16; removalMask++) {
+				const removing = new Set(cards.filter((_, index) => removalMask & (1 << index)).map(card => card.code));
+				const remaining = cards.filter(card => !removing.has(card.code));
+				const collapsed = cards.reduce((total, _, index) => {
+					const seam = issueRemovalSpacing(cards, selected, removing, index);
+					return total + (seam ? seam.gaps * gap - seam.fusedGaps * 4 : 0);
+				}, 0);
+				assert.equal(collapsed, spacing(cards, selected, gap) - spacing(remaining, selected, gap));
+			}
+		}
+	}
 });
 
 test("resting selection does not activate an agent well; selected issues do", () => {

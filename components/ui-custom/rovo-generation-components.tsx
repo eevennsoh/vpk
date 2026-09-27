@@ -302,6 +302,12 @@ export interface RovoGenerationHighlightProps extends Omit<ComponentPropsWithout
 	radius?: number;
 	/** Rainbow stroke thickness in pixels. @default 1 */
 	strokeWidth?: number;
+	/** Perimeter lap duration in seconds. Larger surfaces default to 2.4 seconds. */
+	duration?: number;
+	/** Delay before the perimeter lap, in seconds. @default 0.2 */
+	delay?: number;
+	/** Change this token to retrace without remounting the wrapped content. */
+	playToken?: number;
 	/** Called once the band finishes traveling and dissolves. */
 	onHighlightComplete?: () => void;
 	/** Additional classes applied to the wrapper element. */
@@ -330,6 +336,9 @@ export function RovoGenerationHighlight({
 	active = true,
 	radius,
 	strokeWidth = 1,
+	duration = HIGHLIGHT_DURATION_MS / 1000,
+	delay = HIGHLIGHT_DELAY_MS / 1000,
+	playToken,
 	onHighlightComplete,
 	className,
 	style,
@@ -345,6 +354,8 @@ export function RovoGenerationHighlight({
 	const onCompleteRef = useLatestRef(onHighlightComplete);
 
 	const normalizedStroke = Math.max(0.5, strokeWidth);
+	const normalizedDurationMs = Math.max(0.001, duration) * 1000;
+	const normalizedDelayMs = Math.max(0, delay) * 1000;
 
 	// Imperative rAF loop ported from the reference RovoPerimeterShimmer: a single rainbow
 	// band sweeps once around the perimeter, fading in then dissolving. Driving the 32 path
@@ -376,14 +387,14 @@ export function RovoGenerationHighlight({
 
 			for (const path of paths) path?.setAttribute("d", pathData);
 
-			const elapsed = now - startTime - HIGHLIGHT_DELAY_MS;
+			const elapsed = now - startTime - normalizedDelayMs;
 			if (elapsed < 0) {
 				for (const path of paths) path?.setAttribute("opacity", "0");
 				raf = requestAnimationFrame(tick);
 				return;
 			}
 
-			const progress = Math.min(1, elapsed / HIGHLIGHT_DURATION_MS);
+			const progress = Math.min(1, elapsed / normalizedDurationMs);
 			const eased = highlightEaseInOut(progress);
 
 			const bandWidth = perimeter * HIGHLIGHT_BAND_FRAC;
@@ -427,7 +438,7 @@ export function RovoGenerationHighlight({
 		return () => {
 			if (raf) cancelAnimationFrame(raf);
 		};
-	}, [active, normalizedStroke, onCompleteRef, pathRefs, resolvedRadius, shouldReduceMotion]);
+	}, [active, normalizedDelayMs, normalizedDurationMs, normalizedStroke, onCompleteRef, pathRefs, playToken, resolvedRadius, shouldReduceMotion]);
 
 	return (
 		<div

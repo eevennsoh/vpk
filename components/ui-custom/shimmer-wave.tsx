@@ -4,6 +4,7 @@ import type { MotionProps, Transition } from "motion/react";
 import type { CSSProperties, ElementType, JSX } from "react";
 
 import { resolveWaveHighlightColor } from "@/components/ui-custom/lib/shimmer-colors";
+import { getShimmerWaveCharacterDelay } from "@/components/ui-custom/lib/shimmer-wave-timing";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "motion/react";
 import { memo, useMemo } from "react";
@@ -135,9 +136,7 @@ const ShimmerWaveComponent = ({
 		>
 			<span className="inline-flex items-baseline whitespace-pre [transform-style:preserve-3d]">
 				{characters.map((character, index) => {
-					const delay =
-						(index * resolvedDuration * (1 / Math.max(resolvedSpread, 1))) /
-						Math.max(characters.length, 1);
+					const delay = getShimmerWaveCharacterDelay(index, characters.length, resolvedDuration, resolvedSpread);
 					const renderedCharacter = character === " " ? "\u00A0" : character;
 					if (character === " ") {
 						return (

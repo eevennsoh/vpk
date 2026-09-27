@@ -6,19 +6,23 @@ import { moveJiraKanbanCardsToDropTarget, moveJiraKanbanCardsToStatus } from "@/
 import {
 	createJiraKanbanSelectionState,
 	getCommonJiraKanbanAgentIds,
+	getSelectableJiraKanbanColumns,
 	moveJiraKanbanCardsToColumn,
 	reconcileJiraKanbanSelection,
+	selectAllJiraKanbanCardsInSelectedColumns,
 	selectJiraKanbanCard,
 	updateJiraKanbanCardAgentAssignment,
 } from "@/components/blocks/jira-kanban/state";
 import { createJiraDraggingColumns } from "./data";
-import { useJiraIssueSelectionKeyboard, visibleJiraIssueCards } from "@/components/blocks/jira-kanban/use-jira-issue-selection-keyboard";
+import { useJiraIssueSelectionKeyboard } from "@/components/blocks/jira-kanban/use-jira-issue-selection-keyboard";
 import { useBoardAutoArrangeCommit } from "@/components/blocks/jira-kanban/experimental/hooks/use-board-auto-arrange-commit";
 
 export function useJiraDragging() {
 	const [boardColumns, setBoardColumns] = useState(createJiraDraggingColumns);
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
+	const [collapsedColumns, setCollapsedColumns] = useState<ReadonlySet<string>>(() => new Set());
+	const selectionColumns = getSelectableJiraKanbanColumns(boardColumns, collapsedColumns);
 	const [draggedCardCode, setDraggedCardCode] = useState<string | null>(null);
 	const dragCohort = useRef<readonly string[] | null>(null);
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
@@ -47,20 +51,20 @@ export function useJiraDragging() {
 	const onCardSelect: JiraKanbanProps["onCardSelect"] = (cardCode, columnTitle, indexInColumn, modifiers) => {
 		if (!modifiers.shiftKey && !modifiers.metaOrCtrlKey && modifiers.source !== "selection-control") return;
 		cancelDrag();
-		setSelection((current) => selectJiraKanbanCard(current, boardColumns, {
+		setSelection((current) => selectJiraKanbanCard(current, selectionColumns, {
 			cardCode, columnTitle, indexInColumn, modifiers,
 		}));
 	};
 	const onClearSelection = () => { cancelDrag(); setSelection(createJiraKanbanSelectionState()); };
 	const onSelectAll = () => {
 		cancelDrag();
-		setSelection({ ...createJiraKanbanSelectionState(), selectedCardCodes: new Set(visibleJiraIssueCards(rootRef.current).flatMap((card) => card.dataset.issueKey ? [card.dataset.issueKey] : [])) });
+		setSelection((current) => selectAllJiraKanbanCardsInSelectedColumns(current, selectionColumns));
 	};
 	useJiraIssueSelectionKeyboard({
-		rootRef, dragging: draggedCardCode !== null, onCancelDrag: cancelDrag, onClearSelection, onSelectAll,
+		rootRef, dragging: draggedCardCode !== null, onCancelDrag: cancelDrag, onClearSelection,
 		onRangeSelect: (range) => {
 			cancelDrag();
-			setSelection((current) => selectJiraKanbanCard(current, boardColumns, {
+			setSelection((current) => selectJiraKanbanCard(current, selectionColumns, {
 				...range, modifiers: { shiftKey: true, metaOrCtrlKey: false },
 			}));
 		},
@@ -100,6 +104,8 @@ export function useJiraDragging() {
 	return {
 		rootRef,
 		boardColumns,
+		collapsedColumns,
+		onCollapsedColumnsChange: setCollapsedColumns,
 		draggedCardCode,
 		selectedCardCodes: selection.selectedCardCodes,
 		onCardSelect,

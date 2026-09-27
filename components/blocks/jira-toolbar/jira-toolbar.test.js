@@ -5,6 +5,12 @@ const { test } = require("node:test");
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 
+test("the shared toolbar uses workflow tones unless its owner supplies a resolver", () => {
+	assert.doesNotMatch(SOURCE, /from "@\/components\/blocks\/jira-work-item\//u);
+	assert.match(SOURCE, /getStatusVariant = getWorkflowPhaseLozengeVariant/u);
+	assert.match(SOURCE, /variant=\{getStatusVariant\(status, statusOptions\)\}/u);
+});
+
 test("Jira Toolbar leads with Select all, Add agent, and Ask Rovo", () => {
 	const assignIndex = SOURCE.indexOf('id: "assign"');
 	const rovoIndex = SOURCE.indexOf('id: "ask-rovo"');
@@ -29,6 +35,11 @@ test("Jira Toolbar owns functional status, agent assignment, and clear callbacks
 	assert.match(SOURCE, /aria-label="Clear selection"[\s\S]*onClick=\{onClearSelection\}/u);
 	assert.match(SOURCE, /event\.key === "Escape"[\s\S]*onClearSelection\(\)/u);
 	assert.doesNotMatch(SOURCE, /addEventListener\("keydown", handleKeyDown, true\)/u);
+});
+
+test("toolbar Delete is disabled when its owner does not provide the removal capability", () => {
+	assert.match(SOURCE, /id: "delete",[\s\S]*?<JiraToolbarAction\s+disabled=\{!onDelete\}/u);
+	assert.match(SOURCE, /id: "delete",[\s\S]*?<DropdownMenuItem\s+disabled=\{!onDelete\}/u);
 });
 
 test("Jira Toolbar preserves agent assignment and launches real Rovo navigation", () => {
