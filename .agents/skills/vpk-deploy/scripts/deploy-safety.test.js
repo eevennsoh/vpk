@@ -36,6 +36,15 @@ test("repository deployment descriptor uses the canonical VPK service identity",
 	assert.equal(result.status, 0, result.stdout + result.stderr);
 });
 
+test("stash matching drains large CLI output with pipefail enabled", () => {
+	const stashOutput = REQUIRED_STASHES.join("\n") + "\n" + "UNRELATED_STASH\n".repeat(10_000);
+	const result = spawnSync("/bin/bash", ["-c",
+		'set -o pipefail; source "$1"; task_stash_output=$(cat); vpk_stash_list_contains "$task_stash_output" ASAP_KID',
+		"match-stash-output", path.join(REPO_ROOT, ".agents/skills/vpk-deploy/scripts/deploy-lib.sh"),
+	], { encoding: "utf8", input: stashOutput });
+	assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
 function writeExecutable(filePath, source) {
 	writeFileSync(filePath, source);
 	chmodSync(filePath, 0o755);
