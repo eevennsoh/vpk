@@ -85,6 +85,8 @@ export interface PatternTileProps {
 	back?: string;
 	scale?: number;
 	stroke?: PatternStrokeOptions;
+	/** Balanced tile grids fit whole cells and place their lines halfway inside each cell. */
+	gridAlignment?: "edge" | "balanced";
 	radius?: number;
 	opacity?: number;
 	blendMode?: PatternBlendMode;
@@ -120,6 +122,7 @@ function buildPattern(
 	back: string,
 	scale: number,
 	stroke?: PatternStrokeOptions,
+	balancedGrid = false,
 ): {
 	pattern?: string;
 	maskPattern?: string;
@@ -135,8 +138,10 @@ function buildPattern(
 		case "grid":
 			if (stroke) {
 				return {
-					maskPattern: buildGridStrokeMaskImage(scale, stroke),
+					maskPattern: buildGridStrokeMaskImage(scale, stroke, balancedGrid),
 					size: `${scale}px ${scale}px`,
+					position: balancedGrid ? "left top" : undefined,
+					repeat: balancedGrid ? "round" : undefined,
 					addBackground: back,
 				};
 			}
@@ -320,6 +325,7 @@ export default function PatternTile({
 	back = "#22DDDD",
 	scale = 10,
 	stroke,
+	gridAlignment = "edge",
 	radius = 0,
 	opacity = 1,
 	blendMode = "normal" as PatternBlendMode,
@@ -333,7 +339,7 @@ export default function PatternTile({
 	style,
 }: PatternTileProps) {
 	const { pattern, maskPattern, position: patternPos, size, repeat, blendMode: patternBlendMode, addBackground } =
-		buildPattern(patternType, front, back, scale, stroke);
+		buildPattern(patternType, front, back, scale, stroke, gridAlignment === "balanced" && fill === "tile");
 
 	const resolvedSize = resolveFillSize(fill, size);
 	const resolvedRepeat = resolveFillRepeat(fill, repeat);

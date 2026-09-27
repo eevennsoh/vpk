@@ -6,11 +6,21 @@ const origin = (process.env.PLAYWRIGHT_BASE_URL
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 const storySections = [
-	{ title: "Context", stories: ["Desktop search & chat", "Code context", "Rovo for Work & Mobile", "Artifacts"] },
-	{ title: "Collaboration", stories: ["Loom Desktop recording", "Whiteboard → Figma → Loom collaboration", "AI Planner & human–agent collaboration"] },
-	{ title: "Confidence", stories: ["Loom AI overlays", "Loom PR previews", "Jira Agent Sessions & real-time boards", "DX: session quality & comparative ROI", "Strategy Collection: Focus & Talent", "Enterprise governance & Guard"] },
+	{ title: "Context", stories: ["Search across your work", "Ground AI in your codebase", "Pick up work anywhere", "Turn ideas into outputs"] },
+	{ title: "Collaboration", stories: ["Record. Share. Collaborate.", "From ideas to shared outcomes", "Humans and agents. One plan."] },
+	{ title: "Confidence", stories: ["Make every video clearer", "Preview code changes in video", "See agent work as it happens", "Measure session quality and ROI", "Align talent and investment", "Govern AI at every level"] },
 ];
 const issueTitles = storySections.flatMap((section) => section.stories);
+const coverHeadings = [
+	"Desktop search & chat", "Code context", "Rovo for Work & Mobile", "Rovo Artifacts",
+	"Loom desktop recording", "Whiteboard → Figma → Loom", "AI Planner",
+	"Loom AI overlays", "Loom PR previews", "Jira Agent Sessions", "DX session quality & ROI", "Strategy Collection", "Enterprise governance & Guard",
+];
+const coverApps = [
+	["Rovo"], ["Bitbucket", "GitHub", "GitLab"], ["Rovo"], ["Rovo"],
+	["Loom"], ["Confluence", "Figma", "Loom"], ["Jira"],
+	["Loom"], ["Loom", "Bitbucket"], ["Jira"], ["DX"], ["Focus", "Talent"], ["Guard"],
+];
 
 test.use({ viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true });
 
@@ -20,7 +30,8 @@ async function openBoard(page: Page) {
 }
 
 async function startDrag(page: Page, code: string) {
-	const card = issue(page, code).locator('[draggable="true"]').first();
+	// Pointer transport temporarily disables native draggable during pickup.
+	const card = issue(page, code).locator("[draggable]").first();
 	await card.scrollIntoViewIfNeeded();
 	const box = await card.boundingBox();
 	if (!box) throw new Error(`Missing card ${code}`);
@@ -57,25 +68,74 @@ for (const width of [1440, 1920]) {
 			await card.scrollIntoViewIfNeeded();
 			const cover = card.locator('[data-slot="jira-issue-cover"]');
 			await expect(cover).toHaveCount(1);
-			await expect(cover.locator("img")).toHaveCount(0);
-			await expect(cover).toHaveAttribute("aria-hidden", "true");
-			await expect(cover).toHaveClass(/\bbg-bg-accent-gray-subtler\b/u);
+			await expect(cover).not.toHaveAttribute("aria-hidden", "true");
+			const heading = cover.locator('[data-slot="jira-issue-cover-heading"]');
+			const subheading = cover.locator('[data-slot="jira-issue-cover-subheading"]');
+			await expect(heading).toBeVisible();
+			await expect(heading).toHaveText(coverHeadings[index]);
+			await expect(heading).toHaveCSS("font-size", "20px");
+			await expect(heading).toHaveCSS("text-transform", "capitalize");
+			await expect(heading).toHaveCSS("white-space", "pre-line");
+			await expect(heading).toHaveCSS("text-align", "left");
+			await expect(subheading).toHaveCount(0);
+			const apps = cover.locator('[data-slot="jira-issue-cover-apps"]');
+			const stack = apps.locator('[data-slot="jira-issue-cover-app-stack"]');
+			await expect(apps).toBeVisible();
+			for (const name of coverApps[index]) {
+				await expect(apps.getByRole("img", { name, exact: true }).first()).toBeVisible();
+			}
+			await expect(stack).toHaveCount(coverApps[index].length > 1 ? 1 : 0);
+			if (coverApps[index].length > 1) {
+				await expect(stack.locator(":scope > div")).toHaveCount(coverApps[index].length);
+			} else {
+				await expect(apps.locator(":scope > *")).toHaveCount(1);
+			}
+			const logoBounds = await apps.boundingBox();
+			const headingBounds = await heading.boundingBox();
+			const titleBounds = await card.getByText(title, { exact: true }).boundingBox();
+			expect(logoBounds!.y + logoBounds!.height).toBeLessThan(headingBounds!.y);
+			expect(Math.abs(logoBounds!.x - headingBounds!.x)).toBeLessThanOrEqual(1);
+			expect(Math.abs(headingBounds!.x - titleBounds!.x)).toBeLessThanOrEqual(0.1);
+			const pattern = cover.locator('[data-slot="jira-issue-cover-pattern"]');
+			const patternBounds = await pattern.boundingBox();
+			const coverBounds = await cover.boundingBox();
+			for (const dimension of ["x", "y", "width", "height"] as const) {
+				expect(Math.abs(patternBounds![dimension] - coverBounds![dimension])).toBeLessThanOrEqual(0.1);
+			}
+			await expect(pattern).toHaveAttribute("aria-hidden", "true");
+			await expect(pattern).toHaveCSS("pointer-events", "none");
+			await expect(pattern).not.toHaveCSS("mask-image", "none");
+			await expect(pattern.locator('[style*="data:image/svg+xml"]')).toHaveCSS("mask-repeat", "round");
+			await expect(cover).toHaveCSS("mask-image", "none");
+			await expect(heading).toHaveCSS("mask-image", "none");
 			const geometry = await cover.evaluate((node) => {
 				const coverBounds = node.getBoundingClientRect();
 				const cardBounds = node.closest("article,button")!.getBoundingClientRect();
+				const heading = node.querySelector<HTMLElement>('[data-slot="jira-issue-cover-heading"]')!;
 				return {
 					height: coverBounds.height,
 					leftGap: coverBounds.left - cardBounds.left,
 					rightGap: cardBounds.right - coverBounds.right,
 					topGap: coverBounds.top - cardBounds.top,
 					color: getComputedStyle(node).backgroundColor,
+					textColor: getComputedStyle(heading).color,
+					headingFont: getComputedStyle(heading).fontFamily,
+					headingWeight: getComputedStyle(heading).fontWeight,
+					headingLines: heading.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(heading).lineHeight),
+					textOverflow: heading.scrollWidth > heading.clientWidth || heading.getBoundingClientRect().bottom > coverBounds.bottom,
 				};
 			});
-			expect(geometry.height).toBe(120);
+			expect(geometry.height).toBe(144);
 			expect(geometry.leftGap).toBe(0);
 			expect(geometry.rightGap).toBe(0);
 			expect(geometry.topGap).toBe(0);
-			expect(geometry.color).not.toBe("rgba(0, 0, 0, 0)");
+			expect(geometry.color).toBe("rgb(255, 255, 255)");
+			expect(geometry.textColor).toBe("rgb(16, 18, 20)");
+			expect(geometry.headingFont).toContain("Atlassian Sans");
+			expect(geometry.headingWeight).toBe("400");
+			expect(geometry.headingLines).toBeLessThanOrEqual(2.05);
+			expect(geometry.headingLines).toBeGreaterThanOrEqual(1.95);
+			expect(geometry.textOverflow).toBe(false);
 			coverColors.add(geometry.color);
 		}
 		expect(coverColors.size).toBe(1);
@@ -95,6 +155,24 @@ for (const width of [1440, 1920]) {
 	});
 }
 
+test("all feature headings fit within two lines in narrow board columns", async ({ page }) => {
+	await page.setViewportSize({ width: 1024, height: 900 });
+	await openBoard(page);
+	for (let index = 0; index < coverHeadings.length; index += 1) {
+		const heading = issue(page, `TEU-${index + 1}`).locator('[data-slot="jira-issue-cover-heading"]');
+		await heading.scrollIntoViewIfNeeded();
+		await expect(heading).toHaveText(coverHeadings[index]);
+		const geometry = await heading.evaluate((node) => {
+			const bounds = node.getBoundingClientRect();
+			const coverBounds = node.closest('[data-slot="jira-issue-cover"]')!.getBoundingClientRect();
+			return { lines: bounds.height / Number.parseFloat(getComputedStyle(node).lineHeight), overflow: node.scrollWidth > node.clientWidth, insideCover: bounds.top >= coverBounds.top && bounds.bottom <= coverBounds.bottom };
+		});
+		expect(geometry.lines).toBeLessThanOrEqual(2.05);
+		expect(geometry.overflow).toBe(false);
+		expect(geometry.insideCover).toBe(true);
+	}
+});
+
 test("retained sessions start collapsed and remain unchanged as rehearsal time advances", async ({ page }) => {
 	await page.clock.install();
 	await openBoard(page);
@@ -113,6 +191,44 @@ test("retained sessions start collapsed and remain unchanged as rehearsal time a
 	await page.clock.fastForward(120_000);
 	await expect(rows).toHaveText(before);
 	await expect(sessions.getByTestId("agent-session-row-lw-sync-webhook-gap")).toHaveCount(0);
+});
+
+test("covers stay flush while selection and keyboard focus reveal the border and scrollbars stay inside their columns", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openBoard(page);
+	const card = issue(page, "TEU-1");
+	const cover = card.locator('[data-slot="jira-issue-cover"]');
+	const article = card.locator("article");
+	const geometry = async () => cover.evaluate((node) => {
+		const bounds = node.getBoundingClientRect();
+		const cardBounds = node.closest("article")!.getBoundingClientRect();
+		return { width: bounds.width, height: bounds.height, leftGap: bounds.left - cardBounds.left, rightGap: cardBounds.right - bounds.right, topGap: bounds.top - cardBounds.top };
+	});
+	const idle = await geometry();
+	expect(idle.leftGap).toBe(0);
+	expect(idle.rightGap).toBe(0);
+	expect(idle.topGap).toBe(0);
+
+	await cover.click();
+	await expect(article).toHaveAttribute("data-selected", "true");
+	await expect(cover).toHaveCSS("clip-path", "inset(1px 1px 0px round 7px 7px 0px 0px)");
+	expect(await geometry()).toEqual(idle);
+	await page.getByRole("button", { name: "Clear selection", exact: true }).click();
+	await page.keyboard.press("Tab");
+	await card.locator("[data-jira-issue-activation-control]").focus();
+	await expect(cover).toHaveCSS("clip-path", "inset(1px 1px 0px round 7px 7px 0px 0px)");
+	expect(await geometry()).toEqual(idle);
+
+	const viewport = page.getByRole("region", { name: "Context work items", exact: true });
+	const scrollbar = viewport.locator("..").locator('[data-slot="scroll-area-scrollbar"]');
+	await viewport.hover();
+	await expect(scrollbar).toHaveCSS("opacity", "1");
+	const thumbBounds = await scrollbar.locator('[data-slot="scroll-area-thumb"]').boundingBox();
+	const columnBounds = await column(page, "Context").boundingBox();
+	expect(thumbBounds!.x).toBeGreaterThanOrEqual(columnBounds!.x);
+	expect(thumbBounds!.x + thumbBounds!.width).toBeLessThanOrEqual(columnBounds!.x + columnBounds!.width);
+	await page.mouse.wheel(0, 150);
+	await expect.poll(() => viewport.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
 });
 
 test("MCB views the board with four presenter filters and no faces in column headers", async ({ page }) => {
@@ -152,7 +268,7 @@ test("existing single-card and selected-cohort drag moves work items into Done",
 	for (const code of ["TEU-1", "TEU-2", "TEU-3"]) {
 		const coverHeight = await issue(page, code).locator('[data-slot="jira-issue-cover"]').evaluate((node) => node.getBoundingClientRect().height);
 		expect(coverHeight).toBeGreaterThan(0);
-		expect(coverHeight).toBeLessThanOrEqual(120);
+		expect(coverHeight).toBeLessThanOrEqual(144);
 	}
 	await expect(column(page, "Done").locator("[data-issue-key]")).toHaveCount(3);
 	await expect(column(page, "Context").locator("[data-issue-key]")).toHaveCount(1);

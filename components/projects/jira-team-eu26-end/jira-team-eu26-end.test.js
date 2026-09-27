@@ -71,6 +71,7 @@ test("the route renders the keynote board directly inside Jira app chrome", () =
 	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{false\}[\s\S]*product="jira"/u);
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
 	assert.match(PAGE_SOURCE, /createJiraTeamEu26EndKeynoteBoardColumns/u);
+	assert.match(PAGE_SOURCE, /boardColumns=\{restoreJiraTeamEu26EndKeynoteCoverArtwork\(boardColumns\)\}/u);
 	assert.match(PAGE_SOURCE, /boardTitle=\{JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE\}/u);
 	assert.match(PAGE_SOURCE, /columnWidth="fluid"/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_BOARD_AGENTS/u);

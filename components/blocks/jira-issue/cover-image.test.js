@@ -16,7 +16,7 @@ test("optional covers stay inside the issue content and leave the card in charge
 	assert.match(ISSUE_SOURCE, /coverImage=\{coverImage\}/u);
 	assert.match(SUMMARY_SOURCE, /coverImage \? \([\s\S]*?<JiraIssueCover image=\{coverImage\} \/>[\s\S]*?\) : null/u);
 	assert.match(COVER_SOURCE, /import Image from "next\/image"/u);
-	assert.match(COVER_SOURCE, /cn\("relative aspect-video w-full overflow-hidden rounded-t-lg", image\.backgroundClassName\)/u);
+	assert.match(COVER_SOURCE, /relative aspect-video w-full overflow-hidden rounded-t-lg/u);
 	assert.match(COVER_SOURCE, /className="object-contain"/u);
 	assert.match(COVER_SOURCE, /maxHeight: image\.maxHeight/u);
 	assert.match(COVER_SOURCE, /alt=\{image\.alt\}/u);
@@ -24,13 +24,14 @@ test("optional covers stay inside the issue content and leave the card in charge
 	assert.match(COVER_SOURCE, /fill\s+sizes=/u);
 });
 
-test("solid covers are decorative and image covers retain their image and alt text", async () => {
+test("solid covers are decorative while image and typographic covers remain accessible", async () => {
 	const result = await esbuild.build({
 		entryPoints: [join(__dirname, "cover-image.tsx")],
 		bundle: true,
 		format: "cjs",
 		platform: "node",
 		external: ["react", "react/*", "next/image"],
+		loader: { ".css": "empty" },
 		tsconfig: join(process.cwd(), "tsconfig.json"),
 		write: false,
 	});
@@ -50,4 +51,46 @@ test("solid covers are decorative and image covers retain their image and alt te
 	assert.match(image, /alt="Code illustration"/u);
 	assert.match(image, /src="\/illustration-ai\/code\/light.svg"/u);
 	assert.doesNotMatch(image, /aria-hidden="true"/u);
+
+	const textCover = renderToStaticMarkup(React.createElement(JiraIssueCover, {
+		image: { heading: "Code", subheading: "Context from your codebase", maxHeight: 144 },
+	}));
+	assert.match(textCover, /data-slot="jira-issue-cover-heading">Code<\/p>/u);
+	assert.match(textCover, /data-slot="jira-issue-cover-subheading">Context from your codebase<\/p>/u);
+	assert.match(textCover, /font-sans text-xl font-normal/u);
+	assert.match(textCover, /font-normal capitalize/u);
+	assert.doesNotMatch(textCover, /clamp\(/u);
+	assert.match(textCover, /max-height:144px/u);
+	assert.doesNotMatch(textCover, /aria-hidden="true"|<img/u);
+	assert.doesNotMatch(textCover, /radial-gradient/u);
+
+	for (const heading of [
+		"Whiteboard → Figma → Loom",
+		"Enterprise governance & Guard",
+		"DX: session quality & ROI",
+	]) {
+		const headingOnlyCover = renderToStaticMarkup(React.createElement(JiraIssueCover, {
+			image: { heading, maxHeight: 144 },
+		}));
+		assert.ok(headingOnlyCover.includes(`data-slot="jira-issue-cover-heading">${heading.replaceAll("&", "&amp;")}</p>`));
+		assert.match(headingOnlyCover, /whitespace-pre-line/u);
+		assert.match(headingOnlyCover, /font-sans text-xl font-normal/u);
+		assert.doesNotMatch(headingOnlyCover, /jira-issue-cover-subheading|aria-hidden="true"|<img|line-clamp|truncate/u);
+	}
+	const twoLineCover = renderToStaticMarkup(React.createElement(JiraIssueCover, {
+		image: { heading: "Desktop\nsearch & chat", maxHeight: 144 },
+	}));
+	assert.match(twoLineCover, /data-slot="jira-issue-cover-heading">Desktop\nsearch &amp; chat<\/p>/u);
+
+	const gridCover = renderToStaticMarkup(React.createElement(JiraIssueCover, {
+		image: { heading: "Code", subheading: "Context from your codebase", maxHeight: 144, backgroundPattern: "grid" },
+	}));
+	assert.match(gridCover, /stroke-dasharray%3D%221%203%22/u);
+	assert.match(gridCover, /preserveAspectRatio%3D%22none%22/u);
+	assert.match(gridCover, /mask-size:32px 32px/u);
+	assert.match(gridCover, /M%200%2016%20H%2032%20M%2016%200%20V%2032/u);
+	assert.match(gridCover, /mask-repeat:round/u);
+	assert.match(gridCover, /aria-hidden="true"[^>]*data-slot="jira-issue-cover-pattern"/u);
+	assert.match(gridCover, /mask-image:linear-gradient\(to bottom, black 0, black calc\(100% - var\(--scroll-mask-fade-size\)\), transparent 100%\)/u);
+	assert.doesNotMatch(gridCover, /<img|radial-gradient/u);
 });
