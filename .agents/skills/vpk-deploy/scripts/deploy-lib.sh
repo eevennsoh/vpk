@@ -154,7 +154,8 @@ EOF
 vpk_stash_list_contains() {
   stash_output=$1
   stash_name=$2
-  printf '%s\n' "$stash_output" | grep -Eq "(^|[[:space:]|])${stash_name}([[:space:]|]|$)"
+  # Drain the listing so an early grep exit cannot SIGPIPE printf under pipefail.
+  printf '%s\n' "$stash_output" | grep -E "(^|[[:space:]|])${stash_name}([[:space:]|]|$)" >/dev/null
 }
 
 vpk_require_service_and_stashes() {

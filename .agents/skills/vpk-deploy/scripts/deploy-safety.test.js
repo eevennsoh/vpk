@@ -276,6 +276,17 @@ test("canonical deploy accepts an existing service with no stack yet", () => {
 	});
 });
 
+test("stash presence consumes large listings under pipefail without false negatives", () => {
+	const stashList = "AI_GATEWAY_USER_ID\n" + "UNRELATED_STASH\n".repeat(5000) + "ASAP_KID\n";
+	for (const [name, expectedStatus] of [["AI_GATEWAY_USER_ID", 0], ["ASAP_KID", 0], ["MISSING_STASH", 1]]) {
+		const result = spawnSync("/bin/bash", ["-c",
+			'set -o pipefail; source "$1"; vpk_stash_list_contains "$2" "$3"',
+			"stash-presence", path.join(REPO_ROOT, ".agents/skills/vpk-deploy/scripts/deploy-lib.sh"), stashList, name,
+		], { encoding: "utf8" });
+		assert.equal(result.status, expectedStatus, `${name}: ${result.stdout}${result.stderr}`);
+	}
+});
+
 test("both deploy paths recognize Micros help written to stderr", () => {
 	for (const [scriptPath, args] of [
 		[".agents/skills/vpk-deploy/scripts/deploy.sh", ["example-service", "1.2.3", "pdev-west2"]],
