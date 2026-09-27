@@ -572,10 +572,10 @@ export function JiraToolbar({
 											<Badge max={false}>{selectedCount}</Badge>
 											<span>selected</span>
 										</div>
-										{primaryAction}
 										<JiraToolbarAction disabled={!onSelectAll} icon={<Icon render={<PresenterModeIcon label="" size="small" />} />} onClick={onSelectAll}>
 											Select all
 										</JiraToolbarAction>
+										{primaryAction}
 										<ToolbarSeparator />
 									</div>
 

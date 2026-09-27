@@ -18,16 +18,16 @@ function harness(status = "Done", filtered = false, { dragged = "A" } = {}) {
 	class Element extends Node {
 		constructor(control = "surface", inside = true) { super(); this.control = control; this.inside = inside; }
 		closest(selector) {
+			if (selector === "[data-jira-auto-arrange-scope]") return this.inside ? { getAttribute: () => "board-1" } : null;
+			if (selector === '[data-slot="jira-toolbar"]') return this.control === "toolbar-button" ? this : null;
 			if (selector.includes("data-jira-issue-activation-control") || selector.includes("data-jira-issue-selection-control")) {
 				return ["activation", "selection"].includes(this.control) ? this : null;
 			}
-			const button = ["activation", "selection", "button"].includes(this.control);
+			const button = ["activation", "selection", "button", "toolbar-button"].includes(this.control);
 			return selector.startsWith("button,") ? button ? this : null
 				: selector.startsWith("a,") && !button && this.control !== "surface" ? this : null;
 		}
 	}
-	const root = new Element();
-	root.contains = (target) => target.inside;
 	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-board-auto-arrange.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
 	const loaded = { exports: {} };
 	vm.runInNewContext(compiled, {
@@ -55,7 +55,7 @@ function harness(status = "Done", filtered = false, { dragged = "A" } = {}) {
 			{ code: "A", status: "To do", autoArrangeStatus: status },
 			{ code: "B", status: "To do", autoArrangeStatus: "Done" },
 			{ code: "C", status: "To do", autoArrangeStatus: "In progress" },
-		] }, { title: "Done", count: 0, cards: [] }, { title: "In progress", count: 0, cards: [] }], selected, dragged, onArrange: () => actions.push("arrange"), beforeArrange: () => actions.push("end-pickup"), boardRef: { current: root } });
+		] }, { title: "Done", count: 0, cards: [] }, { title: "In progress", count: 0, cards: [] }], selected, dragged, onArrange: () => actions.push("arrange"), beforeArrange: () => actions.push("end-pickup"), scopeId: "board-1" });
 		return api;
 	}
 	render();
@@ -70,7 +70,7 @@ function harness(status = "Done", filtered = false, { dragged = "A" } = {}) {
 	};
 }
 
-test("an empty, invalid or filtered plan never enables Return or clears the current gesture", () => {
+test("an empty, invalid or filtered plan never enables the shortcut or clears the current gesture", () => {
 	for (const [status, filtered] of [["To do", false], ["Missing", false], ["Done", true]]) {
 		const h = harness(status, filtered); h.prepare();
 		assert.equal(h.api().available, false);
@@ -91,36 +91,48 @@ test("a nonempty prepared plan commits before removing the held preview", () => 
 	assert.deepEqual(h.actions, ["arrange", "end-pickup"]);
 });
 
-test("Enter arranges from focused card activation and selection controls without a held drag", () => {
-	for (const control of ["activation", "selection"]) {
-		const h = harness("Done", false, { dragged: null });
-		h.prepare();
-		assert.equal(h.press(control), true, "prevent native card activation or selection toggle");
-		assert.deepEqual(h.actions, ["arrange", "end-pickup"]);
+test("Command or Control Enter arranges from cards and the focused Select all toolbar button", () => {
+	for (const control of ["activation", "selection", "toolbar-button"]) {
+		for (const modifier of ["metaKey", "ctrlKey"]) {
+			const h = harness("Done", false, { dragged: null });
+			h.prepare();
+			assert.equal(h.press(control, { [modifier]: true }), true, "claim the shortcut without activating the focused button");
+			assert.deepEqual(h.actions, ["arrange", "end-pickup"]);
+		}
 	}
 });
 
-test("Enter keeps native behavior for other controls and cards outside this board", () => {
-	for (const control of ["button", "link", "input", "dialog", "menuitem", "combobox"]) {
+test("plain Enter keeps native activation on cards, the toolbar and the board", () => {
+	for (const control of ["activation", "selection", "toolbar-button", "surface"]) {
 		const h = harness(); h.prepare();
 		assert.equal(h.press(control), false);
 		assert.deepEqual(h.actions, []);
 	}
+});
+
+test("the shortcut ignores editing, menus, dialogs, unrelated buttons and other boards", () => {
+	for (const control of ["button", "link", "input", "textarea", "contenteditable", "dialog", "menuitem", "combobox"]) {
+		const h = harness(); h.prepare();
+		assert.equal(h.press(control, { metaKey: true }), false);
+		assert.deepEqual(h.actions, []);
+	}
 	const h = harness(); h.prepare();
-	assert.equal(h.press("activation", {}, false), false);
-	assert.equal(h.press("surface", {}, false), false);
+	assert.equal(h.press("activation", { metaKey: true }, false), false);
+	assert.equal(h.press("surface", { metaKey: true }, false), false);
+	assert.equal(h.press("toolbar-button", { metaKey: true }, false), false);
 	assert.deepEqual(h.actions, []);
 });
 
-test("board-surface Enter commits once; modifiers, composition and preparation do not arrange", () => {
+test("board-surface Command Enter commits once; other chords, composition and preparation do not arrange", () => {
 	const h = harness();
-	assert.equal(h.press("activation"), false);
+	assert.equal(h.press("activation", { metaKey: true }), false);
 	h.prepare();
-	for (const flag of ["repeat", "isComposing", "altKey", "ctrlKey", "metaKey", "shiftKey", "defaultPrevented"]) {
-		h.press("activation", { [flag]: true });
+	for (const flag of ["repeat", "isComposing", "altKey", "shiftKey", "defaultPrevented"]) {
+		h.press("activation", { metaKey: true, [flag]: true });
 		assert.deepEqual(h.actions, []);
 	}
-	assert.equal(h.press(), true);
+	assert.equal(h.press("surface", { metaKey: true, key: " " }), false);
+	assert.equal(h.press("surface", { metaKey: true }), true);
 	assert.deepEqual(h.actions, ["arrange", "end-pickup"]);
 });
 
