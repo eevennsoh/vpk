@@ -13,6 +13,7 @@ import {
 } from "@/components/blocks/jira-kanban/state";
 import { createJiraDraggingColumns } from "./data";
 import { useJiraIssueSelectionKeyboard, visibleJiraIssueCards } from "@/components/blocks/jira-kanban/use-jira-issue-selection-keyboard";
+import { useBoardAutoArrangeCommit } from "@/components/blocks/jira-kanban/experimental/hooks/use-board-auto-arrange-commit";
 
 export function useJiraDragging() {
 	const [boardColumns, setBoardColumns] = useState(createJiraDraggingColumns);
@@ -27,6 +28,11 @@ export function useJiraDragging() {
 		dragCohort.current = null;
 		setDraggedCardCode(null);
 	}
+	const onAutoArrange = useBoardAutoArrangeCommit(
+		(updater) => setBoardColumns((columns) => [...updater(columns)]),
+		setSelection,
+		cancelDrag,
+	);
 
 	function removeCard(code: string) {
 		cancelDrag();
@@ -99,6 +105,7 @@ export function useJiraDragging() {
 		onCardSelect,
 		onCardDragStart,
 		onCardDrop,
+		onAutoArrange,
 		onCardDragEnd: cancelDrag,
 		cardMoreMenuActions: {
 			onArchive: (card: JiraKanbanCardData) => { archivedCards.current.set(card.code, card); removeCard(card.code); },

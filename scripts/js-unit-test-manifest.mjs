@@ -13,6 +13,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/jira-dragging/use-jira-dragging.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-board-auto-arrange.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-issue-card-drop-arrival.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-board-issue-pointer-drag.test.js",
