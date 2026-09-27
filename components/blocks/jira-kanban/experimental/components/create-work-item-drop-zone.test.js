@@ -84,13 +84,13 @@ test("drop receipts land in the geometric center of the well", () => {
 	assert.doesNotMatch(DROPZONE, /JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u);
 });
 
-test("vertical pinning keeps every dropzone layer on its baseline", () => {
+test("vertical pinning anchors the surface while labels follow both axes", () => {
 	assert.match(FOOTER, /pinVerticalMagnet=\{columnSizing === "content"\}/u);
 	assert.match(DROPZONE, /y: pinMagnet \|\| pinVerticalMagnet \? 0 : magnet\.y/u);
 	assert.match(DROPZONE, /x: pinMagnet \? 0 : magnet\.x/u);
-	assert.equal((DROPZONE.match(/<JiraDropzoneMagneticLabel\b[^>]*pinVertical=\{pinVerticalMagnet\}/gu) ?? []).length, 2);
+	assert.doesNotMatch(DROPZONE, /<JiraDropzoneMagneticLabel\b[^>]*pinVertical=/u);
 	assert.match(MAGNETIC_LABEL, /const stationary = pinned \|\| shouldReduceMotion;/u);
-	assert.match(MAGNETIC_LABEL, /y: stationary \|\| pinVertical \? 0 : magnet\.labelY/u);
+	assert.match(MAGNETIC_LABEL, /y: stationary \? 0 : magnet\.labelY/u);
 	assert.match(MAGNETIC_LABEL, /x: stationary \? 0 : magnet\.labelX/u);
 });
 

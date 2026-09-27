@@ -154,6 +154,47 @@ async function enterStatus(page: Page, status: string) {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`move status wells match the create well's horizontal magnetic range (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await startDrag(page, "PAY-118");
+		for (const status of ["In progress", "Paused"]) {
+			const zone = column(page, "In progress").locator(`[data-issue-status-zone="${status}"]`);
+			await expect(zone).toBeVisible();
+			const box = (await zone.boundingBox())!;
+			const readGeometry = () => zone.evaluate((node) => {
+				const well = node.matches(".border-dashed") ? node : node.querySelector(".border-dashed")!;
+				const bounds = well.getBoundingClientRect();
+				const hitArea = node.getBoundingClientRect();
+				const label = well.querySelector("[data-jira-dropzone-magnetic-label]")!;
+				const transform = new DOMMatrixReadOnly(getComputedStyle(label).transform);
+				return { x: bounds.left - hitArea.left, y: bounds.top - hitArea.top, width: bounds.width, height: bounds.height, hitX: hitArea.left, labelX: transform.m41, labelY: transform.m42 };
+			});
+			for (const direction of [-1, 1]) {
+				// Native dragover drives the same magnet even while pointermove is suspended.
+				// Dispatch at document level to sample the spring without committing a status.
+				await page.evaluate((point) => document.dispatchEvent(new DragEvent("dragover", { bubbles: true, ...point })), {
+					clientX: direction < 0 ? box.x : box.x + box.width,
+					clientY: direction < 0 ? box.y + 1 : box.y + box.height - 1,
+				});
+				await expect.poll(async () => (await readGeometry()).x).toBeCloseTo(reducedMotion === "reduce" ? 0 : direction * 8, 1);
+				const geometry = await readGeometry();
+				expect(geometry.y).toBeCloseTo(0, 1);
+				expect(geometry.labelY).toBeCloseTo(reducedMotion === "reduce" ? 0 : direction * 4 * (1 - 2 / box.height), 1);
+				expect(geometry.labelX).toBeCloseTo(reducedMotion === "reduce" ? 0 : direction * 4, 1);
+				expect(geometry.hitX).toBeCloseTo(box.x, 1);
+				expect(geometry.width).toBeCloseTo(box.width, 1);
+				expect(geometry.height).toBeCloseTo(box.height, 1);
+			}
+			await page.evaluate(() => document.dispatchEvent(new DragEvent("dragover", { bubbles: true, clientX: 0, clientY: 0 })));
+			await expect.poll(async () => (await readGeometry()).x).toBeCloseTo(0, 1);
+		}
+		await enterStatus(page, "Paused");
+		await page.screenshot({ path: `output/agent-browser/dnd/magnetic-move-status-${reducedMotion}.png` });
+		await page.mouse.up();
+		await expect(issue(page, "PAY-118")).toHaveAttribute("data-board-column-title", "In progress");
+	});
+
 	test(`Default empty In progress keeps both status targets usable (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: 1440, height: 800 });
@@ -290,6 +331,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		// Crossing the header keeps the two body choices available.
 		await page.mouse.move(inProgressBounds.x + inProgressBounds.width / 2, inProgressBounds.y + 12, { steps: 3 });
 		await expect(inProgress.locator("[data-issue-status-zone]")).toHaveCount(2);
+		await expect(inProgress.locator("[data-jira-kanban-column-drop-ring]")).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
 		await page.screenshot({ timeout: 5_000, path: `output/agent-browser/dnd/choices-${reducedMotion}.png` });
 		await enterStatus(page, "Paused");
 		await expect(column(page, "In progress")).toContainText("To do → Paused");

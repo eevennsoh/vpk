@@ -551,8 +551,7 @@ function ExperimentalJiraKanbanView({
 		const ring = element.querySelector<HTMLElement>("[data-jira-kanban-column-drop-ring]") ?? element;
 		const choosingStatus = element.querySelector("[data-issue-status-choices]") !== null;
 		const showRing = element.dataset.collapsed === "true"
-			|| (!choosingStatus && element.dataset.jiraKanbanCardCount === "0")
-			|| (issueMoveVisual && choosingStatus);
+			|| (!choosingStatus && element.dataset.jiraKanbanCardCount === "0");
 		setKanbanColumnDropArmed(ring, chrome, armed && showRing);
 	};
 

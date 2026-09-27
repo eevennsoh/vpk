@@ -724,7 +724,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		await expect(source).toBeVisible();
 	});
 
-	test(`small bottom gaps fill down then extend up to the 64px minimum (${reducedMotion})`, async ({ page }) => {
+	test(`small bottom gaps anchor the surface while labels move in every direction (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		const source = await openBoard(page);
 		await page.setViewportSize({ width: 1440, height: 760 });
@@ -783,7 +783,12 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		}
 		// The surface stays anchored while the label reaches +/-4px on each axis,
 		// including diagonal approaches just beyond the stable sensor's edges.
-		for (const direction of [{ x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: -1 }, { x: 1, y: 1 }]) {
+		for (const direction of [
+			{ x: -1, y: 0 }, { x: 1, y: 0 },
+			{ x: 0, y: -1 }, { x: 0, y: 1 },
+			{ x: -1, y: -1 }, { x: 1, y: -1 },
+			{ x: -1, y: 1 }, { x: 1, y: 1 },
+		]) {
 			await page.mouse.move(
 				x + direction.x * (sensorBox.width / 2 + 1),
 				sensorBox.y + sensorBox.height / 2 + direction.y * (sensorBox.height / 2 + 1),
