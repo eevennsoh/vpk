@@ -3,7 +3,10 @@ import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 
 const SOURCE_GHOST_FULL_CLIP = `inset(0px round ${token("radius.large")})`;
-const SOURCE_GHOST_INSET_CLIP = `inset(${token("space.100")} round ${token("radius.large")})`;
+// Both opted-in boards use the default column's 4px padding and 1px border.
+// Joined slots touch, so split the full 13px side gutter across their two edges.
+const SOURCE_GHOST_VERTICAL_INSET = `calc((${token("space.100")} + ${token("space.050")} + ${token("border.width")}) / 2)`;
+const SOURCE_GHOST_INSET_CLIP = `inset(${SOURCE_GHOST_VERTICAL_INSET} ${token("space.100")} round ${token("radius.large")})`;
 
 /** The content remains in flow while only its paint gives way to the source well. */
 export function BoardIssueSourceGhost({ children, dragging, enabled }: Readonly<{
