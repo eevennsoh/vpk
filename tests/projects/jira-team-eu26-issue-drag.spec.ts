@@ -335,8 +335,10 @@ test("a running issue reorders in its column and scrolls to the last slot", asyn
 	const list = column(page, "In progress").locator("[data-jira-kanban-card-list]");
 	const bounds = await list.boundingBox();
 	if (!bounds) throw new Error("Missing card scrollport");
-	await page.mouse.move(bounds.x + 100, bounds.y + bounds.height - 5, { steps: 5 });
-	await page.mouse.move(bounds.x + 100, bounds.y + bounds.height - 5);
+	// Use the exposed right gutter; the floating bulk toolbar covers the middle.
+	const dropX = bounds.x + bounds.width - 16;
+	await page.mouse.move(dropX, bounds.y + bounds.height - 5, { steps: 5 });
+	await page.mouse.move(dropX, bounds.y + bounds.height - 5);
 	await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
 	await expect(column(page, "In progress").locator('[data-issue-drop-before="end"]')).toHaveCount(1);
 	await page.mouse.up();
