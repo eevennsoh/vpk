@@ -6,7 +6,7 @@ test.describe("dropzone label clipping", () => {
 	test.use({ ignoreHTTPSErrors: true });
 	for (const width of [1720, 1100]) {
 		for (const reducedMotion of ["no-preference", "reduce"] as const) {
-			test(`dropzone label stays fully painted at ${width}px (${reducedMotion})`, async ({ page }) => {
+				test(`dropzone label stays vertically pinned and fully painted at ${width}px (${reducedMotion})`, async ({ page }) => {
 				await page.emulateMedia({ reducedMotion });
 				await page.setViewportSize({ width, height: 760 });
 				await page.goto(`${origin}/jira-team-eu26`);
@@ -32,11 +32,8 @@ test.describe("dropzone label clipping", () => {
 						const transform = getComputedStyle(node).transform;
 						return transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42;
 					});
-					if (reducedMotion === "reduce") {
-						await expect.poll(offset).toBe(0);
-					} else {
-						await expect.poll(async () => (await offset()) * (edge === "top" ? -1 : 1)).toBeGreaterThan(3);
-					}
+					// Content-sized targets pin both the surface and copy vertically.
+					await expect.poll(offset).toBe(0);
 					// Compare actual glyph bounds with every ancestor that can clip them.
 					const clippedPixels = await label.evaluate((node) => {
 						const range = document.createRange();

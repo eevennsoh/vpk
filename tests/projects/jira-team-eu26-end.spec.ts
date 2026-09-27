@@ -406,7 +406,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("MCB views the board with four presenter filters and no faces in column headers", async ({ page }) => {
-	await openBoard(page);
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await expect(page.getByRole("heading", { name: "Team ’26 EU keynote", exact: true })).toBeVisible();
 	await expect(page.locator('[data-current-user-id="mcb"] img')).toHaveAttribute("src", "/avatar-user/mcb.png");
 	const filters = page.getByRole("button", { name: /^Filter board by /u });
 	await expect(filters).toHaveCount(4);

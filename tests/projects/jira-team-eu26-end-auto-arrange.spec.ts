@@ -13,6 +13,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await name.press("Enter");
 		await expect(page.locator('[data-jira-kanban-scrollport] [data-issue-key]')).toHaveCount(14);
 		await page.locator('[data-issue-key="TEU-1"] [draggable]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		// Opposite outer corners span all columns before the scoped toolbar expansion.
+		await page.locator('[data-issue-key="TEU-13"] [draggable]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await page.getByRole("button", { name: "Select all", exact: true }).click();
 		const arrange = page.getByRole("button", { name: "Auto arrange", exact: true });
 		await expect(arrange).toBeEnabled();
