@@ -35,8 +35,13 @@ export function useBoardAutoArrange({ columns, selected, dragged, onArrange, bef
 		if (!ready || !onArrange) return;
 		const keydown = (event: KeyboardEvent) => {
 			if (event.key !== "Enter" || event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-			if (event.target instanceof Element && event.target.closest('button, a, input, textarea, select, [contenteditable="true"], [role="button"], [role="menuitem"], [role="combobox"], [role="dialog"]')) return;
 			if (!(event.target instanceof Node) || !boardRef.current?.contains(event.target)) return;
+			if (event.target instanceof Element) {
+				if (event.target.closest('a, input, textarea, select, [contenteditable="true"], [role="menuitem"], [role="combobox"], [role="dialog"]')) return;
+				// Selection leaves focus on a card button; claim Enter before its native click.
+				const cardControl = event.target.closest('[data-jira-issue-activation-control], [data-jira-issue-selection-control]');
+				if (!cardControl && event.target.closest('button, [role="button"]')) return;
+			}
 			event.preventDefault();
 			arrange();
 		};
