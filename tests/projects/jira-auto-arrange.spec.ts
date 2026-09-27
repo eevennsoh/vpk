@@ -45,7 +45,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await expect(animated).toHaveCount(1);
 			await expect(animated.locator("foreignObject")).toHaveCount(1);
 			await expect.poll(() => animated.locator("svg > g").first().evaluate((node) => getComputedStyle(node).transform)).not.toBe("none");
-			await page.screenshot({ path: "output/agent-browser/auto-arrange/detection-sparkle.png" });
+			// Capture screenshots after the timing window so rendering does not skew it.
 		}
 		await expect(action.locator("[data-auto-arrange-sparkle-phase]")).toHaveAttribute("data-auto-arrange-sparkle-phase", "static");
 		expect(await animated.evaluate((node, mounted) => node === mounted, mountedIcon)).toBe(true);
