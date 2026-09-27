@@ -321,6 +321,33 @@ export function RovoColorIcon({
 
 export function RovoColorLogo(props: Readonly<RovoColorIconProps>) { return <RovoColorIcon {...props} />; }
 
+export interface RovoAppIconProps extends Omit<TileProps, "children" | "label" | "variant" | "isInset" | "isSnug" | "hasBorder"> {
+	/** Accessible name; omit for a decorative app icon. */
+	label?: string;
+}
+
+/** Full-color Rovo mark in an app tile, using the Rovo button's background. */
+export function RovoAppIcon({
+	size = "small",
+	label,
+	className,
+	...props
+}: Readonly<RovoAppIconProps>) {
+	return (
+		<Tile
+			{...props}
+			label={label ?? ""}
+			role={label ? "img" : undefined}
+			aria-hidden={label ? undefined : true}
+			size={size}
+			variant="transparent"
+			className={cn("bg-bg-neutral-bold", className)}
+		>
+			<RovoColorIcon size={size ?? "small"} />
+		</Tile>
+	);
+}
+
 /* -- Named product exports --------------------------------------- */
 
 export function AdminIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="admin" {...props} />; }
