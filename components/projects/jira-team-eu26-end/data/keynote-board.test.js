@@ -167,6 +167,27 @@ test("older open boards recover cover artwork without resetting moved items or e
 	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
 });
 
+test("the original gray placeholder covers upgrade without resetting board edits", async () => {
+	const keynote = await loadKeynoteModule();
+	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+	const card = columns[0].cards.shift();
+	card.title = "Edited before the cover update";
+	card.status = "Done";
+	card.coverImage = { backgroundClassName: "bg-bg-accent-gray-subtler", maxHeight: 120 };
+	columns[3].cards.push(card);
+	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
+	const upgraded = restored[3].cards[0];
+	assert.equal(upgraded.title, "Edited before the cover update");
+	assert.equal(upgraded.status, "Done");
+	assert.equal(upgraded.assignee, card.assignee);
+	assert.equal(upgraded.coverImage.heading, "Desktop search\n& chat");
+	assert.equal(upgraded.coverImage.backgroundPattern, "grid");
+	assert.equal(upgraded.coverImage.maxHeight, 144);
+	assert.deepEqual(upgraded.coverImage.appSources.map((app) => app.label), ["Rovo"]);
+	assert.deepEqual(card.coverImage, { backgroundClassName: "bg-bg-accent-gray-subtler", maxHeight: 120 });
+	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
+});
+
 test("cover repair leaves newly created items and supplied image covers untouched", async () => {
 	const keynote = await loadKeynoteModule();
 	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();

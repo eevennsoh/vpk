@@ -56,6 +56,10 @@ const LEGACY_COVER_HEADINGS: Readonly<Record<string, readonly string[]>> = {
 	"TEU-11": ["DX: session quality & ROI"],
 };
 
+function createKeynoteCover(story: typeof KEYNOTE_STORIES[number]): NonNullable<JiraKanbanCardData["coverImage"]> {
+	return { heading: story.heading, appSources: story.apps.map((app) => ({ ...app })), maxHeight: 144, backgroundPattern: "grid" };
+}
+
 /** Restore static artwork on retained pre-artwork cards while keeping the user's board state. */
 export function restoreJiraTeamEu26EndKeynoteCoverArtwork(columns: readonly JiraKanbanColumnData[]): readonly JiraKanbanColumnData[] {
 	let changed = false;
@@ -64,8 +68,15 @@ export function restoreJiraTeamEu26EndKeynoteCoverArtwork(columns: readonly Jira
 		const cards = column.cards.map((card) => {
 			const story = KEYNOTE_STORIES[JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES.indexOf(card.code)];
 			const cover = card.coverImage;
-			if (!story || cover?.heading === undefined) {
+			if (!story) {
 				return card;
+			}
+			if (cover?.heading === undefined) {
+				if (cover?.backgroundClassName !== "bg-bg-accent-gray-subtler" || cover.maxHeight !== 120) {
+					return card;
+				}
+				columnChanged = true;
+				return { ...card, coverImage: createKeynoteCover(story) };
 			}
 			const appsCurrent = cover.appSources?.length === story.apps.length
 				&& cover.appSources.every((app, index) => app.id === story.apps[index].id);
@@ -97,7 +108,7 @@ export function createJiraTeamEu26EndKeynoteBoardColumns(): JiraKanbanColumnData
 	const cards: JiraKanbanCardData[] = KEYNOTE_STORIES.map((story, index) => ({
 		code: JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES[index],
 		title: story.title,
-		coverImage: { heading: story.heading, appSources: story.apps.map((app) => ({ ...app })), maxHeight: 144, backgroundPattern: "grid" },
+		coverImage: createKeynoteCover(story),
 		assignee: { ...story.assignee },
 		status: story.section,
 		issueType: "task",
