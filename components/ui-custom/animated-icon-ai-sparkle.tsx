@@ -28,6 +28,9 @@ const INSTANT = { duration: 0 };
 // Motion sizes SVG transforms against the element's own box, so "center"
 // pivots each shape on itself.
 const PIVOT = { transformBox: "fill-box", transformOrigin: "center" } as const;
+const STAR_STYLE = { ...PIVOT, willChange: "transform" } as const;
+const PLUS_STYLE = { ...PIVOT, willChange: "transform, opacity" } as const;
+const FADE_STYLE = { willChange: "opacity" } as const;
 
 export function AiSparkle({
 	size = 20,
@@ -37,6 +40,7 @@ export function AiSparkle({
 }: RovoIconProps) {
 	const starMaskId = useId();
 	const reduceMotion = useReducedMotion();
+	const fade = reduceMotion ? INSTANT : FADE;
 
 	const starSpin = {
 		initial: { rotate: 0, scale: 1, transition: reduceMotion ? INSTANT : RETURN },
@@ -46,13 +50,13 @@ export function AiSparkle({
 	};
 
 	const starSolid = {
-		initial: { opacity: 1, transition: FADE },
-		hovered: { opacity: singleColor ? 1 : 0, transition: FADE },
+		initial: { opacity: 1, transition: fade },
+		hovered: { opacity: singleColor ? 1 : 0, transition: fade },
 	};
 
 	const starGradient = {
-		initial: { opacity: 0, transition: FADE },
-		hovered: { opacity: 1, transition: FADE },
+		initial: { opacity: 0, transition: fade },
+		hovered: { opacity: 1, transition: fade },
 	};
 
 	return (
@@ -72,10 +76,10 @@ export function AiSparkle({
 				</mask>
 			</defs>
 
-			<motion.g variants={starSpin} style={PIVOT}>
-				<motion.path d={SPARKLE_STAR} fill={color} variants={starSolid} />
+			<motion.g variants={starSpin} style={STAR_STYLE}>
+				<motion.path d={SPARKLE_STAR} fill={color} variants={starSolid} style={FADE_STYLE} />
 				{singleColor ? null : (
-					<motion.g variants={starGradient}>
+					<motion.g variants={starGradient} style={FADE_STYLE}>
 						<foreignObject x="0.5" y="0.5" width="15" height="15" mask={`url(#${starMaskId})`}>
 							<div style={{ width: "100%", height: "100%", background: ROVO_GRADIENT_CSS }} />
 						</foreignObject>
@@ -109,23 +113,23 @@ interface SparklePlusProps {
 // hide-then-reveal handoff the magic wand's sparkles use.
 function SparklePlus({ d, color, accent, delay, reduceMotion }: Readonly<SparklePlusProps>) {
 	const solid = {
-		initial: { opacity: 1, scale: 1, transition: { ...FADE, delay: 0 } },
+		initial: { opacity: 1, scale: 1, transition: reduceMotion ? INSTANT : FADE },
 		hovered: reduceMotion
-			? { opacity: 0, scale: 1, transition: { ...FADE, delay } }
+			? { opacity: 0, scale: 1, transition: INSTANT }
 			: { opacity: 0, scale: 0, transition: { duration: 0.15, ease: EASE_IN_OUT, delay } },
 	};
 
 	const accentVariant = {
-		initial: { opacity: 0, scale: reduceMotion ? 1 : 0, transition: { duration: 0.2, ease: EASE_IN_OUT } },
+		initial: { opacity: 0, scale: reduceMotion ? 1 : 0, transition: reduceMotion ? INSTANT : { duration: 0.2, ease: EASE_IN_OUT } },
 		hovered: reduceMotion
-			? { opacity: 1, scale: 1, transition: { ...FADE, delay } }
+			? { opacity: 1, scale: 1, transition: INSTANT }
 			: { opacity: 1, scale: [0, 1.2, 1], transition: { duration: 0.35, ease: EASE_IN_OUT, delay: delay + 0.25 } },
 	};
 
 	return (
 		<g>
-			<motion.path d={d} fill={color} variants={solid} style={PIVOT} />
-			<motion.path d={d} fill={accent} variants={accentVariant} style={PIVOT} />
+			<motion.path d={d} fill={color} variants={solid} style={PLUS_STYLE} />
+			<motion.path d={d} fill={accent} variants={accentVariant} style={PLUS_STYLE} />
 		</g>
 	);
 }
