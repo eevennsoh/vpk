@@ -17,7 +17,7 @@ export {
 const REPLAY_MS = 1000;
 
 export interface AnimatedIconProps
-	extends Omit<React.ComponentProps<"span">, "color"> {
+	extends Omit<React.ComponentProps<"span">, "color" | "children"> {
 	/** Which animated icon to render. */
 	name: AnimatedIconName;
 	/** Icon size in pixels. */
