@@ -178,7 +178,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, typecheck, and tests. It is required by branch protection on `main` — `/vpk-git-ship` auto-merge waits for it.
 - Validation freshness:
   <!-- validation-freshness:begin -->
-  Last validated: 2026-09-21
+  Last validated: 2026-09-27
   Commands: `pnpm run validate:preflight`, `pnpm run verify:route-manifest`,
   `pnpm run verify:api-surfaces`, `pnpm run verify:repo-map`,
   `pnpm run verify:vpk-feature-map`, `pnpm run verify:file-size`, `pnpm run verify:catalog`,
