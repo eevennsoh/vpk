@@ -55,6 +55,7 @@ import {
 } from "./data/presentation-story";
 import {
 	createJiraTeamEu26EndKeynoteBoardColumns,
+	restoreJiraTeamEu26EndKeynoteCoverArtwork,
 	JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE,
 	JIRA_TEAM_EU26_END_HEADER_ASSIGNEES,
 } from "./data/keynote-board";
@@ -399,7 +400,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						boardTitle={JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE}
 						agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Team ’26 EU keynote announcements."
-						boardColumns={boardColumns}
+						boardColumns={restoreJiraTeamEu26EndKeynoteCoverArtwork(boardColumns)}
 						defaultAgentSessionColumnCollapsed={true}
 						defaultShowUntracked={false}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}

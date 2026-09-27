@@ -269,6 +269,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-session-column/use-agent-session-column-hidden.test.ts",
 		"components/ui-audio/live-waveform-layout.test.js",
 		"components/website/demos/utils/gui-demo.test.js",
+		"components/website/demos/visual/pattern-tile-core.test.js",
 		"components/utils/design-variants.test.js",
 		"components/utils/gui.test.js",
 		"components/utils/gui-color.test.js",

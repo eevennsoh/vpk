@@ -140,6 +140,34 @@ test("card arrival suppresses the inline create seam until its entrance complete
 	);
 });
 
+test("the card viewport retains its stacking context when inline insertion disables its fade", async () => {
+	const esbuild = require("esbuild");
+	const React = require("react");
+	const { renderToStaticMarkup } = require("react-dom/server");
+	const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
+	const result = await esbuild.build({
+		entryPoints: [join(__dirname, "board-column-card-list.tsx")],
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		external: ["react", "react/*", "next/image"],
+		loader: { ".css": "empty" },
+		tsconfig: join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+	const { BoardColumnCardList } = loadCjsModuleFromText(result.outputFiles[0].text);
+	for (const insertionArmed of [false, true]) {
+		const markup = renderToStaticMarkup(React.createElement(BoardColumnCardList, {
+			chrome: { headerFrame: "enclosed", cardList: { gap: "4px" } },
+			columnTitle: "Context", columnSizing: "content", count: 2,
+			insertionArmed, isEmpty: false,
+		}, React.createElement("div", null, "Cards")));
+		const viewport = markup.match(/<div\b[^>]*data-slot="scroll-area-viewport"[^>]*>/u)?.[0];
+		assert.ok(viewport);
+		assert.match(viewport, /class="[^"]*\bisolate\b/u);
+	}
+});
+
 test("normal create uses the full-width compact button and the shared creation field", () => {
 	assert.match(FOOTER, /aria-label=\{control\?\.active \? [^\n]+ : `Create in \$\{title\}`\}[\s\S]*"w-full border-dashed group-hover\/board-column:border-solid"[\s\S]*size=\{size\}[\s\S]*variant="outline"/u);
 	assert.match(FOOTER, /<CreateWorkItemField/u);

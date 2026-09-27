@@ -189,7 +189,8 @@ export function BoardColumnCardList({
 					data-created-card-arrival-id={createdCardArrival?.id}
 					data-jira-kanban-card-list=""
 					className={cn(
-						"min-h-0 min-w-0 overflow-y-auto overscroll-y-contain",
+						// Keep card layers below the sibling scrollbar even when the fade mask is disabled.
+						"isolate min-h-0 min-w-0 overflow-y-auto overscroll-y-contain",
 						// Issue controls own keyboard focus; the viewport is only a scrolling container.
 						"focus-visible:ring-0 focus-visible:outline-none",
 						// Keep the viewport and card focus rings out of the edge fade.
