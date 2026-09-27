@@ -7,6 +7,7 @@ export const JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE = "Team ’26 EU keynote";
 export { JIRA_TEAM_EU26_END_HEADER_ASSIGNEES } from "./keynote-presenters";
 
 const KEYNOTE_SECTIONS = ["Context", "Collaboration", "Confidence"] as const;
+const KEYNOTE_COVER_MAX_HEIGHT = 120;
 
 const COVER_APPS = {
 	rovo: { id: "rovo", label: "Rovo", provider: "rovo" },
@@ -25,19 +26,19 @@ const COVER_APPS = {
 
 // Feature headings live on the cover; card titles describe each demo's core benefit.
 const KEYNOTE_STORIES = [
-	{ section: "Context", heading: "Desktop search\n& chat", title: "Search across your work", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
+	{ section: "Context", heading: "Desktop\nsearch & chat", title: "Search across your work", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ section: "Context", heading: "Code\ncontext", title: "Ground AI in your codebase", apps: [COVER_APPS.bitbucket, COVER_APPS.github, COVER_APPS.gitlab], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ section: "Context", heading: "Rovo for Work\n& Mobile", title: "Pick up work anywhere", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
 	{ section: "Context", heading: "Rovo\nArtifacts", title: "Turn ideas into outputs", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
-	{ section: "Collaboration", heading: "Loom desktop\nrecording", title: "Record. Share. Collaborate.", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
+	{ section: "Collaboration", heading: "Loom\ndesktop recording", title: "Record Share Collaborate", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ section: "Collaboration", heading: "Whiteboard →\nFigma → Loom", title: "From ideas to shared outcomes", apps: [COVER_APPS.confluence, COVER_APPS.figma, COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.sherif },
-	{ section: "Collaboration", heading: "AI\nPlanner", title: "Humans and agents. One plan.", apps: [COVER_APPS.jira], assignee: JIRA_TEAM_EU26_END_PRESENTERS.sherif },
+	{ section: "Collaboration", heading: "AI\nPlanner", title: "Humans and agents One plan", apps: [COVER_APPS.jira], assignee: JIRA_TEAM_EU26_END_PRESENTERS.sherif },
 	{ section: "Confidence", heading: "Loom\nAI overlays", title: "Make every video clearer", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
 	{ section: "Confidence", heading: "Loom\nPR previews", title: "Preview code changes in video", apps: [COVER_APPS.loom, COVER_APPS.bitbucket], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
 	{ section: "Confidence", heading: "Jira\nAgent Sessions", title: "See agent work as it happens", apps: [COVER_APPS.jira], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
-	{ section: "Confidence", heading: "DX session quality\n& ROI", title: "Measure session quality and ROI", apps: [COVER_APPS.dx], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
+	{ section: "Confidence", heading: "DX session\nquality & ROI", title: "Measure session quality and ROI", apps: [COVER_APPS.dx], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
 	{ section: "Confidence", heading: "Strategy\nCollection", title: "Align talent and investment", apps: [COVER_APPS.focus, COVER_APPS.talent], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
-	{ section: "Confidence", heading: "Enterprise governance\n& Guard", title: "Govern AI at every level", apps: [COVER_APPS.guard], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
+	{ section: "Confidence", heading: "Enterprise\ngovernance & Guard", title: "Govern AI at every level", apps: [COVER_APPS.guard], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 ] as const satisfies readonly {
 	section: typeof KEYNOTE_SECTIONS[number];
 	title: string;
@@ -57,7 +58,7 @@ const LEGACY_COVER_HEADINGS: Readonly<Record<string, readonly string[]>> = {
 };
 
 function createKeynoteCover(story: typeof KEYNOTE_STORIES[number]): NonNullable<JiraKanbanCardData["coverImage"]> {
-	return { heading: story.heading, appSources: story.apps.map((app) => ({ ...app })), maxHeight: 144, backgroundPattern: "grid" };
+	return { heading: story.heading, appSources: story.apps.map((app) => ({ ...app })), maxHeight: KEYNOTE_COVER_MAX_HEIGHT, backgroundPattern: "grid" };
 }
 
 /** Restore static artwork on retained pre-artwork cards while keeping the user's board state. */
@@ -84,7 +85,7 @@ export function restoreJiraTeamEu26EndKeynoteCoverArtwork(columns: readonly Jira
 			const canRefreshHeading = retainedHeading === story.heading.replaceAll("\n", " ")
 				|| LEGACY_COVER_HEADINGS[card.code]?.includes(retainedHeading) === true;
 			const heading = canRefreshHeading ? story.heading : cover.heading;
-			if (cover.backgroundPattern === "grid" && appsCurrent && cover.heading === heading) {
+			if (cover.backgroundPattern === "grid" && appsCurrent && cover.heading === heading && cover.maxHeight === KEYNOTE_COVER_MAX_HEIGHT) {
 				return card;
 			}
 			columnChanged = true;
@@ -93,6 +94,7 @@ export function restoreJiraTeamEu26EndKeynoteCoverArtwork(columns: readonly Jira
 				coverImage: {
 					...cover,
 					heading,
+					maxHeight: KEYNOTE_COVER_MAX_HEIGHT,
 					backgroundPattern: "grid" as const,
 					appSources: appsCurrent ? cover.appSources : story.apps.map((app) => ({ ...app })),
 				},
@@ -102,6 +104,20 @@ export function restoreJiraTeamEu26EndKeynoteCoverArtwork(columns: readonly Jira
 		return columnChanged ? { ...column, cards } : column;
 	});
 	return changed ? restored : columns;
+}
+
+/** The keynote's auto-arrange plan always completes work, including newly created items. */
+export function withJiraTeamEu26EndDoneDestinations(columns: readonly JiraKanbanColumnData[]): readonly JiraKanbanColumnData[] {
+	let changed = false;
+	const prepared = columns.map((column) => {
+		if (column.cards.every((card) => card.autoArrangeStatus === "Done")) return column;
+		changed = true;
+		return {
+			...column,
+			cards: column.cards.map((card) => card.autoArrangeStatus === "Done" ? card : { ...card, autoArrangeStatus: "Done" }),
+		};
+	});
+	return changed ? prepared : columns;
 }
 
 export function createJiraTeamEu26EndKeynoteBoardColumns(): JiraKanbanColumnData[] {

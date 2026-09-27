@@ -140,6 +140,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
+	/** Optional project avatar in the board title cluster. */
+	boardAvatar?: ReactNode;
 	boardTitle?: string;
 	columnChrome?: JiraKanbanProps["columnChrome"];
 	compactHeader?: boolean;

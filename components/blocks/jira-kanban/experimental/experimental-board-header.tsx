@@ -142,6 +142,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	viewTabs?: ReactNode;
 	/** Project name in the title cluster. Defaults to the Jira Design space. */
 	title?: string;
+	/** Optional project avatar replacing the default Jira Design artwork. */
+	avatar?: ReactNode;
 }
 
 export type ExperimentalJiraKanbanView = "board" | "list";
@@ -234,10 +236,11 @@ export function ExperimentalJiraKanbanBoardHeader({
 	simpleViews,
 	viewTabs,
 	title = JIRA_DESIGN_PROJECT.name,
+	avatar,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
 	return (
 		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-6" : "pb-0")}>
-			<BoardHeaderTitleCluster surfaceLabel={surfaceLabel} title={title} />
+			<BoardHeaderTitleCluster avatar={avatar} surfaceLabel={surfaceLabel} title={title} />
 			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
 			{showBoardControls ? (
 				<BoardHeaderControlsRow
@@ -271,9 +274,11 @@ export function ExperimentalJiraKanbanBoardHeader({
 }
 
 function BoardHeaderTitleCluster({
+	avatar,
 	surfaceLabel,
 	title,
 }: Readonly<{
+	avatar?: ReactNode;
 	surfaceLabel: string;
 	title: string;
 }>) {
@@ -282,7 +287,7 @@ function BoardHeaderTitleCluster({
 			<div className="flex min-w-0 flex-col gap-0.5">
 				<span className="text-xs text-text-subtlest">Spaces</span>
 				<div className="flex min-w-0 items-center gap-2">
-					<JiraProjectAvatar label={title} src={JIRA_DESIGN_PROJECT.imageSrc} />
+					{avatar ?? <JiraProjectAvatar label={title} src={JIRA_DESIGN_PROJECT.imageSrc} />}
 					<Heading as="h1" className="min-w-0 truncate" size="medium">{title}</Heading>
 					<div className="flex shrink-0 items-center gap-1">
 						<Button aria-disabled aria-label="Add people" size="icon" variant="ghost">

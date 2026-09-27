@@ -184,7 +184,8 @@ for (const width of [1720, 1440]) {
 			await expect(collapse).toHaveCSS("pointer-events", "auto");
 			await expect(addAgent).toHaveCSS("opacity", "1");
 			await expect(create).toHaveCSS("border-top-style", "solid");
-			await expect(create).toHaveCSS("background-color", hoveredBackground);
+			await expect(create).toHaveCSS("background-color", restingBackground);
+			await expect(create).not.toHaveCSS("background-color", hoveredBackground);
 			expect(await create.boundingBox()).toEqual(createBox);
 			expect(await collapse.boundingBox()).toEqual(headerBox);
 			await expect(page.getByRole("button", { name: "Collapse To do column", exact: true })).toHaveCSS("opacity", "0");
@@ -206,4 +207,36 @@ for (const width of [1720, 1440]) {
 			await expect(create).toBeFocused();
 		});
 	}
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`keynote column hover preserves the resting create background (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.setViewportSize({ width: 1720, height: 1100 });
+		await page.goto(`${origin}/jira-team-eu26-end`);
+		const heading = page.getByRole("heading", { name: "Team ’26 EU keynote", exact: true });
+		await expect(heading).toBeVisible();
+		const column = page.locator('[data-jira-kanban-column="Confidence"]');
+		const create = column.getByRole("button", { name: "Create in Confidence", exact: true });
+		await heading.hover();
+		await expect(create).toHaveCSS("border-top-style", "dashed");
+		const restingBackground = await create.evaluate((node) => getComputedStyle(node).backgroundColor);
+		const createBox = await create.boundingBox();
+		await column.getByText("Confidence", { exact: true }).hover();
+		await expect(create).toHaveCSS("border-top-style", "solid");
+		await expect.poll(() => create.evaluate((node) => node.getAnimations().filter((animation) => animation.playState === "running").length)).toBe(0);
+		await expect(create).toHaveCSS("background-color", restingBackground);
+		expect(await create.boundingBox()).toEqual(createBox);
+		await page.screenshot({ path: `output/agent-browser/column-hover/keynote-column-${reducedMotion}.png` });
+		await create.hover();
+		await expect(create).not.toHaveCSS("background-color", restingBackground);
+		await page.screenshot({ path: `output/agent-browser/column-hover/keynote-button-${reducedMotion}.png` });
+		await heading.hover();
+		await expect(create).toHaveCSS("background-color", restingBackground);
+		await create.focus();
+		await page.keyboard.press("Enter");
+		await expect(page.getByRole("dialog", { name: "Create in Confidence", exact: true })).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(create).toBeFocused();
+	});
 }

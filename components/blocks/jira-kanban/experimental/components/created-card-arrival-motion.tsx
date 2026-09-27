@@ -44,6 +44,9 @@ interface CreatedCardArrivalMotionProps {
 	onArrivalComplete: (arrivalId: number) => void;
 	positionMotion?: Readonly<Pick<MotionProps, "layout" | "layoutId" | "transition">>;
 	shouldAnimateCardMoves: boolean;
+	removing?: boolean;
+	removalSpacing?: { gaps: number; fusedGaps: number };
+	onRemovalComplete?: () => void;
 }
 
 function getCardMoveAnimation(
@@ -99,6 +102,9 @@ export function CreatedCardArrivalMotion({
 	onArrivalComplete,
 	positionMotion,
 	shouldAnimateCardMoves,
+	removing = false,
+	removalSpacing,
+	onRemovalComplete,
 }: Readonly<CreatedCardArrivalMotionProps>) {
 	const arrival = moveArrival?.columnTitle === columnTitle && moveArrival.cardCodes.includes(cardCode)
 		? moveArrival : createdArrival;
@@ -132,13 +138,19 @@ export function CreatedCardArrivalMotion({
 
 	return (
 		<motion.div
-			aria-hidden={waiting || undefined}
-			className={cn("w-full min-w-0 max-w-[280px]", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null)}
+			aria-hidden={waiting || removing || undefined}
+			className={cn("w-full min-w-0 max-w-[280px] motion-reduce:transition-none!", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null)}
 			data-created-card-pending={waiting || undefined}
-			inert={waiting || undefined}
-			style={{ maxWidth: columnWidth === "fluid" ? "none" : undefined }}
-			layout={cardArrival.arrivalId !== undefined ? false : positionMotion?.layout}
-			layoutId={cardArrival.arrivalId !== undefined ? undefined : positionMotion?.layoutId}
+			inert={waiting || removing || undefined}
+			style={{
+				maxWidth: columnWidth === "fluid" ? "none" : undefined,
+				marginBottom: removing && removalSpacing
+					? `calc(var(--board-card-gap, 0px) * -${removalSpacing.gaps} + var(--spacing) * ${removalSpacing.fusedGaps})`
+					: undefined,
+				transition: "margin-bottom var(--duration-normal) var(--ease-in)",
+			}}
+			layout={removing || cardArrival.arrivalId !== undefined ? false : positionMotion?.layout}
+			layoutId={removing || cardArrival.arrivalId !== undefined ? undefined : positionMotion?.layoutId}
 			transition={positionMotion?.transition}
 		>
 			<motion.div
@@ -176,6 +188,8 @@ export function CreatedCardArrivalMotion({
 					onAnimationComplete={handleArrivalComplete}
 					replayKey={cardArrival.arrivalId !== undefined && cardArrival.arrivalId < 0 ? cardArrival.arrivalId : undefined}
 					reserveSlot={arrival?.pendingCardCodes !== undefined}
+					removing={removing}
+					onRemovalComplete={onRemovalComplete}
 				>
 					{insertionLine}
 					{children}

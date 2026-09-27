@@ -76,7 +76,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			const initial = await geometry();
 			expect(initial.columnHeight).toBeGreaterThan(500);
 			for (const [index, code] of ["PAY-105", "PAY-107"].entries()) {
-				const card = page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+				const card = page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 				await card.hover({ position: { x: 70, y: 30 } });
 				const source = (await card.boundingBox())!;
 				const target = (await review.boundingBox())!;
@@ -132,7 +132,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			for (const title of ["In progress", "In review", "Done"]) {
 				await expect(column(title).locator('[data-board-agent-session-drop-zone="issue"]')).toHaveCount(0);
 			}
-			const card = page.locator('[data-issue-key="PAY-105"] [draggable="true"]').first();
+			const card = page.locator('[data-issue-key="PAY-105"] [draggable]').first();
 			async function start() {
 				const source = (await card.boundingBox())!;
 				await page.mouse.move(source.x + 70, source.y + 30);
@@ -225,7 +225,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.waitForLoadState("networkidle");
 		const progress = page.locator('[data-jira-kanban-column="In progress"]');
 		for (const [count, code] of ["PAY-105", "PAY-107"].entries()) {
-			const card = page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+			const card = page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 			await card.hover({ position: { x: 70, y: 30 } });
 			const source = (await card.boundingBox())!;
 			await page.mouse.move(source.x + 70, source.y + 30);
@@ -258,7 +258,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.waitForLoadState("networkidle");
 		await recordNativeDragPointer(page);
 		const progress = page.locator('[data-jira-kanban-column="In progress"]');
-		const card = page.locator('[data-issue-key="PAY-105"] [draggable="true"]').first();
+		const card = page.locator('[data-issue-key="PAY-105"] [draggable]').first();
 		for (const space of ["frame", "pending-frame", "pending-below"]) {
 			const hoverChoice = space !== "frame";
 			const source = (await card.boundingBox())!;
@@ -292,11 +292,11 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		}
 	});
 
-	test(`fixed-anchor ranges shrink, reverse and replace cross-column selections (${reducedMotion})`, async ({ page }) => {
+	test(`fixed-anchor ranges shrink, reverse and extend across columns (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/blocks/jira-dragging`);
 		await page.waitForLoadState("networkidle");
-		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 		const selected = () => page.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes.filter((node) => node.querySelector('[data-jira-issue-activation-control][aria-pressed="true"]')).map((node) => node.getAttribute("data-issue-key")));
 		const click = (code: string, modifiers: ("Shift" | "ControlOrMeta")[] = ["Shift"]) => card(code).click({ position: { x: 70, y: 30 }, modifiers });
 		await click("PAY-105");
@@ -339,7 +339,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await click("PAY-130", ["ControlOrMeta"]);
 		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await click("PAY-107");
-		await expect.poll(selected).toEqual(["PAY-107"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-130"]);
 		await click("PAY-130");
 		await expect.poll(selected).toEqual(["PAY-130"]);
 	});
@@ -351,7 +351,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const issue = (code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 		const activation = (code: string) => issue(code).locator('[data-jira-issue-activation-control]');
 		const surface = (code: string) => issue(code).locator('[data-slot="jira-issue-surface"]');
-		const click = (code: string, modifiers?: ("Shift" | "ControlOrMeta")[]) => issue(code).locator('[draggable="true"]').first().click({ position: { x: 70, y: 30 }, modifiers });
+		const click = (code: string, modifiers?: ("Shift" | "ControlOrMeta")[]) => issue(code).locator('[draggable]').first().click({ position: { x: 70, y: 30 }, modifiers });
 		for (const [code, modifier] of [["PAY-105", "Shift"], ["PAY-107", "ControlOrMeta"]] as const) {
 			if (modifier === "Shift") await page.keyboard.down("Shift");
 			await click(code, modifier === "Shift" ? undefined : [modifier]);
@@ -403,7 +403,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.keyboard.press("Shift+ArrowDown");
 		await expect.poll(selected).toEqual(["PAY-107"]);
 		await page.keyboard.press("ControlOrMeta+a");
-		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
+		await expect.poll(selected).toEqual(["PAY-107"]);
 		await page.keyboard.press("Shift+ArrowUp");
 		await expect.poll(selected).toEqual(["PAY-105", "PAY-107"]);
 		const search = page.getByRole("searchbox", { name: "Search components", exact: true });
@@ -419,12 +419,12 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.getByRole("button", { name: "Collapse To do column", exact: true }).click();
 		await page.locator('[data-jira-kanban-scrollport]').focus();
 		await page.keyboard.press("ControlOrMeta+a");
-		await expect(page.locator('[data-slot="jira-toolbar"]')).toHaveCount(0);
+		await expect.poll(selected).toEqual([]);
 		await page.getByRole("button", { name: "Expand To do column", exact: true }).focus();
 		await page.keyboard.press("Enter");
 		await page.locator('[data-jira-kanban-scrollport]').focus();
 		await page.keyboard.press("ControlOrMeta+a");
-		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107"]);
 		await control("PAY-105").focus();
 		await page.keyboard.press("Escape");
 		await expect.poll(selected).toEqual([]);
@@ -435,7 +435,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/blocks/jira-dragging`);
 		await page.waitForLoadState("networkidle");
-		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 		for (const code of ["PAY-105", "PAY-107"]) await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		const toolbar = page.getByRole("region", { name: "2 cards selected. Bulk actions available." });
 		await toolbar.getByRole("button", { name: "More actions", exact: true }).click();
@@ -470,7 +470,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/blocks/jira-dragging`);
 		await page.waitForLoadState("networkidle");
-		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 		const source = (await card("PAY-130").boundingBox())!;
 		const done = (await page.locator('[data-jira-kanban-column="Done"]').boundingBox())!;
 		await page.mouse.move(source.x + 70, source.y + 30);
@@ -537,7 +537,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await recordNativeDragPointer(page);
 		const issue = (code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 		const backdrop = (code: string) => issue(code).locator('[data-slot="jira-issue-agent-backdrop"]');
-		const card = (code: string) => issue(code).locator('[draggable="true"]').first();
+		const card = (code: string) => issue(code).locator('[draggable]').first();
 		const tops = () => page.locator('[data-jira-kanban-column="To do"] [data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
 		for (const code of ["PAY-105", "PAY-107"]) await expect(backdrop(code)).toHaveCSS("opacity", "1");
 		for (const code of ["PAY-123", "PAY-130"]) await expect(backdrop(code)).toHaveCSS("opacity", "0");
@@ -706,7 +706,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`selection shows the shared bulk toolbar and applies its actions (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/blocks/jira-dragging`);
-		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 		await expect(page.locator('[data-slot="jira-toolbar"]')).toHaveCount(0);
 		await card("PAY-105").click({ position: { x: 70, y: 30 } });
 		await expect(page.locator('[data-slot="jira-toolbar"]')).toHaveCount(0);
@@ -758,7 +758,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Ask Rovo launches the standalone Rovo workspace (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/blocks/jira-dragging`);
-		await page.locator('[data-issue-key="PAY-105"] [draggable="true"]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await page.locator('[data-issue-key="PAY-105"] [draggable]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
 		await expect(page).toHaveURL(/\/rovo$/, { timeout: 20_000 });
 	});
@@ -778,7 +778,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		});
 		// Cover both cards with and without session chins, including repeated pickup.
 		for (const code of ["PAY-105", "PAY-123", "PAY-105"]) {
-			const card = column.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+			const card = column.locator(`[data-issue-key="${code}"] [draggable]`).first();
 			const box = (await card.boundingBox())!;
 			await page.mouse.move(box.x + 70, box.y + 30);
 			const before = await geometry();
@@ -818,7 +818,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			expect(geometry.radius).not.toBe("0px");
 		}
 
-		const card = progress.locator('[data-issue-key="PAY-105"] [draggable="true"]').first();
+		const card = progress.locator('[data-issue-key="PAY-105"] [draggable]').first();
 		const box = (await card.boundingBox())!;
 		const target = (await done.boundingBox())!;
 		await page.mouse.move(box.x + 70, box.y + 30);

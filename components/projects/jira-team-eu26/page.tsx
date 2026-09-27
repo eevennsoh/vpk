@@ -33,7 +33,7 @@ import { HeaderLanyards } from "./components/header-lanyards";
 import { renderEu26HeaderAssignee } from "./components/header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
-import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
+import { JIRA_TEAM_EU26_CHAT_AGENT_PROFILES } from "@/components/projects/jira-team-eu26/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
@@ -84,7 +84,7 @@ const isJiraTeamEu26LooseWorkResumable = () => true;
 
 export default function JiraTeamEu26Page(): React.ReactElement {
 	return (
-		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+		<RovoChatProvider agentProfiles={JIRA_TEAM_EU26_CHAT_AGENT_PROFILES}>
 			<JiraTeamEu26App />
 		</RovoChatProvider>
 	);

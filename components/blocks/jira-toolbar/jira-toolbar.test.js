@@ -31,6 +31,11 @@ test("Jira Toolbar owns functional status, agent assignment, and clear callbacks
 	assert.doesNotMatch(SOURCE, /addEventListener\("keydown", handleKeyDown, true\)/u);
 });
 
+test("toolbar Delete is disabled when its owner does not provide the removal capability", () => {
+	assert.match(SOURCE, /id: "delete",[\s\S]*?<JiraToolbarAction\s+disabled=\{!onDelete\}/u);
+	assert.match(SOURCE, /id: "delete",[\s\S]*?<DropdownMenuItem\s+disabled=\{!onDelete\}/u);
+});
+
 test("Jira Toolbar preserves agent assignment and launches real Rovo navigation", () => {
 	assert.match(SOURCE, /defaultPinnedAgentIds=\{defaultPinnedAgentIds\}/u);
 	assert.match(SOURCE, /<AgentSelector[\s\S]*selectionMode="single"/u);

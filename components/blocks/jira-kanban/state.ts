@@ -68,6 +68,36 @@ export function createJiraKanbanSelectionState(): JiraKanbanSelectionState {
 	};
 }
 
+/** Keep range rows in rendered order and omit columns whose cards are hidden. */
+export function getSelectableJiraKanbanColumns(
+	columns: readonly JiraKanbanColumnData[],
+	collapsedColumnTitles: ReadonlySet<string>,
+): JiraKanbanColumnData[] {
+	return columns.filter((column) => !collapsedColumnTitles.has(column.title));
+}
+
+/** The toolbar expands only columns already represented in the selection. */
+export function selectAllJiraKanbanCardsInSelectedColumns(
+	state: JiraKanbanSelectionState,
+	columns: readonly JiraKanbanColumnData[],
+): JiraKanbanSelectionState {
+	return {
+		anchor: null,
+		selectedCardCodes: new Set(columns
+			.filter((column) => column.cards.some((card) => state.selectedCardCodes.has(card.code)))
+			.flatMap((column) => column.cards.map((card) => card.code))),
+	};
+}
+
+function getJiraKanbanCardPosition(
+	columns: readonly JiraKanbanColumnData[],
+	card: Readonly<JiraKanbanSelectionAnchor>,
+) {
+	const columnIndex = columns.findIndex((column) => column.title === card.columnTitle);
+	const cardIndex = columns[columnIndex]?.cards.findIndex((candidate) => candidate.code === card.cardCode) ?? -1;
+	return cardIndex < 0 ? null : { columnIndex, cardIndex };
+}
+
 /** A hidden, moved or deselected card cannot silently remain the range anchor. */
 export function reconcileJiraKanbanSelection<T extends JiraKanbanSelectionState>(
 	state: T,
@@ -87,19 +117,33 @@ export function selectJiraKanbanCard(
 	input: SelectJiraKanbanCardInput,
 ): JiraKanbanSelectionState {
 	const current = reconcileJiraKanbanSelection(state, columns);
-	const column = columns.find((candidate) => candidate.title === input.columnTitle);
-	const targetIndex = column?.cards.findIndex((card) => card.code === input.cardCode) ?? -1;
-	if (!column || targetIndex < 0) return current;
 	const target = { cardCode: input.cardCode, columnTitle: input.columnTitle };
+	const targetPosition = getJiraKanbanCardPosition(columns, target);
+	if (!targetPosition) return current;
 
 	if (input.modifiers.shiftKey) {
-		const candidate = current.anchor?.columnTitle === column.title ? current.anchor : input.fallbackAnchor;
-		const anchorIndex = candidate?.columnTitle === column.title
-			? column.cards.findIndex((card) => card.code === candidate.cardCode) : -1;
-		const anchor = anchorIndex >= 0 && candidate ? candidate : target;
-		const start = Math.min(anchorIndex >= 0 ? anchorIndex : targetIndex, targetIndex);
-		const end = Math.max(anchorIndex >= 0 ? anchorIndex : targetIndex, targetIndex);
-		return { anchor, selectedCardCodes: new Set(column.cards.slice(start, end + 1).map((card) => card.code)) };
+		const candidate = current.anchor ?? input.fallbackAnchor ?? target;
+		const candidatePosition = getJiraKanbanCardPosition(columns, candidate);
+		const anchor = candidatePosition ? candidate : target;
+		const anchorPosition = candidatePosition ?? targetPosition;
+		const [left, right] = anchorPosition.columnIndex <= targetPosition.columnIndex
+			? [anchorPosition, targetPosition] : [targetPosition, anchorPosition];
+		const startRow = Math.min(anchorPosition.cardIndex, targetPosition.cardIndex);
+		const endRow = Math.max(anchorPosition.cardIndex, targetPosition.cardIndex);
+		const spansBoard = left.columnIndex !== right.columnIndex
+			&& left.columnIndex === columns.findIndex((column) => column.cards.length > 0)
+			&& right.columnIndex === columns.findLastIndex((column) => column.cards.length > 0);
+		const oppositeCorners = spansBoard && (
+			(left.cardIndex === 0 && right.cardIndex === columns[right.columnIndex].cards.length - 1)
+			|| (right.cardIndex === 0 && left.cardIndex === columns[left.columnIndex].cards.length - 1)
+		);
+		const range = columns.slice(left.columnIndex, right.columnIndex + 1);
+		return {
+			anchor,
+			selectedCardCodes: new Set(range.flatMap((column) => (
+				oppositeCorners ? column.cards : column.cards.slice(startRow, endRow + 1)
+			)).map((card) => card.code)),
+		};
 	}
 	if (input.modifiers.metaOrCtrlKey) {
 		const nextSelection = new Set(current.selectedCardCodes);

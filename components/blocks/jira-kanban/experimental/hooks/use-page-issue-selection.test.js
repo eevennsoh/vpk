@@ -6,8 +6,8 @@ const vm = require("node:vm");
 const ts = require("typescript");
 const state = require("../../state.ts");
 
-function harness(selectedCodes, anchorCode) {
-	let columns = [{ title: "To do", count: 3, cards: ["A", "B", "C"].map((code) => ({ code })) }];
+function harness(selectedCodes, anchorCode, options = {}) {
+	let columns = options.columns ?? [{ title: "To do", count: 3, cards: ["A", "B", "C"].map((code) => ({ code })) }];
 	let selection = { selectedCardCodes: new Set(selectedCodes), anchor: anchorCode ? { cardCode: anchorCode, columnTitle: "To do" } : null };
 	let draggedCard = { card: columns[0].cards[0], sourceColumnTitle: "To do" };
 	const loaded = { exports: {} };
@@ -27,6 +27,7 @@ function harness(selectedCodes, anchorCode) {
 	});
 	const actions = loaded.exports.usePageIssueSelection({
 		rootRef: { current: null }, enabled: true, boardColumns: columns, filteredBoardColumns: columns,
+		collapsedColumns: options.collapsedColumns ?? new Set(),
 		selection, setSelection: (updater) => { selection = typeof updater === "function" ? updater(selection) : updater; },
 		draggedCard, setDraggedCard: (next) => { draggedCard = next; },
 		updateBoardColumns: (updater) => { columns = updater(columns); },
@@ -44,6 +45,38 @@ test("removing the selected range anchor prunes its code and keeps the remaining
 	assert.equal(h.draggedCard(), null);
 });
 
+const board = [
+	{ title: "To do", cards: ["A", "B", "C"].map((code) => ({ code })) },
+	{ title: "Hidden", cards: ["X", "Y", "Z"].map((code) => ({ code })) },
+	{ title: "Done", cards: ["D", "E"].map((code) => ({ code })) },
+];
+
+test("page Shift ranges cross columns while excluding collapsed cards", () => {
+	const h = harness(["B"], "B", { columns: board, collapsedColumns: new Set(["Hidden"]) });
+	h.actions.handleCardSelect("E", "Done", 1, { shiftKey: true, metaOrCtrlKey: false });
+	assert.deepEqual([...h.selection().selectedCardCodes], ["B", "E"]);
+	assert.equal(h.selection().anchor.cardCode, "B");
+	assert.equal(h.draggedCard(), null);
+});
+
+test("page toolbar Select all expands only represented expanded columns and cancels pickup", () => {
+	const h = harness(["B", "X", "E"], "B", { columns: board, collapsedColumns: new Set(["Hidden"]) });
+	h.actions.onSelectAll();
+	assert.deepEqual([...h.selection().selectedCardCodes], ["A", "B", "C", "D", "E"]);
+	assert.equal(h.selection().anchor, null);
+	assert.equal(h.draggedCard(), null);
+	const single = harness(["B"], "B", { columns: board });
+	single.actions.onSelectAll();
+	assert.deepEqual([...single.selection().selectedCardCodes], ["A", "B", "C"]);
+});
+
+test("page ordinary clicks keep their activation behavior instead of selecting", () => {
+	const h = harness([], null, { columns: board });
+	h.actions.handleCardSelect("A", "To do", 0, { shiftKey: false, metaOrCtrlKey: false });
+	h.actions.handleCardClick("A", "A", board[0].cards[0], "To do");
+	assert.deepEqual([...h.selection().selectedCardCodes], []);
+});
+
 test("removing the only selected issue clears the bulk selection count", () => {
 	const h = harness(["A"], "A");
 	h.actions.handleCardRemove(h.columns()[0].cards[0]);
@@ -56,4 +89,14 @@ test("removing an unselected issue preserves the selected issue and its anchor",
 	h.actions.handleCardRemove(h.columns()[0].cards[0]);
 	assert.deepEqual([...h.selection().selectedCardCodes], ["B"]);
 	assert.equal(h.selection().anchor.cardCode, "B");
+});
+
+test("bulk removal deletes the captured cohort in one transaction and clears its range anchor", () => {
+	const h = harness(["A", "B"], "A");
+	h.actions.handleCardsRemove(["A", "B"]);
+	assert.deepEqual(h.columns()[0].cards.map(card => card.code), ["C"]);
+	assert.equal(h.columns()[0].count, 1);
+	assert.equal(h.selection().selectedCardCodes.size, 0);
+	assert.equal(h.selection().anchor, null);
+	assert.equal(h.draggedCard(), null);
 });

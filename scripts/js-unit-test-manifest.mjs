@@ -13,8 +13,10 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/ui-custom/animated-icon.test.js",
 		"components/blocks/jira-dragging/use-jira-dragging.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-board-auto-arrange.test.js",
+		"components/blocks/jira-kanban/experimental/hooks/use-board-card-removal.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-issue-card-drop-arrival.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-board-issue-pointer-drag.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-page-issue-selection.test.js",
@@ -298,6 +300,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-verify/scripts/verify-feature-map.test.js",
 	],
 	"source-contract": [
+		"components/projects/jira-team-eu26-end/jira-team-eu26-end-controls.test.js",
 		"components/blocks/jira-issue/cover-image.test.js",
 		"components/website/registry/blocks-variants.test.js",
 		"components/blocks/top-navigation/top-navigation-chat-state.test.js",

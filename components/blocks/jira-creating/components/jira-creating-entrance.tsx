@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import {
 	getJiraCreateMotion,
 	getJiraCreateSlotTransition,
+	getJiraCreateRemovalTransition,
 	JIRA_CREATE_MOTION_STYLE,
 } from "../lib/jira-creating-motion";
 
@@ -25,6 +26,9 @@ export interface JiraCreateEntranceProps {
 	replayKey?: number;
 	/** A flying existing card needs its final slot measured before revealing its face. */
 	reserveSlot?: boolean;
+	/** Reverse the entrance before the owner removes the work item. */
+	removing?: boolean;
+	onRemovalComplete?: () => void;
 }
 
 export function JiraCreateEntrance({
@@ -37,6 +41,8 @@ export function JiraCreateEntrance({
 	onAnimationComplete,
 	replayKey,
 	reserveSlot = false,
+	removing = false,
+	onRemovalComplete,
 }: Readonly<JiraCreateEntranceProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const motionVariants = getJiraCreateMotion(shouldReduceMotion, enterDelayS);
@@ -46,36 +52,38 @@ export function JiraCreateEntrance({
 	const slotPlayback = useAnimationControls();
 	const cardPlayback = useAnimationControls();
 	useLayoutEffect(() => {
-		if (!active || replayKey === undefined || waiting) return;
+		if (!active || replayKey === undefined || waiting || removing) return;
 		if (!reserveSlot) slotPlayback.set({ height: 0 });
 		cardPlayback.set("hidden");
 		if (!reserveSlot) void slotPlayback.start({ height: "auto", transition: getJiraCreateSlotTransition(shouldReduceMotion, enterDelayS) });
 		void cardPlayback.start("show");
 		return () => { slotPlayback.stop(); cardPlayback.stop(); };
-	}, [active, waiting, replayKey, reserveSlot, shouldReduceMotion, enterDelayS, slotPlayback, cardPlayback]);
+	}, [active, waiting, removing, replayKey, reserveSlot, shouldReduceMotion, enterDelayS, slotPlayback, cardPlayback]);
 
 	return (
 		<motion.div
-			animate={reserveSlot ? { height: "auto" } : replayKey === undefined ? { height: waiting ? 0 : "auto" } : slotPlayback}
-			aria-hidden={waiting || undefined}
-			className={cn("w-full min-w-0 shrink-0", active ? "overflow-hidden" : null)}
+			animate={removing ? { height: 0 } : reserveSlot ? { height: "auto" } : replayKey === undefined ? { height: waiting ? 0 : "auto" } : slotPlayback}
+			aria-hidden={waiting || removing || undefined}
+			className={cn("w-full min-w-0 shrink-0", active || removing ? "overflow-hidden" : null)}
+			data-jira-creating-removing={removing || undefined}
 			data-jira-creating-item-id={itemId}
 			data-slot="jira-creating-slot"
 			exit={shouldReduceMotion ? { height: "auto" } : { height: 0 }}
 			initial={playEntrance && !reserveSlot ? { height: 0 } : false}
-			inert={waiting || undefined}
+			inert={waiting || removing || undefined}
+			onAnimationComplete={removing ? onRemovalComplete : undefined}
 			style={{ boxSizing: "border-box" }}
-			transition={slotTransition}
+			transition={removing ? getJiraCreateRemovalTransition(shouldReduceMotion) : slotTransition}
 		>
 			<motion.div
-				animate={replayKey === undefined ? waiting ? "hidden" : "show" : cardPlayback}
+				animate={removing ? "exit" : replayKey === undefined ? waiting ? "hidden" : "show" : cardPlayback}
 				className={cn("w-full min-w-0", className)}
 				data-slot="jira-creating-card"
 				exit="exit"
 				initial={active ? "hidden" : false}
-				onAnimationComplete={active && !waiting ? onAnimationComplete : undefined}
+				onAnimationComplete={active && !waiting && !removing ? onAnimationComplete : undefined}
 				style={{
-					...(active ? JIRA_CREATE_MOTION_STYLE : undefined),
+					...(active || removing ? JIRA_CREATE_MOTION_STYLE : undefined),
 					transformOrigin: "top center",
 				}}
 				variants={motionVariants.card}

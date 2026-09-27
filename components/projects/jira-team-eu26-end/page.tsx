@@ -9,6 +9,8 @@ import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { DEFAULT_SKILLS, ROVO_DIRECTORY_AGENT_PROFILES } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
+import { renderEu26HeaderAssignee } from "@/components/projects/jira-team-eu26/components/header-assignee";
+import { HeaderLanyards } from "@/components/projects/jira-team-eu26/components/header-lanyards";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
 	JiraIssueAgentActivity,
@@ -30,7 +32,7 @@ import {
 } from "@/components/blocks/jira-list";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
-import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
+import { JIRA_TEAM_EU26_CHAT_AGENT_PROFILES } from "@/components/projects/jira-team-eu26/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
@@ -43,6 +45,8 @@ import {
 	resolveJiraTab,
 } from "@/components/projects/jira/lib/jira-tab-model";
 import AppLayout from "@/components/projects/page";
+import { AtlassianLogo } from "@/components/ui/logo";
+import { Tile } from "@/components/ui/tile";
 import { cn } from "@/lib/utils";
 import { JiraTeamEu26List } from "./components/jira-team-eu26-end-list";
 
@@ -56,6 +60,7 @@ import {
 import {
 	createJiraTeamEu26EndKeynoteBoardColumns,
 	restoreJiraTeamEu26EndKeynoteCoverArtwork,
+	withJiraTeamEu26EndDoneDestinations,
 	JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE,
 	JIRA_TEAM_EU26_END_HEADER_ASSIGNEES,
 } from "./data/keynote-board";
@@ -86,7 +91,7 @@ const isJiraTeamEu26LooseWorkResumable = () => true;
 
 export default function JiraTeamEu26Page(): React.ReactElement {
 	return (
-		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+		<RovoChatProvider agentProfiles={JIRA_TEAM_EU26_CHAT_AGENT_PROFILES}>
 			<JiraTeamEu26App />
 		</RovoChatProvider>
 	);
@@ -348,6 +353,7 @@ function JiraTeamEu26App(): React.ReactElement {
 
 	return (
 		<>
+			<HeaderLanyards>
 			<AppLayout
 				chatContextBar={chatContextBar}
 				chatPanelFlush
@@ -378,6 +384,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
+						issueSelectionAppearance="fused-backdrop"
 						issueDragTransitions
 						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"
@@ -398,13 +405,19 @@ function JiraTeamEu26App(): React.ReactElement {
 						columnSizing="content"
 						columnWidth="fluid"
 						boardTitle={JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE}
+						boardAvatar={(
+							<Tile role="img" label={JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE} size="small" variant="transparent" isSnug hasBorder>
+								<AtlassianLogo name="atlassian" label={JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE} size="small" />
+							</Tile>
+						)}
 						agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Team ’26 EU keynote announcements."
-						boardColumns={restoreJiraTeamEu26EndKeynoteCoverArtwork(boardColumns)}
+						boardColumns={withJiraTeamEu26EndDoneDestinations(restoreJiraTeamEu26EndKeynoteCoverArtwork(boardColumns))}
 						defaultAgentSessionColumnCollapsed={true}
 						defaultShowUntracked={false}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={JIRA_TEAM_EU26_END_HEADER_ASSIGNEES}
+						renderHeaderAssignee={renderEu26HeaderAssignee}
 						showUnassignedHeaderAvatar={false}
 						insightsEnabled={false}
 						isLooseWorkResumable={isJiraTeamEu26LooseWorkResumable}
@@ -462,6 +475,7 @@ function JiraTeamEu26App(): React.ReactElement {
 					/>
 				</div>
 			</AppLayout>
+			</HeaderLanyards>
 			{/* Resume swaps the button label to "Copied" — colour and text alone,
 			    which a screen reader on the row never hears. Announce it instead. */}
 			<span aria-live="polite" className="sr-only" role="status">

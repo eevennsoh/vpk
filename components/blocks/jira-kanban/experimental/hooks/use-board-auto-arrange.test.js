@@ -9,8 +9,10 @@ const { loadCjsModuleFromText } = require("../../../../../scripts/lib/esbuild-cj
 const model = loadCjsModuleFromText(esbuild.buildSync({ entryPoints: ["components/blocks/jira-kanban/experimental/lib/board-auto-arrange.ts"], bundle: true, format: "cjs", platform: "node", write: false }).outputFiles[0].text);
 
 function harness(status = "Done", filtered = false, { dragged = "A" } = {}) {
-	let readyKey = "", timer, api;
+	let prepared, timer, api, timerId = 0;
+	let selected = new Set(["A"]);
 	const actions = [], listeners = new Map(), effects = [];
+	const latestPlan = { current: undefined };
 	let effectIndex = 0;
 	class Node {}
 	class Element extends Node {
@@ -30,13 +32,15 @@ function harness(status = "Done", filtered = false, { dragged = "A" } = {}) {
 	const loaded = { exports: {} };
 	vm.runInNewContext(compiled, {
 		module: loaded, exports: loaded.exports, Node, Element,
-		setTimeout: (callback) => { timer = callback; return 1; }, clearTimeout() {},
+		setTimeout: (callback) => { timer = callback; return ++timerId; },
+		clearTimeout(id) { if (id === timerId) timer = undefined; },
 		window: { addEventListener: (type, handler) => listeners.set(type, handler), removeEventListener: (type) => listeners.delete(type) },
 		require(name) {
 			if (name.includes("board-auto-arrange")) return model;
+			if (name.includes("use-latest-ref")) return { useLatestRef: value => { latestPlan.current = value; return latestPlan; } };
 			return {
 				useMemo: (factory) => factory(), useCallback: (callback) => callback,
-				useState: () => [readyKey, (next) => { readyKey = next; }],
+				useState: (initial) => [prepared ?? initial, (next) => { prepared = next; }],
 				useEffect(effect, deps) {
 					const i = effectIndex++, previous = effects[i];
 					if (previous && deps.every((dep, index) => Object.is(dep, previous.deps[index]))) return;
@@ -47,11 +51,16 @@ function harness(status = "Done", filtered = false, { dragged = "A" } = {}) {
 	});
 	function render() {
 		effectIndex = 0;
-		api = loaded.exports.useBoardAutoArrange({ columns: [{ title: "To do", count: 1, cards: filtered ? [] : [{ code: "A", status: "To do", autoArrangeStatus: status }] }, { title: "Done", count: 0, cards: [] }], selected: new Set(["A"]), dragged, onArrange: () => actions.push("arrange"), beforeArrange: () => actions.push("end-pickup"), boardRef: { current: root } });
+		api = loaded.exports.useBoardAutoArrange({ columns: [{ title: "To do", count: 3, cards: filtered ? [] : [
+			{ code: "A", status: "To do", autoArrangeStatus: status },
+			{ code: "B", status: "To do", autoArrangeStatus: "Done" },
+			{ code: "C", status: "To do", autoArrangeStatus: "In progress" },
+		] }, { title: "Done", count: 0, cards: [] }, { title: "In progress", count: 0, cards: [] }], selected, dragged, onArrange: () => actions.push("arrange"), beforeArrange: () => actions.push("end-pickup"), boardRef: { current: root } });
 		return api;
 	}
 	render();
 	return { actions, listeners, api: () => api, prepare: () => { timer?.(); render(); },
+		select(codes) { selected = new Set(codes); render(); },
 		press(control = "surface", overrides = {}, inside = true) {
 			const event = { key: "Enter", target: new Element(control, inside), defaultPrevented: false,
 				preventDefault() { this.defaultPrevented = true; }, ...overrides };
@@ -113,4 +122,35 @@ test("board-surface Enter commits once; modifiers, composition and preparation d
 	}
 	assert.equal(h.press(), true);
 	assert.deepEqual(h.actions, ["arrange", "end-pickup"]);
+});
+
+test("a continuing destination keeps its detected count during additions and reductions", () => {
+	const h = harness("Done", false, { dragged: null });
+	h.prepare();
+	assert.equal(h.api().incoming("Done"), 1);
+	h.select(["A", "B"]);
+	assert.equal(h.api().ready, false);
+	assert.equal(h.api().incoming("Done"), 1);
+	h.api().arrange();
+	assert.deepEqual(h.actions, [], "retained display must not enable a pending plan");
+	h.prepare();
+	assert.equal(h.api().incoming("Done"), 2);
+	h.select(["B"]);
+	assert.equal(h.api().ready, false);
+	assert.equal(h.api().incoming("Done"), 2);
+	h.prepare();
+	assert.equal(h.api().incoming("Done"), 1);
+});
+
+test("counts disappear when their destination is removed and new destinations wait for detection", () => {
+	const h = harness("Done", false, { dragged: null });
+	h.prepare();
+	h.select(["C"]);
+	assert.equal(h.api().incoming("Done"), undefined);
+	assert.equal(h.api().incoming("In progress"), undefined);
+	h.prepare();
+	assert.equal(h.api().incoming("In progress"), 1);
+	h.select([]);
+	assert.equal(h.api().incoming("In progress"), undefined);
+	assert.equal(h.api().ready, false);
 });

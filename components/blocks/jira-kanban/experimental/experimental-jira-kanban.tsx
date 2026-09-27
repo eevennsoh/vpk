@@ -48,9 +48,10 @@ import {
 } from "./hooks/use-created-card-arrival";
 import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
 import { createIssueDragPreview } from "./lib/issue-drag-preview";
-import { issueSelectionBackdrop } from "./lib/issue-selection-backdrop";
+import { issueRemovalSpacing, issueSelectionBackdrop } from "./lib/issue-selection-backdrop";
 import { useIssueCohortPreview } from "./hooks/use-issue-cohort-preview";
 import { useBoardAutoArrange } from "./hooks/use-board-auto-arrange";
+import { useBoardCardRemoval } from "./hooks/use-board-card-removal";
 import { useBoardIssuePointerDrag } from "./hooks/use-board-issue-pointer-drag";
 import { BoardAutoArrangeAction, BoardAutoArrangeBadge } from "./components/board-auto-arrange";
 import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
@@ -173,6 +174,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	/** Route-owned per-card Archive/Delete actions. */ cardMoreMenuActions?: JiraKanbanCardMoreMenuActions;
+	/** Commits a toolbar deletion as one transaction after its cards exit. */
+	onCardsRemove?: (cardCodes: readonly string[]) => void;
 	/** Route-owned Browse/Create capabilities for card agent and skill pickers. */
 	cardGenerativeActionFooterActions?: Pick<
 		JiraIssueGenerativeActionConfig,
@@ -395,7 +398,7 @@ function ExperimentalJiraKanbanView({
 	scrollEndInset = 0,
 	boardColumns,
 	cardGenerativeActionPresentation = "sparkle",
-	cardGenerativeActionFooterActions, cardMoreMenuActions,
+	cardGenerativeActionFooterActions, cardMoreMenuActions, onCardsRemove,
 	cardMoveAnimation,
 	iconScale = "compact",
 	issueDragTransitions = false,
@@ -459,6 +462,7 @@ function ExperimentalJiraKanbanView({
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
+	const cardRemoval = useBoardCardRemoval(cardMoreMenuActions, shouldReduceMotion, onCardsRemove);
 	const receivingCreatedCards = useJiraDropzoneReceiving(createdCardArrival?.columnTitle);
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const issueDragImageRef = useRef<HTMLElement | null>(null);
@@ -752,9 +756,9 @@ function ExperimentalJiraKanbanView({
 				<section
 					ref={boardScrollportRef}
 					data-jira-kanban-scrollport=""
-					tabIndex={0}
+					tabIndex={-1}
 					aria-label={ariaLabel}
-					className="flex min-h-0 min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+					className="flex min-h-0 min-w-0 flex-1 select-none outline-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable=true]]:select-text"
 					onScroll={handleBoardScroll}
 					onDragOverCapture={clearOtherColumnHighlights}
 					style={{
@@ -777,7 +781,7 @@ function ExperimentalJiraKanbanView({
 						{boardColumns.map((column, columnIndex) => (
 						<Fragment key={column.title}>
 						<BoardColumnShell
-							headerAccessory={autoArrange.ready ? <BoardAutoArrangeBadge key={autoArrange.key} count={autoArrange.incoming(column.title)} title={column.title} /> : undefined}
+							headerAccessory={<BoardAutoArrangeBadge count={autoArrange.incoming(column.title)} title={column.title} />}
 							chrome={chrome}
 							collapsed={isBoardColumnCollapsed(collapsedColumns, column.title)}
 							columnChrome={columnChrome}
@@ -795,7 +799,7 @@ function ExperimentalJiraKanbanView({
 						>
 							{(handleCollapseColumn) => (
 							<BoardColumn
-								headerAccessory={autoArrange.ready ? <BoardAutoArrangeBadge key={autoArrange.key} count={autoArrange.incoming(column.title)} title={column.title} /> : undefined}
+								headerAccessory={<BoardAutoArrangeBadge count={autoArrange.incoming(column.title)} title={column.title} />}
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
 								cardInsertion={boardSessionDrag.cardInsertion}
@@ -887,6 +891,9 @@ function ExperimentalJiraKanbanView({
 												dropTarget={cardDropTarget}
 												onArrivalComplete={handleCreatedCardArrivalComplete}
 												shouldAnimateCardMoves={shouldAnimateCardMoves}
+												removing={cardRemoval.removingCardCodes.has(card.code)}
+												removalSpacing={issueRemovalSpacing(column.cards, issueSelectionAppearance === "fused-backdrop" ? selectedCardCodes : undefined, cardRemoval.removingCardCodes, cardIndex)}
+												onRemovalComplete={() => cardRemoval.complete(card.code)}
 											>
 								<ExperimentalJiraKanbanCard
 									addAgentLabel={addAgentLabel}
@@ -931,7 +938,7 @@ function ExperimentalJiraKanbanView({
 												showUnlinkWell={showAgentSessionUnlinkWell}
 												selected={isSelected}
 												onSelectionToggle={onCardSelect && selectedColumnTitles.has(column.title) ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined}
-												moreMenuActions={cardMoreMenuActions ? { onArchive: cardMoreMenuActions.onArchive?.bind(undefined, card), onDelete: cardMoreMenuActions.onDelete?.bind(undefined, card), onSelect: onCardSelect ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined } : undefined}
+												moreMenuActions={cardRemoval.actions ? { onArchive: cardRemoval.actions.onArchive?.bind(undefined, card), onDelete: cardRemoval.actions.onDelete?.bind(undefined, card), onSelect: onCardSelect ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined } : undefined}
 												selectionBackdrop={selectionBackdrop}
 												subtaskChrome={subtaskChrome}
 											/>
@@ -976,7 +983,9 @@ function ExperimentalJiraKanbanView({
 						onBrowseAgents={selectionToolbar.onBrowseAgents}
 						onClearSelection={selectionToolbar.onClearSelection}
 						onCreateAgent={selectionToolbar.onCreateAgent}
-						onDelete={selectionToolbar.onDelete}
+						onDelete={cardRemoval.deleteCards
+							? () => cardRemoval.deleteCards?.([...(selectedCardCodes ?? [])])
+							: selectionToolbar.onDelete}
 						onEditFields={selectionToolbar.onEditFields}
 						onMerge={selectionToolbar.onMerge}
 						onStatusChange={selectionToolbar.onStatusChange}

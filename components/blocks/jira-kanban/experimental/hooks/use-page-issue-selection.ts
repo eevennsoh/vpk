@@ -3,18 +3,19 @@
 import { useRef, type Dispatch, type RefObject, type SetStateAction } from "react";
 import type { JiraKanbanCardData, JiraKanbanCardSelectModifiers, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import { moveJiraKanbanCardsToDropTarget, moveJiraKanbanCardsToStatus, type JiraKanbanCardDropTarget } from "@/components/blocks/jira-kanban/card-drop";
-import { createJiraKanbanSelectionState, moveJiraKanbanCardsToColumn, reconcileJiraKanbanSelection, selectJiraKanbanCard, type JiraKanbanSelectionState } from "@/components/blocks/jira-kanban/state";
-import { useJiraIssueSelectionKeyboard, visibleJiraIssueCards } from "@/components/blocks/jira-kanban/use-jira-issue-selection-keyboard";
+import { createJiraKanbanSelectionState, getSelectableJiraKanbanColumns, moveJiraKanbanCardsToColumn, reconcileJiraKanbanSelection, selectAllJiraKanbanCardsInSelectedColumns, selectJiraKanbanCard, type JiraKanbanSelectionState } from "@/components/blocks/jira-kanban/state";
+import { useJiraIssueSelectionKeyboard } from "@/components/blocks/jira-kanban/use-jira-issue-selection-keyboard";
 import { useJiraSelectionDismiss } from "@/components/blocks/jira-kanban/use-jira-selection-dismiss";
 import type { DraggedCardState, ExperimentalJiraKanbanPageProps } from "@/components/blocks/jira-kanban/experimental/experimental-page-types";
 
 /** Page-owned transactions reuse the same interaction contract as Jira Dragging. */
 export function usePageIssueSelection({
-	rootRef, enabled, filteredBoardColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
+	rootRef, enabled, filteredBoardColumns, collapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
 }: Readonly<{
 	rootRef: RefObject<HTMLDivElement | null>;
 	enabled: boolean;
 	filteredBoardColumns: readonly JiraKanbanColumnData[];
+	collapsedColumns: ReadonlySet<string>;
 	boardColumns: readonly JiraKanbanColumnData[];
 	selection: JiraKanbanSelectionState;
 	setSelection: Dispatch<SetStateAction<JiraKanbanSelectionState>>;
@@ -23,14 +24,13 @@ export function usePageIssueSelection({
 	updateBoardColumns: (updater: (columns: readonly JiraKanbanColumnData[]) => readonly JiraKanbanColumnData[]) => void;
 	onCardClick: ExperimentalJiraKanbanPageProps["onCardClick"];
 }>) {
+	const selectionColumns = getSelectableJiraKanbanColumns(filteredBoardColumns, collapsedColumns);
 	const dragCohort = useRef<readonly string[] | null>(null);
 	const handleCardDragEnd = () => { dragCohort.current = null; setDraggedCard(null); };
 	const onClearSelection = () => { handleCardDragEnd(); setSelection(createJiraKanbanSelectionState()); };
 	const onSelectAll = () => {
 		handleCardDragEnd();
-		const codes = enabled ? visibleJiraIssueCards(rootRef.current).flatMap((card) => card.dataset.issueKey ? [card.dataset.issueKey] : [])
-			: filteredBoardColumns.flatMap((column) => column.cards.map((card) => card.code));
-		setSelection({ ...createJiraKanbanSelectionState(), selectedCardCodes: new Set(codes) });
+		setSelection((current) => selectAllJiraKanbanCardsInSelectedColumns(current, selectionColumns));
 	};
 	const handleCardSelect = (
 		cardCode: string,
@@ -40,7 +40,7 @@ export function usePageIssueSelection({
 	) => {
 		if (enabled && !modifiers.shiftKey && !modifiers.metaOrCtrlKey && modifiers.source !== "selection-control") return;
 		handleCardDragEnd();
-		setSelection((current) => selectJiraKanbanCard(current, filteredBoardColumns, {
+		setSelection((current) => selectJiraKanbanCard(current, selectionColumns, {
 			cardCode,
 			columnTitle,
 			indexInColumn,
@@ -116,27 +116,30 @@ export function usePageIssueSelection({
 		updateBoardColumns(() => columns);
 		setSelection((current) => reconcileJiraKanbanSelection(current, columns));
 	};
-	const handleCardRemove = (card: JiraKanbanCardData) => {
+	const handleCardsRemove = (cardCodes: readonly string[]) => {
+		const removed = new Set(cardCodes);
+		if (removed.size === 0) return;
 		handleCardDragEnd();
-		const columns = boardColumns.map((column) => {
-			const cards = column.cards.filter((candidate) => candidate.code !== card.code);
+		updateBoardColumns((columns) => columns.map((column) => {
+			const cards = column.cards.filter((candidate) => !removed.has(candidate.code));
 			return cards.length === column.cards.length ? column : { ...column, cards, count: cards.length };
-		});
-		updateBoardColumns(() => columns);
-		setSelection((current) => reconcileJiraKanbanSelection({
+		}));
+		setSelection((current) => ({
 			...current,
-			selectedCardCodes: new Set([...current.selectedCardCodes].filter((code) => code !== card.code)),
-		}, columns));
+			selectedCardCodes: new Set([...current.selectedCardCodes].filter((code) => !removed.has(code))),
+			anchor: current.anchor && removed.has(current.anchor.cardCode) ? null : current.anchor,
+		}));
 	};
+	const handleCardRemove = (card: JiraKanbanCardData) => handleCardsRemove([card.code]);
 	useJiraIssueSelectionKeyboard({
-		rootRef, enabled, dragging: draggedCard !== null, onCancelDrag: handleCardDragEnd, onClearSelection, onSelectAll,
+		rootRef, enabled, dragging: draggedCard !== null, onCancelDrag: handleCardDragEnd, onClearSelection,
 		onRangeSelect: (range) => {
 			handleCardDragEnd();
-			setSelection((current) => selectJiraKanbanCard(current, filteredBoardColumns, {
+			setSelection((current) => selectJiraKanbanCard(current, selectionColumns, {
 				...range, modifiers: { shiftKey: true, metaOrCtrlKey: false },
 			}));
 		},
 	});
 	useJiraSelectionDismiss({ rootRef, enabled, boardColumns: filteredBoardColumns, selectedCardCodes: selection.selectedCardCodes, dragging: draggedCard !== null, onClearSelection });
-	return { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleCardRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection };
+	return { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection };
 }

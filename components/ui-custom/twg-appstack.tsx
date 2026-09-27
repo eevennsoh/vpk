@@ -4,7 +4,7 @@ import { useEffect, useRef, type ComponentProps, type ReactNode } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, type Transition } from "motion/react";
 
-import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { AtlassianLogo, RovoAppIcon, type AtlassianLogoName } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Tile } from "@/components/ui/tile";
@@ -213,6 +213,17 @@ export function TwgToolSourceIcon({
 					width={APPSTACK_SIZES[size].imagePx}
 				/>
 			</Tile>
+		);
+	}
+
+	if (source.provider === "rovo") {
+		return (
+			<RovoAppIcon
+				{...props}
+				className={cn("shrink-0", className)}
+				label={props["aria-hidden"] ? undefined : source.label}
+				size={size}
+			/>
 		);
 	}
 

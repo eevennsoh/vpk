@@ -8,6 +8,7 @@ import { useId } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { ROVO_GRADIENT_CSS, type RovoIconProps } from "./animated-icon-art";
+import { resolveAiSparkleTiming } from "@/components/ui-custom/lib/ai-sparkle-timing";
 
 const SPARKLE_STAR =
 	"M8 1c.31 0 .587.19.7.479l1.63 4.19 4.192 1.632a.75.75 0 0 1 0 1.398l-4.193 1.63-1.63 4.192a.75.75 0 0 1-1.398 0L5.67 10.33 1.479 8.7a.75.75 0 0 1 0-1.398l4.19-1.631L7.301 1.48l.05-.104A.75.75 0 0 1 8 1M6.95 6.521a.75.75 0 0 1-.429.428L3.82 8l2.702 1.05a.75.75 0 0 1 .428.429l1.05 2.7 1.05-2.7.033-.073a.75.75 0 0 1 .396-.355L12.179 8l-2.7-1.05a.75.75 0 0 1-.428-.429L8 3.82z";
@@ -37,16 +38,18 @@ export function AiSparkle({
 	color = "var(--ds-icon, #505258)",
 	hovered,
 	singleColor = true,
-}: RovoIconProps) {
+	duration,
+}: RovoIconProps & { duration?: number }) {
 	const starMaskId = useId();
 	const reduceMotion = useReducedMotion();
-	const fade = reduceMotion ? INSTANT : FADE;
+	const { scale } = resolveAiSparkleTiming(duration);
+	const fade = reduceMotion ? INSTANT : { ...FADE, duration: FADE.duration * scale };
 
 	const starSpin = {
-		initial: { rotate: 0, scale: 1, transition: reduceMotion ? INSTANT : RETURN },
+		initial: { rotate: 0, scale: 1, transition: reduceMotion ? INSTANT : { ...RETURN, duration: RETURN.duration * scale } },
 		hovered: reduceMotion
 			? { rotate: 0, scale: 1, transition: INSTANT }
-			: { rotate: 90, scale: [1, 0.85, 1], transition: ENTER },
+			: { rotate: 90, scale: [1, 0.85, 1], transition: { ...ENTER, duration: ENTER.duration * scale } },
 	};
 
 	const starSolid = {
@@ -64,6 +67,7 @@ export function AiSparkle({
 			xmlns="http://www.w3.org/2000/svg"
 			width={size}
 			height={size}
+			style={{ width: size, height: size }}
 			viewBox="0 0 16 16"
 			fill="none"
 			overflow="visible"
@@ -93,7 +97,8 @@ export function AiSparkle({
 					d={plus.d}
 					color={color}
 					accent={singleColor ? color : plus.color}
-					delay={plus.delay}
+							delay={plus.delay}
+							durationScale={scale}
 					reduceMotion={reduceMotion ?? false}
 				/>
 			))}
@@ -106,24 +111,25 @@ interface SparklePlusProps {
 	color: string;
 	accent: string;
 	delay: number;
+	durationScale: number;
 	reduceMotion: boolean;
 }
 
 // Solid plus twinkles out while the accent plus pops in — the same
 // hide-then-reveal handoff the magic wand's sparkles use.
-function SparklePlus({ d, color, accent, delay, reduceMotion }: Readonly<SparklePlusProps>) {
+function SparklePlus({ d, color, accent, delay, durationScale, reduceMotion }: Readonly<SparklePlusProps>) {
 	const solid = {
-		initial: { opacity: 1, scale: 1, transition: reduceMotion ? INSTANT : FADE },
+		initial: { opacity: 1, scale: 1, transition: reduceMotion ? INSTANT : { ...FADE, duration: FADE.duration * durationScale } },
 		hovered: reduceMotion
 			? { opacity: 0, scale: 1, transition: INSTANT }
-			: { opacity: 0, scale: 0, transition: { duration: 0.15, ease: EASE_IN_OUT, delay } },
+			: { opacity: 0, scale: 0, transition: { duration: 0.15 * durationScale, ease: EASE_IN_OUT, delay: delay * durationScale } },
 	};
 
 	const accentVariant = {
-		initial: { opacity: 0, scale: reduceMotion ? 1 : 0, transition: reduceMotion ? INSTANT : { duration: 0.2, ease: EASE_IN_OUT } },
+		initial: { opacity: 0, scale: reduceMotion ? 1 : 0, transition: reduceMotion ? INSTANT : { duration: 0.2 * durationScale, ease: EASE_IN_OUT } },
 		hovered: reduceMotion
 			? { opacity: 1, scale: 1, transition: INSTANT }
-			: { opacity: 1, scale: [0, 1.2, 1], transition: { duration: 0.35, ease: EASE_IN_OUT, delay: delay + 0.25 } },
+			: { opacity: 1, scale: [0, 1.2, 1], transition: { duration: 0.35 * durationScale, ease: EASE_IN_OUT, delay: (delay + 0.25) * durationScale } },
 	};
 
 	return (
