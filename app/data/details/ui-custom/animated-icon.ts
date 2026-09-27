@@ -2,11 +2,12 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const ANIMATED_ICON_DETAIL: ComponentDetail = {
 	description:
-		"A set of SVG-level animated AI action icons (Generate text, Summarize text, Search, Code, Suggest, Rovo chat). Each icon stays static on mount and plays its bespoke per-stroke motion on hover or keyboard focus — or imperatively via a shared playToken, so a single control can replay a whole grid. Built with Motion for React; an optional singleColor=false mode reveals Rovo gradient accents.",
+		"A set of SVG-level animated AI action icons (Generate text, Summarize text, Search, AI sparkle, Code, Suggest, Rovo chat). Each icon stays static on mount and plays its bespoke per-stroke motion on hover or keyboard focus — or imperatively via a shared playToken, so a single control can replay a whole grid. Built with Motion for React; an optional singleColor=false mode reveals Rovo gradient accents.",
 	usage: `import { AnimatedIcon } from "@/components/ui-custom/animated-icon";
 
 // Render an animated icon by name; label it for assistive tech.
 <AnimatedIcon name="ai-search" label="Search" />
+<AnimatedIcon name="ai-sparkle" label="AI" />
 <AnimatedIcon name="magic-wand" label="Suggest" size={32} />
 <AnimatedIcon name="rovo-chat" label="Rovo chat" singleColor={false} />
 
@@ -15,7 +16,7 @@ export const ANIMATED_ICON_DETAIL: ComponentDetail = {
 	props: [
 		{
 			name: "name",
-			type: '"ai-generative-text" | "ai-generative-text-summary" | "ai-search" | "angle-brackets" | "magic-wand" | "rovo-chat"',
+			type: '"ai-generative-text" | "ai-generative-text-summary" | "ai-search" | "ai-sparkle" | "angle-brackets" | "magic-wand" | "rovo-chat"',
 			description:
 				"Which animated icon to render. Use the animatedIconNames export to enumerate them.",
 		},

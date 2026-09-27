@@ -8,11 +8,13 @@ import {
 	RovoChat,
 	type RovoIconProps,
 } from "./animated-icon-art";
+import { AiSparkle } from "./animated-icon-ai-sparkle";
 
 export const ANIMATED_ICONS = {
 	"ai-generative-text": AiGenerativeText,
 	"ai-generative-text-summary": AiGenerativeTextSummary,
 	"ai-search": AiSearch,
+	"ai-sparkle": AiSparkle,
 	"angle-brackets": AngleBrackets,
 	"magic-wand": MagicWand,
 	"rovo-chat": RovoChat,
