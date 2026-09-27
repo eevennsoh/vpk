@@ -5,6 +5,12 @@ const { test } = require("node:test");
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 
+test("the shared toolbar uses workflow tones unless its owner supplies a resolver", () => {
+	assert.doesNotMatch(SOURCE, /from "@\/components\/blocks\/jira-work-item\//u);
+	assert.match(SOURCE, /getStatusVariant = getWorkflowPhaseLozengeVariant/u);
+	assert.match(SOURCE, /variant=\{getStatusVariant\(status, statusOptions\)\}/u);
+});
+
 test("Jira Toolbar leads with Select all, Add agent, and Ask Rovo", () => {
 	const assignIndex = SOURCE.indexOf('id: "assign"');
 	const rovoIndex = SOURCE.indexOf('id: "ask-rovo"');

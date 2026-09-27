@@ -19,7 +19,6 @@ import {
 	AgentSelector,
 	type AgentSelectorAgent,
 } from "@/components/blocks/agent-selector";
-import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,10 +32,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { Lozenge } from "@/components/ui/lozenge";
+import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import { getWorkflowPhaseLozengeVariant } from "@/lib/workflow-status";
 
 const TOOLBAR_ENTER: Transition = {
 	duration: 0.25,
@@ -89,6 +89,8 @@ export interface JiraToolbarProps {
 	selectedCount: number;
 	selectedStatus?: string | null;
 	statusOptions: readonly string[];
+	/** Optional board-owned status presentation; shared workflow tones are the default. */
+	getStatusVariant?: (status: string, phases: readonly string[]) => NonNullable<LozengeProps["variant"]>;
 }
 
 interface JiraToolbarActionProps {
@@ -167,6 +169,7 @@ export function JiraToolbar({
 	selectedCount,
 	selectedStatus,
 	statusOptions,
+	getStatusVariant = getWorkflowPhaseLozengeVariant,
 }: Readonly<JiraToolbarProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const router = useRouter();
@@ -214,7 +217,7 @@ export function JiraToolbar({
 			onSelect={() => onStatusChange(status)}
 			selected={selectedStatus === status}
 		>
-			<Lozenge variant={statusVariant(status, statusOptions)}>{status}</Lozenge>
+			<Lozenge variant={getStatusVariant(status, statusOptions)}>{status}</Lozenge>
 		</DropdownMenuItem>
 	));
 	const agentPicker = (

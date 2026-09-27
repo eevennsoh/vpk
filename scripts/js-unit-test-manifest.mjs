@@ -300,6 +300,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-verify/scripts/verify-feature-map.test.js",
 	],
 	"source-contract": [
+		"components/blocks/jira-toolbar/jira-toolbar.test.js",
 		"components/projects/jira-team-eu26-end/jira-team-eu26-end-controls.test.js",
 		"components/blocks/jira-issue/cover-image.test.js",
 		"components/website/registry/blocks-variants.test.js",

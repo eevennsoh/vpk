@@ -30,6 +30,7 @@ import {
 } from "@/components/blocks/jira-list";
 
 import { HeaderLanyards } from "./components/header-lanyards";
+import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { renderEu26HeaderAssignee } from "./components/header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
@@ -376,6 +377,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
 						issueSelectionAppearance="fused-backdrop"
+						getStatusVariant={statusVariant}
 						issueDragTransitions
 						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"

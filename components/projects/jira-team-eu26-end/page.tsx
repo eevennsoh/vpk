@@ -11,6 +11,7 @@ import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import { renderEu26HeaderAssignee } from "@/components/projects/jira-team-eu26/components/header-assignee";
 import { HeaderLanyards } from "@/components/projects/jira-team-eu26/components/header-lanyards";
+import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
 	JiraIssueAgentActivity,
@@ -385,6 +386,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
 						issueSelectionAppearance="fused-backdrop"
+						getStatusVariant={statusVariant}
 						issueDragTransitions
 						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"

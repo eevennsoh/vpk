@@ -50,6 +50,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 }
 
 export interface ExperimentalJiraKanbanPageProps {
+	getStatusVariant?: NonNullable<JiraKanbanProps["selectionToolbar"]>["getStatusVariant"];
 	addAgentLabel?: ExperimentalJiraKanbanProps["addAgentLabel"];
 	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	issueMoveVisual?: ExperimentalJiraKanbanProps["issueMoveVisual"];

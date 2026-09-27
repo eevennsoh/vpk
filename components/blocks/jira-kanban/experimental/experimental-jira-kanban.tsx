@@ -976,6 +976,7 @@ function ExperimentalJiraKanbanView({
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
 						dismissOnEscape={selectionToolbar.dismissOnEscape}
+						getStatusVariant={selectionToolbar.getStatusVariant}
 						defaultPinnedAgentIds={selectionToolbar.defaultPinnedAgentIds}
 						onSelectAll={selectionToolbar.onSelectAll}
 						onAskRovo={selectionToolbar.onAskRovo}

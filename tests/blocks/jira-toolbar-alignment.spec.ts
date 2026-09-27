@@ -6,6 +6,30 @@ const origin = (process.env.PLAYWRIGHT_BASE_URL
 
 test.use({ ignoreHTTPSErrors: true });
 
+for (const fixture of [
+	{ route: "/preview/blocks/jira-dragging", code: "PAY-105", tone: "information" },
+	{ route: "/jira-team-eu26", code: "PAY-118", tone: "warning" },
+] as const) {
+	test(`bulk status tones are owned by ${fixture.route}`, async ({ page }) => {
+		await page.setViewportSize({ width: 1800, height: 1100 });
+		await page.goto(`${origin}${fixture.route}`);
+		await page.locator(`[data-issue-key="${fixture.code}"] [draggable]`).first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await page.locator('[data-slot="jira-toolbar"]').getByRole("button", { name: "More actions", exact: true }).click();
+		await page.getByRole("menuitem", { name: "Change status", exact: true }).focus();
+		await page.keyboard.press("ArrowRight");
+		const review = page.getByRole("menuitem", { name: "In review", exact: true }).locator('[data-slot="lozenge"]');
+		const expected = await page.evaluate((tone) => {
+			const probe = document.createElement("span");
+			probe.style.backgroundColor = `var(--ds-background-${tone}-subtler)`;
+			document.body.append(probe);
+			const color = getComputedStyle(probe).backgroundColor;
+			probe.remove();
+			return color;
+		}, fixture.tone);
+		await expect(review).toHaveCSS("background-color", expected);
+	});
+}
+
 for (const width of [1440, 1920]) {
 	test(`bulk Change status aligns with menu items and supports keyboard activation at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: 1080 });

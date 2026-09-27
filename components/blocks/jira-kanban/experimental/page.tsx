@@ -180,6 +180,7 @@ function ExperimentalJiraKanbanPageContent({
 	issueDragTransitions = false,
 	issueMoveVisual = true,
 	issueSelectionAppearance = "card",
+	getStatusVariant,
 	defaultAgentSessionColumnCollapsed = false,
 	defaultShowUntracked = true,
 	detachedAgentSessionsByCard,
@@ -1004,6 +1005,7 @@ function ExperimentalJiraKanbanPageContent({
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								paddingTop={0} paddingBottom={KANBAN_WORK_ITEM_BOTTOM_PADDING}
 								selectionToolbar={{
+									getStatusVariant,
 									onSelectAll,
 									dismissOnEscape: issueSelectionAppearance === "fused-backdrop" ? false : undefined,
 									onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
