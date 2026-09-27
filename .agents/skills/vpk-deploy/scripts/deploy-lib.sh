@@ -154,7 +154,7 @@ EOF
 vpk_stash_list_contains() {
   stash_output=$1
   stash_name=$2
-  # Drain the listing so an early grep exit cannot SIGPIPE printf under pipefail.
+  # Drain the producer: grep -q can cause SIGPIPE and a false miss with pipefail.
   printf '%s\n' "$stash_output" | grep -E "(^|[[:space:]|])${stash_name}([[:space:]|]|$)" >/dev/null
 }
 
