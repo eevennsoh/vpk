@@ -76,8 +76,9 @@ export function usePageIssueSelection({
 	};
 
 	const handleCardDragStart = (card: JiraKanbanCardData, sourceColumnTitle: string) => {
-		dragCohort.current = selection.selectedCardCodes.has(card.code) ? [...selection.selectedCardCodes] : [card.code];
-		if (!selection.selectedCardCodes.has(card.code)) {
+		const startsFromSelection = selection.selectedCardCodes.has(card.code);
+		dragCohort.current = startsFromSelection ? [...selection.selectedCardCodes] : [card.code];
+		if (!startsFromSelection) {
 			setSelection(createJiraKanbanSelectionState());
 		}
 		setDraggedCard({ card, sourceColumnTitle });
