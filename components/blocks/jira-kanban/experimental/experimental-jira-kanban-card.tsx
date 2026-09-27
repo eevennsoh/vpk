@@ -440,5 +440,5 @@ export function ExperimentalJiraKanbanCard({
 			tags={card.tags}
 		/>
 	);
-	return <BoardIssueSourceGhost dragging={dragging} enabled={selectionBackdrop !== undefined}>{issue}</BoardIssueSourceGhost>;
+	return <BoardIssueSourceGhost dragging={dragging} selectionBackdrop={selectionBackdrop}>{issue}</BoardIssueSourceGhost>;
 }
