@@ -71,7 +71,7 @@ for (const [name, bulk, dragging] of [
 		for (const card of cohort) {
 			const destination = api.boardColumns.find((column) => column.cards.some((item) => item.code === card.code));
 			assert.ok((destination.statuses ?? [destination.title]).includes(card.autoArrangeStatus));
-			assert.deepEqual(JSON.parse(JSON.stringify(destination.cards.find((item) => item.code === card.code))), JSON.parse(JSON.stringify({ ...card, status: card.autoArrangeStatus })));
+			assert.deepEqual(structuredClone(destination.cards.find((item) => item.code === card.code)), structuredClone({ ...card, status: card.autoArrangeStatus }));
 		}
 		assert.ok(api.boardColumns.every((column) => column.count === column.cards.length));
 		assert.deepEqual(Array.from(api.boardColumns[0].cards, (card) => card.code), originalCards.slice(cohort.length).map((card) => card.code));
