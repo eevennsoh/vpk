@@ -2,11 +2,10 @@
 
 import { useRef, useState } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import CheckCircleUncheckedIcon from "@atlaskit/icon/core/check-circle-unchecked";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -57,27 +56,23 @@ const CHEVRON = <ChevronRightIcon label="" size="small" color="currentColor" />;
 
 function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 	return props.onSelectionToggle ? (
-		<Button
-			aria-label={`Select ${props.issueKey}`}
-			aria-pressed={props.selected ?? false}
-			data-jira-issue-selection-control=""
-			onClick={(event) => {
-				event.stopPropagation();
-				props.onSelectionToggle?.();
-			}}
-			size="icon-compact"
-			iconSize="default"
-			selectedAppearance="icon-only"
-			type="button"
-			variant="ghost"
-		>
-			<Icon
-				className={props.selected ? "text-icon-selected" : "text-icon-disabled"}
-				render={props.selected
-					? <StatusSuccessIcon label="" color="currentColor" />
-					: <CheckCircleUncheckedIcon label="" color="currentColor" />}
+		<div className="flex size-full items-center justify-center">
+			<Checkbox
+				aria-label={`Select ${props.issueKey}`}
+				checked={props.selected ?? false}
+				className="motion-reduce:transition-none"
+				data-jira-issue-selection-control=""
+				nativeButton
+				onCheckedChange={props.onSelectionToggle}
+				onClick={(event) => event.stopPropagation()}
+				onMouseDown={(event) => {
+					// Keep the draggable card's native pickup off this selection gesture.
+					event.preventDefault();
+					event.currentTarget.focus({ preventScroll: true });
+				}}
+				render={<button type="button" />}
 			/>
-		</Button>
+		</div>
 	) : <JiraIssueMoreDropdown {...props} />;
 }
 

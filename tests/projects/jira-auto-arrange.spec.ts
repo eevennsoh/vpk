@@ -9,6 +9,28 @@ declare global {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`checkbox pointer movement toggles selection without picking up its card (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
+		await card("PAY-118").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		const checkbox = page.getByRole("checkbox", { name: "Select PAY-124", exact: true });
+		await expect(checkbox).not.toBeChecked();
+		const bounds = (await checkbox.boundingBox())!;
+		await page.mouse.move(bounds.x + 3, bounds.y + bounds.height / 2);
+		await page.mouse.down();
+		await expect(checkbox).toBeFocused();
+		await expect(card("PAY-124")).toHaveAttribute("draggable", "true");
+		await page.mouse.move(bounds.x + 11, bounds.y + bounds.height / 2, { steps: 4 });
+		await expect(card("PAY-124")).not.toHaveAttribute("data-dragging", "true");
+		await page.mouse.up();
+		await expect(checkbox).toBeChecked();
+		await expect(checkbox).toBeFocused();
+		await expect(page.getByRole("checkbox", { name: "Select PAY-118", exact: true })).toBeChecked();
+		await expect(page.locator('[data-jira-kanban-column="To do"] [data-issue-key="PAY-124"]')).toHaveCount(1);
+		await page.screenshot({ path: `output/agent-browser/auto-arrange/checkbox-pointer-${reducedMotion}.png` });
+	});
+
 	for (const shortcut of ["a"] as const) {
 		test(`auto arrange works after Select all retains focus (${shortcut}, ${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });

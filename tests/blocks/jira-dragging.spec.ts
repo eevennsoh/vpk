@@ -319,7 +319,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-130"]);
 		await click("PAY-130");
 		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
-		await page.getByRole("button", { name: "Select PAY-123", exact: true }).click();
+		await page.getByRole("checkbox", { name: "Select PAY-123", exact: true }).click();
 		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-130"]);
 		await click("PAY-107");
 		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-130"]);
@@ -467,7 +467,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(page.locator('[data-slot="jira-toolbar"]')).toHaveCount(0);
 	});
 
-	test(`selection replaces only its column's ellipses with toggle marks (${reducedMotion})`, async ({ page }) => {
+	test(`selection replaces only its column's ellipses with checkboxes (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/blocks/jira-dragging`);
 		await page.waitForLoadState("networkidle");
@@ -484,28 +484,24 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key="PAY-130"]')).toHaveCount(1);
 		await card("PAY-105").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await page.mouse.move(900, 30);
-		const selected = page.getByRole("button", { name: "Select PAY-105", exact: true });
-		await expect(selected).toHaveAttribute("aria-pressed", "true");
-		await expect(selected).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-		await expect(selected).toHaveCSS("border-color", "rgba(0, 0, 0, 0)");
-		await expect(selected.locator('[data-slot="icon"]')).toHaveClass(/text-icon-selected/);
-		await expect(selected.locator("svg")).toHaveCSS("width", "16px");
-		await expect(selected.locator("svg")).toHaveCSS("height", "16px");
+		const selected = page.getByRole("checkbox", { name: "Select PAY-105", exact: true });
+		await expect(selected).toBeChecked();
+		await expect(selected).toHaveAttribute("data-slot", "checkbox");
+		await expect(selected).toHaveCSS("width", "16px");
+		await expect(selected).toHaveCSS("height", "16px");
+		await expect(selected.locator('[data-slot="checkbox-indicator"]')).toBeVisible();
 		for (const code of ["PAY-107", "PAY-123"]) {
-			const toggle = page.getByRole("button", { name: `Select ${code}`, exact: true });
-			await expect(toggle).toBeVisible();
-			await expect(toggle).toHaveAttribute("aria-pressed", "false");
-			await expect(toggle.locator('[data-slot="icon"]')).toHaveClass(/text-icon-disabled/);
-			const disabledColor = await toggle.locator('[data-slot="icon"]').evaluate((node) => getComputedStyle(node).color);
-			await expect(toggle.locator("svg")).toHaveCSS("color", disabledColor);
-			await expect(toggle.locator("svg")).toHaveCSS("width", "16px");
-			await expect(toggle.locator("svg")).toHaveCSS("height", "16px");
+			const checkbox = page.getByRole("checkbox", { name: `Select ${code}`, exact: true });
+			await expect(checkbox).toBeVisible();
+			await expect(checkbox).not.toBeChecked();
+			await expect(checkbox).toHaveAttribute("data-slot", "checkbox");
+			await expect(checkbox.locator('[data-slot="checkbox-indicator"]')).toBeHidden();
 		}
 		await expect(page.getByRole("button", { name: "More actions for PAY-130", exact: true })).toHaveCount(1);
-		await expect(page.getByRole("button", { name: "Select PAY-130", exact: true })).toHaveCount(0);
-		const second = page.getByRole("button", { name: "Select PAY-107", exact: true });
+		await expect(page.getByRole("checkbox", { name: "Select PAY-130", exact: true })).toHaveCount(0);
+		const second = page.getByRole("checkbox", { name: "Select PAY-107", exact: true });
 		await second.click();
-		await expect(second).toHaveAttribute("aria-pressed", "true");
+		await expect(second).toBeChecked();
 		await expect(page.getByRole("region", { name: "2 cards selected. Bulk actions available." })).toBeVisible();
 		await expect(page.getByRole("menu")).toHaveCount(0);
 		await page.keyboard.press("Tab");
@@ -515,16 +511,16 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect.poll(() => second.evaluate((node) => node.getAnimations().filter((animation) => animation.playState === "running").length)).toBe(0);
 		const focusChrome = (node: Element) => {
 			const style = getComputedStyle(node);
-			return { borderColor: style.borderColor, borderWidth: style.borderWidth, radius: style.borderRadius, halo: style.boxShadow };
+			return { borderWidth: style.borderWidth, radius: style.borderRadius, halo: style.boxShadow };
 		};
 		const checkedFocus = await second.evaluate(focusChrome);
-		expect(checkedFocus.borderColor).not.toBe("rgba(0, 0, 0, 0)");
+		expect(checkedFocus.halo).not.toBe("none");
 		await page.keyboard.press("Space");
-		await expect(second).toHaveAttribute("aria-pressed", "false");
+		await expect(second).not.toBeChecked();
 		await expect(second).toBeFocused();
 		await expect.poll(() => second.evaluate(focusChrome)).toEqual(checkedFocus);
-		await expect(selected).toHaveAttribute("aria-pressed", "true");
-		await page.screenshot({ path: `output/agent-browser/jira-dragging/selection-marks-${reducedMotion}.png` });
+		await expect(selected).toBeChecked();
+		await page.screenshot({ path: `output/agent-browser/jira-dragging/selection-checkboxes-${reducedMotion}.png` });
 		await selected.click();
 		await expect(page.locator('[data-jira-issue-selection-control]')).toHaveCount(0);
 		await expect(page.getByRole("button", { name: "More actions for PAY-105", exact: true })).toHaveCount(1);
