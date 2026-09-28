@@ -52,8 +52,7 @@ export function captureIssueCardDropFlights({ root, preview, nativePreview, poin
 	return codes.flatMap((code, index) => {
 		const source = findFace(root, code);
 		if (!source) return [];
-		const surface = source.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]') ?? source;
-		const bounds = surface.getBoundingClientRect();
+		const bounds = source.getBoundingClientRect();
 		const width = lead?.offsetWidth || bounds.width;
 		const height = code === grabbed ? lead?.offsetHeight || bounds.height : bounds.height;
 		const from = travellerBounds ? { x: travellerBounds.left + travellerBounds.width / 2, y: travellerBounds.top + travellerBounds.height / 2 }

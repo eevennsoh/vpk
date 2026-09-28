@@ -425,6 +425,50 @@ test("MCB views the board with four presenter filters and no faces in column hea
 	}
 });
 
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	for (const width of [1440, 1024]) {
+		test(`drag previews keep the full card size and hide actions (${width}, ${reducedMotion})`, async ({ page }) => {
+			await page.setViewportSize({ width, height: 900 });
+			await page.emulateMedia({ reducedMotion });
+			await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+			const codes = ["TEU-1", "TEU-2", "TEU-3"];
+			const resting = await Promise.all(codes.map(code => issue(page, code).locator('[data-slot="jira-issue-card"]').evaluate(node => {
+				const { width, height } = node.getBoundingClientRect();
+				return { width, height };
+			})));
+			const traveller = page.locator('[data-issue-cohort-preview]');
+			async function checkPreview(code: string, count: number) {
+				await startDrag(page, code);
+				await expect(traveller).toHaveAttribute("data-issue-cohort-count", String(count));
+				const front = traveller.locator('[data-issue-cohort-front]');
+				const size = await front.evaluate(node => {
+					const { width, height } = node.getBoundingClientRect();
+					return { width, height };
+				});
+				expect(size).toEqual(resting[codes.indexOf(code)]);
+				await expect(front.locator('[data-jira-issue-selection-control], [aria-label^="More actions for "]')).toHaveCount(0);
+				await expect(front.locator('[data-slot="jira-issue-agent-backdrop"]')).toHaveCount(0);
+				const surface = await front.locator('[data-slot="jira-issue-surface"]').boundingBox();
+				expect(surface?.width).toBeCloseTo(size.width, 1);
+				expect(surface?.height).toBeCloseTo(size.height, 1);
+				await expect(front.locator('[data-slot="jira-issue-cover"]')).toHaveCSS("clip-path", "inset(0px round 8px 8px 0px 0px)");
+				await page.screenshot({ path: `output/agent-browser/issue-drag-preview/${width}-${reducedMotion}-${count}-${code}.png` });
+				await page.keyboard.press("Escape");
+				await page.mouse.up();
+				await expect(traveller).toHaveCount(0);
+			}
+			await checkPreview("TEU-1", 1);
+			for (const code of codes) await issue(page, code).locator("[draggable]").first().click({ modifiers: ["Meta"] });
+			// Exercise first, middle and last members of the fused selection.
+			for (const code of codes) {
+				await expect(issue(page, code).getByRole("checkbox", { name: `Select ${code}`, exact: true })).toBeChecked();
+				await checkPreview(code, 3);
+				await expect(issue(page, code).getByRole("checkbox", { name: `Select ${code}`, exact: true })).toBeChecked();
+			}
+		});
+	}
+}
+
 test("existing single-card and selected-cohort drag moves work items into Done", async ({ page }) => {
 	await openBoard(page);
 	await startDrag(page, "TEU-1");

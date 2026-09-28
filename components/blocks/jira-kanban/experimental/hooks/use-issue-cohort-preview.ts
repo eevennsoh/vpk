@@ -69,8 +69,7 @@ export function useIssueCohortPreview(enabled: boolean, draggedCardCode: string 
 
 	const start = useCallback((event: DragEvent<HTMLElement>, surface: HTMLElement, selection?: ReadonlySet<string>) => {
 		stop();
-		const pickupSurface = surface.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]') ?? surface;
-		const bounds = pickupSurface.getBoundingClientRect();
+		const bounds = surface.getBoundingClientRect();
 		offset.current = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
 		const { node, gathering } = createIssueCohortPreview(surface, selection, previousLayers.current);
 		if (gathering.length > 0) previousLayers.current = gathering.map(({ layer }) => layer);
