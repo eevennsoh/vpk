@@ -26,19 +26,19 @@ const COVER_APPS = {
 
 // Feature headings live on the cover; card titles describe each demo's core benefit.
 const KEYNOTE_STORIES = [
-	{ section: "Context", heading: "Desktop\nsearch & chat", title: "Search across your work", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
-	{ section: "Context", heading: "Code\ncontext", title: "Ground AI in your codebase", apps: [COVER_APPS.bitbucket, COVER_APPS.github, COVER_APPS.gitlab], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
+	{ section: "Context", heading: "Desktop\nSearch & Chat", title: "Search across your work", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
+	{ section: "Context", heading: "Code\nContext", title: "Ground AI in your codebase", apps: [COVER_APPS.bitbucket, COVER_APPS.github, COVER_APPS.gitlab], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ section: "Context", heading: "Rovo for Work\n& Mobile", title: "Pick up work anywhere", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
 	{ section: "Context", heading: "Rovo\nArtifacts", title: "Turn ideas into outputs", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
-	{ section: "Collaboration", heading: "Loom\ndesktop recording", title: "Record Share Collaborate", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
+	{ section: "Collaboration", heading: "Loom\nDesktop Recording", title: "Record Share Collaborate", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ section: "Collaboration", heading: "Whiteboard →\nFigma → Loom", title: "From ideas to shared outcomes", apps: [COVER_APPS.confluence, COVER_APPS.figma, COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.sherif },
 	{ section: "Collaboration", heading: "AI\nPlanner", title: "Humans and agents One plan", apps: [COVER_APPS.jira], assignee: JIRA_TEAM_EU26_END_PRESENTERS.sherif },
-	{ section: "Confidence", heading: "Loom\nAI overlays", title: "Make every video clearer", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
-	{ section: "Confidence", heading: "Loom\nPR previews", title: "Preview code changes in video", apps: [COVER_APPS.loom, COVER_APPS.bitbucket], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
+	{ section: "Confidence", heading: "Loom\nAI Overlays", title: "Make every video clearer", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
+	{ section: "Confidence", heading: "Loom\nPR Previews", title: "Preview code changes in video", apps: [COVER_APPS.loom, COVER_APPS.bitbucket], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
 	{ section: "Confidence", heading: "Jira\nAgent Sessions", title: "See agent work as it happens", apps: [COVER_APPS.jira], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
-	{ section: "Confidence", heading: "DX session\nquality & ROI", title: "Measure session quality and ROI", apps: [COVER_APPS.dx], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
+	{ section: "Confidence", heading: "DX Session\nQuality & ROI", title: "Measure session quality and ROI", apps: [COVER_APPS.dx], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
 	{ section: "Confidence", heading: "Strategy\nCollection", title: "Align talent and investment", apps: [COVER_APPS.focus, COVER_APPS.talent], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
-	{ section: "Confidence", heading: "Enterprise\ngovernance & Guard", title: "Govern AI at every level", apps: [COVER_APPS.guard], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
+	{ section: "Confidence", heading: "Enterprise\nGovernance & Guard", title: "Govern AI at every level", apps: [COVER_APPS.guard], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 ] as const satisfies readonly {
 	section: typeof KEYNOTE_SECTIONS[number];
 	title: string;
@@ -85,7 +85,7 @@ export function restoreJiraTeamEu26EndKeynoteCoverArtwork(columns: readonly Jira
 			const appsCurrent = cover.appSources?.length === story.apps.length
 				&& cover.appSources.every((app, index) => app.id === story.apps[index].id);
 			const retainedHeading = cover.heading.replaceAll("\n", " ");
-			const canRefreshHeading = retainedHeading === story.heading.replaceAll("\n", " ")
+			const canRefreshHeading = retainedHeading.toLowerCase() === story.heading.replaceAll("\n", " ").toLowerCase()
 				|| LEGACY_COVER_HEADINGS[card.code]?.includes(retainedHeading) === true;
 			const heading = canRefreshHeading ? story.heading : cover.heading;
 			if (cover.backgroundPattern === "grid" && appsCurrent && cover.heading === heading && cover.maxHeight === KEYNOTE_COVER_MAX_HEIGHT) {
