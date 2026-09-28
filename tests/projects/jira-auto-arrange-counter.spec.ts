@@ -47,6 +47,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`auto arrange counter fades and scales in and out with a quick trace (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitemcheckbox", { name: "Auto arrange", exact: true }).click();
+		await page.keyboard.press("Escape");
 		await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
 		await page.evaluate(() => {
 			const probe: CounterProbe = { clearing: false, entered: false, exited: false, traceVisible: false };
@@ -101,7 +104,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(counter).toHaveCSS("opacity", "1");
 		for (const target of ["2", "1"]) {
 			await observeContinuingCounter(page, target);
-			await page.getByRole("button", { name: "Select TEU-2", exact: true }).click();
+			await page.getByRole("checkbox", { name: "Select TEU-2", exact: true }).click();
 			await expect(counter).toHaveAttribute("data-auto-arrange-count", target);
 			if (reducedMotion === "no-preference") {
 				await expect.poll(() => page.evaluate(() => window.__smartCounterProbe.cycled)).toBe(true);

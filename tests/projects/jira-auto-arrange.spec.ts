@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
@@ -8,10 +8,97 @@ declare global {
 	interface Window { autoArrangeSparkleProbe?: SparkleProbe; }
 }
 
+async function toggleAutoArrange(page: Page) {
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Auto arrange", exact: true }).click();
+	await page.keyboard.press("Escape");
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`Auto arrange and Peel visual are opt-in through Settings (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await expect(page.getByRole("menuitemcheckbox", { name: "Auto arrange", exact: true })).toHaveAttribute("aria-checked", "false");
+		await expect(page.getByRole("menuitemcheckbox", { name: "Peel visual", exact: true })).toHaveAttribute("aria-checked", "false");
+		await page.keyboard.press("Escape");
+
+		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
+		const action = page.getByRole("button", { name: /^(Preparing auto arrange|Auto arrange)$/u });
+		await card("PAY-118").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await card("PAY-124").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await expect(page.getByRole("region", { name: "2 cards selected. Bulk actions available." })).toBeVisible();
+		await expect(action).toHaveCount(0);
+		await expect(page.locator("[data-auto-arrange-count]")).toHaveCount(0);
+		await page.keyboard.press("a");
+		await expect(page.locator('[data-jira-kanban-column="To do"] [data-issue-key]')).toHaveCount(4);
+		await page.screenshot({ path: `output/agent-browser/auto-arrange/off-selection-${reducedMotion}.png` });
+
+		await toggleAutoArrange(page);
+		await card("PAY-118").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await card("PAY-124").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await expect(action).toBeEnabled();
+		await expect(page.locator("[data-auto-arrange-count]")).not.toHaveCount(0);
+		await toggleAutoArrange(page);
+		await expect(action).toHaveCount(0);
+		await expect(page.locator("[data-auto-arrange-count]")).toHaveCount(0);
+		await card("PAY-118").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await expect(action).toHaveCount(0);
+		await page.keyboard.press("Escape");
+
+		// With arrange off, the board retains its native manual drag transaction.
+		const transfer = await page.evaluateHandle(() => new DataTransfer());
+		await card("PAY-118").dispatchEvent("dragstart", { dataTransfer: transfer });
+		await expect(page.getByText("Transition to...", { exact: true })).toBeVisible();
+		await expect(action).toHaveCount(0);
+		await expect(page.locator("[data-auto-arrange-count]")).toHaveCount(0);
+		await page.screenshot({ path: `output/agent-browser/auto-arrange/off-drag-${reducedMotion}.png` });
+		await card("PAY-118").dispatchEvent("dragend", { dataTransfer: transfer });
+		await expect(page.getByText("Transition to...", { exact: true })).toHaveCount(0);
+		await expect(page.locator('[data-jira-kanban-column="To do"] [data-issue-key="PAY-118"]')).toHaveCount(1);
+
+		await toggleAutoArrange(page);
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitemcheckbox", { name: "Peel visual", exact: true }).click();
+		await page.keyboard.press("Escape");
+		await page.reload();
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await expect(page.getByRole("menuitemcheckbox", { name: "Auto arrange", exact: true })).toHaveAttribute("aria-checked", "true");
+		await expect(page.getByRole("menuitemcheckbox", { name: "Peel visual", exact: true })).toHaveAttribute("aria-checked", "true");
+	});
+
+	test(`Auto arrange works with Move visual off (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
+		await page.keyboard.press("Escape");
+		await toggleAutoArrange(page);
+		const card = page.locator('[data-issue-key="PAY-118"] [draggable]').first();
+		await card.click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		const action = page.getByRole("button", { name: "Auto arrange", exact: true });
+		await expect(action).toBeEnabled();
+		await expect(page.locator("[data-auto-arrange-count]")).not.toHaveCount(0);
+		const box = (await card.boundingBox())!;
+		await page.mouse.move(box.x + 70, box.y + 30);
+		await page.mouse.down();
+		await page.mouse.move(box.x + 95, box.y + 40, { steps: 5 });
+		await expect(page.locator("[data-issue-cohort-preview]")).toBeVisible();
+		await expect(action).toBeEnabled();
+		await page.keyboard.press("a");
+		await page.mouse.up();
+		await expect(page.locator("[data-issue-cohort-preview]")).toHaveCount(0);
+		await expect(page.locator('[data-jira-kanban-column="To do"] [data-issue-key="PAY-118"]')).toHaveCount(0);
+		await expect(page.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-118"]')).toHaveCount(1);
+	});
+
+}
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`checkbox pointer movement toggles selection without picking up its card (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/jira-team-eu26`);
+		await toggleAutoArrange(page);
 		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 		await card("PAY-118").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		const checkbox = page.getByRole("checkbox", { name: "Select PAY-124", exact: true });
@@ -35,6 +122,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		test(`auto arrange works after Select all retains focus (${shortcut}, ${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
 			await page.goto(`${origin}/jira-team-eu26`);
+			await toggleAutoArrange(page);
 			const sourceColumn = page.locator('[data-jira-kanban-column="To do"]');
 			const sourceCards = sourceColumn.locator('[data-board-agent-session-drop-zone="issue"]');
 			await expect(sourceCards.first()).toBeVisible();
@@ -66,6 +154,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
 		await page.goto(`${origin}/jira-team-eu26`);
+		await toggleAutoArrange(page);
 		const card = page.locator('[data-issue-key="PAY-118"] [draggable]').first();
 		await expect(card).toBeVisible();
 		await expect(page.locator('[data-slot="jira-toolbar-positioner"]')).toHaveCount(0);
@@ -94,6 +183,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`board search keeps A from arranging the ready selection (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/jira-team-eu26`);
+		await toggleAutoArrange(page);
 		const sourceCards = page.locator('[data-jira-kanban-column="To do"] [data-board-agent-session-drop-zone="issue"]');
 		await page.locator('[data-issue-key="PAY-118"] [draggable]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await page.getByRole("button", { name: "Select all", exact: true }).click();
@@ -109,6 +199,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`auto arrange matches toolbar size and settles its detection sparkle (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/jira-team-eu26`);
+		await toggleAutoArrange(page);
 		if (reducedMotion === "no-preference") {
 			await page.evaluate(() => {
 				const probe: SparkleProbe = { readyAt: 0, staticAt: 0, waveEndAt: 0, waveObserved: false };

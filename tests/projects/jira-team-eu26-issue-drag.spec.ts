@@ -223,6 +223,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`EU26 single-card drag toolbar appears on pickup and restores selection after cancel (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitemcheckbox", { name: "Auto arrange", exact: true }).click();
+		await page.keyboard.press("Escape");
 		const toolbar = page.getByRole("region", { name: "Move card. Auto arrange available.", exact: true });
 		await startDrag(page, "PAY-118");
 		await expect(toolbar).toBeVisible();

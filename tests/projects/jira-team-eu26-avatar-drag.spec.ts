@@ -8,7 +8,7 @@ test("one inert paper context survives repeat intent and retires for the next ro
 	test.setTimeout(60_000);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: true })));
+	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 3, sessionPeel: true })));
 	await page.goto(`${baseURL}/jira-team-eu26`, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 	const rows = page.locator("[data-agent-session-column] article");
@@ -37,7 +37,7 @@ for (const peel of [false, true]) {
 			await page.setViewportSize({ width: 1440, height: 1000 });
 			await page.emulateMedia({ reducedMotion });
 			await page.addInitScript((sessionPeel) => {
-				localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel }));
+				localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 3, sessionPeel }));
 			}, peel);
 			await page.goto(`${baseURL}/jira-team-eu26`, { waitUntil: "domcontentloaded" });
 			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();

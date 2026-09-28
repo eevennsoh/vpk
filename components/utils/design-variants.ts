@@ -29,10 +29,12 @@ export const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
  * `false` is incidental — the whole map is persisted when a variant is
  * toggled — and must not block the on-default rollout.
  */
-export const DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION = 2;
+export const DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION = 3;
 
 /** Schema that first shipped Simple kanban as an on default. */
 const SIMPLE_KANBAN_ON_DEFAULT_SCHEMA_VERSION = 2;
+/** Older maps persisted Peel visual's former on default alongside unrelated choices. */
+const PEEL_OFF_DEFAULT_SCHEMA_VERSION = 3;
 
 export const DESIGN_VARIANTS = [
 	{ id: "panel", label: "Panel" },
@@ -42,6 +44,7 @@ export const DESIGN_VARIANTS = [
 	{ id: "advancedTimeline", label: "Advanced timeline" },
 	{ id: "agentSessionColumnResizing", label: "Dragging" },
 	{ id: "manualLink", label: "Manual link" },
+	{ id: "autoArrange", label: "Auto arrange" },
 	{ id: "sessionStroke", label: "Stroke tracing" },
 	{ id: "sessionBloom", label: "Card glow" },
 	{ id: "sessionProximity", label: "Proximity sensor" },
@@ -80,7 +83,7 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * Manual link starts off: Team EU hides the Link work item session-menu row
  * until the user explicitly enables it.
  *
- * Peel visual starts on where the route supplies the session preview capability.
+ * Auto arrange and Peel visual start off until explicitly enabled in Settings.
  * Move visual starts on for routes that opt into the experimental issue move visuals.
  * Card glow starts on; Stroke tracing and Proximity sensor start off.
  * Each layer remains independently configurable in Settings:
@@ -93,13 +96,14 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  */
 const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	advancedTimeline: false,
+	autoArrange: false,
 	agentSessionColumnResizing: false,
 	kanbanBackground: false,
 	manualLink: false,
 	moveVisual: true,
 	panel: false,
 	sessionBloom: true,
-	sessionPeel: true,
+	sessionPeel: false,
 	sessionProximity: false,
 	sessionStroke: false,
 	"simple-views": true,
@@ -151,7 +155,9 @@ function storedSchemaVersion(record: Record<string, unknown>): number {
  * missing key. Unknown keys are dropped. Present non-boolean values coerce to
  * off; absent keys keep the store default. Schema 1 (or missing) Simple kanban
  * values are ignored so an incidental stored `false` cannot block the on
- * default. Returns `null` only when there is nothing usable to adopt.
+ * default. Older Peel visual values adopt its off default because the former
+ * on default was persisted with unrelated choices. Returns `null` only when
+ * there is nothing usable to adopt.
  */
 export function readStoredDesignVariants(): DesignVariantState | null {
 	try {
@@ -173,6 +179,9 @@ export function readStoredDesignVariants(): DesignVariantState | null {
 				continue;
 			}
 			if (variant.id === "simpleKanban" && schemaVersion < SIMPLE_KANBAN_ON_DEFAULT_SCHEMA_VERSION) {
+				continue;
+			}
+			if (variant.id === "sessionPeel" && schemaVersion < PEEL_OFF_DEFAULT_SCHEMA_VERSION) {
 				continue;
 			}
 			next[variant.id] = record[variant.id] === true;
