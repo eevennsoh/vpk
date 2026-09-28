@@ -292,7 +292,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		}
 	});
 
-	test(`fixed-anchor ranges shrink, reverse and extend across columns (${reducedMotion})`, async ({ page }) => {
+	test(`fixed-anchor ranges add cards and preserve earlier selections across columns (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/blocks/jira-dragging`);
 		await page.waitForLoadState("networkidle");
@@ -303,26 +303,27 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await click("PAY-130");
 		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await click("PAY-107");
-		await expect.poll(selected).toEqual(["PAY-105", "PAY-107"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await click("PAY-105");
-		await expect.poll(selected).toEqual(["PAY-105"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await page.keyboard.press("Escape");
 		await click("PAY-107");
 		await click("PAY-130");
 		await click("PAY-105");
-		await expect.poll(selected).toEqual(["PAY-105", "PAY-107"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await click("PAY-107");
-		await expect.poll(selected).toEqual(["PAY-107"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await click("PAY-130", []);
-		await expect.poll(selected).toEqual(["PAY-107"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await click("PAY-123", ["ControlOrMeta"]);
-		await expect.poll(selected).toEqual(["PAY-107", "PAY-123"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-130"]);
 		await click("PAY-130");
-		await expect.poll(selected).toEqual(["PAY-123", "PAY-130"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await page.getByRole("button", { name: "Select PAY-123", exact: true }).click();
-		await expect.poll(selected).toEqual(["PAY-130"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-130"]);
 		await click("PAY-107");
-		await expect.poll(selected).toEqual(["PAY-107"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-130"]);
+		await page.keyboard.press("Escape");
 
 		// A native drag gives the second column a card without changing the fixtures.
 		const source = (await card("PAY-130").boundingBox())!;
@@ -339,9 +340,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await click("PAY-130", ["ControlOrMeta"]);
 		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await click("PAY-107");
-		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-130"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 		await click("PAY-130");
-		await expect.poll(selected).toEqual(["PAY-130"]);
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
 	});
 
 	test(`pointer selection focuses cards without the keyboard ring (${reducedMotion})`, async ({ page }) => {

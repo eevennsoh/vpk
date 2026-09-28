@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Badge } from "@/components/ui/badge";
 import { AgentSessionColumnCountMorph } from "@/components/blocks/agent-session-column/agent-session-column-count-swap";
 import { Button } from "@/components/ui/button";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
 import { AnimatedIcon } from "@/components/ui-custom/animated-icon";
 import { ShimmerWave } from "@/components/ui-custom/shimmer-wave";
@@ -37,7 +37,7 @@ export function BoardAutoArrangeAction({ ready, available = true, onArrange }: R
 	const reduceMotion = useReducedMotion();
 	if (!available) return null;
 	return (
-		<Button aria-label={ready ? "Auto arrange" : "Preparing auto arrange"} aria-keyshortcuts="Meta+Enter Control+Enter" variant="ghost" size="default" disabled={!ready} onClick={onArrange}>
+		<Button aria-label={ready ? "Auto arrange" : "Preparing auto arrange"} aria-keyshortcuts="a" variant="ghost" size="default" disabled={!ready} onClick={onArrange}>
 			<span aria-hidden className="relative flex size-4 shrink-0 items-center justify-center">
 				<AnimatePresence initial={false}>
 					<motion.span key={ready || !available ? "sparkle" : "spinner"} className="absolute inset-0 flex items-center justify-center"
@@ -51,7 +51,7 @@ export function BoardAutoArrangeAction({ ready, available = true, onArrange }: R
 			{ready && !reduceMotion ? <span aria-hidden data-auto-arrange-shimmer><ShimmerWave as="span" baseColor="var(--ds-text)" baseGradientColor={["var(--color-orange-300)", "var(--color-lime-400)", "var(--color-blue-600)", "var(--color-purple-500)"]}
 				duration={WAVE_DURATION} spread={WAVE_SPREAD} xDistance={0} yDistance={-1} zDistance={0} rotateYDistance={0} scaleDistance={1.04}
 				transition={{ repeat: 0, ease: [0.4, 0, 0, 1] }}>{AUTO_ARRANGE_LABEL}</ShimmerWave></span> : <span>{AUTO_ARRANGE_LABEL}</span>}
-			<KbdGroup aria-label="Command Enter"><Kbd>Cmd</Kbd><Kbd>Return</Kbd></KbdGroup>
+			<Kbd>A</Kbd>
 		</Button>
 	);
 }

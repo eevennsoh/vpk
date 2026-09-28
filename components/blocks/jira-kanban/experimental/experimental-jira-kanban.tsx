@@ -471,6 +471,7 @@ function ExperimentalJiraKanbanView({
 	const { stop: stopPointerDrag } = useBoardIssuePointerDrag(boardScrollportRef, Boolean(onAutoArrange));
 	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete });
 	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, scopeId: autoArrangeScopeId });
+	const singleCardDrag = Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1);
 	const presentedCardArrival = useMemo(() => createdCardArrival
 		? { ...createdCardArrival, deferred: receivingCreatedCards }
 		: undefined, [createdCardArrival, receivingCreatedCards]);
@@ -970,9 +971,10 @@ function ExperimentalJiraKanbanView({
 				</section>
 				</JiraSessionFlyoutSuspensionProvider>
 			</div>
-				{selectionToolbar && !(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1) ? (
+				{selectionToolbar && (!singleCardDrag || autoArrange.available) ? (
 					<JiraToolbar
 						primaryAction={onAutoArrange ? <BoardAutoArrangeAction key={autoArrange.key} ready={autoArrange.ready} available={autoArrange.available} onArrange={autoArrange.arrange} /> : undefined}
+						primaryActionOnly={singleCardDrag}
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
 						dismissOnEscape={selectionToolbar.dismissOnEscape}

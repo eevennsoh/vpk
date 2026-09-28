@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 
-const issue = (page: Page, code: string) => page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+const issue = (page: Page, code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 const selected = (page: Page) => page.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) =>
 	nodes.filter((node) => node.querySelector('[data-jira-issue-activation-control][aria-pressed="true"]')).map((node) => node.getAttribute("data-issue-key")));
 
@@ -34,7 +34,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await issue(page, "PAY-123").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 			await expect.poll(() => selected(page)).toEqual(["PAY-105", "PAY-107", "PAY-123"]);
 			await issue(page, "PAY-105").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
-			await expect.poll(() => selected(page)).toEqual(["PAY-105"]);
+			await expect.poll(() => selected(page)).toEqual(["PAY-105", "PAY-107", "PAY-123"]);
 		});
 	}
 

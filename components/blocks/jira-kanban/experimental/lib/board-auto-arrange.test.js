@@ -84,12 +84,12 @@ test("destination badges render only positive incoming counts", () => {
 	assert.match(render(3), />3<\/span>/u);
 });
 
-test("auto arrange advertises Command and Control Enter with a Command Return hint", () => {
+test("auto arrange advertises a single A shortcut and key hint", () => {
 	const { BoardAutoArrangeAction } = loadAutoArrangeControls();
 	const render = (available) => renderToStaticMarkup(React.createElement(BoardAutoArrangeAction, { ready: false, available, onArrange() {} }));
-	assert.match(render(true), /aria-keyshortcuts="Meta\+Enter Control\+Enter"/u);
-	assert.match(render(true), /aria-label="Command Enter"/u);
-	assert.match(render(true), />⌘<\/kbd>/u);
+	assert.match(render(true), /aria-keyshortcuts="a"/u);
+	assert.match(render(true), />A<\/kbd>/u);
+	assert.doesNotMatch(render(true), /Meta\+Enter|Control\+Enter|Command Enter|>⌘<\/kbd>/u);
 	assert.doesNotMatch(render(false), /aria-keyshortcuts|data-slot="kbd"/u);
 });
 
