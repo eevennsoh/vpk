@@ -38,7 +38,7 @@ function samples(fn, step = 0.002) {
 test("every tile gets its own deterministic look and motion", () => {
 	const { TILE_GLOW, TILE_GLOW_TONES, TILE_GLOW_MAX_SPOTS, tileGlowLook } = load();
 	const looks = TILES.map((order) => tileGlowLook(order));
-	assert.deepEqual(TILES.map((order) => JSON.parse(JSON.stringify(tileGlowLook(order)))), JSON.parse(JSON.stringify(looks)), "same order, same look");
+	assert.deepEqual(TILES.map((order) => structuredClone(tileGlowLook(order))), structuredClone(looks), "same order, same look");
 	for (const key of ["lineWidth", "bloom", "bloomMix", "intensity", "gain", "opacity", "floor", "smoke", "smokeSize", "smokeSeed", "pulseRate", "pulsePhase", "modRate", "modPhase", "hueShift", "delay", "duration"]) {
 		assert.equal(new Set(looks.map((look) => look[key].toFixed(4))).size, TILES.length, `${key} differs between tiles`);
 	}

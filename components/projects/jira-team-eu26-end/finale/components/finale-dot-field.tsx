@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import type { FinaleFieldRipple, FinaleFit, FinaleViewport } from "../lib/finale-card-motion";
 import { clamp } from "../lib/finale-math";
-import { useFinaleFrame } from "./finale-frame";
+import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 /**
  * Signature dot grid (dots only, no connecting lines), contained inside each

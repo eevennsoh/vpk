@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import type { FinaleRect } from "../data/finale-stories";
 import type { FinaleViewport } from "../lib/finale-card-motion";
 import { TILE_GLOW_FRAGMENT, TILE_GLOW_VERTEX, tileGlowDraws, tileGlowUniforms } from "../lib/finale-tile-glow";
-import { useFinaleFrame } from "./finale-frame";
+import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 interface GlowGl {
 	readonly canvas: HTMLCanvasElement;

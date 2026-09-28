@@ -202,6 +202,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/jira-team-eu26-end/finale/lib/finale-board-exit.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-cursor-path.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-column-flash.test.js",
+		"components/projects/jira-team-eu26-end/finale/lib/finale-late-prints.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-tile-glow.test.js",
 		"components/projects/jira-golden-journeys-v4/data/presentation-story.test.js",
 		"components/projects/jira-team-eu26/data/presentation-story.test.js",

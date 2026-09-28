@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type RefObject } from "react";
 
-import { useFinaleFrame } from "../components/finale-frame";
+import { useFinaleFrame } from "./use-finale-frame";
 import { FINALE_COLORS } from "../data/finale-palette";
 import { queryJiraTeamEu26DoneCards } from "../lib/capture-done-column";
 import { boardDoneCardsHidden, boardExitStyle } from "../lib/finale-board-exit";

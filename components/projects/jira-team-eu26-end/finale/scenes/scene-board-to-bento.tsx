@@ -6,7 +6,7 @@ import { FinaleCardSpaceGl, type FinaleGlCard } from "../components/finale-card-
 import { FinaleColumnFlash } from "../components/finale-column-flash";
 import { FinaleCursors } from "../components/finale-cursor";
 import { FinaleDotField } from "../components/finale-dot-field";
-import { useFinaleFrame } from "../components/finale-frame";
+import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FinaleTeamTitle } from "../components/finale-team-title";
 import { FINALE_TILE_RADIUS, FinaleTileFace } from "../components/finale-tile";
 import { FinaleTileGlow } from "../components/finale-tile-glow";
@@ -75,6 +75,7 @@ function buildField(input: FinaleSceneInput, column: FinaleRect, slotRects: read
 			input: { rect: donor.input.rect, fieldIndex: index, fieldCount: ECHO_COUNT, burstIndex: 0, role: { kind: "echo" } },
 			printKey: donor.printKey,
 			print: donor.print,
+			resolvePrint: donor.resolvePrint,
 		};
 	});
 	return [...echoes, ...cards];

@@ -8,7 +8,7 @@ import { FINALE_STORIES } from "../data/finale-stories";
 import type { FinaleClock } from "../hooks/use-finale-audio-clock";
 import { finaleStageFit, type FinaleStageFit as StageFit } from "../lib/finale-stage-fit";
 import { SceneBoardToBento, type FinaleSceneInput } from "../scenes/scene-board-to-bento";
-import { FinaleFrameContext, createFinaleFrameRegistry } from "./finale-frame";
+import { FinaleFrameContext, createFinaleFrameRegistry } from "../hooks/use-finale-frame";
 
 function currentStageFit(): StageFit {
 	return typeof window === "undefined" ? finaleStageFit(FINALE_STAGE.width, FINALE_STAGE.height) : finaleStageFit(window.innerWidth, window.innerHeight);
@@ -87,6 +87,9 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing }: Readonly
 		dialog.focus({ preventScroll: true });
 		return () => dialog.close();
 	}, []);
+
+	// Mounted only after a client-side trigger; the guard keeps any server render safe.
+	if (typeof document === "undefined") return null;
 
 	const summary = `Team ’26 Europe keynote recap. All ${FINALE_STORIES.length} work items are done. Featured: ${scene.features.map((story) => story.lines.join(" ")).join(", ")}.`;
 

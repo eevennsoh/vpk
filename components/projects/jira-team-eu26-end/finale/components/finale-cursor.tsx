@@ -5,7 +5,7 @@ import { useRef } from "react";
 import type { FinaleSlot } from "../data/finale-stories";
 import type { FinaleViewport } from "../lib/finale-card-motion";
 import { FINALE_CURSORS, cursorPose } from "../lib/finale-cursor-path";
-import { useFinaleFrame } from "./finale-frame";
+import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 /** The arrow's tip inside its 30×30 box; the cursor is placed and pressed about it. */
 const TIP = { x: 3, y: 2.5 } as const;

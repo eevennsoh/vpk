@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { FLASH_GLSL, FLASH_MAX_OCCLUDERS, FLASH_PASS_GLSL, FLASH_SHAPE, flashRingUniforms, flashUniforms, flashVisible, type FlashColumn, type FlashOccluder } from "../lib/finale-column-flash";
-import { useFinaleFrame } from "./finale-frame";
+import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 const vertexShader = /* glsl */ `
 uniform vec4 uCanvasRect;

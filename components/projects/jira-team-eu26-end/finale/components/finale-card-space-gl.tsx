@@ -31,8 +31,9 @@ import {
 	type FinaleCardInput,
 	type FinaleViewport,
 } from "../lib/finale-card-motion";
+import { latePrintResolvers } from "../lib/finale-late-prints";
 import { parseRgb, progress } from "../lib/finale-math";
-import { useFinaleFrame } from "./finale-frame";
+import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 /** Speed (px/s) at which the cloth reaches full bend; faster only saturates. */
 const CLOTH_SPEED = 1200;
@@ -396,11 +397,8 @@ vec4 sampleScene(vec2 uv) {
 }
 
 vec3 spectrum(float t) {
-	return vec3(
-		exp(-pow(t / 0.38, 2.0)),
-		exp(-pow((t - 0.5) / 0.38, 2.0)),
-		exp(-pow((t - 1.0) / 0.38, 2.0))
-	);
+	vec3 offset = (vec3(t) - vec3(0.0, 0.5, 1.0)) / 0.38;
+	return exp(-(offset * offset));
 }
 
 void main() {
@@ -610,13 +608,15 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 		const fogColor = rgbUnit(FINALE_COLORS.slide);
 		const textures = new Map<string, { texture: THREE.CanvasTexture; aspect: number }>();
 		const pending: GlState["pending"] = new Map();
+		const lateResolvers = latePrintResolvers(cards);
 		const sheets = cards.map((card) => {
 			let entry = textures.get(card.printKey);
 			if (!entry) {
 				const source = card.print ?? fallbackPrint(card.input.rect.width, card.input.rect.height, 8);
 				entry = { texture: textureFrom(source), aspect: source.width / source.height };
 				textures.set(card.printKey, entry);
-				if (!card.print && card.resolvePrint) pending.set(card.printKey, { texture: entry.texture, resolve: card.resolvePrint });
+				const resolve = card.print ? undefined : lateResolvers.get(card.printKey);
+				if (resolve) pending.set(card.printKey, { texture: entry.texture, resolve });
 			}
 			const material = new THREE.ShaderMaterial({
 				vertexShader,

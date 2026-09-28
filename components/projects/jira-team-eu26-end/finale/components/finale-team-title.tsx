@@ -5,8 +5,8 @@ import { useRef } from "react";
 import { CUE } from "../data/finale-cues";
 import type { FinaleRect } from "../data/finale-stories";
 import { EASE, eased, progress } from "../lib/finale-math";
-import { FINALE_INK, FINALE_INK_BLEED, applyFinaleBuild, finaleBuildGradient } from "./finale-build-text";
-import { useFinaleFrame } from "./finale-frame";
+import { FINALE_INK, FINALE_INK_BLEED, applyFinaleBuild, finaleBuildGradient } from "../lib/finale-build-style";
+import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 /** Team 20 → Team 26: the year strip rolls through every edition. */
 const YEARS = ["20", "21", "22", "23", "24", "25", "26"] as const;

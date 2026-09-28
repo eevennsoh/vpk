@@ -7,7 +7,7 @@ import { TWGAppstack } from "@/components/ui-custom/twg-appstack";
 import { FINALE_COLORS } from "../data/finale-palette";
 import type { FinaleSlot, FinaleStory } from "../data/finale-stories";
 import { FinaleBuildText } from "./finale-build-text";
-import { useFinaleFrame } from "./finale-frame";
+import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 export const FINALE_TILE_RADIUS = 20;
 

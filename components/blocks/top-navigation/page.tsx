@@ -60,6 +60,8 @@ export interface ShellSidebarSlotState {
 	headerOffsetPx: number;
 }
 
+export type { RightNavigationSettingsMenuItem as TopNavigationSettingsMenuItem };
+
 interface TopNavigationProps {
 	currentUser?: TopNavigationCurrentUser;
 	product?: Product;
@@ -157,8 +159,6 @@ function useMeasuredWidth(): readonly [(node: HTMLElement | null) => void, numbe
  * collapses into a "…" overflow popover at narrow widths. The search shrinks
  * fluidly and collapses to an icon button below `TOP_NAV_SEARCH_ICON_BREAKPOINT_PX`.
  */
-export type { RightNavigationSettingsMenuItem as TopNavigationSettingsMenuItem };
-
 export default function TopNavigation({
 	currentUser,
 	product = "studio",
