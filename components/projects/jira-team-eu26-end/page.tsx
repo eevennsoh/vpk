@@ -50,6 +50,7 @@ import { AtlassianLogo } from "@/components/ui/logo";
 import { Tile } from "@/components/ui/tile";
 import { cn } from "@/lib/utils";
 import { JiraTeamEu26List } from "./components/jira-team-eu26-end-list";
+import { JiraTeamEu26EndFinale } from "./finale";
 
 import { renderJiraTeamEu26AgentActivityIndicator } from "./data/agent-activity-indicators";
 import {
@@ -70,6 +71,7 @@ import { useJiraTeamEu26AgentSessionSync } from "./hooks/use-jira-team-eu26-end-
 import { JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES } from "./data/agent-session-sync";
 import { useJiraTeamEu26GenerativeActions } from "./hooks/use-jira-team-eu26-end-generative-actions";
 import { useJiraTeamEu26List } from "./hooks/use-jira-team-eu26-end-list";
+import { useJiraTeamEu26EndPlayClosing } from "./hooks/use-jira-team-eu26-end-play-closing";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
@@ -145,6 +147,14 @@ function JiraTeamEu26App(): React.ReactElement {
 	const tabOwnsView = activeTab?.view !== undefined;
 	const activeView = activeTab?.view ?? workItemView;
 	const showBoardContent = activeTab?.hasContent === true;
+	// Rehearsal shortcut: bulk-drop every keynote card into Done through the
+	// board's own drop path; the finale's "all Done" transition then starts the
+	// closing. A complete board replays the finale instead.
+	const { closingMoveRequest, finaleReplayRequest, settingsMenuItems } = useJiraTeamEu26EndPlayClosing({
+		boardColumns,
+		boardVisible: showBoardContent && activeView === "board",
+		setBoardColumns,
+	});
 	const [agentSessionColumnInteracting, setAgentSessionColumnInteracting] = useState(false);
 	const {
 		reviewAgentSessions,
@@ -365,6 +375,7 @@ function JiraTeamEu26App(): React.ReactElement {
 				currentUser={JIRA_TEAM_EU26_END_PRESENTERS.mcb}
 				chatGreeting={{ heading: "What can I help you with, MCB?" }}
 				settingsDesignVariantIds={JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
+				settingsMenuItems={settingsMenuItems}
 			>
 				<div
 					className={cn(
@@ -389,6 +400,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						getStatusVariant={statusVariant}
 						issueDragTransitions
 						issueMoveVisual={designVariants.moveVisual}
+						issueMoveRequest={closingMoveRequest}
 						createWellBounce="off"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 						agentSessionAssigneeIdAliases={JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
@@ -500,6 +512,8 @@ function JiraTeamEu26App(): React.ReactElement {
 					skills={DEFAULT_SKILLS}
 				/>
 			</MountOnFirstUse>
+			{/* Closing keynote: once every announcement is Done, hand off to the recap slide. */}
+			<JiraTeamEu26EndFinale boardColumns={boardColumns} replayRequest={finaleReplayRequest} />
 			<JgpRovoOverlay
 				agentCreator={JIRA_TEAM_EU26_END_PRESENTERS.mcb}
 				chatContextBar={chatContextBar}

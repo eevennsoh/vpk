@@ -100,3 +100,12 @@ test("bulk removal deletes the captured cohort in one transaction and clears its
 	assert.equal(h.selection().anchor, null);
 	assert.equal(h.draggedCard(), null);
 });
+
+test("host cohort moves commit like the equivalent multi-card drop and settle selection and pickup", () => {
+	const h = harness(["A"], "A", { columns: board });
+	h.actions.handleCardsMove({ cardCodes: ["A", "X"], columnTitle: "Done", target: { beforeCardCode: null } });
+	assert.deepEqual(h.columns().map((column) => column.cards.map((card) => card.code)), [["B", "C"], ["Y", "Z"], ["D", "E", "A", "X"]]);
+	assert.ok(h.columns()[2].cards.slice(2).every((card) => card.status === "Done"));
+	assert.equal(h.selection().selectedCardCodes.size, 0);
+	assert.equal(h.draggedCard(), null);
+});

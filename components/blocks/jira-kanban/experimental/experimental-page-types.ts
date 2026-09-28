@@ -54,6 +54,11 @@ export interface ExperimentalJiraKanbanPageProps {
 	addAgentLabel?: ExperimentalJiraKanbanProps["addAgentLabel"];
 	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	issueMoveVisual?: ExperimentalJiraKanbanProps["issueMoveVisual"];
+	/**
+	 * Host-requested cohort move, committed through the same drop path as a
+	 * manual multi-card drag. Ignored unless the board may edit its columns.
+	 */
+	issueMoveRequest?: ExperimentalJiraKanbanProps["issueMoveRequest"];
 	/** Fused selection also enables board keyboard navigation and outside-press dismissal. */
 	issueSelectionAppearance?: ExperimentalJiraKanbanProps["issueSelectionAppearance"];
 	activeView?: ExperimentalJiraKanbanView;

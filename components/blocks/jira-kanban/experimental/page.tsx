@@ -179,6 +179,7 @@ function ExperimentalJiraKanbanPageContent({
 	createWorkItemDropZoneLabel,
 	issueDragTransitions = false,
 	issueMoveVisual = true,
+	issueMoveRequest,
 	issueSelectionAppearance = "card",
 	getStatusVariant,
 	defaultAgentSessionColumnCollapsed = false,
@@ -813,7 +814,7 @@ function ExperimentalJiraKanbanPageContent({
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
 		untrackedSessions: agentSessionColumnConfig?.items,
 	});
-	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
+	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardsMove, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
 		rootRef: boardSessionDrag.boardRootRef, enabled: issueSelectionAppearance === "fused-backdrop" && !isListContent,
 		filteredBoardColumns, collapsedColumns: isListContent ? EMPTY_COLLAPSED_BOARD_COLUMNS : displayedCollapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
 	});
@@ -977,6 +978,8 @@ function ExperimentalJiraKanbanPageContent({
 								draggedCardCode={draggedCard?.card.code ?? null}
 								issueDragTransitions={issueDragTransitions}
 								issueMoveVisual={issueMoveVisual}
+								issueMoveRequest={issueMoveRequest}
+								onIssueMove={issueMoveRequest && (controlledBoardColumns === undefined || onBoardColumnsChange) ? handleCardsMove : undefined}
 								issueSelectionAppearance={issueSelectionAppearance}
 								selectedCardCodes={selection.selectedCardCodes}
 								onCardClick={handleCardClick}

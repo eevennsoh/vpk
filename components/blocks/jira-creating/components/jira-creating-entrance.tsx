@@ -10,6 +10,7 @@ import {
 	getJiraCreateSlotTransition,
 	getJiraCreateRemovalTransition,
 	JIRA_CREATE_MOTION_STYLE,
+	shouldClipJiraCreateSlot,
 } from "../lib/jira-creating-motion";
 
 export interface JiraCreateEntranceProps {
@@ -64,7 +65,7 @@ export function JiraCreateEntrance({
 		<motion.div
 			animate={removing ? { height: 0 } : reserveSlot ? { height: "auto" } : replayKey === undefined ? { height: waiting ? 0 : "auto" } : slotPlayback}
 			aria-hidden={waiting || removing || undefined}
-			className={cn("w-full min-w-0 shrink-0", active || removing ? "overflow-hidden" : null)}
+			className={cn("w-full min-w-0 shrink-0", shouldClipJiraCreateSlot({ active, removing, reserveSlot }) ? "overflow-hidden" : null)}
 			data-jira-creating-removing={removing || undefined}
 			data-jira-creating-item-id={itemId}
 			data-slot="jira-creating-slot"

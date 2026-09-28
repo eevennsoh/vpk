@@ -83,12 +83,7 @@ export function usePageIssueSelection({
 		setDraggedCard({ card, sourceColumnTitle });
 	};
 
-	const handleCardDrop = (targetColumnTitle: string, target?: JiraKanbanCardDropTarget) => {
-		if (!draggedCard || !dragCohort.current || (!target && draggedCard.sourceColumnTitle === targetColumnTitle)) {
-			handleCardDragEnd();
-			return;
-		}
-		const draggedCardCodes = dragCohort.current;
+	const commitCardsMove = (draggedCardCodes: readonly string[], targetColumnTitle: string, target?: JiraKanbanCardDropTarget) => {
 		const isMultiDrag = draggedCardCodes.length > 1;
 		const movableCardCodes = draggedCardCodes.filter((cardCode) => boardColumns.some((column) => (
 			column.title !== targetColumnTitle && column.cards.some((card) => card.code === cardCode)
@@ -109,6 +104,17 @@ export function usePageIssueSelection({
 			setSelection((current) => isMultiDrag ? createJiraKanbanSelectionState() : reconcileJiraKanbanSelection(current, movedColumns));
 		}
 		handleCardDragEnd();
+	};
+	const handleCardDrop = (targetColumnTitle: string, target?: JiraKanbanCardDropTarget) => {
+		if (!draggedCard || !dragCohort.current || (!target && draggedCard.sourceColumnTitle === targetColumnTitle)) {
+			handleCardDragEnd();
+			return;
+		}
+		commitCardsMove(dragCohort.current, targetColumnTitle, target);
+	};
+	// A host-requested move settles exactly like the equivalent cohort drop.
+	const handleCardsMove = (move: Readonly<{ cardCodes: readonly string[]; columnTitle: string; target?: JiraKanbanCardDropTarget }>) => {
+		commitCardsMove(move.cardCodes, move.columnTitle, move.target);
 	};
 	const handleSelectedCardsStatusChange = (status: string) => {
 		handleCardDragEnd();
@@ -141,5 +147,5 @@ export function usePageIssueSelection({
 		},
 	});
 	useJiraSelectionDismiss({ rootRef, enabled, boardColumns: filteredBoardColumns, selectedCardCodes: selection.selectedCardCodes, dragging: draggedCard !== null, onClearSelection });
-	return { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection };
+	return { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardsMove, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection };
 }

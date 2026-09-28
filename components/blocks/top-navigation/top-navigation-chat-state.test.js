@@ -215,12 +215,18 @@ test("right navigation settings button can render optional dropdown actions", ()
 	assert.doesNotMatch(RIGHT_NAVIGATION_ACTIONS_SOURCE, /useDesignVariation|design-variation/);
 	assert.match(
 		RIGHT_NAVIGATION_ACTIONS_SOURCE,
-		/hasSettingsMenu \? \([\s\S]*hasSettingsProperties \? <DropdownMenuSeparator \/> : null[\s\S]*<DropdownMenuGroup>[\s\S]*onSelect=\{item\.onSelect\}/u,
+		// Route actions sit inside the Properties group, below a separator.
+		/<DropdownMenuLabel>Properties<\/DropdownMenuLabel>[\s\S]*hasSettingsMenu \? \([\s\S]*<DropdownMenuSeparator \/>[\s\S]*settingsMenuItems\?\.map\(renderSettingsMenuItem\)[\s\S]*<\/DropdownMenuGroup>/u,
 	);
-	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /aria-label="Settings"[\s\S]*<DropdownMenuContent align="end" className="w-64">/u);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /aria-label="Settings"[\s\S]*<DropdownMenuContent align="end" className="max-h-\[min\(480px,var\(--available-height,480px\)\)\] w-64">/u);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /onSelect=\{item\.onSelect\}/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsMenuItems\?: ReadonlyArray<RightNavigationSettingsMenuItem>/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsMenuItems=\{settingsMenuItems\}/);
+	// AppLayout routes reach the same optional capability through TopNavigation.
+	assert.match(TOP_NAVIGATION_SOURCE, /settingsMenuItems\?: ReadonlyArray<RightNavigationSettingsMenuItem>/);
+	assert.match(TOP_NAVIGATION_SOURCE, /settingsMenuItems=\{settingsMenuItems\}/);
+	assert.match(PROJECT_LAYOUT_SOURCE, /settingsMenuItems\?: ReadonlyArray<TopNavigationSettingsMenuItem>/);
+	assert.match(PROJECT_LAYOUT_SOURCE, /settingsMenuItems=\{settingsMenuItems\}/);
 });
 
 test("routes can limit Settings properties to supported design variants", () => {

@@ -43,6 +43,21 @@ interface RightNavigationActionsProps {
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
 }
 
+function renderSettingsMenuItem(item: RightNavigationSettingsMenuItem) {
+	return (
+		<DropdownMenuItem
+			description={item.description}
+			disabled={item.disabled}
+			elemBefore={item.elemBefore}
+			key={item.id}
+			onSelect={item.onSelect}
+			variant={item.variant}
+		>
+			{item.label}
+		</DropdownMenuItem>
+	);
+}
+
 // The shared cluster of right-side actions, rendered both inline (wide widths)
 // and inside the "…" overflow popover (narrow widths). Returns a fragment so the
 // caller owns the flex container in either context.
@@ -110,7 +125,9 @@ export function RightNavigationActions({
 					>
 						<SettingsIcon label="" color="currentColor" />
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-64">
+					{/* Taller than the primitive's 328px cap so route actions below the nine
+					   properties stay in view; still bounded by the space on screen. */}
+					<DropdownMenuContent align="end" className="max-h-[min(480px,var(--available-height,480px))] w-64">
 						{hasSettingsProperties ? (
 							<DropdownMenuGroup>
 								{/* Base UI requires the label to live inside its group. */}
@@ -127,26 +144,16 @@ export function RightNavigationActions({
 										{variant.label}
 									</DropdownMenuCheckboxItem>
 								))}
+								{/* Route actions close the Properties group, below a separator. */}
+								{hasSettingsMenu ? (
+									<>
+										<DropdownMenuSeparator />
+										{settingsMenuItems?.map(renderSettingsMenuItem)}
+									</>
+								) : null}
 							</DropdownMenuGroup>
-						) : null}
-						{hasSettingsMenu ? (
-							<>
-								{hasSettingsProperties ? <DropdownMenuSeparator /> : null}
-								<DropdownMenuGroup>
-									{settingsMenuItems?.map((item) => (
-										<DropdownMenuItem
-											description={item.description}
-											disabled={item.disabled}
-											elemBefore={item.elemBefore}
-											key={item.id}
-											onSelect={item.onSelect}
-											variant={item.variant}
-										>
-											{item.label}
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuGroup>
-							</>
+						) : hasSettingsMenu ? (
+							<DropdownMenuGroup>{settingsMenuItems?.map(renderSettingsMenuItem)}</DropdownMenuGroup>
 						) : null}
 					</DropdownMenuContent>
 				</DropdownMenu>
