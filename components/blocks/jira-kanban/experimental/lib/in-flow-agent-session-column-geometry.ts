@@ -10,6 +10,8 @@ export const SIMPLE_STATUS_COLUMN_CONTENT_INSET_PX = 4;
 export const IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24;
 /** `border-2` on the leading edge of the absolute Untracked surface. */
 export const IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX = 2;
+/** Share the measured leading footprint with the adjacent board scroll row. */
+export const IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR = "--jira-session-column-footprint";
 /**
  * Embedded translate so the well's 1px rest stroke sits on the header's 24px
  * line. The drop-zone's 2px leading border would otherwise push the well

@@ -42,6 +42,7 @@ import { CreatedCardArrivalMotion } from "./components/created-card-arrival-moti
 import { useIssueCardDropArrival, type IssueCardMove } from "./hooks/use-issue-card-drop-arrival";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
+import { IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR } from "./lib/in-flow-agent-session-column-geometry";
 import {
 	useCreatedCardArrivalCompletion,
 	type JiraKanbanCreatedCardArrival,
@@ -512,7 +513,7 @@ function ExperimentalJiraKanbanView({
 	});
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
-	const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart(columnRowPaddingInlineStart, boardColumns[0]?.title, Boolean(chrome.dropContentPadding), collapsedColumns);
+	const resolvedColumnRowPaddingInlineStart = `calc(${resolveBoardColumnRowPaddingInlineStart(columnRowPaddingInlineStart, boardColumns[0]?.title, Boolean(chrome.dropContentPadding), collapsedColumns)} + var(${IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR}, 0px))`;
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedColumnTitles = new Set(boardColumns.filter((column) => column.cards.some((card) => selectedCardCodes?.has(card.code))).map((column) => column.title));
 	const sourceColumn = boardColumns.find((column) => column.cards.some((card) => card.code === draggedCardCode));
@@ -772,6 +773,7 @@ function ExperimentalJiraKanbanView({
 					onDragOverCapture={clearOtherColumnHighlights}
 					style={{
 						flex: 1,
+						marginInlineStart: `calc(-1 * var(${IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR}, 0px))`,
 						paddingTop: scrollportPaddingTop,
 						paddingBottom,
 						overflowX: "auto",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { useReducedMotion } from "motion/react";
 import DragHandleVerticalIcon from "@atlaskit/icon/core/drag-handle-vertical";
 import { Icon } from "@/components/ui/icon";
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 import {
 	IN_FLOW_AGENT_SESSION_COLUMN_EMBEDDED_OFFSET_PX,
+	IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR,
 	IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX,
 	IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX,
 	resolveInFlowAgentSessionColumnGapPx,
@@ -49,6 +50,7 @@ const IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_TRANSITION =
 const IN_FLOW_AGENT_SESSION_COLUMN_EXPANSION_TRANSITION =
 	"width var(--duration-medium) var(--ease-in-out)";
 const IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME = [
+	"pointer-events-auto",
 	"right-auto -translate-x-1/2",
 	"bg-transparent! hover:bg-transparent! data-[active]:bg-transparent! focus-visible:bg-transparent! focus-visible:outline-none focus-visible:ring-0",
 	"duration-normal ease-out-practical",
@@ -366,7 +368,7 @@ function InFlowAgentSessionColumnSurface({
 			className={cn(
 				"group/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 items-start border-2 border-r-0",
 				isEmbedded
-					? "pointer-events-auto"
+					? "pointer-events-none [&_[data-agent-session-column]]:pointer-events-auto"
 					: "pointer-events-none [&_[data-agent-session-notch]]:pointer-events-auto [&_[data-agent-session-column-expand-control]]:pointer-events-auto",
 				untrackedDropArmed ? "border-border-selected" : "border-transparent",
 				className,
@@ -444,7 +446,7 @@ function InFlowAgentSessionColumnGutter({
 	return (
 		<div
 			aria-hidden="true"
-			className="absolute inset-y-0 start-0 z-30"
+			className="pointer-events-auto absolute inset-y-0 start-0 z-30"
 			data-agent-session-column-hit-area=""
 			onPointerEnter={handlePointerEnter}
 			onPointerDown={handleGutterPointerDown}
@@ -463,6 +465,26 @@ function InFlowAgentSessionColumnGutter({
 			) : null}
 		</div>
 	);
+}
+
+/** Keep the board's clip at the page edge, with the footprint inside its content. */
+function useInFlowAgentSessionColumnFootprint(hostRef: RefObject<HTMLDivElement | null>, shifted: boolean) {
+	useLayoutEffect(() => {
+		const host = hostRef.current;
+		const scope = host?.parentElement;
+		if (!host || !scope) return;
+		const sync = () => {
+			const width = shifted ? 0 : host.getBoundingClientRect().width;
+			scope.style.setProperty(IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR, `${width}px`);
+		};
+		sync();
+		const observer = new ResizeObserver(sync);
+		observer.observe(host);
+		return () => {
+			observer.disconnect();
+			scope.style.removeProperty(IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR);
+		};
+	}, [hostRef, shifted]);
 }
 
 function useInFlowAgentSessionColumnModel({
@@ -503,6 +525,7 @@ function useInFlowAgentSessionColumnModel({
 			if (!interaction.pinned && !interaction.isFullWidth) interaction.handlePinnedChange(true);
 		},
 	});
+	useInFlowAgentSessionColumnFootprint(hostRef, reposition.shifted);
 	const handlePinnedPlacementChange = (nextPinned: boolean) => {
 		interaction.handlePinnedChange(nextPinned);
 		if (!nextPinned) reposition.moveToLeadingGutter();
@@ -601,7 +624,7 @@ export function InFlowAgentSessionColumn({
 				data-agent-session-column-pinned={pinned ? "" : undefined}
 				data-session-column-dragging={reposition.dragging || undefined}
 				className={cn(
-					"z-30 flex min-h-0 shrink-0 self-stretch",
+					"z-30 flex min-h-0 shrink-0 self-stretch pointer-events-none",
 					reposition.shifted ? "pointer-events-none absolute inset-y-0 left-0" : "relative",
 					// Only the compact default Expand button crosses the sidebar's resize
 					// seam. Lift its host, but leave empty footprint space pointer-inert.

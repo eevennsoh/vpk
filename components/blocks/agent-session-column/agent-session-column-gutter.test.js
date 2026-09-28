@@ -263,7 +263,7 @@ test("touch can intentionally expand the otherwise pointer-inert gutter", () => 
 test("gutter rest keeps the overlay and rail visually transparent", () => {
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/className="absolute inset-y-0 start-0 z-30"/u,
+		/className="pointer-events-auto absolute inset-y-0 start-0 z-30"/u,
 	);
 	assert.doesNotMatch(
 		IN_FLOW_COLUMN_SOURCE,
@@ -271,7 +271,7 @@ test("gutter rest keeps the overlay and rail visually transparent", () => {
 	);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto"[\s\S]{0,220}?: "pointer-events-none \[&_\[data-agent-session-notch\]\]:pointer-events-auto \[&_\[data-agent-session-column-expand-control\]\]:pointer-events-auto"/u,
+		/isEmbedded[\s\S]{0,100}?\? "pointer-events-none \[&_\[data-agent-session-column\]\]:pointer-events-auto"[\s\S]{0,220}?: "pointer-events-none \[&_\[data-agent-session-notch\]\]:pointer-events-auto \[&_\[data-agent-session-column-expand-control\]\]:pointer-events-auto"/u,
 	);
 	assert.doesNotMatch(
 		IN_FLOW_COLUMN_SOURCE,
@@ -299,7 +299,7 @@ test("underlap paints a solid 24px surface gutter fill with no fade", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /ref=\{hostRef\}/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/"z-30 flex min-h-0 shrink-0 self-stretch"/u,
+		/"z-30 flex min-h-0 shrink-0 self-stretch pointer-events-none"/u,
 	);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
@@ -334,7 +334,7 @@ test("the entire visible gutter is a hover target without covering To do", () =>
 	);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto"[\s\S]{0,220}?: "pointer-events-none \[&_\[data-agent-session-notch\]\]:pointer-events-auto \[&_\[data-agent-session-column-expand-control\]\]:pointer-events-auto"/u,
+		/isEmbedded[\s\S]{0,100}?\? "pointer-events-none \[&_\[data-agent-session-column\]\]:pointer-events-auto"[\s\S]{0,220}?: "pointer-events-none \[&_\[data-agent-session-notch\]\]:pointer-events-auto \[&_\[data-agent-session-column-expand-control\]\]:pointer-events-auto"/u,
 	);
 	assert.doesNotMatch(
 		IN_FLOW_COLUMN_SOURCE,
@@ -458,7 +458,7 @@ test("a collapsed first status column clears the fixed Untracked gutter without 
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\);/u,
+		/resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\)/u,
 	);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /absolute inset-y-0 start-0 z-40/u);
 	assert.match(
