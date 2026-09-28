@@ -516,6 +516,7 @@ function ExperimentalJiraKanbanPageContent({
 		createdCardArrival,
 		handleComplete: handleCreatedCardArrivalComplete,
 		handleCreate: handleBoardAgentSessionCreate,
+		handleGapCreate: handleBoardGapCreate,
 	} = useBoardCreatedCardArrival({
 		captureSession: agentSessionHandlers.onCreateWorkItem,
 		onCreate: onBoardAgentSessionCreate,
@@ -796,18 +797,7 @@ function ExperimentalJiraKanbanPageContent({
 		detachedSessionsByCard: proximityAgentSessionsByCard,
 		linkingVariant: agentSessionLinkingVariant,
 		onCreate: onBoardAgentSessionCreate ? handleBoardAgentSessionCreate : undefined,
-		// Same create path as the well, with a slot. Each cohort member advances
-		// the index, and the refs behind `handleBoardAgentSessionCreate` grow with
-		// every call, so the sessions land in drag order rather than reversed.
-		onBoardGapCreate: onBoardAgentSessionCreate
-			? (sessions, insertion) => sessions.forEach((session, memberIndex) => (
-				handleBoardAgentSessionCreate(
-					session,
-					insertion.columnTitle,
-					insertion.insertAtIndex + memberIndex,
-				)
-			))
-			: undefined,
+		onBoardGapCreate: onBoardAgentSessionCreate ? handleBoardGapCreate : undefined,
 		onCreateWellReceive: receiveCreateWell,
 		onListCreate: onListAgentSessionCreate ? handleListAgentSessionCreate : undefined,
 		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,

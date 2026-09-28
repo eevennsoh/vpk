@@ -7,7 +7,7 @@ const ts = require("typescript");
 
 function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104, step = 112 } = {}) {
 	const animations = [], nodes = [], reads = [], frames = new Map(), frameEvents = [];
-	let frameId = 0, inFrame = false;
+	let frameId = 0, inFrame = false, sharedGlow;
 	class Node {
 		constructor(name) { this.name = name; this.style = {}; this.attributes = {}; this.children = []; this.dataset = {}; }
 		setAttribute(key, value) { this.attributes[key] = value; if (inFrame) frameEvents.push("write"); }
@@ -18,14 +18,16 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 			animations.push(animation); return animation;
 		}
 		getBoundingClientRect() { reads.push(this); if (inFrame) frameEvents.push("read"); else assert.equal(animations.length, 0, "measure every final slot before applying motion"); return this.rect; }
-		querySelector() { return this.surface; }
+		get ownerDocument() { return doc; }
+		querySelector(selector) { return selector.includes("backdrop") ? this.backdrop : this.surface; }
 		closest() { return destination; }
 	}
-	const doc = { body: new Node("body"), createElementNS: (_, name) => { const node = new Node(name); nodes.push(node); return node; } };
+	const doc = { body: new Node("body"), createElement: (name) => { const node = new Node(name); nodes.push(node); return node; }, createElementNS: (_, name) => { const node = new Node(name); nodes.push(node); return node; } };
 	const rect = (top, height) => ({ left: 100, right: 380, width: 280, top, bottom: top + height, height });
 	const issues = Array.from({ length: count }, (_, index) => {
 		const node = new Node("slot"); node.style = { zIndex: "auto", willChange: "opacity" }; node.rect = rect(100 + index * step, slotHeight);
 		const issue = new Node("issue"); issue.dataset = { issueKey: `K${index}`, boardColumnTitle: column }; issue.parentElement = node;
+		node.backdrop = new Node("backdrop");
 		issue.surface = new Node("surface"); issue.surface.rect = rect(node.rect.top + 4, surfaceHeight);
 		return issue;
 	});
@@ -35,11 +37,21 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 		requestAnimationFrame: (callback) => { const id = ++frameId; frames.set(id, callback); return id; },
 		cancelAnimationFrame: (id) => frames.delete(id),
 		module: loaded, exports: loaded.exports, getComputedStyle: () => ({ borderTopLeftRadius: "8px" }),
-		require: () => ({ token: (name) => `token:${name}` }),
+		require(name) {
+			if (name.includes("card-glow")) {
+				const glow = { exports: {} };
+				vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../../../jira-linking/card-glow.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
+					module: glow, exports: glow.exports, require: () => require("../../../jira-linking/glow-motion.ts"),
+				});
+				sharedGlow = glow.exports; return sharedGlow;
+			}
+			if (name.includes("glow-motion")) return require("../../../jira-linking/glow-motion.ts");
+			return { token: (name) => `token:${name}` };
+		},
 	});
 	let complete = 0;
-	const start = (reduced = false, codes = issues.map((issue) => issue.dataset.issueKey)) => loaded.exports.animateIssueSolitaireDrop({ querySelectorAll: () => issues, ownerDocument: doc }, column, codes, reduced, () => complete++);
-	return { start, animations, nodes, issues, reads, doc, frames, frameEvents, complete: () => complete,
+	const start = (reduced = false, codes = issues.map((issue) => issue.dataset.issueKey), glowColors) => loaded.exports.animateIssueSolitaireDrop({ querySelectorAll: () => issues, ownerDocument: doc }, column, codes, reduced, () => complete++, glowColors);
+	return { start, animations, nodes, issues, reads, doc, frames, frameEvents, linkGlow: () => sharedGlow.createJiraLinkingCardGlow({ haloRoot: issues[0].surface, backdropRoot: issues[0].parentElement.backdrop, color: "orange" }), complete: () => complete,
 		runFrame() {
 			const pending = [...frames.values()]; frames.clear(); frameEvents.length = 0; inFrame = true;
 			for (const callback of pending) callback();
@@ -188,3 +200,53 @@ for (const event of ["finish", "cancel", "dispose"]) {
 		assert.equal(h.frames.size, 0, "a late frame cannot restart a completed trace");
 	});
 }
+
+for (const count of [1, 4]) {
+	test(`session creation reveals ${count} cards with the linking glow sweeping upward`, () => {
+		const h = fixture(count); h.start(false, undefined, { K0: "#d97757" });
+		assert.equal(h.nodes.some((node) => node.name === "svg"), false, "creation must not trace borders");
+		const halos = h.animations.filter((item) => item.node.attributes["data-jira-linking-glow-halo"] !== undefined);
+		const pulses = h.animations.filter((item) => item.options.duration === 800);
+		assert.equal(halos.length, count);
+		assert.match(halos[0].node.style.boxShadow, /#d97757 28%/u);
+		assert.equal(pulses.length, count);
+		for (const pulse of pulses) {
+			assert.equal(pulse.node.style.top, "100%");
+			assert.equal(pulse.keyframes.at(-1).transform, "translateY(-200%)");
+			assert.equal(pulse.node.parentElement.attributes["aria-hidden"], "true");
+		}
+		const moves = h.animations.filter((item) => item.options.delay !== undefined);
+		assert.equal(moves.length, count - 1);
+		for (const [index, move] of moves.entries()) {
+			assert.equal(move.keyframes[0].transform, `translate3d(0, ${-(index + 1) * 112}px, 0)`);
+			assert.equal(move.options.duration + move.options.delay, 420);
+		}
+		for (const animation of h.animations) animation.onfinish();
+		assert.equal(h.complete(), 1);
+		assert.ok(halos.every((halo) => halo.node.removed));
+		assert.ok(pulses.every((pulse) => pulse.node.parentElement.removed));
+	});
+}
+
+test("reduced motion and cancellation leave no creation glow or moving slots", () => {
+	const reduced = fixture(4); reduced.start(true, undefined, {});
+	assert.equal(reduced.animations.length, 0);
+	assert.equal(reduced.complete(), 1);
+	const h = fixture(4); const stop = h.start(false, undefined, {}); stop(); stop();
+	assert.equal(h.complete(), 1);
+	assert.ok(h.animations.every((animation) => animation.cancelled));
+	for (const issue of h.issues) assert.equal(issue.parentElement.style.zIndex, "auto");
+});
+
+test("linking retains the same glow recipe with its original upward direction", () => {
+	const h = fixture(1); h.start();
+	const effects = h.linkGlow();
+	assert.equal(effects[0].animation.options.duration, 420);
+	const pulse = effects[1].animation;
+	assert.equal(pulse.options.duration, 800);
+	assert.equal(pulse.node.style.top, "100%");
+	assert.equal(pulse.keyframes.at(-1).transform, "translateY(-200%)");
+	for (const effect of effects) effect.restore();
+	assert.ok(effects[0].animation.node.removed);
+	assert.ok(pulse.node.parentElement.removed);
+});

@@ -1,4 +1,6 @@
 import { token } from "@/lib/tokens";
+import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card-glow";
+import { JIRA_LINKING_GLOW_DEFAULT_COLOR } from "@/components/blocks/jira-linking/glow-motion";
 
 // Reference choreography: the reveal and the border travel use separate clocks.
 export const CARD_DROP_STACK_EXPAND_MS = 420;
@@ -6,6 +8,7 @@ export const CARD_DROP_SHIMMER_MS = 620;
 export const SINGLE_CARD_DROP_SHIMMER_MS = 500;
 
 interface DropCard {
+	code: string;
 	node: HTMLElement;
 	surface: HTMLElement;
 	rect: DOMRect;
@@ -106,7 +109,7 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 }
 
 /** Animate real cards in their final slots; the transaction has already committed. */
-export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string, codes: readonly string[], reducedMotion: boolean, onComplete: () => void): () => void {
+export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string, codes: readonly string[], reducedMotion: boolean, onComplete: () => void, glowColors?: Readonly<Record<string, string>>): () => void {
 	if (reducedMotion) { onComplete(); return () => {}; }
 	const elements = [...root.querySelectorAll<HTMLElement>("[data-issue-key]")];
 	const cards: DropCard[] = codes.flatMap((code) => {
@@ -114,11 +117,19 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 		// The outer slot has FLIP disabled by this arrival and no card-hover transform.
 		const node = issue?.parentElement;
 		const surface = issue?.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
-		return node && surface ? [{ node, surface, rect: node.getBoundingClientRect(), surfaceRect: surface.getBoundingClientRect(), radius: getComputedStyle(surface).borderTopLeftRadius }] : [];
+		return node && surface ? [{ code, node, surface, rect: node.getBoundingClientRect(), surfaceRect: surface.getBoundingClientRect(), radius: getComputedStyle(surface).borderTopLeftRadius }] : [];
 	});
 	if (!cards.length) { onComplete(); return () => {}; }
 	const effects: { animation: Animation; restore: () => void }[] = [];
-	effects.push(createCollectionTrace(cards, root.ownerDocument, columnTitle));
+	if (glowColors) {
+		for (const card of cards) {
+			effects.push(...createJiraLinkingCardGlow({
+				haloRoot: card.surface,
+				backdropRoot: card.node.querySelector('[data-slot="jira-issue-agent-backdrop"]'),
+				color: glowColors[card.code] ?? JIRA_LINKING_GLOW_DEFAULT_COLOR,
+			}));
+		}
+	} else effects.push(createCollectionTrace(cards, root.ownerDocument, columnTitle));
 	const first = cards[0];
 	const priorFirstZ = first.node.style.zIndex;
 	let moving = cards.length - 1;

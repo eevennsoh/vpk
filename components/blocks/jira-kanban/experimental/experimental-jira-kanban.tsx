@@ -39,6 +39,8 @@ import { BoardColumn } from "./components/board-column";
 import { CollapsedColumnSessionDrop } from "./components/collapsed-column-session-drop";
 import { resolveBoardCreateDropzoneDrag } from "./lib/board-agent-session-drag";
 import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
+import { CreatedCardInlineFlight } from "./components/created-card-inline-flight";
+import { useCreatedCardDropMotion } from "./hooks/use-created-card-drop-motion";
 import { useIssueCardDropArrival, type IssueCardMove } from "./hooks/use-issue-card-drop-arrival";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
@@ -482,9 +484,7 @@ function ExperimentalJiraKanbanView({
 	useIssueMoveRequest(issueMoveRequest, issueDropArrival.handleMove);
 	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, scopeId: autoArrangeScopeId });
 	const singleCardDrag = Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1);
-	const presentedCardArrival = useMemo(() => createdCardArrival
-		? { ...createdCardArrival, deferred: receivingCreatedCards }
-		: undefined, [createdCardArrival, receivingCreatedCards]);
+	const { arrival: presentedCardArrival, inlineFlight } = useCreatedCardDropMotion({ arrival: createdCardArrival, boardRef: boardScrollportRef, receiving: receivingCreatedCards, reducedMotion: Boolean(shouldReduceMotion), onComplete: onCreatedCardArrivalComplete });
 	const boardContentUnderlapsRef = useRef(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
 	const handleCreatedCardArrivalComplete = useCreatedCardArrivalCompletion(
@@ -1011,6 +1011,7 @@ function ExperimentalJiraKanbanView({
 						statusOptions={boardColumns.flatMap((column) => column.statuses ?? [column.title])}
 					/>
 				) : null}
+			{inlineFlight ? <CreatedCardInlineFlight key={presentedCardArrival?.id} {...inlineFlight} /> : null}
 			<SessionFusionOverlay
 				members={boardSessionDrag.transaction?.cohort.members
 					?? boardSessionDrag.fusionDrop?.members
