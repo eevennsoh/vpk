@@ -2,6 +2,39 @@ import { expect, test } from "@playwright/test";
 
 const origin = process.env.PLAYWRIGHT_BASE_URL;
 
+test.use({ ignoreHTTPSErrors: true });
+
+for (const width of [1440, 1800]) {
+	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		test(`fitting columns lose their scrollbars after filtering at ${width}px (${reducedMotion})`, async ({ page }) => {
+			test.skip(!origin, "PLAYWRIGHT_BASE_URL must identify the owning worktree");
+			await page.emulateMedia({ reducedMotion });
+			await page.setViewportSize({ width, height: 900 });
+			await page.goto(`${origin}/jira-team-eu26`);
+			await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
+			const review = page.getByRole("region", { name: "In review work items", exact: true });
+			await expect(review.locator("..").locator('[data-slot="scroll-area-scrollbar"]')).toHaveCount(1);
+			const filter = page.getByRole("button", { name: "Filter board by Diego Santos", exact: true });
+			await filter.click();
+			await expect(filter).toHaveAttribute("aria-pressed", "true");
+
+			for (const title of ["To do", "In progress", "In review", "Done"]) {
+				const viewport = page.getByRole("region", { name: `${title} work items`, exact: true });
+				await expect.poll(() => viewport.evaluate((element) => element.scrollHeight - element.clientHeight)).toBe(0);
+				await expect(viewport.locator("..").locator('[data-slot="scroll-area-scrollbar"]')).toHaveCount(0);
+			}
+			await page.screenshot({ path: `output/agent-browser/scrollbars/fitting-${width}-${reducedMotion}.png` });
+
+			await filter.click();
+			const scrollbar = review.locator("..").locator('[data-slot="scroll-area-scrollbar"]');
+			await review.hover();
+			await expect(scrollbar).toHaveCSS("opacity", "1");
+			await page.mouse.wheel(0, 180);
+			await expect.poll(() => review.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+		});
+	}
+}
+
 test("board scrollbars hide at rest and support hover, wheel, dragging, and keyboard", async ({ page }) => {
 	test.skip(!origin, "PLAYWRIGHT_BASE_URL must identify the owning worktree");
 	await page.emulateMedia({ reducedMotion: "reduce" });
