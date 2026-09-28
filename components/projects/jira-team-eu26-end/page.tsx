@@ -399,6 +399,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						issueSelectionAppearance="fused-backdrop"
 						getStatusVariant={statusVariant}
 						issueDragTransitions
+						issueDropMotion="solitaire"
 						issueMoveVisual={designVariants.moveVisual}
 						issueMoveRequest={closingMoveRequest}
 						createWellBounce="off"

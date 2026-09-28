@@ -84,8 +84,11 @@ test("the keynote uses the same card movement presentation as Team EU26", () => 
 	for (const source of [reference, PAGE_SOURCE]) {
 		assert.match(source, /issueSelectionAppearance="fused-backdrop"/u);
 		assert.match(source, /issueDragTransitions\s/u);
+		assert.match(source, /issueDropMotion="solitaire"/u);
 		assert.match(source, /issueMoveVisual=\{designVariants\.moveVisual\}/u);
 	}
+	const wrapper = readProjectFile("components/blocks/jira-kanban/experimental/page.tsx");
+	assert.match(wrapper, /issueDropMotion=\{issueDropMotion\}/u);
 });
 
 test("the keynote floating chat retains MCB creator attribution through its active overlay", () => {

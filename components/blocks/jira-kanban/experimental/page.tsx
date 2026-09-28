@@ -180,6 +180,7 @@ function ExperimentalJiraKanbanPageContent({
 	createWorkItemDropZoneLabel,
 	issueDragTransitions = false,
 	issueMoveVisual = true,
+	issueDropMotion,
 	issueMoveRequest,
 	issueSelectionAppearance = "card",
 	getStatusVariant,
@@ -969,6 +970,7 @@ function ExperimentalJiraKanbanPageContent({
 								draggedCardCode={draggedCard?.card.code ?? null}
 								issueDragTransitions={issueDragTransitions}
 								issueMoveVisual={issueMoveVisual}
+								issueDropMotion={issueDropMotion}
 								issueMoveRequest={issueMoveRequest}
 								onIssueMove={issueMoveRequest && (controlledBoardColumns === undefined || onBoardColumnsChange) ? handleCardsMove : undefined}
 								issueSelectionAppearance={issueSelectionAppearance}

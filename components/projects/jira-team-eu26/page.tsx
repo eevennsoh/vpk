@@ -381,6 +381,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						getStatusVariant={statusVariant}
 						autoArrangeEnabled={designVariants.autoArrange}
 						issueDragTransitions
+						issueDropMotion="solitaire"
 						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}

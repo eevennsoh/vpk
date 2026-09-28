@@ -3,19 +3,16 @@ import { expect, test } from "@playwright/test";
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
-test("auto arrange keeps generated flights at the full issue-card size", async ({ page }) => {
+test("auto arrange unfolds full-size issue cards in their committed slots", async ({ page }) => {
 	await page.addInitScript(() => {
-		const samples: { code: string; width: number; height: number; bodyWidth: number; bodyHeight: number }[] = [];
-		Object.assign(window, { fullSizeIssueFlights: samples });
+		const samples: { code: string; width: number; height: number }[] = [];
+		Object.assign(window, { fullSizeIssueDrops: samples });
 		const animate = Element.prototype.animate;
 		Element.prototype.animate = function (frames, options) {
-			if (this.hasAttribute("data-issue-drop-flight")) {
-				const face = this.firstElementChild?.firstElementChild;
-				const body = face?.querySelector('[data-slot="jira-issue-card"]');
-				if (face && body) {
-					const bounds = face.getBoundingClientRect();
-					const card = body.getBoundingClientRect();
-					samples.push({ code: this.getAttribute("data-issue-drop-flight")!, width: bounds.width, height: bounds.height, bodyWidth: card.width, bodyHeight: card.height });
+			if (this.closest("[data-issue-drop-trace]")) {
+				for (const node of document.querySelectorAll('[data-jira-kanban-column="Done"] [data-slot="jira-issue-card"]')) {
+					const { width, height } = node.getBoundingClientRect();
+					samples.push({ code: node.closest('[data-issue-key]')!.getAttribute("data-issue-key")!, width, height });
 				}
 			}
 			return animate.call(this, frames, options);
@@ -31,16 +28,19 @@ test("auto arrange keeps generated flights at the full issue-card size", async (
 	for (const code of codes) await page.locator(`[data-issue-key="${code}"] [draggable]`).first().click({ modifiers: ["Meta"] });
 	await expect(page.locator('[data-issue-key="TEU-1"] [data-slot="jira-issue-cover"]')).toHaveCSS("clip-path", "inset(4px 4px 0px round 7px 7px 0px 0px)");
 	await page.getByRole("button", { name: "Auto arrange", exact: true }).click();
-	const flights = await page.evaluate(() => (window as typeof window & { fullSizeIssueFlights: { code: string; width: number; height: number; bodyWidth: number; bodyHeight: number }[] }).fullSizeIssueFlights);
-	expect(flights).toHaveLength(codes.length);
-	for (const flight of flights) {
-		const source = expected.find(card => card.code === flight.code)!;
-		expect({ width: flight.width, height: flight.height }).toEqual({ width: source.width, height: source.height });
-		expect(flight.bodyWidth).toBe(flight.width);
-		expect(flight.bodyHeight).toBe(flight.height);
+	const done = page.locator('[data-jira-kanban-column="Done"]');
+	await expect(done.locator("[data-issue-key]")).toHaveCount(codes.length);
+	// Auto arrange may scroll the destination, which deliberately cancels its
+	// decoration. Capture geometry when the drop effect starts, before that scroll.
+	const cards = await page.evaluate(() => (window as typeof window & { fullSizeIssueDrops: { code: string; width: number; height: number }[] }).fullSizeIssueDrops);
+	expect(cards.map(card => card.code)).toEqual(codes);
+	for (const card of cards) {
+		const source = expected.find(source => source.code === card.code)!;
+		expect(card.width).toBeCloseTo(source.width, 1);
+		expect(card.height).toBeCloseTo(source.height, 1);
 	}
-	await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(codes.length);
 	await expect(page.locator("[data-issue-drop-flight]")).toHaveCount(0);
+	await expect(page.locator("[data-issue-drop-trace]")).toHaveCount(0);
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {

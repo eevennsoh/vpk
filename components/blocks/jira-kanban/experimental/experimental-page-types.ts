@@ -56,6 +56,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	addAgentLabel?: ExperimentalJiraKanbanProps["addAgentLabel"];
 	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	issueMoveVisual?: ExperimentalJiraKanbanProps["issueMoveVisual"];
+	issueDropMotion?: ExperimentalJiraKanbanProps["issueDropMotion"];
 	/**
 	 * Host-requested cohort move, committed through the same drop path as a
 	 * manual multi-card drag. Ignored unless the board may edit its columns.
