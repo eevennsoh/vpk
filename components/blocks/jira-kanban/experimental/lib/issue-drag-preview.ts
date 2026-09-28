@@ -3,6 +3,10 @@ import { DECK_VISIBLE_MAX } from "@/components/blocks/agent-session/session-drag
 import { token } from "@/lib/tokens";
 import { createIssueCohortDeckLayers, type IssueCohortGatherLayer } from "./issue-cohort-gather";
 
+function removeIssuePreviewActions(preview: HTMLElement) {
+	for (const control of preview.querySelectorAll('[data-jira-issue-selection-control], [aria-label^="More actions for "]')) control.remove();
+}
+
 /** Isolate native issue paint while preserving an attached session's visible backdrop. */
 export function createIssueDragPreview(card: HTMLElement): HTMLElement {
 	const shell = card.closest<HTMLElement>('[data-slot="jira-issue-agent-shell"]');
@@ -22,7 +26,7 @@ export function createIssueDragPreview(card: HTMLElement): HTMLElement {
 	const sourceNodes = [card, ...card.querySelectorAll<HTMLElement | SVGElement>("*")];
 	const previewNodes = [body, ...body.querySelectorAll<HTMLElement | SVGElement>("*")];
 	// The offscreen clone cannot inherit the source's hover/focus state. Freeze
-	// its painted appearance so revealed actions and chrome survive the lift.
+	// its painted appearance so issue chrome survives the lift.
 	sourceNodes.forEach((source, index) => {
 		const appearance = getComputedStyle(source);
 		Object.assign(previewNodes[index].style, {
@@ -35,6 +39,7 @@ export function createIssueDragPreview(card: HTMLElement): HTMLElement {
 			pointerEvents: "none",
 		});
 	});
+	removeIssuePreviewActions(body);
 	const previewSurface = body.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]')!;
 	previewSurface.style.top = `${inset - 1}px`;
 	preview.setAttribute("aria-hidden", "true");
@@ -77,25 +82,28 @@ export function createIssueDragPreview(card: HTMLElement): HTMLElement {
 	return preview;
 }
 
-/** Crop the frozen issue chrome to its painted face, without changing the source. */
-function cropIssuePreviewToFace(preview: HTMLElement, card: HTMLElement) {
+/** Restore the detached face to the full card size, without changing its source well. */
+function restoreIssuePreviewFace(preview: HTMLElement, card: HTMLElement) {
 	const surface = card.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
 	const body = preview.querySelector<HTMLElement>('[data-slot="jira-issue-card"]');
 	if (!surface || !body) return;
 	const bounds = card.getBoundingClientRect();
-	const face = surface.getBoundingClientRect();
 	preview.querySelector('[data-slot="jira-issue-agent-backdrop"]')?.remove();
 	Object.assign(preview.style, {
-		width: `${face.width}px`, height: `${face.height}px`, overflow: "hidden",
+		width: `${bounds.width}px`, height: `${bounds.height}px`, overflow: "hidden",
 		borderRadius: getComputedStyle(surface).borderRadius,
 	});
 	Object.assign(body.style, {
-		position: "relative", left: `${bounds.left - face.left}px`, top: `${bounds.top - face.top}px`,
+		position: "relative", left: "0", top: "0",
 		width: `${bounds.width}px`, height: `${bounds.height}px`,
 	});
+	body.style.setProperty("--cover-surface-inset", "0px");
+	body.style.setProperty("--cover-surface-top-inset", "0px");
+	for (const cover of body.querySelectorAll<HTMLElement>('[data-slot="jira-issue-cover"]')) cover.style.setProperty("--cover-ring-inset", "0px");
 	const frozenSurface = body.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
 	if (frozenSurface) {
-		frozenSurface.style.top = getComputedStyle(surface).top;
+		// Surface offsets are measured inside the issue body's 1px border.
+		Object.assign(frozenSurface.style, { top: "-1px", right: "-1px", bottom: "-1px", left: "-1px" });
 		// The travelling face uses its normal semantic surface, not frozen hover paint.
 		frozenSurface.style.removeProperty("background-color");
 	}
@@ -108,7 +116,8 @@ export function createIssueFacePreview(card: HTMLElement, captured?: HTMLElement
 		const bounds = card.getBoundingClientRect();
 		Object.assign(lead.style, { width: `${bounds.width}px`, height: `${bounds.height}px` });
 	}
-	cropIssuePreviewToFace(lead, card);
+	restoreIssuePreviewFace(lead, card);
+	removeIssuePreviewActions(lead);
 	return lead;
 }
 
