@@ -25,8 +25,8 @@ function cohortBoard(count) {
 	};
 }
 
-function harness({ reduced = false, reject = false, enabled = true, withMove = false, board, dragged = "A", selected = ["A", "B"] } = {}) {
-	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [], events = [];
+function harness({ reduced = false, reject = false, enabled = true, withMove = false, board, dragged = "A", selected = ["A", "B"], solitaire = false } = {}) {
+	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [], reveals = [], events = [];
 	let stateIndex = 0, refIndex = 0, effectIndex = 0, preview = {}, api;
 	let columns = board ?? [
 		{ title: "To do", count: 2, cards: [issue("A", "Review"), issue("B", "Done")] },
@@ -51,12 +51,20 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-issue-card-drop-arrival.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
 	const loaded = { exports: {} };
 	vm.runInNewContext(compiled, {
-		module: loaded, exports: loaded.exports,
+		module: loaded, exports: loaded.exports, window: { addEventListener() {}, removeEventListener() {} },
 		require(name) {
 			if (name === "react") return react;
 			if (name.includes("use-media-query")) return { useMediaQuery: () => reduced };
 			if (name.includes("board-auto-arrange")) return autoModel;
 			if (name.includes("board-card-arrival")) return arrivalModel;
+			if (name.includes("issue-solitaire-drop")) return {
+				animateIssueSolitaireDrop(root, title, codes, reduced, complete) {
+					const reveal = { title, codes: [...codes], reduced, complete, stopped: false };
+					reveals.push(reveal);
+					if (reduced) complete();
+					return () => { reveal.stopped = true; };
+				},
+			};
 			if (name.includes("issue-card-drop-flight")) return {
 				captureIssueCardDropFlights(options) { events.push("capture"); captures.push({ preview: options.preview, pointer: options.pointer, grabbed: options.grabbed, codes: [...options.codes], allCards: options.allCards }); return options.codes.map((code) => ({ code, node: {}, from: { x: 100, y: 100 } })); },
 				hasIssueDropTarget: () => true,
@@ -67,12 +75,12 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	});
 	function render() {
 		stateIndex = refIndex = effectIndex = 0;
-		api = loaded.exports.useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, draggedCardCode: dragged, selectedCardCodes: new Set(selected), onDrop, onMove, onAutoArrange });
+		api = loaded.exports.useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, solitaire, draggedCardCode: dragged, selectedCardCodes: new Set(selected), onDrop, onMove, onAutoArrange });
 		while (scheduled.length) scheduled.shift()();
 		return api;
 	}
 	render();
-	return { render, captures, flights, events, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review") { api.handleDrop(title); preview = null; } };
+	return { render, captures, flights, reveals, events, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review") { api.handleDrop(title); preview = null; } };
 }
 
 test("Return captures the held preview before commit and launches arrivals for every destination before paint", () => {
@@ -282,7 +290,7 @@ test("each move request id plays once, and a board without the capability ignore
 	};
 	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-issue-move-request.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
 	const loaded = { exports: {} };
-	vm.runInNewContext(compiled, { module: loaded, exports: loaded.exports, require(name) { if (name === "react") return react; throw new Error(`Unexpected import ${name}`); } });
+	vm.runInNewContext(compiled, { module: loaded, exports: loaded.exports, window: { addEventListener() {}, removeEventListener() {} }, require(name) { if (name === "react") return react; throw new Error(`Unexpected import ${name}`); } });
 	const moves = [];
 	const render = (request, onMove = (move) => moves.push(move.id)) => { refIndex = 0; loaded.exports.useIssueMoveRequest(request, onMove); };
 	const request = { id: 1, cardCodes: ["A"], columnTitle: "Done" };
@@ -294,4 +302,37 @@ test("each move request id plays once, and a board without the capability ignore
 	assert.deepEqual(moves, [1, 2]);
 	render({ ...request, id: 3 }, null);
 	assert.deepEqual(moves, [1, 2]);
+});
+
+for (const count of [1, 2, 5, 13]) {
+	test(`solitaire commits all ${count} issues in board order without flights or create entrances`, () => {
+		const board = cohortBoard(count);
+		const h = harness({ board: board.columns, dragged: board.codes.at(-1), selected: [...board.codes].reverse(), solitaire: true });
+		h.drop("Done");
+		const api = h.render();
+		assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), board.codes);
+		assert.deepEqual(h.reveals[0].codes, board.codes);
+		assert.deepEqual([...api.arrivalForColumn("Done").animatedCardCodes], []);
+		assert.equal(h.flights.length, 0);
+		h.reveals[0].complete(); h.render();
+		assert.equal(h.api().arrivalForColumn("Done"), undefined);
+		assert.equal(h.reveals[0].stopped, true);
+	});
+}
+
+test("solitaire rejects no-op moves and cancels when visuals are disabled", () => {
+	const rejected = harness({ solitaire: true, reject: true });
+	rejected.drop(); rejected.render();
+	assert.equal(rejected.reveals.length, 0);
+	const h = harness({ solitaire: true }); h.drop(); h.render();
+	h.setEnabled(false); h.render();
+	assert.ok(h.reveals.every((reveal) => reveal.stopped));
+});
+
+test("reduced-motion solitaire commits immediately without a deferred arrival", () => {
+	const h = harness({ solitaire: true, reduced: true });
+	h.drop(); h.render(); h.render();
+	assert.equal(h.reveals[0].reduced, true);
+	assert.equal(h.api().arrivalForColumn("Review"), undefined);
+	assert.equal(h.captures.length, 0);
 });
