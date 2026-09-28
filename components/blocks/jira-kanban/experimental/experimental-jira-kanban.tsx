@@ -391,7 +391,7 @@ function BoardColumnShell({
 }
 
 function ExperimentalJiraKanbanView({
-	onAutoArrange: requestedAutoArrange,
+	onAutoArrange,
 	activeCardCode,
 	addAgentLabel,
 	agentActivityLayout = "merged",
@@ -458,8 +458,6 @@ function ExperimentalJiraKanbanView({
 	captureBoardSessionDragRoot?: boolean;
 }) {
 	const issueSelectionAppearance = issueMoveVisual ? requestedSelectionAppearance : "card";
-	// Original moves use native DnD; shortcut-triggered auto-arrange needs pointer transport.
-	const onAutoArrange = issueMoveVisual ? requestedAutoArrange : undefined;
 	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const scrollportPaddingTop = withKanbanDropRingClipGutter(paddingTop, chrome).paddingTop;
 	const untrackedPaddingTop = withKanbanDropContentGutter(paddingTop, chrome).paddingTop;
@@ -475,6 +473,7 @@ function ExperimentalJiraKanbanView({
 	const autoArrangeScopeId = useId();
 	const issueDragImageRef = useRef<HTMLElement | null>(null);
 	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop" || Boolean(onAutoArrange), draggedCardCode, onCardDragEnd);
+	// Auto arrange keeps its shortcut usable during pickup, independently of move visuals.
 	const { stop: stopPointerDrag } = useBoardIssuePointerDrag(boardScrollportRef, Boolean(onAutoArrange));
 	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete });
 	useIssueMoveRequest(issueMoveRequest, issueDropArrival.handleMove);

@@ -66,6 +66,32 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(page.getByRole("menuitemcheckbox", { name: "Auto arrange", exact: true })).toHaveAttribute("aria-checked", "true");
 		await expect(page.getByRole("menuitemcheckbox", { name: "Peel visual", exact: true })).toHaveAttribute("aria-checked", "true");
 	});
+
+	test(`Auto arrange works with Move visual off (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
+		await page.keyboard.press("Escape");
+		await toggleAutoArrange(page);
+		const card = page.locator('[data-issue-key="PAY-118"] [draggable]').first();
+		await card.click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		const action = page.getByRole("button", { name: "Auto arrange", exact: true });
+		await expect(action).toBeEnabled();
+		await expect(page.locator("[data-auto-arrange-count]")).not.toHaveCount(0);
+		const box = (await card.boundingBox())!;
+		await page.mouse.move(box.x + 70, box.y + 30);
+		await page.mouse.down();
+		await page.mouse.move(box.x + 95, box.y + 40, { steps: 5 });
+		await expect(page.locator("[data-issue-cohort-preview]")).toBeVisible();
+		await expect(action).toBeEnabled();
+		await page.keyboard.press("a");
+		await page.mouse.up();
+		await expect(page.locator("[data-issue-cohort-preview]")).toHaveCount(0);
+		await expect(page.locator('[data-jira-kanban-column="To do"] [data-issue-key="PAY-118"]')).toHaveCount(0);
+		await expect(page.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-118"]')).toHaveCount(1);
+	});
+
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
