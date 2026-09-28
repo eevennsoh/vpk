@@ -96,8 +96,8 @@ test("MCB owns search and code context while Tamar owns work and artifacts", asy
 	const keynote = await loadKeynoteModule();
 	const context = keynote.createJiraTeamEu26EndKeynoteBoardColumns()[0];
 	assert.deepEqual(context.cards.map((card) => [card.coverImage.heading.replaceAll("\n", " "), card.assignee.name]), [
-		["Desktop search & chat", "MCB"],
-		["Code context", "MCB"],
+		["Desktop Search & Chat", "MCB"],
+		["Code Context", "MCB"],
 		["Rovo for Work & Mobile", "Tamar"],
 		["Rovo Artifacts", "Tamar"],
 	]);
@@ -121,19 +121,19 @@ test("every keynote story pairs its feature cover heading with a benefit title a
 	assert.equal(cards.length, 13);
 	assert.equal(new Set(cards.map((card) => card.coverImage.heading)).size, 13);
 	assert.deepEqual(cards.map((card) => [card.coverImage.heading.replaceAll("\n", " "), card.title]), [
-		["Desktop search & chat", "Search across your work"],
-		["Code context", "Ground AI in your codebase"],
+		["Desktop Search & Chat", "Search across your work"],
+		["Code Context", "Ground AI in your codebase"],
 		["Rovo for Work & Mobile", "Pick up work anywhere"],
 		["Rovo Artifacts", "Turn ideas into outputs"],
-		["Loom desktop recording", "Record Share Collaborate"],
+		["Loom Desktop Recording", "Record Share Collaborate"],
 		["Whiteboard → Figma → Loom", "From ideas to shared outcomes"],
 		["AI Planner", "Humans and agents One plan"],
-		["Loom AI overlays", "Make every video clearer"],
-		["Loom PR previews", "Preview code changes in video"],
+		["Loom AI Overlays", "Make every video clearer"],
+		["Loom PR Previews", "Preview code changes in video"],
 		["Jira Agent Sessions", "See agent work as it happens"],
-		["DX session quality & ROI", "Measure session quality and ROI"],
+		["DX Session Quality & ROI", "Measure session quality and ROI"],
 		["Strategy Collection", "Align talent and investment"],
-		["Enterprise governance & Guard", "Govern AI at every level"],
+		["Enterprise Governance & Guard", "Govern AI at every level"],
 	]);
 	for (const card of cards) {
 		assert.equal(card.coverImage.heading.split("\n").length, 2);
@@ -149,10 +149,10 @@ test("every keynote story pairs its feature cover heading with a benefit title a
 	assert.deepEqual(cards[8].coverImage.appSources.map((app) => app.label), ["Loom", "Bitbucket"]);
 	assert.deepEqual(cards[11].coverImage.appSources.map((app) => app.label), ["Focus", "Talent"]);
 	assert.deepEqual([cards[0], cards[4], cards[10], cards[12]].map((card) => card.coverImage.heading), [
-		"Desktop\nsearch & chat",
-		"Loom\ndesktop recording",
-		"DX session\nquality & ROI",
-		"Enterprise\ngovernance & Guard",
+		"Desktop\nSearch & Chat",
+		"Loom\nDesktop Recording",
+		"DX Session\nQuality & ROI",
+		"Enterprise\nGovernance & Guard",
 	]);
 });
 
@@ -172,7 +172,7 @@ test("separate keynote board instances do not share mutable card or column data"
 	assert.equal(second[3].cards.length, 0);
 	assert.equal(second[0].cards[0].title, "Search across your work");
 	assert.equal(second[0].cards[0].status, "Context");
-	assert.equal(second[0].cards[0].coverImage.heading, "Desktop\nsearch & chat");
+	assert.equal(second[0].cards[0].coverImage.heading, "Desktop\nSearch & Chat");
 	assert.equal(second[0].cards[0].coverImage.appSources[0].label, "Rovo");
 	assert.deepEqual(second[0].cards[0].tags, []);
 });
@@ -183,7 +183,7 @@ test("older open boards recover cover artwork without resetting moved items or e
 	const card = columns[0].cards.shift();
 	card.title = "Edited rehearsal title";
 	card.status = "Confidence";
-	card.coverImage = { heading: "Desktop search & chat", maxHeight: 144, backgroundPattern: "dots" };
+	card.coverImage = { heading: "Desktop Search & Chat", maxHeight: 144, backgroundPattern: "dots" };
 	columns[2].cards.unshift(card);
 	const untouchedCard = columns[2].cards[1];
 
@@ -214,7 +214,7 @@ test("the original gray placeholder covers upgrade without resetting board edits
 	assert.equal(upgraded.title, "Edited before the cover update");
 	assert.equal(upgraded.status, "Done");
 	assert.equal(upgraded.assignee, card.assignee);
-	assert.equal(upgraded.coverImage.heading, "Desktop\nsearch & chat");
+	assert.equal(upgraded.coverImage.heading, "Desktop\nSearch & Chat");
 	assert.equal(upgraded.coverImage.backgroundPattern, "grid");
 	assert.equal(upgraded.coverImage.maxHeight, 120);
 	assert.deepEqual(upgraded.coverImage.appSources.map((app) => app.label), ["Rovo"]);
@@ -268,14 +268,47 @@ test("authored line breaks reach retained covers without replacing custom cover 
 	const custom = columns[0].cards[1];
 	custom.coverImage.heading = "Custom rehearsal cover";
 	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
-	assert.equal(restored[0].cards[0].coverImage.heading, "Desktop\nsearch & chat");
+	assert.equal(restored[0].cards[0].coverImage.heading, "Desktop\nSearch & Chat");
 	assert.equal(restored[0].cards[3].coverImage.heading, "Rovo\nArtifacts");
-	assert.equal(restored[1].cards[0].coverImage.heading, "Loom\ndesktop recording");
-	assert.equal(restored[2].cards[3].coverImage.heading, "DX session\nquality & ROI");
-	assert.equal(restored[2].cards[5].coverImage.heading, "Enterprise\ngovernance & Guard");
+	assert.equal(restored[1].cards[0].coverImage.heading, "Loom\nDesktop Recording");
+	assert.equal(restored[2].cards[3].coverImage.heading, "DX Session\nQuality & ROI");
+	assert.equal(restored[2].cards[5].coverImage.heading, "Enterprise\nGovernance & Guard");
 	assert.equal(restored[0].cards[1], custom);
 	assert.equal(custom.coverImage.heading, "Custom rehearsal cover");
 	assert.equal(columns[0].cards[0].coverImage.heading, "Desktop search\n& chat");
+});
+
+test("retained sentence-case headings adopt title case while preserving board edits", async () => {
+	const keynote = await loadKeynoteModule();
+	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+	const legacyHeadings = {
+		"TEU-1": "Desktop\nsearch & chat",
+		"TEU-2": "Code\ncontext",
+		"TEU-5": "Loom\ndesktop recording",
+		"TEU-8": "Loom\nAI overlays",
+		"TEU-9": "Loom\nPR previews",
+		"TEU-11": "DX session\nquality & ROI",
+		"TEU-13": "Enterprise\ngovernance & Guard",
+	};
+	const cards = columns.flatMap((column) => column.cards);
+	const expectedHeadings = new Map(cards.map((card) => [card.code, card.coverImage.heading]));
+	for (const card of cards) {
+		if (legacyHeadings[card.code]) card.coverImage.heading = legacyHeadings[card.code];
+	}
+	const moved = columns[0].cards.shift();
+	moved.status = "Done";
+	moved.title = "Edited rehearsal title";
+	columns[3].cards.push(moved);
+
+	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
+	for (const card of restored.flatMap((column) => column.cards)) {
+		assert.equal(card.coverImage.heading, expectedHeadings.get(card.code), card.code);
+	}
+	assert.equal(restored[3].cards[0].title, moved.title);
+	assert.equal(restored[3].cards[0].status, "Done");
+	assert.equal(restored[3].cards[0].assignee, moved.assignee);
+	assert.equal(moved.coverImage.heading, legacyHeadings["TEU-1"]);
+	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
 });
 
 test("AI Planner uses one Jira logo and replaces the older retained app stack", async () => {

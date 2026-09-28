@@ -12,9 +12,9 @@ const storySections = [
 ];
 const issueTitles = storySections.flatMap((section) => section.stories);
 const coverHeadings = [
-	"Desktop search & chat", "Code context", "Rovo for Work & Mobile", "Rovo Artifacts",
-	"Loom desktop recording", "Whiteboard → Figma → Loom", "AI Planner",
-	"Loom AI overlays", "Loom PR previews", "Jira Agent Sessions", "DX session quality & ROI", "Strategy Collection", "Enterprise governance & Guard",
+	"Desktop Search & Chat", "Code Context", "Rovo for Work & Mobile", "Rovo Artifacts",
+	"Loom Desktop Recording", "Whiteboard → Figma → Loom", "AI Planner",
+	"Loom AI Overlays", "Loom PR Previews", "Jira Agent Sessions", "DX Session Quality & ROI", "Strategy Collection", "Enterprise Governance & Guard",
 ];
 const coverApps = [
 	["Rovo"], ["Bitbucket", "GitHub", "GitLab"], ["Rovo"], ["Rovo"],
