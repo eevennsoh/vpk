@@ -89,6 +89,8 @@ test("the settings property controls the advanced session timeline", () => {
 		PAGE_SOURCE,
 		/settingsDesignVariantIds=\{JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS\}/u,
 	);
+	// The closing action belongs to the jira-team-eu26-end keynote only.
+	assert.doesNotMatch(PAGE_SOURCE, /settingsMenuItems|Play closing|issueMoveRequest/u);
 	assert.match(
 		PAGE_SOURCE,
 		/advancedAgentSessionTimeline=\{designVariants\.advancedTimeline\}/u,

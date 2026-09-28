@@ -74,6 +74,21 @@ export function getJiraCreateMotion(
 	};
 }
 
+/**
+ * The slot clips only while its own height animates (0 -> auto on insert, auto
+ * -> 0 on removal). A moved card lands in a slot that is already full height
+ * and only scales up to 1 inside it, so clipping there would just cut off the
+ * surface's edge shadow: adjacent arrivals then read as one fused block until
+ * the arrival ends and the shadows snap back.
+ */
+export function shouldClipJiraCreateSlot({ active, removing, reserveSlot }: Readonly<{
+	active: boolean;
+	removing: boolean;
+	reserveSlot: boolean;
+}>): boolean {
+	return removing || (active && !reserveSlot);
+}
+
 export function getJiraCreateSlotTransition(
 	shouldReduceMotion: boolean | null,
 	delayS = 0,
