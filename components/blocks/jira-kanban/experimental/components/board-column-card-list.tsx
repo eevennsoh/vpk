@@ -104,7 +104,7 @@ export function BoardColumnCardList({
 	isSessionDragging?: boolean;
 	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
 }>) {
-	const { ref, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>({ trackAnimatedOverflow: true });
+	const { ref, hasVerticalOverflow, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>({ trackAnimatedOverflow: true });
 	const cardListRef = useRef<HTMLDivElement | null>(null);
 	const setOverflowRef = useCallback((node: HTMLDivElement | null) => {
 		cardListRef.current = node;
@@ -236,7 +236,8 @@ export function BoardColumnCardList({
 						{isEmpty && columnSizing === "fill" ? <BoardEmptyColumnInsertionSlot columnTitle={columnTitle} /> : null}
 					</ScrollAreaContent>
 				</ScrollAreaViewport>
-				<ScrollBar visibility="auto" />
+				{/* Layout projection can change scroll bounds without resizing the content box. */}
+				{hasVerticalOverflow ? <ScrollBar visibility="auto" /> : null}
 			</ScrollAreaRoot>
 		</BoardCardHoverInsertionContext>
 	);
