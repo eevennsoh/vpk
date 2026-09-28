@@ -117,6 +117,7 @@ export function CreatedCardArrivalMotion({
 	const [entranceStarted, setEntranceStarted] = useState(!cardArrival.deferred);
 	const waiting = cardArrival.deferred && !entranceStarted;
 	const flightPending = arrival?.pendingCardCodes?.includes(cardCode) === true;
+	const inlineFlightPending = flightPending && !cardArrival.entering;
 	useLayoutEffect(() => {
 		if (!cardArrival.deferred) setEntranceStarted(true);
 	}, [cardArrival.deferred]);
@@ -139,10 +140,10 @@ export function CreatedCardArrivalMotion({
 
 	return (
 		<motion.div
-			aria-hidden={waiting || removing || undefined}
-			className={cn("w-full min-w-0 max-w-[280px] motion-reduce:transition-none!", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null)}
+			aria-hidden={waiting || removing || inlineFlightPending || undefined}
+			className={cn("w-full min-w-0 max-w-[280px] motion-reduce:transition-none!", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null, inlineFlightPending ? "invisible" : null)}
 			data-created-card-pending={waiting || undefined}
-			inert={waiting || removing || undefined}
+			inert={waiting || removing || inlineFlightPending || undefined}
 			style={{
 				maxWidth: columnWidth === "fluid" ? "none" : undefined,
 				marginBottom: removing && removalSpacing

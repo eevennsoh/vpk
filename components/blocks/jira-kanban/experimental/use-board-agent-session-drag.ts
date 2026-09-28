@@ -409,6 +409,7 @@ export function useBoardAgentSessionDrag({
 	onBoardGapCreate?: (
 		sessions: readonly [AgentSessionItem, ...AgentSessionItem[]],
 		insertion: BoardCardInsertion,
+		from?: Readonly<{ x: number; y: number }>,
 	) => void;
 	onCreate?: (session: AgentSessionItem, columnTitle: string) => void;
 	onCreateWellReceive?: (receipt: SessionDropReceipt) => void;
@@ -482,7 +483,10 @@ export function useBoardAgentSessionDrag({
 			current.origin,
 			lookups,
 		);
-		executeSessionTransferPlan(plan, ports);
+		executeSessionTransferPlan(plan, {
+			...ports,
+			onBoardGapCreate: onBoardGapCreate ? (sessions, insertion) => onBoardGapCreate(sessions, insertion, current.pointer) : undefined,
+		});
 		const receipt = toSessionDropReceipt({
 			plan,
 			pointer: current.pointer,
@@ -493,6 +497,7 @@ export function useBoardAgentSessionDrag({
 	}, [
 		boardColumns,
 		detachedSessionsByCard,
+		onBoardGapCreate,
 		onCreateWellReceive,
 		ports,
 		untrackedSessions,
