@@ -197,16 +197,13 @@ function JiraDropzoneDemoStage({
 				/>
 			) : null}
 			<div className="flex flex-wrap items-center justify-center gap-2">
-				{DEMO_MEMBERS.map((member) => (
-					<JiraDropzoneDemoChip
-						key={member.id}
-						members={[member]}
-						onDragCancel={demoDrag.onDragCancel}
-						onDragEnd={demoDrag.onDragEnd}
-						onDragMove={demoDrag.onDragMove}
-						onDragStart={demoDrag.onDragStart}
-					/>
-				))}
+				<JiraDropzoneDemoChip
+					members={[DEMO_MEMBERS[0]]}
+					onDragCancel={demoDrag.onDragCancel}
+					onDragEnd={demoDrag.onDragEnd}
+					onDragMove={demoDrag.onDragMove}
+					onDragStart={demoDrag.onDragStart}
+				/>
 				<JiraDropzoneDemoChip
 					members={DEMO_MEMBERS}
 					onDragCancel={demoDrag.onDragCancel}
