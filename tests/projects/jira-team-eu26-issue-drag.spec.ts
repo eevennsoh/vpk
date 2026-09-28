@@ -443,7 +443,21 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.mouse.move(next.x + 100, next.y + 20, { steps: 5 });
 		// Chromium may emit dragenter on the final step; another move emits dragover.
 		await page.mouse.move(next.x + 100, next.y + 20);
-		await expect(page.locator('[data-issue-drop-before="PAY-107"] [data-insertion-line]')).toBeVisible();
+		const insertionLine = page.locator('[data-issue-drop-before="PAY-107"] [data-insertion-line]');
+		await expect(insertionLine).toBeVisible();
+		await expect(insertionLine.locator("span")).toBeVisible();
+		const { lineBounds, dotBounds } = await insertionLine.evaluate((node) => ({
+			lineBounds: node.getBoundingClientRect().toJSON(),
+			dotBounds: node.querySelector("span")!.getBoundingClientRect().toJSON(),
+		}));
+		expect(dotBounds.width).toBe(8);
+		expect(dotBounds.height).toBe(8);
+		expect(dotBounds.x).toBe(lineBounds.x);
+		expect(dotBounds.y + dotBounds.height / 2).toBe(lineBounds.y + lineBounds.height / 2);
+		await expect(insertionLine).toHaveCSS("pointer-events", "none");
+		await expect(insertionLine).toHaveAttribute("aria-hidden", "true");
+		expect(await insertionLine.evaluate((node) => parseFloat(getComputedStyle(node).borderTopRightRadius))).toBeGreaterThan(0);
+		expect(await insertionLine.locator("span").evaluate((node) => parseFloat(getComputedStyle(node).borderTopLeftRadius))).toBeGreaterThanOrEqual(4);
 		await page.screenshot({ timeout: 5_000, path: `output/agent-browser/dnd/entered-${reducedMotion}.png` });
 		await page.mouse.up();
 		await expect(issue(page, "PAY-118")).toHaveAttribute("data-board-column-title", "In progress");

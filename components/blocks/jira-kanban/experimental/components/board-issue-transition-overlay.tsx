@@ -82,7 +82,7 @@ export function BoardIssueTransitionOverlay({ issueDrop, title, moveVisual = tru
 		{issueDrop.offeringChoices || issueDrop.current?.entered ? <BoardIssueStatusChoices issueDrop={issueDrop} title={title} moveVisual={moveVisual} /> : null}
 		{insertion?.lineTop !== undefined ? (
 			<div className="pointer-events-none absolute inset-x-1 z-30" style={{ top: insertion.lineTop }} data-issue-drop-before={insertion.beforeCardCode ?? "end"}>
-				<BoardCardInsertionLine position="before" seam="edge" marker={moveVisual ? "none" : "circle"} />
+				<BoardCardInsertionLine position="before" seam="edge" marker="circle" />
 			</div>
 		) : null}
 	</>;
