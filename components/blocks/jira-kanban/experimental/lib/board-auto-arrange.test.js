@@ -60,13 +60,45 @@ test("invalid, missing, unselected and already-arranged cards do not move", () =
 	assert.deepEqual(withAutoArrangeDestinations([{ title: "Only", count: 1, cards: [card("F")] }])[0].cards[0], card("F"));
 });
 
-test("destination badges render only positive incoming counts", () => {
+function loadAutoArrangeControls() {
 	// Atlaskit imports compiled CSS; SSR needs its components, not a CSS loader.
 	const previousCssLoader = require.extensions[".css"];
-	let BoardAutoArrangeBadge;
 	try {
 		require.extensions[".css"] = () => {};
-		({ BoardAutoArrangeBadge } = loadCjsModuleFromText(esbuild.buildSync({
+		return loadCjsModuleFromText(esbuild.buildSync({
+			entryPoints: ["components/blocks/jira-kanban/experimental/components/board-auto-arrange.tsx"],
+			bundle: true, format: "cjs", platform: "node", packages: "external", write: false,
+		}).outputFiles[0].text);
+	} finally {
+		if (previousCssLoader) require.extensions[".css"] = previousCssLoader;
+		else delete require.extensions[".css"];
+	}
+}
+
+test("destination badges render only positive incoming counts", () => {
+	const { BoardAutoArrangeBadge } = loadAutoArrangeControls();
+	const render = (count) => renderToStaticMarkup(React.createElement(BoardAutoArrangeBadge, { count, title: "Done" }));
+	assert.equal(render(undefined), "");
+	assert.equal(render(0), "");
+	assert.match(render(3), /aria-label="3 cards to arrange in Done"/u);
+	assert.match(render(3), />3<\/span>/u);
+});
+
+test("auto arrange advertises a single A shortcut and key hint", () => {
+	const { BoardAutoArrangeAction } = loadAutoArrangeControls();
+	const render = (available) => renderToStaticMarkup(React.createElement(BoardAutoArrangeAction, { ready: false, available, onArrange() {} }));
+	assert.match(render(true), /aria-keyshortcuts="a"/u);
+	assert.match(render(true), />A<\/kbd>/u);
+	assert.doesNotMatch(render(true), /Meta\+Enter|Control\+Enter|Command Enter|>⌘<\/kbd>/u);
+	assert.doesNotMatch(render(false), /aria-keyshortcuts|data-slot="kbd"/u);
+});
+
+test("auto arrange action is omitted without available moves and retained while preparing", () => {
+	const previousCssLoader = require.extensions[".css"];
+	let BoardAutoArrangeAction;
+	try {
+		require.extensions[".css"] = () => {};
+		({ BoardAutoArrangeAction } = loadCjsModuleFromText(esbuild.buildSync({
 			entryPoints: ["components/blocks/jira-kanban/experimental/components/board-auto-arrange.tsx"],
 			bundle: true, format: "cjs", platform: "node", packages: "external", write: false,
 		}).outputFiles[0].text));
@@ -74,9 +106,9 @@ test("destination badges render only positive incoming counts", () => {
 		if (previousCssLoader) require.extensions[".css"] = previousCssLoader;
 		else delete require.extensions[".css"];
 	}
-	const render = (count) => renderToStaticMarkup(React.createElement(BoardAutoArrangeBadge, { count, title: "Done" }));
-	assert.equal(render(undefined), "");
-	assert.equal(render(0), "");
-	assert.match(render(3), /aria-label="3 cards to arrange in Done"/u);
-	assert.match(render(3), />3<\/span>/u);
+	const render = (ready, available) => renderToStaticMarkup(React.createElement(BoardAutoArrangeAction, { ready, available, onArrange: () => {} }));
+	assert.equal(render(false, false), "");
+	assert.equal(render(true, false), "");
+	assert.match(render(false, true), /aria-label="Preparing auto arrange"/u);
+	assert.match(render(true, true), /aria-label="Auto arrange"/u);
 });

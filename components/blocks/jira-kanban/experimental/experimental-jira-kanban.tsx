@@ -457,7 +457,7 @@ function ExperimentalJiraKanbanView({
 	captureBoardSessionDragRoot?: boolean;
 }) {
 	const issueSelectionAppearance = issueMoveVisual ? requestedSelectionAppearance : "card";
-	// Original moves use native DnD; Return-triggered auto-arrange needs pointer transport.
+	// Original moves use native DnD; shortcut-triggered auto-arrange needs pointer transport.
 	const onAutoArrange = issueMoveVisual ? requestedAutoArrange : undefined;
 	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const scrollportPaddingTop = withKanbanDropRingClipGutter(paddingTop, chrome).paddingTop;
@@ -471,12 +471,14 @@ function ExperimentalJiraKanbanView({
 	const cardRemoval = useBoardCardRemoval(cardMoreMenuActions, shouldReduceMotion, onCardsRemove);
 	const receivingCreatedCards = useJiraDropzoneReceiving(createdCardArrival?.columnTitle);
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
+	const autoArrangeScopeId = useId();
 	const issueDragImageRef = useRef<HTMLElement | null>(null);
 	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop" || Boolean(onAutoArrange), draggedCardCode, onCardDragEnd);
 	const { stop: stopPointerDrag } = useBoardIssuePointerDrag(boardScrollportRef, Boolean(onAutoArrange));
 	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete });
 	useIssueMoveRequest(issueMoveRequest, issueDropArrival.handleMove);
-	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, boardRef: boardScrollportRef });
+	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, scopeId: autoArrangeScopeId });
+	const singleCardDrag = Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1);
 	const presentedCardArrival = useMemo(() => createdCardArrival
 		? { ...createdCardArrival, deferred: receivingCreatedCards }
 		: undefined, [createdCardArrival, receivingCreatedCards]);
@@ -558,8 +560,7 @@ function ExperimentalJiraKanbanView({
 		const ring = element.querySelector<HTMLElement>("[data-jira-kanban-column-drop-ring]") ?? element;
 		const choosingStatus = element.querySelector("[data-issue-status-choices]") !== null;
 		const showRing = element.dataset.collapsed === "true"
-			|| (!choosingStatus && element.dataset.jiraKanbanCardCount === "0")
-			|| (issueMoveVisual && choosingStatus);
+			|| (!choosingStatus && element.dataset.jiraKanbanCardCount === "0");
 		setKanbanColumnDropArmed(ring, chrome, armed && showRing);
 	};
 
@@ -736,6 +737,7 @@ function ExperimentalJiraKanbanView({
 		<div
 			ref={captureBoardSessionDragRoot ? boardSessionDrag.boardRootRef : undefined}
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
+			data-jira-auto-arrange-scope={autoArrangeScopeId}
 			data-board-agent-session-dragging={boardSessionDrag.transaction !== null || undefined}
 			data-board-agent-session-origin={boardSessionDrag.transaction?.origin.kind}
 		>
@@ -976,10 +978,10 @@ function ExperimentalJiraKanbanView({
 				</section>
 				</JiraSessionFlyoutSuspensionProvider>
 			</div>
-				{selectionToolbar ? (
+				{selectionToolbar && (!singleCardDrag || autoArrange.available) ? (
 					<JiraToolbar
-						primaryActionOnly={Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1)}
 						primaryAction={onAutoArrange ? <BoardAutoArrangeAction key={autoArrange.key} ready={autoArrange.ready} available={autoArrange.available} onArrange={autoArrange.arrange} /> : undefined}
+						primaryActionOnly={singleCardDrag}
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
 						dismissOnEscape={selectionToolbar.dismissOnEscape}

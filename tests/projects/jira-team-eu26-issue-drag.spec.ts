@@ -48,6 +48,8 @@ for (const route of ["/jira-team-eu26", "/preview/blocks/jira-dragging"]) {
 			await click(middle.codes[0]);
 			await expect.poll(selected).toEqual([left.codes[0], middle.codes[0]]);
 			await click(left.codes[0]);
+			await expect.poll(selected).toEqual([left.codes[0], middle.codes[0]]);
+			await click(middle.codes[0], ["ControlOrMeta"]);
 			await expect.poll(selected).toEqual([left.codes[0]]);
 			await page.getByRole("button", { name: "Select all", exact: true }).click();
 			await expect.poll(selected).toEqual(left.codes);
@@ -95,6 +97,79 @@ test("EU26 plain click does not select; Shift click selects a range", async ({ p
 	await page.keyboard.press("Escape");
 	await expect(control("PAY-105")).toHaveAttribute("aria-pressed", "false");
 });
+
+for (const input of ["selection controls", "modifier clicks"] as const) {
+	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		test(`EU26 Shift adds to disjoint selections from ${input} (${reducedMotion})`, async ({ page }) => {
+			await page.emulateMedia({ reducedMotion });
+			await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
+			await page.goto(`${origin}/jira-team-eu26`);
+			const card = (code: string) => issue(page, code).locator("[draggable]").first();
+			const control = (code: string) => issue(page, code).locator("[data-jira-issue-activation-control]");
+			const selected = () => page.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes
+				.filter((node) => node.querySelector('[data-jira-issue-activation-control][aria-pressed="true"]'))
+				.map((node) => node.getAttribute("data-issue-key")));
+			for (const code of ["PAY-105", "PAY-130"]) {
+				if (input === "selection controls") {
+					await issue(page, code).hover();
+					if (code === "PAY-105") {
+						await page.getByRole("button", { name: "More actions for PAY-105", exact: true }).click();
+						await page.getByRole("menuitem", { name: "Select", exact: true }).click();
+					} else {
+						await issue(page, code).locator("[data-jira-issue-selection-control]").click();
+					}
+				} else {
+					await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["ControlOrMeta"] });
+				}
+			}
+			await expect.poll(selected).toEqual(["PAY-105", "PAY-130"]);
+			await card("PAY-123").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+			await expect.poll(selected).toEqual(["PAY-105", "PAY-123", "PAY-130"]);
+			await expect(control("PAY-123")).toBeFocused();
+			await expect(page.getByRole("region", { name: "3 cards selected. Bulk actions available." })).toBeVisible();
+			await card("PAY-130").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+			await expect.poll(selected).toEqual(["PAY-105", "PAY-123", "PAY-130"]);
+			await page.screenshot({ path: `output/agent-browser/jira-additive-selection/eu26-${input.replaceAll(" ", "-")}-${reducedMotion}.png` });
+			await issue(page, "PAY-105").hover();
+			await issue(page, "PAY-105").locator("[data-jira-issue-selection-control]").click();
+			await expect.poll(selected).toEqual(["PAY-123", "PAY-130"]);
+			await page.keyboard.press("Escape");
+			await expect.poll(selected).toEqual([]);
+		});
+	}
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`EU26 keyboard ranges shrink while keeping independent selections (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
+		await page.goto(`${origin}/jira-team-eu26`);
+		const card = (code: string) => issue(page, code).locator("[draggable]").first();
+		const selected = () => page.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes
+			.filter((node) => node.querySelector('[data-jira-issue-activation-control][aria-pressed="true"]'))
+			.map((node) => node.getAttribute("data-issue-key")));
+		await card("PAY-105").click({ position: { x: 70, y: 30 }, modifiers: ["ControlOrMeta"] });
+		await page.keyboard.press("Shift+ArrowDown");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107"]);
+		await page.keyboard.press("Shift+ArrowUp");
+		await expect.poll(selected).toEqual(["PAY-105"]);
+		await expect(issue(page, "PAY-105").locator("[data-jira-issue-activation-control]")).toBeFocused();
+		await card("PAY-130").click({ position: { x: 70, y: 30 }, modifiers: ["ControlOrMeta"] });
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-130"]);
+		await page.keyboard.press("Shift+ArrowUp");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-123", "PAY-130"]);
+		await page.keyboard.press("Shift+ArrowUp");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
+		await page.keyboard.press("Shift+ArrowDown");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-123", "PAY-130"]);
+		await page.keyboard.press("Shift+ArrowDown");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-130"]);
+		await expect(issue(page, "PAY-130").locator("[data-jira-issue-activation-control]")).toBeFocused();
+		await page.screenshot({ path: `output/agent-browser/jira-additive-selection/eu26-keyboard-shrunk-${reducedMotion}.png` });
+		await page.keyboard.press("Escape");
+		await expect.poll(selected).toEqual([]);
+	});
+}
 
 test("EU26 menu Select is keyboard accessible and restores card focus", async ({ page }) => {
 	await page.goto(`${origin}/jira-team-eu26`);
@@ -144,6 +219,30 @@ async function startDrag(page: Page, code: string) {
 	await expect(card).toHaveAttribute("data-dragging", "true");
 }
 
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`EU26 single-card drag toolbar appears on pickup and restores selection after cancel (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		const toolbar = page.getByRole("region", { name: "Move card. Auto arrange available.", exact: true });
+		await startDrag(page, "PAY-118");
+		await expect(toolbar).toBeVisible();
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect(page.locator('[data-slot="jira-toolbar-positioner"]')).toHaveCount(0);
+		await expect(issue(page, "PAY-118")).toHaveAttribute("data-board-column-title", "To do");
+		await issue(page, "PAY-118").locator("[draggable]").first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		const selection = page.getByRole("region", { name: "1 card selected. Bulk actions available.", exact: true });
+		await expect(selection).toBeVisible();
+		await startDrag(page, "PAY-118");
+		await expect(toolbar).toBeVisible();
+		await expect(toolbar.getByRole("button", { name: "Select all", exact: true })).toHaveCount(0);
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect(selection).toBeVisible();
+		await expect(selection.getByRole("button", { name: "Select all", exact: true })).toBeVisible();
+	});
+}
+
 async function enterStatus(page: Page, status: string) {
 	const zone = page.locator(`[data-issue-status-zone="${status}"]`);
 	const box = await zone.boundingBox();
@@ -154,6 +253,47 @@ async function enterStatus(page: Page, status: string) {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`move status wells match the create well's horizontal magnetic range (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await startDrag(page, "PAY-118");
+		for (const status of ["In progress", "Paused"]) {
+			const zone = column(page, "In progress").locator(`[data-issue-status-zone="${status}"]`);
+			await expect(zone).toBeVisible();
+			const box = (await zone.boundingBox())!;
+			const readGeometry = () => zone.evaluate((node) => {
+				const well = node.matches(".border-dashed") ? node : node.querySelector(".border-dashed")!;
+				const bounds = well.getBoundingClientRect();
+				const hitArea = node.getBoundingClientRect();
+				const label = well.querySelector("[data-jira-dropzone-magnetic-label]")!;
+				const transform = new DOMMatrixReadOnly(getComputedStyle(label).transform);
+				return { x: bounds.left - hitArea.left, y: bounds.top - hitArea.top, width: bounds.width, height: bounds.height, hitX: hitArea.left, labelX: transform.m41, labelY: transform.m42 };
+			});
+			for (const direction of [-1, 1]) {
+				// Native dragover drives the same magnet even while pointermove is suspended.
+				// Dispatch at document level to sample the spring without committing a status.
+				await page.evaluate((point) => document.dispatchEvent(new DragEvent("dragover", { bubbles: true, ...point })), {
+					clientX: direction < 0 ? box.x : box.x + box.width,
+					clientY: direction < 0 ? box.y + 1 : box.y + box.height - 1,
+				});
+				await expect.poll(async () => (await readGeometry()).x).toBeCloseTo(reducedMotion === "reduce" ? 0 : direction * 8, 1);
+				const geometry = await readGeometry();
+				expect(geometry.y).toBeCloseTo(0, 1);
+				expect(geometry.labelY).toBeCloseTo(reducedMotion === "reduce" ? 0 : direction * 4 * (1 - 2 / box.height), 1);
+				expect(geometry.labelX).toBeCloseTo(reducedMotion === "reduce" ? 0 : direction * 4, 1);
+				expect(geometry.hitX).toBeCloseTo(box.x, 1);
+				expect(geometry.width).toBeCloseTo(box.width, 1);
+				expect(geometry.height).toBeCloseTo(box.height, 1);
+			}
+			await page.evaluate(() => document.dispatchEvent(new DragEvent("dragover", { bubbles: true, clientX: 0, clientY: 0 })));
+			await expect.poll(async () => (await readGeometry()).x).toBeCloseTo(0, 1);
+		}
+		await enterStatus(page, "Paused");
+		await page.screenshot({ path: `output/agent-browser/dnd/magnetic-move-status-${reducedMotion}.png` });
+		await page.mouse.up();
+		await expect(issue(page, "PAY-118")).toHaveAttribute("data-board-column-title", "In progress");
+	});
+
 	test(`Default empty In progress keeps both status targets usable (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: 1440, height: 800 });
@@ -290,6 +430,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		// Crossing the header keeps the two body choices available.
 		await page.mouse.move(inProgressBounds.x + inProgressBounds.width / 2, inProgressBounds.y + 12, { steps: 3 });
 		await expect(inProgress.locator("[data-issue-status-zone]")).toHaveCount(2);
+		await expect(inProgress.locator("[data-jira-kanban-column-drop-ring]")).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
 		await page.screenshot({ timeout: 5_000, path: `output/agent-browser/dnd/choices-${reducedMotion}.png` });
 		await enterStatus(page, "Paused");
 		await expect(column(page, "In progress")).toContainText("To do → Paused");
@@ -412,7 +553,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.mouse.move(1000, 150);
 		await page.screenshot({ path: `output/agent-browser/dnd/eu26-fused-selection-${reducedMotion}.png` });
 
-		// The same keyboard range grows and shrinks from its fixed anchor.
+		// Keyboard ranges grow and shrink while retaining the initial selection.
 		await issue(page, "PAY-107").locator('[data-jira-issue-activation-control]').focus();
 		await page.keyboard.press("Shift+ArrowDown");
 		await expect(backdrop("PAY-123")).toHaveClass(/bg-bg-selected/);
