@@ -113,6 +113,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	issueDragTransitions?: boolean;
 	/** False restores the original issue move visuals without changing drop behavior. */
 	issueMoveVisual?: boolean;
+	/** Commit in place, then unfold the cohort using the solitaire reference. */
+	issueDropMotion?: "solitaire";
 	/** Host-requested cohort move, played like a drop; requires `onIssueMove` to commit it. */
 	issueMoveRequest?: JiraKanbanIssueMoveRequest;
 	onIssueMove?: (move: IssueCardMove) => void;
@@ -408,6 +410,7 @@ function ExperimentalJiraKanbanView({
 	iconScale = "compact",
 	issueDragTransitions = false,
 	issueMoveVisual = true,
+	issueDropMotion,
 	issueMoveRequest,
 	onIssueMove,
 	issueSelectionAppearance: requestedSelectionAppearance = "card",
@@ -475,7 +478,7 @@ function ExperimentalJiraKanbanView({
 	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop" || Boolean(onAutoArrange), draggedCardCode, onCardDragEnd);
 	// Auto arrange keeps its shortcut usable during pickup, independently of move visuals.
 	const { stop: stopPointerDrag } = useBoardIssuePointerDrag(boardScrollportRef, Boolean(onAutoArrange));
-	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete });
+	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete, solitaire: issueDropMotion === "solitaire", stopPreview: issueCohortPreview.stop });
 	useIssueMoveRequest(issueMoveRequest, issueDropArrival.handleMove);
 	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, scopeId: autoArrangeScopeId });
 	const singleCardDrag = Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1);

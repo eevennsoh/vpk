@@ -2,6 +2,7 @@
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { animateIssueSolitaireDrop } from "../lib/issue-solitaire-drop";
 import { getAutoArrangePlan } from "../lib/board-auto-arrange";
 import type { JiraKanbanProps } from "../../index";
 import type { JiraKanbanCardDropTarget } from "../../card-drop";
@@ -17,7 +18,9 @@ export interface IssueCardMove {
 }
 
 /** Native issue drops share the agent-session card entrance once their owner commits the move. */
-export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, createdArrival, draggedCardCode, selectedCardCodes, onDrop, onMove, onAutoArrange, onCreatedComplete }: Readonly<{
+export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, createdArrival, draggedCardCode, selectedCardCodes, onDrop, onMove, onAutoArrange, onCreatedComplete, solitaire = false, stopPreview }: Readonly<{
+	solitaire?: boolean;
+	stopPreview?: () => void;
 	boardRef: RefObject<HTMLElement | null>;
 	enabled: boolean;
 	getPreview: () => HTMLElement | null;
@@ -38,14 +41,15 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const releasePoint = useRef<IssueDropPoint | null>(null);
 	const grabOffset = useRef<IssueDropPoint>({ x: 0, y: 0 });
-	const snapshots = useRef<{ id: number; title: string; flights: IssueCardDropFlight[]; started?: boolean }[]>([]);
+	const snapshots = useRef<{ id: number; title: string; flights: IssueCardDropFlight[]; started?: boolean; solitaire?: boolean }[]>([]);
 	const arrivals = useMemo(() => drop.flatMap((item) => {
 		const arrival = resolveIssueCardDropArrival(item, columns);
 		return arrival ? [arrival] : [];
 	}), [drop, columns]);
 	const committedArrivals = useRef(arrivals);
 	useLayoutEffect(() => { committedArrivals.current = arrivals; }, [arrivals]);
-	const hasFlights = arrivals.some((arrival) => arrival.animatedCardCodes !== undefined);
+	const hasFlights = arrivals.some((arrival) => snapshots.current.some((item) => item.id === arrival.id && !item.solitaire) && arrival.animatedCardCodes !== undefined);
+	const hasSolitaire = arrivals.some((arrival) => snapshots.current.some((item) => item.id === arrival.id && item.solitaire));
 	const canDrop = onDrop !== undefined;
 	useLayoutEffect(() => {
 		const root = boardRef.current;
@@ -109,6 +113,25 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		return () => cleanups.forEach((cleanup) => cleanup());
 	}, [boardRef, committedArrivals, enabled, flightBatchId, hasFlights, reduceMotion]);
 	useLayoutEffect(() => {
+		const root = boardRef.current;
+		if (!enabled || !hasSolitaire || !root) return;
+		stopPreview?.();
+		nativePreviewRef.current?.remove();
+		nativePreviewRef.current = null;
+		const cleanups = committedArrivals.current.filter((arrival) => snapshots.current.some((item) => item.id === arrival.id && item.solitaire)).map((arrival) =>
+			animateIssueSolitaireDrop(root, arrival.columnTitle, arrival.cardCodes, reduceMotion, () => {
+				setDrop((current) => current.filter((item) => item.id !== arrival.id));
+			}));
+		const stop = () => cleanups.forEach((cleanup) => cleanup());
+		root.ownerDocument.addEventListener("scroll", stop, true);
+		window.addEventListener("resize", stop);
+		return () => {
+			root.ownerDocument.removeEventListener("scroll", stop, true);
+			window.removeEventListener("resize", stop);
+			stop();
+		};
+	}, [boardRef, enabled, flightBatchId, hasSolitaire, nativePreviewRef, reduceMotion, stopPreview]);
+	useLayoutEffect(() => {
 		// Once the owner ends the gesture, rejected moves cannot react to later edits.
 		if (drop.length && !draggedCardCode && drop.some((item) => !arrivals.some((arrival) => arrival.id === item.id))) {
 			setDrop((current) => current.filter((item) => arrivals.some((arrival) => arrival.id === item.id)));
@@ -127,6 +150,12 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	const captureDrop = useCallback((codes: readonly string[], columnTitle: string, grabbed: string | null) => {
 		// Created-card ids are positive; move ids occupy a separate completion namespace.
 		const next = captureIssueCardDropArrival(columns, codes, columnTitle, --version.current);
+		if (solitaire) {
+			snapshots.current = [{ id: next.id, title: columnTitle, flights: [], solitaire: true }];
+			setFlightBatchId(next.id);
+			setDrop([{ ...next, animatedCardCodes: [] }]);
+			return;
+		}
 		const root = boardRef.current;
 		const dragged = grabbed !== null;
 		const movedCodes = next.before.map((card) => card.code);
@@ -141,7 +170,7 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		setFlightBatchId(next.id);
 		releasePoint.current = null;
 		setDrop([leadCardCodes?.length ? { ...next, animatedCardCodes: movedCodes, pendingCardCodes: flights.map((flight) => flight.code), leadCardCodes, holdBelowLeads: !dragged } : next]);
-	}, [boardRef, columns, getPreview, nativePreviewRef, reduceMotion]);
+	}, [boardRef, columns, getPreview, nativePreviewRef, reduceMotion, solitaire]);
 	const handleDrop = useCallback<NonNullable<JiraKanbanProps["onCardDrop"]>>((columnTitle, target) => {
 		if (enabled && draggedCardCode) {
 			captureDrop(selectedCardCodes?.has(draggedCardCode) ? [...selectedCardCodes] : [draggedCardCode], columnTitle, draggedCardCode);
@@ -163,18 +192,18 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 			const moving = plan.filter((move) => move.columnTitle === title).map((move) => move.code);
 			const next = captureIssueCardDropArrival(columns, moving, title, --version.current);
 			const leadCardCodes = resolveIssueDropDeck(moving);
-			const flights = enabled && !reduceMotion && root ? captureIssueCardDropFlights({
+			const flights = enabled && !solitaire && !reduceMotion && root ? captureIssueCardDropFlights({
 				root, preview: getPreview(), nativePreview: nativePreviewRef.current, pointer: null,
 				grabOffset: grabOffset.current, grabbed: draggedCardCode ?? leadCardCodes[0], codes: leadCardCodes,
 			}) : [];
 			return { next, title, flights, leadCardCodes };
 		});
-		snapshots.current = captured.map(({ next, title, flights }) => ({ id: next.id, title, flights }));
+		snapshots.current = captured.map(({ next, title, flights }) => ({ id: next.id, title, flights, solitaire }));
 		setFlightBatchId(version.current);
-		setDrop(captured.map(({ next, flights, leadCardCodes }) => enabled && !reduceMotion
+		setDrop(captured.map(({ next, flights, leadCardCodes }) => solitaire ? { ...next, animatedCardCodes: [] } : enabled && !reduceMotion
 			? { ...next, animatedCardCodes: next.before.map((card) => card.code), leadCardCodes, holdBelowLeads: true, pendingCardCodes: flights.map((flight) => flight.code) } : next));
 		onAutoArrange?.(codes);
-	}, [boardRef, columns, draggedCardCode, enabled, getPreview, nativePreviewRef, onAutoArrange, reduceMotion]);
+	}, [boardRef, columns, draggedCardCode, enabled, getPreview, nativePreviewRef, onAutoArrange, reduceMotion, solitaire]);
 	const handleComplete = useCallback((id: number) => {
 		if (id < 0) setDrop((current) => current.filter((item) => item.id !== id));
 		else onCreatedComplete?.(id);

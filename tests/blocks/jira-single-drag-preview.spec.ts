@@ -1,6 +1,22 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
+
+async function waitForIssueSurfaceGeometry(surface: Locator) {
+	await surface.evaluate((node) => new Promise<void>((resolve, reject) => {
+		let previous = node.getBoundingClientRect();
+		let stableFrames = 0, frames = 0;
+		const sample = () => {
+			const rect = node.getBoundingClientRect();
+			stableFrames = Math.abs(rect.width - previous.width) < 0.01 && Math.abs(rect.height - previous.height) < 0.01 ? stableFrames + 1 : 0;
+			previous = rect;
+			if (stableFrames >= 3) resolve();
+			else if (++frames >= 120) reject(new Error("Issue surface geometry did not settle"));
+			else requestAnimationFrame(sample);
+		};
+		requestAnimationFrame(sample);
+	}));
+}
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`native card preview leaves all rounded corner cutouts clear (${reducedMotion})`, async ({ page }) => {
@@ -10,7 +26,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
 		await page.keyboard.press("Escape");
-		const card = page.locator('[data-issue-key="PAY-118"] [draggable="true"]').first();
+		const card = page.locator('[data-issue-key="PAY-118"] [draggable]').first();
 		const surface = card.locator('[data-slot="jira-issue-surface"]');
 		const restingSurfaceColor = await surface.evaluate((node) => getComputedStyle(node).backgroundColor);
 		await card.hover({ position: { x: 70, y: 30 } });
@@ -72,10 +88,11 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				await page.emulateMedia({ reducedMotion });
 				await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
 				await page.waitForLoadState("networkidle");
-				const card = page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+				const card = page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 				if (selected) await card.click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 				const source = card.locator('[data-slot="jira-issue-card"]');
 				const restingSurfaceColor = await page.locator('[data-issue-key="PAY-130"] [data-slot="jira-issue-surface"]').evaluate((node) => getComputedStyle(node).backgroundColor);
+				await waitForIssueSurfaceGeometry(source.locator('[data-slot="jira-issue-surface"]'));
 				const face = (await source.locator('[data-slot="jira-issue-surface"]').boundingBox())!;
 				const grab = (await card.boundingBox())!;
 				await page.mouse.move(grab.x + 70, grab.y + 30);
@@ -109,7 +126,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
 		await page.waitForLoadState("networkidle");
-		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 		for (const code of ["PAY-105", "PAY-123"]) await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await card("PAY-107").hover({ position: { x: 70, y: 30 } });
 		const restingSurfaceColor = await page.locator('[data-issue-key="PAY-130"] [data-slot="jira-issue-surface"]').evaluate((node) => getComputedStyle(node).backgroundColor);
