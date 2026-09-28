@@ -62,8 +62,15 @@ function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 				checked={props.selected ?? false}
 				className="motion-reduce:transition-none"
 				data-jira-issue-selection-control=""
+				nativeButton
 				onCheckedChange={props.onSelectionToggle}
 				onClick={(event) => event.stopPropagation()}
+				onMouseDown={(event) => {
+					// Keep the draggable card's native pickup off this selection gesture.
+					event.preventDefault();
+					event.currentTarget.focus({ preventScroll: true });
+				}}
+				render={<button type="button" />}
 			/>
 		</div>
 	) : <JiraIssueMoreDropdown {...props} />;
