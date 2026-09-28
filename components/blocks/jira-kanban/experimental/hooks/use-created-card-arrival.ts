@@ -25,10 +25,17 @@ export interface JiraKanbanCreatedCardArrival {
 	readonly appended: boolean;
 	/** Keep the new card's entrance pending until the create-well receipt finishes. */
 	readonly deferred?: boolean;
-	/** Move flights own this capped entrance order; remaining moved cards appear at rest. */
+	/** Cards that play the entrance; others in `cardCodes` appear at rest. */
 	readonly animatedCardCodes?: readonly string[];
 	/** Reserve moved-card slots while their flight still owns the visible face. */
 	readonly pendingCardCodes?: readonly string[];
+	/**
+	 * A moved cohort's flying cards: one dropped traveller, or a deck. Every
+	 * entrance cascades top to bottom in slot order; see `getIssueDropCascadeDelayS`.
+	 */
+	readonly cascadeLeadCardCodes?: readonly string[];
+	/** The flights are a deck at the top: cards below it wait for it to land. */
+	readonly cascadeHoldsBelowLeads?: boolean;
 }
 
 export function useBoardCreatedCardArrival({

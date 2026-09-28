@@ -19,6 +19,7 @@ import type { DesignVariantId } from "@/components/utils/design-variants";
 import SearchSuggestionsPanel from "./components/search-suggestions-panel";
 import { LeftNavigation } from "./components/left-navigation";
 import { RightNavigation } from "./components/right-navigation";
+import type { RightNavigationSettingsMenuItem } from "./components/right-navigation-actions";
 import { CreateButton } from "./components/create-button";
 import { StudioSidebar } from "./components/studio-sidebar";
 import { useTopNavigation } from "./hooks/use-top-navigation";
@@ -59,6 +60,8 @@ export interface ShellSidebarSlotState {
 	headerOffsetPx: number;
 }
 
+export type { RightNavigationSettingsMenuItem as TopNavigationSettingsMenuItem };
+
 interface TopNavigationProps {
 	currentUser?: TopNavigationCurrentUser;
 	product?: Product;
@@ -72,6 +75,8 @@ interface TopNavigationProps {
 	hideRovoAction?: boolean;
 	settingsDesignVariantIds?: readonly DesignVariantId[];
 	settingsIconOnly?: boolean;
+	/** Route-owned actions rendered below the settings Properties, after a separator. */
+	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
 	/**
 	 * Forces the "Ask Rovo" pill to render even for products that normally
 	 * suppress it (Rovo/Studio). The Figma global top navigation always shows
@@ -164,6 +169,7 @@ export default function TopNavigation({
 	hideRovoAction = false,
 	settingsDesignVariantIds,
 	settingsIconOnly = false,
+	settingsMenuItems,
 	forceShowRovoAction = false,
 	variant = "shell",
 	sidebar,
@@ -362,6 +368,7 @@ export default function TopNavigation({
 			hideRovoAction={hideRovoAction}
 			settingsDesignVariantIds={settingsDesignVariantIds}
 			settingsIconOnly={settingsIconOnly}
+			settingsMenuItems={settingsMenuItems}
 			forceShowRovoAction={forceShowRovoAction}
 			isChatOpen={nav.isSidebarChatOpen}
 			onToggleChat={nav.toggleChat}

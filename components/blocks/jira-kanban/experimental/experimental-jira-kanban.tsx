@@ -39,7 +39,7 @@ import { BoardColumn } from "./components/board-column";
 import { CollapsedColumnSessionDrop } from "./components/collapsed-column-session-drop";
 import { resolveBoardCreateDropzoneDrag } from "./lib/board-agent-session-drag";
 import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
-import { useIssueCardDropArrival } from "./hooks/use-issue-card-drop-arrival";
+import { useIssueCardDropArrival, type IssueCardMove } from "./hooks/use-issue-card-drop-arrival";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
 import { IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR } from "./lib/in-flow-agent-session-column-geometry";
@@ -51,6 +51,7 @@ import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
 import { createIssueDragPreview } from "./lib/issue-drag-preview";
 import { issueRemovalSpacing, issueSelectionBackdrop } from "./lib/issue-selection-backdrop";
 import { useIssueCohortPreview } from "./hooks/use-issue-cohort-preview";
+import { useIssueMoveRequest, type JiraKanbanIssueMoveRequest } from "./hooks/use-issue-move-request";
 import { useBoardAutoArrange } from "./hooks/use-board-auto-arrange";
 import { useBoardCardRemoval } from "./hooks/use-board-card-removal";
 import { useBoardIssuePointerDrag } from "./hooks/use-board-issue-pointer-drag";
@@ -112,6 +113,9 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	issueDragTransitions?: boolean;
 	/** False restores the original issue move visuals without changing drop behavior. */
 	issueMoveVisual?: boolean;
+	/** Host-requested cohort move, played like a drop; requires `onIssueMove` to commit it. */
+	issueMoveRequest?: JiraKanbanIssueMoveRequest;
+	onIssueMove?: (move: IssueCardMove) => void;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/** One-shot card entrance requested by the host after creating cards from sessions. */
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
@@ -404,6 +408,8 @@ function ExperimentalJiraKanbanView({
 	iconScale = "compact",
 	issueDragTransitions = false,
 	issueMoveVisual = true,
+	issueMoveRequest,
+	onIssueMove,
 	issueSelectionAppearance: requestedSelectionAppearance = "card",
 	collapsedColumns: controlledCollapsedColumns,
 	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
@@ -470,7 +476,8 @@ function ExperimentalJiraKanbanView({
 	const issueDragImageRef = useRef<HTMLElement | null>(null);
 	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop" || Boolean(onAutoArrange), draggedCardCode, onCardDragEnd);
 	const { stop: stopPointerDrag } = useBoardIssuePointerDrag(boardScrollportRef, Boolean(onAutoArrange));
-	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete });
+	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete });
+	useIssueMoveRequest(issueMoveRequest, issueDropArrival.handleMove);
 	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, scopeId: autoArrangeScopeId });
 	const singleCardDrag = Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1);
 	const presentedCardArrival = useMemo(() => createdCardArrival

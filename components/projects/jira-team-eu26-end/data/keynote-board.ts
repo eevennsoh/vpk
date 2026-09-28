@@ -47,6 +47,9 @@ const KEYNOTE_STORIES = [
 	assignee: JiraKanbanAssigneeData;
 }[];
 
+/** The keynote's announcements in presentation order; the closing finale reuses them. */
+export const JIRA_TEAM_EU26_END_KEYNOTE_STORIES = KEYNOTE_STORIES;
+
 export const JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES = KEYNOTE_STORIES.map(
 	(_, index) => `TEU-${index + 1}`,
 );

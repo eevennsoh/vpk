@@ -4,12 +4,20 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { getAutoArrangePlan } from "../lib/board-auto-arrange";
 import type { JiraKanbanProps } from "../../index";
-import { captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveVisibleIssueDropCodes, type IssueCardDropArrival } from "../lib/board-card-arrival";
+import type { JiraKanbanCardDropTarget } from "../../card-drop";
+import { captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveIssueDropDeck, resolveVisibleIssueDropCodes, type IssueCardDropArrival } from "../lib/board-card-arrival";
 import type { JiraKanbanCreatedCardArrival } from "./use-created-card-arrival";
 import { captureIssueCardDropFlights, hasIssueDropTarget, startIssueCardDropFlights, type IssueCardDropFlight, type IssueDropPoint } from "../lib/issue-card-drop-flight";
 
+/** A host-requested multi-card move, committed like one cohort drop. */
+export interface IssueCardMove {
+	readonly cardCodes: readonly string[];
+	readonly columnTitle: string;
+	readonly target?: JiraKanbanCardDropTarget;
+}
+
 /** Native issue drops share the agent-session card entrance once their owner commits the move. */
-export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, createdArrival, draggedCardCode, selectedCardCodes, onDrop, onAutoArrange, onCreatedComplete }: Readonly<{
+export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, createdArrival, draggedCardCode, selectedCardCodes, onDrop, onMove, onAutoArrange, onCreatedComplete }: Readonly<{
 	boardRef: RefObject<HTMLElement | null>;
 	enabled: boolean;
 	getPreview: () => HTMLElement | null;
@@ -19,6 +27,8 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	draggedCardCode: string | null;
 	selectedCardCodes: JiraKanbanProps["selectedCardCodes"];
 	onDrop: JiraKanbanProps["onCardDrop"];
+	/** Commits a host-requested move; the arrival is captured first, exactly like a drop. */
+	onMove?: (move: IssueCardMove) => void;
 	onAutoArrange?: (codes: ReadonlySet<string>) => void;
 	onCreatedComplete?: (id: number) => void;
 }>) {
@@ -109,50 +119,65 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		}
 	}, [arrivals, createdArrival, draggedCardCode, drop, onCreatedComplete]);
 
+	// Freeze the cohort's arrival before its owner commits. A native drop flies
+	// its one held traveller into the dropped card's slot while the rest cascade
+	// in around it. A host move has no traveller, so it lands like auto arrange:
+	// a deck of the destination's top cards flies from their own slots into the
+	// top of the column, and the cards below it cascade in once it lands.
+	const captureDrop = useCallback((codes: readonly string[], columnTitle: string, grabbed: string | null) => {
+		// Created-card ids are positive; move ids occupy a separate completion namespace.
+		const next = captureIssueCardDropArrival(columns, codes, columnTitle, --version.current);
+		const root = boardRef.current;
+		const dragged = grabbed !== null;
+		const movedCodes = next.before.map((card) => card.code);
+		const crossColumn = next.before.some((card) => card.columnTitle !== columnTitle);
+		// A host move lists its issues in their destination order.
+		const leadCardCodes = !crossColumn ? undefined : dragged ? resolveVisibleIssueDropCodes(movedCodes, grabbed) : resolveIssueDropDeck(codes.filter((code) => movedCodes.includes(code)));
+		const flights = !reduceMotion && leadCardCodes?.length && root ? captureIssueCardDropFlights({
+			root, preview: dragged ? getPreview() : null, nativePreview: dragged ? nativePreviewRef.current : null, pointer: dragged ? releasePoint.current : null,
+			grabOffset: grabOffset.current, grabbed: grabbed ?? leadCardCodes[0], codes: leadCardCodes,
+		}) : [];
+		snapshots.current = [{ id: next.id, title: columnTitle, flights }];
+		setFlightBatchId(next.id);
+		releasePoint.current = null;
+		setDrop([leadCardCodes?.length ? { ...next, animatedCardCodes: movedCodes, pendingCardCodes: flights.map((flight) => flight.code), leadCardCodes, holdBelowLeads: !dragged } : next]);
+	}, [boardRef, columns, getPreview, nativePreviewRef, reduceMotion]);
 	const handleDrop = useCallback<NonNullable<JiraKanbanProps["onCardDrop"]>>((columnTitle, target) => {
-		if (!enabled) {
-			onDrop?.(columnTitle, target);
-			return;
-		}
-		if (draggedCardCode) {
-			const codes = selectedCardCodes?.has(draggedCardCode) ? [...selectedCardCodes] : [draggedCardCode];
-			// Created-card ids are positive; move ids occupy a separate completion namespace.
-			const next = captureIssueCardDropArrival(columns, codes, columnTitle, --version.current);
-			const root = boardRef.current;
-			const crossColumn = next.before.some((card) => card.columnTitle !== columnTitle);
-			const visibleCodes = enabled && crossColumn ? resolveVisibleIssueDropCodes(next.before.map((card) => card.code), draggedCardCode) : undefined;
-			const flights = enabled && !reduceMotion && crossColumn && root ? captureIssueCardDropFlights({
-				root, preview: getPreview(), nativePreview: nativePreviewRef.current, pointer: releasePoint.current,
-				grabOffset: grabOffset.current, grabbed: draggedCardCode, codes: next.before.map((card) => card.code),
-			}) : [];
-			snapshots.current = [{ id: next.id, title: columnTitle, flights }];
-			setFlightBatchId(next.id);
-			releasePoint.current = null;
-			setDrop([visibleCodes ? { ...next, animatedCardCodes: visibleCodes, pendingCardCodes: flights.map((flight) => flight.code) } : next]);
+		if (enabled && draggedCardCode) {
+			captureDrop(selectedCardCodes?.has(draggedCardCode) ? [...selectedCardCodes] : [draggedCardCode], columnTitle, draggedCardCode);
 		}
 		onDrop?.(columnTitle, target);
-	}, [boardRef, columns, draggedCardCode, enabled, getPreview, nativePreviewRef, onDrop, reduceMotion, selectedCardCodes]);
+	}, [captureDrop, draggedCardCode, enabled, onDrop, selectedCardCodes]);
+	const handleMove = useCallback((move: IssueCardMove) => {
+		if (enabled && move.cardCodes.length > 0) captureDrop(move.cardCodes, move.columnTitle, null);
+		onMove?.(move);
+	}, [captureDrop, enabled, onMove]);
+	// Auto arrange lands each destination as a deck: its top cards (at most the
+	// drag deck's depth) fly into the top of the column — from the held traveller
+	// during a drag, else from their own slots — and the rest cascade in below.
 	const handleAutoArrange = useCallback((codes: ReadonlySet<string>) => {
 		const plan = getAutoArrangePlan(columns, codes);
 		const root = boardRef.current;
 		const captured = [...new Set(plan.map((move) => move.columnTitle))].map((title) => {
+			// Auto arrange prepends each destination's cohort in plan order.
 			const moving = plan.filter((move) => move.columnTitle === title).map((move) => move.code);
 			const next = captureIssueCardDropArrival(columns, moving, title, --version.current);
+			const leadCardCodes = resolveIssueDropDeck(moving);
 			const flights = enabled && !reduceMotion && root ? captureIssueCardDropFlights({
 				root, preview: getPreview(), nativePreview: nativePreviewRef.current, pointer: null,
-				grabOffset: grabOffset.current, grabbed: draggedCardCode ?? moving[0], codes: moving, allCards: true,
+				grabOffset: grabOffset.current, grabbed: draggedCardCode ?? leadCardCodes[0], codes: leadCardCodes,
 			}) : [];
-			return { next, title, flights };
+			return { next, title, flights, leadCardCodes };
 		});
 		snapshots.current = captured.map(({ next, title, flights }) => ({ id: next.id, title, flights }));
 		setFlightBatchId(version.current);
-		setDrop(captured.map(({ next, flights }) => enabled && !reduceMotion
-			? { ...next, animatedCardCodes: next.before.map((card) => card.code), pendingCardCodes: flights.map((flight) => flight.code) } : next));
+		setDrop(captured.map(({ next, flights, leadCardCodes }) => enabled && !reduceMotion
+			? { ...next, animatedCardCodes: next.before.map((card) => card.code), leadCardCodes, holdBelowLeads: true, pendingCardCodes: flights.map((flight) => flight.code) } : next));
 		onAutoArrange?.(codes);
 	}, [boardRef, columns, draggedCardCode, enabled, getPreview, nativePreviewRef, onAutoArrange, reduceMotion]);
 	const handleComplete = useCallback((id: number) => {
 		if (id < 0) setDrop((current) => current.filter((item) => item.id !== id));
 		else onCreatedComplete?.(id);
 	}, [onCreatedComplete]);
-	return { arrivalForColumn: (title: string) => enabled ? arrivals.find((arrival) => arrival.columnTitle === title) : undefined, handleDrop: onDrop ? handleDrop : undefined, handleAutoArrange: onAutoArrange ? handleAutoArrange : undefined, handleComplete };
+	return { arrivalForColumn: (title: string) => enabled ? arrivals.find((arrival) => arrival.columnTitle === title) : undefined, handleDrop: onDrop ? handleDrop : undefined, handleMove: onMove ? handleMove : undefined, handleAutoArrange: onAutoArrange ? handleAutoArrange : undefined, handleComplete };
 }

@@ -1,7 +1,6 @@
 import { animateSessionChipDrop } from "@/components/blocks/jira-dropzone/lib/session-chip-drop-flight";
 import { JIRA_DROPZONE_FULL_MOTION_PROFILE } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-motion";
 import { token } from "@/lib/tokens";
-import { resolveVisibleIssueDropCodes } from "./board-card-arrival";
 import { createIssueFacePreview } from "./issue-drag-preview";
 
 export interface IssueDropPoint { readonly x: number; readonly y: number }
@@ -34,8 +33,12 @@ export function resolveIssueDropLandingPoint(root: HTMLElement, title: string, c
 	return { x: bounds.left + bounds.width / 2, y: bounds.top + (face ? face.offsetHeight / 2 : Math.min(40, bounds.height / 2)) };
 }
 
-/** Freeze the held traveller before commit; auto arrange can split its issues across columns. */
-export function captureIssueCardDropFlights({ root, preview, nativePreview, pointer, grabOffset, grabbed, codes, allCards = false }: Readonly<{
+/**
+ * Freeze the flying faces before commit: exactly `codes`, which the caller
+ * caps (one dropped traveller, or a deck of at most the drag deck's depth).
+ * With a held traveller every face starts from it; otherwise from its own slot.
+ */
+export function captureIssueCardDropFlights({ root, preview, nativePreview, pointer, grabOffset, grabbed, codes }: Readonly<{
 	root: HTMLElement;
 	preview: HTMLElement | null;
 	nativePreview: HTMLElement | null;
@@ -43,13 +46,10 @@ export function captureIssueCardDropFlights({ root, preview, nativePreview, poin
 	grabOffset: IssueDropPoint;
 	grabbed: string;
 	codes: readonly string[];
-	/** Auto arrange sends every issue to its own suggestion. Manual drops keep one cohort flight. */
-	allCards?: boolean;
 }>): IssueCardDropFlight[] {
 	const lead = preview?.querySelector<HTMLElement>("[data-issue-cohort-front]");
 	const travellerBounds = lead?.getBoundingClientRect();
-	const visible = allCards ? codes : resolveVisibleIssueDropCodes(codes, grabbed);
-	return visible.flatMap((code) => {
+	return codes.flatMap((code, index) => {
 		const source = findFace(root, code);
 		if (!source) return [];
 		const surface = source.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]') ?? source;
@@ -75,7 +75,8 @@ export function captureIssueCardDropFlights({ root, preview, nativePreview, poin
 		node.dataset.issueDropFlightIndex = "0";
 		node.setAttribute("aria-hidden", "true");
 		node.inert = true;
-		Object.assign(node.style, { width: "0", height: "0", zIndex: "1003", transform: `translate3d(${from.x}px, ${from.y}px, 0)`, transformOrigin: "0 0" });
+		// Stack like the drag deck: the grabbed face, then the deck front, on top.
+		Object.assign(node.style, { width: "0", height: "0", zIndex: String(code === grabbed ? 1004 + codes.length : 1003 + codes.length - index), transform: `translate3d(${from.x}px, ${from.y}px, 0)`, transformOrigin: "0 0" });
 		const center = root.ownerDocument.createElement("div");
 		Object.assign(center.style, { position: "absolute", width: `${width}px`, height: `${height}px`, transform: "translate(-50%, -50%)" });
 		center.append(face);
