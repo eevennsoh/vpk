@@ -8,7 +8,7 @@ const ts = require("typescript");
 const { loadCjsModuleFromText } = require("../../../../../scripts/lib/esbuild-cjs-loader.js");
 const model = loadCjsModuleFromText(esbuild.buildSync({ entryPoints: ["components/blocks/jira-kanban/experimental/lib/board-auto-arrange.ts"], bundle: true, format: "cjs", platform: "node", write: false }).outputFiles[0].text);
 
-function harness(status = "Done", filtered = false, { dragged = "A" } = {}) {
+function harness(status = "Done", filtered = false, { dragged = "A", enabled = true } = {}) {
 	let prepared, timer, api, timerId = 0;
 	let selected = new Set(["A"]);
 	const actions = [], listeners = new Map(), effects = [];
@@ -55,7 +55,7 @@ function harness(status = "Done", filtered = false, { dragged = "A" } = {}) {
 			{ code: "A", status: "To do", autoArrangeStatus: status },
 			{ code: "B", status: "To do", autoArrangeStatus: "Done" },
 			{ code: "C", status: "To do", autoArrangeStatus: "In progress" },
-		] }, { title: "Done", count: 0, cards: [] }, { title: "In progress", count: 0, cards: [] }], selected, dragged, onArrange: () => actions.push("arrange"), beforeArrange: () => actions.push("end-pickup"), scopeId: "board-1" });
+		] }, { title: "Done", count: 0, cards: [] }, { title: "In progress", count: 0, cards: [] }], selected, dragged, onArrange: enabled ? () => actions.push("arrange") : undefined, beforeArrange: () => actions.push("end-pickup"), scopeId: "board-1" });
 		return api;
 	}
 	render();
@@ -170,4 +170,14 @@ test("counts disappear when their destination is removed and new destinations wa
 	h.select([]);
 	assert.equal(h.api().incoming("In progress"), undefined);
 	assert.equal(h.api().ready, false);
+});
+
+test("a disabled capability never prepares counts, registers A, or ends pickup", () => {
+	const h = harness("Done", false, { enabled: false });
+	h.prepare();
+	assert.equal(h.api().ready, false);
+	assert.equal(h.api().incoming("Done"), undefined);
+	assert.equal(h.press(), false);
+	h.api().arrange();
+	assert.deepEqual(h.actions, []);
 });

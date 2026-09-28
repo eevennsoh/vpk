@@ -50,6 +50,8 @@ export interface ExperimentalJiraKanbanPageHandle {
 }
 
 export interface ExperimentalJiraKanbanPageProps {
+	/** Enables the optional arrange action, destination counts, and shortcut. */
+	autoArrangeEnabled?: boolean;
 	getStatusVariant?: NonNullable<JiraKanbanProps["selectionToolbar"]>["getStatusVariant"];
 	addAgentLabel?: ExperimentalJiraKanbanProps["addAgentLabel"];
 	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];

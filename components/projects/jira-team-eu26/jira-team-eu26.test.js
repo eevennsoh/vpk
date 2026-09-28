@@ -120,7 +120,7 @@ test("Background color paints the Kanban plane while preserving the Agent Sessio
 test("the Dragging property controls session-column width resizing", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*"sessionStroke",\s*"sessionBloom",\s*"sessionProximity",\s*"sessionPeel",\s*"moveVisual",\s*\] as const;/u,
+		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*"autoArrange",\s*"sessionStroke",\s*"sessionBloom",\s*"sessionProximity",\s*"sessionPeel",\s*"moveVisual",\s*\] as const;/u,
 	);
 	// The three chrome layers are separately switchable so the effect can be judged
 	// on the route: stroke alone, stroke plus column-wide reach, or neither.
@@ -976,4 +976,10 @@ test("Team EU26 opts the create well out of bounce", () => {
 		/ants=\{false\}/u,
 		"Team EU26 keeps the create-well marching ants default on",
 	);
+});
+
+test("Team EU26 gates Auto arrange through its Settings preference", () => {
+	assert.match(PAGE_SOURCE, /autoArrangeEnabled=\{designVariants\.autoArrange\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /autoArrangeEnabled\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onAutoArrange=\{autoArrangeEnabled && \(controlledBoardColumns === undefined \|\| onBoardColumnsChange\) \? handleAutoArrange : undefined\}/u);
 });

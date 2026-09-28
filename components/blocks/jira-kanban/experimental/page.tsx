@@ -168,6 +168,7 @@ export default function ExperimentalJiraKanbanPage({
 
 function ExperimentalJiraKanbanPageContent({
 	activeView = "board", addAgentLabel,
+	autoArrangeEnabled = true,
 	activeCardCode,
 	additionalAgentSessions,
 	agentSessionSeedOverrides,
@@ -1001,7 +1002,7 @@ function ExperimentalJiraKanbanPageContent({
 								onCardDragStart={handleCardDragStart}
 								onCardDrop={handleCardDrop}
 								onCardDragEnd={handleCardDragEnd}
-								onAutoArrange={controlledBoardColumns === undefined || onBoardColumnsChange ? handleAutoArrange : undefined}
+								onAutoArrange={autoArrangeEnabled && (controlledBoardColumns === undefined || onBoardColumnsChange) ? handleAutoArrange : undefined}
 								onCreateAgent={handleCreateColumnAgent}
 								onScrollUnderlapChange={setBoardContentUnderlapsSessionColumn}
 								onToggleColumnAgent={handleToggleColumnAgent}

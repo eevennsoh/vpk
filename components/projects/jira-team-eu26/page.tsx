@@ -75,6 +75,7 @@ const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
 	"advancedTimeline",
 	"agentSessionColumnResizing",
 	"manualLink",
+	"autoArrange",
 	"sessionStroke",
 	"sessionBloom",
 	"sessionProximity",
@@ -378,6 +379,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						iconScale="comfortable"
 						issueSelectionAppearance="fused-backdrop"
 						getStatusVariant={statusVariant}
+						autoArrangeEnabled={designVariants.autoArrange}
 						issueDragTransitions
 						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"
