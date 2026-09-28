@@ -9,7 +9,7 @@ declare global {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
-	for (const shortcut of ["Meta+Enter", "Control+Enter"] as const) {
+	for (const shortcut of ["a"] as const) {
 		test(`auto arrange works after Select all retains focus (${shortcut}, ${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
 			await page.goto(`${origin}/jira-team-eu26`);
@@ -23,9 +23,12 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await expect(selectAll).toBeFocused();
 			const action = page.getByRole("button", { name: "Auto arrange", exact: true });
 			await expect(action).toBeEnabled();
-			await expect(action).toHaveAttribute("aria-keyshortcuts", "Meta+Enter Control+Enter");
-			await expect(action.locator('[data-slot="kbd-group"]')).toHaveAccessibleName("Command Enter");
-			await page.keyboard.press("Enter");
+			await expect(action).toHaveAttribute("aria-keyshortcuts", "a");
+			await expect(action.locator('[data-slot="kbd"]')).toHaveText("A");
+			for (const nativeShortcut of ["Enter", "Space", "Meta+Enter", "Control+Enter", "Control+a"]) {
+				await page.keyboard.press(nativeShortcut);
+				await expect(sourceCards).toHaveCount(codes.length);
+			}
 			await expect(selectAll).toBeFocused();
 			await expect(sourceCards).toHaveCount(codes.length);
 			await page.screenshot({ path: `output/agent-browser/auto-arrange/select-all-${shortcut.replace("+", "-")}-${reducedMotion}.png` });
@@ -37,28 +40,48 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		});
 	}
 
-	test(`single-card movement omits the toolbar and keeps Command Enter available (${reducedMotion})`, async ({ page }) => {
+	test(`single-card movement shows the Auto arrange toolbar and keeps A available (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
+		await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
 		await page.goto(`${origin}/jira-team-eu26`);
 		const card = page.locator('[data-issue-key="PAY-118"] [draggable]').first();
 		await expect(card).toBeVisible();
+		await expect(page.locator('[data-slot="jira-toolbar-positioner"]')).toHaveCount(0);
 		const source = (await card.boundingBox())!;
 		await page.mouse.move(source.x + 70, source.y + 30);
 		await page.mouse.down();
 		await page.mouse.move(source.x + 95, source.y + 40, { steps: 5 });
 		await expect(page.locator('[data-issue-cohort-preview]')).toBeVisible();
-		await expect(page.locator('[data-slot="jira-toolbar-positioner"]')).toHaveCount(0);
+		const toolbar = page.getByRole("region", { name: "Move card. Auto arrange available.", exact: true });
+		await expect(toolbar).toBeVisible();
+		await expect(toolbar.getByRole("button", { name: "Auto arrange", exact: true })).toBeEnabled();
+		await expect(toolbar.getByRole("button")).toHaveCount(1);
 		await expect(page.locator('[data-auto-arrange-count]')).not.toHaveCount(0);
 		await page.keyboard.press("Enter");
 		await expect(page.locator('[data-issue-cohort-preview]')).toBeVisible();
-		await expect(page.locator('[data-slot="jira-toolbar-positioner"]')).toHaveCount(0);
+		await expect(toolbar).toBeVisible();
 		await page.screenshot({ path: `output/agent-browser/auto-arrange/single-card-${reducedMotion}.png` });
-		await page.keyboard.press("Meta+Enter");
+		await page.keyboard.press("a");
 		await page.mouse.up();
 		await expect(page.locator('[data-issue-cohort-preview]')).toHaveCount(0);
 		await expect(page.locator('[data-jira-kanban-column="To do"] [data-issue-key="PAY-118"]')).toHaveCount(0);
 		await expect(page.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-118"]')).toHaveCount(1);
 		await expect(page.locator('[data-slot="jira-toolbar-positioner"]')).toHaveCount(0);
+	});
+
+	test(`board search keeps A from arranging the ready selection (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		const sourceCards = page.locator('[data-jira-kanban-column="To do"] [data-board-agent-session-drop-zone="issue"]');
+		await page.locator('[data-issue-key="PAY-118"] [draggable]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await page.getByRole("button", { name: "Select all", exact: true }).click();
+		await expect(page.getByRole("button", { name: "Auto arrange", exact: true })).toBeEnabled();
+		const search = page.getByRole("textbox", { name: "Search board", exact: true });
+		await search.focus();
+		await page.keyboard.type("a");
+		await expect(search).toBeFocused();
+		await expect(sourceCards).toHaveCount(4);
+		await expect(page.getByRole("region", { name: "4 cards selected. Bulk actions available." })).toBeVisible();
 	});
 
 	test(`auto arrange matches toolbar size and settles its detection sparkle (${reducedMotion})`, async ({ page }) => {

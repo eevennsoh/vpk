@@ -62,7 +62,7 @@ function harness(status = "Done", filtered = false, { dragged = "A" } = {}) {
 	return { actions, listeners, api: () => api, prepare: () => { timer?.(); render(); },
 		select(codes) { selected = new Set(codes); render(); },
 		press(control = "surface", overrides = {}, inside = true) {
-			const event = { key: "Enter", target: new Element(control, inside), defaultPrevented: false,
+			const event = { key: "a", target: new Element(control, inside), defaultPrevented: false,
 				preventDefault() { this.defaultPrevented = true; }, ...overrides };
 			listeners.get("keydown")?.(event);
 			return event.defaultPrevented;
@@ -91,48 +91,53 @@ test("a nonempty prepared plan commits before removing the held preview", () => 
 	assert.deepEqual(h.actions, ["arrange", "end-pickup"]);
 });
 
-test("Command or Control Enter arranges from cards and the focused Select all toolbar button", () => {
-	for (const control of ["activation", "selection", "toolbar-button"]) {
-		for (const modifier of ["metaKey", "ctrlKey"]) {
+test("bare A arranges from cards, the board and the focused Select all toolbar button", () => {
+	for (const control of ["activation", "selection", "toolbar-button", "surface"]) {
+		for (const key of ["a", "A"]) {
 			const h = harness("Done", false, { dragged: null });
 			h.prepare();
-			assert.equal(h.press(control, { [modifier]: true }), true, "claim the shortcut without activating the focused button");
+			assert.equal(h.press(control, { key }), true, "claim the shortcut without activating the focused button");
 			assert.deepEqual(h.actions, ["arrange", "end-pickup"]);
 		}
 	}
 });
 
-test("plain Enter keeps native activation on cards, the toolbar and the board", () => {
+test("Enter and Space keep native activation on cards, the toolbar and the board", () => {
 	for (const control of ["activation", "selection", "toolbar-button", "surface"]) {
-		const h = harness(); h.prepare();
-		assert.equal(h.press(control), false);
-		assert.deepEqual(h.actions, []);
+		for (const key of ["Enter", " "]) {
+			const h = harness(); h.prepare();
+			assert.equal(h.press(control, { key }), false);
+			assert.deepEqual(h.actions, []);
+		}
 	}
 });
 
 test("the shortcut ignores editing, menus, dialogs, unrelated buttons and other boards", () => {
 	for (const control of ["button", "link", "input", "textarea", "contenteditable", "dialog", "menuitem", "combobox"]) {
 		const h = harness(); h.prepare();
-		assert.equal(h.press(control, { metaKey: true }), false);
+		assert.equal(h.press(control), false);
 		assert.deepEqual(h.actions, []);
 	}
 	const h = harness(); h.prepare();
-	assert.equal(h.press("activation", { metaKey: true }, false), false);
-	assert.equal(h.press("surface", { metaKey: true }, false), false);
-	assert.equal(h.press("toolbar-button", { metaKey: true }, false), false);
+	assert.equal(h.press("activation", {}, false), false);
+	assert.equal(h.press("surface", {}, false), false);
+	assert.equal(h.press("toolbar-button", {}, false), false);
 	assert.deepEqual(h.actions, []);
 });
 
-test("board-surface Command Enter commits once; other chords, composition and preparation do not arrange", () => {
+test("board-surface A commits once; modifiers, old chords, composition and preparation do not arrange", () => {
 	const h = harness();
-	assert.equal(h.press("activation", { metaKey: true }), false);
+	assert.equal(h.press("activation"), false);
 	h.prepare();
-	for (const flag of ["repeat", "isComposing", "altKey", "shiftKey", "defaultPrevented"]) {
-		h.press("activation", { metaKey: true, [flag]: true });
+	for (const flag of ["repeat", "isComposing", "altKey", "shiftKey", "metaKey", "ctrlKey", "defaultPrevented"]) {
+		h.press("activation", { [flag]: true });
 		assert.deepEqual(h.actions, []);
 	}
 	assert.equal(h.press("surface", { metaKey: true, key: " " }), false);
-	assert.equal(h.press("surface", { metaKey: true }), true);
+	for (const modifier of ["metaKey", "ctrlKey"]) {
+		assert.equal(h.press("surface", { key: "Enter", [modifier]: true }), false);
+	}
+	assert.equal(h.press("surface"), true);
 	assert.deepEqual(h.actions, ["arrange", "end-pickup"]);
 });
 

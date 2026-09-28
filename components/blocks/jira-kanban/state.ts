@@ -50,6 +50,11 @@ export interface JiraKanbanSelectionAnchor {
 export interface JiraKanbanSelectionState {
 	anchor: Readonly<JiraKanbanSelectionAnchor> | null;
 	selectedCardCodes: Set<string>;
+	/** Only cards added by the active keyboard range may be removed on reversal. */
+	keyboardRange?: {
+		addedCardCodes: ReadonlySet<string>;
+		endpoint: Readonly<JiraKanbanSelectionAnchor>;
+	};
 }
 
 interface SelectJiraKanbanCardInput {
@@ -108,7 +113,7 @@ export function reconcileJiraKanbanSelection<T extends JiraKanbanSelectionState>
 	const valid = state.selectedCardCodes.has(anchor.cardCode)
 		&& columns.some((column) => column.title === anchor.columnTitle
 			&& column.cards.some((card) => card.code === anchor.cardCode));
-	return valid ? state : { ...state, anchor: null };
+	return valid ? state : { ...state, anchor: null, keyboardRange: undefined };
 }
 
 export function selectJiraKanbanCard(
@@ -138,12 +143,26 @@ export function selectJiraKanbanCard(
 			|| (right.cardIndex === 0 && left.cardIndex === columns[left.columnIndex].cards.length - 1)
 		);
 		const range = columns.slice(left.columnIndex, right.columnIndex + 1);
-		return {
+		const rangeCodes = new Set(range.flatMap((column) => (
+			oppositeCorners ? column.cards : column.cards.slice(startRow, endRow + 1)
+		)).map((card) => card.code));
+		const previousRange = input.fallbackAnchor
+			&& current.keyboardRange?.endpoint.cardCode === input.fallbackAnchor.cardCode
+			&& current.keyboardRange.endpoint.columnTitle === input.fallbackAnchor.columnTitle
+			? current.keyboardRange : undefined;
+		const retainedCodes = new Set([...current.selectedCardCodes].filter((code) => !previousRange?.addedCardCodes.has(code)));
+		const next = {
 			anchor,
-			selectedCardCodes: new Set(range.flatMap((column) => (
-				oppositeCorners ? column.cards : column.cards.slice(startRow, endRow + 1)
-			)).map((card) => card.code)),
+			selectedCardCodes: new Set([...retainedCodes, ...rangeCodes]),
 		};
+		// Shift-click adds; keyboard arrows resize their own range around the anchor.
+		return input.fallbackAnchor ? {
+			...next,
+			keyboardRange: {
+				addedCardCodes: new Set([...rangeCodes].filter((code) => !retainedCodes.has(code))),
+				endpoint: target,
+			},
+		} : next;
 	}
 	if (input.modifiers.metaOrCtrlKey) {
 		const nextSelection = new Set(current.selectedCardCodes);
