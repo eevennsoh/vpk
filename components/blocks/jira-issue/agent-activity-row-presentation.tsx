@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, type ReactElement } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
+import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
@@ -154,7 +154,7 @@ function JiraIssueActiveAgentStatusIcon({
 		return (
 			<JiraIssueAgentStatusIconTile
 				className="text-icon-information"
-				icon={<QuestionCircleFilledIcon color="currentColor" label="" size="small" />}
+				icon={<StrokeWeightLargeIcon color="currentColor" label="" size="small" />}
 			/>
 		);
 	}

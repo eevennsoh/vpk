@@ -132,7 +132,7 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.match(METADATA_SOURCE, /export function AgentSessionShortMetadata/u);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.match(LIST_CARD_SOURCE, /\{metadata === undefined \? \(/u);
-	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|QuestionCircleFilledIcon|StatusSuccessIcon/u);
+	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|StrokeWeightLargeIcon|StatusSuccessIcon/u);
 	assert.match(LIFECYCLE_SOURCE, /export function AgentSessionShortLifecycleIcon/u);
 	assert.match(LIFECYCLE_SOURCE, /data-agent-session-lifecycle-current=\{accessibleState\}/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator =[\s\S]*isLongDensity[\s\S]*: <AgentSessionShortLifecycleIcon[\s\S]*state=\{shownLifecycleState\}/u);
@@ -756,7 +756,7 @@ test("a working long row breathes with the Avatar spinner", () => {
 		LIFECYCLE_SOURCE,
 		/<Spinner[\s\S]*className=\{cn\("group-aria-pressed\/button:text-icon-selected!", compact && "size-\[16\.75px\]"\)\}[\s\S]*label=""[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="experimental-avatar"/u,
 	);
-	assert.match(LIFECYCLE_SOURCE, /QuestionCircleFilledIcon/u);
+	assert.match(LIFECYCLE_SOURCE, /StrokeWeightLargeIcon/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /PixelLoader/u);
 	// Agent List keeps its own indicator; only the session card swapped.
 	assert.match(LIST_CARD_SOURCE, /PixelLoader/u);
