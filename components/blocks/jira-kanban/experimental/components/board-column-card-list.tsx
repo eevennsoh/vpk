@@ -136,7 +136,6 @@ export function BoardColumnCardList({
 		[showBottomScrollMask, showTopScrollMask],
 	);
 	const suppressCardInsertion = createdCardArrival !== undefined;
-	const paintInsertion = !suppressCardInsertion && (insertionArmed || hoverInsertion !== null);
 
 	const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
 		if (event.pointerType === "touch") {
@@ -195,10 +194,6 @@ export function BoardColumnCardList({
 						"focus-visible:ring-0 focus-visible:outline-none",
 						// Keep the viewport and card focus rings out of the edge fade.
 						"focus-visible:[mask-image:none]! focus-visible:[-webkit-mask-image:none]! has-[:focus-visible]:[mask-image:none]! has-[:focus-visible]:[-webkit-mask-image:none]!",
-						// The mask fades the top and bottom 3rem, which would wash out a line
-						// drawn near a scrolled edge. Stand down the mask only — dropping
-						// `overflow-y-auto` would make the browser discard the scroll offset.
-						paintInsertion && "[mask-image:none]! [-webkit-mask-image:none]!",
 					)}
 					onPointerLeave={handlePointerLeave}
 					onPointerMove={handlePointerMove}

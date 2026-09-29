@@ -2,6 +2,62 @@ import { expect, test } from "@playwright/test";
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 
+test.describe("column scroll fades", () => {
+	test.use({ ignoreHTTPSErrors: true });
+	for (const width of [1440, 1720]) {
+		for (const reducedMotion of ["no-preference", "reduce"] as const) {
+			test(`scroll fades stay visible across card gaps at ${width}px (${reducedMotion})`, async ({ page }) => {
+				await page.emulateMedia({ reducedMotion });
+				await page.setViewportSize({ width, height: 760 });
+				await page.goto(`${origin}/jira-team-eu26`);
+				await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
+				const list = page.locator('[data-jira-kanban-column="In review"] [data-jira-kanban-card-list]');
+				for (const position of [0, 0.5, 1]) {
+					await page.mouse.move(900, 100);
+					await list.evaluate((node, fraction) => { node.scrollTop = (node.scrollHeight - node.clientHeight) * fraction; }, position);
+					await expect.poll(() => list.evaluate((node) => getComputedStyle(node).maskImage)).not.toBe("none");
+					const mask = await list.evaluate((node) => getComputedStyle(node).maskImage);
+					const scrollTop = await list.evaluate((node) => node.scrollTop);
+					const gaps = await list.evaluate((node) => {
+						const clip = node.getBoundingClientRect();
+						const cards = Array.from(node.querySelectorAll('[data-board-agent-session-drop-zone="issue"]'));
+						return cards.slice(1).flatMap((card, index) => {
+							const previous = cards[index].getBoundingClientRect();
+							const next = card.getBoundingClientRect();
+							const y = (previous.bottom + next.top) / 2;
+							return y > clip.top + 16 && y < clip.bottom - 16 ? [{ x: next.left + next.width / 2, y }] : [];
+						});
+					});
+					expect(gaps.length).toBeGreaterThan(0);
+					for (const gap of gaps) {
+						await page.mouse.move(gap.x, gap.y);
+						const marker = page.locator("[data-board-insertion-marker]");
+						await expect(marker).toBeVisible();
+						expect(await list.evaluate((node) => getComputedStyle(node).maskImage)).toBe(mask);
+						expect(await list.evaluate((node) => node.scrollTop)).toBe(scrollTop);
+						const visibleWidth = await marker.evaluate((node) => new Promise<number>((resolve) => {
+							const observer = new IntersectionObserver(([entry]) => { observer.disconnect(); resolve(entry.intersectionRect.width); });
+							observer.observe(node);
+						}));
+						expect(visibleWidth).toBeCloseTo(24, 1);
+						const anchor = await list.locator("[data-insertion-line]").boundingBox();
+						const paint = await page.locator("[data-board-insertion-overlay]").boundingBox();
+						expect(paint).not.toBeNull();
+						expect(paint!.x).toBeCloseTo(anchor!.x, 1);
+						expect(paint!.y).toBeCloseTo(anchor!.y, 1);
+						expect(paint!.width).toBeCloseTo(anchor!.width, 1);
+						await page.mouse.move(900, 100);
+						await expect(marker).toHaveCount(0);
+						expect(await list.evaluate((node) => getComputedStyle(node).maskImage)).toBe(mask);
+					}
+				}
+				await list.getByRole("button", { name: /^PAY-112:/u }).focus();
+				await expect(list).toHaveCSS("mask-image", "none");
+			});
+		}
+	}
+});
+
 test.describe("dropzone label clipping", () => {
 	test.use({ ignoreHTTPSErrors: true });
 	for (const width of [1720, 1100]) {

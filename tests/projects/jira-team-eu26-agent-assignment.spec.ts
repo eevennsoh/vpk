@@ -746,26 +746,24 @@ test("the between-card create marker escapes the card-list clip", async ({ page 
 
 		const marker = page.locator("[data-board-insertion-marker]");
 		await expect(marker).toBeVisible();
+		const listLeft = await upperCard.evaluate((element) => element.closest("[data-jira-kanban-card-list]")!.getBoundingClientRect().left);
 		const visibility = await marker.evaluate((element) => new Promise<{
 			intersectionWidth: number;
-			listLeft: number;
 			markerLeft: number;
 			markerWidth: number;
 		}>((resolve) => {
 			const markerRect = element.getBoundingClientRect();
-			const listRect = element.closest("[data-jira-kanban-card-list]")?.getBoundingClientRect();
 			const observer = new IntersectionObserver(([entry]) => {
 				observer.disconnect();
 				resolve({
 					intersectionWidth: entry.intersectionRect.width,
-					listLeft: listRect?.left ?? Number.NaN,
 					markerLeft: markerRect.left,
 					markerWidth: markerRect.width,
 				});
 			});
 			observer.observe(element);
 		}));
-		expect(visibility.markerLeft).toBeLessThan(visibility.listLeft);
+		expect(visibility.markerLeft).toBeLessThan(listLeft);
 		expect(visibility.intersectionWidth).toBeCloseTo(visibility.markerWidth, 1);
 	} finally {
 		await page.mouse.up();
