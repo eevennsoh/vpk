@@ -62,9 +62,26 @@ export function useBoardIssueDrop({
 		pointer.current = null;
 	}
 
-	useEffect(() => () => {
-		clearWork();
-		setState(null);
+	useEffect(() => {
+		const column = rootRef.current?.closest("[data-jira-kanban-column]");
+		const doc = column?.ownerDocument;
+		const clearOutside = (event: globalThis.DragEvent) => {
+			if (event.target instanceof Node && column?.contains(event.target)) return;
+			// A replaced drag surface can miss dragleave. The next target must
+			// clear both stale feedback and work that could paint it again.
+			clearWork();
+			setState(null);
+		};
+		if (active?.code) {
+			doc?.addEventListener("dragenter", clearOutside, true);
+			doc?.addEventListener("dragover", clearOutside, true);
+		}
+		return () => {
+			doc?.removeEventListener("dragenter", clearOutside, true);
+			doc?.removeEventListener("dragover", clearOutside, true);
+			clearWork();
+			setState(null);
+		};
 	}, [active?.code]);
 
 	function resolveAt(y: number, status: string): DropState | null {

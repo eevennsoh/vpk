@@ -278,6 +278,49 @@ async function startDrag(page: Page, code: string) {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`a whole-column target clears another column's insertion even without dragleave (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26-end`);
+		const source = issue(page, "TEU-8").locator("[draggable]").first();
+		await expect(source).toBeVisible();
+		for (const code of ["TEU-1", "TEU-13"]) {
+			await issue(page, code).locator("[data-jira-issue-activation-control]").evaluate((node) => {
+				node.dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
+			});
+		}
+		await expect(page.locator('[data-jira-issue-activation-control][aria-pressed="true"]')).toHaveCount(13);
+		await source.evaluate((node) => {
+			const bounds = node.getBoundingClientRect();
+			node.dispatchEvent(new DragEvent("dragstart", { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: bounds.x + 70, clientY: bounds.y + 30 }));
+		});
+		const previous = column(page, "Confidence");
+		await previous.locator("[data-issue-drop-hit-area]").evaluate((node) => {
+			const card = node.parentElement!.querySelector('[data-issue-key="TEU-8"]')!;
+			const bounds = card.getBoundingClientRect();
+			node.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: bounds.x + 100, clientY: bounds.y + 20 }));
+		});
+		await expect(previous.locator("[data-issue-drop-before] [data-insertion-line]")).toBeVisible();
+		const destination = column(page, "Done");
+		// A changing drag surface can miss dragleave; the new target must still own all feedback.
+		await destination.locator("[data-issue-drop-hit-area]").evaluate((node) => {
+			const bounds = node.getBoundingClientRect();
+			for (const type of ["dragenter", "dragover"]) {
+				node.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: bounds.x + 100, clientY: bounds.y + 80 }));
+			}
+		});
+		await expect(destination.locator("[data-jira-kanban-column-drop-ring]")).toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		await expect(page.locator("[data-issue-drop-before]")).toHaveCount(0);
+		await page.screenshot({ path: `output/agent-browser/dnd/exclusive-column-target-${reducedMotion}.png` });
+		await previous.locator("[data-issue-drop-hit-area]").evaluate((node) => {
+			const bounds = node.parentElement!.querySelector('[data-issue-key="TEU-8"]')!.getBoundingClientRect();
+			node.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: bounds.x + 100, clientY: bounds.y + 20 }));
+		});
+		await expect(previous.locator("[data-issue-drop-before] [data-insertion-line]")).toBeVisible();
+		await expect(destination.locator("[data-jira-kanban-column-drop-ring]")).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		await source.dispatchEvent("dragend");
+		await expect(page.locator("[data-issue-drop-entered]")).toHaveCount(0);
+	});
+
 	for (const surface of ["unused space", "header"] as const) {
 		test(`column ${surface} accepts a natural-order issue drop (${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
