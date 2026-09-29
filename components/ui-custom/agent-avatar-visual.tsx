@@ -186,9 +186,7 @@ export function AgentAvatarVisual({
 					// Fixed brand canvases are independent of the surrounding theme.
 					style={{ backgroundColor: codingVisual?.backgroundColor ?? (brandName === "claude" ? "#d97757" : undefined) }}
 					className={cn("flex size-full items-center justify-center bg-surface",
-						// Preserve the Rovo button's charcoal (light-theme neutral-bold)
-						// as a brand canvas; the dark-theme token becomes light gray.
-						isRovoAvatar ? "dark:bg-[#292A2E]" : undefined,
+						isRovoAvatar ? "bg-rovo-avatar-canvas" : undefined,
 						brandName === "claude" || codingVisual?.whiteGlyph ? "[&_svg]:brightness-0 [&_svg]:invert [&_img]:brightness-0 [&_img]:invert" : undefined)}>{visual}</span>
 			) : (
 				visual

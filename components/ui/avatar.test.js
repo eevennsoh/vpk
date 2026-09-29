@@ -458,7 +458,10 @@ test("Rovo avatar inputs share an inset hexagon and the dark Rovo button canvas"
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /import \{ ROVO_LOGO_DATA_URI \} from "@\/components\/ui\/data\/rovo-logo"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const isRovoAvatar = vpkLogo === "rovo" \|\| avatarSrc === ROVO_LOGO_DATA_URI/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /shape="hexagon"/);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /isRovoAvatar \? "dark:bg-\[#292A2E\]" : undefined/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /isRovoAvatar \? "bg-rovo-avatar-canvas" : undefined/);
+	const themeSource = fs.readFileSync(path.join(process.cwd(), "app", "shadcn-theme.css"), "utf8");
+	assert.match(themeSource, /--color-rovo-avatar-canvas: light-dark\(var\(--ds-surface\), #292A2E\)/);
+	assert.doesNotMatch(AGENT_AVATAR_VISUAL_SOURCE, /dark:bg-/);
 	const rovoButtonSource = fs.readFileSync(path.join(__dirname, "..", "ui-custom", "rovo-sparkle", "button.tsx"), "utf8");
 	assert.match(rovoButtonSource, /"bg-bg-neutral-bold group-hover\/rovo-sparkle:bg-bg-neutral-bold-hovered/);
 });
