@@ -3,9 +3,21 @@ const test = require("node:test");
 
 const {
 	getBoardIssueInsertionLineTop,
+	resolveBoardIssueDropSurface,
 	getBoardCardInsertionAnchorClassName,
 	resolveBoardCardInsertionPosition,
 } = require("./board-card-insertion.ts");
+
+test("issue drops distinguish the header, card stack and unused column space", () => {
+	const clip = { top: 100, bottom: 600 };
+	assert.equal(resolveBoardIssueDropSurface(70, 90, clip, 400), "header");
+	assert.equal(resolveBoardIssueDropSurface(95, 90, clip, 400), "column");
+	assert.equal(resolveBoardIssueDropSurface(150, 90, clip, 400), "position");
+	assert.equal(resolveBoardIssueDropSurface(410, 90, clip, 400), "position");
+	assert.equal(resolveBoardIssueDropSurface(440, 90, clip, 400), "column");
+	assert.equal(resolveBoardIssueDropSurface(650, 90, clip, 800), "column");
+	assert.equal(resolveBoardIssueDropSurface(150, 90, clip, undefined), "column");
+});
 
 test("the issue rule's centre bisects default, wider and fused card gaps", () => {
 	for (const gap of [0, 4, 8, 12]) {
