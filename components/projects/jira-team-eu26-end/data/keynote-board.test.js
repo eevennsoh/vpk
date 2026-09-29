@@ -29,12 +29,15 @@ test("all keynote items, including retained and newly created ones, auto arrange
 		bundle: true, format: "cjs", platform: "node", write: false,
 	}).outputFiles[0].text);
 	const columns = withAutoArrangeDestinations(keynote.createJiraTeamEu26EndKeynoteBoardColumns());
+	delete columns[3].scrollbarVisibility;
 	const retained = columns[0].cards.shift();
 	retained.status = "Confidence";
 	retained.autoArrangeStatus = "Collaboration";
 	columns[2].cards.unshift(retained);
 	columns[0].cards.push({ ...columns[0].cards[0], code: "TEU-14", title: "New keynote item", autoArrangeStatus: undefined });
 	const prepared = keynote.withJiraTeamEu26EndDoneDestinations(columns);
+	assert.equal(prepared[3].scrollbarVisibility, "hidden");
+	assert.ok(prepared.slice(0, 3).every((column) => column.scrollbarVisibility === undefined));
 	const codes = new Set(prepared.flatMap((column) => column.cards.map((card) => card.code)));
 	assert.equal(codes.size, 14);
 	assert.ok(prepared.every((column) => column.cards.every((card) => card.autoArrangeStatus === "Done")));
@@ -43,6 +46,7 @@ test("all keynote items, including retained and newly created ones, auto arrange
 	assert.ok(plan.every((move) => move.columnTitle === "Done" && move.status === "Done"));
 	const moved = autoArrangeCards(prepared, codes);
 	assert.deepEqual(moved.map((column) => column.cards.length), [0, 0, 0, 14]);
+	assert.equal(moved[3].scrollbarVisibility, "hidden");
 	assert.equal(moved[3].cards.find((card) => card.code === "TEU-14").title, "New keynote item");
 	assert.deepEqual(getAutoArrangePlan(moved, codes), []);
 	assert.equal(keynote.withJiraTeamEu26EndDoneDestinations(prepared), prepared);

@@ -470,7 +470,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("existing single-card and selected-cohort drag moves work items into Done", async ({ page }) => {
-	await openBoard(page);
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	await startDrag(page, "TEU-1");
 	await dropIntoDone(page);
 	await expect(issue(page, "TEU-1")).toHaveAttribute("data-board-column-title", "Done");
@@ -493,6 +493,16 @@ test("existing single-card and selected-cohort drag moves work items into Done",
 	await expect(column(page, "Context").locator("[data-issue-key]")).toHaveCount(1);
 	await expect(column(page, "Collaboration").locator("[data-issue-key]")).toHaveCount(3);
 	await expect(column(page, "Confidence").locator("[data-issue-key]")).toHaveCount(6);
+	await page.setViewportSize({ width: 1440, height: 720 });
+	const doneViewport = page.getByRole("region", { name: "Done work items", exact: true });
+	await expect.poll(() => doneViewport.evaluate(node => node.scrollHeight - node.clientHeight)).toBeGreaterThan(1);
+	await doneViewport.hover();
+	await page.screenshot({ path: "output/agent-browser/done-scrollbar/done-hover.png" });
+	await expect(column(page, "Done").locator('[data-slot="scroll-area-scrollbar"]')).toHaveCount(0);
+	await expect(doneViewport).toHaveCSS("scrollbar-width", "none");
+	await page.mouse.wheel(0, 150);
+	await expect.poll(() => doneViewport.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+	await expect(column(page, "Confidence").locator('[data-slot="scroll-area-scrollbar"]')).toHaveCount(1);
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {

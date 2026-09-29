@@ -7,7 +7,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { JiraDropzoneCopyReveal } from "@/components/blocks/jira-dropzone/jira-dropzone-copy-reveal";
-import type { JiraKanbanAgentData } from "../../index";
+import type { JiraKanbanAgentData, JiraKanbanColumnData } from "../../index";
 import type { KanbanColumnChrome, KanbanColumnChromeStyles } from "../../column-chrome";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
@@ -152,6 +152,7 @@ export function BoardColumn({
 	columnChrome,
 	columnSizing = "fill",
 	count,
+	scrollbarVisibility,
 	createdCardArrival,
 	createWorkItemDropZoneLabel,
 	onCollapse,
@@ -174,6 +175,7 @@ export function BoardColumn({
 	columnChrome: KanbanColumnChrome;
 	columnSizing?: "fill" | "content";
 	count: number;
+	scrollbarVisibility?: JiraKanbanColumnData["scrollbarVisibility"];
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
 	createWorkItemDropZoneLabel?: string;
 	onCollapse: () => void;
@@ -255,6 +257,7 @@ export function BoardColumn({
 						columnTitle={title}
 						columnSizing={columnSizing}
 						count={count}
+						scrollbarVisibility={scrollbarVisibility}
 						createdCardArrival={createdCardArrival}
 						insertionArmed={insertionArmed}
 						isEmpty={isEmptyColumn}

@@ -821,6 +821,7 @@ function ExperimentalJiraKanbanView({
 								columnChrome={columnChrome}
 								columnSizing={columnSizing}
 								count={column.cards.length}
+								scrollbarVisibility={column.scrollbarVisibility}
 								createdCardArrival={presentedCardArrival?.columnTitle === column.title
 									? presentedCardArrival
 									: undefined}
