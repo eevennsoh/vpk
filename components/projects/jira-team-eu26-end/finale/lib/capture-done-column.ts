@@ -84,6 +84,9 @@ const CARD_SELECTOR = '[data-slot="jira-issue-card"]';
 
 /** The real drop/arrival state must be gone before it becomes an immutable print. */
 export function isFinaleColumnCaptureReady(column: HTMLElement): boolean {
+	// The shared drop trace lives in body, outside the column. Let its real
+	// completion (including cancellation/reduced motion) release this gate.
+	if (column.ownerDocument.querySelector(`[data-issue-drop-trace][data-board-column-title="${FINALE_DONE_COLUMN_TITLE}"]`)) return false;
 	if (column.querySelector('[data-transitioning="true"], [data-created-card-pending], [data-jira-creating-arrival="true"], [data-issue-status-choices="true"]')) return false;
 	return [...column.querySelectorAll<HTMLElement>(CARD_SELECTOR)].every((card) => {
 		const rect = card.getBoundingClientRect();

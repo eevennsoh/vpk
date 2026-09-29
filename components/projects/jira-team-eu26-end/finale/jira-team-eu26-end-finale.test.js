@@ -43,6 +43,7 @@ test("capture waits for native drop cleanup and every destination card's layout"
 	let blocked = true;
 	let width = 0;
 	const column = {
+		ownerDocument: { querySelector: () => null },
 		querySelector: () => blocked ? {} : null,
 		querySelectorAll: () => [{ getBoundingClientRect: () => ({ width, height: 199 }) }],
 	};
@@ -58,7 +59,7 @@ test("capture does not freeze the tail of the drop's layout projection", async (
 	const previous = { document: globalThis.document, requestAnimationFrame: globalThis.requestAnimationFrame, cancelAnimationFrame: globalThis.cancelAnimationFrame };
 	const frames = [];
 	let y = 280;
-	const column = { querySelector: () => null, querySelectorAll: () => [], getBoundingClientRect: () => ({ x: 1085, y, width: 330, height: 821 }) };
+	const column = { ownerDocument: { querySelector: () => null }, querySelector: () => null, querySelectorAll: () => [], getBoundingClientRect: () => ({ x: 1085, y, width: 330, height: 821 }) };
 	globalThis.document = { querySelector: () => column };
 	globalThis.requestAnimationFrame = (callback) => { frames.push(callback); return frames.length; };
 	globalThis.cancelAnimationFrame = () => {};
@@ -71,6 +72,39 @@ test("capture does not freeze the tail of the drop's layout projection", async (
 		assert.equal(captured, false, "moving bounds are not yet a valid immutable snapshot");
 		frames.shift()();
 		assert.equal(await pending, column, "the next stable paint frame releases capture");
+	} finally {
+		for (const [key, value] of Object.entries(previous)) {
+			if (value === undefined) delete globalThis[key];
+			else globalThis[key] = value;
+		}
+	}
+});
+
+test("finale capture waits for the Done border trace before taking over the board", async () => {
+	const { waitForFinaleColumnCapture } = loadFinale();
+	const previous = { document: globalThis.document, requestAnimationFrame: globalThis.requestAnimationFrame, cancelAnimationFrame: globalThis.cancelAnimationFrame };
+	const frames = [];
+	let tracing = true;
+	const column = {
+		ownerDocument: { querySelector: (selector) => tracing && selector.includes('data-board-column-title="Done"') ? {} : null },
+		querySelector: () => null,
+		querySelectorAll: () => [],
+		getBoundingClientRect: () => ({ x: 1000, y: 300, width: 300, height: 600 }),
+	};
+	globalThis.document = { querySelector: () => column };
+	globalThis.requestAnimationFrame = (callback) => { frames.push(callback); return frames.length; };
+	globalThis.cancelAnimationFrame = () => {};
+	try {
+		let captured = false;
+		const pending = waitForFinaleColumnCapture().then((result) => { captured = true; return result; });
+		frames.shift()();
+		frames.shift()();
+		await Promise.resolve();
+		assert.equal(captured, false, "stable card geometry must not let the shader obscure an active trace");
+		tracing = false;
+		frames.shift()();
+		frames.shift()();
+		assert.equal(await pending, column, "trace completion releases the existing stable-layout gate");
 	} finally {
 		for (const [key, value] of Object.entries(previous)) {
 			if (value === undefined) delete globalThis[key];

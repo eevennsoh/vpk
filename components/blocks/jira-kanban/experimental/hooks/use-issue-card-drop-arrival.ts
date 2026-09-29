@@ -123,10 +123,17 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 				setDrop((current) => current.filter((item) => item.id !== arrival.id));
 			}));
 		const stop = () => cleanups.forEach((cleanup) => cleanup());
-		root.ownerDocument.addEventListener("scroll", stop, true);
+		const destinations = [...root.querySelectorAll<HTMLElement>("[data-jira-kanban-column]")].filter((column) => committedArrivals.current.some((arrival) => arrival.columnTitle === column.dataset.jiraKanbanColumn));
+		const onScroll = (event: Event) => {
+			const target = event.target;
+			// Emptying a source column resets its scroll offset. That cannot move
+			// the destination trace, and must not cancel its completion feedback.
+			if (target === root.ownerDocument || target instanceof Element && destinations.some((column) => column.contains(target) || target.contains(column))) stop();
+		};
+		root.ownerDocument.addEventListener("scroll", onScroll, true);
 		window.addEventListener("resize", stop);
 		return () => {
-			root.ownerDocument.removeEventListener("scroll", stop, true);
+			root.ownerDocument.removeEventListener("scroll", onScroll, true);
 			window.removeEventListener("resize", stop);
 			stop();
 		};

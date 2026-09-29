@@ -16,6 +16,12 @@ interface DropCard {
 	radius: string;
 }
 
+type DropClip = Pick<DOMRect, "left" | "right" | "top" | "bottom">;
+
+function intersectsClip(rect: DOMRect, clip: DropClip): boolean {
+	return rect.width > 0 && rect.height > 0 && rect.right > clip.left && rect.left < clip.right && rect.bottom > clip.top && rect.top < clip.bottom;
+}
+
 const SVG_NS = "http://www.w3.org/2000/svg";
 let traceId = 0;
 
@@ -27,14 +33,14 @@ function positionTraceRect(outline: Element, rect: DOMRect, left: number, top: n
 }
 
 /** One mask travels through all committed card outlines, measured before reveal. */
-function createCollectionTrace(cards: readonly DropCard[], doc: Document, columnTitle: string) {
+function createCollectionTrace(cards: readonly DropCard[], doc: Document, columnTitle: string, clip: DropClip) {
 	const droppedSurfaces = new Set(cards.map((card) => card.surface));
 	const destination = cards[0].surface.closest<HTMLElement>("[data-jira-kanban-column]");
 	const excludedSurfaces = [...destination?.querySelectorAll<HTMLElement>("[data-issue-key]") ?? []].flatMap((issue) => {
 		const surface = issue.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
 		return surface && !droppedSurfaces.has(surface) ? [surface] : [];
 	});
-	const excludedRects = excludedSurfaces.map((surface) => surface.getBoundingClientRect());
+	const exclusions = excludedSurfaces.map((surface) => ({ surface, rect: surface.getBoundingClientRect() })).filter(({ rect }) => intersectsClip(rect, clip));
 	const left = Math.min(...cards.map(({ surfaceRect }) => surfaceRect.left));
 	const top = Math.min(...cards.map(({ surfaceRect }) => surfaceRect.top));
 	const width = Math.max(1, Math.max(...cards.map(({ surfaceRect }) => surfaceRect.right)) - left);
@@ -51,10 +57,12 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 	};
 	svg.setAttribute("aria-hidden", "true");
 	svg.setAttribute("data-issue-drop-trace", "");
+	svg.setAttribute("data-board-column-title", columnTitle);
 	svg.setAttribute("width", String(width));
 	svg.setAttribute("height", String(height));
 	svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 	Object.assign(svg.style, { position: "fixed", left: `${left}px`, top: `${top}px`, pointerEvents: "none", zIndex: "45", overflow: "visible" });
+	svg.style.clipPath = `inset(${Math.max(0, clip.top - top)}px ${Math.max(0, left + width - clip.right)}px ${Math.max(0, top + height - clip.bottom)}px ${Math.max(0, clip.left - left)}px)`;
 	const defs = make("defs", {}, svg);
 	const gradient = make("linearGradient", { id: `${id}-gradient`, x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
 	for (const [offset, opacity] of [[0, 0], [45, 0.18], [72, 0.5], [92, 1], [100, 0.25]]) {
@@ -64,9 +72,9 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 	const band = make("rect", { x: 0, y: -bandLength, width, height: bandLength, fill: `url(#${id}-gradient)` }, mask);
 	Object.assign(band.style, { transformBox: "fill-box", transformOrigin: "center bottom" });
 	const targets: { surface: HTMLElement; outline: Element; inset: number }[] = [];
-	for (const [index, surface] of excludedSurfaces.entries()) {
+	for (const { surface, rect } of exclusions) {
 		const outline = make("rect", { "data-issue-drop-trace-exclusion": "", fill: "black" }, mask);
-		positionTraceRect(outline, excludedRects[index], left, top, -1);
+		positionTraceRect(outline, rect, left, top, -1);
 		targets.push({ surface, outline, inset: -1 });
 	}
 	const outlines = make("g", { mask: `url(#${id})` }, svg);
@@ -112,13 +120,23 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string, codes: readonly string[], reducedMotion: boolean, onComplete: () => void, glowColors?: Readonly<Record<string, string>>): () => void {
 	if (reducedMotion) { onComplete(); return () => {}; }
 	const elements = [...root.querySelectorAll<HTMLElement>("[data-issue-key]")];
-	const cards: DropCard[] = codes.flatMap((code) => {
+	const measured: DropCard[] = codes.flatMap((code) => {
 		const issue = elements.find((node) => node.dataset.issueKey === code && node.dataset.boardColumnTitle === columnTitle);
 		// The outer slot has FLIP disabled by this arrival and no card-hover transform.
 		const node = issue?.parentElement;
 		const surface = issue?.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
 		return node && surface ? [{ code, node, surface, rect: node.getBoundingClientRect(), surfaceRect: surface.getBoundingClientRect(), radius: getComputedStyle(surface).borderTopLeftRadius }] : [];
 	});
+	if (!measured.length) { onComplete(); return () => {}; }
+	const view = root.ownerDocument.defaultView!;
+	const list = measured[0].surface.closest<HTMLElement>("[data-jira-kanban-card-list]")?.getBoundingClientRect();
+	const clip: DropClip = {
+		left: Math.max(0, list?.left ?? 0), right: Math.min(view.innerWidth, list?.right ?? view.innerWidth),
+		top: Math.max(0, list?.top ?? 0), bottom: Math.min(view.innerHeight, list?.bottom ?? view.innerHeight),
+	};
+	// Decide from final slots before unfolding: hidden cards must not fly through
+	// the visible stack or extend the trace's sweep and per-frame geometry work.
+	const cards = measured.filter(({ surfaceRect }) => intersectsClip(surfaceRect, clip));
 	if (!cards.length) { onComplete(); return () => {}; }
 	const effects: { animation: Animation; restore: () => void }[] = [];
 	if (glowColors) {
@@ -129,7 +147,7 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 				color: glowColors[card.code] ?? JIRA_LINKING_GLOW_DEFAULT_COLOR,
 			}));
 		}
-	} else effects.push(createCollectionTrace(cards, root.ownerDocument, columnTitle));
+	} else effects.push(createCollectionTrace(cards, root.ownerDocument, columnTitle, clip));
 	const first = cards[0];
 	const priorFirstZ = first.node.style.zIndex;
 	let moving = cards.length - 1;

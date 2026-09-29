@@ -32,7 +32,18 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 		{ title: "To do", count: 2, cards: [issue("A", "Review"), issue("B", "Done")] },
 		{ title: "Review", count: 0, cards: [] }, { title: "Done", count: 0, cards: [] },
 	];
-	const root = { ownerDocument: { addEventListener() {}, removeEventListener() {} } };
+	class Element {
+		constructor(parent = null, dataset = {}) { this.parent = parent; this.dataset = dataset; }
+		contains(target) { for (let node = target; node; node = node.parent) if (node === this) return true; return false; }
+	}
+	const listeners = new Map();
+	const root = new Element();
+	const columnNodes = columns.map((column) => new Element(root, { jiraKanbanColumn: column.title }));
+	root.querySelectorAll = () => columnNodes;
+	root.ownerDocument = {
+		addEventListener(name, callback) { const callbacks = listeners.get(name) ?? new Set(); callbacks.add(callback); listeners.set(name, callbacks); },
+		removeEventListener(name, callback) { listeners.get(name)?.delete(callback); },
+	};
 	const boardRef = { current: root }, nativePreviewRef = { current: null };
 	const getPreview = () => preview;
 	const onAutoArrange = (codes) => { if (!reject) columns = autoModel.autoArrangeCards(columns, codes); };
@@ -51,7 +62,7 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-issue-card-drop-arrival.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
 	const loaded = { exports: {} };
 	vm.runInNewContext(compiled, {
-		module: loaded, exports: loaded.exports, window: { addEventListener() {}, removeEventListener() {} },
+		module: loaded, exports: loaded.exports, Element, window: { addEventListener() {}, removeEventListener() {} },
 		require(name) {
 			if (name === "react") return react;
 			if (name.includes("use-media-query")) return { useMediaQuery: () => reduced };
@@ -80,8 +91,23 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 		return api;
 	}
 	render();
-	return { render, captures, flights, reveals, events, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review") { api.handleDrop(title); preview = null; } };
+	return { render, captures, flights, reveals, events, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review") { api.handleDrop(title); preview = null; },
+		scroll(title) {
+			const target = title === "document" ? root.ownerDocument : title === "board" ? root : new Element(columnNodes.find((node) => node.dataset.jiraKanbanColumn === title));
+			for (const callback of listeners.get("scroll") ?? []) callback({ target });
+		},
+	};
 }
+
+test("source-column scroll resets do not cancel a Done trace; destination and ancestor scrolls do", () => {
+	for (const target of ["Done", "board", "document"]) {
+		const h = harness({ solitaire: true }); h.drop("Done"); h.render();
+		h.scroll("To do");
+		assert.equal(h.reveals[0].stopped, false, "emptying a scrolled source must preserve completion feedback");
+		h.scroll(target);
+		assert.equal(h.reveals[0].stopped, true, "moving the destination retires its fixed overlay");
+	}
+});
 
 test("Return captures the held preview before commit and launches arrivals for every destination before paint", () => {
 	const h = harness();
