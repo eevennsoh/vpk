@@ -77,8 +77,8 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * embedded with only expand/collapse until the user opts into unpinning and
  * cross-column repositioning.
  *
- * Agent Session column resizing starts off: Team EU omits the width drag
- * handle until the user explicitly enables Dragging.
+ * Agent Session column resizing starts on: Team EU includes the width drag
+ * handle unless the user explicitly disables Dragging.
  *
  * Manual link starts off: Team EU hides the Link work item session-menu row
  * until the user explicitly enables it.
@@ -97,7 +97,7 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
 const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	advancedTimeline: false,
 	autoArrange: false,
-	agentSessionColumnResizing: false,
+	agentSessionColumnResizing: true,
 	kanbanBackground: false,
 	manualLink: false,
 	moveVisual: true,

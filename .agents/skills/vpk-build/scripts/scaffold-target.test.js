@@ -18,6 +18,39 @@ function writeFile(filePath, contents) {
 	fs.writeFileSync(filePath, contents, "utf8");
 }
 
+async function renderGeneratedLayout(layout) {
+	const ts = require("typescript");
+	const { renderToStaticMarkup } = require("react-dom/server");
+	const { outputText } = ts.transpileModule(layout, {
+		compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+	});
+	const generatedModule = { exports: {} };
+	const previousFlags = globalThis.__PLATFORM_FEATURE_FLAGS__;
+	const requireLayout = (specifier) => {
+		switch (specifier) {
+			case "./feature-flags-shim":
+				globalThis.__PLATFORM_FEATURE_FLAGS__ = { booleanResolver: () => false };
+				return {};
+			case "./globals.css": return {};
+			case "next/font/google": return { Geist: () => ({ variable: "fixture-geist" }) };
+			case "next/font/local": return () => ({ variable: "fixture-local-font" });
+			case "@/components/utils/theme-wrapper": return { ThemeWrapper: ({ children }) => children };
+			case "@/lib/utils": return { cn: (...classes) => classes.filter(Boolean).join(" ") };
+			case "./feature-flags-shim-client": return { FeatureFlagsShim: () => null };
+			default: return require(specifier);
+		}
+	};
+	try {
+		// Run the generated root with real React and ADS token loading. Font and
+		// client-only wrappers are irrelevant to stylesheet selection in this test.
+		new Function("require", "exports", "module", outputText)(requireLayout, generatedModule.exports, generatedModule);
+		return renderToStaticMarkup(await generatedModule.exports.default({ children: null }));
+	} finally {
+		if (previousFlags === undefined) delete globalThis.__PLATFORM_FEATURE_FLAGS__;
+		else globalThis.__PLATFORM_FEATURE_FLAGS__ = previousFlags;
+	}
+}
+
 function createFixture() {
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-build-scaffold-"));
 	const repoRoot = path.join(tempDir, "repo");
@@ -141,7 +174,7 @@ test("staged public assets remain independent from the source when either copy i
 	} finally { fixture.cleanup(); }
 });
 
-test("scaffold-target emits the updated layout, shim, config, and fonts for extracted routes", () => {
+test("scaffold-target emits the updated layout, shim, config, and fonts for extracted routes", async () => {
 	const fixture = createFixture();
 
 	try {
@@ -184,7 +217,11 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(layout, /import \{ getThemeStyles \} from "@atlaskit\/tokens\/get-theme-styles";/);
 		assert.match(layout, /const geist = Geist\(\{ subsets: \["latin"\], variable: "--font-sans" \}\);/);
 		assert.match(layout, /src: "\.\.\/public\/fonts\/ark-es\/ARK-ES-SolidLight\.woff"/);
-		assert.match(layout, /const themeStyles = await getThemeStyles\(THEME_STATE\);/);
+		const renderedLayout = await renderGeneratedLayout(layout);
+		assert.match(renderedLayout, /<html[^>]*data-color-mode="light"/);
+		assert.match(renderedLayout, /<style data-theme="light">/);
+		assert.match(renderedLayout, /<style data-theme="dark">/);
+		assert.match(renderedLayout, /\[data-subtree-theme\]\[data-color-mode="dark"\]\[data-theme~="dark:dark"\]/);
 		assert.match(layout, /import \{ getThemeHtmlAttrs \} from "@atlaskit\/tokens\/get-theme-html-attrs";/);
 		assert.match(layout, /<html[^>]*\{\.\.\.getThemeHtmlAttrs\(THEME_STATE\)\}/);
 		assert.match(layout, /href="\/website\/favicon-fallback\.svg"/);

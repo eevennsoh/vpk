@@ -22,12 +22,13 @@ interface DropState {
 	lineTop?: number;
 }
 
-function resolveIssueDropHeader(active: BoardIssueDragSource | undefined, current: DropState | null, title: string, choices: readonly string[], choosing: boolean, moveVisual: boolean): string {
+type IssueDropHeader = string | { source: string; destination?: string };
+
+function resolveIssueDropHeader(active: BoardIssueDragSource | undefined, current: DropState | null, title: string, choices: readonly string[], choosing: boolean, moveVisual: boolean): IssueDropHeader {
 	if (!active) return title;
 	if (active.columnTitle === title) return "Transition to...";
-	if (!moveVisual) return current?.entered ? `${active.status} → ${current.status}` : title;
-	if (choosing && !current) return `${active.status} →`;
-	return `${active.status} → ${current?.status ?? choices[0] ?? title}`;
+	if (!moveVisual) return current?.entered ? { source: active.status, destination: current.status } : title;
+	return { source: active.status, destination: choosing && !current ? undefined : current?.status ?? choices[0] ?? title };
 }
 
 /** A status choice is latched until the pointer leaves the column. */

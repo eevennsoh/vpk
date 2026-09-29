@@ -8,6 +8,27 @@ const issue = (page: Page, code: string) => page.locator(`[data-board-agent-sess
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`EU26 toolbar and transition icons preserve theme parity (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await issue(page, "PAY-105").locator("[draggable]").first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		const toolbar = page.locator('[data-slot="jira-toolbar"]');
+		await expect(toolbar).toHaveCSS("background-color", "rgb(31, 31, 33)");
+		await toolbar.getByRole("button", { name: "More actions", exact: true }).click();
+		await expect(page.getByRole("menu").last()).toHaveCSS("background-color", "rgb(255, 255, 255)");
+		await page.keyboard.press("Escape");
+		await page.keyboard.press("Escape");
+		await startDrag(page, "PAY-118");
+		const header = column(page, "In review").locator('[data-slot="board-column-header"]');
+		await expect(header.locator('[data-board-column-transition-arrow] svg').first()).toBeVisible();
+		await expect(header).not.toContainText("→");
+		await expect(column(page, "In progress").locator('[data-issue-transition-arrow] svg').first()).toBeVisible();
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+	});
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`shared default column drop chrome respects reduced motion (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/preview/blocks/jira-kanban`);
@@ -556,7 +577,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(inProgress.locator("[data-jira-kanban-column-drop-ring]")).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
 		await page.screenshot({ timeout: 5_000, path: `output/agent-browser/dnd/choices-${reducedMotion}.png` });
 		await enterStatus(page, "Paused");
-		await expect(column(page, "In progress")).toContainText("To do → Paused");
+		await expect(column(page, "In progress").locator('[data-board-column-transition-prefix]').first()).toHaveText("To do");
+		await expect(column(page, "In progress").locator('[data-board-column-destination-copy-layer="label"]').first()).toHaveText("Paused");
 		const next = await issue(page, "PAY-107").boundingBox();
 		if (!next) throw new Error("Missing insertion anchor");
 		await page.mouse.move(next.x + 100, next.y + 20, { steps: 5 });

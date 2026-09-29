@@ -9,8 +9,10 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 	const animations = [], nodes = [], reads = [], frames = new Map(), frameEvents = [];
 	let frameId = 0, inFrame = false, sharedGlow;
 	class Node {
-		constructor(name) { this.name = name; this.style = {}; this.attributes = {}; this.children = []; this.dataset = {}; }
+		constructor(name) { this.name = name; this.style = {}; this.attributes = {}; this.children = []; this.dataset = {}; this.inert = false; }
 		setAttribute(key, value) { this.attributes[key] = value; if (inFrame) frameEvents.push("write"); }
+		getAttribute(key) { return this.attributes[key] ?? null; }
+		removeAttribute(key) { delete this.attributes[key]; }
 		append(node) { this.children.push(node); node.parentElement = this; }
 		remove() { this.removed = true; }
 		animate(keyframes, options) {
@@ -19,7 +21,7 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 		}
 		getBoundingClientRect() { reads.push(this); if (inFrame) frameEvents.push("read"); else assert.equal(animations.length, 0, "measure every final slot before applying motion"); return this.rect; }
 		get ownerDocument() { return doc; }
-		querySelector(selector) { return selector.includes("backdrop") ? this.backdrop : this.surface; }
+		querySelector(selector) { return selector.includes("agent-shell") ? this.shell : selector.includes("backdrop") ? this.backdrop : this.surface; }
 		closest(selector) { return selector.includes("card-list") ? list : destination; }
 	}
 	const doc = { defaultView: { innerWidth: 1000, innerHeight: viewportHeight }, body: new Node("body"), createElement: (name) => { const node = new Node(name); nodes.push(node); return node; }, createElementNS: (_, name) => { const node = new Node(name); nodes.push(node); return node; } };
@@ -27,18 +29,21 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 	const issues = Array.from({ length: count }, (_, index) => {
 		const node = new Node("slot"); node.style = { zIndex: "auto", willChange: "opacity" }; node.rect = rect(100 + index * step, slotHeight);
 		const issue = new Node("issue"); issue.dataset = { issueKey: `K${index}`, boardColumnTitle: column }; issue.parentElement = node;
+		issue.shell = new Node("shell"); issue.shell.style = { backgroundColor: "", backgroundImage: "", transitionProperty: "" };
 		node.backdrop = new Node("backdrop");
 		issue.surface = new Node("surface"); issue.surface.rect = rect(node.rect.top + 4, surfaceHeight);
 		return issue;
 	});
-	const destination = { querySelectorAll: () => issues };
+	const columnSurface = new Node("column-surface");
+	const destination = { querySelectorAll: () => issues, querySelector: () => columnSurface };
 	const list = { getBoundingClientRect: () => rect(clipTop, clipBottom - clipTop) };
 	const loaded = { exports: {} };
 	vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "issue-solitaire-drop.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
 		requestAnimationFrame: (callback) => { const id = ++frameId; frames.set(id, callback); return id; },
 		cancelAnimationFrame: (id) => frames.delete(id),
-		module: loaded, exports: loaded.exports, getComputedStyle: () => ({ borderTopLeftRadius: "8px" }),
+		module: loaded, exports: loaded.exports, getComputedStyle: () => ({ borderTopLeftRadius: "8px", backgroundColor: "rgb(248, 248, 248)" }),
 		require(name) {
+			if (name.includes("card-motion")) return { JIRA_KANBAN_CARD_LAYOUT: { duration: 0.2 } };
 			if (name.includes("card-glow")) {
 				const glow = { exports: {} };
 				vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../../../jira-linking/card-glow.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
@@ -64,7 +69,7 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 test("every later card starts under the fixed first card and finishes at 420ms", () => {
 	const h = fixture(6, "In progress"); h.start();
 	assert.equal(h.animations.length, 6);
-	assert.equal(h.issues[0].parentElement.style.zIndex, "2");
+	assert.deepEqual(h.issues.map((issue) => issue.parentElement.style.zIndex), ["6", "5", "4", "3", "2", "1"], "every card stays behind the card above it during the reveal");
 	h.animations.slice(1).forEach((animation, index) => {
 		assert.equal(animation.keyframes[0].transform, `translate3d(0, ${-(index + 1) * 112}px, 0)`);
 		assert.equal(animation.keyframes[1].transform, "translate3d(0, 0, 0)");
@@ -79,6 +84,30 @@ test("every later card starts under the fixed first card and finishes at 420ms",
 	for (const issue of h.issues) assert.equal(issue.parentElement.style.zIndex, "auto");
 	for (const issue of h.issues.slice(1)) assert.equal(issue.parentElement.style.willChange, "opacity");
 });
+
+for (const event of ["finish", "cancel"]) {
+	test(`bulk drops back translucent activity rows with the column surface until ${event}`, () => {
+		const h = fixture(4);
+		const existing = { backgroundColor: "navy", backgroundImage: "none", transitionProperty: "opacity" };
+		Object.assign(h.issues[0].shell.style, existing);
+		const stop = h.start();
+		for (const issue of h.issues) {
+			assert.equal(issue.shell.style.backgroundColor, "token:elevation.surface", "an opaque base hides the next card's text");
+			assert.equal(issue.shell.style.backgroundImage, "linear-gradient(rgb(248, 248, 248), rgb(248, 248, 248))", "retain the destination column's tint");
+			assert.equal(issue.shell.style.transitionProperty, "none", "the backing must be opaque from the first frame");
+		}
+		if (event === "finish") {
+			h.animations[0].onfinish();
+			assert.equal(h.issues[0].shell.style.backgroundColor, "token:elevation.surface", "retain backing while any cards still overlap");
+			for (const animation of h.animations.slice(1)) animation.onfinish();
+		} else {
+			stop(); stop();
+		}
+		assert.deepEqual(h.issues[0].shell.style, existing);
+		for (const issue of h.issues.slice(1)) assert.deepEqual(issue.shell.style, { backgroundColor: "", backgroundImage: "", transitionProperty: "" });
+		assert.equal(h.complete(), 1);
+	});
+}
 
 test("bulk drops trace and unfold only cards intersecting the column and viewport", () => {
 	for (const bounds of [{ clipBottom: 340 }, { viewportHeight: 340 }]) {
@@ -99,6 +128,36 @@ test("fully clipped cards complete immediately without allocating a trace or ani
 	assert.equal(h.animations.length, 0, "touching the clip edge is not a visible intersection");
 	assert.equal(h.doc.body.children.length, 0);
 	assert.equal(h.frames.size, 0);
+	assert.equal(h.complete(), 1);
+});
+
+test("a single moved card waits for surrounding reflow before becoming visible and interactive", () => {
+	const h = fixture(3); h.start(false, ["K0"]);
+	assert.equal(h.animations.length, 2, "the trace and entry fade share completion ownership");
+	const entry = h.animations[1];
+	assert.equal(entry.node, h.issues[0].parentElement);
+	assert.deepEqual(JSON.parse(JSON.stringify(entry.keyframes)), [{ opacity: 0 }, { opacity: 1 }]);
+	assert.equal(entry.options.delay, 200, "the card stays hidden until neighboring layout movement finishes");
+	assert.equal(entry.options.duration, 150);
+	assert.equal(entry.options.fill, "backwards");
+	assert.equal(entry.node.inert, true);
+	assert.equal(entry.node.getAttribute("aria-hidden"), "true");
+	entry.onfinish();
+	assert.equal(entry.node.inert, false);
+	assert.equal(entry.node.getAttribute("aria-hidden"), null);
+	h.animations[0].onfinish();
+	assert.equal(h.complete(), 1);
+});
+
+test("cancelling a pending single-card entry restores its existing accessibility state once", () => {
+	const h = fixture(2);
+	const slot = h.issues[0].parentElement;
+	slot.setAttribute("aria-hidden", "false");
+	const stop = h.start(false, ["K0"]);
+	assert.equal(slot.inert, true);
+	stop(); stop();
+	assert.equal(slot.inert, false);
+	assert.equal(slot.getAttribute("aria-hidden"), "false");
 	assert.equal(h.complete(), 1);
 });
 
@@ -152,10 +211,10 @@ test("cancel restores every style and removes the trace exactly once", () => {
 	assert.ok(h.animations.every((animation) => animation.cancelled));
 });
 
-test("single cards trace in every column, skip the reveal, and motion-off does no decoration", () => {
+test("single cards trace in every column, skip deck unfolding, and motion-off does no decoration", () => {
 	for (const column of ["Done", "In review"]) {
 		const single = fixture(1, column); single.start();
-		assert.equal(single.animations.length, 1);
+		assert.equal(single.animations.length, 2);
 		assert.equal(single.issues[0].parentElement.style.zIndex, "auto");
 		const reduced = fixture(6, column); reduced.start(true);
 		assert.equal(reduced.animations.length, 0);

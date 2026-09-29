@@ -1,6 +1,8 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
+import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
+import { Icon } from "@/components/ui/icon";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -51,8 +53,14 @@ function BoardColumnHeader({
 	title: string;
 }>) {
 	const isTransitioning = Boolean(issueDrop.active && (issueMoveVisual || issueDrop.active.columnTitle === title));
-	const transitionPrefix = issueDrop.active && issueDrop.active.columnTitle !== title ? `${issueDrop.active.status} →` : null;
-	const destination = transitionPrefix ? issueDrop.header.slice(transitionPrefix.length).trimStart() : "";
+	const transition = typeof issueDrop.header === "string" ? null : issueDrop.header;
+	const headerLabel = typeof issueDrop.header === "string" ? issueDrop.header : "";
+	const transitionPrefix = transition?.source;
+	const destination = transition?.destination ?? "";
+	const transitionSource = transition ? <>
+		<span data-board-column-transition-prefix="" className="shrink-0 whitespace-pre">{transition.source}</span>
+		<Icon aria-hidden className="mx-1 shrink-0 text-icon-subtle" data-board-column-transition-arrow="" render={<ArrowRightIcon color="currentColor" label="" size="small" />} />
+	</> : null;
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
 	const dropHovered = issueDrop.current?.entered && issueDrop.current.surface === "header";
 	return (
@@ -76,7 +84,7 @@ function BoardColumnHeader({
 			{/* Match the compact controls' row height when pickup replaces them with transition copy. */}
 			<div className={cn("flex min-h-6 min-w-0 flex-1 items-center text-xs font-medium leading-4 text-text-subtle", !issueMoveVisual && isTransitioning ? "justify-center" : null)}>
 				{issueMoveVisual ? <JiraDropzoneCopyReveal
-					contentKey={transitionPrefix ?? issueDrop.header}
+					contentKey={transitionPrefix ?? headerLabel}
 					dataPrefix="board-column-header"
 					mode="cycle"
 					revealed={isTransitioning}
@@ -87,7 +95,7 @@ function BoardColumnHeader({
 					</span>}
 				>{transitionPrefix ? (
 					<span className="inline-flex w-full min-w-0 items-center">
-						<span data-board-column-transition-prefix="" className="shrink-0 whitespace-pre">{transitionPrefix}{" "}</span>
+						{transitionSource}
 						<span className="min-w-0 flex-1">
 							<JiraDropzoneCopyReveal
 								contentKey={destination}
@@ -99,9 +107,9 @@ function BoardColumnHeader({
 							>{destination}</JiraDropzoneCopyReveal>
 						</span>
 					</span>
-				) : issueDrop.header}</JiraDropzoneCopyReveal> : (
+				) : headerLabel}</JiraDropzoneCopyReveal> : (
 					<span className="inline-flex min-w-0 items-center gap-1.5">
-						<span className="truncate">{issueDrop.header}</span>
+						{transition ? <span className="inline-flex min-w-0 items-center">{transitionSource}<span className="truncate">{destination}</span></span> : <span className="truncate">{headerLabel}</span>}
 						{isTransitioning ? null : <span data-board-column-count="" className="shrink-0 font-normal text-text-subtlest">{count}</span>}
 					</span>
 				)}

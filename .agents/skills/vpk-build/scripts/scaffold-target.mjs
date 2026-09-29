@@ -285,7 +285,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
-	const themeStyles = await getThemeStyles(THEME_STATE);
+	// Include both color themes for inverse subtrees, even when the app starts light.
+	const themeStyles = await getThemeStyles({ ...THEME_STATE, colorMode: "auto" });
 
 	return (
 		<html lang="en" className="light" {...getThemeHtmlAttrs(THEME_STATE)} suppressHydrationWarning>

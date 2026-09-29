@@ -1,6 +1,7 @@
 import { token } from "@/lib/tokens";
 import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card-glow";
 import { JIRA_LINKING_GLOW_DEFAULT_COLOR } from "@/components/blocks/jira-linking/glow-motion";
+import { JIRA_KANBAN_CARD_LAYOUT } from "./card-motion";
 
 // Reference choreography: the reveal and the border travel use separate clocks.
 export const CARD_DROP_STACK_EXPAND_MS = 420;
@@ -11,6 +12,7 @@ interface DropCard {
 	code: string;
 	node: HTMLElement;
 	surface: HTMLElement;
+	shell: HTMLElement | null;
 	rect: DOMRect;
 	surfaceRect: DOMRect;
 	radius: string;
@@ -20,6 +22,25 @@ type DropClip = Pick<DOMRect, "left" | "right" | "top" | "bottom">;
 
 function intersectsClip(rect: DOMRect, clip: DropClip): boolean {
 	return rect.width > 0 && rect.height > 0 && rect.right > clip.left && rect.left < clip.right && rect.bottom > clip.top && rect.top < clip.bottom;
+}
+
+/** Neutral activity tints need an opaque base while cards overlap during a bulk reveal. */
+function backIssueDropActivityRows(cards: readonly DropCard[]): () => void {
+	if (cards.length < 2) return () => {};
+	const column = cards[0].surface.closest<HTMLElement>("[data-jira-kanban-column]");
+	const columnSurface = column?.querySelector<HTMLElement>("[data-jira-kanban-column-backdrop]")
+		?? column?.querySelector<HTMLElement>("[data-jira-kanban-column-content]");
+	const columnBackground = columnSurface ? getComputedStyle(columnSurface).backgroundColor : "transparent";
+	const restore = cards.flatMap(({ shell }) => {
+		if (!shell) return [];
+		const { backgroundColor, backgroundImage, transitionProperty } = shell.style;
+		// Preserve the column's tint over the opaque surface, including alpha-based chrome.
+		shell.style.transitionProperty = "none";
+		shell.style.backgroundColor = token("elevation.surface");
+		shell.style.backgroundImage = `linear-gradient(${columnBackground}, ${columnBackground})`;
+		return [() => Object.assign(shell.style, { backgroundColor, backgroundImage, transitionProperty })];
+	});
+	return () => restore.forEach((reset) => reset());
 }
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -125,7 +146,7 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 		// The outer slot has FLIP disabled by this arrival and no card-hover transform.
 		const node = issue?.parentElement;
 		const surface = issue?.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
-		return node && surface ? [{ code, node, surface, rect: node.getBoundingClientRect(), surfaceRect: surface.getBoundingClientRect(), radius: getComputedStyle(surface).borderTopLeftRadius }] : [];
+		return node && surface ? [{ code, node, surface, shell: issue.querySelector<HTMLElement>('[data-slot="jira-issue-agent-shell"]'), rect: node.getBoundingClientRect(), surfaceRect: surface.getBoundingClientRect(), radius: getComputedStyle(surface).borderTopLeftRadius }] : [];
 	});
 	if (!measured.length) { onComplete(); return () => {}; }
 	const view = root.ownerDocument.defaultView!;
@@ -148,13 +169,32 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 			}));
 		}
 	} else effects.push(createCollectionTrace(cards, root.ownerDocument, columnTitle, clip));
+	if (codes.length === 1 && !glowColors) {
+		// Reserve the final slot immediately, then reveal its face after neighbors have moved away.
+		const node = cards[0].node;
+		const wasInert = node.inert;
+		const priorAriaHidden = node.getAttribute("aria-hidden");
+		node.inert = true;
+		node.setAttribute("aria-hidden", "true");
+		const animation = node.animate([{ opacity: 0 }, { opacity: 1 }], {
+			delay: Number(JIRA_KANBAN_CARD_LAYOUT.duration ?? 0) * 1000,
+			duration: 150, easing: "cubic-bezier(0.4, 1, 0.6, 1)", fill: "backwards", // duration-normal + ease-out-practical
+		});
+		effects.push({ animation, restore: () => {
+			node.inert = wasInert;
+			if (priorAriaHidden === null) node.removeAttribute("aria-hidden");
+			else node.setAttribute("aria-hidden", priorAriaHidden);
+		} });
+	}
+	const restoreBackings = backIssueDropActivityRows(cards);
 	const first = cards[0];
 	const priorFirstZ = first.node.style.zIndex;
 	let moving = cards.length - 1;
-	if (moving) first.node.style.zIndex = "2";
+	if (moving) first.node.style.zIndex = String(cards.length);
 	for (const [index, card] of cards.slice(1).entries()) {
 		const { zIndex, willChange } = card.node.style;
-		card.node.style.zIndex = "1";
+		// Every later slot stays behind its predecessor while the deck unfolds.
+		card.node.style.zIndex = String(cards.length - index - 1);
 		card.node.style.willChange = "transform";
 		const delay = Math.min((index + 1) * 24, 72);
 		const animation = card.node.animate([
@@ -169,7 +209,7 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 	}
 	let remaining = effects.length;
 	let completed = false;
-	const complete = () => { if (!completed) { completed = true; onComplete(); } };
+	const complete = () => { if (!completed) { completed = true; restoreBackings(); onComplete(); } };
 	const disposers = effects.map(({ animation, restore }) => {
 		let restored = false;
 		const settle = () => {
