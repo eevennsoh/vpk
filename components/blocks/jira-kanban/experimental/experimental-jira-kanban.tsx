@@ -570,7 +570,8 @@ function ExperimentalJiraKanbanView({
 	const handleColumnDragOver = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		event.dataTransfer.dropEffect = "move";
-		setColumnDropArmed(event.currentTarget, true);
+		// Expanded issue columns own ordered versus natural drop feedback.
+		if (!issueDragSource || event.currentTarget.dataset.collapsed === "true") setColumnDropArmed(event.currentTarget, true);
 	};
 
 	const handleColumnDragLeave = (event: React.DragEvent<HTMLDivElement>) => {

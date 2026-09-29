@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 import { JiraDropzoneCopyReveal } from "@/components/blocks/jira-dropzone/jira-dropzone-copy-reveal";
 import type { JiraKanbanAgentData } from "../../index";
 import type { KanbanColumnChrome, KanbanColumnChromeStyles } from "../../column-chrome";
@@ -27,6 +28,7 @@ function BoardColumnHeader({
 	agents,
 	assignedAgentIds,
 	count,
+	dropFeedbackInset,
 	headerStyle,
 	issueDrop,
 	issueMoveVisual,
@@ -39,6 +41,7 @@ function BoardColumnHeader({
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	count: number;
+	dropFeedbackInset?: CSSProperties["paddingInline"];
 	headerStyle?: CSSProperties;
 	issueDrop: BoardIssueDropState;
 	issueMoveVisual: boolean;
@@ -51,16 +54,25 @@ function BoardColumnHeader({
 	const transitionPrefix = issueDrop.active && issueDrop.active.columnTitle !== title ? `${issueDrop.active.status} →` : null;
 	const destination = transitionPrefix ? issueDrop.header.slice(transitionPrefix.length).trimStart() : "";
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
+	const dropHovered = issueDrop.current?.entered && issueDrop.current.surface === "header";
 	return (
 		<div
 			data-slot="board-column-header"
 			data-transitioning={isTransitioning || undefined}
+			data-issue-drop-hovered={dropHovered || undefined}
+			{...issueDrop.handlers}
 			className={cn(
-				"flex min-w-0 items-center gap-2",
+				"relative isolate flex min-w-0 items-center gap-2",
 				!issueMoveVisual && isTransitioning ? "justify-center" : "justify-between",
 			)}
-			style={{ paddingBottom: token("space.100"), ...headerStyle }}
+			style={{ ...headerStyle, paddingBottom: headerStyle?.paddingTop ?? token("space.100") }}
 		>
+			{dropHovered ? <div
+				aria-hidden
+				data-board-column-title-drop-feedback=""
+				className={cn(buttonVariants({ variant: "ghost" }), "pointer-events-none absolute -z-10 bg-bg-neutral-subtle-hovered")}
+				style={{ inset: dropFeedbackInset ?? 0, height: "auto" }}
+			/> : null}
 			{/* Match the compact controls' row height when pickup replaces them with transition copy. */}
 			<div className={cn("flex min-h-6 min-w-0 flex-1 items-center text-xs font-medium leading-4 text-text-subtle", !issueMoveVisual && isTransitioning ? "justify-center" : null)}>
 				{issueMoveVisual ? <JiraDropzoneCopyReveal
@@ -171,7 +183,7 @@ export function BoardColumn({
 	const insertionArmed = cardInsertion?.columnTitle === title;
 	const isEmptyColumn = count === 0;
 	// The moved source can unmount before dragend; settled columns must clear their drag paint.
-	useBoardColumnDropRing(issueDrop.rootRef, chrome, !issueDrop.active ? false : issueMoveVisual && issueDrop.offeringChoices && issueDrop.current?.entered ? isEmptyColumn : undefined);
+	useBoardColumnDropRing(issueDrop.rootRef, chrome, Boolean(issueDrop.current?.entered && issueDrop.current.surface !== "position"));
 	const { minimumHeight: choiceHeight } = useCreateDropzoneHeight(issueMoveVisual && issueDrop.choosing && columnSizing === "content", "bottom", columnSizing, issueDrop.rootRef);
 	const createAction = <BoardColumnCreateAction
 		columnSizing={columnSizing}
@@ -182,8 +194,9 @@ export function BoardColumn({
 		title={title}
 	/>;
 	return (
+		<>
 		<div
-			className={cn("min-h-0 min-w-0 overflow-visible", chrome.columnClassName, columnSizing === "content" ? "bg-transparent" : null)}
+			className={cn("relative z-10 min-h-0 min-w-0 overflow-visible", chrome.columnClassName, columnSizing === "content" ? "bg-transparent" : null)}
 			data-jira-kanban-column-content=""
 			data-kanban-column-chrome={columnChrome}
 			style={{
@@ -203,6 +216,7 @@ export function BoardColumn({
 					agents={agents}
 					assignedAgentIds={assignedAgentIds}
 					count={count}
+					dropFeedbackInset={chrome.footer.paddingInline}
 					headerStyle={chrome.header}
 					issueDrop={issueDrop}
 					issueMoveVisual={issueMoveVisual}
@@ -246,10 +260,13 @@ export function BoardColumn({
 				</div>
 				<BoardIssueTransitionOverlay issueDrop={issueDrop} title={title} moveVisual={issueMoveVisual} />
 			</div>
-			{issueMoveVisual && columnSizing === "content" && issueDrop.offeringChoices && issueDrop.current?.entered ? (
-				<div aria-hidden data-issue-drop-hit-area="" className="absolute inset-0 z-20" {...issueDrop.handlers} />
-			) : null}
-			{issueDrop.current?.entered ? <span className="sr-only" role="status">{`${issueDrop.header}. Choose a position, then release to move. Escape cancels.`}</span> : null}
+			{issueDrop.current?.entered ? <span className="sr-only" role="status">{`${issueDrop.header}. ${issueDrop.current.surface === "position" ? "Release to move to this position." : "Release to move to the top of this column."} Escape cancels.`}</span> : null}
 		</div>
+		{columnSizing === "content" && issueDrop.active && !issueDrop.choosing ? (
+			// Ordinary columns keep this target behind their header and card stack.
+			// A latched status choice retains its stable overlay while the body returns.
+			<div aria-hidden data-issue-drop-hit-area="" className={cn("absolute inset-0", issueDrop.offeringChoices ? "z-20" : "z-0")} {...issueDrop.handlers} />
+		) : null}
+		</>
 	);
 }

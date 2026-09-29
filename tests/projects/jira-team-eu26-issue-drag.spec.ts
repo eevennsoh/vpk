@@ -7,6 +7,20 @@ const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`shared default column drop chrome respects reduced motion (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/preview/blocks/jira-kanban`);
+		const target = page.locator('[data-jira-kanban-column]').first();
+		await expect(target).toBeVisible();
+		if (reducedMotion === "reduce") {
+			await expect(target).toHaveCSS("transition-property", "none");
+		} else {
+			await expect(target).not.toHaveCSS("transition-property", "none");
+		}
+	});
+}
+
 for (const route of ["/jira-team-eu26", "/preview/blocks/jira-dragging"]) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		test(`grid selection and column-scoped Select all on ${route} (${reducedMotion})`, async ({ page }) => {
@@ -217,6 +231,111 @@ async function startDrag(page: Page, code: string) {
 	await page.mouse.down();
 	await page.mouse.move(box.x + 90, box.y + 40, { steps: 5 });
 	await expect(card).toHaveAttribute("data-dragging", "true");
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	for (const surface of ["unused space", "header"] as const) {
+		test(`column ${surface} accepts a natural-order issue drop (${reducedMotion})`, async ({ page }) => {
+			await page.emulateMedia({ reducedMotion });
+			await page.setViewportSize({ width: 1800, height: surface === "header" ? 800 : 1100 });
+			await page.goto(`${origin}/jira-team-eu26`);
+			await expect(issue(page, "PAY-118")).toBeVisible();
+			const destination = column(page, surface === "header" ? "In review" : "To do");
+			const codes = () => destination.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-issue-key")));
+			const before = await codes();
+			await startDrag(page, "PAY-105");
+			const box = await destination.boundingBox();
+			const header = destination.locator('[data-slot="board-column-header"]');
+			const headerBox = await header.boundingBox();
+			const content = await destination.locator('[data-jira-kanban-column-content]').boundingBox();
+			if (!box || !headerBox || !content) throw new Error("Missing column geometry");
+			const x = box.x + box.width / 2;
+			const y = surface === "header" ? headerBox.y + headerBox.height / 2 : Math.min(box.y + box.height - 50, content.y + content.height + 60);
+			if (surface === "unused space") expect(y).toBeGreaterThan(content.y + content.height);
+			await page.mouse.move(x, y, { steps: 5 });
+			await page.mouse.move(x, y);
+			const ring = destination.locator('[data-jira-kanban-column-drop-ring]');
+			await expect(ring).toHaveClass(/\b(?:border|outline)-border-selected\b/);
+			const ringBox = (await ring.boundingBox())!;
+			expect(ringBox.y + ringBox.height).toBeLessThanOrEqual(content.y + content.height + 4);
+			await expect(destination.locator('[data-issue-drop-before]')).toHaveCount(0);
+			if (surface === "header") {
+				await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
+				const feedback = header.locator('[data-board-column-title-drop-feedback]');
+				await expect(feedback).toBeVisible();
+				await expect(feedback).toHaveClass(/\bbg-bg-neutral-subtle-hovered\b/);
+				const feedbackBox = (await feedback.boundingBox())!;
+				const createBox = (await destination.locator('[data-board-column-create-action] button').boundingBox())!;
+				expect(feedbackBox.x).toBeCloseTo(createBox.x);
+				expect(feedbackBox.x + feedbackBox.width).toBeCloseTo(createBox.x + createBox.width);
+				const inset = createBox.x - headerBox.x;
+				expect(feedbackBox.y - headerBox.y).toBeCloseTo(inset);
+				expect(headerBox.y + headerBox.height - feedbackBox.y - feedbackBox.height).toBeCloseTo(inset);
+				expect(feedbackBox.height).toBeGreaterThanOrEqual(32);
+				await expect.poll(async () => {
+					const labelBox = (await header.locator('[data-board-column-header-copy-layer="label"]').first().boundingBox())!;
+					return labelBox.y + labelBox.height / 2 - feedbackBox.y - feedbackBox.height / 2;
+				}).toBeCloseTo(0, 1);
+				await expect(header).not.toHaveClass(/\bbg-bg-selected\b/);
+			}
+			await page.screenshot({ path: `output/agent-browser/dnd/column-${surface.replaceAll(" ", "-")}-${reducedMotion}.png` });
+			await page.mouse.up();
+			await expect.poll(codes).toEqual(["PAY-105", ...before]);
+			await expect(ring).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+			await expect(header).not.toHaveAttribute("data-issue-drop-hovered");
+		});
+	}
+
+	test(`empty column drop border hugs its visible container (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await expect(issue(page, "PAY-112").getByRole("button", { name: "Codex: Needs input", exact: true })).toBeVisible({ timeout: 55_000 });
+		await page.getByRole("button", { name: /^Needs input:/ }).click();
+		const destination = column(page, "To do");
+		await page.getByRole("button", { name: "Expand To do column", exact: true }).focus();
+		await page.keyboard.press("Enter");
+		await expect(destination.locator('[data-jira-kanban-column-content]')).toBeVisible();
+		await expect(destination.locator('[data-issue-key]')).toHaveCount(0);
+		await startDrag(page, "PAY-112");
+		const shellBox = (await destination.boundingBox())!;
+		const content = (await destination.locator('[data-jira-kanban-column-content]').boundingBox())!;
+		const x = shellBox.x + shellBox.width / 2;
+		const y = content.y + content.height + 80;
+		await page.mouse.move(x, y, { steps: 5 });
+		await page.mouse.move(x, y);
+		const ring = destination.locator('[data-jira-kanban-column-drop-ring]');
+		await expect(ring).toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		expect((await ring.boundingBox())!.height).toBeLessThanOrEqual(content.height + 4);
+		await expect(destination.locator('[data-issue-drop-before]')).toHaveCount(0);
+		await page.screenshot({ path: `output/agent-browser/dnd/empty-column-container-${reducedMotion}.png` });
+		await page.mouse.up();
+		await expect(issue(page, "PAY-112")).toHaveAttribute("data-board-column-title", "To do");
+		await expect(ring).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+	});
+
+	test(`precise issue placement switches to column feedback outside the stack (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await startDrag(page, "PAY-105");
+		const destination = column(page, "To do");
+		const anchor = (await issue(page, "PAY-125").boundingBox())!;
+		await page.mouse.move(anchor.x + 100, anchor.y + 20, { steps: 5 });
+		await page.mouse.move(anchor.x + 100, anchor.y + 20);
+		await expect(destination.locator('[data-issue-drop-before="PAY-125"] [data-insertion-line]')).toBeVisible();
+		const ring = destination.locator('[data-jira-kanban-column-drop-ring]');
+		await expect(ring).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		const header = (await destination.locator('[data-slot="board-column-header"]').boundingBox())!;
+		await page.mouse.move(header.x + 100, header.y + 10, { steps: 3 });
+		await page.mouse.move(header.x + 100, header.y + 10);
+		await expect(ring).toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		await expect(destination.locator('[data-issue-drop-before]')).toHaveCount(0);
+		await page.mouse.move(anchor.x + 100, anchor.y + 20, { steps: 3 });
+		await page.mouse.move(anchor.x + 100, anchor.y + 20);
+		await expect(destination.locator('[data-issue-drop-before="PAY-125"] [data-insertion-line]')).toBeVisible();
+		await expect(ring).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		await page.mouse.up();
+		await expect.poll(() => destination.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-issue-key")))).toEqual(["PAY-118", "PAY-124", "PAY-105", "PAY-125", "PAY-127"]);
+	});
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import type { JiraKanbanCardDropTarget } from "../../card-drop";
-import { getBoardIssueInsertionLineTop } from "../lib/board-card-insertion";
+import { getBoardIssueInsertionLineTop, resolveBoardIssueDropSurface, type BoardIssueDropSurface } from "../lib/board-card-insertion";
 
 const STATUS_CHOICE_DWELL_MS = 500;
 
@@ -17,7 +17,8 @@ interface DropState {
 	sourceCode: string;
 	status: string;
 	entered: boolean;
-	beforeCardCode: string | null;
+	beforeCardCode?: string | null;
+	surface: BoardIssueDropSurface;
 	lineTop?: number;
 }
 
@@ -69,6 +70,8 @@ export function useBoardIssueDrop({
 		const root = rootRef.current;
 		if (!active || !root) return null;
 		const bounds = root.getBoundingClientRect();
+		const column = root.closest<HTMLElement>("[data-jira-kanban-column]");
+		const header = column?.querySelector<HTMLElement>('[data-slot="board-column-header"]');
 		const list = root.querySelector<HTMLElement>("[data-jira-kanban-card-list]");
 		const allCards = Array.from(root.querySelectorAll<HTMLElement>('[data-board-agent-session-drop-zone="issue"]'))
 			.map((node) => ({ node, rect: node.getBoundingClientRect() }));
@@ -76,6 +79,10 @@ export function useBoardIssueDrop({
 		const following = cards.find(({ rect }) => y < rect.top + rect.height / 2);
 		const last = cards.at(-1);
 		const clip = list?.getBoundingClientRect() ?? bounds;
+		const surface = resolveBoardIssueDropSurface(y, header?.getBoundingClientRect().bottom ?? bounds.top, clip, allCards.at(-1)?.rect.bottom);
+		// Grouped columns have no header destination; choose a body status first.
+		if (surface === "header" && choices.length > 1) return null;
+		if (surface !== "position") return { sourceCode: active.code, status, entered: true, surface };
 		// Dragged cards stay in the source stack. They still bound the visible gap
 		// even though the insertion transaction excludes them from its candidates.
 		const previous = following ? allCards[allCards.indexOf(following) - 1] : last;
@@ -85,7 +92,7 @@ export function useBoardIssueDrop({
 			? getBoardIssueInsertionLineTop(previous?.rect.bottom ?? clip.top, next.rect.top)
 			: previous ? getBoardIssueInsertionLineTop(previous.rect.bottom, previous.rect.bottom + gap) : clip.top + 2;
 		return {
-			sourceCode: active.code, status, entered: true,
+			sourceCode: active.code, status, entered: true, surface,
 			beforeCardCode: following?.node.dataset.issueKey ?? null,
 			lineTop: allCards.length > 0 ? Math.max(clip.top, Math.min(top, clip.bottom - 2)) - bounds.top : undefined,
 		};
@@ -112,7 +119,7 @@ export function useBoardIssueDrop({
 			}
 			clearWork();
 			pointer.current = { y, status };
-			const next = { sourceCode: active.code, status, entered: false, beforeCardCode: null };
+			const next: DropState = { sourceCode: active.code, status, entered: false, surface: "column", beforeCardCode: null };
 			pending.current = next;
 			setState(next);
 			// Brief dwell distinguishes crossing a target from entering it.
@@ -136,10 +143,11 @@ export function useBoardIssueDrop({
 			const bounds = list?.getBoundingClientRect();
 			const scrollTop = list?.scrollTop ?? 0;
 			const scrollLimit = list ? list.scrollHeight - list.clientHeight : 0;
-			const delta = bounds ? point.y < bounds.top + 32 ? -8 : point.y > bounds.bottom - 32 ? 8 : 0 : 0;
+			const delta = bounds && next?.surface === "position" ? point.y < bounds.top + 32 ? -8 : point.y > bounds.bottom - 32 ? 8 : 0 : 0;
 			pending.current = next;
 			setState((previous) => previous?.beforeCardCode === next?.beforeCardCode
-				&& previous?.lineTop === next?.lineTop && previous?.status === next?.status ? previous : next);
+				&& previous?.lineTop === next?.lineTop && previous?.status === next?.status
+				&& previous?.surface === next?.surface && previous?.entered === next?.entered ? previous : next);
 			// The stable overlay receives native drag events, so scroll its card list
 			// explicitly. Geometry is read above; the scroll write is last.
 			if (list && delta && ((delta < 0 && scrollTop > 0) || (delta > 0 && scrollTop < scrollLimit))) {
