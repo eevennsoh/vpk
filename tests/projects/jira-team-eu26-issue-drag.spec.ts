@@ -659,8 +659,16 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		}));
 		expect(dotBounds.width).toBe(8);
 		expect(dotBounds.height).toBe(8);
-		expect(dotBounds.x).toBe(lineBounds.x);
+		expect(dotBounds.x + dotBounds.width / 2).toBe(lineBounds.x);
 		expect(dotBounds.y + dotBounds.height / 2).toBe(lineBounds.y + lineBounds.height / 2);
+		await expect(insertionLine).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+		await expect(insertionLine.locator("span")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+		const rule = await insertionLine.evaluate((node) => {
+			const style = getComputedStyle(node, "::before");
+			return { left: parseFloat(style.left), color: style.backgroundColor };
+		});
+		expect(rule.left).toBe(dotBounds.width / 2);
+		expect(rule.color).toBe(await insertionLine.locator("span").evaluate((node) => getComputedStyle(node).borderLeftColor));
 		await expect(insertionLine).toHaveCSS("pointer-events", "none");
 		await expect(insertionLine).toHaveAttribute("aria-hidden", "true");
 		expect(await insertionLine.evaluate((node) => parseFloat(getComputedStyle(node).borderTopRightRadius))).toBeGreaterThan(0);

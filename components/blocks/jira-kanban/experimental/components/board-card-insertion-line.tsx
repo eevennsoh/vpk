@@ -64,7 +64,9 @@ export function BoardCardInsertionLine({
 			ref={setAnchor}
 			className={cn(
 				"pointer-events-none absolute inset-x-0 z-30 h-0.5 rounded-full",
-				marker !== "add" ? "bg-border-selected" : null,
+				marker === "none" ? "bg-border-selected" : null,
+				// Start at the ring's rim so its transparent center shows the well below.
+				marker === "circle" ? "before:absolute before:inset-y-0 before:left-1 before:right-0 before:rounded-full before:bg-border-selected" : null,
 				seam === "edge" ? EDGE_POSITION_CLASS_NAME[position] : undefined,
 			)}
 			data-insertion-line={position}
@@ -76,7 +78,7 @@ export function BoardCardInsertionLine({
 					: undefined),
 			} as CSSProperties}
 		>
-			{marker === "circle" ? <span className="absolute left-0 top-1/2 size-2 -translate-y-1/2 rounded-full border-2 border-border-selected bg-surface" /> : null}
+			{marker === "circle" ? <span className="absolute left-0 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-border-selected" /> : null}
 			{/* Keep the rule and its inert + marker outside the viewport mask.
 			    Hovering a seam must not reveal every faded card in the column. */}
 			{marker === "add" && anchor ? createPortal(<div
