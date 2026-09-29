@@ -1,14 +1,19 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 const {
 	DEFAULT_TARGET_URL,
 	REQUIRED_TUNNEL_DEV_ORIGINS,
 	assertTunnelDevOrigins,
-	buildPublicUrl,
+	buildTunnelCommand,
+	buildTunnelUrl,
 	checkDependencies,
 	describeShareTarget,
 	extractAllowedDevOrigins,
-	extractPublicBaseUrl,
+	extractTunnelBaseUrl,
 	missingTunnelDevOrigins,
 	nextConfigPathForTarget,
 	normalizeTargetUrl,
@@ -98,9 +103,9 @@ test("constructs hostname-scoped session names", () => {
 	assert.match(longName, /^vpk-tunnel-/u);
 });
 
-test("preserves the local path, query, and fragment in the public URL", () => {
+test("preserves the local path, query, and fragment in the tunnel URL", () => {
 	assert.equal(
-		buildPublicUrl(
+		buildTunnelUrl(
 			"https://research-session.atlastunnel.com",
 			"https://feature.localhost/jira?view=board#activity",
 		),
@@ -110,12 +115,12 @@ test("preserves the local path, query, and fragment in the public URL", () => {
 
 test("extracts an external URL but ignores Portless URLs", () => {
 	assert.equal(
-		extractPublicBaseUrl(
+		extractTunnelBaseUrl(
 			"Local https://example-project.localhost is available at https://research.atlastunnel.com",
 		),
 		"https://research.atlastunnel.com",
 	);
-	assert.equal(extractPublicBaseUrl("Help: https://example.com/tunnel"), null);
+	assert.equal(extractTunnelBaseUrl("Help: https://example.com/tunnel"), null);
 });
 
 test("flags catalog-root shares separately from project routes", () => {
@@ -187,6 +192,7 @@ test("treats a URL-only invocation as the documented start command", () => {
 		{
 			command: "start",
 			targetUrl: "https://feature.localhost/demo",
+			access: "private",
 		},
 	);
 });
@@ -201,6 +207,9 @@ test("reuses an existing scoped tunnel without starting another", async () => {
 		if (command === "tmux" && args[0] === "has-session") return result(0);
 		if (command === "tmux" && args[0] === "show-options" && args.at(-1) === "@vpk-tunnel-port") {
 			return result(0, "4321\n");
+		}
+		if (command === "tmux" && args[0] === "show-options" && args.at(-1) === "@vpk-tunnel-access") {
+			return result(0, "private\n");
 		}
 		if (command === "tmux" && args[0] === "capture-pane") {
 			return result(0, "Public URL: https://research.atlastunnel.com\n");
@@ -218,7 +227,8 @@ test("reuses an existing scoped tunnel without starting another", async () => {
 	});
 
 	assert.equal(tunnel.reused, true);
-	assert.equal(tunnel.publicUrl, "https://research.atlastunnel.com/demo");
+	assert.equal(tunnel.tunnelUrl, "https://research.atlastunnel.com/demo");
+	assert.equal(tunnel.publicUrl, null);
 	assert.equal(
 		calls.some(([command, args]) => command === "tmux" && args[0] === "new-session"),
 		false,
@@ -270,7 +280,7 @@ test("restarts a scoped tunnel when its resolved frontend port changes", async (
 		calls.some(
 			([command, args]) => command === "tmux"
 				&& args[0] === "new-session"
-				&& args.at(-1) === "atlas tunnel start --port 4321 --public",
+				&& args.at(-1).endsWith("atlas tunnel start --port 4321"),
 		),
 		true,
 	);
@@ -287,6 +297,7 @@ test("starts the canonical public Atlas command in a new scoped session", async 
 		return result(0);
 	};
 	const tunnel = await startTunnel({
+		access: "public",
 		readFile: () => ALLOWED_NEXT_CONFIG,
 		resolveTarget: async () => ({
 			hostname: "feature.localhost",
@@ -307,7 +318,9 @@ test("starts the canonical public Atlas command in a new scoped session", async 
 				"-d",
 				"-s",
 				"vpk-tunnel-feature-localhost",
-				"atlas tunnel start --port 4321 --public",
+				"/bin/sh",
+				"-c",
+				buildTunnelCommand(4321, "public"),
 			],
 		],
 	);
@@ -319,7 +332,7 @@ test("starts the canonical public Atlas command in a new scoped session", async 
 				"set-option",
 				"-t",
 				"vpk-tunnel-feature-localhost",
-				"@vpk-tunnel-public-url",
+				"@vpk-tunnel-url",
 				"https://research.atlastunnel.com",
 			],
 		],
@@ -359,7 +372,7 @@ test("refuses to start when Next.js allowedDevOrigins omits Atlas Tunnel hosts",
 				return result();
 			},
 		}),
-		/blank public page because allowedDevOrigins is missing/u,
+		/blank tunnel page because allowedDevOrigins is missing/u,
 	);
 	assert.equal(calls, 0);
 });
@@ -368,6 +381,7 @@ test("reports a stored public URL after startup logs scroll away", () => {
 	const run = (command, args) => {
 		if (command === "tmux" && args[0] === "has-session") return result(0);
 		if (command === "tmux" && args[0] === "show-options") {
+			if (args.at(-1) === "@vpk-tunnel-access") return result(0, "public\n");
 			return args.at(-1) === "@vpk-tunnel-port"
 				? result(0, "4321\n")
 				: result(0, "https://research.atlastunnel.com\n");
@@ -382,7 +396,7 @@ test("reports a stored public URL after startup logs scroll away", () => {
 	assert.equal(status.publicUrl, "https://research.atlastunnel.com/demo");
 });
 
-test("stops only the target hostname session", async () => {
+test("stops the target local session and cleans Atlas resources", async () => {
 	let hasSessionChecks = 0;
 	const calls = [];
 	const run = (command, args) => {
@@ -400,6 +414,8 @@ test("stops only the target hostname session", async () => {
 	});
 
 	assert.equal(stopped.stopped, true);
+	assert.equal(stopped.cleaned, true);
+	assert.deepEqual(calls.at(-1), ["atlas", ["tunnel", "clean"]]);
 	assert.deepEqual(
 		calls.filter(([command]) => command === "tmux").map(([, args]) => args.slice(0, 3)),
 		[
@@ -409,4 +425,222 @@ test("stops only the target hostname session", async () => {
 			["kill-session", "-t", "vpk-tunnel-feature-localhost"],
 		],
 	);
+});
+
+test("defaults to private access and accepts public only as an explicit start flag", () => {
+	assert.deepEqual(parseCliArguments([]), {
+		command: "start",
+		targetUrl: DEFAULT_TARGET_URL,
+		access: "private",
+	});
+	assert.deepEqual(parseCliArguments(["--public", "https://feature.localhost/demo"]), {
+		command: "start",
+		targetUrl: "https://feature.localhost/demo",
+		access: "public",
+	});
+	assert.throws(() => parseCliArguments(["start", "--confirm-public"]), /Use --public/u);
+	assert.throws(() => parseCliArguments(["stop", "--public"]), /only supported when starting/u);
+});
+
+test("a default start does not expose the prototype publicly", async () => {
+	let startCommand;
+	const tunnel = await startTunnel({
+		readFile: () => ALLOWED_NEXT_CONFIG,
+		resolveTarget: async () => ({
+			hostname: "feature.localhost",
+			localUrl: "https://feature.localhost/demo",
+			port: 4321,
+		}),
+		run: (command, args) => {
+			if (command === "/bin/sh") return result(0, "/usr/bin/tool\n");
+			if (command === "atlas") return result(0, "tunnel 141 Atlas Tunnel CLI\n");
+			if (command === "curl") return result(0, "200");
+			if (command === "tmux" && args[0] === "has-session") return result(1);
+			if (command === "tmux" && args[0] === "new-session") startCommand = args.at(-1);
+			return result(0);
+		},
+		waitForUrl: async () => "https://research.atlastunnel.com",
+	});
+	assert.doesNotMatch(startCommand, /--public/u);
+	assert.equal(tunnel.access, "private");
+	assert.equal(tunnel.tunnelUrl, "https://research.atlastunnel.com/demo");
+	assert.equal(tunnel.publicUrl, null);
+});
+
+test("stop cleans Atlas resources even when the local tunnel already exited", async () => {
+	const calls = [];
+	const stopped = await stopTunnel({
+		targetUrl: "https://feature.localhost/demo",
+		run: (command, args) => {
+			calls.push([command, args]);
+			return result(command === "tmux" ? 1 : 0);
+		},
+	});
+	assert.equal(stopped.stopped, false);
+	assert.equal(stopped.cleaned, true);
+	assert.deepEqual(calls.at(-1), ["atlas", ["tunnel", "clean"]]);
+});
+
+function startFixture(storedAccess = null) {
+	let running = storedAccess !== null;
+	const calls = [];
+	const warnings = [];
+	return {
+		calls,
+		warnings,
+		options: {
+			readFile: () => ALLOWED_NEXT_CONFIG,
+			resolveTarget: async () => ({
+				hostname: "feature.localhost",
+				localUrl: "https://feature.localhost/demo",
+				port: 4321,
+			}),
+			warn: (message) => warnings.push(message),
+			sleep: async () => {},
+			waitForUrl: async () => "https://research.atlastunnel.com",
+			run: (command, args) => {
+				calls.push([command, args]);
+				if (command === "/bin/sh") return result(0, "/usr/bin/tool\n");
+				if (command === "atlas" && args[0] === "plugin") return result(0, "tunnel 141 Atlas Tunnel CLI\n");
+				if (command === "curl") return result(0, "200");
+				if (command === "tmux") {
+					if (args[0] === "has-session") return result(running ? 0 : 1);
+					if (args[0] === "show-options") {
+						if (args.at(-1) === "@vpk-tunnel-port") return result(0, "4321");
+						if (args.at(-1) === "@vpk-tunnel-access") return result(0, storedAccess ?? "");
+					}
+					if (args[0] === "send-keys") running = false;
+					if (args[0] === "new-session") running = true;
+				}
+				return result();
+			},
+		},
+	};
+}
+
+test("warns about internet exposure before starting an explicit public tunnel", async () => {
+	const fixture = startFixture();
+	const run = fixture.options.run;
+	const tunnel = await startTunnel({
+		...fixture.options,
+		access: "public",
+		run: (command, args) => {
+			if (command === "tmux" && args[0] === "new-session") {
+				assert.match(fixture.warnings[0], /WARNING: --public.*internet/u);
+				assert.match(fixture.warnings[0], /https:\/\/feature\.localhost\/demo/u);
+			}
+			return run(command, args);
+		},
+	});
+	assert.equal(tunnel.access, "public");
+	assert.equal(tunnel.publicUrl, tunnel.tunnelUrl);
+});
+
+for (const storedAccess of ["public", "legacy-session"]) {
+	test(`private start replaces an existing ${storedAccess} session and cleans before restart`, async () => {
+		const fixture = startFixture(storedAccess);
+		const tunnel = await startTunnel(fixture.options);
+		assert.equal(tunnel.reused, false);
+		assert.equal(tunnel.access, "private");
+		const cleanupIndex = fixture.calls.findIndex(([command, args]) => command === "atlas" && args[0] === "tunnel" && args[1] === "clean");
+		const startIndex = fixture.calls.findIndex(([command, args]) => command === "tmux" && args[0] === "new-session");
+		assert.ok(cleanupIndex >= 0 && cleanupIndex < startIndex);
+	});
+}
+
+test("cleans a failed startup and preserves the startup error", async () => {
+	const fixture = startFixture();
+	await assert.rejects(startTunnel({
+		...fixture.options,
+		waitForUrl: async () => { throw new Error("authentication failed"); },
+	}), /authentication failed/u);
+	assert.deepEqual(fixture.calls.at(-1), ["atlas", ["tunnel", "clean"]]);
+});
+
+test("cleanup failure prevents a replacement start and is reported", async () => {
+	const fixture = startFixture("public");
+	const run = fixture.options.run;
+	await assert.rejects(startTunnel({
+		...fixture.options,
+		run: (command, args) => command === "atlas" && args[0] === "tunnel"
+			? result(1, "", "issuer unavailable")
+			: run(command, args),
+	}), /cleanup failed: issuer unavailable/u);
+	assert.equal(fixture.calls.some(([command, args]) => command === "tmux" && args[0] === "new-session"), false);
+});
+
+test("reports private access and its stored URL after logs scroll away", () => {
+	const status = statusTunnel({
+		targetUrl: "https://feature.localhost/demo",
+		run: (command, args) => {
+			if (command === "tmux" && args[0] === "show-options") {
+				const values = {
+					"@vpk-tunnel-port": "4321",
+					"@vpk-tunnel-access": "private",
+					"@vpk-tunnel-url": "https://research.atlastunnel.com",
+				};
+				return result(0, values[args.at(-1)] ?? "");
+			}
+			return result();
+		},
+	});
+	assert.equal(status.access, "private");
+	assert.equal(status.tunnelUrl, "https://research.atlastunnel.com/demo");
+	assert.equal(status.publicUrl, null);
+});
+
+function executeTunnelCommand(access, { startExit = "0", cleanExit = "0", signal = "" } = {}) {
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-tunnel-test-"));
+	const logPath = path.join(directory, "calls.log");
+	try {
+		fs.writeFileSync(path.join(directory, "atlas"), [
+			"#!/bin/sh",
+			'printf "%s\\n" "$*" >> "$TUNNEL_TEST_LOG"',
+			'case "$1 $2" in',
+			'  "tunnel start")',
+			'    if [ -n "$TUNNEL_TEST_SIGNAL" ]; then kill -"$TUNNEL_TEST_SIGNAL" "$PPID"; fi',
+			'    exit "$TUNNEL_TEST_START_EXIT" ;;',
+			'  "tunnel clean") exit "$TUNNEL_TEST_CLEAN_EXIT" ;;',
+			"esac",
+		].join("\n"), { mode: 0o755 });
+		const execution = spawnSync("/bin/sh", ["-c", buildTunnelCommand(4321, access)], {
+			encoding: "utf8",
+			timeout: 2000,
+			env: {
+				PATH: directory,
+				TUNNEL_TEST_LOG: logPath,
+				TUNNEL_TEST_SIGNAL: signal,
+				TUNNEL_TEST_START_EXIT: startExit,
+				TUNNEL_TEST_CLEAN_EXIT: cleanExit,
+			},
+		});
+		assert.equal(execution.error, undefined);
+		return { ...execution, calls: fs.readFileSync(logPath, "utf8").trim().split("\n") };
+	} finally {
+		fs.rmSync(directory, { recursive: true, force: true });
+	}
+}
+
+for (const access of ["private", "public"]) {
+	for (const [label, options, expectedStatus] of [
+		["normal exit", {}, 0],
+		["failed Atlas start", { startExit: "7" }, 7],
+		["interruption", { signal: "INT" }, 130],
+		["termination", { signal: "TERM" }, 143],
+	]) {
+		test(`${access} tunnel runs cleanup after ${label}`, () => {
+			const execution = executeTunnelCommand(access, options);
+			assert.equal(execution.status, expectedStatus);
+			assert.deepEqual(execution.calls, [
+				`tunnel start --port 4321${access === "public" ? " --public" : ""}`,
+				"tunnel clean",
+			]);
+		});
+	}
+}
+
+test("the exit trap reports cleanup errors with a failing exit status", () => {
+	const execution = executeTunnelCommand("private", { cleanExit: "1" });
+	assert.equal(execution.status, 1);
+	assert.match(execution.stderr, /cleanup failed; run atlas tunnel clean/u);
 });

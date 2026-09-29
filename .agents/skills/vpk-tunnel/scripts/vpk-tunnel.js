@@ -15,6 +15,11 @@ const DEFAULT_TARGET_URL = `https://${projectName}.localhost`;
 const SESSION_PREFIX = "vpk-tunnel-";
 const START_TIMEOUT_MS = 30_000;
 const START_POLL_INTERVAL_MS = 250;
+const ACCESS_MESSAGES = Object.freeze({
+	private: "Private sharing: accessible through Atlassian VPN and whitelist proxies; external participants cannot use this link.",
+	public: "WARNING: --public exposes this local application to the internet. Use it only when external/public sharing is intended.",
+});
+const CLEANUP_WARNING = "Cleanup runs atlas tunnel clean, which deletes all CLI-created tunnels, configuration files, and logs.";
 const REQUIRED_TUNNEL_DEV_ORIGINS = Object.freeze([
 	"*.public.atlastunnel.com",
 	"*.atlastunnel.com",
@@ -152,7 +157,7 @@ function assertTunnelDevOrigins({
 	if (missing.length === 0) return;
 
 	throw new Error(
-		`Next.js will serve a blank public page because allowedDevOrigins is missing ${missing.join(", ")}. Add those hosts in next.config.ts, restart that worktree's frontend, re-resolve the Portless URL (the port may change), then start the tunnel again.`,
+		`Next.js will serve a blank tunnel page because allowedDevOrigins is missing ${missing.join(", ")}. Add those hosts in next.config.ts, restart that worktree's frontend, re-resolve the Portless URL (the port may change), then start the tunnel again.`,
 	);
 }
 
@@ -258,16 +263,24 @@ function captureSession(sessionName, run) {
 	return result.stdout;
 }
 
-function readStoredPublicBaseUrl(sessionName, run) {
+function readStoredTunnelBaseUrl(sessionName, run) {
 	const result = run("tmux", [
 		"show-options",
 		"-v",
 		"-t",
 		sessionName,
-		"@vpk-tunnel-public-url",
+		"@vpk-tunnel-url",
 	]);
 	if (result.error || result.status !== 0) return null;
-	return extractPublicBaseUrl(result.stdout);
+	return extractTunnelBaseUrl(result.stdout);
+}
+
+function readStoredTunnelAccess(sessionName, run) {
+	const result = run("tmux", ["show-options", "-v", "-t", sessionName, "@vpk-tunnel-access"]);
+	const access = result.stdout.trim();
+	return !result.error && result.status === 0 && Object.hasOwn(ACCESS_MESSAGES, access)
+		? access
+		: null;
 }
 
 function readStoredTunnelPort(sessionName, run) {
@@ -283,16 +296,23 @@ function readStoredTunnelPort(sessionName, run) {
 	return Number.isInteger(port) && port > 0 && port <= 65_535 ? port : null;
 }
 
-function storePublicBaseUrl(sessionName, publicBaseUrl, run) {
+function storeTunnelBaseUrl(sessionName, tunnelBaseUrl, run) {
 	const result = run("tmux", [
 		"set-option",
 		"-t",
 		sessionName,
-		"@vpk-tunnel-public-url",
-		publicBaseUrl,
+		"@vpk-tunnel-url",
+		tunnelBaseUrl,
 	]);
 	if (result.error || result.status !== 0) {
-		throw new Error(`Could not persist the public URL on scoped tunnel session ${sessionName}.`);
+		throw new Error(`Could not persist the tunnel URL on scoped tunnel session ${sessionName}.`);
+	}
+}
+
+function storeTunnelAccess(sessionName, access, run) {
+	const result = run("tmux", ["set-option", "-t", sessionName, "@vpk-tunnel-access", access]);
+	if (result.error || result.status !== 0) {
+		throw new Error(`Could not persist access mode on scoped tunnel session ${sessionName}.`);
 	}
 }
 
@@ -309,9 +329,9 @@ function storeTunnelPort(sessionName, port, run) {
 	}
 }
 
-function extractPublicBaseUrl(output) {
+function extractTunnelBaseUrl(output) {
 	const matches = String(output).match(/https:\/\/[^\s"'<>\\]+/gu) ?? [];
-	const publicMatches = matches.filter((candidate) => {
+	const tunnelMatches = matches.filter((candidate) => {
 		try {
 			const parsed = new URL(candidate.replace(/[),.;]+$/gu, ""));
 			return parsed.hostname === "atlastunnel.com" || parsed.hostname.endsWith(".atlastunnel.com");
@@ -319,13 +339,13 @@ function extractPublicBaseUrl(output) {
 			return false;
 		}
 	});
-	return publicMatches.length > 0
-		? publicMatches[publicMatches.length - 1].replace(/[),.;]+$/gu, "")
+	return tunnelMatches.length > 0
+		? tunnelMatches[tunnelMatches.length - 1].replace(/[),.;]+$/gu, "")
 		: null;
 }
 
-function buildPublicUrl(publicBaseUrl, localUrl) {
-	const base = new URL(publicBaseUrl);
+function buildTunnelUrl(tunnelBaseUrl, localUrl) {
+	const base = new URL(tunnelBaseUrl);
 	const local = normalizeTargetUrl(localUrl);
 	base.pathname = local.pathname;
 	base.search = local.search;
@@ -333,7 +353,7 @@ function buildPublicUrl(publicBaseUrl, localUrl) {
 	return base.href;
 }
 
-async function waitForPublicUrl(sessionName, run, {
+async function waitForTunnelUrl(sessionName, run, {
 	sleep = delay,
 	timeoutMs = START_TIMEOUT_MS,
 	pollIntervalMs = START_POLL_INTERVAL_MS,
@@ -347,8 +367,8 @@ async function waitForPublicUrl(sessionName, run, {
 			);
 		}
 		latestOutput = captureSession(sessionName, run);
-		const publicBaseUrl = extractPublicBaseUrl(latestOutput);
-		if (publicBaseUrl) return publicBaseUrl;
+		const tunnelBaseUrl = extractTunnelBaseUrl(latestOutput);
+		if (tunnelBaseUrl) return tunnelBaseUrl;
 		await sleep(pollIntervalMs);
 	}
 
@@ -357,14 +377,41 @@ async function waitForPublicUrl(sessionName, run, {
 	);
 }
 
+function buildTunnelCommand(port, access) {
+	return [
+		"cleanup() {",
+		"  atlas tunnel clean || {",
+		"    printf '%s\\n' 'Atlas Tunnel cleanup failed; run atlas tunnel clean before restarting.' >&2",
+		"    exit 1",
+		"  }",
+		"}",
+		"trap cleanup EXIT",
+		"trap 'exit 130' INT",
+		"trap 'exit 143' TERM",
+		`atlas tunnel start --port ${port}${access === "public" ? " --public" : ""}`,
+	].join("\n");
+}
+
+function cleanTunnelResources(run) {
+	const cleaned = run("atlas", ["tunnel", "clean"]);
+	if (cleaned.error || cleaned.status !== 0) {
+		throw new Error(`Atlas Tunnel cleanup failed: ${cleaned.stderr.trim() || cleaned.error?.message || "atlas tunnel clean failed"}. Run atlas tunnel clean before restarting.`);
+	}
+}
+
 async function startTunnel({
 	targetUrl = DEFAULT_TARGET_URL,
+	access = "private",
 	run = createRunner(),
 	resolveTarget = resolvePortlessTarget,
 	sleep = delay,
-	waitForUrl = waitForPublicUrl,
+	waitForUrl = waitForTunnelUrl,
 	readFile = (filePath) => fs.readFileSync(filePath, "utf8"),
+	warn = (message) => console.error(message),
 } = {}) {
+	if (!Object.hasOwn(ACCESS_MESSAGES, access)) {
+		throw new Error("Tunnel access must be private or public.");
+	}
 	const target = await resolveTarget({ targetUrl });
 	assertTunnelDevOrigins({
 		configPath: nextConfigPathForTarget(target),
@@ -372,16 +419,18 @@ async function startTunnel({
 	});
 	checkDependencies(run);
 	const httpStatus = verifyHttpTarget(target.localUrl, run);
+	warn(`${ACCESS_MESSAGES[access]}\nLocal source: ${target.localUrl}\n${CLEANUP_WARNING}`);
 	const sessionName = sessionNameForHostname(target.hostname);
 	let reused = tmuxSessionExists(sessionName, run);
-	if (reused && readStoredTunnelPort(sessionName, run) !== target.port) {
-		await stopTmuxSession(sessionName, run, sleep);
+	if (reused && (readStoredTunnelPort(sessionName, run) !== target.port
+		|| readStoredTunnelAccess(sessionName, run) !== access)) {
+		await stopTunnel({ targetUrl, run, sleep, warn });
 		reused = false;
 	}
 
 	if (!reused) {
-		const atlasCommand = `atlas tunnel start --port ${target.port} --public`;
-		const started = run("tmux", ["new-session", "-d", "-s", sessionName, atlasCommand]);
+		const atlasCommand = buildTunnelCommand(target.port, access);
+		const started = run("tmux", ["new-session", "-d", "-s", sessionName, "/bin/sh", "-c", atlasCommand]);
 		if (started.error || started.status !== 0) {
 			throw new Error(
 				`Could not start scoped tunnel session ${sessionName}: ${started.stderr.trim() || "tmux failed"}`,
@@ -389,23 +438,36 @@ async function startTunnel({
 		}
 	}
 
-	const existingOutput = captureSession(sessionName, run);
-	const publicBaseUrl = readStoredPublicBaseUrl(sessionName, run)
-		?? extractPublicBaseUrl(existingOutput)
-		?? await waitForUrl(sessionName, run);
-	storePublicBaseUrl(sessionName, publicBaseUrl, run);
-	storeTunnelPort(sessionName, target.port, run);
-	return {
-		httpStatus,
-		localUrl: target.localUrl,
-		port: target.port,
-		publicBaseUrl,
-		publicUrl: buildPublicUrl(publicBaseUrl, target.localUrl),
-		reused,
-		sessionName,
-		sourceWorktree: target.sourceWorktree ?? null,
-		...describeShareTarget(target.localUrl),
-	};
+	try {
+		const existingOutput = captureSession(sessionName, run);
+		const tunnelBaseUrl = readStoredTunnelBaseUrl(sessionName, run)
+			?? extractTunnelBaseUrl(existingOutput)
+			?? await waitForUrl(sessionName, run);
+		storeTunnelBaseUrl(sessionName, tunnelBaseUrl, run);
+		storeTunnelPort(sessionName, target.port, run);
+		storeTunnelAccess(sessionName, access, run);
+		return {
+			access,
+			httpStatus,
+			localUrl: target.localUrl,
+			port: target.port,
+			tunnelBaseUrl,
+			tunnelUrl: buildTunnelUrl(tunnelBaseUrl, target.localUrl),
+			publicBaseUrl: access === "public" ? tunnelBaseUrl : null,
+			publicUrl: access === "public" ? buildTunnelUrl(tunnelBaseUrl, target.localUrl) : null,
+			reused,
+			sessionName,
+			sourceWorktree: target.sourceWorktree ?? null,
+			...describeShareTarget(target.localUrl),
+		};
+	} catch (error) {
+		try {
+			await stopTunnel({ targetUrl, run, sleep, warn });
+		} catch (cleanupError) {
+			throw new AggregateError([error, cleanupError], `${error.message}\n${cleanupError.message}`);
+		}
+		throw error;
+	}
 }
 
 function statusTunnel({ targetUrl = DEFAULT_TARGET_URL, run = createRunner() } = {}) {
@@ -413,14 +475,18 @@ function statusTunnel({ targetUrl = DEFAULT_TARGET_URL, run = createRunner() } =
 	const sessionName = sessionNameForHostname(parsed.hostname);
 	const running = tmuxSessionExists(sessionName, run);
 	const output = running ? captureSession(sessionName, run) : "";
-	const publicBaseUrl = running
-		? readStoredPublicBaseUrl(sessionName, run) ?? extractPublicBaseUrl(output)
+	const access = running ? readStoredTunnelAccess(sessionName, run) : null;
+	const tunnelBaseUrl = running
+		? readStoredTunnelBaseUrl(sessionName, run) ?? extractTunnelBaseUrl(output)
 		: null;
 	return {
+		access,
 		localUrl: parsed.href,
 		port: running ? readStoredTunnelPort(sessionName, run) : null,
-		publicBaseUrl,
-		publicUrl: publicBaseUrl ? buildPublicUrl(publicBaseUrl, parsed.href) : null,
+		tunnelBaseUrl,
+		tunnelUrl: tunnelBaseUrl ? buildTunnelUrl(tunnelBaseUrl, parsed.href) : null,
+		publicBaseUrl: access === "public" ? tunnelBaseUrl : null,
+		publicUrl: access === "public" && tunnelBaseUrl ? buildTunnelUrl(tunnelBaseUrl, parsed.href) : null,
 		running,
 		sessionName,
 	};
@@ -443,41 +509,50 @@ async function stopTunnel({
 	targetUrl = DEFAULT_TARGET_URL,
 	run = createRunner(),
 	sleep = delay,
+	warn = (message) => console.error(message),
 } = {}) {
 	const parsed = normalizeTargetUrl(targetUrl);
 	const sessionName = sessionNameForHostname(parsed.hostname);
-	if (!tmuxSessionExists(sessionName, run)) {
-		return { localUrl: parsed.href, sessionName, stopped: false };
-	}
-
-	await stopTmuxSession(sessionName, run, sleep);
-	return { localUrl: parsed.href, sessionName, stopped: true };
+	warn(CLEANUP_WARNING);
+	const stopped = tmuxSessionExists(sessionName, run);
+	if (stopped) await stopTmuxSession(sessionName, run, sleep);
+	// Retry cleanup explicitly even if the session's exit trap already ran, or
+	// could not run because the process was force-killed.
+	cleanTunnelResources(run);
+	return { cleaned: true, localUrl: parsed.href, sessionName, stopped };
 }
 
 function parseCliArguments(argv) {
-	const firstArgument = argv[0];
+	if (argv.includes("--confirm-public")) {
+		throw new Error("Use --public to explicitly request internet access; --confirm-public is no longer supported.");
+	}
+	const flags = argv.filter((value) => value.startsWith("--"));
+	const unknownFlag = flags.find((value) => value !== "--public");
+	if (unknownFlag) throw new Error(`Unknown option: ${unknownFlag}. Only --public is supported.`);
+	const positional = argv.filter((value) => value !== "--public");
+	const firstArgument = positional[0];
 	const urlOnlyStart = typeof firstArgument === "string" && /^https?:\/\//iu.test(firstArgument);
 	const command = urlOnlyStart ? "start" : firstArgument ?? "start";
-	const rest = urlOnlyStart ? argv : argv.slice(1);
-	// Keep the former confirmation flag as a no-op so existing shell history and
-	// scripts continue to work while the simpler command becomes canonical.
-	const positional = rest.filter((value) => value !== "--confirm-public");
+	const rest = urlOnlyStart ? positional : positional.slice(1);
 	if (!["resolve", "start", "status", "stop"].includes(command)) {
-		throw new Error("Usage: vpk-tunnel <resolve|start|status|stop> [Portless URL]");
+		throw new Error("Usage: vpk-tunnel <resolve|start|status|stop> [Portless URL] [--public]");
 	}
-	if (positional.length > 1) {
+	if (flags.length > 0 && command !== "start") {
+		throw new Error("--public is only supported when starting a tunnel.");
+	}
+	if (rest.length > 1) {
 		throw new Error("Pass at most one Portless URL.");
 	}
-	return { command, targetUrl: positional[0] ?? DEFAULT_TARGET_URL };
+	return { command, targetUrl: rest[0] ?? DEFAULT_TARGET_URL, access: flags.includes("--public") ? "public" : "private" };
 }
 
 async function main(argv = process.argv.slice(2)) {
-	const { command, targetUrl } = parseCliArguments(argv);
+	const { command, targetUrl, access } = parseCliArguments(argv);
 	let result;
 	if (command === "resolve") {
 		result = await resolvePortlessTarget({ targetUrl });
 	} else if (command === "start") {
-		result = await startTunnel({ targetUrl });
+		result = await startTunnel({ targetUrl, access });
 	} else if (command === "status") {
 		result = statusTunnel({ targetUrl });
 	} else {
@@ -497,29 +572,32 @@ module.exports = {
 	DEFAULT_TARGET_URL,
 	REQUIRED_TUNNEL_DEV_ORIGINS,
 	assertTunnelDevOrigins,
-	buildPublicUrl,
+	buildTunnelCommand,
+	buildTunnelUrl,
 	checkDependencies,
 	chooseRoute,
 	createRunner,
 	dependencySetupMessage,
 	describeShareTarget,
 	extractAllowedDevOrigins,
-	extractPublicBaseUrl,
+	extractTunnelBaseUrl,
 	missingTunnelDevOrigins,
 	nextConfigPathForTarget,
 	normalizeTargetUrl,
 	parseCliArguments,
-	readStoredPublicBaseUrl,
+	readStoredTunnelBaseUrl,
+	readStoredTunnelAccess,
 	readStoredTunnelPort,
 	resolvePortlessTarget,
 	sessionNameForHostname,
 	startTunnel,
 	statusTunnel,
 	stopTmuxSession,
-	storePublicBaseUrl,
+	storeTunnelBaseUrl,
+	storeTunnelAccess,
 	storeTunnelPort,
 	stopTunnel,
 	tmuxSessionExists,
 	verifyHttpTarget,
-	waitForPublicUrl,
+	waitForTunnelUrl,
 };
