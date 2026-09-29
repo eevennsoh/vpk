@@ -149,7 +149,7 @@ export function AgentAvatarVisual({
 	// Both explicit and data-backed Rovo identities keep the gem inset so the
 	// shared avatar hexagon, rather than the logo silhouette, owns the frame.
 	const visual = isRovoAvatar ? (
-		<RovoColorIcon label="" size="xxsmall" className="size-1/2" />
+		<RovoColorIcon label="" size="xxsmall" className="size-5/8" />
 	) : logoName ? (
 		<AtlassianLogo label="" name={logoName} size={insetLogoSize} themeAware />
 	) : brandName ? (

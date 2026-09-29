@@ -419,7 +419,7 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /import \{ AtlassianLogo, RovoColorIcon,/u);
 	assert.match(
 		AGENT_AVATAR_VISUAL_SOURCE,
-		/isRovoAvatar \? \(\s*<RovoColorIcon label="" size="xxsmall" className="size-1\/2" \/>/u,
+		/isRovoAvatar \? \(\s*<RovoColorIcon label="" size="xxsmall" className="size-5\/8" \/>/u,
 	);
 	// The external-mark backdrop follows the theme instead of a hardcoded `#fff`,
 	// so the hexagon stops punching a white hole in a dark surface. Pinned as an
