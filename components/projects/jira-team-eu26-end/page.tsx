@@ -387,6 +387,7 @@ function JiraTeamEu26App(): React.ReactElement {
 					<ExperimentalJiraKanbanPage
 						addAgentLabel={JIRA_TEAM_EU26_ADD_AGENT_LABEL}
 						activeView={activeView}
+						autoArrangeEnabled={designVariants.autoArrange}
 						retainWorkItemViews
 						additionalAgentSessions={syncedAgentSessions}
 						agentSessionSeedOverrides={JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES}

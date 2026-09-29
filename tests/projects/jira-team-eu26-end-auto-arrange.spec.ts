@@ -2,6 +2,9 @@ import { expect, test } from "@playwright/test";
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
+test.beforeEach(async ({ page }, testInfo) => {
+	await page.addInitScript((autoArrange) => localStorage.setItem("ui-design-variants", JSON.stringify({ autoArrange })), !testInfo.title.startsWith("bulk drag"));
+});
 
 test("auto arrange unfolds full-size issue cards in their committed slots", async ({ page }) => {
 	await page.addInitScript(() => {
@@ -69,5 +72,78 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(page.locator("[data-issue-drop-flight]")).toHaveCount(0);
 		await expect(arrange).toHaveCount(0);
 		await page.screenshot({ path: `output/agent-browser/keynote-auto-arrange/done-${reducedMotion}.png` });
+	});
+}
+
+for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["no-preference", "reduce"] as const).map(reducedMotion => ({ reducedMotion, width, height: width === 1800 ? 1100 : 768 })))) {
+	test(`bulk drag traces visible Done cards before the finale (${reducedMotion}, ${width}px)`, async ({ page }, testInfo) => {
+		await page.setViewportSize({ width, height });
+		await page.addInitScript(() => {
+			const probe = { traceAt: 0, traceFinishedAt: 0, traceCancelledAt: 0, finaleAt: 0, outlines: 0, visibleCards: 0, duration: 0 };
+			Object.assign(window, { keynoteDropProbe: probe });
+			const animate = Element.prototype.animate;
+			Element.prototype.animate = function (frames, options) {
+				const animation = animate.call(this, frames, options);
+				const trace = this.closest('[data-issue-drop-trace][data-board-column-title="Done"]');
+				if (trace) {
+					probe.traceAt = performance.now();
+					probe.outlines = trace.querySelectorAll("rect[stroke]").length;
+					probe.duration = Number(animation.effect!.getTiming().duration);
+					const list = document.querySelector('[data-jira-kanban-column="Done"] [data-jira-kanban-card-list]')!;
+					const clip = list.getBoundingClientRect();
+					probe.visibleCards = [...list.querySelectorAll('[data-slot="jira-issue-surface"]')].filter(node => {
+						const rect = node.getBoundingClientRect();
+						return rect.bottom > Math.max(0, clip.top) && rect.top < Math.min(innerHeight, clip.bottom);
+					}).length;
+					animation.addEventListener("finish", () => { probe.traceFinishedAt = performance.now(); });
+					animation.addEventListener("cancel", () => { probe.traceCancelledAt = performance.now(); });
+				}
+				return animation;
+			};
+			new MutationObserver(() => {
+				if (!probe.finaleAt && document.querySelector("[data-jira-team-eu26-end-finale]")) probe.finaleAt = performance.now();
+			}).observe(document, { childList: true, subtree: true });
+		});
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
+		await card("TEU-1").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await card("TEU-13").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		await page.getByRole("button", { name: "Select all", exact: true }).click();
+		await expect(page.locator('[data-jira-issue-activation-control][aria-pressed="true"]')).toHaveCount(13);
+		await expect(page.getByRole("button", { name: "Auto arrange", exact: true })).toHaveCount(0);
+		await page.keyboard.press("a");
+		await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(0);
+		await card("TEU-1").scrollIntoViewIfNeeded();
+		if (width === 1024) await page.locator('[data-jira-kanban-column="Done"]').scrollIntoViewIfNeeded();
+		const source = (await card("TEU-1").boundingBox())!;
+		const done = (await page.locator('[data-jira-kanban-column="Done"]').boundingBox())!;
+		const board = (await page.locator('[data-jira-kanban-scrollport]').boundingBox())!;
+		const grabX = width === 1024 ? Math.max(board.x + 16, source.x + source.width - 50) : source.x + 70;
+		const grabY = source.y + (width === 1024 ? 70 : 30);
+		await page.mouse.move(grabX, grabY);
+		await page.mouse.down();
+		await page.mouse.move(grabX + 8, grabY + 10, { steps: 5 });
+		await page.mouse.move(done.x + done.width / 2, done.y + 60, { steps: 5 });
+		await page.mouse.up();
+		await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(13);
+		await testInfo.attach("drop-start", { body: JSON.stringify(await page.evaluate(() => (window as typeof window & { keynoteDropProbe: unknown }).keynoteDropProbe)), contentType: "application/json" });
+		if (reducedMotion === "no-preference") {
+			await expect(page.locator("[data-issue-drop-trace]")).toBeVisible();
+			await expect(page.locator("[data-jira-team-eu26-end-finale]")).toHaveCount(0);
+			await page.screenshot({ path: `output/agent-browser/keynote-completion/bulk-green-trace-${width}.png` });
+		}
+		await expect(page.locator("[data-jira-team-eu26-end-finale]")).toBeVisible({ timeout: 15000 });
+		const probe = await page.evaluate(() => (window as typeof window & { keynoteDropProbe: { traceAt: number; traceFinishedAt: number; finaleAt: number; outlines: number; visibleCards: number; duration: number } }).keynoteDropProbe);
+		await testInfo.attach("completion-sequence", { body: JSON.stringify(probe), contentType: "application/json" });
+		if (reducedMotion === "no-preference") {
+			expect(probe.outlines).toBe(probe.visibleCards);
+			expect(probe.outlines).toBeGreaterThan(0);
+			expect(probe.outlines).toBeLessThan(13);
+			expect(probe.duration).toBe(620);
+			expect(probe.traceFinishedAt).toBeGreaterThan(probe.traceAt);
+			expect(probe.finaleAt).toBeGreaterThanOrEqual(probe.traceFinishedAt);
+		} else expect(probe.traceAt).toBe(0);
+		await page.screenshot({ path: `output/agent-browser/keynote-completion/finale-${reducedMotion}-${width}.png` });
 	});
 }

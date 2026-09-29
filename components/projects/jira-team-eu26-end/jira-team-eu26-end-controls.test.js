@@ -20,6 +20,10 @@ const EXPERIMENTAL_PAGE_SOURCE = [
 	readProjectFile("components/blocks/jira-kanban/experimental/hooks/use-page-content-model.ts"),
 ].join("\n");
 
+test("the End board shares Team EU26's opt-in auto arrange setting", () => {
+	assert.match(PAGE_SOURCE, /autoArrangeEnabled=\{designVariants\.autoArrange\}/u);
+});
+
 test("the board keeps matching 24px gaps above and below the filter controls", () => {
 	// The control row's opening tag is multi-line (it carries `controlsInsetEnd`
 	// as a style), so match the className string rather than the whole tag —

@@ -5,7 +5,7 @@ const test = require("node:test");
 const vm = require("node:vm");
 const ts = require("typescript");
 
-function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104, step = 112 } = {}) {
+function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104, step = 112, clipTop = 0, clipBottom = 10000, viewportHeight = 10000 } = {}) {
 	const animations = [], nodes = [], reads = [], frames = new Map(), frameEvents = [];
 	let frameId = 0, inFrame = false, sharedGlow;
 	class Node {
@@ -20,9 +20,9 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 		getBoundingClientRect() { reads.push(this); if (inFrame) frameEvents.push("read"); else assert.equal(animations.length, 0, "measure every final slot before applying motion"); return this.rect; }
 		get ownerDocument() { return doc; }
 		querySelector(selector) { return selector.includes("backdrop") ? this.backdrop : this.surface; }
-		closest() { return destination; }
+		closest(selector) { return selector.includes("card-list") ? list : destination; }
 	}
-	const doc = { body: new Node("body"), createElement: (name) => { const node = new Node(name); nodes.push(node); return node; }, createElementNS: (_, name) => { const node = new Node(name); nodes.push(node); return node; } };
+	const doc = { defaultView: { innerWidth: 1000, innerHeight: viewportHeight }, body: new Node("body"), createElement: (name) => { const node = new Node(name); nodes.push(node); return node; }, createElementNS: (_, name) => { const node = new Node(name); nodes.push(node); return node; } };
 	const rect = (top, height) => ({ left: 100, right: 380, width: 280, top, bottom: top + height, height });
 	const issues = Array.from({ length: count }, (_, index) => {
 		const node = new Node("slot"); node.style = { zIndex: "auto", willChange: "opacity" }; node.rect = rect(100 + index * step, slotHeight);
@@ -32,6 +32,7 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 		return issue;
 	});
 	const destination = { querySelectorAll: () => issues };
+	const list = { getBoundingClientRect: () => rect(clipTop, clipBottom - clipTop) };
 	const loaded = { exports: {} };
 	vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "issue-solitaire-drop.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
 		requestAnimationFrame: (callback) => { const id = ++frameId; frames.set(id, callback); return id; },
@@ -77,6 +78,36 @@ test("every later card starts under the fixed first card and finishes at 420ms",
 	assert.equal(h.complete(), 1);
 	for (const issue of h.issues) assert.equal(issue.parentElement.style.zIndex, "auto");
 	for (const issue of h.issues.slice(1)) assert.equal(issue.parentElement.style.willChange, "opacity");
+});
+
+test("bulk drops trace and unfold only cards intersecting the column and viewport", () => {
+	for (const bounds of [{ clipBottom: 340 }, { viewportHeight: 340 }]) {
+		const h = fixture(13, "Done", bounds); h.start();
+		assert.equal(h.nodes.filter((node) => node.attributes.stroke).length, 3, "partially visible cards keep their trace");
+		assert.equal(h.animations.length, 3, "fully offscreen slots never unfold into the visible stack");
+		assert.equal(h.doc.body.children[0].attributes.height, String(2 * 112 + 96), "hidden cards add no sweep distance");
+		h.runFrame();
+		assert.equal(h.frameEvents.filter((event) => event === "read").length, 3, "hidden cards add no per-frame geometry work");
+		for (const issue of h.issues.slice(3)) assert.equal(issue.parentElement.style.zIndex, "auto");
+		for (const animation of h.animations) animation.onfinish();
+		assert.equal(h.complete(), 1);
+	}
+});
+
+test("fully clipped cards complete immediately without allocating a trace or animation", () => {
+	const h = fixture(13, "Done", { clipBottom: 104 }); h.start();
+	assert.equal(h.animations.length, 0, "touching the clip edge is not a visible intersection");
+	assert.equal(h.doc.body.children.length, 0);
+	assert.equal(h.frames.size, 0);
+	assert.equal(h.complete(), 1);
+});
+
+test("a scrolled cohort starts its sweep at the first visible destination card", () => {
+	const h = fixture(13, "Done", { clipTop: 328, clipBottom: 440 }); h.start();
+	assert.equal(h.nodes.filter((node) => node.attributes.stroke).length, 1);
+	assert.equal(h.animations.length, 1);
+	assert.equal(h.doc.body.children[0].style.top, "328px");
+	assert.equal(h.animations[0].options.duration, 500);
 });
 
 test("Done traces one measured collection with 1px success outlines and a push-pull band", () => {

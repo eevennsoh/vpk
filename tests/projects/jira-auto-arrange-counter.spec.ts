@@ -96,6 +96,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	});
 
 	test(`a continuing column cycles its count and retraces without hiding the badge (${reducedMotion})`, async ({ page }) => {
+		await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ autoArrange: true })));
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/jira-team-eu26-end`);
 		await page.locator('[data-issue-key="TEU-1"] [draggable]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
