@@ -192,6 +192,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	>;
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;
+	/** Show issue priority on board cards; defaults to the issue component's behavior. */
+	showPriorityIndicator?: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	/** Nested subtask cards inherit the parent chrome unless set. */
 	subtaskChrome?: JiraIssueChrome;
@@ -410,6 +412,7 @@ function ExperimentalJiraKanbanView({
 	cardGenerativeActionFooterActions, cardMoreMenuActions, onCardsRemove,
 	cardMoveAnimation,
 	iconScale = "compact",
+	showPriorityIndicator,
 	issueDragTransitions = false,
 	issueMoveVisual = true,
 	issueDropMotion,
@@ -821,7 +824,6 @@ function ExperimentalJiraKanbanView({
 								columnChrome={columnChrome}
 								columnSizing={columnSizing}
 								count={column.cards.length}
-								scrollbarVisibility={column.scrollbarVisibility}
 								createdCardArrival={presentedCardArrival?.columnTitle === column.title
 									? presentedCardArrival
 									: undefined}
@@ -933,6 +935,7 @@ function ExperimentalJiraKanbanView({
 												generativeActionSkills={generativeActionSkills}
 												highlightedSessionId={highlightedSessionId}
 												iconScale={iconScale}
+												showPriorityIndicator={showPriorityIndicator}
 												onAgentActivityOpenChange={onCardAgentActivityOpenChange}
 												onAgentActivityViewChat={onCardAgentActivityViewChat}
 												onAssignedAgentIdsChange={onCardAssignedAgentIdsChange}

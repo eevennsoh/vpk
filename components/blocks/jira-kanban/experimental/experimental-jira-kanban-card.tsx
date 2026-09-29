@@ -205,6 +205,7 @@ interface ExperimentalJiraKanbanCardProps {
 		"onBrowseAgents" | "onBrowseSkills" | "onCreateAgent" | "onCreateSkill"
 	>;
 	iconScale?: JiraIssueIconScale;
+	showPriorityIndicator?: boolean;
 	/** Session hovered in the Untracked work column; lights its row here. */
 	highlightedSessionId?: string | null;
 	onAgentActivityOpenChange?: JiraKanbanProps["onCardAgentActivityOpenChange"];
@@ -274,6 +275,7 @@ export function ExperimentalJiraKanbanCard({
 	generativeActionFooterActions,
 	highlightedSessionId,
 	iconScale = "compact",
+	showPriorityIndicator,
 	onAgentActivityOpenChange,
 	onAgentActivityViewChat,
 	onAssignedAgentIdsChange,
@@ -368,6 +370,7 @@ export function ExperimentalJiraKanbanCard({
 			// Opted-in boards let the source ghost own the content fade.
 			style={selectionBackdrop === undefined ? undefined : { opacity: 1 }}
 			iconScale={iconScale}
+			showPriorityIndicator={showPriorityIndicator}
 			parentOwnsLayout
 			generativeAction={{
 				agents: generativeActionAgents,

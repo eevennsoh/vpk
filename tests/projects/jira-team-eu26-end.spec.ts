@@ -498,7 +498,7 @@ test("existing single-card and selected-cohort drag moves work items into Done",
 	await expect.poll(() => doneViewport.evaluate(node => node.scrollHeight - node.clientHeight)).toBeGreaterThan(1);
 	await doneViewport.hover();
 	await page.screenshot({ path: "output/agent-browser/done-scrollbar/done-hover.png" });
-	await expect(column(page, "Done").locator('[data-slot="scroll-area-scrollbar"]')).toHaveCount(0);
+	await expect(column(page, "Done").locator('[data-slot="scroll-area-scrollbar"]')).toHaveCSS("opacity", "1");
 	await expect(doneViewport).toHaveCSS("scrollbar-width", "none");
 	await page.mouse.wheel(0, 150);
 	await expect.poll(() => doneViewport.evaluate(node => node.scrollTop)).toBeGreaterThan(0);

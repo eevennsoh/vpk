@@ -79,8 +79,8 @@ export function settleFinaleColumnCopy(column: HTMLElement): void {
 	}
 	for (const ghost of column.querySelectorAll<HTMLElement>("[data-issue-source-ghost-placeholder]")) ghost.style.opacity = "0";
 	for (const slot of column.querySelectorAll<HTMLElement>('[data-slot="jira-creating-slot"]')) slot.style.height = "auto";
-	// AnimatePresence can retain the outgoing drag caption/badge after state clears.
-	for (const transient of column.querySelectorAll<HTMLElement>('[data-board-column-header-copy-layer="label"], [data-auto-arrange-count]')) transient.remove();
+	// Transient drag chrome and the interactive scrollbar never belong in the shader print.
+	for (const transient of column.querySelectorAll<HTMLElement>('[data-board-column-header-copy-layer="label"], [data-auto-arrange-count], [data-slot="scroll-area-scrollbar"]')) transient.remove();
 	for (const resting of column.querySelectorAll<HTMLElement>('[data-board-column-header-copy-layer="add"]')) {
 		resting.style.opacity = "1";
 		resting.style.transform = "none";

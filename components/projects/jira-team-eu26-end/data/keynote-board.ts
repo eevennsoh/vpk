@@ -109,16 +109,14 @@ export function restoreJiraTeamEu26EndKeynoteCoverArtwork(columns: readonly Jira
 	return changed ? restored : columns;
 }
 
-/** Apply the keynote's completion destinations and Done indicator to retained board data. */
+/** The keynote's auto-arrange plan always completes work, including newly created items. */
 export function withJiraTeamEu26EndDoneDestinations(columns: readonly JiraKanbanColumnData[]): readonly JiraKanbanColumnData[] {
 	let changed = false;
 	const prepared = columns.map((column) => {
-		const scrollbarVisibility = column.title === "Done" ? "hidden" : column.scrollbarVisibility;
-		if (column.scrollbarVisibility === scrollbarVisibility && column.cards.every((card) => card.autoArrangeStatus === "Done")) return column;
+		if (column.cards.every((card) => card.autoArrangeStatus === "Done")) return column;
 		changed = true;
 		return {
 			...column,
-			scrollbarVisibility,
 			cards: column.cards.map((card) => card.autoArrangeStatus === "Done" ? card : { ...card, autoArrangeStatus: "Done" }),
 		};
 	});

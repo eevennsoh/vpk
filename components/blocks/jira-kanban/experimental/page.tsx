@@ -176,6 +176,7 @@ function ExperimentalJiraKanbanPageContent({
 	agentActivityLayout,
 	cardGenerativeActionFooterActions,
 	cardGenerativeActionPresentation, iconScale,
+	showPriorityIndicator,
 	createWellBounce = "once",
 	createWorkItemDropZoneLabel,
 	issueDragTransitions = false,
@@ -957,6 +958,7 @@ function ExperimentalJiraKanbanPageContent({
 									: undefined}
 								onCardsRemove={controlledBoardColumns === undefined || onBoardColumnsChange ? handleCardsRemove : undefined}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale}
+								showPriorityIndicator={showPriorityIndicator}
 								collapsedColumns={displayedCollapsedColumns}
 								columnChrome={columnChrome} columnSizing={columnSizing} columnWidth={columnWidth}
 								createdCardArrival={createdCardArrival ?? undefined}

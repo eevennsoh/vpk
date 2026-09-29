@@ -7,6 +7,29 @@ const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 
+test("EU26 column headers balance the row's top and bottom spacing", async ({ page }) => {
+	for (const width of [1800, 1024]) {
+		await page.setViewportSize({ width, height: 1100 });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await expect(issue(page, "PAY-118")).toBeVisible();
+		const headers = page.locator('[data-slot="board-column-header"]');
+		await expect(headers).toHaveCount(4);
+		const spacing = await headers.evaluateAll(nodes => nodes.map(header => {
+			const well = header.closest('[data-jira-kanban-column-content]')!;
+			const row = header.firstElementChild!;
+			const card = well.querySelector('[data-board-agent-session-drop-zone="issue"]')!;
+			return {
+				title: header.textContent,
+				top: row.getBoundingClientRect().top - well.getBoundingClientRect().top - parseFloat(getComputedStyle(well).borderTopWidth),
+				bottom: card.getBoundingClientRect().top - row.getBoundingClientRect().bottom,
+			};
+		}));
+		for (const { title, top, bottom } of spacing) {
+			expect(bottom, `${title} spacing at ${width}px`).toBeCloseTo(top, 1);
+		}
+	}
+});
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`EU26 toolbar and transition icons preserve theme parity (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });

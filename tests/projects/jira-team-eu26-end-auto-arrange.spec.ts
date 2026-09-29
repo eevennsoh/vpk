@@ -6,6 +6,45 @@ test.beforeEach(async ({ page }, testInfo) => {
 	await page.addInitScript((autoArrange) => localStorage.setItem("ui-design-variants", JSON.stringify({ autoArrange })), !testInfo.title.startsWith("bulk drag"));
 });
 
+test("Done keeps its scrollbar outside the shader and excludes it from the shader print", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 720 });
+	await page.addInitScript(() => {
+		const counts: number[] = [];
+		Object.assign(window, { finaleColumnScrollbarCopies: counts });
+		new MutationObserver(records => {
+			for (const record of records) for (const node of record.addedNodes) {
+				if (!(node instanceof HTMLElement) || node.style.left !== "-30000px") continue;
+				const column = node.querySelector('[data-jira-kanban-column="Done"]');
+				if (column) counts.push(column.querySelectorAll('[data-slot="scroll-area-scrollbar"]').length);
+			}
+		}).observe(document, { childList: true, subtree: true });
+	});
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	for (const code of ["TEU-1", "TEU-2", "TEU-3"]) {
+		await page.locator(`[data-issue-key="${code}"] [draggable]`).first().click({ modifiers: ["Meta"] });
+	}
+	await page.getByRole("button", { name: "Auto arrange", exact: true }).click();
+	const done = page.locator('[data-jira-kanban-column="Done"]');
+	const viewport = done.locator("[data-jira-kanban-card-list]");
+	const scrollbar = done.locator('[data-slot="scroll-area-scrollbar"]');
+	await expect(done.locator("[data-issue-key]")).toHaveCount(3);
+	await viewport.hover();
+	await expect(scrollbar).toHaveCSS("opacity", "1");
+	await expect(scrollbar).toHaveCSS("visibility", "visible");
+	await page.evaluate(() => (window as typeof window & { __jiraTeamEu26Finale: { hold: (time: number) => void } }).__jiraTeamEu26Finale.hold(0.3));
+	const finale = page.locator("[data-jira-team-eu26-end-finale]");
+	await expect(finale).toBeVisible({ timeout: 15000 });
+	await expect(scrollbar).toHaveCSS("visibility", "hidden");
+	await expect.poll(() => page.evaluate(() => (window as typeof window & { finaleColumnScrollbarCopies: number[] }).finaleColumnScrollbarCopies.length)).toBeGreaterThan(0);
+	expect(await page.evaluate(() => (window as typeof window & { finaleColumnScrollbarCopies: number[] }).finaleColumnScrollbarCopies)).toEqual([0]);
+	await page.screenshot({ path: "output/agent-browser/done-scrollbar/shader-only.png" });
+	await page.keyboard.press("Escape");
+	await expect(finale).toHaveCount(0);
+	await viewport.hover();
+	await expect(scrollbar).toHaveCSS("visibility", "visible");
+	await expect(scrollbar).toHaveCSS("opacity", "1");
+});
+
 test("auto arrange unfolds full-size issue cards in their committed slots", async ({ page }) => {
 	await page.addInitScript(() => {
 		const samples: { code: string; width: number; height: number }[] = [];

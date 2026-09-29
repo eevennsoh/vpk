@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 
 import { useFinaleFrame } from "./use-finale-frame";
 import { FINALE_COLORS } from "../data/finale-palette";
@@ -10,7 +10,7 @@ import { parseRgb } from "../lib/finale-math";
 
 const SLIDE_RGB = parseRgb(FINALE_COLORS.slide).join(", ");
 
-interface HiddenCard {
+interface HiddenElement {
 	readonly element: HTMLElement;
 	readonly visibility: string;
 }
@@ -23,8 +23,18 @@ interface HiddenCard {
  * layer's `opacity`, which would also fade the backdrop blur.
  */
 export function useFinaleBoardExit(layerRef: RefObject<HTMLDivElement | null>): void {
-	const hiddenRef = useRef<readonly HiddenCard[] | null>(null);
+	const hiddenRef = useRef<readonly HiddenElement[] | null>(null);
 	const writtenRef = useRef("");
+
+	useLayoutEffect(() => {
+		const scrollbars = document.querySelectorAll<HTMLElement>('[data-jira-team-eu26-end-board-surface] [data-jira-kanban-column="Done"] [data-slot="scroll-area-scrollbar"]');
+		const hidden = [...scrollbars].map((element) => {
+			const previous = { element, visibility: element.style.visibility };
+			element.style.visibility = "hidden";
+			return previous;
+		});
+		return () => restore(hidden);
+	}, []);
 
 	useFinaleFrame((time) => {
 		const layer = layerRef.current;
@@ -57,6 +67,6 @@ export function useFinaleBoardExit(layerRef: RefObject<HTMLDivElement | null>): 
 	}, []);
 }
 
-function restore(cards: readonly HiddenCard[]): void {
+function restore(cards: readonly HiddenElement[]): void {
 	for (const { element, visibility } of cards) element.style.visibility = visibility;
 }

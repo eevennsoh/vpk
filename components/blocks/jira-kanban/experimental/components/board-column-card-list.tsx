@@ -18,7 +18,6 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import type { KanbanColumnChromeStyles } from "../../column-chrome";
-import type { JiraKanbanColumnData } from "../../index";
 import {
 	useCreatedCardArrivalScroll,
 	type JiraKanbanCreatedCardArrival,
@@ -88,7 +87,6 @@ export function BoardColumnCardList({
 	columnTitle,
 	columnSizing = "fill",
 	count,
-	scrollbarVisibility = "auto",
 	createdCardArrival,
 	insertionArmed,
 	isEmpty,
@@ -100,7 +98,6 @@ export function BoardColumnCardList({
 	columnTitle: string;
 	columnSizing?: "fill" | "content";
 	count: number;
-	scrollbarVisibility?: JiraKanbanColumnData["scrollbarVisibility"];
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
 	insertionArmed: boolean;
 	isEmpty: boolean;
@@ -240,7 +237,7 @@ export function BoardColumnCardList({
 					</ScrollAreaContent>
 				</ScrollAreaViewport>
 				{/* Layout projection can change scroll bounds without resizing the content box. */}
-				{hasVerticalOverflow && scrollbarVisibility !== "hidden" ? <ScrollBar visibility="auto" /> : null}
+				{hasVerticalOverflow ? <ScrollBar visibility="auto" /> : null}
 			</ScrollAreaRoot>
 		</BoardCardHoverInsertionContext>
 	);

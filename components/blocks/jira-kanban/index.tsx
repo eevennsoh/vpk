@@ -103,8 +103,6 @@ export interface JiraKanbanCardData {
 }
 
 export interface JiraKanbanColumnData {
-	/** Card-list indicator; hiding it preserves scrolling. */
-	scrollbarVisibility?: "auto" | "hidden";
 	/** People presenting this section; independent from work-item assignees. */
 	presenters?: readonly JiraKanbanAssigneeData[];
 	/** Workflow destinations grouped into this column. Defaults to its title. */
