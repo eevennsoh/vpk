@@ -149,7 +149,7 @@ export function AgentAvatarVisual({
 	// Both explicit and data-backed Rovo identities keep the gem inset so the
 	// shared avatar hexagon, rather than the logo silhouette, owns the frame.
 	const visual = isRovoAvatar ? (
-		<RovoColorIcon label="" size="xxsmall" className="size-3/5" />
+		<RovoColorIcon label="" size="xxsmall" className="size-1/2" />
 	) : logoName ? (
 		<AtlassianLogo label="" name={logoName} size={insetLogoSize} themeAware />
 	) : brandName ? (
@@ -183,10 +183,10 @@ export function AgentAvatarVisual({
 			{hasWhiteBackdrop ? (
 				<span
 					aria-hidden="true"
-					// Fixed brand canvases are independent of the surrounding theme.
-					style={{ backgroundColor: codingVisual?.backgroundColor ?? (brandName === "claude" ? "#d97757" : undefined) }}
+					// ADS color-scheme inherits from the nearest global or subtree theme.
+					// Inline light-dark avoids the CSS compiler's global-theme fallback.
+					style={{ backgroundColor: isRovoAvatar ? "light-dark(var(--ds-surface), #292A2E)" : codingVisual?.backgroundColor ?? (brandName === "claude" ? "#d97757" : undefined) }}
 					className={cn("flex size-full items-center justify-center bg-surface",
-						isRovoAvatar ? "bg-rovo-avatar-canvas" : undefined,
 						brandName === "claude" || codingVisual?.whiteGlyph ? "[&_svg]:brightness-0 [&_svg]:invert [&_img]:brightness-0 [&_img]:invert" : undefined)}>{visual}</span>
 			) : (
 				visual

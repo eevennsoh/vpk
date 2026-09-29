@@ -297,9 +297,6 @@
 	--color-bg-neutral-subtle-hovered: var(--ds-background-neutral-subtle-hovered); /* #0515240F */
 	--color-bg-neutral-subtle-pressed: var(--ds-background-neutral-subtle-pressed); /* #0B120E24 */
 	--color-bg-neutral-bold: var(--ds-background-neutral-bold); /* #292A2E */
-	/* Rovo avatars preserve the button's charcoal in dark mode. ADS color-scheme
-	   inherits from the nearest global or subtree theme, including local overrides. */
-	--color-rovo-avatar-canvas: light-dark(var(--ds-surface), #292A2E);
 	--color-bg-neutral-bold-hovered: var(--ds-background-neutral-bold-hovered); /* #3B3D42 */
 	--color-bg-neutral-bold-pressed: var(--ds-background-neutral-bold-pressed); /* #505258 */
 	--color-bg-selected: var(--ds-background-selected); /* #E9F2FE */
