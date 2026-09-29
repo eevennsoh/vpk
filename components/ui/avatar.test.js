@@ -419,7 +419,7 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /import \{ AtlassianLogo, RovoColorIcon,/u);
 	assert.match(
 		AGENT_AVATAR_VISUAL_SOURCE,
-		/isRovoAvatar \? \(\s*<RovoColorIcon label="" size="xxsmall" className="size-3\/5" \/>/u,
+		/isRovoAvatar \? \(\s*<RovoColorIcon label="" size="xxsmall" className="size-5\/8" \/>/u,
 	);
 	// The external-mark backdrop follows the theme instead of a hardcoded `#fff`,
 	// so the hexagon stops punching a white hole in a dark surface. Pinned as an
@@ -458,7 +458,8 @@ test("Rovo avatar inputs share an inset hexagon and the dark Rovo button canvas"
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /import \{ ROVO_LOGO_DATA_URI \} from "@\/components\/ui\/data\/rovo-logo"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const isRovoAvatar = vpkLogo === "rovo" \|\| avatarSrc === ROVO_LOGO_DATA_URI/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /shape="hexagon"/);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /isRovoAvatar \? "dark:bg-\[#292A2E\]" : undefined/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /backgroundColor: isRovoAvatar \? "light-dark\(var\(--ds-surface\), #292A2E\)"/);
+	assert.doesNotMatch(AGENT_AVATAR_VISUAL_SOURCE, /dark:bg-/);
 	const rovoButtonSource = fs.readFileSync(path.join(__dirname, "..", "ui-custom", "rovo-sparkle", "button.tsx"), "utf8");
 	assert.match(rovoButtonSource, /"bg-bg-neutral-bold group-hover\/rovo-sparkle:bg-bg-neutral-bold-hovered/);
 });
