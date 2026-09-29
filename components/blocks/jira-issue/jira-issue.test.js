@@ -693,7 +693,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/icon=\{<QuestionCircleFilledIcon color="currentColor" label="" size="small" \/>\}/u,
+		/icon=\{<StrokeWeightLargeIcon color="currentColor" label="" size="small" \/>\}/u,
 	);
 	assert.doesNotMatch(
 		AGENT_ACTIVITY_SOURCE,
