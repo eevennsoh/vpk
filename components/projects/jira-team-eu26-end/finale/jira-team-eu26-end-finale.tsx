@@ -16,12 +16,6 @@ import { nextFinaleDragOrder } from "./lib/finale-drag-order";
 import { FINALE_DONE_COLUMN_TITLE, isJiraTeamEu26FinaleReady, parseFinaleSearch } from "./lib/finale-trigger";
 import type { FinaleSceneInput } from "./scenes/scene-board-to-bento";
 
-/**
- * The finale opens this long after the last keynote card lands in Done: the
- * board's drop flight (~250ms) and landing grow-in (settled by ~760ms) finish
- * first, so the finale starts on cards at rest.
- */
-const FINALE_START_DELAY_MS = 800;
 /** Idle pre-print of every keynote card starts once the board has settled in. */
 const FINALE_PREWARM_DELAY_MS = 1500;
 const EXIT_FADE_MS = 260;
@@ -37,8 +31,6 @@ interface FinalePreparation {
 	readonly features: readonly FinaleStory[];
 	readonly seek: number;
 	readonly hold: boolean;
-	/** Earliest wall-clock time (ms) the finale may take over the screen. */
-	readonly notBefore: number;
 }
 
 function doneCodesOf(columns: readonly JiraKanbanColumnData[]): readonly string[] {
@@ -47,7 +39,7 @@ function doneCodesOf(columns: readonly JiraKanbanColumnData[]): readonly string[
 
 /**
  * Closing-keynote finale for the Team ’26 EU board. When the last keynote
- * announcement lands in Done, the board settles, holds, and then hands every
+ * announcement lands in Done, the board immediately hands every
  * card — in the order MCB dragged them — into the field-to-bento finale.
  */
 interface JiraTeamEu26EndFinaleProps {
@@ -66,6 +58,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 	const [preparation, setPreparation] = useState<FinalePreparation | null>(null);
 	const [scene, setScene] = useState<FinaleSceneInput | null>(null);
 	const [closing, setClosing] = useState(false);
+	const startAfterMountRef = useRef<number | null>(null);
 	const ready = isJiraTeamEu26FinaleReady(boardColumns, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES);
 	const wasReadyRef = useRef(ready);
 	const doneCodes = doneCodesOf(boardColumns);
@@ -91,29 +84,33 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		dragOrderRef.current = next;
 	}, [doneKey, prints, ready]);
 
-	const prepare = useCallback((seek: number, hold: boolean, delayMs = 0) => {
+	const prepare = useCallback((seek: number, hold: boolean) => {
 		const dragOrder = dragOrderRef.current;
 		setClosing(false);
-		setPreparation({ dragOrder, features: selectFinaleFeatures(dragOrder), seek, hold, notBefore: performance.now() + delayMs });
+		setPreparation({ dragOrder, features: selectFinaleFeatures(dragOrder), seek, hold });
 	}, []);
 
 	// Every card must be printed before the GL field can start on exact copies.
 	useEffect(() => {
 		if (!preparation) return undefined;
 		let cancelled = false;
+		const controller = new AbortController();
 		const open = async () => {
 			// Never hold the show for a print: late ones fall back to plain sheets.
 			// The "Team 26" title face: resolves at once when the page already uses it.
 			// The whole column, which the flash refracts under the card sheets.
 			let columnPrint: HTMLCanvasElement | undefined;
-			const chrome = printFinaleColumn().then((canvas) => {
+			const chrome = printFinaleColumn(controller.signal).then((canvas) => {
 				columnPrint = canvas;
 			});
 			const ready = Promise.all([prints.ensure(preparation.dragOrder), document.fonts.load('400 112px "Atlassian Sans"', "Team 0123456789").catch(() => []), chrome]);
 			await Promise.race([ready, new Promise((resolve) => window.setTimeout(resolve, FINALE_PRINT_TIMEOUT_MS))]);
-			const wait = preparation.notBefore - performance.now();
-			if (wait > 0) await new Promise((resolve) => window.setTimeout(resolve, wait));
+			// Card sheets may arrive late; the column print cannot be missing or mid-drop.
+			await chrome;
 			if (cancelled) return;
+			if (!columnPrint) { setPreparation(null); return; }
+			clock.hold(preparation.seek);
+			startAfterMountRef.current = preparation.hold ? null : preparation.seek;
 			setScene({
 				snapshot: captureJiraTeamEu26DoneColumn(),
 				dragOrder: preparation.dragOrder,
@@ -122,22 +119,30 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 				columnPrint,
 			});
 			setPreparation(null);
-			if (preparation.hold) clock.hold(preparation.seek);
-			else void clock.start(preparation.seek);
 		};
 		void open();
 		return () => {
 			cancelled = true;
+			controller.abort();
 		};
 	}, [clock, preparation, prints]);
+
+	// Child renderer effects initialise before this parent effect. Starting the
+	// clock here prevents setup work from skipping the foot of the column sweep.
+	useEffect(() => {
+		const seek = startAfterMountRef.current;
+		if (!scene || seek === null) return;
+		startAfterMountRef.current = null;
+		void clock.start(seek);
+	}, [clock, scene]);
 
 	// Fire on the transition into "all Done" — never on load with a retained board.
 	useEffect(() => {
 		const wasReady = wasReadyRef.current;
 		wasReadyRef.current = ready;
 		if (!ready || wasReady) return undefined;
-		const timer = window.setTimeout(() => prepare(0, false), FINALE_START_DELAY_MS);
-		return () => window.clearTimeout(timer);
+		prepare(0, false);
+		return () => setPreparation(null);
 	}, [prepare, ready]);
 
 	// Replay on request once the board is already complete (after Esc).
@@ -145,7 +150,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 	useEffect(() => {
 		if (replayRequest === replayRef.current) return;
 		replayRef.current = replayRequest;
-		if (ready && !scene && !preparation) prepare(0, false, FINALE_START_DELAY_MS);
+		if (ready && !scene && !preparation) prepare(0, false);
 	}, [preparation, prepare, ready, replayRequest, scene]);
 
 	// Rehearsal: `?finale[=seconds][&hold]` arms the finale for the next click.
@@ -175,13 +180,14 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		if (process.env.NODE_ENV === "production") return undefined;
 		const target = window as typeof window & { __jiraTeamEu26Finale?: unknown };
 		target.__jiraTeamEu26Finale = {
+			time: clock.time,
 			hold: (time: number) => scrub(time, true),
 			play: (time = 0) => scrub(time, false),
 		};
 		return () => {
 			delete target.__jiraTeamEu26Finale;
 		};
-	}, [scrub]);
+	}, [clock.time, scrub]);
 
 	const exit = useCallback(() => {
 		clock.stop();

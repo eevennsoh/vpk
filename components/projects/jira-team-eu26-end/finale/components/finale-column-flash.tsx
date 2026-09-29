@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
-import { FLASH_GLSL, FLASH_MAX_OCCLUDERS, FLASH_PASS_GLSL, FLASH_SHAPE, flashRingUniforms, flashUniforms, flashVisible, type FlashColumn, type FlashOccluder } from "../lib/finale-column-flash";
+import { FLASH_BLUR_LEVELS, FLASH_GLSL, FLASH_MAX_OCCLUDERS, FLASH_PASS_GLSL, flashPrintRect, flashRingUniforms, flashUniforms, flashVisible, type FlashColumn, type FlashOccluder } from "@/components/projects/jira-team-eu26-end/finale/lib/finale-column-flash";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
+import { parseRgb } from "../lib/finale-math";
 
 const vertexShader = /* glsl */ `
 uniform vec4 uCanvasRect;
@@ -49,6 +50,28 @@ interface FinaleColumnFlashProps {
 
 const NO_OCCLUDERS: readonly FlashOccluder[] = [];
 
+function printTexture(print: HTMLCanvasElement): THREE.CanvasTexture {
+	const texture = new THREE.CanvasTexture(print);
+	// Raw sRGB bytes in and out: the resting print matches the live DOM.
+	texture.colorSpace = THREE.NoColorSpace;
+	texture.premultiplyAlpha = true;
+	texture.generateMipmaps = false;
+	texture.minFilter = THREE.LinearFilter;
+	return texture;
+}
+
+/** Three bounded Gaussian levels, owned by this snapshot and disposed with its renderer. */
+function softPrintTexture(print: HTMLCanvasElement, radius: number, cssWidth: number): THREE.CanvasTexture {
+	const soft = document.createElement("canvas");
+	soft.width = print.width;
+	soft.height = print.height;
+	const context = soft.getContext("2d");
+	if (!context) return printTexture(print);
+	context.filter = `blur(${radius * print.width / cssWidth}px)`;
+	context.drawImage(print, 0, 0);
+	return printTexture(soft);
+}
+
 interface FlashGl {
 	readonly renderer: THREE.WebGLRenderer;
 	readonly scene: THREE.Scene;
@@ -60,8 +83,9 @@ interface FlashGl {
  * The flash as one full-column pass over the column print, above the resting
  * card sheets: refraction, band blur, glare, the dark lens, highlight halos
  * and coloured edge light, all from one field (`lib/finale-column-flash.ts`).
- * Nothing is clipped to the column's rectangle: the refracted content eases
- * out over its edge and the light carries on past it, falling off softly. It
+ * The silhouette can bend by a few pixels; grading remains on the refracted
+ * column and only a faint narrow bloom carries past it. Sampling padding is
+ * plain backdrop, so no neighbouring column/header can enter the wave. It
  * draws only where the field is active and is transparent elsewhere, so the
  * live board and the GL sheets beneath show through untouched; it is hidden
  * outside its window and gone from the toss.
@@ -71,12 +95,7 @@ export function FinaleColumnFlash({ column, print, occluders = NO_OCCLUDERS }: R
 	const glRef = useRef<FlashGl | null>(null);
 	const visibleRef = useRef(false);
 	// The column plus room for the light's soft falloff past it, snapped to whole px so the canvas composites without resampling.
-	const rect = useMemo(() => {
-		const reach = FLASH_SHAPE.glowCut + 4;
-		const x = Math.floor(column.x - reach);
-		const y = Math.floor(column.y - reach);
-		return { x, y, width: Math.ceil(column.x + column.width + reach) - x, height: Math.ceil(column.y + column.height + reach) - y };
-	}, [column]);
+	const rect = useMemo(() => flashPrintRect(column), [column]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -91,11 +110,9 @@ export function FinaleColumnFlash({ column, print, occluders = NO_OCCLUDERS }: R
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 		renderer.setSize(rect.width, rect.height, false);
 		renderer.setClearColor(0x000000, 0);
-		const texture = new THREE.CanvasTexture(print);
-		// Raw sRGB bytes in and out, like the card sheets: the print must match the DOM.
-		texture.colorSpace = THREE.NoColorSpace;
-		texture.premultiplyAlpha = true;
-		texture.needsUpdate = true;
+		const texture = printTexture(print);
+		const backdrop = parseRgb(print.dataset.finaleBackdrop ?? "rgb(255, 255, 255)");
+		const [soft, blur, bloom] = FLASH_BLUR_LEVELS.map((radius) => softPrintTexture(print, radius, rect.width));
 		const material = new THREE.ShaderMaterial({
 			vertexShader,
 			fragmentShader,
@@ -104,10 +121,15 @@ export function FinaleColumnFlash({ column, print, occluders = NO_OCCLUDERS }: R
 			depthWrite: false,
 			uniforms: {
 				uPrint: { value: texture },
+				uBackdrop: { value: new THREE.Vector3(...backdrop.map((channel) => channel / 255)) },
+				uPrintRect: { value: new THREE.Vector4(rect.x, rect.y, rect.width, rect.height) },
+				uPrintSoft: { value: soft },
+				uPrintBlur: { value: blur },
+				uPrintBloom: { value: bloom },
 				uCanvasRect: { value: new THREE.Vector4(rect.x, rect.y, rect.width, rect.height) },
 				uFlashColumn: { value: new THREE.Vector4(column.x, column.y, column.width, column.height) },
 				uFlashState: { value: new THREE.Vector3(0, 0, 0) },
-				uFlashRing: { value: new THREE.Vector4(0, 0, 0, 0) },
+				uFlashRing: { value: new THREE.Vector3(0, 0, 0) },
 				uOccluders: { value: Array.from({ length: FLASH_MAX_OCCLUDERS }, (_, index) => {
 					const occluder = occluders[index];
 					return occluder ? new THREE.Vector4(occluder.x, occluder.y, occluder.width, occluder.height) : new THREE.Vector4(0, 0, 0, 0);
@@ -121,11 +143,17 @@ export function FinaleColumnFlash({ column, print, occluders = NO_OCCLUDERS }: R
 		scene.add(new THREE.Mesh(geometry, material));
 		const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 		glRef.current = { renderer, scene, camera, material };
+		// Compile/upload on a transparent, hidden frame before the finale clock
+		// starts; the first visible frame then begins at the foot, without a jump.
+		renderer.render(scene, camera);
 		return () => {
 			glRef.current = null;
 			geometry.dispose();
 			material.dispose();
 			texture.dispose();
+			soft.dispose();
+			blur.dispose();
+			bloom.dispose();
 			renderer.dispose();
 		};
 	}, [column, occluders, print, rect]);
@@ -150,6 +178,7 @@ export function FinaleColumnFlash({ column, print, occluders = NO_OCCLUDERS }: R
 			aria-hidden
 			className="pointer-events-none absolute"
 			style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height, visibility: "hidden" }}
+			data-finale-column-flash=""
 		/>
 	);
 }
