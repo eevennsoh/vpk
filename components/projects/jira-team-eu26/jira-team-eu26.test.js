@@ -318,22 +318,20 @@ test("chin-row layout uses Team EU's merged grouping", () => {
 });
 
 test("chin-row agent activity indicators use the Team EU renderer", () => {
-	// Team EU is the baseline, so working rows keep the block's own spinner.
-	// Awaiting-input departs from it: a question circle reads as "blocked on
-	// you", which the pixel loader's solo dot did not. The filled glyph lives in
-	// icon-lab (>= 7.8.0), not @atlaskit/icon, and carries the information color.
+	// Working rows keep their spinner; awaiting-input uses a large dot in
+	// the same information blue as the shared session status indicators.
 	assert.match(
 		INDICATORS_SOURCE,
-		/import QuestionCircleFilledIcon from "@atlaskit\/icon-lab\/core\/question-circle-filled";/u,
+		/import StrokeWeightLargeIcon from "@atlaskit\/icon\/core\/stroke-weight-large";/u,
 	);
 	assert.doesNotThrow(
-		() => require.resolve("@atlaskit/icon-lab/core/question-circle-filled"),
-		"icon-lab must export question-circle-filled (7.8.0+); a stale 7.5.0 install breaks the Team EU chin",
+		() => require.resolve("@atlaskit/icon/core/stroke-weight-large"),
+		"@atlaskit/icon must export stroke-weight-large for the Team EU chin",
 	);
 	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		INDICATORS_SOURCE,
-		/renderJiraTeamEu26AgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="medium" \/>\s*\) : \(\s*<Spinner label="" pulse size="xl" variant="experimental-avatar" \/>\s*\)/u,
+		/renderJiraTeamEu26AgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<StrokeWeightLargeIcon color=\{token\("color\.icon\.information"\)\} label="" size="medium" \/>\s*\) : \(\s*<Spinner label="" pulse size="xl" variant="experimental-avatar" \/>\s*\)/u,
 	);
 	// A finished run gets the filled success status in the ADS success green,
 	// pairing with the filled error status a failed run already shows. The

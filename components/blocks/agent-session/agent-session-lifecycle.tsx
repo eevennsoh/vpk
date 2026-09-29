@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
+import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 
@@ -54,7 +54,7 @@ function IndicatorGlyph({
 				<IconTile
 					aria-hidden="true"
 					className="text-icon-information"
-					icon={<QuestionCircleFilledIcon color="currentColor" label="" size="small" />}
+					icon={<StrokeWeightLargeIcon color="currentColor" label="" size="small" />}
 					iconSize={compact ? "small" : "medium"}
 					label=""
 					size="small"
