@@ -179,7 +179,7 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 			expect(probe.outlines).toBe(probe.visibleCards);
 			expect(probe.outlines).toBeGreaterThan(0);
 			expect(probe.outlines).toBeLessThan(13);
-			expect(probe.duration).toBe(620);
+			expect(probe.duration).toBe(650);
 			expect(probe.traceFinishedAt).toBeGreaterThan(probe.traceAt);
 			expect(probe.finaleAt).toBeGreaterThanOrEqual(probe.traceFinishedAt);
 		} else expect(probe.traceAt).toBe(0);

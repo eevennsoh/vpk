@@ -3,10 +3,10 @@ import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card
 import { JIRA_LINKING_GLOW_DEFAULT_COLOR } from "@/components/blocks/jira-linking/glow-motion";
 import { JIRA_KANBAN_CARD_LAYOUT } from "./card-motion";
 
-// Reference choreography: the reveal and the border travel use separate clocks.
+// The reveal stays responsive while the decorative border has time to travel.
 export const CARD_DROP_STACK_EXPAND_MS = 420;
-export const CARD_DROP_SHIMMER_MS = 620;
-export const SINGLE_CARD_DROP_SHIMMER_MS = 500;
+export const CARD_DROP_SHIMMER_MS = 650; // duration-slowest + duration-xxshort
+export const SINGLE_CARD_DROP_SHIMMER_MS = 650; // duration-slowest + duration-xxshort
 
 interface DropCard {
 	code: string;
@@ -101,7 +101,7 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 	const outlines = make("g", { mask: `url(#${id})` }, svg);
 	for (const { surface, surfaceRect: rect, radius } of cards) {
 		const outline = make("rect", {
-			rx: Number.parseFloat(radius) || 8, fill: "none", stroke: columnTitle === "Done" ? token("color.border.success") : token("color.border.brand"),
+			rx: Number.parseFloat(radius) || 8, fill: "none", stroke: columnTitle === "Done" ? token("color.border.success") : token("color.border.bold"),
 			"stroke-width": 1, "vector-effect": "non-scaling-stroke",
 		}, outlines);
 		positionTraceRect(outline, rect, left, top, 0.5);
@@ -129,7 +129,12 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 		{ transform: transformAt(0.34, 1.18), offset: 0.34 },
 		{ transform: transformAt(0.7, 0.68), offset: 0.7 },
 		{ transform: transformAt(1, 1.08) },
-	], { duration: isSingleCard ? SINGLE_CARD_DROP_SHIMMER_MS : CARD_DROP_SHIMMER_MS, easing: "cubic-bezier(0.42, 0, 0.9, 1)", fill: "forwards" });
+	], {
+		duration: isSingleCard ? SINGLE_CARD_DROP_SHIMMER_MS : CARD_DROP_SHIMMER_MS,
+		// A collection lingers on its lead card, then accelerates through the rest (ease-in).
+		easing: isSingleCard ? "cubic-bezier(0.42, 0, 0.9, 1)" : "cubic-bezier(0.6, 0, 0.8, 0.6)",
+		fill: "forwards",
+	});
 	return { animation, restore: () => {
 		stopped = true;
 		cancelAnimationFrame(frame);

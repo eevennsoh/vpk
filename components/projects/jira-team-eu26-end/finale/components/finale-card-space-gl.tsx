@@ -220,6 +220,9 @@ void main() {
 	float edge = roundedBox((vUv - 0.5) * uSize, uSize * 0.5, uRadius);
 	vec4 tile = vec4(uTileColor, 1.0) * (1.0 - smoothstep(-0.75, 0.75, edge));
 	vec4 colour = mix(card, tile, uFace);
+	// Ink belongs to the front. Keep the same silhouette and premultiplied
+	// edge coverage on the blank paper back, including the card-to-tile morph.
+	if (!gl_FrontFacing) colour = vec4(uTileColor * colour.a, colour.a);
 	// The key light models the folds, relative to the sheet lying flat: faces
 	// turned from the light dim toward the ADS shadow blue, faces turned to it
 	// lift a touch, so light and shade travel through the sheet with the wave.

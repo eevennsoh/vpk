@@ -145,6 +145,8 @@ test("a single moved card waits for surrounding reflow before becoming visible a
 	entry.onfinish();
 	assert.equal(entry.node.inert, false);
 	assert.equal(entry.node.getAttribute("aria-hidden"), null);
+	assert.equal(h.complete(), 0, "the card is interactive before its longer trace completes");
+	assert.notEqual(h.doc.body.children[0].removed, true);
 	h.animations[0].onfinish();
 	assert.equal(h.complete(), 1);
 });
@@ -166,7 +168,7 @@ test("a scrolled cohort starts its sweep at the first visible destination card",
 	assert.equal(h.nodes.filter((node) => node.attributes.stroke).length, 1);
 	assert.equal(h.animations.length, 1);
 	assert.equal(h.doc.body.children[0].style.top, "328px");
-	assert.equal(h.animations[0].options.duration, 500);
+	assert.equal(h.animations[0].options.duration, 650);
 });
 
 test("Done traces one measured collection with 1px success outlines and a push-pull band", () => {
@@ -188,8 +190,8 @@ test("Done traces one measured collection with 1px success outlines and a push-p
 	}
 	assert.deepEqual(h.nodes.filter((node) => node.name === "stop").map((node) => [node.attributes.offset, node.attributes["stop-opacity"]]), [["0%", "0"], ["45%", "0.18"], ["72%", "0.5"], ["92%", "1"], ["100%", "0.25"]]);
 	const band = h.animations[0];
-	assert.equal(band.options.duration, 620);
-	assert.equal(band.options.easing, "cubic-bezier(0.42, 0, 0.9, 1)");
+	assert.equal(band.options.duration, 650);
+	assert.equal(band.options.easing, "cubic-bezier(0.6, 0, 0.8, 0.6)");
 	assert.equal(band.keyframes[0].transform, "translateY(0px) scaleY(0.55)");
 	assert.match(band.keyframes[1].transform, /scaleY\(1.18\)/u);
 	assert.match(band.keyframes[2].transform, /scaleY\(0.68\)/u);
@@ -230,27 +232,28 @@ for (const column of ["To do", "In progress", "In review", "Done"]) {
 		const outlines = h.nodes.filter((node) => node.attributes.stroke);
 		assert.equal(outlines.length, 2);
 		for (const outline of outlines) {
-			assert.equal(outline.attributes.stroke, column === "Done" ? "token:color.border.success" : "token:color.border.brand");
+			assert.equal(outline.attributes.stroke, column === "Done" ? "token:color.border.success" : "token:color.border.bold");
 			assert.equal(outline.attributes.x, "0.5");
 			assert.equal(outline.attributes.width, "279");
 		}
 		const trace = h.animations[0];
 		assert.match(trace.keyframes[0].transform, /^translateY\(0px\)/u);
 		assert.match(trace.keyframes.at(-1).transform, /^translateY\([0-9]/u);
-		assert.equal(trace.options.duration, 620);
+		assert.equal(trace.options.duration, 650);
 		trace.onfinish();
 		assert.equal(h.doc.body.children[0].removed, true);
 	});
 }
 
-test("single and bulk traces use the upstream timing and band geometry", () => {
+test("single and bulk traces use slower feedback timing with the existing band geometry", () => {
 	for (const count of [1, 2, 3, 4, 13]) {
 		for (const surfaceHeight of [64, 120, 400]) {
 			const h = fixture(count, "Done", { surfaceHeight, slotHeight: surfaceHeight, step: surfaceHeight + 8 }); h.start();
 			const trace = h.animations[0];
 			const height = (count - 1) * (surfaceHeight + 8) + surfaceHeight;
 			const bandLength = count === 1 ? Math.min(220, Math.max(112, height * 0.72)) : Math.min(160, Math.max(72, height * 0.45));
-			assert.equal(trace.options.duration, count === 1 ? 500 : 620);
+			assert.equal(trace.options.duration, 650);
+			assert.equal(trace.options.easing, count === 1 ? "cubic-bezier(0.42, 0, 0.9, 1)" : "cubic-bezier(0.6, 0, 0.8, 0.6)");
 			assert.equal(trace.node.attributes.height, String(bandLength));
 			assert.equal(trace.node.attributes.y, String(-bandLength));
 			assert.equal(h.nodes.find((node) => node.name === "mask").attributes["mask-type"], "luminance");

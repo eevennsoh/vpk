@@ -90,7 +90,22 @@ for (const [route, projectCodes, destination] of [
 					await expect(trace).toHaveCount(1);
 					await expect(trace).toHaveAttribute("aria-hidden", "true");
 					await expect(trace.locator("g rect")).toHaveCount(count);
-					for (const outline of await trace.locator("g rect").all()) await expect(outline).toHaveAttribute("stroke", destination === "Done" ? "var(--ds-border-success)" : "var(--ds-border-brand)");
+					expect(await page.evaluate(() => Number(window.solitaireDropAnimations.find((animation) => (animation.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]"))!.effect!.getTiming().duration))).toBe(650);
+					for (const outline of await trace.locator("g rect").all()) await expect(outline).toHaveAttribute("stroke", destination === "Done" ? "var(--ds-border-success)" : "var(--ds-border-bold)");
+					if (count > 1) {
+						const travel = await page.evaluate(async () => {
+							const animation = window.solitaireDropAnimations.find((item) => (item.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]"))!;
+							const band = (animation.effect as KeyframeEffect).target!;
+							const positions: number[] = [];
+							for (const fraction of [0.25, 0.5, 0.75]) {
+								animation.currentTime = Number(animation.effect!.getTiming().duration) * fraction;
+								await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+								positions.push(new DOMMatrix(getComputedStyle(band).transform).m42);
+							}
+							return positions;
+						});
+						expect(travel[2] - travel[1]).toBeGreaterThan(travel[1] - travel[0]);
+					}
 					expect(await page.evaluate(() => window.solitaireDropAnimations.filter((animation) => !(animation.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]")).length)).toBe(count - 1);
 					await page.evaluate(() => window.solitaireDropAnimations.forEach((animation) => { animation.currentTime = 240; }));
 				}
@@ -125,7 +140,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 					return { timing, trace: effect.target?.closest("[data-issue-drop-trace]") !== null, travel };
 				}));
 				const trace = evidence.find((item) => item.trace)!;
-				const expectedDuration = count === 1 ? 500 : 620;
+				const expectedDuration = 650;
 				expect(Number(trace.timing.duration)).toBeCloseTo(expectedDuration, 3);
 				const reveals = evidence.filter((item) => !item.trace);
 				expect(reveals).toHaveLength(count - 1);
@@ -171,7 +186,7 @@ test("other destinations sweep a brand-blue border, and Escape leaves the source
 	await expect(review.locator("[data-issue-key]")).toHaveCount(2);
 	const trace = page.locator("[data-issue-drop-trace]");
 	await expect(trace).toHaveCount(1);
-	for (const outline of await trace.locator("g rect").all()) await expect(outline).toHaveAttribute("stroke", "var(--ds-border-brand)");
+	for (const outline of await trace.locator("g rect").all()) await expect(outline).toHaveAttribute("stroke", "var(--ds-border-bold)");
 	await page.evaluate(() => {
 		for (const animation of window.solitaireDropAnimations) {
 			const target = (animation.effect as KeyframeEffect).target;
