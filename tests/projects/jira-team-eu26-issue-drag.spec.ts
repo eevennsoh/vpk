@@ -7,6 +7,20 @@ const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`shared default column drop chrome respects reduced motion (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/preview/blocks/jira-kanban`);
+		const target = page.locator('[data-jira-kanban-column]').first();
+		await expect(target).toBeVisible();
+		if (reducedMotion === "reduce") {
+			await expect(target).toHaveCSS("transition-property", "none");
+		} else {
+			await expect(target).not.toHaveCSS("transition-property", "none");
+		}
+	});
+}
+
 for (const route of ["/jira-team-eu26", "/preview/blocks/jira-dragging"]) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		test(`grid selection and column-scoped Select all on ${route} (${reducedMotion})`, async ({ page }) => {
