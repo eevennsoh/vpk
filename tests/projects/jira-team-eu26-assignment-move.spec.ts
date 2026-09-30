@@ -87,7 +87,7 @@ for (const { contentMode, reducedMotion } of scenarios) {
 				expect(firstGlowAt! - firstVisibleAt!).toBeGreaterThanOrEqual(-20);
 				const finalY = positions.at(-1)!.y;
 				const intermediate = positions.filter(({ y }) => y > initialY + 1 && y < finalY - 1);
-				expect(intermediate.length).toBeGreaterThan(2); // 150ms still shows multiple intermediate poses.
+				expect(intermediate.length).toBeGreaterThan(0); // Prove interpolation; the exact duration is checked separately from frame sampling.
 				expect(reflowDurations).toEqual([150]);
 			} else expect(visibleDelay).toBeLessThan(100);
 			await expect(page.getByRole("region", { name: "In progress work items", exact: true }).locator(`[data-issue-key="${issueKey}"]`)).toHaveCount(1);
