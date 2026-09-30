@@ -11,8 +11,9 @@ import { selectFinaleFeatures, type FinaleStory } from "./data/finale-stories";
 import { useFinaleAudioClock } from "./hooks/use-finale-audio-clock";
 import { useFinaleControls } from "./hooks/use-finale-controls";
 import { printFinaleColumn, useFinaleCardPrints } from "./hooks/use-finale-prints";
-import { captureJiraTeamEu26DoneColumn } from "./lib/capture-done-column";
+import { captureJiraTeamEu26DoneColumn, waitForFinaleColumnCapture } from "./lib/capture-done-column";
 import { nextFinaleDragOrder } from "./lib/finale-drag-order";
+import { playFinaleConfetti } from "./lib/play-finale-confetti";
 import { FINALE_DONE_COLUMN_TITLE, isJiraTeamEu26FinaleReady, parseFinaleSearch } from "./lib/finale-trigger";
 import type { FinaleSceneInput } from "./scenes/scene-board-to-bento";
 
@@ -77,10 +78,9 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		const next = nextFinaleDragOrder(dragOrderRef.current, codes);
 		if (next === dragOrderRef.current) return;
 		const known = new Set(dragOrderRef.current);
-		// The move that completes the board is about to open the finale: cards it
-		// already pre-printed keep that print instead of re-printing on arrival,
-		// which would compete with the column print the flash waits on.
-		for (const code of next) if (!known.has(code) && !(ready && prints.get(code))) prints.schedule(code);
+		// Completion preparation owns any missing prints. Arrival timers must
+		// not compete with the column image that the shader needs first.
+		for (const code of next) if (!known.has(code) && !ready) prints.schedule(code);
 		dragOrderRef.current = next;
 	}, [doneKey, prints, ready]);
 
@@ -96,6 +96,15 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		let cancelled = false;
 		const controller = new AbortController();
 		const open = async () => {
+			// Celebrate as soon as the real card drop has settled. Image preparation
+			// runs alongside the burst so it cannot delay that first visible response.
+			// Exact rehearsal frames and reduced motion retain their existing path.
+			const hasConfetti = !reducedMotion && preparation.seek === 0 && !preparation.hold;
+			const confetti = hasConfetti
+				? waitForFinaleColumnCapture(controller.signal).then((column) => (
+					column ? playFinaleConfetti(controller.signal, reducedMotion) : undefined
+				))
+				: Promise.resolve();
 			// Never hold the show for a print: late ones fall back to plain sheets.
 			// The "Team 26" title face: resolves at once when the page already uses it.
 			// The whole column, which the flash refracts under the card sheets.
@@ -103,12 +112,17 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			const chrome = printFinaleColumn(controller.signal).then((canvas) => {
 				columnPrint = canvas;
 			});
-			const ready = Promise.all([prints.ensure(preparation.dragOrder), document.fonts.load('400 112px "Atlassian Sans"', "Team 0123456789").catch(() => []), chrome]);
-			await Promise.race([ready, new Promise((resolve) => window.setTimeout(resolve, FINALE_PRINT_TIMEOUT_MS))]);
+			// Give the mandatory column image priority over optional late card sheets.
+			const sheets = hasConfetti ? chrome.then(() => prints.ensure(preparation.dragOrder)) : prints.ensure(preparation.dragOrder);
+			const ready = Promise.all([sheets, document.fonts.load('400 112px "Atlassian Sans"', "Team 0123456789").catch(() => []), chrome]);
+			// Late card sheets already replace their stand-ins during the finale.
+			// With confetti, its exit is the deadline; never add an image-only hold.
+			await Promise.race([ready, hasConfetti ? confetti : new Promise((resolve) => window.setTimeout(resolve, FINALE_PRINT_TIMEOUT_MS))]);
 			// Card sheets may arrive late; the column print cannot be missing or mid-drop.
-			await chrome;
+			await Promise.all([chrome, confetti]);
 			if (cancelled) return;
 			if (!columnPrint) { setPreparation(null); return; }
+			// Start the unchanged shader clock only after every particle is gone.
 			clock.hold(preparation.seek);
 			startAfterMountRef.current = preparation.hold ? null : preparation.seek;
 			setScene({
@@ -125,7 +139,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			cancelled = true;
 			controller.abort();
 		};
-	}, [clock, preparation, prints]);
+	}, [clock, preparation, prints, reducedMotion]);
 
 	// Child renderer effects initialise before this parent effect. Starting the
 	// clock here prevents setup work from skipping the foot of the column sweep.
@@ -198,7 +212,11 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		}, EXIT_FADE_MS);
 	}, [clock]);
 
-	const replay = useCallback(() => scrub(0, false), [scrub]);
+	const replay = useCallback(() => {
+		clock.stop();
+		setScene(null);
+		prepare(0, false);
+	}, [clock, prepare]);
 	useFinaleControls(scene !== null && !closing, {
 		onExit: exit,
 		onTogglePause: clock.togglePause,

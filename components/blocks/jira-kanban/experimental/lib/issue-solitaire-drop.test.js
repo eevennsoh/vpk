@@ -245,6 +245,23 @@ for (const column of ["To do", "In progress", "In review", "Done"]) {
 	});
 }
 
+test("bulk Done borders get their full sweep after the card stack has unfolded", () => {
+	const h = fixture(4, "Done"); h.start();
+	const trace = h.animations[0];
+	const settledAt = Math.max(...h.animations.slice(1).map(animation => animation.options.delay + animation.options.duration));
+	assert.equal(trace.options.delay, settledAt, "the border sweep cannot start while the card borders are still moving");
+	assert.equal(trace.options.duration, 650, "the entire existing trace plays after the reveal");
+	for (const animation of h.animations.slice(1)) animation.onfinish();
+	assert.equal(h.complete(), 0, "settled cards cannot release the celebration while their border is pending");
+	trace.onfinish();
+	assert.equal(h.complete(), 1);
+	assert.equal(h.doc.body.children[0].removed, true, "the finale gate releases only after the full sweep");
+	const other = fixture(4, "In review"); other.start();
+	assert.equal(other.animations[0].options.delay, 0, "other destinations keep their existing timing");
+	const single = fixture(1, "Done"); single.start();
+	assert.equal(single.animations[0].options.delay, 0, "a single card has no stack to wait for");
+});
+
 test("single and bulk traces use slower feedback timing with the existing band geometry", () => {
 	for (const count of [1, 2, 3, 4, 13]) {
 		for (const surfaceHeight of [64, 120, 400]) {
