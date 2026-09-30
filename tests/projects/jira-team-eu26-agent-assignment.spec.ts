@@ -572,7 +572,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
 		await page.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-118"]').hover();
 		await page.getByRole("button", { name: "More actions for PAY-118", exact: true }).click();
-		await page.getByRole("menuitem", { name: "Assign agents Open submenu", exact: true }).click();
+		await page.getByRole("menuitem", { name: "Add agent Open submenu", exact: true }).click();
 		const agent = page.getByRole("option").filter({ hasText: "Readiness Checker" });
 		await expect(agent).toBeVisible();
 
