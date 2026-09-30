@@ -169,6 +169,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	/** Route-owned avatar presentation and hover details; filtering stays in the board. */
 	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
+	/** Keep filter selections independent when the route swaps board datasets. */
+	boardFilterScopeKey?: string;
 	/** Total avatar slots in the header, including Unassigned. */
 	headerAvatarLimit?: number;
 	showUnassignedHeaderAvatar?: boolean;

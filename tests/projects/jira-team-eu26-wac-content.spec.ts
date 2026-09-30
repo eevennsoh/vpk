@@ -13,6 +13,33 @@ async function toggleWacContent(page: Page, expandSessions = true) {
 	if (expandSessions && await expand.count() > 0) await expand.click();
 }
 
+test("content presets retain their own assignee filters without hiding the other board", async ({ page }) => {
+	await page.setViewportSize({ width: 1720, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/jira-team-eu26"));
+	const venn = page.getByRole("button", { name: "Filter board by Venn", exact: true });
+	await venn.click();
+	await expect(venn).toHaveAttribute("aria-pressed", "true");
+	await toggleWacContent(page, false);
+	await expect(page.getByRole("heading", { name: "Checkout roadmap", exact: true })).toBeVisible();
+	const cards = page.locator('[data-issue-key][data-board-column-title]');
+	await expect(cards).toHaveCount(11);
+	const diego = page.getByRole("button", { name: "Filter board by Diego Santos", exact: true });
+	await expect(diego).toHaveAttribute("aria-pressed", "false");
+	await diego.click();
+	await expect(diego).toHaveAttribute("aria-pressed", "true");
+	const filteredKeys = await cards.evaluateAll((items) => items.map((item) => item.getAttribute("data-issue-key")));
+	expect(filteredKeys.length).toBeGreaterThan(0);
+	expect(filteredKeys.length).toBeLessThan(11);
+	await toggleWacContent(page, false);
+	await expect(venn).toHaveAttribute("aria-pressed", "true");
+	await toggleWacContent(page, false);
+	await expect(diego).toHaveAttribute("aria-pressed", "true");
+	await expect.poll(() => cards.evaluateAll((items) => items.map((item) => item.getAttribute("data-issue-key")))).toEqual(filteredKeys);
+	await diego.click();
+	await expect(cards).toHaveCount(11);
+});
+
 test("enabling WAC starts sessions collapsed and lets the viewer expand them", async ({ page }) => {
 	await page.setViewportSize({ width: 1720, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

@@ -200,6 +200,7 @@ function ExperimentalJiraKanbanPageContent({
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
+	boardFilterScopeKey,
 	columnChrome, columnSizing, columnWidth, boardAvatar, boardTitle,
 	compactHeader = false,
 	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee,
@@ -343,7 +344,7 @@ function ExperimentalJiraKanbanPageContent({
 		setDraggedCard(null);
 		setFocusedCollapsedColumns(null);
 	}, []);
-	const boardFilter = useBoardFilter({ onAssigneeChange: resetAssigneeScopedBoardState });
+	const boardFilter = useBoardFilter({ onAssigneeChange: resetAssigneeScopedBoardState, scopeKey: boardFilterScopeKey });
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
 	const [localTimelineLastViewedAt, setLocalTimelineLastViewedAt] = useState<string | null>(() => (
 		insightsEnabled && controlledMode === "pulse"

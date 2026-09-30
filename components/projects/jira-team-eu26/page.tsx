@@ -432,6 +432,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						ariaLabel={wacContent ? "Track the Checkout roadmap. Scroll horizontally to review all delivery statuses." : "Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."}
 						boardTitle={wacContent ? WAC_BOARD_TITLE : undefined}
 						boardColumns={boardColumns}
+						boardFilterScopeKey={contentMode}
 						defaultAgentSessionColumnCollapsed={wacContent}
 						defaultShowUntracked={false}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
