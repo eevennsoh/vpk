@@ -34,10 +34,6 @@ const CARD_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-card.tsx"),
 	"utf8",
 );
-const LIFECYCLE_TRANSITION_SOURCE = readFileSync(
-	join(__dirname, "../agent-session/use-agent-session-lifecycle-transition.ts"),
-	"utf8",
-);
 const SESSION_INDEX_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/index.tsx"),
 	"utf8",
@@ -96,8 +92,7 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 	// Reduced motion drops the beat and keeps the mark. The beat is keyed on
 	// `isArriving`, never on `isNew` — see the one-shot test below.
-	assert.match(LIFECYCLE_TRANSITION_SOURCE, /const shouldPlayArrival = isArriving && !isDeparting && !shouldReduceMotion;/u);
-	assert.match(CARD_SOURCE, /useAgentSessionLifecycleTransition\(\{/u);
+	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !isDeparting && !shouldReduceMotion;/u);
 	assert.match(ARRIVAL_HOOK_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_HIDE_MS/u);
 	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_COMPLETE_MS/u);

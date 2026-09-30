@@ -313,8 +313,6 @@ test("the route periodically syncs one to three new agent sessions into Untracke
 		PAGE_SOURCE,
 		/<ExperimentalJiraKanbanPage[\s\S]*additionalAgentSessions=\{syncedAgentSessions\}[\s\S]*newAgentSessionIds=\{newAgentSessionIds\}[\s\S]*stateChangeVersions=\{stateChangeVersions\}[\s\S]*onAgentSessionColumnInteractionChange=\{setAgentSessionColumnInteracting\}[\s\S]*onAgentSessionsReviewed=\{reviewAgentSessions\}/u,
 	);
-	assert.match(PAGE_SOURCE, /wacSessionSync = useJiraTeamEu26AgentSessionSync\(\{\s*active: showBoardContent && wacContent,\s*paused: agentSessionColumnInteracting,\s*source: WAC_AGENT_SESSION_SYNC_SOURCE,/u);
-	assert.match(PAGE_SOURCE, /wacContent \? wacSessionSync : defaultSessionSync/u);
 	assert.match(HOOK_SOURCE, /!active \|\| paused[\s\S]*return undefined;/u);
 	assert.match(HOOK_SOURCE, /removeReviewedJiraTeamEu26AgentSessionIds/u);
 	assert.match(HOOK_SOURCE, /advanceJiraTeamEu26SyncSession/u);

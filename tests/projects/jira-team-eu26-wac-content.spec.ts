@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { appUrl } from "../helpers/origin";
 
 test.use({ ignoreHTTPSErrors: true });
 
@@ -15,7 +16,7 @@ async function toggleWacContent(page: Page, expandSessions = true) {
 test("enabling WAC starts sessions collapsed and lets the viewer expand them", async ({ page }) => {
 	await page.setViewportSize({ width: 1720, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	await expect(page.getByRole("button", { name: "Collapse Unlink sessions column", exact: true })).toBeVisible();
 	await toggleWacContent(page, false);
 	const expand = page.getByRole("button", { name: "Expand Unlink sessions column", exact: true });
@@ -34,7 +35,7 @@ test("enabling WAC starts sessions collapsed and lets the viewer expand them", a
 test("WAC keeps archived sessions and list drafts separate from the original preset", async ({ page }) => {
 	await page.setViewportSize({ width: 1720, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	const originalSession = page.getByTestId("agent-session-row-lw-scope-thread");
 	await expect(originalSession).toHaveCount(1);
 	await toggleWacContent(page);
@@ -66,7 +67,7 @@ for (const scenario of [
 	test(`WAC content switches the board and list together (${scenario.width}, ${scenario.reducedMotion})`, async ({ page }) => {
 		await page.setViewportSize({ width: scenario.width, height: 1100 });
 		await page.emulateMedia({ reducedMotion: scenario.reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
 		await toggleWacContent(page);
 		await expect(page.getByRole("heading", { name: "Checkout roadmap", exact: true })).toBeVisible();

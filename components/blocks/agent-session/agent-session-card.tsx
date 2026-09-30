@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
 import { motion } from "motion/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -63,10 +63,10 @@ import {
 	type AgentSessionWorkItemOption,
 } from "./agent-session-types";
 import { useAgentSessionMenu } from "./use-agent-session-menu";
-import { AGENT_SESSION_STATE_AVATAR_MOTION, useAgentSessionLifecycleTransition } from "./use-agent-session-lifecycle-transition";
 import { motionEase } from "@/lib/motion";
 
 const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+const STATUS_REENTRY_AVATAR_MOTION = { repeat: 0, repeatDelayMs: 0 } as const;
 
 /** Keep row registration and focus restoration tied to the departing DOM owner. */
 function useAgentSessionDepartureFocus({
@@ -186,9 +186,36 @@ function useAgentSessionCardTransition({
 	onArrivalComplete?: () => void;
 	shouldReduceMotion: boolean | null;
 }>) {
-	const { handleArrivalComplete, handleAvatarComplete, shouldPlayArrival, shouldPlayDeparture, shouldPlayStatusReentry, shouldRotateAvatar, shownLifecycleState } = useAgentSessionLifecycleTransition({
-		state: item.state, hasAnimatedIdentity, isArriving, isDeparting, isStateChanged, onArrivalComplete, shouldReduceMotion,
-	});
+	const [lifecycleState, setLifecycleState] = useState<AgentSessionItem["state"]>(item.state);
+	const [phase, setPhase] = useState<"arrival" | "avatar" | "status">("arrival");
+	useEffect(() => {
+		if (!isStateChanged || isDeparting || shouldReduceMotion) {
+			setLifecycleState(item.state);
+			setPhase("arrival");
+		}
+	}, [isDeparting, isStateChanged, item.state, shouldReduceMotion]);
+	// The beat, not the mark: remounting an unreviewed card must not replay it.
+	const shouldPlayArrival = isArriving && !isDeparting && !shouldReduceMotion;
+	const shouldPlayDeparture = isDeparting && !shouldReduceMotion;
+	const shouldPlayStatusReentry = shouldPlayArrival && isStateChanged && phase === "arrival";
+	// A first-place revision has no arrival callback to start the avatar beat.
+	const shouldRotateAvatar = !isDeparting && !shouldReduceMotion && (
+		phase === "avatar" || (isStateChanged && !isArriving && hasAnimatedIdentity && lifecycleState !== item.state)
+	);
+	// Both in-place revisions and reentries hold the old glyph until the beat ends.
+	const shownLifecycleState = shouldPlayStatusReentry || shouldRotateAvatar ? lifecycleState : item.state;
+	const handleArrivalComplete = () => {
+		if (shouldPlayArrival && phase === "arrival") {
+			const rotateAvatar = isStateChanged && hasAnimatedIdentity;
+			setPhase(rotateAvatar ? "avatar" : "status");
+			if (!rotateAvatar) setLifecycleState(item.state);
+			onArrivalComplete?.();
+		}
+	};
+	const handleAvatarComplete = () => {
+		setLifecycleState(item.state);
+		setPhase("status");
+	};
 	return {
 		handleArrivalComplete,
 		handleAvatarComplete,
@@ -720,7 +747,7 @@ export function AgentSessionCard({
 											attributionOrder="agent-first"
 											sizePx={32}
 											animate={shouldRotateAvatar}
-											motion={AGENT_SESSION_STATE_AVATAR_MOTION}
+											motion={STATUS_REENTRY_AVATAR_MOTION}
 											onAnimationComplete={handleAvatarComplete}
 										/>
 									);

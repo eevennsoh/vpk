@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { appUrl } from "../helpers/origin";
 
 test.use({ ignoreHTTPSErrors: true, viewport: { width: 1720, height: 1100 } });
 
 test("card picker pins the project's coding agents in both content presets", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
 	let defaultCatalog: unknown;
 	for (const content of ["default", "wac"] as const) {
@@ -26,6 +27,7 @@ test("card picker pins the project's coding agents in both content presets", asy
 		await expect(page.getByPlaceholder("Search agents", { exact: true })).toBeVisible();
 		const options = page.getByRole("listbox", { name: "Suggestions", exact: true }).getByRole("option");
 		await expect(options).toHaveCount(8);
+		await expect(options.locator('[data-slot="avatar"] img')).toHaveCount(8);
 		const catalog = await options.evaluateAll((items) => items.map((item) => ({
 			id: item.getAttribute("data-value"),
 			label: item.textContent,
@@ -59,7 +61,7 @@ test("card picker pins the project's coding agents in both content presets", asy
 for (const content of ["default", "wac"] as const) {
 	test(`custom agent search and assignment work in ${content} content`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: "reduce" });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		if (content === "wac") {
 			await page.getByRole("button", { name: "Settings", exact: true }).click();
 			await page.getByRole("menuitemcheckbox", { name: "WAC Content", exact: true }).click();

@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { appUrl } from "../helpers/origin";
 
 test.use({ ignoreHTTPSErrors: true, viewport: { width: 1720, height: 1100 } });
 
 test("WAC finishes review sessions after one minute without moving their cards", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.clock.install();
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
 	await page.clock.fastForward(90_000);
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
@@ -41,7 +42,7 @@ test("WAC review completion animates only the status icon and preserves compact 
 			value: (handler: TimerHandler, delay?: number, ...args: unknown[]) => nativeSetTimeout(handler, delay !== undefined && delay > 59_000 && delay <= 60_000 ? 2_500 : delay, ...args),
 		});
 	});
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await page.getByRole("menuitemcheckbox", { name: "WAC Content", exact: true }).click();
 	await expect(page.getByRole("heading", { name: "Checkout roadmap", exact: true })).toBeVisible();

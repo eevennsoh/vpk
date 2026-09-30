@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { appUrl } from "../helpers/origin";
 import { writeFileSync } from "node:fs";
 
 test.use({ ignoreHTTPSErrors: true, viewport: { width: 1720, height: 1100 } });
@@ -11,7 +12,7 @@ for (const { contentMode, reducedMotion } of scenarios) {
 	for (const issueKey of ["PAY-118", "PAY-113"]) {
 		test(`${issueKey} agent assignment glows only its own card without a move trace (${contentMode}, ${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
-			await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+			await page.goto(appUrl("/jira-team-eu26"));
 			if (contentMode === "wac") {
 				await page.getByRole("button", { name: "Settings", exact: true }).click();
 				await page.getByRole("menuitemcheckbox", { name: "WAC Content", exact: true }).click();
@@ -101,7 +102,7 @@ for (const { contentMode, reducedMotion } of scenarios) {
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`manual card moves settle existing cards before revealing the incoming card (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		await page.getByRole("menuitemcheckbox", { name: "WAC Content", exact: true }).click();
 		const source = page.locator('[data-issue-key="PAY-118"] [draggable]').first();

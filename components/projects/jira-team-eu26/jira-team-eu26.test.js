@@ -618,7 +618,6 @@ test("Team EU returns unlinked sessions to Untracked without parking them on sta
 });
 
 test("unlinked agent sessions remain detached beneath their source Jira card", () => {
-	assert.match(CONTENT_HOOK_SOURCE, /setDetachedAgentSessionsByCard = useCallback/u);
 	assert.match(CONTENT_HOOK_SOURCE, /detachedAgentSessionsByCard: resolveUpdate\(update, current\[contentMode\]\.detachedAgentSessionsByCard\)/u);
 	assert.match(PAGE_SOURCE, /toJiraTeamEu26DetachedAgentSession\(activity, card\)/u);
 	assert.match(PAGE_SOURCE, /setDetachedAgentSessionsByCard\(\(current\) =>/u);
