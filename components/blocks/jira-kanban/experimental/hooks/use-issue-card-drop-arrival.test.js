@@ -44,6 +44,8 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	const columnNodes = columns.map((column) => new Element(root, { jiraKanbanColumn: column.title }));
 	root.querySelectorAll = () => columnNodes;
 	root.ownerDocument = {
+		visibilityState: "visible",
+		dispatch(name) { for (const callback of [...listeners.get(name) ?? []]) callback({ target: root.ownerDocument }); },
 		addEventListener(name, callback) { const callbacks = listeners.get(name) ?? new Set(); callbacks.add(callback); listeners.set(name, callbacks); },
 		removeEventListener(name, callback) { listeners.get(name)?.delete(callback); },
 	};
@@ -69,7 +71,7 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	vm.runInNewContext(compiled, {
 		module: loaded, exports: loaded.exports, Element, window: { addEventListener() {}, removeEventListener() {} },
 		requestAnimationFrame: (callback) => frames.push(callback), cancelAnimationFrame: (id) => { frames[id - 1] = null; },
-		setTimeout: (callback) => timers.push(callback), clearTimeout: (id) => { timers[id - 1] = null; },
+		setTimeout: (callback, delay = 0) => timers.push({ callback, delay }), clearTimeout: (id) => { timers[id - 1] = null; },
 		require(name) {
 			if (name === "react") return react;
 			if (name === "react-dom") return { flushSync(callback) { events.push("flushSync"); callback(); render(); } };
@@ -108,7 +110,11 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 		dragEnd() { if (!api.deferDragEnd(() => events.push("dragend"))) events.push("dragend"); },
 		/** The frame after release paints; the task it queues then runs. */
 		frame() { for (const callback of frames.splice(0)) callback?.(); },
-		task() { for (const callback of timers.splice(0)) callback?.(); },
+		/** Runs the timers due now; later ones (the fallback) stay queued. */
+		task() { for (const [index, timer] of timers.entries()) if (timer && timer.delay === 0) { timers[index] = null; timer.callback(); } },
+		/** Lets every pending timer's delay pass, as throttled frames would. */
+		elapse() { for (const [index, timer] of timers.entries()) if (timer) { timers[index] = null; timer.callback(); } },
+		hide() { root.ownerDocument.visibilityState = "hidden"; root.ownerDocument.dispatch("visibilitychange"); },
 		unmount() { for (const effect of effects) effect?.cleanup?.(); },
 		scroll(title) {
 			const target = title === "document" ? root.ownerDocument : title === "board" ? root : new Element(columnNodes.find((node) => node.dataset.jiraKanbanColumn === title));
@@ -447,3 +453,28 @@ test("an interrupted settled release still commits its move and dragend", () => 
 	assert.equal(h.events.filter((event) => event === "commit").length, 1, "the queued task must not commit twice");
 });
 
+
+// rAF pauses in hidden tabs and throttles in occluded windows; a release must
+// never leave its move and dragend waiting for a frame that may not come.
+test("a settled release still commits its move when frames never arrive", () => {
+	const h = harness({ solitaire: true });
+	h.drop("Done", { status: "Done", beforeCardCode: null });
+	h.dragEnd();
+	h.task();
+	assert.equal(h.events.includes("commit"), false, "the bounded fallback is not due yet");
+	h.elapse();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "flushSync", "commit", "dragend", "reveal", "remove preview"]);
+	h.frame(); h.task(); h.hide();
+	assert.equal(h.events.filter((event) => event === "commit").length, 1, "a late frame or hide must not commit again");
+});
+
+test("hiding the page lands a settled release at once", () => {
+	const h = harness({ solitaire: true });
+	h.drop("Done", { status: "Done", beforeCardCode: null });
+	h.dragEnd();
+	h.hide();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "flushSync", "commit", "dragend", "reveal", "remove preview"]);
+	assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), ["A", "B"]);
+	h.elapse(); h.frame(); h.task();
+	assert.equal(h.events.filter((event) => event === "commit").length, 1);
+});

@@ -23,12 +23,14 @@ export interface IssueCardMove {
 
 /** A released cohort whose move commits in the task after its settled face paints. */
 interface SettledIssueDrop {
-	readonly preview: HTMLElement;
 	readonly dragEnds: (() => void)[];
-	frame: number;
-	timer: ReturnType<typeof setTimeout> | undefined;
 	readonly commit: (flush: boolean) => void;
 }
+
+// rAF pauses in hidden tabs and throttles in occluded windows. The normal path
+// commits within ~2 frames even at 60 Hz; past this bound the move commits
+// without waiting for the settled face to paint.
+const SETTLED_RELEASE_COMMIT_FALLBACK_MS = 100;
 
 /** Native issue drops share the agent-session card entrance once their owner commits the move. */
 export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, createdArrival, draggedCardCode, selectedCardCodes, onDrop, onMove, onAutoArrange, onCreatedComplete, solitaire = false, stopPreview, releasePreview }: Readonly<{
@@ -218,13 +220,20 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		const released = releasePreview();
 		if (!released) return false;
 		settleIssueCohortPreview(released, landing);
+		const doc = root.ownerDocument;
+		let frame = 0;
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		// A hidden page never paints the face; land the move now.
+		const commitWhenHidden = () => { if (doc.visibilityState === "hidden") settled.commit(true); };
 		const settled: SettledIssueDrop = {
-			preview: released, dragEnds: [], frame: 0, timer: undefined,
+			dragEnds: [],
 			commit: (flush) => {
 				if (settledDrop.current !== settled) return;
 				settledDrop.current = null;
-				cancelAnimationFrame(settled.frame);
-				clearTimeout(settled.timer);
+				cancelAnimationFrame(frame);
+				clearTimeout(timer);
+				clearTimeout(fallback);
+				doc.removeEventListener("visibilitychange", commitWhenHidden);
 				const commit = () => {
 					committers.current.captureDrop(codes, columnTitle, grabbed);
 					committers.current.onDrop?.(columnTitle, target);
@@ -235,8 +244,10 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 				released.remove();
 			},
 		};
+		const fallback = setTimeout(() => settled.commit(true), SETTLED_RELEASE_COMMIT_FALLBACK_MS);
 		settledDrop.current = settled;
-		settled.frame = requestAnimationFrame(() => { settled.timer = setTimeout(() => settled.commit(true), 0); });
+		frame = requestAnimationFrame(() => { timer = setTimeout(() => settled.commit(true), 0); });
+		doc.addEventListener("visibilitychange", commitWhenHidden);
 		return true;
 	}, [boardRef, columns, getPreview, reduceMotion, releasePreview, solitaire]);
 	const handleDrop = useCallback<NonNullable<JiraKanbanProps["onCardDrop"]>>((columnTitle, target) => {
