@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { TWGAppstack } from "@/components/ui-custom/twg-appstack";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 
 import { AgentLanyardCard } from "./components/agent-lanyard-card";
 import { AgentLanyardActions } from "./components/agent-lanyard-actions";
@@ -62,7 +63,11 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 			id={agent.id} name={agent.name} byline={agent.publisher} description={agent.description}
 			variant="agent" verified={agent.verified} accentColor={agent.accentColor}
 			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} className={className}
-			avatar={avatar ?? <Image alt="" className="absolute top-6 left-1/2 z-10 -translate-x-1/2" src={agent.avatarSrc} width={54} height={60} />}
+			avatar={avatar ?? (agent.brandName ? (
+				<span className="absolute top-6 left-1/2 z-10 -translate-x-1/2">
+					<AgentAvatarVisual animate={false} brandName={agent.brandName} label="" sizePx={48} />
+				</span>
+			) : <Image alt="" className="absolute top-6 left-1/2 z-10 -translate-x-1/2" src={agent.avatarSrc} width={54} height={60} />)}
 			footer={footer
 				? <div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack">{footer}</div>
 				: <AgentLanyardActions agent={agent} {...actions} />}

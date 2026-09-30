@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
@@ -106,15 +106,22 @@ export function AgentSessionShortLifecycleIcon({
 	animateTransition = false,
 	onTransitionComplete,
 	showWorkingSpinner = false,
+	renderGlyph,
+	transitionEffect = "scale",
 }: Readonly<{
 	accessibleState?: AgentSessionItem["state"];
 	animateTransition?: boolean;
 	onTransitionComplete?: () => void;
 	showWorkingSpinner?: boolean;
+	/** Preserve a consumer's glyph sizes while sharing the exact lifecycle swap. */
+	renderGlyph?: (state: AgentSessionItem["state"]) => ReactNode;
+	/** Fade preserves a consumer's glyph footprint throughout the state change. */
+	transitionEffect?: "scale" | "fade";
 	state: AgentSessionItem["state"];
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const playMotion = animateTransition && shouldReduceMotion !== true;
+	const scaleGlyph = transitionEffect === "scale";
 	if (state === "attention" && !animateTransition) return null;
 	if (state === "running" && !animateTransition && !showWorkingSpinner) return null;
 
@@ -128,17 +135,17 @@ export function AgentSessionShortLifecycleIcon({
 		>
 			<AnimatePresence initial={false} mode={playMotion ? "wait" : "sync"}>
 				<motion.span
-					animate={playMotion ? { opacity: 1, scale: 1 } : undefined}
+					animate={playMotion ? { opacity: 1, ...(scaleGlyph ? { scale: 1 } : {}) } : undefined}
 					aria-hidden="true"
 					className="absolute inset-0 grid place-items-center"
-					exit={playMotion ? { opacity: 0, scale: 0.6, transition: INDICATOR_EXIT } : undefined}
-					initial={playMotion ? { opacity: 0, scale: 0.6 } : false}
+					exit={playMotion ? { opacity: 0, ...(scaleGlyph ? { scale: 0.6 } : {}), transition: INDICATOR_EXIT } : undefined}
+					initial={playMotion ? { opacity: 0, ...(scaleGlyph ? { scale: 0.6 } : {}) } : false}
 					key={state}
 					onAnimationComplete={playMotion && state === accessibleState ? onTransitionComplete : undefined}
-					style={playMotion ? { willChange: "opacity, transform" } : undefined}
+					style={playMotion ? { willChange: scaleGlyph ? "opacity, transform" : "opacity" } : undefined}
 					transition={playMotion ? INDICATOR_ENTER : { duration: 0 }}
 				>
-					<IndicatorGlyph compact state={state} />
+					{renderGlyph ? renderGlyph(state) : <IndicatorGlyph compact state={state} />}
 				</motion.span>
 			</AnimatePresence>
 		</span>

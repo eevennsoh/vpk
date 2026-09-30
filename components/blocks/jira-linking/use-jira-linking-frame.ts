@@ -81,6 +81,8 @@ export interface JiraLinkingRelease {
 	target: JiraLinkingTarget | null;
 	/** Live destination geometry after layout or scrolling moves the target. */
 	resolveTarget?: () => JiraLinkingTarget | null;
+	/** Stable target identity for card glows while layout or motion changes its screen position. */
+	resolveTargetElement?: () => Element | null;
 	/**
 	 * Shape the fuse starts from, when the landing shape differs from the one the
 	 * approach grew into.

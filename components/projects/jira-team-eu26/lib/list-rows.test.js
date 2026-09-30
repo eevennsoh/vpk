@@ -14,12 +14,28 @@ const {
 	selectListRows,
 	createListWorkItemFromSession,
 	getNextPayIssueKey,
+	getJiraTeamEu26CardMove,
 	insertListOrderKey,
 	insertWorkItemCard,
 	moveListOrder,
 	progressJiraTeamEu26WorkItemOnStart,
 	toKanbanCardFromDraft,
 } = require("./list-rows.ts");
+
+test("assignment move planning preserves the source until the board captures its transition", () => {
+	const source = structuredClone(COLUMNS);
+	const plan = (key, agents) => getJiraTeamEu26CardMove(source, applyAssignedAgentIdsToColumns(source, key, agents, PAY_BOARD_CATALOG), key);
+	const firstActive = source.find((column) => column.title === "In progress").cards[0].code;
+	assert.deepEqual(plan("PAY-118", ["test-agent"]), {
+		cardCodes: ["PAY-118"],
+		columnTitle: "In progress",
+		target: { status: "In progress", beforeCardCode: firstActive },
+	});
+	assert.deepEqual(source, COLUMNS);
+	assert.equal(plan("PAY-118", []), undefined);
+	assert.equal(plan("PAY-105", ["test-agent"]), undefined);
+	assert.equal(plan("PAY-missing", ["test-agent"]), undefined);
+});
 const {
 	JIRA_TEAM_EU26_PAY_CURRENT_USER,
 } = require("../data/current-user.ts");

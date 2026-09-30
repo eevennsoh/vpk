@@ -1,7 +1,7 @@
 import { token } from "@/lib/tokens";
 import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card-glow";
 import { JIRA_LINKING_GLOW_DEFAULT_COLOR } from "@/components/blocks/jira-linking/glow-motion";
-import { JIRA_KANBAN_CARD_LAYOUT } from "./card-motion";
+import { JIRA_KANBAN_CARD_REFLOW } from "./card-motion";
 
 // The reveal stays responsive while the decorative border has time to travel.
 export const CARD_DROP_STACK_EXPAND_MS = 420;
@@ -19,6 +19,47 @@ interface DropCard {
 }
 
 type DropClip = Pick<DOMRect, "left" | "right" | "top" | "bottom">;
+
+export interface IssueCardReflowPosition {
+	readonly code: string;
+	readonly columnTitle: string;
+	readonly bounds: DOMRect;
+}
+
+/** Capture existing source/destination slots before a single issue changes columns. */
+export function captureIssueCardReflow(root: HTMLElement, codes: readonly string[], destination: string): IssueCardReflowPosition[] {
+	const issues = [...root.querySelectorAll<HTMLElement>("[data-issue-key][data-board-column-title]")];
+	const moving = new Set(codes);
+	const columns = new Set([destination]);
+	for (const issue of issues) if (moving.has(issue.dataset.issueKey!)) columns.add(issue.dataset.boardColumnTitle!);
+	return issues.flatMap((issue) => {
+		const { issueKey: code, boardColumnTitle: columnTitle } = issue.dataset;
+		const slot = issue.parentElement;
+		return code && columnTitle && slot && !moving.has(code) && columns.has(columnTitle)
+			? [{ code, columnTitle, bounds: slot.getBoundingClientRect() }] : [];
+	});
+}
+
+function measureSiblingReflow(elements: readonly HTMLElement[], before: readonly IssueCardReflowPosition[], clip: DropClip) {
+	const viewports = new Map<Element, DOMRect>();
+	return before.flatMap((position) => {
+		const issue = elements.find((element) => element.dataset.issueKey === position.code && element.dataset.boardColumnTitle === position.columnTitle);
+		const node = issue?.parentElement;
+		if (!issue || !node) return [];
+		const bounds = node.getBoundingClientRect();
+		const list = issue.closest("[data-jira-kanban-card-list]");
+		if (list && !viewports.has(list)) viewports.set(list, list.getBoundingClientRect());
+		const viewport = list ? viewports.get(list) : undefined;
+		const visibleClip = viewport ? {
+			left: Math.max(clip.left, viewport.left), right: Math.min(clip.right, viewport.right),
+			top: Math.max(clip.top, viewport.top), bottom: Math.min(clip.bottom, viewport.bottom),
+		} : clip;
+		const x = position.bounds.left - bounds.left;
+		const y = position.bounds.top - bounds.top;
+		return (Math.abs(x) > 0.5 || Math.abs(y) > 0.5) && (intersectsClip(position.bounds, visibleClip) || intersectsClip(bounds, visibleClip))
+			? [{ node, x, y }] : [];
+	});
+}
 
 function intersectsClip(rect: DOMRect, clip: DropClip): boolean {
 	return rect.width > 0 && rect.height > 0 && rect.right > clip.left && rect.left < clip.right && rect.bottom > clip.top && rect.top < clip.bottom;
@@ -113,6 +154,10 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 	const frameRects = new Array<DOMRect>(targets.length);
 	const syncOutlines = () => {
 		if (stopped) return;
+		if (animation.effect?.getComputedTiming().progress === null) {
+			frame = requestAnimationFrame(syncOutlines);
+			return;
+		}
 		// Read every moving/excluded surface before writing any SVG geometry.
 		for (let index = 0; index < targets.length; index++) frameRects[index] = targets[index].surface.getBoundingClientRect();
 		for (let index = 0; index < targets.length; index++) {
@@ -132,7 +177,7 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 	], {
 		// Bulk Done cards must finish unfolding before their full border sweep.
 		// Keep the trace mounted throughout this delay so the finale gate waits.
-		delay: columnTitle === "Done" && !isSingleCard ? CARD_DROP_STACK_EXPAND_MS : 0,
+		delay: isSingleCard ? Number(JIRA_KANBAN_CARD_REFLOW.duration ?? 0) * 1000 : columnTitle === "Done" ? CARD_DROP_STACK_EXPAND_MS : 0,
 		duration: isSingleCard ? SINGLE_CARD_DROP_SHIMMER_MS : CARD_DROP_SHIMMER_MS,
 		// A collection lingers on its lead card, then accelerates through the rest (ease-in).
 		easing: isSingleCard ? "cubic-bezier(0.42, 0, 0.9, 1)" : "cubic-bezier(0.6, 0, 0.8, 0.6)",
@@ -146,7 +191,7 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 }
 
 /** Animate real cards in their final slots; the transaction has already committed. */
-export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string, codes: readonly string[], reducedMotion: boolean, onComplete: () => void, glowColors?: Readonly<Record<string, string>>): () => void {
+export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string, codes: readonly string[], reducedMotion: boolean, onComplete: () => void, glowColors?: Readonly<Record<string, string>>, feedback: "trace" | "none" = "trace", reflowBefore: readonly IssueCardReflowPosition[] = []): () => void {
 	if (reducedMotion) { onComplete(); return () => {}; }
 	const elements = [...root.querySelectorAll<HTMLElement>("[data-issue-key]")];
 	const measured: DropCard[] = codes.flatMap((code) => {
@@ -156,9 +201,8 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 		const surface = issue?.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
 		return node && surface ? [{ code, node, surface, shell: issue.querySelector<HTMLElement>('[data-slot="jira-issue-agent-shell"]'), rect: node.getBoundingClientRect(), surfaceRect: surface.getBoundingClientRect(), radius: getComputedStyle(surface).borderTopLeftRadius }] : [];
 	});
-	if (!measured.length) { onComplete(); return () => {}; }
 	const view = root.ownerDocument.defaultView!;
-	const list = measured[0].surface.closest<HTMLElement>("[data-jira-kanban-card-list]")?.getBoundingClientRect();
+	const list = measured[0]?.surface.closest<HTMLElement>("[data-jira-kanban-card-list]")?.getBoundingClientRect();
 	const clip: DropClip = {
 		left: Math.max(0, list?.left ?? 0), right: Math.min(view.innerWidth, list?.right ?? view.innerWidth),
 		top: Math.max(0, list?.top ?? 0), bottom: Math.min(view.innerHeight, list?.bottom ?? view.innerHeight),
@@ -166,7 +210,8 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 	// Decide from final slots before unfolding: hidden cards must not fly through
 	// the visible stack or extend the trace's sweep and per-frame geometry work.
 	const cards = measured.filter(({ surfaceRect }) => intersectsClip(surfaceRect, clip));
-	if (!cards.length) { onComplete(); return () => {}; }
+	const reflows = measureSiblingReflow(elements, reflowBefore, { left: 0, right: view.innerWidth, top: 0, bottom: view.innerHeight });
+	if (!cards.length && !reflows.length) { onComplete(); return () => {}; }
 	const effects: { animation: Animation; restore: () => void }[] = [];
 	if (glowColors) {
 		for (const card of cards) {
@@ -176,19 +221,28 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 				color: glowColors[card.code] ?? JIRA_LINKING_GLOW_DEFAULT_COLOR,
 			}));
 		}
-	} else effects.push(createCollectionTrace(cards, root.ownerDocument, columnTitle, clip));
-	if (codes.length === 1 && !glowColors) {
+	} else if (feedback === "trace" && cards.length) effects.push(createCollectionTrace(cards, root.ownerDocument, columnTitle, clip));
+	for (const { node, x, y } of reflows) {
+		const animation = node.animate([
+			{ transform: `translate3d(${x}px, ${y}px, 0)` },
+			{ transform: "translate3d(0, 0, 0)" },
+		], { duration: JIRA_KANBAN_CARD_REFLOW.duration * 1000, easing: `cubic-bezier(${JIRA_KANBAN_CARD_REFLOW.ease.join(",")})`, fill: "both" });
+		effects.push({ animation, restore: () => animation.cancel() });
+	}
+	if (codes.length === 1 && !glowColors && cards.length) {
 		// Reserve the final slot immediately, then reveal its face after neighbors have moved away.
 		const node = cards[0].node;
 		const wasInert = node.inert;
 		const priorAriaHidden = node.getAttribute("aria-hidden");
 		node.inert = true;
 		node.setAttribute("aria-hidden", "true");
+		node.setAttribute("data-issue-drop-reveal-pending", "");
 		const animation = node.animate([{ opacity: 0 }, { opacity: 1 }], {
-			delay: Number(JIRA_KANBAN_CARD_LAYOUT.duration ?? 0) * 1000,
-			duration: 150, easing: "cubic-bezier(0.4, 1, 0.6, 1)", fill: "backwards", // duration-normal + ease-out-practical
+			delay: Number(JIRA_KANBAN_CARD_REFLOW.duration ?? 0) * 1000,
+			duration: 0, fill: "backwards", // Reveal at rest once the shared reflow clock completes.
 		});
 		effects.push({ animation, restore: () => {
+			node.removeAttribute("data-issue-drop-reveal-pending");
 			node.inert = wasInert;
 			if (priorAriaHidden === null) node.removeAttribute("aria-hidden");
 			else node.setAttribute("aria-hidden", priorAriaHidden);
@@ -196,8 +250,8 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 	}
 	const restoreBackings = backIssueDropActivityRows(cards);
 	const first = cards[0];
-	const priorFirstZ = first.node.style.zIndex;
-	let moving = cards.length - 1;
+	const priorFirstZ = first?.node.style.zIndex ?? "";
+	let moving = Math.max(0, cards.length - 1);
 	if (moving) first.node.style.zIndex = String(cards.length);
 	for (const [index, card] of cards.slice(1).entries()) {
 		const { zIndex, willChange } = card.node.style;

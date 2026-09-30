@@ -8,6 +8,7 @@ function readProjectFile(relativePath) {
 }
 
 const PAGE_SOURCE = readProjectFile("components/projects/jira-team-eu26/page.tsx");
+const CONTENT_HOOK_SOURCE = readProjectFile("components/projects/jira-team-eu26/hooks/use-jira-team-eu26-content.ts");
 const LIST_VIEW_SOURCE = readProjectFile("components/projects/jira-team-eu26/components/jira-team-eu26-list.tsx");
 const LIST_HOOK_SOURCE = readProjectFile(
 	"components/projects/jira-team-eu26/hooks/use-jira-team-eu26-list.ts",
@@ -70,10 +71,10 @@ test("the route renders the Payments board directly inside Jira app chrome", () 
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
 	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{false\}[\s\S]*product="jira"/u);
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
-	assert.match(PAGE_SOURCE, /createJiraTeamEu26PayBoardColumns/u);
+	assert.match(CONTENT_HOOK_SOURCE, /default: \{ boardColumns: createJiraTeamEu26PayBoardColumns\(\)/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_BOARD_AGENTS/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES/u);
-	assert.match(PAGE_SOURCE, /agentSessionMembers=\{JIRA_TEAM_EU26_PAY_SESSION_MEMBERS\}/u);
+	assert.match(PAGE_SOURCE, /agentSessionMembers=\{wacContent \? WAC_SESSION_MEMBERS : JIRA_TEAM_EU26_PAY_SESSION_MEMBERS\}/u);
 	assert.match(PAGE_SOURCE, /h-full min-h-0 min-w-0 overflow-hidden \[&>div\]:min-h-0/u);
 });
 
@@ -90,7 +91,7 @@ test("the settings property controls the advanced session timeline", () => {
 		/settingsDesignVariantIds=\{JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS\}/u,
 	);
 	// The closing action belongs to the jira-team-eu26-end keynote only.
-	assert.doesNotMatch(PAGE_SOURCE, /settingsMenuItems|Play closing|issueMoveRequest/u);
+	assert.doesNotMatch(PAGE_SOURCE, /Play closing|issueMoveRequest=\{closingMoveRequest\}/u);
 	assert.match(
 		PAGE_SOURCE,
 		/advancedAgentSessionTimeline=\{designVariants\.advancedTimeline\}/u,
@@ -279,7 +280,7 @@ test("chin-row layout uses Team EU's merged grouping", () => {
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /rowSessionFlyout|JiraSessionFlyoutTrigger/u);
 	assert.match(
 		PAGE_SOURCE,
-		/onCardAssignedAgentIdsChange=\{onAssignedAgentIdsChange\}/u,
+		/onCardAssignedAgentIdsChange=\{onBoardAssignedAgentIdsChange\}/u,
 	);
 	assert.match(
 		LIST_HOOK_SOURCE,
@@ -617,7 +618,7 @@ test("Team EU returns unlinked sessions to Untracked without parking them on sta
 });
 
 test("unlinked agent sessions remain detached beneath their source Jira card", () => {
-	assert.match(PAGE_SOURCE, /const \[detachedAgentSessionsByCard, setDetachedAgentSessionsByCard\] = useState/u);
+	assert.match(CONTENT_HOOK_SOURCE, /detachedAgentSessionsByCard: resolveUpdate\(update, current\[contentMode\]\.detachedAgentSessionsByCard\)/u);
 	assert.match(PAGE_SOURCE, /toJiraTeamEu26DetachedAgentSession\(activity, card\)/u);
 	assert.match(PAGE_SOURCE, /setDetachedAgentSessionsByCard\(\(current\) =>/u);
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
@@ -743,7 +744,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(LIST_HOOK_SOURCE, /createFromAgentSession/u);
 	assert.match(LIST_HOOK_SOURCE, /createListWorkItemFromSession/u);
 	const createFromSessionStart = LIST_HOOK_SOURCE.indexOf("const createFromAgentSession = useCallback");
-	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [setBoardColumns]);", createFromSessionStart);
+	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [setBoardColumns, setListOrder]);", createFromSessionStart);
 	assert.ok(createFromSessionStart > 0 && createFromSessionEnd > createFromSessionStart);
 	assert.match(LIST_HOOK_SOURCE, /boardColumnsRef\.current = result\.columns/u);
 	assert.match(LIST_HOOK_SOURCE, /listOrderRef\.current = result\.listOrder/u);
@@ -768,7 +769,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(LIST_HOOK_SOURCE, /onAssignedAgentIdsChange: handleAssignedAgentIdsChange/u);
 	assert.match(
 		LIST_HOOK_SOURCE,
-		/const JIRA_TEAM_EU26_AGENT_CATALOG = mergeJiraKanbanAgentCatalog\(\s*JIRA_TEAM_EU26_PAY_BOARD_AGENTS,\s*\);/u,
+		/const JIRA_TEAM_EU26_AGENT_CATALOG = useMemo\(\(\) => mergeJiraKanbanAgentCatalog\(agents\), \[agents\]\);/u,
 	);
 	assert.match(LIST_HOOK_SOURCE, /issueType: draftWorkItem.issueType/u);
 	assert.match(LIST_HOOK_SOURCE, /dueDate: draftWorkItem.dueDate/u);

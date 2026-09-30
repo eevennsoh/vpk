@@ -567,6 +567,7 @@ export function useBoardAgentSessionDrag({
 		proximity: NonNullable<BoardAgentSessionDragTransaction["proximity"]>;
 		release: JiraLinkingRelease;
 	}>) => {
+		const cardSelector = `[data-issue-key="${CSS.escape(input.proximity.cardCode)}"]`;
 		pendingAttachRef.current = { flash: input.flash };
 		// The sweep waits for the chips to land, but it does not depend on
 		// them: the overlay is decoration, mounted through a portal behind a
@@ -584,8 +585,9 @@ export function useBoardAgentSessionDrag({
 			proximity: input.proximity,
 			release: {
 				...input.release,
+				resolveTargetElement: () => boardRootRef.current?.querySelector(cardSelector) ?? null,
 				resolveTarget: () => {
-					const issue = boardRootRef.current?.querySelector<HTMLElement>(`[data-issue-key="${CSS.escape(input.proximity.cardCode)}"]`);
+					const issue = boardRootRef.current?.querySelector<HTMLElement>(cardSelector);
 					if (!issue) return null;
 					const bounds = linkingVariant === "glow" ? resolveIssueSurfaceRect(issue) : resolveIssueLandRect(issue);
 					const proximity = {

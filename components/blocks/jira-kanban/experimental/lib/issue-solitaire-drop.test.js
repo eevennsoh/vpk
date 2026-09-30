@@ -43,7 +43,7 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 		cancelAnimationFrame: (id) => frames.delete(id),
 		module: loaded, exports: loaded.exports, getComputedStyle: () => ({ borderTopLeftRadius: "8px", backgroundColor: "rgb(248, 248, 248)" }),
 		require(name) {
-			if (name.includes("card-motion")) return { JIRA_KANBAN_CARD_LAYOUT: { duration: 0.2 } };
+			if (name.includes("card-motion")) return { JIRA_KANBAN_CARD_REFLOW: { duration: 0.15, ease: [0.4, 0, 0, 1] } };
 			if (name.includes("card-glow")) {
 				const glow = { exports: {} };
 				vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../../../jira-linking/card-glow.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
@@ -56,7 +56,7 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 		},
 	});
 	let complete = 0;
-	const start = (reduced = false, codes = issues.map((issue) => issue.dataset.issueKey), glowColors) => loaded.exports.animateIssueSolitaireDrop({ querySelectorAll: () => issues, ownerDocument: doc }, column, codes, reduced, () => complete++, glowColors);
+	const start = (reduced = false, codes = issues.map((issue) => issue.dataset.issueKey), glowColors, feedback, reflowBefore) => loaded.exports.animateIssueSolitaireDrop({ querySelectorAll: () => issues, ownerDocument: doc }, column, codes, reduced, () => complete++, glowColors, feedback, reflowBefore);
 	return { start, animations, nodes, issues, reads, doc, frames, frameEvents, linkGlow: () => sharedGlow.createJiraLinkingCardGlow({ haloRoot: issues[0].surface, backdropRoot: issues[0].parentElement.backdrop, color: "orange" }), complete: () => complete,
 		runFrame() {
 			const pending = [...frames.values()]; frames.clear(); frameEvents.length = 0; inFrame = true;
@@ -133,12 +133,12 @@ test("fully clipped cards complete immediately without allocating a trace or ani
 
 test("a single moved card waits for surrounding reflow before becoming visible and interactive", () => {
 	const h = fixture(3); h.start(false, ["K0"]);
-	assert.equal(h.animations.length, 2, "the trace and entry fade share completion ownership");
+	assert.equal(h.animations.length, 2, "the trace and delayed reveal share completion ownership");
 	const entry = h.animations[1];
 	assert.equal(entry.node, h.issues[0].parentElement);
 	assert.deepEqual(JSON.parse(JSON.stringify(entry.keyframes)), [{ opacity: 0 }, { opacity: 1 }]);
-	assert.equal(entry.options.delay, 200, "the card stays hidden until neighboring layout movement finishes");
-	assert.equal(entry.options.duration, 150);
+	assert.equal(entry.options.delay, 150, "the card stays hidden until neighboring layout movement finishes");
+	assert.equal(entry.options.duration, 0, "the card appears at rest without an entrance fade");
 	assert.equal(entry.options.fill, "backwards");
 	assert.equal(entry.node.inert, true);
 	assert.equal(entry.node.getAttribute("aria-hidden"), "true");
@@ -169,6 +169,33 @@ test("a scrolled cohort starts its sweep at the first visible destination card",
 	assert.equal(h.animations.length, 1);
 	assert.equal(h.doc.body.children[0].style.top, "328px");
 	assert.equal(h.animations[0].options.duration, 650);
+});
+
+test("assignment arrivals retain their face reveal without a trace or a duplicate glow", () => {
+	const h = fixture(1, "In progress");
+	h.start(false, undefined, undefined, "none");
+	assert.equal(h.nodes.some((node) => "data-issue-drop-trace" in node.attributes), false);
+	assert.equal(h.nodes.some((node) => "data-jira-linking-glow-halo" in node.attributes), false);
+	assert.equal(h.animations.length, 1);
+	assert.deepEqual(structuredClone(h.animations[0].keyframes), [{ opacity: 0 }, { opacity: 1 }]);
+	h.animations[0].onfinish();
+	assert.equal(h.complete(), 1);
+	assert.equal(h.issues[0].parentElement.inert, false);
+});
+
+test("existing cards share the delayed reveal's native 150ms reflow clock", () => {
+	const h = fixture(3, "In progress");
+	const before = [{ code: "K1", columnTitle: "In progress", bounds: { ...h.issues[1].parentElement.rect, top: 100, bottom: 212 } }];
+	h.start(false, ["K0"], undefined, "none", before);
+	const reflow = h.animations.find((animation) => animation.keyframes[0].transform);
+	assert.equal(reflow.node, h.issues[1].parentElement);
+	assert.equal(reflow.keyframes[0].transform, "translate3d(0px, -112px, 0)");
+	assert.equal(reflow.options.duration, 150);
+	const reveal = h.animations.find((animation) => animation.keyframes[0].opacity !== undefined);
+	assert.equal(reveal.options.delay, reflow.options.duration);
+	assert.equal(reveal.options.duration, 0);
+	reflow.onfinish(); reveal.onfinish();
+	assert.equal(h.complete(), 1);
 });
 
 test("Done traces one measured collection with 1px success outlines and a push-pull band", () => {
@@ -259,7 +286,7 @@ test("bulk Done borders get their full sweep after the card stack has unfolded",
 	const other = fixture(4, "In review"); other.start();
 	assert.equal(other.animations[0].options.delay, 0, "other destinations keep their existing timing");
 	const single = fixture(1, "Done"); single.start();
-	assert.equal(single.animations[0].options.delay, 0, "a single card has no stack to wait for");
+	assert.equal(single.animations[0].options.delay, 150, "a single card's feedback starts once surrounding reflow has settled");
 });
 
 test("single and bulk traces use slower feedback timing with the existing band geometry", () => {
