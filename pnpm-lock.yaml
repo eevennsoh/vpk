@@ -610,7 +610,7 @@ importers:
         specifier: ^0.15.6
         version: 0.15.6
       postcss:
-        specifier: ^8.5.26
+        specifier: ^8.5.18
         version: 8.5.26
       react-grab:
         specifier: ^0.2.0
