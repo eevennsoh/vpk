@@ -6,7 +6,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
-import type { DiffLayout } from "../../data/types";
+import type { DiffLayout } from "@/components/blocks/code-review/data/types";
 
 export interface EditorDiffLayoutControlsProps {
 	className?: string;

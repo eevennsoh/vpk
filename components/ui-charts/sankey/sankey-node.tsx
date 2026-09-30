@@ -114,8 +114,7 @@ function AnimatedNode({
         x={x}
         y={y}
       />
-      {showLabels && (
-        <>
+      {showLabels ? <>
           <motion.text
             animate={{ opacity: nameOpacity, x: nameLabelX }}
             className="fill-foreground font-medium text-[13px]"
@@ -140,8 +139,7 @@ function AnimatedNode({
           >
             {intFmt(value)} sessions
           </motion.text>
-        </>
-      )}
+        </> : null}
     </motion.g>
   );
 }

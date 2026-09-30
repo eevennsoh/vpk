@@ -5,9 +5,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CodeList } from "@/components/ui-custom/code-list";
 import { cn } from "@/lib/utils";
 
-import { useSectionNavigation } from "../../context-section-navigation";
-import { useScrollSpySections } from "../../hooks/use-scroll-spy-sections";
-import type { PullRequestGuidedReview } from "../../lib/pull-request-detail-data";
+import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v5/context-section-navigation";
+import { useScrollSpySections } from "@/components/blocks/jira-work-item/experimental-v5/hooks/use-scroll-spy-sections";
+import type { PullRequestGuidedReview } from "@/components/blocks/jira-work-item/experimental-v5/lib/pull-request-detail-data";
 
 interface PullRequestGuideProps {
 	onChapterReviewedChange: (chapterId: string, reviewed: boolean) => void;

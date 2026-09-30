@@ -21,7 +21,7 @@ test("card picker pins the project's coding agents in both content presets", asy
 		) : [];
 		await page.getByRole("button", { name: "More actions for PAY-118", exact: true }).focus();
 		await page.keyboard.press("Enter");
-		await page.getByRole("menuitem", { name: /^Assign agents/ }).focus();
+		await page.getByRole("menuitem", { name: /^Add agent/ }).focus();
 		await page.keyboard.press("ArrowRight");
 		await expect(page.getByPlaceholder("Search agents", { exact: true })).toBeVisible();
 		const options = page.getByRole("listbox", { name: "Suggestions", exact: true }).getByRole("option");
@@ -66,7 +66,7 @@ for (const content of ["default", "wac"] as const) {
 		}
 		await page.getByRole("button", { name: "More actions for PAY-118", exact: true }).focus();
 		await page.keyboard.press("Enter");
-		await page.getByRole("menuitem", { name: /^Assign agents/ }).focus();
+		await page.getByRole("menuitem", { name: /^Add agent/ }).focus();
 		await page.keyboard.press("ArrowRight");
 		await page.getByPlaceholder("Search agents", { exact: true }).fill("Code Reviewer");
 		await expect(page.getByRole("listbox", { name: "Suggestions", exact: true }).getByRole("option")).toHaveCount(1);

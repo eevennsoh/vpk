@@ -607,3 +607,83 @@ test("createBoardWorkItemFromSession lands a cohort in drag order at one gap", (
 		["lw-a", "lw-b", "lw-c"],
 	);
 });
+
+// PR #1690 class: the assignment surface echoes whatever ids it was handed —
+// catalog ids, session ids (`PAY-105:test-agent`, card-stripped by the kanban
+// chin to `test-agent`), sessions moved in from another card
+// (`PAY-107:claude-code`), and linked loose-work or finished-run ids known only
+// by agent name. Every shape must canonicalize to the catalog id, and echoing
+// the rows back must never drop one.
+const MIXED_ID_CARD = {
+	code: "PAY-105",
+	title: "Mixed id shapes",
+	priority: "medium",
+	tags: [],
+	agentActivities: [
+		{ id: "PAY-105:test-agent", name: "Cursor", startedAtMs: 1_000, state: "working" },
+		{ id: "PAY-107:claude-code", name: "Claude Code", startedAtMs: 2_000, state: "awaiting-input" },
+		{ id: "lw-sync-webhook-gap", name: "Codex", startedAtMs: 3_000, state: "working" },
+	],
+	agentDoneRuns: [{ id: "pay-105-rollout-session", agentName: "GitHub Copilot", state: "done" }],
+};
+const MIXED_ID_COLUMNS = [{ title: "In progress", count: 1, cards: [MIXED_ID_CARD] }];
+const MIXED_ID_CATALOG = [
+	...PAY_BOARD_CATALOG,
+	{ id: "readiness-checker", name: "Readiness Checker", byline: "Rovo agent by Enterprise Solutions" },
+];
+
+function assignMixedIds(agentIds) {
+	return applyAssignedAgentIdsToColumns(MIXED_ID_COLUMNS, "PAY-105", agentIds, MIXED_ID_CATALOG)
+		.flatMap((column) => column.cards)
+		.find((card) => card.code === "PAY-105");
+}
+
+test("session-shaped, moved, linked and name-only rows canonicalize to catalog ids", () => {
+	const [row] = createListRows(MIXED_ID_COLUMNS, PAY_BOARD_CATALOG);
+
+	assert.deepEqual(
+		row?.agentSessions.map((agent) => agent.id),
+		["test-agent", "claude-code", "review-agent", "release-agent"],
+	);
+});
+
+test("echoing assigned ids back in any shape never drops a running activity (PR #1690)", () => {
+	const echoes = {
+		"kanban chin (card prefix stripped)": ["test-agent", "PAY-107:claude-code", "lw-sync-webhook-gap", "pay-105-rollout-session"],
+		"activity rows (session-shaped)": ["PAY-105:test-agent", "PAY-107:claude-code", "lw-sync-webhook-gap", "pay-105-rollout-session"],
+		"list (canonical)": ["test-agent", "claude-code", "review-agent", "release-agent"],
+	};
+	for (const [shape, agentIds] of Object.entries(echoes)) {
+		const card = assignMixedIds(agentIds);
+		assert.deepEqual(card?.agentActivities, MIXED_ID_CARD.agentActivities, `${shape}: every activity kept`);
+		assert.deepEqual(card?.agentDoneRuns, MIXED_ID_CARD.agentDoneRuns, `${shape}: finished run kept`);
+	}
+
+	const added = assignMixedIds([
+		"test-agent",
+		"PAY-107:claude-code",
+		"lw-sync-webhook-gap",
+		"pay-105-rollout-session",
+		"readiness-checker",
+	]);
+	assert.deepEqual(
+		added?.agentActivities?.map((activity) => activity.id),
+		["PAY-105:test-agent", "PAY-107:claude-code", "lw-sync-webhook-gap", "PAY-105:readiness-checker"],
+	);
+	assert.equal(
+		added?.agentActivities?.[0],
+		MIXED_ID_CARD.agentActivities[0],
+		"the running session keeps its identity instead of restarting",
+	);
+	assert.deepEqual(added?.agentDoneRuns, MIXED_ID_CARD.agentDoneRuns);
+});
+
+test("archiving one echoed id removes only that row", () => {
+	const card = assignMixedIds(["test-agent", "PAY-107:claude-code", "pay-105-rollout-session"]);
+
+	assert.deepEqual(
+		card?.agentActivities?.map((activity) => activity.id),
+		["PAY-105:test-agent", "PAY-107:claude-code"],
+	);
+	assert.deepEqual(card?.agentDoneRuns?.map((run) => run.id), ["pay-105-rollout-session"]);
+});

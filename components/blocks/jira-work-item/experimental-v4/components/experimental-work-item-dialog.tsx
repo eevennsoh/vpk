@@ -13,10 +13,11 @@ import { useWorkItemHeaderVariant } from "@/components/blocks/jira-work-item/exp
 import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 const HEADER_LAYOUT_TRANSITION = {
 	duration: 0.2,
-	ease: [0.4, 0, 0, 1],
+	ease: motionEase.inOut,
 } as const; // duration-medium + ease-in-out
 
 interface ExperimentalWorkItemDialogProps {

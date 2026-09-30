@@ -19,7 +19,7 @@ for (const { contentMode, reducedMotion } of scenarios) {
 			}
 			await page.getByRole("button", { name: `More actions for ${issueKey}`, exact: true }).focus();
 			await page.keyboard.press("Enter");
-			await page.getByRole("menuitem", { name: /^Assign agents/ }).focus();
+			await page.getByRole("menuitem", { name: /^Add agent/ }).focus();
 			await page.keyboard.press("ArrowRight");
 			const agent = page.getByRole("option", { name: /^Claude / });
 			await expect(agent).toBeVisible();

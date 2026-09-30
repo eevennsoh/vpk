@@ -1,6 +1,6 @@
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 
-import type { JiraKanbanCardData, JiraKanbanColumnData } from "../../index";
+import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 
 interface AgentSessionVisibility {
 	showFinished: boolean;

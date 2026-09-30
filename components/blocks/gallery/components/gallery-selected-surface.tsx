@@ -18,9 +18,10 @@ import {
 } from "../lib/gallery-selection";
 import { DEFAULT_GALLERY_PALETTE, type GalleryPalette } from "../lib/gallery-palette";
 import { GalleryTitleLines } from "./gallery-title-lines";
+import { motionEase } from "@/lib/motion";
 
 const ENTER_EASE = [0.45, 0, 0.55, 1] as const; // Deliberately even ink spread.
-const EXIT_EASE = [0, 0.4, 0, 1] as const; // --ease-out; starts the shader exit immediately.
+const EXIT_EASE = motionEase.out; // --ease-out; starts the shader exit immediately.
 const DUR_ENTER = 0.8; // Brisk organic reveal; still outlasts the 0.6s exit.
 const MASK_FEATHER_PX = 18;
 const MASK_DIAMETER_SCALE = 2.6;

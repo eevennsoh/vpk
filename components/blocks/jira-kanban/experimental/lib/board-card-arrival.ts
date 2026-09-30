@@ -1,6 +1,6 @@
 import { DECK_VISIBLE_MAX } from "@/components/blocks/agent-session/session-drag-deck";
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
-import type { JiraKanbanColumnData } from "../../index";
+import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 
 export interface IssueCardDropArrival {
 	readonly id: number;

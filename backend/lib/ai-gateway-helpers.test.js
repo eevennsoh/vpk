@@ -11,7 +11,23 @@ const {
 	describeGatewayCloudIdKind,
 	isDummyGatewayCloudId,
 	isStagingAiGatewayUrl,
+	getModelId,
 } = require("./ai-gateway-helpers");
+
+test("OpenAI gateway resolves GPT-6.1 Sol by default and honors model overrides", () => {
+	const url = "https://ai-gateway.sgw.staging.atl-paas.net/v1/openai/v1/chat/completions";
+	assert.equal(getModelId(url, {}), "gpt-6.1-sol");
+	assert.equal(getModelId(url, { OPENAI_MODEL: " gpt-6-sol " }), "gpt-6-sol");
+	assert.equal(getModelId(url, { OPENAI_MODEL: "  " }), "gpt-6.1-sol");
+});
+
+test("OpenAI model selection preserves URL-owned models and unknown endpoints", () => {
+	const envVars = { OPENAI_MODEL: "gpt-6.1-sol" };
+	assert.equal(getModelId("https://gateway/v1/bedrock/model/anthropic.claude-sonnet-5/invoke-with-response-stream", envVars), "anthropic.claude-sonnet-5");
+	assert.equal(getModelId("https://gateway/v1/google/models/gemini-3-pro-image:streamRawPredict", envVars), "gemini-3-pro-image");
+	assert.equal(getModelId("https://gateway/unknown", envVars), "");
+	assert.equal(getModelId(null, envVars), "");
+});
 
 function makeResponse(status, headers = {}) {
 	const lower = new Map(

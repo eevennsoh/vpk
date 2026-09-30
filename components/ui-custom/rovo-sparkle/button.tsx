@@ -6,6 +6,7 @@ import { useId, useState } from "react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { ROVO_COLOR_SWATCHES } from "@/lib/rovo-colors";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 export type RovoSparkleSize = "compact" | "default";
 
@@ -21,11 +22,11 @@ export interface RovoSparkleButtonProps extends Omit<ButtonProps, "children" | "
 }
 
 const SPARKLE_PATH = "M8.117 1.009a.75.75 0 0 1 .588.484l1.55 4.251 4.252 1.55A.75.75 0 0 1 15 8v.002a.75.75 0 0 1-.493.704l-4.252 1.55-1.55 4.252a.75.75 0 0 1-.704.493h-.002a.75.75 0 0 1-.704-.493l-1.55-4.252-4.252-1.55A.75.75 0 0 1 1 8.001v-.002a.75.75 0 0 1 .493-.704l4.251-1.55 1.55-4.252.049-.106A.75.75 0 0 1 7.999 1h.002z";
-const SPARKLE_COLOR_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const SPARKLE_COLOR_EXIT: Transition = { duration: 0.25, ease: [0.6, 0, 0.8, 0.6] }; // duration-slow + ease-in
-const SPARKLE_VISIBILITY_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
-const SPARKLE_TRANSFORM_ENTER: Transition = { duration: 0.4, ease: [0.4, 0, 0, 1] }; // duration-slower + ease-in-out
-const SPARKLE_TRANSFORM_EXIT: Transition = { duration: 0.25, ease: [0.6, 0, 0.8, 0.6] }; // duration-slow + ease-in
+const SPARKLE_COLOR_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
+const SPARKLE_COLOR_EXIT: Transition = { duration: 0.25, ease: motionEase.in }; // duration-slow + ease-in
+const SPARKLE_VISIBILITY_EXIT: Transition = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+const SPARKLE_TRANSFORM_ENTER: Transition = { duration: 0.4, ease: motionEase.inOut }; // duration-slower + ease-in-out
+const SPARKLE_TRANSFORM_EXIT: Transition = { duration: 0.25, ease: motionEase.in }; // duration-slow + ease-in
 const SPARKLE_REDUCED: Transition = { duration: 0 };
 
 export interface RovoSparkleMarkProps {

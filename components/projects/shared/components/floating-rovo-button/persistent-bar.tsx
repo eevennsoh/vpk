@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import type { FloatingRovoButtonPersistentBar } from "./types";
+import { motionEase } from "@/lib/motion";
 
 export function FloatingRovoButtonPersistentBarRail({
 	bar,
@@ -46,7 +47,7 @@ export function FloatingRovoButtonPersistentBarRail({
 				scale: 0.88,
 				x: "-50%" as const,
 				y: tuckOffset,
-				transition: { duration: 0.12, ease: [0.6, 0, 0.8, 0.6] as const },
+				transition: { duration: 0.12, ease: motionEase.in },
 			},
 		};
 	const itemVariants = shouldReduceMotion

@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { token } from "@/lib/tokens";
 
 import { MAGNETIC_PROXIMITY_DISTANCE } from "@/components/ui-custom/hooks/use-magnetic-proximity";
-import { setKanbanColumnDropArmed, type KanbanColumnChromeStyles } from "../../column-chrome";
+import { setKanbanColumnDropArmed, type KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 
 /** Natural-order feedback uses the outline of the visible column container. */
 export function useBoardColumnDropRing(targetRef: RefObject<HTMLDivElement | null>, chrome: KanbanColumnChromeStyles, armed: boolean) {

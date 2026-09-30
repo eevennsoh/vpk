@@ -1,4 +1,4 @@
-import type { KanbanColumnChromeStyles } from "../../column-chrome";
+import type { KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 

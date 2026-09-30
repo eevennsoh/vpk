@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const STUDIO_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/studio`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const STUDIO_URL = appUrl("/studio");
 
 const STORAGE_KEY = "vpk:studio:session-agents:v1";
 const SEEDED_AGENT_ID = "voice-avatar-blue-agent";

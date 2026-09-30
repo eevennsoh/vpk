@@ -755,8 +755,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-          {!isMobile && (
-            <>
+          {!isMobile ? <>
               <ChartContainer config={chartConfig}>
                 <AreaChart
                   accessibilityLayer
@@ -810,8 +809,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 </div>
               </div>
               <Separator />
-            </>
-          )}
+            </> : null}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
               <Label htmlFor="header">Header</Label>

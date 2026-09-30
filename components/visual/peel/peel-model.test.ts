@@ -1,11 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { PEEL_DURATIONS, PEEL_MAX_DELTA, PEEL_PULSE_DURATION, PEEL_SWING_LIMIT, PEEL_TILT_REFERENCE_SPEED, createPeelState, dragPeel, firePeelImpulse, grabPeel, hoverPeel, isPeelIdle, nudgePeel, peelFlashEnergy, peelFlashProgress, peelImpulseEnergy, peelRecoilRate, peelPivotOffset, pulsePeel, releasePeel, startPeelFlash, stepPeel, type PeelState } from "./peel-model.ts";
-// @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { PEEL_CAMERA_DISTANCE, PEEL_CAMERA_FOV, PEEL_OVERSCAN, resolvePeelSurfaceTuning, resolvePeelTuning } from "./data.ts";
-// @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { deformPeelSheet, peelSurfaceEdgeGlow, peelSurfacePointer, peelSurfaceRoll, peelSurfaceTilt, stepPeelSurfaceTravel } from "./peel-geometry.ts";
 
 test("DOM and paper surfaces share the carried-card tuning and bounded roll", () => {

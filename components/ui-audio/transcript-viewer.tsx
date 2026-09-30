@@ -408,8 +408,7 @@ function TranscriptViewerScrubBar({
           <ScrubBarProgress className={progressClassName} />
           <ScrubBarThumb className={thumbClassName} />
         </ScrubBarTrack>
-		{showTimeLabels && (
-			<div
+		{showTimeLabels ? <div
 				className={cn(
 					"text-text-subtle flex items-center justify-between text-xs",
 					labelsClassName
@@ -417,8 +416,7 @@ function TranscriptViewerScrubBar({
 			>
             <ScrubBarTimeLabel time={currentTime} />
             <ScrubBarTimeLabel time={duration - currentTime} />
-          </div>
-        )}
+          </div> : null}
       </div>
     </ScrubBarContainer>
   )

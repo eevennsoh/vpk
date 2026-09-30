@@ -22,18 +22,19 @@ import {
 import { RovoColorIcon, type LogoSize } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { CodeIcon } from "@/components/ui/vpk-icons";
+import { motionEase } from "@/lib/motion";
 
 const ACTIONS_ENTER_TRANSITION: Transition = {
 	duration: 0.1,
-	ease: [0.4, 1, 0.6, 1], // duration-fast + ease-out-practical
+	ease: motionEase.outPractical, // duration-fast + ease-out-practical
 };
 const EXPANDED_ACTIONS_ENTER_TRANSITION: Transition = {
 	duration: 0.05,
-	ease: [0.4, 1, 0.6, 1], // duration-xxshort + ease-out-practical
+	ease: motionEase.outPractical, // duration-xxshort + ease-out-practical
 };
 const ACTIONS_EXIT_TRANSITION: Transition = {
 	duration: 0.05,
-	ease: [0.6, 0, 0.8, 0.6], // duration-xxshort + ease-in
+	ease: motionEase.in, // duration-xxshort + ease-in
 };
 
 export type CodingAgentId =

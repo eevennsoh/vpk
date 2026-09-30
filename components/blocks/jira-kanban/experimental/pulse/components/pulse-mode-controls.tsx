@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import {
 	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
 	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
-} from "../../header-facepile";
+} from "@/components/blocks/jira-kanban/experimental/header-facepile";
 
 /**
  * The two Pulse controls that live in the board header.

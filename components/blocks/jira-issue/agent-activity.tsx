@@ -67,6 +67,7 @@ import {
 	JiraIssueAgentStatusIcon,
 	type JiraIssueAgentAssignment,
 } from "./agent-activity-row-presentation";
+import { motionEase } from "@/lib/motion";
 
 export type { JiraIssueAgentAssignment } from "./agent-activity-row-presentation";
 
@@ -140,9 +141,9 @@ const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 12;
 /** Light friction so the dragged tag trails a few frames behind the pointer. */
 const JIRA_ISSUE_SESSION_DRAG_SPRING = { damping: 26, mass: 0.6, stiffness: 420, restDelta: 0.01 } as const;
 
-const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
-const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: [0.4, 0, 0, 1] }; // duration-medium + ease-in-out
+const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
+const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: motionEase.inOut }; // duration-medium + ease-in-out
 const JIRA_ISSUE_MOTION_REDUCED: Transition = { duration: 0 };
 const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity" };
 

@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { AGENT_SESSION_DECK_SCROLLING_ATTRIBUTE, AGENT_SESSION_DECK_SCROLL_IDLE_FALLBACK_MS, subscribeToAgentSessionDeckScrollActivity } from "./deck-scroll-activity.ts";
 
 class FakeScrollPort extends EventTarget {

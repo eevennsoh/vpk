@@ -4,8 +4,8 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { animateIssueSolitaireDrop, captureIssueCardReflow, type IssueCardReflowPosition } from "../lib/issue-solitaire-drop";
 import { getAutoArrangePlan } from "../lib/board-auto-arrange";
-import type { JiraKanbanProps } from "../../index";
-import type { JiraKanbanCardDropTarget } from "../../card-drop";
+import type { JiraKanbanProps } from "@/components/blocks/jira-kanban/index";
+import type { JiraKanbanCardDropTarget } from "@/components/blocks/jira-kanban/card-drop";
 import { captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveIssueDropDeck, resolveVisibleIssueDropCodes, type IssueCardDropArrival } from "../lib/board-card-arrival";
 import type { JiraKanbanCreatedCardArrival } from "./use-created-card-arrival";
 import { captureIssueCardDropFlights, hasIssueDropTarget, startIssueCardDropFlights, type IssueCardDropFlight, type IssueDropPoint } from "../lib/issue-card-drop-flight";

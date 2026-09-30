@@ -896,11 +896,8 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 		/needsInputCount=\{needsInputCount\}/u,
 		"the Team EU26 route owns the live Needs input count",
 	);
-	assert.match(
-		PAGE_SOURCE,
-		/agentActivities\?\.filter\(\s*\(activity\) =>\s*activity\.state === "awaiting-input",?\s*\)\.length/u,
-		"the route counts every awaiting-input agent activity",
-	);
+	// The count itself is proven against the Needs input focus in
+	// components/blocks/jira-kanban/experimental/lib/board-agent-filter-scope.test.js.
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /needsInputCount\?: number;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /needsInputCount=\{needsInputCount\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /needsInputCount\?: number;/u);

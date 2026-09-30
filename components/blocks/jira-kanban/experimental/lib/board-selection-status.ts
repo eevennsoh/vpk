@@ -1,4 +1,4 @@
-import type { JiraKanbanColumnData } from "../../index";
+import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 
 export function getCommonSelectedCardStatus(
 	columns: readonly JiraKanbanColumnData[],

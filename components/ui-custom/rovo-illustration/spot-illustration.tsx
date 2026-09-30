@@ -1016,8 +1016,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
   return (
     <div className={cn("shrink-0", className)} style={{ position: "relative", width: size, height: size }}>
       <div ref={chatBubbleContainerRef}>
-        {svg1 && (
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {svg1 ? <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ position: "relative", width: "60%", height: "60%" }}>
               {svg1HasMosaic ? (
                 <MosaicSvg
@@ -1039,11 +1038,9 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
                 </div>
               )}
             </div>
-          </div>
-        )}
+          </div> : null}
 
-        {svg2 && (
-          <div
+        {svg2 ? <div
             ref={svg2Ref}
             style={{
               position: "absolute", display: "flex", alignItems: "center", justifyContent: "center",
@@ -1070,17 +1067,13 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
                 })}
               </svg>
             )}
-          </div>
-        )}
+          </div> : null}
 
-        {svg1 && svg2 && (
-          <div ref={intersectionRef} style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0, zIndex: 5 }}>
+        {svg1 && svg2 ? <div ref={intersectionRef} style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0, zIndex: 5 }}>
             <canvas ref={intersectionCanvasRef} style={{ width: size, height: size }} />
-          </div>
-        )}
+          </div> : null}
 
-        {gestureLines.paths.length > 0 && (
-          <div ref={gestureRef} style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0, transformOrigin: "center center" }}>
+        {gestureLines.paths.length > 0 ? <div ref={gestureRef} style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0, transformOrigin: "center center" }}>
             <svg viewBox={gestureLines.viewBox} style={{ width: "100%", height: "100%" }} fill="none">
               <style>{`
                 @keyframes gesturePulse {
@@ -1090,15 +1083,13 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
                 .gesture-line { transform-box: fill-box; transform-origin: center center; animation: gesturePulse 0.8s steps(1) infinite; }
                 .gesture-line-stagger { animation-delay: 0.4s; }
               `}</style>
-              {gestureLines.renderAs === "fill" && gestureLines.centerlines.length > 0 && (
-                <defs>
+              {gestureLines.renderAs === "fill" && gestureLines.centerlines.length > 0 ? <defs>
                   {gestureLines.centerlines.map((cl, i) => (
                     <mask key={i} id={`gesture-mask-${baseId}-${i}`}>
                       <path ref={(el) => { gestureMaskRefs.current[i] = el; }} d={cl} stroke="white" strokeWidth={30} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                     </mask>
                   ))}
-                </defs>
-              )}
+                </defs> : null}
               {gestureLines.paths.map((d, i) => (
                 <g key={i} className={"gesture-line" + (i % 2 === 1 ? " gesture-line-stagger" : "")}>
                   {gestureLines.renderAs === "fill" ? (
@@ -1109,8 +1100,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
                 </g>
               ))}
             </svg>
-          </div>
-        )}
+          </div> : null}
       </div>
 
       <div

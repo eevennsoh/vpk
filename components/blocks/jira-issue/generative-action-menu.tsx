@@ -237,7 +237,7 @@ export function JiraIssueAgentAndSkillSubmenus({
 	return (
 		<>
 			<DropdownMenuSub onOpenChange={(open) => open ? undefined : setAgentQuery("")}>
-				<DropdownMenuSubTrigger>Assign agents</DropdownMenuSubTrigger>
+				<DropdownMenuSubTrigger>Add agent</DropdownMenuSubTrigger>
 				<DropdownMenuSubContent
 					className="max-h-none w-[360px] overflow-hidden p-0"
 					onClick={(event) => event.stopPropagation()}

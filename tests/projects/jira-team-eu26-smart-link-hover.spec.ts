@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 1600, height: 1100 }, ignoreHTTPSErrors: true });
 
 test("nested Smart Link tolerates a diagonal pause and keeps its session flyout alive", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`, { waitUntil: "domcontentloaded" });
+	await page.goto(appUrl("/jira-team-eu26"), { waitUntil: "domcontentloaded" });
 	const notch = page.locator('[data-session-id="lw-sync-webhook-gap"]');
 	await expect(notch).toBeVisible({ timeout: 15_000 });
 	const railHitArea = page.locator("[data-agent-session-column-hit-area]");

@@ -1,8 +1,12 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { expect, test, type Locator } from "@playwright/test";
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${readFileSync(".dev-frontend-port", "utf8").trim()}`;
-const PEEL_URL = `${BASE_URL}/preview/visual/peel`;
+import { withDesignVariants } from "@/tests/helpers/design-variants";
+import { appUrl } from "@/tests/helpers/origin";
+
+const PEEL_URL = appUrl("/preview/visual/peel");
+// Team EU26 with the regular (non-Peel) drag.
+const FLAT_DRAG_BOARD_URL = appUrl(withDesignVariants("/jira-team-eu26", { sessionPeel: false }));
 const ILLUSTRATION_NAME = /Blue illustration of overlapping speech bubbles/;
 
 async function expectHorizontalAvatarHandoff(overlay: Locator) {
@@ -128,7 +132,7 @@ test("Team EU26 defaults Peel visual off, persists its switch, and prepares only
 	await page.addInitScript(() => {
 		if (!localStorage.getItem("ui-design-variants")) localStorage.setItem("ui-design-variants", JSON.stringify({ sessionBloom: true, schemaVersion: 3 }));
 	});
-	await page.goto(`${BASE_URL}/jira-team-eu26`, { waitUntil: "networkidle" });
+	await page.goto(appUrl("/jira-team-eu26"), { waitUntil: "networkidle" });
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	const setting = page.getByRole("menuitemcheckbox", { name: "Peel visual", exact: true });
 	await expect(setting).toHaveAttribute("aria-checked", "false");
@@ -567,8 +571,7 @@ test("a real touch drag drops Claude at mobile size", async ({ browser }) => {
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`the normal Team EU26 drag forms a horizontal avatar group (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ sessionPeel: false, schemaVersion: 3 })));
-		await page.goto(`${BASE_URL}/jira-team-eu26`, { waitUntil: "networkidle" });
+		await page.goto(FLAT_DRAG_BOARD_URL, { waitUntil: "networkidle" });
 		const expand = page.getByRole("button", { name: "Expand Unlink sessions column", exact: true });
 		if (await expand.isVisible()) await expand.click();
 		const source = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
@@ -619,8 +622,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("the normal glow fills the source card while it contracts to the drag chip", async ({ page }) => {
-	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ sessionPeel: false, schemaVersion: 3 })));
-	await page.goto(`${BASE_URL}/jira-team-eu26`, { waitUntil: "networkidle" });
+	await page.goto(FLAT_DRAG_BOARD_URL, { waitUntil: "networkidle" });
 	const source = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
 	await source.hover();
 	const sourceBox = (await source.boundingBox())!;
@@ -687,11 +689,8 @@ test("the normal glow fills the source card while it contracts to the drag chip"
 });
 
 test("the flat dragged card keeps its face flash visible in dark mode", async ({ page }) => {
-	await page.addInitScript(() => {
-		localStorage.setItem("ui-theme", "dark");
-		localStorage.setItem("ui-design-variants", JSON.stringify({ sessionPeel: false, schemaVersion: 3 }));
-	});
-	await page.goto(`${BASE_URL}/jira-team-eu26`, { waitUntil: "networkidle" });
+	await page.addInitScript(() => localStorage.setItem("ui-theme", "dark"));
+	await page.goto(FLAT_DRAG_BOARD_URL, { waitUntil: "networkidle" });
 	await expect(page.locator("html")).toHaveClass(/dark/);
 	const expand = page.getByRole("button", { name: "Expand Unlink sessions column", exact: true });
 	if (await expand.isVisible()) await expand.click();
@@ -735,8 +734,7 @@ test("the flat dragged card keeps its face flash visible in dark mode", async ({
 
 for (const grab of [{ name: "avatar", x: 0.09, y: 0.5 }, { name: "title", x: 0.7, y: 0.3 }, { name: "byline", x: 0.7, y: 0.8 }]) {
 	test(`dragged avatars stay on their own session's path when grabbed at the ${grab.name}`, async ({ page }) => {
-		await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ sessionPeel: false, schemaVersion: 3 })));
-		await page.goto(`${BASE_URL}/jira-team-eu26`, { waitUntil: "networkidle" });
+		await page.goto(FLAT_DRAG_BOARD_URL, { waitUntil: "networkidle" });
 		const source = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
 		await source.hover();
 		await page.evaluate(() => {

@@ -1,6 +1,6 @@
 import { ROVO_COLOR_SWATCHES } from "@/lib/rovo-colors";
 
-import { JIRA_TEAM_EU26_END_PRESENTERS } from "../../data/keynote-presenters";
+import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-eu26-end/data/keynote-presenters";
 import { CUE } from "../data/finale-cues";
 import type { FinaleSlot, FinaleSlotId } from "../data/finale-stories";
 import { tileFallStart, type FinalePoint, type FinaleViewport } from "./finale-card-motion";

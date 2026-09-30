@@ -26,6 +26,7 @@ import {
 	useCommandMenuScrollMask,
 } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 // Mirror AgentSelector / GreetingPromptRow: label lifts and byline reveals on
 // hover/focus. Dynamic variants collapse the transition under reduced motion.
@@ -49,7 +50,7 @@ const repositoryDescriptionVariants: Variants = {
 	active: (instant: boolean) => ({
 		opacity: 1,
 		transform: "translateY(0px)",
-		transition: instant ? { duration: 0 } : { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
+		transition: instant ? { duration: 0 } : { delay: 0.02, duration: 0.16, ease: motionEase.out },
 	}),
 };
 

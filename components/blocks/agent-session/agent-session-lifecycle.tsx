@@ -14,6 +14,7 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import { cn } from "@/lib/utils";
 
 import type { AgentSessionItem } from "./agent-session-types";
+import { motionEase } from "@/lib/motion";
 
 /**
  * Enter is the attention-getting beat, exit gets out of the way. Resolved token
@@ -22,8 +23,8 @@ import type { AgentSessionItem } from "./agent-session-types";
  * lives in the exit variant's own transition; a lone `transition` prop would
  * silently run the exit at the enter timing.
  */
-const INDICATOR_ENTER = { duration: 0.15, ease: [0.4, 1, 0.6, 1] } as const;
-const INDICATOR_EXIT = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] } as const;
+const INDICATOR_ENTER = { duration: 0.15, ease: motionEase.outPractical } as const;
+const INDICATOR_EXIT = { duration: 0.1, ease: motionEase.in } as const;
 
 const LIFECYCLE_LABELS = {
 	running: "Working",

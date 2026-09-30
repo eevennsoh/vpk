@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { motion, type Transition } from "motion/react";
+import { motionEase } from "@/lib/motion";
 
 /**
  * Vertical extras for `ContextBarPromptFlyout`. Each extra is a context-bar
@@ -9,9 +10,9 @@ import { motion, type Transition } from "motion/react";
  */
 
 /** duration-normal + ease-out-practical — popup-family entrance. */
-const ITEM_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] };
+const ITEM_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical };
 /** duration-fast + ease-in — faster than enter so exit does not pile onto the trigger. */
-const ITEM_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] };
+const ITEM_EXIT: Transition = { duration: 0.1, ease: motionEase.in };
 const REDUCED_MOTION: Transition = { duration: 0, delay: 0 };
 const STAGGER_INTERVAL = 0.05;
 const EXTRA_SLIDE_Y = 8;

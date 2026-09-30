@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost";
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 const issue = (page: Page, code: string) => page.locator(`[data-jira-kanban-scrollport] [data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const card = (page: Page, code: string) => issue(page, code).locator('[draggable]').first();
 

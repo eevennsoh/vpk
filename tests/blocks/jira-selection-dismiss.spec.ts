@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 
 const issue = (page: Page, code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
@@ -10,7 +12,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	for (const release of ["original position", "outside the board"] as const) {
 		test(`releasing a drag at ${release} preserves selection and its anchor (${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
-			await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+			await page.goto(appUrl("/preview/blocks/jira-dragging"));
 			await issue(page, "PAY-105").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 			await issue(page, "PAY-107").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 			const source = (await issue(page, "PAY-105").boundingBox())!;
@@ -40,7 +42,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`outside-column clicks clear the selection and its anchor (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
 		await issue(page, "PAY-105").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await issue(page, "PAY-107").click({ position: { x: 70, y: 30 } });
@@ -59,7 +61,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`selected columns, modified clicks and toolbar portals preserve selection (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
 		// Move a card into the second column through the existing native drag.
 		const source = (await issue(page, "PAY-130").boundingBox())!;

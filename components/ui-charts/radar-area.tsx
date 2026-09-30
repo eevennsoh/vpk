@@ -198,8 +198,7 @@ export const RadarArea = memo(function RadarArea({
         />
       )}
 
-      {showPoints &&
-        metrics.map((metric, i) => {
+      {showPoints ? metrics.map((metric, i) => {
           const target = targetPositions[i];
           if (!target) {
             return null;
@@ -215,7 +214,7 @@ export const RadarArea = memo(function RadarArea({
               target={target}
             />
           );
-        })}
+        }) : null}
     </motion.g>
   );
 });

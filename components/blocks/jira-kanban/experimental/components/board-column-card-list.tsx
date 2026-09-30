@@ -17,7 +17,7 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-import type { KanbanColumnChromeStyles } from "../../column-chrome";
+import type { KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 import {
 	useCreatedCardArrivalScroll,
 	type JiraKanbanCreatedCardArrival,

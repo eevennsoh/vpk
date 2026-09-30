@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const URL = `${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/components/ui/avatar#status`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const URL = appUrl("/components/ui/avatar#status");
 const BADGE_SLOTS = ["avatar-presence", "avatar-status", "avatar-badge", "avatar-company-badge", "avatar-project-badge"];
 
 for (const width of [1440, 390]) {
@@ -29,7 +31,7 @@ for (const width of [1440, 390]) {
 }
 
 test("agent-card cover badges retain the shared 2px white separator", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/components/blocks/agent-card#experimental-template`);
+	await page.goto(appUrl("/components/blocks/agent-card#experimental-template"));
 	const badges = page.locator('[data-slot="avatar-company-badge"], [data-slot="avatar-project-badge"]');
 	await expect(badges.first()).toBeAttached();
 	for (const badge of await badges.all()) {

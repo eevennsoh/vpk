@@ -12,20 +12,21 @@ import { useWorkItemHeaderVariant } from "@/components/blocks/jira-work-item/exp
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 const COPIED_STATE_DURATION_MS = 1800;
 const HEADER_LAYOUT_TRANSITION = {
 	duration: 0.2,
-	ease: [0.4, 0, 0, 1],
+	ease: motionEase.inOut,
 } as const; // duration-medium + ease-in-out
 const TITLE_ENTER_TRANSITION = {
 	delay: 0.1,
 	duration: 0.1,
-	ease: [0.4, 1, 0.6, 1],
+	ease: motionEase.outPractical,
 } as const; // delay-fast + duration-fast + ease-out-practical
 const TITLE_EXIT_TRANSITION = {
 	duration: 0.1,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 } as const; // duration-fast + ease-in
 const INSTANT_TRANSITION = { duration: 0 } as const;
 

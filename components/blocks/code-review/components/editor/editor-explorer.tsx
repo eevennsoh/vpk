@@ -8,8 +8,8 @@ import { SearchIcon } from "@/components/ui/vpk-icons";
 import { FileTree2 } from "@/components/ui-custom/file-tree-2";
 import { cn } from "@/lib/utils";
 
-import type { ChangedFile } from "../../data/types";
-import { createCodeReviewTreeData } from "../../lib/create-code-review-tree-data";
+import type { ChangedFile } from "@/components/blocks/code-review/data/types";
+import { createCodeReviewTreeData } from "@/components/blocks/code-review/lib/create-code-review-tree-data";
 
 /** Single path segment — matches `CODE_REVIEW_WORK_ITEM.repoName` without the org prefix. */
 const CODE_REVIEW_ROOT_PATH = "rfp-response-platform";

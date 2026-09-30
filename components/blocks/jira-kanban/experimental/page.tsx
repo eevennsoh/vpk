@@ -17,7 +17,6 @@ import { useOptionalRovoChatControls } from "@/app/contexts/context-rovo-chat-co
 import {
 	resolveAgentSessionWorkItemKey,
 	type AgentSessionItem,
-	type AgentSessionWorkItemDraft,
 } from "@/components/blocks/agent-session";
 import {
 	JiraDropzoneField,

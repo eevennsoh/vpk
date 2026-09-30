@@ -4,22 +4,15 @@ import {
 	activateAndWaitForScrollSettlement,
 	clickWhenControlReenables,
 } from "@/tests/helpers/jira-interaction-contracts";
+import { appUrl } from "@/tests/helpers/origin";
 
-const JIRA_WORK_ITEM_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/blocks/jira-work-item-demo-experimental`;
+const JIRA_WORK_ITEM_URL = appUrl("/preview/blocks/jira-work-item-demo-experimental");
 
-const JIRA_WORK_ITEM_V2_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/blocks/jira-work-item-demo-experimental-v2`;
+const JIRA_WORK_ITEM_V2_URL = appUrl("/preview/blocks/jira-work-item-demo-experimental-v2");
 
-const JIRA_WORK_ITEM_V3_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/blocks/jira-work-item-demo-experimental-v3`;
+const JIRA_WORK_ITEM_V3_URL = appUrl("/preview/blocks/jira-work-item-demo-experimental-v3");
 
-const JIRA_GOLDEN_JOURNEYS_V3_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/jira-golden-journeys-v3`;
+const JIRA_GOLDEN_JOURNEYS_V3_URL = appUrl("/jira-golden-journeys-v3");
 
 test("rapid metadata toggles settle with visible title actions", async ({ page }) => {
 	await page.goto(JIRA_WORK_ITEM_URL, { waitUntil: "domcontentloaded" });

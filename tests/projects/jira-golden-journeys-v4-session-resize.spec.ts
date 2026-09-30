@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const JIRA_GOLDEN_JOURNEYS_V4_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/jira-golden-journeys-v4";
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_GOLDEN_JOURNEYS_V4_URL = appUrl("/jira-golden-journeys-v4");
 
 async function revealCollapsedAgentSessionColumn(page: Page): Promise<void> {
 	const hitArea = page.locator("[data-agent-session-column-hit-area]");
