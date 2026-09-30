@@ -100,7 +100,7 @@ export const JIRA_TEAM_EU26_PRIMARY_BOARD_AGENTS = [
 	{ id: "test-agent", name: "Cursor", byline: "Coding agent by Cursor", brandName: "cursor", avatarSrc: "/illustration/agent-lanyard/cursor.svg", headerId: "wac-cursor" },
 	{ id: "review-agent", name: "Codex", byline: "Coding agent by OpenAI", brandName: "openai-codex", avatarSrc: "/illustration/agent-lanyard/codex.svg", headerId: "wac-codex" },
 	{ id: "release-agent", name: "GitHub Copilot", byline: "Coding agent by GitHub", brandName: "github-copilot", avatarSrc: "/illustration/agent-lanyard/copilot.svg", headerId: "wac-copilot" },
-	{ id: "figma", name: "Figma", byline: "Design agent by Figma", brandName: "figma", avatarSrc: "/3p/figma/32.svg", headerId: "wac-figma" },
+	{ id: "figma", name: "Figma", byline: "Design agent by Figma", brandName: "figma", avatarSrc: undefined, headerId: "wac-figma" },
 ] as const satisfies readonly (JiraKanbanAgentData & { headerId: string })[];
 
 const CUSTOM_BOARD_AGENT_IDS = ["code-reviewer", "release-notes-drafter", "bug-report-assistant"] as const;

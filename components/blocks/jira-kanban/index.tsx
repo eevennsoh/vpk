@@ -75,7 +75,8 @@ const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: motionEase.in
 export interface JiraKanbanAssigneeData {
 	id: string;
 	name: string;
-	avatarSrc: string;
+	/** Omit when the header renderer supplies a brand visual or initials. */
+	avatarSrc?: string;
 }
 
 export interface JiraKanbanCardData {

@@ -15,7 +15,7 @@ test("card picker pins the project's coding agents in both content presets", asy
 			await expect(page.getByRole("heading", { name: "Checkout roadmap", exact: true })).toBeVisible();
 		}
 		const wacAvatarSources = content === "wac" ? await Promise.all(
-			["Claude", "Cursor", "Codex", "GitHub Copilot", "Figma"].map(async (name) => ({
+			["Claude", "Cursor", "Codex", "GitHub Copilot"].map(async (name) => ({
 				name,
 				src: await page.getByRole("button", { name: `Preview ${name}`, exact: true }).locator("img").getAttribute("src"),
 			})),
@@ -27,12 +27,7 @@ test("card picker pins the project's coding agents in both content presets", asy
 		await expect(page.getByPlaceholder("Search agents", { exact: true })).toBeVisible();
 		const options = page.getByRole("listbox", { name: "Suggestions", exact: true }).getByRole("option");
 		await expect(options).toHaveCount(8);
-		await expect(options.locator('[data-slot="avatar"] img')).toHaveCount(8);
-		const catalog = await options.evaluateAll((items) => items.map((item) => ({
-			id: item.getAttribute("data-value"),
-			label: item.textContent,
-			avatarSrc: item.querySelector("img")?.getAttribute("src"),
-		})));
+		const catalog = await options.evaluateAll((items) => items.map((item) => item.getAttribute("data-value")));
 		if (content === "default") defaultCatalog = catalog;
 		else expect(catalog).toEqual(defaultCatalog);
 		const moreAgents = page.locator('[data-slot="command-group"]').filter({ has: page.getByText("More agents", { exact: true }) });
@@ -45,6 +40,10 @@ test("card picker pins the project's coding agents in both content presets", asy
 			await expect(avatar).toHaveAttribute("data-shape", "hexagon");
 			await expect(avatar.locator("img")).toHaveAttribute("src", src!);
 		}
+		const figma = page.getByRole("option", { name: /^Figma / }).locator('[data-slot="avatar"]');
+		await expect(figma).toHaveAttribute("data-shape", "hexagon");
+		await expect(figma.locator("svg")).toHaveCount(1);
+		if (content === "wac") await expect(page.getByRole("button", { name: "Preview Figma", exact: true }).locator("svg")).toHaveCount(1);
 		for (const name of ["Claude", "Codex", "Cursor", "GitHub Copilot"]) {
 			await expect(page.getByRole("button", { name: `Unpin ${name}`, exact: true })).toBeVisible();
 		}

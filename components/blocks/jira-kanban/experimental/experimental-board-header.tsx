@@ -190,7 +190,7 @@ function AssigneeAvatar({
 	selected?: boolean;
 	showGroupStroke?: boolean;
 }>) {
-	const isAgent = assignee.avatarSrc.startsWith("/avatar-agent/");
+	const isAgent = assignee.avatarSrc?.startsWith("/avatar-agent/") ?? false;
 
 	return (
 		<Avatar
