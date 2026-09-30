@@ -74,6 +74,29 @@ test("four presenter cursors, one per Rovo colour", () => {
 	assert.equal(new Set(FINALE_CURSORS.map((cursor) => cursor.slot)).size, 4, "each by a different tile");
 });
 
+function luminance(hex) {
+	const channel = (offset) => {
+		const value = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+		return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+	};
+	return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+function contrast(a, b) {
+	const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+	return (light + 0.05) / (dark + 0.05);
+}
+
+test("each name pill is inked in whichever of dark and white reads better on its fill", () => {
+	const { FINALE_CURSORS } = load();
+	const inks = [...new Set(FINALE_CURSORS.map((cursor) => cursor.ink))];
+	for (const cursor of FINALE_CURSORS) {
+		const best = inks.reduce((a, b) => (contrast(b, cursor.color) > contrast(a, cursor.color) ? b : a));
+		assert.equal(cursor.ink, best, `${cursor.label}'s name on ${cursor.color}`);
+		assert.ok(contrast(cursor.ink, cursor.color) >= 3, `${cursor.label}'s name meets large-text contrast`);
+	}
+});
+
 test("the cursors appear while the tiles assemble and are gone by the title and the rest frame", () => {
 	const { CUE, FINALE_CURSORS, FINALE_REST_TIME, cursorPose, cursorWindow, tileFallStart } = load();
 	const viewport = VIEWPORTS[0];
