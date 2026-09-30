@@ -4491,10 +4491,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 450,
+			"manifestEntryCount": 451,
 			"categoryCount": 9,
 			"statusCounts": {
-				"live": 445,
+				"live": 446,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -6962,7 +6962,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 107,
+				"entryCount": 108,
 				"entries": [
 					{
 						"category": "visual",
@@ -7353,6 +7353,13 @@
 						"category": "visual",
 						"slug": "paper-image-dithering",
 						"name": "Image Dithering",
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
+					},
+					{
+						"category": "visual",
+						"slug": "paper-lens-distortion",
+						"name": "Lens Distortion",
 						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
 						"status": "live"
 					},
@@ -7791,9 +7798,15 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 17
+			"localSkillCount": 18
 		},
 		"localSkills": [
+			{
+				"description": "Package a VPK route, demo, or generated file and publish or update it as an Atlassian Artifact (hello.atlassian.net/artifacts) through the TWG CLI. Use when asked to \"publish as an artifact\", \"share this as an Atlassian Artifact\", \"host this prototype for coworkers\", \"upload to Artifacts\", \"update my artifact\", or to turn a VPK demo into a single-file HTML for sharing.",
+				"name": "vpk-artifact",
+				"path": ".agents/skills/vpk-artifact/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-artifact"
+			},
 			{
 				"description": "Extract a VPK route into a standalone, minimal Next.js app with traced imports, source-compatible paths, and Micros-ready scaffolding. Use when asked to invoke vpk-build, extract a route, create a standalone prototype, or hand a VPK route off as an independently deployable app.",
 				"name": "vpk-build",

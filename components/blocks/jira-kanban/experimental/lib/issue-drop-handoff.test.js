@@ -17,16 +17,14 @@ function load() {
 	return loaded;
 }
 
-function withWindow(t, fake) {
-	const previous = globalThis.window;
-	globalThis.window = fake;
-	t.after(() => {
-		if (previous === undefined) delete globalThis.window;
-		else globalThis.window = previous;
-	});
+/** Swaps the frame and timer globals the handoff schedules on, for this test only. */
+function withClock(t, fake) {
+	const previous = Object.fromEntries(Object.keys(fake).map((name) => [name, globalThis[name]]));
+	Object.assign(globalThis, fake);
+	t.after(() => Object.assign(globalThis, previous));
 }
 
-test("a drop's commit waits for the release frame, and the drag's end queues behind it in order", () => {
+test("a move's commit waits for the next frame, and work that arrives meanwhile queues behind it in order", () => {
 	const { createIssueDropHandoff } = load();
 	let presented = null;
 	let cancelled = 0;
@@ -56,7 +54,7 @@ test("the handoff runs after the release frame has painted, or after a backstop 
 	const frames = [];
 	const timers = new Map();
 	let nextTimer = 0;
-	withWindow(t, {
+	withClock(t, {
 		requestAnimationFrame: (callback) => frames.push(callback),
 		cancelAnimationFrame: (id) => { frames[id - 1] = null; },
 		setTimeout: (callback, delay) => { timers.set(++nextTimer, { callback, delay }); return nextTimer; },
@@ -85,40 +83,4 @@ test("the handoff runs after the release frame has painted, or after a backstop 
 	cancel();
 	assert.equal(timers.size, 0);
 	assert.equal(ran, 2, "a cancelled handoff never runs");
-});
-
-test("the released traveller fades out and shrinks from where it was let go, then leaves the page", (t) => {
-	const { settleIssueCohortPreview } = load();
-	const timers = [];
-	withWindow(t, {
-		setTimeout: (callback) => timers.push(callback),
-		clearTimeout: () => {},
-	});
-	const traveller = () => {
-		const listeners = new Map();
-		return {
-			removed: false,
-			style: { transform: "translate3d(412px, 318px, 0)" },
-			addEventListener: (name, listener) => listeners.set(name, listener),
-			remove() { this.removed = true; },
-			fire: (name) => listeners.get(name)?.(),
-		};
-	};
-	const node = traveller();
-	settleIssueCohortPreview(node, false);
-	assert.equal(node.removed, false, "it stays up to fade while the commit lands its cards");
-	assert.equal(node.style.opacity, "0");
-	assert.equal(node.style.transform, "translate3d(412px, 318px, 0) scale(0.96)", "in place, where the pointer left it");
-	// Opacity and transform only, on the exit tokens: the compositor runs it through the commit.
-	assert.equal(node.style.transition, "opacity var(--duration-normal) var(--ease-in), transform var(--duration-normal) var(--ease-in)");
-	node.fire("transitionend");
-	assert.equal(node.removed, true);
-	const stalled = traveller();
-	settleIssueCohortPreview(stalled, false);
-	timers.at(-1)();
-	assert.equal(stalled.removed, true, "a missed transitionend cannot leave it on the page");
-	const reduced = traveller();
-	settleIssueCohortPreview(reduced, true);
-	assert.equal(reduced.removed, true, "reduced motion removes it at once");
-	assert.equal(reduced.style.opacity, undefined);
 });

@@ -217,6 +217,7 @@ export function BoardColumnCardList({
 				>
 					<ScrollAreaContent
 						className="flex min-w-0 shrink-0 flex-col"
+						data-jira-kanban-card-list-content=""
 						style={{ minWidth: 0, gap: chrome.cardList.gap ?? token("space.100") }}
 					>
 						{children}

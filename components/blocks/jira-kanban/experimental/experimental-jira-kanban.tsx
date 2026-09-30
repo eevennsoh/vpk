@@ -42,7 +42,6 @@ import { CreatedCardArrivalMotion } from "./components/created-card-arrival-moti
 import { CreatedCardInlineFlight } from "./components/created-card-inline-flight";
 import { useCreatedCardDropMotion } from "./hooks/use-created-card-drop-motion";
 import { useIssueCardDropArrival, type IssueCardMove } from "./hooks/use-issue-card-drop-arrival";
-import { useIssueDropHandoff } from "./hooks/use-issue-drop-handoff";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
 import { IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR } from "./lib/in-flow-agent-session-column-geometry";
@@ -483,11 +482,10 @@ function ExperimentalJiraKanbanView({
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const autoArrangeScopeId = useId();
 	const issueDragImageRef = useRef<HTMLElement | null>(null);
-	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop" || Boolean(onAutoArrange), draggedCardCode, onCardDragEnd, issueDropMotion === "solitaire");
+	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop" || Boolean(onAutoArrange), draggedCardCode, onCardDragEnd);
 	// Auto arrange keeps its shortcut usable during pickup, independently of move visuals.
 	const { stop: stopPointerDrag } = useBoardIssuePointerDrag(boardScrollportRef, Boolean(onAutoArrange));
-	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete, solitaire: issueDropMotion === "solitaire", stopPreview: issueCohortPreview.stop });
-	const issueDropHandoff = useIssueDropHandoff(issueDropMotion === "solitaire", issueDropArrival.handleDrop, onCardDragEnd);
+	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete, solitaire: issueDropMotion === "solitaire", stopPreview: issueCohortPreview.stop, releasePreview: issueCohortPreview.release });
 	useIssueMoveRequest(issueMoveRequest, issueDropArrival.handleMove);
 	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, scopeId: autoArrangeScopeId });
 	const singleCardDrag = Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1);
@@ -604,7 +602,7 @@ function ExperimentalJiraKanbanView({
 	const handleColumnDrop = (event: React.DragEvent<HTMLDivElement>, targetColumnTitle: string) => {
 		event.preventDefault();
 		setColumnDropArmed(event.currentTarget, false);
-		issueDropHandoff.handleDrop?.(targetColumnTitle);
+		issueDropArrival.handleDrop?.(targetColumnTitle);
 	};
 
 	// Cache the multi-drag preview DOM node once on mount. Previously this node
@@ -678,6 +676,8 @@ function ExperimentalJiraKanbanView({
 	};
 
 	const handleCardDragEndInternal = () => {
+		// A settled bulk release replays this once its move commits.
+		if (issueDropArrival.deferDragEnd(handleCardDragEndInternal)) return;
 		issueCohortPreview.stop();
 		issueDragImageRef.current?.remove();
 		issueDragImageRef.current = null;
@@ -685,7 +685,7 @@ function ExperimentalJiraKanbanView({
 		for (const column of boardScrollportRef.current?.querySelectorAll<HTMLDivElement>("[data-jira-kanban-column]") ?? []) {
 			setColumnDropArmed(column, false);
 		}
-		issueDropHandoff.handleDragEnd();
+		onCardDragEnd?.();
 	};
 
 	// Assigning an agent from a card's own menu still earns Glow's halo, but
@@ -851,7 +851,7 @@ function ExperimentalJiraKanbanView({
 								title={column.title}
 								issueDragSource={issueDragSource}
 								statuses={column.statuses}
-								onIssueDrop={issueDropHandoff.handleDrop}
+								onIssueDrop={issueDropArrival.handleDrop}
 								issueMoveVisual={issueMoveVisual}
 							>
 								{column.cards.map((card, cardIndex) => {

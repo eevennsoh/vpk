@@ -26,6 +26,55 @@ export interface IssueCardReflowPosition {
 	readonly bounds: DOMRect;
 }
 
+export interface IssueSolitaireLanding {
+	readonly left: number;
+	readonly top: number;
+	readonly width: number;
+	/** Cohort cards whose slots the column will show, all stacked under the lead at first. */
+	readonly depth: number;
+}
+
+/**
+ * Where a cross-column cohort's lead lands, read from the destination's slots
+ * before the move commits. Mirrors `moveJiraKanbanCardsToDropTarget`: the
+ * cohort goes before `beforeCardCode`, to the end for `null` and to the top for
+ * `undefined`. Null when only the commit can tell: a collapsed or unrendered
+ * column, cohort issues already in it (leaving would shift the slot), or a slot
+ * the column would clip.
+ */
+export function resolveIssueSolitaireLanding(root: HTMLElement, columnTitle: string, codes: readonly string[], beforeCardCode: string | null | undefined, height: number): IssueSolitaireLanding | null {
+	const column = [...root.querySelectorAll<HTMLElement>("[data-jira-kanban-column]")].find((node) => node.dataset.jiraKanbanColumn === columnTitle);
+	const list = column?.querySelector<HTMLElement>("[data-jira-kanban-card-list]");
+	const content = list?.querySelector<HTMLElement>("[data-jira-kanban-card-list-content]");
+	if (!column || column.dataset.collapsed === "true" || !list || !content) return null;
+	const slots = [...content.children].flatMap((slot) => {
+		const issue = slot.querySelector<HTMLElement>("[data-issue-key]");
+		return issue?.dataset.boardColumnTitle === columnTitle ? [{ code: issue.dataset.issueKey!, slot }] : [];
+	});
+	const moving = new Set(codes);
+	if (slots.some(({ code }) => moving.has(code))) return null;
+	const index = beforeCardCode === null ? slots.length
+		: beforeCardCode === undefined ? 0 : slots.findIndex(({ code }) => code === beforeCardCode);
+	if (index < 0) return null;
+	const gap = Number.parseFloat(getComputedStyle(content).rowGap) || 0;
+	let slot: Pick<DOMRect, "left" | "top" | "width">;
+	if (index < slots.length) {
+		slot = slots[index].slot.getBoundingClientRect();
+	} else if (slots.length) {
+		const { left, bottom, width } = slots[slots.length - 1].slot.getBoundingClientRect();
+		slot = { left, top: bottom + gap, width };
+	} else {
+		slot = content.getBoundingClientRect();
+	}
+	// A content-sized list grows with the commit, so only an overflowing one clips its end.
+	const clip = list.getBoundingClientRect();
+	const bottom = Math.min(list.scrollHeight > list.clientHeight + 1 ? clip.bottom : root.getBoundingClientRect().bottom, root.ownerDocument.defaultView?.innerHeight ?? Infinity);
+	if (slot.top < clip.top - 0.5 || slot.top + height > bottom + 0.5) return null;
+	// Only cards whose slots stay visible unfold; the rest never join the stack.
+	const depth = Math.min(codes.length, Math.max(1, Math.ceil((bottom - slot.top) / (height + gap))));
+	return { left: slot.left, top: slot.top, width: slot.width, depth };
+}
+
 /** Capture existing source/destination slots before a single issue changes columns. */
 export function captureIssueCardReflow(root: HTMLElement, codes: readonly string[], destination: string): IssueCardReflowPosition[] {
 	const issues = [...root.querySelectorAll<HTMLElement>("[data-issue-key][data-board-column-title]")];
@@ -65,13 +114,18 @@ function intersectsClip(rect: DOMRect, clip: DropClip): boolean {
 	return rect.width > 0 && rect.height > 0 && rect.right > clip.left && rect.left < clip.right && rect.bottom > clip.top && rect.top < clip.bottom;
 }
 
-/** Neutral activity tints need an opaque base while cards overlap during a bulk reveal. */
-function backIssueDropActivityRows(cards: readonly DropCard[]): () => void {
-	if (cards.length < 2) return () => {};
+/** The destination's tint, read with the final slots so no write precedes it. */
+function readIssueDropColumnBackground(cards: readonly DropCard[]): string {
+	if (cards.length < 2) return "transparent";
 	const column = cards[0].surface.closest<HTMLElement>("[data-jira-kanban-column]");
 	const columnSurface = column?.querySelector<HTMLElement>("[data-jira-kanban-column-backdrop]")
 		?? column?.querySelector<HTMLElement>("[data-jira-kanban-column-content]");
-	const columnBackground = columnSurface ? getComputedStyle(columnSurface).backgroundColor : "transparent";
+	return columnSurface ? getComputedStyle(columnSurface).backgroundColor : "transparent";
+}
+
+/** Neutral activity tints need an opaque base while cards overlap during a bulk reveal. */
+function backIssueDropActivityRows(cards: readonly DropCard[], columnBackground: string): () => void {
+	if (cards.length < 2) return () => {};
 	const restore = cards.flatMap(({ shell }) => {
 		if (!shell) return [];
 		const { backgroundColor, backgroundImage, transitionProperty } = shell.style;
@@ -212,6 +266,7 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 	const cards = measured.filter(({ surfaceRect }) => intersectsClip(surfaceRect, clip));
 	const reflows = measureSiblingReflow(elements, reflowBefore, { left: 0, right: view.innerWidth, top: 0, bottom: view.innerHeight });
 	if (!cards.length && !reflows.length) { onComplete(); return () => {}; }
+	const columnBackground = readIssueDropColumnBackground(cards);
 	const effects: { animation: Animation; restore: () => void }[] = [];
 	if (glowColors) {
 		for (const card of cards) {
@@ -248,7 +303,7 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 			else node.setAttribute("aria-hidden", priorAriaHidden);
 		} });
 	}
-	const restoreBackings = backIssueDropActivityRows(cards);
+	const restoreBackings = backIssueDropActivityRows(cards, columnBackground);
 	const first = cards[0];
 	const priorFirstZ = first?.node.style.zIndex ?? "";
 	let moving = Math.max(0, cards.length - 1);

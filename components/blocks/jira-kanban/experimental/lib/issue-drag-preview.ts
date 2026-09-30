@@ -1,7 +1,11 @@
+import { AVATAR_ENTER_FROM } from "@/components/ui/avatar-enter";
 import { badgeVariants } from "@/components/ui/badge";
 import { DECK_VISIBLE_MAX } from "@/components/blocks/agent-session/session-drag-deck";
 import { token } from "@/lib/tokens";
 import { createIssueCohortDeckLayers, type IssueCohortGatherLayer } from "./issue-cohort-gather";
+
+// Frozen surface rings, kept when a native snapshot face drops its exterior shadow.
+const restingSurfaceShadows = new WeakMap<HTMLElement, string>();
 
 function removeIssuePreviewActions(preview: HTMLElement) {
 	for (const control of preview.querySelectorAll('[data-jira-issue-selection-control], [aria-label^="More actions for "]')) control.remove();
@@ -74,6 +78,7 @@ export function createIssueDragPreview(card: HTMLElement): HTMLElement {
 			overflow: "hidden",
 			boxShadow: "none",
 		});
+		restingSurfaceShadows.set(previewSurface, previewSurface.style.boxShadow);
 		previewSurface.style.boxShadow = "none";
 		previewSurface.style.removeProperty("background-color");
 	}
@@ -121,11 +126,15 @@ export function createIssueFacePreview(card: HTMLElement, captured?: HTMLElement
 	return lead;
 }
 
+// The lead face's own shadow, before the travelling elevation replaced it.
+const restingLeadShadows = new WeakMap<HTMLElement, string>();
+
 /** Issue faces travel without selection wells; cohorts reuse the Agent Session deck. */
 export function createIssueCohortPreview(card: HTMLElement, selection?: ReadonlySet<string>, previousLayers: readonly IssueCohortGatherLayer[] = []) {
 	const count = selection?.size ?? 1;
 	const lead = createIssueFacePreview(card);
 	lead.dataset.issueCohortFront = "";
+	restingLeadShadows.set(lead, lead.style.boxShadow);
 	const preview = card.ownerDocument.createElement("div");
 	// Positioned by transform every frame: opt out of transitions so reduced
 	// motion's global 0.01ms reset cannot paint it one frame behind the pointer.
@@ -168,4 +177,32 @@ export function createIssueCohortPreview(card: HTMLElement, selection?: Readonly
 	}
 	card.ownerDocument.body.append(preview);
 	return { node: preview, gathering };
+}
+
+/**
+ * Pins a released cohort preview into its lead's landing slot: the solitaire
+ * reveal's first frame, where the lead rests alone and the rest of the deck
+ * waits behind it. The already-painted face shows it while the move commits,
+ * so it wears the committed stack's first frame: resting chrome, the edge of
+ * `depth` cards stacked under it, and avatars that have not yet played their
+ * mount entrance.
+ */
+export function settleIssueCohortPreview(preview: HTMLElement, landing: Readonly<{ left: number; top: number; depth: number }>): void {
+	const lead = preview.querySelector<HTMLElement>("[data-issue-cohort-front]");
+	for (const child of preview.children) {
+		if (child !== lead && child instanceof HTMLElement) child.style.visibility = "hidden";
+	}
+	if (lead) {
+		// The travelling face clips to its rounded bounds; a resting card paints its surface ring outside them.
+		Object.assign(lead.style, { boxShadow: restingLeadShadows.get(lead) ?? "", overflow: "" });
+		// The committed stack starts with its visible cards exactly under the lead,
+		// so their rings composite; repeat the lead's to match that edge.
+		const surface = lead.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
+		const ring = surface && (restingSurfaceShadows.get(surface) ?? surface.style.boxShadow);
+		if (surface && ring && ring !== "none") surface.style.boxShadow = Array.from({ length: Math.max(1, landing.depth) }, () => ring).join(", ");
+		for (const avatar of lead.querySelectorAll<HTMLElement>("[data-avatar-enter]")) {
+			Object.assign(avatar.style, { opacity: String(AVATAR_ENTER_FROM.opacity), transform: `scale(${AVATAR_ENTER_FROM.scale})` });
+		}
+	}
+	preview.style.transform = `translate3d(${landing.left}px, ${landing.top}px, 0)`;
 }

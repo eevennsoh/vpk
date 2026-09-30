@@ -19,6 +19,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-kanban/experimental/lib/issue-drop-handoff.test.js",
 		"components/blocks/jira-kanban/experimental/components/board-issue-source-ghost.behavior.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-column-header-drop-feedback.test.js",
+		"components/blocks/jira-kanban/experimental/lib/issue-drag-preview.test.js",
 		"components/ui-custom/animated-icon.test.js",
 		"components/blocks/jira-dragging/use-jira-dragging.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-board-auto-arrange.test.js",

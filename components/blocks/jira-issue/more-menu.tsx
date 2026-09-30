@@ -148,7 +148,7 @@ function JiraIssueMoreDropdown({ generativeAction, generativeActionIssue, issueK
 					<>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<DropdownMenuItem aria-label="Select" aria-description="Shift plus click" disabled={!moreMenuActions.onSelect} elemAfter={<DropdownMenuShortcut aria-hidden="true">Shift + Click</DropdownMenuShortcut>} onSelect={selectCard}>Select</DropdownMenuItem>
+							<DropdownMenuItem aria-label="Select" aria-description="Command plus click" disabled={!moreMenuActions.onSelect} elemAfter={<DropdownMenuShortcut aria-hidden="true">Cmd + Click</DropdownMenuShortcut>} onSelect={selectCard}>Select</DropdownMenuItem>
 							<DropdownMenuItem disabled={!moreMenuActions.onArchive} onSelect={moreMenuActions.onArchive}>Archive</DropdownMenuItem>
 							<DropdownMenuItem disabled={!moreMenuActions.onDelete} onSelect={moreMenuActions.onDelete}>Delete</DropdownMenuItem>
 						</DropdownMenuGroup>

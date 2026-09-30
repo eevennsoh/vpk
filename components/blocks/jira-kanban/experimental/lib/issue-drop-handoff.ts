@@ -1,19 +1,18 @@
-import { motionDuration } from "@/lib/motion";
-
 /**
- * Hands a native issue drop's board commit to the frame after the release.
+ * Hands an issue move's board commit to the frame after the one that asked
+ * for it.
  *
- * The commit remounts every moved card (tens of milliseconds for a cohort).
- * Run inside the `drop` event, it holds the release frame, frozen, for all of
- * it. Run one presented frame later, the traveller is already settling on the
- * compositor (see `settleIssueCohortPreview`) and keeps moving through the
- * commit. Drag callbacks that arrive meanwhile (the source's `dragend`) queue
- * behind it in order, so the owner sees the same updates, one frame late.
+ * A move remounts every card it moves (tens of milliseconds for a cohort).
+ * Committed in the event that requested it, it holds that frame, frozen, for
+ * all of it. Committed once the next frame has been presented, the request's
+ * own feedback (a released traveller settling, a menu leaving) is already on
+ * screen. Work that arrives meanwhile queues behind it in order, so the owner
+ * sees the same updates, one frame late.
  */
 export interface IssueDropHandoff {
-	/** Run `task` once the next frame has been presented (the drop's commit). */
+	/** Run `task` once the next frame has been presented. */
 	readonly defer: (task: () => void) => void;
-	/** Run `task` now, or behind a deferred drop that is still waiting. */
+	/** Run `task` now, or behind a deferred task that is still waiting. */
 	readonly then: (task: () => void) => void;
 	/** Run everything still queued, now (unmount). */
 	readonly flush: () => void;
@@ -50,34 +49,10 @@ export function createIssueDropHandoff(afterNextFrame: AfterNextFrame): IssueDro
 }
 
 /**
- * The released traveller settles where it was let go, while the handed-off
- * commit lands its cards: an exit, so a practical fade with a slight shrink
- * (`duration-normal`, `ease-in`). Opacity and transform run on the
- * compositor, so it keeps moving while the commit holds the main thread. The
- * node leaves the page once it has faded; reduced motion removes it at once.
+ * rAF pauses in hidden tabs and throttles in occluded windows. The normal path
+ * runs within ~2 frames even at 60 Hz; past this bound it runs without waiting
+ * for the frame to be presented.
  */
-export function settleIssueCohortPreview(node: HTMLElement, reducedMotion: boolean): void {
-	if (reducedMotion) {
-		node.remove();
-		return;
-	}
-	let settled = false;
-	const leave = () => {
-		if (settled) return;
-		settled = true;
-		window.clearTimeout(backstop);
-		node.remove();
-	};
-	// Where the pointer left it (the traveller follows it by transform).
-	const at = node.style.transform ? `${node.style.transform} ` : "";
-	node.style.transition = "opacity var(--duration-normal) var(--ease-in), transform var(--duration-normal) var(--ease-in)";
-	node.style.opacity = "0";
-	node.style.transform = `${at}scale(0.96)`;
-	node.addEventListener("transitionend", leave, { once: true });
-	const backstop = window.setTimeout(leave, motionDuration.normal * 1000 + 50);
-}
-
-/** Frame backstop: a stalled or hidden page must still commit the drop. */
 const HANDOFF_BACKSTOP_MS = 100;
 
 /**
@@ -86,23 +61,23 @@ const HANDOFF_BACKSTOP_MS = 100;
  */
 export const afterNextPresentedFrame: AfterNextFrame = (run) => {
 	let done = false;
-	let task = 0;
+	let task: ReturnType<typeof setTimeout> | undefined;
 	const finish = () => {
 		if (done) return;
 		done = true;
-		window.cancelAnimationFrame(frame);
-		window.clearTimeout(task);
-		window.clearTimeout(backstop);
+		cancelAnimationFrame(frame);
+		clearTimeout(task);
+		clearTimeout(backstop);
 		run();
 	};
-	const frame = window.requestAnimationFrame(() => {
-		task = window.setTimeout(finish, 0);
+	const backstop = setTimeout(finish, HANDOFF_BACKSTOP_MS);
+	const frame = requestAnimationFrame(() => {
+		task = setTimeout(finish, 0);
 	});
-	const backstop = window.setTimeout(finish, HANDOFF_BACKSTOP_MS);
 	return () => {
 		done = true;
-		window.cancelAnimationFrame(frame);
-		window.clearTimeout(task);
-		window.clearTimeout(backstop);
+		cancelAnimationFrame(frame);
+		clearTimeout(task);
+		clearTimeout(backstop);
 	};
 };

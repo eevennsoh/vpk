@@ -74,6 +74,7 @@ export const VISUAL_GROUPS: Record<string, string[]> = {
 		"paper-halftone-dots",
 		"paper-heatmap",
 		"paper-image-dithering",
+		"paper-lens-distortion",
 		"paper-liquid-metal",
 		"paper-mesh-gradient",
 		"paper-metaballs",
