@@ -4491,10 +4491,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 450,
+			"manifestEntryCount": 451,
 			"categoryCount": 9,
 			"statusCounts": {
-				"live": 445,
+				"live": 446,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -6962,7 +6962,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 107,
+				"entryCount": 108,
 				"entries": [
 					{
 						"category": "visual",
@@ -7353,6 +7353,13 @@
 						"category": "visual",
 						"slug": "paper-image-dithering",
 						"name": "Image Dithering",
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
+					},
+					{
+						"category": "visual",
+						"slug": "paper-lens-distortion",
+						"name": "Lens Distortion",
 						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
 						"status": "live"
 					},

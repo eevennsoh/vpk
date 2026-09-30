@@ -4107,7 +4107,7 @@
   },
   "components/website/demos/visual/shaders-paper-demo.test.js": {
     "no-restricted-syntax": {
-      "count": 36
+      "count": 35
     }
   },
   "components/website/demos/visual/shaders-paper-demo.tsx": {
