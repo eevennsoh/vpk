@@ -201,7 +201,17 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	const settledDrop = useRef<SettledIssueDrop | null>(null);
 	const committers = useRef({ captureDrop, onDrop });
 	useLayoutEffect(() => { committers.current = { captureDrop, onDrop }; }, [captureDrop, onDrop]);
-	useEffect(() => () => settledDrop.current?.commit(false), []);
+	useEffect(() => {
+		const doc = boardRef.current?.ownerDocument;
+		// A hidden page never paints a settled face; land its move at once.
+		const commitWhenHidden = () => { if (doc?.visibilityState === "hidden") settledDrop.current?.commit(true); };
+		doc?.addEventListener("visibilitychange", commitWhenHidden);
+		return () => {
+			doc?.removeEventListener("visibilitychange", commitWhenHidden);
+			// An interrupted release still commits the move it promised.
+			settledDrop.current?.commit(false);
+		};
+	}, [boardRef]);
 	// A bulk release paints the solitaire reveal's first frame before React
 	// commits: the already-rendered traveller settles into the lead's slot, and
 	// the move (with its dragend) commits in the task after that frame, behind
@@ -220,11 +230,8 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		const released = releasePreview();
 		if (!released) return false;
 		settleIssueCohortPreview(released, landing);
-		const doc = root.ownerDocument;
 		let frame = 0;
 		let timer: ReturnType<typeof setTimeout> | undefined;
-		// A hidden page never paints the face; land the move now.
-		const commitWhenHidden = () => { if (doc.visibilityState === "hidden") settled.commit(true); };
 		const settled: SettledIssueDrop = {
 			dragEnds: [],
 			commit: (flush) => {
@@ -233,7 +240,6 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 				cancelAnimationFrame(frame);
 				clearTimeout(timer);
 				clearTimeout(fallback);
-				doc.removeEventListener("visibilitychange", commitWhenHidden);
 				const commit = () => {
 					committers.current.captureDrop(codes, columnTitle, grabbed);
 					committers.current.onDrop?.(columnTitle, target);
@@ -247,7 +253,6 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		const fallback = setTimeout(() => settled.commit(true), SETTLED_RELEASE_COMMIT_FALLBACK_MS);
 		settledDrop.current = settled;
 		frame = requestAnimationFrame(() => { timer = setTimeout(() => settled.commit(true), 0); });
-		doc.addEventListener("visibilitychange", commitWhenHidden);
 		return true;
 	}, [boardRef, columns, getPreview, reduceMotion, releasePreview, solitaire]);
 	const handleDrop = useCallback<NonNullable<JiraKanbanProps["onCardDrop"]>>((columnTitle, target) => {
