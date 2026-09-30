@@ -58,6 +58,25 @@ test("card picker pins the project's coding agents in both content presets", asy
 });
 
 for (const content of ["default", "wac"] as const) {
+	test(`Figma assignment preserves its brand avatar in ${content} content`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.goto(appUrl("/jira-team-eu26"));
+		if (content === "wac") {
+			await page.getByRole("button", { name: "Settings", exact: true }).click();
+			await page.getByRole("menuitemcheckbox", { name: "WAC Content", exact: true }).click();
+		}
+		await page.getByRole("button", { name: "More actions for PAY-118", exact: true }).focus();
+		await page.keyboard.press("Enter");
+		await page.getByRole("menuitem", { name: /^Add agent/ }).focus();
+		await page.keyboard.press("ArrowRight");
+		await page.getByPlaceholder("Search agents", { exact: true }).fill("Figma");
+		await page.getByRole("option", { name: /^Figma / }).click();
+		const row = page.getByRole("region", { name: "In progress work items", exact: true }).locator('[data-issue-key="PAY-118"] [data-slot="jira-issue-agent-row"]');
+		await expect(row.getByRole("button", { name: "Figma: Working", exact: true })).toBeVisible();
+		await expect(row.locator('[data-slot="avatar"] svg')).toHaveCount(1);
+		await expect(row.locator('[data-slot="human-agent-avatar"]')).toHaveCount(0);
+	});
+
 	test(`custom agent search and assignment work in ${content} content`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.goto(appUrl("/jira-team-eu26"));
