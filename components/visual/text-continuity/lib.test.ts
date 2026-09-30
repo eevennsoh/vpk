@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { caretAfterFormat, formatAmount, formFor, toRaw, valueCharsBefore, wrap } from "./lib.ts";
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { EXAMPLES, EXAMPLE_IDS } from "./data.ts";
 
 // ── wrap ──

@@ -16,6 +16,7 @@ import DeleteIcon from "@atlaskit/icon/core/delete";
 import SuccessIcon from "@atlaskit/icon/core/success";
 import { MOCK_TASKS, flattenStatusGroups, type ProgressStatusGroups, type FlatTask } from "./data/mock-tasks";
 import { formatElapsedTime, getElapsedSeconds, resolveInitialNowMs } from "@/lib/elapsed-time";
+import { motionEase } from "@/lib/motion";
 
 const SUMMARY_RING_SEGMENTED_GRADIENT =
 	"conic-gradient(from 220deg, transparent 0deg 252deg, #8d63ff 252deg 266deg, #7fbb44 266deg 280deg, #3b66e0 280deg 294deg, #e5a126 294deg 308deg, transparent 308deg 360deg)";
@@ -282,7 +283,7 @@ export default function TaskProgress({
 					className="w-full max-w-[800px]"
 					initial={false}
 					exit={{ opacity: 0, y: 40 }}
-					transition={{ duration: 0.3, ease: [0.4, 0, 0, 1] }}
+					transition={{ duration: 0.3, ease: motionEase.inOut }}
 					style={{ willChange: "transform, opacity" }}
 				>
 					<div

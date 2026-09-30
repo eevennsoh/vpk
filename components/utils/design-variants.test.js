@@ -8,6 +8,7 @@ class FakeLocalStorage {
 	constructor({ throwOnAccess = false } = {}) {
 		this.entries = new Map();
 		this.throwOnAccess = throwOnAccess;
+		this.writes = 0;
 	}
 
 	getItem(key) {
@@ -21,12 +22,27 @@ class FakeLocalStorage {
 		if (this.throwOnAccess) {
 			throw new Error("storage disabled");
 		}
+		this.writes += 1;
 		this.entries.set(key, String(value));
 	}
 }
 
+// A test may load several harnesses (one per simulated document load); only the
+// first captures the real global, because `t.after` hooks run in FIFO order.
+const testsRestoringLocalStorage = new WeakSet();
+
 async function loadDesignVariantsHarness(t, { localStorage } = {}) {
-	const previousLocalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+	if (!testsRestoringLocalStorage.has(t)) {
+		testsRestoringLocalStorage.add(t);
+		const previousLocalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+		t.after(() => {
+			if (previousLocalStorage) {
+				Object.defineProperty(globalThis, "localStorage", previousLocalStorage);
+				return;
+			}
+			delete globalThis.localStorage;
+		});
+	}
 
 	Object.defineProperty(globalThis, "localStorage", {
 		configurable: true,
@@ -34,25 +50,21 @@ async function loadDesignVariantsHarness(t, { localStorage } = {}) {
 		writable: true,
 	});
 
-	t.after(() => {
-		if (previousLocalStorage) {
-			Object.defineProperty(globalThis, "localStorage", previousLocalStorage);
-			return;
-		}
-		delete globalThis.localStorage;
-	});
-
 	const result = await esbuild.build({
 		stdin: {
 			contents: `
 				export {
+					applyDesignVariantOverrides,
 					DESIGN_VARIANTS,
+					DESIGN_VARIANTS_QUERY_PARAM,
 					DESIGN_VARIANTS_STORAGE_KEY,
 					DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION,
 					getDefaultDesignVariants,
 					getDesignVariants,
+					hydrateClientDesignVariants,
 					hydrateDesignVariants,
 					isDesignVariantId,
+					parseDesignVariantOverrides,
 					readStoredDesignVariants,
 					resetDesignVariantsForTests,
 					setDesignVariant,
@@ -441,4 +453,176 @@ test("Move visual starts on for older payloads and persists an explicit off", as
 	assert.equal(harness.readStoredDesignVariants().moveVisual, false);
 	harness.setDesignVariant("moveVisual", true);
 	assert.equal(harness.readStoredDesignVariants().moveVisual, true);
+});
+
+// URL overrides: `?variants=id,-id` forces variants for one document load
+// without touching storage, so agents and specs can reach a state directly.
+const STORED_USER_CHOICES = JSON.stringify({ autoArrange: false, panel: true, sessionPeel: true, schemaVersion: 3 });
+
+function parsed(harness, search) {
+	const { overrides, unknownIds } = harness.parseDesignVariantOverrides(search);
+	return { overrides: { ...overrides }, unknownIds: [...unknownIds] };
+}
+
+test("parses ?variants= add and remove tokens, including hyphenated ids", async (t) => {
+	const harness = await loadDesignVariantsHarness(t);
+
+	assert.equal(harness.DESIGN_VARIANTS_QUERY_PARAM, "variants");
+	assert.deepEqual(parsed(harness, "?variants=autoArrange,-sessionPeel"), {
+		overrides: { autoArrange: true, sessionPeel: false },
+		unknownIds: [],
+	});
+	// The leading `-` is the only sign; the rest of the token is the id.
+	assert.deepEqual(parsed(harness, "variants=-simple-views,simple-views&embedded=1"), {
+		overrides: { "simple-views": true },
+		unknownIds: [],
+	});
+	assert.deepEqual(parsed(harness, "?embedded=1&variants=-simple-views"), {
+		overrides: { "simple-views": false },
+		unknownIds: [],
+	});
+	// Encoded commas, padded tokens and a `+` (decodes to a space) still parse.
+	assert.deepEqual(parsed(harness, "?variants=autoArrange%2C%20-sessionPeel+,+panel"), {
+		overrides: { autoArrange: true, panel: true, sessionPeel: false },
+		unknownIds: [],
+	});
+});
+
+test("empty or absent ?variants= yields no overrides", async (t) => {
+	const harness = await loadDesignVariantsHarness(t);
+
+	for (const search of ["", "?", "?embedded=1", "?variants=", "?variants=,,%20,", "?variants=-", "?Variants=autoArrange"]) {
+		assert.deepEqual(parsed(harness, search), { overrides: {}, unknownIds: [] }, search);
+	}
+	// No overrides means the base state keeps its identity.
+	const base = harness.getDefaultDesignVariants();
+	assert.equal(harness.applyDesignVariantOverrides(base, harness.parseDesignVariantOverrides("").overrides), base);
+});
+
+test("unknown ?variants= ids are ignored and reported once each", async (t) => {
+	const harness = await loadDesignVariantsHarness(t);
+
+	assert.deepEqual(parsed(harness, "?variants=bogus,-autoarrange,autoArrange,-bogus,AutoArrange"), {
+		overrides: { autoArrange: true },
+		unknownIds: ["bogus", "autoarrange", "AutoArrange"],
+	});
+});
+
+test("duplicate ?variants= ids resolve to the last token, across repeated params", async (t) => {
+	const harness = await loadDesignVariantsHarness(t);
+
+	assert.deepEqual(parsed(harness, "?variants=autoArrange,-autoArrange").overrides, { autoArrange: false });
+	assert.deepEqual(parsed(harness, "?variants=-autoArrange,autoArrange,autoArrange").overrides, { autoArrange: true });
+	assert.deepEqual(parsed(harness, "?variants=autoArrange,panel&variants=-autoArrange").overrides, {
+		autoArrange: false,
+		panel: true,
+	});
+});
+
+test("URL overrides take precedence over stored values without writing storage", async (t) => {
+	const localStorage = new FakeLocalStorage();
+	localStorage.setItem("ui-design-variants", STORED_USER_CHOICES);
+	localStorage.writes = 0;
+	const harness = await loadDesignVariantsHarness(t, { localStorage });
+
+	harness.hydrateClientDesignVariants("?variants=autoArrange,-sessionPeel");
+
+	assert.deepEqual(harness.getDesignVariants(), { advancedTimeline: false, autoArrange: true, agentSessionColumnResizing: true, kanbanBackground: false, manualLink: false, moveVisual: true, panel: true, sessionBloom: true, sessionPeel: false, sessionProximity: false, sessionStroke: false, "simple-views": true, simpleKanban: true });
+	assert.equal(localStorage.writes, 0);
+	assert.equal(localStorage.getItem("ui-design-variants"), STORED_USER_CHOICES);
+	assert.equal(harness.getDesignVariants(), harness.getDesignVariants(), "the overridden snapshot is stable");
+
+	// Later mounts re-read storage but never re-read the URL: the override is
+	// captured once per document, and a different search is ignored.
+	harness.hydrateClientDesignVariants("?variants=-autoArrange");
+	harness.hydrateClientDesignVariants("");
+	assert.equal(harness.getDesignVariants().autoArrange, true);
+	assert.equal(harness.getDesignVariants().sessionPeel, false);
+	assert.equal(localStorage.writes, 0);
+});
+
+test("reloading without ?variants= restores the user's stored settings", async (t) => {
+	const localStorage = new FakeLocalStorage();
+	localStorage.setItem("ui-design-variants", STORED_USER_CHOICES);
+	const overridden = await loadDesignVariantsHarness(t, { localStorage });
+	overridden.hydrateClientDesignVariants("?variants=autoArrange,-sessionPeel");
+	assert.equal(overridden.getDesignVariants().autoArrange, true);
+
+	// A fresh module instance is a new document load.
+	const reloaded = await loadDesignVariantsHarness(t, { localStorage });
+	reloaded.hydrateClientDesignVariants("");
+	assert.equal(reloaded.getDesignVariants().autoArrange, false);
+	assert.equal(reloaded.getDesignVariants().sessionPeel, true);
+	assert.equal(reloaded.getDesignVariants().panel, true);
+});
+
+test("Settings clicks persist only the user's own map and drop the clicked override", async (t) => {
+	const localStorage = new FakeLocalStorage();
+	localStorage.setItem("ui-design-variants", STORED_USER_CHOICES);
+	const harness = await loadDesignVariantsHarness(t, { localStorage });
+	harness.hydrateClientDesignVariants("?variants=autoArrange,-sessionPeel");
+
+	// Toggling an unrelated variant must not leak the overridden values into storage.
+	harness.setDesignVariant("sessionStroke", true);
+	const persisted = JSON.parse(localStorage.getItem("ui-design-variants"));
+	assert.equal(persisted.sessionStroke, true);
+	assert.equal(persisted.autoArrange, false);
+	assert.equal(persisted.sessionPeel, true);
+	assert.equal(harness.getDesignVariants().autoArrange, true, "unclicked overrides stay in force");
+	assert.equal(harness.getDesignVariants().sessionPeel, false);
+
+	// Clicking an overridden variant is an explicit choice: it persists and wins.
+	harness.setDesignVariant("sessionPeel", true);
+	assert.equal(JSON.parse(localStorage.getItem("ui-design-variants")).sessionPeel, true);
+	assert.equal(harness.getDesignVariants().sessionPeel, true);
+
+	// Re-adopting storage (a later mount or another tab) keeps that choice, while
+	// the still-unclicked Auto arrange override keeps winning over storage.
+	harness.hydrateDesignVariants(harness.readStoredDesignVariants());
+	assert.equal(harness.getDesignVariants().sessionPeel, true);
+	assert.equal(harness.getDesignVariants().autoArrange, true);
+
+	harness.setDesignVariant("autoArrange", false);
+	assert.equal(harness.getDesignVariants().autoArrange, false);
+	assert.equal(JSON.parse(localStorage.getItem("ui-design-variants")).autoArrange, false);
+});
+
+test("cross-tab storage updates replace the base while overrides keep their ids", async (t) => {
+	const localStorage = new FakeLocalStorage();
+	const harness = await loadDesignVariantsHarness(t, { localStorage });
+	harness.hydrateClientDesignVariants("?variants=autoArrange");
+
+	let notifications = 0;
+	harness.subscribeToDesignVariants(() => {
+		notifications += 1;
+	});
+
+	// Another tab turns Auto arrange off and Panel on.
+	harness.hydrateDesignVariants({ ...harness.getDefaultDesignVariants(), autoArrange: false, panel: true });
+	assert.equal(harness.getDesignVariants().panel, true);
+	assert.equal(harness.getDesignVariants().autoArrange, true);
+	assert.equal(notifications, 1);
+
+	// A base change hidden by an override does not notify.
+	harness.hydrateDesignVariants({ ...harness.getDefaultDesignVariants(), autoArrange: true, panel: true });
+	assert.equal(notifications, 1);
+	assert.equal(localStorage.writes, 0);
+});
+
+test("unknown ?variants= ids warn once and never log a console error", async (t) => {
+	const harness = await loadDesignVariantsHarness(t);
+	const warn = t.mock.method(console, "warn", () => {});
+	const error = t.mock.method(console, "error", () => {});
+
+	harness.hydrateClientDesignVariants("?variants=bogus,autoArrange");
+	harness.hydrateClientDesignVariants("?variants=bogus");
+
+	assert.equal(warn.mock.callCount(), 1);
+	assert.match(String(warn.mock.calls[0].arguments[0]), /unknown design variant id\(s\).*bogus.*Known ids: panel, simple-views/u);
+	assert.equal(error.mock.callCount(), 0);
+	assert.equal(harness.getDesignVariants().autoArrange, true);
+
+	const clean = await loadDesignVariantsHarness(t);
+	clean.hydrateClientDesignVariants("?variants=autoArrange");
+	assert.equal(warn.mock.callCount(), 1, "known ids do not warn");
 });

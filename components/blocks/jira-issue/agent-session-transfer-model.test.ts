@@ -6,7 +6,6 @@ import {
 	isWithinJiraIssueDropZoneHalo,
 	nextJiraIssueSessionTransferArmed,
 	shouldCommitJiraIssueSessionTransferDrop,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./agent-session-transfer-model.ts";
 
 const UNLINK_RECT = { bottom: 40, left: 0, right: 100, top: 0 } as const;

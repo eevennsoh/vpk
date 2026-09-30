@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 
+import { withDesignVariants } from "@/tests/helpers/design-variants";
+import { appUrl } from "@/tests/helpers/origin";
+
+// Native morph, not Peel's handoff (which has its own coverage).
+const NATIVE_MORPH_BOARD_ROUTE = withDesignVariants("/jira-team-eu26", { sessionPeel: false });
+
 interface MorphFrame {
 	time: number;
 	agentSize: number;
@@ -11,17 +17,12 @@ interface MorphFrame {
 for (const theme of ["light", "dark"] as const) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		test(`nearby work items share distance-weighted traces (${theme}, ${reducedMotion})`, async ({ page }) => {
-			const baseURL = process.env.PLAYWRIGHT_BASE_URL;
-			if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
 			await page.setViewportSize({ width: 1800, height: 1100 });
 			// Verify the drag preference on a mounted board, independently of
 			// theme/reduced-motion startup behavior elsewhere in the app shell.
 			await page.emulateMedia({ reducedMotion: "no-preference", colorScheme: theme });
-			await page.addInitScript((mode) => {
-				localStorage.setItem("ui-theme", mode);
-				localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false }));
-			}, theme);
-			await page.goto(`${baseURL}/jira-team-eu26`);
+			await page.addInitScript((mode) => localStorage.setItem("ui-theme", mode), theme);
+			await page.goto(appUrl(NATIVE_MORPH_BOARD_ROUTE));
 			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 			await page.emulateMedia({ reducedMotion, colorScheme: theme });
 			const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
@@ -66,12 +67,9 @@ for (const theme of ["light", "dark"] as const) {
 }
 
 test("trace stays subtle at pickup and fades through intermediate brightness on approach", async ({ page }) => {
-	const baseURL = process.env.PLAYWRIGHT_BASE_URL;
-	if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
-	await page.goto(`${baseURL}/jira-team-eu26`);
+	await page.goto(appUrl(NATIVE_MORPH_BOARD_ROUTE));
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 	const article = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
 	await article.scrollIntoViewIfNeeded();
@@ -145,12 +143,9 @@ test("trace stays subtle at pickup and fades through intermediate brightness on 
 });
 
 test("nearby borders stay stable during subpixel nearest-card handoffs", async ({ page }) => {
-	const baseURL = process.env.PLAYWRIGHT_BASE_URL;
-	if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
 	await page.setViewportSize({ width: 1440, height: 920 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
-	await page.goto(`${baseURL}/jira-team-eu26`);
+	await page.goto(appUrl(NATIVE_MORPH_BOARD_ROUTE));
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 	const article = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
 	await article.scrollIntoViewIfNeeded();
@@ -210,12 +205,9 @@ test("nearby borders stay stable during subpixel nearest-card handoffs", async (
 });
 
 test("horizontal tracing does not jump when brightness retargets across columns", async ({ page }) => {
-	const baseURL = process.env.PLAYWRIGHT_BASE_URL;
-	if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
 	await page.setViewportSize({ width: 1440, height: 920 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
-	await page.goto(`${baseURL}/jira-team-eu26`);
+	await page.goto(appUrl(NATIVE_MORPH_BOARD_ROUTE));
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 	const article = page.getByTestId("agent-session-row-lw-scope-thread").locator("article");
 	await article.scrollIntoViewIfNeeded();
@@ -263,8 +255,7 @@ for (const grab of [0.3, 0.8]) {
 	test(`pickup stays continuous from the ${grab < 0.5 ? "left" : "right"} half`, async ({ page }) => {
 		await page.setViewportSize({ width: 1440, height: 920 });
 		await page.emulateMedia({ reducedMotion: "no-preference" });
-		await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl(NATIVE_MORPH_BOARD_ROUTE));
 		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 		const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
 		if (await expand.isVisible()) await expand.click();
@@ -335,9 +326,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await page.setViewportSize({ width: firstMove === 4 ? 1440 : 1100, height: 920 });
 			await page.emulateMedia({ reducedMotion, colorScheme: firstMove === 4 ? "dark" : "light" });
 			await page.addInitScript((theme) => localStorage.setItem("ui-theme", theme), firstMove === 4 ? "dark" : "light");
-			// This suite exercises the native morph; Peel's handoff has its own coverage.
-			await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
-			await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+			await page.goto(appUrl(NATIVE_MORPH_BOARD_ROUTE));
 			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
 			await expect(page.locator("html")).toHaveAttribute("data-color-mode", firstMove === 4 ? "dark" : "light");
 			const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });

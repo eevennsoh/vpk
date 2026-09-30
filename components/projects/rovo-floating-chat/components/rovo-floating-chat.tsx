@@ -18,6 +18,7 @@ import type {
 import { ChatHistoryDrawer } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
 import FloatingChatHeader from "./floating-chat-header";
 import type { AgentResultCreator } from "@/components/projects/sidebar-chat/components/agent-result-card";
+import { motionEase } from "@/lib/motion";
 
 interface RovoFloatingChatProps {
 	agentCreator?: AgentResultCreator;
@@ -92,7 +93,7 @@ export default function RovoFloatingChat({
 			initial={embedded || shouldReduceMotion ? false : { opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
 			exit={embedded ? { opacity: 1, y: 0 } : { opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
-			transition={embedded || shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0, 0.4, 0, 1] }}
+			transition={embedded || shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: motionEase.out }}
 			className={embedded
 				? "absolute inset-0 z-10 flex min-h-0 w-full flex-col overflow-visible border-l border-border bg-surface-overlay"
 				: "fixed right-6 bottom-6 z-[560] flex max-h-[min(720px,calc(100dvh-96px))] w-[400px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-2xl bg-surface-overlay"}

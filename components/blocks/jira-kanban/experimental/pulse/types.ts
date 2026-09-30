@@ -1,5 +1,5 @@
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
-import type { JiraKanbanCardTag, JiraKanbanPriority } from "../../index";
+import type { JiraKanbanCardTag, JiraKanbanPriority } from "@/components/blocks/jira-kanban/index";
 
 /**
  * Pulse — the experimental Kanban's timeline mode.

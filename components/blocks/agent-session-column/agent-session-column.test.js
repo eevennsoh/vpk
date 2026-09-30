@@ -181,11 +181,11 @@ test("card rendering is delegated to the Agent Session block, never re-implement
 });
 
 test("the header count defaults to the visible sessions and can be overridden", () => {
+	// Count derivation (host override, filters, archived view) is proven
+	// behaviorally in agent-session-column-view.test.js.
 	assert.match(INDEX_SOURCE, /title = "Unlink sessions"/u);
-	assert.match(INDEX_SOURCE, /untrackedCount = count \?\? visibleItems\.length/u);
 	assert.match(INDEX_SOURCE, /hasActiveFilters/u);
 	assert.match(INDEX_SOURCE, /displayedItems\.length/u);
-	assert.match(INDEX_SOURCE, /view === "hidden" \? hiddenItems\.length : untrackedCount/u);
 	assert.match(TYPES_SOURCE, /count\?: number;/u);
 });
 
@@ -807,7 +807,7 @@ test("the sticky footer reads Archived N in the active view", () => {
 	assert.match(FOOTER_SOURCE, /\bp-3\b/u);
 	assert.match(FOOTER_SOURCE, /hover:bg-surface-hovered/u);
 	assert.doesNotMatch(FOOTER_SOURCE, /size="compact"|variant="ghost"/u);
-	assert.match(INDEX_SOURCE, /showWellFooter = view === "hidden" \|\| hiddenCount > 0/u);
+	// Footer presence and count: agent-session-column-view.test.js.
 	// An empty visible list still occupies the flex-1 cell so Archived stays
 	// the bottom sibling instead of jumping under a short empty message.
 	assert.match(
@@ -816,7 +816,6 @@ test("the sticky footer reads Archived N in the active view", () => {
 	);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnHiddenFooter/u);
 	assert.match(INDEX_SOURCE, /mode=\{view === "hidden" \? "back" : "hidden"\}/u);
-	assert.match(INDEX_SOURCE, /count=\{view === "hidden" \? untrackedCount : hiddenCount\}/u);
 	// Flex sibling of the scrollport, never sticky inside it. The bottom fade
 	// is pinned to the list wrapper so it sits on the last cards, not the footer.
 	assert.match(
@@ -842,7 +841,6 @@ test("the archived view keeps Archived in the header and a back footer", () => {
 	assert.match(FOOTER_SOURCE, /<ChevronLeftIcon label="" size="small" \/>/u);
 	assert.match(FOOTER_SOURCE, /Back to \$\{title\}/u);
 	assert.match(INDEX_SOURCE, /onClick=\{view === "hidden" \? closeHiddenView : openHiddenView\}/u);
-	assert.match(INDEX_SOURCE, /untrackedCount = count \?\? visibleItems\.length/u);
 	assert.match(INDEX_SOURCE, /items=\{displayedItems\}/u);
 });
 

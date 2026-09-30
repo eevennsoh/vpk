@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const OMNIBAR_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/blocks/omnibar`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const OMNIBAR_URL = appUrl("/preview/blocks/omnibar");
 
 test("keyboard activation moves focus from the Omnibar pill into the revealed composer", async ({ page }) => {
 	await page.goto(OMNIBAR_URL, { waitUntil: "domcontentloaded" });

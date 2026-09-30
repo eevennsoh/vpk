@@ -233,7 +233,7 @@ test("the pull-request status lozenge trails the title like every other card", (
 	// One title row for every variant: visual, title, then the trailing status.
 	assert.match(
 		COMPONENT_SOURCE,
-		/<span className="inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card", statusIconTone\(item\.variant, item\.status\)\)\}<\/span>[\s\S]*?\{item\.status \? \(\s*<span className="shrink-0">\s*<SmartLinkStatusDropdown status=\{item\.status\} \/>/u,
+		/<span className="inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card", statusIconTone\(item\.variant, item\.status\)\)\}<\/span>[\s\S]*?\{item\.status \? \(\s*<span className="shrink-0">\s*<SmartLinkStatusDropdown selection=\{activeStatusSelection\} status=\{item\.status\} \/>/u,
 	);
 	// The leading-placement split and its lozenge glyph are gone with it.
 	assert.doesNotMatch(TYPES_SOURCE, /placement\?: "leading" \| "trailing";/u);

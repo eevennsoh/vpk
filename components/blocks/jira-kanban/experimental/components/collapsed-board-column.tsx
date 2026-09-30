@@ -12,7 +12,7 @@ import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import type { KanbanCollapsedChromeStyles } from "../../column-chrome";
+import type { KanbanCollapsedChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 import { BOARD_COLUMN_ACTION_REVEAL } from "../lib/board-column-action-reveal";
 
 const COLLAPSED_HEAD_COUNT_AT_REST = cn(

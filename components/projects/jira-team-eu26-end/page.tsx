@@ -21,6 +21,7 @@ import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
+import { countNeedsInputAgents } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-filter";
 import {
 	isPulseAgentSession,
 	type PulseLooseWork,
@@ -107,15 +108,8 @@ function JiraTeamEu26App(): React.ReactElement {
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
 	const [boardColumns, setBoardColumns] = useState(createJiraTeamEu26EndKeynoteBoardColumns);
-	const needsInputCount = boardColumns.reduce(
-		(total, column) => total + column.cards.reduce(
-			(cardTotal, card) => cardTotal + (card.agentActivities?.filter(
-				(activity) => activity.state === "awaiting-input",
-			).length ?? 0),
-			0,
-		),
-		0,
-	);
+	// Same selector the Needs input focus uses, so the count names the rows it shows.
+	const needsInputCount = countNeedsInputAgents(boardColumns);
 	const {
 		composerPrefillRequest,
 		handleCardGenerativeActionSubmit,

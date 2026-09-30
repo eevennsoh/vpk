@@ -44,6 +44,19 @@ Refuse to drive:
 
 Two worktrees can run side by side (deterministic ports, unique Portless origins, `vpk-dev-<worktree>` tmux sessions). Two browsers against the **same** origin share `localStorage` (`ui-theme`) — do not double-drive one instance.
 
+## What to re-check, then prove it
+
+1. **What must I re-check?** `control-vpk where <path|slug|/route> [--json]` walks a changed file or directory up to its owner (catalog entry such as `components/projects/<x>`, or the nearest `components/<group>/<x>`) and prints the app routes that render it, one level of `@/` importers with their routes, and the feature recipes and `tests/**/*.spec.ts` specs that mention those routes or paths. It reads `.agents/knowledge/repo-map.json` only; it does not start anything. The owner line shows the catalog `status` (`live`, `frozen`, `superseded`) and `basedOn`; a frozen or superseded owner prints a warning — confirm the user means that variant before editing it.
+2. **Prove this change (default step).** `control-vpk capture <route>` validates the route like `open-target`, opens it on this worktree's origin in the scoped session, sets the viewport (default `1280x720`) and **light** media, reloads, then writes `capture.png`, `capture.aria.txt`, console, page-error and a11y JSON, and `manifest.json` (`route`, `url`, `viewport`, `media`, `variants`, `colorMode`, `counts`, `files`, `ok`) to `output/agent-browser/vpk-verify/<id>/`. It exits non-zero on console errors, page errors, a failed step, or a route that paints only the app shell (no text or media) — a blank screenshot is not proof. A11y violations are reported but non-fatal unless `--strict-a11y`.
+
+```bash
+.agents/skills/vpk-verify/scripts/control-vpk where components/projects/jira-team-eu26-end
+.agents/skills/vpk-verify/scripts/control-vpk capture /jira-team-eu26-end --wait-text "Jira Design"
+.agents/skills/vpk-verify/scripts/control-vpk capture /jira-team-eu26 --variant autoArrange --variant sessionPeel=off --id eu26-auto-arrange
+```
+
+Capture one screenshot of the exact route in the light theme by default. Capture more states (`--media dark`, `--viewport 390x844`, `--variant <id>[=on|off]`, each with its own `--id`) only when the user asks or the change is state-specific. `--variant` is repeatable and forces a Settings **Properties** design variant for that load by merging `?variants=<id>,-<id>` into the route's query (see `State entry` in [features/README.md](features/README.md)); it writes no storage, so it does not change the user's settings. An unknown id fails before the browser opens and lists the valid ids. If the summary warns that `data-color-mode` differs from the requested media, a stored theme preference won. Switch it with the header theme control, then capture again. When `VPK_VERIFY=manual` is set, the user has opted into manual verification. `capture` then opens no browser and exits 0. Hand the route to the user instead. Interactions (drag, menus, Settings) still follow the feature recipe through `control-vpk browser`.
+
 ## Drive
 
 Harness: `agent-browser` via `control-vpk open-target` for the first object navigation, then `control-vpk browser` for interactions. Both inject a worktree-scoped session (`agent-browser session id --scope worktree --prefix vpk-verify`). Load `agent-browser skills get core` once per session if you are unsure of flags. After a Next.js code edit, also follow `next-dev-loop` (`/_next/mcp` plus this same browser).
@@ -99,7 +112,7 @@ to Playwright or curl. Report the classification and evidence boundary.
 
 ## Evidence
 
-Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump.
+Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump. `control-vpk capture` does this for a route's loaded state. Use the commands below for states reached mid-interaction.
 
 ```bash
 EVIDENCE="$(.agents/skills/vpk-verify/scripts/control-vpk evidence-dir)/jira-team-eu26"
@@ -143,6 +156,8 @@ All invocations are from the worktree root. The script is executable.
 .agents/skills/vpk-verify/scripts/control-vpk session
 .agents/skills/vpk-verify/scripts/control-vpk evidence-dir
 .agents/skills/vpk-verify/scripts/control-vpk open-target /components/ui/accordion
+.agents/skills/vpk-verify/scripts/control-vpk where components/ui/accordion.tsx
+.agents/skills/vpk-verify/scripts/control-vpk capture /components/ui/accordion [--id <label>] [--viewport WxH] [--media light|dark] [--variant <id>[=on|off]]... [--wait-text <text>] [--headed] [--strict-a11y]
 .agents/skills/vpk-verify/scripts/control-vpk cleanup
 pnpm run verify:vpk-feature-map
 ```

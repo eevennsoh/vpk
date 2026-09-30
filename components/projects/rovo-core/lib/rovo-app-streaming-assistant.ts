@@ -1,10 +1,10 @@
-import type { RovoUIMessage } from "../../../../lib/rovo-ui-messages";
+import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import {
 	getMessageInterruption,
 	getMessageText,
 	hasTurnCompleteSignal,
 	isRequestUserInputToolName,
-} from "../../../../lib/rovo-ui-messages";
+} from "@/lib/rovo-ui-messages";
 
 export type RovoAppPendingAssistantDisplayState =
 	| "idle"

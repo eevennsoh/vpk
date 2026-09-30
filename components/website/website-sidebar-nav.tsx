@@ -349,8 +349,7 @@ export function WebsiteSidebarNav({
 				>
 
 					{/* Static pages */}
-					{!isSearching && !adsOnly && staticPages.length > 0 && (
-						<ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+					{!isSearching && !adsOnly && staticPages.length > 0 ? <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
 							{staticPages.map((page) => (
 								page.children?.length ? (
 									<NavGroupItem
@@ -371,8 +370,7 @@ export function WebsiteSidebarNav({
 									/>
 								)
 							))}
-						</ul>
-					)}
+						</ul> : null}
 
 					{/* Collapsible sections */}
 					{filteredSections.map((section) => {
@@ -394,8 +392,7 @@ export function WebsiteSidebarNav({
 											{section.title}
 										</div>
 									)}
-									{!isFiltering && hasItems && (
-										<button
+									{!isFiltering && hasItems ? <button
 											type="button"
 											onClick={() => toggleSection(section.title)}
 											aria-label={sectionOpen ? `Collapse ${section.title}` : `Expand ${section.title}`}
@@ -408,12 +405,10 @@ export function WebsiteSidebarNav({
 											>
 												<ChevronDownIcon label="" size="small" />
 											</span>
-										</button>
-									)}
+										</button> : null}
 								</div>
 
-								{sectionOpen && hasItems && (
-									<ul className="m-0 flex list-none flex-col gap-1 p-0">
+								{sectionOpen && hasItems ? <ul className="m-0 flex list-none flex-col gap-1 p-0">
 										{section.items.map((item) =>
 											item.children?.length ? (
 												<NavGroupItem
@@ -434,18 +429,15 @@ export function WebsiteSidebarNav({
 												/>
 											),
 										)}
-									</ul>
-								)}
+									</ul> : null}
 							</div>
 						);
 					})}
 
 					{/* No results */}
-					{isFiltering && filteredSections.length === 0 && (
-						<p className="px-3 py-6 text-sm text-text-subtlest text-center">
+					{isFiltering && filteredSections.length === 0 ? <p className="px-3 py-6 text-sm text-text-subtlest text-center">
 							No components found
-						</p>
-					)}
+						</p> : null}
 				</nav>
 
 				{/* Footer */}
@@ -508,9 +500,7 @@ function NavFlatItem({
 				className="flex items-center gap-1.5 rounded-md py-2 px-3 text-sm no-underline transition-colors text-text-subtle data-[active=true]:bg-bg-neutral data-[active=true]:font-semibold data-[active=true]:text-text"
 			>
 				<span className="truncate">{item.name}</span>
-				{item.adsPackage && (
-					<AdsTag adsPackage={item.adsPackage} mounted={mounted} variant={item.adsTagVariant} />
-				)}
+				{item.adsPackage ? <AdsTag adsPackage={item.adsPackage} mounted={mounted} variant={item.adsTagVariant} /> : null}
 			</Link>
 		</li>
 	);
@@ -538,9 +528,7 @@ function NavGroupItem({
 					{item.expandOnly ? (
 						<div className={cn(NAV_GROUP_LABEL_CLASSNAME, "gap-1.5")}>
 							<span className="truncate">{item.name}</span>
-							{item.adsPackage && (
-								<AdsTag adsPackage={item.adsPackage} mounted={mounted} variant={item.adsTagVariant} />
-							)}
+							{item.adsPackage ? <AdsTag adsPackage={item.adsPackage} mounted={mounted} variant={item.adsTagVariant} /> : null}
 						</div>
 					) : (
 						<Link
@@ -549,13 +537,10 @@ function NavGroupItem({
 							className={cn(NAV_GROUP_LINK_CLASSNAME, "gap-1.5")}
 						>
 							<span className="truncate">{item.name}</span>
-							{item.adsPackage && (
-								<AdsTag adsPackage={item.adsPackage} mounted={mounted} variant={item.adsTagVariant} />
-							)}
+							{item.adsPackage ? <AdsTag adsPackage={item.adsPackage} mounted={mounted} variant={item.adsTagVariant} /> : null}
 						</Link>
 					)}
-					{!isFiltering && (
-						<CollapsibleTrigger
+					{!isFiltering ? <CollapsibleTrigger
 							render={
 								<button
 									type="button"
@@ -571,8 +556,7 @@ function NavGroupItem({
 							>
 								<ChevronDownIcon label="" size="small" />
 							</span>
-						</CollapsibleTrigger>
-					)}
+						</CollapsibleTrigger> : null}
 				</div>
 				<CollapsibleContent>
 					<ul className="ml-3.5 translate-x-px list-none m-0 border-l border-border px-2.5 py-0.5 flex flex-col gap-0.5">

@@ -221,7 +221,7 @@ function ConversationBarContent({
         <Card className="m-0 w-full gap-0 border p-0 shadow-lg">
           <div className="flex flex-col-reverse">
             <div>
-              {keyboardOpen && <Separator />}
+              {keyboardOpen ? <Separator /> : null}
               <div className="flex items-center justify-between gap-2 p-2">
                 <div className="h-8 w-[120px] md:h-10">
                   <div
@@ -257,13 +257,11 @@ function ConversationBarContent({
                             agentState === "disconnected" && "opacity-0"
                           )}
                         />
-                        {agentState === "disconnected" && (
-                          <div className="absolute inset-0 flex items-center justify-center">
+                        {agentState === "disconnected" ? <div className="absolute inset-0 flex items-center justify-center">
                             <span className="text-foreground/50 text-[10px] font-medium">
                               Customer Support
                             </span>
-                          </div>
-                        )}
+                          </div> : null}
                       </div>
                     </div>
                   </div>

@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {

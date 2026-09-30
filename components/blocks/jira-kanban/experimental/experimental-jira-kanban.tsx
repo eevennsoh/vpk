@@ -438,7 +438,6 @@ function ExperimentalJiraKanbanView({
 	onCardAgentActivityViewChat,
 	onCardAssignedAgentIdsChange,
 	onCardAgentSessionLink,
-	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
 	showAgentSessionUnlinkWell = true,
 	onCardAgentDoneRunReview,

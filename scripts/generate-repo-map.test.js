@@ -5,9 +5,11 @@ const path = require("node:path");
 const test = require("node:test");
 
 const {
+	buildComponentMap,
 	buildRepoMap,
 	buildTestSliceMap,
 	checkRepoMap,
+	collectAppPageOwnerErrors,
 	collectAppPageRoutes,
 	collectLocalSkills,
 	extractExplicitNodeTestFiles,
@@ -73,6 +75,10 @@ const APP_PAGE_ROUTES = [
 			source: "components/projects/rovo/page",
 			symbols: ["RovoPage"],
 		}],
+		primaryOwner: {
+			kind: "shell",
+			sources: ["components/projects/rovo/page"],
+		},
 		routePath: "/rovo/[[...id]]",
 		shellOwnerCount: 1,
 		shellOwners: [{
@@ -136,9 +142,11 @@ test("builds deterministic route owners and component categories", () => {
 		"blocks:1",
 		"ui:1",
 	]);
+	assert.deepEqual(repoMap.components.summary.statusCounts, { live: 2, frozen: 0, superseded: 0 });
 	assert.deepEqual(repoMap.appPages.summary, {
 		ownerImportCount: 1,
 		pageCount: 1,
+		primaryOwnerKinds: { shell: 1 },
 	});
 	assert.equal(repoMap.testSlices.summary.sliceCount, 3);
 	assert.deepEqual(repoMap.testSlices.slices.find((slice) => slice.name === "test:backend").prefixes, ["backend/"]);
@@ -150,6 +158,55 @@ test("builds deterministic route owners and component categories", () => {
 	assert.deepEqual(repoMap.skills.summary, {
 		localSkillCount: 1,
 	});
+});
+
+test("records catalog lifecycle status (default live) with basedOn and note only when declared", () => {
+	const componentMap = buildComponentMap([
+		{
+			category: "projects",
+			importPath: "@/components/projects/jira-golden-journeys-v4",
+			name: "Jira Golden Journeys v4",
+			slug: "jira-golden-journeys-v4",
+			status: "superseded",
+			basedOn: "jira-golden-journeys-v3",
+			note: "Superseded by jira-team-eu26.",
+		},
+		{
+			category: "projects",
+			importPath: "@/components/projects/jira-golden-journeys-v3",
+			name: "Jira Golden Journeys v3",
+			slug: "jira-golden-journeys-v3",
+			status: "frozen",
+		},
+		...COMPONENTS,
+	]);
+
+	assert.deepEqual(componentMap.summary.statusCounts, { live: 2, frozen: 1, superseded: 1 });
+	assert.deepEqual(componentMap.categories.find((group) => group.category === "projects").entries, [
+		{
+			category: "projects",
+			slug: "jira-golden-journeys-v3",
+			name: "Jira Golden Journeys v3",
+			importPath: "@/components/projects/jira-golden-journeys-v3",
+			status: "frozen",
+		},
+		{
+			category: "projects",
+			slug: "jira-golden-journeys-v4",
+			name: "Jira Golden Journeys v4",
+			importPath: "@/components/projects/jira-golden-journeys-v4",
+			status: "superseded",
+			basedOn: "jira-golden-journeys-v3",
+			note: "Superseded by jira-team-eu26.",
+		},
+	]);
+	assert.deepEqual(componentMap.categories.find((group) => group.category === "ui").entries, [{
+		category: "ui",
+		slug: "button",
+		name: "Button",
+		importPath: "@/components/ui/button",
+		status: "live",
+	}]);
 });
 
 test("extracts test-slice selections from package scripts", () => {
@@ -196,6 +253,10 @@ test("collects app page owners from local page imports", () => {
 				source: "components/projects/rovo/page",
 				symbols: ["RovoPage"],
 			}],
+			primaryOwner: {
+				kind: "shell",
+				sources: ["components/projects/rovo/page"],
+			},
 			routePath: "/rovo/[[...id]]",
 			shellOwnerCount: 1,
 			shellOwners: [{
@@ -205,6 +266,171 @@ test("collects app page owners from local page imports", () => {
 			}],
 			source: "app/rovo/[[...id]]/page.tsx",
 		}]);
+	} finally {
+		rmSync(cwd, { force: true, recursive: true });
+	}
+});
+
+const CATALOG_COMPONENTS = [
+	{
+		category: "projects",
+		importPath: "@/components/projects/jira-team-eu26-end",
+		name: "Jira Team EU26 End",
+		slug: "jira-team-eu26-end",
+		basedOn: "jira-team-eu26",
+		note: "Keynote closing board.",
+	},
+	{
+		category: "arts",
+		importPath: "@/components/arts/awake",
+		name: "Awake",
+		slug: "awake",
+	},
+];
+
+const CATALOG_REGISTRY_DATA = {
+	primary: {
+		projects: {
+			"jira-team-eu26-end": {
+				imports: [{
+					importPath: "../demos/projects/jira-team-eu26-end-demo",
+					sourceFile: "components/website/registry/projects.ts",
+				}],
+			},
+		},
+	},
+	variants: {},
+};
+
+function writeFixtureFile(cwd, relativePath, lines) {
+	mkdirSync(path.dirname(path.join(cwd, relativePath)), { recursive: true });
+	writeFileSync(path.join(cwd, relativePath), `${lines.join("\n")}\n`);
+}
+
+function writeLoaderPage(cwd, pageDir, loaderCall) {
+	writeFixtureFile(cwd, `${pageDir}/page.tsx`, [
+		'"use client";',
+		'import { Suspense, createElement, use } from "react";',
+		'import { loadDemoComponent as loadDemo } from "@/components/website/demo-registry-loader";',
+		"",
+		"function Content() {",
+		`\tconst Demo = use(${loaderCall});`,
+		"\treturn Demo ? createElement(Demo) : null;",
+		"}",
+		"",
+		"export default function Page() {",
+		"\treturn <Suspense><Content /></Suspense>;",
+		"}",
+	]);
+}
+
+test("resolves literal demo loader pages to their catalog source and registry demo", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-repo-map-loader-"));
+	try {
+		writeLoaderPage(cwd, "app/jira-team-eu26-end", 'loadDemo("jira-team-eu26-end", "projects")');
+		writeFixtureFile(cwd, "components/projects/jira-team-eu26-end/page.tsx", ["export default function Page() { return null; }"]);
+		writeFixtureFile(cwd, "components/website/demos/projects/jira-team-eu26-end-demo.tsx", ["export default function Demo() { return null; }"]);
+
+		const [page] = collectAppPageRoutes({
+			components: CATALOG_COMPONENTS,
+			cwd,
+			registryData: CATALOG_REGISTRY_DATA,
+		});
+
+		assert.equal(page.routePath, "/jira-team-eu26-end");
+		assert.deepEqual(page.shellOwners, []);
+		assert.deepEqual(page.owners.map((owner) => owner.source), ["components/website/demo-registry-loader"]);
+		assert.deepEqual(page.primaryOwner, {
+			kind: "catalog",
+			category: "projects",
+			slug: "jira-team-eu26-end",
+			status: "live",
+			basedOn: "jira-team-eu26",
+			loader: "loadDemoComponent",
+			source: "components/projects/jira-team-eu26-end",
+			entry: "components/projects/jira-team-eu26-end/page.tsx",
+			demo: "components/website/demos/projects/jira-team-eu26-end-demo.tsx",
+		});
+		assert.deepEqual(collectAppPageOwnerErrors([page]), []);
+	} finally {
+		rmSync(cwd, { force: true, recursive: true });
+	}
+});
+
+test("fails generation and check when a literal loader slug has no catalog entry", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-repo-map-unknown-slug-"));
+	try {
+		writeFixtureFile(cwd, "backend/routes/route-manifest.json", [JSON.stringify(ROUTE_MANIFEST)]);
+		writeLoaderPage(cwd, "app/missing-demo", 'loadDemo("missing-demo", "projects")');
+
+		const pages = collectAppPageRoutes({ components: CATALOG_COMPONENTS, cwd, registryData: CATALOG_REGISTRY_DATA });
+		assert.deepEqual(collectAppPageOwnerErrors(pages), [
+			'app/missing-demo/page.tsx: loadDemoComponent(slug: "missing-demo", category: "projects") has no matching catalog entry in app/data/component-manifest.ts.',
+		]);
+
+		const options = {
+			components: CATALOG_COMPONENTS,
+			cwd,
+			localSkills: [],
+			outputPath: ".agents/knowledge/repo-map.json",
+			packageJson: PACKAGE_JSON,
+			registryData: CATALOG_REGISTRY_DATA,
+		};
+		const expectedError = /Cannot resolve 1 catalog-backed app page owner\(s\)[\s\S]*app\/missing-demo\/page\.tsx: loadDemoComponent\(slug: "missing-demo", category: "projects"\)/u;
+		assert.throws(() => checkRepoMap(options), expectedError);
+		assert.throws(() => writeRepoMap(options), expectedError);
+	} finally {
+		rmSync(cwd, { force: true, recursive: true });
+	}
+});
+
+test("marks dynamic catalog routes without guessing a slug and classifies redirect and inline pages", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-repo-map-dynamic-"));
+	try {
+		writeFixtureFile(cwd, "app/preview/projects/[slug]/page.tsx", [
+			'import { RenderPreviewCategoryPage } from "@/app/preview/_shared/render-preview-category-page";',
+			"",
+			"export default async function Page({ params }: { params: Promise<{ slug: string }> }) {",
+			"\tconst { slug } = await params;",
+			'\treturn <RenderPreviewCategoryPage slug={slug} category="projects" />;',
+			"}",
+		]);
+		writeLoaderPage(cwd, "app/preview/arts/[slug]", 'loadDemo(slug, "arts")');
+		writeFixtureFile(cwd, "app/weather/page.tsx", [
+			'import { redirect } from "next/navigation";',
+			"",
+			"export default function Page() {",
+			'\tredirect("/awake");',
+			"}",
+		]);
+		writeFixtureFile(cwd, "app/shadows/page.tsx", [
+			"export default function Page() {",
+			'\treturn <div className="shadow-md" />;',
+			"}",
+		]);
+
+		const pages = collectAppPageRoutes({ components: CATALOG_COMPONENTS, cwd, registryData: CATALOG_REGISTRY_DATA });
+		assert.deepEqual(
+			Object.fromEntries(pages.map((page) => [page.routePath, page.primaryOwner])),
+			{
+				"/preview/arts/[slug]": { kind: "dynamic", dynamic: "catalog", category: "arts", loader: "loadDemoComponent" },
+				"/preview/projects/[slug]": { kind: "dynamic", dynamic: "catalog", category: "projects", loader: "RenderPreviewCategoryPage" },
+				"/shadows": { kind: "inline", source: "app/shadows/page.tsx" },
+				"/weather": { kind: "redirect", to: "/awake" },
+			},
+		);
+		assert.deepEqual(collectAppPageOwnerErrors(pages), []);
+
+		writeFixtureFile(cwd, "app/preview/unknown/[slug]/page.tsx", [
+			'import { RenderPreviewCategoryPage } from "@/app/preview/_shared/render-preview-category-page";',
+			"",
+			"export default function Page({ slug }: { slug: string }) {",
+			'\treturn <RenderPreviewCategoryPage slug={slug} category="not-a-category" />;',
+			"}",
+		]);
+		assert.deepEqual(collectAppPageOwnerErrors(collectAppPageRoutes({ components: CATALOG_COMPONENTS, cwd })), [
+			'app/preview/unknown/[slug]/page.tsx: RenderPreviewCategoryPage(slug: <dynamic>, category: "not-a-category") references a category with no entries in app/data/component-manifest.ts.',
+		]);
 	} finally {
 		rmSync(cwd, { force: true, recursive: true });
 	}

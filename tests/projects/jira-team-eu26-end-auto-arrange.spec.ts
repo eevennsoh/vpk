@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
+import { withDesignVariants } from "@/tests/helpers/design-variants";
+import { appUrl } from "@/tests/helpers/origin";
+
+// Bulk-drag tests run with Auto arrange off (no toolbar button); the rest drive that button.
+const AUTO_ARRANGE_BOARD_ROUTE = withDesignVariants("/jira-team-eu26-end", { autoArrange: true });
+const MANUAL_ARRANGE_BOARD_ROUTE = withDesignVariants("/jira-team-eu26-end", { autoArrange: false });
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
-test.beforeEach(async ({ page }, testInfo) => {
-	await page.addInitScript((autoArrange) => localStorage.setItem("ui-design-variants", JSON.stringify({ autoArrange })), !testInfo.title.startsWith("bulk drag"));
-});
 
 test("Done keeps its scrollbar outside the shader and excludes it from the shader print", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 720 });
@@ -19,7 +21,7 @@ test("Done keeps its scrollbar outside the shader and excludes it from the shade
 			}
 		}).observe(document, { childList: true, subtree: true });
 	});
-	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await page.goto(appUrl(AUTO_ARRANGE_BOARD_ROUTE), { waitUntil: "networkidle" });
 	for (const code of ["TEU-1", "TEU-2", "TEU-3"]) {
 		await page.locator(`[data-issue-key="${code}"] [draggable]`).first().click({ modifiers: ["Meta"] });
 	}
@@ -61,7 +63,7 @@ test("auto arrange unfolds full-size issue cards in their committed slots", asyn
 		};
 	});
 	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await page.goto(appUrl(AUTO_ARRANGE_BOARD_ROUTE), { waitUntil: "networkidle" });
 	const codes = ["TEU-1", "TEU-2", "TEU-3"];
 	const expected = await page.locator('[data-jira-kanban-column="Context"] [data-slot="jira-issue-card"]').evaluateAll(nodes => nodes.map(node => {
 		const { width, height } = node.getBoundingClientRect();
@@ -88,7 +90,7 @@ test("auto arrange unfolds full-size issue cards in their committed slots", asyn
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`keynote auto arrange sends all work items to Done (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${origin}/jira-team-eu26-end`);
+		await page.goto(appUrl(AUTO_ARRANGE_BOARD_ROUTE));
 		await page.getByRole("button", { name: "Create in Context", exact: true }).click();
 		const name = page.getByRole("textbox", { name: "Name this work item", exact: true });
 		await name.fill("New keynote item");
@@ -167,7 +169,7 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 			requestAnimationFrame(ignition);
 		});
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+		await page.goto(appUrl(MANUAL_ARRANGE_BOARD_ROUTE), { waitUntil: "networkidle" });
 		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 		await card("TEU-1").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await card("TEU-13").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });

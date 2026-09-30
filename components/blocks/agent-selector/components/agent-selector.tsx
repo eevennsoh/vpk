@@ -23,6 +23,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 export interface AgentSelectorAgent {
 	id: string;
@@ -144,7 +145,7 @@ const agentDescriptionVariants: Variants = {
 	active: (instant: boolean) => ({
 		opacity: 1,
 		transform: "translateY(0px)",
-		transition: instant ? { duration: 0 } : { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
+		transition: instant ? { duration: 0 } : { delay: 0.02, duration: 0.16, ease: motionEase.out },
 	}),
 };
 

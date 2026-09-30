@@ -418,7 +418,6 @@ async function finalizeRovoDirectOutputs({
 	buildDirectSpecWidgetParts,
 	detectEndpointType,
 	extractDirectSpec,
-	genuiHint,
 	getEnvVars,
 	handleDirectRovoMediaFences,
 	hasEmittedGenuiWidget = false,

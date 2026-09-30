@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const BOARD_URL = (process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000") + "/jira-team-eu26";
+import { appUrl } from "@/tests/helpers/origin";
+
+const BOARD_URL = appUrl("/jira-team-eu26");
 
 for (const reducedMotion of [false, true]) {
 	test(reducedMotion

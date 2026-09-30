@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 
 test.describe("column scroll fades", () => {
 	test.use({ ignoreHTTPSErrors: true });

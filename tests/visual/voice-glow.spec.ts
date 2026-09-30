@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${readFileSync(".dev-frontend-port", "utf8").trim()}`;
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const BASE_URL = resolveAppOrigin();
 test.use({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
 
 test("reset and switching to simulation clear stale microphone denial messages", async ({ page }) => {

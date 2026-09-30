@@ -2,7 +2,6 @@ import {
 	JIRA_DROPZONE_DURATION_TOKEN_MS,
 	JIRA_DROPZONE_FULL_MOTION_PROFILE,
 	type JiraDropzoneDurationToken,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./jira-dropzone-motion.ts";
 import type {
 	FlightProfile,

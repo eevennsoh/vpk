@@ -105,8 +105,8 @@ test("Agent loading exposes visible status copy, size variants, and uses VPK mot
 	assert.match(COMPONENT_SOURCE, /<span className="min-w-0 self-center whitespace-nowrap text-sm text-text">/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /<span aria-hidden="true" className="min-w-0 self-center/u);
 	assert.match(COMPONENT_SOURCE, /AGENT_LOADING_SWAP_MS = 600; \/\/ duration-slowest/u);
-	assert.match(COMPONENT_SOURCE, /duration: 0\.6, ease: \[0\.4, 0, 0, 1\] \}; \/\/ duration-slowest \+ ease-in-out/u);
-	assert.match(COMPONENT_SOURCE, /duration: 0\.4, ease: \[0\.6, 0, 0\.8, 0\.6\] \}; \/\/ duration-slower \+ ease-in/u);
+	assert.match(COMPONENT_SOURCE, /duration: 0\.6, ease: motionEase\.inOut \}; \/\/ duration-slowest \+ ease-in-out/u);
+	assert.match(COMPONENT_SOURCE, /duration: 0\.4, ease: motionEase\.in \}; \/\/ duration-slower \+ ease-in/u);
 	assert.match(COMPONENT_SOURCE, /from "motion\/react"/u);
 	assert.match(COMPONENT_SOURCE, /size = "default"/u);
 	assert.match(COMPONENT_SOURCE, /data-size=\{size\}/u);

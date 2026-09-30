@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { createMentionTokenParser, MENTION_MARKDOWN_TOKEN_NAME, mentionMarkdownTokenizer, parseMentionTokenId, serializeMentionNode, type MentionTokenResolver } from "./mention-token-codec.ts";
 
 // Minimal stand-ins for the tiptap-markdown helper + resolver. The codec only

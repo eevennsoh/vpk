@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const PULL_REQUEST_FIX_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/blocks/pull-request-fix`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const PULL_REQUEST_FIX_URL = appUrl("/preview/blocks/pull-request-fix");
 
 test("keyboard dismissal restores focus to the compact fix composer", async ({ page }) => {
 	await page.goto(PULL_REQUEST_FIX_URL, { waitUntil: "domcontentloaded" });

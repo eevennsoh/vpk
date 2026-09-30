@@ -7,7 +7,7 @@ import { toJiraIssueAttachTracePointer } from "@/components/blocks/jira-issue/at
 import { JiraIssueAttachTraceOverlay } from "@/components/blocks/jira-issue/attach-trace-overlay";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
-import type { KanbanColumnChromeStyles } from "../../column-chrome";
+import type { KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 import { resolveBoardCreateDropzoneDrag } from "../lib/board-agent-session-drag";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
 

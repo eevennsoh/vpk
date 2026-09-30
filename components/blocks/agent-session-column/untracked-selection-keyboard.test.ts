@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { isAdditiveSelectionModifier, selectionGestureFromModifierKeys } from "../agent-session/agent-session-selection-gesture.ts";
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { interpretSelectionKey } from "./untracked-selection.ts";
 
 function keyEvent(

@@ -13,7 +13,6 @@
 import {
 	JIRA_LINKING_MAX_BALLS,
 	type JiraLinkingFrame,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./field.ts";
 
 /**

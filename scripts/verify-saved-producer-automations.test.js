@@ -7,6 +7,7 @@ const test = require("node:test");
 const EXPECTED_PRODUCER_IDS = [
 	"bug-scan",
 	"code-simplification",
+	"correction-ladder",
 	"dependency-sweep",
 	"deprecation-audit",
 	"engineering-improvement-map",
@@ -32,7 +33,7 @@ function writeAutomation(root, id, promptLine) {
 	].join("\n"));
 }
 
-test("expected producer inventory names all twelve saved jobs", async () => {
+test("expected producer inventory names all thirteen saved jobs", async () => {
 	const { EXPECTED_PRODUCER_AUTOMATION_IDS } = await import("./verify-saved-producer-automations.mjs");
 
 	assert.deepEqual(EXPECTED_PRODUCER_AUTOMATION_IDS, EXPECTED_PRODUCER_IDS);

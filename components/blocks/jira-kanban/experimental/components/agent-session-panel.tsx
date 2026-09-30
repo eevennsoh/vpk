@@ -17,6 +17,7 @@ import {
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 /**
  * Default column title, mirrored from `AgentSessionColumn`'s own default so the
@@ -54,7 +55,7 @@ const AGENT_SESSION_PANEL_VARIANTS: Variants = {
 	visible: {
 		opacity: 1,
 		transform: "translateX(0px)",
-		transition: { duration: 0.25, ease: [0, 0.4, 0, 1] }, // duration-slow + ease-out
+		transition: { duration: 0.25, ease: motionEase.out }, // duration-slow + ease-out
 	},
 };
 

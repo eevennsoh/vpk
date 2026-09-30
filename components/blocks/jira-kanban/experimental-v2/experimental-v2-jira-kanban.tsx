@@ -75,6 +75,7 @@ import {
 	type KanbanColumnChrome,
 	type KanbanColumnChromeStyles,
 } from "../column-chrome";
+import { motionEase } from "@/lib/motion";
 
 /**
  * Experimental v2 Jira Kanban board.
@@ -105,8 +106,8 @@ export interface ExperimentalV2JiraKanbanProps extends JiraKanbanProps {
 	onCollapsedColumnsChange?: (collapsedColumns: CollapsedBoardColumns) => void;
 }
 
-const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
-const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
+const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: motionEase.inOut }; // duration-slowest + ease-in-out
+const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: motionEase.in }; // duration-slower + ease-in
 
 /**
  * Collapsing a column repositions everything to its right, so the width change

@@ -97,13 +97,11 @@ export default function BoardToolbar({ avatars, onReset }: Readonly<BoardToolbar
 								</Avatar>
 							</div>
 						))}
-						{avatars.length > 4 && (
-							<div style={{ marginLeft: token("space.negative.050") }}>
+						{avatars.length > 4 ? <div style={{ marginLeft: token("space.negative.050") }}>
 								<Avatar size="sm">
 									<AvatarFallback>{`+${avatars.length - 4}`}</AvatarFallback>
 								</Avatar>
-							</div>
-						)}
+							</div> : null}
 					</div>
 					<Button variant="outline">
 						<Icon render={<FilterIcon label="" />} />

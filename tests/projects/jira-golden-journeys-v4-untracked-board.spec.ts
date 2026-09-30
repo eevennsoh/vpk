@@ -1,8 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const JIRA_GOLDEN_JOURNEYS_V4_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/jira-golden-journeys-v4";
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_GOLDEN_JOURNEYS_V4_URL = appUrl("/jira-golden-journeys-v4");
 
 async function openBoard(page: Page): Promise<void> {
 	await page.goto(JIRA_GOLDEN_JOURNEYS_V4_URL, { waitUntil: "domcontentloaded" });

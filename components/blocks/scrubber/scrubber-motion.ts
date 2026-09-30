@@ -1,3 +1,4 @@
+import { motionEase } from "../../../lib/motion.ts";
 /**
  * Motion signatures for the notch rail.
  *
@@ -16,12 +17,12 @@
 
 export const SCRUBBER_MAGNIFY_IN = {
 	duration: 0.15,
-	ease: [0.4, 1, 0.6, 1],
+	ease: motionEase.outPractical,
 } as const; // duration-normal + ease-out-practical
 
 export const SCRUBBER_MAGNIFY_OUT = {
 	duration: 0.1,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 } as const; // duration-fast + ease-in
 
 export const SCRUBBER_REDUCED = { duration: 0 } as const;
