@@ -7798,9 +7798,15 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 17
+			"localSkillCount": 18
 		},
 		"localSkills": [
+			{
+				"description": "Package a VPK route, demo, or generated file and publish or update it as an Atlassian Artifact (hello.atlassian.net/artifacts) through the TWG CLI. Use when asked to \"publish as an artifact\", \"share this as an Atlassian Artifact\", \"host this prototype for coworkers\", \"upload to Artifacts\", \"update my artifact\", or to turn a VPK demo into a single-file HTML for sharing.",
+				"name": "vpk-artifact",
+				"path": ".agents/skills/vpk-artifact/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-artifact"
+			},
 			{
 				"description": "Extract a VPK route into a standalone, minimal Next.js app with traced imports, source-compatible paths, and Micros-ready scaffolding. Use when asked to invoke vpk-build, extract a route, create a standalone prototype, or hand a VPK route off as an independently deployable app.",
 				"name": "vpk-build",
