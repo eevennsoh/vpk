@@ -11,6 +11,7 @@ const { after, afterEach } = require("node:test");
 const { GlobalRegistrator } = require("@happy-dom/global-registrator");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require("./esbuild-cjs-loader.js");
+const { NEXT_RUNTIME_MOCKS } = require("./next-runtime-mocks.js");
 
 const REPO_ROOT = path.resolve(__dirname, "../..");
 
@@ -32,24 +33,8 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const React = require("react");
 const { createRoot } = require("react-dom/client");
 
-// Minimal, safe stand-ins for Next.js runtime modules. Override any of them via `mocks`.
-const DEFAULT_MOCKS = {
-	"next/image": `import { createElement } from "react";
-		export default function Image({ blurDataURL, fill, loader, placeholder, priority, quality, src, unoptimized, ...props }) {
-			return createElement("img", { ...props, src: typeof src === "object" ? src.src : src });
-		}`,
-	"next/link": `import { createElement } from "react";
-		export default function Link({ href, legacyBehavior, locale, passHref, prefetch, replace, scroll, shallow, ...props }) {
-			return createElement("a", { ...props, href: typeof href === "object" ? href.pathname ?? "" : href });
-		}`,
-	"next/navigation": `const router = { back() {}, forward() {}, prefetch() {}, push() {}, refresh() {}, replace() {} };
-		export const useRouter = () => router;
-		export const usePathname = () => "/";
-		export const useSearchParams = () => new URLSearchParams();
-		export const useParams = () => ({});
-		export function notFound() { throw new Error("notFound() called"); }
-		export function redirect(url) { throw new Error("redirect(" + url + ") called"); }`,
-};
+// Next.js runtime stand-ins. Override any of them via `mocks`.
+const DEFAULT_MOCKS = NEXT_RUNTIME_MOCKS;
 
 const FOCUSABLE = "a[href], area[href], button, input:not([type=hidden]), select, textarea, iframe, summary, [contenteditable]:not([contenteditable=\"false\"]), [tabindex]";
 const BUTTON_INPUT = "input[type=button], input[type=reset], input[type=submit]";
