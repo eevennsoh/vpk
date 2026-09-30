@@ -36,7 +36,8 @@ function runGit(args) {
 }
 
 // CI checks out the PR merged into its base, so compare with the base tip there;
-// locally compare with the merge-base so commits that landed on main later don't count.
+// push builds pass the pre-push tip as VPK_SUPPRESSIONS_BASE (see ci.yml); locally
+// compare with the merge-base so commits that landed on main later don't count.
 function resolveBaseRef({ env = process.env, git = runGit } = {}) {
 	if (env.VPK_SUPPRESSIONS_BASE) {
 		return git(["rev-parse", "--verify", "--quiet", env.VPK_SUPPRESSIONS_BASE]);
@@ -45,6 +46,11 @@ function resolveBaseRef({ env = process.env, git = runGit } = {}) {
 		return git(["rev-parse", "--verify", "--quiet", `origin/${env.GITHUB_BASE_REF}`]);
 	}
 	return git(["merge-base", "HEAD", "origin/main"]);
+}
+
+// An explicitly named base must resolve: skipping would let the ledger grow unchecked.
+function isBaseRequired(env = process.env) {
+	return Boolean(env.GITHUB_BASE_REF || env.VPK_SUPPRESSIONS_BASE);
 }
 
 function readBaseSuppressions(baseRef, git = runGit) {
@@ -62,7 +68,7 @@ function main() {
 	const baseRef = resolveBaseRef();
 	if (!baseRef) {
 		const message = "ESLint suppression ratchet: base ref unavailable (fetch origin/main or set VPK_SUPPRESSIONS_BASE).";
-		if (process.env.GITHUB_BASE_REF) {
+		if (isBaseRequired()) {
 			console.error(message);
 			process.exitCode = 1;
 			return;
@@ -99,6 +105,7 @@ if (require.main === module) {
 
 module.exports = {
 	findSuppressionGrowth,
+	isBaseRequired,
 	resolveBaseRef,
 	totalsByRule,
 };

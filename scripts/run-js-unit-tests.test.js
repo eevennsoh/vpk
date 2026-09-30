@@ -145,16 +145,70 @@ test("legacy-drift entries are excluded from unfiltered and prefix runs but an e
 	);
 });
 
-// Frozen ceiling for the skipped baseline. Lower it when entries graduate; never raise it.
-const LEGACY_DRIFT_BASELINE_CEILING = 50;
+// Frozen membership of the skipped baseline, not just its size: a count cap would let a new
+// suite take a graduated suite's slot and be skipped silently. Delete entries as they
+// graduate; never add one.
+const LEGACY_DRIFT_BASELINE = new Set([
+	"backend/lib/deferred-clarification-replay.test.js",
+	"components/arts/awake/city-popover.test.js",
+	"components/arts/awake/index.test.js",
+	"components/arts/personal-graph/personal-graph-glass-panel.test.js",
+	"components/blocks/agent-directory/agent-directory.test.js",
+	"components/blocks/artifact-panel.test.js",
+	"components/blocks/conversation-starters/conversation-starters.test.js",
+	"components/blocks/editor-toolbar/editor-toolbar.test.js",
+	"components/blocks/jira-kanban/jira-kanban.test.js",
+	"components/blocks/knowledge-directory/knowledge-directory.test.js",
+	"components/blocks/prompt-gallery/prompt-gallery.test.js",
+	"components/blocks/pull-request-fix/pull-request-fix.test.js",
+	"components/blocks/pull-request-header/pull-request-header.test.js",
+	"components/blocks/pull-request-review/pull-request-review.test.js",
+	"components/blocks/subagents/subagents.test.js",
+	"components/blocks/tools-directory/tools-directory.test.js",
+	"components/blocks/twg-agent-card/twg-agent-card.test.js",
+	"components/projects/jira-for-you/jira-for-you-work-item-integration.test.js",
+	"components/projects/jira-for-you/jira-for-you-workspace.test.js",
+	"components/projects/jira-golden-journeys-v0/lib/kanban-lifecycle.test.js",
+	"components/projects/jira-golden-journeys-v1/lib/kanban-lifecycle.test.js",
+	"components/projects/jira-golden-journeys-v1/queue-stage.test.js",
+	"components/projects/jira-golden-journeys-v1/session-gallery.test.js",
+	"components/projects/jira-queue/queue-conversation-workspace.test.js",
+	"components/projects/jira/components/rfp-agent-chat-details.test.js",
+	"components/projects/jira/components/work-item-modal/accordion-accessibility.test.js",
+	"components/projects/jira/rfp-context.test.js",
+	"components/projects/page.test.js",
+	"components/projects/rovo/components/rovo-app-brand.test.js",
+	"components/projects/shared/components/rovo-app-composer.test.js",
+	"components/projects/shared/lib/plan-approval.test.js",
+	"components/projects/shared/lib/plan-identity.test.js",
+	"components/projects/shared/lib/rovo-app-composer-submit-state.test.js",
+	"components/projects/shared/lib/rovo-app-plan-execution-tracker.test.js",
+	"components/projects/shared/lib/rovo-app-plan-task-labels.test.js",
+	"components/projects/shared/thread-message/lib/plan-description-fallback.test.js",
+	"components/projects/sidebar-chat/components/chat-composer.test.js",
+	"components/projects/sidebar-chat/components/chat-greeting.test.js",
+	"components/projects/sidebar-chat/components/chat-history-drawer.test.js",
+	"components/projects/studio/components/rovo-app-agent-creation-flow.test.js",
+	"components/ui-custom/context-bar/context-bar-prompt-flyout.test.js",
+	"components/ui-custom/rich-text-editor/mention-visual.test.js",
+	"components/ui/panel.test.js",
+	"components/ui/vpk-icons.test.js",
+	"components/website/demos/utils/lib/browser-preview-frame-queue.test.js",
+	"components/website/demos/visual/card-glow-demo.test.js",
+	"components/website/demos/visual/dithering-demo.test.js",
+	"components/website/demos/visual/graph-demo.test.js",
+	"components/website/demos/visual/scribbles-demo.test.js",
+	"components/website/demos/visual/shaders/liquid-glass.test.js",
+]);
 
 test("the legacy-drift baseline only shrinks", async () => {
 	const { TEST_FILE_CLASSIFICATIONS } = await import("./js-unit-test-manifest.mjs");
-	const legacyDriftCount = TEST_FILE_CLASSIFICATIONS["legacy-drift"].length;
+	const added = TEST_FILE_CLASSIFICATIONS["legacy-drift"].filter((filePath) => !LEGACY_DRIFT_BASELINE.has(filePath));
 
-	assert.ok(
-		legacyDriftCount <= LEGACY_DRIFT_BASELINE_CEILING,
-		`legacy-drift grew to ${legacyDriftCount} entries (ceiling ${LEGACY_DRIFT_BASELINE_CEILING}); classify new suites as stable or source-contract instead`,
+	assert.deepEqual(
+		added,
+		[],
+		"legacy-drift only shrinks; classify new suites as stable or source-contract instead",
 	);
 });
 
