@@ -54,6 +54,8 @@ import type {
 	SmartLinkProps,
 	SmartLinkProvider,
 	SmartLinkSize,
+	SmartLinkStatusChoice,
+	SmartLinkStatusSelection,
 	SmartLinkVisual,
 } from "@/components/blocks/smart-link/components/smart-link-types";
 
@@ -70,6 +72,8 @@ export type {
 	SmartLinkProps,
 	SmartLinkProvider,
 	SmartLinkSize,
+	SmartLinkStatusChoice,
+	SmartLinkStatusSelection,
 	SmartLinkTone,
 	SmartLinkVariant,
 	SmartLinkVisual,
@@ -311,10 +315,28 @@ function badgeVariantForLozenge(variant: NonNullable<LozengeProps["variant"]>): 
 	return lozengeToBadgeVariant[variant] ?? "neutral";
 }
 
+/** Picked status for one item; a different item starts from its own status again. */
+export function useSmartLinkStatusSelection(item: SmartLinkItem): SmartLinkStatusSelection {
+	const [picked, setPicked] = useState<{ itemId: string; choice: SmartLinkStatusChoice } | null>(null);
+	return {
+		choice: picked?.itemId === item.id ? picked.choice : null,
+		select: (choice) => setPicked({ itemId: item.id, choice }),
+	};
+}
+
+function withPickedStatus(item: SmartLinkItem, choice: SmartLinkStatusChoice | null): SmartLinkItem {
+	if (!choice || !item.status) {
+		return item;
+	}
+	// The original metric describes the original status, so a picked status drops it.
+	return { ...item, status: { ...item.status, label: choice.label, variant: choice.variant, metric: undefined } };
+}
+
 function SmartLinkStatusDropdown({
+	selection,
 	status,
-}: Readonly<{ status: NonNullable<SmartLinkItem["status"]> }>) {
-	const [selected, setSelected] = useState({ label: status.label, variant: status.variant ?? "neutral" });
+}: Readonly<{ selection: SmartLinkStatusSelection; status: NonNullable<SmartLinkItem["status"]> }>) {
+	const selected = selection.choice ?? { label: status.label, variant: status.variant ?? "neutral" };
 	const options = status.options ?? [];
 
 	if (!options.length) {
@@ -355,7 +377,7 @@ function SmartLinkStatusDropdown({
 								option.label === selected.label && "border-l-border-selected bg-bg-neutral",
 							)}
 							key={option.label}
-							onSelect={() => setSelected({ label: option.label, variant: option.variant ?? "neutral" })}
+							onSelect={() => selection.select({ label: option.label, variant: option.variant ?? "neutral" })}
 						>
 							<Lozenge variant={option.variant ?? "neutral"}>{option.label}</Lozenge>
 						</DropdownMenuItem>
@@ -711,7 +733,10 @@ export function SmartLinkCard({
 	selected = false,
 	appearance = "block",
 	className,
+	statusSelection,
 }: Readonly<SmartLinkCardProps>) {
+	const ownStatusSelection = useSmartLinkStatusSelection(item);
+	const activeStatusSelection = statusSelection ?? ownStatusSelection;
 	const titleId = useId();
 	const isFlyout = appearance === "flyout";
 	const showFooterButtons = appearance === "block";
@@ -763,7 +788,7 @@ export function SmartLinkCard({
 					)}
 					{item.status ? (
 						<span className="shrink-0">
-							<SmartLinkStatusDropdown status={item.status} />
+							<SmartLinkStatusDropdown selection={activeStatusSelection} status={item.status} />
 						</span>
 					) : null}
 				</div>
@@ -821,6 +846,8 @@ export function SmartLink({
 	contentClassName,
 }: Readonly<SmartLinkProps>) {
 	const [open, setOpen] = useState(false);
+	// Owned here because the flyout card unmounts on close; the chip shows the same pick.
+	const statusSelection = useSmartLinkStatusSelection(item);
 	const isRemovableOverlay = Boolean(onRemove) && removeVariant === "overlay";
 
 	if (appearance === "card") {
@@ -832,6 +859,7 @@ export function SmartLink({
 				onActionSelect={onActionSelect}
 				onActivate={onActivate}
 				selected={selected}
+				statusSelection={statusSelection}
 			/>
 		);
 	}
@@ -855,7 +883,7 @@ export function SmartLink({
 				render={
 					<SmartLinkTrigger
 						className={className}
-						item={item}
+						item={withPickedStatus(item, statusSelection.choice)}
 						onActivate={onActivate ? handleActivate : undefined}
 						open={open}
 						removable={isRemovableOverlay}
@@ -878,6 +906,7 @@ export function SmartLink({
 					className={contentClassName}
 					item={item}
 					onActionSelect={onActionSelect}
+					statusSelection={statusSelection}
 				/>
 			</ConeSafezoneContent>
 		</ConeSafezone>
