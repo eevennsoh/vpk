@@ -16,6 +16,7 @@ import {
 	HalftoneDots,
 	Heatmap,
 	ImageDithering,
+	LensDistortion,
 	LiquidMetal,
 	MeshGradient,
 	Metaballs,
@@ -45,6 +46,7 @@ import {
 	halftoneDotsPresets,
 	heatmapPresets,
 	imageDitheringPresets,
+	lensDistortionPresets,
 	liquidMetalPresets,
 	meshGradientPresets,
 	metaballsPresets,
@@ -66,6 +68,7 @@ import {
 
 import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
+import { LENS_DISTORTION_NUMBER_CONTROLS, PAPER_TEXTURE_NUMBER_CONTROLS, type NumberControlMeta } from "@/components/website/demos/visual/shaders-paper-control-meta";
 
 const DEFAULT_SLUG = "paper-mesh-gradient";
 const DEMO_IMAGE = "/ambient/ado/combo/primary/blue.svg";
@@ -83,6 +86,7 @@ type PaperShaderSlug =
 	| "paper-halftone-dots"
 	| "paper-heatmap"
 	| "paper-image-dithering"
+	| "paper-lens-distortion"
 	| "paper-liquid-metal"
 	| "paper-mesh-gradient"
 	| "paper-metaballs"
@@ -119,13 +123,6 @@ type PaperShadersDemoProps = {
 
 type PaperShaderParamValue = boolean | number | string | string[] | undefined;
 type PaperShaderParams = Record<string, PaperShaderParamValue>;
-
-type NumberControlMeta = Readonly<{
-	min: number;
-	max: number;
-	step: number;
-	unit?: string;
-}>;
 
 type SelectOption = Readonly<{
 	value: string;
@@ -165,7 +162,6 @@ const NUMBER_CONTROL_META: Record<string, NumberControlMeta> = {
 	contrast: DEFAULT_NUMBER_CONTROL_META,
 	contour: DEFAULT_NUMBER_CONTROL_META,
 	count: { min: 1, max: 20, step: 1 },
-	crumpleSize: DEFAULT_NUMBER_CONTROL_META,
 	crumples: DEFAULT_NUMBER_CONTROL_META,
 	density: DEFAULT_NUMBER_CONTROL_META,
 	distortion: DEFAULT_NUMBER_CONTROL_META,
@@ -181,7 +177,6 @@ const NUMBER_CONTROL_META: Record<string, NumberControlMeta> = {
 	fiberSize: DEFAULT_NUMBER_CONTROL_META,
 	focalAngle: { min: 0, max: 360, step: 1, unit: "deg" },
 	focalDistance: { min: 0, max: 3, step: 0.01 },
-	foldCount: { min: 1, max: 15, step: 1 },
 	folds: DEFAULT_NUMBER_CONTROL_META,
 	frequency: { min: 0, max: 2, step: 0.01 },
 	gainC: { min: -1, max: 1, step: 0.01 },
@@ -294,9 +289,8 @@ const PAPER_SHADER_NUMBER_CONTROL_META: Partial<Record<PaperShaderSlug, Record<s
 	"paper-image-dithering": {
 		size: { min: 0.5, max: 20, step: 0.5 },
 	},
-	"paper-paper-texture": {
-		foldCount: { min: 1, max: 15, step: 1 },
-	},
+	"paper-lens-distortion": LENS_DISTORTION_NUMBER_CONTROLS,
+	"paper-paper-texture": PAPER_TEXTURE_NUMBER_CONTROLS,
 	"paper-simplex-noise": {
 		stepsPerColor: { min: 1, max: 10, step: 1 },
 	},
@@ -407,6 +401,7 @@ const PAPER_SHADER_VISIBLE_COMMON_CONTROL_KEYS: Record<PaperShaderSlug, readonly
 	"paper-halftone-dots": ["scale", "fit"],
 	"paper-heatmap": ["speed", "scale", "rotation", "offsetX", "offsetY"],
 	"paper-image-dithering": ["scale", "fit"],
+	"paper-lens-distortion": ["scale", "fit"],
 	"paper-liquid-metal": ["speed", "scale", "rotation", "offsetX", "offsetY", "fit"],
 	"paper-mesh-gradient": ["speed", "scale", "rotation", "offsetX", "offsetY"],
 	"paper-metaballs": ["speed", "scale", "rotation", "offsetX", "offsetY"],
@@ -502,6 +497,12 @@ const PAPER_SHADER_DEMOS: Record<PaperShaderSlug, PaperShaderDefinition> = {
 		name: "Liquid Metal",
 		component: LiquidMetal,
 		presets: liquidMetalPresets,
+		image: DEMO_IMAGE,
+	},
+	"paper-lens-distortion": {
+		name: "Lens Distortion",
+		component: LensDistortion,
+		presets: lensDistortionPresets,
 		image: DEMO_IMAGE,
 	},
 	"paper-mesh-gradient": {
@@ -744,7 +745,7 @@ function renderPaperShaderControl({
 				label={label}
 				value={typeof value === "string" ? value : undefined}
 				objectFit="contain"
-				showClear={false}
+				showClear={slug === "paper-paper-texture"}
 				valueKeys={controlKey}
 				onChange={(nextValue) => onChange(controlKey, nextValue)}
 			/>
