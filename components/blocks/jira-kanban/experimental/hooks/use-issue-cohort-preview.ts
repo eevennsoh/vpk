@@ -99,5 +99,12 @@ export function useIssueCohortPreview(enabled: boolean, draggedCardCode: string 
 		}
 	}, [reduceMotion, stop, cancel]);
 	const getPreview = useCallback(() => preview.current, []);
-	return { start, stop, getPreview };
+	/** Hands the traveller to a release that settles it; the new owner removes it. */
+	const release = useCallback(() => {
+		const node = preview.current;
+		preview.current = null;
+		stop();
+		return node;
+	}, [stop]);
+	return { start, stop, getPreview, release };
 }

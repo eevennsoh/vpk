@@ -25,9 +25,12 @@ function cohortBoard(count) {
 	};
 }
 
-function harness({ reduced = false, reject = false, enabled = true, withMove = false, board, dragged = "A", selected = ["A", "B"], solitaire = false } = {}) {
-	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [], reveals = [], events = [];
-	let stateIndex = 0, refIndex = 0, effectIndex = 0, preview = {}, api;
+function harness({ reduced = false, reject = false, enabled = true, withMove = false, board, dragged = "A", selected = ["A", "B"], solitaire = false, landing = { left: 40, top: 80, width: 280 }, faceWidth = 280 } = {}) {
+	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [], reveals = [], events = [], frames = [], timers = [], landings = [];
+	let stateIndex = 0, refIndex = 0, effectIndex = 0, api;
+	const face = { offsetHeight: 199, offsetWidth: faceWidth };
+	const createPreview = () => ({ querySelector: (selector) => selector === "[data-issue-cohort-front]" ? face : null, remove() { events.push("remove preview"); this.removed = true; } });
+	let preview = createPreview(), released = null;
 	let columns = board ?? [
 		{ title: "To do", count: 2, cards: [issue("A", "Review"), issue("B", "Done")] },
 		{ title: "Review", count: 0, cards: [] }, { title: "Done", count: 0, cards: [] },
@@ -48,7 +51,8 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	const getPreview = () => preview;
 	const onAutoArrange = (codes) => { if (!reject) columns = autoModel.autoArrangeCards(columns, codes); };
 	const onMove = withMove ? (move) => { events.push("commit"); columns = require("../../card-drop.ts").moveJiraKanbanCardsToDropTarget(columns, move.cardCodes, move.columnTitle, move.target); } : undefined;
-	const onDrop = (title) => { if (!reject) columns = require("../../card-drop.ts").moveJiraKanbanCardsToStatus(columns, selected, title); };
+	const onDrop = (title) => { events.push("commit"); if (!reject) columns = require("../../card-drop.ts").moveJiraKanbanCardsToStatus(columns, selected, title); };
+	const releasePreview = () => { released = preview; preview = null; events.push("release preview"); return released; };
 	const react = {
 		useState(initial) { const i = stateIndex++; if (!(i in states)) states[i] = initial; return [states[i], (next) => { states[i] = typeof next === "function" ? next(states[i]) : next; }]; },
 		useRef(current) { const i = refIndex++; return refs[i] ??= { current }; },
@@ -59,18 +63,25 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 			scheduled.push(() => { previous?.cleanup?.(); effects[i] = { deps, cleanup: effect() }; });
 		},
 	};
+	react.useEffect = react.useLayoutEffect;
 	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-issue-card-drop-arrival.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
 	const loaded = { exports: {} };
 	vm.runInNewContext(compiled, {
 		module: loaded, exports: loaded.exports, Element, window: { addEventListener() {}, removeEventListener() {} },
+		requestAnimationFrame: (callback) => frames.push(callback), cancelAnimationFrame: (id) => { frames[id - 1] = null; },
+		setTimeout: (callback) => timers.push(callback), clearTimeout: (id) => { timers[id - 1] = null; },
 		require(name) {
 			if (name === "react") return react;
+			if (name === "react-dom") return { flushSync(callback) { events.push("flushSync"); callback(); render(); } };
+			if (name.includes("issue-drag-preview")) return { settleIssueCohortPreview(node, at) { events.push("settle preview"); node.settledAt = at; } };
 			if (name.includes("use-media-query")) return { useMediaQuery: () => reduced };
 			if (name.includes("board-auto-arrange")) return autoModel;
 			if (name.includes("board-card-arrival")) return arrivalModel;
 			if (name.includes("issue-solitaire-drop")) return {
 				captureIssueCardReflow: () => [],
+				resolveIssueSolitaireLanding(root, title, codes, beforeCardCode, height) { landings.push({ title, codes: [...codes], beforeCardCode, height }); return landing; },
 				animateIssueSolitaireDrop(root, title, codes, reduced, complete, glowColors, feedback = "trace") {
+					events.push("reveal");
 					const reveal = { title, codes: [...codes], reduced, complete, feedback, stopped: false };
 					reveals.push(reveal);
 					if (reduced) complete();
@@ -87,12 +98,18 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	});
 	function render() {
 		stateIndex = refIndex = effectIndex = 0;
-		api = loaded.exports.useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, solitaire, draggedCardCode: dragged, selectedCardCodes: new Set(selected), onDrop, onMove, onAutoArrange });
+		api = loaded.exports.useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, solitaire, draggedCardCode: dragged, selectedCardCodes: new Set(selected), onDrop, onMove, onAutoArrange, releasePreview });
 		while (scheduled.length) scheduled.shift()();
 		return api;
 	}
 	render();
-	return { render, captures, flights, reveals, events, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review") { api.handleDrop(title); preview = null; },
+	return { render, captures, flights, reveals, events, landings, released: () => released, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review", target) { api.handleDrop(title, target); preview = null; },
+		/** Native dragend right after the drop, as Chromium dispatches it. */
+		dragEnd() { if (!api.deferDragEnd(() => events.push("dragend"))) events.push("dragend"); },
+		/** The frame after release paints; the task it queues then runs. */
+		frame() { for (const callback of frames.splice(0)) callback?.(); },
+		task() { for (const callback of timers.splice(0)) callback?.(); },
+		unmount() { for (const effect of effects) effect?.cleanup?.(); },
 		scroll(title) {
 			const target = title === "document" ? root.ownerDocument : title === "board" ? root : new Element(columnNodes.find((node) => node.dataset.jiraKanbanColumn === title));
 			for (const callback of listeners.get("scroll") ?? []) callback({ target });
@@ -374,3 +391,59 @@ test("reduced-motion solitaire commits immediately without a deferred arrival", 
 	assert.equal(h.api().arrivalForColumn("Review"), undefined);
 	assert.equal(h.captures.length, 0);
 });
+
+// A bulk solitaire release must paint before React commits the move: the held
+// traveller settles into the lead's slot (the reveal's first frame), and the
+// move, then its dragend, commit in the task after that frame paints.
+test("a bulk solitaire release settles the traveller first and commits behind its painted frame", () => {
+	const h = harness({ solitaire: true });
+	const target = { status: "Done", beforeCardCode: null };
+	h.drop("Done", target);
+	h.dragEnd();
+	assert.deepEqual(h.events, ["release preview", "settle preview"], "neither the move nor dragend may run before the frame");
+	assert.deepEqual({ ...h.released().settledAt }, { left: 40, top: 80, width: 280 });
+	assert.deepEqual(h.landings.map(({ title, codes, beforeCardCode, height }) => ({ title, codes, beforeCardCode, height })), [{ title: "Done", codes: ["A", "B"], beforeCardCode: null, height: 199 }]);
+	h.task();
+	assert.equal(h.events.includes("commit"), false, "a task queued before the frame must not commit first");
+	h.frame();
+	assert.equal(h.events.includes("commit"), false, "the frame itself only paints the settled face");
+	h.task();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "flushSync", "commit", "dragend", "reveal", "remove preview"],
+		"the stack starts under the face, which hands over in the same task, so no frame shows both or neither");
+	assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), ["A", "B"]);
+	assert.deepEqual(h.reveals.map((reveal) => reveal.codes), [["A", "B"]]);
+	h.dragEnd();
+	assert.equal(h.events.at(-1), "dragend", "later dragends are never held");
+});
+
+test("releases that the settled face cannot stand in for keep the synchronous commit", () => {
+	const target = { status: "Done", beforeCardCode: null };
+	const cases = {
+		"a single card reflows its neighbours first": { solitaire: true, selected: ["A"] },
+		"a grabbed card that is not the lead wears the wrong face": { solitaire: true, dragged: "B" },
+		"reduced motion has no reveal": { solitaire: true, reduced: true },
+		"an unknown landing slot": { solitaire: true, landing: null },
+		"a destination of another width": { solitaire: true, faceWidth: 300 },
+		"flight drops keep their traveller": { solitaire: false },
+	};
+	for (const [name, options] of Object.entries(cases)) {
+		const h = harness(options);
+		h.drop("Done", target);
+		h.dragEnd();
+		assert.deepEqual(h.events.filter((event) => ["release preview", "commit", "dragend"].includes(event)), ["commit", "dragend"], name);
+	}
+	const untargeted = harness({ solitaire: true });
+	untargeted.drop("Done");
+	assert.deepEqual(untargeted.events, ["commit"], "a column-level drop has no insertion point to settle into");
+});
+
+test("an interrupted settled release still commits its move and dragend", () => {
+	const h = harness({ solitaire: true });
+	h.drop("Done", { status: "Done", beforeCardCode: null });
+	h.dragEnd();
+	h.unmount();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "commit", "dragend", "remove preview"]);
+	h.frame(); h.task();
+	assert.equal(h.events.filter((event) => event === "commit").length, 1, "the queued task must not commit twice");
+});
+

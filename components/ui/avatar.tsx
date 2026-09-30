@@ -18,6 +18,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { Icon } from "@/components/ui/icon"
 import { isAvatarOverlayType } from "@/components/ui/avatar-overlay"
+import { AVATAR_ENTER_FROM } from "@/components/ui/avatar-enter"
 import { avatarHexagonBorderClip, avatarHexagonClip, avatarHexagonStyle } from "@/components/ui/avatar-hexagon"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
@@ -223,11 +224,12 @@ function Avatar({
 	// Disabled avatars opt out entirely: animating opacity would write inline `opacity: 1` and override
 	// the `opacity-(--opacity-disabled)` dim class, and a disabled avatar should not react to hover.
 	const reduce = useReducedMotion()
+	const enters = animate && !reduce && !disabled
 	const motionProps: MotionProps =
-		!animate || reduce || disabled
+		!enters
 			? { initial: false }
 			: {
-					initial: { scale: 0.8, opacity: 0 },
+					initial: AVATAR_ENTER_FROM,
 					animate: { scale: 1, opacity: 1, transition: AVATAR_ENTER_TRANSITION },
 					exit: { scale: 0.8, opacity: 0, transition: AVATAR_EXIT_TRANSITION },
 					whileHover: { scale: 1.12, ...(isInAvatarGroup ? {} : { zIndex: 10 }), transition: AVATAR_HOVER_SPRING },
@@ -246,6 +248,7 @@ function Avatar({
 		return (
 			<AvatarPrimitive.Root
 				data-slot="avatar"
+				data-avatar-enter={enters ? "" : undefined}
 				data-size={size}
 				data-shape={shape}
 				aria-label={label}
@@ -282,6 +285,7 @@ function Avatar({
 	return (
 		<AvatarPrimitive.Root
 			data-slot="avatar"
+			data-avatar-enter={enters ? "" : undefined}
 			data-size={size}
 			data-shape={shape}
 			aria-label={label}
