@@ -712,6 +712,21 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 		postScene.add(new THREE.Mesh(postGeometry, postMaterial));
 		const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
+		// Nothing draws until the toss, so without this the toss itself paid for
+		// every program link, print upload and the multisampled post target (a
+		// ~200ms first-run stall mid-burst). The finale mounts well before the
+		// toss, so do that work now, off the burst: both render targets' program
+		// variants, every print, and the post target.
+		for (const { shadow } of sheets) if (shadow) shadow.visible = true;
+		renderer.compile(scene, camera);
+		renderer.setRenderTarget(target);
+		renderer.compile(scene, camera);
+		renderer.setRenderTarget(null);
+		renderer.compile(postScene, postCamera);
+		for (const { shadow } of sheets) if (shadow) shadow.visible = false;
+		for (const { texture } of textures.values()) renderer.initTexture(texture);
+		renderer.initRenderTarget(target);
+
 		stateRef.current = { renderer, scene, camera, sheets, pending, target, post: { scene: postScene, camera: postCamera, material: postMaterial } };
 		return () => {
 			stateRef.current = null;
