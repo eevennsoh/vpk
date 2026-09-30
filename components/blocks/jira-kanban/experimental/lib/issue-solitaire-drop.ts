@@ -130,6 +130,9 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 		{ transform: transformAt(0.7, 0.68), offset: 0.7 },
 		{ transform: transformAt(1, 1.08) },
 	], {
+		// Bulk Done cards must finish unfolding before their full border sweep.
+		// Keep the trace mounted throughout this delay so the finale gate waits.
+		delay: columnTitle === "Done" && !isSingleCard ? CARD_DROP_STACK_EXPAND_MS : 0,
 		duration: isSingleCard ? SINGLE_CARD_DROP_SHIMMER_MS : CARD_DROP_SHIMMER_MS,
 		// A collection lingers on its lead card, then accelerates through the rest (ease-in).
 		easing: isSingleCard ? "cubic-bezier(0.42, 0, 0.9, 1)" : "cubic-bezier(0.6, 0, 0.8, 0.6)",

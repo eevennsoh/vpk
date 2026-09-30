@@ -118,7 +118,7 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 	test(`bulk drag traces visible Done cards before the finale (${reducedMotion}, ${width}px)`, async ({ page }, testInfo) => {
 		await page.setViewportSize({ width, height });
 		await page.addInitScript(() => {
-			const probe = { traceAt: 0, traceFinishedAt: 0, traceCancelledAt: 0, finaleAt: 0, outlines: 0, visibleCards: 0, duration: 0 };
+			const probe = { traceAt: 0, traceFinishedAt: 0, traceCancelledAt: 0, confettiAt: 0, confettiFinishedAt: 0, confettiBursts: 0, confetti: {} as Record<string, unknown>, finaleAt: 0, outlines: 0, visibleCards: 0, duration: 0 };
 			Object.assign(window, { keynoteDropProbe: probe });
 			const animate = Element.prototype.animate;
 			Element.prototype.animate = function (frames, options) {
@@ -139,7 +139,24 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 				}
 				return animation;
 			};
-			new MutationObserver(() => {
+			new MutationObserver(records => {
+				for (const record of records) {
+					for (const node of record.addedNodes) if (node instanceof HTMLElement && node.hasAttribute("data-finale-confetti")) {
+						probe.confettiAt = performance.now();
+						probe.confettiBursts++;
+						// Capture the brief burst at insertion, before rasterisation or
+						// test-driver round trips can consume its 1.2-second lifetime.
+						probe.confetti = {
+							ariaHidden: node.getAttribute("aria-hidden"),
+							inert: node.inert,
+							pointerEvents: getComputedStyle(node).pointerEvents,
+							left: node.querySelectorAll('[data-confetti-corner="left"]').length,
+							right: node.querySelectorAll('[data-confetti-corner="right"]').length,
+							colors: [...new Set([...node.querySelectorAll<HTMLElement>("[data-confetti-corner]")].map(piece => piece.style.backgroundColor))].sort(),
+						};
+					}
+					for (const node of record.removedNodes) if (node instanceof HTMLElement && node.hasAttribute("data-finale-confetti")) probe.confettiFinishedAt = performance.now();
+				}
 				if (!probe.finaleAt && document.querySelector("[data-jira-team-eu26-end-finale]")) probe.finaleAt = performance.now();
 			}).observe(document, { childList: true, subtree: true });
 		});
@@ -171,9 +188,12 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 			await expect(page.locator("[data-issue-drop-trace]")).toBeVisible();
 			await expect(page.locator("[data-jira-team-eu26-end-finale]")).toHaveCount(0);
 			await page.screenshot({ path: `output/agent-browser/keynote-completion/bulk-green-trace-${width}.png` });
+			await expect.poll(() => page.evaluate(() => (window as typeof window & { keynoteDropProbe: { confettiBursts: number } }).keynoteDropProbe.confettiBursts)).toBe(1);
+			if (await page.locator("[data-finale-confetti]").count()) await page.screenshot({ path: `output/agent-browser/keynote-completion/confetti-${width}.png` });
 		}
 		await expect(page.locator("[data-jira-team-eu26-end-finale]")).toBeVisible({ timeout: 15000 });
-		const probe = await page.evaluate(() => (window as typeof window & { keynoteDropProbe: { traceAt: number; traceFinishedAt: number; finaleAt: number; outlines: number; visibleCards: number; duration: number } }).keynoteDropProbe);
+		await expect(page.locator("[data-finale-confetti]")).toHaveCount(0);
+		const probe = await page.evaluate(() => (window as typeof window & { keynoteDropProbe: { traceAt: number; traceFinishedAt: number; confettiAt: number; confettiFinishedAt: number; confettiBursts: number; confetti: Record<string, unknown>; finaleAt: number; outlines: number; visibleCards: number; duration: number } }).keynoteDropProbe);
 		await testInfo.attach("completion-sequence", { body: JSON.stringify(probe), contentType: "application/json" });
 		if (reducedMotion === "no-preference") {
 			expect(probe.outlines).toBe(probe.visibleCards);
@@ -181,8 +201,142 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 			expect(probe.outlines).toBeLessThan(13);
 			expect(probe.duration).toBe(650);
 			expect(probe.traceFinishedAt).toBeGreaterThan(probe.traceAt);
-			expect(probe.finaleAt).toBeGreaterThanOrEqual(probe.traceFinishedAt);
-		} else expect(probe.traceAt).toBe(0);
+			expect(probe.confettiBursts).toBe(1);
+			expect(probe.confetti).toEqual({ ariaHidden: "true", inert: true, pointerEvents: "none", left: 180, right: 180, colors: ["rgb(106, 154, 35)", "rgb(175, 89, 225)", "rgb(24, 104, 219)", "rgb(252, 167, 0)"] });
+			expect(probe.confettiAt).toBeGreaterThanOrEqual(probe.traceFinishedAt);
+			expect(probe.confettiFinishedAt - probe.confettiAt).toBeGreaterThan(1100);
+			expect(probe.finaleAt).toBeGreaterThanOrEqual(probe.confettiFinishedAt);
+		} else {
+			expect(probe.traceAt).toBe(0);
+			expect(probe.confettiBursts).toBe(0);
+		}
 		await page.screenshot({ path: `output/agent-browser/keynote-completion/finale-${reducedMotion}-${width}.png` });
+	});
+}
+
+test("confetti launches while the shader column image is still preparing", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.addInitScript(() => {
+		const probe = { pendingColumnImages: 0 };
+		Object.assign(window, { confettiPrintProbe: probe });
+		const decode = HTMLImageElement.prototype.decode;
+		HTMLImageElement.prototype.decode = function () {
+			const pending = decode.call(this);
+			const host = this.closest<HTMLElement>("[inert]");
+			if (!this.closest('[data-jira-kanban-column="Done"]') || host?.style.left !== "-30000px") return pending;
+			probe.pendingColumnImages++;
+			return pending.then(() => new Promise<void>((resolve) => window.setTimeout(() => {
+				probe.pendingColumnImages--;
+				resolve();
+			}, 2000)));
+		};
+	});
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
+	await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(13);
+	await expect.poll(() => page.evaluate(() => (window as typeof window & { confettiPrintProbe: { pendingColumnImages: number } }).confettiPrintProbe.pendingColumnImages)).toBeGreaterThan(0);
+	await expect(page.locator("[data-finale-confetti]")).toBeVisible();
+	await expect(page.locator("[data-jira-team-eu26-end-finale]")).toHaveCount(0);
+	await expect(page.locator("[data-jira-team-eu26-end-finale]")).toBeVisible({ timeout: 15000 });
+	await expect(page.locator("[data-finale-confetti]")).toHaveCount(0);
+});
+
+test("confetti gives a forceful broad diagonal burst with an early gradual fade", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.addInitScript(() => {
+		const animate = Element.prototype.animate;
+		Element.prototype.animate = function (frames, options) {
+			const animation = animate.call(this, frames, options);
+			if (this instanceof HTMLElement && this.hasAttribute("data-confetti-corner")) {
+				// Motion finishes configuring and starts its native animation after
+				// this factory returns. Pin the frame after that setup completes.
+				queueMicrotask(() => {
+					animation.pause();
+					animation.currentTime = 450;
+				});
+			}
+			return animation;
+		};
+	});
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
+	const burst = page.locator("[data-finale-confetti]");
+	await expect(burst).toBeVisible();
+	const pieces = await burst.locator("[data-confetti-corner]").evaluateAll(nodes => nodes.map(node => {
+		const rect = node.getBoundingClientRect();
+		return { corner: (node as HTMLElement).dataset.confettiCorner, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, opacity: Number(getComputedStyle(node).opacity), width: innerWidth, height: innerHeight };
+	}));
+	expect(pieces).toHaveLength(360);
+	for (const piece of pieces) {
+		expect(piece.opacity).toBeGreaterThan(0.9);
+		expect(piece.opacity).toBeLessThan(1);
+	}
+	for (const corner of ["left", "right"]) {
+		const fan = pieces.filter(piece => piece.corner === corner);
+		const nearOrigin = fan.filter(piece => (corner === "left" ? piece.x : piece.width - piece.x) >= 0 && (corner === "left" ? piece.x : piece.width - piece.x) < piece.width * 0.16 && piece.y > piece.height * 0.75 && piece.y < piece.height);
+		expect(nearOrigin.length).toBeGreaterThan(20);
+		expect(Math.max(...fan.map(piece => piece.x)) - Math.min(...fan.map(piece => piece.x))).toBeGreaterThan(fan[0].width * 0.25);
+		expect(fan.some(piece => piece.y < piece.height * 0.5)).toBe(true);
+		const rise = fan.reduce((sum, piece) => sum + piece.height - piece.y, 0);
+		const travel = fan.reduce((sum, piece) => sum + (corner === "left" ? piece.x : piece.width - piece.x), 0);
+		expect(rise).toBeGreaterThan(travel * 0.9);
+	}
+	await page.screenshot({ path: "output/agent-browser/keynote-completion/lower-spray-450ms.png" });
+	await burst.evaluate(node => { for (const animation of node.getAnimations({ subtree: true })) animation.currentTime = 900; });
+	const faded = await burst.locator("[data-confetti-corner]").evaluateAll(nodes => nodes.map(node => Number(getComputedStyle(node).opacity)));
+	expect(faded.every(opacity => opacity > 0.3 && opacity < 0.4)).toBe(true);
+	for (const corner of ["left", "right"]) {
+		const nearOrigin = await burst.locator(`[data-confetti-corner="${corner}"]`).evaluateAll(nodes => nodes.filter(node => {
+			const rect = node.getBoundingClientRect();
+			const x = (node as HTMLElement).dataset.confettiCorner === "left" ? rect.x + rect.width / 2 : innerWidth - rect.x - rect.width / 2;
+			const y = rect.y + rect.height / 2;
+			return x >= 0 && x < innerWidth * 0.16 && y > innerHeight * 0.75 && y < innerHeight;
+		}).length);
+		expect(nearOrigin).toBeGreaterThan(20);
+	}
+	await page.screenshot({ path: "output/agent-browser/keynote-completion/lower-spray-fade-900ms.png" });
+	await burst.evaluate(node => { for (const animation of node.getAnimations({ subtree: true })) animation.play(); });
+	await expect(page.locator("[data-jira-team-eu26-end-finale]")).toBeVisible({ timeout: 15000 });
+	await expect(burst).toHaveCount(0);
+});
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`keyboard replay includes the confetti intro (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.addInitScript(() => {
+			const probe = { events: [] as string[], boardVisibleAtBurst: [] as boolean[] };
+			Object.assign(window, { finaleReplayProbe: probe });
+			new MutationObserver(records => {
+				for (const record of records) for (const node of record.addedNodes) {
+					if (!(node instanceof HTMLElement)) continue;
+					if (node.hasAttribute("data-finale-confetti")) {
+						probe.events.push("confetti");
+						const cards = document.querySelectorAll('[data-jira-kanban-column="Done"] [data-slot="jira-issue-card"]');
+						probe.boardVisibleAtBurst.push(cards.length === 13 && [...cards].every(card => getComputedStyle(card).visibility === "visible"));
+					}
+					if (node.hasAttribute("data-jira-team-eu26-end-finale")) probe.events.push("finale");
+				}
+			}).observe(document, { childList: true, subtree: true });
+		});
+		await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
+		const finale = page.locator("[data-jira-team-eu26-end-finale]");
+		await expect(finale).toBeVisible({ timeout: 15000 });
+		const expected = reducedMotion === "reduce" ? ["finale"] : ["confetti", "finale"];
+		for (const key of ["r", "R"]) {
+			// Replay from the final scene, when the original board cards are hidden.
+			await page.evaluate(() => (window as typeof window & { __jiraTeamEu26Finale: { hold: (time: number) => void } }).__jiraTeamEu26Finale.hold(20));
+			await expect(page.locator('[data-jira-kanban-column="Done"] [data-slot="jira-issue-card"]').first()).toHaveCSS("visibility", "hidden");
+			await page.keyboard.press(key);
+			expected.push(...(reducedMotion === "reduce" ? ["finale"] : ["confetti", "finale"]));
+			await expect.poll(() => page.evaluate(() => (window as typeof window & { finaleReplayProbe: { events: string[] } }).finaleReplayProbe.events), { timeout: 15000 }).toEqual(expected);
+			await expect(finale).toBeVisible();
+			await expect(page.locator("[data-finale-confetti]")).toHaveCount(0);
+		}
+		const visibleAtBurst = await page.evaluate(() => (window as typeof window & { finaleReplayProbe: { boardVisibleAtBurst: boolean[] } }).finaleReplayProbe.boardVisibleAtBurst);
+		expect(visibleAtBurst).toEqual(reducedMotion === "reduce" ? [] : [true, true, true]);
 	});
 }
