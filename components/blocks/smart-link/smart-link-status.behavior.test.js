@@ -1,5 +1,6 @@
 // A status picked in the Smart Link card must survive the hover flyout closing
-// and reopening (the card unmounts on close), and must not leak to another item.
+// and reopening (the card unmounts on close), must not leak to another item, and
+// must not be discarded by picking for another item.
 const assert = require("node:assert/strict");
 const path = require("node:path");
 const test = require("node:test");
@@ -48,13 +49,19 @@ test("a picked status survives the flyout closing and reopening", async () => {
 	assert.equal(statusLabel(view), "Status: Done");
 });
 
-test("a status picked for one item does not carry over to another", async () => {
+test("each item keeps its own picked status across A → B → A", async () => {
 	const view = await renderComponent({ exportName: "Host", props: { itemId: "A-1", open: true }, source: HOST_SOURCE });
 	await pickStatus(view, "To do");
 	assert.equal(statusLabel(view), "Status: To do");
 
+	// B starts from its own status, and picking for B must not discard A's pick.
 	await view.rerender({ itemId: "B-2", open: true });
 	assert.equal(statusLabel(view), "Status: In progress");
+	await pickStatus(view, "Done");
+	assert.equal(statusLabel(view), "Status: Done");
+
+	await view.rerender({ itemId: "A-1", open: true });
+	assert.equal(statusLabel(view), "Status: To do");
 });
 
 test("a card rendered without a host keeps its own selection", async () => {

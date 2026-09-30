@@ -315,12 +315,12 @@ function badgeVariantForLozenge(variant: NonNullable<LozengeProps["variant"]>): 
 	return lozengeToBadgeVariant[variant] ?? "neutral";
 }
 
-/** Picked status for one item; a different item starts from its own status again. */
+/** Picked status per item id: an unpicked item shows its own status, and A → B → A keeps A's pick. */
 export function useSmartLinkStatusSelection(item: SmartLinkItem): SmartLinkStatusSelection {
-	const [picked, setPicked] = useState<{ itemId: string; choice: SmartLinkStatusChoice } | null>(null);
+	const [picked, setPicked] = useState<ReadonlyMap<string, SmartLinkStatusChoice>>(() => new Map());
 	return {
-		choice: picked?.itemId === item.id ? picked.choice : null,
-		select: (choice) => setPicked({ itemId: item.id, choice }),
+		choice: picked.get(item.id) ?? null,
+		select: (choice) => setPicked((previous) => new Map(previous).set(item.id, choice)),
 	};
 }
 
