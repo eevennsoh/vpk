@@ -383,39 +383,42 @@ function InFlowAgentSessionColumnSurface({
 				transition: shouldReduceMotion ? "none" : IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_TRANSITION,
 			}}
 		>
-			<AgentSessionColumn
-				{...agentSessionColumn}
-				animateLayout={false}
-				className={cn("max-h-full", agentSessionColumn.className)}
-				showWorkingSpinner
-				collapsed={!isFullWidth}
-				collapsedMenu={collapsedMenu}
-				hasScrollingEffect={hasScrollingEffect}
-				collapsedPresentation={isEmbedded ? "column" : "gutter"}
-				collapsedRailHitSlopPx={isEmbedded && !isFullWidth
-					? IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX
-					: 0}
-				collapsedExpandLeadingHitSlopPx={isEmbedded && !isFullWidth
-					? IN_FLOW_AGENT_SESSION_COLUMN_EXPAND_LEADING_HIT_SLOP_PX
-					: 0}
-				columnFrame={columnFrame}
-				expandedWidthPx={expandedWidthPx}
-				widthTransitionDisabled={resize.isResizing}
-				onCollapsedChange={onCollapsedChange}
-				onGutterIntroComplete={onGutterIntroComplete}
-				onPinnedChange={advancedOnPinnedChange}
-				pinned={pinned}
-				playGutterIntro={playGutterIntro}
-				showTrailingShadow={Boolean(showTrailingShadow && isEmbedded)}
-				toggleChangesWidth={expanded}
-			/>
-			<InFlowAgentSessionColumnResizeHandle
-				columnFrame={columnFrame}
-				expandedWidthPx={expandedWidthPx}
-				resize={resize}
-				title={title}
-				visible={isFullWidth && resizable}
-			/>
+			{/* Share the column's natural height, capped by the board, with its separator. */}
+			<div className="relative flex max-h-full min-h-0 flex-col">
+				<AgentSessionColumn
+					{...agentSessionColumn}
+					animateLayout={false}
+					className={cn("max-h-full shrink", agentSessionColumn.className)}
+					showWorkingSpinner
+					collapsed={!isFullWidth}
+					collapsedMenu={collapsedMenu}
+					hasScrollingEffect={hasScrollingEffect}
+					collapsedPresentation={isEmbedded ? "column" : "gutter"}
+					collapsedRailHitSlopPx={isEmbedded && !isFullWidth
+						? IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX
+						: 0}
+					collapsedExpandLeadingHitSlopPx={isEmbedded && !isFullWidth
+						? IN_FLOW_AGENT_SESSION_COLUMN_EXPAND_LEADING_HIT_SLOP_PX
+						: 0}
+					columnFrame={columnFrame}
+					expandedWidthPx={expandedWidthPx}
+					widthTransitionDisabled={resize.isResizing}
+					onCollapsedChange={onCollapsedChange}
+					onGutterIntroComplete={onGutterIntroComplete}
+					onPinnedChange={advancedOnPinnedChange}
+					pinned={pinned}
+					playGutterIntro={playGutterIntro}
+					showTrailingShadow={Boolean(showTrailingShadow && isEmbedded)}
+					toggleChangesWidth={expanded}
+				/>
+				<InFlowAgentSessionColumnResizeHandle
+					columnFrame={columnFrame}
+					expandedWidthPx={expandedWidthPx}
+					resize={resize}
+					title={title}
+					visible={isFullWidth && resizable}
+				/>
+			</div>
 		</div>
 	);
 }
