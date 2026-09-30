@@ -9,16 +9,16 @@
  *   and satin ribbons, lit by one key light, defocused near the lens and
  *   stretched along their motion. (Depth comes from perspective, focus and
  *   blur; cast shadows read as grey ghosts over a white board and were cut.)
- * - the Done column's border, lit by the bento tiles' own pulsing border: a
- *   band that grows from its crown and is traced down the column as the burst
- *   is drawn in, ending round the foot (see `FINALE_CONFETTI_GLOW_FRAGMENT`).
+ * - the Done column's border, lit by the bento tiles' own pulsing border: it
+ *   pulses in on the top of both sides, then is traced down them as the burst
+ *   is drawn in, meeting along the foot (see `FINALE_CONFETTI_GLOW_FRAGMENT`).
  */
 
 import * as THREE from "three";
 
-import { FLASH_ROVO_COLORS } from "./finale-column-flash";
+import { FLASH_COLOR_GLSL, FLASH_ROVO_COLORS } from "./finale-column-flash";
 import { finaleStageFit } from "./finale-stage-fit";
-import { TILE_GLOW, TILE_GLOW_FRAGMENT, TILE_GLOW_VERTEX, tileGlowLook, tileGlowShape, tileGlowUniforms } from "./finale-tile-glow";
+import { TILE_GLOW, TILE_GLOW_FRAGMENT, TILE_GLOW_VERTEX, perimeterParam, tileGlowLook, tileGlowShape, tileGlowUniforms, type TileGlowShape } from "./finale-tile-glow";
 import {
 	FINALE_CONFETTI_FOV,
 	FINALE_CONFETTI_MOTION_GLSL,
@@ -47,11 +47,27 @@ export const FINALE_CONFETTI_LOOK = {
 	farFocusGain: 0.01,
 	/** The bento tile whose glow the column's border borrows, at its own weight: the hero's bright one. */
 	glowTile: 0,
+	/** How far down each side the glow pulses in, as a share of the column's height, before it is traced. */
+	glowCrown: 0.12,
 	/**
 	 * Length of the glowing band as a share of the column's height, once it has
-	 * grown from the crown: past that its top lets go and follows it down.
+	 * stretched from the crown: from then its tail follows it down at its pace.
 	 */
 	glowBand: 0.35,
+	/** The tail's pace, as a share of the lead's, while the band stretches from the crown. */
+	glowStretch: 0.5,
+	/**
+	 * Share of the trace by which the two leads meet in the foot's middle, so
+	 * the whole foot burns, joined, for the rest of the pull before the flash.
+	 */
+	glowMeet: 0.8,
+	/**
+	 * How much stronger the glow burns once it has rounded onto the foot, at
+	 * full (`FinaleConfettiGlowMask.foot`), at its own width: its brightness
+	 * gain grows by `gain` and the dim floor between its spots rises by
+	 * `floor`, so the whole foot burns, a touch above the crown's glow.
+	 */
+	glowFoot: { gain: 0.35, floor: 0.15 },
 } as const;
 
 const ROVO_GLSL = /* glsl */ `
@@ -190,26 +206,76 @@ void main() {
 const TILE_GLOW_MAIN = "void main() {";
 
 /**
+ * The foot's colours: the flash's Rovo cycle from blue (0) through purple and
+ * orange to green (0.75), the four once each, never cycling back to blue. Each
+ * holds its own stretch; neighbours blend over the middle `FOOT_BLEND` of the
+ * way between them, so no in-between hue (purple into orange reads red) lingers.
+ */
+/** A GLSL float literal. */
+const f = (value: number) => value.toFixed(4);
+
+const FOOT_HUES = 0.75;
+const FOOT_BLEND = 0.5;
+
+/** How brightly the foot burns evenly under its spots, as a share of a spot's peak. */
+const FOOT_EVEN = 0.5;
+
+/**
  * The bento tiles' pulsing border (Paper's; `finale-tile-glow.ts`), unchanged,
- * run round the whole column with its `main` wrapped so only a band of its
- * stroke shows, traced down the column (`finaleConfettiGlowMask`, mirrored by
+ * run round the whole column with its `main` wrapped so only a stretch of its
+ * stroke shows, traced down both sides (`finaleConfettiGlowMask`, mirrored by
  * `finaleConfettiGlowMaskAt`).
  */
 export const FINALE_CONFETTI_GLOW_FRAGMENT = `${TILE_GLOW_FRAGMENT.replace(TILE_GLOW_MAIN, "void tileGlow() {")}
-// The band, y px (down): its top edge (from, fade) and its bottom edge (from, fade).
+${FLASH_COLOR_GLSL}
+// The band, px along the border from the top edge's centre, down either side:
+// its tail (from, fade) and its lead (from, fade).
 uniform vec4 uBand;
+// How far it has rounded onto the foot (0 to 1), and how far round the border (px)
+// either side of the foot's middle its colours span (finaleConfettiFootSpan).
+uniform vec2 uFoot;
 
 void main() {
 	tileGlow();
-	gl_FragColor *= smoothstep(uBand.x, uBand.x + uBand.y, vPoint.y) * (1.0 - smoothstep(uBand.z, uBand.z + uBand.w, vPoint.y));
+	vec4 glow = gl_FragColor;
+	vec2 l = vPoint - uRect.xy - 0.5 * uRect.zw;
+	vec2 h = 0.5 * uRect.zw - uRadius;
+	float s = perimeterParam(l, h, uRadius) * uLength;
+	// Mirrored about the top edge's centre (s = h.x), so both sides trace together.
+	float along = abs(s - h.x);
+	along = min(along, uLength - along);
+	float band = smoothstep(uBand.x, uBand.x + uBand.y, along) * (1.0 - smoothstep(uBand.z, uBand.z + uBand.w, along));
+	// On the foot it takes the flash's four Rovo colours, once each, left to right
+	// (finaleConfettiFootHue), at its own pulsing brightness; white-hot cores stay white.
+	float fromMiddle = (0.5 * uLength - along) * sign(l.x);
+	float k = 3.0 * clamp(0.5 + 0.5 * fromMiddle / uFoot.y, 0.0, 1.0);
+	float seg = min(floor(k), 2.0);
+	vec3 rovo = flashColor((seg + smoothstep(${f((1 - FOOT_BLEND) / 2)}, ${f((1 + FOOT_BLEND) / 2)}, k - seg)) * ${f(FOOT_HUES / 3)});
+	vec3 rgb = glow.rgb / max(glow.a, 0.0001);
+	float whiteHot = smoothstep(0.6, 0.95, min(rgb.r, min(rgb.g, rgb.b)));
+	glow.rgb = mix(glow.rgb, mix(rovo, vec3(1.0), whiteHot) * glow.a, uFoot.x);
+	// Under its orbiting spots the foot also burns evenly, line and halo, beating with
+	// the glow's heart, so the two sides join with no dim gap where no spot is passing.
+	vec2 q = abs(l) - h;
+	float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
+	float line = exp(-pow(d / (0.6 * uLook.x), 2.0));
+	float halo = exp(-abs(d) / (uScale * 0.8 + 0.8 * uLook.y));
+	halo *= mix(${f(TILE_GLOW.innerBloom)}, 1.0, smoothstep(-2.0 * uLook.x, 0.0, d));
+	halo *= 1.0 - smoothstep(0.5, 0.9, abs(d) / (${f(TILE_GLOW.pad)} * uScale));
+	float heart = ${f(FOOT_EVEN)} * (0.8 + 0.2 * beat(uLook3.z * uTime + uLook3.w));
+	float even = uFoot.x * uEnvelope * uLook2.w * heart * (line + ${f(TILE_GLOW.bloomOpacity)} * halo * (1.0 - line));
+	glow += vec4(rovo, 1.0) * clamp(even, 0.0, 1.0) * (1.0 - glow.a);
+	gl_FragColor = glow * band;
 }
 `;
 
 export interface FinaleConfettiGlowMask {
-	/** The band's top edge: the stroke is gone above `from` and whole below `from + fade`. */
-	readonly top: { readonly from: number; readonly fade: number };
-	/** The band's bottom edge: whole above `from` and gone below `from + fade`. */
-	readonly bottom: { readonly from: number; readonly fade: number };
+	/** The band's tail: the stroke is gone before `from` and whole past `from + fade`. */
+	readonly tail: { readonly from: number; readonly fade: number };
+	/** The band's lead: whole before `from` and gone past `from + fade`. */
+	readonly lead: { readonly from: number; readonly fade: number };
+	/** How far the lead has rounded onto the foot (0 → 1): from the bottom corners to the two meeting. */
+	readonly foot: number;
 }
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
@@ -218,31 +284,74 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
 }
 
 /**
- * Which band of the column's border glows as it is traced down the column
- * (`trace` 0 → 1, `finaleConfettiTrace`), as if the pieces pulled the glow
- * down with them. It lights on the crown (the top edge, its corners and the
- * start of each side) and grows down both sides; once it is `glowBand` long
- * its top lets go and follows, and in the last stretch it is drawn down into
- * the bottom edge, where it ends round the foot as the last piece lands, the
- * point the flash then floods up from.
+ * How far along the border (px) `point` sits from the top edge's centre, down
+ * either side: 0 there, `shape.length / 2` at the bottom edge's centre.
+ * Mirrors `along` in `FINALE_CONFETTI_GLOW_FRAGMENT`.
  */
-export function finaleConfettiGlowMask(column: FinaleConfettiColumn, trace: number): FinaleConfettiGlowMask {
-	const i = Math.min(1, Math.max(0, trace));
-	const fade = Math.min(80, column.height * 0.15);
-	const crown = column.radius + 28;
-	// Clear of an edge and its bloom.
-	const over = fade + 24;
-	// Depths below the top border.
-	const lead = crown + (column.height + over - crown) * i;
-	const foot = column.height - crown;
-	const trail = Math.min(foot, Math.max(-over, lead - column.height * FINALE_CONFETTI_LOOK.glowBand));
-	const tail = trail + (foot - trail) * smoothstep(0.8, 1, i);
-	return { top: { from: column.y + tail - fade, fade }, bottom: { from: column.y + lead, fade } };
+function alongBorder(shape: TileGlowShape, point: { readonly x: number; readonly y: number }): number {
+	const offset = Math.abs(perimeterParam(point, shape) * shape.length - (shape.rect.width / 2 - shape.radius));
+	return Math.min(offset, shape.length - offset);
 }
 
-/** The band's opacity at viewport `y` (px, down); mirrors `FINALE_CONFETTI_GLOW_FRAGMENT`. */
-export function finaleConfettiGlowMaskAt(mask: FinaleConfettiGlowMask, y: number): number {
-	return smoothstep(mask.top.from, mask.top.from + mask.top.fade, y) * (1 - smoothstep(mask.bottom.from, mask.bottom.from + mask.bottom.fade, y));
+/**
+ * Which stretch of the column's border glows as it is traced down the column
+ * (`trace` 0 → 1, `finaleConfettiTrace`), as if the pieces pulled the glow
+ * down with them. It glows in on the top of both sides (`glowCrown`, rising
+ * through the top corners, never onto the top edge), and the moment it sets
+ * off both ends travel: the tail slower, until the band is `glowBand` long,
+ * then at the lead's pace, so the top never lingers. It rounds the bottom
+ * corners and runs in along the bottom edge, the two meeting in its middle
+ * (`glowMeet`) before the last piece lands: the whole foot glows, strengthening as
+ * the lead rounds onto it (`foot`), where the flash then floods up from.
+ */
+export function finaleConfettiGlowMask(shape: TileGlowShape, trace: number): FinaleConfettiGlowMask {
+	const i = Math.min(1, Math.max(0, trace));
+	const { glowBand, glowCrown, glowMeet, glowStretch } = FINALE_CONFETTI_LOOK;
+	const { height } = shape.rect;
+	const corner = (Math.PI * shape.radius) / 2;
+	const fade = Math.max(1, Math.min(80, height * 0.15));
+	// Distances along the border from the top edge's centre: the top of each side…
+	const side = shape.rect.width / 2 - shape.radius + corner;
+	// …and how far down it the glow pulses in.
+	const crown = side + Math.max(28, height * glowCrown);
+	const foot = side + height - 2 * shape.radius - 28;
+	// The two leads meet in the foot's middle at `glowMeet`, then run on past it (it stays whole).
+	const lead = crown + ((shape.length / 2 - crown) * i) / glowMeet;
+	const trail = Math.min(foot, Math.max(side + (lead - crown) * glowStretch, lead - height * glowBand));
+	const tail = trail + (foot - trail) * smoothstep(0.8, 1, i);
+	// It fades in round the top corner; the fade lengthens as the tail leaves, so the top edge never lights.
+	const tailFade = Math.max(1, Math.min(fade, corner + tail - side));
+	// From the lead's fade meeting the bottom corners to the two leads meeting.
+	const bottomCorner = side + height - 2 * shape.radius;
+	return { tail: { from: tail - tailFade, fade: tailFade }, lead: { from: lead, fade }, foot: smoothstep(bottomCorner - fade, shape.length / 2, lead) };
+}
+
+/**
+ * How far round the border (px), either side of the foot's middle, the foot
+ * glows once the trace ends: its four colours span exactly that stretch.
+ */
+export function finaleConfettiFootSpan(shape: TileGlowShape): number {
+	return Math.max(1, shape.length / 2 - finaleConfettiGlowMask(shape, 1).tail.from);
+}
+
+/**
+ * Where `point` on the border falls in the flash's Rovo cycle on the foot
+ * (`flashColor`): blue (0) up the left side of the foot's glow, purple (0.25)
+ * and orange (0.5) along the bottom, green (0.75) up the right, each holding
+ * its own stretch (`FOOT_BLEND`).
+ * Mirrors `rovo` in `FINALE_CONFETTI_GLOW_FRAGMENT`.
+ */
+export function finaleConfettiFootHue(shape: TileGlowShape, point: { readonly x: number; readonly y: number }): number {
+	const fromMiddle = (shape.length / 2 - alongBorder(shape, point)) * Math.sign(point.x - (shape.rect.x + shape.rect.width / 2));
+	const k = 3 * Math.min(1, Math.max(0, 0.5 + (0.5 * fromMiddle) / finaleConfettiFootSpan(shape)));
+	const seg = Math.min(Math.floor(k), 2);
+	return (seg + smoothstep((1 - FOOT_BLEND) / 2, (1 + FOOT_BLEND) / 2, k - seg)) * (FOOT_HUES / 3);
+}
+
+/** The band's opacity at viewport `point` (px) on `shape`; mirrors `FINALE_CONFETTI_GLOW_FRAGMENT`. */
+export function finaleConfettiGlowMaskAt(mask: FinaleConfettiGlowMask, shape: TileGlowShape, point: { readonly x: number; readonly y: number }): number {
+	const along = alongBorder(shape, point);
+	return smoothstep(mask.tail.from, mask.tail.from + mask.tail.fade, along) * (1 - smoothstep(mask.lead.from, mask.lead.from + mask.lead.fade, along));
 }
 
 function vector(hex: string): THREE.Vector3 {
@@ -286,14 +395,16 @@ export class FinaleConfettiRenderer {
 		uTime: { value: 0 },
 		uScale: { value: 1 },
 		uBand: { value: new THREE.Vector4() },
+		uFoot: { value: new THREE.Vector2() },
 	};
 	private readonly pieces: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial>;
 	private readonly glow: THREE.Mesh<THREE.BufferGeometry, THREE.RawShaderMaterial>;
-	/** The glow look's bloom length (px), which swells as it hands over to the flash. */
-	private glowBloom = 0;
-	/** The column the glow climbs. */
-	private glowColumn: FinaleConfettiColumn = { x: 0, y: 0, width: 1, height: 1, radius: 0 };
+	/** The glow's own look, which strengthens on the foot and blooms as it hands over to the flash. */
+	private glowLook = { bloom: 0, floor: 0, gain: 0 };
+	/** The column's border the glow is traced round. */
+	private glowShape: TileGlowShape = tileGlowShape({ x: 0, y: 0, width: 1, height: 1 }, 0, 1, 0);
 	private burst: FinaleConfettiBurst | null = null;
+	private size = { width: 0, height: 0, dpr: 0 };
 
 	constructor(canvas: HTMLCanvasElement | OffscreenCanvas, onFailure: (reason: string) => void) {
 		this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, depth: false, stencil: false, premultipliedAlpha: true, powerPreference: "high-performance" });
@@ -344,10 +455,22 @@ export class FinaleConfettiRenderer {
 		this.clear();
 	}
 
-	play(options: FinaleConfettiPlayOptions): FinaleConfettiBurst {
-		const { width, height, dpr, column } = options;
+	/**
+	 * Size the drawing buffer, only when it changes: a resized OffscreenCanvas
+	 * presents through a new compositor surface, which only a main-thread
+	 * commit can embed, and the main thread is busiest just as a show begins.
+	 */
+	resize(width: number, height: number, dpr: number): void {
+		const size = this.size;
+		if (size.width === width && size.height === height && size.dpr === dpr) return;
+		this.size = { width, height, dpr };
 		this.renderer.setPixelRatio(dpr);
 		this.renderer.setSize(width, height, false);
+	}
+
+	play(options: FinaleConfettiPlayOptions): FinaleConfettiBurst {
+		const { width, height, dpr, column } = options;
+		this.resize(width, height, dpr);
 		const distance = finaleConfettiCameraDistance(height);
 		this.camera.aspect = width / height;
 		this.camera.far = distance * 3;
@@ -397,8 +520,11 @@ export class FinaleConfettiRenderer {
 		g.uLook3.value.set(...shared.look3);
 		g.uLook4.value.set(...shared.look4);
 		g.uScale.value = scale;
-		this.glowBloom = shared.look[1];
-		this.glowColumn = column;
+		g.uFoot.value.set(0, finaleConfettiFootSpan(shape));
+		const [, bloom, floor] = shared.look;
+		const [, , gain] = shared.look2;
+		this.glowLook = { bloom, floor, gain };
+		this.glowShape = shape;
 	}
 
 	/** One frame: `time` in seconds since launch; `release` 0 → 1 as the glow hands over to the flash. */
@@ -406,22 +532,29 @@ export class FinaleConfettiRenderer {
 		if (!this.burst) return;
 		this.uniforms.uTime.value = time;
 		this.uniforms.uRelease.value = release;
-		// The border lights as the vortex opens, is traced steadily down the column
-		// through the pull, brightens as the pieces land, and blooms into the flash as it goes.
+		// The border pulses in as the vortex opens, is traced steadily down the column
+		// through the pull, burns stronger on the foot as the pieces land, and blooms into the flash as it goes.
 		const g = this.glowUniforms;
 		g.uTime.value = time;
-		const mask = finaleConfettiGlowMask(this.glowColumn, finaleConfettiTrace(time));
-		g.uBand.value.set(mask.top.from, mask.top.fade, mask.bottom.from, mask.bottom.fade);
+		const mask = finaleConfettiGlowMask(this.glowShape, finaleConfettiTrace(time));
+		g.uBand.value.set(mask.tail.from, mask.tail.fade, mask.lead.from, mask.lead.fade);
 		g.uEnvelope.value = finaleConfettiGlow(time, finaleConfettiCharge(this.burst, time)) * (1 - release) * (1 - release);
-		g.uLook.value.y = this.glowBloom * (1 + 3 * release);
+		const look = this.glowLook;
+		const foot = FINALE_CONFETTI_LOOK.glowFoot;
+		g.uLook.value.y = look.bloom * (1 + 3 * release);
+		g.uLook.value.z = look.floor + foot.floor * mask.foot;
+		g.uLook2.value.z = look.gain * (1 + foot.gain * mask.foot);
+		g.uFoot.value.x = mask.foot;
 		this.renderer.render(this.scene, this.camera);
 	}
 
-	/** Leave a transparent canvas and give its buffers back until the next show. */
+	/**
+	 * Leave a transparent canvas at its size, so the next show draws straight
+	 * into the surface the page already embeds (the parked buffer is the price).
+	 */
 	clear(): void {
 		this.burst = null;
 		for (const mesh of [this.glow, this.pieces]) mesh.visible = false;
-		this.renderer.setSize(1, 1, false);
 		this.renderer.clear();
 	}
 
@@ -437,6 +570,8 @@ export class FinaleConfettiRenderer {
 
 export type FinaleConfettiCommand =
 	| { readonly type: "init"; readonly canvas: HTMLCanvasElement | OffscreenCanvas }
+	/** Between shows: hold a transparent canvas at the viewport's size, ready to draw into. */
+	| { readonly type: "park"; readonly width: number; readonly height: number; readonly dpr: number }
 	| ({ readonly type: "play"; readonly id: number } & FinaleConfettiPlayOptions)
 	| { readonly type: "release" | "cancel"; readonly id: number }
 	/** Rehearsal: freeze on an exact second of the show, or resume from it with `null`. */
@@ -462,7 +597,7 @@ interface PlayerShow {
  * canvas is transparent again (after a release, a cancel or a failure).
  */
 /** What the player needs from a renderer (injectable, so the loop is testable without GL). */
-export type FinaleConfettiSurface = Pick<FinaleConfettiRenderer, "play" | "render" | "clear" | "dispose">;
+export type FinaleConfettiSurface = Pick<FinaleConfettiRenderer, "resize" | "play" | "render" | "clear" | "dispose">;
 
 interface FinaleConfettiPlayerOptions {
 	readonly now?: () => number;
@@ -487,8 +622,7 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 		if (frame !== null) unschedule(frame);
 		frame = null;
 		if (!show) return;
-		// Only a live show has a canvas to clear; clearing an idle one would
-		// reallocate its buffers twice on the way into the next play.
+		// Only a live show has pieces to clear; an idle canvas is already transparent.
 		renderer?.clear();
 		emit({ type: "done", id: show.id });
 		show = null;
@@ -529,6 +663,13 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 				}
 				if (!renderer) {
 					fail("no renderer");
+					return;
+				}
+				if (command.type === "park") {
+					// A live show keeps its canvas; the controller cancels it on a resize first.
+					if (show) return;
+					renderer.resize(command.width, command.height, command.dpr);
+					renderer.clear();
 					return;
 				}
 				if (command.type === "play") {

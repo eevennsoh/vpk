@@ -12,8 +12,9 @@
  * 3. Gather: a vortex opens on the foot of the Done column. Pieces spiral
  *    down onto its bottom border (the farthest leave first and arrive last),
  *    shedding their shading until they are pure hue. The bento tiles' own
- *    pulsing glow lights the column's crown and is traced steadily down its
- *    sides through the pull, ending round its foot as the last piece lands. When
+ *    pulsing glow lights the column's two top corners and is traced steadily
+ *    down its sides through the pull, rounding the bottom corners to meet in
+ *    the middle of its foot as the last piece lands. When
  *    the finale ignites, the flash floods up from the foot and the glow
  *    blooms into it.
  *
@@ -29,7 +30,7 @@
  */
 
 import { FLASH_ROVO_COLORS, FLASH_TIMING } from "./finale-column-flash";
-import { EASE, progress } from "./finale-math";
+import { progress } from "./finale-math";
 
 // Seconds, resolved from the VPK duration tokens. The token contract test
 // checks these against app/tailwind-theme.css to prevent drift.
@@ -55,6 +56,11 @@ export const FINALE_CONFETTI_TIMING = {
 	gatherStart: MOTION_DURATION.slowest * 2 + MOTION_DURATION.medium,
 	/** Pieces join the stream across this window, farthest first. */
 	gatherSpread: MOTION_DURATION.slower,
+	/**
+	 * The column's glow pulses in on the top of both its sides across this
+	 * window, which ends as the vortex opens: one brief pulse, then it sets off.
+	 */
+	glowIn: MOTION_DURATION.slower,
 	/** The nearest piece reaches the source here… */
 	firstArrival: (MOTION_DURATION.slowest + MOTION_DURATION.slower) * 2,
 	/** …and the farthest here: the ember is fully charged and the flash may ignite. */
@@ -210,16 +216,22 @@ export function finaleConfettiSink(column: FinaleConfettiColumn, a: number, b: n
 	return { x: column.x + inset + (column.width - inset * 2) * (a + b) / 2, y: column.y + column.height };
 }
 
+/** The glow-in's pulse: how far it swells past the brightness it sets off at (~1.2× at its peak). */
+const GLOW_IN_SWELL = 0.6;
+
 /**
- * Brightness (0–1) of the column's glowing foot, before its hand-off to the
- * flash. It lights as the vortex opens, with the bento glow's own fade-up
- * (`--ease-out` over `--duration-slow`), so its spots have a bento's length
- * of life to orbit and beat; the pieces landing on it then bring it to full.
+ * Brightness (0–1) of the column's glow, before its hand-off to the flash.
+ * Just before the vortex opens it glows in on the top of both sides with one
+ * pulse (`glowIn`): from nothing, easing in so it never pops on, it swells
+ * and eases back just as the trace sets off, so it never lingers there. Its
+ * spots orbit and beat throughout; the pieces landing on it then bring it to
+ * full.
  */
 export function finaleConfettiGlow(time: number, charge: number): number {
 	const T = FINALE_CONFETTI_TIMING;
-	const rise = EASE.outBold(progress(time, T.gatherStart, T.gatherStart + MOTION_DURATION.slow));
-	return rise * (0.65 + 0.35 * clamp01(charge));
+	const at = progress(time, T.gatherStart - T.glowIn, T.gatherStart);
+	const glowIn = at * at * (3 - 2 * at) + GLOW_IN_SWELL * Math.sin(Math.PI * at) ** 2;
+	return glowIn * (0.65 + 0.35 * clamp01(charge));
 }
 
 /**

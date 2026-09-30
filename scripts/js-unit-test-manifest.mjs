@@ -16,6 +16,9 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
 		"components/blocks/jira-kanban/experimental/hooks/use-created-card-drop-motion.test.js",
 		"components/blocks/jira-kanban/experimental/lib/issue-solitaire-drop.test.js",
+		"components/blocks/jira-kanban/experimental/lib/issue-drop-handoff.test.js",
+		"components/blocks/jira-kanban/experimental/components/board-issue-source-ghost.behavior.test.js",
+		"components/blocks/jira-kanban/experimental/lib/board-column-header-drop-feedback.test.js",
 		"components/ui-custom/animated-icon.test.js",
 		"components/blocks/jira-dragging/use-jira-dragging.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-board-auto-arrange.test.js",
@@ -216,6 +219,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/jira-team-eu26-end/finale/lib/play-finale-confetti.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-late-prints.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-tile-glow.test.js",
+		"components/projects/jira-team-eu26-end/finale/lib/finale-stage-fit.test.js",
 		"components/projects/jira-golden-journeys-v4/data/presentation-story.test.js",
 		"components/projects/jira-team-eu26/data/presentation-story.test.js",
 		"components/projects/jira-team-eu26-end/data/presentation-story.test.js",

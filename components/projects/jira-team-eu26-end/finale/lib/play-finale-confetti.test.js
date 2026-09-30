@@ -15,7 +15,7 @@ async function build(contents, plugins = []) {
 
 let player;
 async function loadPlayer() {
-	player ??= await build('export { createFinaleConfettiPlayer, finaleConfettiGlowMask, finaleConfettiGlowMaskAt, FINALE_CONFETTI_GLOW_FRAGMENT } from "./finale-confetti-renderer"; export { FINALE_CONFETTI_TIMING } from "./finale-confetti"; export { TILE_GLOW_FRAGMENT } from "./finale-tile-glow";');
+	player ??= await build('export { createFinaleConfettiPlayer, finaleConfettiGlowMask, finaleConfettiGlowMaskAt, FINALE_CONFETTI_GLOW_FRAGMENT } from "./finale-confetti-renderer"; export { FINALE_CONFETTI_TIMING } from "./finale-confetti"; export { TILE_GLOW_FRAGMENT, tileGlowShape } from "./finale-tile-glow"; export { FLASH_COLOR_GLSL } from "./finale-column-flash"; export { finaleConfettiFootHue } from "./finale-confetti-renderer";');
 	return player;
 }
 
@@ -62,6 +62,7 @@ function fakeRenderer() {
 	return {
 		calls,
 		create: () => ({
+			resize: (width, height, dpr) => calls.push(["resize", width, height, dpr]),
 			play: (options) => calls.push(["play", options.id]),
 			render: (time, release) => calls.push(["render", Math.round(time * 1000) / 1000, release]),
 			clear: () => calls.push(["clear"]),
@@ -132,6 +133,21 @@ test("rehearsal holds render at once, resume where they froze, and cancel clears
 	assert.deepEqual(events, [{ type: "done", id: 7 }]);
 });
 
+test("between shows the player parks a transparent canvas at the viewport's size; a live show keeps its own", async (t) => {
+	const { createFinaleConfettiPlayer } = await loadPlayer();
+	const frames = fakeFrames();
+	t.after(frames.install());
+	const renderer = fakeRenderer();
+	const player = createFinaleConfettiPlayer(() => {}, { now: () => 0, createRenderer: renderer.create });
+	player.handle({ type: "init", canvas: {} });
+	player.handle({ type: "park", width: 1440, height: 900, dpr: 2 });
+	assert.deepEqual(renderer.calls, [["resize", 1440, 900, 2], ["clear"]]);
+	player.handle({ type: "play", id: 1, width: 1440, height: 900, dpr: 2, column: COLUMN });
+	const drawn = renderer.calls.length;
+	player.handle({ type: "park", width: 1280, height: 800, dpr: 2 });
+	assert.equal(renderer.calls.length, drawn, "a resize mid-show is the controller's to cancel first");
+});
+
 test("a renderer that cannot start reports why, instead of drawing nothing", async () => {
 	const { createFinaleConfettiPlayer } = await loadPlayer();
 	const events = [];
@@ -151,32 +167,76 @@ test("a renderer that cannot start reports why, instead of drawing nothing", asy
 	assert.deepEqual(later, [{ type: "failed", reason: "shader rejected" }, { type: "failed", reason: "no renderer" }], "a failed renderer is never played");
 });
 
-test("the column's border glows with the bento tiles' own pulsing border, traced down from its crown to its foot", async () => {
-	const { FINALE_CONFETTI_GLOW_FRAGMENT: glow, TILE_GLOW_FRAGMENT: tile, finaleConfettiGlowMask: mask, finaleConfettiGlowMaskAt: at } = await loadPlayer();
+test("the column's border glows with the bento tiles' own pulsing border, on the top of both sides, then traced down them to meet along its foot", async () => {
+	const { FINALE_CONFETTI_GLOW_FRAGMENT: glow, FLASH_COLOR_GLSL: flashColor, TILE_GLOW_FRAGMENT: tile, finaleConfettiFootHue: hue, finaleConfettiGlowMask: mask, finaleConfettiGlowMaskAt: at, tileGlowShape } = await loadPlayer();
 	// The tile shader is wrapped, not edited: every line of it but its entry point survives.
 	assert.equal(glow.replace("void tileGlow() {", "void main() {").startsWith(tile), true);
 	assert.equal(glow.match(/void main\(\)/g).length, 1, "one entry point");
-	// The TS mirror used below is the shader's own expression.
-	assert.match(glow, /tileGlow\(\);\s*gl_FragColor \*= smoothstep\(uBand\.x, uBand\.x \+ uBand\.y, vPoint\.y\) \* \(1\.0 - smoothstep\(uBand\.z, uBand\.z \+ uBand\.w, vPoint\.y\)\);/);
-	const top = COLUMN.y;
-	const middle = COLUMN.y + COLUMN.height / 2;
-	const bottom = COLUMN.y + COLUMN.height;
-	const lit = (trace, y) => at(mask(COLUMN, trace), y);
-	assert.equal(lit(0, top), 1, "it lights on the crown…");
-	assert.equal(lit(0, middle), 0);
-	assert.equal(lit(0.5, top), 0, "…lets go of it as it travels down…");
-	assert.equal(lit(0.5, middle), 1);
-	assert.equal(lit(1, bottom), 1, "…and ends round the foot, where the flash ignites");
-	assert.equal(lit(1, middle), 0);
-	assert.equal(lit(1, top), 0);
-	let previous = mask(COLUMN, 0);
+	// The TS mirror used below is the shader's own expression, measured along the border.
+	assert.match(glow, /float along = abs\(s - h\.x\);\s*along = min\(along, uLength - along\);\s*float band = smoothstep\(uBand\.x, uBand\.x \+ uBand\.y, along\) \* \(1\.0 - smoothstep\(uBand\.z, uBand\.z \+ uBand\.w, along\)\);/);
+	assert.match(glow, /gl_FragColor = glow \* band;\s*\}\s*$/, "the band masks everything it draws");
+	const shape = tileGlowShape(COLUMN, COLUMN.radius, 1, 2);
+	const { rect, radius } = shape;
+	const [left, right, top, bottom] = [rect.x, rect.x + rect.width, rect.y, rect.y + rect.height];
+	const middle = top + rect.height / 2;
+	const centre = left + rect.width / 2;
+	const lit = (trace, x, y) => at(mask(shape, trace), shape, { x, y });
+	// Each point on the right, with its mirror on the left: both sides trace together.
+	const both = (trace, x, y) => {
+		const value = lit(trace, x, y);
+		assert.ok(Math.abs(lit(trace, centre - (x - centre), y) - value) < 1e-9, `mirrored at (${x}, ${y})`);
+		return value;
+	};
+	assert.equal(both(0, right, top + radius + 2), 1, "it glows in on the top of both sides…");
+	assert.equal(both(0, right, top + radius + rect.height * 0.1), 1);
+	assert.equal(both(0, right, middle), 0);
+	// Regression: it once lit a lip of the top edge by each corner, and before that the whole edge.
+	for (let trace = 0; trace <= 1.001; trace += 0.05) {
+		for (let x = centre; x <= right - radius; x += 8) assert.equal(both(trace, x, top), 0, "…never on the top edge");
+	}
+	// Regression: its tail held the top until the band had stretched to full length.
+	assert.equal(both(0.25, right, top + radius + 2), 0, "it lets go of the top as soon as it sets off…");
+	assert.ok(both(0.1, right, top + radius + 2) < both(0, right, top + radius + 2), "already fading there");
+	assert.equal(both(0.5, right, middle), 1);
+	assert.equal(both(0.65, right - radius - 6, bottom), 1, "…rounds the bottom corners…");
+	assert.equal(both(0.65, centre, bottom), 0, "…and runs in along the foot…");
+	// Regression: the two leads met only at the very end, so their join in the middle stayed faint.
+	for (let x = left + radius; x <= right - radius; x += 4) assert.equal(lit(0.8, x, bottom), 1, "…meeting in its middle with a fifth of the pull to go, joined end to end…");
+	for (const share of [0, 0.25, 0.5, 0.75, 1]) {
+		const x = left + radius + (rect.width - radius * 2) * share;
+		assert.equal(lit(1, x, bottom), 1, "…until the whole foot glows, where the flash ignites");
+	}
+	assert.equal(both(1, right, middle), 0);
+	// It burns stronger on the foot: at its own strength down the sides, rising as it rounds the bottom corners.
+	assert.equal(mask(shape, 0.5).foot, 0, "its own strength down the sides…");
+	assert.ok(mask(shape, 0.65).foot > 0.2 && mask(shape, 0.65).foot < 0.8, "…strengthening as it rounds onto the foot…");
+	assert.equal(mask(shape, 0.8).foot, 1, "…at full strength once joined…");
+	assert.equal(mask(shape, 1).foot, 1, "…and strongest once the whole foot glows, as the flash ignites");
+	// Regression: the foot showed whichever one or two spot colours were passing (a red and a green).
+	assert.ok(glow.includes(flashColor), "on the foot it takes the flash's own four Rovo colours…");
+	// Regression: they cycled every half column, so the foot showed the four colours three times over.
+	const path = [];
+	for (let y = bottom - 200; y < bottom - radius; y += 10) path.push({ x: left, y });
+	for (let x = left + radius; x <= right - radius; x += 10) path.push({ x, y: bottom });
+	for (let y = bottom - radius - 1; y >= bottom - 200; y -= 10) path.push({ x: right, y });
+	const hues = path.map((point) => hue(shape, point));
+	assert.equal(Math.min(...hues), 0, "…blue up the left of the foot…");
+	assert.equal(Math.max(...hues), 0.75, "…to green up its right, never cycling back to blue…");
+	hues.slice(1).forEach((value, index) => assert.ok(value >= hues[index], "…once each, left to right"));
+	assert.ok(Math.abs(hue(shape, { x: centre, y: bottom }) - 0.375) < 1e-9, "purple into orange in the middle, where the flash ignites…");
+	// Regression: a smooth blend spread purple-into-orange (a red) across the middle of the foot.
+	const span = rect.width / 2 + radius;
+	assert.equal(hue(shape, { x: centre - span * 0.3, y: bottom }), 0.25, "…each colour holding its own stretch…");
+	assert.equal(hue(shape, { x: centre + span * 0.3, y: bottom }), 0.5, "…and blending only briefly into the next");
+	let previous = mask(shape, 0);
 	for (let trace = 0.05; trace <= 1.001; trace += 0.05) {
-		const next = mask(COLUMN, trace);
-		assert.ok(next.bottom.from > previous.bottom.from, "its bottom edge descends the whole way");
-		assert.ok(next.top.from >= previous.top.from, "and its top only ever follows it down");
+		const next = mask(shape, trace);
+		assert.ok(next.lead.from > previous.lead.from, "its lead travels the whole way");
+		assert.ok(next.tail.from >= previous.tail.from, "and its tail only ever follows it");
+		assert.ok(next.foot >= previous.foot, "and it only ever strengthens");
 		previous = next;
 	}
-	assert.deepEqual(mask(COLUMN, 2), mask(COLUMN, 1), "never past the top");
+	assert.deepEqual(mask(shape, 2), mask(shape, 1), "never past the foot");
 });
 
 function fakeDom(t, { offscreen = true } = {}) {
@@ -184,6 +244,9 @@ function fakeDom(t, { offscreen = true } = {}) {
 	const topLayer = [];
 	const listeners = new Map();
 	const workers = [];
+	const frames = [];
+	/** Page changes that need a main-thread commit before a worker's frames can show. */
+	const commits = { appends: 0, shows: 0 };
 	const element = (tag) => {
 		const attributes = new Map();
 		const node = {
@@ -194,19 +257,21 @@ function fakeDom(t, { offscreen = true } = {}) {
 			append: (child) => node.children.push(child),
 			remove: () => { node.isConnected = false; },
 			matches: (selector) => selector === ":popover-open" && topLayer.includes(node),
-			showPopover: () => { topLayer.push(node); },
+			showPopover: () => { commits.shows++; topLayer.push(node); },
 			hidePopover: () => { topLayer.splice(topLayer.indexOf(node), 1); },
 		};
 		if (tag === "canvas" && offscreen) node.transferControlToOffscreen = () => ({ offscreen: true });
 		return node;
 	};
-	globalThis.document = { createElement: element, body: { append: (node) => { node.isConnected = true; } } };
+	globalThis.document = { createElement: element, body: { append: (node) => { commits.appends++; node.isConnected = true; } } };
 	globalThis.window = {
 		innerWidth: 1440, innerHeight: 900, devicePixelRatio: 3,
-		addEventListener: (name, handler) => listeners.set(name, handler),
-		removeEventListener: (name) => listeners.delete(name),
+		addEventListener: (name, handler) => listeners.set(name, new Set([...(listeners.get(name) ?? []), handler])),
+		removeEventListener: (name, handler) => listeners.get(name)?.delete(handler),
 		setTimeout: (...args) => setTimeout(...args),
 		clearTimeout: (handle) => clearTimeout(handle),
+		requestAnimationFrame: (callback) => frames.push(callback),
+		cancelAnimationFrame: (handle) => { frames[handle - 1] = null; },
 	};
 	globalThis.Worker = class {
 		constructor(url, options) {
@@ -222,7 +287,13 @@ function fakeDom(t, { offscreen = true } = {}) {
 			else globalThis[key] = value;
 		}
 	});
-	return { topLayer, listeners, workers };
+	return {
+		topLayer, workers, commits,
+		fire: (name) => { for (const handler of [...(listeners.get(name) ?? [])]) handler(); },
+		listening: (name) => listeners.get(name)?.size ?? 0,
+		/** Deliver every pending frame. */
+		frame: () => frames.splice(0).forEach((callback) => callback?.()),
+	};
 }
 
 const COLUMN = { x: 1090, y: 240, width: 322, height: 640, radius: 8 };
@@ -233,7 +304,7 @@ const settled = async (promise) => {
 	return done;
 };
 
-test("a worker owns the canvas; the layer sits in the top layer and hands over on the worker's word", async (t) => {
+test("a worker owns the canvas, parked in the top layer at the viewport's size, so a launch changes nothing on the page", async (t) => {
 	const dom = fakeDom(t);
 	const { createFinaleConfetti } = await loadController();
 	const confetti = createFinaleConfetti();
@@ -243,15 +314,24 @@ test("a worker owns the canvas; the layer sits in the top layer and hands over o
 	assert.match(worker.url, /finale-confetti\.worker\.ts$/);
 	assert.deepEqual(worker.messages[0].message.type, "init");
 	assert.deepEqual(worker.messages[0].transfer, [worker.messages[0].message.canvas], "the OffscreenCanvas is transferred, not copied");
-	const show = confetti.play(COLUMN);
 	const [layer] = dom.topLayer;
+	assert.equal(layer.isConnected, true, "parked on the page while the board is idle");
 	assert.equal(layer.getAttribute("aria-hidden"), "true");
 	assert.equal(layer.inert, true);
 	assert.equal(layer.getAttribute("popover"), "manual");
-	assert.equal(layer.dataset.finaleConfetti, "");
+	assert.equal(layer.dataset.finaleConfetti, "idle");
 	assert.match(layer.className, /pointer-events-none/);
+	assert.deepEqual(worker.messages.at(-1).message, { type: "park", width: 1440, height: 900, dpr: 2 }, "and sized to the viewport ahead of any show");
+	const parked = { ...dom.commits };
+	const show = confetti.play(COLUMN);
+	// Regression: the layer was inserted, and its canvas resized from 1×1, only
+	// as the burst launched. Either needs a main-thread commit before the worker's
+	// frames can show, and the column print held the main thread, so the first
+	// half-second of the launch never reached the screen.
+	assert.deepEqual(dom.commits, parked, "the launch neither inserts nor re-shows the layer");
+	assert.equal(layer.dataset.finaleConfetti, "playing");
 	const play = worker.messages.at(-1).message;
-	assert.deepEqual({ ...play, id: 0 }, { type: "play", id: 0, width: 1440, height: 900, dpr: 2, column: COLUMN }, "it drains onto the Done column's foot");
+	assert.deepEqual({ ...play, id: 0 }, { type: "play", id: 0, width: 1440, height: 900, dpr: 2, column: COLUMN }, "it drains onto the Done column's foot, at the parked size");
 	worker.onmessage({ data: { type: "gathered", id: play.id + 1 } });
 	assert.equal(await settled(show.gathered), false, "another show's report is ignored");
 	worker.onmessage({ data: { type: "gathered", id: play.id } });
@@ -263,47 +343,59 @@ test("a worker owns the canvas; the layer sits in the top layer and hands over o
 	assert.deepEqual(dom.topLayer, [dialog, layer]);
 	show.release();
 	assert.deepEqual(worker.messages.at(-1).message, { type: "release", id: play.id });
-	assert.equal(layer.isConnected, true, "the ember stays up through its bloom");
+	assert.equal(layer.dataset.finaleConfetti, "playing", "the ember stays up through its bloom");
 	worker.onmessage({ data: { type: "done", id: play.id } });
-	assert.equal(layer.isConnected, false);
-	assert.deepEqual(dom.topLayer, [dialog]);
+	assert.equal(layer.dataset.finaleConfetti, "idle");
+	assert.deepEqual(dom.topLayer, [dialog, layer], "then parks again, ready for a replay");
 	confetti.dispose();
 	assert.equal(worker.terminated, true);
+	assert.equal(layer.isConnected, false, "disposing takes the layer off the page");
+	assert.deepEqual(dom.topLayer, [dialog]);
+	assert.equal(dom.listening("resize"), 0);
 });
 
 test("cancel and resize clear at once; a stale report cannot touch the next show", async (t) => {
 	const dom = fakeDom(t);
 	const { createFinaleConfetti } = await loadController();
 	const confetti = createFinaleConfetti();
+	// Without a prewarm, the first show parks the layer itself.
 	const first = confetti.play(COLUMN);
 	const [worker] = dom.workers;
+	const [layer] = dom.topLayer;
 	const firstId = worker.messages.at(-1).message.id;
 	first.cancel();
 	assert.deepEqual(worker.messages.at(-1).message, { type: "cancel", id: firstId });
-	assert.equal(dom.topLayer.length, 0);
+	assert.equal(layer.dataset.finaleConfetti, "idle");
 	assert.equal(await settled(first.gathered), false, "a cancelled show never hands over");
 	const second = confetti.play(COLUMN);
-	const [layer] = dom.topLayer;
+	assert.deepEqual(dom.topLayer, [layer], "one canvas serves every show");
 	worker.onmessage({ data: { type: "done", id: firstId } });
-	assert.equal(layer.isConnected, true, "the first show's late done leaves the second alone");
-	dom.listeners.get("resize")();
-	assert.equal(layer.isConnected, false, "a resize clears the burst");
+	assert.equal(layer.dataset.finaleConfetti, "playing", "the first show's late done leaves the second alone");
+	globalThis.window.innerWidth = 1280;
+	dom.fire("resize");
+	assert.equal(layer.dataset.finaleConfetti, "idle", "a resize clears the burst");
 	assert.equal(await settled(second.gathered), true, "and lets the finale go on with fresh geometry");
+	dom.fire("resize");
+	dom.frame();
+	assert.deepEqual(worker.messages.at(-1).message, { type: "park", width: 1280, height: 900, dpr: 2 }, "the parked canvas follows the viewport, once per frame");
+	assert.equal(worker.messages.filter(({ message }) => message.type === "park").length, 1);
+	confetti.dispose();
 });
 
 test("a failing worker hands the running show to the main thread; a second failure never holds the finale", async (t) => {
 	const dom = fakeDom(t);
 	const { createFinaleConfetti, probe } = await loadController();
 	const confetti = createFinaleConfetti();
-	t.after(() => confetti.dispose());
 	const warn = console.warn;
 	console.warn = () => {};
 	t.after(() => { console.warn = warn; });
 	const show = confetti.play(COLUMN);
 	const [worker] = dom.workers;
+	const [workerLayer] = dom.topLayer;
 	const { id } = worker.messages.at(-1).message;
 	worker.onerror({ message: "worker WebGL unavailable" });
 	assert.equal(worker.terminated, true);
+	assert.equal(workerLayer.isConnected, false, "the failed canvas leaves the page");
 	// Regression: the show once resolved empty here, so the keynote's only run lost its confetti.
 	const [main] = probe.players;
 	assert.ok(main, "the fallback starts at once, not on a later replay");
@@ -324,6 +416,7 @@ test("a failing worker hands the running show to the main thread; a second failu
 	assert.equal(await settled(last.gathered), true, "after two failures the finale simply runs without confetti");
 	assert.equal(dom.topLayer.length, 0);
 	assert.equal(dom.workers.length, 1, "and no worker is retried");
+	confetti.dispose();
 });
 
 test("a stalled renderer holds the flash for at most a short grace", async (t) => {

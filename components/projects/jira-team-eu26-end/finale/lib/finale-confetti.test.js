@@ -24,6 +24,7 @@ test("the timeline composes the resolved VPK duration tokens and hands over in t
 	assert.equal(T.volley, token("slow"), "the cannons fire as a stream the eye can follow");
 	assert.equal(T.gatherStart, token("slowest") * 2 + token("medium"), "a long hang before the vortex opens");
 	assert.equal(T.gatherSpread, token("slower"));
+	assert.equal(T.glowIn, token("slower"), "the column's glow pulses in once, briefly");
 	assert.equal(T.firstArrival, (token("slowest") + token("slower")) * 2);
 	assert.equal(T.gathered, token("slowest") * 4);
 	assert.equal(T.release, FLASH_TIMING.rise, "the ember blooms over exactly the flash's own rise");
@@ -155,16 +156,28 @@ test("the border charges steadily from the first arrival to full at the gather c
 	assert.ok(middle > 0.35 && middle < 0.65, "arrivals pour in at a steady rate");
 });
 
-test("the column's foot glows for a bento glow's length of life, full once every piece has landed", () => {
+test("the column's glow pulses in once, briefly, just before the pull, then brightens to full as every piece lands", () => {
 	const { createFinaleConfettiBurst, finaleConfettiCharge, finaleConfettiGlow, FINALE_CONFETTI_TIMING: T } = load();
-	const css = readFileSync("app/tailwind-theme.css", "utf8");
-	const slow = Number(css.match(/--duration-slow:\s*(\d+)ms/)[1]) / 1000;
 	const burst = createFinaleConfettiBurst(STAGE);
 	const glow = (time) => finaleConfettiGlow(time, finaleConfettiCharge(burst, time));
-	assert.equal(glow(T.gatherStart), 0, "dark until the vortex opens");
-	assert.ok(Math.abs(glow(T.gatherStart + slow) - 0.65) < 1e-9, "lit, with the bento's fade-up, before any piece lands");
+	const start = T.gatherStart - T.glowIn;
+	assert.ok(start > T.volley, "dark while the cannons fire");
+	assert.equal(glow(start), 0);
+	// Regression: it popped on as the vortex opened, a third of its brightness in one frame.
+	let steepest = 0;
+	for (let time = 0; time < T.gathered; time += 1 / 120) steepest = Math.max(steepest, glow(time + 1 / 60) - glow(time));
+	assert.ok(steepest < 0.1, `it glows in from nothing, never popping on (${steepest.toFixed(3)} in a frame)`);
+	// One pulse: it swells past the brightness it sets off at, then eases back to it.
+	const samples = [];
+	for (let time = start; time <= T.gatherStart + 1e-9; time += 0.005) samples.push(glow(time));
+	const turns = samples.slice(1, -1).map((value, index) => Math.sign(value - samples[index]) - Math.sign(samples[index + 2] - value));
+	assert.equal(turns.filter((turn) => turn > 0).length, 1, "one swell…");
+	assert.equal(turns.filter((turn) => turn < 0).length, 0, "…with no second beat…");
+	assert.ok(Math.max(...samples) > glow(T.gatherStart) * 1.15, "…that reads as a pulse…");
+	assert.ok(Math.abs(glow(T.gatherStart) - 0.65) < 1e-9, "…easing back just as the trace sets off, before any piece lands");
+	// Regression: it pulsed at the top for twice as long, lingering there before the trace.
+	assert.ok(T.glowIn <= T.gatherSpread + 1e-9, "brief: no longer than the pieces take to join the stream");
 	assert.equal(glow(T.gathered), 1, "full once every piece is in");
-	assert.ok(T.gathered - T.gatherStart >= 1 - 1e-9, "a second of orbiting spots before the flash can ignite");
 	let previous = 0;
 	for (let time = T.gatherStart; time <= T.gathered + 0.5; time += 0.01) {
 		assert.ok(glow(time) >= previous - 1e-12 && glow(time) <= 1, "it only brightens, and never past full");

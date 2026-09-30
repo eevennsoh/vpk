@@ -68,7 +68,8 @@ function offFrame(rect, viewport) {
 
 test("four presenter cursors, one per Rovo colour", () => {
 	const { FINALE_CURSORS, ROVO_COLOR_SWATCHES } = load();
-	assert.deepEqual(FINALE_CURSORS.map((cursor) => cursor.label).sort(), ["MCB", "Sherif", "Tamar", "Taroon"]);
+	// The board's "MCB" goes by "Mike" on the finale's cursor.
+	assert.deepEqual(FINALE_CURSORS.map((cursor) => cursor.label).sort(), ["Mike", "Sherif", "Tamar", "Taroon"]);
 	assert.deepEqual(FINALE_CURSORS.map((cursor) => cursor.color).sort(), ROVO_COLOR_SWATCHES.map((swatch) => swatch.hex).sort());
 	assert.equal(new Set(FINALE_CURSORS.map((cursor) => cursor.entry)).size, 4, "each from its own side or corner");
 	assert.equal(new Set(FINALE_CURSORS.map((cursor) => cursor.slot)).size, 4, "each by a different tile");

@@ -33,6 +33,7 @@ import {
 } from "../lib/finale-card-motion";
 import { latePrintResolvers } from "../lib/finale-late-prints";
 import { parseRgb, progress } from "../lib/finale-math";
+import { finaleFieldPixelRatio } from "../lib/finale-stage-fit";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 /** Speed (px/s) at which the cloth reaches full bend; faster only saturates. */
@@ -597,7 +598,7 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 			return undefined;
 		}
 		renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-		const ratio = Math.min(window.devicePixelRatio || 1, 2);
+		const ratio = finaleFieldPixelRatio(viewport.width, viewport.height, window.devicePixelRatio);
 		renderer.setPixelRatio(ratio);
 		renderer.setSize(viewport.width, viewport.height, false);
 		renderer.setClearColor(0x000000, 0);
@@ -723,9 +724,21 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 		renderer.compile(scene, camera);
 		renderer.setRenderTarget(null);
 		renderer.compile(postScene, postCamera);
-		for (const { shadow } of sheets) if (shadow) shadow.visible = false;
 		for (const { texture } of textures.values()) renderer.initTexture(texture);
 		renderer.initRenderTarget(target);
+		// Then draw once through both of the toss's paths (the post target, and
+		// straight to the canvas): ANGLE builds a program's GPU pipeline only at
+		// its first draw into a target, and three checks each program on first
+		// use with a blocking GPU round trip, which otherwise cost the toss two
+		// frames. The sheets sit at the origin, in view; the canvas is cleared
+		// before this task presents anything.
+		renderer.setRenderTarget(target);
+		renderer.render(scene, camera);
+		renderer.setRenderTarget(null);
+		renderer.render(postScene, postCamera);
+		renderer.render(scene, camera);
+		renderer.clear();
+		for (const { shadow } of sheets) if (shadow) shadow.visible = false;
 
 		stateRef.current = { renderer, scene, camera, sheets, pending, target, post: { scene: postScene, camera: postCamera, material: postMaterial } };
 		return () => {

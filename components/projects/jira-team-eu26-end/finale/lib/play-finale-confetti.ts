@@ -31,14 +31,29 @@ const RELEASE_GRACE_MS = 1000;
 interface Host {
 	readonly layer: HTMLElement;
 	readonly send: (command: FinaleConfettiCommand) => void;
+	/** Stop its renderer and take its layer off the page. */
 	readonly dispose: () => void;
+}
+
+/** `idle` while parked between shows, `playing` while a burst is up. */
+type FinaleConfettiState = "idle" | "playing";
+
+const inTopLayer = (layer: HTMLElement) => layer.hasAttribute("popover") && layer.matches(":popover-open");
+
+function removeLayer(layer: HTMLElement): void {
+	if (inTopLayer(layer)) layer.hidePopover();
+	layer.remove();
+}
+
+function viewportSize(): { width: number; height: number; dpr: number } {
+	return { width: window.innerWidth, height: window.innerHeight, dpr: Math.min(window.devicePixelRatio || 1, 2) };
 }
 
 function createLayer(): { layer: HTMLElement; canvas: HTMLCanvasElement } {
 	const layer = document.createElement("div");
 	layer.setAttribute("aria-hidden", "true");
 	layer.inert = true;
-	layer.dataset.finaleConfetti = "";
+	layer.dataset.finaleConfetti = "idle" satisfies FinaleConfettiState;
 	// A manual popover lives in the top layer, so it can be raised above the finale's modal dialog.
 	if (typeof layer.showPopover === "function") layer.setAttribute("popover", "manual");
 	layer.className = "pointer-events-none fixed inset-0 z-[10000] m-0 size-full max-h-none max-w-none overflow-hidden border-0 bg-transparent p-0";
@@ -57,7 +72,14 @@ function createHost(onEvent: (event: FinaleConfettiEvent) => void, allowWorker: 
 			worker.onerror = (event) => onEvent({ type: "failed", reason: event.message || "worker error" });
 			const offscreen = canvas.transferControlToOffscreen();
 			worker.postMessage({ type: "init", canvas: offscreen } satisfies FinaleConfettiCommand, [offscreen]);
-			return { layer, send: (command) => worker.postMessage(command), dispose: () => worker.terminate() };
+			return {
+				layer,
+				send: (command) => worker.postMessage(command),
+				dispose: () => {
+					worker.terminate();
+					removeLayer(layer);
+				},
+			};
 		} catch {
 			// No module workers here: render on the main thread instead.
 			return createHost(onEvent, false);
@@ -66,7 +88,14 @@ function createHost(onEvent: (event: FinaleConfettiEvent) => void, allowWorker: 
 	// Same player, same frames; only exposed to main-thread long tasks.
 	const player = createFinaleConfettiPlayer((event) => queueMicrotask(() => onEvent(event)));
 	player.handle({ type: "init", canvas });
-	return { layer, send: (command) => player.handle(command), dispose: () => player.handle({ type: "dispose" }) };
+	return {
+		layer,
+		send: (command) => player.handle(command),
+		dispose: () => {
+			player.handle({ type: "dispose" });
+			removeLayer(layer);
+		},
+	};
 }
 
 interface ActiveShow {
@@ -81,12 +110,22 @@ interface ActiveShow {
  * Owns the confetti's renderer across shows: one top-layer canvas, driven by a
  * worker when the browser can hand it an OffscreenCanvas. The burst must never
  * hold the finale: a failure, a stall or a resize all release `gathered`.
+ *
+ * Between shows the canvas stays parked on the page: in the top layer,
+ * transparent and sized to the viewport. A worker's frames reach the screen
+ * only through a surface the page has embedded, and embedding a new or resized
+ * canvas takes a main-thread commit, while the main thread prints the Done
+ * column just as the burst launches. Parked ahead of time, the launch presents
+ * from its first frame; the cost is one viewport-sized buffer kept while the
+ * board is open.
  */
 export function createFinaleConfetti(): FinaleConfetti {
 	let host: Host | null = null;
 	let failures = 0;
 	let sequence = 0;
 	let active: ActiveShow | null = null;
+	let parkFrame = 0;
+	let listening = false;
 
 	const onEvent = (event: FinaleConfettiEvent) => {
 		if (event.type === "failed") {
@@ -108,6 +147,29 @@ export function createFinaleConfetti(): FinaleConfetti {
 		if (!host && failures < 2) host = createHost(onEvent, failures === 0);
 		return host;
 	};
+	/** On the page, in the top layer and (between shows) sized to the viewport. */
+	const park = () => {
+		const current = ensureHost();
+		if (!current) return null;
+		const { layer } = current;
+		if (!layer.isConnected) document.body.append(layer);
+		if (layer.hasAttribute("popover") && !inTopLayer(layer)) layer.showPopover();
+		if (!active) current.send({ type: "park", ...viewportSize() });
+		return current;
+	};
+	// Keep the parked canvas at the viewport's size, once per frame of a resize.
+	const onViewportResize = () => {
+		if (parkFrame) return;
+		parkFrame = window.requestAnimationFrame(() => {
+			parkFrame = 0;
+			if (host) park();
+		});
+	};
+	const listen = () => {
+		if (listening) return;
+		listening = true;
+		window.addEventListener("resize", onViewportResize);
+	};
 
 	const play = (column: FinaleConfettiColumn): FinaleConfettiShow => {
 		active?.cancel();
@@ -121,20 +183,17 @@ export function createFinaleConfetti(): FinaleConfetti {
 		let alive = true;
 		let releaseTimer = 0;
 		let gatherTimer = 0;
-		const inTopLayer = (layer: HTMLElement) => layer.hasAttribute("popover") && layer.matches(":popover-open");
-		const removeLayer = () => {
-			const layer = current?.layer;
-			if (!layer) return;
-			if (inTopLayer(layer)) layer.hidePopover();
-			layer.remove();
+		const setState = (state: FinaleConfettiState) => {
+			if (current) current.layer.dataset.finaleConfetti = state;
 		};
 		const unmount = () => {
 			alive = false;
 			window.clearTimeout(gatherTimer);
 			window.clearTimeout(releaseTimer);
 			window.removeEventListener("resize", onResize);
-			removeLayer();
-			if (active?.id === id) active = null;
+			if (active?.id !== id) return;
+			active = null;
+			setState("idle");
 		};
 		const cancel = () => {
 			if (!alive) return;
@@ -148,19 +207,16 @@ export function createFinaleConfetti(): FinaleConfetti {
 		};
 		/** (Re)start this show on the current host; false when no renderer is left. */
 		const start = () => {
-			current = ensureHost();
+			// Parked already (prewarm), so nothing on the page changes as the burst launches.
+			current = park();
 			if (!current) return false;
 			window.clearTimeout(gatherTimer);
 			gatherTimer = window.setTimeout(resolveGathered, FINALE_CONFETTI_TIMING.gathered * 1000 + GATHER_GRACE_MS);
-			// Shown last, so it sits above anything already in the top layer (the finale's dialog).
-			document.body.append(current.layer);
-			if (current.layer.hasAttribute("popover")) current.layer.showPopover();
+			setState("playing");
 			current.send({
 				type: "play",
 				id,
-				width: window.innerWidth,
-				height: window.innerHeight,
-				dpr: Math.min(window.devicePixelRatio || 1, 2),
+				...viewportSize(),
 				column: { x: column.x, y: column.y, width: column.width, height: column.height, radius: column.radius },
 			});
 			return true;
@@ -170,13 +226,14 @@ export function createFinaleConfetti(): FinaleConfetti {
 			gather: resolveGathered,
 			done: unmount,
 			fail: () => {
-				removeLayer();
+				// The failed host has taken its layer down; the show moves to a fresh one.
 				if (alive && start()) return;
 				unmount();
 				resolveGathered();
 			},
 			cancel,
 		};
+		listen();
 		if (!start()) {
 			unmount();
 			resolveGathered();
@@ -203,7 +260,8 @@ export function createFinaleConfetti(): FinaleConfetti {
 
 	return {
 		prewarm: () => {
-			ensureHost();
+			listen();
+			park();
 		},
 		play,
 		hold: (time) => {
@@ -211,6 +269,10 @@ export function createFinaleConfetti(): FinaleConfetti {
 		},
 		dispose: () => {
 			active?.cancel();
+			window.cancelAnimationFrame(parkFrame);
+			parkFrame = 0;
+			window.removeEventListener("resize", onViewportResize);
+			listening = false;
 			host?.dispose();
 			host = null;
 		},
