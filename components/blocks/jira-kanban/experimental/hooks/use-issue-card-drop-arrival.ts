@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { flushSync } from "react-dom";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { animateIssueSolitaireDrop, captureIssueCardReflow, type IssueCardReflowPosition } from "../lib/issue-solitaire-drop";
+import { animateIssueSolitaireDrop, captureIssueCardReflow, resolveIssueSolitaireLanding, type IssueCardReflowPosition } from "../lib/issue-solitaire-drop";
+import { settleIssueCohortPreview } from "../lib/issue-drag-preview";
 import { getAutoArrangePlan } from "../lib/board-auto-arrange";
 import type { JiraKanbanProps } from "@/components/blocks/jira-kanban/index";
 import type { JiraKanbanCardDropTarget } from "@/components/blocks/jira-kanban/card-drop";
@@ -19,10 +21,23 @@ export interface IssueCardMove {
 	readonly feedback?: "none";
 }
 
+/** A released cohort whose move commits in the task after its settled face paints. */
+interface SettledIssueDrop {
+	readonly dragEnds: (() => void)[];
+	readonly commit: (flush: boolean) => void;
+}
+
+// rAF pauses in hidden tabs and throttles in occluded windows. The normal path
+// commits within ~2 frames even at 60 Hz; past this bound the move commits
+// without waiting for the settled face to paint.
+const SETTLED_RELEASE_COMMIT_FALLBACK_MS = 100;
+
 /** Native issue drops share the agent-session card entrance once their owner commits the move. */
-export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, createdArrival, draggedCardCode, selectedCardCodes, onDrop, onMove, onAutoArrange, onCreatedComplete, solitaire = false, stopPreview }: Readonly<{
+export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, createdArrival, draggedCardCode, selectedCardCodes, onDrop, onMove, onAutoArrange, onCreatedComplete, solitaire = false, stopPreview, releasePreview }: Readonly<{
 	solitaire?: boolean;
 	stopPreview?: () => void;
+	/** Takes ownership of the held traveller so a release can settle it into place. */
+	releasePreview?: () => HTMLElement | null;
 	boardRef: RefObject<HTMLElement | null>;
 	enabled: boolean;
 	getPreview: () => HTMLElement | null;
@@ -182,12 +197,77 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		releasePoint.current = null;
 		setDrop([leadCardCodes?.length ? { ...next, animatedCardCodes: movedCodes, pendingCardCodes: flights.map((flight) => flight.code), leadCardCodes, holdBelowLeads: !dragged } : next]);
 	}, [boardRef, columns, getPreview, nativePreviewRef, reduceMotion, solitaire]);
+	// A deferred commit plays the latest owner callbacks, not the ones held at release.
+	const settledDrop = useRef<SettledIssueDrop | null>(null);
+	const committers = useRef({ captureDrop, onDrop });
+	useLayoutEffect(() => { committers.current = { captureDrop, onDrop }; }, [captureDrop, onDrop]);
+	useEffect(() => {
+		const doc = boardRef.current?.ownerDocument;
+		// A hidden page never paints a settled face; land its move at once.
+		const commitWhenHidden = () => { if (doc?.visibilityState === "hidden") settledDrop.current?.commit(true); };
+		doc?.addEventListener("visibilitychange", commitWhenHidden);
+		return () => {
+			doc?.removeEventListener("visibilitychange", commitWhenHidden);
+			// An interrupted release still commits the move it promised.
+			settledDrop.current?.commit(false);
+		};
+	}, [boardRef]);
+	// A bulk release paints the solitaire reveal's first frame before React
+	// commits: the already-rendered traveller settles into the lead's slot, and
+	// the move (with its dragend) commits in the task after that frame, behind
+	// the face. The commit's layout effect starts the real stack under it, so
+	// the face is removed in the same task and no frame shows both or neither.
+	const settleRelease = useCallback((codes: readonly string[], columnTitle: string, grabbed: string, target: JiraKanbanCardDropTarget) => {
+		const root = boardRef.current;
+		const preview = getPreview();
+		const face = preview?.querySelector<HTMLElement>("[data-issue-cohort-front]");
+		if (!solitaire || reduceMotion || codes.length < 2 || !root || !face || !releasePreview || settledDrop.current) return false;
+		// The traveller wears the grabbed face, so it can only stand in for a grabbed lead.
+		const moving = new Set(codes);
+		if (columns.flatMap((column) => column.cards).find((card) => moving.has(card.code))?.code !== grabbed) return false;
+		const landing = resolveIssueSolitaireLanding(root, columnTitle, codes, target.beforeCardCode, face.offsetHeight);
+		if (!landing || Math.abs(landing.width - face.offsetWidth) > 0.5) return false;
+		const released = releasePreview();
+		if (!released) return false;
+		settleIssueCohortPreview(released, landing);
+		let frame = 0;
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const settled: SettledIssueDrop = {
+			dragEnds: [],
+			commit: (flush) => {
+				if (settledDrop.current !== settled) return;
+				settledDrop.current = null;
+				cancelAnimationFrame(frame);
+				clearTimeout(timer);
+				clearTimeout(fallback);
+				const commit = () => {
+					committers.current.captureDrop(codes, columnTitle, grabbed);
+					committers.current.onDrop?.(columnTitle, target);
+					for (const dragEnd of settled.dragEnds) dragEnd();
+				};
+				if (flush) flushSync(commit);
+				else commit();
+				released.remove();
+			},
+		};
+		const fallback = setTimeout(() => settled.commit(true), SETTLED_RELEASE_COMMIT_FALLBACK_MS);
+		settledDrop.current = settled;
+		frame = requestAnimationFrame(() => { timer = setTimeout(() => settled.commit(true), 0); });
+		return true;
+	}, [boardRef, columns, getPreview, reduceMotion, releasePreview, solitaire]);
 	const handleDrop = useCallback<NonNullable<JiraKanbanProps["onCardDrop"]>>((columnTitle, target) => {
 		if (enabled && draggedCardCode) {
-			captureDrop(selectedCardCodes?.has(draggedCardCode) ? [...selectedCardCodes] : [draggedCardCode], columnTitle, draggedCardCode);
+			const codes = selectedCardCodes?.has(draggedCardCode) ? [...selectedCardCodes] : [draggedCardCode];
+			if (target && settleRelease(codes, columnTitle, draggedCardCode, target)) return;
+			captureDrop(codes, columnTitle, draggedCardCode);
 		}
 		onDrop?.(columnTitle, target);
-	}, [captureDrop, draggedCardCode, enabled, onDrop, selectedCardCodes]);
+	}, [captureDrop, draggedCardCode, enabled, onDrop, selectedCardCodes, settleRelease]);
+	/** Holds a native dragend until a settled release has committed its move. */
+	const deferDragEnd = useCallback((dragEnd: () => void) => {
+		settledDrop.current?.dragEnds.push(dragEnd);
+		return settledDrop.current !== null;
+	}, []);
 	const handleMove = useCallback((move: IssueCardMove) => {
 		if (enabled && move.cardCodes.length > 0) captureDrop(move.cardCodes, move.columnTitle, null, move.feedback);
 		onMove?.(move);
@@ -219,5 +299,5 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		if (id < 0) setDrop((current) => current.filter((item) => item.id !== id));
 		else onCreatedComplete?.(id);
 	}, [onCreatedComplete]);
-	return { isReflowing: enabled && solitaire && arrivals.some((arrival) => arrival.cardCodes.length === 1), arrivalForColumn: (title: string) => enabled ? arrivals.find((arrival) => arrival.columnTitle === title) : undefined, handleDrop: onDrop ? handleDrop : undefined, handleMove: onMove ? handleMove : undefined, handleAutoArrange: onAutoArrange ? handleAutoArrange : undefined, handleComplete };
+	return { isReflowing: enabled && solitaire && arrivals.some((arrival) => arrival.cardCodes.length === 1), arrivalForColumn: (title: string) => enabled ? arrivals.find((arrival) => arrival.columnTitle === title) : undefined, handleDrop: onDrop ? handleDrop : undefined, handleMove: onMove ? handleMove : undefined, handleAutoArrange: onAutoArrange ? handleAutoArrange : undefined, handleComplete, deferDragEnd };
 }

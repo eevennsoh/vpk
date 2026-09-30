@@ -485,7 +485,7 @@ function ExperimentalJiraKanbanView({
 	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop" || Boolean(onAutoArrange), draggedCardCode, onCardDragEnd);
 	// Auto arrange keeps its shortcut usable during pickup, independently of move visuals.
 	const { stop: stopPointerDrag } = useBoardIssuePointerDrag(boardScrollportRef, Boolean(onAutoArrange));
-	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete, solitaire: issueDropMotion === "solitaire", stopPreview: issueCohortPreview.stop });
+	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete, solitaire: issueDropMotion === "solitaire", stopPreview: issueCohortPreview.stop, releasePreview: issueCohortPreview.release });
 	useIssueMoveRequest(issueMoveRequest, issueDropArrival.handleMove);
 	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, scopeId: autoArrangeScopeId });
 	const singleCardDrag = Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1);
@@ -676,6 +676,8 @@ function ExperimentalJiraKanbanView({
 	};
 
 	const handleCardDragEndInternal = () => {
+		// A settled bulk release replays this once its move commits.
+		if (issueDropArrival.deferDragEnd(handleCardDragEndInternal)) return;
 		issueCohortPreview.stop();
 		issueDragImageRef.current?.remove();
 		issueDragImageRef.current = null;
