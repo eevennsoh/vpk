@@ -386,7 +386,10 @@ function countPrimaryOwnerKinds(appPageRoutes) {
 		.map((route) => route.primaryOwner?.kind)
 		.filter((kind) => typeof kind === "string")
 		.sort(compareStrings)
-		.reduce((counts, kind) => ({ ...counts, [kind]: (counts[kind] ?? 0) + 1 }), {});
+		.reduce((counts, kind) => {
+			counts[kind] = (counts[kind] ?? 0) + 1;
+			return counts;
+		}, {});
 }
 
 function buildAppPageMap(appPageRoutes) {

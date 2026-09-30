@@ -29,6 +29,12 @@ jobs:
         if: github.event_name == 'pull_request'
         run: git fetch --no-tags --depth=1 origin "+refs/heads/${GITHUB_BASE_REF}:refs/remotes/origin/${GITHUB_BASE_REF}"
 
+      - name: Fetch pre-push tip for ratchet checks
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: git fetch --no-tags --depth=1 origin "$BEFORE_SHA"
+
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
 
@@ -63,4 +69,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run fast PR checks
+        env:
+          # Push builds have no PR base, and origin/main is the pushed commit itself;
+          # compare the suppression ledger with the tip before this push instead.
+          VPK_SUPPRESSIONS_BASE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: pnpm run ci:pr
