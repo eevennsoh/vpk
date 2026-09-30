@@ -81,8 +81,7 @@ export function DocHero({ name, description, category, importPath, adsLinks, ads
 				</h1>
 
 				{/* Description */}
-				{description && (
-					<p
+				{description ? <p
 						style={{
 							fontSize: "15px",
 							color: token("color.text.subtle"),
@@ -92,8 +91,7 @@ export function DocHero({ name, description, category, importPath, adsLinks, ads
 						}}
 					>
 						{description}
-					</p>
-				)}
+					</p> : null}
 
 				{/* Import path and ADS link */}
 				<div

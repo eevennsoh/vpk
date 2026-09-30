@@ -1,4 +1,4 @@
-import type { JiraKanbanCardData, JiraKanbanColumnData } from "../../index";
+import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 import type { BoardAgentFilterId } from "../data/board-view-options";
 import type { CollapsedBoardColumns } from "./board-column-collapse";
 

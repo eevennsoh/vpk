@@ -51,8 +51,7 @@ export function MoreFieldsAccordion() {
 				</div>
 			</div>
 
-			{state.isMoreFieldsOpen && (
-				<div style={{ padding: "8px 12px 12px" }}>
+			{state.isMoreFieldsOpen ? <div style={{ padding: "8px 12px 12px" }}>
 					<div className="flex flex-col gap-2">
 						<div>
 							<span className="text-sm font-medium text-text-subtlest">
@@ -106,8 +105,7 @@ export function MoreFieldsAccordion() {
 							</div>
 						) : null}
 					</div>
-				</div>
-			)}
+				</div> : null}
 		</div>
 	);
 }

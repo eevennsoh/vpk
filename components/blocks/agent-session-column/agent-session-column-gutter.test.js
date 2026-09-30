@@ -492,7 +492,7 @@ test("the first collapsed gutter mount plays a reduced-motion-safe staggered sca
 	assert.match(RAIL_SOURCE, /board's longest surrounding motion window \(duration-slowest\)/u);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/JIRA_KANBAN_CARD_MOVE: Transition = \{ duration: 0\.6, ease: \[0\.4, 0, 0, 1\] \}/u,
+		/JIRA_KANBAN_CARD_MOVE: Transition = \{ duration: 0\.6, ease: motionEase\.inOut \}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,

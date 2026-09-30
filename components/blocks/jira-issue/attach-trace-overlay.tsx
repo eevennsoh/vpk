@@ -13,8 +13,9 @@ import {
 } from "@/components/visual/card-glow";
 
 import type { JiraIssueAttachTrace } from "./attach-proximity";
+import { motionEase } from "@/lib/motion";
 
-const TRACE_REVEAL_TRANSITION = { duration: 0.2, ease: [0.4, 0, 0, 1] } as const; // duration-medium + ease-in-out: gradual colour blending
+const TRACE_REVEAL_TRANSITION = { duration: 0.2, ease: motionEase.inOut } as const; // duration-medium + ease-in-out: gradual colour blending
 
 /**
  * The accent stroke traced along a card's edge as a dragged session approaches.

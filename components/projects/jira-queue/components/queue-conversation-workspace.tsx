@@ -37,14 +37,15 @@ import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import type { AsxQueueJiraColumn, AsxQueueSession } from "../data/queue-sessions";
 import { QueueConversationHeader } from "./queue-conversation-header";
 import { QueueDetailPanel } from "./queue-detail-panel";
+import { motionEase } from "@/lib/motion";
 
 const CHAT_BODY_OPEN_TRANSITION: Transition = {
 	duration: 0.25,
-	ease: [0.4, 0, 0, 1], // duration-slow + ease-in-out
+	ease: motionEase.inOut, // duration-slow + ease-in-out
 };
 const CHAT_BODY_CLOSE_TRANSITION: Transition = {
 	duration: 0.2,
-	ease: [0.6, 0, 0.8, 0.6], // duration-medium + ease-in
+	ease: motionEase.in, // duration-medium + ease-in
 };
 const CHAT_BODY_REDUCED_MOTION_TRANSITION: Transition = { duration: 0 };
 const QUEUE_JIRA_COLUMNS: readonly AsxQueueJiraColumn[] = [

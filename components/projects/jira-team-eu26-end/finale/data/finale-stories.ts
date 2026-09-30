@@ -2,8 +2,8 @@ import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import {
 	JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES,
 	JIRA_TEAM_EU26_END_KEYNOTE_STORIES,
-} from "../../data/keynote-board";
-import { JIRA_TEAM_EU26_END_PRESENTERS } from "../../data/keynote-presenters";
+} from "@/components/projects/jira-team-eu26-end/data/keynote-board";
+import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-eu26-end/data/keynote-presenters";
 
 export type FinaleChapterId = "Context" | "Collaboration" | "Confidence";
 

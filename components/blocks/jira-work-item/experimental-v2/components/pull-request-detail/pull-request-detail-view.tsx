@@ -12,8 +12,8 @@ import {
 	TabsTrigger,
 } from "@/components/ui/tabs";
 
-import { resolvePullRequestDetailData } from "../../lib/pull-request-detail-data";
-import { resolveInitialReviewedChapterIds } from "../../lib/resolve-initial-reviewed-chapter-ids";
+import { resolvePullRequestDetailData } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
+import { resolveInitialReviewedChapterIds } from "@/components/blocks/jira-work-item/experimental-v2/lib/resolve-initial-reviewed-chapter-ids";
 import { PullRequestDetailHeader } from "./pull-request-detail-header";
 import { PullRequestFiles } from "./pull-request-files";
 import { PullRequestGuide } from "./pull-request-guide";

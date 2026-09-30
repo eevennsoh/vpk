@@ -80,7 +80,7 @@ test("TWG Appstack only staggers its first reveal and layout-animates later sour
 		/const delay = shouldStaggerEntrance[\s\S]*\? getAppstackDelay\(index, itemCount, direction\)[\s\S]*: 0;/u,
 	);
 	assert.match(SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
-	assert.match(SOURCE, /layout: \{ duration: 0\.25, ease: \[0\.4, 0, 0, 1\] \}/u);
+	assert.match(SOURCE, /layout: \{ duration: 0\.25, ease: motionEase\.inOut \}/u);
 });
 
 test("TWG source icons hide labeled third-party logos when aria-hidden is set", () => {

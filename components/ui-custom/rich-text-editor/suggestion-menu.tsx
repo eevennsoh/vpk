@@ -93,6 +93,7 @@ import type {
 	RichTextMentionVisual,
 	RichTextSlashCategory,
 } from "./types";
+import { motionEase } from "@/lib/motion";
 
 export interface RichTextCommandItem {
 	id: string;
@@ -287,7 +288,7 @@ const nestedCommandDescriptionVariants: Variants = {
 	active: (instant: boolean) => ({
 		opacity: 1,
 		transform: "translateY(0px)",
-		transition: instant ? { duration: 0 } : { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
+		transition: instant ? { duration: 0 } : { delay: 0.02, duration: 0.16, ease: motionEase.out },
 	}),
 };
 

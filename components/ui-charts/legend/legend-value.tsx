@@ -34,11 +34,9 @@ export function LegendValue({
       )}
     >
       <span>{formatValue(item.value)}</span>
-      {showPercentage && item.maxValue && (
-        <span className={percentageClassName}>
+      {showPercentage && item.maxValue ? <span className={percentageClassName}>
           {formatPercentage(percentage)}
-        </span>
-      )}
+        </span> : null}
     </span>
   );
 }

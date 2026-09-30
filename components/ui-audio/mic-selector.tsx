@@ -146,8 +146,7 @@ export function MicSelector({
             </DropdownMenuItem>
           ))
         )}
-        {devices.length > 0 && (
-          <>
+        {devices.length > 0 ? <>
             <DropdownMenuSeparator />
             <div className="flex items-center gap-2 p-2">
               <Button
@@ -177,8 +176,7 @@ export function MicSelector({
                 />
               </div>
             </div>
-          </>
-        )}
+          </> : null}
       </DropdownMenuContent>
     </DropdownMenu>
   )
