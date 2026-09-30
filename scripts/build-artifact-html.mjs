@@ -8,8 +8,10 @@
 //
 // `--demo <category>/<slug>` resolves components/website/demos/<category>/<slug>-demo.tsx;
 // `--entry` takes any module whose default export is the component to render. Output
-// defaults to artifacts/<slug>/<slug>.html. Fonts are fetched from the ADS and Google Fonts
-// CDNs at build time, so the build needs network access. Demo-specific build hooks live in
+// defaults to the ignored output/artifact-html/<slug>/<slug>.html because the file is
+// regenerable; automation must not write under artifacts/, so pass `--out` only for a
+// destination the user chose. Fonts are fetched from the ADS and Google Fonts CDNs at build
+// time, so the build needs network access. Demo-specific build hooks live in
 // scripts/lib/artifact-targets/.
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -68,7 +70,11 @@ const MIME_TYPES = {
 	".woff": "font/woff",
 	".woff2": "font/woff2",
 };
-const PUBLIC_ASSET_PATTERN = new RegExp(`(["'\`(])(/[\\w./-]+\\.(?:${Object.keys(MIME_TYPES).map((extension) => extension.slice(1)).join("|")}))(?=["'\`)])`, "gu");
+const ASSET_EXTENSIONS = Object.keys(MIME_TYPES).map((extension) => extension.slice(1)).join("|");
+// A quoted or url()-wrapped root-relative asset path, with an optional cache-busting query.
+const PUBLIC_ASSET_PATTERN = new RegExp(`(["'\`(])(/[\\w./-]+\\.(?:${ASSET_EXTENSIONS}))(\\?[^"'\`)\\s]*)?(?=["'\`)])`, "gu");
+// A template literal that builds a root-relative asset path at runtime (`/3p/${name}/24.svg`).
+const DYNAMIC_ASSET_PATTERN = /`(\/[\w./-]*\$\{[^`]*)`/gu;
 
 export const toDataUri = (bytes, mimeType) => `data:${mimeType};base64,${Buffer.from(bytes).toString("base64")}`;
 
@@ -114,7 +120,10 @@ export function resolveTarget({ demo, entry, slug }, repoRoot = REPO_ROOT) {
 	throw new Error("Pass --demo <category>/<slug> or --entry <path>.");
 }
 
-/** Replaces quoted or url()-wrapped root-relative asset paths that exist under public/ with data URIs. */
+/**
+ * Replaces quoted or url()-wrapped root-relative asset paths that exist under public/ with
+ * data URIs. A cache-busting query (`?v=…`) is dropped along with the path.
+ */
 export async function inlinePublicAssets(text, { inlined = new Set(), publicDir = PUBLIC_DIR } = {}) {
 	const replacements = new Map();
 	for (const [, , assetPath] of text.matchAll(PUBLIC_ASSET_PATTERN)) {
@@ -125,6 +134,27 @@ export async function inlinePublicAssets(text, { inlined = new Set(), publicDir 
 		}
 	}
 	return text.replace(PUBLIC_ASSET_PATTERN, (match, quote, assetPath) => (replacements.has(assetPath) ? quote + replacements.get(assetPath) : match));
+}
+
+/**
+ * Lists template literals that assemble public/ asset paths at runtime. They cannot be
+ * inlined statically and will 404 inside the viewer's srcdoc frame, so the build reports
+ * them. Only prefixes whose first segment is a real public/ folder count, which skips
+ * `/api/${id}`-style routes.
+ */
+export async function findDynamicAssetPaths(text, { publicDir = PUBLIC_DIR } = {}) {
+	const found = new Set();
+	for (const [, template] of text.matchAll(DYNAMIC_ASSET_PATTERN)) {
+		const firstSegment = template.split("/")[1];
+		if (firstSegment && !firstSegment.includes("${")) {
+			try {
+				if ((await stat(path.join(publicDir, firstSegment))).isDirectory()) found.add(template);
+			} catch {
+				// Not a public/ folder.
+			}
+		}
+	}
+	return [...found].sort();
 }
 
 /**
@@ -233,7 +263,7 @@ export async function buildArtifactHtml({ demo, entry, out, slug: slugOption, ti
 		throw new Error(`No module at ${path.relative(REPO_ROOT, entryFile)}. Pass --entry <path> for components without a website demo.`);
 	}
 	const title = titleOption ?? slug.replace(/[-_]+/gu, " ").replace(/\b\w/gu, (letter) => letter.toUpperCase());
-	const outFile = path.resolve(out ?? path.join(REPO_ROOT, "artifacts", slug, `${slug}.html`));
+	const outFile = path.resolve(out ?? path.join(REPO_ROOT, "output/artifact-html", slug, `${slug}.html`));
 
 	const hook = hookKey && TARGET_HOOKS[hookKey] ? await TARGET_HOOKS[hookKey]() : null;
 	const prepared = hook ? await hook.prepare({ fetchOk, loadSourceModule }) : {};
@@ -256,6 +286,7 @@ export async function buildArtifactHtml({ demo, entry, out, slug: slugOption, ti
 		const fontCss = `${cdnFontCss}\n${localFontCss}`;
 
 		const inlined = new Set();
+		const dynamicAssetPaths = await findDynamicAssetPaths(rawJs);
 		const js = (await inlinePublicAssets(rawJs, { inlined })).replaceAll("</script", "<\\/script");
 		const css = (await inlinePublicAssets(`${tailwindCss}\n${componentCss}`, { inlined })).replaceAll("</style", "<\\/style");
 
@@ -282,8 +313,11 @@ export async function buildArtifactHtml({ demo, entry, out, slug: slugOption, ti
 			`Wrote ${path.relative(REPO_ROOT, outFile)} (${kib(html)}: js ${kib(js)}, css ${kib(css)}, fonts ${kib(fontCss)})`,
 			`Inlined public assets: ${[...inlined].sort().join(", ") || "none"}`,
 			prepared.summary,
+			dynamicAssetPaths.length > 0
+				? `WARNING: runtime-built public/ asset paths cannot be inlined and will be missing in the viewer: ${dynamicAssetPaths.join(", ")}`
+				: null,
 		].filter(Boolean);
-		return { lines, outFile, slug, title };
+		return { dynamicAssetPaths, lines, outFile, slug, title };
 	} finally {
 		await rm(workDir, { force: true, recursive: true });
 	}

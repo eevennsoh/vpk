@@ -4,11 +4,10 @@ import { parseTwgResult, planPublish, registryPath, slugForFile } from "./publis
 
 const ENTRY = { id: "ab6ac8ca", name: "Awake" };
 
-test("slugForFile uses the artifacts/<slug>/ folder, else the file name", () => {
-	assert.equal(slugForFile("artifacts/awake/awake.html"), "awake");
-	assert.equal(slugForFile("/repo/artifacts/vpk-html/brief/brief.html"), "vpk-html");
-	assert.equal(slugForFile("output/report.html"), "report");
-	assert.equal(slugForFile("artifacts/loose.html"), "loose");
+test("slugForFile uses the file name without extension", () => {
+	assert.equal(slugForFile("output/artifact-html/awake/awake.html"), "awake");
+	assert.equal(slugForFile("/repo/artifacts/vpk-html/brief/brief.html"), "brief");
+	assert.equal(slugForFile("report.csv"), "report");
 });
 
 test("planPublish updates a recorded slug and keeps its name", () => {

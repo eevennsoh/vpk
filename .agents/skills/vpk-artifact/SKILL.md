@@ -54,34 +54,40 @@ not rely on other network hosts (see the viewer constraints below).
 node scripts/build-artifact-html.mjs --demo arts/awake --title Awake
 ```
 
-This writes `artifacts/<slug>/<slug>.html`. It bundles the demo inside the app's real
-`Providers`, compiles Tailwind and the ADS tokens using only the classes in the bundle,
-embeds only the fonts the page references, and turns `public/` assets such as sounds and
-images into data URIs. Read the printed summary: file size, inlined assets, and any
-target-hook note such as the date the embedded data runs out.
+This writes the ignored, regenerable `output/artifact-html/<slug>/<slug>.html`. Automation
+must not write under `artifacts/`, so pass `--out` only for a destination the user chose. The
+build bundles the demo inside the app's real `Providers`, compiles Tailwind and the ADS tokens
+using only the classes in the bundle, embeds only the fonts the page references, and turns
+`public/` assets such as sounds and images (including `?v=` cache-busted paths) into data URIs.
+Read the printed summary: file size, inlined assets, any target-hook note such as the date
+the embedded data runs out, and any `WARNING` about asset paths the code builds at runtime
+(`/3p/${name}/24.svg`). Those cannot be inlined and will be missing in the viewer; make them
+literal paths or a static import, or accept the gap.
 
 ### 3. Verify under the viewer's CSP
 
 ```bash
-node scripts/verify-artifact-html.mjs artifacts/awake/awake.html
+node scripts/verify-artifact-html.mjs output/artifact-html/awake/awake.html
 ```
 
-The script loads the file in an `about:srcdoc` iframe under the viewer's Content Security
-Policy and prints JSON with `blockedRequests`, `consoleErrors`, `pageErrors`, the rendered
-text, and a screenshot under `output/artifact-html/`. Look at the screenshot. Each entry in
-`blockedRequests` is a feature that goes blank in the viewer: either accept that or add a
-target hook (below). Any entry in `pageErrors` is a failure to fix before publishing.
+The script loads the file in a sandboxed `about:srcdoc` iframe (`sandbox="allow-scripts"`,
+an opaque origin, by default; override with `--sandbox`) under the viewer's Content Security
+Policy. It prints JSON with `blockedRequests`, `missingAssets`, `consoleErrors`,
+`pageErrors`, the rendered text, and a screenshot under `output/artifact-html/`. Look at the
+screenshot. Each entry in `blockedRequests` is a feature that goes blank in the viewer:
+either accept that or add a target hook (below). Entries in `missingAssets` or `pageErrors`
+fail the run and must be fixed before publishing.
 
 ### 4. Publish or update
 
 Dry-run first, show the user the plan, and publish after they confirm:
 
 ```bash
-node scripts/publish-artifact.mjs artifacts/awake/awake.html --name Awake --dry-run
-node scripts/publish-artifact.mjs artifacts/awake/awake.html --name Awake
+node scripts/publish-artifact.mjs output/artifact-html/awake/awake.html --name Awake --dry-run
+node scripts/publish-artifact.mjs output/artifact-html/awake/awake.html --name Awake
 ```
 
-The script looks up the slug (the `artifacts/<slug>/` folder name, or `--slug`) in
+The script looks up the slug (the file name without extension, or `--slug`) in
 `~/.config/vpk/artifacts.json`. A recorded slug is **updated in place**, which keeps its
 URL, embeds, and sharing; `--name` is always re-sent, because TWG otherwise renames the
 artifact after the file. A new slug is **created private**. Use `--access shared|open` only

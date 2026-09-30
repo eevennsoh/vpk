@@ -2,7 +2,7 @@
 // Publishes a local file to Atlassian Artifacts through the TWG CLI (production), updating
 // the artifact recorded for its slug instead of creating a duplicate.
 //
-//   node scripts/publish-artifact.mjs artifacts/awake/awake.html --name Awake
+//   node scripts/publish-artifact.mjs output/artifact-html/awake/awake.html --name Awake
 //   node scripts/publish-artifact.mjs report.html --slug q3-report --access shared --description "…"
 //   node scripts/publish-artifact.mjs <file> --dry-run   # print the twg command only
 //   node scripts/publish-artifact.mjs <file> --new       # create even if the slug is recorded
@@ -24,11 +24,8 @@ const ACCESS_LEVELS = new Set(["private", "shared", "open"]);
 
 export const registryPath = (env = process.env) => env.VPK_ARTIFACT_REGISTRY ?? path.join(homedir(), ".config/vpk/artifacts.json");
 
-/** Slug for a file: its folder under artifacts/<slug>/…, else the file name without extension. */
+/** Slug for a file: its name without extension, which matches the builder's <slug>/<slug>.html. */
 export function slugForFile(file) {
-	const parts = path.normalize(file).split(path.sep);
-	const artifactsIndex = parts.lastIndexOf("artifacts");
-	if (artifactsIndex >= 0 && parts.length - artifactsIndex > 2) return parts[artifactsIndex + 1];
 	return path.basename(file, path.extname(file));
 }
 

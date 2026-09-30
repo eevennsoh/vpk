@@ -1,13 +1,14 @@
 #!/usr/bin/env node
-// Opens a single-file HTML artifact the way the Atlassian Artifacts viewer does — inside an
-// about:srcdoc iframe under the viewer's Content Security Policy — in headless Chromium,
-// then reports CSP-blocked requests, page errors, and a screenshot.
+// Opens a single-file HTML artifact the way the Atlassian Artifacts viewer does — inside a
+// sandboxed about:srcdoc iframe under the viewer's Content Security Policy — in headless
+// Chromium, then reports CSP-blocked requests, missing assets, page errors, and a screenshot.
 //
-//   node scripts/verify-artifact-html.mjs artifacts/awake/awake.html [--wait 8000]
+//   node scripts/verify-artifact-html.mjs output/artifact-html/awake/awake.html [--wait 8000] [--sandbox "allow-scripts"]
 //
-// Exits non-zero on uncaught page errors. Blocked requests are reported, not failures:
-// decide per artifact whether it degrades acceptably. WebGL content needs a real GPU or
-// SwiftShader, so run outside restrictive sandboxes.
+// Exits non-zero on uncaught page errors or missing assets (root-relative requests that the
+// srcdoc frame sends to the viewer host, which has no files for them). Blocked requests are
+// reported, not failures: decide per artifact whether it degrades acceptably. WebGL content
+// needs a real GPU or SwiftShader, so run outside restrictive sandboxes.
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -21,8 +22,18 @@ export const VIEWER_CSP = [
 	"https://forge-outbound-proxy.services.atlassian.com https://tdp-os.services.atlassian.com https://object-store.atlassian.com",
 	"https://forge.cdn.prod.atlassian-dev.net",
 ].join(" ");
+// The strictest plausible viewer sandbox: scripts run, but the frame gets an opaque origin,
+// so storage and other origin-bound APIs behave as they can in the live viewer. Pass
+// `--sandbox` to match different flags, or `--sandbox none` to drop the attribute.
+export const DEFAULT_SANDBOX = "allow-scripts";
 const VIEWER_ORIGIN = "https://artifacts-viewer.test";
 const CSP_VIOLATION = /violates the (?:following|document's) Content Security Policy/u;
+
+/** The synthetic viewer page: a full-bleed iframe that receives the artifact via srcdoc. */
+export function viewerHostHtml(sandbox = DEFAULT_SANDBOX) {
+	const sandboxAttribute = sandbox === "none" ? "" : ` sandbox="${sandbox.replace(/[^\w -]/gu, "")}"`;
+	return `<!doctype html><style>html,body,iframe{margin:0;border:0;width:100%;height:100%;display:block}</style><iframe title="artifact"${sandboxAttribute}></iframe><script>fetch("/artifact.html").then((r) => r.text()).then((t) => { document.querySelector("iframe").srcdoc = t; })</script>`;
+}
 
 /**
  * Pulls the refused URL out of a Chromium CSP console message: either the directive report
@@ -37,11 +48,15 @@ export function blockedUrlFromConsole(text) {
 async function main() {
 	const { positionals, values } = parseArgs({
 		allowPositionals: true,
-		options: { out: { type: "string" }, wait: { default: "8000", type: "string" } },
+		options: {
+			out: { type: "string" },
+			sandbox: { default: DEFAULT_SANDBOX, type: "string" },
+			wait: { default: "8000", type: "string" },
+		},
 	});
 	const file = positionals[0];
 	if (!file) {
-		throw new Error("Usage: node scripts/verify-artifact-html.mjs <file.html> [--wait ms] [--out screenshot.png]");
+		throw new Error("Usage: node scripts/verify-artifact-html.mjs <file.html> [--wait ms] [--sandbox flags|none] [--out screenshot.png]");
 	}
 	const html = await readFile(file, "utf8");
 	const screenshot = path.resolve(values.out ?? path.join("output/artifact-html", `${path.basename(file, path.extname(file))}.png`));
@@ -51,6 +66,7 @@ async function main() {
 	try {
 		const page = await browser.newPage({ viewport: { height: 900, width: 1440 } });
 		const blocked = new Set();
+		const missingAssets = new Set();
 		const consoleErrors = [];
 		const pageErrors = [];
 		page.on("console", (message) => {
@@ -59,13 +75,18 @@ async function main() {
 			else if (message.type() === "error" && !/GL Driver|Failed to load resource/u.test(message.text())) consoleErrors.push(message.text().slice(0, 300));
 		});
 		page.on("pageerror", (error) => pageErrors.push(error.message.slice(0, 300)));
-		await page.route(`${VIEWER_ORIGIN}/**`, (route) => (route.request().url().endsWith("/artifact.html")
-			? route.fulfill({ body: html, contentType: "text/html" })
-			: route.fulfill({
-				body: `<!doctype html><style>html,body,iframe{margin:0;border:0;width:100%;height:100%;display:block}</style><iframe title="artifact"></iframe><script>fetch("/artifact.html").then((r) => r.text()).then((t) => { document.querySelector("iframe").srcdoc = t; })</script>`,
-				contentType: "text/html",
-				headers: { "content-security-policy": VIEWER_CSP },
-			})));
+		await page.route(`${VIEWER_ORIGIN}/**`, (route) => {
+			const { pathname, search } = new URL(route.request().url());
+			if (pathname === "/") {
+				return route.fulfill({ body: viewerHostHtml(values.sandbox), contentType: "text/html", headers: { "content-security-policy": VIEWER_CSP } });
+			}
+			if (pathname === "/artifact.html") {
+				return route.fulfill({ body: html, contentType: "text/html" });
+			}
+			// srcdoc documents resolve relative URLs against the viewer page, which has no files.
+			if (pathname !== "/favicon.ico") missingAssets.add(pathname + search);
+			return route.fulfill({ body: "Not found", status: 404 });
+		});
 		await page.goto(`${VIEWER_ORIGIN}/`);
 		await page.waitForTimeout(Number(values.wait));
 		const frame = page.frames().find((candidate) => candidate.url() === "about:srcdoc");
@@ -73,9 +94,17 @@ async function main() {
 		await mkdir(path.dirname(screenshot), { recursive: true });
 		await page.screenshot({ path: screenshot });
 
-		const report = { blockedRequests: [...blocked], consoleErrors, pageErrors, rendered, screenshot: path.relative(process.cwd(), screenshot) };
+		const report = {
+			blockedRequests: [...blocked],
+			consoleErrors,
+			missingAssets: [...missingAssets],
+			pageErrors,
+			rendered,
+			sandbox: values.sandbox,
+			screenshot: path.relative(process.cwd(), screenshot),
+		};
 		console.log(JSON.stringify(report, null, 2));
-		if (!rendered || rendered.elements === 0 || pageErrors.length > 0) process.exitCode = 1;
+		if (!rendered || rendered.elements === 0 || pageErrors.length > 0 || missingAssets.size > 0) process.exitCode = 1;
 	} finally {
 		await browser.close();
 	}

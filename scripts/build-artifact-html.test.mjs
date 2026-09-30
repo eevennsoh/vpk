@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import vm from "node:vm";
-import { inlinePublicAssets, resolveTarget, selectFontFaces } from "./build-artifact-html.mjs";
+import { findDynamicAssetPaths, inlinePublicAssets, resolveTarget, selectFontFaces } from "./build-artifact-html.mjs";
 import { installStorageFallback, invokeInBanner } from "./lib/artifact-runtime.mjs";
 import { installForecastFallback } from "./lib/artifact-targets/awake.mjs";
 
@@ -62,9 +62,20 @@ test("inlinePublicAssets embeds existing public files and leaves the rest untouc
 		await mkdir(path.join(publicDir, "sound"));
 		await writeFile(path.join(publicDir, "sound/click.mp3"), "abc");
 		const inlined = new Set();
-		const output = await inlinePublicAssets(`play("/sound/click.mp3"); img("/missing.png"); url(/sound/click.mp3)`, { inlined, publicDir });
-		assert.equal(output, `play("data:audio/mpeg;base64,YWJj"); img("/missing.png"); url(data:audio/mpeg;base64,YWJj)`);
+		const output = await inlinePublicAssets(`play("/sound/click.mp3"); img("/missing.png"); url(/sound/click.mp3); logo("/sound/click.mp3?v=transparent-bg")`, { inlined, publicDir });
+		assert.equal(output, `play("data:audio/mpeg;base64,YWJj"); img("/missing.png"); url(data:audio/mpeg;base64,YWJj); logo("data:audio/mpeg;base64,YWJj")`);
 		assert.deepEqual([...inlined], ["/sound/click.mp3"]);
+	} finally {
+		await rm(publicDir, { force: true, recursive: true });
+	}
+});
+
+test("findDynamicAssetPaths reports runtime-built public/ paths but not API routes", async () => {
+	const publicDir = await mkdtemp(path.join(tmpdir(), "artifact-public-"));
+	try {
+		await mkdir(path.join(publicDir, "3p"));
+		const bundle = "const a=`/3p/${e}/24.svg`,b=`/api/items/${id}`,c=`/3p/${e}/24.svg`,d=`${base}/x.svg`,f=\"/3p/jira/24.svg\";";
+		assert.deepEqual(await findDynamicAssetPaths(bundle, { publicDir }), ["/3p/${e}/24.svg"]);
 	} finally {
 		await rm(publicDir, { force: true, recursive: true });
 	}

@@ -8,10 +8,13 @@ the console of a live artifact when behavior changes, and update `VIEWER_CSP` in
 
 - The viewer page loads the artifact into an `iframe` through `srcdoc`, so the document's
   URL is `about:srcdoc` and it inherits the host page's Content Security Policy.
-- Relative URLs do not resolve against anything useful. Every asset has to be inline or a
-  data URI, which is what `scripts/build-artifact-html.mjs` produces.
+- Relative URLs resolve against the viewer page, which has no files for them. Every asset has
+  to be inline or a data URI, which is what `scripts/build-artifact-html.mjs` produces. Paths
+  the code assembles at runtime (`/3p/${name}/24.svg`) cannot be inlined; the build warns about
+  them and `scripts/verify-artifact-html.mjs` reports them as `missingAssets`.
 - `localStorage` and `sessionStorage` may throw in the sandboxed frame. The build installs an
-  in-memory fallback, so settings work for a visit but reset on reload.
+  in-memory fallback, so settings work for a visit but reset on reload. The verifier's frame
+  defaults to `sandbox="allow-scripts"` (an opaque origin) so this path is exercised.
 
 ## Content Security Policy
 

@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { blockedUrlFromConsole, VIEWER_CSP } from "./verify-artifact-html.mjs";
+import { blockedUrlFromConsole, DEFAULT_SANDBOX, VIEWER_CSP, viewerHostHtml } from "./verify-artifact-html.mjs";
+
+test("viewerHostHtml sandboxes the srcdoc frame with an opaque origin by default", () => {
+	assert.equal(DEFAULT_SANDBOX, "allow-scripts");
+	assert.match(viewerHostHtml(), /<iframe title="artifact" sandbox="allow-scripts">/u);
+	assert.match(viewerHostHtml("allow-scripts allow-same-origin"), /sandbox="allow-scripts allow-same-origin"/u);
+	assert.match(viewerHostHtml("none"), /<iframe title="artifact">/u);
+	assert.equal(viewerHostHtml(`allow-scripts" onload="x`).includes("onload"), true);
+	assert.equal(viewerHostHtml(`allow-scripts" onload="x`).includes(`" onload`), false);
+});
 
 test("blockedUrlFromConsole reads both Chromium CSP message shapes", () => {
 	assert.equal(
