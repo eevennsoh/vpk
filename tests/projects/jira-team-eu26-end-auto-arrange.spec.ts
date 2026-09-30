@@ -252,7 +252,7 @@ test("confetti launches while the shader column image is still preparing", async
 			if (!probe.finaleAt && document.querySelector("[data-jira-team-eu26-end-finale]")) probe.finaleAt = performance.now();
 		}).observe(document, { childList: true, subtree: true });
 	});
-	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await page.goto(appUrl(AUTO_ARRANGE_BOARD_ROUTE), { waitUntil: "networkidle" });
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
 	await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(13);
@@ -279,7 +279,7 @@ test("confetti fires a broad 3D burst from both lower corners and gathers into t
 			}
 		}).observe(document, { childList: true, subtree: true });
 	});
-	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await page.goto(appUrl(AUTO_ARRANGE_BOARD_ROUTE), { waitUntil: "networkidle" });
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
 	const burst = page.locator("[data-finale-confetti]");
@@ -366,7 +366,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				}
 			}).observe(document, { childList: true, subtree: true });
 		});
-		await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+		await page.goto(appUrl(AUTO_ARRANGE_BOARD_ROUTE), { waitUntil: "networkidle" });
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
 		const finale = page.locator("[data-jira-team-eu26-end-finale]");
