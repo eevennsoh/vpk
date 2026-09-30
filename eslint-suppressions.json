@@ -391,7 +391,7 @@
   },
   "components/blocks/agent-session-column/agent-session-column-capabilities.test.js": {
     "no-restricted-syntax": {
-      "count": 98
+      "count": 96
     }
   },
   "components/blocks/agent-session-column/agent-session-column-frame.test.js": {
@@ -436,7 +436,7 @@
   },
   "components/blocks/agent-session-column/agent-session-column.test.js": {
     "no-restricted-syntax": {
-      "count": 484
+      "count": 479
     }
   },
   "components/blocks/agent-session-column/index.tsx": {
@@ -702,11 +702,6 @@
   },
   "components/blocks/generative/page.tsx": {
     "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/blocks/html-selector/components/artifact-notes-popover.tsx": {
-    "shadcn/no-restyle": {
       "count": 1
     }
   },
@@ -1100,11 +1095,6 @@
   },
   "components/blocks/jira-linking/use-jira-linking-atlas.ts": {
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/blocks/jira-list/jira-list-column-controls.tsx": {
-    "shadcn/no-restyle": {
       "count": 1
     }
   },
@@ -2062,7 +2052,7 @@
   },
   "components/projects/jira-team-eu26-end/jira-team-eu26-end-controls.test.js": {
     "no-restricted-syntax": {
-      "count": 17
+      "count": 16
     }
   },
   "components/projects/jira-team-eu26-end/jira-team-eu26-end-create-session.test.js": {
@@ -2117,7 +2107,7 @@
   },
   "components/projects/jira-team-eu26/jira-team-eu26.test.js": {
     "no-restricted-syntax": {
-      "count": 339
+      "count": 338
     }
   },
   "components/projects/jira-team-eu26/terminal-story.test.js": {
