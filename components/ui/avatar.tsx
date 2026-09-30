@@ -224,9 +224,9 @@ function Avatar({
 	// Disabled avatars opt out entirely: animating opacity would write inline `opacity: 1` and override
 	// the `opacity-(--opacity-disabled)` dim class, and a disabled avatar should not react to hover.
 	const reduce = useReducedMotion()
-	const enters = animate && !reduce && !disabled
+	const skipsEnter = !animate || reduce || disabled
 	const motionProps: MotionProps =
-		!enters
+		skipsEnter
 			? { initial: false }
 			: {
 					initial: AVATAR_ENTER_FROM,
@@ -248,7 +248,7 @@ function Avatar({
 		return (
 			<AvatarPrimitive.Root
 				data-slot="avatar"
-				data-avatar-enter={enters ? "" : undefined}
+				data-avatar-enter={skipsEnter ? undefined : ""}
 				data-size={size}
 				data-shape={shape}
 				aria-label={label}
@@ -285,7 +285,7 @@ function Avatar({
 	return (
 		<AvatarPrimitive.Root
 			data-slot="avatar"
-			data-avatar-enter={enters ? "" : undefined}
+			data-avatar-enter={skipsEnter ? undefined : ""}
 			data-size={size}
 			data-shape={shape}
 			aria-label={label}
