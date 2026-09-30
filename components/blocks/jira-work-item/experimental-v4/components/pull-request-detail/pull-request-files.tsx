@@ -2,7 +2,7 @@ import { CodeReview } from "@/components/blocks/code-review";
 import type { CodeReviewCommit } from "@/components/blocks/code-review/data/types";
 import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
 
-import type { PullRequestGuidedReview } from "../../lib/pull-request-detail-data";
+import type { PullRequestGuidedReview } from "@/components/blocks/jira-work-item/experimental-v4/lib/pull-request-detail-data";
 
 export function PullRequestFiles({
 	commits,

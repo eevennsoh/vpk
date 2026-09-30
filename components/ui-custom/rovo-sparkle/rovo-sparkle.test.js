@@ -59,12 +59,12 @@ test("Rovo Sparkle uses VPK button geometry and the exact four Rovo leaves", () 
 
 test("Rovo Sparkle uses token-matched Motion transitions with reduced-motion handling", () => {
 	assert.match(BUTTON_SOURCE, /import \{ motion, useReducedMotion, type Transition \} from "motion\/react";/);
-	assert.match(BUTTON_SOURCE, /const SPARKLE_COLOR_ENTER: Transition = \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}/);
-	assert.match(BUTTON_SOURCE, /const SPARKLE_COLOR_EXIT: Transition = \{ duration: 0\.25, ease: \[0\.6, 0, 0\.8, 0\.6\] \}/);
-	assert.match(BUTTON_SOURCE, /const SPARKLE_VISIBILITY_EXIT: Transition = \{ duration: 0\.1, ease: \[0\.6, 0, 0\.8, 0\.6\] \}/);
+	assert.match(BUTTON_SOURCE, /const SPARKLE_COLOR_ENTER: Transition = \{ duration: 0\.15, ease: motionEase\.outPractical \}/);
+	assert.match(BUTTON_SOURCE, /const SPARKLE_COLOR_EXIT: Transition = \{ duration: 0\.25, ease: motionEase\.in \}/);
+	assert.match(BUTTON_SOURCE, /const SPARKLE_VISIBILITY_EXIT: Transition = \{ duration: 0\.1, ease: motionEase\.in \}/);
 	assert.match(BUTTON_SOURCE, /visible[\s\S]*\? SPARKLE_COLOR_ENTER[\s\S]*: SPARKLE_VISIBILITY_EXIT/);
-	assert.match(BUTTON_SOURCE, /const SPARKLE_TRANSFORM_ENTER: Transition = \{ duration: 0\.4, ease: \[0\.4, 0, 0, 1\] \}/);
-	assert.match(BUTTON_SOURCE, /const SPARKLE_TRANSFORM_EXIT: Transition = \{ duration: 0\.25, ease: \[0\.6, 0, 0\.8, 0\.6\] \}/);
+	assert.match(BUTTON_SOURCE, /const SPARKLE_TRANSFORM_ENTER: Transition = \{ duration: 0\.4, ease: motionEase\.inOut \}/);
+	assert.match(BUTTON_SOURCE, /const SPARKLE_TRANSFORM_EXIT: Transition = \{ duration: 0\.25, ease: motionEase\.in \}/);
 	assert.match(BUTTON_SOURCE, /const SPARKLE_REDUCED: Transition = \{ duration: 0 \}/);
 	assert.match(BUTTON_SOURCE, /rotate: shouldReduceMotion \|\| !active \? 0 : 180/);
 	assert.match(BUTTON_SOURCE, /const hoverScale = size === "compact" \? 16 \/ 12 : 20 \/ 16/);

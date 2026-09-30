@@ -3,6 +3,7 @@ import type { Transition } from "motion/react";
 
 import type { JiraIssueChrome, JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import type { AvatarUnassignedKind } from "@/components/ui/avatar";
+import { motionEase } from "../../../lib/motion.ts";
 
 export const JIRA_ISSUE_COMPACT_ISSUE_KEY_CLASS = "text-xs font-normal leading-4 text-text-subtlest";
 /** Matches the compact Subtasks row label: medium weight + subtle color. */
@@ -57,9 +58,9 @@ export function resolveJiraIssueSubtaskChrome(
  * Motion values are the resolved VPK duration/easing tokens: Motion for React
  * cannot read `var()`, so each array is annotated with the token it mirrors.
  */
-export const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-export const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
-export const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: [0.4, 0, 0, 1] }; // duration-medium + ease-in-out
+export const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
+export const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+export const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: motionEase.inOut }; // duration-medium + ease-in-out
 export const JIRA_ISSUE_MOTION_REDUCED: Transition = { duration: 0 };
 export const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity" };
 

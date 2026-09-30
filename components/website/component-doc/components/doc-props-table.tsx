@@ -62,16 +62,14 @@ function PropsTable({ props }: Readonly<{ props: PropDefinition[] }>) {
 								>
 									{prop.name}
 								</code>
-								{prop.required && (
-									<span
+								{prop.required ? <span
 										style={{
 											color: token("color.text.danger"),
 											marginLeft: 4,
 										}}
 									>
 										*
-									</span>
-								)}
+									</span> : null}
 							</td>
 							<td style={tdStyle}>
 								<code
@@ -170,7 +168,7 @@ export function DocPropsTable({ componentName, props, subComponents }: Readonly<
 						>
 							{sub.description}
 						</p>
-						{sub.props && <PropsTable props={sub.props} />}
+						{sub.props ? <PropsTable props={sub.props} /> : null}
 					</div>
 				))}
 			</div>

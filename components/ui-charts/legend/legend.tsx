@@ -65,11 +65,9 @@ export function Legend({
   return (
     <LegendProvider value={contextValue}>
       <div className={cn("legend-container flex flex-col gap-2", className)}>
-        {title && (
-          <h3 className={cn("mb-1 text-legend-foreground", titleClassName)}>
+        {title ? <h3 className={cn("mb-1 text-legend-foreground", titleClassName)}>
             {title}
-          </h3>
-        )}
+          </h3> : null}
         {items.map((item, index) => {
           const isHovered = hoveredIndex === index;
           const isFaded = hoveredIndex !== null && hoveredIndex !== index;

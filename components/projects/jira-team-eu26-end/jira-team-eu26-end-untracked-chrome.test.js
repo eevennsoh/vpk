@@ -400,11 +400,11 @@ test("the Agent Session surface gains overlay elevation only after Kanban underl
 	);
 	assert.match(
 		AGENT_SESSION_COLUMN_SOURCE,
-		/duration: 0\.15,\s*\n\s*ease: \[0\.4, 1, 0\.6, 1\]/u,
+		/duration: 0\.15,\s*\n\s*ease: motionEase\.outPractical/u,
 	);
 	assert.match(
 		AGENT_SESSION_COLUMN_SOURCE,
-		/duration: 0\.1,\s*\n\s*ease: \[0\.6, 0, 0\.8, 0\.6\]/u,
+		/duration: 0\.1,\s*\n\s*ease: motionEase\.in\b/u,
 	);
 	assert.match(
 		AGENT_SESSION_COLUMN_SOURCE,

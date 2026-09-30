@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type DragEvent } from "react";
-import type { JiraKanbanCardDropTarget } from "../../card-drop";
+import type { JiraKanbanCardDropTarget } from "@/components/blocks/jira-kanban/card-drop";
 import { getBoardIssueInsertionLineTop, resolveBoardIssueDropSurface, type BoardIssueDropSurface } from "../lib/board-card-insertion";
 
 const STATUS_CHOICE_DWELL_MS = 500;

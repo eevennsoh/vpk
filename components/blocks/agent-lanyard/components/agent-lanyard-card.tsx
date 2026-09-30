@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { AgentLanyardGrid } from "../agent-lanyard-grid";
+import { motionEase } from "@/lib/motion";
 
 interface AgentLanyardCardProps {
 	id: string;
@@ -30,8 +31,8 @@ interface AgentLanyardCardProps {
 
 const HOVER_TILT = "perspective(900px) rotateX(-1.2deg) rotateY(4.4deg) rotateZ(-0.6deg)";
 const REST_TILT = "perspective(900px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)";
-const ENTER = { duration: 0.15, ease: [0.4, 1, 0.6, 1] as const }; // duration-normal + ease-out-practical
-const EXIT = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] as const }; // duration-fast + ease-in
+const ENTER = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
+const EXIT = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
 
 export function AgentLanyardCard({
 	id, name, byline, description, variant, avatar, footer, verified = false,

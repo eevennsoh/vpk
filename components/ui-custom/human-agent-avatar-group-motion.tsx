@@ -14,6 +14,7 @@ import { AvatarGroup, type AvatarGroupProps } from "@/components/ui/avatar";
 import type { HumanAgentAvatarMotionProps } from "@/components/ui-custom/human-agent-avatar-motion";
 import { resolveHumanAgentAvatarMotion } from "@/components/ui-custom/human-agent-avatar-motion-config";
 import { useHumanAgentAvatarGroupCycle } from "@/components/ui-custom/use-human-agent-avatar-group-cycle";
+import { motionEase } from "@/lib/motion";
 
 const PX_TO_GROUP_SIZE: Record<number, NonNullable<AvatarGroupProps["size"]>> = {
 	12: "xxs",
@@ -78,7 +79,7 @@ function GroupComposition({
 			exit={{ opacity: 0 }}
 			transition={{
 				duration: transition.duration === 0 ? 0 : 0.1,
-				ease: [0.6, 0, 0.8, 0.6],
+				ease: motionEase.in,
 			}}
 		>
 			{grouped ? (

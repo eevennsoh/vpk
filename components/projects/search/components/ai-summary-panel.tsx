@@ -65,11 +65,10 @@ export default function AISummaryPanel({ defaultExpanded = true }: Readonly<AISu
 			</div>
 
 			{/* Collapsed State */}
-			{!isExpanded && <CollapsedSummary onExpand={handleExpand} />}
+			{!isExpanded ? <CollapsedSummary onExpand={handleExpand} /> : null}
 
 			{/* Expanded Content */}
-			{isExpanded && (
-				<div style={{ marginRight: token("space.200") }}>
+			{isExpanded ? <div style={{ marginRight: token("space.200") }}>
 					<div className="flex flex-col gap-2">
 						{/* Summary Text */}
 						<div style={{ font: token("font.body") }}>
@@ -123,8 +122,7 @@ export default function AISummaryPanel({ defaultExpanded = true }: Readonly<AISu
 							))}
 						</div>
 					</div>
-				</div>
-			)}
+				</div> : null}
 		</div>
 	);
 }

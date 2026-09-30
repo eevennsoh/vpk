@@ -83,14 +83,12 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
 					</div>
 
 					{/* Assignee row */}
-					{assignee && (
-						<div className="flex items-center gap-2">
+					{assignee ? <div className="flex items-center gap-2">
 							<Avatar size="xs" shape="circle">
 								<AvatarFallback>{assignee.initials}</AvatarFallback>
 							</Avatar>
 							<span className="text-xs text-text-subtle">{assignee.name}</span>
-						</div>
-					)}
+						</div> : null}
 
 					{/* Task ID and dates */}
 					<div className="flex justify-between text-xs text-text-subtle">

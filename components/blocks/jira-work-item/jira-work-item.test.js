@@ -282,8 +282,8 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(layoutSource, /<AnimatePresence initial=\{false\}>/u);
 	assert.match(layoutSource, /id="experimental-work-item-metadata-panel"/u);
 	assert.match(layoutSource, /transform: "translateX\(100%\)"/u);
-	assert.match(layoutSource, /duration: 0\.25, ease: \[0, 0\.4, 0, 1\]/u);
-	assert.match(layoutSource, /duration: 0\.2, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(layoutSource, /duration: 0\.25, ease: motionEase\.out\b/u);
+	assert.match(layoutSource, /duration: 0\.2, ease: motionEase\.in\b/u);
 	assert.match(layoutSource, /useReducedMotion\(\)/u);
 	assert.match(layoutSource, /maxWidth: metadataCollapsed \? "800px" : "100%"/u);
 	assert.match(layoutSource, /METADATA_CONTENT_COLLAPSE_TRANSITION/u);
@@ -331,8 +331,8 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.doesNotMatch(panelLayoutSource, /METADATA_PEEK_ENTER_TRANSITION/u);
 	assert.doesNotMatch(panelLayoutSource, /METADATA_PEEK_EXIT_TRANSITION/u);
 	assert.match(titleBarSource, /const ACTIONS_EXIT_DURATION_MS = 50;/u);
-	assert.match(titleBarSource, /duration: ACTIONS_EXIT_DURATION_MS \/ 1000,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
-	assert.match(titleBarSource, /duration: 0\.1,[\s\S]*ease: \[0\.4, 1, 0\.6, 1\]/u);
+	assert.match(titleBarSource, /duration: ACTIONS_EXIT_DURATION_MS \/ 1000,[\s\S]*ease: motionEase\.in\b/u);
+	assert.match(titleBarSource, /duration: 0\.1,[\s\S]*ease: motionEase\.outPractical/u);
 	assert.match(titleBarSource, /EXPANDED_ACTIONS_ENTER_TRANSITION[\s\S]*duration: 0\.05/u);
 	assert.match(titleBarSource, /collapsed \? ACTIONS_ENTER_TRANSITION : EXPANDED_ACTIONS_ENTER_TRANSITION/u);
 	assert.match(titleBarSource, /opacity: 0, scale: 0\.96/u);
@@ -424,7 +424,7 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(composerMotionSource, /<LayoutGroup inherit="id">/u);
 	assert.match(composerMotionSource, /layout=\{metadataLayoutAnimating \? false : layout\}/u);
 	assert.match(composerMotionSource, /layoutDependency=\{layoutDependency \?\? placement\}/u);
-	assert.match(composerMotionSource, /duration: 0\.25,[\s\S]*ease: \[0\.4, 0, 0, 1\]/u);
+	assert.match(composerMotionSource, /duration: 0\.25,[\s\S]*ease: motionEase\.inOut/u);
 	assert.match(composerMotionSource, /useReducedMotion\(\)/u);
 	assert.match(composerMotionSource, /onLayoutAnimationStart[\s\S]*onLayoutAnimationComplete/u);
 	assert.match(layoutSource, /planner\.status === "inactive" \|\| planner\.status === "applied"/u);

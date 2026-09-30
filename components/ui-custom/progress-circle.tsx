@@ -8,6 +8,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { useEffect, useId, useState } from "react";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 const VIEWBOX_SIZE = 24;
 const CENTER = VIEWBOX_SIZE / 2;
@@ -21,7 +22,7 @@ const FILLED_RING_RADIUS = CENTER - FILLED_RING_WIDTH / 2; // 10.5
 const FILLED_CIRCUMFERENCE = 2 * Math.PI * FILLED_RING_RADIUS;
 // 15° gaps throughout; longer 45° dashes at zero, then 15° dashes once started.
 const FILLED_DASH_GAP = FILLED_CIRCUMFERENCE / 24;
-const FILL_TRANSITION = { duration: 0.4, ease: [0, 0.4, 0, 1] } as const; // duration-slower / ease-out
+const FILL_TRANSITION = { duration: 0.4, ease: motionEase.out } as const; // duration-slower / ease-out
 const FILLED_GAP = 1.5;
 const FILLED_ARC_OUTER = FILLED_RING_RADIUS - FILLED_RING_WIDTH / 2 - FILLED_GAP; // 7.5
 
@@ -452,7 +453,7 @@ function ProgressCircle({
 							strokeDasharray={CIRCUMFERENCE}
 							initial={false}
 							animate={{ strokeDashoffset: dashOffset }}
-							transition={isIndeterminate ? { duration: 0 } : { duration: 0.4, ease: [0, 0.4, 0, 1] }}
+							transition={isIndeterminate ? { duration: 0 } : { duration: 0.4, ease: motionEase.out }}
 							transform={`rotate(-90 ${CENTER} ${CENTER})`}
 							className="text-text-subtle"
 						/>

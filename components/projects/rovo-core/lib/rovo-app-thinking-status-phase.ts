@@ -1,4 +1,4 @@
 export {
 	resolveAssistantThinkingTraceVisibility as resolveRovoAppThinkingVisibility,
 	resolveAssistantThinkingTracePhase as resolveRovoAppThinkingStatusPhase,
-} from "../../shared/lib/assistant-thinking-trace-state";
+} from "@/components/projects/shared/lib/assistant-thinking-trace-state";

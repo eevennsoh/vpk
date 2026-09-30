@@ -17,6 +17,7 @@ import {
 	buildScrollMaskStyle,
 	SCROLL_MASK_DEFAULT_FADE_SIZE,
 } from "@/components/visual/scroll-mask/lib";
+import { motionEase } from "@/lib/motion";
 
 interface ExperimentalWorkItemLayoutProps {
 	context: ReactNode;
@@ -32,11 +33,11 @@ const NARROW_BOTTOM_SCROLL_MASK_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("bo
 const METADATA_PANEL_VARIANTS: Variants = {
 	closed: {
 		transform: "translateX(100%)",
-		transition: { duration: 0.2, ease: [0.6, 0, 0.8, 0.6] }, // duration-medium + ease-in
+		transition: { duration: 0.2, ease: motionEase.in }, // duration-medium + ease-in
 	},
 	open: {
 		transform: "translateX(0%)",
-		transition: { duration: 0.25, ease: [0, 0.4, 0, 1] }, // duration-slow + ease-out
+		transition: { duration: 0.25, ease: motionEase.out }, // duration-slow + ease-out
 	},
 };
 

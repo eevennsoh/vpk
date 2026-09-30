@@ -4,6 +4,7 @@ import { useId } from "react";
 import { motion } from "motion/react";
 
 import { GRID_WAVE_PATHS, GRID_WAVE_TIMES, STATIC_GRID_PATH } from "./grid-path";
+import { motionEase } from "@/lib/motion";
 
 interface AgentLanyardGridProps {
 	active: boolean;
@@ -12,7 +13,7 @@ interface AgentLanyardGridProps {
 }
 
 // Existing hover feedback stays on duration-normal + ease-out-practical.
-const HOVER_WAVE_TRANSITION = { duration: 0.15, ease: [0.4, 1, 0.6, 1] as const, times: GRID_WAVE_TIMES };
+const HOVER_WAVE_TRANSITION = { duration: 0.15, ease: motionEase.outPractical, times: GRID_WAVE_TIMES };
 // Revealed previews opt into the original duration-slowest linear wave.
 const REVEAL_WAVE_TRANSITION = { duration: 0.6, ease: "linear" as const, times: GRID_WAVE_TIMES };
 

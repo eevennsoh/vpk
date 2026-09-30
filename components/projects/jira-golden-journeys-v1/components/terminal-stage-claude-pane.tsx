@@ -10,9 +10,10 @@ import {
 } from "../lib/terminal-demo-state";
 import type { TerminalStoryDefinition } from "../lib/terminal-story-definition";
 import { BlinkCursor, StateGlyph, TerminalLineView } from "./terminal-stage-chrome";
+import { motionEase } from "@/lib/motion";
 
-const LINE_TRANSITION: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const LINE_EXIT_TRANSITION: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
+const LINE_TRANSITION: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
+const LINE_EXIT_TRANSITION: Transition = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
 const LINE_MOTION_STYLE = { willChange: "transform, opacity" } as const;
 
 // ---------------------------------------------------------------------------

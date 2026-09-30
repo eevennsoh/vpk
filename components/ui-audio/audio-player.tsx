@@ -430,11 +430,9 @@ const PlayButton = ({
           aria-hidden="true"
         />
       )}
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center rounded-[inherit]">
+      {loading ? <div className="absolute inset-0 flex items-center justify-center rounded-[inherit]">
           <Spinner size="sm" />
-        </div>
-      )}
+        </div> : null}
     </Button>
   )
 }

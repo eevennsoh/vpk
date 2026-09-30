@@ -38,6 +38,7 @@ import {
 	type HomeStarterHeroDecoration,
 	type HomeStarterTemplate,
 } from "../data/home-starter-views";
+import { motionEase } from "@/lib/motion";
 
 // The bento landing variant fits its tiles to a fixed-width content column,
 // matching the studio shell. The carousel collapses to horizontal scroll below
@@ -117,7 +118,7 @@ function HomeStarterHeroTile({
 			onMouseLeave={onMouseLeave}
 			ref={setTileRef}
 			style={getCardStyle(template.iconSrc)}
-			transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+			transition={{ duration: 0.2, ease: motionEase.out }}
 			type="button"
 			variants={HERO_VARIANTS}
 			whileHover={
@@ -428,7 +429,7 @@ export function HomeStarterBento({
 											visible: { opacity: 1, y: 0, scale: 1 },
 											exit: { opacity: 0, y: -4, scale: 0.98 },
 										}}
-										transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+										transition={{ duration: 0.2, ease: motionEase.out }}
 										whileHover={
 											shouldReduceMotion
 												? undefined

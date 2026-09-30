@@ -153,9 +153,7 @@ export function FileTreeFolder({
               left-3.5 = 14px = px-2(8) + half-chevron(6) = chevron center
               (Atlaskit small chevron is 12px wide).
               top-7 skips the header row height. */}
-          {isExpanded && (
-            <div className="absolute bottom-0 left-3.5 top-7 w-px bg-icon-subtlest/20" />
-          )}
+          {isExpanded ? <div className="absolute bottom-0 left-3.5 top-7 w-px bg-icon-subtlest/20" /> : null}
           <div
             className={cn(
               "relative flex w-full items-center gap-1 rounded px-2 py-1 text-left transition-colors hover:bg-muted/50",
@@ -163,9 +161,7 @@ export function FileTreeFolder({
             )}
           >
             {/* Selected indicator: 2px blue bar pinned to the row's left edge. */}
-            {isSelected && (
-              <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" />
-            )}
+            {isSelected ? <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" /> : null}
             <CollapsibleTrigger
               render={
                 <button
@@ -278,9 +274,7 @@ export function FileTreeFile({
         {...props}
       >
         {/* Custom-content branch: 2px blue bar pinned to the row's left edge. */}
-        {children != null && isSelected && (
-          <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" />
-        )}
+        {children != null && isSelected ? <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" /> : null}
         {children ?? (
           <>
             {/* Chevron-width spacer (Atlaskit small chevron = 12px) aligns file
@@ -294,9 +288,7 @@ export function FileTreeFile({
               )}
             >
               {/* Selected indicator: 2px blue bar pinned to the highlight's left edge. */}
-              {isSelected && (
-                <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" />
-              )}
+              {isSelected ? <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" /> : null}
               <FileTreeIcon>
                 {icon ?? (
                   <FileIcon

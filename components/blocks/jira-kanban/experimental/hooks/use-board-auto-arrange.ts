@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLatestRef } from "@/lib/use-latest-ref";
-import type { JiraKanbanColumnData } from "../../index";
+import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 import { getAutoArrangePlan } from "../lib/board-auto-arrange";
 
 const EMPTY_CODES = new Set<string>();

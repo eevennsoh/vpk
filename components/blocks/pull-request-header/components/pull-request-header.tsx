@@ -41,6 +41,7 @@ import {
 	DEFAULT_COLLAPSE_OFFSET,
 	resolveVariant,
 } from "@/components/blocks/pull-request-header/components/pull-request-header-variant";
+import { motionEase } from "@/lib/motion";
 
 const DEFAULT_MERGE_STATE: PullRequestHeaderMergeState = "ready";
 const DEFAULT_MERGE_METHOD: PullRequestHeaderMergeMethod = "squash";
@@ -52,15 +53,15 @@ const MERGE_METHOD_VALUES = [
 ] as const satisfies ReadonlyArray<PullRequestHeaderMergeMethod>;
 const META_ENTER_TRANSITION = {
 	duration: 0.2,
-	ease: [0, 0.4, 0, 1],
+	ease: motionEase.out,
 } as const; // duration-medium + ease-out
 const META_EXIT_TRANSITION = {
 	duration: 0.1,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 } as const; // duration-fast + ease-in
 const LAYOUT_TRANSITION = {
 	duration: 0.2,
-	ease: [0.4, 0, 0, 1],
+	ease: motionEase.inOut,
 } as const; // duration-medium + ease-in-out
 const INSTANT_TRANSITION = { duration: 0 } as const;
 const TITLE_SIZE_TRANSITION =

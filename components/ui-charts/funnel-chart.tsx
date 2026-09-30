@@ -277,8 +277,7 @@ function HSegment({
             viewBox={`0 0 ${segW} ${fullH}`}
           >
             <defs>
-              {gradientStops && (
-                <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
+              {gradientStops ? <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
                   {gradientStops.map((stop) => (
                     <stop
                       key={`${stop.offset}-${stop.color}`}
@@ -290,8 +289,7 @@ function HSegment({
                       stopColor={stop.color}
                     />
                   ))}
-                </linearGradient>
-              )}
+                </linearGradient> : null}
               {renderPattern?.(patternId, color)}
             </defs>
             {rings.map((r, i) => {
@@ -335,8 +333,7 @@ function HSegment({
             viewBox={`0 0 ${segW} ${fullH}`}
           >
             <defs>
-              {gradientStops && (
-                <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
+              {gradientStops ? <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
                   {gradientStops.map((stop) => (
                     <stop
                       key={`${stop.offset}-${stop.color}`}
@@ -348,8 +345,7 @@ function HSegment({
                       stopColor={stop.color}
                     />
                   ))}
-                </linearGradient>
-              )}
+                </linearGradient> : null}
               {renderPattern?.(patternId, color)}
             </defs>
             {rings.map((r, i) => {
@@ -488,8 +484,7 @@ function VSegment({
             viewBox={`0 0 ${fullW} ${segH}`}
           >
             <defs>
-              {gradientStops && (
-                <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+              {gradientStops ? <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
                   {gradientStops.map((stop) => (
                     <stop
                       key={`${stop.offset}-${stop.color}`}
@@ -501,8 +496,7 @@ function VSegment({
                       stopColor={stop.color}
                     />
                   ))}
-                </linearGradient>
-              )}
+                </linearGradient> : null}
               {renderPattern?.(patternId, color)}
             </defs>
             {rings.map((r, i) => {
@@ -546,8 +540,7 @@ function VSegment({
             viewBox={`0 0 ${fullW} ${segH}`}
           >
             <defs>
-              {gradientStops && (
-                <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+              {gradientStops ? <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
                   {gradientStops.map((stop) => (
                     <stop
                       key={`${stop.offset}-${stop.color}`}
@@ -559,8 +552,7 @@ function VSegment({
                       stopColor={stop.color}
                     />
                   ))}
-                </linearGradient>
-              )}
+                </linearGradient> : null}
               {renderPattern?.(patternId, color)}
             </defs>
             {rings.map((r, i) => {
@@ -843,11 +835,9 @@ export function FunnelChart({
         ...style,
       }}
     >
-      {W > 0 && H > 0 && (
-        <>
+      {W > 0 && H > 0 ? <>
           {/* Grid layer: background bands + grid lines */}
-          {gridEnabled && (
-            <svg
+          {gridEnabled ? <svg
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 h-full w-full"
               preserveAspectRatio="none"
@@ -855,8 +845,7 @@ export function FunnelChart({
               viewBox={`0 0 ${W} ${H}`}
             >
               {/* Background bands — alternating on even segments */}
-              {showBands &&
-                data.map((stage, i) => {
+              {showBands ? data.map((stage, i) => {
                   if (i % 2 !== 0) {
                     return null;
                   }
@@ -884,9 +873,8 @@ export function FunnelChart({
                       y={y}
                     />
                   );
-                })}
-            </svg>
-          )}
+                }) : null}
+            </svg> : null}
 
           {/* Segments container — overflow-visible so hover scale is not clipped */}
           <div
@@ -945,8 +933,7 @@ export function FunnelChart({
           </div>
 
           {/* Grid lines — rendered above segments so they're visible */}
-          {gridEnabled && showGridLines && (
-            <svg
+          {gridEnabled && showGridLines ? <svg
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 h-full w-full"
               preserveAspectRatio="none"
@@ -985,8 +972,7 @@ export function FunnelChart({
                   />
                 );
               })}
-            </svg>
-          )}
+            </svg> : null}
 
           {/* Label overlays — one per segment, positioned over each segment cell.
               These are the hover triggers for each segment. */}
@@ -1036,8 +1022,7 @@ export function FunnelChart({
               </motion.div>
             );
           })}
-        </>
-      )}
+        </> : null}
     </div>
   );
 }

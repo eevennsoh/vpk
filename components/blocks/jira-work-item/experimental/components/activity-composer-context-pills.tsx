@@ -7,6 +7,7 @@ import type { SkillsDirectorySkill } from "@/app/data/directory";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental/components/activity-composer-skill-context-pill";
+import { motionEase } from "@/lib/motion";
 
 const PILL_GROUP_VARIANTS = {
 	hidden: {},
@@ -25,7 +26,7 @@ const PILL_REVEAL_VARIANTS = {
 		y: 0,
 		transition: {
 			duration: 0.15,
-			ease: [0.4, 1, 0.6, 1],
+			ease: motionEase.outPractical,
 		}, // duration-normal + ease-out-practical
 	},
 } satisfies Variants;

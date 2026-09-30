@@ -921,8 +921,7 @@ export function AgentSessionColumnRail({
 							),
 						)}
 						introIndex={index}
-						isArriving={!(order.phase === "exit" && order.changingItemId === item.id)
-							&& ((arrivingItemIds ?? newItemIds)?.has(item.id) ?? false)}
+						isArriving={!(order.phase === "exit" && order.changingItemId === item.id) && ((arrivingItemIds ?? newItemIds)?.has(item.id) ?? false)}
 						isHighlighted={item.id === highlightedItemId}
 						isHovered={item.id === hoverIntent.activeItemId}
 						isLeaving={order.phase === "exit" && order.changingItemId === item.id}

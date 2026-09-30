@@ -63,8 +63,7 @@ export function CheckpointDemoConversation() {
 										<MessageResponse>{message.content}</MessageResponse>
 									</MessageContent>
 								</Message>
-								{checkpoint && (
-									<Checkpoint>
+								{checkpoint ? <Checkpoint>
 										<CheckpointIcon />
 										<CheckpointTrigger
 											onClick={() => restoreToCheckpoint(checkpoint.messageIndex)}
@@ -72,8 +71,7 @@ export function CheckpointDemoConversation() {
 										>
 											Restore to &ldquo;{checkpoint.label}&rdquo;
 										</CheckpointTrigger>
-									</Checkpoint>
-								)}
+									</Checkpoint> : null}
 							</Fragment>
 						);
 					})}

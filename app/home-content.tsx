@@ -56,8 +56,7 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 				/>
 
 				<div>
-					{category === "ui" && (
-						<>
+					{category === "ui" ? <>
 							<HomeSectionHeading
 								id="ui"
 								title="UI"
@@ -70,11 +69,9 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 									</WebsiteCard>
 								))}
 							</WebsiteGrid>
-						</>
-					)}
+						</> : null}
 
-					{category === "ui-custom" && (
-						<>
+					{category === "ui-custom" ? <>
 							<HomeSectionHeading
 								id="custom-elements"
 								title="UI — Custom"
@@ -87,11 +84,9 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 									</WebsiteCard>
 								))}
 							</WebsiteGrid>
-						</>
-					)}
+						</> : null}
 
-					{category === "ui-audio" && (
-						<>
+					{category === "ui-audio" ? <>
 							<HomeSectionHeading
 								id="audio-elements"
 								title="UI — Audio"
@@ -104,11 +99,9 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 									</WebsiteCard>
 								))}
 							</WebsiteGrid>
-						</>
-					)}
+						</> : null}
 
-					{category === "ui-charts" && (
-						<>
+					{category === "ui-charts" ? <>
 							<HomeSectionHeading
 								id="ui-charts"
 								title="UI — Charts"
@@ -121,11 +114,9 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 									</WebsiteCard>
 								))}
 							</WebsiteGrid>
-						</>
-					)}
+						</> : null}
 
-					{category === "blocks" && (
-						<>
+					{category === "blocks" ? <>
 							<HomeSectionHeading
 								id="blocks"
 								title="Blocks"
@@ -150,19 +141,13 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 									</WebsiteCard>
 								))}
 							</ul>
-						</>
-					)}
+						</> : null}
 
-					{category === "projects" && (
-						<HomeProjectsSection projectComponents={projectComponents} />
-					)}
+					{category === "projects" ? <HomeProjectsSection projectComponents={projectComponents} /> : null}
 
-					{category === "arts" && (
-						<HomeArtsSection artComponents={artComponents} />
-					)}
+					{category === "arts" ? <HomeArtsSection artComponents={artComponents} /> : null}
 
-					{category === "utility" && (
-						<>
+					{category === "utility" ? <>
 							<HomeSectionHeading
 								id="utility"
 								title="Utils"
@@ -187,11 +172,9 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 									</WebsiteCard>
 								))}
 							</ul>
-						</>
-					)}
+						</> : null}
 
-					{category === "visual" && (
-						<>
+					{category === "visual" ? <>
 							<HomeSectionHeading
 								id="visual"
 								title="Visual"
@@ -204,8 +187,7 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 									</WebsiteCard>
 								))}
 							</WebsiteGrid>
-						</>
-					)}
+						</> : null}
 				</div>
 			</div>
 		</>

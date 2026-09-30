@@ -1,1 +1,1 @@
-export * from "../../shared/lib/realtime-assistant-state";
+export * from "@/components/projects/shared/lib/realtime-assistant-state";

@@ -8,6 +8,7 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 /**
  * Shared prompt-greeting row used across every chat greeting surface (sidebar
@@ -55,7 +56,7 @@ const greetingDescriptionVariants: Variants = {
 	active: {
 		opacity: 1,
 		transform: "translateY(0px)",
-		transition: { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
+		transition: { delay: 0.02, duration: 0.16, ease: motionEase.out },
 	},
 };
 

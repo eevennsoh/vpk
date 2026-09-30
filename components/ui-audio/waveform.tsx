@@ -532,12 +532,10 @@ export const AudioScrubber = ({
         style={{ left: `${localProgress * 100}%` }}
       />
 
-      {showHandle && (
-        <div
+      {showHandle ? <div
           className="border-surface bg-bg-selected-bold pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-lg transition-transform hover:scale-110"
           style={{ left: `${localProgress * 100}%` }}
-        />
-      )}
+        /> : null}
     </div>
   )
 }

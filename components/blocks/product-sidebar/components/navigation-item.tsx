@@ -82,8 +82,7 @@ export function NavigationItem({
 			</span>
 
 			{/* Right icons */}
-			{(hasChevron || hasExternalLink) && (
-				<span
+			{(hasChevron || hasExternalLink) ? <span
 					style={{
 						display: "flex",
 						alignItems: "center",
@@ -91,12 +90,9 @@ export function NavigationItem({
 						marginRight: token("space.025"),
 					}}
 				>
-					{hasChevron && <ChevronRightIcon label="Expand" color={token("color.icon.subtle")} size="small" />}
-					{hasExternalLink && (
-						<LinkExternalIcon label="External link" color={token("color.icon.subtle")} size="small" />
-					)}
-				</span>
-			)}
+					{hasChevron ? <ChevronRightIcon label="Expand" color={token("color.icon.subtle")} size="small" /> : null}
+					{hasExternalLink ? <LinkExternalIcon label="External link" color={token("color.icon.subtle")} size="small" /> : null}
+				</span> : null}
 		</>
 	);
 
@@ -114,8 +110,7 @@ export function NavigationItem({
 			}}
 		>
 			{/* Selected indicator */}
-			{isSelected && (
-				<div
+			{isSelected ? <div
 					style={{
 						position: "absolute",
 						left: 0,
@@ -126,8 +121,7 @@ export function NavigationItem({
 						backgroundColor: token("color.border.selected"),
 						borderRadius: token("radius.xsmall"),
 					}}
-				/>
-			)}
+				/> : null}
 
 			{href ? (
 				<Link href={href} onClick={() => onClick?.()} style={PRIMARY_CONTROL_STYLE}>
