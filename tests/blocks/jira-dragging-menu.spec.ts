@@ -16,10 +16,10 @@ test("the new actions follow Add flag and Select uses the existing Kbd hint", as
 	await page.goto(`${origin}/components/blocks/jira-dragging`);
 	const menu = await openMenu(page);
 	const labels = await menu.getByRole("menuitem").allTextContents();
-	expect(labels.slice(-4).map((label) => label.trim())).toEqual(["Add flag", "Select⇧Click", "Archive", "Delete"]);
+	expect(labels.slice(-4).map((label) => label.trim())).toEqual(["Add flag", "Select⌘Click", "Archive", "Delete"]);
 	const select = menu.getByRole("menuitem", { name: "Select", exact: true });
-	await expect(select.locator('[data-slot="kbd"]')).toHaveText(["⇧", "Click"]);
-	await expect(select).toHaveAttribute("aria-description", "Shift plus click");
+	await expect(select.locator('[data-slot="kbd"]')).toHaveText(["⌘", "Click"]);
+	await expect(select).toHaveAttribute("aria-description", "Command plus click");
 	await page.screenshot({ path: "output/agent-browser/jira-dragging-menu/actions-and-shortcut.png" });
 	await select.click();
 	await expect(page.getByRole("menu")).toHaveCount(0);

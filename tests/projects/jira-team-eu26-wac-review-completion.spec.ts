@@ -17,13 +17,20 @@ test("WAC finishes review sessions after one minute without moving their cards",
 	const review = page.getByRole("region", { name: "In review work items", exact: true });
 	await page.clock.fastForward(55_000);
 	for (const code of ["PAY-115", "PAY-119"]) {
-		await expect(review.locator(`[data-issue-key="${code}"]`).getByRole("button", { name: "Cursor: Working", exact: true })).toBeVisible();
+		const card = review.locator(`[data-issue-key="${code}"]`);
+		await expect(card.getByRole("button", { name: "Cursor: Working", exact: true })).toBeVisible();
+		const status = card.locator('[data-slot="jira-issue-agent-status-icon"] svg');
+		await expect(status).toHaveCount(1);
+		expect(await status.boundingBox()).toMatchObject({ width: 24, height: 24 });
 	}
 	await page.clock.fastForward(6_000);
 	for (const code of ["PAY-115", "PAY-119"]) {
 		const card = review.locator(`[data-issue-key="${code}"]`);
 		await expect(card.getByRole("button", { name: "Cursor: Finished", exact: true })).toBeVisible();
 		await expect(card.getByRole("button", { name: "Cursor: Working", exact: true })).toHaveCount(0);
+		const status = card.locator('[data-slot="jira-issue-agent-status-icon"] svg');
+		await expect(status).toHaveCount(1);
+		expect(await status.boundingBox()).toMatchObject({ width: 16, height: 16 });
 	}
 	await expect.poll(() => review.locator("[data-issue-key]").evaluateAll((cards) => cards.map((card) => card.getAttribute("data-issue-key"))))
 		.toEqual(["PAY-112", "PAY-115", "PAY-119"]);
@@ -64,13 +71,21 @@ test("WAC review completion animates only the status icon and preserves compact 
 			const sample = () => {
 				const status = row.querySelector<HTMLElement>('[data-agent-session-lifecycle-current="complete"]');
 				const glyph = status?.firstElementChild;
-				if (glyph && getComputedStyle(glyph).transform !== "none") {
+				if (glyph && (getComputedStyle(glyph).transform !== "none" || getComputedStyle(glyph).opacity !== "1")) {
 					row.dataset.observedStatusAnimation = "true";
+				}
+				const finishedIcon = status?.querySelector('svg:not([data-slot])');
+				if (finishedIcon) {
+					const bounds = finishedIcon.getBoundingClientRect();
+					row.dataset.minimumStatusWidth = String(Math.min(Number(row.dataset.minimumStatusWidth ?? Infinity), bounds.width));
+					row.dataset.minimumStatusHeight = String(Math.min(Number(row.dataset.minimumStatusHeight ?? Infinity), bounds.height));
 				}
 				if (getComputedStyle(avatar).transform !== "none" || avatar.getAnimations({ subtree: true }).length > 0) {
 					row.dataset.observedAvatarAnimation = "true";
 				}
-				if (row.isConnected && row.dataset.observedStatusAnimation !== "true") requestAnimationFrame(sample);
+				const settled = finishedIcon && glyph && getComputedStyle(glyph).opacity === "1" && getComputedStyle(glyph).transform === "none";
+				if (settled) row.dataset.statusTransitionSettled = "true";
+				if (row.isConnected && !settled) requestAnimationFrame(sample);
 			};
 			requestAnimationFrame(sample);
 		}
@@ -80,6 +95,9 @@ test("WAC review completion animates only the status icon and preserves compact 
 		await expect(row.locator('[data-agent-session-lifecycle-current="complete"][data-agent-session-lifecycle-shown="complete"]')).toBeVisible();
 		await expect(row).toHaveAttribute("data-observed-status-animation", "true");
 		await expect(row).not.toHaveAttribute("data-observed-avatar-animation", "true");
+		await expect(row).toHaveAttribute("data-status-transition-settled", "true");
+		expect(Number(await row.getAttribute("data-minimum-status-width"))).toBeCloseTo(16, 1);
+		expect(Number(await row.getAttribute("data-minimum-status-height"))).toBeCloseTo(16, 1);
 		await expect(row.locator('[data-slot="human-agent-avatar"]')).toHaveCount(0);
 		expect(await row.locator('[data-slot="avatar"]').boundingBox()).toMatchObject({ width: 20, height: 20 });
 		const after = await row.elementHandle();
