@@ -118,7 +118,7 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 	test(`bulk drag traces visible Done cards before the finale (${reducedMotion}, ${width}px)`, async ({ page }, testInfo) => {
 		await page.setViewportSize({ width, height });
 		await page.addInitScript(() => {
-			const probe = { traceAt: 0, traceFinishedAt: 0, traceCancelledAt: 0, confettiAt: 0, confettiFinishedAt: 0, confettiBursts: 0, confetti: {} as Record<string, unknown>, finaleAt: 0, outlines: 0, visibleCards: 0, duration: 0 };
+			const probe = { traceAt: 0, traceFinishedAt: 0, traceCancelledAt: 0, confettiAt: 0, confettiFinishedAt: 0, confettiBursts: 0, confetti: {} as Record<string, unknown>, finaleAt: 0, igniteAt: 0, outlines: 0, visibleCards: 0, duration: 0 };
 			Object.assign(window, { keynoteDropProbe: probe });
 			const animate = Element.prototype.animate;
 			Element.prototype.animate = function (frames, options) {
@@ -144,21 +144,27 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 					for (const node of record.addedNodes) if (node instanceof HTMLElement && node.hasAttribute("data-finale-confetti")) {
 						probe.confettiAt = performance.now();
 						probe.confettiBursts++;
-						// Capture the brief burst at insertion, before rasterisation or
-						// test-driver round trips can consume its 1.2-second lifetime.
+						// Capture the layer at insertion, before test-driver round trips.
 						probe.confetti = {
 							ariaHidden: node.getAttribute("aria-hidden"),
 							inert: node.inert,
 							pointerEvents: getComputedStyle(node).pointerEvents,
-							left: node.querySelectorAll('[data-confetti-corner="left"]').length,
-							right: node.querySelectorAll('[data-confetti-corner="right"]').length,
-							colors: [...new Set([...node.querySelectorAll<HTMLElement>("[data-confetti-corner]")].map(piece => piece.style.backgroundColor))].sort(),
+							popover: node.getAttribute("popover"),
+							topLayer: node.matches(":popover-open"),
+							canvases: node.querySelectorAll("canvas").length,
 						};
 					}
 					for (const node of record.removedNodes) if (node instanceof HTMLElement && node.hasAttribute("data-finale-confetti")) probe.confettiFinishedAt = performance.now();
 				}
 				if (!probe.finaleAt && document.querySelector("[data-jira-team-eu26-end-finale]")) probe.finaleAt = performance.now();
 			}).observe(document, { childList: true, subtree: true });
+			// The flash ignites when the mounted finale's clock first moves.
+			const ignition = () => {
+				const finale = (window as typeof window & { __jiraTeamEu26Finale?: { time: () => number } }).__jiraTeamEu26Finale;
+				if (!probe.igniteAt && probe.finaleAt && (finale?.time() ?? 0) > 0) probe.igniteAt = performance.now();
+				requestAnimationFrame(ignition);
+			};
+			requestAnimationFrame(ignition);
 		});
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
@@ -193,7 +199,7 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 		}
 		await expect(page.locator("[data-jira-team-eu26-end-finale]")).toBeVisible({ timeout: 15000 });
 		await expect(page.locator("[data-finale-confetti]")).toHaveCount(0);
-		const probe = await page.evaluate(() => (window as typeof window & { keynoteDropProbe: { traceAt: number; traceFinishedAt: number; confettiAt: number; confettiFinishedAt: number; confettiBursts: number; confetti: Record<string, unknown>; finaleAt: number; outlines: number; visibleCards: number; duration: number } }).keynoteDropProbe);
+		const probe = await page.evaluate(() => (window as typeof window & { keynoteDropProbe: { traceAt: number; traceFinishedAt: number; confettiAt: number; confettiFinishedAt: number; confettiBursts: number; confetti: Record<string, unknown>; finaleAt: number; igniteAt: number; outlines: number; visibleCards: number; duration: number } }).keynoteDropProbe);
 		await testInfo.attach("completion-sequence", { body: JSON.stringify(probe), contentType: "application/json" });
 		if (reducedMotion === "no-preference") {
 			expect(probe.outlines).toBe(probe.visibleCards);
@@ -202,10 +208,16 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 			expect(probe.duration).toBe(650);
 			expect(probe.traceFinishedAt).toBeGreaterThan(probe.traceAt);
 			expect(probe.confettiBursts).toBe(1);
-			expect(probe.confetti).toEqual({ ariaHidden: "true", inert: true, pointerEvents: "none", left: 180, right: 180, colors: ["rgb(106, 154, 35)", "rgb(175, 89, 225)", "rgb(24, 104, 219)", "rgb(252, 167, 0)"] });
+			// One inert, top-layer GL canvas (a worker draws it), so it can stay above the finale's dialog.
+			expect(probe.confetti).toEqual({ ariaHidden: "true", inert: true, pointerEvents: "none", popover: "manual", topLayer: true, canvases: 1 });
 			expect(probe.confettiAt).toBeGreaterThanOrEqual(probe.traceFinishedAt);
-			expect(probe.confettiFinishedAt - probe.confettiAt).toBeGreaterThan(1100);
-			expect(probe.finaleAt).toBeGreaterThanOrEqual(probe.confettiFinishedAt);
+			// The finale mounts (invisibly, on frame 0) beneath the burst, so its setup runs while pieces fly…
+			expect(probe.finaleAt).toBeGreaterThan(probe.confettiAt);
+			// …ignites only once every piece has gathered into the ember (2.4s)…
+			expect(probe.igniteAt - probe.confettiAt).toBeGreaterThanOrEqual(2350);
+			// …and the ember blooms into the flash's rise, then the layer is gone.
+			expect(probe.confettiFinishedAt).toBeGreaterThanOrEqual(probe.igniteAt);
+			expect(probe.confettiFinishedAt - probe.igniteAt).toBeLessThan(1000);
 		} else {
 			expect(probe.traceAt).toBe(0);
 			expect(probe.confettiBursts).toBe(0);
@@ -217,7 +229,7 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 test("confetti launches while the shader column image is still preparing", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.addInitScript(() => {
-		const probe = { pendingColumnImages: 0 };
+		const probe = { pendingColumnImages: 0, imagesDoneAt: 0, finaleAt: 0, confettiGoneAt: 0 };
 		Object.assign(window, { confettiPrintProbe: probe });
 		const decode = HTMLImageElement.prototype.decode;
 		HTMLImageElement.prototype.decode = function () {
@@ -227,9 +239,16 @@ test("confetti launches while the shader column image is still preparing", async
 			probe.pendingColumnImages++;
 			return pending.then(() => new Promise<void>((resolve) => window.setTimeout(() => {
 				probe.pendingColumnImages--;
+				if (!probe.pendingColumnImages) probe.imagesDoneAt = performance.now();
 				resolve();
 			}, 2000)));
 		};
+		new MutationObserver(records => {
+			for (const record of records) for (const node of record.removedNodes) {
+				if (node instanceof HTMLElement && node.hasAttribute("data-finale-confetti")) probe.confettiGoneAt = performance.now();
+			}
+			if (!probe.finaleAt && document.querySelector("[data-jira-team-eu26-end-finale]")) probe.finaleAt = performance.now();
+		}).observe(document, { childList: true, subtree: true });
 	});
 	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
@@ -240,64 +259,89 @@ test("confetti launches while the shader column image is still preparing", async
 	await expect(page.locator("[data-jira-team-eu26-end-finale]")).toHaveCount(0);
 	await expect(page.locator("[data-jira-team-eu26-end-finale]")).toBeVisible({ timeout: 15000 });
 	await expect(page.locator("[data-finale-confetti]")).toHaveCount(0);
+	// The print outlasted the gather: the ember held until the finale could mount and ignite from it.
+	const probe = await page.evaluate(() => (window as typeof window & { confettiPrintProbe: { imagesDoneAt: number; finaleAt: number; confettiGoneAt: number } }).confettiPrintProbe);
+	expect(probe.finaleAt).toBeGreaterThanOrEqual(probe.imagesDoneAt);
+	expect(probe.confettiGoneAt).toBeGreaterThan(probe.finaleAt);
 });
 
-test("confetti gives a forceful broad diagonal burst with an early gradual fade", async ({ page }) => {
+test("confetti fires a broad 3D burst from both lower corners and gathers into the Done column's foot", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.addInitScript(() => {
-		const animate = Element.prototype.animate;
-		Element.prototype.animate = function (frames, options) {
-			const animation = animate.call(this, frames, options);
-			if (this instanceof HTMLElement && this.hasAttribute("data-confetti-corner")) {
-				// Motion finishes configuring and starts its native animation after
-				// this factory returns. Pin the frame after that setup completes.
-				queueMicrotask(() => {
-					animation.pause();
-					animation.currentTime = 450;
-				});
+		// Freeze the burst as it mounts, so exact seconds of it can be inspected.
+		new MutationObserver(records => {
+			for (const record of records) for (const node of record.addedNodes) {
+				if (node instanceof HTMLElement && node.hasAttribute("data-finale-confetti")) {
+					(window as typeof window & { __jiraTeamEu26Finale: { holdConfetti: (time: number | null) => void } }).__jiraTeamEu26Finale.holdConfetti(0);
+				}
 			}
-			return animation;
-		};
+		}).observe(document, { childList: true, subtree: true });
 	});
 	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
 	const burst = page.locator("[data-finale-confetti]");
-	await expect(burst).toBeVisible();
-	const pieces = await burst.locator("[data-confetti-corner]").evaluateAll(nodes => nodes.map(node => {
-		const rect = node.getBoundingClientRect();
-		return { corner: (node as HTMLElement).dataset.confettiCorner, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, opacity: Number(getComputedStyle(node).opacity), width: innerWidth, height: innerHeight };
-	}));
-	expect(pieces).toHaveLength(360);
-	for (const piece of pieces) {
-		expect(piece.opacity).toBeGreaterThan(0.9);
-		expect(piece.opacity).toBeLessThan(1);
-	}
-	for (const corner of ["left", "right"]) {
-		const fan = pieces.filter(piece => piece.corner === corner);
-		const nearOrigin = fan.filter(piece => (corner === "left" ? piece.x : piece.width - piece.x) >= 0 && (corner === "left" ? piece.x : piece.width - piece.x) < piece.width * 0.16 && piece.y > piece.height * 0.75 && piece.y < piece.height);
-		expect(nearOrigin.length).toBeGreaterThan(20);
-		expect(Math.max(...fan.map(piece => piece.x)) - Math.min(...fan.map(piece => piece.x))).toBeGreaterThan(fan[0].width * 0.25);
-		expect(fan.some(piece => piece.y < piece.height * 0.5)).toBe(true);
-		const rise = fan.reduce((sum, piece) => sum + piece.height - piece.y, 0);
-		const travel = fan.reduce((sum, piece) => sum + (corner === "left" ? piece.x : piece.width - piece.x), 0);
-		expect(rise).toBeGreaterThan(travel * 0.9);
-	}
-	await page.screenshot({ path: "output/agent-browser/keynote-completion/lower-spray-450ms.png" });
-	await burst.evaluate(node => { for (const animation of node.getAnimations({ subtree: true })) animation.currentTime = 900; });
-	const faded = await burst.locator("[data-confetti-corner]").evaluateAll(nodes => nodes.map(node => Number(getComputedStyle(node).opacity)));
-	expect(faded.every(opacity => opacity > 0.3 && opacity < 0.4)).toBe(true);
-	for (const corner of ["left", "right"]) {
-		const nearOrigin = await burst.locator(`[data-confetti-corner="${corner}"]`).evaluateAll(nodes => nodes.filter(node => {
-			const rect = node.getBoundingClientRect();
-			const x = (node as HTMLElement).dataset.confettiCorner === "left" ? rect.x + rect.width / 2 : innerWidth - rect.x - rect.width / 2;
-			const y = rect.y + rect.height / 2;
-			return x >= 0 && x < innerWidth * 0.16 && y > innerHeight * 0.75 && y < innerHeight;
-		}).length);
-		expect(nearOrigin).toBeGreaterThan(20);
-	}
-	await page.screenshot({ path: "output/agent-browser/keynote-completion/lower-spray-fade-900ms.png" });
-	await burst.evaluate(node => { for (const animation of node.getAnimations({ subtree: true })) animation.play(); });
+	await expect(burst).toBeAttached();
+	// Painted pixels of the worker-drawn canvas at one held second, in viewport fractions.
+	const paint = (time: number) => page.evaluate(async (at) => {
+		(window as typeof window & { __jiraTeamEu26Finale: { holdConfetti: (time: number | null) => void } }).__jiraTeamEu26Finale.holdConfetti(at);
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		const canvas = document.querySelector<HTMLCanvasElement>("[data-finale-confetti] canvas")!;
+		const sample = document.createElement("canvas");
+		sample.width = 360;
+		sample.height = 220;
+		const context = sample.getContext("2d")!;
+		context.drawImage(canvas, 0, 0, sample.width, sample.height);
+		const { data } = context.getImageData(0, 0, sample.width, sample.height);
+		const points: [number, number][] = [];
+		for (let index = 0; index < data.length; index += 4) {
+			if (data[index + 3] > 60) points.push([(index / 4 % sample.width) / sample.width, Math.floor(index / 4 / sample.width) / sample.height]);
+		}
+		return points;
+	}, time);
+	const launch = await paint(0.45);
+	await page.screenshot({ path: "output/agent-browser/keynote-completion/confetti-launch-450ms.png" });
+	expect(launch.filter(([x, y]) => x < 0.3 && y > 0.5).length, "the left cannon's fan").toBeGreaterThan(150);
+	expect(launch.filter(([x, y]) => x > 0.7 && y > 0.5).length, "the right cannon's fan").toBeGreaterThan(150);
+	expect(launch.filter(([, y]) => y < 0.5).length, "it reaches well into the upper half").toBeGreaterThan(150);
+	// Just before the gather cue (FINALE_CONFETTI_TIMING.gathered, 2.4s); holding past it ignites the finale.
+	const gather = await paint(2.3);
+	await page.screenshot({ path: "output/agent-browser/keynote-completion/confetti-gather-2300ms.png" });
+	const { sourceX, sourceY, left, right, crown, aspect } = await page.locator('[data-jira-kanban-column="Done"]').evaluate((column) => {
+		const rect = column.getBoundingClientRect();
+		return {
+			sourceX: (rect.x + rect.width / 2) / innerWidth,
+			sourceY: (rect.y + rect.height * 0.98) / innerHeight,
+			left: rect.left / innerWidth,
+			right: rect.right / innerWidth,
+			foot: rect.bottom / innerHeight,
+			crown: rect.top / innerHeight,
+			aspect: innerWidth / innerHeight,
+		};
+	});
+	// Distance from the source (the foot of Done), in viewport heights.
+	const distance = ([x, y]: [number, number]) => Math.hypot((x - sourceX) * aspect, y - sourceY);
+	expect(gather.length, "the stream is still visible").toBeGreaterThan(100);
+	expect(gather.filter((point) => distance(point) < 0.45).length / gather.length, "and converges on the flash's source").toBeGreaterThan(0.6);
+	// The glow (a bento-weight hairline, lost at 1/5 scale) has been pulled up round the column's top.
+	const hairline = await page.evaluate(({ y, x0, x1 }) => {
+		const canvas = document.querySelector<HTMLCanvasElement>("[data-finale-confetti] canvas")!;
+		const scale = canvas.width / innerWidth;
+		const region = { x: Math.floor((x0 * innerWidth - 20) * scale), y: Math.floor((y * innerHeight - 24) * scale) };
+		const sample = document.createElement("canvas");
+		sample.width = Math.ceil(((x1 - x0) * innerWidth + 40) * scale);
+		sample.height = Math.ceil(48 * scale);
+		const context = sample.getContext("2d")!;
+		context.drawImage(canvas, region.x, region.y, sample.width, sample.height, 0, 0, sample.width, sample.height);
+		const { data } = context.getImageData(0, 0, sample.width, sample.height);
+		let lit = 0;
+		for (let index = 3; index < data.length; index += 4) if (data[index] > 12) lit++;
+		return lit;
+	}, { y: crown, x0: left, x1: right });
+	expect(hairline, "round the column's top").toBeGreaterThan(150);
+	expect(gather.filter(([x]) => x < 0.5).length, "nothing is left behind on the far side").toBe(0);
+	// Resuming completes the gather and ignites the unchanged finale from the ember.
+	await page.evaluate(() => (window as typeof window & { __jiraTeamEu26Finale: { holdConfetti: (time: number | null) => void } }).__jiraTeamEu26Finale.holdConfetti(null));
 	await expect(page.locator("[data-jira-team-eu26-end-finale]")).toBeVisible({ timeout: 15000 });
 	await expect(burst).toHaveCount(0);
 });

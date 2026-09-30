@@ -4,133 +4,182 @@ const { test } = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
 
-async function load() {
-	const result = await esbuild.build({
-		stdin: { contents: 'export * from "./finale-confetti"; export * from "./play-finale-confetti"; export { probe } from "motion";', resolveDir: __dirname, loader: "ts" },
+let model;
+function load() {
+	model ??= loadCjsModuleFromText(esbuild.buildSync({
+		stdin: { contents: 'export * from "./finale-confetti"; export { FLASH_TIMING, FLASH_ROVO_COLORS } from "./finale-column-flash";', resolveDir: __dirname, loader: "ts" },
 		bundle: true, format: "cjs", platform: "node", write: false,
-		plugins: [{ name: "motion-probe", setup(build) {
-			build.onResolve({ filter: /^motion$/ }, () => ({ path: "motion", namespace: "probe" }));
-			build.onLoad({ filter: /.*/, namespace: "probe" }, () => ({ contents: `
-				export const probe = [];
-				export function animate(element, keyframes, options) {
-					let finish;
-					const pending = new Promise(resolve => { finish = resolve; });
-					const control = { element, keyframes, options, finish, cancelled: false };
-					pending.cancel = () => { control.cancelled = true; };
-					probe.push(control);
-					return pending;
-				}
-			` }));
-		} }],
-	});
-	return loadCjsModuleFromText(result.outputFiles[0].text, "finale-confetti-harness.cjs");
+	}).outputFiles[0].text, "finale-confetti-harness.cjs");
+	return model;
 }
 
-test("burst and fade timing compose the resolved VPK duration tokens", async () => {
-	const { FINALE_CONFETTI_DURATION, createFinaleConfettiBurst } = await load();
+// A 1440×900 board whose Done column sits at the right.
+const COLUMN = { x: 1090, y: 240, width: 322, height: 630, radius: 8 };
+const STAGE = { width: 1440, height: 900, column: COLUMN };
+
+test("the timeline composes the resolved VPK duration tokens and hands over in the flash's rise", () => {
+	const { FINALE_CONFETTI_TIMING: T, FLASH_TIMING } = load();
 	const css = readFileSync("app/tailwind-theme.css", "utf8");
-	const seconds = name => Number(css.match(new RegExp(`--duration-${name}:\\s*(\\d+)ms`))[1]) / 1000;
-	assert.equal(FINALE_CONFETTI_DURATION, seconds("slowest") * 2);
-	const opacity = createFinaleConfettiBurst(900, () => 0.5)[0].keyframes.opacity;
-	const steps = opacity.length - 1;
-	const fadeDuration = (FINALE_CONFETTI_DURATION / steps) / opacity.at(-2);
-	assert.ok(Math.abs(fadeDuration - seconds("slower") * 2) < 1e-12);
+	const token = (name) => Number(css.match(new RegExp(`--duration-${name}:\\s*(\\d+)ms`))[1]) / 1000;
+	assert.equal(T.volley, token("xxshort"));
+	assert.equal(T.gatherStart, token("slowest") * 2 + token("medium"), "a long hang before the vortex opens");
+	assert.equal(T.gatherSpread, token("slower"));
+	assert.equal(T.firstArrival, (token("slowest") + token("slower")) * 2);
+	assert.equal(T.gathered, token("slowest") * 4);
+	assert.equal(T.release, FLASH_TIMING.rise, "the ember blooms over exactly the flash's own rise");
+	assert.equal(T.release, token("fast"));
 });
 
-test("one burst mirrors both corners, uses only the four Rovo colours, and fades every piece to zero", async () => {
-	const { createFinaleConfettiBurst } = await load();
-	const particles = createFinaleConfettiBurst(900, () => 0.5);
-	assert.equal(particles.length, 360);
-	assert.equal(particles.filter(particle => particle.corner === "left").length, 180);
-	assert.deepEqual(new Set(particles.map(particle => particle.color)), new Set(["#1868DB", "#AF59E1", "#FCA700", "#6A9A23"]));
-	const position = (particle, step) => particle.keyframes.transform[step].match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/).slice(1).map(Number);
-	assert.ok(position(particles[0], 10)[0] > 0, "left cannon travels inward");
-	assert.ok(position(particles[180], 10)[0] < 0, "right cannon travels inward");
-	assert.ok(position(particles[0], 10)[1] < 0, "both cannons launch upward from the foot of the viewport");
-	for (const particle of particles) {
-		assert.equal(particle.keyframes.transform.length, 41);
-		assert.equal(particle.keyframes.opacity[13], 1, "the launch stays vivid for the first 0.4 seconds");
-		assert.ok(particle.keyframes.opacity[20] > 0.7 && particle.keyframes.opacity[20] < 0.8, "fade already underway at 0.6 seconds");
-		assert.ok(particle.keyframes.opacity[30] > 0.3 && particle.keyframes.opacity[30] < 0.4, "a gradual tail stays visible at 0.9 seconds");
-		assert.ok(Math.abs(particle.keyframes.opacity.at(-1)) < 1e-9);
-		assert.ok(particle.keyframes.opacity.every((value, index, values) => value <= (values[index - 1] ?? 1)), "the fade never flashes back");
+test("one mirrored burst of Rovo paper, sequins and ribbons, balanced in hue everywhere", () => {
+	const { createFinaleConfettiBurst, FLASH_ROVO_COLORS } = load();
+	const { pieces } = createFinaleConfettiBurst(STAGE);
+	assert.equal(pieces.length, 600);
+	assert.equal(pieces.filter((piece) => piece.corner === "left").length, 300);
+	const rovo = new Set(FLASH_ROVO_COLORS);
+	for (const piece of pieces) assert.ok(rovo.has(piece.front) && rovo.has(piece.back) && piece.front !== piece.back, "two Rovo faces");
+	const count = (predicate) => pieces.filter(predicate).length;
+	assert.ok(count((piece) => piece.material === "sequin") > 90, "enough sequins to glint");
+	assert.ok(count((piece) => piece.material === "ribbon") > 25, "enough ribbons to read as streamers");
+	// Regression: the slow trail was once every fourth index, which aligned it with the hue cycle.
+	const trail = pieces.filter((piece) => Math.hypot(piece.velocity.x, piece.velocity.y) < 2200 * 0.5);
+	assert.ok(trail.length > 100, "a slow trail stays near each corner");
+	for (const hue of FLASH_ROVO_COLORS) {
+		const share = trail.filter((piece) => piece.front === hue).length / trail.length;
+		assert.ok(share > 0.15 && share < 0.35, `the trail carries ${hue} in proportion (${share.toFixed(2)})`);
 	}
 });
 
-test("the forceful broad fans rise diagonally across viewport heights", async () => {
-	const { createFinaleConfettiBurst } = await load();
-	for (const height of [400, 768, 900, 1100, 1600]) {
-		for (const random of [0, 0.5, 0.99999]) {
-			for (const particle of createFinaleConfettiBurst(height, () => random)) {
-				const positions = particle.keyframes.transform.map(frame => frame.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/).slice(1).map(Number));
-				assert.ok(positions[4][1] < 0, "every piece launches upward from its corner");
-			}
+test("both cannons fire a forceful broad diagonal fan from the lower corners", () => {
+	const { createFinaleConfettiBurst, finaleConfettiFree, FINALE_CONFETTI_TIMING: T } = load();
+	for (const height of [600, 900, 1100]) {
+		const stage = { ...STAGE, height, column: { ...COLUMN, height: height - 270 } };
+		const { pieces } = createFinaleConfettiBurst(stage);
+		for (const piece of pieces) {
+			assert.equal(piece.origin.x, piece.corner === "left" ? 0 : stage.width);
+			const early = finaleConfettiFree(piece, piece.delay + 0.05);
+			assert.ok(early.y < piece.origin.y, "every piece launches upward");
+			// Flutter may sway a vertical launch by under a pixel; none heads off the edge.
+			assert.ok(piece.corner === "left" ? early.x > -1 : early.x < stage.width + 1, "and never outward");
 		}
-	}
-	// Guard strength, width and diagonal pitch against the gentler and
-	// vertically compressed variants.
-	let index = 0;
-	const leading = createFinaleConfettiBurst(900, () => index++ === 0 ? 0 : 0.99999)[0];
-	const x = Number(leading.keyframes.transform[20].match(/translate\(([-\d.]+)px/)[1]);
-	assert.ok(x > 900, "the forceful fan reaches farther across the screen");
-	const central = createFinaleConfettiBurst(900, () => 0.5)[0];
-	const [cx, cy] = central.keyframes.transform[10].match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/).slice(1).map(Number);
-	assert.ok(-cy > cx, "the central trajectory shoots diagonally upward");
-	const peak = Math.min(...central.keyframes.transform.map(frame => Number(frame.match(/translate\([-\d.]+px, ([-\d.]+)px\)/)[1])));
-	assert.ok(peak < -900 * 0.6, "the stronger central trajectory reaches well into the upper half");
-});
-
-test("both corners retain a gentle trail near their origin through the fade", async () => {
-	const { createFinaleConfettiBurst } = await load();
-	const particles = createFinaleConfettiBurst(900, () => 0.5);
-	for (const corner of ["left", "right"]) {
-		for (const step of [15, 30]) {
-			const nearOrigin = particles.filter(particle => {
-				if (particle.corner !== corner) return false;
-				const [x, y] = particle.keyframes.transform[step].match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/).slice(1).map(Number);
-				return Math.abs(x) < 180 && y < 0 && y > -225;
-			});
-			assert.ok(nearOrigin.length >= 45, "a substantial trail fills the corner at 450 and 900 ms");
-			assert.deepEqual(new Set(nearOrigin.map(particle => particle.color)), new Set(["#1868DB", "#AF59E1", "#FCA700", "#6A9A23"]));
+		for (const corner of ["left", "right"]) {
+			const fan = pieces.filter((piece) => piece.corner === corner).map((piece) => finaleConfettiFree(piece, T.gatherStart));
+			const reach = fan.map((point) => corner === "left" ? point.x : stage.width - point.x);
+			// Launch strength scales with the viewport height, as the drop does.
+			assert.ok(Math.max(...reach) > height * 0.95, "the forceful fan reaches across the board");
+			assert.ok(fan.filter((point) => point.y < height * 0.5).length > 60, "and well into the upper half");
 		}
 	}
 });
 
-test("shader handoff waits for all pieces; abort, resize and reduced motion clear the entire burst", async (t) => {
-	const previous = { document: globalThis.document, window: globalThis.window };
-	const layers = [];
-	const listeners = new Map();
-	globalThis.document = {
-		createElement: () => ({ style: {}, dataset: {}, children: [], setAttribute() {}, appendChild(node) { this.children.push(node); }, remove() { layers.splice(layers.indexOf(this), 1); } }),
-		body: { appendChild: layer => layers.push(layer) },
+test("the vortex lands every piece exactly on the column's bottom border, farthest last, by `gathered`", () => {
+	const { createFinaleConfettiBurst, finaleConfettiCenter, finaleConfettiFree, FINALE_CONFETTI_TIMING: T } = load();
+	const { pieces } = createFinaleConfettiBurst(STAGE);
+	const sinks = pieces.map((piece) => piece.gather.sink);
+	for (const sink of sinks) {
+		assert.equal(sink.y, COLUMN.y + COLUMN.height, "on the bottom border");
+		assert.ok(sink.x >= COLUMN.x + COLUMN.radius && sink.x <= COLUMN.x + COLUMN.width - COLUMN.radius, "clear of its corners");
+	}
+	const middle = sinks.filter((sink) => Math.abs(sink.x - (COLUMN.x + COLUMN.width / 2)) < COLUMN.width / 4).length;
+	assert.ok(middle / sinks.length > 0.6, "the landing favours the centre, where the flash ignites");
+	for (const piece of pieces) {
+		assert.ok(piece.gather.start >= T.gatherStart - 0.03, "free flight runs until the vortex opens");
+		assert.ok(piece.gather.end - piece.gather.start >= 0.4 - 1e-9, "no piece is snatched to the source");
+		assert.ok(piece.gather.end >= T.firstArrival - 1e-9 && piece.gather.end <= T.gathered + 1e-9);
+		for (const time of [piece.gather.end, T.gathered, T.gathered + 1]) {
+			const at = finaleConfettiCenter(piece, time);
+			assert.ok(Math.hypot(at.x - piece.gather.sink.x, at.y - piece.gather.sink.y, at.z) < 1e-6, "it lands, and stays, on its sink, on the page");
+		}
+		// The pull and swirl start at rest: entering the vortex keeps the piece's velocity.
+		const dt = 1e-4;
+		const velocity = (fn) => {
+			const a = fn(piece.gather.start - dt);
+			const b = fn(piece.gather.start + dt);
+			return [(b.x - a.x) / (2 * dt), (b.y - a.y) / (2 * dt)];
+		};
+		const free = velocity((time) => finaleConfettiFree(piece, time));
+		const drawn = velocity((time) => finaleConfettiCenter(piece, time));
+		assert.ok(Math.hypot(free[0] - drawn[0], free[1] - drawn[1]) < 1, "no kink where the vortex takes over");
+	}
+	assert.ok(Math.abs(Math.max(...pieces.map((piece) => piece.gather.end)) - T.gathered) < 1e-9, "the last arrival is the gather cue");
+	const distance = (piece) => {
+		const at = finaleConfettiFree(piece, T.gatherStart);
+		return Math.hypot(at.x - piece.gather.sink.x, at.y - piece.gather.sink.y, at.z);
 	};
-	globalThis.window = { innerHeight: 900, addEventListener: (name, handler) => listeners.set(name, handler), removeEventListener: name => listeners.delete(name) };
-	t.after(() => Object.assign(globalThis, previous));
-	for (const action of ["finish", "abort", "resize"]) {
-		const { playFinaleConfetti, probe } = await load();
-		const controller = new AbortController();
-		let handedOff = false;
-		const pending = playFinaleConfetti(controller.signal, false).then(() => { handedOff = true; });
-		assert.equal(layers.length, 1);
-		assert.equal(layers[0].children.length, 360);
-		assert.equal(probe.length, 360, "both cannons fire exactly once");
-		assert.ok(probe.every(animation => animation.options.duration === 1.2));
-		probe[0].finish();
-		await Promise.resolve();
-		assert.equal(handedOff, false, "the first piece cannot start the shader early");
-		if (action === "finish") for (const animation of probe) animation.finish();
-		else if (action === "abort") controller.abort();
-		else listeners.get("resize")();
-		await pending;
-		assert.equal(layers.length, 0, "no particles survive the handoff");
-		assert.equal(listeners.size, 0);
-		assert.ok(probe.every(animation => animation.cancelled), "no animation remains alive");
+	const byArrival = [...pieces].sort((a, b) => a.gather.end - b.gather.end);
+	assert.ok(distance(byArrival[0]) < distance(byArrival.at(-1)), "the nearest arrives first, the farthest last");
+});
+
+test("depth of field: a foreground layer near the lens and a background layer behind the page", () => {
+	const { createFinaleConfettiBurst, finaleConfettiFree, finaleConfettiCameraDistance, FINALE_CONFETTI_TIMING: T } = load();
+	const { pieces } = createFinaleConfettiBurst(STAGE);
+	const lens = finaleConfettiCameraDistance(STAGE.height);
+	const depth = pieces.map((piece) => finaleConfettiFree(piece, T.gatherStart).z);
+	const near = depth.filter((z) => z > lens * 0.25).length / pieces.length;
+	const far = depth.filter((z) => z < -lens * 0.3).length / pieces.length;
+	assert.ok(near > 0.07 && near < 0.14, `about a tenth fly past the lens (${near.toFixed(3)})`);
+	assert.ok(far > 0.1 && far < 0.18, `and a larger share recede behind the page (${far.toFixed(3)})`);
+	assert.ok(depth.every((z) => z < lens * 0.61), "none reaches the lens");
+	const order = pieces.map((piece) => finaleConfettiFree(piece, T.gatherStart * 0.75).z);
+	assert.ok(order.every((z, index) => index === 0 || z >= order[index - 1]), "drawn far to near");
+});
+
+test("the border charges steadily from the first arrival to full at the gather cue", () => {
+	const { createFinaleConfettiBurst, finaleConfettiCharge, FINALE_CONFETTI_TIMING: T } = load();
+	const burst = createFinaleConfettiBurst(STAGE);
+	assert.equal(finaleConfettiCharge(burst, T.firstArrival - 0.07), 0);
+	assert.equal(finaleConfettiCharge(burst, T.gathered), 1);
+	let previous = 0;
+	for (let time = T.firstArrival - 0.1; time <= T.gathered + 0.05; time += 0.01) {
+		const charge = finaleConfettiCharge(burst, time);
+		assert.ok(charge >= previous - 1e-12, "the charge never drains");
+		previous = charge;
 	}
-	const { playFinaleConfetti, probe } = await load();
-	await playFinaleConfetti(new AbortController().signal, true);
-	const aborted = new AbortController();
-	aborted.abort();
-	await playFinaleConfetti(aborted.signal, false);
-	assert.equal(probe.length, 0);
-	assert.equal(layers.length, 0);
+	const middle = finaleConfettiCharge(burst, (T.firstArrival + T.gathered) / 2);
+	assert.ok(middle > 0.35 && middle < 0.65, "arrivals pour in at a steady rate");
+});
+
+test("the column's foot glows for a bento glow's length of life, full once every piece has landed", () => {
+	const { createFinaleConfettiBurst, finaleConfettiCharge, finaleConfettiGlow, FINALE_CONFETTI_TIMING: T } = load();
+	const css = readFileSync("app/tailwind-theme.css", "utf8");
+	const slow = Number(css.match(/--duration-slow:\s*(\d+)ms/)[1]) / 1000;
+	const burst = createFinaleConfettiBurst(STAGE);
+	const glow = (time) => finaleConfettiGlow(time, finaleConfettiCharge(burst, time));
+	assert.equal(glow(T.gatherStart), 0, "dark until the vortex opens");
+	assert.ok(Math.abs(glow(T.gatherStart + slow) - 0.65) < 1e-9, "lit, with the bento's fade-up, before any piece lands");
+	assert.equal(glow(T.gathered), 1, "full once every piece is in");
+	assert.ok(T.gathered - T.gatherStart >= 1 - 1e-9, "a second of orbiting spots before the flash can ignite");
+	let previous = 0;
+	for (let time = T.gatherStart; time <= T.gathered + 0.5; time += 0.01) {
+		assert.ok(glow(time) >= previous - 1e-12 && glow(time) <= 1, "it only brightens, and never past full");
+		previous = glow(time);
+	}
+});
+
+test("the glow is traced up the column at a steady pace across the whole pull", () => {
+	const { finaleConfettiTrace, FINALE_CONFETTI_TIMING: T } = load();
+	assert.equal(finaleConfettiTrace(T.gatherStart), 0, "from the moment the vortex opens…");
+	assert.equal(finaleConfettiTrace(T.gathered), 1, "…to the last piece landing");
+	assert.equal(finaleConfettiTrace(T.gathered + 1), 1);
+	// Regression: paced by the pieces, it once covered ~90% of the column in 0.6s.
+	const step = 0.05;
+	const rate = step / (T.gathered - T.gatherStart);
+	for (let time = T.gatherStart; time < T.gathered - 1e-9; time += step) {
+		assert.ok(Math.abs(finaleConfettiTrace(time + step) - finaleConfettiTrace(time) - rate) < 1e-9, "never racing: the same climb every moment");
+	}
+});
+
+test("every rehearsal is the same show, and the GPU layout matches the GLSL port", () => {
+	const { createFinaleConfettiBurst, packFinaleConfettiBurst, FINALE_CONFETTI_MOTION_GLSL } = load();
+	const a = createFinaleConfettiBurst(STAGE);
+	assert.deepEqual(createFinaleConfettiBurst(STAGE), a, "seeded: a rehearsal matches the keynote");
+	const packed = packFinaleConfettiBurst(a);
+	for (const [name, { array, itemSize }] of Object.entries(packed)) {
+		assert.equal(array.length, a.pieces.length * itemSize);
+		const type = itemSize === 1 ? "float" : `vec${itemSize}`;
+		assert.match(FINALE_CONFETTI_MOTION_GLSL, new RegExp(`attribute ${type} ${name};`), `${name} is declared as ${type}`);
+	}
+	const declared = [...FINALE_CONFETTI_MOTION_GLSL.matchAll(/attribute \w+ (\w+);/g)].map((match) => match[1]);
+	assert.deepEqual(declared.sort(), Object.keys(packed).sort(), "no attribute is declared without data");
+	const row = [...packed.aGather.array.slice(0, 3)];
+	assert.deepEqual(row.map((value) => Number(value.toFixed(5))), [a.pieces[0].gather.start, a.pieces[0].gather.end, a.pieces[0].gather.swirl].map((value) => Number(Math.fround(value).toFixed(5))));
 });
