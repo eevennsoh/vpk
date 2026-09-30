@@ -6,6 +6,7 @@ import {
 	DESIGN_VARIANTS_STORAGE_KEY,
 	getDefaultDesignVariants,
 	getDesignVariants,
+	hydrateClientDesignVariants,
 	hydrateDesignVariants,
 	readStoredDesignVariants,
 	setDesignVariant,
@@ -23,10 +24,10 @@ interface UseDesignVariantsResult {
  * Reads and writes the global design-variant toggles.
  *
  * Hydration-safe: `useSyncExternalStore` renders the store default on the
- * server and during hydration, then an effect adopts the stored preferences —
- * the same shape `ThemeWrapper` uses for `ui-theme`. Any
- * variant-driven UI must therefore tolerate one paint at the default before
- * a stored override applies.
+ * server and during hydration, then an effect adopts the stored preferences
+ * and this document's `?variants=` URL overrides — the same shape
+ * `ThemeWrapper` uses for `ui-theme`. Any variant-driven UI must therefore
+ * tolerate one paint at the default before a stored or URL override applies.
  */
 export function useDesignVariants(): UseDesignVariantsResult {
 	const designVariants = useSyncExternalStore(
@@ -35,9 +36,10 @@ export function useDesignVariants(): UseDesignVariantsResult {
 		getDefaultDesignVariants,
 	);
 
-	// Adopt the stored preferences after mount.
+	// Adopt the stored preferences after mount. The store reads the URL only on
+	// its first client hydration, so later mounts and client navigations reuse it.
 	useEffect(() => {
-		hydrateDesignVariants(readStoredDesignVariants() ?? getDesignVariants());
+		hydrateClientDesignVariants(window.location.search);
 	}, []);
 
 	// Keep tabs in sync. The writing tab already persisted the value, so re-read

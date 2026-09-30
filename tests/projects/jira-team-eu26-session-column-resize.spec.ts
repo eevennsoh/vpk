@@ -1,15 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-const JIRA_TEAM_EU26_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/jira-team-eu26";
+import { appUrl } from "@/tests/helpers/origin";
 
 for (const width of [1440, 1024]) {
 	test(`the session resize handle follows the column height at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: 900 });
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.clock.install();
-		await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+		await page.goto(appUrl("/jira-team-eu26"), { waitUntil: "domcontentloaded" });
 		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 		const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
 		if (await expand.isVisible()) await expand.click();

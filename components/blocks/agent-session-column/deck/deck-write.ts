@@ -1,6 +1,4 @@
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { cardLoopPositionFrom, stackZIndex } from "../../../visual/scrolling/stack-layout.ts";
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { deckRunFrame, groupDeckRuns, isIdentityFrame, type AgentSessionDeck, type DeckRow, type DeckRunFrame } from "./deck-model.ts";
 
 export const DECK_ITEM_SELECTOR = ":scope > ul > li";

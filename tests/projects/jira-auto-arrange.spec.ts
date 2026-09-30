@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 
 type SparkleProbe = { readyAt: number; staticAt: number; waveEndAt: number; waveObserved: boolean };

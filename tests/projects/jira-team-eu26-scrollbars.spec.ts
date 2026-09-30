@@ -1,16 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL;
+import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ ignoreHTTPSErrors: true });
 
 for (const width of [1440, 1800]) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		test(`fitting columns lose their scrollbars after filtering at ${width}px (${reducedMotion})`, async ({ page }) => {
-			test.skip(!origin, "PLAYWRIGHT_BASE_URL must identify the owning worktree");
 			await page.emulateMedia({ reducedMotion });
 			await page.setViewportSize({ width, height: 900 });
-			await page.goto(`${origin}/jira-team-eu26`);
+			await page.goto(appUrl("/jira-team-eu26"));
 			await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
 			const review = page.getByRole("region", { name: "In review work items", exact: true });
 			await expect(review.locator("..").locator('[data-slot="scroll-area-scrollbar"]')).toHaveCount(1);
@@ -36,10 +35,9 @@ for (const width of [1440, 1800]) {
 }
 
 test("board scrollbars hide at rest and support hover, wheel, dragging, and keyboard", async ({ page }) => {
-	test.skip(!origin, "PLAYWRIGHT_BASE_URL must identify the owning worktree");
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(`${origin}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	const heading = page.getByRole("heading", { name: "Jira Design", exact: true });
 	await expect(heading).toBeVisible();
 	const viewport = page.getByRole("region", { name: "In review work items", exact: true });

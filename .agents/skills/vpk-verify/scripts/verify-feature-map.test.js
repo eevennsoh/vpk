@@ -19,10 +19,19 @@ function writeFixture({
 	features = {},
 	indexEntries = Object.keys(features),
 	routes = ["/", "/studio"],
+	projects = [],
+	catalogProjects = projects,
+	uncoveredLines = [],
 } = {}) {
 	const root = mkdtempSync(path.join(os.tmpdir(), "vpk-feature-map-"));
 	const featuresDir = path.join(root, "features");
+	const projectsDir = path.join(root, "projects");
 	mkdirSync(featuresDir, { recursive: true });
+	mkdirSync(projectsDir, { recursive: true });
+	for (const project of projects) {
+		mkdirSync(path.join(projectsDir, project));
+	}
+	writeFileSync(path.join(projectsDir, "page.tsx"), "export {};\n");
 	writeFileSync(
 		path.join(featuresDir, "README.md"),
 		[
@@ -31,6 +40,10 @@ function writeFixture({
 			"## Features",
 			"",
 			...indexEntries.map((name) => `- [${name}](./${name}.md)`),
+			"",
+			"## Uncovered projects",
+			"",
+			...uncoveredLines,
 			"",
 		].join("\n"),
 	);
@@ -44,10 +57,19 @@ function writeFixture({
 			appPages: {
 				pages: routes.map((routePath) => ({ routePath })),
 			},
-			components: { categories: [] },
+			components: {
+				categories: catalogProjects.length === 0 ? [] : [{
+					category: "projects",
+					entries: catalogProjects.map((slug) => ({
+						category: "projects",
+						importPath: `@/components/projects/${slug}`,
+						slug,
+					})),
+				}],
+			},
 		})}\n`,
 	);
-	return { featuresDir, repoMapPath, root };
+	return { featuresDir, projectsDir, repoMapPath, root };
 }
 
 function feature({ id = "fixture-open", route = "/studio", sections = REQUIRED_SECTIONS } = {}) {
@@ -171,6 +193,87 @@ test("accepts concrete URLs matched by generated dynamic route patterns", () => 
 	}
 });
 
+test("rejects a project directory that no recipe covers and the index does not list", () => {
+	const fixture = writeFixture({
+		features: { studio: feature() },
+		projects: ["alpha", "studio"],
+		routes: ["/", "/alpha", "/studio"],
+	});
+	try {
+		const report = verifyFeatureMap(fixture);
+		assert.equal(report.ok, false);
+		assert.deepEqual(report.failures.map((failure) => [failure.file, failure.type]), [
+			["components/projects/alpha", "project-coverage-missing"],
+		]);
+		assert.match(report.failures[0].message, /\/alpha, \/preview\/projects\/alpha/u);
+		assert.match(report.failures[0].message, /## Uncovered projects in README\.md/u);
+		assert.deepEqual(report.projects.covered, ["studio"]);
+	} finally {
+		rmSync(fixture.root, { force: true, recursive: true });
+	}
+});
+
+test("accepts projects covered through a dynamic route or listed as uncovered with a reason", () => {
+	const fixture = writeFixture({
+		features: { studio: feature() },
+		projects: ["alpha", "shared", "studio"],
+		catalogProjects: ["alpha", "studio"],
+		routes: ["/", "/studio/[[...id]]"],
+		uncoveredLines: ["- `alpha`: Needs a backend-gated recipe."],
+	});
+	try {
+		const report = verifyFeatureMap(fixture);
+		assert.deepEqual(report.failures, []);
+		assert.equal(report.ok, true);
+		assert.deepEqual(report.projects, {
+			covered: ["studio"],
+			excluded: ["shared"],
+			uncovered: ["alpha"],
+		});
+	} finally {
+		rmSync(fixture.root, { force: true, recursive: true });
+	}
+});
+
+test("rejects stale uncovered entries for covered, deleted, or library projects and reason-less entries", () => {
+	const fixture = writeFixture({
+		features: { studio: feature() },
+		projects: ["beta", "studio"],
+		uncoveredLines: [
+			"- `studio`: Was uncovered before its recipe landed.",
+			"- `gone`: Deleted project.",
+			"- `shared`: Library code.",
+			"- `beta`",
+		],
+	});
+	try {
+		const report = verifyFeatureMap(fixture);
+		assert.equal(report.ok, false);
+		assert.deepEqual(report.failures.map((failure) => failure.type), [
+			"uncovered-project-stale",
+			"uncovered-project-stale",
+			"uncovered-project-stale",
+			"uncovered-project-reason-missing",
+		]);
+		assert.match(report.failures[0].message, /studio is now covered by studio\.md/u);
+		assert.match(report.failures[1].message, /gone is not a project directory/u);
+		assert.match(report.failures[2].message, /shared is not a project directory/u);
+		assert.match(report.failures[3].message, /beta needs a one-line reason/u);
+	} finally {
+		rmSync(fixture.root, { force: true, recursive: true });
+	}
+});
+
+test("rejects a library exclusion that gains a projects catalog entry", () => {
+	const fixture = writeFixture({ catalogProjects: ["shared"], projects: ["shared"] });
+	try {
+		const report = verifyFeatureMap(fixture);
+		assert.deepEqual(report.failures.map((failure) => failure.type), ["project-exclusion-invalid"]);
+	} finally {
+		rmSync(fixture.root, { force: true, recursive: true });
+	}
+});
+
 test("repository validation gates run the feature-map verifier", () => {
 	const repoRoot = path.resolve(__dirname, "../../../..");
 	const packageJson = require(path.join(repoRoot, "package.json"));
@@ -178,6 +281,8 @@ test("repository validation gates run the feature-map verifier", () => {
 		packageJson.scripts["verify:vpk-feature-map"],
 		"node .agents/skills/vpk-verify/scripts/verify-feature-map.js",
 	);
-	assert.match(packageJson.scripts["validate:local"], /verify:vpk-feature-map/u);
-	assert.match(packageJson.scripts["ci:pr"], /verify:vpk-feature-map/u);
+	const { gateRunsScript } = require(path.join(repoRoot, "scripts/lib/package-gates.js"));
+	for (const gate of ["validate:local", "ci:pr"]) {
+		assert.ok(gateRunsScript(packageJson.scripts, gate, "verify:vpk-feature-map"), `${gate} must run verify:vpk-feature-map`);
+	}
 });

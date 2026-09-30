@@ -5,6 +5,8 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
+const { gateRunsScript } = require("./lib/package-gates.js");
+
 const {
 	buildUpdatedAllowlist,
 	collectForbiddenImportViolationsFromSource,
@@ -456,8 +458,9 @@ test("package scripts expose the source guardrail verifier", () => {
 	const packageJson = JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8"));
 
 	assert.equal(packageJson.scripts["verify:source-guardrails"], "node scripts/verify-source-guardrails.js");
-	assert.match(packageJson.scripts["validate:local"], /corepack pnpm run verify:source-guardrails/u);
-	assert.match(packageJson.scripts["ci:pr"], /pnpm run verify:source-guardrails/u);
+	for (const gate of ["validate:local", "ci:pr", "verify:fast"]) {
+		assert.ok(gateRunsScript(packageJson.scripts, gate, "verify:source-guardrails"), `${gate} must run verify:source-guardrails`);
+	}
 });
 
 test("recognizes configured source extensions", () => {

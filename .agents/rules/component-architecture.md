@@ -1,5 +1,11 @@
 ---
 description: Component architecture patterns — Context State/Actions/Meta, compound components, CVA variants
+paths:
+  - "components/**"
+  - "app/**/*.tsx"
+  - "hooks/**"
+  - "eslint.config.mjs"
+  - "scripts/eslint-boundary-rules.test.js"
 ---
 
 # Component Architecture
@@ -16,9 +22,13 @@ Quick rules:
   `components/projects/shared/**` owners must not import an experimental
   variant. Move reusable behavior behind a shared model or require an explicit
   capability at the feature boundary.
+- Layers import downward only (lint-enforced): `ui` → `ui-custom` → `blocks`
+  → `projects`. Blocks may use `projects/shared` and `projects/rovo-core`;
+  numbered `experimental-v*` work-item variants belong to their projects.
 - Render an interactive affordance only when its consumer supplies the real
   capability. Missing callbacks must produce display-only, disabled, or omitted
-  UI, never an enabled control backed by an optional call or no-op handler.
+  UI, never an enabled control backed by an optional call or no-op handler
+  (lint rejects empty `on*={() => {}}` handlers).
   Register advertised drop targets with the owning transaction, and cover both
   capability-present and capability-absent behavior in focused tests.
 
@@ -60,8 +70,10 @@ interface BadgeProps extends React.ComponentProps<"span">, VariantProps<typeof b
 
 `eslint.config.mjs` owns the `@shadcn/lint` policy. The initial `no-restyle`
 pilot covers Button and Badge consumers in Team EU26 and Agent Session
-Column. Other primitives and features remain outside enforcement until
-their customization is reviewed. Primitive implementations under
+Column. One repo-wide contract enforces established policy: overlay
+`*Content` surfaces may not add border/ring widths (`overlaySurfaceContract`).
+Other primitives and features remain outside enforcement until their
+customization is reviewed. Primitive implementations under
 `components/ui/**` own their styling and are exempt from `no-restyle`.
 
 After correcting UI misuse or incorporating user feedback:
@@ -79,6 +91,11 @@ After correcting UI misuse or incorporating user feedback:
   policy edit. Button owns appearance, padding, radius, and height; callers
   may control placement and width. Containers may deliberately allow
   padding, typography, or geometry after review.
+- To enforce a rule that already has violations, make it an `error` and
+  baseline the existing ones with `eslint <paths> --suppress-rule <rule-id>`.
+  `eslint-suppressions.json` is a debt ledger: `verify:eslint-suppressions`
+  fails when any rule's suppressed total grows, and `pnpm run lint --
+  --prune-suppressions` records fixed debt.
 - Never weaken a rule, broaden an allowance, or suppress a finding merely
   to make an implementation pass. A legitimate exception must identify its
   owner, scope, and design reason. Preserve reference geometry, ADS font

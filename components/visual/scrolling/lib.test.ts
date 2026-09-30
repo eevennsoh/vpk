@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { fanOffset, fanOpacity, focusRevealOffset, isKeyboardFocus, shouldCaptureWheel, wheelDeltaPx, FAN_OPACITY_INPUT, FAN_OPACITY_OUTPUT } from "./lib.ts";
 
 const NON_FINITE = [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, undefined];

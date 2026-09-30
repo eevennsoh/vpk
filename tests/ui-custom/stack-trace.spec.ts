@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const STACK_TRACE_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/components/ui-custom/stack-trace`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const STACK_TRACE_URL = appUrl("/components/ui-custom/stack-trace");
 
 test("stack trace main preview renders parsed frames under the header", async ({
 	page,

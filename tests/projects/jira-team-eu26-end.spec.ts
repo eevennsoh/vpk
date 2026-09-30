@@ -1,8 +1,8 @@
-import { execFileSync } from "node:child_process";
 import { expect, test, type Page } from "@playwright/test";
 
-const origin = (process.env.PLAYWRIGHT_BASE_URL
-	?? execFileSync(process.execPath, [".agents/skills/vpk-verify/scripts/control-vpk", "url"], { encoding: "utf8" }).trim()).replace(/\/$/u, "");
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 const storySections = [

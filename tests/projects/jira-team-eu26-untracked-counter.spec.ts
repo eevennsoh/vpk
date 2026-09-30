@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const JIRA_TEAM_EU26_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/jira-team-eu26";
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");
 
 async function getUntrackedSessionCount(page: Page): Promise<number> {
 	const label = await page.getByLabel(/^Unlink sessions,/u).getAttribute("aria-label");

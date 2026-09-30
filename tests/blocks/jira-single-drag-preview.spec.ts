@@ -1,5 +1,7 @@
 import { expect, test, type Locator } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 
 async function waitForIssueSurfaceGeometry(surface: Locator) {
@@ -21,7 +23,7 @@ async function waitForIssueSurfaceGeometry(surface: Locator) {
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`native card preview leaves all rounded corner cutouts clear (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await page.waitForLoadState("networkidle");
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
@@ -86,7 +88,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		for (const selected of [false, true]) {
 			test(`one ${selected ? "selected" : "unselected"} ${code} previews only its face (${reducedMotion})`, async ({ page }) => {
 				await page.emulateMedia({ reducedMotion });
-				await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+				await page.goto(appUrl("/preview/blocks/jira-dragging"));
 				await page.waitForLoadState("networkidle");
 				const card = page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 				if (selected) await card.click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
@@ -124,7 +126,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`multiple cards show white faces, deck and count (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
 		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 		for (const code of ["PAY-105", "PAY-123"]) await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });

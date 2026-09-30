@@ -2,7 +2,6 @@ import type { JiraLinkingPoint } from "./drop";
 import {
 	createSessionChipDropKeyframes,
 	SESSION_CHIP_DROP_DURATION_MS,
-	// @ts-expect-error Node's strip-types runner requires the explicit .ts extension.
 } from "../jira-dropzone/lib/jira-dropzone-motion.ts";
 
 /** Exact recipe from agentic-jira-board's animateUnattachedSessionDropToCard. */

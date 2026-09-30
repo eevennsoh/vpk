@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { buildHorizontalScrollMaskStyle, buildScrollMaskBlurLayerStyles, buildScrollMaskOverlayStyle, buildScrollMaskStyle, resolveFadeSize, resolveTopFadeSize } from "./lib.ts";
 import { createRequire } from "node:module";
 

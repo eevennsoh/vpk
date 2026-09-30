@@ -92,6 +92,12 @@
 			"target": "\tprojectComponent(\"{targetSlug}\", \"{targetTitle}\"),"
 		},
 		{
+			"file": "app/data/component-manifest.ts",
+			"kind": "line",
+			"source": "export const CATALOG_LIFECYCLE: Readonly<Partial<Record<CatalogKey, ComponentLifecycle>>> = {",
+			"target": "\t\"projects/{targetSlug}\": {\n\t\tbasedOn: \"{sourceSlug}\",\n\t},"
+		},
+		{
 			"end": "\n\t},",
 			"file": "app/data/details/projects.ts",
 			"kind": "block",

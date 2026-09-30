@@ -4,7 +4,6 @@ import test from "node:test";
 import {
 	measureSessionDragChipPointer,
 	sessionDragChipViewportStyle,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./agent-session-drag.ts";
 
 test("the travelling mention chip pins to the viewport while it follows the pointer", () => {

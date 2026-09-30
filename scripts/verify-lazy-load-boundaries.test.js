@@ -4,6 +4,8 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
+const { gateRunsScript } = require("./lib/package-gates.js");
+
 const {
 	DEFAULT_DEFERRED_MODULE_RULES,
 	DEFAULT_ROUTE_SHELL_FILES,
@@ -206,6 +208,7 @@ test("package scripts expose and run the lazy-load verifier", () => {
 	const packageJson = JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8"));
 
 	assert.equal(packageJson.scripts["verify:lazy-load"], "node scripts/verify-lazy-load-boundaries.js");
-	assert.match(packageJson.scripts["validate:local"], /corepack pnpm run verify:lazy-load/u);
-	assert.match(packageJson.scripts["ci:pr"], /pnpm run verify:lazy-load/u);
+	for (const gate of ["validate:local", "ci:pr", "verify:fast"]) {
+		assert.ok(gateRunsScript(packageJson.scripts, gate, "verify:lazy-load"), `${gate} must run verify:lazy-load`);
+	}
 });

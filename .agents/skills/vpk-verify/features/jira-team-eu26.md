@@ -18,6 +18,16 @@ Jira Team EU26 shows the Payments SDK migration in Jira chrome at `/jira-team-eu
 - Open `/components/projects/jira-team-eu26` only for the project's documentation.
 - The embedded preview `/preview/projects/jira-team-eu26?embedded=1` is a separate entry path; report it separately if the task requests it.
 
+### State entry
+
+`?variants=` (see the index) reaches every Settings **Properties** state on this route without clicking Settings. The Properties checkboxes show the forced values.
+
+- `/jira-team-eu26?variants=autoArrange` forces Auto arrange on: selecting cards shows the selection toolbar with an `Auto arrange` button (named `Preparing auto arrange` until it is ready; shortcut `A`). With it off (the default), the toolbar has no Auto arrange button.
+- `/jira-team-eu26?variants=advancedTimeline` enables Advanced timeline for `eu26-pin` without the Settings step.
+- `/jira-team-eu26?variants=sessionPeel` and `/jira-team-eu26?variants=-sessionPeel` set Peel visual on or off for `eu26-drag`.
+- The other ids offered here are `kanbanBackground`, `agentSessionColumnResizing` (Dragging), `manualLink`, `sessionStroke`, `sessionBloom` (Card glow), `sessionProximity` and `moveVisual`. Combine them with commas, e.g. `/jira-team-eu26?variants=autoArrange,-sessionPeel`.
+- Capture one directly with `control-vpk capture /jira-team-eu26 --variant autoArrange --id eu26-auto-arrange`.
+
 ## Driving it with control-vpk
 
 Preconditions:
@@ -28,7 +38,7 @@ Preconditions:
 
 - **Open and identify.** Run `control-vpk open-target /jira-team-eu26 --headed`, then `control-vpk browser wait --text "Jira Design"`. Confirm `control-vpk browser get url` is the project route on `ORIGIN`; snapshot with `control-vpk browser snapshot -i --compact --depth 8`. The visible session header is `Unlinked agent sessions`, while the region and controls retain `Unlink sessions`.
 - **Board/List.** Run `control-vpk browser find role tab click --name List`; region `Payments SDK v2 migration work items list` appears. Return with `control-vpk browser find role tab click --name Board`. Preserve the session column and selection; do not look for v3's chapter gallery or Reset.
-- **Settings.** Run `control-vpk browser find role button click --name Settings`, then snapshot. Unmodified defaults are Advanced timeline, Dragging and Manual link off, Card glow and Peel visual on; sidebar starts collapsed and the session panel expanded. Inspect checked states before clicking a menuitemcheckbox, and close menus with `control-vpk browser press Escape`. Dragging enables column width resizing; it is not proof that card dragging is disabled.
+- **Settings.** Run `control-vpk browser find role button click --name Settings`, then snapshot. Unmodified defaults (`DEFAULT_DESIGN_VARIANTS` in `components/utils/design-variants.ts`) are Advanced timeline, Manual link and Peel visual off, Dragging and Card glow on; sidebar starts collapsed and the session panel expanded. Inspect checked states before clicking a menuitemcheckbox, and close menus with `control-vpk browser press Escape`. Dragging enables column width resizing; it is not proof that card dragging is disabled.
 - **Needs input.** Run `control-vpk browser click "button[aria-label^='Needs input:']"`, snapshot, and record the actual session count and filter state. Counts change with the finite arrival/lifecycle queue; do not hardcode an early count after it settles. Click the same control again to restore the prior filter.
 - **Empty then populated.** When a real user filter produces region `Unlink sessions, 0 sessions`, capture the automatic collapsed pill with vertical `0` / `Unlink sessions`. Run `control-vpk browser find role button click --name "Expand Unlink sessions column"`; `No sessions to unlink` appears. Clear the filter with its visible control to restore sessions, then run `control-vpk browser find role button click --name "Collapse Unlink sessions column"` and capture the populated rail. Expand again before continuing. If the current fixture cannot produce zero through its controls, report this path as unexercised; do not fabricate data or use a nonzero count as empty proof.
 - **Pin/unpin (Advanced timeline).** In Settings, enable `Advanced timeline` only if unchecked. After closing Settings, if the column is expanded run `control-vpk browser find role button click --name "Collapse Unlink sessions column"` first. For a hidden gutter, reveal its hit area with `control-vpk browser hover "[data-agent-session-column-hit-area]"`. Then run `control-vpk browser find role button click --name "Unlink sessions column options"`, snapshot, and choose the currently offered `Pin` or `Unpin` menuitem with `control-vpk browser find role menuitem click --name Pin` (or `Unpin`). Reopen options to reverse the action. Confirm column placement and focus; the default panel does not expose the advanced gutter's pin behavior. Restore Advanced timeline afterward.

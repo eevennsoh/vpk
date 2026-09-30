@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const PAGE_HEADER_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/components/ui/page-header`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const PAGE_HEADER_URL = appUrl("/components/ui/page-header");
 
 test("page headers fill flex preview containers without squashing content", async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
