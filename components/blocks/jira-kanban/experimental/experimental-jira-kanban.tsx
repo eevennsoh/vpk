@@ -58,7 +58,7 @@ import { useBoardAutoArrange } from "./hooks/use-board-auto-arrange";
 import { useBoardCardRemoval } from "./hooks/use-board-card-removal";
 import { useBoardIssuePointerDrag } from "./hooks/use-board-issue-pointer-drag";
 import { BoardAutoArrangeAction, BoardAutoArrangeBadge } from "./components/board-auto-arrange";
-import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
+import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE, JIRA_KANBAN_CARD_REFLOW } from "./lib/card-motion";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	resolveBoardColumnShellSizing,
@@ -182,6 +182,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	onCardAgentSessionMove?: (session: JiraIssueAgentSessionRef, sourceCard: JiraKanbanCardData, targetCard: JiraKanbanCardData, sourceColumnTitle: string, targetColumnTitle: string) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	/** Explicit space pins use the board's agent catalog in card pickers. */
+	cardGenerativeActionPinnedAgentIds?: readonly string[];
 	/** Route-owned per-card Archive/Delete actions. */ cardMoreMenuActions?: JiraKanbanCardMoreMenuActions;
 	/** Commits a toolbar deletion as one transaction after its cards exit. */
 	onCardsRemove?: (cardCodes: readonly string[]) => void;
@@ -409,6 +411,7 @@ function ExperimentalJiraKanbanView({
 	scrollEndInset = 0,
 	boardColumns,
 	cardGenerativeActionPresentation = "sparkle",
+	cardGenerativeActionPinnedAgentIds,
 	cardGenerativeActionFooterActions, cardMoreMenuActions, onCardsRemove,
 	cardMoveAnimation,
 	iconScale = "compact",
@@ -532,19 +535,26 @@ function ExperimentalJiraKanbanView({
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
 		: null;
+	const cardPickerAgents = cardGenerativeActionPinnedAgentIds !== undefined ? agents : selectionToolbar?.agents;
 	const generativeActionAgents = useMemo(
-		() => selectionToolbar?.agents
+		() => cardPickerAgents
 			? getMentionChildItems(
 					{
 						subagent: orderPickerItems(
-							selectionToolbar.agents,
-							selectionToolbar.defaultPinnedAgentIds,
-						).map(mapAgentToMentionItem),
+							cardPickerAgents,
+							cardGenerativeActionPinnedAgentIds ?? selectionToolbar?.defaultPinnedAgentIds,
+						).map((agent) => {
+							const item = mapAgentToMentionItem(agent);
+							return agent.avatarSrc ? {
+								...item,
+								visual: { kind: "avatar" as const, shape: "hexagon" as const, src: agent.avatarSrc },
+							} : item;
+						}),
 					},
 					"subagent",
 				)
 			: undefined,
-		[selectionToolbar?.agents, selectionToolbar?.defaultPinnedAgentIds],
+		[cardPickerAgents, cardGenerativeActionPinnedAgentIds, selectionToolbar?.defaultPinnedAgentIds],
 	);
 	const generativeActionSkills = useMemo(
 		() => selectionToolbar?.skills
@@ -886,9 +896,9 @@ function ExperimentalJiraKanbanView({
 												key={card.code}
 												joinsPrevious={selectionBackdrop === "middle" || selectionBackdrop === "end"}
 												positionMotion={{
-													layout: shouldAnimateCardLayout ? "position" : false,
-													layoutId: shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined,
-													transition: shouldAnimateCardPosition ? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT,
+													layout: shouldAnimateCardLayout && !issueDropArrival.isReflowing ? "position" : false,
+													layoutId: shouldAnimateCardPosition && !issueDropArrival.isReflowing ? `jira-kanban-card-${card.code}` : undefined,
+													transition: issueDropArrival.isReflowing ? JIRA_KANBAN_CARD_REFLOW : shouldAnimateCardPosition ? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT,
 												}}
 												arrival={presentedCardArrival?.columnTitle === column.title
 													? presentedCardArrival
@@ -930,6 +940,7 @@ function ExperimentalJiraKanbanView({
 													detachedSessionDrag={detachedSessionDragBinding}
 												dragging={isCardBeingDragged || isSelectedCardBeingDragged}
 												generativeActionAgents={generativeActionAgents}
+												generativeActionPinnedAgentIds={cardGenerativeActionPinnedAgentIds}
 												generativeActionFooterActions={cardGenerativeActionFooterActions}
 												generativeActionPresentation={cardGenerativeActionPresentation}
 												generativeActionSkills={generativeActionSkills}

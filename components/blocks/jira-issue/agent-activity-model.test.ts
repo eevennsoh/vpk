@@ -4,6 +4,14 @@ import test from "node:test";
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { groupJiraIssueAgentActivityRows, resolveRelatedJiraIssueAgentActivityMode, summarizeJiraIssueAgentActivities } from "./agent-activity-model.ts";
 
+test("session lifecycle transitions retain the same row identity when completed", () => {
+	const activity = { id: "review-session", state: "working", stateTransition: "agent-session" } as const;
+	const before = groupJiraIssueAgentActivityRows([activity], "merged");
+	const after = groupJiraIssueAgentActivityRows([{ ...activity, state: "completed" }], "merged");
+	assert.equal(before[0].key, activity.id);
+	assert.equal(after[0].key, before[0].key);
+});
+
 test("single working agent uses the direct Working label", () => {
 	assert.deepEqual(
 		summarizeJiraIssueAgentActivities([{ state: "working" }]),

@@ -25,10 +25,10 @@ interface JiraIssueGlowRoots {
 	haloRoot: Element | null;
 }
 
-function resolveJiraIssueGlowRoots(anchor: Readonly<{ x: number; y: number }>): JiraIssueGlowRoots {
+function resolveJiraIssueGlowRoots(anchor: Readonly<{ x: number; y: number }>, targetElement?: Element | null): JiraIssueGlowRoots {
 	if (typeof document === "undefined") return { backdropRoot: null, haloRoot: null };
-	const hit = document.elementFromPoint(anchor.x, anchor.y);
-	const shell = hit?.closest(JIRA_ISSUE_AGENT_SHELL_SELECTOR);
+	const hit = targetElement === undefined ? document.elementFromPoint(anchor.x, anchor.y) : targetElement;
+	const shell = hit?.closest(JIRA_ISSUE_AGENT_SHELL_SELECTOR) ?? hit?.querySelector(JIRA_ISSUE_AGENT_SHELL_SELECTOR);
 	return {
 		backdropRoot: shell?.querySelector(JIRA_ISSUE_AGENT_BACKDROP_SELECTOR) ?? null,
 		haloRoot: shell?.querySelector(JIRA_ISSUE_SURFACE_SELECTOR) ?? null,
@@ -71,7 +71,7 @@ export function JiraLinkingGlow({ identities, release, onFuseSettled, zIndex = 2
 			lastReleaseId.current = release.id;
 			const backdrop = release.resolveTarget?.() ?? release.fromTarget ?? release.target;
 			const roots = backdrop
-				? resolveJiraIssueGlowRoots(backdrop.anchor)
+				? resolveJiraIssueGlowRoots(backdrop.anchor, release.resolveTargetElement?.())
 				: { backdropRoot: null, haloRoot: null };
 			const leadIdentity = identities?.[0];
 			setSnapshot({
@@ -125,6 +125,7 @@ function GlowRelease({ backdropRoot, glowColor, haloRoot, portalRoot, release, s
 	const landing = release.target;
 	const drop = release.drop;
 	const resolveTarget = release.resolveTarget;
+	const resolveTargetElement = release.resolveTargetElement;
 
 	useLayoutEffect(() => {
 		if (shouldReduceMotion || !landing || !backdrop) {
@@ -139,20 +140,34 @@ function GlowRelease({ backdropRoot, glowColor, haloRoot, portalRoot, release, s
 			return;
 		}
 		let cancelled = false;
+		let revealFrame: number | undefined;
 		let effects: JiraCardGlowEffect[] = [];
 		const finish = () => {
 			if (!cancelled) onComplete(release.id);
 		};
 		const playGlow = () => {
 			if (cancelled) return;
+			const targetElement = resolveTargetElement?.();
+			if (targetElement?.closest("[data-issue-drop-reveal-pending]")) {
+				revealFrame = requestAnimationFrame(playGlow);
+				return;
+			}
+			const roots = resolveTargetElement
+				? resolveJiraIssueGlowRoots(landing.anchor, targetElement)
+				: { haloRoot, backdropRoot };
+			if (resolveTargetElement && !roots.haloRoot) {
+				onSettled(release.id);
+				finish();
+				return;
+			}
 			if (flight) {
 				flight.style.visibility = "hidden";
 			}
 			effects = createJiraLinkingCardGlow({
-				haloRoot: haloRoot ?? portalRoot,
-				backdropRoot,
+				haloRoot: roots.haloRoot ?? portalRoot,
+				backdropRoot: roots.backdropRoot,
 				color: glowColor,
-				fallbackStyle: haloRoot ? undefined : {
+				fallbackStyle: roots.haloRoot ? undefined : {
 					position: "fixed", left: `${landing.anchor.x - landing.width / 2}px`, top: `${landing.anchor.y - landing.height / 2}px`,
 					width: `${landing.width}px`, height: `${landing.height}px`, borderRadius: `${landing.radius ?? 8}px`, zIndex: String(zIndex),
 				},
@@ -174,6 +189,7 @@ function GlowRelease({ backdropRoot, glowColor, haloRoot, portalRoot, release, s
 		if (!stopFlight) playGlow();
 		return () => {
 			cancelled = true;
+			if (revealFrame !== undefined) cancelAnimationFrame(revealFrame);
 			stopFlight?.();
 			for (const effect of effects) {
 				effect.animation.onfinish = null;
@@ -182,7 +198,7 @@ function GlowRelease({ backdropRoot, glowColor, haloRoot, portalRoot, release, s
 				effect.restore();
 			}
 		};
-	}, [backdrop, backdropRoot, drop, glowColor, haloRoot, landing, onComplete, onSettled, portalRoot, release.id, resolveTarget, shouldReduceMotion, zIndex]);
+	}, [backdrop, backdropRoot, drop, glowColor, haloRoot, landing, onComplete, onSettled, portalRoot, release.id, resolveTarget, resolveTargetElement, shouldReduceMotion, zIndex]);
 
 	if (shouldReduceMotion || !backdrop || !landing) return null;
 	return drop ? <JiraLinkingFlightChip drop={drop} ref={flightRef} portalRoot={portalRoot} zIndex={zIndex + 110} /> : null;

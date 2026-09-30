@@ -175,6 +175,7 @@ function ExperimentalJiraKanbanPageContent({
 	agentSessionMembers = PULSE_TIMELINE.members,
 	agentActivityLayout,
 	cardGenerativeActionFooterActions,
+	cardGenerativeActionPinnedAgentIds,
 	cardGenerativeActionPresentation, iconScale,
 	showPriorityIndicator,
 	createWellBounce = "once",
@@ -202,7 +203,7 @@ function ExperimentalJiraKanbanPageContent({
 	boardColumns: controlledBoardColumns,
 	columnChrome, columnSizing, columnWidth, boardAvatar, boardTitle,
 	compactHeader = false,
-	headerAssignees, showUnassignedHeaderAvatar, renderHeaderAssignee,
+	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee,
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
@@ -821,6 +822,7 @@ function ExperimentalJiraKanbanPageContent({
 			<ExperimentalJiraKanbanBoardHeader avatar={boardAvatar} title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
 				activeView={activeView} renderHeaderAssignee={renderHeaderAssignee}
 				assignees={assignees}
+				avatarLimit={headerAvatarLimit}
 				compact={compactHeader}
 				controlsInsetEnd={boardScrollEndInset}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
@@ -953,6 +955,7 @@ function ExperimentalJiraKanbanPageContent({
 								assignedAgentIdsByColumn={columnAgentAssignments}
 								boardColumns={filteredBoardColumns}
 								cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
+								cardGenerativeActionPinnedAgentIds={cardGenerativeActionPinnedAgentIds}
 								cardMoreMenuActions={issueSelectionAppearance === "fused-backdrop" && (controlledBoardColumns === undefined || onBoardColumnsChange)
 									? { onArchive: handleCardRemove, onDelete: handleCardRemove }
 									: undefined}

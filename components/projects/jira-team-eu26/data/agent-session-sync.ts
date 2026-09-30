@@ -728,6 +728,18 @@ export const JIRA_TEAM_EU26_SYNC_SESSIONS = JIRA_TEAM_EU26_SYNC_SESSION_SOURCE.m
 	},
 ) satisfies readonly JiraTeamEu26SyncSession[];
 
+export interface JiraTeamEu26AgentSessionSyncSource {
+	readonly sessions: readonly PulseAgentSession[];
+	readonly seedOverrides: ReadonlyMap<string, PulseAgentSession>;
+	readonly cohortById: ReadonlyMap<string, JiraTeamEu26SessionCohort>;
+}
+
+export const JIRA_TEAM_EU26_DEFAULT_SYNC_SOURCE: JiraTeamEu26AgentSessionSyncSource = {
+	sessions: JIRA_TEAM_EU26_SYNC_SESSIONS,
+	seedOverrides: JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES,
+	cohortById: JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID,
+};
+
 export function getJiraTeamEu26SyncDelayMs(
 	nextIndex: number,
 	random: () => number = Math.random,
@@ -761,6 +773,7 @@ export function advanceJiraTeamEu26SyncSession(
 	sessions: readonly JiraTeamEu26SyncSession[],
 	stateChangeVersions: ReadonlyMap<string, number>,
 	sessionId: string,
+	cohortById: ReadonlyMap<string, JiraTeamEu26SessionCohort> = JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID,
 ): Readonly<{
 	sessions: readonly JiraTeamEu26SyncSession[];
 	stateChangeVersions: ReadonlyMap<string, number>;
@@ -768,7 +781,7 @@ export function advanceJiraTeamEu26SyncSession(
 }> {
 	const sessionIndex = sessions.findIndex((session) => session.id === sessionId);
 	const session = sessions[sessionIndex];
-	const cohort = JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID.get(sessionId);
+	const cohort = cohortById.get(sessionId);
 	if (
 		(cohort !== "needs-input-terminal" && cohort !== "full-path")
 		|| (session?.state !== "running" && session?.state !== "needs-input")
@@ -805,14 +818,15 @@ export function advanceJiraTeamEu26SyncSession(
 export function takeJiraTeamEu26SyncBatch(
 	nextIndex: number,
 	random: () => number = Math.random,
+	availableSessions: readonly PulseAgentSession[] = JIRA_TEAM_EU26_SYNC_SESSIONS,
 ): Readonly<{
 	nextIndex: number;
 	sessions: readonly JiraTeamEu26SyncSession[];
 }> {
 	const batchSize = 1 + Math.min(2, Math.floor(random() * 3));
 	const nextBreak = SYNC_BREAK_AFTER_SESSION_COUNTS.find((count) => count > nextIndex)
-		?? JIRA_TEAM_EU26_SYNC_SESSIONS.length;
-	const sessions = JIRA_TEAM_EU26_SYNC_SESSIONS.slice(
+		?? availableSessions.length;
+	const sessions = availableSessions.slice(
 		nextIndex,
 		Math.min(nextIndex + batchSize, nextBreak),
 	);

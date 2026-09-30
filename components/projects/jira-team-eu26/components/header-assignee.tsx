@@ -1,7 +1,7 @@
 "use client";
 
 import type { HeaderAssigneeRenderContext } from "@/components/blocks/jira-kanban/experimental/experimental-board-header";
-import { AGENT_LANYARD_AGENTS, AGENT_LANYARD_FIRST_PARTY_AGENTS } from "@/components/blocks/agent-lanyard";
+import { AGENT_LANYARD_AGENTS, AGENT_LANYARD_FIRST_PARTY_AGENTS, type AgentLanyardAgent } from "@/components/blocks/agent-lanyard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,10 +11,20 @@ import { useHeaderLanyardHandle } from "./header-lanyards";
 const CLAUDE = AGENT_LANYARD_AGENTS.find((agent) => agent.id === "claude")!;
 const CURSOR = AGENT_LANYARD_AGENTS.find((agent) => agent.id === "cursor")!;
 const JIRA_CODING = AGENT_LANYARD_FIRST_PARTY_AGENTS.find((agent) => agent.id === "jira-coding")!;
+const FIGMA: AgentLanyardAgent = {
+	id: "figma",
+	name: "Figma",
+	publisher: "Figma",
+	description: "Collaborate on checkout designs with the Figma agent.",
+	avatarSrc: "/3p/figma/32.svg",
+	action: "chat",
+};
 const HEADER_AGENTS = new Map([
 	["claude-code", CLAUDE],
 	["review-agent", JIRA_CODING],
 	["test-agent", CURSOR],
+	...AGENT_LANYARD_AGENTS.map((agent) => [`wac-${agent.id}`, agent] as const),
+	["wac-figma", FIGMA],
 ]);
 
 export function renderEu26HeaderAssignee(context: HeaderAssigneeRenderContext) {

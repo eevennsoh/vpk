@@ -309,6 +309,26 @@ export function applyAssignedAgentIdsToColumns(
 		: nextColumns;
 }
 
+/** The shared move request is planned from the actual domain update. */
+export function getJiraTeamEu26CardMove(
+	columns: readonly JiraKanbanColumnData[],
+	next: readonly JiraKanbanColumnData[],
+	issueKey: string,
+) {
+	const source = columns.find((column) => column.cards.some((card) => card.code === issueKey));
+	if (!source) return undefined;
+	const destination = next.find((column) => column.cards.some((card) => card.code === issueKey));
+	if (!destination || destination.title === source.title) return undefined;
+	return {
+		cardCodes: [issueKey],
+		columnTitle: destination.title,
+		target: {
+			status: destination.title,
+			beforeCardCode: destination.cards.find((card) => card.code !== issueKey)?.code ?? null,
+		},
+	};
+}
+
 function createListRow(
 	card: JiraKanbanCardData,
 	columnTitle: string,

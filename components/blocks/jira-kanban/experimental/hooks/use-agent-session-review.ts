@@ -11,6 +11,12 @@ export function useAgentSessionReview(
 ) {
 	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultCollapsed);
 	const [untrackedHoveredSession, setUntrackedHoveredSession] = useState<AgentSessionItem | null>(null);
+	const [previousDefaultCollapsed, setPreviousDefaultCollapsed] = useState(defaultCollapsed);
+	// A content preset can change the starting state without remounting the board.
+	if (previousDefaultCollapsed !== defaultCollapsed) {
+		setPreviousDefaultCollapsed(defaultCollapsed);
+		setAgentSessionColumnCollapsed(defaultCollapsed);
+	}
 	const handleUntrackedItemHover = useCallback((item: AgentSessionItem | null) => {
 		if (suggestSessionBoardLinkOnHover) {
 			setUntrackedHoveredSession(item);
