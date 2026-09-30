@@ -177,7 +177,7 @@ test("assignment arrivals retain their face reveal without a trace or a duplicat
 	assert.equal(h.nodes.some((node) => "data-issue-drop-trace" in node.attributes), false);
 	assert.equal(h.nodes.some((node) => "data-jira-linking-glow-halo" in node.attributes), false);
 	assert.equal(h.animations.length, 1);
-	assert.deepEqual(JSON.parse(JSON.stringify(h.animations[0].keyframes)), [{ opacity: 0 }, { opacity: 1 }]);
+	assert.deepEqual(structuredClone(h.animations[0].keyframes), [{ opacity: 0 }, { opacity: 1 }]);
 	h.animations[0].onfinish();
 	assert.equal(h.complete(), 1);
 	assert.equal(h.issues[0].parentElement.inert, false);
