@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const { readFileSync } = require("node:fs");
 const { test } = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
@@ -24,6 +25,17 @@ async function load() {
 	});
 	return loadCjsModuleFromText(result.outputFiles[0].text, "finale-confetti-harness.cjs");
 }
+
+test("burst and fade timing compose the resolved VPK duration tokens", async () => {
+	const { FINALE_CONFETTI_DURATION, createFinaleConfettiBurst } = await load();
+	const css = readFileSync("app/tailwind-theme.css", "utf8");
+	const seconds = name => Number(css.match(new RegExp(`--duration-${name}:\\s*(\\d+)ms`))[1]) / 1000;
+	assert.equal(FINALE_CONFETTI_DURATION, seconds("slowest") * 2);
+	const opacity = createFinaleConfettiBurst(900, () => 0.5)[0].keyframes.opacity;
+	const steps = opacity.length - 1;
+	const fadeDuration = (FINALE_CONFETTI_DURATION / steps) / opacity.at(-2);
+	assert.ok(Math.abs(fadeDuration - seconds("slower") * 2) < 1e-12);
+});
 
 test("one burst mirrors both corners, uses only the four Rovo colours, and fades every piece to zero", async () => {
 	const { createFinaleConfettiBurst } = await load();

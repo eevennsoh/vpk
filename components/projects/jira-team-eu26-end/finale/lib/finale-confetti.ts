@@ -5,8 +5,14 @@ import { FLASH_ROVO_COLORS } from "./finale-column-flash";
  * Physics derived from canvas-confetti, Copyright (c) 2020 Kiril Vatev, ISC.
  * Precomputed transform/opacity keyframes keep the burst off React's frame loop.
  */
-export const FINALE_CONFETTI_DURATION = 1.2;
-const FADE_DURATION = 0.8; // Two duration-slower beats, starting early without extending the handoff.
+// Motion accepts seconds, so use the resolved VPK duration values. The token
+// contract test checks these against app/tailwind-theme.css to prevent drift.
+const MOTION_DURATION = {
+	slower: 0.4, // --duration-slower (motion.duration.xlong)
+	slowest: 0.6, // --duration-slowest (motion.duration.xxlong)
+} as const;
+export const FINALE_CONFETTI_DURATION = MOTION_DURATION.slowest * 2;
+const FADE_DURATION = MOTION_DURATION.slower * 2;
 const PARTICLES_PER_CORNER = 180;
 const STEPS = 40;
 const SHAPES = ["circle", "rect", "rect", "strip", "strip"] as const;
