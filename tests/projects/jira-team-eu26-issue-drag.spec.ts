@@ -240,7 +240,8 @@ test("EU26 menu Select is keyboard accessible and restores card focus", async ({
 		await expect(menu.getByRole("menuitem", { name: action, exact: true })).toBeEnabled();
 	}
 	const select = menu.getByRole("menuitem", { name: "Select", exact: true });
-	await expect(select).toHaveAttribute("aria-description", "Shift plus click");
+	await expect(select.locator('[data-slot="kbd"]')).toHaveText(["⌘", "Click"]);
+	await expect(select).toHaveAttribute("aria-description", "Command plus click");
 	await page.screenshot({ path: "output/agent-browser/dnd/eu26-card-menu.png" });
 	await select.focus();
 	await page.keyboard.press("Enter");

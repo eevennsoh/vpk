@@ -281,6 +281,21 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(nextConfig, /allowedDevOrigins:\s*\[\s*"127\.0\.2\.2",\s*"localhost"\s*\]/);
 		const tsconfig = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "tsconfig.json"), "utf8"));
 		assert.ok(tsconfig.include.includes(".next/dev/types/**/*.ts"));
+		// Copied helpers use explicit .ts imports so Node can load their tests too.
+		// Exercise the emitted compiler config instead of checking a flag string.
+		const ts = require("typescript");
+		const extensionEntry = path.join(fixture.targetDir, "lib", "extension-entry.ts");
+		writeFile(path.join(fixture.targetDir, "lib", "extension-fixture.ts"), "export const value = 42;\n");
+		writeFile(extensionEntry, 'import { value } from "./extension-fixture.ts";\nexport const copiedValue: number = value;\n');
+		const { options } = ts.convertCompilerOptionsFromJson(tsconfig.compilerOptions, fixture.targetDir);
+		const program = ts.createProgram([extensionEntry], options);
+		assert.deepEqual(
+			program.getSemanticDiagnostics(program.getSourceFile(extensionEntry)).map((diagnostic) => ({
+				code: diagnostic.code,
+				message: ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"),
+			})),
+			[],
+		);
 		assert.match(fs.readFileSync(path.join(fixture.targetDir, ".gitignore"), "utf8"), /^output\/$/m);
 		assert.match(fs.readFileSync(path.join(fixture.targetDir, ".gitignore"), "utf8"), /^backend\/data\/$/m);
 
