@@ -174,6 +174,7 @@ function ExperimentalJiraKanbanPageContent({
 	agentSessionMembers = PULSE_TIMELINE.members,
 	agentActivityLayout,
 	cardGenerativeActionFooterActions,
+	cardGenerativeActionPinnedAgentIds,
 	cardGenerativeActionPresentation, iconScale,
 	showPriorityIndicator,
 	createWellBounce = "once",
@@ -199,9 +200,10 @@ function ExperimentalJiraKanbanPageContent({
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
+	boardFilterScopeKey,
 	columnChrome, columnSizing, columnWidth, boardAvatar, boardTitle,
 	compactHeader = false,
-	headerAssignees, showUnassignedHeaderAvatar, renderHeaderAssignee,
+	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee,
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
@@ -342,7 +344,7 @@ function ExperimentalJiraKanbanPageContent({
 		setDraggedCard(null);
 		setFocusedCollapsedColumns(null);
 	}, []);
-	const boardFilter = useBoardFilter({ onAssigneeChange: resetAssigneeScopedBoardState });
+	const boardFilter = useBoardFilter({ onAssigneeChange: resetAssigneeScopedBoardState, scopeKey: boardFilterScopeKey });
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
 	const [localTimelineLastViewedAt, setLocalTimelineLastViewedAt] = useState<string | null>(() => (
 		insightsEnabled && controlledMode === "pulse"
@@ -820,6 +822,7 @@ function ExperimentalJiraKanbanPageContent({
 			<ExperimentalJiraKanbanBoardHeader avatar={boardAvatar} title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
 				activeView={activeView} renderHeaderAssignee={renderHeaderAssignee}
 				assignees={assignees}
+				avatarLimit={headerAvatarLimit}
 				compact={compactHeader}
 				controlsInsetEnd={boardScrollEndInset}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
@@ -952,6 +955,7 @@ function ExperimentalJiraKanbanPageContent({
 								assignedAgentIdsByColumn={columnAgentAssignments}
 								boardColumns={filteredBoardColumns}
 								cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
+								cardGenerativeActionPinnedAgentIds={cardGenerativeActionPinnedAgentIds}
 								cardMoreMenuActions={issueSelectionAppearance === "fused-backdrop" && (controlledBoardColumns === undefined || onBoardColumnsChange)
 									? { onArchive: handleCardRemove, onDelete: handleCardRemove }
 									: undefined}

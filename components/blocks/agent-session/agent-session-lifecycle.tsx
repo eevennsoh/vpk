@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
@@ -106,11 +106,14 @@ export function AgentSessionShortLifecycleIcon({
 	animateTransition = false,
 	onTransitionComplete,
 	showWorkingSpinner = false,
+	renderGlyph,
 }: Readonly<{
 	accessibleState?: AgentSessionItem["state"];
 	animateTransition?: boolean;
 	onTransitionComplete?: () => void;
 	showWorkingSpinner?: boolean;
+	/** Preserve a consumer's glyph sizes while sharing the exact lifecycle swap. */
+	renderGlyph?: (state: AgentSessionItem["state"]) => ReactNode;
 	state: AgentSessionItem["state"];
 }>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -138,7 +141,7 @@ export function AgentSessionShortLifecycleIcon({
 					style={playMotion ? { willChange: "opacity, transform" } : undefined}
 					transition={playMotion ? INDICATOR_ENTER : { duration: 0 }}
 				>
-					<IndicatorGlyph compact state={state} />
+					{renderGlyph ? renderGlyph(state) : <IndicatorGlyph compact state={state} />}
 				</motion.span>
 			</AnimatePresence>
 		</span>

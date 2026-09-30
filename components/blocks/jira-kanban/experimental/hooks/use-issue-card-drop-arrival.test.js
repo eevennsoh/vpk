@@ -69,8 +69,9 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 			if (name.includes("board-auto-arrange")) return autoModel;
 			if (name.includes("board-card-arrival")) return arrivalModel;
 			if (name.includes("issue-solitaire-drop")) return {
-				animateIssueSolitaireDrop(root, title, codes, reduced, complete) {
-					const reveal = { title, codes: [...codes], reduced, complete, stopped: false };
+				captureIssueCardReflow: () => [],
+				animateIssueSolitaireDrop(root, title, codes, reduced, complete, glowColors, feedback = "trace") {
+					const reveal = { title, codes: [...codes], reduced, complete, feedback, stopped: false };
 					reveals.push(reveal);
 					if (reduced) complete();
 					return () => { reveal.stopped = true; };
@@ -138,6 +139,17 @@ test("manual drops retain their one-cohort-flight contract", () => {
 	assert.equal(h.flights[0].items.length, 1);
 	assert.equal(h.captures[0].allCards, undefined);
 	assertTravellerCascade(api.arrivalForColumn("Review"), "A");
+});
+
+test("assignment moves keep arrival geometry without borrowing manual drop feedback", () => {
+	const h = harness({ withMove: true, solitaire: true, dragged: null, selected: [] });
+	h.api().handleMove({ cardCodes: ["A"], columnTitle: "Review", target: { beforeCardCode: null }, feedback: "none" });
+	h.render();
+	assert.equal(h.reveals[0].feedback, "none");
+	assert.deepEqual(h.reveals[0].codes, ["A"]);
+	const manual = harness({ solitaire: true });
+	manual.drop(); manual.render();
+	assert.equal(manual.reveals[0].feedback, "trace");
 });
 
 test("reduced motion and rejected arrangements never launch flights", () => {

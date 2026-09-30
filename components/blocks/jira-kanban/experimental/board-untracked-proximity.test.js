@@ -371,7 +371,7 @@ test("a hovered detached board session lights its column twin", () => {
 test("Jira cards animate surrounding reflow when a session attach chin opens", () => {
 	assert.match(
 		BOARD_SOURCE,
-		/import \{ JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE \} from "\.\/lib\/card-motion"/u,
+		/import \{ JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE, JIRA_KANBAN_CARD_REFLOW \} from "\.\/lib\/card-motion"/u,
 	);
 	assert.match(
 		BOARD_SOURCE,
@@ -379,7 +379,7 @@ test("Jira cards animate surrounding reflow when a session attach chin opens", (
 	);
 	assert.match(
 		BOARD_SOURCE,
-		/layout: shouldAnimateCardLayout \? "position" : false/u,
+		/layout: shouldAnimateCardLayout && !issueDropArrival\.isReflowing \? "position" : false/u,
 	);
 	assert.doesNotMatch(
 		BOARD_SOURCE,
@@ -387,7 +387,7 @@ test("Jira cards animate surrounding reflow when a session attach chin opens", (
 	);
 	assert.match(
 		BOARD_SOURCE,
-		/transition: shouldAnimateCardPosition \? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT/u,
+		/transition: issueDropArrival\.isReflowing \? JIRA_KANBAN_CARD_REFLOW : shouldAnimateCardPosition \? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT/u,
 	);
 	assert.match(CARD_SOURCE, /parentOwnsLayout/u);
 	assert.match(JIRA_ISSUE_SOURCE, /parentOwnsLayout\?: boolean;/u);

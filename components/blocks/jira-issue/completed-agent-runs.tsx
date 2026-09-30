@@ -11,7 +11,7 @@ import {
 	type AgentListItem,
 	toAgentSessionFlyoutItem,
 } from "@/components/blocks/agent-list";
-import type { JiraIssueAgentActivityIndicatorRenderer } from "@/components/blocks/jira-issue/agent-activity";
+import type { JiraIssueAgentActivity, JiraIssueAgentActivityIndicatorRenderer } from "@/components/blocks/jira-issue/agent-activity";
 import type { JiraIssueAgentActivityLayout } from "@/components/blocks/jira-issue/agent-activity-model";
 import {
 	createJiraSessionFlyoutHandle,
@@ -30,6 +30,7 @@ export type JiraIssueCompletedAgentRunState = "done" | "failed" | "review";
 
 export interface JiraIssueCompletedAgentRun {
 	id: string;
+	stateTransition?: JiraIssueAgentActivity["stateTransition"];
 	summary: string;
 	description?: string;
 	agentName: string;

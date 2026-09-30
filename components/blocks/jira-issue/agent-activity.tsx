@@ -33,6 +33,7 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import { agentIdentityLabel } from "@/components/blocks/agent-session/agent-session-identity-label";
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
+import { AgentSessionShortLifecycleIcon } from "@/components/blocks/agent-session/agent-session-lifecycle";
 import {
 	groupJiraIssueAgentActivityRows,
 	summarizeJiraIssueAgentActivities,
@@ -95,6 +96,8 @@ export type {
 
 export interface JiraIssueAgentActivity {
 	id: string;
+	/** Opt in to the session column's status-icon transition. */
+	stateTransition?: "agent-session";
 	name: string;
 	avatarSrc?: string;
 	agentBrandName?: ThirdPartyLogoName;
@@ -557,6 +560,8 @@ function JiraIssueAgentActivityRow({
 		rowLinkFlash,
 		startupSequenceKey,
 	} = resolveJiraIssueAgentRowPresentation(activities, linkFlash);
+	const animateStateTransition = activities.length === 1 && featuredActivity?.stateTransition === "agent-session";
+	const lifecycleState = isCompletedRow ? "complete" : isAwaitingInput ? "needs-input" : "running";
 	const startupPhase = useJiraIssueAgentStartupPhase(
 		startupSequenceKey,
 		shouldReduceMotion,
@@ -634,7 +639,21 @@ function JiraIssueAgentActivityRow({
 		<JiraIssueAgentStatusAffordance
 			interactive={showAssignmentFlyout}
 			statusIcon={isViewerRow ? undefined : (
-				<JiraIssueAgentStatusIcon
+				animateStateTransition ? <AgentSessionShortLifecycleIcon
+					accessibleState={lifecycleState}
+					animateTransition
+					showWorkingSpinner
+					state={lifecycleState}
+					renderGlyph={(state) => <JiraIssueAgentStatusIcon
+						iconScale={iconScale}
+						isAwaitingInput={state === "needs-input"}
+						isCompletedRow={state === "complete"}
+						isFailedRow={isFailedRow}
+						renderAgentActivityIndicator={renderAgentActivityIndicator}
+						startupPhase={startupPhase}
+						workingSpinnerVariant={workingSpinnerVariant}
+					/>}
+				/> : <JiraIssueAgentStatusIcon
 					iconScale={iconScale}
 					isAwaitingInput={isAwaitingInput}
 					isCompletedRow={isCompletedRow}

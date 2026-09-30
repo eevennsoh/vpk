@@ -24,6 +24,7 @@ import SettingsIcon from "@atlaskit/icon/core/settings";
 import { DEFAULT_TOP_NAVIGATION_CURRENT_USER, type TopNavigationCurrentUser } from "../data/current-user";
 
 export interface RightNavigationSettingsMenuItem {
+	checked?: boolean;
 	description?: string;
 	disabled?: boolean;
 	elemBefore?: ReactNode;
@@ -44,6 +45,21 @@ interface RightNavigationActionsProps {
 }
 
 function renderSettingsMenuItem(item: RightNavigationSettingsMenuItem) {
+	if (item.checked !== undefined) {
+		return (
+			<DropdownMenuCheckboxItem
+				checked={item.checked}
+				closeOnClick
+				disabled={item.disabled}
+				indicatorPlacement="end"
+				key={item.id}
+				onCheckedChange={item.onSelect}
+			>
+				{item.label}
+			</DropdownMenuCheckboxItem>
+		);
+	}
+
 	return (
 		<DropdownMenuItem
 			description={item.description}

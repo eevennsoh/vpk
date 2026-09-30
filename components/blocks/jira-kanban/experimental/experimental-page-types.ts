@@ -75,6 +75,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	cardGenerativeActionFooterActions?: ExperimentalJiraKanbanProps["cardGenerativeActionFooterActions"];
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	cardGenerativeActionPinnedAgentIds?: readonly string[];
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;
 	showPriorityIndicator?: ExperimentalJiraKanbanProps["showPriorityIndicator"];
@@ -168,6 +169,10 @@ export interface ExperimentalJiraKanbanPageProps {
 	/** Route-owned avatar presentation and hover details; filtering stays in the board. */
 	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
+	/** Keep filter selections independent when the route swaps board datasets. */
+	boardFilterScopeKey?: string;
+	/** Total avatar slots in the header, including Unassigned. */
+	headerAvatarLimit?: number;
 	showUnassignedHeaderAvatar?: boolean;
 	insightsEnabled?: boolean;
 	insightsDefaultAssigneeIds?: readonly string[];

@@ -198,6 +198,7 @@ interface ExperimentalJiraKanbanCardProps {
 	detachedSessionDrag?: JiraIssueAgentSessionDragBinding;
 	dragging: boolean;
 	generativeActionAgents: JiraIssueGenerativeActionConfig["agents"];
+	generativeActionPinnedAgentIds?: readonly string[];
 	generativeActionPresentation: JiraIssueGenerativeActionPresentation;
 	generativeActionSkills: JiraIssueGenerativeActionConfig["skills"];
 	generativeActionFooterActions?: Pick<
@@ -270,6 +271,7 @@ export function ExperimentalJiraKanbanCard({
 	detachedSessionDrag,
 	dragging,
 	generativeActionAgents,
+	generativeActionPinnedAgentIds,
 	generativeActionPresentation,
 	generativeActionSkills,
 	generativeActionFooterActions,
@@ -374,6 +376,7 @@ export function ExperimentalJiraKanbanCard({
 			parentOwnsLayout
 			generativeAction={{
 				agents: generativeActionAgents,
+				defaultPinnedAgentIds: generativeActionPinnedAgentIds,
 				...generativeActionFooterActions,
 				onSubmit: (request) => {
 					void onGenerativeActionSubmit?.(request, card, columnTitle);
