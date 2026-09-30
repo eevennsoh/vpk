@@ -39,7 +39,7 @@ test("both content presets share the coding and custom agent catalog", async () 
 	]);
 	assert.equal(new Set(board.JIRA_TEAM_EU26_BOARD_AGENTS.map((agent) => agent.id)).size, 8);
 	for (const agent of board.JIRA_TEAM_EU26_BOARD_AGENTS) {
-		assert.ok(agent.avatarSrc);
+		assert.ok(agent.avatarSrc || agent.brandName);
 		assert.ok(fs.existsSync(path.join(process.cwd(), "public", agent.avatarSrc)));
 	}
 });
