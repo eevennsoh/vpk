@@ -609,6 +609,9 @@ importers:
       portless:
         specifier: ^0.15.6
         version: 0.15.6
+      postcss:
+        specifier: ^8.5.26
+        version: 8.5.26
       react-grab:
         specifier: ^0.2.0
         version: 0.2.0(react@19.2.8)
