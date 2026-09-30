@@ -12,7 +12,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 - Frontend edits live mainly in `components/projects/`, `components/blocks/`, `components/arts/`, `components/ui-custom/`, `components/ui-audio/`, `components/visual/`, `components/website/`, and `app/`.
 - Backend/API ownership: `backend/app.js` composes Express; `backend/server.js` owns startup/static serving/listen/WebSockets; `backend/routes/*.js`, `backend/chat/*.js`, `backend/services/*`, and `backend/middleware/*` own their domains; `app/api/**/route.ts` owns dev proxies and route adapters.
 - Validate every change with `pnpm run lint` and `pnpm run typecheck`; UI changes also need visual and accessibility checks.
-- UI feedback and recurring component misuse: assess lint prevention before handoff. Read the **Design-system lint maintenance** section in `.agents/rules/component-architecture.md`; tighten established policy in the narrowest contract and add executable lint cases. Propose uncertain new policy rather than enforcing it globally. Run `pnpm run lint:design-system` and `node --test scripts/eslint-boundary-rules.test.js` when changing those contracts.
+- When the user corrects you, fix the environment as well as the diff: push the lesson to the lowest rung that can hold it — (1) codebase: one paved path, delete the copy you nearly followed; (2) lint/types/CI: an `error` rule, existing violations baselined in `eslint-suppressions.json`; (3) rules; (4) skills; (5) `DESIGN.md`. Codex doesn't auto-load `.agents/rules/` and Cursor loads only `.mdc`, so anything mechanical belongs in rungs 1–2. Procedure: `.agents/docs/playbooks/push-corrections-down-the-ladder.md`. Propose new or subjective policy instead of enforcing it globally.
 - For browser verification after editing code served by the local Next.js app, load and follow `next-dev-loop`; it owns the `/_next/mcp` plus `agent-browser` runtime cross-check. For browser work that is not verifying a Next.js edit, default to `agent-browser` (`npx agent-browser`) and load its skill first. Keep artifacts under ignored `output/agent-browser/`. If `agent-browser` is unavailable or blocked, use Playwright CLI after loading its skill.
 - Browser entry: resolve the requested component, block, or project's exact route before opening a browser. Use the supplied route or the current route/catalog map, then navigate directly on this worktree's origin (`control-vpk open-target <route>`). Do not start at the bare origin, `localhost:3000`, or a category landing page and browse for the object. Start at home only when the task explicitly verifies catalog navigation or that entry point; confirm the target URL and route marker before debugging.
 - Symphony browser evidence is the exception: use `vpk-symphony` so issue evidence lands under ignored `output/playwright/` per `WORKFLOW.md` and `.agents/docs/symphony.md`.
@@ -23,6 +23,9 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 
 | When you need...                       | Read                                                        |
 | -------------------------------------- | ----------------------------------------------------------- |
+| Which code owns a route, and what renders a file | `.agents/knowledge/repo-map.json` (`appPages.pages[].primaryOwner`), `control-vpk where <path\|slug>` |
+| Drive a route into a state and capture proof | `.agents/skills/vpk-verify/SKILL.md`, recipes in `.agents/skills/vpk-verify/features/` |
+| Turning a correction into a lasting guard | `.agents/docs/playbooks/push-corrections-down-the-ladder.md` |
 | UI performance decisions and shared mechanisms | `.agents/docs/playbooks/improve-ui-performance.md`          |
 | Maintained upstream runtime-library adoption | `.agents/docs/playbooks/adopt-upstream-runtime.md`         |
 | Reference-video motion acceptance and replay | `.agents/docs/playbooks/recreate-reference-motion.md`      |
@@ -81,8 +84,8 @@ If instructions overlap, use this precedence:
 ### Non-negotiable Defaults
 
 - Package manager: `pnpm`; indentation: tabs; imports: use `@/` alias.
-- React 19: `use(Context)`, `<Context value={}>`, and `ref` as a regular prop; not `useContext()`, `<Context.Provider>`, or `forwardRef`.
-- Conditional rendering: use ternary (`cond ? <X /> : null`), not `&&` patterns that can render `0`.
+- React 19: `use(Context)`, `<Context value={}>`, and `ref` as a regular prop; not `useContext()`, `<Context.Provider>`, or `forwardRef` (lint + source guardrails).
+- Conditional rendering: use ternary (`cond ? <X /> : null`), not `&&` patterns that can render `0` (lint-enforced for rendered children; boolean props keep `&&`).
 - Prefer semantic token classes; do not introduce `bg-[var(--ds-...)]` / `text-[var(--ds-...)]` in VPK components.
 - Figma links and assets: load `vpk-design` and use the official Figma MCP first. Its tools may be lazy/deferred, so discover the exact `mcp__figma__*` capability and use `whoami` for access diagnostics before declaring Figma unavailable. Do not jump to browser login or `FIGMA_TOKEN` while the configured MCP is callable.
 - ADS content (components, tokens, icons, docs): query the `atlas ads` CLI first; ADS MCP tools are fallback only. See **ADS Lookups**.
@@ -172,19 +175,21 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 
 - There is no single `pnpm test` script in `package.json`.
 - Repo tests span `backend/`, `lib/`, `scripts/`, `app/`, `components/`, and `rovo/`; run targeted `node --test` commands against relevant `.test.js` or `.test.ts` files.
-- When changing source guarded by a source-contract test, run the colocated exact-file suite before `pnpm run ci:pr`. If implementation moves between owners, relocate the assertion instead of deleting the contract; prefer behavioral, typed, or helper-level proof over incidental prop, class, or source ordering.
-- Classify every new or renamed `components/**` `node:test` suite in `scripts/js-unit-test-manifest.mjs` as `stable` or `source-contract`, then verify CI discovery through unfiltered `node scripts/run-js-unit-tests.mjs`. The `--file` option force-runs a named path and does not prove manifest inclusion; unclassified component suites default to `legacy-drift` and are skipped by the CI unit gate.
-- Browser coverage is under `tests/**/*.spec.ts`; run targeted specs with `pnpm exec playwright test <spec>` after `pnpm install`.
+- When changing source guarded by a source-contract test, run the colocated exact-file suite before `pnpm run ci:pr`. If implementation moves between owners, relocate the assertion instead of deleting the contract; prefer behavioral, typed, or helper-level proof over incidental prop, class, or source ordering. Lint rejects new `assert.match(*_SOURCE, …)` assertions in app/components/hooks/lib tests; existing ones are baselined in `eslint-suppressions.json`, so a file's count may only drop.
+- Prove UI behavior by rendering it, not by regex-matching source: `renderComponent()` in `scripts/lib/render-component.js` bundles a real TSX component (with `@/` and mocks) into happy-dom and offers role/text queries, `click`/`press`/`focus`/`fill`, `tabOrder()`, and `isFocused()`. Assert on strings and booleans, never on DOM nodes, because a failed assert on a node can hang. Example: `components/blocks/jira-issue/uncaptured-work-chin.behavior.test.js`.
+- Classify every new or renamed `components/**` `node:test` suite in `scripts/js-unit-test-manifest.mjs` as `stable` or `source-contract`; unfiltered `node scripts/run-js-unit-tests.mjs` fails CI on unclassified suites. `legacy-drift` is a frozen skipped baseline that must only shrink. `--file` force-runs a named path and does not prove manifest inclusion.
+- Modules that a `node:test` suite loads directly cannot resolve the `@/` alias; they import siblings by relative path with the `.ts` extension (`allowImportingTsExtensions` is on, so no `@ts-expect-error` is needed).
+- Browser coverage is under `tests/**/*.spec.ts` (`playwright.config.ts`); run targeted specs with `pnpm exec playwright test <spec>` after `pnpm install`. Specs reach the app through `appUrl()` in `tests/helpers/origin.ts` (lint rejects hardcoded ports and `*.localhost` hosts) and seed design settings with `?variants=` via `tests/helpers/design-variants.ts`.
 - GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, typecheck, and tests. It is required by branch protection on `main` — `/vpk-git-ship` auto-merge waits for it.
 - Validation freshness:
   <!-- validation-freshness:begin -->
-  Last validated: 2026-09-21
-  Commands: `pnpm run validate:preflight`, `pnpm run verify:route-manifest`,
-  `pnpm run verify:api-surfaces`, `pnpm run verify:repo-map`,
-  `pnpm run verify:vpk-feature-map`, `pnpm run verify:file-size`, `pnpm run verify:catalog`,
-  `pnpm run verify:lazy-load`, `pnpm run verify:source-guardrails`,
-  `pnpm run verify:doc-scripts`, `pnpm run lint`, `pnpm run lint:design-system`,
-  `pnpm run typecheck`.
+  Last validated: 2026-09-30
+  Commands: `pnpm run validate:preflight`, `pnpm run verify:fast` (bundles the next
+  eleven), `pnpm run verify:route-manifest`, `pnpm run verify:api-surfaces`,
+  `pnpm run verify:repo-map`, `pnpm run verify:vpk-feature-map`, `pnpm run verify:file-size`,
+  `pnpm run verify:catalog`, `pnpm run verify:lazy-load`, `pnpm run verify:source-guardrails`,
+  `pnpm run verify:eslint-suppressions`, `pnpm run verify:doc-scripts`, `pnpm run lint`,
+  `pnpm run lint:design-system`, `pnpm run typecheck`.
   Reference docs: `.agents/docs/architecture-overview.md`,
   `.agents/docs/workflows-extended.md`, `.agents/rules/api-surfaces.md`,
   `.agents/rules/token-priority.md`,
@@ -204,7 +209,7 @@ Inside cmux, use the `/cmux` skill and `cmux read-screen` to inspect the failing
 - Worktree ports are deterministic. Use `pnpm ports` or `pnpm ports watch` (arrows select, Enter opens, `k` confirms kill, `q` quits). The dashboard discovers active worktrees; browser tools use its Portless `🌐` URL, falling back to `.dev-frontend-port`, never a hardcoded port.
 - `pnpm run mem` reports each `next-server`'s CPU, port, worktree, and physical footprint via vmmap; `ps` RSS undercounts it ~50x. Next ≥16.3 is healthy at low single-digit GB; `vpk-system-clean` restarts servers at ≥6 GB.
 - Worktrees isolate browser automation through deterministic ports, unique Portless origins, and persistent `vpk-dev-<worktree>` tmux sessions. `pnpm run dev:tmux:stop` affects only this worktree. Only `tmux kill-server` and `portless prune` cascade globally — never use either for per-worktree cleanup; use the stop command or `portless alias --remove <name>`.
-- Runtime port files: `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, `.dev-backend-port`
+- Runtime port files: `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, `.dev-backend-port`. `.claude/launch.json` (Claude preview configs) is also per-checkout: the SessionStart hook writes it via `scripts/write-claude-launch-config.js`; don't commit it.
 - Dev API calls traverse Next.js proxy then Express; debug both layers.
 - TypeScript excludes only `node_modules`; all project directories are type-checked.
 - Never import transitive pnpm dependencies directly — pnpm's strict isolation only allows imports from `package.json` direct dependencies. Use internal mechanisms (e.g., `globalThis.__PLATFORM_FEATURE_FLAGS__`) or add the package explicitly.
@@ -247,31 +252,32 @@ New behavior gets a clear owner instead of expanding an already-busy file. Befor
 - For Figma work, front-load key specs: spacing, radius, width constraints, shadow token.
 - When editing icons, check consistency across all icons in the component.
 - When fixing a bug, add a regression test that reproduces the original failure.
-- After a UI edit, verify the change on the live route the user will see (screenshot it), across relevant states and viewports; when changing a pattern or default, migrate every old instance in the same change so old and new never coexist.
+- After a UI edit, prove it on the exact route the user will see: `control-vpk capture <route>` saves one light-theme screenshot plus console, page-error, and a11y results. Add states or viewports only when the change depends on them or the user asks. When the user says they'll verify it themselves, stop browser checks for that task (`VPK_VERIFY=manual` makes `capture` a no-op).
+- When changing a pattern or default, migrate every old instance in the same change so old and new never coexist.
 
 ## Contextual Rules
 
 Rules live in `.agents/rules/` (canonical; provider dirs `.cursor/`, `.claude/`, `.codex/`, `.rovo/` symlink to it). Loading is per-provider, and it is not lazy everywhere:
 
-- Claude Code: reads through the `.claude/rules` symlink and injects every `.md` in that directory into the system prompt at session start. Nothing narrows this — every `.md` rule loads on every session regardless of the scope table below — and `.mdc` files are not injected. Every byte of `.agents/rules/*.md` is a standing context cost on top of this file — run `wc -c .agents/rules/*.md` to size it, and keep added rule content proportionate.
-- Cursor: auto-attaches `.mdc` files only (currently just `browser-screenshots.mdc`), scoped by that file's `globs:` frontmatter. The `.md` rules carry no frontmatter scope and are not auto-attached — reach them through the table below.
+- Claude Code: reads through the `.claude/rules` symlink. A `.md` rule without `paths:` frontmatter loads every session; a rule with `paths:` loads once a matching file is read. `.mdc` files are not injected. This file plus the unscoped rules are a standing context cost on every session, so keep additions proportionate and scope new rules.
+- Cursor: reads `.mdc` files only. `.agents/rules/cursor/*.mdc` are generated mirrors of each `.md` rule (`globs:` = `paths:`); after editing a rule, run `node scripts/generate-cursor-rules.js` (`verify:cursor-rules` checks drift). `browser-screenshots.mdc` is hand-written.
 - Codex and Rovo: no auto-load. Before editing files matching a rule's scope, read that rule first.
 
-The table below stays the scope reference for every provider — it says which rule governs which files, whether or not your provider preloaded it.
+Each rule's `paths:` frontmatter is its canonical scope; `scripts/agent-rule-scopes.test.js` keeps this table equal to it.
 
 | Rule file | Read before editing |
 | --- | --- |
-| `token-priority.md` | `*` (always) — most often `components/**/*.tsx`, `app/**/*.tsx`, `*.css` |
-| `component-architecture.md` | `components/**/*.tsx`, `app/contexts/**/*.tsx` |
-| `chat-architecture.md` | `context-rovo-chat.tsx`, `backend/chat/**`, `backend/routes/chat-*.js`, `backend/routes/rovo-*.js`, `backend/lib/rovo-*.js`, `rovo/**` |
-| `api-surfaces.md` | `backend/routes/**/*.js`, `backend/app.js`, `backend/server.js`, `app/api/**/*.ts`, `backend/lib/*.js` |
-| `gotchas-ui.md` | `components/**/*.tsx` |
-| `gotchas-chat.md` | `context-rovo-chat.tsx`, `rovo-*.js` |
+| `token-priority.md` | `*` (always) |
+| `component-architecture.md` | `components/**`, `app/**/*.tsx`, `hooks/**`, `eslint.config.mjs`, `scripts/eslint-boundary-rules.test.js` |
+| `chat-architecture.md` | `app/contexts/**`, `app/api/chat-sdk/**`, `backend/chat/**`, `backend/routes/**`, `backend/lib/**`, `rovo/**`, `lib/rovo-*.ts`, `components/projects/rovo*/**`, `components/projects/studio/**` |
+| `api-surfaces.md` | `app/api/**`, `backend/**` |
+| `gotchas-ui.md` | `components/**/*.tsx`, `app/**/*.tsx` |
+| `gotchas-chat.md` | `app/contexts/**`, `app/api/chat-sdk/**`, `backend/chat/**`, `backend/routes/**`, `backend/lib/**`, `rovo/**`, `lib/rovo-*.ts`, `components/projects/rovo*/**`, `components/projects/studio/**` |
 | `gotchas-react.md` | `**/*.tsx` |
-| `motion-base-ui.md` | `*.tsx`, `*.jsx` |
-| `motion-decisions.md` | `components/**/*.tsx`, `app/**/*.tsx`, `*.css` |
-| `agent-operations.md` | `.agents/skills/**`, `.agents/agents/**` |
-| `appendix-reference.md` | `backend/**`, `app/contexts/**`, `app/providers.tsx`, `.agents/skills/**` |
+| `motion-base-ui.md` | `**/*.tsx`, `**/*.jsx` |
+| `motion-decisions.md` | `components/**/*.tsx`, `app/**/*.tsx`, `**/*.css`, `lib/motion.ts` |
+| `agent-operations.md` | `.agents/**`, `.claude/**`, `.codex/**`, `.cursor/**`, `.rovo/**`, `scripts/validate-agents*.js`, `scripts/validate-skills*.js` |
+| `appendix-reference.md` | `backend/**`, `app/contexts/**`, `app/providers.tsx`, `.agents/**` |
 | `browser-screenshots.mdc` | `*` (always) |
 
 <!-- BEGIN:nextjs-agent-rules -->

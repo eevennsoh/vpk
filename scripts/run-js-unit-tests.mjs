@@ -9,6 +9,7 @@ import {
 } from "./js-unit-test-manifest.mjs";
 
 const COMPONENT_TEST_PREFIX = "components/";
+const MANIFEST_PATH = "scripts/js-unit-test-manifest.mjs";
 const COMPONENT_TEST_REPORT_PREFIX = "JS_UNIT_COMPONENT_TEST_REPORT";
 const COMPONENT_TEST_REPORT_MAX_LINE_BYTES = 60 * 1024;
 const COMPONENT_TEST_REPORT_CHUNK_PREFIX_RESERVE_BYTES = 32;
@@ -34,17 +35,14 @@ export function buildTestFileClassificationMap(classifications = TEST_FILE_CLASS
 	return classificationByFile;
 }
 
-function getDefaultTestFileClassification(filePath) {
-	if (filePath.startsWith(COMPONENT_TEST_PREFIX)) {
-		return "legacy-drift";
-	}
-	return "unclassified";
-}
-
 export function getTestFileClassification(filePath, {
 	classificationByFile = TEST_FILE_CLASSIFICATION_BY_PATH,
 } = {}) {
-	return classificationByFile.get(filePath) ?? getDefaultTestFileClassification(filePath);
+	return classificationByFile.get(filePath) ?? "unclassified";
+}
+
+function isComponentNodeTestEntry(entry) {
+	return entry.filePath.startsWith(COMPONENT_TEST_PREFIX) && (entry.source ?? "").includes("node:test");
 }
 
 export function getTestFileInclusion(filePath, {
@@ -55,7 +53,8 @@ export function getTestFileInclusion(filePath, {
 	includedTestPrefixes = INCLUDED_TEST_PREFIXES,
 } = {}) {
 	const classification = getTestFileClassification(filePath, { classificationByFile });
-	if (!filePath || excludedTestFiles.has(filePath)) {
+	// An explicitly named `--file` still force-runs a legacy-drift suite so it can be checked before graduating.
+	if (!filePath || (excludedTestFiles.has(filePath) && !includedTestFiles.has(filePath))) {
 		return {
 			classification,
 			included: false,
@@ -90,12 +89,13 @@ export function getTestFileInclusion(filePath, {
 	return {
 		classification,
 		included: false,
-		reason: classification === "legacy-drift" ? "legacy-drift" : "not-included",
+		reason: classification === "legacy-drift" || classification === "unclassified" ? classification : "not-included",
 	};
 }
 
 export function buildComponentTestReport(testEntries, options) {
 	const componentEntries = testEntries
+		.filter(isComponentNodeTestEntry)
 		.map((entry) => {
 			const inclusion = getTestFileInclusion(entry.filePath, options);
 			return {
@@ -104,10 +104,6 @@ export function buildComponentTestReport(testEntries, options) {
 				included: inclusion.included,
 				reason: inclusion.reason,
 			};
-		})
-		.filter((entry, index) => {
-			const source = testEntries[index]?.source ?? "";
-			return entry.filePath.startsWith(COMPONENT_TEST_PREFIX) && source.includes("node:test");
 		})
 		.sort((a, b) => a.filePath.localeCompare(b.filePath));
 
@@ -249,14 +245,63 @@ export function assertClassifiedTestFilesExist(
 	].join("\n"));
 }
 
+export function assertUniqueTestFileClassifications(classifications = TEST_FILE_CLASSIFICATIONS) {
+	const classificationsByFile = new Map();
+	for (const [classification, filePaths] of Object.entries(classifications)) {
+		for (const filePath of filePaths) {
+			classificationsByFile.set(filePath, [...(classificationsByFile.get(filePath) ?? []), classification]);
+		}
+	}
+	const duplicateEntries = [...classificationsByFile]
+		.filter(([, fileClassifications]) => fileClassifications.length > 1)
+		.sort(([left], [right]) => left.localeCompare(right));
+
+	if (duplicateEntries.length === 0) {
+		return;
+	}
+
+	throw new Error([
+		`js-unit-tests: test paths are listed more than once in ${MANIFEST_PATH}; keep exactly one classification per path:`,
+		...duplicateEntries.map(([filePath, fileClassifications]) => {
+			return `- ${filePath}: ${fileClassifications.join(", ")}`;
+		}),
+	].join("\n"));
+}
+
+export function findUnclassifiedComponentTestFiles(testEntries, {
+	classificationByFile = TEST_FILE_CLASSIFICATION_BY_PATH,
+} = {}) {
+	return testEntries
+		.filter(isComponentNodeTestEntry)
+		.filter((entry) => getTestFileClassification(entry.filePath, { classificationByFile }) === "unclassified")
+		.map((entry) => entry.filePath)
+		.sort((left, right) => left.localeCompare(right));
+}
+
+export function assertComponentTestFilesClassified(testEntries, options) {
+	const unclassifiedFiles = findUnclassifiedComponentTestFiles(testEntries, options);
+	if (unclassifiedFiles.length === 0) {
+		return;
+	}
+
+	throw new Error([
+		`js-unit-tests: ${unclassifiedFiles.length} component node:test suite(s) are not classified, so the CI unit gate cannot run them:`,
+		...unclassifiedFiles.map((filePath) => `- ${filePath}`),
+		`Add each path to ${MANIFEST_PATH} under \`stable\` (behavioral tests) or \`source-contract\` (tests that assert on source text).`,
+		"Do not add them to `legacy-drift`: it is a frozen baseline of skipped suites that must only shrink.",
+	].join("\n"));
+}
+
+// Every node:test file extension in the repo; a missing one silently drops those suites from CI.
+export const TEST_FILE_GLOBS = ["*.test.js", "*.test.mjs", "*.test.ts"];
+
 function listCandidateTestFiles() {
 	const gitResult = spawnSync("git", [
 		"ls-files",
 		"--cached",
 		"--others",
 		"--exclude-standard",
-		"*.test.js",
-		"*.test.ts",
+		...TEST_FILE_GLOBS,
 	], {
 		encoding: "utf8",
 		stdio: ["ignore", "pipe", "inherit"],
@@ -280,8 +325,11 @@ function readTestEntries(filePaths) {
 }
 
 function reportComponentTestCoverage(report) {
+	const legacyDriftCount = report.excludedFiles
+		.filter((entry) => entry.classification === "legacy-drift")
+		.length;
 	console.log(
-		`js-unit-tests: component node:test coverage ${report.includedCount} included, ${report.excludedCount} legacy-drift. Graduate stable tests through scripts/js-unit-test-manifest.mjs.`
+		`js-unit-tests: component node:test coverage ${report.includedCount} included, ${legacyDriftCount} frozen legacy-drift. Graduate legacy-drift tests to stable or source-contract in ${MANIFEST_PATH}.`
 	);
 	console.log(formatComponentTestReport(report));
 }
@@ -385,13 +433,46 @@ export function runTestFiles(testFiles, {
 	}
 }
 
+function exitOnManifestError(check) {
+	try {
+		check();
+	} catch (error) {
+		console.error(error.message);
+		process.exit(1);
+	}
+}
+
+function warnUnclassifiedSelectedTests(testEntries, testFiles) {
+	const selectedFiles = new Set(testFiles);
+	const unclassifiedFiles = findUnclassifiedComponentTestFiles(
+		testEntries.filter((entry) => selectedFiles.has(entry.filePath)),
+	);
+	if (unclassifiedFiles.length === 0) {
+		return;
+	}
+
+	console.warn([
+		`js-unit-tests: warning: selected component suites are unclassified; the unfiltered CI run fails until they are classified in ${MANIFEST_PATH}:`,
+		...unclassifiedFiles.map((filePath) => `- ${filePath}`),
+	].join("\n"));
+}
+
 function main() {
-	assertClassifiedTestFilesExist();
+	exitOnManifestError(() => {
+		assertClassifiedTestFilesExist();
+		assertUniqueTestFileClassifications();
+	});
 	const selection = parseTestSelectionArgs(process.argv.slice(2));
 	const selectionOptions = buildSelectionOptions(selection);
 	const testEntries = readTestEntries(listCandidateTestFiles());
-	const testFiles = selectRunnableTestFiles(testEntries, selectionOptions);
 	const hasSelection = selection.files.length > 0 || selection.prefixes.length > 0;
+	if (!hasSelection) {
+		exitOnManifestError(() => assertComponentTestFilesClassified(testEntries));
+	}
+	const testFiles = selectRunnableTestFiles(testEntries, selectionOptions);
+	if (hasSelection) {
+		warnUnclassifiedSelectedTests(testEntries, testFiles);
+	}
 	if (
 		shouldReportComponentCoverage(selection) &&
 		(!hasSelection || testFiles.some((testFile) => testFile.startsWith(COMPONENT_TEST_PREFIX)))

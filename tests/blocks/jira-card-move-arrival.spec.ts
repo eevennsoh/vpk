@@ -1,12 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	for (const sameColumn of [false, true]) {
 		test(`issue-card drop reuses session-created card arrival (${sameColumn ? "reorder" : "between columns"}, ${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
-			await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+			await page.goto(appUrl("/preview/blocks/jira-dragging"));
 			await page.waitForLoadState("networkidle");
 			const code = sameColumn ? "PAY-130" : "PAY-105";
 			const title = sameColumn ? "To do" : "Done";
@@ -64,7 +66,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	}
 	test(`selected cohort flies one card and plays the entrance for every landed card (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
 		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
 		await card("PAY-105").click({ modifiers: ["Shift"], position: { x: 70, y: 30 } });
@@ -97,7 +99,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("a no-op drop cannot replay when another card later leaves its column", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+	await page.goto(appUrl("/preview/blocks/jira-dragging"));
 	await page.waitForLoadState("networkidle");
 	const card = page.locator('[data-issue-key="PAY-107"]');
 	const bounds = (await card.locator('[draggable="true"]').first().boundingBox())!;
@@ -129,7 +131,7 @@ test("a no-op drop cannot replay when another card later leaves its column", asy
 for (const moveCreated of [false, true]) {
 	test(`a move ${moveCreated ? "takes over its created card" : "preserves another creation in flight"}`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: "no-preference" });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await expect(page.locator("[data-agent-session-column-expansion]")).toBeVisible();
 		const expand = page.getByRole("button", { name: "Expand Unlink sessions column", exact: true });
 		if (await expand.isVisible()) {

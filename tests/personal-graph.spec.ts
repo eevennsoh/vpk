@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
-const PERSONAL_GRAPH_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000"
-}/arts/personal-graph`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const PERSONAL_GRAPH_URL = appUrl("/arts/personal-graph");
 
 const explorerFixture = {
 	edges: [

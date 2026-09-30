@@ -1,7 +1,6 @@
 import type { BoardAgentSessionDragOrigin, BoardAgentSessionDragPointer, BoardAgentSessionDropZone } from "./board-agent-session-drag";
 import {
 	toJiraIssueAttachTracePointer,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "../../../jira-issue/attach-proximity.ts";
 
 export interface BoardAgentSessionTrace {

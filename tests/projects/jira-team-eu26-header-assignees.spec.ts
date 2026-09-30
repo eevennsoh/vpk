@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
 test.use({ ignoreHTTPSErrors: true });
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+const baseURL = resolveAppOrigin();
 const agentNames = ["Claude", "Jira Coding Agent", "Cursor"];
 
 for (const route of ["jira-team-eu26", "jira-team-eu26-end"]) {

@@ -1,8 +1,8 @@
 import { expect, test, type ConsoleMessage, type Page, type Response } from "@playwright/test";
 
-const ROVO_APP_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000"
-}/rovo`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const ROVO_APP_URL = appUrl("/rovo");
 
 const COMPOSER_PLACEHOLDER = "Ask, @mention, or / for skills";
 

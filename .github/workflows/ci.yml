@@ -2,6 +2,9 @@ name: CI
 
 on:
   pull_request:
+  # Direct pushes (e.g. vpk-git-ship-fast) skip PR checks; run the same gate after they land.
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -21,6 +24,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+
+      - name: Fetch PR base for ratchet checks
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --depth=1 origin "+refs/heads/${GITHUB_BASE_REF}:refs/remotes/origin/${GITHUB_BASE_REF}"
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6

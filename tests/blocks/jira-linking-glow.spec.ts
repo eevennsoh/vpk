@@ -1,8 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const JIRA_LINKING_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/components/blocks/jira-linking";
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_LINKING_URL = appUrl("/components/blocks/jira-linking");
 
 async function dragSessionToCard(page: Page, source: Locator, target: Locator) {
 	const sourceBox = await source.boundingBox();

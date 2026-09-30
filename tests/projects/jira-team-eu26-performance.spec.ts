@@ -8,14 +8,9 @@ import {
 	type InteractionSample,
 	type SampleAction,
 } from "@/tests/helpers/interaction-performance";
+import { appUrl } from "@/tests/helpers/origin";
 
 const eventTimingDeliveryTimeoutMs = 1_000;
-
-function worktreeOrigin() {
-	return (process.env.PLAYWRIGHT_BASE_URL
-		?? execFileSync(process.execPath, [".agents/skills/vpk-verify/scripts/control-vpk", "url"], { encoding: "utf8" }).trim())
-		.replace(/\/$/u, "");
-}
 
 test.use({ ignoreHTTPSErrors: true });
 
@@ -42,7 +37,7 @@ function localCheckout() {
 }
 
 async function openBoard(page: Page) {
-	await page.goto(`${worktreeOrigin()}/jira-team-eu26`, { waitUntil: "domcontentloaded" });
+	await page.goto(appUrl("/jira-team-eu26"), { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 30_000 });
 	await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(4);
 }

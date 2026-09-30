@@ -4,7 +4,6 @@ import test from "node:test";
 import {
 	linkAgentSessionChinCopy,
 	resolveLinkAgentSessionChinCount,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./attach-chin-copy.ts";
 
 test("a singleton transfer uses the singular chin copy", () => {

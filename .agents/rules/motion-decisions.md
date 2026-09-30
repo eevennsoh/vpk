@@ -1,5 +1,10 @@
 ---
 description: Deciding which motion token to pick for a UI role (duration, easing, property)
+paths:
+  - "components/**/*.tsx"
+  - "app/**/*.tsx"
+  - "**/*.css"
+  - "lib/motion.ts"
 ---
 
 # Motion decisions
@@ -77,7 +82,7 @@ Choose the simplest property that communicates the change. A third property crea
 
 ## Per-role recipes (vpk tokens)
 
-Reuse the same recipe for components that play the same role — one mental model, less cognitive load. Source all timing from tokens per [Consuming tokens](#consuming-tokens-css-vs-motion-for-react) below — never invent a duration or curve.
+Reuse the same recipe for components that play the same role — one mental model, less cognitive load. Source all timing from tokens per [Consuming tokens](#consuming-tokens-css-vs-motion-for-react) below — never invent a duration or curve. In Motion for React, the popup, modal, blanket, flag, and avatar rows are `motionRecipe.<role>` in `@/lib/motion`.
 
 | Role | Enter | Exit | Property |
 | --- | --- | --- | --- |
@@ -100,40 +105,42 @@ style={{ transition: "left var(--duration-medium) var(--ease-in-out)" }}
 className="transition-colors duration-xxshort ease-out-practical"
 ```
 
-**Motion for React JS props** (`transition={{…}}`, variants) — Motion **cannot read `var()`**. Use the *resolved* token value as a cubic-bezier array (duration in **seconds**), annotate it with the token name, and hoist shared curves to a module/`const` so the value lives in one place (this is the established vpk pattern — see `agent-2.tsx`, `agent-bento/`):
+**Motion for React JS props** (`transition={{…}}`, variants) — Motion **cannot read `var()`**, so import the JS mirror from `@/lib/motion` (`lib/motion.test.js` keeps it equal to `app/tailwind-theme.css`):
 
 ```tsx
-const ENTER = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const EXIT  = { duration: 0.1,  ease: [0.6, 0, 0.8, 0.6] }; // duration-fast  + ease-in
+import { motionDuration, motionEase, motionRecipe } from "@/lib/motion";
+
+<motion.div
+	initial={{ opacity: 0, y: 8 }}
+	animate={{ opacity: 1, y: 0, transition: motionRecipe.popup.enter }}
+	exit={{ opacity: 0, y: 8, transition: motionRecipe.popup.exit }}
+/>
+transition={{ duration: motionDuration.medium, ease: motionEase.inOut }}
 ```
 
-Never invent a curve that is not a token. Pick the resolved array from this map:
-
-| Token utility | cubic-bezier array |
-| --- | --- |
-| `ease-out` (bold) | `[0, 0.4, 0, 1]` |
-| `ease-in-out` (bold) | `[0.4, 0, 0, 1]` |
-| `ease-in` (practical exit) | `[0.6, 0, 0.8, 0.6]` |
-| `ease-out-practical` | `[0.4, 1, 0.6, 1]` |
-
-Durations (seconds): `xxshort` .05 · `fast` .1 · `normal` .15 · `medium` .2 · `slow` .25 · `slower` .4 · `slowest` .6
+Lint rejects inline cubic-bezier arrays, hand-written `cubic-bezier()` strings, and numeric `duration-NNN` classes. Older copies are baselined in `eslint-suppressions.json`; migrate them when you touch the file.
 
 **Two Motion idioms agents miss:**
 
 - Animating `transform` / `opacity` / `filter` / `clipPath` → set `willChange` for exactly those properties on the element.
-- **Asymmetric exit:** put the faster exit timing in the **`exit` variant's own `transition`**, not a single shared `transition` prop — a lone `transition` prop applies to enter *and* exit, silently making the exit run at the enter timing. Wrap with `AnimatePresence`, and zero motion via `useReducedMotion()`.
+- **Asymmetric exit:** put the faster exit timing in the **`exit` variant's own `transition`**, not a single shared `transition` prop — a lone `transition` prop applies to enter *and* exit, silently making the exit run at the enter timing. Wrap with `AnimatePresence`.
 
 ## Spatial anchoring + consistency
 
 - Open and exit elements from **where they belong**: a dropdown opens from its trigger; a dismissed flag exits the way it entered. Never appear/disappear from disconnected locations — it breaks the sense of origin.
 - Same role → same recipe (enter and exit). Different motion for same-role components increases load.
 
-## Reduced-motion mandate (always your job)
+## Reduced motion
 
-**vpk's `--duration-*` / `--ease-*` tokens do NOT honor reduced motion** — they resolve to literal ms/curves and play regardless of the user's setting. There are no motion *semantic* tokens here that auto-collapse. So **every** motion you add needs an explicit guard — a Tailwind `duration-*`/`ease-*` transition, a CSS `transition` string, Base UI `data-starting-style`/`data-ending-style`, or Motion props alike. No exceptions, **including when you edit an existing component** (e.g. `components/ui/tooltip.tsx`).
+Two global owners already collapse most motion under `prefers-reduced-motion: reduce`, and `app/reduced-motion-contract.test.js` locks both:
 
-- CSS / Tailwind: add `motion-reduce:transition-none` (or `motion-reduce:duration-0`), or an `@media (prefers-reduced-motion: reduce)` rule collapsing duration to ~1ms.
-- Motion for React: gate with `useReducedMotion()` and zero the duration/offset.
+- **CSS** — the reset in `app/globals.css` forces every transition and keyframe animation to ~0ms, covering Tailwind `duration-*`/`ease-*` utilities, `transition` strings, and Base UI `data-starting-style`/`data-ending-style`.
+- **Motion for React** — `<MotionConfig reducedMotion="user">` in `app/providers.tsx` disables transform and layout animations.
+
+Don't add `motion-reduce:transition-none` or per-component `useReducedMotion()` branches for motion those owners cover; duplicate branches have shipped bugs, such as a reduced path that never expanded a drop zone. You still own:
+
+- **Motion the reset cannot see** — `requestAnimationFrame` loops, canvas/WebGL/shaders, GSAP, timers that step visual state, scroll-driven effects, autoplaying media. Gate these with `useReducedMotion()`.
+- **End-state parity** — a reduced path reaches the same final state and fires the same callbacks as the animated one; only the travel is removed.
 - Never flash, rapidly oscillate, or sweep large areas. Confirm the UI is fully usable with all motion disabled.
 
 ## Five quality lenses (verify before shipping)

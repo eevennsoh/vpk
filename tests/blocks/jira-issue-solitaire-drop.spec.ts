@@ -1,11 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 const codes = ["PAY-105", "PAY-107", "PAY-123", "PAY-130"];
 const issue = (page: Page, code: string) => page.locator(`[data-jira-kanban-scrollport] [data-issue-key="${code}"] [draggable]`).first();
-const origin = () => {
-	if (!process.env.PLAYWRIGHT_BASE_URL) throw new Error("Set PLAYWRIGHT_BASE_URL to the verified worktree origin");
-	return process.env.PLAYWRIGHT_BASE_URL;
-};
 declare global { interface Window { solitaireDropAnimations: Animation[]; } }
 test.use({ viewport: { width: 1800, height: 1200 }, ignoreHTTPSErrors: true });
 
@@ -30,7 +28,7 @@ async function observeDropAnimations(page: Page, pause = true) {
 async function prepare(page: Page, count: number, reducedMotion: "reduce" | "no-preference", pause = true) {
 	await observeDropAnimations(page, pause);
 	await page.emulateMedia({ reducedMotion });
-	await page.goto(`${origin()}/components/blocks/jira-dragging`);
+	await page.goto(appUrl("/components/blocks/jira-dragging"));
 	await expect(page.locator("[data-jira-dragging]")).toHaveAttribute("data-variant", "experimental");
 	if (count > 1) {
 		await issue(page, codes[0]).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
@@ -65,7 +63,7 @@ for (const [route, projectCodes, destination] of [
 			test(`${route} uses the new column-drop effect for ${count} issues (${reducedMotion})`, async ({ page }) => {
 				await observeDropAnimations(page);
 				await page.emulateMedia({ reducedMotion });
-				await page.goto(`${origin()}/${route}`);
+				await page.goto(appUrl(`/${route}`));
 				const movedCodes = projectCodes.slice(0, count);
 				if (count > 1) {
 					for (const code of movedCodes) await issue(page, code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
@@ -228,7 +226,7 @@ test("record the four-issue solitaire handoff at native speed", async ({ browser
 
 test("a narrow dark board keeps the cohort intact through horizontal scrolling", async ({ page }) => {
 	await page.setViewportSize({ width: 1100, height: 950 });
-	await page.goto(`${origin()}/components/blocks/jira-dragging`);
+	await page.goto(appUrl("/components/blocks/jira-dragging"));
 	await page.getByRole("button", { name: "Light theme", exact: true }).click();
 	await expect(page.getByRole("button", { name: "Dark theme", exact: true })).toBeVisible();
 	await prepare(page, 2, "no-preference");

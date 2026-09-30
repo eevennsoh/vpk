@@ -1,9 +1,8 @@
-import { execFileSync } from "node:child_process";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const origin = (process.env.PLAYWRIGHT_BASE_URL
-	?? execFileSync(process.execPath, [".agents/skills/vpk-verify/scripts/control-vpk", "url"], { encoding: "utf8" }).trim())
-	.replace(/\/$/u, "");
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 const project = process.env.PLAYWRIGHT_JIRA_PROJECT ?? "jira-team-eu26";
 
 interface CreateFlightFrame {

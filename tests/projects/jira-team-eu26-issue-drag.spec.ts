@@ -1,9 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { appUrl, resolveAppOrigin } from "@/tests/helpers/origin";
+
 test.setTimeout(60_000);
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
+const origin = resolveAppOrigin();
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 
@@ -506,7 +508,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Default empty In progress keeps both status targets usable (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: 1440, height: 800 });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
 		await page.keyboard.press("Escape");
@@ -554,7 +556,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`collapsed drop border hugs the visible cell (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: 1440, height: 800 });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await column(page, "To do").hover({ position: { x: 20, y: 15 } });
 		await page.getByRole("button", { name: "Collapse To do column", exact: true }).click();
 		const collapsed = column(page, "To do");
@@ -581,7 +583,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`collapsed In progress accepts an issue drop (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await column(page, "In progress").hover({ position: { x: 20, y: 15 } });
 		await page.getByRole("button", { name: "Collapse In progress column", exact: true }).click();
 		const progress = column(page, "In progress");
@@ -605,7 +607,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`issue-only preview and two-stage status drop (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await expect(issue(page, "PAY-105")).toBeVisible();
 		const sourceHeight = await issue(page, "PAY-105").evaluate((node) => node.getBoundingClientRect().height);
 		const sourceCard = (await issue(page, "PAY-105").locator('[data-slot="jira-issue-card"]').boundingBox())!;
@@ -684,7 +686,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("leaving a chosen zone resets it; a second drag can choose another status", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
+	await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 	await startDrag(page, "PAY-118");
 	await enterStatus(page, "Paused");
 	const todo = await column(page, "To do").boundingBox();
@@ -704,7 +706,7 @@ test("leaving a chosen zone resets it; a second drag can choose another status",
 
 test("a running issue reorders in its column and scrolls to the last slot", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 800 });
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
+	await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 	await startDrag(page, "PAY-105");
 	const list = column(page, "In progress").locator("[data-jira-kanban-card-list]");
 	const bounds = await list.boundingBox();
@@ -722,7 +724,7 @@ test("a running issue reorders in its column and scrolls to the last slot", asyn
 });
 
 test("Default grouped statuses reject header drops and use 2px split-zone strokes", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
+	await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
 	await page.keyboard.press("Escape");
@@ -764,7 +766,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`EU26 matches Jira Dragging fused selection and cohort preview (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		const card = (code: string) => issue(page, code).locator('[draggable]').first();
 		const backdrop = (code: string) => issue(page, code).locator('[data-slot="jira-issue-agent-backdrop"]');
 		for (const code of ["PAY-118", "PAY-124"]) await expect(backdrop(code)).toHaveCSS("opacity", "0");

@@ -1,5 +1,13 @@
 ---
 description: Skills, parallel work model, agent teams, behavioral rules
+paths:
+  - ".agents/**"
+  - ".claude/**"
+  - ".codex/**"
+  - ".cursor/**"
+  - ".rovo/**"
+  - "scripts/validate-agents*.js"
+  - "scripts/validate-skills*.js"
 ---
 
 # Agent Operations

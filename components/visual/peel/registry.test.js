@@ -56,9 +56,8 @@ test("Peel's demo is registered as an SSR-disabled dynamic import", () => {
 });
 
 /**
- * The motion contract lives in `peel-model.test.ts`, which only runs in CI if it
- * is classified in the manifest — an unlisted `components/**` suite silently
- * defaults to `legacy-drift` and is skipped.
+ * The motion contract lives in `peel-model.test.ts`, which only runs in CI while
+ * it stays classified in the manifest rather than the skipped `legacy-drift` baseline.
  */
 test("the motion model's contract suite is classified for CI", () => {
 	assert.match(

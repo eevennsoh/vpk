@@ -110,28 +110,7 @@ className="duration-medium ease-in-out"
 style={{ transition: "left var(--duration-medium) var(--ease-in-out)" }}
 ```
 
-**Common mistakes:**
-
-| Wrong | Correct |
-|---|---|
-| `duration-[var(--duration-normal)]` | `duration-normal` |
-| `duration-[var(--duration-medium)]` | `duration-medium` |
-| `ease-[var(--ease-in-out)]` | `ease-in-out` |
-| `ease-[var(--ease-out)]` | `ease-out` |
-| `duration-200` (hardcoded) | `duration-medium` (token) |
-| `duration-150` (hardcoded) | `duration-normal` (token) |
-| `transition: "left 0.15s cubic-bezier(0.4, 0, 0.2, 1)"` | `transition: "left var(--duration-medium) var(--ease-in-out)"` |
-| `ease-linear` on sidebar open/close | `ease-in-out` (sidebar's default `ease-linear` is mechanical) |
-| Hardcoded `200ms` or `0.2s` | `var(--duration-medium)` |
-| Mismatched easing between synced elements | All elements that move together must share the same duration + easing |
-
-**Sidebar-specific rule:** The sidebar component (`components/ui/sidebar.tsx`) defaults to `ease-linear` on both `[data-slot=sidebar-gap]` and `[data-slot=sidebar-container]`. Override to `ease-in-out` for natural motion:
-
-```tsx
-<SidebarProvider
-  className="[&_[data-slot=sidebar-gap]]:ease-in-out [&_[data-slot=sidebar-container]]:ease-in-out"
->
-```
+Checks enforce the mechanical cases: `scripts/design-token-usage.test.js` rejects `duration-[var(…)]` / `ease-[var(…)]`, and lint rejects numeric `duration-NNN`, hand-written `cubic-bezier()`, and inline Motion curve arrays (use `@/lib/motion`). Still on you: hardcoded `200ms`/`0.2s` in CSS → `var(--duration-medium)`, and elements that move together share one duration + easing.
 
 ## Common Mistakes
 

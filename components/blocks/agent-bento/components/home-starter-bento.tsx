@@ -8,7 +8,6 @@ import {
 	useReducedMotion,
 	type AnimationPlaybackControls,
 } from "motion/react";
-import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 

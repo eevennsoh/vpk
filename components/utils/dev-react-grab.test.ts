@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { isAtlasTunnelHostname, isReactGrabDisabledPath, shouldDisableReactGrab } from "./dev-react-grab.ts";
 
 test("treats Atlas Tunnel public and private hosts as share hosts", () => {

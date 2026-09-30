@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost";
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 const codes = ["PAY-105", "PAY-107", "PAY-123", "PAY-130"];
 const card = (page: Page, code: string) => page.locator(`[data-jira-kanban-scrollport] [data-issue-key="${code}"] [draggable="true"]`).first();
 const preview = (page: Page) => page.locator('[data-issue-cohort-preview]');

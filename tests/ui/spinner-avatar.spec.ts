@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const URL = `${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/components/ui/spinner#experimental`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const URL = appUrl("/components/ui/spinner#experimental");
 
 test.use({ ignoreHTTPSErrors: true });
 
