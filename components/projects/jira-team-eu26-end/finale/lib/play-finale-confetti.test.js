@@ -151,7 +151,7 @@ test("a renderer that cannot start reports why, instead of drawing nothing", asy
 	assert.deepEqual(later, [{ type: "failed", reason: "shader rejected" }, { type: "failed", reason: "no renderer" }], "a failed renderer is never played");
 });
 
-test("the column's border glows with the bento tiles' own pulsing border, pulled up from its foot to its top", async () => {
+test("the column's border glows with the bento tiles' own pulsing border, traced down from its crown to its foot", async () => {
 	const { FINALE_CONFETTI_GLOW_FRAGMENT: glow, TILE_GLOW_FRAGMENT: tile, finaleConfettiGlowMask: mask, finaleConfettiGlowMaskAt: at } = await loadPlayer();
 	// The tile shader is wrapped, not edited: every line of it but its entry point survives.
 	assert.equal(glow.replace("void tileGlow() {", "void main() {").startsWith(tile), true);
@@ -162,18 +162,18 @@ test("the column's border glows with the bento tiles' own pulsing border, pulled
 	const middle = COLUMN.y + COLUMN.height / 2;
 	const bottom = COLUMN.y + COLUMN.height;
 	const lit = (trace, y) => at(mask(COLUMN, trace), y);
-	assert.equal(lit(0, bottom), 1, "it lights on the foot…");
+	assert.equal(lit(0, top), 1, "it lights on the crown…");
 	assert.equal(lit(0, middle), 0);
-	assert.equal(lit(0.5, bottom), 0, "…is pulled off it as it climbs…");
+	assert.equal(lit(0.5, top), 0, "…lets go of it as it travels down…");
 	assert.equal(lit(0.5, middle), 1);
-	assert.equal(lit(1, top), 1, "…and ends round the top");
+	assert.equal(lit(1, bottom), 1, "…and ends round the foot, where the flash ignites");
 	assert.equal(lit(1, middle), 0);
-	assert.equal(lit(1, bottom), 0);
+	assert.equal(lit(1, top), 0);
 	let previous = mask(COLUMN, 0);
 	for (let trace = 0.05; trace <= 1.001; trace += 0.05) {
 		const next = mask(COLUMN, trace);
-		assert.ok(next.lead.from < previous.lead.from, "its top edge rises the whole way");
-		assert.ok(next.tail.from <= previous.tail.from, "and its bottom only ever follows it up");
+		assert.ok(next.bottom.from > previous.bottom.from, "its bottom edge descends the whole way");
+		assert.ok(next.top.from >= previous.top.from, "and its top only ever follows it down");
 		previous = next;
 	}
 	assert.deepEqual(mask(COLUMN, 2), mask(COLUMN, 1), "never past the top");
@@ -291,7 +291,7 @@ test("cancel and resize clear at once; a stale report cannot touch the next show
 	assert.equal(await settled(second.gathered), true, "and lets the finale go on with fresh geometry");
 });
 
-test("a failing worker falls back to the main thread, then to no confetti; the finale is never held", async (t) => {
+test("a failing worker hands the running show to the main thread; a second failure never holds the finale", async (t) => {
 	const dom = fakeDom(t);
 	const { createFinaleConfetti, probe } = await loadController();
 	const confetti = createFinaleConfetti();
@@ -299,21 +299,31 @@ test("a failing worker falls back to the main thread, then to no confetti; the f
 	const warn = console.warn;
 	console.warn = () => {};
 	t.after(() => { console.warn = warn; });
-	const first = confetti.play(COLUMN);
-	dom.workers[0].onerror({ message: "module workers unavailable" });
-	assert.equal(await settled(first.gathered), true, "the show goes on");
-	assert.equal(dom.topLayer.length, 0);
-	assert.equal(dom.workers[0].terminated, true);
-	const second = confetti.play(COLUMN);
-	assert.equal(dom.workers.length, 1, "no second worker");
+	const show = confetti.play(COLUMN);
+	const [worker] = dom.workers;
+	const { id } = worker.messages.at(-1).message;
+	worker.onerror({ message: "worker WebGL unavailable" });
+	assert.equal(worker.terminated, true);
+	// Regression: the show once resolved empty here, so the keynote's only run lost its confetti.
 	const [main] = probe.players;
+	assert.ok(main, "the fallback starts at once, not on a later replay");
 	assert.equal(main.commands[0].type, "init");
-	assert.equal(main.commands.at(-1).type, "play");
+	assert.deepEqual({ ...main.commands.at(-1), column: null }, { type: "play", id, width: 1440, height: 900, dpr: 2, column: null }, "the same show restarts there");
+	assert.equal(dom.topLayer.length, 1, "on its own top-layer canvas");
+	assert.equal(await settled(show.gathered), false, "and the finale still waits for its pieces");
+	main.emit({ type: "gathered", id });
+	assert.equal(await settled(show.gathered), true);
+	show.release();
+	assert.deepEqual(main.commands.at(-1), { type: "release", id }, "the handle drives whichever renderer is drawing");
+	// With no renderer left, the next show releases the finale at once and draws nothing.
+	const next = confetti.play(COLUMN);
 	main.emit({ type: "failed", reason: "no WebGL2" });
-	assert.equal(await settled(second.gathered), true);
-	const third = confetti.play(COLUMN);
-	assert.equal(await settled(third.gathered), true, "after two failures the finale simply runs without confetti");
+	assert.equal(await settled(next.gathered), true);
 	assert.equal(dom.topLayer.length, 0);
+	const last = confetti.play(COLUMN);
+	assert.equal(await settled(last.gathered), true, "after two failures the finale simply runs without confetti");
+	assert.equal(dom.topLayer.length, 0);
+	assert.equal(dom.workers.length, 1, "and no worker is retried");
 });
 
 test("a stalled renderer holds the flash for at most a short grace", async (t) => {

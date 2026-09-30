@@ -21,7 +21,7 @@ test("the timeline composes the resolved VPK duration tokens and hands over in t
 	const { FINALE_CONFETTI_TIMING: T, FLASH_TIMING } = load();
 	const css = readFileSync("app/tailwind-theme.css", "utf8");
 	const token = (name) => Number(css.match(new RegExp(`--duration-${name}:\\s*(\\d+)ms`))[1]) / 1000;
-	assert.equal(T.volley, token("xxshort"));
+	assert.equal(T.volley, token("slow"), "the cannons fire as a stream the eye can follow");
 	assert.equal(T.gatherStart, token("slowest") * 2 + token("medium"), "a long hang before the vortex opens");
 	assert.equal(T.gatherSpread, token("slower"));
 	assert.equal(T.firstArrival, (token("slowest") + token("slower")) * 2);
@@ -46,6 +46,23 @@ test("one mirrored burst of Rovo paper, sequins and ribbons, balanced in hue eve
 	for (const hue of FLASH_ROVO_COLORS) {
 		const share = trail.filter((piece) => piece.front === hue).length / trail.length;
 		assert.ok(share > 0.15 && share < 0.35, `the trail carries ${hue} in proportion (${share.toFixed(2)})`);
+	}
+});
+
+test("each corner fires a stream: the plume's head first, the gentle trail dribbling out last", () => {
+	const { createFinaleConfettiBurst, FINALE_CONFETTI_TIMING: T } = load();
+	const { pieces } = createFinaleConfettiBurst(STAGE);
+	const trail = (piece) => Math.hypot(piece.velocity.x, piece.velocity.y) < 2200 * 0.5;
+	const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+	for (const corner of ["left", "right"]) {
+		const fired = pieces.filter((piece) => piece.corner === corner);
+		const delays = fired.map((piece) => piece.delay);
+		assert.ok(Math.min(...delays) < 0.01 && Math.max(...delays) > T.volley * 0.9 && Math.max(...delays) <= T.volley, "it keeps firing across the whole volley");
+		// Regression: the whole volley once fired within 50ms, a fan already formed when first seen.
+		assert.ok(Math.max(...delays) - Math.min(...delays) > 0.2, "long enough to watch it leave the corner");
+		const head = fired.filter((piece) => !trail(piece)).map((piece) => piece.delay);
+		assert.ok(median(head) < T.volley * 0.4, "front-loaded: most of the plume leaves early");
+		assert.ok(fired.filter(trail).every((piece) => piece.delay >= T.volley * 0.35 - 1e-9), "the slow trail follows it out");
 	}
 });
 

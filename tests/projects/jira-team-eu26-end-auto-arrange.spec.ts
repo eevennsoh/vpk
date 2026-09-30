@@ -309,7 +309,7 @@ test("confetti fires a broad 3D burst from both lower corners and gathers into t
 	// Just before the gather cue (FINALE_CONFETTI_TIMING.gathered, 2.4s); holding past it ignites the finale.
 	const gather = await paint(2.3);
 	await page.screenshot({ path: "output/agent-browser/keynote-completion/confetti-gather-2300ms.png" });
-	const { sourceX, sourceY, left, right, crown, aspect } = await page.locator('[data-jira-kanban-column="Done"]').evaluate((column) => {
+	const { sourceX, sourceY, left, right, foot, aspect } = await page.locator('[data-jira-kanban-column="Done"]').evaluate((column) => {
 		const rect = column.getBoundingClientRect();
 		return {
 			sourceX: (rect.x + rect.width / 2) / innerWidth,
@@ -317,7 +317,6 @@ test("confetti fires a broad 3D burst from both lower corners and gathers into t
 			left: rect.left / innerWidth,
 			right: rect.right / innerWidth,
 			foot: rect.bottom / innerHeight,
-			crown: rect.top / innerHeight,
 			aspect: innerWidth / innerHeight,
 		};
 	});
@@ -325,7 +324,7 @@ test("confetti fires a broad 3D burst from both lower corners and gathers into t
 	const distance = ([x, y]: [number, number]) => Math.hypot((x - sourceX) * aspect, y - sourceY);
 	expect(gather.length, "the stream is still visible").toBeGreaterThan(100);
 	expect(gather.filter((point) => distance(point) < 0.45).length / gather.length, "and converges on the flash's source").toBeGreaterThan(0.6);
-	// The glow (a bento-weight hairline, lost at 1/5 scale) has been pulled up round the column's top.
+	// The glow (a bento-weight hairline, lost at 1/5 scale) has been traced down round the column's foot.
 	const hairline = await page.evaluate(({ y, x0, x1 }) => {
 		const canvas = document.querySelector<HTMLCanvasElement>("[data-finale-confetti] canvas")!;
 		const scale = canvas.width / innerWidth;
@@ -339,8 +338,8 @@ test("confetti fires a broad 3D burst from both lower corners and gathers into t
 		let lit = 0;
 		for (let index = 3; index < data.length; index += 4) if (data[index] > 12) lit++;
 		return lit;
-	}, { y: crown, x0: left, x1: right });
-	expect(hairline, "round the column's top").toBeGreaterThan(150);
+	}, { y: foot, x0: left, x1: right });
+	expect(hairline, "round the column's foot").toBeGreaterThan(150);
 	expect(gather.filter(([x]) => x < 0.5).length, "nothing is left behind on the far side").toBe(0);
 	// Resuming completes the gather and ignites the unchanged finale from the ember.
 	await page.evaluate(() => (window as typeof window & { __jiraTeamEu26Finale: { holdConfetti: (time: number | null) => void } }).__jiraTeamEu26Finale.holdConfetti(null));

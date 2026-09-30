@@ -12,8 +12,8 @@
  * 3. Gather: a vortex opens on the foot of the Done column. Pieces spiral
  *    down onto its bottom border (the farthest leave first and arrive last),
  *    shedding their shading until they are pure hue. The bento tiles' own
- *    pulsing glow lights that border, and is pulled steadily up the column's
- *    sides through the pull, ending round its top as the last piece lands. When
+ *    pulsing glow lights the column's crown and is traced steadily down its
+ *    sides through the pull, ending round its foot as the last piece lands. When
  *    the finale ignites, the flash floods up from the foot and the glow
  *    blooms into it.
  *
@@ -42,8 +42,12 @@ const MOTION_DURATION = {
 } as const;
 
 export const FINALE_CONFETTI_TIMING = {
-	/** Both cannons fire across this window: a pop, not a single spawn frame. */
-	volley: MOTION_DURATION.xxshort,
+	/**
+	 * Both cannons fire across this window, front-loaded, with the slow trail
+	 * dribbling out last: a stream the eye can follow out of each corner,
+	 * rather than a fan that is already formed within a few frames.
+	 */
+	volley: MOTION_DURATION.slow,
 	/**
 	 * Free flight (launch, apex and a long flutter) before the vortex opens.
 	 * Drag leaves pieces at a slow terminal fall, so ~94% are still on screen here.
@@ -219,7 +223,7 @@ export function finaleConfettiGlow(time: number, charge: number): number {
 }
 
 /**
- * How far the glow has been pulled up the column (0 → 1): steadily, across
+ * How far the glow has been traced down the column (0 → 1): steadily, across
  * the whole pull, from the moment the vortex opens until the last piece lands.
  * Paced by time rather than by the pieces (whose arrivals bunch in the middle
  * of the pull), so the trace never races and can be followed all the way up.
@@ -281,7 +285,8 @@ export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = f
 			front: FLASH_ROVO_COLORS[index % FLASH_ROVO_COLORS.length],
 			back: FLASH_ROVO_COLORS[(index + 1) % FLASH_ROVO_COLORS.length],
 			origin: { x: corner === "left" ? 0 : width, y: height + 8, z: random() * 40 },
-			delay: random() * T.volley,
+			// One draw, as before: the plume's head leaves first, the gentle trail last.
+			delay: ((roll) => T.volley * (gentle ? 0.35 + 0.65 * roll : roll ** 1.5))(random()),
 			velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed, z: depth * drag },
 			drag,
 			fall: fallBase * scale * (gentle ? 0.45 : 1),

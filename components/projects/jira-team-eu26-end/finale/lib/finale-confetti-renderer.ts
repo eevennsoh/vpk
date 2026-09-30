@@ -10,8 +10,8 @@
  *   stretched along their motion. (Depth comes from perspective, focus and
  *   blur; cast shadows read as grey ghosts over a white board and were cut.)
  * - the Done column's border, lit by the bento tiles' own pulsing border: a
- *   band that grows from its foot and is pulled up the column as the burst is
- *   drawn in, ending round the top (see `FINALE_CONFETTI_GLOW_FRAGMENT`).
+ *   band that grows from its crown and is traced down the column as the burst
+ *   is drawn in, ending round the foot (see `FINALE_CONFETTI_GLOW_FRAGMENT`).
  */
 
 import * as THREE from "three";
@@ -49,7 +49,7 @@ export const FINALE_CONFETTI_LOOK = {
 	glowTile: 0,
 	/**
 	 * Length of the glowing band as a share of the column's height, once it has
-	 * grown from the foot: past that its bottom lets go and follows it up.
+	 * grown from the crown: past that its top lets go and follows it down.
 	 */
 	glowBand: 0.35,
 } as const;
@@ -90,10 +90,14 @@ void main() {
 	// Well into the vortex, a piece slims into a thread of light and the exposure
 	// lengthens, so the stream reads as light painting; early on it is still confetti.
 	float thread = smoothstep(0.25, 0.8, s);
+	// Fresh out of the cannon, a long exposure streaks each piece back along its
+	// own path to its corner, so the first frames read as a burst out of both
+	// corners; it decays over the piece's first ~70ms of flight.
+	float launch = exp(-max(uTime - aOrigin.w, 0.0) / 0.07);
 	vec3 center = confettiCenter(uTime);
-	vec3 trail = center - confettiCenter(uTime - uShutter * (1.0 + 2.0 * thread));
+	vec3 trail = center - confettiCenter(uTime - uShutter * (1.0 + 2.0 * thread + 5.0 * launch));
 	float span = aSize.x * pow(1.0 - pull, 0.35);
-	float breadth = aSize.y * sqrt(1.0 - pull) * mix(1.0, 0.26, thread);
+	float breadth = aSize.y * sqrt(1.0 - pull) * mix(1.0, 0.26, thread) * mix(1.0, 0.6, launch);
 	// Depth of field: soft near the lens, and (more gently) far behind the page.
 	float soft = max(center.z - uFocus.x, 0.0) * uFocus.y + max(-center.z - uFocus.z, 0.0) * uFocus.w;
 	float pad = 1.5 + soft;
@@ -107,8 +111,9 @@ void main() {
 	float behind = streak > 0.5 ? smoothstep(0.3, -0.3, dot(normalize(offset + vec3(0.0001)), trail / streak)) : 0.0;
 	vec3 p = center + offset - trail * behind;
 	float size = max(span, breadth) + soft;
-	// A streak spreads the same paint over more screen; a thread of light keeps its presence.
-	float presence = mix(clamp(size / (size + streak), 0.45, 1.0), 0.92, smoothstep(0.1, 0.4, s)) * (1.0 - uRelease);
+	// A streak spreads the same paint over more screen; launch rays and threads of light keep their presence.
+	float physical = mix(clamp(size / (size + streak), 0.45, 1.0), 0.8, launch);
+	float presence = mix(physical, 0.92, smoothstep(0.1, 0.4, s)) * (1.0 - uRelease);
 	// Defocused pieces spread thinner, and distant ones fade a little into the air.
 	float distant = smoothstep(uFocus.z, uFocus.z * 5.0, -center.z);
 	vAlpha = presence * mix(1.0, 0.65, clamp(soft / 12.0, 0.0, 1.0)) * mix(1.0, 0.7, distant);
@@ -187,11 +192,11 @@ const TILE_GLOW_MAIN = "void main() {";
 /**
  * The bento tiles' pulsing border (Paper's; `finale-tile-glow.ts`), unchanged,
  * run round the whole column with its `main` wrapped so only a band of its
- * stroke shows, pulled up the column (`finaleConfettiGlowMask`, mirrored by
+ * stroke shows, traced down the column (`finaleConfettiGlowMask`, mirrored by
  * `finaleConfettiGlowMaskAt`).
  */
 export const FINALE_CONFETTI_GLOW_FRAGMENT = `${TILE_GLOW_FRAGMENT.replace(TILE_GLOW_MAIN, "void tileGlow() {")}
-// The band, y px (down): its rising top edge (from, fade) and its trailing bottom edge (from, fade).
+// The band, y px (down): its top edge (from, fade) and its bottom edge (from, fade).
 uniform vec4 uBand;
 
 void main() {
@@ -201,10 +206,10 @@ void main() {
 `;
 
 export interface FinaleConfettiGlowMask {
-	/** The rising top edge: the stroke is gone above `from` and whole below `from + fade`. */
-	readonly lead: { readonly from: number; readonly fade: number };
-	/** The trailing bottom edge: whole above `from` and gone below `from + fade`. */
-	readonly tail: { readonly from: number; readonly fade: number };
+	/** The band's top edge: the stroke is gone above `from` and whole below `from + fade`. */
+	readonly top: { readonly from: number; readonly fade: number };
+	/** The band's bottom edge: whole above `from` and gone below `from + fade`. */
+	readonly bottom: { readonly from: number; readonly fade: number };
 }
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
@@ -213,31 +218,31 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
 }
 
 /**
- * Which band of the column's border glows as it is traced up the column
- * (`trace` 0 → 1, `finaleConfettiTrace`), as if the glow were pulled up it. It lights on the foot (the
- * bottom edge, its corners and the start of each side) and grows up both
- * sides; once it is `glowBand` long its bottom lets go and follows, and in the
- * last stretch it is drawn up into the top edge, where it ends round the top
- * corners as the last piece lands.
+ * Which band of the column's border glows as it is traced down the column
+ * (`trace` 0 → 1, `finaleConfettiTrace`), as if the pieces pulled the glow
+ * down with them. It lights on the crown (the top edge, its corners and the
+ * start of each side) and grows down both sides; once it is `glowBand` long
+ * its top lets go and follows, and in the last stretch it is drawn down into
+ * the bottom edge, where it ends round the foot as the last piece lands, the
+ * point the flash then floods up from.
  */
 export function finaleConfettiGlowMask(column: FinaleConfettiColumn, trace: number): FinaleConfettiGlowMask {
 	const i = Math.min(1, Math.max(0, trace));
 	const fade = Math.min(80, column.height * 0.15);
-	const bottom = column.y + column.height;
-	const foot = column.radius + 28;
+	const crown = column.radius + 28;
 	// Clear of an edge and its bloom.
 	const over = fade + 24;
-	// Heights above the bottom border.
-	const lead = foot + (column.height + over - foot) * i;
-	const crown = column.height - foot;
-	const trail = Math.min(crown, Math.max(-over, lead - column.height * FINALE_CONFETTI_LOOK.glowBand));
-	const tail = trail + (crown - trail) * smoothstep(0.8, 1, i);
-	return { lead: { from: bottom - lead - fade, fade }, tail: { from: bottom - tail, fade } };
+	// Depths below the top border.
+	const lead = crown + (column.height + over - crown) * i;
+	const foot = column.height - crown;
+	const trail = Math.min(foot, Math.max(-over, lead - column.height * FINALE_CONFETTI_LOOK.glowBand));
+	const tail = trail + (foot - trail) * smoothstep(0.8, 1, i);
+	return { top: { from: column.y + tail - fade, fade }, bottom: { from: column.y + lead, fade } };
 }
 
 /** The band's opacity at viewport `y` (px, down); mirrors `FINALE_CONFETTI_GLOW_FRAGMENT`. */
 export function finaleConfettiGlowMaskAt(mask: FinaleConfettiGlowMask, y: number): number {
-	return smoothstep(mask.lead.from, mask.lead.from + mask.lead.fade, y) * (1 - smoothstep(mask.tail.from, mask.tail.from + mask.tail.fade, y));
+	return smoothstep(mask.top.from, mask.top.from + mask.top.fade, y) * (1 - smoothstep(mask.bottom.from, mask.bottom.from + mask.bottom.fade, y));
 }
 
 function vector(hex: string): THREE.Vector3 {
@@ -401,12 +406,12 @@ export class FinaleConfettiRenderer {
 		if (!this.burst) return;
 		this.uniforms.uTime.value = time;
 		this.uniforms.uRelease.value = release;
-		// The border lights as the vortex opens, is pulled steadily up the column
+		// The border lights as the vortex opens, is traced steadily down the column
 		// through the pull, brightens as the pieces land, and blooms into the flash as it goes.
 		const g = this.glowUniforms;
 		g.uTime.value = time;
 		const mask = finaleConfettiGlowMask(this.glowColumn, finaleConfettiTrace(time));
-		g.uBand.value.set(mask.lead.from, mask.lead.fade, mask.tail.from, mask.tail.fade);
+		g.uBand.value.set(mask.top.from, mask.top.fade, mask.bottom.from, mask.bottom.fade);
 		g.uEnvelope.value = finaleConfettiGlow(time, finaleConfettiCharge(this.burst, time)) * (1 - release) * (1 - release);
 		g.uLook.value.y = this.glowBloom * (1 + 3 * release);
 		this.renderer.render(this.scene, this.camera);

@@ -91,7 +91,9 @@ export function createFinaleConfetti(): FinaleConfetti {
 	const onEvent = (event: FinaleConfettiEvent) => {
 		if (event.type === "failed") {
 			if (process.env.NODE_ENV !== "production") console.warn("Finale confetti renderer failed:", event.reason);
-			// Retry once on the main thread; after that, the finale runs without confetti.
+			// The first failure falls back to the main thread, and the running show
+			// moves there at once: for a keynote this is the only run. After a
+			// second failure the finale runs without confetti.
 			failures += 1;
 			host?.dispose();
 			host = null;
@@ -113,28 +115,30 @@ export function createFinaleConfetti(): FinaleConfetti {
 		const gathered = new Promise<void>((resolve) => {
 			resolveGathered = resolve;
 		});
-		const current = ensureHost();
-		if (!current) {
-			resolveGathered();
-			return { gathered, raise: () => {}, release: () => {}, cancel: () => {} };
-		}
 		const id = ++sequence;
-		const { layer } = current;
-		const inTopLayer = () => layer.hasAttribute("popover") && layer.matches(":popover-open");
+		// The host drawing this show; it changes if the worker fails and the show moves to the main thread.
+		let current: Host | null = null;
 		let alive = true;
 		let releaseTimer = 0;
+		let gatherTimer = 0;
+		const inTopLayer = (layer: HTMLElement) => layer.hasAttribute("popover") && layer.matches(":popover-open");
+		const removeLayer = () => {
+			const layer = current?.layer;
+			if (!layer) return;
+			if (inTopLayer(layer)) layer.hidePopover();
+			layer.remove();
+		};
 		const unmount = () => {
 			alive = false;
 			window.clearTimeout(gatherTimer);
 			window.clearTimeout(releaseTimer);
 			window.removeEventListener("resize", onResize);
-			if (inTopLayer()) layer.hidePopover();
-			layer.remove();
+			removeLayer();
 			if (active?.id === id) active = null;
 		};
 		const cancel = () => {
 			if (!alive) return;
-			current.send({ type: "cancel", id });
+			current?.send({ type: "cancel", id });
 			unmount();
 		};
 		// A resized viewport clears the burst; the finale goes on with fresh geometry.
@@ -142,39 +146,55 @@ export function createFinaleConfetti(): FinaleConfetti {
 			cancel();
 			resolveGathered();
 		};
-		const gatherTimer = window.setTimeout(resolveGathered, FINALE_CONFETTI_TIMING.gathered * 1000 + GATHER_GRACE_MS);
+		/** (Re)start this show on the current host; false when no renderer is left. */
+		const start = () => {
+			current = ensureHost();
+			if (!current) return false;
+			window.clearTimeout(gatherTimer);
+			gatherTimer = window.setTimeout(resolveGathered, FINALE_CONFETTI_TIMING.gathered * 1000 + GATHER_GRACE_MS);
+			// Shown last, so it sits above anything already in the top layer (the finale's dialog).
+			document.body.append(current.layer);
+			if (current.layer.hasAttribute("popover")) current.layer.showPopover();
+			current.send({
+				type: "play",
+				id,
+				width: window.innerWidth,
+				height: window.innerHeight,
+				dpr: Math.min(window.devicePixelRatio || 1, 2),
+				column: { x: column.x, y: column.y, width: column.width, height: column.height, radius: column.radius },
+			});
+			return true;
+		};
 		active = {
 			id,
 			gather: resolveGathered,
 			done: unmount,
 			fail: () => {
+				removeLayer();
+				if (alive && start()) return;
 				unmount();
 				resolveGathered();
 			},
 			cancel,
 		};
-		document.body.append(layer);
-		if (layer.hasAttribute("popover")) layer.showPopover();
+		if (!start()) {
+			unmount();
+			resolveGathered();
+			return { gathered, raise: () => {}, release: () => {}, cancel: () => {} };
+		}
 		window.addEventListener("resize", onResize);
-		current.send({
-			type: "play",
-			id,
-			width: window.innerWidth,
-			height: window.innerHeight,
-			dpr: Math.min(window.devicePixelRatio || 1, 2),
-			column: { x: column.x, y: column.y, width: column.width, height: column.height, radius: column.radius },
-		});
 		return {
 			gathered,
 			raise: () => {
 				// Re-showing moves it to the top of the top layer, above the dialog.
-				if (!alive || !inTopLayer()) return;
+				const layer = current?.layer;
+				if (!alive || !layer || !inTopLayer(layer)) return;
 				layer.hidePopover();
 				layer.showPopover();
 			},
 			release: () => {
 				if (!alive || releaseTimer) return;
-				current.send({ type: "release", id });
+				current?.send({ type: "release", id });
 				releaseTimer = window.setTimeout(unmount, RELEASE_GRACE_MS);
 			},
 			cancel,
