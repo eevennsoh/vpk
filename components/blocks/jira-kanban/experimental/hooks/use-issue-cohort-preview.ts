@@ -4,9 +4,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef, type DragEvent } from 
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { createIssueCohortPreview } from "../lib/issue-drag-preview";
 import { createIssueCohortGatherKeyframes, ISSUE_COHORT_GATHER_TIMING, type IssueCohortGatherLayer } from "../lib/issue-cohort-gather";
+import { settleIssueCohortPreview } from "../lib/issue-drop-handoff";
 
-/** A visual traveller; native Jira drag/drop continues to own the transaction. */
-export function useIssueCohortPreview(enabled: boolean, draggedCardCode: string | null, onCancel?: () => void) {
+/**
+ * A visual traveller; native Jira drag/drop continues to own the transaction.
+ * With `settleOnDrop` (boards that hand their drop commit to the next frame),
+ * a drop lets it settle where it was released instead of vanishing at once.
+ */
+export function useIssueCohortPreview(enabled: boolean, draggedCardCode: string | null, onCancel?: () => void, settleOnDrop = false) {
 	const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const preview = useRef<HTMLElement | null>(null);
 	const emptyImage = useRef<HTMLCanvasElement | null>(null);
@@ -19,6 +24,9 @@ export function useIssueCohortPreview(enabled: boolean, draggedCardCode: string 
 	const sourceObserver = useRef<MutationObserver | null>(null);
 	const cancelCallback = useRef(onCancel);
 	useLayoutEffect(() => { cancelCallback.current = onCancel; }, [onCancel]);
+	// Read at release: a live media change must not re-run the drag listeners, whose cleanup cancels the drag.
+	const reduceMotionAtRelease = useRef(reduceMotion);
+	useLayoutEffect(() => { reduceMotionAtRelease.current = reduceMotion; }, [reduceMotion]);
 	const stop = useCallback(() => {
 		sourceObserver.current?.disconnect();
 		sourceObserver.current = null;
@@ -36,6 +44,14 @@ export function useIssueCohortPreview(enabled: boolean, draggedCardCode: string 
 		stop();
 		if (active) cancelCallback.current?.();
 	}, [stop]);
+	// Released, the traveller is no longer the live preview: later stops (drag
+	// end, the committed arrival) leave its fade to finish.
+	const settle = useCallback(() => {
+		const node = preview.current;
+		preview.current = null;
+		stop();
+		if (node) settleIssueCohortPreview(node, reduceMotionAtRelease.current);
+	}, [stop]);
 
 	useEffect(() => {
 		if (!enabled) return;
@@ -52,16 +68,17 @@ export function useIssueCohortPreview(enabled: boolean, draggedCardCode: string 
 		// pointer there, and dragenter covers the first move into a new target.
 		document.addEventListener("dragenter", move, true);
 		document.addEventListener("dragover", move, true);
+		const release = settleOnDrop ? settle : stop;
 		document.addEventListener("dragend", stop);
-		document.addEventListener("drop", stop);
+		document.addEventListener("drop", release);
 		return () => {
 			document.removeEventListener("dragenter", move, true);
 			document.removeEventListener("dragover", move, true);
 			document.removeEventListener("dragend", stop);
-			document.removeEventListener("drop", stop);
+			document.removeEventListener("drop", release);
 			cancel();
 		};
-	}, [enabled, stop, cancel]);
+	}, [enabled, stop, cancel, settle, settleOnDrop]);
 	useLayoutEffect(() => { if (!draggedCardCode) stop(); }, [draggedCardCode, stop]);
 	useEffect(() => {
 		if (reduceMotion) for (const animation of animations.current) animation.cancel();

@@ -140,6 +140,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				const trace = evidence.find((item) => item.trace)!;
 				const expectedDuration = 650;
 				expect(Number(trace.timing.duration)).toBeCloseTo(expectedDuration, 3);
+				// A bulk Done sweep starts once the stack has unfolded; a single card waits for neighbour reflow.
+				const traceDelay = count > 1 ? 420 : 150;
+				expect(Number(trace.timing.delay)).toBeCloseTo(traceDelay, 3);
 				const reveals = evidence.filter((item) => !item.trace);
 				expect(reveals).toHaveLength(count - 1);
 				for (const [index, reveal] of reveals.entries()) {
@@ -153,6 +156,12 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				const unfolding = await done.locator("[data-issue-key]").evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
 				expect(unfolding[0]).toBe(tops[0]);
 				for (const top of unfolding.slice(1)) expect(top).toBeGreaterThan(tops[0]);
+				// The border sweep cannot start while the unfolding card borders are still moving.
+				const traceProgress = () => page.evaluate(() => window.solitaireDropAnimations.find((animation) => (animation.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]"))!.effect!.getComputedTiming().progress);
+				expect(await traceProgress() === null).toBe(count > 1);
+				// Mid-sweep, its outlines sit on the settled card faces.
+				await page.evaluate((time) => window.solitaireDropAnimations.forEach((animation) => { animation.currentTime = time; }), traceDelay + 160);
+				expect(await traceProgress()).toBeGreaterThan(0);
 				await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
 				const outlinesFollowCards = await done.locator("[data-issue-key]").evaluateAll((nodes) => {
 					const outlines = [...document.querySelectorAll("[data-issue-drop-trace] g rect")];
