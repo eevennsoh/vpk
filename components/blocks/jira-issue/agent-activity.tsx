@@ -642,6 +642,7 @@ function JiraIssueAgentActivityRow({
 				animateStateTransition ? <AgentSessionShortLifecycleIcon
 					accessibleState={lifecycleState}
 					animateTransition
+					transitionEffect="fade"
 					showWorkingSpinner
 					state={lifecycleState}
 					renderGlyph={(state) => <JiraIssueAgentStatusIcon
