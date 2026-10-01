@@ -158,6 +158,13 @@ The PR body must include:
 - overlap/freshness result;
 - explicit reviewer focus and remaining risk.
 
+Write the body with a shell heredoc into the worktree's ignored `output/`
+directory (for example `output/automation/pr-body.md`) and pass it with
+`--body-file`: `gh pr create` for a new PR, or `gh pr edit <number>` when
+updating the PR this branch already owns. Do not `apply_patch` files outside
+the worktree, such as `/tmp`: that write waits for a human approval, and
+unattended runs have stalled on it for hours.
+
 Report the PR URL, branch, commit, validation state, and reviewer focus. A
 producer job stops at review-ready PR handoff. Never merge, enable auto-merge,
 approve, or bypass review/check policy from this skill.
