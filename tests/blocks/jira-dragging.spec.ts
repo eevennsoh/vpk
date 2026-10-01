@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
@@ -87,19 +87,28 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				await page.mouse.move(source.x + 95, source.y + 35, { steps: 5 });
 				await expect(card).toHaveAttribute("data-dragging", "true");
 				const content = (await review.locator('[data-jira-kanban-column-content]').boundingBox())!;
-				// Exercise both the real UI and the full-height invisible remainder.
+				if (index > 0) {
+					// Only the card stack and its trailing edge place an issue precisely.
+					const stacked = (await review.locator('[data-board-agent-session-drop-zone="issue"]').last().boundingBox())!;
+					await page.mouse.move(stacked.x + 90, stacked.y + stacked.height + 4, { steps: 5 });
+					await page.mouse.move(stacked.x + 91, stacked.y + stacked.height + 4);
+					const line = review.locator('[data-insertion-line]');
+					await expect(line).toBeVisible();
+					// The circle marker's rule paints from ::before so the ring's centre stays clear.
+					await expect(line).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+					await expect.poll(() => line.evaluate((node) => getComputedStyle(node, "::before").backgroundColor)).toBe(selectedColor);
+					await expect.poll(async () => (await geometry()).color).toBe("rgba(0, 0, 0, 0)");
+				}
+				// Exercise both the real UI and the full-height invisible remainder:
+				// unused space below the stack targets the whole column.
 				for (const y of [target.y + target.height - 70, content.y + content.height - 12, target.y + target.height - 90]) {
 					await page.mouse.move(target.x + 90, y, { steps: 5 });
 					await page.mouse.move(target.x + 91, y);
-					await expect.poll(async () => (await geometry()).color).toBe(index === 0 ? selectedColor : "rgba(0, 0, 0, 0)");
+					await expect.poll(async () => (await geometry()).color).toBe(selectedColor);
 					await expect.poll(async () => (await geometry()).background).toBe("rgba(0, 0, 0, 0)");
 					if (y === content.y + content.height - 12) {
 						await expect(review.locator('[data-issue-drop-entered]')).toHaveAttribute("data-issue-drop-entered", title);
-						if (index === 0) {
-							await expect(review.locator('[data-insertion-line]')).toHaveCount(0);
-						} else {
-							await expect(review.locator('[data-insertion-line]')).toHaveCSS("background-color", selectedColor);
-						}
+						await expect(review.locator('[data-insertion-line]')).toHaveCount(0);
 					}
 					await expect.poll(() => page.locator('[data-jira-kanban-column="To do"] [data-jira-kanban-column-drop-ring]').evaluate((node) => getComputedStyle(node).borderTopColor)).toBe("rgba(0, 0, 0, 0)");
 					await expect.poll(() => page.locator('[data-jira-kanban-column="To do"] [data-jira-kanban-column-drop-ring]').evaluate((node) => getComputedStyle(node).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
@@ -115,6 +124,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				await page.screenshot({ path: `output/agent-browser/jira-dragging/drop-border-${title.replaceAll(" ", "-")}-${index}-${reducedMotion}.png`, timeout: 5000 });
 				await page.mouse.up();
 				await expect(review.locator('[data-board-agent-session-drop-zone="issue"]')).toHaveCount(index + 1);
+				// A whole-column drop lands in natural order, ahead of the existing cards.
+				await expect.poll(() => review.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-issue-key")))).toEqual(["PAY-105", "PAY-107"].slice(0, index + 1).reverse());
 				await expect.poll(async () => (await geometry()).color).toBe("rgba(0, 0, 0, 0)");
 				await expect.poll(async () => (await geometry()).background).toBe("rgba(0, 0, 0, 0)");
 			}
@@ -162,8 +173,11 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			});
 			const choices = progress.getByRole("group", { name: "Choose a status in In progress", exact: true });
 			const ring = progress.locator('[data-jira-kanban-column-drop-ring]');
+			const transitionCopy = (column: Locator) => column.locator('[data-slot="board-column-header"]');
 			await expect(choices).toBeVisible();
-			await expect(progress.getByText("To do →", { exact: true })).toBeVisible();
+			await expect(transitionCopy(progress).locator('[data-board-column-transition-prefix]').first()).toHaveText("To do");
+			await expect(transitionCopy(progress).locator('[data-board-column-transition-arrow] svg').first()).toBeVisible();
+			await expect(transitionCopy(progress)).not.toContainText("→");
 			await expect(choices.locator('[data-issue-status-zone]')).toHaveCount(2);
 			await expect(ring).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
 			await expect(choices).toHaveCSS("border-top-width", "0px");
@@ -175,7 +189,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			const bounds = (await progress.boundingBox())!;
 			await page.mouse.move(bounds.x + 100, bounds.y + 12, { steps: 3 });
 			await expect(choices).toBeVisible();
-			await expect(ring).toHaveCSS("border-top-color", selectedColor);
+			// Grouped statuses have no header destination: the ring waits for a body status.
+			await expect(ring).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
+			await expect(progress.locator('[data-issue-drop-entered]')).toHaveCount(0);
 			await page.screenshot({ path: `output/agent-browser/jira-dragging/empty-dual-targets-${status.replaceAll(" ", "-")}-${reducedMotion}.png` });
 			const zone = (await choices.locator(`[data-issue-status-zone="${status}"]`).boundingBox())!;
 			const zoneX = Math.round(zone.x + zone.width / 2);
@@ -189,7 +205,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				const reviewHeight = (await column("In review").locator('[data-jira-kanban-column-drop-ring]').boundingBox())!.height;
 				return Math.abs(progressHeight - reviewHeight);
 			}).toBeLessThan(1);
-			await expect(progress).toContainText(`To do → ${status}`);
+			await expect(transitionCopy(progress).locator('[data-board-column-transition-prefix]').first()).toHaveText("To do");
+			await expect(transitionCopy(progress).locator('[data-board-column-destination-copy-layer="label"]').first()).toHaveText(status);
 			await page.mouse.move(zoneX + 1, zoneY);
 			await settleNativeDragPointer(page, zoneX + 1, zoneY);
 			const traveller = page.locator('[data-issue-cohort-preview]');
@@ -214,7 +231,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			const target = (await review.locator('[data-jira-kanban-column-content]').boundingBox())!;
 			await page.mouse.move(target.x + 90, target.y + target.height - 12, { steps: 5 });
 			await page.mouse.move(target.x + 91, target.y + target.height - 12);
-			await expect(review).toContainText(`${status} → In review`);
+			await expect(transitionCopy(review).locator('[data-board-column-transition-prefix]').first()).toHaveText(status);
+			await expect(transitionCopy(review).locator('[data-board-column-destination-copy-layer="label"]').first()).toHaveText("In review");
 			await page.mouse.up();
 			await expect(review.locator('[data-issue-key="PAY-105"]')).toHaveCount(1);
 			await expect(progress.locator('[data-board-agent-session-drop-zone="issue"]')).toHaveCount(0);
@@ -724,7 +742,12 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const toolbar = page.getByRole("region", { name: "3 cards selected. Bulk actions available." });
 		await expect(toolbar).toBeVisible();
 		const selectAll = toolbar.getByRole("button", { name: "Select all", exact: true });
-		expect(await selectAll.evaluate((button) => button.nextElementSibling?.matches('span[aria-hidden="true"]'))).toBe(true);
+		// Auto arrange sits between Select all and the leading cluster's separator.
+		await expect(toolbar.getByRole("button", { name: "Auto arrange", exact: true })).toBeEnabled();
+		expect(await selectAll.evaluate((button) => [
+			button.nextElementSibling?.getAttribute("aria-label"),
+			button.nextElementSibling?.nextElementSibling?.matches('span[aria-hidden="true"]'),
+		])).toEqual(["Auto arrange", true]);
 		await expect(toolbar.getByRole("button", { name: "Ask Rovo", exact: true }).locator('svg[viewBox="0 0 16 16"]')).toHaveCount(1);
 		await expect(toolbar.locator('[data-slot="jira-toolbar"]')).toHaveAttribute("data-color-mode", "dark");
 		await expect(toolbar.getByRole("button", { name: "Ask Rovo", exact: true })).toBeVisible();

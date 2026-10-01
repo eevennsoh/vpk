@@ -10,9 +10,11 @@ import { parseRgb } from "../lib/finale-math";
 
 const SLIDE_RGB = parseRgb(FINALE_COLORS.slide).join(", ");
 
-interface HiddenElement {
+interface HiddenCard {
 	readonly element: HTMLElement;
-	readonly visibility: string;
+	/** Its inline opacity and transition before, restored as they were. */
+	readonly opacity: string;
+	readonly transition: string;
 }
 
 /**
@@ -21,19 +23,28 @@ interface HiddenElement {
  * live Done column's DOM cards from the toss on (restored when scrubbed back or
  * when the finale closes). The slide's fade is its background alpha, not the
  * layer's `opacity`, which would also fade the backdrop blur.
+ *
+ * The cards hide with `opacity`, not `visibility`: visibility is inherited,
+ * so hiding 13 cards restyled all ~650 of their elements (8ms) on the toss
+ * frame, which already starts the blur and the GL sheets. Under the modal
+ * finale the board is inert, so an invisible card is all that is needed. The
+ * cards' own opacity transition is held off both ways: a fading original
+ * would ghost under its lifting sheet, and fade back in on a replay.
  */
 export function useFinaleBoardExit(layerRef: RefObject<HTMLDivElement | null>): void {
-	const hiddenRef = useRef<readonly HiddenElement[] | null>(null);
+	const hiddenRef = useRef<readonly HiddenCard[] | null>(null);
 	const writtenRef = useRef("");
 
 	useLayoutEffect(() => {
 		const scrollbars = document.querySelectorAll<HTMLElement>('[data-jira-team-eu26-end-board-surface] [data-jira-kanban-column="Done"] [data-slot="scroll-area-scrollbar"]');
 		const hidden = [...scrollbars].map((element) => {
-			const previous = { element, visibility: element.style.visibility };
+			const previous = { element, value: element.style.visibility };
 			element.style.visibility = "hidden";
 			return previous;
 		});
-		return () => restore(hidden);
+		return () => {
+			for (const { element, value } of hidden) element.style.visibility = value;
+		};
 	}, []);
 
 	useFinaleFrame((time) => {
@@ -51,8 +62,9 @@ export function useFinaleBoardExit(layerRef: RefObject<HTMLDivElement | null>): 
 		const hide = boardDoneCardsHidden(time);
 		if (hide && !hiddenRef.current) {
 			hiddenRef.current = queryJiraTeamEu26DoneCards().map((element) => {
-				const hidden = { element, visibility: element.style.visibility };
-				element.style.visibility = "hidden";
+				const hidden = { element, opacity: element.style.opacity, transition: element.style.transition };
+				element.style.transition = "none";
+				element.style.opacity = "0";
 				return hidden;
 			});
 		} else if (!hide && hiddenRef.current) {
@@ -67,6 +79,9 @@ export function useFinaleBoardExit(layerRef: RefObject<HTMLDivElement | null>): 
 	}, []);
 }
 
-function restore(cards: readonly HiddenElement[]): void {
-	for (const { element, visibility } of cards) element.style.visibility = visibility;
+function restore(cards: readonly HiddenCard[]): void {
+	for (const { element, opacity } of cards) element.style.opacity = opacity;
+	// Apply the restored opacity before the cards' own transition returns, or they fade back in.
+	if (cards.length > 0) void getComputedStyle(cards[0].element).opacity;
+	for (const { element, transition } of cards) element.style.transition = transition;
 }

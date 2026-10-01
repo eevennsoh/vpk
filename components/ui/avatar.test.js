@@ -596,3 +596,8 @@ test("hexagon styles preserve Base UI callbacks and the original style object", 
 	assert.equal(avatarHexagonStyle(undefined)["--avatar-hexagon-status-top"], avatarHexagonStatusAnchor().top);
 	assert.equal(avatarHexagonStyle(() => undefined)({})["--avatar-hexagon-status-top"], avatarHexagonStatusAnchor().top);
 });
+
+test("avatar.enter starts from 80% scale and transparent, the pose settled stand-ins copy", () => {
+	const { AVATAR_ENTER_FROM } = require("./avatar-enter.ts");
+	assert.deepEqual({ ...AVATAR_ENTER_FROM }, { scale: 0.8, opacity: 0 });
+});

@@ -393,6 +393,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				expect(feedbackBox.x + feedbackBox.width).toBeCloseTo(createBox.x + createBox.width);
 				const inset = createBox.x - headerBox.x;
 				expect(feedbackBox.y - headerBox.y).toBeCloseTo(inset);
+				// The balanced header pads 8px above its title row and 4px below, so the pill
+				// centres on the row: the same inset separates it from the first card.
 				const firstCard = (await destination.locator('[data-board-agent-session-drop-zone="issue"]').first().boundingBox())!;
 				expect(firstCard.y - feedbackBox.y - feedbackBox.height).toBeCloseTo(inset);
 				expect(feedbackBox.height).toBeGreaterThanOrEqual(32);

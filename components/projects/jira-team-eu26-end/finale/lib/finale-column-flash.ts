@@ -429,6 +429,26 @@ const S = FLASH_SHAPE;
 const L = FLASH_LOOK;
 
 /**
+ * `flashColor(s)`: the cyclic Rovo gradient (blue → purple → orange → green →
+ * blue) at `s` laps, blended smoothly, in GLSL ES 1.0 (no integer `%` or
+ * dynamic indexing). Shared with the column glow that hands over to the flash.
+ */
+export const FLASH_COLOR_GLSL = /* glsl */ `
+vec3 flashColor(float s) {
+	float k = fract(s) * 4.0;
+	float i = floor(k);
+	float t = smoothstep(0.0, 1.0, k - i);
+	vec3 c0 = ${glslColor(FLASH_ROVO_COLORS[0])};
+	vec3 c1 = ${glslColor(FLASH_ROVO_COLORS[1])};
+	vec3 c2 = ${glslColor(FLASH_ROVO_COLORS[2])};
+	vec3 c3 = ${glslColor(FLASH_ROVO_COLORS[3])};
+	vec3 from = i < 0.5 ? c0 : i < 1.5 ? c1 : i < 2.5 ? c2 : c3;
+	vec3 to = i < 0.5 ? c1 : i < 1.5 ? c2 : i < 2.5 ? c3 : c0;
+	return mix(from, to, t);
+}
+`;
+
+/**
  * GLSL port of the field: `flashLook(p)` fills a `FlashLook` for viewport px
  * `p` (y down), line for line with the JS. Declares `uFlashColumn`,
  * `uFlashState` and `uFlashRing` (the per-frame ring scalars the JS derives
@@ -541,19 +561,7 @@ FlashLook flashLook(vec2 p) {
 	return look;
 }
 
-vec3 flashColor(float s) {
-	float k = fract(s) * 4.0;
-	float i = floor(k);
-	float t = smoothstep(0.0, 1.0, k - i);
-	vec3 c0 = ${glslColor(FLASH_ROVO_COLORS[0])};
-	vec3 c1 = ${glslColor(FLASH_ROVO_COLORS[1])};
-	vec3 c2 = ${glslColor(FLASH_ROVO_COLORS[2])};
-	vec3 c3 = ${glslColor(FLASH_ROVO_COLORS[3])};
-	vec3 from = i < 0.5 ? c0 : i < 1.5 ? c1 : i < 2.5 ? c2 : c3;
-	vec3 to = i < 0.5 ? c1 : i < 1.5 ? c2 : i < 2.5 ? c3 : c0;
-	return mix(from, to, t);
-}
-`;
+${FLASH_COLOR_GLSL}`;
 
 /** Per-frame ring uniforms for `FLASH_GLSL` (`uFlashRing`): energy, core width, travel. */
 export function flashRingUniforms(time: number, column: FlashColumn): readonly [number, number, number] {

@@ -6,7 +6,7 @@ const vm = require("node:vm");
 const ts = require("typescript");
 
 function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104, step = 112, clipTop = 0, clipBottom = 10000, viewportHeight = 10000 } = {}) {
-	const animations = [], nodes = [], reads = [], frames = new Map(), frameEvents = [];
+	const animations = [], nodes = [], reads = [], frames = new Map(), frameEvents = [], styleReads = [];
 	let frameId = 0, inFrame = false, sharedGlow;
 	class Node {
 		constructor(name) { this.name = name; this.style = {}; this.attributes = {}; this.children = []; this.dataset = {}; this.inert = false; }
@@ -41,7 +41,7 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 	vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "issue-solitaire-drop.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
 		requestAnimationFrame: (callback) => { const id = ++frameId; frames.set(id, callback); return id; },
 		cancelAnimationFrame: (id) => frames.delete(id),
-		module: loaded, exports: loaded.exports, getComputedStyle: () => ({ borderTopLeftRadius: "8px", backgroundColor: "rgb(248, 248, 248)" }),
+		module: loaded, exports: loaded.exports, getComputedStyle: (node) => { styleReads.push({ node, animations: animations.length, appended: doc.body.children.length }); return { borderTopLeftRadius: "8px", backgroundColor: "rgb(248, 248, 248)" }; },
 		require(name) {
 			if (name.includes("card-motion")) return { JIRA_KANBAN_CARD_REFLOW: { duration: 0.15, ease: [0.4, 0, 0, 1] } };
 			if (name.includes("card-glow")) {
@@ -57,7 +57,7 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 	});
 	let complete = 0;
 	const start = (reduced = false, codes = issues.map((issue) => issue.dataset.issueKey), glowColors, feedback, reflowBefore) => loaded.exports.animateIssueSolitaireDrop({ querySelectorAll: () => issues, ownerDocument: doc }, column, codes, reduced, () => complete++, glowColors, feedback, reflowBefore);
-	return { start, animations, nodes, issues, reads, doc, frames, frameEvents, linkGlow: () => sharedGlow.createJiraLinkingCardGlow({ haloRoot: issues[0].surface, backdropRoot: issues[0].parentElement.backdrop, color: "orange" }), complete: () => complete,
+	return { start, animations, nodes, issues, reads, doc, frames, frameEvents, styleReads, columnSurface, linkGlow: () => sharedGlow.createJiraLinkingCardGlow({ haloRoot: issues[0].surface, backdropRoot: issues[0].parentElement.backdrop, color: "orange" }), complete: () => complete,
 		runFrame() {
 			const pending = [...frames.values()]; frames.clear(); frameEvents.length = 0; inFrame = true;
 			for (const callback of pending) callback();
@@ -386,4 +386,58 @@ test("linking retains the same glow recipe with its original upward direction", 
 	for (const effect of effects) effect.restore();
 	assert.ok(effects[0].animation.node.removed);
 	assert.ok(pulse.node.parentElement.removed);
+});
+
+test("a bulk reveal reads the column tint with its slots, before any motion or trace is written", () => {
+	const h = fixture(4, "Done"); h.start();
+	const tint = h.styleReads.filter((read) => read.node === h.columnSurface);
+	assert.equal(tint.length, 1);
+	assert.deepEqual({ ...tint[0], node: undefined }, { node: undefined, animations: 0, appended: 0 }, "a style read after a write forces an extra style pass");
+	assert.ok(h.issues.every((issue) => issue.shell.style.backgroundImage === "linear-gradient(rgb(248, 248, 248), rgb(248, 248, 248))"));
+});
+
+// The settled release pins the traveller where the lead will land, so the
+// resolver must agree with `moveJiraKanbanCardsToDropTarget`'s insertion.
+function landing({ slots = [], collapsed = false, overflowing = false, listTop = 276, listBottom = 928, contentTop = 280, boardBottom = 950, innerHeight = 982 } = {}) {
+	const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
+	const slotNodes = slots.map(({ code, column = "Done", top, height = 199 }) => ({
+		querySelector: () => ({ dataset: { issueKey: code, boardColumnTitle: column } }),
+		getBoundingClientRect: () => rect(1146.5, top, 334.5, height),
+	}));
+	const content = { children: slotNodes, getBoundingClientRect: () => rect(1146.5, contentTop, 334.5, 0) };
+	const list = { scrollHeight: overflowing ? 2000 : 8, clientHeight: overflowing ? 652 : 8, querySelector: () => content, getBoundingClientRect: () => rect(1142.5, listTop, 342.5, listBottom - listTop) };
+	const done = { dataset: { jiraKanbanColumn: "Done", ...(collapsed ? { collapsed: "true" } : {}) }, querySelector: () => list };
+	const other = { dataset: { jiraKanbanColumn: "To do" }, querySelector: () => null };
+	const root = { querySelectorAll: () => [other, done], ownerDocument: { defaultView: { innerHeight } }, getBoundingClientRect: () => rect(0, 240, 1512, boardBottom - 240) };
+	const loaded = { exports: {} };
+	vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "issue-solitaire-drop.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
+		module: loaded, exports: loaded.exports, getComputedStyle: () => ({ rowGap: "4px" }), require: () => ({ token: (name) => name, JIRA_KANBAN_CARD_REFLOW: { duration: 0.15, ease: [0, 0, 1, 1] } }),
+	});
+	return (codes, beforeCardCode, height = 199) => {
+		const result = loaded.exports.resolveIssueSolitaireLanding(root, "Done", codes, beforeCardCode, height);
+		return result && { ...result };
+	};
+}
+
+test("the settled lead lands where the drop target inserts the cohort", () => {
+	const empty = landing();
+	assert.deepEqual(empty(["K1", "K2"], null), { left: 1146.5, top: 280, width: 334.5, depth: 2 }, "an empty column's first slot is its content box");
+	assert.deepEqual(empty(["K1", "K2"], undefined), { left: 1146.5, top: 280, width: 334.5, depth: 2 });
+	const filled = landing({ slots: [{ code: "D1", top: 280 }, { code: "D2", top: 483 }] });
+	assert.deepEqual(filled(["K1"], "D2"), { left: 1146.5, top: 483, width: 334.5, depth: 1 }, "inserted before a card, the lead takes its slot");
+	assert.deepEqual(filled(["K1"], undefined), { left: 1146.5, top: 280, width: 334.5, depth: 1 }, "an undefined target inserts at the top");
+	assert.deepEqual(filled(["K1"], null, 100), { left: 1146.5, top: 686, width: 334.5, depth: 1 }, "appended, it follows the last slot and the list gap");
+	const keynote = Array.from({ length: 13 }, (_, index) => `TEU-${index + 1}`);
+	assert.equal(empty(keynote, null).depth, 4, "only the four slots the column shows join the first stack (280, 483, 686, 889)");
+});
+
+test("the settled lead defers to the commit whenever only the commit knows its slot", () => {
+	const filled = landing({ slots: [{ code: "D1", top: 280 }, { code: "K2", top: 483 }] });
+	assert.equal(filled(["K1", "K2"], "D1"), null, "a cohort issue already in the column shifts the slot when it leaves");
+	assert.equal(landing({ slots: [{ code: "D1", top: 280 }] })(["K1"], "missing"), null);
+	assert.equal(landing({ collapsed: true })(["K1"], null), null);
+	assert.equal(landing({ slots: [{ code: "D1", top: 700 }], overflowing: true })(["K1"], null), null, "an overflowing list clips an appended lead");
+	assert.equal(landing({ slots: [{ code: "D1", top: 600 }] })(["K1"], null), null, "a lead below the board would be clipped once the column grows");
+	assert.equal(landing({ contentTop: 200 })(["K1"], null), null, "a lead scrolled above the list is not painted");
+	assert.deepEqual(landing({ slots: [{ code: "D1", top: 280 }], overflowing: true })(["K1"], "D1"), { left: 1146.5, top: 280, width: 334.5, depth: 1 });
 });

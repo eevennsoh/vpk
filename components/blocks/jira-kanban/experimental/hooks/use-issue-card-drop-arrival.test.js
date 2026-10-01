@@ -25,9 +25,12 @@ function cohortBoard(count) {
 	};
 }
 
-function harness({ reduced = false, reject = false, enabled = true, withMove = false, board, dragged = "A", selected = ["A", "B"], solitaire = false } = {}) {
-	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [], reveals = [], events = [];
-	let stateIndex = 0, refIndex = 0, effectIndex = 0, preview = {}, api;
+function harness({ reduced = false, reject = false, enabled = true, withMove = false, board, dragged = "A", selected = ["A", "B"], solitaire = false, landing = { left: 40, top: 80, width: 280 }, faceWidth = 280 } = {}) {
+	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [], reveals = [], events = [], frames = [], timers = [], landings = [];
+	let stateIndex = 0, refIndex = 0, effectIndex = 0, api;
+	const face = { offsetHeight: 199, offsetWidth: faceWidth };
+	const createPreview = () => ({ querySelector: (selector) => selector === "[data-issue-cohort-front]" ? face : null, remove() { events.push("remove preview"); this.removed = true; } });
+	let preview = createPreview(), released = null;
 	let columns = board ?? [
 		{ title: "To do", count: 2, cards: [issue("A", "Review"), issue("B", "Done")] },
 		{ title: "Review", count: 0, cards: [] }, { title: "Done", count: 0, cards: [] },
@@ -41,6 +44,8 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	const columnNodes = columns.map((column) => new Element(root, { jiraKanbanColumn: column.title }));
 	root.querySelectorAll = () => columnNodes;
 	root.ownerDocument = {
+		visibilityState: "visible",
+		dispatch(name) { for (const callback of [...listeners.get(name) ?? []]) callback({ target: root.ownerDocument }); },
 		addEventListener(name, callback) { const callbacks = listeners.get(name) ?? new Set(); callbacks.add(callback); listeners.set(name, callbacks); },
 		removeEventListener(name, callback) { listeners.get(name)?.delete(callback); },
 	};
@@ -48,7 +53,8 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	const getPreview = () => preview;
 	const onAutoArrange = (codes) => { if (!reject) columns = autoModel.autoArrangeCards(columns, codes); };
 	const onMove = withMove ? (move) => { events.push("commit"); columns = require("../../card-drop.ts").moveJiraKanbanCardsToDropTarget(columns, move.cardCodes, move.columnTitle, move.target); } : undefined;
-	const onDrop = (title) => { if (!reject) columns = require("../../card-drop.ts").moveJiraKanbanCardsToStatus(columns, selected, title); };
+	const onDrop = (title) => { events.push("commit"); if (!reject) columns = require("../../card-drop.ts").moveJiraKanbanCardsToStatus(columns, selected, title); };
+	const releasePreview = () => { released = preview; preview = null; events.push("release preview"); return released; };
 	const react = {
 		useState(initial) { const i = stateIndex++; if (!(i in states)) states[i] = initial; return [states[i], (next) => { states[i] = typeof next === "function" ? next(states[i]) : next; }]; },
 		useRef(current) { const i = refIndex++; return refs[i] ??= { current }; },
@@ -59,18 +65,31 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 			scheduled.push(() => { previous?.cleanup?.(); effects[i] = { deps, cleanup: effect() }; });
 		},
 	};
+	react.useEffect = react.useLayoutEffect;
 	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-issue-card-drop-arrival.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
 	const loaded = { exports: {} };
+	const clock = {
+		requestAnimationFrame: (callback) => frames.push(callback), cancelAnimationFrame: (id) => { frames[id - 1] = null; },
+		setTimeout: (callback, delay = 0) => timers.push({ callback, delay }), clearTimeout: (id) => { timers[id - 1] = null; },
+	};
+	// The real frame handoff, on this harness's frames and timers.
+	const handoff = { exports: {} };
+	vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../lib/issue-drop-handoff.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { module: handoff, exports: handoff.exports, ...clock });
 	vm.runInNewContext(compiled, {
-		module: loaded, exports: loaded.exports, Element, window: { addEventListener() {}, removeEventListener() {} },
+		module: loaded, exports: loaded.exports, Element, window: { addEventListener() {}, removeEventListener() {} }, ...clock,
 		require(name) {
+			if (name.includes("issue-drop-handoff")) return handoff.exports;
 			if (name === "react") return react;
+			if (name === "react-dom") return { flushSync(callback) { events.push("flushSync"); callback(); render(); } };
+			if (name.includes("issue-drag-preview")) return { settleIssueCohortPreview(node, at) { events.push("settle preview"); node.settledAt = at; } };
 			if (name.includes("use-media-query")) return { useMediaQuery: () => reduced };
 			if (name.includes("board-auto-arrange")) return autoModel;
 			if (name.includes("board-card-arrival")) return arrivalModel;
 			if (name.includes("issue-solitaire-drop")) return {
 				captureIssueCardReflow: () => [],
+				resolveIssueSolitaireLanding(root, title, codes, beforeCardCode, height) { landings.push({ title, codes: [...codes], beforeCardCode, height }); return landing; },
 				animateIssueSolitaireDrop(root, title, codes, reduced, complete, glowColors, feedback = "trace") {
+					events.push("reveal");
 					const reveal = { title, codes: [...codes], reduced, complete, feedback, stopped: false };
 					reveals.push(reveal);
 					if (reduced) complete();
@@ -87,12 +106,22 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	});
 	function render() {
 		stateIndex = refIndex = effectIndex = 0;
-		api = loaded.exports.useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, solitaire, draggedCardCode: dragged, selectedCardCodes: new Set(selected), onDrop, onMove, onAutoArrange });
+		api = loaded.exports.useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, solitaire, draggedCardCode: dragged, selectedCardCodes: new Set(selected), onDrop, onMove, onAutoArrange, releasePreview });
 		while (scheduled.length) scheduled.shift()();
 		return api;
 	}
 	render();
-	return { render, captures, flights, reveals, events, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review") { api.handleDrop(title); preview = null; },
+	return { render, captures, flights, reveals, events, landings, released: () => released, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review", target) { api.handleDrop(title, target); preview = null; },
+		/** Native dragend right after the drop, as Chromium dispatches it. */
+		dragEnd() { if (!api.deferDragEnd(() => events.push("dragend"))) events.push("dragend"); },
+		/** The frame after release paints; the task it queues then runs. */
+		frame() { for (const callback of frames.splice(0)) callback?.(); },
+		/** Runs the timers due now; later ones (the fallback) stay queued. */
+		task() { for (const [index, timer] of timers.entries()) if (timer && timer.delay === 0) { timers[index] = null; timer.callback(); } },
+		/** Lets every pending timer's delay pass, as throttled frames would. */
+		elapse() { for (const [index, timer] of timers.entries()) if (timer) { timers[index] = null; timer.callback(); } },
+		hide() { root.ownerDocument.visibilityState = "hidden"; root.ownerDocument.dispatch("visibilitychange"); },
+		unmount() { for (const effect of effects) effect?.cleanup?.(); },
 		scroll(title) {
 			const target = title === "document" ? root.ownerDocument : title === "board" ? root : new Element(columnNodes.find((node) => node.dataset.jiraKanbanColumn === title));
 			for (const callback of listeners.get("scroll") ?? []) callback({ target });
@@ -319,27 +348,51 @@ test("host moves commit without visuals when move visuals are off, and stay abse
 	assert.equal(harness().api().handleMove, undefined);
 });
 
-test("each move request id plays once, and a board without the capability ignores it", () => {
+test("each move request id plays once, after the frame that follows it, and a board without the capability ignores it", () => {
 	const refs = [];
 	let refIndex = 0;
 	const react = {
 		useRef(current) { const i = refIndex++; return refs[i] ??= { current }; },
 		useEffect(effect) { effect(); },
 	};
-	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-issue-move-request.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-	const loaded = { exports: {} };
-	vm.runInNewContext(compiled, { module: loaded, exports: loaded.exports, window: { addEventListener() {}, removeEventListener() {} }, require(name) { if (name === "react") return react; throw new Error(`Unexpected import ${name}`); } });
+	const load = (file, requireModule) => {
+		const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, file), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+		const loaded = { exports: {} };
+		vm.runInNewContext(compiled, { module: loaded, exports: loaded.exports, window: { addEventListener() {}, removeEventListener() {} }, require: requireModule });
+		return loaded.exports;
+	};
+	const handoff = load("../lib/issue-drop-handoff.ts", (name) => {
+		if (name === "@/lib/motion") return { motionDuration: { normal: 0.15 } };
+		throw new Error(`Unexpected import ${name}`);
+	});
+	const loaded = load("use-issue-move-request.ts", (name) => {
+		if (name === "react") return react;
+		if (name === "../lib/issue-drop-handoff") return handoff;
+		if (name === "./use-issue-card-drop-arrival") return {};
+		throw new Error(`Unexpected import ${name}`);
+	});
+	const frames = [];
+	const afterFrame = (run) => { frames.push(run); return () => {}; };
+	const present = () => { for (const run of frames.splice(0)) run(); };
 	const moves = [];
-	const render = (request, onMove = (move) => moves.push(move.id)) => { refIndex = 0; loaded.exports.useIssueMoveRequest(request, onMove); };
+	const render = (request, onMove = (move) => moves.push(move.id)) => { refIndex = 0; loaded.useIssueMoveRequest(request, onMove, afterFrame); };
 	const request = { id: 1, cardCodes: ["A"], columnTitle: "Done" };
 	render(request);
+	// Regression: a menu click flushed this effect before paint, so the whole
+	// move committed inside the click and froze the menu's own exit for ~80ms.
+	assert.deepEqual(moves, [], "the move waits for the frame that shows the request");
+	present();
 	render(request);
 	render({ ...request });
+	present();
 	assert.deepEqual(moves, [1]);
 	render({ ...request, id: 2 });
-	assert.deepEqual(moves, [1, 2]);
-	render({ ...request, id: 3 }, null);
-	assert.deepEqual(moves, [1, 2]);
+	render({ ...request, id: 3 });
+	present();
+	assert.deepEqual(moves, [1, 2, 3], "requests made within one frame still play, in order");
+	render({ ...request, id: 4 }, null);
+	present();
+	assert.deepEqual(moves, [1, 2, 3]);
 });
 
 for (const count of [1, 2, 5, 13]) {
@@ -373,4 +426,85 @@ test("reduced-motion solitaire commits immediately without a deferred arrival", 
 	assert.equal(h.reveals[0].reduced, true);
 	assert.equal(h.api().arrivalForColumn("Review"), undefined);
 	assert.equal(h.captures.length, 0);
+});
+
+// A bulk solitaire release must paint before React commits the move: the held
+// traveller settles into the lead's slot (the reveal's first frame), and the
+// move, then its dragend, commit in the task after that frame paints.
+test("a bulk solitaire release settles the traveller first and commits behind its painted frame", () => {
+	const h = harness({ solitaire: true });
+	const target = { status: "Done", beforeCardCode: null };
+	h.drop("Done", target);
+	h.dragEnd();
+	assert.deepEqual(h.events, ["release preview", "settle preview"], "neither the move nor dragend may run before the frame");
+	assert.deepEqual({ ...h.released().settledAt }, { left: 40, top: 80, width: 280 });
+	assert.deepEqual(h.landings.map(({ title, codes, beforeCardCode, height }) => ({ title, codes, beforeCardCode, height })), [{ title: "Done", codes: ["A", "B"], beforeCardCode: null, height: 199 }]);
+	h.task();
+	assert.equal(h.events.includes("commit"), false, "a task queued before the frame must not commit first");
+	h.frame();
+	assert.equal(h.events.includes("commit"), false, "the frame itself only paints the settled face");
+	h.task();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "flushSync", "commit", "dragend", "reveal", "remove preview"],
+		"the stack starts under the face, which hands over in the same task, so no frame shows both or neither");
+	assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), ["A", "B"]);
+	assert.deepEqual(h.reveals.map((reveal) => reveal.codes), [["A", "B"]]);
+	h.dragEnd();
+	assert.equal(h.events.at(-1), "dragend", "later dragends are never held");
+});
+
+test("releases that the settled face cannot stand in for keep the synchronous commit", () => {
+	const target = { status: "Done", beforeCardCode: null };
+	const cases = {
+		"a single card reflows its neighbours first": { solitaire: true, selected: ["A"] },
+		"a grabbed card that is not the lead wears the wrong face": { solitaire: true, dragged: "B" },
+		"reduced motion has no reveal": { solitaire: true, reduced: true },
+		"an unknown landing slot": { solitaire: true, landing: null },
+		"a destination of another width": { solitaire: true, faceWidth: 300 },
+		"flight drops keep their traveller": { solitaire: false },
+	};
+	for (const [name, options] of Object.entries(cases)) {
+		const h = harness(options);
+		h.drop("Done", target);
+		h.dragEnd();
+		assert.deepEqual(h.events.filter((event) => ["release preview", "commit", "dragend"].includes(event)), ["commit", "dragend"], name);
+	}
+	const untargeted = harness({ solitaire: true });
+	untargeted.drop("Done");
+	assert.deepEqual(untargeted.events, ["commit"], "a column-level drop has no insertion point to settle into");
+});
+
+test("an interrupted settled release still commits its move and dragend", () => {
+	const h = harness({ solitaire: true });
+	h.drop("Done", { status: "Done", beforeCardCode: null });
+	h.dragEnd();
+	h.unmount();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "commit", "dragend", "remove preview"]);
+	h.frame(); h.task();
+	assert.equal(h.events.filter((event) => event === "commit").length, 1, "the queued task must not commit twice");
+});
+
+
+// rAF pauses in hidden tabs and throttles in occluded windows; a release must
+// never leave its move and dragend waiting for a frame that may not come.
+test("a settled release still commits its move when frames never arrive", () => {
+	const h = harness({ solitaire: true });
+	h.drop("Done", { status: "Done", beforeCardCode: null });
+	h.dragEnd();
+	h.task();
+	assert.equal(h.events.includes("commit"), false, "the bounded fallback is not due yet");
+	h.elapse();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "flushSync", "commit", "dragend", "reveal", "remove preview"]);
+	h.frame(); h.task(); h.hide();
+	assert.equal(h.events.filter((event) => event === "commit").length, 1, "a late frame or hide must not commit again");
+});
+
+test("hiding the page lands a settled release at once", () => {
+	const h = harness({ solitaire: true });
+	h.drop("Done", { status: "Done", beforeCardCode: null });
+	h.dragEnd();
+	h.hide();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "flushSync", "commit", "dragend", "reveal", "remove preview"]);
+	assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), ["A", "B"]);
+	h.elapse(); h.frame(); h.task();
+	assert.equal(h.events.filter((event) => event === "commit").length, 1);
 });
