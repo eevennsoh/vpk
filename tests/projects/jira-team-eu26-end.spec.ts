@@ -119,6 +119,33 @@ async function startDrag(page: Page, code: string) {
 	await expect(card).toHaveAttribute("data-dragging", "true");
 }
 
+test("column header drop feedback keeps equal space above and below its transition label", async ({ page }) => {
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await startDrag(page, "TEU-1");
+
+	const header = column(page, "Context").locator('[data-slot="board-column-header"]');
+	const headerBox = await header.boundingBox();
+	if (!headerBox) throw new Error("Missing Context column header");
+	const x = headerBox.x + headerBox.width / 2;
+	const y = headerBox.y + headerBox.height / 2;
+	await page.mouse.move(x, y, { steps: 5 });
+	await page.mouse.move(x, y);
+
+	await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
+	await expect(header).toContainText("Transition to...");
+	const clearance = await header.evaluate((node) => {
+		const feedback = node.querySelector<HTMLElement>("[data-board-column-title-drop-feedback]")!.getBoundingClientRect();
+		const label = node.querySelector<HTMLElement>("[data-board-column-header-copy-motion]")!.getBoundingClientRect();
+		return {
+			bottom: feedback.bottom - label.bottom,
+			top: label.top - feedback.top,
+		};
+	});
+	expect(clearance.bottom).toBeCloseTo(clearance.top, 1);
+	await page.keyboard.press("Escape");
+	await page.mouse.up();
+});
+
 async function dropIntoDone(page: Page) {
 	const target = column(page, "Done");
 	const box = await target.boundingBox();
