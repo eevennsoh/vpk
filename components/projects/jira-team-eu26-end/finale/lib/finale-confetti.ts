@@ -2,7 +2,9 @@
  * Confetti for the moment the last keynote card lands in Done, and the bridge
  * into the column flash that follows it (`finale-column-flash.ts`).
  *
- * Three acts, each a pure function of seconds since launch:
+ * Three acts, each a pure function of show seconds since launch. The show's
+ * clock runs at its own pace (`FINALE_CONFETTI_PACE`): the pop explodes fast,
+ * the hang drops into bullet time, and the gather rushes in.
  * 1. Pop: two cannons at the viewport's lower corners fire a broad diagonal
  *    fan of 3D paper (a Rovo hue on each face), iridescent sequins whose film
  *    runs through the Rovo gradient, and curled satin ribbons. A few fly past
@@ -36,6 +38,7 @@ import { progress } from "./finale-math";
 // checks these against app/tailwind-theme.css to prevent drift.
 const MOTION_DURATION = {
 	xxshort: 0.05, // --duration-xxshort (motion.duration.xxshort)
+	fast: 0.1, // --duration-fast (motion.duration.xshort)
 	medium: 0.2, // --duration-medium (motion.duration.medium)
 	slow: 0.25, // --duration-slow (motion.duration.long)
 	slower: 0.4, // --duration-slower (motion.duration.xlong)
@@ -50,24 +53,72 @@ export const FINALE_CONFETTI_TIMING = {
 	 */
 	volley: MOTION_DURATION.slow,
 	/**
-	 * Free flight (launch, apex and a long flutter) before the vortex opens.
-	 * Drag leaves pieces at a slow terminal fall, so ~94% are still on screen here.
+	 * Free flight (launch, apex and a flutter) before the vortex opens, while
+	 * nearly every piece is still in the air.
 	 */
-	gatherStart: MOTION_DURATION.slowest * 2 + MOTION_DURATION.medium,
+	gatherStart: MOTION_DURATION.slowest + MOTION_DURATION.slower,
 	/** Pieces join the stream across this window, farthest first. */
-	gatherSpread: MOTION_DURATION.slower,
+	gatherSpread: MOTION_DURATION.slow,
 	/**
 	 * The column's glow pulses in on the top of both its sides across this
-	 * window, which ends as the vortex opens: one brief pulse, then it sets off.
+	 * window, from the moment the vortex opens: one brief pulse, already moving.
 	 */
-	glowIn: MOTION_DURATION.slower,
+	glowIn: MOTION_DURATION.slow,
 	/** The nearest piece reaches the source here… */
-	firstArrival: (MOTION_DURATION.slowest + MOTION_DURATION.slower) * 2,
+	firstArrival: MOTION_DURATION.slowest * 2 + MOTION_DURATION.medium,
 	/** …and the farthest here: the ember is fully charged and the flash may ignite. */
-	gathered: MOTION_DURATION.slowest * 4,
+	gathered: MOTION_DURATION.slowest * 3,
 	/** The ember blooms into the flash over exactly the flash's own rise. */
 	release: FLASH_TIMING.rise,
 } as const;
+
+/**
+ * The show's pace against real time, shared by the burst and the column's
+ * trace (every time here, and `FINALE_CONFETTI_TIMING`, is in show seconds).
+ * The cannons explode at `burst`× and carry the pieces up to their apex; it
+ * eases into a brief bullet time at `hang`× while they float (held for
+ * `--duration-medium` of show time, ~0.4s), and as the vortex opens it picks
+ * up again to draw them in at `pull`× (~0.7s). Each change eases across its
+ * window (show seconds).
+ */
+export const FINALE_CONFETTI_PACE = {
+	burst: 1.7,
+	slow: [
+		FINALE_CONFETTI_TIMING.gatherStart - MOTION_DURATION.medium - MOTION_DURATION.slow,
+		FINALE_CONFETTI_TIMING.gatherStart - MOTION_DURATION.medium,
+	],
+	hang: 0.5,
+	rush: [FINALE_CONFETTI_TIMING.gatherStart, FINALE_CONFETTI_TIMING.gatherStart + MOTION_DURATION.slow],
+	pull: 1.4,
+} as const;
+
+/** ∫₀ˢ smoothstep(edge0, edge1, x) dx: the eased share of a pace change, accrued by show second `s`. */
+function easedArea(s: number, [edge0, edge1]: readonly [number, number]): number {
+	const span = edge1 - edge0;
+	const t = clamp01((s - edge0) / span);
+	return span * (t ** 3 - t ** 4 / 2) + Math.max(0, s - edge1);
+}
+
+/** Real seconds the show takes to reach show second `show`: the integral of its slowness. */
+export function finaleConfettiRealTime(show: number): number {
+	const P = FINALE_CONFETTI_PACE;
+	const s = Math.max(0, show);
+	return s / P.burst + (1 / P.hang - 1 / P.burst) * easedArea(s, P.slow) + (1 / P.pull - 1 / P.hang) * easedArea(s, P.rush);
+}
+
+/** The show second reached `real` seconds after launch (the inverse of `finaleConfettiRealTime`). */
+export function finaleConfettiShowTime(real: number): number {
+	if (real <= 0) return 0;
+	const P = FINALE_CONFETTI_PACE;
+	let low = 0;
+	let high = real * Math.max(P.burst, P.hang, P.pull);
+	for (let step = 0; step < 48; step++) {
+		const mid = (low + high) / 2;
+		if (finaleConfettiRealTime(mid) < real) low = mid;
+		else high = mid;
+	}
+	return (low + high) / 2;
+}
 
 /** The shortest pull into the vortex, so no piece is snatched to the source. */
 const MIN_GATHER = MOTION_DURATION.slower;
@@ -221,27 +272,30 @@ const GLOW_IN_SWELL = 0.6;
 
 /**
  * Brightness (0–1) of the column's glow, before its hand-off to the flash.
- * Just before the vortex opens it glows in on the top of both sides with one
- * pulse (`glowIn`): from nothing, easing in so it never pops on, it swells
- * and eases back just as the trace sets off, so it never lingers there. Its
+ * Dark through the hang, it glows in on the top of both sides as the vortex
+ * opens, with one pulse (`glowIn`), already setting off down them: from
+ * nothing, easing in so it never pops on, it swells and eases back. Its
  * spots orbit and beat throughout; the pieces landing on it then bring it to
  * full.
  */
 export function finaleConfettiGlow(time: number, charge: number): number {
 	const T = FINALE_CONFETTI_TIMING;
-	const at = progress(time, T.gatherStart - T.glowIn, T.gatherStart);
+	const at = progress(time, T.gatherStart, T.gatherStart + T.glowIn);
 	const glowIn = at * at * (3 - 2 * at) + GLOW_IN_SWELL * Math.sin(Math.PI * at) ** 2;
 	return glowIn * (0.65 + 0.35 * clamp01(charge));
 }
 
 /**
- * How far the glow has been traced down the column (0 → 1): steadily, across
- * the whole pull, from the moment the vortex opens until the last piece lands.
- * Paced by time rather than by the pieces (whose arrivals bunch in the middle
- * of the pull), so the trace never races and can be followed all the way up.
+ * How far the glow has been traced down the column (0 → 1), from the moment
+ * the vortex opens and the pieces start to pour in (it sets off as it
+ * appears, never pausing at the top) until the last piece lands. Steady in
+ * show seconds, so it keeps the burst's own pace (`FINALE_CONFETTI_PACE`):
+ * leaving bullet time slowly, then rushing down with the pull. Paced by time rather than by the pieces (whose
+ * arrivals bunch in the middle of the pull), so it can be followed all the way down.
  */
 export function finaleConfettiTrace(time: number): number {
-	return progress(time, FINALE_CONFETTI_TIMING.gatherStart, FINALE_CONFETTI_TIMING.gathered);
+	const T = FINALE_CONFETTI_TIMING;
+	return progress(time, T.gatherStart, T.gathered);
 }
 
 /** Share of the burst that has landed on the border (0 → 1), eased over each piece's last 60ms. */

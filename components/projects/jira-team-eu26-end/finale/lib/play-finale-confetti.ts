@@ -1,4 +1,4 @@
-import { FINALE_CONFETTI_TIMING, type FinaleConfettiColumn } from "./finale-confetti";
+import { FINALE_CONFETTI_TIMING, finaleConfettiRealTime, type FinaleConfettiColumn } from "./finale-confetti";
 import { createFinaleConfettiPlayer, type FinaleConfettiCommand, type FinaleConfettiEvent } from "./finale-confetti-renderer";
 
 /** A running burst, handed from the board's completion to the finale's ignition. */
@@ -104,6 +104,8 @@ interface ActiveShow {
 	readonly done: () => void;
 	readonly fail: () => void;
 	readonly cancel: () => void;
+	/** A rehearsal hold (`null` resumes): the stall backstop waits with the frozen show. */
+	readonly hold: (time: number | null) => void;
 }
 
 /**
@@ -183,6 +185,12 @@ export function createFinaleConfetti(): FinaleConfetti {
 		let alive = true;
 		let releaseTimer = 0;
 		let gatherTimer = 0;
+		let heldAt = 0;
+		/** Arms the stall backstop for a gather due `after` real seconds from now. */
+		const armGather = (after: number) => {
+			window.clearTimeout(gatherTimer);
+			gatherTimer = window.setTimeout(resolveGathered, after * 1000 + GATHER_GRACE_MS);
+		};
 		const setState = (state: FinaleConfettiState) => {
 			if (current) current.layer.dataset.finaleConfetti = state;
 		};
@@ -210,8 +218,7 @@ export function createFinaleConfetti(): FinaleConfetti {
 			// Parked already (prewarm), so nothing on the page changes as the burst launches.
 			current = park();
 			if (!current) return false;
-			window.clearTimeout(gatherTimer);
-			gatherTimer = window.setTimeout(resolveGathered, FINALE_CONFETTI_TIMING.gathered * 1000 + GATHER_GRACE_MS);
+			armGather(finaleConfettiRealTime(FINALE_CONFETTI_TIMING.gathered));
 			setState("playing");
 			current.send({
 				type: "play",
@@ -232,6 +239,14 @@ export function createFinaleConfetti(): FinaleConfetti {
 				resolveGathered();
 			},
 			cancel,
+			hold: (time) => {
+				// Frozen, the show cannot gather; resumed, it is due from the held second.
+				if (time === null) armGather(Math.max(0, finaleConfettiRealTime(FINALE_CONFETTI_TIMING.gathered) - finaleConfettiRealTime(heldAt)));
+				else {
+					heldAt = time;
+					window.clearTimeout(gatherTimer);
+				}
+			},
 		};
 		listen();
 		if (!start()) {
@@ -265,7 +280,9 @@ export function createFinaleConfetti(): FinaleConfetti {
 		},
 		play,
 		hold: (time) => {
-			if (active) host?.send({ type: "hold", id: active.id, time });
+			if (!active) return;
+			active.hold(time);
+			host?.send({ type: "hold", id: active.id, time });
 		},
 		dispose: () => {
 			active?.cancel();

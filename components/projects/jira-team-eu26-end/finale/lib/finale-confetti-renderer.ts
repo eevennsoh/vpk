@@ -27,6 +27,8 @@ import {
 	finaleConfettiCameraDistance,
 	finaleConfettiCharge,
 	finaleConfettiGlow,
+	finaleConfettiRealTime,
+	finaleConfettiShowTime,
 	finaleConfettiTrace,
 	packFinaleConfettiBurst,
 	type FinaleConfettiBurst,
@@ -58,9 +60,10 @@ export const FINALE_CONFETTI_LOOK = {
 	glowStretch: 0.5,
 	/**
 	 * Share of the trace by which the two leads meet in the foot's middle, so
-	 * the whole foot burns, joined, for the rest of the pull before the flash.
+	 * the whole foot burns, joined, for the rest of the pull before the flash
+	 * (a beat of the rush: `FINALE_CONFETTI_PACE`).
 	 */
-	glowMeet: 0.8,
+	glowMeet: 0.65,
 	/**
 	 * How much stronger the glow burns once it has rounded onto the foot, at
 	 * full (`FinaleConfettiGlowMask.foot`), at its own width: its brightness
@@ -217,7 +220,12 @@ const f = (value: number) => value.toFixed(4);
 const FOOT_HUES = 0.75;
 const FOOT_BLEND = 0.5;
 
-/** How brightly the foot burns evenly under its spots, as a share of a spot's peak. */
+/**
+ * How brightly the band burns evenly under its orbiting spots, as a share of
+ * a spot's peak: down the sides, so the trace reads wherever the spots are,
+ * and on the foot, a touch stronger.
+ */
+const SIDE_EVEN = 0.7;
 const FOOT_EVEN = 0.5;
 
 /**
@@ -254,16 +262,18 @@ void main() {
 	vec3 rgb = glow.rgb / max(glow.a, 0.0001);
 	float whiteHot = smoothstep(0.6, 0.95, min(rgb.r, min(rgb.g, rgb.b)));
 	glow.rgb = mix(glow.rgb, mix(rovo, vec3(1.0), whiteHot) * glow.a, uFoot.x);
-	// Under its orbiting spots the foot also burns evenly, line and halo, beating with
-	// the glow's heart, so the two sides join with no dim gap where no spot is passing.
+	// Under its orbiting spots the band also burns evenly, line and halo, beating with the
+	// glow's heart, so the trace reads all the way down wherever the spots are, and the two
+	// sides join with no dim gap. Down the sides it takes the foot's end colours.
 	vec2 q = abs(l) - h;
 	float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
-	float line = exp(-pow(d / (0.6 * uLook.x), 2.0));
+	float across = d / (0.6 * uLook.x);
+	float line = exp(-across * across);
 	float halo = exp(-abs(d) / (uScale * 0.8 + 0.8 * uLook.y));
 	halo *= mix(${f(TILE_GLOW.innerBloom)}, 1.0, smoothstep(-2.0 * uLook.x, 0.0, d));
 	halo *= 1.0 - smoothstep(0.5, 0.9, abs(d) / (${f(TILE_GLOW.pad)} * uScale));
-	float heart = ${f(FOOT_EVEN)} * (0.8 + 0.2 * beat(uLook3.z * uTime + uLook3.w));
-	float even = uFoot.x * uEnvelope * uLook2.w * heart * (line + ${f(TILE_GLOW.bloomOpacity)} * halo * (1.0 - line));
+	float heart = mix(${f(SIDE_EVEN)}, ${f(FOOT_EVEN)}, uFoot.x) * (0.8 + 0.2 * beat(uLook3.z * uTime + uLook3.w));
+	float even = uEnvelope * uLook2.w * heart * (line + ${f(TILE_GLOW.bloomOpacity)} * halo * (1.0 - line));
 	glow += vec4(rovo, 1.0) * clamp(even, 0.0, 1.0) * (1.0 - glow.a);
 	gl_FragColor = glow * band;
 }
@@ -632,7 +642,8 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 		if (!show || !renderer) return;
 		const at = now();
 		show.startedAt ??= at;
-		const time = show.held ?? (at - show.startedAt) / 1000;
+		// The show's own clock: real time through its pace (bullet time, then the rush).
+		const time = show.held ?? finaleConfettiShowTime((at - show.startedAt) / 1000);
 		if (!show.gathered && time >= FINALE_CONFETTI_TIMING.gathered) {
 			show.gathered = true;
 			emit({ type: "gathered", id: show.id });
@@ -686,7 +697,7 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 				if (command.type === "cancel") finish();
 				else if (command.type === "release") show.releasedAt ??= now();
 				else if (command.type === "hold") {
-					if (command.time === null && show.held !== null) show.startedAt = now() - show.held * 1000;
+					if (command.time === null && show.held !== null) show.startedAt = now() - finaleConfettiRealTime(show.held) * 1000;
 					show.held = command.time;
 					// Render now: a hidden page may never deliver the pending frame.
 					if (frame !== null) unschedule(frame);
