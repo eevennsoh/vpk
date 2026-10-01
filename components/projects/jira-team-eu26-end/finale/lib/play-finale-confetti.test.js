@@ -15,13 +15,13 @@ async function build(contents, plugins = []) {
 
 let player;
 async function loadPlayer() {
-	player ??= await build('export { createFinaleConfettiPlayer, finaleConfettiGlowMask, finaleConfettiGlowMaskAt, FINALE_CONFETTI_GLOW_FRAGMENT } from "./finale-confetti-renderer"; export { FINALE_CONFETTI_TIMING } from "./finale-confetti"; export { TILE_GLOW_FRAGMENT, tileGlowShape } from "./finale-tile-glow"; export { FLASH_COLOR_GLSL } from "./finale-column-flash"; export { finaleConfettiFootHue } from "./finale-confetti-renderer";');
+	player ??= await build('export { createFinaleConfettiPlayer, FINALE_CONFETTI_LOOK, finaleConfettiGlowMask, finaleConfettiGlowMaskAt, FINALE_CONFETTI_GLOW_FRAGMENT } from "./finale-confetti-renderer"; export { FINALE_CONFETTI_TIMING, finaleConfettiRealTime, finaleConfettiShowTime } from "./finale-confetti"; export { TILE_GLOW_FRAGMENT, tileGlowShape } from "./finale-tile-glow"; export { FLASH_COLOR_GLSL } from "./finale-column-flash"; export { finaleConfettiFootHue } from "./finale-confetti-renderer";');
 	return player;
 }
 
 /** The controller, with its main-thread player swapped for a probe (no GL in node). */
 function loadController() {
-	return build('export * from "./play-finale-confetti"; export { probe } from "./finale-confetti-renderer"; export { FINALE_CONFETTI_TIMING } from "./finale-confetti";', [{
+	return build('export * from "./play-finale-confetti"; export { probe } from "./finale-confetti-renderer"; export { FINALE_CONFETTI_TIMING, finaleConfettiRealTime } from "./finale-confetti";', [{
 		name: "renderer-probe",
 		setup(context) {
 			context.onResolve({ filter: /^\.\/finale-confetti-renderer$/ }, () => ({ path: "renderer", namespace: "probe" }));
@@ -72,7 +72,7 @@ function fakeRenderer() {
 }
 
 test("the player opens on frame 0 and starts its clock on the first delivered frame", async (t) => {
-	const { createFinaleConfettiPlayer, FINALE_CONFETTI_TIMING: T } = await loadPlayer();
+	const { createFinaleConfettiPlayer, FINALE_CONFETTI_TIMING: T, finaleConfettiRealTime: real } = await loadPlayer();
 	const frames = fakeFrames();
 	t.after(frames.install());
 	let clock = 0;
@@ -86,7 +86,8 @@ test("the player opens on frame 0 and starts its clock on the first delivered fr
 	clock = 80;
 	frames.step();
 	assert.deepEqual(renderer.calls.at(-1), ["render", 0, 0]);
-	clock = 80 + T.gathered * 1000 - 1;
+	// The show's clock runs at its own pace: it gathers at the real time of its gather cue.
+	clock = 80 + real(T.gathered) * 1000 - 1;
 	frames.step();
 	assert.deepEqual(events, [], "no hand-off before every piece is in");
 	clock += 2;
@@ -110,7 +111,7 @@ test("the player opens on frame 0 and starts its clock on the first delivered fr
 });
 
 test("rehearsal holds render at once, resume where they froze, and cancel clears", async (t) => {
-	const { createFinaleConfettiPlayer } = await loadPlayer();
+	const { createFinaleConfettiPlayer, finaleConfettiRealTime: real, finaleConfettiShowTime: showTime } = await loadPlayer();
 	const frames = fakeFrames();
 	t.after(frames.install());
 	let clock = 0;
@@ -127,7 +128,9 @@ test("rehearsal holds render at once, resume where they froze, and cancel clears
 	show.handle({ type: "hold", id: 7, time: null });
 	clock += 100;
 	frames.step();
-	assert.deepEqual(renderer.calls.at(-1), ["render", 0.55, 0], "resuming continues from the held second");
+	const [, resumed] = renderer.calls.at(-1);
+	// The fake renderer records times to the millisecond.
+	assert.ok(Math.abs(resumed - showTime(real(0.45) + 0.1)) < 1e-3 && resumed > 0.45, "resuming continues from the held second, at the show's pace");
 	show.handle({ type: "cancel", id: 7 });
 	assert.deepEqual(renderer.calls.at(-1), ["clear"]);
 	assert.deepEqual(events, [{ type: "done", id: 7 }]);
@@ -168,7 +171,10 @@ test("a renderer that cannot start reports why, instead of drawing nothing", asy
 });
 
 test("the column's border glows with the bento tiles' own pulsing border, on the top of both sides, then traced down them to meet along its foot", async () => {
-	const { FINALE_CONFETTI_GLOW_FRAGMENT: glow, FLASH_COLOR_GLSL: flashColor, TILE_GLOW_FRAGMENT: tile, finaleConfettiFootHue: hue, finaleConfettiGlowMask: mask, finaleConfettiGlowMaskAt: at, tileGlowShape } = await loadPlayer();
+	const { FINALE_CONFETTI_GLOW_FRAGMENT: glow, FINALE_CONFETTI_LOOK: look, FLASH_COLOR_GLSL: flashColor, TILE_GLOW_FRAGMENT: tile, finaleConfettiFootHue: hue, finaleConfettiGlowMask: mask, finaleConfettiGlowMaskAt: at, tileGlowShape } = await loadPlayer();
+	// Points in the trace, as shares of the way to where the two leads meet.
+	const toMeet = (share) => look.glowMeet * share;
+	const joined = look.glowMeet + (1 - look.glowMeet) / 2;
 	// The tile shader is wrapped, not edited: every line of it but its entry point survives.
 	assert.equal(glow.replace("void tileGlow() {", "void main() {").startsWith(tile), true);
 	assert.equal(glow.match(/void main\(\)/g).length, 1, "one entry point");
@@ -195,24 +201,28 @@ test("the column's border glows with the bento tiles' own pulsing border, on the
 		for (let x = centre; x <= right - radius; x += 8) assert.equal(both(trace, x, top), 0, "…never on the top edge");
 	}
 	// Regression: its tail held the top until the band had stretched to full length.
-	assert.equal(both(0.25, right, top + radius + 2), 0, "it lets go of the top as soon as it sets off…");
-	assert.ok(both(0.1, right, top + radius + 2) < both(0, right, top + radius + 2), "already fading there");
-	assert.equal(both(0.5, right, middle), 1);
-	assert.equal(both(0.65, right - radius - 6, bottom), 1, "…rounds the bottom corners…");
-	assert.equal(both(0.65, centre, bottom), 0, "…and runs in along the foot…");
+	assert.equal(both(toMeet(0.35), right, top + radius + 2), 0, "it lets go of the top as soon as it sets off…");
+	assert.ok(both(toMeet(0.15), right, top + radius + 2) < both(0, right, top + radius + 2), "already fading there");
+	assert.equal(both(toMeet(0.55), right, middle), 1);
+	assert.equal(both(toMeet(0.83), right - radius - 6, bottom), 1, "…rounds the bottom corners…");
+	assert.equal(both(toMeet(0.83), centre, bottom), 0, "…and runs in along the foot…");
 	// Regression: the two leads met only at the very end, so their join in the middle stayed faint.
-	for (let x = left + radius; x <= right - radius; x += 4) assert.equal(lit(0.8, x, bottom), 1, "…meeting in its middle with a fifth of the pull to go, joined end to end…");
+	for (let x = left + radius; x <= right - radius; x += 4) assert.equal(lit(joined, x, bottom), 1, "…meeting in its middle before the trace ends, joined end to end…");
 	for (const share of [0, 0.25, 0.5, 0.75, 1]) {
 		const x = left + radius + (rect.width - radius * 2) * share;
 		assert.equal(lit(1, x, bottom), 1, "…until the whole foot glows, where the flash ignites");
 	}
 	assert.equal(both(1, right, middle), 0);
 	// It burns stronger on the foot: at its own strength down the sides, rising as it rounds the bottom corners.
-	assert.equal(mask(shape, 0.5).foot, 0, "its own strength down the sides…");
-	assert.ok(mask(shape, 0.65).foot > 0.2 && mask(shape, 0.65).foot < 0.8, "…strengthening as it rounds onto the foot…");
-	assert.equal(mask(shape, 0.8).foot, 1, "…at full strength once joined…");
+	assert.equal(mask(shape, toMeet(0.55)).foot, 0, "its own strength down the sides…");
+	assert.ok(mask(shape, toMeet(0.83)).foot > 0.2 && mask(shape, toMeet(0.83)).foot < 0.8, "…strengthening as it rounds onto the foot…");
+	assert.equal(mask(shape, look.glowMeet).foot, 1, "…at full strength once joined…");
 	assert.equal(mask(shape, 1).foot, 1, "…and strongest once the whole foot glows, as the flash ignites");
 	// Regression: the foot showed whichever one or two spot colours were passing (a red and a green).
+	// Regression: only the orbiting spots lit the sides, so where none was passing the trace vanished.
+	assert.match(glow, /float heart = mix\([\d.]+, [\d.]+, uFoot\.x\)/, "the whole band burns evenly under its spots, a touch stronger on the foot");
+	assert.doesNotMatch(glow, /float even = uFoot\.x/, "not only once it reaches the foot");
+	assert.doesNotMatch(glow.slice(glow.indexOf("void main() {")), /pow\(d /, "and squares the border distance without pow(), which is undefined below zero");
 	assert.ok(glow.includes(flashColor), "on the foot it takes the flash's own four Rovo colours…");
 	// Regression: they cycled every half column, so the foot showed the four colours three times over.
 	const path = [];
@@ -419,14 +429,36 @@ test("a failing worker hands the running show to the main thread; a second failu
 	confetti.dispose();
 });
 
+test("a rehearsal hold pauses the stall backstop, and resuming re-arms it from the held second", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	fakeDom(t);
+	const { createFinaleConfetti, FINALE_CONFETTI_TIMING: T, finaleConfettiRealTime: real } = await loadController();
+	const confetti = createFinaleConfetti();
+	const show = confetti.play(COLUMN);
+	let released = false;
+	void show.gathered.then(() => { released = true; });
+	confetti.hold(1.5);
+	// Regression: a held rehearsal tripped the backstop, which released the show mid-inspection.
+	t.mock.timers.tick(T.gathered * 1000 + 10000);
+	await Promise.resolve();
+	assert.equal(released, false, "a frozen show is not a stalled one");
+	confetti.hold(null);
+	t.mock.timers.tick((real(T.gathered) - real(1.5)) * 1000 + 2400);
+	await Promise.resolve();
+	assert.equal(released, false, "resumed, its gather is due from the held second…");
+	t.mock.timers.tick(200);
+	await Promise.resolve();
+	assert.equal(released, true, "…and the backstop still releases a stall after that");
+});
+
 test("a stalled renderer holds the flash for at most a short grace", async (t) => {
 	t.mock.timers.enable({ apis: ["setTimeout"] });
 	fakeDom(t);
-	const { createFinaleConfetti, FINALE_CONFETTI_TIMING: T } = await loadController();
+	const { createFinaleConfetti, FINALE_CONFETTI_TIMING: T, finaleConfettiRealTime: real } = await loadController();
 	const show = createFinaleConfetti().play(COLUMN);
 	let released = false;
 	void show.gathered.then(() => { released = true; });
-	t.mock.timers.tick(T.gathered * 1000 + 2400);
+	t.mock.timers.tick(real(T.gathered) * 1000 + 2400);
 	await Promise.resolve();
 	assert.equal(released, false);
 	t.mock.timers.tick(200);

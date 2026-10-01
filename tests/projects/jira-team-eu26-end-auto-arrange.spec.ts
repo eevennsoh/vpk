@@ -217,8 +217,8 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 			expect(probe.confettiAt).toBeGreaterThanOrEqual(probe.traceFinishedAt);
 			// The finale mounts (invisibly, on frame 0) beneath the burst, so its setup runs while pieces fly…
 			expect(probe.finaleAt).toBeGreaterThan(probe.confettiAt);
-			// …ignites only once every piece has gathered into the ember (2.4s)…
-			expect(probe.igniteAt - probe.confettiAt).toBeGreaterThanOrEqual(2350);
+			// …ignites only once every piece has gathered into the ember (~1.78s at the show's pace)…
+			expect(probe.igniteAt - probe.confettiAt).toBeGreaterThanOrEqual(1700);
 			// …and the ember blooms into the flash's rise, then the layer is gone.
 			expect(probe.confettiFinishedAt).toBeGreaterThanOrEqual(probe.igniteAt);
 			expect(probe.confettiFinishedAt - probe.igniteAt).toBeLessThan(1000);
@@ -309,9 +309,9 @@ test("confetti fires a broad 3D burst from both lower corners and gathers into t
 	expect(launch.filter(([x, y]) => x < 0.3 && y > 0.5).length, "the left cannon's fan").toBeGreaterThan(150);
 	expect(launch.filter(([x, y]) => x > 0.7 && y > 0.5).length, "the right cannon's fan").toBeGreaterThan(150);
 	expect(launch.filter(([, y]) => y < 0.5).length, "it reaches well into the upper half").toBeGreaterThan(150);
-	// Just before the gather cue (FINALE_CONFETTI_TIMING.gathered, 2.4s); holding past it ignites the finale.
-	const gather = await paint(2.3);
-	await page.screenshot({ path: "output/agent-browser/keynote-completion/confetti-gather-2300ms.png" });
+	// Just before the gather cue (FINALE_CONFETTI_TIMING.gathered, show second 1.8); holding past it ignites the finale.
+	const gather = await paint(1.7);
+	await page.screenshot({ path: "output/agent-browser/keynote-completion/confetti-gather-1700ms.png" });
 	const { sourceX, sourceY, left, right, foot, aspect } = await page.locator('[data-jira-kanban-column="Done"]').evaluate((column) => {
 		const rect = column.getBoundingClientRect();
 		return {

@@ -22,11 +22,12 @@ test("the timeline composes the resolved VPK duration tokens and hands over in t
 	const css = readFileSync("app/tailwind-theme.css", "utf8");
 	const token = (name) => Number(css.match(new RegExp(`--duration-${name}:\\s*(\\d+)ms`))[1]) / 1000;
 	assert.equal(T.volley, token("slow"), "the cannons fire as a stream the eye can follow");
-	assert.equal(T.gatherStart, token("slowest") * 2 + token("medium"), "a long hang before the vortex opens");
-	assert.equal(T.gatherSpread, token("slower"));
-	assert.equal(T.glowIn, token("slower"), "the column's glow pulses in once, briefly");
-	assert.equal(T.firstArrival, (token("slowest") + token("slower")) * 2);
-	assert.equal(T.gathered, token("slowest") * 4);
+	assert.equal(T.gatherStart, token("slowest") + token("slower"), "a hang before the vortex opens");
+	assert.equal(T.gatherSpread, token("slow"));
+	assert.equal(T.glowIn, token("slow"), "the column's glow pulses in once, briefly");
+	assert.equal(T.firstArrival, token("slowest") * 2 + token("medium"));
+	// Regression: at 2.4s to the flash, the burst and its trace dragged.
+	assert.equal(T.gathered, token("slowest") * 3, "the flash may ignite 1.8s after launch");
 	assert.equal(T.release, FLASH_TIMING.rise, "the ember blooms over exactly the flash's own rise");
 	assert.equal(T.release, token("fast"));
 });
@@ -156,46 +157,79 @@ test("the border charges steadily from the first arrival to full at the gather c
 	assert.ok(middle > 0.35 && middle < 0.65, "arrivals pour in at a steady rate");
 });
 
-test("the column's glow pulses in once, briefly, just before the pull, then brightens to full as every piece lands", () => {
+test("the column's glow pulses in once, briefly, as the pull begins, then brightens to full as every piece lands", () => {
 	const { createFinaleConfettiBurst, finaleConfettiCharge, finaleConfettiGlow, FINALE_CONFETTI_TIMING: T } = load();
 	const burst = createFinaleConfettiBurst(STAGE);
 	const glow = (time) => finaleConfettiGlow(time, finaleConfettiCharge(burst, time));
-	const start = T.gatherStart - T.glowIn;
-	assert.ok(start > T.volley, "dark while the cannons fire");
-	assert.equal(glow(start), 0);
+	const start = T.gatherStart;
+	// Regression: it glowed in and set off while the pieces still hung in bullet time.
+	for (let time = 0; time <= start; time += 0.01) assert.equal(glow(time), 0, "dark through the launch and the hang");
 	// Regression: it popped on as the vortex opened, a third of its brightness in one frame.
 	let steepest = 0;
 	for (let time = 0; time < T.gathered; time += 1 / 120) steepest = Math.max(steepest, glow(time + 1 / 60) - glow(time));
-	assert.ok(steepest < 0.1, `it glows in from nothing, never popping on (${steepest.toFixed(3)} in a frame)`);
+	// A quick swell from nothing (its brief window) rises at most ~0.13 a frame; the pop was 0.35.
+	assert.ok(steepest < 0.15, `it glows in from nothing, never popping on (${steepest.toFixed(3)} in a frame)`);
 	// One pulse: it swells past the brightness it sets off at, then eases back to it.
 	const samples = [];
-	for (let time = start; time <= T.gatherStart + 1e-9; time += 0.005) samples.push(glow(time));
+	for (let time = start; time <= start + T.glowIn + 1e-9; time += 0.005) samples.push(glow(time));
 	const turns = samples.slice(1, -1).map((value, index) => Math.sign(value - samples[index]) - Math.sign(samples[index + 2] - value));
 	assert.equal(turns.filter((turn) => turn > 0).length, 1, "one swell…");
 	assert.equal(turns.filter((turn) => turn < 0).length, 0, "…with no second beat…");
-	assert.ok(Math.max(...samples) > glow(T.gatherStart) * 1.15, "…that reads as a pulse…");
-	assert.ok(Math.abs(glow(T.gatherStart) - 0.65) < 1e-9, "…easing back just as the trace sets off, before any piece lands");
+	assert.ok(Math.max(...samples) > glow(start + T.glowIn) * 1.15, "…that reads as a pulse…");
+	assert.ok(Math.abs(glow(start + T.glowIn) - 0.65) < 1e-9, "…easing back as the pull gets going, before any piece lands");
+	assert.ok(start + T.glowIn < T.firstArrival);
 	// Regression: it pulsed at the top for twice as long, lingering there before the trace.
 	assert.ok(T.glowIn <= T.gatherSpread + 1e-9, "brief: no longer than the pieces take to join the stream");
 	assert.equal(glow(T.gathered), 1, "full once every piece is in");
 	let previous = 0;
-	for (let time = T.gatherStart; time <= T.gathered + 0.5; time += 0.01) {
+	for (let time = start + T.glowIn; time <= T.gathered + 0.5; time += 0.01) {
 		assert.ok(glow(time) >= previous - 1e-12 && glow(time) <= 1, "it only brightens, and never past full");
 		previous = glow(time);
 	}
 });
 
-test("the glow is traced up the column at a steady pace across the whole pull", () => {
-	const { finaleConfettiTrace, FINALE_CONFETTI_TIMING: T } = load();
-	assert.equal(finaleConfettiTrace(T.gatherStart), 0, "from the moment the vortex opens…");
+test("the show explodes fast, drops into bullet time while the pieces hang, then rushes them in", () => {
+	const { finaleConfettiRealTime: real, finaleConfettiShowTime: show, FINALE_CONFETTI_PACE: P, FINALE_CONFETTI_TIMING: T } = load();
+	const pace = (at) => 1e-4 / (real(at + 1e-4) - real(at));
+	assert.equal(real(0), 0);
+	assert.ok(Math.abs(pace(T.volley / 2) - P.burst) < 1e-6, "the cannons explode fast…");
+	assert.ok(Math.abs(pace((P.slow[1] + P.rush[0]) / 2) - P.hang) < 1e-6, "…the hang floats in bullet time…");
+	assert.ok(Math.abs(pace((P.rush[1] + T.gathered) / 2) - P.pull) < 1e-6, "…and it picks up again to draw the pieces in");
+	assert.ok(P.burst > 1.5 && P.hang < 0.6 && P.pull > 2 * P.hang);
+	// Regression: at 2.6× the pieces were sucked into the column in ~0.5s.
+	const pull = real(T.gathered) - real(T.gatherStart);
+	assert.ok(pull > 0.65, `the pull is followable (${pull.toFixed(2)}s)`);
+	assert.ok(P.slow[0] >= T.volley, "bullet time once the volley is out");
+	assert.equal(P.rush[0], T.gatherStart, "the rush as the vortex opens");
+	let previous = -1;
+	for (let at = 0; at <= T.gathered + 0.5; at += 0.01) {
+		assert.ok(real(at) > previous, "it never stops or runs backwards");
+		assert.ok(Math.abs(show(real(at)) - at) < 1e-9, "and plays, holds and resumes on one exact clock");
+		previous = real(at);
+	}
+	// Regression: held for most of the hang, bullet time dragged (~0.8s at half speed).
+	const bullet = real(P.rush[0]) - real(P.slow[1]);
+	assert.ok(bullet < 0.45, `bullet time is brief (${bullet.toFixed(2)}s)`);
+	const flash = real(T.gathered);
+	assert.ok(flash > 1.65 && flash < 1.9, `the flash may ignite ${flash.toFixed(2)}s after launch`);
+});
+
+test("the glow is traced on the burst's own clock: from the moment the pull begins, leaving bullet time slowly, then rushing down", () => {
+	const { finaleConfettiTrace, finaleConfettiRealTime: real, finaleConfettiShowTime: show, FINALE_CONFETTI_TIMING: T } = load();
+	const start = T.gatherStart;
+	// Regression: it traced while the pieces still hung in bullet time.
+	for (let time = 0; time <= start; time += 0.01) assert.equal(finaleConfettiTrace(time), 0, "not before the pieces start to pour in…");
+	// Regression: it glowed in and pulsed in place at the top before setting off.
+	assert.ok(finaleConfettiTrace(start + 1 / 60) > 0, "…already moving as it appears…");
 	assert.equal(finaleConfettiTrace(T.gathered), 1, "…to the last piece landing");
 	assert.equal(finaleConfettiTrace(T.gathered + 1), 1);
-	// Regression: paced by the pieces, it once covered ~90% of the column in 0.6s.
+	// Steady in show time (paced by time, not the pieces, which once raced it down in 0.6s)…
 	const step = 0.05;
-	const rate = step / (T.gathered - T.gatherStart);
-	for (let time = T.gatherStart; time < T.gathered - 1e-9; time += step) {
-		assert.ok(Math.abs(finaleConfettiTrace(time + step) - finaleConfettiTrace(time) - rate) < 1e-9, "never racing: the same climb every moment");
-	}
+	const rate = step / (T.gathered - start);
+	for (let at = start; at < T.gathered - 1e-9; at += step) assert.ok(Math.abs(finaleConfettiTrace(at + step) - finaleConfettiTrace(at) - rate) < 1e-9);
+	// …so in real time it keeps the burst's pace. Regression: its own ease read as no speed-up at all.
+	const perSecond = (at) => (finaleConfettiTrace(show(real(at) + 0.02)) - finaleConfettiTrace(at)) / 0.02;
+	assert.ok(perSecond(T.gathered - 0.2) > 2 * perSecond(start + 0.05), "it speeds up to over twice the pace it set off at");
 });
 
 test("every rehearsal is the same show, and the GPU layout matches the GLSL port", () => {
