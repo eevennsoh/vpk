@@ -16,6 +16,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
 		"components/blocks/jira-kanban/experimental/hooks/use-created-card-drop-motion.test.js",
 		"components/blocks/jira-kanban/experimental/lib/issue-solitaire-drop.test.js",
+		"components/blocks/jira-kanban/experimental/lib/board-column-header-drop-feedback.test.js",
 		"components/ui-custom/animated-icon.test.js",
 		"components/blocks/jira-dragging/use-jira-dragging.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-board-auto-arrange.test.js",
