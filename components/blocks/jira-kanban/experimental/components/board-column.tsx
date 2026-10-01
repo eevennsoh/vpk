@@ -5,8 +5,8 @@ import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
 import { Icon } from "@/components/ui/icon";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 import { JiraDropzoneCopyReveal } from "@/components/blocks/jira-dropzone/jira-dropzone-copy-reveal";
+import { JIRA_DROPZONE_WELL_CHROME_CLASS, resolveJiraDropzoneWellColors } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-chrome";
 import type { JiraKanbanAgentData } from "@/components/blocks/jira-kanban/index";
 import type { KanbanColumnChrome, KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
@@ -64,6 +64,7 @@ function BoardColumnHeader({
 	</> : null;
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
 	const dropHovered = issueDrop.current?.entered && issueDrop.current.surface === "header";
+	const showHeaderDropFeedback = Boolean(issueDrop.active && !issueDrop.offeringChoices);
 	const paddingBottom = headerStyle?.paddingBottom ?? token("space.100");
 	return (
 		<div
@@ -77,14 +78,23 @@ function BoardColumnHeader({
 			)}
 			style={{ ...headerStyle, paddingBottom }}
 		>
-			{dropHovered ? <div
+			{showHeaderDropFeedback ? <div
 				aria-hidden
 				data-board-column-title-drop-feedback=""
-				className={cn(buttonVariants({ variant: "ghost" }), "pointer-events-none absolute -z-10 bg-bg-neutral-subtle-hovered")}
+				className={cn(
+					"pointer-events-none absolute -z-10 transition-colors duration-normal ease-out-practical motion-reduce:transition-none",
+					JIRA_DROPZONE_WELL_CHROME_CLASS,
+					resolveJiraDropzoneWellColors(Boolean(dropHovered)),
+					!dropHovered ? "bg-transparent" : null,
+				)}
 				style={{ ...resolveBoardColumnHeaderDropFeedbackInset(dropFeedbackInset, headerStyle?.paddingTop, paddingBottom), height: "auto" }}
 			/> : null}
 			{/* Match the compact controls' row height when pickup replaces them with transition copy. */}
-			<div className={cn("flex min-h-6 min-w-0 flex-1 items-center text-xs font-medium leading-4 text-text-subtle", !issueMoveVisual && isTransitioning ? "justify-center" : null)}>
+			<div className={cn(
+				"flex min-h-6 min-w-0 flex-1 items-center text-xs font-medium leading-4",
+				dropHovered ? "text-text-selected" : "text-text-subtle",
+				!issueMoveVisual && isTransitioning ? "justify-center" : null,
+			)}>
 				{issueMoveVisual ? <JiraDropzoneCopyReveal
 					contentKey={transitionPrefix ?? headerLabel}
 					dataPrefix="board-column-header"

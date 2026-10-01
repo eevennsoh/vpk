@@ -339,6 +339,13 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			const headerBox = await header.boundingBox();
 			const content = await destination.locator('[data-jira-kanban-column-content]').boundingBox();
 			if (!box || !headerBox || !content) throw new Error("Missing column geometry");
+			const feedback = header.locator('[data-board-column-title-drop-feedback]');
+			if (surface === "header") {
+				await expect(feedback).toBeVisible();
+				await expect(feedback).toHaveClass(/\bborder-dashed\b/);
+				await expect(feedback).toHaveClass(/\bborder-border\b/);
+				await expect(feedback).toHaveClass(/\bbg-transparent\b/);
+			}
 			const x = box.x + box.width / 2;
 			const y = surface === "header" ? headerBox.y + headerBox.height / 2 : Math.min(box.y + box.height - 50, content.y + content.height + 60);
 			if (surface === "unused space") expect(y).toBeGreaterThan(content.y + content.height);
@@ -351,16 +358,18 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await expect(destination.locator('[data-issue-drop-before]')).toHaveCount(0);
 			if (surface === "header") {
 				await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
-				const feedback = header.locator('[data-board-column-title-drop-feedback]');
 				await expect(feedback).toBeVisible();
-				await expect(feedback).toHaveClass(/\bbg-bg-neutral-subtle-hovered\b/);
+				await expect(feedback).toHaveClass(/\bborder-dashed\b/);
+				await expect(feedback).toHaveClass(/\bborder-border-selected\b/);
+				await expect(feedback).toHaveClass(/\bbg-bg-selected\b/);
 				const feedbackBox = (await feedback.boundingBox())!;
 				const createBox = (await destination.locator('[data-board-column-create-action] button').boundingBox())!;
 				expect(feedbackBox.x).toBeCloseTo(createBox.x);
 				expect(feedbackBox.x + feedbackBox.width).toBeCloseTo(createBox.x + createBox.width);
 				const inset = createBox.x - headerBox.x;
 				expect(feedbackBox.y - headerBox.y).toBeCloseTo(inset);
-				expect(headerBox.y + headerBox.height - feedbackBox.y - feedbackBox.height).toBeCloseTo(inset);
+				const firstCard = (await destination.locator('[data-board-agent-session-drop-zone="issue"]').first().boundingBox())!;
+				expect(firstCard.y - feedbackBox.y - feedbackBox.height).toBeCloseTo(inset);
 				expect(feedbackBox.height).toBeGreaterThanOrEqual(32);
 				await expect.poll(async () => {
 					const labelBox = (await header.locator('[data-board-column-header-copy-layer="label"]').first().boundingBox())!;
