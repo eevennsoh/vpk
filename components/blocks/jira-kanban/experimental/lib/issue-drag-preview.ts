@@ -136,7 +136,9 @@ export function createIssueCohortPreview(card: HTMLElement, selection?: Readonly
 	lead.dataset.issueCohortFront = "";
 	restingLeadShadows.set(lead, lead.style.boxShadow);
 	const preview = card.ownerDocument.createElement("div");
-	preview.className = "pointer-events-none fixed isolate";
+	// Positioned by transform every frame: opt out of transitions so reduced
+	// motion's global 0.01ms reset cannot paint it one frame behind the pointer.
+	preview.className = "pointer-events-none fixed isolate transition-none";
 	preview.setAttribute("aria-hidden", "true");
 	preview.inert = true;
 	preview.dataset.issueCohortPreview = "";

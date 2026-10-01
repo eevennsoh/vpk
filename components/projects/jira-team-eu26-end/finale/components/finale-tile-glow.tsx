@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import type { FinaleRect } from "../data/finale-stories";
 import type { FinaleViewport } from "../lib/finale-card-motion";
-import { TILE_GLOW_FRAGMENT, TILE_GLOW_VERTEX, tileGlowDraws, tileGlowUniforms } from "../lib/finale-tile-glow";
+import { TILE_GLOW_FRAGMENT, TILE_GLOW_VERTEX, tileGlowClock, tileGlowDraws, tileGlowUniforms } from "../lib/finale-tile-glow";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 interface GlowGl {
@@ -108,8 +108,8 @@ export function FinaleTileGlow({ tiles, radius, scale, viewport }: Readonly<Fina
 		state.drawn = draws.length > 0;
 		gl.uniform2f(uniforms.viewport, viewport.width, viewport.height);
 		gl.uniform1f(uniforms.scale, scale);
-		// Paper's shader time is the finale clock, so the motion scrubs.
-		gl.uniform1f(uniforms.time, time);
+		// Paper's shader time is the finale clock (anchored to the toss), so the motion scrubs.
+		gl.uniform1f(uniforms.time, tileGlowClock(time));
 		for (const draw of draws) {
 			const { quad, shape } = draw;
 			gl.uniform4f(uniforms.quad, quad.x, quad.y, quad.width, quad.height);

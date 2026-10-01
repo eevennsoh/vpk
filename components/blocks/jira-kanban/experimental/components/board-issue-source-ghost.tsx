@@ -23,7 +23,8 @@ export function BoardIssueSourceGhost({ children, dragging, selectionBackdrop }:
 		if (!enabled || !dragging || !contentRef.current) return;
 		// Inert on a native drag source (or its ancestors) aborts Chromium's
 		// drag. Its child UI can be inert while the real source stays mounted.
-		const source = contentRef.current.querySelector<HTMLElement>('[draggable="true"]');
+		// Match any `draggable` value: pointer transport clears it during pickup.
+		const source = contentRef.current.querySelector<HTMLElement>("[draggable]");
 		const targets = [...(source ?? contentRef.current).children].filter((node): node is HTMLElement => node instanceof HTMLElement);
 		const previous = targets.map((node) => node.inert);
 		const focused = contentRef.current.ownerDocument.activeElement;

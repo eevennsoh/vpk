@@ -68,11 +68,17 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 	react.useEffect = react.useLayoutEffect;
 	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-issue-card-drop-arrival.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
 	const loaded = { exports: {} };
-	vm.runInNewContext(compiled, {
-		module: loaded, exports: loaded.exports, Element, window: { addEventListener() {}, removeEventListener() {} },
+	const clock = {
 		requestAnimationFrame: (callback) => frames.push(callback), cancelAnimationFrame: (id) => { frames[id - 1] = null; },
 		setTimeout: (callback, delay = 0) => timers.push({ callback, delay }), clearTimeout: (id) => { timers[id - 1] = null; },
+	};
+	// The real frame handoff, on this harness's frames and timers.
+	const handoff = { exports: {} };
+	vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../lib/issue-drop-handoff.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { module: handoff, exports: handoff.exports, ...clock });
+	vm.runInNewContext(compiled, {
+		module: loaded, exports: loaded.exports, Element, window: { addEventListener() {}, removeEventListener() {} }, ...clock,
 		require(name) {
+			if (name.includes("issue-drop-handoff")) return handoff.exports;
 			if (name === "react") return react;
 			if (name === "react-dom") return { flushSync(callback) { events.push("flushSync"); callback(); render(); } };
 			if (name.includes("issue-drag-preview")) return { settleIssueCohortPreview(node, at) { events.push("settle preview"); node.settledAt = at; } };
@@ -342,27 +348,51 @@ test("host moves commit without visuals when move visuals are off, and stay abse
 	assert.equal(harness().api().handleMove, undefined);
 });
 
-test("each move request id plays once, and a board without the capability ignores it", () => {
+test("each move request id plays once, after the frame that follows it, and a board without the capability ignores it", () => {
 	const refs = [];
 	let refIndex = 0;
 	const react = {
 		useRef(current) { const i = refIndex++; return refs[i] ??= { current }; },
 		useEffect(effect) { effect(); },
 	};
-	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-issue-move-request.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-	const loaded = { exports: {} };
-	vm.runInNewContext(compiled, { module: loaded, exports: loaded.exports, window: { addEventListener() {}, removeEventListener() {} }, require(name) { if (name === "react") return react; throw new Error(`Unexpected import ${name}`); } });
+	const load = (file, requireModule) => {
+		const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, file), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+		const loaded = { exports: {} };
+		vm.runInNewContext(compiled, { module: loaded, exports: loaded.exports, window: { addEventListener() {}, removeEventListener() {} }, require: requireModule });
+		return loaded.exports;
+	};
+	const handoff = load("../lib/issue-drop-handoff.ts", (name) => {
+		if (name === "@/lib/motion") return { motionDuration: { normal: 0.15 } };
+		throw new Error(`Unexpected import ${name}`);
+	});
+	const loaded = load("use-issue-move-request.ts", (name) => {
+		if (name === "react") return react;
+		if (name === "../lib/issue-drop-handoff") return handoff;
+		if (name === "./use-issue-card-drop-arrival") return {};
+		throw new Error(`Unexpected import ${name}`);
+	});
+	const frames = [];
+	const afterFrame = (run) => { frames.push(run); return () => {}; };
+	const present = () => { for (const run of frames.splice(0)) run(); };
 	const moves = [];
-	const render = (request, onMove = (move) => moves.push(move.id)) => { refIndex = 0; loaded.exports.useIssueMoveRequest(request, onMove); };
+	const render = (request, onMove = (move) => moves.push(move.id)) => { refIndex = 0; loaded.useIssueMoveRequest(request, onMove, afterFrame); };
 	const request = { id: 1, cardCodes: ["A"], columnTitle: "Done" };
 	render(request);
+	// Regression: a menu click flushed this effect before paint, so the whole
+	// move committed inside the click and froze the menu's own exit for ~80ms.
+	assert.deepEqual(moves, [], "the move waits for the frame that shows the request");
+	present();
 	render(request);
 	render({ ...request });
+	present();
 	assert.deepEqual(moves, [1]);
 	render({ ...request, id: 2 });
-	assert.deepEqual(moves, [1, 2]);
-	render({ ...request, id: 3 }, null);
-	assert.deepEqual(moves, [1, 2]);
+	render({ ...request, id: 3 });
+	present();
+	assert.deepEqual(moves, [1, 2, 3], "requests made within one frame still play, in order");
+	render({ ...request, id: 4 }, null);
+	present();
+	assert.deepEqual(moves, [1, 2, 3]);
 });
 
 for (const count of [1, 2, 5, 13]) {

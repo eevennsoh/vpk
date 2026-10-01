@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
@@ -13,7 +13,7 @@ import { useFinaleControls } from "./hooks/use-finale-controls";
 import { printFinaleColumn, useFinaleCardPrints } from "./hooks/use-finale-prints";
 import { captureJiraTeamEu26DoneColumn, waitForFinaleColumnCapture } from "./lib/capture-done-column";
 import { nextFinaleDragOrder } from "./lib/finale-drag-order";
-import { playFinaleConfetti } from "./lib/play-finale-confetti";
+import { createFinaleConfetti, type FinaleConfettiShow } from "./lib/play-finale-confetti";
 import { FINALE_DONE_COLUMN_TITLE, isJiraTeamEu26FinaleReady, parseFinaleSearch } from "./lib/finale-trigger";
 import type { FinaleSceneInput } from "./scenes/scene-board-to-bento";
 
@@ -60,6 +60,9 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 	const [scene, setScene] = useState<FinaleSceneInput | null>(null);
 	const [closing, setClosing] = useState(false);
 	const startAfterMountRef = useRef<number | null>(null);
+	const confetti = useMemo(() => createFinaleConfetti(), []);
+	/** A burst the mounted finale has yet to ignite from. */
+	const confettiShowRef = useRef<FinaleConfettiShow | null>(null);
 	const ready = isJiraTeamEu26FinaleReady(boardColumns, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES);
 	const wasReadyRef = useRef(ready);
 	const doneCodes = doneCodesOf(boardColumns);
@@ -71,6 +74,14 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		const timer = window.setTimeout(() => prints.prewarm(JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES), FINALE_PREWARM_DELAY_MS);
 		return () => window.clearTimeout(timer);
 	}, [prints]);
+
+	// Boot the confetti renderer (worker, GL context, shaders) while the board is idle.
+	useEffect(() => {
+		if (reducedMotion) return undefined;
+		const timer = window.setTimeout(() => confetti.prewarm(), FINALE_PREWARM_DELAY_MS);
+		return () => window.clearTimeout(timer);
+	}, [confetti, reducedMotion]);
+	useEffect(() => () => confetti.dispose(), [confetti]);
 
 	// Record MCB's drag order and print each card shortly after it lands.
 	useEffect(() => {
@@ -94,16 +105,21 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 	useEffect(() => {
 		if (!preparation) return undefined;
 		let cancelled = false;
+		let show: FinaleConfettiShow | null = null;
 		const controller = new AbortController();
 		const open = async () => {
 			// Celebrate as soon as the real card drop has settled. Image preparation
 			// runs alongside the burst so it cannot delay that first visible response.
 			// Exact rehearsal frames and reduced motion retain their existing path.
 			const hasConfetti = !reducedMotion && preparation.seek === 0 && !preparation.hold;
-			const confetti = hasConfetti
-				? waitForFinaleColumnCapture(controller.signal).then((column) => (
-					column ? playFinaleConfetti(controller.signal, reducedMotion) : undefined
-				))
+			const celebration = hasConfetti
+				? waitForFinaleColumnCapture(controller.signal).then((column) => {
+					if (!column || cancelled) return;
+					const { x, y, width, height } = column.getBoundingClientRect();
+					// The pieces land on the column's own bottom border, round its corners.
+					const radius = Number.parseFloat(getComputedStyle(column).borderBottomLeftRadius) || 0;
+					show = confetti.play({ x, y, width, height, radius });
+				})
 				: Promise.resolve();
 			// Never hold the show for a print: late ones fall back to plain sheets.
 			// The "Team 26" title face: resolves at once when the page already uses it.
@@ -115,16 +131,20 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			// Give the mandatory column image priority over optional late card sheets.
 			const sheets = hasConfetti ? chrome.then(() => prints.ensure(preparation.dragOrder)) : prints.ensure(preparation.dragOrder);
 			const ready = Promise.all([sheets, document.fonts.load('400 112px "Atlassian Sans"', "Team 0123456789").catch(() => []), chrome]);
-			// Late card sheets already replace their stand-ins during the finale.
-			// With confetti, its exit is the deadline; never add an image-only hold.
-			await Promise.race([ready, hasConfetti ? confetti : new Promise((resolve) => window.setTimeout(resolve, FINALE_PRINT_TIMEOUT_MS))]);
+			await celebration;
+			// Under confetti the finale mounts as soon as the column print exists:
+			// held on frame 0 it is invisible over the board, so its setup runs while
+			// the pieces fly, and late card sheets replace their stand-ins mid-flight.
+			if (!show) await Promise.race([ready, new Promise((resolve) => window.setTimeout(resolve, FINALE_PRINT_TIMEOUT_MS))]);
 			// Card sheets may arrive late; the column print cannot be missing or mid-drop.
-			await Promise.all([chrome, confetti]);
+			await chrome;
 			if (cancelled) return;
 			if (!columnPrint) { setPreparation(null); return; }
-			// Start the unchanged shader clock only after every particle is gone.
 			clock.hold(preparation.seek);
 			startAfterMountRef.current = preparation.hold ? null : preparation.seek;
+			// The mounted finale now owns the burst, and ignites from its ember.
+			confettiShowRef.current = show;
+			show = null;
 			setScene({
 				snapshot: captureJiraTeamEu26DoneColumn(),
 				dragOrder: preparation.dragOrder,
@@ -138,16 +158,35 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		return () => {
 			cancelled = true;
 			controller.abort();
+			show?.cancel();
 		};
-	}, [clock, preparation, prints, reducedMotion]);
+	}, [clock, confetti, preparation, prints, reducedMotion]);
 
 	// Child renderer effects initialise before this parent effect. Starting the
 	// clock here prevents setup work from skipping the foot of the column sweep.
 	useEffect(() => {
 		const seek = startAfterMountRef.current;
-		if (!scene || seek === null) return;
+		if (!scene || seek === null) return undefined;
 		startAfterMountRef.current = null;
-		void clock.start(seek);
+		const show = confettiShowRef.current;
+		if (!show) {
+			void clock.start(seek);
+			return undefined;
+		}
+		// The finale's dialog has just entered the top layer: keep the burst over
+		// it, and ignite the unchanged flash from the ember once every piece is in.
+		show.raise();
+		void show.gathered.then(() => {
+			if (confettiShowRef.current !== show) return;
+			confettiShowRef.current = null;
+			void clock.start(seek);
+			show.release();
+		});
+		return () => {
+			if (confettiShowRef.current !== show) return;
+			confettiShowRef.current = null;
+			show.cancel();
+		};
 	}, [clock, scene]);
 
 	// Fire on the transition into "all Done" — never on load with a retained board.
@@ -197,14 +236,19 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			time: clock.time,
 			hold: (time: number) => scrub(time, true),
 			play: (time = 0) => scrub(time, false),
+			/** Freeze the running confetti on an exact second (`null` resumes). */
+			holdConfetti: (time: number | null) => confetti.hold(time),
 		};
 		return () => {
 			delete target.__jiraTeamEu26Finale;
 		};
-	}, [clock.time, scrub]);
+	}, [clock.time, confetti, scrub]);
 
 	const exit = useCallback(() => {
 		clock.stop();
+		// An exit before ignition must not let the burst start the clock mid-fade.
+		confettiShowRef.current?.cancel();
+		confettiShowRef.current = null;
 		setClosing(true);
 		window.setTimeout(() => {
 			setScene(null);

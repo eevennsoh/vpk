@@ -19,8 +19,13 @@ export const FINALE_STAGE = { width: 1920, height: 1080 } as const;
 export const FINALE_SOUND_ENABLED = false;
 export const FINALE_AUDIO_SRC = "/sound/brand/team-eu26-finale.mp3";
 
-/** All following choreography is offset by the full-column sweep's duration. */
-const FLASH_DURATION = 0.87;
+/**
+ * All following choreography is offset by the full-column sweep's duration.
+ * The cards toss the moment the bright ring has cleared the column's top
+ * (~0.53s): its dark wake dissolves where it is rather than trailing off the
+ * top, which left ~0.34s of dead air before the burst.
+ */
+const FLASH_DURATION = 0.62;
 
 export const CUE = {
 	/** The slide is up; the Done column and its cards sit exactly where they were. */
