@@ -86,7 +86,7 @@ function BoardColumnHeader({
 				className={cn(
 					"pointer-events-none absolute -z-10",
 					isSelfLoop ? cn(
-						"transition-colors duration-normal ease-out-practical motion-reduce:transition-none",
+						"transition-colors duration-normal ease-out-practical",
 						JIRA_DROPZONE_WELL_CHROME_CLASS,
 						resolveJiraDropzoneWellColors(Boolean(dropHovered)),
 						!dropHovered ? "bg-transparent" : null,

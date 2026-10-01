@@ -280,35 +280,40 @@ async function startDrag(page: Page, code: string) {
 	await expect(card).toHaveAttribute("data-dragging", "true");
 }
 
-test("only the self-loop header shows a dashed outline and blue hover highlight", async ({ page }) => {
-	await page.goto(`${origin}/jira-team-eu26`);
-	await startDrag(page, "PAY-118");
-	const header = column(page, "To do").locator('[data-slot="board-column-header"]');
-	const feedback = header.locator('[data-board-column-title-drop-feedback]');
-	await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(1);
-	await expect(feedback).toBeVisible();
-	await expect(feedback).toHaveCSS("border-style", "dashed");
-	await expect(feedback).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-	for (const title of ["In review", "Done"]) {
-		await expect(column(page, title).locator('[data-board-column-title-drop-feedback]')).toHaveCount(0);
-	}
-
-	const box = await header.boundingBox();
-	if (!box) throw new Error("Missing self-loop header");
-	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
-	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-	await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
-	await expect(feedback).toHaveCSS("border-style", "dashed");
-	await expect(feedback).toHaveClass(/\bborder-border-selected\b/);
-	await expect(feedback).toHaveClass(/\bbg-bg-selected\b/);
-	await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(1);
-	await page.screenshot({ path: "output/agent-browser/dnd/self-loop-header.png" });
-	await page.keyboard.press("Escape");
-	await page.mouse.up();
-	await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(0);
-});
-
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`only the self-loop header shows a dashed outline and blue hover highlight (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await startDrag(page, "PAY-118");
+		const header = column(page, "To do").locator('[data-slot="board-column-header"]');
+		const feedback = header.locator('[data-board-column-title-drop-feedback]');
+		await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(1);
+		await expect(feedback).toBeVisible();
+		await expect(feedback).toHaveCSS("border-style", "dashed");
+		await expect(feedback).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+		for (const title of ["In review", "Done"]) {
+			await expect(column(page, title).locator('[data-board-column-title-drop-feedback]')).toHaveCount(0);
+		}
+		if (reducedMotion === "reduce") {
+			const duration = await feedback.evaluate((node) => Number.parseFloat(getComputedStyle(node).transitionDuration));
+			expect(duration).toBeLessThan(0.001);
+		}
+
+		const box = await header.boundingBox();
+		if (!box) throw new Error("Missing self-loop header");
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
+		await expect(feedback).toHaveCSS("border-style", "dashed");
+		await expect(feedback).toHaveClass(/\bborder-border-selected\b/);
+		await expect(feedback).toHaveClass(/\bbg-bg-selected\b/);
+		await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(1);
+		await page.screenshot({ path: `output/agent-browser/dnd/self-loop-header-${reducedMotion}.png` });
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(0);
+	});
+
 	test(`a whole-column target clears another column's insertion even without dragleave (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/jira-team-eu26-end`);
