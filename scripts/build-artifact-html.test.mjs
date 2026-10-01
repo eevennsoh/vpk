@@ -45,6 +45,13 @@ test("resolveTarget maps a demo to its website demo module and slug", () => {
 	assert.throws(() => resolveTarget({}, "/repo"), /--demo/u);
 });
 
+test("resolveTarget keeps an explicit slug inside one output path segment", () => {
+	assert.equal(resolveTarget({ demo: "arts/awake", slug: "awake.v2" }, "/repo").slug, "awake.v2");
+	for (const slug of ["", ".", "..", "../artifacts/awake", "..\\artifacts\\awake", "/tmp/awake"]) {
+		assert.throws(() => resolveTarget({ demo: "arts/awake", slug }, "/repo"), /--slug/u);
+	}
+});
+
 test("selectFontFaces keeps wanted subsets of referenced families only", () => {
 	const css = [
 		"/* cyrillic */\n@font-face { font-family: 'Atlassian Sans'; src: url(a.woff2); }",

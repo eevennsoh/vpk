@@ -101,6 +101,9 @@ async function fetchOk(url, init) {
  * `--demo` wins over `--entry`; the slug defaults to the demo slug or entry file name.
  */
 export function resolveTarget({ demo, entry, slug }, repoRoot = REPO_ROOT) {
+	if (slug !== undefined && (!slug || slug === "." || slug === ".." || /[\\/]/u.test(slug))) {
+		throw new Error("--slug must be a single non-empty file name segment.");
+	}
 	if (demo) {
 		const match = /^([a-z][\w-]*)\/([a-z0-9][\w-]*)$/u.exec(demo);
 		if (!match) {
