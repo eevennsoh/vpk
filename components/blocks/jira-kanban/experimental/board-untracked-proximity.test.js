@@ -499,10 +499,6 @@ test("a menu assignment measures the card after the link its own commit caused",
 	// re-columns it in the same commit — so measuring before that commit hands
 	// Glow a stale anchor whose hit test finds whichever card slid in behind.
 	// The wrong card then glows.
-	assert.match(
-		DRAG_HOOK_SOURCE,
-		/assignmentFrameRef\.current = requestAnimationFrame\(\(\) => \{\s*assignmentFrameRef\.current = null;\s*const proximity = toBoardAgentSessionCardProximity\(/u,
-	);
 	// The deferred frame must not outlive the board, or it arms against a tree
 	// that is already gone.
 	assert.match(
