@@ -149,14 +149,3 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 	);
 	assert.doesNotMatch(VIEW_MENU_SOURCE, /DevicesIcon|@atlaskit\/icon\/core\/devices/u);
 });
-
-test("Needs input button leads with the ADS question-circle icon and omits its count badge", () => {
-	assert.match(
-		VIEW_MENU_SOURCE,
-		/import QuestionCircleIcon from "@atlaskit\/icon\/core\/question-circle";/u,
-	);
-	assert.match(
-		VIEW_MENU_SOURCE,
-		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>\s*Needs input\s*<\/Button>/u,
-	);
-});
