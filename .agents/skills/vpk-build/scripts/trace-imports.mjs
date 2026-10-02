@@ -165,6 +165,7 @@ function npmPackageRoot(specifier) {
 function extractFromSource(sourceFile) {
 	const imports = [];
 	const dynamicImports = [];
+	const workerImports = [];
 	const demoCalls = [];
 	const nonLiteralWarnings = [];
 
@@ -178,6 +179,24 @@ function extractFromSource(sourceFile) {
 		if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
 			if (node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
 				imports.push(node.moduleSpecifier.text);
+			}
+		}
+
+		if (ts.isNewExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "Worker") {
+			const url = node.arguments[0];
+			if (url && ts.isNewExpression(url) && ts.isIdentifier(url.expression) && url.expression.text === "URL") {
+				const [specifier, base] = url.arguments;
+				const isImportMetaUrl = base
+					&& ts.isPropertyAccessExpression(base)
+					&& ts.isMetaProperty(base.expression)
+					&& base.expression.keywordToken === ts.SyntaxKind.ImportKeyword
+					&& base.expression.name.text === "meta"
+					&& base.name.text === "url";
+				if (isImportMetaUrl) {
+					const literal = specifier && stringLiteralValue(specifier);
+					if (literal) workerImports.push(literal);
+					else nonLiteralWarnings.push("Non-literal Worker URL at " + node.getStart());
+				}
 			}
 		}
 
@@ -214,7 +233,7 @@ function extractFromSource(sourceFile) {
 	}
 
 	visit(sourceFile);
-	return { imports, dynamicImports, demoCalls, nonLiteralWarnings };
+	return { imports, dynamicImports, workerImports, demoCalls, nonLiteralWarnings };
 }
 
 /**
@@ -315,7 +334,7 @@ function trace({ route, repoRoot }) {
 		while ((fetchMatch = fetchRe.exec(text)) !== null) apiCalls.add(fetchMatch[1]);
 
 		// Static + dynamic imports
-		const allImports = [...extracted.imports, ...extracted.dynamicImports];
+		const allImports = [...extracted.imports, ...extracted.dynamicImports, ...extracted.workerImports];
 		for (const spec of allImports) {
 			const kind = classifySpecifier(spec);
 

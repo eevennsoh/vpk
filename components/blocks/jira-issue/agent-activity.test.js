@@ -18,12 +18,6 @@ const AGENT_ACTIVITY_PRESENTATION_SOURCE = readFileSync(
 	join(__dirname, "agent-activity-row-presentation.tsx"),
 	"utf8",
 );
-const AGENT_ACTIVITY_STARTUP_SOURCE = readFileSync(join(__dirname, "agent-activity-startup.tsx"), "utf8");
-const TEXT_EFFECTS_SOURCE = readFileSync(join(__dirname, "../../visual/text-effects/index.tsx"), "utf8");
-const GENERATIVE_ACTIONS_SOURCE = readFileSync(
-	join(__dirname, "../../projects/jira-golden-journeys-v4/hooks/use-jira-golden-journeys-v4-generative-actions.ts"),
-	"utf8",
-);
 
 test("all Jira chin identity paths use the coding appearance", () => {
 	const rowContent = AGENT_ACTIVITY_PRESENTATION_SOURCE.slice(
@@ -58,40 +52,27 @@ test("chin rows keep lifecycle copy stable while flyout rows retain detailed sta
 	assert.match(AGENT_ACTIVITY_SOURCE, /statusSequence: activity\.state === "working" \? getJiraIssueAgentWorkingLabels\(activity\) : undefined/u);
 });
 
-test("new Jira agent and skill sessions use the staged startup presentation", () => {
-	assert.match(GENERATIVE_ACTIONS_SOURCE, /startupSequence: "jira-work-item-start"/u);
-	assert.match(GENERATIVE_ACTIONS_SOURCE, /startedAtMs: Date\.now\(\)/u);
-	assert.match(
-		GENERATIVE_ACTIONS_SOURCE,
-		/progressJiraGoldenJourneysV4WorkItemOnStart\(\s*linkJiraKanbanAgentSession\(columns, card\.code, activity\),\s*card\.code,\s*\)/u,
-	);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /import TextEffects from "@\/components\/visual\/text-effects";/u);
-	assert.match(
-		AGENT_ACTIVITY_STARTUP_SOURCE,
-		/import \{ configForEffect \} from "@\/components\/visual\/text-effects\/data";/u,
-	);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /text="Let's get started"/u);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /presentation="inline"/u);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /splitBy: "word"/u);
-	assert.match(
-		AGENT_ACTIVITY_STARTUP_SOURCE,
-		/flex min-w-0 flex-1 items-baseline gap-1 overflow-hidden text-sm leading-5 text-text/u,
-	);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /baseColor="var\(--color-text\)"/u);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /block min-w-0 truncate text-sm leading-5/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_STARTUP_SOURCE, /text-text-subtlest|text-xs leading-4/u);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /jira-agent-wave-motion/u);
-	assert.match(AGENT_ACTIVITY_PRESENTATION_SOURCE, /Gathering context/u);
-	assert.match(AGENT_ACTIVITY_PRESENTATION_SOURCE, /<TWGLoader label="" size="small" \/>/u);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /<Shimmer[\s\S]*>\s*\{label\}\s*<\/Shimmer>/u);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /className="block min-w-0 truncate text-sm leading-5"/u);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /shouldReduceMotion \? "working"/u);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /Date\.now\(\) - startedAtMs/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /featuredActivity\?\.startedAtMs/u);
-	assert.match(TEXT_EFFECTS_SOURCE, /import \{ AnimatePresence, motion,/u);
-	assert.match(
-		TEXT_EFFECTS_SOURCE,
-		/presentation === "inline"[\s\S]*<AnimatePresence initial>\s*<span className=\{cn\("inline-block", className\)\} lang="en">\s*\{renderedText\}[\s\S]*<\/AnimatePresence>/u,
-	);
-	assert.doesNotMatch(TEXT_EFFECTS_SOURCE, /<AnimatePresence initial>\s*<span key=\{animationKey\}/u);
+test("new Jira agent sessions show Working immediately", async () => {
+	const { renderComponent } = require("../../../scripts/lib/render-component.js");
+	const activity = {
+		id: "new-session",
+		name: "Claude",
+		state: "working",
+		label: "Working",
+		startupSequence: "jira-work-item-start",
+		startedAtMs: Date.now(),
+	};
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/agent-activity.tsx",
+		exportName: "JiraIssueAgentActivityRows",
+		props: {
+			activities: [activity],
+			iconScale: "comfortable",
+			shouldReduceMotion: false,
+			usesStrokeChrome: true,
+		},
+	});
+	assert.ok(Boolean(view.getByText("Working")));
+	assert.equal(Boolean(view.queryByText("Let's get started")), false);
+	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });

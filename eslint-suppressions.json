@@ -795,7 +795,7 @@
   },
   "components/blocks/jira-issue/agent-activity.test.js": {
     "no-restricted-syntax": {
-      "count": 29
+      "count": 6
     }
   },
   "components/blocks/jira-issue/agent-activity.tsx": {
@@ -863,7 +863,7 @@
   },
   "components/blocks/jira-issue/jira-issue.test.js": {
     "no-restricted-syntax": {
-      "count": 627
+      "count": 625
     }
   },
   "components/blocks/jira-issue/page.tsx": {
@@ -2107,7 +2107,7 @@
   },
   "components/projects/jira-team-eu26/jira-team-eu26.test.js": {
     "no-restricted-syntax": {
-      "count": 338
+      "count": 330
     }
   },
   "components/projects/jira-team-eu26/terminal-story.test.js": {

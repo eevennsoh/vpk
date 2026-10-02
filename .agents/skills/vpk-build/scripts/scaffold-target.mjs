@@ -69,15 +69,15 @@ function rewriteRoutePage(sourceCode) {
 	const demoImportPath = `@/components/website/demos/${category}/${slug}-demo`;
 	const demoIdentifier = toPascalCase(`${slug}-demo`);
 
-	// Strip the dispatcher import, Suspense/use ceremony, and render the demo
-	// component directly. This produces a tiny client page that any extracted
-	// route can use regardless of what the original VPK wrapper looked like.
+	// Replace the dispatcher with a direct lazy import while preserving its Suspense boundary.
 	return `"use client";
 
-import ${demoIdentifier} from "${demoImportPath}";
+import { lazy, Suspense } from "react";
+
+const ${demoIdentifier} = lazy(() => import("${demoImportPath}"));
 
 export default function Page() {
-	return <${demoIdentifier} />;
+	return <Suspense><${demoIdentifier} /></Suspense>;
 }
 `;
 }
@@ -201,18 +201,22 @@ function rewriteShadcnCssImport(css) {
  * alphabetical order (the order contextFiles came out of the trace);
  * if a provider needs to be inside another, the user reorders manually.
  */
-function composeLayout({ targetName, routeSlug, providers, includeDemoGoogleFonts }) {
+function composeLayout({ targetName, routeSlug, providers, includeDemoGoogleFonts, includeMotionConfig }) {
 	const providerImports = providers
 		.map(p => `import { ${p.name} } from "${p.importPath}";`)
 		.join("\n");
+	const motionConfigImport = includeMotionConfig ? 'import { MotionConfig } from "motion/react";' : "";
 
 	// Build nested JSX: outermost provider opens first, innermost wraps {children}.
-	let body = `{children}`;
+	let body = `<main id="main-content">{children}</main>`;
 	for (let i = providers.length - 1; i >= 0; i--) {
 		const { name } = providers[i];
 		body = `<${name}>\n\t\t\t\t\t${body}\n\t\t\t\t</${name}>`;
 	}
 	body = `<ThemeWrapper>\n\t\t\t\t${body}\n\t\t\t</ThemeWrapper>`;
+	if (includeMotionConfig) {
+		body = `<MotionConfig reducedMotion="user">\n\t\t\t\t${body}\n\t\t\t</MotionConfig>`;
+	}
 	const demoGoogleFontLinks = includeDemoGoogleFonts ? `
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
 				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -255,6 +259,7 @@ import { cn } from "@/lib/utils";
 // Client-side counterpart to feature-flags-shim.ts — installs the resolver
 // on the browser globalThis during hydration.
 import { FeatureFlagsShim } from "./feature-flags-shim-client";
+${motionConfigImport ? "\n" + motionConfigImport : ""}
 ${providerImports ? "\n" + providerImports + "\n" : ""}
 // Fonts — VPK prototypes reference --font-sans and --font-ark-es as CSS
 // variables. Without these declarations the fonts fall back to browser
@@ -448,6 +453,74 @@ const HOST_PACKAGE_PEERS = [
 	{ host: "react-leaflet", runtime: ["leaflet"], types: ["@types/leaflet"] },
 	{ host: "three", runtime: [], types: ["@types/three"] },
 ];
+
+function readSourceLockfileVersions(repoRoot) {
+	const lockfilePath = path.join(repoRoot, "pnpm-lock.yaml");
+	if (!fs.existsSync(lockfilePath)) return new Map();
+	const lockfile = fs.readFileSync(lockfilePath, "utf8");
+	const rootVersions = new Map();
+	const otherVersions = new Map();
+	let inImporters = false;
+	let importer = null;
+	let section = null;
+	let dependency = null;
+
+	for (const line of lockfile.split(/\r?\n/u)) {
+		if (!inImporters) {
+			if (line === "importers:") inImporters = true;
+			continue;
+		}
+		if (line && !line.startsWith(" ")) {
+			if (line === "packages:" || line === "snapshots:") break;
+			inImporters = false;
+			continue;
+		}
+
+		const importerMatch = line.match(/^ {2}([^ ].*):\s*$/u);
+		if (importerMatch) {
+			importer = importerMatch[1].replace(/^(['"])(.*)\1$/u, "$2");
+			section = null;
+			dependency = null;
+			continue;
+		}
+
+		const sectionMatch = line.match(/^ {4}(dependencies|devDependencies|optionalDependencies):\s*$/u);
+		if (sectionMatch) {
+			section = sectionMatch[1];
+			dependency = null;
+			continue;
+		}
+		if (/^ {4}\S/u.test(line)) {
+			section = null;
+			dependency = null;
+			continue;
+		}
+		if (!section) continue;
+
+		const dependencyMatch = line.match(/^ {6}(.+):\s*$/u);
+		if (dependencyMatch) {
+			dependency = dependencyMatch[1].replace(/^(['"])(.*)\1$/u, "$2");
+			continue;
+		}
+
+		const resolvedMatch = line.match(/^ {8}version:\s*(\S+)/u);
+		if (!dependency || !resolvedMatch) continue;
+		const exactVersion = resolvedMatch[1].match(/^(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/u)?.[1];
+		if (!exactVersion) continue;
+		if (importer === ".") rootVersions.set(dependency, exactVersion);
+		else if (!otherVersions.has(dependency)) otherVersions.set(dependency, exactVersion);
+	}
+
+	return new Map([...otherVersions, ...rootVersions]);
+}
+
+function pinDependenciesToSourceLockfile(repoRoot, dependencies) {
+	const lockfileVersions = readSourceLockfileVersions(repoRoot);
+	for (const name of Object.keys(dependencies)) {
+		const exactVersion = lockfileVersions.get(name);
+		if (exactVersion) dependencies[name] = exactVersion;
+	}
+}
 
 function resolveExtractedDependencies({ planPackages, sourceManifest, catalog }) {
 	const resolved = {};
@@ -706,6 +779,7 @@ export function FeatureFlagsShim() {
 		path.join(targetDir, "app", "layout.tsx"),
 		composeLayout({
 			targetName, routeSlug, providers,
+			includeMotionConfig: Boolean(plan.npmPackages?.motion),
 			includeDemoGoogleFonts: routeUsesDemoGoogleFonts(
 				repoRoot, [...plan.files, ...(plan.cssImports || []), "app/globals.css", "app/tailwind-theme.css"]
 			),
@@ -753,6 +827,7 @@ export function FeatureFlagsShim() {
 			catalog,
 		}));
 	}
+	pinDependenciesToSourceLockfile(repoRoot, augmentedNpm);
 	const availablePackages = new Set(Object.keys(augmentedNpm));
 	const generatedGlobalsCss = buildGlobalsCssFromSource(sourceGlobalsCss, availablePackages);
 	writeFileEnsuring(
