@@ -42,8 +42,25 @@ function columns(done, rest = []) {
 test("finale prints and handoff identify a real card with its footer metadata hidden", async (t) => {
 	const { findFinaleCard, captureJiraTeamEu26DoneColumn } = loadFinale();
 	const view = await renderComponent({
-		entry: "components/blocks/jira-issue/index.tsx",
-		exportName: "JiraIssue",
+		source: `
+import { JiraIssue } from "@/components/blocks/jira-issue";
+import { CreatedCardArrivalMotion } from "@/components/blocks/jira-kanban/experimental/components/created-card-arrival-motion";
+export function FinaleCard(props) {
+	return <CreatedCardArrivalMotion
+		cardCode={props.issueKey}
+		cardCount={1}
+		cardIndex={0}
+		columnTitle="Done"
+		cardInsertion={null}
+		dropTarget={null}
+		onArrivalComplete={() => {}}
+		shouldAnimateCardMoves={false}
+	>
+		<JiraIssue {...props} />
+	</CreatedCardArrivalMotion>;
+}
+`,
+		exportName: "FinaleCard",
 		props: {
 			issueKey: "TEU-1",
 			summary: "Search across your work",
@@ -57,6 +74,7 @@ test("finale prints and handoff identify a real card with its footer metadata hi
 	assert.ok(card);
 	card.getBoundingClientRect = () => DOMRect.fromRect({ x: 908, y: 248, width: 304, height: 200 });
 	assert.equal(card.textContent.includes("TEU-1"), false, "the hidden footer cannot supply identity");
+	assert.equal(view.container.querySelectorAll("[data-issue-key]").length, 1, "board geometry keeps one identity marker on the full card wrapper");
 	assert.equal(findFinaleCard("TEU-1", "board") === card, true, "idle preprints find the card");
 	assert.equal(findFinaleCard("TEU-1") === card, true, "completion prints find the same card in Done");
 	// happy-dom does not perform hit testing; this fixture has no floating chrome.

@@ -213,7 +213,7 @@ export function findFinaleCard(code: string, scope: "done" | "board" = "done"): 
 	const root = scope === "done" ? document.querySelector(`[data-jira-kanban-column="${FINALE_DONE_COLUMN_TITLE}"]`) : document;
 	const cards = root?.querySelectorAll<HTMLElement>('[data-slot="jira-issue-card"]') ?? [];
 	for (const card of cards) {
-		if (card.dataset.issueKey === code) return card;
+		if (card.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey === code) return card;
 	}
 	return null;
 }

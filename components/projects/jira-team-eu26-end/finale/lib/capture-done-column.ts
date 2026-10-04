@@ -143,7 +143,7 @@ export function captureJiraTeamEu26DoneColumn(): FinaleHandoffSnapshot | null {
 	const cards = [...column.querySelectorAll<HTMLElement>(CARD_SELECTOR)]
 		.map((card) => ({ card, rect: card.getBoundingClientRect() }))
 		.filter(({ rect }) => rect.width > 0 && rect.height > 0)
-		.map(({ card, rect }) => ({ rect: toRect(rect), code: card.dataset.issueKey ?? "" }));
+		.map(({ card, rect }) => ({ rect: toRect(rect), code: card.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey ?? "" }));
 	return {
 		column: toRect(column.getBoundingClientRect()),
 		list: toRect(listElement.getBoundingClientRect()),

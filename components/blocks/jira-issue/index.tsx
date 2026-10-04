@@ -787,7 +787,6 @@ function JiraIssueDefault({
 			<LayoutGroup id={agentActivityLayoutGroupId}>
 				<motion.div
 					className={rootClassName}
-					data-issue-key={issueKey}
 					data-slot="jira-issue-card"
 					layout={shouldReduceMotion || agentActivityHoverOpen || parentOwnsLayout ? false : "position"}
 					style={agentActivityInnerStyle}
