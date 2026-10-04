@@ -2,6 +2,20 @@ const { spawn } = require("node:child_process");
 
 const DEFAULT_RESTART_DELAY_MS = 1_500;
 
+function subscribeProcessSignals(signalTarget, forwardSignal) {
+	const listeners = new Map(["SIGINT", "SIGTERM", "SIGHUP"].map((signal) => [
+		signal, () => forwardSignal(signal),
+	]));
+	for (const [signal, listener] of listeners) {
+		signalTarget.on?.(signal, listener);
+	}
+	return () => {
+		for (const [signal, listener] of listeners) {
+			signalTarget.removeListener?.(signal, listener);
+		}
+	};
+}
+
 function startSupervisedRovoPorts({
 	ports,
 	rovoBin,
@@ -32,11 +46,7 @@ function startSupervisedRovoPorts({
 	let firstError = null;
 	let shuttingDown = false;
 
-	const removeSignalListeners = () => {
-		signalTarget.removeListener?.("SIGINT", handleSigint);
-		signalTarget.removeListener?.("SIGTERM", handleSigterm);
-		signalTarget.removeListener?.("SIGHUP", handleSighup);
-	};
+	let removeSignalListeners = () => {};
 
 	const finalizeShutdown = (code, signal) => {
 		removeSignalListeners();
@@ -162,19 +172,7 @@ function startSupervisedRovoPorts({
 		}
 	};
 
-	const handleSigint = () => {
-		forwardSignal("SIGINT");
-	};
-	const handleSigterm = () => {
-		forwardSignal("SIGTERM");
-	};
-	const handleSighup = () => {
-		forwardSignal("SIGHUP");
-	};
-
-	signalTarget.on?.("SIGINT", handleSigint);
-	signalTarget.on?.("SIGTERM", handleSigterm);
-	signalTarget.on?.("SIGHUP", handleSighup);
+	removeSignalListeners = subscribeProcessSignals(signalTarget, forwardSignal);
 
 	for (const port of ports) {
 		spawnChildForPort(port);
@@ -189,5 +187,6 @@ function startSupervisedRovoPorts({
 
 module.exports = {
 	DEFAULT_RESTART_DELAY_MS,
+	subscribeProcessSignals,
 	startSupervisedRovoPorts,
 };

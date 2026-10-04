@@ -32,7 +32,7 @@ const canListen = (options, { allowUnsupported = false } = {}) =>
 		server.listen(options);
 	});
 
-const isPortAvailable = async (port) => {
+const isPortAvailable = async (port, { includeLoopback = true } = {}) => {
 	const ipv4Available = await canListen({ port, host: "0.0.0.0" }, {
 		allowUnsupported: true,
 	});
@@ -46,6 +46,9 @@ const isPortAvailable = async (port) => {
 	);
 	if (ipv6Available === false) {
 		return false;
+	}
+	if (!includeLoopback) {
+		return true;
 	}
 
 	// On macOS, 0.0.0.0/:: can appear available while loopback is occupied.
