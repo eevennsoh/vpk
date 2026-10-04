@@ -1,4 +1,4 @@
-import { FINALE_CONFETTI_TIMING, finaleConfettiRealTime, type FinaleConfettiColumn } from "./finale-confetti";
+import { FINALE_CONFETTI_TIMING, SMALL_CONFETTI_TIMING, finaleConfettiRealTime, type FinaleConfettiColumn, type FinaleConfettiStage } from "./finale-confetti";
 import { createFinaleConfettiPlayer, type FinaleConfettiCommand, type FinaleConfettiEvent } from "./finale-confetti-renderer";
 
 /** A running burst, handed from the board's completion to the finale's ignition. */
@@ -16,8 +16,8 @@ export interface FinaleConfettiShow {
 export interface FinaleConfetti {
 	/** Boot the renderer (worker, GL context and shaders) ahead of the show. */
 	readonly prewarm: () => void;
-	/** Fire the burst from the viewport's lower corners, draining onto `column`'s bottom border. */
-	readonly play: (column: FinaleConfettiColumn) => FinaleConfettiShow;
+	/** Fire both sizes from the viewport's lower corners, draining onto the column's bottom border. */
+	readonly play: (column: FinaleConfettiColumn, size?: FinaleConfettiStage["size"]) => FinaleConfettiShow;
 	/** Rehearsal: freeze the running burst on an exact second, or resume from it with `null`. */
 	readonly hold: (time: number | null) => void;
 	readonly dispose: () => void;
@@ -173,7 +173,7 @@ export function createFinaleConfetti(): FinaleConfetti {
 		window.addEventListener("resize", onViewportResize);
 	};
 
-	const play = (column: FinaleConfettiColumn): FinaleConfettiShow => {
+	const play = (column: FinaleConfettiColumn, size: FinaleConfettiStage["size"] = "large"): FinaleConfettiShow => {
 		active?.cancel();
 		let resolveGathered = () => {};
 		const gathered = new Promise<void>((resolve) => {
@@ -186,10 +186,13 @@ export function createFinaleConfetti(): FinaleConfetti {
 		let releaseTimer = 0;
 		let gatherTimer = 0;
 		let heldAt = 0;
-		/** Arms the stall backstop for a gather due `after` real seconds from now. */
-		const armGather = (after: number) => {
+		const completionTime = size === "small" ? SMALL_CONFETTI_TIMING.fadeStart + SMALL_CONFETTI_TIMING.fade : finaleConfettiRealTime(FINALE_CONFETTI_TIMING.gathered);
+		const armBackstop = (after: number) => {
 			window.clearTimeout(gatherTimer);
-			gatherTimer = window.setTimeout(resolveGathered, after * 1000 + GATHER_GRACE_MS);
+			gatherTimer = window.setTimeout(() => {
+				if (size === "small") cancel();
+				else resolveGathered();
+			}, after * 1000 + GATHER_GRACE_MS);
 		};
 		const setState = (state: FinaleConfettiState) => {
 			if (current) current.layer.dataset.finaleConfetti = state;
@@ -218,11 +221,13 @@ export function createFinaleConfetti(): FinaleConfetti {
 			// Parked already (prewarm), so nothing on the page changes as the burst launches.
 			current = park();
 			if (!current) return false;
-			armGather(finaleConfettiRealTime(FINALE_CONFETTI_TIMING.gathered));
+			armBackstop(completionTime);
 			setState("playing");
+			current.layer.dataset.finaleConfettiSize = size;
 			current.send({
 				type: "play",
 				id,
+				size,
 				...viewportSize(),
 				column: { x: column.x, y: column.y, width: column.width, height: column.height, radius: column.radius },
 			});
@@ -241,7 +246,7 @@ export function createFinaleConfetti(): FinaleConfetti {
 			cancel,
 			hold: (time) => {
 				// Frozen, the show cannot gather; resumed, it is due from the held second.
-				if (time === null) armGather(Math.max(0, finaleConfettiRealTime(FINALE_CONFETTI_TIMING.gathered) - finaleConfettiRealTime(heldAt)));
+				if (time === null) armBackstop(Math.max(0, completionTime - (size === "small" ? heldAt : finaleConfettiRealTime(heldAt))));
 				else {
 					heldAt = time;
 					window.clearTimeout(gatherTimer);

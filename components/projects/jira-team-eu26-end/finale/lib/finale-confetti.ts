@@ -72,6 +72,11 @@ export const FINALE_CONFETTI_TIMING = {
 	release: FLASH_TIMING.rise,
 } as const;
 
+export const SMALL_CONFETTI_TIMING = {
+	fadeStart: MOTION_DURATION.slowest * 2,
+	fade: MOTION_DURATION.slow,
+} as const;
+
 /**
  * The show's pace against real time, shared by the burst and the column's
  * trace (every time here, and `FINALE_CONFETTI_TIMING`, is in show seconds).
@@ -159,6 +164,7 @@ export interface FinaleConfettiStage {
 	readonly width: number;
 	readonly height: number;
 	readonly column: FinaleConfettiColumn;
+	readonly size?: "small" | "large";
 }
 
 /** Share of the launching (non-trail) pieces in each depth layer; the rest fly near the page. */
@@ -191,7 +197,7 @@ export interface FinaleConfettiPiece {
 	/** Footprint (px), bend along the length (rad; ribbons curl through turns) and helical pitch. */
 	readonly size: { readonly length: number; readonly width: number; readonly arc: number; readonly pitch: number };
 	/** The pull into the vortex (s), its clockwise swirl (rad) and where it lands on the column's bottom border. */
-	readonly gather: { readonly start: number; readonly end: number; readonly swirl: number; readonly sink: { readonly x: number; readonly y: number } };
+	readonly gather: { readonly start: number; readonly end: number; readonly swirl: number; readonly sink: { readonly x: number; readonly y: number } } | null;
 	readonly seed: number;
 }
 
@@ -235,6 +241,7 @@ export function finaleConfettiFree(piece: FinaleConfettiFlight, time: number): V
 
 /** 0 → 1 through the piece's pull into the vortex. */
 export function finaleConfettiGather(piece: FinaleConfettiPiece, time: number): number {
+	if (!piece.gather) return 0;
 	return clamp01((time - piece.gather.start) / (piece.gather.end - piece.gather.start));
 }
 
@@ -246,6 +253,7 @@ export function finaleConfettiGather(piece: FinaleConfettiPiece, time: number): 
  */
 export function finaleConfettiCenter(piece: FinaleConfettiPiece, time: number): Vec3 {
 	const free = finaleConfettiFree(piece, time);
+	if (!piece.gather) return free;
 	const s = finaleConfettiGather(piece, time);
 	const hold = 1 - s * s;
 	const angle = piece.gather.swirl * s * s;
@@ -302,6 +310,7 @@ export function finaleConfettiTrace(time: number): number {
 export function finaleConfettiCharge(burst: FinaleConfettiBurst, time: number): number {
 	let charge = 0;
 	for (const piece of burst.pieces) {
+		if (!piece.gather) continue;
 		const t = clamp01((time - (piece.gather.end - 0.06)) / 0.06);
 		charge += t * t * (3 - 2 * t);
 	}
@@ -317,13 +326,15 @@ function unitVector(random: () => number): Vec3 {
 
 export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = finaleConfettiRandom(FINALE_CONFETTI_SEED)): FinaleConfettiBurst {
 	const { width, height } = stage;
-	const scale = height / 900;
-	const sizeScale = Math.min(1.3, Math.max(0.85, Math.sqrt(scale)));
-	const lens = finaleConfettiCameraDistance(height);
+	const small = stage.size === "small";
+	const piecesPerCorner = small ? 60 : PIECES_PER_CORNER;
+	const scale = height / 900 * (small ? 0.32 : 1);
+	const sizeScale = Math.min(1.3, Math.max(0.85, Math.sqrt(height / 900))) * (small ? 0.7 : 1);
+	const lens = finaleConfettiCameraDistance(height) * (small ? 0.32 : 1);
 	const T = FINALE_CONFETTI_TIMING;
 	const { near, far } = FINALE_CONFETTI_DEPTH;
-	const draft = Array.from({ length: PIECES_PER_CORNER * 2 }, (_, index): Omit<FinaleConfettiPiece, "gather"> & { swirl: number; jitter: number; sink: { x: number; y: number } } => {
-		const corner = index < PIECES_PER_CORNER ? "left" : "right";
+	const draft = Array.from({ length: piecesPerCorner * 2 }, (_, index): Omit<FinaleConfettiPiece, "gather"> & { swirl: number; jitter: number; sink: { x: number; y: number } } => {
+		const corner = index < piecesPerCorner ? "left" : "right";
 		const roll = random();
 		const material: FinaleConfettiMaterial = roll < 0.07 ? "ribbon" : roll < 0.28 ? "sequin" : "paper";
 		const shape: FinaleConfettiShape = material === "ribbon" ? "ribbon" : material === "sequin" || random() < 0.12 ? "disc" : "rect";
@@ -350,7 +361,11 @@ export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = f
 			shape,
 			front: FLASH_ROVO_COLORS[index % FLASH_ROVO_COLORS.length],
 			back: FLASH_ROVO_COLORS[(index + 1) % FLASH_ROVO_COLORS.length],
-			origin: { x: corner === "left" ? 0 : width, y: height + 8, z: random() * 40 },
+			origin: {
+				x: corner === "left" ? 0 : width,
+				y: height + 8,
+				z: random() * 40 * (small ? 0.32 : 1),
+			},
 			// One draw, as before: the plume's head leaves first, the gentle trail last.
 			delay: ((roll) => T.volley * (gentle ? 0.35 + 0.65 * roll : roll ** 1.5))(random()),
 			velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed, z: depth * drag },
@@ -383,12 +398,13 @@ export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = f
 		const at = finaleConfettiFree(piece, T.gatherStart);
 		return Math.hypot(at.x - piece.sink.x, at.y - piece.sink.y, at.z);
 	};
-	const order = draft.map((piece, index) => ({ index, distance: probe(piece) })).sort((a, b) => a.distance - b.distance);
+	const order = small ? [] : draft.map((piece, index) => ({ index, distance: probe(piece) })).sort((a, b) => a.distance - b.distance);
 	const rank = new Array<number>(draft.length);
 	order.forEach(({ index }, position) => {
 		rank[index] = order.length > 1 ? position / (order.length - 1) : 1;
 	});
 	const pieces = draft.map(({ swirl, jitter, sink, ...piece }, index): FinaleConfettiPiece => {
+		if (small) return { ...piece, gather: null };
 		const end = T.firstArrival + (T.gathered - T.firstArrival) * rank[index];
 		const start = Math.min(T.gatherStart + T.gatherSpread * (1 - rank[index]) + jitter, end - MIN_GATHER);
 		return { ...piece, gather: { start: Math.max(start, T.gatherStart - 0.03), end, swirl, sink } };
@@ -414,8 +430,8 @@ export function packFinaleConfettiBurst(burst: FinaleConfettiBurst): Record<stri
 		aAxis: [4, (p) => [p.axis.x, p.axis.y, p.axis.z, p.spin.phase]],
 		aSpin: [4, (p) => [p.spin.start, p.spin.rest, p.spin.decay, p.spin.gather]],
 		aSize: [4, (p) => [p.size.length, p.size.width, p.size.arc, p.size.pitch]],
-		aGather: [4, (p) => [p.gather.start, p.gather.end, p.gather.swirl, p.seed]],
-		aSink: [2, (p) => [p.gather.sink.x, p.gather.sink.y]],
+		aGather: [4, (p) => p.gather ? [p.gather.start, p.gather.end, p.gather.swirl, p.seed] : [0, 0, 0, p.seed]],
+		aSink: [2, (p) => p.gather ? [p.gather.sink.x, p.gather.sink.y] : [0, 0]],
 		aLook: [2, (p) => [SHAPE_CODE[p.shape], MATERIAL_CODE[p.material]]],
 		aFront: [3, (p) => rgb(p.front)],
 		aBack: [3, (p) => rgb(p.back)],
@@ -459,6 +475,7 @@ vec3 confettiFree(float time) {
 }
 
 float confettiGather(float time) {
+	if (aGather.y <= aGather.x) return 0.0;
 	return clamp((time - aGather.x) / (aGather.y - aGather.x), 0.0, 1.0);
 }
 

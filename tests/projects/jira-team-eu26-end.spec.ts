@@ -517,6 +517,45 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	}
 }
 
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`single-card Done drops celebrate small and completing the board celebrates big (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.addInitScript(() => {
+			const sizes: string[] = [];
+			Object.assign(window, { doneCelebrationSizes: sizes });
+			new MutationObserver((records) => {
+				for (const record of records) {
+					const layer = record.target;
+					if (layer instanceof HTMLElement && layer.dataset.finaleConfetti === "playing" && record.oldValue !== "playing") {
+						sizes.push(layer.dataset.finaleConfettiSize ?? "");
+					}
+				}
+			}).observe(document, { subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ["data-finale-confetti"] });
+		});
+		await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+		const sizes = () => page.evaluate(() => (window as typeof window & { doneCelebrationSizes: string[] }).doneCelebrationSizes);
+		for (const [index, code] of ["TEU-1", "TEU-2"].entries()) {
+			await startDrag(page, code);
+			await dropIntoDone(page);
+			await expect(issue(page, code)).toHaveAttribute("data-board-column-title", "Done");
+			await expect.poll(sizes).toEqual(reducedMotion === "reduce" ? [] : Array(index + 1).fill("small"));
+			await expect(page.locator('[data-jira-team-eu26-end-finale]')).toHaveCount(0);
+			if (reducedMotion === "no-preference") {
+				const layer = page.locator('[data-finale-confetti]');
+				await expect(layer).toHaveAttribute("aria-hidden", "true");
+				await expect(layer).toHaveJSProperty("inert", true);
+				await expect(layer).toHaveCSS("pointer-events", "none");
+				await expect(layer).toHaveAttribute("data-finale-confetti", "idle", { timeout: 10000 });
+			}
+		}
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
+		await expect.poll(sizes, { timeout: 15000 }).toEqual(reducedMotion === "reduce" ? [] : ["small", "small", "large"]);
+		await expect(page.locator('[data-jira-team-eu26-end-finale]')).toBeVisible({ timeout: 20000 });
+		await expect(column(page, "Done").locator("[data-issue-key]")).toHaveCount(13);
+	});
+}
+
 test("existing single-card and selected-cohort drag moves work items into Done", async ({ page }) => {
 	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	await startDrag(page, "TEU-1");
