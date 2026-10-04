@@ -43,7 +43,7 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 					data-slot="jira-issue-cover-pattern"
 					style={GRID_FADE_STYLE}
 				>
-					<PatternTile patternType="grid" gridAlignment="centered" front={token("color.border")} back="transparent" scale={32} stroke={GRID_STROKE} style={{ maskPosition: "left 8px" }} />
+					<PatternTile patternType="grid" gridAlignment="centered" front={token("color.border")} back="transparent" scale={32} stroke={GRID_STROKE} style={{ maskPosition: "center 8px" }} />
 				</div>
 			) : null}
 			{firstApp ? (

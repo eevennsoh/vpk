@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
-import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
+import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefCallback } from "react";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "motion/react";
 
@@ -406,7 +406,7 @@ function AgentSessionUserNotchStateGlyph({
 					state === "needs-input" ? "text-icon-information" : "text-icon-success",
 				)}
 				render={state === "needs-input"
-					? <QuestionCircleFilledIcon color="currentColor" label="" size="small" />
+					? <StrokeWeightLargeIcon color="currentColor" label="" size="small" />
 					: <StatusSuccessIcon color="currentColor" label="" size="small" />}
 			/>
 		</span>
@@ -921,8 +921,7 @@ export function AgentSessionColumnRail({
 							),
 						)}
 						introIndex={index}
-						isArriving={!(order.phase === "exit" && order.changingItemId === item.id)
-							&& ((arrivingItemIds ?? newItemIds)?.has(item.id) ?? false)}
+						isArriving={!(order.phase === "exit" && order.changingItemId === item.id) && ((arrivingItemIds ?? newItemIds)?.has(item.id) ?? false)}
 						isHighlighted={item.id === highlightedItemId}
 						isHovered={item.id === hoverIntent.activeItemId}
 						isLeaving={order.phase === "exit" && order.changingItemId === item.id}

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- These underscored compatibility props and inferred generic placeholders are intentionally retained for API shape. */
-
 /**
  * Domain-scoping for Studio agent creation.
  *

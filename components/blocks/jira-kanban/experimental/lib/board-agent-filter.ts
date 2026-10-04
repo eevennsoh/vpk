@@ -1,4 +1,4 @@
-import type { JiraKanbanCardData, JiraKanbanColumnData } from "../../index";
+import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 import type { BoardAgentFilterId } from "../data/board-view-options";
 import type { CollapsedBoardColumns } from "./board-column-collapse";
 
@@ -117,6 +117,12 @@ export function filterAgentSessionsByAgentFilter<T extends AgentFilterSession>(
 	return items.filter((item) => sessionMatchesAgentFilter(item, filterId, viewer));
 }
 
+type BoardAgentActivity = NonNullable<JiraKanbanCardData["agentActivities"]>[number];
+
+function isNeedsInputActivity(activity: BoardAgentActivity): boolean {
+	return activity.state === "awaiting-input";
+}
+
 /**
  * Does this card carry the linked-session chrome the Agents focus asked for?
  *
@@ -133,7 +139,7 @@ export function cardMatchesAgentFilter(
 		case "working":
 			return card.agentActivities?.some((activity) => activity.state === "working") ?? false;
 		case "needs-input":
-			return card.agentActivities?.some((activity) => activity.state === "awaiting-input") ?? false;
+			return card.agentActivities?.some(isNeedsInputActivity) ?? false;
 		case "finished":
 			return Boolean(card.agentDoneRuns?.length)
 				|| (card.agentActivities?.some((activity) => activity.state === "completed") ?? false);
@@ -178,6 +184,21 @@ export function filterJiraKanbanColumnsByAgentFilter(
 			? column
 			: { ...column, cards, count: cards.length };
 	});
+}
+
+/**
+ * The Needs input button's agent count: every waiting agent row on the cards
+ * the Needs input focus keeps, read through that same focus so the number
+ * always names the rows pressing the button shows on these columns.
+ */
+export function countNeedsInputAgents(columns: readonly JiraKanbanColumnData[]): number {
+	return filterJiraKanbanColumnsByAgentFilter(columns, "needs-input").reduce(
+		(total, column) => total + column.cards.reduce(
+			(cardTotal, card) => cardTotal + (card.agentActivities?.filter(isNeedsInputActivity).length ?? 0),
+			0,
+		),
+		0,
+	);
 }
 
 /**

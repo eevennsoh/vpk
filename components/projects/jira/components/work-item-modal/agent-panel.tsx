@@ -15,6 +15,7 @@ import {
 import Heading from "@/components/ui/heading";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 const AGENT_ICON_ROTATION_VARIANTS = {
 	rest: {
@@ -36,7 +37,7 @@ const AGENT_ICON_ROTATION_REDUCED_VARIANTS = {
 
 const AGENT_ICON_ROTATION_TRANSITION = {
 	duration: 0.42,
-	ease: [0, 0.4, 0, 1],
+	ease: motionEase.out,
 } as const;
 
 type AgentPanelIllustrationProps = {

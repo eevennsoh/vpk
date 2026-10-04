@@ -22,6 +22,7 @@ import {
 } from "../data/terminal-demo-script";
 import { foldBoardPreview } from "../hooks/use-terminal-demo";
 import { BlinkCursor, PrLabel, StateGlyph, TerminalLineView } from "./terminal-stage-chrome";
+import { motionEase } from "@/lib/motion";
 
 // ---------------------------------------------------------------------------
 // Left pane — the invented "Jira CLI" sessions dashboard. Before `jira
@@ -29,8 +30,8 @@ import { BlinkCursor, PrLabel, StateGlyph, TerminalLineView } from "./terminal-s
 // reducer flips `dashboardVisible` it fades into the sectioned board.
 // ---------------------------------------------------------------------------
 
-const DASHBOARD_FADE_TRANSITION: Transition = { duration: 0.2, ease: [0, 0.4, 0, 1] }; // duration-medium + ease-out (bold)
-const ROW_TRANSITION: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
+const DASHBOARD_FADE_TRANSITION: Transition = { duration: 0.2, ease: motionEase.out }; // duration-medium + ease-out (bold)
+const ROW_TRANSITION: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
 
 const COUNT_TONE_CLASS = {
 	awaiting: "text-yellow-300",

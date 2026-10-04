@@ -61,6 +61,7 @@ import {
 	type KanbanColumnChrome,
 	type KanbanColumnChromeStyles,
 } from "./column-chrome";
+import { motionEase } from "@/lib/motion";
 
 export type { KanbanColumnChrome };
 
@@ -68,13 +69,14 @@ export type JiraKanbanPriority = JiraIssuePriority;
 
 export type JiraKanbanCardTag = JiraIssueTag;
 
-const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
-const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
+const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: motionEase.inOut }; // duration-slowest + ease-in-out
+const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: motionEase.in }; // duration-slower + ease-in
 
 export interface JiraKanbanAssigneeData {
 	id: string;
 	name: string;
-	avatarSrc: string;
+	/** Omit when the header renderer supplies a brand visual or initials. */
+	avatarSrc?: string;
 }
 
 export interface JiraKanbanCardData {

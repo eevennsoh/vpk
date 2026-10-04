@@ -40,11 +40,9 @@ export function CheckboxFilterDropdown({
 				}
 			>
 				{label}
-				{selectedValues.length > 0 && (
-					<Badge variant="information">
+				{selectedValues.length > 0 ? <Badge variant="information">
 						{selectedValues.length}
-					</Badge>
-				)}
+					</Badge> : null}
 				{isOpen ? <ChevronUpIcon label="" size="small" /> : <ChevronDownIcon label="" size="small" />}
 			</PopoverTrigger>
 			<PopoverContent align="start" className="min-w-[200px] gap-0 p-1">

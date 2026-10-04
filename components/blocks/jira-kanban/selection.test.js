@@ -16,36 +16,51 @@ function click(state, code, modifiers = shift, visible = columns, extra = {}) {
 	});
 }
 const codes = (state) => [...state.selectedCardCodes];
+const assertCodes = (state, expected) => assert.deepEqual(state.selectedCardCodes, new Set(expected));
 
-test("a fixed anchor extends, shrinks, reverses and collapses the exact range", () => {
+test("PAY-105 stays selected when Shift adds PAY-123 from the PAY-130 anchor", () => {
+	const payments = [{
+		title: "In progress",
+		cards: ["PAY-105", "PAY-107", "PAY-123", "PAY-130"].map((code) => ({ code })),
+	}];
+	let state = click(createJiraKanbanSelectionState(), "PAY-105", toggle, payments);
+	state = click(state, "PAY-130", toggle, payments);
+	const previous = state;
+	state = click(state, "PAY-123", shift, payments);
+	assert.deepEqual(state.selectedCardCodes, new Set(["PAY-105", "PAY-123", "PAY-130"]));
+	assert.equal(state.anchor.cardCode, "PAY-130");
+	assert.deepEqual(codes(previous), ["PAY-105", "PAY-130"]);
+});
+
+test("a fixed anchor adds ranges without removing earlier selections", () => {
 	let state = click(createJiraKanbanSelectionState(), "B");
 	assert.deepEqual(codes(state), ["B"]);
 	assert.deepEqual(state.anchor, { columnTitle: "First", cardCode: "B" });
 	state = click(state, "D");
 	assert.deepEqual(codes(state), ["B", "C", "D"]);
 	state = click(state, "C");
-	assert.deepEqual(codes(state), ["B", "C"]);
+	assertCodes(state, ["B", "C", "D"]);
 	state = click(state, "A");
-	assert.deepEqual(codes(state), ["A", "B"]);
+	assertCodes(state, ["A", "B", "C", "D"]);
 	state = click(state, "B");
-	assert.deepEqual(codes(state), ["B"]);
+	assertCodes(state, ["A", "B", "C", "D"]);
 	assert.deepEqual(click(state, "B"), state);
 });
 
-test("the requested A to D to B sequence discards the old tail", () => {
+test("a smaller Shift range keeps the previously selected tail", () => {
 	let state = click(createJiraKanbanSelectionState(), "A");
 	state = click(state, "D");
 	assert.deepEqual(codes(state), ["A", "B", "C", "D"]);
-	assert.deepEqual(codes(click(state, "B")), ["A", "B"]);
+	assertCodes(click(state, "B"), ["A", "B", "C", "D"]);
 });
 
 test("another column extends the fixed anchor across matching card rows", () => {
 	let state = click(click(createJiraKanbanSelectionState(), "A"), "D");
 	state = click(state, "E");
-	assert.deepEqual(codes(state), ["A", "E"]);
+	assertCodes(state, ["A", "B", "C", "D", "E"]);
 	assert.deepEqual(state.anchor, { columnTitle: "First", cardCode: "A" });
 	assert.deepEqual(codes(click(state, "F")), ["A", "B", "C", "D", "E", "F"]);
-	assert.deepEqual(codes(click(state, "C")), ["A", "B", "C"]);
+	assertCodes(click(state, "C"), ["A", "B", "C", "D", "E"]);
 });
 
 const grid = [
@@ -56,24 +71,24 @@ const grid = [
 	{ title: "Empty end", cards: [] },
 ];
 
-test("grid rectangles grow, shrink and reverse without moving the anchor", () => {
+test("grid rectangles add cards while smaller and reversed ranges preserve selections", () => {
 	let state = click(createJiraKanbanSelectionState(), "B", shift, grid);
 	state = click(state, "K", shift, grid);
 	assert.deepEqual(codes(state), ["B", "C", "D", "F", "G", "I", "J", "K"]);
 	state = click(state, "J", shift, grid);
-	assert.deepEqual(codes(state), ["B", "C", "F", "G", "I", "J"]);
+	assertCodes(state, ["B", "C", "D", "F", "G", "I", "J", "K"]);
 	state = click(state, "H", shift, grid);
-	assert.deepEqual(codes(state), ["A", "B", "E", "F", "H", "I"]);
+	assertCodes(state, ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]);
 	assert.equal(state.anchor.cardCode, "B");
-	assert.deepEqual(codes(click(state, "B", shift, grid)), ["B"]);
-	assert.deepEqual(codes(click(click(createJiraKanbanSelectionState(), "K", shift, grid), "B", shift, grid)), ["B", "C", "D", "F", "G", "I", "J", "K"]);
+	assertCodes(click(state, "B", shift, grid), ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]);
+	assertCodes(click(click(createJiraKanbanSelectionState(), "K", shift, grid), "B", shift, grid), ["B", "C", "D", "F", "G", "I", "J", "K"]);
 });
 
 test("either outer diagonal selects every card in either direction on uneven boards", () => {
 	const uneven = [{ title: "Left", cards: ["A", "B"].map((code) => ({ code })) }, grid[2], grid[3]];
 	for (const [anchor, target] of [["A", "L"], ["L", "A"], ["H", "B"], ["B", "H"]]) {
 		const state = click(click(createJiraKanbanSelectionState(), anchor, shift, uneven), target, shift, uneven);
-		assert.deepEqual(codes(state), ["A", "B", "E", "F", "G", "H", "I", "J", "K", "L"]);
+		assertCodes(state, ["A", "B", "E", "F", "G", "H", "I", "J", "K", "L"]);
 		assert.equal(state.anchor.cardCode, anchor);
 	}
 });
@@ -85,7 +100,7 @@ test("a first row across columns is a rectangle, not an outer diagonal", () => {
 test("cross-column ranges follow current card IDs and column order", () => {
 	const state = click(createJiraKanbanSelectionState(), "B", shift, grid);
 	const reordered = [grid[3], grid[2], { ...grid[1], cards: ["D", "A", "C", "B"].map((code) => ({ code })) }];
-	assert.deepEqual(codes(click(state, "J", shift, reordered, { indexInColumn: 0 })), ["J", "K", "G", "C", "B"]);
+	assertCodes(click(state, "J", shift, reordered, { indexInColumn: 0 }), ["J", "K", "G", "C", "B"]);
 });
 
 test("filtered and collapsed columns do not contribute rows or corner selections", () => {
@@ -94,7 +109,7 @@ test("filtered and collapsed columns do not contribute rows or corner selections
 	assert.deepEqual(eligible.map((column) => column.title), ["Left", "Right"]);
 	assert.deepEqual(codes(click(click(createJiraKanbanSelectionState(), "B", shift, eligible), "L", shift, eligible)), ["B", "C", "D", "H", "I", "J", "K", "L"]);
 	const collapsedAnchor = click(createJiraKanbanSelectionState(), "F", shift, filtered);
-	assert.deepEqual(codes(click(collapsedAnchor, "J", shift, eligible)), ["J"]);
+	assertCodes(click(collapsedAnchor, "J", shift, eligible), ["F", "J"]);
 });
 
 test("toolbar Select all expands only the columns containing selected cards", () => {
@@ -129,10 +144,10 @@ test("individual toggles establish an anchor on add and clear it only on its rem
 	assert.deepEqual(codes(state), []);
 });
 
-test("Shift replaces disjoint toggles and takes precedence over the toggle modifier", () => {
+test("Shift preserves disjoint toggles and takes precedence over the toggle modifier", () => {
 	let state = click(click(createJiraKanbanSelectionState(), "A", toggle), "C", toggle);
 	state = click(state, "D", { shiftKey: true, metaOrCtrlKey: true });
-	assert.deepEqual(codes(state), ["C", "D"]);
+	assertCodes(state, ["A", "C", "D"]);
 	assert.equal(state.anchor.cardCode, "C");
 });
 
@@ -149,7 +164,7 @@ test("hidden, removed, moved and deselected anchors are absent", () => {
 	const moved = [hidden[0], { ...columns[1], cards: [...columns[1].cards, { code: "A" }] }];
 	for (const visible of [hidden, moved]) {
 		assert.equal(reconcileJiraKanbanSelection(state, visible).anchor, null);
-		assert.deepEqual(codes(click(state, "C", shift, visible)), ["C"]);
+		assertCodes(click(state, "C", shift, visible), ["A", "C"]);
 	}
 	assert.equal(reconcileJiraKanbanSelection({ ...state, selectedCardCodes: new Set() }, columns).anchor, null);
 });
@@ -160,16 +175,66 @@ test("a keyboard range can start from the focused card without a prior selection
 		fallbackAnchor: { cardCode: "A", columnTitle: "First" },
 	})), ["A", "B"]);
 	const anchored = click(fresh, "C");
-	assert.deepEqual(codes(click(anchored, "A", shift, columns, {
+	assertCodes(click(anchored, "A", shift, columns, {
 		fallbackAnchor: { cardCode: "B", columnTitle: "First" },
-	})), ["A", "B", "C"]);
+	}), ["A", "B", "C"]);
+});
+
+const arrow = (state, from, to) => click(state, to, shift, columns, {
+	fallbackAnchor: { cardCode: from, columnTitle: "First" },
+});
+
+test("keyboard ranges grow, shrink and reverse around the selected anchor", () => {
+	let state = click(createJiraKanbanSelectionState(), "B", toggle);
+	state = arrow(state, "B", "C");
+	assertCodes(state, ["B", "C"]);
+	state = arrow(state, "C", "D");
+	assertCodes(state, ["B", "C", "D"]);
+	state = arrow(state, "D", "C");
+	assertCodes(state, ["B", "C"]);
+	state = arrow(state, "C", "B");
+	assertCodes(state, ["B"]);
+	state = arrow(state, "B", "A");
+	assertCodes(state, ["A", "B"]);
+	state = arrow(state, "A", "B");
+	assertCodes(state, ["B"]);
+	assert.equal(state.anchor.cardCode, "B");
+});
+
+test("shrinking a keyboard range keeps independent selections outside and inside it", () => {
+	let state = click(click(createJiraKanbanSelectionState(), "A", toggle), "C", toggle);
+	state = click(state, "D", toggle);
+	state = arrow(state, "D", "C");
+	state = arrow(state, "C", "B");
+	assertCodes(state, ["A", "B", "C", "D"]);
+	state = arrow(state, "B", "C");
+	assertCodes(state, ["A", "C", "D"]);
+	state = arrow(state, "C", "D");
+	assertCodes(state, ["A", "C", "D"]);
+});
+
+test("pointer selection starts a new keyboard range without undoing the pointer selection", () => {
+	let state = click(createJiraKanbanSelectionState(), "B", toggle);
+	state = arrow(state, "B", "C");
+	state = click(state, "D");
+	state = arrow(state, "D", "C");
+	assertCodes(state, ["B", "C", "D"]);
+	state = arrow(state, "C", "B");
+	assertCodes(state, ["B", "C", "D"]);
+});
+
+test("keyboard reversal does not restore an independently selected card that was removed", () => {
+	let state = click(click(createJiraKanbanSelectionState(), "A", toggle), "B", toggle);
+	state = arrow(state, "B", "C");
+	state = { ...state, selectedCardCodes: new Set(["B", "C"]) };
+	assertCodes(arrow(state, "C", "B"), ["B"]);
 });
 
 test("clear and Select all reset the anchor; invalid targets do not select phantom cards", () => {
 	const fresh = createJiraKanbanSelectionState();
 	assert.equal(fresh.anchor, null);
 	const all = { ...fresh, selectedCardCodes: new Set(["A", "B", "C", "D", "E", "F"]) };
-	assert.deepEqual(codes(click(all, "C")), ["C"]);
+	assertCodes(click(all, "C"), ["A", "B", "C", "D", "E", "F"]);
 	assert.equal(selectJiraKanbanCard(fresh, columns, {
 		cardCode: "missing", columnTitle: "First", indexInColumn: 1, modifiers: shift,
 	}), fresh);

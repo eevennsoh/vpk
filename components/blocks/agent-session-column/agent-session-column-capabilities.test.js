@@ -117,8 +117,7 @@ test("hosts can omit the filter and overflow header actions", () => {
 	assert.match(TYPES_SOURCE, /showOverflow\?: boolean;/u);
 	assert.match(INDEX_SOURCE, /showFilter = true,/u);
 	assert.match(INDEX_SOURCE, /showOverflow = true,/u);
-	assert.match(INDEX_SOURCE, /const hasActiveFilters = showFilter && selectedFilterCount > 0/u);
-	assert.match(INDEX_SOURCE, /const displayedItems = showFilter \? filteredViewItems : viewItems/u);
+	// A hidden filter never scopes rows: agent-session-column-view.test.js.
 	assert.match(INDEX_SOURCE, /const overflowMenu = showOverflow \? \(/u);
 	assert.match(INDEX_SOURCE, /const filterMenu = showFilter \? \(/u);
 	assert.match(INDEX_SOURCE, /filter=\{filterMenu\}/u);

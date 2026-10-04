@@ -1,5 +1,5 @@
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
-import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
+import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 
 import { Spinner } from "@/components/ui/spinner";
 
@@ -15,7 +15,7 @@ export function JiraSessionStatusIndicator({
 		case "needs-input":
 			return (
 				<span aria-hidden="true" className="mt-0.5 grid size-4 shrink-0 self-start place-items-center text-icon-information">
-					<QuestionCircleFilledIcon color="currentColor" label="" size="medium" />
+					<StrokeWeightLargeIcon color="currentColor" label="" size="medium" />
 				</span>
 			);
 		case "working":

@@ -11,7 +11,7 @@ import { useMetadataRail } from "@/components/blocks/jira-work-item/team-eu26/co
 
 import type {
 	PullRequestDetailData,
-} from "../../lib/pull-request-detail-data";
+} from "@/components/blocks/jira-work-item/team-eu26/lib/pull-request-detail-data";
 import { PULL_REQUEST_CHECKS_SECTION_ID } from "./pull-request-details-rail";
 
 const DEMO_MERGE = () => undefined;

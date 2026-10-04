@@ -75,7 +75,7 @@ export function Terminal({
 								<TerminalStatus />
 								<TerminalActions>
 									<TerminalCopyButton />
-									{onClear && <TerminalClearButton />}
+									{onClear ? <TerminalClearButton /> : null}
 								</TerminalActions>
 							</div>
 						</TerminalHeader>
@@ -279,9 +279,7 @@ export function TerminalContent({
 			{children ?? (
 				<pre className="whitespace-pre-wrap break-words">
 					<Ansi>{output}</Ansi>
-					{isStreaming && (
-						<span className="ml-0.5 inline-block h-4 w-2 animate-pulse bg-zinc-100" />
-					)}
+					{isStreaming ? <span className="ml-0.5 inline-block h-4 w-2 animate-pulse bg-zinc-100" /> : null}
 				</pre>
 			)}
 		</div>

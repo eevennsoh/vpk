@@ -1,16 +1,34 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
+
+import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
+
+async function waitForIssueSurfaceGeometry(surface: Locator) {
+	await surface.evaluate((node) => new Promise<void>((resolve, reject) => {
+		let previous = node.getBoundingClientRect();
+		let stableFrames = 0, frames = 0;
+		const sample = () => {
+			const rect = node.getBoundingClientRect();
+			stableFrames = Math.abs(rect.width - previous.width) < 0.01 && Math.abs(rect.height - previous.height) < 0.01 ? stableFrames + 1 : 0;
+			previous = rect;
+			if (stableFrames >= 3) resolve();
+			else if (++frames >= 120) reject(new Error("Issue surface geometry did not settle"));
+			else requestAnimationFrame(sample);
+		};
+		requestAnimationFrame(sample);
+	}));
+}
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`native card preview leaves all rounded corner cutouts clear (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await page.waitForLoadState("networkidle");
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
 		await page.keyboard.press("Escape");
-		const card = page.locator('[data-issue-key="PAY-118"] [draggable="true"]').first();
+		const card = page.locator('[data-issue-key="PAY-118"] [draggable]').first();
 		const surface = card.locator('[data-slot="jira-issue-surface"]');
 		const restingSurfaceColor = await surface.evaluate((node) => getComputedStyle(node).backgroundColor);
 		await card.hover({ position: { x: 70, y: 30 } });
@@ -70,13 +88,15 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		for (const selected of [false, true]) {
 			test(`one ${selected ? "selected" : "unselected"} ${code} previews only its face (${reducedMotion})`, async ({ page }) => {
 				await page.emulateMedia({ reducedMotion });
-				await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+				await page.goto(appUrl("/preview/blocks/jira-dragging"));
 				await page.waitForLoadState("networkidle");
-				const card = page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+				const card = page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 				if (selected) await card.click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 				const source = card.locator('[data-slot="jira-issue-card"]');
 				const restingSurfaceColor = await page.locator('[data-issue-key="PAY-130"] [data-slot="jira-issue-surface"]').evaluate((node) => getComputedStyle(node).backgroundColor);
-				const face = (await source.locator('[data-slot="jira-issue-surface"]').boundingBox())!;
+				await waitForIssueSurfaceGeometry(source.locator('[data-slot="jira-issue-surface"]'));
+				// The detached face restores the full card size, not the inset face of a selection or session well.
+				const resting = (await source.boundingBox())!;
 				const grab = (await card.boundingBox())!;
 				await page.mouse.move(grab.x + 70, grab.y + 30);
 				await page.mouse.down();
@@ -94,8 +114,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 					return [outer.x - painted.x, outer.y - painted.y, outer.width - painted.width, outer.height - painted.height].map((gap) => Math.abs(gap) < 0.5 ? 0 : Number(gap.toFixed(2)));
 				}).toEqual([0, 0, 0, 0]);
 				const bounds = (await preview.boundingBox())!;
-				expect(bounds.width).toBeCloseTo(face.width, 1);
-				expect(bounds.height).toBeCloseTo(face.height, 1);
+				expect(bounds.width).toBeCloseTo(resting.width, 1);
+				expect(bounds.height).toBeCloseTo(resting.height, 1);
 				await page.mouse.move(1100, 750, { steps: 4 });
 				if (code === "PAY-107" && !selected) await page.screenshot({ path: `output/agent-browser/single-card-preview/single-${reducedMotion}.png` });
 				await page.keyboard.press("Escape");
@@ -107,13 +127,14 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`multiple cards show white faces, deck and count (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
-		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
+		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable]`).first();
 		for (const code of ["PAY-105", "PAY-123"]) await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await card("PAY-107").hover({ position: { x: 70, y: 30 } });
 		const restingSurfaceColor = await page.locator('[data-issue-key="PAY-130"] [data-slot="jira-issue-surface"]').evaluate((node) => getComputedStyle(node).backgroundColor);
-		const face = (await card("PAY-107").locator('[data-slot="jira-issue-surface"]').boundingBox())!;
+		// The lead restores the full card size, not the inset face of its selection well.
+		const resting = (await card("PAY-107").locator('[data-slot="jira-issue-card"]').boundingBox())!;
 		const bounds = (await card("PAY-107").boundingBox())!;
 		await page.mouse.move(bounds.x + 70, bounds.y + 30);
 		await page.mouse.down();
@@ -128,8 +149,11 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await expect(sheet).toBeEmpty();
 		}
 		const lead = (await preview.locator('[data-issue-cohort-front]').boundingBox())!;
-		expect(lead.width).toBeCloseTo(face.width, 1);
-		expect(lead.height).toBeCloseTo(face.height, 1);
+		expect(lead.width).toBeCloseTo(resting.width, 1);
+		expect(lead.height).toBeCloseTo(resting.height, 1);
+		const leadFace = (await preview.locator('[data-issue-cohort-front] [data-slot="jira-issue-surface"]').boundingBox())!;
+		expect(leadFace.width).toBeCloseTo(resting.width, 1);
+		expect(leadFace.height).toBeCloseTo(resting.height, 1);
 		await expect(preview.locator('[data-slot="badge"]')).toHaveText("3");
 		await page.keyboard.press("Escape");
 		await page.mouse.up();

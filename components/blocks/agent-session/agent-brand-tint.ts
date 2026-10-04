@@ -21,7 +21,6 @@ import {
 	// Relative leaf import with an explicit extension: this module is loaded raw
 	// by a node:test suite, where the `@/` alias does not resolve. Keep every
 	// import here in that shape, and keep this module dependency-light.
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "../../ui-custom/lib/shimmer-colors.ts";
 
 const BRAND_TINT_HEX: Readonly<Record<string, string>> = {

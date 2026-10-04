@@ -40,6 +40,7 @@ import {
 	AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD,
 } from "@/components/blocks/agent/lib/agent-reference-mapping";
 import { useAgentAutomationDialogs } from "@/components/blocks/agent/hooks/use-agent-automation-dialogs";
+import { motionEase } from "@/lib/motion";
 
 export {
 	AgentCompactHeaderNav,
@@ -370,7 +371,7 @@ export const AgentConfigFields = memo(
 									key="agent-onboarding-bento"
 									className="shrink-0"
 									exit={{ opacity: 0 }}
-									transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+									transition={{ duration: 0.2, ease: motionEase.out }}
 								>
 									<AgentCompactOperationsBento
 										onDismiss={() => setIsOnboardingBentoDismissed(true)}

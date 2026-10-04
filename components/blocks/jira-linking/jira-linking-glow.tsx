@@ -1,20 +1,15 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { createPortal } from "react-dom";
 
-import { AgentSessionCohortChip } from "@/components/blocks/agent-session/agent-session-cohort-chip";
 import { animateSessionChipDrop } from "@/components/blocks/jira-dropzone/lib/session-chip-drop-flight";
 
-import { toJiraLinkingCohort } from "./drop-cohort";
+import { createJiraLinkingCardGlow, type JiraCardGlowEffect } from "./card-glow";
+import { JiraLinkingFlightChip } from "./jira-linking-flight-chip";
 import {
 	JIRA_LINKING_GLOW_DEFAULT_COLOR,
 	JIRA_LINKING_GLOW_DROP_DURATION_MS,
-	JIRA_LINKING_GLOW_FADE_DURATION_MS,
-	JIRA_LINKING_GLOW_PULSE_DURATION_MS,
 	resolveJiraLinkingGlowColor,
-	resolveJiraLinkingGlowPulseColor,
-	resolveJiraLinkingGlowShadow,
 } from "./glow-motion";
 import type { JiraLinkingProps } from "./jira-linking";
 import { resolveJiraLinkingIdentityTint } from "./use-jira-linking-atlas";
@@ -30,10 +25,10 @@ interface JiraIssueGlowRoots {
 	haloRoot: Element | null;
 }
 
-function resolveJiraIssueGlowRoots(anchor: Readonly<{ x: number; y: number }>): JiraIssueGlowRoots {
+function resolveJiraIssueGlowRoots(anchor: Readonly<{ x: number; y: number }>, targetElement?: Element | null): JiraIssueGlowRoots {
 	if (typeof document === "undefined") return { backdropRoot: null, haloRoot: null };
-	const hit = document.elementFromPoint(anchor.x, anchor.y);
-	const shell = hit?.closest(JIRA_ISSUE_AGENT_SHELL_SELECTOR);
+	const hit = targetElement === undefined ? document.elementFromPoint(anchor.x, anchor.y) : targetElement;
+	const shell = hit?.closest(JIRA_ISSUE_AGENT_SHELL_SELECTOR) ?? hit?.querySelector(JIRA_ISSUE_AGENT_SHELL_SELECTOR);
 	return {
 		backdropRoot: shell?.querySelector(JIRA_ISSUE_AGENT_BACKDROP_SELECTOR) ?? null,
 		haloRoot: shell?.querySelector(JIRA_ISSUE_SURFACE_SELECTOR) ?? null,
@@ -76,7 +71,7 @@ export function JiraLinkingGlow({ identities, release, onFuseSettled, zIndex = 2
 			lastReleaseId.current = release.id;
 			const backdrop = release.resolveTarget?.() ?? release.fromTarget ?? release.target;
 			const roots = backdrop
-				? resolveJiraIssueGlowRoots(backdrop.anchor)
+				? resolveJiraIssueGlowRoots(backdrop.anchor, release.resolveTargetElement?.())
 				: { backdropRoot: null, haloRoot: null };
 			const leadIdentity = identities?.[0];
 			setSnapshot({
@@ -126,12 +121,11 @@ function GlowRelease({ backdropRoot, glowColor, haloRoot, portalRoot, release, s
 	zIndex: number;
 }>) {
 	const flightRef = useRef<HTMLDivElement>(null);
-	const haloRef = useRef<HTMLDivElement>(null);
-	const pulseRef = useRef<HTMLDivElement>(null);
 	const backdrop = release.fromTarget ?? release.target;
 	const landing = release.target;
 	const drop = release.drop;
 	const resolveTarget = release.resolveTarget;
+	const resolveTargetElement = release.resolveTargetElement;
 
 	useLayoutEffect(() => {
 		if (shouldReduceMotion || !landing || !backdrop) {
@@ -140,46 +134,49 @@ function GlowRelease({ backdropRoot, glowColor, haloRoot, portalRoot, release, s
 			return;
 		}
 		const flight = drop ? flightRef.current : null;
-		const halo = haloRef.current;
-		const pulse = pulseRef.current;
-		if (!halo || typeof halo.animate !== "function" || (drop && (!flight || typeof flight.animate !== "function"))) {
+		if (drop && (!flight || typeof flight.animate !== "function")) {
 			onSettled(release.id);
 			onComplete(release.id);
 			return;
 		}
 		let cancelled = false;
-		const animations: Animation[] = [];
-		let haloAnimation: Animation | null = null;
-		let pulseAnimation: Animation | null = null;
+		let revealFrame: number | undefined;
+		let effects: JiraCardGlowEffect[] = [];
 		const finish = () => {
 			if (!cancelled) onComplete(release.id);
 		};
 		const playGlow = () => {
 			if (cancelled) return;
+			const targetElement = resolveTargetElement?.();
+			if (targetElement?.closest("[data-issue-drop-reveal-pending]")) {
+				revealFrame = requestAnimationFrame(playGlow);
+				return;
+			}
+			const roots = resolveTargetElement
+				? resolveJiraIssueGlowRoots(landing.anchor, targetElement)
+				: { haloRoot, backdropRoot };
+			if (resolveTargetElement && !roots.haloRoot) {
+				onSettled(release.id);
+				finish();
+				return;
+			}
 			if (flight) {
 				flight.style.visibility = "hidden";
 			}
-			haloAnimation = halo.animate([{ opacity: 1 }, { opacity: 0 }], {
-				duration: JIRA_LINKING_GLOW_FADE_DURATION_MS,
-				easing: "ease-out",
-				fill: "forwards",
+			effects = createJiraLinkingCardGlow({
+				haloRoot: roots.haloRoot ?? portalRoot,
+				backdropRoot: roots.backdropRoot,
+				color: glowColor,
+				fallbackStyle: roots.haloRoot ? undefined : {
+					position: "fixed", left: `${landing.anchor.x - landing.width / 2}px`, top: `${landing.anchor.y - landing.height / 2}px`,
+					width: `${landing.width}px`, height: `${landing.height}px`, borderRadius: `${landing.radius ?? 8}px`, zIndex: String(zIndex),
+				},
 			});
-			animations.push(haloAnimation);
-			if (pulse) {
-				pulseAnimation = pulse.animate([
-					{ transform: "translateY(0)" },
-					{ transform: "translateY(-200%)" },
-				], {
-					duration: JIRA_LINKING_GLOW_PULSE_DURATION_MS,
-					easing: "cubic-bezier(0.4, 0, 0.2, 1)",
-					fill: "forwards",
-				});
-				animations.push(pulseAnimation);
-				pulseAnimation.addEventListener("finish", finish, { once: true });
-				pulseAnimation.addEventListener("cancel", finish, { once: true });
-			} else {
-				haloAnimation.addEventListener("finish", finish, { once: true });
-				haloAnimation.addEventListener("cancel", finish, { once: true });
+			const last = effects.at(-1);
+			for (const effect of effects) {
+				const settle = () => { effect.restore(); if (effect === last) finish(); };
+				effect.animation.onfinish = settle;
+				effect.animation.oncancel = settle;
 			}
 			onSettled(release.id);
 		};
@@ -192,65 +189,17 @@ function GlowRelease({ backdropRoot, glowColor, haloRoot, portalRoot, release, s
 		if (!stopFlight) playGlow();
 		return () => {
 			cancelled = true;
+			if (revealFrame !== undefined) cancelAnimationFrame(revealFrame);
 			stopFlight?.();
-			haloAnimation?.removeEventListener("finish", finish);
-			haloAnimation?.removeEventListener("cancel", finish);
-			pulseAnimation?.removeEventListener("finish", finish);
-			pulseAnimation?.removeEventListener("cancel", finish);
-			for (const running of animations) running.cancel();
+			for (const effect of effects) {
+				effect.animation.onfinish = null;
+				effect.animation.oncancel = null;
+				effect.animation.cancel();
+				effect.restore();
+			}
 		};
-	}, [backdrop, drop, landing, onComplete, onSettled, release.id, resolveTarget, shouldReduceMotion]);
+	}, [backdrop, backdropRoot, drop, glowColor, haloRoot, landing, onComplete, onSettled, portalRoot, release.id, resolveTarget, resolveTargetElement, shouldReduceMotion, zIndex]);
 
 	if (shouldReduceMotion || !backdrop || !landing) return null;
-	const haloStyle = {
-		left: landing.anchor.x - landing.width / 2,
-		top: landing.anchor.y - landing.height / 2,
-		width: landing.width,
-		height: landing.height,
-		borderRadius: landing.radius ?? 8,
-		zIndex,
-	};
-	const showFlight = Boolean(drop);
-	const showFallbackHalo = !haloRoot;
-	return (
-		<>
-			{showFlight || showFallbackHalo ? createPortal(
-				<div aria-hidden="true" data-slot="jira-linking" data-jira-linking-variant="glow" className="pointer-events-none">
-					{showFallbackHalo ? (
-							<div ref={haloRef} data-jira-linking-glow-halo="" className="fixed" style={{ ...haloStyle, opacity: 0, boxShadow: resolveJiraLinkingGlowShadow(glowColor) }} />
-					) : null}
-					{drop ? (
-					<div
-						ref={flightRef}
-						data-jira-linking-flight=""
-						data-jira-linking-flight-members={String(drop.members.length)}
-						className="fixed left-0 top-0 w-fit"
-						style={{ zIndex: zIndex + 110, transform: `translate3d(${drop.from.x}px, ${drop.from.y}px, 0)`, transformOrigin: "0 0" }}
-					>
-						<div className="flex w-fit -translate-x-1/2 -translate-y-1/2 items-center">
-							<AgentSessionCohortChip cohort={toJiraLinkingCohort(drop.members)} elevated />
-						</div>
-					</div>
-					) : null}
-				</div>,
-				portalRoot,
-			) : null}
-			{haloRoot ? createPortal(
-				<div
-					aria-hidden="true"
-					className="absolute -inset-px rounded-[inherit]"
-					data-jira-linking-glow-halo=""
-					ref={haloRef}
-						style={{ boxShadow: resolveJiraLinkingGlowShadow(glowColor), opacity: 0 }}
-				/>,
-				haloRoot,
-			) : null}
-			{backdropRoot ? createPortal(
-				<div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-[inherit]" data-jira-linking-glow-backdrop="">
-					<div ref={pulseRef} className="absolute inset-x-0 top-full h-full" style={{ background: `linear-gradient(0deg, transparent 0%, ${resolveJiraLinkingGlowPulseColor(glowColor)} 50%, transparent 100%)` }} />
-				</div>,
-				backdropRoot,
-			) : null}
-		</>
-	);
+	return drop ? <JiraLinkingFlightChip drop={drop} ref={flightRef} portalRoot={portalRoot} zIndex={zIndex + 110} /> : null;
 }

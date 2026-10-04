@@ -95,17 +95,11 @@ export const SchemaDisplay = ({
                 <SchemaDisplayPath />
               </div>
             </SchemaDisplayHeader>
-            {description && <SchemaDisplayDescription />}
+            {description ? <SchemaDisplayDescription /> : null}
             <SchemaDisplayContent>
-              {parameters && parameters.length > 0 && (
-                <SchemaDisplayParameters />
-              )}
-              {requestBody && requestBody.length > 0 && (
-                <SchemaDisplayRequest />
-              )}
-              {responseBody && responseBody.length > 0 && (
-                <SchemaDisplayResponse />
-              )}
+              {parameters && parameters.length > 0 ? <SchemaDisplayParameters /> : null}
+              {requestBody && requestBody.length > 0 ? <SchemaDisplayRequest /> : null}
+              {responseBody && responseBody.length > 0 ? <SchemaDisplayResponse /> : null}
             </SchemaDisplayContent>
           </>
         )}
@@ -271,23 +265,17 @@ export const SchemaDisplayParameter = ({
       <Badge className="text-xs" variant="neutral">
         {type}
       </Badge>
-      {location && (
-        <Badge className="text-xs" variant="neutral">
+      {location ? <Badge className="text-xs" variant="neutral">
           {location}
-        </Badge>
-      )}
-      {required && (
-        <Badge
+        </Badge> : null}
+      {required ? <Badge
           className="bg-red-100 text-red-700 text-xs"
           variant="neutral"
         >
           required
-        </Badge>
-      )}
+        </Badge> : null}
     </div>
-    {description && (
-      <p className="mt-1 text-muted-foreground text-sm">{description}</p>
-    )}
+    {description ? <p className="mt-1 text-muted-foreground text-sm">{description}</p> : null}
   </div>
 );
 
@@ -391,23 +379,19 @@ export const SchemaDisplayProperty = ({
           <Badge className="text-xs" variant="neutral">
             {type}
           </Badge>
-          {required && (
-            <Badge
+          {required ? <Badge
               className="bg-red-100 text-red-700 text-xs"
               variant="neutral"
             >
               required
-            </Badge>
-          )}
+            </Badge> : null}
         </CollapsibleTrigger>
-        {description && (
-          <p
+        {description ? <p
             className="pb-2 text-muted-foreground text-sm"
             style={{ paddingLeft: paddingLeft + 24 }}
           >
             {description}
-          </p>
-        )}
+          </p> : null}
         <CollapsibleContent>
           <div className="divide-y border-t">
             {properties?.map((prop) => (
@@ -417,13 +401,11 @@ export const SchemaDisplayProperty = ({
                 depth={depth + 1}
               />
             ))}
-            {items && (
-              <SchemaDisplayProperty
+            {items ? <SchemaDisplayProperty
                 {...items}
                 depth={depth + 1}
                 name={`${name}[]`}
-              />
-            )}
+              /> : null}
           </div>
         </CollapsibleContent>
       </Collapsible>
@@ -443,18 +425,14 @@ export const SchemaDisplayProperty = ({
         <Badge className="text-xs" variant="neutral">
           {type}
         </Badge>
-        {required && (
-          <Badge
+        {required ? <Badge
             className="bg-red-100 text-red-700 text-xs"
             variant="neutral"
           >
             required
-          </Badge>
-        )}
+          </Badge> : null}
       </div>
-      {description && (
-        <p className="mt-1 pl-6 text-muted-foreground text-sm">{description}</p>
-      )}
+      {description ? <p className="mt-1 pl-6 text-muted-foreground text-sm">{description}</p> : null}
     </div>
   );
 };

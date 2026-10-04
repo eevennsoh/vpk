@@ -8,6 +8,9 @@ const projectName = packageMetadata.name.replace(/^@[^/]+\//, "");
 const nextConfig: NextConfig = {
 	devIndicators: false,
 	allowedDevOrigins: [
+		// control-vpk and Playwright fall back to the IPv4 loopback when Portless is off;
+		// without it Next blocks dev chunks and the page never hydrates.
+		"127.0.0.1",
 		`${projectName}.localhost`,
 		`*.${projectName}.localhost`,
 		// Atlas Tunnel public hosts are ephemeral (`<id>.public.atlastunnel.com`).

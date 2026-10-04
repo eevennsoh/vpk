@@ -10,7 +10,7 @@ const DAILY_INSIGHTS_PANEL_SOURCE = fs.readFileSync(path.join(__dirname, "daily-
 test("floating Rovo button content exit uses the shared fast practical-exit token", () => {
 	assert.match(
 		MOTION_SOURCE,
-		/export const FLOATING_ROVO_BUTTON_CONTENT_EXIT = \{\s*duration: 0\.1,\s*ease: \[0\.6, 0, 0\.8, 0\.6\],\s*\} as const;/u,
+		/export const FLOATING_ROVO_BUTTON_CONTENT_EXIT = \{\s*duration: 0\.1,\s*ease: motionEase\.in,\s*\} as const;/u,
 	);
 	assert.match(SURFACE_SOURCE, /transition: FLOATING_ROVO_BUTTON_CONTENT_EXIT/u);
 	assert.match(DAILY_INSIGHTS_PANEL_SOURCE, /transition: FLOATING_ROVO_BUTTON_CONTENT_EXIT/u);

@@ -17,7 +17,6 @@ import { useOptionalRovoChatControls } from "@/app/contexts/context-rovo-chat-co
 import {
 	resolveAgentSessionWorkItemKey,
 	type AgentSessionItem,
-	type AgentSessionWorkItemDraft,
 } from "@/components/blocks/agent-session";
 import {
 	JiraDropzoneField,
@@ -168,17 +167,22 @@ export default function ExperimentalJiraKanbanPage({
 
 function ExperimentalJiraKanbanPageContent({
 	activeView = "board", addAgentLabel,
+	autoArrangeEnabled = true,
 	activeCardCode,
 	additionalAgentSessions,
 	agentSessionSeedOverrides,
 	agentSessionMembers = PULSE_TIMELINE.members,
 	agentActivityLayout,
 	cardGenerativeActionFooterActions,
+	cardGenerativeActionPinnedAgentIds,
 	cardGenerativeActionPresentation, iconScale,
+	showPriorityIndicator,
 	createWellBounce = "once",
 	createWorkItemDropZoneLabel,
 	issueDragTransitions = false,
 	issueMoveVisual = true,
+	issueDropMotion,
+	issueMoveRequest,
 	issueSelectionAppearance = "card",
 	getStatusVariant,
 	defaultAgentSessionColumnCollapsed = false,
@@ -196,9 +200,10 @@ function ExperimentalJiraKanbanPageContent({
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
+	boardFilterScopeKey,
 	columnChrome, columnSizing, columnWidth, boardAvatar, boardTitle,
 	compactHeader = false,
-	headerAssignees, showUnassignedHeaderAvatar, renderHeaderAssignee,
+	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee,
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
@@ -339,7 +344,7 @@ function ExperimentalJiraKanbanPageContent({
 		setDraggedCard(null);
 		setFocusedCollapsedColumns(null);
 	}, []);
-	const boardFilter = useBoardFilter({ onAssigneeChange: resetAssigneeScopedBoardState });
+	const boardFilter = useBoardFilter({ onAssigneeChange: resetAssigneeScopedBoardState, scopeKey: boardFilterScopeKey });
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
 	const [localTimelineLastViewedAt, setLocalTimelineLastViewedAt] = useState<string | null>(() => (
 		insightsEnabled && controlledMode === "pulse"
@@ -514,6 +519,7 @@ function ExperimentalJiraKanbanPageContent({
 		createdCardArrival,
 		handleComplete: handleCreatedCardArrivalComplete,
 		handleCreate: handleBoardAgentSessionCreate,
+		handleGapCreate: handleBoardGapCreate,
 	} = useBoardCreatedCardArrival({
 		captureSession: agentSessionHandlers.onCreateWorkItem,
 		onCreate: onBoardAgentSessionCreate,
@@ -794,18 +800,7 @@ function ExperimentalJiraKanbanPageContent({
 		detachedSessionsByCard: proximityAgentSessionsByCard,
 		linkingVariant: agentSessionLinkingVariant,
 		onCreate: onBoardAgentSessionCreate ? handleBoardAgentSessionCreate : undefined,
-		// Same create path as the well, with a slot. Each cohort member advances
-		// the index, and the refs behind `handleBoardAgentSessionCreate` grow with
-		// every call, so the sessions land in drag order rather than reversed.
-		onBoardGapCreate: onBoardAgentSessionCreate
-			? (sessions, insertion) => sessions.forEach((session, memberIndex) => (
-				handleBoardAgentSessionCreate(
-					session,
-					insertion.columnTitle,
-					insertion.insertAtIndex + memberIndex,
-				)
-			))
-			: undefined,
+		onBoardGapCreate: onBoardAgentSessionCreate ? handleBoardGapCreate : undefined,
 		onCreateWellReceive: receiveCreateWell,
 		onListCreate: onListAgentSessionCreate ? handleListAgentSessionCreate : undefined,
 		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
@@ -813,7 +808,7 @@ function ExperimentalJiraKanbanPageContent({
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
 		untrackedSessions: agentSessionColumnConfig?.items,
 	});
-	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
+	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardsMove, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
 		rootRef: boardSessionDrag.boardRootRef, enabled: issueSelectionAppearance === "fused-backdrop" && !isListContent,
 		filteredBoardColumns, collapsedColumns: isListContent ? EMPTY_COLLAPSED_BOARD_COLUMNS : displayedCollapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
 	});
@@ -827,6 +822,7 @@ function ExperimentalJiraKanbanPageContent({
 			<ExperimentalJiraKanbanBoardHeader avatar={boardAvatar} title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
 				activeView={activeView} renderHeaderAssignee={renderHeaderAssignee}
 				assignees={assignees}
+				avatarLimit={headerAvatarLimit}
 				compact={compactHeader}
 				controlsInsetEnd={boardScrollEndInset}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
@@ -959,11 +955,13 @@ function ExperimentalJiraKanbanPageContent({
 								assignedAgentIdsByColumn={columnAgentAssignments}
 								boardColumns={filteredBoardColumns}
 								cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
+								cardGenerativeActionPinnedAgentIds={cardGenerativeActionPinnedAgentIds}
 								cardMoreMenuActions={issueSelectionAppearance === "fused-backdrop" && (controlledBoardColumns === undefined || onBoardColumnsChange)
 									? { onArchive: handleCardRemove, onDelete: handleCardRemove }
 									: undefined}
 								onCardsRemove={controlledBoardColumns === undefined || onBoardColumnsChange ? handleCardsRemove : undefined}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale}
+								showPriorityIndicator={showPriorityIndicator}
 								collapsedColumns={displayedCollapsedColumns}
 								columnChrome={columnChrome} columnSizing={columnSizing} columnWidth={columnWidth}
 								createdCardArrival={createdCardArrival ?? undefined}
@@ -977,6 +975,9 @@ function ExperimentalJiraKanbanPageContent({
 								draggedCardCode={draggedCard?.card.code ?? null}
 								issueDragTransitions={issueDragTransitions}
 								issueMoveVisual={issueMoveVisual}
+								issueDropMotion={issueDropMotion}
+								issueMoveRequest={issueMoveRequest}
+								onIssueMove={issueMoveRequest && (controlledBoardColumns === undefined || onBoardColumnsChange) ? handleCardsMove : undefined}
 								issueSelectionAppearance={issueSelectionAppearance}
 								selectedCardCodes={selection.selectedCardCodes}
 								onCardClick={handleCardClick}
@@ -998,7 +999,7 @@ function ExperimentalJiraKanbanPageContent({
 								onCardDragStart={handleCardDragStart}
 								onCardDrop={handleCardDrop}
 								onCardDragEnd={handleCardDragEnd}
-								onAutoArrange={controlledBoardColumns === undefined || onBoardColumnsChange ? handleAutoArrange : undefined}
+								onAutoArrange={autoArrangeEnabled && (controlledBoardColumns === undefined || onBoardColumnsChange) ? handleAutoArrange : undefined}
 								onCreateAgent={handleCreateColumnAgent}
 								onScrollUnderlapChange={setBoardContentUnderlapsSessionColumn}
 								onToggleColumnAgent={handleToggleColumnAgent}

@@ -379,7 +379,7 @@ function resolveBaseURL(gatewayUrl) {
 	return resolved.replace(/\/chat\/completions$/, "");
 }
 
-function getModelId(gatewayUrl) {
+function getModelId(gatewayUrl, envVars = getEnvVars()) {
 	if (!gatewayUrl || typeof gatewayUrl !== "string") {
 		return "";
 	}
@@ -397,6 +397,10 @@ function getModelId(gatewayUrl) {
 	const publisherMatch = gatewayUrl.match(/\/publishers\/[^/]+\/models\/([^/:]+)(?::[A-Za-z]+)?$/);
 	if (publisherMatch?.[1]) {
 		return decodeURIComponent(publisherMatch[1]);
+	}
+
+	if (/\/v1\/openai\//.test(gatewayUrl)) {
+		return envVars.OPENAI_MODEL?.trim() || "gpt-6.1-sol";
 	}
 
 	return "";

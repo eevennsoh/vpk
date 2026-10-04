@@ -39,9 +39,12 @@ import { BoardColumn } from "./components/board-column";
 import { CollapsedColumnSessionDrop } from "./components/collapsed-column-session-drop";
 import { resolveBoardCreateDropzoneDrag } from "./lib/board-agent-session-drag";
 import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
-import { useIssueCardDropArrival } from "./hooks/use-issue-card-drop-arrival";
+import { CreatedCardInlineFlight } from "./components/created-card-inline-flight";
+import { useCreatedCardDropMotion } from "./hooks/use-created-card-drop-motion";
+import { useIssueCardDropArrival, type IssueCardMove } from "./hooks/use-issue-card-drop-arrival";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
+import { IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR } from "./lib/in-flow-agent-session-column-geometry";
 import {
 	useCreatedCardArrivalCompletion,
 	type JiraKanbanCreatedCardArrival,
@@ -50,11 +53,12 @@ import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
 import { createIssueDragPreview } from "./lib/issue-drag-preview";
 import { issueRemovalSpacing, issueSelectionBackdrop } from "./lib/issue-selection-backdrop";
 import { useIssueCohortPreview } from "./hooks/use-issue-cohort-preview";
+import { useIssueMoveRequest, type JiraKanbanIssueMoveRequest } from "./hooks/use-issue-move-request";
 import { useBoardAutoArrange } from "./hooks/use-board-auto-arrange";
 import { useBoardCardRemoval } from "./hooks/use-board-card-removal";
 import { useBoardIssuePointerDrag } from "./hooks/use-board-issue-pointer-drag";
 import { BoardAutoArrangeAction, BoardAutoArrangeBadge } from "./components/board-auto-arrange";
-import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
+import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE, JIRA_KANBAN_CARD_REFLOW } from "./lib/card-motion";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	resolveBoardColumnShellSizing,
@@ -111,6 +115,11 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	issueDragTransitions?: boolean;
 	/** False restores the original issue move visuals without changing drop behavior. */
 	issueMoveVisual?: boolean;
+	/** Commit in place, then unfold the cohort using the solitaire reference. */
+	issueDropMotion?: "solitaire";
+	/** Host-requested cohort move, played like a drop; requires `onIssueMove` to commit it. */
+	issueMoveRequest?: JiraKanbanIssueMoveRequest;
+	onIssueMove?: (move: IssueCardMove) => void;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/** One-shot card entrance requested by the host after creating cards from sessions. */
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
@@ -173,6 +182,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	onCardAgentSessionMove?: (session: JiraIssueAgentSessionRef, sourceCard: JiraKanbanCardData, targetCard: JiraKanbanCardData, sourceColumnTitle: string, targetColumnTitle: string) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	/** Explicit space pins use the board's agent catalog in card pickers. */
+	cardGenerativeActionPinnedAgentIds?: readonly string[];
 	/** Route-owned per-card Archive/Delete actions. */ cardMoreMenuActions?: JiraKanbanCardMoreMenuActions;
 	/** Commits a toolbar deletion as one transaction after its cards exit. */
 	onCardsRemove?: (cardCodes: readonly string[]) => void;
@@ -183,6 +194,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	>;
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;
+	/** Show issue priority on board cards; defaults to the issue component's behavior. */
+	showPriorityIndicator?: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	/** Nested subtask cards inherit the parent chrome unless set. */
 	subtaskChrome?: JiraIssueChrome;
@@ -386,7 +399,7 @@ function BoardColumnShell({
 }
 
 function ExperimentalJiraKanbanView({
-	onAutoArrange: requestedAutoArrange,
+	onAutoArrange,
 	activeCardCode,
 	addAgentLabel,
 	agentActivityLayout = "merged",
@@ -398,11 +411,16 @@ function ExperimentalJiraKanbanView({
 	scrollEndInset = 0,
 	boardColumns,
 	cardGenerativeActionPresentation = "sparkle",
+	cardGenerativeActionPinnedAgentIds,
 	cardGenerativeActionFooterActions, cardMoreMenuActions, onCardsRemove,
 	cardMoveAnimation,
 	iconScale = "compact",
+	showPriorityIndicator,
 	issueDragTransitions = false,
 	issueMoveVisual = true,
+	issueDropMotion,
+	issueMoveRequest,
+	onIssueMove,
 	issueSelectionAppearance: requestedSelectionAppearance = "card",
 	collapsedColumns: controlledCollapsedColumns,
 	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
@@ -423,7 +441,6 @@ function ExperimentalJiraKanbanView({
 	onCardAgentActivityViewChat,
 	onCardAssignedAgentIdsChange,
 	onCardAgentSessionLink,
-	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
 	showAgentSessionUnlinkWell = true,
 	onCardAgentDoneRunReview,
@@ -451,8 +468,6 @@ function ExperimentalJiraKanbanView({
 	captureBoardSessionDragRoot?: boolean;
 }) {
 	const issueSelectionAppearance = issueMoveVisual ? requestedSelectionAppearance : "card";
-	// Original moves use native DnD; shortcut-triggered auto-arrange needs pointer transport.
-	const onAutoArrange = issueMoveVisual ? requestedAutoArrange : undefined;
 	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const scrollportPaddingTop = withKanbanDropRingClipGutter(paddingTop, chrome).paddingTop;
 	const untrackedPaddingTop = withKanbanDropContentGutter(paddingTop, chrome).paddingTop;
@@ -468,12 +483,13 @@ function ExperimentalJiraKanbanView({
 	const autoArrangeScopeId = useId();
 	const issueDragImageRef = useRef<HTMLElement | null>(null);
 	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop" || Boolean(onAutoArrange), draggedCardCode, onCardDragEnd);
+	// Auto arrange keeps its shortcut usable during pickup, independently of move visuals.
 	const { stop: stopPointerDrag } = useBoardIssuePointerDrag(boardScrollportRef, Boolean(onAutoArrange));
-	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete });
+	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete, solitaire: issueDropMotion === "solitaire", stopPreview: issueCohortPreview.stop, releasePreview: issueCohortPreview.release });
+	useIssueMoveRequest(issueMoveRequest, issueDropArrival.handleMove);
 	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, scopeId: autoArrangeScopeId });
-	const presentedCardArrival = useMemo(() => createdCardArrival
-		? { ...createdCardArrival, deferred: receivingCreatedCards }
-		: undefined, [createdCardArrival, receivingCreatedCards]);
+	const singleCardDrag = Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1);
+	const { arrival: presentedCardArrival, inlineFlight } = useCreatedCardDropMotion({ arrival: createdCardArrival, boardRef: boardScrollportRef, receiving: receivingCreatedCards, reducedMotion: Boolean(shouldReduceMotion), onComplete: onCreatedCardArrivalComplete });
 	const boardContentUnderlapsRef = useRef(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
 	const handleCreatedCardArrivalComplete = useCreatedCardArrivalCompletion(
@@ -504,7 +520,7 @@ function ExperimentalJiraKanbanView({
 	});
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
-	const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart(columnRowPaddingInlineStart, boardColumns[0]?.title, Boolean(chrome.dropContentPadding), collapsedColumns);
+	const resolvedColumnRowPaddingInlineStart = `calc(${resolveBoardColumnRowPaddingInlineStart(columnRowPaddingInlineStart, boardColumns[0]?.title, Boolean(chrome.dropContentPadding), collapsedColumns)} + var(${IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR}, 0px))`;
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedColumnTitles = new Set(boardColumns.filter((column) => column.cards.some((card) => selectedCardCodes?.has(card.code))).map((column) => column.title));
 	const sourceColumn = boardColumns.find((column) => column.cards.some((card) => card.code === draggedCardCode));
@@ -518,19 +534,26 @@ function ExperimentalJiraKanbanView({
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
 		: null;
+	const cardPickerAgents = cardGenerativeActionPinnedAgentIds !== undefined ? agents : selectionToolbar?.agents;
 	const generativeActionAgents = useMemo(
-		() => selectionToolbar?.agents
+		() => cardPickerAgents
 			? getMentionChildItems(
 					{
 						subagent: orderPickerItems(
-							selectionToolbar.agents,
-							selectionToolbar.defaultPinnedAgentIds,
-						).map(mapAgentToMentionItem),
+							cardPickerAgents,
+							cardGenerativeActionPinnedAgentIds ?? selectionToolbar?.defaultPinnedAgentIds,
+						).map((agent) => {
+							const item = mapAgentToMentionItem(agent);
+							return agent.avatarSrc ? {
+								...item,
+								visual: { kind: "avatar" as const, shape: "hexagon" as const, src: agent.avatarSrc },
+							} : item;
+						}),
 					},
 					"subagent",
 				)
 			: undefined,
-		[selectionToolbar?.agents, selectionToolbar?.defaultPinnedAgentIds],
+		[cardPickerAgents, cardGenerativeActionPinnedAgentIds, selectionToolbar?.defaultPinnedAgentIds],
 	);
 	const generativeActionSkills = useMemo(
 		() => selectionToolbar?.skills
@@ -559,7 +582,8 @@ function ExperimentalJiraKanbanView({
 	const handleColumnDragOver = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		event.dataTransfer.dropEffect = "move";
-		setColumnDropArmed(event.currentTarget, true);
+		// Expanded issue columns own ordered versus natural drop feedback.
+		if (!issueDragSource || event.currentTarget.dataset.collapsed === "true") setColumnDropArmed(event.currentTarget, true);
 	};
 
 	const handleColumnDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
@@ -652,6 +676,8 @@ function ExperimentalJiraKanbanView({
 	};
 
 	const handleCardDragEndInternal = () => {
+		// A settled bulk release replays this once its move commits.
+		if (issueDropArrival.deferDragEnd(handleCardDragEndInternal)) return;
 		issueCohortPreview.stop();
 		issueDragImageRef.current?.remove();
 		issueDragImageRef.current = null;
@@ -764,6 +790,7 @@ function ExperimentalJiraKanbanView({
 					onDragOverCapture={clearOtherColumnHighlights}
 					style={{
 						flex: 1,
+						marginInlineStart: `calc(-1 * var(${IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR}, 0px))`,
 						paddingTop: scrollportPaddingTop,
 						paddingBottom,
 						overflowX: "auto",
@@ -870,9 +897,9 @@ function ExperimentalJiraKanbanView({
 												key={card.code}
 												joinsPrevious={selectionBackdrop === "middle" || selectionBackdrop === "end"}
 												positionMotion={{
-													layout: shouldAnimateCardLayout ? "position" : false,
-													layoutId: shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined,
-													transition: shouldAnimateCardPosition ? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT,
+													layout: shouldAnimateCardLayout && !issueDropArrival.isReflowing ? "position" : false,
+													layoutId: shouldAnimateCardPosition && !issueDropArrival.isReflowing ? `jira-kanban-card-${card.code}` : undefined,
+													transition: issueDropArrival.isReflowing ? JIRA_KANBAN_CARD_REFLOW : shouldAnimateCardPosition ? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT,
 												}}
 												arrival={presentedCardArrival?.columnTitle === column.title
 													? presentedCardArrival
@@ -914,11 +941,13 @@ function ExperimentalJiraKanbanView({
 													detachedSessionDrag={detachedSessionDragBinding}
 												dragging={isCardBeingDragged || isSelectedCardBeingDragged}
 												generativeActionAgents={generativeActionAgents}
+												generativeActionPinnedAgentIds={cardGenerativeActionPinnedAgentIds}
 												generativeActionFooterActions={cardGenerativeActionFooterActions}
 												generativeActionPresentation={cardGenerativeActionPresentation}
 												generativeActionSkills={generativeActionSkills}
 												highlightedSessionId={highlightedSessionId}
 												iconScale={iconScale}
+												showPriorityIndicator={showPriorityIndicator}
 												onAgentActivityOpenChange={onCardAgentActivityOpenChange}
 												onAgentActivityViewChat={onCardAgentActivityViewChat}
 												onAssignedAgentIdsChange={onCardAssignedAgentIdsChange}
@@ -970,9 +999,10 @@ function ExperimentalJiraKanbanView({
 				</section>
 				</JiraSessionFlyoutSuspensionProvider>
 			</div>
-				{selectionToolbar && !(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1) ? (
+				{selectionToolbar && (!singleCardDrag || autoArrange.available) ? (
 					<JiraToolbar
 						primaryAction={onAutoArrange ? <BoardAutoArrangeAction key={autoArrange.key} ready={autoArrange.ready} available={autoArrange.available} onArrange={autoArrange.arrange} /> : undefined}
+						primaryActionOnly={singleCardDrag}
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
 						dismissOnEscape={selectionToolbar.dismissOnEscape}
@@ -998,6 +1028,7 @@ function ExperimentalJiraKanbanView({
 						statusOptions={boardColumns.flatMap((column) => column.statuses ?? [column.title])}
 					/>
 				) : null}
+			{inlineFlight ? <CreatedCardInlineFlight key={presentedCardArrival?.id} {...inlineFlight} /> : null}
 			<SessionFusionOverlay
 				members={boardSessionDrag.transaction?.cohort.members
 					?? boardSessionDrag.fusionDrop?.members

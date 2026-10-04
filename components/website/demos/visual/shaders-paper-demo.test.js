@@ -2,6 +2,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
+const { PAPER_TEXTURE_NUMBER_CONTROLS, LENS_DISTORTION_NUMBER_CONTROLS } = require("./shaders-paper-control-meta.ts");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 
@@ -28,6 +30,7 @@ const PAPER_SHADER_SLUGS = [
 	"paper-halftone-dots",
 	"paper-heatmap",
 	"paper-image-dithering",
+	"paper-lens-distortion",
 	"paper-liquid-metal",
 	"paper-mesh-gradient",
 	"paper-metaballs",
@@ -54,6 +57,7 @@ const IMAGE_BACKED_RUNTIME_SLUGS = [
 	"paper-halftone-dots",
 	"paper-heatmap",
 	"paper-image-dithering",
+	"paper-lens-distortion",
 	"paper-liquid-metal",
 	"paper-paper-texture",
 	"paper-water",
@@ -66,7 +70,7 @@ function getPaperShaderGroupBody() {
 }
 
 test("Shaders Paper dependency is declared", () => {
-	assert.match(PACKAGE_SOURCE, /"@paper-design\/shaders-react": "\^0\.0\.80"/u);
+	assert.equal(JSON.parse(PACKAGE_SOURCE).dependencies["@paper-design/shaders-react"], "^0.0.81");
 });
 
 test("Shaders Paper catalog wiring covers every shader route", () => {
@@ -146,8 +150,71 @@ test("Paper shader controls match the live site control surface", () => {
 	assert.match(DEMO_SOURCE, /getPaperShaderControlGroups\(slug, params\)/u);
 });
 
-test("Paper shader route count matches the package export surface", () => {
-	assert.equal(PAPER_SHADER_SLUGS.length, 29);
+test("Paper shader routes cover the published package presets", async () => {
+	const paper = await import("@paper-design/shaders-react");
+	const publishedSlugs = Object.keys(paper)
+		.filter((name) => name.endsWith("Presets"))
+		.map((name) => `paper-${name.replace(/Presets$/u, "").replace(/[A-Z]/gu, (letter) => `-${letter.toLowerCase()}`)}`);
+	assert.deepEqual([...PAPER_SHADER_SLUGS].sort(), publishedSlugs.sort());
 	assert.equal((DEMO_SOURCE.match(/\n\t\tcomponent: /gu) ?? []).length, PAPER_SHADER_SLUGS.length);
 	assert.equal((getPaperShaderGroupBody().match(/"paper-[a-z-]+"/gu) ?? []).length, PAPER_SHADER_SLUGS.length);
+});
+
+async function renderShaderDemo(slug) {
+	const paper = await import("@paper-design/shaders-react");
+	// Keep the published presets; replace only the GPU host so props are observable.
+	const shaderMock = Object.entries(paper).map(([name, value]) => name.endsWith("Presets")
+		? `export const ${name} = ${JSON.stringify(value)};`
+		: `export function ${name}(props) { return <output data-shader="${name}" data-props={JSON.stringify(props)} />; }`
+	).join("\n");
+	return renderComponent({
+		entry: "components/website/demos/visual/shaders-paper-demo.tsx",
+		props: { slug },
+		mocks: {
+			"@paper-design/shaders-react": shaderMock,
+			"motion/react": "export const useReducedMotion = () => true;",
+		},
+	});
+}
+
+function renderedShaderProps(view) {
+	return JSON.parse(view.container.querySelector("output[data-shader]").getAttribute("data-props"));
+}
+
+test("Paper Texture exposes the rebuilt controls, signed distortion, and standalone mode", async () => {
+	const view = await renderShaderDemo("paper-paper-texture");
+	const props = renderedShaderProps(view);
+	for (const key of ["colorPaper", "colorShadow", "blending", "clip", "angle", "roughnessSize", "roughnessRows", "foldSizeX", "foldSizeY", "foldOffsetX", "foldOffsetY", "wrinkles", "wrinkleSize", "crumpleCount"]) {
+		assert.ok(Object.hasOwn(props, key), `missing rebuilt prop ${key}`);
+		assert.ok(view.container.querySelector(`[id^="paper-paper-texture-${key}"]`) !== null, `missing control ${key}`);
+	}
+	for (const key of ["colorFront", "contrast", "fade", "foldCount", "crumpleSize"]) {
+		assert.equal(Object.hasOwn(props, key), false, `retired prop ${key}`);
+	}
+	assert.deepEqual(PAPER_TEXTURE_NUMBER_CONTROLS.distortion, { min: -1, max: 1, step: 0.01 });
+	assert.deepEqual(PAPER_TEXTURE_NUMBER_CONTROLS.crumpleCount, { min: 2, max: 15, step: 1 });
+	await view.fill(view.getByRole("textbox", { name: "Distortion" }), "-1");
+	assert.equal(renderedShaderProps(view).distortion, -1);
+	await view.click(view.getByRole("button", { name: "Clear" }));
+	assert.equal(renderedShaderProps(view).image, undefined);
+	await view.click(view.getByRole("button", { name: "Creased" }));
+	assert.equal(renderedShaderProps(view).distortion, -0.5);
+	assert.equal(renderedShaderProps(view).crumpleCount, 4);
+	assert.equal(renderedShaderProps(view).image, undefined);
+	assert.equal(renderedShaderProps(view).speed, 0);
+});
+
+test("Lens Distortion exposes normalized noise offset and the full layer count range", async () => {
+	const view = await renderShaderDemo("paper-lens-distortion");
+	assert.equal(view.container.querySelector("output").getAttribute("data-shader"), "LensDistortion");
+	assert.equal(renderedShaderProps(view).image, "/ambient/ado/combo/primary/blue.svg");
+	assert.deepEqual(LENS_DISTORTION_NUMBER_CONTROLS.count, { min: 2, max: 50, step: 1 });
+	await view.fill(view.getByRole("textbox", { name: "Count" }), "50");
+	assert.equal(renderedShaderProps(view).count, 50);
+	assert.deepEqual(LENS_DISTORTION_NUMBER_CONTROLS.noiseOffset, { min: 0, max: 1, step: 0.01 });
+	await view.fill(view.getByRole("textbox", { name: "Noise Offset" }), "0.01");
+	assert.equal(renderedShaderProps(view).noiseOffset, 0.01);
+	await view.fill(view.getByRole("textbox", { name: "Swirl" }), "-1");
+	assert.equal(renderedShaderProps(view).swirl, -1);
+	assert.equal(view.queryByRole("button", { name: "Clear" }) === null, true);
 });

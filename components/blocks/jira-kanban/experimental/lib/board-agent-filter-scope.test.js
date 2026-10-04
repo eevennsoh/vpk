@@ -3,6 +3,7 @@ const test = require("node:test");
 
 const {
 	cardMatchesAgentFilter,
+	countNeedsInputAgents,
 	filterAgentSessionsByAgentFilter,
 	filterJiraKanbanColumnsByAgentFilter,
 	resolveAgentFilterViewer,
@@ -311,4 +312,36 @@ test("the prototype viewer resolves from the Pulse roster id", () => {
 
 	assert.deepEqual(viewer, VENN_VIEWER);
 	assert.equal(resolveAgentFilterViewer([{ id: "maya", name: "Maya Ferreira" }]), null);
+});
+
+function waitingRowsShown(columns) {
+	return filterJiraKanbanColumnsByAgentFilter(columns, "needs-input")
+		.flatMap((column) => column.cards)
+		.flatMap((entry) => entry.agentActivities ?? [])
+		.filter((entry) => entry.state === "awaiting-input").length;
+}
+
+test("the Needs input count names exactly the waiting rows its focus shows", () => {
+	const twoWaitingOnOneCard = [{
+		title: "In review",
+		count: 2,
+		cards: [
+			card({
+				code: "PAY-112",
+				agentActivities: [
+					activity("blocked-agent", "awaiting-input"),
+					activity("second-blocked-agent", "awaiting-input"),
+					activity("working-agent", "working"),
+				],
+			}),
+			card({ code: "PAY-115", agentActivities: [activity("release-agent", "working")] }),
+		],
+	}];
+
+	for (const columns of [columnsFixture(), twoWaitingOnOneCard, []]) {
+		assert.equal(countNeedsInputAgents(columns), waitingRowsShown(columns));
+	}
+	assert.equal(countNeedsInputAgents(columnsFixture()), 1);
+	// Agents, not cards: one card with two waiting agents counts twice.
+	assert.equal(countNeedsInputAgents(twoWaitingOnOneCard), 2);
 });

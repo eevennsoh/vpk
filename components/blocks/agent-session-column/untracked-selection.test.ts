@@ -5,9 +5,7 @@ import type { ApproveTarget } from "../agent-session/agent-session-approve";
 import type { AgentSessionItem } from "../agent-session/agent-session-types";
 import type { UntrackedWorkTriage } from "../agent-session/untracked-work-triage";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { runBulkAction } from "./untracked-selection-actions.ts";
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { buildUntrackedHeaderModel, NO_SELECTION_MARKS, reduceSelectionMarks, resolveLeadSpotlight, resolveTriageApprove, resolveUntrackedSelectionGesture, resolveVisibleLeadId, selectEffectiveSelection } from "./untracked-selection.ts";
 
 function session(id: string, issueKey?: string): AgentSessionItem {

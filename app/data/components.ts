@@ -134,6 +134,7 @@ const PAPER_SHADER_COMPONENTS = [
 	["paper-halftone-dots", "Halftone Dots"],
 	["paper-heatmap", "Heatmap"],
 	["paper-image-dithering", "Image Dithering"],
+	["paper-lens-distortion", "Lens Distortion"],
 	["paper-liquid-metal", "Liquid Metal"],
 	["paper-mesh-gradient", "Mesh Gradient"],
 	["paper-metaballs", "Metaballs"],

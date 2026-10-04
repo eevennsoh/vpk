@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const JSX_PREVIEW_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/components/ui-custom/jsx-preview`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const JSX_PREVIEW_URL = appUrl("/components/ui-custom/jsx-preview");
 
 const RENDER_PHASE_WARNING =
 	"Cannot update a component (`JSXPreview`) while rendering a different component (`JsxParser`)";

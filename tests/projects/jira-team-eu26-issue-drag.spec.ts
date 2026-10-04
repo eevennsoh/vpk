@@ -1,11 +1,71 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { appUrl, resolveAppOrigin } from "@/tests/helpers/origin";
+
 test.setTimeout(60_000);
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
+const origin = resolveAppOrigin();
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
+
+test("EU26 column headers balance the row's top and bottom spacing", async ({ page }) => {
+	for (const width of [1800, 1024]) {
+		await page.setViewportSize({ width, height: 1100 });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await expect(issue(page, "PAY-118")).toBeVisible();
+		const headers = page.locator('[data-slot="board-column-header"]');
+		await expect(headers).toHaveCount(4);
+		const spacing = await headers.evaluateAll(nodes => nodes.map(header => {
+			const well = header.closest('[data-jira-kanban-column-content]')!;
+			const row = header.firstElementChild!;
+			const card = well.querySelector('[data-board-agent-session-drop-zone="issue"]')!;
+			return {
+				title: header.textContent,
+				top: row.getBoundingClientRect().top - well.getBoundingClientRect().top - parseFloat(getComputedStyle(well).borderTopWidth),
+				bottom: card.getBoundingClientRect().top - row.getBoundingClientRect().bottom,
+			};
+		}));
+		for (const { title, top, bottom } of spacing) {
+			expect(bottom, `${title} spacing at ${width}px`).toBeCloseTo(top, 1);
+		}
+	}
+});
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`EU26 toolbar and transition icons preserve theme parity (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await issue(page, "PAY-105").locator("[draggable]").first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		const toolbar = page.locator('[data-slot="jira-toolbar"]');
+		await expect(toolbar).toHaveCSS("background-color", "rgb(31, 31, 33)");
+		await toolbar.getByRole("button", { name: "More actions", exact: true }).click();
+		await expect(page.getByRole("menu").last()).toHaveCSS("background-color", "rgb(255, 255, 255)");
+		await page.keyboard.press("Escape");
+		await page.keyboard.press("Escape");
+		await startDrag(page, "PAY-118");
+		const header = column(page, "In review").locator('[data-slot="board-column-header"]');
+		await expect(header.locator('[data-board-column-transition-arrow] svg').first()).toBeVisible();
+		await expect(header).not.toContainText("→");
+		await expect(column(page, "In progress").locator('[data-issue-transition-arrow] svg').first()).toBeVisible();
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+	});
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`shared default column drop chrome respects reduced motion (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/preview/blocks/jira-kanban`);
+		const target = page.locator('[data-jira-kanban-column]').first();
+		await expect(target).toBeVisible();
+		if (reducedMotion === "reduce") {
+			await expect(target).toHaveCSS("transition-property", "none");
+		} else {
+			await expect(target).not.toHaveCSS("transition-property", "none");
+		}
+	});
+}
 
 for (const route of ["/jira-team-eu26", "/preview/blocks/jira-dragging"]) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
@@ -48,6 +108,8 @@ for (const route of ["/jira-team-eu26", "/preview/blocks/jira-dragging"]) {
 			await click(middle.codes[0]);
 			await expect.poll(selected).toEqual([left.codes[0], middle.codes[0]]);
 			await click(left.codes[0]);
+			await expect.poll(selected).toEqual([left.codes[0], middle.codes[0]]);
+			await click(middle.codes[0], ["ControlOrMeta"]);
 			await expect.poll(selected).toEqual([left.codes[0]]);
 			await page.getByRole("button", { name: "Select all", exact: true }).click();
 			await expect.poll(selected).toEqual(left.codes);
@@ -96,6 +158,79 @@ test("EU26 plain click does not select; Shift click selects a range", async ({ p
 	await expect(control("PAY-105")).toHaveAttribute("aria-pressed", "false");
 });
 
+for (const input of ["selection controls", "modifier clicks"] as const) {
+	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		test(`EU26 Shift adds to disjoint selections from ${input} (${reducedMotion})`, async ({ page }) => {
+			await page.emulateMedia({ reducedMotion });
+			await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
+			await page.goto(`${origin}/jira-team-eu26`);
+			const card = (code: string) => issue(page, code).locator("[draggable]").first();
+			const control = (code: string) => issue(page, code).locator("[data-jira-issue-activation-control]");
+			const selected = () => page.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes
+				.filter((node) => node.querySelector('[data-jira-issue-activation-control][aria-pressed="true"]'))
+				.map((node) => node.getAttribute("data-issue-key")));
+			for (const code of ["PAY-105", "PAY-130"]) {
+				if (input === "selection controls") {
+					await issue(page, code).hover();
+					if (code === "PAY-105") {
+						await page.getByRole("button", { name: "More actions for PAY-105", exact: true }).click();
+						await page.getByRole("menuitem", { name: "Select", exact: true }).click();
+					} else {
+						await issue(page, code).locator("[data-jira-issue-selection-control]").click();
+					}
+				} else {
+					await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["ControlOrMeta"] });
+				}
+			}
+			await expect.poll(selected).toEqual(["PAY-105", "PAY-130"]);
+			await card("PAY-123").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+			await expect.poll(selected).toEqual(["PAY-105", "PAY-123", "PAY-130"]);
+			await expect(control("PAY-123")).toBeFocused();
+			await expect(page.getByRole("region", { name: "3 cards selected. Bulk actions available." })).toBeVisible();
+			await card("PAY-130").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+			await expect.poll(selected).toEqual(["PAY-105", "PAY-123", "PAY-130"]);
+			await page.screenshot({ path: `output/agent-browser/jira-additive-selection/eu26-${input.replaceAll(" ", "-")}-${reducedMotion}.png` });
+			await issue(page, "PAY-105").hover();
+			await issue(page, "PAY-105").locator("[data-jira-issue-selection-control]").click();
+			await expect.poll(selected).toEqual(["PAY-123", "PAY-130"]);
+			await page.keyboard.press("Escape");
+			await expect.poll(selected).toEqual([]);
+		});
+	}
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`EU26 keyboard ranges shrink while keeping independent selections (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
+		await page.goto(`${origin}/jira-team-eu26`);
+		const card = (code: string) => issue(page, code).locator("[draggable]").first();
+		const selected = () => page.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes
+			.filter((node) => node.querySelector('[data-jira-issue-activation-control][aria-pressed="true"]'))
+			.map((node) => node.getAttribute("data-issue-key")));
+		await card("PAY-105").click({ position: { x: 70, y: 30 }, modifiers: ["ControlOrMeta"] });
+		await page.keyboard.press("Shift+ArrowDown");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107"]);
+		await page.keyboard.press("Shift+ArrowUp");
+		await expect.poll(selected).toEqual(["PAY-105"]);
+		await expect(issue(page, "PAY-105").locator("[data-jira-issue-activation-control]")).toBeFocused();
+		await card("PAY-130").click({ position: { x: 70, y: 30 }, modifiers: ["ControlOrMeta"] });
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-130"]);
+		await page.keyboard.press("Shift+ArrowUp");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-123", "PAY-130"]);
+		await page.keyboard.press("Shift+ArrowUp");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-107", "PAY-123", "PAY-130"]);
+		await page.keyboard.press("Shift+ArrowDown");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-123", "PAY-130"]);
+		await page.keyboard.press("Shift+ArrowDown");
+		await expect.poll(selected).toEqual(["PAY-105", "PAY-130"]);
+		await expect(issue(page, "PAY-130").locator("[data-jira-issue-activation-control]")).toBeFocused();
+		await page.screenshot({ path: `output/agent-browser/jira-additive-selection/eu26-keyboard-shrunk-${reducedMotion}.png` });
+		await page.keyboard.press("Escape");
+		await expect.poll(selected).toEqual([]);
+	});
+}
+
 test("EU26 menu Select is keyboard accessible and restores card focus", async ({ page }) => {
 	await page.goto(`${origin}/jira-team-eu26`);
 	await issue(page, "PAY-105").hover();
@@ -105,7 +240,8 @@ test("EU26 menu Select is keyboard accessible and restores card focus", async ({
 		await expect(menu.getByRole("menuitem", { name: action, exact: true })).toBeEnabled();
 	}
 	const select = menu.getByRole("menuitem", { name: "Select", exact: true });
-	await expect(select).toHaveAttribute("aria-description", "Shift plus click");
+	await expect(select.locator('[data-slot="kbd"]')).toHaveText(["⌘", "Click"]);
+	await expect(select).toHaveAttribute("aria-description", "Command plus click");
 	await page.screenshot({ path: "output/agent-browser/dnd/eu26-card-menu.png" });
 	await select.focus();
 	await page.keyboard.press("Enter");
@@ -142,6 +278,222 @@ async function startDrag(page: Page, code: string) {
 	await page.mouse.down();
 	await page.mouse.move(box.x + 90, box.y + 40, { steps: 5 });
 	await expect(card).toHaveAttribute("data-dragging", "true");
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`only the self-loop header shows a dashed outline and blue hover highlight (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await startDrag(page, "PAY-118");
+		const header = column(page, "To do").locator('[data-slot="board-column-header"]');
+		const feedback = header.locator('[data-board-column-title-drop-feedback]');
+		await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(1);
+		await expect(feedback).toBeVisible();
+		await expect(feedback).toHaveCSS("border-style", "dashed");
+		await expect(feedback).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+		for (const title of ["In review", "Done"]) {
+			await expect(column(page, title).locator('[data-board-column-title-drop-feedback]')).toHaveCount(0);
+		}
+		if (reducedMotion === "reduce") {
+			const duration = await feedback.evaluate((node) => Number.parseFloat(getComputedStyle(node).transitionDuration));
+			expect(duration).toBeLessThan(0.001);
+		}
+
+		const box = await header.boundingBox();
+		if (!box) throw new Error("Missing self-loop header");
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
+		await expect(feedback).toHaveCSS("border-style", "dashed");
+		await expect(feedback).toHaveClass(/\bborder-border-selected\b/);
+		await expect(feedback).toHaveClass(/\bbg-bg-selected\b/);
+		await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(1);
+		await page.screenshot({ path: `output/agent-browser/dnd/self-loop-header-${reducedMotion}.png` });
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(0);
+	});
+
+	test(`a whole-column target clears another column's insertion even without dragleave (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26-end`);
+		const source = issue(page, "TEU-8").locator("[draggable]").first();
+		await expect(source).toBeVisible();
+		for (const code of ["TEU-1", "TEU-13"]) {
+			await issue(page, code).locator("[data-jira-issue-activation-control]").evaluate((node) => {
+				node.dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
+			});
+		}
+		await expect(page.locator('[data-jira-issue-activation-control][aria-pressed="true"]')).toHaveCount(13);
+		await source.evaluate((node) => {
+			const bounds = node.getBoundingClientRect();
+			node.dispatchEvent(new DragEvent("dragstart", { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: bounds.x + 70, clientY: bounds.y + 30 }));
+		});
+		const previous = column(page, "Confidence");
+		await previous.locator("[data-issue-drop-hit-area]").evaluate((node) => {
+			const card = node.parentElement!.querySelector('[data-issue-key="TEU-8"]')!;
+			const bounds = card.getBoundingClientRect();
+			node.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: bounds.x + 100, clientY: bounds.y + 20 }));
+		});
+		await expect(previous.locator("[data-issue-drop-before] [data-insertion-line]")).toBeVisible();
+		const destination = column(page, "Done");
+		// A changing drag surface can miss dragleave; the new target must still own all feedback.
+		await destination.locator("[data-issue-drop-hit-area]").evaluate((node) => {
+			const bounds = node.getBoundingClientRect();
+			for (const type of ["dragenter", "dragover"]) {
+				node.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: bounds.x + 100, clientY: bounds.y + 80 }));
+			}
+		});
+		await expect(destination.locator("[data-jira-kanban-column-drop-ring]")).toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		await expect(page.locator("[data-issue-drop-before]")).toHaveCount(0);
+		await page.screenshot({ path: `output/agent-browser/dnd/exclusive-column-target-${reducedMotion}.png` });
+		await previous.locator("[data-issue-drop-hit-area]").evaluate((node) => {
+			const bounds = node.parentElement!.querySelector('[data-issue-key="TEU-8"]')!.getBoundingClientRect();
+			node.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: bounds.x + 100, clientY: bounds.y + 20 }));
+		});
+		await expect(previous.locator("[data-issue-drop-before] [data-insertion-line]")).toBeVisible();
+		await expect(destination.locator("[data-jira-kanban-column-drop-ring]")).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		await source.dispatchEvent("dragend");
+		await expect(page.locator("[data-issue-drop-entered]")).toHaveCount(0);
+	});
+
+	for (const surface of ["unused space", "header"] as const) {
+		test(`column ${surface} accepts a natural-order issue drop (${reducedMotion})`, async ({ page }) => {
+			await page.emulateMedia({ reducedMotion });
+			await page.setViewportSize({ width: 1800, height: surface === "header" ? 800 : 1100 });
+			await page.goto(`${origin}/jira-team-eu26`);
+			await expect(issue(page, "PAY-118")).toBeVisible();
+			const destination = column(page, surface === "header" ? "In review" : "To do");
+			const codes = () => destination.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-issue-key")));
+			const before = await codes();
+			await startDrag(page, "PAY-105");
+			const box = await destination.boundingBox();
+			const header = destination.locator('[data-slot="board-column-header"]');
+			const headerBox = await header.boundingBox();
+			const content = await destination.locator('[data-jira-kanban-column-content]').boundingBox();
+			if (!box || !headerBox || !content) throw new Error("Missing column geometry");
+			const feedback = header.locator('[data-board-column-title-drop-feedback]');
+			if (surface === "header") {
+				await expect(feedback).toHaveCount(0);
+			}
+			const x = box.x + box.width / 2;
+			const y = surface === "header" ? headerBox.y + headerBox.height / 2 : Math.min(box.y + box.height - 50, content.y + content.height + 60);
+			if (surface === "unused space") expect(y).toBeGreaterThan(content.y + content.height);
+			await page.mouse.move(x, y, { steps: 5 });
+			await page.mouse.move(x, y);
+			const ring = destination.locator('[data-jira-kanban-column-drop-ring]');
+			await expect(ring).toHaveClass(/\b(?:border|outline)-border-selected\b/);
+			const ringBox = (await ring.boundingBox())!;
+			expect(ringBox.y + ringBox.height).toBeLessThanOrEqual(content.y + content.height + 4);
+			await expect(destination.locator('[data-issue-drop-before]')).toHaveCount(0);
+			if (surface === "header") {
+				await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
+				await expect(feedback).toBeVisible();
+				await expect(feedback).not.toHaveCSS("border-style", "dashed");
+				await expect(feedback).toHaveClass(/\bbg-bg-neutral-subtle-hovered\b/);
+				await expect(feedback).not.toHaveClass(/(?:^|\s)bg-bg-selected(?:\s|$)/);
+				const feedbackBox = (await feedback.boundingBox())!;
+				const createBox = (await destination.locator('[data-board-column-create-action] button').boundingBox())!;
+				expect(feedbackBox.x).toBeCloseTo(createBox.x);
+				expect(feedbackBox.x + feedbackBox.width).toBeCloseTo(createBox.x + createBox.width);
+				const inset = createBox.x - headerBox.x;
+				expect(feedbackBox.y - headerBox.y).toBeCloseTo(inset);
+				// The balanced header pads 8px above its title row and 4px below, so the pill
+				// centres on the row: the same inset separates it from the first card.
+				const firstCard = (await destination.locator('[data-board-agent-session-drop-zone="issue"]').first().boundingBox())!;
+				expect(firstCard.y - feedbackBox.y - feedbackBox.height).toBeCloseTo(inset);
+				expect(feedbackBox.height).toBeGreaterThanOrEqual(32);
+				await expect.poll(async () => {
+					const labelBox = (await header.locator('[data-board-column-header-copy-layer="label"]').first().boundingBox())!;
+					return labelBox.y + labelBox.height / 2 - feedbackBox.y - feedbackBox.height / 2;
+				}).toBeCloseTo(0, 1);
+				await expect(header).not.toHaveClass(/\bbg-bg-selected\b/);
+			}
+			await page.screenshot({ path: `output/agent-browser/dnd/column-${surface.replaceAll(" ", "-")}-${reducedMotion}.png` });
+			await page.mouse.up();
+			await expect.poll(codes).toEqual(["PAY-105", ...before]);
+			await expect(ring).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+			await expect(header).not.toHaveAttribute("data-issue-drop-hovered");
+		});
+	}
+
+	test(`empty column drop border hugs its visible container (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await expect(issue(page, "PAY-112").getByRole("button", { name: "Codex: Needs input", exact: true })).toBeVisible({ timeout: 55_000 });
+		await page.getByRole("button", { name: /^Needs input:/ }).click();
+		const destination = column(page, "To do");
+		await page.getByRole("button", { name: "Expand To do column", exact: true }).focus();
+		await page.keyboard.press("Enter");
+		await expect(destination.locator('[data-jira-kanban-column-content]')).toBeVisible();
+		await expect(destination.locator('[data-issue-key]')).toHaveCount(0);
+		await startDrag(page, "PAY-112");
+		const shellBox = (await destination.boundingBox())!;
+		const content = (await destination.locator('[data-jira-kanban-column-content]').boundingBox())!;
+		const x = shellBox.x + shellBox.width / 2;
+		const y = content.y + content.height + 80;
+		await page.mouse.move(x, y, { steps: 5 });
+		await page.mouse.move(x, y);
+		const ring = destination.locator('[data-jira-kanban-column-drop-ring]');
+		await expect(ring).toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		expect((await ring.boundingBox())!.height).toBeLessThanOrEqual(content.height + 4);
+		await expect(destination.locator('[data-issue-drop-before]')).toHaveCount(0);
+		await page.screenshot({ path: `output/agent-browser/dnd/empty-column-container-${reducedMotion}.png` });
+		await page.mouse.up();
+		await expect(issue(page, "PAY-112")).toHaveAttribute("data-board-column-title", "To do");
+		await expect(ring).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+	});
+
+	test(`precise issue placement switches to column feedback outside the stack (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await startDrag(page, "PAY-105");
+		const destination = column(page, "To do");
+		const anchor = (await issue(page, "PAY-125").boundingBox())!;
+		await page.mouse.move(anchor.x + 100, anchor.y + 20, { steps: 5 });
+		await page.mouse.move(anchor.x + 100, anchor.y + 20);
+		await expect(destination.locator('[data-issue-drop-before="PAY-125"] [data-insertion-line]')).toBeVisible();
+		const ring = destination.locator('[data-jira-kanban-column-drop-ring]');
+		await expect(ring).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		const header = (await destination.locator('[data-slot="board-column-header"]').boundingBox())!;
+		await page.mouse.move(header.x + 100, header.y + 10, { steps: 3 });
+		await page.mouse.move(header.x + 100, header.y + 10);
+		await expect(ring).toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		await expect(destination.locator('[data-issue-drop-before]')).toHaveCount(0);
+		await page.mouse.move(anchor.x + 100, anchor.y + 20, { steps: 3 });
+		await page.mouse.move(anchor.x + 100, anchor.y + 20);
+		await expect(destination.locator('[data-issue-drop-before="PAY-125"] [data-insertion-line]')).toBeVisible();
+		await expect(ring).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
+		await page.mouse.up();
+		await expect.poll(() => destination.locator('[data-board-agent-session-drop-zone="issue"]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-issue-key")))).toEqual(["PAY-118", "PAY-124", "PAY-105", "PAY-125", "PAY-127"]);
+	});
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`EU26 single-card drag toolbar appears on pickup and restores selection after cancel (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		await page.getByRole("menuitemcheckbox", { name: "Auto arrange", exact: true }).click();
+		await page.keyboard.press("Escape");
+		const toolbar = page.getByRole("region", { name: "Move card. Auto arrange available.", exact: true });
+		await startDrag(page, "PAY-118");
+		await expect(toolbar).toBeVisible();
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect(page.locator('[data-slot="jira-toolbar-positioner"]')).toHaveCount(0);
+		await expect(issue(page, "PAY-118")).toHaveAttribute("data-board-column-title", "To do");
+		await issue(page, "PAY-118").locator("[draggable]").first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+		const selection = page.getByRole("region", { name: "1 card selected. Bulk actions available.", exact: true });
+		await expect(selection).toBeVisible();
+		await startDrag(page, "PAY-118");
+		await expect(toolbar).toBeVisible();
+		await expect(toolbar.getByRole("button", { name: "Select all", exact: true })).toHaveCount(0);
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect(selection).toBeVisible();
+		await expect(selection.getByRole("button", { name: "Select all", exact: true })).toBeVisible();
+	});
 }
 
 async function enterStatus(page: Page, status: string) {
@@ -198,7 +550,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Default empty In progress keeps both status targets usable (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: 1440, height: 800 });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
 		await page.keyboard.press("Escape");
@@ -246,7 +598,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`collapsed drop border hugs the visible cell (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: 1440, height: 800 });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await column(page, "To do").hover({ position: { x: 20, y: 15 } });
 		await page.getByRole("button", { name: "Collapse To do column", exact: true }).click();
 		const collapsed = column(page, "To do");
@@ -273,7 +625,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`collapsed In progress accepts an issue drop (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await column(page, "In progress").hover({ position: { x: 20, y: 15 } });
 		await page.getByRole("button", { name: "Collapse In progress column", exact: true }).click();
 		const progress = column(page, "In progress");
@@ -297,18 +649,19 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`issue-only preview and two-stage status drop (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		await expect(issue(page, "PAY-105")).toBeVisible();
 		const sourceHeight = await issue(page, "PAY-105").evaluate((node) => node.getBoundingClientRect().height);
+		const sourceCard = (await issue(page, "PAY-105").locator('[data-slot="jira-issue-card"]').boundingBox())!;
 		await startDrag(page, "PAY-105");
 		const traveller = page.locator("[data-issue-cohort-preview]");
 		await expect(traveller).toHaveAttribute("data-issue-cohort-count", "1");
 		await expect(traveller.locator('[data-slot="jira-issue-agent-backdrop"]')).toHaveCount(0);
 		await expect(traveller).not.toContainText(/Working|Needs input/);
 		const previewFace = (await traveller.boundingBox())!;
-		const sourceFace = (await issue(page, "PAY-105").locator('[data-slot="jira-issue-surface"]').boundingBox())!;
-		expect(previewFace.width).toBe(sourceFace.width);
-		expect(previewFace.height).toBe(sourceFace.height);
+		expect(previewFace.width).toBe(sourceCard.width);
+		expect(previewFace.height).toBe(sourceCard.height);
+		await expect(traveller.locator('[data-jira-issue-selection-control], [aria-label^="More actions for "]')).toHaveCount(0);
 		await expect.poll(() => issue(page, "PAY-105").evaluate((node) => node.getBoundingClientRect().height)).toBe(sourceHeight);
 		await expect(traveller).toHaveAttribute("aria-hidden", "true");
 		await expect(traveller).toHaveAttribute("inert", "");
@@ -334,13 +687,36 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(inProgress.locator("[data-jira-kanban-column-drop-ring]")).not.toHaveClass(/\b(?:border|outline)-border-selected\b/);
 		await page.screenshot({ timeout: 5_000, path: `output/agent-browser/dnd/choices-${reducedMotion}.png` });
 		await enterStatus(page, "Paused");
-		await expect(column(page, "In progress")).toContainText("To do → Paused");
+		await expect(column(page, "In progress").locator('[data-board-column-transition-prefix]').first()).toHaveText("To do");
+		await expect(column(page, "In progress").locator('[data-board-column-destination-copy-layer="label"]').first()).toHaveText("Paused");
 		const next = await issue(page, "PAY-107").boundingBox();
 		if (!next) throw new Error("Missing insertion anchor");
 		await page.mouse.move(next.x + 100, next.y + 20, { steps: 5 });
 		// Chromium may emit dragenter on the final step; another move emits dragover.
 		await page.mouse.move(next.x + 100, next.y + 20);
-		await expect(page.locator('[data-issue-drop-before="PAY-107"] [data-insertion-line]')).toBeVisible();
+		const insertionLine = page.locator('[data-issue-drop-before="PAY-107"] [data-insertion-line]');
+		await expect(insertionLine).toBeVisible();
+		await expect(insertionLine.locator("span")).toBeVisible();
+		const { lineBounds, dotBounds } = await insertionLine.evaluate((node) => ({
+			lineBounds: node.getBoundingClientRect().toJSON(),
+			dotBounds: node.querySelector("span")!.getBoundingClientRect().toJSON(),
+		}));
+		expect(dotBounds.width).toBe(8);
+		expect(dotBounds.height).toBe(8);
+		expect(dotBounds.x + dotBounds.width / 2).toBe(lineBounds.x);
+		expect(dotBounds.y + dotBounds.height / 2).toBe(lineBounds.y + lineBounds.height / 2);
+		await expect(insertionLine).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+		await expect(insertionLine.locator("span")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+		const rule = await insertionLine.evaluate((node) => {
+			const style = getComputedStyle(node, "::before");
+			return { left: parseFloat(style.left), color: style.backgroundColor };
+		});
+		expect(rule.left).toBe(dotBounds.width / 2);
+		expect(rule.color).toBe(await insertionLine.locator("span").evaluate((node) => getComputedStyle(node).borderLeftColor));
+		await expect(insertionLine).toHaveCSS("pointer-events", "none");
+		await expect(insertionLine).toHaveAttribute("aria-hidden", "true");
+		expect(await insertionLine.evaluate((node) => parseFloat(getComputedStyle(node).borderTopRightRadius))).toBeGreaterThan(0);
+		expect(await insertionLine.locator("span").evaluate((node) => parseFloat(getComputedStyle(node).borderTopLeftRadius))).toBeGreaterThanOrEqual(4);
 		await page.screenshot({ timeout: 5_000, path: `output/agent-browser/dnd/entered-${reducedMotion}.png` });
 		await page.mouse.up();
 		await expect(issue(page, "PAY-118")).toHaveAttribute("data-board-column-title", "In progress");
@@ -352,7 +728,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("leaving a chosen zone resets it; a second drag can choose another status", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
+	await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 	await startDrag(page, "PAY-118");
 	await enterStatus(page, "Paused");
 	const todo = await column(page, "To do").boundingBox();
@@ -372,7 +748,7 @@ test("leaving a chosen zone resets it; a second drag can choose another status",
 
 test("a running issue reorders in its column and scrolls to the last slot", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 800 });
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
+	await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 	await startDrag(page, "PAY-105");
 	const list = column(page, "In progress").locator("[data-jira-kanban-card-list]");
 	const bounds = await list.boundingBox();
@@ -390,7 +766,7 @@ test("a running issue reorders in its column and scrolls to the last slot", asyn
 });
 
 test("Default grouped statuses reject header drops and use 2px split-zone strokes", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/preview/projects/jira-team-eu26`);
+	await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await page.getByRole("menuitemcheckbox", { name: "Move visual", exact: true }).click();
 	await page.keyboard.press("Escape");
@@ -432,7 +808,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`EU26 matches Jira Dragging fused selection and cohort preview (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.setViewportSize({ width: reducedMotion === "reduce" ? 1440 : 1800, height: 1100 });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/projects/jira-team-eu26`);
+		await page.goto(appUrl("/preview/projects/jira-team-eu26"));
 		const card = (code: string) => issue(page, code).locator('[draggable]').first();
 		const backdrop = (code: string) => issue(page, code).locator('[data-slot="jira-issue-agent-backdrop"]');
 		for (const code of ["PAY-118", "PAY-124"]) await expect(backdrop(code)).toHaveCSS("opacity", "0");
@@ -454,7 +830,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.mouse.move(1000, 150);
 		await page.screenshot({ path: `output/agent-browser/dnd/eu26-fused-selection-${reducedMotion}.png` });
 
-		// The same keyboard range grows and shrinks from its fixed anchor.
+		// Keyboard ranges grow and shrink while retaining the initial selection.
 		await issue(page, "PAY-107").locator('[data-jira-issue-activation-control]').focus();
 		await page.keyboard.press("Shift+ArrowDown");
 		await expect(backdrop("PAY-123")).toHaveClass(/bg-bg-selected/);

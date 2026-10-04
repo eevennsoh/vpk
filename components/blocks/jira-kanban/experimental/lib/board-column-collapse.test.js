@@ -128,7 +128,11 @@ test("the first collapsed column restores the simple chrome content inset", () =
 	);
 	assert.match(
 		BOARD_SOURCE,
-		/const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\);/u,
+		/const resolvedColumnRowPaddingInlineStart = `calc\(\$\{resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\)\} \+ var\(\$\{IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR\}, 0px\)\)`;/u,
+	);
+	assert.match(
+		BOARD_SOURCE,
+		/marginInlineStart: `calc\(-1 \* var\(\$\{IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR\}, 0px\)\)`/u,
 	);
 });
 

@@ -1,8 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const JIRA_GOLDEN_JOURNEYS_V4_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/preview/projects/jira-golden-journeys-v4?embedded=1";
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_GOLDEN_JOURNEYS_V4_URL = appUrl("/preview/projects/jira-golden-journeys-v4?embedded=1");
 
 function getIssueDropZone(page: Page, issueKey: string): Locator {
 	return page.locator(

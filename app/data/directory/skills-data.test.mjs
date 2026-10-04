@@ -30,9 +30,14 @@ test("every skill carries a standard, round-tripping SKILL.md", () => {
 		assert.equal(typeof description, "string", `${skill.id}: description is a string`);
 		assert.ok(description.trim().length > 0, `${skill.id}: description non-empty`);
 
-		// allowed-tools = the referenced apps (non-empty list).
+		// allowed-tools = the referenced apps (non-empty list). create-skill is the built-in authoring
+		// flow (created-skills-store.ts): it only uses internal Editor/Knowledge tools, so it lists none.
 		const allowed = field(frontmatter, "allowed-tools");
-		assert.ok(Array.isArray(allowed) && allowed.length > 0, `${skill.id}: allowed-tools is a non-empty list`);
+		if (skill.id === "create-skill") {
+			assert.equal(allowed, undefined, "create-skill references no external apps");
+		} else {
+			assert.ok(Array.isArray(allowed) && allowed.length > 0, `${skill.id}: allowed-tools is a non-empty list`);
+		}
 
 		// Optional but generated keys.
 		assert.ok(LICENSES.has(field(frontmatter, "license")), `${skill.id}: valid license`);

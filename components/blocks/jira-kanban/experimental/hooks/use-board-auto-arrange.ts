@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLatestRef } from "@/lib/use-latest-ref";
-import type { JiraKanbanColumnData } from "../../index";
+import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 import { getAutoArrangePlan } from "../lib/board-auto-arrange";
 
 const EMPTY_CODES = new Set<string>();
@@ -43,10 +43,10 @@ export function useBoardAutoArrange({ columns, selected, dragged, onArrange, bef
 	useEffect(() => {
 		if (!ready || !onArrange) return;
 		const keydown = (event: KeyboardEvent) => {
-			if (event.key !== "Enter" || !(event.metaKey || event.ctrlKey) || event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.shiftKey) return;
+			if (event.key.toLowerCase() !== "a" || event.metaKey || event.ctrlKey || event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.shiftKey) return;
 			if (!(event.target instanceof Element) || event.target.closest("[data-jira-auto-arrange-scope]")?.getAttribute("data-jira-auto-arrange-scope") !== scopeId) return;
-			if (event.target.closest('a, input, textarea, select, [contenteditable="true"], [role="menuitem"], [role="combobox"], [role="dialog"]')) return;
-			// The explicit chord also works while Select all retains toolbar focus.
+			if (event.target.closest('a, input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="menu"], [role="menuitem"], [role="listbox"], [role="combobox"], [role="dialog"]')) return;
+			// The board shortcut also works while Select all retains toolbar focus.
 			const cardControl = event.target.closest('[data-jira-issue-activation-control], [data-jira-issue-selection-control]');
 			const toolbarControl = event.target.closest('[data-slot="jira-toolbar"]');
 			if (!cardControl && !toolbarControl && event.target.closest('button, [role="button"]')) return;

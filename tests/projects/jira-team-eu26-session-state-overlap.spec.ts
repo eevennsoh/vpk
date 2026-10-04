@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test("a status change followed by synced sessions keeps expanded rows apart", async ({ page }) => {
 	test.setTimeout(75_000);
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`, {
+	await page.goto(appUrl("/jira-team-eu26"), {
 		waitUntil: "networkidle",
 	});
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();

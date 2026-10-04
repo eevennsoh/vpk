@@ -291,8 +291,7 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 	return (
 		<div className="relative z-10 inline-flex items-center justify-center overflow-visible">
 			{/* Animated pulse rings */}
-			{isListening &&
-				[0, 1, 2].map((index) => (
+			{isListening ? [0, 1, 2].map((index) => (
 					<div
 						className={cn("pointer-events-none absolute animate-pulse rounded-full border-2 border-destructive/30", index === 0 ? "inset-0" : index === 1 ? "-inset-px" : "-inset-1")}
 						key={index}
@@ -301,7 +300,7 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 							animationDuration: "1.4s",
 						}}
 					/>
-				))}
+				)) : null}
 
 			{/* Main record button */}
 			<Button
@@ -317,9 +316,9 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 				variant={resolvedVariant}
 				type="button"
 			>
-				{isProcessing && <Spinner />}
-				{!isProcessing && isListening && <VideoStopIcon label="" size={resolvedIconSize} />}
-				{!(isProcessing || isListening) && <MicrophoneIcon label="" size={resolvedIconSize} />}
+				{isProcessing ? <Spinner /> : null}
+				{!isProcessing && isListening ? <VideoStopIcon label="" size={resolvedIconSize} /> : null}
+				{!(isProcessing || isListening) ? <MicrophoneIcon label="" size={resolvedIconSize} /> : null}
 			</Button>
 		</div>
 	);

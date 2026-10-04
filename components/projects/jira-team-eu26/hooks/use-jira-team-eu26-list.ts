@@ -7,7 +7,7 @@ import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import { mergeJiraKanbanAgentCatalog } from "@/components/blocks/jira-kanban/lib/agent-catalog";
 import { linkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import { moveJiraKanbanCardsToStatus } from "@/components/blocks/jira-kanban/card-drop";
-import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import type { JiraKanbanAgentData, JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import type {
 	JiraListAssignedAgent,
 	JiraListDraftWorkItem,
@@ -39,10 +39,6 @@ import {
 
 const ignoreIssueClick = () => undefined;
 
-const JIRA_TEAM_EU26_AGENT_CATALOG = mergeJiraKanbanAgentCatalog(
-	JIRA_TEAM_EU26_PAY_BOARD_AGENTS,
-);
-
 interface ListDraftWorkItem {
 	anchorIssueKey: string | null;
 	assignee?: JiraListPerson;
@@ -50,6 +46,24 @@ interface ListDraftWorkItem {
 	insertAtIndex: number | null;
 	issueType: JiraListIssueType;
 	summary: string;
+}
+
+type ContentMode = "default" | "wac";
+
+function useContentModeState<T>(contentMode: ContentMode, createInitial: () => T) {
+	const [values, setValues] = useState<Record<ContentMode, T>>(() => ({
+		default: createInitial(),
+		wac: createInitial(),
+	}));
+	const setValue = useCallback((update: SetStateAction<T>) => {
+		setValues((current) => ({
+			...current,
+			[contentMode]: typeof update === "function"
+				? (update as (value: T) => T)(current[contentMode])
+				: update,
+		}));
+	}, [contentMode]);
+	return [values[contentMode], setValue] as const;
 }
 
 export interface CreateFromAgentSessionInput {
@@ -78,21 +92,28 @@ export interface UseJiraTeamEu26ListResult {
 }
 
 export function useJiraTeamEu26List({
+	agents = JIRA_TEAM_EU26_PAY_BOARD_AGENTS,
 	boardColumns,
+	contentMode = "default",
+	listAriaLabel = "Payments SDK v2 migration work items list",
 	onAssignedAgentSelect,
 	setBoardColumns,
 }: Readonly<{
+	agents?: readonly JiraKanbanAgentData[];
 	boardColumns: readonly JiraKanbanColumnData[];
+	contentMode?: ContentMode;
+	listAriaLabel?: string;
 	onAssignedAgentSelect?: (issueKey: string, agent: JiraListAssignedAgent) => void;
 	setBoardColumns: Dispatch<SetStateAction<JiraKanbanColumnData[]>>;
 }>): UseJiraTeamEu26ListResult {
-	const [listOrder, setListOrder] = useState<readonly string[]>([]);
-	const [selectedIssueKeys, setSelectedIssueKeys] = useState<Set<string>>(() => new Set());
-	const [copiedIssueKey, setCopiedIssueKey] = useState<string | null>(null);
-	const [draftWorkItem, setDraftWorkItem] = useState<ListDraftWorkItem | null>(null);
+	const JIRA_TEAM_EU26_AGENT_CATALOG = useMemo(() => mergeJiraKanbanAgentCatalog(agents), [agents]);
+	const [listOrder, setListOrder] = useContentModeState<readonly string[]>(contentMode, () => []);
+	const [selectedIssueKeys, setSelectedIssueKeys] = useContentModeState(contentMode, () => new Set<string>());
+	const [copiedIssueKey, setCopiedIssueKey] = useContentModeState<string | null>(contentMode, () => null);
+	const [draftWorkItem, setDraftWorkItem] = useContentModeState<ListDraftWorkItem | null>(contentMode, () => null);
 	const rowIndex = useMemo(
 		() => createListRowIndex(boardColumns, JIRA_TEAM_EU26_AGENT_CATALOG),
-		[boardColumns],
+		[boardColumns, JIRA_TEAM_EU26_AGENT_CATALOG],
 	);
 	const nextIssueKey = useMemo(() => getNextPayIssueKey(boardColumns), [boardColumns]);
 	const visibleKeysRef = useRef<readonly string[]>([]);
@@ -120,11 +141,11 @@ export function useJiraTeamEu26List({
 		}, 1800);
 
 		return () => window.clearTimeout(copiedStateTimer);
-	}, [copiedIssueKey]);
+	}, [copiedIssueKey, setCopiedIssueKey]);
 
 	const handleSelectAllRows = useCallback((checked: boolean) => {
 		setSelectedIssueKeys(checked ? new Set(visibleKeysRef.current) : new Set<string>());
-	}, []);
+	}, [setSelectedIssueKeys]);
 
 	const handleSelectRow = useCallback((issueKey: string, checked: boolean) => {
 		setSelectedIssueKeys((currentSelected) => {
@@ -136,7 +157,7 @@ export function useJiraTeamEu26List({
 			}
 			return nextSelected;
 		});
-	}, []);
+	}, [setSelectedIssueKeys]);
 
 	const handleMoveRow = useCallback((issueKey: string, targetIndex: number) => {
 		setListOrder((currentOrder) => {
@@ -151,7 +172,7 @@ export function useJiraTeamEu26List({
 				targetIndex,
 			);
 		});
-	}, [boardColumns]);
+	}, [boardColumns, JIRA_TEAM_EU26_AGENT_CATALOG, setListOrder]);
 
 	const handleCreateWorkItem = useCallback((insertion?: JiraListInsertion) => {
 		const visibleKeys = visibleKeysRef.current;
@@ -162,7 +183,7 @@ export function useJiraTeamEu26List({
 			issueType: "task",
 			summary: "",
 		});
-	}, []);
+	}, [setDraftWorkItem]);
 
 	const handleDraftWorkItemSubmit = useCallback(() => {
 		if (!draftWorkItem?.summary.trim()) {
@@ -186,7 +207,7 @@ export function useJiraTeamEu26List({
 		));
 		setSelectedIssueKeys(new Set([issueKey]));
 		setDraftWorkItem(null);
-	}, [boardColumns, draftWorkItem, setBoardColumns]);
+	}, [boardColumns, draftWorkItem, setBoardColumns, setDraftWorkItem, setListOrder, setSelectedIssueKeys]);
 
 	const handleCopyLink = useCallback(async (row: JiraListRowData) => {
 		const currentUrl = new URL(window.location.href);
@@ -201,14 +222,14 @@ export function useJiraTeamEu26List({
 		}
 
 		setCopiedIssueKey(row.issueKey);
-	}, []);
+	}, [setCopiedIssueKey]);
 
 	const handleRefresh = useCallback(() => {
 		setListOrder([]);
 		setSelectedIssueKeys(new Set());
 		setCopiedIssueKey(null);
 		setDraftWorkItem(null);
-	}, []);
+	}, [setCopiedIssueKey, setDraftWorkItem, setListOrder, setSelectedIssueKeys]);
 
 	const handleStatusChange = useCallback((issueKey: string, status: JiraListStatusOption) => {
 		setBoardColumns((columns) => moveJiraKanbanCardsToStatus(columns, [issueKey], status.status));
@@ -224,7 +245,7 @@ export function useJiraTeamEu26List({
 			agentIds,
 			JIRA_TEAM_EU26_AGENT_CATALOG,
 		));
-	}, [setBoardColumns]);
+	}, [setBoardColumns, JIRA_TEAM_EU26_AGENT_CATALOG]);
 
 	// One drop can carry several marked sessions, and the transfer plan replays
 	// this callback once per session inside a single event. Every read is
@@ -257,7 +278,7 @@ export function useJiraTeamEu26List({
 		setBoardColumns([...result.columns]);
 		setListOrder(result.listOrder);
 		return result.issueKey;
-	}, [setBoardColumns]);
+	}, [setBoardColumns, setListOrder]);
 
 	const createBoardFromAgentSession = useCallback((input: CreateBoardFromAgentSessionInput) => {
 		const columnsBeforeCreate = boardColumnsRef.current;
@@ -285,7 +306,7 @@ export function useJiraTeamEu26List({
 		setBoardColumns([...result.columns]);
 		setListOrder(nextListOrder);
 		return result.issueKey;
-	}, [setBoardColumns]);
+	}, [setBoardColumns, setListOrder]);
 
 	const handleDraftWorkItemAssigneeChange = useCallback((
 		assignee: JiraListPerson | undefined,
@@ -293,7 +314,7 @@ export function useJiraTeamEu26List({
 		setDraftWorkItem((currentDraft) => (
 			currentDraft ? { ...currentDraft, assignee } : currentDraft
 		));
-	}, []);
+	}, [setDraftWorkItem]);
 
 	const handleDraftWorkItemDueDateChange = useCallback((
 		dueDate: string | undefined,
@@ -301,7 +322,7 @@ export function useJiraTeamEu26List({
 		setDraftWorkItem((currentDraft) => (
 			currentDraft ? { ...currentDraft, dueDate } : currentDraft
 		));
-	}, []);
+	}, [setDraftWorkItem]);
 
 	const handleDraftWorkItemIssueTypeChange = useCallback((
 		issueType: JiraListIssueType,
@@ -309,7 +330,7 @@ export function useJiraTeamEu26List({
 		setDraftWorkItem((currentDraft) => (
 			currentDraft ? { ...currentDraft, issueType } : currentDraft
 		));
-	}, []);
+	}, [setDraftWorkItem]);
 
 	const handleDraftWorkItemSummaryChange = useCallback((
 		summary: string,
@@ -317,9 +338,9 @@ export function useJiraTeamEu26List({
 		setDraftWorkItem((currentDraft) => (
 			currentDraft ? { ...currentDraft, summary } : currentDraft
 		));
-	}, []);
+	}, [setDraftWorkItem]);
 
-	const handleDraftWorkItemCancel = useCallback(() => setDraftWorkItem(null), []);
+	const handleDraftWorkItemCancel = useCallback(() => setDraftWorkItem(null), [setDraftWorkItem]);
 
 	const getProps = useCallback((columns: readonly JiraKanbanColumnData[]): JiraListProps => {
 		const rows = applyListOrder(
@@ -329,7 +350,7 @@ export function useJiraTeamEu26List({
 
 		return {
 			agentCatalog: JIRA_TEAM_EU26_AGENT_CATALOG,
-			ariaLabel: "Payments SDK v2 migration work items list",
+			ariaLabel: listAriaLabel,
 			className: "max-h-full",
 			copiedIssueKey,
 			draftWorkItem: draftWorkItem
@@ -366,6 +387,8 @@ export function useJiraTeamEu26List({
 			visibleCount: rows.length,
 		};
 	}, [
+		JIRA_TEAM_EU26_AGENT_CATALOG,
+		listAriaLabel,
 		copiedIssueKey,
 		draftWorkItem,
 		handleAssignedAgentIdsChange,

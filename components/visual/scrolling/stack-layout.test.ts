@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { cardLoopPositionFrom, cardTopFrom, depthGate, depthLift, depthProgress, depthScale, fanAnchor, fansIn, fanSlack, stackZIndex, SCROLLING_DEPTHS, SCROLLING_ENTRANCE_ORIGINS, SCROLLING_STACK_ORDERS } from "./stack-layout.ts";
 
 const NON_FINITE = [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, undefined];

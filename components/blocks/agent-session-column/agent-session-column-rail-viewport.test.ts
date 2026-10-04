@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { AGENT_SESSION_RAIL_FOCUS_GUTTER_PX, AGENT_SESSION_RAIL_ITEM_GAP_PX, AGENT_SESSION_RAIL_ITEM_HEIGHT_PX, AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS, advanceAgentSessionRailOrder, releaseAgentSessionRailOrder, settleAgentSessionRailOrder, toAgentSessionRailHitSlopStyle, toAgentSessionRailViewportMaxHeight } from "./agent-session-column-rail-viewport.ts";
 
 const TEN_ITEM_HEIGHT = AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS * AGENT_SESSION_RAIL_ITEM_HEIGHT_PX

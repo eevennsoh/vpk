@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const AGENT_LOADING_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/components/ui-custom/agent-loading`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const AGENT_LOADING_URL = appUrl("/components/ui-custom/agent-loading");
 
 test("Claude avatars use the brand background and a white starburst", async ({ page }) => {
 	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });

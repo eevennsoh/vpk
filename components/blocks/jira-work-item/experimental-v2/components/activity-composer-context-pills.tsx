@@ -18,6 +18,7 @@ import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
+import { motionEase } from "@/lib/motion";
 
 
 const NEEDS_INPUT_STATUS_LABEL = "Needs input";
@@ -39,7 +40,7 @@ const PILL_REVEAL_VARIANTS = {
 		y: 0,
 		transition: {
 			duration: 0.15,
-			ease: [0.4, 1, 0.6, 1],
+			ease: motionEase.outPractical,
 		}, // duration-normal + ease-out-practical
 	},
 } satisfies Variants;

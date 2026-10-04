@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Avatar, AvatarFallback, AvatarImage, type AvatarProps, type AvatarStatus } from "@/components/ui/avatar";
 import { AtlassianLogo, RovoColorIcon, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
 import { getCodingAgentLogoFrame, getCodingAgentVisual } from "@/components/ui-custom/agent-avatar-coding-appearance";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
@@ -136,7 +137,8 @@ export function AgentAvatarVisual({
 	const isSecondPartyAgent = avatarSrc?.startsWith("/2p/") ?? false;
 	const isThirdPartyAgent = Boolean(brandName);
 	const isExternalAgent = isSecondPartyAgent || isThirdPartyAgent;
-	const hasWhiteBackdrop = isExternalAgent || logoName === "atlassian" || Boolean(vpkLogo);
+	const isRovoAvatar = vpkLogo === "rovo" || avatarSrc === ROVO_LOGO_DATA_URI;
+	const hasWhiteBackdrop = isExternalAgent || logoName === "atlassian" || isRovoAvatar;
 	const shouldInsetImage = inset || isExternalAgent;
 	// Keep partner marks at the previous 50% ratio when the avatar is 32px.
 	const insetImageClassName = isSecondPartyAgent && sizePx === 32 ? "size-4" : PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
@@ -144,10 +146,10 @@ export function AgentAvatarVisual({
 	const codingVisual = appearance === "coding" ? getCodingAgentVisual(brandName, sizePx) : undefined;
 	const codingLogoFrame = codingVisual ? getCodingAgentLogoFrame(sizePx) : undefined;
 	const externalLogoSize = codingLogoFrame?.size ?? PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
-	// The Rovo gem is authored at 16×16 (`ROVO_LOGO_VIEWBOX`). Hexagon avatars
-	// keep that native mark so a tile/circle size token cannot enlarge it.
-	const visual = vpkLogo === "rovo" ? (
-		<RovoColorIcon label="" size="xxsmall" />
+	// Both explicit and data-backed Rovo identities keep the gem inset so the
+	// shared avatar hexagon, rather than the logo silhouette, owns the frame.
+	const visual = isRovoAvatar ? (
+		<RovoColorIcon label="" size="xxsmall" className="size-5/8" />
 	) : logoName ? (
 		<AtlassianLogo label="" name={logoName} size={insetLogoSize} themeAware />
 	) : brandName ? (
@@ -181,8 +183,9 @@ export function AgentAvatarVisual({
 			{hasWhiteBackdrop ? (
 				<span
 					aria-hidden="true"
-					// Fixed brand canvases are independent of the surrounding theme.
-					style={{ backgroundColor: codingVisual?.backgroundColor ?? (brandName === "claude" ? "#d97757" : undefined) }}
+					// ADS color-scheme inherits from the nearest global or subtree theme.
+					// Inline light-dark avoids the CSS compiler's global-theme fallback.
+					style={{ backgroundColor: isRovoAvatar ? "light-dark(var(--ds-surface), #292A2E)" : codingVisual?.backgroundColor ?? (brandName === "claude" ? "#d97757" : undefined) }}
 					className={cn("flex size-full items-center justify-center bg-surface",
 						brandName === "claude" || codingVisual?.whiteGlyph ? "[&_svg]:brightness-0 [&_svg]:invert [&_img]:brightness-0 [&_img]:invert" : undefined)}>{visual}</span>
 			) : (

@@ -1,3 +1,4 @@
+import { motionEase } from "../../../lib/motion.ts";
 /**
  * Motion signatures for the Omnibar's geometries.
  *
@@ -22,7 +23,7 @@
  */
 export const OMNIBAR_SURFACE_ENTER = {
 	duration: 0.25,
-	ease: [0, 0.4, 0, 1],
+	ease: motionEase.out,
 } as const; // duration-slow + ease-out
 
 /**
@@ -31,7 +32,7 @@ export const OMNIBAR_SURFACE_ENTER = {
  */
 export const OMNIBAR_SURFACE_EXIT = {
 	duration: 0.1,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 } as const; // duration-fast + ease-in
 
 /**
@@ -47,12 +48,12 @@ export const OMNIBAR_BAR_ZOOM = { enterFrom: 0.9, exitTo: 0.78 } as const;
 
 export const OMNIBAR_PANEL_ENTER = {
 	duration: 0.25,
-	ease: [0, 0.4, 0, 1],
+	ease: motionEase.out,
 } as const; // duration-slow + ease-out
 
 export const OMNIBAR_PANEL_EXIT = {
 	duration: 0.2,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 } as const; // duration-medium + ease-in
 
 /**
@@ -62,12 +63,12 @@ export const OMNIBAR_PANEL_EXIT = {
  */
 export const OMNIBAR_RAIL_ENTER = {
 	duration: 0.15,
-	ease: [0.4, 1, 0.6, 1],
+	ease: motionEase.outPractical,
 } as const; // duration-normal + ease-out-practical
 
 export const OMNIBAR_RAIL_EXIT = {
 	duration: 0.1,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 } as const; // duration-fast + ease-in
 
 export const OMNIBAR_REDUCED = { delay: 0, duration: 0 } as const;

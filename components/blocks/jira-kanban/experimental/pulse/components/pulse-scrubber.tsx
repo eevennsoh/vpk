@@ -20,6 +20,7 @@ import {
 	type PulseRuleWeight,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 /**
  * Pulse scrubber — the outline of one continuous article.
@@ -82,8 +83,8 @@ export interface PulseScrubberViewProps {
 	filteredMemberName?: string | null;
 }
 
-const MAGNIFY_IN = { duration: 0.15, ease: [0.4, 1, 0.6, 1] } as const; // duration-normal + ease-out-practical
-const MAGNIFY_OUT = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] } as const; // duration-fast + ease-in
+const MAGNIFY_IN = { duration: 0.15, ease: motionEase.outPractical } as const; // duration-normal + ease-out-practical
+const MAGNIFY_OUT = { duration: 0.1, ease: motionEase.in } as const; // duration-fast + ease-in
 
 /**
  * Pointer scrubbing plus the swell, sharing one pointer position.

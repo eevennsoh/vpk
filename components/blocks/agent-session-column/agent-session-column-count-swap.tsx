@@ -6,13 +6,14 @@ import { motion, type Transition } from "motion/react";
 import { MonitorIcon } from "@/components/ui/vpk-icons";
 import TextMorphing from "@/components/visual/text-morphing";
 import type { TextMorphConfig } from "@/components/visual/text-morphing/data";
+import { motionEase } from "@/lib/motion";
 
 // Keep the number visible through brief gaps between arrival batches.
 // Each increase restarts this window before the local icon returns.
 const COUNT_SETTLE_MS = 4_000;
 
-const SWAP_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const SWAP_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
+const SWAP_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
+const SWAP_EXIT: Transition = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
 const SWAP_REDUCED: Transition = { duration: 0 };
 
 /** Both column presentations roll the same digit slots when the session total changes. */
