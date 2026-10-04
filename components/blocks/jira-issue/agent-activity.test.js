@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 const { getJiraIssueAgentAvatarSize } = require("./agent-activity-avatar.ts");
 
 test("coding-agent chins retain Claude's compact size without resizing other brands", () => {
@@ -53,7 +54,6 @@ test("chin rows keep lifecycle copy stable while flyout rows retain detailed sta
 });
 
 test("new Jira agent sessions show Working immediately", async () => {
-	const { renderComponent } = require("../../../scripts/lib/render-component.js");
 	const activity = {
 		id: "new-session",
 		name: "Claude",
@@ -76,3 +76,28 @@ test("new Jira agent sessions show Working immediately", async () => {
 	assert.equal(Boolean(view.queryByText("Let's get started")), false);
 	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });
+
+for (const { name, iconScale, workingSpinnerVariant, avatar } of [
+	{ name: "comfortable default", iconScale: "comfortable", avatar: true },
+	{ name: "compact default", iconScale: "compact", avatar: false },
+	{ name: "compact avatar override", iconScale: "compact", workingSpinnerVariant: "experimental-avatar", avatar: true },
+	{ name: "comfortable standard override", iconScale: "comfortable", workingSpinnerVariant: "default", avatar: false },
+]) {
+	test(`working Jira status uses a decorative spinner for ${name}`, async () => {
+		const view = await renderComponent({
+			entry: "components/blocks/jira-issue/agent-activity-row-presentation.tsx",
+			exportName: "JiraIssueAgentStatusIcon",
+			props: {
+				iconScale,
+				workingSpinnerVariant,
+				isAwaitingInput: false,
+				isCompletedRow: false,
+				isFailedRow: false,
+			},
+		});
+		const spinner = view.getByRole("status", { hidden: true });
+		assert.equal(spinner.hasAttribute("data-iconic-orb-avatar"), avatar);
+		assert.equal(spinner.getAttribute("aria-label"), "");
+		assert.equal(Boolean(view.queryByRole("status")), false);
+	});
+}
