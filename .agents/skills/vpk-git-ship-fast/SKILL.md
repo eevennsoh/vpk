@@ -62,7 +62,10 @@ branch, or ref cleanup.
    Add a short body only for distinct concerns, follow repository log style,
    and omit co-author footers unless requested. Commit once.
 
-6. Fetch and prove fast-forward ancestry immediately before pushing:
+6. Run `pnpm run verify:fast` (~10s). It is the only check before this commit
+   lands on `main`; if it fails, fix the cause or stop and report the failure.
+
+7. Fetch and prove fast-forward ancestry immediately before pushing:
 
    ```bash
    git fetch origin main
@@ -74,12 +77,12 @@ branch, or ref cleanup.
    `~/.ssh/known_hosts` is denied. A known-hosts permission error is an
    environment failure; retry that exact remote command with approval once.
 
-7. If the ancestry check is non-zero, stop with the local commit intact and
+8. If the ancestry check is non-zero, stop with the local commit intact and
    report that `origin/main` advanced. The user must merge or rebase onto the
    current remote tip before retrying. If push returns `GH006`, route to
    `/vpk-git-ship` instead.
 
-8. After a successful push, sync local `main` only when it can fast-forward
+9. After a successful push, sync local `main` only when it can fast-forward
    without touching user edits. If this checkout owns `main`, it already moved.
    Otherwise find the owner with `git worktree list --porcelain` and use:
 

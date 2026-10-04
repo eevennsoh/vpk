@@ -9,6 +9,9 @@ import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { DEFAULT_SKILLS, ROVO_DIRECTORY_AGENT_PROFILES } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
+import { renderEu26HeaderAssignee } from "@/components/projects/jira-team-eu26/components/header-assignee";
+import { HeaderLanyards } from "@/components/projects/jira-team-eu26/components/header-lanyards";
+import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
 	JiraIssueAgentActivity,
@@ -18,6 +21,7 @@ import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
+import { countNeedsInputAgents } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-filter";
 import {
 	isPulseAgentSession,
 	type PulseLooseWork,
@@ -30,7 +34,7 @@ import {
 } from "@/components/blocks/jira-list";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
-import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
+import { JIRA_TEAM_EU26_CHAT_AGENT_PROFILES } from "@/components/projects/jira-team-eu26/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
@@ -43,8 +47,11 @@ import {
 	resolveJiraTab,
 } from "@/components/projects/jira/lib/jira-tab-model";
 import AppLayout from "@/components/projects/page";
+import { AtlassianLogo } from "@/components/ui/logo";
+import { Tile } from "@/components/ui/tile";
 import { cn } from "@/lib/utils";
 import { JiraTeamEu26List } from "./components/jira-team-eu26-end-list";
+import { JiraTeamEu26EndFinale } from "./finale";
 
 import { renderJiraTeamEu26AgentActivityIndicator } from "./data/agent-activity-indicators";
 import {
@@ -55,6 +62,8 @@ import {
 } from "./data/presentation-story";
 import {
 	createJiraTeamEu26EndKeynoteBoardColumns,
+	restoreJiraTeamEu26EndKeynoteCoverArtwork,
+	withJiraTeamEu26EndDoneDestinations,
 	JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE,
 	JIRA_TEAM_EU26_END_HEADER_ASSIGNEES,
 } from "./data/keynote-board";
@@ -63,6 +72,7 @@ import { useJiraTeamEu26AgentSessionSync } from "./hooks/use-jira-team-eu26-end-
 import { JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES } from "./data/agent-session-sync";
 import { useJiraTeamEu26GenerativeActions } from "./hooks/use-jira-team-eu26-end-generative-actions";
 import { useJiraTeamEu26List } from "./hooks/use-jira-team-eu26-end-list";
+import { useJiraTeamEu26EndPlayClosing } from "./hooks/use-jira-team-eu26-end-play-closing";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
@@ -79,12 +89,13 @@ const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
 	"sessionBloom",
 	"sessionProximity",
 	"sessionPeel",
+	"moveVisual",
 ] as const;
 const isJiraTeamEu26LooseWorkResumable = () => true;
 
 export default function JiraTeamEu26Page(): React.ReactElement {
 	return (
-		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+		<RovoChatProvider agentProfiles={JIRA_TEAM_EU26_CHAT_AGENT_PROFILES}>
 			<JiraTeamEu26App />
 		</RovoChatProvider>
 	);
@@ -97,15 +108,8 @@ function JiraTeamEu26App(): React.ReactElement {
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
 	const [boardColumns, setBoardColumns] = useState(createJiraTeamEu26EndKeynoteBoardColumns);
-	const needsInputCount = boardColumns.reduce(
-		(total, column) => total + column.cards.reduce(
-			(cardTotal, card) => cardTotal + (card.agentActivities?.filter(
-				(activity) => activity.state === "awaiting-input",
-			).length ?? 0),
-			0,
-		),
-		0,
-	);
+	// Same selector the Needs input focus uses, so the count names the rows it shows.
+	const needsInputCount = countNeedsInputAgents(boardColumns);
 	const {
 		composerPrefillRequest,
 		handleCardGenerativeActionSubmit,
@@ -137,6 +141,14 @@ function JiraTeamEu26App(): React.ReactElement {
 	const tabOwnsView = activeTab?.view !== undefined;
 	const activeView = activeTab?.view ?? workItemView;
 	const showBoardContent = activeTab?.hasContent === true;
+	// Rehearsal shortcut: bulk-drop every keynote card into Done through the
+	// board's own drop path; the finale's "all Done" transition then starts the
+	// closing. A complete board replays the finale instead.
+	const { closingMoveRequest, finaleReplayRequest, settingsMenuItems } = useJiraTeamEu26EndPlayClosing({
+		boardColumns,
+		boardVisible: showBoardContent && activeView === "board",
+		setBoardColumns,
+	});
 	const [agentSessionColumnInteracting, setAgentSessionColumnInteracting] = useState(false);
 	const {
 		reviewAgentSessions,
@@ -346,6 +358,7 @@ function JiraTeamEu26App(): React.ReactElement {
 
 	return (
 		<>
+			<HeaderLanyards>
 			<AppLayout
 				chatContextBar={chatContextBar}
 				chatPanelFlush
@@ -356,6 +369,7 @@ function JiraTeamEu26App(): React.ReactElement {
 				currentUser={JIRA_TEAM_EU26_END_PRESENTERS.mcb}
 				chatGreeting={{ heading: "What can I help you with, MCB?" }}
 				settingsDesignVariantIds={JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
+				settingsMenuItems={settingsMenuItems}
 			>
 				<div
 					className={cn(
@@ -367,6 +381,7 @@ function JiraTeamEu26App(): React.ReactElement {
 					<ExperimentalJiraKanbanPage
 						addAgentLabel={JIRA_TEAM_EU26_ADD_AGENT_LABEL}
 						activeView={activeView}
+						autoArrangeEnabled={designVariants.autoArrange}
 						retainWorkItemViews
 						additionalAgentSessions={syncedAgentSessions}
 						agentSessionSeedOverrides={JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES}
@@ -376,7 +391,13 @@ function JiraTeamEu26App(): React.ReactElement {
 						cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
+						showPriorityIndicator={false}
+						issueSelectionAppearance="fused-backdrop"
+						getStatusVariant={statusVariant}
 						issueDragTransitions
+						issueDropMotion="solitaire"
+						issueMoveVisual={designVariants.moveVisual}
+						issueMoveRequest={closingMoveRequest}
 						createWellBounce="off"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 						agentSessionAssigneeIdAliases={JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
@@ -395,13 +416,19 @@ function JiraTeamEu26App(): React.ReactElement {
 						columnSizing="content"
 						columnWidth="fluid"
 						boardTitle={JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE}
+						boardAvatar={(
+							<Tile role="img" label={JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE} size="small" variant="transparent" isSnug hasBorder>
+								<AtlassianLogo name="atlassian" label={JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE} size="small" />
+							</Tile>
+						)}
 						agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Team ’26 EU keynote announcements."
-						boardColumns={boardColumns}
+						boardColumns={withJiraTeamEu26EndDoneDestinations(restoreJiraTeamEu26EndKeynoteCoverArtwork(boardColumns))}
 						defaultAgentSessionColumnCollapsed={true}
 						defaultShowUntracked={false}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={JIRA_TEAM_EU26_END_HEADER_ASSIGNEES}
+						renderHeaderAssignee={renderEu26HeaderAssignee}
 						showUnassignedHeaderAvatar={false}
 						insightsEnabled={false}
 						isLooseWorkResumable={isJiraTeamEu26LooseWorkResumable}
@@ -459,6 +486,7 @@ function JiraTeamEu26App(): React.ReactElement {
 					/>
 				</div>
 			</AppLayout>
+			</HeaderLanyards>
 			{/* Resume swaps the button label to "Copied" — colour and text alone,
 			    which a screen reader on the row never hears. Announce it instead. */}
 			<span aria-live="polite" className="sr-only" role="status">
@@ -481,6 +509,8 @@ function JiraTeamEu26App(): React.ReactElement {
 					skills={DEFAULT_SKILLS}
 				/>
 			</MountOnFirstUse>
+			{/* Closing keynote: once every announcement is Done, hand off to the recap slide. */}
+			<JiraTeamEu26EndFinale boardColumns={boardColumns} replayRequest={finaleReplayRequest} />
 			<JgpRovoOverlay
 				agentCreator={JIRA_TEAM_EU26_END_PRESENTERS.mcb}
 				chatContextBar={chatContextBar}

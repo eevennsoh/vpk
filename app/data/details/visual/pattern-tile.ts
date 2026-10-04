@@ -16,6 +16,7 @@ export const PATTERN_TILE_DETAIL: ComponentDetail = {
 			{ name: "front", type: "string", default: `"#FFFFFF"`, description: "Foreground pattern color." },
 			{ name: "back", type: "string", default: `"#22DDDD"`, description: "Background color. Can be `transparent`." },
 			{ name: "scale", type: "number", default: "10", description: "Size multiplier for the generated pattern tiles." },
+			{ name: "gridAlignment", type: `"edge" | "balanced"`, default: `"edge"`, description: "For tiled stroke grids, balanced fits whole cells to the surface and places lines at cell centers, giving equal half-cell spacing at opposite edges." },
 			{ name: "stroke", type: `{ style?: "solid" | "dashed"; width?: number; dash?: number; gap?: number; dashArray?: string; dashOffset?: number; lineCap?: "butt" | "round" | "square"; lineJoin?: "miter" | "round" | "bevel"; miterLimit?: number }`, description: "Optional grid stroke settings. When `patternType=\"grid\"`, customizes solid or dashed stroke rendering; `dashArray` accepts CSS stroke-dasharray values and overrides `dash`/`gap`." },
 			{ name: "radius", type: "number", default: "0", description: "Border radius applied to the pattern surface." },
 			{ name: "opacity", type: "number", default: "1", description: "Overall pattern opacity." },

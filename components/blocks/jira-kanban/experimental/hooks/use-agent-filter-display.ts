@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 
-import type { JiraKanbanColumnData } from "../../index";
-import { filterJiraKanbanColumnsByAssignee } from "../../state";
+import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
+import { filterJiraKanbanColumnsByAssignee } from "@/components/blocks/jira-kanban/state";
 import {
 	shownSessionStateIdsForAgentFilter,
 	type BoardAgentFilterId,

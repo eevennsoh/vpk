@@ -15,6 +15,7 @@ import {
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { createAsxQueueSidebarSessionItem, type AsxQueueSession } from "../data/queue-sessions";
 import { QueueDetailArtifacts } from "./queue-detail-artifacts";
+import { motionEase } from "@/lib/motion";
 
 const DETAIL_PREVIEW_POSITION = {
 	align: "center",
@@ -25,11 +26,11 @@ const DETAIL_PREVIEW_POSITION = {
 const PANEL_VARIANTS: Variants = {
 	closed: {
 		transform: "translateX(100%)",
-		transition: { duration: 0.2, ease: [0.6, 0, 0.8, 0.6] }, // duration-medium + ease-in
+		transition: { duration: 0.2, ease: motionEase.in }, // duration-medium + ease-in
 	},
 	open: {
 		transform: "translateX(0%)",
-		transition: { duration: 0.25, ease: [0, 0.4, 0, 1] }, // duration-slow + ease-out
+		transition: { duration: 0.25, ease: motionEase.out }, // duration-slow + ease-out
 	},
 };
 

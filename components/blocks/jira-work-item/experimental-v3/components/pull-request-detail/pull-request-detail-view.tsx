@@ -18,8 +18,8 @@ import {
 import {
 	resolvePullRequestDetailData,
 	type PullRequestActivity,
-} from "../../lib/pull-request-detail-data";
-import { resolveInitialReviewedChapterIds } from "../../lib/resolve-initial-reviewed-chapter-ids";
+} from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
+import { resolveInitialReviewedChapterIds } from "@/components/blocks/jira-work-item/experimental-v3/lib/resolve-initial-reviewed-chapter-ids";
 import { PullRequestActivityPanel } from "./pull-request-activity-panel";
 import { PullRequestDetailHeader } from "./pull-request-detail-header";
 import { PullRequestFiles } from "./pull-request-files";

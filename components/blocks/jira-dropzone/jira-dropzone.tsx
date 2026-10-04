@@ -10,6 +10,9 @@ import type { MagneticPointerRelation } from "@/components/ui-custom/hooks/magne
 import { cn } from "@/lib/utils";
 
 import { JiraDropzoneAntsStroke } from "./jira-dropzone-ants-stroke";
+import { JiraDropzoneMagneticLabel } from "./jira-dropzone-magnetic-label";
+import { JiraDropzoneCopyReveal } from "./jira-dropzone-copy-reveal";
+import { JIRA_DROPZONE_WELL_CHROME_CLASS, resolveJiraDropzoneWellColors } from "./lib/jira-dropzone-chrome";
 import { useJiraDropzoneChannel } from "./jira-dropzone-field";
 import { JiraDropzoneFlight } from "./jira-dropzone-flight";
 import { JIRA_DROPZONE_ANTS_CLASS } from "./lib/jira-dropzone-ants";
@@ -40,7 +43,7 @@ import type {
 	ViewportPoint,
 } from "./lib/jira-dropzone-types";
 
-export const JIRA_DROPZONE_WELL_CHROME_CLASS = "rounded-lg border border-dashed";
+export { JIRA_DROPZONE_WELL_CHROME_CLASS } from "./lib/jira-dropzone-chrome";
 
 export interface JiraDropzoneControlProps {
 	active: boolean;
@@ -378,7 +381,6 @@ function JiraDropzoneWell({
 							marching={marching}
 							openMinHeight={openMinHeight}
 							pinMagnet={pinMagnet}
-							pinVerticalMagnet={pinVerticalMagnet}
 							renderControl={renderControl}
 							selected={selected}
 						/>
@@ -393,7 +395,6 @@ function JiraDropzoneWell({
 						marching={marching}
 						phase={phase}
 						pinMagnet={pinMagnet}
-						pinVerticalMagnet={pinVerticalMagnet}
 						selected={selected}
 						size={size}
 					/>}
@@ -414,7 +415,6 @@ type JiraDropzoneWellChromeProps = Pick<
 	| "openMinHeight"
 	| "phase"
 	| "pinMagnet"
-	| "pinVerticalMagnet"
 	| "selected"
 	| "size"
 > & {
@@ -430,25 +430,24 @@ function JiraDropzoneButtonChrome({
 	marching,
 	openMinHeight,
 	pinMagnet,
-	pinVerticalMagnet,
 	renderControl,
 	selected,
 }: Readonly<Pick<JiraDropzoneWellProps,
-	"active" | "copy" | "expanded" | "label" | "magnet" | "openMinHeight" | "pinMagnet" | "pinVerticalMagnet" | "selected"
+	"active" | "copy" | "expanded" | "label" | "magnet" | "openMinHeight" | "pinMagnet" | "selected"
 > & {
 	marching: boolean;
 	renderControl: (props: JiraDropzoneControlProps) => ReactElement;
 }>): ReactElement {
 	const shouldReduceMotion = useReducedMotion();
 	const showLabel = active && copy === "label";
-	const copyTransition = shouldReduceMotion ? JIRA_DROPZONE_WELL_ENTER_REDUCED : JIRA_DROPZONE_WELL_ENTER;
 	return renderControl({
 		active,
 		className: cn(
 			"relative w-full overflow-hidden transition-colors duration-normal ease-out-practical motion-reduce:transition-none",
 			JIRA_DROPZONE_WELL_CHROME_CLASS,
 			active ? "bg-surface hover:bg-surface active:bg-surface disabled:opacity-100" : null,
-			selected ? "border-border-selected bg-bg-selected hover:bg-bg-selected active:bg-bg-selected text-text-selected" : null,
+			selected ? resolveJiraDropzoneWellColors(true) : null,
+			selected ? "hover:bg-bg-selected active:bg-bg-selected" : null,
 			marching ? JIRA_DROPZONE_ANTS_CLASS : null,
 		),
 		label,
@@ -457,38 +456,9 @@ function JiraDropzoneButtonChrome({
 		selected,
 		children: <>
 			{marching ? <JiraDropzoneAntsStroke selected={selected} /> : null}
-			<span
-				className="relative grid h-5 w-full place-items-center"
-			>
-				{/* Both visual layers share one centered slot and the height animation's clock. */}
-				<span
-					aria-hidden
-					className="col-start-1 row-start-1 grid w-full place-items-center"
-					data-jira-dropzone-copy-motion={showLabel ? "label" : "add"}
-				>
-					<motion.span
-						animate={{ opacity: showLabel ? 0 : 1 }}
-						className="col-start-1 row-start-1 inline-flex items-center justify-center"
-						data-jira-dropzone-copy-layer="add"
-						initial={false}
-						transition={copyTransition}
-					>
-						<Icon render={<AddIcon label="" size="small" />} />
-					</motion.span>
-					<motion.span
-						animate={{ opacity: showLabel ? 1 : 0 }}
-						className="col-start-1 row-start-1 inline-flex w-full items-center justify-center"
-						data-jira-dropzone-copy-layer="label"
-						initial={false}
-						transition={copyTransition}
-					>
-						<motion.span
-							className={cn("inline-block will-change-transform", selected ? "text-text-selected" : null)}
-							style={{ x: pinMagnet ? 0 : magnet.labelX, y: pinMagnet || pinVerticalMagnet ? 0 : magnet.labelY }}
-						>{label}</motion.span>
-					</motion.span>
-				</span>
-			</span>
+			<JiraDropzoneCopyReveal ariaHidden revealed={showLabel} resting={<Icon render={<AddIcon label="" size="small" />} />}>
+				<JiraDropzoneMagneticLabel className={selected ? "text-text-selected" : undefined} magnet={magnet} pinned={pinMagnet}>{label}</JiraDropzoneMagneticLabel>
+			</JiraDropzoneCopyReveal>
 		</>,
 	});
 }
@@ -504,7 +474,6 @@ function JiraDropzoneWellChrome({
 	marching,
 	phase,
 	pinMagnet,
-	pinVerticalMagnet,
 	selected,
 	size,
 }: JiraDropzoneWellChromeProps): ReactElement {
@@ -523,9 +492,7 @@ function JiraDropzoneWellChrome({
 				// slide, scale, and colour. The spatial cue is already carried by
 				// the magnet/bounce transform and the marching-ants stroke.
 				"transition-[background-color,border-color] duration-normal ease-out-practical motion-reduce:transition-none",
-				selected
-					? "border-border-selected bg-bg-selected text-text-selected"
-					: "border-border bg-surface text-text-subtlest",
+				resolveJiraDropzoneWellColors(selected),
 				marching ? JIRA_DROPZONE_ANTS_CLASS : null,
 			)}
 			initial={bounce
@@ -543,7 +510,6 @@ function JiraDropzoneWellChrome({
 				label={label}
 				magnet={magnet}
 				pinMagnet={pinMagnet}
-				pinVerticalMagnet={pinVerticalMagnet}
 			/>
 		</motion.div>
 	);
@@ -554,18 +520,9 @@ function JiraDropzoneWellCopy({
 	label,
 	magnet,
 	pinMagnet,
-	pinVerticalMagnet,
-}: Pick<JiraDropzoneWellProps, "copy" | "label" | "magnet" | "pinMagnet" | "pinVerticalMagnet">): ReactElement {
+}: Pick<JiraDropzoneWellProps, "copy" | "label" | "magnet" | "pinMagnet">): ReactElement {
 	return copy === "label" ? (
-		<motion.span
-			className="inline-block will-change-transform"
-			style={{
-				x: pinMagnet ? 0 : magnet.labelX,
-				y: pinMagnet || pinVerticalMagnet ? 0 : magnet.labelY,
-			}}
-		>
-			{label}
-		</motion.span>
+		<JiraDropzoneMagneticLabel magnet={magnet} pinned={pinMagnet}>{label}</JiraDropzoneMagneticLabel>
 	) : (
 		<Icon
 			className="text-icon-subtlest"

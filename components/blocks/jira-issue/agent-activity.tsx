@@ -33,14 +33,12 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import { agentIdentityLabel } from "@/components/blocks/agent-session/agent-session-identity-label";
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
+import { AgentSessionShortLifecycleIcon } from "@/components/blocks/agent-session/agent-session-lifecycle";
 import {
 	groupJiraIssueAgentActivityRows,
 	summarizeJiraIssueAgentActivities,
 	type JiraIssueAgentActivityLayout,
 } from "@/components/blocks/jira-issue/agent-activity-model";
-import {
-	useJiraIssueAgentStartupPhase,
-} from "@/components/blocks/jira-issue/agent-activity-startup";
 import {
 	sessionDragChipViewportStyle,
 	sessionTransferTintSeed,
@@ -66,6 +64,7 @@ import {
 	JiraIssueAgentStatusIcon,
 	type JiraIssueAgentAssignment,
 } from "./agent-activity-row-presentation";
+import { motionEase } from "@/lib/motion";
 
 export type { JiraIssueAgentAssignment } from "./agent-activity-row-presentation";
 
@@ -94,6 +93,8 @@ export type {
 
 export interface JiraIssueAgentActivity {
 	id: string;
+	/** Opt in to the session column's status-icon transition. */
+	stateTransition?: "agent-session";
 	name: string;
 	avatarSrc?: string;
 	agentBrandName?: ThirdPartyLogoName;
@@ -137,9 +138,9 @@ const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 12;
 /** Light friction so the dragged tag trails a few frames behind the pointer. */
 const JIRA_ISSUE_SESSION_DRAG_SPRING = { damping: 26, mass: 0.6, stiffness: 420, restDelta: 0.01 } as const;
 
-const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
-const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: [0.4, 0, 0, 1] }; // duration-medium + ease-in-out
+const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
+const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: motionEase.inOut }; // duration-medium + ease-in-out
 const JIRA_ISSUE_MOTION_REDUCED: Transition = { duration: 0 };
 const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity" };
 
@@ -556,11 +557,8 @@ function JiraIssueAgentActivityRow({
 		rowLinkFlash,
 		startupSequenceKey,
 	} = resolveJiraIssueAgentRowPresentation(activities, linkFlash);
-	const startupPhase = useJiraIssueAgentStartupPhase(
-		startupSequenceKey,
-		shouldReduceMotion,
-		featuredActivity?.startedAtMs,
-	);
+	const animateStateTransition = activities.length === 1 && featuredActivity?.stateTransition === "agent-session";
+	const lifecycleState = isCompletedRow ? "complete" : isAwaitingInput ? "needs-input" : "running";
 	const catalogAgents = useMemo(
 		() => mergeJiraIssueAgentCatalog(activities, assignment?.agents),
 		[activities, assignment?.agents],
@@ -633,13 +631,26 @@ function JiraIssueAgentActivityRow({
 		<JiraIssueAgentStatusAffordance
 			interactive={showAssignmentFlyout}
 			statusIcon={isViewerRow ? undefined : (
-				<JiraIssueAgentStatusIcon
+				animateStateTransition ? <AgentSessionShortLifecycleIcon
+					accessibleState={lifecycleState}
+					animateTransition
+					transitionEffect="fade"
+					showWorkingSpinner
+					state={lifecycleState}
+					renderGlyph={(state) => <JiraIssueAgentStatusIcon
+						iconScale={iconScale}
+						isAwaitingInput={state === "needs-input"}
+						isCompletedRow={state === "complete"}
+						isFailedRow={isFailedRow}
+						renderAgentActivityIndicator={renderAgentActivityIndicator}
+						workingSpinnerVariant={workingSpinnerVariant}
+					/>}
+				/> : <JiraIssueAgentStatusIcon
 					iconScale={iconScale}
 					isAwaitingInput={isAwaitingInput}
 					isCompletedRow={isCompletedRow}
 					isFailedRow={isFailedRow}
 					renderAgentActivityIndicator={renderAgentActivityIndicator}
-					startupPhase={startupPhase}
 					workingSpinnerVariant={workingSpinnerVariant}
 				/>
 			)}
@@ -649,6 +660,7 @@ function JiraIssueAgentActivityRow({
 		<button
 			type="button"
 			aria-label={rowAriaLabel}
+			data-jira-issue-agent-row-handle=""
 			{...(sessionDragBind ?? {})}
 			{...(sessionDragBind
 				? {
@@ -658,7 +670,7 @@ function JiraIssueAgentActivityRow({
 				}
 				: {})}
 			className={cn(
-				"flex min-w-0 items-center gap-2 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
+				"flex min-w-0 items-center gap-2 rounded-md border border-transparent text-left outline-none",
 				cn("h-full min-w-0 flex-1", showUnlinkControl ? "justify-start" : "justify-between"),
 				sessionDragBind && "touch-none select-none",
 			)}
@@ -671,7 +683,6 @@ function JiraIssueAgentActivityRow({
 				isWorking={!isViewerRow && !isCompletedRow && !isAwaitingInput}
 				rowLabel={rowLabel}
 				showUnlinkControl={showUnlinkControl}
-				startupPhase={isViewerRow ? "working" : startupPhase}
 				statusIcon={statusIcon}
 				isViewerRow={isViewerRow}
 			/>
@@ -711,7 +722,6 @@ function JiraIssueAgentActivityRow({
 				rowLinkFlash={rowLinkFlash}
 				sessionDrag={sessionDrag}
 				showUnlinkControl={showUnlinkControl}
-				startupPhase={startupPhase}
 				startupSequenceKey={startupSequenceKey}
 				statusIcon={statusIcon}
 			/>
@@ -725,6 +735,7 @@ export function JiraIssueAgentActivityRows({
 	attachPreviewCopy,
 	avatarLayout = "animated",
 	flushContent = false,
+	flushBottom = false,
 	iconScale = "compact",
 	instantSessionTransfer = false,
 	linkFlash,
@@ -747,6 +758,8 @@ export function JiraIssueAgentActivityRows({
 	avatarLayout?: JiraIssueAgentActivityAvatarLayout;
 	/** Remove the horizontal gutters when a parent cell owns its left alignment. */
 	flushContent?: boolean;
+	/** A fused following card owns the bottom gutter. */
+	flushBottom?: boolean;
 	iconScale?: JiraIssueIconScale;
 	/** Rest shows the parent well; hover still paints only this row. */
 	inheritChinSurface?: boolean;
@@ -799,7 +812,8 @@ export function JiraIssueAgentActivityRows({
 				// resolves in the same commit rather than through a state round-trip.
 				(hasActivities || hasAttachPreview) && cn(
 					flushContent ? "px-0" : "px-1",
-					"py-1 has-[[data-session-chip-out]]:py-0",
+					flushBottom ? "pt-1 pb-0" : "py-1",
+					"has-[[data-session-chip-out]]:py-0",
 				),
 			)}
 			layout={rowLayout}

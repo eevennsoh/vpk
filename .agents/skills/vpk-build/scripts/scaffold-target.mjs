@@ -23,6 +23,7 @@ import { execFileSync, execSync } from "node:child_process";
 import { writeBackendDeploymentHarness, writeBackendServiceDescriptor, writeStaticDeliveryHarness } from "./backend-deploy-harness.mjs";
 import { wireScaffoldSkills } from "./scaffold-skill-access.mjs";
 import { validateScaffoldTarget } from "./scaffold-target-safety.mjs";
+import { pinDependenciesToSourceLockfile } from "./scaffold-lockfile.mjs";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -69,15 +70,15 @@ function rewriteRoutePage(sourceCode) {
 	const demoImportPath = `@/components/website/demos/${category}/${slug}-demo`;
 	const demoIdentifier = toPascalCase(`${slug}-demo`);
 
-	// Strip the dispatcher import, Suspense/use ceremony, and render the demo
-	// component directly. This produces a tiny client page that any extracted
-	// route can use regardless of what the original VPK wrapper looked like.
+	// Replace the dispatcher with a direct lazy import while preserving its Suspense boundary.
 	return `"use client";
 
-import ${demoIdentifier} from "${demoImportPath}";
+import { lazy, Suspense } from "react";
+
+const ${demoIdentifier} = lazy(() => import("${demoImportPath}"));
 
 export default function Page() {
-	return <${demoIdentifier} />;
+	return <Suspense><${demoIdentifier} /></Suspense>;
 }
 `;
 }
@@ -201,18 +202,22 @@ function rewriteShadcnCssImport(css) {
  * alphabetical order (the order contextFiles came out of the trace);
  * if a provider needs to be inside another, the user reorders manually.
  */
-function composeLayout({ targetName, routeSlug, providers, includeDemoGoogleFonts }) {
+function composeLayout({ targetName, routeSlug, providers, includeDemoGoogleFonts, includeMotionConfig }) {
 	const providerImports = providers
 		.map(p => `import { ${p.name} } from "${p.importPath}";`)
 		.join("\n");
+	const motionConfigImport = includeMotionConfig ? 'import { MotionConfig } from "motion/react";' : "";
 
 	// Build nested JSX: outermost provider opens first, innermost wraps {children}.
-	let body = `{children}`;
+	let body = `<main id="main-content">{children}</main>`;
 	for (let i = providers.length - 1; i >= 0; i--) {
 		const { name } = providers[i];
 		body = `<${name}>\n\t\t\t\t\t${body}\n\t\t\t\t</${name}>`;
 	}
 	body = `<ThemeWrapper>\n\t\t\t\t${body}\n\t\t\t</ThemeWrapper>`;
+	if (includeMotionConfig) {
+		body = `<MotionConfig reducedMotion="user">\n\t\t\t\t${body}\n\t\t\t</MotionConfig>`;
+	}
 	const demoGoogleFontLinks = includeDemoGoogleFonts ? `
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
 				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -255,6 +260,7 @@ import { cn } from "@/lib/utils";
 // Client-side counterpart to feature-flags-shim.ts — installs the resolver
 // on the browser globalThis during hydration.
 import { FeatureFlagsShim } from "./feature-flags-shim-client";
+${motionConfigImport ? "\n" + motionConfigImport : ""}
 ${providerImports ? "\n" + providerImports + "\n" : ""}
 // Fonts — VPK prototypes reference --font-sans and --font-ark-es as CSS
 // variables. Without these declarations the fonts fall back to browser
@@ -285,7 +291,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
-	const themeStyles = await getThemeStyles(THEME_STATE);
+	// Include both color themes for inverse subtrees, even when the app starts light.
+	const themeStyles = await getThemeStyles({ ...THEME_STATE, colorMode: "auto" });
 
 	return (
 		<html lang="en" className="light" {...getThemeHtmlAttrs(THEME_STATE)} suppressHydrationWarning>
@@ -705,6 +712,7 @@ export function FeatureFlagsShim() {
 		path.join(targetDir, "app", "layout.tsx"),
 		composeLayout({
 			targetName, routeSlug, providers,
+			includeMotionConfig: Boolean(plan.npmPackages?.motion),
 			includeDemoGoogleFonts: routeUsesDemoGoogleFonts(
 				repoRoot, [...plan.files, ...(plan.cssImports || []), "app/globals.css", "app/tailwind-theme.css"]
 			),
@@ -752,6 +760,7 @@ export function FeatureFlagsShim() {
 			catalog,
 		}));
 	}
+	pinDependenciesToSourceLockfile(repoRoot, augmentedNpm);
 	const availablePackages = new Set(Object.keys(augmentedNpm));
 	const generatedGlobalsCss = buildGlobalsCssFromSource(sourceGlobalsCss, availablePackages);
 	writeFileEnsuring(

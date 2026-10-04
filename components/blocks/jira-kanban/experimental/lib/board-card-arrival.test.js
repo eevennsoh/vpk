@@ -8,7 +8,7 @@ async function loadArrivalHarness() {
 	const result = await esbuild.build({
 		stdin: {
 			contents: `
-				export { resolveBoardCardArrival } from "./components/blocks/jira-kanban/experimental/lib/board-card-arrival";
+				export { resolveBoardCardArrival, captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveVisibleIssueDropCodes, getIssueDropCascadeDelayS } from "./components/blocks/jira-kanban/experimental/lib/board-card-arrival";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -88,4 +88,47 @@ test("a receipt defers only its arriving cards and preserves their completion ow
 	assert.equal(resolveBoardCardArrival(pending, "PAY-1").final, true);
 	assert.equal(resolveBoardCardArrival(pending, "PAY-9").deferred, false);
 	assert.equal(resolveBoardCardArrival({ ...pending, deferred: false }, "PAY-1").deferred, false);
+});
+
+test("issue moves wait for a committed order change and ignore no-op drops", async () => {
+	const { captureIssueCardDropArrival, resolveIssueCardDropArrival } = await loadArrivalHarness();
+	const columns = [{ title: "To do", cards: [{ code: "A" }, { code: "B" }, { code: "C" }] }, { title: "Done", cards: [] }];
+	const drop = captureIssueCardDropArrival(columns, ["A"], "To do", -1);
+	assert.equal(resolveIssueCardDropArrival(drop, columns), undefined);
+	const reordered = [{ ...columns[0], cards: [{ code: "B" }, { code: "A" }, { code: "C" }] }, columns[1]];
+	assert.deepEqual(resolveIssueCardDropArrival(drop, reordered), { id: -1, columnTitle: "To do", cardCodes: ["A"], appended: false });
+	assert.equal(resolveIssueCardDropArrival(null, reordered), undefined);
+});
+
+test("cross-column and cohort moves publish the shared arrival in destination order", async () => {
+	const { captureIssueCardDropArrival, resolveIssueCardDropArrival } = await loadArrivalHarness();
+	const columns = [{ title: "To do", cards: [{ code: "A" }, { code: "B" }, { code: "C" }] }, { title: "Done", cards: [] }];
+	const drop = captureIssueCardDropArrival(columns, ["B", "A"], "Done", -2);
+	assert.equal(resolveIssueCardDropArrival(drop, columns), undefined);
+	const moved = [{ ...columns[0], cards: [{ code: "C" }] }, { title: "Done", cards: [{ code: "A", status: "Done" }, { code: "B", status: "Done" }] }];
+	assert.deepEqual(resolveIssueCardDropArrival(drop, moved), { id: -2, columnTitle: "Done", cardCodes: ["A", "B"], appended: false });
+	assert.equal(resolveIssueCardDropArrival({ ...drop, columnTitle: "Missing" }, moved), undefined);
+});
+
+test("one grabbed-card flight represents the selection while every landed issue cascades in slot order", async () => {
+	const { resolveVisibleIssueDropCodes, getIssueDropCascadeDelayS, captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveBoardCardArrival } = await loadArrivalHarness();
+	const codes = ["A", "B", "C", "D", "E"];
+	const visible = resolveVisibleIssueDropCodes(codes, "D");
+	assert.deepEqual(visible, ["D"]);
+	assert.deepEqual(resolveVisibleIssueDropCodes(["A"], "A"), ["A"]);
+	assert.deepEqual(resolveVisibleIssueDropCodes(codes, "missing"), ["A"]);
+	assert.deepEqual(resolveVisibleIssueDropCodes([], "D"), []);
+	const columns = [{ title: "To do", cards: codes.map((code) => ({ code })) }, { title: "Done", cards: [] }];
+	// Capture order differs from the destination's slot order; the entrance follows slots.
+	const drop = { ...captureIssueCardDropArrival(columns, codes, "Done", -3), animatedCardCodes: ["E", "D", "C", "B", "A"], pendingCardCodes: visible, leadCardCodes: visible };
+	const moved = [{ title: "To do", cards: [] }, { title: "Done", cards: codes.map((code) => ({ code, status: "Done" })) }];
+	const resolved = resolveIssueCardDropArrival(drop, moved);
+	assert.deepEqual(resolved.cardCodes, codes);
+	assert.deepEqual(resolved.animatedCardCodes, codes, "entrances follow destination slot order, top to bottom");
+	assert.deepEqual(resolved.pendingCardCodes, ["D"], "only the flying lead waits to land");
+	assert.deepEqual(resolved.cascadeLeadCardCodes, ["D"]);
+	assert.deepEqual(codes.map((code) => getIssueDropCascadeDelayS(resolved, code)).map((value) => +value.toFixed(3)), [0, 0.05, 0.1, 0, 0.15], "top to bottom; the lead starts on landing");
+	for (const code of codes) assert.equal(resolveBoardCardArrival(resolved, code).entering, true, `${code} plays the entrance`);
+	assert.equal(resolveBoardCardArrival(resolved, "D").final, true, "the lead lands after every step starts, so it completes the arrival");
+	assert.equal(resolveBoardCardArrival(resolved, "E").final, false);
 });

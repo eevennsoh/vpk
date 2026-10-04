@@ -5,6 +5,7 @@ import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
 import type { JiraKanbanAgentData } from "@/components/blocks/jira-kanban";
+import { BOARD_COLUMN_ACTION_REVEAL } from "@/components/blocks/jira-kanban/experimental/lib/board-column-action-reveal";
 import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
 import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 import {
@@ -146,9 +147,11 @@ export function BoardColumnAgentAssignment({
 									<Button
 										aria-label={triggerLabel}
 										className={cn(
-											"opacity-0 transition-opacity group-hover/board-column:opacity-100 group-focus-within/board-column:opacity-100",
+											BOARD_COLUMN_ACTION_REVEAL,
+											"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
+											"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
 											hasAssignedAgents && "h-8 min-w-0 gap-1 px-1.5",
-											(hasAssignedAgents || open) && "opacity-100",
+											(hasAssignedAgents || open) && "pointer-events-auto opacity-100",
 										)}
 										data-assigned={hasAssignedAgents || undefined}
 										data-open={open || undefined}

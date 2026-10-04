@@ -70,7 +70,9 @@ import {
 	filterJiraKanbanColumnsByAssignee,
 	getCommonJiraKanbanAgentIds,
 	getJiraKanbanAssignees,
+	getSelectableJiraKanbanColumns,
 	moveJiraKanbanCardsToColumn,
+	selectAllJiraKanbanCardsInSelectedColumns,
 	selectJiraKanbanCard,
 	updateJiraKanbanCardAgentAssignment,
 } from "../state";
@@ -398,7 +400,7 @@ export default function ExperimentalV2JiraKanbanPage({
 		indexInColumn: number,
 		modifiers: JiraKanbanCardSelectModifiers,
 	) => {
-		setSelection((current) => selectJiraKanbanCard(current, filteredBoardColumns, {
+		setSelection((current) => selectJiraKanbanCard(current, getSelectableJiraKanbanColumns(filteredBoardColumns, collapsedColumns), {
 			cardCode,
 			columnTitle,
 			indexInColumn,
@@ -465,6 +467,10 @@ export default function ExperimentalV2JiraKanbanPage({
 
 	const handleCardDragEnd = () => {
 		setDraggedCard(null);
+	};
+	const handleSelectAll = () => {
+		handleCardDragEnd();
+		setSelection((current) => selectAllJiraKanbanCardsInSelectedColumns(current, getSelectableJiraKanbanColumns(filteredBoardColumns, collapsedColumns)));
 	};
 
 	const handleAssigneeFilterChange = (assigneeIds: Set<string>) => {
@@ -618,6 +624,7 @@ export default function ExperimentalV2JiraKanbanPage({
 						onToggleColumnAgent={handleToggleColumnAgent}
 						paddingTop={0}
 						selectionToolbar={{
+							onSelectAll: handleSelectAll,
 							onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
 							onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
 							onStatusChange: handleSelectedCardsStatusChange,

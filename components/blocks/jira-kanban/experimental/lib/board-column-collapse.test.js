@@ -128,7 +128,11 @@ test("the first collapsed column restores the simple chrome content inset", () =
 	);
 	assert.match(
 		BOARD_SOURCE,
-		/const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\);/u,
+		/const resolvedColumnRowPaddingInlineStart = `calc\(\$\{resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\)\} \+ var\(\$\{IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR\}, 0px\)\)`;/u,
+	);
+	assert.match(
+		BOARD_SOURCE,
+		/marginInlineStart: `calc\(-1 \* var\(\$\{IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR\}, 0px\)\)`/u,
 	);
 });
 
@@ -191,7 +195,7 @@ test("the pinned session column shares the status columns' box model", () => {
 	// the column itself remains the Untracked drop zone and lights when armed.
 	assert.match(
 		IN_FLOW_SOURCE,
-		/className=\{cn\(\s*"group\/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 items-start border-2 border-r-0",[\s\S]*?untrackedDropArmed \? "border-ring" : "border-transparent",[\s\S]*?className,\s*\)\}/u,
+		/className=\{cn\(\s*"group\/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 items-start border-2 border-r-0",[\s\S]*?untrackedDropArmed \? "border-border-selected" : "border-transparent",[\s\S]*?className,\s*\)\}/u,
 	);
 	assert.match(IN_FLOW_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
 });

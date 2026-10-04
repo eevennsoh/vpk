@@ -27,7 +27,8 @@ import {
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import { AgentSelector } from "@/components/blocks/agent-selector";
 import type { JiraKanbanCardDropTarget } from "./card-drop";
-import { JiraToolbar } from "@/components/blocks/jira-toolbar";
+import { hasJiraSelectionToggleModifier } from "./selection-modifiers";
+import { JiraToolbar, type JiraToolbarProps } from "@/components/blocks/jira-toolbar";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -60,6 +61,7 @@ import {
 	type KanbanColumnChrome,
 	type KanbanColumnChromeStyles,
 } from "./column-chrome";
+import { motionEase } from "@/lib/motion";
 
 export type { KanbanColumnChrome };
 
@@ -67,16 +69,19 @@ export type JiraKanbanPriority = JiraIssuePriority;
 
 export type JiraKanbanCardTag = JiraIssueTag;
 
-const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
-const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
+const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: motionEase.inOut }; // duration-slowest + ease-in-out
+const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: motionEase.in }; // duration-slower + ease-in
 
 export interface JiraKanbanAssigneeData {
 	id: string;
 	name: string;
-	avatarSrc: string;
+	/** Omit when the header renderer supplies a brand visual or initials. */
+	avatarSrc?: string;
 }
 
 export interface JiraKanbanCardData {
+	/** Demo AI suggestion; stable across selection, filtering and manual moves. */
+	autoArrangeStatus?: string;
 	/** Workflow status when a board column groups several statuses. */
 	status?: string;
 	title: string;
@@ -119,6 +124,8 @@ export interface JiraKanbanAgentData {
 }
 
 export interface JiraKanbanCardSelectModifiers {
+	/** Explicit selection controls can toggle without a card-click modifier. */
+	source?: "card" | "selection-control";
 	shiftKey: boolean;
 	metaOrCtrlKey: boolean;
 }
@@ -137,6 +144,11 @@ function getJiraKanbanCardScale(
 }
 
 export interface JiraKanbanSelectionToolbarConfig {
+	getStatusVariant?: JiraToolbarProps["getStatusVariant"];
+	/** A board-owned keyboard handler can take precedence over global dismissal. */
+	dismissOnEscape?: boolean;
+	onSelectAll?: () => void;
+	onAskRovo?: () => void;
 	agents?: readonly JiraKanbanAgentData[];
 	className?: string;
 	defaultPinnedAgentIds?: readonly string[];
@@ -697,7 +709,7 @@ export function JiraKanban({
 									const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
-											metaOrCtrlKey: event.metaKey || event.ctrlKey,
+											metaOrCtrlKey: hasJiraSelectionToggleModifier(event),
 										};
 										if (modifiers.shiftKey || modifiers.metaOrCtrlKey) {
 											event.preventDefault();
@@ -794,8 +806,11 @@ export function JiraKanban({
 					<JiraToolbar
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
+						dismissOnEscape={selectionToolbar.dismissOnEscape}
+						getStatusVariant={selectionToolbar.getStatusVariant}
 						defaultPinnedAgentIds={selectionToolbar.defaultPinnedAgentIds}
-						defaultPinnedSkillIds={selectionToolbar.defaultPinnedSkillIds}
+						onSelectAll={selectionToolbar.onSelectAll}
+						onAskRovo={selectionToolbar.onAskRovo}
 						onAgentAssignmentChange={selectionToolbar.onAgentAssignmentChange}
 						onBrowseAgents={selectionToolbar.onBrowseAgents}
 						onClearSelection={selectionToolbar.onClearSelection}
@@ -809,7 +824,6 @@ export function JiraKanban({
 						selectedAgentIds={selectionToolbar.selectedAgentIds}
 						selectedCount={selectedCount}
 						selectedStatus={selectedStatus}
-						skills={selectionToolbar.skills}
 						statusOptions={boardColumns.map((column) => column.title)}
 					/>
 				) : null}

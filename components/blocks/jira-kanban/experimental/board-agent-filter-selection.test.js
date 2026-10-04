@@ -18,6 +18,10 @@ const { test } = require("node:test");
 
 const EXPERIMENTAL_DIR = __dirname;
 const PAGE_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "page.tsx"), "utf8");
+const ISSUE_SELECTION_HOOK_SOURCE = readFileSync(
+	join(EXPERIMENTAL_DIR, "hooks/use-page-issue-selection.ts"),
+	"utf8",
+);
 const BOARD_FILTER_HOOK_SOURCE = readFileSync(
 	join(EXPERIMENTAL_DIR, "hooks/use-board-filter.ts"),
 	"utf8",
@@ -26,7 +30,7 @@ const BOARD_FILTER_HOOK_SOURCE = readFileSync(
 /** Body of a single-expression arrow handler declared as `const <name> = (...) => { ... }`. */
 function handlerBody(source, name) {
 	const start = source.indexOf(`const ${name} = (`);
-	assert.notEqual(start, -1, `${name} should exist in page.tsx`);
+	assert.notEqual(start, -1, `${name} should exist in its source owner`);
 	const open = source.indexOf("{", source.indexOf("=>", start));
 	assert.notEqual(open, -1, `${name} should have a block body`);
 
@@ -72,7 +76,7 @@ test("every board-filter assignee mutation clears focused collapse and card stat
 		PAGE_SOURCE,
 		/const resetAssigneeScopedBoardState = useCallback\(\(\) => \{[\s\S]*?setSelection\(createJiraKanbanSelectionState\(\)\)[\s\S]*?setDraggedCard\(null\)[\s\S]*?setFocusedCollapsedColumns\(null\)[\s\S]*?\}, \[\]\);/u,
 	);
-	assert.match(PAGE_SOURCE, /useBoardFilter\(\{ onAssigneeChange: resetAssigneeScopedBoardState \}\)/u);
+	assert.match(PAGE_SOURCE, /useBoardFilter\(\{ onAssigneeChange: resetAssigneeScopedBoardState, scopeKey: boardFilterScopeKey \}\)/u);
 	assert.match(BOARD_FILTER_HOOK_SOURCE, /if \(fieldId === "assignee"\) onAssigneeChange\?\.\(\);[\s\S]*?toggleBoardFilterValue/u);
 	assert.match(BOARD_FILTER_HOOK_SOURCE, /const setAssigneeIds = useCallback\([\s\S]*?onAssigneeChange\?\.\(\);/u);
 	assert.match(BOARD_FILTER_HOOK_SOURCE, /const clearField = useCallback\([\s\S]*?if \(fieldId === "assignee"\) onAssigneeChange\?\.\(\);/u);
@@ -81,9 +85,11 @@ test("every board-filter assignee mutation clears focused collapse and card stat
 });
 
 test("bulk actions read the raw selection, which is why the reset is required", () => {
-	const statusChange = handlerBody(PAGE_SOURCE, "handleSelectedCardsStatusChange");
+	const statusChange = handlerBody(ISSUE_SELECTION_HOOK_SOURCE, "handleSelectedCardsStatusChange");
 	const agentAssignment = handlerBody(PAGE_SOURCE, "handleSelectedCardsAgentAssignmentChange");
 
 	assert.match(statusChange, /\[\.\.\.selection\.selectedCardCodes\]/u);
+	assert.match(statusChange, /moveJiraKanbanCardsToStatus\(boardColumns,/u);
+	assert.match(PAGE_SOURCE, /onStatusChange: handleSelectedCardsStatusChange/u);
 	assert.match(agentAssignment, /selection\.selectedCardCodes/u);
 });

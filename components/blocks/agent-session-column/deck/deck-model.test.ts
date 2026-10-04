@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { SCROLLING_ENTRANCE_SPRING } from "../../../visual/scrolling/data.ts";
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { AGENT_SESSION_DECK_END_SPACE_PX, AGENT_SESSION_DECK_FLAT, AGENT_SESSION_DECK_STACKED, deckRunFrame, groupDeckRuns, isAgentSessionDeckActive, isIdentityFrame, resolveAgentSessionDeckCollapse, resolveAgentSessionDeckMotion, type AgentSessionDeck, type DeckRow } from "./deck-model.ts";
 
 const STACKED_WITH_ENTRANCE: AgentSessionDeck = {

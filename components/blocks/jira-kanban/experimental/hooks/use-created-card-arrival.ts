@@ -11,6 +11,12 @@ import {
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import { subscribeCreatedCardBottomReveal } from "@/components/blocks/jira-creating/lib/jira-creating-column-scroll";
+import { agentSessionTintSeed } from "@/components/blocks/agent-session/agent-session-transfer-member";
+import { resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
+import { JIRA_LINKING_GLOW_DEFAULT_COLOR } from "@/components/blocks/jira-linking/glow-motion";
+import type { JiraLinkingDrop, JiraLinkingPoint } from "@/components/blocks/jira-linking";
+import { toJiraDropzoneMember } from "../lib/session-drop-receipt";
+import type { BoardCardInsertion } from "../lib/board-agent-session-drag";
 
 export interface JiraKanbanCreatedCardArrival {
 	readonly id: number;
@@ -25,6 +31,21 @@ export interface JiraKanbanCreatedCardArrival {
 	readonly appended: boolean;
 	/** Keep the new card's entrance pending until the create-well receipt finishes. */
 	readonly deferred?: boolean;
+	/** Cards that play the entrance; others in `cardCodes` appear at rest. */
+	readonly animatedCardCodes?: readonly string[];
+	/** Reserve moved-card slots while their flight still owns the visible face. */
+	readonly pendingCardCodes?: readonly string[];
+	/**
+	 * A moved cohort's flying cards: one dropped traveller, or a deck. Every
+	 * entrance cascades top to bottom in slot order; see `getIssueDropCascadeDelayS`.
+	 */
+	readonly cascadeLeadCardCodes?: readonly string[];
+	/** The flights are a deck at the top: cards below it wait for it to land. */
+	readonly cascadeHoldsBelowLeads?: boolean;
+	/** Session brand colors for the creation acknowledgement. */
+	readonly glowColors?: Readonly<Record<string, string>>;
+	/** Inline drops travel into the new card before its creation acknowledgement. */
+	readonly inlineDrop?: JiraLinkingDrop & { readonly cardCodes: readonly string[] };
 }
 
 export function useBoardCreatedCardArrival({
@@ -57,10 +78,11 @@ export function useBoardCreatedCardArrival({
 		const appended = insertAtIndex === undefined;
 		createdCardArrivalIdRef.current += 1;
 		const id = createdCardArrivalIdRef.current;
+		const glowColor = resolveAgentBrandTintColor(agentSessionTintSeed(session)) ?? JIRA_LINKING_GLOW_DEFAULT_COLOR;
 		setCreatedCardArrival((current) => (
 			current?.columnTitle === columnTitle
-				? { id, columnTitle, cardCodes: [...current.cardCodes, cardCode], appended }
-				: { id, columnTitle, cardCodes: [cardCode], appended }
+				? { id, columnTitle, cardCodes: [...current.cardCodes, cardCode], appended, glowColors: { ...current.glowColors, [cardCode]: glowColor } }
+				: { id, columnTitle, cardCodes: [cardCode], appended, glowColors: { [cardCode]: glowColor } }
 		));
 		return cardCode;
 	}, [captureSession, onCreate]);
@@ -69,7 +91,17 @@ export function useBoardCreatedCardArrival({
 		setCreatedCardArrival((current) => current?.id === arrivalId ? null : current);
 	}, []);
 
-	return { createdCardArrival, handleComplete, handleCreate };
+	const handleGapCreate = useCallback((sessions: readonly [AgentSessionItem, ...AgentSessionItem[]], insertion: BoardCardInsertion, from?: JiraLinkingPoint) => {
+		const codes = sessions.flatMap((session, index) => {
+			const code = handleCreate(session, insertion.columnTitle, insertion.insertAtIndex + index);
+			return code ? [code] : [];
+		});
+		if (!from || !codes.length) return;
+		const inlineDrop: NonNullable<JiraKanbanCreatedCardArrival["inlineDrop"]> = { from, members: [toJiraDropzoneMember(sessions[0]), ...sessions.slice(1).map(toJiraDropzoneMember)], playback: "cohort", cardCodes: codes };
+		setCreatedCardArrival((current) => current && codes.every((code) => current.cardCodes.includes(code)) ? { ...current, inlineDrop } : current);
+	}, [handleCreate]);
+
+	return { createdCardArrival, handleComplete, handleCreate, handleGapCreate };
 }
 
 export function useCreatedCardArrivalCompletion(

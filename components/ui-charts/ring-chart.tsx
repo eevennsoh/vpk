@@ -373,14 +373,12 @@ const RingChartCore = memo(function RingChartCore({
         </svg>
 
         {/* HTML layer with center content - stacked on top via grid */}
-        {centerChildren.length > 0 && (
-          <div
+        {centerChildren.length > 0 ? <div
             className="pointer-events-none flex items-center justify-center"
             style={{ gridArea: "1 / 1" }}
           >
             {centerChildren}
-          </div>
-        )}
+          </div> : null}
       </div>
     </RingProvider>
   );

@@ -1,0 +1,510 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const test = require("node:test");
+const vm = require("node:vm");
+const ts = require("typescript");
+const esbuild = require("esbuild");
+const { loadCjsModuleFromText } = require("../../../../../scripts/lib/esbuild-cjs-loader.js");
+const arrivalModel = loadCjsModuleFromText(esbuild.buildSync({ entryPoints: ["components/blocks/jira-kanban/experimental/lib/board-card-arrival.ts"], bundle: true, format: "cjs", platform: "node", tsconfig: "tsconfig.json", write: false }).outputFiles[0].text);
+const autoModel = loadCjsModuleFromText(esbuild.buildSync({ entryPoints: ["components/blocks/jira-kanban/experimental/lib/board-auto-arrange.ts"], bundle: true, format: "cjs", platform: "node", write: false }).outputFiles[0].text);
+
+const issue = (code, autoArrangeStatus) => ({ code, title: code, tags: [], priority: "medium", ...(autoArrangeStatus ? { autoArrangeStatus } : {}) });
+
+/** `count` issues split across two source columns, like a multi-column keynote selection. */
+function cohortBoard(count) {
+	const codes = Array.from({ length: count }, (_, index) => `K${index + 1}`);
+	const split = Math.ceil(count / 2);
+	return {
+		codes,
+		columns: [
+			{ title: "To do", count: split, cards: codes.slice(0, split).map((code) => issue(code)) },
+			{ title: "Review", count: count - split, cards: codes.slice(split).map((code) => issue(code)) },
+			{ title: "Done", count: 0, cards: [] },
+		],
+	};
+}
+
+function harness({ reduced = false, reject = false, enabled = true, withMove = false, board, dragged = "A", selected = ["A", "B"], solitaire = false, landing = { left: 40, top: 80, width: 280 }, faceWidth = 280 } = {}) {
+	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [], reveals = [], events = [], frames = [], timers = [], landings = [];
+	let stateIndex = 0, refIndex = 0, effectIndex = 0, api;
+	const face = { offsetHeight: 199, offsetWidth: faceWidth };
+	const createPreview = () => ({ querySelector: (selector) => selector === "[data-issue-cohort-front]" ? face : null, remove() { events.push("remove preview"); this.removed = true; } });
+	let preview = createPreview(), released = null;
+	let columns = board ?? [
+		{ title: "To do", count: 2, cards: [issue("A", "Review"), issue("B", "Done")] },
+		{ title: "Review", count: 0, cards: [] }, { title: "Done", count: 0, cards: [] },
+	];
+	class Element {
+		constructor(parent = null, dataset = {}) { this.parent = parent; this.dataset = dataset; }
+		contains(target) { for (let node = target; node; node = node.parent) if (node === this) return true; return false; }
+	}
+	const listeners = new Map();
+	const root = new Element();
+	const columnNodes = columns.map((column) => new Element(root, { jiraKanbanColumn: column.title }));
+	root.querySelectorAll = () => columnNodes;
+	root.ownerDocument = {
+		visibilityState: "visible",
+		dispatch(name) { for (const callback of [...listeners.get(name) ?? []]) callback({ target: root.ownerDocument }); },
+		addEventListener(name, callback) { const callbacks = listeners.get(name) ?? new Set(); callbacks.add(callback); listeners.set(name, callbacks); },
+		removeEventListener(name, callback) { listeners.get(name)?.delete(callback); },
+	};
+	const boardRef = { current: root }, nativePreviewRef = { current: null };
+	const getPreview = () => preview;
+	const onAutoArrange = (codes) => { if (!reject) columns = autoModel.autoArrangeCards(columns, codes); };
+	const onMove = withMove ? (move) => { events.push("commit"); columns = require("../../card-drop.ts").moveJiraKanbanCardsToDropTarget(columns, move.cardCodes, move.columnTitle, move.target); } : undefined;
+	const onDrop = (title) => { events.push("commit"); if (!reject) columns = require("../../card-drop.ts").moveJiraKanbanCardsToStatus(columns, selected, title); };
+	const releasePreview = () => { released = preview; preview = null; events.push("release preview"); return released; };
+	const react = {
+		useState(initial) { const i = stateIndex++; if (!(i in states)) states[i] = initial; return [states[i], (next) => { states[i] = typeof next === "function" ? next(states[i]) : next; }]; },
+		useRef(current) { const i = refIndex++; return refs[i] ??= { current }; },
+		useMemo: (factory) => factory(), useCallback: (callback) => callback,
+		useLayoutEffect(effect, deps) {
+			const i = effectIndex++, previous = effects[i];
+			if (previous && deps.every((dep, index) => Object.is(dep, previous.deps[index]))) return;
+			scheduled.push(() => { previous?.cleanup?.(); effects[i] = { deps, cleanup: effect() }; });
+		},
+	};
+	react.useEffect = react.useLayoutEffect;
+	const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, "use-issue-card-drop-arrival.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+	const loaded = { exports: {} };
+	const clock = {
+		requestAnimationFrame: (callback) => frames.push(callback), cancelAnimationFrame: (id) => { frames[id - 1] = null; },
+		setTimeout: (callback, delay = 0) => timers.push({ callback, delay }), clearTimeout: (id) => { timers[id - 1] = null; },
+	};
+	// The real frame handoff, on this harness's frames and timers.
+	const handoff = { exports: {} };
+	vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../lib/issue-drop-handoff.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { module: handoff, exports: handoff.exports, ...clock });
+	vm.runInNewContext(compiled, {
+		module: loaded, exports: loaded.exports, Element, window: { addEventListener() {}, removeEventListener() {} }, ...clock,
+		require(name) {
+			if (name.includes("issue-drop-handoff")) return handoff.exports;
+			if (name === "react") return react;
+			if (name === "react-dom") return { flushSync(callback) { events.push("flushSync"); callback(); render(); } };
+			if (name.includes("issue-drag-preview")) return { settleIssueCohortPreview(node, at) { events.push("settle preview"); node.settledAt = at; } };
+			if (name.includes("use-media-query")) return { useMediaQuery: () => reduced };
+			if (name.includes("board-auto-arrange")) return autoModel;
+			if (name.includes("board-card-arrival")) return arrivalModel;
+			if (name.includes("issue-solitaire-drop")) return {
+				captureIssueCardReflow: () => [],
+				resolveIssueSolitaireLanding(root, title, codes, beforeCardCode, height) { landings.push({ title, codes: [...codes], beforeCardCode, height }); return landing; },
+				animateIssueSolitaireDrop(root, title, codes, reduced, complete, glowColors, feedback = "trace") {
+					events.push("reveal");
+					const reveal = { title, codes: [...codes], reduced, complete, feedback, stopped: false };
+					reveals.push(reveal);
+					if (reduced) complete();
+					return () => { reveal.stopped = true; };
+				},
+			};
+			if (name.includes("issue-card-drop-flight")) return {
+				captureIssueCardDropFlights(options) { events.push("capture"); captures.push({ preview: options.preview, pointer: options.pointer, grabbed: options.grabbed, codes: [...options.codes], allCards: options.allCards }); return options.codes.map((code) => ({ code, node: {}, from: { x: 100, y: 100 } })); },
+				hasIssueDropTarget: () => true,
+				startIssueCardDropFlights(root, title, items, landed, finished) { const flight = { title, items, landed, finished, stopped: false }; flights.push(flight); return () => { flight.stopped = true; }; },
+			};
+			throw new Error(`Unexpected import ${name}`);
+		},
+	});
+	function render() {
+		stateIndex = refIndex = effectIndex = 0;
+		api = loaded.exports.useIssueCardDropArrival({ boardRef, enabled, getPreview, nativePreviewRef, columns, solitaire, draggedCardCode: dragged, selectedCardCodes: new Set(selected), onDrop, onMove, onAutoArrange, releasePreview });
+		while (scheduled.length) scheduled.shift()();
+		return api;
+	}
+	render();
+	return { render, captures, flights, reveals, events, landings, released: () => released, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review", target) { api.handleDrop(title, target); preview = null; },
+		/** Native dragend right after the drop, as Chromium dispatches it. */
+		dragEnd() { if (!api.deferDragEnd(() => events.push("dragend"))) events.push("dragend"); },
+		/** The frame after release paints; the task it queues then runs. */
+		frame() { for (const callback of frames.splice(0)) callback?.(); },
+		/** Runs the timers due now; later ones (the fallback) stay queued. */
+		task() { for (const [index, timer] of timers.entries()) if (timer && timer.delay === 0) { timers[index] = null; timer.callback(); } },
+		/** Lets every pending timer's delay pass, as throttled frames would. */
+		elapse() { for (const [index, timer] of timers.entries()) if (timer) { timers[index] = null; timer.callback(); } },
+		hide() { root.ownerDocument.visibilityState = "hidden"; root.ownerDocument.dispatch("visibilitychange"); },
+		unmount() { for (const effect of effects) effect?.cleanup?.(); },
+		scroll(title) {
+			const target = title === "document" ? root.ownerDocument : title === "board" ? root : new Element(columnNodes.find((node) => node.dataset.jiraKanbanColumn === title));
+			for (const callback of listeners.get("scroll") ?? []) callback({ target });
+		},
+	};
+}
+
+test("source-column scroll resets do not cancel a Done trace; destination and ancestor scrolls do", () => {
+	for (const target of ["Done", "board", "document"]) {
+		const h = harness({ solitaire: true }); h.drop("Done"); h.render();
+		h.scroll("To do");
+		assert.equal(h.reveals[0].stopped, false, "emptying a scrolled source must preserve completion feedback");
+		h.scroll(target);
+		assert.equal(h.reveals[0].stopped, true, "moving the destination retires its fixed overlay");
+	}
+});
+
+test("Return captures the held preview before commit and launches arrivals for every destination before paint", () => {
+	const h = harness();
+	h.arrange();
+	assert.equal(h.captures.length, 2);
+	assert.ok(h.captures.every((capture) => capture.preview !== null && capture.allCards === undefined));
+	const api = h.render();
+	assert.deepEqual(h.flights.map((flight) => flight.title), ["Review", "Done"]);
+	assert.equal(api.arrivalForColumn("Review").pendingCardCodes[0], "A");
+	assert.equal(api.arrivalForColumn("Done").pendingCardCodes[0], "B");
+	for (const flight of h.flights) flight.landed(flight.items[0].code);
+	const landed = h.render();
+	assert.equal(landed.arrivalForColumn("Review").pendingCardCodes.length, 0);
+	assert.equal(landed.arrivalForColumn("Done").pendingCardCodes.length, 0);
+	landed.handleComplete(landed.arrivalForColumn("Review").id);
+	const remaining = h.render();
+	assert.equal(remaining.arrivalForColumn("Review"), undefined);
+	assert.ok(remaining.arrivalForColumn("Done"));
+	assert.equal(h.flights.length, 2, "finishing one column must not replay flights in another");
+	remaining.handleComplete(remaining.arrivalForColumn("Done").id);
+	h.render();
+	assert.ok(h.flights.every((flight) => flight.stopped));
+});
+
+test("manual drops retain their one-cohort-flight contract", () => {
+	const h = harness(); h.drop(); const api = h.render();
+	assert.equal(h.flights.length, 1);
+	assert.equal(h.flights[0].items.length, 1);
+	assert.equal(h.captures[0].allCards, undefined);
+	assertTravellerCascade(api.arrivalForColumn("Review"), "A");
+});
+
+test("assignment moves keep arrival geometry without borrowing manual drop feedback", () => {
+	const h = harness({ withMove: true, solitaire: true, dragged: null, selected: [] });
+	h.api().handleMove({ cardCodes: ["A"], columnTitle: "Review", target: { beforeCardCode: null }, feedback: "none" });
+	h.render();
+	assert.equal(h.reveals[0].feedback, "none");
+	assert.deepEqual(h.reveals[0].codes, ["A"]);
+	const manual = harness({ solitaire: true });
+	manual.drop(); manual.render();
+	assert.equal(manual.reveals[0].feedback, "trace");
+});
+
+test("reduced motion and rejected arrangements never launch flights", () => {
+	for (const options of [{ reduced: true }, { reject: true }]) {
+		const h = harness(options); h.arrange(); h.render();
+		assert.equal(h.flights.length, 0);
+		if (options.reduced) assert.equal(h.captures.length, 0);
+	}
+});
+
+
+test("disabled move visuals preserve manual drops without starting an arrival", () => {
+	const h = harness({ enabled: false });
+	h.drop();
+	const api = h.render();
+	assert.equal(api.arrivalForColumn("Review"), undefined);
+	assert.equal(h.captures.length, 0);
+	assert.equal(h.flights.length, 0);
+});
+
+test("switching move visuals off cancels flights and clears arrivals before re-enabling", () => {
+	const h = harness();
+	h.arrange();
+	h.render();
+	assert.equal(h.flights.length, 2);
+	h.setEnabled(false);
+	h.render();
+	assert.ok(h.flights.every((flight) => flight.stopped));
+	h.setEnabled(true);
+	const restored = h.render();
+	assert.equal(restored.arrivalForColumn("Review"), undefined);
+	assert.equal(restored.arrivalForColumn("Done"), undefined);
+	assert.equal(h.flights.length, 2);
+});
+
+// A pointer drop flies its one held traveller however many issues move; the
+// drag deck caps at three faces, but a drop never fans out into one flight per
+// issue. Every landed issue still plays the entrance, cascading top to bottom
+// in slot order from the commit, one duration-xxshort step per slot, capped
+// past the fold. The traveller is off that clock: it enters when it lands,
+// after every cascade step has started, so it finishes last.
+const FLIGHT_S = 0.26;
+const plain = (values) => [...values];
+function assertTravellerCascade(arrival, lead) {
+	assert.deepEqual(plain(arrival.animatedCardCodes), plain(arrival.cardCodes), "every landed issue plays the entrance, in slot order");
+	assert.deepEqual(plain(arrival.cascadeLeadCardCodes), [lead]);
+	assert.deepEqual(plain(arrival.pendingCardCodes), [lead], "only the flying traveller waits to land");
+	const others = arrival.cardCodes.filter((code) => code !== lead).map((code) => arrivalModel.getIssueDropCascadeDelayS(arrival, code));
+	for (let index = 1; index < others.length; index++) assert.ok(others[index] >= others[index - 1], `a lower slot may not start before the slot above it (${others})`);
+	assert.ok(others.every((startS) => startS < FLIGHT_S), "the whole cascade starts before the traveller can land");
+	for (const code of arrival.cardCodes) assert.equal(arrivalModel.resolveBoardCardArrival(arrival, code).entering, true, `${code} plays the entrance`);
+	assert.equal(arrivalModel.resolveBoardCardArrival(arrival, lead).final, true, "the traveller enters last and owns completion");
+	assert.equal(arrival.cardCodes.filter((code) => arrivalModel.resolveBoardCardArrival(arrival, code).final).length, 1);
+}
+
+// Auto arrange and host moves land a deck instead: the destination's top cards,
+// at most the drag deck's three, fly into the top slots; every card below the
+// deck holds until it lands and then steps down from it, top to bottom.
+function assertDeckCascade(arrival, flights) {
+	const deck = arrival.cardCodes.slice(0, Math.min(3, arrival.cardCodes.length));
+	assert.deepEqual(plain(flights), deck, "a deck of at most three flies into the destination's top slots");
+	assert.deepEqual(plain(arrival.cascadeLeadCardCodes), deck);
+	assert.equal(arrival.cascadeHoldsBelowLeads, true);
+	assert.deepEqual(plain(arrival.pendingCardCodes), plain(arrival.cardCodes), "the deck and everything below it wait for the landing");
+	const starts = arrival.cardCodes.map((code) => arrivalModel.getIssueDropCascadeDelayS(arrival, code));
+	assert.deepEqual(starts.slice(0, deck.length), deck.map(() => 0), "the deck enters as one stack on landing");
+	for (let index = 1; index < starts.length; index++) assert.ok(starts[index] >= starts[index - 1], `slot ${index} may not start before the slot above it (${starts})`);
+	assert.ok(starts.every((startS) => startS <= arrivalModel.ISSUE_DROP_AFTER_DECK_MAX_STEPS * arrivalModel.ISSUE_DROP_CASCADE_STAGGER_S + 1e-9), "past the fold the after-deck cascade adds no time");
+	for (const code of arrival.cardCodes) assert.equal(arrivalModel.resolveBoardCardArrival(arrival, code).entering, true, `${code} plays the entrance`);
+	assert.equal(arrivalModel.resolveBoardCardArrival(arrival, arrival.cardCodes.at(-1)).final, true, "the bottom card starts last and owns completion");
+}
+
+for (const count of [2, 3, 5, 13]) {
+	test(`a ${count}-issue pointer drop flies only the grabbed traveller while every issue cascades in`, () => {
+		const { codes, columns } = cohortBoard(count);
+		const grabbed = codes[Math.floor(count / 2)];
+		const h = harness({ board: columns, dragged: grabbed, selected: codes });
+		h.drop("Done");
+		const api = h.render();
+		assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), codes);
+		assert.equal(h.flights.length, 1);
+		assert.deepEqual(h.flights[0].items.map((item) => item.code), [grabbed]);
+		assertTravellerCascade(api.arrivalForColumn("Done"), grabbed);
+	});
+
+	test(`a ${count}-issue host move drops a deck into the top of the column like auto arrange`, () => {
+		const { codes, columns } = cohortBoard(count);
+		const h = harness({ board: columns, withMove: true, dragged: null, selected: [] });
+		h.api().handleMove({ cardCodes: codes, columnTitle: "Done", target: { beforeCardCode: null } });
+		assert.deepEqual(h.events, ["capture", "commit"]);
+		assert.equal(h.captures[0].preview, null, "no held traveller exists for a host move");
+		assert.equal(h.captures[0].pointer, null, "each deck card flies from its own slot");
+		const api = h.render();
+		assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), codes);
+		assert.equal(h.flights.length, 1);
+		const arrival = api.arrivalForColumn("Done");
+		assertDeckCascade(arrival, h.flights[0].items.map((item) => item.code));
+		for (const item of h.flights[0].items) h.flights[0].landed(item.code);
+		const landed = h.render();
+		assert.deepEqual(plain(landed.arrivalForColumn("Done").pendingCardCodes), [], "the landing releases the cards below the deck");
+		landed.handleComplete(landed.arrivalForColumn("Done").id);
+		assert.equal(h.render().arrivalForColumn("Done"), undefined);
+	});
+}
+
+// The toolbar's Auto arrange and Return during a drag share one path: each
+// destination drops a deck of its top cards into its top slots.
+for (const dragging of [false, true]) {
+	test(`${dragging ? "Return mid-drag" : "the toolbar"} auto-arranges 13 issues as a three-card deck into the top of Done`, () => {
+		const { codes, columns } = cohortBoard(13);
+		const board = columns.map((column) => ({ ...column, cards: column.cards.map((card) => ({ ...card, autoArrangeStatus: "Done" })) }));
+		const grabbed = dragging ? codes[7] : null;
+		const h = harness({ board, dragged: grabbed, selected: codes });
+		h.api().handleAutoArrange(new Set(codes));
+		assert.equal(h.captures.length, 1);
+		assert.deepEqual(h.captures[0].codes, codes.slice(0, 3), "the deck is the destination's top three, never all thirteen");
+		const api = h.render();
+		const done = h.columns().find((column) => column.title === "Done").cards.map((card) => card.code);
+		assert.deepEqual(done.slice(0, 3), codes.slice(0, 3), "the deck's cards occupy the top slots");
+		assert.equal(h.flights.length, 1);
+		assertDeckCascade(api.arrivalForColumn("Done"), h.flights[0].items.map((item) => item.code));
+	});
+}
+
+test("auto arrange across destinations drops one deck into the top of each", () => {
+	const { codes, columns } = cohortBoard(12);
+	const board = columns.map((column) => ({ ...column, cards: column.cards.map((card, index) => ({ ...card, autoArrangeStatus: index % 2 ? "Done" : "Review" })) }));
+	const h = harness({ board, dragged: null, selected: codes });
+	h.api().handleAutoArrange(new Set(codes));
+	const api = h.render();
+	assert.deepEqual(h.flights.map((flight) => flight.title).sort(), ["Done", "Review"]);
+	assert.equal(api.arrivalForColumn("Done").cardCodes.length, 6, "Done lands more than its deck");
+	for (const flight of h.flights) {
+		const arrival = api.arrivalForColumn(flight.title);
+		assertDeckCascade(arrival, flight.items.map((item) => item.code));
+	}
+});
+
+test("the landing cascade starts top to bottom in slot order and stops growing past the fold", () => {
+	const cardCodes = Array.from({ length: 13 }, (_, index) => `K${index + 1}`);
+	const step = arrivalModel.ISSUE_DROP_CASCADE_STAGGER_S;
+	const round = (values) => values.map((value) => +value.toFixed(3));
+	const columns = [{ title: "To do", cards: cardCodes.map((code) => ({ code })) }, { title: "Done", cards: [] }];
+	const moved = [{ title: "To do", cards: [] }, { title: "Done", cards: cardCodes.map((code) => ({ code, status: "Done" })) }];
+	const captured = arrivalModel.captureIssueCardDropArrival(columns, cardCodes, "Done", -9);
+	// A traveller mid-column; captured out of order, the cascade still follows slots.
+	const traveller = arrivalModel.resolveIssueCardDropArrival({ ...captured, animatedCardCodes: [...cardCodes].reverse(), pendingCardCodes: ["K8"], leadCardCodes: ["K8"] }, moved);
+	assert.deepEqual(plain(traveller.animatedCardCodes), cardCodes);
+	const starts = cardCodes.map((code) => arrivalModel.getIssueDropCascadeDelayS(traveller, code));
+	assert.deepEqual(round(starts.slice(0, 5)), round([0, step, 2 * step, 3 * step, 3 * step]), "top slot first, then each slot below it");
+	assert.equal(starts[7], 0, "the traveller's own entrance starts on landing");
+	// A deck at the top: it lands first, then the slots below step down from it.
+	const deck = arrivalModel.resolveIssueCardDropArrival({ ...captured, animatedCardCodes: cardCodes, pendingCardCodes: ["K1", "K2", "K3"], leadCardCodes: ["K1", "K2", "K3"], holdBelowLeads: true }, moved);
+	assert.deepEqual(plain(deck.pendingCardCodes), cardCodes);
+	assert.deepEqual(round(cardCodes.slice(0, 6).map((code) => arrivalModel.getIssueDropCascadeDelayS(deck, code))), round([0, 0, 0, step, step, step]), "the deck lands as one stack, then the slots below follow it");
+	assert.deepEqual(arrivalModel.resolveIssueDropDeck(cardCodes), ["K1", "K2", "K3"]);
+	assert.deepEqual(arrivalModel.resolveIssueDropDeck(["K1", "K2"]), ["K1", "K2"]);
+	const released = arrivalModel.resolveIssueCardDropArrival({ ...captured, animatedCardCodes: cardCodes, pendingCardCodes: [], leadCardCodes: ["K1", "K2", "K3"], holdBelowLeads: true }, moved);
+	assert.deepEqual(plain(released.pendingCardCodes), [], "once the deck lands nothing is held");
+});
+
+test("host moves commit without visuals when move visuals are off, and stay absent without an owner", () => {
+	const h = harness({ withMove: true, enabled: false });
+	h.api().handleMove({ cardCodes: ["A", "B"], columnTitle: "Done", target: { beforeCardCode: null } });
+	assert.deepEqual(h.events, ["commit"]);
+	assert.equal(h.render().arrivalForColumn("Done"), undefined);
+	assert.equal(harness().api().handleMove, undefined);
+});
+
+test("each move request id plays once, after the frame that follows it, and a board without the capability ignores it", () => {
+	const refs = [];
+	let refIndex = 0;
+	const react = {
+		useRef(current) { const i = refIndex++; return refs[i] ??= { current }; },
+		useEffect(effect) { effect(); },
+	};
+	const load = (file, requireModule) => {
+		const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, file), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+		const loaded = { exports: {} };
+		vm.runInNewContext(compiled, { module: loaded, exports: loaded.exports, window: { addEventListener() {}, removeEventListener() {} }, require: requireModule });
+		return loaded.exports;
+	};
+	const handoff = load("../lib/issue-drop-handoff.ts", (name) => {
+		if (name === "@/lib/motion") return { motionDuration: { normal: 0.15 } };
+		throw new Error(`Unexpected import ${name}`);
+	});
+	const loaded = load("use-issue-move-request.ts", (name) => {
+		if (name === "react") return react;
+		if (name === "../lib/issue-drop-handoff") return handoff;
+		if (name === "./use-issue-card-drop-arrival") return {};
+		throw new Error(`Unexpected import ${name}`);
+	});
+	const frames = [];
+	const afterFrame = (run) => { frames.push(run); return () => {}; };
+	const present = () => { for (const run of frames.splice(0)) run(); };
+	const moves = [];
+	const render = (request, onMove = (move) => moves.push(move.id)) => { refIndex = 0; loaded.useIssueMoveRequest(request, onMove, afterFrame); };
+	const request = { id: 1, cardCodes: ["A"], columnTitle: "Done" };
+	render(request);
+	// Regression: a menu click flushed this effect before paint, so the whole
+	// move committed inside the click and froze the menu's own exit for ~80ms.
+	assert.deepEqual(moves, [], "the move waits for the frame that shows the request");
+	present();
+	render(request);
+	render({ ...request });
+	present();
+	assert.deepEqual(moves, [1]);
+	render({ ...request, id: 2 });
+	render({ ...request, id: 3 });
+	present();
+	assert.deepEqual(moves, [1, 2, 3], "requests made within one frame still play, in order");
+	render({ ...request, id: 4 }, null);
+	present();
+	assert.deepEqual(moves, [1, 2, 3]);
+});
+
+for (const count of [1, 2, 5, 13]) {
+	test(`solitaire commits all ${count} issues in board order without flights or create entrances`, () => {
+		const board = cohortBoard(count);
+		const h = harness({ board: board.columns, dragged: board.codes.at(-1), selected: [...board.codes].reverse(), solitaire: true });
+		h.drop("Done");
+		const api = h.render();
+		assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), board.codes);
+		assert.deepEqual(h.reveals[0].codes, board.codes);
+		assert.deepEqual([...api.arrivalForColumn("Done").animatedCardCodes], []);
+		assert.equal(h.flights.length, 0);
+		h.reveals[0].complete(); h.render();
+		assert.equal(h.api().arrivalForColumn("Done"), undefined);
+		assert.equal(h.reveals[0].stopped, true);
+	});
+}
+
+test("solitaire rejects no-op moves and cancels when visuals are disabled", () => {
+	const rejected = harness({ solitaire: true, reject: true });
+	rejected.drop(); rejected.render();
+	assert.equal(rejected.reveals.length, 0);
+	const h = harness({ solitaire: true }); h.drop(); h.render();
+	h.setEnabled(false); h.render();
+	assert.ok(h.reveals.every((reveal) => reveal.stopped));
+});
+
+test("reduced-motion solitaire commits immediately without a deferred arrival", () => {
+	const h = harness({ solitaire: true, reduced: true });
+	h.drop(); h.render(); h.render();
+	assert.equal(h.reveals[0].reduced, true);
+	assert.equal(h.api().arrivalForColumn("Review"), undefined);
+	assert.equal(h.captures.length, 0);
+});
+
+// A bulk solitaire release must paint before React commits the move: the held
+// traveller settles into the lead's slot (the reveal's first frame), and the
+// move, then its dragend, commit in the task after that frame paints.
+test("a bulk solitaire release settles the traveller first and commits behind its painted frame", () => {
+	const h = harness({ solitaire: true });
+	const target = { status: "Done", beforeCardCode: null };
+	h.drop("Done", target);
+	h.dragEnd();
+	assert.deepEqual(h.events, ["release preview", "settle preview"], "neither the move nor dragend may run before the frame");
+	assert.deepEqual({ ...h.released().settledAt }, { left: 40, top: 80, width: 280 });
+	assert.deepEqual(h.landings.map(({ title, codes, beforeCardCode, height }) => ({ title, codes, beforeCardCode, height })), [{ title: "Done", codes: ["A", "B"], beforeCardCode: null, height: 199 }]);
+	h.task();
+	assert.equal(h.events.includes("commit"), false, "a task queued before the frame must not commit first");
+	h.frame();
+	assert.equal(h.events.includes("commit"), false, "the frame itself only paints the settled face");
+	h.task();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "flushSync", "commit", "dragend", "reveal", "remove preview"],
+		"the stack starts under the face, which hands over in the same task, so no frame shows both or neither");
+	assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), ["A", "B"]);
+	assert.deepEqual(h.reveals.map((reveal) => reveal.codes), [["A", "B"]]);
+	h.dragEnd();
+	assert.equal(h.events.at(-1), "dragend", "later dragends are never held");
+});
+
+test("releases that the settled face cannot stand in for keep the synchronous commit", () => {
+	const target = { status: "Done", beforeCardCode: null };
+	const cases = {
+		"a single card reflows its neighbours first": { solitaire: true, selected: ["A"] },
+		"a grabbed card that is not the lead wears the wrong face": { solitaire: true, dragged: "B" },
+		"reduced motion has no reveal": { solitaire: true, reduced: true },
+		"an unknown landing slot": { solitaire: true, landing: null },
+		"a destination of another width": { solitaire: true, faceWidth: 300 },
+		"flight drops keep their traveller": { solitaire: false },
+	};
+	for (const [name, options] of Object.entries(cases)) {
+		const h = harness(options);
+		h.drop("Done", target);
+		h.dragEnd();
+		assert.deepEqual(h.events.filter((event) => ["release preview", "commit", "dragend"].includes(event)), ["commit", "dragend"], name);
+	}
+	const untargeted = harness({ solitaire: true });
+	untargeted.drop("Done");
+	assert.deepEqual(untargeted.events, ["commit"], "a column-level drop has no insertion point to settle into");
+});
+
+test("an interrupted settled release still commits its move and dragend", () => {
+	const h = harness({ solitaire: true });
+	h.drop("Done", { status: "Done", beforeCardCode: null });
+	h.dragEnd();
+	h.unmount();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "commit", "dragend", "remove preview"]);
+	h.frame(); h.task();
+	assert.equal(h.events.filter((event) => event === "commit").length, 1, "the queued task must not commit twice");
+});
+
+
+// rAF pauses in hidden tabs and throttles in occluded windows; a release must
+// never leave its move and dragend waiting for a frame that may not come.
+test("a settled release still commits its move when frames never arrive", () => {
+	const h = harness({ solitaire: true });
+	h.drop("Done", { status: "Done", beforeCardCode: null });
+	h.dragEnd();
+	h.task();
+	assert.equal(h.events.includes("commit"), false, "the bounded fallback is not due yet");
+	h.elapse();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "flushSync", "commit", "dragend", "reveal", "remove preview"]);
+	h.frame(); h.task(); h.hide();
+	assert.equal(h.events.filter((event) => event === "commit").length, 1, "a late frame or hide must not commit again");
+});
+
+test("hiding the page lands a settled release at once", () => {
+	const h = harness({ solitaire: true });
+	h.drop("Done", { status: "Done", beforeCardCode: null });
+	h.dragEnd();
+	h.hide();
+	assert.deepEqual(h.events, ["release preview", "settle preview", "flushSync", "commit", "dragend", "reveal", "remove preview"]);
+	assert.deepEqual(h.columns().find((column) => column.title === "Done").cards.map((card) => card.code), ["A", "B"]);
+	h.elapse(); h.frame(); h.task();
+	assert.equal(h.events.filter((event) => event === "commit").length, 1);
+});

@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
+	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
@@ -33,8 +35,17 @@ export type JiraIssueMoreAction =
 	| "edit-labels"
 	| "add-flag";
 
+export interface JiraIssueMoreMenuActions {
+	readonly onArchive?: () => void;
+	readonly onSelect?: () => void;
+	readonly onDelete?: () => void;
+}
+
 interface JiraIssueMoreMenuProps {
 	issueKey: string;
+	selected?: boolean;
+	moreMenuActions?: JiraIssueMoreMenuActions;
+	onSelectionToggle?: () => void;
 	onActionSelect?: (action: JiraIssueMoreAction) => void;
 	onOpenChange?: (open: boolean) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
@@ -43,8 +54,31 @@ interface JiraIssueMoreMenuProps {
 
 const CHEVRON = <ChevronRightIcon label="" size="small" color="currentColor" />;
 
-function JiraIssueMoreMenu({ generativeAction, generativeActionIssue, issueKey, onActionSelect, onOpenChange }: Readonly<JiraIssueMoreMenuProps>) {
+function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
+	return props.onSelectionToggle ? (
+		<div className="flex size-full items-center justify-center">
+			<Checkbox
+				aria-label={`Select ${props.issueKey}`}
+				checked={props.selected ?? false}
+				className="motion-reduce:transition-none"
+				data-jira-issue-selection-control=""
+				nativeButton
+				onCheckedChange={props.onSelectionToggle}
+				onClick={(event) => event.stopPropagation()}
+				onMouseDown={(event) => {
+					// Keep the draggable card's native pickup off this selection gesture.
+					event.preventDefault();
+					event.currentTarget.focus({ preventScroll: true });
+				}}
+				render={<button type="button" />}
+			/>
+		</div>
+	) : <JiraIssueMoreDropdown {...props} />;
+}
+
+function JiraIssueMoreDropdown({ generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange }: Readonly<JiraIssueMoreMenuProps>) {
 	const [open, setOpen] = useState(false);
+	const triggerRef = useRef<HTMLButtonElement | null>(null);
 
 	function handleOpenChange(nextOpen: boolean) {
 		setOpen(nextOpen);
@@ -55,11 +89,20 @@ function JiraIssueMoreMenu({ generativeAction, generativeActionIssue, issueKey, 
 		return () => onActionSelect?.(action);
 	}
 
+	function selectCard() {
+		if (!moreMenuActions?.onSelect) return;
+		const cardControl = triggerRef.current?.closest('[data-slot="jira-issue-card"]')?.querySelector<HTMLElement>('[data-jira-issue-activation-control]');
+		handleOpenChange(false);
+		moreMenuActions.onSelect();
+		queueMicrotask(() => { if (cardControl?.isConnected) cardControl.focus({ preventScroll: true }); });
+	}
+
 	return (
 		<DropdownMenu open={open} onOpenChange={handleOpenChange}>
 			<DropdownMenuTrigger
 				render={
 					<Button
+						ref={triggerRef}
 						aria-label={`More actions for ${issueKey}`}
 						className="pointer-events-none size-6 opacity-0 transition-opacity duration-fast ease-out-practical motion-reduce:transition-none group-[&:hover:not(:has([data-slot=jira-issue-subtask-card]:hover))]/jira-issue:pointer-events-auto group-[&:hover:not(:has([data-slot=jira-issue-subtask-card]:hover))]/jira-issue:opacity-100 group-has-[:focus-visible]/jira-issue:pointer-events-auto group-has-[:focus-visible]/jira-issue:opacity-100 data-popup-open:pointer-events-auto data-popup-open:opacity-100"
 						onClick={(event) => event.stopPropagation()}
@@ -101,6 +144,16 @@ function JiraIssueMoreMenu({ generativeAction, generativeActionIssue, issueKey, 
 					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("add-flag")}>Add flag</DropdownMenuItem>
 				</DropdownMenuGroup>
+				{moreMenuActions ? (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuGroup>
+							<DropdownMenuItem aria-label="Select" aria-description="Command plus click" disabled={!moreMenuActions.onSelect} elemAfter={<DropdownMenuShortcut aria-hidden="true">Cmd + Click</DropdownMenuShortcut>} onSelect={selectCard}>Select</DropdownMenuItem>
+							<DropdownMenuItem disabled={!moreMenuActions.onArchive} onSelect={moreMenuActions.onArchive}>Archive</DropdownMenuItem>
+							<DropdownMenuItem disabled={!moreMenuActions.onDelete} onSelect={moreMenuActions.onDelete}>Delete</DropdownMenuItem>
+						</DropdownMenuGroup>
+					</>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

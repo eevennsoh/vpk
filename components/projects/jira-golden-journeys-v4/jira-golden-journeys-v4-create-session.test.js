@@ -82,13 +82,14 @@ test("every created card — create well or mid-column gap drop — enters throu
 	);
 	assert.match(
 		ARRIVAL_MOTION_SOURCE,
-		/import \{ resolveBoardCardArrival \} from "\.\.\/lib\/board-card-arrival"/u,
+		// The same owner also supplies the moved-cohort cascade delay.
+		/import \{[^}]*\bresolveBoardCardArrival\b[^}]*\} from "\.\.\/lib\/board-card-arrival"/u,
 	);
 	// The entrance is gated on `active`, which resolveBoardCardArrival sets for
 	// any arriving card — `appended` no longer picks an entrance.
 	assert.match(
 		ARRIVAL_MOTION_SOURCE,
-		/<JiraCreateEntrance\s*active=\{cardArrival\.entering\}\s*deferred=\{waiting\}\s*enterDelayS=\{enterDelayS\}\s*onAnimationComplete=\{handleArrivalComplete\}/u,
+		/<JiraCreateEntrance\s*active=\{cardArrival\.entering\}\s*deferred=\{waiting \|\| flightPending\}\s*enterDelayS=\{enterDelayS\}\s*onAnimationComplete=\{handleArrivalComplete\}/u,
 	);
 	// The wrapper must stay mounted at rest; swapping it for a fragment would
 	// remount the card and wipe state opened during its entrance.
@@ -107,6 +108,8 @@ test("created card arrivals never add a blue agent backdrop or completion hold",
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/useCreatedCardArrivalCompletion\(\s*onCreatedCardArrivalComplete,\s*\)/u,
+		/useCreatedCardArrivalCompletion\(\s*issueDropArrival\.handleComplete,\s*\)/u,
 	);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /onCreatedComplete: onCreatedCardArrivalComplete/u);
+	assert.match(readProjectFile("components/blocks/jira-kanban/experimental/hooks/use-issue-card-drop-arrival.ts"), /else onCreatedComplete\?\.\(id\);/u);
 });

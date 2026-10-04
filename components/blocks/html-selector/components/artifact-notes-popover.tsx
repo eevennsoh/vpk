@@ -89,7 +89,7 @@ export function ArtifactNotesPopover({
 				</TooltipTrigger>
 				<TooltipContent side="bottom">{triggerTitle}</TooltipContent>
 			</Tooltip>
-			<PopoverContent align="end" side="bottom" className="w-[360px] gap-3 border border-border bg-surface-raised p-3 text-text shadow-lg">
+			<PopoverContent align="end" side="bottom" className="w-[360px] gap-3 bg-surface-raised p-3 text-text shadow-lg">
 				<PopoverHeader>
 					<PopoverTitle>Speaker notes</PopoverTitle>
 				</PopoverHeader>

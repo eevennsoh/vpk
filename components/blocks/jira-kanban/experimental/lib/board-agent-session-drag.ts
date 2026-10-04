@@ -2,7 +2,6 @@ import type { SessionCohort } from "@/components/blocks/agent-session/session-co
 import {
 	resolveBoardAgentSessionTraces,
 	type BoardAgentSessionTrace,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./board-agent-session-trace.ts";
 import type {
 	JiraListAgentSessionDropIntent,
@@ -14,13 +13,11 @@ import {
 } from "../../../jira-list/jira-list-row-zone.js";
 import {
 	distanceFromPointToRect,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./create-work-item-exclusive-proximity.ts";
 import {
 	resolveJiraLinkingNearness,
 	// Leaf module, not the package barrel: the barrel pulls in the React
 	// component and this file is loaded raw by a node:test suite.
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "../../../jira-linking/lifecycle.ts";
 
 export interface BoardAgentSessionDragPointer {

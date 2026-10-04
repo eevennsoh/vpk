@@ -240,6 +240,28 @@ export default function Page() {
 	}
 }
 
+test("trace-imports follows module worker URLs and warns on non-literal worker paths", () => {
+	const fixture = createMinimalRepo({
+		"app/demo/page.tsx": [
+			"const worker = new Worker(new URL(\"./finale.worker.ts\", import.meta.url), { type: \"module\" });",
+			"const dynamicWorker = new Worker(new URL(resolveWorkerPath(), import.meta.url), { type: \"module\" });",
+			"export default function Page() { return null; }",
+		].join("\n"),
+		"app/demo/finale.worker.ts": "import { render } from \"./render-worker\";\nrender();\n",
+		"app/demo/render-worker.ts": "export function render() { return null; }\n",
+	});
+
+	try {
+		const plan = runTrace(fixture.repoRoot, "/demo", fixture.planPath);
+
+		assert.ok(plan.files.includes("app/demo/finale.worker.ts"));
+		assert.ok(plan.files.includes("app/demo/render-worker.ts"));
+		assert.ok(plan.warnings.some((warning) => warning.includes("Non-literal Worker URL")));
+	} finally {
+		fixture.cleanup();
+	}
+});
+
 test("trace plan records the selected Git revision and working-tree state", () => {
 	const fixture = createMinimalRepo();
 	try {

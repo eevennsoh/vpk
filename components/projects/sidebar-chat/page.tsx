@@ -1991,8 +1991,7 @@ export default function ChatPanel({ onClose, agentCreator,
 			) : (
 				<ChatHistoryDrawer active={shouldRenderHeaderHistory} />
 			)}
-			{!hideHeader && (
-				<div className="shrink-0">
+			{!hideHeader ? <div className="shrink-0">
 					<ChatHeader
 						endAction={headerEndAction}
 						variant={headerVariant}
@@ -2005,8 +2004,7 @@ export default function ChatPanel({ onClose, agentCreator,
 						showAgentBackButton={showAgentBackButton}
 						showAgentSelector={showAgentSelector}
 					/>
-				</div>
-			)}
+				</div> : null}
 			{shouldRenderCustomAgentTabs ? (
 				<>
 					<Tabs

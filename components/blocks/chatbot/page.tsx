@@ -127,16 +127,13 @@ export default function AIChatbotBlock() {
 					{messages.map((msg) => (
 						<Message key={msg.id} from={msg.role}>
 							<MessageContent>
-								{msg.reasoning && (
-									<Reasoning defaultOpen={false} duration={12}>
+								{msg.reasoning ? <Reasoning defaultOpen={false} duration={12}>
 										<ReasoningTrigger />
 										<ReasoningContent>{msg.reasoning}</ReasoningContent>
-									</Reasoning>
-								)}
+									</Reasoning> : null}
 								<MessageResponse>{msg.content}</MessageResponse>
 							</MessageContent>
-							{msg.role === "assistant" && (
-								<MessageActions>
+							{msg.role === "assistant" ? <MessageActions>
 									<MessageAction tooltip="Copy" label="Copy response">
 										<CopyIcon className="size-4" />
 									</MessageAction>
@@ -149,8 +146,7 @@ export default function AIChatbotBlock() {
 									<MessageAction tooltip="Regenerate" label="Regenerate response">
 										<RefreshCwIcon className="size-4" />
 									</MessageAction>
-								</MessageActions>
-							)}
+								</MessageActions> : null}
 						</Message>
 					))}
 				</ConversationContent>

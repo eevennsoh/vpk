@@ -12,7 +12,7 @@ import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import type { KanbanCollapsedChromeStyles } from "../../column-chrome";
+import type { KanbanCollapsedChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 import { BOARD_COLUMN_ACTION_REVEAL } from "../lib/board-column-action-reveal";
 
 const COLLAPSED_HEAD_COUNT_AT_REST = cn(
@@ -86,12 +86,14 @@ export function BoardColumnResizeButton({
  * box — do not reuse `space.150` as inline pad.
  */
 export function CollapsedBoardColumn({
+	headerAccessory,
 	chrome,
 	count,
 	headerFrame,
 	onExpand,
 	title,
 }: Readonly<{
+	headerAccessory?: ReactNode;
 	chrome: KanbanCollapsedChromeStyles;
 	count: number;
 	headerFrame: AgentSessionColumnFrame;
@@ -100,6 +102,7 @@ export function CollapsedBoardColumn({
 }>): ReactNode {
 	const countRow = (
 		<div className="group/collapsed-column w-full">
+			{headerAccessory ? <div className="mb-1 flex justify-center">{headerAccessory}</div> : null}
 			<div className="relative flex h-6 w-full items-center justify-center">
 				<span className={COLLAPSED_HEAD_COUNT_AT_REST}>
 					{count}

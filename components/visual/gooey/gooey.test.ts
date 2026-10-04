@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { EVOLVE_DEFAULTS, MOVE_DEFAULTS, resolveDissolveTimings, resolveDissolveTuning, resolveMorphTuning, resolveMoveTuning } from "./tuning-model.ts";
 
 test("pins the current upstream engine and exposes all four effects", () => {

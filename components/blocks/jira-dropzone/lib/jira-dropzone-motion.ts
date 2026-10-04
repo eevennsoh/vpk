@@ -4,6 +4,7 @@ import type {
 	JiraDropzoneArcOptions,
 	ViewportPoint,
 } from "./jira-dropzone-types";
+import { motionEase } from "../../../../lib/motion.ts";
 
 /** Resolved `--duration-*` values the catalog duration control may emit. */
 export const JIRA_DROPZONE_DURATION_TOKEN_MS = {
@@ -27,13 +28,13 @@ export const SESSION_CHIP_DROP_DURATION_MS = 260;
 /** Compact bottom-target entrance: duration-normal + ease-out-practical. */
 export const JIRA_DROPZONE_WELL_ENTER = {
 	duration: 0.15,
-	ease: [0.4, 1, 0.6, 1],
+	ease: motionEase.outPractical,
 } as const; // duration-normal + ease-out-practical
 export const JIRA_DROPZONE_WELL_ENTER_REDUCED = { duration: 0 } as const;
 /** Faster matching dismissal: duration-fast + ease-in. */
 export const JIRA_DROPZONE_WELL_EXIT = {
 	duration: 0.1,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 } as const;
 export const JIRA_DROPZONE_WELL_VISIBLE = { opacity: 1, transform: "translateY(0px)" } as const;
 export const JIRA_DROPZONE_WELL_HIDDEN = { opacity: 0, transform: "translateY(8px)" } as const; // space.100
@@ -55,7 +56,7 @@ export const JIRA_DROPZONE_FULL_MOTION_PROFILE: FlightProfile = {
 	arcRotate: 0,
 	arcStrength: 0.42,
 	durationMs: SESSION_CHIP_DROP_DURATION_MS,
-	ease: [0.4, 1, 0.6, 1],
+	ease: motionEase.outPractical,
 	impact: {
 		damping: 12,
 		impulseXPx: 6,
@@ -74,7 +75,7 @@ export const JIRA_DROPZONE_REDUCED_MOTION_PROFILE: FlightProfile = {
 	arcRotate: 0,
 	arcStrength: 0,
 	durationMs: 0,
-	ease: [0, 0, 1, 1],
+	ease: motionEase.linear,
 	impact: null,
 	launchSpreadPx: 0,
 	settleHoldMs: 100,

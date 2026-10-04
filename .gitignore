@@ -140,6 +140,8 @@ secrets*
 .gsd/runtime/
 .claude/worktrees/
 .claude/hooks/state/*.log
+# Per-checkout preview ports; written by scripts/write-claude-launch-config.js at SessionStart.
+.claude/launch.json
 .gsd/parallel/
 .gsd/auto.lock
 .gsd/metrics.json

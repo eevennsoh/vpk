@@ -3,7 +3,6 @@ import test from "node:test";
 
 import type { AgentSessionItem } from "../agent-session/agent-session-types";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { collectLinkableAgentSessions, isAgentSessionLinkable, linkAllAgentSessions } from "./agent-session-column-overflow.ts";
 
 function session(id: string, issueKey?: string): AgentSessionItem {

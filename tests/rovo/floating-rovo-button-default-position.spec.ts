@@ -1,8 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const STUDIO_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/studio`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const STUDIO_URL = appUrl("/studio");
 
 // The floating button parks itself `FLOATING_ROVO_BUTTON_EDGE_GAP` (24px) from
 // each edge when it lives in the bottom-right corner. Allow a small tolerance

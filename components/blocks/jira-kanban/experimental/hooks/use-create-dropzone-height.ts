@@ -4,10 +4,28 @@ import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { token } from "@/lib/tokens";
 
 import { MAGNETIC_PROXIMITY_DISTANCE } from "@/components/ui-custom/hooks/use-magnetic-proximity";
+import { setKanbanColumnDropArmed, type KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
+
+/** Natural-order feedback uses the outline of the visible column container. */
+export function useBoardColumnDropRing(targetRef: RefObject<HTMLDivElement | null>, chrome: KanbanColumnChromeStyles, armed: boolean) {
+	useLayoutEffect(() => {
+		const column = targetRef.current?.closest<HTMLElement>("[data-jira-kanban-column]");
+		if (!column) return;
+		const ring = column.querySelector<HTMLElement>("[data-jira-kanban-column-drop-ring]") ?? column;
+		setKanbanColumnDropArmed(ring, chrome, armed);
+		return () => setKanbanColumnDropArmed(ring, chrome, false);
+	}, [armed, chrome, targetRef]);
+}
 
 /** Measure spare space from issue content; independent of the footer's reserved height. */
-export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bottom", columnSizing: "fill" | "content" = "fill") {
-	const anchorRef = useRef<HTMLDivElement>(null);
+export function useCreateDropzoneHeight(
+	active: boolean,
+	placement: "top" | "bottom",
+	columnSizing: "fill" | "content" = "fill",
+	providedAnchorRef?: RefObject<HTMLDivElement | null>,
+) {
+	const localAnchorRef = useRef<HTMLDivElement>(null);
+	const anchorRef = providedAnchorRef ?? localAnchorRef;
 	const [minimumHeight, setMinimumHeight] = useState(0);
 
 	useLayoutEffect(() => {
@@ -68,7 +86,7 @@ export function useCreateDropzoneHeight(active: boolean, placement: "top" | "bot
 			mutations.disconnect();
 			list.removeEventListener("scroll", schedule);
 		};
-	}, [active, placement, columnSizing]);
+	}, [active, placement, columnSizing, anchorRef]);
 
 	// Keep the last drag's size during receipt playback; the new card must not
 	// move the landing target while sessions are still flying into it.
@@ -81,20 +99,23 @@ export function useCreateDropzoneBackdrop(targetRef: RefObject<HTMLDivElement | 
 		const target = targetRef.current;
 		const column = target?.closest<HTMLElement>("[data-jira-kanban-column]");
 		const backdrop = column?.querySelector<HTMLElement>("[data-jira-kanban-column-backdrop]");
+		const ring = column?.querySelector<HTMLElement>("[data-jira-kanban-column-drop-ring]");
 		const content = column?.querySelector<HTMLElement>("[data-jira-kanban-column-content]");
-		const button = target?.querySelector<HTMLElement>("[data-jira-dropzone-control]");
-		if (columnSizing !== "content" || !target || !backdrop || !content || !button) return;
+		const shape = target?.querySelector<HTMLElement>("[data-jira-dropzone-control]") ?? target;
+		if (columnSizing !== "content" || !target || !backdrop || !content || !shape) return;
 		const action = target.closest<HTMLElement>("[data-board-column-create-action]");
 		const syncBackdrop = () => {
 			// Finish geometry reads before writing the decorative clip.
 			const backdropRect = backdrop.getBoundingClientRect();
 			const contentRect = content.getBoundingClientRect();
-			const shapeRect = button.getBoundingClientRect();
+			const shapeRect = shape.getBoundingClientRect();
 			const targetRect = target.getBoundingClientRect();
+			const columnRect = column!.getBoundingClientRect();
 			const inset = Math.max(0, targetRect.left - contentRect.left);
 			const extent = Math.max(contentRect.height, shapeRect.bottom - backdropRect.top + inset);
 			const bottom = Math.max(0, backdropRect.height - extent);
 			backdrop.style.clipPath = `inset(0 0 ${bottom}px 0 round ${token("radius.xlarge")})`;
+			if (ring) ring.style.height = `${backdropRect.height - bottom + Math.max(0, columnRect.height - backdropRect.height)}px`;
 		};
 		// Motion writes height and magnetic transforms once per frame.
 		// Include the footer's reserved height: it can reposition the control
@@ -102,7 +123,7 @@ export function useCreateDropzoneBackdrop(targetRef: RefObject<HTMLDivElement | 
 		const mutations = new MutationObserver(syncBackdrop);
 		mutations.observe(action ?? target.parentElement ?? target, { attributes: true, subtree: true, attributeFilter: ["style", "class"] });
 		const resize = new ResizeObserver(syncBackdrop);
-		for (const element of [target, column!, content, button]) resize.observe(element);
+		for (const element of [target, column!, content, shape]) resize.observe(element);
 		syncBackdrop();
 		return () => {
 			mutations.disconnect();

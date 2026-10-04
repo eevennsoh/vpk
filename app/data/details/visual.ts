@@ -98,6 +98,7 @@ interface PaperShaderDetailSource {
 	exportName: string;
 	description: string;
 	hasImage?: boolean;
+	props?: ComponentDetail["props"];
 }
 
 const PAPER_SHADER_DETAILS_SOURCE: PaperShaderDetailSource[] = [
@@ -113,11 +114,39 @@ const PAPER_SHADER_DETAILS_SOURCE: PaperShaderDetailSource[] = [
 	{ slug: "paper-halftone-dots", name: "Halftone Dots", exportName: "HalftoneDots", description: "Paper Design halftone-dot image filter with grid, palette, dot style, and contrast controls.", hasImage: true },
 	{ slug: "paper-heatmap", name: "Heatmap", exportName: "Heatmap", description: "Paper Design image-driven glowing heatmap shader that flows color across source intensity.", hasImage: true },
 	{ slug: "paper-image-dithering", name: "Image Dithering", exportName: "ImageDithering", description: "Paper Design image dithering filter with palette, luminance, and pixel-size controls.", hasImage: true },
+	{ slug: "paper-lens-distortion", name: "Lens Distortion", exportName: "LensDistortion", description: "Paper Design image filter with chromatic aberration, barrel and pincushion distortion, and grain.", hasImage: true },
 	{ slug: "paper-liquid-metal", name: "Liquid Metal", exportName: "LiquidMetal", description: "Paper Design liquid-metal shader for image masks or abstract shapes with animated stripe distortion.", hasImage: true },
 	{ slug: "paper-mesh-gradient", name: "Mesh Gradient", exportName: "MeshGradient", description: "Paper Design animated mesh gradient with multi-point color blending and organic motion." },
 	{ slug: "paper-metaballs", name: "Metaballs", exportName: "Metaballs", description: "Paper Design metaballs shader with soft merging blobs and color transitions." },
 	{ slug: "paper-neuro-noise", name: "Neuro Noise", exportName: "NeuroNoise", description: "Paper Design neural noise shader for flowing organic texture and atmospheric backgrounds." },
-	{ slug: "paper-paper-texture", name: "Paper Texture", exportName: "PaperTexture", description: "Paper Design layered noise texture for paper, cardboard, and abstract surface treatments.", hasImage: true },
+	{
+		slug: "paper-paper-texture", name: "Paper Texture", exportName: "PaperTexture",
+		description: "Paper Design three-color paper texture with folds, wrinkles, crumples, fibers, and laid-paper grain. Use it as an image filter or a standalone surface.",
+		hasImage: true,
+		props: [
+			{ name: "colorBack", type: "string", default: '"#d3d2ab"', description: "Color behind the paper sheet." },
+			{ name: "colorPaper", type: "string", default: '"#ffffff"', description: "Color of the paper sheet." },
+			{ name: "colorShadow", type: "string", default: '"#cccccc"', description: "Color of the patterns over the paper sheet." },
+			{ name: "blending", type: "number", default: "1", description: "Image-to-paper blending, from 0 to 1. Requires an image." },
+			{ name: "distortion", type: "number", default: "0.75", description: "Image bending along the paper surface, from -1 to 1. Requires an image." },
+			{ name: "clip", type: "boolean", default: "false", description: "Cut the paper sheet to the image frame. Requires an image." },
+			{ name: "angle", type: "number", default: "300", description: "Lighting and roughness-row direction in degrees, from 0 to 360." },
+			{ name: "seed", type: "number", default: "4", description: "Random seed applied to all patterns, from 0 to 1000." },
+			{ name: "roughness", type: "number", default: "0.4", description: "Fine surface grain intensity, from 0 to 1." },
+			{ name: "roughnessSize", type: "number", default: "0.5", description: "Grain scale, from 0 to 1. Requires roughness." },
+			{ name: "roughnessRows", type: "number", default: "0", description: "Align grain into laid-paper stripes, from 0 to 1. Requires roughness." },
+			{ name: "fiber", type: "number", default: "0.4", description: "Curly fiber intensity, from 0 to 1." },
+			{ name: "fiberSize", type: "number", default: "0.5", description: "Fiber scale, from 0 to 1. Requires fiber." },
+			{ name: "folds", type: "number", default: "0.5", description: "Straight vertical and horizontal fold intensity, from 0 to 1." },
+			{ name: "foldSizeX / foldSizeY", type: "number", default: "1", description: "Vertical and horizontal fold sizes, from 0 to 1. Requires folds." },
+			{ name: "foldOffsetX / foldOffsetY", type: "number", default: "0", description: "Vertical and horizontal fold offsets, from 0 to 1. Requires folds." },
+			{ name: "wrinkles", type: "number", default: "1", description: "Repeating wrinkle-facet intensity, from 0 to 1." },
+			{ name: "wrinkleSize", type: "number", default: "0.65", description: "Wrinkle-facet scale, from 0 to 1. Requires wrinkles." },
+			{ name: "crumples", type: "number", default: "0", description: "Irregular folding-line intensity, from 0 to 1." },
+			{ name: "crumpleCount", type: "number", default: "6", description: "Number of crumple facets, from 2 to 15." },
+			{ name: "drops", type: "number", default: "0.4", description: "Dark speckle intensity, from 0 to 1." },
+		],
+	},
 	{ slug: "paper-perlin-noise", name: "Perlin Noise", exportName: "PerlinNoise", description: "Paper Design Perlin noise shader for soft procedural fields and animated texture." },
 	{ slug: "paper-pulsing-border", name: "Pulsing Border", exportName: "PulsingBorder", description: "Paper Design animated border shader with pulsing edge glow and aspect-ratio controls." },
 	{ slug: "paper-simplex-noise", name: "Simplex Noise", exportName: "SimplexNoise", description: "Paper Design simplex noise shader for smooth animated texture and gradient-like fields." },
@@ -150,6 +179,7 @@ function createPaperShaderDetail(source: PaperShaderDetailSource): ComponentDeta
 			previewHeight: "fixed",
 		},
 		props: [
+			...(source.props ?? []),
 			...(source.hasImage ? [{ name: "image", type: "HTMLImageElement | string", description: "Source image element or URL used by image-backed shaders. String values are loaded as image uniforms by the Paper shader mount." }] : []),
 			{ name: "width", type: "string | number", description: "Inline CSS width for the mounted shader surface." },
 			{ name: "height", type: "string | number", description: "Inline CSS height for the mounted shader surface." },

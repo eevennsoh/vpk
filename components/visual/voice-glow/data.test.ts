@@ -1,11 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { resolveVoiceDefaults } from "voice-glow";
-// @ts-expect-error Node's strip-types runner requires the explicit extension.
 import { getVoiceGlowStatus, resolveVoiceGlowNumbers, VOICE_GLOW_CONTROLS, VOICE_GLOW_DEFAULTS } from "./data.ts";
-// @ts-expect-error Node's strip-types runner requires the explicit extension.
 import { requestVoiceGlowMicrophone } from "./microphone-request.ts";
-// @ts-expect-error Node's strip-types runner requires the explicit extension.
 import { createVoiceGlowSimulation, sampleSimulatedVoice } from "./simulated-voice.ts";
 
 test("shape and page theme resolve the upstream tuning without retaining another preset", () => {

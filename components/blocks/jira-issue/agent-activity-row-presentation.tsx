@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, type ReactElement } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
+import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
@@ -12,11 +12,6 @@ import {
 	type AgentAssignmentProps,
 } from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import {
-	JiraIssueAgentIntroLabel,
-	JiraIssueShimmeringAgentLabel,
-	useJiraIssueAgentStartupPhase,
-} from "@/components/blocks/jira-issue/agent-activity-startup";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { JiraIssueAgentLinkFlashOverlay, type JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
 import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issue/agent-session-unlink-button";
@@ -25,7 +20,6 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { TWGLoader } from "@/components/ui-custom/twg-loader";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
@@ -77,7 +71,7 @@ function toAgentLoadingAgent(activity: JiraIssueAgentActivity): AgentLoadingAgen
 	};
 }
 
-/** 16px glyph in a 24px transparent IconTile — same recipe as completed-agent-runs. */
+/** Match the session column's 12px glyph while retaining the 24px status slot. */
 function JiraIssueAgentStatusIconTile({
 	className,
 	icon,
@@ -91,7 +85,7 @@ function JiraIssueAgentStatusIconTile({
 			as="span"
 			className={className}
 			icon={icon}
-			iconSize="medium"
+			iconSize="small"
 			label=""
 			size="small"
 			variant="transparent"
@@ -154,7 +148,7 @@ function JiraIssueActiveAgentStatusIcon({
 		return (
 			<JiraIssueAgentStatusIconTile
 				className="text-icon-information"
-				icon={<QuestionCircleFilledIcon color="currentColor" label="" size="small" />}
+				icon={<StrokeWeightLargeIcon color="currentColor" label="" size="small" />}
 			/>
 		);
 	}
@@ -167,9 +161,9 @@ function JiraIssueActiveAgentStatusIcon({
 			className="grid size-6 shrink-0 place-items-center text-icon"
 		>
 			{spinnerVariant === "experimental-avatar" ? (
-				<Spinner label="" pulse size="xl" variant="experimental-avatar" />
+				<Spinner className="size-[16.75px]" label="" pulse size="xl" variant="experimental-avatar" />
 			) : (
-				<Spinner label="" />
+				<Spinner label="" size="xs" />
 			)}
 		</span>
 	);
@@ -181,7 +175,6 @@ export function JiraIssueAgentStatusIcon({
 	isCompletedRow,
 	isFailedRow,
 	renderAgentActivityIndicator,
-	startupPhase,
 	workingSpinnerVariant,
 }: Readonly<{
 	iconScale: JiraIssueIconScale;
@@ -189,7 +182,6 @@ export function JiraIssueAgentStatusIcon({
 	isCompletedRow: boolean;
 	isFailedRow: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
-	startupPhase: ReturnType<typeof useJiraIssueAgentStartupPhase>;
 	workingSpinnerVariant?: "default" | "experimental-avatar";
 }>): ReactElement {
 	if (isCompletedRow) {
@@ -198,18 +190,6 @@ export function JiraIssueAgentStatusIcon({
 				isFailed={isFailedRow}
 				renderAgentActivityIndicator={renderAgentActivityIndicator}
 			/>
-		);
-	}
-
-	if (!isAwaitingInput && startupPhase === "intro") {
-		return <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center" />;
-	}
-
-	if (!isAwaitingInput && startupPhase === "gathering-context") {
-		return (
-			<span aria-hidden="true" className="grid size-6 shrink-0 place-items-center">
-				<TWGLoader label="" size="small" />
-			</span>
 		);
 	}
 
@@ -248,12 +228,10 @@ function JiraIssueAgentRowLabel({
 	isAwaitingInput,
 	isWorking,
 	rowLabel,
-	startupPhase,
 }: Readonly<{
 	isAwaitingInput: boolean;
 	isWorking: boolean;
 	rowLabel: string;
-	startupPhase: ReturnType<typeof useJiraIssueAgentStartupPhase>;
 }>): ReactElement {
 	if (isAwaitingInput) {
 		return (
@@ -261,18 +239,6 @@ function JiraIssueAgentRowLabel({
 				<span className="block min-w-0 truncate text-sm leading-5">{rowLabel}</span>
 				<AnimatedDots />
 			</span>
-		);
-	}
-
-	if (startupPhase === "intro") {
-		return <JiraIssueAgentIntroLabel />;
-	}
-
-	if (startupPhase === "gathering-context") {
-		return (
-			<JiraIssueShimmeringAgentLabel
-				label="Gathering context"
-			/>
 		);
 	}
 
@@ -305,7 +271,6 @@ export function JiraIssueAgentRowContent({
 	rowLabel,
 	showUnlinkControl,
 	isViewerRow = false,
-	startupPhase,
 	statusIcon,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
@@ -316,7 +281,6 @@ export function JiraIssueAgentRowContent({
 	rowLabel: string;
 	showUnlinkControl: boolean;
 	isViewerRow?: boolean;
-	startupPhase: ReturnType<typeof useJiraIssueAgentStartupPhase>;
 	statusIcon: ReactElement;
 }>): ReactElement {
 	let avatar: ReactElement;
@@ -378,7 +342,6 @@ export function JiraIssueAgentRowContent({
 					isAwaitingInput={isAwaitingInput}
 					isWorking={isWorking}
 					rowLabel={rowLabel}
-					startupPhase={startupPhase}
 				/>
 			</div>
 			{showUnlinkControl ? null : statusIcon}
@@ -464,7 +427,6 @@ export function JiraIssueAgentRowSurface({
 	rowLinkFlash,
 	sessionDrag,
 	showUnlinkControl,
-	startupPhase,
 	startupSequenceKey,
 	statusIcon,
 }: Readonly<{
@@ -478,7 +440,6 @@ export function JiraIssueAgentRowSurface({
 	rowLinkFlash: JiraIssueAgentLinkFlash | null;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	showUnlinkControl: boolean;
-	startupPhase: ReturnType<typeof useJiraIssueAgentStartupPhase>;
 	startupSequenceKey: string | null;
 	statusIcon: ReactElement;
 }>): ReactElement {
@@ -490,11 +451,13 @@ export function JiraIssueAgentRowSurface({
 					? "h-auto w-fit max-w-full justify-start bg-transparent p-0"
 					: cn(
 						"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered has-[[aria-expanded=true]]:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
+						// Outline paints on the full surface without shrinking its content box.
+						"outline-1 outline-transparent has-[[data-jira-issue-agent-row-handle]:focus-visible]:outline-ring has-[[data-jira-issue-agent-row-handle]:focus-visible]:ring-3 has-[[data-jira-issue-agent-row-handle]:focus-visible]:ring-ring/50 transition-shadow duration-fast ease-out-practical motion-reduce:transition-none",
 						flushContent ? "px-0" : iconScale === "comfortable" ? "pr-2 pl-1" : "px-2",
 						inheritChinSurface ? "bg-transparent" : "bg-bg-neutral",
 					),
 			)}
-			data-agent-startup-phase={startupSequenceKey ? startupPhase : undefined}
+			data-agent-startup-phase={startupSequenceKey ? "working" : undefined}
 			data-session-chin=""
 			data-slot="jira-issue-agent-row"
 		>

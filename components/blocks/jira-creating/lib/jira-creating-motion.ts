@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Transition, Variants } from "motion/react";
+import { motionEase } from "@/lib/motion";
 
 /**
  * duration-slower + ease-out (bold entrance).
@@ -9,16 +10,19 @@ import type { Transition, Variants } from "motion/react";
  * into its slot, and long enough for the surrounding cards to read as pushed
  * apart rather than teleported.
  */
-const CARD_ENTER: Transition = { duration: 0.4, ease: [0, 0.4, 0, 1] };
+const CARD_ENTER: Transition = { duration: 0.4, ease: motionEase.out };
 /**
  * duration-medium + ease-out — opacity lands well before the scale settles so
  * the card is readable for most of its growth instead of hanging translucent
  * over the cards behind it.
  */
-const CARD_ENTER_OPACITY: Transition = { duration: 0.2, ease: [0, 0.4, 0, 1] };
+const CARD_ENTER_OPACITY: Transition = { duration: 0.2, ease: motionEase.out };
 /** duration-fast + ease-in */
-const CARD_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] };
-const REDUCED_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] };
+const CARD_EXIT: Transition = { duration: 0.1, ease: motionEase.in };
+/** duration-normal + ease-in — close the slot faster than its entrance. */
+export const JIRA_CREATE_REMOVE_DURATION_S = 0.15;
+const SLOT_EXIT: Transition = { duration: JIRA_CREATE_REMOVE_DURATION_S, ease: motionEase.in };
+const REDUCED_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical };
 const REDUCED_INSTANT: Transition = { duration: 0 };
 
 /**
@@ -66,9 +70,24 @@ export function getJiraCreateMotion(
 					opacity: { ...CARD_ENTER_OPACITY, delay: delayS },
 				},
 			},
-			exit: { opacity: 0, scale: 0.9, transition: CARD_EXIT },
+			exit: { opacity: 0, scale: JIRA_CREATE_HIDDEN_SCALE, transition: CARD_EXIT },
 		},
 	};
+}
+
+/**
+ * The slot clips only while its own height animates (0 -> auto on insert, auto
+ * -> 0 on removal). A moved card lands in a slot that is already full height
+ * and only scales up to 1 inside it, so clipping there would just cut off the
+ * surface's edge shadow: adjacent arrivals then read as one fused block until
+ * the arrival ends and the shadows snap back.
+ */
+export function shouldClipJiraCreateSlot({ active, removing, reserveSlot }: Readonly<{
+	active: boolean;
+	removing: boolean;
+	reserveSlot: boolean;
+}>): boolean {
+	return removing || (active && !reserveSlot);
 }
 
 export function getJiraCreateSlotTransition(
@@ -80,6 +99,10 @@ export function getJiraCreateSlotTransition(
 	}
 
 	return { ...CARD_ENTER, delay: delayS };
+}
+
+export function getJiraCreateRemovalTransition(shouldReduceMotion: boolean | null): Transition {
+	return shouldReduceMotion ? REDUCED_INSTANT : SLOT_EXIT;
 }
 
 export function getJiraCreateLayoutTransition(

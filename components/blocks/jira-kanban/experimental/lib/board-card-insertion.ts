@@ -12,6 +12,26 @@ import type {
  */
 export const BOARD_CARD_INSERTION_BAND_PX = 12;
 
+export type BoardIssueDropSurface = "header" | "column" | "position";
+
+/** Only the visible card stack and its trailing edge offer an ordered slot. */
+export function resolveBoardIssueDropSurface(
+	y: number,
+	headerBottom: number,
+	listBounds: Readonly<{ top: number; bottom: number }>,
+	lastCardBottom: number | undefined,
+): BoardIssueDropSurface {
+	if (y <= headerBottom) return "header";
+	if (lastCardBottom === undefined || y < listBounds.top || y > listBounds.bottom
+		|| y > lastCardBottom + BOARD_CARD_INSERTION_BAND_PX) return "column";
+	return "position";
+}
+
+/** Centre the 2px rule in the measured gap, rather than against either card. */
+export function getBoardIssueInsertionLineTop(previousBottom: number, followingTop: number): number {
+	return (previousBottom + followingTop) / 2 - 1;
+}
+
 export function pickBoardCardInsertionAtPoint(
 	pointer: BoardAgentSessionDragPointer,
 	zones: readonly Readonly<{

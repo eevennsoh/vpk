@@ -14,6 +14,7 @@ const DEMO_ICONS: ReadonlyArray<{ name: AnimatedIconName; label: string }> = [
 	{ name: "ai-generative-text", label: "Generate text" },
 	{ name: "ai-generative-text-summary", label: "Summarize text" },
 	{ name: "ai-search", label: "Search" },
+	{ name: "ai-sparkle", label: "AI" },
 	{ name: "angle-brackets", label: "Code" },
 	{ name: "magic-wand", label: "Suggest" },
 	{ name: "rovo-chat", label: "Rovo chat" },

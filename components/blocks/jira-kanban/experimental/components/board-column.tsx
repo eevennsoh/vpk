@@ -1,65 +1,137 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import ArrowDownIcon from "@atlaskit/icon/core/arrow-down";
+import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
+import { Icon } from "@/components/ui/icon";
+import { buttonVariants } from "@/components/ui/button";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import { Icon } from "@/components/ui/icon";
-import type { JiraKanbanAgentData } from "../../index";
-import type { KanbanColumnChrome, KanbanColumnChromeStyles } from "../../column-chrome";
+import { JiraDropzoneCopyReveal } from "@/components/blocks/jira-dropzone/jira-dropzone-copy-reveal";
+import { JIRA_DROPZONE_WELL_CHROME_CLASS, resolveJiraDropzoneWellColors } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-chrome";
+import type { JiraKanbanAgentData } from "@/components/blocks/jira-kanban/index";
+import type { KanbanColumnChrome, KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
 import { BOARD_COLUMN_WIDTH_PX } from "../lib/board-column-collapse";
 import { BOARD_COLUMN_ACTION_REVEAL } from "../lib/board-column-action-reveal";
+import { resolveBoardColumnHeaderDropFeedbackInset } from "../lib/board-column-header-drop-feedback";
 import { BoardColumnAgentAssignment } from "./board-column-agent-assignment";
 import { BoardColumnResizeButton } from "./collapsed-board-column";
 import { BoardColumnCreateAction } from "./create-work-item-drop-zone";
 import { BoardColumnCardList } from "./board-column-card-list";
+import { BoardIssueTransitionOverlay } from "./board-issue-transition-overlay";
 import { useBoardIssueDrop, type BoardIssueDragSource } from "../hooks/use-board-issue-drop";
-import type { JiraKanbanCardDropTarget } from "../../card-drop";
-import { BoardCardInsertionLine } from "./board-card-insertion-line";
-import { Lozenge } from "@/components/ui/lozenge";
+import { useBoardColumnDropRing, useCreateDropzoneHeight } from "../hooks/use-create-dropzone-height";
+import type { JiraKanbanCardDropTarget } from "@/components/blocks/jira-kanban/card-drop";
 import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
 
 type BoardIssueDropState = ReturnType<typeof useBoardIssueDrop>;
 
 function BoardColumnHeader({
+	headerAccessory,
 	agents,
 	assignedAgentIds,
 	count,
+	dropFeedbackInset,
 	headerStyle,
 	issueDrop,
+	issueMoveVisual,
 	onCollapse,
 	onCreateAgent,
 	onToggleAgent,
 	title,
 }: Readonly<{
+	headerAccessory?: ReactNode;
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	count: number;
+	dropFeedbackInset?: CSSProperties["paddingInline"];
 	headerStyle?: CSSProperties;
 	issueDrop: BoardIssueDropState;
+	issueMoveVisual: boolean;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleAgent?: (agentId: string) => void;
 	title: string;
 }>) {
-	const isTransitionSource = issueDrop.active?.columnTitle === title;
+	const isTransitioning = Boolean(issueDrop.active && (issueMoveVisual || issueDrop.active.columnTitle === title));
+	const transition = typeof issueDrop.header === "string" ? null : issueDrop.header;
+	const headerLabel = typeof issueDrop.header === "string" ? issueDrop.header : "";
+	const transitionPrefix = transition?.source;
+	const destination = transition?.destination ?? "";
+	const transitionSource = transition ? <>
+		<span data-board-column-transition-prefix="" className="shrink-0 whitespace-pre">{transition.source}</span>
+		<Icon aria-hidden className="mx-1 shrink-0 text-icon-subtle" data-board-column-transition-arrow="" render={<ArrowRightIcon color="currentColor" label="" size="small" />} />
+	</> : null;
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
+	const dropHovered = issueDrop.current?.entered && issueDrop.current.surface === "header";
+	const isSelfLoop = issueDrop.active?.columnTitle === title;
+	const showHeaderDropFeedback = isSelfLoop || Boolean(dropHovered);
+	const paddingBottom = headerStyle?.paddingBottom ?? token("space.100");
 	return (
 		<div
-			data-transitioning={isTransitionSource || undefined}
+			data-slot="board-column-header"
+			data-transitioning={isTransitioning || undefined}
+			data-issue-drop-hovered={dropHovered || undefined}
+			{...issueDrop.handlers}
 			className={cn(
-				"flex min-w-0 items-center gap-2",
-				isTransitionSource ? "justify-center text-center" : "justify-between",
+				"relative isolate flex min-w-0 items-center gap-2",
+				!issueMoveVisual && isTransitioning ? "justify-center" : "justify-between",
 			)}
-			style={{ paddingBottom: token("space.100"), ...headerStyle }}
+			style={{ ...headerStyle, paddingBottom }}
 		>
-			<div className="flex min-w-0 items-center gap-1.5">
-				<span className="truncate text-xs font-medium leading-4 text-text-subtle">{issueDrop.header}</span>
-				{isTransitionSource ? null : <span className="shrink-0 text-xs font-normal text-text-subtlest">{count}</span>}
+			{showHeaderDropFeedback ? <div
+				aria-hidden
+				data-board-column-title-drop-feedback=""
+				className={cn(
+					"pointer-events-none absolute -z-10",
+					isSelfLoop ? cn(
+						"transition-colors duration-normal ease-out-practical",
+						JIRA_DROPZONE_WELL_CHROME_CLASS,
+						resolveJiraDropzoneWellColors(Boolean(dropHovered)),
+						!dropHovered ? "bg-transparent" : null,
+					) : cn(buttonVariants({ variant: "ghost" }), "bg-bg-neutral-subtle-hovered"),
+				)}
+				style={{ ...resolveBoardColumnHeaderDropFeedbackInset(dropFeedbackInset, headerStyle?.paddingTop, paddingBottom), height: "auto" }}
+			/> : null}
+			{/* Match the compact controls' row height when pickup replaces them with transition copy. */}
+			<div className={cn(
+				"flex min-h-6 min-w-0 flex-1 items-center text-xs font-medium leading-4",
+				isSelfLoop && dropHovered ? "text-text-selected" : "text-text-subtle",
+				!issueMoveVisual && isTransitioning ? "justify-center" : null,
+			)}>
+				{issueMoveVisual ? <JiraDropzoneCopyReveal
+					contentKey={transitionPrefix ?? headerLabel}
+					dataPrefix="board-column-header"
+					mode="cycle"
+					revealed={isTransitioning}
+					alignment="start"
+					resting={<span className="inline-flex min-w-0 items-center gap-1.5">
+						<span className="truncate">{title}</span>
+						{isTransitioning ? null : <span data-board-column-count="" className="shrink-0 font-normal text-text-subtlest">{count}</span>}
+					</span>}
+				>{transitionPrefix ? (
+					<span className="inline-flex w-full min-w-0 items-center">
+						{transitionSource}
+						<span className="min-w-0 flex-1">
+							<JiraDropzoneCopyReveal
+								contentKey={destination}
+								dataPrefix="board-column-destination"
+								mode="cycle"
+								revealed={Boolean(destination)}
+								resting={null}
+								alignment="start"
+							>{destination}</JiraDropzoneCopyReveal>
+						</span>
+					</span>
+				) : headerLabel}</JiraDropzoneCopyReveal> : (
+					<span className="inline-flex min-w-0 items-center gap-1.5">
+						{transition ? <span className="inline-flex min-w-0 items-center">{transitionSource}<span className="truncate">{destination}</span></span> : <span className="truncate">{headerLabel}</span>}
+						{isTransitioning ? null : <span data-board-column-count="" className="shrink-0 font-normal text-text-subtlest">{count}</span>}
+					</span>
+				)}
 			</div>
-			{isTransitionSource ? null : (
+			{isTransitioning ? null : (
 				<div className="flex shrink-0 items-center gap-0.5">
 					{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
 						<BoardColumnAgentAssignment
@@ -82,46 +154,13 @@ function BoardColumnHeader({
 					/>
 				</div>
 			)}
+			{headerAccessory}
 		</div>
 	);
 }
 
-function BoardIssueTransitionOverlay({
-	issueDrop,
-	title,
-}: Readonly<{ issueDrop: BoardIssueDropState; title: string }>) {
-	return (
-		<>
-			{issueDrop.offeringChoices || issueDrop.current?.entered ? (
-				<div className={cn("absolute inset-0 z-20 flex flex-col overflow-hidden rounded-lg border-2 border-border-selected bg-bg-selected", !issueDrop.choosing ? "opacity-0" : null)} aria-hidden={!issueDrop.choosing || undefined} role="group" aria-label={`Choose a status in ${title}`}>
-					{issueDrop.choices.map((status) => (
-						<div
-							key={status}
-							data-issue-status-zone={status}
-							className={cn("flex min-h-0 flex-1 flex-col items-center justify-center gap-2 border-border-selected text-sm text-text last:border-t-2", issueDrop.current?.status === status ? "bg-bg-selected-hovered" : null)}
-						>
-							<span>Transition to</span>
-							<Icon
-								aria-hidden
-								className="text-icon-subtle"
-								data-issue-transition-arrow=""
-								render={<ArrowDownIcon color="currentColor" label="" size="small" />}
-							/>
-							<Lozenge variant="information">{status}</Lozenge>
-						</div>
-					))}
-				</div>
-			) : null}
-			{!issueDrop.choosing && issueDrop.current?.lineTop !== undefined ? (
-				<div className="pointer-events-none absolute inset-x-1 z-30" style={{ top: issueDrop.current.lineTop }} data-issue-drop-before={issueDrop.current.beforeCardCode ?? "end"}>
-					<BoardCardInsertionLine position="before" seam="edge" marker="circle" />
-				</div>
-			) : null}
-		</>
-	);
-}
-
 export function BoardColumn({
+	headerAccessory,
 	agents,
 	assignedAgentIds,
 	cardInsertion,
@@ -139,9 +178,11 @@ export function BoardColumn({
 	sessionDragTransaction,
 	title,
 	issueDragSource,
+	issueMoveVisual = true,
 	statuses,
 	onIssueDrop,
 }: Readonly<{
+	headerAccessory?: ReactNode;
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	cardInsertion: BoardAgentSessionDrag["cardInsertion"];
@@ -159,12 +200,16 @@ export function BoardColumn({
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 	issueDragSource?: BoardIssueDragSource;
+	issueMoveVisual?: boolean;
 	statuses?: readonly string[];
 	onIssueDrop?: (title: string, target?: JiraKanbanCardDropTarget) => void;
 }>) {
-	const issueDrop = useBoardIssueDrop({ source: issueDragSource, title, statuses, onDrop: onIssueDrop });
+	const issueDrop = useBoardIssueDrop({ source: issueDragSource, title, statuses, onDrop: onIssueDrop, moveVisual: issueMoveVisual });
 	const insertionArmed = cardInsertion?.columnTitle === title;
 	const isEmptyColumn = count === 0;
+	// The moved source can unmount before dragend; settled columns must clear their drag paint.
+	useBoardColumnDropRing(issueDrop.rootRef, chrome, Boolean(issueDrop.current?.entered && issueDrop.current.surface !== "position"));
+	const { minimumHeight: choiceHeight } = useCreateDropzoneHeight(issueMoveVisual && issueDrop.choosing && columnSizing === "content", "bottom", columnSizing, issueDrop.rootRef);
 	const createAction = <BoardColumnCreateAction
 		columnSizing={columnSizing}
 		dropZoneLabel={createWorkItemDropZoneLabel}
@@ -174,8 +219,9 @@ export function BoardColumn({
 		title={title}
 	/>;
 	return (
+		<>
 		<div
-			className={cn("min-h-0 min-w-0 overflow-visible", chrome.columnClassName, columnSizing === "content" ? "bg-transparent" : null)}
+			className={cn("relative z-10 min-h-0 min-w-0 overflow-visible", chrome.columnClassName, columnSizing === "content" ? "bg-transparent" : null)}
 			data-jira-kanban-column-content=""
 			data-kanban-column-chrome={columnChrome}
 			style={{
@@ -191,11 +237,14 @@ export function BoardColumn({
 			}}
 		>
 			<BoardColumnHeader
+					headerAccessory={headerAccessory}
 					agents={agents}
 					assignedAgentIds={assignedAgentIds}
 					count={count}
+					dropFeedbackInset={chrome.footer.paddingInline}
 					headerStyle={chrome.header}
 					issueDrop={issueDrop}
+					issueMoveVisual={issueMoveVisual}
 					onCollapse={onCollapse}
 					onCreateAgent={onCreateAgent}
 					onToggleAgent={onToggleAgent}
@@ -205,8 +254,12 @@ export function BoardColumn({
 				ref={issueDrop.rootRef}
 				{...issueDrop.handlers}
 				className={cn("relative flex min-h-0 flex-col", columnSizing === "fill" ? "flex-1" : null)}
-				// Reserve space per status throughout the drag, including after selection.
-				style={{ minHeight: issueDrop.offeringChoices ? `${issueDrop.choices.length * 8}rem` : undefined }}
+				// Fixed status targets reuse the create well's reserved magnetic clearance.
+				style={{
+					height: issueMoveVisual && issueDrop.choosing && columnSizing === "content" ? `calc(${choiceHeight}px + ${token("space.100")} - ${token("border.width")})` : undefined,
+					minHeight: !issueMoveVisual && issueDrop.offeringChoices ? `${issueDrop.choices.length * 8}rem` : undefined,
+				}}
+				data-issue-status-choices={issueDrop.choosing || undefined}
 				data-issue-drop-entered={issueDrop.current?.entered ? issueDrop.current.status : undefined}
 			>
 				<div
@@ -230,9 +283,15 @@ export function BoardColumn({
 
 					<div style={chrome.footer}>{createAction}</div>
 				</div>
-				<BoardIssueTransitionOverlay issueDrop={issueDrop} title={title} />
+				<BoardIssueTransitionOverlay issueDrop={issueDrop} title={title} moveVisual={issueMoveVisual} />
 			</div>
-			{issueDrop.current?.entered ? <span className="sr-only" role="status">{`${issueDrop.header}. Choose a position, then release to move. Escape cancels.`}</span> : null}
+			{issueDrop.current?.entered ? <span className="sr-only" role="status">{`${issueDrop.header}. ${issueDrop.current.surface === "position" ? "Release to move to this position." : "Release to move to the top of this column."} Escape cancels.`}</span> : null}
 		</div>
+		{columnSizing === "content" && issueDrop.active && !issueDrop.choosing ? (
+			// Ordinary columns keep this target behind their header and card stack.
+			// A latched status choice retains its stable overlay while the body returns.
+			<div aria-hidden data-issue-drop-hit-area="" className={cn("absolute inset-0", issueDrop.offeringChoices ? "z-20" : "z-0")} {...issueDrop.handlers} />
+		) : null}
+		</>
 	);
 }

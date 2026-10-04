@@ -248,9 +248,28 @@ test("toolbar clear-selection empties the selection", async () => {
 	let state = createInitialAsxKanbanState();
 
 	state = asxKanbanReducer(state, { type: "select", cardCode: "RFP-102", columnTitle: "RFP Intake", indexInColumn: 1, modifiers: { shiftKey: false, metaOrCtrlKey: false } });
+	assert.equal(state.anchor.cardCode, "RFP-102");
 	assert.equal(state.selectedCardCodes.size, 1);
 	state = asxKanbanReducer(state, { type: "clear-selection" });
 	assert.equal(state.selectedCardCodes.size, 0);
+	assert.equal(state.anchor, null);
+});
+
+test("shared ranges shrink and moving the anchor invalidates it", async () => {
+	const { asxKanbanReducer, createInitialAsxKanbanState } = await loadHarness();
+	let state = createInitialAsxKanbanState();
+	const choose = (code) => {
+		state = asxKanbanReducer(state, {
+			type: "select", cardCode: code, columnTitle: "RFP Intake", indexInColumn: 0,
+			modifiers: { shiftKey: true, metaOrCtrlKey: false },
+		});
+	};
+	choose("RFP-102");
+	choose("RFP-104");
+	choose("RFP-103");
+	assert.deepEqual([...state.selectedCardCodes], ["RFP-102", "RFP-103"]);
+	state = asxKanbanReducer(state, { type: "set-status", targetColumnTitle: "Review" });
+	assert.equal(state.anchor, null);
 });
 
 test("bulk-assigning one agent produces varied, non-lockstep working states per card", async () => {

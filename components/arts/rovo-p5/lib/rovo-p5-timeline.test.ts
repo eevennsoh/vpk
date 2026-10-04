@@ -7,7 +7,6 @@ import {
 	ROVO_P5_FACET_CLOCKWISE,
 	ROVO_P5_FACET_COUNT,
 	ROVO_P5_STAGES,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./rovo-p5-timeline.ts";
 
 /** Midpoint of a named stage, in seconds from the start of the cycle. */

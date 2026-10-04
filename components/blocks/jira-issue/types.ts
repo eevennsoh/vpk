@@ -1,4 +1,5 @@
 import type { TagColor } from "@/components/ui/tag";
+import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
 
 /** Raised elevation is the default card chrome. Stroke is a 1px border with no shadow. */
 export type JiraIssueChrome = "raised" | "stroke";
@@ -8,12 +9,15 @@ export type JiraIssuePriority = "major" | "medium" | "minor";
 export type JiraIssuePullRequestStatus = "open" | "failed" | "merged";
 export type JiraIssueVariant = "default" | "uncaptured-work";
 
-/** Optional card cover; the host can cap its rendered height in pixels. */
-export interface JiraIssueCoverImage {
-	src: string;
-	alt: string;
+/** Optional image, decorative solid color, or typographic cover with a host-owned height cap. */
+export type JiraIssueCoverImage = {
 	maxHeight?: number;
-}
+	backgroundPattern?: "grid";
+} & (
+	| { src: string; alt: string; backgroundClassName?: never; heading?: never; subheading?: never; appSources?: never }
+	| { backgroundClassName: string; src?: never; alt?: never; heading?: never; subheading?: never; appSources?: never }
+	| { heading: string; subheading?: string; appSources?: readonly TwgToolSource[]; src?: never; alt?: never; backgroundClassName?: never }
+);
 
 /** Dummy or live overlay fields for the Pull Request hover flyout. */
 export interface JiraIssuePullRequestPreview {

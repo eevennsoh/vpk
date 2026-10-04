@@ -1,8 +1,9 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const JIRA_GOLDEN_JOURNEYS_V4_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/jira-golden-journeys-v4";
+import { withDesignVariants } from "@/tests/helpers/design-variants";
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_GOLDEN_JOURNEYS_V4_ROUTE = "/jira-golden-journeys-v4";
 
 const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
 const AGENT_SESSION_PANEL_WIDTH_PX = 360;
@@ -25,26 +26,14 @@ function getAgentSessionColumn(page: Page): Locator {
 }
 
 async function openBoard(page: Page, options?: { panelVariant?: boolean }): Promise<void> {
-	if (options?.panelVariant === false) {
-		await page.addInitScript(
-			([key, value]) => {
-				window.localStorage.setItem(key, value);
-			},
-			[DESIGN_VARIANTS_STORAGE_KEY, JSON.stringify({ panel: false })] as const,
-		);
-	} else if (options?.panelVariant) {
-		// Seeding the store before navigation is deterministic and keeps the
-		// overlay tests independent of the settings dropdown; one test below
-		// drives the real menu to prove the toggle is wired.
-		await page.addInitScript(
-			([key, value]) => {
-				window.localStorage.setItem(key, value);
-			},
-			[DESIGN_VARIANTS_STORAGE_KEY, JSON.stringify({ panel: true })] as const,
-		);
-	}
+	// A `?variants=` override is deterministic and keeps the overlay tests
+	// independent of the settings dropdown; one test below opens the board
+	// without it and drives the real menu to prove the toggle is wired.
+	const route = options?.panelVariant === undefined
+		? JIRA_GOLDEN_JOURNEYS_V4_ROUTE
+		: withDesignVariants(JIRA_GOLDEN_JOURNEYS_V4_ROUTE, { panel: options.panelVariant });
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(JIRA_GOLDEN_JOURNEYS_V4_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(appUrl(route), { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
 		timeout: 30_000,
 	});

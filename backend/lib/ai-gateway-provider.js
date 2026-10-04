@@ -156,6 +156,21 @@ function throwIfAborted(signal, message) {
 	throw createAbortError(message);
 }
 
+function buildOpenAiCompletionPayload({ model, messages, maxOutputTokens, temperature }) {
+	const payload = { model, messages, stream: false };
+	const isGpt6Sol = /^gpt-6(?:\.\d+)?-sol$/.test(model);
+	if (typeof maxOutputTokens === "number") {
+		// This limit includes reasoning tokens; tiny title budgets can exhaust it
+		// before the model emits any visible text.
+		payload.max_completion_tokens = isGpt6Sol ? Math.max(2048, maxOutputTokens) : maxOutputTokens;
+	}
+	// GPT-6 Sol reasoning models only accept the default temperature.
+	if (typeof temperature === "number" && !isGpt6Sol) {
+		payload.temperature = temperature;
+	}
+	return payload;
+}
+
 async function fetchOpenAiCompatibleCompletion({
 	gatewayUrl,
 	envVars,
@@ -178,19 +193,12 @@ async function fetchOpenAiCompatibleCompletion({
 		throw new Error("AI Gateway request requires at least one message.");
 	}
 
-	const payload = {
-		model: getModelId(gatewayUrl),
+	const payload = buildOpenAiCompletionPayload({
+		model: getModelId(gatewayUrl, envVars),
 		messages: resolvedMessages,
-		stream: false,
-	};
-
-	if (typeof maxOutputTokens === "number") {
-		payload.max_completion_tokens = maxOutputTokens;
-	}
-
-	if (typeof temperature === "number") {
-		payload.temperature = temperature;
-	}
+		maxOutputTokens,
+		temperature,
+	});
 
 	const response = await fetch(gatewayUrl, {
 		method: "POST",
@@ -346,5 +354,6 @@ function createAIGatewayProvider(options = {}) {
 }
 
 module.exports = {
+	buildOpenAiCompletionPayload,
 	createAIGatewayProvider,
 };

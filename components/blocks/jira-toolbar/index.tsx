@@ -10,14 +10,15 @@ import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
-import SkillIcon from "@atlaskit/icon-lab/core/skill";
+import PresenterModeIcon from "@atlaskit/icon/core/presenter-mode";
+import RovoIcon from "@atlaskit/icon-lab/core/rovo";
+import { useRouter } from "next/navigation";
+import { useOptionalRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 
 import {
 	AgentSelector,
 	type AgentSelectorAgent,
 } from "@/components/blocks/agent-selector";
-import { SkillSelector } from "@/components/blocks/skill-selector";
-import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,29 +36,16 @@ import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-
-type LozengeVariant = NonNullable<LozengeProps["variant"]>;
-
-// Map Jira workflow statuses to lozenge tones following ADS status conventions:
-// grey (to-do) → blue/yellow (in-progress) → green (done).
-const STATUS_LOZENGE_VARIANTS: Record<string, LozengeVariant> = {
-	Intake: "neutral",
-	Drafting: "information",
-	Review: "warning",
-	Approved: "success",
-};
-
-function statusLozengeVariant(status: string): LozengeVariant {
-	return STATUS_LOZENGE_VARIANTS[status] ?? "neutral";
-}
+import { getWorkflowPhaseLozengeVariant } from "@/lib/workflow-status";
+import { motionEase } from "@/lib/motion";
 
 const TOOLBAR_ENTER: Transition = {
 	duration: 0.25,
-	ease: [0, 0.4, 0, 1],
+	ease: motionEase.out,
 }; // duration-slow + ease-out
 const TOOLBAR_EXIT: Transition = {
 	duration: 0.2,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 }; // duration-medium + ease-in
 const TOOLBAR_REDUCED: Transition = { duration: 0 };
 
@@ -77,43 +65,51 @@ const TOOLBAR_HORIZONTAL_PADDING = 16;
 const FLYOUT_SIDE_OFFSET = 16;
 
 export interface JiraToolbarProps {
+	/** Consumer-owned primary action, kept visible beside the selection count. */
+	primaryAction?: ReactNode;
+	/** Show only the consumer-owned primary action during a focused gesture. */
+	primaryActionOnly?: boolean;
+	/** Disable when the owning board handles scoped keyboard dismissal. */
+	dismissOnEscape?: boolean;
 	agents: readonly AgentSelectorAgent[];
 	className?: string;
 	defaultPinnedAgentIds?: readonly string[];
-	defaultPinnedSkillIds?: readonly string[];
+	onAskRovo?: () => void;
+	onSelectAll?: () => void;
 	onAgentAssignmentChange: (agentId: string, assigned: boolean) => void;
 	onBrowseAgents?: () => void;
 	onClearSelection: () => void;
 	onCreateAgent?: () => void;
 	onDelete?: () => void;
 	onEditFields?: () => void;
-	onBrowseSkills?: () => void;
-	onCreateSkill?: () => void;
 	onMerge?: () => void;
-	onSkillSelect?: (skillId: string) => void;
 	onStatusChange: (status: string) => void;
 	onWatchOptions?: () => void;
 	pinnedItemsLabel?: string;
 	selectedAgentIds?: readonly string[];
 	selectedCount: number;
 	selectedStatus?: string | null;
-	skills?: readonly SkillsDirectorySkill[];
 	statusOptions: readonly string[];
+	/** Optional board-owned status presentation; shared workflow tones are the default. */
+	getStatusVariant?: (status: string, phases: readonly string[]) => NonNullable<LozengeProps["variant"]>;
 }
 
 interface JiraToolbarActionProps {
 	children: ReactNode;
 	icon: ReactNode;
+	disabled?: boolean;
 	onClick?: () => void;
 }
 
 function JiraToolbarAction({
 	children,
 	icon,
+	disabled,
 	onClick,
 }: Readonly<JiraToolbarActionProps>) {
 	return (
 		<Button
+			disabled={disabled}
 			className={ACTION_BUTTON_CLASS}
 			onClick={onClick}
 			type="button"
@@ -126,7 +122,7 @@ function JiraToolbarAction({
 }
 
 function ToolbarSeparator() {
-	return <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-border" />;
+	return <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-border-bold opacity-50" />;
 }
 
 // A middle action is described once and rendered in three forms: a hidden
@@ -136,7 +132,7 @@ function ToolbarSeparator() {
 interface ToolbarAction {
 	id: string;
 	label: string;
-	/** Bare @atlaskit icon element, wrapped in `<Icon>` at each render site. */
+	/** Icon or logo element, wrapped in `<Icon>` for measurement. */
 	icon: ReactElement;
 	/** Inline toolbar node (button or dropdown). */
 	renderInline: () => ReactNode;
@@ -152,34 +148,35 @@ interface ToolbarAction {
 }
 
 export function JiraToolbar({
+	primaryAction,
+	primaryActionOnly = false,
+	dismissOnEscape = true,
 	agents,
 	className,
 	defaultPinnedAgentIds,
-	defaultPinnedSkillIds,
+	onAskRovo,
+	onSelectAll,
 	onAgentAssignmentChange,
 	onBrowseAgents,
 	onClearSelection,
 	onCreateAgent,
 	onDelete,
 	onEditFields,
-	onBrowseSkills,
-	onCreateSkill,
 	onMerge,
-	onSkillSelect,
 	onStatusChange,
 	onWatchOptions,
 	pinnedItemsLabel,
 	selectedAgentIds = [],
 	selectedCount,
 	selectedStatus,
-	skills,
 	statusOptions,
+	getStatusVariant = getWorkflowPhaseLozengeVariant,
 }: Readonly<JiraToolbarProps>) {
 	const shouldReduceMotion = useReducedMotion();
+	const router = useRouter();
+	const rovoChat = useOptionalRovoChatControls();
 	const [agentSelectorOpen, setAgentSelectorOpen] = useState(false);
 	const [agentQuery, setAgentQuery] = useState("");
-	const [skillSelectorOpen, setSkillSelectorOpen] = useState(false);
-	const [skillQuery, setSkillQuery] = useState("");
 	const selectedAgentIdSet = useMemo(
 		() => new Set(selectedAgentIds),
 		[selectedAgentIds],
@@ -193,49 +190,53 @@ export function JiraToolbar({
 		}
 	};
 
-	const handleSkillSelectorOpenChange = (open: boolean) => {
-		setSkillSelectorOpen(open);
-		if (!open) {
-			setSkillQuery("");
-		}
-	};
-
-	const handleSkillToggle = (skillId: string) => {
-		onSkillSelect?.(skillId);
-		setSkillSelectorOpen(false);
-		setSkillQuery("");
-	};
+	const handleAskRovo = onAskRovo ?? (() => {
+		if (rovoChat) rovoChat.openChat("sidebar");
+		else router.push("/rovo");
+	});
 
 	useEffect(() => {
-		if (selectedCount === 0) {
+		if (selectedCount === 0 || !dismissOnEscape) {
 			return;
 		}
 
 		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") {
+			if (event.key === "Escape" && !event.defaultPrevented) {
 				onClearSelection();
 			}
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [onClearSelection, selectedCount]);
+	}, [dismissOnEscape, onClearSelection, selectedCount]);
 
 	// Status submenu is reused verbatim inside the standalone dropdown and the
 	// overflow menu so the option list stays identical in both places.
 	const statusItems = statusOptions.map((status) => (
 		<DropdownMenuItem
 			key={status}
-			// The lozenge tone + trailing check mark carry selection meaning, so
-			// keep the default text color and use a subtle blue selected surface
-			// instead of the strong selected tint.
-			className="data-selected:bg-bg-brand-subtlest data-selected:text-text data-selected:data-[highlighted]:bg-bg-brand-subtlest-hovered data-selected:data-[highlighted]:text-text data-selected:active:bg-bg-brand-subtlest-pressed"
 			onSelect={() => onStatusChange(status)}
 			selected={selectedStatus === status}
 		>
-			<Lozenge variant={statusLozengeVariant(status)}>{status}</Lozenge>
+			<Lozenge variant={getStatusVariant(status, statusOptions)}>{status}</Lozenge>
 		</DropdownMenuItem>
 	));
+	const agentPicker = (
+		<AgentSelector
+			agents={agents}
+			defaultPinnedAgentIds={defaultPinnedAgentIds}
+			onAgentToggle={(agentId) => {
+				onAgentAssignmentChange(agentId, !selectedAgentIdSet.has(agentId));
+			}}
+			onBrowseAgents={() => onBrowseAgents?.()}
+			onCreateAgent={() => onCreateAgent?.()}
+			onQueryChange={setAgentQuery}
+			pinnedItemsLabel={pinnedItemsLabel}
+			query={agentQuery}
+			selectedAgentIds={selectedAgentIds}
+			selectionMode="single"
+		/>
+	);
 
 	// Middle actions, in priority order (left = highest priority, collapses last).
 	// Merge only exists for multi-selection, so it drops out of the list entirely
@@ -243,7 +244,7 @@ export function JiraToolbar({
 	const actions: ToolbarAction[] = [
 		{
 			id: "assign",
-			label: "Assign agents",
+			label: "Add agent",
 			icon: <AiAgentIcon label="" size="small" />,
 			renderInline: () => (
 				<DropdownMenu open={agentSelectorOpen} onOpenChange={handleAgentSelectorOpenChange}>
@@ -251,7 +252,7 @@ export function JiraToolbar({
 						render={<Button className={ACTION_BUTTON_CLASS} type="button" variant="ghost" />}
 					>
 						<Icon render={<AiAgentIcon label="" size="small" />} />
-						Assign agents
+						Add agent
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="start"
@@ -265,75 +266,37 @@ export function JiraToolbar({
 						side="top"
 						sideOffset={FLYOUT_SIDE_OFFSET}
 					>
-						<AgentSelector
-							agents={agents}
-							defaultPinnedAgentIds={defaultPinnedAgentIds}
-							onAgentToggle={(agentId) => {
-								onAgentAssignmentChange(agentId, !selectedAgentIdSet.has(agentId));
-							}}
-							onBrowseAgents={() => onBrowseAgents?.()}
-							onCreateAgent={() => onCreateAgent?.()}
-							onQueryChange={setAgentQuery}
-							pinnedItemsLabel={pinnedItemsLabel}
-							query={agentQuery}
-							selectedAgentIds={selectedAgentIds}
-							selectionMode="single"
-						/>
+						{agentPicker}
 					</DropdownMenuContent>
 				</DropdownMenu>
 			),
-			// In the overflow menu, reuse the standalone agent selector by opening it.
+			// Overflow owns a real submenu; the inline dropdown is absent here.
 			renderMenu: () => (
-				<DropdownMenuItem
-					elemBefore={<Icon render={<AiAgentIcon label="" size="small" />} />}
-					onSelect={() => setAgentSelectorOpen(true)}
-				>
-					Assign agents
-				</DropdownMenuItem>
+				<DropdownMenuSub onOpenChange={(open) => { if (!open) setAgentQuery(""); }}>
+					<DropdownMenuSubTrigger
+						aria-label="Add agent"
+						elemBefore={<Icon render={<AiAgentIcon label="" size="small" />} />}
+					>
+						Add agent
+					</DropdownMenuSubTrigger>
+					<DropdownMenuSubContent className="w-[360px] max-w-[calc(100vw-2rem)] max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" positionerClassName="z-[502]">
+						{agentPicker}
+					</DropdownMenuSubContent>
+				</DropdownMenuSub>
 			),
 		},
 		{
-			id: "use-skills",
-			label: "Use skills",
-			icon: <SkillIcon label="" size="small" />,
+			id: "ask-rovo",
+			label: "Ask Rovo",
+			icon: <RovoIcon label="" size="small" />,
 			renderInline: () => (
-				<DropdownMenu open={skillSelectorOpen} onOpenChange={handleSkillSelectorOpenChange}>
-					<DropdownMenuTrigger
-						render={<Button className={ACTION_BUTTON_CLASS} type="button" variant="ghost" />}
-					>
-						<Icon render={<SkillIcon label="" size="small" />} />
-						Use skills
-					</DropdownMenuTrigger>
-					<DropdownMenuContent
-						align="start"
-						// Bottom-anchored like Assign agents: bound the height by the space
-						// above the trigger and let the SkillSelector's own list scroll.
-						className="w-[360px] max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0"
-						positionerClassName="z-[501]"
-						side="top"
-						sideOffset={FLYOUT_SIDE_OFFSET}
-					>
-						<SkillSelector
-							defaultPinnedSkillIds={defaultPinnedSkillIds}
-							onBrowseSkills={() => onBrowseSkills?.()}
-							onCreateSkill={() => onCreateSkill?.()}
-							onQueryChange={setSkillQuery}
-							onSkillToggle={handleSkillToggle}
-							pinnedItemsLabel={pinnedItemsLabel}
-							query={skillQuery}
-							selectionMode="single"
-							skills={skills}
-						/>
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<JiraToolbarAction icon={<Icon render={<RovoIcon label="" size="small" />} />} onClick={handleAskRovo}>
+					Ask Rovo
+				</JiraToolbarAction>
 			),
-			// In the overflow menu, reuse the standalone skill selector by opening it.
 			renderMenu: () => (
-				<DropdownMenuItem
-					elemBefore={<Icon render={<SkillIcon label="" size="small" />} />}
-					onSelect={() => setSkillSelectorOpen(true)}
-				>
-					Use skills
+				<DropdownMenuItem elemBefore={<Icon render={<RovoIcon label="" size="small" />} />} onSelect={handleAskRovo}>
+					Ask Rovo
 				</DropdownMenuItem>
 			),
 		},
@@ -361,6 +324,7 @@ export function JiraToolbar({
 		},
 		{
 			id: "change-status",
+			alwaysOverflow: true,
 			label: "Change status",
 			icon: <ProjectStatusIcon label="" size="small" />,
 			renderInline: () => (
@@ -383,8 +347,10 @@ export function JiraToolbar({
 			),
 			renderMenu: () => (
 				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>
-						<Icon render={<ProjectStatusIcon label="" size="small" />} />
+					<DropdownMenuSubTrigger
+						aria-label="Change status"
+						elemBefore={<Icon render={<ProjectStatusIcon label="" size="small" />} />}
+					>
 						Change status
 					</DropdownMenuSubTrigger>
 					<DropdownMenuSubContent positionerClassName="z-[501]">
@@ -443,10 +409,12 @@ export function JiraToolbar({
 		},
 		{
 			id: "delete",
+			alwaysOverflow: true,
 			label: "Delete",
 			icon: <DeleteIcon label="" size="small" />,
 			renderInline: () => (
 				<JiraToolbarAction
+					disabled={!onDelete}
 					icon={<Icon render={<DeleteIcon label="" size="small" />} />}
 					onClick={onDelete}
 				>
@@ -455,6 +423,7 @@ export function JiraToolbar({
 			),
 			renderMenu: () => (
 				<DropdownMenuItem
+					disabled={!onDelete}
 					elemBefore={<Icon render={<DeleteIcon label="" size="small" />} />}
 					onSelect={() => onDelete?.()}
 				>
@@ -488,8 +457,10 @@ export function JiraToolbar({
 		inlineEligibleActions.length,
 	);
 	const inlineActionCount = inlineEligibleActions.length;
+	const hasSelection = selectedCount > 0;
 
 	useLayoutEffect(() => {
+		if (!hasSelection || primaryActionOnly) return;
 		const positioner = positionerRef.current;
 		const measure = measureRef.current;
 		const leading = leadingRef.current;
@@ -534,7 +505,7 @@ export function JiraToolbar({
 		observer.observe(leading);
 		observer.observe(trailing);
 		return () => observer.disconnect();
-	}, [inlineActionCount, pinnedOverflowActions.length]);
+	}, [hasSelection, inlineActionCount, pinnedOverflowActions.length, primaryActionOnly]);
 
 	// Inline-eligible actions that fit render inline; the rest collapse into the
 	// "⋯" menu. Pinned overflow actions are always appended to the hidden set so
@@ -549,7 +520,7 @@ export function JiraToolbar({
 		<AnimatePresence initial={false}>
 			{selectedCount > 0 ? (
 				<div
-					aria-label={`${selectedCount} card${selectedCount === 1 ? "" : "s"} selected. Bulk actions available.`}
+					aria-label={primaryActionOnly ? "Move card. Auto arrange available." : `${selectedCount} card${selectedCount === 1 ? "" : "s"} selected. Bulk actions available.`}
 					className={cn(
 						"pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4",
 						className,
@@ -580,86 +551,94 @@ export function JiraToolbar({
 							data-subtree-theme=""
 							data-theme="dark:dark spacing:spacing typography:typography shape:shape"
 						>
-							{/* Hidden measurement row: intrinsic width of every inline-eligible
-							    middle action, used only to compute how many fit. Pinned
-							    overflow actions are excluded so the widths array aligns with
-							    the fitting math. Never visible. */}
-							<div aria-hidden className="pointer-events-none absolute h-0 w-0 overflow-clip">
-								<div className="invisible flex items-center" ref={measureRef}>
-									{inlineEligibleActions.map((action) => (
-										<JiraToolbarAction icon={<Icon render={action.icon} />} key={`measure-${action.id}`}>
-											{action.label}
+							{primaryActionOnly ? primaryAction : (
+								<>
+									{/* Hidden measurement row: intrinsic width of every inline-eligible
+									    middle action, used only to compute how many fit. Pinned
+									    overflow actions are excluded so the widths array aligns with
+									    the fitting math. Never visible. */}
+									<div aria-hidden className="pointer-events-none absolute h-0 w-0 overflow-clip">
+										<div className="invisible flex items-center" ref={measureRef}>
+											{inlineEligibleActions.map((action) => (
+												<JiraToolbarAction icon={<Icon render={action.icon} />} key={`measure-${action.id}`}>
+													{action.label}
+												</JiraToolbarAction>
+											))}
+										</div>
+									</div>
+
+									{/* Always-visible leading cluster. */}
+									<div className="flex shrink-0 items-center" ref={leadingRef}>
+										<div aria-live="polite" className="flex h-8 items-center gap-2 px-2 text-sm font-medium text-text">
+											<Badge max={false}>{selectedCount}</Badge>
+											<span>selected</span>
+										</div>
+										<JiraToolbarAction disabled={!onSelectAll} icon={<Icon render={<PresenterModeIcon label="" size="small" />} />} onClick={onSelectAll}>
+											Select all
 										</JiraToolbarAction>
-									))}
-								</div>
-							</div>
+										{primaryAction}
+										<ToolbarSeparator />
+									</div>
 
-							{/* Always-visible leading cluster. */}
-							<div className="flex shrink-0 items-center" ref={leadingRef}>
-								<div aria-live="polite" className="flex h-8 items-center gap-2 px-2 text-sm font-medium text-text">
-									<Badge max={false}>{selectedCount}</Badge>
-									<span>selected</span>
-								</div>
-								<ToolbarSeparator />
-							</div>
+									{/* Middle actions: those that fit render inline; the rest collapse
+									    into the "⋯" menu. */}
+									<div className="flex min-w-0 items-center">
+										{visibleActions.map((action) => (
+											<span className="flex items-center" key={action.id}>
+												{action.renderInline()}
+											</span>
+										))}
+									</div>
 
-							{/* Middle actions: those that fit render inline; the rest collapse
-							    into the "⋯" menu. */}
-							<div className="flex min-w-0 items-center">
-								{visibleActions.map((action) => (
-									<span className="flex items-center" key={action.id}>
-										{action.renderInline()}
-									</span>
-								))}
-							</div>
-
-							{/* Always-visible trailing cluster (overflow menu + separator + close).
-							    Its width is subtracted from the available space so the fitting
-							    math accounts for the "⋯" button and close affordance. */}
-							<div className="flex shrink-0 items-center" ref={trailingRef}>
-								{hiddenActions.length > 0 ? (
-									<DropdownMenu>
-										<DropdownMenuTrigger
-											aria-label="More actions"
-											render={
-												<Button
-													className="size-8"
-													shape="circle"
-													size="icon"
-													type="button"
-													variant="ghost"
-												/>
-											}
+									{/* Always-visible trailing cluster (overflow menu + separator + close).
+									    Its width is subtracted from the available space so the fitting
+									    math accounts for the "⋯" button and close affordance. */}
+									<div className="flex shrink-0 items-center" ref={trailingRef}>
+										{hiddenActions.length > 0 ? (
+											<DropdownMenu>
+												<DropdownMenuTrigger
+													aria-label="More actions"
+													render={
+														<Button
+															className="size-8"
+															shape="circle"
+															size="icon"
+															type="button"
+															variant="ghost"
+														/>
+													}
+												>
+													<Icon render={<ShowMoreHorizontalIcon label="" size="small" />} />
+												</DropdownMenuTrigger>
+												<DropdownMenuContent
+													align="end"
+													positionerClassName="z-[501]"
+													side="top"
+													sideOffset={FLYOUT_SIDE_OFFSET}
+												>
+													<DropdownMenuGroup>
+														{hiddenActions.map((action) => (
+															<span key={action.id}>{action.renderMenu()}</span>
+														))}
+													</DropdownMenuGroup>
+												</DropdownMenuContent>
+											</DropdownMenu>
+										) : null}
+										<ToolbarSeparator />
+										<Button
+											aria-label="Clear selection"
+											className="size-8"
+											onClick={onClearSelection}
+											shape="circle"
+											size="icon"
+											type="button"
+											variant="ghost"
 										>
-											<Icon render={<ShowMoreHorizontalIcon label="" size="small" />} />
-										</DropdownMenuTrigger>
-										<DropdownMenuContent
-											align="end"
-											positionerClassName="z-[501]"
-											side="top"
-											sideOffset={FLYOUT_SIDE_OFFSET}
-										>
-											<DropdownMenuGroup>
-												{hiddenActions.map((action) => (
-													<span key={action.id}>{action.renderMenu()}</span>
-												))}
-											</DropdownMenuGroup>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								) : null}
-								<ToolbarSeparator />
-								<Button
-									aria-label="Clear selection"
-									className="size-8"
-									onClick={onClearSelection}
-									shape="circle"
-									size="icon"
-									type="button"
-									variant="ghost"
-								>
-									<Icon render={<CrossIcon label="" size="small" />} />
-								</Button>
-							</div>
+											<Icon render={<CrossIcon label="" size="small" />} />
+										</Button>
+									</div>
+								</>
+							)}
 						</div>
 					</motion.div>
 				</div>

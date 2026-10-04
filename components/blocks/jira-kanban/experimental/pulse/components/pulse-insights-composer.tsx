@@ -20,6 +20,7 @@ import { JiraActivityComposer, type JiraActivityActor } from "@/components/block
 import { ContextBarPromptFlyout } from "@/components/ui-custom/context-bar";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 /**
  * Asking the article a question, and where the answer lands.
@@ -67,9 +68,9 @@ const PULSE_READER: JiraActivityActor = {
 };
 
 /** duration-normal + ease-out-practical — a small, frequent surface settling. */
-const PULSE_ASK_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] };
+const PULSE_ASK_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical };
 /** duration-fast + ease-in — the reader triggered it; clear out of the way. */
-const PULSE_ASK_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] };
+const PULSE_ASK_EXIT: Transition = { duration: 0.1, ease: motionEase.in };
 /** VPK's duration tokens do not honour the OS setting, so the guard is explicit. */
 const PULSE_ASK_STILL: Transition = { duration: 0 };
 

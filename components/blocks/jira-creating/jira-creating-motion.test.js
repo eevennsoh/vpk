@@ -19,8 +19,10 @@ async function loadMotionHarness() {
 					getJiraCreateArrivalDelayS,
 					getJiraCreateMotion,
 					getJiraCreateSlotTransition,
+					getJiraCreateRemovalTransition,
 					JIRA_CREATE_CARD_STAGGER_S,
 					JIRA_CREATE_HIDDEN_SCALE,
+					shouldClipJiraCreateSlot,
 				} from "./components/blocks/jira-creating/lib/jira-creating-motion";
 			`,
 			loader: "ts",
@@ -80,6 +82,21 @@ test("an arrival delay applies to the scale and the opacity override alike", asy
 	assert.equal(motion.card.show.transition.opacity.delay, 0.15);
 });
 
+test("removal reverses the whole-card entrance and closes its slot faster without a stagger", async () => {
+	const harness = await loadMotionHarness();
+	const exit = harness.getJiraCreateMotion(false, 0.3).card.exit;
+	assert.equal(exit.scale, harness.JIRA_CREATE_HIDDEN_SCALE);
+	assert.equal(exit.opacity, 0);
+	assert.equal(exit.transition.duration, 0.1);
+	assert.equal(exit.transition.delay, undefined);
+	const slot = harness.getJiraCreateRemovalTransition(false);
+	assert.equal(slot.duration, 0.15);
+	assert.ok(slot.duration < harness.getJiraCreateSlotTransition(false).duration);
+	assert.deepEqual(slot.ease, [0.6, 0, 0.8, 0.6]);
+	assert.equal(slot.delay, undefined);
+	assert.equal(harness.getJiraCreateRemovalTransition(true).duration, 0);
+});
+
 test("create motion drops travel under reduced motion and keeps a fade", async () => {
 	const harness = await loadMotionHarness();
 	const motion = harness.getJiraCreateMotion(true);
@@ -126,4 +143,14 @@ test("Restart clears created cards and remounts a resting board", () => {
 	assert.doesNotMatch(DEMO_HOOK_SOURCE, /generation: item\.generation \+ 1|const replay/u);
 	assert.match(PAGE_SOURCE, /onRestart=\{demo\.restart\}/u);
 	assert.match(PAGE_SOURCE, /<JiraCreateBoard[\s\S]*key=\{demo\.boardGeneration\}/u);
+});
+
+test("only a slot whose height animates clips, so landed moves keep their edge shadows", async () => {
+	const { shouldClipJiraCreateSlot } = await loadMotionHarness();
+	// A moved card (drop or host bulk move) lands in a full-height reserved slot.
+	assert.equal(shouldClipJiraCreateSlot({ active: true, removing: false, reserveSlot: true }), false);
+	// Inserts and same-column reorders grow the slot from 0, which must clip.
+	assert.equal(shouldClipJiraCreateSlot({ active: true, removing: false, reserveSlot: false }), true);
+	assert.equal(shouldClipJiraCreateSlot({ active: false, removing: true, reserveSlot: true }), true);
+	assert.equal(shouldClipJiraCreateSlot({ active: false, removing: false, reserveSlot: false }), false);
 });

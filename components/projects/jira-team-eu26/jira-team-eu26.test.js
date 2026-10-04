@@ -8,6 +8,7 @@ function readProjectFile(relativePath) {
 }
 
 const PAGE_SOURCE = readProjectFile("components/projects/jira-team-eu26/page.tsx");
+const CONTENT_HOOK_SOURCE = readProjectFile("components/projects/jira-team-eu26/hooks/use-jira-team-eu26-content.ts");
 const LIST_VIEW_SOURCE = readProjectFile("components/projects/jira-team-eu26/components/jira-team-eu26-list.tsx");
 const LIST_HOOK_SOURCE = readProjectFile(
 	"components/projects/jira-team-eu26/hooks/use-jira-team-eu26-list.ts",
@@ -52,9 +53,6 @@ const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE = readProjectFile(
 const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_CONTEXT_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/create-work-item-exclusive-proximity-context.tsx",
 );
-const INDICATORS_SOURCE = readProjectFile(
-	"components/projects/jira-team-eu26/data/agent-activity-indicators.tsx",
-);
 const COMPLETED_RUNS_SOURCE = readProjectFile(
 	"components/blocks/jira-issue/completed-agent-runs.tsx",
 );
@@ -70,10 +68,10 @@ test("the route renders the Payments board directly inside Jira app chrome", () 
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
 	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{false\}[\s\S]*product="jira"/u);
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
-	assert.match(PAGE_SOURCE, /createJiraTeamEu26PayBoardColumns/u);
+	assert.match(CONTENT_HOOK_SOURCE, /default: \{ boardColumns: createJiraTeamEu26PayBoardColumns\(\)/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_BOARD_AGENTS/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES/u);
-	assert.match(PAGE_SOURCE, /agentSessionMembers=\{JIRA_TEAM_EU26_PAY_SESSION_MEMBERS\}/u);
+	assert.match(PAGE_SOURCE, /agentSessionMembers=\{wacContent \? WAC_SESSION_MEMBERS : JIRA_TEAM_EU26_PAY_SESSION_MEMBERS\}/u);
 	assert.match(PAGE_SOURCE, /h-full min-h-0 min-w-0 overflow-hidden \[&>div\]:min-h-0/u);
 });
 
@@ -89,6 +87,8 @@ test("the settings property controls the advanced session timeline", () => {
 		PAGE_SOURCE,
 		/settingsDesignVariantIds=\{JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS\}/u,
 	);
+	// The closing action belongs to the jira-team-eu26-end keynote only.
+	assert.doesNotMatch(PAGE_SOURCE, /Play closing|issueMoveRequest=\{closingMoveRequest\}/u);
 	assert.match(
 		PAGE_SOURCE,
 		/advancedAgentSessionTimeline=\{designVariants\.advancedTimeline\}/u,
@@ -118,7 +118,7 @@ test("Background color paints the Kanban plane while preserving the Agent Sessio
 test("the Dragging property controls session-column width resizing", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*"sessionStroke",\s*"sessionBloom",\s*"sessionProximity",\s*"sessionPeel",\s*\] as const;/u,
+		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*"autoArrange",\s*"sessionStroke",\s*"sessionBloom",\s*"sessionProximity",\s*"sessionPeel",\s*"moveVisual",\s*\] as const;/u,
 	);
 	// The three chrome layers are separately switchable so the effect can be judged
 	// on the route: stroke alone, stroke plus column-wide reach, or neither.
@@ -277,7 +277,7 @@ test("chin-row layout uses Team EU's merged grouping", () => {
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /rowSessionFlyout|JiraSessionFlyoutTrigger/u);
 	assert.match(
 		PAGE_SOURCE,
-		/onCardAssignedAgentIdsChange=\{onAssignedAgentIdsChange\}/u,
+		/onCardAssignedAgentIdsChange=\{onBoardAssignedAgentIdsChange\}/u,
 	);
 	assert.match(
 		LIST_HOOK_SOURCE,
@@ -316,32 +316,6 @@ test("chin-row layout uses Team EU's merged grouping", () => {
 });
 
 test("chin-row agent activity indicators use the Team EU renderer", () => {
-	// Team EU is the baseline, so working rows keep the block's own spinner.
-	// Awaiting-input departs from it: a question circle reads as "blocked on
-	// you", which the pixel loader's solo dot did not. The filled glyph lives in
-	// icon-lab (>= 7.8.0), not @atlaskit/icon, and carries the information color.
-	assert.match(
-		INDICATORS_SOURCE,
-		/import QuestionCircleFilledIcon from "@atlaskit\/icon-lab\/core\/question-circle-filled";/u,
-	);
-	assert.doesNotThrow(
-		() => require.resolve("@atlaskit/icon-lab/core/question-circle-filled"),
-		"icon-lab must export question-circle-filled (7.8.0+); a stale 7.5.0 install breaks the Team EU chin",
-	);
-	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(
-		INDICATORS_SOURCE,
-		/renderJiraTeamEu26AgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="medium" \/>\s*\) : \(\s*<Spinner label="" pulse size="xl" variant="experimental-avatar" \/>\s*\)/u,
-	);
-	// A finished run gets the filled success status in the ADS success green,
-	// pairing with the filled error status a failed run already shows. The
-	// block's own fallback dot only said the row had ended.
-	assert.match(INDICATORS_SOURCE, /import StatusSuccessIcon from "@atlaskit\/icon\/core\/status-success";/u);
-	assert.match(
-		INDICATORS_SOURCE,
-		/renderJiraTeamEu26AgentActivityIndicator[\s\S]*if \(state === "finished"\) \{\s*return <StatusSuccessIcon color=\{token\("color\.icon\.success"\)\} label="" size="medium" \/>;\s*\}/u,
-	);
-	assert.doesNotMatch(INDICATORS_SOURCE, /PixelLoader|2000-years-later|DesignVariationId/u);
 	assert.doesNotMatch(PAGE_SOURCE, /PixelLoader|useDesignVariation|design-variation/u);
 	assert.match(
 		PAGE_SOURCE,
@@ -446,10 +420,10 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 		JIRA_DROPZONE_SOURCE,
 		/expanded \? "h-16 text-sm leading-5" : "h-8 text-sm leading-5"/u,
 	);
-	assert.match(
-		JIRA_DROPZONE_SOURCE,
-		/selected\s*\n\t\t\t\t\t\? "border-border-selected bg-bg-selected text-text-selected"\n\t\t\t\t\t: "border-border bg-surface text-text-subtlest"/u,
-	);
+	assert.match(JIRA_DROPZONE_SOURCE, /resolveJiraDropzoneWellColors\(selected\)/u);
+	const { resolveJiraDropzoneWellColors } = require("../../blocks/jira-dropzone/lib/jira-dropzone-chrome.ts");
+	assert.equal(resolveJiraDropzoneWellColors(true), "border-border-selected bg-bg-selected text-text-selected");
+	assert.equal(resolveJiraDropzoneWellColors(false), "border-border bg-surface text-text-subtlest");
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
 		/marching \? JIRA_DROPZONE_ANTS_CLASS : null/u,
@@ -522,7 +496,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,
-		/<motion\.div[\s\S]*x: pinMagnet \? 0 : magnet\.x,[\s\S]*<motion\.span[\s\S]*x: pinMagnet \? 0 : magnet\.labelX,/u,
+		/<motion\.div[\s\S]*x: pinMagnet \? 0 : magnet\.x,[\s\S]*<JiraDropzoneMagneticLabel[^>]*magnet=\{magnet\} pinned=\{pinMagnet\}/u,
 	);
 	assert.match(JIRA_DROPZONE_SOURCE, /const dropTargetAttributes = isPresent && active \? \{[\s\S]*"data-board-agent-session-drop-zone": "create",[\s\S]*\} : \{\};/u);
 	assert.match(
@@ -617,7 +591,7 @@ test("Team EU returns unlinked sessions to Untracked without parking them on sta
 });
 
 test("unlinked agent sessions remain detached beneath their source Jira card", () => {
-	assert.match(PAGE_SOURCE, /const \[detachedAgentSessionsByCard, setDetachedAgentSessionsByCard\] = useState/u);
+	assert.match(CONTENT_HOOK_SOURCE, /detachedAgentSessionsByCard: resolveUpdate\(update, current\[contentMode\]\.detachedAgentSessionsByCard\)/u);
 	assert.match(PAGE_SOURCE, /toJiraTeamEu26DetachedAgentSession\(activity, card\)/u);
 	assert.match(PAGE_SOURCE, /setDetachedAgentSessionsByCard\(\(current\) =>/u);
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
@@ -743,7 +717,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(LIST_HOOK_SOURCE, /createFromAgentSession/u);
 	assert.match(LIST_HOOK_SOURCE, /createListWorkItemFromSession/u);
 	const createFromSessionStart = LIST_HOOK_SOURCE.indexOf("const createFromAgentSession = useCallback");
-	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [setBoardColumns]);", createFromSessionStart);
+	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [setBoardColumns, setListOrder]);", createFromSessionStart);
 	assert.ok(createFromSessionStart > 0 && createFromSessionEnd > createFromSessionStart);
 	assert.match(LIST_HOOK_SOURCE, /boardColumnsRef\.current = result\.columns/u);
 	assert.match(LIST_HOOK_SOURCE, /listOrderRef\.current = result\.listOrder/u);
@@ -768,7 +742,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(LIST_HOOK_SOURCE, /onAssignedAgentIdsChange: handleAssignedAgentIdsChange/u);
 	assert.match(
 		LIST_HOOK_SOURCE,
-		/const JIRA_TEAM_EU26_AGENT_CATALOG = mergeJiraKanbanAgentCatalog\(\s*JIRA_TEAM_EU26_PAY_BOARD_AGENTS,\s*\);/u,
+		/const JIRA_TEAM_EU26_AGENT_CATALOG = useMemo\(\(\) => mergeJiraKanbanAgentCatalog\(agents\), \[agents\]\);/u,
 	);
 	assert.match(LIST_HOOK_SOURCE, /issueType: draftWorkItem.issueType/u);
 	assert.match(LIST_HOOK_SOURCE, /dueDate: draftWorkItem.dueDate/u);
@@ -894,11 +868,8 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 		/needsInputCount=\{needsInputCount\}/u,
 		"the Team EU26 route owns the live Needs input count",
 	);
-	assert.match(
-		PAGE_SOURCE,
-		/agentActivities\?\.filter\(\s*\(activity\) =>\s*activity\.state === "awaiting-input",?\s*\)\.length/u,
-		"the route counts every awaiting-input agent activity",
-	);
+	// The count itself is proven against the Needs input focus in
+	// components/blocks/jira-kanban/experimental/lib/board-agent-filter-scope.test.js.
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /needsInputCount\?: number;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /needsInputCount=\{needsInputCount\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /needsInputCount\?: number;/u);
@@ -908,15 +879,6 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 	);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardNeedsInputButton/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /Needs input/u);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/import QuestionCircleIcon from "@atlaskit\/icon\/core\/question-circle";/u,
-	);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>\s*Needs input\s*<\/Button>/u,
-		"the Needs input control shows its label without a visible count badge",
-	);
 	assert.doesNotMatch(BOARD_VIEW_MENU_SOURCE, /StatusInformationIcon/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardGroupByMenu/u);
 	assert.match(
@@ -974,4 +936,25 @@ test("Team EU26 opts the create well out of bounce", () => {
 		/ants=\{false\}/u,
 		"Team EU26 keeps the create-well marching ants default on",
 	);
+});
+
+test("Team EU26 gates Auto arrange through its Settings preference", () => {
+	assert.match(PAGE_SOURCE, /autoArrangeEnabled=\{designVariants\.autoArrange\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /autoArrangeEnabled\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onAutoArrange=\{autoArrangeEnabled && \(controlledBoardColumns === undefined \|\| onBoardColumnsChange\) \? handleAutoArrange : undefined\}/u);
+});
+
+test("Needs input is text-only and preserves keyboard filter activation", async () => {
+	const { renderComponent } = require("../../../scripts/lib/render-component.js");
+	const selections = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-kanban/experimental/components/board-view-menu.tsx",
+		exportName: "BoardNeedsInputButton",
+		props: { count: 1, onAgentFilterIdChange: (id) => selections.push(id) },
+	});
+	const button = view.getByRole("button", { name: "Needs input: 1 agent" });
+	assert.equal(button.textContent, "Needs input");
+	assert.equal(button.querySelectorAll("svg").length, 0);
+	await view.press(button, "Enter");
+	assert.deepEqual(selections, ["needs-input"]);
 });

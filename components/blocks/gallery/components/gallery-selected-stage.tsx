@@ -6,10 +6,11 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 import type { GalleryItem } from "../data/gallery-items";
+import { motionEase } from "@/lib/motion";
 
-const ENTER_EASE = [0.4, 1, 0.6, 1] as const; // --ease-out-practical
-const EXIT_EASE = [0.6, 0, 0.8, 0.6] as const; // --ease-in
-const LAYOUT_EASE = [0.4, 0, 0, 1] as const; // --ease-in-out
+const ENTER_EASE = motionEase.outPractical; // --ease-out-practical
+const EXIT_EASE = motionEase.in; // --ease-in
+const LAYOUT_EASE = motionEase.inOut; // --ease-in-out
 
 export type GalleryStagePosition = "top" | "center";
 

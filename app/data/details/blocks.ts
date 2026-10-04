@@ -23,6 +23,7 @@ import { CONVERSATION_STARTERS_DETAIL } from "./blocks/conversation-starters";
 import { AGENT_ACCESS_DETAIL } from "./blocks/agent-access";
 import { AGENT_EVALUATION_DETAIL } from "./blocks/agent-evaluation";
 import { AGENT_INSIGHTS_DETAIL } from "./blocks/agent-insights";
+import { AGENT_LANYARD_DETAIL } from "./blocks/agent-lanyard";
 import { AGENT_TEST_DETAIL } from "./blocks/agent-test";
 import { AGENT_SURFACES_DETAIL } from "./blocks/agent-surfaces";
 import { MERMAID_DIAGRAM_DETAIL } from "./blocks/mermaid-diagram";
@@ -107,6 +108,7 @@ import { JIRA_LINKING_DETAIL } from "./blocks/jira-linking";
 import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
 import { JIRA_KANBAN_DETAIL } from "./blocks/jira-kanban";
 import { JIRA_CREATE_DETAIL } from "./blocks/jira-creating";
+import { JIRA_DRAGGING_DETAIL } from "./blocks/jira-dragging";
 import { JIRA_DROPZONE_DETAIL } from "./blocks/jira-dropzone";
 import { JIRA_TOOLBAR_DETAIL } from "./blocks/jira-toolbar";
 import { GENERATIVE_DETAIL } from "./blocks/generative";
@@ -138,6 +140,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-access": AGENT_ACCESS_DETAIL,
 	"agent-evaluation": AGENT_EVALUATION_DETAIL,
 	"agent-insights": AGENT_INSIGHTS_DETAIL,
+	"agent-lanyard": AGENT_LANYARD_DETAIL,
 	"agent-test": AGENT_TEST_DETAIL,
 	"agent-surfaces": AGENT_SURFACES_DETAIL,
 	"mermaid-diagram": MERMAID_DIAGRAM_DETAIL,
@@ -222,6 +225,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-list": JIRA_LIST_DETAIL,
 	"jira-kanban": JIRA_KANBAN_DETAIL,
 	"jira-creating": JIRA_CREATE_DETAIL,
+	"jira-dragging": JIRA_DRAGGING_DETAIL,
 	"jira-dropzone": JIRA_DROPZONE_DETAIL,
 	"jira-toolbar": JIRA_TOOLBAR_DETAIL,
 	generative: GENERATIVE_DETAIL,

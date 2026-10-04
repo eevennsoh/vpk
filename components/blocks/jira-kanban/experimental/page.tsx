@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { usePageIssueSelection } from "@/components/blocks/jira-kanban/experimental/hooks/use-page-issue-selection";
 import { useAgentSessionReview } from "@/components/blocks/jira-kanban/experimental/hooks/use-agent-session-review";
 import { RetainedView } from "@/components/projects/shared/components/mount-on-first-use";
 import {
@@ -16,7 +17,6 @@ import { useOptionalRovoChatControls } from "@/app/contexts/context-rovo-chat-co
 import {
 	resolveAgentSessionWorkItemKey,
 	type AgentSessionItem,
-	type AgentSessionWorkItemDraft,
 } from "@/components/blocks/agent-session";
 import {
 	JiraDropzoneField,
@@ -31,12 +31,12 @@ import {
 } from "@/components/blocks/agent-session-column";
 import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type {
-	JiraKanbanCardData,
-	JiraKanbanCardSelectModifiers,
 	JiraKanbanColumnData,
 } from "../index";
 import { KANBAN_WORK_ITEM_BOTTOM_PADDING, resolveKanbanColumnChrome, withKanbanDropContentGutter } from "../column-chrome";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
+import { withAutoArrangeDestinations } from "./lib/board-auto-arrange";
+import { useBoardAutoArrangeCommit } from "./hooks/use-board-auto-arrange-commit";
 import {
 	AGENT_SESSION_PANEL_WIDTH_PX,
 	AgentSessionPanel,
@@ -57,7 +57,6 @@ import {
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
 import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
-import { moveJiraKanbanCardsToDropTarget, moveJiraKanbanCardsToStatus, type JiraKanbanCardDropTarget } from "../card-drop";
 import { SessionColumnPlacementProvider } from "./components/session-column-placement";
 import {
 	collectBoardIssueKeys,
@@ -71,7 +70,7 @@ import {
 	BOARD_HEADER_TAB_STRIP_BOTTOM_PX,
 	ExperimentalJiraKanbanBoardHeader,
 } from "./experimental-board-header";
-import type { ExperimentalJiraKanbanPageProps } from "./experimental-page-types";
+import type { DraggedCardState, ExperimentalJiraKanbanPageProps } from "./experimental-page-types";
 import { useBoardCreatedCardArrival } from "./hooks/use-created-card-arrival";
 import { useBoardMenuWorkItem } from "./hooks/use-board-menu-work-item";
 import { useAgentFilterDisplay } from "./hooks/use-agent-filter-display";
@@ -121,8 +120,6 @@ import {
 	createJiraKanbanSelectionState,
 	getCommonJiraKanbanAgentIds,
 	getJiraKanbanAssignees,
-	moveJiraKanbanCardsToColumn,
-	selectJiraKanbanCard,
 	updateJiraKanbanCardAgentAssignment,
 } from "../state";
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
@@ -152,11 +149,6 @@ const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";
 /** Stable identity, so an unscoped article does not re-render on every tick. */
 const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
 
-interface DraggedCardState {
-	card: JiraKanbanCardData;
-	sourceColumnTitle: string;
-}
-
 export default function ExperimentalJiraKanbanPage({
 	createWellBounce = "once",
 	...props
@@ -175,16 +167,24 @@ export default function ExperimentalJiraKanbanPage({
 
 function ExperimentalJiraKanbanPageContent({
 	activeView = "board", addAgentLabel,
+	autoArrangeEnabled = true,
 	activeCardCode,
 	additionalAgentSessions,
 	agentSessionSeedOverrides,
 	agentSessionMembers = PULSE_TIMELINE.members,
 	agentActivityLayout,
 	cardGenerativeActionFooterActions,
+	cardGenerativeActionPinnedAgentIds,
 	cardGenerativeActionPresentation, iconScale,
+	showPriorityIndicator,
 	createWellBounce = "once",
 	createWorkItemDropZoneLabel,
 	issueDragTransitions = false,
+	issueMoveVisual = true,
+	issueDropMotion,
+	issueMoveRequest,
+	issueSelectionAppearance = "card",
+	getStatusVariant,
 	defaultAgentSessionColumnCollapsed = false,
 	defaultShowUntracked = true,
 	detachedAgentSessionsByCard,
@@ -200,9 +200,10 @@ function ExperimentalJiraKanbanPageContent({
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
-	columnChrome, columnSizing, columnWidth, boardTitle,
+	boardFilterScopeKey,
+	columnChrome, columnSizing, columnWidth, boardAvatar, boardTitle,
 	compactHeader = false,
-	headerAssignees, showUnassignedHeaderAvatar,
+	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee,
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
@@ -252,7 +253,7 @@ function ExperimentalJiraKanbanPageContent({
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
 		() => createJiraKanbanColumns(BOARD_COLUMNS),
 	);
-	const boardColumns = controlledBoardColumns ?? localBoardColumns;
+	const boardColumns = useMemo(() => withAutoArrangeDestinations(controlledBoardColumns ?? localBoardColumns), [controlledBoardColumns, localBoardColumns]);
 	const updateBoardColumns = useCallback((
 		updater: (columns: readonly JiraKanbanColumnData[]) => readonly JiraKanbanColumnData[],
 	) => {
@@ -343,7 +344,7 @@ function ExperimentalJiraKanbanPageContent({
 		setDraggedCard(null);
 		setFocusedCollapsedColumns(null);
 	}, []);
-	const boardFilter = useBoardFilter({ onAssigneeChange: resetAssigneeScopedBoardState });
+	const boardFilter = useBoardFilter({ onAssigneeChange: resetAssigneeScopedBoardState, scopeKey: boardFilterScopeKey });
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
 	const [localTimelineLastViewedAt, setLocalTimelineLastViewedAt] = useState<string | null>(() => (
 		insightsEnabled && controlledMode === "pulse"
@@ -518,6 +519,7 @@ function ExperimentalJiraKanbanPageContent({
 		createdCardArrival,
 		handleComplete: handleCreatedCardArrivalComplete,
 		handleCreate: handleBoardAgentSessionCreate,
+		handleGapCreate: handleBoardGapCreate,
 	} = useBoardCreatedCardArrival({
 		captureSession: agentSessionHandlers.onCreateWorkItem,
 		onCreate: onBoardAgentSessionCreate,
@@ -674,80 +676,7 @@ function ExperimentalJiraKanbanPageContent({
 		[assignedAgentIdsByCard, selection.selectedCardCodes],
 	);
 
-	const handleCardSelect = (
-		cardCode: string,
-		columnTitle: string,
-		indexInColumn: number,
-		modifiers: JiraKanbanCardSelectModifiers,
-	) => {
-		setSelection((current) => selectJiraKanbanCard(current, filteredBoardColumns, {
-			cardCode,
-			columnTitle,
-			indexInColumn,
-			modifiers,
-		}));
-	};
-
-	// An owning workspace uses a plain click for activation, so clear any bulk
-	// selection before opening it. Shift/⌘ clicks bypass this handler in
-	// `JiraKanban` and continue through `onCardSelect` for range/toggle selection.
-	// The standalone block keeps its original plain-click selection behavior.
-	const handleCardClick = (
-		_title: string,
-		cardCode: string,
-		card: JiraKanbanCardData,
-		columnTitle: string,
-	) => {
-		if (onCardClick) {
-			setSelection(createJiraKanbanSelectionState());
-			onCardClick(card, columnTitle);
-			return;
-		}
-
-		const indexInColumn = filteredBoardColumns
-			.find((column) => column.title === columnTitle)
-			?.cards.findIndex((card) => card.code === cardCode) ?? 0;
-		handleCardSelect(cardCode, columnTitle, indexInColumn, {
-			metaOrCtrlKey: false,
-			shiftKey: false,
-		});
-	};
-
-	const handleCardDragStart = (card: JiraKanbanCardData, sourceColumnTitle: string) => {
-		if (!selection.selectedCardCodes.has(card.code)) {
-			setSelection(createJiraKanbanSelectionState());
-		}
-		setDraggedCard({ card, sourceColumnTitle });
-	};
-
-	const handleCardDrop = (targetColumnTitle: string, target?: JiraKanbanCardDropTarget) => {
-		if (!draggedCard || (!target && draggedCard.sourceColumnTitle === targetColumnTitle)) {
-			setDraggedCard(null);
-			return;
-		}
-
-		const isMultiDrag = selection.selectedCardCodes.has(draggedCard.card.code)
-			&& selection.selectedCardCodes.size > 1;
-		const draggedCardCodes = isMultiDrag
-			? [...selection.selectedCardCodes]
-			: [draggedCard.card.code];
-
-		updateBoardColumns((prevColumns) => {
-			if (target) return moveJiraKanbanCardsToDropTarget(prevColumns, draggedCardCodes, targetColumnTitle, target);
-			const movableCardCodes = draggedCardCodes.filter((cardCode) => prevColumns.some((column) => (
-				column.title !== targetColumnTitle && column.cards.some((card) => card.code === cardCode)
-			)));
-			return moveJiraKanbanCardsToColumn(prevColumns, movableCardCodes, targetColumnTitle);
-		});
-
-		if (isMultiDrag) {
-			setSelection(createJiraKanbanSelectionState());
-		}
-		setDraggedCard(null);
-	};
-	const handleCardDragEnd = () => {
-		setDraggedCard(null);
-	};
+	const handleAutoArrange = useBoardAutoArrangeCommit(updateBoardColumns, setSelection, setDraggedCard);
 
 	const handleListAgentSessionCreate = (
 		session: AgentSessionItem,
@@ -821,9 +750,6 @@ function ExperimentalJiraKanbanPageContent({
 		handleAssigneeFilterChange(toPulseMemberAssigneeIds(memberId));
 	};
 
-	const handleSelectedCardsStatusChange = (status: string) => {
-		updateBoardColumns((columns) => moveJiraKanbanCardsToStatus(columns, [...selection.selectedCardCodes], status));
-	};
 
 	const handleSelectedCardsAgentAssignmentChange = (agentId: string, assigned: boolean) => {
 		setAssignedAgentIdsByCard((currentAssignments) => updateJiraKanbanCardAgentAssignment(
@@ -874,18 +800,7 @@ function ExperimentalJiraKanbanPageContent({
 		detachedSessionsByCard: proximityAgentSessionsByCard,
 		linkingVariant: agentSessionLinkingVariant,
 		onCreate: onBoardAgentSessionCreate ? handleBoardAgentSessionCreate : undefined,
-		// Same create path as the well, with a slot. Each cohort member advances
-		// the index, and the refs behind `handleBoardAgentSessionCreate` grow with
-		// every call, so the sessions land in drag order rather than reversed.
-		onBoardGapCreate: onBoardAgentSessionCreate
-			? (sessions, insertion) => sessions.forEach((session, memberIndex) => (
-				handleBoardAgentSessionCreate(
-					session,
-					insertion.columnTitle,
-					insertion.insertAtIndex + memberIndex,
-				)
-			))
-			: undefined,
+		onBoardGapCreate: onBoardAgentSessionCreate ? handleBoardGapCreate : undefined,
 		onCreateWellReceive: receiveCreateWell,
 		onListCreate: onListAgentSessionCreate ? handleListAgentSessionCreate : undefined,
 		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
@@ -893,15 +808,21 @@ function ExperimentalJiraKanbanPageContent({
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
 		untrackedSessions: agentSessionColumnConfig?.items,
 	});
+	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardsMove, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
+		rootRef: boardSessionDrag.boardRootRef, enabled: issueSelectionAppearance === "fused-backdrop" && !isListContent,
+		filteredBoardColumns, collapsedColumns: isListContent ? EMPTY_COLLAPSED_BOARD_COLUMNS : displayedCollapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
+	});
+
 	return (
 		<div
 			className="relative flex h-full min-h-[640px] flex-col"
 			ref={boardSessionDrag.boardRootRef}
 			style={{ [UNTRACKED_PANEL_WIDTH_CSS_VAR]: `${untrackedPanelFabInsetPx}px` } as CSSProperties}
 		>
-			<ExperimentalJiraKanbanBoardHeader title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
-				activeView={activeView}
+			<ExperimentalJiraKanbanBoardHeader avatar={boardAvatar} title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
+				activeView={activeView} renderHeaderAssignee={renderHeaderAssignee}
 				assignees={assignees}
+				avatarLimit={headerAvatarLimit}
 				compact={compactHeader}
 				controlsInsetEnd={boardScrollEndInset}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
@@ -1034,7 +955,13 @@ function ExperimentalJiraKanbanPageContent({
 								assignedAgentIdsByColumn={columnAgentAssignments}
 								boardColumns={filteredBoardColumns}
 								cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
+								cardGenerativeActionPinnedAgentIds={cardGenerativeActionPinnedAgentIds}
+								cardMoreMenuActions={issueSelectionAppearance === "fused-backdrop" && (controlledBoardColumns === undefined || onBoardColumnsChange)
+									? { onArchive: handleCardRemove, onDelete: handleCardRemove }
+									: undefined}
+								onCardsRemove={controlledBoardColumns === undefined || onBoardColumnsChange ? handleCardsRemove : undefined}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale}
+								showPriorityIndicator={showPriorityIndicator}
 								collapsedColumns={displayedCollapsedColumns}
 								columnChrome={columnChrome} columnSizing={columnSizing} columnWidth={columnWidth}
 								createdCardArrival={createdCardArrival ?? undefined}
@@ -1047,6 +974,11 @@ function ExperimentalJiraKanbanPageContent({
 								onCreateWorkItem={boardMenuWorkItem.onCreateColumnWorkItem}
 								draggedCardCode={draggedCard?.card.code ?? null}
 								issueDragTransitions={issueDragTransitions}
+								issueMoveVisual={issueMoveVisual}
+								issueDropMotion={issueDropMotion}
+								issueMoveRequest={issueMoveRequest}
+								onIssueMove={issueMoveRequest && (controlledBoardColumns === undefined || onBoardColumnsChange) ? handleCardsMove : undefined}
+								issueSelectionAppearance={issueSelectionAppearance}
 								selectedCardCodes={selection.selectedCardCodes}
 								onCardClick={handleCardClick}
 								onCardAgentActivityViewChat={onCardAgentActivityViewChat}
@@ -1067,14 +999,18 @@ function ExperimentalJiraKanbanPageContent({
 								onCardDragStart={handleCardDragStart}
 								onCardDrop={handleCardDrop}
 								onCardDragEnd={handleCardDragEnd}
+								onAutoArrange={autoArrangeEnabled && (controlledBoardColumns === undefined || onBoardColumnsChange) ? handleAutoArrange : undefined}
 								onCreateAgent={handleCreateColumnAgent}
 								onScrollUnderlapChange={setBoardContentUnderlapsSessionColumn}
 								onToggleColumnAgent={handleToggleColumnAgent}
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								paddingTop={0} paddingBottom={KANBAN_WORK_ITEM_BOTTOM_PADDING}
 								selectionToolbar={{
+									getStatusVariant,
+									onSelectAll,
+									dismissOnEscape: issueSelectionAppearance === "fused-backdrop" ? false : undefined,
 									onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
-									onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
+									onClearSelection,
 									onStatusChange: handleSelectedCardsStatusChange,
 									selectedAgentIds,
 								}}

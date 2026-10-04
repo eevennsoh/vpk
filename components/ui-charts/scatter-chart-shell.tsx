@@ -246,7 +246,7 @@ export function ScatterChartInner({
         height={height}
         width={width}
       >
-        {defsChildren.length > 0 && <defs>{defsChildren}</defs>}
+        {defsChildren.length > 0 ? <defs>{defsChildren}</defs> : null}
 
         <rect fill="transparent" height={height} width={width} x={0} y={0} />
 

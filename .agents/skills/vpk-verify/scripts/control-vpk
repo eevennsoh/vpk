@@ -3,24 +3,7 @@
 
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
-const http = require("node:http");
-const https = require("node:https");
-const path = require("node:path");
 
-const REPO_ROOT = path.resolve(__dirname, "../../../../");
-const FRONTEND_PORT_FILE = path.join(REPO_ROOT, ".dev-frontend-port");
-const BACKEND_PORT_FILE = path.join(REPO_ROOT, ".dev-backend-port");
-const RUN_DIR = path.join(REPO_ROOT, "output/vpk-verify/.run");
-const STATE_FILE = path.join(RUN_DIR, "state.json");
-const EVIDENCE_DIR = path.join(REPO_ROOT, "output/agent-browser/vpk-verify");
-const SESSION_PREFIX = "vpk-verify";
-const DEFAULT_BROWSER_TIMEOUT_MS = 35_000;
-const MIN_BROWSER_TIMEOUT_MS = 1_000;
-const MAX_BROWSER_TIMEOUT_MS = 300_000;
-const DEFAULT_LAUNCH_READY_TIMEOUT_MS = 60_000;
-const MIN_LAUNCH_READY_TIMEOUT_MS = 1_000;
-const MAX_LAUNCH_READY_TIMEOUT_MS = 300_000;
-const LAUNCH_READY_POLL_INTERVAL_MS = 500;
 const LOCALHOST_PROXY_BYPASS = ["localhost", "127.0.0.1", ".localhost"];
 
 function applyLocalhostProxyBypass(env = process.env) {
@@ -50,10 +33,39 @@ if (require.main === module && process.env.VPK_VERIFY_PROXY_BYPASS_READY !== "1"
 	process.exit(result.status ?? 1);
 }
 
-const { loadPortlessRoutes, findPortlessUrl } = require(
-	path.join(REPO_ROOT, "scripts/lib/portless-routes.js"),
-);
-const { resolvableRoutes, dynamicRouteMatchers } = require("./verify-feature-map.js");
+// Subcommand owners load only after the proxy-bypass re-exec above.
+const {
+	browserSessionId,
+	classifyAgentBrowserFailure,
+	closeBrowserSessionBestEffort,
+	executeBrowserCommand,
+	formatBrowserFailure,
+	isBrowserSessionStarter,
+	parseBrowserTimeoutMs,
+	resolveAgentBrowserBin,
+	runAgentBrowser,
+	writeCapturedOutput,
+} = require("./lib/browser.js");
+const {
+	buildCaptureManifest,
+	captureCli,
+	formatCaptureSummary,
+	manualVerificationRequested,
+	parseCaptureArgs,
+	runCapture,
+} = require("./lib/capture.js");
+const { resolveOrigin, targetBrowserArguments } = require("./lib/origin.js");
+const { EVIDENCE_DIR, FRONTEND_PORT_FILE, RUN_DIR, readTrimmed } = require("./lib/repo.js");
+const {
+	collectDoctor,
+	parseLaunchReadyTimeoutMs,
+	printDoctor,
+	readState,
+	runPnpm,
+	waitForDoctorReady,
+	writeState,
+} = require("./lib/stack.js");
+const { formatWhere, resolveWhere, whereCli } = require("./lib/where.js");
 
 function usage(exitCode = 1) {
 	process.stderr.write(`Usage: control-vpk <command>
@@ -70,440 +82,19 @@ Commands:
   browser [--] <args> Run agent-browser with the vpk-verify session injected.
   open-target <route> [--headed]
                       First open an exact mapped object route on this worktree.
+  capture <route> [--id <label>] [--viewport WxH] [--media light|dark]
+          [--variant <id>[=on|off]]... [--wait-text <text>] [--headed] [--strict-a11y]
+                      One-command proof: screenshot, ARIA snapshot, console, page
+                      errors, a11y audit and manifest.json in the evidence dir.
+                      Light media by default. --variant (repeatable) forces a
+                      design variant via ?variants= without writing storage.
+                      VPK_VERIFY=manual skips the browser.
+  where <path|slug|route> [--json]
+                      List the routes, importers, feature recipes and Playwright
+                      specs to re-check for a source path, catalog slug or route.
 
 `);
 	process.exit(exitCode);
-}
-
-function readTrimmed(file) {
-	try {
-		return fs.readFileSync(file, "utf8").trim();
-	} catch {
-		return "";
-	}
-}
-
-function portListening(port) {
-	if (!port) return false;
-	const result = spawnSync(
-		"lsof",
-		["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"],
-		{ stdio: "ignore" },
-	);
-	return result.status === 0;
-}
-
-function requestWorktreeOrigin(url, { timeoutMs = 4000 } = {}) {
-	return new Promise((resolve) => {
-		let settled = false;
-		const finish = (value) => {
-			if (settled) return;
-			settled = true;
-			resolve(value);
-		};
-		let parsed;
-		try {
-			parsed = new URL(url);
-		} catch (error) {
-			finish({ ok: false, status: 0, error: error.message, body: "" });
-			return;
-		}
-		const lib = parsed.protocol === "https:" ? https : http;
-		const req = lib.request(
-			{
-				protocol: parsed.protocol,
-				hostname: parsed.hostname,
-				port: parsed.port || undefined,
-				path: `${parsed.pathname}${parsed.search}`,
-				method: "GET",
-				rejectUnauthorized: false,
-				headers: { accept: "application/json, text/html;q=0.8" },
-			},
-			(res) => {
-				const chunks = [];
-				res.on("data", (chunk) => chunks.push(chunk));
-				res.on("end", () => {
-					finish({
-						ok: (res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 400,
-						status: res.statusCode ?? 0,
-						error: "",
-						body: Buffer.concat(chunks).toString("utf8"),
-					});
-				});
-			},
-		);
-		req.setTimeout(timeoutMs, () => {
-			req.destroy();
-			finish({ ok: false, status: 0, error: "timeout", body: "" });
-		});
-		req.on("error", (error) => {
-			finish({ ok: false, status: 0, error: error.message, body: "" });
-		});
-		req.end();
-	});
-}
-
-function resolveOrigin(frontendPort) {
-	if (!frontendPort) return "";
-	const portlessUrl = findPortlessUrl(loadPortlessRoutes(), frontendPort);
-	if (portlessUrl) return portlessUrl;
-	return `http://127.0.0.1:${frontendPort}`;
-}
-
-function resolveAgentBrowserBin(repoRoot = REPO_ROOT) {
-	let packageJsonPath;
-	try {
-		packageJsonPath = require.resolve("agent-browser/package.json", { paths: [repoRoot] });
-	} catch {
-		throw new Error(
-			"agent-browser is not installed in this worktree. Run `pnpm install` from the repo root.",
-		);
-	}
-	const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-	const binField = pkg.bin;
-	const relativeBin = typeof binField === "string"
-		? binField
-		: binField && typeof binField === "object"
-			? binField["agent-browser"]
-			: undefined;
-	if (typeof relativeBin !== "string" || relativeBin.length === 0) {
-		throw new Error("agent-browser package.json is missing a bin.agent-browser entry.");
-	}
-	const binPath = path.resolve(path.dirname(packageJsonPath), relativeBin);
-	if (!fs.existsSync(binPath)) {
-		throw new Error(
-			`agent-browser bin is missing at ${binPath}. Run \`pnpm install\` from the repo root.`,
-		);
-	}
-	return binPath;
-}
-
-function parseBrowserTimeoutMs(env = process.env) {
-	const configured = Number.parseInt(env.VPK_VERIFY_BROWSER_TIMEOUT_MS ?? "", 10);
-	if (!Number.isFinite(configured)) return DEFAULT_BROWSER_TIMEOUT_MS;
-	return Math.min(Math.max(configured, MIN_BROWSER_TIMEOUT_MS), MAX_BROWSER_TIMEOUT_MS);
-}
-
-function parseLaunchReadyTimeoutMs(env = process.env) {
-	const configured = Number.parseInt(env.VPK_VERIFY_LAUNCH_TIMEOUT_MS ?? "", 10);
-	if (!Number.isFinite(configured)) return DEFAULT_LAUNCH_READY_TIMEOUT_MS;
-	return Math.min(
-		Math.max(configured, MIN_LAUNCH_READY_TIMEOUT_MS),
-		MAX_LAUNCH_READY_TIMEOUT_MS,
-	);
-}
-
-function runAgentBrowser(args, options = {}) {
-	const {
-		binPath = resolveAgentBrowserBin(),
-		timeoutMs = parseBrowserTimeoutMs(),
-		...spawnOptions
-	} = options;
-	return spawnSync(binPath, args, {
-		cwd: REPO_ROOT,
-		killSignal: "SIGTERM",
-		timeout: timeoutMs,
-		...spawnOptions,
-	});
-}
-
-function failureText(failure) {
-	if (failure instanceof Error) return failure.message;
-	return [failure?.stdout, failure?.stderr, failure?.error?.message]
-		.filter(Boolean)
-		.map(String)
-		.join("\n");
-}
-
-function classifyAgentBrowserFailure(failure) {
-	if (!failure) return "assertion_failure";
-	if (["timeout", "stale_session", "missing_binary", "assertion_failure"].includes(failure.classification)) {
-		return failure.classification;
-	}
-	if (failure?.error?.code === "ETIMEDOUT") return "timeout";
-	if (!(failure instanceof Error) && failure.status === 0) return null;
-	const text = failureText(failure);
-	if (/not installed in this worktree|bin is missing|missing a bin\.agent-browser|ENOENT/iu.test(text)) {
-		return "missing_binary";
-	}
-	if (/no browser session|session (?:is )?not found|browser session.*(?:closed|missing)|about:blank/iu.test(text)) {
-		return "stale_session";
-	}
-	return "assertion_failure";
-}
-
-function isBrowserSessionStarter(forwarded) {
-	return forwarded[0] === "open" || forwarded[0] === "connect";
-}
-
-function targetBrowserArguments(route, {
-	headed = false,
-	origin = resolveOrigin(readTrimmed(FRONTEND_PORT_FILE)),
-	repoMap = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, ".agents/knowledge/repo-map.json"), "utf8")),
-} = {}) {
-	if (typeof route !== "string" || !route.startsWith("/") || route.startsWith("//")) {
-		throw new Error("Target route must be an explicit repository path, not an external URL.");
-	}
-	const parsed = new URL(route, "https://target.invalid");
-	if (parsed.pathname !== route.split(/[?#]/u)[0]) {
-		throw new Error("Target route must not contain traversal or normalized path segments.");
-	}
-	const landingRoutes = new Set([
-		"/", "/components",
-		...(repoMap.components?.categories ?? []).map((entry) => `/${entry.category}`),
-	]);
-	if (landingRoutes.has(parsed.pathname)) {
-		throw new Error("Object target must name a component or project, not a catalog landing page.");
-	}
-	if (!resolvableRoutes(repoMap).has(parsed.pathname)
-		&& !dynamicRouteMatchers(repoMap).some((pattern) => pattern.test(parsed.pathname))) {
-		throw new Error(`Unknown target route: ${parsed.pathname}. Inspect the generated repo map before opening an object.`);
-	}
-	if (!origin) throw new Error("No worktree origin. Run `control-vpk doctor` and repair this worktree's stack.");
-	return ["open", ...(headed ? ["--headed"] : []), new URL(route, origin).href];
-}
-
-function inspectBrowserSession(runCommand, runOptions, session) {
-	let result;
-	try {
-		result = runCommand(
-			["--session", session, "session", "info", "--json"],
-			runOptions,
-		);
-	} catch (error) {
-		return { classification: classifyAgentBrowserFailure(error), result: error };
-	}
-	const commandClassification = classifyAgentBrowserFailure(result);
-	if (commandClassification !== null) {
-		return { classification: commandClassification, result };
-	}
-
-	let payload;
-	try {
-		payload = JSON.parse(result.stdout);
-	} catch {
-		return {
-			classification: "assertion_failure",
-			result: {
-				...result,
-				stderr: "agent-browser session info did not return valid JSON.",
-			},
-		};
-	}
-	const info = payload?.data;
-	const active = info?.active === true
-		&& info?.runtime?.browserLaunched === true
-		&& Number(info?.runtime?.pageCount) > 0;
-	if (active) return { classification: null, result };
-	return {
-		classification: "stale_session",
-		result: {
-			...result,
-			status: 1,
-			stderr: "The scoped agent-browser session has no active page. Run `control-vpk browser open <url>` before non-navigation commands.",
-		},
-	};
-}
-
-function executeBrowserCommand(forwarded, {
-	runCommand = runAgentBrowser,
-	session,
-	timeoutMs = parseBrowserTimeoutMs(),
-} = {}) {
-	const commandArgs = ["--session", session, ...forwarded];
-	const runOptions = {
-		encoding: "utf8",
-		env: {
-			...process.env,
-			AGENT_BROWSER_SESSION: session,
-			AGENT_BROWSER_RESTORE: session,
-		},
-		stdio: ["inherit", "pipe", "pipe"],
-		timeoutMs,
-	};
-	const invoke = () => {
-		try {
-			return runCommand(commandArgs, runOptions);
-		} catch (error) {
-			return error;
-		}
-	};
-	const closeScopedSession = () => {
-		try {
-			runCommand(["--session", session, "close"], {
-				...runOptions,
-				stdio: "ignore",
-				timeoutMs: Math.min(timeoutMs, 5_000),
-			});
-		} catch {
-			// Best-effort cleanup must never expand beyond this worktree-scoped session.
-		}
-	};
-	const sessionStarter = isBrowserSessionStarter(forwarded);
-	if (!sessionStarter) {
-		const preflight = inspectBrowserSession(runCommand, runOptions, session);
-		if (preflight.classification !== null) {
-			return {
-				classification: preflight.classification,
-				recoveredFromStaleSession: false,
-				result: preflight.result,
-				session,
-				sessionStarter,
-				timeoutMs,
-			};
-		}
-	}
-
-	let result = invoke();
-	let classification = classifyAgentBrowserFailure(result);
-	let recoveredFromStaleSession = false;
-	if (classification === "stale_session" && sessionStarter) {
-		closeScopedSession();
-		result = invoke();
-		classification = classifyAgentBrowserFailure(result);
-		recoveredFromStaleSession = classification === null;
-		if (classification === "stale_session" || classification === "timeout") {
-			closeScopedSession();
-		}
-	} else if (classification === "stale_session" || classification === "timeout") {
-		closeScopedSession();
-	}
-
-	return {
-		classification,
-		recoveredFromStaleSession,
-		result,
-		session,
-		sessionStarter,
-		timeoutMs,
-	};
-}
-
-function quotedCommand(args) {
-	return ["agent-browser", ...args.map((arg) => JSON.stringify(arg))].join(" ");
-}
-
-function formatBrowserFailure(outcome, forwarded) {
-	const classification = outcome.classification ?? "assertion_failure";
-	const detail = failureText(outcome.result).trim() || "agent-browser exited without a diagnostic.";
-	const recovery = classification === "stale_session" && !outcome.sessionStarter
-		? "Recovery: reopen the scoped browser at the feature entrypoint, wait for its route marker, and revalidate before retrying this command."
-		: "Playwright fallback: load the Playwright skill, then run the narrow `corepack pnpm exec playwright test <spec>` proof path and report this agent-browser failure.";
-	return [
-		`control-vpk browser failure [${classification}]`,
-		`failed command: ${quotedCommand(forwarded)}`,
-		`detail: ${detail}`,
-		`Existing evidence retained at ${EVIDENCE_DIR}; this failed command is not accepted as proof.`,
-		recovery,
-	].join("\n");
-}
-
-function writeCapturedOutput(result) {
-	if (!result || result instanceof Error) return;
-	if (result.stdout) process.stdout.write(result.stdout);
-	if (result.stderr) process.stderr.write(result.stderr);
-}
-
-function browserSessionId({ timeoutMs = parseBrowserTimeoutMs() } = {}) {
-	const result = runAgentBrowser(
-		["session", "id", "--scope", "worktree", "--prefix", SESSION_PREFIX],
-		{ encoding: "utf8", timeoutMs },
-	);
-	if (result.status !== 0) {
-		const classification = classifyAgentBrowserFailure(result);
-		throw Object.assign(new Error(
-			`agent-browser session id failed [${classification}]: ${result.stderr?.trim()
-				|| result.error?.message
-				|| "Run `pnpm install` from the repo root, then retry."}`,
-		), { classification });
-	}
-	return result.stdout.trim();
-}
-
-function closeBrowserSessionBestEffort() {
-	let session = "";
-	try {
-		session = browserSessionId();
-	} catch {
-		return;
-	}
-	runAgentBrowser(["--session", session, "close"], { stdio: "ignore" });
-}
-
-function readState() {
-	try {
-		return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
-	} catch {
-		return {};
-	}
-}
-
-function writeState(patch) {
-	fs.mkdirSync(RUN_DIR, { recursive: true });
-	const next = { ...readState(), ...patch };
-	fs.writeFileSync(STATE_FILE, `${JSON.stringify(next, null, "\t")}\n`);
-	return next;
-}
-
-async function collectDoctor() {
-	const frontendPort = readTrimmed(FRONTEND_PORT_FILE);
-	const backendPort = readTrimmed(BACKEND_PORT_FILE);
-	const origin = resolveOrigin(frontendPort);
-	const frontendListening = portListening(frontendPort);
-	const backendListening = portListening(backendPort);
-	const home = origin ? await requestWorktreeOrigin(`${origin}/`) : { ok: false, status: 0, error: "no origin", body: "" };
-	const health = origin
-		? await requestWorktreeOrigin(`${origin}/api/health`)
-		: { ok: false, status: 0, error: "no origin", body: "" };
-	let healthJson = null;
-	try {
-		healthJson = JSON.parse(health.body);
-	} catch {
-		healthJson = null;
-	}
-	const backendOk = healthJson?.status === "OK";
-	const ok = Boolean(frontendPort && frontendListening && origin && home.ok);
-	return {
-		ok,
-		worktree: REPO_ROOT,
-		origin,
-		frontendPort: frontendPort || null,
-		frontendListening,
-		frontendStatus: home.status,
-		backendPort: backendPort || null,
-		backendListening,
-		backendStatus: health.status,
-		backendOk,
-		healthError: healthJson?.error || health.error || null,
-	};
-}
-
-async function waitForDoctorReady({
-	collect = collectDoctor,
-	delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-	intervalMs = LAUNCH_READY_POLL_INTERVAL_MS,
-	now = Date.now,
-	timeoutMs = parseLaunchReadyTimeoutMs(),
-} = {}) {
-	const startedAt = now();
-	let report = await collect();
-	while (!report.ok && now() - startedAt < timeoutMs) {
-		const remainingMs = timeoutMs - (now() - startedAt);
-		await delay(Math.min(intervalMs, remainingMs));
-		report = await collect();
-	}
-	return report;
-}
-
-function printDoctor(report) {
-	process.stdout.write(`${JSON.stringify(report, null, "\t")}\n`);
-}
-
-function runPnpm(args, { stdio = "inherit" } = {}) {
-	const result = spawnSync("pnpm", args, { cwd: REPO_ROOT, stdio });
-	if (result.status !== 0) {
-		process.exit(result.status ?? 1);
-	}
 }
 
 async function main() {
@@ -530,6 +121,12 @@ async function main() {
 
 	if (command === "session") {
 		process.stdout.write(`${browserSessionId()}\n`);
+		return;
+	}
+
+	if (command === "capture" || command === "where") {
+		const exitCode = command === "capture" ? captureCli(argv.slice(1)) : whereCli(argv.slice(1));
+		if (exitCode !== 0) process.exit(exitCode);
 		return;
 	}
 
@@ -614,21 +211,30 @@ async function main() {
 
 if (require.main === module) {
 	main().catch((error) => {
-		process.stderr.write(`${error.stack || error.message}\n`);
+		process.stderr.write(`${error.expected ? error.message : error.stack || error.message}\n`);
 		process.exit(1);
 	});
 }
 
 module.exports = {
 	applyLocalhostProxyBypass,
+	buildCaptureManifest,
+	captureCli,
 	classifyAgentBrowserFailure,
 	executeBrowserCommand,
 	formatBrowserFailure,
+	formatCaptureSummary,
+	formatWhere,
 	isBrowserSessionStarter,
+	manualVerificationRequested,
 	parseBrowserTimeoutMs,
+	parseCaptureArgs,
 	parseLaunchReadyTimeoutMs,
 	resolveAgentBrowserBin,
+	resolveWhere,
 	runAgentBrowser,
+	runCapture,
 	targetBrowserArguments,
 	waitForDoctorReady,
+	whereCli,
 };

@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { AGENT_SESSION_DECK_STACKED, deckRunFrame, groupDeckRuns } from "./deck-model.ts";
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { applyDeckHostStyle, deckHostStyle, deckRowFromLayout, deckRunZIndex, shouldMeasureDeckItem, type DeckStyleTarget } from "./deck-write.ts";
 
 test("deckRowFromLayout subtracts the scrollport layout origin", () => {

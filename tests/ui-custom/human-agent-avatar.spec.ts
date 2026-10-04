@@ -1,10 +1,8 @@
 import { expect, test, type Locator } from "@playwright/test";
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL;
+import { resolveAppOrigin } from "@/tests/helpers/origin";
 
-if (!BASE_URL) {
-	throw new Error("Set PLAYWRIGHT_BASE_URL to the target dev server URL.");
-}
+const BASE_URL = resolveAppOrigin();
 
 async function geometry(avatar: Locator) {
 	return avatar.evaluate((frame) => {

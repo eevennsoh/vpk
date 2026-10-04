@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 1800, height: 1100 } });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`assignment metadata keeps Claude in front of Maya (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await page.getByRole("button", { name: "Claude with Maya Ferreira", exact: true }).click();
 		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 		const identity = flyout.getByRole("group", { name: "Claude, used by Maya Ferreira", exact: true });
@@ -33,7 +35,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`attached session flyout dismisses when its row leaves the column (${reducedMotion})`, async ({ page }) => {
 		await page.setViewportSize({ width: 1340, height: 760 });
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		const column = page.getByRole("region", { name: "In review work items", exact: true });
 		const row = column.locator('[data-issue-key="PAY-112"] [data-slot="jira-issue-agent-row"]');
 		const trigger = row.getByRole("button", { name: "Codex: Needs input", exact: true });
@@ -72,7 +74,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`viewer agent chin reveals a small chevron on hover and focus (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		const row = page.locator('[data-issue-key="PAY-107"] [data-slot="jira-issue-agent-row"]');
 		const trigger = row.getByRole("button", { name: "Claude with Maya Ferreira", exact: true });
 		const chevron = row.locator('[data-slot="jira-issue-agent-chevron"]');
@@ -105,7 +107,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("List session identities align with Add agent and working uses the Avatar spinner", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	await page.getByRole("tab", { name: "List" }).click();
 	const emptyCell = page.locator('[data-issue-key="PAY-125"] td').nth(4);
 	const emptyLabel = emptyCell.getByText("Add agent", { exact: true });
@@ -141,7 +143,7 @@ test("List session identities align with Add agent and working uses the Avatar s
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Board working indicators use the Avatar spinner (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		const chin = page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-agent-row"]');
 		const spinner = chin.locator('[data-slot="spinner"]');
 		await expect(spinner).toHaveAttribute("data-iconic-orb-avatar", "");
@@ -153,7 +155,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("List assigned menu uses Add agent and opens the selector", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	await page.getByRole("tab", { name: "List" }).click();
 	const assignedCell = page.locator('[data-issue-key="PAY-105"] td').nth(4);
 	await assignedCell.getByRole("button", { name: "Edit agents", exact: true }).click();
@@ -164,7 +166,7 @@ test("List assigned menu uses Add agent and opens the selector", async ({ page }
 });
 
 test("compact assignment flyout centers status and more actions in each row", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	const workingRow = page.locator('[data-issue-key="PAY-123"] [data-slot="jira-issue-agent-row"] button[aria-label="2 agents: Working"]');
 	await expect(workingRow).toHaveText("Working");
 	await workingRow.click();
@@ -228,7 +230,7 @@ test("compact assignment flyout centers status and more actions in each row", as
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`finished assignment shows the human invoker (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await page.getByRole("button", { name: "Claude: Finished", exact: true }).click();
 		const row = page.getByTestId("agent-session-row-pay-101-inventory-claude-session");
 		const identity = row.getByRole("group", { name: "Claude, used by Maya Ferreira", exact: true });
@@ -243,7 +245,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`assignment flyouts align with the activity row (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 
 		for (const issueKey of ["PAY-123", "PAY-105", "PAY-112", "PAY-101"]) {
@@ -264,7 +266,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("keyboard cloud session selection moves focus into the opened chat", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	const trigger = page.getByRole("button", { name: "GitHub Copilot: Working", exact: true });
 	await trigger.focus();
 	await page.keyboard.press("Enter");
@@ -286,7 +288,7 @@ test("keyboard cloud session selection moves focus into the opened chat", async 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`local assignment separates Continue in from Dismiss (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await page.getByRole("button", { name: "2 agents: Working", exact: true }).click();
 		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 		const row = flyout.getByTestId("agent-session-row-claude-code");
@@ -346,7 +348,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("List local sessions use Continue in and menus fit a narrow viewport", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	await page.getByRole("tab", { name: "List" }).click();
 	await page.locator('[data-issue-key="PAY-105"] td').nth(4).getByRole("button", { name: "Edit agents", exact: true }).click();
 	const assignment = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
@@ -375,7 +377,7 @@ test("List local sessions use Continue in and menus fit a narrow viewport", asyn
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`outside dismissal of untracked more actions returns to rest (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		const row = page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread");
 		await row.scrollIntoViewIfNeeded();
 		await row.hover();
@@ -421,7 +423,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`untracked local cards separate continuation and dismissal (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 		const row = page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread");
 		await row.scrollIntoViewIfNeeded();
@@ -470,7 +472,7 @@ for (const { issueKey, state, agent } of [
 	{ issueKey: "PAY-101", state: "Finished", agent: "Claude" },
 ]) {
 	test(`${state} session rows share the assignment flyout`, async ({ page }) => {
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		const row = page.locator(`[data-issue-key="${issueKey}"] [data-slot="jira-issue-agent-row"]`);
 		const trigger = row.getByRole("button", { name: `${agent}: ${state}`, exact: true });
 		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
@@ -499,7 +501,7 @@ for (const { issueKey, state, agent } of [
 }
 
 test("Jira issue playground opens owner and viewer session lists on click", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/components/blocks/jira-issue#agent-activity-states-experimental-v2`);
+	await page.goto(appUrl("/components/blocks/jira-issue#agent-activity-states-experimental-v2"));
 	const demo = page.locator('#agent-activity-states-experimental-v2 [data-slot="jira-issue-agent-row"]');
 	const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 	for (const label of ["1 agent as owner", "1 agent, not owner"]) {
@@ -521,7 +523,7 @@ test("Jira issue playground opens owner and viewer session lists on click", asyn
 });
 
 test("activity clicks preserve linking and cancelled drags do not open the assignment list", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	const trigger = page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-agent-row"]')
 		.getByRole("button", { name: "Cursor: Working", exact: true });
 	const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
@@ -551,7 +553,7 @@ test("activity clicks preserve linking and cancelled drags do not open the assig
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Finished session flyout supports keyboard access (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await page.getByRole("button", { name: "More actions for PAY-101", exact: true }).focus();
 		await page.keyboard.press("Tab");
 		const trigger = page.getByRole("button", { name: "Claude: Finished", exact: true });
@@ -569,10 +571,10 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`manual assignment keeps card content inside its shell (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await page.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-118"]').hover();
 		await page.getByRole("button", { name: "More actions for PAY-118", exact: true }).click();
-		await page.getByRole("menuitem", { name: "Assign agents Open submenu", exact: true }).click();
+		await page.getByRole("menuitem", { name: "Add agent Open submenu", exact: true }).click();
 		const agent = page.getByRole("option").filter({ hasText: "Readiness Checker" });
 		await expect(agent).toBeVisible();
 
@@ -604,7 +606,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`session attach reflows the surrounding Jira cards (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 
 		const sourceRow = page.locator("[data-agent-session-column]")
@@ -711,7 +713,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("the between-card create marker escapes the card-list clip", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+	await page.goto(appUrl("/jira-team-eu26"));
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 
 	const sourceRow = page.locator("[data-agent-session-column]")
@@ -746,26 +748,24 @@ test("the between-card create marker escapes the card-list clip", async ({ page 
 
 		const marker = page.locator("[data-board-insertion-marker]");
 		await expect(marker).toBeVisible();
+		const listLeft = await upperCard.evaluate((element) => element.closest("[data-jira-kanban-card-list]")!.getBoundingClientRect().left);
 		const visibility = await marker.evaluate((element) => new Promise<{
 			intersectionWidth: number;
-			listLeft: number;
 			markerLeft: number;
 			markerWidth: number;
 		}>((resolve) => {
 			const markerRect = element.getBoundingClientRect();
-			const listRect = element.closest("[data-jira-kanban-card-list]")?.getBoundingClientRect();
 			const observer = new IntersectionObserver(([entry]) => {
 				observer.disconnect();
 				resolve({
 					intersectionWidth: entry.intersectionRect.width,
-					listLeft: listRect?.left ?? Number.NaN,
 					markerLeft: markerRect.left,
 					markerWidth: markerRect.width,
 				});
 			});
 			observer.observe(element);
 		}));
-		expect(visibility.markerLeft).toBeLessThan(visibility.listLeft);
+		expect(visibility.markerLeft).toBeLessThan(listLeft);
 		expect(visibility.intersectionWidth).toBeCloseTo(visibility.markerWidth, 1);
 	} finally {
 		await page.mouse.up();
@@ -774,7 +774,7 @@ test("the between-card create marker escapes the card-list clip", async ({ page 
 
 for (const flag of ["jiraWorkItemOpen", "jiraPulseOpen"] as const) {
 	test(`temporarily hidden chat preserves host focus on ${flag} remount`, async ({ page }) => {
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
 		const composer = page.getByRole("textbox", { name: "Chat message input" });
 		await expect(composer).toBeFocused();

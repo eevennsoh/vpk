@@ -1,3 +1,4 @@
+import { motionEase } from "@/lib/motion";
 /**
  * Motion signatures shared by more than one floating Rovo button surface.
  *
@@ -16,5 +17,5 @@ export const FLOATING_ROVO_BUTTON_MORPH_SPRING = {
 // shared morphing surface with the same practical exit signature.
 export const FLOATING_ROVO_BUTTON_CONTENT_EXIT = {
 	duration: 0.1,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 } as const;

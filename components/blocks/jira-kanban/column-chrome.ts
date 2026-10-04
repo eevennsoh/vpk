@@ -10,11 +10,11 @@ export const DEFAULT_KANBAN_COLUMN_CHROME: KanbanColumnChrome = "default";
 /** The 2px transparent drop-shell border completes the 24px painted-surface gutter. */
 export const KANBAN_WORK_ITEM_BOTTOM_PADDING = `calc(${token("space.300")} - 2px)`;
 
-export const DEFAULT_KANBAN_DROP_ARMED_CLASS_NAME = "border-ring";
+export const DEFAULT_KANBAN_DROP_ARMED_CLASS_NAME = "border-border-selected";
 export const DEFAULT_KANBAN_DROP_IDLE_CLASS_NAME = "border-transparent";
-export const DEFAULT_KANBAN_DROP_SHELL_CLASS_NAME = "border-2 border-transparent transition-colors";
+export const DEFAULT_KANBAN_DROP_SHELL_CLASS_NAME = "border-2 border-transparent transition-colors motion-reduce:transition-none";
 
-export const SIMPLE_KANBAN_DROP_ARMED_CLASS_NAME = "outline-ring";
+export const SIMPLE_KANBAN_DROP_ARMED_CLASS_NAME = "outline-border-selected";
 export const SIMPLE_KANBAN_DROP_IDLE_CLASS_NAME = "outline-transparent";
 
 /**
