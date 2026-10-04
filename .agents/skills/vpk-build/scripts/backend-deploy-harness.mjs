@@ -25,7 +25,7 @@ export function writeBackendDeploymentHarness({ repoRoot, targetDir, packageMana
 	Object.assign(pkg.scripts, {
 		dev: "node scripts/dev-backend-backed.mjs",
 		start: "node backend/extracted-server.js",
-		build: "next build",
+		build: "next build --webpack",
 		"build:export": "node scripts/build-static-export.mjs",
 		"deploy:micros": "./scripts/dev-deploy-fast.sh",
 	});

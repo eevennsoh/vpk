@@ -28,6 +28,7 @@ import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import { getSkillIcon } from "@/lib/skill-icons";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 const HOME_STARTER_BENTO_ENTER_TRANSITION = {
 	type: "spring",
@@ -138,7 +139,7 @@ function HomeStarterHeroTile({
 			onMouseLeave={onMouseLeave}
 			ref={setTileRef}
 			style={getHomeStarterCardStyle(template.iconSrc)}
-			transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+			transition={{ duration: 0.2, ease: motionEase.out }}
 			type="button"
 			variants={HOME_STARTER_HERO_VARIANTS}
 			whileHover={
@@ -397,7 +398,7 @@ function HomeStarterBento({
 											visible: { opacity: 1, y: 0, scale: 1 },
 											exit: { opacity: 0, y: -4, scale: 0.98 },
 										}}
-										transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+										transition={{ duration: 0.2, ease: motionEase.out }}
 										whileHover={
 											shouldReduceMotion
 												? undefined

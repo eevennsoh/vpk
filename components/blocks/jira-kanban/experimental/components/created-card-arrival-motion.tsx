@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
 import type { BoardCardInsertion } from "../lib/board-agent-session-drag";
-import { resolveBoardCardArrival } from "../lib/board-card-arrival";
+import { getIssueDropCascadeDelayS, resolveBoardCardArrival } from "../lib/board-card-arrival";
 import {
 	getBoardCardInsertionAnchorClassName,
 	resolveBoardCardInsertionPosition,
@@ -117,6 +117,7 @@ export function CreatedCardArrivalMotion({
 	const [entranceStarted, setEntranceStarted] = useState(!cardArrival.deferred);
 	const waiting = cardArrival.deferred && !entranceStarted;
 	const flightPending = arrival?.pendingCardCodes?.includes(cardCode) === true;
+	const inlineFlightPending = flightPending && !cardArrival.entering;
 	useLayoutEffect(() => {
 		if (!cardArrival.deferred) setEntranceStarted(true);
 	}, [cardArrival.deferred]);
@@ -126,9 +127,10 @@ export function CreatedCardArrivalMotion({
 		cardArrival.final,
 		onArrivalComplete,
 	);
-	const enterDelayS = cardArrival.entering && arrival
-		? arrival.pendingCardCodes ? 0 : getJiraCreateArrivalDelayS(arrival.animatedCardCodes ?? arrival.cardCodes, cardCode)
-		: 0;
+	// A moved cohort cascades top to bottom around its flights; created cards keep their stagger.
+	const enterDelayS = !cardArrival.entering || !arrival ? 0
+		: arrival.cascadeLeadCardCodes !== undefined ? getIssueDropCascadeDelayS(arrival, cardCode)
+		: arrival.pendingCardCodes ? 0 : getJiraCreateArrivalDelayS(arrival.animatedCardCodes ?? arrival.cardCodes, cardCode);
 
 	// Only interior gaps arm a seam, so the rule always has a real gutter to
 	// centre itself in — no card owns a flush column-edge line.
@@ -138,10 +140,10 @@ export function CreatedCardArrivalMotion({
 
 	return (
 		<motion.div
-			aria-hidden={waiting || removing || undefined}
-			className={cn("w-full min-w-0 max-w-[280px] motion-reduce:transition-none!", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null)}
+			aria-hidden={waiting || removing || inlineFlightPending || undefined}
+			className={cn("w-full min-w-0 max-w-[280px] motion-reduce:transition-none!", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null, inlineFlightPending ? "invisible" : null)}
 			data-created-card-pending={waiting || undefined}
-			inert={waiting || removing || undefined}
+			inert={waiting || removing || inlineFlightPending || undefined}
 			style={{
 				maxWidth: columnWidth === "fluid" ? "none" : undefined,
 				marginBottom: removing && removalSpacing

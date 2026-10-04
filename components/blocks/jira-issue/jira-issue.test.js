@@ -8,7 +8,6 @@ const AGENT_ACTIVITY_SOURCE = [
 	readFileSync(join(__dirname, "agent-activity.tsx"), "utf8"),
 	readFileSync(join(__dirname, "agent-activity-row-presentation.tsx"), "utf8"),
 ].join("\n");
-const STARTUP_SOURCE = readFileSync(join(__dirname, "agent-activity-startup.tsx"), "utf8");
 const SUMMARY_SOURCE = readFileSync(join(__dirname, "summary.tsx"), "utf8");
 const PULL_REQUEST_CLUSTER_SOURCE = readFileSync(join(__dirname, "pull-request-cluster.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "types.ts"), "utf8");
@@ -276,7 +275,7 @@ test("Jira issue exposes separate Work Item agent and skill pickers in the More 
 	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenus[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}[\s\S]*onRequestClose=\{\(\) => handleOpenChange\(false\)\}[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Move work item/u);
 	assert.match(MORE_MENU_SOURCE, /generativeAction \? null : <DropdownMenuItem[\s\S]*Add agent/u);
 	assert.match(GENERATIVE_SOURCE, /export function JiraIssueAgentAndSkillSubmenus/u);
-	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Assign agents<\/DropdownMenuSubTrigger>/u);
+	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Add agent<\/DropdownMenuSubTrigger>/u);
 	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Use skills<\/DropdownMenuSubTrigger>/u);
 	assert.doesNotMatch(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Assign agent and use skill<\/DropdownMenuSubTrigger>/u);
 	assert.match(GENERATIVE_SOURCE, /<AgentSelector[\s\S]*agents=\{agents\}[\s\S]*pinnedItemsLabel=\{WORK_ITEM_PINNED_ITEMS_LABEL\}[\s\S]*selectionMode="single"/u);
@@ -600,10 +599,10 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /<motion\.g[\s\S]*animate=\{\{ opacity: colorActive \? 1 : 0 \}\}/);
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /animate=\{\{ opacity: selected \? 1 : 0 \}\}[\s\S]*className="text-icon-selected!"/);
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /if \(selected !== previousSelected\) \{[\s\S]*setInteractionSuppressed\(true\)/);
-	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_COLOR_ENTER: Transition = \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}/);
-	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_COLOR_EXIT: Transition = \{ duration: 0\.25, ease: \[0\.6, 0, 0\.8, 0\.6\] \}/);
-	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_TRANSFORM_ENTER: Transition = \{ duration: 0\.4, ease: \[0\.4, 0, 0, 1\] \}/);
-	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_TRANSFORM_EXIT: Transition = \{ duration: 0\.25, ease: \[0\.6, 0, 0\.8, 0\.6\] \}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_COLOR_ENTER: Transition = \{ duration: 0\.15, ease: motionEase\.outPractical \}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_COLOR_EXIT: Transition = \{ duration: 0\.25, ease: motionEase\.in \}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_TRANSFORM_ENTER: Transition = \{ duration: 0\.4, ease: motionEase\.inOut \}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_TRANSFORM_EXIT: Transition = \{ duration: 0\.25, ease: motionEase\.in \}/);
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const colorTransition = shouldReduceMotion[\s\S]*\? SPARKLE_REDUCED/);
 	assert.match(ROVO_SPARKLE_SOURCE, /className="rich-text-command-menu-borderless rich-text-command-menu-search-selects"/);
 	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected,[\s\S]*\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected:hover,[\s\S]*background-color: var\(--ds-background-neutral-subtle-hovered, #f1f2f4\);/);
@@ -681,19 +680,17 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 		AGENT_ACTIVITY_SOURCE,
 		/if \(isAwaitingInput\) \{[\s\S]*?<span className="block min-w-0 truncate text-sm leading-5">\{rowLabel\}<\/span>[\s\S]*?<AnimatedDots \/>/u,
 	);
-	assert.match(STARTUP_SOURCE, /baseColor="var\(--color-text\)"/u);
-	assert.match(STARTUP_SOURCE, /className="block min-w-0 truncate text-sm leading-5"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /PixelLoader/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="flex min-w-0 flex-1 items-center gap-2"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="grid size-6 shrink-0 place-items-center text-icon"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/function JiraIssueAgentStatusIconTile[\s\S]*<IconTile[\s\S]*iconSize="medium"[\s\S]*size="small"[\s\S]*variant="transparent"/u,
+		/function JiraIssueAgentStatusIconTile[\s\S]*<IconTile[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"/u,
 	);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/icon=\{<QuestionCircleFilledIcon color="currentColor" label="" size="small" \/>\}/u,
+		/icon=\{<StrokeWeightLargeIcon color="currentColor" label="" size="small" \/>\}/u,
 	);
 	assert.doesNotMatch(
 		AGENT_ACTIVITY_SOURCE,
@@ -809,9 +806,9 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /import \{ AnimatePresence, LayoutGroup, motion, useReducedMotion \} from "motion\/react";/);
 	assert.match(LIB_SOURCE, /import type \{ Transition \} from "motion\/react";/);
 	assert.doesNotMatch(SOURCE, /framer-motion/);
-	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_ENTER: Transition = \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}; \/\/ duration-normal \+ ease-out-practical/);
-	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_EXIT: Transition = \{ duration: 0\.1, ease: \[0\.6, 0, 0\.8, 0\.6\] \}; \/\/ duration-fast \+ ease-in/);
-	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_LAYOUT: Transition = \{ duration: 0\.2, ease: \[0\.4, 0, 0, 1\] \}; \/\/ duration-medium \+ ease-in-out/);
+	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_ENTER: Transition = \{ duration: 0\.15, ease: motionEase\.outPractical \}; \/\/ duration-normal \+ ease-out-practical/);
+	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_EXIT: Transition = \{ duration: 0\.1, ease: motionEase\.in \}; \/\/ duration-fast \+ ease-in/);
+	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_LAYOUT: Transition = \{ duration: 0\.2, ease: motionEase\.inOut \}; \/\/ duration-medium \+ ease-in-out/);
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
 	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);

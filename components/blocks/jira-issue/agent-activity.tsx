@@ -33,14 +33,12 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import { agentIdentityLabel } from "@/components/blocks/agent-session/agent-session-identity-label";
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
+import { AgentSessionShortLifecycleIcon } from "@/components/blocks/agent-session/agent-session-lifecycle";
 import {
 	groupJiraIssueAgentActivityRows,
 	summarizeJiraIssueAgentActivities,
 	type JiraIssueAgentActivityLayout,
 } from "@/components/blocks/jira-issue/agent-activity-model";
-import {
-	useJiraIssueAgentStartupPhase,
-} from "@/components/blocks/jira-issue/agent-activity-startup";
 import {
 	sessionDragChipViewportStyle,
 	sessionTransferTintSeed,
@@ -66,6 +64,7 @@ import {
 	JiraIssueAgentStatusIcon,
 	type JiraIssueAgentAssignment,
 } from "./agent-activity-row-presentation";
+import { motionEase } from "@/lib/motion";
 
 export type { JiraIssueAgentAssignment } from "./agent-activity-row-presentation";
 
@@ -94,6 +93,8 @@ export type {
 
 export interface JiraIssueAgentActivity {
 	id: string;
+	/** Opt in to the session column's status-icon transition. */
+	stateTransition?: "agent-session";
 	name: string;
 	avatarSrc?: string;
 	agentBrandName?: ThirdPartyLogoName;
@@ -137,9 +138,9 @@ const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 12;
 /** Light friction so the dragged tag trails a few frames behind the pointer. */
 const JIRA_ISSUE_SESSION_DRAG_SPRING = { damping: 26, mass: 0.6, stiffness: 420, restDelta: 0.01 } as const;
 
-const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
-const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: [0.4, 0, 0, 1] }; // duration-medium + ease-in-out
+const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
+const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: motionEase.inOut }; // duration-medium + ease-in-out
 const JIRA_ISSUE_MOTION_REDUCED: Transition = { duration: 0 };
 const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity" };
 
@@ -556,11 +557,8 @@ function JiraIssueAgentActivityRow({
 		rowLinkFlash,
 		startupSequenceKey,
 	} = resolveJiraIssueAgentRowPresentation(activities, linkFlash);
-	const startupPhase = useJiraIssueAgentStartupPhase(
-		startupSequenceKey,
-		shouldReduceMotion,
-		featuredActivity?.startedAtMs,
-	);
+	const animateStateTransition = activities.length === 1 && featuredActivity?.stateTransition === "agent-session";
+	const lifecycleState = isCompletedRow ? "complete" : isAwaitingInput ? "needs-input" : "running";
 	const catalogAgents = useMemo(
 		() => mergeJiraIssueAgentCatalog(activities, assignment?.agents),
 		[activities, assignment?.agents],
@@ -633,13 +631,26 @@ function JiraIssueAgentActivityRow({
 		<JiraIssueAgentStatusAffordance
 			interactive={showAssignmentFlyout}
 			statusIcon={isViewerRow ? undefined : (
-				<JiraIssueAgentStatusIcon
+				animateStateTransition ? <AgentSessionShortLifecycleIcon
+					accessibleState={lifecycleState}
+					animateTransition
+					transitionEffect="fade"
+					showWorkingSpinner
+					state={lifecycleState}
+					renderGlyph={(state) => <JiraIssueAgentStatusIcon
+						iconScale={iconScale}
+						isAwaitingInput={state === "needs-input"}
+						isCompletedRow={state === "complete"}
+						isFailedRow={isFailedRow}
+						renderAgentActivityIndicator={renderAgentActivityIndicator}
+						workingSpinnerVariant={workingSpinnerVariant}
+					/>}
+				/> : <JiraIssueAgentStatusIcon
 					iconScale={iconScale}
 					isAwaitingInput={isAwaitingInput}
 					isCompletedRow={isCompletedRow}
 					isFailedRow={isFailedRow}
 					renderAgentActivityIndicator={renderAgentActivityIndicator}
-					startupPhase={startupPhase}
 					workingSpinnerVariant={workingSpinnerVariant}
 				/>
 			)}
@@ -672,7 +683,6 @@ function JiraIssueAgentActivityRow({
 				isWorking={!isViewerRow && !isCompletedRow && !isAwaitingInput}
 				rowLabel={rowLabel}
 				showUnlinkControl={showUnlinkControl}
-				startupPhase={isViewerRow ? "working" : startupPhase}
 				statusIcon={statusIcon}
 				isViewerRow={isViewerRow}
 			/>
@@ -712,7 +722,6 @@ function JiraIssueAgentActivityRow({
 				rowLinkFlash={rowLinkFlash}
 				sessionDrag={sessionDrag}
 				showUnlinkControl={showUnlinkControl}
-				startupPhase={startupPhase}
 				startupSequenceKey={startupSequenceKey}
 				statusIcon={statusIcon}
 			/>

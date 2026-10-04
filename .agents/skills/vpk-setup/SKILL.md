@@ -209,7 +209,7 @@ OPENAI_REALTIME_VOICE=alloy
 | `AI_GATEWAY_USE_CASE_ID` | Yes | Your AI Gateway use case ID |
 | `AI_GATEWAY_CLOUD_ID` | Yes | Cloud ID. For staging/local, use `internal-dummy-<use-case-id>` (Proximity's dummy CloudID). Tenant UUIDs and `local-testing` are rejected by staging AI Gateway. |
 | `AI_GATEWAY_USER_ID` | Yes | Your Atlassian email |
-| `OPENAI_MODEL` | Optional | GPT model ID (default: `gpt-5.6-terra`) |
+| `OPENAI_MODEL` | Optional | GPT model ID (default: `gpt-6.1-sol`) |
 | `GOOGLE_IMAGE_MODEL` | Yes | Gemini image model (default: `gemini-3-pro-image`) |
 | `GOOGLE_TTS_MODEL` | Yes | TTS model (default: `tts-latest`) |
 | `GOOGLE_STT_MODEL` | Yes | Google speech-to-text model used when `STT_PRESET=google` |

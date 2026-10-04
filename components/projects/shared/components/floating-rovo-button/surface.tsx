@@ -68,6 +68,7 @@ import type {
 	FloatingRovoButtonPlacement,
 	FloatingRovoButtonPositioning,
 } from "./types";
+import { motionEase } from "@/lib/motion";
 
 const FLOATING_ROVO_BUTTON_CLICK_SUPPRESSION_MS = 1000;
 const FLOATING_ROVO_BUTTON_LOGO_CYCLE_S = 2.5;
@@ -113,7 +114,7 @@ function FloatingRovoButtonInner({
 			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, transition: FLOATING_ROVO_BUTTON_CONTENT_EXIT }}
 			transition={shouldReduceMotion
 				? { duration: 0 }
-				: { duration: 0.2, delay: 0.24, ease: [0, 0.4, 0, 1] as const }}
+				: { duration: 0.2, delay: 0.24, ease: motionEase.out }}
 			style={{
 				borderRadius: "inherit",
 				boxShadow: token("elevation.shadow.overlay"),

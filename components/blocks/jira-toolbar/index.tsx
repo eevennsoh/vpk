@@ -37,14 +37,15 @@ import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/ov
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { getWorkflowPhaseLozengeVariant } from "@/lib/workflow-status";
+import { motionEase } from "@/lib/motion";
 
 const TOOLBAR_ENTER: Transition = {
 	duration: 0.25,
-	ease: [0, 0.4, 0, 1],
+	ease: motionEase.out,
 }; // duration-slow + ease-out
 const TOOLBAR_EXIT: Transition = {
 	duration: 0.2,
-	ease: [0.6, 0, 0.8, 0.6],
+	ease: motionEase.in,
 }; // duration-medium + ease-in
 const TOOLBAR_REDUCED: Transition = { duration: 0 };
 

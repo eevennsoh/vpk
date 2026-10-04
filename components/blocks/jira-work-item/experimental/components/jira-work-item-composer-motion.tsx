@@ -5,10 +5,11 @@ import { useState, type ReactNode } from "react";
 
 import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental/context-panel-layout";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 const COMPOSER_REPOSITION_TRANSITION = {
 	duration: 0.25,
-	ease: [0.4, 0, 0, 1],
+	ease: motionEase.inOut,
 } satisfies Transition; // duration-slow + ease-in-out
 
 const REDUCED_MOTION_TRANSITION = { duration: 0 } satisfies Transition;

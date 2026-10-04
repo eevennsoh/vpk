@@ -1,12 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const JIRA_KANBAN_EXPERIMENTAL_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/blocks/jira-kanban-demo-experimental`;
+import { appUrl } from "@/tests/helpers/origin";
 
-const JIRA_GOLDEN_JOURNEYS_V3_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/jira-golden-journeys-v3`;
+const JIRA_KANBAN_EXPERIMENTAL_URL = appUrl("/preview/blocks/jira-kanban-demo-experimental");
+
+const JIRA_GOLDEN_JOURNEYS_V3_URL = appUrl("/jira-golden-journeys-v3");
 
 async function openPulseInsights(page: Page) {
 	await page.getByRole("button", { name: /^Insights/u }).click();

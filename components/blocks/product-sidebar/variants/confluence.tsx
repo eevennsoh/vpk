@@ -78,12 +78,10 @@ export function ConfluenceSidebar({
 				onClick={() => setIsContentExpanded((prev) => !prev)}
 			/>
 
-			{isContentExpanded && (
-				<ContentTreeSection
+			{isContentExpanded ? <ContentTreeSection
 					selectedItem={selectedItem}
 					onSelectItem={onSelectItem}
-				/>
-			)}
+				/> : null}
 
 			<NavigationItemWithHoverChevron
 				icon={QuotationMarkIcon}

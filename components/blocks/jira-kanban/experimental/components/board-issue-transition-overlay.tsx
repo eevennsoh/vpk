@@ -40,7 +40,7 @@ function BoardIssueStatusDropZone({ selected, status }: Readonly<{ selected: boo
 			<JiraDropzoneMagneticLabel magnet={magnet}>
 				<span className="flex flex-col items-center justify-center gap-1">
 					<span className="text-xs font-medium leading-4 text-text-subtle">Transition to</span>
-					<span aria-hidden className="inline-block rotate-90 text-xs font-medium leading-4 text-text-subtle" data-issue-transition-arrow="">→</span>
+					<Icon aria-hidden className="text-icon-subtle" data-issue-transition-arrow="" render={<ArrowDownIcon color="currentColor" label="" size="small" />} />
 					<Lozenge className="mt-1" variant="information">{status}</Lozenge>
 				</span>
 			</JiraDropzoneMagneticLabel>
@@ -82,7 +82,7 @@ export function BoardIssueTransitionOverlay({ issueDrop, title, moveVisual = tru
 		{issueDrop.offeringChoices || issueDrop.current?.entered ? <BoardIssueStatusChoices issueDrop={issueDrop} title={title} moveVisual={moveVisual} /> : null}
 		{insertion?.lineTop !== undefined ? (
 			<div className="pointer-events-none absolute inset-x-1 z-30" style={{ top: insertion.lineTop }} data-issue-drop-before={insertion.beforeCardCode ?? "end"}>
-				<BoardCardInsertionLine position="before" seam="edge" marker={moveVisual ? "none" : "circle"} />
+				<BoardCardInsertionLine position="before" seam="edge" marker="circle" />
 			</div>
 		) : null}
 	</>;

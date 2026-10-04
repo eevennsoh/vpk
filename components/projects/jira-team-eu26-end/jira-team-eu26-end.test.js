@@ -84,8 +84,11 @@ test("the keynote uses the same card movement presentation as Team EU26", () => 
 	for (const source of [reference, PAGE_SOURCE]) {
 		assert.match(source, /issueSelectionAppearance="fused-backdrop"/u);
 		assert.match(source, /issueDragTransitions\s/u);
+		assert.match(source, /issueDropMotion="solitaire"/u);
 		assert.match(source, /issueMoveVisual=\{designVariants\.moveVisual\}/u);
 	}
+	const wrapper = readProjectFile("components/blocks/jira-kanban/experimental/page.tsx");
+	assert.match(wrapper, /issueDropMotion=\{issueDropMotion\}/u);
 });
 
 test("the keynote floating chat retains MCB creator attribution through its active overlay", () => {
@@ -116,6 +119,14 @@ test("the settings property controls the advanced session timeline", () => {
 		PAGE_SOURCE,
 		/advancedAgentSessionTimeline=\{designVariants\.advancedTimeline\}/u,
 	);
+});
+
+test("Settings ends with a Play closing action that plays the board's cohort drop or replays the finale", () => {
+	assert.match(PAGE_SOURCE, /import \{ useJiraTeamEu26EndPlayClosing \} from "\.\/hooks\/use-jira-team-eu26-end-play-closing";/u);
+	assert.match(PAGE_SOURCE, /const \{ closingMoveRequest, finaleReplayRequest, settingsMenuItems \} = useJiraTeamEu26EndPlayClosing\(\{/u);
+	assert.match(PAGE_SOURCE, /settingsMenuItems=\{settingsMenuItems\}/u);
+	assert.match(PAGE_SOURCE, /issueMoveRequest=\{closingMoveRequest\}/u);
+	assert.match(PAGE_SOURCE, /<JiraTeamEu26EndFinale boardColumns=\{boardColumns\} replayRequest=\{finaleReplayRequest\} \/>/u);
 });
 
 test("Background color paints the Kanban plane while preserving the Agent Session surface", () => {

@@ -39,8 +39,7 @@ export function ProjectItem({
 			}}
 			onClick={onClick}
 		>
-			{isSelected && (
-				<span
+			{isSelected ? <span
 					aria-hidden
 					style={{
 						position: "absolute",
@@ -52,8 +51,7 @@ export function ProjectItem({
 						backgroundColor: token("color.border.selected"),
 						borderRadius: token("radius.xsmall"),
 					}}
-				/>
-			)}
+				/> : null}
 
 			<span
 				style={{

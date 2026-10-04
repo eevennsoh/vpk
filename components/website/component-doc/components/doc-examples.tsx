@@ -99,8 +99,7 @@ function ExampleItem({
 					</h3>
 					<AnchorLinkButton id={id} label={example.title} />
 				</div>
-				{example.description && (
-					<p
+				{example.description ? <p
 						style={{
 							fontSize: "13px",
 							color: token("color.text.subtle"),
@@ -109,8 +108,7 @@ function ExampleItem({
 						}}
 					>
 						{example.description}
-					</p>
-				)}
+					</p> : null}
 			</div>
 			<DemoPreviewShell
 				contentWidth={shell.contentWidth}

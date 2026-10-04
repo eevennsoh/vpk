@@ -18,17 +18,19 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { Icon } from "@/components/ui/icon"
 import { isAvatarOverlayType } from "@/components/ui/avatar-overlay"
+import { AVATAR_ENTER_FROM } from "@/components/ui/avatar-enter"
 import { avatarHexagonBorderClip, avatarHexagonClip, avatarHexagonStyle } from "@/components/ui/avatar-hexagon"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { motionEase } from "@/lib/motion";
 
 const HEXAGON_CLIP = avatarHexagonClip()
 const HEXAGON_BORDER_CLIP = avatarHexagonBorderClip()
 const HEXAGON_SEPARATOR_CLIP = avatarHexagonClip(2)
 
 // motion.avatar.* recipe expressed in vpk tokens (Motion for React can't read var(), so use the resolved values — see motion-decisions.md).
-const AVATAR_ENTER_TRANSITION: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] } // duration-normal + ease-out-practical
-const AVATAR_EXIT_TRANSITION: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] } // duration-fast + ease-in
+const AVATAR_ENTER_TRANSITION: Transition = { duration: 0.15, ease: motionEase.outPractical } // duration-normal + ease-out-practical
+const AVATAR_EXIT_TRANSITION: Transition = { duration: 0.1, ease: motionEase.in } // duration-fast + ease-in
 const AVATAR_HOVER_SPRING: Transition = { type: "spring", stiffness: 300, damping: 18 } // mirrors ease-spring / motion.avatar.hovered
 
 const avatarVariants = cva(
@@ -222,11 +224,12 @@ function Avatar({
 	// Disabled avatars opt out entirely: animating opacity would write inline `opacity: 1` and override
 	// the `opacity-(--opacity-disabled)` dim class, and a disabled avatar should not react to hover.
 	const reduce = useReducedMotion()
+	const skipsEnter = !animate || reduce || disabled
 	const motionProps: MotionProps =
-		!animate || reduce || disabled
+		skipsEnter
 			? { initial: false }
 			: {
-					initial: { scale: 0.8, opacity: 0 },
+					initial: AVATAR_ENTER_FROM,
 					animate: { scale: 1, opacity: 1, transition: AVATAR_ENTER_TRANSITION },
 					exit: { scale: 0.8, opacity: 0, transition: AVATAR_EXIT_TRANSITION },
 					whileHover: { scale: 1.12, ...(isInAvatarGroup ? {} : { zIndex: 10 }), transition: AVATAR_HOVER_SPRING },
@@ -245,6 +248,7 @@ function Avatar({
 		return (
 			<AvatarPrimitive.Root
 				data-slot="avatar"
+				data-avatar-enter={skipsEnter ? undefined : ""}
 				data-size={size}
 				data-shape={shape}
 				aria-label={label}
@@ -281,6 +285,7 @@ function Avatar({
 	return (
 		<AvatarPrimitive.Root
 			data-slot="avatar"
+			data-avatar-enter={skipsEnter ? undefined : ""}
 			data-size={size}
 			data-shape={shape}
 			aria-label={label}

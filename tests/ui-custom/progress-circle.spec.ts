@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const URL = `${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/components/ui-custom/progress-circle#filled-controlled`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const URL = appUrl("/components/ui-custom/progress-circle#filled-controlled");
 
 test.use({ ignoreHTTPSErrors: true });
 

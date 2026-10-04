@@ -13,7 +13,7 @@ import {
 	type ThinkingNarrationDetailMap,
 	type ThinkingNarrationMap,
 	type ThinkingToolCallSummary,
-} from "../../../../lib/rovo-ui-messages";
+} from "@/lib/rovo-ui-messages";
 import {
 	getLatestRovoAppTodoProgress,
 	type RovoAppTodoProgressItem,

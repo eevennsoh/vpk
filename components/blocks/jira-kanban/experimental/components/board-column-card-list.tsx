@@ -17,7 +17,7 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-import type { KanbanColumnChromeStyles } from "../../column-chrome";
+import type { KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 import {
 	useCreatedCardArrivalScroll,
 	type JiraKanbanCreatedCardArrival,
@@ -104,7 +104,7 @@ export function BoardColumnCardList({
 	isSessionDragging?: boolean;
 	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
 }>) {
-	const { ref, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>({ trackAnimatedOverflow: true });
+	const { ref, hasVerticalOverflow, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>({ trackAnimatedOverflow: true });
 	const cardListRef = useRef<HTMLDivElement | null>(null);
 	const setOverflowRef = useCallback((node: HTMLDivElement | null) => {
 		cardListRef.current = node;
@@ -136,7 +136,6 @@ export function BoardColumnCardList({
 		[showBottomScrollMask, showTopScrollMask],
 	);
 	const suppressCardInsertion = createdCardArrival !== undefined;
-	const paintInsertion = !suppressCardInsertion && (insertionArmed || hoverInsertion !== null);
 
 	const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
 		if (event.pointerType === "touch") {
@@ -195,10 +194,6 @@ export function BoardColumnCardList({
 						"focus-visible:ring-0 focus-visible:outline-none",
 						// Keep the viewport and card focus rings out of the edge fade.
 						"focus-visible:[mask-image:none]! focus-visible:[-webkit-mask-image:none]! has-[:focus-visible]:[mask-image:none]! has-[:focus-visible]:[-webkit-mask-image:none]!",
-						// The mask fades the top and bottom 3rem, which would wash out a line
-						// drawn near a scrolled edge. Stand down the mask only — dropping
-						// `overflow-y-auto` would make the browser discard the scroll offset.
-						paintInsertion && "[mask-image:none]! [-webkit-mask-image:none]!",
 					)}
 					onPointerLeave={handlePointerLeave}
 					onPointerMove={handlePointerMove}
@@ -222,6 +217,7 @@ export function BoardColumnCardList({
 				>
 					<ScrollAreaContent
 						className="flex min-w-0 shrink-0 flex-col"
+						data-jira-kanban-card-list-content=""
 						style={{ minWidth: 0, gap: chrome.cardList.gap ?? token("space.100") }}
 					>
 						{children}
@@ -236,7 +232,8 @@ export function BoardColumnCardList({
 						{isEmpty && columnSizing === "fill" ? <BoardEmptyColumnInsertionSlot columnTitle={columnTitle} /> : null}
 					</ScrollAreaContent>
 				</ScrollAreaViewport>
-				<ScrollBar visibility="auto" />
+				{/* Layout projection can change scroll bounds without resizing the content box. */}
+				{hasVerticalOverflow ? <ScrollBar visibility="auto" /> : null}
 			</ScrollAreaRoot>
 		</BoardCardHoverInsertionContext>
 	);

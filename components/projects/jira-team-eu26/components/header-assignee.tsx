@@ -1,8 +1,9 @@
 "use client";
 
 import type { HeaderAssigneeRenderContext } from "@/components/blocks/jira-kanban/experimental/experimental-board-header";
-import { AGENT_LANYARD_AGENTS, AGENT_LANYARD_FIRST_PARTY_AGENTS } from "@/components/blocks/agent-lanyard";
+import { AGENT_LANYARD_AGENTS, AGENT_LANYARD_FIRST_PARTY_AGENTS, type AgentLanyardAgent } from "@/components/blocks/agent-lanyard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -11,10 +12,20 @@ import { useHeaderLanyardHandle } from "./header-lanyards";
 const CLAUDE = AGENT_LANYARD_AGENTS.find((agent) => agent.id === "claude")!;
 const CURSOR = AGENT_LANYARD_AGENTS.find((agent) => agent.id === "cursor")!;
 const JIRA_CODING = AGENT_LANYARD_FIRST_PARTY_AGENTS.find((agent) => agent.id === "jira-coding")!;
+const FIGMA: AgentLanyardAgent = {
+	id: "figma",
+	name: "Figma",
+	publisher: "Figma",
+	description: "Collaborate on checkout designs with the Figma agent.",
+	brandName: "figma",
+	action: "chat",
+};
 const HEADER_AGENTS = new Map([
 	["claude-code", CLAUDE],
 	["review-agent", JIRA_CODING],
 	["test-agent", CURSOR],
+	...AGENT_LANYARD_AGENTS.map((agent) => [`wac-${agent.id}`, agent] as const),
+	["wac-figma", FIGMA],
 ]);
 
 export function renderEu26HeaderAssignee(context: HeaderAssigneeRenderContext) {
@@ -33,7 +44,7 @@ function Eu26HeaderAssignee({ assignee, muted, selected, onToggle, surfaceLabel 
 			onClick={agent ? undefined : onToggle}
 			type="button"
 		>
-			<Avatar
+			{agent?.brandName ? <AgentAvatarVisual animate={false} brandName={agent.brandName} label={assignee.name} sizePx={24} /> : <Avatar
 				label={assignee.name}
 				shape={agent ? "hexagon" : "circle"}
 				size="sm"
@@ -49,7 +60,7 @@ function Eu26HeaderAssignee({ assignee, muted, selected, onToggle, surfaceLabel 
 					</span>
 				) : <AvatarImage alt="" src={assignee.avatarSrc} />}
 				<AvatarFallback>{assignee.name.slice(0, 1)}</AvatarFallback>
-			</Avatar>
+			</Avatar>}
 		</button>
 	);
 

@@ -5,11 +5,14 @@ const path = require("node:path");
 const test = require("node:test");
 
 const {
+	DEFAULT_LIFECYCLE_STATUS,
+	LIFECYCLE_STATUSES,
 	collectDemoFiles,
 	collectRegistryData,
 	getComponentAddPlan,
 	isTitleCaseName,
 	loadComponentEntries,
+	loadComponentManifest,
 	resolveProjectImport,
 	resolveRegistryImport,
 	summarizeDiagnostics,
@@ -324,6 +327,61 @@ test("catalog preserves the requested Cone safezone name only at its utility ent
 		const nameErrors = diagnostics.filter((entry) => entry.message.includes("is not Title Case"));
 		assert.equal(nameErrors.length, slug === "cone-safezone" ? 0 : 1);
 	}
+});
+
+function projectEntry(slug, lifecycle = {}) {
+	return { category: "projects", importPath: `@/components/projects/${slug}`, name: "Fixture Project", slug, ...lifecycle };
+}
+
+function lifecycleErrors(components, lifecycleKeys = []) {
+	return validateComponentCatalog({
+		cwd: process.cwd(),
+		components,
+		detailRecords: {},
+		lifecycleKeys,
+		registryData: { primary: {}, variants: {} },
+	})
+		.filter((entry) => entry.severity === "error")
+		.map((entry) => entry.message)
+		.filter((message) => /^(?:Lifecycle entry |Component \S+ (?:has unknown status|basedOn|cannot be basedOn|is superseded|note))/u.test(message));
+}
+
+test("lifecycle metadata accepts known statuses and basedOn slugs in the same category", () => {
+	assert.deepEqual(lifecycleErrors([
+		projectEntry("fixture-v1", { status: "frozen" }),
+		projectEntry("fixture-v2", { status: "superseded", basedOn: "fixture-v1", note: "Superseded by fixture-v3." }),
+		projectEntry("fixture-v3", { status: "live", basedOn: "fixture-v2" }),
+		projectEntry("fixture-plain"),
+	], ["projects/fixture-v1", "projects/fixture-v2", "projects/fixture-v3"]), []);
+});
+
+test("lifecycle metadata rejects unknown statuses, dangling or self basedOn and orphan lifecycle keys", () => {
+	const errors = lifecycleErrors([
+		projectEntry("fixture-a", { status: "archived" }),
+		projectEntry("fixture-b", { basedOn: "fixture-missing" }),
+		projectEntry("fixture-c", { basedOn: "fixture-c" }),
+		projectEntry("fixture-d", { status: "superseded" }),
+		projectEntry("fixture-e", { note: " " }),
+		{ category: "blocks", importPath: "@/components/blocks/fixture-a", name: "Fixture Block", slug: "fixture-block", basedOn: "fixture-a" },
+	], ["projects/fixture-a", "projects/fixture-typo"]);
+
+	assert.deepEqual(errors, [
+		"Lifecycle entry projects/fixture-typo matches no manifest entry.",
+		'Component projects/fixture-a has unknown status "archived" (expected live, frozen, superseded).',
+		'Component projects/fixture-b basedOn "fixture-missing" is not a projects slug in the manifest.',
+		"Component projects/fixture-c cannot be basedOn itself.",
+		"Component projects/fixture-d is superseded but has no note naming its successor.",
+		"Component projects/fixture-e note must be a non-empty string.",
+		'Component blocks/fixture-block basedOn "fixture-a" is not a blocks slug in the manifest.',
+	]);
+});
+
+test("the manifest's lifecycle statuses and table match what the verifier enforces", () => {
+	const manifest = loadComponentManifest();
+	assert.deepEqual([...manifest.lifecycleStatuses], LIFECYCLE_STATUSES);
+	assert.equal(DEFAULT_LIFECYCLE_STATUS, "live");
+	assert.ok(manifest.lifecycleKeys.length > 0, "CATALOG_LIFECYCLE is exported and non-empty");
+	assert.deepEqual(lifecycleErrors(manifest.components, manifest.lifecycleKeys), []);
 });
 
 test("component loader reads the editable manifest source", () => {

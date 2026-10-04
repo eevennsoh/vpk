@@ -89,7 +89,7 @@ test("solid covers are decorative while image and typographic covers remain acce
 	assert.match(gridCover, /preserveAspectRatio%3D%22none%22/u);
 	assert.match(gridCover, /mask-size:32px 32px/u);
 	assert.match(gridCover, /M%200%2016%20H%2032%20M%2016%200%20V%2032/u);
-	assert.match(gridCover, /mask-position:left 8px/u);
+	assert.match(gridCover, /mask-position:center 8px/u);
 	assert.match(gridCover, /mask-repeat:repeat/u);
 	assert.match(gridCover, /aria-hidden="true"[^>]*data-slot="jira-issue-cover-pattern"/u);
 	assert.match(gridCover, /mask-image:linear-gradient\(to bottom, black 0, black calc\(100% - var\(--scroll-mask-fade-size\)\), transparent 100%\)/u);

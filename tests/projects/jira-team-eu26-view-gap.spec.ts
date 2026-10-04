@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const baseUrl = resolveAppOrigin();
 
 for (const width of [1440, 1024]) {
 	test(`Board and List keep a 16px session gutter at ${width}px`, async ({ page }) => {

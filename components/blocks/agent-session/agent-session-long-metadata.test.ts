@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { AGENT_SESSION_STATUS_LABEL, toAgentSessionMetadataSegments } from "./agent-session-long-metadata.ts";
 
 type Segment = {

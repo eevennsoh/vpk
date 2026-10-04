@@ -415,11 +415,11 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const PX_TO_EXTERNAL_LOGO_SIZE:[\s\S]*24: "small"[\s\S]*32: "small"[\s\S]*40: "small"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const PX_TO_INSET_IMAGE_CLASS_NAME:[\s\S]*24: "size-5"[\s\S]*32: "size-5"[\s\S]*40: "size-5"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<LogoThirdParty borderless label="" name=\{brandName\} size=\{externalLogoSize\}/);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const hasWhiteBackdrop = isExternalAgent \|\| logoName === "atlassian" \|\| Boolean\(vpkLogo\)/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const hasWhiteBackdrop = isExternalAgent \|\| logoName === "atlassian" \|\| isRovoAvatar/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /import \{ AtlassianLogo, RovoColorIcon,/u);
 	assert.match(
 		AGENT_AVATAR_VISUAL_SOURCE,
-		/vpkLogo === "rovo" \? \(\s*<RovoColorIcon label="" size="xxsmall" \/>/u,
+		/isRovoAvatar \? \(\s*<RovoColorIcon label="" size="xxsmall" className="size-5\/8" \/>/u,
 	);
 	// The external-mark backdrop follows the theme instead of a hardcoded `#fff`,
 	// so the hexagon stops punching a white hole in a dark surface. Pinned as an
@@ -452,6 +452,16 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	assert.match(ENTITY_CARD_AGENT_SOURCE, /<AgentAvatarVisual[\s\S]*brandName=\{brandName\}[\s\S]*sizePx=\{32\}/);
 	assert.match(AGENT_CARD_SOURCE, /<AgentAvatarVisual[\s\S]*brandName=\{brandName\}[\s\S]*sizePx=\{32\}/);
 	assert.doesNotMatch(ENTITY_CARD_AGENT_SOURCE, /Brand-identity agent.*no hexagon/);
+});
+
+test("Rovo avatar inputs share an inset hexagon and the dark Rovo button canvas", () => {
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /import \{ ROVO_LOGO_DATA_URI \} from "@\/components\/ui\/data\/rovo-logo"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const isRovoAvatar = vpkLogo === "rovo" \|\| avatarSrc === ROVO_LOGO_DATA_URI/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /shape="hexagon"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /backgroundColor: isRovoAvatar \? "light-dark\(var\(--ds-surface\), #292A2E\)"/);
+	assert.doesNotMatch(AGENT_AVATAR_VISUAL_SOURCE, /dark:bg-/);
+	const rovoButtonSource = fs.readFileSync(path.join(__dirname, "..", "ui-custom", "rovo-sparkle", "button.tsx"), "utf8");
+	assert.match(rovoButtonSource, /"bg-bg-neutral-bold group-hover\/rovo-sparkle:bg-bg-neutral-bold-hovered/);
 });
 
 test("avatar docs demonstrate Rovo, 1P, 2P, and 3P agent tiers", () => {
@@ -585,4 +595,9 @@ test("hexagon styles preserve Base UI callbacks and the original style object", 
 	assert.equal(callbackStyle({ imageLoadingStatus: "loaded" })["--avatar-hexagon-status-left"], avatarHexagonStatusAnchor().left);
 	assert.equal(avatarHexagonStyle(undefined)["--avatar-hexagon-status-top"], avatarHexagonStatusAnchor().top);
 	assert.equal(avatarHexagonStyle(() => undefined)({})["--avatar-hexagon-status-top"], avatarHexagonStatusAnchor().top);
+});
+
+test("avatar.enter starts from 80% scale and transparent, the pose settled stand-ins copy", () => {
+	const { AVATAR_ENTER_FROM } = require("./avatar-enter.ts");
+	assert.deepEqual({ ...AVATAR_ENTER_FROM }, { scale: 0.8, opacity: 0 });
 });

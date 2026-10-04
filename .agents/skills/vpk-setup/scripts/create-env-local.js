@@ -139,7 +139,7 @@ const envContent = `# Chat routing
 AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-5/invoke-with-response-stream
 
 # OpenAI model ID (used when AI_GATEWAY_URL points to an OpenAI endpoint)
-${preservedOpenaiModel ? `OPENAI_MODEL=${preservedOpenaiModel}` : '# OPENAI_MODEL=gpt-5.6-terra'}
+${preservedOpenaiModel ? `OPENAI_MODEL=${preservedOpenaiModel}` : '# OPENAI_MODEL=gpt-6.1-sol'}
 
 # Google/Gemini endpoint (for provider: "google" chat/image requests and Google TTS route derivation)
 AI_GATEWAY_URL_GOOGLE=${resolvedGoogleGatewayUrl}

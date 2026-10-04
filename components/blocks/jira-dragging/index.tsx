@@ -25,6 +25,7 @@ export function JiraDragging({ className, variant = "default" }: Readonly<JiraDr
 				{...board}
 				agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
 				ariaLabel="Jira Dragging: drag issues between To do, In progress, In review, and Done"
+				issueDropMotion={variant === "experimental" ? "solitaire" : undefined}
 				issueDragTransitions
 				issueMoveVisual={variant === "experimental"}
 				issueSelectionAppearance="fused-backdrop"

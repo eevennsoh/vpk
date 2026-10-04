@@ -1,0 +1,28 @@
+---
+description: API endpoint reference — backend routes, orchestrator, and dev proxy mappings
+globs: app/api/**, backend/**
+alwaysApply: false
+---
+
+<!-- Generated from .agents/rules/api-surfaces.md by scripts/generate-cursor-rules.js. Edit the .md source, then rerun the script. -->
+
+# API Surfaces
+
+## Dev Proxy JSON Contracts
+
+- When a `POST` route consumes JSON before proxying, use `readJsonBody()` or a route-local wrapper around it instead of manual `request.json()` / `JSON.parse()` handling (lint rejects `request.json()` under `app/api`).
+- Add or keep focused route tests for malformed JSON. The test should assert the public error shape for that route and prove the backend/proxy call is not reached.
+- When a proxy route rewrites query params, path params, or JSON field names before forwarding, add or keep a focused route test that proves the forwarded request shape. Cover the exact behavior that lives in the proxy layer, not just the backend handler behind it.
+- Prefer `app/api/**/route.test.js` coverage when the contract risk is in the Next.js proxy route. Backend tests alone do not prove that the proxy preserved the public request contract.
+- Match the route's existing response contract: most dev proxy routes return JSON errors, while transport-specific routes such as `app/api/chat-sdk/route.ts` intentionally normalize client-body errors to `text/plain`.
+
+## Endpoint Tables (not inlined here)
+
+The full backend/Next-proxy endpoint tables are **not** in this file. Claude Code eagerly loads
+every `.md` under `.agents/rules/` into its session context (see the Contextual Rules section of
+`AGENTS.md` for the per-provider contract), and the generated tables are ~300 rows of lookup data
+that an agent can grep on demand.
+
+- Source of truth: `backend/routes/route-manifest.json`
+- Generated markdown tables: `.agents/knowledge/api-surfaces.md` (committed, drift-checked, not auto-loaded)
+- Regenerate: `node scripts/generate-api-surfaces.js`; verify: `pnpm run verify:api-surfaces`

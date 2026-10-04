@@ -1,8 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost";
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 const codes = ["PAY-105", "PAY-107", "PAY-123", "PAY-130"];
-const card = (page: Page, code: string) => page.locator(`[data-jira-kanban-scrollport] [data-issue-key="${code}"] [draggable="true"]`).first();
+// Pointer transport temporarily disables native draggable during pickup.
+const card = (page: Page, code: string) => page.locator(`[data-jira-kanban-scrollport] [data-issue-key="${code}"] [draggable]`).first();
 const preview = (page: Page) => page.locator('[data-issue-cohort-preview]');
 declare global {
 	interface Window {
@@ -32,8 +35,9 @@ async function holdGathering(page: Page) {
 		document.addEventListener("dragenter", track, true);
 		document.addEventListener("dragover", track, true);
 		document.addEventListener("dragstart", (event) => {
-			const face = (event.target as HTMLElement).querySelector('[data-slot="jira-issue-surface"]')!.getBoundingClientRect();
-			state.issueGatherOffset = { x: event.clientX - face.x, y: event.clientY - face.y };
+			// The traveller keeps the full card size, so it anchors to the card rather than its inset face.
+			const card = (event.target as HTMLElement).querySelector('[data-slot="jira-issue-card"]')!.getBoundingClientRect();
+			state.issueGatherOffset = { x: event.clientX - card.x, y: event.clientY - card.y };
 		}, true);
 	});
 }
@@ -58,6 +62,19 @@ async function start(page: Page, code: string) {
 	await page.mouse.move(source.x + 95, source.y + 35, { steps: 5 });
 	await expect(card(page, code)).toHaveAttribute("data-dragging", "true");
 	await expect(preview(page)).toBeVisible();
+	await settleTraveller(page);
+}
+
+/** The traveller follows drag events on the next frame; measure it once it has caught up. */
+async function settleTraveller(page: Page) {
+	await expect.poll(() => preview(page).evaluate(async (node) => {
+		const before = node.getBoundingClientRect();
+		await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+		const after = node.getBoundingClientRect();
+		return before.x === after.x && before.y === after.y;
+	})).toBe(true);
+	// It never eases after the pointer, even under reduced motion's global transition reset.
+	expect(await preview(page).evaluate((node) => node.getAnimations().length)).toBe(0);
 }
 
 async function seek(page: Page, time: number) {
@@ -73,6 +90,7 @@ async function move(page: Page, x: number, y: number) {
 	await page.mouse.move(x, y);
 	await expect.poll(() => page.evaluate(() => window.issueGatherPointer)).toBe(`${x},${y}`);
 	await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+	await settleTraveller(page);
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
@@ -245,7 +263,12 @@ test("early drop, rapid restart and live reduced motion retire gathering cleanly
 	await start(page, "PAY-123");
 	await expect(preview(page).locator('[data-issue-cohort-front]')).toContainText("PAY-123");
 	await seek(page, 70);
+	const dragging = await page.locator('[data-dragging="true"]').count();
 	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+	// Regression: the switch re-ran the drag listeners, whose cleanup cancelled the live drag.
+	expect(await preview(page).count(), "the drag survives a live reduced-motion switch").toBe(1);
+	expect(await page.locator('[data-dragging="true"]').count()).toBe(dragging);
 	await expect.poll(() => preview(page).evaluate((node) => node.getAnimations({ subtree: true }).length)).toBe(0);
 	for (const layer of await preview(page).locator('[data-issue-deck-layer]').all()) {
 		const pose = await layer.evaluate((node) => ({ actual: [...new DOMMatrix(getComputedStyle(node).transform).toFloat64Array()], expected: [...new DOMMatrix((node as HTMLElement).style.transform).toFloat64Array()] }));

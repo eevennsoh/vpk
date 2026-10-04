@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import {
 	AGENT_BENTO_OPERATIONS_TEMPLATES,
 } from "../data/operations-templates";
+import { motionEase } from "@/lib/motion";
 
 // This variant's tiles fade their own content out at the bottom edge, so the
 // border ring has to fade with it or a hard stroke outlives the content.
@@ -140,7 +141,7 @@ export function AgentCompactOperationsBento({ onDismiss, onStartWithTemplate }: 
 			initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
 			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
-			transition={{ duration: 0.24, ease: [0, 0.4, 0, 1] }}
+			transition={{ duration: 0.24, ease: motionEase.out }}
 		>
 			<TemplatesHint onBrowseAll={handleBrowseTemplates} onDismiss={onDismiss} />
 			{/*
@@ -166,7 +167,7 @@ export function AgentCompactOperationsBento({ onDismiss, onStartWithTemplate }: 
 							)}
 							ref={cardGlow.registerTile}
 							style={getCardStyle(template.iconSrc)}
-							transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+							transition={{ duration: 0.2, ease: motionEase.out }}
 							whileTap={shouldReduceMotion ? undefined : { scale: 0.98, transition: { duration: 0.05 } }}
 							onClick={handleBrowseTemplates}
 						>

@@ -412,7 +412,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		guideSource,
-		/from "\.\.\/\.\.\/lib\/pull-request-guide-active-chapter"/u,
+		/from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/pull-request-guide-active-chapter"/u,
 	);
 	assert.match(
 		guideSource,

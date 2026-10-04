@@ -73,8 +73,7 @@ export default function ConfluenceHeader({
 			}}
 		>
 			{/* Left section - only visible when sidebar is closed */}
-			{!isSidebarOpen && (
-				<div className="flex items-center gap-1">
+			{!isSidebarOpen ? <div className="flex items-center gap-1">
 					<div
 						style={{
 							padding: `${token("space.075")} ${token("space.100")}`,
@@ -88,8 +87,7 @@ export default function ConfluenceHeader({
 							</span>
 						</div>
 					</div>
-				</div>
-			)}
+				</div> : null}
 
 			{/* Right section */}
 			<div style={{ marginLeft: "auto" }}>
@@ -113,9 +111,7 @@ export default function ConfluenceHeader({
 									<AvatarFallback>{user.name?.[0] ?? "U"}</AvatarFallback>
 								</Avatar>
 							))}
-							{PRESENCE_USERS.length > 3 && (
-								<AvatarGroupCount>{`+${PRESENCE_USERS.length - 3}`}</AvatarGroupCount>
-							)}
+							{PRESENCE_USERS.length > 3 ? <AvatarGroupCount>{`+${PRESENCE_USERS.length - 3}`}</AvatarGroupCount> : null}
 						</AvatarGroup>
 					</div>
 
@@ -138,13 +134,11 @@ export default function ConfluenceHeader({
 								<ChevronDownIcon label="" size="small" />
 							</Button>
 
-							{isShareDropdownOpen && shareButtonRect && (
-								<ShareDropdownMenu
+							{isShareDropdownOpen && shareButtonRect ? <ShareDropdownMenu
 									menuRef={shareMenuRef}
 									buttonRect={shareButtonRect}
 									onClose={closeShareDropdown}
-								/>
-							)}
+								/> : null}
 						</div>
 
 						{/* More options button */}

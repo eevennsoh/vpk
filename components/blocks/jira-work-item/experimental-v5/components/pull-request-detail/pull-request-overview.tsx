@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/experimental-v5/components/context-description-editor";
 import { token } from "@/lib/tokens";
 
-import type { PullRequestDetailData } from "../../lib/pull-request-detail-data";
+import type { PullRequestDetailData } from "@/components/blocks/jira-work-item/experimental-v5/lib/pull-request-detail-data";
 
 export function PullRequestOverview({ data }: Readonly<{ data: PullRequestDetailData }>) {
 	const review = data.guidedReview;

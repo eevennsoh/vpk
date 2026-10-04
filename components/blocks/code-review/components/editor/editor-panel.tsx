@@ -9,16 +9,16 @@ import { Icon } from "@/components/ui/icon";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
-import type { ChangedFile, CodeReviewCommit, DiffLayout } from "../../data/types";
+import type { ChangedFile, CodeReviewCommit, DiffLayout } from "@/components/blocks/code-review/data/types";
 import type {
 	InlineCommentAnchor,
 	InlineCommentDraft,
 	InlineReviewComment,
-} from "../../lib/inline-comments";
+} from "@/components/blocks/code-review/lib/inline-comments";
 import {
 	filterChangedFilesByScope,
 	type ChangesScope,
-} from "../../lib/filter-changed-files-by-scope";
+} from "@/components/blocks/code-review/lib/filter-changed-files-by-scope";
 import { DiffFileView } from "../diff-file-view";
 import { EditorChangesPicker } from "./editor-changes-picker";
 import { EditorDiffLayoutControls } from "./editor-diff-layout-controls";

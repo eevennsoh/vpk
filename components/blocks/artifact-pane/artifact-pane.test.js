@@ -86,7 +86,7 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /<motion\.span[\s\S]*animate=\{\{ rotate: open \? 90 : 0 \}\}/u);
 	assert.match(BLOCK_SOURCE, /initial=\{false\}/u);
 	assert.match(BLOCK_SOURCE, /style=\{\{ willChange: "transform" \}\}/u);
-	assert.match(BLOCK_SOURCE, /prefersReducedMotion \? \{ duration: 0 \} : \{ duration: 0\.15, ease: \[0\.4, 0, 0, 1\] \}/u);
+	assert.match(BLOCK_SOURCE, /prefersReducedMotion \? \{ duration: 0 \} : \{ duration: 0\.15, ease: motionEase\.inOut \}/u);
 	assert.match(BLOCK_SOURCE, /<ChevronRightIcon label="" size="small" \/>/u);
 	assert.match(BLOCK_SOURCE, /headerAction\?: Readonly<\{[\s\S]*label: string;[\s\S]*onClick\?: \(\) => void;[\s\S]*appearance\?: "icon" \| "label";[\s\S]*reveal\?: "hover" \| "open";/u);
 	assert.match(BLOCK_SOURCE, /className="group\/header flex w-full items-center gap-2 px-3 py-3"/u);

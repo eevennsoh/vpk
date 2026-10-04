@@ -51,8 +51,8 @@ test("Jira Toolbar preserves agent assignment and launches real Rovo navigation"
 });
 
 test("Jira Toolbar uses token motion with a reduced-motion path", () => {
-	assert.match(SOURCE, /duration: 0\.25,[\s\S]*ease: \[0, 0\.4, 0, 1\]/u);
-	assert.match(SOURCE, /duration: 0\.2,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(SOURCE, /duration: 0\.25,[\s\S]*ease: motionEase\.out\b/u);
+	assert.match(SOURCE, /duration: 0\.2,[\s\S]*ease: motionEase\.in\b/u);
 	assert.match(SOURCE, /useReducedMotion\(\)/u);
 	assert.match(SOURCE, /willChange: "transform, opacity"/u);
 });

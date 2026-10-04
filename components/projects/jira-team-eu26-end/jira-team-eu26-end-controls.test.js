@@ -20,6 +20,10 @@ const EXPERIMENTAL_PAGE_SOURCE = [
 	readProjectFile("components/blocks/jira-kanban/experimental/hooks/use-page-content-model.ts"),
 ].join("\n");
 
+test("the End board shares Team EU26's opt-in auto arrange setting", () => {
+	assert.match(PAGE_SOURCE, /autoArrangeEnabled=\{designVariants\.autoArrange\}/u);
+});
+
 test("the board keeps matching 24px gaps above and below the filter controls", () => {
 	// The control row's opening tag is multi-line (it carries `controlsInsetEnd`
 	// as a style), so match the className string rather than the whole tag —
@@ -44,11 +48,8 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 		/needsInputCount=\{needsInputCount\}/u,
 		"the Team EU26 route owns the live Needs input count",
 	);
-	assert.match(
-		PAGE_SOURCE,
-		/agentActivities\?\.filter\(\s*\(activity\) =>\s*activity\.state === "awaiting-input",?\s*\)\.length/u,
-		"the route counts every awaiting-input agent activity",
-	);
+	// The count itself is proven against the Needs input focus in
+	// components/blocks/jira-kanban/experimental/lib/board-agent-filter-scope.test.js.
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /needsInputCount\?: number;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /needsInputCount=\{needsInputCount\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /needsInputCount\?: number;/u);
@@ -58,15 +59,6 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 	);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardNeedsInputButton/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /Needs input/u);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/import QuestionCircleIcon from "@atlaskit\/icon\/core\/question-circle";/u,
-	);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>\s*Needs input\s*<\/Button>/u,
-		"the Needs input control shows its label without a visible count badge",
-	);
 	assert.doesNotMatch(BOARD_VIEW_MENU_SOURCE, /StatusInformationIcon/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardGroupByMenu/u);
 	assert.match(

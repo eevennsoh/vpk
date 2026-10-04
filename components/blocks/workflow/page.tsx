@@ -111,8 +111,7 @@ export default function AIWorkflowBlock() {
 							<Message key={msg.id} from={msg.role}>
 								<MessageContent>
 									{/* Plan rendering */}
-									{msg.plan && (
-										<Plan defaultOpen className="mb-4">
+									{msg.plan ? <Plan defaultOpen className="mb-4">
 											<PlanHeader
 												leading={<PlanAvatar visualIdentity={resolvePlanVisualIdentity(msg.plan.title)} />}
 												title={<PlanTitle>{msg.plan.title}</PlanTitle>}
@@ -130,11 +129,10 @@ export default function AIWorkflowBlock() {
 													))}
 												</div>
 											</PlanContent>
-										</Plan>
-									)}
+										</Plan> : null}
 
 									{/* Tool call rendering */}
-									{msg.toolCalls && msg.toolCalls.map((tc, i) => (
+									{msg.toolCalls ? msg.toolCalls.map((tc, i) => (
 										<Tool key={`${msg.id}-tool-${i}`} defaultOpen={false}>
 											<ToolHeader
 												title={tc.name}
@@ -146,16 +144,13 @@ export default function AIWorkflowBlock() {
 												<ToolOutput output={tc.output} errorText={undefined} />
 											</ToolContent>
 										</Tool>
-									))}
+									)) : null}
 
 									{/* Message content */}
-									{msg.content && (
-										<MessageResponse>{msg.content}</MessageResponse>
-									)}
+									{msg.content ? <MessageResponse>{msg.content}</MessageResponse> : null}
 
 									{/* Confirmation rendering */}
-									{msg.confirmation && (
-										<Confirmation
+									{msg.confirmation ? <Confirmation
 											state={msg.confirmation.state}
 											approval={{ id: msg.confirmation.id }}
 										>
@@ -166,8 +161,7 @@ export default function AIWorkflowBlock() {
 													<ConfirmationAction>Approve</ConfirmationAction>
 												</ConfirmationActions>
 											</ConfirmationRequest>
-										</Confirmation>
-									)}
+										</Confirmation> : null}
 								</MessageContent>
 							</Message>
 						))}

@@ -1,9 +1,9 @@
-import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
-const origin = (process.env.PLAYWRIGHT_BASE_URL
-	?? execFileSync(process.execPath, [".agents/skills/vpk-verify/scripts/control-vpk", "url"], { encoding: "utf8" }).trim()).replace(/\/$/u, "");
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 const evidence = "output/agent-browser/vpk-verify/jira-team-eu26-drop";
 
 interface FlightFrame {

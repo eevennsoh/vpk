@@ -1,4 +1,5 @@
 import type { Transition } from "motion/react";
+import { motionEase } from "../../../lib/motion.ts";
 
 /**
  * Approach model for "drag an agent session onto this work item".
@@ -20,7 +21,7 @@ import type { Transition } from "motion/react";
  * crisp geometry change and is too slow to chase a pointer, so opacity gets its
  * own per-value timing on the backdrop's `transition` prop.
  */
-export const JIRA_ISSUE_MOTION_BACKDROP_NEARNESS: Transition = { duration: 0.1, ease: [0.4, 1, 0.6, 1] }; // duration-fast + ease-out-practical
+export const JIRA_ISSUE_MOTION_BACKDROP_NEARNESS: Transition = { duration: 0.1, ease: motionEase.outPractical }; // duration-fast + ease-out-practical
 
 /**
  * Nearness at which the attach chin opens. The board's smoothstep ramp puts

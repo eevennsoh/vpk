@@ -55,12 +55,13 @@ import {
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 import { Tag } from "@/components/ui/tag";
+import { motionEase } from "@/lib/motion";
 
 const ACTIVITY_COMMENTS_PROMPT = "Discuss these activity comments.";
 
 const COMPOSER_CONTENT_LAYOUT_TRANSITION = {
 	duration: 0.25,
-	ease: [0.4, 0, 0, 1],
+	ease: motionEase.inOut,
 } satisfies Transition; // duration-slow + ease-in-out
 
 const COMPOSER_CONTENT_VARIANTS = {
@@ -68,7 +69,7 @@ const COMPOSER_CONTENT_VARIANTS = {
 		opacity: 0,
 		transition: {
 			duration: 0.1,
-			ease: [0.6, 0, 0.8, 0.6],
+			ease: motionEase.in,
 		}, // duration-fast + ease-in
 	},
 	visible: {
