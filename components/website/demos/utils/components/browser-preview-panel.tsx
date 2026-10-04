@@ -36,6 +36,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { UseBrowserWorkspaceResult } from "@/components/website/demos/utils/hooks/use-browser-workspace";
 import { useBrowserPreviewSession } from "@/components/website/demos/utils/hooks/use-browser-preview-session";
+import { dispatchBrowserControl, type BrowserControlCommand } from "@/components/website/demos/utils/lib/browser-control-dispatch";
 
 type PreviewPanelTab = "browser" | "snapshot";
 
@@ -43,23 +44,6 @@ interface BrowserPreviewPanelProps {
 	workspace: UseBrowserWorkspaceResult;
 	onClose: () => void;
 }
-
-const SPECIAL_KEY_MAP: Record<string, string> = {
-	" ": "Space",
-	ArrowDown: "ArrowDown",
-	ArrowLeft: "ArrowLeft",
-	ArrowRight: "ArrowRight",
-	ArrowUp: "ArrowUp",
-	Backspace: "Backspace",
-	Delete: "Delete",
-	End: "End",
-	Enter: "Enter",
-	Escape: "Escape",
-	Home: "Home",
-	PageDown: "PageDown",
-	PageUp: "PageUp",
-	Tab: "Tab",
-};
 
 function getTabLabel(url: string, title: string) {
 	if (title.trim()) {
@@ -186,6 +170,10 @@ function EmbeddedBrowserWorkspacePreview({
 			await resetWorkspace();
 		},
 	});
+	const dispatchControl = useCallback((command: BrowserControlCommand) => dispatchBrowserControl(command, {
+		preview: canSendControl ? sendControlMessage : null,
+		workspace: runWorkspaceAction,
+	}), [canSendControl, runWorkspaceAction, sendControlMessage]);
 	const previousPreviewStatusRef = useRef(previewStatus);
 
 	const currentUrl = workspaceState?.url ?? "";
@@ -461,23 +449,9 @@ function EmbeddedBrowserWorkspacePreview({
 
 			event.preventDefault();
 			liveViewportRef.current?.focus();
-			if (
-				canSendControl &&
-				sendControlMessage({
-					type: "preview-click",
-					x: point.x,
-					y: point.y,
-				})
-			) {
-				return;
-			}
-
-			void runWorkspaceAction("click", {
-				x: point.x,
-				y: point.y,
-			});
+			void dispatchControl({ type: "click", x: point.x, y: point.y });
 		},
-		[canSendControl, resolvePreviewPoint, runWorkspaceAction, sendControlMessage],
+		[dispatchControl, resolvePreviewPoint],
 	);
 
 	const handleLiveWheel = useCallback(
@@ -508,91 +482,21 @@ function EmbeddedBrowserWorkspacePreview({
 					return;
 				}
 
-				if (
-					canSendControl &&
-					sendControlMessage({
-						type: "preview-wheel",
-						x: nextWheel.x,
-						y: nextWheel.y,
-						deltaX: nextWheel.deltaX,
-						deltaY: nextWheel.deltaY,
-					})
-				) {
-					return;
-				}
-
-				void runWorkspaceAction("wheel", {
-					deltaX: nextWheel.deltaX,
-					deltaY: nextWheel.deltaY,
-				});
+				void dispatchControl({ type: "wheel", ...nextWheel });
 			}, 40);
 		},
-		[
-			canSendControl,
-			resolvePreviewPointOrCenter,
-			runWorkspaceAction,
-			sendControlMessage,
-		],
+		[dispatchControl, resolvePreviewPointOrCenter],
 	);
 
 	const handleLiveKeyDown = useCallback(
 		(event: ReactKeyboardEvent<HTMLDivElement>) => {
-			const isPrintableKey =
-				event.key.length === 1 &&
-				!event.metaKey &&
-				!event.ctrlKey &&
-				!event.altKey;
-
 			event.preventDefault();
-			if (canSendControl) {
-				const sentDown = sendControlMessage({
-					type: "preview-key",
-					eventType: "keyDown",
-					key: event.key,
-					code: event.code,
-					text: isPrintableKey ? event.key : undefined,
-				});
-				if (sentDown) {
-					void sendControlMessage({
-						type: "preview-key",
-						eventType: "keyUp",
-						key: event.key,
-						code: event.code,
-					});
-					return;
-				}
-			}
-
-			if (isPrintableKey) {
-				void runWorkspaceAction("type", { text: event.key });
-				return;
-			}
-
-			const mappedKey = SPECIAL_KEY_MAP[event.key];
-			if (!mappedKey) {
-				return;
-			}
-
-			const modifiers: string[] = [];
-			if (event.ctrlKey) {
-				modifiers.push("Control");
-			}
-			if (event.metaKey) {
-				modifiers.push("Meta");
-			}
-			if (event.altKey) {
-				modifiers.push("Alt");
-			}
-			if (event.shiftKey) {
-				modifiers.push("Shift");
-			}
-
-			const key = modifiers.length
-				? `${modifiers.join("+")}+${mappedKey}`
-				: mappedKey;
-			void runWorkspaceAction("press", { key });
+			void dispatchControl({
+				type: "key", key: event.key, code: event.code,
+				ctrlKey: event.ctrlKey, metaKey: event.metaKey, altKey: event.altKey, shiftKey: event.shiftKey,
+			});
 		},
-		[canSendControl, runWorkspaceAction, sendControlMessage],
+		[dispatchControl],
 	);
 
 	const handlePaste = useCallback(
@@ -603,19 +507,9 @@ function EmbeddedBrowserWorkspacePreview({
 			}
 
 			event.preventDefault();
-			if (
-				canSendControl &&
-				sendControlMessage({
-					type: "preview-paste",
-					text: pastedText,
-				})
-			) {
-				return;
-			}
-
-			void runWorkspaceAction("type", { text: pastedText });
+			void dispatchControl({ type: "paste", text: pastedText });
 		},
-		[canSendControl, runWorkspaceAction, sendControlMessage],
+		[dispatchControl],
 	);
 
 	const activeTab = workspaceState?.tabs.find((tab) => tab.active) ?? null;
