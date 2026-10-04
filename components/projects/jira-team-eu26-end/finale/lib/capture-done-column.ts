@@ -27,8 +27,6 @@ export interface FinaleHandoffSnapshot {
 	readonly occluders: readonly FinaleCapturedOccluder[];
 }
 
-const ISSUE_KEY = /\b[A-Z][A-Z0-9]+-\d+\b/u;
-
 function toRect(rect: DOMRect): FinaleCapturedRect {
 	return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 }
@@ -145,7 +143,7 @@ export function captureJiraTeamEu26DoneColumn(): FinaleHandoffSnapshot | null {
 	const cards = [...column.querySelectorAll<HTMLElement>(CARD_SELECTOR)]
 		.map((card) => ({ card, rect: card.getBoundingClientRect() }))
 		.filter(({ rect }) => rect.width > 0 && rect.height > 0)
-		.map(({ card, rect }) => ({ rect: toRect(rect), code: card.textContent?.match(ISSUE_KEY)?.[0] ?? "" }));
+		.map(({ card, rect }) => ({ rect: toRect(rect), code: card.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey ?? "" }));
 	return {
 		column: toRect(column.getBoundingClientRect()),
 		list: toRect(listElement.getBoundingClientRect()),
