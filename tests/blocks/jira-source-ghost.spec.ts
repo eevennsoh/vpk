@@ -47,7 +47,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await page.goto(`${origin}/jira-team-eu26`);
 			await card(page, selected[0]).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 			for (const code of selected.slice(1)) {
-				await page.getByRole("button", { name: `Select ${code}`, exact: true }).click();
+				await page.getByRole("checkbox", { name: `Select ${code}`, exact: true }).click();
 			}
 			for (const code of selected) {
 				await expect(issue(page, code).locator('[data-jira-issue-activation-control]')).toHaveAttribute("aria-pressed", "true");
@@ -159,7 +159,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				const placeholder = issue(page, code).locator('[data-issue-source-ghost-placeholder]');
 				await expect(content).toHaveCSS("opacity", "0");
 				await expect(card(page, code)).not.toHaveAttribute("inert", "");
-				const blocked = await content.locator('[draggable="true"]').evaluate((source) => [...source.children].every((node) => node instanceof HTMLElement && node.inert));
+				// Pointer transport clears the source's native draggable during pickup.
+				const blocked = await content.locator("[draggable]").first().evaluate((source) => [...source.children].every((node) => node instanceof HTMLElement && node.inert));
 				expect(blocked).toBe(true);
 				await expect(content).toHaveAttribute("aria-hidden", "true");
 				await expect(placeholder).toHaveCSS("opacity", "1");

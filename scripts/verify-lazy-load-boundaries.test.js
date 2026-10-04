@@ -172,6 +172,11 @@ test("default route shell list covers the measured app shells", () => {
 test("default deferred module rules cover the Jira pull request review subtree", () => {
 	assert.deepEqual(DEFAULT_DEFERRED_MODULE_RULES, [
 		{
+			entryFile: "components/projects/studio/components/rovo-app-shell.tsx",
+			reason: "the Studio Ask Rovo chat panel must stay out of the initial project bundle",
+			targetFile: "components/projects/sidebar-chat/page.tsx",
+		},
+		{
 			entryFile: "components/projects/jira-golden-journeys-v2/page.tsx",
 			reason: "the Jira pull request review subtree must stay out of the initial project bundle",
 			targetFile: "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view.tsx",

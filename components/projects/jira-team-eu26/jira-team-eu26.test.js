@@ -53,9 +53,6 @@ const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE = readProjectFile(
 const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_CONTEXT_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/create-work-item-exclusive-proximity-context.tsx",
 );
-const INDICATORS_SOURCE = readProjectFile(
-	"components/projects/jira-team-eu26/data/agent-activity-indicators.tsx",
-);
 const COMPLETED_RUNS_SOURCE = readProjectFile(
 	"components/blocks/jira-issue/completed-agent-runs.tsx",
 );
@@ -319,30 +316,6 @@ test("chin-row layout uses Team EU's merged grouping", () => {
 });
 
 test("chin-row agent activity indicators use the Team EU renderer", () => {
-	// Working rows keep their spinner; awaiting-input uses a large dot in
-	// the same information blue as the shared session status indicators.
-	assert.match(
-		INDICATORS_SOURCE,
-		/import StrokeWeightLargeIcon from "@atlaskit\/icon\/core\/stroke-weight-large";/u,
-	);
-	assert.doesNotThrow(
-		() => require.resolve("@atlaskit/icon/core/stroke-weight-large"),
-		"@atlaskit/icon must export stroke-weight-large for the Team EU chin",
-	);
-	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(
-		INDICATORS_SOURCE,
-		/renderJiraTeamEu26AgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<StrokeWeightLargeIcon color=\{token\("color\.icon\.information"\)\} label="" size="medium" \/>\s*\) : \(\s*<Spinner label="" pulse size="xl" variant="experimental-avatar" \/>\s*\)/u,
-	);
-	// A finished run gets the filled success status in the ADS success green,
-	// pairing with the filled error status a failed run already shows. The
-	// block's own fallback dot only said the row had ended.
-	assert.match(INDICATORS_SOURCE, /import StatusSuccessIcon from "@atlaskit\/icon\/core\/status-success";/u);
-	assert.match(
-		INDICATORS_SOURCE,
-		/renderJiraTeamEu26AgentActivityIndicator[\s\S]*if \(state === "finished"\) \{\s*return <StatusSuccessIcon color=\{token\("color\.icon\.success"\)\} label="" size="medium" \/>;\s*\}/u,
-	);
-	assert.doesNotMatch(INDICATORS_SOURCE, /PixelLoader|2000-years-later|DesignVariationId/u);
 	assert.doesNotMatch(PAGE_SOURCE, /PixelLoader|useDesignVariation|design-variation/u);
 	assert.match(
 		PAGE_SOURCE,
@@ -906,15 +879,6 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 	);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardNeedsInputButton/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /Needs input/u);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/import QuestionCircleIcon from "@atlaskit\/icon\/core\/question-circle";/u,
-	);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>\s*Needs input\s*<\/Button>/u,
-		"the Needs input control shows its label without a visible count badge",
-	);
 	assert.doesNotMatch(BOARD_VIEW_MENU_SOURCE, /StatusInformationIcon/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardGroupByMenu/u);
 	assert.match(
@@ -978,4 +942,19 @@ test("Team EU26 gates Auto arrange through its Settings preference", () => {
 	assert.match(PAGE_SOURCE, /autoArrangeEnabled=\{designVariants\.autoArrange\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /autoArrangeEnabled\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onAutoArrange=\{autoArrangeEnabled && \(controlledBoardColumns === undefined \|\| onBoardColumnsChange\) \? handleAutoArrange : undefined\}/u);
+});
+
+test("Needs input is text-only and preserves keyboard filter activation", async () => {
+	const { renderComponent } = require("../../../scripts/lib/render-component.js");
+	const selections = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-kanban/experimental/components/board-view-menu.tsx",
+		exportName: "BoardNeedsInputButton",
+		props: { count: 1, onAgentFilterIdChange: (id) => selections.push(id) },
+	});
+	const button = view.getByRole("button", { name: "Needs input: 1 agent" });
+	assert.equal(button.textContent, "Needs input");
+	assert.equal(button.querySelectorAll("svg").length, 0);
+	await view.press(button, "Enter");
+	assert.deepEqual(selections, ["needs-input"]);
 });

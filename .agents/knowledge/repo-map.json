@@ -7798,7 +7798,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 18
+			"localSkillCount": 19
 		},
 		"localSkills": [
 			{
@@ -7836,6 +7836,12 @@
 				"name": "vpk-design",
 				"path": ".agents/skills/vpk-design/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-design"
+			},
+			{
+				"description": "Explain concepts, code, architecture, documents, and model outputs through clear prose, diagrams, interactive HTML, or a requested explainer video. Use for vpk-explain or requests for a tailored explanation artifact; ordinary short answers do not need the artifact workflow.",
+				"name": "vpk-explain",
+				"path": ".agents/skills/vpk-explain/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-explain"
 			},
 			{
 				"description": "Remove only proven-landed VPK worktrees and branches, prune stale refs, and close explicitly abandoned PRs. Use when the user says \\\"vpk-git-clean\\\", \\\"clean up worktrees\\\", \\\"clean up branches\\\", \\\"remove merged worktrees\\\", \\\"prune stale refs\\\", or \\\"worktrees are piling up\\\".",

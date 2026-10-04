@@ -3,16 +3,18 @@
 import type { CSSProperties, ReactNode } from "react";
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
 import { Icon } from "@/components/ui/icon";
+import { buttonVariants } from "@/components/ui/button";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 import { JiraDropzoneCopyReveal } from "@/components/blocks/jira-dropzone/jira-dropzone-copy-reveal";
+import { JIRA_DROPZONE_WELL_CHROME_CLASS, resolveJiraDropzoneWellColors } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-chrome";
 import type { JiraKanbanAgentData } from "@/components/blocks/jira-kanban/index";
 import type { KanbanColumnChrome, KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
 import { BOARD_COLUMN_WIDTH_PX } from "../lib/board-column-collapse";
 import { BOARD_COLUMN_ACTION_REVEAL } from "../lib/board-column-action-reveal";
+import { resolveBoardColumnHeaderDropFeedbackInset } from "../lib/board-column-header-drop-feedback";
 import { BoardColumnAgentAssignment } from "./board-column-agent-assignment";
 import { BoardColumnResizeButton } from "./collapsed-board-column";
 import { BoardColumnCreateAction } from "./create-work-item-drop-zone";
@@ -63,6 +65,9 @@ function BoardColumnHeader({
 	</> : null;
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
 	const dropHovered = issueDrop.current?.entered && issueDrop.current.surface === "header";
+	const isSelfLoop = issueDrop.active?.columnTitle === title;
+	const showHeaderDropFeedback = isSelfLoop || Boolean(dropHovered);
+	const paddingBottom = headerStyle?.paddingBottom ?? token("space.100");
 	return (
 		<div
 			data-slot="board-column-header"
@@ -73,16 +78,28 @@ function BoardColumnHeader({
 				"relative isolate flex min-w-0 items-center gap-2",
 				!issueMoveVisual && isTransitioning ? "justify-center" : "justify-between",
 			)}
-			style={{ ...headerStyle, paddingBottom: headerStyle?.paddingBottom ?? token("space.100") }}
+			style={{ ...headerStyle, paddingBottom }}
 		>
-			{dropHovered ? <div
+			{showHeaderDropFeedback ? <div
 				aria-hidden
 				data-board-column-title-drop-feedback=""
-				className={cn(buttonVariants({ variant: "ghost" }), "pointer-events-none absolute -z-10 bg-bg-neutral-subtle-hovered")}
-				style={{ inset: dropFeedbackInset ?? 0, height: "auto" }}
+				className={cn(
+					"pointer-events-none absolute -z-10",
+					isSelfLoop ? cn(
+						"transition-colors duration-normal ease-out-practical",
+						JIRA_DROPZONE_WELL_CHROME_CLASS,
+						resolveJiraDropzoneWellColors(Boolean(dropHovered)),
+						!dropHovered ? "bg-transparent" : null,
+					) : cn(buttonVariants({ variant: "ghost" }), "bg-bg-neutral-subtle-hovered"),
+				)}
+				style={{ ...resolveBoardColumnHeaderDropFeedbackInset(dropFeedbackInset, headerStyle?.paddingTop, paddingBottom), height: "auto" }}
 			/> : null}
 			{/* Match the compact controls' row height when pickup replaces them with transition copy. */}
-			<div className={cn("flex min-h-6 min-w-0 flex-1 items-center text-xs font-medium leading-4 text-text-subtle", !issueMoveVisual && isTransitioning ? "justify-center" : null)}>
+			<div className={cn(
+				"flex min-h-6 min-w-0 flex-1 items-center text-xs font-medium leading-4",
+				isSelfLoop && dropHovered ? "text-text-selected" : "text-text-subtle",
+				!issueMoveVisual && isTransitioning ? "justify-center" : null,
+			)}>
 				{issueMoveVisual ? <JiraDropzoneCopyReveal
 					contentKey={transitionPrefix ?? headerLabel}
 					dataPrefix="board-column-header"

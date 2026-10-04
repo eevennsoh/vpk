@@ -117,6 +117,25 @@ test("the flash is fully spent by the toss: nothing of it overlaps the grey slid
 	assert.ok(flashVisible(CUE.burst - 0.05), "still fading out on the live board just before the toss");
 });
 
+test("the cards toss as the bright ring clears the column: no dead air before the burst", () => {
+	const { CUE, FLASH_SHAPE, flashCoreWidth, flashCornerRadius, flashIntensity, flashRadius } = load();
+	for (const column of [COLUMN, { x: 1090, y: 240, width: 322, height: 630 }]) {
+		const top = flashCornerRadius(column);
+		const cleared = top + FLASH_SHAPE.edge * column.height + flashCoreWidth(top, column);
+		let clearedAt = null;
+		for (let time = 0; time <= CUE.burst; time += 1 / 480) {
+			if (flashRadius(time, column) >= cleared) {
+				clearedAt = time;
+				break;
+			}
+		}
+		assert.ok(clearedAt !== null, "the ring leaves the column before the toss");
+		assert.ok(flashIntensity(clearedAt) > 0.8, `it leaves at near-full energy (${flashIntensity(clearedAt).toFixed(2)})`);
+		// Regression: the toss once waited ~0.34s here while only the dark wake drifted up.
+		assert.ok(CUE.burst - clearedAt < 0.12, `the toss follows ${(CUE.burst - clearedAt).toFixed(3)}s after the ring clears`);
+	}
+});
+
 test("the flash is exactly dark on frame 0 and once its window has passed", () => {
 	const { CUE, flashIntensity, flashLook, flashWindow } = load();
 	const { start, end } = flashWindow();

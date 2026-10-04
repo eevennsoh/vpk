@@ -40,9 +40,6 @@ import {
 	type JiraIssueAgentActivityLayout,
 } from "@/components/blocks/jira-issue/agent-activity-model";
 import {
-	useJiraIssueAgentStartupPhase,
-} from "@/components/blocks/jira-issue/agent-activity-startup";
-import {
 	sessionDragChipViewportStyle,
 	sessionTransferTintSeed,
 	type JiraIssueAgentSessionDragBinding,
@@ -562,11 +559,6 @@ function JiraIssueAgentActivityRow({
 	} = resolveJiraIssueAgentRowPresentation(activities, linkFlash);
 	const animateStateTransition = activities.length === 1 && featuredActivity?.stateTransition === "agent-session";
 	const lifecycleState = isCompletedRow ? "complete" : isAwaitingInput ? "needs-input" : "running";
-	const startupPhase = useJiraIssueAgentStartupPhase(
-		startupSequenceKey,
-		shouldReduceMotion,
-		featuredActivity?.startedAtMs,
-	);
 	const catalogAgents = useMemo(
 		() => mergeJiraIssueAgentCatalog(activities, assignment?.agents),
 		[activities, assignment?.agents],
@@ -651,7 +643,6 @@ function JiraIssueAgentActivityRow({
 						isCompletedRow={state === "complete"}
 						isFailedRow={isFailedRow}
 						renderAgentActivityIndicator={renderAgentActivityIndicator}
-						startupPhase={startupPhase}
 						workingSpinnerVariant={workingSpinnerVariant}
 					/>}
 				/> : <JiraIssueAgentStatusIcon
@@ -660,7 +651,6 @@ function JiraIssueAgentActivityRow({
 					isCompletedRow={isCompletedRow}
 					isFailedRow={isFailedRow}
 					renderAgentActivityIndicator={renderAgentActivityIndicator}
-					startupPhase={startupPhase}
 					workingSpinnerVariant={workingSpinnerVariant}
 				/>
 			)}
@@ -693,7 +683,6 @@ function JiraIssueAgentActivityRow({
 				isWorking={!isViewerRow && !isCompletedRow && !isAwaitingInput}
 				rowLabel={rowLabel}
 				showUnlinkControl={showUnlinkControl}
-				startupPhase={isViewerRow ? "working" : startupPhase}
 				statusIcon={statusIcon}
 				isViewerRow={isViewerRow}
 			/>
@@ -733,7 +722,6 @@ function JiraIssueAgentActivityRow({
 				rowLinkFlash={rowLinkFlash}
 				sessionDrag={sessionDrag}
 				showUnlinkControl={showUnlinkControl}
-				startupPhase={startupPhase}
 				startupSequenceKey={startupSequenceKey}
 				statusIcon={statusIcon}
 			/>

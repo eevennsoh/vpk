@@ -95,7 +95,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				const source = card.locator('[data-slot="jira-issue-card"]');
 				const restingSurfaceColor = await page.locator('[data-issue-key="PAY-130"] [data-slot="jira-issue-surface"]').evaluate((node) => getComputedStyle(node).backgroundColor);
 				await waitForIssueSurfaceGeometry(source.locator('[data-slot="jira-issue-surface"]'));
-				const face = (await source.locator('[data-slot="jira-issue-surface"]').boundingBox())!;
+				// The detached face restores the full card size, not the inset face of a selection or session well.
+				const resting = (await source.boundingBox())!;
 				const grab = (await card.boundingBox())!;
 				await page.mouse.move(grab.x + 70, grab.y + 30);
 				await page.mouse.down();
@@ -113,8 +114,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 					return [outer.x - painted.x, outer.y - painted.y, outer.width - painted.width, outer.height - painted.height].map((gap) => Math.abs(gap) < 0.5 ? 0 : Number(gap.toFixed(2)));
 				}).toEqual([0, 0, 0, 0]);
 				const bounds = (await preview.boundingBox())!;
-				expect(bounds.width).toBeCloseTo(face.width, 1);
-				expect(bounds.height).toBeCloseTo(face.height, 1);
+				expect(bounds.width).toBeCloseTo(resting.width, 1);
+				expect(bounds.height).toBeCloseTo(resting.height, 1);
 				await page.mouse.move(1100, 750, { steps: 4 });
 				if (code === "PAY-107" && !selected) await page.screenshot({ path: `output/agent-browser/single-card-preview/single-${reducedMotion}.png` });
 				await page.keyboard.press("Escape");
@@ -132,7 +133,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		for (const code of ["PAY-105", "PAY-123"]) await card(code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await card("PAY-107").hover({ position: { x: 70, y: 30 } });
 		const restingSurfaceColor = await page.locator('[data-issue-key="PAY-130"] [data-slot="jira-issue-surface"]').evaluate((node) => getComputedStyle(node).backgroundColor);
-		const face = (await card("PAY-107").locator('[data-slot="jira-issue-surface"]').boundingBox())!;
+		// The lead restores the full card size, not the inset face of its selection well.
+		const resting = (await card("PAY-107").locator('[data-slot="jira-issue-card"]').boundingBox())!;
 		const bounds = (await card("PAY-107").boundingBox())!;
 		await page.mouse.move(bounds.x + 70, bounds.y + 30);
 		await page.mouse.down();
@@ -147,8 +149,11 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await expect(sheet).toBeEmpty();
 		}
 		const lead = (await preview.locator('[data-issue-cohort-front]').boundingBox())!;
-		expect(lead.width).toBeCloseTo(face.width, 1);
-		expect(lead.height).toBeCloseTo(face.height, 1);
+		expect(lead.width).toBeCloseTo(resting.width, 1);
+		expect(lead.height).toBeCloseTo(resting.height, 1);
+		const leadFace = (await preview.locator('[data-issue-cohort-front] [data-slot="jira-issue-surface"]').boundingBox())!;
+		expect(leadFace.width).toBeCloseTo(resting.width, 1);
+		expect(leadFace.height).toBeCloseTo(resting.height, 1);
 		await expect(preview.locator('[data-slot="badge"]')).toHaveText("3");
 		await page.keyboard.press("Escape");
 		await page.mouse.up();

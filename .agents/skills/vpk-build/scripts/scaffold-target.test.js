@@ -37,6 +37,7 @@ async function renderGeneratedLayout(layout) {
 			case "@/components/utils/theme-wrapper": return { ThemeWrapper: ({ children }) => children };
 			case "@/lib/utils": return { cn: (...classes) => classes.filter(Boolean).join(" ") };
 			case "./feature-flags-shim-client": return { FeatureFlagsShim: () => null };
+			case "motion/react": return { MotionConfig: ({ children }) => children };
 			default: return require(specifier);
 		}
 	};
@@ -51,7 +52,7 @@ async function renderGeneratedLayout(layout) {
 	}
 }
 
-function createFixture() {
+function createFixture({ includeMotion = false, extraPackages = {}, sourceLock = null } = {}) {
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-build-scaffold-"));
 	const repoRoot = path.join(tempDir, "repo");
 	const targetDir = path.join(tempDir, "output");
@@ -108,6 +109,7 @@ export default function AwakePage() {
 		for (const skill of ["vpk-setup", "vpk-deploy"]) {
 			writeFile(path.join(repoRoot, ".agents", "skills", skill, "SKILL.md"), `name: ${skill}\n`);
 		}
+		if (sourceLock) writeFile(path.join(repoRoot, "pnpm-lock.yaml"), sourceLock);
 		writeFile(
 			planPath,
 			JSON.stringify(
@@ -125,6 +127,8 @@ export default function AwakePage() {
 					npmPackages: {
 						next: "16.2.4",
 						react: "19.2.5",
+						...(includeMotion ? { motion: "^13.1.1" } : {}),
+						...extraPackages,
 					},
 					contextFiles: [],
 				},
@@ -197,12 +201,20 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 			"utf8",
 		);
 		const nextConfig = fs.readFileSync(path.join(fixture.targetDir, "next.config.ts"), "utf8");
+		const targetPackage = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "package.json"), "utf8"));
+		const generatedTsconfig = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "tsconfig.json"), "utf8"));
 
 		assert.match(
 			page,
-			/import AwakeDemo from "@\/components\/website\/demos\/arts\/awake-demo";/,
+			/import \{ lazy, Suspense \} from "react";/,
 		);
-		assert.match(page, /return <AwakeDemo \/>;/);
+		assert.match(
+			page,
+			/const AwakeDemo = lazy\(\(\) => import\("@\/components\/website\/demos\/arts\/awake-demo"\)\);/,
+		);
+		assert.match(page, /return <Suspense><AwakeDemo \/><\/Suspense>;/);
+		assert.equal(targetPackage.scripts.build, "NEXT_OUTPUT=export next build --webpack");
+		assert.ok(generatedTsconfig.exclude.includes("out"));
 
 		assert.ok(
 			layout.includes('import "./feature-flags-shim";'),
@@ -218,6 +230,10 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(layout, /const geist = Geist\(\{ subsets: \["latin"\], variable: "--font-sans" \}\);/);
 		assert.match(layout, /src: "\.\.\/public\/fonts\/ark-es\/ARK-ES-SolidLight\.woff"/);
 		const renderedLayout = await renderGeneratedLayout(layout);
+		assert.match(layout, /<ThemeWrapper>[\s\S]*<main id="main-content">/);
+		assert.match(layout, /<\/main>[\s\S]*<\/ThemeWrapper>/);
+		assert.doesNotMatch(layout, /MotionConfig/);
+		assert.match(renderedLayout, /<main id="main-content">/);
 		assert.match(renderedLayout, /<html[^>]*data-color-mode="light"/);
 		assert.match(renderedLayout, /<style data-theme="light">/);
 		assert.match(renderedLayout, /<style data-theme="dark">/);
@@ -627,6 +643,66 @@ test("scaffold-target resolves catalog versions, copies npmrc, and adds host pee
 	}
 });
 
+test("scaffold-target pins extracted direct dependencies to source lockfile versions", () => {
+	const fixture = createFixture({
+		includeMotion: true,
+		extraPackages: { express: "^5.2.1" },
+		sourceLock: [
+			"lockfileVersion: '9.0'",
+			"importers:",
+			"  .:",
+			"    dependencies:",
+			"      motion:",
+			"        specifier: ^13.1.1",
+			"        version: 13.1.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)",
+			"  backend:",
+			"    dependencies:",
+			"      express:",
+			"        specifier: ^5.2.1",
+			"        version: 5.2.0",
+			"packages:",
+		].join("\n"),
+	});
+
+	try {
+		execFileSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir], {
+			encoding: "utf8",
+			env: GIT_TEST_ENV,
+			stdio: "pipe",
+		});
+
+		const targetPackage = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "package.json"), "utf8"));
+		assert.equal(targetPackage.dependencies.motion, "13.1.1");
+		assert.equal(targetPackage.dependencies.express, "5.2.0");
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+test("scaffold-target wraps motion routes in the source reduced-motion provider", async () => {
+	const fixture = createFixture({ includeMotion: true });
+
+	try {
+		execFileSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir], {
+			encoding: "utf8",
+			env: GIT_TEST_ENV,
+			stdio: "pipe",
+		});
+
+		const layout = fs.readFileSync(path.join(fixture.targetDir, "app", "layout.tsx"), "utf8");
+		const renderedLayout = await renderGeneratedLayout(layout);
+		const motionConfig = layout.indexOf("<MotionConfig reducedMotion=\"user\">");
+		const themeWrapper = layout.indexOf("<ThemeWrapper>");
+		const main = layout.indexOf("<main id=\"main-content\">");
+
+		assert.match(layout, /import \{ MotionConfig \} from "motion\/react";/);
+		assert.ok(motionConfig >= 0 && motionConfig < themeWrapper && themeWrapper < main);
+		assert.match(renderedLayout, /<main id="main-content">/);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
 test("scaffold-target copies local CSS and never strips shadcn", () => {
 	const fixture = createContractFixture();
 
@@ -710,6 +786,7 @@ test("backend-backed scaffold preserves source backend and generates proxy/deplo
 		assert.equal(targetPackage.dependencies["ansi-to-react"], undefined);
 		assert.equal(targetPackage.scripts.dev, "node scripts/dev-backend-backed.mjs");
 		assert.equal(targetPackage.scripts.start, "node backend/extracted-server.js");
+		assert.equal(targetPackage.scripts.build, "next build --webpack");
 		assert.equal(targetPackage.packageManager, "pnpm@11.25.0");
 		assert.equal(targetPackage.scripts["build:export"], "node scripts/build-static-export.mjs");
 		assert.equal(targetPackage.scripts["deploy:micros"], "./scripts/dev-deploy-fast.sh");

@@ -209,3 +209,66 @@ test("overflow masks refresh after style-only animation changes and cancel queue
 		Object.assign(globalThis, originals);
 	}
 });
+
+test("child-list bursts re-resolve the observed boxes once, in the measurement frame", async () => {
+	const { subscribeToVerticalOverflow } = await loadOverflowHarness();
+	const originals = {
+		window: globalThis.window,
+		ResizeObserver: globalThis.ResizeObserver,
+		MutationObserver: globalThis.MutationObserver,
+	};
+	const frames = new Map();
+	let nextFrame = 0;
+	let styleReads = 0;
+	const observed = new Set();
+	let onMutations;
+	globalThis.window = {
+		getComputedStyle: () => {
+			styleReads += 1;
+			return { display: "block" };
+		},
+		requestAnimationFrame(callback) { frames.set(++nextFrame, callback); return nextFrame; },
+		cancelAnimationFrame(id) { frames.delete(id); },
+	};
+	globalThis.ResizeObserver = class {
+		observe(target) { observed.add(target); }
+		unobserve(target) { observed.delete(target); }
+		disconnect() { observed.clear(); }
+	};
+	globalThis.MutationObserver = class {
+		constructor(callback) { onMutations = callback; }
+		observe() {}
+		disconnect() {}
+	};
+	const element = {
+		children: [{ children: [] }],
+		clientHeight: 80,
+		scrollHeight: 160,
+		scrollTop: 0,
+		addEventListener() {},
+		removeEventListener() {},
+	};
+	let measurements = 0;
+	let stop;
+	try {
+		stop = subscribeToVerticalOverflow(element, () => { measurements += 1; });
+		const settled = styleReads;
+		// A drop commits cards into the list in bursts.
+		const arrived = { children: [] };
+		element.children.push(arrived);
+		for (let burst = 0; burst < 3; burst += 1) onMutations([{ type: "childList" }]);
+		// Regression: each burst re-read every child's computed style at once,
+		// forcing a style pass right after the commit.
+		assert.equal(styleReads, settled, "no style reads while the commit is still settling");
+		for (const [id, callback] of frames) {
+			frames.delete(id);
+			callback();
+		}
+		assert.equal(styleReads, settled + element.children.length, "one pass over the children, in the frame");
+		assert.equal(observed.has(arrived), true, "the arrived child is observed");
+		assert.equal(measurements, 1);
+	} finally {
+		stop?.();
+		Object.assign(globalThis, originals);
+	}
+});

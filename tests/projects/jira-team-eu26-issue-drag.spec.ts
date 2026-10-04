@@ -281,6 +281,39 @@ async function startDrag(page: Page, code: string) {
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`only the self-loop header shows a dashed outline and blue hover highlight (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(`${origin}/jira-team-eu26`);
+		await startDrag(page, "PAY-118");
+		const header = column(page, "To do").locator('[data-slot="board-column-header"]');
+		const feedback = header.locator('[data-board-column-title-drop-feedback]');
+		await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(1);
+		await expect(feedback).toBeVisible();
+		await expect(feedback).toHaveCSS("border-style", "dashed");
+		await expect(feedback).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+		for (const title of ["In review", "Done"]) {
+			await expect(column(page, title).locator('[data-board-column-title-drop-feedback]')).toHaveCount(0);
+		}
+		if (reducedMotion === "reduce") {
+			const duration = await feedback.evaluate((node) => Number.parseFloat(getComputedStyle(node).transitionDuration));
+			expect(duration).toBeLessThan(0.001);
+		}
+
+		const box = await header.boundingBox();
+		if (!box) throw new Error("Missing self-loop header");
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
+		await expect(feedback).toHaveCSS("border-style", "dashed");
+		await expect(feedback).toHaveClass(/\bborder-border-selected\b/);
+		await expect(feedback).toHaveClass(/\bbg-bg-selected\b/);
+		await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(1);
+		await page.screenshot({ path: `output/agent-browser/dnd/self-loop-header-${reducedMotion}.png` });
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await expect(page.locator('[data-board-column-title-drop-feedback]')).toHaveCount(0);
+	});
+
 	test(`a whole-column target clears another column's insertion even without dragleave (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(`${origin}/jira-team-eu26-end`);
@@ -339,6 +372,10 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			const headerBox = await header.boundingBox();
 			const content = await destination.locator('[data-jira-kanban-column-content]').boundingBox();
 			if (!box || !headerBox || !content) throw new Error("Missing column geometry");
+			const feedback = header.locator('[data-board-column-title-drop-feedback]');
+			if (surface === "header") {
+				await expect(feedback).toHaveCount(0);
+			}
 			const x = box.x + box.width / 2;
 			const y = surface === "header" ? headerBox.y + headerBox.height / 2 : Math.min(box.y + box.height - 50, content.y + content.height + 60);
 			if (surface === "unused space") expect(y).toBeGreaterThan(content.y + content.height);
@@ -351,16 +388,20 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await expect(destination.locator('[data-issue-drop-before]')).toHaveCount(0);
 			if (surface === "header") {
 				await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
-				const feedback = header.locator('[data-board-column-title-drop-feedback]');
 				await expect(feedback).toBeVisible();
+				await expect(feedback).not.toHaveCSS("border-style", "dashed");
 				await expect(feedback).toHaveClass(/\bbg-bg-neutral-subtle-hovered\b/);
+				await expect(feedback).not.toHaveClass(/(?:^|\s)bg-bg-selected(?:\s|$)/);
 				const feedbackBox = (await feedback.boundingBox())!;
 				const createBox = (await destination.locator('[data-board-column-create-action] button').boundingBox())!;
 				expect(feedbackBox.x).toBeCloseTo(createBox.x);
 				expect(feedbackBox.x + feedbackBox.width).toBeCloseTo(createBox.x + createBox.width);
 				const inset = createBox.x - headerBox.x;
 				expect(feedbackBox.y - headerBox.y).toBeCloseTo(inset);
-				expect(headerBox.y + headerBox.height - feedbackBox.y - feedbackBox.height).toBeCloseTo(inset);
+				// The balanced header pads 8px above its title row and 4px below, so the pill
+				// centres on the row: the same inset separates it from the first card.
+				const firstCard = (await destination.locator('[data-board-agent-session-drop-zone="issue"]').first().boundingBox())!;
+				expect(firstCard.y - feedbackBox.y - feedbackBox.height).toBeCloseTo(inset);
 				expect(feedbackBox.height).toBeGreaterThanOrEqual(32);
 				await expect.poll(async () => {
 					const labelBox = (await header.locator('[data-board-column-header-copy-layer="label"]').first().boundingBox())!;
