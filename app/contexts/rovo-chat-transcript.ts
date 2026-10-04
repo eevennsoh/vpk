@@ -37,7 +37,7 @@ export interface RovoLocalTurn {
 	userMessage?: RovoUIMessage;
 }
 
-interface TranscriptOwner {
+export interface RovoChatTranscriptOwner {
 	begin: (kind: RovoChatTransitionKind) => { token: RovoChatTransitionToken; signal: AbortSignal };
 	isCurrent: (token: RovoChatTransitionToken) => boolean;
 	finish: (token: RovoChatTransitionToken) => void;
@@ -78,13 +78,12 @@ function waitForThreadCreation(pending: Promise<string>, signal: AbortSignal): P
 }
 
 /** Uses the provider's transition owner so resets and network turns supersede local work. */
-export function createRovoChatTranscript(initialOwner?: TranscriptOwner) {
+export function createRovoChatTranscript(initialOwner: RovoChatTranscriptOwner) {
 	let configuredOwner = initialOwner;
 	return {
-		configure(owner: TranscriptOwner) { configuredOwner = owner; },
+		configure(owner: RovoChatTranscriptOwner) { configuredOwner = owner; },
 		async activateSession(snapshot: RovoSessionSnapshot): Promise<boolean> {
 			const owner = configuredOwner;
-			if (!owner) return false;
 			const { token, signal } = owner.begin("activate-session");
 			try {
 				await owner.stop();
@@ -102,7 +101,6 @@ export function createRovoChatTranscript(initialOwner?: TranscriptOwner) {
 		},
 		async applyLocalTurn(turn: RovoLocalTurn): Promise<boolean> {
 			const owner = configuredOwner;
-			if (!owner) return false;
 			const { token, signal } = owner.begin("apply-local-turn");
 			const turnSignal = turn.signal ? AbortSignal.any([signal, turn.signal]) : signal;
 			const active = () => !turnSignal.aborted && owner.isCurrent(token);

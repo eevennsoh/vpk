@@ -30,14 +30,42 @@ const mocks = {
 		export async function listRovoAppThreads() { return []; }
 		export async function updateRovoAppThread(id, patch) { return { id, ...patch }; }
 	`,
+	"@/components/projects/sidebar-chat/page": `
+		import { useEffect } from "react";
+		import { useRovoChat } from "@/app/contexts/context-rovo-chat";
+		import { useChatSubmit } from "@/components/projects/sidebar-chat/hooks/use-chat-submit";
+		export default function ChatPanel({ chatHistory }) {
+			const { selectedAgent, uiMessages } = useRovoChat();
+			const { abort } = useChatSubmit();
+			useEffect(() => () => abort(), [abort]);
+			return <>
+				<output data-agent>{selectedAgent.id}</output>
+				<output data-history-session>{chatHistory.activeThreadId ?? "none"}</output>
+				<output data-messages>{uiMessages.flatMap(message => message.parts.filter(part => part.type === "text").map(part => part.text)).join("|")}</output>
+				<button onClick={chatHistory.onNewChat}>New chat</button>
+				<button onClick={() => void chatHistory.selectThread(chatHistory.threads[0].id)}>Select history session</button>
+				{chatHistory.getThreadActions(chatHistory.threads[0])}
+			</>;
+		}
+	`,
+	"@/components/blocks/product-sidebar/variants/jira": `
+		export function JiraSessionDescription() { return null; }
+		export function JiraSessionLabel() { return null; }
+		export function JiraSessionLifecycle() { return null; }
+		export function JiraSessionRowActions({ onTogglePin }) {
+			return <button onClick={onTogglePin}>Toggle pin</button>;
+		}
+	`,
 };
 
 async function loadHarness() {
 	const result = await esbuild.build({
 		stdin: {
 			contents: `
-				import { useRef } from "react";
+				import { useEffect, useRef, useState } from "react";
 				import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
+				import { RovoStage } from "@/components/projects/jira-golden-journeys-v1/components/rovo-stage";
+				import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 				function Controls() {
 					const { sendPrompt, applyLocalTurn, activeThreadId, queueCount } = useRovoChat();
 					const controller = useRef(null);
@@ -53,6 +81,42 @@ async function loadHarness() {
 					</>;
 				}
 				export function Harness() { return <RovoChatProvider><Controls /></RovoChatProvider>; }
+				function ColdMountControls({ operation }) {
+					const { activateSession, applyLocalTurn, activeThreadId, uiMessages } = useRovoChat();
+					useEffect(() => {
+						const pending = operation === "activateSession"
+							? activateSession({
+								threadId: "cold-mount-session",
+								messages: [{ id: "restored-assistant", role: "assistant", parts: [{ type: "text", text: "Restored on mount" }] }],
+							})
+							: applyLocalTurn({ promptText: "Local on mount", assistantParts: [{ type: "text", text: "Local reply" }] });
+						void pending.then(result => window.dispatchEvent(new CustomEvent("test-mount-turn-finished", { detail: result })));
+					}, [activateSession, applyLocalTurn, operation]);
+					return <>
+						<output data-active-thread>{activeThreadId ?? "none"}</output>
+						<output data-messages>{uiMessages.flatMap(message => message.parts.filter(part => part.type === "text").map(part => part.text)).join("|")}</output>
+					</>;
+				}
+				export function ColdMountHarness({ operation }) {
+					return <RovoChatProvider><ColdMountControls operation={operation} /></RovoChatProvider>;
+				}
+				function ResetOnEntry({ shown }) {
+					const { resetAgentToRovo, resetChat } = useRovoChat();
+					useEffect(() => {
+						if (!shown) return;
+						resetAgentToRovo();
+						resetChat();
+					}, [shown, resetAgentToRovo, resetChat]);
+					return null;
+				}
+				export function JiraRovoHarness({ initial }) {
+					const [shown, setShown] = useState(initial);
+					return <RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+						<ResetOnEntry shown={shown} />
+						<button onClick={() => setShown(true)}>Enter Rovo</button>
+						{shown ? <RovoStage /> : null}
+					</RovoChatProvider>;
+				}
 			`,
 			loader: "tsx", resolveDir: process.cwd(), sourcefile: "rovo-chat-lifecycle-harness.tsx",
 		},
@@ -64,6 +128,75 @@ async function loadHarness() {
 		} }],
 	});
 	return loadCjsModuleFromText(result.outputFiles[0].text);
+}
+
+test("Jira Rovo initialization survives chat cleanup replay and preserves successful history choices", async () => {
+	const { JiraRovoHarness } = await loadHarness();
+	for (const initial of [false, true]) {
+		const container = document.createElement("div");
+		document.body.append(container);
+		const root = createRoot(container);
+		const button = (name) => Array.from(container.querySelectorAll("button")).find((element) => element.textContent === name);
+		const text = (selector) => container.querySelector(selector).textContent;
+		try {
+			await React.act(async () => root.render(React.createElement(React.StrictMode, null, React.createElement(JiraRovoHarness, { initial }))));
+			if (!initial) await React.act(async () => button("Enter Rovo").click());
+			assert.equal(text("[data-agent]"), "cursor");
+			assert.equal(text("[data-history-session]"), "jgp-251-persistence-question");
+			const restored = text("[data-messages]");
+			assert.equal(restored.includes("Implement saved assignee focus for this board."), true);
+			await React.act(async () => button("Toggle pin").click());
+			assert.equal(text("[data-messages]"), restored);
+			await React.act(async () => button("New chat").click());
+			await React.act(async () => button("Toggle pin").click());
+			assert.equal(text("[data-history-session]"), "none");
+			assert.equal(text("[data-messages]"), "");
+			await React.act(async () => button("Select history session").click());
+			await React.act(async () => button("Toggle pin").click());
+			assert.equal(text("[data-history-session]"), "jgp-251-persistence-question");
+			assert.equal(text("[data-messages]"), restored);
+		} finally {
+			await React.act(async () => root.unmount());
+			container.remove();
+		}
+	}
+});
+
+for (const operation of ["activateSession", "applyLocalTurn"]) {
+	test(`${operation} from a descendant cold-mount effect applies the transcript through StrictMode replay`, async () => {
+		const { ColdMountHarness } = await loadHarness();
+		for (const strict of [false, true]) {
+			const finished = [];
+			const created = [];
+			const observe = (event) => finished.push(event.detail);
+			window.addEventListener("test-mount-turn-finished", observe);
+			window.testThreadCreation = async (thread) => { created.push(thread); return thread; };
+			const container = document.createElement("div");
+			document.body.append(container);
+			const root = createRoot(container);
+			try {
+				await React.act(async () => {
+					const harness = React.createElement(ColdMountHarness, { operation });
+					root.render(strict ? React.createElement(React.StrictMode, null, harness) : harness);
+				});
+				assert.deepEqual(finished, strict ? [false, true] : [true]);
+				if (operation === "activateSession") {
+					assert.equal(container.querySelector("[data-active-thread]").textContent, "cold-mount-session");
+					assert.equal(container.querySelector("[data-messages]").textContent, "Restored on mount");
+					assert.equal(created.length, 0);
+				} else {
+					assert.equal(created.length, 1);
+					assert.equal(container.querySelector("[data-active-thread]").textContent, created[0].id);
+					assert.equal(container.querySelector("[data-messages]").textContent, "Local on mount|Local reply");
+				}
+			} finally {
+				await React.act(async () => root.unmount());
+				container.remove();
+				window.removeEventListener("test-mount-turn-finished", observe);
+				delete window.testThreadCreation;
+			}
+		}
+	});
 }
 
 test("root StrictMode replay leaves the mounted provider able to dispatch a queued prompt", async () => {

@@ -1944,7 +1944,7 @@
   },
   "components/projects/jira-golden-journeys-v1/queue-stage.test.js": {
     "no-restricted-syntax": {
-      "count": 208
+      "count": 206
     }
   },
   "components/projects/jira-golden-journeys-v1/session-gallery.test.js": {

@@ -271,18 +271,20 @@ export function RovoStage(): React.ReactElement {
 	const handleBackToRovo = useCallback(() => {
 		setActiveHistorySessionId(null);
 	}, []);
+	const initializedSessionIdRef = useRef<string | null>(null);
 	const handleSelectThread = useCallback(async (threadId: string) => {
 		const session = historySessions.find((item) => item.id === threadId);
 		const thread = historyThreads.find((item) => item.id === threadId);
 		if (!session || !thread) return Promise.resolve();
 
 		const activated = await activateSession({ agentId: session.agentId, threadId: null, messages: thread.messages });
-		if (activated) setActiveHistorySessionId(threadId);
-	}, [activateSession, historySessions, historyThreads]);
-	const initializedSessionIdRef = useRef<string | null>(null);
+		if (activated) {
+			initializedSessionIdRef.current = initialSessionId;
+			setActiveHistorySessionId(threadId);
+		}
+	}, [activateSession, historySessions, historyThreads, initialSessionId]);
 	useEffect(() => {
 		if (initializedSessionIdRef.current === initialSessionId) return;
-		initializedSessionIdRef.current = initialSessionId;
 		void handleSelectThread(initialSessionId);
 	}, [handleSelectThread, initialSessionId]);
 	const handleDeleteThread = useCallback((threadId: string) => {

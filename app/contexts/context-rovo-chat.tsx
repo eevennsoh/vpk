@@ -1,7 +1,7 @@
 "use client";
 
 import { useLazyRef } from "@/lib/use-lazy-ref";
-import { createRovoChatTranscript, type RovoSessionSnapshot, type RovoLocalTurn } from "@/app/contexts/rovo-chat-transcript";
+import { createRovoChatTranscript, type RovoChatTranscriptOwner, type RovoSessionSnapshot, type RovoLocalTurn } from "@/app/contexts/rovo-chat-transcript";
 import { type RovoChatTransitionKind } from "@/app/contexts/rovo-chat-transition-coordinator";
 import { useLatestRef } from "@/lib/use-latest-ref";
 import {
@@ -9,6 +9,7 @@ import {
 	use,
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -254,6 +255,12 @@ interface RovoChatProviderProps {
 	children: ReactNode;
 	defaultPromptOptions?: SendPromptOptions;
 	portIndex?: number;
+}
+
+function useRovoChatTranscript(owner: RovoChatTranscriptOwner) {
+	const [transcript] = useState(() => createRovoChatTranscript(owner));
+	useLayoutEffect(() => transcript.configure(owner), [transcript, owner]);
+	return transcript;
 }
 
 export function RovoChatProvider({
@@ -2177,8 +2184,7 @@ export function RovoChatProvider({
 	}, [resetChat, setSelectedAgentIdState]);
 
 	const rawUiMessagesRef = useLatestRef(rawUiMessages);
-	const [transcript] = useState(() => createRovoChatTranscript());
-	useEffect(() => transcript.configure({
+	const transcriptOwner = useMemo<RovoChatTranscriptOwner>(() => ({
 		begin: (kind) => {
 			const token = beginTransition(kind);
 			const controller = new AbortController();
@@ -2210,7 +2216,8 @@ export function RovoChatProvider({
 			setMessages(sanitized);
 		},
 		selectAgent: (agentId) => selectAgent(agentId, { preserveCurrentThread: true }),
-	}), [beginTransition, isCurrentTransition, finishTransition, queueTick, cancelCurrentStream, ensureThreadForLocalTurn, rawUiMessagesRef, resetTranscriptPending, setMessages, selectAgent, transcript]);
+	}), [beginTransition, isCurrentTransition, finishTransition, queueTick, cancelCurrentStream, ensureThreadForLocalTurn, rawUiMessagesRef, resetTranscriptPending, setMessages, selectAgent]);
+	const transcript = useRovoChatTranscript(transcriptOwner);
 	const { activateSession, applyLocalTurn } = transcript;
 
 	const queueCount = queuedPrompts.length;
