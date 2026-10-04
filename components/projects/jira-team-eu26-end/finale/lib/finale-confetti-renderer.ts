@@ -23,6 +23,7 @@ import {
 	FINALE_CONFETTI_FOV,
 	FINALE_CONFETTI_MOTION_GLSL,
 	FINALE_CONFETTI_TIMING,
+	SMALL_CONFETTI_TIMING,
 	createFinaleConfettiBurst,
 	finaleConfettiCameraDistance,
 	finaleConfettiCharge,
@@ -490,8 +491,8 @@ export class FinaleConfettiRenderer {
 		this.uniforms.uCamera.value.set(width / 2, height / 2, distance);
 		const L = FINALE_CONFETTI_LOOK;
 		this.uniforms.uFocus.value.set(distance * L.focus, L.focusGain, distance * L.farFocus, L.farFocusGain);
-		this.playGlow(width, height, column);
-		const burst = createFinaleConfettiBurst({ width, height, column });
+		if (options.size !== "small") this.playGlow(width, height, column);
+		const burst = createFinaleConfettiBurst(options);
 		const geometry = new THREE.InstancedBufferGeometry();
 		geometry.index = this.strip.index;
 		geometry.setAttribute("position", this.strip.getAttribute("position"));
@@ -501,7 +502,8 @@ export class FinaleConfettiRenderer {
 		geometry.instanceCount = burst.pieces.length;
 		this.pieces.geometry.dispose();
 		this.pieces.geometry = geometry;
-		for (const mesh of [this.glow, this.pieces]) mesh.visible = true;
+		this.pieces.visible = true;
+		this.glow.visible = options.size !== "small";
 		this.burst = burst;
 		return burst;
 	}
@@ -542,6 +544,10 @@ export class FinaleConfettiRenderer {
 		if (!this.burst) return;
 		this.uniforms.uTime.value = time;
 		this.uniforms.uRelease.value = release;
+		if (this.burst.stage.size === "small") {
+			this.renderer.render(this.scene, this.camera);
+			return;
+		}
 		// The border pulses in as the vortex opens, is traced steadily down the column
 		// through the pull, burns stronger on the foot as the pieces land, and blooms into the flash as it goes.
 		const g = this.glowUniforms;
@@ -594,6 +600,7 @@ export type FinaleConfettiEvent =
 
 interface PlayerShow {
 	readonly id: number;
+	readonly size: NonNullable<FinaleConfettiStage["size"]>;
 	/** Set on the first delivered frame, so first-draw costs never eat into the launch. */
 	startedAt: number | null;
 	releasedAt: number | null;
@@ -642,13 +649,15 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 		if (!show || !renderer) return;
 		const at = now();
 		show.startedAt ??= at;
-		// The show's own clock: real time through its pace (bullet time, then the rush).
-		const time = show.held ?? finaleConfettiShowTime((at - show.startedAt) / 1000);
-		if (!show.gathered && time >= FINALE_CONFETTI_TIMING.gathered) {
+		const elapsed = (at - show.startedAt) / 1000;
+		const time = show.held ?? (show.size === "small" ? elapsed : finaleConfettiShowTime(elapsed));
+		if (show.size === "large" && !show.gathered && time >= FINALE_CONFETTI_TIMING.gathered) {
 			show.gathered = true;
 			emit({ type: "gathered", id: show.id });
 		}
-		const release = show.releasedAt === null ? 0 : Math.min(1, (at - show.releasedAt) / 1000 / FINALE_CONFETTI_TIMING.release);
+		const requestedRelease = show.releasedAt === null ? 0 : Math.min(1, (at - show.releasedAt) / 1000 / FINALE_CONFETTI_TIMING.release);
+		const fade = show.size === "small" ? Math.max(0, Math.min(1, (time - SMALL_CONFETTI_TIMING.fadeStart) / SMALL_CONFETTI_TIMING.fade)) : 0;
+		const release = Math.max(requestedRelease, fade);
 		renderer.render(time, release);
 		if (release >= 1) finish();
 		else frame = schedule(tick);
@@ -689,7 +698,7 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 					// Draw frame 0 (every piece still below the viewport) to size the
 					// canvas and upload the burst; the clock starts on the next frame.
 					renderer.render(0, 0);
-					show = { id: command.id, startedAt: null, releasedAt: null, held: null, gathered: false };
+					show = { id: command.id, size: command.size ?? "large", startedAt: null, releasedAt: null, held: null, gathered: false };
 					frame = schedule(tick);
 					return;
 				}
@@ -697,7 +706,7 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 				if (command.type === "cancel") finish();
 				else if (command.type === "release") show.releasedAt ??= now();
 				else if (command.type === "hold") {
-					if (command.time === null && show.held !== null) show.startedAt = now() - finaleConfettiRealTime(show.held) * 1000;
+					if (command.time === null && show.held !== null) show.startedAt = now() - (show.size === "small" ? show.held : finaleConfettiRealTime(show.held)) * 1000;
 					show.held = command.time;
 					// Render now: a hidden page may never deliver the pending frame.
 					if (frame !== null) unschedule(frame);

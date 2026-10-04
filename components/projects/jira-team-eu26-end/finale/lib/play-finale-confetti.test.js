@@ -15,7 +15,7 @@ async function build(contents, plugins = []) {
 
 let player;
 async function loadPlayer() {
-	player ??= await build('export { createFinaleConfettiPlayer, FINALE_CONFETTI_LOOK, finaleConfettiGlowMask, finaleConfettiGlowMaskAt, FINALE_CONFETTI_GLOW_FRAGMENT } from "./finale-confetti-renderer"; export { FINALE_CONFETTI_TIMING, finaleConfettiRealTime, finaleConfettiShowTime } from "./finale-confetti"; export { TILE_GLOW_FRAGMENT, tileGlowShape } from "./finale-tile-glow"; export { FLASH_COLOR_GLSL } from "./finale-column-flash"; export { finaleConfettiFootHue } from "./finale-confetti-renderer";');
+	player ??= await build('export { createFinaleConfettiPlayer, FINALE_CONFETTI_LOOK, finaleConfettiGlowMask, finaleConfettiGlowMaskAt, FINALE_CONFETTI_GLOW_FRAGMENT } from "./finale-confetti-renderer"; export { FINALE_CONFETTI_TIMING, SMALL_CONFETTI_TIMING, finaleConfettiRealTime, finaleConfettiShowTime } from "./finale-confetti"; export { TILE_GLOW_FRAGMENT, tileGlowShape } from "./finale-tile-glow"; export { FLASH_COLOR_GLSL } from "./finale-column-flash"; export { finaleConfettiFootHue } from "./finale-confetti-renderer";');
 	return player;
 }
 
@@ -108,6 +108,53 @@ test("the player opens on frame 0 and starts its clock on the first delivered fr
 	assert.deepEqual(renderer.calls.slice(-2), [["render", renderer.calls.at(-2)[1], 1], ["clear"]]);
 	assert.deepEqual(events.at(-1), { type: "done", id: 1 }, "done once the canvas is transparent again");
 	assert.equal(frames.queue.filter(Boolean).length, 0, "and the loop stops");
+});
+
+test("single-card bursts run at normal speed and fade out without gathering or a release command", async (t) => {
+	const { createFinaleConfettiPlayer, SMALL_CONFETTI_TIMING: T } = await loadPlayer();
+	const frames = fakeFrames();
+	t.after(frames.install());
+	let clock = 80;
+	const events = [];
+	const renderer = fakeRenderer();
+	const show = createFinaleConfettiPlayer((event) => events.push(event), { now: () => clock, createRenderer: renderer.create });
+	show.handle({ type: "init", canvas: {} });
+	show.handle({ type: "play", id: 2, size: "small", width: 1440, height: 900, dpr: 2, column: COLUMN });
+	frames.step();
+	for (const time of [0.4, 0.7, 1.1]) {
+		clock = 80 + time * 1000;
+		frames.step();
+		assert.deepEqual(renderer.calls.at(-1), ["render", time, 0], "no bullet-time clock in the burst");
+		assert.deepEqual(events, [], "no gathered event");
+	}
+	clock = 80 + (T.fadeStart + T.fade / 2) * 1000;
+	frames.step();
+	assert.ok(Math.abs(renderer.calls.at(-1)[2] - 0.5) < 1e-9, "the paper fades while still in flight");
+	clock = 80 + (T.fadeStart + T.fade) * 1000;
+	frames.step();
+	assert.deepEqual(events, [{ type: "done", id: 2 }]);
+	assert.deepEqual(renderer.calls.at(-1), ["clear"]);
+	assert.equal(frames.queue.filter(Boolean).length, 0, "the burst stops itself");
+});
+
+test("a held single-card burst resumes at normal speed", async (t) => {
+	const { createFinaleConfettiPlayer } = await loadPlayer();
+	const frames = fakeFrames();
+	t.after(frames.install());
+	let clock = 0;
+	const renderer = fakeRenderer();
+	const show = createFinaleConfettiPlayer(() => {}, { now: () => clock, createRenderer: renderer.create });
+	show.handle({ type: "init", canvas: {} });
+	show.handle({ type: "play", id: 3, size: "small", width: 1440, height: 900, dpr: 2, column: COLUMN });
+	show.handle({ type: "hold", id: 3, time: 0.65 });
+	clock = 5000;
+	frames.step();
+	assert.deepEqual(renderer.calls.at(-1), ["render", 0.65, 0]);
+	show.handle({ type: "hold", id: 3, time: null });
+	clock += 100;
+	frames.step();
+	assert.deepEqual(renderer.calls.at(-1), ["render", 0.75, 0]);
+	show.handle({ type: "cancel", id: 3 });
 });
 
 test("rehearsal holds render at once, resume where they froze, and cancel clears", async (t) => {
@@ -314,6 +361,29 @@ const settled = async (promise) => {
 	return done;
 };
 
+test("small card celebrations share the renderer and yield to the full-board show", async (t) => {
+	const dom = fakeDom(t);
+	const { createFinaleConfetti } = await loadController();
+	const confetti = createFinaleConfetti();
+	const small = confetti.play(COLUMN, "small");
+	const [worker] = dom.workers;
+	const [layer] = dom.topLayer;
+	assert.equal(worker.messages.at(-1).message.size, "small");
+	assert.equal(layer.dataset.finaleConfettiSize, "small");
+	const smallId = worker.messages.at(-1).message.id;
+	worker.onmessage({ data: { type: "gathered", id: smallId } });
+	await small.gathered;
+	small.release();
+	assert.deepEqual(worker.messages.at(-1).message, { type: "release", id: smallId });
+	const large = confetti.play(COLUMN);
+	assert.equal(dom.workers.length, 1, "both sizes reuse one worker and canvas");
+	assert.equal(worker.messages.at(-1).message.size, "large");
+	assert.equal(layer.dataset.finaleConfettiSize, "large");
+	assert.ok(worker.messages.some(({ message }) => message.type === "cancel" && message.id === smallId));
+	large.cancel();
+	confetti.dispose();
+});
+
 test("a worker owns the canvas, parked in the top layer at the viewport's size, so a launch changes nothing on the page", async (t) => {
 	const dom = fakeDom(t);
 	const { createFinaleConfetti } = await loadController();
@@ -341,7 +411,7 @@ test("a worker owns the canvas, parked in the top layer at the viewport's size, 
 	assert.deepEqual(dom.commits, parked, "the launch neither inserts nor re-shows the layer");
 	assert.equal(layer.dataset.finaleConfetti, "playing");
 	const play = worker.messages.at(-1).message;
-	assert.deepEqual({ ...play, id: 0 }, { type: "play", id: 0, width: 1440, height: 900, dpr: 2, column: COLUMN }, "it drains onto the Done column's foot, at the parked size");
+	assert.deepEqual({ ...play, id: 0 }, { type: "play", id: 0, size: "large", width: 1440, height: 900, dpr: 2, column: COLUMN }, "it drains onto the Done column's foot, at the parked size");
 	worker.onmessage({ data: { type: "gathered", id: play.id + 1 } });
 	assert.equal(await settled(show.gathered), false, "another show's report is ignored");
 	worker.onmessage({ data: { type: "gathered", id: play.id } });
@@ -410,7 +480,7 @@ test("a failing worker hands the running show to the main thread; a second failu
 	const [main] = probe.players;
 	assert.ok(main, "the fallback starts at once, not on a later replay");
 	assert.equal(main.commands[0].type, "init");
-	assert.deepEqual({ ...main.commands.at(-1), column: null }, { type: "play", id, width: 1440, height: 900, dpr: 2, column: null }, "the same show restarts there");
+	assert.deepEqual({ ...main.commands.at(-1), column: null }, { type: "play", id, size: "large", width: 1440, height: 900, dpr: 2, column: null }, "the same show restarts there");
 	assert.equal(dom.topLayer.length, 1, "on its own top-layer canvas");
 	assert.equal(await settled(show.gathered), false, "and the finale still waits for its pieces");
 	main.emit({ type: "gathered", id });
@@ -464,4 +534,23 @@ test("a stalled renderer holds the flash for at most a short grace", async (t) =
 	t.mock.timers.tick(200);
 	await Promise.resolve();
 	assert.equal(released, true);
+});
+
+test("a stalled single-card burst clears itself, respecting rehearsal holds", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const dom = fakeDom(t);
+	const { createFinaleConfetti } = await loadController();
+	const confetti = createFinaleConfetti();
+	confetti.play(COLUMN, "small");
+	const [layer] = dom.topLayer;
+	confetti.hold(0.65);
+	t.mock.timers.tick(10000);
+	assert.equal(layer.dataset.finaleConfetti, "playing", "a deliberate hold is not a stalled burst");
+	confetti.hold(null);
+	t.mock.timers.tick(3200);
+	assert.equal(layer.dataset.finaleConfetti, "playing");
+	t.mock.timers.tick(200);
+	assert.equal(layer.dataset.finaleConfetti, "idle", "a missing done event cannot leave the canvas running");
+	assert.equal(dom.workers[0].messages.at(-1).message.type, "cancel");
+	confetti.dispose();
 });
