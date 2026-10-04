@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import type { RovoDataParts, RovoUIMessage } from "@/lib/rovo-ui-messages";
+import { getMessageText, type RovoDataParts, type RovoUIMessage } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
@@ -513,7 +513,7 @@ interface AutomationRunPlan {
 
 // Builds a staged playback for an inline automation test run. No backend is
 // involved — `handleRunAutomation` writes each frame into the conversation via
-// `replaceMessages`, reusing `assistantId` so the message updates in place. The
+// `applyLocalTurn`, reusing `assistantId` so the message updates in place. The
 // run replays realistically: a "Thought for Xs" chain whose tool calls appear
 // one at a time (receive the scheduled event → query Jira for lost/no-bid RFPs →
 // post the summary to Slack), then the human-friendly reply streams in. The
@@ -823,7 +823,7 @@ function AgentTestChatPanel({
 	automationRules: readonly AgentAutomationRule[];
 	testAgentProfile: RovoAgentProfile;
 }>): ReactElement {
-	const { selectedAgentId, selectAgent, replaceMessages } = useRovoChat();
+	const { selectedAgentId, selectAgent, applyLocalTurn } = useRovoChat();
 
 	// The greeting flows come from a read-only test fixture. We hold an editable
 	// local copy so the in-situ Edit dialog can commit changes; the whole panel
@@ -832,7 +832,8 @@ function AgentTestChatPanel({
 	const [rules, setRules] = useState<readonly AgentAutomationRule[]>(automationRules);
 	const [editingRule, setEditingRule] = useState<AgentAutomationRule | null>(null);
 	// Increments per run so a newer test run supersedes an in-flight frame loop.
-	const runTokenRef = useRef(0);
+	const runAbortRef = useRef<AbortController | null>(null);
+	useEffect(() => () => runAbortRef.current?.abort(), []);
 	// Id of the assistant message currently "thinking" — drives the live
 	// morphing-Rovo trace (expanded) while frames play; null settles it collapsed.
 	const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
@@ -848,31 +849,20 @@ function AgentTestChatPanel({
 		if (!plan) {
 			return;
 		}
-		// Supersede any in-flight run so a second click doesn't interleave frames.
-		const token = (runTokenRef.current += 1);
+		runAbortRef.current?.abort();
+		const controller = new AbortController();
+		runAbortRef.current = controller;
 		const { userMessage, assistantId, frames } = plan;
-		// Mark the turn as actively thinking → live morphing-Rovo trace (expanded).
-		setThinkingMessageId(assistantId);
-		try {
-			for (const frame of frames) {
-				if (frame.delayMs > 0) {
-					await new Promise((resolve) => window.setTimeout(resolve, frame.delayMs));
-				}
-				if (runTokenRef.current !== token) {
-					return;
-				}
-				replaceMessages([
-					userMessage,
-					{ id: assistantId, role: "assistant", parts: frame.parts },
-				]);
-			}
-		} finally {
-			// Settle the trace to collapsed once the run finishes — but only if a
-			// newer run hasn't taken over the thinking id.
-			if (runTokenRef.current === token) {
-				setThinkingMessageId(null);
-			}
-		}
+		await applyLocalTurn({
+			history: "replace",
+			promptText: getMessageText(userMessage),
+			userMessage,
+			assistantMessageId: assistantId,
+			assistantParts: frames[0]?.parts ?? [],
+			assistantPartStages: frames.map((frame) => ({ delayMs: frame.delayMs, getAssistantParts: () => frame.parts })),
+			signal: controller.signal,
+			onThinkingMessageChange: setThinkingMessageId,
+		});
 	}
 
 	function handleEditAutomation(rule: AgentAutomationRule): void {

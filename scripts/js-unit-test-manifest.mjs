@@ -14,8 +14,12 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
-		"components/ui-custom/prompt-input-attachments.behavior.test.js",
 		".agents/skills/vpk-build/scripts/extraction-dependencies.test.js",
+		"app/contexts/context-rovo-chat-lifecycle.behavior.test.js",
+		"components/ui-custom/prompt-input-attachments.behavior.test.js",
+		"components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge.test.js",
+		"app/contexts/rovo-chat-transcript.test.js",
+		"components/projects/studio/lib/studio-chat-helpers.test.js",
 		"components/blocks/skills-directory/skills-directory-view.behavior.test.js",
 		"components/website/demos/utils/lib/browser-control-dispatch.test.js",
 		"components/website/demos/utils/components/browser-preview-panel.behavior.test.js",
@@ -698,7 +702,6 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/rovo-core/hooks/use-rovo-app-use-chat-lifecycle-actions.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-user-message-actions.test.js",
 		"components/projects/rovo-core/lib/api-backend-unavailable.test.js",
-		"components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge.test.js",
 		"components/projects/rovo-core/lib/rovo-app-shell-layout.test.js",
 		"components/arts/awake/glass-slider.test.js",
 		"components/arts/awake/selected-weather-clock.test.js",

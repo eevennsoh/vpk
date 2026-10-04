@@ -1,28 +1,19 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
 import type { QueuedPromptItem } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
-import { createRovoAppUserMessage } from "@/components/projects/rovo-core/lib/rovo-app-user-message";
-import { createId } from "@/lib/utils";
-import { useLatestRef } from "@/lib/use-latest-ref";
+import type { RovoLocalAssistantStage, RovoLocalTurn } from "@/app/contexts/rovo-chat-transcript";
 import type { RovoMessageMetadata, RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { FileUIPart } from "ai";
-
-interface ChatSubmitInterceptStage {
-	delayMs: number;
-	getAssistantParts: (context: { startedAt: Date }) => RovoUIMessage["parts"];
-	onApply?: () => Promise<void> | void;
-	startsNewAssistantMessage?: boolean;
-}
 
 export interface ChatSubmitInterceptOutcome {
 	handled: boolean;
 	assistantReply?: string;
 	assistantParts?: RovoUIMessage["parts"];
 	getAssistantParts?: (context: { startedAt: Date }) => RovoUIMessage["parts"];
-	assistantPartStages?: readonly ChatSubmitInterceptStage[];
+	assistantPartStages?: readonly RovoLocalAssistantStage[];
 	delayMs?: number;
 	onApply?: () => Promise<void> | void;
 	/** Apply the intercepted action after the final assistant response is committed. */
@@ -84,12 +75,6 @@ interface UseChatSubmitOptions {
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 }
 
-function waitForInterceptDelay(ms: number): Promise<void> {
-	return new Promise((resolve) => {
-		window.setTimeout(resolve, ms);
-	});
-}
-
 const DEFAULT_REQUIRED_INTERCEPT_REPLY =
 	"I can only update the open agent from this edit context. Try asking me to add a trigger, update the instructions, or add an app or skill. Close the Edit context to chat normally.";
 
@@ -105,7 +90,7 @@ export function useChatSubmit({
 	const {
 		uiMessages,
 		sendPrompt,
-		replaceMessages,
+		applyLocalTurn,
 		stopStreaming,
 		isStreaming,
 		hasInFlightTurn,
@@ -114,128 +99,21 @@ export function useChatSubmit({
 		activePrompt,
 		queuedPrompts,
 		removeQueuedPrompt,
-		ensureThreadForLocalTurn,
 	} = useRovoChat();
 
-	// `uiMessages` mutates on every streamed token. Keep it in a ref so the
-	// interception closure can read the latest list without pulling it into the
-	// `useCallback` deps below — otherwise `submitPrompt`/`handleSubmit` would get
-	// a new identity per token for every (app-wide) ChatPanel consumer.
-	const uiMessagesRef = useLatestRef(uiMessages);
-	const isStreamingRef = useLatestRef(isStreaming);
-	const hasInFlightTurnRef = useLatestRef(hasInFlightTurn);
-
-	const injectLocalAssistantTurn = useCallback(
-		async ({
-			assistantParts,
-			assistantPartStages,
-			files,
-			getAssistantParts,
-			getPendingAssistantParts,
-			onApply,
-			onApplyAfterResponse,
-			pendingAssistantParts,
-			promptText,
-			delayMs,
-			userMetadata,
-		}: {
-			assistantParts: RovoUIMessage["parts"];
-			assistantPartStages?: readonly ChatSubmitInterceptStage[];
-			files: ReadonlyArray<FileUIPart>;
-			getAssistantParts?: (context: { startedAt: Date }) => RovoUIMessage["parts"];
-			getPendingAssistantParts?: (context: { startedAt: Date }) => RovoUIMessage["parts"];
-			onApply?: () => Promise<void> | void;
-			onApplyAfterResponse?: () => Promise<void> | void;
-			pendingAssistantParts?: RovoUIMessage["parts"];
-			promptText: string;
-			delayMs?: number;
-			userMetadata?: RovoMessageMetadata;
-		}) => {
-			setPrompt("");
-			// Abort any live turn before mutating the transcript — otherwise the
-			// stream keeps writing tokens over our injection and corrupts it.
-			if (isStreamingRef.current || hasInFlightTurnRef.current) {
-				await stopStreaming();
-			}
-			await ensureThreadForLocalTurn(promptText || files[0]?.filename || "New chat");
-
-			const baseMessages = uiMessagesRef.current;
-			const createdAt = new Date().toISOString();
-			const startedAt = new Date();
-			const userMessage = createRovoAppUserMessage({
-				id: createId("rovo-chat-user"),
-				createdAt,
-				files,
-				text: promptText,
-				metadata: userMetadata,
-			});
-			const firstAssistantMessageId = createId("rovo-chat-assistant");
-			const createAssistantMessage = (id: string, parts: RovoUIMessage["parts"]): RovoUIMessage => ({
-				id,
-				role: "assistant",
-				metadata: { origin: "rovo", createdAt, updatedAt: new Date().toISOString() },
-				parts,
-			});
-			const firstAssistantParts = getPendingAssistantParts?.({ startedAt }) ?? pendingAssistantParts ?? assistantParts;
-			let activeAssistantMessageId = firstAssistantMessageId;
-			let assistantMessages = [createAssistantMessage(firstAssistantMessageId, firstAssistantParts)];
-			replaceMessages([...baseMessages, userMessage, ...assistantMessages]);
-
-			try {
-				if (assistantPartStages && assistantPartStages.length > 0) {
-					setLocalThinkingAssistantMessageId(activeAssistantMessageId);
-					for (const stage of assistantPartStages) {
-						if (stage.delayMs > 0) {
-							await waitForInterceptDelay(stage.delayMs);
-						}
-						await stage.onApply?.();
-						const stagedAssistantParts = stage.getAssistantParts({ startedAt });
-						if (stage.startsNewAssistantMessage) {
-							activeAssistantMessageId = createId("rovo-chat-assistant");
-							setLocalThinkingAssistantMessageId(activeAssistantMessageId);
-							assistantMessages = [
-								...assistantMessages,
-								createAssistantMessage(activeAssistantMessageId, stagedAssistantParts),
-							];
-						} else {
-							assistantMessages = [
-								...assistantMessages.slice(0, -1),
-								createAssistantMessage(activeAssistantMessageId, stagedAssistantParts),
-							];
-						}
-						replaceMessages([...baseMessages, userMessage, ...assistantMessages]);
-					}
-				} else if ((pendingAssistantParts || getPendingAssistantParts) && typeof delayMs === "number" && delayMs > 0) {
-					setLocalThinkingAssistantMessageId(activeAssistantMessageId);
-					await waitForInterceptDelay(delayMs);
-				}
-				await onApply?.();
-
-				const latestStagedAssistantParts = assistantPartStages && assistantPartStages.length > 0
-					? assistantMessages.at(-1)?.parts
-					: null;
-				const finalAssistantParts = getAssistantParts?.({ startedAt }) ?? latestStagedAssistantParts ?? assistantParts;
-				if (assistantMessages.at(-1)?.parts !== finalAssistantParts) {
-					assistantMessages = [
-						...assistantMessages.slice(0, -1),
-						createAssistantMessage(activeAssistantMessageId, finalAssistantParts),
-					];
-					replaceMessages([...baseMessages, userMessage, ...assistantMessages]);
-				}
-				await onApplyAfterResponse?.();
-			} finally {
-				setLocalThinkingAssistantMessageId(null);
-			}
-		},
-		[
-			ensureThreadForLocalTurn,
-			hasInFlightTurnRef,
-			isStreamingRef,
-			replaceMessages,
-			stopStreaming,
-			uiMessagesRef,
-		],
-	);
+	const localTurnAbortRef = useRef<AbortController | null>(null);
+	useEffect(() => () => localTurnAbortRef.current?.abort(), []);
+	const injectLocalAssistantTurn = useCallback(async (turn: RovoLocalTurn) => {
+		setPrompt("");
+		localTurnAbortRef.current?.abort();
+		const controller = new AbortController();
+		localTurnAbortRef.current = controller;
+		await applyLocalTurn({
+			...turn,
+			signal: controller.signal,
+			onThinkingMessageChange: setLocalThinkingAssistantMessageId,
+		});
+	}, [applyLocalTurn]);
 
 	// Deterministic interception: when the prompt is a handled build intent, skip
 	// the model and inject the user message + scripted reply locally so the
@@ -341,7 +219,8 @@ export function useChatSubmit({
 	}, [prompt, submitPrompt]);
 
 	const abort = useCallback(() => {
-		stopStreaming();
+		localTurnAbortRef.current?.abort();
+		void stopStreaming();
 	}, [stopStreaming]);
 
 	return {

@@ -70,17 +70,9 @@ function useThreadMessageDerived(
 			: null;
 	const isAnyWidgetLoading = widgetLoadingPart?.data.loading ?? false;
 	const widgetDataParts = facts.widgetDataParts;
-	const latestWidgetDataEntry =
-		widgetDataParts.length > 0
-			? widgetDataParts[widgetDataParts.length - 1]
-			: null;
 
 	// ---------- widget data (remaining) ----------
 	const widgetErrorPart = facts.widgetErrorPart;
-	const widgetErrorType =
-		typeof widgetErrorPart?.data.type === "string"
-			? widgetErrorPart.data.type
-			: null;
 	const shouldShowWidgetSections = Boolean(renderWidget);
 	const selectedWidgetDataEntry = selectLatestRenderableWidgetPart(
 		widgetDataParts,
@@ -110,12 +102,7 @@ function useThreadMessageDerived(
 			: undefined,
 	);
 	const widgetDataPart = selectedWidgetDataEntry?.part ?? null;
-	const widgetType =
-		selectedWidgetDataEntry?.widgetType ??
-		latestWidgetDataEntry?.widgetType ??
-		loadingWidgetType ??
-		widgetErrorType ??
-		undefined;
+	const widgetType = selectedWidgetDataEntry?.widgetType ?? facts.widgetType;
 	const isWidgetLoading =
 		isAnyWidgetLoading && (widgetType ? loadingWidgetType === widgetType : true);
 	const hasWidgetPayload = Boolean(widgetDataPart);

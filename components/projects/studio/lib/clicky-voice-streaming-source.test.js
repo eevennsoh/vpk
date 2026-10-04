@@ -29,32 +29,6 @@ function sourceBetween(source, startNeedle, endNeedle) {
 	return source.slice(start, end);
 }
 
-function assistantDeltaSourceForRoute(route) {
-	if (route.shellSource.includes("const handleRealtimeAssistantTextDelta")) {
-		return sourceBetween(
-			route.shellSource,
-			"const handleRealtimeAssistantTextDelta",
-			"const handleRealtimeAssistantTextCompleted",
-		);
-	}
-
-	return sourceBetween(
-		route.shellSource,
-		"onAssistantTextDelta: useCallback",
-		"onAssistantTextCompleted: useCallback",
-	);
-}
-
-test("live voice starts Clicky before connecting so assistant transcript deltas have a visible panel", () => {
-	for (const route of ROUTE_SOURCES) {
-		assert.match(
-			route.shellSource,
-			/const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = false;[\s\S]*activateClicky\(\);[\s\S]*realtime\.connect\(\);[\s\S]*\}, \[activateClicky, realtime\]\);/u,
-			`${route.name} should activate Clicky before opening realtime voice`,
-		);
-	}
-});
-
 test("realtime assistant text and audio transcript deltas are exposed as live panel text", () => {
 	for (const route of ROUTE_SOURCES) {
 		const textDeltaSource = sourceBetween(
@@ -99,23 +73,4 @@ test("Studio exposes a gated no-mic assistant text stream hook through the real 
 	assert.match(studio.shellSource, /__VPK_E2E_SCREEN_ASSISTANT__/u);
 	assert.match(studio.shellSource, /streamAssistantText: async \(chunks\) => \{/u);
 	assert.match(studio.shellSource, /await handleRealtimeAssistantTextDelta\(\{[\s\S]*displayOnly: true,[\s\S]*source: "text",[\s\S]*text,/u);
-});
-
-test("assistant deltas update Clicky before chat persistence or display-only suppression", () => {
-	for (const route of ROUTE_SOURCES) {
-		const assistantDeltaSource = assistantDeltaSourceForRoute(route);
-
-		const clickyIndex = assistantDeltaSource.indexOf("streamClickyAssistantText(text);");
-		const displayOnlyIndex = assistantDeltaSource.indexOf("payload.displayOnly === true");
-		const ensureMessageIndex = assistantDeltaSource.indexOf("ensureRealtimeAssistantMessage");
-		const updateMessageIndex = assistantDeltaSource.indexOf("updateRealtimeMessage");
-
-		assert.notEqual(clickyIndex, -1, `${route.name} should stream assistant text into Clicky`);
-		assert.notEqual(displayOnlyIndex, -1, `${route.name} should still suppress display-only chat writes`);
-		assert.notEqual(ensureMessageIndex, -1, `${route.name} should still create chat messages for non-display-only deltas`);
-		assert.ok(clickyIndex < displayOnlyIndex, `${route.name} should update Clicky before display-only returns`);
-		assert.ok(clickyIndex < ensureMessageIndex, `${route.name} should update Clicky before chat message creation`);
-		assert.ok(clickyIndex < updateMessageIndex, `${route.name} should update Clicky before chat message writes`);
-		assert.doesNotMatch(assistantDeltaSource, /isClickyActive && text/u, `${route.name} should not gate streamed panel text on stale active state`);
-	}
 });

@@ -39,7 +39,7 @@ function createProviderHarness() {
 function controls() {
 	return {
 		chatSurface: null, isOpen: false,
-		openChat() {}, closeChat() {}, toggleChat() {}, selectAgent() {}, replaceMessages() {},
+		openChat() {}, closeChat() {}, toggleChat() {}, selectAgent() {}, applyLocalTurn() {},
 	};
 }
 

@@ -8,6 +8,7 @@ import {
 	buildJgpAgentChatPlayback,
 	type JgpAgentChatScenario,
 } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
+import { getMessageText } from "@/lib/rovo-ui-messages";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 
 export interface UseJgpAgentChatDemoResult {
@@ -17,26 +18,22 @@ export interface UseJgpAgentChatDemoResult {
 }
 
 export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
-	const { openChat, replaceMessages, selectAgent } = useRovoChatControls();
+	const { openChat, applyLocalTurn, selectAgent } = useRovoChatControls();
 	const [chatContextBar, setChatContextBar] = useState<ChatContextBarDescriptor | null>(null);
 	const [externalThinkingMessageId, setExternalThinkingMessageId] = useState<string | null>(null);
-	const playbackTokenRef = useRef(0);
+	const playbackAbortRef = useRef<AbortController | null>(null);
 	const runCounterRef = useRef(0);
-	const timersRef = useRef(new Set<number>());
 
 	const cancelPlayback = useCallback(() => {
-		playbackTokenRef.current += 1;
-		for (const timer of timersRef.current) {
-			window.clearTimeout(timer);
-		}
-		timersRef.current.clear();
+		playbackAbortRef.current?.abort();
 	}, []);
 
 	useEffect(() => cancelPlayback, [cancelPlayback]);
 
 	const openAgentChat = useCallback((scenario: JgpAgentChatScenario) => {
 		cancelPlayback();
-		const playbackToken = playbackTokenRef.current;
+		const controller = new AbortController();
+		playbackAbortRef.current = controller;
 		const runId = `${scenario.issueKey.toLowerCase()}-${runCounterRef.current += 1}`;
 		const playback = buildJgpAgentChatPlayback(scenario, runId);
 
@@ -45,31 +42,24 @@ export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
 		openChat("floating");
 		setExternalThinkingMessageId(scenario.question ? null : playback.assistantMessageId);
 
-		let elapsedMs = 0;
-		playback.frames.forEach((frame, index) => {
-			elapsedMs += frame.delayMs;
-			const renderFrame = () => {
-				if (playbackTokenRef.current !== playbackToken) return;
-				replaceMessages([
-					playback.userMessage,
-					{ id: playback.assistantMessageId, role: "assistant", parts: frame.parts },
-				]);
-				if (index === playback.frames.length - 1) {
-					setExternalThinkingMessageId(null);
-				}
-			};
-
-			if (elapsedMs === 0) {
-				renderFrame();
-				return;
-			}
-			const timer = window.setTimeout(() => {
-				timersRef.current.delete(timer);
-				renderFrame();
-			}, elapsedMs);
-			timersRef.current.add(timer);
+		void applyLocalTurn({
+			history: "replace",
+			promptText: getMessageText(playback.userMessage),
+			userMessage: playback.userMessage,
+			assistantMessageId: playback.assistantMessageId,
+			assistantParts: playback.frames[0]?.parts ?? [],
+			assistantPartStages: playback.frames.map((frame) => ({
+				delayMs: frame.delayMs,
+				getAssistantParts: () => frame.parts,
+			})),
+			signal: controller.signal,
+			onThinkingMessageChange: (id) => {
+				if (controller.signal.aborted) return;
+				if (id || !Boolean(scenario.question)) setExternalThinkingMessageId(id);
+			},
 		});
-	}, [cancelPlayback, openChat, replaceMessages, selectAgent]);
+
+	}, [cancelPlayback, openChat, applyLocalTurn, selectAgent]);
 
 	return { chatContextBar, externalThinkingMessageId, openAgentChat };
 }

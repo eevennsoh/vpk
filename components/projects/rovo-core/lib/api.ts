@@ -152,7 +152,8 @@ export async function getRovoAppThread(threadId: string): Promise<RovoAppThread 
 	return normalizeRovoAppThread(payload.thread);
 }
 
-export async function createRovoAppThread(input: {
+export async function createRovoAppThread({ signal, ...input }: {
+	signal?: AbortSignal;
 	id: string;
 	title: string;
 	messages?: ReadonlyArray<RovoUIMessage>;
@@ -166,6 +167,7 @@ export async function createRovoAppThread(input: {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(input),
+		signal,
 	});
 	const payload = await parseJsonResponse<{ thread?: Partial<RovoAppThread> }>(response);
 	const thread = normalizeRovoAppThread(payload.thread);

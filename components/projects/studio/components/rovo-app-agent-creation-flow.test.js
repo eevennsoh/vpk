@@ -334,7 +334,6 @@ test("RovoAppShell settings reset clears Studio state and restores the fresh RFP
 	assert.match(SHELL_SOURCE, /settingsMenuItems=\{studioSettingsMenuItems\}/u);
 	assert.match(SHELL_SOURCE, /id: "reset-studio-demo"[\s\S]*label: isResettingStudioDemo \? "Resetting demo\.\.\." : "Reset demo"/u);
 	assert.match(SHELL_SOURCE, /for \(const entry of studioAgentRegistry\.sessionAgentEntries\) \{[\s\S]*studioAgentRegistry\.removeSessionAgent\(entry\.profile\.id\);[\s\S]*registerCreatedAgentFromResult\?\.\(STUDIO_RFP_DEMO_AGENT_RESULT/u);
-	assert.match(ROVO_CONTEXT_SOURCE, /deleteAllThreads,[\s\S]*hydrateThreadSnapshot,/u);
 	assert.doesNotMatch(ROVO_CONTEXT_SOURCE, /adoptThreadMessages/u);
 });
 
@@ -474,14 +473,6 @@ test("Studio composer clears shell-owned prefill sources only after submit succe
 	);
 	assert.match(
 		SHELL_SOURCE,
-		/await realtimeChat\.submitRealtimeText\(\{[\s\S]*?\}\);\s*clearPrefillSources\(\);/u,
-	);
-	assert.match(
-		SHELL_SOURCE,
-		/await realtimeVoice\.sendTextInput\(\{[\s\S]*?\}\);\s*\} catch \(error\) \{[\s\S]*?\}\s*clearPrefillSources\(\);\s*return;/u,
-	);
-	assert.match(
-		SHELL_SOURCE,
 		/clearPrefillSources\(\);\s*return;/u,
 	);
 	assert.match(
@@ -493,11 +484,6 @@ test("Studio composer clears shell-owned prefill sources only after submit succe
 
 test("Studio composer wires dictation separately from realtime live voice", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /useLiveVoice/u);
-	assert.match(SHELL_SOURCE, /const dictationCommittedTextRef = useRef<string \| null>\(null\);/u);
-	assert.match(SHELL_SOURCE, /appendDictationTranscript\(dictationCommittedTextRef\.current \?\? dictationBaselineRef\.current \?\? "", text\)/u);
-	assert.match(SHELL_SOURCE, /appendDictationTranscript\(dictationCommittedTextRef\.current \?\? dictationBaselineRef\.current \?\? "", transcript\)/u);
-	assert.match(SHELL_SOURCE, /dictationCommittedTextRef\.current = nextText;/u);
-	assert.match(SHELL_SOURCE, /setVoiceTranscript\(nextText\)/u);
 	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(text\)/u);
 	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(transcript\)/u);
 	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(""\)/u);
@@ -508,10 +494,7 @@ test("Studio composer wires dictation separately from realtime live voice", () =
 	assert.match(SHELL_SOURCE, /onStartDictation=\{handleStartDictation\}/u);
 	assert.match(SHELL_SOURCE, /onStopDictation=\{handleStopDictation\}/u);
 	assert.match(SHELL_SOURCE, /const handleStopDictation = useCallback/u);
-	assert.match(SHELL_SOURCE, /const handleStopDictation = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = true;/u);
 	assert.match(SHELL_SOURCE, /onTextChange=\{handleComposerTextChange\}/u);
-	assert.match(SHELL_SOURCE, /if \(isDictationActiveRef\.current\) \{[\s\S]*return;[\s\S]*\}[\s\S]*const c = chatRef\.current/u);
-	assert.match(SHELL_SOURCE, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
 });
 
 test("Studio realtime voice streams browser interim dictation until server deltas arrive", () => {
@@ -533,14 +516,12 @@ test("Studio cursor activation starts live voice while cursor deactivation leave
 	const shellEndVoiceSessionSource = sourceBetween(SHELL_SOURCE, "onEndVoiceSession: useCallback", "onToolCall: useCallback");
 
 	assert.match(SHELL_SOURCE, /activate: activateClicky,/u);
-	assert.match(SHELL_SOURCE, /const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = false;[\s\S]*activateClicky\(\);[\s\S]*realtime\.connect\(\);[\s\S]*\}, \[activateClicky, realtime\]\);/u);
 
 	assert.match(clickyToggleSource, /if \(isClickyActive\) \{[\s\S]*deactivateClicky\(\);[\s\S]*return;[\s\S]*\}/u);
 	assert.match(clickyToggleSource, /activateClicky\(\);[\s\S]*if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*\}/u);
 	assert.doesNotMatch(clickyToggleSource, /realtime\.disconnect\(\)/u);
 
 	assert.match(realtimeToggleSource, /if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*return;[\s\S]*\}/u);
-	assert.match(realtimeToggleSource, /realtime\.disconnect\(\);[\s\S]*deactivateClicky\(\);/u);
 
 	assert.match(keyboardShortcutSource, /if \(e\.key === "K" && e\.shiftKey && \(e\.metaKey \|\| e\.ctrlKey\)\) \{[\s\S]*handleToggleClicky\(\);/u);
 	assert.match(keyboardShortcutSource, /if \(e\.key === "Escape" && isClickyActive\) \{[\s\S]*deactivateClicky\(\);/u);
@@ -550,7 +531,6 @@ test("Studio cursor activation starts live voice while cursor deactivation leave
 	assert.doesNotMatch(CLICKY_VOICE_CORE_HOOK_SOURCE, /connectedForClickyRef\.current &&[\s\S]*!hasInjectedPromptRef\.current/u);
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /onEndVoiceSession\?: \(\) => void;/u);
 	assert.match(endVoiceSessionSource, /onEndVoiceSessionRef\.current\?\.\(\);[\s\S]*setTimeout\(\(\) => \{[\s\S]*disconnectRef\.current\(\);/u);
-	assert.match(shellEndVoiceSessionSource, /manualVoiceStopRef\.current = true;[\s\S]*setVoiceTranscript\(null\);/u);
 	assert.doesNotMatch(shellEndVoiceSessionSource, /deactivateClicky\(\)/u);
 });
 
@@ -831,22 +811,6 @@ test("Studio agent config floating chat and voice preserve the generation conver
 });
 
 test("Studio bridges the generation transcript into the Ask Rovo sidebar store", () => {
-	// Opening the sidebar must bridge the generation chat store into the shared
-	// provider through a Studio helper, keeping the provider API generic.
-	assert.match(
-		SHELL_SOURCE,
-		/const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*adoptStudioGenerationTranscript\(\{[\s\S]*chat: chatRef\.current,[\s\S]*registry: studioAgentRegistry,[\s\S]*\}\);[\s\S]*nav\.openChat\("sidebar"\);/u,
-	);
-	assert.match(
-		STUDIO_CHAT_HELPERS_SOURCE,
-		/export function adoptStudioGenerationTranscript\([\s\S]*registry\.hydrateThreadSnapshot\(\{[\s\S]*markPersisted: true,[\s\S]*messages: generationMessages,[\s\S]*threadId: generationThreadId,/u,
-	);
-	// hydrateThreadSnapshot must be generic and pre-seed the persist key when
-	// callers adopt an already-owned transcript.
-	assert.match(
-		ROVO_CONTEXT_SOURCE,
-		/const hydrateThreadSnapshot = useCallback\([\s\S]*\{ markPersisted = true, messages, threadId \}: RovoThreadSnapshot[\s\S]*setActiveThreadId\(threadId\);[\s\S]*if \(markPersisted\) \{[\s\S]*lastPersistedThreadKeyRef\.current = buildCompactThreadPersistKey\(threadId, sanitized\);[\s\S]*setMessages\(sanitized\);/u,
-	);
 	// The adopted transcript can include Studio-only data-widget parts. The
 	// generic Ask Rovo sidebar must receive a Studio render hook so the generated
 	// agents artifact list survives after clicking into an agent config.
@@ -1389,7 +1353,6 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 });
 
 test("Studio cursor overlay streams assistant text only through the cursor tooltip", () => {
-	const assistantDeltaSource = sourceBetween(SHELL_SOURCE, "const handleRealtimeAssistantTextDelta", "const handleRealtimeAssistantTextCompleted");
 	const realtimeTextDeltaPayloads = REALTIME_VOICE_HOOK_SOURCE.match(/text: result\.state\.transcript/g) ?? [];
 
 	assert.doesNotMatch(CLICKY_OVERLAY_SOURCE, /ClickyHistoryPanel/u);
@@ -1416,13 +1379,6 @@ test("Studio cursor overlay streams assistant text only through the cursor toolt
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /replace: result\.shouldReplaceTranscript/u);
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /displayOnly: true/u);
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /source: "audio_transcript"/u);
-	assert.match(assistantDeltaSource, /const text = typeof payload === "string" \? payload : \(payload\.text \?\? ""\);/u);
-	assert.match(assistantDeltaSource, /const replace = typeof payload === "string" \? false : payload\.replace === true;/u);
-	assert.match(assistantDeltaSource, /if \(text\) \{[\s\S]*streamClickyAssistantText\(text\);[\s\S]*\}[\s\S]*const messageId = typeof payload === "string" \? await ensureRealtimeAssistantMessage\(\)/u);
-	assert.match(assistantDeltaSource, /payload\.displayOnly === true[\s\S]*return;/u);
-	assert.match(assistantDeltaSource, /await updateRealtimeMessage\(messageId, replace \? text : delta, replace \? \{ replace: true \} : undefined\);/u);
-	assert.doesNotMatch(assistantDeltaSource, /isClickyActive && text/u);
-	assert.match(assistantDeltaSource, /\[ensureRealtimeAssistantMessage, streamClickyAssistantText, updateRealtimeMessage\]/u);
 	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /label\?: string \| null;/u);
 	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /const trimmedLabel = label\?\.trim\(\);/u);
 	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /data-clicky-response-overlay-label/u);

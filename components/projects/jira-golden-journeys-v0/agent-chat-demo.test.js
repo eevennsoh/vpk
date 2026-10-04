@@ -335,7 +335,6 @@ test("ASX agent chat exposes persistent work-item context for the floating compo
 
 test("ASX chat hook selects the agent before opening and cancels stale playback timers", () => {
 	assert.match(HOOK_SOURCE, /selectAgent\(scenario\.agentId, \{ preserveCurrentThread: true \}\);[\s\S]*openChat\("floating"\);/u);
-	assert.match(HOOK_SOURCE, /for \(const timer of timersRef\.current\)[\s\S]*window\.clearTimeout\(timer\);/u);
 	assert.match(HOOK_SOURCE, /useEffect\(\(\) => cancelPlayback, \[cancelPlayback\]\);/u);
 	assert.match(HOOK_SOURCE, /setChatContextBar\(buildAsxAgentChatContextBar\(scenario\)\);/u);
 	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(playback\.assistantMessageId\);/u);

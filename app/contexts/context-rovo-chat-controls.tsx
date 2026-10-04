@@ -4,7 +4,7 @@ import { createContext, use, useMemo, type ReactNode } from "react";
 import type { useRovoChat } from "@/app/contexts/context-rovo-chat";
 
 type RovoChatControls = Pick<ReturnType<typeof useRovoChat>,
-	"chatSurface" | "isOpen" | "openChat" | "closeChat" | "toggleChat" | "selectAgent" | "replaceMessages"
+	"chatSurface" | "isOpen" | "openChat" | "closeChat" | "toggleChat" | "selectAgent" | "applyLocalTurn"
 >;
 
 const RovoChatControlsContext = createContext<RovoChatControls | null>(null);
@@ -14,10 +14,10 @@ export function RovoChatControlsProvider({ value, children }: Readonly<{
 	value: RovoChatControls;
 	children: ReactNode;
 }>) {
-	const { chatSurface, isOpen, openChat, closeChat, toggleChat, selectAgent, replaceMessages } = value;
+	const { chatSurface, isOpen, openChat, closeChat, toggleChat, selectAgent, applyLocalTurn } = value;
 	const controls = useMemo(() => ({
-		chatSurface, isOpen, openChat, closeChat, toggleChat, selectAgent, replaceMessages,
-	}), [chatSurface, isOpen, openChat, closeChat, toggleChat, selectAgent, replaceMessages]);
+		chatSurface, isOpen, openChat, closeChat, toggleChat, selectAgent, applyLocalTurn,
+	}), [chatSurface, isOpen, openChat, closeChat, toggleChat, selectAgent, applyLocalTurn]);
 	return <RovoChatControlsContext value={controls}>{children}</RovoChatControlsContext>;
 }
 

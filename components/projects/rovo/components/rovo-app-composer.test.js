@@ -67,11 +67,6 @@ test("RovoAppShell caps directory autocomplete to eight for the fullscreen two-c
 
 test("RovoAppShell wires dictation separately from realtime live voice", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /useLiveVoice/u);
-	assert.match(SHELL_SOURCE, /const dictationCommittedTextRef = useRef<string \| null>\(null\);/u);
-	assert.match(SHELL_SOURCE, /appendDictationTranscript\(dictationCommittedTextRef\.current \?\? dictationBaselineRef\.current \?\? "", text\)/u);
-	assert.match(SHELL_SOURCE, /appendDictationTranscript\(dictationCommittedTextRef\.current \?\? dictationBaselineRef\.current \?\? "", transcript\)/u);
-	assert.match(SHELL_SOURCE, /dictationCommittedTextRef\.current = nextText;/u);
-	assert.match(SHELL_SOURCE, /setVoiceTranscript\(nextText\)/u);
 	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(text\)/u);
 	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(transcript\)/u);
 	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(""\)/u);
@@ -82,10 +77,7 @@ test("RovoAppShell wires dictation separately from realtime live voice", () => {
 	assert.match(SHELL_SOURCE, /onStartDictation=\{handleStartDictation\}/u);
 	assert.match(SHELL_SOURCE, /onStopDictation=\{handleStopDictation\}/u);
 	assert.match(SHELL_SOURCE, /const handleStopDictation = useCallback/u);
-	assert.match(SHELL_SOURCE, /const handleStopDictation = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = true;/u);
 	assert.match(SHELL_SOURCE, /onTextChange=\{handleComposerTextChange\}/u);
-	assert.match(SHELL_SOURCE, /if \(isDictationActiveRef\.current\) \{[\s\S]*return;[\s\S]*\}[\s\S]*const c = chatRef\.current/u);
-	assert.match(SHELL_SOURCE, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
 });
 
 test("RovoAppShell imports screen-assistant helpers from rovo-core", () => {
@@ -101,14 +93,12 @@ test("Rovo cursor activation starts live voice while cursor deactivation leaves 
 	const shellEndVoiceSessionSource = sourceBetween(SHELL_SOURCE, "onEndVoiceSession: useCallback", "onToolCall: useCallback");
 
 	assert.match(SHELL_SOURCE, /activate: activateClicky,/u);
-	assert.match(SHELL_SOURCE, /const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = false;[\s\S]*activateClicky\(\);[\s\S]*realtime\.connect\(\);[\s\S]*\}, \[activateClicky, realtime\]\);/u);
 
 	assert.match(clickyToggleSource, /if \(isClickyActive\) \{[\s\S]*deactivateClicky\(\);[\s\S]*return;[\s\S]*\}/u);
 	assert.match(clickyToggleSource, /activateClicky\(\);[\s\S]*if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*\}/u);
 	assert.doesNotMatch(clickyToggleSource, /realtime\.disconnect\(\)/u);
 
 	assert.match(realtimeToggleSource, /if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*return;[\s\S]*\}/u);
-	assert.match(realtimeToggleSource, /realtime\.disconnect\(\);[\s\S]*deactivateClicky\(\);/u);
 
 	assert.match(keyboardShortcutSource, /if \(e\.key === "K" && e\.shiftKey && \(e\.metaKey \|\| e\.ctrlKey\)\) \{[\s\S]*handleToggleClicky\(\);/u);
 	assert.match(keyboardShortcutSource, /if \(e\.key === "Escape" && isClickyActive\) \{[\s\S]*deactivateClicky\(\);/u);
@@ -120,7 +110,6 @@ test("Rovo cursor activation starts live voice while cursor deactivation leaves 
 	assert.doesNotMatch(CLICKY_VOICE_HOOK_SOURCE, /disconnectRealtime\(\)/u);
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /onEndVoiceSession\?: \(\) => void;/u);
 	assert.match(endVoiceSessionSource, /onEndVoiceSessionRef\.current\?\.\(\);[\s\S]*setTimeout\(\(\) => \{[\s\S]*disconnectRef\.current\(\);/u);
-	assert.match(shellEndVoiceSessionSource, /manualVoiceStopRef\.current = true;[\s\S]*setVoiceTranscript\(null\);/u);
 	assert.doesNotMatch(shellEndVoiceSessionSource, /deactivateClicky\(\)/u);
 });
 
@@ -202,7 +191,6 @@ test("Rovo cursor voice uses structured screen tools instead of screenshot POINT
 });
 
 test("Rovo cursor overlay streams assistant text only through the cursor tooltip", () => {
-	const assistantDeltaSource = sourceBetween(SHELL_SOURCE, "onAssistantTextDelta: useCallback", "onAssistantTextCompleted: useCallback");
 	const realtimeTextDeltaPayloads = REALTIME_VOICE_HOOK_SOURCE.match(/text: result\.state\.transcript/g) ?? [];
 
 	assert.doesNotMatch(CLICKY_OVERLAY_SOURCE, /ClickyHistoryPanel/u);
@@ -229,13 +217,6 @@ test("Rovo cursor overlay streams assistant text only through the cursor tooltip
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /replace: result\.shouldReplaceTranscript/u);
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /displayOnly: true/u);
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /source: "audio_transcript"/u);
-	assert.match(assistantDeltaSource, /const text = typeof payload === "string" \? payload : \(payload\.text \?\? ""\);/u);
-	assert.match(assistantDeltaSource, /const replace = typeof payload === "string" \? false : payload\.replace === true;/u);
-	assert.match(assistantDeltaSource, /if \(text\) \{[\s\S]*streamClickyAssistantText\(text\);[\s\S]*\}[\s\S]*const messageId = typeof payload === "string" \? await ensureRealtimeAssistantMessage\(\)/u);
-	assert.match(assistantDeltaSource, /payload\.displayOnly === true[\s\S]*return;/u);
-	assert.match(assistantDeltaSource, /await updateRealtimeMessage\(messageId, replace \? text : delta, replace \? \{ replace: true \} : undefined\);/u);
-	assert.doesNotMatch(assistantDeltaSource, /isClickyActive && text/u);
-	assert.match(assistantDeltaSource, /\[ensureRealtimeAssistantMessage, updateRealtimeMessage, streamClickyAssistantText\]/u);
 	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /label\?: string \| null;/u);
 	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /const trimmedLabel = label\?\.trim\(\);/u);
 	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /data-clicky-response-overlay-label/u);
@@ -249,14 +230,6 @@ test("RovoAppShell clears shell-owned prefill sources only after submit succeeds
 	assert.doesNotMatch(
 		SHELL_SOURCE,
 		/const latestUserMessageIdBeforeSubmit = getLatestUserMessageId\(chat\.messages\);\s*clearPrefillSources\(\);\s*if \(isRealtimeActive\)/u,
-	);
-	assert.match(
-		SHELL_SOURCE,
-		/await realtimeChat\.submitRealtimeText\(\{[\s\S]*?\}\);\s*clearPrefillSources\(\);/u,
-	);
-	assert.match(
-		SHELL_SOURCE,
-		/await realtimeVoice\.sendTextInput\(\{[\s\S]*?\}\);\s*\} catch \(error\) \{[\s\S]*?\}\s*clearPrefillSources\(\);\s*return;/u,
 	);
 	assert.match(
 		SHELL_SOURCE,

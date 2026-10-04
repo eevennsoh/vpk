@@ -27,14 +27,6 @@ const SIDEBAR_CHAT_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
 	"utf8",
 );
-const ROVO_APP_SHELL_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/rovo/components/rovo-app-shell.tsx"),
-	"utf8",
-);
-const STUDIO_APP_SHELL_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/studio/components/rovo-app-shell.tsx"),
-	"utf8",
-);
 
 test("Rovo and Studio realtime voice hooks are thin policy wrappers over core", () => {
 	assert.match(
@@ -114,11 +106,9 @@ test("dictation opens the Realtime transport in transcription-only mode", () => 
 		/startBrowserRecognition\(\);[\s\S]*setConnectionState\("connecting"\);[\s\S]*connectWs\(\);/u,
 	);
 
-	for (const source of [
-		SIDEBAR_CHAT_SOURCE,
-		ROVO_APP_SHELL_SOURCE,
-		STUDIO_APP_SHELL_SOURCE,
-	]) {
+	// Rovo and Studio pass dictation intent through the shared conversation;
+	// its outcome suite verifies the transport mode and stop/connect ordering.
+	for (const source of [SIDEBAR_CHAT_SOURCE]) {
 		assert.match(
 			source,
 			/realtime\.connect\(\{ transcriptionOnly: true \}\);/u,
