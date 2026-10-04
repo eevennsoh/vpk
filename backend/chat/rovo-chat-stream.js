@@ -531,7 +531,6 @@ function createRovoTurnRunner(dependencies = {}) {
 			});
 			const postStreamPipelineResult = await runRovoPostStreamPipeline({
 				abortSignal: abortController.signal,
-				activeRequests,
 				browserBridge,
 				buildArtifactPreviewSummary,
 				buildDirectSpecWidgetParts,

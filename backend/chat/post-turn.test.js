@@ -149,19 +149,9 @@ test("buildTurnCompletePart and buildPostTurnWorkCompleteTraceData preserve payl
 
 test("completeRovoPostTurn runs post-turn side effects in order", async () => {
 	const calls = [];
-	class OrderedActiveRequests extends Map {
-		delete(key) {
-			calls.push(`delete-active-request:${key}`);
-			return super.delete(key);
-		}
-	}
-	const activeRequests = new OrderedActiveRequests([
-		["thread-1", { port: 43123 }],
-	]);
 	const parts = [];
 	const stageMarks = [];
 	const result = await completeRovoPostTurn({
-		activeRequests,
 		buildArtifactPreviewSummary: () => "preview",
 		buildMissingStudioAgentResultFailureParts: () => [],
 		buildPostTurnWorkCompleteTraceData: ({ hasQueuedPrompts }) => ({
@@ -253,12 +243,10 @@ test("completeRovoPostTurn runs post-turn side effects in order", async () => {
 		"missing-studio-result",
 		"close-question-loading",
 		"sync-thread",
-		"delete-active-request:thread-1",
 		"info:[OUTPUT-ROUTING] Turn routing summary",
 		"finalize-plan",
 		"write:data-turn-complete",
 	]);
-	assert.equal(activeRequests.has("thread-1"), false);
 	assert.deepEqual(parts, [
 		{
 			type: "data-turn-complete",
@@ -291,10 +279,8 @@ test("completeRovoPostTurn runs post-turn side effects in order", async () => {
 
 test("completeRovoPostTurn warns on sync failure and still completes the turn", async () => {
 	const warnings = [];
-	const activeRequests = new Map([["thread-1", {}]]);
 	const parts = [];
 	const result = await completeRovoPostTurn({
-		activeRequests,
 		buildArtifactPreviewSummary: () => "",
 		buildMissingStudioAgentResultFailureParts: () => [],
 		buildRovoTurnRoutingTelemetry: (input) => input,
@@ -333,7 +319,6 @@ test("completeRovoPostTurn warns on sync failure and still completes the turn", 
 		},
 	});
 
-	assert.equal(activeRequests.has("thread-1"), false);
 	assert.equal(warnings.length, 1);
 	assert.equal(
 		warnings[0][0],

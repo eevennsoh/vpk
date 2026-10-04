@@ -258,3 +258,30 @@ test("a composed runner keeps question state local to each turn", async () => {
 	assert.equal(visibleText(second.parts), "A fresh answer");
 	assert.equal(second.parts.at(-1).type, "data-turn-complete");
 });
+
+for (const failsCompletion of [false, true]) {
+	test(`runTurn preserves a successor request when ${failsCompletion ? "failed" : "successful"} completion finishes`, async () => {
+		const successor = { port: 43124, abortController: new AbortController() };
+		const failure = new Error("completion failed after successor acquired thread");
+		let syncCount = 0;
+		const { dependencies } = createContractDependencies({
+			streamViaRovo: async ({ onPortAcquired, onTextDelta }) => { onPortAcquired(43123); onTextDelta("Finished turn"); },
+			syncRovoAppThreadSessionFromCurrentPort: async () => {
+				syncCount += 1;
+				if (syncCount === 2) { dependencies.activeRequests.set("thread-1", successor); }
+				return null;
+			},
+			finalizePlanExecutionArtifactPostStream: async () => { if (failsCompletion) { throw failure; } },
+		});
+		const { context, parts } = createOutput();
+		const completed = createRovoTurnRunner(dependencies)(createTurn(), context);
+		if (failsCompletion) {
+			await assert.rejects(completed, (error) => error === failure);
+		} else {
+			await completed;
+		}
+		assert.equal(dependencies.activeRequests.get("thread-1") === successor, true);
+		assert.equal(dependencies.activeRequests.size, 1);
+		assert.equal(parts.some((part) => part.type === "data-turn-complete"), !failsCompletion);
+	});
+}

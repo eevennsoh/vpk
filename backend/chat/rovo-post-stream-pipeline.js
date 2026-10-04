@@ -191,7 +191,6 @@ async function runRovoPostStreamPipeline({
 	});
 
 	await completeRovoPostTurn({
-		activeRequests: options.activeRequests,
 		buildArtifactPreviewSummary: options.buildArtifactPreviewSummary,
 		buildMissingStudioAgentResultFailureParts:
 			options.buildMissingStudioAgentResultFailureParts,
