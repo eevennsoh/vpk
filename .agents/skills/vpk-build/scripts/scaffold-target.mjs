@@ -24,6 +24,7 @@ import { writeBackendDeploymentHarness, writeBackendServiceDescriptor, writeStat
 import { wireScaffoldSkills } from "./scaffold-skill-access.mjs";
 import { validateScaffoldTarget } from "./scaffold-target-safety.mjs";
 import { pinDependenciesToSourceLockfile } from "./scaffold-lockfile.mjs";
+import { collectLocalCssImportsFromText, resolveScaffoldDependencies } from "./extraction-dependencies.mjs";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -137,24 +138,6 @@ function hasRequiredNonChildrenProp(typeBody) {
 	return false;
 }
 
-function readPnpmCatalog(repoRoot) {
-	const yamlPath = path.join(repoRoot, "pnpm-workspace.yaml");
-	if (!fs.existsSync(yamlPath)) return {};
-	const catalog = {};
-	let inCatalog = false;
-	for (const rawLine of fs.readFileSync(yamlPath, "utf8").split("\n")) {
-		const line = rawLine.replace(/\s+#.*$/, "");
-		if (!inCatalog) {
-			if (/^catalog:\s*$/.test(line)) inCatalog = true;
-			continue;
-		}
-		if (/^\S/.test(line) && line.trim() !== "") break;
-		const match = line.match(/^\s+['"]?([^'"#:]+)['"]?\s*:\s*['"]?([^'"#\s]+)['"]?\s*$/);
-		if (match) catalog[match[1].trim()] = match[2].trim();
-	}
-	return catalog;
-}
-
 function readPnpmYamlSection(repoRoot, sectionName) {
 	const yamlPath = path.join(repoRoot, "pnpm-workspace.yaml");
 	if (!fs.existsSync(yamlPath)) return "";
@@ -164,27 +147,6 @@ function readPnpmYamlSection(repoRoot, sectionName) {
 	let end = start + 1;
 	while (end < lines.length && (lines[end] === "" || /^\s/.test(lines[end]))) end += 1;
 	return `${lines.slice(start, end).join("\n").trimEnd()}\n`;
-}
-
-function resolveCatalogSpecifier(pkgName, version, catalog) {
-	if (version !== "catalog:") return version;
-	return catalog[pkgName] || version;
-}
-
-function resolvePinnedVersion(pkgName, rootManifest) {
-	const deps = rootManifest.dependencies || {};
-	const dev = rootManifest.devDependencies || {};
-	return deps[pkgName] || dev[pkgName] || null;
-}
-
-function collectLocalCssImportsFromText(cssText, fromDir) {
-	const found = [];
-	const re = /@import\s+["'](\.\.?\/[^"']+\.css)["']/g;
-	let match;
-	while ((match = re.exec(cssText)) !== null) {
-		found.push(path.posix.normalize(path.posix.join(fromDir, match[1])));
-	}
-	return found;
 }
 
 function rewriteShadcnCssImport(css) {
@@ -450,55 +412,6 @@ function buildDependenciesBlock(npmPackages) {
 	return `{\n${lines.join(",\n")}\n\t}`;
 }
 
-const HOST_PACKAGE_PEERS = [
-	{ host: "react-leaflet", runtime: ["leaflet"], types: ["@types/leaflet"] },
-	{ host: "three", runtime: [], types: ["@types/three"] },
-];
-
-function resolveExtractedDependencies({ planPackages, sourceManifest, catalog }) {
-	const resolved = {};
-	for (const [name, version] of Object.entries(planPackages || {})) {
-		resolved[name] = resolveCatalogSpecifier(name, version, catalog);
-	}
-	const fromSource = (pkgName) => {
-		const raw = resolvePinnedVersion(pkgName, sourceManifest);
-		return raw ? resolveCatalogSpecifier(pkgName, raw, catalog) : null;
-	};
-	if (!resolved["tw-animate-css"]) {
-		resolved["tw-animate-css"] = fromSource("tw-animate-css") || "^1.4.0";
-	}
-	if (!resolved.shadcn) {
-		const shadcnVersion = fromSource("shadcn");
-		if (shadcnVersion) resolved.shadcn = shadcnVersion;
-	}
-	for (const { host, runtime, types } of HOST_PACKAGE_PEERS) {
-		if (!resolved[host]) continue;
-		for (const peer of [...runtime, ...types]) {
-			if (resolved[peer]) continue;
-			const version = fromSource(peer);
-			if (version) resolved[peer] = version;
-		}
-	}
-	return resolved;
-}
-
-function resolveBackendDependencies({ sourceManifest, backendManifest, catalog }) {
-	const dependencies = {};
-	for (const [name, version] of Object.entries({
-		...sourceManifest.dependencies,
-		...backendManifest.dependencies,
-	})) {
-		// Frontend-only libraries are retained only when the route trace uses them.
-		if (["motion-plus", "ansi-to-react"].includes(name)) continue;
-		const resolved = resolveCatalogSpecifier(name, version, catalog);
-		if (resolved === "catalog:") {
-			throw new Error(`Backend dependency ${name} has no catalog version`);
-		}
-		dependencies[name] = resolved;
-	}
-	return dependencies;
-}
-
 function writeTargetPackageJson({ targetDir, tmpl, targetName, dependencies }) {
 	const runtimeDeps = {};
 	const typeDeps = {};
@@ -740,26 +653,19 @@ export function FeatureFlagsShim() {
 	const sourceGlobalsCss = fs.existsSync(globalsCssSrc)
 		? fs.readFileSync(globalsCssSrc, "utf8")
 		: "";
-	const sourceManifest = fs.existsSync(path.join(repoRoot, "package.json"))
-		? readJSON(path.join(repoRoot, "package.json"))
-		: { dependencies: {}, devDependencies: {} };
-	const catalog = readPnpmCatalog(repoRoot);
-	const augmentedNpm = resolveExtractedDependencies({
-		planPackages: plan.npmPackages,
-		sourceManifest,
-		catalog,
-	});
+	let backendManifest;
 	if (args.backendBacked) {
 		const backendManifestPath = path.join(repoRoot, "backend", "package.json");
 		if (!fs.existsSync(backendManifestPath)) {
 			throw new Error("Backend-backed extraction requires source backend/package.json");
 		}
-		Object.assign(augmentedNpm, resolveBackendDependencies({
-			sourceManifest,
-			backendManifest: readJSON(backendManifestPath),
-			catalog,
-		}));
+		backendManifest = readJSON(backendManifestPath);
 	}
+	const { npmPackages: augmentedNpm, packageManager } = resolveScaffoldDependencies({
+		repoRoot,
+		planPackages: plan.npmPackages,
+		backendManifest,
+	});
 	pinDependenciesToSourceLockfile(repoRoot, augmentedNpm);
 	const availablePackages = new Set(Object.keys(augmentedNpm));
 	const generatedGlobalsCss = buildGlobalsCssFromSource(sourceGlobalsCss, availablePackages);
@@ -822,7 +728,7 @@ export function FeatureFlagsShim() {
 	});
 	if (args.backendBacked) {
 		writeBackendDeploymentHarness({
-			repoRoot, targetDir, packageManager: sourceManifest.packageManager,
+			repoRoot, targetDir, packageManager,
 			buildPolicy: readPnpmYamlSection(repoRoot, "overrides") + readPnpmYamlSection(repoRoot, "allowBuilds"),
 		});
 	}
