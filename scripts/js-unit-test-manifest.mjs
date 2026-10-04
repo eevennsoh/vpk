@@ -14,6 +14,17 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		".agents/skills/vpk-build/scripts/extraction-dependencies.test.js",
+		"app/contexts/context-rovo-chat-lifecycle.behavior.test.js",
+		"components/ui-custom/prompt-input-attachments.behavior.test.js",
+		"components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge.test.js",
+		"app/contexts/rovo-chat-transcript.test.js",
+		"components/projects/studio/lib/studio-chat-helpers.test.js",
+		"components/blocks/skills-directory/skills-directory-view.behavior.test.js",
+		"components/website/demos/utils/lib/browser-control-dispatch.test.js",
+		"components/website/demos/utils/components/browser-preview-panel.behavior.test.js",
+		"components/projects/shared/lib/process-assistant-message.test.js",
+		"components/projects/rovo-core/components/rovo-app-shell-pane-layout.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-created-card-drop-motion.test.js",
 		"components/blocks/jira-kanban/experimental/lib/issue-solitaire-drop.test.js",
 		"components/blocks/jira-kanban/experimental/lib/issue-drop-handoff.test.js",
@@ -655,7 +666,6 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"scripts/css-utility-collisions.test.js",
 		"components/projects/rovo-core/components/clicky/clicky-core.test.js",
 		"components/projects/rovo-core/components/rovo-app-header.test.js",
-		"components/projects/rovo-core/components/rovo-app-shell-pane-layout.test.js",
 		"components/projects/rovo-core/components/rovo-app-surface-shell.test.js",
 		"components/projects/rovo-core/hooks/use-clicky-voice.test.js",
 		"components/projects/rovo-core/hooks/use-realtime-voice.test.js",
@@ -691,7 +701,6 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/rovo-core/hooks/use-rovo-app-turn-lifecycle-state.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-use-chat-lifecycle-actions.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-user-message-actions.test.js",
-		"components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge.test.js",
 		"components/projects/rovo-core/lib/api-backend-unavailable.test.js",
 		"components/projects/rovo-core/lib/rovo-app-shell-layout.test.js",
 		"components/arts/awake/glass-slider.test.js",

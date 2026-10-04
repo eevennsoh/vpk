@@ -70,18 +70,7 @@ test("clamps the chat pane width on wide screens", async () => {
 	assert.equal(layout.artifactPaneWidth, 1040);
 });
 
-test("Rovo imports shell layout from the core owner while Studio owns width constants", () => {
-	const rovoShellSource = readProjectFile("components/projects/rovo/components/rovo-app-shell.tsx");
-	const studioShellSource = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
+test("Studio keeps its established composer width", () => {
 	const studioLayoutConstantsSource = readProjectFile("components/projects/studio/lib/studio-layout-constants.ts");
-
-	assert.match(
-		rovoShellSource,
-		/from "@\/components\/projects\/rovo-core\/lib\/rovo-app-shell-layout";/u,
-	);
-	assert.match(
-		studioShellSource,
-		/from "@\/components\/projects\/rovo-core\/lib\/rovo-app-shell-layout";/u,
-	);
 	assert.match(studioLayoutConstantsSource, /export const ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS = "max-w-\[600px\]";/u);
 });

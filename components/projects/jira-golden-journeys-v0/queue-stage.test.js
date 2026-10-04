@@ -180,10 +180,6 @@ test("ASX Rovo history reuses the three Queue sessions and swaps agent plus tran
 	assert.match(ROVO_STAGE_SOURCE, /getThreadActions,/u);
 	assert.match(ROVO_STAGE_SOURCE, /pinnedThreadIds,/u);
 	assert.match(ROVO_STAGE_SOURCE, /chatHistory=\{chatHistory\}/u);
-	assert.match(
-		ROVO_STAGE_SOURCE,
-		/resetChat\(\);[\s\S]*selectAgent\(session\.agentId, \{ preserveCurrentThread: true \}\);[\s\S]*replaceMessages\(thread\.messages\);[\s\S]*setActiveHistorySessionId\(threadId\);/u,
-	);
 	assert.match(ROVO_STAGE_SOURCE, /resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*resetChat\(\);/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /createAsxQueueHistoryThreads/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /createAsxQueueSidebarSessionItem/u);

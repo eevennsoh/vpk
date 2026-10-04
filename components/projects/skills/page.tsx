@@ -259,7 +259,6 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				autoFocusComposer
 			/>
 			<SkillsDirectoryDialog
-				key={configSkillId ?? (isSkillsDirectoryOpen ? "browse" : "closed")}
 				open={isDialogOpen}
 				onOpenChange={(open) => {
 					if (!open) {

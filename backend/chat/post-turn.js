@@ -213,7 +213,6 @@ async function finalizePlanExecutionArtifactPostStream({
 }
 
 async function completeRovoPostTurn({
-	activeRequests,
 	buildArtifactPreviewSummary,
 	buildMissingStudioAgentResultFailureParts,
 	buildPostTurnWorkCompleteTraceData: buildPostTurnTraceData =
@@ -282,10 +281,6 @@ async function completeRovoPostTurn({
 				error: error instanceof Error ? error.message : String(error),
 			});
 		}
-	}
-
-	if (threadId) {
-		activeRequests.delete(threadId);
 	}
 
 	const routingTelemetry = buildRovoTurnRoutingTelemetry({

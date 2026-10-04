@@ -18,7 +18,6 @@ export {
 } from "@/components/projects/rovo-core/lib/agent-records/session-agent-entry";
 export type {
 	QueuedPromptItem,
-	RovoThreadSnapshot,
 	SendPromptOptions,
 	StudioAgentPublishStatus,
 	StudioSessionAgentEntry,
@@ -50,3 +49,5 @@ export {
 	useCreationModeActions,
 } from "./context-creation-mode";
 export type { CreationMode } from "./context-creation-mode";
+
+export type { RovoSessionSnapshot, RovoLocalTurn } from "./rovo-chat-transcript";

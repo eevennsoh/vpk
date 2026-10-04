@@ -21,3 +21,29 @@ test("api exports the shared Rovo app user error formatter", () => {
 	assert.match(API_SOURCE, /if \(isRovoAppBackendUnavailableError\(error\)\) \{[\s\S]*return getRovoAppBackendUnavailableUserMessage\(\);/u);
 	assert.match(API_SOURCE, /return error instanceof Error \? error\.message : String\(error\);/u);
 });
+
+test("thread creation forwards cancellation to fetch without serializing it in the request body", async () => {
+	const { loadRovoCoreModule } = require("../test-utils/load-rovo-core-module.cjs");
+	const { createRovoAppThread } = loadRovoCoreModule("lib/api.ts");
+	const originalFetch = globalThis.fetch;
+	const controller = new AbortController();
+	const input = { id: "thread", title: "New chat", visibility: "private", messages: [] };
+	const requests = [];
+	globalThis.fetch = async (url, request) => {
+		requests.push({ method: request.method, body: JSON.parse(request.body), signal: request.signal });
+		return new Response(JSON.stringify({ thread: input }), { headers: { "Content-Type": "application/json" } });
+	};
+	try {
+		assert.equal((await createRovoAppThread({ ...input, signal: controller.signal })).id, "thread");
+		assert.equal(requests[0].method, "POST");
+		assert.deepEqual(requests[0].body, input);
+		assert.equal(requests[0].signal === controller.signal, true);
+		const cancelled = new DOMException("Cancelled", "AbortError");
+		globalThis.fetch = (url, request) => new Promise((resolve, reject) => request.signal.addEventListener("abort", () => reject(cancelled), { once: true }));
+		const pending = createRovoAppThread({ ...input, signal: controller.signal });
+		controller.abort();
+		await assert.rejects(pending, (error) => error === cancelled);
+	} finally {
+		globalThis.fetch = originalFetch;
+	}
+});

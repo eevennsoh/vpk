@@ -22,6 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import ts from "typescript";
+import { resolveTraceDependencies } from "./extraction-dependencies.mjs";
 
 const RESOLVE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mts", ".cjs", ".cts", ".json"];
 
@@ -413,64 +414,6 @@ function trace({ route, repoRoot }) {
 
 // -------- Plan assembly -------------------------------------------------
 
-function readJSON(p) {
-	return JSON.parse(fs.readFileSync(p, "utf8"));
-}
-
-function resolvePinnedVersion(pkgName, rootManifest) {
-	const deps = rootManifest.dependencies || {};
-	const dev = rootManifest.devDependencies || {};
-	return deps[pkgName] || dev[pkgName] || null;
-}
-
-/**
- * Parse the top-level `catalog:` map from `pnpm-workspace.yaml`. The sibling
- * extract is not a pnpm workspace, so every `"catalog:"` specifier must be
- * replaced with the concrete version from this block.
- */
-function readPnpmCatalog(repoRoot) {
-	const yamlPath = path.join(repoRoot, "pnpm-workspace.yaml");
-	if (!fs.existsSync(yamlPath)) return {};
-	const catalog = {};
-	let inCatalog = false;
-	for (const rawLine of fs.readFileSync(yamlPath, "utf8").split("\n")) {
-		const line = rawLine.replace(/\s+#.*$/, "");
-		if (!inCatalog) {
-			if (/^catalog:\s*$/.test(line)) inCatalog = true;
-			continue;
-		}
-		if (/^\S/.test(line) && line.trim() !== "") break;
-		const match = line.match(/^\s+['"]?([^'"#:]+)['"]?\s*:\s*['"]?([^'"#\s]+)['"]?\s*$/);
-		if (match) catalog[match[1].trim()] = match[2].trim();
-	}
-	return catalog;
-}
-
-function resolveCatalogSpecifier(pkgName, version, catalog) {
-	if (version !== "catalog:") return version;
-	return catalog[pkgName] || version;
-}
-
-const HOST_PACKAGE_PEERS = [
-	{ host: "react-leaflet", runtime: ["leaflet"], types: ["@types/leaflet"] },
-	{ host: "three", runtime: [], types: ["@types/three"] },
-];
-
-function addHostPackagePeers(npmPackages, rootManifest, catalog, warnings) {
-	for (const { host, runtime, types } of HOST_PACKAGE_PEERS) {
-		if (!npmPackages[host]) continue;
-		for (const peer of [...runtime, ...types]) {
-			if (npmPackages[peer]) continue;
-			const raw = resolvePinnedVersion(peer, rootManifest);
-			if (!raw) {
-				warnings.push(`Host package "${host}" is in the graph but peer "${peer}" is missing from source package.json`);
-				continue;
-			}
-			npmPackages[peer] = resolveCatalogSpecifier(peer, raw, catalog);
-		}
-	}
-}
-
 function collectAmbientTypeFiles(repoRoot, files) {
 	const extra = [];
 	const typesDir = path.join(repoRoot, "types");
@@ -487,78 +430,18 @@ function collectAmbientTypeFiles(repoRoot, files) {
 	return extra;
 }
 
-function collectLocalCssImportsFromText(cssText, fromDir) {
-	const found = [];
-	const re = /@import\s+["'](\.\.?\/[^"']+\.css)["']/g;
-	let match;
-	while ((match = re.exec(cssText)) !== null) {
-		found.push(path.posix.normalize(path.posix.join(fromDir, match[1])));
-	}
-	return found;
-}
-
 function buildPlan({ route, repoRoot, trace: t, gitState }) {
-	const manifest = readJSON(path.join(repoRoot, "package.json"));
-	const catalog = readPnpmCatalog(repoRoot);
-
 	const files = [...t.visited]
 		.map(f => path.relative(repoRoot, f))
 		.sort();
 	const ambientTypes = collectAmbientTypeFiles(repoRoot, files);
 	const allFiles = [...new Set([...files, ...ambientTypes])].sort();
-
-	const npmPackages = {};
-	const unresolvedNpm = [];
-	const unresolvedCatalog = [];
-	for (const pkg of [...t.npmPackages.keys()].sort()) {
-		const rawVersion = resolvePinnedVersion(pkg, manifest);
-		if (rawVersion) {
-			const version = resolveCatalogSpecifier(pkg, rawVersion, catalog);
-			npmPackages[pkg] = version;
-			if (rawVersion === "catalog:" && version === "catalog:") {
-				unresolvedCatalog.push(pkg);
-			}
-		} else if (pkg.startsWith("react") || pkg === "next" || pkg === "typescript") {
-			// Core always assumed present in the scaffold even if not explicit
-			npmPackages[pkg] = "latest";
-		} else {
-			unresolvedNpm.push(pkg);
-		}
-	}
-
-	const peerWarnings = [];
-	addHostPackagePeers(npmPackages, manifest, catalog, peerWarnings);
-
-	// Always mark the two universal CSS prerequisites so the scaffold copies them.
-	// These are Tailwind-build-time dependencies that the AST won't catch if they're
-	// only referenced transitively through layout.tsx.
-	const universalCss = [
-		"app/tailwind-theme.css",
-		"@atlaskit/tokens/css-reset.css",
-	];
-	const cssImportSet = new Set([...t.cssImports, ...universalCss]);
-	const globalsCssRel = "app/globals.css";
-	const globalsCssAbs = path.join(repoRoot, globalsCssRel);
-	if (fs.existsSync(globalsCssAbs)) {
-		for (const rel of collectLocalCssImportsFromText(fs.readFileSync(globalsCssAbs, "utf8"), "app")) {
-			cssImportSet.add(rel);
-		}
-	}
-	const cssImports = [...cssImportSet].sort();
-
-	// If tailwind-theme.css is local and @atlaskit/tokens is npm, ensure the latter is in deps
-	if (cssImports.includes("@atlaskit/tokens/css-reset.css") && !npmPackages["@atlaskit/tokens"]) {
-		const v = resolvePinnedVersion("@atlaskit/tokens", manifest);
-		if (v) npmPackages["@atlaskit/tokens"] = resolveCatalogSpecifier("@atlaskit/tokens", v, catalog);
-	}
-
-	const warnings = [...t.warnings, ...peerWarnings];
-	for (const pkg of unresolvedNpm) {
-		warnings.push(`npm dep "${pkg}" not found in root package.json — extraction may fail`);
-	}
-	for (const pkg of unresolvedCatalog) {
-		warnings.push(`npm dep "${pkg}" uses catalog: but has no entry in pnpm-workspace.yaml`);
-	}
+	const { npmPackages, cssImports, warnings: dependencyWarnings } = resolveTraceDependencies({
+		repoRoot,
+		packageNames: t.npmPackages.keys(),
+		cssImports: t.cssImports,
+	});
+	const warnings = [...t.warnings, ...dependencyWarnings];
 
 	const backendRoutes = [...t.backendRoutes].sort();
 	if (backendRoutes.length > 0) {

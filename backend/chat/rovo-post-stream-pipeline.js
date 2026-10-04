@@ -7,8 +7,8 @@ const {
 	runRovoPostStreamRouting: defaultRunRovoPostStreamRouting,
 } = require("./rovo-post-stream-routing-orchestrator");
 const {
-	runRovoPostTurnCompletion: defaultRunRovoPostTurnCompletion,
-} = require("./rovo-post-turn-completion-orchestrator");
+	completeRovoPostTurn: defaultCompleteRovoPostTurn,
+} = require("./post-turn");
 
 async function runRovoPostStreamPipeline({
 	flushRovoMarkerStream,
@@ -16,7 +16,7 @@ async function runRovoPostStreamPipeline({
 	onShouldEmitMissingStudioAgentResultFailure,
 	runRovoPostStreamFinalizers = defaultRunRovoPostStreamFinalizers,
 	runRovoPostStreamRouting = defaultRunRovoPostStreamRouting,
-	runRovoPostTurnCompletion = defaultRunRovoPostTurnCompletion,
+	completeRovoPostTurn = defaultCompleteRovoPostTurn,
 	...options
 } = {}) {
 	flushRovoMarkerStream?.();
@@ -190,8 +190,7 @@ async function runRovoPostStreamPipeline({
 		writer: options.writer,
 	});
 
-	await runRovoPostTurnCompletion({
-		activeRequests: options.activeRequests,
+	await completeRovoPostTurn({
 		buildArtifactPreviewSummary: options.buildArtifactPreviewSummary,
 		buildMissingStudioAgentResultFailureParts:
 			options.buildMissingStudioAgentResultFailureParts,
@@ -206,7 +205,7 @@ async function runRovoPostStreamPipeline({
 			options.derivePlanExecutionArtifactTitle,
 		emitRovoMissingStudioAgentResultFailure:
 			options.emitRovoMissingStudioAgentResultFailure,
-		finalizePlanExecutionArtifactPostStream:
+		finalizePlanExecutionArtifactPostStreamFn:
 			options.finalizePlanExecutionArtifactPostStream,
 		flushDeferredToolFirstText: options.flushDeferredToolFirstText,
 		generatePlanMetadataViaGateway:
@@ -223,10 +222,11 @@ async function runRovoPostStreamPipeline({
 		isPostClarificationTurn: options.isPostClarificationTurn,
 		isStrictToolFirstTurn: options.isStrictToolFirstTurn,
 		logger: options.logger,
-		postStreamRoutingResult,
+		getRouteToolsDetected: postStreamRoutingResult.getRouteToolsDetected,
+		hasEmittedGenuiWidget: postStreamRoutingResult.hasEmittedGenuiWidget,
 		requestOrigin: options.requestOrigin,
-		requestUserInputQuestionCardEmitter:
-			options.requestUserInputQuestionCardEmitter,
+		closePendingQuestionCardLoading: () =>
+			options.requestUserInputQuestionCardEmitter.closePendingLoading(),
 		resolvePlanExecutionCompletionFn:
 			options.resolvePlanExecutionCompletionFn,
 		resolvedRovoPort: options.resolvedRovoPort,

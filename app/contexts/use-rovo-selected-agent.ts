@@ -18,7 +18,7 @@ export function useRovoSelectedAgent() {
 		removeSessionAgent,
 		resetAgentToRovo,
 		deleteAllThreads,
-		hydrateThreadSnapshot,
+		activateSession,
 	} = useRovoChat();
 
 	return {
@@ -36,6 +36,6 @@ export function useRovoSelectedAgent() {
 		removeSessionAgent,
 		resetAgentToRovo,
 		deleteAllThreads,
-		hydrateThreadSnapshot,
+		activateSession,
 	};
 }

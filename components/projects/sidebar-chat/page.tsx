@@ -338,7 +338,7 @@ interface ChatPanelProps {
 	/**
 	 * Id of an externally-injected assistant message that should render as
 	 * actively "thinking" (live morphing-Rovo trace, auto-expanded) — used by the
-	 * Agent Test panel while it plays a local run via `replaceMessages`. Cleared
+	 * Agent Test panel while it plays a local run via `applyLocalTurn`. Cleared
 	 * (set to null) when the run settles so the trace collapses to "Thought for Xs".
 	 */
 	externalThinkingMessageId?: string | null;

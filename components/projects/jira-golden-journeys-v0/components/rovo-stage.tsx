@@ -59,10 +59,9 @@ function ignoreThreadRun(): Promise<void> {
  */
 export function RovoStage(): React.ReactElement {
 	const {
-		replaceMessages,
+		activateSession,
 		resetAgentToRovo,
 		resetChat,
-		selectAgent,
 	} = useRovoChat();
 	const [historySessions, setHistorySessions] = useState<AsxQueueSession[]>(() => (
 		ASX_QUEUE_SESSION_SEEDS.map((session) => ({ ...session }))
@@ -112,17 +111,14 @@ export function RovoStage(): React.ReactElement {
 	const handleBackToRovo = useCallback(() => {
 		setActiveHistorySessionId(null);
 	}, []);
-	const handleSelectThread = useCallback((threadId: string) => {
+	const handleSelectThread = useCallback(async (threadId: string) => {
 		const session = historySessions.find((item) => item.id === threadId);
 		const thread = historyThreads.find((item) => item.id === threadId);
 		if (!session || !thread) return Promise.resolve();
 
-		resetChat();
-		selectAgent(session.agentId, { preserveCurrentThread: true });
-		replaceMessages(thread.messages);
-		setActiveHistorySessionId(threadId);
-		return Promise.resolve();
-	}, [historySessions, historyThreads, replaceMessages, resetChat, selectAgent]);
+		const activated = await activateSession({ agentId: session.agentId, threadId: null, messages: thread.messages });
+		if (activated) setActiveHistorySessionId(threadId);
+	}, [activateSession, historySessions, historyThreads]);
 	const handleDeleteThread = useCallback((threadId: string) => {
 		setHistorySessions((sessions) => sessions.filter((session) => session.id !== threadId));
 		if (activeHistorySessionId === threadId) handleNewChat();

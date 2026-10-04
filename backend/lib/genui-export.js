@@ -3,7 +3,7 @@
  * Accepts a json-render spec and renders it to PDF, PNG, SVG, or React code.
  *
  * All renderers use their own internal catalogs/registries — the spec is first
- * mapped from the React catalog to the target format via mapSpecToFormat().
+ * mapped from the React catalog to the target format by this module's mapSpec().
  */
 
 const { loadFonts } = require("./genui-export-fonts");

@@ -1,4 +1,8 @@
 export type RovoChatTransitionKind =
+	| "activate-session"
+	| "apply-local-turn"
+	| "stop-streaming"
+	| "destroy"
 	| "delete-all-threads"
 	| "delete-thread"
 	| "hydrate-thread-snapshot"

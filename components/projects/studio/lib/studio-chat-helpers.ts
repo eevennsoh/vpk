@@ -10,27 +10,27 @@ interface StudioGenerationThreadSource {
 }
 
 interface StudioGenerationThreadHydrator {
-	hydrateThreadSnapshot?: (snapshot: { threadId: string; messages: ReadonlyArray<RovoUIMessage>; markPersisted?: boolean }) => void;
+	activateSession?: (snapshot: { threadId: string; messages: ReadonlyArray<RovoUIMessage>; markPersisted?: boolean }) => Promise<boolean>;
 }
 
-export function adoptStudioGenerationTranscript({
+export async function adoptStudioGenerationTranscript({
 	chat,
 	registry,
 }: {
 	chat: StudioGenerationThreadSource | null | undefined;
 	registry: StudioGenerationThreadHydrator;
-}): void {
+}): Promise<boolean> {
 	const generationThreadId = chat?.activeThreadId ?? null;
 	const generationMessages = chat?.messages ?? [];
 	if (!generationThreadId || generationMessages.length === 0) {
-		return;
+		return false;
 	}
 
-	if (typeof registry.hydrateThreadSnapshot !== "function") {
-		return;
+	if (typeof registry.activateSession !== "function") {
+		return false;
 	}
 
-	registry.hydrateThreadSnapshot({
+	return registry.activateSession({
 		markPersisted: true,
 		messages: generationMessages,
 		threadId: generationThreadId,

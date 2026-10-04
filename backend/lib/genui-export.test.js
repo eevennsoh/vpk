@@ -1,208 +1,173 @@
-const { describe, it } = require("node:test");
+const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { mapSpec, generateReactCode, exportSpec, EXPORT_FORMATS } = require("./genui-export");
-
-// ── Sample spec ──────────────────────────────────────────────────
+const fs = require("node:fs");
+const path = require("node:path");
+const Module = require("node:module");
+const { exportSpec, EXPORT_FORMATS } = require("./genui-export");
 
 const sampleSpec = {
 	root: "root",
-	state: {
-		userName: "Alice",
-		accepted: true,
-	},
+	state: { userName: "Alice", accepted: true },
 	elements: {
-		root: {
-			type: "Stack",
-			props: { direction: "vertical", gap: "md" },
-			children: ["heading", "text", "badge", "input", "sep", "btn"],
-		},
-		heading: {
-			type: "Heading",
-			props: { text: "Dashboard", level: "h1" },
-		},
-		text: {
-			type: "Text",
-			props: { content: "Welcome to the dashboard.", muted: true },
-		},
-		badge: {
-			type: "Badge",
-			props: { text: "New", variant: "success" },
-		},
-		input: {
-			type: "TextInput",
-			props: {
-				label: "Your name",
-				value: { $bindState: "/userName" },
-			},
-		},
-		sep: {
-			type: "Separator",
-			props: { orientation: "horizontal" },
-		},
-		btn: {
-			type: "Button",
-			props: { label: "Submit", variant: "default" },
-		},
+		root: { type: "Stack", props: { direction: "vertical", gap: "md" }, children: ["heading", "text", "badge", "input", "sep", "btn"] },
+		heading: { type: "Heading", props: { text: "Dashboard", level: "h1" } },
+		text: { type: "Text", props: { content: "Welcome to the dashboard.", muted: true } },
+		badge: { type: "Badge", props: { text: "New", variant: "success" } },
+		input: { type: "TextInput", props: { label: "Your name", value: { $bindState: "/userName" } } },
+		sep: { type: "Separator", props: { orientation: "horizontal" } },
+		btn: { type: "Button", props: { label: "Submit", variant: "default" } },
 	},
 };
 
-const chartSpec = {
-	root: "root",
-	elements: {
-		root: {
-			type: "Stack",
-			props: { direction: "vertical", gap: "md" },
-			children: ["chart"],
-		},
-		chart: {
-			type: "BarChart",
-			props: {
-				title: "Revenue by Region",
-				data: [{ region: "North", revenue: 4500 }],
-				xKey: "region",
-				yKey: "revenue",
-			},
-		},
-	},
-};
+// The renderer/font stand-ins are internal dependency seams, never options in
+// the caller's export interface. Their returned bytes expose the document the
+// real export owner passes to PDF/Image rendering without loading fonts/network.
+function loadExportWithRenderers({ pdf, png } = {}) {
+	const filename = path.join(__dirname, "genui-export.js");
+	const loaded = new Module(filename, module);
+	loaded.filename = filename;
+	loaded.paths = Module._nodeModulePaths(__dirname);
+	const requireDependency = loaded.require.bind(loaded);
+	loaded.require = (specifier) => {
+		if (specifier === "@json-render/react-pdf") return {
+			renderToBuffer: pdf ?? (async (spec) => Buffer.from(JSON.stringify(spec))),
+		};
+		if (specifier === "@json-render/image") return {
+			renderToPng: png ?? (async (spec, options) => Buffer.from(JSON.stringify({ spec, options }))),
+		};
+		if (specifier === "./genui-export-fonts") return { loadFonts: async () => [{ name: "Local test font" }] };
+		return requireDependency(specifier);
+	};
+	loaded._compile(fs.readFileSync(filename, "utf8"), filename);
+	return loaded.exports.exportSpec;
+}
 
-const threeDSpec = {
-	root: "scene",
-	elements: {
-		scene: {
-			type: "Scene3D",
-			props: { background: "#111", height: "400px" },
-			children: ["box"],
-		},
-		box: {
-			type: "Box",
-			props: { position: [0, 0, 0], size: [1, 1, 1], color: "red" },
-		},
-	},
-};
+function parseDocument(result) {
+	return JSON.parse(result.data.toString("utf8"));
+}
 
-// ── Tests ────────────────────────────────────────────────────────
-
-describe("mapSpec", () => {
-	it("maps a basic spec to PDF format", () => {
-		const result = mapSpec(sampleSpec, "pdf");
-		assert.ok(result.root, "PDF spec has a root");
-		assert.ok(result.elements, "PDF spec has elements");
-
-		// Root should be a Document
-		const rootEl = result.elements[result.root];
-		assert.equal(rootEl.type, "Document");
-
-		// Should have a Page
-		const pageKey = rootEl.children[0];
-		const pageEl = result.elements[pageKey];
-		assert.equal(pageEl.type, "Page");
-	});
-
-	it("maps a basic spec to image format", () => {
-		const result = mapSpec(sampleSpec, "image");
-		const rootEl = result.elements[result.root];
-		assert.equal(rootEl.type, "Frame");
-	});
-
-	it("resolves $bindState expressions from external state", () => {
-		const result = mapSpec(sampleSpec, "pdf", { userName: "Bob" });
-		// TextInput should become static Text with resolved value
-		const inputEl = result.elements["input"];
-		assert.ok(inputEl, "Input element exists");
-		assert.equal(inputEl.type, "Text");
-		assert.ok(inputEl.props.text.includes("Bob"), "State resolved in text");
-	});
-
-	it("converts charts to placeholder text", () => {
-		const result = mapSpec(chartSpec, "pdf");
-		const chartEl = result.elements["chart"];
-		assert.ok(chartEl, "Chart element mapped");
-		assert.equal(chartEl.type, "Text");
-		assert.ok(chartEl.props.text.includes("Revenue by Region"), "Chart title preserved as placeholder");
-	});
-
-	it("drops 3D elements entirely", () => {
-		const result = mapSpec(threeDSpec, "pdf");
-		assert.ok(!result.elements["scene"] || result.elements["scene"].type !== "Scene3D", "Scene3D dropped");
-		assert.ok(!result.elements["box"] || result.elements["box"].type !== "Box", "3D Box dropped");
-	});
-
-	it("wraps top-level mapped orphans when the declared root is dropped", () => {
-		const result = mapSpec({
-			root: "scene",
-			elements: {
-				scene: {
-					type: "Scene3D",
-					props: {},
-					children: ["heading"],
-				},
-				heading: {
-					type: "Stack",
-					props: { direction: "vertical" },
-					children: ["detail"],
-				},
-				detail: {
-					type: "Text",
-					props: { content: "Detail" },
-				},
-				loose: {
-					type: "Text",
-					props: { content: "Loose" },
-				},
-			},
-		}, "pdf");
-
-		const doc = result.elements[result.root];
-		const page = result.elements[doc.children[0]];
-		const wrapper = result.elements[page.children[0]];
-
-		assert.equal(wrapper.type, "View");
-		assert.deepEqual(wrapper.children, ["heading", "loose"]);
-	});
+test("exportSpec is the download interface for the three supported formats", async () => {
+	assert.deepEqual(EXPORT_FORMATS, ["pdf", "png", "react-code"]);
+	const result = await exportSpec(sampleSpec, "react-code", { title: "test", componentName: "MyDashboard" });
+	assert.equal(result.contentType, "text/plain; charset=utf-8");
+	assert.equal(result.filename, "test.tsx");
+	assert.equal(Buffer.isBuffer(result.data), true);
+	const code = result.data.toString("utf8");
+	assert.equal(code.startsWith('"use client";'), true);
+	assert.equal(code.includes("export function MyDashboard()"), true);
+	assert.equal(code.includes("<Heading text=\"Dashboard\" level=\"h1\" />"), true);
+	assert.equal(code.includes("$bindState"), false);
+	assert.equal(code.includes("TODO"), false);
 });
 
-describe("generateReactCode", () => {
-	it("generates a valid React component string", () => {
-		const code = generateReactCode(sampleSpec, "MyDashboard");
-		assert.ok(code.includes("export function MyDashboard"), "Has exported function");
-		assert.ok(code.includes("use client"), "Has use client directive");
-	});
-
-	it("uses default component name when not specified", () => {
-		const code = generateReactCode(sampleSpec);
-		assert.ok(code.includes("export function GeneratedUI"), "Uses default name");
-	});
+test("code download preserves serialization, child order, default name and omitted dynamic props", async () => {
+	const result = await exportSpec({
+		root: "root", state: { count: 2 },
+		elements: {
+			root: { type: "Stack", props: { direction: "vertical" }, children: ["first", "missing", "second"] },
+			first: { type: "Text", props: { content: "First", muted: true, absent: null, value: { $state: "/count" } } },
+			second: { type: "Button", props: { label: "Second", data: { count: 2 }, enabled: false } },
+		},
+	}, "react-code");
+	const code = result.data.toString("utf8");
+	assert.equal(result.filename, "export.tsx");
+	assert.equal(code.includes("export function GeneratedUI()"), true);
+	assert.equal(code.indexOf("First") < code.indexOf("Second"), true);
+	assert.equal(code.includes("absent="), false);
+	assert.equal(code.includes("$state"), false);
+	assert.equal(code.includes("enabled={false}"), true);
+	assert.equal(code.includes("muted"), true);
+	assert.equal(code.includes("data={{ count: 2 }}"), true);
 });
 
-describe("EXPORT_FORMATS", () => {
-	it("contains all supported formats", () => {
-		assert.ok(EXPORT_FORMATS.includes("pdf"));
-		assert.ok(EXPORT_FORMATS.includes("png"));
-		assert.ok(EXPORT_FORMATS.includes("react-code"));
-	});
+test("download filenames sanitize and bound titles consistently across formats", async () => {
+	const exportWithRenderers = loadExportWithRenderers();
+	for (const [format, extension] of [["pdf", "pdf"], ["png", "png"], ["react-code", "tsx"]]) {
+		const result = await exportWithRenderers(sampleSpec, format, { title: "My Report: Q4/2025!" });
+		assert.equal(result.filename, `My_Report__Q4_2025_.${extension}`);
+		const longTitle = await exportWithRenderers(sampleSpec, format, { title: "a".repeat(80) });
+		assert.equal(longTitle.filename, `${"a".repeat(60)}.${extension}`);
+		const emptyTitle = await exportWithRenderers(sampleSpec, format, { title: "" });
+		assert.equal(emptyTitle.filename, `export.${extension}`);
+	}
 });
 
-describe("exportSpec", () => {
-	it("exports react-code format", async () => {
-		const result = await exportSpec(sampleSpec, "react-code", { title: "test" });
-		assert.equal(result.contentType, "text/plain; charset=utf-8");
-		assert.equal(result.filename, "test.tsx");
-		assert.ok(Buffer.isBuffer(result.data), "Data is a buffer");
-		const code = result.data.toString("utf-8");
-		assert.ok(code.includes("export function"), "Contains exported function");
-	});
+test("PDF download wraps content in a document/page and resolves external state", async () => {
+	const result = await loadExportWithRenderers()(sampleSpec, "pdf", { state: { userName: "Bob" } });
+	assert.equal(result.contentType, "application/pdf");
+	assert.equal(result.filename, "export.pdf");
+	const document = parseDocument(result);
+	const root = document.elements[document.root];
+	assert.equal(root.type, "Document");
+	const page = document.elements[root.children[0]];
+	assert.equal(page.type, "Page");
+	assert.equal(page.props.size, "A4");
+	assert.equal(document.elements.input.type, "Text");
+	assert.equal(document.elements.input.props.text, "Your name: Bob");
+	assert.equal(document.elements.heading.props.text, "Dashboard");
+});
 
-	it("rejects unsupported format", async () => {
-		await assert.rejects(
-			() => exportSpec(sampleSpec, "docx"),
-			/Unsupported export format/
-		);
-	});
+test("PNG download passes a bounded frame, state and local fonts to its renderer", async () => {
+	const result = await loadExportWithRenderers()(sampleSpec, "png");
+	assert.equal(result.contentType, "image/png");
+	assert.equal(result.filename, "export.png");
+	const { spec, options } = parseDocument(result);
+	assert.equal(spec.elements[spec.root].type, "Frame");
+	assert.equal(spec.elements[spec.root].props.width, 1200);
+	assert.equal(spec.elements[spec.root].props.height, 470);
+	assert.equal(spec.elements.input.props.text, "Your name: Alice");
+	assert.deepEqual(options.fonts, [{ name: "Local test font" }]);
+});
 
-	it("sanitizes title for filename", async () => {
-		const result = await exportSpec(sampleSpec, "react-code", { title: "My Report: Q4/2025!" });
-		assert.ok(!result.filename.includes("/"), "No slashes in filename");
-		assert.ok(!result.filename.includes("!"), "No exclamation in filename");
+test("PDF and PNG downloads use chart placeholders and prune dropped 3D descendants", async () => {
+	const spec = {
+		root: "root",
+		elements: {
+			root: { type: "Stack", children: ["chart", "scene"] },
+			chart: { type: "BarChart", props: { title: "Revenue by Region" } },
+			scene: { type: "Scene3D", children: ["box"] },
+			box: { type: "Box", props: { size: [1, 1, 1] } },
+		},
+	};
+	for (const format of ["pdf", "png"]) {
+		const output = parseDocument(await loadExportWithRenderers()(spec, format));
+		const mapped = format === "png" ? output.spec : output;
+		assert.deepEqual(mapped.elements.root.children, ["chart"]);
+		assert.equal(mapped.elements.chart.props.text, "[Revenue by Region]");
+		assert.equal(Object.hasOwn(mapped.elements, "scene"), false);
+		assert.equal(Object.hasOwn(mapped.elements, "box"), false);
+	}
+});
+
+test("a dropped export root wraps surviving top-level content once", async () => {
+	const result = await loadExportWithRenderers()({
+		root: "scene",
+		elements: {
+			scene: { type: "Scene3D", children: ["heading"] },
+			heading: { type: "Stack", children: ["detail"] },
+			detail: { type: "Text", props: { content: "Detail" } },
+			loose: { type: "Text", props: { content: "Loose" } },
+		},
+	}, "pdf");
+	const document = parseDocument(result);
+	const root = document.elements[document.root];
+	const page = document.elements[root.children[0]];
+	assert.deepEqual(document.elements[page.children[0]].children, ["heading", "loose"]);
+});
+
+test("renderer bytes and renderer failures are preserved through exportSpec", async () => {
+	const bytes = Buffer.from([0, 1, 2, 255]);
+	for (const format of ["pdf", "png"]) {
+		const success = loadExportWithRenderers({ pdf: async () => bytes, png: async () => bytes });
+		assert.deepEqual((await success(sampleSpec, format)).data, bytes);
+		const failure = new Error(`${format} rendering failed`);
+		const fail = async () => { throw failure; };
+		await assert.rejects(loadExportWithRenderers({ pdf: fail, png: fail })(sampleSpec, format), (error) => error === failure);
+	}
+});
+
+test("unsupported export formats retain the caller-visible diagnostic", async () => {
+	await assert.rejects(exportSpec(sampleSpec, "docx"), {
+		message: "Unsupported export format: docx. Supported: pdf, png, react-code",
 	});
 });

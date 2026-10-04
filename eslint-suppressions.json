@@ -545,7 +545,7 @@
   },
   "components/blocks/agent-test/components/agent-test.test.js": {
     "no-restricted-syntax": {
-      "count": 70
+      "count": 65
     }
   },
   "components/blocks/agent-test/components/agent-test.tsx": {
@@ -1854,7 +1854,7 @@
   },
   "components/projects/jira-golden-journeys-v0/agent-chat-demo.test.js": {
     "no-restricted-syntax": {
-      "count": 6
+      "count": 5
     }
   },
   "components/projects/jira-golden-journeys-v0/card-kanban-stage.test.js": {
@@ -1894,7 +1894,7 @@
   },
   "components/projects/jira-golden-journeys-v0/queue-stage.test.js": {
     "no-restricted-syntax": {
-      "count": 188
+      "count": 187
     }
   },
   "components/projects/jira-golden-journeys-v0/work-item-stage.test.js": {
@@ -1904,7 +1904,7 @@
   },
   "components/projects/jira-golden-journeys-v1/agent-chat-demo.test.js": {
     "no-restricted-syntax": {
-      "count": 6
+      "count": 5
     }
   },
   "components/projects/jira-golden-journeys-v1/card-kanban-stage.test.js": {
@@ -1944,7 +1944,7 @@
   },
   "components/projects/jira-golden-journeys-v1/queue-stage.test.js": {
     "no-restricted-syntax": {
-      "count": 209
+      "count": 206
     }
   },
   "components/projects/jira-golden-journeys-v1/session-gallery.test.js": {
@@ -2213,11 +2213,6 @@
       "count": 16
     }
   },
-  "components/projects/rovo-core/components/rovo-app-shell-pane-layout.test.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "components/projects/rovo-core/components/rovo-app-surface-shell.test.js": {
     "no-restricted-syntax": {
       "count": 38
@@ -2465,7 +2460,7 @@
   },
   "components/projects/rovo/components/rovo-app-composer.test.js": {
     "no-restricted-syntax": {
-      "count": 144
+      "count": 133
     }
   },
   "components/projects/rovo/components/rovo-app-messages-empty-state.test.js": {
@@ -2480,7 +2475,7 @@
   },
   "components/projects/rovo/components/rovo-app-shell.tsx": {
     "react-hooks/refs": {
-      "count": 20
+      "count": 17
     },
     "react-hooks/set-state-in-effect": {
       "count": 12
@@ -2655,7 +2650,7 @@
   },
   "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
     "no-restricted-syntax": {
-      "count": 870
+      "count": 855
     }
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.test.js": {
@@ -2681,7 +2676,7 @@
       "count": 4
     },
     "react-hooks/refs": {
-      "count": 27
+      "count": 24
     },
     "react-hooks/set-state-in-effect": {
       "count": 16
