@@ -1,6 +1,7 @@
 import {
 	getAllDataParts,
 	hasCreatePlanSkillSignal,
+	hasTurnCompleteSignal,
 	getLatestDataPart,
 	getLatestRouteDecision,
 	getMessageReasoning,
@@ -10,103 +11,71 @@ import {
 	getToolFirstWarning,
 	getMessageToolParts,
 	isMessageTextStreaming,
-	type RovoDataPart,
-	type RovoRenderableUIMessage,
-	type RoutingDecision,
+	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
+import { getNormalizedWidgetDataParts } from "../thread-message/lib/widget-selection";
 import {
 	extractPlanRenderableText,
 	removeActionItemsSection,
 	removeLeadingSingleCharacterFragment,
 	removeTrailingSingleCharacterLine,
 	sanitizeMarkdownArtifactMarkers,
-} from "../lib/message-text-utils";
+} from "./message-text-utils";
 
-export interface MessageProcessingResult {
-	messageText: string;
-	rawMessageText: string;
-	isStreaming: boolean;
-	widgetType: string | undefined;
-	isWidgetLoading: boolean;
-	isPlanWidgetFlow: boolean;
-	isCreatePlanSkillFlow: boolean;
-	suggestedQuestions: string[];
-	reasoning: ReturnType<typeof getMessageReasoning>;
-	sources: ReturnType<typeof getMessageSources>;
-	toolFirstWarning: ReturnType<typeof getToolFirstWarning>;
-	toolParts: ReturnType<typeof getMessageToolParts>;
-	thinkingToolCalls: ReturnType<typeof getThinkingToolCallSummaries>;
-	thinkingStatusPart: RovoDataPart<"thinking-status"> | null;
-	thinkingEventParts: RovoDataPart<"thinking-event">[];
-	widgetDataPart: RovoDataPart<"widget-data"> | null;
-	routeDecision: RoutingDecision | null;
-}
-
-export function processAssistantMessage(
-	message: RovoRenderableUIMessage
-): MessageProcessingResult {
-	const rawMessageText = getMessageText(message);
-	const thinkingStatusPart = getLatestDataPart(message, "data-thinking-status");
-	const thinkingEventParts = getAllDataParts(message, "data-thinking-event");
-	const isStreaming = isMessageTextStreaming(message);
-
+/** Message facts have no dependency on which surface can render a widget. */
+export function readAssistantMessage(message: RovoUIMessage) {
 	const widgetLoadingPart = getLatestDataPart(message, "data-widget-loading");
 	const widgetDataPart = getLatestDataPart(message, "data-widget-data");
 	const widgetErrorPart = getLatestDataPart(message, "data-widget-error");
-	const suggestedQuestionsPart = getLatestDataPart(message, "data-suggested-questions");
-	const routeDecision = getLatestRouteDecision(message);
-
-	const widgetType =
-		widgetDataPart?.data.type ??
-		widgetLoadingPart?.data.type ??
-		widgetErrorPart?.data.type;
-	const isWidgetLoading = widgetLoadingPart?.data.loading ?? false;
-	const normalizedWidgetText = widgetType
-		? removeLeadingSingleCharacterFragment(rawMessageText)
-		: rawMessageText;
-	const isCreatePlanSkillFlow = hasCreatePlanSkillSignal(message);
-	const isPlanWidgetFlow =
-		widgetType === "plan" ||
-		widgetLoadingPart?.data.type === "plan" ||
-		widgetErrorPart?.data.type === "plan";
-	const planRenderableText =
-		widgetType === "plan" && isCreatePlanSkillFlow
-			? extractPlanRenderableText(normalizedWidgetText, { maxSummaryLines: 2 })
-			: null;
-
-	const baseMessageText =
-		widgetType === "question-card"
-			? removeTrailingSingleCharacterLine(normalizedWidgetText)
-			: widgetType === "plan"
-				? isCreatePlanSkillFlow
-					? planRenderableText?.text ?? ""
-					: removeActionItemsSection(normalizedWidgetText)
-				: normalizedWidgetText;
-
-	const toolParts = getMessageToolParts(message);
-	const thinkingToolCalls = getThinkingToolCallSummaries(message);
-	const messageTextBeforeMarkdownSanitization = baseMessageText;
-	const messageText = sanitizeMarkdownArtifactMarkers(
-		messageTextBeforeMarkdownSanitization
-	);
-
+	const widgetDataParts = getNormalizedWidgetDataParts(message);
+	const latestWidgetDataEntry = widgetDataParts.at(-1) ?? null;
 	return {
-		messageText,
-		rawMessageText,
-		isStreaming,
-		widgetType,
-		isWidgetLoading,
-		isPlanWidgetFlow,
-		isCreatePlanSkillFlow,
-		suggestedQuestions: suggestedQuestionsPart?.data.questions ?? [],
+		rawMessageText: getMessageText(message),
+		isStreaming: isMessageTextStreaming(message),
+		hasTurnComplete: hasTurnCompleteSignal(message),
+		isCreatePlanSkillFlow: hasCreatePlanSkillSignal(message),
+		widgetLoadingPart,
+		widgetDataPart,
+		widgetDataParts,
+		latestWidgetDataEntry,
+		widgetErrorPart,
+		widgetType: latestWidgetDataEntry?.widgetType ?? widgetLoadingPart?.data.type ?? widgetErrorPart?.data.type,
+		isWidgetLoading: widgetLoadingPart?.data.loading ?? false,
+		suggestedQuestions: getLatestDataPart(message, "data-suggested-questions")?.data.questions ?? [],
 		reasoning: getMessageReasoning(message),
 		sources: getMessageSources(message),
 		toolFirstWarning: getToolFirstWarning(message),
-		toolParts,
-		thinkingToolCalls,
-		thinkingStatusPart,
-		thinkingEventParts,
-		widgetDataPart,
-		routeDecision,
+		toolParts: getMessageToolParts(message),
+		thinkingToolCalls: getThinkingToolCallSummaries(message),
+		thinkingStatusPart: getLatestDataPart(message, "data-thinking-status"),
+		thinkingStatusParts: getAllDataParts(message, "data-thinking-status"),
+		thinkingEventParts: getAllDataParts(message, "data-thinking-event"),
+		browserScreenshots: getAllDataParts(message, "data-browser-screenshot"),
+		hasArtifactResult: Boolean(getLatestDataPart(message, "data-artifact-result")),
+		hasAgentResult: Boolean(getLatestDataPart(message, "data-agent-result")),
+		routeDecision: getLatestRouteDecision(message),
+	};
+}
+
+export type AssistantMessageFacts = ReturnType<typeof readAssistantMessage>;
+
+/** Surface widget selection may differ from the message's latest widget. */
+export function presentAssistantMessageText(facts: AssistantMessageFacts, widgetType = facts.widgetType) {
+	const normalizedWidgetText = widgetType
+		? removeLeadingSingleCharacterFragment(facts.rawMessageText)
+		: facts.rawMessageText;
+	const planRenderableText = widgetType === "plan"
+		? extractPlanRenderableText(normalizedWidgetText, { maxSummaryLines: 2 })
+		: null;
+	const baseMessageText = widgetType === "question-card"
+		? removeTrailingSingleCharacterLine(normalizedWidgetText)
+		: widgetType === "plan"
+			? facts.isCreatePlanSkillFlow
+				? planRenderableText?.text ?? ""
+				: removeActionItemsSection(normalizedWidgetText)
+			: normalizedWidgetText;
+	return {
+		normalizedWidgetText,
+		messageText: sanitizeMarkdownArtifactMarkers(baseMessageText),
 	};
 }

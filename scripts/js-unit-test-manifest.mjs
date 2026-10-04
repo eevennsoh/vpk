@@ -14,6 +14,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/projects/shared/lib/process-assistant-message.test.js",
 		"components/projects/rovo-core/components/rovo-app-shell-pane-layout.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-created-card-drop-motion.test.js",
 		"components/blocks/jira-kanban/experimental/lib/issue-solitaire-drop.test.js",
@@ -691,8 +692,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/rovo-core/hooks/use-rovo-app-turn-lifecycle-state.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-use-chat-lifecycle-actions.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-user-message-actions.test.js",
-		"components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge.test.js",
 		"components/projects/rovo-core/lib/api-backend-unavailable.test.js",
+		"components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge.test.js",
 		"components/projects/rovo-core/lib/rovo-app-shell-layout.test.js",
 		"components/arts/awake/glass-slider.test.js",
 		"components/arts/awake/selected-weather-clock.test.js",

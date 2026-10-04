@@ -32,19 +32,12 @@ import { AssistantSuggestionsSection } from "@/components/projects/shared/compon
 import { PlanWidgetInlineCard } from "@/components/projects/shared/components/plan-widget-inline-card";
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
 import { AssistantThinkingTrace, useAssistantThinkingTraceState } from "@/components/projects/shared/components/assistant-thinking-trace";
+import { readAssistantMessage } from "@/components/projects/shared/lib/process-assistant-message";
 import { getPreloadShimmerLabel } from "@/components/projects/shared/lib/reasoning-labels";
 import {
-	getAllDataParts,
 	getMessageInterruption,
-	getLatestDataPart,
-	getLatestRouteDecision,
-	getMessageReasoning,
-	getMessageSources,
 	getMessageText,
-	hasTurnCompleteSignal,
-	isMessageTextStreaming,
 	type RovoDataParts,
-	type RoutingDecision,
 	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
 import { getLatestPendingPlanWidget, getLatestPlanWidgetPayload, parsePlanWidgetPayload, type ParsedPlanWidgetPayload } from "@/components/projects/shared/lib/plan-widget";
@@ -365,15 +358,13 @@ function AssistantMessage({
 }>) {
 	const interruption = getMessageInterruption(message);
 	const interruptionLabel = getRovoAppInterruptionLabel(interruption);
-	const text = sanitizeRovoAppAssistantText(getMessageText(message));
-	const reasoning = getMessageReasoning(message);
-	const widget = getLatestDataPart(message, "data-widget-data");
-	const widgetLoading = getLatestDataPart(message, "data-widget-loading");
-	const widgetError = getLatestDataPart(message, "data-widget-error");
-	const sources = getMessageSources(message);
-	const browserScreenshots = getAllDataParts(message, "data-browser-screenshot");
+	const facts = readAssistantMessage(message);
+	const { reasoning, sources, browserScreenshots, routeDecision, hasTurnComplete } = facts;
+	const text = sanitizeRovoAppAssistantText(facts.rawMessageText);
+	const widget = facts.widgetDataPart;
+	const widgetLoading = facts.widgetLoadingPart;
+	const widgetError = facts.widgetErrorPart;
 	const hasBrowserScreenshotContent = browserScreenshots.length > 0;
-	const routeDecision: RoutingDecision | null = getLatestRouteDecision(message);
 
 	// Widget type determines rendering path: "question-card" and "plan" widgets
 	// render regardless of routing presentation (they come from Rovo tool calls
@@ -397,8 +388,7 @@ function AssistantMessage({
 	const isFallbackRoute = routeDecision !== null && routeDecision.confidence < 0.3;
 
 	const shouldRenderPlanWidget = shouldShowWidget && parsedPlanWidget !== null;
-	const hasTurnComplete = hasTurnCompleteSignal(message);
-	const isResponseInFlight = isMessageTextStreaming(message) || isThinkingLifecycleStreaming || widgetLoading?.data.loading === true;
+	const isResponseInFlight = facts.isStreaming || isThinkingLifecycleStreaming || widgetLoading?.data.loading === true;
 	const thinkingTraceState = useAssistantThinkingTraceState({
 		message,
 		isThinkingLifecycleStreaming,
@@ -406,7 +396,7 @@ function AssistantMessage({
 		treatQuestionToolCallsAsAnswered: isQuestionCardResolved,
 		treatSettledToolsAsPostResultPending,
 		planNarrationText: shouldRenderPlanWidget ? text : "",
-		planNarrationStreaming: isMessageTextStreaming(message),
+		planNarrationStreaming: facts.isStreaming,
 	});
 	const thinkingToolCalls = thinkingTraceState.data.thinkingToolCalls;
 	const hasThinkingToolCalls = thinkingTraceState.data.hasThinkingToolCalls;
@@ -462,7 +452,7 @@ function AssistantMessage({
 		hasWidget: hasVisibleWidget,
 		hasWidgetError: Boolean(widgetError),
 	});
-	const isPlanWidgetStreaming = widgetType === "plan" && ((widgetLoading?.data.type === "plan" && widgetLoading.data.loading) || isMessageTextStreaming(message));
+	const isPlanWidgetStreaming = widgetType === "plan" && ((widgetLoading?.data.type === "plan" && widgetLoading.data.loading) || facts.isStreaming);
 
 	if (!shouldRenderAssistantMessage) {
 		return null;
@@ -531,7 +521,7 @@ function AssistantMessage({
 
 						{shouldRenderAssistantText ? (
 							<MessageContent className="max-w-3xl">
-								<MessageResponse isAnimating={isMessageTextStreaming(message)}>{text}</MessageResponse>
+								<MessageResponse isAnimating={facts.isStreaming}>{text}</MessageResponse>
 							</MessageContent>
 						) : null}
 

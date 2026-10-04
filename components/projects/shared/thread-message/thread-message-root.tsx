@@ -3,31 +3,11 @@
 // oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
 
 import { useMemo, type ReactNode } from "react";
-import {
-	hasCreatePlanSkillSignal,
-	hasTurnCompleteSignal,
-	getLatestDataPart,
-	getLatestRouteDecision,
-	getMessageReasoning,
-	getMessageSources,
-	getMessageText,
-	getThinkingToolCallSummaries,
-	getToolFirstWarning,
-	getMessageToolParts,
-	isMessageTextStreaming,
-	type RovoRenderableUIMessage,
-	type RoutingDecision,
-} from "@/lib/rovo-ui-messages";
+import { type RovoRenderableUIMessage } from "@/lib/rovo-ui-messages";
+import { readAssistantMessage, presentAssistantMessageText } from "../lib/process-assistant-message";
 import {
 	Message as UiMessage,
 } from "@/components/ui-custom/message";
-import {
-	extractPlanRenderableText,
-	removeActionItemsSection,
-	removeLeadingSingleCharacterFragment,
-	removeTrailingSingleCharacterLine,
-	sanitizeMarkdownArtifactMarkers,
-} from "../lib/message-text-utils";
 import {
 	sanitizeQuestionCardMessageText,
 	shouldSuppressQuestionCardMessageText,
@@ -38,7 +18,6 @@ import { UserMessageBubble } from "../components/user-message-bubble";
 import { useAssistantThinkingTraceState } from "../components/assistant-thinking-trace";
 import { ThreadMessageContext, type ThreadMessageContextValue } from "./thread-message-context";
 import {
-	getNormalizedWidgetDataParts,
 	selectLatestRenderableWidgetPart,
 } from "./lib/widget-selection";
 import { filterThinkingToolCallsForVisibleWidget } from "./lib/thinking-tool-visibility";
@@ -80,32 +59,28 @@ function useThreadMessageDerived(
 	getWidgetPosition: ThreadMessageRootProps["getWidgetPosition"],
 	treatQuestionToolCallsAsAnswered: boolean,
 ): ThreadMessageContextValue {
-	const rawMessageText = getMessageText(message);
-	const isStreaming = isMessageTextStreaming(message);
+	const facts = readAssistantMessage(message);
+	const { rawMessageText, isStreaming, isCreatePlanSkillFlow, suggestedQuestions, reasoning, sources, toolFirstWarning, toolParts, thinkingToolCalls, hasArtifactResult, hasAgentResult, hasTurnComplete, routeDecision } = facts;
 
 	// ---------- widget loading state (needed for thinking status) ----------
-	const widgetLoadingPart = getLatestDataPart(message, "data-widget-loading");
+	const widgetLoadingPart = facts.widgetLoadingPart;
 	const loadingWidgetType =
 		typeof widgetLoadingPart?.data.type === "string"
 			? widgetLoadingPart.data.type
 			: null;
 	const isAnyWidgetLoading = widgetLoadingPart?.data.loading ?? false;
-	const widgetDataParts = getNormalizedWidgetDataParts(message);
+	const widgetDataParts = facts.widgetDataParts;
 	const latestWidgetDataEntry =
 		widgetDataParts.length > 0
 			? widgetDataParts[widgetDataParts.length - 1]
 			: null;
 
 	// ---------- widget data (remaining) ----------
-	const widgetErrorPart = getLatestDataPart(message, "data-widget-error");
+	const widgetErrorPart = facts.widgetErrorPart;
 	const widgetErrorType =
 		typeof widgetErrorPart?.data.type === "string"
 			? widgetErrorPart.data.type
 			: null;
-	const suggestedQuestionsPart = getLatestDataPart(
-		message,
-		"data-suggested-questions"
-	);
 	const shouldShowWidgetSections = Boolean(renderWidget);
 	const selectedWidgetDataEntry = selectLatestRenderableWidgetPart(
 		widgetDataParts,
@@ -147,36 +122,11 @@ function useThreadMessageDerived(
 	const hasWidgetOutput = hasWidgetPayload && !isWidgetLoading;
 
 	// ---------- route decision ----------
-	const routeDecision: RoutingDecision | null = getLatestRouteDecision(message);
 	const isFallbackTextRoute = routeDecision?.confidence !== undefined && routeDecision.confidence < 0.3;
 
 	// ---------- message text processing ----------
-	const normalizedWidgetText = widgetType
-		? removeLeadingSingleCharacterFragment(rawMessageText)
-		: rawMessageText;
-	const isCreatePlanSkillFlow = hasCreatePlanSkillSignal(message);
-	const planRenderableText =
-		widgetType === "plan"
-			? extractPlanRenderableText(normalizedWidgetText, {
-					maxSummaryLines: 2,
-				})
-			: null;
-	const baseMessageText =
-		widgetType === "question-card"
-			? removeTrailingSingleCharacterLine(normalizedWidgetText)
-			: widgetType === "plan"
-				? isCreatePlanSkillFlow
-					? planRenderableText?.text ?? ""
-					: removeActionItemsSection(normalizedWidgetText)
-				: normalizedWidgetText;
+	const { normalizedWidgetText, messageText: sanitizedMessageText } = presentAssistantMessageText(facts, widgetType);
 
-	// ---------- derived data ----------
-	const suggestedQuestions = suggestedQuestionsPart?.data.questions ?? [];
-	const reasoning = getMessageReasoning(message);
-	const sources = getMessageSources(message);
-	const toolFirstWarning = getToolFirstWarning(message);
-	const toolParts = getMessageToolParts(message);
-	const thinkingToolCalls = getThinkingToolCallSummaries(message);
 	const visibleThinkingToolCalls = filterThinkingToolCallsForVisibleWidget({
 		thinkingToolCalls,
 		widgetType,
@@ -187,8 +137,6 @@ function useThreadMessageDerived(
 			toolCall.state === "running" ||
 			toolCall.state === "approval-requested"
 	);
-	const hasArtifactResult = Boolean(getLatestDataPart(message, "data-artifact-result"));
-	const hasAgentResult = Boolean(getLatestDataPart(message, "data-agent-result"));
 	const isPostToolsGenuiGeneration = resolvePostToolsGenuiGeneration({
 		widgetType,
 		isWidgetLoading,
@@ -204,7 +152,7 @@ function useThreadMessageDerived(
 		!hasAgentResult
 	);
 	const isRetryThinkingStatus =
-		getLatestDataPart(message, "data-thinking-status")?.data.label?.includes("Retrying") ?? false;
+		facts.thinkingStatusPart?.data.label?.includes("Retrying") ?? false;
 	const thinkingToolCallsForStatus =
 		toolParts.length > 0 ? [] : visibleThinkingToolCalls;
 	const thinkingTraceState = useAssistantThinkingTraceState({
@@ -218,10 +166,6 @@ function useThreadMessageDerived(
 		thinkingToolCalls: thinkingToolCallsForStatus,
 		treatQuestionToolCallsAsAnswered,
 	});
-	const messageTextBeforeSanitization = baseMessageText;
-	const sanitizedMessageText = sanitizeMarkdownArtifactMarkers(
-		messageTextBeforeSanitization
-	);
 	const questionCardMessageText =
 		widgetType === "question-card"
 			? sanitizeQuestionCardMessageText({
@@ -229,7 +173,6 @@ function useThreadMessageDerived(
 					messageText: sanitizedMessageText,
 				})
 			: sanitizedMessageText;
-	const hasTurnComplete = hasTurnCompleteSignal(message);
 	const hasToolFirstWarning =
 		Boolean(toolFirstWarning?.message) && !isStreaming;
 
