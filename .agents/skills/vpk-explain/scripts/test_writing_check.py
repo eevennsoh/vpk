@@ -94,6 +94,21 @@ class WritingCheckTests(unittest.TestCase):
                                     text=True, capture_output=True)
             self.assertEqual(result.returncode, 2)
 
+    def test_disable_before_input_path_and_repeated_options(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "draft.md"
+            source.write_text("Spin up the job; inspect its output.", encoding="utf-8")
+            result = subprocess.run([sys.executable, str(SCRIPT), "--json", "--disable",
+                                     "semicolon", str(source)], text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual([f["rule"] for f in json.loads(result.stdout)["findings"]],
+                             ["phrasal-verb"])
+            result = subprocess.run([sys.executable, str(SCRIPT), "--json", "--disable",
+                                     "semicolon", "--disable", "phrasal-verb", str(source)],
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["findings"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

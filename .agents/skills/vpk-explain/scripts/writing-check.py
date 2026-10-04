@@ -147,7 +147,7 @@ def main(argv=None):
     parser.add_argument("files", nargs="*", help="Plain text or simple Markdown; default: stdin")
     parser.add_argument("--json", action="store_true", help="Print structured advisory findings")
     parser.add_argument("--instructions", action="store_true", help="Use a 20-word guideline instead of 25")
-    parser.add_argument("--disable", nargs="+", choices=RULE_NAMES, default=[], metavar="RULE",
+    parser.add_argument("--disable", action="append", choices=RULE_NAMES, default=[], metavar="RULE",
                         help="Checks to suppress: " + ", ".join(RULE_NAMES))
     args = parser.parse_args(argv)
     findings = []

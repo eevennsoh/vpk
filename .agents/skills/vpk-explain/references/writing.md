@@ -77,6 +77,7 @@ Run it against an existing draft file, or provide the extracted text on stdin:
 python3 .agents/skills/vpk-explain/scripts/writing-check.py explanation.md
 python3 .agents/skills/vpk-explain/scripts/writing-check.py --json explanation.md
 python3 .agents/skills/vpk-explain/scripts/writing-check.py --instructions procedure.md
+python3 .agents/skills/vpk-explain/scripts/writing-check.py --disable semicolon explanation.md
 ```
 
 The checker reports long sentences across paragraph line wraps, semicolons,
@@ -87,7 +88,7 @@ Review terminology, actors, tenses, noun phrases, and meaning manually.
 
 Findings are advisory and never fail a style gate or edit the input. Exit 0
 means the check ran; exit 2 means an input/argument error. `--disable RULE`
-can suppress a named check; see `--help` for available names. English sentence
+can suppress a named check and can be repeated; see `--help` for available names. English sentence
 segmentation and Markdown handling are heuristic, not a complete parser.
 Do not interpret an empty report as compliance or preserved meaning.
 
