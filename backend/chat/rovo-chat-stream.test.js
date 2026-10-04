@@ -1,376 +1,260 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const test = require("node:test");
+const { before, test } = require("node:test");
+const { loadAiSdk } = require("../lib/ai-sdk-runtime");
+const { createRovoTurnRunner, createRovoChatRoute } = require("./rovo-chat-stream");
+const { createRequestState, createContractDependencies } = require("./chat-sdk-handler.fixture");
+const { finalizePlanExecutionArtifactPostStream } = require("./post-turn");
 
-const {
-	createRovoChatStream,
-	streamRovoChatRoute,
-} = require("./rovo-chat-stream");
+before(async () => { await loadAiSdk(); });
 
-function createWriter() {
+function createTurn(overrides = {}) {
+	return {
+		...createRequestState({ backendPreference: "rovo" }),
+		isStrictToolFirstTurn: false,
+		isTaskLikeRequest: false,
+		prefersGenuiCardExperience: false,
+		smartGenerationActive: false,
+		stageTrace: { mark() {} },
+		toolFirstPolicy: { domains: [], enforcement: {}, relevanceDomains: [] },
+		userMessageText: "Hello",
+		...overrides,
+	};
+}
+
+function createOutput(signal = new AbortController().signal) {
 	const parts = [];
-	return {
-		parts,
-		writer: {
-			write(part) {
-				parts.push(part);
-			},
-		},
-	};
+	return { parts, context: { signal, emit: (part) => parts.push(part) } };
 }
 
-function createStageTrace() {
-	const marks = [];
-	return {
-		marks,
-		stageTrace: {
-			mark(stage, data) {
-				marks.push([stage, data]);
-			},
-		},
-	};
+function visibleText(parts) {
+	return parts.filter((part) => part.type === "text-delta").map((part) => part.delta).join("");
 }
 
-function createBaseOptions(overrides = {}) {
-	const events = [];
-	const toolFirstExecutionState = { attempts: [] };
-	const toolFirstPolicy = {
-		enforcement: {
-			mode: "soft-retry",
-			maxRelevantRetries: 1,
+test("runTurn emits text before artifact persistence and turn completion", async () => {
+	const outcomes = [];
+	const { dependencies } = createContractDependencies({
+		finalizePlanExecutionArtifactPostStream,
+		streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+			onPortAcquired(43123);
+			onTextDelta("Finished building");
 		},
-		relevanceDomains: ["jira"],
-	};
-
-	return {
-		events,
-		options: {
-			CLARIFICATION_CUSTOM_OPTION_PLACEHOLDER: "__custom__",
-			CLARIFICATION_MAX_LABEL_LENGTH: 80,
-			CLARIFICATION_MAX_PRESET_OPTIONS: 4,
-			CLARIFICATION_WIDGET_TYPE: "question-card",
-			CLASSIFIER_JSON_BUFFER_MAX_CHARS: 2000,
-			INTERACTIVE_CHAT_FORCE_PORT_RECOVERY_MAX_ATTEMPTS: 1,
-			INTERACTIVE_CHAT_FORCE_PORT_RECOVERY_TIMEOUT_MS: 5000,
-			INTERACTIVE_CHAT_STUCK_PORT_RECOVERY_RETRY_ATTEMPTS: 1,
-			SMART_WIDGET_TYPE_AUDIO: "audio-preview",
-			SMART_WIDGET_TYPE_GENUI: "genui-preview",
-			SMART_WIDGET_TYPE_IMAGE: "image-preview",
-			TOOL_FIRST_ENFORCEMENT_MODE_SOFT_RETRY: "soft-retry",
-			WAIT_FOR_TURN_TIMEOUT_MS: 1000,
-			_requestUserInputQuestionMetaStore: new Map(),
-			abortController: new AbortController(),
-			activeRequests: new Map(),
-			appendToolObservationEntry: (entries, entry) => entries.push(entry),
-			buildRovoInitialActiveAttemptMessage: ({ rawDeferredToolResponse, userMessageText }) =>
-				rawDeferredToolResponse && typeof rawDeferredToolResponse === "object"
-					? { message: rawDeferredToolResponse, enableDeepPlan: false }
-					: { message: userMessageText, enableDeepPlan: false },
-			buildQuestionCardPayloadFromRequestUserInput: () => null,
-			buildQuestionMetaFromQuestionCardPayload: () => null,
-			createExitPlanWidgetEmitter: () => ({
-				emitFromToolInput: () => false,
-				emitLoading: () => {},
-			}),
-			createLazyRovoThinkingStatusEmitter: () => ({
-				emit: () => {},
-				markEmitted: () => events.push(["thinking-marked"]),
-			}),
-			createRequestUserInputQuestionCardEmitter: () => ({
-				emit: () => false,
-				emitFromResult: () => false,
-				markQuestionCardEmitted: (id) => events.push(["question-emitted", id]),
-			}),
-			createRovoBrowserToolEventRouter: (input) => {
-				events.push(["browser-router", Boolean(input.browserBridge)]);
-				return { kind: "browser-router" };
-			},
-			createRovoMarkerStreamAdapter: () => ({
-				flush: () => events.push(["marker-flush"]),
-				reset: () => events.push(["marker-reset"]),
-			}),
-			createRovoStreamAttemptErrorHandler: (input) => {
-				events.push(["attempt-error-handler", input.threadId]);
-				return async () => ({ action: "continue-after-error" });
-			},
-			createRovoStreamAttemptRunner: (input) => {
-				events.push(["attempt-runner", input.threadId]);
-				input.onResolvedRovoPort(43123);
-				input.onObservedDeferredToolRequest();
-				input.onObservedActionableToolCall();
-				input.onObservedRelevantActionableToolCall();
-				input.onObservedToolExecution();
-				return async ({ activeAttemptMessage, currentToolFirstAttempt }) => {
-					events.push([
-						"run-attempt",
-						activeAttemptMessage,
-						currentToolFirstAttempt,
-						input.getResolvedRovoPort(),
-					]);
-				};
-			},
-			createRovoStreamTextDeltaHandler: () => ({
-				getRawAgentCreationAssistantText: () => "raw assistant text",
-				handleStreamTextDelta: (delta) => events.push(["text-delta", delta]),
-			}),
-			createRovoTextOutputController: () => ({
-				emitBufferedAssistantTextForTextRoute: () => {},
-				emitForcedTextDelta: (delta) => events.push(["forced", delta]),
-				emitTextDelta: (delta) => events.push(["text", delta]),
-				emitTextDeltaRaw: (delta) => events.push(["raw", delta]),
-				finalizeBufferedAssistantText: () => {},
-				flushDeferredToolFirstText: () => {},
-				getAssistantText: () => "assistant text",
-				getHasSuppressedLargeAssistantJson: () => false,
-				getUnsuppressedAssistantText: () => "assistant text",
-				removeToolFirstFailureNarrative: (value) => value,
-				resetAssistantTextForRetryAttempt: () => events.push(["text-reset"]),
-				setAssistantText: (value) => events.push(["set-text", value]),
-				writeTextEndIfStarted: () => {},
-			}),
-			createThreadBrowserBridge: () => ({
-				hasAuthoritativeOutput: () => false,
-			}),
-			createToolFirstExecutionState: () => toolFirstExecutionState,
-			createToolObservationRecorder: ({ entries }) => ({
-				hasToolObservationEntries: () => entries.length > 0,
-				recordToolObservation: (entry) => {
-					entries.push(entry);
-				},
-			}),
-			createUIMessageStream: (options) => options,
-			creationMode: "chat",
-			getNonEmptyString: (value) =>
-				typeof value === "string" && value.trim() ? value.trim() : "",
-			hasQueuedPrompts: false,
-			hasRelevantToolObservation: () => false,
-			hasRelevantToolSuccess: () => true,
-			instrumentChatSdkWriter: ({ writer }) => ({
-				getHasEmittedAgentResult: () => {
-					writer.write({ type: "data-agent-result-probe" });
-					return false;
-				},
-			}),
-			isClassifierIntentLeakCandidate: () => false,
-			isStrictToolFirstTurn: true,
-			latestUserMessage: "Plan and build a Jira helper",
-			latestVisibleUserMessage: { text: "Plan and build a Jira helper" },
-			messages: [],
-			parseClassifierIntentPayload: () => null,
-			persistRovoAppBrowserScreenshotBuffer: async () => "upload-1",
-			provider: "rovo",
-			rawDeferredToolResponse: null,
-			rawModel: "model",
-			recordToolFirstAttempt: (state, data) => {
-				state.attempts.push(data);
-			},
-			requestOrigin: "text",
-			resolveRovoToolFirstRetryLimit: () => 1,
-			rovoSessionId: "session-1",
-			runRovoPostStreamPipeline: async (pipelineOptions) => {
-				events.push([
-					"post-pipeline",
-					pipelineOptions.resolvedRovoPort,
-					pipelineOptions.hasObservedDeferredToolRequest,
-					pipelineOptions.hasObservedActionableToolCall,
-					pipelineOptions.hasObservedRelevantActionableToolCall,
-					pipelineOptions.hasObservedToolExecution,
-				]);
-				return { aborted: false };
-			},
-			runRovoStreamRetryLoopWithToolFirstPlanning: async (retryOptions) => {
-				events.push([
-					"retry-loop",
-					retryOptions.initialActiveAttemptMessage,
-					retryOptions.totalToolFirstAttempts,
-					retryOptions.toolFirstPolicy,
-					retryOptions.toolFirstExecutionState,
-				]);
-				await retryOptions.runStreamAttempt({
-					activeAttemptMessage: retryOptions.initialActiveAttemptMessage,
-					currentToolFirstAttempt: 1,
-				});
-			},
-			sessionMode: "chat",
-			shouldForceCardFirstGenui: false,
-			splitDirectMediaTextForStreaming: (text) => ({
-				pendingText: "",
-				visibleText: text,
-			}),
-			splitSpecFenceTextForStreaming: (text) => ({
-				pendingText: "",
-				visibleText: text,
-			}),
-			stageTrace: createStageTrace().stageTrace,
-			stripToolFirstFailureNarrative: (text) => ({ replaced: false, text }),
-			threadId: "thread-1",
-			toolFirstPolicy,
-			toolFirstRelevanceDomains: ["jira"],
-			userMessageText: "Plan and build a Jira helper",
-			withCanonicalPreviewBody: (type, payload) => ({ ...payload, type }),
-			workSummaryStartMs: Date.now(),
-			...overrides,
+		syncRovoAppThreadSessionFromCurrentPort: async () => {
+			outcomes.push("persist-session");
+			return { id: "thread-1", messages: [] };
 		},
-		toolFirstExecutionState,
-		toolFirstPolicy,
-	};
-}
+		resolvePlanExecutionCompletion: () => ({
+			shouldFinalizePlan: true,
+			shouldCreateArtifact: true,
+			appRoute: "/built-app",
+			appRoutes: ["/built-app"],
+		}),
+		rovoAppDocumentManager: {
+			async createDocument(document) {
+				outcomes.push(document.content);
+				return { id: "document-1", ...document };
+			},
+		},
+		rovoAppThreadManager: {
+			async updateThread(id, update) { outcomes.push([id, update.activeDocumentId]); },
+		},
+		generatePlanMetadataViaGateway: async () => ({ shortDescription: "The built app" }),
+		clearPlanSession: (id) => outcomes.push(["plan-cleared", id]),
+	});
+	const { context, parts } = createOutput();
+	const result = await createRovoTurnRunner(dependencies)(createTurn(), context);
 
-test("createRovoChatStream preserves stream error mapping", () => {
-	const { options } = createBaseOptions();
-	const stream = createRovoChatStream(options);
+	assert.equal(result.aborted, false);
+	assert.match(visibleText(parts), /Finished building.*Your app is ready/su);
+	assert.deepEqual(outcomes, ["persist-session", "persist-session", "/built-app", ["thread-1", "document-1"], ["plan-cleared", "thread-1"]]);
+	assert.equal(parts.find((part) => part.type === "data-artifact-result").data.documentId, "document-1");
+	assert.equal(parts.at(-1).type, "data-turn-complete");
+	assert.equal(dependencies.activeRequests.size, 0);
+});
 
+test("runTurn retries in order and discards prior attempt text before completing", async () => {
+	const messages = [];
+	const { dependencies } = createContractDependencies({
+		streamViaRovo: async ({ message, onTextDelta }) => {
+			messages.push(message.message);
+			onTextDelta(messages.length === 1 ? "Discard this attempt" : "Recovered answer");
+		},
+		resolveRovoToolFirstRetryPlan: ({ currentToolFirstAttempt }) => currentToolFirstAttempt === 1
+			? { action: "retry", activeAttemptMessage: { message: "Try again", enableDeepPlan: false }, nextAttempt: 2, retryDelayMs: 0, statusPart: { type: "data-thinking-status", data: { label: "Retrying" } } }
+			: { action: "complete" },
+		hasRelevantToolSuccess: () => true,
+	});
+	const { parts, context } = createOutput();
+	await createRovoTurnRunner(dependencies)(createTurn({
+		isStrictToolFirstTurn: true,
+		toolFirstPolicy: { domains: [], enforcement: { mode: "soft-retry", maxRelevantRetries: 1 } },
+	}), context);
+
+	assert.deepEqual(messages, ["Hello", "Try again"]);
+	assert.equal(visibleText(parts), "Recovered answer");
+	assert.equal(parts.at(-1).type, "data-turn-complete");
+});
+
+test("runTurn propagates cancellation through transport and skips persistence/completion", async () => {
+	const controller = new AbortController();
+	let observedSignal;
+	const { dependencies } = createContractDependencies({
+		streamViaRovo: async ({ signal, onPortAcquired, onTextDelta }) => {
+			observedSignal = signal;
+			onPortAcquired(43123);
+			onTextDelta("Partial answer");
+			controller.abort("cancelled by viewer");
+		},
+		syncRovoAppThreadSessionFromCurrentPort: async () => null,
+		finalizePlanExecutionArtifactPostStream: async () => { throw new Error("cancelled turn must not finalize"); },
+	});
+	const { context, parts } = createOutput(controller.signal);
+	const result = await createRovoTurnRunner(dependencies)(createTurn(), context);
+
+	assert.equal(result.aborted, true);
+	assert.equal(observedSignal.aborted, true);
+	assert.equal(observedSignal.reason, "cancelled by viewer");
+	assert.equal(parts.some((part) => part.type === "data-turn-complete"), false);
+	assert.equal(dependencies.activeRequests.size, 0);
+});
+
+test("runTurn does no transport work when already cancelled", async () => {
+	const controller = new AbortController();
+	controller.abort();
+	const { dependencies } = createContractDependencies({ streamViaRovo: async () => { throw new Error("must not start"); } });
+	const { parts, context } = createOutput(controller.signal);
+	assert.deepEqual(await createRovoTurnRunner(dependencies)(createTurn(), context), { aborted: true });
+	assert.deepEqual(parts, []);
+});
+
+test("runTurn handles deferred clarification retry before fresh completion", async () => {
+	const messages = [];
+	const { dependencies } = createContractDependencies({
+		streamViaRovo: async ({ message, onTextDelta }) => {
+			messages.push(message.message);
+			if (messages.length === 1) { throw new Error("pending deferred tool request"); }
+			onTextDelta("Resumed with answers");
+		},
+		synthesiseDeferredToolResponseFromClarification: () => ({ type: "DeferredToolResponse", answers: ["Project A"] }),
+	});
+	const { parts, context } = createOutput();
+	await createRovoTurnRunner(dependencies)(createTurn({ clarificationSubmission: { sessionId: "clarification-1", answers: { project: "Project A" } } }), context);
+	assert.deepEqual(messages, ["Hello", { type: "DeferredToolResponse", answers: ["Project A"] }]);
+	assert.equal(visibleText(parts), "Resumed with answers");
+	assert.equal(parts.at(-1).type, "data-turn-complete");
+});
+
+test("runTurn releases its active request and abort subscription when completion fails", async () => {
+	const controller = new AbortController();
+	let observedSignal;
+	const failure = new Error("completion failed");
+	const { dependencies } = createContractDependencies({
+		streamViaRovo: async ({ signal, onPortAcquired }) => { observedSignal = signal; onPortAcquired(43123); },
+		finalizePlanExecutionArtifactPostStream: async () => { throw failure; },
+	});
+	const { context, parts } = createOutput(controller.signal);
+	await assert.rejects(createRovoTurnRunner(dependencies)(createTurn(), context), (error) => error === failure);
+	controller.abort();
+	assert.equal(observedSignal.aborted, false);
+	assert.equal(dependencies.activeRequests.size, 0);
+	assert.equal(parts.some((part) => part.type === "data-turn-complete"), false);
+});
+
+test("runTurn tolerates persistence failure and still completes", async () => {
+	const { dependencies } = createContractDependencies({
+		streamViaRovo: async ({ onPortAcquired, onTextDelta }) => { onPortAcquired(43123); onTextDelta("Still complete"); },
+		syncRovoAppThreadSessionFromCurrentPort: async () => { throw new Error("storage offline"); },
+	});
+	const { context, parts } = createOutput();
+	await createRovoTurnRunner(dependencies)(createTurn(), context);
+	assert.equal(visibleText(parts), "Still complete");
+	assert.equal(parts.at(-1).type, "data-turn-complete");
+});
+
+test("HTTP adapter preserves stream error payload mapping", async () => {
+	let stream;
+	const { dependencies } = createContractDependencies({
+		resolvePreferredBackend: async () => ({ backend: "rovo" }),
+		createChatAbortTracking: () => ({ abortController: new AbortController(), cleanupAbortTracking() {} }),
+		createUIMessageStream: (options) => options,
+		pipeUIMessageStreamToResponse: (options) => { stream = options.stream; },
+	});
+	await createRovoChatRoute(dependencies)(createTurn(), { req: {}, res: {} });
 	assert.equal(stream.onError(new Error("Rovo failed")), "Rovo failed");
 	assert.equal(stream.onError("bad"), "Failed to stream AI response");
 });
 
-test("createRovoChatStream wires retry loop and post-stream state", async () => {
-	const { parts, writer } = createWriter();
-	const { marks, stageTrace } = createStageTrace();
-	const { events, options, toolFirstExecutionState, toolFirstPolicy } =
-		createBaseOptions({ stageTrace });
-	const stream = createRovoChatStream(options);
-
-	await stream.execute({ writer });
-
-	assert.deepEqual(marks, [[
-		"rovo_stream_start",
-		{ conflictPolicy: "wait-for-turn" },
-	]]);
-	assert.deepEqual(events.find((event) => event[0] === "retry-loop"), [
-		"retry-loop",
-		{ message: "Plan and build a Jira helper", enableDeepPlan: false },
-		2,
-		toolFirstPolicy,
-		toolFirstExecutionState,
-	]);
-	assert.deepEqual(events.find((event) => event[0] === "run-attempt"), [
-		"run-attempt",
-		{ message: "Plan and build a Jira helper", enableDeepPlan: false },
-		1,
-		43123,
-	]);
-	assert.deepEqual(events.find((event) => event[0] === "post-pipeline"), [
-		"post-pipeline",
-		43123,
-		true,
-		true,
-		true,
-		true,
-	]);
-	assert.deepEqual(toolFirstExecutionState.attempts, []);
-	assert.deepEqual(parts, []);
-});
-
-test("streamRovoChatRoute maps unavailable backend through the shared error response", async () => {
-	const calls = [];
-	const unavailableError = new Error("Rovo unavailable");
-	const handled = await streamRovoChatRoute({
-		handlerDependencies: {
-			createRovoUnavailableError: () => unavailableError,
-			resolvePreferredBackend: async () => ({ backend: "ai-gateway" }),
-			sendGatewayErrorResponse: (...args) => calls.push(args),
+test("runTurn plan feedback guard cancels its transport without completing", async () => {
+	const cancellations = [];
+	let observedSignal;
+	const { dependencies } = createContractDependencies({
+		getPlanFeedbackToolGuard: () => ({ ignore: false, block: true }),
+		rovoCancelChat: async (port) => cancellations.push(port),
+		streamViaRovo: async ({ signal, onPortAcquired, onToolCallStart }) => {
+			observedSignal = signal;
+			onPortAcquired(43123);
+			onToolCallStart({ toolCallId: "blocked-write", toolName: "update_todo" });
 		},
-		res: { id: "response" },
 	});
-
-	assert.equal(handled, true);
-	assert.deepEqual(calls, [[
-		{ id: "response" },
-		unavailableError,
-		"Failed to stream chat response",
-	]]);
+	const { context, parts } = createOutput();
+	const result = await createRovoTurnRunner(dependencies)(createTurn({ isPlanFeedbackDeferredResumeTurn: true }), context);
+	assert.equal(result.aborted, true);
+	assert.equal(observedSignal.aborted, true);
+	assert.deepEqual(cancellations, [43123]);
+	assert.equal(parts.some((part) => part.type === "data-turn-complete"), false);
+	assert.equal(dependencies.activeRequests.size, 0);
 });
 
-test("streamRovoChatRoute wires abort tracking, preprocessing, stream, and piping", async () => {
-	const abortController = new AbortController();
-	const cleanup = () => {};
-	const cleanupCalls = [];
-	const loggerCalls = [];
-	const pipeCalls = [];
-	const streamCalls = [];
-	const stageMarks = [];
-	const req = { id: "request" };
-	const res = { id: "response" };
-	const stream = { id: "stream" };
-	const handlerDependencies = {
-		buildRovoPreprocessingTraceData: (input) => ({
-			backend: input.backend,
-			promptProfile: input.promptProfile,
-			smartGenerationActive: input.smartGenerationActive,
-			isStrictToolFirstTurn: input.isStrictToolFirstTurn,
+test("runTurn cancellation during retry delay prevents the next attempt", async () => {
+	const controller = new AbortController();
+	const messages = [];
+	const { dependencies } = createContractDependencies({
+		streamViaRovo: async ({ message }) => messages.push(message.message),
+		resolveRovoToolFirstRetryPlan: () => ({
+			action: "retry",
+			activeAttemptMessage: { message: "Must not start" },
+			nextAttempt: 2,
+			retryDelayMs: 10_000,
+			statusPart: { type: "data-thinking-status", data: { label: "Retry pending" } },
 		}),
-		createChatAbortTracking: (input) => {
-			assert.equal(input.req, req);
-			assert.equal(input.res, res);
-			input.onAbort();
-			return {
-				abortController,
-				cleanupAbortTracking: cleanup,
-			};
-		},
-		pipeUIMessageStreamToResponse: (input) => {
-			pipeCalls.push(input);
-		},
-		resolvePreferredBackend: async () => ({ backend: "rovo" }),
-	};
-
-	const handled = await streamRovoChatRoute({
-		approvalSubmission: { decision: "approved" },
-		chatSdkEntryStartedAtMs: 100,
-		createRovoChatStreamFn: (options) => {
-			streamCalls.push(options);
-			return stream;
-		},
-		handlerDependencies,
-		isStrictToolFirstTurn: false,
-		latestUserMessage: "Build a report",
-		logger: {
-			log(...args) {
-				loggerCalls.push(args);
-			},
-		},
-		onCleanupAbortTracking: (value) => {
-			cleanupCalls.push(value);
-		},
-		prefersGenuiCardExperience: true,
-		promptProfile: "plain",
-		req,
-		res,
-		smartGenerationActive: true,
-		stageTrace: {
-			mark(stage, data) {
-				stageMarks.push([stage, data]);
-			},
-		},
-		threadId: "thread-1",
-		userMessageText: "Build a report",
 	});
+	const { context, parts } = createOutput(controller.signal);
+	context.emit = (part) => {
+		parts.push(part);
+		if (part.type === "data-thinking-status" && part.data.label === "Retry pending") {
+			setImmediate(() => controller.abort());
+		}
+	};
+	const result = await createRovoTurnRunner(dependencies)(createTurn({
+		isStrictToolFirstTurn: true,
+		toolFirstPolicy: { domains: [], enforcement: { mode: "soft-retry", maxRelevantRetries: 1 } },
+	}), context);
+	assert.equal(result.aborted, true);
+	assert.deepEqual(messages, ["Hello"]);
+	assert.equal(parts.some((part) => part.type === "data-turn-complete"), false);
+});
 
-	assert.equal(handled, true);
-	assert.deepEqual(loggerCalls, [[
-		"[CHAT-SDK] Client disconnected, aborting Rovo stream",
-	]]);
-	assert.deepEqual(cleanupCalls, [cleanup]);
-	assert.deepEqual(stageMarks, [[
-		"preprocessing_complete",
-		{
-			backend: "rovo",
-			promptProfile: "plain",
-			smartGenerationActive: true,
-			isStrictToolFirstTurn: false,
+test("a composed runner keeps question state local to each turn", async () => {
+	let turnIndex = 0;
+	const { dependencies } = createContractDependencies({
+		streamViaRovo: async ({ onPortAcquired, onDeferredToolRequest, onTextDelta }) => {
+			onPortAcquired(43123);
+			turnIndex += 1;
+			if (turnIndex === 1) {
+				await onDeferredToolRequest({ toolCallId: "question-1", toolName: "ask_user_questions", toolInput: { question: "Which project?" } });
+			} else {
+				onTextDelta("A fresh answer");
+			}
 		},
-	]]);
-	assert.equal(streamCalls.length, 1);
-	assert.equal(streamCalls[0].abortController, abortController);
-	assert.equal(streamCalls[0].approvalSubmission.decision, "approved");
-	assert.equal(streamCalls[0].latestUserMessage, "Build a report");
-	assert.equal(streamCalls[0].shouldForceCardFirstGenui, true);
-	assert.equal(streamCalls[0].threadId, "thread-1");
-	assert.equal(streamCalls[0].userMessageText, "Build a report");
-	assert.deepEqual(pipeCalls, [{
-		response: res,
-		stream,
-	}]);
+	});
+	const runTurn = createRovoTurnRunner(dependencies);
+	const first = createOutput();
+	const second = createOutput();
+	await runTurn(createTurn(), first.context);
+	await runTurn(createTurn(), second.context);
+	assert.equal(first.parts.some((part) => part.type === "data-widget-data"), true);
+	assert.equal(second.parts.some((part) => part.type === "data-widget-data"), false);
+	assert.equal(visibleText(second.parts), "A fresh answer");
+	assert.equal(second.parts.at(-1).type, "data-turn-complete");
 });

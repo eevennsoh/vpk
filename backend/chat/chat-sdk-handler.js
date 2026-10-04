@@ -1,40 +1,6 @@
 "use strict";
 
-const {
-	createExitPlanWidgetEmitter,
-} = require("./exit-plan-widget");
-const {
-	handleLocalModelTurn,
-} = require("./local-model-turn");
-const {
-	createRequestUserInputQuestionCardEmitter,
-} = require("./request-user-input-question-card");
-const {
-	createRovoStreamAttemptErrorHandler,
-} = require("./rovo-stream-attempt");
-const {
-	createRovoStreamAttemptRunner,
-} = require("./rovo-stream-attempt-orchestrator");
-const {
-	buildRovoInitialActiveAttemptMessage,
-	resolveRovoToolFirstRetryLimit,
-	runRovoStreamRetryLoopWithToolFirstPlanning,
-} = require("./rovo-stream-loop");
-const {
-	createRovoBrowserToolEventRouter,
-} = require("./rovo-browser-tool-events");
-const {
-	createRovoStreamTextDeltaHandler,
-} = require("./rovo-stream-text-delta");
-const {
-	createLazyRovoThinkingStatusEmitter,
-} = require("./rovo-thinking-events");
-const {
-	runRovoPostStreamPipeline,
-} = require("./rovo-post-stream-pipeline");
-const {
-	createToolObservationRecorder,
-} = require("./tool-observation-context");
+const { handleLocalModelTurn } = require("./local-model-turn");
 const {
 	streamSmartGenerationRoute,
 } = require("./smart-generation-stream");
@@ -48,7 +14,7 @@ const {
 	streamGoogleDirectImageRoute,
 } = require("./google-direct-stream");
 const {
-	streamRovoChatRoute,
+	createRovoChatRoute,
 } = require("./rovo-chat-stream");
 const {
 	streamAIGatewayChatRoute,
@@ -160,6 +126,7 @@ function createChatSdkHandler(dependencies = {}) {
 		shouldRejectExpiredDeferredClarification,
 		shouldRestorePlanModeOnResume,
 		shouldSurfaceMissingStudioAgentResultFailure,
+		streamRovoChatRoute = createRovoChatRoute(dependencies),
 		streamAudioWidgetGeneration,
 		streamExpiredClarificationResponse,
 		streamGoogleGatewayManualSse,
@@ -731,21 +698,6 @@ function createChatSdkHandler(dependencies = {}) {
 			clarificationToolCallId,
 			deferredToolResponseToolCallId,
 			genuiHint,
-			handlerDependencies: {
-				...dependencies,
-				buildRovoInitialActiveAttemptMessage,
-				createExitPlanWidgetEmitter,
-				createLazyRovoThinkingStatusEmitter,
-				createRequestUserInputQuestionCardEmitter,
-				createRovoBrowserToolEventRouter,
-				createRovoStreamAttemptErrorHandler,
-				createRovoStreamAttemptRunner,
-				createRovoStreamTextDeltaHandler,
-				createToolObservationRecorder,
-				resolveRovoToolFirstRetryLimit,
-				runRovoPostStreamPipeline,
-				runRovoStreamRetryLoopWithToolFirstPlanning,
-			},
 			hasPausedApprovalToolCall,
 			hasPausedClarificationToolCall,
 			hasQueuedPrompts,
@@ -756,20 +708,14 @@ function createChatSdkHandler(dependencies = {}) {
 			isTaskLikeRequest,
 			latestUserMessage,
 			latestVisibleUserMessage,
-			logger: console,
 			messages,
-			onCleanupAbortTracking: (cleanupAbortTracking) => {
-				cleanupChatSdkAbortTracking = cleanupAbortTracking;
-			},
 			pausedContinuationToolCallId,
 			prefersGenuiCardExperience,
 			promptProfile,
 			provider,
 			rawDeferredToolResponse,
 			rawModel,
-			req,
 			requestOrigin,
-			res,
 			resolvedPlanModeActive,
 			rovoSessionId,
 			sessionMode,
@@ -778,9 +724,14 @@ function createChatSdkHandler(dependencies = {}) {
 			stageTrace,
 			threadId,
 			toolFirstPolicy,
-			toolFirstRelevanceDomains,
 			userMessageText,
 			workSummaryStartMs,
+		}, {
+			req,
+			res,
+			onCleanupAbortTracking: (cleanupAbortTracking) => {
+				cleanupChatSdkAbortTracking = cleanupAbortTracking;
+			},
 		});
 		} catch (error) {
 			cleanupChatSdkAbortTracking?.();

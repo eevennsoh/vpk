@@ -181,6 +181,7 @@ const {
 const {
 	STAGE_TRACE_ID_HEADER,
 } = require("../lib/stage-trace");
+const { createRovoChatRoute } = require("./rovo-chat-stream");
 const {
 	createChatSdkHandler,
 } = require("./chat-sdk-handler");
@@ -621,7 +622,11 @@ function buildChatSdkHandlerCompositionDependencies(dependencies = {}) {
 }
 
 function createServerChatSdkHandler(dependencies = {}) {
-	return createChatSdkHandler(buildChatSdkHandlerCompositionDependencies(dependencies));
+	const composed = buildChatSdkHandlerCompositionDependencies(dependencies);
+	return createChatSdkHandler({
+		...composed,
+		streamRovoChatRoute: createRovoChatRoute(composed),
+	});
 }
 
 function createRovoAppThreadId() {

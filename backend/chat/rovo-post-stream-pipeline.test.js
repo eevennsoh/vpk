@@ -73,10 +73,10 @@ function createBaseOptions(overrides = {}) {
 				]);
 				return routingResult;
 			},
-			runRovoPostTurnCompletion: async (completionOptions) => {
+			completeRovoPostTurn: async (completionOptions) => {
 				events.push([
 					"completion",
-					completionOptions.postStreamRoutingResult,
+					completionOptions.getRouteToolsDetected(),
 					completionOptions.shouldEmitMissingStudioAgentResultFailure,
 				]);
 			},
@@ -113,7 +113,7 @@ test("runRovoPostStreamPipeline preserves flush, finalizer, routing, completion 
 		["set-missing-agent", true],
 		["has-success", toolFirstExecutionState],
 		["routing", true, true, true],
-		["completion", routingResult, true],
+		["completion", true, true],
 	]);
 });
 
@@ -130,7 +130,7 @@ test("runRovoPostStreamPipeline skips routing and completion when finalizers abo
 		runRovoPostStreamRouting: async () => {
 			throw new Error("routing should not run");
 		},
-		runRovoPostTurnCompletion: async () => {
+		completeRovoPostTurn: async () => {
 			throw new Error("completion should not run");
 		},
 	});
