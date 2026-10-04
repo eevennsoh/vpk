@@ -263,15 +263,16 @@ export function RovoStage(): React.ReactElement {
 		};
 	}, [historySessionItems]);
 
+	const initializedSessionIdRef = useRef<string | null>(null);
 	const handleNewChat = useCallback(() => {
+		initializedSessionIdRef.current = initialSessionId;
 		setActiveHistorySessionId(null);
 		resetAgentToRovo({ preserveCurrentThread: true });
 		resetChat();
-	}, [resetAgentToRovo, resetChat]);
+	}, [initialSessionId, resetAgentToRovo, resetChat]);
 	const handleBackToRovo = useCallback(() => {
 		setActiveHistorySessionId(null);
 	}, []);
-	const initializedSessionIdRef = useRef<string | null>(null);
 	const handleSelectThread = useCallback(async (threadId: string) => {
 		const session = historySessions.find((item) => item.id === threadId);
 		const thread = historyThreads.find((item) => item.id === threadId);

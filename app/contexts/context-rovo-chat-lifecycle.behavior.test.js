@@ -14,7 +14,7 @@ const mocks = {
 			const sendMessage = useCallback(async (payload) => {
 				window.dispatchEvent(new CustomEvent("test-rovo-dispatch", { detail: payload.text }));
 			}, []);
-			const stop = useCallback(async () => {}, []);
+			const stop = useCallback(async () => { await window.testSdkStop?.(); }, []);
 			return { messages, setMessages, sendMessage, stop, status: "ready" };
 		}
 	`,
@@ -159,6 +159,37 @@ test("Jira Rovo initialization survives chat cleanup replay and preserves succes
 			await React.act(async () => root.unmount());
 			container.remove();
 		}
+	}
+});
+
+test("New chat during pending Jira Rovo initialization stays empty after a history change", async () => {
+	const { JiraRovoHarness } = await loadHarness();
+	let releaseStop;
+	const pendingStop = new Promise((resolve) => { releaseStop = resolve; });
+	let stopCalls = 0;
+	window.testSdkStop = () => { stopCalls += 1; return pendingStop; };
+	const container = document.createElement("div");
+	document.body.append(container);
+	const root = createRoot(container);
+	const button = (name) => Array.from(container.querySelectorAll("button")).find((element) => element.textContent === name);
+	const text = (selector) => container.querySelector(selector).textContent;
+	try {
+		await React.act(async () => root.render(React.createElement(React.StrictMode, null, React.createElement(JiraRovoHarness, { initial: false }))));
+		await React.act(async () => button("Enter Rovo").click());
+		assert.equal(stopCalls > 0, true);
+		assert.equal(text("[data-agent]"), "rovo-dev");
+		assert.equal(text("[data-messages]"), "");
+		await React.act(async () => button("New chat").click());
+		await React.act(async () => button("Toggle pin").click());
+		await React.act(async () => { releaseStop(); await pendingStop; });
+		assert.equal(text("[data-agent]"), "rovo-dev");
+		assert.equal(text("[data-history-session]"), "none");
+		assert.equal(text("[data-messages]"), "");
+	} finally {
+		releaseStop();
+		delete window.testSdkStop;
+		await React.act(async () => root.unmount());
+		container.remove();
 	}
 });
 
