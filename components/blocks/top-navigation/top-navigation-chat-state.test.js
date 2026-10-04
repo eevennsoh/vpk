@@ -194,14 +194,14 @@ test("standalone top navigation releases its pinned shell sidebar in small conta
 	assert.doesNotMatch(TOP_NAVIGATION_SOURCE, /setSidebarOpen\(\(current\) =>/u);
 });
 
-test("top navigation renders the shared theme toggle after settings", () => {
+test("top navigation places the shared theme toggle in the profile popover", () => {
 	assert.match(
 		RIGHT_NAVIGATION_ACTIONS_SOURCE,
 		/import \{ ThemeToggle \} from "@\/components\/utils\/theme-wrapper";/u,
 	);
 	assert.match(
 		RIGHT_NAVIGATION_ACTIONS_SOURCE,
-		/aria-label="Settings"[\s\S]*<ThemeToggle \/>[\s\S]*\{\/\* Profile \*\/\}/u,
+		/aria-label="Profile menu"[\s\S]*<Avatar[\s\S]*<PopoverContent align="end" className="w-44">[\s\S]*<PopoverTitle className="text-sm">Theme<\/PopoverTitle>[\s\S]*<ThemeToggle \/>/u,
 	);
 	assert.doesNotMatch(RIGHT_NAVIGATION_ACTIONS_SOURCE, /aria-label="Toggle theme"/u);
 });

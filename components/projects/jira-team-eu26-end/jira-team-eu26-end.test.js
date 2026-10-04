@@ -742,7 +742,7 @@ test("the Jira tab bar splits or collapses work items per Simple views", () => {
 	assert.doesNotMatch(JIRA_TABS_SOURCE, /2000-years-later|DesignVariationId/u);
 	assert.doesNotMatch(USE_JIRA_TABS_SOURCE, /useDesignVariation|design-variation/u);
 	assert.match(PAGE_SOURCE, /import \{ JiraViewTabs \} from "@\/components\/projects\/jira\/components\/jira-header"/u);
-	assert.match(PAGE_SOURCE, /const JIRA_TEAM_EU26_TABS = getJiraTabs\(false\);/u);
+	assert.match(PAGE_SOURCE, /const JIRA_TEAM_EU26_TABS = getJiraTeamEu26EndTabs\(\);/u);
 	assert.match(
 		PAGE_SOURCE,
 		/const JIRA_TEAM_EU26_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel\(JIRA_TEAM_EU26_TABS\);/u,

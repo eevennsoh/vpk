@@ -13,6 +13,12 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTitle,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { DESIGN_VARIANTS, type DesignVariantId } from "@/components/utils/design-variants";
 import { ThemeToggle } from "@/components/utils/theme-wrapper";
@@ -175,16 +181,31 @@ export function RightNavigationActions({
 				</DropdownMenu>
 			)}
 
-			{/* Theme toggle */}
-			<ThemeToggle />
-
-			{/* Profile */}
-			<div className="flex size-8 items-center justify-center" data-current-user-id={currentUser.id}>
-				<Avatar label={currentUser.name} size="sm">
-					<AvatarImage src={currentUser.avatarSrc} alt={`${currentUser.name} avatar`} />
-					<AvatarFallback>{currentUser.initials ?? currentUser.name.slice(0, 3)}</AvatarFallback>
-				</Avatar>
-			</div>
+			{/* Profile and theme */}
+			<Popover>
+				<PopoverTrigger
+					render={(
+						<Button
+							aria-label="Profile menu"
+							data-current-user-id={currentUser.id}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<Avatar label={currentUser.name} size="sm">
+								<AvatarImage src={currentUser.avatarSrc} alt={`${currentUser.name} avatar`} />
+								<AvatarFallback>{currentUser.initials ?? currentUser.name.slice(0, 3)}</AvatarFallback>
+							</Avatar>
+						</Button>
+					)}
+				/>
+				<PopoverContent align="end" className="w-44">
+					<div className="flex items-center justify-between gap-2">
+						<PopoverTitle className="text-sm">Theme</PopoverTitle>
+						<ThemeToggle />
+					</div>
+				</PopoverContent>
+			</Popover>
 		</>
 	);
 }

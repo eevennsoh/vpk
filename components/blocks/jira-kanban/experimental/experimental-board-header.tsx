@@ -1,9 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
+import AutomationIcon from "@atlaskit/icon/core/automation";
 import BoardIcon from "@atlaskit/icon/core/board";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
-import ExpandHorizontalIcon from "@atlaskit/icon/core/expand-horizontal";
+import FeedbackIcon from "@atlaskit/icon/core/feedback";
+import GrowDiagonalIcon from "@atlaskit/icon/core/grow-diagonal";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShareIcon from "@atlaskit/icon/core/share";
@@ -305,11 +307,17 @@ function BoardHeaderTitleCluster({
 				</div>
 			</div>
 			<div className="flex shrink-0 gap-2">
-				<Button aria-disabled aria-label="Share" size="icon" variant="ghost">
+				<Button aria-disabled aria-label="Share" size="icon" variant="outline">
 					<Icon render={<ShareIcon label="" />} />
 				</Button>
-				<Button aria-disabled aria-label="Expand" size="icon" variant="ghost">
-					<Icon render={<ExpandHorizontalIcon label="" />} />
+				<Button aria-disabled aria-label="Automation" size="icon" variant="outline">
+					<Icon render={<AutomationIcon label="" />} />
+				</Button>
+				<Button aria-disabled aria-label="Feedback" size="icon" variant="outline">
+					<Icon render={<FeedbackIcon label="" />} />
+				</Button>
+				<Button aria-disabled aria-label="Expand" size="icon" variant="outline">
+					<Icon render={<GrowDiagonalIcon label="" />} />
 				</Button>
 			</div>
 		</div>
