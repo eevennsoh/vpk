@@ -63,8 +63,9 @@ import {
 	type AgentSessionWorkItemOption,
 } from "./agent-session-types";
 import { useAgentSessionMenu } from "./use-agent-session-menu";
+import { motionEase } from "@/lib/motion";
 
-const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] as const }; // duration-fast + ease-in
+const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
 const STATUS_REENTRY_AVATAR_MOTION = { repeat: 0, repeatDelayMs: 0 } as const;
 
 /** Keep row registration and focus restoration tied to the departing DOM owner. */

@@ -31,6 +31,7 @@ import type {
 	JiraForYouWorkspaceAgentSession,
 	JiraForYouWorkspaceItemDetails,
 } from "./jira-for-you-workspace-types";
+import { motionEase } from "@/lib/motion";
 
 const DETAIL_PREVIEW_POSITION = {
 	align: "center",
@@ -41,11 +42,11 @@ const DETAIL_PREVIEW_POSITION = {
 const DESKTOP_PANEL_VARIANTS: Variants = {
 	closed: {
 		transform: "translateX(100%)",
-		transition: { duration: 0.2, ease: [0.6, 0, 0.8, 0.6] },
+		transition: { duration: 0.2, ease: motionEase.in },
 	},
 	open: {
 		transform: "translateX(0%)",
-		transition: { duration: 0.25, ease: [0, 0.4, 0, 1] },
+		transition: { duration: 0.25, ease: motionEase.out },
 	},
 };
 
@@ -53,12 +54,12 @@ const MOBILE_PANEL_VARIANTS: Variants = {
 	closed: {
 		opacity: 0,
 		transform: "translateY(12px)",
-		transition: { duration: 0.18, ease: [0.6, 0, 0.8, 0.6] },
+		transition: { duration: 0.18, ease: motionEase.in },
 	},
 	open: {
 		opacity: 1,
 		transform: "translateY(0px)",
-		transition: { duration: 0.22, ease: [0, 0.4, 0, 1] },
+		transition: { duration: 0.22, ease: motionEase.out },
 	},
 };
 

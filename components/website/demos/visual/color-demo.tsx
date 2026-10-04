@@ -74,23 +74,17 @@ function Swatch({ label, className, type }: Readonly<SwatchProps>) {
 				onMouseEnter={resolveColor}
 				onPointerDown={handlePointerDown}
 			>
-				{type === "bg" && (
-					<div
+				{type === "bg" ? <div
 						ref={colorRef}
 						className={`w-12 h-12 rounded-lg border border-border ${className}`}
-					/>
-				)}
-				{type === "text" && (
-					<div className="w-12 h-12 rounded-lg border border-border bg-surface flex items-center justify-center">
+					/> : null}
+				{type === "text" ? <div className="w-12 h-12 rounded-lg border border-border bg-surface flex items-center justify-center">
 						<span ref={colorRef} className={`text-lg font-bold ${className}`}>Aa</span>
-					</div>
-				)}
-				{type === "border" && (
-					<div
+					</div> : null}
+				{type === "border" ? <div
 						ref={colorRef}
 						className={`w-12 h-12 rounded-lg border-2 bg-surface ${className}`}
-					/>
-				)}
+					/> : null}
 				<code className="text-text-subtlest text-[10px] font-mono text-center leading-tight max-w-16 break-all">
 					{label}
 				</code>

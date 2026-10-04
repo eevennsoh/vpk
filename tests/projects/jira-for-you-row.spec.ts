@@ -5,9 +5,9 @@ import {
 	type Page,
 } from "@playwright/test";
 
-const JIRA_FOR_YOU_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/projects/jira-for-you`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_FOR_YOU_URL = appUrl("/preview/projects/jira-for-you");
 
 function getRow(page: Page, title: string) {
 	return page.getByRole("listitem").filter({

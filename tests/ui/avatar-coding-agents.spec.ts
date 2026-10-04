@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const URL = `${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/components/ui/avatar#coding-agents`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const URL = appUrl("/components/ui/avatar#coding-agents");
 
 for (const width of [1440, 390]) {
 	test(`coding agent artwork and brand canvases stay correct in both themes at ${width}px`, async ({ page }) => {

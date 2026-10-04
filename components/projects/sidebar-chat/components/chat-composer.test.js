@@ -14,7 +14,6 @@ const SESSION_AGENT_ENTRY_SOURCE = readProjectFile("components/projects/rovo-cor
 const SESSION_AGENT_REGISTRY_SOURCE = readProjectFile("components/projects/rovo-core/lib/agent-records/session-agent-registry.ts");
 const LIVE_WAVEFORM_SOURCE = readProjectFile("components/ui-audio/live-waveform.tsx");
 const PROMPT_INPUT_DICTATION_SOURCE = readProjectFile("components/ui-custom/prompt-input-dictation.tsx");
-const PROMPT_INPUT_SOURCE = readProjectFile("components/ui-custom/prompt-input.tsx");
 const ROVO_CURSOR_SOURCE = readProjectFile("components/ui-custom/rovo-cursor.tsx");
 const ROVO_CHAT_HELPERS_SOURCE = readProjectFile("app/contexts/rovo-chat-helpers.ts");
 

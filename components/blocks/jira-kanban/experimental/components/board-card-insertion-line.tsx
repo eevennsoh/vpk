@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, type CSSProperties } from "react";
+import { useId, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import AddIcon from "@atlaskit/icon/core/add";
 
 import { Icon } from "@/components/ui/icon";
@@ -55,12 +56,17 @@ export function BoardCardInsertionLine({
 }: Readonly<{ position: BoardCardInsertion["position"]; seam: BoardCardInsertionSeam; marker?: "add" | "circle" | "none" }>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const anchorName = `--board-insertion-${insertionAnchorId}`;
+	const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
 
 	return (
 		<div
 			aria-hidden
+			ref={setAnchor}
 			className={cn(
-				"pointer-events-none absolute inset-x-0 z-30 h-0.5 rounded-full bg-border-selected",
+				"pointer-events-none absolute inset-x-0 z-30 h-0.5 rounded-full",
+				marker === "none" ? "bg-border-selected" : null,
+				// Start at the ring's rim so its transparent center shows the well below.
+				marker === "circle" ? "before:absolute before:inset-y-0 before:left-1 before:right-0 before:rounded-full before:bg-border-selected" : null,
 				seam === "edge" ? EDGE_POSITION_CLASS_NAME[position] : undefined,
 			)}
 			data-insertion-line={position}
@@ -72,47 +78,29 @@ export function BoardCardInsertionLine({
 					: undefined),
 			} as CSSProperties}
 		>
-			{/*
-			 * The "+" anchoring the rule's left end, matching the list view's
-			 * `JiraListColumnBoundary` / `RowBoundaryCreateControls` treatment:
-			 * a 24px outline square on the overlay surface with a subtle icon —
-			 * not an accent-coloured circle, and no overlay shadow that would
-			 * draw a second edge against the 1px grid border.
-			 *
-			 * Inert on purpose: hover paints the same affordance as a session
-			 * drag, but the board does not mint a work item from a click here.
-			 * The list's tooltip goes with its real create button. A focusable
-			 * node inside `aria-hidden` would be an accessibility violation, so
-			 * this stays a `span`.
-			 *
-			 * `fixed` + CSS anchors hang the marker halfway outside the card's
-			 * left edge. The card list is a scrollport (`overflow-y-auto`
-			 * computes `overflow-x` to `auto`), so an absolutely positioned
-			 * half-outside marker would be clipped — the same reason the list
-			 * column controls use `fixed`.
-			 */}
-			{marker === "circle" ? <span className="absolute left-0 top-1/2 size-2 -translate-y-1/2 rounded-full border-2 border-border-selected bg-surface" /> : null}
-			{marker === "add" ? <span
-				className="fixed z-30 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-surface-overlay text-icon-subtle"
-				data-board-insertion-marker={position}
+			{marker === "circle" ? <span className="absolute left-0 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-border-selected" /> : null}
+			{/* Keep the rule and its inert + marker outside the viewport mask.
+			    Hovering a seam must not reveal every faded card in the column. */}
+			{marker === "add" && anchor ? createPortal(<div
+				aria-hidden
+				className="pointer-events-none fixed z-30 h-0.5 rounded-full bg-border-selected"
+				data-board-insertion-overlay={position}
 				style={{
-					// This node mounts in the same commit as its anchor. Until the
-					// browser resolves that anchor, bare anchor() insets compute to
-					// `auto` and paint the fixed node at its clipped static position.
-					// Keep that unresolved frame offscreen and non-painting instead.
+					// Unresolved or fully clipped anchors must not paint a stray rule.
 					left: "anchor(left, -100vw)",
 					positionAnchor: anchorName,
 					positionVisibility: "anchors-visible",
-					top: "anchor(center, -100vh)",
+					top: "anchor(top, -100vh)",
+					width: "anchor-size(width, 0px)",
 				}}
 			>
-				{/*
-				 * ADS icons ship unlayered Compiled CSS, so a Tailwind text colour
-				 * utility on the wrapper loses the cascade — the colour has to be the
-				 * icon's own prop.
-				 */}
-				<Icon render={<AddIcon color={token("color.icon.subtle")} label="" size="small" />} />
-			</span> : null}
+				<span
+					className="absolute left-0 top-1/2 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-surface-overlay text-icon-subtle"
+					data-board-insertion-marker={position}
+				>
+					<Icon render={<AddIcon color={token("color.icon.subtle")} label="" size="small" />} />
+				</span>
+			</div>, anchor.ownerDocument.body) : null}
 		</div>
 	);
 }

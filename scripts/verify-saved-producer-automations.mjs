@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 export const EXPECTED_PRODUCER_AUTOMATION_IDS = [
 	"bug-scan",
 	"code-simplification",
+	"correction-ladder",
 	"dependency-sweep",
 	"deprecation-audit",
 	"engineering-improvement-map",

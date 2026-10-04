@@ -4,11 +4,12 @@ import { useEffect, useRef, type ComponentProps, type ReactNode } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, type Transition } from "motion/react";
 
-import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { AtlassianLogo, RovoAppIcon, type AtlassianLogoName } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Tile } from "@/components/ui/tile";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 /**
  * Shared with `components/ui/tile` — the names resolve to the same box on the
@@ -83,9 +84,9 @@ function getAppstackInitialRotation(rotation: number) {
 
 function getAppstackTransition(delay: number): Transition {
 	return {
-		filter: { duration: 0.36, ease: [0, 0.4, 0, 1], delay },
-		layout: { duration: 0.25, ease: [0.4, 0, 0, 1] },
-		opacity: { duration: 0.32, ease: [0, 0.4, 0, 1], delay },
+		filter: { duration: 0.36, ease: motionEase.out, delay },
+		layout: { duration: 0.25, ease: motionEase.inOut },
+		opacity: { duration: 0.32, ease: motionEase.out, delay },
 		rotate: { type: "spring", stiffness: 260, damping: 30, mass: 0.85, delay: delay + 0.08 },
 		scale: { type: "spring", stiffness: 260, damping: 28, mass: 0.85, delay },
 		x: { type: "spring", stiffness: 260, damping: 28, mass: 0.85, delay },
@@ -213,6 +214,17 @@ export function TwgToolSourceIcon({
 					width={APPSTACK_SIZES[size].imagePx}
 				/>
 			</Tile>
+		);
+	}
+
+	if (source.provider === "rovo") {
+		return (
+			<RovoAppIcon
+				{...props}
+				className={cn("shrink-0", className)}
+				label={props["aria-hidden"] ? undefined : source.label}
+				size={size}
+			/>
 		);
 	}
 

@@ -50,9 +50,18 @@ export interface ExperimentalJiraKanbanPageHandle {
 }
 
 export interface ExperimentalJiraKanbanPageProps {
+	/** Enables the optional arrange action, destination counts, and shortcut. */
+	autoArrangeEnabled?: boolean;
+	getStatusVariant?: NonNullable<JiraKanbanProps["selectionToolbar"]>["getStatusVariant"];
 	addAgentLabel?: ExperimentalJiraKanbanProps["addAgentLabel"];
 	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	issueMoveVisual?: ExperimentalJiraKanbanProps["issueMoveVisual"];
+	issueDropMotion?: ExperimentalJiraKanbanProps["issueDropMotion"];
+	/**
+	 * Host-requested cohort move, committed through the same drop path as a
+	 * manual multi-card drag. Ignored unless the board may edit its columns.
+	 */
+	issueMoveRequest?: ExperimentalJiraKanbanProps["issueMoveRequest"];
 	/** Fused selection also enables board keyboard navigation and outside-press dismissal. */
 	issueSelectionAppearance?: ExperimentalJiraKanbanProps["issueSelectionAppearance"];
 	activeView?: ExperimentalJiraKanbanView;
@@ -66,8 +75,10 @@ export interface ExperimentalJiraKanbanPageProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	cardGenerativeActionFooterActions?: ExperimentalJiraKanbanProps["cardGenerativeActionFooterActions"];
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	cardGenerativeActionPinnedAgentIds?: readonly string[];
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;
+	showPriorityIndicator?: ExperimentalJiraKanbanProps["showPriorityIndicator"];
 	createWorkItemDropZoneLabel?: ExperimentalJiraKanbanProps["createWorkItemDropZoneLabel"];
 	columnSizing?: ExperimentalJiraKanbanProps["columnSizing"];
 	columnWidth?: ExperimentalJiraKanbanProps["columnWidth"];
@@ -140,6 +151,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
+	/** Optional project avatar in the board title cluster. */
+	boardAvatar?: ReactNode;
 	boardTitle?: string;
 	columnChrome?: JiraKanbanProps["columnChrome"];
 	compactHeader?: boolean;
@@ -156,6 +169,10 @@ export interface ExperimentalJiraKanbanPageProps {
 	/** Route-owned avatar presentation and hover details; filtering stays in the board. */
 	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
+	/** Keep filter selections independent when the route swaps board datasets. */
+	boardFilterScopeKey?: string;
+	/** Total avatar slots in the header, including Unassigned. */
+	headerAvatarLimit?: number;
 	showUnassignedHeaderAvatar?: boolean;
 	insightsEnabled?: boolean;
 	insightsDefaultAssigneeIds?: readonly string[];

@@ -55,7 +55,7 @@ function harness({ enabled = true, face = true, nestedControl = false } = {}) {
 	return { source, root, doc, win, events, frames, api, focused: () => focused, cleanup: () => cleanup?.(),
 		down: () => fire(root, "pointerdown"), move: (x) => fire(doc, "pointermove", { clientX: x }), up: () => fire(doc, "pointerup"),
 		key: (key) => fire(doc, "keydown", { key }), tick: () => { const callback = frames.get(1); frames.clear(); callback?.(); },
-		click: () => { let blocked = false; fire(doc, "click", { preventDefault() { blocked = true; } }); return blocked; },
+		click: (detail = 1) => { let blocked = false; fire(doc, "click", { detail, preventDefault() { blocked = true; } }); return blocked; },
 	};
 }
 
@@ -112,6 +112,18 @@ test("ending an idle transport preserves genuine keyboard focus", () => {
 	h.root.focus();
 	h.api.stop();
 	assert.equal(h.focused(), true);
+});
+
+test("a completed drag preserves keyboard activation while suppressing its pointer click", () => {
+	for (const cancelled of [false, true]) {
+		const h = harness();
+		h.down(); h.move(120); h.tick();
+		if (cancelled) h.key("Escape");
+		else h.up();
+		assert.equal(h.click(0), false, "Return can expand a collapsed column after the drag");
+		assert.equal(h.click(1), true, "the drag release must still not activate a card");
+		assert.equal(h.click(1), false, "only one compatibility click is suppressed");
+	}
 });
 
 

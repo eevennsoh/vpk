@@ -52,9 +52,9 @@ export const PackageInfo = ({
         <>
           <PackageInfoHeader>
             <PackageInfoName />
-            {changeType && <PackageInfoChangeType />}
+            {changeType ? <PackageInfoChangeType /> : null}
           </PackageInfoHeader>
-          {(currentVersion || newVersion) && <PackageInfoVersion />}
+          {(currentVersion || newVersion) ? <PackageInfoVersion /> : null}
         </>
       )}
     </div>
@@ -161,13 +161,9 @@ export const PackageInfoVersion = ({
     >
       {children ?? (
         <>
-          {currentVersion && <span>{currentVersion}</span>}
-          {currentVersion && newVersion && (
-            <ArrowRightIcon className="size-3" />
-          )}
-          {newVersion && (
-            <span className="font-medium text-foreground">{newVersion}</span>
-          )}
+          {currentVersion ? <span>{currentVersion}</span> : null}
+          {currentVersion && newVersion ? <ArrowRightIcon className="size-3" /> : null}
+          {newVersion ? <span className="font-medium text-foreground">{newVersion}</span> : null}
         </>
       )}
     </div>
@@ -232,7 +228,7 @@ export const PackageInfoDependency = ({
     {children ?? (
       <>
         <span className="font-mono text-muted-foreground">{name}</span>
-        {version && <span className="font-mono text-xs">{version}</span>}
+        {version ? <span className="font-mono text-xs">{version}</span> : null}
       </>
     )}
   </div>

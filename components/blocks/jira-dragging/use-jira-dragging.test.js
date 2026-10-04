@@ -49,6 +49,35 @@ function select(api, cards) {
 	}));
 }
 
+test("toolbar Select all remains column scoped after selecting and moving cards", () => {
+	const render = harness();
+	let api = render();
+	const [first, second] = api.boardColumns[0].cards;
+	select(api, [second]);
+	api = render();
+	api.selectionToolbar.onStatusChange("Done");
+	api = render();
+	api.selectionToolbar.onClearSelection();
+	api.onCardSelect(first.code, "To do", 0, { shiftKey: true, metaOrCtrlKey: false });
+	api = render();
+	api.selectionToolbar.onSelectAll();
+	api = render();
+	assert.deepEqual([...api.selectedCardCodes], Array.from(api.boardColumns[0].cards, (card) => card.code));
+	assert.equal(api.selectedCardCodes.has(second.code), false);
+	api.onCardSelect(second.code, "Done", 0, { shiftKey: false, metaOrCtrlKey: true });
+	api = render();
+	api.onCardDragStart(first);
+	api = render();
+	api.selectionToolbar.onSelectAll();
+	api = render();
+	assert.equal(api.selectedCardCodes.size, 4);
+	assert.equal(api.draggedCardCode, null);
+	api.onCollapsedColumnsChange(new Set(["Done"]));
+	api = render();
+	api.selectionToolbar.onSelectAll();
+	assert.equal(render().selectedCardCodes.has(second.code), false);
+});
+
 for (const [name, bulk, dragging] of [
 	["a held single card", false, true],
 	["bulk selected cards", true, false],

@@ -102,6 +102,7 @@ import type {
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 import { getStudioAgentChangeSummary, type StudioAgentChangeSection, type StudioAgentChangeSummary } from "@/components/projects/rovo-core/lib/agent-records/agent-versioning";
+import { motionEase } from "@/lib/motion";
 
 type AgentResult = RovoDataParts["agent-result"];
 export type AgentConfigView = "configure" | "insights" | "test";
@@ -1442,7 +1443,7 @@ export function RovoAppAgentConfigPanel({
 				data-screen-assistant-target="studio-agent-config-panel"
 				initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
 				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.24, ease: [0, 0.4, 0, 1] }}
+				transition={{ duration: 0.24, ease: motionEase.out }}
 			>
 			<Agent className="flex min-h-0 flex-1 flex-col">
 				<Tabs

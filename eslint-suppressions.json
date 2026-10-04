@@ -1,0 +1,4173 @@
+{
+  "app/api/rovo/cancel-deferred-tool/route.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "app/api/sprint-board/tasks/route.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "app/arts/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "app/arts/personal-graph/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 597
+    }
+  },
+  "app/arts/rovo-fable/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 52
+    }
+  },
+  "app/arts/rovo-p5/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 18
+    }
+  },
+  "app/contexts/context-rovo-chat-select-agent.test.js": {
+    "no-restricted-syntax": {
+      "count": 40
+    }
+  },
+  "app/contexts/context-rovo-chat.tsx": {
+    "@next/next/no-location-assign-relative-destination": {
+      "count": 1
+    },
+    "react-hooks/purity": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 5
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "app/data/details/ui-custom/shimmer.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "app/data/directory/agents.test.js": {
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "app/data/studio-project-catalog.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "app/globals.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "app/layout.test.js": {
+    "no-restricted-syntax": {
+      "count": 28
+    }
+  },
+  "app/preview/projects/jira-for-you/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "app/weather/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/animate-ui/icons/icon.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    },
+    "react-hooks/refs": {
+      "count": 4
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "components/animate-ui/icons/moon.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/arts/awake/city-popover.test.js": {
+    "no-restricted-syntax": {
+      "count": 23
+    }
+  },
+  "components/arts/awake/city-popover.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/arts/awake/glass-slider.test.js": {
+    "no-restricted-syntax": {
+      "count": 34
+    }
+  },
+  "components/arts/awake/glass-slider.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/awake/index.test.js": {
+    "no-restricted-syntax": {
+      "count": 103
+    }
+  },
+  "components/arts/awake/index.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "components/arts/awake/selected-weather-clock.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/arts/awake/use-cities.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/awake/use-city-search.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/awake/use-location-clock.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/arts/awake/use-location-clock.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/awake/use-wake-lock.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/awake/wake-lock-hotkey.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/arts/cursors/index.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/cursors/three/cursor-scene.tsx": {
+    "react-hooks/immutability": {
+      "count": 3
+    }
+  },
+  "components/arts/personal-graph/hooks/use-graph-source.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/personal-graph/hooks/use-personal-graph-intro.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/personal-graph/hooks/use-personal-graph-summary.test.js": {
+    "no-restricted-syntax": {
+      "count": 19
+    }
+  },
+  "components/arts/personal-graph/hooks/use-vault-search.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/personal-graph/hooks/use-vault-settings.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/personal-graph/personal-graph-control-flyout.test.js": {
+    "no-restricted-syntax": {
+      "count": 111
+    }
+  },
+  "components/arts/personal-graph/personal-graph-glass-panel.test.js": {
+    "no-restricted-syntax": {
+      "count": 48
+    }
+  },
+  "components/arts/personal-graph/personal-graph-glass-panel.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/arts/personal-graph/personal-graph-neural-canvas.tsx": {
+    "jsx-a11y/no-aria-hidden-on-focusable": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 3
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/personal-graph/personal-graph-page.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/arts/personal-graph/personal-graph-source-picker.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/arts/personal-graph/personal-graph-summary-panel.test.js": {
+    "no-restricted-syntax": {
+      "count": 29
+    }
+  },
+  "components/arts/personal-graph/personal-graph-surface.test.js": {
+    "no-restricted-syntax": {
+      "count": 66
+    }
+  },
+  "components/arts/personal-graph/personal-graph-surface.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/arts/rovo-p5/index.test.js": {
+    "no-restricted-syntax": {
+      "count": 129
+    }
+  },
+  "components/blocks/agent-access/agent-access.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent-assignment/components/agent-session-target-menu.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-assignment/components/assigned-agents-menu.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-assignment/components/assignment-avatar.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-assignment/page.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-bento/components/home-starter-bento.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent-browser/components/agent-browser.tsx": {
+    "react-hooks/refs": {
+      "count": 8
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-browser/components/template-build-flow.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "components/blocks/agent-card/components/agent-card.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 2
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent-card/page.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/blocks/agent-config-core/components/agent-compact-config-nav.tsx": {
+    "react-hooks/refs": {
+      "count": 5
+    }
+  },
+  "components/blocks/agent-config-core/components/agent-compact-nav-menu.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent-directory/agent-directory.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/blocks/agent-evaluation/agent-evaluation.test.js": {
+    "no-restricted-syntax": {
+      "count": 42
+    }
+  },
+  "components/blocks/agent-insights/agent-insights.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent-list/agent-list.test.js": {
+    "no-restricted-syntax": {
+      "count": 326
+    }
+  },
+  "components/blocks/agent-list/page.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-progress/page.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-selector/agent-selector.test.js": {
+    "no-restricted-syntax": {
+      "count": 157
+    }
+  },
+  "components/blocks/agent-selector/components/agent-selector.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "components/blocks/agent-selector/page.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-arrival.test.js": {
+    "no-restricted-syntax": {
+      "count": 97
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-capabilities.test.js": {
+    "no-restricted-syntax": {
+      "count": 96
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-frame.test.js": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-gutter.test.js": {
+    "no-restricted-syntax": {
+      "count": 212
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-header.test.js": {
+    "no-restricted-syntax": {
+      "count": 54
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-markers.test.js": {
+    "no-restricted-syntax": {
+      "count": 25
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-overflow.test.js": {
+    "no-restricted-syntax": {
+      "count": 20
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-rail.tsx": {
+    "react-hooks/refs": {
+      "count": 6
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-scrolling-effect.test.js": {
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-well.test.js": {
+    "no-restricted-syntax": {
+      "count": 40
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column.test.js": {
+    "no-restricted-syntax": {
+      "count": 479
+    }
+  },
+  "components/blocks/agent-session-column/index.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-session-column/use-agent-session-column-end-space.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-session-column/use-agent-session-user-notch-arrival.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-session-flyout/agent-session-flyout-data.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-session/agent-session-attached.test.js": {
+    "no-restricted-syntax": {
+      "count": 61
+    }
+  },
+  "components/blocks/agent-session/agent-session-card.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 3
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-session/agent-session-compact-card.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-session/agent-session-drag-host.test.js": {
+    "no-restricted-syntax": {
+      "count": 59
+    }
+  },
+  "components/blocks/agent-session/agent-session-drag-motion.test.js": {
+    "no-restricted-syntax": {
+      "count": 20
+    }
+  },
+  "components/blocks/agent-session/agent-session-flyout-hover.test.js": {
+    "no-restricted-syntax": {
+      "count": 13
+    }
+  },
+  "components/blocks/agent-session/agent-session-glow.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-session/agent-session-link-work-item.test.js": {
+    "no-restricted-syntax": {
+      "count": 66
+    }
+  },
+  "components/blocks/agent-session/agent-session-linking.test.js": {
+    "no-restricted-syntax": {
+      "count": 33
+    }
+  },
+  "components/blocks/agent-session/agent-session-medium-drag.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent-session/agent-session.test.js": {
+    "no-restricted-syntax": {
+      "count": 526
+    }
+  },
+  "components/blocks/agent-session/page.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-states/agent-states.test.js": {
+    "no-restricted-syntax": {
+      "count": 39
+    }
+  },
+  "components/blocks/agent-surfaces/agent-surfaces.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent-templates/agent-templates.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/blocks/agent-test/components/agent-test.test.js": {
+    "no-restricted-syntax": {
+      "count": 70
+    }
+  },
+  "components/blocks/agent-test/components/agent-test.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-users/agent-users.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent/agent.test.js": {
+    "no-restricted-syntax": {
+      "count": 18
+    }
+  },
+  "components/blocks/agent/components/agent-compact-config-nav.tsx": {
+    "react-hooks/refs": {
+      "count": 5
+    }
+  },
+  "components/blocks/agent/components/agent-compact-nav-menu.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "components/blocks/answer-card/components/answer-card.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/approval-card/page.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "jsx-a11y/no-noninteractive-element-to-interactive-role": {
+      "count": 1
+    }
+  },
+  "components/blocks/apps-directory/apps-directory.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/blocks/apps-directory/components/apps-directory.tsx": {
+    "react-hooks/refs": {
+      "count": 9
+    },
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "components/blocks/artifact-pane/artifact-agents-field.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/artifact-pane/artifact-pane.test.js": {
+    "no-restricted-syntax": {
+      "count": 200
+    }
+  },
+  "components/blocks/artifact-panel.test.js": {
+    "no-restricted-syntax": {
+      "count": 24
+    }
+  },
+  "components/blocks/board/board-column.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/chat-timeline/chat-timeline-navigator.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    },
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/chatgpt/create-project-form.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/blocks/code-review/code-review.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/blocks/code-review/components/code-review-canvas-right-rail.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/code-review/components/inline-comment-annotation.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/conversation-starters/components/conversation-starters.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "components/blocks/conversation-starters/conversation-starters.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/dashboard/components/nav-main.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/data-table/data-table.test.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "components/blocks/directory-shared/experimental-directory-view.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "components/blocks/editor-toolbar/editor-toolbar.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/blocks/emoji-picker/emoji-picker.test.js": {
+    "no-restricted-syntax": {
+      "count": 99
+    }
+  },
+  "components/blocks/gallery/components/gallery.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/blocks/gallery/gallery.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/blocks/generative-card/index.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/generative/page.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/html-selector/components/html-selector.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/html-selector/hooks/use-agent-preference.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/html-selector/hooks/use-artifact-theme.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/html-selector/html-selector.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-activity/jira-activity-alignment.test.js": {
+    "no-restricted-syntax": {
+      "count": 43
+    }
+  },
+  "components/blocks/jira-activity/jira-activity-event-row.test.js": {
+    "no-restricted-syntax": {
+      "count": 18
+    }
+  },
+  "components/blocks/jira-activity/jira-activity-threads.test.js": {
+    "no-restricted-syntax": {
+      "count": 213
+    }
+  },
+  "components/blocks/jira-activity/jira-activity.test.js": {
+    "no-restricted-syntax": {
+      "count": 311
+    }
+  },
+  "components/blocks/jira-creating/jira-creating-motion.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/blocks/jira-creating/lib/jira-creating-column-scroll.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/blocks/jira-creating/lib/jira-creating-demo-state.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/blocks/jira-dragging/data.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-dragging/index.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-dropzone/use-jira-dropzone-collapse-hold.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-epic/jira-epic.test.js": {
+    "no-restricted-syntax": {
+      "count": 32
+    }
+  },
+  "components/blocks/jira-insights/components/jira-insights-timeline-rail.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-issue/agent-activity-imports.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/blocks/jira-issue/agent-activity.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/blocks/jira-issue/agent-activity.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-issue/agent-link-flash.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-issue/agent-session-transfer.test.js": {
+    "no-restricted-syntax": {
+      "count": 265
+    }
+  },
+  "components/blocks/jira-issue/agent-shell-stability.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/blocks/jira-issue/attach-trace.test.js": {
+    "no-restricted-syntax": {
+      "count": 16
+    }
+  },
+  "components/blocks/jira-issue/chrome.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-issue/compact-chrome.test.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "components/blocks/jira-issue/cover-image.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/blocks/jira-issue/generative-action-menu.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-issue/index.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-issue/jira-issue-assignee.test.js": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "components/blocks/jira-issue/jira-issue-experimental-v2.test.js": {
+    "no-restricted-syntax": {
+      "count": 86
+    }
+  },
+  "components/blocks/jira-issue/jira-issue.test.js": {
+    "no-restricted-syntax": {
+      "count": 625
+    }
+  },
+  "components/blocks/jira-issue/page.tsx": {
+    "no-restricted-imports": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-issue/uncaptured-work-chin.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/blocks/jira-kanban/board-header-avatar-stroke.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-kanban/column-chrome.test.js": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "components/blocks/jira-kanban/experimental-v2/experimental-v2-jira-kanban.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-imports": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental-v2/page.tsx": {
+    "no-restricted-imports": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/board-agent-filter-selection.test.js": {
+    "no-restricted-syntax": {
+      "count": 13
+    }
+  },
+  "components/blocks/jira-kanban/experimental/board-untracked-proximity.test.js": {
+    "no-restricted-syntax": {
+      "count": 170
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/board-column-agent-assignment.tsx": {
+    "no-restricted-imports": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/board-column.tsx": {
+    "react-hooks/refs": {
+      "count": 26
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/board-filter-popover.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/board-filter-popover.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/board-view-menu.test.js": {
+    "no-restricted-syntax": {
+      "count": 49
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/created-card-arrival-motion.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/created-card-inline-flight.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/in-flow-agent-session-column-collapsed-menu.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/in-flow-agent-session-column.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/in-flow-gutter-scroll-mask.test.js": {
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/session-column-placement.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/hooks/use-board-auto-arrange.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/hooks/use-issue-card-drop-arrival.ts": {
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/lib/board-column-collapse.test.js": {
+    "no-restricted-syntax": {
+      "count": 62
+    }
+  },
+  "components/blocks/jira-kanban/experimental/lib/issue-cohort-gather.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/lib/issue-solitaire-drop.ts": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/blocks/jira-kanban/experimental/lib/session-column-reposition-pointer.test.js": {
+    "no-restricted-syntax": {
+      "count": 58
+    }
+  },
+  "components/blocks/jira-kanban/experimental/page.tsx": {
+    "no-restricted-imports": {
+      "count": 2
+    },
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/components/pulse-embedded-chat.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/components/pulse-scrubber.tsx": {
+    "jsx-a11y/interactive-supports-focus": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/experimental-pulse.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-reading.ts": {
+    "react-hooks/immutability": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/pulse-sessions.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/pulse-source-attribution.test.js": {
+    "no-restricted-syntax": {
+      "count": 30
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/pulse-source-contracts.test.js": {
+    "no-restricted-syntax": {
+      "count": 74
+    }
+  },
+  "components/blocks/jira-kanban/experimental/use-board-agent-session-drag.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/index.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/jira-kanban-contract.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/blocks/jira-kanban/jira-kanban-docs.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/blocks/jira-kanban/jira-kanban.test.js": {
+    "no-restricted-syntax": {
+      "count": 302
+    }
+  },
+  "components/blocks/jira-kanban/page.tsx": {
+    "no-restricted-imports": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-linking/card-glow.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-linking/jira-linking-canvas.tsx": {
+    "jsx-a11y/no-aria-hidden-on-focusable": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-linking/use-jira-linking-atlas.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-list/jira-list.test.js": {
+    "no-restricted-syntax": {
+      "count": 334
+    }
+  },
+  "components/blocks/jira-toolbar/jira-toolbar.test.js": {
+    "no-restricted-syntax": {
+      "count": 33
+    }
+  },
+  "components/blocks/jira-toolbar/page.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/data/metadata-crew.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/data/session-agents.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/detail-field-editor-data.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/detail-field-editors.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/development-repository-picker.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-dialog.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/floating-session-surface.tsx": {
+    "no-restricted-imports": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/metadata-rail-toggle.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-activity-panel.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-details-rail.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/activity-composer-context-pills.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/detail-field-editor-data.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/detail-field-editors.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/development-repository-picker.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-dialog.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/floating-session-surface.tsx": {
+    "no-restricted-imports": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-activity-panel.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-details-rail.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/context-section-navigation.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/components/activity-composer-context-pills.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/components/detail-field-editor-data.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/components/detail-field-editors.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/components/development-repository-picker.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/components/experimental-work-item-dialog.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/components/floating-session-surface.tsx": {
+    "no-restricted-imports": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/components/pull-request-detail/pull-request-activity-panel.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/components/pull-request-detail/pull-request-details-rail.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/context-section-navigation.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/experimental-v4-jira-work-item.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v4/lib/pull-request-detail-data.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/components/activity-composer-context-pills.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/components/detail-field-editor-data.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/components/detail-field-editors.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/components/development-repository-picker.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/components/experimental-work-item-dialog.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/components/floating-session-surface.tsx": {
+    "no-restricted-imports": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/components/pull-request-detail/pull-request-activity-panel.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/components/pull-request-detail/pull-request-details-rail.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/context-section-navigation.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/experimental-v5-jira-work-item.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v5/lib/pull-request-detail-data.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/detail-field-editor-data.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/detail-field-editors.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/experimental-work-item-dialog.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/floating-session-surface.tsx": {
+    "no-restricted-imports": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-work-item/experimental/experimental-jira-work-item.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/index.tsx": {
+    "no-restricted-imports": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-work-item/jira-work-item.test.js": {
+    "no-restricted-syntax": {
+      "count": 26
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/activity-composer-context-pills.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/detail-field-editors.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/development-repository-picker.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/floating-session-surface.tsx": {
+    "no-restricted-imports": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/high-confidence-work-item-body.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/panel-content-motion.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-activity-panel.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-details-rail.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/context-section-navigation.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/lib/pull-request-detail-data.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/team-eu26-jira-work-item.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/knowledge-directory/knowledge-directory.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/next-best-action/next-best-action.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/product-sidebar/components/content-tree-section.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/product-sidebar/components/navigation-item-with-hover-chevron.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/product-sidebar/components/navigation-item.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/product-sidebar/page.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/product-sidebar/variants/admin.tsx": {
+    "no-restricted-imports": {
+      "count": 3
+    }
+  },
+  "components/blocks/product-sidebar/variants/confluence.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/blocks/product-sidebar/variants/jira.test.js": {
+    "no-restricted-syntax": {
+      "count": 97
+    }
+  },
+  "components/blocks/prompt-gallery/prompt-gallery.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/blocks/pull-request-fix/pull-request-fix.test.js": {
+    "no-restricted-syntax": {
+      "count": 111
+    }
+  },
+  "components/blocks/pull-request-header/pull-request-header.test.js": {
+    "no-restricted-syntax": {
+      "count": 218
+    }
+  },
+  "components/blocks/pull-request-review/components/pull-request-review-verdict.tsx": {
+    "jsx-a11y/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "components/blocks/pull-request-review/pull-request-review.test.js": {
+    "no-restricted-syntax": {
+      "count": 80
+    }
+  },
+  "components/blocks/pull-request/pull-request.test.js": {
+    "no-restricted-syntax": {
+      "count": 114
+    }
+  },
+  "components/blocks/question-card/components/question-card.test.js": {
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "components/blocks/question-card/components/question-card.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/question-card/hooks/use-question-card.ts": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/rovo-canvas/components/rovo-canvas-view-content.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/blocks/rovo-canvas/components/rovo-canvas-view-switcher.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/blocks/rovo-canvas/components/rovo-canvas.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/scrubber/components/scrubber-rail.tsx": {
+    "jsx-a11y/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "components/blocks/sidebar/app-sidebar/components/nav-main.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/sidebar/sidebar-07/components/nav-main.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/sidebar/sidebar-10/components/nav-actions.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/skill-config/skill-config.test.js": {
+    "no-restricted-syntax": {
+      "count": 22
+    }
+  },
+  "components/blocks/skill-selector/skill-selector.test.js": {
+    "no-restricted-syntax": {
+      "count": 22
+    }
+  },
+  "components/blocks/skills-directory/components/skills-directory-sidebar.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "components/blocks/skills-directory/components/skills-directory.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "components/blocks/skills-directory/skills-directory.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/blocks/smart-link/smart-link.test.js": {
+    "no-restricted-syntax": {
+      "count": 161
+    }
+  },
+  "components/blocks/sprint-board/column.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/subagents/page.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/subagents/subagents-navigator.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/subagents/subagents.test.js": {
+    "no-restricted-syntax": {
+      "count": 136
+    }
+  },
+  "components/blocks/task-progress/page.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/purity": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "components/blocks/terminal-switch/page.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/blocks/tools-directory/components/tools-directory.tsx": {
+    "react-hooks/refs": {
+      "count": 9
+    }
+  },
+  "components/blocks/tools-directory/tools-directory.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/blocks/top-navigation/page.tsx": {
+    "react-hooks/refs": {
+      "count": 32
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/blocks/top-navigation/top-navigation-chat-state.test.js": {
+    "no-restricted-syntax": {
+      "count": 111
+    }
+  },
+  "components/blocks/trigger-config/trigger-config.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/blocks/triggers/components/agent-automation-flow-cover.test.js": {
+    "no-restricted-syntax": {
+      "count": 41
+    }
+  },
+  "components/blocks/triggers/manage-triggers-dialog.test.js": {
+    "no-restricted-syntax": {
+      "count": 51
+    }
+  },
+  "components/blocks/triggers/page.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/triggers/triggers.test.js": {
+    "no-restricted-syntax": {
+      "count": 71
+    }
+  },
+  "components/blocks/twg-agent-card/page.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/twg-agent-card/twg-agent-card.test.js": {
+    "no-restricted-syntax": {
+      "count": 128
+    }
+  },
+  "components/blocks/video/video.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/blocks/visual-waveform/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/visual-waveform/page.tsx": {
+    "no-restricted-imports": {
+      "count": 2
+    }
+  },
+  "components/blocks/visual-waveform/smooth-gradient-waveform.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/workflow/page.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/charts/bar/chart-bar-interactive.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/charts/line/chart-line-interactive.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/charts/pie/chart-pie-donut-with-text.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/charts/pie/chart-pie-interactive.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/charts/radial/chart-radial-shape.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/charts/radial/chart-radial-stacked.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/charts/radial/chart-radial-text.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/admin/components/admin-context.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/admin/components/admin-expandable-controls.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/confluence/components/document-editor.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/projects/confluence/components/document-title.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-for-you/jira-for-you-details.test.js": {
+    "no-restricted-syntax": {
+      "count": 35
+    }
+  },
+  "components/projects/jira-for-you/jira-for-you-work-item-integration.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/projects/jira-for-you/jira-for-you-workspace.test.js": {
+    "no-restricted-syntax": {
+      "count": 235
+    }
+  },
+  "components/projects/jira-for-you/jira-for-you.test.js": {
+    "no-restricted-syntax": {
+      "count": 44
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/agent-chat-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/card-kanban-stage.test.js": {
+    "no-restricted-syntax": {
+      "count": 30
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/components/rovo-stage.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/components/terminal-stage.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/hooks/use-terminal-demo.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/kanban-stage.test.js": {
+    "no-restricted-syntax": {
+      "count": 50
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/lib/terminal-demo-state.test.js": {
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/queue-stage.test.js": {
+    "no-restricted-syntax": {
+      "count": 188
+    }
+  },
+  "components/projects/jira-golden-journeys-v0/work-item-stage.test.js": {
+    "no-restricted-syntax": {
+      "count": 27
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/agent-chat-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/card-kanban-stage.test.js": {
+    "no-restricted-syntax": {
+      "count": 26
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/components/rovo-stage.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/components/terminal-stage.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/hooks/use-terminal-demo.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/kanban-stage.test.js": {
+    "no-restricted-syntax": {
+      "count": 100
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/lib/terminal-demo-state.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/queue-stage.test.js": {
+    "no-restricted-syntax": {
+      "count": 209
+    }
+  },
+  "components/projects/jira-golden-journeys-v1/session-gallery.test.js": {
+    "no-restricted-syntax": {
+      "count": 175
+    }
+  },
+  "components/projects/jira-golden-journeys-v2/use-hotfix-story.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/projects/jira-golden-journeys-v3/jira-golden-journeys-v3.test.js": {
+    "no-restricted-syntax": {
+      "count": 65
+    }
+  },
+  "components/projects/jira-golden-journeys-v3/page.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journeys-v3/terminal-story.test.js": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "components/projects/jira-golden-journeys-v4/data/agent-session-sync.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-board-gap.test.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-create-session.test.js": {
+    "no-restricted-syntax": {
+      "count": 26
+    }
+  },
+  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-generative-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-untracked-chrome.test.js": {
+    "no-restricted-syntax": {
+      "count": 107
+    }
+  },
+  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4.test.js": {
+    "no-restricted-syntax": {
+      "count": 247
+    }
+  },
+  "components/projects/jira-golden-journeys-v4/terminal-story.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/jira-queue/queue-conversation-workspace.test.js": {
+    "no-restricted-syntax": {
+      "count": 54
+    }
+  },
+  "components/projects/jira-team-eu26-end/data/agent-session-sync.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/finale-card-space-gl.tsx": {
+    "jsx-a11y/no-aria-hidden-on-focusable": {
+      "count": 1
+    },
+    "react-hooks/immutability": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/finale-column-flash.tsx": {
+    "jsx-a11y/no-aria-hidden-on-focusable": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/finale-dot-field.tsx": {
+    "jsx-a11y/no-aria-hidden-on-focusable": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/finale-overlay.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/jira-team-eu26-end-finale.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-board-gap.test.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-controls.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-create-session.test.js": {
+    "no-restricted-syntax": {
+      "count": 24
+    }
+  },
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-generative-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-untracked-chrome.test.js": {
+    "no-restricted-syntax": {
+      "count": 163
+    }
+  },
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end.test.js": {
+    "no-restricted-syntax": {
+      "count": 332
+    }
+  },
+  "components/projects/jira-team-eu26-end/terminal-story.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/jira-team-eu26/data/agent-session-sync.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/projects/jira-team-eu26/jira-team-eu26-board-gap.test.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "components/projects/jira-team-eu26/jira-team-eu26-create-session.test.js": {
+    "no-restricted-syntax": {
+      "count": 26
+    }
+  },
+  "components/projects/jira-team-eu26/jira-team-eu26-generative-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/jira-team-eu26/jira-team-eu26-untracked-chrome.test.js": {
+    "no-restricted-syntax": {
+      "count": 163
+    }
+  },
+  "components/projects/jira-team-eu26/jira-team-eu26.test.js": {
+    "no-restricted-syntax": {
+      "count": 330
+    }
+  },
+  "components/projects/jira-team-eu26/terminal-story.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/jira/components/rfp-agent-chat-details.test.js": {
+    "no-restricted-syntax": {
+      "count": 77
+    }
+  },
+  "components/projects/jira/components/rfp-report-canvas.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira/components/work-item-modal/agent-panel.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/projects/jira/components/work-item-modal/child-item-row.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira/components/work-item-modal/comment-thread.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/projects/jira/components/work-item-modal/description-section.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira/components/work-item-modal/modal-backdrop.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/projects/jira/data/board-agents.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/projects/jira/hooks/use-agents-rfp-demo-state.test.js": {
+    "no-restricted-syntax": {
+      "count": 19
+    }
+  },
+  "components/projects/jira/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 135
+    }
+  },
+  "components/projects/jira/rfp-context.test.js": {
+    "no-restricted-syntax": {
+      "count": 65
+    }
+  },
+  "components/projects/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 148
+    }
+  },
+  "components/projects/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-button/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 52
+    }
+  },
+  "components/projects/rovo-core/components/clicky/clicky-core.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/projects/rovo-core/components/clicky/clicky-overlay.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-core/components/clicky/clicky-response-overlay.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/projects/rovo-core/components/clicky/clicky-speech-bubble.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-core/components/rovo-app-header.test.js": {
+    "no-restricted-syntax": {
+      "count": 16
+    }
+  },
+  "components/projects/rovo-core/components/rovo-app-shell-pane-layout.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/projects/rovo-core/components/rovo-app-surface-shell.test.js": {
+    "no-restricted-syntax": {
+      "count": 38
+    }
+  },
+  "components/projects/rovo-core/hooks/use-clicky-voice.test.js": {
+    "no-restricted-syntax": {
+      "count": 23
+    }
+  },
+  "components/projects/rovo-core/hooks/use-realtime-voice.test.js": {
+    "no-restricted-syntax": {
+      "count": 23
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-active-document-sync.test.js": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-active-turn-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-active-turn-actions.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-controller.test.js": {
+    "no-restricted-syntax": {
+      "count": 18
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-effects.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-artifact-reset-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-background-refresh.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-chat-transport.test.js": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-chat-transport.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-clarification-plan-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-completed-run-hydration.test.js": {
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-core.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-data-part-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-delegation-queue-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-delegation-queue-actions.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-derived-state.test.js": {
+    "no-restricted-syntax": {
+      "count": 18
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-prep-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-runtime.test.js": {
+    "no-restricted-syntax": {
+      "count": 18
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-runtime.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-local-run-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-message-edit-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-message-state.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-mode-state-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-plan-retry.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-plan-widget-metadata-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-prompt-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-realtime-state-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-route-replacement-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-run-side-effect-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-runtime-refs.test.js": {
+    "no-restricted-syntax": {
+      "count": 16
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-runtime-refs.ts": {
+    "react-hooks/immutability": {
+      "count": 2
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-suggested-questions.test.js": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-lifecycle-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-list.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-mutation-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-navigation-effects.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-persistence.test.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-refresh-effects.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-title-generation.test.js": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-turn-lifecycle-state.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-use-chat-lifecycle-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/projects/rovo-core/hooks/use-rovo-app-user-message-actions.test.js": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "components/projects/rovo-core/hooks/use-sidebar-resize.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/rovo-core/lib/api-backend-unavailable.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/projects/rovo-floating-chat/components/rovo-floating-chat.test.js": {
+    "no-restricted-syntax": {
+      "count": 106
+    }
+  },
+  "components/projects/rovo/components/rovo-app-brand.test.js": {
+    "no-restricted-syntax": {
+      "count": 43
+    }
+  },
+  "components/projects/rovo/components/rovo-app-composer.test.js": {
+    "no-restricted-syntax": {
+      "count": 144
+    }
+  },
+  "components/projects/rovo/components/rovo-app-messages-empty-state.test.js": {
+    "no-restricted-syntax": {
+      "count": 92
+    }
+  },
+  "components/projects/rovo/components/rovo-app-shell-approval-card.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/projects/rovo/components/rovo-app-shell.tsx": {
+    "react-hooks/refs": {
+      "count": 20
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 12
+    }
+  },
+  "components/projects/search/components/search-result-card.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/projects/search/page.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/shared/components/agent-edit-summary-card.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/projects/shared/components/assistant-feedback-actions.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/shared/components/assistant-thinking-trace.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "components/projects/shared/components/chat-context-bar.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/projects/shared/components/composer-floating-body.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    }
+  },
+  "components/projects/shared/components/floating-rovo-button/index.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/projects/shared/components/floating-rovo-button/motion.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/projects/shared/components/floating-rovo-button/nudge.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/shared/components/floating-rovo-button/surface.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/shared/components/greeting-prompt-row.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/shared/components/rovo-app-composer.test.js": {
+    "no-restricted-syntax": {
+      "count": 365
+    }
+  },
+  "components/projects/shared/components/rovo-composer-send-controls.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/shared/components/user-message-bubble.test.js": {
+    "no-restricted-syntax": {
+      "count": 35
+    }
+  },
+  "components/projects/shared/hooks/use-reasoning-phase.ts": {
+    "react-hooks/purity": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 6
+    }
+  },
+  "components/projects/shared/lib/rovo-app-composer-response-gradient-state.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/projects/sidebar-chat/components/agent-result-card.test.js": {
+    "no-restricted-syntax": {
+      "count": 38
+    }
+  },
+  "components/projects/sidebar-chat/components/artifact-result-card.test.js": {
+    "no-restricted-syntax": {
+      "count": 35
+    }
+  },
+  "components/projects/sidebar-chat/components/artifact-result-card.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/projects/sidebar-chat/components/chat-composer.test.js": {
+    "no-restricted-syntax": {
+      "count": 65
+    }
+  },
+  "components/projects/sidebar-chat/components/chat-greeting.test.js": {
+    "no-restricted-syntax": {
+      "count": 68
+    }
+  },
+  "components/projects/sidebar-chat/components/message-bubble-plan-widget.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/projects/sidebar-chat/hooks/use-scroll-anchor.test.js": {
+    "no-restricted-syntax": {
+      "count": 13
+    }
+  },
+  "components/projects/sidebar-chat/page-plan-approval.test.js": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "components/projects/sidebar-chat/page.tsx": {
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/sidebar-chat/sidebar-chat-thinking-indicator-contract.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/projects/skills/components/skill-creation-result-card.test.js": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "components/projects/skills/components/skill-creation-trace-card.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/projects/skills/page.test.js": {
+    "no-restricted-syntax": {
+      "count": 40
+    }
+  },
+  "components/projects/studio/components/rovo-app-agent-config-panel.tsx": {
+    "react-hooks/refs": {
+      "count": 8
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
+    "no-restricted-syntax": {
+      "count": 870
+    }
+  },
+  "components/projects/studio/components/rovo-app-automation-discovery-widget.test.js": {
+    "no-restricted-syntax": {
+      "count": 117
+    }
+  },
+  "components/projects/studio/components/rovo-app-custom-agents-table.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/studio/components/rovo-app-home-starter-bento.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    }
+  },
+  "components/projects/studio/components/rovo-app-shell.tsx": {
+    "react-hooks/immutability": {
+      "count": 4
+    },
+    "react-hooks/refs": {
+      "count": 27
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 16
+    }
+  },
+  "components/projects/studio/components/rovo-app-sidebar.test.js": {
+    "no-restricted-syntax": {
+      "count": 34
+    }
+  },
+  "components/projects/studio/components/rovo-cursor-onboarding-tour.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "components/projects/studio/hooks/use-agent-onboarding-tour.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/studio/hooks/use-clicky-voice.test.js": {
+    "no-restricted-syntax": {
+      "count": 20
+    }
+  },
+  "components/projects/studio/hooks/use-rovo-app.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/screen-assistant/screen-assistant-region-overlay.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/screen-assistant/use-screen-assistant.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-audio/bar-visualizer.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 4
+    }
+  },
+  "components/ui-audio/conversation-bar.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-audio/hooks/use-scribe.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-audio/live-waveform.tsx": {
+    "jsx-a11y/no-aria-hidden-on-focusable": {
+      "count": 1
+    }
+  },
+  "components/ui-audio/matrix.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-audio/mic-selector.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "components/ui-audio/orb.tsx": {
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/purity": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "components/ui-audio/speech-input.tsx": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/ui-audio/transcript-viewer.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "components/ui-audio/voice-button.tsx": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/ui-audio/voice-picker.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/ui-audio/waveform.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    },
+    "react-hooks/immutability": {
+      "count": 2
+    },
+    "react-hooks/purity": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 8
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/animation.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/bar-chart.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/bar-x-axis.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/bar-y-axis.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/candlestick-chart.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/chart-config-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/chart-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/chart-legend-hover.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/chart-loading-label.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/choropleth/choropleth-chart.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/choropleth/choropleth-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/ui-charts/heatmap/heatmap-cells.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/heatmap/heatmap-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/highlight-segment.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "components/ui-charts/legend/legend-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/legend/legend-item.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/legend/legend-progress.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/line-loading-pulse.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/ui-charts/live-line-chart.tsx": {
+    "react-hooks/purity": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/live-x-axis.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/live-y-axis.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/measured-parent-size.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/pie-chart.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/pie-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/profit-loss-legend-hover.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/radar-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/radar-labels.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/ring-chart.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/ring-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/sankey/sankey-chart.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/sankey/sankey-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/stat-card-choropleth-01/lib/use-world-data.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/static-chart-preview-context.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/tooltip/chart-tooltip.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/tooltip/tooltip-box.tsx": {
+    "react-hooks/refs": {
+      "count": 4
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/tooltip/tooltip-content.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/use-animated-y-domains.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/use-grid-shimmer.ts": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/ui-charts/x-axis.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/y-axis.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/agent-loading-model.test.js": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "components/ui-custom/agent-loading.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/agent-triggers-dialog.test.js": {
+    "no-restricted-syntax": {
+      "count": 39
+    }
+  },
+  "components/ui-custom/agent-triggers-dialog.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/animated-dots.test.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "components/ui-custom/animated-rovo.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "components/ui-custom/artifact-list/artifact-list.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-custom/chain-of-thought.test.js": {
+    "no-restricted-syntax": {
+      "count": 72
+    }
+  },
+  "components/ui-custom/chain-of-thought.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/code-block.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/ui-custom/code-block.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/code-list/code-list.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-custom/commit.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/context-bar/context-bar-prompt-flyout.test.js": {
+    "no-restricted-syntax": {
+      "count": 72
+    }
+  },
+  "components/ui-custom/context-bar/context-bar-prompt-flyout.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/context-bar/context-bar-pull-request-ci-model.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/context-bar/context-bar-pull-request-ci.tsx": {
+    "no-restricted-imports": {
+      "count": 2
+    }
+  },
+  "components/ui-custom/context-bar/context-bar-pull-request.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/context-bar/context-bar.test.js": {
+    "no-restricted-syntax": {
+      "count": 71
+    }
+  },
+  "components/ui-custom/context.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/ui-custom/conversation.test.js": {
+    "no-restricted-syntax": {
+      "count": 37
+    }
+  },
+  "components/ui-custom/entity-card/agent-expanded.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/entity-card/agent-profile.tsx": {
+    "no-restricted-imports": {
+      "count": 3
+    }
+  },
+  "components/ui-custom/entity-card/entity-card-catalog.test.js": {
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "components/ui-custom/entity-card/entity-card.test.js": {
+    "no-restricted-syntax": {
+      "count": 225
+    }
+  },
+  "components/ui-custom/failing-checks-composer-chip.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-custom/file-tree-2.tsx": {
+    "jsx-a11y/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/file-tree.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/hooks/use-artifact-annotations.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/hooks/use-audio-devices.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/hover-reveal-row.test.js": {
+    "no-restricted-syntax": {
+      "count": 18
+    }
+  },
+  "components/ui-custom/human-agent-avatar-group-motion.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/human-agent-avatar-motion-config.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/inline-citation.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/jsx-preview.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "components/ui-custom/lib/artifact-annotations.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/lib/artifact-versions.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/link-safety-dialog.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/list.test.js": {
+    "no-restricted-syntax": {
+      "count": 19
+    }
+  },
+  "components/ui-custom/message.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/ui-custom/persona.tsx": {
+    "react-hooks/immutability": {
+      "count": 4
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/plan.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/ui-custom/plan.tsx": {
+    "no-restricted-imports": {
+      "count": 4
+    }
+  },
+  "components/ui-custom/progress-circle.test.js": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "components/ui-custom/prompt-input-dictation.test.js": {
+    "no-restricted-syntax": {
+      "count": 30
+    }
+  },
+  "components/ui-custom/prompt-input.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/queue.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-custom/reasoning.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rich-text-editor/extensions.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rich-text-editor/frontmatter-node-view.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rich-text-editor/markdown-source-editor.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rich-text-editor/mention-node-view.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rich-text-editor/mention-visual.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui-custom/rich-text-editor/reference-preview.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rich-text-editor/rich-text-editor.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "components/ui-custom/rich-text-editor/suggestion-menu-empty-popup.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/ui-custom/rich-text-editor/suggestion-menu.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 5
+    }
+  },
+  "components/ui-custom/rich-text-editor/task-item-node-view.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rich-text-editor/toolbar.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rovo-generation-components.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rovo-generation.test.js": {
+    "no-restricted-syntax": {
+      "count": 18
+    }
+  },
+  "components/ui-custom/rovo-illustration.test.js": {
+    "no-restricted-syntax": {
+      "count": 55
+    }
+  },
+  "components/ui-custom/rovo-illustration/controlled-spot-illustration.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/rovo-illustration/spot-illustration.tsx": {
+    "react-hooks/immutability": {
+      "count": 2
+    }
+  },
+  "components/ui-custom/rovo-sparkle/rovo-sparkle.test.js": {
+    "no-restricted-syntax": {
+      "count": 70
+    }
+  },
+  "components/ui-custom/shimmer-wave.tsx": {
+    "react-hooks/static-components": {
+      "count": 2
+    }
+  },
+  "components/ui-custom/skill-tag.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 2
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/sources-preview-menu.test.js": {
+    "no-restricted-syntax": {
+      "count": 31
+    }
+  },
+  "components/ui-custom/speech-input.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/stack-trace.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/tool-output.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/ui-custom/twg-appstack.test.js": {
+    "no-restricted-syntax": {
+      "count": 88
+    }
+  },
+  "components/ui-custom/twg-appstack.tsx": {
+    "react-hooks/refs": {
+      "count": 5
+    }
+  },
+  "components/ui-custom/twg-loader/twg-loader.test.js": {
+    "no-restricted-syntax": {
+      "count": 13
+    }
+  },
+  "components/ui-custom/use-human-agent-avatar-group-cycle.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/web-preview-chromium.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/ui/avatar.test.js": {
+    "no-restricted-syntax": {
+      "count": 210
+    }
+  },
+  "components/ui/badge.test.js": {
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "components/ui/breadcrumb.test.js": {
+    "no-restricted-syntax": {
+      "count": 20
+    }
+  },
+  "components/ui/button-group.test.js": {
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "components/ui/carousel.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui/chart.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui/checkbox.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/ui/date-label.test.js": {
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "components/ui/elapsed-time.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/ui/field.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/ui/icon-tile.test.js": {
+    "no-restricted-syntax": {
+      "count": 26
+    }
+  },
+  "components/ui/input-group.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 2
+    },
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/ui/input-otp.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui/logo-mark.test.js": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "components/ui/logo-mark.tsx": {
+    "react-hooks/static-components": {
+      "count": 2
+    }
+  },
+  "components/ui/logo-third-party.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/ui/lozenge.test.js": {
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "components/ui/message-scroller.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/ui/page-header.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/ui/panel.test.js": {
+    "no-restricted-syntax": {
+      "count": 23
+    }
+  },
+  "components/ui/progress-tracker.test.js": {
+    "no-restricted-syntax": {
+      "count": 70
+    }
+  },
+  "components/ui/radio-group.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/ui/select.test.js": {
+    "no-restricted-syntax": {
+      "count": 43
+    }
+  },
+  "components/ui/slider.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/ui/sonner.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/ui/tabs.test.js": {
+    "no-restricted-syntax": {
+      "count": 46
+    }
+  },
+  "components/ui/tag.test.js": {
+    "no-restricted-syntax": {
+      "count": 25
+    }
+  },
+  "components/ui/tag.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui/tile.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/ui/vpk-icons.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/utils/cone-safezone.tsx": {
+    "react-hooks/immutability": {
+      "count": 2
+    }
+  },
+  "components/utils/gui-components.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/utils/gui.test.js": {
+    "no-restricted-syntax": {
+      "count": 44
+    }
+  },
+  "components/utils/theme-wrapper.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/visual/border-beam/source.test.js": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "components/visual/card-glow/card-glow.test.js": {
+    "no-restricted-syntax": {
+      "count": 50
+    }
+  },
+  "components/visual/dropzone-effect/registry.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/visual/dropzone-effect/scene.tsx": {
+    "react-hooks/immutability": {
+      "count": 4
+    },
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "components/visual/glass-tabs.test.js": {
+    "no-restricted-syntax": {
+      "count": 24
+    }
+  },
+  "components/visual/gooey/tuning-model.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/visual/heatmap/registry.test.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/visual/ink-wash/index.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/visual/liquid-metal/data.test.js": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "components/visual/motion/data.ts": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/visual/peel/index.tsx": {
+    "react-hooks/immutability": {
+      "count": 1
+    }
+  },
+  "components/visual/peel/peel-scene.tsx": {
+    "react-hooks/immutability": {
+      "count": 6
+    }
+  },
+  "components/visual/peel/peel-surface.tsx": {
+    "react-hooks/immutability": {
+      "count": 7
+    }
+  },
+  "components/visual/peel/registry.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/visual/scroll-mask/lib.test.ts": {
+    "no-restricted-syntax": {
+      "count": 19
+    }
+  },
+  "components/visual/scrolling/registry.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/visual/svg-tracing/index.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/visual/svg-tracing/lib.test.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "components/visual/text-continuity/data.ts": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/visual/text-continuity/examples/gestures.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/visual/text-continuity/examples/inline.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/visual/text-continuity/examples/interface.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/visual/text-continuity/examples/numora.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/visual/text-continuity/examples/resize.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/visual/text-effects/data.ts": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/visual/text-morphing/data.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/visual/text-morphing/slots.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/visual/thinking-orbs/theme.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/visual/thinking-orbs/thinking-orb.tsx": {
+    "jsx-a11y/no-interactive-element-to-noninteractive-role": {
+      "count": 1
+    }
+  },
+  "components/visual/thinking-orbs/thinking-orbs.test.js": {
+    "no-restricted-syntax": {
+      "count": 46
+    }
+  },
+  "components/visual/visual-tracing/index.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/component-doc/components/doc-hero.test.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/website/demos/blocks/agent-card-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/website/demos/blocks/agent-demo.tsx": {
+    "@next/next/no-location-assign-relative-destination": {
+      "count": 1
+    }
+  },
+  "components/website/demos/blocks/agent-profile-card-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/website/demos/blocks/agent-progress-demo.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "components/website/demos/blocks/chat-configuration-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/blocks/jira-activity-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/blocks/task-progress-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 7
+    },
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "components/website/demos/blocks/trigger-config-demo.tsx": {
+    "@next/next/no-location-assign-relative-destination": {
+      "count": 1
+    }
+  },
+  "components/website/demos/blocks/twg-agent-card-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/projects/jira-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 52
+    }
+  },
+  "components/website/demos/projects/jira-demo.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "components/website/demos/projects/sidebar-chat-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/projects/skills-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/projects/use-project-demo-embedded.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/website/demos/ui-audio/matrix-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/website/demos/ui-audio/speech-input-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui-custom/attachments-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/website/demos/ui-custom/chain-of-thought-demo.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/website/demos/ui-custom/entity-card-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 26
+    }
+  },
+  "components/website/demos/ui-custom/shimmer-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/website/demos/ui-custom/skill-tag-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/website/demos/ui-custom/skill-tag-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/website/demos/ui-custom/sources-demo-preview-menu.test.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "components/website/demos/ui/chart-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui/checkbox-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "components/website/demos/ui/command-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui/date-label-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "components/website/demos/ui/inline-edit-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui/table-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "components/website/demos/ui/tag-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "components/website/demos/ui/toggle-group-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "components/website/demos/utils/components/browser-preview-panel.tsx": {
+    "jsx-a11y/no-interactive-element-to-noninteractive-role": {
+      "count": 1
+    },
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/utils/gui-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "components/website/demos/utils/hooks/use-browser-preview-session.ts": {
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/utils/multiports-demo.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/ascii-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 250
+    }
+  },
+  "components/website/demos/visual/card-glow-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 59
+    }
+  },
+  "components/website/demos/visual/card-glow-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/dithering-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 38
+    }
+  },
+  "components/website/demos/visual/gooey-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/graph-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 188
+    }
+  },
+  "components/website/demos/visual/graph.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/liquid-glass-demo.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/liquid-metal-demo.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/melt-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 20
+    }
+  },
+  "components/website/demos/visual/ripple-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 35
+    }
+  },
+  "components/website/demos/visual/scribbles-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 33
+    }
+  },
+  "components/website/demos/visual/scribbles.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/shader-lab-effect-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 39
+    }
+  },
+  "components/website/demos/visual/shaders-paper-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 35
+    }
+  },
+  "components/website/demos/visual/shaders-paper-demo.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/shaders/liquid-glass.test.js": {
+    "no-restricted-syntax": {
+      "count": 109
+    }
+  },
+  "components/website/demos/visual/shaders/ripple.tsx": {
+    "jsx-a11y/no-aria-hidden-on-focusable": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/shaders/squircle.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/svg-tracing-demo.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/text-continuity-demo.test.js": {
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "components/website/registry/blocks-variants.test.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "components/website/website-header.test.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "components/website/website-sidebar-nav.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "hooks/use-agent-url-sync.test.js": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "hooks/use-mobile.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "lib/json-render/registry.test.js": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  }
+}

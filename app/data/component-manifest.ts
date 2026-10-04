@@ -11,15 +11,83 @@ export type ComponentCategory =
 	| "utility"
 	| "visual";
 
-export interface ComponentManifestEntry {
+/**
+ * Which copy of a forked surface is the one to change. Omitted means "live".
+ * - "live": actively developed or demoed; edit it as usual.
+ * - "frozen": a finished demo kept as-is; change it only when the user names this variant.
+ * - "superseded": replaced by a newer fork (named in `note`) and kept only to compare
+ *   against; change it only when the user names this variant.
+ */
+export const COMPONENT_LIFECYCLE_STATUSES = ["live", "frozen", "superseded"] as const;
+
+export type ComponentLifecycleStatus = (typeof COMPONENT_LIFECYCLE_STATUSES)[number];
+
+export interface ComponentLifecycle {
+	status?: ComponentLifecycleStatus;
+	/** Slug in the same category that this entry was forked from. */
+	basedOn?: string;
+	/** One line to read before editing: what it is, its successor, or who shares its code. */
+	note?: string;
+}
+
+export interface ComponentManifestEntry extends ComponentLifecycle {
 	name: string;
 	slug: string;
 	importPath: string;
 	category: ComponentCategory;
 }
 
-function sortEntriesByName<T extends { name: string }>(entries: readonly T[]): T[] {
-	return [...entries].sort(compareByNameNatural);
+type CatalogKey = `${ComponentCategory}/${string}`;
+
+/**
+ * Lifecycle metadata keyed by `category/slug`, merged into the matching entry below. A table,
+ * not helper arguments, so `projectComponent(slug, name)` calls keep the shape tests match.
+ * `node scripts/verify-component-catalog.js` rejects unknown keys, statuses and `basedOn` slugs.
+ */
+export const CATALOG_LIFECYCLE: Readonly<Partial<Record<CatalogKey, ComponentLifecycle>>> = {
+	"blocks/jira-work-item": {
+		note: "Variant dirs are independent forks with separate consumers; experimental-v4 and experimental-v5 are reachable only from this block's own demos.",
+	},
+	"projects/jira-golden-journeys-v0": {
+		status: "frozen",
+		note: "Formerly asx. Its Rovo overlay and agent-chat hook are also imported by every jira-work-item variant and the jira-issue demo.",
+	},
+	"projects/jira-golden-journeys-v1": {
+		status: "frozen",
+		note: "Its Rovo overlay, terminal stage and agent-chat hook are imported by v3, v4 and both Jira Team EU26 boards, so edits there reach live boards.",
+	},
+	"projects/jira-golden-journeys-v2": {
+		status: "frozen",
+		note: "Formerly jira-agents; the only project that renders jira-work-item/experimental-v2.",
+	},
+	"projects/jira-golden-journeys-v3": {
+		status: "frozen",
+		basedOn: "jira-golden-journeys-v2",
+	},
+	"projects/jira-golden-journeys-v4": {
+		status: "superseded",
+		basedOn: "jira-golden-journeys-v3",
+		note: "Superseded by jira-team-eu26, its 2026-09-09 copy; the jira-kanban block demo still reads its board data.",
+	},
+	"projects/jira-team-eu26": {
+		status: "live",
+		basedOn: "jira-golden-journeys-v4",
+		note: "Team ’26 EU Payments SDK board; jira-team-eu26-end imports its header and agent data.",
+	},
+	"projects/jira-team-eu26-end": {
+		status: "live",
+		basedOn: "jira-team-eu26",
+		note: "Team ’26 EU keynote closing board (TEU-1 to TEU-13 and the recap finale), not the Payments SDK board.",
+	},
+};
+
+function withLifecycle(entry: ComponentManifestEntry): ComponentManifestEntry {
+	const lifecycle = CATALOG_LIFECYCLE[`${entry.category}/${entry.slug}`];
+	return lifecycle ? { ...entry, ...lifecycle } : entry;
+}
+
+function catalogEntries(entries: readonly ComponentManifestEntry[]): ComponentManifestEntry[] {
+	return entries.map(withLifecycle).sort(compareByNameNatural);
 }
 
 function toTitleCase(slug: string): string {
@@ -129,6 +197,7 @@ const PAPER_SHADER_COMPONENTS = [
 	["paper-halftone-dots", "Halftone Dots"],
 	["paper-heatmap", "Heatmap"],
 	["paper-image-dithering", "Image Dithering"],
+	["paper-lens-distortion", "Lens Distortion"],
 	["paper-liquid-metal", "Liquid Metal"],
 	["paper-mesh-gradient", "Mesh Gradient"],
 	["paper-metaballs", "Metaballs"],
@@ -148,7 +217,7 @@ const PAPER_SHADER_COMPONENTS = [
 	["paper-waves", "Waves"],
 ] as const;
 
-export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("agent-loading", "Agent Loading"),
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-icon", "Animated Icons"),
@@ -226,7 +295,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("web-preview", "Web Preview"),
 ]);
 
-export const AUDIO_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+export const AUDIO_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	audioComponent("audio-player", "Audio Player"),
 	audioComponent("bar-visualizer", "Bar Visualizer"),
 	audioComponent("conversation"),
@@ -246,7 +315,7 @@ export const AUDIO_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	audioComponent("waveform", "Waveform"),
 ]);
 
-export const UI_CHART_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+export const UI_CHART_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	uiChartComponent("area-chart", "Area Chart"),
 	uiChartComponent("bar-chart", "Bar Chart"),
 	uiChartComponent("candlestick-chart", "Candlestick Chart"),
@@ -269,7 +338,7 @@ export const UI_CHART_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	uiChartComponent("stat-card-line-01", "Stat Card Line 01"),
 ]);
 
-export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+export const UI_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	uiComponent("accordion"),
 	uiComponent("alert"),
 	uiComponent("alert-dialog", "Alert Dialog"),
@@ -359,7 +428,7 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	uiComponent("tooltip"),
 ]);
 
-export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+export const BLOCK_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	blockComponent("agent"),
 	blockComponent("skill-config", "Skill Config"),
 	blockComponent("trigger-config", "Trigger Config"),
@@ -612,7 +681,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("workflow", "Workflow"),
 ]);
 
-export const PROJECT_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+export const PROJECT_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	projectComponent("admin", "Admin"),
 	projectComponent("confluence", "Confluence"),
 	projectComponent("html", "HTML"),
@@ -634,7 +703,7 @@ export const PROJECT_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	projectComponent("studio", "Studio"),
 ]);
 
-export const ART_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+export const ART_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	artComponent("awake", "Awake"),
 	artComponent("cursors", "Cursors"),
 	artComponent("personal-graph", "Personal Graph"),
@@ -642,7 +711,7 @@ export const ART_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	artComponent("rovo-p5", "Rovo p5"),
 ]);
 
-export const UTILITY_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+export const UTILITY_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	{
 		name: "Agent Browser",
 		slug: "agent-browser",
@@ -660,7 +729,7 @@ export const UTILITY_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	utilityComponent("visual-json", "Visual JSON"),
 ]);
 
-export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+export const VISUAL_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	visualComponent("gooey", "Gooey", "@/components/visual/gooey"),
 	visualComponent("typography", "Typography", "@/lib/tokens"),
 	visualComponent("color", "Color", "@/app/tailwind-theme.css\n@/app/shadcn-theme.css"),

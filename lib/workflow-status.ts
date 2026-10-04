@@ -165,3 +165,13 @@ export function getWorkflowLozengeVariant(
 
 	return WORKFLOW_STATUS_PRESETS[kind].lozengeVariant;
 }
+
+/** Known workflow tones take precedence; custom phases follow their board order. */
+export function getWorkflowPhaseLozengeVariant(
+	status: string,
+	phases: readonly string[],
+): WorkflowLozengeVariant {
+	const index = phases.indexOf(status);
+	const fallback = index <= 0 ? "neutral" : index === phases.length - 1 ? "success" : "information";
+	return getWorkflowLozengeVariant(status, fallback);
+}

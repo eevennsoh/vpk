@@ -1,11 +1,11 @@
 ---
 name: vpk-tunnel
-description: "Share a live VPK localhost prototype with external participants through a public Atlas Tunnel URL. Hides the react-grab development control on public tunnel hosts. Use when the user says \"vpk-tunnel\", \"share my prototype\", \"make this localhost link public\", \"send a customer a prototype link\", or asks to start, inspect, or stop an Atlas Tunnel for a VPK Portless URL."
-purpose: Expose one live VPK Portless frontend through a scoped, short-lived public Atlas Tunnel.
+description: "Share a live VPK localhost prototype through Atlas Tunnel, privately by default or publicly with explicit --public intent and an exposure warning. Clean Atlas tunnels after use. Use when the user says \"vpk-tunnel\", \"share my prototype\", \"make this localhost link public\", \"send a customer a prototype link\", or asks to start, inspect, or stop an Atlas Tunnel for a VPK Portless URL."
+purpose: Share one live VPK Portless frontend through a short-lived Atlas Tunnel with explicit access mode and cleanup.
 owner: VPK
 category: workflow
-inputs: Optional Portless URL and action (start, status, or stop).
-outputs: Public prototype URL, local source URL, tunnel status, or a targeted shutdown result.
+inputs: Optional Portless URL, action (start, status, or stop), and explicit --public flag.
+outputs: Private or public prototype URL, access mode, local source URL, tunnel status, or shutdown and cleanup result.
 required_tools: shell, node, pnpm, atlas, cloudflared, tmux
 validation_command: node --test .agents/skills/vpk-tunnel/scripts/vpk-tunnel.test.js
 generated_artifacts: None. Runtime state is limited to a target-scoped tmux session.
@@ -14,7 +14,7 @@ common_failure_modes: Local prototype is unresponsive, Portless URL is stale, At
 
 # VPK Tunnel
 
-Share a live VPK prototype with an external participant through Atlas Tunnel.
+Share a live VPK prototype through Atlas Tunnel, privately by default.
 This workflow is for short research sessions, feedback rounds, and live reviews;
 it is not production or long-term hosting.
 
@@ -23,6 +23,7 @@ it is not production or long-term hosting.
 ```text
 vpk-tunnel
 vpk-tunnel https://feature.<project>.localhost/path
+vpk-tunnel https://feature.<project>.localhost/path --public
 vpk-tunnel status [Portless URL]
 vpk-tunnel stop [Portless URL]
 ```
@@ -30,12 +31,13 @@ vpk-tunnel stop [Portless URL]
 With no URL, derive the persistent main worktree's stable Portless hostname
 from this repository's package metadata. Run `pnpm ports once` to see the exact
 URL. A supplied Portless URL selects another live frontend. Preserve its path,
-query, and fragment in the public link.
+query, and fragment in the tunnel link. Pass raw URLs in terminal commands,
+not Markdown links.
 
 ## Share the route people should open
 
 The catalog homepage (`/`) embeds project cards in iframes. Those previews look
-empty on a public tunnel even when the real project works. Do not hand reviewers
+empty on a tunnel even when the real project works. Do not hand reviewers
 the catalog unless they explicitly asked for it.
 
 - If the user named a project or path, share that route
@@ -44,14 +46,29 @@ the catalog unless they explicitly asked for it.
   route people should open before starting. Do not infer the catalog.
 - After resolve, `isCatalogRoot: true` means you still need a share path.
 
-## Public-sharing boundary
+## Private versus external sharing
 
-Atlas Tunnel makes the selected local application reachable from the public
-internet. Invoking this skill or manually running `vpk-tunnel <Portless URL>`
-authorizes public sharing for that prototype. Do not ask for a separate
-synthetic-data or fake-data confirmation, and do not require an additional
-confirmation flag. Always show the exact local URL before starting through an
-agent workflow.
+Default to **private** for a bare invocation or an unspecified audience. Start
+without `--public`; neither `--private` nor a confirmation flag is needed.
+Tell the user that private tunnels are accessible through Atlassian VPN and
+whitelist proxies, so external participants cannot use that link. Private
+access is a network restriction; restricted tunnels additionally require
+authentication.
+
+Use **public** only when the user explicitly requests external/public sharing
+or supplies `--public`. Before starting, show the exact local URL and warn:
+**`--public` exposes the local application to the internet; anyone who can
+reach the link can access it.** Invoking this skill alone does not authorize
+public access. If the intended audience is unclear and external access might
+be needed, ask whether they want private VPN access or public internet access,
+with private as the default. An explicit external/customer/public request
+already selects public access; show the warning without repeating approval.
+Do not add an unrelated synthetic-data confirmation.
+
+The helper supports private and public modes. For an explicitly requested
+restricted tunnel, Atlas supports `--restricted`; for both access types,
+Atlas supports `--public --private`. Do not silently select either advanced
+mode or pass unsupported flags to the helper.
 
 ## One-time setup
 
@@ -62,6 +79,7 @@ machine-level change, then use the relevant commands:
 ```bash
 atlas upgrade
 atlas plugin install --name tunnel
+atlas plugin upgrade -n tunnel
 brew install cloudflared
 ```
 
@@ -83,14 +101,19 @@ brew install cloudflared
 4. If resolve reports `isCatalogRoot: true` and the user named a project or
    screen, switch the target to that path and resolve again. If they did not
    name one, ask before continuing.
-5. Show the resolved local URL. Invocation of this skill already authorizes
-   public sharing; do not ask a synthetic-data or fake-data confirmation
-   question.
+5. Show the resolved local URL, selected access mode, and its access warning.
+   For public sharing, apply the boundary above before adding `--public`.
+   Also explain that cleanup deletes **all** CLI-created Atlas tunnels,
+   configuration files, and logs, so other Atlas sessions may be disrupted.
 6. Start the scoped tunnel:
 
    ```bash
    vpk-tunnel [Portless URL]
    ```
+
+   Add `--public` only for explicitly selected public sharing. The helper
+   prints the access warning before starting and reports `access` and
+   `tunnelUrl`. Its `publicUrl` is null for private access.
 
    The helper refuses to start when `next.config.ts` `allowedDevOrigins` is
    missing `*.public.atlastunnel.com` and `*.atlastunnel.com`. Add those hosts,
@@ -100,7 +123,8 @@ brew install cloudflared
    Atlas commands may need permission to write their machine-local cache or use
    the network. Request that permission through the active tool rather than
    weakening the preflight.
-7. Open the returned `publicUrl` and confirm it is not a blank shell. Body text
+7. Open the returned `tunnelUrl` and confirm it is not a blank shell. Private
+   links require VPN/whitelist access. Body text
    that is only `Skip to content` means Next.js blocked `/_next` chunks from the
    tunnel host. HTTP 200 is not enough. Also confirm the react-grab development
    control is hidden — the floating cursor/chevron pill and any
@@ -108,20 +132,25 @@ brew install cloudflared
    skip that tooling automatically. Do not hide it with injected CSS or by
    clicking the pill. Do not hand off the link until the intended UI is visible
    and that control is gone.
-8. Report the returned `publicUrl` as the shareable link and include the
+8. Report the returned `tunnelUrl`, its private/public access mode, and the
    `localUrl`. State that the link works only while the local server, scoped
    tunnel session, laptop, and network connection remain active.
 
-The helper runs the canonical command in a hostname-scoped tmux session:
+The helper runs one of these commands in a hostname-scoped tmux session:
 
 ```bash
+atlas tunnel start --port <resolved-frontend-port>
+# Only for explicitly requested public/external access:
 atlas tunnel start --port <resolved-frontend-port> --public
 ```
 
-Starting the same hostname again reuses its existing tunnel. Different paths
-on that hostname share one tunnel but receive path-specific public links.
+Starting the same hostname again reuses its existing tunnel only when the
+frontend port and access mode match. A different mode or port stops and cleans
+the old tunnel before starting another. Existing sessions from the former
+public-only helper are replaced rather than assumed private. Different paths
+on one hostname share a tunnel and receive path-specific links.
 
-Public Atlas Tunnel hosts automatically hide the react-grab development
+Atlas Tunnel hosts automatically hide the react-grab development
 control. Local Portless URLs keep it for development.
 
 ## Status and stop
@@ -132,19 +161,41 @@ Inspect only the selected hostname's tunnel:
 node .agents/skills/vpk-tunnel/scripts/vpk-tunnel.js status [Portless URL]
 ```
 
-Stop only that hostname's tunnel:
+Stop that hostname's local tunnel session and clean Atlas resources:
 
 ```bash
 node .agents/skills/vpk-tunnel/scripts/vpk-tunnel.js stop [Portless URL]
 ```
 
-Never use `atlas tunnel clean`: it deletes every Atlas Tunnel created by the
-CLI and can disrupt unrelated prototype sessions. Do not stop the VPK dev
-server unless the user separately asks for it, or `allowedDevOrigins` must
-change. After any frontend restart, re-resolve and start the tunnel again.
+**Every time a tunnel finishes, run `atlas tunnel clean`.** This includes
+normal completion, explicit stop, interruption, and failed startup after a
+session was launched. The helper installs an exit trap and runs cleanup again
+on `stop`, including when the session has already exited. For a manually run
+Atlas command, always finish with:
+
+```bash
+atlas tunnel clean
+```
+
+Cleanup deletes all tunnels created by the CLI, plus configuration files and
+logs; it is not a hostname-scoped remote deletion. Do not promise that other
+Atlas tunnels remain available. If cleanup fails, report the error and retry
+`atlas tunnel clean` before restarting or claiming cleanup completed. Abrupt
+machine shutdown or force-killing outside the helper can prevent exit traps;
+run the stop command or manual cleanup on return.
+
+Do not stop the VPK dev server unless the user separately asks for it, or
+`allowedDevOrigins` must change. After any frontend restart, re-resolve and
+start the tunnel again.
 
 ## Troubleshooting
 
+- **Atlas Tunnel errors:** first check the installed plugin version with
+  `atlas plugin installed`; upgrade a stale plugin with
+  `atlas plugin upgrade -n tunnel` after approval for that machine-level change.
+- **External participant cannot open a private link:** explain the VPN/proxy
+  restriction. Switch to `--public` only when public access is explicitly
+  selected, with the internet-exposure warning.
 - **Unknown Portless URL:** run `pnpm ports once` and use an exact listed URL.
 - **Recorded route but dead port:** start or repair that worktree's frontend.
 - **HTTP probe times out or returns an error:** open the local route and fix it
@@ -176,8 +227,10 @@ change. After any frontend restart, re-resolve and start the tunnel again.
 For a successful start, keep the handoff compact:
 
 ```text
-Public link: <public URL>
+Access: Private (VPN/whitelist proxies) or Public (internet accessible)
+Link: <tunnel URL>
 Local source: <Portless URL>
 Status: Live while the local server, tunnel, laptop, and network stay running.
 Stop: vpk-tunnel stop <Portless URL>
+Cleanup: atlas tunnel clean runs after use and deletes all CLI-created tunnels.
 ```

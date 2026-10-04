@@ -43,12 +43,10 @@ function ResizableHandle({
       )}
       {...props}
     >
-      {withHandle && (
-        <div
+      {withHandle ? <div
           aria-hidden
           className="pointer-events-none z-10 h-6 w-1 shrink-0 rounded-lg bg-neutral-100 transition-[opacity,background-color] duration-medium ease-out opacity-0 group-data-[separator=hover]:opacity-100 group-data-[separator=active]:opacity-100 group-data-[separator=hover]:bg-bg-selected-bold group-data-[separator=active]:bg-bg-selected-bold"
-        />
-      )}
+        /> : null}
     </ResizablePrimitive.Separator>
   )
 }

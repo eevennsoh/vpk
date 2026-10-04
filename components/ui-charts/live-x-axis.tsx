@@ -128,8 +128,7 @@ const LiveXAxisInner = memo(function LiveXAxisInner({
       ))}
 
       {/* Time pill at crosshair — spring-animated to match crosshair line */}
-      {isHovering && pillLabel && (
-        <motion.div
+      {isHovering && pillLabel ? <motion.div
           className="absolute z-50"
           style={{
             left: animatedPillX,
@@ -142,8 +141,7 @@ const LiveXAxisInner = memo(function LiveXAxisInner({
               {pillLabel}
             </span>
           </div>
-        </motion.div>
-      )}
+        </motion.div> : null}
     </div>,
     container
   );

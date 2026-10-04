@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const JIRA_TEAM_EU26_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/jira-team-eu26";
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");
 
 async function expandUnlink(page: Page): Promise<void> {
 	const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
@@ -51,6 +51,82 @@ async function measureCollapsedExpandHitArea(page: Page) {
 		};
 	});
 }
+
+for (const width of [1024, 1440]) {
+	test(`short session columns leave scrolled Jira content visible and clickable below them at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 1100 });
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+		if (width === 1440) await page.getByRole("button", { name: "Expand sidebar" }).click();
+		await expandUnlink(page);
+		const column = page.locator("[data-agent-session-column]");
+		await column.hover();
+		// Dismiss sessions through their menu without filtering the Jira cards.
+		while (await column.locator('[data-testid^="agent-session-row-"]').count() > 2) {
+			const more = column.getByRole("button", { name: /^More actions for/u }).first();
+			await more.focus();
+			await more.press("Enter");
+			await page.getByRole("menuitem", { name: "Dismiss", exact: true }).click();
+		}
+		const surface = page.locator("[data-agent-session-column-surface]");
+		const board = page.locator("[data-jira-kanban-scrollport]");
+		const columnBox = await column.boundingBox();
+		const boardBox = await board.boundingBox();
+		expect(columnBox).not.toBeNull();
+		expect(boardBox).not.toBeNull();
+		if (!columnBox || !boardBox) return;
+		expect(boardBox.y + boardBox.height - columnBox.y - columnBox.height).toBeGreaterThan(100);
+		expect(boardBox.x).toBeLessThanOrEqual(columnBox.x);
+		const frozenLeft = columnBox.x;
+		await board.evaluate((element) => { element.scrollLeft = 400; });
+		await expect(surface).not.toHaveCSS("box-shadow", "none");
+		expect((await column.boundingBox())?.x).toBe(frozenLeft);
+		const hit = await page.evaluate(() => {
+			const panel = document.querySelector("[data-agent-session-column-surface]")!.getBoundingClientRect();
+			const x = panel.left + panel.width / 2;
+			const y = panel.bottom + 60;
+			const target = document.elementFromPoint(x, y);
+			return {
+				x,
+				y,
+				column: target?.closest("[data-jira-kanban-column]")?.getAttribute("data-jira-kanban-column"),
+				card: target?.closest("[data-issue-key]")?.getAttribute("data-issue-key"),
+			};
+		});
+		expect(hit.column, JSON.stringify(hit)).toBeTruthy();
+		expect(hit.card).toBeTruthy();
+		const scrollLeft = await board.evaluate((element) => element.scrollLeft);
+		await page.mouse.move(hit.x, hit.y);
+		await page.mouse.wheel(-80, 0);
+		await expect.poll(() => board.evaluate((element) => element.scrollLeft)).toBeLessThan(scrollLeft);
+		await page.getByRole("heading", { name: "Jira Design" }).hover();
+		await page.screenshot({ path: `output/agent-browser/short-session-underlap-${width}.png` });
+	});
+}
+
+test("board spacing follows session resizing and collapse without clipping the scrollport", async ({ page }) => {
+	await page.setViewportSize({ width: 1024, height: 900 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openBoard(page);
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Dragging", exact: true }).click();
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	const column = page.locator("[data-agent-session-column]");
+	const handle = page.getByRole("separator", { name: "Resize Unlink sessions column" });
+	for (const key of ["End", "Home"]) {
+		await handle.press(key);
+		await expect(column).toHaveCSS("width", key === "End" ? "560px" : "280px");
+		await expect.poll(() => page.evaluate(() => {
+			const panel = document.querySelector("[data-agent-session-column-surface]")!.getBoundingClientRect();
+			const status = document.querySelector('[data-jira-kanban-column="To do"] > div')!.getBoundingClientRect();
+			const board = document.querySelector("[data-jira-kanban-scrollport]")!.getBoundingClientRect();
+			return { gap: status.left - panel.right, boardCoversPanel: board.left <= panel.left };
+		})).toEqual({ gap: 16, boardCoversPanel: true });
+	}
+	await collapseUnlink(page);
+	await expect(column).toHaveCSS("width", "32px");
+});
 
 test("Agent Sessions stays rounded and frozen while the status pane scrolls underneath", async ({ page }) => {
 	await openBoard(page);

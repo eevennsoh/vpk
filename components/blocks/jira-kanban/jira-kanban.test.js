@@ -949,7 +949,7 @@ test("Insights keeps the seven-item header facepile at one reserved width", () =
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/<AvatarGroup\s+className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}[\s\S]*showUnassignedAvatar \? <AvatarUnassigned[\s\S]*assignees\.slice\(0, getHeaderFacepileAssigneeLimit\(showUnassignedAvatar\)\)/u,
+		/<AvatarGroup\s+className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}[\s\S]*showUnassignedAvatar \? <AvatarUnassigned[\s\S]*assignees\.slice\(0, getHeaderFacepileAssigneeLimit\(showUnassignedAvatar, avatarLimit\)\)/u,
 	);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /shape=\{isAgent \? "hexagon" : "circle"\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /headerAssignees\?: readonly JiraKanbanAssigneeData\[\];/u);

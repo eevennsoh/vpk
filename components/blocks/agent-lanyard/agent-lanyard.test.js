@@ -72,6 +72,13 @@ function renderCard(agent, capabilities = {}) {
 	return parseHTML(html).document;
 }
 
+test("brand-backed lanyards render through the shared agent visual", () => {
+	const card = renderCard({ id: "figma", name: "Figma", publisher: "Figma", description: "Design agent", brandName: "figma", action: "chat" });
+	assert.equal(card.querySelector("h3").textContent, "Figma");
+	assert.ok(card.querySelector('[data-slot="avatar"][data-shape="hexagon"] svg'));
+	assert.equal(card.querySelectorAll("img").length, 0);
+});
+
 test("the lanyard cutout paints its recessed shadow separately from the rim and fill", () => {
 	const card = renderCard(AGENT_LANYARD_AGENTS[0]);
 	const cutout = card.querySelector('[data-slot="agent-lanyard-cutout"]');

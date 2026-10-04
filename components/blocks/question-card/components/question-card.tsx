@@ -19,6 +19,7 @@ import { getVisibleOptionCount } from "@/components/blocks/question-card/lib/opt
 import { getSelectedValues } from "@/components/blocks/question-card/lib/question-helpers";
 import { getQuestionSignature, useQuestionCard } from "@/components/blocks/question-card/hooks/use-question-card";
 import type { QuestionCardAnswerValue, QuestionCardAnswers, QuestionCardQuestion } from "../types";
+import { motionEase } from "@/lib/motion";
 
 // Re-export types for backward compatibility
 export type { QuestionCardOption, QuestionCardQuestion, QuestionCardAnswerValue, QuestionCardAnswers } from "../types";
@@ -60,7 +61,7 @@ const DEFAULT_CUSTOM_INPUT_PLACEHOLDER = "Tell Rovo what to do...";
 // ---------------------------------------------------------------------------
 
 const SLIDE_OFFSET = 12;
-const SLIDE_TRANSITION = { duration: 0.2, ease: [0.4, 0, 0, 1] } as const; // --duration-medium (200ms), --ease-in-out
+const SLIDE_TRANSITION = { duration: 0.2, ease: motionEase.inOut } as const; // --duration-medium (200ms), --ease-in-out
 
 type SlideDirection = "forward" | "backward";
 

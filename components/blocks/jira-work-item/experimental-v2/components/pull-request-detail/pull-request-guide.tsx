@@ -12,8 +12,8 @@ import {
 	buildChapterJumpTarget,
 	getChapterContentTop,
 	resolveActiveChapterId,
-} from "../../lib/pull-request-guide-active-chapter";
-import type { PullRequestGuidedReview } from "../../lib/pull-request-detail-data";
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-guide-active-chapter";
+import type { PullRequestGuidedReview } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 
 interface PullRequestGuideProps {
 	onChapterReviewedChange: (chapterId: string, reviewed: boolean) => void;

@@ -32,10 +32,23 @@ export interface BoardFilterActions {
 	toggleValue: (fieldId: BoardFilterValueFieldId, valueId: string) => void;
 }
 
+interface BoardFilterSelection {
+	values: BoardFilterValueSelections;
+	days: BoardFilterDaysSelection;
+}
+
+const EMPTY_BOARD_FILTER_SELECTION: BoardFilterSelection = {
+	values: EMPTY_BOARD_FILTER_VALUE_SELECTIONS,
+	days: EMPTY_BOARD_FILTER_DAYS,
+};
+
 export function useBoardFilter({
 	onAssigneeChange,
+	scopeKey = "default",
 }: Readonly<{
 	onAssigneeChange?: () => void;
+	/** Retain independent selections when one board switches between datasets. */
+	scopeKey?: string;
 }> = {}): {
 	actions: BoardFilterActions;
 	model: BoardFilterModel;
@@ -43,10 +56,17 @@ export function useBoardFilter({
 } {
 	const [open, setOpen] = useState(false);
 	const [selectedFieldId, setSelectedFieldId] = useState<BoardFilterFieldId>("assignee");
-	const [selectedValueIdsByField, setSelectedValueIdsByField] = useState<BoardFilterValueSelections>(
-		EMPTY_BOARD_FILTER_VALUE_SELECTIONS,
-	);
-	const [days, setDays] = useState<BoardFilterDaysSelection>(EMPTY_BOARD_FILTER_DAYS);
+	const [selectionsByScope, setSelectionsByScope] = useState<Record<string, BoardFilterSelection>>({});
+	const { values: selectedValueIdsByField, days } = selectionsByScope[scopeKey] ?? EMPTY_BOARD_FILTER_SELECTION;
+	const updateSelection = useCallback((update: (current: BoardFilterSelection) => BoardFilterSelection) => {
+		setSelectionsByScope((current) => ({
+			...current,
+			[scopeKey]: update(current[scopeKey] ?? EMPTY_BOARD_FILTER_SELECTION),
+		}));
+	}, [scopeKey]);
+	const setDays = useCallback((nextDays: BoardFilterDaysSelection) => {
+		updateSelection((current) => ({ ...current, days: nextDays }));
+	}, [updateSelection]);
 
 	const selectedCount = countBoardFilterSelections(selectedValueIdsByField, days);
 	const selectedAssigneeIds = useMemo(
@@ -56,16 +76,16 @@ export function useBoardFilter({
 
 	const toggleValue = useCallback((fieldId: BoardFilterValueFieldId, valueId: string) => {
 		if (fieldId === "assignee") onAssigneeChange?.();
-		setSelectedValueIdsByField((current) => toggleBoardFilterValue(current, fieldId, valueId));
-	}, [onAssigneeChange]);
+		updateSelection((current) => ({ ...current, values: toggleBoardFilterValue(current.values, fieldId, valueId) }));
+	}, [onAssigneeChange, updateSelection]);
 
 	const setAssigneeIds = useCallback((assigneeIds: Set<string>) => {
 		onAssigneeChange?.();
-		setSelectedValueIdsByField((current) => ({
+		updateSelection((current) => ({
 			...current,
-			assignee: [...assigneeIds],
+			values: { ...current.values, assignee: [...assigneeIds] },
 		}));
-	}, [onAssigneeChange]);
+	}, [onAssigneeChange, updateSelection]);
 
 	const clearField = useCallback((fieldId: BoardFilterFieldId) => {
 		if (fieldId === "days") {
@@ -73,16 +93,16 @@ export function useBoardFilter({
 			return;
 		}
 		if (fieldId === "assignee") onAssigneeChange?.();
-		setSelectedValueIdsByField((current) => (
-			clearBoardFilterField(current, EMPTY_BOARD_FILTER_DAYS, fieldId).values
-		));
-	}, [onAssigneeChange]);
+		updateSelection((current) => ({
+			...current,
+			values: clearBoardFilterField(current.values, EMPTY_BOARD_FILTER_DAYS, fieldId).values,
+		}));
+	}, [onAssigneeChange, setDays, updateSelection]);
 
 	const clearAll = useCallback(() => {
 		onAssigneeChange?.();
-		setSelectedValueIdsByField(EMPTY_BOARD_FILTER_VALUE_SELECTIONS);
-		setDays(EMPTY_BOARD_FILTER_DAYS);
-	}, [onAssigneeChange]);
+		updateSelection(() => EMPTY_BOARD_FILTER_SELECTION);
+	}, [onAssigneeChange, updateSelection]);
 
 	return {
 		actions: {

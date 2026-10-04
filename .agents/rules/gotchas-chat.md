@@ -1,5 +1,15 @@
 ---
 description: Chat and Rovo gotchas — session management, AI SDK useChat, message deletion
+paths:
+  - "app/contexts/**"
+  - "app/api/chat-sdk/**"
+  - "backend/chat/**"
+  - "backend/routes/**"
+  - "backend/lib/**"
+  - "rovo/**"
+  - "lib/rovo-*.ts"
+  - "components/projects/rovo*/**"
+  - "components/projects/studio/**"
 ---
 
 # Chat / Rovo Gotchas

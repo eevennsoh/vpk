@@ -1,15 +1,16 @@
 import { expect, test } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+import { withDesignVariants } from "@/tests/helpers/design-variants";
+import { appUrl } from "@/tests/helpers/origin";
+
 const evidence = "output/agent-browser/avatar-drag";
 
 test("one inert paper context survives repeat intent and retires for the next row", async ({ page }) => {
 	test.setTimeout(60_000);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: true })));
-	await page.goto(`${baseURL}/jira-team-eu26`, { waitUntil: "domcontentloaded" });
+	await page.goto(appUrl(withDesignVariants("/jira-team-eu26", { sessionPeel: true })), { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 	const rows = page.locator("[data-agent-session-column] article");
 	if (!await rows.first().isVisible()) await page.getByRole("button", { name: "Expand Unlink sessions column", exact: true }).click();
@@ -36,10 +37,7 @@ for (const peel of [false, true]) {
 			test.setTimeout(60_000);
 			await page.setViewportSize({ width: 1440, height: 1000 });
 			await page.emulateMedia({ reducedMotion });
-			await page.addInitScript((sessionPeel) => {
-				localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel }));
-			}, peel);
-			await page.goto(`${baseURL}/jira-team-eu26`, { waitUntil: "domcontentloaded" });
+			await page.goto(appUrl(withDesignVariants("/jira-team-eu26", { sessionPeel: peel })), { waitUntil: "domcontentloaded" });
 			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 			const row = page.locator("[data-agent-session-column] article").first();
 			if (!await row.isVisible()) {

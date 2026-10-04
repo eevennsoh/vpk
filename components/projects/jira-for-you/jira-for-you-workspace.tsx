@@ -33,6 +33,7 @@ import { JiraForYouConversation } from "./jira-for-you-conversation";
 import { JiraForYouDetailPanel } from "./jira-for-you-detail-panel";
 import { createJiraForYouWorkspaceData } from "./jira-for-you-workspace-data";
 import type { JiraForYouWorkspaceData } from "./jira-for-you-workspace-types";
+import { motionEase } from "@/lib/motion";
 
 const JiraForYouWorkItemWorkspace = dynamic(() =>
 	import("./jira-for-you-work-item-workspace").then(
@@ -52,11 +53,11 @@ const WIDE_JIRA_WORK_ITEM_PREFERRED_WIDTH_PX = 1200;
 const CONSTRAINED_OVERLAY_VARIANTS: Variants = {
 	closed: {
 		transform: "translateX(100%)",
-		transition: { duration: 0.2, ease: [0.6, 0, 0.8, 0.6] },
+		transition: { duration: 0.2, ease: motionEase.in },
 	},
 	open: {
 		transform: "translateX(0%)",
-		transition: { duration: 0.25, ease: [0, 0.4, 0, 1] },
+		transition: { duration: 0.25, ease: motionEase.out },
 	},
 };
 const STATIC_WORKSPACE_VARIANTS: Variants = {

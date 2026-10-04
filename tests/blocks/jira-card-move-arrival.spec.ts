@@ -1,12 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	for (const sameColumn of [false, true]) {
 		test(`issue-card drop reuses session-created card arrival (${sameColumn ? "reorder" : "between columns"}, ${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
-			await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+			await page.goto(appUrl("/preview/blocks/jira-dragging"));
 			await page.waitForLoadState("networkidle");
 			const code = sameColumn ? "PAY-130" : "PAY-105";
 			const title = sameColumn ? "To do" : "Done";
@@ -62,9 +64,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await page.screenshot({ path: `output/agent-browser/side-card-move/arrival-${sameColumn ? "reorder" : "cross-column"}-${reducedMotion}.png` });
 		});
 	}
-	test(`selected cohort uses one session-created entrance (${reducedMotion})`, async ({ page }) => {
+	test(`selected cohort flies one card and plays the entrance for every landed card (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
 		const card = (code: string) => page.locator(`[data-issue-key="${code}"] [draggable="true"]`).first();
 		await card("PAY-105").click({ modifiers: ["Shift"], position: { x: 70, y: 30 } });
@@ -88,7 +90,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.mouse.move(target.x + 91, target.y + 80);
 		await page.mouse.up();
 		await expect(done.locator('[data-issue-key]')).toHaveCount(2);
-		if (reducedMotion !== "reduce") await expect.poll(() => page.evaluate(() => [...(window as typeof window & { cohortMoveArrivals: Set<string> }).cohortMoveArrivals])).toEqual(["PAY-105"]);
+		// One flight (the grabbed card) represents the cohort, but every landed card plays the entrance.
+		if (reducedMotion !== "reduce") await expect.poll(() => page.evaluate(() => [...(window as typeof window & { cohortMoveArrivals: Set<string> }).cohortMoveArrivals].sort())).toEqual(["PAY-105", "PAY-107"]);
 		await expect(done.locator('[data-jira-creating-arrival="true"]')).toHaveCount(0);
 		if (reducedMotion === "reduce") await expect(page.locator("[data-issue-drop-flight]")).toHaveCount(0);
 		await page.evaluate(() => { (window as typeof window & { cohortMoveWatching: boolean }).cohortMoveWatching = false; });
@@ -96,7 +99,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("a no-op drop cannot replay when another card later leaves its column", async ({ page }) => {
-	await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+	await page.goto(appUrl("/preview/blocks/jira-dragging"));
 	await page.waitForLoadState("networkidle");
 	const card = page.locator('[data-issue-key="PAY-107"]');
 	const bounds = (await card.locator('[draggable="true"]').first().boundingBox())!;
@@ -128,7 +131,7 @@ test("a no-op drop cannot replay when another card later leaves its column", asy
 for (const moveCreated of [false, true]) {
 	test(`a move ${moveCreated ? "takes over its created card" : "preserves another creation in flight"}`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: "no-preference" });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await expect(page.locator("[data-agent-session-column-expansion]")).toBeVisible();
 		const expand = page.getByRole("button", { name: "Expand Unlink sessions column", exact: true });
 		if (await expand.isVisible()) {

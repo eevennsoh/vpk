@@ -262,6 +262,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"paper-image-dithering": dynamic(() => import("../demos/visual/shaders-paper-demo"), {
 		ssr: false,
 	}),
+	"paper-lens-distortion": dynamic(() => import("../demos/visual/shaders-paper-demo"), {
+		ssr: false,
+	}),
 	"paper-liquid-metal": dynamic(() => import("../demos/visual/shaders-paper-demo"), {
 		ssr: false,
 	}),

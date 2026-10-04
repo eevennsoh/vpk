@@ -37,7 +37,7 @@ test("the assignee avatar animates on mount, so a card remount is a visible defe
 	// changes and the assertions below deserve a fresh look.
 	assert.match(
 		AVATAR_SOURCE,
-		/initial: \{ scale: 0\.8, opacity: 0 \},\s*\n\s*animate: \{ scale: 1, opacity: 1, transition: AVATAR_ENTER_TRANSITION \},/u,
+		/initial: AVATAR_ENTER_FROM,\s*\n\s*animate: \{ scale: 1, opacity: 1, transition: AVATAR_ENTER_TRANSITION \},/u,
 	);
 });
 

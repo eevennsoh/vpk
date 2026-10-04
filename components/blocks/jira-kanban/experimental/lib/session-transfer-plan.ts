@@ -2,7 +2,7 @@ import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-s
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraListInsertion } from "@/components/blocks/jira-list/jira-list-types";
 
-import type { JiraKanbanCardData } from "../../index";
+import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban/index";
 import type {
 	BoardAgentSessionDragOrigin,
 	BoardAgentSessionDropAction,

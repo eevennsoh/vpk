@@ -1,12 +1,70 @@
 import { expect, test } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
+
+test.describe("column scroll fades", () => {
+	test.use({ ignoreHTTPSErrors: true });
+	for (const width of [1440, 1720]) {
+		for (const reducedMotion of ["no-preference", "reduce"] as const) {
+			test(`scroll fades stay visible across card gaps at ${width}px (${reducedMotion})`, async ({ page }) => {
+				await page.emulateMedia({ reducedMotion });
+				await page.setViewportSize({ width, height: 760 });
+				await page.goto(`${origin}/jira-team-eu26`);
+				await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
+				const list = page.locator('[data-jira-kanban-column="In review"] [data-jira-kanban-card-list]');
+				for (const position of [0, 0.5, 1]) {
+					await page.mouse.move(900, 100);
+					await list.evaluate((node, fraction) => { node.scrollTop = (node.scrollHeight - node.clientHeight) * fraction; }, position);
+					await expect.poll(() => list.evaluate((node) => getComputedStyle(node).maskImage)).not.toBe("none");
+					const mask = await list.evaluate((node) => getComputedStyle(node).maskImage);
+					const scrollTop = await list.evaluate((node) => node.scrollTop);
+					const gaps = await list.evaluate((node) => {
+						const clip = node.getBoundingClientRect();
+						const cards = Array.from(node.querySelectorAll('[data-board-agent-session-drop-zone="issue"]'));
+						return cards.slice(1).flatMap((card, index) => {
+							const previous = cards[index].getBoundingClientRect();
+							const next = card.getBoundingClientRect();
+							const y = (previous.bottom + next.top) / 2;
+							return y > clip.top + 16 && y < clip.bottom - 16 ? [{ x: next.left + next.width / 2, y }] : [];
+						});
+					});
+					expect(gaps.length).toBeGreaterThan(0);
+					for (const gap of gaps) {
+						await page.mouse.move(gap.x, gap.y);
+						const marker = page.locator("[data-board-insertion-marker]");
+						await expect(marker).toBeVisible();
+						expect(await list.evaluate((node) => getComputedStyle(node).maskImage)).toBe(mask);
+						expect(await list.evaluate((node) => node.scrollTop)).toBe(scrollTop);
+						const visibleWidth = await marker.evaluate((node) => new Promise<number>((resolve) => {
+							const observer = new IntersectionObserver(([entry]) => { observer.disconnect(); resolve(entry.intersectionRect.width); });
+							observer.observe(node);
+						}));
+						expect(visibleWidth).toBeCloseTo(24, 1);
+						const anchor = await list.locator("[data-insertion-line]").boundingBox();
+						const paint = await page.locator("[data-board-insertion-overlay]").boundingBox();
+						expect(paint).not.toBeNull();
+						expect(paint!.x).toBeCloseTo(anchor!.x, 1);
+						expect(paint!.y).toBeCloseTo(anchor!.y, 1);
+						expect(paint!.width).toBeCloseTo(anchor!.width, 1);
+						await page.mouse.move(900, 100);
+						await expect(marker).toHaveCount(0);
+						expect(await list.evaluate((node) => getComputedStyle(node).maskImage)).toBe(mask);
+					}
+				}
+				await list.getByRole("button", { name: /^PAY-112:/u }).focus();
+				await expect(list).toHaveCSS("mask-image", "none");
+			});
+		}
+	}
+});
 
 test.describe("dropzone label clipping", () => {
 	test.use({ ignoreHTTPSErrors: true });
 	for (const width of [1720, 1100]) {
 		for (const reducedMotion of ["no-preference", "reduce"] as const) {
-			test(`dropzone label stays fully painted at ${width}px (${reducedMotion})`, async ({ page }) => {
+				test(`dropzone label stays vertically pinned and fully painted at ${width}px (${reducedMotion})`, async ({ page }) => {
 				await page.emulateMedia({ reducedMotion });
 				await page.setViewportSize({ width, height: 760 });
 				await page.goto(`${origin}/jira-team-eu26`);
@@ -32,11 +90,8 @@ test.describe("dropzone label clipping", () => {
 						const transform = getComputedStyle(node).transform;
 						return transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42;
 					});
-					if (reducedMotion === "reduce") {
-						await expect.poll(offset).toBe(0);
-					} else {
-						await expect.poll(async () => (await offset()) * (edge === "top" ? -1 : 1)).toBeGreaterThan(3);
-					}
+					// Content-sized targets pin both the surface and copy vertically.
+					await expect.poll(offset).toBe(0);
 					// Compare actual glyph bounds with every ancestor that can clip them.
 					const clippedPixels = await label.evaluate((node) => {
 						const range = document.createRange();
@@ -184,7 +239,8 @@ for (const width of [1720, 1440]) {
 			await expect(collapse).toHaveCSS("pointer-events", "auto");
 			await expect(addAgent).toHaveCSS("opacity", "1");
 			await expect(create).toHaveCSS("border-top-style", "solid");
-			await expect(create).toHaveCSS("background-color", hoveredBackground);
+			await expect(create).toHaveCSS("background-color", restingBackground);
+			await expect(create).not.toHaveCSS("background-color", hoveredBackground);
 			expect(await create.boundingBox()).toEqual(createBox);
 			expect(await collapse.boundingBox()).toEqual(headerBox);
 			await expect(page.getByRole("button", { name: "Collapse To do column", exact: true })).toHaveCSS("opacity", "0");
@@ -206,4 +262,36 @@ for (const width of [1720, 1440]) {
 			await expect(create).toBeFocused();
 		});
 	}
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`keynote column hover preserves the resting create background (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.setViewportSize({ width: 1720, height: 1100 });
+		await page.goto(`${origin}/jira-team-eu26-end`);
+		const heading = page.getByRole("heading", { name: "Team ’26 EU keynote", exact: true });
+		await expect(heading).toBeVisible();
+		const column = page.locator('[data-jira-kanban-column="Confidence"]');
+		const create = column.getByRole("button", { name: "Create in Confidence", exact: true });
+		await heading.hover();
+		await expect(create).toHaveCSS("border-top-style", "dashed");
+		const restingBackground = await create.evaluate((node) => getComputedStyle(node).backgroundColor);
+		const createBox = await create.boundingBox();
+		await column.getByText("Confidence", { exact: true }).hover();
+		await expect(create).toHaveCSS("border-top-style", "solid");
+		await expect.poll(() => create.evaluate((node) => node.getAnimations().filter((animation) => animation.playState === "running").length)).toBe(0);
+		await expect(create).toHaveCSS("background-color", restingBackground);
+		expect(await create.boundingBox()).toEqual(createBox);
+		await page.screenshot({ path: `output/agent-browser/column-hover/keynote-column-${reducedMotion}.png` });
+		await create.hover();
+		await expect(create).not.toHaveCSS("background-color", restingBackground);
+		await page.screenshot({ path: `output/agent-browser/column-hover/keynote-button-${reducedMotion}.png` });
+		await heading.hover();
+		await expect(create).toHaveCSS("background-color", restingBackground);
+		await create.focus();
+		await page.keyboard.press("Enter");
+		await expect(page.getByRole("dialog", { name: "Create in Confidence", exact: true })).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(create).toBeFocused();
+	});
 }

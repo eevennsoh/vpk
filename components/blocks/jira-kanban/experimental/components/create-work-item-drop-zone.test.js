@@ -20,8 +20,9 @@ const DROPZONE = readFileSync(
 );
 const MAGNETIC_LABEL = readFileSync(join(__dirname, "../../../jira-dropzone/jira-dropzone-magnetic-label.tsx"), "utf8");
 
-test("normal create rests dashed and becomes solid on column hover", () => {
+test("normal create becomes solid on column hover without borrowing button hover colors", () => {
 	assert.match(FOOTER, /"w-full border-dashed group-hover\/board-column:border-solid"/u);
+	assert.doesNotMatch(FOOTER, /group-hover\/board-column:[^"\s]*bg-/u);
 	assert.match(FOOTER, /control\?\.active \? "group-hover\/board-column:border-dashed" : null/u);
 	assert.equal(require("../../../jira-dropzone/lib/jira-dropzone-chrome.ts").JIRA_DROPZONE_WELL_CHROME_CLASS, "rounded-lg border border-dashed bg-clip-padding");
 	assert.match(
@@ -83,13 +84,13 @@ test("drop receipts land in the geometric center of the well", () => {
 	assert.doesNotMatch(DROPZONE, /JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u);
 });
 
-test("vertical pinning keeps every dropzone layer on its baseline", () => {
+test("vertical pinning anchors the surface while labels follow both axes", () => {
 	assert.match(FOOTER, /pinVerticalMagnet=\{columnSizing === "content"\}/u);
 	assert.match(DROPZONE, /y: pinMagnet \|\| pinVerticalMagnet \? 0 : magnet\.y/u);
 	assert.match(DROPZONE, /x: pinMagnet \? 0 : magnet\.x/u);
-	assert.equal((DROPZONE.match(/<JiraDropzoneMagneticLabel\b[^>]*pinVertical=\{pinVerticalMagnet\}/gu) ?? []).length, 2);
+	assert.doesNotMatch(DROPZONE, /<JiraDropzoneMagneticLabel\b[^>]*pinVertical=/u);
 	assert.match(MAGNETIC_LABEL, /const stationary = pinned \|\| shouldReduceMotion;/u);
-	assert.match(MAGNETIC_LABEL, /y: stationary \|\| pinVertical \? 0 : magnet\.labelY/u);
+	assert.match(MAGNETIC_LABEL, /y: stationary \? 0 : magnet\.labelY/u);
 	assert.match(MAGNETIC_LABEL, /x: stationary \? 0 : magnet\.labelX/u);
 });
 
@@ -101,11 +102,13 @@ test("board insertion marker avoids clipped paint before its anchor resolves", (
 	);
 	const motionSource = readFileSync(join(__dirname, "created-card-arrival-motion.tsx"), "utf8");
 
-	assert.match(lineSource, /fixed z-30 flex size-6 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(lineSource, /pointer-events-none fixed z-30 h-0\.5/u);
+	assert.match(lineSource, /createPortal\([\s\S]*anchor\.ownerDocument\.body/u);
 	assert.match(lineSource, /left: "anchor\(left, -100vw\)"/u);
 	assert.match(lineSource, /positionAnchor: anchorName/u);
 	assert.match(lineSource, /positionVisibility: "anchors-visible"/u);
-	assert.match(lineSource, /top: "anchor\(center, -100vh\)"/u);
+	assert.match(lineSource, /top: "anchor\(top, -100vh\)"/u);
+	assert.match(lineSource, /width: "anchor-size\(width, 0px\)"/u);
 	assert.match(lineSource, /border border-border bg-surface-overlay/u);
 	assert.doesNotMatch(lineSource, /boxShadow|elevation\.shadow\.overlay/u);
 	assert.doesNotMatch(lineSource, /absolute left-0 top-1\/2 flex size-6 -translate-y-1\/2/u);
@@ -128,16 +131,43 @@ test("card arrival suppresses the inline create seam until its entrance complete
 	assert.match(CARD_LIST, /const suppressCardInsertion = createdCardArrival !== undefined;/u);
 	assert.match(
 		CARD_LIST,
-		/const paintInsertion = !suppressCardInsertion && \(insertionArmed \|\| hoverInsertion !== null\);/u,
-	);
-	assert.match(
-		CARD_LIST,
 		/if \(suppressCardInsertion\) \{\s*setHoverInsertion\(\(current\) => \(current === null \? current : null\)\);\s*return;\s*\}/u,
 	);
 	assert.match(
 		CARD_LIST,
 		/<BoardCardHoverInsertionContext value=\{suppressCardInsertion \? null : hoverInsertion\}>/u,
 	);
+});
+
+test("the card viewport retains its stacking context and fade during inline insertion", async () => {
+	const esbuild = require("esbuild");
+	const React = require("react");
+	const { renderToStaticMarkup } = require("react-dom/server");
+	const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
+	const result = await esbuild.build({
+		entryPoints: [join(__dirname, "board-column-card-list.tsx")],
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		external: ["react", "react/*", "next/image"],
+		loader: { ".css": "empty" },
+		tsconfig: join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+	const { BoardColumnCardList } = loadCjsModuleFromText(result.outputFiles[0].text);
+	for (const insertionArmed of [false, true]) {
+		const markup = renderToStaticMarkup(React.createElement(BoardColumnCardList, {
+			chrome: { headerFrame: "enclosed", cardList: { gap: "4px" } },
+			columnTitle: "Context", columnSizing: "content", count: 2,
+			insertionArmed, isEmpty: false,
+		}, React.createElement("div", null, "Cards")));
+		const viewport = markup.match(/<div\b[^>]*data-slot="scroll-area-viewport"[^>]*>/u)?.[0];
+		assert.ok(viewport);
+		assert.match(viewport, /class="[^"]*\bisolate\b/u);
+		const classes = viewport.match(/class="([^"]*)"/u)[1].split(" ");
+		assert.ok(!classes.includes("[mask-image:none]!"), "insertion must not override the viewport fade");
+		assert.ok(!classes.includes("[-webkit-mask-image:none]!"));
+	}
 });
 
 test("normal create uses the full-width compact button and the shared creation field", () => {

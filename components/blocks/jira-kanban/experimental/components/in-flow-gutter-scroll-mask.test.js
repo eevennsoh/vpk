@@ -152,3 +152,71 @@ test("an active gutter paints only a solid 24px surface fill", () => {
 		1,
 	);
 });
+
+function loadGutterWatcher() {
+	const esbuild = require("esbuild");
+	const { loadCjsModuleFromText } = require(join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
+	return loadCjsModuleFromText(esbuild.buildSync({
+		entryPoints: [join(__dirname, "use-in-flow-gutter-scroll-mask.ts")],
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		external: ["react"],
+		tsconfig: join(process.cwd(), "tsconfig.json"),
+		write: false,
+	}).outputFiles[0].text, "in-flow-gutter-watcher-harness.cjs");
+}
+
+test("DOM change bursts around the column remeasure the gutter once per frame", () => {
+	const { watchInFlowGutterScrollMask } = loadGutterWatcher();
+	const originals = { window: globalThis.window, ResizeObserver: globalThis.ResizeObserver, MutationObserver: globalThis.MutationObserver };
+	const frames = new Map();
+	let nextFrame = 0;
+	let onMutations;
+	globalThis.window = {
+		requestAnimationFrame(callback) { frames.set(++nextFrame, callback); return nextFrame; },
+		cancelAnimationFrame(id) { frames.delete(id); },
+		addEventListener() {},
+		removeEventListener() {},
+	};
+	globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+	globalThis.MutationObserver = class {
+		constructor(callback) { onMutations = callback; }
+		observe() {}
+		disconnect() {}
+	};
+	const flush = () => {
+		for (const [id, callback] of frames) {
+			frames.delete(id);
+			callback();
+		}
+	};
+	const scrollport = { addEventListener() {}, removeEventListener() {}, querySelectorAll: () => [] };
+	let layoutReads = 0;
+	const host = {
+		parentElement: { querySelector: () => scrollport, parentElement: null },
+		querySelector: () => null,
+		getBoundingClientRect() {
+			layoutReads += 1;
+			return { left: 320, right: 346, top: 200, bottom: 760, width: 26, height: 560 };
+		},
+	};
+	const reports = [];
+	try {
+		const stop = watchInFlowGutterScrollMask(host, (active) => reports.push(active));
+		assert.equal(layoutReads, 1, "measured once as it binds");
+		// A drop commits the moved cards (and their ghosts and placeholders) in bursts.
+		for (let burst = 0; burst < 4; burst += 1) onMutations([{ type: "childList" }]);
+		// Regression: every burst forced a layout of the whole board mid-commit.
+		assert.equal(layoutReads, 1, "no layout reads while the commit settles");
+		flush();
+		assert.equal(layoutReads, 2, "one remeasure for the whole burst, in the next frame");
+		assert.deepEqual(reports, [false, false]);
+		onMutations([{ type: "childList" }]);
+		stop();
+		flush();
+		assert.equal(layoutReads, 2, "cleanup cancels a queued remeasure");
+	} finally {
+		Object.assign(globalThis, originals);
+	}
+});

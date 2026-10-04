@@ -11,7 +11,7 @@ import SprintIcon from "@atlaskit/icon/core/sprint";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
 
-import type { JiraKanbanAssigneeData } from "../../index";
+import type { JiraKanbanAssigneeData } from "@/components/blocks/jira-kanban/index";
 import {
 	BOARD_FILTER_DAYS_OPTIONS,
 	BOARD_FILTER_FIELD_LABELS,

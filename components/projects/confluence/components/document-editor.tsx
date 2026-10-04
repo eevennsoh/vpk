@@ -68,7 +68,7 @@ export default function DocumentEditor() {
 				}}
 			>
 				<EditorContent editor={editor} />
-				{editor && <EditorBubbleMenu editor={editor} />}
+				{editor ? <EditorBubbleMenu editor={editor} /> : null}
 			</div>
 		</div>
 	);

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
 import type { BoardCardInsertion } from "../lib/board-agent-session-drag";
-import { resolveBoardCardArrival } from "../lib/board-card-arrival";
+import { getIssueDropCascadeDelayS, resolveBoardCardArrival } from "../lib/board-card-arrival";
 import {
 	getBoardCardInsertionAnchorClassName,
 	resolveBoardCardInsertionPosition,
@@ -44,6 +44,9 @@ interface CreatedCardArrivalMotionProps {
 	onArrivalComplete: (arrivalId: number) => void;
 	positionMotion?: Readonly<Pick<MotionProps, "layout" | "layoutId" | "transition">>;
 	shouldAnimateCardMoves: boolean;
+	removing?: boolean;
+	removalSpacing?: { gaps: number; fusedGaps: number };
+	onRemovalComplete?: () => void;
 }
 
 function getCardMoveAnimation(
@@ -99,6 +102,9 @@ export function CreatedCardArrivalMotion({
 	onArrivalComplete,
 	positionMotion,
 	shouldAnimateCardMoves,
+	removing = false,
+	removalSpacing,
+	onRemovalComplete,
 }: Readonly<CreatedCardArrivalMotionProps>) {
 	const arrival = moveArrival?.columnTitle === columnTitle && moveArrival.cardCodes.includes(cardCode)
 		? moveArrival : createdArrival;
@@ -111,6 +117,7 @@ export function CreatedCardArrivalMotion({
 	const [entranceStarted, setEntranceStarted] = useState(!cardArrival.deferred);
 	const waiting = cardArrival.deferred && !entranceStarted;
 	const flightPending = arrival?.pendingCardCodes?.includes(cardCode) === true;
+	const inlineFlightPending = flightPending && !cardArrival.entering;
 	useLayoutEffect(() => {
 		if (!cardArrival.deferred) setEntranceStarted(true);
 	}, [cardArrival.deferred]);
@@ -120,9 +127,10 @@ export function CreatedCardArrivalMotion({
 		cardArrival.final,
 		onArrivalComplete,
 	);
-	const enterDelayS = cardArrival.entering && arrival
-		? arrival.pendingCardCodes ? 0 : getJiraCreateArrivalDelayS(arrival.animatedCardCodes ?? arrival.cardCodes, cardCode)
-		: 0;
+	// A moved cohort cascades top to bottom around its flights; created cards keep their stagger.
+	const enterDelayS = !cardArrival.entering || !arrival ? 0
+		: arrival.cascadeLeadCardCodes !== undefined ? getIssueDropCascadeDelayS(arrival, cardCode)
+		: arrival.pendingCardCodes ? 0 : getJiraCreateArrivalDelayS(arrival.animatedCardCodes ?? arrival.cardCodes, cardCode);
 
 	// Only interior gaps arm a seam, so the rule always has a real gutter to
 	// centre itself in — no card owns a flush column-edge line.
@@ -132,13 +140,19 @@ export function CreatedCardArrivalMotion({
 
 	return (
 		<motion.div
-			aria-hidden={waiting || undefined}
-			className={cn("w-full min-w-0 max-w-[280px]", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null)}
+			aria-hidden={waiting || removing || inlineFlightPending || undefined}
+			className={cn("w-full min-w-0 max-w-[280px] motion-reduce:transition-none!", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null, inlineFlightPending ? "invisible" : null)}
 			data-created-card-pending={waiting || undefined}
-			inert={waiting || undefined}
-			style={{ maxWidth: columnWidth === "fluid" ? "none" : undefined }}
-			layout={cardArrival.arrivalId !== undefined ? false : positionMotion?.layout}
-			layoutId={cardArrival.arrivalId !== undefined ? undefined : positionMotion?.layoutId}
+			inert={waiting || removing || inlineFlightPending || undefined}
+			style={{
+				maxWidth: columnWidth === "fluid" ? "none" : undefined,
+				marginBottom: removing && removalSpacing
+					? `calc(var(--board-card-gap, 0px) * -${removalSpacing.gaps} + var(--spacing) * ${removalSpacing.fusedGaps})`
+					: undefined,
+				transition: "margin-bottom var(--duration-normal) var(--ease-in)",
+			}}
+			layout={removing || cardArrival.arrivalId !== undefined ? false : positionMotion?.layout}
+			layoutId={removing || cardArrival.arrivalId !== undefined ? undefined : positionMotion?.layoutId}
 			transition={positionMotion?.transition}
 		>
 			<motion.div
@@ -176,6 +190,8 @@ export function CreatedCardArrivalMotion({
 					onAnimationComplete={handleArrivalComplete}
 					replayKey={cardArrival.arrivalId !== undefined && cardArrival.arrivalId < 0 ? cardArrival.arrivalId : undefined}
 					reserveSlot={arrival?.pendingCardCodes !== undefined}
+					removing={removing}
+					onRemovalComplete={onRemovalComplete}
 				>
 					{insertionLine}
 					{children}

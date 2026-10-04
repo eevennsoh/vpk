@@ -1,16 +1,34 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-test("component test report separates classified and legacy-drift node:test files", async () => {
+const NODE_TEST_SOURCE = 'const test = require("node:test");';
+
+test("discovery covers every node:test file extension tracked in the repo", async () => {
+	const { execFileSync } = require("node:child_process");
+	const { TEST_FILE_GLOBS } = await import("./run-js-unit-tests.mjs");
+	const extensions = new Set(TEST_FILE_GLOBS.map((glob) => glob.replace("*", "")));
+	const tracked = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" })
+		.split("\n")
+		.filter((file) => /\.test\.[cm]?[jt]sx?$/u.test(file) && !file.startsWith("node_modules/"));
+	// *.test.mjs suites were silently never run before they were added here.
+	const missed = tracked.filter((file) => ![...extensions].some((extension) => file.endsWith(extension)));
+	assert.deepEqual(missed, []);
+});
+
+test("component test report separates classified, legacy-drift, and unclassified node:test files", async () => {
 	const { buildComponentTestReport } = await import("./run-js-unit-tests.mjs");
 	const report = buildComponentTestReport([
 		{
 			filePath: "components/allowed.test.js",
-			source: 'const test = require("node:test");',
+			source: NODE_TEST_SOURCE,
 		},
 		{
-			filePath: "components/skipped.test.js",
-			source: 'const test = require("node:test");',
+			filePath: "components/unlisted.test.js",
+			source: NODE_TEST_SOURCE,
+		},
+		{
+			filePath: "components/frozen.test.js",
+			source: NODE_TEST_SOURCE,
 		},
 		{
 			filePath: "components/not-node-test.test.js",
@@ -18,29 +36,180 @@ test("component test report separates classified and legacy-drift node:test file
 		},
 		{
 			filePath: "lib/included-by-prefix.test.js",
-			source: 'const test = require("node:test");',
+			source: NODE_TEST_SOURCE,
 		},
 	], {
-		classificationByFile: new Map([["components/allowed.test.js", "stable"]]),
+		classificationByFile: new Map([
+			["components/allowed.test.js", "stable"],
+			["components/frozen.test.js", "legacy-drift"],
+		]),
 		includedTestFiles: new Set(["components/allowed.test.js"]),
 		includedTestPrefixes: ["lib/"],
-		excludedTestFiles: new Set(),
+		excludedTestFiles: new Set(["components/frozen.test.js"]),
 	});
 
 	assert.deepEqual(report, {
 		version: 1,
 		componentRoot: "components/",
 		includedCount: 1,
-		excludedCount: 1,
+		excludedCount: 2,
 		includedFiles: ["components/allowed.test.js"],
 		excludedFiles: [
 			{
 				classification: "legacy-drift",
-				filePath: "components/skipped.test.js",
-				reason: "legacy-drift",
+				filePath: "components/frozen.test.js",
+				reason: "excluded-file",
+			},
+			{
+				classification: "unclassified",
+				filePath: "components/unlisted.test.js",
+				reason: "unclassified",
 			},
 		],
 	});
+});
+
+test("unlisted component suites are unclassified instead of silently defaulting to legacy-drift", async () => {
+	const { getTestFileClassification, getTestFileInclusion } = await import("./run-js-unit-tests.mjs");
+	const classificationByFile = new Map([["components/frozen.test.js", "legacy-drift"]]);
+
+	assert.equal(getTestFileClassification("components/new.test.js", { classificationByFile }), "unclassified");
+	assert.equal(getTestFileClassification("components/frozen.test.js", { classificationByFile }), "legacy-drift");
+	assert.deepEqual(getTestFileInclusion("components/new.test.js", {
+		classificationByFile,
+		excludedTestFiles: new Set(),
+		includedTestFiles: new Set(),
+		includedTestPrefixes: [],
+	}), {
+		classification: "unclassified",
+		included: false,
+		reason: "unclassified",
+	});
+});
+
+test("unfiltered runs fail with an actionable diagnostic for unclassified component suites", async () => {
+	const {
+		assertComponentTestFilesClassified,
+		findUnclassifiedComponentTestFiles,
+	} = await import("./run-js-unit-tests.mjs");
+	const classifiedEntries = [
+		{ filePath: "components/stable.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "components/frozen.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "components/helper.test.js", source: "module.exports = {};" },
+		{ filePath: "lib/unlisted-outside-components.test.js", source: NODE_TEST_SOURCE },
+	];
+	const testEntries = [
+		{ filePath: "components/z-new.test.ts", source: 'import test from "node:test";' },
+		...classifiedEntries,
+		{ filePath: "components/a-new.test.js", source: NODE_TEST_SOURCE },
+	];
+	const options = {
+		classificationByFile: new Map([
+			["components/stable.test.js", "stable"],
+			["components/frozen.test.js", "legacy-drift"],
+		]),
+	};
+
+	assert.deepEqual(findUnclassifiedComponentTestFiles(testEntries, options), [
+		"components/a-new.test.js",
+		"components/z-new.test.ts",
+	]);
+	assert.throws(
+		() => assertComponentTestFilesClassified(testEntries, options),
+		new Error([
+			"js-unit-tests: 2 component node:test suite(s) are not classified, so the CI unit gate cannot run them:",
+			"- components/a-new.test.js",
+			"- components/z-new.test.ts",
+			"Add each path to scripts/js-unit-test-manifest.mjs under `stable` (behavioral tests) or `source-contract` (tests that assert on source text).",
+			"Do not add them to `legacy-drift`: it is a frozen baseline of skipped suites that must only shrink.",
+		].join("\n")),
+	);
+	assert.doesNotThrow(() => assertComponentTestFilesClassified(classifiedEntries, options));
+});
+
+test("legacy-drift entries are excluded from unfiltered and prefix runs but an explicit --file force-runs them", async () => {
+	const { TEST_FILE_CLASSIFICATIONS } = await import("./js-unit-test-manifest.mjs");
+	const { buildSelectionOptions, selectRunnableTestFiles } = await import("./run-js-unit-tests.mjs");
+	const frozenFile = TEST_FILE_CLASSIFICATIONS["legacy-drift"].find((filePath) => filePath.startsWith("components/"));
+	const stableFile = TEST_FILE_CLASSIFICATIONS.stable.find((filePath) => filePath.startsWith("components/"));
+	const testEntries = [frozenFile, stableFile].map((filePath) => ({ filePath, source: NODE_TEST_SOURCE }));
+
+	assert.deepEqual(selectRunnableTestFiles(testEntries, buildSelectionOptions()), [stableFile]);
+	assert.deepEqual(
+		selectRunnableTestFiles(testEntries, buildSelectionOptions({ prefixes: ["components/"] })),
+		[stableFile],
+	);
+	assert.deepEqual(
+		selectRunnableTestFiles(testEntries, buildSelectionOptions({ files: [frozenFile] })),
+		[frozenFile],
+	);
+});
+
+// Frozen membership of the skipped baseline, not just its size: a count cap would let a new
+// suite take a graduated suite's slot and be skipped silently. Delete entries as they
+// graduate; never add one.
+const LEGACY_DRIFT_BASELINE = new Set([
+	"backend/lib/deferred-clarification-replay.test.js",
+	"components/arts/awake/city-popover.test.js",
+	"components/arts/awake/index.test.js",
+	"components/arts/personal-graph/personal-graph-glass-panel.test.js",
+	"components/blocks/agent-directory/agent-directory.test.js",
+	"components/blocks/artifact-panel.test.js",
+	"components/blocks/conversation-starters/conversation-starters.test.js",
+	"components/blocks/editor-toolbar/editor-toolbar.test.js",
+	"components/blocks/jira-kanban/jira-kanban.test.js",
+	"components/blocks/knowledge-directory/knowledge-directory.test.js",
+	"components/blocks/prompt-gallery/prompt-gallery.test.js",
+	"components/blocks/pull-request-fix/pull-request-fix.test.js",
+	"components/blocks/pull-request-header/pull-request-header.test.js",
+	"components/blocks/pull-request-review/pull-request-review.test.js",
+	"components/blocks/subagents/subagents.test.js",
+	"components/blocks/tools-directory/tools-directory.test.js",
+	"components/blocks/twg-agent-card/twg-agent-card.test.js",
+	"components/projects/jira-for-you/jira-for-you-work-item-integration.test.js",
+	"components/projects/jira-for-you/jira-for-you-workspace.test.js",
+	"components/projects/jira-golden-journeys-v0/lib/kanban-lifecycle.test.js",
+	"components/projects/jira-golden-journeys-v1/lib/kanban-lifecycle.test.js",
+	"components/projects/jira-golden-journeys-v1/queue-stage.test.js",
+	"components/projects/jira-golden-journeys-v1/session-gallery.test.js",
+	"components/projects/jira-queue/queue-conversation-workspace.test.js",
+	"components/projects/jira/components/rfp-agent-chat-details.test.js",
+	"components/projects/jira/components/work-item-modal/accordion-accessibility.test.js",
+	"components/projects/jira/rfp-context.test.js",
+	"components/projects/page.test.js",
+	"components/projects/rovo/components/rovo-app-brand.test.js",
+	"components/projects/shared/components/rovo-app-composer.test.js",
+	"components/projects/shared/lib/plan-approval.test.js",
+	"components/projects/shared/lib/plan-identity.test.js",
+	"components/projects/shared/lib/rovo-app-composer-submit-state.test.js",
+	"components/projects/shared/lib/rovo-app-plan-execution-tracker.test.js",
+	"components/projects/shared/lib/rovo-app-plan-task-labels.test.js",
+	"components/projects/shared/thread-message/lib/plan-description-fallback.test.js",
+	"components/projects/sidebar-chat/components/chat-composer.test.js",
+	"components/projects/sidebar-chat/components/chat-greeting.test.js",
+	"components/projects/sidebar-chat/components/chat-history-drawer.test.js",
+	"components/projects/studio/components/rovo-app-agent-creation-flow.test.js",
+	"components/ui-custom/context-bar/context-bar-prompt-flyout.test.js",
+	"components/ui-custom/rich-text-editor/mention-visual.test.js",
+	"components/ui/panel.test.js",
+	"components/ui/vpk-icons.test.js",
+	"components/website/demos/utils/lib/browser-preview-frame-queue.test.js",
+	"components/website/demos/visual/card-glow-demo.test.js",
+	"components/website/demos/visual/dithering-demo.test.js",
+	"components/website/demos/visual/graph-demo.test.js",
+	"components/website/demos/visual/scribbles-demo.test.js",
+	"components/website/demos/visual/shaders/liquid-glass.test.js",
+]);
+
+test("the legacy-drift baseline only shrinks", async () => {
+	const { TEST_FILE_CLASSIFICATIONS } = await import("./js-unit-test-manifest.mjs");
+	const added = TEST_FILE_CLASSIFICATIONS["legacy-drift"].filter((filePath) => !LEGACY_DRIFT_BASELINE.has(filePath));
+
+	assert.deepEqual(
+		added,
+		[],
+		"legacy-drift only shrinks; classify new suites as stable or source-contract instead",
+	);
 });
 
 test("component test report output chunks only payloads that exceed the line limit", async () => {
@@ -210,11 +379,29 @@ test("classified test paths fail validation with a deterministic diagnostic", as
 		() => assertClassifiedTestFilesExist({
 			stable: ["components/present.test.js", "components/missing.test.js"],
 			"source-contract": ["app/data/moved.test.js"],
+			"legacy-drift": ["components/deleted-legacy.test.js"],
 		}, (filePath) => filePath === "components/present.test.js"),
 		new Error([
 			"js-unit-tests: classified test paths do not exist:",
+			"- legacy-drift: components/deleted-legacy.test.js",
 			"- source-contract: app/data/moved.test.js",
 			"- stable: components/missing.test.js",
+		].join("\n")),
+	);
+});
+
+test("test paths listed under more than one classification fail validation", async () => {
+	const { assertUniqueTestFileClassifications } = await import("./run-js-unit-tests.mjs");
+
+	assert.throws(
+		() => assertUniqueTestFileClassifications({
+			stable: ["components/graduated.test.js", "components/twice.test.js", "components/twice.test.js"],
+			"legacy-drift": ["components/graduated.test.js", "components/frozen.test.js"],
+		}),
+		new Error([
+			"js-unit-tests: test paths are listed more than once in scripts/js-unit-test-manifest.mjs; keep exactly one classification per path:",
+			"- components/graduated.test.js: stable, legacy-drift",
+			"- components/twice.test.js: stable, stable",
 		].join("\n")),
 	);
 });
@@ -237,11 +424,12 @@ test("Jira and ASX tests renamed to v0, v1, and v2 remain classified", async () 
 	}
 });
 
-test("every checked-in classified test path exists", async () => {
+test("every checked-in classified test path exists and is listed once", async () => {
 	const { TEST_FILE_CLASSIFICATIONS } = await import("./js-unit-test-manifest.mjs");
-	const { assertClassifiedTestFilesExist } = await import("./run-js-unit-tests.mjs");
+	const { assertClassifiedTestFilesExist, assertUniqueTestFileClassifications } = await import("./run-js-unit-tests.mjs");
 
 	assert.doesNotThrow(() => assertClassifiedTestFilesExist(TEST_FILE_CLASSIFICATIONS));
+	assert.doesNotThrow(() => assertUniqueTestFileClassifications(TEST_FILE_CLASSIFICATIONS));
 });
 
 test("test batching groups ordinary node tests by directory and isolates vm-module tests", async () => {

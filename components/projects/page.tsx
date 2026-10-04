@@ -5,7 +5,10 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import { token } from "@/lib/tokens";
-import TopNavigation, { type TopNavigationCurrentUser } from "@/components/blocks/top-navigation/page";
+import TopNavigation, {
+	type TopNavigationCurrentUser,
+	type TopNavigationSettingsMenuItem,
+} from "@/components/blocks/top-navigation/page";
 import Sidebar from "@/components/blocks/product-sidebar/page";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type {
@@ -39,6 +42,8 @@ interface AppLayoutProps {
 	hideRovoAction?: boolean;
 	settingsDesignVariantIds?: readonly DesignVariantId[];
 	settingsIconOnly?: boolean;
+	/** Route-owned settings actions; omitted routes render no extra rows. */
+	settingsMenuItems?: ReadonlyArray<TopNavigationSettingsMenuItem>;
 	onChatSurfaceSwitch?: ChatSurfaceSwitchHandler;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	chatGreeting?: ChatPanelGreetingProps;
@@ -148,6 +153,7 @@ export default function AppLayout({
 	hideRovoAction = false,
 	settingsDesignVariantIds,
 	settingsIconOnly = false,
+	settingsMenuItems,
 	onChatSurfaceSwitch,
 	chatContextBar,
 	chatGreeting,
@@ -308,6 +314,7 @@ export default function AppLayout({
 			hideRovoAction={shouldHideRovoAction}
 			settingsDesignVariantIds={settingsDesignVariantIds}
 			settingsIconOnly={settingsIconOnly}
+			settingsMenuItems={settingsMenuItems}
 			sidebar={(slot) => (
 				<Sidebar
 					product={product}

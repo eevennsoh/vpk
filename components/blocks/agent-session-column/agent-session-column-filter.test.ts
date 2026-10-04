@@ -3,7 +3,6 @@ import test from "node:test";
 
 import type { AgentSessionItem } from "../agent-session/agent-session-types";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { AGENT_SESSION_FILTER_AGENT_OPTIONS, EMPTY_AGENT_SESSION_COLUMN_FILTER, UNASSIGNED_OWNER_ID, agentSessionContainsArtifacts, agentSessionFilterToggleTriState, agentSessionHasLinkSuggestion, agentSessionOwnerId, applyAgentSessionColumnFilter, collectAgentSessionFilterOwners, countAgentSessionColumnFilterSelections, resolveAgentSessionFilterAgentId, resolveAgentSessionFilterDaysRange, shouldKeepAgentSessionFilterMenuOpen, toggleFilterId, toggleFilterTriState, toLocalIsoDate } from "./agent-session-column-filter.ts";
 
 function session(

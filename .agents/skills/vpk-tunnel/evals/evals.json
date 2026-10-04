@@ -4,24 +4,25 @@
 		{
 			"id": 1,
 			"prompt": "vpk-tunnel — share my usual VPK prototype with a customer for a short research session.",
-			"expected_output": "Selects https://example-project.localhost, resolves and health-checks it, asks which route people should open if none was given, and treats the skill invocation as authorization to share without asking for synthetic-data confirmation.",
+			"expected_output": "Resolves the default Portless hostname from package metadata, asks which route people should open, and selects public access for the explicitly external customer with an internet-exposure warning before --public.",
 			"files": [],
 			"expectations": [
-				"The default target hostname is https://example-project.localhost regardless of the branch checked out in the persistent worktree.",
+				"The default target hostname comes from package metadata regardless of the branch checked out in the persistent worktree.",
 				"The catalog root is not treated as the shareable surface unless the user explicitly asked for it.",
-				"The response does not ask for synthetic or fake-data confirmation because invoking the skill authorizes sharing.",
-				"The response explains the link lifetime and targeted stop command."
+				"The explicitly external audience selects --public, and the user sees an internet-exposure warning before the tunnel starts.",
+				"The response explains the link lifetime, stop command, and global atlas tunnel clean behavior."
 			]
 		},
 		{
 			"id": 2,
 			"prompt": "Use vpk-tunnel to share https://align-jira-activity-cards.example-project.localhost/jira?view=board#activity instead of the main prototype.",
-			"expected_output": "Resolves the custom Portless hostname to its live frontend and preserves /jira?view=board#activity in the eventual public link.",
+			"expected_output": "Resolves the custom Portless hostname to its live frontend, defaults to private access without --public, and preserves /jira?view=board#activity in the tunnel link.",
 			"files": [],
 			"expectations": [
 				"The exact supplied Portless hostname is selected instead of the default.",
-				"The path, query, and fragment are preserved when constructing the public link.",
-				"The tunnel remains scoped to that hostname and does not clean or stop other tunnels."
+				"The path, query, and fragment are preserved when constructing the tunnel link.",
+				"No --public flag is used for the unspecified audience; the user is told private access requires VPN or whitelist proxies.",
+				"The response explains that atlas tunnel clean runs after use and can disrupt other Atlas tunnels."
 			]
 		},
 		{
@@ -31,17 +32,17 @@
 			"files": [],
 			"expectations": [
 				"No public Atlas Tunnel command is started.",
-				"The response does not ask for synthetic or fake-data confirmation because invoking the skill authorizes sharing.",
+				"Public sharing is identified as internet exposure, not assumed authorized by a bare skill invocation.",
 				"The response requires a successful local HTTP response before retrying."
 			]
 		},
 		{
 			"id": 4,
 			"prompt": "vpk-tunnel so people can look at jira-golden-journeys-v4. The public homepage looks empty.",
-			"expected_output": "Shares https://example-project.localhost/jira-golden-journeys-v4, not the catalog root, and treats a blank public page as a blocked-origin failure rather than a successful start.",
+			"expected_output": "Resolves the project route on the selected Portless hostname, defaults to private sharing unless external/public access was selected, and treats a blank tunnel page as a blocked-origin failure.",
 			"files": [],
 			"expectations": [
-				"The public link path is /jira-golden-journeys-v4 rather than /.",
+				"The tunnel link path is /jira-golden-journeys-v4 rather than /.",
 				"The catalog homepage is not handed to reviewers as the project surface.",
 				"A public URL that only renders Skip to content is not reported as live.",
 				"Missing allowedDevOrigins Atlas Tunnel hosts require a frontend restart, re-resolve, and a new start.",
@@ -51,12 +52,36 @@
 		{
 			"id": 5,
 			"prompt": "vpk-tunnel jira-golden-journeys-v4. Hide the react-grab control for testers.",
-			"expected_output": "Starts the public tunnel and confirms the react-grab development control is absent on the public URL.",
+			"expected_output": "Defaults to private access, resolves the project route, and confirms the react-grab development control is absent on the tunnel URL.",
 			"files": [],
 			"expectations": [
-				"Public Atlas Tunnel hosts hide the react-grab development control automatically.",
+				"No --public flag is added without an explicit public/external request.",
+				"Atlas Tunnel hosts hide the react-grab development control automatically.",
 				"A public page that still shows the floating cursor/chevron react-grab pill is not reported as ready to share.",
 				"Injected CSS or clicking the pill is not treated as a substitute for the host-based hide."
+			]
+		},
+		{
+			"id": 6,
+			"prompt": "Stop vpk-tunnel for https://feature.example-project.localhost/jira. The process already exited.",
+			"expected_output": "Runs atlas tunnel clean even though the scoped process has already exited, explains that cleanup deletes all CLI-created Atlas tunnels and logs, and reports whether cleanup succeeded.",
+			"files": [],
+			"expectations": [
+				"atlas tunnel clean is run even when no scoped tmux session remains.",
+				"The response does not claim cleanup preserves unrelated Atlas tunnels.",
+				"The VPK frontend is left running.",
+				"A failed cleanup is reported rather than described as successful."
+			]
+		},
+		{
+			"id": 7,
+			"prompt": "Use vpk-tunnel for https://feature.example-project.localhost/jira. Some reviewers might be outside Atlassian; I have not decided yet.",
+			"expected_output": "Resolves and health-checks the route, explains private VPN/proxy access and public internet exposure, then asks for the sharing audience with private as the default before any public start.",
+			"files": [],
+			"expectations": [
+				"Private access is the default and requires no --public flag.",
+				"The unresolved external audience is clarified before public exposure.",
+				"The warning explains that --public exposes the application to the internet."
 			]
 		}
 	]

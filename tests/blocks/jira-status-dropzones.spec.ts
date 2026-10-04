@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 
 async function geometry(page: Page, status = "In progress") {
@@ -18,7 +20,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`status labels react before entry without choosing a status (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.clock.install();
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
 		const card = page.locator('[data-issue-key="PAY-105"] [draggable="true"]').first();
 		const source = (await card.boundingBox())!;
@@ -69,7 +71,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`status targets share create-well chrome and only their labels move (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.clock.install();
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
 		const card = page.locator('[data-issue-key="PAY-105"] [draggable="true"]').first();
 		const source = (await card.boundingBox())!;

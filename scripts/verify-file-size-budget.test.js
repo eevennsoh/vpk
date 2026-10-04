@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
-const { mkdtempSync, rmSync, writeFileSync } = require("node:fs");
+const { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
@@ -12,9 +12,14 @@ const {
 	formatFailure,
 	getGrowthLimit,
 	isBudgetedTextFile,
+	isExtensionlessNodeScript,
 	listTrackedFiles,
 	readBudgetEntries,
 } = require("./verify-file-size-budget");
+
+function nodeScriptSource(lineCount) {
+	return ["#!/usr/bin/env node", ...Array.from({ length: lineCount - 1 }, (_, index) => `// line ${index + 2}`)].join("\n") + "\n";
+}
 
 test("counts logical lines with and without trailing newlines", () => {
 	assert.equal(countLines(""), 0);
@@ -145,6 +150,73 @@ test("skips deleted tracked paths while reading current budget entries", () => {
 			{
 				filePath: "existing.ts",
 				lines: 2,
+			},
+		]);
+	} finally {
+		rmSync(cwd, { force: true, recursive: true });
+	}
+});
+
+test("budgets extensionless files only when they start with a node shebang", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-file-budget-shebang-"));
+	try {
+		writeFileSync(path.join(cwd, "control-vpk"), nodeScriptSource(3));
+		writeFileSync(path.join(cwd, "node-args"), "#!/usr/bin/env node --no-warnings\none\n");
+		writeFileSync(path.join(cwd, "shell-tool"), "#!/bin/sh\necho one\n");
+		writeFileSync(path.join(cwd, "nodejs-tool"), "#!/usr/bin/env nodejs\none\n");
+		writeFileSync(path.join(cwd, "LICENSE"), "MIT\n");
+		writeFileSync(path.join(cwd, "data.json"), "#!/usr/bin/env node\n");
+		mkdirSync(path.join(cwd, "bin-dir"));
+		symlinkSync("control-vpk", path.join(cwd, "linked-tool"));
+
+		assert.equal(isExtensionlessNodeScript("control-vpk", { cwd }), true);
+		assert.equal(isExtensionlessNodeScript("shell-tool", { cwd }), false);
+		assert.equal(isExtensionlessNodeScript("bin-dir", { cwd }), false);
+		assert.equal(isExtensionlessNodeScript("linked-tool", { cwd }), false);
+		assert.equal(isExtensionlessNodeScript("missing-tool", { cwd }), false);
+		assert.equal(isExtensionlessNodeScript("data.json", { cwd }), false);
+
+		assert.deepEqual(readBudgetEntries([
+			"control-vpk",
+			"node-args",
+			"shell-tool",
+			"nodejs-tool",
+			"LICENSE",
+			"data.json",
+			"bin-dir",
+			"linked-tool",
+			"missing-tool",
+		], { cwd }), [
+			{
+				filePath: "control-vpk",
+				lines: 3,
+			},
+			{
+				filePath: "node-args",
+				lines: 2,
+			},
+		]);
+	} finally {
+		rmSync(cwd, { force: true, recursive: true });
+	}
+});
+
+test("an oversized extensionless node CLI fails the budget like any other source file", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-file-budget-cli-"));
+	try {
+		// Mirrors the pre-split 1340-line `.agents/skills/vpk-verify/scripts/control-vpk`.
+		const cliPath = ".agents/skills/vpk-verify/scripts/control-vpk";
+		mkdirSync(path.join(cwd, path.dirname(cliPath)), { recursive: true });
+		writeFileSync(path.join(cwd, cliPath), nodeScriptSource(1340));
+
+		const entries = readBudgetEntries([cliPath], { cwd });
+		assert.deepEqual(entries, [{ filePath: cliPath, lines: 1340 }]);
+		assert.deepEqual(evaluateFileSizeBudget(entries, { threshold: 1000, files: {} }), [
+			{
+				type: "new-oversized-file",
+				filePath: cliPath,
+				lines: 1340,
+				threshold: 1000,
 			},
 		]);
 	} finally {

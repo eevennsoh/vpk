@@ -58,7 +58,7 @@ export function PackageInfoDemoChangeTypes() {
 						<PackageInfoName />
 						<PackageInfoChangeType />
 					</PackageInfoHeader>
-					{(pkg.currentVersion || pkg.newVersion) && <PackageInfoVersion />}
+					{(pkg.currentVersion || pkg.newVersion) ? <PackageInfoVersion /> : null}
 				</PackageInfo>
 			))}
 		</div>

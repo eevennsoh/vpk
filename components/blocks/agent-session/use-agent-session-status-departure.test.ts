@@ -4,7 +4,6 @@ import test from "node:test";
 import {
 	advanceAgentSessionStatusDeparture,
 	completeAgentSessionStatusDeparture,
-// @ts-expect-error Node's strip-types runner needs the explicit extension.
 } from "./use-agent-session-status-departure.ts";
 
 const working = { id: "session", state: "working" };

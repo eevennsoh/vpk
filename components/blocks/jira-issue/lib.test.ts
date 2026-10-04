@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { getJiraIssueAgentSurfaceOffsets, JIRA_ISSUE_COMFORTABLE_COMPACT_ICON_CLASS, JIRA_ISSUE_COMFORTABLE_ISSUE_KEY_CLASS, JIRA_ISSUE_COMPACT_ISSUE_KEY_CLASS, resolveIssueAssigneeUnassignedKind, resolveJiraIssueIconMetrics, resolveJiraIssueSubtaskChrome } from "./lib.ts";
 
 test("missing assignee photos resolve to the unassigned person placeholder", () => {

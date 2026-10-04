@@ -185,32 +185,24 @@ function VoicePickerItem({
           agentState={isPlaying ? "talking" : undefined}
           className="pointer-events-none absolute inset-0"
         />
-        {preview && isHovered && (
-          <div className="pointer-events-none absolute inset-0 flex size-8 shrink-0 items-center justify-center rounded-full bg-bg-neutral-bold text-text-inverse transition-opacity">
+        {preview && isHovered ? <div className="pointer-events-none absolute inset-0 flex size-8 shrink-0 items-center justify-center rounded-full bg-bg-neutral-bold text-text-inverse transition-opacity">
             {isPlaying ? (
               <Pause className="size-3" />
             ) : (
               <Play className="size-3" />
             )}
-          </div>
-        )}
+          </div> : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-0.5">
         <span className="font-medium">{voice.name}</span>
-        {voice.labels && (
-          <div className="text-text-subtle flex items-center gap-1.5 text-xs">
-            {voice.labels.accent && <span>{voice.labels.accent}</span>}
-            {voice.labels.gender && <span>•</span>}
-            {voice.labels.gender && (
-              <span className="capitalize">{voice.labels.gender}</span>
-            )}
-            {voice.labels.age && <span>•</span>}
-            {voice.labels.age && (
-              <span className="capitalize">{voice.labels.age}</span>
-            )}
-          </div>
-        )}
+        {voice.labels ? <div className="text-text-subtle flex items-center gap-1.5 text-xs">
+            {voice.labels.accent ? <span>{voice.labels.accent}</span> : null}
+            {voice.labels.gender ? <span>•</span> : null}
+            {voice.labels.gender ? <span className="capitalize">{voice.labels.gender}</span> : null}
+            {voice.labels.age ? <span>•</span> : null}
+            {voice.labels.age ? <span className="capitalize">{voice.labels.age}</span> : null}
+          </div> : null}
       </div>
 
       <Check

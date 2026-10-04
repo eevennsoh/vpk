@@ -20,10 +20,11 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 
 import type { AgentSessionMoreMenuActions } from "./agent-session-more-menu";
 import type { AgentSessionItem } from "./agent-session-types";
+import { motionEase } from "@/lib/motion";
 
 // duration-normal + ease-out-practical; duration-fast + ease-in.
-const COPIED_ENTER = { duration: 0.15, ease: [0.4, 1, 0.6, 1] } as const;
-const COPIED_EXIT = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] } as const;
+const COPIED_ENTER = { duration: 0.15, ease: motionEase.outPractical } as const;
+const COPIED_EXIT = { duration: 0.1, ease: motionEase.in } as const;
 
 function CopiedPromptIndicator({ copied }: Readonly<{ copied: boolean }>) {
 	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);

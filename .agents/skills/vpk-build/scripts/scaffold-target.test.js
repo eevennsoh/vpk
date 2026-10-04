@@ -18,7 +18,41 @@ function writeFile(filePath, contents) {
 	fs.writeFileSync(filePath, contents, "utf8");
 }
 
-function createFixture() {
+async function renderGeneratedLayout(layout) {
+	const ts = require("typescript");
+	const { renderToStaticMarkup } = require("react-dom/server");
+	const { outputText } = ts.transpileModule(layout, {
+		compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+	});
+	const generatedModule = { exports: {} };
+	const previousFlags = globalThis.__PLATFORM_FEATURE_FLAGS__;
+	const requireLayout = (specifier) => {
+		switch (specifier) {
+			case "./feature-flags-shim":
+				globalThis.__PLATFORM_FEATURE_FLAGS__ = { booleanResolver: () => false };
+				return {};
+			case "./globals.css": return {};
+			case "next/font/google": return { Geist: () => ({ variable: "fixture-geist" }) };
+			case "next/font/local": return () => ({ variable: "fixture-local-font" });
+			case "@/components/utils/theme-wrapper": return { ThemeWrapper: ({ children }) => children };
+			case "@/lib/utils": return { cn: (...classes) => classes.filter(Boolean).join(" ") };
+			case "./feature-flags-shim-client": return { FeatureFlagsShim: () => null };
+			case "motion/react": return { MotionConfig: ({ children }) => children };
+			default: return require(specifier);
+		}
+	};
+	try {
+		// Run the generated root with real React and ADS token loading. Font and
+		// client-only wrappers are irrelevant to stylesheet selection in this test.
+		new Function("require", "exports", "module", outputText)(requireLayout, generatedModule.exports, generatedModule);
+		return renderToStaticMarkup(await generatedModule.exports.default({ children: null }));
+	} finally {
+		if (previousFlags === undefined) delete globalThis.__PLATFORM_FEATURE_FLAGS__;
+		else globalThis.__PLATFORM_FEATURE_FLAGS__ = previousFlags;
+	}
+}
+
+function createFixture({ includeMotion = false, extraPackages = {}, sourceLock = null } = {}) {
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-build-scaffold-"));
 	const repoRoot = path.join(tempDir, "repo");
 	const targetDir = path.join(tempDir, "output");
@@ -75,6 +109,7 @@ export default function AwakePage() {
 		for (const skill of ["vpk-setup", "vpk-deploy"]) {
 			writeFile(path.join(repoRoot, ".agents", "skills", skill, "SKILL.md"), `name: ${skill}\n`);
 		}
+		if (sourceLock) writeFile(path.join(repoRoot, "pnpm-lock.yaml"), sourceLock);
 		writeFile(
 			planPath,
 			JSON.stringify(
@@ -92,6 +127,8 @@ export default function AwakePage() {
 					npmPackages: {
 						next: "16.2.4",
 						react: "19.2.5",
+						...(includeMotion ? { motion: "^13.1.1" } : {}),
+						...extraPackages,
 					},
 					contextFiles: [],
 				},
@@ -141,7 +178,7 @@ test("staged public assets remain independent from the source when either copy i
 	} finally { fixture.cleanup(); }
 });
 
-test("scaffold-target emits the updated layout, shim, config, and fonts for extracted routes", () => {
+test("scaffold-target emits the updated layout, shim, config, and fonts for extracted routes", async () => {
 	const fixture = createFixture();
 
 	try {
@@ -164,12 +201,20 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 			"utf8",
 		);
 		const nextConfig = fs.readFileSync(path.join(fixture.targetDir, "next.config.ts"), "utf8");
+		const targetPackage = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "package.json"), "utf8"));
+		const generatedTsconfig = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "tsconfig.json"), "utf8"));
 
 		assert.match(
 			page,
-			/import AwakeDemo from "@\/components\/website\/demos\/arts\/awake-demo";/,
+			/import \{ lazy, Suspense \} from "react";/,
 		);
-		assert.match(page, /return <AwakeDemo \/>;/);
+		assert.match(
+			page,
+			/const AwakeDemo = lazy\(\(\) => import\("@\/components\/website\/demos\/arts\/awake-demo"\)\);/,
+		);
+		assert.match(page, /return <Suspense><AwakeDemo \/><\/Suspense>;/);
+		assert.equal(targetPackage.scripts.build, "NEXT_OUTPUT=export next build --webpack");
+		assert.ok(generatedTsconfig.exclude.includes("out"));
 
 		assert.ok(
 			layout.includes('import "./feature-flags-shim";'),
@@ -184,7 +229,15 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(layout, /import \{ getThemeStyles \} from "@atlaskit\/tokens\/get-theme-styles";/);
 		assert.match(layout, /const geist = Geist\(\{ subsets: \["latin"\], variable: "--font-sans" \}\);/);
 		assert.match(layout, /src: "\.\.\/public\/fonts\/ark-es\/ARK-ES-SolidLight\.woff"/);
-		assert.match(layout, /const themeStyles = await getThemeStyles\(THEME_STATE\);/);
+		const renderedLayout = await renderGeneratedLayout(layout);
+		assert.match(layout, /<ThemeWrapper>[\s\S]*<main id="main-content">/);
+		assert.match(layout, /<\/main>[\s\S]*<\/ThemeWrapper>/);
+		assert.doesNotMatch(layout, /MotionConfig/);
+		assert.match(renderedLayout, /<main id="main-content">/);
+		assert.match(renderedLayout, /<html[^>]*data-color-mode="light"/);
+		assert.match(renderedLayout, /<style data-theme="light">/);
+		assert.match(renderedLayout, /<style data-theme="dark">/);
+		assert.match(renderedLayout, /\[data-subtree-theme\]\[data-color-mode="dark"\]\[data-theme~="dark:dark"\]/);
 		assert.match(layout, /import \{ getThemeHtmlAttrs \} from "@atlaskit\/tokens\/get-theme-html-attrs";/);
 		assert.match(layout, /<html[^>]*\{\.\.\.getThemeHtmlAttrs\(THEME_STATE\)\}/);
 		assert.match(layout, /href="\/website\/favicon-fallback\.svg"/);
@@ -244,6 +297,21 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.match(nextConfig, /allowedDevOrigins:\s*\[\s*"127\.0\.2\.2",\s*"localhost"\s*\]/);
 		const tsconfig = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "tsconfig.json"), "utf8"));
 		assert.ok(tsconfig.include.includes(".next/dev/types/**/*.ts"));
+		// Copied helpers use explicit .ts imports so Node can load their tests too.
+		// Exercise the emitted compiler config instead of checking a flag string.
+		const ts = require("typescript");
+		const extensionEntry = path.join(fixture.targetDir, "lib", "extension-entry.ts");
+		writeFile(path.join(fixture.targetDir, "lib", "extension-fixture.ts"), "export const value = 42;\n");
+		writeFile(extensionEntry, 'import { value } from "./extension-fixture.ts";\nexport const copiedValue: number = value;\n');
+		const { options } = ts.convertCompilerOptionsFromJson(tsconfig.compilerOptions, fixture.targetDir);
+		const program = ts.createProgram([extensionEntry], options);
+		assert.deepEqual(
+			program.getSemanticDiagnostics(program.getSourceFile(extensionEntry)).map((diagnostic) => ({
+				code: diagnostic.code,
+				message: ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"),
+			})),
+			[],
+		);
 		assert.match(fs.readFileSync(path.join(fixture.targetDir, ".gitignore"), "utf8"), /^output\/$/m);
 		assert.match(fs.readFileSync(path.join(fixture.targetDir, ".gitignore"), "utf8"), /^backend\/data\/$/m);
 
@@ -575,6 +643,66 @@ test("scaffold-target resolves catalog versions, copies npmrc, and adds host pee
 	}
 });
 
+test("scaffold-target pins extracted direct dependencies to source lockfile versions", () => {
+	const fixture = createFixture({
+		includeMotion: true,
+		extraPackages: { express: "^5.2.1" },
+		sourceLock: [
+			"lockfileVersion: '9.0'",
+			"importers:",
+			"  .:",
+			"    dependencies:",
+			"      motion:",
+			"        specifier: ^13.1.1",
+			"        version: 13.1.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)",
+			"  backend:",
+			"    dependencies:",
+			"      express:",
+			"        specifier: ^5.2.1",
+			"        version: 5.2.0",
+			"packages:",
+		].join("\n"),
+	});
+
+	try {
+		execFileSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir], {
+			encoding: "utf8",
+			env: GIT_TEST_ENV,
+			stdio: "pipe",
+		});
+
+		const targetPackage = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, "package.json"), "utf8"));
+		assert.equal(targetPackage.dependencies.motion, "13.1.1");
+		assert.equal(targetPackage.dependencies.express, "5.2.0");
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+test("scaffold-target wraps motion routes in the source reduced-motion provider", async () => {
+	const fixture = createFixture({ includeMotion: true });
+
+	try {
+		execFileSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir], {
+			encoding: "utf8",
+			env: GIT_TEST_ENV,
+			stdio: "pipe",
+		});
+
+		const layout = fs.readFileSync(path.join(fixture.targetDir, "app", "layout.tsx"), "utf8");
+		const renderedLayout = await renderGeneratedLayout(layout);
+		const motionConfig = layout.indexOf("<MotionConfig reducedMotion=\"user\">");
+		const themeWrapper = layout.indexOf("<ThemeWrapper>");
+		const main = layout.indexOf("<main id=\"main-content\">");
+
+		assert.match(layout, /import \{ MotionConfig \} from "motion\/react";/);
+		assert.ok(motionConfig >= 0 && motionConfig < themeWrapper && themeWrapper < main);
+		assert.match(renderedLayout, /<main id="main-content">/);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
 test("scaffold-target copies local CSS and never strips shadcn", () => {
 	const fixture = createContractFixture();
 
@@ -658,6 +786,7 @@ test("backend-backed scaffold preserves source backend and generates proxy/deplo
 		assert.equal(targetPackage.dependencies["ansi-to-react"], undefined);
 		assert.equal(targetPackage.scripts.dev, "node scripts/dev-backend-backed.mjs");
 		assert.equal(targetPackage.scripts.start, "node backend/extracted-server.js");
+		assert.equal(targetPackage.scripts.build, "next build --webpack");
 		assert.equal(targetPackage.packageManager, "pnpm@11.25.0");
 		assert.equal(targetPackage.scripts["build:export"], "node scripts/build-static-export.mjs");
 		assert.equal(targetPackage.scripts["deploy:micros"], "./scripts/dev-deploy-fast.sh");

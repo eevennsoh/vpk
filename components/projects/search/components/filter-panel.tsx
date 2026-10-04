@@ -56,8 +56,7 @@ export default function FilterPanel({ selectedFilter, onFilterChange }: Readonly
 				))}
 
 				{/* Show more button */}
-				{!showMoreProducts && (
-					<button
+				{!showMoreProducts ? <button
 						type="button"
 						onClick={handleShowMore}
 						aria-label="Show more products"
@@ -78,8 +77,7 @@ export default function FilterPanel({ selectedFilter, onFilterChange }: Readonly
 						<span className="text-sm text-text">
 							Show more
 						</span>
-					</button>
-				)}
+					</button> : null}
 
 				{/* Divider */}
 				<div

@@ -41,6 +41,12 @@ fi
 
 vpk_bootstrap_worktree "$PROJECT_DIR" "$SOURCE_TREE_PATH"
 
+# Preview ports differ per checkout, so .claude/launch.json is generated rather than tracked.
+# stdout is reserved for the hook JSON below; best-effort so a failure never blocks startup.
+if [ "$IS_CLAUDE_HOOK" -eq 1 ] && [ -f "$PROJECT_DIR/scripts/write-claude-launch-config.js" ]; then
+	(cd "$PROJECT_DIR" && node scripts/write-claude-launch-config.js) >&2 || true
+fi
+
 if [ "$IS_CLAUDE_HOOK" -eq 1 ] && [ ${#VPK_BOOTSTRAP_MESSAGES[@]} -gt 0 ]; then
 	CONTEXT="${VPK_BOOTSTRAP_MESSAGES[*]}"
 	CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr -d '\n')

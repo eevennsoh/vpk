@@ -1,10 +1,7 @@
 import type { Transition } from "motion/react";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { SCROLLING_DEPTH_LIFT_PX, SCROLLING_DEPTH_MIN_SCALE, SCROLLING_DEPTH_ZONE_PX } from "../../../visual/scrolling/data.ts";
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { FAN_OPACITY_INPUT, fanOffset, fanOpacity } from "../../../visual/scrolling/lib.ts";
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { cardTopFrom, depthGate, depthLift, depthProgress, depthScale, fanAnchor, fansIn, type ScrollingDepth, type ScrollingEntranceOrigin, type ScrollingStackOrder } from "../../../visual/scrolling/stack-layout.ts";
 
 export interface AgentSessionDeckEntrance {

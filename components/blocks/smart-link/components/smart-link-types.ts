@@ -150,8 +150,24 @@ export interface SmartLinkProps {
 	contentClassName?: string;
 }
 
+export interface SmartLinkStatusChoice {
+	readonly label: string;
+	readonly variant: NonNullable<LozengeProps["variant"]>;
+}
+
+/** A status picked from the card's dropdown, keyed to the item it was picked for. */
+export interface SmartLinkStatusSelection {
+	readonly choice: SmartLinkStatusChoice | null;
+	readonly select: (choice: SmartLinkStatusChoice) => void;
+}
+
 export interface SmartLinkCardProps {
 	item: SmartLinkItem;
+	/**
+	 * Owner of the picked status when the card can unmount while its parent stays
+	 * (the hover flyout closes). Omit it and the card keeps its own selection.
+	 */
+	statusSelection?: SmartLinkStatusSelection;
 	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
 	/**
 	 * When provided, render the card title as a selectable pressed button

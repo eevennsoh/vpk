@@ -5,9 +5,9 @@ import {
 	type Page,
 } from "@playwright/test";
 
-const JIRA_AGENTS_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/jira-golden-journeys-v2`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_AGENTS_URL = appUrl("/jira-golden-journeys-v2");
 
 const CHAPTERS = [
 	"Intake",

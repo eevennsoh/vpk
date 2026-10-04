@@ -1,3 +1,4 @@
+import { motionEase } from "@/lib/motion";
 /**
  * Text-animation presets ported from Pixel Point's `animate-text` skill
  * (https://pixelpoint.io/skills/animate-text/). Each effect's keyframes,
@@ -121,7 +122,7 @@ export const TEXT_EFFECTS: Readonly<Record<EffectId, TextEffectSpec>> = {
 		target: "char",
 		durationMs: 240,
 		staggerMs: 46,
-		easing: [0, 0, 1, 1],
+		easing: motionEase.linear,
 		stepped: true,
 		from: { opacity: 0 },
 		to: { opacity: 1 },

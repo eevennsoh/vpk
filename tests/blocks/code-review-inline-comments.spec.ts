@@ -1,8 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const CODE_REVIEW_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/blocks/code-review`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const CODE_REVIEW_URL = appUrl("/preview/blocks/code-review");
 
 type DiffSide = "additions" | "deletions";
 

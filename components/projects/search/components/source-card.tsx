@@ -39,7 +39,7 @@ export default function SourceCard({ source }: Readonly<SourceCardProps>) {
 					</Avatar>
 					<span className="text-xs text-text-subtle">
 						Created by {source.author}
-						{source.updatedDate && ` • ${source.updatedDate}`}
+						{source.updatedDate ? ` • ${source.updatedDate}` : null}
 					</span>
 				</div>
 

@@ -12,8 +12,10 @@ import type {
 	JiraKanbanColumnData,
 } from "@/components/blocks/jira-kanban";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
+import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 
 import { JIRA_TEAM_EU26_PAY_CURRENT_USER } from "./current-user";
+import { JIRA_TEAM_EU26_HEADER_AGENT_ASSIGNEES } from "./header-agent-assignees";
 import {
 	JIRA_TEAM_EU26_PAY_101_SESSION_ID,
 	JIRA_TEAM_EU26_PAY_101_PULL_REQUEST_NUMBER,
@@ -91,6 +93,23 @@ export const JIRA_TEAM_EU26_PAY_BOARD_AGENTS = [
 		brandName: "github-copilot",
 	},
 ] as const satisfies readonly JiraKanbanAgentData[];
+
+/** The five existing board identities, including the WAC header artwork. */
+export const JIRA_TEAM_EU26_PRIMARY_BOARD_AGENTS = [
+	{ id: "claude-code", name: "Claude", byline: "Coding agent by Anthropic", brandName: "claude", avatarSrc: "/illustration/agent-lanyard/claude.svg", headerId: "wac-claude" },
+	{ id: "test-agent", name: "Cursor", byline: "Coding agent by Cursor", brandName: "cursor", avatarSrc: "/illustration/agent-lanyard/cursor.svg", headerId: "wac-cursor" },
+	{ id: "review-agent", name: "Codex", byline: "Coding agent by OpenAI", brandName: "openai-codex", avatarSrc: "/illustration/agent-lanyard/codex.svg", headerId: "wac-codex" },
+	{ id: "release-agent", name: "GitHub Copilot", byline: "Coding agent by GitHub", brandName: "github-copilot", avatarSrc: "/illustration/agent-lanyard/copilot.svg", headerId: "wac-copilot" },
+	{ id: "figma", name: "Figma", byline: "Design agent by Figma", brandName: "figma", avatarSrc: undefined, headerId: "wac-figma" },
+] as const satisfies readonly (JiraKanbanAgentData & { headerId: string })[];
+
+const CUSTOM_BOARD_AGENT_IDS = ["code-reviewer", "release-notes-drafter", "bug-report-assistant"] as const;
+
+/** Assignment catalog shared by both content presets; custom agents stay unpinned. */
+export const JIRA_TEAM_EU26_BOARD_AGENTS: readonly JiraKanbanAgentData[] = [
+	...JIRA_TEAM_EU26_PRIMARY_BOARD_AGENTS,
+	...CUSTOM_BOARD_AGENT_IDS.map((id) => ROVO_AGENT_SELECTOR_AGENTS.find((agent) => agent.id === id)!),
+];
 
 export function toJiraTeamEu26AgentActivityFromSession(
 	session: AgentSessionItem,
@@ -173,9 +192,7 @@ export const JIRA_TEAM_EU26_PAY_COMPOSER_AGENTS = [
 
 export const JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES = [
 	JIRA_TEAM_EU26_PAY_CURRENT_USER,
-	{ id: "claude-code", name: "Claude", avatarSrc: "/illustration/agent-lanyard/claude.svg" },
-	{ id: "review-agent", name: "Jira Coding Agent", avatarSrc: "/1p/agent-lanyard/glyph-jira-coding.svg" },
-	{ id: "test-agent", name: "Cursor", avatarSrc: "/illustration/agent-lanyard/cursor.svg" },
+	...JIRA_TEAM_EU26_HEADER_AGENT_ASSIGNEES,
 ] as const satisfies readonly JiraKanbanAssigneeData[];
 
 function attachPullRequestPreview(

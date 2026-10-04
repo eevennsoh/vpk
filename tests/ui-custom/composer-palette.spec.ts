@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 /**
  * E2E coverage for the tiptap chat-composer palette (Phase 2).
  *
- * Requires a running stack (defaults to http://localhost:3000; override with
- * PLAYWRIGHT_BASE_URL). NOT part of the `ci:pr` gate — run with
+ * Requires a running stack (this worktree's dev server via tests/helpers/origin.ts;
+ * override with PLAYWRIGHT_BASE_URL). NOT part of the `ci:pr` gate — run with
  * `pnpm exec playwright test tests/ui-custom/composer-palette.spec.ts`.
  *
  * Targets the prompt-input chat-composer demo, which renders the shared PromptInput
@@ -13,9 +15,7 @@ import { expect, test } from "@playwright/test";
  * app/data/directory (skills/people) so they stay meaningful as data evolves.
  */
 
-const COMPOSER_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000"
-}/preview/ui-custom/prompt-input`;
+const COMPOSER_URL = appUrl("/preview/ui-custom/prompt-input");
 
 // The tiptap editor renders as a ProseMirror contentEditable inside the primitive.
 const EDITOR = ".ProseMirror[contenteditable='true']";

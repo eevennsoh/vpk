@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type DragEvent } from "react";
-import type { JiraKanbanCardDropTarget } from "../../card-drop";
-import { getBoardIssueInsertionLineTop } from "../lib/board-card-insertion";
+import type { JiraKanbanCardDropTarget } from "@/components/blocks/jira-kanban/card-drop";
+import { getBoardIssueInsertionLineTop, resolveBoardIssueDropSurface, type BoardIssueDropSurface } from "../lib/board-card-insertion";
 
 const STATUS_CHOICE_DWELL_MS = 500;
 
@@ -17,16 +17,18 @@ interface DropState {
 	sourceCode: string;
 	status: string;
 	entered: boolean;
-	beforeCardCode: string | null;
+	beforeCardCode?: string | null;
+	surface: BoardIssueDropSurface;
 	lineTop?: number;
 }
 
-function resolveIssueDropHeader(active: BoardIssueDragSource | undefined, current: DropState | null, title: string, choices: readonly string[], choosing: boolean, moveVisual: boolean): string {
+type IssueDropHeader = string | { source: string; destination?: string };
+
+function resolveIssueDropHeader(active: BoardIssueDragSource | undefined, current: DropState | null, title: string, choices: readonly string[], choosing: boolean, moveVisual: boolean): IssueDropHeader {
 	if (!active) return title;
 	if (active.columnTitle === title) return "Transition to...";
-	if (!moveVisual) return current?.entered ? `${active.status} → ${current.status}` : title;
-	if (choosing && !current) return `${active.status} →`;
-	return `${active.status} → ${current?.status ?? choices[0] ?? title}`;
+	if (!moveVisual) return current?.entered ? { source: active.status, destination: current.status } : title;
+	return { source: active.status, destination: choosing && !current ? undefined : current?.status ?? choices[0] ?? title };
 }
 
 /** A status choice is latched until the pointer leaves the column. */
@@ -60,15 +62,34 @@ export function useBoardIssueDrop({
 		pointer.current = null;
 	}
 
-	useEffect(() => () => {
-		clearWork();
-		setState(null);
+	useEffect(() => {
+		const column = rootRef.current?.closest("[data-jira-kanban-column]");
+		const doc = column?.ownerDocument;
+		const clearOutside = (event: globalThis.DragEvent) => {
+			if (event.target instanceof Node && column?.contains(event.target)) return;
+			// A replaced drag surface can miss dragleave. The next target must
+			// clear both stale feedback and work that could paint it again.
+			clearWork();
+			setState(null);
+		};
+		if (active?.code) {
+			doc?.addEventListener("dragenter", clearOutside, true);
+			doc?.addEventListener("dragover", clearOutside, true);
+		}
+		return () => {
+			doc?.removeEventListener("dragenter", clearOutside, true);
+			doc?.removeEventListener("dragover", clearOutside, true);
+			clearWork();
+			setState(null);
+		};
 	}, [active?.code]);
 
 	function resolveAt(y: number, status: string): DropState | null {
 		const root = rootRef.current;
 		if (!active || !root) return null;
 		const bounds = root.getBoundingClientRect();
+		const column = root.closest<HTMLElement>("[data-jira-kanban-column]");
+		const header = column?.querySelector<HTMLElement>('[data-slot="board-column-header"]');
 		const list = root.querySelector<HTMLElement>("[data-jira-kanban-card-list]");
 		const allCards = Array.from(root.querySelectorAll<HTMLElement>('[data-board-agent-session-drop-zone="issue"]'))
 			.map((node) => ({ node, rect: node.getBoundingClientRect() }));
@@ -76,6 +97,10 @@ export function useBoardIssueDrop({
 		const following = cards.find(({ rect }) => y < rect.top + rect.height / 2);
 		const last = cards.at(-1);
 		const clip = list?.getBoundingClientRect() ?? bounds;
+		const surface = resolveBoardIssueDropSurface(y, header?.getBoundingClientRect().bottom ?? bounds.top, clip, allCards.at(-1)?.rect.bottom);
+		// Grouped columns have no header destination; choose a body status first.
+		if (surface === "header" && choices.length > 1) return null;
+		if (surface !== "position") return { sourceCode: active.code, status, entered: true, surface };
 		// Dragged cards stay in the source stack. They still bound the visible gap
 		// even though the insertion transaction excludes them from its candidates.
 		const previous = following ? allCards[allCards.indexOf(following) - 1] : last;
@@ -85,7 +110,7 @@ export function useBoardIssueDrop({
 			? getBoardIssueInsertionLineTop(previous?.rect.bottom ?? clip.top, next.rect.top)
 			: previous ? getBoardIssueInsertionLineTop(previous.rect.bottom, previous.rect.bottom + gap) : clip.top + 2;
 		return {
-			sourceCode: active.code, status, entered: true,
+			sourceCode: active.code, status, entered: true, surface,
 			beforeCardCode: following?.node.dataset.issueKey ?? null,
 			lineTop: allCards.length > 0 ? Math.max(clip.top, Math.min(top, clip.bottom - 2)) - bounds.top : undefined,
 		};
@@ -112,7 +137,7 @@ export function useBoardIssueDrop({
 			}
 			clearWork();
 			pointer.current = { y, status };
-			const next = { sourceCode: active.code, status, entered: false, beforeCardCode: null };
+			const next: DropState = { sourceCode: active.code, status, entered: false, surface: "column", beforeCardCode: null };
 			pending.current = next;
 			setState(next);
 			// Brief dwell distinguishes crossing a target from entering it.
@@ -136,10 +161,11 @@ export function useBoardIssueDrop({
 			const bounds = list?.getBoundingClientRect();
 			const scrollTop = list?.scrollTop ?? 0;
 			const scrollLimit = list ? list.scrollHeight - list.clientHeight : 0;
-			const delta = bounds ? point.y < bounds.top + 32 ? -8 : point.y > bounds.bottom - 32 ? 8 : 0 : 0;
+			const delta = bounds && next?.surface === "position" ? point.y < bounds.top + 32 ? -8 : point.y > bounds.bottom - 32 ? 8 : 0 : 0;
 			pending.current = next;
 			setState((previous) => previous?.beforeCardCode === next?.beforeCardCode
-				&& previous?.lineTop === next?.lineTop && previous?.status === next?.status ? previous : next);
+				&& previous?.lineTop === next?.lineTop && previous?.status === next?.status
+				&& previous?.surface === next?.surface && previous?.entered === next?.entered ? previous : next);
 			// The stable overlay receives native drag events, so scroll its card list
 			// explicitly. Geometry is read above; the scroll write is last.
 			if (list && delta && ((delta < 0 && scrollTop > 0) || (delta > 0 && scrollTop < scrollLimit))) {

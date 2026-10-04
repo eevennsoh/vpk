@@ -17,15 +17,15 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
-import type { ChangedFile, CodeReviewCommit } from "../../data/types";
+import type { ChangedFile, CodeReviewCommit } from "@/components/blocks/code-review/data/types";
 import {
 	canApplyChangesScope,
 	filterChangedFilesByScope,
 	isFixedChangesScope,
 	type ChangesScope,
 	type FixedChangesScope,
-} from "../../lib/filter-changed-files-by-scope";
-import { sumChangedFileDiffStats } from "../../lib/sum-changed-file-diff-stats";
+} from "@/components/blocks/code-review/lib/filter-changed-files-by-scope";
+import { sumChangedFileDiffStats } from "@/components/blocks/code-review/lib/sum-changed-file-diff-stats";
 import { DiffStats } from "../diff-stats";
 
 const CHANGES_SCOPE_LABELS: Record<FixedChangesScope, string> = {

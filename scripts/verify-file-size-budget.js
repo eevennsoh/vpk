@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 
 const { spawnSync } = require("node:child_process");
-const { existsSync, readFileSync, writeFileSync } = require("node:fs");
+const {
+	closeSync,
+	existsSync,
+	lstatSync,
+	openSync,
+	readFileSync,
+	readSync,
+	writeFileSync,
+} = require("node:fs");
 const path = require("node:path");
 
 const ALLOWLIST_PATH = path.join(__dirname, "file-size-allowlist.json");
@@ -18,6 +26,10 @@ const TRACKED_TEXT_EXTENSIONS = new Set([
 	".ts",
 	".tsx",
 ]);
+// Extensionless executables such as `.agents/skills/vpk-verify/scripts/control-vpk`
+// are Node sources too; budget them when their first line is a node shebang.
+const NODE_SHEBANG = /^#!\/usr\/bin\/env node(?:[ \t\r\n]|$)/u;
+const SHEBANG_PROBE_BYTES = 64;
 
 function countLines(source) {
 	if (!source) {
@@ -30,6 +42,32 @@ function countLines(source) {
 
 function isBudgetedTextFile(filePath) {
 	return TRACKED_TEXT_EXTENSIONS.has(path.extname(filePath));
+}
+
+// Regular files only: directories, submodules and symlinks (whose targets are
+// budgeted under their own tracked path) are skipped.
+function isExtensionlessNodeScript(filePath, { cwd = process.cwd() } = {}) {
+	if (path.extname(filePath) !== "") {
+		return false;
+	}
+
+	const absolutePath = path.join(cwd, filePath);
+	try {
+		if (!lstatSync(absolutePath).isFile()) {
+			return false;
+		}
+
+		const fd = openSync(absolutePath, "r");
+		try {
+			const head = Buffer.alloc(SHEBANG_PROBE_BYTES);
+			const bytesRead = readSync(fd, head, 0, head.length, 0);
+			return NODE_SHEBANG.test(head.toString("utf8", 0, bytesRead));
+		} finally {
+			closeSync(fd);
+		}
+	} catch {
+		return false;
+	}
 }
 
 function listTrackedFiles({ cwd = process.cwd() } = {}) {
@@ -51,7 +89,7 @@ function listTrackedFiles({ cwd = process.cwd() } = {}) {
 
 function readBudgetEntries(filePaths, { cwd = process.cwd() } = {}) {
 	return filePaths
-		.filter(isBudgetedTextFile)
+		.filter((filePath) => isBudgetedTextFile(filePath) || isExtensionlessNodeScript(filePath, { cwd }))
 		.filter((filePath) => existsSync(path.join(cwd, filePath)))
 		.map((filePath) => {
 			const absolutePath = path.join(cwd, filePath);
@@ -240,6 +278,7 @@ module.exports = {
 	formatFailure,
 	getGrowthLimit,
 	isBudgetedTextFile,
+	isExtensionlessNodeScript,
 	listTrackedFiles,
 	readBudgetEntries,
 };

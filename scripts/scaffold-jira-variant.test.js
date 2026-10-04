@@ -223,6 +223,9 @@ function createFixtureWorkspace({
 
 	for (const filePath of ["app/data/components.ts", "app/data/component-manifest.ts"]) {
 		writeFixtureFile(root, filePath, [
+			...(filePath.endsWith("component-manifest.ts")
+				? ["export const CATALOG_LIFECYCLE: Readonly<Partial<Record<CatalogKey, ComponentLifecycle>>> = {", "};", ""]
+				: []),
 			"export const PROJECTS = [",
 			`\tprojectComponent("${identity.slug}", "${identity.title}"),`,
 			"];",
@@ -711,6 +714,11 @@ test("mutation applies the approved plan and reports registration and validation
 		assert.match(targetPage, /JiraGoldenJourneysV3Page/u);
 		assert.match(targetPage, /ExperimentalV3JiraWorkItem/u);
 		assert.doesNotMatch(targetPage, /jira-golden-journeys-v2|JiraGoldenJourneysV2|ExperimentalV2/u);
+		// A fork records where it came from so `control-vpk where` can tell agents which variant is which.
+		assert.match(
+			readFileSync(path.join(root, "app/data/component-manifest.ts"), "utf8"),
+			/"projects\/jira-golden-journeys-v3": \{\n\t\tbasedOn: "jira-golden-journeys-v2",\n\t\},/u,
+		);
 		assert.deepEqual(
 			JSON.parse(readFileSync(path.join(root, ".agents/knowledge/repo-map.json"), "utf8")),
 			{ state: "generated" },

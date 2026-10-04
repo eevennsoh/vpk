@@ -409,6 +409,7 @@ export function useBoardAgentSessionDrag({
 	onBoardGapCreate?: (
 		sessions: readonly [AgentSessionItem, ...AgentSessionItem[]],
 		insertion: BoardCardInsertion,
+		from?: Readonly<{ x: number; y: number }>,
 	) => void;
 	onCreate?: (session: AgentSessionItem, columnTitle: string) => void;
 	onCreateWellReceive?: (receipt: SessionDropReceipt) => void;
@@ -444,6 +445,11 @@ export function useBoardAgentSessionDrag({
 	const pendingAttachRef = useRef<PendingSessionLinkFlash | null>(null);
 	/** Deferred assignment measurement, so unmounting cannot arm against a dead board. */
 	const assignmentFrameRef = useRef<number | null>(null);
+	const pendingAssignmentRef = useRef<{
+		cardCode: string;
+		member: JiraIssueAgentSessionTransferMember;
+		previousActivities: JiraKanbanCardData["agentActivities"];
+	} | null>(null);
 	const settleDeadlineRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const flashRetireRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const ports: SessionTransferPorts = useMemo(() => ({
@@ -482,7 +488,10 @@ export function useBoardAgentSessionDrag({
 			current.origin,
 			lookups,
 		);
-		executeSessionTransferPlan(plan, ports);
+		executeSessionTransferPlan(plan, {
+			...ports,
+			onBoardGapCreate: onBoardGapCreate ? (sessions, insertion) => onBoardGapCreate(sessions, insertion, current.pointer) : undefined,
+		});
 		const receipt = toSessionDropReceipt({
 			plan,
 			pointer: current.pointer,
@@ -493,6 +502,7 @@ export function useBoardAgentSessionDrag({
 	}, [
 		boardColumns,
 		detachedSessionsByCard,
+		onBoardGapCreate,
 		onCreateWellReceive,
 		ports,
 		untrackedSessions,
@@ -562,6 +572,7 @@ export function useBoardAgentSessionDrag({
 		proximity: NonNullable<BoardAgentSessionDragTransaction["proximity"]>;
 		release: JiraLinkingRelease;
 	}>) => {
+		const cardSelector = `[data-issue-key="${CSS.escape(input.proximity.cardCode)}"]`;
 		pendingAttachRef.current = { flash: input.flash };
 		// The sweep waits for the chips to land, but it does not depend on
 		// them: the overlay is decoration, mounted through a portal behind a
@@ -579,8 +590,9 @@ export function useBoardAgentSessionDrag({
 			proximity: input.proximity,
 			release: {
 				...input.release,
+				resolveTargetElement: () => boardRootRef.current?.querySelector(cardSelector) ?? null,
 				resolveTarget: () => {
-					const issue = boardRootRef.current?.querySelector<HTMLElement>(`[data-issue-key="${CSS.escape(input.proximity.cardCode)}"]`);
+					const issue = boardRootRef.current?.querySelector<HTMLElement>(cardSelector);
 					if (!issue) return null;
 					const bounds = linkingVariant === "glow" ? resolveIssueSurfaceRect(issue) : resolveIssueLandRect(issue);
 					const proximity = {
@@ -606,7 +618,7 @@ export function useBoardAgentSessionDrag({
 	 * stands in every one of those cases, because the decoration was never
 	 * what committed it.
 	 *
-	 * Measured a frame late, on purpose. A drop hit-tests a board the pointer
+	 * Measured after the session commits, on purpose. A drop hit-tests a board the pointer
 	 * was already over, but an assignment's own link can move the card it
 	 * targets: a host that advances the work item on start re-columns it in the
 	 * very commit this acknowledges. Measuring first would hand Glow a stale
@@ -676,9 +688,23 @@ export function useBoardAgentSessionDrag({
 	const withAssignedAgentLink = useCallback((
 		onSubmit: JiraKanbanProps["onCardGenerativeActionSubmit"],
 	): JiraKanbanProps["onCardGenerativeActionSubmit"] => onSubmit && ((request, card, columnTitle) => {
+		const member = toAssignedAgentTransferMember(request);
+		pendingAssignmentRef.current = member ? {
+			cardCode: card.code, member, previousActivities: card.agentActivities,
+		} : null;
 		void onSubmit(request, card, columnTitle);
-		armMemberLink(card.code, toAssignedAgentTransferMember(request));
-	}), [armMemberLink]);
+	}), []);
+
+	useEffect(() => {
+		const pending = pendingAssignmentRef.current;
+		if (!pending) return;
+		const card = findBoardCard(boardColumns, pending.cardCode)?.card;
+		// Hosts can defer the session until a move commits. The original card
+		// must never consume its replacement's glow while it is leaving.
+		if (!card || card.agentActivities === pending.previousActivities) return;
+		pendingAssignmentRef.current = null;
+		armMemberLink(pending.cardCode, pending.member);
+	}, [armMemberLink, boardColumns]);
 
 	useEffect(() => () => {
 		if (settleDeadlineRef.current !== null) {

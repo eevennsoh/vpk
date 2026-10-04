@@ -50,6 +50,11 @@ export interface JiraKanbanSelectionAnchor {
 export interface JiraKanbanSelectionState {
 	anchor: Readonly<JiraKanbanSelectionAnchor> | null;
 	selectedCardCodes: Set<string>;
+	/** Only cards added by the active keyboard range may be removed on reversal. */
+	keyboardRange?: {
+		addedCardCodes: ReadonlySet<string>;
+		endpoint: Readonly<JiraKanbanSelectionAnchor>;
+	};
 }
 
 interface SelectJiraKanbanCardInput {
@@ -68,6 +73,36 @@ export function createJiraKanbanSelectionState(): JiraKanbanSelectionState {
 	};
 }
 
+/** Keep range rows in rendered order and omit columns whose cards are hidden. */
+export function getSelectableJiraKanbanColumns(
+	columns: readonly JiraKanbanColumnData[],
+	collapsedColumnTitles: ReadonlySet<string>,
+): JiraKanbanColumnData[] {
+	return columns.filter((column) => !collapsedColumnTitles.has(column.title));
+}
+
+/** The toolbar expands only columns already represented in the selection. */
+export function selectAllJiraKanbanCardsInSelectedColumns(
+	state: JiraKanbanSelectionState,
+	columns: readonly JiraKanbanColumnData[],
+): JiraKanbanSelectionState {
+	return {
+		anchor: null,
+		selectedCardCodes: new Set(columns
+			.filter((column) => column.cards.some((card) => state.selectedCardCodes.has(card.code)))
+			.flatMap((column) => column.cards.map((card) => card.code))),
+	};
+}
+
+function getJiraKanbanCardPosition(
+	columns: readonly JiraKanbanColumnData[],
+	card: Readonly<JiraKanbanSelectionAnchor>,
+) {
+	const columnIndex = columns.findIndex((column) => column.title === card.columnTitle);
+	const cardIndex = columns[columnIndex]?.cards.findIndex((candidate) => candidate.code === card.cardCode) ?? -1;
+	return cardIndex < 0 ? null : { columnIndex, cardIndex };
+}
+
 /** A hidden, moved or deselected card cannot silently remain the range anchor. */
 export function reconcileJiraKanbanSelection<T extends JiraKanbanSelectionState>(
 	state: T,
@@ -78,7 +113,7 @@ export function reconcileJiraKanbanSelection<T extends JiraKanbanSelectionState>
 	const valid = state.selectedCardCodes.has(anchor.cardCode)
 		&& columns.some((column) => column.title === anchor.columnTitle
 			&& column.cards.some((card) => card.code === anchor.cardCode));
-	return valid ? state : { ...state, anchor: null };
+	return valid ? state : { ...state, anchor: null, keyboardRange: undefined };
 }
 
 export function selectJiraKanbanCard(
@@ -87,19 +122,47 @@ export function selectJiraKanbanCard(
 	input: SelectJiraKanbanCardInput,
 ): JiraKanbanSelectionState {
 	const current = reconcileJiraKanbanSelection(state, columns);
-	const column = columns.find((candidate) => candidate.title === input.columnTitle);
-	const targetIndex = column?.cards.findIndex((card) => card.code === input.cardCode) ?? -1;
-	if (!column || targetIndex < 0) return current;
 	const target = { cardCode: input.cardCode, columnTitle: input.columnTitle };
+	const targetPosition = getJiraKanbanCardPosition(columns, target);
+	if (!targetPosition) return current;
 
 	if (input.modifiers.shiftKey) {
-		const candidate = current.anchor?.columnTitle === column.title ? current.anchor : input.fallbackAnchor;
-		const anchorIndex = candidate?.columnTitle === column.title
-			? column.cards.findIndex((card) => card.code === candidate.cardCode) : -1;
-		const anchor = anchorIndex >= 0 && candidate ? candidate : target;
-		const start = Math.min(anchorIndex >= 0 ? anchorIndex : targetIndex, targetIndex);
-		const end = Math.max(anchorIndex >= 0 ? anchorIndex : targetIndex, targetIndex);
-		return { anchor, selectedCardCodes: new Set(column.cards.slice(start, end + 1).map((card) => card.code)) };
+		const candidate = current.anchor ?? input.fallbackAnchor ?? target;
+		const candidatePosition = getJiraKanbanCardPosition(columns, candidate);
+		const anchor = candidatePosition ? candidate : target;
+		const anchorPosition = candidatePosition ?? targetPosition;
+		const [left, right] = anchorPosition.columnIndex <= targetPosition.columnIndex
+			? [anchorPosition, targetPosition] : [targetPosition, anchorPosition];
+		const startRow = Math.min(anchorPosition.cardIndex, targetPosition.cardIndex);
+		const endRow = Math.max(anchorPosition.cardIndex, targetPosition.cardIndex);
+		const spansBoard = left.columnIndex !== right.columnIndex
+			&& left.columnIndex === columns.findIndex((column) => column.cards.length > 0)
+			&& right.columnIndex === columns.findLastIndex((column) => column.cards.length > 0);
+		const oppositeCorners = spansBoard && (
+			(left.cardIndex === 0 && right.cardIndex === columns[right.columnIndex].cards.length - 1)
+			|| (right.cardIndex === 0 && left.cardIndex === columns[left.columnIndex].cards.length - 1)
+		);
+		const range = columns.slice(left.columnIndex, right.columnIndex + 1);
+		const rangeCodes = new Set(range.flatMap((column) => (
+			oppositeCorners ? column.cards : column.cards.slice(startRow, endRow + 1)
+		)).map((card) => card.code));
+		const previousRange = input.fallbackAnchor
+			&& current.keyboardRange?.endpoint.cardCode === input.fallbackAnchor.cardCode
+			&& current.keyboardRange.endpoint.columnTitle === input.fallbackAnchor.columnTitle
+			? current.keyboardRange : undefined;
+		const retainedCodes = new Set([...current.selectedCardCodes].filter((code) => !previousRange?.addedCardCodes.has(code)));
+		const next = {
+			anchor,
+			selectedCardCodes: new Set([...retainedCodes, ...rangeCodes]),
+		};
+		// Shift-click adds; keyboard arrows resize their own range around the anchor.
+		return input.fallbackAnchor ? {
+			...next,
+			keyboardRange: {
+				addedCardCodes: new Set([...rangeCodes].filter((code) => !retainedCodes.has(code))),
+				endpoint: target,
+			},
+		} : next;
 	}
 	if (input.modifiers.metaOrCtrlKey) {
 		const nextSelection = new Set(current.selectedCardCodes);

@@ -1,3 +1,4 @@
+import { motionEase } from "../../lib/motion.ts";
 export type HumanAgentAvatarEasing = readonly [number, number, number, number];
 
 export interface HumanAgentAvatarMotionOptions {
@@ -27,7 +28,7 @@ export const DEFAULT_HUMAN_AGENT_AVATAR_MOTION: Readonly<HumanAgentAvatarMotionO
 		betweenTurnsMs: 50,
 		repeatDelayMs: 1_200,
 		repeat: "infinite",
-		ease: [0.4, 0, 0, 1], // ease-in-out
+		ease: motionEase.inOut, // ease-in-out
 		direction: "clockwise",
 		curvature: 2,
 		scaleAmount: 1,

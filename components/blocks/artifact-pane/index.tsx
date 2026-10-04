@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
+import { motionEase } from "@/lib/motion";
 
 export interface ArtifactPaneSectionItem {
 	content: ReactNode;
@@ -284,7 +285,7 @@ function ArtifactPaneDisclosure({
 									className="block text-icon-subtle"
 									initial={false}
 									style={{ willChange: "transform" }}
-									transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15, ease: [0.4, 0, 0, 1] }}
+									transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15, ease: motionEase.inOut }}
 								>
 									<Icon render={<ChevronRightIcon label="" size="small" />} />
 								</motion.span>
