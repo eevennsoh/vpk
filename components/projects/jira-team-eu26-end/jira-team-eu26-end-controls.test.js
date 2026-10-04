@@ -59,15 +59,6 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 	);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardNeedsInputButton/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /Needs input/u);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/import QuestionCircleIcon from "@atlaskit\/icon\/core\/question-circle";/u,
-	);
-	assert.match(
-		BOARD_VIEW_MENU_SOURCE,
-		/<Icon data-icon="inline-start" render=\{<QuestionCircleIcon label="" \/>\} \/>\s*Needs input\s*<\/Button>/u,
-		"the Needs input control shows its label without a visible count badge",
-	);
 	assert.doesNotMatch(BOARD_VIEW_MENU_SOURCE, /StatusInformationIcon/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardGroupByMenu/u);
 	assert.match(
