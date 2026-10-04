@@ -39,7 +39,6 @@ import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
 	DEFAULT_JIRA_WORK_ITEM_VIEW,
-	getJiraTabs,
 	type JiraWorkItemView,
 } from "@/components/projects/jira/data/tabs";
 import {
@@ -67,6 +66,7 @@ import {
 	JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE,
 	JIRA_TEAM_EU26_END_HEADER_ASSIGNEES,
 } from "./data/keynote-board";
+import { getJiraTeamEu26EndTabs } from "./data/tabs";
 import { JIRA_TEAM_EU26_END_PRESENTERS } from "./data/keynote-presenters";
 import { useJiraTeamEu26AgentSessionSync } from "./hooks/use-jira-team-eu26-end-agent-session-sync";
 import { JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES } from "./data/agent-session-sync";
@@ -77,7 +77,7 @@ import { useJiraTeamEu26EndPlayClosing } from "./hooks/use-jira-team-eu26-end-pl
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
 
-const JIRA_TEAM_EU26_TABS = getJiraTabs(false);
+const JIRA_TEAM_EU26_TABS = getJiraTeamEu26EndTabs();
 const JIRA_TEAM_EU26_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(JIRA_TEAM_EU26_TABS);
 const JIRA_TEAM_EU26_ADD_AGENT_LABEL = "Add agent";
 const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
