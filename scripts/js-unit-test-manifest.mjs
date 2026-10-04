@@ -14,6 +14,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/skills-directory/skills-directory-view.behavior.test.js",
 		"components/website/demos/utils/lib/browser-control-dispatch.test.js",
 		"components/website/demos/utils/components/browser-preview-panel.behavior.test.js",
 		"components/projects/shared/lib/process-assistant-message.test.js",

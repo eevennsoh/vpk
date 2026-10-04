@@ -70,6 +70,7 @@ import {
 	parseSkillMd,
 } from "@/app/data/directory/skill-frontmatter";
 import { SkillsDirectorySidebar } from "./skills-directory-sidebar";
+import { useSkillsDirectoryView } from "../hooks/use-skills-directory-view";
 import {
 	DEFAULT_SKILLS,
 	getSkillCategoryId,
@@ -115,8 +116,8 @@ export interface SkillsDirectoryDialogProps {
 	/**
 	 * Opens the dialog directly on this skill's detail/config view (the SKILL.md
 	 * editor) instead of the browse grid. Used when a configured Skills chip is
-	 * clicked to jump straight to that skill. Pair with a remount `key` so a new
-	 * value re-seeds the detail state on each open.
+	 * clicked to jump straight to that skill. Reapplied on each open or when this
+	 * value changes; browse navigation and filters remain owned by the dialog.
 	 */
 	initialDetailSkillId?: string | null;
 	/**
@@ -358,10 +359,7 @@ export function SkillsDirectoryDialog({
 		)),
 		[baseSkills, favoriteOverrides, normalizedSessionSkills],
 	);
-	// Seeded from `initialDetailSkillId` so a chip click can open the dialog
-	// straight on a skill's detail/config view. Callers remount via `key` when the
-	// seed changes, so this initializer re-runs for each newly opened skill.
-	const [selectedDetailSkillId, setSelectedDetailSkillId] = useState<string | null>(initialDetailSkillId);
+	const [selectedDetailSkillId, setSelectedDetailSkillId] = useSkillsDirectoryView(open, initialDetailSkillId);
 	const [uncontrolledSelectedIds, setUncontrolledSelectedIds] = useState<readonly string[]>(defaultSelectedSkillIds);
 	// Per-skill enable/disable state for the detail view — mirrors the agent
 	// config toggle, where a configured skill can be parked disabled while staying

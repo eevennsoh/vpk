@@ -1746,7 +1746,6 @@ export function RovoAppAgentConfigPanel({
 				tools={DIRECTORY_APPS}
 			/>
 			<SkillsDirectoryDialog
-				key={`skills-${directorySelectedSkillId ?? "browse"}`}
 				addedSkillIds={addedSkillIds}
 				disabledSkillIds={disabledSkillIds}
 				variant="experimental"
