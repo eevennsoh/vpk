@@ -10,7 +10,7 @@ import {
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "motion/react";
 
-import { AgentSessionCohortChip } from "@/components/blocks/agent-session/agent-session-cohort-chip";
+import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
 import { sessionDragChipViewportStyle } from "@/components/blocks/jira-issue/agent-session-drag";
 import { useSessionDragChipPointer } from "@/components/blocks/jira-issue/use-session-drag-chip-pointer";
 import {
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui-custom/hooks/use-pointer-drag";
 import { cn } from "@/lib/utils";
 
-import { toJiraDropzoneCohort } from "./lib/jira-dropzone-cohort";
 import type { JiraDropzoneMember, ViewportPoint } from "./lib/jira-dropzone-types";
 
 const DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
@@ -46,10 +45,8 @@ export function JiraDropzoneDemoChip({
 	const originRef = useRef<ViewportPoint | null>(null);
 	const publishedRef = useRef(false);
 	const hostRef = useRef<HTMLButtonElement>(null);
-	const cohort = toJiraDropzoneCohort(members);
-	const label = members.length === 1
-		? `Drag ${members[0].name} session`
-		: `Drag ${members.length} sessions`;
+	const label = `${members.length} ${members.length === 1 ? "agent" : "agents"}`;
+	const agent = { name: label };
 
 	function toHostEvent(
 		event: ReactPointerEvent<HTMLElement> | PointerEvent,
@@ -124,7 +121,7 @@ export function JiraDropzoneDemoChip({
 		<div className="relative">
 			<button
 				{...dragBind}
-				aria-label={label}
+				aria-label={`Drag ${label}`}
 				className={cn(
 					"cursor-grab touch-none select-none rounded-md",
 					published ? "pointer-events-none opacity-0" : null,
@@ -165,7 +162,7 @@ export function JiraDropzoneDemoChip({
 				}}
 				type="button"
 			>
-				<AgentSessionCohortChip cohort={cohort} />
+				<AgentSessionDragPill agent={agent} />
 			</button>
 			{typeof document === "undefined" || !published
 				? null
@@ -181,7 +178,7 @@ export function JiraDropzoneDemoChip({
 						}}
 					>
 						<div className="pointer-events-none flex w-fit max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-start">
-							<AgentSessionCohortChip cohort={cohort} elevated />
+							<AgentSessionDragPill agent={agent} elevated />
 						</div>
 					</motion.div>,
 					document.body,

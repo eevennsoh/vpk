@@ -19,6 +19,7 @@ import {
 	type AgentHideableConfigField,
 } from "@/components/blocks/agent/lib/agent-config-model";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 export interface AgentCompactConfigPanelProps {
 	config: AgentConfigFormValue;
@@ -230,7 +231,7 @@ export function AgentCompactConfigPanel({
 				initial={false}
 				animate={{ opacity: stripRevealed ? 1 : 0 }}
 				layout
-				transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.4, 1, 0.6, 1] }}
+				transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: motionEase.outPractical }}
 				// `overflow: hidden` drives the height-collapse animation, but it clips
 				// BOTH axes — and `overflow-x: visible` can't pair with `overflow-y:
 				// hidden` (it computes to `auto`, which still clips). The strip inside

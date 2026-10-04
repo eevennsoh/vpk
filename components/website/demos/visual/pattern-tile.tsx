@@ -85,6 +85,8 @@ export interface PatternTileProps {
 	back?: string;
 	scale?: number;
 	stroke?: PatternStrokeOptions;
+	/** Centered grids keep the exact cell size; balanced grids resize cells to fit. */
+	gridAlignment?: "edge" | "centered" | "balanced";
 	radius?: number;
 	opacity?: number;
 	blendMode?: PatternBlendMode;
@@ -120,6 +122,7 @@ function buildPattern(
 	back: string,
 	scale: number,
 	stroke?: PatternStrokeOptions,
+	gridAlignment: NonNullable<PatternTileProps["gridAlignment"]> = "edge",
 ): {
 	pattern?: string;
 	maskPattern?: string;
@@ -135,8 +138,10 @@ function buildPattern(
 		case "grid":
 			if (stroke) {
 				return {
-					maskPattern: buildGridStrokeMaskImage(scale, stroke),
+					maskPattern: buildGridStrokeMaskImage(scale, stroke, gridAlignment !== "edge"),
 					size: `${scale}px ${scale}px`,
+					position: gridAlignment !== "edge" ? "left top" : undefined,
+					repeat: gridAlignment === "balanced" ? "round" : gridAlignment === "centered" ? "repeat" : undefined,
 					addBackground: back,
 				};
 			}
@@ -320,6 +325,7 @@ export default function PatternTile({
 	back = "#22DDDD",
 	scale = 10,
 	stroke,
+	gridAlignment = "edge",
 	radius = 0,
 	opacity = 1,
 	blendMode = "normal" as PatternBlendMode,
@@ -333,12 +339,13 @@ export default function PatternTile({
 	style,
 }: PatternTileProps) {
 	const { pattern, maskPattern, position: patternPos, size, repeat, blendMode: patternBlendMode, addBackground } =
-		buildPattern(patternType, front, back, scale, stroke);
+		buildPattern(patternType, front, back, scale, stroke, fill === "tile" ? gridAlignment : "edge");
 
 	const resolvedSize = resolveFillSize(fill, size);
 	const resolvedRepeat = resolveFillRepeat(fill, repeat);
 	const resolvedBlendMode = blendMode !== "normal" ? blendMode : patternBlendMode;
 	const resolvedPosition = fill === "tile" ? (patternPos ?? POSITION_MAP[position]) : POSITION_MAP[position];
+	const resolvedMaskPosition = style?.maskPosition ?? resolvedPosition;
 	const usesStrokeMask = Boolean(maskPattern);
 
 	const animTarget =
@@ -384,12 +391,12 @@ export default function PatternTile({
 					style={{
 						backgroundColor: front,
 						maskImage: maskPattern,
-						maskPosition: resolvedPosition,
+						maskPosition: resolvedMaskPosition,
 						maskRepeat: resolvedRepeat,
 						maskSize: resolvedSize,
 						mixBlendMode: resolvedBlendMode as React.CSSProperties["mixBlendMode"],
 						WebkitMaskImage: maskPattern,
-						WebkitMaskPosition: resolvedPosition,
+						WebkitMaskPosition: resolvedMaskPosition,
 						WebkitMaskRepeat: resolvedRepeat,
 						WebkitMaskSize: resolvedSize,
 					}}

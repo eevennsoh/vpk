@@ -7,6 +7,7 @@ export function toJiraIssueAgentActivityFromCompletedRun(
 ): JiraIssueAgentActivity {
 	return {
 		id: run.id,
+		...(run.stateTransition ? { stateTransition: run.stateTransition } : {}),
 		name: run.agentName,
 		avatarSrc: run.agentAvatarSrc,
 		agentBrandName: run.agentBrandName,

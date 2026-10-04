@@ -82,7 +82,8 @@ test("every created card — create well or mid-column gap drop — enters throu
 	);
 	assert.match(
 		ARRIVAL_MOTION_SOURCE,
-		/import \{ resolveBoardCardArrival \} from "\.\.\/lib\/board-card-arrival"/u,
+		// The same owner also supplies the moved-cohort cascade delay.
+		/import \{[^}]*\bresolveBoardCardArrival\b[^}]*\} from "\.\.\/lib\/board-card-arrival"/u,
 	);
 	// The entrance is gated on `active`, which resolveBoardCardArrival sets for
 	// any arriving card — `appended` no longer picks an entrance.

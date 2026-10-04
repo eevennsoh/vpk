@@ -67,8 +67,7 @@ export function DetailsAccordion() {
 				</div>
 			</div>
 
-			{state.isDetailsOpen && (
-				<div>
+			{state.isDetailsOpen ? <div>
 					<div className="py-2 px-3">
 						<DetailRow label="Assignee">
 							<div className="flex items-center gap-2">
@@ -124,8 +123,7 @@ export function DetailsAccordion() {
 							</TagGroup>
 						</DetailRow>
 					</div>
-				</div>
-			)}
+				</div> : null}
 		</div>
 	);
 }

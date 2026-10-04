@@ -51,6 +51,7 @@ export interface JiraIssueGenerativeActionRequest {
 
 export interface JiraIssueGenerativeActionConfig {
 	agents?: readonly RovoSparkleItem[];
+	defaultPinnedAgentIds?: readonly string[];
 	ariaLabel?: string;
 	onBrowseAgents?: () => void;
 	onBrowseSkills?: () => void;
@@ -189,7 +190,7 @@ export function JiraIssueAgentAndSkillSubmenus({
 	const [agentQuery, setAgentQuery] = useState("");
 	const [skillQuery, setSkillQuery] = useState("");
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(() => (
-		resolvePinnedItemIds(agents, DEFAULT_PINNED_SPACE_AGENT_IDS)
+		resolvePinnedItemIds(agents, action.defaultPinnedAgentIds ?? DEFAULT_PINNED_SPACE_AGENT_IDS)
 	));
 	const [pinnedSkillIds, setPinnedSkillIds] = useState<readonly string[]>(() => (
 		resolvePinnedItemIds(skills, DEFAULT_PINNED_WORK_ITEM_SKILL_IDS)
@@ -236,7 +237,7 @@ export function JiraIssueAgentAndSkillSubmenus({
 	return (
 		<>
 			<DropdownMenuSub onOpenChange={(open) => open ? undefined : setAgentQuery("")}>
-				<DropdownMenuSubTrigger>Assign agents</DropdownMenuSubTrigger>
+				<DropdownMenuSubTrigger>Add agent</DropdownMenuSubTrigger>
 				<DropdownMenuSubContent
 					className="max-h-none w-[360px] overflow-hidden p-0"
 					onClick={(event) => event.stopPropagation()}

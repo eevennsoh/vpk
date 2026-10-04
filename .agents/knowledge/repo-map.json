@@ -2684,7 +2684,14 @@
 	"appPages": {
 		"summary": {
 			"ownerImportCount": 74,
-			"pageCount": 57
+			"pageCount": 57,
+			"primaryOwnerKinds": {
+				"catalog": 17,
+				"dynamic": 9,
+				"inline": 1,
+				"redirect": 2,
+				"shell": 28
+			}
 		},
 		"pages": [
 			{
@@ -2698,6 +2705,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"app/home-content"
+					]
+				},
 				"routePath": "/",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -2723,6 +2736,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"app/home-content"
+					]
+				},
 				"routePath": "/[category]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -2748,6 +2767,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/projects/admin/page"
+					]
+				},
 				"routePath": "/admin",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -2808,6 +2833,15 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"app/home-arts-section",
+						"components/website/category-tabs",
+						"components/website/website-header",
+						"components/website/website-sidebar-nav"
+					]
+				},
 				"routePath": "/arts",
 				"shellOwnerCount": 4,
 				"shellOwners": [
@@ -2853,6 +2887,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/arts/personal-graph"
+					]
+				},
 				"routePath": "/arts/personal-graph",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -2877,6 +2917,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/arts/rovo-fable"
+					]
+				},
 				"routePath": "/arts/rovo-fable",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -2901,6 +2947,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/arts/rovo-p5"
+					]
+				},
 				"routePath": "/arts/rovo-p5",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -2925,6 +2977,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "arts",
+					"slug": "awake",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/arts/awake",
+					"entry": "components/arts/awake/index.tsx",
+					"demo": "components/website/demos/arts/awake-demo.tsx"
+				},
 				"routePath": "/awake",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -2957,6 +3019,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/website/component-doc/page"
+					]
+				},
 				"routePath": "/components/[category]/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -2981,6 +3049,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "confluence",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/confluence",
+					"entry": "components/projects/confluence/page.tsx",
+					"demo": "components/website/demos/projects/confluence-demo.tsx"
+				},
 				"routePath": "/confluence",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -2997,6 +3075,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "arts",
+					"slug": "cursors",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/arts/cursors",
+					"entry": "components/arts/cursors/index.tsx",
+					"demo": "components/website/demos/arts/cursors-demo.tsx"
+				},
 				"routePath": "/cursors",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3013,6 +3101,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "html",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/html",
+					"entry": "components/projects/html/index.ts",
+					"demo": "components/website/demos/projects/html-demo.tsx"
+				},
 				"routePath": "/html",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3029,6 +3127,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "jira",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/jira",
+					"entry": "components/projects/jira/page.tsx",
+					"demo": "components/website/demos/projects/jira-demo.tsx"
+				},
 				"routePath": "/jira",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3045,6 +3153,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "jira-golden-journeys-v0",
+					"status": "frozen",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/jira-golden-journeys-v0",
+					"entry": "components/projects/jira-golden-journeys-v0/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journeys-v0-demo.tsx"
+				},
 				"routePath": "/jira-golden-journeys-v0",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3061,6 +3179,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "jira-golden-journeys-v1",
+					"status": "frozen",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/jira-golden-journeys-v1",
+					"entry": "components/projects/jira-golden-journeys-v1/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journeys-v1-demo.tsx"
+				},
 				"routePath": "/jira-golden-journeys-v1",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3077,6 +3205,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "jira-golden-journeys-v2",
+					"status": "frozen",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/jira-golden-journeys-v2",
+					"entry": "components/projects/jira-golden-journeys-v2/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journeys-v2-demo.tsx"
+				},
 				"routePath": "/jira-golden-journeys-v2",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3093,6 +3231,17 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "jira-golden-journeys-v3",
+					"status": "frozen",
+					"basedOn": "jira-golden-journeys-v2",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/jira-golden-journeys-v3",
+					"entry": "components/projects/jira-golden-journeys-v3/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journeys-v3-demo.tsx"
+				},
 				"routePath": "/jira-golden-journeys-v3",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3109,6 +3258,17 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "jira-golden-journeys-v4",
+					"status": "superseded",
+					"basedOn": "jira-golden-journeys-v3",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/jira-golden-journeys-v4",
+					"entry": "components/projects/jira-golden-journeys-v4/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journeys-v4-demo.tsx"
+				},
 				"routePath": "/jira-golden-journeys-v4",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3125,6 +3285,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "jira-queue",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/jira-queue",
+					"entry": "components/projects/jira-queue/page.tsx",
+					"demo": "components/website/demos/projects/jira-queue-demo.tsx"
+				},
 				"routePath": "/jira-queue",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3141,6 +3311,17 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "jira-team-eu26",
+					"status": "live",
+					"basedOn": "jira-golden-journeys-v4",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/jira-team-eu26",
+					"entry": "components/projects/jira-team-eu26/page.tsx",
+					"demo": "components/website/demos/projects/jira-team-eu26-demo.tsx"
+				},
 				"routePath": "/jira-team-eu26",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3157,6 +3338,17 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "jira-team-eu26-end",
+					"status": "live",
+					"basedOn": "jira-team-eu26",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/jira-team-eu26-end",
+					"entry": "components/projects/jira-team-eu26-end/page.tsx",
+					"demo": "components/website/demos/projects/jira-team-eu26-end-demo.tsx"
+				},
 				"routePath": "/jira-team-eu26-end",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3173,6 +3365,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/arts/personal-graph"
+					]
+				},
 				"routePath": "/personal-graph",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3204,6 +3402,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "dynamic",
+					"dynamic": "catalog",
+					"category": "arts",
+					"loader": "RenderPreviewCategoryPage"
+				},
 				"routePath": "/preview/arts/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3235,6 +3439,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "dynamic",
+					"dynamic": "catalog",
+					"category": "blocks",
+					"loader": "RenderPreviewCategoryPage"
+				},
 				"routePath": "/preview/blocks/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3259,6 +3469,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/agent/page"
+					]
+				},
 				"routePath": "/preview/blocks/agent",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3275,6 +3491,10 @@
 			{
 				"ownerCount": 0,
 				"owners": [],
+				"primaryOwner": {
+					"kind": "redirect",
+					"to": "/preview/blocks/agent"
+				},
 				"routePath": "/preview/blocks/agent-2",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3291,6 +3511,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/agent-bento/page"
+					]
+				},
 				"routePath": "/preview/blocks/agent-bento",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3315,6 +3541,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/agent-card/page"
+					]
+				},
 				"routePath": "/preview/blocks/agent-card",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3339,6 +3571,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/agent-profile-card/page"
+					]
+				},
 				"routePath": "/preview/blocks/agent-profile-card",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3363,6 +3601,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/code-review/page"
+					]
+				},
 				"routePath": "/preview/blocks/code-review",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3387,6 +3631,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/jira-kanban/page"
+					]
+				},
 				"routePath": "/preview/blocks/jira-kanban",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3411,6 +3661,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/jira-kanban/experimental/page"
+					]
+				},
 				"routePath": "/preview/blocks/jira-kanban-experimental",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3435,6 +3691,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/jira-kanban/experimental-v2/page"
+					]
+				},
 				"routePath": "/preview/blocks/jira-kanban-experimental-v2",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3459,6 +3721,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/jira-list/page"
+					]
+				},
 				"routePath": "/preview/blocks/jira-list",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3483,6 +3751,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/skill-config/page"
+					]
+				},
 				"routePath": "/preview/blocks/skill-config",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3507,6 +3781,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/trigger-config/page"
+					]
+				},
 				"routePath": "/preview/blocks/trigger-config",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3531,6 +3811,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/twg-agent-card/page"
+					]
+				},
 				"routePath": "/preview/blocks/twg-agent-card",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3562,6 +3848,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "dynamic",
+					"dynamic": "catalog",
+					"category": "projects",
+					"loader": "RenderPreviewCategoryPage"
+				},
 				"routePath": "/preview/projects/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3593,6 +3885,13 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"app/contexts/context-rovo-chat",
+						"components/projects/jira-for-you/page"
+					]
+				},
 				"routePath": "/preview/projects/jira-for-you",
 				"shellOwnerCount": 2,
 				"shellOwners": [
@@ -3616,6 +3915,10 @@
 			{
 				"ownerCount": 0,
 				"owners": [],
+				"primaryOwner": {
+					"kind": "inline",
+					"source": "app/preview/shadows/page.tsx"
+				},
 				"routePath": "/preview/shadows",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3639,6 +3942,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "dynamic",
+					"dynamic": "catalog",
+					"category": "ui-audio",
+					"loader": "RenderPreviewCategoryPage"
+				},
 				"routePath": "/preview/ui-audio/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3670,6 +3979,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "dynamic",
+					"dynamic": "catalog",
+					"category": "ui-charts",
+					"loader": "RenderPreviewCategoryPage"
+				},
 				"routePath": "/preview/ui-charts/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3701,6 +4016,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "dynamic",
+					"dynamic": "catalog",
+					"category": "ui-custom",
+					"loader": "RenderPreviewCategoryPage"
+				},
 				"routePath": "/preview/ui-custom/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3732,6 +4053,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "dynamic",
+					"dynamic": "catalog",
+					"category": "ui",
+					"loader": "RenderPreviewCategoryPage"
+				},
 				"routePath": "/preview/ui/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3763,6 +4090,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "dynamic",
+					"dynamic": "catalog",
+					"category": "utility",
+					"loader": "RenderPreviewCategoryPage"
+				},
 				"routePath": "/preview/utility/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3794,6 +4127,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "dynamic",
+					"dynamic": "catalog",
+					"category": "visual",
+					"loader": "RenderPreviewCategoryPage"
+				},
 				"routePath": "/preview/visual/[slug]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3818,6 +4157,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"app/home-content"
+					]
+				},
 				"routePath": "/projects",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3842,6 +4187,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/projects/rovo-button/page"
+					]
+				},
 				"routePath": "/rovo-button",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3866,6 +4217,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "arts",
+					"slug": "rovo-p5",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/arts/rovo-p5",
+					"entry": "components/arts/rovo-p5/index.tsx",
+					"demo": "components/website/demos/arts/rovo-p5-demo.tsx"
+				},
 				"routePath": "/rovo-p5",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3882,6 +4243,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/projects/rovo/page"
+					]
+				},
 				"routePath": "/rovo/[[...id]]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -3920,6 +4287,13 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/screen-assistant",
+						"components/ui/button"
+					]
+				},
 				"routePath": "/sandbox/screen-assistant",
 				"shellOwnerCount": 2,
 				"shellOwners": [
@@ -3951,6 +4325,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "search",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/search",
+					"entry": "components/projects/search/page.tsx",
+					"demo": "components/website/demos/projects/search-demo.tsx"
+				},
 				"routePath": "/search",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3967,6 +4351,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "sidebar-chat",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/sidebar-chat",
+					"entry": "components/projects/sidebar-chat/page.tsx",
+					"demo": "components/website/demos/projects/sidebar-chat-demo.tsx"
+				},
 				"routePath": "/sidebar-chat",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3983,6 +4377,16 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "skills",
+					"status": "live",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/skills",
+					"entry": "components/projects/skills/page.tsx",
+					"demo": "components/website/demos/projects/skills-demo.tsx"
+				},
 				"routePath": "/skills",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -3999,6 +4403,12 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/projects/studio/page"
+					]
+				},
 				"routePath": "/studio/[[...id]]",
 				"shellOwnerCount": 1,
 				"shellOwners": [
@@ -4038,6 +4448,13 @@
 						]
 					}
 				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"app/components/layout",
+						"components/website/component-doc/page"
+					]
+				},
 				"routePath": "/visual/[slug]",
 				"shellOwnerCount": 2,
 				"shellOwners": [
@@ -4061,6 +4478,10 @@
 			{
 				"ownerCount": 0,
 				"owners": [],
+				"primaryOwner": {
+					"kind": "redirect",
+					"to": "/awake"
+				},
 				"routePath": "/weather",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -4070,8 +4491,13 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 450,
-			"categoryCount": 9
+			"manifestEntryCount": 451,
+			"categoryCount": 9,
+			"statusCounts": {
+				"live": 446,
+				"frozen": 4,
+				"superseded": 1
+			}
 		},
 		"categories": [
 			{
@@ -4082,31 +4508,36 @@
 						"category": "arts",
 						"slug": "awake",
 						"name": "Awake",
-						"importPath": "@/components/arts/awake"
+						"importPath": "@/components/arts/awake",
+						"status": "live"
 					},
 					{
 						"category": "arts",
 						"slug": "cursors",
 						"name": "Cursors",
-						"importPath": "@/components/arts/cursors"
+						"importPath": "@/components/arts/cursors",
+						"status": "live"
 					},
 					{
 						"category": "arts",
 						"slug": "personal-graph",
 						"name": "Personal Graph",
-						"importPath": "@/components/arts/personal-graph"
+						"importPath": "@/components/arts/personal-graph",
+						"status": "live"
 					},
 					{
 						"category": "arts",
 						"slug": "rovo-fable",
 						"name": "Rovo Fable",
-						"importPath": "@/components/arts/rovo-fable"
+						"importPath": "@/components/arts/rovo-fable",
+						"status": "live"
 					},
 					{
 						"category": "arts",
 						"slug": "rovo-p5",
 						"name": "Rovo p5",
-						"importPath": "@/components/arts/rovo-p5"
+						"importPath": "@/components/arts/rovo-p5",
+						"status": "live"
 					}
 				]
 			},
@@ -4118,691 +4549,807 @@
 						"category": "blocks",
 						"slug": "agent",
 						"name": "Agent",
-						"importPath": "@/components/blocks/agent"
+						"importPath": "@/components/blocks/agent",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-access",
 						"name": "Agent Access",
-						"importPath": "@/components/blocks/agent-access"
+						"importPath": "@/components/blocks/agent-access",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-assignment",
 						"name": "Agent Assignment",
-						"importPath": "@/components/blocks/agent-assignment"
+						"importPath": "@/components/blocks/agent-assignment",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-bento",
 						"name": "Agent Bento",
-						"importPath": "@/components/blocks/agent-bento"
+						"importPath": "@/components/blocks/agent-bento",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-card",
 						"name": "Agent Card",
-						"importPath": "@/components/blocks/agent-card"
+						"importPath": "@/components/blocks/agent-card",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-directory",
 						"name": "Agent Directory",
-						"importPath": "@/components/blocks/agent-directory"
+						"importPath": "@/components/blocks/agent-directory",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-evaluation",
 						"name": "Agent Evaluation",
-						"importPath": "@/components/blocks/agent-evaluation"
+						"importPath": "@/components/blocks/agent-evaluation",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-insights",
 						"name": "Agent Insights",
-						"importPath": "@/components/blocks/agent-insights"
+						"importPath": "@/components/blocks/agent-insights",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-lanyard",
 						"name": "Agent Lanyard",
-						"importPath": "@/components/blocks/agent-lanyard"
+						"importPath": "@/components/blocks/agent-lanyard",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-list",
 						"name": "Agent List",
-						"importPath": "@/components/blocks/agent-list"
+						"importPath": "@/components/blocks/agent-list",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-profile-card",
 						"name": "Agent Profile Card",
-						"importPath": "@/components/blocks/agent-profile-card"
+						"importPath": "@/components/blocks/agent-profile-card",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-progress",
 						"name": "Agent Progress",
-						"importPath": "@/components/blocks/agent-progress"
+						"importPath": "@/components/blocks/agent-progress",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-selector",
 						"name": "Agent Selector",
-						"importPath": "@/components/blocks/agent-selector"
+						"importPath": "@/components/blocks/agent-selector",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-session",
 						"name": "Agent Session",
-						"importPath": "@/components/blocks/agent-session"
+						"importPath": "@/components/blocks/agent-session",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-session-column",
 						"name": "Agent Session Column",
-						"importPath": "@/components/blocks/agent-session-column"
+						"importPath": "@/components/blocks/agent-session-column",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-session-flyout",
 						"name": "Agent Session Flyout",
-						"importPath": "@/components/blocks/agent-session-flyout"
+						"importPath": "@/components/blocks/agent-session-flyout",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-states",
 						"name": "Agent States",
-						"importPath": "@/components/blocks/agent-states"
+						"importPath": "@/components/blocks/agent-states",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-surfaces",
 						"name": "Agent Surfaces",
-						"importPath": "@/components/blocks/agent-surfaces"
+						"importPath": "@/components/blocks/agent-surfaces",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-templates",
 						"name": "Agent Templates",
-						"importPath": "@/components/blocks/agent-templates"
+						"importPath": "@/components/blocks/agent-templates",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-test",
 						"name": "Agent Test",
-						"importPath": "@/components/blocks/agent-test"
+						"importPath": "@/components/blocks/agent-test",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "agent-users",
 						"name": "Agent Users",
-						"importPath": "@/components/blocks/agent-users"
+						"importPath": "@/components/blocks/agent-users",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "answer-card",
 						"name": "Answer Card",
-						"importPath": "@/components/blocks/answer-card"
+						"importPath": "@/components/blocks/answer-card",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "app-sidebar",
 						"name": "App Sidebar",
-						"importPath": "@/components/blocks/sidebar/app-sidebar"
+						"importPath": "@/components/blocks/sidebar/app-sidebar",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "approval-card",
 						"name": "Approval Card",
-						"importPath": "@/components/blocks/approval-card"
+						"importPath": "@/components/blocks/approval-card",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "apps-directory",
 						"name": "Apps Directory",
-						"importPath": "@/components/blocks/apps-directory"
+						"importPath": "@/components/blocks/apps-directory",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "artifact",
 						"name": "Artifact",
-						"importPath": "@/components/blocks/artifact"
+						"importPath": "@/components/blocks/artifact",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "artifact-pane",
 						"name": "Artifact Pane",
-						"importPath": "@/components/blocks/artifact-pane"
+						"importPath": "@/components/blocks/artifact-pane",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "chat-configuration",
 						"name": "Chat Configuration",
-						"importPath": "@/components/projects/shared/components/chat-configuration/customize-menu"
+						"importPath": "@/components/projects/shared/components/chat-configuration/customize-menu",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "chat-gallery",
 						"name": "Chat Gallery",
-						"importPath": "@/components/blocks/chat-gallery"
+						"importPath": "@/components/blocks/chat-gallery",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "chat-timeline",
 						"name": "Chat Timeline",
-						"importPath": "@/components/blocks/chat-timeline"
+						"importPath": "@/components/blocks/chat-timeline",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "chatbot",
 						"name": "Chatbot",
-						"importPath": "@/components/blocks/chatbot"
+						"importPath": "@/components/blocks/chatbot",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "chatgpt",
 						"name": "ChatGPT",
-						"importPath": "@/components/blocks/chatgpt"
+						"importPath": "@/components/blocks/chatgpt",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "code-review",
 						"name": "Code Review",
-						"importPath": "@/components/blocks/code-review"
+						"importPath": "@/components/blocks/code-review",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "conversation-starters",
 						"name": "Conversation Starters",
-						"importPath": "@/components/blocks/conversation-starters"
+						"importPath": "@/components/blocks/conversation-starters",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "cursor",
 						"name": "Cursor",
-						"importPath": "@/components/blocks/cursor"
+						"importPath": "@/components/blocks/cursor",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "dashboard",
 						"name": "Dashboard",
-						"importPath": "@/components/blocks/dashboard"
+						"importPath": "@/components/blocks/dashboard",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "data-table",
 						"name": "Data Table",
-						"importPath": "@/components/blocks/data-table"
+						"importPath": "@/components/blocks/data-table",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "editor-palette",
 						"name": "Editor Palette",
-						"importPath": "@/components/blocks/editor-palette"
+						"importPath": "@/components/blocks/editor-palette",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "editor-toolbar",
 						"name": "Editor Toolbar",
-						"importPath": "@/components/blocks/editor-toolbar"
+						"importPath": "@/components/blocks/editor-toolbar",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "emoji-picker",
 						"name": "Emoji Picker",
-						"importPath": "@/components/blocks/emoji-picker"
+						"importPath": "@/components/blocks/emoji-picker",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "gallery",
 						"name": "Gallery",
-						"importPath": "@/components/blocks/gallery"
+						"importPath": "@/components/blocks/gallery",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "generative",
 						"name": "Generative UI",
-						"importPath": "@/components/blocks/generative"
+						"importPath": "@/components/blocks/generative",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "generative-card",
 						"name": "Generative Card",
-						"importPath": "@/components/blocks/generative-card"
+						"importPath": "@/components/blocks/generative-card",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "html-selector",
 						"name": "HTML Selector",
-						"importPath": "@/components/blocks/html-selector"
+						"importPath": "@/components/blocks/html-selector",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-activity",
 						"name": "Jira Activity",
-						"importPath": "@/components/blocks/jira-activity"
+						"importPath": "@/components/blocks/jira-activity",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-creating",
 						"name": "Jira Creating",
-						"importPath": "@/components/blocks/jira-creating"
+						"importPath": "@/components/blocks/jira-creating",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-dragging",
 						"name": "Jira Dragging",
-						"importPath": "@/components/blocks/jira-dragging"
+						"importPath": "@/components/blocks/jira-dragging",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-dropzone",
 						"name": "Jira Dropzone",
-						"importPath": "@/components/blocks/jira-dropzone"
+						"importPath": "@/components/blocks/jira-dropzone",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-epic",
 						"name": "Jira Epic",
-						"importPath": "@/components/blocks/jira-epic"
+						"importPath": "@/components/blocks/jira-epic",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-insights",
 						"name": "Jira Insights",
-						"importPath": "@/components/blocks/jira-insights"
+						"importPath": "@/components/blocks/jira-insights",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-issue",
 						"name": "Jira Issue",
-						"importPath": "@/components/blocks/jira-issue"
+						"importPath": "@/components/blocks/jira-issue",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-kanban",
 						"name": "Jira Kanban",
-						"importPath": "@/components/blocks/jira-kanban"
+						"importPath": "@/components/blocks/jira-kanban",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-linking",
 						"name": "Jira Linking",
-						"importPath": "@/components/blocks/jira-linking"
+						"importPath": "@/components/blocks/jira-linking",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-list",
 						"name": "Jira List",
-						"importPath": "@/components/blocks/jira-list"
+						"importPath": "@/components/blocks/jira-list",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-toolbar",
 						"name": "Jira Toolbar",
-						"importPath": "@/components/blocks/jira-toolbar"
+						"importPath": "@/components/blocks/jira-toolbar",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-work-item",
 						"name": "Jira Work Item",
-						"importPath": "@/components/blocks/jira-work-item"
+						"importPath": "@/components/blocks/jira-work-item",
+						"status": "live",
+						"note": "Variant dirs are independent forks with separate consumers; experimental-v4 and experimental-v5 are reachable only from this block's own demos."
 					},
 					{
 						"category": "blocks",
 						"slug": "knowledge-directory",
 						"name": "Knowledge Directory",
-						"importPath": "@/components/blocks/knowledge-directory"
+						"importPath": "@/components/blocks/knowledge-directory",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "login-01",
 						"name": "Login 01",
-						"importPath": "@/components/blocks/login/login-01"
+						"importPath": "@/components/blocks/login/login-01",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "login-02",
 						"name": "Login 02",
-						"importPath": "@/components/blocks/login/login-02"
+						"importPath": "@/components/blocks/login/login-02",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "login-03",
 						"name": "Login 03",
-						"importPath": "@/components/blocks/login/login-03"
+						"importPath": "@/components/blocks/login/login-03",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "login-04",
 						"name": "Login 04",
-						"importPath": "@/components/blocks/login/login-04"
+						"importPath": "@/components/blocks/login/login-04",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "login-05",
 						"name": "Login 05",
-						"importPath": "@/components/blocks/login/login-05"
+						"importPath": "@/components/blocks/login/login-05",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "memory",
 						"name": "Memory",
-						"importPath": "@/components/blocks/memory"
+						"importPath": "@/components/blocks/memory",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "mermaid-diagram",
 						"name": "Mermaid Diagram",
-						"importPath": "@/components/blocks/mermaid-diagram"
+						"importPath": "@/components/blocks/mermaid-diagram",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "next-best-action",
 						"name": "Next Best Action",
-						"importPath": "@/components/blocks/next-best-action"
+						"importPath": "@/components/blocks/next-best-action",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "omnibar",
 						"name": "Omnibar",
-						"importPath": "@/components/blocks/omnibar"
+						"importPath": "@/components/blocks/omnibar",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "product-sidebar",
 						"name": "Product Sidebar",
-						"importPath": "@/components/blocks/product-sidebar"
+						"importPath": "@/components/blocks/product-sidebar",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "prompt-gallery",
 						"name": "Prompt Gallery",
-						"importPath": "@/components/blocks/prompt-gallery"
+						"importPath": "@/components/blocks/prompt-gallery",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "pull-request",
 						"name": "Pull Request",
-						"importPath": "@/components/blocks/pull-request"
+						"importPath": "@/components/blocks/pull-request",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "pull-request-fix",
 						"name": "Pull Request Fix",
-						"importPath": "@/components/blocks/pull-request-fix"
+						"importPath": "@/components/blocks/pull-request-fix",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "pull-request-header",
 						"name": "Pull Request Header",
-						"importPath": "@/components/blocks/pull-request-header"
+						"importPath": "@/components/blocks/pull-request-header",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "pull-request-review",
 						"name": "Pull Request Review",
-						"importPath": "@/components/blocks/pull-request-review"
+						"importPath": "@/components/blocks/pull-request-review",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "question-card",
 						"name": "Question Card",
-						"importPath": "@/components/blocks/question-card"
+						"importPath": "@/components/blocks/question-card",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "rovo-canvas",
 						"name": "Rovo Canvas",
-						"importPath": "@/components/blocks/rovo-canvas"
+						"importPath": "@/components/blocks/rovo-canvas",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "scrubber",
 						"name": "Scrubber",
-						"importPath": "@/components/blocks/scrubber"
+						"importPath": "@/components/blocks/scrubber",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "settings-dialog",
 						"name": "Settings Dialog",
-						"importPath": "@/components/blocks/settings-dialog"
+						"importPath": "@/components/blocks/settings-dialog",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-01",
 						"name": "Sidebar 01",
-						"importPath": "@/components/blocks/sidebar/sidebar-01"
+						"importPath": "@/components/blocks/sidebar/sidebar-01",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-02",
 						"name": "Sidebar 02",
-						"importPath": "@/components/blocks/sidebar/sidebar-02"
+						"importPath": "@/components/blocks/sidebar/sidebar-02",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-03",
 						"name": "Sidebar 03",
-						"importPath": "@/components/blocks/sidebar/sidebar-03"
+						"importPath": "@/components/blocks/sidebar/sidebar-03",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-04",
 						"name": "Sidebar 04",
-						"importPath": "@/components/blocks/sidebar/sidebar-04"
+						"importPath": "@/components/blocks/sidebar/sidebar-04",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-05",
 						"name": "Sidebar 05",
-						"importPath": "@/components/blocks/sidebar/sidebar-05"
+						"importPath": "@/components/blocks/sidebar/sidebar-05",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-06",
 						"name": "Sidebar 06",
-						"importPath": "@/components/blocks/sidebar/sidebar-06"
+						"importPath": "@/components/blocks/sidebar/sidebar-06",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-07",
 						"name": "Sidebar 07",
-						"importPath": "@/components/blocks/sidebar/sidebar-07"
+						"importPath": "@/components/blocks/sidebar/sidebar-07",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-08",
 						"name": "Sidebar 08",
-						"importPath": "@/components/blocks/sidebar/sidebar-08"
+						"importPath": "@/components/blocks/sidebar/sidebar-08",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-09",
 						"name": "Sidebar 09",
-						"importPath": "@/components/blocks/sidebar/sidebar-09"
+						"importPath": "@/components/blocks/sidebar/sidebar-09",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-10",
 						"name": "Sidebar 10",
-						"importPath": "@/components/blocks/sidebar/sidebar-10"
+						"importPath": "@/components/blocks/sidebar/sidebar-10",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-11",
 						"name": "Sidebar 11",
-						"importPath": "@/components/blocks/sidebar/sidebar-11"
+						"importPath": "@/components/blocks/sidebar/sidebar-11",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-12",
 						"name": "Sidebar 12",
-						"importPath": "@/components/blocks/sidebar/sidebar-12"
+						"importPath": "@/components/blocks/sidebar/sidebar-12",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-13",
 						"name": "Sidebar 13",
-						"importPath": "@/components/blocks/sidebar/sidebar-13"
+						"importPath": "@/components/blocks/sidebar/sidebar-13",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-14",
 						"name": "Sidebar 14",
-						"importPath": "@/components/blocks/sidebar/sidebar-14"
+						"importPath": "@/components/blocks/sidebar/sidebar-14",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-15",
 						"name": "Sidebar 15",
-						"importPath": "@/components/blocks/sidebar/sidebar-15"
+						"importPath": "@/components/blocks/sidebar/sidebar-15",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-16",
 						"name": "Sidebar 16",
-						"importPath": "@/components/blocks/sidebar/sidebar-16"
+						"importPath": "@/components/blocks/sidebar/sidebar-16",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "sidebar-rail",
 						"name": "Sidebar Rail",
-						"importPath": "@/components/blocks/sidebar-rail"
+						"importPath": "@/components/blocks/sidebar-rail",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "signup-01",
 						"name": "Signup 01",
-						"importPath": "@/components/blocks/signup/signup-01"
+						"importPath": "@/components/blocks/signup/signup-01",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "signup-02",
 						"name": "Signup 02",
-						"importPath": "@/components/blocks/signup/signup-02"
+						"importPath": "@/components/blocks/signup/signup-02",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "signup-03",
 						"name": "Signup 03",
-						"importPath": "@/components/blocks/signup/signup-03"
+						"importPath": "@/components/blocks/signup/signup-03",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "signup-04",
 						"name": "Signup 04",
-						"importPath": "@/components/blocks/signup/signup-04"
+						"importPath": "@/components/blocks/signup/signup-04",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "signup-05",
 						"name": "Signup 05",
-						"importPath": "@/components/blocks/signup/signup-05"
+						"importPath": "@/components/blocks/signup/signup-05",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "skill-config",
 						"name": "Skill Config",
-						"importPath": "@/components/blocks/skill-config"
+						"importPath": "@/components/blocks/skill-config",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "skill-selector",
 						"name": "Skill Selector",
-						"importPath": "@/components/blocks/skill-selector"
+						"importPath": "@/components/blocks/skill-selector",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "skills-directory",
 						"name": "Skills Directory",
-						"importPath": "@/components/blocks/skills-directory"
+						"importPath": "@/components/blocks/skills-directory",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "smart-link",
 						"name": "Smart Link",
-						"importPath": "@/components/blocks/smart-link"
+						"importPath": "@/components/blocks/smart-link",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "spotlight",
 						"name": "Spotlight",
-						"importPath": "@/components/blocks/spotlight"
+						"importPath": "@/components/blocks/spotlight",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "subagents",
 						"name": "Subagents",
-						"importPath": "@/components/blocks/subagents"
+						"importPath": "@/components/blocks/subagents",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "task-progress",
 						"name": "Task Progress",
-						"importPath": "@/components/blocks/task-progress"
+						"importPath": "@/components/blocks/task-progress",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "terminal-switch",
 						"name": "Terminal Switch",
-						"importPath": "@/components/blocks/terminal-switch"
+						"importPath": "@/components/blocks/terminal-switch",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "tool-approval",
 						"name": "Tool Approval",
-						"importPath": "@/components/blocks/tool-approval"
+						"importPath": "@/components/blocks/tool-approval",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "tools-directory",
 						"name": "Tools Directory",
-						"importPath": "@/components/blocks/tools-directory"
+						"importPath": "@/components/blocks/tools-directory",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "top-navigation",
 						"name": "Top Navigation",
-						"importPath": "@/components/blocks/top-navigation"
+						"importPath": "@/components/blocks/top-navigation",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "trigger-config",
 						"name": "Trigger Config",
-						"importPath": "@/components/blocks/trigger-config"
+						"importPath": "@/components/blocks/trigger-config",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "triggers",
 						"name": "Triggers",
-						"importPath": "@/components/blocks/triggers"
+						"importPath": "@/components/blocks/triggers",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "twg-agent-card",
 						"name": "TWG Agent Card",
-						"importPath": "@/components/blocks/twg-agent-card"
+						"importPath": "@/components/blocks/twg-agent-card",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "video",
 						"name": "Video",
-						"importPath": "@/components/blocks/video"
+						"importPath": "@/components/blocks/video",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "visual-waveform",
 						"name": "Visual Waveform",
-						"importPath": "@/components/blocks/visual-waveform"
+						"importPath": "@/components/blocks/visual-waveform",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
 						"slug": "workflow",
 						"name": "Workflow",
-						"importPath": "@/components/blocks/workflow"
+						"importPath": "@/components/blocks/workflow",
+						"status": "live"
 					}
 				]
 			},
@@ -4814,115 +5361,144 @@
 						"category": "projects",
 						"slug": "admin",
 						"name": "Admin",
-						"importPath": "@/components/projects/admin"
+						"importPath": "@/components/projects/admin",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "confluence",
 						"name": "Confluence",
-						"importPath": "@/components/projects/confluence"
+						"importPath": "@/components/projects/confluence",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "html",
 						"name": "HTML",
-						"importPath": "@/components/projects/html"
+						"importPath": "@/components/projects/html",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "jira",
 						"name": "Jira",
-						"importPath": "@/components/projects/jira"
+						"importPath": "@/components/projects/jira",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "jira-for-you",
 						"name": "Jira For You",
-						"importPath": "@/components/projects/jira-for-you"
+						"importPath": "@/components/projects/jira-for-you",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "jira-golden-journeys-v0",
 						"name": "Jira Golden Journeys v0",
-						"importPath": "@/components/projects/jira-golden-journeys-v0"
+						"importPath": "@/components/projects/jira-golden-journeys-v0",
+						"status": "frozen",
+						"note": "Formerly asx. Its Rovo overlay and agent-chat hook are also imported by every jira-work-item variant and the jira-issue demo."
 					},
 					{
 						"category": "projects",
 						"slug": "jira-golden-journeys-v1",
 						"name": "Jira Golden Journeys v1",
-						"importPath": "@/components/projects/jira-golden-journeys-v1"
+						"importPath": "@/components/projects/jira-golden-journeys-v1",
+						"status": "frozen",
+						"note": "Its Rovo overlay, terminal stage and agent-chat hook are imported by v3, v4 and both Jira Team EU26 boards, so edits there reach live boards."
 					},
 					{
 						"category": "projects",
 						"slug": "jira-golden-journeys-v2",
 						"name": "Jira Golden Journeys v2",
-						"importPath": "@/components/projects/jira-golden-journeys-v2"
+						"importPath": "@/components/projects/jira-golden-journeys-v2",
+						"status": "frozen",
+						"note": "Formerly jira-agents; the only project that renders jira-work-item/experimental-v2."
 					},
 					{
 						"category": "projects",
 						"slug": "jira-golden-journeys-v3",
 						"name": "Jira Golden Journeys v3",
-						"importPath": "@/components/projects/jira-golden-journeys-v3"
+						"importPath": "@/components/projects/jira-golden-journeys-v3",
+						"status": "frozen",
+						"basedOn": "jira-golden-journeys-v2"
 					},
 					{
 						"category": "projects",
 						"slug": "jira-golden-journeys-v4",
 						"name": "Jira Golden Journeys v4",
-						"importPath": "@/components/projects/jira-golden-journeys-v4"
+						"importPath": "@/components/projects/jira-golden-journeys-v4",
+						"status": "superseded",
+						"basedOn": "jira-golden-journeys-v3",
+						"note": "Superseded by jira-team-eu26, its 2026-09-09 copy; the jira-kanban block demo still reads its board data."
 					},
 					{
 						"category": "projects",
 						"slug": "jira-queue",
 						"name": "Jira Queue",
-						"importPath": "@/components/projects/jira-queue"
+						"importPath": "@/components/projects/jira-queue",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "jira-team-eu26",
 						"name": "Jira Team EU26",
-						"importPath": "@/components/projects/jira-team-eu26"
+						"importPath": "@/components/projects/jira-team-eu26",
+						"status": "live",
+						"basedOn": "jira-golden-journeys-v4",
+						"note": "Team ’26 EU Payments SDK board; jira-team-eu26-end imports its header and agent data."
 					},
 					{
 						"category": "projects",
 						"slug": "jira-team-eu26-end",
 						"name": "Jira Team EU26 End",
-						"importPath": "@/components/projects/jira-team-eu26-end"
+						"importPath": "@/components/projects/jira-team-eu26-end",
+						"status": "live",
+						"basedOn": "jira-team-eu26",
+						"note": "Team ’26 EU keynote closing board (TEU-1 to TEU-13 and the recap finale), not the Payments SDK board."
 					},
 					{
 						"category": "projects",
 						"slug": "rovo",
 						"name": "Rovo",
-						"importPath": "@/components/projects/rovo"
+						"importPath": "@/components/projects/rovo",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "rovo-button",
 						"name": "Rovo Button",
-						"importPath": "@/components/projects/rovo-button"
+						"importPath": "@/components/projects/rovo-button",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "search",
 						"name": "Search",
-						"importPath": "@/components/projects/search"
+						"importPath": "@/components/projects/search",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "sidebar-chat",
 						"name": "Sidebar Chat",
-						"importPath": "@/components/projects/sidebar-chat"
+						"importPath": "@/components/projects/sidebar-chat",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "skills",
 						"name": "Skills",
-						"importPath": "@/components/projects/skills"
+						"importPath": "@/components/projects/skills",
+						"status": "live"
 					},
 					{
 						"category": "projects",
 						"slug": "studio",
 						"name": "Studio",
-						"importPath": "@/components/projects/studio"
+						"importPath": "@/components/projects/studio",
+						"status": "live"
 					}
 				]
 			},
@@ -4934,493 +5510,575 @@
 						"category": "ui",
 						"slug": "accordion",
 						"name": "Accordion",
-						"importPath": "@/components/ui/accordion"
+						"importPath": "@/components/ui/accordion",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "alert",
 						"name": "Alert",
-						"importPath": "@/components/ui/alert"
+						"importPath": "@/components/ui/alert",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "alert-dialog",
 						"name": "Alert Dialog",
-						"importPath": "@/components/ui/alert-dialog"
+						"importPath": "@/components/ui/alert-dialog",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "aspect-ratio",
 						"name": "Aspect Ratio",
-						"importPath": "@/components/ui/aspect-ratio"
+						"importPath": "@/components/ui/aspect-ratio",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "attachment",
 						"name": "Attachment",
-						"importPath": "@/components/ui/attachment"
+						"importPath": "@/components/ui/attachment",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "avatar",
 						"name": "Avatar",
-						"importPath": "@/components/ui/avatar"
+						"importPath": "@/components/ui/avatar",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "badge",
 						"name": "Badge",
-						"importPath": "@/components/ui/badge"
+						"importPath": "@/components/ui/badge",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "banner",
 						"name": "Banner",
-						"importPath": "@/components/ui/banner"
+						"importPath": "@/components/ui/banner",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "blanket",
 						"name": "Blanket",
-						"importPath": "@/components/ui/blanket"
+						"importPath": "@/components/ui/blanket",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "breadcrumb",
 						"name": "Breadcrumb",
-						"importPath": "@/components/ui/breadcrumb"
+						"importPath": "@/components/ui/breadcrumb",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "bubble",
 						"name": "Bubble",
-						"importPath": "@/components/ui/bubble"
+						"importPath": "@/components/ui/bubble",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "button",
 						"name": "Button",
-						"importPath": "@/components/ui/button"
+						"importPath": "@/components/ui/button",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "button-group",
 						"name": "Button Group",
-						"importPath": "@/components/ui/button-group"
+						"importPath": "@/components/ui/button-group",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "calendar",
 						"name": "Calendar",
-						"importPath": "@/components/ui/calendar"
+						"importPath": "@/components/ui/calendar",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "card",
 						"name": "Card",
-						"importPath": "@/components/ui/card"
+						"importPath": "@/components/ui/card",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "carousel",
 						"name": "Carousel",
-						"importPath": "@/components/ui/carousel"
+						"importPath": "@/components/ui/carousel",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "chart",
 						"name": "Chart",
-						"importPath": "@/components/ui/chart"
+						"importPath": "@/components/ui/chart",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "checkbox",
 						"name": "Checkbox",
-						"importPath": "@/components/ui/checkbox"
+						"importPath": "@/components/ui/checkbox",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "collapsible",
 						"name": "Collapsible",
-						"importPath": "@/components/ui/collapsible"
+						"importPath": "@/components/ui/collapsible",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "combobox",
 						"name": "Combobox",
-						"importPath": "@/components/ui/combobox"
+						"importPath": "@/components/ui/combobox",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "command",
 						"name": "Command",
-						"importPath": "@/components/ui/command"
+						"importPath": "@/components/ui/command",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "comment",
 						"name": "Comment",
-						"importPath": "@/components/ui/comment"
+						"importPath": "@/components/ui/comment",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "context-menu",
 						"name": "Context Menu",
-						"importPath": "@/components/ui/context-menu"
+						"importPath": "@/components/ui/context-menu",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "date-label",
 						"name": "Date Label",
-						"importPath": "@/components/ui/date-label"
+						"importPath": "@/components/ui/date-label",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "date-picker",
 						"name": "Date Picker",
-						"importPath": "@/components/ui/date-picker"
+						"importPath": "@/components/ui/date-picker",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "date-time-picker",
 						"name": "Date Time Picker",
-						"importPath": "@/components/ui/date-time-picker"
+						"importPath": "@/components/ui/date-time-picker",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "dialog",
 						"name": "Dialog",
-						"importPath": "@/components/ui/dialog"
+						"importPath": "@/components/ui/dialog",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "direction",
 						"name": "Direction",
-						"importPath": "@/components/ui/direction"
+						"importPath": "@/components/ui/direction",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "drawer",
 						"name": "Drawer",
-						"importPath": "@/components/ui/drawer"
+						"importPath": "@/components/ui/drawer",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "dropdown-menu",
 						"name": "Dropdown Menu",
-						"importPath": "@/components/ui/dropdown-menu"
+						"importPath": "@/components/ui/dropdown-menu",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "empty",
 						"name": "Empty",
-						"importPath": "@/components/ui/empty"
+						"importPath": "@/components/ui/empty",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "field",
 						"name": "Field",
-						"importPath": "@/components/ui/field"
+						"importPath": "@/components/ui/field",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "forms",
 						"name": "Forms",
-						"importPath": "@/components/ui/form"
+						"importPath": "@/components/ui/form",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "heading",
 						"name": "Heading",
-						"importPath": "@/components/ui/heading"
+						"importPath": "@/components/ui/heading",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "hover-card",
 						"name": "Hover Card",
-						"importPath": "@/components/ui/hover-card"
+						"importPath": "@/components/ui/hover-card",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "icon",
 						"name": "Icon",
-						"importPath": "@/components/ui/icon"
+						"importPath": "@/components/ui/icon",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "icon-tile",
 						"name": "Icon Tile",
-						"importPath": "@/components/ui/icon-tile"
+						"importPath": "@/components/ui/icon-tile",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "inline-edit",
 						"name": "Inline Edit",
-						"importPath": "@/components/ui/inline-edit"
+						"importPath": "@/components/ui/inline-edit",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "input-group",
 						"name": "Input Group",
-						"importPath": "@/components/ui/input-group"
+						"importPath": "@/components/ui/input-group",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "input-otp",
 						"name": "Input OTP",
-						"importPath": "@/components/ui/input-otp"
+						"importPath": "@/components/ui/input-otp",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "item",
 						"name": "Item",
-						"importPath": "@/components/ui/item"
+						"importPath": "@/components/ui/item",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "kbd",
 						"name": "Kbd",
-						"importPath": "@/components/ui/kbd"
+						"importPath": "@/components/ui/kbd",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "label",
 						"name": "Label",
-						"importPath": "@/components/ui/label"
+						"importPath": "@/components/ui/label",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "logo",
 						"name": "Logo",
-						"importPath": "@/components/ui/logo"
+						"importPath": "@/components/ui/logo",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "logo-third-party",
 						"name": "Logo Third Party",
-						"importPath": "@/components/ui/logo-third-party"
+						"importPath": "@/components/ui/logo-third-party",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "lozenge",
 						"name": "Lozenge",
-						"importPath": "@/components/ui/lozenge"
+						"importPath": "@/components/ui/lozenge",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "marker",
 						"name": "Marker",
-						"importPath": "@/components/ui/marker"
+						"importPath": "@/components/ui/marker",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "menu-group",
 						"name": "Menu",
-						"importPath": "@/components/ui/menu-group"
+						"importPath": "@/components/ui/menu-group",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "menubar",
 						"name": "Menubar",
-						"importPath": "@/components/ui/menubar"
+						"importPath": "@/components/ui/menubar",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "message",
 						"name": "Message",
-						"importPath": "@/components/ui/message"
+						"importPath": "@/components/ui/message",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "message-scroller",
 						"name": "Message Scroller",
-						"importPath": "@/components/ui/message-scroller"
+						"importPath": "@/components/ui/message-scroller",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "native-select",
 						"name": "Native Select",
-						"importPath": "@/components/ui/native-select"
+						"importPath": "@/components/ui/native-select",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "navigation-menu",
 						"name": "Navigation Menu",
-						"importPath": "@/components/ui/navigation-menu"
+						"importPath": "@/components/ui/navigation-menu",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "page-header",
 						"name": "Page Header",
-						"importPath": "@/components/ui/page-header"
+						"importPath": "@/components/ui/page-header",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "pagination",
 						"name": "Pagination",
-						"importPath": "@/components/ui/pagination"
+						"importPath": "@/components/ui/pagination",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "panel",
 						"name": "Panel",
-						"importPath": "@/components/ui/panel"
+						"importPath": "@/components/ui/panel",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "popover",
 						"name": "Popover",
-						"importPath": "@/components/ui/popover"
+						"importPath": "@/components/ui/popover",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "progress",
 						"name": "Progress",
-						"importPath": "@/components/ui/progress"
+						"importPath": "@/components/ui/progress",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "progress-indicator",
 						"name": "Progress Indicator",
-						"importPath": "@/components/ui/progress-indicator"
+						"importPath": "@/components/ui/progress-indicator",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "progress-tracker",
 						"name": "Progress Tracker",
-						"importPath": "@/components/ui/progress-tracker"
+						"importPath": "@/components/ui/progress-tracker",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "questionnaire",
 						"name": "Questionnaire",
-						"importPath": "@/components/ui/questionnaire"
+						"importPath": "@/components/ui/questionnaire",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "radio-group",
 						"name": "Radio Group",
-						"importPath": "@/components/ui/radio-group"
+						"importPath": "@/components/ui/radio-group",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "resizable",
 						"name": "Resizable",
-						"importPath": "@/components/ui/resizable"
+						"importPath": "@/components/ui/resizable",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "scroll-area",
 						"name": "Scroll Area",
-						"importPath": "@/components/ui/scroll-area"
+						"importPath": "@/components/ui/scroll-area",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "scroll-fade",
 						"name": "Scroll Fade",
-						"importPath": "@/components/ui/scroll-fade"
+						"importPath": "@/components/ui/scroll-fade",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "select",
 						"name": "Select",
-						"importPath": "@/components/ui/select"
+						"importPath": "@/components/ui/select",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "separator",
 						"name": "Separator",
-						"importPath": "@/components/ui/separator"
+						"importPath": "@/components/ui/separator",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "sheet",
 						"name": "Sheet",
-						"importPath": "@/components/ui/sheet"
+						"importPath": "@/components/ui/sheet",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "sidebar",
 						"name": "Sidebar",
-						"importPath": "@/components/ui/sidebar"
+						"importPath": "@/components/ui/sidebar",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "skeleton",
 						"name": "Skeleton",
-						"importPath": "@/components/ui/skeleton"
+						"importPath": "@/components/ui/skeleton",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "slider",
 						"name": "Slider",
-						"importPath": "@/components/ui/slider"
+						"importPath": "@/components/ui/slider",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "sonner",
 						"name": "Sonner",
-						"importPath": "@/components/ui/sonner"
+						"importPath": "@/components/ui/sonner",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "spinner",
 						"name": "Spinner",
-						"importPath": "@/components/ui/spinner"
+						"importPath": "@/components/ui/spinner",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "switch",
 						"name": "Switch",
-						"importPath": "@/components/ui/switch"
+						"importPath": "@/components/ui/switch",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "table",
 						"name": "Table",
-						"importPath": "@/components/ui/table"
+						"importPath": "@/components/ui/table",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "tabs",
 						"name": "Tabs",
-						"importPath": "@/components/ui/tabs"
+						"importPath": "@/components/ui/tabs",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "tag",
 						"name": "Tag",
-						"importPath": "@/components/ui/tag"
+						"importPath": "@/components/ui/tag",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "tile",
 						"name": "Tile",
-						"importPath": "@/components/ui/tile"
+						"importPath": "@/components/ui/tile",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "time-picker",
 						"name": "Time Picker",
-						"importPath": "@/components/ui/time-picker"
+						"importPath": "@/components/ui/time-picker",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "toggle",
 						"name": "Toggle",
-						"importPath": "@/components/ui/toggle"
+						"importPath": "@/components/ui/toggle",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "toggle-group",
 						"name": "Toggle Group",
-						"importPath": "@/components/ui/toggle-group"
+						"importPath": "@/components/ui/toggle-group",
+						"status": "live"
 					},
 					{
 						"category": "ui",
 						"slug": "tooltip",
 						"name": "Tooltip",
-						"importPath": "@/components/ui/tooltip"
+						"importPath": "@/components/ui/tooltip",
+						"status": "live"
 					}
 				]
 			},
@@ -5432,103 +6090,120 @@
 						"category": "ui-audio",
 						"slug": "audio-player",
 						"name": "Audio Player",
-						"importPath": "@/components/ui-audio/audio-player"
+						"importPath": "@/components/ui-audio/audio-player",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "bar-visualizer",
 						"name": "Bar Visualizer",
-						"importPath": "@/components/ui-audio/bar-visualizer"
+						"importPath": "@/components/ui-audio/bar-visualizer",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "conversation",
 						"name": "Conversation",
-						"importPath": "@/components/ui-audio/conversation"
+						"importPath": "@/components/ui-audio/conversation",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "conversation-bar",
 						"name": "Conversation Bar",
-						"importPath": "@/components/ui-audio/conversation-bar"
+						"importPath": "@/components/ui-audio/conversation-bar",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "live-waveform",
 						"name": "Live Waveform",
-						"importPath": "@/components/ui-audio/live-waveform"
+						"importPath": "@/components/ui-audio/live-waveform",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "matrix",
 						"name": "Matrix",
-						"importPath": "@/components/ui-audio/matrix"
+						"importPath": "@/components/ui-audio/matrix",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "message",
 						"name": "Message",
-						"importPath": "@/components/ui-audio/message"
+						"importPath": "@/components/ui-audio/message",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "mic-selector",
 						"name": "Mic Selector",
-						"importPath": "@/components/ui-audio/mic-selector"
+						"importPath": "@/components/ui-audio/mic-selector",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "orb",
 						"name": "Orb",
-						"importPath": "@/components/ui-audio/orb"
+						"importPath": "@/components/ui-audio/orb",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "response",
 						"name": "Response",
-						"importPath": "@/components/ui-audio/response"
+						"importPath": "@/components/ui-audio/response",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "scrub-bar",
 						"name": "Scrub Bar",
-						"importPath": "@/components/ui-audio/scrub-bar"
+						"importPath": "@/components/ui-audio/scrub-bar",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "shimmering-text",
 						"name": "Shimmering Text",
-						"importPath": "@/components/ui-audio/shimmering-text"
+						"importPath": "@/components/ui-audio/shimmering-text",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "speech-input",
 						"name": "Speech Input",
-						"importPath": "@/components/ui-audio/speech-input"
+						"importPath": "@/components/ui-audio/speech-input",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "transcript-viewer",
 						"name": "Transcript Viewer",
-						"importPath": "@/components/ui-audio/transcript-viewer"
+						"importPath": "@/components/ui-audio/transcript-viewer",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "voice-button",
 						"name": "Voice Button",
-						"importPath": "@/components/ui-audio/voice-button"
+						"importPath": "@/components/ui-audio/voice-button",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "voice-picker",
 						"name": "Voice Picker",
-						"importPath": "@/components/ui-audio/voice-picker"
+						"importPath": "@/components/ui-audio/voice-picker",
+						"status": "live"
 					},
 					{
 						"category": "ui-audio",
 						"slug": "waveform",
 						"name": "Waveform",
-						"importPath": "@/components/ui-audio/waveform"
+						"importPath": "@/components/ui-audio/waveform",
+						"status": "live"
 					}
 				]
 			},
@@ -5540,121 +6215,141 @@
 						"category": "ui-charts",
 						"slug": "area-chart",
 						"name": "Area Chart",
-						"importPath": "@/components/ui-charts/area-chart"
+						"importPath": "@/components/ui-charts/area-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "bar-chart",
 						"name": "Bar Chart",
-						"importPath": "@/components/ui-charts/bar-chart"
+						"importPath": "@/components/ui-charts/bar-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "candlestick-chart",
 						"name": "Candlestick Chart",
-						"importPath": "@/components/ui-charts/candlestick-chart"
+						"importPath": "@/components/ui-charts/candlestick-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "choropleth-chart",
 						"name": "Choropleth Chart",
-						"importPath": "@/components/ui-charts/choropleth"
+						"importPath": "@/components/ui-charts/choropleth",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "composed-chart",
 						"name": "Composed Chart",
-						"importPath": "@/components/ui-charts/composed-chart"
+						"importPath": "@/components/ui-charts/composed-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "funnel-chart",
 						"name": "Funnel Chart",
-						"importPath": "@/components/ui-charts/funnel-chart"
+						"importPath": "@/components/ui-charts/funnel-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "gauge-chart",
 						"name": "Gauge Chart",
-						"importPath": "@/components/ui-charts/gauge"
+						"importPath": "@/components/ui-charts/gauge",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "heatmap-chart",
 						"name": "Heatmap Chart",
-						"importPath": "@/components/ui-charts/heatmap"
+						"importPath": "@/components/ui-charts/heatmap",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "legend",
 						"name": "Legend",
-						"importPath": "@/components/ui-charts/legend"
+						"importPath": "@/components/ui-charts/legend",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "line-chart",
 						"name": "Line Chart",
-						"importPath": "@/components/ui-charts/line-chart"
+						"importPath": "@/components/ui-charts/line-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "live-line-chart",
 						"name": "Live Line Chart",
-						"importPath": "@/components/ui-charts/live-line-chart"
+						"importPath": "@/components/ui-charts/live-line-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "pie-chart",
 						"name": "Pie Chart",
-						"importPath": "@/components/ui-charts/pie-chart"
+						"importPath": "@/components/ui-charts/pie-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "profit-loss-line",
 						"name": "Profit Loss Line",
-						"importPath": "@/components/ui-charts/profit-loss-line"
+						"importPath": "@/components/ui-charts/profit-loss-line",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "radar-chart",
 						"name": "Radar Chart",
-						"importPath": "@/components/ui-charts/radar-chart"
+						"importPath": "@/components/ui-charts/radar-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "ring-chart",
 						"name": "Ring Chart",
-						"importPath": "@/components/ui-charts/ring-chart"
+						"importPath": "@/components/ui-charts/ring-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "sankey-chart",
 						"name": "Sankey Chart",
-						"importPath": "@/components/ui-charts/sankey"
+						"importPath": "@/components/ui-charts/sankey",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "scatter-chart",
 						"name": "Scatter Chart",
-						"importPath": "@/components/ui-charts/scatter-chart"
+						"importPath": "@/components/ui-charts/scatter-chart",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "stat-card-area-01",
 						"name": "Stat Card Area 01",
-						"importPath": "@/components/ui-charts/stat-card-area-01"
+						"importPath": "@/components/ui-charts/stat-card-area-01",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "stat-card-choropleth-01",
 						"name": "Stat Card Choropleth 01",
-						"importPath": "@/components/ui-charts/stat-card-choropleth-01"
+						"importPath": "@/components/ui-charts/stat-card-choropleth-01",
+						"status": "live"
 					},
 					{
 						"category": "ui-charts",
 						"slug": "stat-card-line-01",
 						"name": "Stat Card Line 01",
-						"importPath": "@/components/ui-charts/stat-card-line-01"
+						"importPath": "@/components/ui-charts/stat-card-line-01",
+						"status": "live"
 					}
 				]
 			},
@@ -5666,451 +6361,526 @@
 						"category": "ui-custom",
 						"slug": "agent-loading",
 						"name": "Agent Loading",
-						"importPath": "@/components/ui-custom/agent-loading"
+						"importPath": "@/components/ui-custom/agent-loading",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "animated-dots",
 						"name": "Animated Dots",
-						"importPath": "@/components/ui-custom/animated-dots"
+						"importPath": "@/components/ui-custom/animated-dots",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "animated-icon",
 						"name": "Animated Icons",
-						"importPath": "@/components/ui-custom/animated-icon"
+						"importPath": "@/components/ui-custom/animated-icon",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "animated-rovo",
 						"name": "Animated Rovo",
-						"importPath": "@/components/ui-custom/animated-rovo"
+						"importPath": "@/components/ui-custom/animated-rovo",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "artifact-list",
 						"name": "Artifact List",
-						"importPath": "@/components/ui-custom/artifact-list"
+						"importPath": "@/components/ui-custom/artifact-list",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "attachments",
 						"name": "Attachments",
-						"importPath": "@/components/ui-custom/attachments"
+						"importPath": "@/components/ui-custom/attachments",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "audio-player",
 						"name": "Audio Player",
-						"importPath": "@/components/ui-custom/audio-player"
+						"importPath": "@/components/ui-custom/audio-player",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "canvas",
 						"name": "Canvas",
-						"importPath": "@/components/ui-custom/canvas"
+						"importPath": "@/components/ui-custom/canvas",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "chain-of-thought",
 						"name": "Chain of Thought",
-						"importPath": "@/components/ui-custom/chain-of-thought"
+						"importPath": "@/components/ui-custom/chain-of-thought",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "checkpoint",
 						"name": "Checkpoint",
-						"importPath": "@/components/ui-custom/checkpoint"
+						"importPath": "@/components/ui-custom/checkpoint",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "code-block",
 						"name": "Code Block",
-						"importPath": "@/components/ui-custom/code-block"
+						"importPath": "@/components/ui-custom/code-block",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "code-list",
 						"name": "Code List",
-						"importPath": "@/components/ui-custom/code-list"
+						"importPath": "@/components/ui-custom/code-list",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "commit",
 						"name": "Commit",
-						"importPath": "@/components/ui-custom/commit"
+						"importPath": "@/components/ui-custom/commit",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "confirmation",
 						"name": "Confirmation",
-						"importPath": "@/components/ui-custom/confirmation"
+						"importPath": "@/components/ui-custom/confirmation",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "connection",
 						"name": "Connection",
-						"importPath": "@/components/ui-custom/connection"
+						"importPath": "@/components/ui-custom/connection",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "context",
 						"name": "Context",
-						"importPath": "@/components/ui-custom/context"
+						"importPath": "@/components/ui-custom/context",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "context-bar",
 						"name": "Context Bar",
-						"importPath": "@/components/ui-custom/context-bar"
+						"importPath": "@/components/ui-custom/context-bar",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "controls",
 						"name": "Controls",
-						"importPath": "@/components/ui-custom/controls"
+						"importPath": "@/components/ui-custom/controls",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "conversation",
 						"name": "Conversation",
-						"importPath": "@/components/ui-custom/conversation"
+						"importPath": "@/components/ui-custom/conversation",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "edge",
 						"name": "Edge",
-						"importPath": "@/components/ui-custom/edge"
+						"importPath": "@/components/ui-custom/edge",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "entity-card",
 						"name": "Entity Card",
-						"importPath": "@/components/ui-custom/entity-card"
+						"importPath": "@/components/ui-custom/entity-card",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "environment-variables",
 						"name": "Environment Variables",
-						"importPath": "@/components/ui-custom/environment-variables"
+						"importPath": "@/components/ui-custom/environment-variables",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "file-tree",
 						"name": "File Tree",
-						"importPath": "@/components/ui-custom/file-tree"
+						"importPath": "@/components/ui-custom/file-tree",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "file-tree-2",
 						"name": "File Tree 2",
-						"importPath": "@/components/ui-custom/file-tree-2"
+						"importPath": "@/components/ui-custom/file-tree-2",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "flow-panel",
 						"name": "Flow Panel",
-						"importPath": "@/components/ui-custom/flow-panel"
+						"importPath": "@/components/ui-custom/flow-panel",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "footer",
 						"name": "Footer",
-						"importPath": "@/components/ui-custom/footer"
+						"importPath": "@/components/ui-custom/footer",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "hover-reveal-row",
 						"name": "Hover Reveal Row",
-						"importPath": "@/components/ui-custom/hover-reveal-row"
+						"importPath": "@/components/ui-custom/hover-reveal-row",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "human-agent-avatar",
 						"name": "Human Agent Avatar",
-						"importPath": "@/components/ui-custom/human-agent-avatar"
+						"importPath": "@/components/ui-custom/human-agent-avatar",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "image",
 						"name": "Image",
-						"importPath": "@/components/ui-custom/image"
+						"importPath": "@/components/ui-custom/image",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "inline-citation",
 						"name": "Inline Citation",
-						"importPath": "@/components/ui-custom/inline-citation"
+						"importPath": "@/components/ui-custom/inline-citation",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "jsx-preview",
 						"name": "JSX Preview",
-						"importPath": "@/components/ui-custom/jsx-preview"
+						"importPath": "@/components/ui-custom/jsx-preview",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "knowledge",
 						"name": "Knowledge",
-						"importPath": "@/components/ui-custom/knowledge"
+						"importPath": "@/components/ui-custom/knowledge",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "list",
 						"name": "List",
-						"importPath": "@/components/ui-custom/list"
+						"importPath": "@/components/ui-custom/list",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "message",
 						"name": "Message",
-						"importPath": "@/components/ui-custom/message"
+						"importPath": "@/components/ui-custom/message",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "mic-selector",
 						"name": "Mic Selector",
-						"importPath": "@/components/ui-custom/mic-selector"
+						"importPath": "@/components/ui-custom/mic-selector",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "model-selector",
 						"name": "Model Selector",
-						"importPath": "@/components/ui-custom/model-selector"
+						"importPath": "@/components/ui-custom/model-selector",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "morphing-rovo",
 						"name": "Morphing Rovo",
-						"importPath": "@/components/ui-custom/morphing-rovo"
+						"importPath": "@/components/ui-custom/morphing-rovo",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "node",
 						"name": "Node",
-						"importPath": "@/components/ui-custom/node"
+						"importPath": "@/components/ui-custom/node",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "object-tile",
 						"name": "Object Tile",
-						"importPath": "@/components/ui-custom/object-tile"
+						"importPath": "@/components/ui-custom/object-tile",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "open-in-chat",
 						"name": "Open in Chat",
-						"importPath": "@/components/ui-custom/open-in-chat"
+						"importPath": "@/components/ui-custom/open-in-chat",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "package-info",
 						"name": "Package Info",
-						"importPath": "@/components/ui-custom/package-info"
+						"importPath": "@/components/ui-custom/package-info",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "persona",
 						"name": "Persona",
-						"importPath": "@/components/ui-custom/persona"
+						"importPath": "@/components/ui-custom/persona",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "pixel-loader",
 						"name": "Pixel Loader",
-						"importPath": "@/components/ui-custom/pixel-loader"
+						"importPath": "@/components/ui-custom/pixel-loader",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "plan",
 						"name": "Plan",
-						"importPath": "@/components/ui-custom/plan"
+						"importPath": "@/components/ui-custom/plan",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "progress-circle",
 						"name": "Progress Circle",
-						"importPath": "@/components/ui-custom/progress-circle"
+						"importPath": "@/components/ui-custom/progress-circle",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "progress-rovo",
 						"name": "Progress Rovo",
-						"importPath": "@/components/ui-custom/progress-rovo"
+						"importPath": "@/components/ui-custom/progress-rovo",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "prompt-input",
 						"name": "Prompt Input",
-						"importPath": "@/components/ui-custom/prompt-input"
+						"importPath": "@/components/ui-custom/prompt-input",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "queue",
 						"name": "Queue",
-						"importPath": "@/components/ui-custom/queue"
+						"importPath": "@/components/ui-custom/queue",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "reasoning",
 						"name": "Reasoning",
-						"importPath": "@/components/ui-custom/reasoning"
+						"importPath": "@/components/ui-custom/reasoning",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "rovo-cursor",
 						"name": "Rovo Cursor",
-						"importPath": "@/components/ui-custom/rovo-cursor"
+						"importPath": "@/components/ui-custom/rovo-cursor",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "rovo-generation",
 						"name": "Rovo Generation",
-						"importPath": "@/components/ui-custom/rovo-generation"
+						"importPath": "@/components/ui-custom/rovo-generation",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "rovo-illustration",
 						"name": "Rovo Illustration",
-						"importPath": "@/components/ui-custom/rovo-illustration"
+						"importPath": "@/components/ui-custom/rovo-illustration",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "rovo-sparkle",
 						"name": "Rovo Sparkle",
-						"importPath": "@/components/ui-custom/rovo-sparkle"
+						"importPath": "@/components/ui-custom/rovo-sparkle",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "sandbox",
 						"name": "Sandbox",
-						"importPath": "@/components/ui-custom/sandbox"
+						"importPath": "@/components/ui-custom/sandbox",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "schema-display",
 						"name": "Schema Display",
-						"importPath": "@/components/ui-custom/schema-display"
+						"importPath": "@/components/ui-custom/schema-display",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "shimmer",
 						"name": "Shimmer",
-						"importPath": "@/components/ui-custom/shimmer"
+						"importPath": "@/components/ui-custom/shimmer",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "shimmer-wave",
 						"name": "Shimmer Wave",
-						"importPath": "@/components/ui-custom/shimmer-wave"
+						"importPath": "@/components/ui-custom/shimmer-wave",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "sidebar-nav-item",
 						"name": "Sidebar Nav Item",
-						"importPath": "@/components/ui-custom/sidebar-nav-item"
+						"importPath": "@/components/ui-custom/sidebar-nav-item",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "skill-tag",
 						"name": "Skill Tag",
-						"importPath": "@/components/ui-custom/skill-tag"
+						"importPath": "@/components/ui-custom/skill-tag",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "snippet",
 						"name": "Snippet",
-						"importPath": "@/components/ui-custom/snippet"
+						"importPath": "@/components/ui-custom/snippet",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "sources",
 						"name": "Sources",
-						"importPath": "@/components/ui-custom/sources"
+						"importPath": "@/components/ui-custom/sources",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "speech-input",
 						"name": "Speech Input",
-						"importPath": "@/components/ui-custom/speech-input"
+						"importPath": "@/components/ui-custom/speech-input",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "stack-trace",
 						"name": "Stack Trace",
-						"importPath": "@/components/ui-custom/stack-trace"
+						"importPath": "@/components/ui-custom/stack-trace",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "suggestion",
 						"name": "Suggestion",
-						"importPath": "@/components/ui-custom/suggestion"
+						"importPath": "@/components/ui-custom/suggestion",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "task",
 						"name": "Task",
-						"importPath": "@/components/ui-custom/task"
+						"importPath": "@/components/ui-custom/task",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "terminal",
 						"name": "Terminal",
-						"importPath": "@/components/ui-custom/terminal"
+						"importPath": "@/components/ui-custom/terminal",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "test-results",
 						"name": "Test Results",
-						"importPath": "@/components/ui-custom/test-results"
+						"importPath": "@/components/ui-custom/test-results",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "tool",
 						"name": "Tool",
-						"importPath": "@/components/ui-custom/tool"
+						"importPath": "@/components/ui-custom/tool",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "toolbar",
 						"name": "Toolbar",
-						"importPath": "@/components/ui-custom/toolbar"
+						"importPath": "@/components/ui-custom/toolbar",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "transcription",
 						"name": "Transcription",
-						"importPath": "@/components/ui-custom/transcription"
+						"importPath": "@/components/ui-custom/transcription",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "twg-appstack",
 						"name": "TWG Appstack",
-						"importPath": "@/components/ui-custom/twg-appstack"
+						"importPath": "@/components/ui-custom/twg-appstack",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "twg-loader",
 						"name": "TWG Loader",
-						"importPath": "@/components/ui-custom/twg-loader"
+						"importPath": "@/components/ui-custom/twg-loader",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "twg-tool",
 						"name": "TWG Tool",
-						"importPath": "@/components/ui-custom/twg-tool"
+						"importPath": "@/components/ui-custom/twg-tool",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "voice-selector",
 						"name": "Voice Selector",
-						"importPath": "@/components/ui-custom/voice-selector"
+						"importPath": "@/components/ui-custom/voice-selector",
+						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "web-preview",
 						"name": "Web Preview",
-						"importPath": "@/components/ui-custom/web-preview"
+						"importPath": "@/components/ui-custom/web-preview",
+						"status": "live"
 					}
 				]
 			},
@@ -6122,709 +6892,833 @@
 						"category": "utility",
 						"slug": "agent-browser",
 						"name": "Agent Browser",
-						"importPath": "@/components/website/demos/utils/agent-browser"
+						"importPath": "@/components/website/demos/utils/agent-browser",
+						"status": "live"
 					},
 					{
 						"category": "utility",
 						"slug": "cone-safezone",
 						"name": "Cone safezone",
-						"importPath": "@/components/utils/cone-safezone"
+						"importPath": "@/components/utils/cone-safezone",
+						"status": "live"
 					},
 					{
 						"category": "utility",
 						"slug": "gui",
 						"name": "GUI",
-						"importPath": "@/components/website/demos/utils/gui-demo"
+						"importPath": "@/components/website/demos/utils/gui-demo",
+						"status": "live"
 					},
 					{
 						"category": "utility",
 						"slug": "image-generation",
 						"name": "Image Generation",
-						"importPath": "@/components/website/demos/utils/image-generation-demo"
+						"importPath": "@/components/website/demos/utils/image-generation-demo",
+						"status": "live"
 					},
 					{
 						"category": "utility",
 						"slug": "multiports",
 						"name": "Multiports",
-						"importPath": "@/components/website/demos/utils/multiports-demo"
+						"importPath": "@/components/website/demos/utils/multiports-demo",
+						"status": "live"
 					},
 					{
 						"category": "utility",
 						"slug": "sound-generation",
 						"name": "Sound Generation",
-						"importPath": "@/components/website/demos/utils/sound-generation-demo"
+						"importPath": "@/components/website/demos/utils/sound-generation-demo",
+						"status": "live"
 					},
 					{
 						"category": "utility",
 						"slug": "streamdown",
 						"name": "Streamdown",
-						"importPath": "@/components/website/demos/utils/streamdown-demo"
+						"importPath": "@/components/website/demos/utils/streamdown-demo",
+						"status": "live"
 					},
 					{
 						"category": "utility",
 						"slug": "tools-invocation",
 						"name": "Tools Invocation",
-						"importPath": "@/components/website/demos/utils/tools-invocation-demo"
+						"importPath": "@/components/website/demos/utils/tools-invocation-demo",
+						"status": "live"
 					},
 					{
 						"category": "utility",
 						"slug": "ui-generation",
 						"name": "UI Generation",
-						"importPath": "@/components/website/demos/utils/ui-generation-demo"
+						"importPath": "@/components/website/demos/utils/ui-generation-demo",
+						"status": "live"
 					},
 					{
 						"category": "utility",
 						"slug": "visual-json",
 						"name": "Visual JSON",
-						"importPath": "@/components/website/demos/utils/visual-json-demo"
+						"importPath": "@/components/website/demos/utils/visual-json-demo",
+						"status": "live"
 					}
 				]
 			},
 			{
 				"category": "visual",
-				"entryCount": 107,
+				"entryCount": 108,
 				"entries": [
 					{
 						"category": "visual",
 						"slug": "ascii",
 						"name": "ASCII",
-						"importPath": "@/components/website/demos/visual/shaders/ascii"
+						"importPath": "@/components/website/demos/visual/shaders/ascii",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "bands",
 						"name": "Bands",
-						"importPath": "@/components/website/demos/visual/shaders/bands"
+						"importPath": "@/components/website/demos/visual/shaders/bands",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "blob-tracking",
 						"name": "Blob Tracking",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "blockify",
 						"name": "Blockify",
-						"importPath": "@/components/website/demos/visual/shaders/blockify"
+						"importPath": "@/components/website/demos/visual/shaders/blockify",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "bloom",
 						"name": "Bloom",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "border-beam",
 						"name": "Border Beam",
-						"importPath": "@/components/visual/border-beam"
+						"importPath": "@/components/visual/border-beam",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "card-glow",
 						"name": "Card Glow",
-						"importPath": "@/components/website/demos/visual/card-glow-demo"
+						"importPath": "@/components/website/demos/visual/card-glow-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "chromatic-aberration",
 						"name": "Chromatic Aberration",
-						"importPath": "@/components/website/demos/visual/shaders/chromatic-aberration"
+						"importPath": "@/components/website/demos/visual/shaders/chromatic-aberration",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "chromatic-aberration-v2",
 						"name": "Chromatic Aberration v2",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "circuit-bent",
 						"name": "Circuit Bent",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "color",
 						"name": "Color",
-						"importPath": "@/app/tailwind-theme.css\n@/app/shadcn-theme.css"
+						"importPath": "@/app/tailwind-theme.css\n@/app/shadcn-theme.css",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "crt",
 						"name": "CRT",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "custom-shader",
 						"name": "Custom Shader",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "directional-blur",
 						"name": "Directional Blur",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "displacement-map",
 						"name": "Displacement Map",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "dithering",
 						"name": "Dithering",
-						"importPath": "@/components/website/demos/visual/shaders/dithering"
+						"importPath": "@/components/website/demos/visual/shaders/dithering",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "dropzone-effect",
 						"name": "Dropzone Effect",
-						"importPath": "@/components/visual/dropzone-effect"
+						"importPath": "@/components/visual/dropzone-effect",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "edge-detect",
 						"name": "Edge Detect",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "fluid",
 						"name": "Fluid",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "fluted-glass",
 						"name": "Fluted Glass",
-						"importPath": "@/components/website/demos/visual/shaders/fluted-glass"
+						"importPath": "@/components/website/demos/visual/shaders/fluted-glass",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "fluted-glass-v2",
 						"name": "Fluted Glass v2",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "glass-slider",
 						"name": "Glass Slider",
-						"importPath": "@/components/arts/awake/glass-slider"
+						"importPath": "@/components/arts/awake/glass-slider",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "glass-tabs",
 						"name": "Glass Tabs",
-						"importPath": "@/components/visual/glass-tabs"
+						"importPath": "@/components/visual/glass-tabs",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "gooey",
 						"name": "Gooey",
-						"importPath": "@/components/visual/gooey"
+						"importPath": "@/components/visual/gooey",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "graph",
 						"name": "Graph",
-						"importPath": "@/components/website/demos/visual/graph"
+						"importPath": "@/components/website/demos/visual/graph",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "halftone",
 						"name": "Halftone",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "heatmap",
 						"name": "Heatmap",
-						"importPath": "@/components/visual/heatmap"
+						"importPath": "@/components/visual/heatmap",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "holo",
 						"name": "Holo",
-						"importPath": "@/components/website/demos/visual/shaders/holo"
+						"importPath": "@/components/website/demos/visual/shaders/holo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "ink",
 						"name": "Ink",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "ink-wash",
 						"name": "Ink Wash",
-						"importPath": "@/components/visual/ink-wash"
+						"importPath": "@/components/visual/ink-wash",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "liquid-glass",
 						"name": "Liquid Glass",
-						"importPath": "@/components/website/demos/visual/shaders/liquid-glass"
+						"importPath": "@/components/website/demos/visual/shaders/liquid-glass",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "liquid-gradient",
 						"name": "Liquid Gradient",
-						"importPath": "@/components/visual/liquid-gradient"
+						"importPath": "@/components/visual/liquid-gradient",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "liquid-metal",
 						"name": "Liquid Metal",
-						"importPath": "@/components/visual/liquid-metal"
+						"importPath": "@/components/visual/liquid-metal",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "logo-crystal",
 						"name": "Logo Crystal",
-						"importPath": "@/components/website/demos/visual/shaders/logo-crystal"
+						"importPath": "@/components/website/demos/visual/shaders/logo-crystal",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "logo-glass",
 						"name": "Logo Glass",
-						"importPath": "@/components/website/demos/visual/shaders/logo-glass"
+						"importPath": "@/components/website/demos/visual/shaders/logo-glass",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "logo-gradient",
 						"name": "Logo Gradient",
-						"importPath": "@/components/website/demos/visual/shaders/logo-gradient"
+						"importPath": "@/components/website/demos/visual/shaders/logo-gradient",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "logo-spectrum",
 						"name": "Logo Spectrum",
-						"importPath": "@/components/website/demos/visual/shaders/logo-spectrum"
+						"importPath": "@/components/website/demos/visual/shaders/logo-spectrum",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "magnify-lens",
 						"name": "Magnify Lens",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "melt",
 						"name": "Melt",
-						"importPath": "@/components/website/demos/visual/melt"
+						"importPath": "@/components/website/demos/visual/melt",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "mesh",
 						"name": "Mesh",
-						"importPath": "@/components/website/demos/visual/shaders/mesh"
+						"importPath": "@/components/website/demos/visual/shaders/mesh",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "mesh-gradient",
 						"name": "Mesh Gradient",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "mesh-v2",
 						"name": "Mesh v2",
-						"importPath": "@/components/website/demos/visual/shaders/mesh-v2"
+						"importPath": "@/components/website/demos/visual/shaders/mesh-v2",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "motion",
 						"name": "Motion",
-						"importPath": "@/components/visual/motion"
+						"importPath": "@/components/visual/motion",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "noise",
 						"name": "Noise",
-						"importPath": "@/components/website/demos/visual/shaders/noise"
+						"importPath": "@/components/website/demos/visual/shaders/noise",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-color-panels",
 						"name": "Color Panels",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-dithering",
 						"name": "Dithering",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-dot-grid",
 						"name": "Dot Grid",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-dot-orbit",
 						"name": "Dot Orbit",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-fluted-glass",
 						"name": "Fluted Glass",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-gem-smoke",
 						"name": "Gem Smoke",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-god-rays",
 						"name": "God Rays",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-grain-gradient",
 						"name": "Grain Gradient",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-halftone-cmyk",
 						"name": "Halftone CMYK",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-halftone-dots",
 						"name": "Halftone Dots",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-heatmap",
 						"name": "Heatmap",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-image-dithering",
 						"name": "Image Dithering",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
+					},
+					{
+						"category": "visual",
+						"slug": "paper-lens-distortion",
+						"name": "Lens Distortion",
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-liquid-metal",
 						"name": "Liquid Metal",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-mesh-gradient",
 						"name": "Mesh Gradient",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-metaballs",
 						"name": "Metaballs",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-neuro-noise",
 						"name": "Neuro Noise",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-paper-texture",
 						"name": "Paper Texture",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-perlin-noise",
 						"name": "Perlin Noise",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-pulsing-border",
 						"name": "Pulsing Border",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-simplex-noise",
 						"name": "Simplex Noise",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-smoke-ring",
 						"name": "Smoke Ring",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-spiral",
 						"name": "Spiral",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-static-mesh-gradient",
 						"name": "Static Mesh Gradient",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-static-radial-gradient",
 						"name": "Static Radial Gradient",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-swirl",
 						"name": "Swirl",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-voronoi",
 						"name": "Voronoi",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-warp",
 						"name": "Warp",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-water",
 						"name": "Water",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "paper-waves",
 						"name": "Waves",
-						"importPath": "@/components/website/demos/visual/shaders-paper-demo"
+						"importPath": "@/components/website/demos/visual/shaders-paper-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "particle-grid",
 						"name": "Particle Grid",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "particles",
 						"name": "Particles",
-						"importPath": "@/components/website/demos/visual/shaders/particles"
+						"importPath": "@/components/website/demos/visual/shaders/particles",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "pattern",
 						"name": "Pattern",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "pattern-tile",
 						"name": "Pattern Tile",
-						"importPath": "@/components/website/demos/visual/pattern-tile"
+						"importPath": "@/components/website/demos/visual/pattern-tile",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "peel",
 						"name": "Peel",
-						"importPath": "@/components/visual/peel"
+						"importPath": "@/components/visual/peel",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "pixel-sorting",
 						"name": "Pixel Sorting",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "pixel-trail",
 						"name": "Pixel Trail",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "pixelation",
 						"name": "Pixelation",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "pixels",
 						"name": "Pixels",
-						"importPath": "@/components/website/demos/visual/shaders/pixels"
+						"importPath": "@/components/website/demos/visual/shaders/pixels",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "plotter",
 						"name": "Plotter",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "posterize",
 						"name": "Posterize",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "rings",
 						"name": "Rings",
-						"importPath": "@/components/website/demos/visual/shaders/rings"
+						"importPath": "@/components/website/demos/visual/shaders/rings",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "ripple",
 						"name": "Ripple",
-						"importPath": "@/components/website/demos/visual/shaders/ripple"
+						"importPath": "@/components/website/demos/visual/shaders/ripple",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "scramble-text",
 						"name": "Scramble Text",
-						"importPath": "motion-plus/react"
+						"importPath": "motion-plus/react",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "scribbles",
 						"name": "Scribbles",
-						"importPath": "@/components/website/demos/visual/scribbles"
+						"importPath": "@/components/website/demos/visual/scribbles",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "scroll-mask",
 						"name": "Scroll Mask",
-						"importPath": "@/components/visual/scroll-mask"
+						"importPath": "@/components/visual/scroll-mask",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "scrolling",
 						"name": "Scrolling",
-						"importPath": "@/components/visual/scrolling"
+						"importPath": "@/components/visual/scrolling",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "shadow",
 						"name": "Shadow",
-						"importPath": "@/lib/tokens"
+						"importPath": "@/lib/tokens",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "shadow-overlay",
 						"name": "Shadow Overlay",
-						"importPath": "@/components/website/demos/visual/shadow-overlay"
+						"importPath": "@/components/website/demos/visual/shadow-overlay",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "slice",
 						"name": "Slice",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "smear",
 						"name": "Smear",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "squircle",
 						"name": "Squircle",
-						"importPath": "@/components/website/demos/visual/shaders/squircle"
+						"importPath": "@/components/website/demos/visual/shaders/squircle",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "svg-tracing",
 						"name": "SVG Tracing",
-						"importPath": "@/components/visual/svg-tracing"
+						"importPath": "@/components/visual/svg-tracing",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "text-continuity",
 						"name": "Text Continuity",
-						"importPath": "@/components/visual/text-continuity"
+						"importPath": "@/components/visual/text-continuity",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "text-effects",
 						"name": "Text Effects",
-						"importPath": "@/components/visual/text-effects"
+						"importPath": "@/components/visual/text-effects",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "text-morphing",
 						"name": "Text Morphing",
-						"importPath": "@/components/visual/text-morphing"
+						"importPath": "@/components/visual/text-morphing",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "thinking-orbs",
 						"name": "Thinking Orbs",
-						"importPath": "@/components/visual/thinking-orbs"
+						"importPath": "@/components/visual/thinking-orbs",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "threshold",
 						"name": "Threshold",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "truchet",
 						"name": "Truchet",
-						"importPath": "@/components/website/demos/visual/shaders/truchet"
+						"importPath": "@/components/website/demos/visual/shaders/truchet",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "typography",
 						"name": "Typography",
-						"importPath": "@/lib/tokens"
+						"importPath": "@/lib/tokens",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "visual-tracing",
 						"name": "Visual Tracing",
-						"importPath": "@/components/visual/visual-tracing"
+						"importPath": "@/components/visual/visual-tracing",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "voice-glow",
 						"name": "Voice Glow",
-						"importPath": "@/components/visual/voice-glow"
+						"importPath": "@/components/visual/voice-glow",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "voxel",
 						"name": "Voxel",
-						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
 					},
 					{
 						"category": "visual",
 						"slug": "wave-gradient",
 						"name": "Wave Gradient",
-						"importPath": "@/components/website/demos/visual/shaders/wave-gradient"
+						"importPath": "@/components/website/demos/visual/shaders/wave-gradient",
+						"status": "live"
 					}
 				]
 			}
@@ -6904,9 +7798,15 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 17
+			"localSkillCount": 19
 		},
 		"localSkills": [
+			{
+				"description": "Package a VPK route, demo, or generated file and publish or update it as an Atlassian Artifact (hello.atlassian.net/artifacts) through the TWG CLI. Use when asked to \"publish as an artifact\", \"share this as an Atlassian Artifact\", \"host this prototype for coworkers\", \"upload to Artifacts\", \"update my artifact\", or to turn a VPK demo into a single-file HTML for sharing.",
+				"name": "vpk-artifact",
+				"path": ".agents/skills/vpk-artifact/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-artifact"
+			},
 			{
 				"description": "Extract a VPK route into a standalone, minimal Next.js app with traced imports, source-compatible paths, and Micros-ready scaffolding. Use when asked to invoke vpk-build, extract a route, create a standalone prototype, or hand a VPK route off as an independently deployable app.",
 				"name": "vpk-build",
@@ -6936,6 +7836,12 @@
 				"name": "vpk-design",
 				"path": ".agents/skills/vpk-design/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-design"
+			},
+			{
+				"description": "Explain concepts, code, architecture, documents, and model outputs through clear prose, diagrams, interactive HTML, or a requested explainer video. Use for vpk-explain or requests for a tailored explanation artifact; ordinary short answers do not need the artifact workflow.",
+				"name": "vpk-explain",
+				"path": ".agents/skills/vpk-explain/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-explain"
 			},
 			{
 				"description": "Remove only proven-landed VPK worktrees and branches, prune stale refs, and close explicitly abandoned PRs. Use when the user says \\\"vpk-git-clean\\\", \\\"clean up worktrees\\\", \\\"clean up branches\\\", \\\"remove merged worktrees\\\", \\\"prune stale refs\\\", or \\\"worktrees are piling up\\\".",
@@ -6998,7 +7904,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-tidy"
 			},
 			{
-				"description": "Share a live VPK localhost prototype with external participants through a public Atlas Tunnel URL. Hides the react-grab development control on public tunnel hosts. Use when the user says \\\"vpk-tunnel\\\", \\\"share my prototype\\\", \\\"make this localhost link public\\\", \\\"send a customer a prototype link\\\", or asks to start, inspect, or stop an Atlas Tunnel for a VPK Portless URL.",
+				"description": "Share a live VPK localhost prototype through Atlas Tunnel, privately by default or publicly with explicit --public intent and an exposure warning. Clean Atlas tunnels after use. Use when the user says \\\"vpk-tunnel\\\", \\\"share my prototype\\\", \\\"make this localhost link public\\\", \\\"send a customer a prototype link\\\", or asks to start, inspect, or stop an Atlas Tunnel for a VPK Portless URL.",
 				"name": "vpk-tunnel",
 				"path": ".agents/skills/vpk-tunnel/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-tunnel"

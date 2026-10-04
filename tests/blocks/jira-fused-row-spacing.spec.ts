@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ ignoreHTTPSErrors: true });
 
 for (const width of [1440, 2048]) {
@@ -7,7 +9,7 @@ for (const width of [1440, 2048]) {
 		test(`fused agent rows have equal upper and lower gutters (${width}, ${reducedMotion})`, async ({ page }) => {
 			await page.setViewportSize({ width, height: 1152 });
 			await page.emulateMedia({ reducedMotion });
-			await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/components/blocks/jira-dragging`);
+			await page.goto(appUrl("/components/blocks/jira-dragging"));
 			await page.waitForLoadState("networkidle");
 			const board = page.locator('[data-jira-dragging]');
 			for (const code of ["PAY-105", "PAY-107", "PAY-123"]) {

@@ -4,7 +4,7 @@ export const LOGO_DETAIL: ComponentDetail = {
     description:
       "Unified Atlassian product/app logo wrapper built on @atlaskit/logo with theme-aware defaults for light and dark mode. Supports icon-only and lockup (icon + wordmark) variants, a CustomLogo for rendering your own SVG or a 2P partner brand asset, and a RovoColorIcon for the full-color Rovo brand mark. Logo usage decisions (bare vs. bordered tile vs. borderless-in-tile) are documented centrally in components/ui/data/logo-usage.json. CustomLogo with a src applies the 2P treatment automatically; AtlassianLogo opts in to the 1P treatment (Atlassian master logo = tile, product logos = bare) via withUsageBorder. Third-party (3P) brand logos live on their own component — see /components/ui/logo-third-party.",
     adsUrl: "https://atlassian.design/components/logo",
-    usage: `import { AtlassianLogo, JiraIcon, CustomLogo, RovoColorIcon } from "@/components/ui/logo";
+	usage: `import { AtlassianLogo, JiraIcon, CustomLogo, RovoColorIcon, RovoAppIcon } from "@/components/ui/logo";
 
 <AtlassianLogo name="jira" label="Jira" size="small" />
 <AtlassianLogo name="jira" label="Jira" variant="lockup" size="small" />
@@ -14,7 +14,8 @@ export const LOGO_DETAIL: ComponentDetail = {
 {/* 2P partner mark by asset path */}
 <CustomLogo src="/2p/appfire.png" label="Appfire" size="small" />
 <CustomLogo svg={<MySvg />} wordmark="Acme" size="small" label="Acme" />
-<RovoColorIcon size="small" label="Rovo" />`,
+<RovoColorIcon size="small" label="Rovo" />
+<RovoAppIcon size="small" label="Rovo" />`,
     props: [
       {
         name: "name",
@@ -90,6 +91,11 @@ export const LOGO_DETAIL: ComponentDetail = {
       },
     ],
     examples: [
+		{
+			title: "Rovo App Icon",
+			description: "The full-color Rovo mark in a rounded app container at all six sizes. Uses the same background color as the Rovo button in light and dark mode.",
+			demoSlug: "logo-demo-rovo-app-icon",
+		},
       {
         title: "Icons",
         description: "All available product icon logos.",

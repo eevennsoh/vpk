@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { createFrame, createSeed, edgeDistance, mulberry32, progressOf, radiusFraction, sampleFlow, SWALLOW_SCALE, TUMBLE_TILT_LIMIT, type DropzoneLayout, type StickerFrame, type StickerSeed } from "./flow-model.ts";
-// @ts-expect-error Node's strip-types runner requires explicit .ts extensions.
 import { resolveLayout } from "./tuning.ts";
 
 const DEG = Math.PI / 180;

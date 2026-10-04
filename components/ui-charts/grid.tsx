@@ -129,8 +129,7 @@ export function Grid({
   return (
     <g className="chart-grid">
       {/* Gradient mask for horizontal grid lines - fades at left/right */}
-      {horizontal && (fadeHorizontal || shimmer) && (
-        <defs>
+      {horizontal && (fadeHorizontal || shimmer) ? <defs>
           <linearGradient id={hGradientId} x1="0%" x2="100%" y1="0%" y2="0%">
             <stop offset="0%" style={{ stopColor: "white", stopOpacity: 0 }} />
             <stop offset="10%" style={{ stopColor: "white", stopOpacity: 1 }} />
@@ -149,8 +148,7 @@ export function Grid({
               y="0"
             />
           </mask>
-        </defs>
-      )}
+        </defs> : null}
 
       {horizontal && shimmerEnabled ? (
         <defs>
@@ -173,8 +171,7 @@ export function Grid({
       ) : null}
 
       {/* Gradient mask for vertical grid lines - fades at top/bottom */}
-      {vertical && fadeVertical && (
-        <defs>
+      {vertical && fadeVertical ? <defs>
           <linearGradient id={vGradientId} x1="0%" x2="0%" y1="0%" y2="100%">
             <stop offset="0%" style={{ stopColor: "white", stopOpacity: 0 }} />
             <stop offset="10%" style={{ stopColor: "white", stopOpacity: 1 }} />
@@ -193,11 +190,9 @@ export function Grid({
               y="0"
             />
           </mask>
-        </defs>
-      )}
+        </defs> : null}
 
-      {horizontal && (
-        <g mask={fadeHorizontal || shimmer ? `url(#${hMaskId})` : undefined}>
+      {horizontal ? <g mask={fadeHorizontal || shimmer ? `url(#${hMaskId})` : undefined}>
           <GridRows
             numTicks={rowTickValues ? undefined : numTicksRows}
             scale={yScale}
@@ -220,8 +215,7 @@ export function Grid({
               width={innerWidth}
             />
           ) : null}
-        </g>
-      )}
+        </g> : null}
       {horizontal && highlightRowValues && highlightRowValues.length > 0 ? (
         <g className="chart-grid-highlight-rows">
           {highlightRowValues.map((value) => {
@@ -246,8 +240,7 @@ export function Grid({
           })}
         </g>
       ) : null}
-      {vertical && columnScale && typeof columnScale === "function" && (
-        <g mask={fadeVertical ? `url(#${vMaskId})` : undefined}>
+      {vertical && columnScale && typeof columnScale === "function" ? <g mask={fadeVertical ? `url(#${vMaskId})` : undefined}>
           <GridColumns
             height={innerHeight}
             numTicks={numTicksColumns}
@@ -257,8 +250,7 @@ export function Grid({
             strokeOpacity={strokeOpacity}
             strokeWidth={strokeWidth}
           />
-        </g>
-      )}
+        </g> : null}
     </g>
   );
 }

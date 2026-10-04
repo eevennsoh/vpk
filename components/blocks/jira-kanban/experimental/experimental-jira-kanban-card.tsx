@@ -198,6 +198,7 @@ interface ExperimentalJiraKanbanCardProps {
 	detachedSessionDrag?: JiraIssueAgentSessionDragBinding;
 	dragging: boolean;
 	generativeActionAgents: JiraIssueGenerativeActionConfig["agents"];
+	generativeActionPinnedAgentIds?: readonly string[];
 	generativeActionPresentation: JiraIssueGenerativeActionPresentation;
 	generativeActionSkills: JiraIssueGenerativeActionConfig["skills"];
 	generativeActionFooterActions?: Pick<
@@ -205,6 +206,7 @@ interface ExperimentalJiraKanbanCardProps {
 		"onBrowseAgents" | "onBrowseSkills" | "onCreateAgent" | "onCreateSkill"
 	>;
 	iconScale?: JiraIssueIconScale;
+	showPriorityIndicator?: boolean;
 	/** Session hovered in the Untracked work column; lights its row here. */
 	highlightedSessionId?: string | null;
 	onAgentActivityOpenChange?: JiraKanbanProps["onCardAgentActivityOpenChange"];
@@ -269,11 +271,13 @@ export function ExperimentalJiraKanbanCard({
 	detachedSessionDrag,
 	dragging,
 	generativeActionAgents,
+	generativeActionPinnedAgentIds,
 	generativeActionPresentation,
 	generativeActionSkills,
 	generativeActionFooterActions,
 	highlightedSessionId,
 	iconScale = "compact",
+	showPriorityIndicator,
 	onAgentActivityOpenChange,
 	onAgentActivityViewChat,
 	onAssignedAgentIdsChange,
@@ -368,9 +372,11 @@ export function ExperimentalJiraKanbanCard({
 			// Opted-in boards let the source ghost own the content fade.
 			style={selectionBackdrop === undefined ? undefined : { opacity: 1 }}
 			iconScale={iconScale}
+			showPriorityIndicator={showPriorityIndicator}
 			parentOwnsLayout
 			generativeAction={{
 				agents: generativeActionAgents,
+				defaultPinnedAgentIds: generativeActionPinnedAgentIds,
 				...generativeActionFooterActions,
 				onSubmit: (request) => {
 					void onGenerativeActionSubmit?.(request, card, columnTitle);
@@ -440,5 +446,5 @@ export function ExperimentalJiraKanbanCard({
 			tags={card.tags}
 		/>
 	);
-	return <BoardIssueSourceGhost dragging={dragging} enabled={selectionBackdrop !== undefined}>{issue}</BoardIssueSourceGhost>;
+	return <BoardIssueSourceGhost dragging={dragging} selectionBackdrop={selectionBackdrop}>{issue}</BoardIssueSourceGhost>;
 }

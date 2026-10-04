@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import type { JiraKanbanColumnData } from "../../index";
-import { createJiraKanbanSelectionState, type JiraKanbanSelectionState } from "../../state";
+import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
+import { createJiraKanbanSelectionState, type JiraKanbanSelectionState } from "@/components/blocks/jira-kanban/state";
 import { autoArrangeCards } from "../lib/board-auto-arrange";
 
 /** Commit the complete plan and settle both selection and drag together. */

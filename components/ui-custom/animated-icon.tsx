@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
 import { ANIMATED_ICONS, type AnimatedIconName } from "./animated-icon-registry";
+import { resolveAiSparkleTiming } from "@/components/ui-custom/lib/ai-sparkle-timing";
 
 export {
 	ANIMATED_ICONS,
@@ -33,6 +34,14 @@ export interface AnimatedIconProps
 	/** Change this value to replay the motion imperatively (e.g. a "Replay all"
 	 * button bumping a shared token across many icons). */
 	playToken?: number;
+	/** Start a single replay on mount, synchronized with sibling entrance motion. */
+	playOnMount?: boolean;
+	/** Full AI Sparkle cycle, including its return to rest, in seconds. */
+	replayDuration?: number;
+	/** Called when a replay starts returning to rest. */
+	onReplayReturn?: () => void;
+	/** Called after a replay has returned to rest. */
+	onReplayComplete?: () => void;
 	/** Accessible label. Omit (or leave empty) to render the icon decoratively. */
 	label?: string;
 }
@@ -45,6 +54,10 @@ export function AnimatedIcon({
 	replayOnHover = true,
 	replayOnFocus = true,
 	playToken,
+	playOnMount = false,
+	replayDuration,
+	onReplayReturn,
+	onReplayComplete,
 	label,
 	className,
 	onMouseEnter,
@@ -53,24 +66,33 @@ export function AnimatedIcon({
 	onBlur,
 	...props
 }: Readonly<AnimatedIconProps>) {
-	const [playing, setPlaying] = useState(false);
-	const prevToken = useRef(playToken);
+	const [playing, setPlaying] = useState(playOnMount);
+	const prevToken = useRef(playOnMount ? null : playToken);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+	const callbacks = useRef({ onReplayReturn, onReplayComplete });
 	useEffect(() => {
+		callbacks.current = { onReplayReturn, onReplayComplete };
+	}, [onReplayComplete, onReplayReturn]);
+
+	useLayoutEffect(() => {
 		if (prevToken.current === playToken) return;
+		const previousToken = prevToken.current;
 		prevToken.current = playToken;
 		setPlaying(true);
 		if (timer.current) clearTimeout(timer.current);
-		timer.current = setTimeout(() => setPlaying(false), REPLAY_MS);
-	}, [playToken]);
-
-	useEffect(
-		() => () => {
+		const sparkle = name === "ai-sparkle" ? resolveAiSparkleTiming(replayDuration) : null;
+		const playMs = sparkle && replayDuration !== undefined ? sparkle.playSeconds * 1000 : REPLAY_MS;
+		timer.current = setTimeout(() => {
+			setPlaying(false);
+			callbacks.current.onReplayReturn?.();
+			timer.current = setTimeout(() => callbacks.current.onReplayComplete?.(), (sparkle?.returnSeconds ?? 0) * 1000);
+		}, playMs);
+		return () => {
 			if (timer.current) clearTimeout(timer.current);
-		},
-		[],
-	);
+			// Strict Mode replays effect setup after cleanup with refs preserved.
+			prevToken.current = previousToken;
+		};
+	}, [name, playToken, replayDuration]);
 
 	const Icon = ANIMATED_ICONS[name];
 	const isDecorative = !label;
@@ -103,6 +125,7 @@ export function AnimatedIcon({
 			<Icon
 				size={size}
 				color={color ?? "currentColor"}
+				{...(name === "ai-sparkle" ? { duration: replayDuration } : {})}
 				hovered={playing}
 				singleColor={singleColor}
 			/>

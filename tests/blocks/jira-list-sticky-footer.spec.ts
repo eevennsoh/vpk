@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const JIRA_GOLDEN_JOURNEYS_V4_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/jira-golden-journeys-v4`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_GOLDEN_JOURNEYS_V4_URL = appUrl("/jira-golden-journeys-v4");
 
 interface ListFooterGeometry {
 	gapTableToFooter: number;
@@ -65,7 +65,7 @@ test("the work items list anchors its footer once the rows overflow", async ({ p
 	expect(geometry.footerToSectionBottom).toBeLessThanOrEqual(2);
 });
 
-const JIRA_TEAM_EU26_URL = `${process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"}/jira-team-eu26`;
+const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");
 
 for (const { width, height, reducedMotion } of [
 	{ width: 1440, height: 900, reducedMotion: "no-preference" as const },

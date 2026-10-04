@@ -29,6 +29,7 @@ import {
 	ProjectsIcon,
 	RovoIcon,
 	RovoColorIcon,
+	RovoAppIcon,
 	RovoDevIcon,
 	RovoDevAgentIcon,
 	SearchIcon,
@@ -98,6 +99,10 @@ export default function LogoDemo() {
 						<span className="text-sm text-text">{entry.label}</span>
 					</div>
 				))}
+				<div className="flex items-center gap-2 rounded-md border border-border px-3 py-2 bg-surface">
+					<RovoAppIcon label="Rovo app icon" size="small" />
+					<span className="text-sm text-text">Rovo app icon</span>
+				</div>
 			</div>
 		</div>
 	);
@@ -112,6 +117,21 @@ export function LogoDemoIcons() {
 				<div key={entry.name} className="flex flex-col items-center gap-1.5">
 					<AtlassianLogo name={entry.name} label={entry.label} size="small" />
 					<span className="text-xs text-text-subtle">{entry.label}</span>
+				</div>
+			))}
+		</div>
+	);
+}
+
+/* ── Demo: Rovo app icon ─────────────────────────────────────── */
+
+export function LogoDemoRovoAppIcon() {
+	return (
+		<div className="flex flex-wrap items-end gap-4">
+			{LOGO_TILE_SIZES.map((size) => (
+				<div key={size} className="flex flex-col items-center gap-1.5">
+					<RovoAppIcon label={`Rovo app icon ${size}`} size={size} />
+					<span className="text-xs text-text-subtle">{size}</span>
 				</div>
 			))}
 		</div>

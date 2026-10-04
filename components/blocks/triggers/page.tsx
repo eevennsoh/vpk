@@ -79,6 +79,7 @@ import { cn } from "@/lib/utils";
 // form a runtime import cycle, so it is loaded lazily (the type import below is
 // erased at build time and is cycle-safe).
 import type { AgentConfigFormValue } from "@/components/blocks/trigger-config/components/trigger-config";
+import { motionEase } from "@/lib/motion";
 const AgentConfigFields = lazy(() =>
 	import("@/components/blocks/trigger-config/components/trigger-config").then((module) => ({
 		default: module.AgentConfigFields,
@@ -499,7 +500,7 @@ const triggerProviderBylineVariants: Variants = {
 	active: {
 		opacity: 1,
 		transform: "translateY(0px)",
-		transition: { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
+		transition: { delay: 0.02, duration: 0.16, ease: motionEase.out },
 	},
 };
 

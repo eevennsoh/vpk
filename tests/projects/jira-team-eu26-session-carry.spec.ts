@@ -1,17 +1,19 @@
 import { expect, test } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL;
+import { withDesignVariants } from "@/tests/helpers/design-variants";
+import { appUrl } from "@/tests/helpers/origin";
+
+// The regular session preview, not Peel.
+const REGULAR_PREVIEW_BOARD_ROUTE = withDesignVariants("/jira-team-eu26", { sessionPeel: false });
 const evidence = "output/agent-browser/peel-carry-side";
 
 test("regular preview stays level during first and repeated pickup", async ({ page }) => {
-	if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
 	const pickupEvidence = "output/agent-browser/flat-pickup-side";
 	await mkdir(pickupEvidence, { recursive: true });
 	await page.setViewportSize({ width: 1440, height: 920 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false })));
-	await page.goto(`${baseURL}/jira-team-eu26`);
+	await page.goto(appUrl(REGULAR_PREVIEW_BOARD_ROUTE));
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
 	const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
 	if (await expand.isVisible()) await expand.click();
@@ -74,15 +76,11 @@ for (const theme of ["light", "dark"] as const) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		test(`regular session preview carries paper tilt, roll and edge light (${theme}, ${reducedMotion})`, async ({ page }) => {
 			test.setTimeout(60_000);
-			if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to this worktree's origin");
 			await mkdir(evidence, { recursive: true });
 			await page.setViewportSize({ width: 1440, height: 920 });
 			await page.emulateMedia({ reducedMotion, colorScheme: theme });
-			await page.addInitScript((mode) => {
-				localStorage.setItem("ui-theme", mode);
-				localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, sessionPeel: false }));
-			}, theme);
-			await page.goto(`${baseURL}/jira-team-eu26`);
+			await page.addInitScript((mode) => localStorage.setItem("ui-theme", mode), theme);
+			await page.goto(appUrl(REGULAR_PREVIEW_BOARD_ROUTE));
 			await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
 			const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
 			if (await expand.isVisible()) await expand.click();

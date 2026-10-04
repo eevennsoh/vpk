@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { DAILY_INSIGHTS_ROW_CLASSES } from "./daily-insights-row-classes";
 import { FLOATING_ROVO_BUTTON_CONTENT_EXIT } from "./motion";
 import type { FloatingRovoButtonInsightRow, FloatingRovoButtonInsightsConfig } from "./types";
+import { motionEase } from "@/lib/motion";
 
 /**
  * The one piece of visible copy both the pill and the card share.
@@ -141,10 +142,10 @@ export function FloatingRovoButtonDailyInsightsPanelInner({
 	// time the body starts, so the body only has to catch up.
 	const phaseChild = shouldReduceMotion
 		? { duration: 0 }
-		: { duration: 0.22, ease: [0, 0.4, 0, 1] as const };
+		: { duration: 0.22, ease: motionEase.out };
 	const phaseHeaderTransition = shouldReduceMotion
 		? { duration: 0 }
-		: { duration: 0.22, delay: 0.24, ease: [0, 0.4, 0, 1] as const };
+		: { duration: 0.22, delay: 0.24, ease: motionEase.out };
 	const phaseVariants: Variants = shouldReduceMotion
 		? {
 			hidden: { opacity: 1, y: 0, filter: "blur(0px)" },
@@ -173,7 +174,7 @@ export function FloatingRovoButtonDailyInsightsPanelInner({
 			exit={{ opacity: 0, transition: { duration: 0 } }}
 			transition={shouldReduceMotion
 				? { duration: 0 }
-				: { duration: 0.14, delay: 0.18, ease: [0, 0.4, 0, 1] as const }}
+				: { duration: 0.14, delay: 0.18, ease: motionEase.out }}
 			onKeyDown={(event) => {
 				if (event.key === "Escape") {
 					event.stopPropagation();
@@ -333,7 +334,7 @@ export function FloatingRovoButtonDailyInsightsPill({
 			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, transition: FLOATING_ROVO_BUTTON_CONTENT_EXIT }}
 			transition={shouldReduceMotion
 				? { duration: 0 }
-				: { duration: 0.2, delay: 0.24, ease: [0, 0.4, 0, 1] as const }}
+				: { duration: 0.2, delay: 0.24, ease: motionEase.out }}
 			style={{ borderRadius: "inherit", willChange: "opacity, filter" }}
 		>
 			<span className="min-w-0 truncate text-sm leading-5 font-medium">{countLabel}</span>

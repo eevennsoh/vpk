@@ -43,6 +43,8 @@ belong to another route; compare traced packages and backend requirements before
 changing the target or accepting a prior installed dependency layer. Preserve
 required extraction harness fixes. For overlaps, merge the owner changes through
 the manual refresh path; automatic apply stops before writing any file.
+Review generated-layout changes too: an existing target must acquire both
+light and dark token styles rather than retain the older light-only harness.
 
 ```bash
 node .agents/skills/vpk-build/scripts/plan-target-refresh.mjs \
@@ -88,6 +90,9 @@ release baseline.
 Run required source gates and one relevant local browser regression matrix on
 the extracted `/`, including changed behavior, normal/reduced motion, responsive
 layout, console, accessibility, API proxy, and WebSocket discovery/upgrade.
+Use the [source-to-extract UI parity checklist](extraction-guide.md#source-to-extract-ui-parity)
+with matching theme/settings and active interaction states; resting-page proof
+does not cover inverse toolbars, portalled popups, or drag-state icons.
 Preserve the export while `next dev` runs, then stop that preview and restore
 the scaffold's minimal `next-env.d.ts` when it acquired `.next/dev` imports.
 

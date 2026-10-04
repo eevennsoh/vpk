@@ -1,5 +1,5 @@
-import type { JiraKanbanColumnData } from "../../index";
-import { moveJiraKanbanCardsToStatus } from "../../card-drop";
+import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
+import { moveJiraKanbanCardsToStatus } from "@/components/blocks/jira-kanban/card-drop";
 
 /** Stable demo randomization: rerenders, filters and moves never reroll a card. */
 export function withAutoArrangeDestinations(columns: readonly JiraKanbanColumnData[]): JiraKanbanColumnData[] {

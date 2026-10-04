@@ -3,7 +3,6 @@ import test from "node:test";
 
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { appendBoardCardFromDraft, boardHasWorkItem, nextBoardIssueKey, toAgentSessionWorkItemOptions } from "./board-work-item-options.ts";
 
 function column(

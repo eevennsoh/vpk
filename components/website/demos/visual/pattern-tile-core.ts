@@ -63,10 +63,10 @@ export function resolvePatternStrokeDashArray(stroke?: PatternStrokeOptions): st
 	return `${dash} ${gap}`;
 }
 
-export function buildGridStrokeMaskImage(scale: number, stroke?: PatternStrokeOptions): string {
+export function buildGridStrokeMaskImage(scale: number, stroke?: PatternStrokeOptions, centered = false): string {
 	const strokeWidth = toFinitePositive(stroke?.width, 1);
 	const tileSize = toFinitePositive(scale, 1);
-	const pathInset = strokeWidth / 2;
+	const pathInset = centered ? tileSize / 2 : strokeWidth / 2;
 	const lineCap = stroke?.lineCap ?? "butt";
 	const lineJoin = stroke?.lineJoin ?? "miter";
 	const miterLimit = toFinitePositive(stroke?.miterLimit, 4);
@@ -77,7 +77,8 @@ export function buildGridStrokeMaskImage(scale: number, stroke?: PatternStrokeOp
 		: "";
 
 	const svg = [
-		`<svg xmlns="http://www.w3.org/2000/svg" width="${tileSize}" height="${tileSize}" viewBox="0 0 ${tileSize} ${tileSize}">`,
+		// CSS round-repeat can resize each tile into a rectangle. Fill it rather than letterboxing.
+		`<svg xmlns="http://www.w3.org/2000/svg" width="${tileSize}" height="${tileSize}" viewBox="0 0 ${tileSize} ${tileSize}" preserveAspectRatio="none">`,
 		`<path d="M 0 ${pathInset} H ${tileSize} M ${pathInset} 0 V ${tileSize}" fill="none" stroke="white" stroke-width="${strokeWidth}" stroke-linecap="${lineCap}" stroke-linejoin="${lineJoin}" stroke-miterlimit="${miterLimit}"${dashAttributes}/>`,
 		"</svg>",
 	].join("");

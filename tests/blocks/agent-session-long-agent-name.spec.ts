@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const AGENT_SESSION_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/components/blocks/agent-session";
+import { appUrl } from "@/tests/helpers/origin";
+
+const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
 test("cloud long metadata stays together before the lifecycle controls", async ({ page }) => {
 	await page.goto(`${AGENT_SESSION_URL}#cloud-—-long`, { waitUntil: "domcontentloaded" });
@@ -64,8 +64,7 @@ test("local long metadata keeps the full agent name visible", async ({ page }) =
 });
 
 test("assignment metadata truncates before lifecycle and privacy controls", async ({ page }) => {
-	const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
-	await page.goto(`${origin}/components/blocks/agent-assignment`, { waitUntil: "domcontentloaded" });
+	await page.goto(appUrl("/components/blocks/agent-assignment"), { waitUntil: "domcontentloaded" });
 	const editAgents = page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true });
 	await editAgents.click();
 	const rows = page.locator('[aria-label="Agent assignment"] article');

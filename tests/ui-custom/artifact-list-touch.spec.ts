@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const ARTIFACT_LIST_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/ui-custom/artifact-list`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const ARTIFACT_LIST_URL = appUrl("/preview/ui-custom/artifact-list");
 
 test.use({
 	hasTouch: true,

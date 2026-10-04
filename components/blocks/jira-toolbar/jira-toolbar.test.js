@@ -5,6 +5,12 @@ const { test } = require("node:test");
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 
+test("the shared toolbar uses workflow tones unless its owner supplies a resolver", () => {
+	assert.doesNotMatch(SOURCE, /from "@\/components\/blocks\/jira-work-item\//u);
+	assert.match(SOURCE, /getStatusVariant = getWorkflowPhaseLozengeVariant/u);
+	assert.match(SOURCE, /variant=\{getStatusVariant\(status, statusOptions\)\}/u);
+});
+
 test("Jira Toolbar leads with Select all, Add agent, and Ask Rovo", () => {
 	const assignIndex = SOURCE.indexOf('id: "assign"');
 	const rovoIndex = SOURCE.indexOf('id: "ask-rovo"');
@@ -31,6 +37,11 @@ test("Jira Toolbar owns functional status, agent assignment, and clear callbacks
 	assert.doesNotMatch(SOURCE, /addEventListener\("keydown", handleKeyDown, true\)/u);
 });
 
+test("toolbar Delete is disabled when its owner does not provide the removal capability", () => {
+	assert.match(SOURCE, /id: "delete",[\s\S]*?<JiraToolbarAction\s+disabled=\{!onDelete\}/u);
+	assert.match(SOURCE, /id: "delete",[\s\S]*?<DropdownMenuItem\s+disabled=\{!onDelete\}/u);
+});
+
 test("Jira Toolbar preserves agent assignment and launches real Rovo navigation", () => {
 	assert.match(SOURCE, /defaultPinnedAgentIds=\{defaultPinnedAgentIds\}/u);
 	assert.match(SOURCE, /<AgentSelector[\s\S]*selectionMode="single"/u);
@@ -40,8 +51,8 @@ test("Jira Toolbar preserves agent assignment and launches real Rovo navigation"
 });
 
 test("Jira Toolbar uses token motion with a reduced-motion path", () => {
-	assert.match(SOURCE, /duration: 0\.25,[\s\S]*ease: \[0, 0\.4, 0, 1\]/u);
-	assert.match(SOURCE, /duration: 0\.2,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(SOURCE, /duration: 0\.25,[\s\S]*ease: motionEase\.out\b/u);
+	assert.match(SOURCE, /duration: 0\.2,[\s\S]*ease: motionEase\.in\b/u);
 	assert.match(SOURCE, /useReducedMotion\(\)/u);
 	assert.match(SOURCE, /willChange: "transform, opacity"/u);
 });

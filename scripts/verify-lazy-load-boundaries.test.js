@@ -4,6 +4,8 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
+const { gateRunsScript } = require("./lib/package-gates.js");
+
 const {
 	DEFAULT_DEFERRED_MODULE_RULES,
 	DEFAULT_ROUTE_SHELL_FILES,
@@ -170,6 +172,11 @@ test("default route shell list covers the measured app shells", () => {
 test("default deferred module rules cover the Jira pull request review subtree", () => {
 	assert.deepEqual(DEFAULT_DEFERRED_MODULE_RULES, [
 		{
+			entryFile: "components/projects/studio/components/rovo-app-shell.tsx",
+			reason: "the Studio Ask Rovo chat panel must stay out of the initial project bundle",
+			targetFile: "components/projects/sidebar-chat/page.tsx",
+		},
+		{
 			entryFile: "components/projects/jira-golden-journeys-v2/page.tsx",
 			reason: "the Jira pull request review subtree must stay out of the initial project bundle",
 			targetFile: "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view.tsx",
@@ -206,6 +213,7 @@ test("package scripts expose and run the lazy-load verifier", () => {
 	const packageJson = JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8"));
 
 	assert.equal(packageJson.scripts["verify:lazy-load"], "node scripts/verify-lazy-load-boundaries.js");
-	assert.match(packageJson.scripts["validate:local"], /corepack pnpm run verify:lazy-load/u);
-	assert.match(packageJson.scripts["ci:pr"], /pnpm run verify:lazy-load/u);
+	for (const gate of ["validate:local", "ci:pr", "verify:fast"]) {
+		assert.ok(gateRunsScript(packageJson.scripts, gate, "verify:lazy-load"), `${gate} must run verify:lazy-load`);
+	}
 });

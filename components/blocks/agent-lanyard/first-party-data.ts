@@ -4,10 +4,11 @@ import { customFirstPartyBadge, namedFirstPartyBadge, type AgentLanyardFirstPart
 
 export type AgentLanyardCollection = "teamwork" | "software" | "product" | "service" | "strategy";
 
-export interface AgentLanyardFirstPartyAgent extends AgentLanyardAgent {
+export type AgentLanyardFirstPartyAgent = AgentLanyardAgent & {
+	avatarSrc: string;
 	sources: readonly TwgToolSource[];
 	badge: AgentLanyardFirstPartyBadge;
-}
+};
 
 // Figma collection colors and logo-only exports; the shared Avatar owns the hexagon.
 export const AGENT_LANYARD_COLLECTIONS = {

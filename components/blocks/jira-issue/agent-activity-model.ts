@@ -28,6 +28,7 @@ interface JiraIssueAgentActivitySummaryInput {
 }
 
 interface JiraIssueAgentActivityRowInput extends JiraIssueAgentActivitySummaryInput {
+	stateTransition?: "agent-session";
 	id: string;
 }
 
@@ -104,7 +105,9 @@ export function groupJiraIssueAgentActivityRows<TActivity extends JiraIssueAgent
 
 		const summary = summarizeJiraIssueAgentActivities(activeActivities);
 
-		return [{ activities: activeActivities, key: `${summary.priorityState}-${summary.activityCount}` }];
+		const key = activeActivities.length === 1 && activeActivities[0].stateTransition === "agent-session"
+			? activeActivities[0].id : `${summary.priorityState}-${summary.activityCount}`;
+		return [{ activities: activeActivities, key }];
 	}
 
 	return activities

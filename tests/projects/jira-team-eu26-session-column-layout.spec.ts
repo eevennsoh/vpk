@@ -1,11 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const JIRA_TEAM_EU26_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/jira-team-eu26";
-const JIRA_TEAM_EU26_EMBEDDED_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/preview/projects/jira-team-eu26?embedded=1";
+import { appUrl } from "@/tests/helpers/origin";
+
+const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");
+const JIRA_TEAM_EU26_EMBEDDED_URL = appUrl("/preview/projects/jira-team-eu26?embedded=1");
 
 for (const width of [1440, 1024]) {
 	test(`empty unlink sessions automatically collapses to the status pill geometry at ${width}px`, async ({ page }) => {

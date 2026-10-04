@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, use, useRef, useState, type ReactNode } from "react";
+import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import { AgentLanyard, type AgentLanyardAgent, type AgentLanyardFirstPartyAgent } from "@/components/blocks/agent-lanyard";
 import { AgentLanyardFirstPartyAvatar } from "@/components/blocks/agent-lanyard/agent-lanyard-first-party-avatar";
 import { HoverCard, HoverCardContent, createHoverCardHandle, type HoverCardHandle } from "@/components/ui/hover-card";
@@ -18,8 +19,19 @@ export function useHeaderLanyardHandle() {
 }
 
 export function HeaderLanyards({ children }: Readonly<{ children: ReactNode }>) {
+	const { openChat, selectAgent } = useRovoChatControls();
 	const [handle] = useState(() => createHoverCardHandle<HeaderAgent>());
+	const [menuAnnouncement, setMenuAnnouncement] = useState("");
 	const popupRef = useRef<HTMLDivElement>(null);
+	function chatWithAgent(agent: AgentLanyardAgent) {
+		handle.close();
+		selectAgent(agent.id === "claude" ? "claude-code" : agent.id);
+		openChat("sidebar");
+	}
+	function announceMenuSelection(action: string, agent: AgentLanyardAgent) {
+		// These project previews expose the shared options without navigating elsewhere.
+		setMenuAnnouncement(`Selected ${action} for ${agent.name}.`);
+	}
 	return (
 		<HeaderLanyardContext value={handle}>
 			{children}
@@ -48,11 +60,19 @@ export function HeaderLanyards({ children }: Readonly<{ children: ReactNode }>) 
 								animateGrid
 								gridAnimationTrigger="reveal"
 								headingLevel={2}
+								onAction={chatWithAgent}
+								menuActions={{
+									onViewProfile: (selected) => announceMenuSelection("View profile", selected),
+									onToggleStar: (selected) => announceMenuSelection("Star", selected),
+									onCopyLink: (selected) => announceMenuSelection("Copy link", selected),
+									onDuplicate: (selected) => announceMenuSelection("Duplicate", selected),
+								}}
 							/>
 						) : null}
 					</HoverCardContent>
 				)}
 			</HoverCard>
+			<span role="status" className="sr-only">{menuAnnouncement}</span>
 		</HeaderLanyardContext>
 	);
 }

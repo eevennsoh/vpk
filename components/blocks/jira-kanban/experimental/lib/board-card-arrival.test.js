@@ -8,7 +8,7 @@ async function loadArrivalHarness() {
 	const result = await esbuild.build({
 		stdin: {
 			contents: `
-				export { resolveBoardCardArrival, captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveVisibleIssueDropCodes } from "./components/blocks/jira-kanban/experimental/lib/board-card-arrival";
+				export { resolveBoardCardArrival, captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveVisibleIssueDropCodes, getIssueDropCascadeDelayS } from "./components/blocks/jira-kanban/experimental/lib/board-card-arrival";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -110,8 +110,8 @@ test("cross-column and cohort moves publish the shared arrival in destination or
 	assert.equal(resolveIssueCardDropArrival({ ...drop, columnTitle: "Missing" }, moved), undefined);
 });
 
-test("one grabbed-card drop represents the entire committed selection", async () => {
-	const { resolveVisibleIssueDropCodes, captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveBoardCardArrival } = await loadArrivalHarness();
+test("one grabbed-card flight represents the selection while every landed issue cascades in slot order", async () => {
+	const { resolveVisibleIssueDropCodes, getIssueDropCascadeDelayS, captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveBoardCardArrival } = await loadArrivalHarness();
 	const codes = ["A", "B", "C", "D", "E"];
 	const visible = resolveVisibleIssueDropCodes(codes, "D");
 	assert.deepEqual(visible, ["D"]);
@@ -119,15 +119,16 @@ test("one grabbed-card drop represents the entire committed selection", async ()
 	assert.deepEqual(resolveVisibleIssueDropCodes(codes, "missing"), ["A"]);
 	assert.deepEqual(resolveVisibleIssueDropCodes([], "D"), []);
 	const columns = [{ title: "To do", cards: codes.map((code) => ({ code })) }, { title: "Done", cards: [] }];
-	const drop = { ...captureIssueCardDropArrival(columns, codes, "Done", -3), animatedCardCodes: visible };
+	// Capture order differs from the destination's slot order; the entrance follows slots.
+	const drop = { ...captureIssueCardDropArrival(columns, codes, "Done", -3), animatedCardCodes: ["E", "D", "C", "B", "A"], pendingCardCodes: visible, leadCardCodes: visible };
 	const moved = [{ title: "To do", cards: [] }, { title: "Done", cards: codes.map((code) => ({ code, status: "Done" })) }];
 	const resolved = resolveIssueCardDropArrival(drop, moved);
 	assert.deepEqual(resolved.cardCodes, codes);
-	assert.deepEqual(resolved.animatedCardCodes, visible);
-	assert.equal(resolveBoardCardArrival(resolved, "D").final, true);
-	assert.equal(resolveBoardCardArrival(resolved, "D").entering, true);
-	assert.equal(resolveBoardCardArrival(resolved, "A").entering, false);
-	assert.equal(resolveBoardCardArrival(resolved, "B").entering, false);
-	assert.equal(resolveBoardCardArrival(resolved, "C").entering, false);
-	assert.equal(resolveBoardCardArrival(resolved, "E").entering, false);
+	assert.deepEqual(resolved.animatedCardCodes, codes, "entrances follow destination slot order, top to bottom");
+	assert.deepEqual(resolved.pendingCardCodes, ["D"], "only the flying lead waits to land");
+	assert.deepEqual(resolved.cascadeLeadCardCodes, ["D"]);
+	assert.deepEqual(codes.map((code) => getIssueDropCascadeDelayS(resolved, code)).map((value) => +value.toFixed(3)), [0, 0.05, 0.1, 0, 0.15], "top to bottom; the lead starts on landing");
+	for (const code of codes) assert.equal(resolveBoardCardArrival(resolved, code).entering, true, `${code} plays the entrance`);
+	assert.equal(resolveBoardCardArrival(resolved, "D").final, true, "the lead lands after every step starts, so it completes the arrival");
+	assert.equal(resolveBoardCardArrival(resolved, "E").final, false);
 });

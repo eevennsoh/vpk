@@ -33,6 +33,10 @@ backend behavior.
   an explicit refresh request does not need another confirmation.
 - Preserve repo-relative source paths and copy source files verbatim where
   possible; put extraction-specific behavior in the target harness.
+- Preserve the selected design's components, icons, assets, theme scopes, and
+  interaction states. Do not substitute lookalike UI or Unicode for source
+  icons. Verify [source-to-extract UI parity](references/extraction-guide.md#source-to-extract-ui-parity)
+  before claiming the extract is complete; a resting screenshot is insufficient.
 - Copy the full `public/` tree because runtime data can reference untraced assets.
 - Preserve optional UI loading boundaries. Fix shared runtime/interaction hot
   paths in VPK source; extraction reports and packages the selected behavior.
@@ -50,6 +54,11 @@ backend behavior.
 - Import `getThemeStyles` from `@atlaskit/tokens/get-theme-styles`. Skip
   providers whose required props are not children-only
   (`WorkItemModalProvider` at minimum).
+- Load both light and dark token styles with
+  `getThemeStyles({ ...THEME_STATE, colorMode: "auto" })`, while keeping the
+  document's initial color mode separate. Inverse subtrees need the opposite
+  stylesheet even when the page starts light. Apply this generated-layout
+  contract when refreshing existing targets as well as new scaffolds.
 - Carry VPK's fallback and light/dark SVG favicon links into the generated
   layout; the full `public/website/` asset tree supplies their files.
 - Set `allowedDevOrigins: ["127.0.2.2", "localhost"]` in generated
@@ -229,6 +238,10 @@ For an actual extraction, the required proof is a passing `verify-target.sh`
 run plus live browser verification of the extracted route, including computed
 layout in a headed/narrow viewport. Successful typecheck/build can still hide
 missing `shadcn` variants.
+Compare the selected source and extract in equivalent relevant interaction
+states using the parity checklist in the extraction guide. Record computed
+theme colors and rendered icon evidence alongside screenshots; report any
+remaining differences explicitly instead of claiming design parity.
 
 After stopping a target `next dev` preview, compare its ignored `next-env.d.ts`
 with the scaffold's minimal version and restore it if Next added a `.next/dev`

@@ -190,11 +190,9 @@ export function VoiceButton({
       aria-pressed={isRecording}
       {...props}
     >
-      {size !== "icon" && displayLabel && (
-        <span className="inline-flex shrink-0 items-center justify-start">
+      {size !== "icon" && displayLabel ? <span className="inline-flex shrink-0 items-center justify-start">
           {displayLabel}
-        </span>
-      )}
+        </span> : null}
 
       <div
         className={cn(
@@ -210,8 +208,7 @@ export function VoiceButton({
           waveformClassName
         )}
       >
-        {shouldShowWaveform && (
-          <LiveWaveform
+        {shouldShowWaveform ? <LiveWaveform
             active={isRecording}
             processing={isProcessing || isSuccess}
             barWidth={2}
@@ -223,11 +220,9 @@ export function VoiceButton({
             height={20}
             mode="static"
             className="animate-in fade-in absolute inset-0 h-full w-full duration-300"
-          />
-        )}
+          /> : null}
 
-        {shouldShowTrailing && (
-          <div className="animate-in fade-in absolute inset-0 flex items-center justify-center duration-300">
+        {shouldShowTrailing ? <div className="animate-in fade-in absolute inset-0 flex items-center justify-center duration-300">
             {typeof trailing === "string" ? (
               <span className="text-text-subtle px-1.5 font-mono text-[10px] font-medium select-none">
                 {trailing}
@@ -235,34 +230,27 @@ export function VoiceButton({
             ) : (
               trailing
             )}
-          </div>
-        )}
+          </div> : null}
 
         {!shouldShowWaveform &&
           !shouldShowTrailing &&
           icon &&
-          size === "icon" && (
-            <div className="animate-in fade-in absolute inset-0 flex items-center justify-center duration-300">
+          size === "icon" ? <div className="animate-in fade-in absolute inset-0 flex items-center justify-center duration-300">
               {icon}
-            </div>
-          )}
+            </div> : null}
 
-        {isSuccess && showFeedback && (
-          <div className="animate-in fade-in bg-surface absolute inset-0 flex items-center justify-center duration-300">
+        {isSuccess && showFeedback ? <div className="animate-in fade-in bg-surface absolute inset-0 flex items-center justify-center duration-300">
             <span className="text-icon-success text-[10px] font-medium">
               <CheckIcon className="size-3.5" />
             </span>
-          </div>
-        )}
+          </div> : null}
 
         {/* Error Icon */}
-        {isError && showFeedback && (
-          <div className="animate-in fade-in bg-surface absolute inset-0 flex items-center justify-center duration-300">
+        {isError && showFeedback ? <div className="animate-in fade-in bg-surface absolute inset-0 flex items-center justify-center duration-300">
             <span className="text-icon-danger text-[10px] font-medium">
               <XIcon className="size-3.5" />
             </span>
-          </div>
-        )}
+          </div> : null}
       </div>
     </Button>
   )

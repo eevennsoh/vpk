@@ -340,6 +340,13 @@ export const UI_ATLASSIAN_VARIANT_DEMOS: Record<string, ComponentType> = {
 		{ ssr: false },
 	),
 	// Logo
+	"logo-demo-rovo-app-icon": dynamic(
+		() =>
+			import("../../demos/ui/logo-demo").then((mod) => ({
+				default: mod.LogoDemoRovoAppIcon,
+			})),
+		{ ssr: false },
+	),
 	"logo-demo-icons": dynamic(
 		() =>
 			import("../../demos/ui/logo-demo").then((mod) => ({

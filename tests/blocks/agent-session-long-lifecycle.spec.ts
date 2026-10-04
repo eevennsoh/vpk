@@ -1,16 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-const AGENT_SESSION_URL = (
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-) + "/components/blocks/agent-session";
+import { appUrl } from "@/tests/helpers/origin";
+
+const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Jira agent chin swaps its status for a chevron on hover and keyboard focus (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 		const demo = page.locator("#agent-activity-states-experimental-v2");
 		for (const state of ["1 agent as owner", "1-n agents as owner", "Needs input"]) {
-			await page.goto(`${origin}/components/blocks/jira-issue#agent-activity-states-experimental-v2`);
+			await page.goto(appUrl("/components/blocks/jira-issue#agent-activity-states-experimental-v2"));
 			await demo.getByRole("button", { name: state, exact: true }).click();
 			const row = demo.locator('[data-slot="jira-issue-agent-row"]').first();
 			const status = row.locator('[data-slot="jira-issue-agent-status-icon"]');
@@ -53,8 +52,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		test(`Jira Expired option retains the session list while deleting at ${width}px (${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
 			await page.setViewportSize({ width, height: 900 });
-			const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
-			await page.goto(`${origin}/components/blocks/jira-issue#agent-activity-states-experimental-v2`, { waitUntil: "domcontentloaded" });
+			await page.goto(appUrl("/components/blocks/jira-issue#agent-activity-states-experimental-v2"), { waitUntil: "domcontentloaded" });
 			const demo = page.locator("#agent-activity-states-experimental-v2");
 			await demo.getByRole("button", { name: "Expired", exact: true }).click();
 			await demo.locator('[data-slot="jira-issue-agent-row"] button').click();

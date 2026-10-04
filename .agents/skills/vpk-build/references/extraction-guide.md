@@ -9,6 +9,7 @@ Use this reference after selecting a route and before approving the scaffold.
 - [Scaffold behavior](#scaffold-behavior)
 - [Existing sibling refresh](#existing-sibling-refresh)
 - [Verification and failures](#verification-and-failures)
+- [Source-to-extract UI parity](#source-to-extract-ui-parity)
 - [Ports and local runtime](#ports-and-local-runtime)
 - [Deployment handoff](#deployment-handoff)
 - [Out of scope](#out-of-scope)
@@ -104,6 +105,14 @@ It wraps only providers whose required props are children-only; skip
 `isOpen` / `onClose` / `workItem`. Keep font links for any family referenced
 by the copied route.
 
+Load token styles with `getThemeStyles({ ...THEME_STATE, colorMode: "auto" })`
+so both light and dark stylesheets are present. Keep `getThemeHtmlAttrs` tied
+to the intended initial document mode. `getThemeStyles` with only
+`colorMode: "light"` omits dark tokens: a `[data-subtree-theme]` inverse
+toolbar can then inherit white surface and dark text values despite declaring
+`data-color-mode="dark"`. Global theme toggling is not sufficient proof because
+it can load the missing stylesheet later and mask the initial-render defect.
+
 `next.config.ts` disables the floating Next dev indicator and sets
 `allowedDevOrigins: ["127.0.2.2", "localhost"]`. Preview via
 `http://localhost:3001`. The Network URL on `127.0.2.2` is blocked from
@@ -144,6 +153,10 @@ provider skill links, and unrelated target work. The staging harness generates
 regenerate the sibling's own launcher rather than copying that path. Keep the
 full `public/` tree and list old-only files for review before any deletion.
 
+Review generated harness differences such as `app/layout.tsx` and carry forward
+extraction fixes, including both token stylesheets. Preserving deployment
+configuration does not mean retaining a defective generated layout.
+
 For repeated updates use [fast refresh](fast-refresh.md): the refresh planner
 compares against the previous verified source Git tree, includes copied CSS and
 types, and guards reviewed preimages. This replaces rebuilding comparison
@@ -178,6 +191,8 @@ narrowest owner:
 | Blank or unstyled runtime | Tailwind utilities were not emitted |
 | Unstyled overlapping HTML on Network URL | `/_next/*` blocked from `127.0.2.2`. Add `allowedDevOrigins` and preview via `http://localhost:3001` |
 | `getThemeStyles` is not a function | Layout imported from `@atlaskit/tokens` instead of `@atlaskit/tokens/get-theme-styles` |
+| Inverse surface stays light until the global theme changes | Generated layout omitted the opposite token stylesheet. Load both themes without changing the initial document mode; verify subtree surface, text, and icon colors on a fresh light-mode page. |
+| Text glyph appears where a source icon should render | Compare component bytes/imports and the rendered SVG with the selected source in the same interaction state. Repair a copy/trace defect in extraction tooling; an authorized design correction belongs in the canonical source owner, followed by a refresh. |
 | Layout crash on `WorkItemModalProvider` | Provider requires `isOpen` / `onClose` / `workItem`. Skip providers whose required props are not children-only |
 | `JSX.Element` / missing ambient types | Copy `types/*.d.ts`, sibling `lib/*.d.ts`, generate `next-env.d.ts` (no `.next/dev`) and `types/jsx-namespace.d.ts` |
 | `leaflet` / `three` type or runtime miss | Add `leaflet` + `@types/leaflet` with `react-leaflet`, and `@types/three` with `three` |
@@ -202,6 +217,40 @@ and WebSocket proof.
 headed/narrow window when CSS variants are missing. After verify, inspect
 computed layout (Jira header tabs `flex-direction: column` when
 `data-horizontal`) in a real viewport, not only an accessibility snapshot.
+
+## Source-to-extract UI parity
+
+Treat extraction as preservation of the selected design. Use the source's exact
+route and the extracted `/` with matching viewport, theme, design-variant
+settings, and relevant persisted state. Separate fixture timing or user data
+differences from a styling or component mismatch.
+
+Choose the states exercised by the route; do not stop at its initial render:
+
+- Check relevant global themes and locally themed surfaces. On a fresh light
+  page, activate any inverse toolbar or overlay before toggling the global
+  theme. Compare computed background, text, icon colors, and `color-scheme`
+  with the source. Open its popup too: a portalled menu may intentionally retain
+  the app theme rather than the trigger's inverse theme.
+- Exercise selection, hover/focus, drag/pickup/drop, expanded/collapsed views,
+  and opened menus or dialogs where present. Match the source's icon components
+  and assets in these states. For an SVG icon, verify a rendered `svg` and its
+  source import/path; a similar-looking Unicode arrow is not icon evidence.
+- Inspect desktop and relevant narrow layouts, loaded fonts/assets, and computed
+  layout. Keep screenshots of the states that expose the contract, plus runtime
+  error and accessibility results.
+
+For Jira boards this includes selected-card and pickup toolbars, their app-themed
+popups, transition header arrows, status-choice arrows, and horizontal tabs
+whose container uses `flex-direction: column`. These are examples of the
+general state-parity requirement, not substitutes for another route's states.
+
+Resolve differences at their owner: generated theme/provider/CSS setup in the
+build harness, missing imports/assets in tracing/copying, and authorized design
+changes in the canonical VPK component. Do not hide a mismatch with target-only
+style overrides or replacement markup. Add regression coverage for a confirmed
+contract defect, then refresh and repeat the affected states. If parity remains
+unverified or a source defect remains, identify it explicitly at handoff.
 
 ## Ports and local runtime
 

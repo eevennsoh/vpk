@@ -35,6 +35,7 @@ import type { BoardAgentFilterId, BoardAgentSessionStateId } from "./data/board-
 import {
 	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
 	getHeaderFacepileAssigneeLimit,
+	getHeaderFacepileWidth,
 } from "./header-facepile";
 
 export interface HeaderAssigneeRenderContext {
@@ -73,6 +74,8 @@ function toggleSelectedAssigneeId(
 interface ExperimentalJiraKanbanBoardHeaderProps {
 	activeView?: ExperimentalJiraKanbanView;
 	assignees?: readonly JiraKanbanAssigneeData[];
+	/** Total visible avatars, including the Unassigned placeholder. Defaults to seven. */
+	avatarLimit?: number;
 	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	showUnassignedAvatar?: boolean;
 	compact?: boolean;
@@ -142,6 +145,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	viewTabs?: ReactNode;
 	/** Project name in the title cluster. Defaults to the Jira Design space. */
 	title?: string;
+	/** Optional project avatar replacing the default Jira Design artwork. */
+	avatar?: ReactNode;
 }
 
 export type ExperimentalJiraKanbanView = "board" | "list";
@@ -185,7 +190,7 @@ function AssigneeAvatar({
 	selected?: boolean;
 	showGroupStroke?: boolean;
 }>) {
-	const isAgent = assignee.avatarSrc.startsWith("/avatar-agent/");
+	const isAgent = assignee.avatarSrc?.startsWith("/avatar-agent/") ?? false;
 
 	return (
 		<Avatar
@@ -207,6 +212,7 @@ function AssigneeAvatar({
 export function ExperimentalJiraKanbanBoardHeader({
 	activeView = "board",
 	assignees = [],
+	avatarLimit,
 	renderHeaderAssignee,
 	showUnassignedAvatar = true,
 	compact = false,
@@ -234,15 +240,17 @@ export function ExperimentalJiraKanbanBoardHeader({
 	simpleViews,
 	viewTabs,
 	title = JIRA_DESIGN_PROJECT.name,
+	avatar,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
 	return (
 		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-6" : "pb-0")}>
-			<BoardHeaderTitleCluster surfaceLabel={surfaceLabel} title={title} />
+			<BoardHeaderTitleCluster avatar={avatar} surfaceLabel={surfaceLabel} title={title} />
 			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
 			{showBoardControls ? (
 				<BoardHeaderControlsRow
 					activeView={activeView}
 					assignees={assignees}
+					avatarLimit={avatarLimit}
 					renderHeaderAssignee={renderHeaderAssignee}
 					showUnassignedAvatar={showUnassignedAvatar}
 					compact={compact}
@@ -271,9 +279,11 @@ export function ExperimentalJiraKanbanBoardHeader({
 }
 
 function BoardHeaderTitleCluster({
+	avatar,
 	surfaceLabel,
 	title,
 }: Readonly<{
+	avatar?: ReactNode;
 	surfaceLabel: string;
 	title: string;
 }>) {
@@ -282,7 +292,7 @@ function BoardHeaderTitleCluster({
 			<div className="flex min-w-0 flex-col gap-0.5">
 				<span className="text-xs text-text-subtlest">Spaces</span>
 				<div className="flex min-w-0 items-center gap-2">
-					<JiraProjectAvatar label={title} src={JIRA_DESIGN_PROJECT.imageSrc} />
+					{avatar ?? <JiraProjectAvatar label={title} src={JIRA_DESIGN_PROJECT.imageSrc} />}
 					<Heading as="h1" className="min-w-0 truncate" size="medium">{title}</Heading>
 					<div className="flex shrink-0 items-center gap-1">
 						<Button aria-disabled aria-label="Add people" size="icon" variant="ghost">
@@ -308,6 +318,7 @@ function BoardHeaderTitleCluster({
 
 function BoardHeaderDefaultFacepile({
 	assignees,
+	avatarLimit,
 	renderHeaderAssignee,
 	showUnassignedAvatar,
 	onSelectedAssigneeIdsChange,
@@ -315,6 +326,7 @@ function BoardHeaderDefaultFacepile({
 	surfaceLabel,
 }: Readonly<{
 	assignees: readonly JiraKanbanAssigneeData[];
+	avatarLimit?: number;
 	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	showUnassignedAvatar: boolean;
 	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
@@ -329,9 +341,10 @@ function BoardHeaderDefaultFacepile({
 			<AvatarGroup
 				className={JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME}
 				label={`${surfaceTitle} assignees`}
+				style={avatarLimit === undefined ? undefined : { width: getHeaderFacepileWidth(avatarLimit) }}
 			>
 				{showUnassignedAvatar ? <AvatarUnassigned kind="person" label="Unassigned" size="sm" /> : null}
-				{assignees.slice(0, getHeaderFacepileAssigneeLimit(showUnassignedAvatar)).map((assignee) => (
+				{assignees.slice(0, getHeaderFacepileAssigneeLimit(showUnassignedAvatar, avatarLimit)).map((assignee) => (
 					<BoardHeaderAssigneeFacepileItem
 						assignee={assignee}
 						renderHeaderAssignee={renderHeaderAssignee}
@@ -409,6 +422,7 @@ function BoardHeaderControlsRow({
 	activeView,
 	agentFilterId,
 	assignees,
+	avatarLimit,
 	renderHeaderAssignee,
 	showUnassignedAvatar,
 	compact,
@@ -436,6 +450,7 @@ function BoardHeaderControlsRow({
 	activeView: ExperimentalJiraKanbanView;
 	agentFilterId?: BoardAgentFilterId | null;
 	assignees: readonly JiraKanbanAssigneeData[];
+	avatarLimit?: number;
 	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	showUnassignedAvatar: boolean;
 	compact: boolean;
@@ -494,6 +509,7 @@ function BoardHeaderControlsRow({
 			{facepile ?? (
 				<BoardHeaderDefaultFacepile
 					assignees={assignees}
+					avatarLimit={avatarLimit}
 					renderHeaderAssignee={renderHeaderAssignee}
 					showUnassignedAvatar={showUnassignedAvatar}
 					onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}

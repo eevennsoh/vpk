@@ -1,5 +1,8 @@
 ---
 description: Animating Base UI components with Motion for React
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
 ---
 
 # Animating Base UI with Motion for React

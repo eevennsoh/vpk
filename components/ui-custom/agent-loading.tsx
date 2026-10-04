@@ -18,11 +18,12 @@ import {
 	type AgentLoadingStatus,
 } from "@/components/ui-custom/agent-loading-model";
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 const AGENT_LOADING_HOLD_MS = 2_000;
 const AGENT_LOADING_SWAP_MS = 600; // duration-slowest
-const AGENT_LOADING_MOTION_SWAP: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
-const AGENT_LOADING_MOTION_EXIT: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
+const AGENT_LOADING_MOTION_SWAP: Transition = { duration: 0.6, ease: motionEase.inOut }; // duration-slowest + ease-in-out
+const AGENT_LOADING_MOTION_EXIT: Transition = { duration: 0.4, ease: motionEase.in }; // duration-slower + ease-in
 const AGENT_LOADING_MOTION_REDUCED: Transition = { duration: 0 };
 const AGENT_LOADING_SLOT_STYLE: MotionStyle = {
 	originX: 0,

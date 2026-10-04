@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { motion } from "motion/react";
 import ArrowDownIcon from "@atlaskit/icon/core/arrow-down";
 import { Icon } from "@/components/ui/icon";
 import { JiraDropzoneAntsStroke } from "@/components/blocks/jira-dropzone/jira-dropzone-ants-stroke";
@@ -23,21 +24,27 @@ function BoardIssueStatusDropZone({ selected, status }: Readonly<{ selected: boo
 	return <div
 		ref={targetRef}
 		data-issue-status-zone={status}
-		className={cn(
-			"relative flex min-h-0 flex-1 items-center justify-center overflow-hidden text-center text-sm font-medium transition-colors duration-normal ease-out-practical motion-reduce:transition-none",
-			JIRA_DROPZONE_WELL_CHROME_CLASS,
-			resolveJiraDropzoneWellColors(selected),
-			!shouldReduceMotion ? JIRA_DROPZONE_ANTS_CLASS : null,
-		)}
+		className="relative min-h-0 flex-1"
 	>
-		{!shouldReduceMotion ? <JiraDropzoneAntsStroke selected={selected} /> : null}
-		<JiraDropzoneMagneticLabel magnet={magnet}>
-			<span className="flex flex-col items-center justify-center gap-1">
-				<span className="text-xs font-medium leading-4 text-text-subtle">Transition to</span>
-				<span aria-hidden className="inline-block rotate-90 text-xs font-medium leading-4 text-text-subtle" data-issue-transition-arrow="">→</span>
-				<Lozenge className="mt-1" variant="information">{status}</Lozenge>
-			</span>
-		</JiraDropzoneMagneticLabel>
+		{/* Keep detection fixed while the painted well follows the create well's 8px lean. */}
+		<motion.div
+			className={cn(
+				"pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden text-center text-sm font-medium transition-colors duration-normal ease-out-practical will-change-transform motion-reduce:transition-none",
+				JIRA_DROPZONE_WELL_CHROME_CLASS,
+				resolveJiraDropzoneWellColors(selected),
+				!shouldReduceMotion ? JIRA_DROPZONE_ANTS_CLASS : null,
+			)}
+			style={{ x: shouldReduceMotion ? 0 : magnet.x, y: 0 }}
+		>
+			{!shouldReduceMotion ? <JiraDropzoneAntsStroke selected={selected} /> : null}
+			<JiraDropzoneMagneticLabel magnet={magnet}>
+				<span className="flex flex-col items-center justify-center gap-1">
+					<span className="text-xs font-medium leading-4 text-text-subtle">Transition to</span>
+					<Icon aria-hidden className="text-icon-subtle" data-issue-transition-arrow="" render={<ArrowDownIcon color="currentColor" label="" size="small" />} />
+					<Lozenge className="mt-1" variant="information">{status}</Lozenge>
+				</span>
+			</JiraDropzoneMagneticLabel>
+		</motion.div>
 	</div>;
 }
 
@@ -75,7 +82,7 @@ export function BoardIssueTransitionOverlay({ issueDrop, title, moveVisual = tru
 		{issueDrop.offeringChoices || issueDrop.current?.entered ? <BoardIssueStatusChoices issueDrop={issueDrop} title={title} moveVisual={moveVisual} /> : null}
 		{insertion?.lineTop !== undefined ? (
 			<div className="pointer-events-none absolute inset-x-1 z-30" style={{ top: insertion.lineTop }} data-issue-drop-before={insertion.beforeCardCode ?? "end"}>
-				<BoardCardInsertionLine position="before" seam="edge" marker={moveVisual ? "none" : "circle"} />
+				<BoardCardInsertionLine position="before" seam="edge" marker="circle" />
 			</div>
 		) : null}
 	</>;

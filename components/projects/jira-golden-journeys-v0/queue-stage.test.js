@@ -310,8 +310,8 @@ test("Queue detail panel reuses session details and adds sources and output", ()
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /h-full bg-surface/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /useReducedMotion\(\)/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /transform: "translateX\(100%\)"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.25, ease: \[0, 0\.4, 0, 1\]/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.2, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.25, ease: motionEase\.out\b/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.2, ease: motionEase\.in\b/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelTitle>Details<\/PanelTitle>/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelActionClose label="Close detail panel" onClick=\{onClose\} \/>/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /createAsxQueueSidebarSessionItem\(session\)/u);

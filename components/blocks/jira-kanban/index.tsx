@@ -28,7 +28,7 @@ import {
 import { AgentSelector } from "@/components/blocks/agent-selector";
 import type { JiraKanbanCardDropTarget } from "./card-drop";
 import { hasJiraSelectionToggleModifier } from "./selection-modifiers";
-import { JiraToolbar } from "@/components/blocks/jira-toolbar";
+import { JiraToolbar, type JiraToolbarProps } from "@/components/blocks/jira-toolbar";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -61,6 +61,7 @@ import {
 	type KanbanColumnChrome,
 	type KanbanColumnChromeStyles,
 } from "./column-chrome";
+import { motionEase } from "@/lib/motion";
 
 export type { KanbanColumnChrome };
 
@@ -68,13 +69,14 @@ export type JiraKanbanPriority = JiraIssuePriority;
 
 export type JiraKanbanCardTag = JiraIssueTag;
 
-const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
-const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
+const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: motionEase.inOut }; // duration-slowest + ease-in-out
+const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: motionEase.in }; // duration-slower + ease-in
 
 export interface JiraKanbanAssigneeData {
 	id: string;
 	name: string;
-	avatarSrc: string;
+	/** Omit when the header renderer supplies a brand visual or initials. */
+	avatarSrc?: string;
 }
 
 export interface JiraKanbanCardData {
@@ -142,6 +144,7 @@ function getJiraKanbanCardScale(
 }
 
 export interface JiraKanbanSelectionToolbarConfig {
+	getStatusVariant?: JiraToolbarProps["getStatusVariant"];
 	/** A board-owned keyboard handler can take precedence over global dismissal. */
 	dismissOnEscape?: boolean;
 	onSelectAll?: () => void;
@@ -804,6 +807,7 @@ export function JiraKanban({
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
 						dismissOnEscape={selectionToolbar.dismissOnEscape}
+						getStatusVariant={selectionToolbar.getStatusVariant}
 						defaultPinnedAgentIds={selectionToolbar.defaultPinnedAgentIds}
 						onSelectAll={selectionToolbar.onSelectAll}
 						onAskRovo={selectionToolbar.onAskRovo}

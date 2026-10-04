@@ -63,10 +63,17 @@ test("grid stroke mask includes dashed stroke parameters", async () => {
 	);
 
 	assert.match(svg, /width="24" height="24"/);
+	assert.match(svg, /preserveAspectRatio="none"/);
 	assert.match(svg, /stroke-width="2"/);
 	assert.match(svg, /stroke-linecap="round"/);
 	assert.match(svg, /stroke-linejoin="bevel"/);
 	assert.match(svg, /stroke-miterlimit="6"/);
 	assert.match(svg, /stroke-dasharray="8 4"/);
 	assert.match(svg, /stroke-dashoffset="3"/);
+});
+
+test("balanced grid lines sit at cell centers while existing grids retain their edge strokes", async () => {
+	const { buildGridStrokeMaskImage } = await helpers;
+	assert.match(decodeMaskImage(buildGridStrokeMaskImage(32, { width: 1 }, true)), /d="M 0 16 H 32 M 16 0 V 32"/);
+	assert.match(decodeMaskImage(buildGridStrokeMaskImage(32, { width: 1 })), /d="M 0 0\.5 H 32 M 0\.5 0 V 32"/);
 });

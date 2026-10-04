@@ -278,7 +278,7 @@ function Comp_ai_generative_text_summary({ size, color = "currentColor", hovered
         />
       ))}
 
-      {!singleColor && LINE_DEFS.map((ld, li) =>
+      {!singleColor ? LINE_DEFS.map((ld, li) =>
         ROVO_COLORS.map((clr, ci) => (
           <line
             key={`grad-${li}-${ci}`}
@@ -296,7 +296,7 @@ function Comp_ai_generative_text_summary({ size, color = "currentColor", hovered
             strokeDashoffset="0"
           />
         ))
-      )}
+      ) : null}
 
       <motion.g
             variants={TEXT_SUMMARY_SPARKLE_GROUP_VARIANTS}
@@ -312,8 +312,7 @@ function Comp_ai_generative_text_summary({ size, color = "currentColor", hovered
           initial="initial"
           animate={solidControls}
         />
-        {!singleColor && (
-          <motion.g
+        {!singleColor ? <motion.g
             variants={TEXT_SUMMARY_SPARKLE_GRADIENT_VARIANTS}
             initial="initial"
             animate={solidControls}
@@ -327,8 +326,7 @@ function Comp_ai_generative_text_summary({ size, color = "currentColor", hovered
                 }}
               />
             </foreignObject>
-          </motion.g>
-        )}
+          </motion.g> : null}
       </motion.g>
     </motion.svg>
   );
@@ -580,8 +578,7 @@ function Comp_rovo_chat({ size, color = "currentColor", hovered, singleColor }: 
             initial="initial"
             animate={controls}
           />
-          {!singleColor && (
-            <motion.g
+          {!singleColor ? <motion.g
               variants={sparkleGradient}
               initial="initial"
               animate={controls}
@@ -601,8 +598,7 @@ function Comp_rovo_chat({ size, color = "currentColor", hovered, singleColor }: 
                   }}
                 />
               </foreignObject>
-            </motion.g>
-          )}
+            </motion.g> : null}
         </motion.g>
       </motion.g>
     </motion.svg>
@@ -828,7 +824,7 @@ function Comp_angle_brackets({ size, color = "currentColor", hovered, singleColo
           ref={slashSolidRef}
           d={ABR_SLASH}
         />
-        {!singleColor && ROVO_COLORS.map((clr, ci) => (
+        {!singleColor ? ROVO_COLORS.map((clr, ci) => (
           <path
             key={ci}
             ref={setSlashGradRef(ci)}
@@ -838,7 +834,7 @@ function Comp_angle_brackets({ size, color = "currentColor", hovered, singleColo
             opacity={0}
             strokeDasharray="0 100"
           />
-        ))}
+        )) : null}
       </g>
 
       <motion.g variants={rightSpread} initial="initial" animate={controls}>
@@ -962,8 +958,7 @@ function Comp_ai_generative_text({ size, color = "currentColor", hovered, single
           initial="initial"
           animate={controls}
         />
-        {!singleColor && (
-          <motion.g
+        {!singleColor ? <motion.g
             variants={sparkleGradient}
             initial="initial"
             animate={controls}
@@ -983,8 +978,7 @@ function Comp_ai_generative_text({ size, color = "currentColor", hovered, single
                 }}
               />
             </foreignObject>
-          </motion.g>
-        )}
+          </motion.g> : null}
       </motion.g>
     </motion.svg>
   );
@@ -1097,8 +1091,7 @@ function Comp_ai_search({ size, color = "currentColor", hovered, singleColor }: 
           />
         </g>
 
-        {!singleColor && (
-          <motion.g
+        {!singleColor ? <motion.g
             variants={gradientFade}
             initial="initial"
             animate={controls}
@@ -1119,8 +1112,7 @@ function Comp_ai_search({ size, color = "currentColor", hovered, singleColor }: 
                 animate={controls}
               />
             </foreignObject>
-          </motion.g>
-        )}
+          </motion.g> : null}
       </motion.g>
 
       <motion.g variants={sparkleSpin} initial="initial" animate={controls} style={{ transformOrigin: "16.125px 4.875px" }}>
@@ -1134,8 +1126,7 @@ function Comp_ai_search({ size, color = "currentColor", hovered, singleColor }: 
           initial="initial"
           animate={controls}
         />
-        {!singleColor && (
-          <motion.g
+        {!singleColor ? <motion.g
             variants={sparkleGradientFade}
             initial="initial"
             animate={controls}
@@ -1156,8 +1147,7 @@ function Comp_ai_search({ size, color = "currentColor", hovered, singleColor }: 
                 animate={controls}
               />
             </foreignObject>
-          </motion.g>
-        )}
+          </motion.g> : null}
       </motion.g>
     </motion.svg>
   );

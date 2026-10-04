@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { AGENT_SESSION_NOTCH_LENGTH, AGENT_SESSION_NOTCH_MAGNIFY_RADIUS, AGENT_SESSION_NOTCH_NO_NEAREST, AGENT_SESSION_NOTCH_POINTER_AWAY, AGENT_SESSION_NOTCH_TONE, AGENT_SESSION_USER_NOTCH_DIAMETER, toAgentSessionNotchLength, toAgentSessionNotchMagnification, toAgentSessionNotchTone, toAgentSessionUserNotchDiameter, toNearestAgentSessionNotchIndex } from "./agent-session-notch-magnify.ts";
 
 /** The rail's pitch: a 20px notch row plus the list's 4px gap. */

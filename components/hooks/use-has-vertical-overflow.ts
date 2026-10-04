@@ -107,8 +107,15 @@ export function getVerticalOverflowResizeTargets(element: Element): Element[] {
 
 export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void, { trackAnimatedOverflow = false }: VerticalOverflowOptions = {}): () => void {
 	let measurementFrame = 0;
+	let resizeTargetsStale = false;
 	const measure = () => {
 		measurementFrame = 0;
+		// Resolved in the frame, not per mutation: each boxless-wrapper check reads
+		// computed style, which right after a commit forces an extra style pass.
+		if (resizeTargetsStale) {
+			resizeTargetsStale = false;
+			syncResizeTargets();
+		}
 		updateScrollState();
 	};
 	const scheduleMeasurement = () => {
@@ -153,7 +160,7 @@ export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollSt
 		? null
 		: new MutationObserver((records) => {
 				if (records.some((record) => record.type === "childList" || record.attributeName === "class")) {
-					syncResizeTargets();
+					resizeTargetsStale = true;
 				}
 				scheduleMeasurement();
 			});

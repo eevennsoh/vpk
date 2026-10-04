@@ -196,7 +196,7 @@ test("Gallery suppresses click-to-expand after a drag-to-pan gesture", () => {
 test("Gallery selected surface preserves the organic ink-bloom contract", () => {
 	const source = readProjectFile("components/blocks/gallery/components/gallery-selected-surface.tsx");
 	assert.match(source, /const ENTER_EASE = \[0\.45, 0, 0\.55, 1\] as const;/u);
-	assert.match(source, /const EXIT_EASE = \[0, 0\.4, 0, 1\] as const;/u);
+	assert.match(source, /const EXIT_EASE = motionEase\.out;/u);
 	assert.match(source, /const DUR_ENTER = 0\.8;/u);
 	assert.match(source, /const inkMaskSeed = seed \+ visual\.key \* 7919;/u);
 	assert.match(

@@ -1,12 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`hover previews each status before the dwell and clears in the gap (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.clock.install();
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
 		const card = page.locator('[data-issue-key="PAY-105"] [draggable="true"]').first();
 		const source = (await card.boundingBox())!;
@@ -49,7 +51,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`destination changes preserve the transition prefix (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/preview/blocks/jira-dragging`);
+		await page.goto(appUrl("/preview/blocks/jira-dragging"));
 		await page.waitForLoadState("networkidle");
 		const card = page.locator('[data-issue-key="PAY-105"] [draggable="true"]').first();
 		const source = (await card.boundingBox())!;

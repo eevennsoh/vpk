@@ -1,0 +1,4 @@
+interface:
+  display_name: "VPK Explain"
+  short_description: "Explain with prose, diagrams, HTML, or requested video"
+  default_prompt: "Use $vpk-explain to explain this material for my audience, choosing a suitable format and producing a video when requested."

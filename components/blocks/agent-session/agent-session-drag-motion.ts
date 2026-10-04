@@ -1,17 +1,18 @@
 import type { Transition } from "motion/react";
 
 import type { PointerDragPosition } from "@/components/ui-custom/hooks/use-pointer-drag";
+import { motionEase } from "../../../lib/motion.ts";
 
 /** Standalone parity: duration-slower + ease-in-out, independent of pointer travel. */
 export const SESSION_DRAG_CHIP_ENTER_TRANSITION = {
 	duration: 0.4,
-	ease: [0.4, 0, 0, 1],
+	ease: motionEase.inOut,
 } satisfies Transition;
 
 /** Paper keeps its existing fast popup-family entrance. */
 export const SESSION_PEEL_CHIP_ENTER_TRANSITION = {
 	duration: 0.1,
-	ease: [0.4, 1, 0.6, 1],
+	ease: motionEase.outPractical,
 } satisfies Transition; // duration-fast + ease-out-practical
 
 /** Marks the row's identity mark so the chip can fly out of the grabbed avatar. */

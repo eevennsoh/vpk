@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types runner needs the explicit extension.
 import { advanceAgentSessionArrivals } from "./use-agent-session-arrivals.ts";
 
 const initialInput = {

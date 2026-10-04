@@ -198,8 +198,7 @@ export function LiveLine({
       </defs>
 
       {/* Area fill */}
-      {fill && data.length > 1 && (
-        <g mask={`url(#${fadeMaskId})`}>
+      {fill && data.length > 1 ? <g mask={`url(#${fadeMaskId})`}>
           <AreaClosed
             curve={curve}
             data={data}
@@ -209,12 +208,10 @@ export function LiveLine({
             y={getY}
             yScale={yScale}
           />
-        </g>
-      )}
+        </g> : null}
 
       {/* Line */}
-      {data.length > 1 && (
-        <g mask={`url(#${fadeMaskId})`}>
+      {data.length > 1 ? <g mask={`url(#${fadeMaskId})`}>
           <LinePath
             curve={curve}
             data={data}
@@ -225,8 +222,7 @@ export function LiveLine({
             x={getX}
             y={getY}
           />
-        </g>
-      )}
+        </g> : null}
 
       {/* Dashed horizontal line at current value */}
       <line
@@ -247,8 +243,7 @@ export function LiveLine({
       >
         {/* Pulsing dot */}
         <g>
-          {pulse && (
-            <circle
+          {pulse ? <circle
               cx={liveDotX}
               cy={liveDotY}
               fill="none"
@@ -271,8 +266,7 @@ export function LiveLine({
                 repeatCount="indefinite"
                 to="0"
               />
-            </circle>
-          )}
+            </circle> : null}
           <circle
             cx={liveDotX}
             cy={liveDotY}
@@ -291,8 +285,7 @@ export function LiveLine({
         </g>
 
         {/* Badge — use chart tooltip vars so text is never white-on-white */}
-        {badge && (
-          <g transform={`translate(${liveDotX + 12},${liveDotY})`}>
+        {badge ? <g transform={`translate(${liveDotX + 12},${liveDotY})`}>
             <rect
               fill="var(--chart-tooltip-background)"
               height={24}
@@ -312,8 +305,7 @@ export function LiveLine({
             >
               {formatValue(liveValue)}
             </text>
-          </g>
-        )}
+          </g> : null}
       </motion.g>
     </>
   );

@@ -122,8 +122,7 @@ export function TaskCard({ task, isDragOverlay = false, onTaskClick, onDeleteCli
 					>
 						{priorityInfo.label}
 					</Lozenge>
-					{!isDragOverlay && (
-						<Button
+					{!isDragOverlay ? <Button
 							variant="ghost"
 							size="icon"
 							className="size-5 opacity-0 transition-opacity group-hover/task-card:opacity-100"
@@ -131,19 +130,15 @@ export function TaskCard({ task, isDragOverlay = false, onTaskClick, onDeleteCli
 							title="Delete task"
 						>
 							<DeleteIcon label="Delete" size="small" />
-						</Button>
-					)}
+						</Button> : null}
 				</div>
 			</div>
 
 			{/* Description (if available) */}
-			{task.description && (
-				<p className="text-xs text-text-subtle mb-2 line-clamp-2">{task.description}</p>
-			)}
+			{task.description ? <p className="text-xs text-text-subtle mb-2 line-clamp-2">{task.description}</p> : null}
 
 			{/* Labels */}
-			{task.labels && task.labels.length > 0 && (
-				<div className="flex flex-wrap gap-1 mb-2">
+			{task.labels && task.labels.length > 0 ? <div className="flex flex-wrap gap-1 mb-2">
 					{task.labels.map((label, idx) => (
 						<Lozenge
 							key={`${task.id}-label-${idx}`}
@@ -153,8 +148,7 @@ export function TaskCard({ task, isDragOverlay = false, onTaskClick, onDeleteCli
 							{label.text}
 						</Lozenge>
 					))}
-				</div>
-			)}
+				</div> : null}
 
 			{/* Footer: Assignee, Story Points */}
 			<div className="flex items-center justify-between gap-2 pt-2 border-t border-border-subtle">
@@ -175,14 +169,12 @@ export function TaskCard({ task, isDragOverlay = false, onTaskClick, onDeleteCli
 				</div>
 
 				{/* Story Points Badge */}
-				{task.storyPoints && (
-					<div className="flex items-center gap-1 shrink-0">
+				{task.storyPoints ? <div className="flex items-center gap-1 shrink-0">
 						<span className="text-xs text-text-subtle">pts:</span>
 						<span className="inline-flex h-5 min-w-5 items-center justify-center rounded-sm bg-bg-neutral px-1 text-xs font-medium text-text">
 							{task.storyPoints}
 						</span>
-					</div>
-				)}
+					</div> : null}
 			</div>
 		</div>
 	);
