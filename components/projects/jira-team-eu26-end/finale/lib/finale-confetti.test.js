@@ -51,6 +51,40 @@ test("one mirrored burst of Rovo paper, sequins and ribbons, balanced in hue eve
 	}
 });
 
+test("a single-card burst uses smaller pieces from both viewport corners", () => {
+	const { createFinaleConfettiBurst, finaleConfettiFree, FINALE_CONFETTI_TIMING: T } = load();
+	const small = createFinaleConfettiBurst({ ...STAGE, size: "small" });
+	const large = createFinaleConfettiBurst(STAGE);
+	assert.equal(small.pieces.length, 120);
+	assert.equal(small.pieces.filter((piece) => piece.corner === "left").length, 60);
+	assert.deepEqual(new Set(small.pieces.map((piece) => piece.material)), new Set(["paper", "sequin", "ribbon"]));
+	const average = (pieces, value) => pieces.reduce((sum, piece) => sum + value(piece), 0) / pieces.length;
+	assert.ok(average(small.pieces, (piece) => piece.size.length) < average(large.pieces, (piece) => piece.size.length) * 0.8);
+	assert.ok(average(small.pieces, (piece) => Math.hypot(piece.velocity.x, piece.velocity.y)) < average(large.pieces, (piece) => Math.hypot(piece.velocity.x, piece.velocity.y)) * 0.4);
+	for (const piece of small.pieces) {
+		assert.equal(piece.origin.x, piece.corner === "left" ? 0 : STAGE.width);
+		assert.equal(piece.origin.y, STAGE.height + 8);
+		const airborne = finaleConfettiFree(piece, T.gatherStart);
+		assert.ok(piece.origin.y - airborne.y < 400, "a low plume, rather than the full-screen launch");
+		assert.equal(piece.gather, null, "single-card confetti has no destination to gather into");
+	}
+	assert.deepEqual(large.pieces, createFinaleConfettiBurst({ ...STAGE, size: "large" }).pieces, "the original full-board burst remains the default");
+});
+
+test("single-card confetti stays in free flight after the full finale's gather cue", () => {
+	const { createFinaleConfettiBurst, finaleConfettiCenter, finaleConfettiFree, finaleConfettiGather, packFinaleConfettiBurst } = load();
+	const small = createFinaleConfettiBurst({ ...STAGE, size: "small" });
+	for (const piece of small.pieces) {
+		for (const time of [0.6, 1, 1.4, 2]) {
+			assert.deepEqual(finaleConfettiCenter(piece, time), finaleConfettiFree(piece, time));
+			assert.equal(finaleConfettiGather(piece, time), 0);
+		}
+	}
+	const attributes = packFinaleConfettiBurst(small);
+	assert.ok(attributes.aGather.array.every((value, index) => index % 4 === 3 || value === 0), "the GPU receives no pull or vortex");
+	assert.ok(attributes.aSink.array.every((value) => value === 0), "no Done-column target");
+});
+
 test("each corner fires a stream: the plume's head first, the gentle trail dribbling out last", () => {
 	const { createFinaleConfettiBurst, FINALE_CONFETTI_TIMING: T } = load();
 	const { pieces } = createFinaleConfettiBurst(STAGE);

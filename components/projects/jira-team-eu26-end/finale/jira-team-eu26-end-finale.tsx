@@ -89,11 +89,25 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		const next = nextFinaleDragOrder(dragOrderRef.current, codes);
 		if (next === dragOrderRef.current) return;
 		const known = new Set(dragOrderRef.current);
+		const arrived = next.filter((code) => !known.has(code));
 		// Completion preparation owns any missing prints. Arrival timers must
 		// not compete with the column image that the shader needs first.
-		for (const code of next) if (!known.has(code) && !ready) prints.schedule(code);
+		for (const code of arrived) if (!ready) prints.schedule(code);
 		dragOrderRef.current = next;
-	}, [doneKey, prints, ready]);
+		if (arrived.length !== 1 || ready || reducedMotion) return undefined;
+		const controller = new AbortController();
+		let show: FinaleConfettiShow | null = null;
+		void waitForFinaleColumnCapture(controller.signal).then((column) => {
+			if (!column || controller.signal.aborted) return;
+			const { x, y, width, height } = column.getBoundingClientRect();
+			const radius = Number.parseFloat(getComputedStyle(column).borderBottomLeftRadius) || 0;
+			show = confetti.play({ x, y, width, height, radius }, "small");
+		});
+		return () => {
+			controller.abort();
+			show?.cancel();
+		};
+	}, [confetti, doneKey, prints, ready, reducedMotion]);
 
 	const prepare = useCallback((seek: number, hold: boolean) => {
 		const dragOrder = dragOrderRef.current;
