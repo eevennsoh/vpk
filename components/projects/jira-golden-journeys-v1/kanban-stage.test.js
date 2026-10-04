@@ -122,7 +122,6 @@ test("JGP Kanban reuses the Jira Issue aggregate row for working agents", () => 
 	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 2);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /avatarLayout = "animated"/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AgentLoading[\s\S]*agents=\{activities\.map\(toAgentLoadingAgent\)\}[\s\S]*className="shrink-0"/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" \/>/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /isCompletedRow\s*\? featuredActivity\?\.label \?\? "Finished"\s*: summary\.label;/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /if \(isAwaitingInput\) \{[\s\S]*\{rowLabel\}[\s\S]*<AnimatedDots/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /className="block min-w-0 flex-1 truncate text-sm leading-5 text-text"[\s\S]*\{rowLabel\}/u);

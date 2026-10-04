@@ -931,7 +931,7 @@
   },
   "components/blocks/jira-kanban/experimental/components/board-view-menu.test.js": {
     "no-restricted-syntax": {
-      "count": 51
+      "count": 49
     }
   },
   "components/blocks/jira-kanban/experimental/components/created-card-arrival-motion.tsx": {
@@ -1884,7 +1884,7 @@
   },
   "components/projects/jira-golden-journeys-v0/kanban-stage.test.js": {
     "no-restricted-syntax": {
-      "count": 51
+      "count": 50
     }
   },
   "components/projects/jira-golden-journeys-v0/lib/terminal-demo-state.test.js": {
@@ -1934,7 +1934,7 @@
   },
   "components/projects/jira-golden-journeys-v1/kanban-stage.test.js": {
     "no-restricted-syntax": {
-      "count": 101
+      "count": 100
     }
   },
   "components/projects/jira-golden-journeys-v1/lib/terminal-demo-state.test.js": {
@@ -2052,7 +2052,7 @@
   },
   "components/projects/jira-team-eu26-end/jira-team-eu26-end-controls.test.js": {
     "no-restricted-syntax": {
-      "count": 16
+      "count": 14
     }
   },
   "components/projects/jira-team-eu26-end/jira-team-eu26-end-create-session.test.js": {
