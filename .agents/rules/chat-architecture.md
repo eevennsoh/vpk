@@ -1,5 +1,15 @@
 ---
 description: AI SDK / Chat architecture — useChat, Rovo Serve, data parts, streaming
+paths:
+  - "app/contexts/**"
+  - "app/api/chat-sdk/**"
+  - "backend/chat/**"
+  - "backend/routes/**"
+  - "backend/lib/**"
+  - "rovo/**"
+  - "lib/rovo-*.ts"
+  - "components/projects/rovo*/**"
+  - "components/projects/studio/**"
 ---
 
 # AI SDK / Chat Architecture

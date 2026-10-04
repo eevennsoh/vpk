@@ -35,7 +35,7 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira-golden-journeys-v0": {
-		description: "Jira Golden Journeys v0 — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
+		description: "The original agent-session pattern gallery: each card (Terminal, Rovo, Queue, For you, Kanban, List, Work item) opens that pattern's design in the stage.",
 		importStatement: `import JiraGoldenJourneysV0Page from "@/components/projects/jira-golden-journeys-v0";`,
 		demoLayout: {
 			previewHeight: "fixed",
@@ -43,7 +43,7 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira-golden-journeys-v1": {
-		description: "Jira Golden Journeys v1 — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
+		description: "Two presenter-paced session walkthroughs, stepped screen by screen: Carl's local Claude Code session on JGP-247 and Sarah's global session delegating five Jira tasks to Cursor.",
 		importStatement: `import JiraGoldenJourneysV1Page from "@/components/projects/jira-golden-journeys-v1";`,
 		demoLayout: {
 			previewHeight: "fixed",
@@ -51,7 +51,7 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira-golden-journeys-v2": {
-		description: "A Jira Golden Journeys v2 gallery with a Work Item stage for the software delivery story.",
+		description: "A guest-checkout work item moved through seven delivery chapters, Intake to Release, with a Details/Activity rail and a guided PR #1847 review.",
 		importStatement: `import JiraGoldenJourneysV2Page from "@/components/projects/jira-golden-journeys-v2";`,
 		demoLayout: {
 			previewHeight: "fixed",
@@ -59,7 +59,7 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira-golden-journeys-v3": {
-		description: "A Jira Golden Journeys v3 gallery with a Work Item stage for the software delivery story.",
+		description: "Four delivery chapters, Track, Learn, Build and Terminal: a Payments SDK board, the PAY-101 work item with scroll-linked sections and PR #1839, and a terminal session.",
 		importStatement: `import JiraGoldenJourneysV3Page from "@/components/projects/jira-golden-journeys-v3";`,
 		demoLayout: {
 			previewHeight: "fixed",
@@ -67,7 +67,7 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira-golden-journeys-v4": {
-		description: "A Jira Golden Journeys v4 gallery with a Work Item stage for the software delivery story.",
+		description: "The Payments SDK v2 migration board in full Jira chrome, with Board/List views and an Unlink sessions column, without a story gallery.",
 		importStatement: `import JiraGoldenJourneysV4Page from "@/components/projects/jira-golden-journeys-v4";`,
 		demoLayout: {
 			previewHeight: "fixed",
@@ -83,7 +83,7 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira-team-eu26": {
-		description: "A Jira Team EU26 gallery with a Work Item stage for the software delivery story.",
+		description: "The Team ’26 EU Payments SDK v2 migration board in Jira chrome, with Board/List views, session filters, an Unlink sessions column and drag-to-link agent sessions.",
 		importStatement: `import JiraTeamEu26Page from "@/components/projects/jira-team-eu26";`,
 		demoLayout: {
 			previewHeight: "fixed",
@@ -91,7 +91,7 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira-team-eu26-end": {
-		description: "A Team ’26 EU keynote board with thirteen story cards organized into Context, Collaboration, and Confidence columns, a Done destination, and a retained agent-session rail.",
+		description: "The Team ’26 EU keynote closing board: thirteen announcement cards in Context, Collaboration and Confidence columns; moving them all into Done plays the recap finale.",
 		importStatement: `import JiraTeamEu26EndPage from "@/components/projects/jira-team-eu26-end";`,
 		demoLayout: {
 			previewHeight: "fixed",

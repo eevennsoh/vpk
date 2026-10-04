@@ -367,9 +367,25 @@ export function beat(x: number): number {
 	return clamp(first + 0.6 * second);
 }
 
-/** Where a spot's centre is on the lap at `time`: Paper's `atg1 = fract(angle + time)` peaks at 0.5. */
+/**
+ * The glow's motion clock (spot orbits, flicker, heartbeat, hue and smoke) for
+ * finale `time`, anchored to the toss. Every tile's look was tuned with the
+ * toss at `TILE_GLOW_EPOCH`; anchoring keeps each glow frame-identical however
+ * the flash before the toss is retimed. The shader's `uTime` is this clock.
+ */
+const TILE_GLOW_EPOCH = 0.87;
+
+export function tileGlowClock(time: number): number {
+	return time - CUE.burst + TILE_GLOW_EPOCH;
+}
+
+function centreAt(spot: TileGlowSpot, clock: number): number {
+	return fract(0.5 - spot.speed * clock - spot.phase);
+}
+
+/** Where a spot's centre is on the lap at finale `time`: Paper's `atg1 = fract(angle + time)` peaks at 0.5. */
 export function spotCentre(spot: TileGlowSpot, time: number): number {
-	return fract(0.5 - spot.speed * time - spot.phase);
+	return centreAt(spot, tileGlowClock(time));
 }
 
 /** Tile-wide values that drift while it glows. */
@@ -381,9 +397,10 @@ export interface TileGlowPulse {
 }
 
 export function tileGlowPulse(look: TileGlowLook, time: number): TileGlowPulse {
+	const clock = tileGlowClock(time);
 	return {
-		beat: beat(look.pulseRate * time + look.pulsePhase),
-		drift: Math.sin(look.modRate * time + look.modPhase),
+		beat: beat(look.pulseRate * clock + look.pulsePhase),
+		drift: Math.sin(look.modRate * clock + look.modPhase),
 	};
 }
 
@@ -405,10 +422,11 @@ function rgb01(hex: string): [number, number, number] {
 
 /** One spot's sector at share `u` and `time`, after its mask and Paper's intensity clip. */
 export function spotSector(u: number, spot: TileGlowSpot, look: TileGlowLook, time: number, pulse: TileGlowPulse = tileGlowPulse(look, time)): number {
-	const size = spot.size * (1 + TILE_GLOW.sizeSwing * Math.sin(spot.sizeRate * time + spot.sizePhase));
-	const a = fract(u - spotCentre(spot, time) + 0.5);
+	const clock = tileGlowClock(time);
+	const size = spot.size * (1 + TILE_GLOW.sizeSwing * Math.sin(spot.sizeRate * clock + spot.sizePhase));
+	const a = fract(u - centreAt(spot, clock) + 0.5);
 	const shape = smoothstep(0.5 - size, 0.5, a) * (1 - smoothstep(0.5, 0.5 + size, a));
-	let mask = 0.5 + 0.5 * Math.sin(spot.maskRate * time + spot.maskPhase);
+	let mask = 0.5 + 0.5 * Math.sin(spot.maskRate * clock + spot.maskPhase);
 	mask = lerp(TILE_GLOW.maskFloor, 1, mask);
 	mask = lerp(mask, pulse.beat, spot.pulseMix);
 	return clamp(shape * mask * look.intensity);
@@ -422,6 +440,7 @@ export function spotSector(u: number, spot: TileGlowSpot, look: TileGlowLook, ti
  */
 export function strokeProfile(u: number, time: number, look: TileGlowLook, perimeter: number, scale: number): StrokeProfile {
 	const pulse = tileGlowPulse(look, time);
+	const clock = tileGlowClock(time);
 	let blend = 0;
 	let add = 0;
 	let white = 0;
@@ -432,7 +451,7 @@ export function strokeProfile(u: number, time: number, look: TileGlowLook, perim
 		blend += (1 - blend) * sector;
 		add += sector;
 		white += spot.white * sector * sector * (0.6 + 0.4 * pulse.beat);
-		const slide = look.hueShift * (0.5 + 0.5 * Math.sin(0.9 * time + spot.huePhase));
+		const slide = look.hueShift * (0.5 + 0.5 * Math.sin(0.9 * clock + spot.huePhase));
 		const from = rgb01(spot.color);
 		const to = rgb01(spot.shift);
 		const w = sector + 1e-3;
@@ -441,7 +460,7 @@ export function strokeProfile(u: number, time: number, look: TileGlowLook, perim
 	}
 	const heat = lerp(blend, Math.min(add, 1.5), look.bloomMix);
 	// Paper's smoke, scrolling both ways along the stroke.
-	const t = 1.2 * time;
+	const t = 1.2 * clock;
 	const x = (u * perimeter) / (look.smokeSize * scale) + look.smokeSeed;
 	const haze = clamp(3 * noise1(2.7 * x + 0.5 * t)) - noise1(3.4 * x - 0.5 * t);
 	const smokeGlow = 0.35 * clamp(30 * haze * haze * 0.5 * look.smoke * look.smoke);

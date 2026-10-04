@@ -7,13 +7,12 @@ import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PriorityTrivialIcon from "@atlaskit/icon/core/priority-trivial";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-import QuestionCircleIcon from "@atlaskit/icon/core/question-circle";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import GroupIcon from "@atlaskit/icon-lab/core/group";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
-import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
+import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 
 import { BOARD_GROUP_OPTIONS, type BoardGroupOptionId } from "../data/board-group-options";
 import {
@@ -148,7 +147,6 @@ export function BoardNeedsInputButton({
 			onClick={() => onAgentFilterIdChange?.(selected ? null : "needs-input")}
 			variant="outline"
 		>
-			<Icon data-icon="inline-start" render={<QuestionCircleIcon label="" />} />
 			Needs input
 		</Button>
 	);
@@ -201,7 +199,7 @@ const PR_STATE_ICONS = {
 
 const AGENT_STATE_ICONS = {
 	working: { spinner: "experimental-avatar" },
-	"needs-input": { glyph: QuestionCircleFilledIcon, color: token("color.icon.information") },
+	"needs-input": { glyph: StrokeWeightLargeIcon, color: token("color.icon.information") },
 	finished: { glyph: StatusSuccessIcon, color: token("color.icon.success") },
 	untracked: { glyph: PriorityTrivialIcon, color: token("color.icon.subtlest") },
 } as const satisfies Record<BoardAgentFilterId, StateIcon>;

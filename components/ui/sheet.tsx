@@ -85,8 +85,7 @@ function SheetContent({
         {...props}
       >
         {children}
-        {showCloseButton && (
-          <SheetPrimitive.Close
+        {showCloseButton ? <SheetPrimitive.Close
             data-slot="sheet-close"
             render={
               <Button
@@ -98,8 +97,7 @@ function SheetContent({
           >
             <CrossIcon label="" />
             <span className="sr-only">Close</span>
-          </SheetPrimitive.Close>
-        )}
+          </SheetPrimitive.Close> : null}
       </SheetPrimitive.Popup>
     </>
   )

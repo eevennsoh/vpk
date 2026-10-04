@@ -76,7 +76,7 @@ test("every board-filter assignee mutation clears focused collapse and card stat
 		PAGE_SOURCE,
 		/const resetAssigneeScopedBoardState = useCallback\(\(\) => \{[\s\S]*?setSelection\(createJiraKanbanSelectionState\(\)\)[\s\S]*?setDraggedCard\(null\)[\s\S]*?setFocusedCollapsedColumns\(null\)[\s\S]*?\}, \[\]\);/u,
 	);
-	assert.match(PAGE_SOURCE, /useBoardFilter\(\{ onAssigneeChange: resetAssigneeScopedBoardState \}\)/u);
+	assert.match(PAGE_SOURCE, /useBoardFilter\(\{ onAssigneeChange: resetAssigneeScopedBoardState, scopeKey: boardFilterScopeKey \}\)/u);
 	assert.match(BOARD_FILTER_HOOK_SOURCE, /if \(fieldId === "assignee"\) onAssigneeChange\?\.\(\);[\s\S]*?toggleBoardFilterValue/u);
 	assert.match(BOARD_FILTER_HOOK_SOURCE, /const setAssigneeIds = useCallback\([\s\S]*?onAssigneeChange\?\.\(\);/u);
 	assert.match(BOARD_FILTER_HOOK_SOURCE, /const clearField = useCallback\([\s\S]*?if \(fieldId === "assignee"\) onAssigneeChange\?\.\(\);/u);

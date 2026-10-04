@@ -585,7 +585,7 @@ const ChartCore = memo(function ChartCore({
     <ChartProvider value={contextValue}>
       <svg aria-hidden="true" height={height} width={width}>
         {/* Gradient and pattern definitions */}
-        {defsChildren.length > 0 && <defs>{defsChildren}</defs>}
+        {defsChildren.length > 0 ? <defs>{defsChildren}</defs> : null}
 
         <rect fill="transparent" height={height} width={width} x={0} y={0} />
 

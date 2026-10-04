@@ -102,11 +102,13 @@ test("board insertion marker avoids clipped paint before its anchor resolves", (
 	);
 	const motionSource = readFileSync(join(__dirname, "created-card-arrival-motion.tsx"), "utf8");
 
-	assert.match(lineSource, /fixed z-30 flex size-6 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(lineSource, /pointer-events-none fixed z-30 h-0\.5/u);
+	assert.match(lineSource, /createPortal\([\s\S]*anchor\.ownerDocument\.body/u);
 	assert.match(lineSource, /left: "anchor\(left, -100vw\)"/u);
 	assert.match(lineSource, /positionAnchor: anchorName/u);
 	assert.match(lineSource, /positionVisibility: "anchors-visible"/u);
-	assert.match(lineSource, /top: "anchor\(center, -100vh\)"/u);
+	assert.match(lineSource, /top: "anchor\(top, -100vh\)"/u);
+	assert.match(lineSource, /width: "anchor-size\(width, 0px\)"/u);
 	assert.match(lineSource, /border border-border bg-surface-overlay/u);
 	assert.doesNotMatch(lineSource, /boxShadow|elevation\.shadow\.overlay/u);
 	assert.doesNotMatch(lineSource, /absolute left-0 top-1\/2 flex size-6 -translate-y-1\/2/u);
@@ -129,10 +131,6 @@ test("card arrival suppresses the inline create seam until its entrance complete
 	assert.match(CARD_LIST, /const suppressCardInsertion = createdCardArrival !== undefined;/u);
 	assert.match(
 		CARD_LIST,
-		/const paintInsertion = !suppressCardInsertion && \(insertionArmed \|\| hoverInsertion !== null\);/u,
-	);
-	assert.match(
-		CARD_LIST,
 		/if \(suppressCardInsertion\) \{\s*setHoverInsertion\(\(current\) => \(current === null \? current : null\)\);\s*return;\s*\}/u,
 	);
 	assert.match(
@@ -141,7 +139,7 @@ test("card arrival suppresses the inline create seam until its entrance complete
 	);
 });
 
-test("the card viewport retains its stacking context when inline insertion disables its fade", async () => {
+test("the card viewport retains its stacking context and fade during inline insertion", async () => {
 	const esbuild = require("esbuild");
 	const React = require("react");
 	const { renderToStaticMarkup } = require("react-dom/server");
@@ -166,6 +164,9 @@ test("the card viewport retains its stacking context when inline insertion disab
 		const viewport = markup.match(/<div\b[^>]*data-slot="scroll-area-viewport"[^>]*>/u)?.[0];
 		assert.ok(viewport);
 		assert.match(viewport, /class="[^"]*\bisolate\b/u);
+		const classes = viewport.match(/class="([^"]*)"/u)[1].split(" ");
+		assert.ok(!classes.includes("[mask-image:none]!"), "insertion must not override the viewport fade");
+		assert.ok(!classes.includes("[-webkit-mask-image:none]!"));
 	}
 });
 

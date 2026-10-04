@@ -6,11 +6,9 @@ import {
 	JIRA_ISSUE_ATTACH_CHIN_NEARNESS,
 	JIRA_ISSUE_MOTION_BACKDROP_NEARNESS,
 	resolveJiraIssueAttachNearness,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./attach-proximity.ts";
 import {
 	sessionTransferTintSeed,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./agent-session-drag.ts";
 
 test("the approach ramp is clamped to 0..1", () => {

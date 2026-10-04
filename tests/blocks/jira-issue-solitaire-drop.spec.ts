@@ -1,15 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 const codes = ["PAY-105", "PAY-107", "PAY-123", "PAY-130"];
 const issue = (page: Page, code: string) => page.locator(`[data-jira-kanban-scrollport] [data-issue-key="${code}"] [draggable]`).first();
-const origin = () => {
-	if (!process.env.PLAYWRIGHT_BASE_URL) throw new Error("Set PLAYWRIGHT_BASE_URL to the verified worktree origin");
-	return process.env.PLAYWRIGHT_BASE_URL;
-};
 declare global { interface Window { solitaireDropAnimations: Animation[]; } }
 test.use({ viewport: { width: 1800, height: 1200 }, ignoreHTTPSErrors: true });
 
-async function prepare(page: Page, count: number, reducedMotion: "reduce" | "no-preference", pause = true) {
+async function observeDropAnimations(page: Page, pause = true) {
 	await page.addInitScript((pause) => {
 		window.solitaireDropAnimations = [];
 		const animate = Element.prototype.animate;
@@ -25,8 +23,12 @@ async function prepare(page: Page, count: number, reducedMotion: "reduce" | "no-
 			return animation;
 		};
 	}, pause);
+}
+
+async function prepare(page: Page, count: number, reducedMotion: "reduce" | "no-preference", pause = true) {
+	await observeDropAnimations(page, pause);
 	await page.emulateMedia({ reducedMotion });
-	await page.goto(`${origin()}/components/blocks/jira-dragging`);
+	await page.goto(appUrl("/components/blocks/jira-dragging"));
 	await expect(page.locator("[data-jira-dragging]")).toHaveAttribute("data-variant", "experimental");
 	if (count > 1) {
 		await issue(page, codes[0]).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
@@ -52,6 +54,67 @@ async function drop(page: Page, title = "Done") {
 	return destination;
 }
 
+for (const [route, projectCodes, destination] of [
+	["jira-team-eu26", ["PAY-105", "PAY-107"], "In review"],
+	["jira-team-eu26-end", ["TEU-1", "TEU-2"], "Done"],
+] as const) {
+	for (const reducedMotion of ["no-preference", "reduce"] as const) {
+		for (const count of [1, 2]) {
+			test(`${route} uses the new column-drop effect for ${count} issues (${reducedMotion})`, async ({ page }) => {
+				await observeDropAnimations(page);
+				await page.emulateMedia({ reducedMotion });
+				await page.goto(appUrl(`/${route}`));
+				const movedCodes = projectCodes.slice(0, count);
+				if (count > 1) {
+					for (const code of movedCodes) await issue(page, code).click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
+				}
+				const sourceColumn = await issue(page, projectCodes[0]).evaluate((node) => node.closest("[data-jira-kanban-column]")!.getAttribute("data-jira-kanban-column"));
+				const source = (await issue(page, projectCodes[0]).boundingBox())!;
+				await page.mouse.move(source.x + 70, source.y + 30);
+				await page.mouse.down();
+				await page.mouse.move(source.x + 95, source.y + 35, { steps: 5 });
+				await expect(issue(page, projectCodes[0])).toHaveAttribute("data-dragging", "true");
+				const target = await drop(page, destination);
+				for (const code of movedCodes) {
+					await expect(target.locator(`[data-issue-key="${code}"]`)).toHaveCount(1);
+					await expect(page.locator(`[data-jira-kanban-column="${sourceColumn}"] [data-issue-key="${code}"]`)).toHaveCount(0);
+				}
+				await expect(page.locator("[data-issue-cohort-preview], [data-issue-drop-flight]")).toHaveCount(0);
+				const trace = page.locator("[data-issue-drop-trace]");
+				if (reducedMotion === "reduce") {
+					await expect(trace).toHaveCount(0);
+					expect(await page.evaluate(() => window.solitaireDropAnimations.length)).toBe(0);
+				} else {
+					await expect(trace).toHaveCount(1);
+					await expect(trace).toHaveAttribute("aria-hidden", "true");
+					await expect(trace.locator("g rect")).toHaveCount(count);
+					expect(await page.evaluate(() => Number(window.solitaireDropAnimations.find((animation) => (animation.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]"))!.effect!.getTiming().duration))).toBe(650);
+					for (const outline of await trace.locator("g rect").all()) await expect(outline).toHaveAttribute("stroke", destination === "Done" ? "var(--ds-border-success)" : "var(--ds-border-bold)");
+					if (count > 1) {
+						const travel = await page.evaluate(async () => {
+							const animation = window.solitaireDropAnimations.find((item) => (item.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]"))!;
+							const band = (animation.effect as KeyframeEffect).target!;
+							const positions: number[] = [];
+							for (const fraction of [0.25, 0.5, 0.75]) {
+								animation.currentTime = Number(animation.effect!.getTiming().duration) * fraction;
+								await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+								positions.push(new DOMMatrix(getComputedStyle(band).transform).m42);
+							}
+							return positions;
+						});
+						expect(travel[2] - travel[1]).toBeGreaterThan(travel[1] - travel[0]);
+					}
+					expect(await page.evaluate(() => window.solitaireDropAnimations.filter((animation) => !(animation.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]")).length)).toBe(count - 1);
+					await page.evaluate(() => window.solitaireDropAnimations.forEach((animation) => { animation.currentTime = 240; }));
+				}
+				await page.screenshot({ path: `output/agent-browser/project-column-drop/${route}-${count}-${reducedMotion}.png` });
+				await page.evaluate(() => window.solitaireDropAnimations.forEach((animation) => animation.finish()));
+				await expect(trace).toHaveCount(0);
+			});
+		}
+	}
+}
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	for (const count of [1, 2, 3, 4]) {
 		test(`${count} issues commit atomically and unfold into Done (${reducedMotion})`, async ({ page }) => {
@@ -75,8 +138,11 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 					return { timing, trace: effect.target?.closest("[data-issue-drop-trace]") !== null, travel };
 				}));
 				const trace = evidence.find((item) => item.trace)!;
-				const expectedDuration = count === 1 ? 500 : 620;
+				const expectedDuration = 650;
 				expect(Number(trace.timing.duration)).toBeCloseTo(expectedDuration, 3);
+				// A bulk Done sweep starts once the stack has unfolded; a single card waits for neighbour reflow.
+				const traceDelay = count > 1 ? 420 : 150;
+				expect(Number(trace.timing.delay)).toBeCloseTo(traceDelay, 3);
 				const reveals = evidence.filter((item) => !item.trace);
 				expect(reveals).toHaveLength(count - 1);
 				for (const [index, reveal] of reveals.entries()) {
@@ -90,6 +156,12 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				const unfolding = await done.locator("[data-issue-key]").evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
 				expect(unfolding[0]).toBe(tops[0]);
 				for (const top of unfolding.slice(1)) expect(top).toBeGreaterThan(tops[0]);
+				// The border sweep cannot start while the unfolding card borders are still moving.
+				const traceProgress = () => page.evaluate(() => window.solitaireDropAnimations.find((animation) => (animation.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]"))!.effect!.getComputedTiming().progress);
+				expect(await traceProgress() === null).toBe(count > 1);
+				// Mid-sweep, its outlines sit on the settled card faces.
+				await page.evaluate((time) => window.solitaireDropAnimations.forEach((animation) => { animation.currentTime = time; }), traceDelay + 160);
+				expect(await traceProgress()).toBeGreaterThan(0);
 				await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
 				const outlinesFollowCards = await done.locator("[data-issue-key]").evaluateAll((nodes) => {
 					const outlines = [...document.querySelectorAll("[data-issue-drop-trace] g rect")];
@@ -121,7 +193,7 @@ test("other destinations sweep a brand-blue border, and Escape leaves the source
 	await expect(review.locator("[data-issue-key]")).toHaveCount(2);
 	const trace = page.locator("[data-issue-drop-trace]");
 	await expect(trace).toHaveCount(1);
-	for (const outline of await trace.locator("g rect").all()) await expect(outline).toHaveAttribute("stroke", "var(--ds-border-brand)");
+	for (const outline of await trace.locator("g rect").all()) await expect(outline).toHaveAttribute("stroke", "var(--ds-border-bold)");
 	await page.evaluate(() => {
 		for (const animation of window.solitaireDropAnimations) {
 			const target = (animation.effect as KeyframeEffect).target;
@@ -163,7 +235,7 @@ test("record the four-issue solitaire handoff at native speed", async ({ browser
 
 test("a narrow dark board keeps the cohort intact through horizontal scrolling", async ({ page }) => {
 	await page.setViewportSize({ width: 1100, height: 950 });
-	await page.goto(`${origin()}/components/blocks/jira-dragging`);
+	await page.goto(appUrl("/components/blocks/jira-dragging"));
 	await page.getByRole("button", { name: "Light theme", exact: true }).click();
 	await expect(page.getByRole("button", { name: "Dark theme", exact: true })).toBeVisible();
 	await prepare(page, 2, "no-preference");

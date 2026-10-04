@@ -42,7 +42,13 @@ Each feature file starts with an H1 title and one paragraph describing the user-
 
 Keep implementation details out of the map. Name only user paths, stable handles, required state, commands, and observable proof.
 
-After changing this index or a feature file, run `pnpm run verify:vpk-feature-map`. The verifier checks index parity, the required section order, unique sub-feature IDs, and user-entry routes against the generated repo map.
+State entry: when a URL reaches a state directly, end `How to get to it (user POV)` with a `### State entry` subsection that lists each deep link, query param or anchor and what it opens. The verifier resolves their paths like any entry route. Shared ones:
+
+- `?embedded=1` renders a project or preview route as the catalog embeds it: shell chrome is hidden, and projects on the shared layout drop the top navigation (Settings, theme, chat).
+- `?variants=<id>,-<id>` forces Settings **Properties** (design variants) on (`id`) or off (`-id`) for one page load, on top of the stored/default values. Use it instead of Settings clicks or storage writes when the Settings menu is not what is under test; `control-vpk capture <route> --variant <id>[=on|off]` (repeatable) appends it. Ids are case-sensitive (`autoArrange`, `sessionPeel`, `simple-views`, …); `capture --variant` rejects an unknown id and lists the valid ones, while the page ignores it with a console warning. It writes no storage, so it never reaches other tabs and a reload without it restores the user's settings. It is read once per full page load; client navigation keeps it. Settings checkboxes show the forced value, and clicking one persists that choice as usual and ends its override.
+- Doc pages have section anchors (`#preview`, `#examples`, `#api`) and one per example: `#<example-title>`, lowercased with spaces as `-` unless the example sets an `id`. `Copy link to <title>` copies it.
+
+After changing this index or a feature file, run `pnpm run verify:vpk-feature-map`. The verifier checks index parity, the required section order, unique sub-feature IDs, user-entry routes against the generated repo map, and project coverage (below).
 
 ## Features
 
@@ -57,3 +63,20 @@ After changing this index or a feature file, run `pnpm run verify:vpk-feature-ma
 - [Jira Golden Journeys v3](./jira-golden-journeys-v3.md) covers Track/Learn/Build/Terminal, PAY-101 sections, PR #1839, and narrow `Jump to chapter`.
 - [Jira Golden Journeys v4](./jira-golden-journeys-v4.md) covers the Payments SDK board/list in Jira chrome, Unlink sessions, and view controls.
 - [Jira Team EU26](./jira-team-eu26.md) covers direct project entry, Board/List, current settings, session filters and column states, drag/drop/cancel, and narrow motion-off proof.
+- [Jira Team EU26 End](./jira-team-eu26-end.md) covers the keynote board, drags into Done, `Play closing`, the recap finale, and `?finale` cue links.
+
+## Uncovered projects
+
+Every directory under `components/projects/` needs a recipe whose `How to get to it (user POV)` names one of its live routes (its app route or `/preview/projects/<slug>`; the doc page alone does not count), or a line here with a one-line reason. The verifier fails on a project in neither place and on a line whose project is now covered or gone, so this list only shrinks. Library directories (`shared`, `rovo-core`, `rovo-floating-chat`) are excluded, with reasons, in `LIBRARY_PROJECT_DIRS` in `scripts/verify-feature-map.js`.
+
+- `admin`: Administration settings surface at `/admin`; no recipe yet.
+- `confluence`: Rich-text editor at `/confluence`; editing proof not mapped yet.
+- `html`: Embeds the checked-in vpk-html index at `/html`; no recipe yet.
+- `jira`: RFP board at `/jira` whose agent and report flows lead into chat; no recipe yet.
+- `jira-for-you`: No app route; reachable only at `/preview/projects/jira-for-you`; no recipe yet.
+- `jira-queue`: Agent-session queue at `/jira-queue`; no recipe yet.
+- `rovo`: Chat workspace at `/rovo`; meaningful proof sends a message, which needs `control-vpk doctor --require-backend`.
+- `rovo-button`: Floating Rovo button demo at `/rovo-button`; no recipe yet.
+- `search`: Search results page at `/search`; no recipe yet.
+- `sidebar-chat`: Chat panel at `/sidebar-chat`; send proof is backend-gated like Studio.
+- `skills`: Skills workspace at `/skills` built on Sidebar Chat; no recipe yet.

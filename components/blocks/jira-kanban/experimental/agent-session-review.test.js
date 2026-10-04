@@ -63,3 +63,34 @@ test("expanding the session panel acknowledges all sessions regardless of previe
 		assert.deepEqual(reviewed, [undefined]);
 	}
 });
+
+test("changing the content preset resets collapse while manual expansion remains available", () => {
+	const values = [];
+	let stateIndex = 0;
+	const reviewHook = runInNewContext(`${hook}; exports.useAgentSessionReview`, {
+		exports: {},
+		require() {
+			return {
+				useState(initialValue) {
+					const index = stateIndex++;
+					if (index >= values.length) values.push(initialValue);
+					return [values[index], (value) => { values[index] = value; }];
+				},
+				useCallback: (callback) => callback,
+			};
+		},
+	});
+	function render(defaultCollapsed) {
+		// React retries the render before committing guarded render-time updates.
+		stateIndex = 0;
+		reviewHook(defaultCollapsed, false, undefined);
+		stateIndex = 0;
+		return reviewHook(defaultCollapsed, false, undefined);
+	}
+	assert.equal(render(false).agentSessionColumnCollapsed, false);
+	assert.equal(render(true).agentSessionColumnCollapsed, true);
+	render(true).handleAgentSessionColumnCollapsedChange(false);
+	assert.equal(render(true).agentSessionColumnCollapsed, false);
+	assert.equal(render(false).agentSessionColumnCollapsed, false);
+	assert.equal(render(true).agentSessionColumnCollapsed, true);
+});

@@ -48,7 +48,7 @@ export function NavMain({ items }: Readonly<NavMainProps>) {
 						return (
 							<SidebarMenuItem key={item.title}>
 								<SidebarMenuButton tooltip={item.title}>
-									{Icon && <Icon />}
+									{Icon ? <Icon /> : null}
 									<span>{item.title}</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>

@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const CONVERSATION_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/components/ui-custom/conversation`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const CONVERSATION_URL = appUrl("/components/ui-custom/conversation");
 
 test("conversation docs preview exposes markdown download", async ({ page }) => {
 	await page.goto(CONVERSATION_URL, { waitUntil: "networkidle" });

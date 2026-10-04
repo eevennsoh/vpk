@@ -96,6 +96,7 @@ import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dism
 import { useRovoSelectedAgent } from "@/app/contexts";
 import { getRovoAgentPromptContext, isRovoAgentProfile } from "@/app/data/directory/agents";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
+import { motionEase } from "@/lib/motion";
 
 interface RovoAppShellProps {
 	embedded?: boolean;
@@ -363,7 +364,7 @@ function RovoAppDirectoryAutocompleteRows({
 			animate={{ opacity: 1, y: 0 }}
 			className={cn("w-full", className)}
 			initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
-			transition={{ duration: 0.18, ease: [0, 0.4, 0, 1] }}
+			transition={{ duration: 0.18, ease: motionEase.out }}
 			style={{ willChange: "transform, opacity" }}
 		>
 			<div className={cn("grid gap-1", useWideLayout ? "grid-cols-2 gap-x-6" : "grid-cols-1")}>
@@ -2096,7 +2097,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 								className="relative overflow-visible"
 								initial={showHomeState && !shouldReduceMotion ? { opacity: 0, y: 20 } : false}
 								animate={{ opacity: 1, y: 0 }}
-								transition={{ duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.2 }}
+								transition={{ duration: 0.4, ease: motionEase.out, delay: 0.2 }}
 								style={{ willChange: "transform, opacity" }}
 							>
 								<RovoAppComposer
@@ -2163,7 +2164,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 										)}
 										initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
 										animate={{ opacity: 1, y: 0 }}
-										transition={{ duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.3 }}
+										transition={{ duration: 0.4, ease: motionEase.out, delay: 0.3 }}
 										style={{ willChange: "transform, opacity" }}
 									>
 										<ViewTransition exit="slide-down" default="none">

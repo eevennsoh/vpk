@@ -1,6 +1,6 @@
 import { ROVO_COLOR_SWATCHES } from "@/lib/rovo-colors";
 
-import { JIRA_TEAM_EU26_END_PRESENTERS } from "../../data/keynote-presenters";
+import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-eu26-end/data/keynote-presenters";
 import { CUE } from "../data/finale-cues";
 import type { FinaleSlot, FinaleSlotId } from "../data/finale-stories";
 import { tileFallStart, type FinalePoint, type FinaleViewport } from "./finale-card-motion";
@@ -47,7 +47,7 @@ export interface FinaleCursorPose {
 export const FINALE_CURSOR_BOX = { left: 4, top: 4, right: 140, bottom: 80 } as const;
 
 const [BLUE, AMBER, PURPLE, GREEN] = ROVO_COLOR_SWATCHES;
-/** Dark ink for the light fills (ADS neutral 1000); white on blue. */
+/** Dark ink for the light fills (ADS neutral 1000); white on blue and purple. */
 const DARK_INK = "#292A2E";
 const LIGHT_INK = "#FFFFFF";
 
@@ -59,9 +59,10 @@ const LIGHT_INK = "#FFFFFF";
  * tile: its upper half), clear of the title.
  */
 export const FINALE_CURSORS: readonly FinaleCursorSpec[] = [
-	{ id: "mcb", label: JIRA_TEAM_EU26_END_PRESENTERS.mcb.name, color: GREEN.hex, ink: DARK_INK, entry: "top-right", slot: "e", rest: { u: 0.22, v: 0.68 } },
+	// The board's "MCB" goes by first name on the closing cursor.
+	{ id: "mcb", label: "Mike", color: GREEN.hex, ink: DARK_INK, entry: "top-right", slot: "e", rest: { u: 0.22, v: 0.68 } },
 	{ id: "tamar", label: JIRA_TEAM_EU26_END_PRESENTERS.tamar.name, color: BLUE.hex, ink: LIGHT_INK, entry: "top", slot: "c", rest: { u: 0.42, v: 0.3 } },
-	{ id: "sherif", label: JIRA_TEAM_EU26_END_PRESENTERS.sherif.name, color: PURPLE.hex, ink: DARK_INK, entry: "bottom-left", slot: "b", rest: { u: 0.6, v: 0.26 } },
+	{ id: "sherif", label: JIRA_TEAM_EU26_END_PRESENTERS.sherif.name, color: PURPLE.hex, ink: LIGHT_INK, entry: "bottom-left", slot: "b", rest: { u: 0.6, v: 0.26 } },
 	{ id: "taroon", label: JIRA_TEAM_EU26_END_PRESENTERS.taroon.name, color: AMBER.hex, ink: DARK_INK, entry: "bottom-right", slot: "f", rest: { u: 0.22, v: 0.26 } },
 ];
 

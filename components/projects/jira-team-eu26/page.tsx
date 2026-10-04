@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
@@ -16,8 +16,9 @@ import type {
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
-import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
+import { countNeedsInputAgents } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-filter";
 import {
 	isPulseAgentSession,
 	type PulseLooseWork,
@@ -51,8 +52,8 @@ import { cn } from "@/lib/utils";
 import { JiraTeamEu26List } from "./components/jira-team-eu26-list";
 
 import { renderJiraTeamEu26AgentActivityIndicator } from "./data/agent-activity-indicators";
+import { JIRA_TEAM_EU26_BOARD_AGENTS } from "@/components/projects/jira-team-eu26/data/presentation-board";
 import {
-	createJiraTeamEu26PayBoardColumns,
 	toJiraTeamEu26DetachedAgentSession,
 	JIRA_TEAM_EU26_PAY_BOARD_AGENTS,
 	JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES,
@@ -63,6 +64,16 @@ import { useJiraTeamEu26AgentSessionSync } from "./hooks/use-jira-team-eu26-agen
 import { JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES } from "./data/agent-session-sync";
 import { useJiraTeamEu26GenerativeActions } from "./hooks/use-jira-team-eu26-generative-actions";
 import { useJiraTeamEu26List } from "./hooks/use-jira-team-eu26-list";
+import { useJiraTeamEu26AssignmentMove } from "@/components/projects/jira-team-eu26/hooks/use-jira-team-eu26-assignment-move";
+import { useJiraTeamEu26Content } from "./hooks/use-jira-team-eu26-content";
+import {
+	WAC_BOARD_TITLE,
+	WAC_HEADER_ASSIGNEES,
+	WAC_SEEDED_AGENT_SESSION_OVERRIDES,
+	WAC_AGENT_SESSION_SYNC_SOURCE,
+	WAC_CURRENT_USER,
+	WAC_SESSION_MEMBERS,
+} from "./data/wac-content";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
@@ -70,6 +81,7 @@ const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-d
 const JIRA_TEAM_EU26_TABS = getJiraTabs(false);
 const JIRA_TEAM_EU26_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(JIRA_TEAM_EU26_TABS);
 const JIRA_TEAM_EU26_ADD_AGENT_LABEL = "Add agent";
+const JIRA_TEAM_EU26_PINNED_CODING_AGENT_IDS = JIRA_TEAM_EU26_PAY_BOARD_AGENTS.map((agent) => agent.id);
 const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
 	"kanbanBackground",
 	"advancedTimeline",
@@ -98,16 +110,23 @@ function JiraTeamEu26App(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
-	const [boardColumns, setBoardColumns] = useState(createJiraTeamEu26PayBoardColumns);
-	const needsInputCount = boardColumns.reduce(
-		(total, column) => total + column.cards.reduce(
-			(cardTotal, card) => cardTotal + (card.agentActivities?.filter(
-				(activity) => activity.state === "awaiting-input",
-			).length ?? 0),
-			0,
-		),
-		0,
-	);
+	const {
+		boardColumns,
+		contentMode,
+		detachedActivitiesByIdRef,
+		detachedAgentSessionsByCard,
+		setBoardColumns,
+		setDetachedAgentSessionsByCard,
+		toggleWacContent,
+		wacContent,
+	} = useJiraTeamEu26Content();
+	// Same selector the Needs input focus uses, so the count names the rows it shows.
+	const needsInputCount = countNeedsInputAgents(boardColumns);
+	const { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, startAgentSession } = useJiraTeamEu26AssignmentMove({
+		agents: JIRA_TEAM_EU26_BOARD_AGENTS,
+		boardColumns,
+		setBoardColumns,
+	});
 	const {
 		composerPrefillRequest,
 		handleCardGenerativeActionSubmit,
@@ -116,6 +135,7 @@ function JiraTeamEu26App(): React.ReactElement {
 		useJiraTeamEu26GenerativeActions({
 			openAgentChat,
 			setBoardColumns,
+			onStartAgentSession: startAgentSession,
 		});
 	const cardGenerativeActionFooterActions = {
 		onBrowseAgents: () => setAgentsDirectoryOpen(true),
@@ -123,10 +143,6 @@ function JiraTeamEu26App(): React.ReactElement {
 		onCreateAgent: () => router.push("/studio"),
 		onCreateSkill: () => router.push("/skills"),
 	};
-	const [detachedAgentSessionsByCard, setDetachedAgentSessionsByCard] = useState<
-		Readonly<Record<string, readonly AgentSessionItem[]>>
-	>({});
-	const detachedActivitiesByIdRef = useRef<Record<string, JiraIssueAgentActivity>>({});
 	// Team EU 26 keeps its page structure fixed: Board and List remain sibling
 	// tabs, untracked work remains an in-flow column, and standard kanban chrome
 	// stays on. Only the timeline interaction model is user-configurable.
@@ -140,15 +156,16 @@ function JiraTeamEu26App(): React.ReactElement {
 	const activeView = activeTab?.view ?? workItemView;
 	const showBoardContent = activeTab?.hasContent === true;
 	const [agentSessionColumnInteracting, setAgentSessionColumnInteracting] = useState(false);
-	const {
-		reviewAgentSessions,
-		newAgentSessionIds,
-		stateChangeVersions,
-		syncedAgentSessions,
-	} = useJiraTeamEu26AgentSessionSync({
-		active: showBoardContent,
+	const defaultSessionSync = useJiraTeamEu26AgentSessionSync({
+		active: showBoardContent && !wacContent,
 		paused: agentSessionColumnInteracting,
 	});
+	const wacSessionSync = useJiraTeamEu26AgentSessionSync({
+		active: showBoardContent && wacContent,
+		paused: agentSessionColumnInteracting,
+		source: WAC_AGENT_SESSION_SYNC_SOURCE,
+	});
+	const { reviewAgentSessions, newAgentSessionIds, stateChangeVersions, syncedAgentSessions } = wacContent ? wacSessionSync : defaultSessionSync;
 	const handleTabChange = useCallback((tabLabel: string) => {
 		const tabView = tabs.find((tab) => tab.label === tabLabel)?.view;
 		if (!tabView) {
@@ -244,10 +261,12 @@ function JiraTeamEu26App(): React.ReactElement {
 		createBoardFromAgentSession,
 		createFromAgentSession,
 		getProps: getListProps,
-		onAssignedAgentIdsChange,
 		onVisibleRowsChange,
 	} = useJiraTeamEu26List({
+		agents: JIRA_TEAM_EU26_BOARD_AGENTS,
 		boardColumns,
+		contentMode,
+		listAriaLabel: wacContent ? "Checkout roadmap work items list" : undefined,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		setBoardColumns,
 	});
@@ -277,7 +296,7 @@ function JiraTeamEu26App(): React.ReactElement {
 				: { ...current, [card.code]: [...currentSessions, detachedSession] };
 		});
 		setBoardColumns((columns) => unlinkJiraKanbanAgentSession(columns, card.code, session.id));
-	}, []);
+	}, [detachedActivitiesByIdRef, setBoardColumns, setDetachedAgentSessionsByCard]);
 	const consumeDetachedAgentSession = useCallback((session: AgentSessionItem) => {
 		const activity = detachedActivitiesByIdRef.current[session.id]
 			?? toJiraIssueDemoAttachedActivity(session);
@@ -301,12 +320,12 @@ function JiraTeamEu26App(): React.ReactElement {
 			return changed ? next : current;
 		});
 		return activity;
-	}, []);
+	}, [detachedActivitiesByIdRef, setDetachedAgentSessionsByCard]);
 	const handleAgentSessionLink = useCallback((session: AgentSessionItem, card: JiraKanbanCardData) => {
 		const activity = consumeDetachedAgentSession(session);
 		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
 		flashListRow(card.code);
-	}, [consumeDetachedAgentSession, flashListRow]);
+	}, [consumeDetachedAgentSession, flashListRow, setBoardColumns]);
 	const handleBoardAgentSessionCreate = useCallback((
 		session: AgentSessionItem,
 		columnTitle: string,
@@ -344,7 +363,7 @@ function JiraTeamEu26App(): React.ReactElement {
 			targetCard.code,
 			session.id,
 		));
-	}, []);
+	}, [setBoardColumns]);
 
 	return (
 		<>
@@ -356,7 +375,14 @@ function JiraTeamEu26App(): React.ReactElement {
 				defaultSidebarOpen={false}
 				hideFloatingRovo
 				product="jira"
+				currentUser={wacContent ? WAC_CURRENT_USER : undefined}
 				settingsDesignVariantIds={JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
+				settingsMenuItems={[{
+					checked: wacContent,
+					id: "jira-team-eu26-wac-content",
+					label: "WAC Content",
+					onSelect: () => startInstantTransition(toggleWacContent),
+				}]}
 			>
 				<div
 					className={cn(
@@ -364,23 +390,27 @@ function JiraTeamEu26App(): React.ReactElement {
 						designVariants.kanbanBackground ? "bg-bg-accent-gray-subtlest" : "bg-surface",
 					)}
 					data-jira-team-eu26-board-surface=""
+					data-jira-team-eu26-content={wacContent ? "wac" : "default"}
 				>
 					<ExperimentalJiraKanbanPage
 						addAgentLabel={JIRA_TEAM_EU26_ADD_AGENT_LABEL}
 						activeView={activeView}
 						retainWorkItemViews
 						additionalAgentSessions={syncedAgentSessions}
-						agentSessionSeedOverrides={JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES}
+						agentSessionSeedOverrides={wacContent ? WAC_SEEDED_AGENT_SESSION_OVERRIDES : JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES}
 						agentActivityLayout="merged"
-						agentSessionMembers={JIRA_TEAM_EU26_PAY_SESSION_MEMBERS}
+						agentSessionMembers={wacContent ? WAC_SESSION_MEMBERS : JIRA_TEAM_EU26_PAY_SESSION_MEMBERS}
 						agentSessionMultiSelect={false}
 						cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
+						cardGenerativeActionPinnedAgentIds={JIRA_TEAM_EU26_PINNED_CODING_AGENT_IDS}
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
 						issueSelectionAppearance="fused-backdrop"
 						getStatusVariant={statusVariant}
 						autoArrangeEnabled={designVariants.autoArrange}
 						issueDragTransitions
+						issueDropMotion="solitaire"
+						issueMoveRequest={issueMoveRequest}
 						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
@@ -398,13 +428,16 @@ function JiraTeamEu26App(): React.ReactElement {
 						}}
 						columnChrome="default"
 						columnSizing="content"
-						agents={JIRA_TEAM_EU26_PAY_BOARD_AGENTS}
-						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
+						agents={JIRA_TEAM_EU26_BOARD_AGENTS}
+						ariaLabel={wacContent ? "Track the Checkout roadmap. Scroll horizontally to review all delivery statuses." : "Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."}
+						boardTitle={wacContent ? WAC_BOARD_TITLE : undefined}
 						boardColumns={boardColumns}
-						defaultAgentSessionColumnCollapsed={false}
+						boardFilterScopeKey={contentMode}
+						defaultAgentSessionColumnCollapsed={wacContent}
 						defaultShowUntracked={false}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
-						headerAssignees={JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES}
+						headerAssignees={wacContent ? WAC_HEADER_ASSIGNEES : JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES}
+						headerAvatarLimit={wacContent ? WAC_HEADER_ASSIGNEES.length + 1 : undefined}
 						renderHeaderAssignee={renderEu26HeaderAssignee}
 						insightsEnabled={false}
 						isLooseWorkResumable={isJiraTeamEu26LooseWorkResumable}
@@ -413,11 +446,9 @@ function JiraTeamEu26App(): React.ReactElement {
 						onAgentSessionColumnInteractionChange={setAgentSessionColumnInteracting}
 						onAgentSessionsReviewed={reviewAgentSessions}
 						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
-						onBoardColumnsChange={(columns: readonly JiraKanbanColumnData[]) => {
-							setBoardColumns([...columns]);
-						}}
+						onBoardColumnsChange={onBoardColumnsChange}
 						onCardAgentActivityViewChat={handleViewChat}
-						onCardAssignedAgentIdsChange={onAssignedAgentIdsChange}
+						onCardAssignedAgentIdsChange={onBoardAssignedAgentIdsChange}
 						onCardAgentDoneRunView={handleViewCompletedRun}
 						onCardGenerativeActionSubmit={handleCardGenerativeActionSubmit}
 						onCardAgentSessionLink={handleAgentSessionLink}

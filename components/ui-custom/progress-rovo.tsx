@@ -5,6 +5,7 @@
 import { motion, AnimatePresence } from "motion/react";
 
 import { cn } from "@/lib/utils";
+import { motionEase } from "@/lib/motion";
 
 const ROVO_BANDS = [
 	{ color: "#FCA700", delay: "450ms" },
@@ -61,7 +62,7 @@ function ProgressRovo({ value, isIndeterminate = false, className, ...props }: R
 						style={{ transformOrigin: "left", willChange: "transform" }}
 						initial={{ scaleX: 0 }}
 						animate={{ scaleX: 1 }}
-						transition={{ duration: 0.5, ease: [0, 0.4, 0, 1] }}
+						transition={{ duration: 0.5, ease: motionEase.out }}
 					/>
 				) : (
 					<motion.div
@@ -69,7 +70,7 @@ function ProgressRovo({ value, isIndeterminate = false, className, ...props }: R
 						className="absolute inset-0 overflow-hidden rounded-full"
 						animate={{ clipPath: `inset(0 ${100 - clampedValue}% 0 0)` }}
 						style={{ willChange: "clipPath" }}
-						transition={{ duration: 0.3, ease: [0, 0.4, 0, 1] }}
+						transition={{ duration: 0.3, ease: motionEase.out }}
 					>
 						<span
 							className="animate-rovo-band-traverse flex h-full"

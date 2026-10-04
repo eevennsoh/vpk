@@ -76,19 +76,26 @@ function slugAgentName(name: string): string {
 	return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
+/** A catalog id, or a session id (`PAY-105:test-agent`) whose suffix is one. */
+function resolveCatalogIdHint(
+	idHint: string,
+	catalog: readonly JiraKanbanAgentData[],
+): string | undefined {
+	if (catalog.some((agent) => agent.id === idHint)) {
+		return idHint;
+	}
+	const suffix = idHint.includes(":") ? idHint.slice(idHint.lastIndexOf(":") + 1) : "";
+	return suffix && catalog.some((agent) => agent.id === suffix) ? suffix : undefined;
+}
+
 function resolveCatalogAgentId(
 	name: string,
 	idHint: string | undefined,
 	catalog: readonly JiraKanbanAgentData[],
 ): string {
-	if (idHint) {
-		if (catalog.some((agent) => agent.id === idHint)) {
-			return idHint;
-		}
-		const suffix = idHint.includes(":") ? idHint.slice(idHint.lastIndexOf(":") + 1) : "";
-		if (suffix && catalog.some((agent) => agent.id === suffix)) {
-			return suffix;
-		}
+	const fromHint = idHint ? resolveCatalogIdHint(idHint, catalog) : undefined;
+	if (fromHint) {
+		return fromHint;
 	}
 
 	const byName = catalog.find((agent) => agent.name === name);
@@ -228,20 +235,31 @@ function createAssignedActivity(
 	};
 }
 
+/**
+ * The assignment surface echoes whatever ids it was handed: catalog ids,
+ * session ids (`PAY-105:test-agent`, or card-stripped `test-agent`), sessions
+ * moved in from another card (`PAY-107:claude-code`), and linked loose-work or
+ * finished-run ids known only by agent name (`lw-…`). Resolve an echo through
+ * the row that produced it, so the keep-filter below reads the same canonical
+ * id and never drops a running activity (PR #1690).
+ */
 function canonicalizeAssignedAgentIds(
+	card: JiraKanbanCardData,
 	agentIds: readonly string[],
 	catalog: readonly JiraKanbanAgentData[],
 ): string[] {
-	return agentIds.map((agentId) => {
-		if (catalog.some((agent) => agent.id === agentId)) {
-			return agentId;
-		}
-		const suffix = agentId.includes(":") ? agentId.slice(agentId.lastIndexOf(":") + 1) : "";
-		if (suffix && catalog.some((agent) => agent.id === suffix)) {
-			return suffix;
-		}
-		return agentId;
-	});
+	const rows = [
+		...(card.agentActivities ?? []).map((activity) => ({ id: activity.id, name: activity.name })),
+		...(card.agentDoneRuns ?? []).map((run) => ({ id: run.id, name: run.agentName })),
+	];
+	return [...new Set(agentIds.map((agentId) => {
+		const row = rows.find((candidate) => (
+			candidate.id === agentId || candidate.id === `${card.code}:${agentId}`
+		));
+		return row
+			? resolveCatalogAgentId(row.name, row.id, catalog)
+			: resolveCatalogIdHint(agentId, catalog) ?? agentId;
+	}))];
 }
 
 export function applyAssignedAgentIdsToCard(
@@ -249,7 +267,7 @@ export function applyAssignedAgentIdsToCard(
 	agentIds: readonly string[],
 	catalog: readonly JiraKanbanAgentData[],
 ): JiraKanbanCardData {
-	const nextIds = canonicalizeAssignedAgentIds(agentIds, catalog);
+	const nextIds = canonicalizeAssignedAgentIds(card, agentIds, catalog);
 	const nextIdSet = new Set(nextIds);
 	const activities = (card.agentActivities ?? []).filter((activity) => (
 		nextIdSet.has(resolveCatalogAgentId(activity.name, activity.id, catalog))
@@ -307,6 +325,26 @@ export function applyAssignedAgentIdsToColumns(
 	return started
 		? progressJiraTeamEu26WorkItemOnStart(nextColumns, issueKey)
 		: nextColumns;
+}
+
+/** The shared move request is planned from the actual domain update. */
+export function getJiraTeamEu26CardMove(
+	columns: readonly JiraKanbanColumnData[],
+	next: readonly JiraKanbanColumnData[],
+	issueKey: string,
+) {
+	const source = columns.find((column) => column.cards.some((card) => card.code === issueKey));
+	if (!source) return undefined;
+	const destination = next.find((column) => column.cards.some((card) => card.code === issueKey));
+	if (!destination || destination.title === source.title) return undefined;
+	return {
+		cardCodes: [issueKey],
+		columnTitle: destination.title,
+		target: {
+			status: destination.title,
+			beforeCardCode: destination.cards.find((card) => card.code !== issueKey)?.code ?? null,
+		},
+	};
 }
 
 function createListRow(

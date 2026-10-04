@@ -1,15 +1,20 @@
-export interface AgentLanyardAgent {
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+
+interface AgentLanyardIdentity {
 	id: string;
 	name: string;
 	publisher: string;
 	description: string;
-	/** Complete hexagonal badge artwork, including its brand background. */
-	avatarSrc: string;
 	action: "chat" | "connect";
 	verified?: boolean;
 	/** Decorative grid wave color, independent of the card's semantic colors. */
 	accentColor?: string;
 }
+
+/** Supply either complete badge artwork or a brand rendered by the shared logo component. */
+export type AgentLanyardAgent = AgentLanyardIdentity & (
+	{ avatarSrc: string; brandName?: never } | { brandName: ThirdPartyLogoName; avatarSrc?: never }
+);
 
 export const AGENT_LANYARD_AGENTS: readonly AgentLanyardAgent[] = [
 	{

@@ -4,12 +4,22 @@ const { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, w
 const os = require("node:os");
 const path = require("node:path");
 const { buildSync } = require("esbuild");
-const ts = require("typescript");
+const {
+	APP_DIR,
+	COMPONENT_MANIFEST_ENTRY,
+	buildAppPageMap,
+	collectAppPageOwnerErrors,
+	collectAppPageRoutes,
+	compareStrings,
+	getLifecycleFields,
+	normalizeLocalImportSource,
+	routePathFromPageFile,
+	toPosixPath,
+} = require("./lib/repo-map-app-pages");
+const { LIFECYCLE_STATUSES, collectRegistryData } = require("./verify-component-catalog");
 
 const OUTPUT_PATH = ".agents/knowledge/repo-map.json";
 const ROUTE_MANIFEST_PATH = "backend/routes/route-manifest.json";
-const COMPONENT_MANIFEST_ENTRY = "app/data/component-manifest.ts";
-const APP_DIR = "app";
 const PACKAGE_JSON_PATH = "package.json";
 const LOCAL_SKILLS_DIR = ".agents/skills";
 
@@ -61,20 +71,6 @@ const VALIDATION_COMMANDS = [
 	},
 ];
 
-function compareStrings(left, right) {
-	if (left < right) {
-		return -1;
-	}
-	if (left > right) {
-		return 1;
-	}
-	return 0;
-}
-
-function toPosixPath(filePath) {
-	return filePath.split(path.sep).join("/");
-}
-
 function stripSourceLocation(source) {
 	if (typeof source !== "string" || source.length === 0) {
 		return "unknown";
@@ -92,25 +88,6 @@ function readJsonIfExists(filePath, cwd = process.cwd(), fallback = null) {
 		return fallback;
 	}
 	return JSON.parse(readFileSync(absolutePath, "utf8"));
-}
-
-function walkFiles(rootDir) {
-	if (!existsSync(rootDir)) {
-		return [];
-	}
-
-	const entries = [];
-	for (const entry of readdirSync(rootDir, { withFileTypes: true })) {
-		const entryPath = path.join(rootDir, entry.name);
-		if (entry.isDirectory()) {
-			entries.push(...walkFiles(entryPath));
-			continue;
-		}
-		if (entry.isFile()) {
-			entries.push(entryPath);
-		}
-	}
-	return entries;
 }
 
 function bundleModule(entryPoint, cwd = process.cwd()) {
@@ -246,13 +223,23 @@ function normalizeComponent(component) {
 		slug: component.slug,
 		name: component.name,
 		importPath: component.importPath,
+		...getLifecycleFields(component),
 	};
+}
+
+function countStatuses(components) {
+	const counts = Object.fromEntries(LIFECYCLE_STATUSES.map((status) => [status, 0]));
+	for (const component of components) {
+		counts[component.status] = (counts[component.status] ?? 0) + 1;
+	}
+	return counts;
 }
 
 function buildComponentMap(components) {
 	const categoryMap = new Map();
+	const normalizedComponents = components.map(normalizeComponent);
 
-	for (const component of components.map(normalizeComponent)) {
+	for (const component of normalizedComponents) {
 		if (!categoryMap.has(component.category)) {
 			categoryMap.set(component.category, []);
 		}
@@ -277,153 +264,22 @@ function buildComponentMap(components) {
 		summary: {
 			manifestEntryCount: components.length,
 			categoryCount: categories.length,
+			statusCounts: countStatuses(normalizedComponents),
 		},
 		categories,
 	};
 }
 
-function routePathFromPageFile(filePath, appDir = APP_DIR) {
-	const relativePath = toPosixPath(path.relative(appDir, filePath));
-	const routePart = relativePath.replace(/\/?page\.tsx$/u, "");
-	if (!routePart) {
-		return "/";
+function assertAppPageOwnersResolved(appPageRoutes = []) {
+	const errors = collectAppPageOwnerErrors(appPageRoutes);
+	if (errors.length === 0) {
+		return;
 	}
-
-	const visibleSegments = routePart
-		.split("/")
-		.filter((segment) => !(segment.startsWith("(") && segment.endsWith(")")));
-	return `/${visibleSegments.join("/")}`.replace(/\/+$/u, "") || "/";
-}
-
-function getImportSymbols(importClause) {
-	if (!importClause) {
-		return [];
-	}
-
-	const symbols = [];
-	if (importClause.name) {
-		symbols.push(importClause.name.text);
-	}
-	if (importClause.namedBindings && ts.isNamespaceImport(importClause.namedBindings)) {
-		symbols.push(importClause.namedBindings.name.text);
-	}
-	if (importClause.namedBindings && ts.isNamedImports(importClause.namedBindings)) {
-		for (const element of importClause.namedBindings.elements) {
-			symbols.push(element.name.text);
-		}
-	}
-	return [...new Set(symbols)].sort(compareStrings);
-}
-
-function collectJsxIdentifiers(sourceFile) {
-	const identifiers = new Set();
-
-	function addJsxTagName(tagName) {
-		if (ts.isIdentifier(tagName)) {
-			if (/^[A-Z]/u.test(tagName.text)) {
-				identifiers.add(tagName.text);
-			}
-			return;
-		}
-		if (ts.isPropertyAccessExpression(tagName) && /^[A-Z]/u.test(tagName.getText(sourceFile))) {
-			identifiers.add(tagName.getText(sourceFile));
-		}
-	}
-
-	function visit(node) {
-		if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
-			addJsxTagName(node.tagName);
-		}
-		ts.forEachChild(node, visit);
-	}
-
-	visit(sourceFile);
-	return identifiers;
-}
-
-function normalizeLocalImportSource({ importPath, sourceFilePath }) {
-	if (importPath.startsWith("@/")) {
-		return importPath.slice(2);
-	}
-	if (!importPath.startsWith(".")) {
-		return null;
-	}
-
-	return toPosixPath(path.normalize(path.join(path.dirname(sourceFilePath), importPath)));
-}
-
-function isAppPageOwnerImport(source) {
-	return (
-		source.startsWith("app/") ||
-		source.startsWith("components/")
-	);
-}
-
-function collectAppPageRoutes({ appDir = APP_DIR, cwd = process.cwd() } = {}) {
-	const absoluteAppDir = path.join(cwd, appDir);
-	return walkFiles(absoluteAppDir)
-		.filter((filePath) => filePath.endsWith(`${path.sep}page.tsx`))
-		.map((absolutePagePath) => {
-			const source = toPosixPath(path.relative(cwd, absolutePagePath));
-			const sourceFile = ts.createSourceFile(
-				source,
-				readFileSync(absolutePagePath, "utf8"),
-				ts.ScriptTarget.Latest,
-				true,
-				ts.ScriptKind.TSX,
-			);
-			const owners = [];
-			const jsxIdentifiers = collectJsxIdentifiers(sourceFile);
-
-			for (const statement of sourceFile.statements) {
-				if (
-					!ts.isImportDeclaration(statement) ||
-					!ts.isStringLiteral(statement.moduleSpecifier)
-				) {
-					continue;
-				}
-
-				const importPath = statement.moduleSpecifier.text;
-				const normalizedSource = normalizeLocalImportSource({
-					importPath,
-					sourceFilePath: source,
-				});
-				if (!normalizedSource || !isAppPageOwnerImport(normalizedSource)) {
-					continue;
-				}
-
-				owners.push({
-					importPath,
-					source: normalizedSource,
-					symbols: getImportSymbols(statement.importClause),
-				});
-			}
-			const shellOwners = owners
-				.filter((owner) => owner.symbols.some((symbol) => jsxIdentifiers.has(symbol)))
-				.map((owner) => ({ ...owner }))
-				.sort((left, right) => compareStrings(left.source, right.source));
-
-			return {
-				ownerCount: owners.length,
-				owners: owners.sort((left, right) => compareStrings(left.source, right.source)),
-				routePath: routePathFromPageFile(source, appDir),
-				shellOwnerCount: shellOwners.length,
-				shellOwners,
-				source,
-			};
-		})
-		.sort((left, right) => compareStrings(left.routePath, right.routePath) || compareStrings(left.source, right.source));
-}
-
-function buildAppPageMap(appPageRoutes) {
-	const ownerCount = appPageRoutes.reduce((total, route) => total + route.ownerCount, 0);
-	return {
-		summary: {
-			ownerImportCount: ownerCount,
-			pageCount: appPageRoutes.length,
-		},
-		pages: appPageRoutes,
-	};
+	throw new Error([
+		`Cannot resolve ${errors.length} catalog-backed app page owner(s) for ${OUTPUT_PATH}:`,
+		...errors.map((error) => `- ${error}`),
+		`Add the slug to ${COMPONENT_MANIFEST_ENTRY} (with its registry demo) or fix the page's literal loader arguments, then run: node scripts/generate-repo-map.js`,
+	].join("\n"));
 }
 
 function extractPrefixSelections(command) {
@@ -602,10 +458,16 @@ function generateRepoMapText({
 	appPageRoutes,
 	localSkills,
 	packageJson,
+	registryData,
 } = {}) {
 	const routeManifest = readJson(routeManifestPath, cwd);
 	const componentEntries = components ?? loadComponentManifest(componentManifestEntry, cwd);
-	const pageRoutes = appPageRoutes ?? collectAppPageRoutes({ cwd });
+	const pageRoutes = appPageRoutes ?? collectAppPageRoutes({
+		components: componentEntries,
+		cwd,
+		registryData: registryData ?? collectRegistryData(cwd),
+	});
+	assertAppPageOwnersResolved(pageRoutes);
 	const skills = localSkills ?? collectLocalSkills({ cwd });
 	const packageData = packageJson ?? readJsonIfExists(PACKAGE_JSON_PATH, cwd, { scripts: {} });
 	return serializeRepoMap(buildRepoMap({
@@ -628,6 +490,7 @@ function writeRepoMap({
 	appPageRoutes,
 	localSkills,
 	packageJson,
+	registryData,
 } = {}) {
 	const text = generateRepoMapText({
 		appPageRoutes,
@@ -636,6 +499,7 @@ function writeRepoMap({
 		cwd,
 		localSkills,
 		packageJson,
+		registryData,
 		routeManifestPath,
 	});
 	const absoluteOutputPath = path.join(cwd, outputPath);
@@ -653,6 +517,7 @@ function checkRepoMap({
 	appPageRoutes,
 	localSkills,
 	packageJson,
+	registryData,
 } = {}) {
 	const expectedText = generateRepoMapText({
 		appPageRoutes,
@@ -661,6 +526,7 @@ function checkRepoMap({
 		cwd,
 		localSkills,
 		packageJson,
+		registryData,
 		routeManifestPath,
 	});
 	const absoluteOutputPath = path.join(cwd, outputPath);
@@ -700,6 +566,7 @@ function printHelp() {
 		"Usage: node scripts/generate-repo-map.js [--check]",
 		"",
 		"Generates .agents/knowledge/repo-map.json from route and component manifests.",
+		"Fails when a catalog-backed app page (e.g. loadDemoComponent(\"slug\", \"category\")) has no catalog entry.",
 		"",
 		"Options:",
 		"  --check  Verify the generated file is current without writing it.",
@@ -747,6 +614,7 @@ module.exports = {
 	buildTestSliceMap,
 	buildRouteMap,
 	checkRepoMap,
+	collectAppPageOwnerErrors,
 	collectAppPageRoutes,
 	collectLocalSkills,
 	extractExplicitNodeTestFiles,

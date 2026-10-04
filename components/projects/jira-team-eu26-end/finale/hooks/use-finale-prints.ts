@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import { flashPrintRect } from "@/components/projects/jira-team-eu26-end/finale/lib/finale-column-flash";
+import { waitForFinaleColumnCapture } from "@/components/projects/jira-team-eu26-end/finale/lib/capture-done-column";
 import { FINALE_DONE_COLUMN_TITLE } from "../lib/finale-trigger";
 
 const ISSUE_KEY = /\b[A-Z][A-Z0-9]+-\d+\b/u;
 const CARD = '[data-slot="jira-issue-card"]';
 /** Lets the board's own drop animation finish before a card is printed. */
 const PRINT_SETTLE_MS = 700;
-
 let fontEmbedCss: Promise<string> | null = null;
 
 /**
@@ -27,6 +28,22 @@ function freezeSingleLineText(source: HTMLElement, copy: HTMLElement): void {
 	}
 }
 
+/** A DOM clone loses scroll offsets; bake them into its content before rasterising. */
+export function freezeFinalePrintScroll(source: HTMLElement, copy: HTMLElement): void {
+	const originals = [...source.children];
+	const copies = [...copy.children];
+	for (let index = 0; index < originals.length; index += 1) {
+		const original = originals[index];
+		const cloned = copies[index];
+		if (!(original instanceof HTMLElement) || !(cloned instanceof HTMLElement)) continue;
+		if (source.scrollLeft !== 0 || source.scrollTop !== 0) {
+			const transform = cloned.style.transform;
+			cloned.style.transform = `translate(${-source.scrollLeft}px, ${-source.scrollTop}px)${transform && transform !== "none" ? ` ${transform}` : ""}`;
+		}
+		freezeFinalePrintScroll(original, cloned);
+	}
+}
+
 interface FinalePrintOptions {
 	readonly pixelRatio?: number;
 	/**
@@ -36,6 +53,38 @@ interface FinalePrintOptions {
 	readonly detach?: boolean;
 	/** Adjust the detached copy before it is printed (e.g. hide parts of it). */
 	readonly prepare?: (copy: HTMLElement) => void;
+}
+
+function printBackdrop(element: HTMLElement): string {
+	for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+		const colour = getComputedStyle(node).backgroundColor;
+		if (colour.startsWith("rgb(") || /,\s*1\)$/u.test(colour)) return colour;
+	}
+	return getComputedStyle(document.body).backgroundColor;
+}
+
+/** Offscreen clones must load immediately: lazy visibility never arrives there. */
+export async function loadFinalePrintImages(element: HTMLElement): Promise<void> {
+	await Promise.all([...element.querySelectorAll("img")].map((image) => {
+		image.loading = "eager";
+		return image.decode().catch(() => undefined);
+	}));
+}
+
+/** Print the settled face, rather than freezing a still-hidden arrival/drag ghost. */
+export function settleFinaleColumnCopy(column: HTMLElement): void {
+	for (const face of column.querySelectorAll<HTMLElement>('[data-issue-source-ghost-content], [data-slot="jira-creating-card"]')) {
+		face.style.opacity = "1";
+		face.style.transform = "none";
+	}
+	for (const ghost of column.querySelectorAll<HTMLElement>("[data-issue-source-ghost-placeholder]")) ghost.style.opacity = "0";
+	for (const slot of column.querySelectorAll<HTMLElement>('[data-slot="jira-creating-slot"]')) slot.style.height = "auto";
+	// Transient drag chrome and the interactive scrollbar never belong in the shader print.
+	for (const transient of column.querySelectorAll<HTMLElement>('[data-board-column-header-copy-layer="label"], [data-auto-arrange-count], [data-slot="scroll-area-scrollbar"]')) transient.remove();
+	for (const resting of column.querySelectorAll<HTMLElement>('[data-board-column-header-copy-layer="add"]')) {
+		resting.style.opacity = "1";
+		resting.style.transform = "none";
+	}
 }
 
 /**
@@ -60,13 +109,14 @@ export async function printFinaleElement(element: HTMLElement, options: FinalePr
 		copy.style.height = `${element.offsetHeight}px`;
 		copy.style.margin = "0";
 		freezeSingleLineText(element, copy);
+		freezeFinalePrintScroll(element, copy);
 		options.prepare?.(copy);
 		host.append(copy);
-		document.body.append(host);
 		target = copy;
+		document.body.append(host);
 	}
 	try {
-		await Promise.all([...target.querySelectorAll("img")].map((image) => image.decode().catch(() => undefined)));
+		await loadFinalePrintImages(target);
 		return await toCanvas(target, {
 			pixelRatio: options.pixelRatio ?? Math.min(window.devicePixelRatio || 1, 2),
 			fontEmbedCSS: await fontEmbedCss,
@@ -78,21 +128,24 @@ export async function printFinaleElement(element: HTMLElement, options: FinalePr
 }
 
 /**
- * The Done column as it stands (header, surface and the cards it shows), for
+ * The Done column after native drop cleanup (header, surface and its cards), for
  * the flash's column pass (`finale-column-flash.tsx`), which renders the
- * whole column through the flash. The print copy loses the list's scroll offset, so
- * its content is shifted to match the live list. Cards below the visible list
+ * whole column through the flash. Scroll offsets are baked into the copy, and
+ * only a plain backdrop fills its overscan. Cards below the visible list
  * are clipped out of the print anyway, so the copy swaps them for one spacer of
  * the same height: the rasteriser then inlines styles for only the cards that
  * show (about 4 of 13), which is most of the print's cost.
  */
-export async function printFinaleColumn(): Promise<HTMLCanvasElement | undefined> {
-	const column = document.querySelector<HTMLElement>(`[data-jira-kanban-column="${FINALE_DONE_COLUMN_TITLE}"]`);
+export async function printFinaleColumn(signal?: AbortSignal): Promise<HTMLCanvasElement | undefined> {
+	const column = await waitForFinaleColumnCapture(signal);
 	if (!column) return undefined;
 	const liveList = column.querySelector<HTMLElement>("[data-jira-kanban-card-list]");
-	const scroll = liveList?.scrollTop ?? 0;
 	const trim = trailingHiddenCards(column, liveList);
+	const bounds = column.getBoundingClientRect();
+	const region = flashPrintRect(bounds);
+	const backdrop = printBackdrop(column);
 	const prepare = (copy: HTMLElement) => {
+		settleFinaleColumnCopy(copy);
 		if (trim) {
 			const container = elementAtPath(copy, trim.path);
 			const items = [...(container?.children ?? [])].slice(trim.from);
@@ -101,10 +154,20 @@ export async function printFinaleColumn(): Promise<HTMLCanvasElement | undefined
 			for (const item of items) item.remove();
 			container?.append(spacer);
 		}
-		const list = copy.querySelector<HTMLElement>("[data-jira-kanban-card-list]");
-		if (scroll > 0) for (const child of list?.children ?? []) (child as HTMLElement).style.transform = `translateY(${-scroll}px)`;
 	};
-	return printFinaleElement(column, { detach: true, prepare }).catch(() => undefined);
+	const image = await printFinaleElement(column, { detach: true, prepare }).catch(() => undefined);
+	if (!image || signal?.aborted) return undefined;
+	const ratio = Math.min(window.devicePixelRatio || 1, 2);
+	const padded = document.createElement("canvas");
+	padded.width = Math.round(region.width * ratio);
+	padded.height = Math.round(region.height * ratio);
+	const context = padded.getContext("2d");
+	if (!context) return undefined;
+	context.fillStyle = backdrop;
+	context.fillRect(0, 0, padded.width, padded.height);
+	context.drawImage(image, (bounds.x - region.x) * ratio, (bounds.y - region.y) * ratio, bounds.width * ratio, bounds.height * ratio);
+	padded.dataset.finaleBackdrop = backdrop;
+	return padded;
 }
 
 interface TrailingCards {

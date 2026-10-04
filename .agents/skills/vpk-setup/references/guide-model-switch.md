@@ -15,7 +15,7 @@ model routing.
 | Provider | Model ID | Endpoint Path |
 |----------|----------|---------------|
 | **Claude (Default)** | `anthropic.claude-sonnet-5` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
-| **GPT** | `gpt-5.6-terra` | `/v1/openai/v1/chat/completions` |
+| **GPT** | `gpt-6.1-sol` | `/v1/openai/v1/chat/completions` |
 | **Gemini (Google)** | `gemini-3-pro-image` | `/v1/google/publishers/google/v1/chat/completions` |
 | **TTS (Audio Speech)** | `tts-latest` | `/v1/google/v1/text:synthesize` (when model maps to `vendor: GOOGLE`) |
 
@@ -143,15 +143,10 @@ AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/mode
 
 ---
 
-## Default Models (defined in backend/lib/ai-gateway-helpers.js)
+## Default Models
 
-```javascript
-const DEFAULT_MODELS = {
-  bedrock: "anthropic.claude-sonnet-5",  // Claude - model ID in URL
-  openai: "gpt-5.6-terra",                              // GPT - model ID in payload
-  google: "gemini-3-pro-image",                         // Gemini - supports image generation
-};
-```
+OpenAI gateway requests use `OPENAI_MODEL`, defaulting to `gpt-6.1-sol`.
+Bedrock and Google model IDs are resolved from their configured endpoint URLs.
 
 ---
 
@@ -168,15 +163,18 @@ AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/mode
 
 ### For GPT Models
 
-1. Set the URL to GPT endpoint in `.env.local`
-2. Edit `backend/lib/ai-gateway-helpers.js` and change `DEFAULT_MODELS.openai`:
+Set the URL to the OpenAI endpoint and select the model in `.env.local`:
 
-```javascript
-const DEFAULT_MODELS = {
-  bedrock: "anthropic.claude-sonnet-5",
-  openai: "gpt-4.1-2025-04-14",  // Change to your preferred GPT model
-};
+```bash
+AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/openai/v1/chat/completions
+OPENAI_MODEL=gpt-6.1-sol
 ```
+
+Restart the backend after changing these values. GPT-6.1 Sol is available via
+AI Gateway v1 and v2 and shares the `gpt-sol-family` quota. VPK uses the existing
+v1 chat completions integration. VPK omits temperature for GPT-6 Sol models
+and reserves a minimum 2,048 completion tokens because that budget includes
+reasoning as well as visible output.
 
 ---
 
@@ -209,7 +207,7 @@ Provider mappings can vary by environment, so treat Atlas CLI output as the sour
 - `anthropic.claude-opus-4-6` (most capable)
 
 **GPT:**
-- `gpt-5.6-terra` (latest)
+- `gpt-6.1-sol` (latest)
 
 **Gemini (Google):**
 - `gemini-3-pro-image` (image generation + text)
@@ -301,7 +299,7 @@ pnpm run dev
 
 ```json
 {
-  "model": "gpt-5.6-terra",
+  "model": "gpt-6.1-sol",
   "messages": [
     { "role": "system", "content": "You are an AI assistant..." },
     { "role": "user", "content": "Hello" }
@@ -365,6 +363,6 @@ When using the Gemini endpoint with a model that supports image generation (e.g.
 | File | Purpose |
 |------|---------|
 | `.env.local` | Contains `AI_GATEWAY_URL` (default provider) and optional `AI_GATEWAY_URL_GOOGLE` (Google chat/image routing + voice route derivation) |
-| `backend/lib/ai-gateway-helpers.js` | Contains `DEFAULT_MODELS`, endpoint detection, and provider-specific request/stream helpers |
+| `backend/lib/ai-gateway-helpers.js` | Contains model resolution, endpoint detection, and provider-specific request/stream helpers |
 | `backend/server.js` | Backend routing, gateway-backed behavior, and endpoint handlers |
 | `rovo/config.js` | Rovo user-message formatting (`buildUserMessage`) |

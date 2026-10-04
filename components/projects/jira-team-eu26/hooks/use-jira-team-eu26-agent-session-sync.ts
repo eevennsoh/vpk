@@ -7,12 +7,11 @@ import {
 	advanceJiraTeamEu26SyncSession,
 	getJiraTeamEu26StateChangeDelayMs,
 	getJiraTeamEu26SyncDelayMs,
-	JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES,
-	JIRA_TEAM_EU26_SYNC_SESSIONS,
-	JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID,
+	JIRA_TEAM_EU26_DEFAULT_SYNC_SOURCE,
+	type JiraTeamEu26AgentSessionSyncSource,
 	removeReviewedJiraTeamEu26AgentSessionIds,
 	takeJiraTeamEu26SyncBatch,
-} from "../data/agent-session-sync";
+} from "@/components/projects/jira-team-eu26/data/agent-session-sync";
 
 interface JiraTeamEu26AgentSessionSyncState {
 	lastAction: "arrival" | "state-change";
@@ -23,29 +22,31 @@ interface JiraTeamEu26AgentSessionSyncState {
 	transitionQueue: readonly string[];
 }
 
-function createInitialSyncState(): JiraTeamEu26AgentSessionSyncState {
+function createInitialSyncState(source: JiraTeamEu26AgentSessionSyncSource): JiraTeamEu26AgentSessionSyncState {
 	return {
 		lastAction: "state-change",
 		newAgentSessionIds: new Set(),
 		nextIndex: 0,
 		stateChangeVersions: new Map(
-			[...JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES.keys()].map((id) => [id, 0] as const),
+			[...source.seedOverrides.values()].map((session) => [session.id, 0] as const),
 		),
 		syncedAgentSessions: [],
 		transitionQueue: [],
 	};
 }
 
+/** One retained instance per content source keeps each preset's progress and arrival marks isolated. */
 export function useJiraTeamEu26AgentSessionSync({
 	active,
 	paused = false,
-}: Readonly<{ active: boolean; paused?: boolean }>): Readonly<{
+	source = JIRA_TEAM_EU26_DEFAULT_SYNC_SOURCE,
+}: Readonly<{ active: boolean; paused?: boolean; source?: JiraTeamEu26AgentSessionSyncSource }>): Readonly<{
 	newAgentSessionIds: ReadonlySet<string>;
 	reviewAgentSessions: (sessionIds?: readonly string[]) => void;
 	stateChangeVersions: ReadonlyMap<string, number>;
 	syncedAgentSessions: readonly PulseAgentSession[];
 }> {
-	const [syncState, setSyncState] = useState(createInitialSyncState);
+	const [syncState, setSyncState] = useState(() => createInitialSyncState(source));
 	const reviewAgentSessions = useCallback((sessionIds?: readonly string[]) => {
 		setSyncState((current) => {
 			const newAgentSessionIds = removeReviewedJiraTeamEu26AgentSessionIds(
@@ -61,7 +62,7 @@ export function useJiraTeamEu26AgentSessionSync({
 	useEffect(() => {
 		if (
 			!active || paused || (
-				syncState.nextIndex >= JIRA_TEAM_EU26_SYNC_SESSIONS.length
+				syncState.nextIndex >= source.sessions.length
 				&& syncState.transitionQueue.length === 0
 			)
 		) {
@@ -83,13 +84,13 @@ export function useJiraTeamEu26AgentSessionSync({
 
 			const changingState = syncState.transitionQueue.length > 0 && (
 				syncState.lastAction === "arrival"
-				|| syncState.nextIndex >= JIRA_TEAM_EU26_SYNC_SESSIONS.length
+				|| syncState.nextIndex >= source.sessions.length
 			);
 			timeoutId = window.setTimeout(() => {
 				timeoutId = undefined;
 				const batchRandom = Math.random();
 				setSyncState((current) => {
-					const hasPendingArrivals = current.nextIndex < JIRA_TEAM_EU26_SYNC_SESSIONS.length;
+					const hasPendingArrivals = current.nextIndex < source.sessions.length;
 					const shouldChangeState = current.transitionQueue.length > 0 && (
 						current.lastAction === "arrival" || !hasPendingArrivals
 					);
@@ -99,6 +100,7 @@ export function useJiraTeamEu26AgentSessionSync({
 							current.syncedAgentSessions,
 							current.stateChangeVersions,
 							sessionId,
+							source.cohortById,
 						);
 						return {
 							...current,
@@ -106,7 +108,7 @@ export function useJiraTeamEu26AgentSessionSync({
 							stateChangeVersions: next.stateChangeVersions,
 							syncedAgentSessions: next.sessions,
 							transitionQueue: next.nextState === "needs-input"
-								&& JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID.get(sessionId) === "full-path"
+								&& source.cohortById.get(sessionId) === "full-path"
 								? [sessionId, ...current.transitionQueue.slice(1)]
 								: current.transitionQueue.slice(1),
 						};
@@ -115,7 +117,7 @@ export function useJiraTeamEu26AgentSessionSync({
 						return current;
 					}
 
-					const batch = takeJiraTeamEu26SyncBatch(current.nextIndex, () => batchRandom);
+					const batch = takeJiraTeamEu26SyncBatch(current.nextIndex, () => batchRandom, source.sessions);
 					return {
 						...current,
 						lastAction: "arrival",
@@ -136,7 +138,7 @@ export function useJiraTeamEu26AgentSessionSync({
 							...current.transitionQueue,
 							...batch.sessions
 								.filter((session) => {
-									const cohort = JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID.get(session.id);
+									const cohort = source.cohortById.get(session.id);
 									return cohort === "needs-input-terminal" || cohort === "full-path";
 								})
 								.map((session) => session.id),
@@ -162,7 +164,7 @@ export function useJiraTeamEu26AgentSessionSync({
 			clearPendingSync();
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 		};
-	}, [active, paused, syncState.lastAction, syncState.nextIndex, syncState.transitionQueue]);
+	}, [active, paused, source, syncState.lastAction, syncState.nextIndex, syncState.transitionQueue]);
 
 	return {
 		newAgentSessionIds: syncState.newAgentSessionIds,

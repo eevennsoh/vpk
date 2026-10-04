@@ -1,7 +1,7 @@
 ---
 name: vpk-git-ship
 description: "Ship VPK changes through a pull request, required checks, review remediation, merge, and persistent-main sync. Use when the user says \"vpk-git-ship\", \"ship this\", \"merge it\", \"land this work end-to-end\", or \"merge these PRs back to main\"; use vpk-git-clean for cleanup."
-validation_command: pnpm run lint && pnpm run typecheck
+validation_command: pnpm run verify:fast && pnpm run lint && pnpm run typecheck
 ---
 
 # VPK Git Ship
@@ -77,9 +77,10 @@ unavailable.
    contains unrelated experiments, secrets, or `.env*`; report every skipped
    path. Generate a concise imperative commit subject from the diff, with no
    co-author footer unless requested.
-6. Push with upstream when needed, then create the PR with `gh pr create` or
-   capture the updated PR URL. Use the validation checklist from
-   `.agents/rules/appendix-reference.md` and check only commands actually run.
+6. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
+   guardrails, ESLint suppression ratchet — about half of first-run CI
+   failures). Then push with upstream when needed and create the PR with
+   `gh pr create` or capture the updated PR URL. List only checks actually run.
 7. Report the PR URL, branch, commit, and checks URL. `--pr` stops here.
 
 Local validation may be deferred to CI for the create-only path. If the flow

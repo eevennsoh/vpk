@@ -33,6 +33,7 @@ import {
 } from "../lib/finale-card-motion";
 import { latePrintResolvers } from "../lib/finale-late-prints";
 import { parseRgb, progress } from "../lib/finale-math";
+import { finaleFieldPixelRatio } from "../lib/finale-stage-fit";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 /** Speed (px/s) at which the cloth reaches full bend; faster only saturates. */
@@ -220,6 +221,9 @@ void main() {
 	float edge = roundedBox((vUv - 0.5) * uSize, uSize * 0.5, uRadius);
 	vec4 tile = vec4(uTileColor, 1.0) * (1.0 - smoothstep(-0.75, 0.75, edge));
 	vec4 colour = mix(card, tile, uFace);
+	// Ink belongs to the front. Keep the same silhouette and premultiplied
+	// edge coverage on the blank paper back, including the card-to-tile morph.
+	if (!gl_FrontFacing) colour = vec4(uTileColor * colour.a, colour.a);
 	// The key light models the folds, relative to the sheet lying flat: faces
 	// turned from the light dim toward the ADS shadow blue, faces turned to it
 	// lift a touch, so light and shade travel through the sheet with the wave.
@@ -594,7 +598,7 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 			return undefined;
 		}
 		renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-		const ratio = Math.min(window.devicePixelRatio || 1, 2);
+		const ratio = finaleFieldPixelRatio(viewport.width, viewport.height, window.devicePixelRatio);
 		renderer.setPixelRatio(ratio);
 		renderer.setSize(viewport.width, viewport.height, false);
 		renderer.setClearColor(0x000000, 0);
@@ -708,6 +712,33 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 		const postScene = new THREE.Scene();
 		postScene.add(new THREE.Mesh(postGeometry, postMaterial));
 		const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+		// Nothing draws until the toss, so without this the toss itself paid for
+		// every program link, print upload and the multisampled post target (a
+		// ~200ms first-run stall mid-burst). The finale mounts well before the
+		// toss, so do that work now, off the burst: both render targets' program
+		// variants, every print, and the post target.
+		for (const { shadow } of sheets) if (shadow) shadow.visible = true;
+		renderer.compile(scene, camera);
+		renderer.setRenderTarget(target);
+		renderer.compile(scene, camera);
+		renderer.setRenderTarget(null);
+		renderer.compile(postScene, postCamera);
+		for (const { texture } of textures.values()) renderer.initTexture(texture);
+		renderer.initRenderTarget(target);
+		// Then draw once through both of the toss's paths (the post target, and
+		// straight to the canvas): ANGLE builds a program's GPU pipeline only at
+		// its first draw into a target, and three checks each program on first
+		// use with a blocking GPU round trip, which otherwise cost the toss two
+		// frames. The sheets sit at the origin, in view; the canvas is cleared
+		// before this task presents anything.
+		renderer.setRenderTarget(target);
+		renderer.render(scene, camera);
+		renderer.setRenderTarget(null);
+		renderer.render(postScene, postCamera);
+		renderer.render(scene, camera);
+		renderer.clear();
+		for (const { shadow } of sheets) if (shadow) shadow.visible = false;
 
 		stateRef.current = { renderer, scene, camera, sheets, pending, target, post: { scene: postScene, camera: postCamera, material: postMaterial } };
 		return () => {

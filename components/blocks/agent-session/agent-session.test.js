@@ -132,7 +132,7 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.match(METADATA_SOURCE, /export function AgentSessionShortMetadata/u);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.match(LIST_CARD_SOURCE, /\{metadata === undefined \? \(/u);
-	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|QuestionCircleFilledIcon|StatusSuccessIcon/u);
+	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|StrokeWeightLargeIcon|StatusSuccessIcon/u);
 	assert.match(LIFECYCLE_SOURCE, /export function AgentSessionShortLifecycleIcon/u);
 	assert.match(LIFECYCLE_SOURCE, /data-agent-session-lifecycle-current=\{accessibleState\}/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator =[\s\S]*isLongDensity[\s\S]*: <AgentSessionShortLifecycleIcon[\s\S]*state=\{shownLifecycleState\}/u);
@@ -756,7 +756,7 @@ test("a working long row breathes with the Avatar spinner", () => {
 		LIFECYCLE_SOURCE,
 		/<Spinner[\s\S]*className=\{cn\("group-aria-pressed\/button:text-icon-selected!", compact && "size-\[16\.75px\]"\)\}[\s\S]*label=""[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="experimental-avatar"/u,
 	);
-	assert.match(LIFECYCLE_SOURCE, /QuestionCircleFilledIcon/u);
+	assert.match(LIFECYCLE_SOURCE, /StrokeWeightLargeIcon/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /PixelLoader/u);
 	// Agent List keeps its own indicator; only the session card swapped.
 	assert.match(LIST_CARD_SOURCE, /PixelLoader/u);
@@ -783,8 +783,8 @@ test("a working long row breathes with the Avatar spinner", () => {
 	assert.match(LIFECYCLE_SOURCE, /showLabel[\s\S]*state === "running"[\s\S]*<Shimmer[\s\S]*\{label\}[\s\S]*<\/Shimmer>[\s\S]*: <span>\{label\}<\/span>[\s\S]*: null/u);
 	// Grow in and out on the state swap, with the exit timing on the exit variant
 	// so it does not silently run at the enter timing.
-	assert.match(LIFECYCLE_SOURCE, /const INDICATOR_ENTER = \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}/u);
-	assert.match(LIFECYCLE_SOURCE, /const INDICATOR_EXIT = \{ duration: 0\.1, ease: \[0\.6, 0, 0\.8, 0\.6\] \}/u);
+	assert.match(LIFECYCLE_SOURCE, /const INDICATOR_ENTER = \{ duration: 0\.15, ease: motionEase\.outPractical \}/u);
+	assert.match(LIFECYCLE_SOURCE, /const INDICATOR_EXIT = \{ duration: 0\.1, ease: motionEase\.in \}/u);
 	assert.match(
 		LIFECYCLE_SOURCE,
 		/exit=\{shouldReduceMotion[\s\S]*\? undefined[\s\S]*: \{ opacity: 0, scale: 0\.6, transition: INDICATOR_EXIT \}\}/u,

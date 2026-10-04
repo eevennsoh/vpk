@@ -242,7 +242,7 @@ test("untracked work shows lifecycle state in metadata and a matching corner ind
 		/lifecycleState === "working" \? \([\s\S]*<Shimmer[\s\S]*duration=\{1\.4\}[\s\S]*spread=\{2\}[\s\S]*\{JIRA_SESSION_FLYOUT_STATE_LABEL\[lifecycleState\]\}[\s\S]*<\/Shimmer>[\s\S]*\) : \([\s\S]*<p[\s\S]*\{JIRA_SESSION_FLYOUT_STATE_LABEL\[lifecycleState\]\}[\s\S]*<\/p>[\s\S]*\)/u,
 	);
 	assert.match(cardSource, /trailing=\{<JiraSessionStatusIndicator state=\{lifecycleState\} \/>\}/u);
-	assert.match(indicatorSource, /case "needs-input":[\s\S]*text-icon-information[\s\S]*QuestionCircleFilledIcon[\s\S]*size="medium"/u);
+	assert.match(indicatorSource, /case "needs-input":[\s\S]*text-icon-information[\s\S]*StrokeWeightLargeIcon[\s\S]*size="medium"/u);
 	assert.match(indicatorSource, /case "working":[\s\S]*text-icon-subtlest[\s\S]*<Spinner label="" size="default" variant="experimental-avatar" \/>/u);
 	assert.match(indicatorSource, /case "finished":[\s\S]*text-icon-success[\s\S]*StatusSuccessIcon[\s\S]*size="medium"/u);
 	assert.equal(indicatorSource.match(/<span aria-hidden="true"/gu)?.length, 3);

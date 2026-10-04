@@ -59,6 +59,7 @@ import {
 	WidgetCard,
 	WidgetGridOverlay,
 } from "./widget-card";
+import { motionEase } from "@/lib/motion";
 
 // Pool of preloaded <audio> elements keyed by src. Reusing the same element
 // across calls means:
@@ -277,7 +278,7 @@ function ThemeControl({
 					: { opacity: 0, filter: "blur(16px)", transform: "scale(0.82) translateY(-16px)" }
 				}
 				initial={{ opacity: 0, filter: "blur(16px)", transform: "scale(0.82) translateY(-16px)" }}
-				transition={{ duration: 0.35, ease: [0, 0.4, 0, 1] }}
+				transition={{ duration: 0.35, ease: motionEase.out }}
 				aria-hidden={!isThemeChromeVisible}
 				inert={!isThemeChromeVisible}
 				style={{
@@ -567,7 +568,7 @@ function WeatherKeyboardHints({
 					: { opacity: 0, filter: "blur(16px)" }
 				}
 				initial={{ opacity: 0, filter: "blur(16px)" }}
-				transition={{ duration: 0.35, ease: [0, 0.4, 0, 1] }}
+				transition={{ duration: 0.35, ease: motionEase.out }}
 				style={{
 					willChange: "opacity, filter",
 					pointerEvents: isVisible ? "auto" : "none",
@@ -1095,8 +1096,8 @@ function SelectedWeatherClock({
 				transition={{
 					scale: { type: "spring", stiffness: 180, damping: 12, mass: 0.6, delay: 0.2 },
 					y: { type: "spring", stiffness: 180, damping: 12, mass: 0.6, delay: 0.2 },
-					filter: { duration: 0.5, ease: [0, 0.4, 0, 1], delay: 0.2 },
-					opacity: { duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.2 },
+					filter: { duration: 0.5, ease: motionEase.out, delay: 0.2 },
+					opacity: { duration: 0.4, ease: motionEase.out, delay: 0.2 },
 				}}
 				style={{ willChange: "opacity, filter, transform" }}
 			>
@@ -1646,7 +1647,7 @@ export default function Weather({
 						initial={{ opacity: 0, filter: "blur(12px)", y: 8 }}
 						animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
 						exit={{ opacity: 0, filter: "blur(12px)", y: 8 }}
-						transition={{ duration: 0.35, ease: [0, 0.4, 0, 1] }}
+						transition={{ duration: 0.35, ease: motionEase.out }}
 						style={{
 							fontFamily: "'DotGothic16', sans-serif",
 							letterSpacing: "0.04em",
@@ -1662,7 +1663,7 @@ export default function Weather({
 						initial={{ opacity: 0, filter: "blur(12px)", y: 8 }}
 						animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
 						exit={{ opacity: 0, filter: "blur(12px)", y: 8 }}
-						transition={{ duration: 0.35, ease: [0, 0.4, 0, 1] }}
+						transition={{ duration: 0.35, ease: motionEase.out }}
 						style={{
 							fontFamily: "'Bitcount Grid Single', sans-serif",
 							fontSize: 20,
@@ -1809,8 +1810,8 @@ export default function Weather({
 					transition={{
 						scaleY: { type: "spring", stiffness: 180, damping: 12, mass: 0.6, delay: 0.3 },
 						y: { type: "spring", stiffness: 180, damping: 12, mass: 0.6, delay: 0.3 },
-						filter: { duration: 0.5, ease: [0, 0.4, 0, 1], delay: 0.3 },
-						opacity: { duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.3 },
+						filter: { duration: 0.5, ease: motionEase.out, delay: 0.3 },
+						opacity: { duration: 0.4, ease: motionEase.out, delay: 0.3 },
 					}}
 					style={{ transformOrigin: "bottom center", willChange: "opacity, filter, transform" }}
 				>
@@ -1909,8 +1910,8 @@ export default function Weather({
 					transition={{
 						scale: { type: "spring", stiffness: 180, damping: 12, mass: 0.6, delay: 0.4 },
 						y: { type: "spring", stiffness: 180, damping: 12, mass: 0.6, delay: 0.4 },
-						filter: { duration: 0.5, ease: [0, 0.4, 0, 1], delay: 0.4 },
-						opacity: { duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.4 },
+						filter: { duration: 0.5, ease: motionEase.out, delay: 0.4 },
+						opacity: { duration: 0.4, ease: motionEase.out, delay: 0.4 },
 					}}
 					style={{ willChange: "opacity, filter, transform" }}
 				>
@@ -2020,8 +2021,8 @@ export default function Weather({
 						transition={{
 							scaleY: { type: "spring", stiffness: 180, damping: 12, mass: 0.6, delay: 0.1 },
 							y: { type: "spring", stiffness: 180, damping: 12, mass: 0.6, delay: 0.1 },
-							filter: { duration: 0.5, ease: [0, 0.4, 0, 1], delay: 0.1 },
-							opacity: { duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.1 },
+							filter: { duration: 0.5, ease: motionEase.out, delay: 0.1 },
+							opacity: { duration: 0.4, ease: motionEase.out, delay: 0.1 },
 						}}
 						style={{
 							marginBottom: sliderOverlapMarginBottom,

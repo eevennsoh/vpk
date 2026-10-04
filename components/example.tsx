@@ -42,11 +42,9 @@ export function Example({
       )}
       {...props}
     >
-      {title && (
-        <h3 className="text-muted-foreground mb-4 text-sm font-medium">
+      {title ? <h3 className="text-muted-foreground mb-4 text-sm font-medium">
           {title}
-        </h3>
-      )}
+        </h3> : null}
       <div className={cn("flex flex-1 flex-col", className)}>{children}</div>
     </div>
   )

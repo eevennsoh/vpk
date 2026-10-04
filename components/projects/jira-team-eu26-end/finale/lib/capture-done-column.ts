@@ -82,6 +82,50 @@ function findOccluders(column: HTMLElement): FinaleCapturedOccluder[] {
 const DONE_COLUMN_SELECTOR = `[data-jira-kanban-column="${FINALE_DONE_COLUMN_TITLE}"]`;
 const CARD_SELECTOR = '[data-slot="jira-issue-card"]';
 
+/** The real drop/arrival state must be gone before it becomes an immutable print. */
+export function isFinaleColumnCaptureReady(column: HTMLElement): boolean {
+	// The shared drop trace lives in body, outside the column. Let its real
+	// completion (including cancellation/reduced motion) release this gate.
+	if (column.ownerDocument.querySelector(`[data-issue-drop-trace][data-board-column-title="${FINALE_DONE_COLUMN_TITLE}"]`)) return false;
+	if (column.querySelector('[data-transitioning="true"], [data-created-card-pending], [data-jira-creating-arrival="true"], [data-issue-status-choices="true"]')) return false;
+	return [...column.querySelectorAll<HTMLElement>(CARD_SELECTOR)].every((card) => {
+		const rect = card.getBoundingClientRect();
+		return rect.width > 0 && rect.height > 0;
+	});
+}
+
+/** Wait on the board's own completion markers, with no additional presentation hold. */
+export function waitForFinaleColumnCapture(signal?: AbortSignal): Promise<HTMLElement | null> {
+	return new Promise((resolve) => {
+		let frame = 0;
+		let previousGeometry: string | null = null;
+		const finish = (column: HTMLElement | null) => {
+			cancelAnimationFrame(frame);
+			signal?.removeEventListener("abort", abort);
+			resolve(column);
+		};
+		const abort = () => finish(null);
+		const check = () => {
+			if (signal?.aborted) { finish(null); return; }
+			const column = document.querySelector<HTMLElement>(DONE_COLUMN_SELECTOR);
+			if (!column) { finish(null); return; }
+			if (isFinaleColumnCaptureReady(column)) {
+				// Layout projection can outlive the arrival flag. Capture only once
+				// the actual column/card bounds agree on consecutive paint frames.
+				const geometry = [column, ...column.querySelectorAll<HTMLElement>(CARD_SELECTOR)].map((node) => {
+					const rect = node.getBoundingClientRect();
+					return [rect.x, rect.y, rect.width, rect.height].map((value) => value.toFixed(2)).join(",");
+				}).join("|");
+				if (geometry === previousGeometry) { finish(column); return; }
+				previousGeometry = geometry;
+			} else previousGeometry = null;
+			frame = requestAnimationFrame(check);
+		};
+		signal?.addEventListener("abort", abort, { once: true });
+		check();
+	});
+}
+
 /** The live Done column's DOM cards (the originals the GL sheets are printed from). */
 export function queryJiraTeamEu26DoneCards(): readonly HTMLElement[] {
 	if (typeof document === "undefined") return [];

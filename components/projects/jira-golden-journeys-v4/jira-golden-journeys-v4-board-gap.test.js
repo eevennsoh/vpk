@@ -34,8 +34,9 @@ test("a gap drop reuses the create-well path with a slot rather than a second cr
 test("each cohort member advances the slot so the sessions land in drag order", () => {
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/onBoardGapCreate: onBoardAgentSessionCreate[\s\S]*insertion\.insertAtIndex \+ memberIndex/u,
+		/onBoardGapCreate: onBoardAgentSessionCreate \? handleBoardGapCreate : undefined/u,
 	);
+	assert.match(ARRIVAL_HOOK_SOURCE, /handleCreate\(session, insertion\.columnTitle, insertion\.insertAtIndex \+ index\)/u);
 });
 
 test("a board without the create capability never draws an insertion line", () => {

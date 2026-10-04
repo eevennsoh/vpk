@@ -1,6 +1,6 @@
 import type { ReasoningPhase } from "@/components/projects/shared/hooks/use-reasoning-phase";
-import { getReasoningCompletedLabel } from "../../lib/reasoning-labels";
-import { resolveThinkingLabelForSurface } from "../../lib/thinking-label-policy";
+import { getReasoningCompletedLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { resolveThinkingLabelForSurface } from "@/components/projects/shared/lib/thinking-label-policy";
 
 interface ResolveThinkingStatusActiveOptions {
 	hasThinkingStatusPart: boolean;

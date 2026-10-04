@@ -454,8 +454,8 @@ const FilePathButton = memo(
 				type="button"
 			>
 				{frame.filePath}
-				{frame.lineNumber !== null && `:${frame.lineNumber}`}
-				{frame.columnNumber !== null && `:${frame.columnNumber}`}
+				{frame.lineNumber !== null ? `:${frame.lineNumber}` : null}
+				{frame.columnNumber !== null ? `:${frame.columnNumber}` : null}
 			</button>
 		);
 	}
@@ -486,29 +486,21 @@ export const StackTraceFrames = memo(
 						key={`${frame.raw}-${index}`}
 					>
 						<span className="text-muted-foreground">at </span>
-						{frame.functionName && (
-							<span className={frame.isInternal ? "" : "text-foreground"}>
+						{frame.functionName ? <span className={frame.isInternal ? "" : "text-foreground"}>
 								{frame.functionName}{" "}
-							</span>
-						)}
-						{frame.filePath && (
-							<>
+							</span> : null}
+						{frame.filePath ? <>
 								<span className="text-muted-foreground">(</span>
 								<FilePathButton
 									frame={frame}
 									onFilePathClick={onFilePathClick}
 								/>
 								<span className="text-muted-foreground">)</span>
-							</>
-						)}
-						{!(frame.filePath || frame.functionName) && (
-							<span>{frame.raw.replace(AT_PREFIX_REGEX, "")}</span>
-						)}
+							</> : null}
+						{!(frame.filePath || frame.functionName) ? <span>{frame.raw.replace(AT_PREFIX_REGEX, "")}</span> : null}
 					</div>
 				))}
-				{framesToShow.length === 0 && (
-					<div className="text-muted-foreground text-xs">No stack frames</div>
-				)}
+				{framesToShow.length === 0 ? <div className="text-muted-foreground text-xs">No stack frames</div> : null}
 			</div>
 		);
 	}

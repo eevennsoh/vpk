@@ -307,7 +307,7 @@ test("the route periodically syncs one to three new agent sessions into Untracke
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/const \{\s*reviewAgentSessions,\s*newAgentSessionIds,\s*stateChangeVersions,\s*syncedAgentSessions,\s*\} = useJiraTeamEu26AgentSessionSync\(\{\s*active: showBoardContent,\s*paused: agentSessionColumnInteracting,\s*\}\);/u,
+		/defaultSessionSync = useJiraTeamEu26AgentSessionSync\(\{\s*active: showBoardContent && !wacContent,\s*paused: agentSessionColumnInteracting,\s*\}\);/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
@@ -317,7 +317,7 @@ test("the route periodically syncs one to three new agent sessions into Untracke
 	assert.match(HOOK_SOURCE, /removeReviewedJiraTeamEu26AgentSessionIds/u);
 	assert.match(HOOK_SOURCE, /advanceJiraTeamEu26SyncSession/u);
 	assert.match(HOOK_SOURCE, /addJiraTeamEu26SyncSessionInitialVersions/u);
-	assert.match(HOOK_SOURCE, /JIRA_TEAM_EU26_SYNC_SESSION_COHORT_BY_ID/u);
+	assert.match(HOOK_SOURCE, /source\.cohortById/u);
 	assert.match(HOOK_SOURCE, /document\.visibilityState !== "visible"/u);
-	assert.match(PAGE_SOURCE, /agentSessionSeedOverrides=\{JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES\}/u);
+	assert.match(PAGE_SOURCE, /agentSessionSeedOverrides=\{wacContent \? WAC_SEEDED_AGENT_SESSION_OVERRIDES : JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES\}/u);
 });

@@ -81,8 +81,7 @@ function DialogContent({
         {...props}
       >
         {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
+        {showCloseButton ? <DialogPrimitive.Close
             data-slot="dialog-close"
             render={
               <Button
@@ -94,8 +93,7 @@ function DialogContent({
           >
             <CrossIcon label="" />
             <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
+          </DialogPrimitive.Close> : null}
       </DialogPrimitive.Popup>
     </DialogPortal>
   )
@@ -131,11 +129,9 @@ function DialogFooter({
       {...props}
     >
       {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>
+      {showCloseButton ? <DialogPrimitive.Close render={<Button variant="outline" />}>
           Close
-        </DialogPrimitive.Close>
-      )}
+        </DialogPrimitive.Close> : null}
     </div>
   )
 }
@@ -174,13 +170,11 @@ function DialogTitle({
       )}
       {...props}
     >
-      {config && (
-        <Icon
+      {config ? <Icon
           render={<config.icon label="" />}
           label={variant}
           className={config.colorClass}
-        />
-      )}
+        /> : null}
       {children}
     </DialogPrimitive.Title>
   )

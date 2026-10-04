@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const STREAMDOWN_PREVIEW_URL = `${
-	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
-}/preview/utility/streamdown`;
+import { appUrl } from "@/tests/helpers/origin";
+
+const STREAMDOWN_PREVIEW_URL = appUrl("/preview/utility/streamdown");
 
 test("shared MessageResponse defers inline code lozenges until the streaming block completes", async ({
 	page,

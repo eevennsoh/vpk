@@ -4,12 +4,11 @@ import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { token } from "@/lib/tokens";
 
 import { MAGNETIC_PROXIMITY_DISTANCE } from "@/components/ui-custom/hooks/use-magnetic-proximity";
-import { setKanbanColumnDropArmed, type KanbanColumnChromeStyles } from "../../column-chrome";
+import { setKanbanColumnDropArmed, type KanbanColumnChromeStyles } from "@/components/blocks/jira-kanban/column-chrome";
 
-/** Dual-status targets adopt the shared empty-column outline after their dwell. */
-export function useBoardColumnDropRing(targetRef: RefObject<HTMLDivElement | null>, chrome: KanbanColumnChromeStyles, armed: boolean | undefined) {
+/** Natural-order feedback uses the outline of the visible column container. */
+export function useBoardColumnDropRing(targetRef: RefObject<HTMLDivElement | null>, chrome: KanbanColumnChromeStyles, armed: boolean) {
 	useLayoutEffect(() => {
-		if (armed === undefined) return;
 		const column = targetRef.current?.closest<HTMLElement>("[data-jira-kanban-column]");
 		if (!column) return;
 		const ring = column.querySelector<HTMLElement>("[data-jira-kanban-column-drop-ring]") ?? column;

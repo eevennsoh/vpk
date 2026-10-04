@@ -1,9 +1,8 @@
-import { execFileSync } from "node:child_process";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const origin = (process.env.PLAYWRIGHT_BASE_URL
-	?? execFileSync(process.execPath, [".agents/skills/vpk-verify/scripts/control-vpk", "url"], { encoding: "utf8" }).trim())
-	.replace(/\/$/u, "");
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 const project = process.env.PLAYWRIGHT_JIRA_PROJECT ?? "jira-team-eu26";
 
 interface CreateFlightFrame {
@@ -22,6 +21,8 @@ interface CreatedCardEntranceFrame {
 	opacity: number;
 	scale: number;
 	slotHeight: number;
+	glowY: number | null;
+	borderTraces: number;
 }
 
 test("columns hug their cards and keep creation visible outside the scrollport", async ({ page }) => {
@@ -157,7 +158,7 @@ for (const [reducedMotion, columnState] of [
 				const button = document.querySelector('[data-jira-dropzone-control="To do"]')!;
 				const target = button.getBoundingClientRect();
 				const transform = getComputedStyle(button).transform;
-				const card = document.querySelector('[data-jira-kanban-column="To do"] [data-jira-creating-arrival="true"]');
+				const card = document.querySelector('[data-jira-kanban-column="To do"] [data-issue-key][data-created-card-arrival-id]');
 				const pending = card?.closest("[data-created-card-pending]");
 				if (card) {
 					const content = card.querySelector('[data-slot="jira-creating-card"]')!;
@@ -166,6 +167,8 @@ for (const [reducedMotion, columnState] of [
 						deferred: pending !== null,
 						opacity: Number(getComputedStyle(content).opacity),
 						scale: cardTransform === "none" ? 1 : new DOMMatrixReadOnly(cardTransform).m11,
+						glowY: (() => { const pulse = card.querySelector("[data-jira-linking-glow-backdrop]")?.firstElementChild; return pulse ? new DOMMatrixReadOnly(getComputedStyle(pulse).transform).m42 : null; })(),
+						borderTraces: document.querySelectorAll("[data-issue-drop-trace]").length,
 						slotHeight: card.querySelector('[data-slot="jira-creating-slot"]')!.getBoundingClientRect().height,
 					});
 				}
@@ -229,8 +232,13 @@ for (const [reducedMotion, columnState] of [
 			expect(Math.min(...frames.map((frame) => frame.chipY))).toBeLessThan(frames[0].chipY - 12);
 			expect(frames.some((frame) => frame.opacity > 0.01 && frame.opacity < 0.99 && frame.scale < 0.99)).toBe(true);
 			expect(frames.at(-1)!.distanceToTarget).toBeLessThan(10);
-			expect(trace.cards.some((card) => !card.deferred && card.slotHeight > 0 && card.scale > 0.8 && card.scale < 1)).toBe(true);
-			expect(trace.cards.some((card) => !card.deferred && card.opacity > 0 && card.opacity < 1)).toBe(true);
+			const revealed = trace.cards.filter((card) => !card.deferred && card.slotHeight > 0);
+			expect(revealed.length).toBeGreaterThan(2);
+			expect(revealed.every((card) => card.opacity === 1 && Math.abs(card.scale - 1) < 0.001)).toBe(true);
+			const sweep = revealed.flatMap((card) => card.glowY === null ? [] : [card.glowY]);
+			expect(sweep.length).toBeGreaterThan(2);
+			expect(sweep.at(-1)!).toBeLessThan(sweep[0]);
+			expect(trace.cards.every((card) => card.borderTraces === 0)).toBe(true);
 		}
 		if (columnState !== "empty") {
 			await expect.poll(async () => (await button.boundingBox())!.y + 24).toBeCloseTo(resting.y + resting.height, 0);
@@ -260,9 +268,9 @@ test("a second creation drop preserves a card whose entrance already started", a
 		.find((value) => !before.includes(value));
 	const first = column.locator(`[data-issue-key="${key}"]`);
 	await expect(first).toBeVisible();
-	const content = first.locator('[data-slot="jira-creating-card"]');
+	const content = first.locator('[data-jira-linking-glow-backdrop] > div');
 	await content.evaluate((node) => node.getAnimations().forEach((animation) => { animation.pause(); animation.currentTime = 80; }));
-	await expect(first).toHaveAttribute("data-jira-creating-arrival", "true");
+	await expect(first).toHaveAttribute("data-created-card-arrival-id", /\d+/u);
 	await drop(page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-kickoff-killswitch-session"));
 	await expect(page.locator("[data-jira-dropzone-flight]")).toHaveCount(1);
 	const stayedVisible = await first.isVisible();
@@ -448,11 +456,68 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 			await expect(second).not.toHaveAttribute("data-board-agent-session-target", "attach");
 		}
 		await page.screenshot({ path: `output/agent-browser/restored-inline-create-${reducedMotion}.png` });
+		await page.evaluate(() => {
+			const animations: Animation[] = [];
+			Object.assign(window, { inlineFlightAnimations: animations });
+			const animate = Element.prototype.animate;
+			Element.prototype.animate = function (frames, options) {
+				const animation = animate.call(this, frames, options);
+				if (this.matches('[data-jira-linking-flight-purpose="create-inline"]')) {
+					animations.push(animation); animation.pause(); animation.currentTime = 0;
+				}
+				return animation;
+			};
+		});
 		await page.mouse.up();
+		const flight = page.locator('[data-jira-linking-flight-purpose="create-inline"]');
+		if (reducedMotion === "no-preference") {
+			await expect(flight).toBeVisible();
+			await expect(flight).toHaveAttribute("data-jira-linking-flight-members", "1");
+			const pendingCard = cards.nth(1);
+			await expect(pendingCard).toHaveCSS("visibility", "hidden");
+			expect(await pendingCard.evaluate((node) => node.closest('[inert][aria-hidden="true"]') !== null)).toBe(true);
+			await expect(pendingCard.locator("[data-jira-linking-glow-backdrop]")).toHaveCount(0);
+			const trajectory = await flight.evaluate((node) => {
+				const animation = node.getAnimations()[0];
+				const effect = animation.effect as KeyframeEffect;
+				const frames = effect.getKeyframes();
+				animation.currentTime = 110;
+				return { duration: effect.getTiming().duration, frames: frames.length, first: frames[0].transform, last: frames.at(-1)!.transform };
+			});
+			expect(trajectory.duration).toBe(260);
+			expect(trajectory.frames).toBe(61);
+			expect(trajectory.first).toBe(`translate3d(${x}px, ${y}px, 0px) scale(1)`);
+			expect(trajectory.last).toContain("scale(0.65)");
+			await page.screenshot({ path: "output/agent-browser/creation-glow/inline-chip-flight.png" });
+			await flight.evaluate((node) => node.getAnimations().forEach((animation) => animation.play()));
+			await expect(flight).toHaveCount(0);
+		} else {
+			await expect(flight).toHaveCount(0);
+		}
+
 		await expect(cards).toHaveCount(5);
 		await expect(cards.nth(0)).toHaveAttribute("data-issue-key", "PAY-118");
 		await expect(cards.nth(2)).toHaveAttribute("data-issue-key", "PAY-124");
 		await expect(cards.nth(1).locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(1);
+		const created = cards.nth(1);
+		if (reducedMotion === "no-preference") {
+			const glow = created.locator("[data-jira-linking-glow-backdrop]");
+			await expect(glow).toHaveAttribute("data-jira-linking-glow-direction", "bottom-to-top");
+			const pulse = glow.locator("div");
+			const frames = await pulse.evaluate((node) => {
+				const animation = node.getAnimations()[0];
+				animation.pause(); animation.currentTime = 400;
+				return (animation.effect as KeyframeEffect).getKeyframes().map((frame) => frame.transform);
+			});
+			expect(frames).toEqual(["translateY(0px)", "translateY(-200%)"]);
+			await expect(created.locator('[data-slot="jira-creating-card"]')).toHaveCSS("opacity", "1");
+			await expect(page.locator("[data-issue-drop-trace]")).toHaveCount(0);
+			await page.screenshot({ path: "output/agent-browser/creation-glow/inline-glow.png" });
+			await pulse.evaluate((node) => node.getAnimations().forEach((animation) => animation.play()));
+		} else {
+			await expect(created.locator("[data-jira-linking-glow-halo], [data-jira-linking-glow-backdrop]")).toHaveCount(0);
+		}
+
 		await expect(page.locator("[data-agent-session-column]").getByTestId(sourceId!)).toHaveCount(0);
 		await expect(line).toHaveCount(0);
 	});

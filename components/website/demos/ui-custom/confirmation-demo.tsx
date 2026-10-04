@@ -137,15 +137,13 @@ export function ConfirmationDemoInteractive() {
 					</div>
 				</ConfirmationRejected>
 			</Confirmation>
-			{state !== "approval-requested" && (
-				<button
+			{state !== "approval-requested" ? <button
 					type="button"
 					onClick={reset}
 					className="self-start text-xs text-link underline-offset-2 hover:underline"
 				>
 					Reset demo
-				</button>
-			)}
+				</button> : null}
 		</div>
 	);
 }

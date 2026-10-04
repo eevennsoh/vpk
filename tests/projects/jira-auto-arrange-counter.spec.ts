@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "https://vpk.localhost";
+import { withDesignVariants } from "@/tests/helpers/design-variants";
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 1600, height: 1000 }, ignoreHTTPSErrors: true });
 
 type CounterProbe = {
@@ -46,7 +48,7 @@ async function observeContinuingCounter(page: Page, target: string) {
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`auto arrange counter fades and scales in and out with a quick trace (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${origin}/jira-team-eu26`);
+		await page.goto(appUrl("/jira-team-eu26"));
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		await page.getByRole("menuitemcheckbox", { name: "Auto arrange", exact: true }).click();
 		await page.keyboard.press("Escape");
@@ -97,7 +99,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 	test(`a continuing column cycles its count and retraces without hiding the badge (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
-		await page.goto(`${origin}/jira-team-eu26-end`);
+		await page.goto(appUrl(withDesignVariants("/jira-team-eu26-end", { autoArrange: true })));
 		await page.locator('[data-issue-key="TEU-1"] [draggable]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		const counter = page.locator('[data-jira-kanban-column="Done"] [data-auto-arrange-count]');
 		await expect(counter).toHaveAttribute("data-auto-arrange-count", "1");

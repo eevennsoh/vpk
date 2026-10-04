@@ -1,6 +1,5 @@
 import {
 	createSessionChipDropKeyframes,
-	// @ts-expect-error Node's strip-types runner requires the explicit .ts extension.
 } from "./jira-dropzone-motion.ts";
 import type { ViewportPoint } from "./jira-dropzone-types";
 

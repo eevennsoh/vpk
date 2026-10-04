@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import type { FloatingRovoButtonOnboardingConfig } from "./types";
+import { motionEase } from "@/lib/motion";
 
 export const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 
@@ -32,10 +33,10 @@ export function FloatingRovoButtonOnboardingPanelInner({
 		: { delayChildren: 0.36, staggerChildren: 0.05 };
 	const phaseTwoChild = shouldReduceMotion
 		? { duration: 0 }
-		: { duration: 0.22, ease: [0, 0.4, 0, 1] as const };
+		: { duration: 0.22, ease: motionEase.out };
 	const phaseTwoHeaderTransition = shouldReduceMotion
 		? { duration: 0 }
-		: { duration: 0.22, delay: 0.32, ease: [0, 0.4, 0, 1] as const };
+		: { duration: 0.22, delay: 0.32, ease: motionEase.out };
 	const phaseTwoVariants = shouldReduceMotion
 		? ({
 			hidden: { opacity: 1, y: 0, filter: "blur(0px)" },
@@ -68,7 +69,7 @@ export function FloatingRovoButtonOnboardingPanelInner({
 			exit={{ opacity: 0, transition: { duration: 0 } }}
 			transition={shouldReduceMotion
 				? { duration: 0 }
-				: { duration: 0.14, delay: 0.18, ease: [0, 0.4, 0, 1] as const }}
+				: { duration: 0.14, delay: 0.18, ease: motionEase.out }}
 			onKeyDown={(event) => {
 				if (event.key === "Escape") {
 					event.stopPropagation();

@@ -14,10 +14,13 @@ import {
 } from "@/components/projects/jira-golden-journeys-v1/data/kanban-activity-data";
 import type { UseJgpAgentChatDemoResult } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { progressJiraTeamEu26WorkItemOnStart } from "@/components/projects/jira-team-eu26/lib/list-rows";
+import { JIRA_TEAM_EU26_BOARD_AGENTS } from "@/components/projects/jira-team-eu26/data/presentation-board";
 
 interface UseJiraTeamEu26GenerativeActionsOptions {
 	openAgentChat: UseJgpAgentChatDemoResult["openAgentChat"];
 	setBoardColumns: Dispatch<SetStateAction<JiraKanbanColumnData[]>>;
+	/** Lets the Board capture its native arrival before the assignment commits. */
+	onStartAgentSession?: (issueKey: string, activity: JiraIssueAgentActivity) => void;
 }
 
 interface ComposerPrefillRequest {
@@ -34,6 +37,7 @@ function createAssignedActivity(
 	card: JiraKanbanCardData,
 ): JiraIssueAgentActivity {
 	const selection = getJgpGenerativeAgentSelection(request);
+	const agent = JIRA_TEAM_EU26_BOARD_AGENTS.find((candidate) => candidate.id === selection.id);
 	const skillName = request.kind === "skill" ? request.selectedItem?.label : undefined;
 	const activity: JiraIssueAgentActivity = {
 		...createJgpKanbanActivity(
@@ -41,6 +45,7 @@ function createAssignedActivity(
 			skillName ? { ...selection, name: "Claude" } : selection,
 			`${card.code}:${selection.id}`,
 		),
+		...(agent?.brandName ? { agentBrandName: agent.brandName } : {}),
 		...(skillName ? { agentBrandName: "claude" as const } : {}),
 		startedAtMs: Date.now(),
 		startupSequence: "jira-work-item-start",
@@ -64,6 +69,7 @@ function createAssignedActivity(
 export function useJiraTeamEu26GenerativeActions({
 	openAgentChat,
 	setBoardColumns,
+	onStartAgentSession,
 }: Readonly<UseJiraTeamEu26GenerativeActionsOptions>) {
 	const prefillRequestKeyRef = useRef(0);
 	const [composerPrefillRequest, setComposerPrefillRequest] = useState<ComposerPrefillRequest>();
@@ -90,10 +96,14 @@ export function useJiraTeamEu26GenerativeActions({
 
 		if ((request.kind === "agent" || request.kind === "skill") && request.selectedItem) {
 			const activity = createAssignedActivity(request, card);
-			setBoardColumns((columns) => progressJiraTeamEu26WorkItemOnStart(
-				linkJiraKanbanAgentSession(columns, card.code, activity),
-				card.code,
-			));
+			if (onStartAgentSession) {
+				onStartAgentSession(card.code, activity);
+			} else {
+				setBoardColumns((columns) => progressJiraTeamEu26WorkItemOnStart(
+					linkJiraKanbanAgentSession(columns, card.code, activity),
+					card.code,
+				));
+			}
 
 			if (request.kind !== "skill") return;
 
@@ -120,7 +130,7 @@ export function useJiraTeamEu26GenerativeActions({
 				requestKey: prefillRequestKeyRef.current,
 			});
 		}
-	}, [openAgentChat, setBoardColumns]);
+	}, [openAgentChat, onStartAgentSession, setBoardColumns]);
 
 	return {
 		composerPrefillRequest,

@@ -458,7 +458,6 @@ export function AgentSessionColumn({
 	const {
 		closeHiddenView,
 		hideHidden,
-		hiddenCount,
 		hiddenItems,
 		openHiddenView,
 		toggleHidden,
@@ -466,17 +465,27 @@ export function AgentSessionColumn({
 		visibleItems,
 	} = useAgentSessionColumnHidden(items);
 	const viewItems = view === "hidden" ? hiddenItems : visibleItems;
+	// One selector owns the painted rows and every count about them (header,
+	// rail, footer, newly synced), so no badge can ignore the active filter.
 	const {
+		displayedItems,
 		filter,
-		filteredViewItems,
-		selectedCount: selectedFilterCount,
+		footerCount,
+		hasActiveFilters,
+		newCount,
+		sessionCount,
 		setFilter,
+		showWellFooter,
 	} = useAgentSessionColumnFilter({
+		activeItems: visibleItems,
+		count,
 		getSuggestedWorkItemKey: sessionProps.getSuggestedWorkItemKey,
 		getSuggestedWorkItemKeys: sessionProps.getSuggestedWorkItemKeys,
-		viewItems,
+		hiddenItems,
+		newItemIds,
+		showFilter,
+		view,
 	});
-	const displayedItems = showFilter ? filteredViewItems : viewItems;
 	// Header Archive, the untracked-work flyout Archive, and the rail flyout
 	// all hide into the column-owned well the footer reads. In the archived
 	// view the same control Unarchives, matching the row.
@@ -530,12 +539,6 @@ export function AgentSessionColumn({
 		deckListRef(node);
 		endSpaceRef(node);
 	}, [deckListRef, endSpaceRef, overflowListRef]);
-	const untrackedCount = count ?? visibleItems.length;
-	const showWellFooter = view === "hidden" || hiddenCount > 0;
-	const hasActiveFilters = showFilter && selectedFilterCount > 0;
-	const sessionCount = hasActiveFilters
-		? displayedItems.length
-		: (view === "hidden" ? hiddenItems.length : untrackedCount);
 	const risingCount = useRisingSessionCount(sessionCount);
 	const allLocalSessions = displayedItems.length > 0 && viewItems.every(isLocalAgentListItem);
 	const showRisingCount = !allLocalSessions || risingCount;
@@ -596,11 +599,6 @@ export function AgentSessionColumn({
 			size={headerSurface === "column" ? "icon-compact" : "icon"}
 		/>
 	) : undefined;
-	const newCount = newItemIds === undefined
-		? 0
-		: visibleItems.reduce((total: number, item: AgentSessionItem) => (
-			newItemIds.has(item.id) ? total + 1 : total
-		), 0);
 	const {
 		arrivingItemIds,
 		stateChangedItemIds,
@@ -897,7 +895,7 @@ export function AgentSessionColumn({
 			</div>
 			{showWellFooter ? (
 				<AgentSessionColumnHiddenFooter
-					count={view === "hidden" ? untrackedCount : hiddenCount}
+					count={footerCount}
 					mode={view === "hidden" ? "back" : "hidden"}
 					onClick={view === "hidden" ? closeHiddenView : openHiddenView}
 					title={title}

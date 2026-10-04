@@ -1,8 +1,8 @@
-import { execFileSync } from "node:child_process";
 import { expect, test, type Page } from "@playwright/test";
 
-const origin = (process.env.PLAYWRIGHT_BASE_URL
-	?? execFileSync(process.execPath, [".agents/skills/vpk-verify/scripts/control-vpk", "url"], { encoding: "utf8" }).trim()).replace(/\/$/u, "");
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 const storySections = [
@@ -118,6 +118,33 @@ async function startDrag(page: Page, code: string) {
 	await page.mouse.move(box.x + 90, box.y + 40, { steps: 5 });
 	await expect(card).toHaveAttribute("data-dragging", "true");
 }
+
+test("column header drop feedback keeps equal space above and below its transition label", async ({ page }) => {
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await startDrag(page, "TEU-1");
+
+	const header = column(page, "Context").locator('[data-slot="board-column-header"]');
+	const headerBox = await header.boundingBox();
+	if (!headerBox) throw new Error("Missing Context column header");
+	const x = headerBox.x + headerBox.width / 2;
+	const y = headerBox.y + headerBox.height / 2;
+	await page.mouse.move(x, y, { steps: 5 });
+	await page.mouse.move(x, y);
+
+	await expect(header).toHaveAttribute("data-issue-drop-hovered", "true");
+	await expect(header).toContainText("Transition to...");
+	const clearance = await header.evaluate((node) => {
+		const feedback = node.querySelector<HTMLElement>("[data-board-column-title-drop-feedback]")!.getBoundingClientRect();
+		const label = node.querySelector<HTMLElement>("[data-board-column-header-copy-motion]")!.getBoundingClientRect();
+		return {
+			bottom: feedback.bottom - label.bottom,
+			top: label.top - feedback.top,
+		};
+	});
+	expect(clearance.bottom).toBeCloseTo(clearance.top, 1);
+	await page.keyboard.press("Escape");
+	await page.mouse.up();
+});
 
 async function dropIntoDone(page: Page) {
 	const target = column(page, "Done");
@@ -470,7 +497,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("existing single-card and selected-cohort drag moves work items into Done", async ({ page }) => {
-	await openBoard(page);
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	await startDrag(page, "TEU-1");
 	await dropIntoDone(page);
 	await expect(issue(page, "TEU-1")).toHaveAttribute("data-board-column-title", "Done");
@@ -493,6 +520,16 @@ test("existing single-card and selected-cohort drag moves work items into Done",
 	await expect(column(page, "Context").locator("[data-issue-key]")).toHaveCount(1);
 	await expect(column(page, "Collaboration").locator("[data-issue-key]")).toHaveCount(3);
 	await expect(column(page, "Confidence").locator("[data-issue-key]")).toHaveCount(6);
+	await page.setViewportSize({ width: 1440, height: 720 });
+	const doneViewport = page.getByRole("region", { name: "Done work items", exact: true });
+	await expect.poll(() => doneViewport.evaluate(node => node.scrollHeight - node.clientHeight)).toBeGreaterThan(1);
+	await doneViewport.hover();
+	await page.screenshot({ path: "output/agent-browser/done-scrollbar/done-hover.png" });
+	await expect(column(page, "Done").locator('[data-slot="scroll-area-scrollbar"]')).toHaveCSS("opacity", "1");
+	await expect(doneViewport).toHaveCSS("scrollbar-width", "none");
+	await page.mouse.wheel(0, 150);
+	await expect.poll(() => doneViewport.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+	await expect(column(page, "Confidence").locator('[data-slot="scroll-area-scrollbar"]')).toHaveCount(1);
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {

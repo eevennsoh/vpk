@@ -1,12 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import { appUrl } from "@/tests/helpers/origin";
+
 test.use({ viewport: { width: 2200, height: 1300 }, ignoreHTTPSErrors: true });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	for (const count of [1, 4]) {
 		test(`destination outline clears after moving ${count} issues (${reducedMotion})`, async ({ page }) => {
 			await page.emulateMedia({ reducedMotion });
-			await page.goto(`${process.env.PLAYWRIGHT_BASE_URL ?? "https://26b9.localhost"}/components/blocks/jira-dragging`);
+			await page.goto(appUrl("/components/blocks/jira-dragging"));
 			await page.waitForLoadState("networkidle");
 			const board = page.locator("[data-jira-kanban-scrollport]");
 			const issue = (code: string) => board.locator(`[data-issue-key="${code}"] [draggable]`).first();

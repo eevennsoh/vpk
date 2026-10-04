@@ -13,6 +13,8 @@ export * from "./lib/finale-drag-order";
 export * from "./data/finale-cues";
 export * from "./data/finale-stories";
 export * from "./data/finale-palette";
+export { freezeFinalePrintScroll, loadFinalePrintImages, settleFinaleColumnCopy } from "./hooks/use-finale-prints";
+export { isFinaleColumnCaptureReady, waitForFinaleColumnCapture } from "./lib/capture-done-column";
 export { JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES } from "../data/keynote-board";
 `;
 
@@ -35,6 +37,141 @@ function columns(done, rest = []) {
 		{ title: "Done", cards: done.map((code) => ({ code })) },
 	];
 }
+
+test("capture waits for native drop cleanup and every destination card's layout", () => {
+	const { isFinaleColumnCaptureReady } = loadFinale();
+	let blocked = true;
+	let width = 0;
+	const column = {
+		ownerDocument: { querySelector: () => null },
+		querySelector: () => blocked ? {} : null,
+		querySelectorAll: () => [{ getBoundingClientRect: () => ({ width, height: 199 }) }],
+	};
+	assert.equal(isFinaleColumnCaptureReady(column), false, "transition/header and arrival states cannot be frozen");
+	blocked = false;
+	assert.equal(isFinaleColumnCaptureReady(column), false, "hidden or deferred destinations are not a valid capture");
+	width = 316;
+	assert.equal(isFinaleColumnCaptureReady(column), true, "capture begins as soon as the destination is rendered");
+});
+
+test("capture does not freeze the tail of the drop's layout projection", async () => {
+	const { waitForFinaleColumnCapture } = loadFinale();
+	const previous = { document: globalThis.document, requestAnimationFrame: globalThis.requestAnimationFrame, cancelAnimationFrame: globalThis.cancelAnimationFrame };
+	const frames = [];
+	let y = 280;
+	const column = { ownerDocument: { querySelector: () => null }, querySelector: () => null, querySelectorAll: () => [], getBoundingClientRect: () => ({ x: 1085, y, width: 330, height: 821 }) };
+	globalThis.document = { querySelector: () => column };
+	globalThis.requestAnimationFrame = (callback) => { frames.push(callback); return frames.length; };
+	globalThis.cancelAnimationFrame = () => {};
+	try {
+		let captured = false;
+		const pending = waitForFinaleColumnCapture().then((result) => { captured = true; return result; });
+		y = 283;
+		frames.shift()();
+		await Promise.resolve();
+		assert.equal(captured, false, "moving bounds are not yet a valid immutable snapshot");
+		frames.shift()();
+		assert.equal(await pending, column, "the next stable paint frame releases capture");
+	} finally {
+		for (const [key, value] of Object.entries(previous)) {
+			if (value === undefined) delete globalThis[key];
+			else globalThis[key] = value;
+		}
+	}
+});
+
+test("finale capture waits for the Done border trace before taking over the board", async () => {
+	const { waitForFinaleColumnCapture } = loadFinale();
+	const previous = { document: globalThis.document, requestAnimationFrame: globalThis.requestAnimationFrame, cancelAnimationFrame: globalThis.cancelAnimationFrame };
+	const frames = [];
+	let tracing = true;
+	const column = {
+		ownerDocument: { querySelector: (selector) => tracing && selector.includes('data-board-column-title="Done"') ? {} : null },
+		querySelector: () => null,
+		querySelectorAll: () => [],
+		getBoundingClientRect: () => ({ x: 1000, y: 300, width: 300, height: 600 }),
+	};
+	globalThis.document = { querySelector: () => column };
+	globalThis.requestAnimationFrame = (callback) => { frames.push(callback); return frames.length; };
+	globalThis.cancelAnimationFrame = () => {};
+	try {
+		let captured = false;
+		const pending = waitForFinaleColumnCapture().then((result) => { captured = true; return result; });
+		frames.shift()();
+		frames.shift()();
+		await Promise.resolve();
+		assert.equal(captured, false, "stable card geometry must not let the shader obscure an active trace");
+		tracing = false;
+		frames.shift()();
+		frames.shift()();
+		assert.equal(await pending, column, "trace completion releases the existing stable-layout gate");
+	} finally {
+		for (const [key, value] of Object.entries(previous)) {
+			if (value === undefined) delete globalThis[key];
+			else globalThis[key] = value;
+		}
+	}
+});
+
+test("offscreen print copies load their images before decode instead of waiting for lazy visibility", async () => {
+	const { loadFinalePrintImages } = loadFinale();
+	let decoded = 0;
+	const images = [false, true].map((failed) => ({
+		loading: "lazy",
+		decode() {
+			assert.equal(this.loading, "eager", "an offscreen image cannot wait for viewport visibility");
+			decoded += 1;
+			return failed ? Promise.reject(new Error("unavailable image")) : Promise.resolve();
+		},
+	}));
+	await loadFinalePrintImages({ querySelectorAll: () => images });
+	assert.equal(decoded, 2, "missing imagery never holds the column capture hostage");
+});
+
+test("an immediate completion print contains the landed cards while the live drop still shows its ghost", () => {
+	const { settleFinaleColumnCopy } = loadFinale();
+	const liveStyle = { opacity: "0", transform: "scale(0.8)" };
+	const face = { style: { ...liveStyle } };
+	const ghost = { style: { opacity: "1" } };
+	const slot = { style: { height: "0px" } };
+	const transient = { removed: false, remove() { this.removed = true; } };
+	const resting = { style: { opacity: "0", transform: "translateY(100%)" } };
+	settleFinaleColumnCopy({ querySelectorAll: (selector) => {
+		if (selector.includes('copy-layer="label"')) return [transient];
+		if (selector.includes('copy-layer="add"')) return [resting];
+		return selector.includes("placeholder") ? [ghost] : selector.includes("jira-creating-slot") ? [slot] : [face];
+	} });
+	assert.equal(face.style.opacity, "1", "the printed face is visible immediately");
+	assert.equal(face.style.transform, "none", "the print uses its landed size");
+	assert.equal(ghost.style.opacity, "0", "the neutral drop ghost cannot cover the printed card");
+	assert.equal(slot.style.height, "auto", "its final layout is reserved");
+	assert.equal(transient.removed, true, "drag captions and incoming-count badges are excluded");
+	assert.equal(resting.style.opacity, "1", "the real Done label/count remains visible");
+	assert.deepEqual(liveStyle, { opacity: "0", transform: "scale(0.8)" }, "the live drop remains untouched");
+});
+
+test("a scrolled board's print keeps the column in its visible position", () => {
+	const { freezeFinalePrintScroll } = loadFinale();
+	class Element {
+		constructor(children = [], scrollLeft = 0, scrollTop = 0, transform = "none") {
+			Object.assign(this, { children, scrollLeft, scrollTop, style: { transform } });
+		}
+	}
+	const previous = globalThis.HTMLElement;
+	globalThis.HTMLElement = Element;
+	try {
+		const originalFace = new Element();
+		const original = new Element([originalFace], 214, 80);
+		const face = new Element([], 0, 0, "rotate(4deg)");
+		const copy = new Element([face]);
+		freezeFinalePrintScroll(original, copy);
+		assert.equal(face.style.transform, "translate(-214px, -80px) rotate(4deg)");
+		assert.equal(originalFace.style.transform, "none", "only the detached print is adjusted");
+	} finally {
+		if (previous === undefined) delete globalThis.HTMLElement;
+		else globalThis.HTMLElement = previous;
+	}
+});
 
 test("the finale is ready only once every keynote announcement sits in Done", () => {
 	const { isJiraTeamEu26FinaleReady, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES: codes } = loadFinale();

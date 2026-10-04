@@ -5,7 +5,6 @@ import {
 	nextJiraIssueDemoLinkedIds,
 	splitJiraIssueDemoSessionsById,
 	toJiraIssueDemoAttachedActivity,
-	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./agent-session-demo-attach.ts";
 
 const CLAUDE = {

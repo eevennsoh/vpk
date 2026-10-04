@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+import { resolveAppOrigin } from "@/tests/helpers/origin";
+
+const origin = resolveAppOrigin();
 
 for (const width of [1440, 640]) {
 	for (const route of ["/jira-team-eu26", "/rovo", "/confluence", "/studio", "/preview/blocks/top-navigation"]) {

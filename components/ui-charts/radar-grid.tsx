@@ -85,8 +85,7 @@ export function RadarGrid({
       })}
 
       {/* Grid level labels */}
-      {showLabels &&
-        [...new Array(levels)].map((_, i) => (
+      {showLabels ? [...new Array(levels)].map((_, i) => (
           <motion.g
             animate={{ opacity: 1 }}
             initial={animate ? { opacity: 0 } : { opacity: 1 }}
@@ -112,7 +111,7 @@ export function RadarGrid({
               {((i + 1) * 100) / levels}
             </text>
           </motion.g>
-        ))}
+        )) : null}
     </g>
   );
 }

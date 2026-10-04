@@ -39,8 +39,7 @@ export default function ComposerActions({
 	return (
 		<div style={composerStyles.actionsRow}>
 			<div style={composerStyles.buttonGroup}>
-				{showAddMenu && (
-					<Popover open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
+				{showAddMenu ? <Popover open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
 						<PopoverTrigger
 							render={
 								<Button
@@ -55,11 +54,9 @@ export default function ComposerActions({
 						<PopoverContent side="top" align="start" sideOffset={8} className="w-auto min-w-[200px] p-1">
 							<AddMenu onClose={() => setIsAddMenuOpen(false)} />
 						</PopoverContent>
-					</Popover>
-				)}
+					</Popover> : null}
 
-				{showCustomizeMenu && (
-					<Popover open={isCustomizeMenuOpen} onOpenChange={setIsCustomizeMenuOpen}>
+				{showCustomizeMenu ? <Popover open={isCustomizeMenuOpen} onOpenChange={setIsCustomizeMenuOpen}>
 						<PopoverTrigger
 							render={
 								<Button
@@ -71,27 +68,22 @@ export default function ComposerActions({
 						>
 							<CustomizeIcon label="" />
 						</PopoverTrigger>
-						{customizeMenuProps && (
-							<PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-2">
+						{customizeMenuProps ? <PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-2">
 								<PopoverTitle className="sr-only">Customize response</PopoverTitle>
 								<CustomizeMenu {...customizeMenuProps} onClose={() => setIsCustomizeMenuOpen(false)} />
-							</PopoverContent>
-						)}
-					</Popover>
-				)}
+							</PopoverContent> : null}
+					</Popover> : null}
 			</div>
 
 			<div style={composerStyles.buttonGroup}>
-				{showMicrophone && onToggleDictation && (
-					<Button
+				{showMicrophone && onToggleDictation ? <Button
 						aria-label={isListening ? "Stop listening" : "Voice"}
 						size="icon"
 						variant="ghost"
 						onClick={onToggleDictation}
 					>
 						{isListening ? <CrossIcon label="" /> : <MicrophoneIcon label="" />}
-					</Button>
-				)}
+					</Button> : null}
 
 				<Button
 					aria-label="Submit"

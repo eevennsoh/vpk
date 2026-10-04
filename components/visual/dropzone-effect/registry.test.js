@@ -59,9 +59,8 @@ test("Dropzone Effect's demo is registered as an SSR-disabled dynamic import", (
 });
 
 /**
- * The motion contract lives in `flow-model.test.ts`, which only runs in CI if it
- * is classified in the manifest — an unlisted `components/**` suite silently
- * defaults to `legacy-drift` and is skipped.
+ * The motion contract lives in `flow-model.test.ts`, which only runs in CI while
+ * it stays classified in the manifest rather than the skipped `legacy-drift` baseline.
  */
 test("the flow model's contract suite is classified for CI", () => {
 	assert.match(

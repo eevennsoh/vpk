@@ -21,6 +21,7 @@ import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
+import { countNeedsInputAgents } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-filter";
 import {
 	isPulseAgentSession,
 	type PulseLooseWork,
@@ -107,15 +108,8 @@ function JiraTeamEu26App(): React.ReactElement {
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
 	const [boardColumns, setBoardColumns] = useState(createJiraTeamEu26EndKeynoteBoardColumns);
-	const needsInputCount = boardColumns.reduce(
-		(total, column) => total + column.cards.reduce(
-			(cardTotal, card) => cardTotal + (card.agentActivities?.filter(
-				(activity) => activity.state === "awaiting-input",
-			).length ?? 0),
-			0,
-		),
-		0,
-	);
+	// Same selector the Needs input focus uses, so the count names the rows it shows.
+	const needsInputCount = countNeedsInputAgents(boardColumns);
 	const {
 		composerPrefillRequest,
 		handleCardGenerativeActionSubmit,
@@ -387,6 +381,7 @@ function JiraTeamEu26App(): React.ReactElement {
 					<ExperimentalJiraKanbanPage
 						addAgentLabel={JIRA_TEAM_EU26_ADD_AGENT_LABEL}
 						activeView={activeView}
+						autoArrangeEnabled={designVariants.autoArrange}
 						retainWorkItemViews
 						additionalAgentSessions={syncedAgentSessions}
 						agentSessionSeedOverrides={JIRA_TEAM_EU26_SEEDED_AGENT_SESSION_OVERRIDES}
@@ -396,9 +391,11 @@ function JiraTeamEu26App(): React.ReactElement {
 						cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
+						showPriorityIndicator={false}
 						issueSelectionAppearance="fused-backdrop"
 						getStatusVariant={statusVariant}
 						issueDragTransitions
+						issueDropMotion="solitaire"
 						issueMoveVisual={designVariants.moveVisual}
 						issueMoveRequest={closingMoveRequest}
 						createWellBounce="off"

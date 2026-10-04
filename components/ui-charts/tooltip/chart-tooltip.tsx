@@ -169,8 +169,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
   const tooltipContent = (
     <>
       {/* Crosshair indicator - rendered as SVG overlay */}
-      {showCrosshair && (
-        <svg
+      {showCrosshair ? <svg
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
           height="100%"
@@ -190,12 +189,10 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
               x={x}
             />
           </g>
-        </svg>
-      )}
+        </svg> : null}
 
       {/* Dots on bars/lines - show for vertical charts only */}
-      {showDots && visible && !isHorizontal && (
-        <svg
+      {showDots && visible && !isHorizontal ? <svg
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
           height="100%"
@@ -214,8 +211,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
               />
             ))}
           </g>
-        </svg>
-      )}
+        </svg> : null}
 
       {/* Tooltip Box */}
       <TooltipBox
