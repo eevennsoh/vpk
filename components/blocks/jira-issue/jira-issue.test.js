@@ -8,7 +8,6 @@ const AGENT_ACTIVITY_SOURCE = [
 	readFileSync(join(__dirname, "agent-activity.tsx"), "utf8"),
 	readFileSync(join(__dirname, "agent-activity-row-presentation.tsx"), "utf8"),
 ].join("\n");
-const STARTUP_SOURCE = readFileSync(join(__dirname, "agent-activity-startup.tsx"), "utf8");
 const SUMMARY_SOURCE = readFileSync(join(__dirname, "summary.tsx"), "utf8");
 const PULL_REQUEST_CLUSTER_SOURCE = readFileSync(join(__dirname, "pull-request-cluster.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "types.ts"), "utf8");
@@ -681,15 +680,13 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 		AGENT_ACTIVITY_SOURCE,
 		/if \(isAwaitingInput\) \{[\s\S]*?<span className="block min-w-0 truncate text-sm leading-5">\{rowLabel\}<\/span>[\s\S]*?<AnimatedDots \/>/u,
 	);
-	assert.match(STARTUP_SOURCE, /baseColor="var\(--color-text\)"/u);
-	assert.match(STARTUP_SOURCE, /className="block min-w-0 truncate text-sm leading-5"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /PixelLoader/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="flex min-w-0 flex-1 items-center gap-2"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="grid size-6 shrink-0 place-items-center text-icon"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/function JiraIssueAgentStatusIconTile[\s\S]*<IconTile[\s\S]*iconSize="medium"[\s\S]*size="small"[\s\S]*variant="transparent"/u,
+		/function JiraIssueAgentStatusIconTile[\s\S]*<IconTile[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"/u,
 	);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,

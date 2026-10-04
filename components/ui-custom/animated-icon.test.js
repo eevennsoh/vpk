@@ -17,6 +17,11 @@ function timingModule(file) {
 const sparkleTiming = timingModule("ai-sparkle-timing.ts");
 const waveTiming = timingModule("shimmer-wave-timing.ts");
 
+test("the fixed animated icon does not advertise caller children that it discards", () => {
+	const source = readFileSync(join(__dirname, "animated-icon.tsx"), "utf8");
+	assert.match(source, /extends Omit<React\.ComponentProps<"span">, "color" \| "children">/u);
+});
+
 function harness() {
 	const hooks = [], effects = [], timers = new Map();
 	let cursor = 0, timerId = 0, dirty = false;

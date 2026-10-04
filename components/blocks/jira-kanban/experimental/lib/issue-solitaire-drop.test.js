@@ -253,6 +253,15 @@ test("single cards trace in every column, skip deck unfolding, and motion-off do
 	}
 });
 
+test("a drop whose committed cards have disappeared completes without creating an overlay", () => {
+	const h = fixture(2);
+	h.start(false, ["STALE-ISSUE"]);
+	assert.equal(h.complete(), 1);
+	assert.equal(h.animations.length, 0);
+	assert.equal(h.doc.body.children.length, 0);
+	assert.equal(h.reads.length, 0);
+});
+
 for (const column of ["To do", "In progress", "In review", "Done"]) {
 	test(`${column} automatically sweeps both sides using its semantic destination color`, () => {
 		const h = fixture(2, column); h.start();

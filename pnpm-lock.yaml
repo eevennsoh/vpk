@@ -631,8 +631,8 @@ importers:
         specifier: ^2.8.5
         version: 2.8.6
       dotenv:
-        specifier: ^18.0.0
-        version: 18.0.0
+        specifier: ^18.0.3
+        version: 18.0.4
       express:
         specifier: ^5.2.1
         version: 5.2.1(supports-color@10.2.2)
@@ -5090,8 +5090,8 @@ packages:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
-  dotenv@18.0.0:
-    resolution: {integrity: sha512-16YSUvsKtKbwrTbESvtTSZzzJUug6jdFdqiBFg9Q6Bk1JY9r0hAtrtTiWxdI9YrsgOTmkjZRdgU0n3LnwGpECw==}
+  dotenv@18.0.4:
+    resolution: {integrity: sha512-jGt9uI5BIxpVO15kvy+iEFqNAwxYClKWnkptLjSNPnFLC003Imd0ofr3aEVsbpHdSBdSsbcApNIlz4nbyGMwdA==}
     engines: {node: '>=12'}
     hasBin: true
 
@@ -13495,7 +13495,7 @@ snapshots:
 
   dotenv@17.4.2: {}
 
-  dotenv@18.0.0: {}
+  dotenv@18.0.4: {}
 
   draco3d@1.5.7: {}
 
