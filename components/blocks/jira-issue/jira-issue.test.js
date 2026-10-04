@@ -246,7 +246,7 @@ test("Jira issue reserves a stable title action slot and opens the built-in acti
 	assert.match(SOURCE, /import \{ JiraIssueMoreMenu, type JiraIssueMoreAction, type JiraIssueMoreMenuActions \} from "@\/components\/blocks\/jira-issue\/more-menu";/u);
 	assert.match(SOURCE, /showMoreAction\?: boolean;/u);
 	assert.match(SOURCE, /onMoreActionSelect\?: \(action: JiraIssueMoreAction\) => void;/u);
-	assert.match(SUMMARY_SOURCE, /<div className="size-6 shrink-0" data-slot="jira-issue-more-action" \/>/u);
+	assert.match(SUMMARY_SOURCE, /<div className="size-6 shrink-0" data-slot="jira-issue-more-action">[\s\S]*\{moreAction \?\? null\}[\s\S]*<\/div>/u);
 	assert.match(SOURCE, /<JiraIssueMoreMenu[\s\S]*issueKey=\{issueKey\}[\s\S]*onActionSelect=\{onMoreActionSelect\}[\s\S]*onOpenChange=\{setMoreActionMenuOpen\}/u);
 	assert.match(MORE_MENU_SOURCE, /import ShowMoreHorizontalIcon from "@atlaskit\/icon\/core\/show-more-horizontal";/u);
 	assert.match(MORE_MENU_SOURCE, /<DropdownMenu open=\{open\} onOpenChange=\{handleOpenChange\}>/u);
@@ -298,15 +298,15 @@ test("Jira issue only renders picker footer actions when real capabilities are s
 	assert.doesNotMatch(GENERATIVE_SOURCE, /on(?:BrowseAgents|CreateAgent|BrowseSkills|CreateSkill)=\{onRequestClose\}/u);
 });
 
-test("Jira issue renders the more-actions button as a sibling of the card button", () => {
+test("Jira issue keeps standard card more-actions outside their button", () => {
 	assert.doesNotMatch(SUMMARY_BLOCK, /<JiraIssueMoreMenu/u);
 	assert.match(
 		SOURCE,
-		/const moreActionMenu = showMoreAction \? \([\s\S]*<div className="absolute right-3 top-3 z-20 size-6">[\s\S]*<JiraIssueMoreMenu/u,
+		/const positionedMoreActionMenu = !usesCompactVisual && moreActionMenu \? \([\s\S]*<div className="absolute right-3 top-3 z-20 size-6">\{moreActionMenu\}<\/div>/u,
 	);
 	assert.ok(
-		RICH_ISSUE_CONTENT_BLOCK.indexOf("{moreActionMenu}") > RICH_ISSUE_CONTENT_BLOCK.indexOf("</button>"),
-		"the menu trigger must render after the card button closes",
+		RICH_ISSUE_CONTENT_BLOCK.indexOf("{positionedMoreActionMenu}") > RICH_ISSUE_CONTENT_BLOCK.indexOf("</button>"),
+		"the standard card menu trigger must render after the card button closes",
 	);
 });
 
@@ -474,7 +474,7 @@ test("Jira issue switches rich variants to an article with internal controls", (
 	assert.match(SOURCE, /const shouldRenderIssueClickButton = Boolean\(props\.onClick && !parentEpicControl\);/);
 	assert.match(SOURCE, /<article[\s\S]*data-selected=\{selected \|\| undefined\}/);
 	assert.match(SOURCE, /draggable=\{draggable\}/);
-	assert.match(SOURCE, /shouldRenderIssueClickButton \? \([\s\S]*usesCompactVisual \? \([\s\S]*<button[\s\S]*className="sr-only"[\s\S]*\{issueKey\}: \{summary\}[\s\S]*: \([\s\S]*<button[\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
+	assert.match(SOURCE, /shouldRenderIssueClickButton \? \([\s\S]*usesCompactVisual \? \([\s\S]*<button[\s\S]*className="sr-only"[\s\S]*\{showFooterMetadata \? `\$\{issueKey\}: \$\{summary\}` : summary\}[\s\S]*: \([\s\S]*<button[\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
 	assert.match(SOURCE, /parentEpicControl\?: ReactNode;/);
 	assert.match(SOURCE, /parentEpicControl=\{parentEpicControl\}/);
 	assert.match(SUMMARY_SOURCE, /<p className="text-sm font-semibold leading-5 text-text-subtle">Parent<\/p>/);

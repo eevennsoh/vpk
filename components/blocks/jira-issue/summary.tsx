@@ -113,6 +113,7 @@ export function JiraIssueSummary({
 	issueKey,
 	issueTypeLabel,
 	isMounted,
+	moreAction,
 	parentEpicControl,
 	priority,
 	pullRequestNumber,
@@ -121,6 +122,7 @@ export function JiraIssueSummary({
 	pullRequestTitle,
 	showAutomationIndicator,
 	showPriorityIndicator,
+	showFooterMetadata = true,
 	summary,
 	tags,
 	usesStrokeChrome,
@@ -135,6 +137,7 @@ export function JiraIssueSummary({
 	issueKey: string;
 	issueTypeLabel: string;
 	isMounted: boolean;
+	moreAction?: ReactNode;
 	parentEpicControl?: ReactNode;
 	priority: JiraIssuePriority;
 	pullRequestNumber?: number;
@@ -143,6 +146,7 @@ export function JiraIssueSummary({
 	pullRequestTitle?: string;
 	showAutomationIndicator: boolean;
 	showPriorityIndicator: boolean;
+	showFooterMetadata?: boolean;
 	summary: string;
 	tags?: readonly JiraIssueTag[];
 	usesStrokeChrome: boolean;
@@ -248,7 +252,9 @@ export function JiraIssueSummary({
 			) : null}
 			<div className="flex min-w-0 items-start gap-2">
 				<span className={cn("min-w-0 flex-1", usesStrokeChrome ? "line-clamp-2 text-sm leading-5" : "text-sm")}>{summary}</span>
-				<div className="size-6 shrink-0" data-slot="jira-issue-more-action" />
+				<div className="size-6 shrink-0" data-slot="jira-issue-more-action">
+					{moreAction ?? null}
+				</div>
 			</div>
 
 			{parentEpicControl ? (
@@ -272,54 +278,56 @@ export function JiraIssueSummary({
 				</TagGroup>
 			) : null}
 
-			<div className="pt-0.5">
-				<div className="flex min-w-0 items-center justify-between">
-					<div className={usesStrokeChrome ? "flex min-w-0 items-center" : "flex min-w-0 items-center gap-2"}>
-						<div
-							className={
-								usesStrokeChrome
-									? "flex shrink-0 items-center gap-1.5"
-									: "flex shrink-0 items-center gap-1"
-							}
-						>
-							{usesStrokeChrome ? (
-								<IconTile
-									as="span"
-									icon={<TaskIcon label="" color={token("color.icon.brand")} size="small" />}
-									iconSize={iconMetrics.iconTileIconSize}
-									label={issueTypeLabel}
-									size={iconMetrics.iconTileSize}
-									variant="transparent"
-								/>
-							) : (
-								<TaskIcon
-									label={issueTypeLabel}
-									color={token("color.icon.brand")}
-								/>
-							)}
-							<span
+			{showFooterMetadata ? (
+				<div className="pt-0.5">
+					<div className="flex min-w-0 items-center justify-between">
+						<div className={usesStrokeChrome ? "flex min-w-0 items-center" : "flex min-w-0 items-center gap-2"}>
+							<div
 								className={
 									usesStrokeChrome
-										? iconMetrics.issueKeyClassName
-										: "text-xs font-semibold text-text-subtlest"
+										? "flex shrink-0 items-center gap-1.5"
+										: "flex shrink-0 items-center gap-1"
 								}
 							>
-								{issueKey}
-							</span>
+								{usesStrokeChrome ? (
+									<IconTile
+										as="span"
+										icon={<TaskIcon label="" color={token("color.icon.brand")} size="small" />}
+										iconSize={iconMetrics.iconTileIconSize}
+										label={issueTypeLabel}
+										size={iconMetrics.iconTileSize}
+										variant="transparent"
+									/>
+								) : (
+									<TaskIcon
+										label={issueTypeLabel}
+										color={token("color.icon.brand")}
+									/>
+								)}
+								<span
+									className={
+										usesStrokeChrome
+										? iconMetrics.issueKeyClassName
+										: "text-xs font-semibold text-text-subtlest"
+									}
+								>
+									{issueKey}
+								</span>
+							</div>
+							{usesStrokeChrome ? null : pullRequestCluster}
 						</div>
-						{usesStrokeChrome ? null : pullRequestCluster}
-					</div>
 
-					{usesStrokeChrome && pullRequestCluster ? (
-						<div className="flex shrink-0 items-center gap-0">
-							{pullRequestCluster}
-							{metadataCluster}
-						</div>
-					) : (
-						metadataCluster
-					)}
+						{usesStrokeChrome && pullRequestCluster ? (
+							<div className="flex shrink-0 items-center gap-0">
+								{pullRequestCluster}
+								{metadataCluster}
+							</div>
+						) : (
+							metadataCluster
+						)}
+					</div>
 				</div>
-			</div>
+			) : null}
 		</div>
 	);
 }

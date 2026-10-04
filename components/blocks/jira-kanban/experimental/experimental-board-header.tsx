@@ -6,11 +6,11 @@ import BoardIcon from "@atlaskit/icon/core/board";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
 import FeedbackIcon from "@atlaskit/icon/core/feedback";
 import GrowDiagonalIcon from "@atlaskit/icon/core/grow-diagonal";
-import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TableIcon from "@atlaskit/icon/core/table";
+import TeamsIcon from "@atlaskit/icon/core/teams";
 import {
 	Avatar,
 	AvatarFallback,
@@ -291,34 +291,34 @@ function BoardHeaderTitleCluster({
 }>) {
 	return (
 		<div className="flex min-w-0 items-center justify-between gap-2 px-6">
-			<div className="flex min-w-0 flex-col gap-0.5">
-				<span className="text-xs text-text-subtlest">Spaces</span>
+			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+				<span className="text-sm text-text-subtlest">Spaces</span>
 				<div className="flex min-w-0 items-center gap-2">
 					{avatar ?? <JiraProjectAvatar label={title} src={JIRA_DESIGN_PROJECT.imageSrc} />}
 					<Heading as="h1" className="min-w-0 truncate" size="medium">{title}</Heading>
 					<div className="flex shrink-0 items-center gap-1">
-						<Button aria-disabled aria-label="Add people" size="icon" variant="ghost">
-							<Icon render={<PersonAddIcon label="" />} />
+						<Button aria-disabled aria-label="Teams" size="icon" variant="outline">
+							<Icon render={<TeamsIcon label="" />} />
 						</Button>
 						<Button aria-disabled aria-label={`More ${surfaceLabel} actions`} size="icon" variant="ghost">
 							<Icon render={<ShowMoreHorizontalIcon label="" />} />
 						</Button>
 					</div>
+					<div className="ml-auto flex shrink-0 gap-2">
+						<Button aria-disabled aria-label="Share" size="icon" variant="outline">
+							<Icon render={<ShareIcon label="" />} />
+						</Button>
+						<Button aria-disabled aria-label="Automation" size="icon" variant="outline">
+							<Icon render={<AutomationIcon label="" />} />
+						</Button>
+						<Button aria-disabled aria-label="Feedback" size="icon" variant="outline">
+							<Icon render={<FeedbackIcon label="" />} />
+						</Button>
+						<Button aria-disabled aria-label="Expand" size="icon" variant="outline">
+							<Icon render={<GrowDiagonalIcon label="" />} />
+						</Button>
+					</div>
 				</div>
-			</div>
-			<div className="flex shrink-0 gap-2">
-				<Button aria-disabled aria-label="Share" size="icon" variant="outline">
-					<Icon render={<ShareIcon label="" />} />
-				</Button>
-				<Button aria-disabled aria-label="Automation" size="icon" variant="outline">
-					<Icon render={<AutomationIcon label="" />} />
-				</Button>
-				<Button aria-disabled aria-label="Feedback" size="icon" variant="outline">
-					<Icon render={<FeedbackIcon label="" />} />
-				</Button>
-				<Button aria-disabled aria-label="Expand" size="icon" variant="outline">
-					<Icon render={<GrowDiagonalIcon label="" />} />
-				</Button>
 			</div>
 		</div>
 	);

@@ -228,6 +228,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	showMoreAction?: boolean;
 	/** Called after an item is selected from the issue actions menu. */
 	onMoreActionSelect?: (action: JiraIssueMoreAction) => void;
+	/** Shows the issue key, issue type, and assignee row at the bottom of a card. */
+	showFooterMetadata?: boolean;
 	/** Host-owned Archive, Select and Delete capabilities for the actions menu. */
 	moreMenuActions?: JiraIssueMoreMenuActions;
 	generativeAction?: JiraIssueGenerativeActionConfig;
@@ -305,6 +307,7 @@ function JiraIssueDefault({
 	showAutomationIndicator = false,
 	showMoreAction = true,
 	showPriorityIndicator = true,
+	showFooterMetadata = true,
 	style,
 	subtaskChrome,
 	subtasks,
@@ -629,6 +632,17 @@ function JiraIssueDefault({
 		onAgentActivityOpenChange?.(open);
 	}
 
+	const moreActionMenu = showMoreAction ? (
+		<JiraIssueMoreMenu
+			selected={selected} onSelectionToggle={onSelectionToggle}
+			generativeAction={generativeActionPresentation === "more-actions" ? generativeAction : undefined}
+			generativeActionIssue={{ issueKey, summary }}
+			issueKey={issueKey}
+			moreMenuActions={moreMenuActions}
+			onActionSelect={onMoreActionSelect}
+			onOpenChange={setMoreActionMenuOpen}
+		/>
+	) : null;
 	const summaryContent = (
 		<JiraIssueSummary
 			assigneeAvatarLabel={assigneeAvatarLabel}
@@ -641,6 +655,7 @@ function JiraIssueDefault({
 			issueKey={issueKey}
 			issueTypeLabel={issueTypeLabel}
 			isMounted={isMounted}
+			moreAction={usesCompactVisual ? moreActionMenu : undefined}
 			parentEpicControl={parentEpicControl}
 			priority={priority}
 			pullRequestNumber={resolvedPullRequestNumber}
@@ -649,23 +664,14 @@ function JiraIssueDefault({
 			pullRequestTitle={pullRequestTitle}
 			showAutomationIndicator={showAutomationIndicator}
 			showPriorityIndicator={showPriorityIndicator}
+			showFooterMetadata={showFooterMetadata}
 			summary={summary}
 			tags={tags}
 			usesStrokeChrome={usesCompactVisual}
 		/>
 	);
-	const moreActionMenu = showMoreAction ? (
-		<div className="absolute right-3 top-3 z-20 size-6">
-			<JiraIssueMoreMenu
-				selected={selected} onSelectionToggle={onSelectionToggle}
-				generativeAction={generativeActionPresentation === "more-actions" ? generativeAction : undefined}
-				generativeActionIssue={{ issueKey, summary }}
-				issueKey={issueKey}
-				moreMenuActions={moreMenuActions}
-				onActionSelect={onMoreActionSelect}
-				onOpenChange={setMoreActionMenuOpen}
-			/>
-		</div>
+	const positionedMoreActionMenu = !usesCompactVisual && moreActionMenu ? (
+		<div className="absolute right-3 top-3 z-20 size-6">{moreActionMenu}</div>
 	) : null;
 	const richIssueContent = (
 		<div className="relative z-10 flex flex-col">
@@ -680,7 +686,7 @@ function JiraIssueDefault({
 							onClick={props.onClick}
 							type={type}
 						>
-							{issueKey}: {summary}
+							{showFooterMetadata ? `${issueKey}: ${summary}` : summary}
 						</button>
 						<div
 							onClick={props.disabled ? undefined : props.onClick as ComponentProps<"div">["onClick"]}
@@ -703,7 +709,7 @@ function JiraIssueDefault({
 			) : (
 				<div className={usesCompactVisual ? "px-3 pt-3 pb-2" : "p-3"}>{summaryContent}</div>
 			)}
-			{moreActionMenu}
+			{positionedMoreActionMenu}
 			<AnimatePresence initial={false} mode="popLayout">
 				{hasIssueRows && subtasks ? (
 					<motion.div

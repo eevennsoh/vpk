@@ -40,6 +40,7 @@ import {
 	TOP_NAV_SEARCH_MIN_WIDTH_PX,
 	TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX,
 } from "./layout-constants";
+import AppsIcon from "@atlaskit/icon/core/apps";
 import SearchIcon from "@atlaskit/icon/core/search";
 import type { TopNavigationCurrentUser } from "./data/current-user";
 export type { TopNavigationCurrentUser } from "./data/current-user";
@@ -333,6 +334,11 @@ export default function TopNavigation({
 								placeholder="Search"
 								className="h-full text-sm placeholder:text-sm [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden"
 							/>
+							<InputGroupAddon align="inline-end">
+								<span className="size-4 shrink-0 text-icon-subtle">
+									<AppsIcon label="" spacing="none" />
+								</span>
+							</InputGroupAddon>
 						</InputGroup>
 						<SearchSuggestionsPanel
 							anchorRef={nav.searchContainerRef}

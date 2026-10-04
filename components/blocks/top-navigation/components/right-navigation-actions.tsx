@@ -16,7 +16,6 @@ import {
 import {
 	Popover,
 	PopoverContent,
-	PopoverTitle,
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
@@ -200,10 +199,7 @@ export function RightNavigationActions({
 					)}
 				/>
 				<PopoverContent align="end" className="w-44">
-					<div className="flex items-center justify-between gap-2">
-						<PopoverTitle className="text-sm">Theme</PopoverTitle>
-						<ThemeToggle />
-					</div>
+					<ThemeToggle className="w-full justify-between" label="Theme" />
 				</PopoverContent>
 			</Popover>
 		</>

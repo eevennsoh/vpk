@@ -2,8 +2,9 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { Icon } from "@/components/ui/icon";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { JiraDropzoneCopyReveal } from "@/components/blocks/jira-dropzone/jira-dropzone-copy-reveal";
@@ -133,15 +134,6 @@ function BoardColumnHeader({
 			</div>
 			{isTransitioning ? null : (
 				<div className="flex shrink-0 items-center gap-0.5">
-					{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
-						<BoardColumnAgentAssignment
-							agents={agents}
-							assignedAgentIds={assignedAgentIds}
-							columnTitle={title}
-							onCreateAgent={onCreateAgent}
-							onToggleAgent={onToggleAgent}
-						/>
-					) : null}
 					<BoardColumnResizeButton
 						className={cn(
 							BOARD_COLUMN_ACTION_REVEAL,
@@ -152,6 +144,29 @@ function BoardColumnHeader({
 						onToggle={onCollapse}
 						title={title}
 					/>
+					{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
+						<BoardColumnAgentAssignment
+							agents={agents}
+							assignedAgentIds={assignedAgentIds}
+							columnTitle={title}
+							onCreateAgent={onCreateAgent}
+							onToggleAgent={onToggleAgent}
+						/>
+					) : null}
+					<Button
+						aria-disabled
+						aria-label={`${title} column actions`}
+						className={cn(
+							BOARD_COLUMN_ACTION_REVEAL,
+							"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
+							"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
+						)}
+						size="icon-compact"
+						type="button"
+						variant="ghost"
+					>
+						<Icon className="text-icon-subtle" render={<ShowMoreHorizontalIcon label="" size="small" />} />
+					</Button>
 				</div>
 			)}
 			{headerAccessory}

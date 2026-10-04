@@ -29,6 +29,26 @@ async function openBoard(page: Page) {
 	await expect(page.getByRole("heading", { name: "Team ’26 EU keynote", exact: true })).toBeVisible();
 }
 
+test("keynote cards keep More actions by the summary, omit the work item key, and hide footer metadata", async ({ page }) => {
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	const target = issue(page, "TEU-1");
+	await expect(target).toBeVisible();
+	const summaryRow = target.locator('[data-slot="jira-issue-more-action"]').locator("xpath=..");
+	await expect(summaryRow.getByText("Search across your work", { exact: true })).toBeVisible();
+	await expect.soft(summaryRow.getByRole("button", { name: "More actions for TEU-1", exact: true })).toBeVisible();
+	await expect.soft(target.locator("[data-jira-issue-activation-control]")).toHaveText("Search across your work");
+	await expect.soft(target.getByText("TEU-1", { exact: true })).toHaveCount(0);
+});
+
+test("clicking the profile Theme label changes the theme", async ({ page }) => {
+	await page.addInitScript(() => localStorage.setItem("ui-theme", "light"));
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
+	await page.getByRole("button", { name: "Profile menu", exact: true }).click();
+	await page.getByText("Theme", { exact: true }).click();
+	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "dark");
+});
+
 async function coverThemeColors(page: Page) {
 	return page.evaluate(() => {
 		const probe = document.createElement("div");

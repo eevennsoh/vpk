@@ -175,7 +175,12 @@ export function useTheme() {
 }
 
 // Theme toggle component for easy integration
-export function ThemeToggle() {
+interface ThemeToggleProps {
+	className?: string;
+	label?: string;
+}
+
+export function ThemeToggle({ className, label }: Readonly<ThemeToggleProps> = {}) {
 	const { theme, setTheme } = useTheme();
 
 	const handleToggle = () => {
@@ -195,12 +200,20 @@ export function ThemeToggle() {
 	}
 
 	const themeLabel = getThemeLabel();
+	const accessibleLabel = label ? `${label}: ${themeLabel}` : themeLabel;
 	const icon = theme === "system"
 		? <DevicesIcon label="" />
 		: <ThemeIcon label="" />;
 
 	return (
-		<Button aria-label={themeLabel} onClick={handleToggle} variant="ghost" size="icon">
+		<Button
+			aria-label={accessibleLabel}
+			className={className}
+			onClick={handleToggle}
+			variant="ghost"
+			size={label ? "default" : "icon"}
+		>
+			{label ? <span>{label}</span> : null}
 			{icon}
 		</Button>
 	);

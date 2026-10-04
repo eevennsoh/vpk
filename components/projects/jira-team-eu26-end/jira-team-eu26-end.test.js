@@ -863,7 +863,7 @@ test("the Work items header switches between Board and List views with their ico
 		EXPERIMENTAL_HEADER_SOURCE,
 		/showCustomizeControl \? \(\s*<Button aria-disabled aria-label="Customize" size="icon" variant="outline">/u,
 	);
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /className="text-xs text-text-subtlest">Spaces</u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /className="text-sm text-text-subtlest">Spaces</u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /<Heading as="h1" className="min-w-0 truncate" size="medium">\{title\}<\/Heading>/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Share"/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Expand"/u);
