@@ -3,6 +3,7 @@ const path = require("node:path");
 const { test } = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
+const { renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
 
 const ENTRY = `
 export * from "./lib/finale-trigger";
@@ -13,8 +14,8 @@ export * from "./lib/finale-drag-order";
 export * from "./data/finale-cues";
 export * from "./data/finale-stories";
 export * from "./data/finale-palette";
-export { freezeFinalePrintScroll, loadFinalePrintImages, settleFinaleColumnCopy } from "./hooks/use-finale-prints";
-export { isFinaleColumnCaptureReady, waitForFinaleColumnCapture } from "./lib/capture-done-column";
+export { findFinaleCard, freezeFinalePrintScroll, loadFinalePrintImages, settleFinaleColumnCopy } from "./hooks/use-finale-prints";
+export { captureJiraTeamEu26DoneColumn, isFinaleColumnCaptureReady, waitForFinaleColumnCapture } from "./lib/capture-done-column";
 export { JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES } from "../data/keynote-board";
 `;
 
@@ -37,6 +38,36 @@ function columns(done, rest = []) {
 		{ title: "Done", cards: done.map((code) => ({ code })) },
 	];
 }
+
+test("finale prints and handoff identify a real card with its footer metadata hidden", async (t) => {
+	const { findFinaleCard, captureJiraTeamEu26DoneColumn } = loadFinale();
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			issueKey: "TEU-1",
+			summary: "Search across your work",
+			agentActivityMode: "none",
+			showFooterMetadata: false,
+		},
+	});
+	view.container.dataset.jiraKanbanColumn = "Done";
+	view.container.getBoundingClientRect = () => DOMRect.fromRect({ x: 900, y: 200, width: 320, height: 600 });
+	const card = view.container.querySelector('[data-slot="jira-issue-card"]');
+	assert.ok(card);
+	card.getBoundingClientRect = () => DOMRect.fromRect({ x: 908, y: 248, width: 304, height: 200 });
+	assert.equal(card.textContent.includes("TEU-1"), false, "the hidden footer cannot supply identity");
+	assert.equal(findFinaleCard("TEU-1", "board") === card, true, "idle preprints find the card");
+	assert.equal(findFinaleCard("TEU-1") === card, true, "completion prints find the same card in Done");
+	// happy-dom does not perform hit testing; this fixture has no floating chrome.
+	const elementsFromPoint = document.elementsFromPoint;
+	document.elementsFromPoint = () => [];
+	t.after(() => { document.elementsFromPoint = elementsFromPoint; });
+	assert.deepEqual(captureJiraTeamEu26DoneColumn().cards, [{
+		code: "TEU-1",
+		rect: { x: 908, y: 248, width: 304, height: 200 },
+	}], "the printed sheet starts at its original card's position");
+});
 
 test("capture waits for native drop cleanup and every destination card's layout", () => {
 	const { isFinaleColumnCaptureReady } = loadFinale();

@@ -6,7 +6,6 @@ import { flashPrintRect } from "@/components/projects/jira-team-eu26-end/finale/
 import { waitForFinaleColumnCapture } from "@/components/projects/jira-team-eu26-end/finale/lib/capture-done-column";
 import { FINALE_DONE_COLUMN_TITLE } from "../lib/finale-trigger";
 
-const ISSUE_KEY = /\b[A-Z][A-Z0-9]+-\d+\b/u;
 const CARD = '[data-slot="jira-issue-card"]';
 /** Lets the board's own drop animation finish before a card is printed. */
 const PRINT_SETTLE_MS = 700;
@@ -214,7 +213,7 @@ export function findFinaleCard(code: string, scope: "done" | "board" = "done"): 
 	const root = scope === "done" ? document.querySelector(`[data-jira-kanban-column="${FINALE_DONE_COLUMN_TITLE}"]`) : document;
 	const cards = root?.querySelectorAll<HTMLElement>('[data-slot="jira-issue-card"]') ?? [];
 	for (const card of cards) {
-		if (card.textContent?.match(ISSUE_KEY)?.[0] === code) return card;
+		if (card.dataset.issueKey === code) return card;
 	}
 	return null;
 }
