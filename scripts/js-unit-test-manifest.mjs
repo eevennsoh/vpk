@@ -14,6 +14,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/projects/rovo-core/components/rovo-app-shell-pane-layout.test.js",
 		"components/blocks/jira-kanban/experimental/hooks/use-created-card-drop-motion.test.js",
 		"components/blocks/jira-kanban/experimental/lib/issue-solitaire-drop.test.js",
 		"components/blocks/jira-kanban/experimental/lib/issue-drop-handoff.test.js",
@@ -655,7 +656,6 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"scripts/css-utility-collisions.test.js",
 		"components/projects/rovo-core/components/clicky/clicky-core.test.js",
 		"components/projects/rovo-core/components/rovo-app-header.test.js",
-		"components/projects/rovo-core/components/rovo-app-shell-pane-layout.test.js",
 		"components/projects/rovo-core/components/rovo-app-surface-shell.test.js",
 		"components/projects/rovo-core/hooks/use-clicky-voice.test.js",
 		"components/projects/rovo-core/hooks/use-realtime-voice.test.js",

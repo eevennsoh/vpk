@@ -2213,11 +2213,6 @@
       "count": 16
     }
   },
-  "components/projects/rovo-core/components/rovo-app-shell-pane-layout.test.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "components/projects/rovo-core/components/rovo-app-surface-shell.test.js": {
     "no-restricted-syntax": {
       "count": 38
@@ -2480,7 +2475,7 @@
   },
   "components/projects/rovo/components/rovo-app-shell.tsx": {
     "react-hooks/refs": {
-      "count": 20
+      "count": 17
     },
     "react-hooks/set-state-in-effect": {
       "count": 12
@@ -2681,7 +2676,7 @@
       "count": 4
     },
     "react-hooks/refs": {
-      "count": 27
+      "count": 24
     },
     "react-hooks/set-state-in-effect": {
       "count": 16

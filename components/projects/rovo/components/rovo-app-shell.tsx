@@ -21,7 +21,11 @@ import { RovoAppHeaderCore as RovoAppHeader } from "@/components/projects/rovo-c
 import { RovoAppBrowserArtifact } from "@/components/projects/rovo-core/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/rovo/components/rovo-app-composer";
 import { RovoAppMessages } from "@/components/projects/rovo/components/rovo-app-messages";
-import { RovoAppShellPaneLayoutCore as RovoAppShellPaneLayout } from "@/components/projects/rovo-core/components/rovo-app-shell-pane-layout";
+import {
+	RovoAppShellPaneLayoutCore as RovoAppShellPaneLayout,
+	useRovoAppShellPanePresentation,
+	useRovoAppShellSize,
+} from "@/components/projects/rovo-core/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/rovo/components/rovo-app-sidebar";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
 import { formatAnnotationsForVoiceContext } from "@/components/ui-custom/lib/artifact-annotations";
@@ -29,7 +33,6 @@ import type { ArtifactAnnotation } from "@/components/ui-custom/lib/artifact-ann
 import { useRovoApp } from "@/components/projects/rovo/hooks/use-rovo-app";
 import { useHmrReloadSuppression } from "@/components/projects/rovo-core/hooks/use-hmr-reload-suppression";
 import { getRovoAppArtifactKindLabel, getRovoAppArtifactTypeLabel, sortRovoAppArtifacts } from "@/components/projects/rovo-core/lib/rovo-app-artifacts";
-import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
 	buildRovoAppBrowserArtifactKey,
 	shouldAutoOpenRovoAppBrowserArtifact,
@@ -37,7 +40,6 @@ import {
 } from "@/components/projects/rovo-core/lib/rovo-app-browser-preview";
 import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/lib/rovo-app-composer-placeholder";
 import { appendDictationTranscript, resolveComposerDictationState } from "@/lib/composer-dictation";
-import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, getRovoAppShellLayout } from "@/components/projects/rovo-core/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/rovo-core/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/rovo-core/lib/rovo-app-timeline";
 import { buildRovoAppThreadPath } from "@/components/projects/rovo/lib/rovo-app-thread-route-sync";
@@ -83,7 +85,7 @@ import {
 	type StudioScreenAssistantTarget,
 } from "@/components/projects/rovo-core/lib/screen-assistant";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
-import { clamp, cn, createId } from "@/lib/utils";
+import { cn, createId } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { getLatestDataPart, getLatestUserMessageId, getMessageArtifactResult, getMessageText } from "@/lib/rovo-ui-messages";
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
@@ -115,8 +117,6 @@ const DEFAULT_COMPOSER_PLACEHOLDER = "Describe what it should do";
 const ROVO_APP_DIRECTORY_AUTOCOMPLETE_LIMIT = 8;
 const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
 const REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
-const ROVO_APP_SPLIT_CHAT_PANEL_ID = "rovo-app-chat-pane";
-const ROVO_APP_SPLIT_ARTIFACT_PANEL_ID = "rovo-app-artifact-pane";
 
 function parseCssDurationMs(value: string): number | null {
 	const trimmedValue = value.trim();
@@ -398,7 +398,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const selectedAgentContextDescription = getRovoAgentPromptContext(selectedAgent);
 	const isCustomAgentSelected = !isRovoAgentProfile(selectedAgent);
 	const [viewportWidthPx, setViewportWidthPx] = useState<number | null>(null);
-	const [shellSize, setShellSize] = useState({ width: 0, height: 0 });
+	const shellRef = useRef<HTMLDivElement | null>(null);
+	const shellSize = useRovoAppShellSize(shellRef);
 	const smartGenerationLayout = useMemo(() => {
 		return getRovoAppSmartGenerationLayoutContext({
 			shellWidth: shellSize.width,
@@ -1687,26 +1688,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[buildPromptOptions, chat, clearAnnotations],
 	);
 
-	const shellRef = useRef<HTMLDivElement | null>(null);
 	const composerDockRef = useRef<HTMLDivElement | null>(null);
-	const artifactCardOriginRef = useRef<DOMRect | null>(null);
-	const artifactPreviewOriginRef = useLazyRef<Map<string, DOMRect>>(() => new Map());
-	const [artifactOrigin, setArtifactOrigin] = useState({
-		left: 0,
-		top: 0,
-		width: 320,
-		height: 96,
+	const panePresentation = useRovoAppShellPanePresentation({
+		shellRef,
+		composerRef: composerDockRef,
+		shellSize,
+		artifact: { isOpen: isArtifactOpen, documentId: workspaceDocument?.id ?? null },
 	});
-	const artifactSplitChatPaneWidthRef = useRef<number | null>(null);
-	const artifactLayout = getRovoAppShellLayout(shellSize.width);
-	const shouldSplitArtifactPane = isArtifactOpen && artifactLayout.mode === "split";
-	const splitChatPaneMaxSize = shouldSplitArtifactPane
-		? Math.min(ROVO_APP_MAX_CHAT_PANE_WIDTH, Math.max(ROVO_APP_MIN_CHAT_PANE_WIDTH, shellSize.width - ROVO_APP_MIN_ARTIFACT_PANE_WIDTH))
-		: ROVO_APP_MAX_CHAT_PANE_WIDTH;
-	const splitChatPaneDefaultSize = shouldSplitArtifactPane
-		? clamp(artifactSplitChatPaneWidthRef.current ?? artifactLayout.chatPaneWidth ?? ROVO_APP_MIN_CHAT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, splitChatPaneMaxSize)
-		: ROVO_APP_MIN_CHAT_PANE_WIDTH;
-	const splitArtifactPaneDefaultSize = shouldSplitArtifactPane ? Math.max(ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, shellSize.width - splitChatPaneDefaultSize) : ROVO_APP_MIN_ARTIFACT_PANE_WIDTH;
+	const { shouldSplitArtifactPane, registerArtifactCard, prepareArtifactOpen } = panePresentation;
 
 	useEffect(() => {
 		if (!isRealtimeActive) {
@@ -1805,111 +1794,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		return () => window.removeEventListener("resize", updateViewportWidth);
 	}, []);
 
-	useEffect(() => {
-		const shellElement = shellRef.current;
-		if (!shellElement || typeof ResizeObserver === "undefined") {
-			return;
-		}
-
-		const updateBounds = () => {
-			setShellSize((prev) => {
-				const width = shellElement.clientWidth;
-				const height = shellElement.clientHeight;
-				return prev.width === width && prev.height === height ? prev : { width, height };
-			});
-		};
-
-		updateBounds();
-		const observer = new ResizeObserver(() => {
-			updateBounds();
-		});
-		observer.observe(shellElement);
-		return () => observer.disconnect();
-	}, []);
-
 	const handleOpenArtifactFromCard = useCallback(
 		(documentId: string, element: HTMLElement) => {
-			const shellElement = shellRef.current;
-			if (shellElement) {
-				const shellRect = shellElement.getBoundingClientRect();
-				const cardRect = element.getBoundingClientRect();
-				artifactCardOriginRef.current = new DOMRect(cardRect.left - shellRect.left, cardRect.top - shellRect.top, cardRect.width, cardRect.height);
-			}
+			prepareArtifactOpen(element);
 			void chat.openDocument(documentId);
 		},
-		[chat],
-	);
-
-		const handleRegisterArtifactCard = useCallback((documentId: string, element: HTMLElement) => {
-			const shellElement = shellRef.current;
-			if (!shellElement) {
-				return;
-			}
-
-			const shellRect = shellElement.getBoundingClientRect();
-			const cardRect = element.getBoundingClientRect();
-			artifactPreviewOriginRef.current.set(documentId, new DOMRect(cardRect.left - shellRect.left, cardRect.top - shellRect.top, cardRect.width, cardRect.height));
-		}, [artifactPreviewOriginRef]);
-
-	useEffect(() => {
-		if (!isArtifactOpen) {
-			return;
-		}
-
-		const cardOrigin = artifactCardOriginRef.current;
-		if (cardOrigin) {
-			artifactCardOriginRef.current = null;
-			setArtifactOrigin({
-				left: Math.max(cardOrigin.x, 16),
-				top: Math.max(cardOrigin.y, 16),
-				width: Math.min(Math.max(cardOrigin.width, 260), 420),
-				height: Math.min(Math.max(cardOrigin.height, 40), 140),
-			});
-			return;
-		}
-
-		const previewOrigin = workspaceDocument?.id ? (artifactPreviewOriginRef.current.get(workspaceDocument.id) ?? null) : null;
-		if (previewOrigin) {
-			setArtifactOrigin({
-				left: Math.max(previewOrigin.x, 16),
-				top: Math.max(previewOrigin.y, 16),
-				width: Math.min(Math.max(previewOrigin.width, 260), 420),
-				height: Math.min(Math.max(previewOrigin.height, 40), 220),
-			});
-			return;
-		}
-
-		const shellElement = shellRef.current;
-		const composerElement = composerDockRef.current;
-		if (!shellElement || !composerElement) {
-			return;
-		}
-
-		const shellRect = shellElement.getBoundingClientRect();
-		const composerRect = composerElement.getBoundingClientRect();
-		const nextWidth = Math.min(Math.max(composerRect.width - 56, 260), 420);
-		const nextHeight = Math.min(Math.max(composerRect.height, 72), 140);
-		const nextLeft = Math.max(composerRect.left - shellRect.left + 28, 16);
-		const nextTop = Math.max(composerRect.top - shellRect.top + 8, 16);
-
-		setArtifactOrigin({
-			left: nextLeft,
-			top: nextTop,
-			width: nextWidth,
-			height: nextHeight,
-		});
-		}, [artifactPreviewOriginRef, isArtifactOpen, workspaceDocument?.id]);
-
-	const handleArtifactSplitLayoutChanged = useCallback(
-		(layout: Record<string, number>) => {
-			const nextChatPanePercentage = layout[ROVO_APP_SPLIT_CHAT_PANEL_ID];
-			if (!Number.isFinite(nextChatPanePercentage) || shellSize.width <= 0) {
-				return;
-			}
-
-			artifactSplitChatPaneWidthRef.current = Math.round((shellSize.width * nextChatPanePercentage) / 100);
-		},
-		[shellSize.width],
+		[chat, prepareArtifactOpen],
 	);
 
 	const sortedArtifacts = sortRovoAppArtifacts(chat.documents);
@@ -2034,7 +1924,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					onOpenArtifactFromCard={handleOpenArtifactFromCard}
 					onOpenBrowserPreview={handleOpenBrowserPreview}
 					onOpenPlanPreview={handleOpenPlanPreview}
-					onRegisterArtifactCard={handleRegisterArtifactCard}
+					onRegisterArtifactCard={registerArtifactCard}
 					onRegenerate={chat.regenerateLatest}
 					onScrollActiveUserMessageChange={handleScrollActiveTimelineChange}
 					onSelectSuggestion={handleRovoAppSuggestionSelect}
@@ -2389,19 +2279,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				/>
 				<main ref={shellRef} className="relative flex min-h-0 min-w-0 flex-1 bg-background px-3 text-foreground">
 					<RovoAppShellPaneLayout
-						artifactOrigin={artifactOrigin}
+						presentation={panePresentation}
 						artifactPane={artifactPane}
-						artifactPanelId={ROVO_APP_SPLIT_ARTIFACT_PANEL_ID}
 						chatPane={chatPaneContainer}
-						chatPanelId={ROVO_APP_SPLIT_CHAT_PANEL_ID}
-						minArtifactPaneWidth={ROVO_APP_MIN_ARTIFACT_PANE_WIDTH}
-						minChatPaneWidth={ROVO_APP_MIN_CHAT_PANE_WIDTH}
-						onArtifactSplitLayoutChanged={handleArtifactSplitLayoutChanged}
-						shouldSplitArtifactPane={shouldSplitArtifactPane}
-						shellSize={shellSize}
-						splitArtifactPaneDefaultSize={splitArtifactPaneDefaultSize}
-						splitChatPaneDefaultSize={splitChatPaneDefaultSize}
-						splitChatPaneMaxSize={splitChatPaneMaxSize}
 					/>
 				</main>
 			</div>
