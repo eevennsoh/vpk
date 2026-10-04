@@ -141,7 +141,7 @@ test("every keynote story pairs its feature cover heading with a benefit title a
 		assert.equal(card.coverImage.src, undefined);
 		assert.equal(card.coverImage.alt, undefined);
 		assert.equal(card.coverImage.backgroundClassName, undefined);
-		assert.equal(card.coverImage.maxHeight, 120);
+		assert.equal(card.coverImage.maxHeight, 140);
 		assert.equal(card.coverImage.backgroundPattern, "grid");
 		assert.ok(card.coverImage.appSources.length > 0);
 	}
@@ -216,7 +216,7 @@ test("the original gray placeholder covers upgrade without resetting board edits
 	assert.equal(upgraded.assignee, card.assignee);
 	assert.equal(upgraded.coverImage.heading, "Desktop\nSearch & Chat");
 	assert.equal(upgraded.coverImage.backgroundPattern, "grid");
-	assert.equal(upgraded.coverImage.maxHeight, 120);
+	assert.equal(upgraded.coverImage.maxHeight, 140);
 	assert.deepEqual(upgraded.coverImage.appSources.map((app) => app.label), ["Rovo"]);
 	assert.deepEqual(card.coverImage, { backgroundClassName: "bg-bg-accent-gray-subtler", maxHeight: 120 });
 	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
@@ -246,7 +246,7 @@ test("retained keynote covers adopt the shorter height without resetting board e
 
 	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
 	const resized = restored[3].cards[0];
-	assert.equal(resized.coverImage.maxHeight, 120);
+	assert.equal(resized.coverImage.maxHeight, 140);
 	assert.equal(resized.coverImage.heading, "Custom rehearsal cover");
 	assert.equal(resized.title, "Edited rehearsal title");
 	assert.equal(resized.status, "Done");

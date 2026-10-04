@@ -7,7 +7,7 @@ export const JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE = "Team ’26 EU keynote";
 export { JIRA_TEAM_EU26_END_HEADER_ASSIGNEES } from "./keynote-presenters";
 
 const KEYNOTE_SECTIONS = ["Context", "Collaboration", "Confidence"] as const;
-const KEYNOTE_COVER_MAX_HEIGHT = 120;
+const KEYNOTE_COVER_MAX_HEIGHT = 140;
 
 const COVER_APPS = {
 	rovo: { id: "rovo", label: "Rovo", provider: "rovo" },
