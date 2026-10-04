@@ -79,6 +79,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;
 	showPriorityIndicator?: ExperimentalJiraKanbanProps["showPriorityIndicator"];
+	showFooterMetadata?: ExperimentalJiraKanbanProps["showFooterMetadata"];
 	createWorkItemDropZoneLabel?: ExperimentalJiraKanbanProps["createWorkItemDropZoneLabel"];
 	columnSizing?: ExperimentalJiraKanbanProps["columnSizing"];
 	columnWidth?: ExperimentalJiraKanbanProps["columnWidth"];

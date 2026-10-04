@@ -196,6 +196,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	iconScale?: JiraIssueIconScale;
 	/** Show issue priority on board cards; defaults to the issue component's behavior. */
 	showPriorityIndicator?: boolean;
+	/** Show the issue type, key, and assignee strip at the bottom of board cards. */
+	showFooterMetadata?: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	/** Nested subtask cards inherit the parent chrome unless set. */
 	subtaskChrome?: JiraIssueChrome;
@@ -416,6 +418,7 @@ function ExperimentalJiraKanbanView({
 	cardMoveAnimation,
 	iconScale = "compact",
 	showPriorityIndicator,
+	showFooterMetadata = true,
 	issueDragTransitions = false,
 	issueMoveVisual = true,
 	issueDropMotion,
@@ -948,6 +951,7 @@ function ExperimentalJiraKanbanView({
 												highlightedSessionId={highlightedSessionId}
 												iconScale={iconScale}
 												showPriorityIndicator={showPriorityIndicator}
+												showFooterMetadata={showFooterMetadata}
 												onAgentActivityOpenChange={onCardAgentActivityOpenChange}
 												onAgentActivityViewChat={onCardAgentActivityViewChat}
 												onAssignedAgentIdsChange={onCardAssignedAgentIdsChange}

@@ -392,6 +392,7 @@ function JiraTeamEu26App(): React.ReactElement {
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
 						showPriorityIndicator={false}
+						showFooterMetadata={false}
 						issueSelectionAppearance="fused-backdrop"
 						getStatusVariant={statusVariant}
 						issueDragTransitions

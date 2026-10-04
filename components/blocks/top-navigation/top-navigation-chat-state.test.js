@@ -201,7 +201,7 @@ test("top navigation places the shared theme toggle in the profile popover", () 
 	);
 	assert.match(
 		RIGHT_NAVIGATION_ACTIONS_SOURCE,
-		/aria-label="Profile menu"[\s\S]*<Avatar[\s\S]*<PopoverContent align="end" className="w-44">[\s\S]*<PopoverTitle className="text-sm">Theme<\/PopoverTitle>[\s\S]*<ThemeToggle \/>/u,
+		/aria-label="Profile menu"[\s\S]*<Avatar[\s\S]*<PopoverContent align="end" className="w-44">[\s\S]*<ThemeToggle className="w-full justify-between" label="Theme" \/>/u,
 	);
 	assert.doesNotMatch(RIGHT_NAVIGATION_ACTIONS_SOURCE, /aria-label="Toggle theme"/u);
 });

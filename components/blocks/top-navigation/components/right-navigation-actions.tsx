@@ -200,10 +200,8 @@ export function RightNavigationActions({
 					)}
 				/>
 				<PopoverContent align="end" className="w-44">
-					<div className="flex items-center justify-between gap-2">
-						<PopoverTitle className="text-sm">Theme</PopoverTitle>
-						<ThemeToggle />
-					</div>
+					<PopoverTitle className="sr-only">Profile settings</PopoverTitle>
+					<ThemeToggle className="w-full justify-between" label="Theme" />
 				</PopoverContent>
 			</Popover>
 		</>
