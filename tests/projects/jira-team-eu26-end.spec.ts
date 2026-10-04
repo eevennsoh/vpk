@@ -45,6 +45,7 @@ test("clicking the profile Theme label changes the theme", async ({ page }) => {
 	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
 	await page.getByRole("button", { name: "Profile menu", exact: true }).click();
+	await expect(page.getByRole("dialog", { name: "Profile settings", exact: true })).toBeVisible();
 	await page.getByText("Theme", { exact: true }).click();
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "dark");
 });

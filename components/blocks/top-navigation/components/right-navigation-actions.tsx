@@ -16,6 +16,7 @@ import {
 import {
 	Popover,
 	PopoverContent,
+	PopoverTitle,
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
@@ -199,6 +200,7 @@ export function RightNavigationActions({
 					)}
 				/>
 				<PopoverContent align="end" className="w-44">
+					<PopoverTitle className="sr-only">Profile settings</PopoverTitle>
 					<ThemeToggle className="w-full justify-between" label="Theme" />
 				</PopoverContent>
 			</Popover>
