@@ -163,6 +163,8 @@ Thumbs.db
 node_modules/
 .next/
 dist/
+# The vendored Rovo Stage Kit ships its built runtime: the finale's wall draws its pieces from it.
+!public/1p/rovo-stage-kit/dist/
 build/
 __pycache__/
 *.pyc
