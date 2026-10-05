@@ -32,8 +32,6 @@ import type { FinaleShapeKind } from "../data/finale-identity-shapes";
 export const WALL_SCALE = 0.3;
 /** Gap between wall tiles at the 1920 stage (it scales with the type): wide, for air. */
 const WALL_GUTTER = 32;
-/** Columns before the wall repeats. */
-export const WALL_PERIOD = 12;
 /**
  * Columns on the wall as it appears: at this scale nine fill the frame, the
  * period's first at its left edge. The next one is the leading edge, its
@@ -134,7 +132,8 @@ const covered = "covered" as const;
  * top right (6), f bottom right (7). None is in the frame's last two columns,
  * so each is on the wall as it appears. Each story shows once a period and
  * in one form: the six featured ones in the gaps and on their benefit lines,
- * the other seven as their Done cards (1 + 2 + 4 prints).
+ * the other nineteen as their Done cards. Three more bands of prints after
+ * the opening frame hold the expanded board at the same card scale.
  */
 const PERIOD: readonly (readonly [CellRecipe, CellRecipe, CellRecipe])[] = [
 	[tt(shape("banner", "lime"), benefit), wide(tt(poster("Context", "lime", "black"), print)), rst(air, stat("presenters"), terminal(0))],
@@ -149,7 +148,13 @@ const PERIOD: readonly (readonly [CellRecipe, CellRecipe, CellRecipe])[] = [
 	[tt(portrait("mcb", "shield", "blue"), benefit), tt(poster("Rovo", "black", "lime"), shape("star", "lime")), sxs(shape("banner", "blue"), poster("Shipped", "lime", "black"), air)],
 	[wide(band(poster("Confidence", "blue", "white"))), tt(portrait("taroon", "hexagon", "blue"), benefit), tt(terminal(3), agent("test-agent"))],
 	[covered, sxs(air, strip("presenters"), shape("circle", "purple")), band(poster("Done", "lime", "black"))],
+	[band(print), tt(poster("Context", "lime", "black"), shape("star", "lime")), tt(air, shape("hexagon", "blue"))],
+	[tt(shape("circle", "purple"), air), band(print), tt(poster("Collaboration", "purple", "black"), shape("shield", "blue"))],
+	[tt(poster("Confidence", "blue", "white"), shape("banner", "saffron")), tt(shape("arch", "purple"), air), band(print)],
 ];
+
+/** Columns before the wall repeats. */
+export const WALL_PERIOD = PERIOD.length;
 
 /**
  * How many printed cards stack in a slot: one across a wide slot, two down a

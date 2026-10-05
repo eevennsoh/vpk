@@ -835,7 +835,7 @@
   },
   "components/blocks/jira-issue/cover-image.test.js": {
     "no-restricted-syntax": {
-      "count": 10
+      "count": 9
     }
   },
   "components/blocks/jira-issue/generative-action-menu.tsx": {

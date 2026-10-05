@@ -157,6 +157,7 @@ function createFixture(options = {}) {
 		[
 			"#!/bin/bash",
 			'printf \'docker %s\\n\' "$*" >> "$FAKE_CALL_LOG"',
+			'if [ "${1:-}" = "login" ]; then cat > /dev/null; fi',
 			"exit 0",
 			"",
 		].join("\n"),
@@ -605,6 +606,16 @@ test("hot-swap accepts omitted optional environment or version arguments", () =>
 			assert.doesNotMatch(callsFor(fixture), /app---hot-swap/u);
 		});
 	}
+});
+
+test("successful Docker login accepts a full stdin payload", () => {
+	withFixture({}, (fixture) => {
+		const configPath = path.join(fixture.root, ".deploy.local");
+		writeFileSync(configPath, readFileSync(configPath, "utf8").replace("fixture-password", "fixture-password".repeat(10_000)));
+		const result = runFixture(fixture, "scripts/dev-deploy-fast.sh", ["--hot-swap"]);
+		assert.equal(result.status, 0, result.stdout + result.stderr);
+		assert.match(callsFor(fixture), /docker login .*--password-stdin/u);
+	});
 });
 
 test("both deploy paths reject an unstyled ADS export before image build or push", () => {

@@ -14,6 +14,9 @@ import type {
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list";
 import { JIRA_TEAM_EU26_PAY_CURRENT_USER } from "../data/current-user";
+import { JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES } from "../data/keynote-board";
+
+const REFERENCE_ISSUE_CODES = new Set(JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES.filter((code) => Number(code.slice("TEU-".length)) >= 100));
 
 /** Mirrors TopNavigation / `JIRA_TEAM_EU26_PAY_CURRENT_USER`; covered by the list-row contract tests. */
 const CURRENT_USER_ASSIGNEE = JIRA_TEAM_EU26_PAY_CURRENT_USER;
@@ -488,9 +491,12 @@ export function appendBoardCreatedListOrder({
 }
 
 export function getNextPayIssueKey(columns: readonly JiraKanbanColumnData[]): string {
-	return columns.some((column) => column.cards.length > 0)
-		? nextBoardIssueKey(columns)
+	const liveColumns = columns.map((column) => ({ ...column, cards: column.cards.filter((card) => !REFERENCE_ISSUE_CODES.has(card.code)) }));
+	let issueKey = liveColumns.some((column) => column.cards.length > 0)
+		? nextBoardIssueKey(liveColumns)
 		: "TEU-1";
+	while (REFERENCE_ISSUE_CODES.has(issueKey)) issueKey = `TEU-${Number(issueKey.slice("TEU-".length)) + 1}`;
+	return issueKey;
 }
 
 export function insertWorkItemCard(

@@ -1,8 +1,5 @@
 import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
-import {
-	JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES,
-	JIRA_TEAM_EU26_END_KEYNOTE_STORIES,
-} from "@/components/projects/jira-team-eu26-end/data/keynote-board";
+import { JIRA_TEAM_EU26_END_KEYNOTE_STORIES } from "@/components/projects/jira-team-eu26-end/data/keynote-board";
 import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-eu26-end/data/keynote-presenters";
 
 export type FinaleChapterId = "Context" | "Collaboration" | "Confidence";
@@ -21,13 +18,13 @@ export interface FinaleStory {
 }
 
 export const FINALE_STORIES: readonly FinaleStory[] = JIRA_TEAM_EU26_END_KEYNOTE_STORIES.map((story, index) => ({
-	code: JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES[index],
+	code: story.code,
 	index,
 	chapter: story.section,
 	lines: story.heading.split("\n"),
 	title: story.title,
 	apps: story.apps,
-	presenter: story.assignee.id as FinalePresenterId,
+	presenter: story.assignee.id,
 }));
 
 export interface FinaleRect {
@@ -99,14 +96,14 @@ export function finaleBentoLayout(viewport: { readonly width: number; readonly h
 }
 
 /** The bento always closes on Jira's own story… */
-export const FINALE_PINNED_FEATURE = "TEU-10"; // Jira Agent Sessions
+export const FINALE_PINNED_FEATURE = "TEU-10"; // Agent Session Tracking
 /** …which takes Rovo Artifacts' place: that story is never a tile. */
-export const FINALE_RETIRED_FEATURE = "TEU-4"; // Rovo Artifacts
+export const FINALE_RETIRED_FEATURE = "TEU-4"; // Artifacts
 
 /**
  * Bento features follow MCB's drag order: the first cards he moved into Done
- * fill the slots in landing order, with Jira Agent Sessions standing in for
- * Rovo Artifacts wherever that was dragged — and guaranteed a slot if it
+ * fill the slots in landing order, with Agent Session Tracking standing in for
+ * Artifacts wherever that was dragged — and guaranteed a slot if it
  * would otherwise miss the cut. Keynote stories that were never dragged
  * (rehearsal) top the list up in board order.
  */
