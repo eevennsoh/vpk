@@ -36,7 +36,7 @@ RECEIPT_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../vpk-deploy/scripts" &
 cd "$TARGET"
 
 echo "━━━━ 1/4  pnpm install ━━━━"
-pnpm install
+pnpm install --reporter=append-only
 node "$RECEIPT_SCRIPT" inputs --target "$PWD" --receipt "$PWD/output/build-inputs.json"
 
 echo ""

@@ -37,7 +37,7 @@ backend behavior.
   interaction states. Do not substitute lookalike UI or Unicode for source
   icons. Verify [source-to-extract UI parity](references/extraction-guide.md#source-to-extract-ui-parity)
   before claiming the extract is complete; a resting screenshot is insufficient.
-- Copy the full `public/` tree because runtime data can reference untraced assets.
+- Copy the full `public/` tree initially because runtime data can reference untraced assets. Prune only when the user requests it, using the reviewed asset-audit workflow below. Referenced artwork is a design choice, not an unused asset.
 - Preserve optional UI loading boundaries. Fix shared runtime/interaction hot
   paths in VPK source; extraction reports and packages the selected behavior.
 - Resolve `catalog:` against the source `pnpm-workspace.yaml` catalog when
@@ -68,6 +68,8 @@ backend behavior.
 - After `verify-target.sh`, inspect computed layout in a real viewport. Jira
   header tabs must be `flex-direction: column` when `data-horizontal`.
 - Do not create fake local API shims unless the user explicitly requests a mock.
+- Keep reduced-motion preference snapshots identical on the server and during initial hydration. The scaffold routes copied Motion `useReducedMotion` imports through a generated hydration-safe adapter and records those harness adaptations in provenance.
+- Never move or delete `.next` while its dev server is running. Stop that preview before rebuilding or clearing its cache.
 - Keep the script filenames and paths in this skill. Encode extraction-contract
   fixes in those scripts and their tests, not as one-off target edits.
 
@@ -108,6 +110,11 @@ backend-backed contract in [extraction guide](references/extraction-guide.md).
 Show the plan summary, resolve decision points, and continue within the user's
 authorized scope.
 
+If the skill cache is not writable, place the plan in a writable task directory.
+When cleanup can remove temporary or ignored files, keep the selection and
+verification logs outside that cleanup scope; check the original process handle
+and actual artifacts before repeating a vanished build.
+
 ### 2. Scaffold and copy
 
 ```bash
@@ -120,7 +127,8 @@ The script creates the sibling project, preserves repo-relative paths, copies
 planned source plus `public`, local CSS, ambient `.d.ts`, and `.npmrc`, resolves
 `catalog:` versions, rewrites the route entry to its direct demo import,
 generates the provider/layout harness (skipping unsafe providers), keeps
-always-on `shadcn` CSS, adds the Micros scaffold, initializes Git, and wires
+always-on `shadcn` CSS, adapts browser-only motion preference imports, includes
+the optional asset-audit script, adds the Micros scaffold, initializes Git, and wires
 only the approved setup and deploy skills.
 
 Static scaffold inputs live under [scaffold references](references/scaffold/).
@@ -136,7 +144,7 @@ changes. Preserve `.deploy.local`, `service-descriptor.yml`, the sibling README,
 `.dockerignore`, Git metadata, and local overrides. The staged
 `scripts/dev-backend-backed.mjs` points at the staging path; keep or regenerate
 the launcher for the actual sibling path. Review backend changes separately and
-retain the full public asset tree. See [extraction guide](references/extraction-guide.md).
+preserve the target's reviewed asset policy. See [extraction guide](references/extraction-guide.md).
 
 For recurring releases, follow [fast refresh](references/fast-refresh.md).
 Use `plan-target-refresh.mjs` with the previous verified VPK source SHA to plan
@@ -146,6 +154,16 @@ edits or changed file bytes after review. When the verified baseline Git commit
 is available, a previous full staging tree is not needed.
 
 ### 3. Verify the target
+
+Include the same clean-checkout startup a colleague will use in handoff proof.
+For a frontend-only preview, complete `pnpm install`, then start
+`pnpm exec next dev -p 3001` and open `/`. This does not start the backend;
+use `pnpm dev` when the route needs its backend-backed runtime.
+Check fresh loads with both normal and reduced motion. Persistent hydration
+warnings are failures, even when the page appears usable. Diagnose the full log:
+pnpm 11 can launch a nested install before `run`/`exec`, while a React hydration
+log identifies a rendering problem. See the extraction guide's failure table.
+Stop the preview and restore minimal `next-env.d.ts` before export verification.
 
 Choose one verification mode. For the backend-backed deployment harness:
 
@@ -160,13 +178,13 @@ require `out/index.html`, prepare gzip/Brotli once, and verify an export
 inventory in the extracted project. The report under `output/export-inventory.json`
 lists HTML-referenced Next.js JS/CSS/fonts and largest assets separately from
 all packaged files. Missing referenced assets fail verification. These are file
-sizes, not browser transfer or latency measurements. Preserve the full public
-tree and dynamic-import boundaries; use the trace for dependency provenance and
+sizes, not browser transfer or latency measurements. Preserve approved assets
+and dynamic-import boundaries; use the trace for dependency provenance and
 profile the real route before pruning or changing optional surfaces. Resolve
 failures at their owner: dependency versions in target `package.json`, missing
 graph edges in the plan/trace, source parity in copied files, and CSS/runtime
 setup in the generated harness. If a copied CSS file exists and the bundler
-still cannot resolve it, delete the target `.next` cache and rebuild. Then run
+still cannot resolve it, stop its dev server, clear the target `.next` cache and rebuild. Then run
 the extracted app at `http://localhost:3001` and verify the real route, assets,
 console, computed layout (not only an a11y snapshot), and every required
 interaction.
@@ -183,6 +201,16 @@ node .agents/skills/vpk-deploy/scripts/verify-wss.mjs \
 
 This verifies the target's URL discovery and upgrade proxy. The deployed HTTPS
 check requires a scoped token; follow `vpk-deploy` for that proof.
+
+### Optional asset reduction
+
+When requested, use [asset reduction](references/extraction-guide.md#optional-asset-reduction)
+for a read-only inventory and checksum-guarded deletion. The scaffold includes
+`audit-public-assets.mjs`; it never prunes automatically. Keep runtime directories,
+compiled iframe/kit bundles, fonts, avatars and source-derived companions.
+Remove referenced artwork only with the user's design authorization, after
+migrating every loader, preload and fallback. Rebuild and repeat affected states.
+Preserve intentional asset and hydration overrides during later refreshes.
 
 ### 4. Hand off deployment
 
@@ -223,7 +251,7 @@ approval to deploy or proof of browser behavior.
 Use [the browser verifier](../vpk-deploy/references/guide-deployment.md#functional-and-browser-evidence)
 for first paint, route marker, fonts and viewport smokes; keep the route-specific
 interaction regression matrix. Read packaging measurements before changing
-codec or dependency policy. Preserve the full public tree and optional runtime
+codec or dependency policy. Preserve approved assets and optional runtime
 capabilities; unclassified dependencies are not proven unused.
 
 ## Validation
@@ -253,6 +281,10 @@ reference. That reference can break a later standalone typecheck.
   import walker and catalog-dispatcher resolver.
 - [scaffold-target.mjs](scripts/scaffold-target.mjs): plan-driven copier and
   target generator.
+- [scaffold-motion.mjs](scripts/scaffold-motion.mjs): generated hydration-safe
+  motion adapter and import migration.
+- [audit-public-assets.mjs](scripts/audit-public-assets.mjs): optional asset
+  inventory and reviewed deletion.
 - [verify-target.sh](scripts/verify-target.sh): install/typecheck/build gate.
 - [plan-target-refresh.mjs](scripts/plan-target-refresh.mjs): Git-baseline file
   comparison and checksum-guarded source refresh.

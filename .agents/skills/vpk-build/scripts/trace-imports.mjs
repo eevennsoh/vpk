@@ -24,7 +24,7 @@ import process from "node:process";
 import ts from "typescript";
 import { resolveTraceDependencies } from "./extraction-dependencies.mjs";
 
-const RESOLVE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mts", ".cjs", ".cts", ".json"];
+const RESOLVE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mts", ".cjs", ".cts", ".json", ".d.ts"];
 
 // Files we never follow, even if statically imported. These are "dispatcher"
 // modules whose sole job is to centralize imports across many unrelated
@@ -459,7 +459,7 @@ function buildPlan({ route, repoRoot, trace: t, gitState }) {
 		warnings.push(
 			`Route makes ${apiCalls.length} runtime fetch call(s) to /api/*: ${apiCalls.join(", ")}. ` +
 			`The extracted project does not include these backend routes. ` +
-			`Either add stub handlers to the extracted backend/server.js, proxy to VPK, or extract a route that doesn't hit /api/*.`,
+			`Preserve the source backend or proxy to VPK for live behavior. Local mock handlers require an explicit mock request.`,
 		);
 	}
 

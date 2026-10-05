@@ -41,7 +41,10 @@ array. It reports:
 Review the actual diffs and every manual decision. Root dependency additions can
 belong to another route; compare traced packages and backend requirements before
 changing the target or accepting a prior installed dependency layer. Preserve
-required extraction harness fixes. For overlaps, merge the owner changes through
+required extraction harness fixes, including hydration-safe motion adapters.
+Retain reviewed asset pruning and deliberate artwork removals; a full staged
+public copy is not authorization to restore them. Re-run the asset audit after
+a reviewed refresh when pruning remains in scope. For overlaps, merge the owner changes through
 the manual refresh path; automatic apply stops before writing any file.
 Review generated-layout changes too: an existing target must acquire both
 light and dark token styles rather than retain the older light-only harness.

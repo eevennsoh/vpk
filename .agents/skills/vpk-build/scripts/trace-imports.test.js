@@ -316,3 +316,16 @@ test("trace-imports adds ambient dts, sibling dts, and local CSS imports", () =>
 		fixture.cleanup();
 	}
 });
+
+test("trace resolves public declaration files without a false missing-import warning", () => {
+	const fixture = createFixture();
+	try {
+		writeFile(path.join(fixture.repoRoot, "public/kit/types/stage-file.d.ts"), "export interface Stage { version: number }\n");
+		const entry = path.join(fixture.repoRoot, "app/studio/[[...id]]/page.tsx");
+		fs.appendFileSync(entry, '\nimport type { Stage } from "@/public/kit/types/stage-file";\n');
+		execFileSync(process.execPath, [TRACE_IMPORTS_PATH, "/studio/[[...id]]", "--repo", fixture.repoRoot, "--out", fixture.planPath], { stdio: "pipe" });
+		const plan = JSON.parse(fs.readFileSync(fixture.planPath, "utf8"));
+		assert.equal(plan.files.includes("public/kit/types/stage-file.d.ts"), true);
+		assert.equal(plan.warnings.some(warning => warning.includes("stage-file")), false);
+	} finally { fixture.cleanup(); }
+});

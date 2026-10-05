@@ -3,12 +3,12 @@
  * scaffold-target.mjs
  *
  * Reads an extraction plan produced by trace-imports.mjs and materializes a
- * standalone sibling Next.js project. Copies files verbatim (preserving
- * repo-relative paths so `@/*` imports resolve without rewriting), fills in
+ * standalone sibling Next.js project. Preserves repo-relative source paths,
+ * applies declared runtime import adaptations, fills in
  * templated scaffold files, copies the public asset tree, and initializes a git repo.
  *
  * Usage:
- *   node scaffold-target.mjs <plan.json> [--target <dir>] [--force]
+ *   node scaffold-target.mjs <plan.json> [--target <dir>] [--backend-backed] [--force]
  *
  * The route entry (app/<route>/page.tsx) is promoted to app/page.tsx so the
  * extracted project serves the prototype at `/`. The original route's import
@@ -25,6 +25,7 @@ import { wireScaffoldSkills } from "./scaffold-skill-access.mjs";
 import { validateScaffoldTarget } from "./scaffold-target-safety.mjs";
 import { pinDependenciesToSourceLockfile } from "./scaffold-lockfile.mjs";
 import { collectLocalCssImportsFromText, resolveScaffoldDependencies } from "./extraction-dependencies.mjs";
+import { prepareHydrationSafeMotion } from "./scaffold-motion.mjs";
 
 const SKILL_ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const SCAFFOLD_DIR = path.join(SKILL_ROOT, "references", "scaffold");
@@ -741,6 +742,10 @@ export function FeatureFlagsShim() {
 		ROUTE_NAME: routeSlug,
 		GENERATED_DATE: new Date().toISOString().slice(0, 10),
 		SOURCE_SHA: sha,
+		BUILD_COMMAND: args.backendBacked ? "pnpm run build:export" : "pnpm build",
+		RUNTIME_DESCRIPTION: args.backendBacked
+			? "The production image runs the copied Express backend and serves the static export plus live API/WebSocket routes. `pnpm dev` requires the source VPK checkout; see Backend-backed runtime below."
+			: "The production image uses a minimal Express static-serving wrapper. This route has no live backend contract.",
 	});
 	fs.writeFileSync(path.join(targetDir, "README.md"), readmeFilled);
 
@@ -796,6 +801,8 @@ runs the copied source Express backend, including API and WebSocket routes.
 	}
 
 	writeStaticDeliveryHarness(repoRoot, targetDir);
+	const motionConsumers = prepareHydrationSafeMotion(targetDir);
+	copyFileVerbatim(path.join(SKILL_ROOT, "scripts", "audit-public-assets.mjs"), path.join(targetDir, "scripts", "audit-public-assets.mjs"));
 
 	// ---- 9b. Wire the approved VPK skills into the extracted app ----
 	wireScaffoldSkills({ repoRoot, targetDir });
@@ -804,6 +811,7 @@ runs the copied source Express backend, including API and WebSocket routes.
 	writeFileEnsuring(path.join(targetDir, ".vpk-source.json"), `${JSON.stringify({
 		version: 1, sourceRevision: plan.sourceRevision, sourceWasDirty: Boolean(plan.sourceWasDirty), route: plan.route,
 		dependencyProvenance: { route: Object.keys(plan.npmPackages).sort(), conservativeBackend: args.backendBacked ? Object.keys(augmentedNpm).filter(name => !Object.hasOwn(plan.npmPackages, name)).sort() : [] },
+		harnessAdaptations: { hydrationSafeMotion: motionConsumers },
 	}, null, 2)}\n`);
 
 	// ---- 10. git init + initial commit ----

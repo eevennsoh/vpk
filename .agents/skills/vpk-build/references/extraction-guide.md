@@ -10,6 +10,7 @@ Use this reference after selecting a route and before approving the scaffold.
 - [Existing sibling refresh](#existing-sibling-refresh)
 - [Verification and failures](#verification-and-failures)
 - [Source-to-extract UI parity](#source-to-extract-ui-parity)
+- [Optional asset reduction](#optional-asset-reduction)
 - [Ports and local runtime](#ports-and-local-runtime)
 - [Deployment handoff](#deployment-handoff)
 - [Out of scope](#out-of-scope)
@@ -126,6 +127,22 @@ The linked skills use relative paths back to VPK and will break if the
 source checkout moves independently. Re-run the scaffold or repair the symlinks
 after such a move.
 
+### Reduced-motion hydration
+
+Motion's browser preference can be known on the first client render while it is
+unknown on the server. Branching on it can change initial styles, attributes or
+text and trigger hydration errors. The scaffold keeps the server and initial
+client snapshot at `null` using React's `useSyncExternalStore`, then applies the
+browser preference. It preserves aliases and other Motion imports, rewrites
+only the named `useReducedMotion` import in copied frontend source, and records
+the affected files in `.vpk-source.json.harnessAdaptations`.
+
+Treat this as a declared extraction harness adaptation, not byte-for-byte source
+parity. Test fresh normal/reduced-motion loads and visible final states. Preserve
+an existing target's validated adapter and reduced-motion fixes on refresh;
+never overwrite a different local harness file. Shared source defects still
+belong to their canonical VPK owner when that change is in scope.
+
 ## Existing sibling refresh
 
 Freeze the selected source Git SHA and checkout state before tracing. Recheck
@@ -186,7 +203,7 @@ narrowest owner:
 | `@atlassian/logo-third-party` 404 / wrong registry | Source token-free `.npmrc` was not copied |
 | Missing `@/` import | Trace edge or copied file missing |
 | Unresolved Tailwind class/build failure | `app/globals.css` import chain |
-| Missing CSS / module not found | Local `cssImports` or `globals.css` `@import "./…"` not copied. If the file exists and the bundler still cannot resolve it, delete target `.next` and rebuild |
+| Missing CSS / module not found | Local `cssImports` or `globals.css` `@import "./…"` not copied. If the file exists and the bundler still cannot resolve it, stop the dev server, clear target `.next`, then rebuild |
 | Overlapping tabs / unstyled chrome | `shadcn` CSS stripped or bare `@import "shadcn/tailwind.css"` crashed Turbopack. Restore `@import "../node_modules/shadcn/dist/tailwind.css";` and the `shadcn` dep. Proof: tabs `getComputedStyle(...).flexDirection === "column"` and `hasShadcnCss` |
 | Blank or unstyled runtime | Tailwind utilities were not emitted |
 | Unstyled overlapping HTML on Network URL | `/_next/*` blocked from `127.0.2.2`. Add `allowedDevOrigins` and preview via `http://localhost:3001` |
@@ -208,6 +225,18 @@ narrowest owner:
 
 Do not dismiss a browser-only failure as cache until a request with `Origin`,
 `Referer`, `Sec-Fetch-Dest: font`, and `Sec-Fetch-Mode: cors` succeeds.
+
+Read the actual failure log before choosing a fix. A pnpm 11 `run` or `exec` can
+start another install when dependency state is incomplete. Capture
+`pnpm install --reporter=append-only` and the first install error; the final
+"Command failed with exit code 1" wrapper is not the cause. Do not disable
+dependency verification or repeatedly use `--force` to diagnose a React hydration
+warning. `--force` also downloads optional packages for other platforms.
+
+If ignored dependencies or export files disappear during verification, inspect
+the running process and receipt instead of claiming success or repeatedly
+restoring them. Use an isolated copy outside the active cleanup scope when needed,
+record its source/asset equivalence, and retain logs outside disposable directories.
 
 After the build, run the target and inspect its actual route, console, fonts,
 assets, navigation, and stateful behavior. Backend-backed flows require live API
@@ -251,6 +280,48 @@ changes in the canonical VPK component. Do not hide a mismatch with target-only
 style overrides or replacement markup. Add regression coverage for a confirmed
 contract defect, then refresh and repeat the affected states. If parity remains
 unverified or a source defect remains, identify it explicitly at handoff.
+
+## Optional asset reduction
+
+Start with a full public-tree copy. An extraction trace is insufficient proof
+that an asset is unused: shared views, random agent banners, dynamic logo names,
+JSON data and iframe kits may reach it later. After dependencies are installed:
+
+```sh
+node scripts/audit-public-assets.mjs --plan . output/asset-prune-plan.json
+# Add --keep /runtime-directory for application-specific asset loaders.
+# Review removed, retained, warnings and the byte summary before deletion.
+node scripts/audit-public-assets.mjs --apply output/asset-prune-plan.json
+```
+
+The audit retains exact references and dynamic directory prefixes, follows
+retained public CSS/HTML/JS/data references, and retains fonts and literal public
+filesystem paths. Unbounded dynamic roots retain the entire tree and produce a
+warning. These are conservative candidates, not proof of every optional state;
+review other path-construction mechanisms and exercise the relevant views.
+Apply requires extraction provenance and rejects changed source/public file
+inventories, changed bytes, traversal and symlink substitution.
+
+Referenced artwork requires a separate product choice. For example, replacing
+agent-profile banner artwork with the existing solid-color cover permits removing
+the SVGs only after all image sources and preloads are migrated. Do not silently
+remove such artwork, trim a banner pool, or replace icons. Verify the resulting
+profile, board, responsive, drag and finale states before handoff.
+
+A kit can contain types, manifests and examples while lacking its generated
+`dist` bundle. Check the actual iframe/module request and rendered pieces; a
+successful app build does not prove that runtime bundle exists. Restore or build
+the matching source kit through its owner, rather than inventing a substitute.
+
+Report current tracked/public bytes, prepared export bytes and local folder
+usage separately. Local usage includes `.git`, dependencies and caches; hosted
+Git storage uses packed objects. Normal `git gc` may compact loose objects while
+preserving refs. Removing files from the current tree does not remove historical
+blobs; a history rewrite or force push needs separate authorization.
+
+Pruning invalidates the previous release receipt. Rebuild once, recheck the
+request/interaction matrix and capture a new receipt. Clean only temporary
+verification directories created for this task after retaining needed proof.
 
 ## Ports and local runtime
 
