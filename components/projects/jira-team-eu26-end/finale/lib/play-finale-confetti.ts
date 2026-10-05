@@ -1,4 +1,4 @@
-import { FINALE_CONFETTI_TIMING, SMALL_CONFETTI_TIMING, finaleConfettiRealTime, type FinaleConfettiColumn, type FinaleConfettiStage } from "./finale-confetti";
+import { FINALE_CONFETTI_TIMING, SMALL_CONFETTI_TIMING, finaleConfettiRealTime, type FinaleConfettiBox, type FinaleConfettiStage, type FinaleConfettiTarget } from "./finale-confetti";
 import { createFinaleConfettiPlayer, type FinaleConfettiCommand, type FinaleConfettiEvent } from "./finale-confetti-renderer";
 
 /** A running burst, handed from the board's completion to the finale's ignition. */
@@ -17,11 +17,11 @@ export interface FinaleConfetti {
 	/** Boot the renderer (worker, GL context and shaders) ahead of the show. */
 	readonly prewarm: () => void;
 	/**
-	 * Fire from the viewport's lower corners: the finale's burst drains onto the
-	 * column's bottom border and replaces any earlier one; a small burst lands
-	 * on top of any still flying.
+	 * The finale's burst fires from the viewport's lower corners, drains onto
+	 * the column's bottom border and replaces any earlier one; a small burst
+	 * puffs out from under its landing, on top of any still flying.
 	 */
-	readonly play: (column: FinaleConfettiColumn, size?: FinaleConfettiStage["size"]) => FinaleConfettiShow;
+	readonly play: (target: FinaleConfettiTarget) => FinaleConfettiShow;
 	/** Rehearsal: freeze the latest burst on an exact second, or resume from it with `null`. */
 	readonly hold: (time: number | null) => void;
 	readonly dispose: () => void;
@@ -41,6 +41,12 @@ interface Host {
 
 /** `idle` while parked between shows, `playing` while any burst is up. */
 type FinaleConfettiState = "idle" | "playing";
+
+/** Only the box crosses to the worker, whatever else the caller's object carries. */
+const boxOf = ({ x, y, width, height, radius }: FinaleConfettiBox): FinaleConfettiBox => ({ x, y, width, height, radius });
+
+const targetOf = (target: FinaleConfettiTarget): FinaleConfettiTarget =>
+	target.size === "small" ? { size: "small", landing: boxOf(target.landing) } : { size: "large", column: boxOf(target.column) };
 
 const inTopLayer = (layer: HTMLElement) => layer.hasAttribute("popover") && layer.matches(":popover-open");
 
@@ -180,7 +186,8 @@ export function createFinaleConfetti(): FinaleConfetti {
 		window.addEventListener("resize", onViewportResize);
 	};
 
-	const play = (column: FinaleConfettiColumn, size: FinaleConfettiStage["size"] = "large"): FinaleConfettiShow => {
+	const play = (target: FinaleConfettiTarget): FinaleConfettiShow => {
+		const size = target.size ?? "large";
 		if (size === "large") for (const show of [...live.values()]) if (show.size === "large") show.cancel();
 		let resolveGathered = () => {};
 		const gathered = new Promise<void>((resolve) => {
@@ -230,13 +237,7 @@ export function createFinaleConfetti(): FinaleConfetti {
 			armBackstop(completionTime);
 			setState("playing");
 			current.layer.dataset.finaleConfettiSize = size;
-			current.send({
-				type: "play",
-				id,
-				size,
-				...viewportSize(),
-				column: { x: column.x, y: column.y, width: column.width, height: column.height, radius: column.radius },
-			});
+			current.send({ type: "play", id, ...viewportSize(), ...targetOf(target) });
 			return true;
 		};
 		live.set(id, {

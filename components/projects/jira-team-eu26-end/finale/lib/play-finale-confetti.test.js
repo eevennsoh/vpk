@@ -126,9 +126,9 @@ test("single-card bursts run at normal speed and fade out without gathering or a
 	const renderer = fakeRenderer();
 	const show = createFinaleConfettiPlayer((event) => events.push(event), { now: () => clock, createRenderer: renderer.create });
 	show.handle({ type: "init", canvas: {} });
-	show.handle({ type: "play", id: 2, size: "small", width: 1440, height: 900, dpr: 2, column: COLUMN });
+	show.handle({ type: "play", id: 2, size: "small", width: 1440, height: 900, dpr: 2, landing: COLUMN });
 	frames.step();
-	for (const time of [0.4, 0.7, 1.1]) {
+	for (const time of [0.2, 0.4, 0.55]) {
 		clock = 80 + time * 1000;
 		frames.step();
 		assert.deepEqual(renderer.calls.at(-1), ["render", time, 0], "no bullet-time clock in the burst");
@@ -153,18 +153,18 @@ test("a drop's burst lands on the last one's tail: each runs on its own clock an
 	const renderer = fakeRenderer();
 	const player = createFinaleConfettiPlayer((event) => events.push(event), { now: () => clock, createRenderer: renderer.create });
 	player.handle({ type: "init", canvas: {} });
-	player.handle({ type: "play", id: 1, size: "small", width: 1440, height: 900, dpr: 2, column: COLUMN });
+	player.handle({ type: "play", id: 1, size: "small", width: 1440, height: 900, dpr: 2, landing: COLUMN });
 	frames.step();
 	clock = 400;
 	frames.step();
 	// Regression: a second drop used to clear the first burst before its own launched.
-	player.handle({ type: "play", id: 2, size: "small", width: 1440, height: 900, dpr: 2, column: COLUMN });
+	player.handle({ type: "play", id: 2, size: "small", width: 1440, height: 900, dpr: 2, landing: COLUMN });
 	assert.deepEqual(renderer.frames.at(-1), [[1, 0.4, 0], [2, 0, 0]], "the new burst opens on frame 0 among the first's pieces");
 	assert.ok(!renderer.calls.some(([name]) => name === "clear"), "nothing is cleared");
 	frames.step();
-	clock = 700;
+	clock = 550;
 	frames.step();
-	assert.deepEqual(renderer.frames.at(-1), [[1, 0.7, 0], [2, 0.3, 0]], "one pass draws both, each at its own second");
+	assert.deepEqual(renderer.frames.at(-1), [[1, 0.55, 0], [2, 0.15, 0]], "one pass draws both, each at its own second");
 	assert.equal(frames.queue.filter(Boolean).length, 1, "on one frame loop");
 	clock = (T.fadeStart + T.fade) * 1000;
 	frames.step();
@@ -187,15 +187,15 @@ test("a held single-card burst resumes at normal speed", async (t) => {
 	const renderer = fakeRenderer();
 	const show = createFinaleConfettiPlayer(() => {}, { now: () => clock, createRenderer: renderer.create });
 	show.handle({ type: "init", canvas: {} });
-	show.handle({ type: "play", id: 3, size: "small", width: 1440, height: 900, dpr: 2, column: COLUMN });
-	show.handle({ type: "hold", id: 3, time: 0.65 });
+	show.handle({ type: "play", id: 3, size: "small", width: 1440, height: 900, dpr: 2, landing: COLUMN });
+	show.handle({ type: "hold", id: 3, time: 0.45 });
 	clock = 5000;
 	frames.step();
-	assert.deepEqual(renderer.calls.at(-1), ["render", 0.65, 0]);
+	assert.deepEqual(renderer.calls.at(-1), ["render", 0.45, 0]);
 	show.handle({ type: "hold", id: 3, time: null });
 	clock += 100;
 	frames.step();
-	assert.deepEqual(renderer.calls.at(-1), ["render", 0.75, 0]);
+	assert.deepEqual(renderer.calls.at(-1), ["render", 0.55, 0]);
 	show.handle({ type: "cancel", id: 3 });
 });
 
@@ -407,31 +407,52 @@ test("small card celebrations stack on one renderer, and fly on under the full-b
 	const dom = fakeDom(t);
 	const { createFinaleConfetti } = await loadController();
 	const confetti = createFinaleConfetti();
-	confetti.play(COLUMN, "small");
+	confetti.play({ size: "small", landing: COLUMN });
 	const [worker] = dom.workers;
 	const [layer] = dom.topLayer;
 	assert.equal(worker.messages.at(-1).message.size, "small");
 	assert.equal(layer.dataset.finaleConfettiSize, "small");
 	const firstId = worker.messages.at(-1).message.id;
 	// Regression: a quick second drop used to cancel the first burst outright.
-	confetti.play(COLUMN, "small");
+	confetti.play({ size: "small", landing: COLUMN });
 	const secondId = worker.messages.at(-1).message.id;
 	assert.notEqual(secondId, firstId);
 	const cancelled = () => worker.messages.filter(({ message }) => message.type === "cancel").map(({ message }) => message.id);
 	assert.deepEqual(cancelled(), [], "the second lands on top of the first");
 	worker.onmessage({ data: { type: "done", id: firstId } });
 	assert.equal(layer.dataset.finaleConfetti, "playing", "the layer stays up while any burst flies");
-	confetti.play(COLUMN);
+	confetti.play({ column: COLUMN });
 	const largeId = worker.messages.at(-1).message.id;
 	assert.equal(dom.workers.length, 1, "both sizes reuse one worker and canvas");
 	assert.equal(worker.messages.at(-1).message.size, "large");
 	assert.equal(layer.dataset.finaleConfettiSize, "large");
 	assert.deepEqual(cancelled(), [], "and the finale's burst leaves the small one to fade");
-	const again = confetti.play(COLUMN);
+	const again = confetti.play({ column: COLUMN });
 	assert.deepEqual(cancelled(), [largeId], "a second finale burst replaces the first");
 	again.cancel();
 	worker.onmessage({ data: { type: "done", id: secondId } });
 	assert.equal(layer.dataset.finaleConfetti, "idle", "idle once the last is off");
+	confetti.dispose();
+});
+
+test("a drop's puff crosses to the worker as just its landed cards' box, and the finale's burst as just its column", async (t) => {
+	const dom = fakeDom(t);
+	const { createFinaleConfetti } = await loadController();
+	const confetti = createFinaleConfetti();
+	const landing = { x: 1098, y: 412, width: 306, height: 148, radius: 8 };
+	// A caller's box may carry more than the box (a DOMRect's edges, say); only the box crosses.
+	confetti.play({ size: "small", landing: { ...landing, top: 412, bottom: 560 } });
+	const [worker] = dom.workers;
+	const puff = worker.messages.at(-1).message;
+	assert.equal(puff.type, "play");
+	assert.equal(puff.size, "small");
+	assert.deepEqual(puff.landing, landing, "the puff starts from the cards, not the column");
+	assert.equal("column" in puff, false);
+	confetti.play({ column: COLUMN });
+	const burst = worker.messages.at(-1).message;
+	assert.equal(burst.size, "large");
+	assert.deepEqual(burst.column, COLUMN, "the finale's burst still drains onto the whole column");
+	assert.equal("landing" in burst, false);
 	confetti.dispose();
 });
 
@@ -454,7 +475,7 @@ test("a worker owns the canvas, parked in the top layer at the viewport's size, 
 	assert.match(layer.className, /pointer-events-none/);
 	assert.deepEqual(worker.messages.at(-1).message, { type: "park", width: 1440, height: 900, dpr: 2 }, "and sized to the viewport ahead of any show");
 	const parked = { ...dom.commits };
-	const show = confetti.play(COLUMN);
+	const show = confetti.play({ column: COLUMN });
 	// Regression: the layer was inserted, and its canvas resized from 1×1, only
 	// as the burst launched. Either needs a main-thread commit before the worker's
 	// frames can show, and the column print held the main thread, so the first
@@ -490,7 +511,7 @@ test("cancel and resize clear at once; a stale report cannot touch the next show
 	const { createFinaleConfetti } = await loadController();
 	const confetti = createFinaleConfetti();
 	// Without a prewarm, the first show parks the layer itself.
-	const first = confetti.play(COLUMN);
+	const first = confetti.play({ column: COLUMN });
 	const [worker] = dom.workers;
 	const [layer] = dom.topLayer;
 	const firstId = worker.messages.at(-1).message.id;
@@ -498,7 +519,7 @@ test("cancel and resize clear at once; a stale report cannot touch the next show
 	assert.deepEqual(worker.messages.at(-1).message, { type: "cancel", id: firstId });
 	assert.equal(layer.dataset.finaleConfetti, "idle");
 	assert.equal(await settled(first.gathered), false, "a cancelled show never hands over");
-	const second = confetti.play(COLUMN);
+	const second = confetti.play({ column: COLUMN });
 	assert.deepEqual(dom.topLayer, [layer], "one canvas serves every show");
 	worker.onmessage({ data: { type: "done", id: firstId } });
 	assert.equal(layer.dataset.finaleConfetti, "playing", "the first show's late done leaves the second alone");
@@ -520,7 +541,7 @@ test("a failing worker hands the running show to the main thread; a second failu
 	const warn = console.warn;
 	console.warn = () => {};
 	t.after(() => { console.warn = warn; });
-	const show = confetti.play(COLUMN);
+	const show = confetti.play({ column: COLUMN });
 	const [worker] = dom.workers;
 	const [workerLayer] = dom.topLayer;
 	const { id } = worker.messages.at(-1).message;
@@ -539,11 +560,11 @@ test("a failing worker hands the running show to the main thread; a second failu
 	show.release();
 	assert.deepEqual(main.commands.at(-1), { type: "release", id }, "the handle drives whichever renderer is drawing");
 	// With no renderer left, the next show releases the finale at once and draws nothing.
-	const next = confetti.play(COLUMN);
+	const next = confetti.play({ column: COLUMN });
 	main.emit({ type: "failed", reason: "no WebGL2" });
 	assert.equal(await settled(next.gathered), true);
 	assert.equal(dom.topLayer.length, 0);
-	const last = confetti.play(COLUMN);
+	const last = confetti.play({ column: COLUMN });
 	assert.equal(await settled(last.gathered), true, "after two failures the finale simply runs without confetti");
 	assert.equal(dom.topLayer.length, 0);
 	assert.equal(dom.workers.length, 1, "and no worker is retried");
@@ -555,7 +576,7 @@ test("a rehearsal hold pauses the stall backstop, and resuming re-arms it from t
 	fakeDom(t);
 	const { createFinaleConfetti, FINALE_CONFETTI_TIMING: T, finaleConfettiRealTime: real } = await loadController();
 	const confetti = createFinaleConfetti();
-	const show = confetti.play(COLUMN);
+	const show = confetti.play({ column: COLUMN });
 	let released = false;
 	void show.gathered.then(() => { released = true; });
 	confetti.hold(1.5);
@@ -576,7 +597,7 @@ test("a stalled renderer holds the flash for at most a short grace", async (t) =
 	t.mock.timers.enable({ apis: ["setTimeout"] });
 	fakeDom(t);
 	const { createFinaleConfetti, FINALE_CONFETTI_TIMING: T, finaleConfettiRealTime: real } = await loadController();
-	const show = createFinaleConfetti().play(COLUMN);
+	const show = createFinaleConfetti().play({ column: COLUMN });
 	let released = false;
 	void show.gathered.then(() => { released = true; });
 	t.mock.timers.tick(real(T.gathered) * 1000 + 2400);
@@ -592,13 +613,13 @@ test("a stalled single-card burst clears itself, respecting rehearsal holds", as
 	const dom = fakeDom(t);
 	const { createFinaleConfetti } = await loadController();
 	const confetti = createFinaleConfetti();
-	confetti.play(COLUMN, "small");
+	confetti.play({ size: "small", landing: COLUMN });
 	const [layer] = dom.topLayer;
-	confetti.hold(0.65);
+	confetti.hold(0.4);
 	t.mock.timers.tick(10000);
 	assert.equal(layer.dataset.finaleConfetti, "playing", "a deliberate hold is not a stalled burst");
 	confetti.hold(null);
-	t.mock.timers.tick(3200);
+	t.mock.timers.tick(3000);
 	assert.equal(layer.dataset.finaleConfetti, "playing");
 	t.mock.timers.tick(200);
 	assert.equal(layer.dataset.finaleConfetti, "idle", "a missing done event cannot leave the canvas running");
