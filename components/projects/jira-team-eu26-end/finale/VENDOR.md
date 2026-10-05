@@ -71,11 +71,14 @@ treats it as vendored.
 ## Updating
 
 - **The stage changed** (composition, styles): export it again from the lab
-  (Lab panel → Stage kit → Export stage JSON, or the composer's Export stage)
-  and replace `rovo-stage.json`. Nothing else changes.
+  (Lab panel → Stage kit → Export stage JSON, or the composer's Export stage),
+  replace `rovo-stage.json`, and record its new SHA-256 in the table above. No
+  code changes.
 - **The pieces changed** (a newer kit): replace the whole folder with the new
   kit, never part of it. Then check that `git status` lists `dist/`, and update
-  the release and fingerprints above.
+  the release and every fingerprint above.
+
+To get a file's SHA-256, run `shasum -a 256 <file>`.
 
 Then run the finale's tests and look at the wall in the browser:
 
@@ -88,6 +91,8 @@ node --test components/projects/jira-team-eu26-end/finale/lib/finale-wall-pieces
 - every file the kit's `package.json` names isn't in the folder;
 - the README names a different release;
 - a newer kit wrote the stage file than the kit vendored here;
+- a file in the fingerprint table no longer matches its SHA-256 (it was
+  edited, re-minified or swapped);
 - a wall tile names a piece this kit doesn't draw.
 
 ## Known limitations

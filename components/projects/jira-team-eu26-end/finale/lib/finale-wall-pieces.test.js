@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const { createHash } = require("node:crypto");
 const { existsSync, readFileSync } = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
@@ -150,4 +151,16 @@ test("the vendored kit is whole and one release: every file its package names is
 	// A stage exported by a newer lab may name pieces this kit drops: update the whole folder, not the stage file alone.
 	const stage = JSON.parse(readFileSync(path.join(kit, "rovo-stage.json"), "utf8"));
 	assert.ok(releaseOrder(stage.kit, pkg.version) <= 0, `rovo-stage.json was written by kit ${stage.kit}, newer than the vendored ${pkg.version}`);
+});
+
+test("the vendored kit is byte for byte the build VENDOR.md fingerprints", () => {
+	const kit = path.join(PUBLIC, "1p/rovo-stage-kit");
+	// The integration notes' fingerprint table is the record: an edited, re-minified or swapped build fails here.
+	const notes = readFileSync(path.join(__dirname, "../VENDOR.md"), "utf8");
+	const fingerprints = [...notes.matchAll(/^\| `([^`]+)` \| `([0-9a-f]{64})` \|$/gmu)].map(([, file, sha256]) => ({ file, sha256 }));
+	assert.deepEqual(fingerprints.map(({ file }) => file).sort(), ["dist/react/index.js", "dist/rovo-stage.js", "rovo-stage.json"], "VENDOR.md fingerprints the kit's builds and its stage file");
+	for (const { file, sha256 } of fingerprints) {
+		const actual = createHash("sha256").update(readFileSync(path.join(kit, file))).digest("hex");
+		assert.equal(actual, sha256, `${file} is not the build VENDOR.md records; after a deliberate update, record its new SHA-256 there`);
+	}
 });
