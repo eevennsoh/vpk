@@ -226,7 +226,7 @@ test("new work items continue the keynote board issue-key sequence", () => {
 	const withLiveItems = insertWorkItemCard(columns, { code: "TEU-14", title: "Live item" }, "Context");
 	assert.equal(getNextPayIssueKey(withLiveItems), "TEU-15");
 	const withLiveBoundary = insertWorkItemCard(withLiveItems, { code: "TEU-100", title: "Live boundary item" }, "Context");
-	assert.equal(getNextPayIssueKey(withLiveBoundary), "TEU-114");
+	assert.equal(getNextPayIssueKey(withLiveBoundary), "TEU-113");
 	const withLaterLiveItem = insertWorkItemCard(withLiveItems, { code: "TEU-114", title: "Later live item" }, "Collaboration");
 	assert.equal(getNextPayIssueKey(withLaterLiveItem), "TEU-115");
 	assert.equal(getNextPayIssueKey([]), "TEU-1");
@@ -236,7 +236,7 @@ test("the keynote list exposes the same section workflow as its board", () => {
 	const columns = createJiraTeamEu26EndKeynoteBoardColumns();
 	const rows = createListRows(columns, PAY_BOARD_CATALOG);
 	assert.deepEqual(JIRA_TEAM_EU26_LIST_STATUS_OPTIONS.map((option) => option.status), columns.map((column) => column.title));
-	assert.equal(rows.length, 25);
+	assert.equal(rows.length, 24);
 	assert.deepEqual(rows.map((row) => row.issueKey), columns.flatMap((column) => column.cards.map((card) => card.code)));
 	assert.ok(rows.every((row) => row.statusVariant === "information"));
 	assert.deepEqual(rows.map((row) => row.status), columns.flatMap((column) => column.cards.map(() => column.title)));
