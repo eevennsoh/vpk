@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, memo, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, memo, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import Image from "next/image";
 
 import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-eu26-end/data/keynote-presenters";
@@ -13,6 +13,7 @@ import { FINALE_INK, applyFinaleBuild, buildAfter, finaleBuildPaint } from "../l
 import { EASE, progress } from "../lib/finale-math";
 import {
 	paintWallPrint,
+	wallSlotRadius,
 	wallPrintCards,
 	wallPrintGap,
 	wallPrintOpacity,
@@ -25,7 +26,7 @@ import {
 	type WallStripId,
 } from "../lib/finale-wall-layout";
 import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
-import { FinaleDealt, FinaleTileLogos, FINALE_TILE_RADIUS } from "./finale-tile";
+import { FinaleDealt, FinaleTileLogos, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
 import { FinaleTileFace } from "./finale-tile-face";
 import { WallPieces } from "./finale-wall-pieces";
 import { FinaleWallShape } from "./finale-wall-shape";
@@ -64,8 +65,14 @@ interface StageBoxProps {
 /** Lays a tile out at the 1920 stage's bento size and scales it onto its wall slot. */
 function StageBox({ slot, geometry, children }: Readonly<StageBoxProps>) {
 	const size = { width: slot.rect.width / geometry.typeScale, height: slot.rect.height / geometry.typeScale };
+	const style: CSSProperties & { "--finale-tile-radius": string } = {
+		...size,
+		"--finale-tile-radius": `${wallSlotRadius(slot, geometry) / geometry.typeScale}px`,
+		transform: `scale(${geometry.typeScale})`,
+		transformOrigin: "0 0",
+	};
 	return (
-		<div className="absolute top-0 left-0" style={{ ...size, transform: `scale(${geometry.typeScale})`, transformOrigin: "0 0" }}>
+		<div className="absolute top-0 left-0" style={style}>
 			{children(size)}
 		</div>
 	);
@@ -128,7 +135,7 @@ function Poster({ word, fill, ink, width, height, revealStart }: Readonly<Poster
 		line.style.transform = `translate(${(-travel).toFixed(1)}px, 0)`;
 	});
 	return (
-		<div className="absolute inset-0 overflow-hidden" style={{ background: fill, borderRadius: FINALE_TILE_RADIUS }}>
+		<div className="absolute inset-0 overflow-hidden" style={{ background: fill, borderRadius: FINALE_TILE_RADIUS_CSS }}>
 			<div ref={lineRef} className="absolute flex whitespace-nowrap" style={{ fontFamily: "var(--font-sans)", left: 0, bottom: -fontSize * 0.2, fontSize, lineHeight: 1, fontWeight: 600 }}>
 				{[0, 1, 2].map((copy) => (
 					<span key={copy} ref={(element) => { wordRefs.current[copy] = element; }} style={{ ...finaleBuildPaint(ink, revealStart === null, "-0.045em"), paddingRight: fontSize * 0.28 }}>
@@ -144,7 +151,7 @@ function Poster({ word, fill, ink, width, height, revealStart }: Readonly<Poster
 function Benefit({ story, width, height, revealStart }: Readonly<{ story: FinaleStory; width: number; height: number; revealStart: number | null }>) {
 	const fontSize = Math.min(80, Math.max(52, height * 0.14), width * 0.13);
 	return (
-		<div className="absolute inset-0 flex flex-col justify-between overflow-hidden" style={{ ...SANS, background: CHAPTER_TINT[story.chapter], borderRadius: FINALE_TILE_RADIUS, padding: 40, color: FINALE_INK }}>
+		<div className="absolute inset-0 flex flex-col justify-between overflow-hidden" style={{ ...SANS, background: CHAPTER_TINT[story.chapter], borderRadius: FINALE_TILE_RADIUS_CSS, padding: 40, color: FINALE_INK }}>
 			<FinaleBuildText text={story.title} start={revealStart} tracking="-0.03em" style={{ fontSize, lineHeight: 1.04, fontWeight: 500, textWrap: "balance" }} />
 			<div className="flex items-center justify-between">
 				<FinaleTileLogos sources={story.apps} revealStart={revealStart} className="origin-left scale-150" />
@@ -189,7 +196,7 @@ function Stat({ stat, width, height, revealStart }: Readonly<{ stat: WallStatId;
 	const { lozenge, tone, figure, label } = STATS[stat];
 	const size = Math.min(height * 0.62, width * 0.36);
 	return (
-		<div className="absolute inset-0 flex flex-col justify-between overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS, padding: 36, color: FINALE_INK }}>
+		<div className="absolute inset-0 flex flex-col justify-between overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS_CSS, padding: 36, color: FINALE_INK }}>
 			<FinaleDealt start={revealStart} className="flex self-start">
 				<span className="rounded-[6px] px-3 py-1 text-[26px] leading-none font-bold tracking-normal uppercase" style={tone}>{lozenge}</span>
 			</FinaleDealt>
@@ -210,7 +217,7 @@ const FLOW = [
 /** Jira's status flow, end to end, dealt in from left to right. */
 function Flow({ revealStart }: Readonly<{ revealStart: number | null }>) {
 	return (
-		<div className="absolute inset-0 flex items-center justify-center gap-4 overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS, color: SUBTLE }}>
+		<div className="absolute inset-0 flex items-center justify-center gap-4 overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS_CSS, color: SUBTLE }}>
 			{FLOW.map((step, index) => (
 				<Fragment key={step.label}>
 					{index > 0 ? <FinaleDealt start={revealStart} index={index * 2 - 1}><span className="text-[30px]">→</span></FinaleDealt> : null}
@@ -224,7 +231,7 @@ function Flow({ revealStart }: Readonly<{ revealStart: number | null }>) {
 function Strip({ strip, revealStart }: Readonly<{ strip: WallStripId; revealStart: number | null }>) {
 	if (strip === "flow") return <Flow revealStart={revealStart} />;
 	return (
-		<div className="absolute inset-0 flex items-center gap-5 overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS, paddingInline: 32, color: FINALE_INK }}>
+		<div className="absolute inset-0 flex items-center gap-5 overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS_CSS, paddingInline: 32, color: FINALE_INK }}>
 			{/* The presenters are dealt in like the logos, then their names build. */}
 			<div className="flex shrink-0">
 				{PRESENTERS.map((presenter, index) => (
@@ -319,7 +326,7 @@ export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot,
 			{(size) => {
 				switch (content.kind) {
 					case "story":
-						return <FinaleTileFace story={content.story} slot={{ rect: { x: 0, y: 0, ...size }, short: slot.height === "short" }} scale={1} revealStart={revealStart} />;
+						return <FinaleTileFace story={content.story} slot={{ rect: { x: 0, y: 0, ...size }, short: slot.rect.height < slot.rect.width }} scale={1} revealStart={revealStart} />;
 					case "benefit":
 						return <Benefit story={content.story} {...size} revealStart={revealStart} />;
 					case "poster":
@@ -335,7 +342,7 @@ export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot,
 					case "title":
 						// "Team ’26" as a card, as the bento's title became one at the throw.
 						return (
-							<div className="absolute inset-0 flex items-center justify-center" style={{ background: FINALE_BRAND.black, borderRadius: FINALE_TILE_RADIUS }}>
+							<div className="absolute inset-0 flex items-center justify-center" style={{ background: FINALE_BRAND.black, borderRadius: FINALE_TILE_RADIUS_CSS }}>
 								<FinaleTitleLockup ink={FINALE_BRAND.white} revealStart={revealStart} />
 							</div>
 						);

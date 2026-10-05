@@ -36,9 +36,9 @@ function Slot({ visibleFrom, children }) {
 export default function Harness({ onRegistry, track, revealStart, visibleFrom }) {
 	const registry = useMemo(() => createFinaleFrameRegistry(), []);
 	useLayoutEffect(() => onRegistry(registry), [onRegistry, registry]);
-	const host = useMemo(() => ({ track, kit: { pieces: [{ id: "codeCard", w: 276, h: 143, holds: 4 }], pieceStyles: {} } }), [track]);
-	const slot = useMemo(() => ({ key: "0:0:0", column: 0, band: 0, rect: { x: 100, y: 100, width: 180, height: 140 }, height: "tall", seed: 1, content: { kind: "piece", pieces: ["codeCard"] } }), []);
-	const geometry = useMemo(() => ({ originX: 0, typeScale: 0.3, viewport: { width: 1000, height: 800 } }), []);
+	const host = useMemo(() => ({ track, kit: { pieces: [{ id: "codeCard", w: 276, h: 143, scale: 1.6, holds: 4 }], pieceStyles: {}, composition: { pieces: [{ id: "codeCard", scale: 0.4 }] } } }), [track]);
+	const slot = useMemo(() => ({ key: "0:0:0", column: 0, band: 0, rect: { x: 100, y: 100, width: 180, height: 140 }, height: "tall", seed: 1, content: { kind: "piece", pieces: [{ id: "codeCard", scale: 0.4 }] } }), []);
+	const geometry = useMemo(() => ({ originX: 0, pieceScale: 0.5, typeScale: 0.3, viewport: { width: 1000, height: 800 } }), []);
 	return (
 		<FinaleFrameContext value={registry}>
 			<WallPieceHostContext value={host}>
@@ -91,12 +91,12 @@ test("a piece rests on its last moving frame once its moment is done, and is not
 	assert.equal(tile.piece().getAttribute("time"), "untouched");
 });
 
-test("the kit draws the piece at the scale that fits its tile, light, with the stage file's styles", async () => {
+test("the kit draws the piece at its authored scale, light, with the stage file's styles", async () => {
 	const tile = await renderTile({ revealStart: 5, visibleFrom: 5 });
 	tile.emit(6);
 	const piece = tile.piece();
 	assert.equal(piece.getAttribute("piece"), "codeCard");
 	assert.equal(piece.getAttribute("appearance"), "light");
-	assert.ok(Number(piece.getAttribute("scale")) > 0);
+	assert.equal(piece.getAttribute("scale"), "0.2000");
 	assert.deepEqual(piece.pieceStyles, {});
 });

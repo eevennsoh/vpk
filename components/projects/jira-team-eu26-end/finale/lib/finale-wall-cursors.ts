@@ -15,7 +15,7 @@ import {
 	slotDescent,
 	slotOnScreen,
 	titleCarryOf,
-	visibleColumns,
+	visibleWallBuckets,
 	wallActive,
 	wallOffset,
 	wallSpeed,
@@ -306,10 +306,10 @@ function wallHold(slot: WallSlot, wall: FinaleWall): WallHold | null {
 		if (!own) return null;
 		const { geometry } = wall;
 		const apart = (CURSOR_APART * geometry.typeScale) / WALL_SCALE;
-		// Any hold that can overlap this one in time is within this many columns of it (its line up to the deepest away; a wide cell belongs to its left column).
-		const around = Math.ceil(((own.to - own.from + LANE_REST_S) * wallSpeed(geometry)) / geometry.pitch + DESCEND_SPAN) + 2;
-		for (let column = slot.column - around; column <= slot.column + around; column += 1) {
-			for (const other of wall.column(column)) {
+		// Search every spatial bucket whose card width and travel time can overlap this hold.
+		const around = Math.ceil(((own.to - own.from + LANE_REST_S) * wallSpeed(geometry)) / geometry.bucketWidth + DESCEND_SPAN + geometry.maxTileWidth / geometry.bucketWidth) + 1;
+		for (let column = slot.bucket - around; column <= slot.bucket + around; column += 1) {
+			for (const other of wall.bucket(column)) {
 				if (other.key === slot.key) continue;
 				const theirs = holdCandidate(other, wall);
 				if (!theirs || theirs.from > own.from || (theirs.from === own.from && other.key > slot.key)) continue;
@@ -351,11 +351,11 @@ function titleCarrierCursor(time: number, wall: FinaleWall, drops: readonly Bent
 export function wallCursorsAt(time: number, wall: FinaleWall, drops: readonly BentoDrop[], viewport: FinaleViewport, prints?: WallPrintShapes): readonly PageCursor[] {
 	if (!wallActive(time)) return [];
 	const { geometry } = wall;
-	const { first, last } = visibleColumns(wallOffset(time, geometry), geometry);
+	const { first, last } = visibleWallBuckets(wallOffset(time, geometry), geometry);
 	const carrier = titleCarrierCursor(time, wall, drops, viewport);
 	const cursors: PageCursor[] = carrier ? [carrier] : [];
 	for (let column = first; column <= last + 1; column += 1) {
-		for (const slot of wall.column(column)) {
+		for (const slot of wall.bucket(column)) {
 			const hold = wallHold(slot, wall);
 			if (!hold) continue;
 			// The card it takes: the slot's own, or the top one of a print slot's stack.

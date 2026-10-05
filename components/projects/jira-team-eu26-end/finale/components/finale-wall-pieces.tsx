@@ -2,14 +2,14 @@
 
 import { createContext, use, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 
-import type { PieceId, PieceStyles } from "@/public/1p/rovo-stage-kit/types/stage-file";
+import type { PieceStyles } from "@/public/1p/rovo-stage-kit/types/stage-file";
 
 import { FINALE_COLORS } from "../data/finale-palette";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
-import { fitWallPieces, pieceStillAfter, ROVO_STAGE_KIT_FAILED, ROVO_STAGE_KIT_READY, rovoStageKitSrcdoc, type RovoStageKit, type RovoStageKitWindow } from "../lib/finale-wall-pieces";
-import type { WallGeometry, WallSlot } from "../lib/finale-wall-layout";
+import { wallPiecesLayout, pieceStillAfter, ROVO_STAGE_KIT_FAILED, ROVO_STAGE_KIT_READY, rovoStageKitSrcdoc, type RovoStageKit, type RovoStageKitWindow } from "../lib/finale-wall-pieces";
+import type { WallGeometry, WallPiece, WallSlot } from "../lib/finale-wall-layout";
 import { slotOnScreen, wallOffset, wallSlotRevealTime } from "../lib/finale-wall-motion";
-import { applyFinaleDeal, finaleDealAmount, FINALE_TILE_RADIUS } from "./finale-tile";
+import { applyFinaleDeal, finaleDealAmount, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
 
 /*
  * The mega bento's product tiles: each a grey card on the wall, its Rovo
@@ -111,10 +111,10 @@ const STILL_MARGIN_S = 0.25;
 /** A jump in a piece's time at least this long (a seek) redraws it, so it is crisp where it lands. */
 const SEEK_JUMP_S = 1;
 
-function mountPieces(host: WallPieceHost, slot: WallSlot, typeScale: number, ids: readonly PieceId[]): MountedPieces | null {
+function mountPieces(host: WallPieceHost, slot: WallSlot, pieceScale: number, specs: readonly WallPiece[]): MountedPieces | null {
 	const { kit, track } = host;
 	// A piece this kit does not draw (a stage file newer than the kit) is dropped, as the kit drops it.
-	const known = ids.flatMap((id) => kit.pieces.filter((piece) => piece.id === id));
+	const known = specs.flatMap(({ id, scale }) => kit.pieces.filter((piece) => piece.id === id).map((piece) => ({ ...piece, scale })));
 	if (known.length === 0) return null;
 	const doc = track.ownerDocument;
 	const { x, y, width, height } = slot.rect;
@@ -122,7 +122,7 @@ function mountPieces(host: WallPieceHost, slot: WallSlot, typeScale: number, ids
 	holder.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${width}px;height:${height}px;opacity:0;visibility:hidden`;
 	const inner = doc.createElement("div");
 	inner.style.cssText = "position:absolute;inset:0";
-	const boxes = fitWallPieces({ width, height }, known, typeScale);
+	const { boxes } = wallPiecesLayout(known, pieceScale);
 	const pieces = boxes.map((box, index) => {
 		const element = doc.createElement("rovo-piece") as RovoPiece;
 		element.setAttribute("piece", box.id);
@@ -142,7 +142,7 @@ function mountPieces(host: WallPieceHost, slot: WallSlot, typeScale: number, ids
 interface WallPiecesProps {
 	readonly slot: WallSlot;
 	readonly geometry: WallGeometry;
-	readonly pieces: readonly PieceId[];
+	readonly pieces: readonly WallPiece[];
 	/** When it builds (it landed blank), or null: it was on the wall all along. */
 	readonly revealStart: number | null;
 }
@@ -193,7 +193,7 @@ export function WallPieces({ slot, geometry, pieces, revealStart }: Readonly<Wal
 
 	useLayoutEffect(() => {
 		if (!host) return undefined;
-		const mounted = mountPieces(host, slot, geometry.typeScale, pieces);
+		const mounted = mountPieces(host, slot, geometry.pieceScale, pieces);
 		if (!mounted) return undefined;
 		mountedRef.current = mounted;
 		const detach = mirror?.(mounted.holder);
@@ -211,5 +211,5 @@ export function WallPieces({ slot, geometry, pieces, revealStart }: Readonly<Wal
 		paintRef.current(time);
 	});
 
-	return <div className="absolute inset-0" style={{ background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS }} />;
+	return <div className="absolute inset-0" style={{ background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS_CSS }} />;
 }

@@ -12,7 +12,7 @@ const storySections = [
 ];
 const issueTitles = storySections.flatMap((section) => section.stories);
 const issueCodes = [
-	"TEU-4", "TEU-1", "TEU-101", "TEU-2", "TEU-113", "TEU-102", "TEU-3", "TEU-103", "TEU-104",
+	"TEU-4", "TEU-1", "TEU-101", "TEU-2", "TEU-102", "TEU-3", "TEU-103", "TEU-104",
 	"TEU-105", "TEU-5", "TEU-106", "TEU-7", "TEU-8", "TEU-107",
 	"TEU-9", "TEU-108", "TEU-11", "TEU-109", "TEU-110", "TEU-10", "TEU-111", "TEU-112", "TEU-12", "TEU-13",
 ];
@@ -67,7 +67,7 @@ test("keynote covers follow live light, dark and system theme changes", async ({
 	await page.addInitScript(() => localStorage.setItem("ui-theme", "light"));
 	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	const covers = page.locator('[data-jira-kanban-scrollport] [data-slot="jira-issue-cover"]');
-	await expect(covers).toHaveCount(25);
+	await expect(covers).toHaveCount(24);
 	const geometry = () => covers.evaluateAll(nodes => nodes.map(node => {
 		const bounds = node.getBoundingClientRect();
 		return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
@@ -240,7 +240,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 for (const width of [1440, 1920, 1024]) {
-	test(`25 keynote stories show their artwork and app logos at ${width}px`, async ({ page }) => {
+	test(`24 keynote stories show their artwork and app logos at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: 1080 });
 		await openBoard(page);
 		await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(4);
@@ -472,7 +472,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
 		await expect.poll(sizes, { timeout: 15000 }).toEqual(reducedMotion === "reduce" ? [] : ["small", "small", "large"]);
 		await expect(page.locator('[data-jira-team-eu26-end-finale]')).toBeVisible({ timeout: 20000 });
-		await expect(column(page, "Done").locator("[data-issue-key]")).toHaveCount(25);
+		await expect(column(page, "Done").locator("[data-issue-key]")).toHaveCount(24);
 	});
 }
 

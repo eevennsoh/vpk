@@ -456,7 +456,7 @@ test("the wall's accents mount nothing until the wall exists (never on the rest 
 	const viewport = { width: 1920, height: 1080 };
 	const fit = { scale: 1, x: 0, y: 0 };
 	const bento = finaleBentoLayout(viewport, fit.scale);
-	const wall = buildFinaleWall(wallGeometry(bento, fit.scale, viewport), bento, FINALE_FEATURES, []);
+	const wall = buildFinaleWall(wallGeometry(fit.scale, viewport), bento, FINALE_FEATURES, []);
 	const drops = bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);
 	const view = await renderComponent({ source: ACCENTS_HARNESS, props: { wall, drops, fit, viewport } });
 	const emit = (time) => React.act(async () => {

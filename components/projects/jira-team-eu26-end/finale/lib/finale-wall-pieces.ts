@@ -61,12 +61,10 @@ Promise.all([
 	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;color-scheme:light}</style></head><body><script type="module">${script}</script></body></html>`;
 }
 
-/** Room round a tile's pieces at the 1920 stage: about the kit's 40pt for shadows and entrances. */
+/** Room around the kit's natural box for its shadows and entrances, in kit points. */
 const WALL_PIECE_INSET = 40;
-/** Between the pieces of one tile (a row of app logos) at the 1920 stage. */
 const WALL_PIECE_GAP = 24;
 
-/** A piece placed on its tile: px from the tile's top left, and the scale the kit draws it at. */
 export interface WallPieceBox {
 	readonly id: PieceId;
 	readonly x: number;
@@ -76,29 +74,22 @@ export interface WallPieceBox {
 	readonly scale: number;
 }
 
-/**
- * A tile's pieces, as the kit sizes them (its box in points, times its
- * scale), laid out in one centred row at the one scale that fits them all
- * inside the tile with room round them: never stretched, never clipped.
- * `size` is the tile in viewport px; `typeScale` the wall's stage-to-viewport
- * scale, which the inset and gap take.
- */
-export function fitWallPieces(size: { readonly width: number; readonly height: number }, pieces: readonly Pick<KitPiece, "id" | "w" | "h">[], typeScale: number): readonly WallPieceBox[] {
-	if (pieces.length === 0) return [];
-	const inset = WALL_PIECE_INSET * typeScale;
-	const gap = WALL_PIECE_GAP * typeScale;
-	const gaps = gap * (pieces.length - 1);
-	const rowWidth = pieces.reduce((sum, piece) => sum + piece.w, 0);
-	const rowHeight = Math.max(...pieces.map((piece) => piece.h));
-	const scale = Math.max(0, Math.min((size.width - inset * 2 - gaps) / rowWidth, (size.height - inset * 2) / rowHeight));
-	let x = (size.width - rowWidth * scale - gaps) / 2;
-	return pieces.map((piece) => {
+/** Natural piece dimensions at one shared camera scale. Nothing fits or snaps to a host tile. */
+export function wallPiecesLayout(pieces: readonly Pick<KitPiece, "id" | "w" | "h" | "scale">[], viewportScale: number): { readonly width: number; readonly height: number; readonly boxes: readonly WallPieceBox[] } {
+	if (pieces.length === 0) return { width: 0, height: 0, boxes: [] };
+	const inset = WALL_PIECE_INSET * viewportScale;
+	const gap = WALL_PIECE_GAP * viewportScale;
+	const rowHeight = Math.max(...pieces.map((piece) => piece.h * piece.scale * viewportScale));
+	let x = inset;
+	const boxes = pieces.map((piece) => {
+		const scale = piece.scale * viewportScale;
 		const width = piece.w * scale;
 		const height = piece.h * scale;
-		const box = { id: piece.id, x, y: (size.height - height) / 2, width, height, scale };
+		const box = { id: piece.id, x, y: inset + (rowHeight - height) / 2, width, height, scale };
 		x += width + gap;
 		return box;
 	});
+	return { width: x - gap + inset, height: rowHeight + inset * 2, boxes };
 }
 
 /**

@@ -45,7 +45,7 @@ function landings() {
 	const scale = Math.min(VIEWPORT.width / 1920, VIEWPORT.height / 1080);
 	const bento = m.finaleBentoLayout(VIEWPORT, scale);
 	const slots = bento.slots.map((slot) => slot.rect);
-	const geometry = m.wallGeometry(bento, scale, VIEWPORT);
+	const geometry = m.wallGeometry(scale, VIEWPORT);
 	const wall = m.buildFinaleWall(geometry, bento, m.FINALE_FEATURES, []);
 	const drops = m.bentoDrops(wall, slots, bento.title);
 	const card = { x: 708, y: 160, width: 224, height: 150 };
@@ -63,7 +63,7 @@ function landings() {
 	assert.equal(thrown.length, 7, "six tiles and the title");
 	const arrivals = [];
 	for (let column = 0; column < 40 && arrivals.length < 4; column += 1) {
-		for (const slot of wall.column(column)) {
+		for (const slot of wall.bucket(column)) {
 			const descent = slot.reserved === undefined && slot.content.kind !== "print" ? m.slotDescent(slot, wall) : null;
 			if (!descent || arrivals.length >= 4) continue;
 			arrivals.push({

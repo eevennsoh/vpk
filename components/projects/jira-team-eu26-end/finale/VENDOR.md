@@ -53,8 +53,8 @@ These alternatives were weighed and rejected for now:
 | Kit file | Used by | How |
 | --- | --- | --- |
 | `dist/rovo-stage.js` | `lib/finale-wall-pieces.ts` | Imported as a module in the frame; draws every `<rovo-piece>` |
-| `rovo-stage.json` | `lib/finale-wall-pieces.ts` | Fetched in the frame; checked with `stageInfo`; supplies `pieceStyles` |
-| `pieces.json` | `lib/finale-wall-pieces.test.js` | Each wall piece's id and box |
+| `rovo-stage.json` | `lib/finale-wall-layout.ts`, `lib/finale-wall-pieces.ts` | Supplies instance scales and camera zoom to the masonry layout; fetched and checked with `stageInfo` in the frame for `pieceStyles` |
+| `pieces.json` | `lib/finale-wall-layout.ts`, adapter tests | Intrinsic piece boxes for masonry packing and sizing proof |
 | `types/stage-file.d.ts` | the adapter | Types, via `@/public/1p/rovo-stage-kit/types/stage-file` |
 
 The rest ships with the kit and VPK doesn't load it: the React build, the
