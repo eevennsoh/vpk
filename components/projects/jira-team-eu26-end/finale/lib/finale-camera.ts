@@ -22,6 +22,17 @@ export function cameraDistance(viewport: FinaleViewport): number {
 	return viewport.height / 2 / Math.tan((FINALE_CAMERA_FOV * Math.PI) / 360);
 }
 
+/**
+ * Where a point lifted `z` toward the lens (x right, y down, viewport px)
+ * shows on screen, filmed by the resting camera, and how much larger
+ * anything there looks than on the z = 0 plane.
+ */
+export function projectLifted(point: { readonly x: number; readonly y: number; readonly z: number }, viewport: FinaleViewport): { x: number; y: number; scale: number } {
+	const distance = cameraDistance(viewport);
+	const scale = distance / Math.max(1, distance - point.z);
+	return { x: viewport.width / 2 + (point.x - viewport.width / 2) * scale, y: viewport.height / 2 + (point.y - viewport.height / 2) * scale, scale };
+}
+
 const add = (a: Vec3, b: Vec3, k = 1): Vec3 => ({ x: a.x + b.x * k, y: a.y + b.y * k, z: a.z + b.z * k });
 const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const dot = (a: Vec3, b: Vec3): number => a.x * b.x + a.y * b.y + a.z * b.z;

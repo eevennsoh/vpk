@@ -202,16 +202,35 @@ export function turns(seed: number, chance: number): number {
 	return roll < chance / 2 ? -1 : 1;
 }
 
+/** Whole turns a tossed card tumbles through about each axis. */
+interface FinaleTumble {
+	readonly x: number;
+	readonly y: number;
+	readonly z: number;
+}
+
+function seededTumble(seed: number): FinaleTumble {
+	return { x: turns(seed * 2.3, 0.35), y: turns(seed * 3.7, 0.25), z: turns(seed * 4.9, 0.3) };
+}
+
+/**
+ * The hero always flips end over end, exactly once: the rush unwinds its
+ * tumble as it squares up to the lens, so a seeded one flipped it from some
+ * places in the column, spun it from others and left it still from the rest.
+ */
+const HERO_TUMBLE: FinaleTumble = { x: 1, y: 0, z: 0 };
+
 /**
  * Column → field: the deck is tossed. Each card shoots out of its place in the
  * Done column on its own arc (up and toward the lens), tumbling as it goes —
  * some flip end over end, some spin, the rest tilt and wobble — and it is
  * airborne cloth from the first frame, so it bends with the throw.
  */
-function burstPose(time: number, input: FinaleCardInput, home: FieldHome, viewport: FinaleViewport, sway = 1): FinaleCardPose {
+function burstPose(time: number, input: FinaleCardInput, home: FieldHome, viewport: FinaleViewport, sway = 1, tumble?: FinaleTumble): FinaleCardPose {
 	const field = fieldPose(home, input.rect, time, viewport, sway);
 	const start = burstStart(input);
 	const seed = input.burstIndex * 13.1 + home.seed;
+	const spin = tumble ?? seededTumble(seed);
 	const flight = CUE.burstDuration * lerp(0.8, 1.15, hash01(seed * 1.9));
 	const out = EASE.outPractical(progress(time, start, start + flight));
 	const rest = { ...flatPose(input.rect, 0), clip: 1 };
@@ -225,9 +244,9 @@ function burstPose(time: number, input: FinaleCardInput, home: FieldHome, viewpo
 		x: pose.x + arc * (hash01(seed * 5.3) - 0.5) * 260,
 		y: pose.y - arc * lerp(60, 240, hash01(seed * 6.1)),
 		z: Math.min(pose.z + arc * distance * lerp(0.08, 0.2, hash01(seed * 4.3)), distance * NEAREST),
-		rotateX: pose.rotateX + turns(seed * 2.3, 0.35) * TAU * out + arc * wobble * 0.6,
-		rotateY: pose.rotateY + turns(seed * 3.7, 0.25) * TAU * out + arc * wobble,
-		rotateZ: pose.rotateZ + turns(seed * 4.9, 0.3) * TAU * out + arc * (hash01(seed * 8.3) - 0.5) * 1.2,
+		rotateX: pose.rotateX + spin.x * TAU * out + arc * wobble * 0.6,
+		rotateY: pose.rotateY + spin.y * TAU * out + arc * wobble,
+		rotateZ: pose.rotateZ + spin.z * TAU * out + arc * (hash01(seed * 8.3) - 0.5) * 1.2,
 		clip: 1 - progress(time, start, start + 0.18),
 		lift: smooth(progress(time, start, start + 0.1)),
 	};
@@ -355,8 +374,8 @@ export function cardPose(time: number, input: FinaleCardInput, viewport: FinaleV
 	}
 
 	if (role.kind === "hero") {
-		const airborne = burstPose(time, input, heroHome(viewport), viewport, 0);
-		// Squares up to the lens during the rush, so it arrives face-on.
+		const airborne = burstPose(time, input, heroHome(viewport), viewport, 0, HERO_TUMBLE);
+		// Squares up to the lens during the rush, flipping as it does, so it arrives face-on.
 		const square = 1 - eased(time, CUE.zoom, CUE.zoomEnd, EASE.inOut);
 		// It arrives as its card, held square on, and turns into its tile only on the way down.
 		if (time < CUE.zoomEnd) return { ...airborne, rotateX: airborne.rotateX * square, rotateY: airborne.rotateY * square, rotateZ: airborne.rotateZ * square, face: 0 };

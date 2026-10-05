@@ -94,13 +94,14 @@ const TOSS_AT = TITLE_FLIP_AT + 0.12;
 /**
  * Act III, the mega bento (see `lib/finale-wall-motion.ts`), in seconds after
  * the bento's final frame. "Team ’26" flips over into a black card and, as it
- * comes over, the bento's seven cards, faces and all, are thrown like the
- * Done column's deck, the title straight on out of its flip:
- * tumbling away from the lens and down as paper falls, into gaps across the
- * mega bento far below, which appears around them from the middle out. Each
- * lands as it landed on the slide, the wall already gliding under it, and
- * the wall glides on forever; new cards wait in the air at its leading edge,
- * tilted, and come down one by one.
+ * comes over, the bento's six tiles, faces and all, are thrown like the
+ * Done column's deck: tumbling away from the lens and down as paper falls,
+ * into gaps across the mega bento far below, which appears around them from
+ * the middle out. MCB's cursor takes the black card as its flip lands and
+ * drags it into its own gap (`lib/finale-title-drag.ts`), as he dragged the
+ * keynote's cards into Done. Each card lands as it landed on the slide, the
+ * wall already gliding under it, and the wall glides on forever; new cards
+ * wait in the air at its leading edge, tilted, and come down one by one.
  */
 export const WALL_CUE = {
 	start: CUE.end,
@@ -109,29 +110,38 @@ export const WALL_CUE = {
 	/** …which flips end over end, as the field's cards do, to its black back… */
 	titleFlipAt: TITLE_FLIP_AT,
 	/**
-	 * …and the bento's seven cards are thrown at once, like the Done column's
-	 * deck, as it whips past edge-on (`titleFlipPose`'s spring): it never comes
-	 * to rest in its box, but flies on out of its flip.
+	 * …and the bento's six tiles are thrown at once, like the Done column's
+	 * deck, as it whips past edge-on (`titleFlipPose`'s spring).
 	 */
 	tossAt: TOSS_AT,
-	tossSpread: CUE.burstSpread,
-	/** …and come down into their gaps one after another, as they landed on the slide. */
-	landAt: TOSS_AT + 2,
-	landStagger: 0.2,
-	/** Each flight ends as a bento tile's swoop onto the slide did. */
-	fallS: CUE.tileFall,
-	/** The mega bento appears around the thrown cards, from the middle out. */
+	/** The deck's hair of spread, at the throw's quicker pace. */
+	tossSpread: 0.07,
+	/** …and come down into their gaps one after another, as they landed on the slide, all down within two seconds. */
+	landAt: TOSS_AT + 1.2,
+	landStagger: 0.12,
+	/** Each flight ends in a bento tile's swoop onto the slide, quickened to the throw's pace. */
+	fallS: 0.4,
+	/** The mega bento appears around the thrown cards, from the middle out, as quickly. */
 	revealAt: TOSS_AT,
-	revealS: 1.7,
-	revealFadeS: 0.6,
+	revealS: 1,
+	revealFadeS: 0.4,
 	/**
 	 * The wall starts to glide this far through the throw, from `tossAt` to the
 	 * first touchdown (`landAt`), while the cards are still coming down, so
 	 * every one lands in a gap already on the move. It eases up to its pace
 	 * over `driftRamp`, reached soon after the last card is down.
 	 */
-	driftShare: 0.5,
-	driftRamp: 3,
+	driftShare: 0.3,
+	driftRamp: 2.6,
+	/**
+	 * MCB's cursor reaches in as the black face comes up, takes the card as
+	 * its flip lands, so it never comes to rest in its box, and drags it into
+	 * its gap, setting it down a beat after the last tile (`landAt` plus five
+	 * `landStagger`s), the act's last placement before the teammates join in.
+	 */
+	carryReachAt: TITLE_FLIP_AT + 0.16,
+	carryGrabAt: TITLE_FLIP_AT + 0.46,
+	carryDownAt: TOSS_AT + 2,
 	/** A waiting card's descent from the air into its slot at the leading edge. */
 	descendS: 0.95,
 } as const;

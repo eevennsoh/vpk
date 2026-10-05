@@ -453,6 +453,26 @@ test("the camera finds the hero far off, then rushes in and arrives face-on with
 	}
 });
 
+test("the hero flips end over end once on its rush, wherever MCB dropped it in the Done column", () => {
+	const { CUE, finaleBentoLayout, cardPose } = loadFinale();
+	const viewport = { width: 1920, height: 1080 };
+	const slots = finaleBentoLayout(viewport, 1).slots.map((slot) => slot.rect);
+	const card = { x: 1450, y: 300, width: 436, height: 199 };
+	const TAU = Math.PI * 2;
+	// Its toss tumble was seeded by its place in the column, so the rush that
+	// squares it up flipped it from some places (0, 5, 6), spun it or flipped it
+	// sideways from others, and from 2, 4, 7 and 9 did not turn it at all.
+	for (let burstIndex = 0; burstIndex < 13; burstIndex += 1) {
+		const input = { rect: card, fieldIndex: 0, fieldCount: 13, burstIndex, role: { kind: "hero", slot: slots[0] } };
+		const from = cardPose(CUE.zoom, input, viewport);
+		const to = cardPose(CUE.zoomEnd, input, viewport);
+		const turned = { x: from.rotateX - to.rotateX, y: from.rotateY - to.rotateY, z: from.rotateZ - to.rotateZ };
+		assert.ok(Math.abs(turned.x - TAU) < 0.5, `column place ${burstIndex}: one end-over-end flip (turned ${turned.x.toFixed(2)} rad)`);
+		assert.ok(Math.abs(turned.y) < Math.PI / 2, `column place ${burstIndex}: no sideways flip (turned ${turned.y.toFixed(2)} rad)`);
+		assert.ok(Math.abs(turned.z) < Math.PI / 2, `column place ${burstIndex}: no spin (turned ${turned.z.toFixed(2)} rad)`);
+	}
+});
+
 test("tiles land one by one and every heading has built with a hold before the final frame", () => {
 	const { CUE, FINALE_SLOT_COUNT, touchdownTime, tileRevealStart } = loadFinale();
 	const landings = Array.from({ length: FINALE_SLOT_COUNT }, (_, order) => touchdownTime(order));

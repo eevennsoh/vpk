@@ -236,6 +236,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/jira-team-eu26-end/finale/lib/finale-landing.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-lens.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-tile-glow.test.js",
+		"components/projects/jira-team-eu26-end/finale/lib/finale-title-drag.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-wall-cursors.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-wall-layout.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-wall-pieces.test.js",

@@ -2,8 +2,20 @@ import { CUE, WALL_CUE } from "../data/finale-cues";
 import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
 import type { FinaleRect } from "../data/finale-stories";
 import type { Vec3 } from "./finale-camera";
-import { blendPose, cameraDistance, flatPose, landingWaveAge, turns, withLandingWave, type FinaleCardPose, type FinaleViewport } from "./finale-card-motion";
+import { blendPose, cameraDistance, flatPose, landingWaveAge, turns, withLandingWave, type FinaleCardPose, type FinalePoint, type FinaleViewport } from "./finale-card-motion";
 import { EASE, clamp, hash01, lerp, progress, smoothstep as smooth, spring } from "./finale-math";
+import {
+	titleCarriedPose,
+	titleCarrySmear,
+	titleGrabTime,
+	titleHeldPose,
+	titlePickup,
+	sheetPoint,
+	titleSetDownStart,
+	titleTouchdownTime,
+	TITLE_GRIP_UV,
+	type TitleCarry,
+} from "./finale-title-drag";
 import { wallPrintCards, wallPrintGap, type FinaleWall, type WallContent, type WallGeometry, type WallPrintShapes, type WallSlot } from "./finale-wall-layout";
 
 /*
@@ -12,7 +24,9 @@ import { wallPrintCards, wallPrintGap, type FinaleWall, type WallContent, type W
  *
  * - The flip: "Team ’26" gains a grey card, which hands over to its GL sheet
  *   and flips end over end, bowing like paper, onto its black back.
- * - The throw: the bento's seven cards, faces and all, are thrown at once
+ * - The drag: MCB's cursor takes the black card as its flip lands and drags
+ *   it into its gap (`finale-title-drag.ts`), setting it down last.
+ * - The throw: the bento's six tiles, faces and all, are thrown at once
  *   like the Done column's deck. Each flies
  *   as paper does: up toward the lens on its own arc, turning whole turns that
  *   die away as the air catches it, banking into its travel and pitching with
@@ -249,11 +263,10 @@ export function bentoTossTime(): number {
  * through the rush: a spring that whips it through edge-on in about a tenth
  * of a second and lets it overshoot flat a little before it settles; a hop
  * toward the lens (camera distances) and up the frame (frame heights) that
- * peaks as it turns edge-on, which its cloth answers by bowing; a little
- * roll, as a flicked card never turns quite square; and how long the throw
- * takes to win it over from the flip once it is thrown.
+ * peaks as it turns edge-on, which its cloth answers by bowing; and a little
+ * roll, as a flicked card never turns quite square.
  */
-const TITLE_FLIP = { stiffness: 220, damping: 20, hopS: 0.5, leap: 0.07, rise: 0.025, roll: 0.06, blendS: 0.3 } as const;
+const TITLE_FLIP = { stiffness: 220, damping: 20, hopS: 0.5, leap: 0.07, rise: 0.025, roll: 0.06 } as const;
 
 /**
  * The hop's height through it (0 → 1 → 0 by `hopS`): it leaves the slide at
@@ -286,37 +299,43 @@ function titleFlipPose(drop: BentoDrop, time: number, viewport: FinaleViewport):
 	};
 }
 
-/** When a card leaves: the title straight out of its flip, the tiles within a hair of it. */
+/** When a tile leaves: all at once, within a hair of each other. */
 function launchTime(drop: BentoDrop): number {
-	return drop.kind === "title" ? bentoTossTime() : bentoTossTime() + hash01(drop.order * 7.7 + 3) * WALL_CUE.tossSpread;
+	return bentoTossTime() + hash01(drop.order * 7.7 + 3) * WALL_CUE.tossSpread;
 }
 
 const landingRanks = new WeakMap<readonly BentoDrop[], Map<number, number>>();
 
-/** The shortest throws land first, then the longer ones, a beat apart. */
+/** The tiles' shortest throws land first, then the longer ones, a beat apart. */
 function landingRank(drop: BentoDrop, drops: readonly BentoDrop[]): number {
 	let ranks = landingRanks.get(drops);
 	if (!ranks) {
 		const travel = (each: BentoDrop) => Math.hypot(each.slot.rect.x - each.from.x, each.slot.rect.y - each.from.y);
-		ranks = new Map([...drops].sort((a, b) => travel(a) - travel(b) || a.order - b.order).map((each, rank) => [each.order, rank]));
+		const tiles = drops.filter((each) => each.kind === "tile");
+		ranks = new Map(tiles.sort((a, b) => travel(a) - travel(b) || a.order - b.order).map((each, rank) => [each.order, rank]));
 		landingRanks.set(drops, ranks);
 	}
 	return ranks.get(drop.order) ?? drop.order;
 }
 
-/** When bento card `drop` touches down in its gap. */
+/** When bento card `drop` touches down in its gap: a tile in its turn, the title when MCB sets it down. */
 export function bentoTouchdown(drop: BentoDrop, drops: readonly BentoDrop[]): number {
+	if (drop.kind === "title") return titleTouchdownTime();
 	return WALL_CUE.start + WALL_CUE.landAt + landingRank(drop, drops) * WALL_CUE.landStagger;
 }
 
-/** When the last of the bento's cards is down, `count` of them (`wall.gaps`): the latest `bentoTouchdown`. */
+/**
+ * When the last of the bento's cards is down, `count` of them (`wall.gaps`,
+ * the title among them): the latest `bentoTouchdown`, the title's.
+ */
 export function bentoLandedTime(count: number): number {
-	return WALL_CUE.start + WALL_CUE.landAt + Math.max(0, count - 1) * WALL_CUE.landStagger;
+	const lastTile = WALL_CUE.start + WALL_CUE.landAt + Math.max(0, count - 2) * WALL_CUE.landStagger;
+	return Math.max(lastTile, titleTouchdownTime());
 }
 
 /** When its last stretch begins: the swoop onto the wall, as onto the slide. */
 export function bentoFallStart(drop: BentoDrop, drops: readonly BentoDrop[]): number {
-	return bentoTouchdown(drop, drops) - WALL_CUE.fallS;
+	return drop.kind === "title" ? titleSetDownStart() : bentoTouchdown(drop, drops) - WALL_CUE.fallS;
 }
 
 /** Where on its flight a card is (0 thrown → 1 down). */
@@ -373,8 +392,6 @@ function airbornePose(drop: BentoDrop, gap: FinaleRect, u: number, time: number,
 	// Its shape turns from the tile's to the gap's on the way.
 	const shape = smooth(0.05, 0.7, u);
 	const spin = u >= SPIN_DONE ? 0 : 1 - (1 - u / SPIN_DONE) ** 2.6;
-	// The title has just flipped to its black face: it may spin, but never turns its pale back up again.
-	const over = drop.kind === "title" ? 0 : spin;
 	const air = Math.sin(Math.PI * u);
 	const wobble = (hash01(seed * 9.7) - 0.5) * 1.2;
 	const breath = time + seed * 1.7;
@@ -386,8 +403,8 @@ function airbornePose(drop: BentoDrop, gap: FinaleRect, u: number, time: number,
 		z: distance * (1 - 1 / near),
 		width: lerp(drop.from.width / start, gap.width, shape) * own,
 		height: lerp(drop.from.height / start, gap.height, shape) * own,
-		rotateX: turns(seed * 2.3, 0.35) * TAU * over - (1 - 2 * u) * 0.42 * air + Math.sin(breath * 1.3) * 0.05 * air,
-		rotateY: turns(seed * 3.7, 0.25) * TAU * over + wobble * air + Math.cos(breath * 1.1) * 0.06 * air,
+		rotateX: turns(seed * 2.3, 0.35) * TAU * spin - (1 - 2 * u) * 0.42 * air + Math.sin(breath * 1.3) * 0.05 * air,
+		rotateY: turns(seed * 3.7, 0.25) * TAU * spin + wobble * air + Math.cos(breath * 1.1) * 0.06 * air,
 		rotateZ: turns(seed * 4.9, 0.3) * TAU * spin + (dx / span) * 0.38 * Math.sin(Math.PI * across) + (hash01(seed * 8.3) - 0.5) * 0.5 * air,
 		lift: smooth(0, 0.06, u),
 	};
@@ -399,31 +416,37 @@ function airbornePose(drop: BentoDrop, gap: FinaleRect, u: number, time: number,
  * flips) and once its landed DOM face has taken over.
  */
 export function bentoSheetPose(drop: BentoDrop, drops: readonly BentoDrop[], time: number, geometry: WallGeometry, viewport: FinaleViewport): FinaleCardPose | null {
-	if (drop.kind === "title") return time < bentoTitleFlipTime() ? null : titleSheetPose(drop, drops, time, geometry, viewport);
+	if (drop.kind === "title") return time < bentoTitleFlipTime() ? null : titleSheetPose(drop, time, geometry, viewport);
 	return time < bentoTossTime() ? null : thrownPose(drop, drops, time, geometry, viewport);
 }
 
-/** When the throw has won the title wholly over from its flip. */
-export function bentoTitleFlownTime(): number {
-	return bentoTossTime() + TITLE_FLIP.blendS;
-}
+const titleCarries = new WeakMap<BentoDrop, { geometry: WallGeometry; viewport: FinaleViewport; carry: TitleCarry }>();
 
-/** How far the throw has won the title over from its flip (0 at the throw → 1). */
-function titleInto(time: number): number {
-	return smooth(bentoTossTime(), bentoTitleFlownTime(), time);
+/** What MCB's carry of the title sees of the wall (`finale-title-drag.ts`): its box, its gliding gap and its flip. */
+export function titleCarryOf(drop: BentoDrop, geometry: WallGeometry, viewport: FinaleViewport): TitleCarry {
+	const known = titleCarries.get(drop);
+	if (known && known.geometry === geometry && known.viewport === viewport) return known.carry;
+	const carry: TitleCarry = {
+		from: drop.from,
+		gapAt: (time) => slotOnScreen(drop.slot, wallOffset(time, geometry), geometry),
+		flipAt: (time) => titleFlipPose(drop, time, viewport),
+		viewport,
+	};
+	titleCarries.set(drop, { geometry, viewport, carry });
+	return carry;
 }
 
 /**
- * The title from its flip on: turning over in its box until it is thrown,
- * then flying on out of the flip, its turn and hop giving way to the throw's
- * flight, so it never comes to rest in the bento.
+ * The title from its flip on: turning over in its box until MCB takes it as
+ * its flip lands, in his hand to its gap, then landed, until its DOM face
+ * has taken over (null).
  */
-function titleSheetPose(drop: BentoDrop, drops: readonly BentoDrop[], time: number, geometry: WallGeometry, viewport: FinaleViewport): FinaleCardPose | null {
-	const flip = titleFlipPose(drop, time, viewport);
-	if (time < bentoTossTime()) return flip;
-	const thrown = thrownPose(drop, drops, time, geometry, viewport);
-	const into = titleInto(time);
-	return !thrown || into >= 1 ? thrown : blendPose(flip, thrown, into);
+function titleSheetPose(drop: BentoDrop, time: number, geometry: WallGeometry, viewport: FinaleViewport): FinaleCardPose | null {
+	if (time < titleGrabTime()) return titleFlipPose(drop, time, viewport);
+	const touchdown = titleTouchdownTime();
+	if (landingHandover(time, touchdown) >= 1) return null;
+	const carry = titleCarryOf(drop, geometry, viewport);
+	return time >= touchdown ? landedPose(carry.gapAt(time), touchdown, time, 0) : titleCarriedPose(carry, time);
 }
 
 /**
@@ -613,21 +636,12 @@ export function arrivalCardPose(slot: WallSlot, card: WallArrival, onScreen: Fin
 
 /**
  * Card `rect` of a stack (`stack`, both on screen) as the stack's pose carries
- * it: its centre where it lies on the stack's turned plane, turned as the
- * stack is (the sheet's own turn, as `poseSheet` applies it: x, then y, then
- * −z, in world axes with y up), at its own size.
+ * it: its centre where it lies on the stack's turned plane (`sheetPoint`),
+ * turned as the stack is, at its own size.
  */
 function carried(pose: FinaleCardPose, rect: FinaleRect, stack: FinaleRect): FinaleCardPose {
-	const dx = rect.x + rect.width / 2 - (stack.x + stack.width / 2);
-	const dy = stack.y + stack.height / 2 - (rect.y + rect.height / 2);
-	const z = -pose.rotateZ;
-	const x1 = dx * Math.cos(z) - dy * Math.sin(z);
-	const y1 = dx * Math.sin(z) + dy * Math.cos(z);
-	const x2 = x1 * Math.cos(pose.rotateY);
-	const z2 = -x1 * Math.sin(pose.rotateY);
-	const y3 = y1 * Math.cos(pose.rotateX) - z2 * Math.sin(pose.rotateX);
-	const z3 = y1 * Math.sin(pose.rotateX) + z2 * Math.cos(pose.rotateX);
-	return { ...pose, x: pose.x + x2, y: pose.y - y3, z: pose.z + z3, width: rect.width, height: rect.height };
+	const at = sheetPoint(pose, rect.x + rect.width / 2 - (stack.x + stack.width / 2), stack.y + stack.height / 2 - (rect.y + rect.height / 2));
+	return { ...pose, x: pose.x + at.x, y: pose.y + at.y, z: pose.z + at.z, width: rect.width, height: rect.height };
 }
 
 /* ─── What a slot's card looks like as a blank sheet ──────────────────── */
@@ -678,6 +692,8 @@ export interface WallSheet {
 	readonly radius: number;
 	/** How much of the field's chromatic smear films it (0–1): while it flies or waits in the air. */
 	readonly chroma: number;
+	/** Where its landing wave runs from, in the sheet's own uv (u right, v up): the title's from MCB's grip; null for Peel's grab point. */
+	readonly waveFrom: FinalePoint | null;
 }
 
 const CLOTH_LAG = 0.12;
@@ -695,22 +711,28 @@ function thrownVelocity(drop: BentoDrop, drops: readonly BentoDrop[], time: numb
 	return velocityOf(pose, thrownPose(drop, drops, before, geometry, viewport) ?? pose);
 }
 
+/** The title in MCB's hand or landed, in the wall's world: its pose without its flip. */
+function titleWallPose(drop: BentoDrop, time: number, geometry: WallGeometry, viewport: FinaleViewport): FinaleCardPose {
+	const touchdown = titleTouchdownTime();
+	const carry = titleCarryOf(drop, geometry, viewport);
+	return time >= touchdown ? landedPose(carry.gapAt(time), touchdown, time, 0) : titleHeldPose(carry, time);
+}
+
 /**
  * A bento sheet's motion for its cloth. The title's flip feels its hop from
- * rest, and hands that over to its flight's as the throw wins it over. Each
- * is measured in its own space: the throw carries a card from near the lens
- * (`airbornePose`), and a blend across the two depths would read as a rush
- * toward the lens that is never seen.
+ * rest, and hands that over to MCB's drag as he takes it. Each is measured in
+ * its own space: he holds the card near the lens (`titleHeldPose`), and a
+ * blend across the two depths would read as a rush toward the lens that is
+ * never seen.
  */
 function bentoSheetVelocity(drop: BentoDrop, drops: readonly BentoDrop[], time: number, pose: FinaleCardPose, geometry: WallGeometry, viewport: FinaleViewport): Vec3 {
 	if (drop.kind !== "title") return thrownVelocity(drop, drops, time, pose, geometry, viewport);
 	const flip = titleFlipPose(drop, time, viewport);
 	const flipping = velocityOf(flip, titleFlipPose(drop, time - CLOTH_LAG, viewport));
-	const into = titleInto(time);
+	const into = titlePickup(time);
 	if (into <= 0) return flipping;
-	const thrown = thrownPose(drop, drops, time, geometry, viewport) ?? pose;
-	const flying = thrownVelocity(drop, drops, time, thrown, geometry, viewport);
-	return { x: lerp(flipping.x, flying.x, into), y: lerp(flipping.y, flying.y, into), z: lerp(flipping.z, flying.z, into) };
+	const held = velocityOf(titleWallPose(drop, time, geometry, viewport), titleWallPose(drop, time - CLOTH_LAG, geometry, viewport));
+	return { x: lerp(flipping.x, held.x, into), y: lerp(flipping.y, held.y, into), z: lerp(flipping.z, held.z, into) };
 }
 
 /** How many pitches past the frame's right edge a waiting card is still drawn (it stands out toward the lens). */
@@ -721,7 +743,7 @@ const BENTO_SMEAR_IN_S = 0.4;
 
 /**
  * Every sheet the GL layer draws at `time`: the title card from its flip,
- * the bento's six tiles from the throw, each until its DOM face takes over,
+ * in MCB's hand, the bento's six tiles from the throw, each until its DOM face takes over,
  * and each arriving card from when it waits in view until its DOM card has
  * taken over: a print slot's Done cards each a sheet of its own, on its
  * printed card's rect (`prints`: the prints' shapes; without it, or before
@@ -735,8 +757,11 @@ export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly Ben
 		const pose = bentoSheetPose(drop, drops, time, geometry, viewport);
 		if (!pose) continue;
 		const touchdown = bentoTouchdown(drop, drops);
-		const launch = launchTime(drop);
 		const title = drop.kind === "title";
+		// The flip hops in place, over its own box: the title casts its shadow on the wall from when MCB takes it.
+		const shadowFrom = title ? titleGrabTime() : bentoFallStart(drop, drops);
+		const shadowed = time >= (title ? titleGrabTime() : bentoTossTime());
+		const launch = launchTime(drop);
 		sheets.push({
 			key: `bento-${drop.order}`,
 			kind: "bento",
@@ -745,13 +770,13 @@ export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly Ben
 			back: FINALE_COLORS.tile,
 			texture: title ? "title" : `bento-${drop.order}`,
 			print: null,
-			// The flip hops in place, over its own box: only the throw casts a landing shadow.
-			shadow: time < bentoTossTime() ? null : { start: bentoFallStart(drop, drops), settled: touchdown, pose },
+			shadow: shadowed ? { start: shadowFrom, settled: touchdown, pose } : null,
 			velocity: bentoSheetVelocity(drop, drops, time, pose, geometry, viewport),
 			// The bento card's radius, scaling down with it to the wall's.
 			radius: (geometry.radius * pose.width) / drop.slot.rect.width,
 			// It swells in as it leaves the hand and clears over its swoop down, landing crisp: eased at both ends, so it never snaps.
-			chroma: smooth(launch, launch + BENTO_SMEAR_IN_S, time) * (1 - smooth(bentoFallStart(drop, drops), touchdown, time)),
+			chroma: title ? titleCarrySmear(time) : smooth(launch, launch + BENTO_SMEAR_IN_S, time) * (1 - smooth(bentoFallStart(drop, drops), touchdown, time)),
+			waveFrom: title ? TITLE_GRIP_UV : null,
 		});
 	}
 	const offset = wallOffset(time, geometry);
@@ -786,6 +811,7 @@ export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly Ben
 					velocity: velocityOf(pose, before),
 					radius: card.radius,
 					chroma: 1 - smooth(descent.start, descent.touchdown, time),
+					waveFrom: null,
 				});
 			}
 		}

@@ -770,15 +770,20 @@ export function landingWaveEnergy(waveAge: number): number {
 	return LANDING_AMPLITUDE * swell * Math.exp((-2.2 * waveAge) / PEEL_DURATIONS.wave) * settle * settle;
 }
 
-/** The landing wave from the grab point, and how much the key light models the sheet's folds. */
-export function setLandingWave(uniforms: THREE.ShaderMaterial["uniforms"], pose: FinaleCardPose): void {
+/**
+ * The landing wave, from `from` (the sheet's own uv, u right and v up: where
+ * a hand set it down) or else Peel's grab point, and how much the key light
+ * models the sheet's folds.
+ */
+export function setLandingWave(uniforms: THREE.ShaderMaterial["uniforms"], pose: FinaleCardPose, from?: { readonly x: number; readonly y: number } | null): void {
+	const origin = from ?? GRAB_POINT;
 	const energy = landingWaveEnergy(pose.waveAge);
 	// Light models the folds only while the sheet is bent (flat sheets stay exactly as printed),
 	// turning up from the flight's gentler modelling as the wave swells.
 	const flight = FLIGHT_LIGHT * pose.lift;
 	uniforms.uLit.value = energy > 0 ? Math.max(flight, landingSwell(pose.waveAge)) : flight;
 	// The ripple runs from when it began to gather, so it travels on without a hitch at touchdown.
-	uniforms.uImpulse.value.set(GRAB_POINT.x, GRAB_POINT.y, Math.max(0, pose.waveAge + LANDING.lead), energy);
+	uniforms.uImpulse.value.set(origin.x, origin.y, Math.max(0, pose.waveAge + LANDING.lead), energy);
 }
 
 /** Motion (world px/s) into the sheet's own frame (`rotation`), saturating softly, scaled by `weight`. */

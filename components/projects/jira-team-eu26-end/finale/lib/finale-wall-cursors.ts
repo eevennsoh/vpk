@@ -1,28 +1,33 @@
 import { FINALE_WALL_CURSOR_NAMES } from "../data/finale-wall-cursor-names";
-import { cameraDistance, type FinaleViewport } from "./finale-card-motion";
+import { projectLifted } from "./finale-camera";
+import type { FinaleViewport } from "./finale-card-motion";
 import { FINALE_CURSORS, finaleCursorBox } from "./finale-cursor-path";
 import { EASE, hash01, lerp, progress, smoothstep as smooth } from "./finale-math";
+import { TITLE_CARRY_PRESS, titleCarrierAt, titleCarrierGoneTime } from "./finale-title-drag";
 import { WALL_SCALE, type FinaleWall, type WallGeometry, type WallPrintShapes, type WallSlot } from "./finale-wall-layout";
 import {
 	BREATH,
 	DESCEND_SPAN,
 	arrivalCardPose,
-	bentoLandedTime,
 	dealDelay,
 	perSlot,
 	slotArrivals,
 	slotDescent,
 	slotOnScreen,
+	titleCarryOf,
 	visibleColumns,
 	wallActive,
 	wallOffset,
 	wallSpeed,
+	type BentoDrop,
 	type Descent,
 	type WallArrival,
 } from "./finale-wall-motion";
 
 /*
- * Act III's teammates at the mega bento's leading edge: now and then one
+ * Act III's cursors on the mega bento. First MCB, whose cursor placed the
+ * bento's cards, drags "Team ’26" into its gap (`finale-title-drag.ts`) and
+ * leaves. Then the teammates take over at the leading edge: now and then one
  * reaches in, catches a card coming down from the air by its middle, rides
  * it into its slot and lets go. The cards come down exactly as they would
  * alone (`finale-wall-motion.ts`); only who holds which card, and when, is
@@ -41,18 +46,11 @@ export interface PageCursor {
 	/** The tip, on screen. */
 	readonly x: number;
 	readonly y: number;
-	/** Perspective: larger while the card is up near the lens. */
+	/** Perspective: larger while the card is up near the lens (and a press, as MCB takes the title). */
 	readonly scale: number;
 	readonly opacity: number;
 	/** Turned over, its arrow pointing down onto the card and its name above (a hand that came up from below). */
 	readonly pillAbove: boolean;
-}
-
-/** Where a point lifted `z` toward the lens shows on screen, filmed by the resting camera. */
-export function projectLifted(point: { readonly x: number; readonly y: number; readonly z: number }, viewport: FinaleViewport): { x: number; y: number; scale: number } {
-	const distance = cameraDistance(viewport);
-	const scale = distance / Math.max(1, distance - point.z);
-	return { x: viewport.width / 2 + (point.x - viewport.width / 2) * scale, y: viewport.height / 2 + (point.y - viewport.height / 2) * scale, scale };
 }
 
 /** Most arriving cards are a teammate's to set down (some give way to another's: `wallHold`). */
@@ -145,8 +143,9 @@ function onLeg(leg: HandLeg, along: number): { readonly x: number; readonly y: n
 
 /**
  * Who sets a slot's card down, the same on every pass of the loop: a teammate
- * from the avatar roster (the presenters' cursors belong to the bento), each
- * always in the same one of the slide's four cursor colours.
+ * from the avatar roster (the presenters' cursors belong to the bento, and
+ * MCB's to the title), each always in the same one of the slide's four
+ * cursor colours.
  */
 function wallCursorHolder(seed: number): { readonly name: string; readonly lane: number } {
 	const person = Math.floor(hash01(seed * 5.13 + 0.7) * FINALE_WALL_CURSOR_NAMES.length);
@@ -236,7 +235,7 @@ const holdCandidates = new WeakMap<FinaleWall, Map<string, WallHold | null>>();
 /**
  * Whether a teammate would take a slot's card, before they make way for one
  * another: about `HELD_SHARE` of the arrivals, once the bento's own cards are
- * all down. The card comes down where it always does, and its teammate
+ * all down and MCB has left. The card comes down where it always does, and its teammate
  * catches it from the first moment their cursor, name pill and all, stays
  * `CURSOR_MARGIN` inside the frame from there to leaving, as long as that
  * leaves at least `RIDE_S` to ride it down. Every pass of the loop plans it alike.
@@ -263,7 +262,7 @@ function holdCandidate(slot: WallSlot, wall: FinaleWall): WallHold | null {
 		let first = times.length;
 		while (first > 0 && inside(settled(times[first - 1]))) first -= 1;
 		const from = times[first];
-		if (from === undefined || from > descent.touchdown - RIDE_S || from < bentoLandedTime(wall.gaps.length)) return null;
+		if (from === undefined || from > descent.touchdown - RIDE_S || from < titleCarrierGoneTime()) return null;
 		// Then its reach in, as the frame allows: turned a little inward, then shortened, before it would only fade in on the card.
 		for (const turn of [0, 0.45, 0.9]) {
 			for (const reachShare of [1, 0.6]) {
@@ -321,21 +320,40 @@ function wallHold(slot: WallSlot, wall: FinaleWall): WallHold | null {
 	});
 }
 
+/** MCB's lane: his own colour and name, from the slide. */
+const CARRIER_LANE = Math.max(0, FINALE_CURSORS.findIndex((cursor) => cursor.id === "mcb"));
+
 /**
- * Teammates reaching in at the leading edge: one reaches in (from above,
- * the side or below, by where the card is: `HAND`), takes a card coming
- * down by its middle, rides it into its slot and lets go, drifting off
- * along a path of its own, every cursor, name and all, well inside the frame.
+ * MCB's cursor dragging the title (`drops`' title card) into its gap, as a
+ * wall cursor: in his lane, named as on the slide, upright, its press about its tip.
+ */
+function titleCarrierCursor(time: number, wall: FinaleWall, drops: readonly BentoDrop[], viewport: FinaleViewport): PageCursor | null {
+	const title = drops.find((drop) => drop.kind === "title");
+	const carrier = title ? titleCarrierAt(titleCarryOf(title, wall.geometry, viewport), time) : null;
+	if (!carrier) return null;
+	const { label } = FINALE_CURSORS[CARRIER_LANE];
+	return { key: "title", lane: CARRIER_LANE, name: label, x: carrier.x, y: carrier.y, scale: carrier.scale * (1 - TITLE_CARRY_PRESS * carrier.pressed), opacity: carrier.opacity, pillAbove: false };
+}
+
+/**
+ * Every cursor on the wall at `time`. MCB first, dragging the title into its
+ * gap (`drops`: the bento's cards). Then teammates reaching in at the leading
+ * edge: one reaches in (from above, the side or below, by where the card is:
+ * `HAND`), takes a card coming down by its middle, rides it into its slot and
+ * lets go, drifting off along a path of its own, every cursor, name and all,
+ * well inside the frame.
  * Each lane holds one card at a time, so no more hands are in than the wall
  * has cursors, nobody is in two places at once, and no two cursors cover each
- * other (`wallHold`). A print slot's stack is held by its top card's middle
- * (`prints`: the prints' shapes, as `wallSheetsAt` takes them).
+ * other (`wallHold`); none reaches in until MCB has left. A print slot's
+ * stack is held by its top card's middle (`prints`: the prints' shapes, as
+ * `wallSheetsAt` takes them).
  */
-export function wallCursorsAt(time: number, wall: FinaleWall, viewport: FinaleViewport, prints?: WallPrintShapes): readonly PageCursor[] {
+export function wallCursorsAt(time: number, wall: FinaleWall, drops: readonly BentoDrop[], viewport: FinaleViewport, prints?: WallPrintShapes): readonly PageCursor[] {
 	if (!wallActive(time)) return [];
 	const { geometry } = wall;
 	const { first, last } = visibleColumns(wallOffset(time, geometry), geometry);
-	const cursors: PageCursor[] = [];
+	const carrier = titleCarrierCursor(time, wall, drops, viewport);
+	const cursors: PageCursor[] = carrier ? [carrier] : [];
 	for (let column = first; column <= last + 1; column += 1) {
 		for (const slot of wall.column(column)) {
 			const hold = wallHold(slot, wall);

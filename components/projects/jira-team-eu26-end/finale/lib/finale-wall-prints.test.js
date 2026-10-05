@@ -247,12 +247,12 @@ test("a print slot with nothing printed yet comes down as one blank card over it
 test("a teammate holding a print slot holds it by its top card's middle", () => {
 	let found = 0;
 	for (const viewport of VIEWPORTS) {
-		const { m, geometry, wall, prints } = sceneFor(viewport);
+		const { m, geometry, wall, drops, prints } = sceneFor(viewport);
 		for (let column = 0; column < 120; column += 1) {
 			for (const slot of wall.column(column)) {
 				if (slot.content.kind !== "print") continue;
 				const descent = m.slotDescent(slot, wall);
-				const cursor = descent && m.wallCursorsAt(descent.touchdown, wall, viewport, prints).find((each) => each.key === slot.key);
+				const cursor = descent && m.wallCursorsAt(descent.touchdown, wall, drops, viewport, prints).find((each) => each.key === slot.key);
 				if (!cursor) continue;
 				found += 1;
 				const [top] = m.wallPrintCards(slot.rect, slot.content.codes, prints, m.wallPrintGap(geometry));
