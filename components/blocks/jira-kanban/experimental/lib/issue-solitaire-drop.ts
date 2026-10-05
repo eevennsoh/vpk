@@ -5,8 +5,8 @@ import { JIRA_KANBAN_CARD_REFLOW } from "./card-motion";
 
 // The reveal stays responsive while the decorative border has time to travel.
 export const CARD_DROP_STACK_EXPAND_MS = 420;
-export const CARD_DROP_SHIMMER_MS = 650; // duration-slowest + duration-xxshort
-export const SINGLE_CARD_DROP_SHIMMER_MS = 650; // duration-slowest + duration-xxshort
+export const CARD_DROP_SHIMMER_MS = 1000; // duration-slowest + duration-slower
+export const SINGLE_CARD_DROP_SHIMMER_MS = 1000; // duration-slowest + duration-slower
 
 interface DropCard {
 	code: string;
@@ -162,7 +162,7 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 	const width = Math.max(1, Math.max(...cards.map(({ surfaceRect }) => surfaceRect.right)) - left);
 	const height = Math.max(1, Math.max(...cards.map(({ surfaceRect }) => surfaceRect.bottom)) - top);
 	const isSingleCard = cards.length === 1;
-	const bandLength = isSingleCard ? Math.min(220, Math.max(112, height * 0.72)) : Math.min(160, Math.max(72, height * 0.45));
+	const bandLength = isSingleCard ? Math.min(440, Math.max(224, height * 1.44)) : Math.min(320, Math.max(144, height * 0.9));
 	const id = `issue-drop-trace-${++traceId}`;
 	const svg = doc.createElementNS(SVG_NS, "svg");
 	const make = (name: string, attributes: Record<string, string | number>, parent: Element) => {
