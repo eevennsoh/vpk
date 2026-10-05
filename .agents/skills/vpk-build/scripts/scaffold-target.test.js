@@ -829,3 +829,22 @@ test("backend-backed scaffold preserves source backend and generates proxy/deplo
 		fixture.cleanup();
 	}
 });
+
+test("scaffold carries a declared hydration adapter and asset audit into the target", () => {
+	const fixture = createFixture({ includeMotion: true });
+	try {
+		const relative = "components/fixture-motion.tsx";
+		const original = 'import { motion, useReducedMotion } from "motion/react";\nexport const readPreference = () => useReducedMotion();\n';
+		writeFile(path.join(fixture.repoRoot, relative), original);
+		const plan = JSON.parse(fs.readFileSync(fixture.planPath, "utf8"));
+		plan.files.push(relative);
+		fs.writeFileSync(fixture.planPath, JSON.stringify(plan));
+		execFileSync(process.execPath, [SCAFFOLD_TARGET_PATH, fixture.planPath, "--target", fixture.targetDir], { stdio: "pipe" });
+		const provenance = JSON.parse(fs.readFileSync(path.join(fixture.targetDir, ".vpk-source.json"), "utf8"));
+		assert.deepEqual(provenance.harnessAdaptations.hydrationSafeMotion, [relative]);
+		assert.equal(fs.existsSync(path.join(fixture.targetDir, "hooks/use-extraction-reduced-motion.ts")), true);
+		assert.equal(fs.existsSync(path.join(fixture.targetDir, "scripts/audit-public-assets.mjs")), true);
+		assert.equal(fs.readFileSync(path.join(fixture.repoRoot, relative), "utf8"), original);
+		execFileSync(process.execPath, ["--check", path.join(fixture.targetDir, "scripts/audit-public-assets.mjs")]);
+	} finally { fixture.cleanup(); }
+});

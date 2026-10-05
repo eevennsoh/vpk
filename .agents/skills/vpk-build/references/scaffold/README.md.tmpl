@@ -8,21 +8,26 @@ using the `/vpk-build` skill. Deploys to Atlassian Micros.
 Extracted on `{{GENERATED_DATE}}` from VPK SHA `{{SOURCE_SHA}}`. To sync
 with upstream changes, re-run `/vpk-build /{{ROUTE_NAME}}` in VPK.
 
-## Dev
+## Frontend preview
 
 ```bash
 pnpm install
-pnpm dev           # http://localhost:3001
+pnpm exec next dev -p 3001
 ```
 
 Preview at `http://localhost:3001`. Next may also advertise a Network URL on
 `127.0.2.2`; that origin is allowed in `next.config.ts`, but localhost is the
 reliable demo URL.
 
+This command starts the frontend only. `pnpm dev` runs the configured development
+launcher, which may also require the source VPK backend.
+After a verified lockfile is committed, use `pnpm install --frozen-lockfile`
+for reproducible installs of the published repository.
+
 ## Build
 
 ```bash
-pnpm build         # produces ./out/ (static export)
+{{BUILD_COMMAND}}   # produces ./out/ (static export)
 ```
 
 ## Deploy to Micros
@@ -46,12 +51,23 @@ pnpm run deploy:micros
 - `app/` — the extracted route, promoted to the root (so `/{{ROUTE_NAME}}`
   becomes `/` in the extracted app).
 - `components/` — the subset of VPK components the route transitively imports.
-- `backend/` — minimal Express wrapper that serves the Next static export at
-  `:8080` in production. Not used during `pnpm dev`.
+- `backend/` — the selected production serving/runtime contract.
 
 ## Adding to this project
 
-Because this is a pure static export, API routes are not available. For
-frontend-only features, add them normally. For features needing a backend,
-either extend `backend/server.js` with new routes, or deploy the parent
-VPK instead.
+{{RUNTIME_DESCRIPTION}}
+
+## Asset inventory
+
+The initial extraction preserves all public assets, including dynamic lookups.
+After installation, review an optional pruning plan:
+
+```sh
+node scripts/audit-public-assets.mjs --plan . output/asset-prune-plan.json
+# Review candidates and runtime directories before deleting anything.
+node scripts/audit-public-assets.mjs --apply output/asset-prune-plan.json
+```
+
+Rebuild and verify the affected views after pruning. Referenced decorative artwork
+requires an explicit design change before removal. Removing current files does
+not remove their bytes from Git history.

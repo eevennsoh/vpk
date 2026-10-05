@@ -60,7 +60,7 @@ esac
 test("normal verification retains install, typecheck, and one build", (t) => {
 	const result = verify(t);
 	assert.equal(result.status, 0, result.stderr);
-	assert.deepEqual(result.calls, ["install", "run typecheck", "run build"]);
+	assert.deepEqual(result.calls, ["install --reporter=append-only", "run typecheck", "run build"]);
 	assert.ok(fs.existsSync(path.join(result.target, "output/export-inventory.json")));
 	assert.ok(fs.existsSync(path.join(result.target, "output/release-receipt.json")));
 });
@@ -68,7 +68,7 @@ test("normal verification retains install, typecheck, and one build", (t) => {
 test("explicit export verification builds once and records the inventory", (t) => {
 	const result = verify(t, ["--export"]);
 	assert.equal(result.status, 0, result.stderr);
-	assert.deepEqual(result.calls, ["install", "run typecheck", "run build:export"]);
+	assert.deepEqual(result.calls, ["install --reporter=append-only", "run typecheck", "run build:export"]);
 	assert.ok(fs.existsSync(path.join(result.target, "output/export-inventory.json")));
 	assert.ok(fs.existsSync(path.join(result.target, "output/release-receipt.json")));
 });
@@ -82,7 +82,7 @@ test("export verification fails when its deliverable is missing", (t) => {
 test("failed typecheck stops before export packaging", (t) => {
 	const result = verify(t, ["--export"], { fail: "run typecheck" });
 	assert.equal(result.status, 7);
-	assert.deepEqual(result.calls, ["install", "run typecheck"]);
+	assert.deepEqual(result.calls, ["install --reporter=append-only", "run typecheck"]);
 	assert.equal(fs.existsSync(path.join(result.target, "output/export-inventory.json")), false);
 });
 
@@ -96,7 +96,7 @@ test("referenced assets are checked after the single export build", (t) => {
 	const result = verify(t, ["--export"], { missingAsset: true });
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Missing referenced asset.*missing.js/u);
-	assert.deepEqual(result.calls, ["install", "run typecheck", "run build:export"]);
+	assert.deepEqual(result.calls, ["install --reporter=append-only", "run typecheck", "run build:export"]);
 });
 
 for (const wrapper of [false, true]) {
@@ -114,7 +114,7 @@ for (const wrapper of [false, true]) {
 			encoding: "utf8", env: { ...process.env, PATH: `${root}/bin${path.delimiter}${process.env.PATH}` },
 		});
 		assert.equal(result.status, 0, result.stdout + result.stderr);
-		assert.equal(fs.readFileSync(path.join(root, "output/calls.log"), "utf8"), `install\nrun typecheck\nrun ${wrapper ? "build:export" : "build"}\n`);
+		assert.equal(fs.readFileSync(path.join(root, "output/calls.log"), "utf8"), `install --reporter=append-only\nrun typecheck\nrun ${wrapper ? "build:export" : "build"}\n`);
 		const inventory = JSON.parse(fs.readFileSync(path.join(root, "output/export-inventory.json"), "utf8"));
 		assert.equal(inventory.routes[0].html.rawBytes, 21);
 		assert.equal(fs.existsSync(path.join(root, "out/index.html.gz")), true);
@@ -126,7 +126,7 @@ for (const wrapper of [false, true]) {
 test("documented relative invocation resolves the receipt helper before changing target directories", t => {
 	const result = verify(t, ["--export"], { relativeInvocation: true });
 	assert.equal(result.status, 0, result.stdout + result.stderr);
-	assert.deepEqual(result.calls, ["install", "run typecheck", "run build:export"]);
+	assert.deepEqual(result.calls, ["install --reporter=append-only", "run typecheck", "run build:export"]);
 	assert.ok(fs.existsSync(path.join(result.target, "output/release-receipt.json")));
 });
 
