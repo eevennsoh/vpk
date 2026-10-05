@@ -67,8 +67,20 @@ export const CUE = {
 	tiles: FLASH_DURATION + 4.3,
 	tileStagger: 0.22,
 	tileFall: 0.65,
-	/** A landed tile hands over to its crisp DOM face once the wave has settled. */
+	/**
+	 * A landed card's wave has settled this long after touchdown: the wall's
+	 * cards hand over to their DOM cards then, and each tile's logo and heading
+	 * (and its border glow) are timed from it.
+	 */
 	handoff: 0.6,
+	/**
+	 * A bento tile hands its GL sheet over to its crisp DOM face this soon after
+	 * touchdown, its wave all but spent. The frame's smear films every sheet
+	 * still in GL, so while the tiles after it swoop in, a landed tile is
+	 * smeared until it hands over: at `handoff` the first down (top left, top
+	 * right) stayed smeared 0.72 s after landing, the bottom corners at most 0.43 s.
+	 */
+	tileHandoff: 0.3,
 	/** Logo and heading build on each tile (slow enough to see the gradient pass). */
 	reveal: 1.4,
 	/** "Team ’26" arrives only once the bento is nearly assembled. */

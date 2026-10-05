@@ -11,10 +11,11 @@ const ENTRY = `
 export { WALL_CUE } from "../data/finale-cues";
 export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 export { FINALE_WALL_CURSOR_NAMES } from "../data/finale-wall-cursor-names";
-export { FINALE_CURSORS } from "./finale-cursor-path";
-export { buildFinaleWall, wallGeometry } from "./finale-wall-layout";
+export { FINALE_CURSORS, finaleCursorBox } from "./finale-cursor-path";
+export { WALL_SCALE, buildFinaleWall, wallGeometry } from "./finale-wall-layout";
 export { wallCursorsAt } from "./finale-wall-cursors";
-export { bentoDrops, wallTimeAt } from "./finale-wall-motion";
+export { arrivalCardPose, bentoDrops, slotArrivals, slotDescent, slotOnScreen, wallOffset, wallTimeAt } from "./finale-wall-motion";
+export { projectLifted } from "./finale-camera";
 export { titleCarrierGoneTime, titleReachTime } from "./finale-title-drag";
 `;
 
@@ -118,6 +119,106 @@ test("each held card's cursor is the slot's own teammate on every pass, one per 
 	const names = new Set([...byKey.values()].map((who) => who.split("@")[0]));
 	assert.ok(names.size >= FINALE_CURSORS.length, `many teammates over a loop (${[...names].join(", ")})`);
 	assert.equal(new Set([...byKey.values()].map((who) => who.split("@")[1])).size, FINALE_CURSORS.length, "every lane is used");
+});
+
+/** Where a cursor paints on screen around its tip, name pill and all (turned over: its name above). */
+function paintedBox(m, cursor, fit) {
+	const upright = m.finaleCursorBox(cursor.name);
+	const box = cursor.pillAbove ? { ...upright, top: upright.bottom, bottom: upright.top } : upright;
+	const scale = fit * cursor.scale;
+	return { left: cursor.x - box.left * scale, top: cursor.y - box.top * scale, right: cursor.x + box.right * scale, bottom: cursor.y + box.bottom * scale };
+}
+
+const whollyOff = (box, viewport) => box.right <= 0 || box.left >= viewport.width || box.bottom <= 0 || box.top >= viewport.height;
+const whollyIn = (box, viewport) => box.left >= 0 && box.top >= 0 && box.right <= viewport.width && box.bottom <= viewport.height;
+
+test("a teammate's cursor glides in from wholly off the frame onto its card, holds it as before, then heads back off the frame, fading as it goes", () => {
+	const m = load();
+	for (const viewport of [{ width: 1920, height: 1080 }, { width: 1440, height: 900 }, { width: 1130, height: 2296 }]) {
+		const { wall, drops } = wallFor(viewport);
+		const { geometry } = wall;
+		const fit = geometry.typeScale / m.WALL_SCALE;
+		const at = (time, key) => m.wallCursorsAt(time, wall, drops, viewport).find((cursor) => cursor.key === key) ?? null;
+		const slotOf = (key) => wall.bucket(Number(key.split(":")[0])).find((slot) => slot.key === key);
+		// The tip of a hand resting on its card: the card's middle as it comes down, then as the wall carries it on.
+		const cardMiddle = (slot, time) => {
+			const [card] = m.slotArrivals(slot, wall);
+			const pose = m.arrivalCardPose(slot, card, m.slotOnScreen(slot, m.wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport);
+			return m.projectLifted(pose, viewport);
+		};
+		const offCard = (cursor, slot, time) => {
+			const middle = cardMiddle(slot, time);
+			return Math.hypot(cursor.x - middle.x, cursor.y - middle.y);
+		};
+		// The moment a cursor appears or is gone: the step between a time without it and one with it.
+		const edge = (key, without, within) => {
+			for (let step = 0; step < 40; step += 1) {
+				const mid = (without + within) / 2;
+				if (at(mid, key)) within = mid;
+				else without = mid;
+			}
+			return within;
+		};
+
+		// One loop's teammates, each first seen on a coarse pass that runs on until the last of them is gone.
+		const end = m.wallTimeAt(wall.periodWidth, geometry) + 30;
+		const seen = new Map();
+		for (let time = m.WALL_CUE.start; time < end + 3; time += 0.1) {
+			for (const cursor of m.wallCursorsAt(time, wall, drops, viewport)) {
+				if (cursor.key === "title" || (time >= end && !seen.has(cursor.key))) continue;
+				const span = seen.get(cursor.key) ?? { first: time, last: time };
+				span.last = time;
+				seen.set(cursor.key, span);
+			}
+		}
+		assert.ok(seen.size >= 10, `teammates reach in (${seen.size} at ${viewport.width}×${viewport.height})`);
+
+		for (const [key, span] of seen) {
+			const slot = slotOf(key);
+			const { touchdown } = m.slotDescent(slot, wall);
+			const who = `${key} at ${viewport.width}×${viewport.height}`;
+
+			// Coming in: it sets off wholly off the frame, opaque, and only glides closer onto its card.
+			const from = edge(key, span.first - 0.1, span.first);
+			const first = at(from, key);
+			assert.ok(whollyOff(paintedBox(m, first, fit), viewport), `${who} sets off wholly off the frame`);
+			let previous = { cursor: first, off: offCard(first, slot, from) };
+			const own = paintedBox(m, first, fit);
+			assert.ok(previous.off >= own.right - own.left, `${who} travels at least its own length onto its card`);
+			for (let time = from + 1 / 60; time <= touchdown - 0.05; time += 1 / 60) {
+				const cursor = at(time, key);
+				const off = offCard(cursor, slot, time);
+				assert.equal(cursor.opacity, 1, `${who} comes in opaque, never fading in on its card (${time.toFixed(3)}s)`);
+				assert.ok(off <= previous.off + 1e-6, `${who} only ever closes in on its card (${time.toFixed(3)}s)`);
+				assert.ok(Math.hypot(cursor.x - previous.cursor.x, cursor.y - previous.cursor.y) < 0.06 * Math.max(viewport.width, viewport.height), `${who} glides, never jumps (${time.toFixed(3)}s)`);
+				previous = { cursor, off };
+			}
+
+			// Holding: on its card's middle, opaque and wholly in the frame, from a beat before it lands until it lands.
+			for (const time of [touchdown - 0.05, touchdown]) {
+				const cursor = at(time, key);
+				assert.ok(offCard(cursor, slot, time) < 0.5, `${who} rests on its card's middle (${time.toFixed(3)}s)`);
+				assert.equal(cursor.opacity, 1);
+				assert.ok(whollyIn(paintedBox(m, cursor, fit), viewport), `${who} holds its card wholly in the frame`);
+			}
+
+			// Leaving: as the card lands it heads away, fading only as it travels, and is gone wholly off the frame.
+			const gone = edge(key, span.last + 0.1, span.last);
+			const last = at(gone, key);
+			const away = offCard(last, slot, gone);
+			assert.ok(whollyOff(paintedBox(m, last, fit), viewport) && last.opacity < 0.01, `${who} fades out as it leaves the frame`);
+			previous = { cursor: at(touchdown, key), off: 0 };
+			let halfFaded = null;
+			for (let time = touchdown + 1 / 60; time < gone; time += 1 / 60) {
+				const cursor = at(time, key);
+				const off = offCard(cursor, slot, time);
+				assert.ok(off >= previous.off - 1e-6 && cursor.opacity <= previous.cursor.opacity + 1e-9, `${who} only ever heads away, fading (${time.toFixed(3)}s)`);
+				if (halfFaded === null && cursor.opacity <= 0.5) halfFaded = off;
+				previous = { cursor, off };
+			}
+			assert.ok(halfFaded !== null && halfFaded >= 0.4 * away, `${who} is well on its way out by the time it is half faded, not fading where it stood`);
+		}
+	}
 });
 
 /** The wall's cursors under a frame registry the test drives, as the overlay's clock does. */
