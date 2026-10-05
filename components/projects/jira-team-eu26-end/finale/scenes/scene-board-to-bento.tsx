@@ -26,7 +26,7 @@ import {
 	type FinaleFit,
 	type FinaleViewport,
 } from "../lib/finale-card-motion";
-import { buildFinaleWall, wallGeometry } from "../lib/finale-wall-layout";
+import { buildFinaleWall, wallGeometry, wallPrintShapes } from "../lib/finale-wall-layout";
 import { bentoDrops, bentoTossTime } from "../lib/finale-wall-motion";
 
 /** The field always carries a full board, padding with blank sheets in rehearsal. */
@@ -192,6 +192,8 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 	const geometry = useMemo(() => wallGeometry(bento, fit.scale, viewport), [bento, fit.scale, viewport]);
 	const wall = useMemo(() => buildFinaleWall(geometry, bento, features, dragOrder), [geometry, bento, features, dragOrder]);
 	const drops = useMemo(() => bentoDrops(wall, slotRects, bento.title), [wall, slotRects, bento.title]);
+	// The Done cards' print shapes: a print slot's cards land, show and glow each on its own rect.
+	const prints = useMemo(() => wallPrintShapes(cardPrint), [cardPrint]);
 	// The camera frames the hero (the first card MCB dragged) for the long zoom.
 	const subject = useMemo(() => cards.find((card) => card.input.role.kind === "hero")?.input.rect ?? column, [cards, column]);
 
@@ -214,14 +216,8 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		<div aria-hidden className="absolute inset-0">
 			{/* The live board shows through while light sweeps its Done column; on the toss it blurs and fades out under the slide. */}
 			<div ref={slideRef} className="absolute inset-0" style={{ visibility: "hidden" }} />
-			{/* Act III: the mega bento's DOM cards, the sheets landing on it, and the accents of each landing. */}
-			{reducedMotion ? null : (
-				<>
-					<FinaleWall wall={wall} drops={drops} cardPrint={cardPrint} />
-					<FinaleWallGl wall={wall} drops={drops} viewport={viewport} fit={fit} cardPrint={cardPrint} facePrint={facePrint} />
-					<FinaleWallAccents wall={wall} drops={drops} fit={fit} viewport={viewport} />
-				</>
-			)}
+			{/* Act III: the mega bento's DOM cards (its sheets and accents are drawn over the bento, below). */}
+			{reducedMotion ? null : <FinaleWall wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />}
 			<FinaleTeamTitle rect={bento.title} scale={fit.scale} />
 			<FinaleCardSpaceGl cards={cards} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
 			{/* The column "completes" in a sweep of light before its cards are tossed. */}
@@ -245,6 +241,13 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 			<FinaleTileGlow tiles={slotRects} radius={FINALE_TILE_RADIUS * fit.scale} scale={fit.scale} viewport={viewport} />
 			{/* Above the tiles: each touchdown pulses a dot lattice inside its own tile. */}
 			<FinaleDotField fit={fit} viewport={viewport} ripples={ripples} radius={FINALE_TILE_RADIUS * fit.scale} />
+			{/* Act III's sheets and landing accents, over the bento's tiles: the title card hops over its neighbours as it flips. */}
+			{reducedMotion ? null : (
+				<>
+					<FinaleWallGl wall={wall} drops={drops} viewport={viewport} fit={fit} cardPrint={cardPrint} prints={prints} facePrint={facePrint} />
+					<FinaleWallAccents wall={wall} drops={drops} fit={fit} viewport={viewport} prints={prints} />
+				</>
+			)}
 			{/* Topmost: the presenters' cursors placing the final cards. */}
 			<FinaleCursors slots={bento.slots} viewport={viewport} scale={fit.scale} />
 		</div>

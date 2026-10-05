@@ -100,7 +100,7 @@ function paintPulse(context: CanvasRenderingContext2D, dots: Lattice, ripple: Fi
 	if (count === 0) return store;
 	context.save();
 	context.beginPath();
-	context.roundRect(tile.x, tile.y, tile.width, tile.height, radius);
+	context.roundRect(tile.x, tile.y, tile.width, tile.height, ripple.radius ?? radius);
 	context.clip();
 	for (let step = 1; step <= ALPHA_STEPS; step += 1) {
 		if (!store.used[step]) continue;

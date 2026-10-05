@@ -252,6 +252,99 @@ export function wallGeometry(bento: FinaleBentoLayout, fitScale: number, viewpor
 	};
 }
 
+/* ─── A print slot's Done cards ───────────────────────────────────────── */
+
+/** Gap between a print slot's stacked Done cards at the 1920 stage (it scales with the type). */
+const WALL_PRINT_GAP = 8;
+/** A Done card's corner as a share of its width, for a print that does not say (the board's 8px card, ~390px wide). */
+const WALL_PRINT_CORNER = 0.02;
+
+/** A Done card's print as the wall fits it: its width ÷ height, and its corner radius as a share of its width. */
+export interface WallPrintShape {
+	readonly aspect: number;
+	readonly corner: number;
+}
+
+/** A Done card's print shape by code; undefined until it is printed. */
+export type WallPrintShapes = (code: string) => WallPrintShape | undefined;
+
+/** What a print's shape is read from: its canvas, with the corner share `useFinaleCardPrints` records on it (`data-finale-corner`). */
+export interface WallPrintSource {
+	readonly width: number;
+	readonly height: number;
+	readonly dataset?: Readonly<Record<string, string | undefined>>;
+}
+
+/** The shapes of the prints `print` finds: as wide and tall as their canvases, rounded as their cards were. */
+export function wallPrintShapes(print: (code: string) => WallPrintSource | undefined): WallPrintShapes {
+	return (code) => {
+		const source = print(code);
+		if (!source || source.width <= 0 || source.height <= 0) return undefined;
+		const corner = Number(source.dataset?.finaleCorner);
+		return { aspect: source.width / source.height, corner: Number.isFinite(corner) && corner >= 0 ? corner : WALL_PRINT_CORNER };
+	};
+}
+
+/** One of a print slot's Done cards, where it shows in the slot. */
+export interface WallPrintCard {
+	/** Its place in the slot's `codes`. */
+	readonly index: number;
+	readonly code: string;
+	/** In the slot: px from its top left. */
+	readonly rect: FinaleRect;
+	/** Its corner radius, px. */
+	readonly radius: number;
+}
+
+/** The gap between a print slot's stacked cards, in viewport px. */
+export function wallPrintGap(geometry: WallGeometry): number {
+	return (WALL_PRINT_GAP * geometry.typeScale) / WALL_SCALE;
+}
+
+/**
+ * A print slot's Done cards, stacked down it like a column: each fitted to the
+ * slot's width or its share of the height (every card dealt to the slot keeps
+ * its share), the stack centred, a card not yet printed left out. Each is a
+ * card of its own: the DOM paints it on this rect, its GL sheet is this rect,
+ * and its shadow and landing accents trace it, so nothing is drawn round the
+ * cards or in the gaps between them.
+ */
+export function wallPrintCards(size: { readonly width: number; readonly height: number }, codes: readonly string[], shapes: WallPrintShapes, gap: number): readonly WallPrintCard[] {
+	if (codes.length === 0) return [];
+	const share = (size.height - gap * (codes.length - 1)) / codes.length;
+	const fitted = codes.flatMap((code, index) => {
+		const shape = shapes(code);
+		if (!shape) return [];
+		const width = Math.min(size.width, share * shape.aspect);
+		return [{ index, code, width, height: width / shape.aspect, radius: shape.corner * width }];
+	});
+	const total = fitted.reduce((sum, card) => sum + card.height, 0) + gap * Math.max(0, fitted.length - 1);
+	let y = (size.height - total) / 2;
+	return fitted.map(({ index, code, width, height, radius }) => {
+		const rect = { x: (size.width - width) / 2, y, width, height };
+		y += height + gap;
+		return { index, code, rect, radius };
+	});
+}
+
+/** The custom property a print slot's card `index` takes its opacity from (its slot writes it as the card lands). */
+export function wallPrintOpacity(index: number): string {
+	return `--wall-print-${index}`;
+}
+
+/**
+ * A Done card's print on a canvas of its card's size, as both its DOM card and
+ * its GL sheet paint it, so the hand-over between them is pixel for pixel.
+ */
+export function paintWallPrint(context: CanvasRenderingContext2D, width: number, height: number, print: CanvasImageSource & { readonly width: number; readonly height: number }): void {
+	context.clearRect(0, 0, width, height);
+	if (print.width <= 0 || print.height <= 0) return;
+	const fit = Math.min(width / print.width, height / print.height);
+	const drawWidth = print.width * fit;
+	const drawHeight = print.height * fit;
+	context.drawImage(print, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
+}
+
 /**
  * The bands the wall is made of: those at least half in the frame. A band
  * that would only show a sliver at the top or bottom is left out, so the

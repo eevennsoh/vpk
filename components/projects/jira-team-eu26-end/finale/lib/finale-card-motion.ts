@@ -61,7 +61,7 @@ export interface FinaleCardPose {
 	readonly face: number;
 	/** 0 flat on the page → 1 airborne (Peel flutter, cloth). */
 	readonly lift: number;
-	/** Seconds since touchdown for the Peel landing ripple, or −1 before it lands. */
+	/** Seconds since touchdown for the Peel landing wave (negative while it gathers, see `landingWaveAge`), or −1 before. */
 	readonly waveAge: number;
 	/** 1 while clipped to the Done column's scroll viewport → 0 once it has left it. */
 	readonly clip: number;
@@ -247,15 +247,43 @@ export function tileRevealStart(order: number): number {
 	return touchdownTime(order) + CUE.handoff + 0.05;
 }
 
-/** Peel's landing recoil, exaggerated for the stage: a brief in-plane shear that springs back. */
-export function landingSkew(age: number): number {
-	if (age < 0) return 0;
-	return 0.07 * Math.sin(age * 17) * Math.exp(-age * 6);
+/**
+ * How every card comes to rest on the page: the bento's tiles on the slide,
+ * and the mega bento's thrown cards and arrivals on the wall. Paper lands
+ * softly. Its swoop brings it to rest in its slot with no in-plane kick, and
+ * the one reaction is Peel's wave, which gathers over the fall's last moments,
+ * swells through touchdown and relaxes once. Each part starts and ends at
+ * rest, so no frame of the landing jolts.
+ */
+export const LANDING = {
+	/** The wave starts to gather this long before touchdown (s)… */
+	lead: 0.1,
+	/** …and has fully swelled this long after it (s). */
+	swell: 0.06,
+} as const;
+
+/**
+ * `FinaleCardPose.waveAge` at `time` for a card touching down at `touchdown`:
+ * seconds since touchdown, negative while the wave gathers over the fall's
+ * last `LANDING.lead`, and −1 before that.
+ */
+export function landingWaveAge(time: number, touchdown: number): number {
+	const age = time - touchdown;
+	return age >= -LANDING.lead ? age : -1;
+}
+
+/** How far the landing wave has swelled at `waveAge`: 0 → 1, leaving and reaching it at rest. */
+export function landingSwell(waveAge: number): number {
+	return smooth(progress(waveAge, -LANDING.lead, LANDING.swell));
+}
+
+/** A card on its way down to, or resting on, the page, carrying its landing wave. */
+export function withLandingWave(pose: FinaleCardPose, touchdown: number, time: number): FinaleCardPose {
+	return { ...pose, waveAge: landingWaveAge(time, touchdown) };
 }
 
 function landed(pose: FinaleCardPose, order: number, time: number): FinaleCardPose {
-	const age = time - touchdownTime(order);
-	return { ...pose, waveAge: age >= 0 ? age : -1, rotateZ: pose.rotateZ + landingSkew(age) };
+	return withLandingWave(pose, touchdownTime(order), time);
 }
 
 /**
@@ -792,6 +820,8 @@ export interface FinaleFieldRipple {
 	readonly from: FinaleRect;
 	readonly start: number;
 	readonly amp: number;
+	/** The footprint's own corner radius (viewport px), for a card not rounded as the tiles are. */
+	readonly radius?: number;
 }
 
 /** The dot grid only exists as one pulse around each tile as it touches down. */

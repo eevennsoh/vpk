@@ -3,14 +3,13 @@
 import { useRef } from "react";
 
 import { CUE } from "../data/finale-cues";
-import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
+import { FINALE_COLORS } from "../data/finale-palette";
 import type { FinaleRect } from "../data/finale-stories";
 import { EASE, eased, lerp, progress } from "../lib/finale-math";
-import { bentoTitleFlip, bentoTossTime } from "../lib/finale-wall-motion";
+import { bentoTitleFlipTime, bentoTitleForm } from "../lib/finale-wall-motion";
 import { FINALE_INK, FINALE_INK_BLEED, applyFinaleBuild, finaleBuildGradient } from "../lib/finale-build-style";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FINALE_TILE_RADIUS } from "./finale-tile";
-import { FinaleTitleLockup } from "./finale-title-lockup";
 
 /** Team 20 → Team 26: the year strip rolls through every edition. */
 const YEARS = ["20", "21", "22", "23", "24", "25", "26"] as const;
@@ -45,19 +44,8 @@ const YEAR_EDGE = `linear-gradient(to bottom, transparent 0%, #000 ${(YEAR_OPAQU
  */
 const SANS = { fontFamily: "var(--font-sans)", fontWeight: 400, letterSpacing: "-0.02em" } as const;
 
-/**
- * The title card's turn, in stage px: the depth it is seen from, how much it
- * lifts toward the lens at mid-turn, how far it tips (as paper does), and the
- * scale its white face rises from.
- */
-const TURN = { perspective: 2600, lift: 0.07, tip: 0.1, formFrom: 0.9 } as const;
-
-/** The turn's transform at `turn` (0 → 1), for a face that starts `offset` half turns over. */
-function turnTransform(turn: number, offset: 0 | 1): string {
-	const air = Math.sin(Math.PI * turn);
-	const angle = Math.PI * (turn - offset);
-	return `perspective(${TURN.perspective}px) rotateX(${(TURN.tip * air).toFixed(4)}rad) rotateY(${angle.toFixed(4)}rad) scale(${(1 + TURN.lift * air).toFixed(4)})`;
-}
+/** The scale the title card's white face rises from. */
+const FORM_FROM = 0.9;
 
 const GRADIENT_TEXT = {
 	backgroundImage: finaleBuildGradient(FINALE_INK),
@@ -77,32 +65,28 @@ const GRADIENT_TEXT = {
  * in. "Team" and the year share the Atlassian Sans headline style; "Team"
  * builds through the colour band while the year fades in and rolls from 20 to
  * 26 behind a soft mask, settling in the same ink. "Team 26" then holds, centred at full size, to the final frame.
- * As Act III begins it becomes a card of its own, as the bento's cards flip:
- * a white tile, the bento's own, rises under the type, and turns over, lifting
- * and tipping like a sheet of paper, to its black back with the type in white.
- * At the throw it hands over to its GL sheet, which carries that face on.
+ * As Act III begins it becomes a card of its own: a white tile, the bento's
+ * own, rises under the type. Formed, it hands over to its GL sheet, which
+ * flips it end over end like paper to its black back (`finale-wall-motion.ts`).
  */
 export function FinaleTeamTitle({ rect, scale }: Readonly<{ rect: FinaleRect; scale: number }>) {
 	const teamRef = useRef<HTMLSpanElement>(null);
 	const yearRef = useRef<HTMLSpanElement>(null);
 	const stripRef = useRef<HTMLSpanElement>(null);
 	const rootRef = useRef<HTMLDivElement>(null);
-	const lineRef = useRef<HTMLDivElement>(null);
-	const frontRef = useRef<HTMLDivElement>(null);
-	const backRef = useRef<HTMLDivElement>(null);
-	const flipRef = useRef("");
+	const faceRef = useRef<HTMLDivElement>(null);
+	const formRef = useRef(Number.NaN);
 	const lineHeight = FONT_SIZE * LINE;
 	const yearPad = FONT_SIZE * YEAR_PAD_TOP;
-	const face = { width: rect.width / scale, height: rect.height / scale, borderRadius: FINALE_TILE_RADIUS, backfaceVisibility: "hidden" } as const;
 
 	useFinaleFrame((time) => {
-		// Nothing is labelled until the bento is nearly assembled, and from the throw its GL sheet carries it.
+		// Nothing is labelled until the bento is nearly assembled, and from its flip its GL sheet carries it.
 		const root = rootRef.current;
-		const tossed = time >= bentoTossTime();
-		const visibility = time >= CUE.title && !tossed ? "visible" : "hidden";
+		const flipped = time >= bentoTitleFlipTime();
+		const visibility = time >= CUE.title && !flipped ? "visible" : "hidden";
 		if (root && root.style.visibility !== visibility) root.style.visibility = visibility;
-		// Through the wall's glide there is nothing left to write.
-		if (tossed) return;
+		// Through the flip and the wall's glide there is nothing left to write.
+		if (flipped) return;
 		const team = teamRef.current;
 		if (team) applyFinaleBuild(team, progress(time, CUE.title, CUE.title + 1.2));
 
@@ -117,22 +101,13 @@ export function FinaleTeamTitle({ rect, scale }: Readonly<{ rect: FinaleRect; sc
 			strip.style.filter = `blur(${(speed * 3).toFixed(2)}px)`;
 		}
 
-		// The title card: a white tile forms under the type, then turns over to its black back.
-		const { form, turn } = bentoTitleFlip(time);
-		const flip = `${form.toFixed(4)}|${turn.toFixed(4)}`;
-		if (flip === flipRef.current) return;
-		flipRef.current = flip;
-		const front = turnTransform(turn, 0);
-		if (frontRef.current) {
-			frontRef.current.style.opacity = form.toFixed(3);
-			frontRef.current.style.transform = `translate(-50%, -50%) ${front} scale(${lerp(TURN.formFrom, 1, form).toFixed(4)})`;
-		}
-		// The type rides the white face round; on the slide it is plain type, untransformed.
-		if (lineRef.current) lineRef.current.style.transform = turn > 0 ? front : "";
-		if (backRef.current) {
-			// "inherit", not "visible": a visible child would outlive the title hiding at the throw.
-			backRef.current.style.visibility = turn > 0 ? "inherit" : "hidden";
-			backRef.current.style.transform = `translate(-50%, -50%) ${turnTransform(turn, 1)}`;
+		// The title card: a white tile forms under the type, flat on the slide, as its GL sheet will take it.
+		const form = bentoTitleForm(time);
+		if (form === formRef.current) return;
+		formRef.current = form;
+		if (faceRef.current) {
+			faceRef.current.style.opacity = form.toFixed(3);
+			faceRef.current.style.transform = `translate(-50%, -50%) scale(${lerp(FORM_FROM, 1, form).toFixed(4)})`;
 		}
 	});
 
@@ -154,19 +129,11 @@ export function FinaleTeamTitle({ rect, scale }: Readonly<{ rect: FinaleRect; sc
 		>
 			{/* The card's white face: the title's own box at stage size (the root is scaled), with the bento tiles' corner. */}
 			<div
-				ref={frontRef}
+				ref={faceRef}
 				className="absolute top-1/2 left-1/2 -z-10"
-				style={{ ...face, background: FINALE_COLORS.tile, opacity: 0, transform: "translate(-50%, -50%)" }}
+				style={{ width: rect.width / scale, height: rect.height / scale, borderRadius: FINALE_TILE_RADIUS, background: FINALE_COLORS.tile, opacity: 0, transform: "translate(-50%, -50%)" }}
 			/>
-			{/* Its black back, the face the throw carries on: the same lockup, in white. */}
-			<div
-				ref={backRef}
-				className="absolute top-1/2 left-1/2 flex items-center justify-center"
-				style={{ ...face, background: FINALE_BRAND.black, visibility: "hidden", transform: `translate(-50%, -50%) ${turnTransform(0, 1)}` }}
-			>
-				<FinaleTitleLockup ink={FINALE_BRAND.white} revealStart={null} />
-			</div>
-			<div ref={lineRef} className="flex items-baseline justify-center gap-[0.22em]" style={{ height: lineHeight, backfaceVisibility: "hidden" }}>
+			<div className="flex items-baseline justify-center gap-[0.22em]" style={{ height: lineHeight }}>
 				<span ref={teamRef} style={{ ...SANS, ...GRADIENT_TEXT }}>Team</span>
 				<span ref={yearRef} className="inline-flex items-baseline" style={{ ...SANS, opacity: 0 }}>
 					{/*

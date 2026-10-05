@@ -473,11 +473,11 @@ test("the wall's accents mount nothing until the wall exists (never on the rest 
 		const cursors = wallCursorsAt(time, wall, viewport);
 		if (cursors.some((cursor) => cursor.opacity > 0.99)) held = { time, cursors };
 	}
-	assert.ok(held, "a presenter sets a card down");
+	assert.ok(held, "a teammate sets a card down");
 	// One reading, then the clock holds: the layers that mount on it paint it without another.
 	await emit(held.time);
 	assert.deepEqual(mounted(), { canvases: 2, cursors: FINALE_CURSORS.length });
-	assert.deepEqual(shown(), held.cursors.filter((cursor) => cursor.opacity > 0).map((cursor) => FINALE_CURSORS[cursor.presenter].label).sort(), "the presenters holding cards, and only they");
+	assert.deepEqual(shown(), held.cursors.filter((cursor) => cursor.opacity > 0).map((cursor) => cursor.name).sort(), "the teammates holding cards, by name, and only they");
 	await emit(FINALE_REST_TIME);
 	assert.deepEqual(mounted(), { canvases: 0, cursors: 0 }, "seeking back before the wall takes it down");
 });

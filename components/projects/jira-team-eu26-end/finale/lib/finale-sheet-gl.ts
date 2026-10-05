@@ -5,7 +5,7 @@ import { PEEL_DURATIONS } from "@/components/visual/peel/peel-model";
 
 import { CUE } from "../data/finale-cues";
 import type { Vec3 } from "./finale-camera";
-import { FINALE_LIGHT_DIRECTION, type FinaleCardPose, type FinaleLandingShadow, type FinaleShadowGround, type FinaleViewport } from "./finale-card-motion";
+import { FINALE_LIGHT_DIRECTION, LANDING, landingSwell, type FinaleCardPose, type FinaleLandingShadow, type FinaleShadowGround, type FinaleViewport } from "./finale-card-motion";
 import { parseRgb, progress } from "./finale-math";
 
 /*
@@ -25,9 +25,12 @@ const clothVelocity = new THREE.Vector3();
 
 /** Peel's shared carry/landing tuning, so the finale's paper matches the component. */
 const PEEL = resolvePeelSurfaceTuning();
-/** Peel's landing impulse amplitude and grab point (see `releasePeel`). */
-/** Exaggerated for the stage: the landing wave reads from the back of the room. */
-const LANDING_AMPLITUDE = 1.7;
+/**
+ * Peel's landing impulse at touchdown and its grab point (see `releasePeel`),
+ * exaggerated for the stage so the wave reads from the back of the room. The
+ * swell into it (`landingSwell`) peaks lower, at about 1.1, just after touchdown.
+ */
+const LANDING_AMPLITUDE = 2;
 const FLUTTER_BOOST = 2;
 const GRAB_POINT = new THREE.Vector2(0.25, 0.9);
 
@@ -162,6 +165,14 @@ uniform float uFace;
 uniform vec2 uSize;
 uniform float uRadius;
 uniform vec3 uTileColor;
+/** The blank paper of its back. */
+uniform vec3 uBackColor;
+/**
+ * The face its print is on: 0 the front, its back blank paper; 1 the front
+ * alone; −1 the back alone, upright once the sheet has turned end over end
+ * (v mirrored). A one-sided print leaves the other face clear.
+ */
+uniform float uPrintSide;
 uniform vec3 uFogColor;
 uniform float uFog;
 uniform float uOpacity;
@@ -205,16 +216,21 @@ void main() {
 		? css.x < uClipRect.x || css.x > uClipRect.z || css.y < uClipRect.y || css.y > uClipRect.w
 		: vUv.x < uClipUv.x || vUv.y < uClipUv.y || vUv.x > uClipUv.z || vUv.y > uClipUv.w;
 	float clipped = outside ? uClip : 0.0;
-	vec2 local = (vUv - 0.5) / uCardFit + 0.5;
+	if (gl_FrontFacing ? uPrintSide < -0.5 : uPrintSide > 0.5) discard;
+	vec2 printed = uPrintSide < -0.5 ? vec2(vUv.x, 1.0 - vUv.y) : vUv;
+	vec2 local = (printed - 0.5) / uCardFit + 0.5;
 	bool off = local.x < 0.0 || local.y < 0.0 || local.x > 1.0 || local.y > 1.0;
-	vec4 card = off ? vec4(0.0) : texture2D(uCard, local);
+	// Sampled outside any branch: under one, the 2×2 quads along a fitted print's
+	// edge lose their derivatives and read a far mip, a grey hairline round the print.
+	vec4 card = texture2D(uCard, local);
+	if (off) card = vec4(0.0);
 	// The bento tile is an empty sheet: its logo and heading build on the DOM tile.
 	float edge = roundedBox((vUv - 0.5) * uSize, uSize * 0.5, uRadius);
 	vec4 tile = vec4(uTileColor, 1.0) * (1.0 - smoothstep(-0.75, 0.75, edge));
 	vec4 colour = mix(card, tile, uFace);
-	// Ink belongs to the front. Keep the same silhouette and premultiplied
-	// edge coverage on the blank paper back, including the card-to-tile morph.
-	if (!gl_FrontFacing) colour = vec4(uTileColor * colour.a, colour.a);
+	// Ink belongs to the front, unless printed on the back alone. Keep the same silhouette
+	// and premultiplied edge coverage on the blank paper back, including the card-to-tile morph.
+	if (!gl_FrontFacing && uPrintSide > -0.5) colour = vec4(uBackColor * colour.a, colour.a);
 	// The key light models the folds, relative to the sheet lying flat: faces
 	// turned from the light dim toward the ADS shadow blue, faces turned to it
 	// lift a touch, so light and shade travel through the sheet with the wave.
@@ -233,6 +249,7 @@ void main() {
 		colour.rgb = mix(colour.rgb, uShadowTint * colour.a, dark);
 		colour.rgb += (colour.a - colour.rgb) * (uLit * min(max(lit, 0.0) * DIFFUSE, MAX_BRIGHT));
 	}
+	// Last: at uFog 1 the sheet is its fog colour over exactly its coverage, which the wall's lens mask draws it as.
 	colour.rgb = mix(colour.rgb, uFogColor * colour.a, uFog);
 	gl_FragColor = colour * uOpacity * (1.0 - clipped);
 }
@@ -359,6 +376,49 @@ void main() {
 }
 `;
 
+/** Taps along each pixel's ray to the centre. */
+export const LENS_TAPS = 32;
+
+/**
+ * How the wall's lens keeps each sheet to its own smear. The field round the
+ * smeared sheets sets each pixel's reach, but every tap is weighed by the
+ * paper it finds (the lens's mask: its chroma, premultiplied by coverage): a
+ * tap counts only while it lies within that paper's own share of the reach,
+ * so a sheet beside one still in the air is smeared only as far as its own
+ * chroma, and a landed one (chroma 0) not at all, whatever its neighbours. Its
+ * trail shortens and fades with its chroma, and it never has a smear to drop
+ * when it hands over to its DOM card. Bare slide between the taps goes with
+ * the paper at the pixel itself (all of it, over bare slide); past a share,
+ * the pixel as drawn stands in. At full shares, every tap is as it was.
+ * Scalar GLSL, so its tests can run it as it is.
+ */
+export const LENS_SHARE_GLSL = /* glsl */ `
+float ownShare(float chroma, float cover, float field) {
+	return clamp(chroma / max(cover, 1.0 / 255.0) * 1.02 / max(field, 1e-4), 0.0, 1.0);
+}
+
+float bareShare(float chroma, float cover, float field) {
+	return cover > 0.0 ? ownShare(chroma, cover, field) : 1.0;
+}
+
+float within(float share, float along) {
+	return clamp(min(share * 0.8 - along, share * 0.2 + along) * float(TAPS) + 0.5, 0.0, 1.0) * clamp(share * float(TAPS), 0.0, 1.0);
+}
+
+float standIn(float paper, float bare, float cover) {
+	return 1.0 - paper * cover - bare * (1.0 - cover);
+}
+`;
+
+/**
+ * A sheet's share of the wall's lens (its spot's weight and its mask's
+ * chroma): its chroma, as far as it is shown, so a card the wall reveals
+ * brings its smear (and its field) up with it rather than in one frame.
+ */
+export function lensShare(chroma: number, opacity: number): number {
+	return chroma * Math.min(1, Math.max(0, opacity));
+}
+
 /**
  * Spectral radial dispersion, after the lens in Yousuf Soomro's liquid-glass
  * carousel (MIT, github.com/Yousuf-developer/liquid-glass-carousel): toward
@@ -385,7 +445,7 @@ uniform float uWarp;
 #endif
 uniform vec3 uBackground;
 varying vec2 vUv;
-const int TAPS = 32;
+const int TAPS = ${LENS_TAPS};
 
 #ifdef CHROMA_FIELD
 /** The smear and the bulge at full chroma: each pixel takes its share from the sheets near it. */
@@ -411,6 +471,15 @@ vec2 chromaField(vec2 uv) {
 	}
 	return field;
 }
+
+/** The scene's sheets again, each as its own chroma (r) and bulge (g), premultiplied by its coverage (a). */
+uniform sampler2D uMask;
+
+vec4 sampleMask(vec2 uv) {
+	if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return vec4(0.0);
+	return texture2D(uMask, uv);
+}
+${LENS_SHARE_GLSL}
 #endif
 
 // Barrel warp: the frame bulges as if painted on the inside of a sphere.
@@ -456,13 +525,27 @@ void main() {
 	float angle = atan(screen.y, screen.x);
 	float fluid = sin(angle * 2.0 + uTime * 1.3) * 0.55 + sin(angle - uTime * 0.9) * 0.25;
 	vec2 base = lensUv + tangent * fluid * uStrength * edge * 0.018;
+#ifdef CHROMA_FIELD
+	vec4 plain = sampleScene(lensUv);
+	vec4 mask = sampleMask(lensUv);
+	float here = bareShare(mask.r, mask.a, field.x);
+#endif
 	vec3 sum = vec3(0.0);
 	vec3 alpha = vec3(0.0);
 	vec3 weight = vec3(0.0);
 	for (int index = 0; index < TAPS; index++) {
 		float t = (float(index) + 0.5) / float(TAPS);
 		// Mostly outward trails, with a little of the split running inward too.
-		vec4 tap = sampleScene(base - inward * reach * (t - 0.2));
+		vec2 at = base - inward * reach * (t - 0.2);
+		vec4 tap = sampleScene(at);
+#ifdef CHROMA_FIELD
+		// Each sheet is smeared only as far as its own chroma (see LENS_SHARE_GLSL).
+		float along = t - 0.2;
+		vec4 under = sampleMask(at);
+		float paper = within(ownShare(under.r, under.a, field.x), along);
+		float bare = within(here, along);
+		tap = tap * paper + plain * standIn(paper, bare, tap.a);
+#endif
 		vec3 w = spectrum(t);
 		sum += (tap.rgb + uBackground * (1.0 - tap.a)) * w;
 		alpha += tap.a * w;
@@ -505,27 +588,6 @@ export function textureFrom(canvas: HTMLCanvasElement): THREE.CanvasTexture {
 	return texture;
 }
 
-/**
- * Done cards stacked down a print slot exactly as the wall's DOM stacks them
- * (`Prints`): each fitted to the slot's width or its share of the height, the
- * stack centred, a card not yet printed left out. Sizes in canvas px.
- */
-export function drawPrintStack(context: CanvasRenderingContext2D, width: number, height: number, prints: readonly (HTMLCanvasElement | undefined)[], space: number): void {
-	context.clearRect(0, 0, width, height);
-	const cards = prints.filter((print): print is HTMLCanvasElement => print !== undefined);
-	if (cards.length === 0) return;
-	const share = (height - space * (prints.length - 1)) / prints.length;
-	const fits = cards.map((print) => Math.min(width / print.width, share / print.height));
-	const total = cards.reduce((sum, print, index) => sum + print.height * fits[index], 0) + space * (cards.length - 1);
-	let y = (height - total) / 2;
-	cards.forEach((print, index) => {
-		const drawWidth = print.width * fits[index];
-		const drawHeight = print.height * fits[index];
-		context.drawImage(print, (width - drawWidth) / 2, y, drawWidth, drawHeight);
-		y += drawHeight + space;
-	});
-}
-
 export interface SheetMaterialOptions {
 	readonly texture: THREE.Texture;
 	/** Blank tile corner radius, sheet px. */
@@ -557,6 +619,9 @@ export function createSheetMaterial(options: SheetMaterialOptions): THREE.Shader
 			uSize: { value: new THREE.Vector2(1, 1) },
 			uRadius: { value: radius },
 			uTileColor: { value: tileColor },
+			// Its own copy: a sheet whose back differs sets it apart from its tile colour.
+			uBackColor: { value: tileColor.clone() },
+			uPrintSide: { value: 0 },
 			uFogColor: { value: fogColor },
 			uFog: { value: 0 },
 			uOpacity: { value: 1 },
@@ -593,10 +658,18 @@ export interface LensMaterialOptions {
 	 * (`uStrength`, `uWarp`), as the card field's camera does.
 	 */
 	readonly spots?: number;
+	/**
+	 * With `spots`: the same sheets as `scene`, each in its own chroma (r) and
+	 * bulge (g), premultiplied by its coverage (a), so the field smears each
+	 * sheet no further than its own chroma (`uMask`). A sheet drawn with
+	 * `uFog` 1 and its mask colour as `uFogColor` (a shadow, as `uTint`) is
+	 * exactly that over exactly its own coverage.
+	 */
+	readonly mask?: THREE.Texture;
 }
 
 /** The lens pass: the frame through the spectral dispersion and sphere warp. */
-export function createLensMaterial({ scene, aspect, background, spots = 0 }: LensMaterialOptions): THREE.ShaderMaterial {
+export function createLensMaterial({ scene, aspect, background, spots = 0, mask }: LensMaterialOptions): THREE.ShaderMaterial {
 	const field: Record<string, THREE.IUniform> = spots > 0
 		? {
 				uSmear: { value: 0 },
@@ -605,6 +678,7 @@ export function createLensMaterial({ scene, aspect, background, spots = 0 }: Len
 				uSpotWeights: { value: Array.from({ length: spots }, () => new THREE.Vector2()) },
 				uSpotCount: { value: 0 },
 				uSpotReach: { value: 0 },
+				uMask: { value: mask ?? null },
 			}
 		: { uStrength: { value: 0 }, uWarp: { value: 0 } };
 	return new THREE.ShaderMaterial({
@@ -670,18 +744,28 @@ export function poseSheet(mesh: SheetMesh, pose: FinaleCardPose, world: Vec3, ca
 	uniforms.uLift.value = pose.lift;
 }
 
-/** Peel's landing wave `waveAge` s after touchdown: spent (exactly 0) by the hand-off to the DOM, so the swap never pops. */
+/**
+ * Peel's landing wave `waveAge` s from touchdown: Peel's decay, swelling from
+ * a flat sheet as it gathers (so the paper never bends in one frame) and
+ * spent (exactly 0, at rest) by the hand-off to the DOM, so the swap never
+ * pops. Smooth throughout: the sheet's bend never changes speed abruptly.
+ */
 export function landingWaveEnergy(waveAge: number): number {
-	const settle = 1 - progress(waveAge, 0, CUE.handoff);
-	return waveAge >= 0 ? LANDING_AMPLITUDE * Math.exp((-2.2 * waveAge) / PEEL_DURATIONS.wave) * settle * settle : 0;
+	const swell = landingSwell(waveAge);
+	if (swell <= 0) return 0;
+	const settle = 1 - progress(waveAge, -LANDING.lead, CUE.handoff);
+	return LANDING_AMPLITUDE * swell * Math.exp((-2.2 * waveAge) / PEEL_DURATIONS.wave) * settle * settle;
 }
 
 /** The landing wave from the grab point, and how much the key light models the sheet's folds. */
 export function setLandingWave(uniforms: THREE.ShaderMaterial["uniforms"], pose: FinaleCardPose): void {
 	const energy = landingWaveEnergy(pose.waveAge);
-	// Light models the folds only while the sheet is bent; flat sheets stay exactly as printed.
-	uniforms.uLit.value = energy > 0 ? 1 : FLIGHT_LIGHT * pose.lift;
-	uniforms.uImpulse.value.set(GRAB_POINT.x, GRAB_POINT.y, Math.max(0, pose.waveAge), energy);
+	// Light models the folds only while the sheet is bent (flat sheets stay exactly as printed),
+	// turning up from the flight's gentler modelling as the wave swells.
+	const flight = FLIGHT_LIGHT * pose.lift;
+	uniforms.uLit.value = energy > 0 ? Math.max(flight, landingSwell(pose.waveAge)) : flight;
+	// The ripple runs from when it began to gather, so it travels on without a hitch at touchdown.
+	uniforms.uImpulse.value.set(GRAB_POINT.x, GRAB_POINT.y, Math.max(0, pose.waveAge + LANDING.lead), energy);
 }
 
 /** Motion (world px/s) into the sheet's own frame (`rotation`), saturating softly, scaled by `weight`. */

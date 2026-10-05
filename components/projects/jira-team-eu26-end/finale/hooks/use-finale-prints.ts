@@ -218,6 +218,13 @@ export function findFinaleCard(code: string, scope: "done" | "board" = "done"): 
 	return null;
 }
 
+/** A card's top-left corner radius as a share of its width. */
+function cornerShare(element: HTMLElement): number {
+	const width = element.offsetWidth;
+	const radius = Number.parseFloat(getComputedStyle(element).borderTopLeftRadius) || 0;
+	return width > 0 ? radius / width : 0;
+}
+
 export interface FinaleCardPrints {
 	/** Print a card shortly after it lands in Done (idle time, so the demo stays smooth). */
 	readonly schedule: (code: string) => void;
@@ -249,6 +256,8 @@ export function useFinaleCardPrints(): FinaleCardPrints {
 		if (!element) return Promise.resolve();
 		const task = printFinaleElement(element, { detach: true })
 			.then((canvas) => {
+				// Its corner as a share of its width: the wall rounds the card's shadow and accents as the print is rounded.
+				canvas.dataset.finaleCorner = String(cornerShare(element));
 				printsRef.current.set(code, canvas);
 			})
 			.catch(() => undefined)

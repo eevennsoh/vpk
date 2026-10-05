@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import type { FinaleSlot } from "../data/finale-stories";
 import type { FinaleViewport } from "../lib/finale-card-motion";
 import { FINALE_CURSORS, cursorPose, type FinaleCursorPose } from "../lib/finale-cursor-path";
+import type { PageCursor } from "../lib/finale-wall-motion";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 /** The arrow's tip inside its 30×30 box; the cursor is placed and pressed about it. */
@@ -58,11 +59,19 @@ export function FinaleTelepointer({ color, ink, label, ref }: Readonly<FinaleTel
 	);
 }
 
-interface FinalePresenterCursorsProps {
+/** A telepointer's colours and name. */
+interface FinaleTelepointerLook {
+	readonly id: string;
+	readonly label: string;
+	readonly color: string;
+	readonly ink: string;
+}
+
+interface FinaleTelepointersProps {
+	readonly looks: readonly FinaleTelepointerLook[];
 	/**
-	 * Presenter `index` (of `FINALE_CURSORS`: Mike, Tamar, Sherif, Taroon) at
-	 * `time`: their tip in viewport px, press or perspective scale, and
-	 * opacity; null while they are off.
+	 * Cursor `index` (of `looks`) at `time`: its tip in viewport px, press or
+	 * perspective scale, and opacity; null while it is off.
 	 */
 	readonly poseAt: (time: number, index: number) => FinaleCursorPose | null;
 	/** Stage fit: the cursors are drawn at the 1920 stage size and scaled with the type. */
@@ -70,15 +79,18 @@ interface FinalePresenterCursorsProps {
 }
 
 /**
- * One telepointer per presenter, each in their own colour and name, placed
- * every frame by `poseAt`. A cursor that is off (or faded out) is hidden, and
- * a resting one is not rewritten.
+ * One telepointer per look, placed every frame by `poseAt`. A cursor that is
+ * off (or faded out) is hidden, and a resting one is not rewritten. A render
+ * (a wall cursor taking a new name) places the last frame again at once, as
+ * the clock may be held.
  */
-export function FinalePresenterCursors({ poseAt, scale }: Readonly<FinalePresenterCursorsProps>) {
+function FinaleTelepointers({ looks, poseAt, scale }: Readonly<FinaleTelepointersProps>) {
 	const refs = useRef<(HTMLDivElement | null)[]>([]);
 	const written = useRef<{ opacity: string; transform: string }[]>([]);
+	const lastTime = useRef<number | null>(null);
 
-	useFinaleFrame((time) => {
+	const place = (time: number) => {
+		lastTime.current = time;
 		refs.current.forEach((element, index) => {
 			if (!element) return;
 			const pose = poseAt(time, index);
@@ -97,21 +109,25 @@ export function FinalePresenterCursors({ poseAt, scale }: Readonly<FinalePresent
 				element.style.transform = transform;
 			}
 		});
+	};
+	useFinaleFrame(place);
+	useLayoutEffect(() => {
+		if (lastTime.current !== null) place(lastTime.current);
 	});
 
 	return (
 		<>
-			{FINALE_CURSORS.map((cursor, index) => (
+			{looks.map((look, index) => (
 				<FinaleTelepointer
-					key={cursor.id}
+					key={look.id}
 					ref={(element) => {
 						refs.current[index] = element;
 						// A fresh element has none of the styles written to the last one.
 						written.current[index] = { opacity: "", transform: "" };
 					}}
-					color={cursor.color}
-					ink={cursor.ink}
-					label={cursor.label}
+					color={look.color}
+					ink={look.ink}
+					label={look.label}
 				/>
 			))}
 		</>
@@ -130,5 +146,42 @@ interface FinaleCursorsProps {
  * assembles. Their motion is `cursorPose` on the finale clock.
  */
 export function FinaleCursors({ slots, viewport, scale }: Readonly<FinaleCursorsProps>) {
-	return <FinalePresenterCursors scale={scale} poseAt={(time, index) => cursorPose(time, index, slots, viewport, scale)} />;
+	return <FinaleTelepointers looks={FINALE_CURSORS} scale={scale} poseAt={(time, index) => cursorPose(time, index, slots, viewport, scale)} />;
+}
+
+interface FinaleWallCursorsProps {
+	/** The wall's cursors at `time` (`wallCursorsAt`): who holds which card, in which lane. */
+	readonly cursorsAt: (time: number) => readonly PageCursor[];
+	/** Stage fit: the cursors are drawn at the 1920 stage size and scaled with the type. */
+	readonly scale: number;
+}
+
+const NO_NAMES: readonly string[] = FINALE_CURSORS.map(() => "");
+
+/**
+ * The mega bento's cursors: one lane per cursor colour of the slide, named
+ * for the teammate holding its card (`PageCursor.name`). An idle lane keeps
+ * its last name; as it takes a card from someone else it re-renders with the
+ * new name and stays hidden until that name is in, so it never shows the
+ * last holder's.
+ */
+export function FinaleWallCursors({ cursorsAt, scale }: Readonly<FinaleWallCursorsProps>) {
+	const [names, setNames] = useState(NO_NAMES);
+	const holderAt = (time: number, lane: number) => cursorsAt(time).find((cursor) => cursor.lane === lane);
+
+	useFinaleFrame((time) => {
+		const next = names.map((name, lane) => holderAt(time, lane)?.name ?? name);
+		if (next.some((name, lane) => name !== names[lane])) setNames(next);
+	});
+
+	return (
+		<FinaleTelepointers
+			looks={FINALE_CURSORS.map(({ id, color, ink }, lane) => ({ id, color, ink, label: names[lane] }))}
+			scale={scale}
+			poseAt={(time, lane) => {
+				const cursor = holderAt(time, lane);
+				return cursor && cursor.name === names[lane] ? cursor : null;
+			}}
+		/>
+	);
 }

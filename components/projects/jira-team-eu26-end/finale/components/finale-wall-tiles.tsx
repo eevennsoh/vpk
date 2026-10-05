@@ -12,7 +12,19 @@ import { FINALE_STORIES, type FinaleChapterId, type FinaleStory } from "../data/
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FINALE_INK, applyFinaleBuild, buildAfter, finaleBuildPaint } from "../lib/finale-build-style";
 import { EASE, progress } from "../lib/finale-math";
-import { WALL_SCALE, type WallContent, type WallGeometry, type WallSlot, type WallStatId, type WallStripId } from "../lib/finale-wall-layout";
+import {
+	paintWallPrint,
+	wallPrintCards,
+	wallPrintGap,
+	wallPrintOpacity,
+	wallPrintShapes,
+	type WallContent,
+	type WallGeometry,
+	type WallPrintCard,
+	type WallSlot,
+	type WallStatId,
+	type WallStripId,
+} from "../lib/finale-wall-layout";
 import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
 import { FinaleDealt, FinaleTileFace, FinaleTileLogos, FINALE_TILE_RADIUS } from "./finale-tile";
 import { WallAgent, WallComposer, WallFlow, WallSearch, WallTerminal } from "./finale-wall-product-tiles";
@@ -35,8 +47,6 @@ const SANS = { fontFamily: "var(--font-sans)", letterSpacing: "-0.02em" } as con
 const DONE_LOZENGE = { background: "#DCFFF1", color: "#216E4E" } as const;
 /** Each chapter's tint: the 200 steps of its poster's colour in the Team ’26 palette. */
 const CHAPTER_TINT: Readonly<Record<FinaleChapterId, string>> = { Context: "#DAF0AF", Collaboration: "#E9D8F8", Confidence: "#D0E1FD" };
-/** Gap between stacked printed cards, in viewport px at the 1920 stage. */
-const CARD_GAP = 8;
 /** A poster's word picks up its glide over this long once it has built. */
 const POSTER_RAMP_S = 1.2;
 
@@ -215,36 +225,39 @@ function Strip({ strip, revealStart }: Readonly<{ strip: WallStripId; revealStar
 }
 
 /**
- * Done cards exactly as they were printed for the finale, stacked down the
- * slot like a column: each fitted to the slot's width (or its share of the
- * height), the stack centred. A card not yet printed is left out.
+ * One of a print slot's Done cards exactly as it was printed for the finale,
+ * on its own rect, painted as its GL sheet is (`paintWallPrint`) at the same
+ * resolution, so the hand-over is pixel for pixel. It shows as its own sheet
+ * hands over (its slot writes `wallPrintOpacity`).
  */
-function Prints({ slot, prints, gap }: Readonly<{ slot: WallSlot; prints: readonly (HTMLCanvasElement | undefined)[]; gap: number }>) {
+function PrintCard({ card, print }: Readonly<{ card: WallPrintCard; print: HTMLCanvasElement }>) {
 	const ref = useRef<HTMLCanvasElement>(null);
-	const { width, height } = slot.rect;
+	const { rect, index } = card;
 	useLayoutEffect(() => {
 		const canvas = ref.current;
 		const context = canvas?.getContext("2d");
 		if (!canvas || !context) return;
 		const ratio = Math.min(window.devicePixelRatio || 1, 2);
-		canvas.width = Math.round(width * ratio);
-		canvas.height = Math.round(height * ratio);
-		context.clearRect(0, 0, canvas.width, canvas.height);
-		const cards = prints.filter((print): print is HTMLCanvasElement => print !== undefined);
-		if (cards.length === 0) return;
-		const space = gap * ratio;
-		const share = (canvas.height - space * (prints.length - 1)) / prints.length;
-		const fits = cards.map((print) => Math.min(canvas.width / print.width, share / print.height));
-		const total = cards.reduce((sum, print, index) => sum + print.height * fits[index], 0) + space * (cards.length - 1);
-		let y = (canvas.height - total) / 2;
-		cards.forEach((print, index) => {
-			const drawWidth = print.width * fits[index];
-			const drawHeight = print.height * fits[index];
-			context.drawImage(print, (canvas.width - drawWidth) / 2, y, drawWidth, drawHeight);
-			y += drawHeight + space;
-		});
-	}, [gap, prints, width, height]);
-	return <canvas ref={ref} className="absolute inset-0 size-full" />;
+		canvas.width = Math.max(2, Math.round(rect.width * ratio));
+		canvas.height = Math.max(2, Math.round(rect.height * ratio));
+		paintWallPrint(context, canvas.width, canvas.height, print);
+	}, [print, rect.width, rect.height]);
+	return <canvas ref={ref} className="absolute" style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height, opacity: `var(${wallPrintOpacity(index)}, 1)` }} />;
+}
+
+/**
+ * Done cards exactly as they were printed for the finale, stacked down the
+ * slot like a column, each a card of its own (`wallPrintCards`): the GL
+ * sheets they land as, their shadows and their landing accents are on the
+ * same rects, so nothing shows round them or in the gaps between them. A
+ * card not yet printed is left out.
+ */
+function Prints({ slot, codes, prints, gap }: Readonly<{ slot: WallSlot; codes: readonly string[]; prints: readonly (HTMLCanvasElement | undefined)[]; gap: number }>) {
+	const cards = useMemo(() => wallPrintCards(slot.rect, codes, wallPrintShapes((code) => prints[codes.indexOf(code)]), gap), [codes, gap, prints, slot.rect]);
+	return cards.map((card) => {
+		const print = prints[card.index];
+		return print ? <PrintCard key={card.index} card={card} print={print} /> : null;
+	});
 }
 
 /**
@@ -266,7 +279,7 @@ function WallPrints({ slot, geometry, codes, cardPrint, revealStart }: Readonly<
 		const next = codes.map((code) => cardPrint(code));
 		if (next.some((print, index) => print !== prints[index])) setPrints(next);
 	});
-	if (prints.some(Boolean)) return <Prints slot={slot} prints={prints} gap={(CARD_GAP * geometry.typeScale) / WALL_SCALE} />;
+	if (prints.some(Boolean)) return <Prints slot={slot} codes={codes} prints={prints} gap={wallPrintGap(geometry)} />;
 	if (!standIn) return null;
 	return <FinaleWallTileContent slot={standIn} geometry={geometry} cardPrint={cardPrint} revealStart={revealStart} />;
 }

@@ -40,7 +40,7 @@ import { landingSettled } from "./finale-wall-motion";
 const [BLUE, ORANGE, PURPLE, LIME] = ROVO_SHADER_COLOR_HEX;
 
 export const TILE_GLOW = {
-	/** After touchdown, once the landing recoil has spent itself (s). */
+	/** After touchdown, once the landing wave's swell has passed (s). */
 	settle: 0.2,
 	/** Start-delay jitter after `settle`. */
 	delay: [0, 0.05],
@@ -280,7 +280,7 @@ export interface TileGlowWindow {
 
 /**
  * The glow of a card seeded `seed` that touches down at `touchdown`: from once
- * its recoil has spent itself (plus its glow's jitter), and gone by
+ * its landing wave has swelled (plus its glow's jitter), and gone by
  * `revealEnd`, when its content has built.
  */
 export function tileGlowWindowFor(touchdown: number, revealEnd: number, seed: number): TileGlowWindow {
@@ -541,6 +541,8 @@ export interface TileGlowLanding {
 	readonly rect: FinaleRect;
 	readonly touchdown: number;
 	readonly seed: number;
+	/** Its own corner radius (viewport px), for a card not rounded as the tiles are. */
+	readonly radius?: number;
 }
 
 const NO_DRAWS: readonly TileGlowDraw[] = [];
@@ -580,7 +582,7 @@ export function landingGlowDraws(time: number, landings: readonly TileGlowLandin
 		const level = tileGlowFor(time, touchdown, landingSettled(touchdown), seed);
 		if (!level.active || level.envelope <= 0) continue;
 		draws ??= [];
-		draws.push(glowDraw(glowOrder(seed), rect, level, radius, scale, stroke, tileGlowClock(landingGlowTime(time, touchdown, seed))));
+		draws.push(glowDraw(glowOrder(seed), rect, level, landing.radius ?? radius, scale, stroke, tileGlowClock(landingGlowTime(time, touchdown, seed))));
 	}
 	return draws ?? NO_DRAWS;
 }

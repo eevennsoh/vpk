@@ -4,7 +4,7 @@ import { memo, useRef, useState } from "react";
 
 import { WALL_CUE } from "../data/finale-cues";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
-import type { FinaleWall as FinaleWallModel, WallSlot } from "../lib/finale-wall-layout";
+import { wallPrintOpacity, type FinaleWall as FinaleWallModel, type WallPrintShapes, type WallSlot } from "../lib/finale-wall-layout";
 import { visibleColumns, wallActive, wallMounted, wallOffset, wallSlotPresence, type BentoDrop } from "../lib/finale-wall-motion";
 import { FinaleWallTileContent } from "./finale-wall-tiles";
 
@@ -15,33 +15,42 @@ interface WallSlotCardProps {
 	readonly wall: FinaleWallModel;
 	readonly drops: readonly BentoDrop[];
 	readonly cardPrint: CardPrint;
+	readonly prints: WallPrintShapes;
 }
+
+const opacityText = (opacity: number) => (opacity >= 1 ? "1" : opacity.toFixed(3));
 
 /**
  * One card on the wall, shown as `wallSlotPresence` says: coming up (a hair
  * small, settling) as the wall appears around the throw, or taking over from
  * its GL sheet once that has landed, to build its content from then on if it
- * landed blank. Hidden, it is not painted at all; it writes only when its
- * presence moves.
+ * landed blank; a print slot's Done cards each as their own sheets hand over.
+ * Hidden, it is not painted at all; it writes only when its presence moves.
  */
-function WallSlotCard({ slot, wall, drops, cardPrint }: Readonly<WallSlotCardProps>) {
+function WallSlotCard({ slot, wall, drops, cardPrint, prints }: Readonly<WallSlotCardProps>) {
 	const ref = useRef<HTMLDivElement>(null);
 	const writtenRef = useRef("");
+	const cardsRef = useRef(0);
 	// When a slot's content builds is fixed for its wall; only its opacity and scale move with the clock.
 	const { revealStart } = wallSlotPresence(slot, wall, drops, WALL_CUE.start);
 
 	useFinaleFrame((time) => {
 		const element = ref.current;
 		if (!element) return;
-		const { opacity, scale } = wallSlotPresence(slot, wall, drops, time);
-		const shown = opacity >= 1 ? "1" : opacity.toFixed(3);
+		const { opacity, scale, cards } = wallSlotPresence(slot, wall, drops, time, prints);
+		const shown = opacityText(opacity);
 		const transform = scale >= 1 ? "" : `scale(${scale.toFixed(4)})`;
-		const written = `${shown}|${transform}`;
+		const each = cards?.map(opacityText) ?? [];
+		const written = `${shown}|${transform}|${each.join(",")}`;
 		if (written === writtenRef.current) return;
 		writtenRef.current = written;
 		element.style.opacity = shown;
 		element.style.visibility = opacity > 0 ? "visible" : "hidden";
 		element.style.transform = transform;
+		// Each printed card reads its own (a card printed later picks it up as it mounts).
+		each.forEach((value, index) => element.style.setProperty(wallPrintOpacity(index), value));
+		for (let index = each.length; index < cardsRef.current; index += 1) element.style.removeProperty(wallPrintOpacity(index));
+		cardsRef.current = each.length;
 	});
 
 	return (
@@ -56,11 +65,12 @@ interface WallColumnProps {
 	readonly wall: FinaleWallModel;
 	readonly drops: readonly BentoDrop[];
 	readonly cardPrint: CardPrint;
+	readonly prints: WallPrintShapes;
 }
 
 /** One column of the wall; it renders once, when it comes into range. */
-const WallColumn = memo(function WallColumn({ slots, wall, drops, cardPrint }: Readonly<WallColumnProps>) {
-	return slots.map((slot) => <WallSlotCard key={slot.key} slot={slot} wall={wall} drops={drops} cardPrint={cardPrint} />);
+const WallColumn = memo(function WallColumn({ slots, wall, drops, cardPrint, prints }: Readonly<WallColumnProps>) {
+	return slots.map((slot) => <WallSlotCard key={slot.key} slot={slot} wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />);
 });
 
 interface FinaleWallProps {
@@ -68,6 +78,8 @@ interface FinaleWallProps {
 	/** The bento's cards and the gaps they land in. */
 	readonly drops: readonly BentoDrop[];
 	readonly cardPrint: CardPrint;
+	/** Those prints' shapes, as the GL layer and the accents take them. */
+	readonly prints: WallPrintShapes;
 }
 
 /**
@@ -79,7 +91,7 @@ interface FinaleWallProps {
  * above). Its columns mount hidden on the bento's held final frame
  * (`wallMounted`) and show once the act starts.
  */
-export function FinaleWall({ wall, drops, cardPrint }: Readonly<FinaleWallProps>) {
+export function FinaleWall({ wall, drops, cardPrint, prints }: Readonly<FinaleWallProps>) {
 	const rootRef = useRef<HTMLDivElement>(null);
 	const trackRef = useRef<HTMLDivElement>(null);
 	const [range, setRange] = useState<{ first: number; last: number } | null>(null);
@@ -120,7 +132,7 @@ export function FinaleWall({ wall, drops, cardPrint }: Readonly<FinaleWallProps>
 		<div ref={rootRef} aria-hidden className="absolute inset-0 overflow-hidden" style={{ visibility: "hidden" }}>
 			<div ref={trackRef} className="absolute top-0 left-0" style={{ willChange: "transform" }}>
 				{columns.map((column) => (
-					<WallColumn key={column} slots={wall.column(column)} wall={wall} drops={drops} cardPrint={cardPrint} />
+					<WallColumn key={column} slots={wall.column(column)} wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />
 				))}
 			</div>
 		</div>

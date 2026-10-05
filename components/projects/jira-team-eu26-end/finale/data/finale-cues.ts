@@ -78,42 +78,59 @@ export const CUE = {
 	yearLand: FLASH_DURATION + 6.95,
 	/**
 	 * Final frame: "Team ’26" holds at full size. The last tile's heading has
-	 * built before this cue (`tileRevealStart(5) + reveal`), leaving ~1s of hold.
+	 * built before this cue (`tileRevealStart(5) + reveal`), leaving just over
+	 * half a second of hold before the title turns into its black card.
 	 */
-	end: FLASH_DURATION + 8.95,
+	end: FLASH_DURATION + 8.45,
 } as const;
 
 /** The bento's final frame: what reduced motion shows, and where the wall takes over. */
 export const FINALE_REST_TIME = CUE.end;
 
+/** Act III's title flip, and the throw it flows into (see `WALL_CUE`). */
+const TITLE_FLIP_AT = 0.22;
+const TOSS_AT = TITLE_FLIP_AT + 0.12;
+
 /**
  * Act III, the mega bento (see `lib/finale-wall-motion.ts`), in seconds after
- * the bento's final frame. "Team ’26" turns over into a black card, and the
- * bento's seven cards, faces and all, are thrown like the Done column's deck:
+ * the bento's final frame. "Team ’26" flips over into a black card and, as it
+ * comes over, the bento's seven cards, faces and all, are thrown like the
+ * Done column's deck, the title straight on out of its flip:
  * tumbling away from the lens and down as paper falls, into gaps across the
  * mega bento far below, which appears around them from the middle out. Each
- * lands as it landed on the slide. Then the wall glides forever; new cards
- * wait in the air at its leading edge, tilted, and come down one by one.
+ * lands as it landed on the slide, the wall already gliding under it, and
+ * the wall glides on forever; new cards wait in the air at its leading edge,
+ * tilted, and come down one by one.
  */
 export const WALL_CUE = {
 	start: CUE.end,
-	/** "Team ’26" gains a white card and turns it over to a black one, ready to be thrown with the cards. */
-	titleCardAt: 0.05,
-	titleCardS: 0.8,
-	/** The bento's seven cards are thrown at once, like the Done column's deck. */
-	tossAt: 0.9,
+	/** "Team ’26" gains a white card under its type at once… */
+	titleCardAt: 0.02,
+	/** …which flips end over end, as the field's cards do, to its black back… */
+	titleFlipAt: TITLE_FLIP_AT,
+	/**
+	 * …and the bento's seven cards are thrown at once, like the Done column's
+	 * deck, as it whips past edge-on (`titleFlipPose`'s spring): it never comes
+	 * to rest in its box, but flies on out of its flip.
+	 */
+	tossAt: TOSS_AT,
 	tossSpread: CUE.burstSpread,
 	/** …and come down into their gaps one after another, as they landed on the slide. */
-	landAt: 2.9,
+	landAt: TOSS_AT + 2,
 	landStagger: 0.2,
 	/** Each flight ends as a bento tile's swoop onto the slide did. */
 	fallS: CUE.tileFall,
 	/** The mega bento appears around the thrown cards, from the middle out. */
-	revealAt: 0.9,
+	revealAt: TOSS_AT,
 	revealS: 1.7,
 	revealFadeS: 0.6,
-	/** The wall picks up speed once the last card is down. */
-	driftAt: 4.55,
+	/**
+	 * The wall starts to glide this far through the throw, from `tossAt` to the
+	 * first touchdown (`landAt`), while the cards are still coming down, so
+	 * every one lands in a gap already on the move. It eases up to its pace
+	 * over `driftRamp`, reached soon after the last card is down.
+	 */
+	driftShare: 0.5,
 	driftRamp: 3,
 	/** A waiting card's descent from the air into its slot at the leading edge. */
 	descendS: 0.95,

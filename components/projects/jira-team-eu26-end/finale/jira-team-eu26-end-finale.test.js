@@ -440,7 +440,9 @@ test("tiles land one by one and every heading has built with a hold before the f
 		if (order > 0) assert.ok(time > landings[order - 1], "tiles land one after another");
 	});
 	const lastHeadingBuilt = tileRevealStart(FINALE_SLOT_COUNT - 1) + CUE.reveal;
-	assert.ok(CUE.end - lastHeadingBuilt >= 0.8, `final frame holds ${(CUE.end - lastHeadingBuilt).toFixed(2)}s after the last heading builds`);
+	// A short hold: the title turns into its black card soon after, without a wait.
+	const hold = CUE.end - lastHeadingBuilt;
+	assert.ok(hold >= 0.5 && hold <= 0.8, `final frame holds ${hold.toFixed(2)}s after the last heading builds`);
 	assert.ok(CUE.end - CUE.yearLand >= 1, "the year has landed well before the final frame");
 });
 
