@@ -6,7 +6,8 @@
  * camera recoils, reveals and sweeps the field, finds the first card MCB
  * dragged far off and rushes in to it, and that card becomes the first tile of
  * the bento assembling from the field. "Team ’26" lands in its centre and
- * holds to the final frame.
+ * holds to the bento's final frame; then Act III (`WALL_CUE`) tosses the
+ * bento's tiles into an endless mega bento that glides on until Esc.
  *
  * Sound is off for now, so these beats are paced by the choreography. The
  * parked score (`scripts/compose-team-eu26-finale-score.py`) was written to an
@@ -82,5 +83,38 @@ export const CUE = {
 	end: FLASH_DURATION + 8.95,
 } as const;
 
-/** Final frame used when motion is reduced or the sequence has finished. */
+/** The bento's final frame: what reduced motion shows, and where the wall takes over. */
 export const FINALE_REST_TIME = CUE.end;
+
+/**
+ * Act III, the mega bento (see `lib/finale-wall-motion.ts`), in seconds after
+ * the bento's final frame. "Team ’26" turns over into a black card, and the
+ * bento's seven cards, faces and all, are thrown like the Done column's deck:
+ * tumbling away from the lens and down as paper falls, into gaps across the
+ * mega bento far below, which appears around them from the middle out. Each
+ * lands as it landed on the slide. Then the wall glides forever; new cards
+ * wait in the air at its leading edge, tilted, and come down one by one.
+ */
+export const WALL_CUE = {
+	start: CUE.end,
+	/** "Team ’26" gains a white card and turns it over to a black one, ready to be thrown with the cards. */
+	titleCardAt: 0.05,
+	titleCardS: 0.8,
+	/** The bento's seven cards are thrown at once, like the Done column's deck. */
+	tossAt: 0.9,
+	tossSpread: CUE.burstSpread,
+	/** …and come down into their gaps one after another, as they landed on the slide. */
+	landAt: 2.9,
+	landStagger: 0.2,
+	/** Each flight ends as a bento tile's swoop onto the slide did. */
+	fallS: CUE.tileFall,
+	/** The mega bento appears around the thrown cards, from the middle out. */
+	revealAt: 0.9,
+	revealS: 1.7,
+	revealFadeS: 0.6,
+	/** The wall picks up speed once the last card is down. */
+	driftAt: 4.55,
+	driftRamp: 3,
+	/** A waiting card's descent from the air into its slot at the leading edge. */
+	descendS: 0.95,
+} as const;

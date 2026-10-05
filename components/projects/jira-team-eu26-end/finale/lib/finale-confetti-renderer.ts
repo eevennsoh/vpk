@@ -4,11 +4,12 @@
  * default: the main thread is busy printing the column while the burst flies)
  * or on the main thread as a fallback.
  *
- * Two draws per frame:
- * - pieces, instanced from one burst: two-sided Rovo paper, thin-film sequins
+ * One pass per frame draws:
+ * - pieces, instanced per burst: two-sided Rovo paper, thin-film sequins
  *   and satin ribbons, lit by one key light, defocused near the lens and
  *   stretched along their motion. (Depth comes from perspective, focus and
  *   blur; cast shadows read as grey ghosts over a white board and were cut.)
+ *   The board's small bursts stack, each on its own clock, over the finale's.
  * - the Done column's border, lit by the bento tiles' own pulsing border: it
  *   pulses in on the top of both sides, then is traced down them as the burst
  *   is drawn in, meeting along the foot (see `FINALE_CONFETTI_GLOW_FRAGMENT`).
@@ -22,12 +23,14 @@ import { TILE_GLOW, TILE_GLOW_FRAGMENT, TILE_GLOW_VERTEX, perimeterParam, tileGl
 import {
 	FINALE_CONFETTI_FOV,
 	FINALE_CONFETTI_MOTION_GLSL,
+	FINALE_CONFETTI_SEED,
 	FINALE_CONFETTI_TIMING,
 	SMALL_CONFETTI_TIMING,
 	createFinaleConfettiBurst,
 	finaleConfettiCameraDistance,
 	finaleConfettiCharge,
 	finaleConfettiGlow,
+	finaleConfettiRandom,
 	finaleConfettiRealTime,
 	finaleConfettiShowTime,
 	finaleConfettiTrace,
@@ -373,6 +376,15 @@ export interface FinaleConfettiPlayOptions extends FinaleConfettiStage {
 	readonly dpr: number;
 }
 
+/** Where one show is on this frame: `time` in its own seconds since launch, `release` 0 → 1 as it goes. */
+export interface FinaleConfettiPose {
+	readonly id: number;
+	readonly time: number;
+	readonly release: number;
+}
+
+type PiecesMesh = THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial>;
+
 export class FinaleConfettiRenderer {
 	private readonly renderer: THREE.WebGLRenderer;
 	private readonly scene = new THREE.Scene();
@@ -408,13 +420,21 @@ export class FinaleConfettiRenderer {
 		uBand: { value: new THREE.Vector4() },
 		uFoot: { value: new THREE.Vector2() },
 	};
-	private readonly pieces: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial>;
+	/** The finale's burst: one at a time, under its column glow. */
+	private readonly pieces: PiecesMesh;
+	/**
+	 * The board's small bursts in flight, by show: each its own mesh and clock
+	 * (sharing the camera and look), so a drop's burst joins the last one's
+	 * pieces instead of replacing them. Spent meshes wait in `idleSprays`.
+	 */
+	private readonly sprays = new Map<number, PiecesMesh>();
+	private readonly idleSprays: PiecesMesh[] = [];
 	private readonly glow: THREE.Mesh<THREE.BufferGeometry, THREE.RawShaderMaterial>;
 	/** The glow's own look, which strengthens on the foot and blooms as it hands over to the flash. */
 	private glowLook = { bloom: 0, floor: 0, gain: 0 };
 	/** The column's border the glow is traced round. */
 	private glowShape: TileGlowShape = tileGlowShape({ x: 0, y: 0, width: 1, height: 1 }, 0, 1, 0);
-	private burst: FinaleConfettiBurst | null = null;
+	private large: { readonly id: number; readonly burst: FinaleConfettiBurst } | null = null;
 	private size = { width: 0, height: 0, dpr: 0 };
 
 	constructor(canvas: HTMLCanvasElement | OffscreenCanvas, onFailure: (reason: string) => void) {
@@ -425,17 +445,7 @@ export class FinaleConfettiRenderer {
 		this.renderer.debug.onShaderError = (gl, program, vertex, fragment) => {
 			onFailure([gl.getProgramInfoLog(program), gl.getShaderInfoLog(vertex), gl.getShaderInfoLog(fragment)].filter(Boolean).join("\n"));
 		};
-		const material = (vertexShader: string, fragmentShader: string) => new THREE.ShaderMaterial({
-			uniforms: this.uniforms,
-			vertexShader,
-			fragmentShader,
-			transparent: true,
-			premultipliedAlpha: true,
-			depthTest: false,
-			depthWrite: false,
-			side: THREE.DoubleSide,
-		});
-		this.pieces = new THREE.Mesh(new THREE.InstancedBufferGeometry(), material(PIECE_VERTEX, PIECE_FRAGMENT));
+		this.pieces = this.createPieces(this.uniforms);
 		// The tile glow's own screen-space quad: its vertex shader maps `aCorner` over `uQuad`.
 		const quad = new THREE.BufferGeometry();
 		quad.setAttribute("position", new THREE.BufferAttribute(new Float32Array(12), 3));
@@ -461,9 +471,37 @@ export class FinaleConfettiRenderer {
 		});
 		// Warm up with one real draw (program link, buffers, attribute layout) so
 		// the show never opens on that cost; then leave the canvas transparent.
-		this.play({ width: 1, height: 1, dpr: 1, column: { x: 0, y: 0, width: 1, height: 1, radius: 0 } });
-		this.render(0, 0);
+		this.play({ id: 0, width: 1, height: 1, dpr: 1, column: { x: 0, y: 0, width: 1, height: 1, radius: 0 } });
+		this.render([{ id: 0, time: 0, release: 0 }]);
 		this.clear();
+	}
+
+	/** Instanced pieces on `uniforms`; every material shares one program, so a new spray compiles nothing. */
+	private createPieces(uniforms: typeof this.uniforms): PiecesMesh {
+		const mesh = new THREE.Mesh(new THREE.InstancedBufferGeometry(), new THREE.ShaderMaterial({
+			uniforms,
+			vertexShader: PIECE_VERTEX,
+			fragmentShader: PIECE_FRAGMENT,
+			transparent: true,
+			premultipliedAlpha: true,
+			depthTest: false,
+			depthWrite: false,
+			side: THREE.DoubleSide,
+		}));
+		// Motion lives in the shaders, so the CPU-side bounds mean nothing.
+		mesh.frustumCulled = false;
+		return mesh;
+	}
+
+	/** A pooled mesh for a small burst: the shared camera and look, its own clock. */
+	private claimSpray(): PiecesMesh {
+		const idle = this.idleSprays.pop();
+		if (idle) return idle;
+		const mesh = this.createPieces({ ...this.uniforms, uTime: { value: 0 }, uRelease: { value: 0 } });
+		mesh.renderOrder = this.pieces.renderOrder;
+		mesh.visible = false;
+		this.scene.add(mesh);
+		return mesh;
 	}
 
 	/**
@@ -479,8 +517,10 @@ export class FinaleConfettiRenderer {
 		this.renderer.setSize(width, height, false);
 	}
 
-	play(options: FinaleConfettiPlayOptions): FinaleConfettiBurst {
-		const { width, height, dpr, column } = options;
+	/** Launch show `id`: the finale's burst replaces any other of its own; a small one joins those in flight. */
+	play(options: FinaleConfettiPlayOptions & { readonly id: number }): FinaleConfettiBurst {
+		const { id, width, height, dpr, column } = options;
+		const small = options.size === "small";
 		this.resize(width, height, dpr);
 		const distance = finaleConfettiCameraDistance(height);
 		this.camera.aspect = width / height;
@@ -491,8 +531,8 @@ export class FinaleConfettiRenderer {
 		this.uniforms.uCamera.value.set(width / 2, height / 2, distance);
 		const L = FINALE_CONFETTI_LOOK;
 		this.uniforms.uFocus.value.set(distance * L.focus, L.focusGain, distance * L.farFocus, L.farFocusGain);
-		if (options.size !== "small") this.playGlow(width, height, column);
-		const burst = createFinaleConfettiBurst(options);
+		// Each small burst is drawn afresh, so one landing on another's tail never echoes it.
+		const burst = small ? createFinaleConfettiBurst(options, finaleConfettiRandom(FINALE_CONFETTI_SEED + id)) : createFinaleConfettiBurst(options);
 		const geometry = new THREE.InstancedBufferGeometry();
 		geometry.index = this.strip.index;
 		geometry.setAttribute("position", this.strip.getAttribute("position"));
@@ -500,11 +540,16 @@ export class FinaleConfettiRenderer {
 			geometry.setAttribute(name, new THREE.InstancedBufferAttribute(array, itemSize));
 		}
 		geometry.instanceCount = burst.pieces.length;
-		this.pieces.geometry.dispose();
-		this.pieces.geometry = geometry;
-		this.pieces.visible = true;
-		this.glow.visible = options.size !== "small";
-		this.burst = burst;
+		const mesh = small ? this.claimSpray() : this.pieces;
+		mesh.geometry.dispose();
+		mesh.geometry = geometry;
+		mesh.visible = true;
+		if (small) this.sprays.set(id, mesh);
+		else {
+			this.playGlow(width, height, column);
+			this.glow.visible = true;
+			this.large = { id, burst };
+		}
 		return burst;
 	}
 
@@ -539,39 +584,59 @@ export class FinaleConfettiRenderer {
 		this.glowShape = shape;
 	}
 
-	/** One frame: `time` in seconds since launch; `release` 0 → 1 as the glow hands over to the flash. */
-	render(time: number, release: number): void {
-		if (!this.burst) return;
+	/** One frame of every show in flight, drawn in one pass. */
+	render(poses: readonly FinaleConfettiPose[]): void {
+		let drawn = false;
+		for (const { id, time, release } of poses) {
+			if (this.large?.id === id) this.poseLarge(this.large.burst, time, release);
+			else {
+				const spray = this.sprays.get(id);
+				if (!spray) continue;
+				spray.material.uniforms.uTime.value = time;
+				spray.material.uniforms.uRelease.value = release;
+			}
+			drawn = true;
+		}
+		if (drawn) this.renderer.render(this.scene, this.camera);
+	}
+
+	/** The finale's burst at `time`; `release` 0 → 1 as the glow hands over to the flash. */
+	private poseLarge(burst: FinaleConfettiBurst, time: number, release: number): void {
 		this.uniforms.uTime.value = time;
 		this.uniforms.uRelease.value = release;
-		if (this.burst.stage.size === "small") {
-			this.renderer.render(this.scene, this.camera);
-			return;
-		}
 		// The border pulses in as the vortex opens, is traced steadily down the column
 		// through the pull, burns stronger on the foot as the pieces land, and blooms into the flash as it goes.
 		const g = this.glowUniforms;
 		g.uTime.value = time;
 		const mask = finaleConfettiGlowMask(this.glowShape, finaleConfettiTrace(time));
 		g.uBand.value.set(mask.tail.from, mask.tail.fade, mask.lead.from, mask.lead.fade);
-		g.uEnvelope.value = finaleConfettiGlow(time, finaleConfettiCharge(this.burst, time)) * (1 - release) * (1 - release);
+		g.uEnvelope.value = finaleConfettiGlow(time, finaleConfettiCharge(burst, time)) * (1 - release) * (1 - release);
 		const look = this.glowLook;
 		const foot = FINALE_CONFETTI_LOOK.glowFoot;
 		g.uLook.value.y = look.bloom * (1 + 3 * release);
 		g.uLook.value.z = look.floor + foot.floor * mask.foot;
 		g.uLook2.value.z = look.gain * (1 + foot.gain * mask.foot);
 		g.uFoot.value.x = mask.foot;
-		this.renderer.render(this.scene, this.camera);
 	}
 
 	/**
-	 * Leave a transparent canvas at its size, so the next show draws straight
-	 * into the surface the page already embeds (the parked buffer is the price).
+	 * Take show `id` off (every show without one). Once none is left, leave a
+	 * transparent canvas at its size, so the next show draws straight into the
+	 * surface the page already embeds (the parked buffer is the price).
 	 */
-	clear(): void {
-		this.burst = null;
-		for (const mesh of [this.glow, this.pieces]) mesh.visible = false;
-		this.renderer.clear();
+	clear(id?: number): void {
+		if (id === undefined || this.large?.id === id) {
+			this.large = null;
+			for (const mesh of [this.glow, this.pieces]) mesh.visible = false;
+		}
+		for (const [key, spray] of this.sprays) {
+			if (id !== undefined && key !== id) continue;
+			spray.visible = false;
+			spray.geometry.dispose();
+			this.sprays.delete(key);
+			this.idleSprays.push(spray);
+		}
+		if (!this.large && this.sprays.size === 0) this.renderer.clear();
 	}
 
 	dispose(): void {
@@ -579,7 +644,7 @@ export class FinaleConfettiRenderer {
 		this.pieces.geometry.dispose();
 		this.strip.dispose();
 		this.glow.geometry.dispose();
-		for (const mesh of [this.glow, this.pieces]) mesh.material.dispose();
+		for (const mesh of [this.glow, this.pieces, ...this.idleSprays]) mesh.material.dispose();
 		this.renderer.dispose();
 	}
 }
@@ -608,11 +673,6 @@ interface PlayerShow {
 	gathered: boolean;
 }
 
-/**
- * The show's own frame loop, identical in a worker and on the main thread.
- * Reports `gathered` once every piece has landed on the border and `done` once the
- * canvas is transparent again (after a release, a cancel or a failure).
- */
 /** What the player needs from a renderer (injectable, so the loop is testable without GL). */
 export type FinaleConfettiSurface = Pick<FinaleConfettiRenderer, "resize" | "play" | "render" | "clear" | "dispose">;
 
@@ -621,46 +681,67 @@ interface FinaleConfettiPlayerOptions {
 	readonly createRenderer?: (canvas: HTMLCanvasElement | OffscreenCanvas, onFailure: (reason: string) => void) => FinaleConfettiSurface;
 }
 
+/**
+ * The shows' own frame loop, identical in a worker and on the main thread.
+ * Small bursts stack, each on its own clock, over at most one finale burst.
+ * Reports `gathered` once every piece of the finale's has landed on the
+ * border, and `done` for each show once it is off the canvas (after a
+ * release, a fade, a cancel or a failure).
+ */
 export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) => void, options: FinaleConfettiPlayerOptions = {}) {
 	const { now = () => performance.now(), createRenderer = (canvas, onFailure) => new FinaleConfettiRenderer(canvas, onFailure) } = options;
 	let renderer: FinaleConfettiSurface | null = null;
-	let show: PlayerShow | null = null;
+	/** Every show in flight, oldest first. */
+	const shows = new Map<number, PlayerShow>();
 	let frame: number | null = null;
 	const schedule = (callback: () => void) => typeof requestAnimationFrame === "function" ? requestAnimationFrame(callback) : setTimeout(callback, 16) as unknown as number;
 	const unschedule = (handle: number) => typeof cancelAnimationFrame === "function" ? cancelAnimationFrame(handle) : clearTimeout(handle);
-	const fail = (reason: string) => {
+	const stop = () => {
 		if (frame !== null) unschedule(frame);
 		frame = null;
-		show = null;
+	};
+	const fail = (reason: string) => {
+		stop();
+		shows.clear();
 		renderer = null;
 		emit({ type: "failed", reason });
 	};
-	const finish = () => {
-		if (frame !== null) unschedule(frame);
-		frame = null;
-		if (!show) return;
-		// Only a live show has pieces to clear; an idle canvas is already transparent.
-		renderer?.clear();
+	const finish = (show: PlayerShow) => {
+		if (!shows.delete(show.id)) return;
+		renderer?.clear(show.id);
 		emit({ type: "done", id: show.id });
-		show = null;
+		if (shows.size === 0) stop();
+	};
+	const finishAll = () => {
+		for (const show of [...shows.values()]) finish(show);
+	};
+	/** Where `show` is at `at`; one whose clock has not started is on frame 0. */
+	const poseOf = (show: PlayerShow, at: number): FinaleConfettiPose => {
+		const elapsed = show.startedAt === null ? 0 : (at - show.startedAt) / 1000;
+		const time = show.held ?? (show.size === "small" ? elapsed : finaleConfettiShowTime(elapsed));
+		const requested = show.releasedAt === null ? 0 : Math.min(1, (at - show.releasedAt) / 1000 / FINALE_CONFETTI_TIMING.release);
+		const fade = show.size === "small" ? Math.max(0, Math.min(1, (time - SMALL_CONFETTI_TIMING.fadeStart) / SMALL_CONFETTI_TIMING.fade)) : 0;
+		return { id: show.id, time, release: Math.max(requested, fade) };
 	};
 	const tick = () => {
 		frame = null;
-		if (!show || !renderer) return;
+		if (shows.size === 0 || !renderer) return;
 		const at = now();
-		show.startedAt ??= at;
-		const elapsed = (at - show.startedAt) / 1000;
-		const time = show.held ?? (show.size === "small" ? elapsed : finaleConfettiShowTime(elapsed));
-		if (show.size === "large" && !show.gathered && time >= FINALE_CONFETTI_TIMING.gathered) {
-			show.gathered = true;
-			emit({ type: "gathered", id: show.id });
+		const poses = [...shows.values()].map((show) => {
+			show.startedAt ??= at;
+			const pose = poseOf(show, at);
+			if (show.size === "large" && !show.gathered && pose.time >= FINALE_CONFETTI_TIMING.gathered) {
+				show.gathered = true;
+				emit({ type: "gathered", id: show.id });
+			}
+			return pose;
+		});
+		renderer.render(poses);
+		for (const pose of poses) {
+			const show = shows.get(pose.id);
+			if (show && pose.release >= 1) finish(show);
 		}
-		const requestedRelease = show.releasedAt === null ? 0 : Math.min(1, (at - show.releasedAt) / 1000 / FINALE_CONFETTI_TIMING.release);
-		const fade = show.size === "small" ? Math.max(0, Math.min(1, (time - SMALL_CONFETTI_TIMING.fadeStart) / SMALL_CONFETTI_TIMING.fade)) : 0;
-		const release = Math.max(requestedRelease, fade);
-		renderer.render(time, release);
-		if (release >= 1) finish();
-		else frame = schedule(tick);
+		if (shows.size > 0) frame = schedule(tick);
 	};
 	return {
 		handle(command: FinaleConfettiCommand): void {
@@ -676,7 +757,7 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 					return;
 				}
 				if (command.type === "dispose") {
-					finish();
+					finishAll();
 					renderer?.dispose();
 					renderer = null;
 					return;
@@ -687,29 +768,34 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 				}
 				if (command.type === "park") {
 					// A live show keeps its canvas; the controller cancels it on a resize first.
-					if (show) return;
+					if (shows.size > 0) return;
 					renderer.resize(command.width, command.height, command.dpr);
 					renderer.clear();
 					return;
 				}
 				if (command.type === "play") {
-					finish();
+					const size = command.size ?? "large";
+					// The finale's burst replaces any other of its own; a small one joins whatever is flying.
+					if (size === "large") for (const show of [...shows.values()]) if (show.size === "large") finish(show);
 					renderer.play(command);
-					// Draw frame 0 (every piece still below the viewport) to size the
-					// canvas and upload the burst; the clock starts on the next frame.
-					renderer.render(0, 0);
-					show = { id: command.id, size: command.size ?? "large", startedAt: null, releasedAt: null, held: null, gathered: false };
-					frame = schedule(tick);
+					const show: PlayerShow = { id: command.id, size, startedAt: null, releasedAt: null, held: null, gathered: false };
+					shows.set(show.id, show);
+					// Draw its frame 0 (every piece still below the viewport) with the rest, to
+					// upload the burst; its clock starts on the next frame.
+					const at = now();
+					renderer.render([...shows.values()].map((each) => poseOf(each, at)));
+					frame ??= schedule(tick);
 					return;
 				}
-				if (!show || show.id !== command.id) return;
-				if (command.type === "cancel") finish();
+				const show = shows.get(command.id);
+				if (!show) return;
+				if (command.type === "cancel") finish(show);
 				else if (command.type === "release") show.releasedAt ??= now();
 				else if (command.type === "hold") {
 					if (command.time === null && show.held !== null) show.startedAt = now() - (show.size === "small" ? show.held : finaleConfettiRealTime(show.held)) * 1000;
 					show.held = command.time;
 					// Render now: a hidden page may never deliver the pending frame.
-					if (frame !== null) unschedule(frame);
+					stop();
 					tick();
 				}
 			} catch (error) {

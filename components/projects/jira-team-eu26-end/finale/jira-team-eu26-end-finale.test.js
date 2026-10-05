@@ -267,6 +267,19 @@ test("drag order records arrivals in Done, forgets cards dragged back out, and r
 	assert.equal(nextFinaleDragOrder(order, ["TEU-8", "TEU-1", "TEU-3"]), order, "unchanged input keeps identity");
 });
 
+test("any drop into Done short of completing the board earns the small confetti, bulk drags included", () => {
+	const { finaleArrivals, finaleSmallConfettiDue, nextFinaleDragOrder } = loadFinale();
+	const drop = (previous, done) => finaleArrivals(previous, nextFinaleDragOrder(previous, done));
+	assert.deepEqual(drop([], ["TEU-1"]), ["TEU-1"], "one card");
+	assert.deepEqual(drop(["TEU-1"], ["TEU-1", "TEU-2", "TEU-3"]), ["TEU-2", "TEU-3"], "a bulk drag of two");
+	assert.equal(finaleSmallConfettiDue(["TEU-1"], false), true);
+	assert.equal(finaleSmallConfettiDue(["TEU-2", "TEU-3"], false), true, "a bulk drag celebrates too");
+	assert.equal(finaleSmallConfettiDue(["TEU-4", "TEU-5", "TEU-6"], false), true);
+	assert.equal(finaleSmallConfettiDue(["TEU-12", "TEU-13"], true), false, "the drop that completes the board opens the finale instead");
+	assert.deepEqual(drop(["TEU-1", "TEU-2"], ["TEU-1"]), [], "dragging a card back out is no arrival");
+	assert.equal(finaleSmallConfettiDue(drop(["TEU-1", "TEU-2"], ["TEU-2", "TEU-1"]), false), false, "nor is reordering within Done");
+});
+
 test("bento features follow MCB's drag order, with Agent Session Tracking standing in for Artifacts", () => {
 	const { selectFinaleFeatures, FINALE_SLOT_COUNT, FINALE_PINNED_FEATURE, FINALE_RETIRED_FEATURE, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES } = loadFinale();
 	const codes = (order) => selectFinaleFeatures(order).map((story) => story.code);

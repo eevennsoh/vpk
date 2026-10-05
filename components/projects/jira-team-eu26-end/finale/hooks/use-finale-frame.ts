@@ -26,17 +26,25 @@ export function useFinaleFrame(callback: FinaleFrameCallback): void {
 	}, [registry]);
 }
 
-/** Creates a registry whose `emit` fans one clock reading out to every scene. */
+/**
+ * Creates a registry whose `emit` fans one clock reading out to every scene.
+ * A scene that mounts after a reading (a wall column coming into view while
+ * the clock is held) is given that reading at once, so it paints the current
+ * frame instead of waiting for a clock that may not move.
+ */
 export function createFinaleFrameRegistry(): FinaleFrameRegistry & { readonly emit: FinaleFrameCallback } {
 	const callbacks = new Set<FinaleFrameCallback>();
+	let last: number | null = null;
 	return {
 		subscribe(callback) {
 			callbacks.add(callback);
+			if (last !== null) callback(last);
 			return () => {
 				callbacks.delete(callback);
 			};
 		},
 		emit(time) {
+			last = time;
 			for (const callback of callbacks) callback(time);
 		},
 	};

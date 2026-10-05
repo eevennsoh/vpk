@@ -137,6 +137,12 @@ export function finaleConfettiCameraDistance(height: number): number {
 }
 
 const PIECES_PER_CORNER = 300;
+/**
+ * A drop that does not complete the board (one card or a bulk drag): a
+ * denser, lower burst of smaller pieces than the finale's. `power` scales the
+ * launch, the depth and the lens, so the plume tops out lower on the page.
+ */
+const SMALL_BURST = { piecesPerCorner: 150, power: 0.38, pieceSize: 0.7 } as const;
 /** Launch speed (px/s) of a full-strength piece on a 900px-tall viewport. */
 const LAUNCH_SPEED = 2200;
 /** Fixed, so every rehearsal of the show is the same show. */
@@ -327,10 +333,11 @@ function unitVector(random: () => number): Vec3 {
 export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = finaleConfettiRandom(FINALE_CONFETTI_SEED)): FinaleConfettiBurst {
 	const { width, height } = stage;
 	const small = stage.size === "small";
-	const piecesPerCorner = small ? 60 : PIECES_PER_CORNER;
-	const scale = height / 900 * (small ? 0.32 : 1);
-	const sizeScale = Math.min(1.3, Math.max(0.85, Math.sqrt(height / 900))) * (small ? 0.7 : 1);
-	const lens = finaleConfettiCameraDistance(height) * (small ? 0.32 : 1);
+	const piecesPerCorner = small ? SMALL_BURST.piecesPerCorner : PIECES_PER_CORNER;
+	const power = small ? SMALL_BURST.power : 1;
+	const scale = height / 900 * power;
+	const sizeScale = Math.min(1.3, Math.max(0.85, Math.sqrt(height / 900))) * (small ? SMALL_BURST.pieceSize : 1);
+	const lens = finaleConfettiCameraDistance(height) * power;
 	const T = FINALE_CONFETTI_TIMING;
 	const { near, far } = FINALE_CONFETTI_DEPTH;
 	const draft = Array.from({ length: piecesPerCorner * 2 }, (_, index): Omit<FinaleConfettiPiece, "gather"> & { swirl: number; jitter: number; sink: { x: number; y: number } } => {
@@ -364,7 +371,7 @@ export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = f
 			origin: {
 				x: corner === "left" ? 0 : width,
 				y: height + 8,
-				z: random() * 40 * (small ? 0.32 : 1),
+				z: random() * 40 * power,
 			},
 			// One draw, as before: the plume's head leaves first, the gentle trail last.
 			delay: ((roll) => T.volley * (gentle ? 0.35 + 0.65 * roll : roll ** 1.5))(random()),
