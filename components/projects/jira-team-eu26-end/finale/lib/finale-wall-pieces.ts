@@ -8,7 +8,8 @@ import type { KitPiece, PieceId, PieceStyle, PieceStyles } from "@/public/1p/rov
  * holds it on the finale clock.
  *
  * The kit lives whole in `public/1p/rovo-stage-kit/` (its GUIDE.md is the
- * contract). To update it, replace that folder with a newer kit. A new stage
+ * contract; `finale/VENDOR.md` records which build it is and why it lives
+ * there). To update it, replace that folder with a newer kit. A new stage
  * arrives as a new `rovo-stage.json` exported from the Rovo stage lab (Lab
  * panel → Stage kit → Export stage JSON, or the composer's Export stage),
  * dropped over the one in the folder; the wall reads its piece styles.
