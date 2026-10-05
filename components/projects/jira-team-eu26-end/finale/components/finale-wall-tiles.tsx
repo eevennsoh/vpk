@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { memo, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 
 import { JIRA_TEAM_EU26_END_COVER_APPS as COVER_APPS } from "@/components/projects/jira-team-eu26-end/data/keynote-board";
@@ -10,10 +10,10 @@ import { CUE } from "../data/finale-cues";
 import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
 import { FINALE_STORIES, type FinaleChapterId, type FinaleStory } from "../data/finale-stories";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
-import { FINALE_INK, applyFinaleBuild } from "../lib/finale-build-style";
+import { FINALE_INK, applyFinaleBuild, buildAfter, finaleBuildPaint } from "../lib/finale-build-style";
 import { EASE, progress } from "../lib/finale-math";
 import { WALL_SCALE, type WallContent, type WallGeometry, type WallSlot, type WallStatId, type WallStripId } from "../lib/finale-wall-layout";
-import { FinaleBuildSpan, FinaleBuildText, buildAfter, finaleBuildPaint, useFinaleBuild } from "./finale-build-text";
+import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
 import { FinaleDealt, FinaleTileFace, FinaleTileLogos, FINALE_TILE_RADIUS } from "./finale-tile";
 import { WallAgent, WallComposer, WallFlow, WallSearch, WallTerminal } from "./finale-wall-product-tiles";
 import { FinaleWallShape } from "./finale-wall-shape";
@@ -256,15 +256,19 @@ function Prints({ slot, prints, gap }: Readonly<{ slot: WallSlot; prints: readon
  */
 function WallPrints({ slot, geometry, codes, cardPrint, revealStart }: Readonly<WallTileContentProps & { codes: readonly string[] }>) {
 	const [prints, setPrints] = useState(() => codes.map((code) => cardPrint(code)));
+	// One stand-in per slot, so the memoised tile behind it is not redrawn on every render.
+	const standIn = useMemo((): WallSlot | null => {
+		const story = FINALE_STORIES.find((each) => each.code === codes[0]);
+		return story ? { ...slot, content: { kind: "story", story } } : null;
+	}, [codes, slot]);
 	useFinaleFrame(() => {
 		if (prints.every(Boolean)) return;
 		const next = codes.map((code) => cardPrint(code));
 		if (next.some((print, index) => print !== prints[index])) setPrints(next);
 	});
 	if (prints.some(Boolean)) return <Prints slot={slot} prints={prints} gap={(CARD_GAP * geometry.typeScale) / WALL_SCALE} />;
-	const story = FINALE_STORIES.find((each) => each.code === codes[0]);
-	if (!story) return null;
-	return <FinaleWallTileContent slot={{ ...slot, content: { kind: "story", story } }} geometry={geometry} cardPrint={cardPrint} revealStart={revealStart} />;
+	if (!standIn) return null;
+	return <FinaleWallTileContent slot={standIn} geometry={geometry} cardPrint={cardPrint} revealStart={revealStart} />;
 }
 
 interface WallTileContentProps {

@@ -4,13 +4,8 @@ import { useRef, type CSSProperties, type RefObject } from "react";
 
 import { CUE } from "../data/finale-cues";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
-import { FINALE_INK, FINALE_INK_BLEED, applyFinaleBuild, finaleBuildGradient } from "../lib/finale-build-style";
+import { FINALE_INK, applyFinaleBuild, finaleBuildPaint } from "../lib/finale-build-style";
 import { progress } from "../lib/finale-math";
-
-/** `start` pushed back by `delay`, keeping "already built" (null) as it is. */
-export function buildAfter(start: number | null, delay: number): number | null {
-	return start === null ? null : start + delay;
-}
 
 /**
  * Builds `ref`'s text through the colour band from `start` (finale-clock
@@ -28,26 +23,6 @@ export function useFinaleBuild(ref: RefObject<HTMLElement | null>, start: number
 		amountRef.current = amount;
 		applyFinaleBuild(element, amount);
 	});
-}
-
-/**
- * The build's paint: the gradient clipped to the glyphs, bled past the line
- * boxes so the clip never cuts ascenders, accents or descenders (the bleed
- * is cancelled by an equal negative margin, so nothing moves). Text that is
- * already built is plain ink, with no gradient to paint.
- */
-export function finaleBuildPaint(ink: string, built: boolean, tracking = "-0.02em"): CSSProperties {
-	const type: CSSProperties = { paddingBlock: FINALE_INK_BLEED, marginBlock: `calc(-1 * ${FINALE_INK_BLEED})`, letterSpacing: tracking, fontFeatureSettings: '"liga" 0, "calt" 0' };
-	if (built) return { ...type, color: ink };
-	return {
-		...type,
-		backgroundImage: finaleBuildGradient(ink),
-		backgroundSize: "300% 100%",
-		backgroundPosition: "100% 0",
-		backgroundClip: "text",
-		WebkitBackgroundClip: "text",
-		color: "transparent",
-	};
 }
 
 interface FinaleBuildSpanProps {

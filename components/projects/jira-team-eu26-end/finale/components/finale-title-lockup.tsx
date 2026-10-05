@@ -1,7 +1,8 @@
 "use client";
 
 import { CUE } from "../data/finale-cues";
-import { FinaleBuildSpan, buildAfter } from "./finale-build-text";
+import { buildAfter } from "../lib/finale-build-style";
+import { FinaleBuildSpan } from "./finale-build-text";
 
 /** "Team 26" set exactly as the finale's title settles (`finale-team-title.tsx`), for the wall's title tiles. */
 export const FINALE_TITLE_FONT_SIZE = 112;

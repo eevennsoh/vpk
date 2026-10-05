@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { clamp } from "./finale-math";
 
 export const FINALE_INK = "#101214";
@@ -48,4 +50,29 @@ export function applyFinaleBuild(element: HTMLElement, amount: number, lift = 0.
 	const eased = x * x * (3 - 2 * x);
 	element.style.backgroundPosition = `${(100 - eased * 100).toFixed(2)}% 0`;
 	element.style.transform = eased >= 1 ? "" : `translate(0, ${((1 - eased) * lift).toFixed(3)}em)`;
+}
+
+/** `start` pushed back by `delay`, keeping "already built" (null) as it is. */
+export function buildAfter(start: number | null, delay: number): number | null {
+	return start === null ? null : start + delay;
+}
+
+/**
+ * The build's paint: the gradient clipped to the glyphs, bled past the line
+ * boxes so the clip never cuts ascenders, accents or descenders (the bleed
+ * is cancelled by an equal negative margin, so nothing moves). Text that is
+ * already built is plain ink, with no gradient to paint.
+ */
+export function finaleBuildPaint(ink: string, built: boolean, tracking = "-0.02em"): CSSProperties {
+	const type: CSSProperties = { paddingBlock: FINALE_INK_BLEED, marginBlock: `calc(-1 * ${FINALE_INK_BLEED})`, letterSpacing: tracking, fontFeatureSettings: '"liga" 0, "calt" 0' };
+	if (built) return { ...type, color: ink };
+	return {
+		...type,
+		backgroundImage: finaleBuildGradient(ink),
+		backgroundSize: "300% 100%",
+		backgroundPosition: "100% 0",
+		backgroundClip: "text",
+		WebkitBackgroundClip: "text",
+		color: "transparent",
+	};
 }

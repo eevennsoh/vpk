@@ -11,7 +11,8 @@ import type { FinalePresenterId } from "../data/finale-stories";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { SHAPE_HOLD_S, alignRing, blendRings, ringPath, shapeStepAt, svgPathSampler, type MorphRing } from "../lib/finale-shape-morph";
 import { hash01, spring } from "../lib/finale-math";
-import { FinaleBuildSpan, buildAfter } from "./finale-build-text";
+import { buildAfter } from "../lib/finale-build-style";
+import { FinaleBuildSpan } from "./finale-build-text";
 import { FINALE_TILE_RADIUS } from "./finale-tile";
 
 const RING_POINTS = 96;

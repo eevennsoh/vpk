@@ -13,9 +13,9 @@ import { CUE } from "../data/finale-cues";
 import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
 import { WALL_COMPOSER_PROMPTS, WALL_TERMINAL_SCRIPTS, wallAgentCard } from "../data/finale-wall-content";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
-import { FINALE_INK } from "../lib/finale-build-style";
+import { FINALE_INK, buildAfter } from "../lib/finale-build-style";
 import type { WallAgentId } from "../lib/finale-wall-layout";
-import { FinaleBuildSpan, buildAfter } from "./finale-build-text";
+import { FinaleBuildSpan } from "./finale-build-text";
 import { FINALE_TILE_RADIUS, FinaleDealt } from "./finale-tile";
 
 /*
