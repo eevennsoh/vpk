@@ -99,12 +99,12 @@ export function finaleBentoLayout(viewport: { readonly width: number; readonly h
 /**
  * The bento's six features, each with its own face in the Figma bento, in
  * landing order (slots a, e, c, b, f, d): Agent Sessions top left, where the
- * camera dives, then Artifacts top right, Agent Effectiveness over the title,
- * AI Capital Management bottom left, Rovo Work Mode bottom right and Record
- * for Agent under the title. Each lands as the Done card of its story,
- * wherever MCB dragged it.
+ * camera dives, then Artifacts top right, Rovo Work Mode over the title, AI
+ * Capital Management bottom left, Agent Effectiveness bottom right and
+ * Record for Agent under the title. Each lands as the Done card of its
+ * story, wherever MCB dragged it.
  */
-export const FINALE_FEATURE_CODES = ["TEU-10", "TEU-4", "TEU-11", "TEU-12", "TEU-3", "TEU-106"] as const;
+export const FINALE_FEATURE_CODES = ["TEU-10", "TEU-4", "TEU-3", "TEU-12", "TEU-11", "TEU-106"] as const;
 
 export type FinaleFeatureCode = (typeof FINALE_FEATURE_CODES)[number];
 

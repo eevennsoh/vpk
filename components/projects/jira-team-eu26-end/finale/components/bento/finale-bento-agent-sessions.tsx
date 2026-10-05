@@ -28,7 +28,7 @@ function SessionSlot({ summary, target = false, className }: Readonly<SessionSlo
 				style={{ background: target ? "rgba(5, 21, 36, 0.06)" : "rgba(23, 23, 23, 0.03)" }}
 			>
 				<div className="relative isolate flex flex-col rounded-[16px] px-[20px] pt-[20px] pb-[13.338px] shadow-[0_0_1.667px_rgba(9,30,66,0.31),0_1.667px_1.667px_rgba(9,30,66,0.25)]">
-					<div className={`absolute inset-0 z-[1] rounded-[16px] bg-white ${target ? "border-2 border-[#3941FE]" : ""}`} />
+					<div className={`absolute inset-0 z-[1] rounded-[16px] bg-[#FFFFFF] ${target ? "border-2 border-[#3941FE]" : ""}`} />
 					<p className="relative z-[2] h-[66.688px] w-[370.119px] text-[#292A2E]" style={BODY}>{summary}</p>
 					<div className="relative z-[2] mt-[13.338px] flex h-[46.682px] items-center gap-[6.669px]">
 						<div className="flex flex-1 items-center gap-[6.669px]">
@@ -63,7 +63,7 @@ function SessionChip() {
 						<Image src={`${ASSET}/agent-sessions-agent-avatar.svg`} alt="" width={37} height={39} className="absolute top-[-2.6px] left-[-1.53px] z-[2] h-[39.365px] w-[37.204px] max-w-none" />
 						<Image src={ASSIGNEE} alt="" width={34} height={34} className="absolute top-0 left-[24px] z-[1] size-[34.154px] rounded-full object-cover" />
 					</div>
-					<p className="whitespace-nowrap text-black" style={BODY}>Jordan Okafor</p>
+					<p className="whitespace-nowrap text-[#000000]" style={BODY}>Jordan Okafor</p>
 				</div>
 			</div>
 			<Image src={`${ASSET}/agent-sessions-grab.svg`} alt="" width={34} height={32} className="absolute top-[168.796px] left-[140.247px] h-[31.786px] w-[34.292px] max-w-none" />

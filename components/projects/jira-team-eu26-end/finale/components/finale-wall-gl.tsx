@@ -5,6 +5,7 @@ import * as THREE from "three";
 
 import { WALL_CUE } from "../data/finale-cues";
 import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
+import { FINALE_TITLE, FINALE_TITLE_BLOCK } from "../data/finale-title";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import {
 	FINALE_CAMERA_FOV,
@@ -49,14 +50,7 @@ const POOL_START = 32;
  */
 const PREFETCH_FROM = WALL_CUE.start - 1;
 
-/** "Team 26" as `FinaleTeamTitle` sets it: Atlassian Sans 400, 112 stage px, 1.1 line, −0.02em, 0.22em between the words. */
-const TITLE_FONT = 112;
-const TITLE_LINE = 1.1;
-/** Its baseline in the 1.1em row, from the row's top (ascent 0.973em, descent 0.241em). */
-const TITLE_BASELINE = 0.916;
-const TITLE_GAP = 0.22;
-const TITLE_TRACKING = -0.02;
-/** Room round the ink so no glyph clips (descenders fall just below the row). */
+/** Room round the ink so no glyph clips, in em of its type. */
 const TITLE_BLEED = 0.1;
 
 /** The smear at full chroma, as the field's burst and swoops filmed it. */
@@ -92,7 +86,7 @@ interface FacePrint {
 	readonly texture: THREE.CanvasTexture;
 }
 
-/** "Team 26" in one colour on a clear ground, laid on a face of the title's plate. */
+/** "Team ’26 Europe" in one colour on a clear ground, laid on a face of the title's plate. */
 interface TitleInk {
 	readonly texture: THREE.CanvasTexture;
 	/** Its canvas in em of its type: the lockup's box, centred on its row. */
@@ -268,38 +262,42 @@ function faceFor(state: WallGlState, key: string, facePrint: PrintLookup): THREE
 }
 
 /**
- * "Team 26" set as `FinaleTeamTitle` sets it, in `ink`, once, at the largest
- * it shows (the bento's title box) and the display's resolution. It is only
- * the ink: the plate is the sheet's own blank face, so its size and corners
- * follow the sheet, and the ink's share of it is set each frame (`drawInk`).
+ * "Team ’26 Europe" set as `FinaleTeamTitle` sets it (`FINALE_TITLE`), in
+ * `ink`, once, at the largest it shows (the bento's title box) and the
+ * display's resolution. It is only the ink: the plate is the sheet's own blank
+ * face, so its size and corners follow the sheet, and the ink's share of it is
+ * set each frame (`drawInk`). The canvas is centred on the card, the type its
+ * lift above that centre, as on the slide.
  */
 function paintTitleInk(fit: FinaleFit, ink: string): TitleInk | null {
-	const em = TITLE_FONT * fit.scale * Math.min(window.devicePixelRatio || 1, 2);
+	const em = FINALE_TITLE.fontSize * fit.scale * Math.min(window.devicePixelRatio || 1, 2);
 	const family = getComputedStyle(document.documentElement).getPropertyValue("--font-sans").trim() || "\"Atlassian Sans\", sans-serif";
 	const font = `400 ${em.toFixed(2)}px ${family}`;
 	const canvas = document.createElement("canvas");
 	const set = (context: CanvasRenderingContext2D) => {
 		context.font = font;
-		context.letterSpacing = `${(TITLE_TRACKING * em).toFixed(3)}px`;
+		context.letterSpacing = `${(FINALE_TITLE.tracking * em).toFixed(3)}px`;
 		context.textBaseline = "alphabetic";
 	};
-	let context = canvas.getContext("2d");
+	const context = canvas.getContext("2d");
 	if (!context) return null;
 	set(context);
-	const team = context.measureText("Team").width;
-	const year = context.measureText("26").width;
-	const line = team + TITLE_GAP * em + year;
-	canvas.width = Math.ceil(line + TITLE_BLEED * 2 * em);
-	canvas.height = Math.ceil((TITLE_LINE + TITLE_BLEED * 2) * em);
-	// Sizing the canvas resets its context.
-	context = canvas.getContext("2d");
-	if (!context) return null;
+	const [first, second] = FINALE_TITLE.lines.map((text) => context.measureText(text));
+	// Each line centres the font's ascent and descent on its leading, as CSS does.
+	const baseline = (FINALE_TITLE.line * em - first.fontBoundingBoxAscent - first.fontBoundingBoxDescent) / 2 + first.fontBoundingBoxAscent;
+	// Baselines from the card's centre, the lockup lifted above it.
+	const top = -(FINALE_TITLE_BLOCK * em) / 2 - (FINALE_TITLE.lift / FINALE_TITLE.fontSize) * em;
+	const baselines = [top + baseline, top + baseline + (FINALE_TITLE.line + FINALE_TITLE.gap) * em];
+	// The canvas reaches as far either side of the centre as the ink does, so it stays centred on the card.
+	const reach = Math.max(first.actualBoundingBoxAscent - baselines[0], baselines[1] + second.actualBoundingBoxDescent);
+	canvas.width = Math.ceil(Math.max(first.width, second.width) + TITLE_BLEED * 2 * em);
+	canvas.height = Math.ceil((reach + TITLE_BLEED * em) * 2);
+	// Sizing the canvas resets its context's state.
 	set(context);
 	context.fillStyle = ink;
-	const x = (canvas.width - line) / 2;
-	const baseline = (canvas.height - TITLE_LINE * em) / 2 + TITLE_BASELINE * em;
-	context.fillText("Team", x, baseline);
-	context.fillText("26", x + team + TITLE_GAP * em, baseline);
+	[first, second].forEach((line, index) => {
+		context.fillText(FINALE_TITLE.lines[index], (canvas.width - line.width) / 2, canvas.height / 2 + baselines[index]);
+	});
 	return { texture: textureFrom(canvas), width: canvas.width / em, height: canvas.height / em };
 }
 
@@ -321,7 +319,7 @@ function disposeTitle(title: TitleFaces<TitleInk> | null): void {
 function titleInk(state: WallGlState, fit: FinaleFit): TitleFaces<TitleInk> | null {
 	if (state.title) return state.title;
 	state.title = paintTitleFaces(fit);
-	const probe = `400 ${TITLE_FONT}px "Atlassian Sans"`;
+	const probe = `400 ${FINALE_TITLE.fontSize}px "Atlassian Sans"`;
 	if (state.title && typeof document.fonts?.check === "function" && !document.fonts.check(probe)) {
 		void document.fonts.load(probe).then(() => {
 			if (state.disposed || !state.title) return;
@@ -367,7 +365,7 @@ function drawInk(state: WallGlState, plate: SheetMesh, sheet: WallSheet, inkOrde
 	const { pose } = sheet;
 	const span = drop.from.width - drop.slot.rect.width;
 	const along = Math.abs(span) < 1e-3 ? 1 : clamp((drop.from.width - pose.width) / span);
-	const em = lerp(TITLE_FONT * input.fit.scale, TITLE_FONT * input.wall.geometry.typeScale, along);
+	const em = lerp(FINALE_TITLE.fontSize * input.fit.scale, FINALE_TITLE.fontSize * input.wall.geometry.typeScale, along);
 	layInk(state.inks.front, title.front, plate, pose, em, inkOrder);
 	layInk(state.inks.back, title.back, plate, pose, em, inkOrder);
 }
