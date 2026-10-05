@@ -58,7 +58,7 @@ for (const [route, code] of [["jira-team-eu26", "PAY-118"], ["jira-team-eu26-end
 		await expect(board).toHaveCSS("box-shadow", "none");
 		await expect(card).toHaveCSS("user-select", "none");
 		const text = route.endsWith("-end")
-			? issue.locator('[data-slot="jira-issue-cover-heading"]').first()
+			? issue.getByText("Rovo Desktop", { exact: true }).last()
 			: issue.getByText("Carry card-artwork metadata into the next wallet epic", { exact: true });
 		await text.dblclick();
 		expect(await page.evaluate(() => window.getSelection()?.toString() ?? "")).toBe("");

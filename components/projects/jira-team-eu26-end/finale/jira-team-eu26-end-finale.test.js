@@ -224,9 +224,9 @@ test("a scrolled board's print keeps the column in its visible position", () => 
 
 test("the finale is ready only once every keynote announcement sits in Done", () => {
 	const { isJiraTeamEu26FinaleReady, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES: codes } = loadFinale();
-	assert.equal(codes.length, 13);
+	assert.equal(codes.length, 25);
 	assert.equal(isJiraTeamEu26FinaleReady(columns(codes), codes), true);
-	assert.equal(isJiraTeamEu26FinaleReady(columns(codes.slice(0, 12), codes.slice(12)), codes), false);
+	assert.equal(isJiraTeamEu26FinaleReady(columns(codes.slice(0, -1), codes.slice(-1)), codes), false);
 	// Cards created live during the demo neither block nor trigger the finale.
 	assert.equal(isJiraTeamEu26FinaleReady(columns([...codes, "TEU-99"], ["TEU-100"]), codes), true);
 	assert.equal(isJiraTeamEu26FinaleReady([{ title: "Context", cards: codes.map((code) => ({ code })) }], codes), false);
@@ -267,24 +267,35 @@ test("drag order records arrivals in Done, forgets cards dragged back out, and r
 	assert.equal(nextFinaleDragOrder(order, ["TEU-8", "TEU-1", "TEU-3"]), order, "unchanged input keeps identity");
 });
 
-test("bento features follow MCB's drag order, with Jira Agent Sessions standing in for Rovo Artifacts", () => {
-	const { selectFinaleFeatures, FINALE_SLOT_COUNT, FINALE_PINNED_FEATURE, FINALE_RETIRED_FEATURE } = loadFinale();
+test("bento features follow MCB's drag order, with Agent Session Tracking standing in for Artifacts", () => {
+	const { selectFinaleFeatures, FINALE_SLOT_COUNT, FINALE_PINNED_FEATURE, FINALE_RETIRED_FEATURE, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES } = loadFinale();
 	const codes = (order) => selectFinaleFeatures(order).map((story) => story.code);
 	const order = ["TEU-9", "TEU-2", "TEU-13", "TEU-5", "TEU-10", "TEU-7", "TEU-1"];
 	assert.deepEqual(codes(order), order.slice(0, FINALE_SLOT_COUNT), "drag order, not a hard-coded list");
 	// Rovo Artifacts is swapped for Jira Agent Sessions in place.
 	assert.deepEqual(codes(["TEU-1", FINALE_RETIRED_FEATURE, "TEU-3", "TEU-5", "TEU-8", "TEU-11"]), ["TEU-1", FINALE_PINNED_FEATURE, "TEU-3", "TEU-5", "TEU-8", "TEU-11"]);
 	// Jira Agent Sessions always makes the cut, taking the last slot if it was dragged late.
-	const late = codes(["TEU-1", "TEU-2", "TEU-3", "TEU-5", "TEU-6", "TEU-7", "TEU-10"]);
-	assert.deepEqual(late, ["TEU-1", "TEU-2", "TEU-3", "TEU-5", "TEU-6", FINALE_PINNED_FEATURE]);
+	const late = codes(["TEU-1", "TEU-2", "TEU-3", "TEU-5", "TEU-101", "TEU-7", "TEU-10"]);
+	assert.deepEqual(late, ["TEU-1", "TEU-2", "TEU-3", "TEU-5", "TEU-101", FINALE_PINNED_FEATURE]);
 	for (let seed = 0; seed < 50; seed += 1) {
-		const shuffled = Array.from({ length: 13 }, (_, index) => `TEU-${index + 1}`).sort((a, b) => Math.sin(seed * 31 + Number(a.slice(4))) - Math.sin(seed * 31 + Number(b.slice(4))));
+		const shuffled = [...JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES].sort((a, b) => Math.sin(seed * 31 + Number(a.slice(4))) - Math.sin(seed * 31 + Number(b.slice(4))));
 		const picked = codes(shuffled);
 		assert.equal(picked.length, FINALE_SLOT_COUNT);
 		assert.ok(picked.includes(FINALE_PINNED_FEATURE) && !picked.includes(FINALE_RETIRED_FEATURE), `seed ${seed}`);
 	}
 	// Rehearsal with too few drags tops up in board order, skipping duplicates and unknown cards.
-	assert.deepEqual(codes(["TEU-5", "NOPE-1", "TEU-5"]), ["TEU-5", "TEU-1", "TEU-2", "TEU-3", "TEU-10", "TEU-6"]);
+	assert.deepEqual(codes(["TEU-5", "NOPE-1", "TEU-5"]), ["TEU-5", "TEU-10", "TEU-1", "TEU-101", "TEU-2", "TEU-113"]);
+});
+
+test("the recap retains each reference story's issue identity and updated name", () => {
+	const { FINALE_STORIES } = loadFinale();
+	assert.equal(FINALE_STORIES.length, 25);
+	assert.deepEqual(FINALE_STORIES.filter((story) => ["TEU-4", "TEU-101", "TEU-107", "TEU-10"].includes(story.code)).map((story) => [story.code, story.title, story.chapter]), [
+		["TEU-4", "Artifacts", "Context"],
+		["TEU-101", "Data Context", "Context"],
+		["TEU-107", "ChatGPT Codex from Jira", "Collaboration"],
+		["TEU-10", "Agent Session Tracking", "Confidence"],
+	]);
 });
 
 test("the bento fills any screen shape with 60px clear on every side and nothing overlapping", () => {
