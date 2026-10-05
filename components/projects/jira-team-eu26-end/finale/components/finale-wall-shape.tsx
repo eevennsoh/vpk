@@ -46,7 +46,7 @@ const GROW_SETTLED_S = 1.6;
 interface FinaleWallShapeProps {
 	readonly shape: FinaleShapeKind;
 	readonly fill: string;
-	readonly portrait?: FinalePresenterId;
+	readonly portrait: FinalePresenterId;
 	/** Staggers each tile's cycle so neighbours never morph in step. */
 	readonly seed: number;
 	readonly width: number;
@@ -56,10 +56,10 @@ interface FinaleWallShapeProps {
 }
 
 /**
- * One of the identity's bold shapes on a white tile, after `ShapeTile` in the
- * Rovo Chat desktop mosaic: it floats and tilts a little, rests, then morphs
- * on through the cycle. A presenter's tile fills the shape with their
- * portrait in grayscale, multiplied into the colour like a duotone. Landing
+ * A presenter in one of the identity's bold shapes on a grey tile, after
+ * `ShapeTile` in the Rovo Chat desktop mosaic: it floats and tilts a little,
+ * rests, then morphs on through the cycle, their portrait filling the shape in
+ * grayscale, multiplied into the colour like a duotone. Landing
  * blank, the shape grows in from the tile's centre and starts its cycle as its
  * name builds; until then it has nothing to draw, so nothing runs.
  */
@@ -74,7 +74,7 @@ export function FinaleWallShape({ shape, fill, portrait, seed, width, height, re
 	const start = FINALE_SHAPE_CYCLE.indexOf(shape);
 	const order = [...FINALE_SHAPE_CYCLE.slice(start), ...FINALE_SHAPE_CYCLE.slice(0, start)];
 	const phase = hash01(seed * 0.37) * 3.3;
-	const presenter = portrait ? JIRA_TEAM_EU26_END_PRESENTERS[portrait] : undefined;
+	const presenter = JIRA_TEAM_EU26_END_PRESENTERS[portrait];
 
 	useFinaleFrame((time) => {
 		const group = groupRef.current;
@@ -115,32 +115,28 @@ export function FinaleWallShape({ shape, fill, portrait, seed, width, height, re
 				</defs>
 				<g ref={groupRef} transform={revealStart === null ? undefined : "scale(0)"}>
 					<path ref={fillRef} d={FINALE_SHAPES[shape]} fill={fill} />
-					{presenter ? (
-						// Clipped on the image itself (a clipped group would isolate it), so it blends into the fill.
-						<image
-							ref={imageRef}
-							href={presenter.avatarSrc}
-							x={0}
-							y={0}
-							width={100}
-							height={100}
-							clipPath={`url(#${clipId})`}
-							preserveAspectRatio="xMidYMid slice"
-							style={{ filter: "grayscale(1) contrast(1.15)", mixBlendMode: "luminosity" }}
-						/>
-					) : null}
+					{/* Clipped on the image itself (a clipped group would isolate it), so it blends into the fill. */}
+					<image
+						ref={imageRef}
+						href={presenter.avatarSrc}
+						x={0}
+						y={0}
+						width={100}
+						height={100}
+						clipPath={`url(#${clipId})`}
+						preserveAspectRatio="xMidYMid slice"
+						style={{ filter: "grayscale(1) contrast(1.15)", mixBlendMode: "luminosity" }}
+					/>
 				</g>
 			</svg>
-			{presenter ? (
-				<FinaleBuildSpan
-					text={presenter.name}
-					start={buildAfter(revealStart, 0.35)}
-					duration={CUE.reveal * 0.7}
-					tracking="normal"
-					className="absolute font-sans"
-					style={{ left: 36, bottom: 30, fontSize: 34, lineHeight: 1 }}
-				/>
-			) : null}
+			<FinaleBuildSpan
+				text={presenter.name}
+				start={buildAfter(revealStart, 0.35)}
+				duration={CUE.reveal * 0.7}
+				tracking="normal"
+				className="absolute font-sans"
+				style={{ left: 36, bottom: 30, fontSize: 34, lineHeight: 1 }}
+			/>
 		</div>
 	);
 }

@@ -22,7 +22,7 @@ import { wallPrintCards, wallPrintGap, type FinaleWall, type WallContent, type W
  * Act III on the finale clock. Every beat is a pure function of the time, so
  * the mega bento scrubs, holds and loops like the rest of the finale.
  *
- * - The flip: "Team ’26" gains a white card, which hands over to its GL sheet
+ * - The flip: "Team ’26" gains a grey card, which hands over to its GL sheet
  *   and flips end over end, bowing like paper, onto its black back.
  * - The drag: MCB's cursor takes the black card as its flip lands and drags
  *   it into its gap (`finale-title-drag.ts`), setting it down last.
@@ -197,10 +197,29 @@ function landedPose(rect: FinaleRect, touchdown: number, time: number, face = 1)
  * card fading up over `revealFadeS`.
  */
 export function wallRevealAt(point: { readonly x: number; readonly y: number }, seed: number, time: number, viewport: FinaleViewport): number {
+	const delay = revealDelay(point, seed, viewport);
+	return EASE.outBold(progress(wallSince(time), delay, delay + WALL_CUE.revealFadeS));
+}
+
+/** Seconds into the act at which a point of the frame starts to appear. */
+function revealDelay(point: { readonly x: number; readonly y: number }, seed: number, viewport: FinaleViewport): number {
 	const reach = Math.hypot(viewport.width / 2, viewport.height / 2);
 	const distance = Math.hypot(point.x - viewport.width / 2, point.y - viewport.height / 2) / reach;
-	const delay = WALL_CUE.revealAt + WALL_CUE.revealS * (0.72 * clamp(distance) + 0.28 * hash01(seed * 0.71 + 0.3));
-	return EASE.outBold(progress(wallSince(time), delay, delay + WALL_CUE.revealFadeS));
+	return WALL_CUE.revealAt + WALL_CUE.revealS * (0.72 * clamp(distance) + 0.28 * hash01(seed * 0.71 + 0.3));
+}
+
+/**
+ * When a card already on the wall as it appears starts to fade up
+ * (`wallRevealAt` leaves 0), on the finale clock. The wall may already be
+ * gliding, so its centre is read where it is then: two passes settle it.
+ */
+export function wallSlotRevealTime(slot: WallSlot, geometry: WallGeometry): number {
+	let time = WALL_CUE.start + WALL_CUE.revealAt;
+	for (let pass = 0; pass < 2; pass += 1) {
+		const rect = slotOnScreen(slot, wallOffset(time, geometry), geometry);
+		time = WALL_CUE.start + revealDelay({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }, slot.seed, geometry.viewport);
+	}
+	return time;
 }
 
 /* ─── The bento's cards: thrown, flown, landed ────────────────────────── */
@@ -224,7 +243,7 @@ export function bentoDrops(wall: FinaleWall, bentoRects: readonly FinaleRect[], 
 	});
 }
 
-/** 0 → 1: a white card, the bento tiles' own, rises under "Team ’26" on the DOM slide. */
+/** 0 → 1: a grey card, the bento tiles' own, rises under "Team ’26" on the DOM slide. */
 export function bentoTitleForm(time: number): number {
 	return EASE.outBold(progress(wallSince(time), WALL_CUE.titleCardAt, WALL_CUE.titleFlipAt));
 }
@@ -261,7 +280,7 @@ function titleHop(since: number): number {
 
 /**
  * The title card's flip, from its hand-over on: exactly where its DOM card
- * lay, white side up (its back: the sheet's front is the black face the
+ * lay, grey side up (its back: the sheet's front is the black face the
  * throw carries), and turning over end to end, top edge away first, onto
  * that black front. Before the hand-over it is that resting pose.
  */
@@ -636,7 +655,6 @@ export function slotSheetColor(content: WallContent): string {
 			return FINALE_BRAND[content.fill];
 		case "benefit":
 			return CHAPTER_TINT[content.story.chapter];
-		case "terminal":
 		case "title":
 			return FINALE_BRAND.black;
 		default:
@@ -653,7 +671,7 @@ export interface WallSheet {
 	readonly pose: FinaleCardPose;
 	/** The blank sheet's colour (`uTileColor`). */
 	readonly color: string;
-	/** Its back's (`uBackColor`): its own colour, but for the title card, whose back is the white card it formed as. */
+	/** Its back's (`uBackColor`): its own colour, but for the title card, whose back is the grey card it formed as. */
 	readonly back: string;
 	/**
 	 * A printed face for the sheet (face 0), by key: `bento-<order>` for a bento

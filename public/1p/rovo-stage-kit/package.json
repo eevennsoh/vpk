@@ -1,0 +1,40 @@
+{
+  "name": "rovo-stage-kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Rovo stage from Rovo Desktop’s stage lab: draws rovo-stage.json and its animated pieces exactly as the lab composes them.",
+  "type": "module",
+  "main": "./dist/rovo-stage.js",
+  "module": "./dist/rovo-stage.js",
+  "types": "./types/element.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/element.d.ts",
+      "default": "./dist/rovo-stage.js"
+    },
+    "./react": {
+      "types": "./types/react.d.ts",
+      "default": "./dist/react/index.js"
+    },
+    "./rovo-stage.json": "./rovo-stage.json",
+    "./pieces.json": "./pieces.json",
+    "./stage.schema.json": "./stage.schema.json",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "./dist/rovo-stage.js",
+    "./dist/react/index.js"
+  ],
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  }
+}

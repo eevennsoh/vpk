@@ -23,6 +23,7 @@ import { TILE_GLOW, TILE_GLOW_FRAGMENT, TILE_GLOW_VERTEX, perimeterParam, tileGl
 import {
 	FINALE_CONFETTI_FOV,
 	FINALE_CONFETTI_MOTION_GLSL,
+	FINALE_CONFETTI_PAD,
 	FINALE_CONFETTI_SEED,
 	FINALE_CONFETTI_TIMING,
 	SMALL_CONFETTI_TIMING,
@@ -113,9 +114,9 @@ void main() {
 	// Well into the vortex, a piece slims into a thread of light and the exposure
 	// lengthens, so the stream reads as light painting; early on it is still confetti.
 	float thread = smoothstep(0.25, 0.8, s);
-	// Fresh out of the cannon, a long exposure streaks each piece back along its
-	// own path to its corner, so the first frames read as a burst out of both
-	// corners; it decays over the piece's first ~70ms of flight.
+	// Fresh out of the cannon (or off the landing's edge), a long exposure streaks
+	// each piece back along its own path to where it set off, so the first frames
+	// read as rays out of the source; it decays over the piece's first ~70ms of flight.
 	float launch = exp(-max(uTime - aOrigin.w, 0.0) / 0.07);
 	vec3 center = confettiCenter(uTime);
 	vec3 trail = center - confettiCenter(uTime - uShutter * (1.0 + 2.0 * thread + 5.0 * launch));
@@ -123,7 +124,7 @@ void main() {
 	float breadth = aSize.y * sqrt(1.0 - pull) * mix(1.0, 0.26, thread) * mix(1.0, 0.6, launch);
 	// Depth of field: soft near the lens, and (more gently) far behind the page.
 	float soft = max(center.z - uFocus.x, 0.0) * uFocus.y + max(-center.z - uFocus.z, 0.0) * uFocus.w;
-	float pad = 1.5 + soft;
+	float pad = ${FINALE_CONFETTI_PAD.toFixed(1)} + soft;
 	float along = position.x * (span + 2.0 * pad);
 	float across = position.y * (breadth + 2.0 * pad);
 	mat3 turn = confettiTurn(uTime);
@@ -139,7 +140,10 @@ void main() {
 	float presence = mix(physical, 0.92, smoothstep(0.1, 0.4, s)) * (1.0 - uRelease);
 	// Defocused pieces spread thinner, and distant ones fade a little into the air.
 	float distant = smoothstep(uFocus.z, uFocus.z * 5.0, -center.z);
-	vAlpha = presence * mix(1.0, 0.65, clamp(soft / 12.0, 0.0, 1.0)) * mix(1.0, 0.7, distant);
+	// Unseen until it sets off: a puff's pieces wait round the landing, and would outline it on
+	// the impact frames; the cannons' long ribbons would poke still stubs into the lower corners.
+	float launched = step(aOrigin.w + 0.001, uTime);
+	vAlpha = launched * presence * mix(1.0, 0.65, clamp(soft / 12.0, 0.0, 1.0)) * mix(1.0, 0.7, distant);
 	vLocal = vec2(along, across);
 	vExtent = vec2(span, breadth) * 0.5;
 	vNormal = turn * surfaceNormal;
@@ -372,9 +376,7 @@ function vector(hex: string): THREE.Vector3 {
 	return new THREE.Vector3(...[1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255));
 }
 
-export interface FinaleConfettiPlayOptions extends FinaleConfettiStage {
-	readonly dpr: number;
-}
+export type FinaleConfettiPlayOptions = FinaleConfettiStage & { readonly dpr: number };
 
 /** Where one show is on this frame: `time` in its own seconds since launch, `release` 0 → 1 as it goes. */
 export interface FinaleConfettiPose {
@@ -519,7 +521,7 @@ export class FinaleConfettiRenderer {
 
 	/** Launch show `id`: the finale's burst replaces any other of its own; a small one joins those in flight. */
 	play(options: FinaleConfettiPlayOptions & { readonly id: number }): FinaleConfettiBurst {
-		const { id, width, height, dpr, column } = options;
+		const { id, width, height, dpr } = options;
 		const small = options.size === "small";
 		this.resize(width, height, dpr);
 		const distance = finaleConfettiCameraDistance(height);
@@ -544,9 +546,9 @@ export class FinaleConfettiRenderer {
 		mesh.geometry.dispose();
 		mesh.geometry = geometry;
 		mesh.visible = true;
-		if (small) this.sprays.set(id, mesh);
+		if (options.size === "small") this.sprays.set(id, mesh);
 		else {
-			this.playGlow(width, height, column);
+			this.playGlow(width, height, options.column);
 			this.glow.visible = true;
 			this.large = { id, burst };
 		}
@@ -780,7 +782,7 @@ export function createFinaleConfettiPlayer(emit: (event: FinaleConfettiEvent) =>
 					renderer.play(command);
 					const show: PlayerShow = { id: command.id, size, startedAt: null, releasedAt: null, held: null, gathered: false };
 					shows.set(show.id, show);
-					// Draw its frame 0 (every piece still below the viewport) with the rest, to
+					// Draw its frame 0 (every piece still unseen, waiting to set off) with the rest, to
 					// upload the burst; its clock starts on the next frame.
 					const at = now();
 					renderer.render([...shows.values()].map((each) => poseOf(each, at)));

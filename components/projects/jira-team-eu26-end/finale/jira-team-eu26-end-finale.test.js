@@ -667,7 +667,9 @@ test("the hero's shadow falls on a lens-square plane that becomes the slide as i
 
 test("colour parsing reads hex and rgb() alike (the slide never eases to black)", () => {
 	const { parseRgb, FINALE_COLORS } = loadFinale();
-	assert.deepEqual(parseRgb(FINALE_COLORS.slide), [241, 242, 244]);
+	assert.deepEqual(parseRgb(FINALE_COLORS.slide), [255, 255, 255]);
+	// Neutral100: its hex digits would read as 8, 8, 8 were they parsed as decimal channels.
+	assert.deepEqual(parseRgb(FINALE_COLORS.tile), [248, 248, 248]);
 	assert.deepEqual(parseRgb("rgb(248, 248, 248)"), [248, 248, 248]);
 	assert.deepEqual(parseRgb("rgba(9, 30, 66, 0.14)"), [9, 30, 66]);
 });

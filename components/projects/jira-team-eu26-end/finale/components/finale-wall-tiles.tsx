@@ -1,9 +1,8 @@
 "use client";
 
-import { memo, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, memo, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 
-import { JIRA_TEAM_EU26_END_COVER_APPS as COVER_APPS } from "@/components/projects/jira-team-eu26-end/data/keynote-board";
 import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-eu26-end/data/keynote-presenters";
 
 import { CUE } from "../data/finale-cues";
@@ -27,7 +26,7 @@ import {
 } from "../lib/finale-wall-layout";
 import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
 import { FinaleDealt, FinaleTileFace, FinaleTileLogos, FINALE_TILE_RADIUS } from "./finale-tile";
-import { WallAgent, WallComposer, WallFlow, WallSearch, WallTerminal } from "./finale-wall-product-tiles";
+import { WallPieces } from "./finale-wall-pieces";
 import { FinaleWallShape } from "./finale-wall-shape";
 import { FinaleTitleLockup } from "./finale-title-lockup";
 
@@ -41,10 +40,15 @@ import { FinaleTitleLockup } from "./finale-title-lockup";
  */
 
 const PRESENTERS = Object.values(JIRA_TEAM_EU26_END_PRESENTERS);
-const WALL_APPS = [COVER_APPS.rovo, COVER_APPS.jira, COVER_APPS.confluence, COVER_APPS.loom, COVER_APPS.bitbucket, COVER_APPS.github, COVER_APPS.figma] as const;
 const SANS = { fontFamily: "var(--font-sans)", letterSpacing: "-0.02em" } as const;
-/** ADS's Done lozenge (a fixed brand surface, like the slide). */
-const DONE_LOZENGE = { background: "#DCFFF1", color: "#216E4E" } as const;
+const SUBTLE = "#6B6E76";
+const LOZENGE = "rounded-[6px] px-3 py-1.5 text-[24px] leading-none font-bold tracking-normal uppercase";
+/** ADS's status lozenges (a fixed brand surface, like the slide). */
+const STATUS = {
+	todo: { background: "#DDDEE1", color: "#292A2E" },
+	progress: { background: "#E9F2FE", color: "#1558BC" },
+	done: { background: "#DCFFF1", color: "#216E4E" },
+} as const;
 /** Each chapter's tint: the 200 steps of its poster's colour in the Team ’26 palette. */
 const CHAPTER_TINT: Readonly<Record<FinaleChapterId, string>> = { Context: "#DAF0AF", Collaboration: "#E9D8F8", Confidence: "#D0E1FD" };
 /** A poster's word picks up its glide over this long once it has built. */
@@ -151,7 +155,6 @@ function Benefit({ story, width, height, revealStart }: Readonly<{ story: Finale
 
 /** The keynote in numbers: a lozenge as Jira shows status, one figure, one line. */
 const STATS: Readonly<Record<WallStatId, { readonly lozenge: string; readonly tone: { readonly background: string; readonly color: string }; readonly figure: number; readonly label: string }>> = {
-	shipped: { lozenge: "Done", tone: DONE_LOZENGE, figure: FINALE_STORIES.length, label: "keynote cards shipped" },
 	presenters: { lozenge: "On stage", tone: { background: "#E9F2FE", color: "#1558BC" }, figure: PRESENTERS.length, label: "presenters, one board" },
 	chapters: { lozenge: "In progress", tone: { background: "#F8EEFE", color: "#803FA5" }, figure: 3, label: "chapters: Context, Collaboration, Confidence" },
 };
@@ -197,29 +200,43 @@ function Stat({ stat, width, height, revealStart }: Readonly<{ stat: WallStatId;
 	);
 }
 
+const FLOW = [
+	{ label: "To do", tone: STATUS.todo },
+	{ label: "In progress", tone: STATUS.progress },
+	{ label: "Done", tone: STATUS.done },
+] as const;
+
+/** Jira's status flow, end to end, dealt in from left to right. */
+function Flow({ revealStart }: Readonly<{ revealStart: number | null }>) {
+	return (
+		<div className="absolute inset-0 flex items-center justify-center gap-4 overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS, color: SUBTLE }}>
+			{FLOW.map((step, index) => (
+				<Fragment key={step.label}>
+					{index > 0 ? <FinaleDealt start={revealStart} index={index * 2 - 1}><span className="text-[30px]">→</span></FinaleDealt> : null}
+					<FinaleDealt start={revealStart} index={index * 2}><span className={LOZENGE} style={step.tone}>{step.label}</span></FinaleDealt>
+				</Fragment>
+			))}
+		</div>
+	);
+}
+
 function Strip({ strip, revealStart }: Readonly<{ strip: WallStripId; revealStart: number | null }>) {
-	if (strip === "flow") return <WallFlow revealStart={revealStart} />;
-	if (strip === "search") return <WallSearch revealStart={revealStart} />;
+	if (strip === "flow") return <Flow revealStart={revealStart} />;
 	return (
 		<div className="absolute inset-0 flex items-center gap-5 overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS, paddingInline: 32, color: FINALE_INK }}>
-			{strip === "apps" ? (
-				<FinaleTileLogos sources={WALL_APPS} revealStart={revealStart} className="origin-left scale-150" />
-			) : (
-				<>
-					{/* The presenters are dealt in like the logos, then their names build. */}
-					<div className="flex shrink-0">
-						{PRESENTERS.map((presenter, index) => (
-							<FinaleDealt key={presenter.id} start={revealStart} index={index} style={{ marginLeft: index === 0 ? 0 : -18 }}>
-								<Image src={presenter.avatarSrc} alt="" width={76} height={76} className="size-[76px] rounded-full object-cover ring-4 ring-white" />
-							</FinaleDealt>
-						))}
-					</div>
-					<span className="flex min-w-0 flex-col text-[28px] leading-[1.15]">
-						<FinaleBuildSpan text={PRESENTERS.slice(0, 2).map((presenter) => presenter.name).join(" · ")} start={buildAfter(revealStart, 0.3)} duration={CUE.reveal * 0.7} />
-						<FinaleBuildSpan text={PRESENTERS.slice(2).map((presenter) => presenter.name).join(" · ")} start={buildAfter(revealStart, 0.5)} duration={CUE.reveal * 0.7} />
-					</span>
-				</>
-			)}
+			{/* The presenters are dealt in like the logos, then their names build. */}
+			<div className="flex shrink-0">
+				{PRESENTERS.map((presenter, index) => (
+					<FinaleDealt key={presenter.id} start={revealStart} index={index} style={{ marginLeft: index === 0 ? 0 : -18 }}>
+						{/* Ringed in the tile's own fill, so each overlap reads as a cut-out of the card. */}
+						<Image src={presenter.avatarSrc} alt="" width={76} height={76} className="size-[76px] rounded-full object-cover" style={{ boxShadow: `0 0 0 4px ${FINALE_COLORS.tile}` }} />
+					</FinaleDealt>
+				))}
+			</div>
+			<span className="flex min-w-0 flex-col text-[28px] leading-[1.15]">
+				<FinaleBuildSpan text={PRESENTERS.slice(0, 2).map((presenter) => presenter.name).join(" · ")} start={buildAfter(revealStart, 0.3)} duration={CUE.reveal * 0.7} />
+				<FinaleBuildSpan text={PRESENTERS.slice(2).map((presenter) => presenter.name).join(" · ")} start={buildAfter(revealStart, 0.5)} duration={CUE.reveal * 0.7} />
+			</span>
 		</div>
 	);
 }
@@ -312,12 +329,8 @@ export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot,
 						return <Stat stat={content.stat} {...size} revealStart={revealStart} />;
 					case "strip":
 						return <Strip strip={content.strip} revealStart={revealStart} />;
-					case "terminal":
-						return <WallTerminal script={content.script} revealStart={revealStart} />;
-					case "agent":
-						return <WallAgent agent={content.agent} revealStart={revealStart} />;
-					case "composer":
-						return <WallComposer prompt={content.prompt} revealStart={revealStart} />;
+					case "piece":
+						return <WallPieces slot={slot} geometry={geometry} pieces={content.pieces} revealStart={revealStart} />;
 					case "title":
 						// "Team ’26" as a card, as the bento's title became one at the throw.
 						return (

@@ -57,6 +57,25 @@ const DEAL_S = 0.36;
 const DEAL_OFFSET = 14;
 const DEAL_BLUR = 6;
 
+/** How far an item dealt from `start` (the `index`th of its deal) has come in at `time`: 0 → 1. */
+export function finaleDealAmount(time: number, start: number, index = 0): number {
+	const at = start + index * DEAL_STAGGER_S;
+	return EASE.outBold(progress(time, at, at + DEAL_S));
+}
+
+/**
+ * Writes a dealt item's entrance at `amount`, its offset and blur in stage px
+ * times `scale` (an item laid out in viewport px passes the stage's scale);
+ * once in, its styles are cleared.
+ */
+export function applyFinaleDeal(element: HTMLElement, amount: number, scale = 1): void {
+	const rest = 1 - amount;
+	element.style.opacity = amount >= 1 ? "1" : amount.toFixed(3);
+	// 2D, so a dealt item paints with its card instead of taking a compositor layer of its own.
+	element.style.transform = amount >= 1 ? "" : `translate(${(rest * DEAL_OFFSET * scale).toFixed(2)}px, 0)`;
+	element.style.filter = amount >= 1 ? "" : `blur(${(rest * DEAL_BLUR * scale).toFixed(2)}px)`;
+}
+
 interface FinaleDealtProps {
 	/** When the first item deals in (finale-clock seconds); null: already there. */
 	readonly start: number | null;
@@ -78,15 +97,10 @@ export function FinaleDealt({ start, index = 0, className = "flex", style, child
 	useFinaleFrame((time) => {
 		const element = ref.current;
 		if (!element || start === null) return;
-		const at = start + index * DEAL_STAGGER_S;
-		const amount = EASE.outBold(progress(time, at, at + DEAL_S));
+		const amount = finaleDealAmount(time, start, index);
 		if (amount === amountRef.current) return;
 		amountRef.current = amount;
-		const rest = 1 - amount;
-		element.style.opacity = amount >= 1 ? "1" : amount.toFixed(3);
-		// 2D, so a dealt item paints with its card instead of taking a compositor layer of its own.
-		element.style.transform = amount >= 1 ? "" : `translate(${(rest * DEAL_OFFSET).toFixed(2)}px, 0)`;
-		element.style.filter = amount >= 1 ? "" : `blur(${(rest * DEAL_BLUR).toFixed(2)}px)`;
+		applyFinaleDeal(element, amount);
 	});
 	return (
 		<div ref={ref} className={className} style={start === null ? style : { ...style, opacity: 0 }}>
