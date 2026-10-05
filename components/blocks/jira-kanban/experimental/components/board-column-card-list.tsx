@@ -167,7 +167,7 @@ export function BoardColumnCardList({
 		});
 	}, [insertionArmed, suppressCardInsertion]);
 
-	const handlePointerLeave = useCallback(() => {
+	const clearHoverInsertion = useCallback(() => {
 		setHoverInsertion((current) => (current === null ? current : null));
 	}, []);
 
@@ -195,8 +195,10 @@ export function BoardColumnCardList({
 						// Keep the viewport and card focus rings out of the edge fade.
 						"focus-visible:[mask-image:none]! focus-visible:[-webkit-mask-image:none]! has-[:focus-visible]:[mask-image:none]! has-[:focus-visible]:[-webkit-mask-image:none]!",
 					)}
-					onPointerLeave={handlePointerLeave}
+					onPointerLeave={clearHoverInsertion}
 					onPointerMove={handlePointerMove}
+					onScroll={clearHoverInsertion}
+					onWheel={clearHoverInsertion}
 					style={{
 						flexGrow: columnSizing === "fill" ? 1 : 0,
 						flexBasis: columnSizing === "fill" ? 0 : "auto",

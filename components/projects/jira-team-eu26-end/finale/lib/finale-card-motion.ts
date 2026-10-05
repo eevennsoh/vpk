@@ -528,7 +528,7 @@ const SHADOW = {
 	/** The hero lands through the returning camera: at full lift its ground sits this share of its depth behind it. */
 	heroHeight: 0.3,
 	fadeIn: 0.25,
-	/** Gone before the hand-off to the flat DOM tile (`CUE.handoff`). */
+	/** Gone as a tile's hand-off to its flat DOM tile ends (`CUE.tileHandoff`), and before a wall card's (`CUE.handoff`). */
 	fadeOut: 0.42,
 } as const;
 
@@ -745,10 +745,37 @@ export function landingShadowIn(window: FinaleShadowWindow, time: number, pose: 
 	};
 }
 
-/** A landed tile hands over from the GL sheet to its crisp DOM face. */
+/** The shortest a landed tile's sheet takes to dissolve off its DOM face. */
+const TILE_DISSOLVE = 0.12;
+
+/**
+ * How long the frame's smear is still coming up over tile `order` once it has
+ * touched down: until the swoop rising as it lands peaks (0 if none is).
+ */
+function smearRiseAfterLanding(order: number, tileCount = 6): number {
+	const touchdown = touchdownTime(order);
+	let rise = 0;
+	for (let other = 1; other < tileCount; other += 1) {
+		const start = tileFallStart(other);
+		const peak = start + CUE.tileFall * SWOOP_PEAK;
+		if (touchdown >= start && touchdown < peak) rise = Math.max(rise, peak - touchdown);
+	}
+	return rise;
+}
+
+/**
+ * A landed tile hands over from its GL sheet to its crisp DOM face, the sheet
+ * dissolving off it, gone `CUE.tileHandoff` + `TILE_DISSOLVE` after touchdown.
+ * The frame's smear films every sheet still in GL, so the dissolve is what
+ * clears a landed tile; it takes at least as long as the smear was still coming
+ * up over the tile after it landed, so the smear never leaves a tile faster than
+ * it arrived. The tiles after the first land smeared, mid-swoop, and dissolve
+ * in `TILE_DISSOLVE`; the hero lands crisp just as the first swoop sets off, and
+ * eases out of the smear over that swoop's rise.
+ */
 export function tileHandoff(time: number, order: number): number {
-	const at = touchdownTime(order) + CUE.handoff;
-	return progress(time, at, at + 0.12);
+	const end = touchdownTime(order) + CUE.tileHandoff + TILE_DISSOLVE;
+	return progress(time, end - Math.max(TILE_DISSOLVE, smearRiseAfterLanding(order)), end);
 }
 
 /* ─── Through the lens ────────────────────────────────────────────────── */
@@ -804,6 +831,9 @@ export function cardVelocity(time: number, input: FinaleCardInput, viewport: Fin
 
 /* ─── Chromatic dispersion ────────────────────────────────────────────── */
 
+/** A tile's swoop smear peaks this share of the way into its fall. */
+const SWOOP_PEAK = 0.35;
+
 function bump(time: number, start: number, peak: number, end: number): number {
 	if (time <= start || time >= end) return 0;
 	return time < peak ? smooth(progress(time, start, peak)) : 1 - smooth(progress(time, peak, end));
@@ -825,7 +855,7 @@ export function chromaStrength(time: number, viewport: FinaleViewport, subject: 
 	let swoop = 0;
 	for (let order = 1; order < tileCount; order += 1) {
 		const start = tileFallStart(order);
-		swoop = Math.max(swoop, bump(time, start, start + CUE.tileFall * 0.35, touchdownTime(order)) * 0.4);
+		swoop = Math.max(swoop, bump(time, start, start + CUE.tileFall * SWOOP_PEAK, touchdownTime(order)) * 0.4);
 	}
 	return Math.min(1.8, Math.max(burst, camera * 1.1) + warp + swoop);
 }

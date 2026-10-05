@@ -9,6 +9,7 @@ const ENTRY = `
 export * from "./lib/finale-trigger";
 export * from "./lib/finale-math";
 export * from "./lib/finale-card-motion";
+export { landingWaveEnergy } from "./lib/finale-sheet-gl";
 export { finaleCameraRig, identityRig, heroAnchor, cameraSpeed } from "./lib/finale-camera";
 export * from "./lib/finale-drag-order";
 export * from "./data/finale-cues";
@@ -369,7 +370,7 @@ test("the camera rests on the slide at frame 0 and from the hero's landing on, a
 });
 
 test("each card is one continuous layer from the Done column to its bento tile, as the camera films it", () => {
-	const { CUE, finaleBentoLayout, cameraDistance, cardPose, finaleCameraRig, projectPose, tileFallStart, tileHandoff, touchdownTime } = loadFinale();
+	const { CUE, finaleBentoLayout, cameraDistance, cardPose, finaleCameraRig, landingWaveEnergy, projectPose, tileFallStart, tileHandoff, touchdownTime } = loadFinale();
 	const fit = { scale: 0.5, x: 0, y: 30 };
 	const viewport = { width: 960, height: 600 };
 	const card = { x: 708, y: 160, width: 224, height: 150 };
@@ -410,7 +411,12 @@ test("each card is one continuous layer from the Done column to its bento tile, 
 		for (const key of ["x", "y", "width", "height"]) assert.ok(Math.abs(rest[key] - role.slot[key]) < 0.5, `${role.kind} ${key}`);
 		assert.equal(pose(touchdownTime(order) + 0.01).face, 1);
 		assert.ok(pose(touchdownTime(order) + 0.2).waveAge > 0, "Peel landing wave runs after touchdown");
-		assert.equal(tileHandoff(touchdownTime(order) + 0.2, order), 0, "GL sheet still owns the wave");
+		// The GL sheet owns the wave through its strongest: its DOM tile comes up only once the wave has relaxed below half its height.
+		let handover = touchdownTime(order);
+		while (tileHandoff(handover, order) === 0) handover += 1 / 240;
+		let wavePeak = 0;
+		for (let age = 0; age < CUE.handoff; age += 1 / 240) wavePeak = Math.max(wavePeak, landingWaveEnergy(age));
+		assert.ok(landingWaveEnergy(handover - touchdownTime(order)) < wavePeak / 2, "GL sheet still owns the wave");
 		assert.equal(tileHandoff(touchdownTime(order) + CUE.handoff + 0.2, order), 1, "crisp DOM tile once settled");
 		// No teleporting on screen while the card is in front of the lens and not a fly-by.
 		let previous = null;
@@ -512,6 +518,53 @@ test("the chromatic smear is off on frame 0 and the final bento, and peaks on th
 	}
 	assert.ok(peakAt >= CUE.zoom && peakAt <= CUE.zoomEnd, `strongest on the rush (peak at ${peakAt.toFixed(2)}s)`);
 	assert.ok(chroma(CUE.burst + 0.4) > 0.3, "the burst smears at the edges");
+});
+
+test("a landed bento tile lingers in the frame's smear no longer than the bottom corners did, clears as gently as the top right, and flies through it as before", () => {
+	const { CUE, FINALE_SLOT_COUNT, chromaStrength, tileFallStart, tileHandoff, tileRevealStart, touchdownTime } = loadFinale();
+	const viewport = { width: 1920, height: 1080 };
+	const subject = { x: 0, y: 0, width: 436, height: 199 };
+	// The frame's smear films a tile's GL sheet until it has handed over to its crisp DOM face.
+	const onSheet = (time, order) => chromaStrength(time, viewport, subject) * (1 - tileHandoff(time, order));
+	const lingers = Array.from({ length: FINALE_SLOT_COUNT }, (_, order) => {
+		const touchdown = touchdownTime(order);
+		let last = touchdown;
+		for (let time = touchdown; time <= touchdown + 1; time += 1 / 240) if (onSheet(time, order) > 0.001) last = time;
+		return last - touchdown;
+	});
+	// Handed over at `CUE.handoff`, the first down (top left, top right) lingered 0.72 s; the bottom corners 0.43 s and 0.21 s.
+	const cap = CUE.tileHandoff + 0.12;
+	lingers.forEach((seconds, order) => assert.ok(seconds <= cap + 1e-9 && seconds <= 0.43, `tile ${order} lingers ${seconds.toFixed(3)} s after landing`));
+	assert.ok(Math.max(lingers[0], lingers[1]) <= 0.43, "the top corners linger no longer than the bottom corners did");
+	// How abruptly the smear leaves each tile: the largest drop, frame to frame, in the smear on its sheet.
+	const drops = Array.from({ length: FINALE_SLOT_COUNT }, (_, order) => {
+		let largest = 0;
+		for (let time = touchdownTime(order); time <= touchdownTime(order) + cap; time += 1 / 60) largest = Math.max(largest, onSheet(time, order) - onSheet(time + 1 / 60, order));
+		return largest;
+	});
+	// The hero lands crisp as the first swoop sets off, and the smear that comes up over it leaves no more
+	// abruptly than off the top right, which lands mid-swoop: it once left in one 0.12 s dissolve, twice as steep.
+	assert.ok(drops[0] <= drops[1] + 1e-9, `top left clears at ${drops[0].toFixed(3)}/frame, top right at ${drops[1].toFixed(3)}`);
+	assert.ok(drops[0] < 0.04, `top left clears at ${drops[0].toFixed(3)}/frame`);
+	for (let order = 0; order < FINALE_SLOT_COUNT; order += 1) {
+		// In flight, until it touches down, its sheet takes the frame's smear in full.
+		const flight = order === 0 ? CUE.zoomEnd : tileFallStart(order);
+		for (let time = flight; time <= touchdownTime(order); time += 1 / 240) {
+			assert.equal(onSheet(time, order), chromaStrength(time, viewport, subject), `tile ${order} at ${time.toFixed(3)}`);
+		}
+		// Each swoop's smear still peaks at full strength.
+		if (order > 0) assert.equal(chromaStrength(tileFallStart(order) + CUE.tileFall * 0.35, viewport, subject), 0.4);
+		// The tiles that land mid-swoop hand over as they did: one 0.12 s dissolve from `CUE.tileHandoff`.
+		const at = touchdownTime(order) + CUE.tileHandoff;
+		if (order > 0) {
+			assert.equal(tileHandoff(at, order), 0, `tile ${order} starts to dissolve at CUE.tileHandoff`);
+			assert.ok(Math.abs(tileHandoff(at + 0.06, order) - 0.5) < 1e-9, `tile ${order} is half dissolved 0.06 s in`);
+		}
+		// The hand-over dissolves rather than cuts, and its DOM face is up before its logo and heading build.
+		for (let time = touchdownTime(order); time <= at + 0.12; time += 1 / 60) assert.ok(tileHandoff(time + 1 / 60, order) - tileHandoff(time, order) < 0.15);
+		assert.equal(tileHandoff(at + 0.12, order), 1);
+		assert.ok(at + 0.12 <= tileRevealStart(order), `tile ${order} has handed over before its reveal`);
+	}
 });
 
 test("the cloth feels motion as the camera sees it, and only while airborne", () => {
