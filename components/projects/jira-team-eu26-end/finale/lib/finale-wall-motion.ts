@@ -469,7 +469,7 @@ function thrownPose(drop: BentoDrop, drops: readonly BentoDrop[], time: number, 
 
 /* ─── Arrivals at the leading edge ────────────────────────────────────── */
 
-/** Where across the frame a waiting card starts down: between these many pitches from the right edge. */
+/** Where across the frame a waiting card starts down, in entry-camera distances from the right edge. */
 const DESCEND_FROM = 0.45;
 export const DESCEND_SPAN = 0.7;
 
@@ -493,12 +493,14 @@ export function perSlot<T>(store: WeakMap<FinaleWall, Map<string, T>>, wall: Fin
 
 /**
  * A slot's descent when its card starts down as its centre crosses a line
- * `from` to `from + span` pitches in from the frame's right edge (where, by
- * the slot's seed); null if it was already on the wall when it appeared.
+ * `from` to `from + span` entry distances in from the frame's right edge.
+ * Wider cards start at the reference card's leading edge, so their full
+ * chroma cannot linger deeper inside the frame just because they are wider.
  */
 function descentFrom(slot: WallSlot, geometry: WallGeometry, from: number, span: number): Descent | null {
-	const line = geometry.viewport.width - geometry.bucketWidth * (from + span * hash01(slot.seed * 0.917 + 0.13));
-	const start = wallTimeAt(slot.rect.x + geometry.originX + slot.rect.width / 2 - line, geometry);
+	const line = geometry.viewport.width - geometry.arrivalReach * (from + span * hash01(slot.seed * 0.917 + 0.13));
+	const edge = slot.rect.x + geometry.originX + Math.min(slot.rect.width, geometry.arrivalWidth) / 2;
+	const start = wallTimeAt(edge - line, geometry);
 	return start === Number.NEGATIVE_INFINITY ? null : { start, touchdown: start + WALL_CUE.descendS * lerp(0.85, 1.25, hash01(slot.seed * 1.37 + 0.5)) };
 }
 
@@ -734,7 +736,7 @@ function bentoSheetVelocity(drop: BentoDrop, drops: readonly BentoDrop[], time: 
 	return { x: lerp(flipping.x, held.x, into), y: lerp(flipping.y, held.y, into), z: lerp(flipping.z, held.z, into) };
 }
 
-/** How many pitches past the frame's right edge a waiting card is still drawn (it stands out toward the lens). */
+/** How many entry-camera distances past the right edge a waiting card is still drawn. */
 const ARRIVAL_LEAD = 1.2;
 
 /** How long a thrown card's smear takes to swell in as it leaves the hand. */
@@ -783,14 +785,14 @@ export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly Ben
 	}
 	const offset = wallOffset(time, geometry);
 	const { first, last } = visibleWallBuckets(offset, geometry);
-	const reach = Math.ceil(ARRIVAL_LEAD);
+	const reach = Math.ceil(ARRIVAL_LEAD * geometry.arrivalReach / geometry.bucketWidth);
 	for (let column = first; column <= last + reach; column += 1) {
 		for (const slot of wall.bucket(column)) {
 			if (slot.reserved !== undefined) continue;
 			const cards = slotArrivals(slot, wall, prints);
 			if (cards.length === 0) continue;
 			const rect = slotOnScreen(slot, offset, geometry);
-			if (rect.x > viewport.width + geometry.bucketWidth * ARRIVAL_LEAD) continue;
+			if (rect.x > viewport.width + geometry.arrivalReach * ARRIVAL_LEAD) continue;
 			const earlier = slotOnScreen(slot, wallOffset(time - CLOTH_LAG, geometry), geometry);
 			// Waiting cards appear with the rest of the wall, where they wait.
 			const shown = wallRevealAt({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }, slot.seed, time, viewport);
