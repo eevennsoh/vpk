@@ -14,6 +14,7 @@ import { setGlobalTheme } from "@atlaskit/tokens/set-global-theme";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import ThemeIcon from "@atlaskit/icon/core/theme";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
 	Select,
 	SelectContent,
@@ -178,9 +179,10 @@ export function useTheme() {
 interface ThemeToggleProps {
 	className?: string;
 	label?: string;
+	appearance?: "button" | "menu-item";
 }
 
-export function ThemeToggle({ className, label }: Readonly<ThemeToggleProps> = {}) {
+export function ThemeToggle({ className, label, appearance = "button" }: Readonly<ThemeToggleProps> = {}) {
 	const { theme, setTheme } = useTheme();
 
 	const handleToggle = () => {
@@ -204,6 +206,20 @@ export function ThemeToggle({ className, label }: Readonly<ThemeToggleProps> = {
 	const icon = theme === "system"
 		? <DevicesIcon label="" />
 		: <ThemeIcon label="" />;
+
+	if (appearance === "menu-item") {
+		return (
+			<DropdownMenuItem
+				aria-label={accessibleLabel}
+				className={className}
+				closeOnClick={false}
+				elemAfter={icon}
+				onSelect={handleToggle}
+			>
+				{label ?? themeLabel}
+			</DropdownMenuItem>
+		);
+	}
 
 	return (
 		<Button

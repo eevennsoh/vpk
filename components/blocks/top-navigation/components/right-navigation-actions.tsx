@@ -13,12 +13,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTitle,
-	PopoverTrigger,
-} from "@/components/ui/popover";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { DESIGN_VARIANTS, type DesignVariantId } from "@/components/utils/design-variants";
 import { ThemeToggle } from "@/components/utils/theme-wrapper";
@@ -182,8 +176,8 @@ export function RightNavigationActions({
 			)}
 
 			{/* Profile and theme */}
-			<Popover>
-				<PopoverTrigger
+			<DropdownMenu>
+				<DropdownMenuTrigger
 					render={(
 						<Button
 							aria-label="Profile menu"
@@ -199,11 +193,10 @@ export function RightNavigationActions({
 						</Button>
 					)}
 				/>
-				<PopoverContent align="end" className="w-44">
-					<PopoverTitle className="sr-only">Profile settings</PopoverTitle>
-					<ThemeToggle className="w-full justify-between" label="Theme" />
-				</PopoverContent>
-			</Popover>
+				<DropdownMenuContent align="end" aria-label="Profile settings" className="min-w-44 w-44">
+					<ThemeToggle appearance="menu-item" label="Theme" />
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</>
 	);
 }
