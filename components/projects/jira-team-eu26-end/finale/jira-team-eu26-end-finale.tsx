@@ -10,10 +10,11 @@ import { FinaleOverlay } from "./components/finale-overlay";
 import { selectFinaleFeatures, type FinaleStory } from "./data/finale-stories";
 import { useFinaleAudioClock } from "./hooks/use-finale-audio-clock";
 import { useFinaleControls } from "./hooks/use-finale-controls";
+import { useFinaleDropPuff } from "./hooks/use-finale-drop-puff";
 import { printFinaleColumn, useFinaleCardPrints } from "./hooks/use-finale-prints";
-import { captureJiraTeamEu26DoneColumn, queryJiraTeamEu26DoneColumn, waitForFinaleColumnCapture } from "./lib/capture-done-column";
+import { captureJiraTeamEu26DoneColumn, waitForFinaleColumnCapture } from "./lib/capture-done-column";
+import { confettiBoxOf } from "./lib/finale-confetti-target";
 import { finaleArrivals, finaleSmallConfettiDue, nextFinaleDragOrder } from "./lib/finale-drag-order";
-import type { FinaleConfettiColumn } from "./lib/finale-confetti";
 import { createFinaleConfetti, type FinaleConfettiShow } from "./lib/play-finale-confetti";
 import { FINALE_DONE_COLUMN_TITLE, isJiraTeamEu26FinaleReady, parseFinaleSearch } from "./lib/finale-trigger";
 import type { FinaleSceneInput } from "./scenes/scene-board-to-bento";
@@ -33,12 +34,6 @@ interface FinalePreparation {
 	readonly features: readonly FinaleStory[];
 	readonly seek: number;
 	readonly hold: boolean;
-}
-
-/** Where the confetti lands: the Done column's bounds, round its own bottom corners. */
-function confettiColumnOf(column: HTMLElement): FinaleConfettiColumn {
-	const { x, y, width, height } = column.getBoundingClientRect();
-	return { x, y, width, height, radius: Number.parseFloat(getComputedStyle(column).borderBottomLeftRadius) || 0 };
 }
 
 function doneCodesOf(columns: readonly JiraKanbanColumnData[]): readonly string[] {
@@ -68,6 +63,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 	const [closing, setClosing] = useState(false);
 	const startAfterMountRef = useRef<number | null>(null);
 	const confetti = useMemo(() => createFinaleConfetti(), []);
+	const puffDrop = useFinaleDropPuff(confetti);
 	/** A burst the mounted finale has yet to ignite from. */
 	const confettiShowRef = useRef<FinaleConfettiShow | null>(null);
 	const ready = isJiraTeamEu26FinaleReady(boardColumns, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES);
@@ -100,13 +96,13 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		// not compete with the column image that the shader needs first.
 		for (const code of arrived) if (!ready) prints.schedule(code);
 		dragOrderRef.current = next;
-		// One card or a bulk drag alike, short of completing the board: on the
-		// drop itself, landing on any burst still flying. A small burst never
-		// gathers on the column, so it need not wait for the drop to settle.
+		// One card or a bulk drag alike, short of completing the board: a puff
+		// from under the cards this drop brought in, as they touch down in their
+		// slots, on top of any burst still flying. It never gathers on the
+		// column, so nothing waits on it.
 		if (!finaleSmallConfettiDue(arrived, ready) || reducedMotion) return;
-		const column = queryJiraTeamEu26DoneColumn();
-		if (column) confetti.play(confettiColumnOf(column), "small");
-	}, [confetti, doneKey, prints, ready, reducedMotion]);
+		puffDrop(arrived);
+	}, [doneKey, prints, puffDrop, ready, reducedMotion]);
 
 	const prepare = useCallback((seek: number, hold: boolean) => {
 		const dragOrder = dragOrderRef.current;
@@ -128,7 +124,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			const celebration = hasConfetti
 				? waitForFinaleColumnCapture(controller.signal).then((column) => {
 					if (!column || cancelled) return;
-					show = confetti.play(confettiColumnOf(column));
+					show = confetti.play({ column: confettiBoxOf(column) });
 				})
 				: Promise.resolve();
 			// Never hold the show for a print: late ones fall back to plain sheets.
