@@ -4,7 +4,8 @@ import { useMemo, useRef, useState } from "react";
 
 import type { FinaleFieldRipple, FinaleFit, FinaleViewport } from "../lib/finale-card-motion";
 import type { FinaleWall, WallPrintShapes } from "../lib/finale-wall-layout";
-import { wallActive, wallCursorsAt, wallLandingsAt, type BentoDrop } from "../lib/finale-wall-motion";
+import { wallCursorsAt } from "../lib/finale-wall-cursors";
+import { wallActive, wallLandingsAt, type BentoDrop } from "../lib/finale-wall-motion";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FinaleWallCursors } from "./finale-cursor";
 import { FinaleDotField } from "./finale-dot-field";

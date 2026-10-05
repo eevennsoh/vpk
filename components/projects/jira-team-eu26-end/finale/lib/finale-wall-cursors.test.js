@@ -13,7 +13,8 @@ export { finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories"
 export { FINALE_WALL_CURSOR_NAMES } from "../data/finale-wall-cursor-names";
 export { FINALE_CURSORS } from "./finale-cursor-path";
 export { WALL_PERIOD, buildFinaleWall, wallGeometry } from "./finale-wall-layout";
-export { wallCursorsAt, wallTimeAt } from "./finale-wall-motion";
+export { wallCursorsAt } from "./finale-wall-cursors";
+export { wallTimeAt } from "./finale-wall-motion";
 `;
 
 let loaded;

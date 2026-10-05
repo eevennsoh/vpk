@@ -15,6 +15,7 @@ const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-
 const ENTRY = `
 export * from "./finale-wall-layout";
 export * from "./finale-wall-motion";
+export * from "./finale-wall-cursors";
 export { hash01 } from "./finale-math";
 export { CUE } from "../data/finale-cues";
 export { finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";

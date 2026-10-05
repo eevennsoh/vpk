@@ -419,7 +419,8 @@ test("uniforms size the hairline by the stroke scale and the bloom and smoke by 
 const WALL_ENTRY = `
 export { finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";
 export { buildFinaleWall, wallGeometry } from "./finale-wall-layout";
-export { bentoDrops, wallCursorsAt } from "./finale-wall-motion";
+export { bentoDrops } from "./finale-wall-motion";
+export { wallCursorsAt } from "./finale-wall-cursors";
 export { FINALE_CURSORS } from "./finale-cursor-path";
 `;
 

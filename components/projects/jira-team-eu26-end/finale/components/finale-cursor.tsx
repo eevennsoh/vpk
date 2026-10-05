@@ -5,7 +5,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import type { FinaleSlot } from "../data/finale-stories";
 import type { FinaleViewport } from "../lib/finale-card-motion";
 import { FINALE_CURSORS, cursorPose, type FinaleCursorPose } from "../lib/finale-cursor-path";
-import type { PageCursor } from "../lib/finale-wall-motion";
+import type { PageCursor } from "../lib/finale-wall-cursors";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 /** The arrow's tip inside its 30×30 box; the cursor is placed and pressed about it. */
