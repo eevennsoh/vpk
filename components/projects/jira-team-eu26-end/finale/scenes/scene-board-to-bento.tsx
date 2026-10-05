@@ -8,19 +8,25 @@ import { FinaleCursors } from "../components/finale-cursor";
 import { FinaleDotField } from "../components/finale-dot-field";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FinaleTeamTitle } from "../components/finale-team-title";
-import { FINALE_TILE_RADIUS, FinaleTileFace } from "../components/finale-tile";
+import { FinaleBentoTile } from "../components/finale-bento-tile";
+import { FINALE_TILE_RADIUS } from "../components/finale-tile";
 import { FinaleTileGlow } from "../components/finale-tile-glow";
+import { FinaleWall } from "../components/finale-wall";
+import { FinaleWallAccents } from "../components/finale-wall-accents";
+import { FinaleWallGl } from "../components/finale-wall-gl";
 import { finaleBentoLayout, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import { useFinaleBoardExit } from "../hooks/use-finale-board-exit";
+import { finaleFacePrintKey } from "../hooks/use-finale-face-prints";
 import type { FinaleHandoffSnapshot } from "../lib/capture-done-column";
 import {
 	fieldRipples,
 	tileHandoff,
-	tileRevealStart,
 	type FinaleCardRole,
 	type FinaleFit,
 	type FinaleViewport,
 } from "../lib/finale-card-motion";
+import { buildFinaleWall, wallGeometry, wallPrintShapes } from "../lib/finale-wall-layout";
+import { bentoDrops, bentoTossTime } from "../lib/finale-wall-motion";
 
 /** The field always carries a full board, padding with blank sheets in rehearsal. */
 const FIELD_SIZE = 13;
@@ -34,12 +40,14 @@ export interface FinaleSceneInput {
 	/** Bento tiles in landing order; the first is the hero the camera dives into. */
 	readonly features: readonly FinaleStory[];
 	readonly cardPrint: (code: string) => HTMLCanvasElement | undefined;
+	/** The bento tiles' faces as printed ahead of the finale (`finaleFacePrintKey`): each landing sheet turns into its own. */
+	readonly facePrint: (key: string) => HTMLCanvasElement | undefined;
 	/** The Done column as printed at the hand-off, which the flash's column pass renders. */
 	readonly columnPrint?: HTMLCanvasElement;
 }
 
 /** Field cards: the Done cards in drag order (each with its finale role), then the echoes. */
-function buildField(input: FinaleSceneInput, column: FinaleRect, slotRects: readonly FinaleRect[]): FinaleGlCard[] {
+function buildField(input: Pick<FinaleSceneInput, "snapshot" | "dragOrder" | "features" | "cardPrint">, column: FinaleRect, slotRects: readonly FinaleRect[]): FinaleGlCard[] {
 	const captured = input.snapshot?.cards ?? [];
 	const byCode = new Map(captured.map((card) => [card.code, card]));
 	const ordered = [
@@ -66,6 +74,7 @@ function buildField(input: FinaleSceneInput, column: FinaleRect, slotRects: read
 			print: input.cardPrint(code),
 			resolvePrint: () => input.cardPrint(code),
 			tileOrder: order >= 0 ? order : undefined,
+			faceKey: order >= 0 ? finaleFacePrintKey(order) : undefined,
 		};
 	});
 	const echoes = Array.from({ length: ECHO_COUNT }, (_, index): FinaleGlCard => {
@@ -84,17 +93,23 @@ function buildField(input: FinaleSceneInput, column: FinaleRect, slotRects: read
 interface SceneBoardToBentoProps extends FinaleSceneInput {
 	readonly fit: FinaleFit;
 	readonly viewport: FinaleViewport;
+	/** Reduced motion rests on the bento: the mega bento never mounts, nor its WebGL context. */
+	readonly reducedMotion: boolean;
 }
 
 /**
  * The finale as one continuous take. Every card is a single shared layer: the
  * DOM card in Done becomes a printed GL sheet that bursts out of the column
- * into the field; the camera sweeps it and rushes in to the first card MCB
- * dragged, and each chosen sheet swoops
+ * into the field; the camera sweeps it and rushes in to the hero (Agent
+ * Session Tracking, the bento's first feature), and each chosen sheet swoops
  * onto the page with Peel's paper wave before handing over to its DOM tile.
+ * Then Act III: "Team ’26" becomes a card, and the bento's seven cards are
+ * thrown, faces and all, as GL sheets carrying prints of them, to land in gaps
+ * across the mega bento as it appears around them.
  */
-export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features, cardPrint, columnPrint }: Readonly<SceneBoardToBentoProps>) {
+export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features, cardPrint, facePrint, columnPrint, reducedMotion }: Readonly<SceneBoardToBentoProps>) {
 	const tileRefs = useRef<(HTMLDivElement | null)[]>([]);
+	const writtenRefs = useRef<number[]>([]);
 	const slideRef = useRef<HTMLDivElement>(null);
 	const column = useMemo(
 		() => snapshot?.column ?? { x: viewport.width / 2 - 150, y: 80, width: 300, height: viewport.height - 160 },
@@ -113,14 +128,24 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		[snapshot, dragOrder, features, cardPrint, column, slotRects],
 	);
 	const ripples = useMemo(() => fieldRipples(slotRects), [slotRects]);
-	// The camera frames the hero (the first card MCB dragged) for the long zoom.
+	// Act III: the mega bento, and the gap each bento card is thrown into.
+	const geometry = useMemo(() => wallGeometry(bento, fit.scale, viewport), [bento, fit.scale, viewport]);
+	const wall = useMemo(() => buildFinaleWall(geometry, bento, features, dragOrder), [geometry, bento, features, dragOrder]);
+	const drops = useMemo(() => bentoDrops(wall, slotRects, bento.title), [wall, slotRects, bento.title]);
+	// The Done cards' print shapes: a print slot's cards land, show and glow each on its own rect.
+	const prints = useMemo(() => wallPrintShapes(cardPrint), [cardPrint]);
+	// The camera frames the hero (the bento's first feature) for the long zoom.
 	const subject = useMemo(() => cards.find((card) => card.input.role.kind === "hero")?.input.rect ?? column, [cards, column]);
 
 	useFinaleBoardExit(slideRef);
 	useFinaleFrame((time) => {
+		// At the throw each tile's GL sheet, printed with its face and in place, takes over: a clean cut.
+		const tossed = time >= bentoTossTime();
 		tileRefs.current.forEach((tile, order) => {
 			if (!tile) return;
-			const shown = tileHandoff(time, order);
+			const shown = tossed ? 0 : tileHandoff(time, order);
+			if (writtenRefs.current[order] === shown) return;
+			writtenRefs.current[order] = shown;
 			tile.style.opacity = String(shown);
 			tile.style.visibility = shown > 0 ? "visible" : "hidden";
 		});
@@ -130,29 +155,35 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		<div aria-hidden className="absolute inset-0">
 			{/* The live board shows through while light sweeps its Done column; on the toss it blurs and fades out under the slide. */}
 			<div ref={slideRef} className="absolute inset-0" style={{ visibility: "hidden" }} />
+			{/* Act III: the mega bento's DOM cards (its sheets and accents are drawn over the bento, below). */}
+			{reducedMotion ? null : <FinaleWall wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />}
 			<FinaleTeamTitle rect={bento.title} scale={fit.scale} />
-			<FinaleCardSpaceGl cards={cards} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
+			<FinaleCardSpaceGl cards={cards} facePrint={facePrint} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
 			{/* The column "completes" in a sweep of light before its cards are tossed. */}
 			<FinaleColumnFlash column={column} print={columnPrint} occluders={snapshot?.occluders} />
-			{features.map((story, order) => {
-				const rect = slotRects[order];
-				return (
-					<div
-						key={story.code}
-						ref={(element) => { tileRefs.current[order] = element; }}
-						className="absolute"
-						style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height, opacity: 0, visibility: "hidden" }}
-					>
-						<div style={{ transform: `scale(${fit.scale})`, transformOrigin: "0 0" }}>
-							<FinaleTileFace story={story} slot={bento.slots[order]} scale={fit.scale} revealStart={tileRevealStart(order)} />
-						</div>
-					</div>
-				);
-			})}
+			{/* Each tile is there in full from its hand-off: its sheet landed as its face's print. */}
+			{features.map((story, order) => (
+				<FinaleBentoTile
+					key={story.code}
+					ref={(element) => { tileRefs.current[order] = element; }}
+					story={story}
+					slot={bento.slots[order]}
+					scale={fit.scale}
+					className="absolute"
+					style={{ left: slotRects[order].x, top: slotRects[order].y, opacity: 0, visibility: "hidden" }}
+				/>
+			))}
 			{/* One shared WebGL layer: each tile's whole border glows once, Pulsing Border style, as it settles. */}
 			<FinaleTileGlow tiles={slotRects} radius={FINALE_TILE_RADIUS * fit.scale} scale={fit.scale} viewport={viewport} />
 			{/* Above the tiles: each touchdown pulses a dot lattice inside its own tile. */}
 			<FinaleDotField fit={fit} viewport={viewport} ripples={ripples} radius={FINALE_TILE_RADIUS * fit.scale} />
+			{/* Act III's sheets and landing accents, over the bento's tiles: the title card hops over its neighbours as it flips. */}
+			{reducedMotion ? null : (
+				<>
+					<FinaleWallGl wall={wall} drops={drops} viewport={viewport} fit={fit} cardPrint={cardPrint} prints={prints} facePrint={facePrint} />
+					<FinaleWallAccents wall={wall} drops={drops} fit={fit} viewport={viewport} prints={prints} />
+				</>
+			)}
 			{/* Topmost: the presenters' cursors placing the final cards. */}
 			<FinaleCursors slots={bento.slots} viewport={viewport} scale={fit.scale} />
 		</div>

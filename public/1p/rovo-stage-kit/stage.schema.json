@@ -1,0 +1,616 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stage.schema.json",
+  "title": "Rovo stage",
+  "description": "The stage the Rovo stage lab exports, for the Rovo Stage Kit to render. Values outside their ranges are brought within them; unknown pieces are dropped.",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "board"
+  ],
+  "properties": {
+    "format": {
+      "const": "rovo-stage"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1
+    },
+    "kit": {
+      "type": "string",
+      "description": "The kit version that wrote it."
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "board": {
+      "type": "object",
+      "required": [
+        "cells"
+      ],
+      "properties": {
+        "preset": {
+          "type": "string"
+        },
+        "layout": {
+          "const": "single"
+        },
+        "canvas": {
+          "enum": [
+            "mist",
+            "paper",
+            "ink",
+            "wallpaper"
+          ]
+        },
+        "aspect": {
+          "enum": [
+            "16:9",
+            "21:9",
+            "32:9",
+            "48:9",
+            "9:16"
+          ],
+          "description": "16:9: 16:9 · one screen · 21:9: 21:9 · an ultrawide · 32:9: 32:9 · two screens side by side · 48:9: 48:9 · three screens side by side · 9:16: 9:16 · a portrait screen"
+        },
+        "bleed": {
+          "type": "boolean",
+          "description": "The stage to the canvas’s edges."
+        },
+        "appearance": {
+          "enum": [
+            "light",
+            "dark"
+          ]
+        },
+        "cells": {
+          "type": "object",
+          "required": [
+            "a"
+          ],
+          "properties": {
+            "a": {
+              "type": "object",
+              "description": "The stage’s card: its options, framing and tone.",
+              "properties": {
+                "module": {
+                  "const": "stage"
+                },
+                "motion": {
+                  "enum": [
+                    "animated",
+                    "static"
+                  ]
+                },
+                "frame": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "tone": {
+                  "enum": [
+                    "paper",
+                    "mist",
+                    "wallpaper",
+                    "ink",
+                    "blue",
+                    "dusk"
+                  ]
+                },
+                "label": {
+                  "type": "boolean"
+                },
+                "eyebrow": {
+                  "type": "string"
+                },
+                "caption": {
+                  "type": "string"
+                },
+                "zoom": {
+                  "type": "number",
+                  "description": "1 frames the stage as made."
+                },
+                "panX": {
+                  "type": "number"
+                },
+                "panY": {
+                  "type": "number"
+                },
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "view": {
+                      "title": "View",
+                      "enum": [
+                        "stage",
+                        "mosaic",
+                        "scatter",
+                        "grid",
+                        "gravity",
+                        "orbit",
+                        "scroll"
+                      ],
+                      "description": "stage: Stage: a wall gliding past · mosaic: Mosaic: cells taking turns · scatter: Scatter: the frame full, at many heights · grid: Grid: a piece in each cell · gravity: Gravity: they fall and pile up · orbit: Orbit: two rings round the greeting · scroll: Scrolling background: columns"
+                    },
+                    "camera": {
+                      "title": "Camera",
+                      "enum": [
+                        "glide",
+                        "angle",
+                        "low",
+                        "close"
+                      ],
+                      "description": "glide: Glide: square on · angle: Angle: along the shelf · low: Low: looking up the wall · close: Close: pieces large"
+                    },
+                    "pace": {
+                      "title": "Speed",
+                      "enum": [
+                        "slow",
+                        "calm",
+                        "brisk",
+                        "quick"
+                      ],
+                      "description": "slow: Slow: 60 pt a second · calm: Calm: 95 pt a second · brisk: Brisk: 140 pt a second · quick: Quick: 200 pt a second"
+                    },
+                    "density": {
+                      "title": "Density",
+                      "enum": [
+                        "gallery",
+                        "balanced",
+                        "dense"
+                      ],
+                      "description": "gallery: Gallery: a few pieces, room round each · balanced: Balanced · dense: Dense: close together"
+                    },
+                    "text": {
+                      "title": "Headline",
+                      "enum": [
+                        "still",
+                        "wall",
+                        "none"
+                      ],
+                      "description": "still: Still: pieces pass in front and behind · wall: On the wall: it travels with them · none: None"
+                    },
+                    "greeting": {
+                      "title": "Greeting",
+                      "type": "string",
+                      "maxLength": 160
+                    },
+                    "textSize": {
+                      "title": "Greeting size",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0.4 to 2, written as text."
+                    },
+                    "textX": {
+                      "title": "Greeting across",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0 to 0.9, written as text."
+                    },
+                    "textY": {
+                      "title": "Greeting down",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0 to 0.9, written as text."
+                    },
+                    "showSearch": {
+                      "title": "Show Search",
+                      "type": "boolean"
+                    },
+                    "showChat": {
+                      "title": "Show Chat",
+                      "type": "boolean"
+                    },
+                    "showReasoning": {
+                      "title": "Show Reasoning and sources",
+                      "type": "boolean"
+                    },
+                    "showVoice": {
+                      "title": "Show Voice",
+                      "type": "boolean"
+                    },
+                    "showAgents": {
+                      "title": "Show Agents",
+                      "type": "boolean"
+                    },
+                    "showHold": {
+                      "title": "Show Click and hold, Compact",
+                      "type": "boolean"
+                    },
+                    "showIcons": {
+                      "title": "Show Rovo’s icons",
+                      "type": "boolean"
+                    },
+                    "showApps": {
+                      "title": "Show App logos",
+                      "type": "boolean"
+                    },
+                    "showOnboarding": {
+                      "title": "Show Onboarding: mosaic and Facets Zoom",
+                      "type": "boolean"
+                    },
+                    "showArtifacts": {
+                      "title": "Show Artifacts",
+                      "type": "boolean"
+                    },
+                    "showDev": {
+                      "title": "Show Rovo Dev and code",
+                      "type": "boolean"
+                    },
+                    "showCollab": {
+                      "title": "Show Working together",
+                      "type": "boolean"
+                    },
+                    "showLoom": {
+                      "title": "Show Loom",
+                      "type": "boolean"
+                    },
+                    "showTrust": {
+                      "title": "Show Trust and numbers",
+                      "type": "boolean"
+                    },
+                    "showMosaic": {
+                      "title": "Show Mosaic tiles",
+                      "type": "boolean"
+                    },
+                    "entryTilt": {
+                      "title": "Tilt at the start",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0 to 70, written as text."
+                    },
+                    "entryTiltCurve": {
+                      "title": "Tilt curve",
+                      "enum": [
+                        "settle",
+                        "hold",
+                        "wobble",
+                        "even"
+                      ],
+                      "description": "settle: Settle: it straightens as it lands · hold: Hold: it keeps its tilt, then rights itself · wobble: Wobble: it overshoots flat and settles · even: Even: it rights itself steadily"
+                    },
+                    "entryMaterial": {
+                      "title": "Material",
+                      "enum": [
+                        "solid",
+                        "card",
+                        "paper",
+                        "sticker",
+                        "silk"
+                      ],
+                      "description": "solid: Solid: a rigid layer · card: Card: it flexes a little · paper: Paper: it bends as it flies · sticker: Sticker: it curls, then lays down from one edge · silk: Silk: it ripples, very soft"
+                    },
+                    "entrySoftness": {
+                      "title": "Softness",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0 to 1, written as text."
+                    },
+                    "entrySpeed": {
+                      "title": "Entrance speed",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0.4 to 2.5, written as text."
+                    },
+                    "entryDepth": {
+                      "title": "Into the wall",
+                      "enum": [
+                        "swoop",
+                        "steady",
+                        "dive",
+                        "bounce"
+                      ],
+                      "description": "swoop: Swoop: fast past the lens, long and soft onto the wall · steady: Steady: it eases in and out · dive: Dive: it gathers speed and lands softly · bounce: Bounce: it presses into the wall and springs back"
+                    },
+                    "curtainExit": {
+                      "title": "How the curtain goes",
+                      "enum": [
+                        "rise",
+                        "theater",
+                        "pageTurn",
+                        "fold",
+                        "blinds",
+                        "tiles",
+                        "flythrough",
+                        "fall",
+                        "dissolve",
+                        "unfold"
+                      ],
+                      "description": "rise: Rise: the slide lifts away · theater: Theater: it parts at the middle and draws aside · pageTurn: Page turn: it peels over from the right · fold: Fold: it folds itself up like a letter · blinds: Blinds: its slats turn away, top to bottom · tiles: Tiles: it breaks into tiles that fall away · flythrough: Fly through: the camera passes through it · fall: Fall: it tips back and falls away · dissolve: Dissolve: it parts into bands that melt away · unfold: Unfold: it holds still and blurs into the stage, as a foldable opens"
+                    },
+                    "curtainPlace": {
+                      "title": "Where the slide sits",
+                      "enum": [
+                        "across",
+                        "right",
+                        "left"
+                      ],
+                      "description": "across: Across the canvas · right: On the right screen, the left dark · left: On the left screen, the right dark"
+                    },
+                    "curtainSpeed": {
+                      "title": "Curtain speed",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0.4 to 2.5, written as text."
+                    },
+                    "curtainSoftness": {
+                      "title": "Curtain softness",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0 to 1, written as text."
+                    },
+                    "curtainStagger": {
+                      "title": "Curtain stagger",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0 to 1, written as text."
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "composition": {
+      "description": "The hand-composed wall; null when the stage packs its own.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/composition"
+        }
+      ]
+    },
+    "pieceStyles": {
+      "description": "How each kind of piece looks and plays, by piece id.",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/pieceId"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/pieceStyle"
+      }
+    }
+  },
+  "$defs": {
+    "pieceId": {
+      "enum": [
+        "search",
+        "searchDrop",
+        "filters",
+        "bubbles",
+        "composer",
+        "starters",
+        "skills",
+        "twg",
+        "reasoning",
+        "workPill",
+        "sources",
+        "sourcesPopover",
+        "voice",
+        "picker",
+        "avatars",
+        "badgeRovo",
+        "hold",
+        "compact",
+        "switch",
+        "bloom",
+        "glyphSearch",
+        "glyphChat",
+        "glyphForYou",
+        "glyphAuto",
+        "appConfluence",
+        "appJira",
+        "appSlack",
+        "appFigma",
+        "appGithub",
+        "appDrive",
+        "appLoom",
+        "mosaic",
+        "filmFacets",
+        "mobileChat",
+        "scheduledTask",
+        "quizArtifact",
+        "dashboardArtifact",
+        "artifactsLogo",
+        "rovoDevCli",
+        "codeCard",
+        "codeSearchLogo",
+        "ringsTile",
+        "agentPresence",
+        "mentions",
+        "attribution",
+        "shareSnapshot",
+        "loomRecordBar",
+        "loomTeleprompter",
+        "loomCameraBubble",
+        "loomOverlays",
+        "recordForAgent",
+        "governance",
+        "iso42001",
+        "statTokens",
+        "stampTyping",
+        "stampPhotos",
+        "stampShapes",
+        "stampShield",
+        "stampRovoMark",
+        "stampTangle",
+        "stampLoops",
+        "stampRibbon",
+        "stampSignal",
+        "stampGrid",
+        "stampSparkle",
+        "stampFields",
+        "stampSquiggle",
+        "stampSmile"
+      ]
+    },
+    "playMode": {
+      "enum": [
+        "once",
+        "loop",
+        "live"
+      ],
+      "description": "once: plays its moment, then holds · loop: again after a rest · live: never stops"
+    },
+    "moment": {
+      "type": "object",
+      "properties": {
+        "play": {
+          "$ref": "#/$defs/playMode"
+        },
+        "rest": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "length": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 120
+        }
+      }
+    },
+    "pieceStyle": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/moment"
+        }
+      ],
+      "type": "object",
+      "properties": {
+        "surface": {
+          "const": false,
+          "description": "Drawn without its card."
+        }
+      }
+    },
+    "composedPiece": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/moment"
+        }
+      ],
+      "type": "object",
+      "required": [
+        "key",
+        "id",
+        "x",
+        "y"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "id": {
+          "$ref": "#/$defs/pieceId"
+        },
+        "x": {
+          "type": "number",
+          "description": "Its top left corner on the wall, in points."
+        },
+        "y": {
+          "type": "number"
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 4
+        },
+        "z": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 400,
+          "description": "Its height off the wall; past 60 it passes over the greeting."
+        }
+      }
+    },
+    "composition": {
+      "type": "object",
+      "required": [
+        "version",
+        "period",
+        "speed",
+        "pieces"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "period": {
+          "type": "number",
+          "minimum": 400,
+          "maximum": 200000,
+          "description": "The wall repeats every period, in points."
+        },
+        "speed": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20000,
+          "description": "Points a second at the calm pace."
+        },
+        "frame": {
+          "type": "object",
+          "properties": {
+            "w": {
+              "type": "number"
+            },
+            "h": {
+              "type": "number"
+            }
+          }
+        },
+        "band": {
+          "type": "object",
+          "properties": {
+            "top": {
+              "type": "number"
+            },
+            "bottom": {
+              "type": "number"
+            }
+          }
+        },
+        "pieces": {
+          "type": "array",
+          "maxItems": 600,
+          "items": {
+            "$ref": "#/$defs/composedPiece"
+          }
+        },
+        "keynote": {
+          "type": "object",
+          "description": "Where the curtain’s cards land: card id → piece key.",
+          "propertyNames": {
+            "enum": [
+              "teu-1",
+              "teu-10",
+              "teu-3",
+              "teu-6",
+              "teu-2",
+              "teu-5"
+            ]
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

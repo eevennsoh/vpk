@@ -19,6 +19,12 @@ export function progress(time: number, start: number, end: number): number {
 	return clamp((time - start) / (end - start));
 }
 
+/** Smoothstep of `value` from `edge0` to `edge1`: 0 → 1, eased at both ends. */
+export function smoothstep(edge0: number, edge1: number, value: number): number {
+	const x = clamp((value - edge0) / (edge1 - edge0));
+	return x * x * (3 - 2 * x);
+}
+
 /** CSS-style cubic-bezier easing solved with Newton-Raphson plus bisection fallback. */
 export function cubicBezier(x1: number, y1: number, x2: number, y2: number): Ease {
 	const cx = 3 * x1;
@@ -99,7 +105,7 @@ export function hash01(seed: number): number {
 
 /**
  * Parses `#rrggbb` or `rgb()/rgba()` into channels. Hex is checked first: its
- * digits would otherwise be misread as decimal channels (#F1F2F4 → 1, 2, 4).
+ * digits would otherwise be misread as decimal channels (#F8F8F8 → 8, 8, 8).
  */
 export function parseRgb(colour: string): readonly [number, number, number] {
 	const value = colour.trim();

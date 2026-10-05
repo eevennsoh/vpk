@@ -2,12 +2,15 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const { test } = require("node:test");
 const esbuild = require("esbuild");
+const React = require("react");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
+const { renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
 
 const ENTRY = `
 export * from "./finale-tile-glow";
 export { tileRevealStart, touchdownTime } from "./finale-card-motion";
 export { CUE, FINALE_REST_TIME } from "../data/finale-cues";
+export { landingSettled } from "./finale-wall-motion";
 `;
 
 let glow;
@@ -309,4 +312,173 @@ test("the shader mirrors Paper's dynamics on the finale clock", () => {
 	assert.match(TILE_GLOW_FRAGMENT, /float heat = mix\(blend, min\(add, 1\.5\), uLook3\.x\);/, "Paper's blend-vs-add bloom");
 	assert.doesNotMatch(TILE_GLOW_FRAGMENT, /uTrace|drawn/, "no traced head");
 	assert.doesNotMatch(TILE_GLOW_FRAGMENT, /\$\{/);
+});
+
+/* ─── The mega bento's landings ───────────────────────────────────────── */
+
+/** The wall's tiles are smaller: their bloom and smoke shrink with them; the hairline does not. */
+const WALL_SCALE = 0.3;
+const STROKE = SCALE;
+const LANDING = { x: 300, y: 120, width: 180, height: 160 };
+
+test("a bento tile glows in its gap exactly as it did on the slide, from its own touchdown", () => {
+	const { landingGlowTime, landingSettled, tileGlow, tileGlowClock, tileGlowFor, tileGlowWindow, tileGlowWindowFor, touchdownTime } = load();
+	for (const order of TILES) {
+		const touchdown = 12.345 + order * 0.21;
+		const shift = touchdown - touchdownTime(order);
+		const slide = tileGlowWindow(order);
+		const wall = tileGlowWindowFor(touchdown, landingSettled(touchdown), order);
+		for (const key of ["start", "peak", "fallStart", "end"]) assert.ok(Math.abs(wall[key] - slide[key] - shift) < 1e-9, `tile ${order}: ${key} as on the slide, after its own touchdown`);
+		for (let time = wall.start - 0.1; time < wall.end + 0.1; time += FRAME * 3) {
+			const replay = landingGlowTime(time, touchdown, order);
+			assert.ok(Math.abs(replay - (time - shift)) < 1e-9, "it replays the slide's moment");
+			assert.ok(Math.abs(tileGlowClock(replay) - tileGlowClock(time - shift)) < 1e-9, "with the slide's motion");
+			if (Math.min(Math.abs(time - wall.start), Math.abs(time - wall.end)) < 1e-6) continue;
+			const now = tileGlowFor(time, touchdown, landingSettled(touchdown), order);
+			const then = tileGlow(time - shift, order);
+			assert.equal(now.active, then.active);
+			assert.ok(Math.abs(now.envelope - then.envelope) < 1e-6, `tile ${order}: the slide's envelope`);
+		}
+	}
+});
+
+test("every card replays one of the six glows, from its own touchdown until its content has built", () => {
+	const { TILE_GLOW, glowOrder, landingSettled, tileGlowFor, tileGlowLook, tileGlowWindowFor } = load();
+	assert.deepEqual(TILES.map(glowOrder), TILES, "the bento's own tiles replay their own");
+	assert.ok(TILES.includes(glowOrder(6)), "the title (order 6) replays one of the six");
+	const seeds = [];
+	for (let seed = -60; seed < 480; seed += 1) seeds.push(seed);
+	const orders = seeds.map(glowOrder);
+	for (const order of orders) assert.ok(TILES.includes(order), "one of the six");
+	assert.deepEqual(seeds.map(glowOrder), orders, "deterministic");
+	for (const order of TILES) assert.ok(orders.filter((each) => each === order).length > seeds.length * 0.1, `the stream draws on glow ${order}`);
+	assert.ok(TILES.includes(glowOrder(2.5)) && TILES.includes(glowOrder(-7.25)), "any seed");
+	for (const seed of seeds.filter((_, index) => index % 9 === 0)) {
+		const touchdown = 40 + seed * 0.13;
+		const settled = landingSettled(touchdown);
+		const { start, peak, fallStart, end } = tileGlowWindowFor(touchdown, settled, seed);
+		assert.ok(start >= touchdown + TILE_GLOW.settle && start <= touchdown + TILE_GLOW.settle + TILE_GLOW.delay[1], "starts once settled");
+		assert.ok(start < peak && peak < fallStart && fallStart < end, "rise, alive, fall");
+		assert.ok(Math.abs(end - start - tileGlowLook(glowOrder(seed)).duration) < 1e-9, "its glow's own duration (not clamped)");
+		assert.ok(end <= settled + 1e-9, "gone once its content has built");
+		for (const time of [touchdown - 1, touchdown, start - FRAME, end, settled, settled + 1]) assert.deepEqual(tileGlowFor(time, touchdown, settled, seed), { active: false, envelope: 0 });
+		assert.equal(tileGlowFor((peak + fallStart) / 2, touchdown, settled, seed).envelope, 1);
+	}
+	const never = Number.NEGATIVE_INFINITY;
+	for (const time of [0, 10, 1000]) assert.equal(tileGlowFor(time, never, landingSettled(never), 7).active, false, "a card that was down before the wall faded in never glows");
+});
+
+test("the wall's glows: only landings in their windows, each around its rect this frame, the hairline at the stroke scale", () => {
+	const { TILE_GLOW, glowOrder, landingGlowDraws, landingGlowTime, landingSettled, tileGlowClock, tileGlowFor, tileGlowLook, tileGlowShape } = load();
+	const landings = [
+		{ rect: LANDING, touchdown: 30, seed: 2 },
+		{ rect: { ...LANDING, x: 520 }, touchdown: 30.4, seed: 137 },
+		// Already down when the wall faded in, and long settled.
+		{ rect: { ...LANDING, x: 740 }, touchdown: Number.NEGATIVE_INFINITY, seed: 9 },
+		{ rect: { ...LANDING, x: 960 }, touchdown: 26, seed: 4 },
+		// Not yet settled from its touchdown.
+		{ rect: { ...LANDING, x: 1180 }, touchdown: 30.8, seed: 5 },
+	];
+	const radius = 8;
+	const time = 30.9;
+	const draws = landingGlowDraws(time, landings, radius, WALL_SCALE, STROKE);
+	assert.deepEqual(draws.map((draw) => draw.order), [2, glowOrder(137)]);
+	draws.forEach((draw, index) => {
+		const { rect, touchdown, seed } = landings[index];
+		const pad = TILE_GLOW.pad * WALL_SCALE;
+		assert.deepEqual(draw.quad, { x: rect.x - pad, y: rect.y - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }, "the overhang shrinks with the tile");
+		assert.deepEqual(draw.shape, tileGlowShape(rect, radius, STROKE, draw.look.lineWidth), "the hairline at the stroke scale");
+		assert.equal(draw.look, tileGlowLook(draw.order));
+		assert.deepEqual(draw.level, tileGlowFor(time, touchdown, landingSettled(touchdown), seed));
+		assert.equal(draw.clock, tileGlowClock(landingGlowTime(time, touchdown, seed)));
+	});
+	// The wall carries the card: the next frame's rect moves its quad, nothing else.
+	const moved = landingGlowDraws(time, [{ ...landings[0], rect: { ...LANDING, x: LANDING.x - 7 } }], radius, WALL_SCALE, STROKE)[0];
+	assert.equal(moved.quad.x, draws[0].quad.x - 7);
+	assert.deepEqual(moved.level, draws[0].level);
+	const idle = landingGlowDraws(time, [], radius, WALL_SCALE, STROKE);
+	assert.equal(idle.length, 0);
+	assert.equal(landingGlowDraws(100, landings, radius, WALL_SCALE, STROKE), idle, "idle frames share one empty list");
+	assert.equal(landingGlowDraws(time, landings, radius, WALL_SCALE)[0].shape.rect.x, LANDING.x - (draws[0].look.lineWidth * WALL_SCALE) / 2, "the stroke is the tile's scale unless set");
+});
+
+test("uniforms size the hairline by the stroke scale and the bloom and smoke by the tile's", () => {
+	const { tileGlowLook, tileGlowUniforms } = load();
+	for (const order of TILES) {
+		const look = tileGlowLook(order);
+		const uniforms = tileGlowUniforms(look, WALL_SCALE, STROKE);
+		assert.equal(tileGlowUniforms(look, WALL_SCALE, STROKE), uniforms, "cached per tile and scales");
+		assert.notEqual(tileGlowUniforms(look, WALL_SCALE), uniforms);
+		assert.equal(tileGlowUniforms(look, SCALE, SCALE), tileGlowUniforms(look, SCALE), "on the slide the stroke is the scale");
+		assert.ok(Math.abs(uniforms.look[0] - look.lineWidth * STROKE) < 1e-9);
+		assert.ok(Math.abs(uniforms.look[1] - look.bloom * WALL_SCALE) < 1e-9);
+		assert.ok(Math.abs(uniforms.look2[0] - look.smokeSize * WALL_SCALE) < 1e-9);
+	}
+});
+
+const WALL_ENTRY = `
+export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
+export { buildFinaleWall, wallGeometry } from "./finale-wall-layout";
+export { bentoDrops } from "./finale-wall-motion";
+export { wallCursorsAt } from "./finale-wall-cursors";
+export { FINALE_CURSORS } from "./finale-cursor-path";
+`;
+
+let wallModule;
+function loadWall() {
+	wallModule ??= loadCjsModuleFromText(esbuild.buildSync({
+		stdin: { contents: WALL_ENTRY, resolveDir: __dirname, loader: "ts" },
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+	}).outputFiles[0].text, "finale-wall-accents-harness.cjs");
+	return wallModule;
+}
+
+/** The accents under a frame registry the test drives, as the overlay's clock does. */
+const ACCENTS_HARNESS = `
+import { useMemo } from "react";
+import { FinaleWallAccents } from "@/components/projects/jira-team-eu26-end/finale/components/finale-wall-accents";
+import { FinaleFrameContext, createFinaleFrameRegistry } from "@/components/projects/jira-team-eu26-end/finale/hooks/use-finale-frame";
+
+export default function Harness(props) {
+	const registry = useMemo(() => createFinaleFrameRegistry(), []);
+	globalThis.__emitFinaleFrame = registry.emit;
+	return <FinaleFrameContext value={registry}><FinaleWallAccents {...props} /></FinaleFrameContext>;
+}
+`;
+
+test("the wall's accents mount nothing until the wall exists (never on the rest frame), then paint a held frame at once", async () => {
+	const { CUE, FINALE_REST_TIME } = load();
+	const { FINALE_CURSORS, bentoDrops, buildFinaleWall, finaleBentoLayout, FINALE_FEATURES, wallCursorsAt, wallGeometry } = loadWall();
+	const viewport = { width: 1920, height: 1080 };
+	const fit = { scale: 1, x: 0, y: 0 };
+	const bento = finaleBentoLayout(viewport, fit.scale);
+	const wall = buildFinaleWall(wallGeometry(bento, fit.scale, viewport), bento, FINALE_FEATURES, []);
+	const drops = bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);
+	const view = await renderComponent({ source: ACCENTS_HARNESS, props: { wall, drops, fit, viewport } });
+	const emit = (time) => React.act(async () => {
+		globalThis.__emitFinaleFrame(time);
+	});
+	const mounted = () => ({ canvases: view.container.querySelectorAll("canvas").length, cursors: view.container.querySelectorAll("[data-finale-cursor]").length });
+	const shown = () => [...view.container.querySelectorAll("[data-finale-cursor]")].filter((element) => element.style.visibility === "visible").map((element) => element.getAttribute("data-finale-cursor")).sort();
+
+	for (const time of [CUE.end - 1, FINALE_REST_TIME]) {
+		await emit(time);
+		assert.deepEqual(mounted(), { canvases: 0, cursors: 0 }, `nothing at ${time.toFixed(2)}s`);
+	}
+	let held = null;
+	for (let time = CUE.end; time < CUE.end + 60 && !held; time += 0.05) {
+		const cursors = wallCursorsAt(time, wall, drops, viewport);
+		if (cursors.some((cursor) => cursor.opacity > 0.99)) held = { time, cursors };
+	}
+	assert.ok(held, "a cursor holds a card (MCB the title, first)");
+	// One reading, then the clock holds: the layers that mount on it paint it without another.
+	await emit(held.time);
+	assert.deepEqual(mounted(), { canvases: 2, cursors: FINALE_CURSORS.length });
+	assert.deepEqual(shown(), held.cursors.filter((cursor) => cursor.opacity > 0).map((cursor) => cursor.name).sort(), "the cursors holding cards, by name, and only they");
+	await emit(FINALE_REST_TIME);
+	assert.deepEqual(mounted(), { canvases: 0, cursors: 0 }, "seeking back before the wall takes it down");
 });

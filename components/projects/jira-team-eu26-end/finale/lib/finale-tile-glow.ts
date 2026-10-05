@@ -4,6 +4,7 @@ import { CUE } from "../data/finale-cues";
 import type { FinaleRect } from "../data/finale-stories";
 import { tileRevealStart, touchdownTime } from "./finale-card-motion";
 import { EASE, clamp, hash01, lerp, parseRgb, progress } from "./finale-math";
+import { landingSettled } from "./finale-wall-motion";
 
 /**
  * Paper's Pulsing Border, alive for one brief moment round each bento tile as
@@ -26,12 +27,20 @@ import { EASE, clamp, hash01, lerp, parseRgb, progress } from "./finale-math";
  *
  * Every tile is seeded by its landing order. The GLSL mirrors
  * `perimeterParam`, `spotCentre` and `strokeProfile`.
+ *
+ * The mega bento's cards light the same way as they land, on rects that ride
+ * the gliding wall: each replays one of the slide's six glows, look and
+ * motion, timed from its own touchdown (`landingGlowDraws`). The bento's own
+ * tiles replay their own, so they glow in their gaps exactly as they did on
+ * the slide; every other card replays one picked by its slot's seed, and so
+ * alike on every pass of the loop. Only the six are replayed: a free seed's
+ * spots can bunch into the single travelling head the six never show.
  */
 
 const [BLUE, ORANGE, PURPLE, LIME] = ROVO_SHADER_COLOR_HEX;
 
 export const TILE_GLOW = {
-	/** After touchdown, once the landing recoil has spent itself (s). */
+	/** After touchdown, once the landing wave's swell has passed (s). */
 	settle: 0.2,
 	/** Start-delay jitter after `settle`. */
 	delay: [0, 0.05],
@@ -76,7 +85,7 @@ export const TILE_GLOW = {
 	pad: 36,
 	/** Bloom opacity relative to the stroke core. */
 	bloomOpacity: 0.6,
-	/** Share of the bloom kept over the white face (it reads mostly outside). */
+	/** Share of the bloom kept over the tile's face (it reads mostly outside). */
 	innerBloom: 0.3,
 	/** Rovo blue → purple → amber → green. */
 	colors: [BLUE, PURPLE, ORANGE, LIME],
@@ -248,6 +257,15 @@ export function tileGlowLook(order: number): TileGlowLook {
 	return look;
 }
 
+/**
+ * Which of the slide's six glows a landing replays: a bento tile its own
+ * (its seed is its landing order), any other card one picked by its seed.
+ */
+export function glowOrder(seed: number): number {
+	if (Number.isInteger(seed) && seed >= 0 && seed < TILE_COUNT) return seed;
+	return Math.floor(hash01(seed * 0.618 + 41.3) * TILE_COUNT) % TILE_COUNT;
+}
+
 /* ─── Timing ──────────────────────────────────────────────────────────── */
 
 export interface TileGlowWindow {
@@ -260,14 +278,22 @@ export interface TileGlowWindow {
 	readonly end: number;
 }
 
-/** From just after touchdown (plus jitter); gone by the time the heading has built. */
-export function tileGlowWindow(order: number): TileGlowWindow {
-	const look = tileGlowLook(order);
-	const start = touchdownTime(order) + TILE_GLOW.settle + look.delay;
-	const latest = Math.min(tileRevealStart(order) + CUE.reveal, CUE.end);
-	const end = Math.min(start + look.duration, latest);
+/**
+ * The glow of a card seeded `seed` that touches down at `touchdown`: from once
+ * its landing wave has swelled (plus its glow's jitter), and gone by
+ * `revealEnd`, when its content has built.
+ */
+export function tileGlowWindowFor(touchdown: number, revealEnd: number, seed: number): TileGlowWindow {
+	const look = tileGlowLook(glowOrder(seed));
+	const start = touchdown + TILE_GLOW.settle + look.delay;
+	const end = Math.min(start + look.duration, revealEnd);
 	const span = end - start;
 	return { start, peak: start + span * look.rise, fallStart: end - span * look.fall, end };
+}
+
+/** From just after touchdown (plus jitter); gone by the time the heading has built. */
+export function tileGlowWindow(order: number): TileGlowWindow {
+	return tileGlowWindowFor(touchdownTime(order), Math.min(tileRevealStart(order) + CUE.reveal, CUE.end), order);
 }
 
 export interface TileGlowLevel {
@@ -279,12 +305,22 @@ export interface TileGlowLevel {
 
 const OFF: TileGlowLevel = { active: false, envelope: 0 };
 
-export function tileGlow(time: number, order: number): TileGlowLevel {
-	const { start, peak, fallStart, end } = tileGlowWindow(order);
+function levelIn(time: number, { start, peak, fallStart, end }: TileGlowWindow): TileGlowLevel {
 	if (time < start || time >= end) return OFF;
 	const up = EASE.outBold(progress(time, start, peak));
 	const down = 1 - EASE.in(progress(time, fallStart, end));
 	return { active: true, envelope: Math.min(up, down) };
+}
+
+export function tileGlow(time: number, order: number): TileGlowLevel {
+	return levelIn(time, tileGlowWindow(order));
+}
+
+/** As `tileGlow`, for any card: its touchdown, when its content has built, and its seed. */
+export function tileGlowFor(time: number, touchdown: number, revealEnd: number, seed: number): TileGlowLevel {
+	// Most of a stream of landings is outside its window: skip the look before building one.
+	if (time < touchdown + TILE_GLOW.settle || time >= revealEnd) return OFF;
+	return levelIn(time, tileGlowWindowFor(touchdown, revealEnd, seed));
 }
 
 /* ─── Geometry ────────────────────────────────────────────────────────── */
@@ -297,7 +333,7 @@ export interface TileGlowShape {
 	readonly length: number;
 }
 
-/** The line sits just outside the white face, concentric with its corners. */
+/** The line sits just outside the tile's face, concentric with its corners. */
 export function tileGlowShape(tile: FinaleRect, radius: number, scale: number, lineWidth: number): TileGlowShape {
 	const out = (lineWidth * scale) / 2;
 	const rect = { x: tile.x - out, y: tile.y - out, width: tile.width + out * 2, height: tile.height + out * 2 };
@@ -377,6 +413,18 @@ const TILE_GLOW_EPOCH = 0.87;
 
 export function tileGlowClock(time: number): number {
 	return time - CUE.burst + TILE_GLOW_EPOCH;
+}
+
+/**
+ * The moment on the slide a landing's glow replays: as long after the
+ * touchdown of the bento tile it replays (`glowOrder`) as `time` is after its own.
+ * It is the `time` the landing's motion runs on (`tileGlowClock`, and the JS
+ * mirrors below): a bento tile glows in its gap exactly as it did on the
+ * slide, and a slot's card glows alike on every pass of the loop, however
+ * late it lands.
+ */
+export function landingGlowTime(time: number, touchdown: number, seed: number): number {
+	return time - touchdown + touchdownTime(glowOrder(seed));
 }
 
 function centreAt(spot: TileGlowSpot, clock: number): number {
@@ -477,25 +525,66 @@ export function strokeProfile(u: number, time: number, look: TileGlowLook, perim
 /* ─── Per-frame draw list ─────────────────────────────────────────────── */
 
 export interface TileGlowDraw {
+	/** The bento tile whose glow this is (on the wall, the one it replays). */
 	readonly order: number;
 	/** Quad to draw (viewport px). */
 	readonly quad: FinaleRect;
 	readonly shape: TileGlowShape;
 	readonly level: TileGlowLevel;
 	readonly look: TileGlowLook;
+	/** Its motion clock this frame (the shader's `uTime`). */
+	readonly clock: number;
+}
+
+/** A card landing on the wall, as `wallLandingsAt` reports it: its rect rides the wall. */
+export interface TileGlowLanding {
+	readonly rect: FinaleRect;
+	readonly touchdown: number;
+	readonly seed: number;
+	/** Its own corner radius (viewport px), for a card not rounded as the tiles are. */
+	readonly radius?: number;
+}
+
+const NO_DRAWS: readonly TileGlowDraw[] = [];
+
+/**
+ * `scale` sizes what belongs to the tile (bloom, smoke cells, the quad's
+ * overhang); `stroke` sizes the hairline core, which stays a hairline on
+ * smaller tiles.
+ */
+function glowDraw(order: number, tile: FinaleRect, level: TileGlowLevel, radius: number, scale: number, stroke: number, clock: number): TileGlowDraw {
+	const pad = TILE_GLOW.pad * scale;
+	const look = tileGlowLook(order);
+	const shape = tileGlowShape(tile, radius, stroke, look.lineWidth);
+	const quad = { x: tile.x - pad, y: tile.y - pad, width: tile.width + pad * 2, height: tile.height + pad * 2 };
+	return { order, quad, shape, level, look, clock };
 }
 
 /** Tiles glowing this frame; empty (draw nothing) outside every window. */
 export function tileGlowDraws(time: number, tiles: readonly FinaleRect[], radius: number, scale: number): readonly TileGlowDraw[] {
-	const pad = TILE_GLOW.pad * scale;
+	const clock = tileGlowClock(time);
 	return tiles.flatMap((tile, order): TileGlowDraw[] => {
 		const level = tileGlow(time, order);
 		if (!level.active || level.envelope <= 0) return [];
-		const look = tileGlowLook(order);
-		const shape = tileGlowShape(tile, radius, scale, look.lineWidth);
-		const quad = { x: tile.x - pad, y: tile.y - pad, width: tile.width + pad * 2, height: tile.height + pad * 2 };
-		return [{ order, quad, shape, level, look }];
+		return [glowDraw(order, tile, level, radius, scale, scale, clock)];
 	});
+}
+
+/**
+ * Landed cards glowing this frame, each from its own touchdown until its
+ * content has built (`landingSettled`), on its rect this frame. Empty (and
+ * shared) when none is, which is most frames of an endless stream.
+ */
+export function landingGlowDraws(time: number, landings: readonly TileGlowLanding[], radius: number, scale: number, stroke = scale): readonly TileGlowDraw[] {
+	let draws: TileGlowDraw[] | null = null;
+	for (const landing of landings) {
+		const { rect, touchdown, seed } = landing;
+		const level = tileGlowFor(time, touchdown, landingSettled(touchdown), seed);
+		if (!level.active || level.envelope <= 0) continue;
+		draws ??= [];
+		draws.push(glowDraw(glowOrder(seed), rect, level, landing.radius ?? radius, scale, stroke, tileGlowClock(landingGlowTime(time, touchdown, seed))));
+	}
+	return draws ?? NO_DRAWS;
 }
 
 export interface TileGlowUniforms {
@@ -517,13 +606,24 @@ export interface TileGlowUniforms {
 	readonly look4: readonly [number, number, number, number];
 }
 
-const UNIFORMS = new WeakMap<TileGlowLook, Map<number, TileGlowUniforms>>();
+const UNIFORMS = new WeakMap<TileGlowLook, Map<number, Map<number, TileGlowUniforms>>>();
 
-/** The per-tile uniforms for one draw (viewport px); cached per tile and scale. */
-export function tileGlowUniforms(look: TileGlowLook, scale: number): TileGlowUniforms {
-	const byScale = UNIFORMS.get(look) ?? new Map<number, TileGlowUniforms>();
-	UNIFORMS.set(look, byScale);
-	const cached = byScale.get(scale);
+/**
+ * The per-tile uniforms for one draw (viewport px); cached per tile and
+ * scales. `stroke` sizes the hairline core (as `glowDraw`), `scale` the rest.
+ */
+export function tileGlowUniforms(look: TileGlowLook, scale: number, stroke = scale): TileGlowUniforms {
+	let byScale = UNIFORMS.get(look);
+	if (!byScale) {
+		byScale = new Map();
+		UNIFORMS.set(look, byScale);
+	}
+	let byStroke = byScale.get(scale);
+	if (!byStroke) {
+		byStroke = new Map();
+		byScale.set(scale, byStroke);
+	}
+	const cached = byStroke.get(stroke);
 	if (cached) return cached;
 	const spotA = new Float32Array(TILE_GLOW_MAX_SPOTS * 4);
 	const spotB = new Float32Array(TILE_GLOW_MAX_SPOTS * 4);
@@ -540,12 +640,12 @@ export function tileGlowUniforms(look: TileGlowLook, scale: number): TileGlowUni
 		spotB,
 		spotC,
 		spotD,
-		look: [look.lineWidth * scale, look.bloom * scale, look.floor, look.smoke],
+		look: [look.lineWidth * stroke, look.bloom * scale, look.floor, look.smoke],
 		look2: [look.smokeSize * scale, look.smokeSeed, look.gain, look.opacity],
 		look3: [look.bloomMix, look.intensity, look.pulseRate, look.pulsePhase],
 		look4: [look.modRate, look.modPhase, look.hueShift, 0],
 	};
-	byScale.set(scale, uniforms);
+	byStroke.set(stroke, uniforms);
 	return uniforms;
 }
 
@@ -684,7 +784,7 @@ void main() {
 	float core = exp(-pow(d / (0.6 * width), 2.0));
 	float bloomLength = uScale * 0.8 + uLook.y * clamp(hot, 0.0, 1.2) * (0.8 + 0.2 * drift + 0.4 * pulseBeat);
 	float bloom = exp(-abs(d) / max(bloomLength, 0.0001));
-	// Held back over the white face, and spent well inside the quad.
+	// Held back over the tile's face, and spent well inside the quad.
 	bloom *= mix(${f(TILE_GLOW.innerBloom)}, 1.0, smoothstep(-2.0 * width, 0.0, d));
 	bloom *= 1.0 - smoothstep(0.5, 0.9, abs(d) / (${f(TILE_GLOW.pad)} * uScale));
 

@@ -8,6 +8,7 @@ import { AtlassianLogo, RovoAppIcon, type AtlassianLogoName } from "@/components
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Tile } from "@/components/ui/tile";
+import { TeamworkGraphMark } from "@/components/ui-custom/teamwork-graph-mark";
 import { cn } from "@/lib/utils";
 import { motionEase } from "@/lib/motion";
 
@@ -20,6 +21,8 @@ export type TwgToolSourceIconSize = "xxsmall" | "xsmall" | "small" | "medium";
 export type TwgToolThirdPartyProvider = "google-drive" | "salesforce";
 export type TwgToolSourceProvider =
 	| "twg"
+	| "teamwork-graph"
+	| "code-search"
 	| TwgToolThirdPartyProvider
 	| AtlassianLogoName;
 
@@ -225,6 +228,43 @@ export function TwgToolSourceIcon({
 				label={props["aria-hidden"] ? undefined : source.label}
 				size={size}
 			/>
+		);
+	}
+
+	if (source.provider === "teamwork-graph") {
+		return (
+			<Tile
+				{...props}
+				className={cn("bg-bg-neutral-bold", className)}
+				label={source.label}
+				role={props["aria-hidden"] ? undefined : "img"}
+				size={size}
+				variant="transparent"
+			>
+				<TeamworkGraphMark className="text-icon-inverse" />
+			</Tile>
+		);
+	}
+
+	if (source.provider === "code-search") {
+		return (
+			<Tile
+				{...props}
+				className={cn("bg-lime-300", className)}
+				isInset={false}
+				label={source.label}
+				role={props["aria-hidden"] ? undefined : "img"}
+				size={size}
+				variant="transparent"
+			>
+				<Image
+					alt=""
+					aria-hidden
+					height={APPSTACK_SIZES[size].imagePx}
+					src="/brand-icons/rovo-search.svg"
+					width={APPSTACK_SIZES[size].imagePx}
+				/>
+			</Tile>
 		);
 	}
 

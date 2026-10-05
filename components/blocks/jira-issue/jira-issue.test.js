@@ -480,7 +480,7 @@ test("Jira issue switches rich variants to an article with internal controls", (
 	assert.match(SUMMARY_SOURCE, /<p className="text-sm font-semibold leading-5 text-text-subtle">Parent<\/p>/);
 	assert.match(SOURCE, /showPriorityIndicator\?: boolean;/);
 	assert.match(SUMMARY_SOURCE, /\{showPriorityIndicator \? \([\s\S]*usesStrokeChrome \? \([\s\S]*<span[\s\S]*aria-label=\{`\$\{priority\} priority`\}[\s\S]*buttonVariants\(\{ size: "icon-compact", variant: "ghost" \}\)/);
-	assert.match(SOURCE, /className="relative w-full px-3 pt-3 pb-2 text-left outline-none/);
+	assert.match(SOURCE, /className="relative w-full px-3 pt-3 pb-3 text-left outline-none/);
 	assert.match(SOURCE, /className="w-full p-3 text-left outline-none/);
 	assert.match(SOURCE, /<div className=\{usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>\{summaryContent\}<\/div>/);
 	assert.match(SUBTASKS_SOURCE, /import \{ JiraIssueCountBadge \} from "@\/components\/blocks\/jira-issue\/count-badge";/);

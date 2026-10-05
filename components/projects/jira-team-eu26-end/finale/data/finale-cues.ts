@@ -1,12 +1,13 @@
 /**
  * Timeline for the closing-keynote finale, in seconds from the moment the
  * finale takes over the screen. Light starts immediately and
- * sweeps up the live Done column (`lib/finale-column-flash.ts`), the grey
+ * sweeps up the live Done column (`lib/finale-column-flash.ts`), the white
  * slide cuts in behind it, and its cards burst out into a 3D field. The
- * camera recoils, reveals and sweeps the field, finds the first card MCB
- * dragged far off and rushes in to it, and that card becomes the first tile of
+ * camera recoils, reveals and sweeps the field, finds the hero (Agent Session
+ * Tracking's card) far off and rushes in to it, and that card becomes the first tile of
  * the bento assembling from the field. "Team ’26" lands in its centre and
- * holds to the final frame.
+ * holds to the bento's final frame; then Act III (`WALL_CUE`) tosses the
+ * bento's tiles into an endless mega bento that glides on until Esc.
  *
  * Sound is off for now, so these beats are paced by the choreography. The
  * parked score (`scripts/compose-team-eu26-finale-score.py`) was written to an
@@ -55,7 +56,7 @@ export const CUE = {
 	wide: FLASH_DURATION + 1.7,
 	sweep: FLASH_DURATION + 2.4,
 	/**
-	 * The rush: having found the first card MCB dragged far off in the field, the
+	 * The rush: having found the hero card far off in the field, the
 	 * camera time-warps in to it from afar and arrives face-on.
 	 */
 	zoom: FLASH_DURATION + 2.95,
@@ -77,10 +78,70 @@ export const CUE = {
 	yearLand: FLASH_DURATION + 6.95,
 	/**
 	 * Final frame: "Team ’26" holds at full size. The last tile's heading has
-	 * built before this cue (`tileRevealStart(5) + reveal`), leaving ~1s of hold.
+	 * built before this cue (`tileRevealStart(5) + reveal`), leaving just over
+	 * half a second of hold before the title turns into its black card.
 	 */
-	end: FLASH_DURATION + 8.95,
+	end: FLASH_DURATION + 8.45,
 } as const;
 
-/** Final frame used when motion is reduced or the sequence has finished. */
+/** The bento's final frame: what reduced motion shows, and where the wall takes over. */
 export const FINALE_REST_TIME = CUE.end;
+
+/** Act III's title flip, and the throw it flows into (see `WALL_CUE`). */
+const TITLE_FLIP_AT = 0.22;
+const TOSS_AT = TITLE_FLIP_AT + 0.12;
+
+/**
+ * Act III, the mega bento (see `lib/finale-wall-motion.ts`), in seconds after
+ * the bento's final frame. "Team ’26" flips over into a black card and, as it
+ * comes over, the bento's six tiles, faces and all, are thrown like the
+ * Done column's deck: tumbling away from the lens and down as paper falls,
+ * into gaps across the mega bento far below, which appears around them from
+ * the middle out. MCB's cursor takes the black card as its flip lands and
+ * drags it into its own gap (`lib/finale-title-drag.ts`), as he dragged the
+ * keynote's cards into Done. Each card lands as it landed on the slide, the
+ * wall already gliding under it, and the wall glides on forever; new cards
+ * wait in the air at its leading edge, tilted, and come down one by one.
+ */
+export const WALL_CUE = {
+	start: CUE.end,
+	/** "Team ’26" gains a grey card under its type at once… */
+	titleCardAt: 0.02,
+	/** …which flips end over end, as the field's cards do, to its black back… */
+	titleFlipAt: TITLE_FLIP_AT,
+	/**
+	 * …and the bento's six tiles are thrown at once, like the Done column's
+	 * deck, as it whips past edge-on (`titleFlipPose`'s spring).
+	 */
+	tossAt: TOSS_AT,
+	/** The deck's hair of spread, at the throw's quicker pace. */
+	tossSpread: 0.07,
+	/** …and come down into their gaps one after another, as they landed on the slide, all down within two seconds. */
+	landAt: TOSS_AT + 1.2,
+	landStagger: 0.12,
+	/** Each flight ends in a bento tile's swoop onto the slide, quickened to the throw's pace. */
+	fallS: 0.4,
+	/** The mega bento appears around the thrown cards, from the middle out, as quickly. */
+	revealAt: TOSS_AT,
+	revealS: 1,
+	revealFadeS: 0.4,
+	/**
+	 * The wall starts to glide this far through the throw, from `tossAt` to the
+	 * first touchdown (`landAt`), while the cards are still coming down, so
+	 * every one lands in a gap already on the move. It eases up to its pace
+	 * over `driftRamp`, reached soon after the last card is down.
+	 */
+	driftShare: 0.3,
+	driftRamp: 2.6,
+	/**
+	 * MCB's cursor reaches in as the black face comes up, takes the card as
+	 * its flip lands, so it never comes to rest in its box, and drags it into
+	 * its gap, setting it down a beat after the last tile (`landAt` plus five
+	 * `landStagger`s), the act's last placement before the teammates join in.
+	 */
+	carryReachAt: TITLE_FLIP_AT + 0.16,
+	carryGrabAt: TITLE_FLIP_AT + 0.46,
+	carryDownAt: TOSS_AT + 2,
+	/** A waiting card's descent from the air into its slot at the leading edge. */
+	descendS: 0.95,
+} as const;

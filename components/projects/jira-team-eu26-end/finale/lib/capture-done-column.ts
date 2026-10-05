@@ -1,3 +1,4 @@
+import { waitForFinaleStillFrames } from "./finale-frame-wait";
 import { FINALE_DONE_COLUMN_TITLE } from "./finale-trigger";
 
 export interface FinaleCapturedRect {
@@ -35,8 +36,16 @@ function toRect(rect: DOMRect): FinaleCapturedRect {
 const OCCLUDER_PITCH = 20;
 const MAX_OCCLUDERS = 4;
 
-function cornerRadius(element: HTMLElement, rect: DOMRect): number {
-	const value = getComputedStyle(element).borderTopLeftRadius;
+/**
+ * A corner's radius in px as the browser draws it: a `%` resolves against the
+ * box, and no corner is rounder than half the box can hold.
+ */
+export function finaleCornerRadius(
+	element: Element,
+	rect: Readonly<{ width: number; height: number }>,
+	corner: "borderTopLeftRadius" | "borderBottomLeftRadius" = "borderTopLeftRadius",
+): number {
+	const value = getComputedStyle(element)[corner];
 	const amount = Number.parseFloat(value) || 0;
 	const radius = value.endsWith("%") ? (Math.min(rect.width, rect.height) * amount) / 100 : amount;
 	return Math.min(radius, rect.width / 2, rect.height / 2);
@@ -68,7 +77,7 @@ function findOccluders(column: HTMLElement): FinaleCapturedOccluder[] {
 				for (let node = hit.parentElement; node && node !== document.body && !node.contains(column) && area(node) <= limit; node = node.parentElement) owner = node;
 				if (found.has(owner) || found.size >= MAX_OCCLUDERS) continue;
 				const rect = owner.getBoundingClientRect();
-				found.set(owner, { ...toRect(rect), radius: cornerRadius(owner, rect) });
+				found.set(owner, { ...toRect(rect), radius: finaleCornerRadius(owner, rect) });
 			}
 		}
 	}
@@ -79,49 +88,53 @@ function findOccluders(column: HTMLElement): FinaleCapturedOccluder[] {
 
 const DONE_COLUMN_SELECTOR = `[data-jira-kanban-column="${FINALE_DONE_COLUMN_TITLE}"]`;
 const CARD_SELECTOR = '[data-slot="jira-issue-card"]';
+/** A card the board is still bringing in: a deferred receipt, or a create entrance mid-play. */
+export const FINALE_ARRIVING_CARD_SELECTOR = '[data-created-card-pending], [data-jira-creating-arrival="true"]';
+
+/** The column's scroll viewport, which clips its cards (the column itself when it has none). */
+export function queryFinaleCardList(column: HTMLElement): HTMLElement {
+	return column.querySelector<HTMLElement>("[data-jira-kanban-card-list]") ?? column;
+}
+
+/** The Jira key (e.g. "TEU-6") of a board card, or "" if absent. */
+export function finaleCardCode(card: HTMLElement): string {
+	return card.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey ?? "";
+}
 
 /** The real drop/arrival state must be gone before it becomes an immutable print. */
 export function isFinaleColumnCaptureReady(column: HTMLElement): boolean {
 	// The shared drop trace lives in body, outside the column. Let its real
 	// completion (including cancellation/reduced motion) release this gate.
 	if (column.ownerDocument.querySelector(`[data-issue-drop-trace][data-board-column-title="${FINALE_DONE_COLUMN_TITLE}"]`)) return false;
-	if (column.querySelector('[data-transitioning="true"], [data-created-card-pending], [data-jira-creating-arrival="true"], [data-issue-status-choices="true"]')) return false;
+	if (column.querySelector(`[data-transitioning="true"], ${FINALE_ARRIVING_CARD_SELECTOR}, [data-issue-status-choices="true"]`)) return false;
 	return [...column.querySelectorAll<HTMLElement>(CARD_SELECTOR)].every((card) => {
 		const rect = card.getBoundingClientRect();
 		return rect.width > 0 && rect.height > 0;
 	});
 }
 
+/** The column's and its cards' bounds, to the hundredth of a px. */
+function columnGeometry(column: HTMLElement): string {
+	return [column, ...column.querySelectorAll<HTMLElement>(CARD_SELECTOR)].map((node) => {
+		const rect = node.getBoundingClientRect();
+		return [rect.x, rect.y, rect.width, rect.height].map((value) => value.toFixed(2)).join(",");
+	}).join("|");
+}
+
 /** Wait on the board's own completion markers, with no additional presentation hold. */
 export function waitForFinaleColumnCapture(signal?: AbortSignal): Promise<HTMLElement | null> {
-	return new Promise((resolve) => {
-		let frame = 0;
-		let previousGeometry: string | null = null;
-		const finish = (column: HTMLElement | null) => {
-			cancelAnimationFrame(frame);
-			signal?.removeEventListener("abort", abort);
-			resolve(column);
-		};
-		const abort = () => finish(null);
-		const check = () => {
-			if (signal?.aborted) { finish(null); return; }
-			const column = document.querySelector<HTMLElement>(DONE_COLUMN_SELECTOR);
-			if (!column) { finish(null); return; }
-			if (isFinaleColumnCaptureReady(column)) {
-				// Layout projection can outlive the arrival flag. Capture only once
-				// the actual column/card bounds agree on consecutive paint frames.
-				const geometry = [column, ...column.querySelectorAll<HTMLElement>(CARD_SELECTOR)].map((node) => {
-					const rect = node.getBoundingClientRect();
-					return [rect.x, rect.y, rect.width, rect.height].map((value) => value.toFixed(2)).join(",");
-				}).join("|");
-				if (geometry === previousGeometry) { finish(column); return; }
-				previousGeometry = geometry;
-			} else previousGeometry = null;
-			frame = requestAnimationFrame(check);
-		};
-		signal?.addEventListener("abort", abort, { once: true });
-		check();
-	});
+	return waitForFinaleStillFrames<{ readonly column: HTMLElement; readonly geometry: string | null }, HTMLElement>(() => {
+		const column = document.querySelector<HTMLElement>(DONE_COLUMN_SELECTOR);
+		// Layout projection can outlive the arrival flag. Capture only once
+		// the actual column/card bounds agree on consecutive paint frames.
+		return column ? { column, geometry: isFinaleColumnCaptureReady(column) ? columnGeometry(column) : null } : null;
+	}, (previous, next) => next.geometry !== null && next.geometry === previous?.geometry ? next.column : null, { signal });
+}
+
+/** The live Done column as it is now, mid-drop or not. */
+export function queryJiraTeamEu26DoneColumn(): HTMLElement | null {
+	if (typeof document === "undefined") return null;
+	return document.querySelector<HTMLElement>(DONE_COLUMN_SELECTOR);
 }
 
 /** The live Done column's DOM cards (the originals the GL sheets are printed from). */
@@ -139,11 +152,11 @@ export function captureJiraTeamEu26DoneColumn(): FinaleHandoffSnapshot | null {
 	if (typeof document === "undefined") return null;
 	const column = document.querySelector<HTMLElement>(DONE_COLUMN_SELECTOR);
 	if (!column) return null;
-	const listElement = column.querySelector<HTMLElement>("[data-jira-kanban-card-list]") ?? column;
+	const listElement = queryFinaleCardList(column);
 	const cards = [...column.querySelectorAll<HTMLElement>(CARD_SELECTOR)]
 		.map((card) => ({ card, rect: card.getBoundingClientRect() }))
 		.filter(({ rect }) => rect.width > 0 && rect.height > 0)
-		.map(({ card, rect }) => ({ rect: toRect(rect), code: card.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey ?? "" }));
+		.map(({ card, rect }) => ({ rect: toRect(rect), code: finaleCardCode(card) }));
 	return {
 		column: toRect(column.getBoundingClientRect()),
 		list: toRect(listElement.getBoundingClientRect()),

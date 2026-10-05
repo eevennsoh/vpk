@@ -1,0 +1,74 @@
+{
+  "stage": "rovo-stage.json",
+  "viewport": {
+    "width": 1600,
+    "height": 900
+  },
+  "references": [
+    {
+      "t": 0,
+      "curtain": null,
+      "file": "reference/stage-0s.png",
+      "width": 1600,
+      "height": 900,
+      "scale": 1,
+      "drawnBy": "lab",
+      "parity": {
+        "over8": 0.0001173611111111111,
+        "over32": 0.00003194444444444445
+      }
+    },
+    {
+      "t": 4,
+      "curtain": null,
+      "file": "reference/stage-4s.png",
+      "width": 1600,
+      "height": 900,
+      "scale": 1,
+      "drawnBy": "lab",
+      "parity": {
+        "over8": 0.00019930555555555554,
+        "over32": 0.00005486111111111111
+      }
+    },
+    {
+      "t": 12,
+      "curtain": null,
+      "file": "reference/stage-12s.png",
+      "width": 1600,
+      "height": 900,
+      "scale": 1,
+      "drawnBy": "lab",
+      "parity": {
+        "over8": 0.0007208333333333333,
+        "over32": 0.00013958333333333333
+      }
+    },
+    {
+      "t": 1,
+      "curtain": 2,
+      "file": "reference/curtain-2s-at-1s.png",
+      "width": 1600,
+      "height": 900,
+      "scale": 1,
+      "drawnBy": "lab",
+      "parity": {
+        "over8": 0,
+        "over32": 0
+      }
+    },
+    {
+      "t": 3.5,
+      "curtain": 2,
+      "file": "reference/curtain-2s-at-3.5s.png",
+      "width": 1600,
+      "height": 900,
+      "scale": 1,
+      "drawnBy": "lab",
+      "parity": {
+        "over8": 0.00017291666666666668,
+        "over32": 0.00005972222222222222
+      }
+    }
+  ]
+}

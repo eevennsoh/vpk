@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Rovo stage</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                height: 100%;
+                overflow: hidden;
+                background: #ffffff;
+            }
+
+            rovo-stage {
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body>
+        <!--
+            The Rovo Stage Kit's player: the stage file drawn to fit this page.
+              ?src=rovo-stage.json  the stage file (default: the one beside this page)
+              ?t=12.5               hold on this second (frame-exact: for captures and stills)
+              ?curtain=2            open on the keynote's curtain, down 2 s, then raised
+              ?appearance=dark      light or dark, over the stage file's
+              ?fit=none             the board at its own size (else fitted, letterboxed)
+              ?paused               start paused
+              ?bg=%23000            the page around the board
+            Keys: Space plays or pauses, ←/→ step a second (⇧ a frame), R redraws.
+            For capture tools: await window.rovo.ready, then await window.rovo.frame(seconds).
+        -->
+        <rovo-stage id="stage"></rovo-stage>
+        <script type="module">
+            import './dist/rovo-stage.js';
+
+            const params = new URLSearchParams(location.search);
+            const stage = document.getElementById('stage');
+            if (params.has('t')) stage.setAttribute('time', params.get('t'));
+            for (const name of ['curtain', 'appearance', 'fit']) {
+                if (params.has(name)) stage.setAttribute(name, params.get(name));
+            }
+            if (params.has('paused')) stage.setAttribute('paused', '');
+            if (params.has('bg')) document.body.style.background = params.get('bg');
+
+            const frames = () =>
+                new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+            // Every image on the stage decoded, so a frame is shot whole.
+            const decoded = () =>
+                Promise.all(
+                    [...stage.querySelectorAll('img')].map((image) =>
+                        image.complete ? null : image.decode().catch(() => null),
+                    ),
+                );
+
+            window.rovo = {
+                stage,
+                /** Resolves with the stage's info once it is drawn, its fonts loaded. */
+                ready: new Promise((done, failed) => {
+                    stage.addEventListener(
+                        'ready',
+                        (event) => {
+                            if (!params.has('bg') && event.detail.appearance === 'dark') {
+                                document.body.style.background = '#101114';
+                            }
+                            document.fonts.ready
+                                .then(decoded)
+                                .then(frames)
+                                .then(() => done(event.detail));
+                        },
+                        { once: true },
+                    );
+                    stage.addEventListener('stageerror', (event) => failed(event.detail), {
+                        once: true,
+                    });
+                }),
+                /** Seeks the film and waits until that frame is painted. */
+                async frame(seconds, { redraw = false } = {}) {
+                    stage.seek(seconds);
+                    if (redraw) stage.redraw();
+                    await document.fonts.ready;
+                    await decoded();
+                    await frames();
+                },
+            };
+
+            addEventListener('keydown', (event) => {
+                if (event.key === ' ') {
+                    event.preventDefault();
+                    if (stage.hasAttribute('time') || stage.hasAttribute('paused')) stage.play();
+                    else stage.pause();
+                } else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+                    const step = (event.shiftKey ? 1 / 60 : 1) * (event.key === 'ArrowLeft' ? -1 : 1);
+                    stage.setAttribute('time', String(Math.max(0, stage.currentTime + step)));
+                } else if (event.key === 'r' || event.key === 'R') {
+                    stage.redraw();
+                }
+            });
+
+            stage.setAttribute('src', params.get('src') ?? 'rovo-stage.json');
+        </script>
+    </body>
+</html>

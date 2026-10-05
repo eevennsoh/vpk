@@ -5,8 +5,15 @@ import { JIRA_KANBAN_CARD_REFLOW } from "./card-motion";
 
 // The reveal stays responsive while the decorative border has time to travel.
 export const CARD_DROP_STACK_EXPAND_MS = 420;
-export const CARD_DROP_SHIMMER_MS = 650; // duration-slowest + duration-xxshort
-export const SINGLE_CARD_DROP_SHIMMER_MS = 650; // duration-slowest + duration-xxshort
+export const CARD_DROP_SHIMMER_MS = 1000; // duration-slowest + duration-slower
+export const SINGLE_CARD_DROP_SHIMMER_MS = 1000; // duration-slowest + duration-slower
+/**
+ * Marks a single dropped card's slot while it is reserved but hidden, waiting
+ * for its neighbours to make room. Landing feedback elsewhere (a link glow, a
+ * celebration) holds until it clears, when the card is actually in its slot.
+ */
+export const ISSUE_DROP_REVEAL_PENDING_ATTRIBUTE = "data-issue-drop-reveal-pending";
+export const ISSUE_DROP_REVEAL_PENDING_SELECTOR = `[${ISSUE_DROP_REVEAL_PENDING_ATTRIBUTE}]`;
 
 interface DropCard {
 	code: string;
@@ -162,7 +169,7 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 	const width = Math.max(1, Math.max(...cards.map(({ surfaceRect }) => surfaceRect.right)) - left);
 	const height = Math.max(1, Math.max(...cards.map(({ surfaceRect }) => surfaceRect.bottom)) - top);
 	const isSingleCard = cards.length === 1;
-	const bandLength = isSingleCard ? Math.min(220, Math.max(112, height * 0.72)) : Math.min(160, Math.max(72, height * 0.45));
+	const bandLength = isSingleCard ? Math.min(440, Math.max(224, height * 1.44)) : Math.min(320, Math.max(144, height * 0.9));
 	const id = `issue-drop-trace-${++traceId}`;
 	const svg = doc.createElementNS(SVG_NS, "svg");
 	const make = (name: string, attributes: Record<string, string | number>, parent: Element) => {
@@ -291,13 +298,13 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 		const priorAriaHidden = node.getAttribute("aria-hidden");
 		node.inert = true;
 		node.setAttribute("aria-hidden", "true");
-		node.setAttribute("data-issue-drop-reveal-pending", "");
+		node.setAttribute(ISSUE_DROP_REVEAL_PENDING_ATTRIBUTE, "");
 		const animation = node.animate([{ opacity: 0 }, { opacity: 1 }], {
 			delay: Number(JIRA_KANBAN_CARD_REFLOW.duration ?? 0) * 1000,
 			duration: 0, fill: "backwards", // Reveal at rest once the shared reflow clock completes.
 		});
 		effects.push({ animation, restore: () => {
-			node.removeAttribute("data-issue-drop-reveal-pending");
+			node.removeAttribute(ISSUE_DROP_REVEAL_PENDING_ATTRIBUTE);
 			node.inert = wasInert;
 			if (priorAriaHidden === null) node.removeAttribute("aria-hidden");
 			else node.setAttribute("aria-hidden", priorAriaHidden);

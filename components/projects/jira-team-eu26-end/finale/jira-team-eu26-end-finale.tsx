@@ -6,19 +6,25 @@ import { useReducedMotion } from "motion/react";
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 
 import { JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES } from "../data/keynote-board";
+import { FinaleFacePrintStage } from "./components/finale-face-print-stage";
 import { FinaleOverlay } from "./components/finale-overlay";
-import { selectFinaleFeatures, type FinaleStory } from "./data/finale-stories";
+import { FINALE_FEATURES } from "./data/finale-stories";
 import { useFinaleAudioClock } from "./hooks/use-finale-audio-clock";
 import { useFinaleControls } from "./hooks/use-finale-controls";
+import { useFinaleDropPuff } from "./hooks/use-finale-drop-puff";
+import { useFinaleFacePrints } from "./hooks/use-finale-face-prints";
 import { printFinaleColumn, useFinaleCardPrints } from "./hooks/use-finale-prints";
 import { captureJiraTeamEu26DoneColumn, waitForFinaleColumnCapture } from "./lib/capture-done-column";
-import { nextFinaleDragOrder } from "./lib/finale-drag-order";
+import { confettiBoxOf } from "./lib/finale-confetti-target";
+import { finaleArrivals, finaleSmallConfettiDue, nextFinaleDragOrder } from "./lib/finale-drag-order";
 import { createFinaleConfetti, type FinaleConfettiShow } from "./lib/play-finale-confetti";
 import { FINALE_DONE_COLUMN_TITLE, isJiraTeamEu26FinaleReady, parseFinaleSearch } from "./lib/finale-trigger";
 import type { FinaleSceneInput } from "./scenes/scene-board-to-bento";
 
 /** Idle pre-print of every keynote card starts once the board has settled in. */
 const FINALE_PREWARM_DELAY_MS = 1500;
+/** A resize (going full screen for the keynote) reprints the bento faces once it settles. */
+const FACE_REPRINT_DELAY_MS = 500;
 const EXIT_FADE_MS = 260;
 /**
  * Longest the finale waits for card prints before it starts anyway (a bulk
@@ -29,7 +35,6 @@ const FINALE_PRINT_TIMEOUT_MS = 8000;
 
 interface FinalePreparation {
 	readonly dragOrder: readonly string[];
-	readonly features: readonly FinaleStory[];
 	readonly seek: number;
 	readonly hold: boolean;
 }
@@ -55,12 +60,15 @@ interface JiraTeamEu26EndFinaleProps {
 export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Readonly<JiraTeamEu26EndFinaleProps>) {
 	const clock = useFinaleAudioClock();
 	const prints = useFinaleCardPrints();
+	const facePrints = useFinaleFacePrints();
+	const { ensure: ensureFaces, get: facePrint } = facePrints;
 	const reducedMotion = useReducedMotion() ?? false;
 	const [preparation, setPreparation] = useState<FinalePreparation | null>(null);
 	const [scene, setScene] = useState<FinaleSceneInput | null>(null);
 	const [closing, setClosing] = useState(false);
 	const startAfterMountRef = useRef<number | null>(null);
 	const confetti = useMemo(() => createFinaleConfetti(), []);
+	const puffDrop = useFinaleDropPuff(confetti);
 	/** A burst the mounted finale has yet to ignite from. */
 	const confettiShowRef = useRef<FinaleConfettiShow | null>(null);
 	const ready = isJiraTeamEu26FinaleReady(boardColumns, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES);
@@ -75,6 +83,20 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		return () => window.clearTimeout(timer);
 	}, [prints]);
 
+	// And the bento's six faces, for the window as it is, so its tiles land in full.
+	useEffect(() => {
+		let timer = window.setTimeout(() => void ensureFaces(), FINALE_PREWARM_DELAY_MS);
+		const reprint = () => {
+			window.clearTimeout(timer);
+			timer = window.setTimeout(() => void ensureFaces(), FACE_REPRINT_DELAY_MS);
+		};
+		window.addEventListener("resize", reprint);
+		return () => {
+			window.clearTimeout(timer);
+			window.removeEventListener("resize", reprint);
+		};
+	}, [ensureFaces]);
+
 	// Boot the confetti renderer (worker, GL context, shaders) while the board is idle.
 	useEffect(() => {
 		if (reducedMotion) return undefined;
@@ -88,31 +110,23 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		const codes = doneKey ? doneKey.split("|") : [];
 		const next = nextFinaleDragOrder(dragOrderRef.current, codes);
 		if (next === dragOrderRef.current) return;
-		const known = new Set(dragOrderRef.current);
-		const arrived = next.filter((code) => !known.has(code));
+		const arrived = finaleArrivals(dragOrderRef.current, next);
 		// Completion preparation owns any missing prints. Arrival timers must
 		// not compete with the column image that the shader needs first.
 		for (const code of arrived) if (!ready) prints.schedule(code);
 		dragOrderRef.current = next;
-		if (arrived.length !== 1 || ready || reducedMotion) return undefined;
-		const controller = new AbortController();
-		let show: FinaleConfettiShow | null = null;
-		void waitForFinaleColumnCapture(controller.signal).then((column) => {
-			if (!column || controller.signal.aborted) return;
-			const { x, y, width, height } = column.getBoundingClientRect();
-			const radius = Number.parseFloat(getComputedStyle(column).borderBottomLeftRadius) || 0;
-			show = confetti.play({ x, y, width, height, radius }, "small");
-		});
-		return () => {
-			controller.abort();
-			show?.cancel();
-		};
-	}, [confetti, doneKey, prints, ready, reducedMotion]);
+		// One card or a bulk drag alike, short of completing the board: a puff
+		// from under the cards this drop brought in, as they touch down in their
+		// slots, on top of any burst still flying. It never gathers on the
+		// column, so nothing waits on it.
+		if (!finaleSmallConfettiDue(arrived, ready) || reducedMotion) return;
+		puffDrop(arrived);
+	}, [doneKey, prints, puffDrop, ready, reducedMotion]);
 
 	const prepare = useCallback((seek: number, hold: boolean) => {
 		const dragOrder = dragOrderRef.current;
 		setClosing(false);
-		setPreparation({ dragOrder, features: selectFinaleFeatures(dragOrder), seek, hold });
+		setPreparation({ dragOrder, seek, hold });
 	}, []);
 
 	// Every card must be printed before the GL field can start on exact copies.
@@ -129,10 +143,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			const celebration = hasConfetti
 				? waitForFinaleColumnCapture(controller.signal).then((column) => {
 					if (!column || cancelled) return;
-					const { x, y, width, height } = column.getBoundingClientRect();
-					// The pieces land on the column's own bottom border, round its corners.
-					const radius = Number.parseFloat(getComputedStyle(column).borderBottomLeftRadius) || 0;
-					show = confetti.play({ x, y, width, height, radius });
+					show = confetti.play({ column: confettiBoxOf(column) });
 				})
 				: Promise.resolve();
 			// Never hold the show for a print: late ones fall back to plain sheets.
@@ -144,7 +155,9 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			});
 			// Give the mandatory column image priority over optional late card sheets.
 			const sheets = hasConfetti ? chrome.then(() => prints.ensure(preparation.dragOrder)) : prints.ensure(preparation.dragOrder);
-			const ready = Promise.all([sheets, document.fonts.load('400 112px "Atlassian Sans"', "Team 0123456789").catch(() => []), chrome]);
+			// Faces printed for another window size print again: a late one lands its tile blank.
+			const faces = ensureFaces();
+			const ready = Promise.all([sheets, faces, document.fonts.load('400 112px "Atlassian Sans"', "Team 0123456789").catch(() => []), chrome]);
 			await celebration;
 			// Under confetti the finale mounts as soon as the column print exists:
 			// held on frame 0 it is invisible over the board, so its setup runs while
@@ -162,8 +175,9 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			setScene({
 				snapshot: captureJiraTeamEu26DoneColumn(),
 				dragOrder: preparation.dragOrder,
-				features: preparation.features,
+				features: FINALE_FEATURES,
 				cardPrint: prints.get,
+				facePrint,
 				columnPrint,
 			});
 			setPreparation(null);
@@ -174,7 +188,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			controller.abort();
 			show?.cancel();
 		};
-	}, [clock, confetti, preparation, prints, reducedMotion]);
+	}, [clock, confetti, ensureFaces, facePrint, preparation, prints, reducedMotion]);
 
 	// Child renderer effects initialise before this parent effect. Starting the
 	// clock here prevents setup work from skipping the foot of the column sweep.
@@ -282,5 +296,10 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		onReplay: replay,
 	});
 
-	return scene ? <FinaleOverlay scene={scene} clock={clock} reducedMotion={reducedMotion} closing={closing} /> : null;
+	return (
+		<>
+			<FinaleFacePrintStage prints={facePrints} />
+			{scene ? <FinaleOverlay scene={scene} clock={clock} reducedMotion={reducedMotion} closing={closing} /> : null}
+		</>
+	);
 }

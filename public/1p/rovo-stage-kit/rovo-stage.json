@@ -1,0 +1,618 @@
+{
+  "format": "rovo-stage",
+  "version": 1,
+  "kit": "1.0.0",
+  "exportedAt": "2026-10-05T07:35:14.192607Z",
+  "board": {
+    "preset": "stageWall",
+    "layout": "single",
+    "canvas": "mist",
+    "aspect": "16:9",
+    "bleed": false,
+    "appearance": "light",
+    "cells": {
+      "a": {
+        "module": "stage",
+        "options": {
+          "view": "stage",
+          "camera": "glide",
+          "pace": "brisk",
+          "density": "balanced",
+          "text": "none",
+          "greeting": "Hey there,\nready to get \nto work?",
+          "textSize": "0.9",
+          "textX": "0.065",
+          "textY": "0.08",
+          "showSearch": true,
+          "showChat": true,
+          "showReasoning": true,
+          "showVoice": true,
+          "showAgents": true,
+          "showHold": true,
+          "showIcons": true,
+          "showApps": true,
+          "showOnboarding": true,
+          "showArtifacts": true,
+          "showDev": true,
+          "showCollab": true,
+          "showLoom": true,
+          "showTrust": true,
+          "showMosaic": true,
+          "entryTilt": "20",
+          "entryTiltCurve": "settle",
+          "entryMaterial": "solid",
+          "entrySoftness": "0.5",
+          "entrySpeed": "1",
+          "entryDepth": "swoop",
+          "curtainExit": "rise",
+          "curtainSpeed": "1",
+          "curtainSoftness": "0.5",
+          "curtainStagger": "0.5",
+          "curtainPlace": "across"
+        },
+        "motion": "animated",
+        "frame": null,
+        "tone": "paper",
+        "label": false,
+        "eyebrow": "",
+        "caption": "",
+        "zoom": 0.61,
+        "panX": 0,
+        "panY": 0
+      }
+    }
+  },
+  "composition": {
+    "version": 1,
+    "name": "Composed wall",
+    "period": 4220,
+    "speed": 61.655,
+    "frame": {
+      "w": 2700,
+      "h": 1420
+    },
+    "band": {
+      "top": -8,
+      "bottom": 1428
+    },
+    "pieces": [
+      {
+        "key": "filmFacets#0",
+        "id": "filmFacets",
+        "x": 0,
+        "y": 30,
+        "scale": 0.924,
+        "z": 10.5
+      },
+      {
+        "key": "search#1",
+        "id": "search",
+        "x": 0,
+        "y": 1347.2,
+        "scale": 0.792,
+        "z": 12.5
+      },
+      {
+        "key": "agentPresence#2",
+        "id": "agentPresence",
+        "x": 0,
+        "y": 371.2,
+        "scale": 0.704,
+        "z": 49.1
+      },
+      {
+        "key": "badgeRovo#3",
+        "id": "badgeRovo",
+        "x": 0,
+        "y": 1022.7,
+        "scale": 0.924,
+        "z": 38
+      },
+      {
+        "key": "bubbles#4",
+        "id": "bubbles",
+        "x": 275.6,
+        "y": 766.8,
+        "scale": 0.88,
+        "z": 30.9
+      },
+      {
+        "key": "statTokens#5",
+        "id": "statTokens",
+        "x": 275.6,
+        "y": 1058,
+        "scale": 0.704,
+        "z": 26.2
+      },
+      {
+        "key": "appConfluence#6",
+        "id": "appConfluence",
+        "x": 0,
+        "y": 766.8,
+        "scale": 0.792,
+        "z": 28.6
+      },
+      {
+        "key": "reasoning#7",
+        "id": "reasoning",
+        "x": 396.6,
+        "y": 148.8,
+        "scale": 1.1,
+        "z": 19.6
+      },
+      {
+        "key": "mobileChat#8",
+        "id": "mobileChat",
+        "x": 744.4,
+        "y": 371.2,
+        "scale": 0.44,
+        "z": 32.1
+      },
+      {
+        "key": "switch#9",
+        "id": "switch",
+        "x": 705.7,
+        "y": 1309,
+        "scale": 1.76,
+        "z": 39.2
+      },
+      {
+        "key": "glyphSearch#10",
+        "id": "glyphSearch",
+        "x": 489.2,
+        "y": 371.2,
+        "scale": 0.792,
+        "z": 20.3
+      },
+      {
+        "key": "codeCard#11",
+        "id": "codeCard",
+        "x": 744.4,
+        "y": 1043.7,
+        "scale": 1.408,
+        "z": 16.2
+      },
+      {
+        "key": "voice#12",
+        "id": "voice",
+        "x": 744.4,
+        "y": 846.8,
+        "scale": 1.1,
+        "z": 40.6
+      },
+      {
+        "key": "sources#13",
+        "id": "sources",
+        "x": 1004.9,
+        "y": 407,
+        "scale": 0.968,
+        "z": 30.7
+      },
+      {
+        "key": "mentions#14",
+        "id": "mentions",
+        "x": 854.4,
+        "y": 30,
+        "scale": 0.66,
+        "z": 17.9
+      },
+      {
+        "key": "hold#15",
+        "id": "hold",
+        "x": 1197,
+        "y": 1238.6,
+        "scale": 0.88,
+        "z": 24.7
+      },
+      {
+        "key": "appSlack#16",
+        "id": "appSlack",
+        "x": 489.2,
+        "y": 539.7,
+        "scale": 0.792,
+        "z": 21.7
+      },
+      {
+        "key": "loomRecordBar#17",
+        "id": "loomRecordBar",
+        "x": 1197,
+        "y": 1087,
+        "scale": 0.352,
+        "z": 31.4
+      },
+      {
+        "key": "twg#18",
+        "id": "twg",
+        "x": 1316.4,
+        "y": 30,
+        "scale": 0.968,
+        "z": 21.9
+      },
+      {
+        "key": "ringsTile#19",
+        "id": "ringsTile",
+        "x": 1204.4,
+        "y": 928,
+        "scale": 0.792,
+        "z": 49.1
+      },
+      {
+        "key": "skills#20",
+        "id": "skills",
+        "x": 1352.1,
+        "y": 293.4,
+        "scale": 0.748,
+        "z": 19.9
+      },
+      {
+        "key": "dashboardArtifact#21",
+        "id": "dashboardArtifact",
+        "x": 1295.3,
+        "y": 579.3,
+        "scale": 0.66,
+        "z": 45.1
+      },
+      {
+        "key": "mosaic#22",
+        "id": "mosaic",
+        "x": 1789,
+        "y": 928,
+        "scale": 0.88,
+        "z": 17.6
+      },
+      {
+        "key": "governance#23",
+        "id": "governance",
+        "x": 1790.3,
+        "y": 651.3,
+        "scale": 0.704,
+        "z": 15.7
+      },
+      {
+        "key": "glyphChat#24",
+        "id": "glyphChat",
+        "x": 1796.7,
+        "y": 30,
+        "scale": 0.792,
+        "z": 16.2
+      },
+      {
+        "key": "bloom#25",
+        "id": "bloom",
+        "x": 1902.3,
+        "y": 492.3,
+        "scale": 1.584,
+        "z": 21.6
+      },
+      {
+        "key": "rovoDevCli#26",
+        "id": "rovoDevCli",
+        "x": 1902.3,
+        "y": 198.5,
+        "scale": 0.748,
+        "z": 31.9
+      },
+      {
+        "key": "searchDrop#27",
+        "id": "searchDrop",
+        "x": 2345.8,
+        "y": 1132.3,
+        "scale": 0.704,
+        "z": 40.5
+      },
+      {
+        "key": "appFigma#28",
+        "id": "appFigma",
+        "x": 1363.4,
+        "y": 928,
+        "scale": 0.792,
+        "z": 13
+      },
+      {
+        "key": "loomCameraBubble#29",
+        "id": "loomCameraBubble",
+        "x": 2345.8,
+        "y": 766.1,
+        "scale": 0.66,
+        "z": 46.5
+      },
+      {
+        "key": "sourcesPopover#30",
+        "id": "sourcesPopover",
+        "x": 2427.1,
+        "y": 30,
+        "scale": 0.924,
+        "z": 32.1
+      },
+      {
+        "key": "attribution#31",
+        "id": "attribution",
+        "x": 2370.2,
+        "y": 508.5,
+        "scale": 0.88,
+        "z": 34.9
+      },
+      {
+        "key": "compact#32",
+        "id": "compact",
+        "x": 2756.3,
+        "y": 371.2,
+        "scale": 0.5456,
+        "z": 37.2
+      },
+      {
+        "key": "artifactsLogo#33",
+        "id": "artifactsLogo",
+        "x": 1965.2,
+        "y": 38.1,
+        "scale": 0.704,
+        "z": 48.6
+      },
+      {
+        "key": "filters#34",
+        "id": "filters",
+        "x": 2646.1,
+        "y": 777.3,
+        "scale": 0.924,
+        "z": 35
+      },
+      {
+        "key": "quizArtifact#35",
+        "id": "quizArtifact",
+        "x": 2823.7,
+        "y": 69.6,
+        "scale": 0.528,
+        "z": 46.8
+      },
+      {
+        "key": "picker#36",
+        "id": "picker",
+        "x": 2937.8,
+        "y": 870.9,
+        "scale": 0.88,
+        "z": 43.1
+      },
+      {
+        "key": "glyphForYou#37",
+        "id": "glyphForYou",
+        "x": 2133.1,
+        "y": 759.4,
+        "scale": 0.792,
+        "z": 11.6
+      },
+      {
+        "key": "iso42001#38",
+        "id": "iso42001",
+        "x": 3196.8,
+        "y": 371.2,
+        "scale": 0.704,
+        "z": 17
+      },
+      {
+        "key": "composer#39",
+        "id": "composer",
+        "x": 2937.8,
+        "y": 1302.9,
+        "scale": 0.792,
+        "z": 24.3
+      },
+      {
+        "key": "loomTeleprompter#40",
+        "id": "loomTeleprompter",
+        "x": 3220,
+        "y": 870.9,
+        "scale": 0.528,
+        "z": 27
+      },
+      {
+        "key": "avatars#41",
+        "id": "avatars",
+        "x": 3275.6,
+        "y": 683,
+        "scale": 0.968,
+        "z": 10.8
+      },
+      {
+        "key": "codeSearchLogo#42",
+        "id": "codeSearchLogo",
+        "x": 3310.1,
+        "y": 30,
+        "scale": 0.704,
+        "z": 13.5
+      },
+      {
+        "key": "appGithub#43",
+        "id": "appGithub",
+        "x": 1503.5,
+        "y": 947,
+        "scale": 0.792,
+        "z": 40.7
+      },
+      {
+        "key": "scheduledTask#44",
+        "id": "scheduledTask",
+        "x": 3604,
+        "y": 870.9,
+        "scale": 0.528,
+        "z": 24.8
+      },
+      {
+        "key": "workPill#45",
+        "id": "workPill",
+        "x": 0,
+        "y": 908,
+        "scale": 1.408,
+        "z": 98.1
+      },
+      {
+        "key": "shareSnapshot#46",
+        "id": "shareSnapshot",
+        "x": 3664.2,
+        "y": 194.7,
+        "scale": 0.792,
+        "z": 47.8
+      },
+      {
+        "key": "starters#47",
+        "id": "starters",
+        "x": 396.6,
+        "y": 42.5,
+        "scale": 1.144,
+        "z": 38.1
+      },
+      {
+        "key": "recordForAgent#48",
+        "id": "recordForAgent",
+        "x": 3604,
+        "y": 1245.6,
+        "scale": 0.66,
+        "z": 37.5
+      },
+      {
+        "key": "loomOverlays#49",
+        "id": "loomOverlays",
+        "x": 3664.2,
+        "y": 571.6,
+        "scale": 0.396,
+        "z": 23.2
+      },
+      {
+        "key": "appDrive#50",
+        "id": "appDrive",
+        "x": 1643.5,
+        "y": 928,
+        "scale": 0.792,
+        "z": 24.3
+      },
+      {
+        "key": "glyphAuto#51",
+        "id": "glyphAuto",
+        "x": 2646.1,
+        "y": 963.8,
+        "scale": 0.792,
+        "z": 15.6
+      },
+      {
+        "key": "appJira#52",
+        "id": "appJira",
+        "x": 1789,
+        "y": 1300,
+        "scale": 0.792,
+        "z": 15.3
+      },
+      {
+        "key": "appLoom#53",
+        "id": "appLoom",
+        "x": 1929,
+        "y": 1314,
+        "scale": 0.792,
+        "z": 46.5
+      },
+      {
+        "key": "appConfluence#54",
+        "id": "appConfluence",
+        "x": 2069.1,
+        "y": 1300,
+        "scale": 0.792,
+        "z": 22.9
+      },
+      {
+        "key": "appSlack#55",
+        "id": "appSlack",
+        "x": 3310.1,
+        "y": 194.7,
+        "scale": 0.792,
+        "z": 17.6
+      },
+      {
+        "key": "appFigma#56",
+        "id": "appFigma",
+        "x": 3450.1,
+        "y": 194.7,
+        "scale": 0.792,
+        "z": 35.3
+      },
+      {
+        "key": "appGithub#57",
+        "id": "appGithub",
+        "x": 3761.3,
+        "y": 30,
+        "scale": 0.792,
+        "z": 23.5
+      },
+      {
+        "key": "appDrive#58",
+        "id": "appDrive",
+        "x": 3901.3,
+        "y": 30,
+        "scale": 0.792,
+        "z": 11.7
+      },
+      {
+        "key": "appJira#59",
+        "id": "appJira",
+        "x": 3908.6,
+        "y": 870.9,
+        "scale": 0.792,
+        "z": 37.4
+      },
+      {
+        "key": "appLoom#60",
+        "id": "appLoom",
+        "x": 3908.6,
+        "y": 1010.9,
+        "scale": 0.792,
+        "z": 46.9
+      },
+      {
+        "key": "ringsTile#61",
+        "id": "ringsTile",
+        "x": 3940.6,
+        "y": 1150.9,
+        "scale": 0.792,
+        "z": 31.9
+      },
+      {
+        "key": "workPill#62",
+        "id": "workPill",
+        "x": 2427.1,
+        "y": 371.2,
+        "scale": 1.408,
+        "z": 36.2
+      },
+      {
+        "key": "glyphSearch#63",
+        "id": "glyphSearch",
+        "x": 4041.4,
+        "y": 30,
+        "scale": 0.6336,
+        "z": 46.8
+      },
+      {
+        "key": "glyphChat#64",
+        "id": "glyphChat",
+        "x": 4048.7,
+        "y": 870.9,
+        "scale": 0.6336,
+        "z": 14.7
+      },
+      {
+        "key": "appConfluence#65",
+        "id": "appConfluence",
+        "x": 3940.6,
+        "y": 1314,
+        "scale": 0.792,
+        "z": 31.2
+      },
+      {
+        "key": "appDrive#66",
+        "id": "appDrive",
+        "x": 140,
+        "y": 783.2,
+        "scale": 0.6336,
+        "z": 45.6
+      }
+    ]
+  },
+  "pieceStyles": {}
+}

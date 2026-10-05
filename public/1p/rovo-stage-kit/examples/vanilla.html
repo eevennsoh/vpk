@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Rovo stage · web component</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 32px;
+                font: 14px / 20px system-ui, sans-serif;
+            }
+
+            .hero {
+                max-width: 1200px;
+                margin: 0 auto 32px;
+            }
+
+            .pieces {
+                display: flex;
+                gap: 32px;
+                justify-content: center;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Serve the kit's folder over HTTP and open /examples/vanilla.html. -->
+        <section class="hero" aria-hidden="true">
+            <!-- As wide as its column, the board's own ratio, playing on its own clock. -->
+            <rovo-stage id="stage" src="../rovo-stage.json"></rovo-stage>
+        </section>
+        <section class="pieces" aria-hidden="true">
+            <rovo-piece piece="mentions" scale="0.75"></rovo-piece>
+            <rovo-piece piece="agentPresence" scale="0.75" play="loop" rest="2"></rovo-piece>
+        </section>
+        <script type="module">
+            import { stageInfo } from '../dist/rovo-stage.js';
+
+            const stage = document.getElementById('stage');
+            stage.addEventListener('ready', (event) => {
+                console.log('stage ready', event.detail);
+                // Still for people who ask for less motion: the lab's own poster frame.
+                if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    stage.setAttribute('time', String(event.detail.poster));
+                }
+            });
+            stage.addEventListener('stageerror', (event) => console.error(event.detail));
+            // Pause it while it is off screen.
+            new IntersectionObserver(([entry]) =>
+                entry.isIntersecting ? stage.removeAttribute('paused') : stage.setAttribute('paused', ''),
+            ).observe(stage);
+            // The pieces take the stage file's styles (their cards, how they play).
+            const file = await fetch('../rovo-stage.json').then((response) => response.json());
+            console.log('stage file', stageInfo(file));
+            for (const piece of document.querySelectorAll('rovo-piece')) {
+                piece.pieceStyles = file.pieceStyles;
+            }
+        </script>
+    </body>
+</html>

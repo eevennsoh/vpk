@@ -46,6 +46,18 @@ export interface FinaleCursorPose {
  */
 export const FINALE_CURSOR_BOX = { left: 4, top: 4, right: 140, bottom: 80 } as const;
 
+/**
+ * How far right of the tip a name pill paints, in stage px: where it starts
+ * (with its padding and shadow), then up to the widest letter of its 20px
+ * semibold type for each letter of the name.
+ */
+const PILL_RIGHT = { start: 64, letter: 13 } as const;
+
+/** The same extent for a cursor named `label`: its pill as long as the name needs. */
+export function finaleCursorBox(label: string): { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number } {
+	return { ...FINALE_CURSOR_BOX, right: PILL_RIGHT.start + label.length * PILL_RIGHT.letter };
+}
+
 const [BLUE, AMBER, PURPLE, GREEN] = ROVO_COLOR_SWATCHES;
 /** Dark ink for the light fills (ADS neutral 1000); white on blue and purple. */
 const DARK_INK = "#292A2E";

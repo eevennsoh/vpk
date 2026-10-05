@@ -224,9 +224,9 @@ test("a scrolled board's print keeps the column in its visible position", () => 
 
 test("the finale is ready only once every keynote announcement sits in Done", () => {
 	const { isJiraTeamEu26FinaleReady, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES: codes } = loadFinale();
-	assert.equal(codes.length, 13);
+	assert.equal(codes.length, 25);
 	assert.equal(isJiraTeamEu26FinaleReady(columns(codes), codes), true);
-	assert.equal(isJiraTeamEu26FinaleReady(columns(codes.slice(0, 12), codes.slice(12)), codes), false);
+	assert.equal(isJiraTeamEu26FinaleReady(columns(codes.slice(0, -1), codes.slice(-1)), codes), false);
 	// Cards created live during the demo neither block nor trigger the finale.
 	assert.equal(isJiraTeamEu26FinaleReady(columns([...codes, "TEU-99"], ["TEU-100"]), codes), true);
 	assert.equal(isJiraTeamEu26FinaleReady([{ title: "Context", cards: codes.map((code) => ({ code })) }], codes), false);
@@ -267,27 +267,48 @@ test("drag order records arrivals in Done, forgets cards dragged back out, and r
 	assert.equal(nextFinaleDragOrder(order, ["TEU-8", "TEU-1", "TEU-3"]), order, "unchanged input keeps identity");
 });
 
-test("bento features follow MCB's drag order, with Jira Agent Sessions standing in for Rovo Artifacts", () => {
-	const { selectFinaleFeatures, FINALE_SLOT_COUNT, FINALE_PINNED_FEATURE, FINALE_RETIRED_FEATURE } = loadFinale();
-	const codes = (order) => selectFinaleFeatures(order).map((story) => story.code);
-	const order = ["TEU-9", "TEU-2", "TEU-13", "TEU-5", "TEU-10", "TEU-7", "TEU-1"];
-	assert.deepEqual(codes(order), order.slice(0, FINALE_SLOT_COUNT), "drag order, not a hard-coded list");
-	// Rovo Artifacts is swapped for Jira Agent Sessions in place.
-	assert.deepEqual(codes(["TEU-1", FINALE_RETIRED_FEATURE, "TEU-3", "TEU-5", "TEU-8", "TEU-11"]), ["TEU-1", FINALE_PINNED_FEATURE, "TEU-3", "TEU-5", "TEU-8", "TEU-11"]);
-	// Jira Agent Sessions always makes the cut, taking the last slot if it was dragged late.
-	const late = codes(["TEU-1", "TEU-2", "TEU-3", "TEU-5", "TEU-6", "TEU-7", "TEU-10"]);
-	assert.deepEqual(late, ["TEU-1", "TEU-2", "TEU-3", "TEU-5", "TEU-6", FINALE_PINNED_FEATURE]);
-	for (let seed = 0; seed < 50; seed += 1) {
-		const shuffled = Array.from({ length: 13 }, (_, index) => `TEU-${index + 1}`).sort((a, b) => Math.sin(seed * 31 + Number(a.slice(4))) - Math.sin(seed * 31 + Number(b.slice(4))));
-		const picked = codes(shuffled);
-		assert.equal(picked.length, FINALE_SLOT_COUNT);
-		assert.ok(picked.includes(FINALE_PINNED_FEATURE) && !picked.includes(FINALE_RETIRED_FEATURE), `seed ${seed}`);
-	}
-	// Rehearsal with too few drags tops up in board order, skipping duplicates and unknown cards.
-	assert.deepEqual(codes(["TEU-5", "NOPE-1", "TEU-5"]), ["TEU-5", "TEU-1", "TEU-2", "TEU-3", "TEU-10", "TEU-6"]);
+test("any drop into Done short of completing the board earns the small confetti, bulk drags included", () => {
+	const { finaleArrivals, finaleSmallConfettiDue, nextFinaleDragOrder } = loadFinale();
+	const drop = (previous, done) => finaleArrivals(previous, nextFinaleDragOrder(previous, done));
+	assert.deepEqual(drop([], ["TEU-1"]), ["TEU-1"], "one card");
+	assert.deepEqual(drop(["TEU-1"], ["TEU-1", "TEU-2", "TEU-3"]), ["TEU-2", "TEU-3"], "a bulk drag of two");
+	assert.equal(finaleSmallConfettiDue(["TEU-1"], false), true);
+	assert.equal(finaleSmallConfettiDue(["TEU-2", "TEU-3"], false), true, "a bulk drag celebrates too");
+	assert.equal(finaleSmallConfettiDue(["TEU-4", "TEU-5", "TEU-6"], false), true);
+	assert.equal(finaleSmallConfettiDue(["TEU-12", "TEU-13"], true), false, "the drop that completes the board opens the finale instead");
+	assert.deepEqual(drop(["TEU-1", "TEU-2"], ["TEU-1"]), [], "dragging a card back out is no arrival");
+	assert.equal(finaleSmallConfettiDue(drop(["TEU-1", "TEU-2"], ["TEU-2", "TEU-1"]), false), false, "nor is reordering within Done");
 });
 
-test("the bento fills any screen shape with 60px clear on every side and nothing overlapping", () => {
+test("the bento shows the Figma's six features in its slots, each a keynote story", () => {
+	const { FINALE_FEATURES, FINALE_SLOT_COUNT, FINALE_STORIES, finaleBentoLayout } = loadFinale();
+	assert.equal(FINALE_FEATURES.length, FINALE_SLOT_COUNT);
+	// Landing order is slot order: a, e, c, b, f, d.
+	const slots = finaleBentoLayout({ width: 1920, height: 1080 }, 1).slots.map((slot) => slot.id);
+	const bySlot = Object.fromEntries(FINALE_FEATURES.map((story, order) => [slots[order], story.title]));
+	assert.deepEqual(bySlot, {
+		a: "Agent Session Tracking",
+		e: "Artifacts",
+		c: "Agent Effectiveness",
+		b: "AI Capital Management",
+		f: "Rovo For Work",
+		d: "Loom Record for Agent",
+	});
+	for (const feature of FINALE_FEATURES) assert.ok(FINALE_STORIES.includes(feature), `${feature.code} is a keynote story`);
+});
+
+test("the recap retains each reference story's issue identity and updated name", () => {
+	const { FINALE_STORIES } = loadFinale();
+	assert.equal(FINALE_STORIES.length, 25);
+	assert.deepEqual(FINALE_STORIES.filter((story) => ["TEU-4", "TEU-101", "TEU-107", "TEU-10"].includes(story.code)).map((story) => [story.code, story.title, story.chapter]), [
+		["TEU-4", "Artifacts", "Context"],
+		["TEU-101", "Data Context", "Context"],
+		["TEU-107", "ChatGPT Codex from Jira", "Collaboration"],
+		["TEU-10", "Agent Session Tracking", "Confidence"],
+	]);
+});
+
+test("the bento fills any screen shape with 40px clear on every side and nothing overlapping", () => {
 	const { finaleBentoLayout, FINALE_BENTO_MARGIN, FINALE_SLOT_COUNT } = loadFinale();
 	for (const viewport of [{ width: 1920, height: 1080 }, { width: 1618, height: 1025 }, { width: 1280, height: 960 }]) {
 		const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
@@ -303,8 +324,8 @@ test("the bento fills any screen shape with 60px clear on every side and nothing
 			assert.ok(rect.width > 0 && rect.height > 0, `${id} has room at ${viewport.width}×${viewport.height}`);
 		}
 		const label = `${viewport.width}×${viewport.height}`;
-		assert.ok(Math.abs(edges.left - FINALE_BENTO_MARGIN) < 1e-6 && Math.abs(edges.top - FINALE_BENTO_MARGIN) < 1e-6, `60px top-left at ${label}`);
-		assert.ok(Math.abs(viewport.width - edges.right - FINALE_BENTO_MARGIN) < 1e-6 && Math.abs(viewport.height - edges.bottom - FINALE_BENTO_MARGIN) < 1e-6, `60px bottom-right at ${label}`);
+		assert.ok(Math.abs(edges.left - FINALE_BENTO_MARGIN) < 1e-6 && Math.abs(edges.top - FINALE_BENTO_MARGIN) < 1e-6, `40px top-left at ${label}`);
+		assert.ok(Math.abs(viewport.width - edges.right - FINALE_BENTO_MARGIN) < 1e-6 && Math.abs(viewport.height - edges.bottom - FINALE_BENTO_MARGIN) < 1e-6, `40px bottom-right at ${label}`);
 		for (const [index, [idA, a]] of rects.entries()) {
 			for (const [idB, b] of rects.slice(index + 1)) {
 				const overlaps = a.x < b.x + b.width - 1e-6 && b.x < a.x + a.width - 1e-6 && a.y < b.y + b.height - 1e-6 && b.y < a.y + a.height - 1e-6;
@@ -348,7 +369,7 @@ test("the camera rests on the slide at frame 0 and from the hero's landing on, a
 });
 
 test("each card is one continuous layer from the Done column to its bento tile, as the camera films it", () => {
-	const { CUE, finaleBentoLayout, cameraDistance, cardPose, finaleCameraRig, projectPose, tileHandoff, touchdownTime } = loadFinale();
+	const { CUE, finaleBentoLayout, cameraDistance, cardPose, finaleCameraRig, projectPose, tileFallStart, tileHandoff, touchdownTime } = loadFinale();
 	const fit = { scale: 0.5, x: 0, y: 30 };
 	const viewport = { width: 960, height: 600 };
 	const card = { x: 708, y: 160, width: 224, height: 150 };
@@ -371,8 +392,20 @@ test("each card is one continuous layer from the Done column to its bento tile, 
 			assert.equal(pose(CUE.heroLand).opacity, 0, "extras have left by the time the camera is back on the slide");
 			continue;
 		}
-		// Lands exactly on its slot, flat, as an empty tile, then hands over to the DOM tile.
+		// Lands exactly on its slot, flat, as its tile, then hands over to the DOM tile.
 		const order = role.kind === "hero" ? 0 : role.order;
+		// Its card until it flies for its slot, then its tile within a fifth of a second: the
+		// two pictures never sit over each other long enough to read as a double exposure.
+		const flight = role.kind === "hero" ? CUE.zoomEnd : tileFallStart(order);
+		assert.equal(pose(flight).face, 0, `${role.kind} is still its card as its flight starts`);
+		let turning = null;
+		let turned = null;
+		for (let time = flight; time <= touchdownTime(order); time += 0.005) {
+			const { face } = pose(time);
+			if (turning === null && face > 0.05) turning = time;
+			if (turned === null && face >= 0.95) turned = time;
+		}
+		assert.ok(turning !== null && turned !== null && turned - turning < 0.25, `${role.kind} turns into its tile in ${Math.round(((turned ?? Infinity) - (turning ?? 0)) * 1000)} ms`);
 		const rest = projectPose(pose(touchdownTime(order) + 0.01), viewport);
 		for (const key of ["x", "y", "width", "height"]) assert.ok(Math.abs(rest[key] - role.slot[key]) < 0.5, `${role.kind} ${key}`);
 		assert.equal(pose(touchdownTime(order) + 0.01).face, 1);
@@ -420,6 +453,26 @@ test("the camera finds the hero far off, then rushes in and arrives face-on with
 	}
 });
 
+test("the hero flips end over end once on its rush, wherever MCB dropped it in the Done column", () => {
+	const { CUE, finaleBentoLayout, cardPose } = loadFinale();
+	const viewport = { width: 1920, height: 1080 };
+	const slots = finaleBentoLayout(viewport, 1).slots.map((slot) => slot.rect);
+	const card = { x: 1450, y: 300, width: 436, height: 199 };
+	const TAU = Math.PI * 2;
+	// Its toss tumble was seeded by its place in the column, so the rush that
+	// squares it up flipped it from some places (0, 5, 6), spun it or flipped it
+	// sideways from others, and from 2, 4, 7 and 9 did not turn it at all.
+	for (let burstIndex = 0; burstIndex < 13; burstIndex += 1) {
+		const input = { rect: card, fieldIndex: 0, fieldCount: 13, burstIndex, role: { kind: "hero", slot: slots[0] } };
+		const from = cardPose(CUE.zoom, input, viewport);
+		const to = cardPose(CUE.zoomEnd, input, viewport);
+		const turned = { x: from.rotateX - to.rotateX, y: from.rotateY - to.rotateY, z: from.rotateZ - to.rotateZ };
+		assert.ok(Math.abs(turned.x - TAU) < 0.5, `column place ${burstIndex}: one end-over-end flip (turned ${turned.x.toFixed(2)} rad)`);
+		assert.ok(Math.abs(turned.y) < Math.PI / 2, `column place ${burstIndex}: no sideways flip (turned ${turned.y.toFixed(2)} rad)`);
+		assert.ok(Math.abs(turned.z) < Math.PI / 2, `column place ${burstIndex}: no spin (turned ${turned.z.toFixed(2)} rad)`);
+	}
+});
+
 test("tiles land one by one and every heading has built with a hold before the final frame", () => {
 	const { CUE, FINALE_SLOT_COUNT, touchdownTime, tileRevealStart } = loadFinale();
 	const landings = Array.from({ length: FINALE_SLOT_COUNT }, (_, order) => touchdownTime(order));
@@ -427,7 +480,9 @@ test("tiles land one by one and every heading has built with a hold before the f
 		if (order > 0) assert.ok(time > landings[order - 1], "tiles land one after another");
 	});
 	const lastHeadingBuilt = tileRevealStart(FINALE_SLOT_COUNT - 1) + CUE.reveal;
-	assert.ok(CUE.end - lastHeadingBuilt >= 0.8, `final frame holds ${(CUE.end - lastHeadingBuilt).toFixed(2)}s after the last heading builds`);
+	// A short hold: the title turns into its black card soon after, without a wait.
+	const hold = CUE.end - lastHeadingBuilt;
+	assert.ok(hold >= 0.5 && hold <= 0.8, `final frame holds ${hold.toFixed(2)}s after the last heading builds`);
 	assert.ok(CUE.end - CUE.yearLand >= 1, "the year has landed well before the final frame");
 });
 
@@ -621,7 +676,9 @@ test("the hero's shadow falls on a lens-square plane that becomes the slide as i
 
 test("colour parsing reads hex and rgb() alike (the slide never eases to black)", () => {
 	const { parseRgb, FINALE_COLORS } = loadFinale();
-	assert.deepEqual(parseRgb(FINALE_COLORS.slide), [241, 242, 244]);
+	assert.deepEqual(parseRgb(FINALE_COLORS.slide), [255, 255, 255]);
+	// Neutral100: its hex digits would read as 8, 8, 8 were they parsed as decimal channels.
+	assert.deepEqual(parseRgb(FINALE_COLORS.tile), [248, 248, 248]);
 	assert.deepEqual(parseRgb("rgb(248, 248, 248)"), [248, 248, 248]);
 	assert.deepEqual(parseRgb("rgba(9, 30, 66, 0.14)"), [9, 30, 66]);
 });

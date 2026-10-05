@@ -57,11 +57,11 @@ export interface FinaleCardPose {
 	readonly rotateY: number;
 	readonly rotateZ: number;
 	readonly opacity: number;
-	/** 0 Jira card face → 1 blank bento tile. */
+	/** 0 Jira card face → 1 its bento tile (as its face prints, or blank). */
 	readonly face: number;
 	/** 0 flat on the page → 1 airborne (Peel flutter, cloth). */
 	readonly lift: number;
-	/** Seconds since touchdown for the Peel landing ripple, or −1 before it lands. */
+	/** Seconds since touchdown for the Peel landing wave (negative while it gathers, see `landingWaveAge`), or −1 before. */
 	readonly waveAge: number;
 	/** 1 while clipped to the Done column's scroll viewport → 0 once it has left it. */
 	readonly clip: number;
@@ -98,7 +98,7 @@ export type FinaleCardRole =
 export interface FinaleCardInput {
 	/** The card's DOM rect in the Done column when the finale began (echoes: its size donor). */
 	readonly rect: FinaleRect;
-	/** Place in the field spiral, in drag order (the hero is 0). */
+	/** Place in the field spiral, in drag order. */
 	readonly fieldIndex: number;
 	readonly fieldCount: number;
 	/** The card's place in the column (top first); seeds its toss. */
@@ -152,7 +152,7 @@ function heroHome(viewport: FinaleViewport): FieldHome {
 	return { x: anchor.x, y: -anchor.y, z: anchor.z, rotateX: 0.18, rotateY: -0.35, rotateZ: 0.06, seed: 1 };
 }
 
-function flatPose(rect: FinaleRect, face: number): FinaleCardPose {
+export function flatPose(rect: FinaleRect, face: number): FinaleCardPose {
 	const centre = rectCentre(rect);
 	return { x: centre.x, y: centre.y, z: 0, width: rect.width, height: rect.height, rotateX: 0, rotateY: 0, rotateZ: 0, opacity: 1, face, lift: 0, waveAge: -1, clip: 0 };
 }
@@ -172,7 +172,7 @@ function fieldPose(home: FieldHome, rect: FinaleRect, time: number, viewport: Fi
 	};
 }
 
-function blendPose(from: FinaleCardPose, to: FinaleCardPose, amount: number): FinaleCardPose {
+export function blendPose(from: FinaleCardPose, to: FinaleCardPose, amount: number): FinaleCardPose {
 	return {
 		x: lerp(from.x, to.x, amount),
 		y: lerp(from.y, to.y, amount),
@@ -196,11 +196,29 @@ function burstStart(input: FinaleCardInput): number {
 }
 
 /** Whole turns, so a flipped card still comes to rest at its field angle. */
-function turns(seed: number, chance: number): number {
+export function turns(seed: number, chance: number): number {
 	const roll = hash01(seed);
 	if (roll > chance) return 0;
 	return roll < chance / 2 ? -1 : 1;
 }
+
+/** Whole turns a tossed card tumbles through about each axis. */
+interface FinaleTumble {
+	readonly x: number;
+	readonly y: number;
+	readonly z: number;
+}
+
+function seededTumble(seed: number): FinaleTumble {
+	return { x: turns(seed * 2.3, 0.35), y: turns(seed * 3.7, 0.25), z: turns(seed * 4.9, 0.3) };
+}
+
+/**
+ * The hero always flips end over end, exactly once: the rush unwinds its
+ * tumble as it squares up to the lens, so a seeded one flipped it from some
+ * places in the column, spun it from others and left it still from the rest.
+ */
+const HERO_TUMBLE: FinaleTumble = { x: 1, y: 0, z: 0 };
 
 /**
  * Column → field: the deck is tossed. Each card shoots out of its place in the
@@ -208,10 +226,11 @@ function turns(seed: number, chance: number): number {
  * some flip end over end, some spin, the rest tilt and wobble — and it is
  * airborne cloth from the first frame, so it bends with the throw.
  */
-function burstPose(time: number, input: FinaleCardInput, home: FieldHome, viewport: FinaleViewport, sway = 1): FinaleCardPose {
+function burstPose(time: number, input: FinaleCardInput, home: FieldHome, viewport: FinaleViewport, sway = 1, tumble?: FinaleTumble): FinaleCardPose {
 	const field = fieldPose(home, input.rect, time, viewport, sway);
 	const start = burstStart(input);
 	const seed = input.burstIndex * 13.1 + home.seed;
+	const spin = tumble ?? seededTumble(seed);
 	const flight = CUE.burstDuration * lerp(0.8, 1.15, hash01(seed * 1.9));
 	const out = EASE.outPractical(progress(time, start, start + flight));
 	const rest = { ...flatPose(input.rect, 0), clip: 1 };
@@ -225,9 +244,9 @@ function burstPose(time: number, input: FinaleCardInput, home: FieldHome, viewpo
 		x: pose.x + arc * (hash01(seed * 5.3) - 0.5) * 260,
 		y: pose.y - arc * lerp(60, 240, hash01(seed * 6.1)),
 		z: Math.min(pose.z + arc * distance * lerp(0.08, 0.2, hash01(seed * 4.3)), distance * NEAREST),
-		rotateX: pose.rotateX + turns(seed * 2.3, 0.35) * TAU * out + arc * wobble * 0.6,
-		rotateY: pose.rotateY + turns(seed * 3.7, 0.25) * TAU * out + arc * wobble,
-		rotateZ: pose.rotateZ + turns(seed * 4.9, 0.3) * TAU * out + arc * (hash01(seed * 8.3) - 0.5) * 1.2,
+		rotateX: pose.rotateX + spin.x * TAU * out + arc * wobble * 0.6,
+		rotateY: pose.rotateY + spin.y * TAU * out + arc * wobble,
+		rotateZ: pose.rotateZ + spin.z * TAU * out + arc * (hash01(seed * 8.3) - 0.5) * 1.2,
 		clip: 1 - progress(time, start, start + 0.18),
 		lift: smooth(progress(time, start, start + 0.1)),
 	};
@@ -247,15 +266,53 @@ export function tileRevealStart(order: number): number {
 	return touchdownTime(order) + CUE.handoff + 0.05;
 }
 
-/** Peel's landing recoil, exaggerated for the stage: a brief in-plane shear that springs back. */
-function landingSkew(age: number): number {
-	if (age < 0) return 0;
-	return 0.07 * Math.sin(age * 17) * Math.exp(-age * 6);
+/**
+ * How every card comes to rest on the page: the bento's tiles on the slide,
+ * and the mega bento's thrown cards and arrivals on the wall. Paper lands
+ * softly. Its swoop brings it to rest in its slot with no in-plane kick, and
+ * the one reaction is Peel's wave, which gathers over the fall's last moments,
+ * swells through touchdown and relaxes once. Each part starts and ends at
+ * rest, so no frame of the landing jolts.
+ */
+export const LANDING = {
+	/** The wave starts to gather this long before touchdown (s)… */
+	lead: 0.1,
+	/** …and has fully swelled this long after it (s). */
+	swell: 0.06,
+} as const;
+
+/**
+ * `FinaleCardPose.waveAge` at `time` for a card touching down at `touchdown`:
+ * seconds since touchdown, negative while the wave gathers over the fall's
+ * last `LANDING.lead`, and −1 before that.
+ */
+export function landingWaveAge(time: number, touchdown: number): number {
+	const age = time - touchdown;
+	return age >= -LANDING.lead ? age : -1;
+}
+
+/** How far the landing wave has swelled at `waveAge`: 0 → 1, leaving and reaching it at rest. */
+export function landingSwell(waveAge: number): number {
+	return smooth(progress(waveAge, -LANDING.lead, LANDING.swell));
+}
+
+/** A card on its way down to, or resting on, the page, carrying its landing wave. */
+export function withLandingWave(pose: FinaleCardPose, touchdown: number, time: number): FinaleCardPose {
+	return { ...pose, waveAge: landingWaveAge(time, touchdown) };
+}
+
+/**
+ * How far a landing sheet has turned from its Done card into its tile (its
+ * `face`), by how far it has flown to its slot: all in the flight's
+ * fastest stretch, so the two pictures never sit over each other long enough
+ * to read as a double exposure. The hero and the swooping tiles share it.
+ */
+function landingFace(flight: number): number {
+	return smooth(progress(flight, 0.2, 0.8));
 }
 
 function landed(pose: FinaleCardPose, order: number, time: number): FinaleCardPose {
-	const age = time - touchdownTime(order);
-	return { ...pose, waveAge: age >= 0 ? age : -1, rotateZ: pose.rotateZ + landingSkew(age) };
+	return withLandingWave(pose, touchdownTime(order), time);
 }
 
 /**
@@ -295,7 +352,7 @@ function clearing(time: number): number {
 /**
  * One card's whole life. It starts exactly on its DOM card in the Done column
  * and is tossed out of the column into the field with the rest of the deck. The camera sweeps the field,
- * finds the hero (the first card MCB dragged) far off and rushes in to it;
+ * finds the hero (the bento's first feature) far off and rushes in to it;
  * as the camera returns to the slide the hero becomes the first bento tile,
  * the other tiles clear the frame and swoop back onto their slots, and the
  * rest of the field fades away.
@@ -317,13 +374,12 @@ export function cardPose(time: number, input: FinaleCardInput, viewport: FinaleV
 	}
 
 	if (role.kind === "hero") {
-		const airborne = burstPose(time, input, heroHome(viewport), viewport, 0);
-		// Squares up to the lens during the rush, so it arrives face-on.
+		const airborne = burstPose(time, input, heroHome(viewport), viewport, 0, HERO_TUMBLE);
+		// Squares up to the lens during the rush, flipping as it does, so it arrives face-on.
 		const square = 1 - eased(time, CUE.zoom, CUE.zoomEnd, EASE.inOut);
-		const faced = { ...airborne, rotateX: airborne.rotateX * square, rotateY: airborne.rotateY * square, rotateZ: airborne.rotateZ * square };
-		const face = eased(time, CUE.zoomEnd - 0.15, CUE.zoomEnd + 0.4, EASE.inOut);
-		if (time < CUE.zoomEnd) return { ...faced, face };
-		return landed({ ...heroLanding(time, input, role.slot, viewport), face }, 0, time);
+		// It arrives as its card, held square on, and turns into its tile only on the way down.
+		if (time < CUE.zoomEnd) return { ...airborne, rotateX: airborne.rotateX * square, rotateY: airborne.rotateY * square, rotateZ: airborne.rotateZ * square, face: 0 };
+		return landed(heroLanding(time, input, role.slot, viewport), 0, time);
 	}
 
 	// Tiles float until the camera pulls back, clear with the field, and wait
@@ -338,7 +394,7 @@ export function cardPose(time: number, input: FinaleCardInput, viewport: FinaleV
 		return { ...blendPose(airborne, hold, leave), opacity: time >= CUE.heroLand ? 1 : clearing(time) };
 	}
 	const pose = blendPose(hold, flatPose(role.slot, 1), fall);
-	return landed({ ...pose, face: smooth(progress(fall, 0.2, 0.8)), lift: 1 - fall }, role.order, time);
+	return landed({ ...pose, face: landingFace(fall), lift: 1 - fall }, role.order, time);
 }
 
 /**
@@ -366,7 +422,7 @@ function heroLanding(time: number, input: FinaleCardInput, slot: FinaleRect, vie
 	const offset = fromView(view, basis);
 	const world = { x: rig.position.x + offset.x, y: rig.position.y + offset.y, z: rig.position.z + offset.z };
 	return {
-		...flatPose(slot, 1),
+		...flatPose(slot, landingFace(down)),
 		x: world.x + viewport.width / 2,
 		y: viewport.height / 2 - world.y,
 		z: world.z,
@@ -604,7 +660,19 @@ function contactSigma(height: number, falloff: FinaleShadowFalloff): number {
  */
 export function landingShadow(time: number, order: number, pose: FinaleCardPose, viewport: FinaleViewport, ground: FinaleShadowGround = slideShadowGround(viewport), radius = 0): FinaleLandingShadow | null {
 	const landing = order === 0 ? CUE.zoomEnd : tileFallStart(order);
-	const settled = touchdownTime(order);
+	return landingShadowIn({ start: landing, settled: touchdownTime(order) }, time, pose, viewport, ground, radius);
+}
+
+/** When a landing card's shadow exists: from `start` (it starts down) to just after `settled` (it lies flat). */
+export interface FinaleShadowWindow {
+	readonly start: number;
+	readonly settled: number;
+}
+
+/** `landingShadow` for any landing, timed by an explicit window rather than a bento tile's order. */
+export function landingShadowIn(window: FinaleShadowWindow, time: number, pose: FinaleCardPose, viewport: FinaleViewport, ground: FinaleShadowGround = slideShadowGround(viewport), radius = 0): FinaleLandingShadow | null {
+	const landing = window.start;
+	const settled = window.settled;
 	if (time < landing || time > settled + SHADOW.fadeOut) return null;
 	const presence = smooth(progress(time, landing, landing + SHADOW.fadeIn)) * (1 - smooth(progress(time, settled, settled + SHADOW.fadeOut)));
 	if (presence <= 0) return null;
@@ -780,6 +848,8 @@ export interface FinaleFieldRipple {
 	readonly from: FinaleRect;
 	readonly start: number;
 	readonly amp: number;
+	/** The footprint's own corner radius (viewport px), for a card not rounded as the tiles are. */
+	readonly radius?: number;
 }
 
 /** The dot grid only exists as one pulse around each tile as it touches down. */

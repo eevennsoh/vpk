@@ -15,6 +15,11 @@ export function finaleStageFit(width: number, height: number): FinaleStageFit {
 	return { scale, x: (width - FINALE_STAGE.width * scale) / 2, y: (height - FINALE_STAGE.height * scale) / 2, width, height };
 }
 
+/** The live window's fit (the 1920 stage itself while server rendering). */
+export function currentFinaleStageFit(): FinaleStageFit {
+	return typeof window === "undefined" ? finaleStageFit(FINALE_STAGE.width, FINALE_STAGE.height) : finaleStageFit(window.innerWidth, window.innerHeight);
+}
+
 /**
  * Most device pixels the card field may draw: a 4K frame. Its lens pass (a 4×
  * multisampled scene, then a 32-tap chromatic smear) runs over every pixel of

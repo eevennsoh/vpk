@@ -22,6 +22,17 @@ export function cameraDistance(viewport: FinaleViewport): number {
 	return viewport.height / 2 / Math.tan((FINALE_CAMERA_FOV * Math.PI) / 360);
 }
 
+/**
+ * Where a point lifted `z` toward the lens (x right, y down, viewport px)
+ * shows on screen, filmed by the resting camera, and how much larger
+ * anything there looks than on the z = 0 plane.
+ */
+export function projectLifted(point: { readonly x: number; readonly y: number; readonly z: number }, viewport: FinaleViewport): { x: number; y: number; scale: number } {
+	const distance = cameraDistance(viewport);
+	const scale = distance / Math.max(1, distance - point.z);
+	return { x: viewport.width / 2 + (point.x - viewport.width / 2) * scale, y: viewport.height / 2 + (point.y - viewport.height / 2) * scale, scale };
+}
+
 const add = (a: Vec3, b: Vec3, k = 1): Vec3 => ({ x: a.x + b.x * k, y: a.y + b.y * k, z: a.z + b.z * k });
 const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const dot = (a: Vec3, b: Vec3): number => a.x * b.x + a.y * b.y + a.z * b.z;
@@ -32,7 +43,7 @@ const normalize = (a: Vec3): Vec3 => {
 	return { x: a.x / size, y: a.y / size, z: a.z / size };
 };
 
-/** Where the first card MCB dragged waits deep in the field for the long zoom. */
+/** Where the hero (the bento's first feature) waits deep in the field for the long zoom. */
 export function heroAnchor(viewport: FinaleViewport): Vec3 {
 	const distance = cameraDistance(viewport);
 	const z = -distance * 1.7;
@@ -65,7 +76,7 @@ export function identityRig(viewport: FinaleViewport): FinaleCameraRig {
  *   recoil   — the cards burst at the lens; the camera flinches back and turns to the column
  *   reveal   — it cranes back and swings left, banking, to show the whole field
  *   sweep    — a low arc to the right, close enough for cards to slide past the lens
- *   find     — it settles on the first card MCB dragged, small and far away
+ *   find     — it settles on the hero card, small and far away
  *   rush     — a long zoom from afar through the field, arriving face-on to it
  *   land     — back to the slide as that card becomes the first bento tile
  */

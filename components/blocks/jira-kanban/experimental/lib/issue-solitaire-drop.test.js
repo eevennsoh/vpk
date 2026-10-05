@@ -168,7 +168,7 @@ test("a scrolled cohort starts its sweep at the first visible destination card",
 	assert.equal(h.nodes.filter((node) => node.attributes.stroke).length, 1);
 	assert.equal(h.animations.length, 1);
 	assert.equal(h.doc.body.children[0].style.top, "328px");
-	assert.equal(h.animations[0].options.duration, 650);
+	assert.equal(h.animations[0].options.duration, 1000);
 });
 
 test("assignment arrivals retain their face reveal without a trace or a duplicate glow", () => {
@@ -217,12 +217,12 @@ test("Done traces one measured collection with 1px success outlines and a push-p
 	}
 	assert.deepEqual(h.nodes.filter((node) => node.name === "stop").map((node) => [node.attributes.offset, node.attributes["stop-opacity"]]), [["0%", "0"], ["45%", "0.18"], ["72%", "0.5"], ["92%", "1"], ["100%", "0.25"]]);
 	const band = h.animations[0];
-	assert.equal(band.options.duration, 650);
+	assert.equal(band.options.duration, 1000);
 	assert.equal(band.options.easing, "cubic-bezier(0.6, 0, 0.8, 0.6)");
 	assert.equal(band.keyframes[0].transform, "translateY(0px) scaleY(0.55)");
 	assert.match(band.keyframes[1].transform, /scaleY\(1.18\)/u);
 	assert.match(band.keyframes[2].transform, /scaleY\(0.68\)/u);
-	assert.equal(band.keyframes[3].transform, "translateY(752px) scaleY(1.08)");
+	assert.equal(band.keyframes[3].transform, "translateY(1072px) scaleY(1.08)");
 	assert.equal(band.node.style.transformOrigin, "center bottom");
 	for (const animation of h.animations.slice(1)) animation.onfinish();
 	assert.equal(h.complete(), 0);
@@ -275,7 +275,7 @@ for (const column of ["To do", "In progress", "In review", "Done"]) {
 		const trace = h.animations[0];
 		assert.match(trace.keyframes[0].transform, /^translateY\(0px\)/u);
 		assert.match(trace.keyframes.at(-1).transform, /^translateY\([0-9]/u);
-		assert.equal(trace.options.duration, 650);
+		assert.equal(trace.options.duration, 1000);
 		trace.onfinish();
 		assert.equal(h.doc.body.children[0].removed, true);
 	});
@@ -286,7 +286,7 @@ test("bulk Done borders get their full sweep after the card stack has unfolded",
 	const trace = h.animations[0];
 	const settledAt = Math.max(...h.animations.slice(1).map(animation => animation.options.delay + animation.options.duration));
 	assert.equal(trace.options.delay, settledAt, "the border sweep cannot start while the card borders are still moving");
-	assert.equal(trace.options.duration, 650, "the entire existing trace plays after the reveal");
+	assert.equal(trace.options.duration, 1000, "the entire longer trace plays after the reveal");
 	for (const animation of h.animations.slice(1)) animation.onfinish();
 	assert.equal(h.complete(), 0, "settled cards cannot release the celebration while their border is pending");
 	trace.onfinish();
@@ -298,18 +298,20 @@ test("bulk Done borders get their full sweep after the card stack has unfolded",
 	assert.equal(single.animations[0].options.delay, 150, "a single card's feedback starts once surrounding reflow has settled");
 });
 
-test("single and bulk traces use slower feedback timing with the existing band geometry", () => {
+test("single and bulk traces double the trail length with one-second sweeps in every destination", () => {
 	for (const count of [1, 2, 3, 4, 13]) {
 		for (const surfaceHeight of [64, 120, 400]) {
-			const h = fixture(count, "Done", { surfaceHeight, slotHeight: surfaceHeight, step: surfaceHeight + 8 }); h.start();
-			const trace = h.animations[0];
-			const height = (count - 1) * (surfaceHeight + 8) + surfaceHeight;
-			const bandLength = count === 1 ? Math.min(220, Math.max(112, height * 0.72)) : Math.min(160, Math.max(72, height * 0.45));
-			assert.equal(trace.options.duration, 650);
-			assert.equal(trace.options.easing, count === 1 ? "cubic-bezier(0.42, 0, 0.9, 1)" : "cubic-bezier(0.6, 0, 0.8, 0.6)");
-			assert.equal(trace.node.attributes.height, String(bandLength));
-			assert.equal(trace.node.attributes.y, String(-bandLength));
-			assert.equal(h.nodes.find((node) => node.name === "mask").attributes["mask-type"], "luminance");
+			for (const column of ["Done", "In progress"]) {
+				const h = fixture(count, column, { surfaceHeight, slotHeight: surfaceHeight, step: surfaceHeight + 8 }); h.start();
+				const trace = h.animations[0];
+				const height = (count - 1) * (surfaceHeight + 8) + surfaceHeight;
+				const bandLength = count === 1 ? Math.min(220, Math.max(112, height * 0.72)) : Math.min(160, Math.max(72, height * 0.45));
+				assert.equal(trace.options.duration, 1000);
+				assert.equal(trace.options.easing, count === 1 ? "cubic-bezier(0.42, 0, 0.9, 1)" : "cubic-bezier(0.6, 0, 0.8, 0.6)");
+				assert.equal(trace.node.attributes.height, String(bandLength * 2));
+				assert.equal(trace.node.attributes.y, String(-bandLength * 2));
+				assert.equal(h.nodes.find((node) => node.name === "mask").attributes["mask-type"], "luminance");
+			}
 		}
 	}
 });

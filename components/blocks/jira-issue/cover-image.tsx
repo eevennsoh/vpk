@@ -1,7 +1,8 @@
 import Image from "next/image";
+import type { CSSProperties } from "react";
 
 import type { JiraIssueCoverImage } from "@/components/blocks/jira-issue/types";
-import { TWGAppstack, TwgToolSourceIcon } from "@/components/ui-custom/twg-appstack";
+import { TWGAppstack } from "@/components/ui-custom/twg-appstack";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import PatternTile from "@/components/website/demos/visual/pattern-tile";
 import { token } from "@/lib/tokens";
@@ -18,7 +19,14 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 	const hasSubheading = image.subheading !== undefined;
 	const hasGrid = image.backgroundPattern === "grid";
 	const appSources = image.appSources ?? [];
-	const firstApp = appSources[0];
+	const appIconSize = image.src ? "xsmall" : "small";
+	const imageMaskStyle = image.mask ? {
+		maskImage: `url("${image.mask.src}")`,
+		maskMode: "luminance",
+		maskSize: image.fit ?? "contain",
+		maskPosition: "center",
+		maskRepeat: "no-repeat",
+	} satisfies CSSProperties : undefined;
 
 	return (
 		<div
@@ -33,6 +41,7 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 			data-slot="jira-issue-cover"
 			style={{
 				maxHeight: image.maxHeight,
+				backgroundColor: image.mask?.backgroundColor,
 				clipPath: `inset(${COVER_TOP_INSET} ${COVER_SIDE_INSET} 0px round ${COVER_RADIUS} ${COVER_RADIUS} 0px 0px)`,
 			}}
 		>
@@ -46,13 +55,12 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 					<PatternTile patternType="grid" gridAlignment="centered" front={token("color.border")} back="transparent" scale={32} stroke={GRID_STROKE} style={{ maskPosition: "center 8px" }} />
 				</div>
 			) : null}
-			{firstApp ? (
-				<div className="relative flex shrink-0 items-center" data-slot="jira-issue-cover-apps">
-					{appSources.length > 1 ? (
-						<TWGAppstack animated={false} iconSize="small" sources={appSources} data-slot="jira-issue-cover-app-stack" />
-					) : (
-						<TwgToolSourceIcon source={firstApp} size="small" />
-					)}
+			{appSources.length > 0 ? (
+				<div
+					className={cn("flex shrink-0 items-center", image.src ? "absolute top-4 left-4 z-10" : "relative")}
+					data-slot="jira-issue-cover-apps"
+				>
+					<TWGAppstack animated={false} iconSize={appIconSize} sources={appSources} data-slot="jira-issue-cover-app-stack" />
 				</div>
 			) : null}
 			{isTextCover ? (
@@ -68,7 +76,11 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 			) : null}
 			{image.src ? <Image
 				alt={image.alt}
-				className="object-contain"
+				className={image.fit === "cover" ? "object-cover" : "object-contain"}
+				style={{
+					...imageMaskStyle,
+					transform: image.zoom ? `scale(${image.zoom})` : undefined,
+				}}
 				draggable={false}
 				fill
 				sizes="(max-width: 768px) 100vw, 50vw"

@@ -3,16 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { FINALE_REST_TIME, FINALE_STAGE } from "../data/finale-cues";
+import { FINALE_REST_TIME } from "../data/finale-cues";
 import { FINALE_STORIES } from "../data/finale-stories";
 import type { FinaleClock } from "../hooks/use-finale-audio-clock";
-import { finaleStageFit, type FinaleStageFit as StageFit } from "../lib/finale-stage-fit";
+import { currentFinaleStageFit, type FinaleStageFit as StageFit } from "../lib/finale-stage-fit";
 import { SceneBoardToBento, type FinaleSceneInput } from "../scenes/scene-board-to-bento";
 import { FinaleFrameContext, createFinaleFrameRegistry } from "../hooks/use-finale-frame";
-
-function currentStageFit(): StageFit {
-	return typeof window === "undefined" ? finaleStageFit(FINALE_STAGE.width, FINALE_STAGE.height) : finaleStageFit(window.innerWidth, window.innerHeight);
-}
 
 /**
  * The live window's fit, correct from the very first render: the GL layers
@@ -20,10 +16,10 @@ function currentStageFit(): StageFit {
  * frame later) would draw the resting cards misregistered for a frame or two.
  */
 function useStageFit(): StageFit {
-	const [fit, setFit] = useState<StageFit>(currentStageFit);
+	const [fit, setFit] = useState<StageFit>(currentFinaleStageFit);
 	useEffect(() => {
 		const update = () => {
-			const next = currentStageFit();
+			const next = currentFinaleStageFit();
 			setFit((previous) => (next.width === previous.width && next.height === previous.height ? previous : next));
 		};
 		update();
@@ -56,7 +52,8 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing }: Readonly
 		let frame = 0;
 		let last = Number.NaN;
 		const tick = () => {
-			const time = reducedMotion ? FINALE_REST_TIME : Math.min(clock.time(), FINALE_REST_TIME);
+			// The bento is the rest frame; with motion on, the wall after it glides on until Esc.
+			const time = reducedMotion ? FINALE_REST_TIME : clock.time();
 			if (time !== last) {
 				registry.emit(time);
 				last = time;
@@ -110,7 +107,7 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing }: Readonly
 				data-jira-team-eu26-end-finale=""
 			>
 				<p className="sr-only" aria-live="polite">{summary}</p>
-				<SceneBoardToBento {...scene} fit={fit} viewport={viewport} />
+				<SceneBoardToBento {...scene} fit={fit} viewport={viewport} reducedMotion={reducedMotion} />
 			</dialog>
 		</FinaleFrameContext>,
 		document.body,
