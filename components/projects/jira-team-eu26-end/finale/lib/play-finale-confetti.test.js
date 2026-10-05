@@ -407,7 +407,7 @@ test("small card celebrations stack on one renderer, and fly on under the full-b
 	const dom = fakeDom(t);
 	const { createFinaleConfetti } = await loadController();
 	const confetti = createFinaleConfetti();
-	confetti.play({ size: "small", landing: COLUMN });
+	const small = confetti.play({ size: "small", landing: COLUMN });
 	const [worker] = dom.workers;
 	const [layer] = dom.topLayer;
 	assert.equal(worker.messages.at(-1).message.size, "small");
@@ -419,7 +419,9 @@ test("small card celebrations stack on one renderer, and fly on under the full-b
 	assert.notEqual(secondId, firstId);
 	const cancelled = () => worker.messages.filter(({ message }) => message.type === "cancel").map(({ message }) => message.id);
 	assert.deepEqual(cancelled(), [], "the second lands on top of the first");
+	assert.equal(await settled(small.gathered), false);
 	worker.onmessage({ data: { type: "done", id: firstId } });
+	assert.equal(await settled(small.gathered), true, "a completed small burst settles its promise while another flies");
 	assert.equal(layer.dataset.finaleConfetti, "playing", "the layer stays up while any burst flies");
 	confetti.play({ column: COLUMN });
 	const largeId = worker.messages.at(-1).message.id;

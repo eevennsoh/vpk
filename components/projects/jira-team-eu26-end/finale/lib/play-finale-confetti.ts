@@ -244,7 +244,10 @@ export function createFinaleConfetti(): FinaleConfetti {
 			id,
 			size,
 			gather: resolveGathered,
-			done: unmount,
+			done: () => {
+				unmount();
+				resolveGathered();
+			},
 			fail: () => {
 				// The failed host has taken its layer down; the show moves to a fresh one.
 				if (alive && start()) return;
