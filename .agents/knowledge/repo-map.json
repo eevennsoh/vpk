@@ -7798,7 +7798,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 19
+			"localSkillCount": 20
 		},
 		"localSkills": [
 			{
@@ -7860,6 +7860,12 @@
 				"name": "vpk-git-ship-fast",
 				"path": ".agents/skills/vpk-git-ship-fast/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-git-ship-fast"
+			},
+			{
+				"description": "Host or update a static VPK project, extracted route, HTML file, or export directory on Atlassian Statlas. Use for vpk-host, Statlas hosting, or uploading a prototype to Atlassian's static CDN. Use vpk-deploy for a project that needs an Express runtime.",
+				"name": "vpk-host",
+				"path": ".agents/skills/vpk-host/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-host"
 			},
 			{
 				"description": "Render supplied material into offline, single-file HTML documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces with the Algebrica editorial identity. Use only when explicitly invoked as vpk-html or /vpk-html, optionally with a document hint or --github.",
