@@ -44,7 +44,7 @@ const YEAR_EDGE = `linear-gradient(to bottom, transparent 0%, #000 ${(YEAR_OPAQU
  */
 const SANS = { fontFamily: "var(--font-sans)", fontWeight: 400, letterSpacing: "-0.02em" } as const;
 
-/** The scale the title card's white face rises from. */
+/** The scale the title card's face rises from. */
 const FORM_FROM = 0.9;
 
 const GRADIENT_TEXT = {
@@ -65,7 +65,7 @@ const GRADIENT_TEXT = {
  * in. "Team" and the year share the Atlassian Sans headline style; "Team"
  * builds through the colour band while the year fades in and rolls from 20 to
  * 26 behind a soft mask, settling in the same ink. "Team 26" then holds, centred at full size, to the final frame.
- * As Act III begins it becomes a card of its own: a white tile, the bento's
+ * As Act III begins it becomes a card of its own: a grey tile, the bento's
  * own, rises under the type. Formed, it hands over to its GL sheet, which
  * flips it end over end like paper to its black back (`finale-wall-motion.ts`).
  */
@@ -101,7 +101,7 @@ export function FinaleTeamTitle({ rect, scale }: Readonly<{ rect: FinaleRect; sc
 			strip.style.filter = `blur(${(speed * 3).toFixed(2)}px)`;
 		}
 
-		// The title card: a white tile forms under the type, flat on the slide, as its GL sheet will take it.
+		// The title card: a grey tile forms under the type, flat on the slide, as its GL sheet will take it.
 		const form = bentoTitleForm(time);
 		if (form === formRef.current) return;
 		formRef.current = form;
@@ -127,7 +127,7 @@ export function FinaleTeamTitle({ rect, scale }: Readonly<{ rect: FinaleRect; sc
 				visibility: "hidden",
 			}}
 		>
-			{/* The card's white face: the title's own box at stage size (the root is scaled), with the bento tiles' corner. */}
+			{/* The card's grey face: the title's own box at stage size (the root is scaled), with the bento tiles' corner. */}
 			<div
 				ref={faceRef}
 				className="absolute top-1/2 left-1/2 -z-10"

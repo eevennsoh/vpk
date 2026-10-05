@@ -104,7 +104,7 @@ const TOSS_AT = TITLE_FLIP_AT + 0.12;
  */
 export const WALL_CUE = {
 	start: CUE.end,
-	/** "Team ’26" gains a white card under its type at once… */
+	/** "Team ’26" gains a grey card under its type at once… */
 	titleCardAt: 0.02,
 	/** …which flips end over end, as the field's cards do, to its black back… */
 	titleFlipAt: TITLE_FLIP_AT,

@@ -273,6 +273,8 @@ const eslintConfig = defineConfig([
 		"tmp/**",
 		"next-env.d.ts",
 		"components/blocks/login/**",
+		// Vendored Rovo Stage Kit, served as is and replaced whole (its GUIDE.md).
+		"public/1p/rovo-stage-kit/**",
 	]),
 	{
 		files: ["**/*.js", "**/*.cjs"],
