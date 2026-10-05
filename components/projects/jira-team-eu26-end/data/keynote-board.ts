@@ -13,6 +13,9 @@ const KEYNOTE_COVER_IMAGE_ZOOM = 379 / 371;
 const COVER_APPS = {
 	studio: { id: "studio", label: "Artifacts", provider: "studio" },
 	rovo: { id: "rovo", label: "Rovo", provider: "rovo" },
+	bitbucket: { id: "bitbucket", label: "Bitbucket", provider: "bitbucket" },
+	github: { id: "github", label: "GitHub", provider: "twg", name: "github" },
+	figma: { id: "figma", label: "Figma", provider: "twg", name: "figma" },
 	graph: { id: "teamwork-graph", label: "Teamwork Graph", provider: "teamwork-graph" },
 	search: { id: "code-search", label: "Code Search", provider: "code-search" },
 	loom: { id: "loom", label: "Loom", provider: "loom" },
@@ -24,10 +27,9 @@ const COVER_APPS = {
 	guard: { id: "guard", label: "Guard", provider: "guard" },
 } as const satisfies Record<string, TwgToolSource>;
 
-/** The product marks on the keynote covers (the finale wall reuses them). */
+/** Shared product marks for keynote covers and the finale wall. */
 export const JIRA_TEAM_EU26_END_COVER_APPS = COVER_APPS;
 
-// Feature headings live on the cover; card titles describe each demo's core benefit.
 const KEYNOTE_STORIES = [
 	{ code: "TEU-4", section: "Context", heading: "Rovo\nArtifacts", title: "Artifacts", cover: "artifacts.jpeg", apps: [COVER_APPS.studio], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
 	{ code: "TEU-1", section: "Context", heading: "Rovo\nDesktop", title: "Rovo Desktop", cover: "rovo-desktop.jpeg", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
