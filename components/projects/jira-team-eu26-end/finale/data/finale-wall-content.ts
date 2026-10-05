@@ -1,6 +1,7 @@
 import { JIRA_TEAM_EU26_HEADER_AGENT_ASSIGNEES } from "@/components/projects/jira-team-eu26/data/header-agent-assignees";
 
 import type { WallAgentId } from "../lib/finale-wall-layout";
+import { FINALE_STORIES } from "./finale-stories";
 
 /** One terminal line: dim prefixes and brand-lit markers, as the keynote's terminal story sets them. */
 export type WallTerminalLine = readonly { readonly text: string; readonly tone?: "brand" | "dim" | "done" }[];
@@ -18,14 +19,14 @@ export const WALL_TERMINAL_SCRIPTS: readonly (readonly WallTerminalLine[])[] = [
 		[{ text: "✓ ", tone: "done" }, { text: "4 checks passed" }],
 	],
 	[
-		[{ text: "$ ", tone: "dim" }, { text: "git push origin teu-9-pr-previews" }],
+		[{ text: "$ ", tone: "dim" }, { text: "git push origin teu-9-pr-reviews" }],
 		[{ text: "→ ", tone: "brand" }, { text: "Pull request opened · Bitbucket" }],
 		[{ text: "✓ ", tone: "done" }, { text: "TEU-9 moved to Done" }],
 	],
 	[
 		[{ text: "⏺ Board · ", tone: "brand" }, { text: "Team ’26 EU keynote" }],
 		[{ text: "  ⎿ ", tone: "dim" }, { text: "Context · Collaboration · Confidence" }],
-		[{ text: "✓ ", tone: "done" }, { text: "13 of 13 in Done" }],
+		[{ text: "✓ ", tone: "done" }, { text: `${FINALE_STORIES.length} of ${FINALE_STORIES.length} in Done` }],
 	],
 ];
 
@@ -33,7 +34,7 @@ export const WALL_TERMINAL_SCRIPTS: readonly (readonly WallTerminalLine[])[] = [
 export const WALL_COMPOSER_PROMPTS: readonly string[] = [
 	"Summarise everything we shipped at Team ’26",
 	"Which agent sessions are still running?",
-	"Draft the launch post for Loom PR Previews",
+	"Draft the launch post for Loom PR Reviews",
 	"Find the PR that closed TEU-10",
 ];
 
@@ -47,8 +48,8 @@ interface WallAgentCard {
 
 const AGENT_WORK: Readonly<Record<WallAgentId, { readonly code: string; readonly story: string }>> = {
 	"claude-code": { code: "TEU-2", story: "Code Context" },
-	"review-agent": { code: "TEU-10", story: "Jira Agent Sessions" },
-	"test-agent": { code: "TEU-9", story: "Loom PR Previews" },
+	"review-agent": { code: "TEU-10", story: "Agent Session Tracking" },
+	"test-agent": { code: "TEU-9", story: "Loom PR Reviews" },
 };
 
 /** Each header agent with the keynote card its session closed. */

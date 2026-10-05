@@ -677,7 +677,7 @@ function JiraIssueDefault({
 		<div className="relative z-10 flex flex-col">
 			{shouldRenderIssueClickButton ? (
 				usesCompactVisual ? (
-					<div className="relative w-full px-3 pt-3 pb-2 text-left outline-none transition-colors duration-normal ease-out">
+					<div className="relative w-full px-3 pt-3 pb-3 text-left outline-none transition-colors duration-normal ease-out">
 						<button
 							aria-pressed={ariaPressed ?? selected}
 							className="sr-only"

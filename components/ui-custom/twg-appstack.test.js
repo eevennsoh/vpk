@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
+const { accessibleName, renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
 
 const ROOT = join(__dirname, "..", "..");
 const SOURCE = readFileSync(join(__dirname, "twg-appstack.tsx"), "utf8");
@@ -136,6 +137,43 @@ test("Rovo source icons use the app container across sizes and preserve decorati
 	});
 	assert.match(jira, /bg-surface/u);
 	assert.doesNotMatch(jira, /bg-bg-neutral-bold/u);
+});
+
+test("Teamwork Graph app tiles reuse the graph mark and can be decorative", async () => {
+	const source = { id: "teamwork-graph", label: "Teamwork Graph", provider: "teamwork-graph" };
+	const view = await renderComponent({
+		entry: "components/ui-custom/twg-appstack.tsx",
+		exportName: "TwgToolSourceIcon",
+		props: { source, size: "xsmall" },
+	});
+	assert.equal(accessibleName(view.getByRole("img", { name: "Teamwork Graph" })), "Teamwork Graph");
+	assert.equal(view.container.querySelectorAll("circle").length, 4);
+	assert.equal(view.container.querySelectorAll("svg").length, 1);
+	assert.equal(view.container.querySelector("svg").getAttribute("aria-hidden"), "true");
+	assert.deepEqual(view.tabOrder(), []);
+
+	await view.rerender({ source, size: "xsmall", "aria-hidden": true });
+	assert.equal(view.queryByRole("img", { name: "Teamwork Graph" }) === null, true);
+	assert.equal(view.container.querySelector('[aria-label="Teamwork Graph"]') === null, true);
+});
+
+test("Code Search uses its existing glyph in the lime app tile", async () => {
+	const source = { id: "search", label: "Search", provider: "code-search" };
+	const view = await renderComponent({
+		entry: "components/ui-custom/twg-appstack.tsx",
+		exportName: "TwgToolSourceIcon",
+		props: { source, size: "xsmall" },
+	});
+	const tile = view.getByRole("img", { name: "Search" });
+	assert.equal(accessibleName(tile), "Search");
+	assert.equal(tile.classList.contains("bg-lime-300"), true);
+	assert.equal(tile.querySelector("img").getAttribute("src"), "/brand-icons/rovo-search.svg");
+	assert.equal(tile.querySelector("img").getAttribute("aria-hidden"), "true");
+	assert.equal(tile.querySelector("img").getAttribute("width"), "20");
+	assert.deepEqual(view.tabOrder(), []);
+
+	await view.rerender({ source, size: "xsmall", "aria-hidden": true });
+	assert.equal(view.queryByRole("img", { name: "Search" }) === null, true);
 });
 
 test("TWG Appstack keeps the legacy TwgToolSourceStack adapter", () => {

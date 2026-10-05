@@ -14,9 +14,9 @@ export type JiraIssueCoverImage = {
 	maxHeight?: number;
 	backgroundPattern?: "grid";
 } & (
-	| { src: string; alt: string; backgroundClassName?: never; heading?: never; subheading?: never; appSources?: never }
-	| { backgroundClassName: string; src?: never; alt?: never; heading?: never; subheading?: never; appSources?: never }
-	| { heading: string; subheading?: string; appSources?: readonly TwgToolSource[]; src?: never; alt?: never; backgroundClassName?: never }
+	| { src: string; alt: string; fit?: "contain" | "cover"; zoom?: number; mask?: Readonly<{ src: string; backgroundColor: string }>; appSources?: readonly TwgToolSource[]; backgroundClassName?: never; heading?: never; subheading?: never }
+	| { backgroundClassName: string; src?: never; alt?: never; fit?: never; mask?: never; heading?: never; subheading?: never; appSources?: never }
+	| { heading: string; subheading?: string; appSources?: readonly TwgToolSource[]; src?: never; alt?: never; fit?: never; mask?: never; backgroundClassName?: never }
 );
 
 /** Dummy or live overlay fields for the Pull Request hover flyout. */

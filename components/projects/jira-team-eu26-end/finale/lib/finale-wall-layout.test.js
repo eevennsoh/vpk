@@ -32,7 +32,7 @@ const VIEWPORTS = [
 ];
 
 /** Rehearsal (nothing dragged), and two keynote runs, one dragging Rovo Artifacts early. */
-const DRAG_ORDERS = [[], ["TEU-7", "TEU-4", "TEU-12", "TEU-1", "TEU-9", "TEU-3", "TEU-13"], ["TEU-13", "TEU-11", "TEU-2", "TEU-8", "TEU-5", "TEU-6", "TEU-10"]];
+const DRAG_ORDERS = [[], ["TEU-7", "TEU-4", "TEU-12", "TEU-1", "TEU-9", "TEU-3", "TEU-13"], ["TEU-13", "TEU-11", "TEU-2", "TEU-8", "TEU-5", "TEU-106", "TEU-10"]];
 
 function sceneFor(viewport, dragOrder = []) {
 	const m = load();

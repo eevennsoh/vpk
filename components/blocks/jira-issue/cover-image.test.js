@@ -17,7 +17,6 @@ test("optional covers stay inside the issue content and leave the card in charge
 	assert.match(SUMMARY_SOURCE, /coverImage \? \([\s\S]*?<JiraIssueCover image=\{coverImage\} \/>[\s\S]*?\) : null/u);
 	assert.match(COVER_SOURCE, /import Image from "next\/image"/u);
 	assert.match(COVER_SOURCE, /relative aspect-video w-full overflow-hidden rounded-t-lg/u);
-	assert.match(COVER_SOURCE, /className="object-contain"/u);
 	assert.match(COVER_SOURCE, /maxHeight: image\.maxHeight/u);
 	assert.match(COVER_SOURCE, /alt=\{image\.alt\}/u);
 	assert.match(COVER_SOURCE, /draggable=\{false\}/u);
@@ -94,4 +93,50 @@ test("solid covers are decorative while image and typographic covers remain acce
 	assert.match(gridCover, /aria-hidden="true"[^>]*data-slot="jira-issue-cover-pattern"/u);
 	assert.match(gridCover, /mask-image:linear-gradient\(to bottom, black 0, black calc\(100% - var\(--scroll-mask-fade-size\)\), transparent 100%\)/u);
 	assert.doesNotMatch(gridCover, /<img|radial-gradient/u);
+});
+
+test("image covers expose their artwork and selected app logos without typographic cover copy", async () => {
+	const { accessibleName, renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
+	const artwork = { src: "/illustration-ai/code/light.svg", alt: "Code context preview", maxHeight: 140 };
+	const view = await renderComponent({
+		source: `
+			import { JiraIssueCover } from "@/components/blocks/jira-issue/cover-image";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			export default function Cover({ image }) {
+				return <ThemeWrapper><JiraIssueCover image={image} /></ThemeWrapper>;
+			}
+		`,
+		props: {
+			image: { ...artwork, appSources: [{ id: "loom", label: "Loom", provider: "loom" }] },
+		},
+	});
+	assert.deepEqual(view.getAllByRole("img").map(accessibleName), ["Loom", "Code context preview"]);
+	assert.equal(view.getByRole("img", { name: "Code context preview" }).getAttribute("src"), artwork.src);
+	assert.equal(view.getByRole("img", { name: "Code context preview" }).className, "object-contain");
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-cover-heading"]') === null, true);
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-cover-subheading"]') === null, true);
+
+	await view.rerender({
+		image: {
+			...artwork,
+			fit: "cover",
+			mask: { src: "/illustration/jira-team-eu26-end/app-stack-mask.svg", backgroundColor: "#f8f8f8" },
+			appSources: [
+				{ id: "jira", label: "Jira", provider: "jira" },
+				{ id: "confluence", label: "Confluence", provider: "confluence" },
+				{ id: "teamwork-graph", label: "Teamwork Graph", provider: "teamwork-graph" },
+			],
+		},
+	});
+	assert.deepEqual(view.getAllByRole("img").map(accessibleName), ["Jira", "Confluence", "Teamwork Graph", "Code context preview"]);
+	assert.equal(view.getByRole("img", { name: "Code context preview" }).className, "object-cover");
+	assert.equal(view.getByRole("img", { name: "Code context preview" }).style.maskMode, "luminance");
+	assert.equal(view.getByRole("img", { name: "Code context preview" }).style.maskSize, "cover");
+	assert.equal(view.queryByRole("img", { name: "Loom" }) === null, true);
+
+	await view.rerender({ image: artwork });
+	assert.deepEqual(view.getAllByRole("img").map(accessibleName), ["Code context preview"]);
+	assert.equal(view.getByRole("img", { name: "Code context preview" }).className, "object-contain");
+	assert.equal(view.getByRole("img", { name: "Code context preview" }).style.maskImage, "");
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-cover-apps"]') === null, true);
 });
