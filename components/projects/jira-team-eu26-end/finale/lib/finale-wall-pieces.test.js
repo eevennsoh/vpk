@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const { createHash } = require("node:crypto");
 const { existsSync, readFileSync } = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
@@ -129,4 +130,37 @@ test("the kit's frame loads the vendored kit and its stage file, in standards mo
 	for (const url of urls) assert.ok(existsSync(path.join(PUBLIC, url)), `${url} is served from public/`);
 	const stage = JSON.parse(readFileSync(path.join(PUBLIC, m.ROVO_STAGE_KIT_ROOT, "rovo-stage.json"), "utf8"));
 	assert.equal(stage.format, "rovo-stage");
+});
+
+/** Release order of two `x.y.z` kit versions: negative when `a` is older. */
+function releaseOrder(a, b) {
+	const [x, y] = [a, b].map((version) => version.split(".").map(Number));
+	for (let index = 0; index < 3; index += 1) if (x[index] !== y[index]) return x[index] - y[index];
+	return 0;
+}
+
+test("the vendored kit is whole and one release: every file its package names is here, and no newer kit wrote its stage", () => {
+	const kit = path.join(PUBLIC, "1p/rovo-stage-kit");
+	const pkg = JSON.parse(readFileSync(path.join(kit, "package.json"), "utf8"));
+	// What the kit's own package says it ships: a folder half-copied, or a dist/ an ignore rule kept out of git, fails here.
+	const exported = Object.values(pkg.exports).flatMap((entry) => (typeof entry === "string" ? [entry] : Object.values(entry)));
+	for (const file of new Set([pkg.main, pkg.module, pkg.types, ...pkg.sideEffects, ...exported])) {
+		assert.ok(existsSync(path.join(kit, file)), `${file} is in the vendored kit`);
+	}
+	assert.ok(readFileSync(path.join(kit, "README.md"), "utf8").startsWith(`# Rovo Stage Kit ${pkg.version}\n`), "its README is the same release");
+	// A stage exported by a newer lab may name pieces this kit drops: update the whole folder, not the stage file alone.
+	const stage = JSON.parse(readFileSync(path.join(kit, "rovo-stage.json"), "utf8"));
+	assert.ok(releaseOrder(stage.kit, pkg.version) <= 0, `rovo-stage.json was written by kit ${stage.kit}, newer than the vendored ${pkg.version}`);
+});
+
+test("the vendored kit is byte for byte the build VENDOR.md fingerprints", () => {
+	const kit = path.join(PUBLIC, "1p/rovo-stage-kit");
+	// The integration notes' fingerprint table is the record: an edited, re-minified or swapped build fails here.
+	const notes = readFileSync(path.join(__dirname, "../VENDOR.md"), "utf8");
+	const fingerprints = [...notes.matchAll(/^\| `([^`]+)` \| `([0-9a-f]{64})` \|$/gmu)].map(([, file, sha256]) => ({ file, sha256 }));
+	assert.deepEqual(fingerprints.map(({ file }) => file).sort(), ["dist/react/index.js", "dist/rovo-stage.js", "rovo-stage.json"], "VENDOR.md fingerprints the kit's builds and its stage file");
+	for (const { file, sha256 } of fingerprints) {
+		const actual = createHash("sha256").update(readFileSync(path.join(kit, file))).digest("hex");
+		assert.equal(actual, sha256, `${file} is not the build VENDOR.md records; after a deliberate update, record its new SHA-256 there`);
+	}
 });
