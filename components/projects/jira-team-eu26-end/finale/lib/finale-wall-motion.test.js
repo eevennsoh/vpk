@@ -8,6 +8,7 @@ const ENTRY = `
 export * from "./finale-wall-layout";
 export * from "./finale-wall-motion";
 export * from "./finale-shape-morph";
+export { titleGrabTime, titleHeldTime } from "./finale-title-drag";
 export { cameraDistance, tileRevealStart } from "./finale-card-motion";
 export { CUE, FINALE_REST_TIME, WALL_CUE } from "../data/finale-cues";
 export { FINALE_STORIES, finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";
@@ -78,13 +79,13 @@ test("the mega bento never exists on the bento's rest frame (reduced motion)", (
 	assert.equal(m.wallMounted(m.FINALE_REST_TIME), true);
 });
 
-test("the bento's seven cards, its title among them, are thrown faces and all from exactly where they lie", () => {
+test("the bento's six tiles are thrown faces and all from exactly where they lie", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, drops } = sceneFor(viewport);
 		assert.equal(drops.length, 7, "six tiles and the title");
 		assert.equal(drops.filter((drop) => drop.kind === "title").length, 1);
 		for (const drop of drops) {
-			// The title is thrown mid-flip, straight on out of it (see its own test).
+			// MCB drags the title in instead (see its own tests).
 			if (drop.kind === "title") continue;
 			assert.equal(m.bentoSheetPose(drop, drops, m.bentoTossTime() - 1e-3, geometry, viewport), null, "its DOM card shows until the throw");
 			const pose = m.bentoSheetPose(drop, drops, m.bentoTossTime(), geometry, viewport);
@@ -124,9 +125,9 @@ test("a thrown card falls away from the lens onto the wall like paper: never tow
 		const { m, geometry, drops } = sceneFor(viewport);
 		const distance = m.cameraDistance(viewport);
 		const spins = [];
-		for (const drop of drops) {
-			// The title rises with its flip's hop until the throw has it wholly.
-			const toss = drop.kind === "title" ? m.bentoTitleFlownTime() : m.bentoTossTime();
+		// MCB lowers the title by hand (`finale-title-drag.test.js`).
+		for (const drop of drops.filter((each) => each.kind === "tile")) {
+			const toss = m.bentoTossTime();
 			const touchdown = m.bentoTouchdown(drop, drops);
 			const gap = drop.slot.rect;
 			// Regression: cards once rose toward the lens and loomed larger than their tiles.
@@ -152,7 +153,7 @@ test("a thrown card falls away from the lens onto the wall like paper: never tow
 	}
 });
 
-test("Team 26 gains a white card on the slide, then its GL sheet flips it end over end, like paper, to its black back, and flies on into the mega bento", () => {
+test("Team 26 gains a white card on the slide, then its GL sheet flips it end over end, like paper, to its black back, and MCB takes it as it lands", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, wall, drops } = sceneFor(viewport);
 		const title = drops.find((drop) => drop.kind === "title");
@@ -171,17 +172,18 @@ test("Team 26 gains a white card on the slide, then its GL sheet flips it end ov
 		assert.ok(close(Math.abs(handover.rotateX), Math.PI) && handover.rotateY === 0 && handover.rotateZ === 0, "white side up: the sheet's back");
 		// It turns over on a spring, top edge away first, through edge-on in about a tenth of a second.
 		const step = 1 / 120;
-		const flown = m.bentoTitleFlownTime();
+		const flown = m.titleHeldTime();
 		const samples = [];
 		for (let time = flip; time <= flown + 0.2; time += step) samples.push({ time, pose: pose(time) });
 		assert.ok(samples[1].pose.rotateX < samples[0].pose.rotateX, "its top edge tips away first");
 		const edgeOn = samples.find(({ pose: each }) => Math.abs(each.rotateX) <= Math.PI / 2);
 		assert.ok(edgeOn && edgeOn.time - flip < 0.15, `whips through edge-on (${(edgeOn.time - flip).toFixed(3)}s)`);
-		assert.ok(edgeOn.time < toss, "and is thrown just after");
+		assert.ok(edgeOn.time < toss, "and the tiles are thrown just after");
 		assert.ok(edgeOn.pose.z > 0 && edgeOn.pose.lift > 0.5, "hopping toward the lens as airborne paper as it turns");
-		// Thrown as its black face comes up, still turning and in the air: it never comes to rest in its box.
+		// Still turning and in the air as its black face comes up and the tiles go: MCB takes it as it lands, so it never comes to rest in its box.
 		const thrown = pose(toss);
-		assert.ok(Math.cos(thrown.rotateX) > 0 && thrown.rotateX > 0.2 && thrown.z > 0 && thrown.lift > 0.5, "thrown mid-flip");
+		assert.ok(Math.cos(thrown.rotateX) > 0 && thrown.rotateX > 0.2 && thrown.z > 0 && thrown.lift > 0.5, "mid-flip as the tiles are thrown");
+		assert.ok(m.titleGrabTime() > toss && m.titleGrabTime() - flip < 0.6, "taken as its flip lands");
 		// Regression: the hop once jumped the card ~3% larger on the flip's first frame.
 		const first = seen(m, pose(flip + 1 / 60), viewport);
 		assert.ok(first.width / at.width < 1.02, `leaves its box smoothly (${first.width / at.width})`);
@@ -229,7 +231,7 @@ test("a thrown card's smear eases in as it leaves the hand and out as it comes d
 	}
 });
 
-test("the thrown title flies black side up: its white back never shows again", () => {
+test("the flipped title stays black side up in MCB's hand: its white back never shows again", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, drops } = sceneFor(viewport);
 		const title = drops.find((drop) => drop.kind === "title");
@@ -242,13 +244,16 @@ test("the thrown title flies black side up: its white back never shows again", (
 	}
 });
 
-test("each card lands in its own gap exactly as on the slide, one after another, then hands over to its built DOM card", () => {
+test("each card lands in its own gap exactly as on the slide, one after another, the title last, then hands over to its built DOM card", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, wall, drops } = sceneFor(viewport);
-		const touchdowns = drops.map((drop) => m.bentoTouchdown(drop, drops)).sort((a, b) => a - b);
+		const touchdowns = drops.filter((drop) => drop.kind === "tile").map((drop) => m.bentoTouchdown(drop, drops)).sort((a, b) => a - b);
 		touchdowns.forEach((time, index) => {
-			if (index > 0) assert.ok(close(time - touchdowns[index - 1], m.WALL_CUE.landStagger), "a beat apart");
+			if (index > 0) assert.ok(close(time - touchdowns[index - 1], m.WALL_CUE.landStagger), "the tiles a beat apart");
 		});
+		const title = m.bentoTouchdown(drops.find((drop) => drop.kind === "title"), drops);
+		assert.ok(title - touchdowns.at(-1) >= m.WALL_CUE.landStagger - 1e-9, "MCB sets the title down a beat after the last tile");
+		assert.equal(m.bentoLandedTime(wall.gaps.length), title, "the last of the bento's cards down");
 		assert.equal(new Set(drops.map((drop) => drop.slot.key)).size, 7, "distinct gaps");
 		for (const drop of drops) {
 			const touchdown = m.bentoTouchdown(drop, drops);

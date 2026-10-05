@@ -39,7 +39,7 @@ const VIEWPORT = { width: 1728, height: 1117 };
 const FRAME = 1 / 60;
 const STEP = 1 / 240;
 
-/** Every way a card lands on the page: bento tiles on the slide, thrown cards in their gaps, arrivals at the leading edge. */
+/** Every way a card lands on the page: bento tiles on the slide, thrown cards in their gaps, the title set down by MCB, arrivals at the leading edge. */
 function landings() {
 	const m = load();
 	const scale = Math.min(VIEWPORT.width / 1920, VIEWPORT.height / 1080);
@@ -54,12 +54,13 @@ function landings() {
 		touchdown: m.touchdownTime(order),
 		pose: (time) => m.cardPose(time, { rect: card, fieldIndex: order, fieldCount: 13, burstIndex: order, role: { kind: "tile", order, slot: slots[order] } }, VIEWPORT),
 	}));
-	const thrown = drops.filter((drop) => drop.kind === "tile").map((drop) => ({
-		label: `thrown card ${drop.order}`,
+	const thrown = drops.map((drop) => ({
+		label: drop.kind === "title" ? "the title, set down by MCB" : `thrown card ${drop.order}`,
 		touchdown: m.bentoTouchdown(drop, drops),
 		pose: (time) => m.bentoSheetPose(drop, drops, time, geometry, VIEWPORT),
 		slot: drop.slot,
 	}));
+	assert.equal(thrown.length, 7, "six tiles and the title");
 	const arrivals = [];
 	for (let column = 0; column < 40 && arrivals.length < 4; column += 1) {
 		for (const slot of wall.column(column)) {
