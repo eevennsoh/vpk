@@ -59,13 +59,20 @@ function fakeFrames() {
 
 function fakeRenderer() {
 	const calls = [];
+	/** Each drawn frame: every show's id, time (to the ms) and release, in one pass. */
+	const frames = [];
+	const ms = (value) => Math.round(value * 1000) / 1000;
 	return {
 		calls,
+		frames,
 		create: () => ({
 			resize: (width, height, dpr) => calls.push(["resize", width, height, dpr]),
 			play: (options) => calls.push(["play", options.id]),
-			render: (time, release) => calls.push(["render", Math.round(time * 1000) / 1000, release]),
-			clear: () => calls.push(["clear"]),
+			render: (poses) => {
+				frames.push(poses.map(({ id, time, release }) => [id, ms(time), ms(release)]));
+				for (const { time, release } of poses) calls.push(["render", ms(time), release]);
+			},
+			clear: (id) => calls.push(id === undefined ? ["clear"] : ["clear", id]),
 			dispose: () => calls.push(["dispose"]),
 		}),
 	};
@@ -105,7 +112,7 @@ test("the player opens on frame 0 and starts its clock on the first delivered fr
 	assert.equal(renderer.calls.at(-1)[2], 0.5, "the ember blooms over the flash's rise");
 	clock += T.release * 500;
 	frames.step();
-	assert.deepEqual(renderer.calls.slice(-2), [["render", renderer.calls.at(-2)[1], 1], ["clear"]]);
+	assert.deepEqual(renderer.calls.slice(-2), [["render", renderer.calls.at(-2)[1], 1], ["clear", 1]]);
 	assert.deepEqual(events.at(-1), { type: "done", id: 1 }, "done once the canvas is transparent again");
 	assert.equal(frames.queue.filter(Boolean).length, 0, "and the loop stops");
 });
@@ -133,8 +140,43 @@ test("single-card bursts run at normal speed and fade out without gathering or a
 	clock = 80 + (T.fadeStart + T.fade) * 1000;
 	frames.step();
 	assert.deepEqual(events, [{ type: "done", id: 2 }]);
-	assert.deepEqual(renderer.calls.at(-1), ["clear"]);
+	assert.deepEqual(renderer.calls.at(-1), ["clear", 2]);
 	assert.equal(frames.queue.filter(Boolean).length, 0, "the burst stops itself");
+});
+
+test("a drop's burst lands on the last one's tail: each runs on its own clock and leaves on its own", async (t) => {
+	const { createFinaleConfettiPlayer, SMALL_CONFETTI_TIMING: T } = await loadPlayer();
+	const frames = fakeFrames();
+	t.after(frames.install());
+	let clock = 0;
+	const events = [];
+	const renderer = fakeRenderer();
+	const player = createFinaleConfettiPlayer((event) => events.push(event), { now: () => clock, createRenderer: renderer.create });
+	player.handle({ type: "init", canvas: {} });
+	player.handle({ type: "play", id: 1, size: "small", width: 1440, height: 900, dpr: 2, column: COLUMN });
+	frames.step();
+	clock = 400;
+	frames.step();
+	// Regression: a second drop used to clear the first burst before its own launched.
+	player.handle({ type: "play", id: 2, size: "small", width: 1440, height: 900, dpr: 2, column: COLUMN });
+	assert.deepEqual(renderer.frames.at(-1), [[1, 0.4, 0], [2, 0, 0]], "the new burst opens on frame 0 among the first's pieces");
+	assert.ok(!renderer.calls.some(([name]) => name === "clear"), "nothing is cleared");
+	frames.step();
+	clock = 700;
+	frames.step();
+	assert.deepEqual(renderer.frames.at(-1), [[1, 0.7, 0], [2, 0.3, 0]], "one pass draws both, each at its own second");
+	assert.equal(frames.queue.filter(Boolean).length, 1, "on one frame loop");
+	clock = (T.fadeStart + T.fade) * 1000;
+	frames.step();
+	assert.deepEqual(events, [{ type: "done", id: 1 }], "the first leaves once it has faded");
+	assert.deepEqual(renderer.calls.at(-1), ["clear", 1]);
+	clock += 16;
+	frames.step();
+	assert.deepEqual(renderer.frames.at(-1).map(([id]) => id), [2], "the second flies on");
+	clock = 400 + (T.fadeStart + T.fade) * 1000;
+	frames.step();
+	assert.deepEqual(events, [{ type: "done", id: 1 }, { type: "done", id: 2 }]);
+	assert.equal(frames.queue.filter(Boolean).length, 0, "and the loop stops with the last");
 });
 
 test("a held single-card burst resumes at normal speed", async (t) => {
@@ -179,7 +221,7 @@ test("rehearsal holds render at once, resume where they froze, and cancel clears
 	// The fake renderer records times to the millisecond.
 	assert.ok(Math.abs(resumed - showTime(real(0.45) + 0.1)) < 1e-3 && resumed > 0.45, "resuming continues from the held second, at the show's pace");
 	show.handle({ type: "cancel", id: 7 });
-	assert.deepEqual(renderer.calls.at(-1), ["clear"]);
+	assert.deepEqual(renderer.calls.at(-1), ["clear", 7]);
 	assert.deepEqual(events, [{ type: "done", id: 7 }]);
 });
 
@@ -361,26 +403,35 @@ const settled = async (promise) => {
 	return done;
 };
 
-test("small card celebrations share the renderer and yield to the full-board show", async (t) => {
+test("small card celebrations stack on one renderer, and fly on under the full-board show", async (t) => {
 	const dom = fakeDom(t);
 	const { createFinaleConfetti } = await loadController();
 	const confetti = createFinaleConfetti();
-	const small = confetti.play(COLUMN, "small");
+	confetti.play(COLUMN, "small");
 	const [worker] = dom.workers;
 	const [layer] = dom.topLayer;
 	assert.equal(worker.messages.at(-1).message.size, "small");
 	assert.equal(layer.dataset.finaleConfettiSize, "small");
-	const smallId = worker.messages.at(-1).message.id;
-	worker.onmessage({ data: { type: "gathered", id: smallId } });
-	await small.gathered;
-	small.release();
-	assert.deepEqual(worker.messages.at(-1).message, { type: "release", id: smallId });
-	const large = confetti.play(COLUMN);
+	const firstId = worker.messages.at(-1).message.id;
+	// Regression: a quick second drop used to cancel the first burst outright.
+	confetti.play(COLUMN, "small");
+	const secondId = worker.messages.at(-1).message.id;
+	assert.notEqual(secondId, firstId);
+	const cancelled = () => worker.messages.filter(({ message }) => message.type === "cancel").map(({ message }) => message.id);
+	assert.deepEqual(cancelled(), [], "the second lands on top of the first");
+	worker.onmessage({ data: { type: "done", id: firstId } });
+	assert.equal(layer.dataset.finaleConfetti, "playing", "the layer stays up while any burst flies");
+	confetti.play(COLUMN);
+	const largeId = worker.messages.at(-1).message.id;
 	assert.equal(dom.workers.length, 1, "both sizes reuse one worker and canvas");
 	assert.equal(worker.messages.at(-1).message.size, "large");
 	assert.equal(layer.dataset.finaleConfettiSize, "large");
-	assert.ok(worker.messages.some(({ message }) => message.type === "cancel" && message.id === smallId));
-	large.cancel();
+	assert.deepEqual(cancelled(), [], "and the finale's burst leaves the small one to fade");
+	const again = confetti.play(COLUMN);
+	assert.deepEqual(cancelled(), [largeId], "a second finale burst replaces the first");
+	again.cancel();
+	worker.onmessage({ data: { type: "done", id: secondId } });
+	assert.equal(layer.dataset.finaleConfetti, "idle", "idle once the last is off");
 	confetti.dispose();
 });
 

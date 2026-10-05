@@ -37,10 +37,15 @@ export function finaleBuildGradient(ink: string): string {
  * Writes the build state for progress `amount` (0 hidden → 1 settled ink).
  * The sweep is an even smoothstep rather than a bold ease-out: a bold curve
  * spends its first frames racing, so the colour band flashed past unseen.
+ *
+ * The lift is a 2D translate, cleared once built: the band repaints the text
+ * every frame anyway, and a 3D transform would make each word its own
+ * compositor layer, which on the mega bento's hundreds of words ran the GPU
+ * out of tile memory and blinked whole cards out for a frame.
  */
 export function applyFinaleBuild(element: HTMLElement, amount: number, lift = 0.12): void {
 	const x = clamp(amount);
 	const eased = x * x * (3 - 2 * x);
 	element.style.backgroundPosition = `${(100 - eased * 100).toFixed(2)}% 0`;
-	element.style.transform = `translate3d(0, ${((1 - eased) * lift).toFixed(3)}em, 0)`;
+	element.style.transform = eased >= 1 ? "" : `translate(0, ${((1 - eased) * lift).toFixed(3)}em)`;
 }

@@ -24,6 +24,9 @@ const COVER_APPS = {
 	guard: { id: "guard", label: "Guard", provider: "guard" },
 } as const satisfies Record<string, TwgToolSource>;
 
+/** The product marks on the keynote covers (the finale wall reuses them). */
+export const JIRA_TEAM_EU26_END_COVER_APPS = COVER_APPS;
+
 // Feature headings live on the cover; card titles describe each demo's core benefit.
 const KEYNOTE_STORIES = [
 	{ section: "Context", heading: "Desktop\nSearch & Chat", title: "Search across your work", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },

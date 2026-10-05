@@ -11,8 +11,9 @@ import { selectFinaleFeatures, type FinaleStory } from "./data/finale-stories";
 import { useFinaleAudioClock } from "./hooks/use-finale-audio-clock";
 import { useFinaleControls } from "./hooks/use-finale-controls";
 import { printFinaleColumn, useFinaleCardPrints } from "./hooks/use-finale-prints";
-import { captureJiraTeamEu26DoneColumn, waitForFinaleColumnCapture } from "./lib/capture-done-column";
-import { nextFinaleDragOrder } from "./lib/finale-drag-order";
+import { captureJiraTeamEu26DoneColumn, queryJiraTeamEu26DoneColumn, waitForFinaleColumnCapture } from "./lib/capture-done-column";
+import { finaleArrivals, finaleSmallConfettiDue, nextFinaleDragOrder } from "./lib/finale-drag-order";
+import type { FinaleConfettiColumn } from "./lib/finale-confetti";
 import { createFinaleConfetti, type FinaleConfettiShow } from "./lib/play-finale-confetti";
 import { FINALE_DONE_COLUMN_TITLE, isJiraTeamEu26FinaleReady, parseFinaleSearch } from "./lib/finale-trigger";
 import type { FinaleSceneInput } from "./scenes/scene-board-to-bento";
@@ -32,6 +33,12 @@ interface FinalePreparation {
 	readonly features: readonly FinaleStory[];
 	readonly seek: number;
 	readonly hold: boolean;
+}
+
+/** Where the confetti lands: the Done column's bounds, round its own bottom corners. */
+function confettiColumnOf(column: HTMLElement): FinaleConfettiColumn {
+	const { x, y, width, height } = column.getBoundingClientRect();
+	return { x, y, width, height, radius: Number.parseFloat(getComputedStyle(column).borderBottomLeftRadius) || 0 };
 }
 
 function doneCodesOf(columns: readonly JiraKanbanColumnData[]): readonly string[] {
@@ -88,25 +95,17 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 		const codes = doneKey ? doneKey.split("|") : [];
 		const next = nextFinaleDragOrder(dragOrderRef.current, codes);
 		if (next === dragOrderRef.current) return;
-		const known = new Set(dragOrderRef.current);
-		const arrived = next.filter((code) => !known.has(code));
+		const arrived = finaleArrivals(dragOrderRef.current, next);
 		// Completion preparation owns any missing prints. Arrival timers must
 		// not compete with the column image that the shader needs first.
 		for (const code of arrived) if (!ready) prints.schedule(code);
 		dragOrderRef.current = next;
-		if (arrived.length !== 1 || ready || reducedMotion) return undefined;
-		const controller = new AbortController();
-		let show: FinaleConfettiShow | null = null;
-		void waitForFinaleColumnCapture(controller.signal).then((column) => {
-			if (!column || controller.signal.aborted) return;
-			const { x, y, width, height } = column.getBoundingClientRect();
-			const radius = Number.parseFloat(getComputedStyle(column).borderBottomLeftRadius) || 0;
-			show = confetti.play({ x, y, width, height, radius }, "small");
-		});
-		return () => {
-			controller.abort();
-			show?.cancel();
-		};
+		// One card or a bulk drag alike, short of completing the board: on the
+		// drop itself, landing on any burst still flying. A small burst never
+		// gathers on the column, so it need not wait for the drop to settle.
+		if (!finaleSmallConfettiDue(arrived, ready) || reducedMotion) return;
+		const column = queryJiraTeamEu26DoneColumn();
+		if (column) confetti.play(confettiColumnOf(column), "small");
 	}, [confetti, doneKey, prints, ready, reducedMotion]);
 
 	const prepare = useCallback((seek: number, hold: boolean) => {
@@ -129,10 +128,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 			const celebration = hasConfetti
 				? waitForFinaleColumnCapture(controller.signal).then((column) => {
 					if (!column || cancelled) return;
-					const { x, y, width, height } = column.getBoundingClientRect();
-					// The pieces land on the column's own bottom border, round its corners.
-					const radius = Number.parseFloat(getComputedStyle(column).borderBottomLeftRadius) || 0;
-					show = confetti.play({ x, y, width, height, radius });
+					show = confetti.play(confettiColumnOf(column));
 				})
 				: Promise.resolve();
 			// Never hold the show for a print: late ones fall back to plain sheets.

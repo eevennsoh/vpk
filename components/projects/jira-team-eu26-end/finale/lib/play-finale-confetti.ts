@@ -16,9 +16,13 @@ export interface FinaleConfettiShow {
 export interface FinaleConfetti {
 	/** Boot the renderer (worker, GL context and shaders) ahead of the show. */
 	readonly prewarm: () => void;
-	/** Fire both sizes from the viewport's lower corners, draining onto the column's bottom border. */
+	/**
+	 * Fire from the viewport's lower corners: the finale's burst drains onto the
+	 * column's bottom border and replaces any earlier one; a small burst lands
+	 * on top of any still flying.
+	 */
 	readonly play: (column: FinaleConfettiColumn, size?: FinaleConfettiStage["size"]) => FinaleConfettiShow;
-	/** Rehearsal: freeze the running burst on an exact second, or resume from it with `null`. */
+	/** Rehearsal: freeze the latest burst on an exact second, or resume from it with `null`. */
 	readonly hold: (time: number | null) => void;
 	readonly dispose: () => void;
 }
@@ -35,7 +39,7 @@ interface Host {
 	readonly dispose: () => void;
 }
 
-/** `idle` while parked between shows, `playing` while a burst is up. */
+/** `idle` while parked between shows, `playing` while any burst is up. */
 type FinaleConfettiState = "idle" | "playing";
 
 const inTopLayer = (layer: HTMLElement) => layer.hasAttribute("popover") && layer.matches(":popover-open");
@@ -100,6 +104,7 @@ function createHost(onEvent: (event: FinaleConfettiEvent) => void, allowWorker: 
 
 interface ActiveShow {
 	readonly id: number;
+	readonly size: NonNullable<FinaleConfettiStage["size"]>;
 	readonly gather: () => void;
 	readonly done: () => void;
 	readonly fail: () => void;
@@ -125,25 +130,27 @@ export function createFinaleConfetti(): FinaleConfetti {
 	let host: Host | null = null;
 	let failures = 0;
 	let sequence = 0;
-	let active: ActiveShow | null = null;
+	/** Every show in flight, oldest first. */
+	const live = new Map<number, ActiveShow>();
 	let parkFrame = 0;
 	let listening = false;
 
 	const onEvent = (event: FinaleConfettiEvent) => {
 		if (event.type === "failed") {
 			if (process.env.NODE_ENV !== "production") console.warn("Finale confetti renderer failed:", event.reason);
-			// The first failure falls back to the main thread, and the running show
-			// moves there at once: for a keynote this is the only run. After a
+			// The first failure falls back to the main thread, and the running shows
+			// move there at once: for a keynote this is the only run. After a
 			// second failure the finale runs without confetti.
 			failures += 1;
 			host?.dispose();
 			host = null;
-			active?.fail();
+			for (const show of [...live.values()]) show.fail();
 			return;
 		}
-		if (!active || event.id !== active.id) return;
-		if (event.type === "gathered") active.gather();
-		else active.done();
+		const show = live.get(event.id);
+		if (!show) return;
+		if (event.type === "gathered") show.gather();
+		else show.done();
 	};
 	const ensureHost = () => {
 		if (!host && failures < 2) host = createHost(onEvent, failures === 0);
@@ -156,7 +163,7 @@ export function createFinaleConfetti(): FinaleConfetti {
 		const { layer } = current;
 		if (!layer.isConnected) document.body.append(layer);
 		if (layer.hasAttribute("popover") && !inTopLayer(layer)) layer.showPopover();
-		if (!active) current.send({ type: "park", ...viewportSize() });
+		if (live.size === 0) current.send({ type: "park", ...viewportSize() });
 		return current;
 	};
 	// Keep the parked canvas at the viewport's size, once per frame of a resize.
@@ -174,7 +181,7 @@ export function createFinaleConfetti(): FinaleConfetti {
 	};
 
 	const play = (column: FinaleConfettiColumn, size: FinaleConfettiStage["size"] = "large"): FinaleConfettiShow => {
-		active?.cancel();
+		if (size === "large") for (const show of [...live.values()]) if (show.size === "large") show.cancel();
 		let resolveGathered = () => {};
 		const gathered = new Promise<void>((resolve) => {
 			resolveGathered = resolve;
@@ -202,9 +209,8 @@ export function createFinaleConfetti(): FinaleConfetti {
 			window.clearTimeout(gatherTimer);
 			window.clearTimeout(releaseTimer);
 			window.removeEventListener("resize", onResize);
-			if (active?.id !== id) return;
-			active = null;
-			setState("idle");
+			if (!live.delete(id)) return;
+			if (live.size === 0) setState("idle");
 		};
 		const cancel = () => {
 			if (!alive) return;
@@ -233,8 +239,9 @@ export function createFinaleConfetti(): FinaleConfetti {
 			});
 			return true;
 		};
-		active = {
+		live.set(id, {
 			id,
+			size,
 			gather: resolveGathered,
 			done: unmount,
 			fail: () => {
@@ -252,7 +259,7 @@ export function createFinaleConfetti(): FinaleConfetti {
 					window.clearTimeout(gatherTimer);
 				}
 			},
-		};
+		});
 		listen();
 		if (!start()) {
 			unmount();
@@ -285,12 +292,13 @@ export function createFinaleConfetti(): FinaleConfetti {
 		},
 		play,
 		hold: (time) => {
-			if (!active) return;
-			active.hold(time);
-			host?.send({ type: "hold", id: active.id, time });
+			const latest = [...live.values()].at(-1);
+			if (!latest) return;
+			latest.hold(time);
+			host?.send({ type: "hold", id: latest.id, time });
 		},
 		dispose: () => {
-			active?.cancel();
+			for (const show of [...live.values()]) show.cancel();
 			window.cancelAnimationFrame(parkFrame);
 			parkFrame = 0;
 			window.removeEventListener("resize", onViewportResize);

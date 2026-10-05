@@ -9,3 +9,15 @@ export const FINALE_COLORS = {
 	/** Bento tile fill — white cards on grey, like Jira cards on a column. */
 	tile: "#FFFFFF",
 } as const;
+
+/** Team ’26 primaries from the template's colour guidelines: the wall's posters and shapes. */
+export const FINALE_BRAND = {
+	blue: "#3266D4",
+	lime: "#82B536",
+	purple: "#B367EB",
+	saffron: "#F1AB3C",
+	black: "#111214",
+	white: "#FFFFFF",
+} as const;
+
+export type FinaleBrandColor = keyof typeof FINALE_BRAND;
