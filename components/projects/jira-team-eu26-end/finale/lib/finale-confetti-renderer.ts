@@ -12,7 +12,8 @@
  *   The board's small bursts stack, each on its own clock, over the finale's.
  * - the Done column's border, lit by the bento tiles' own pulsing border: it
  *   pulses in on the top of both sides, then is traced down them as the burst
- *   is drawn in, meeting along the foot (see `FINALE_CONFETTI_GLOW_FRAGMENT`).
+ *   is drawn in, meeting along the foot (see `FINALE_CONFETTI_GLOW_FRAGMENT`),
+ *   and is spent as the last piece lands (`finaleConfettiGlow`).
  */
 
 import * as THREE from "three";
@@ -65,8 +66,8 @@ export const FINALE_CONFETTI_LOOK = {
 	glowStretch: 0.5,
 	/**
 	 * Share of the trace by which the two leads meet in the foot's middle, so
-	 * the whole foot burns, joined, for the rest of the pull before the flash
-	 * (a beat of the rush: `FINALE_CONFETTI_PACE`).
+	 * the whole foot burns, joined, for a beat before the glow eases out with
+	 * the last arrivals (`FINALE_CONFETTI_TIMING.glowOut`).
 	 */
 	glowMeet: 0.65,
 	/**
@@ -137,7 +138,10 @@ void main() {
 	float size = max(span, breadth) + soft;
 	// A streak spreads the same paint over more screen; launch rays and threads of light keep their presence.
 	float physical = mix(clamp(size / (size + streak), 0.45, 1.0), 0.8, launch);
-	float presence = mix(physical, 0.92, smoothstep(0.1, 0.4, s)) * (1.0 - uRelease);
+	// Absorbed: once a piece lands, its thread drains into the border over its own exposure
+	// and is gone, rather than resting on the border as a speck until the flash ignites.
+	float absorbed = aGather.y > aGather.x ? smoothstep(aGather.y, aGather.y + 3.0 * uShutter, uTime) : 0.0;
+	float presence = mix(physical, 0.92, smoothstep(0.1, 0.4, s)) * (1.0 - absorbed) * (1.0 - uRelease);
 	// Defocused pieces spread thinner, and distant ones fade a little into the air.
 	float distant = smoothstep(uFocus.z, uFocus.z * 5.0, -center.z);
 	// Unseen until it sets off: a puff's pieces wait round the landing, and would outline it on
@@ -432,8 +436,8 @@ export class FinaleConfettiRenderer {
 	private readonly sprays = new Map<number, PiecesMesh>();
 	private readonly idleSprays: PiecesMesh[] = [];
 	private readonly glow: THREE.Mesh<THREE.BufferGeometry, THREE.RawShaderMaterial>;
-	/** The glow's own look, which strengthens on the foot and blooms as it hands over to the flash. */
-	private glowLook = { bloom: 0, floor: 0, gain: 0 };
+	/** The glow's own look, which strengthens on the foot. */
+	private glowLook = { floor: 0, gain: 0 };
 	/** The column's border the glow is traced round. */
 	private glowShape: TileGlowShape = tileGlowShape({ x: 0, y: 0, width: 1, height: 1 }, 0, 1, 0);
 	private large: { readonly id: number; readonly burst: FinaleConfettiBurst } | null = null;
@@ -580,9 +584,9 @@ export class FinaleConfettiRenderer {
 		g.uLook4.value.set(...shared.look4);
 		g.uScale.value = scale;
 		g.uFoot.value.set(0, finaleConfettiFootSpan(shape));
-		const [, bloom, floor] = shared.look;
+		const [, , floor] = shared.look;
 		const [, , gain] = shared.look2;
-		this.glowLook = { bloom, floor, gain };
+		this.glowLook = { floor, gain };
 		this.glowShape = shape;
 	}
 
@@ -602,12 +606,14 @@ export class FinaleConfettiRenderer {
 		if (drawn) this.renderer.render(this.scene, this.camera);
 	}
 
-	/** The finale's burst at `time`; `release` 0 → 1 as the glow hands over to the flash. */
+	/** The finale's burst at `time`; `release` 0 → 1 as the flash ignites. */
 	private poseLarge(burst: FinaleConfettiBurst, time: number, release: number): void {
 		this.uniforms.uTime.value = time;
 		this.uniforms.uRelease.value = release;
 		// The border pulses in as the vortex opens, is traced steadily down the column
-		// through the pull, burns stronger on the foot as the pieces land, and blooms into the flash as it goes.
+		// through the pull and burns stronger on the foot, then is spent as the last piece
+		// lands (`finaleConfettiGlow`). Its envelope scales everything it draws, bloom and
+		// halo included, so the border is dark from then on; a release only clears a stalled show.
 		const g = this.glowUniforms;
 		g.uTime.value = time;
 		const mask = finaleConfettiGlowMask(this.glowShape, finaleConfettiTrace(time));
@@ -615,7 +621,6 @@ export class FinaleConfettiRenderer {
 		g.uEnvelope.value = finaleConfettiGlow(time, finaleConfettiCharge(burst, time)) * (1 - release) * (1 - release);
 		const look = this.glowLook;
 		const foot = FINALE_CONFETTI_LOOK.glowFoot;
-		g.uLook.value.y = look.bloom * (1 + 3 * release);
 		g.uLook.value.z = look.floor + foot.floor * mask.foot;
 		g.uLook2.value.z = look.gain * (1 + foot.gain * mask.foot);
 		g.uFoot.value.x = mask.foot;

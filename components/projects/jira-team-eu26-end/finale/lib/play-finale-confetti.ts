@@ -7,7 +7,7 @@ export interface FinaleConfettiShow {
 	readonly gathered: Promise<void>;
 	/** Re-enter the top layer above a dialog that opened after the burst began. */
 	readonly raise: () => void;
-	/** The flash has ignited: the border glow blooms into it, then the layer removes itself. */
+	/** The flash has ignited: whatever the burst still draws clears (its glow is already spent), then the layer removes itself. */
 	readonly release: () => void;
 	/** Clear everything now (exit, replay, unmount). */
 	readonly cancel: () => void;

@@ -7,7 +7,7 @@ const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-
 let model;
 function load() {
 	model ??= loadCjsModuleFromText(esbuild.buildSync({
-		stdin: { contents: 'export * from "./finale-confetti"; export { FLASH_TIMING, FLASH_ROVO_COLORS } from "./finale-column-flash";', resolveDir: __dirname, loader: "ts" },
+		stdin: { contents: 'export * from "./finale-confetti"; export { FLASH_TIMING, FLASH_ROVO_COLORS } from "./finale-column-flash"; export { CUE } from "../data/finale-cues";', resolveDir: __dirname, loader: "ts" },
 		bundle: true, format: "cjs", platform: "node", write: false,
 	}).outputFiles[0].text, "finale-confetti-harness.cjs");
 	return model;
@@ -95,7 +95,8 @@ test("the timeline composes the resolved VPK duration tokens and hands over in t
 	assert.equal(T.firstArrival, token("slowest") * 2 + token("medium"));
 	// Regression: at 2.4s to the flash, the burst and its trace dragged.
 	assert.equal(T.gathered, token("slowest") * 3, "the flash may ignite 1.8s after launch");
-	assert.equal(T.release, FLASH_TIMING.rise, "the ember blooms over exactly the flash's own rise");
+	assert.equal(T.glowOut, token("slow"), "the glow is spent over the last of the pull");
+	assert.equal(T.release, FLASH_TIMING.rise, "whatever is still drawn clears over exactly the flash's own rise");
 	assert.equal(T.release, token("fast"));
 });
 
@@ -472,7 +473,7 @@ test("the border charges steadily from the first arrival to full at the gather c
 	assert.ok(middle > 0.35 && middle < 0.65, "arrivals pour in at a steady rate");
 });
 
-test("the column's glow pulses in once, briefly, as the pull begins, then brightens to full as every piece lands", () => {
+test("the column's glow pulses in once, briefly, as the pull begins, then brightens as the pieces land", () => {
 	const { createFinaleConfettiBurst, finaleConfettiCharge, finaleConfettiGlow, FINALE_CONFETTI_TIMING: T } = load();
 	const burst = createFinaleConfettiBurst(STAGE);
 	const glow = (time) => finaleConfettiGlow(time, finaleConfettiCharge(burst, time));
@@ -495,12 +496,44 @@ test("the column's glow pulses in once, briefly, as the pull begins, then bright
 	assert.ok(start + T.glowIn < T.firstArrival);
 	// Regression: it pulsed at the top for twice as long, lingering there before the trace.
 	assert.ok(T.glowIn <= T.gatherSpread + 1e-9, "brief: no longer than the pieces take to join the stream");
-	assert.equal(glow(T.gathered), 1, "full once every piece is in");
 	let previous = 0;
-	for (let time = start + T.glowIn; time <= T.gathered + 0.5; time += 0.01) {
-		assert.ok(glow(time) >= previous - 1e-12 && glow(time) <= 1, "it only brightens, and never past full");
+	for (let time = start + T.glowIn; time <= T.gathered - T.glowOut; time += 0.01) {
+		assert.ok(glow(time) >= previous - 1e-12 && glow(time) <= 1, "it only brightens with the arrivals, and never past full");
 		previous = glow(time);
 	}
+	assert.ok(glow(T.gathered - T.glowOut) > glow(start + T.glowIn) + 0.1, "the pieces landing on it brighten it before it is spent");
+});
+
+test("the border glow is spent as the last piece lands, and stays dark however late the flash ignites", () => {
+	const { createFinaleConfettiBurst, finaleConfettiCharge, finaleConfettiGlow, finaleConfettiRealTime: real, finaleConfettiShowTime: show, FINALE_CONFETTI_TIMING: T, CUE } = load();
+	const { glowMeet } = loadLook();
+	const burst = createFinaleConfettiBurst(STAGE);
+	// The envelope of everything the column's glow draws: its stroke, its bloom, and the even band and halo.
+	const glow = (time) => finaleConfettiGlow(time, finaleConfettiCharge(burst, time));
+	// Milliseconds of real time from the moment the burst is absorbed (its last piece lands).
+	const absorbed = real(T.gathered);
+	const at = (ms) => show(absorbed + ms / 1000);
+	const fadeFrom = T.gathered - T.glowOut;
+	assert.ok(T.gatherStart + glowMeet * (T.gathered - T.gatherStart) < fadeFrom, "the two leads meet on the foot before it lets go, so the joined foot still burns for a beat");
+	// It eases out across the last of the pull: the last arrivals lift it a hair as the ease sets
+	// in, then it only dims.
+	const fading = [];
+	for (let time = fadeFrom; time <= T.gathered + 1e-9; time += 0.005) fading.push({ time, value: glow(time) });
+	const brightest = fading.reduce((best, sample) => sample.value > best.value ? sample : best);
+	assert.ok(brightest.value < glow(fadeFrom) + 0.05 && brightest.time < fadeFrom + T.glowOut / 3, "no flare as it is spent");
+	fading.filter((sample) => sample.time >= brightest.time).forEach((sample, index, after) => {
+		if (index > 0) assert.ok(sample.value <= after[index - 1].value + 1e-12, "it only dims once spent");
+	});
+	const fade = (absorbed - real(fadeFrom)) * 1000;
+	const entrance = (real(T.gatherStart + T.glowIn) - real(T.gatherStart)) * 1000;
+	assert.ok(fade > 150 && fade < 200 && fade < entrance - 100, `a brisk exit, well under its entrance (${fade.toFixed(0)}ms vs ${entrance.toFixed(0)}ms)`);
+	assert.ok(glow(at(-50)) < 0.6, "already half gone as the last pieces pour in");
+	// Regression: it held at full on the foot until the flash's release reached the renderer, then
+	// bloomed outward as it went, ~110ms past the absorption (and as long again as the main thread stalled).
+	assert.equal(glow(T.gathered), 0, "exactly dark at 0ms after the absorption…");
+	// …and through the flash's whole sweep up the column, however late that ignites (a busy main
+	// thread, the stall backstop), so nothing lingers on the border in its late travel either.
+	for (let ms = 1000 / 120; ms <= (CUE.flashDuration + 3) * 1000; ms += 1000 / 120) assert.equal(glow(at(ms)), 0, `dark ${ms.toFixed(0)}ms after the absorption`);
 });
 
 test("the show explodes fast, drops into bullet time while the pieces hang, then rushes them in", () => {

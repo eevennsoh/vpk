@@ -13,12 +13,13 @@
  *    catching the key light.
  * 3. Gather: a vortex opens on the foot of the Done column. Pieces spiral
  *    down onto its bottom border (the farthest leave first and arrive last),
- *    shedding their shading until they are pure hue. The bento tiles' own
- *    pulsing glow lights the column's two top corners and is traced steadily
- *    down its sides through the pull, rounding the bottom corners to meet in
- *    the middle of its foot as the last piece lands. When
- *    the finale ignites, the flash floods up from the foot and the glow
- *    blooms into it.
+ *    shedding their shading until they are pure hue, and are gone as they
+ *    land. The bento tiles' own pulsing glow lights the column's two top
+ *    corners and is traced steadily down its sides through the pull, rounding
+ *    the bottom corners to meet in the middle of its foot. Once joined it is
+ *    spent with the pull: it eases out to nothing exactly as the last piece
+ *    lands, so nothing lingers on the border once the burst is absorbed, and
+ *    the flash floods up from a clean foot however late it ignites.
  *
  * Depth of field: most pieces fly near the page, in focus. A foreground layer
  * passes close to the lens (large and soft) and a background layer flies away
@@ -41,7 +42,7 @@
  */
 
 import { FLASH_ROVO_COLORS, FLASH_TIMING } from "./finale-column-flash";
-import { clamp, lerp, progress } from "./finale-math";
+import { EASE, clamp, lerp, progress } from "./finale-math";
 
 // Seconds, resolved from the VPK duration tokens. The token contract test
 // checks these against app/tailwind-theme.css to prevent drift.
@@ -75,9 +76,15 @@ export const FINALE_CONFETTI_TIMING = {
 	glowIn: MOTION_DURATION.slow,
 	/** The nearest piece reaches the source here… */
 	firstArrival: MOTION_DURATION.slowest * 2 + MOTION_DURATION.medium,
-	/** …and the farthest here: the ember is fully charged and the flash may ignite. */
+	/** …and the farthest here: the burst is absorbed and the flash may ignite. */
 	gathered: MOTION_DURATION.slowest * 3,
-	/** The ember blooms into the flash over exactly the flash's own rise. */
+	/**
+	 * The glow eases out (`--ease-in`) across this last stretch of the pull,
+	 * from just after its two leads meet on the foot, and is exactly dark from
+	 * `gathered` on. At the pull's pace it is about half the glow-in's real time.
+	 */
+	glowOut: MOTION_DURATION.slow,
+	/** Whatever a show still draws when the flash ignites clears over exactly the flash's own rise. */
 	release: FLASH_TIMING.rise,
 } as const;
 
@@ -448,18 +455,20 @@ export function finaleConfettiSink(column: FinaleConfettiColumn, a: number, b: n
 const GLOW_IN_SWELL = 0.6;
 
 /**
- * Brightness (0–1) of the column's glow, before its hand-off to the flash.
+ * Brightness (0–1) of the column's glow: the envelope of everything it draws.
  * Dark through the hang, it glows in on the top of both sides as the vortex
  * opens, with one pulse (`glowIn`), already setting off down them: from
  * nothing, easing in so it never pops on, it swells and eases back. Its
- * spots orbit and beat throughout; the pieces landing on it then bring it to
- * full.
+ * spots orbit and beat throughout, and the pieces landing on it brighten it.
+ * Over the last of the pull (`glowOut`) it is spent: it eases out to exactly
+ * 0 as the last piece lands, and stays dark from then on.
  */
 export function finaleConfettiGlow(time: number, charge: number): number {
 	const T = FINALE_CONFETTI_TIMING;
 	const at = progress(time, T.gatherStart, T.gatherStart + T.glowIn);
 	const glowIn = at * at * (3 - 2 * at) + GLOW_IN_SWELL * Math.sin(Math.PI * at) ** 2;
-	return glowIn * (0.65 + 0.35 * clamp01(charge));
+	const spent = EASE.in(progress(time, T.gathered - T.glowOut, T.gathered));
+	return glowIn * (0.65 + 0.35 * clamp01(charge)) * (1 - spent);
 }
 
 /**

@@ -23,7 +23,7 @@ import { landingSettled } from "./finale-wall-motion";
  * with Paper's angle (a share of the lap) mapped to the perimeter parameter of
  * the tile's rounded rect, so spots follow the tile's shape. Shader time is the
  * finale clock, so it scrubs. It lights once: an envelope fades it up with the
- * motion already alive, and out to nothing before the heading has built.
+ * motion already alive, and out to nothing as "Team ’26" settles.
  *
  * Every tile is seeded by its landing order. The GLSL mirrors
  * `perimeterParam`, `spotCentre` and `strokeProfile`.
@@ -44,8 +44,15 @@ export const TILE_GLOW = {
 	settle: 0.2,
 	/** Start-delay jitter after `settle`. */
 	delay: [0, 0.05],
-	/** Whole glow, fade-up to gone (s). */
+	/** Whole glow, fade-up to gone (s), unless `outBy` cuts it short. */
 	duration: [1.5, 1.8],
+	/**
+	 * Every glow on the slide is gone this long after "Team ’26" has built
+	 * (`CUE.yearLand`), about one fade-out. Only the last tile to land rolls a
+	 * glow long enough to reach it, and so goes out with the others rather
+	 * than burning on alone after them.
+	 */
+	outBy: 0.6,
 	/** Share of the duration fading up (`EASE.outBold`)… */
 	rise: [0.12, 0.2],
 	/** …and fading out at the end (`EASE.in`). */
@@ -279,19 +286,31 @@ export interface TileGlowWindow {
 }
 
 /**
+ * How long glow `order` lasts, fade-up to gone: its own duration, cut short
+ * where that would carry it on the slide past `TILE_GLOW.outBy` after the
+ * heading has built. Every replay keeps it, so it lasts as it did on the slide.
+ */
+function glowSpan(order: number): number {
+	const look = tileGlowLook(order);
+	const start = touchdownTime(order) + TILE_GLOW.settle + look.delay;
+	return Math.min(look.duration, CUE.yearLand + TILE_GLOW.outBy - start);
+}
+
+/**
  * The glow of a card seeded `seed` that touches down at `touchdown`: from once
- * its landing wave has swelled (plus its glow's jitter), and gone by
- * `revealEnd`, when its content has built.
+ * its landing wave has swelled (plus its glow's jitter), for its glow's span,
+ * and gone by `revealEnd`, when its content has built.
  */
 export function tileGlowWindowFor(touchdown: number, revealEnd: number, seed: number): TileGlowWindow {
-	const look = tileGlowLook(glowOrder(seed));
+	const order = glowOrder(seed);
+	const look = tileGlowLook(order);
 	const start = touchdown + TILE_GLOW.settle + look.delay;
-	const end = Math.min(start + look.duration, revealEnd);
+	const end = Math.min(start + glowSpan(order), revealEnd);
 	const span = end - start;
 	return { start, peak: start + span * look.rise, fallStart: end - span * look.fall, end };
 }
 
-/** From just after touchdown (plus jitter); gone by the time the heading has built. */
+/** From just after touchdown (plus jitter); gone by `TILE_GLOW.outBy` after "Team ’26" has built. */
 export function tileGlowWindow(order: number): TileGlowWindow {
 	return tileGlowWindowFor(touchdownTime(order), Math.min(tileRevealStart(order) + CUE.reveal, CUE.end), order);
 }

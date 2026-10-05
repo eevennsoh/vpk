@@ -760,8 +760,10 @@ export function poseSheet(mesh: SheetMesh, pose: FinaleCardPose, world: Vec3, ca
 /**
  * Peel's landing wave `waveAge` s from touchdown: Peel's decay, swelling from
  * a flat sheet as it gathers (so the paper never bends in one frame) and
- * spent (exactly 0, at rest) by the hand-off to the DOM, so the swap never
- * pops. Smooth throughout: the sheet's bend never changes speed abruptly.
+ * spent (exactly 0, at rest) by a wall card's hand-off to the DOM
+ * (`CUE.handoff`), so the swap never pops; a bento tile dissolves off its DOM
+ * face sooner (`CUE.tileHandoff`), its wave all but spent (15% of its peak,
+ * 4% as it ends). Smooth throughout: the sheet's bend never changes speed abruptly.
  */
 export function landingWaveEnergy(waveAge: number): number {
 	const swell = landingSwell(waveAge);

@@ -1,8 +1,10 @@
+import { motionDuration } from "@/lib/motion";
+
 import { FINALE_WALL_CURSOR_NAMES } from "../data/finale-wall-cursor-names";
 import { projectLifted } from "./finale-camera";
 import type { FinaleViewport } from "./finale-card-motion";
 import { FINALE_CURSORS, finaleCursorBox } from "./finale-cursor-path";
-import { EASE, hash01, lerp, progress, smoothstep as smooth } from "./finale-math";
+import { EASE, hash01, progress } from "./finale-math";
 import { TITLE_CARRY_PRESS, titleCarrierAt, titleCarrierGoneTime } from "./finale-title-drag";
 import { WALL_SCALE, type FinaleWall, type WallGeometry, type WallPrintShapes, type WallSlot } from "./finale-wall-layout";
 import {
@@ -55,11 +57,20 @@ export interface PageCursor {
 
 /** Most arriving cards are a teammate's to set down (some give way to another's: `wallHold`). */
 const HELD_SHARE = 0.85;
+/** How long after a hand could first hold its card it is on it, at most (it is always on it a beat before the card lands). */
 const GRAB_S = 0.6;
-const RELEASE_S = 0.65;
+/**
+ * A hand glides in from off the frame onto its card over `ENTER_S`, easing
+ * out (`--ease-out-practical`, as the presenters' cursors come in), and once
+ * it lets go heads back off the frame over the quicker `LEAVE_S`, easing in
+ * and fading out as it goes (`--ease-in`): `--duration-slowest` in,
+ * `--duration-slower` out.
+ */
+const ENTER_S = motionDuration.slowest;
+const LEAVE_S = motionDuration.slower;
 /** The least a teammate rides a card down before letting go: a card they could only catch later comes down alone. */
 const RIDE_S = 0.2;
-/** How far inside the frame's edges a cursor stays, name pill and all, and how far apart two stay, in stage px. */
+/** How far inside the frame's edges a cursor stays on its card, name pill and all, and how far apart two stay, in stage px. */
 const CURSOR_MARGIN = 48;
 const CURSOR_APART = 16;
 /** A lane rests at least this long between letting one card go and taking the next. */
@@ -68,23 +79,22 @@ const LANE_REST_S = 0.15;
 const PLAN_RATE = 30;
 
 /**
- * How a teammate's hand comes and goes, by where its card is in the frame: a
- * card in the top third is reached from above and let go on downward, its
- * cursor turned over (`pillAbove`: arrow down onto the card, name above);
- * one in the middle is swept in from the side and back out; one in the
- * bottom third is reached from below and let go upward. Each leans inward, away from the
- * leading edge, and the slot's seed swings it, sizes it and bows its path,
- * so no two hands move alike (stage px; angles in radians, y down).
+ * Which way a teammate's hand comes and goes, by where its card is in the
+ * frame: a card in the top third is reached from above, its cursor turned
+ * over (`pillAbove`: arrow down onto the card, name above); one in the middle
+ * from the leading edge, beside it; one in the bottom third from below. Each
+ * comes in on one side and heads back out on the other, so it never retraces
+ * its way in, and the slot's seed swings it and bows its path, so no two
+ * hands move alike (angles in radians, y down). How far each way runs is the
+ * frame's: from wholly off it, and back off it (`offFrame`).
  */
 const HAND = {
 	bands: [
-		{ reach: -Math.PI / 2 - 0.4, leave: Math.PI / 2 + 0.45, pillAbove: true },
-		{ reach: Math.PI - 0.35, leave: Math.PI + 0.5, pillAbove: false },
-		{ reach: Math.PI / 2 + 0.4, leave: -Math.PI / 2 - 0.45, pillAbove: false },
+		{ reach: -Math.PI / 2 - 0.4, leave: -Math.PI / 2 + 0.45, pillAbove: true },
+		{ reach: 0.35, leave: -0.25, pillAbove: false },
+		{ reach: Math.PI / 2 + 0.4, leave: Math.PI / 2 - 0.45, pillAbove: false },
 	],
 	swing: 0.3,
-	reach: [40, 75],
-	leave: [28, 55],
 	bow: 0.2,
 } as const;
 
@@ -102,34 +112,28 @@ interface Hand {
 	readonly pillAbove: boolean;
 }
 
+/** Which way a slot's hand comes in and goes out, and how far each bows (a share of its length), the same on every pass of the loop. */
+interface HandWays {
+	readonly reach: number;
+	readonly leave: number;
+	readonly reachBow: number;
+	readonly leaveBow: number;
+	readonly pillAbove: boolean;
+}
+
 function handLeg(angle: number, distance: number, bow: number): HandLeg {
 	return { x: Math.cos(angle) * distance, y: Math.sin(angle) * distance, bow: bow * distance };
 }
 
-/** A leg turned `by` radians toward the inward side (straight left), as when the frame's edge is in its way. */
-function turnedIn(leg: HandLeg, by: number): HandLeg {
-	const angle = Math.atan2(leg.y, leg.x);
-	const length = Math.hypot(leg.x, leg.y);
-	const toward = angle < 0 ? -1 : 1;
-	const turned = Math.abs(angle) + by >= Math.PI ? Math.PI : angle + toward * by;
-	return { x: Math.cos(turned) * length, y: Math.sin(turned) * length, bow: leg.bow };
-}
-
-/** A slot's hand, the same on every pass of the loop. */
-function handFor(slot: WallSlot, geometry: WallGeometry): Hand {
-	const fit = geometry.typeScale / WALL_SCALE;
+function handWaysFor(slot: WallSlot, geometry: WallGeometry): HandWays {
 	const middle = slot.rect.y + slot.rect.height / 2;
 	const band = HAND.bands[Math.min(2, Math.max(0, Math.floor((middle / geometry.viewport.height) * 3)))];
 	const swing = (seed: number) => (hash01(slot.seed * seed) - 0.5) * 2 * HAND.swing;
 	const bow = (seed: number) => (hash01(slot.seed * seed) - 0.5) * 2 * HAND.bow;
-	return {
-		reach: handLeg(band.reach + swing(2.17), lerp(HAND.reach[0], HAND.reach[1], hash01(slot.seed * 4.41)) * fit, bow(6.03)),
-		leave: handLeg(band.leave + swing(3.29), lerp(HAND.leave[0], HAND.leave[1], hash01(slot.seed * 5.87)) * fit, bow(7.19)),
-		pillAbove: band.pillAbove,
-	};
+	return { reach: band.reach + swing(2.17), leave: band.leave + swing(3.29), reachBow: bow(6.03), leaveBow: bow(7.19), pillAbove: band.pillAbove };
 }
 
-/** When a hand that reaches in at `from` has arrived on its card: `GRAB_S` on, or a beat before the card lands if that is sooner. */
+/** When a hand that could first hold its card at `from` is on it: `GRAB_S` on, or a beat before the card lands if that is sooner. */
 function arrivedAt(from: number, descent: Descent): number {
 	return from + Math.max(0.1, Math.min(GRAB_S, descent.touchdown - 0.05 - from));
 }
@@ -159,44 +163,49 @@ interface Box {
 	readonly bottom: number;
 }
 
-/** Who holds a card, and how: their name and lane, their hand, when they reach in, and how much of their reach in fits the frame (0: none, they fade in on the card). */
+/** Who holds a card, and how: their name and lane, their hand, when they set off for it from off the frame (`from`), and when they are on it (`arrive`). */
 interface Holder {
 	readonly name: string;
 	readonly lane: number;
 	readonly hand: Hand;
-	readonly from?: number;
-	readonly reachShare?: number;
+	readonly from: number;
+	readonly arrive: number;
 }
 
 /** A teammate's hold on a slot's card: when it comes down, who holds it, and where their cursor paints. */
 interface WallHold extends Holder {
 	readonly descent: Descent;
-	/** From the cursor reaching in to its leaving. */
-	readonly from: number;
+	/** From the cursor setting off for its card to its being gone. */
 	readonly to: number;
-	/** Where its cursor may paint on screen at a time from `from` to `to`, whatever its card's breath. */
-	readonly reach: (time: number) => Box;
+	/** Where its cursor may paint inside the frame at a time from `from` to `to`, whatever its card's breath (null: wholly off it). */
+	readonly reach: (time: number) => Box | null;
+}
+
+/**
+ * Where a hand holding `card` (of `slot`) has its tip at `time`: on the
+ * card's middle, larger while the card is up near the lens, riding it down,
+ * then on where it lands as the wall carries it on (`breathing`: as
+ * `waitingPose`).
+ */
+function onCard(slot: WallSlot, card: WallArrival, time: number, geometry: WallGeometry, viewport: FinaleViewport, breathing = true): { readonly x: number; readonly y: number; readonly scale: number } {
+	const pose = arrivalCardPose(slot, card, slotOnScreen(slot, wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport, breathing);
+	return projectLifted(pose, viewport);
 }
 
 /**
  * The cursor holding `card` (of `slot`) at `time`: from the hold's `from` its
- * hand comes in along its reach (`Hand`), fading up, and settles its tip on
- * the middle of the card, larger while the card is up near the lens, riding
- * it down; then lets go and drifts off along its leave, fading out
- * (`breathing`: as `waitingPose`).
+ * hand glides in from off the frame along its reach (`Hand`), easing onto the
+ * card's middle by `arrive`, and rides it down (`onCard`); as the card lands
+ * it lets go and heads back off the frame along its leave, easing away and
+ * fading out as it goes (`breathing`: as `waitingPose`).
  */
 function heldCursor(slot: WallSlot, card: WallArrival, holder: Holder, time: number, geometry: WallGeometry, viewport: FinaleViewport, breathing = true): PageCursor {
-	const { descent } = card;
-	const pose = arrivalCardPose(slot, card, slotOnScreen(slot, wallOffset(time, geometry), geometry), Math.min(time, descent.touchdown), viewport, breathing);
-	const shown = projectLifted(pose, viewport);
-	const from = holder.from ?? descent.start - GRAB_S;
-	const enter = smooth(from, lerp(from, arrivedAt(from, descent), 0.7), time);
-	const away = smooth(descent.touchdown, descent.touchdown + RELEASE_S, time);
-	// Coming in: from the far end of its reach, easing onto the card.
-	const coming = onLeg(holder.hand.reach, (1 - EASE.inOut(progress(time, from, arrivedAt(from, descent)))) * (holder.reachShare ?? 0));
-	// Letting go: easing off along its leave.
-	const going = onLeg(holder.hand.leave, EASE.inOut(progress(time, descent.touchdown, descent.touchdown + RELEASE_S)));
-	return { key: slot.key, lane: holder.lane, name: holder.name, x: shown.x + coming.x + going.x, y: shown.y + coming.y + going.y, scale: shown.scale, opacity: Math.min(enter, 1 - away), pillAbove: holder.hand.pillAbove };
+	const { touchdown } = card.descent;
+	const shown = onCard(slot, card, time, geometry, viewport, breathing);
+	const coming = onLeg(holder.hand.reach, 1 - EASE.outPractical(progress(time, holder.from, holder.arrive)));
+	const away = EASE.in(progress(time, touchdown, touchdown + LEAVE_S));
+	const going = onLeg(holder.hand.leave, away);
+	return { key: slot.key, lane: holder.lane, name: holder.name, x: shown.x + coming.x + going.x, y: shown.y + coming.y + going.y, scale: shown.scale, opacity: 1 - away, pillAbove: holder.hand.pillAbove };
 }
 
 /**
@@ -206,7 +215,7 @@ function heldCursor(slot: WallSlot, card: WallArrival, holder: Holder, time: num
  * slot's is planned on the slot's middle, before its cards are printed, so it
  * reaches as far up as its top card's middle may be.
  */
-function cursorReach(cursor: PageCursor, slot: WallSlot, fit: number): Box {
+function cursorReach(cursor: Pick<PageCursor, "x" | "y" | "scale" | "name" | "pillAbove">, slot: WallSlot, fit: number): Box {
 	const upright = finaleCursorBox(cursor.name);
 	// Turned over about its tip, its name and arrow paint above the tip, not below.
 	const box = cursor.pillAbove ? { ...upright, top: upright.bottom, bottom: upright.top } : upright;
@@ -230,15 +239,33 @@ function planTimes(from: number, to: number): number[] {
 	return times;
 }
 
+/** How far a cursor painting `box` must move `angle`-wards to be wholly off the frame, by whichever edge it crosses first. */
+function offFrame(box: Box, angle: number, viewport: FinaleViewport): number {
+	const dx = Math.cos(angle);
+	const dy = Math.sin(angle);
+	const across = dx > 1e-6 ? (viewport.width - box.left) / dx : dx < -1e-6 ? box.right / -dx : Number.POSITIVE_INFINITY;
+	const along = dy > 1e-6 ? (viewport.height - box.top) / dy : dy < -1e-6 ? box.bottom / -dy : Number.POSITIVE_INFINITY;
+	return Math.max(0, Math.min(across, along));
+}
+
+/** The part of `box` inside the frame, or null if it is wholly off it. */
+function inFrame(box: Box, viewport: FinaleViewport): Box | null {
+	const clipped = { left: Math.max(0, box.left), top: Math.max(0, box.top), right: Math.min(viewport.width, box.right), bottom: Math.min(viewport.height, box.bottom) };
+	return clipped.left < clipped.right && clipped.top < clipped.bottom ? clipped : null;
+}
+
 const holdCandidates = new WeakMap<FinaleWall, Map<string, WallHold | null>>();
 
 /**
  * Whether a teammate would take a slot's card, before they make way for one
  * another: about `HELD_SHARE` of the arrivals, once the bento's own cards are
- * all down and MCB has left. The card comes down where it always does, and its teammate
- * catches it from the first moment their cursor, name pill and all, stays
- * `CURSOR_MARGIN` inside the frame from there to leaving, as long as that
- * leaves at least `RIDE_S` to ride it down. Every pass of the loop plans it alike.
+ * all down and MCB has left. The card comes down where it always does, and
+ * its teammate holds it from the first moment their cursor on it, name pill
+ * and all, stays `CURSOR_MARGIN` inside the frame until they let go, as long
+ * as that leaves at least `RIDE_S` to ride it down. Their hand sets off from
+ * wholly off the frame `ENTER_S` before it is on the card, and once it lets
+ * go runs back off the frame, each leg as long as the frame makes it
+ * (`offFrame`). Every pass of the loop plans it alike.
  */
 function holdCandidate(slot: WallSlot, wall: FinaleWall): WallHold | null {
 	return perSlot(holdCandidates, wall, slot, () => {
@@ -249,34 +276,37 @@ function holdCandidate(slot: WallSlot, wall: FinaleWall): WallHold | null {
 		const { viewport } = geometry;
 		const fit = geometry.typeScale / WALL_SCALE;
 		const margin = CURSOR_MARGIN * fit;
-		const holder: Holder = { ...wallCursorHolder(slot.seed), hand: handFor(slot, geometry) };
+		const { name, lane } = wallCursorHolder(slot.seed);
+		const ways = handWaysFor(slot, geometry);
 		// A print slot's top card may come down a beat after the slot's first.
 		const deal = slot.content.kind === "print" ? dealDelay(slot, slot.content.codes.length - 1) : 0;
 		const inside = (box: Box) => box.left >= margin && box.top >= margin && box.right <= viewport.width - margin && box.bottom <= viewport.height - margin;
-		const to = descent.touchdown + deal + RELEASE_S;
 		const card: WallArrival = { key: slot.key, index: null, code: null, rect: { x: 0, y: 0, width: slot.rect.width, height: slot.rect.height }, radius: geometry.radius, descent };
-		const reachOf = (held: Holder) => (time: number) => cursorReach(heldCursor(slot, card, held, Math.min(time, descent.touchdown + RELEASE_S), geometry, viewport, false), slot, fit);
-		// The earliest moment from which the whole rest of its path, on the card and letting go, stays inside: walk back from letting go.
-		const settled = reachOf(holder);
-		const times = planTimes(descent.start - GRAB_S, to);
+		const boxAt = (time: number) => cursorReach({ ...onCard(slot, card, time, geometry, viewport, false), name, pillAbove: ways.pillAbove }, slot, fit);
+		// The earliest moment from which its cursor on the card stays inside until it lets go: walk back from letting go.
+		const times = planTimes(descent.start - GRAB_S, descent.touchdown + deal);
 		let first = times.length;
-		while (first > 0 && inside(settled(times[first - 1]))) first -= 1;
-		const from = times[first];
-		if (from === undefined || from > descent.touchdown - RIDE_S || from < titleCarrierGoneTime()) return null;
-		// Then its reach in, as the frame allows: turned a little inward, then shortened, before it would only fade in on the card.
-		for (const turn of [0, 0.45, 0.9]) {
-			for (const reachShare of [1, 0.6]) {
-				const held = { ...holder, hand: { ...holder.hand, reach: turnedIn(holder.hand.reach, turn) }, from, reachShare };
-				const reach = reachOf(held);
-				if (planTimes(from, arrivedAt(from, descent)).every((time) => inside(reach(time)))) return { ...held, descent, to, reach };
-			}
-		}
-		const held = { ...holder, from, reachShare: 0 };
-		return { ...held, descent, to, reach: reachOf(held) };
+		while (first > 0 && inside(boxAt(times[first - 1]))) first -= 1;
+		const onFrom = times[first];
+		if (onFrom === undefined || onFrom > descent.touchdown - RIDE_S) return null;
+		const arrive = arrivedAt(onFrom, descent);
+		const from = arrive - ENTER_S;
+		if (from < titleCarrierGoneTime()) return null;
+		// Each leg reaches from the card to wholly off the frame (with room to spare): in from where the card is as the hand sets off, out from where it is as the hand is gone.
+		const spare = CURSOR_APART * fit;
+		const leaveEnd = descent.touchdown + LEAVE_S;
+		const hand: Hand = {
+			reach: handLeg(ways.reach, offFrame(boxAt(from), ways.reach, viewport) + spare, ways.reachBow),
+			leave: handLeg(ways.leave, offFrame(boxAt(leaveEnd), ways.leave, viewport) + spare, ways.leaveBow),
+			pillAbove: ways.pillAbove,
+		};
+		const held: Holder = { name, lane, hand, from, arrive };
+		const reach = (time: number) => inFrame(cursorReach(heldCursor(slot, card, held, Math.min(time, leaveEnd), geometry, viewport, false), slot, fit), viewport);
+		return { ...held, descent, to: leaveEnd + deal, reach };
 	});
 }
 
-/** Whether two teammates' holds would get in each other's way: one lane twice at once, or two cursors near or over each other. */
+/** Whether two teammates' holds would get in each other's way: one lane twice at once, or two cursors near or over each other in the frame. */
 function holdsClash(a: WallHold, b: WallHold, apart: number): boolean {
 	if (a.to + LANE_REST_S <= b.from || b.to + LANE_REST_S <= a.from) return false;
 	if (a.lane === b.lane) return true;
@@ -286,7 +316,7 @@ function holdsClash(a: WallHold, b: WallHold, apart: number): boolean {
 	return planTimes(from, to).some((time) => {
 		const p = a.reach(time);
 		const q = b.reach(time);
-		return p.left < q.right + apart && q.left < p.right + apart && p.top < q.bottom + apart && q.top < p.bottom + apart;
+		return p !== null && q !== null && p.left < q.right + apart && q.left < p.right + apart && p.top < q.bottom + apart && q.top < p.bottom + apart;
 	});
 }
 
@@ -338,10 +368,10 @@ function titleCarrierCursor(time: number, wall: FinaleWall, drops: readonly Bent
 /**
  * Every cursor on the wall at `time`. MCB first, dragging the title into its
  * gap (`drops`: the bento's cards). Then teammates reaching in at the leading
- * edge: one reaches in (from above, the side or below, by where the card is:
- * `HAND`), takes a card coming down by its middle, rides it into its slot and
- * lets go, drifting off along a path of its own, every cursor, name and all,
- * well inside the frame.
+ * edge: one glides in from off the frame (from above, the side or below, by
+ * where the card is: `HAND`), takes a card coming down by its middle, rides it
+ * into its slot, every cursor, name and all, well inside the frame, and lets
+ * go, heading back off the frame along a path of its own as it fades out.
  * Each lane holds one card at a time, so no more hands are in than the wall
  * has cursors, nobody is in two places at once, and no two cursors cover each
  * other (`wallHold`); none reaches in until MCB has left. A print slot's
@@ -360,7 +390,7 @@ export function wallCursorsAt(time: number, wall: FinaleWall, drops: readonly Be
 			if (!hold) continue;
 			// The card it takes: the slot's own, or the top one of a print slot's stack.
 			const card = slotArrivals(slot, wall, prints)[0];
-			if (!card || time < hold.from || time > card.descent.touchdown + RELEASE_S) continue;
+			if (!card || time < hold.from || time > card.descent.touchdown + LEAVE_S) continue;
 			cursors.push(heldCursor(slot, card, hold, time, geometry, viewport));
 		}
 	}

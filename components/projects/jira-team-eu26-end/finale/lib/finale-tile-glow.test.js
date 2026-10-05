@@ -10,6 +10,7 @@ const ENTRY = `
 export * from "./finale-tile-glow";
 export { tileRevealStart, touchdownTime } from "./finale-card-motion";
 export { CUE, FINALE_REST_TIME } from "../data/finale-cues";
+export { FINALE_FEATURES } from "../data/finale-stories";
 export { landingSettled } from "./finale-wall-motion";
 `;
 
@@ -69,18 +70,47 @@ test("every tile gets its own deterministic look and motion", () => {
 	assert.ok(Math.max(...byTone("soft").map((look) => look.gain * look.opacity)) < Math.min(...byTone("bright").map((look) => look.gain * look.opacity)), "soft tiles are quieter");
 });
 
-test("each glow starts once its tile settles, and is gone before its heading has built and by CUE.end", () => {
+test("each glow starts once its tile settles, and is gone soon after the heading has built and by CUE.end", () => {
 	const { CUE, TILE_GLOW, tileGlowLook, tileGlowWindow, tileRevealStart, touchdownTime } = load();
+	const deadline = CUE.yearLand + TILE_GLOW.outBy;
 	for (const order of TILES) {
 		const { start, peak, fallStart, end } = tileGlowWindow(order);
 		const settle = touchdownTime(order) + TILE_GLOW.settle;
+		const look = tileGlowLook(order);
 		assert.ok(start >= settle && start <= settle + TILE_GLOW.delay[1], `tile ${order} starts once settled`);
 		assert.ok(start < peak && peak < fallStart && fallStart < end, "rise, alive, fall");
-		assert.ok(Math.abs(end - start - tileGlowLook(order).duration) < 1e-9, `tile ${order} keeps its own duration (not clamped)`);
-		assert.ok(end - start >= 1.5, "a brief but readable moment");
+		assert.ok(Math.abs(end - start - Math.min(look.duration, deadline - start)) < 1e-9, `tile ${order} keeps its own duration unless the heading's deadline cuts it`);
+		assert.ok(Math.abs((peak - start) / (end - start) - look.rise) < 1e-9 && Math.abs((end - fallStart) / (end - start) - look.fall) < 1e-9, "a cut glow keeps its shape");
+		assert.ok(end - start >= 1.4, "a brief but readable moment");
 		assert.ok(peak - start <= 0.4, "fades up quickly");
-		assert.ok(end <= tileRevealStart(order) + CUE.reveal + 1e-9, "gone once the heading has built");
+		assert.ok(end <= deadline + 1e-9, `tile ${order} is gone within outBy of "Team ’26" building`);
+		assert.ok(end <= tileRevealStart(order) + CUE.reveal + 1e-9, "gone once its content has built");
 		assert.ok(end < CUE.end, "gone by the final frame");
+	}
+});
+
+test("Record for Agent's glow goes out with the others' once the heading has built, not after them (regression)", () => {
+	const { CUE, FINALE_FEATURES, TILE_GLOW, tileGlow, tileGlowLook, tileGlowWindow, touchdownTime } = load();
+	const record = FINALE_FEATURES.findIndex((story) => story.code === "TEU-106");
+	assert.equal(record, TILES.length - 1, "Record for Agent lands last");
+	const deadline = CUE.yearLand + TILE_GLOW.outBy;
+	const windows = TILES.map((order) => tileGlowWindow(order));
+	const others = TILES.filter((order) => order !== record);
+	// Its own roll (longest duration, latest start, last touchdown) would run on alone ~0.3s after the rest were out.
+	const look = tileGlowLook(record);
+	const natural = windows[record].start + look.duration;
+	assert.ok(natural > Math.max(...others.map((order) => windows[order].end)) + 0.2, "the roll that lingered");
+	for (const order of others) assert.ok(Math.abs(windows[order].end - windows[order].start - tileGlowLook(order).duration) < 1e-9, `tile ${order} keeps its timing`);
+	const lastOther = Math.max(...others.map((order) => windows[order].end));
+	assert.ok(windows[record].end <= lastOther + 1 / 60, "out within a frame of the last of the others");
+	const life = (order) => windows[order].end - touchdownTime(order);
+	assert.ok(life(record) <= Math.max(...others.map(life)) + 1e-9, "no longer after its touchdown than the others run after theirs");
+	for (const order of TILES) {
+		for (let time = deadline; time <= CUE.end + 1; time += FRAME) assert.deepEqual(tileGlow(time, order), { active: false, envelope: 0 }, `tile ${order} is dark at ${time.toFixed(3)}`);
+	}
+	// From the moment "Team ’26" has built, its glow never outshines Rovo Work Mode's (lit just as long) by more than a hair.
+	for (let time = CUE.yearLand; time < deadline; time += FRAME) {
+		assert.ok(tileGlow(time, record).envelope <= tileGlow(time, record - 1).envelope + 0.12, `fades with its neighbour at ${time.toFixed(3)}`);
 	}
 });
 
@@ -343,7 +373,7 @@ test("a bento tile glows in its gap exactly as it did on the slide, from its own
 });
 
 test("every card replays one of the six glows, from its own touchdown until its content has built", () => {
-	const { TILE_GLOW, glowOrder, landingSettled, tileGlowFor, tileGlowLook, tileGlowWindowFor } = load();
+	const { TILE_GLOW, glowOrder, landingSettled, tileGlowFor, tileGlowWindow, tileGlowWindowFor } = load();
 	assert.deepEqual(TILES.map(glowOrder), TILES, "the bento's own tiles replay their own");
 	assert.ok(TILES.includes(glowOrder(6)), "the title (order 6) replays one of the six");
 	const seeds = [];
@@ -359,7 +389,8 @@ test("every card replays one of the six glows, from its own touchdown until its 
 		const { start, peak, fallStart, end } = tileGlowWindowFor(touchdown, settled, seed);
 		assert.ok(start >= touchdown + TILE_GLOW.settle && start <= touchdown + TILE_GLOW.settle + TILE_GLOW.delay[1], "starts once settled");
 		assert.ok(start < peak && peak < fallStart && fallStart < end, "rise, alive, fall");
-		assert.ok(Math.abs(end - start - tileGlowLook(glowOrder(seed)).duration) < 1e-9, "its glow's own duration (not clamped)");
+		const slide = tileGlowWindow(glowOrder(seed));
+		assert.ok(Math.abs(end - start - (slide.end - slide.start)) < 1e-9, "its glow's span on the slide (not clamped)");
 		assert.ok(end <= settled + 1e-9, "gone once its content has built");
 		for (const time of [touchdown - 1, touchdown, start - FRAME, end, settled, settled + 1]) assert.deepEqual(tileGlowFor(time, touchdown, settled, seed), { active: false, envelope: 0 });
 		assert.equal(tileGlowFor((peak + fallStart) / 2, touchdown, settled, seed).envelope, 1);
