@@ -88,7 +88,7 @@ for (const [route, projectCodes, destination] of [
 					await expect(trace).toHaveCount(1);
 					await expect(trace).toHaveAttribute("aria-hidden", "true");
 					await expect(trace.locator("g rect")).toHaveCount(count);
-					expect(await page.evaluate(() => Number(window.solitaireDropAnimations.find((animation) => (animation.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]"))!.effect!.getTiming().duration))).toBe(650);
+					expect(await page.evaluate(() => Number(window.solitaireDropAnimations.find((animation) => (animation.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]"))!.effect!.getTiming().duration))).toBe(1000);
 					for (const outline of await trace.locator("g rect").all()) await expect(outline).toHaveAttribute("stroke", destination === "Done" ? "var(--ds-border-success)" : "var(--ds-border-bold)");
 					if (count > 1) {
 						const travel = await page.evaluate(async () => {
@@ -105,7 +105,12 @@ for (const [route, projectCodes, destination] of [
 						expect(travel[2] - travel[1]).toBeGreaterThan(travel[1] - travel[0]);
 					}
 					expect(await page.evaluate(() => window.solitaireDropAnimations.filter((animation) => !(animation.effect as KeyframeEffect).target?.closest("[data-issue-drop-trace]")).length)).toBe(count - 1);
-					await page.evaluate(() => window.solitaireDropAnimations.forEach((animation) => { animation.currentTime = 240; }));
+					await page.evaluate(() => window.solitaireDropAnimations.forEach((animation) => {
+						const effect = animation.effect as KeyframeEffect;
+						const timing = effect.getTiming();
+						animation.currentTime = effect.target?.closest("[data-issue-drop-trace]")
+							? Number(timing.delay) + Number(timing.duration) * 0.55 : 420;
+					}));
 				}
 				await page.screenshot({ path: `output/agent-browser/project-column-drop/${route}-${count}-${reducedMotion}.png` });
 				await page.evaluate(() => window.solitaireDropAnimations.forEach((animation) => animation.finish()));
@@ -138,7 +143,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 					return { timing, trace: effect.target?.closest("[data-issue-drop-trace]") !== null, travel };
 				}));
 				const trace = evidence.find((item) => item.trace)!;
-				const expectedDuration = 650;
+				const expectedDuration = 1000;
 				expect(Number(trace.timing.duration)).toBeCloseTo(expectedDuration, 3);
 				// A bulk Done sweep starts once the stack has unfolded; a single card waits for neighbour reflow.
 				const traceDelay = count > 1 ? 420 : 150;
