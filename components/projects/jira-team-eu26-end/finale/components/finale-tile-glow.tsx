@@ -4,7 +4,14 @@ import { useEffect, useRef } from "react";
 
 import type { FinaleRect } from "../data/finale-stories";
 import type { FinaleViewport } from "../lib/finale-card-motion";
-import { TILE_GLOW_FRAGMENT, TILE_GLOW_VERTEX, tileGlowClock, tileGlowDraws, tileGlowUniforms } from "../lib/finale-tile-glow";
+import {
+	TILE_GLOW_FRAGMENT,
+	TILE_GLOW_VERTEX,
+	landingGlowDraws,
+	tileGlowDraws,
+	tileGlowUniforms,
+	type TileGlowLanding,
+} from "../lib/finale-tile-glow";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 interface GlowGl {
@@ -73,15 +80,30 @@ function createGlowGl(canvas: HTMLCanvasElement, ratio: number): GlowGl | null {
 	};
 }
 
-interface FinaleTileGlowProps {
-	/** Bento slots in landing order (viewport px). */
-	readonly tiles: readonly FinaleRect[];
+const NO_TILES: readonly FinaleRect[] = [];
+
+interface FinaleTileGlowBase {
 	/** Tile corner radius in viewport px. */
 	readonly radius: number;
-	/** Stage-to-viewport scale. */
+	/** Stage-to-viewport scale of the tiles: bloom, smoke and the quads' overhang. */
 	readonly scale: number;
+	/** Stage-to-viewport scale of the hairline core; the tiles' `scale` unless set. */
+	readonly stroke?: number;
 	readonly viewport: FinaleViewport;
 }
+
+type FinaleTileGlowProps = FinaleTileGlowBase & (
+	| {
+		/** Bento slots in landing order (viewport px), lit by their landing order. */
+		readonly tiles: readonly FinaleRect[];
+		readonly landings?: never;
+	}
+	| {
+		/** Cards that may be glowing at `time`, on their rects this frame (the wall's `wallLandingsAt`). */
+		readonly landings: (time: number) => readonly TileGlowLanding[];
+		readonly tiles?: never;
+	}
+);
 
 /**
  * One shared WebGL layer, above the DOM tiles, that lights each tile's whole
@@ -89,8 +111,12 @@ interface FinaleTileGlowProps {
  * orbiting spots, flowing smoke, a heartbeat, each tile with its own seeded
  * spots, speeds, colours, bloom and tone (see `lib/finale-tile-glow`). It
  * draws one quad per glowing tile, and nothing — hidden — when none is.
+ *
+ * The bento's six tiles are fixed on the slide; the mega bento's cards land
+ * in an endless stream on a wall that glides, so for those it is handed
+ * `landings`, read each frame.
  */
-export function FinaleTileGlow({ tiles, radius, scale, viewport }: Readonly<FinaleTileGlowProps>) {
+export function FinaleTileGlow({ tiles, landings, radius, scale, stroke = scale, viewport }: Readonly<FinaleTileGlowProps>) {
 	const hostRef = useRef<HTMLDivElement>(null);
 	const glRef = useRef<GlowGl | null>(null);
 	const lastTimeRef = useRef<number | null>(null);
@@ -99,7 +125,7 @@ export function FinaleTileGlow({ tiles, radius, scale, viewport }: Readonly<Fina
 		const state = glRef.current;
 		if (!state) return;
 		const { gl, canvas, uniforms } = state;
-		const draws = tileGlowDraws(time, tiles, radius, scale);
+		const draws = landings ? landingGlowDraws(time, landings(time), radius, scale, stroke) : tileGlowDraws(time, tiles ?? NO_TILES, radius, scale);
 		const visibility = draws.length > 0 ? "visible" : "hidden";
 		if (canvas.style.visibility !== visibility) canvas.style.visibility = visibility;
 		if (draws.length === 0 && !state.drawn) return;
@@ -108,15 +134,17 @@ export function FinaleTileGlow({ tiles, radius, scale, viewport }: Readonly<Fina
 		state.drawn = draws.length > 0;
 		gl.uniform2f(uniforms.viewport, viewport.width, viewport.height);
 		gl.uniform1f(uniforms.scale, scale);
-		// Paper's shader time is the finale clock (anchored to the toss), so the motion scrubs.
-		gl.uniform1f(uniforms.time, tileGlowClock(time));
 		for (const draw of draws) {
 			const { quad, shape } = draw;
+			// Off the frame (carried out by the wall): nothing to shade.
+			if (quad.x >= viewport.width || quad.y >= viewport.height || quad.x + quad.width <= 0 || quad.y + quad.height <= 0) continue;
+			// Paper's shader time is the finale clock (anchored to the toss; on the wall, to each card's touchdown), so the motion scrubs.
+			gl.uniform1f(uniforms.time, draw.clock);
 			gl.uniform4f(uniforms.quad, quad.x, quad.y, quad.width, quad.height);
 			gl.uniform4f(uniforms.rect, shape.rect.x, shape.rect.y, shape.rect.width, shape.rect.height);
 			gl.uniform1f(uniforms.radius, shape.radius);
 			gl.uniform1f(uniforms.length, shape.length);
-			const look = tileGlowUniforms(draw.look, scale);
+			const look = tileGlowUniforms(draw.look, scale, stroke);
 			gl.uniform4fv(uniforms.spotA, look.spotA);
 			gl.uniform4fv(uniforms.spotB, look.spotB);
 			gl.uniform4fv(uniforms.spotC, look.spotC);

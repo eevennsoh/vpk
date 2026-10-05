@@ -10,3 +10,18 @@ export function nextFinaleDragOrder(previous: readonly string[], doneCodes: read
 	if (arrived.length === 0 && kept.length === previous.length) return previous;
 	return [...kept, ...arrived];
 }
+
+/** The cards one drop brought into Done (a bulk drag brings several at once). */
+export function finaleArrivals(previous: readonly string[], next: readonly string[]): readonly string[] {
+	const known = new Set(previous);
+	return next.filter((code) => !known.has(code));
+}
+
+/**
+ * Whether a drop earns the small celebration: cards into Done, one or a
+ * bulk drag of several, short of the drop that completes the board (that one
+ * opens the finale and its full burst instead).
+ */
+export function finaleSmallConfettiDue(arrived: readonly string[], boardComplete: boolean): boolean {
+	return arrived.length > 0 && !boardComplete;
+}

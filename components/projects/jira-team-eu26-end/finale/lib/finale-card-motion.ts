@@ -152,7 +152,7 @@ function heroHome(viewport: FinaleViewport): FieldHome {
 	return { x: anchor.x, y: -anchor.y, z: anchor.z, rotateX: 0.18, rotateY: -0.35, rotateZ: 0.06, seed: 1 };
 }
 
-function flatPose(rect: FinaleRect, face: number): FinaleCardPose {
+export function flatPose(rect: FinaleRect, face: number): FinaleCardPose {
 	const centre = rectCentre(rect);
 	return { x: centre.x, y: centre.y, z: 0, width: rect.width, height: rect.height, rotateX: 0, rotateY: 0, rotateZ: 0, opacity: 1, face, lift: 0, waveAge: -1, clip: 0 };
 }
@@ -172,7 +172,7 @@ function fieldPose(home: FieldHome, rect: FinaleRect, time: number, viewport: Fi
 	};
 }
 
-function blendPose(from: FinaleCardPose, to: FinaleCardPose, amount: number): FinaleCardPose {
+export function blendPose(from: FinaleCardPose, to: FinaleCardPose, amount: number): FinaleCardPose {
 	return {
 		x: lerp(from.x, to.x, amount),
 		y: lerp(from.y, to.y, amount),
@@ -196,7 +196,7 @@ function burstStart(input: FinaleCardInput): number {
 }
 
 /** Whole turns, so a flipped card still comes to rest at its field angle. */
-function turns(seed: number, chance: number): number {
+export function turns(seed: number, chance: number): number {
 	const roll = hash01(seed);
 	if (roll > chance) return 0;
 	return roll < chance / 2 ? -1 : 1;
@@ -248,7 +248,7 @@ export function tileRevealStart(order: number): number {
 }
 
 /** Peel's landing recoil, exaggerated for the stage: a brief in-plane shear that springs back. */
-function landingSkew(age: number): number {
+export function landingSkew(age: number): number {
 	if (age < 0) return 0;
 	return 0.07 * Math.sin(age * 17) * Math.exp(-age * 6);
 }
@@ -604,7 +604,19 @@ function contactSigma(height: number, falloff: FinaleShadowFalloff): number {
  */
 export function landingShadow(time: number, order: number, pose: FinaleCardPose, viewport: FinaleViewport, ground: FinaleShadowGround = slideShadowGround(viewport), radius = 0): FinaleLandingShadow | null {
 	const landing = order === 0 ? CUE.zoomEnd : tileFallStart(order);
-	const settled = touchdownTime(order);
+	return landingShadowIn({ start: landing, settled: touchdownTime(order) }, time, pose, viewport, ground, radius);
+}
+
+/** When a landing card's shadow exists: from `start` (it starts down) to just after `settled` (it lies flat). */
+export interface FinaleShadowWindow {
+	readonly start: number;
+	readonly settled: number;
+}
+
+/** `landingShadow` for any landing, timed by an explicit window rather than a bento tile's order. */
+export function landingShadowIn(window: FinaleShadowWindow, time: number, pose: FinaleCardPose, viewport: FinaleViewport, ground: FinaleShadowGround = slideShadowGround(viewport), radius = 0): FinaleLandingShadow | null {
+	const landing = window.start;
+	const settled = window.settled;
 	if (time < landing || time > settled + SHADOW.fadeOut) return null;
 	const presence = smooth(progress(time, landing, landing + SHADOW.fadeIn)) * (1 - smooth(progress(time, settled, settled + SHADOW.fadeOut)));
 	if (presence <= 0) return null;

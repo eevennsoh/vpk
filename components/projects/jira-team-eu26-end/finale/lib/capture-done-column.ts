@@ -124,6 +124,12 @@ export function waitForFinaleColumnCapture(signal?: AbortSignal): Promise<HTMLEl
 	});
 }
 
+/** The live Done column as it is now, mid-drop or not. */
+export function queryJiraTeamEu26DoneColumn(): HTMLElement | null {
+	if (typeof document === "undefined") return null;
+	return document.querySelector<HTMLElement>(DONE_COLUMN_SELECTOR);
+}
+
 /** The live Done column's DOM cards (the originals the GL sheets are printed from). */
 export function queryJiraTeamEu26DoneCards(): readonly HTMLElement[] {
 	if (typeof document === "undefined") return [];

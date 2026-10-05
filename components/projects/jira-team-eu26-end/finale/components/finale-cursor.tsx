@@ -4,7 +4,7 @@ import { useRef } from "react";
 
 import type { FinaleSlot } from "../data/finale-stories";
 import type { FinaleViewport } from "../lib/finale-card-motion";
-import { FINALE_CURSORS, cursorPose } from "../lib/finale-cursor-path";
+import { FINALE_CURSORS, cursorPose, type FinaleCursorPose } from "../lib/finale-cursor-path";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 /** The arrow's tip inside its 30×30 box; the cursor is placed and pressed about it. */
@@ -58,6 +58,66 @@ export function FinaleTelepointer({ color, ink, label, ref }: Readonly<FinaleTel
 	);
 }
 
+interface FinalePresenterCursorsProps {
+	/**
+	 * Presenter `index` (of `FINALE_CURSORS`: Mike, Tamar, Sherif, Taroon) at
+	 * `time`: their tip in viewport px, press or perspective scale, and
+	 * opacity; null while they are off.
+	 */
+	readonly poseAt: (time: number, index: number) => FinaleCursorPose | null;
+	/** Stage fit: the cursors are drawn at the 1920 stage size and scaled with the type. */
+	readonly scale: number;
+}
+
+/**
+ * One telepointer per presenter, each in their own colour and name, placed
+ * every frame by `poseAt`. A cursor that is off (or faded out) is hidden, and
+ * a resting one is not rewritten.
+ */
+export function FinalePresenterCursors({ poseAt, scale }: Readonly<FinalePresenterCursorsProps>) {
+	const refs = useRef<(HTMLDivElement | null)[]>([]);
+	const written = useRef<{ opacity: string; transform: string }[]>([]);
+
+	useFinaleFrame((time) => {
+		refs.current.forEach((element, index) => {
+			if (!element) return;
+			const pose = poseAt(time, index);
+			const visibility = pose && pose.opacity > 0 ? "visible" : "hidden";
+			if (element.style.visibility !== visibility) element.style.visibility = visibility;
+			if (!pose || visibility === "hidden") return;
+			const last = (written.current[index] ??= { opacity: "", transform: "" });
+			const opacity = String(pose.opacity);
+			const transform = `translate3d(${pose.x - TIP.x}px, ${pose.y - TIP.y}px, 0) scale(${scale * pose.scale})`;
+			if (last.opacity !== opacity) {
+				last.opacity = opacity;
+				element.style.opacity = opacity;
+			}
+			if (last.transform !== transform) {
+				last.transform = transform;
+				element.style.transform = transform;
+			}
+		});
+	});
+
+	return (
+		<>
+			{FINALE_CURSORS.map((cursor, index) => (
+				<FinaleTelepointer
+					key={cursor.id}
+					ref={(element) => {
+						refs.current[index] = element;
+						// A fresh element has none of the styles written to the last one.
+						written.current[index] = { opacity: "", transform: "" };
+					}}
+					color={cursor.color}
+					ink={cursor.ink}
+					label={cursor.label}
+				/>
+			))}
+		</>
+	);
+}
+
 interface FinaleCursorsProps {
 	readonly slots: readonly FinaleSlot[];
 	readonly viewport: FinaleViewport;
@@ -70,33 +130,5 @@ interface FinaleCursorsProps {
  * assembles. Their motion is `cursorPose` on the finale clock.
  */
 export function FinaleCursors({ slots, viewport, scale }: Readonly<FinaleCursorsProps>) {
-	const refs = useRef<(HTMLDivElement | null)[]>([]);
-
-	useFinaleFrame((time) => {
-		refs.current.forEach((element, index) => {
-			if (!element) return;
-			const pose = cursorPose(time, index, slots, viewport, scale);
-			if (!pose) {
-				if (element.style.visibility !== "hidden") element.style.visibility = "hidden";
-				return;
-			}
-			element.style.visibility = "visible";
-			element.style.opacity = String(pose.opacity);
-			element.style.transform = `translate3d(${pose.x - TIP.x}px, ${pose.y - TIP.y}px, 0) scale(${scale * pose.scale})`;
-		});
-	});
-
-	return (
-		<>
-			{FINALE_CURSORS.map((cursor, index) => (
-				<FinaleTelepointer
-					key={cursor.id}
-					ref={(element) => { refs.current[index] = element; }}
-					color={cursor.color}
-					ink={cursor.ink}
-					label={cursor.label}
-				/>
-			))}
-		</>
-	);
+	return <FinalePresenterCursors scale={scale} poseAt={(time, index) => cursorPose(time, index, slots, viewport, scale)} />;
 }

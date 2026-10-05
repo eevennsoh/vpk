@@ -56,7 +56,8 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing }: Readonly
 		let frame = 0;
 		let last = Number.NaN;
 		const tick = () => {
-			const time = reducedMotion ? FINALE_REST_TIME : Math.min(clock.time(), FINALE_REST_TIME);
+			// The bento is the rest frame; with motion on, the wall after it glides on until Esc.
+			const time = reducedMotion ? FINALE_REST_TIME : clock.time();
 			if (time !== last) {
 				registry.emit(time);
 				last = time;
@@ -110,7 +111,7 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing }: Readonly
 				data-jira-team-eu26-end-finale=""
 			>
 				<p className="sr-only" aria-live="polite">{summary}</p>
-				<SceneBoardToBento {...scene} fit={fit} viewport={viewport} />
+				<SceneBoardToBento {...scene} fit={fit} viewport={viewport} reducedMotion={reducedMotion} />
 			</dialog>
 		</FinaleFrameContext>,
 		document.body,

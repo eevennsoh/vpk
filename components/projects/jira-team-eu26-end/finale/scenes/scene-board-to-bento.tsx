@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 
 import { FinaleCardSpaceGl, type FinaleGlCard } from "../components/finale-card-space-gl";
 import { FinaleColumnFlash } from "../components/finale-column-flash";
@@ -10,8 +10,13 @@ import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FinaleTeamTitle } from "../components/finale-team-title";
 import { FINALE_TILE_RADIUS, FinaleTileFace } from "../components/finale-tile";
 import { FinaleTileGlow } from "../components/finale-tile-glow";
-import { finaleBentoLayout, type FinaleRect, type FinaleStory } from "../data/finale-stories";
+import { FinaleWall } from "../components/finale-wall";
+import { FinaleWallAccents } from "../components/finale-wall-accents";
+import { FinaleWallGl } from "../components/finale-wall-gl";
+import { CUE } from "../data/finale-cues";
+import { FINALE_SLOT_COUNT, finaleBentoLayout, type FinaleBentoLayout, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import { useFinaleBoardExit } from "../hooks/use-finale-board-exit";
+import { printFinaleElement } from "../hooks/use-finale-prints";
 import type { FinaleHandoffSnapshot } from "../lib/capture-done-column";
 import {
 	fieldRipples,
@@ -21,6 +26,8 @@ import {
 	type FinaleFit,
 	type FinaleViewport,
 } from "../lib/finale-card-motion";
+import { buildFinaleWall, wallGeometry } from "../lib/finale-wall-layout";
+import { bentoDrops, bentoTossTime } from "../lib/finale-wall-motion";
 
 /** The field always carries a full board, padding with blank sheets in rehearsal. */
 const FIELD_SIZE = 13;
@@ -81,9 +88,73 @@ function buildField(input: FinaleSceneInput, column: FinaleRect, slotRects: read
 	return [...echoes, ...cards];
 }
 
+/** The bento's static hold: every tile has built, so a print now costs a frame nobody is watching. */
+const BENTO_FACES_BUILT = tileRevealStart(FINALE_SLOT_COUNT - 1) + CUE.reveal;
+
+/** A detached copy of a tile wrapper as it rests: shown, unmoved, at its own origin. */
+function settleTileCopy(copy: HTMLElement): void {
+	copy.style.opacity = "1";
+	copy.style.visibility = "visible";
+	copy.style.transform = "none";
+	copy.style.left = "0px";
+	copy.style.top = "0px";
+}
+
+interface FacePrintRun {
+	cancelled: boolean;
+	started: boolean;
+}
+
+/**
+ * Prints of the bento's tile faces (`bento-<order>`) for the GL sheets that
+ * carry them into the mega bento: taken once in the bento's static hold, one
+ * after another, or at once if the scene mounts past it (a seek, a held
+ * frame). Each prints a detached copy forced visible, so a tile already handed
+ * to its sheet still prints. A new layout reprints, the old prints standing in
+ * until then; unmounting stops a run.
+ */
+function useBentoFacePrints(tileRefs: RefObject<(HTMLDivElement | null)[]>, bento: FinaleBentoLayout): (key: string) => HTMLCanvasElement | undefined {
+	const printsRef = useRef(new Map<string, HTMLCanvasElement>());
+	const runRef = useRef<FacePrintRun | null>(null);
+	const lastTimeRef = useRef<number | null>(null);
+
+	const print = useCallback((run: FacePrintRun) => {
+		run.started = true;
+		void (async () => {
+			for (const [order, tile] of [...tileRefs.current.entries()]) {
+				if (run.cancelled) return;
+				if (!tile) continue;
+				const face = await printFinaleElement(tile, { detach: true, prepare: settleTileCopy }).catch(() => undefined);
+				if (run.cancelled) return;
+				if (face) printsRef.current.set(`bento-${order}`, face);
+			}
+		})();
+	}, [tileRefs]);
+
+	// Before the frame below subscribes, so a scene mounted on a held frame past the hold prints at once.
+	useLayoutEffect(() => {
+		const run: FacePrintRun = { cancelled: false, started: false };
+		runRef.current = run;
+		if ((lastTimeRef.current ?? Number.NEGATIVE_INFINITY) >= BENTO_FACES_BUILT) print(run);
+		return () => {
+			run.cancelled = true;
+		};
+	}, [bento, print]);
+
+	useFinaleFrame((time) => {
+		lastTimeRef.current = time;
+		const run = runRef.current;
+		if (run && !run.started && time >= BENTO_FACES_BUILT) print(run);
+	});
+
+	return useCallback((key: string) => printsRef.current.get(key), []);
+}
+
 interface SceneBoardToBentoProps extends FinaleSceneInput {
 	readonly fit: FinaleFit;
 	readonly viewport: FinaleViewport;
+	/** Reduced motion rests on the bento: the mega bento never mounts, nor its WebGL context. */
+	readonly reducedMotion: boolean;
 }
 
 /**
@@ -92,9 +163,13 @@ interface SceneBoardToBentoProps extends FinaleSceneInput {
  * into the field; the camera sweeps it and rushes in to the first card MCB
  * dragged, and each chosen sheet swoops
  * onto the page with Peel's paper wave before handing over to its DOM tile.
+ * Then Act III: "Team ’26" becomes a card, and the bento's seven cards are
+ * thrown, faces and all, as GL sheets carrying prints of them, to land in gaps
+ * across the mega bento as it appears around them.
  */
-export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features, cardPrint, columnPrint }: Readonly<SceneBoardToBentoProps>) {
+export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features, cardPrint, columnPrint, reducedMotion }: Readonly<SceneBoardToBentoProps>) {
 	const tileRefs = useRef<(HTMLDivElement | null)[]>([]);
+	const writtenRefs = useRef<number[]>([]);
 	const slideRef = useRef<HTMLDivElement>(null);
 	const column = useMemo(
 		() => snapshot?.column ?? { x: viewport.width / 2 - 150, y: 80, width: 300, height: viewport.height - 160 },
@@ -113,14 +188,23 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		[snapshot, dragOrder, features, cardPrint, column, slotRects],
 	);
 	const ripples = useMemo(() => fieldRipples(slotRects), [slotRects]);
+	// Act III: the mega bento, and the gap each bento card is thrown into.
+	const geometry = useMemo(() => wallGeometry(bento, fit.scale, viewport), [bento, fit.scale, viewport]);
+	const wall = useMemo(() => buildFinaleWall(geometry, bento, features, dragOrder), [geometry, bento, features, dragOrder]);
+	const drops = useMemo(() => bentoDrops(wall, slotRects, bento.title), [wall, slotRects, bento.title]);
 	// The camera frames the hero (the first card MCB dragged) for the long zoom.
 	const subject = useMemo(() => cards.find((card) => card.input.role.kind === "hero")?.input.rect ?? column, [cards, column]);
 
 	useFinaleBoardExit(slideRef);
+	const facePrint = useBentoFacePrints(tileRefs, bento);
 	useFinaleFrame((time) => {
+		// At the throw each tile's GL sheet, printed with its face and in place, takes over: a clean cut.
+		const tossed = time >= bentoTossTime();
 		tileRefs.current.forEach((tile, order) => {
 			if (!tile) return;
-			const shown = tileHandoff(time, order);
+			const shown = tossed ? 0 : tileHandoff(time, order);
+			if (writtenRefs.current[order] === shown) return;
+			writtenRefs.current[order] = shown;
 			tile.style.opacity = String(shown);
 			tile.style.visibility = shown > 0 ? "visible" : "hidden";
 		});
@@ -130,6 +214,14 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		<div aria-hidden className="absolute inset-0">
 			{/* The live board shows through while light sweeps its Done column; on the toss it blurs and fades out under the slide. */}
 			<div ref={slideRef} className="absolute inset-0" style={{ visibility: "hidden" }} />
+			{/* Act III: the mega bento's DOM cards, the sheets landing on it, and the accents of each landing. */}
+			{reducedMotion ? null : (
+				<>
+					<FinaleWall wall={wall} drops={drops} cardPrint={cardPrint} />
+					<FinaleWallGl wall={wall} drops={drops} viewport={viewport} fit={fit} cardPrint={cardPrint} facePrint={facePrint} />
+					<FinaleWallAccents wall={wall} drops={drops} fit={fit} viewport={viewport} />
+				</>
+			)}
 			<FinaleTeamTitle rect={bento.title} scale={fit.scale} />
 			<FinaleCardSpaceGl cards={cards} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
 			{/* The column "completes" in a sweep of light before its cards are tossed. */}

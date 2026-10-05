@@ -51,21 +51,21 @@ test("one mirrored burst of Rovo paper, sequins and ribbons, balanced in hue eve
 	}
 });
 
-test("a single-card burst uses smaller pieces from both viewport corners", () => {
+test("a partial drop's burst is dense, with smaller pieces from both viewport corners", () => {
 	const { createFinaleConfettiBurst, finaleConfettiFree, FINALE_CONFETTI_TIMING: T } = load();
 	const small = createFinaleConfettiBurst({ ...STAGE, size: "small" });
 	const large = createFinaleConfettiBurst(STAGE);
-	assert.equal(small.pieces.length, 120);
-	assert.equal(small.pieces.filter((piece) => piece.corner === "left").length, 60);
+	assert.equal(small.pieces.length, 300, "denser than the original 120-piece burst");
+	assert.equal(small.pieces.filter((piece) => piece.corner === "left").length, 150);
 	assert.deepEqual(new Set(small.pieces.map((piece) => piece.material)), new Set(["paper", "sequin", "ribbon"]));
 	const average = (pieces, value) => pieces.reduce((sum, piece) => sum + value(piece), 0) / pieces.length;
 	assert.ok(average(small.pieces, (piece) => piece.size.length) < average(large.pieces, (piece) => piece.size.length) * 0.8);
-	assert.ok(average(small.pieces, (piece) => Math.hypot(piece.velocity.x, piece.velocity.y)) < average(large.pieces, (piece) => Math.hypot(piece.velocity.x, piece.velocity.y)) * 0.4);
+	assert.ok(average(small.pieces, (piece) => Math.hypot(piece.velocity.x, piece.velocity.y)) < average(large.pieces, (piece) => Math.hypot(piece.velocity.x, piece.velocity.y)) * 0.45);
 	for (const piece of small.pieces) {
 		assert.equal(piece.origin.x, piece.corner === "left" ? 0 : STAGE.width);
 		assert.equal(piece.origin.y, STAGE.height + 8);
 		const airborne = finaleConfettiFree(piece, T.gatherStart);
-		assert.ok(piece.origin.y - airborne.y < 400, "a low plume, rather than the full-screen launch");
+		assert.ok(piece.origin.y - airborne.y < STAGE.height * 0.5, "a low plume, below half the screen, rather than the full-screen launch");
 		assert.equal(piece.gather, null, "single-card confetti has no destination to gather into");
 	}
 	assert.deepEqual(large.pieces, createFinaleConfettiBurst({ ...STAGE, size: "large" }).pieces, "the original full-board burst remains the default");
