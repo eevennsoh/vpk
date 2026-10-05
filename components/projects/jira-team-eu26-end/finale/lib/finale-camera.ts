@@ -32,7 +32,7 @@ const normalize = (a: Vec3): Vec3 => {
 	return { x: a.x / size, y: a.y / size, z: a.z / size };
 };
 
-/** Where the first card MCB dragged waits deep in the field for the long zoom. */
+/** Where the hero (the bento's first feature) waits deep in the field for the long zoom. */
 export function heroAnchor(viewport: FinaleViewport): Vec3 {
 	const distance = cameraDistance(viewport);
 	const z = -distance * 1.7;
@@ -65,7 +65,7 @@ export function identityRig(viewport: FinaleViewport): FinaleCameraRig {
  *   recoil   — the cards burst at the lens; the camera flinches back and turns to the column
  *   reveal   — it cranes back and swings left, banking, to show the whole field
  *   sweep    — a low arc to the right, close enough for cards to slide past the lens
- *   find     — it settles on the first card MCB dragged, small and far away
+ *   find     — it settles on the hero card, small and far away
  *   rush     — a long zoom from afar through the field, arriving face-on to it
  *   land     — back to the slide as that card becomes the first bento tile
  */

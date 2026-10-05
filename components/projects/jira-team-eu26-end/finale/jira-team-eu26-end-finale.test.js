@@ -280,24 +280,21 @@ test("any drop into Done short of completing the board earns the small confetti,
 	assert.equal(finaleSmallConfettiDue(drop(["TEU-1", "TEU-2"], ["TEU-2", "TEU-1"]), false), false, "nor is reordering within Done");
 });
 
-test("bento features follow MCB's drag order, with Agent Session Tracking standing in for Artifacts", () => {
-	const { selectFinaleFeatures, FINALE_SLOT_COUNT, FINALE_PINNED_FEATURE, FINALE_RETIRED_FEATURE, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES } = loadFinale();
-	const codes = (order) => selectFinaleFeatures(order).map((story) => story.code);
-	const order = ["TEU-9", "TEU-2", "TEU-13", "TEU-5", "TEU-10", "TEU-7", "TEU-1"];
-	assert.deepEqual(codes(order), order.slice(0, FINALE_SLOT_COUNT), "drag order, not a hard-coded list");
-	// Rovo Artifacts is swapped for Jira Agent Sessions in place.
-	assert.deepEqual(codes(["TEU-1", FINALE_RETIRED_FEATURE, "TEU-3", "TEU-5", "TEU-8", "TEU-11"]), ["TEU-1", FINALE_PINNED_FEATURE, "TEU-3", "TEU-5", "TEU-8", "TEU-11"]);
-	// Jira Agent Sessions always makes the cut, taking the last slot if it was dragged late.
-	const late = codes(["TEU-1", "TEU-2", "TEU-3", "TEU-5", "TEU-101", "TEU-7", "TEU-10"]);
-	assert.deepEqual(late, ["TEU-1", "TEU-2", "TEU-3", "TEU-5", "TEU-101", FINALE_PINNED_FEATURE]);
-	for (let seed = 0; seed < 50; seed += 1) {
-		const shuffled = [...JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES].sort((a, b) => Math.sin(seed * 31 + Number(a.slice(4))) - Math.sin(seed * 31 + Number(b.slice(4))));
-		const picked = codes(shuffled);
-		assert.equal(picked.length, FINALE_SLOT_COUNT);
-		assert.ok(picked.includes(FINALE_PINNED_FEATURE) && !picked.includes(FINALE_RETIRED_FEATURE), `seed ${seed}`);
-	}
-	// Rehearsal with too few drags tops up in board order, skipping duplicates and unknown cards.
-	assert.deepEqual(codes(["TEU-5", "NOPE-1", "TEU-5"]), ["TEU-5", "TEU-10", "TEU-1", "TEU-101", "TEU-2", "TEU-113"]);
+test("the bento shows the Figma's six features in its slots, each a keynote story", () => {
+	const { FINALE_FEATURES, FINALE_SLOT_COUNT, FINALE_STORIES, finaleBentoLayout } = loadFinale();
+	assert.equal(FINALE_FEATURES.length, FINALE_SLOT_COUNT);
+	// Landing order is slot order: a, e, c, b, f, d.
+	const slots = finaleBentoLayout({ width: 1920, height: 1080 }, 1).slots.map((slot) => slot.id);
+	const bySlot = Object.fromEntries(FINALE_FEATURES.map((story, order) => [slots[order], story.title]));
+	assert.deepEqual(bySlot, {
+		a: "Agent Session Tracking",
+		e: "Artifacts",
+		c: "Agent Effectiveness",
+		b: "AI Capital Management",
+		f: "Rovo For Work",
+		d: "Loom Record for Agent",
+	});
+	for (const feature of FINALE_FEATURES) assert.ok(FINALE_STORIES.includes(feature), `${feature.code} is a keynote story`);
 });
 
 test("the recap retains each reference story's issue identity and updated name", () => {
@@ -311,7 +308,7 @@ test("the recap retains each reference story's issue identity and updated name",
 	]);
 });
 
-test("the bento fills any screen shape with 60px clear on every side and nothing overlapping", () => {
+test("the bento fills any screen shape with 40px clear on every side and nothing overlapping", () => {
 	const { finaleBentoLayout, FINALE_BENTO_MARGIN, FINALE_SLOT_COUNT } = loadFinale();
 	for (const viewport of [{ width: 1920, height: 1080 }, { width: 1618, height: 1025 }, { width: 1280, height: 960 }]) {
 		const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
@@ -327,8 +324,8 @@ test("the bento fills any screen shape with 60px clear on every side and nothing
 			assert.ok(rect.width > 0 && rect.height > 0, `${id} has room at ${viewport.width}×${viewport.height}`);
 		}
 		const label = `${viewport.width}×${viewport.height}`;
-		assert.ok(Math.abs(edges.left - FINALE_BENTO_MARGIN) < 1e-6 && Math.abs(edges.top - FINALE_BENTO_MARGIN) < 1e-6, `60px top-left at ${label}`);
-		assert.ok(Math.abs(viewport.width - edges.right - FINALE_BENTO_MARGIN) < 1e-6 && Math.abs(viewport.height - edges.bottom - FINALE_BENTO_MARGIN) < 1e-6, `60px bottom-right at ${label}`);
+		assert.ok(Math.abs(edges.left - FINALE_BENTO_MARGIN) < 1e-6 && Math.abs(edges.top - FINALE_BENTO_MARGIN) < 1e-6, `40px top-left at ${label}`);
+		assert.ok(Math.abs(viewport.width - edges.right - FINALE_BENTO_MARGIN) < 1e-6 && Math.abs(viewport.height - edges.bottom - FINALE_BENTO_MARGIN) < 1e-6, `40px bottom-right at ${label}`);
 		for (const [index, [idA, a]] of rects.entries()) {
 			for (const [idB, b] of rects.slice(index + 1)) {
 				const overlaps = a.x < b.x + b.width - 1e-6 && b.x < a.x + a.width - 1e-6 && a.y < b.y + b.height - 1e-6 && b.y < a.y + a.height - 1e-6;
@@ -372,7 +369,7 @@ test("the camera rests on the slide at frame 0 and from the hero's landing on, a
 });
 
 test("each card is one continuous layer from the Done column to its bento tile, as the camera films it", () => {
-	const { CUE, finaleBentoLayout, cameraDistance, cardPose, finaleCameraRig, projectPose, tileHandoff, touchdownTime } = loadFinale();
+	const { CUE, finaleBentoLayout, cameraDistance, cardPose, finaleCameraRig, projectPose, tileFallStart, tileHandoff, touchdownTime } = loadFinale();
 	const fit = { scale: 0.5, x: 0, y: 30 };
 	const viewport = { width: 960, height: 600 };
 	const card = { x: 708, y: 160, width: 224, height: 150 };
@@ -395,8 +392,20 @@ test("each card is one continuous layer from the Done column to its bento tile, 
 			assert.equal(pose(CUE.heroLand).opacity, 0, "extras have left by the time the camera is back on the slide");
 			continue;
 		}
-		// Lands exactly on its slot, flat, as an empty tile, then hands over to the DOM tile.
+		// Lands exactly on its slot, flat, as its tile, then hands over to the DOM tile.
 		const order = role.kind === "hero" ? 0 : role.order;
+		// Its card until it flies for its slot, then its tile within a fifth of a second: the
+		// two pictures never sit over each other long enough to read as a double exposure.
+		const flight = role.kind === "hero" ? CUE.zoomEnd : tileFallStart(order);
+		assert.equal(pose(flight).face, 0, `${role.kind} is still its card as its flight starts`);
+		let turning = null;
+		let turned = null;
+		for (let time = flight; time <= touchdownTime(order); time += 0.005) {
+			const { face } = pose(time);
+			if (turning === null && face > 0.05) turning = time;
+			if (turned === null && face >= 0.95) turned = time;
+		}
+		assert.ok(turning !== null && turned !== null && turned - turning < 0.25, `${role.kind} turns into its tile in ${Math.round(((turned ?? Infinity) - (turning ?? 0)) * 1000)} ms`);
 		const rest = projectPose(pose(touchdownTime(order) + 0.01), viewport);
 		for (const key of ["x", "y", "width", "height"]) assert.ok(Math.abs(rest[key] - role.slot[key]) < 0.5, `${role.kind} ${key}`);
 		assert.equal(pose(touchdownTime(order) + 0.01).face, 1);
@@ -647,7 +656,8 @@ test("the hero's shadow falls on a lens-square plane that becomes the slide as i
 
 test("colour parsing reads hex and rgb() alike (the slide never eases to black)", () => {
 	const { parseRgb, FINALE_COLORS } = loadFinale();
-	assert.deepEqual(parseRgb(FINALE_COLORS.slide), [241, 242, 244]);
+	assert.deepEqual(parseRgb("#F1F2F4"), [241, 242, 244]);
+	assert.deepEqual(parseRgb(FINALE_COLORS.slide), [255, 255, 255]);
 	assert.deepEqual(parseRgb("rgb(248, 248, 248)"), [248, 248, 248]);
 	assert.deepEqual(parseRgb("rgba(9, 30, 66, 0.14)"), [9, 30, 66]);
 });

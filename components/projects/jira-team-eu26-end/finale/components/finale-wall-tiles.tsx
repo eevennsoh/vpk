@@ -26,7 +26,8 @@ import {
 	type WallStripId,
 } from "../lib/finale-wall-layout";
 import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
-import { FinaleDealt, FinaleTileFace, FinaleTileLogos, FINALE_TILE_RADIUS } from "./finale-tile";
+import { FinaleDealt, FinaleTileLogos, FINALE_TILE_RADIUS } from "./finale-tile";
+import { FinaleTileFace } from "./finale-tile-face";
 import { WallAgent, WallComposer, WallFlow, WallSearch, WallTerminal } from "./finale-wall-product-tiles";
 import { FinaleWallShape } from "./finale-wall-shape";
 import { FinaleTitleLockup } from "./finale-title-lockup";

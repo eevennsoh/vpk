@@ -35,11 +35,11 @@ export interface FinaleRect {
 }
 
 /** Clear space around the bento, in viewport px, whatever the screen's shape. */
-export const FINALE_BENTO_MARGIN = 60;
+export const FINALE_BENTO_MARGIN = 40;
 /** Figma gutter at the 1920 stage; it scales with the type. */
-const GUTTER = 16;
-/** Short middle tiles as a share of a tall tile's height (Figma: 305 of 468). */
-const SHORT_SHARE = 305 / 468;
+const GUTTER = 40;
+/** Short middle tiles as a share of a tall tile's height (Figma: 360 of 480). */
+const SHORT_SHARE = 360 / 480;
 
 export type FinaleSlotId = "a" | "b" | "c" | "d" | "e" | "f";
 
@@ -54,15 +54,16 @@ export interface FinaleSlot {
 export const FINALE_SLOT_COUNT = 6;
 
 export interface FinaleBentoLayout {
-	/** In landing order: the first slot receives the first card MCB dragged into Done. */
+	/** In landing order: the first slot receives the hero, the first of `FINALE_FEATURES`. */
 	readonly slots: readonly FinaleSlot[];
 	readonly title: FinaleRect;
 }
 
 /**
- * Figma "Bento - with title", fitted to the actual screen rather than
- * letterboxed: three columns with tall tiles left and right and two short
- * tiles framing the title in the middle, 60px clear of every edge.
+ * Figma "Bento" (Founder Keynote, node 10774:6028), fitted to the actual
+ * screen rather than letterboxed: three columns with tall tiles left and
+ * right and two short tiles framing the title in the middle, 40px clear of
+ * every edge.
  */
 export function finaleBentoLayout(viewport: { readonly width: number; readonly height: number }, scale: number): FinaleBentoLayout {
 	const margin = FINALE_BENTO_MARGIN;
@@ -95,30 +96,25 @@ export function finaleBentoLayout(viewport: { readonly width: number; readonly h
 	};
 }
 
-/** The bento always closes on Jira's own story… */
-export const FINALE_PINNED_FEATURE = "TEU-10"; // Agent Session Tracking
-/** …which takes Rovo Artifacts' place: that story is never a tile. */
-export const FINALE_RETIRED_FEATURE = "TEU-4"; // Artifacts
-
 /**
- * Bento features follow MCB's drag order: the first cards he moved into Done
- * fill the slots in landing order, with Agent Session Tracking standing in for
- * Artifacts wherever that was dragged — and guaranteed a slot if it
- * would otherwise miss the cut. Keynote stories that were never dragged
- * (rehearsal) top the list up in board order.
+ * The bento's six features, each with its own face in the Figma bento, in
+ * landing order (slots a, e, c, b, f, d): Agent Sessions top left, where the
+ * camera dives, then Artifacts top right, Agent Effectiveness over the title,
+ * AI Capital Management bottom left, Rovo Work Mode bottom right and Record
+ * for Agent under the title. Each lands as the Done card of its story,
+ * wherever MCB dragged it.
  */
-export function selectFinaleFeatures(dragOrder: readonly string[]): readonly FinaleStory[] {
-	const known = new Map(FINALE_STORIES.map((story) => [story.code, story]));
-	const ordered = [...dragOrder, ...FINALE_STORIES.map((story) => story.code)]
-		.map((code) => (code === FINALE_RETIRED_FEATURE ? FINALE_PINNED_FEATURE : code));
-	const picked: FinaleStory[] = [];
-	for (const code of ordered) {
-		const story = known.get(code);
-		if (!story || picked.includes(story)) continue;
-		picked.push(story);
-		if (picked.length === FINALE_SLOT_COUNT) break;
-	}
-	const pinned = known.get(FINALE_PINNED_FEATURE);
-	if (pinned && !picked.includes(pinned)) picked[picked.length - 1] = pinned;
-	return picked;
+export const FINALE_FEATURE_CODES = ["TEU-10", "TEU-4", "TEU-11", "TEU-12", "TEU-3", "TEU-106"] as const;
+
+export type FinaleFeatureCode = (typeof FINALE_FEATURE_CODES)[number];
+
+/** Whether a story is one of the bento's six, with a face of its own. */
+export function isFinaleFeatureCode(code: string): code is FinaleFeatureCode {
+	return FINALE_FEATURE_CODES.some((each) => each === code);
 }
+
+export const FINALE_FEATURES: readonly FinaleStory[] = FINALE_FEATURE_CODES.map((code) => {
+	const story = FINALE_STORIES.find((each) => each.code === code);
+	if (!story) throw new Error(`Finale feature ${code} is not a keynote story`);
+	return story;
+});

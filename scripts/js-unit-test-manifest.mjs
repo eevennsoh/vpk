@@ -224,6 +224,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/jira-team-eu26-end/data/agent-session-sync.test.js",
 		"components/projects/jira-team-eu26-end/data/keynote-board.test.js",
 		"components/projects/jira-team-eu26-end/finale/jira-team-eu26-end-finale.test.js",
+		"components/projects/jira-team-eu26-end/finale/components/finale-bento-tile.behavior.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-board-exit.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-cursor-path.test.js",
 		"components/projects/jira-team-eu26-end/finale/lib/finale-column-flash.test.js",

@@ -9,7 +9,7 @@ export * from "./finale-wall-layout";
 export * from "./finale-wall-motion";
 export * from "./finale-wall-order";
 export { cameraDistance } from "./finale-card-motion";
-export { finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";
+export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 `;
 
 let orderModule;
@@ -35,7 +35,7 @@ function sceneFor(viewport) {
 	const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
 	const bento = m.finaleBentoLayout(viewport, scale);
 	const geometry = m.wallGeometry(bento, scale, viewport);
-	const wall = m.buildFinaleWall(geometry, bento, m.selectFinaleFeatures([]), []);
+	const wall = m.buildFinaleWall(geometry, bento, m.FINALE_FEATURES, []);
 	const drops = m.bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);
 	const title = drops.find((drop) => drop.kind === "title");
 	return { m, viewport, wall, drops, distance: m.cameraDistance(viewport), touchdown: m.bentoTouchdown(title, drops) };

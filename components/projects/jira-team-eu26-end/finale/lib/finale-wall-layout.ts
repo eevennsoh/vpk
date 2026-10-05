@@ -1,4 +1,4 @@
-import { FINALE_SLOT_COUNT, FINALE_STORIES, type FinaleBentoLayout, type FinalePresenterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
+import { FINALE_SLOT_COUNT, FINALE_STORIES, finaleBentoLayout, type FinaleBentoLayout, type FinalePresenterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import type { FinaleBrandColor } from "../data/finale-palette";
 import type { FinaleShapeKind } from "../data/finale-identity-shapes";
 
@@ -24,12 +24,6 @@ import type { FinaleShapeKind } from "../data/finale-identity-shapes";
  * function of its column and band.
  */
 
-/**
- * How much smaller the wall's tiles are than the bento's: small enough that
- * three whole bands, with their wide gutters, leave a margin above and below
- * on a 16:9 or 16:10 screen.
- */
-export const WALL_SCALE = 0.3;
 /** Gap between wall tiles at the 1920 stage (it scales with the type): wide, for air. */
 const WALL_GUTTER = 32;
 /**
@@ -40,6 +34,15 @@ const WALL_GUTTER = 32;
 export const WALL_FRAME_COLUMNS = 9;
 /** How much of the leading column is in the frame as the wall appears. */
 const LEADING_SHARE = 0.45;
+/** The bento's column at the 1920 stage. */
+const BENTO_STAGE_COLUMN = finaleBentoLayout({ width: 1920, height: 1080 }, 1).slots[0].rect.width;
+/**
+ * How much smaller the wall's tiles are than the bento's (about a third):
+ * exactly as small as lets nine columns and the leading one's share fill a
+ * 1920 frame at the wall's gutters, which also leaves three whole bands a
+ * margin above and below on a 16:9 or 16:10 screen.
+ */
+export const WALL_SCALE = (1920 - WALL_FRAME_COLUMNS * WALL_GUTTER) / (WALL_FRAME_COLUMNS + LEADING_SHARE) / BENTO_STAGE_COLUMN;
 /** The bento's title, thrown with its six tiles: its order is one past theirs. */
 export const WALL_TITLE_ORDER = FINALE_SLOT_COUNT;
 

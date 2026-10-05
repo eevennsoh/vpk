@@ -9,7 +9,7 @@ const { renderComponent } = require(process.cwd() + "/scripts/lib/render-compone
 
 const ENTRY = `
 export { WALL_CUE } from "../data/finale-cues";
-export { finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";
+export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 export { FINALE_WALL_CURSOR_NAMES } from "../data/finale-wall-cursor-names";
 export { FINALE_CURSORS } from "./finale-cursor-path";
 export { WALL_PERIOD, buildFinaleWall, wallGeometry } from "./finale-wall-layout";
@@ -43,10 +43,10 @@ function rosterFirstNames() {
 }
 
 function wallFor(viewport) {
-	const { buildFinaleWall, finaleBentoLayout, selectFinaleFeatures, wallGeometry } = load();
+	const { buildFinaleWall, finaleBentoLayout, FINALE_FEATURES, wallGeometry } = load();
 	const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
 	const bento = finaleBentoLayout(viewport, scale);
-	return buildFinaleWall(wallGeometry(bento, scale, viewport), bento, selectFinaleFeatures([]), []);
+	return buildFinaleWall(wallGeometry(bento, scale, viewport), bento, FINALE_FEATURES, []);
 }
 
 test("the wall's cursors are named from the avatar roster, once each, and never for a presenter", () => {

@@ -10,7 +10,7 @@ import { wallPrintCards, wallPrintGap, type FinaleWall, type WallContent, type W
  * Act III on the finale clock. Every beat is a pure function of the time, so
  * the mega bento scrubs, holds and loops like the rest of the finale.
  *
- * - The flip: "Team ’26" gains a white card, which hands over to its GL sheet
+ * - The flip: "Team ’26" gains a card of the tiles' fill, which hands over to its GL sheet
  *   and flips end over end, bowing like paper, onto its black back.
  * - The throw: the bento's seven cards, faces and all, are thrown at once
  *   like the Done column's deck. Each flies
@@ -210,7 +210,7 @@ export function bentoDrops(wall: FinaleWall, bentoRects: readonly FinaleRect[], 
 	});
 }
 
-/** 0 → 1: a white card, the bento tiles' own, rises under "Team ’26" on the DOM slide. */
+/** 0 → 1: a card in the bento tiles' own fill rises under "Team ’26" on the DOM slide. */
 export function bentoTitleForm(time: number): number {
 	return EASE.outBold(progress(wallSince(time), WALL_CUE.titleCardAt, WALL_CUE.titleFlipAt));
 }
@@ -248,7 +248,7 @@ function titleHop(since: number): number {
 
 /**
  * The title card's flip, from its hand-over on: exactly where its DOM card
- * lay, white side up (its back: the sheet's front is the black face the
+ * lay, pale side up (its back: the sheet's front is the black face the
  * throw carries), and turning over end to end, top edge away first, onto
  * that black front. Before the hand-over it is that resting pose.
  */
@@ -354,7 +354,7 @@ function airbornePose(drop: BentoDrop, gap: FinaleRect, u: number, time: number,
 	// Its shape turns from the tile's to the gap's on the way.
 	const shape = smooth(0.05, 0.7, u);
 	const spin = u >= SPIN_DONE ? 0 : 1 - (1 - u / SPIN_DONE) ** 2.6;
-	// The title has just flipped to its black face: it may spin, but never turns its white back up again.
+	// The title has just flipped to its black face: it may spin, but never turns its pale back up again.
 	const over = drop.kind === "title" ? 0 : spin;
 	const air = Math.sin(Math.PI * u);
 	const wobble = (hash01(seed * 9.7) - 0.5) * 1.2;
@@ -639,7 +639,7 @@ export interface WallSheet {
 	readonly pose: FinaleCardPose;
 	/** The blank sheet's colour (`uTileColor`). */
 	readonly color: string;
-	/** Its back's (`uBackColor`): its own colour, but for the title card, whose back is the white card it formed as. */
+	/** Its back's (`uBackColor`): its own colour, but for the title card, whose back is the pale card it formed as. */
 	readonly back: string;
 	/**
 	 * A printed face for the sheet (face 0), by key: `bento-<order>` for a bento

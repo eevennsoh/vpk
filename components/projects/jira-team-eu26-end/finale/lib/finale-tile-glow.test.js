@@ -417,7 +417,7 @@ test("uniforms size the hairline by the stroke scale and the bloom and smoke by 
 });
 
 const WALL_ENTRY = `
-export { finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";
+export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 export { buildFinaleWall, wallGeometry } from "./finale-wall-layout";
 export { bentoDrops } from "./finale-wall-motion";
 export { wallCursorsAt } from "./finale-wall-cursors";
@@ -452,11 +452,11 @@ export default function Harness(props) {
 
 test("the wall's accents mount nothing until the wall exists (never on the rest frame), then paint a held frame at once", async () => {
 	const { CUE, FINALE_REST_TIME } = load();
-	const { FINALE_CURSORS, bentoDrops, buildFinaleWall, finaleBentoLayout, selectFinaleFeatures, wallCursorsAt, wallGeometry } = loadWall();
+	const { FINALE_CURSORS, bentoDrops, buildFinaleWall, finaleBentoLayout, FINALE_FEATURES, wallCursorsAt, wallGeometry } = loadWall();
 	const viewport = { width: 1920, height: 1080 };
 	const fit = { scale: 1, x: 0, y: 0 };
 	const bento = finaleBentoLayout(viewport, fit.scale);
-	const wall = buildFinaleWall(wallGeometry(bento, fit.scale, viewport), bento, selectFinaleFeatures([]), []);
+	const wall = buildFinaleWall(wallGeometry(bento, fit.scale, viewport), bento, FINALE_FEATURES, []);
 	const drops = bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);
 	const view = await renderComponent({ source: ACCENTS_HARNESS, props: { wall, drops, fit, viewport } });
 	const emit = (time) => React.act(async () => {

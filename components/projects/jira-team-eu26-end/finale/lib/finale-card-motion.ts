@@ -57,7 +57,7 @@ export interface FinaleCardPose {
 	readonly rotateY: number;
 	readonly rotateZ: number;
 	readonly opacity: number;
-	/** 0 Jira card face → 1 blank bento tile. */
+	/** 0 Jira card face → 1 its bento tile (as its face prints, or blank). */
 	readonly face: number;
 	/** 0 flat on the page → 1 airborne (Peel flutter, cloth). */
 	readonly lift: number;
@@ -98,7 +98,7 @@ export type FinaleCardRole =
 export interface FinaleCardInput {
 	/** The card's DOM rect in the Done column when the finale began (echoes: its size donor). */
 	readonly rect: FinaleRect;
-	/** Place in the field spiral, in drag order (the hero is 0). */
+	/** Place in the field spiral, in drag order. */
 	readonly fieldIndex: number;
 	readonly fieldCount: number;
 	/** The card's place in the column (top first); seeds its toss. */
@@ -282,6 +282,16 @@ export function withLandingWave(pose: FinaleCardPose, touchdown: number, time: n
 	return { ...pose, waveAge: landingWaveAge(time, touchdown) };
 }
 
+/**
+ * How far a landing sheet has turned from its Done card into its tile (its
+ * `face`), by how far it has flown to its slot: all in the flight's
+ * fastest stretch, so the two pictures never sit over each other long enough
+ * to read as a double exposure. The hero and the swooping tiles share it.
+ */
+function landingFace(flight: number): number {
+	return smooth(progress(flight, 0.2, 0.8));
+}
+
 function landed(pose: FinaleCardPose, order: number, time: number): FinaleCardPose {
 	return withLandingWave(pose, touchdownTime(order), time);
 }
@@ -323,7 +333,7 @@ function clearing(time: number): number {
 /**
  * One card's whole life. It starts exactly on its DOM card in the Done column
  * and is tossed out of the column into the field with the rest of the deck. The camera sweeps the field,
- * finds the hero (the first card MCB dragged) far off and rushes in to it;
+ * finds the hero (the bento's first feature) far off and rushes in to it;
  * as the camera returns to the slide the hero becomes the first bento tile,
  * the other tiles clear the frame and swoop back onto their slots, and the
  * rest of the field fades away.
@@ -348,10 +358,9 @@ export function cardPose(time: number, input: FinaleCardInput, viewport: FinaleV
 		const airborne = burstPose(time, input, heroHome(viewport), viewport, 0);
 		// Squares up to the lens during the rush, so it arrives face-on.
 		const square = 1 - eased(time, CUE.zoom, CUE.zoomEnd, EASE.inOut);
-		const faced = { ...airborne, rotateX: airborne.rotateX * square, rotateY: airborne.rotateY * square, rotateZ: airborne.rotateZ * square };
-		const face = eased(time, CUE.zoomEnd - 0.15, CUE.zoomEnd + 0.4, EASE.inOut);
-		if (time < CUE.zoomEnd) return { ...faced, face };
-		return landed({ ...heroLanding(time, input, role.slot, viewport), face }, 0, time);
+		// It arrives as its card, held square on, and turns into its tile only on the way down.
+		if (time < CUE.zoomEnd) return { ...airborne, rotateX: airborne.rotateX * square, rotateY: airborne.rotateY * square, rotateZ: airborne.rotateZ * square, face: 0 };
+		return landed(heroLanding(time, input, role.slot, viewport), 0, time);
 	}
 
 	// Tiles float until the camera pulls back, clear with the field, and wait
@@ -366,7 +375,7 @@ export function cardPose(time: number, input: FinaleCardInput, viewport: FinaleV
 		return { ...blendPose(airborne, hold, leave), opacity: time >= CUE.heroLand ? 1 : clearing(time) };
 	}
 	const pose = blendPose(hold, flatPose(role.slot, 1), fall);
-	return landed({ ...pose, face: smooth(progress(fall, 0.2, 0.8)), lift: 1 - fall }, role.order, time);
+	return landed({ ...pose, face: landingFace(fall), lift: 1 - fall }, role.order, time);
 }
 
 /**
@@ -394,7 +403,7 @@ function heroLanding(time: number, input: FinaleCardInput, slot: FinaleRect, vie
 	const offset = fromView(view, basis);
 	const world = { x: rig.position.x + offset.x, y: rig.position.y + offset.y, z: rig.position.z + offset.z };
 	return {
-		...flatPose(slot, 1),
+		...flatPose(slot, landingFace(down)),
 		x: world.x + viewport.width / 2,
 		y: viewport.height / 2 - world.y,
 		z: world.z,

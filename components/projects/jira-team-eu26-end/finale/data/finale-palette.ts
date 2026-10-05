@@ -4,10 +4,10 @@
  * these are deliberate literals rather than ADS semantic tokens.
  */
 export const FINALE_COLORS = {
-	/** Slide background in the "Template example" bento frames. */
-	slide: "#F1F2F4",
-	/** Bento tile fill — white cards on grey, like Jira cards on a column. */
-	tile: "#FFFFFF",
+	/** Slide background behind the Founder Keynote "Bento" frame. */
+	slide: "#FFFFFF",
+	/** Bento tile fill (Figma "Neutral/Light/100"): soft grey cards on the white slide. */
+	tile: "#F8F8F8",
 } as const;
 
 /** Team ’26 primaries from the template's colour guidelines: the wall's posters and shapes. */

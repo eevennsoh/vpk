@@ -32,14 +32,14 @@ Cue seconds from [finale-cues.ts](../../../../components/projects/jira-team-eu26
 | `<sec>` | On screen |
 | --- | --- |
 | `0` | The board exactly as it was (the flash adds nothing on frame 0); light then floods up the Done column from its foot until 0.62. |
-| `0.62` | Burst: the Done cards are tossed into a 3D field within 0.12 s, tumbling for 1.25 s with blank white backs; the board fades under the grey slide. |
+| `0.62` | Burst: the Done cards are tossed into a 3D field within 0.12 s, tumbling for 1.25 s with blank light-grey backs; the board fades under the white slide. |
 | `1.52`, `2.32`, `3.02` | Camera recoil, wide reveal of the field, close sweep. |
-| `3.57` to `4.27` | The camera rushes in to the hero (the first card dragged into Done) and arrives face-on. |
-| `4.92` | Back on the slide: the hero lands as the first bento tile; five tiles follow 0.22 s apart. |
+| `3.57` to `4.27` | The camera rushes in to the hero (Agent Session Tracking's card, which always takes the first slot) and arrives face-on. |
+| `4.92` | Back on the slide: the hero lands as the first bento tile; five tiles follow 0.22 s apart. Each sheet turns from its Done card into its tile's face as it comes down and lands in full: never an empty tile, nothing builds in after. The faces are printed ahead (`useFinaleFacePrints`); a capture held past a landing before they finish shows that sheet blank. |
 | `6.27` | The `Team` title starts building in the bento centre. |
 | `6.72` to `7.57` | The year's last digit rolls up to `26`. |
-| `9.57` | The bento's final frame: six tiles with logos and headings around “Team 26”; this is also the reduced-motion frame. Nothing of the mega bento shows yet. |
-| `9.62` to `10.42` | A white card, the tiles' own, rises under “Team 26” and turns over (edge-on near `9.98`), lifting and tipping like paper, to its black back with the type in white. Every tile keeps its logos and heading. |
+| `9.57` | The bento's final frame, as the Founder Keynote Figma "Bento" (node `10774:6028`): around “Team 26”, Agent Sessions and AI Capital Management on the left, Agent Effectiveness and Record for Agent above and below the title, Artifacts and Rovo Work Mode on the right, each a grey tile with a mono label over its product slice. This is also the reduced-motion frame. Nothing of the mega bento shows yet. |
+| `9.62` to `10.42` | A card in the tiles' own grey rises under “Team 26” and turns over (edge-on near `9.98`), lifting and tipping like paper, to its black back with the type in white. Every tile keeps its face. |
 | `10.47` | All seven cards (the six tiles, content and all, and the black title card) become WebGL sheets in place and are thrown at once, tumbling and bending like paper with a chromatic smear. They fall away from the lens onto the wall, shrinking toward their gaps, and are never seen larger than their tiles. The mega bento fades in around them from the centre out (until about `12.8`). |
 | `12.47` to `13.67` | They come down one after another, 0.2 s apart (the shortest flight first), into seven gaps across the wall, the title card into the middle one, each landing as on the slide: paper wave, shadow, border glow, dot pulse. |
 | `14.12` on | The wall starts to glide (full pace from `17.12`, looping continuously). |

@@ -1,10 +1,10 @@
 /**
  * Timeline for the closing-keynote finale, in seconds from the moment the
  * finale takes over the screen. Light starts immediately and
- * sweeps up the live Done column (`lib/finale-column-flash.ts`), the grey
+ * sweeps up the live Done column (`lib/finale-column-flash.ts`), the white
  * slide cuts in behind it, and its cards burst out into a 3D field. The
- * camera recoils, reveals and sweeps the field, finds the first card MCB
- * dragged far off and rushes in to it, and that card becomes the first tile of
+ * camera recoils, reveals and sweeps the field, finds the hero (Agent Session
+ * Tracking's card) far off and rushes in to it, and that card becomes the first tile of
  * the bento assembling from the field. "Team ’26" lands in its centre and
  * holds to the bento's final frame; then Act III (`WALL_CUE`) tosses the
  * bento's tiles into an endless mega bento that glides on until Esc.
@@ -56,7 +56,7 @@ export const CUE = {
 	wide: FLASH_DURATION + 1.7,
 	sweep: FLASH_DURATION + 2.4,
 	/**
-	 * The rush: having found the first card MCB dragged far off in the field, the
+	 * The rush: having found the hero card far off in the field, the
 	 * camera time-warps in to it from afar and arrives face-on.
 	 */
 	zoom: FLASH_DURATION + 2.95,
@@ -104,7 +104,7 @@ const TOSS_AT = TITLE_FLIP_AT + 0.12;
  */
 export const WALL_CUE = {
 	start: CUE.end,
-	/** "Team ’26" gains a white card under its type at once… */
+	/** "Team ’26" gains a card of the tiles' fill under its type at once… */
 	titleCardAt: 0.02,
 	/** …which flips end over end, as the field's cards do, to its black back… */
 	titleFlipAt: TITLE_FLIP_AT,

@@ -95,14 +95,14 @@ export function FinaleDealt({ start, index = 0, className = "flex", style, child
 	);
 }
 
-interface FinaleTileFaceProps {
+export interface FinaleTileFaceProps {
 	readonly story: FinaleStory;
 	readonly slot: Pick<FinaleSlot, "rect" | "short">;
 	/** Stage-to-viewport type scale: the face is laid out at slot size ÷ scale, then scaled up. */
 	readonly scale: number;
 	/**
-	 * When the logo and heading start to build (finale-clock seconds). Null
-	 * shows it already built, as a card that was on the wall all along.
+	 * When the face starts to build (finale-clock seconds). Null shows it
+	 * already built, as a card that was on the wall all along.
 	 */
 	readonly revealStart: number | null;
 }
@@ -110,13 +110,12 @@ interface FinaleTileFaceProps {
 const HEADING_STYLE = { lineHeight: 1.05, fontWeight: 400 } as const;
 
 /**
- * Slide-side face of a bento tile, laid out in stage units: just the product
- * logo top-left and the feature heading — the Figma bento's editorial minimum.
- * It lands as an empty sheet (matching the GL tile it takes over from), then
- * the logos deal in with the app stack's own left-to-right entrance while the
- * heading builds.
+ * A story's tile without a bento face of its own, laid out in stage units:
+ * just the product logo top-left and the feature heading. It lands as an
+ * empty sheet (matching the GL tile it takes over from), then the logos deal
+ * in with the app stack's own left-to-right entrance while the heading builds.
  */
-export function FinaleTileFace({ story, slot, scale, revealStart }: Readonly<FinaleTileFaceProps>) {
+export function FinaleHeadingFace({ story, slot, scale, revealStart }: Readonly<FinaleTileFaceProps>) {
 	const short = slot.short;
 	return (
 		<div

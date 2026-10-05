@@ -165,6 +165,9 @@ uniform float uFace;
 uniform vec2 uSize;
 uniform float uRadius;
 uniform vec3 uTileColor;
+/** Its bento tile's face as printed (when uTileFaced is 1), or none: a blank tile of uTileColor. */
+uniform sampler2D uTileFace;
+uniform float uTileFaced;
 /** The blank paper of its back. */
 uniform vec3 uBackColor;
 /**
@@ -224,9 +227,11 @@ void main() {
 	// edge lose their derivatives and read a far mip, a grey hairline round the print.
 	vec4 card = texture2D(uCard, local);
 	if (off) card = vec4(0.0);
-	// The bento tile is an empty sheet: its logo and heading build on the DOM tile.
+	// The bento tile: its face as printed, so the DOM tile it hands over to is the
+	// same picture; a sheet without a face (or before its print) lands blank.
 	float edge = roundedBox((vUv - 0.5) * uSize, uSize * 0.5, uRadius);
-	vec4 tile = vec4(uTileColor, 1.0) * (1.0 - smoothstep(-0.75, 0.75, edge));
+	vec4 face = texture2D(uTileFace, printed);
+	vec4 tile = mix(vec4(uTileColor, 1.0), face, uTileFaced) * (1.0 - smoothstep(-0.75, 0.75, edge));
 	vec4 colour = mix(card, tile, uFace);
 	// Ink belongs to the front, unless printed on the back alone. Keep the same silhouette
 	// and premultiplied edge coverage on the blank paper back, including the card-to-tile morph.
@@ -588,6 +593,12 @@ export function textureFrom(canvas: HTMLCanvasElement): THREE.CanvasTexture {
 	return texture;
 }
 
+/** Lands a sheet as its bento tile's printed face rather than a blank tile. */
+export function setTileFace(material: THREE.ShaderMaterial, face: THREE.Texture): void {
+	material.uniforms.uTileFace.value = face;
+	material.uniforms.uTileFaced.value = 1;
+}
+
 export interface SheetMaterialOptions {
 	readonly texture: THREE.Texture;
 	/** Blank tile corner radius, sheet px. */
@@ -619,6 +630,8 @@ export function createSheetMaterial(options: SheetMaterialOptions): THREE.Shader
 			uSize: { value: new THREE.Vector2(1, 1) },
 			uRadius: { value: radius },
 			uTileColor: { value: tileColor },
+			uTileFace: { value: texture },
+			uTileFaced: { value: 0 },
 			// Its own copy: a sheet whose back differs sets it apart from its tile colour.
 			uBackColor: { value: tileColor.clone() },
 			uPrintSide: { value: 0 },

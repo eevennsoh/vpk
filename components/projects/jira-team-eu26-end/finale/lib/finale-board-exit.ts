@@ -3,7 +3,7 @@
  *
  * Through the flash the finale is transparent: the board, its chrome and the
  * sweeping light stay exactly as they are. On the toss the whole board (nav,
- * tabs, toolbar, every column) blurs and washes out under the grey slide
+ * tabs, toolbar, every column) blurs and washes out under the white slide
  * together, over one full-viewport layer, so nothing snaps and nothing is
  * column-shaped. The GL sheets fly above that layer and stay crisp.
  *
@@ -48,7 +48,7 @@ export function boardExitProgress(time: number): number {
 	return BOARD_EXIT.ease(progress(time, BOARD_EXIT.start, boardExitEnd()));
 }
 
-/** The grey slide's opacity over the board. */
+/** The slide's opacity over the board. */
 export function boardExitSlideOpacity(time: number): number {
 	return boardExitProgress(time);
 }

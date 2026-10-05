@@ -18,7 +18,7 @@ export * from "./finale-wall-layout";
 export * from "./finale-wall-motion";
 export { landingWaveEnergy } from "./finale-sheet-gl";
 export { CUE } from "../data/finale-cues";
-export { finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";
+export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 `;
 
 let landingModule;
@@ -46,7 +46,7 @@ function landings() {
 	const bento = m.finaleBentoLayout(VIEWPORT, scale);
 	const slots = bento.slots.map((slot) => slot.rect);
 	const geometry = m.wallGeometry(bento, scale, VIEWPORT);
-	const wall = m.buildFinaleWall(geometry, bento, m.selectFinaleFeatures([]), []);
+	const wall = m.buildFinaleWall(geometry, bento, m.FINALE_FEATURES, []);
 	const drops = m.bentoDrops(wall, slots, bento.title);
 	const card = { x: 708, y: 160, width: 224, height: 150 };
 	const tiles = [1, 3, 5].map((order) => ({

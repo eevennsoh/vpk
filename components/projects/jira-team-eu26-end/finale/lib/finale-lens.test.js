@@ -21,7 +21,7 @@ export * from "./finale-wall-motion";
 export { cameraDistance, lensFade } from "./finale-card-motion";
 export { LENS_SHARE_GLSL, LENS_TAPS, lensShare } from "./finale-sheet-gl";
 export { CUE, WALL_CUE } from "../data/finale-cues";
-export { finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";
+export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 `;
 
 let lensModule;
@@ -132,7 +132,7 @@ function wallFor(viewport) {
 	const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
 	const bento = m.finaleBentoLayout(viewport, scale);
 	const geometry = m.wallGeometry(bento, scale, viewport);
-	const wall = m.buildFinaleWall(geometry, bento, m.selectFinaleFeatures([]), []);
+	const wall = m.buildFinaleWall(geometry, bento, m.FINALE_FEATURES, []);
 	const drops = m.bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);
 	return { wall, drops };
 }

@@ -10,7 +10,7 @@ export * from "./finale-wall-motion";
 export * from "./finale-shape-morph";
 export { cameraDistance, tileRevealStart } from "./finale-card-motion";
 export { CUE, FINALE_REST_TIME, WALL_CUE } from "../data/finale-cues";
-export { FINALE_STORIES, finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";
+export { FINALE_STORIES, finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 `;
 
 let motionModule;
@@ -36,7 +36,7 @@ function sceneFor(viewport, dragOrder = []) {
 	const m = load();
 	const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
 	const bento = m.finaleBentoLayout(viewport, scale);
-	const features = m.selectFinaleFeatures(dragOrder);
+	const features = m.FINALE_FEATURES;
 	const geometry = m.wallGeometry(bento, scale, viewport);
 	const wall = m.buildFinaleWall(geometry, bento, features, dragOrder);
 	const drops = m.bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);

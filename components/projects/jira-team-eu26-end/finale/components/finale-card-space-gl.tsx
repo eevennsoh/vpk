@@ -36,6 +36,7 @@ import {
 	rgbUnit,
 	setCloth,
 	setLandingWave,
+	setTileFace,
 	textureFrom,
 	type SheetMesh,
 } from "../lib/finale-sheet-gl";
@@ -53,10 +54,14 @@ export interface FinaleGlCard {
 	readonly resolvePrint?: () => HTMLCanvasElement | undefined;
 	/** Landing order for tiles (hero = 0), used for the DOM hand-off. */
 	readonly tileOrder?: number;
+	/** A landing tile's face print key: the sheet turns from its card into that face as it lands. */
+	readonly faceKey?: string;
 }
 
 interface FinaleCardSpaceGlProps {
 	readonly cards: readonly FinaleGlCard[];
+	/** The bento tiles' faces as printed ahead of the finale, by `FinaleGlCard.faceKey`. */
+	readonly facePrint: (key: string) => HTMLCanvasElement | undefined;
 	/** Done column scroll viewport (DOM px) that clips resting cards. */
 	readonly clip: FinaleRect;
 	/** What the camera frames for the long zoom (the hero card's rect). */
@@ -75,10 +80,14 @@ interface GlState {
 		/** Landing tiles cast a drop shadow on the slide. */
 		shadow: SheetMesh | null;
 		printKey: string;
+		faceKey: string | undefined;
 		cardAspect: number;
 	}[];
 	/** Prints still showing a stand-in, and how to fetch the real one. */
 	readonly pending: Map<string, { texture: THREE.CanvasTexture; resolve: () => HTMLCanvasElement | undefined }>;
+	/** Face prints in use, and those still to arrive (their sheets land on a blank tile until then). */
+	readonly faces: Map<string, THREE.CanvasTexture>;
+	readonly pendingFaces: Set<string>;
 	readonly target: THREE.WebGLRenderTarget;
 	readonly post: { scene: THREE.Scene; camera: THREE.OrthographicCamera; material: THREE.ShaderMaterial };
 }
@@ -88,7 +97,7 @@ interface GlState {
  * WebGL scene, plus the spectral dispersion pass. Rendered from the finale
  * clock (not its own loop) so every frame is deterministic and scrubbable.
  */
-export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }: Readonly<FinaleCardSpaceGlProps>) {
+export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, tileRadius }: Readonly<FinaleCardSpaceGlProps>) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const stateRef = useRef<GlState | null>(null);
 
@@ -117,6 +126,8 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 		const textures = new Map<string, { texture: THREE.CanvasTexture; aspect: number }>();
 		const pending: GlState["pending"] = new Map();
 		const lateResolvers = latePrintResolvers(cards);
+		const faces: GlState["faces"] = new Map();
+		const pendingFaces: GlState["pendingFaces"] = new Set();
 		const sheets = cards.map((card) => {
 			let entry = textures.get(card.printKey);
 			if (!entry) {
@@ -138,13 +149,21 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 			});
 			const mesh = new THREE.Mesh(geometry, material);
 			scene.add(mesh);
+			if (card.faceKey) {
+				const print = facePrint(card.faceKey);
+				const face = faces.get(card.faceKey) ?? (print ? textureFrom(print) : undefined);
+				if (face) {
+					faces.set(card.faceKey, face);
+					setTileFace(material, face);
+				} else pendingFaces.add(card.faceKey);
+			}
 			let shadow: SheetMesh | null = null;
 			if (card.tileOrder !== undefined) {
 				shadow = new THREE.Mesh(shadowGeometry, createShadowMaterial(tileRadius));
 				shadow.visible = false;
 				scene.add(shadow);
 			}
-			return { mesh, shadow, printKey: card.printKey, cardAspect: entry.aspect };
+			return { mesh, shadow, printKey: card.printKey, faceKey: card.faceKey, cardAspect: entry.aspect };
 		});
 
 		const target = new THREE.WebGLRenderTarget(Math.round(viewport.width * ratio), Math.round(viewport.height * ratio), { samples: 4 });
@@ -166,6 +185,7 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 		renderer.setRenderTarget(null);
 		renderer.compile(postScene, postCamera);
 		for (const { texture } of textures.values()) renderer.initTexture(texture);
+		for (const face of faces.values()) renderer.initTexture(face);
 		renderer.initRenderTarget(target);
 		// Then draw once through both of the toss's paths (the post target, and
 		// straight to the canvas): ANGLE builds a program's GPU pipeline only at
@@ -181,7 +201,7 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 		renderer.clear();
 		for (const { shadow } of sheets) if (shadow) shadow.visible = false;
 
-		stateRef.current = { renderer, scene, camera, sheets, pending, target, post: { scene: postScene, camera: postCamera, material: postMaterial } };
+		stateRef.current = { renderer, scene, camera, sheets, pending, faces, pendingFaces, target, post: { scene: postScene, camera: postCamera, material: postMaterial } };
 		return () => {
 			stateRef.current = null;
 			for (const { mesh, shadow } of sheets) {
@@ -190,6 +210,7 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 				mesh.material.dispose();
 			}
 			for (const { texture } of textures.values()) texture.dispose();
+			for (const face of faces.values()) face.dispose();
 			geometry.dispose();
 			shadowGeometry.dispose();
 			postGeometry.dispose();
@@ -197,7 +218,7 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 			target.dispose();
 			renderer.dispose();
 		};
-	}, [cards, clip, tileRadius, viewport]);
+	}, [cards, clip, facePrint, tileRadius, viewport]);
 
 	useFinaleFrame((time) => {
 		const state = stateRef.current;
@@ -214,6 +235,15 @@ export function FinaleCardSpaceGl({ cards, clip, subject, viewport, tileRadius }
 			}
 			entry.texture.dispose();
 			state.pending.delete(printKey);
+		}
+		// A face printed after the finale started: its sheets now land as it.
+		for (const faceKey of state.pendingFaces) {
+			const print = facePrint(faceKey);
+			if (!print) continue;
+			const face = textureFrom(print);
+			state.faces.set(faceKey, face);
+			for (const sheet of state.sheets) if (sheet.faceKey === faceKey) setTileFace(sheet.mesh.material, face);
+			state.pendingFaces.delete(faceKey);
 		}
 		// Until the toss the live DOM cards are what shows: prints rasterise text a
 		// hair differently on real displays, so the sheets take over only at the

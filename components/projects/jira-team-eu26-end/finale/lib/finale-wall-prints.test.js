@@ -18,7 +18,7 @@ export * from "./finale-wall-motion";
 export * from "./finale-wall-cursors";
 export { hash01 } from "./finale-math";
 export { CUE } from "../data/finale-cues";
-export { finaleBentoLayout, selectFinaleFeatures } from "../data/finale-stories";
+export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 export { Euler, Vector3 } from "three";
 `;
 
@@ -52,7 +52,7 @@ function sceneFor(viewport, missing = new Set()) {
 	const m = load();
 	const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
 	const bento = m.finaleBentoLayout(viewport, scale);
-	const features = m.selectFinaleFeatures([]);
+	const features = m.FINALE_FEATURES;
 	const geometry = m.wallGeometry(bento, scale, viewport);
 	const wall = m.buildFinaleWall(geometry, bento, features, []);
 	const drops = m.bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);
@@ -109,6 +109,7 @@ test("a print slot's Done cards keep the stack's layout exactly, each on the rec
 		const { m, geometry, wall, prints } = sceneFor(viewport);
 		const gap = m.wallPrintGap(geometry);
 		assert.ok(close(gap, (8 * geometry.typeScale) / m.WALL_SCALE), "the DOM stack's gap, scaled with the type");
+		const sheetShows = [];
 		for (const count of [1, 2, 4]) {
 			const [slot] = arrivingPrints(m, wall, count, 1);
 			const cards = m.wallPrintCards(slot.rect, slot.content.codes, prints, gap);
@@ -123,9 +124,11 @@ test("a print slot's Done cards keep the stack's layout exactly, each on the rec
 				assert.ok(close(card.radius, (8 / 388.5) * card.rect.width), "rounded as the board's card");
 				if (index > 0) assert.ok(close(card.rect.y - (cards[index - 1].rect.y + cards[index - 1].rect.height), gap), "the stack's gap between cards");
 			});
-			// Smaller than the slot somewhere: the grey bands were the slot's sheet showing round the card.
-			assert.ok(cards.some((card) => card.rect.width < slot.rect.width - 1) || cards.reduce((sum, card) => sum + card.rect.height, 0) < slot.rect.height - 1);
+			sheetShows.push(cards.some((card) => card.rect.width < slot.rect.width - 1) || cards.reduce((sum, card) => sum + card.rect.height, 0) < slot.rect.height - 1);
 		}
+		// Smaller than the slot somewhere: the grey bands were the slot's sheet showing round the card.
+		// (A card can match its slot's shape exactly, as the one-card slot does at 1024 × 768.)
+		assert.ok(sheetShows.some(Boolean), `a slot's sheet shows round its cards at ${viewport.width}×${viewport.height}`);
 		// A card not yet printed is left out, and the rest re-centre, as the DOM stack does.
 		const [band] = arrivingPrints(m, wall, 4, 1);
 		const missing = new Set([band.content.codes[1]]);
