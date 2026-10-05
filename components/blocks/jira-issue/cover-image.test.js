@@ -111,6 +111,7 @@ test("image covers expose their artwork and selected app logos without typograph
 		},
 	});
 	assert.deepEqual(view.getAllByRole("img").map(accessibleName), ["Loom", "Code context preview"]);
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-cover-app-stack"]').children.length, 1);
 	assert.equal(view.getByRole("img", { name: "Code context preview" }).getAttribute("src"), artwork.src);
 	assert.equal(view.getByRole("img", { name: "Code context preview" }).className, "object-contain");
 	assert.equal(view.container.querySelector('[data-slot="jira-issue-cover-heading"]') === null, true);
@@ -129,6 +130,7 @@ test("image covers expose their artwork and selected app logos without typograph
 		},
 	});
 	assert.deepEqual(view.getAllByRole("img").map(accessibleName), ["Jira", "Confluence", "Teamwork Graph", "Code context preview"]);
+	assert.deepEqual([...view.container.querySelector('[data-slot="jira-issue-cover-app-stack"]').children].map((item) => item.style.transform), ["rotate(0deg)", "rotate(6deg)", "rotate(0deg)"]);
 	assert.equal(view.getByRole("img", { name: "Code context preview" }).className, "object-cover");
 	assert.equal(view.getByRole("img", { name: "Code context preview" }).style.maskMode, "luminance");
 	assert.equal(view.getByRole("img", { name: "Code context preview" }).style.maskSize, "cover");

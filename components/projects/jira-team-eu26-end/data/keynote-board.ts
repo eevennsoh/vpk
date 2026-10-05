@@ -8,7 +8,6 @@ export { JIRA_TEAM_EU26_END_HEADER_ASSIGNEES } from "./keynote-presenters";
 
 const KEYNOTE_SECTIONS = ["Context", "Collaboration", "Confidence"] as const;
 const KEYNOTE_COVER_MAX_HEIGHT = 140;
-const KEYNOTE_COVER_IMAGE_ZOOM = 379 / 371;
 
 const COVER_APPS = {
 	studio: { id: "studio", label: "Artifacts", provider: "studio" },
@@ -35,10 +34,10 @@ const KEYNOTE_STORIES = [
 	{ code: "TEU-1", section: "Context", heading: "Rovo\nDesktop", title: "Rovo Desktop", cover: "rovo-desktop.jpeg", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ code: "TEU-101", section: "Context", heading: "Data\nContext", title: "Data Context", cover: "data-context.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ code: "TEU-2", section: "Context", heading: "Code\nContext", title: "Code Context", cover: "code-context.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
-	{ code: "TEU-113", section: "Context", heading: "Code\nContext", title: "Code Context", cover: "code-context-search.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
+	{ code: "TEU-113", section: "Context", heading: "Code\nContext", title: "Code Context", cover: "code-context.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ code: "TEU-102", section: "Context", heading: "Code Search\nApp", title: "Code Search App", cover: "code-search-app.jpeg", apps: [COVER_APPS.search], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ code: "TEU-3", section: "Context", heading: "Rovo\nFor Work", title: "Rovo For Work", cover: "rovo-for-work.jpeg", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
-	{ code: "TEU-103", section: "Context", heading: "People\nContext", title: "People Context", cover: "people-context-solid.svg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
+	{ code: "TEU-103", section: "Context", heading: "People\nContext", title: "People Context", cover: "people-context.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
 	{ code: "TEU-104", section: "Context", heading: "Communications\nContext", title: "Communications Context", cover: "communications-context.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
 	{ code: "TEU-105", section: "Collaboration", heading: "Atlassian\nMCP", title: "Atlassian MCP", cover: "atlassian-mcp.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.sherif },
 	{ code: "TEU-5", section: "Collaboration", heading: "Loom\nDesktop", title: "Loom Desktop", cover: "loom-desktop.jpeg", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
@@ -95,11 +94,6 @@ function createKeynoteCover(story: typeof KEYNOTE_STORIES[number]) {
 		appSources: story.apps.map((app) => ({ ...app })),
 		maxHeight: KEYNOTE_COVER_MAX_HEIGHT,
 		fit: "cover",
-		zoom: KEYNOTE_COVER_IMAGE_ZOOM,
-		mask: story.apps.length > 0 ? {
-			src: `/illustration/jira-team-eu26-end/${story.apps.length > 1 ? "app-stack-mask" : "app-badge-mask"}.svg`,
-			backgroundColor: "#f8f8f8",
-		} : undefined,
 	} satisfies NonNullable<JiraKanbanCardData["coverImage"]>;
 }
 
@@ -140,11 +134,11 @@ export function restoreJiraTeamEu26EndKeynoteCoverArtwork(columns: readonly Jira
 				coverImage = expected;
 			} else if (cover && (cover.src === expected.src
 				|| (story.code === "TEU-4" && cover.src === "/illustration/jira-team-eu26-end/artifacts-no-fade.png")
-				|| (story.code === "TEU-103" && cover.src === "/illustration/jira-team-eu26-end/people-context.jpeg"))) {
+				|| (story.code === "TEU-113" && cover.src === "/illustration/jira-team-eu26-end/code-context-search.jpeg")
+				|| (story.code === "TEU-103" && cover.src === "/illustration/jira-team-eu26-end/people-context-solid.svg"))) {
 				const authoredAlt = legacy?.title.endsWith(" (Confirm Visual)") === true && cover.alt === `${legacy.title} preview`;
-				if (cover.src !== expected.src || cover.maxHeight !== KEYNOTE_COVER_MAX_HEIGHT || cover.fit !== "cover" || cover.zoom !== KEYNOTE_COVER_IMAGE_ZOOM || !appsMatch(cover.appSources, story.apps)
-					|| cover.mask?.src !== expected.mask?.src || cover.mask?.backgroundColor !== expected.mask?.backgroundColor || authoredAlt) {
-					coverImage = { ...cover, src: expected.src, alt: authoredAlt ? expected.alt : cover.alt, maxHeight: KEYNOTE_COVER_MAX_HEIGHT, fit: "cover", zoom: KEYNOTE_COVER_IMAGE_ZOOM, appSources: expected.appSources, mask: expected.mask };
+				if (cover.src !== expected.src || cover.maxHeight !== KEYNOTE_COVER_MAX_HEIGHT || cover.fit !== "cover" || cover.zoom !== undefined || cover.mask !== undefined || !appsMatch(cover.appSources, story.apps) || authoredAlt) {
+					coverImage = { ...cover, src: expected.src, alt: authoredAlt ? expected.alt : cover.alt, maxHeight: KEYNOTE_COVER_MAX_HEIGHT, fit: "cover", zoom: undefined, mask: undefined, appSources: expected.appSources };
 				}
 			} else if (cover?.heading !== undefined && (cover.maxHeight !== KEYNOTE_COVER_MAX_HEIGHT
 				|| cover.backgroundPattern !== "grid" || !appsMatch(cover.appSources, story.apps))) {
