@@ -12,6 +12,7 @@ import { FinaleBuildText } from "./finale-build-text";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 
 export const FINALE_TILE_RADIUS = 20;
+export const FINALE_TILE_RADIUS_CSS = `var(--finale-tile-radius, ${FINALE_TILE_RADIUS}px)`;
 
 interface FinaleTileLogosProps {
 	readonly sources: readonly TwgToolSource[];
@@ -134,7 +135,7 @@ export function FinaleHeadingFace({ story, slot, scale, revealStart }: Readonly<
 	return (
 		<div
 			className="flex flex-col overflow-hidden"
-			style={{ width: slot.rect.width / scale, height: slot.rect.height / scale, padding: short ? 32 : 40, borderRadius: FINALE_TILE_RADIUS, background: FINALE_COLORS.tile }}
+			style={{ width: slot.rect.width / scale, height: slot.rect.height / scale, padding: short ? 32 : 40, borderRadius: FINALE_TILE_RADIUS_CSS, background: FINALE_COLORS.tile }}
 		>
 			<FinaleTileLogos sources={story.apps} revealStart={revealStart} className="flex h-12 origin-top-left scale-150" />
 			<FinaleBuildText

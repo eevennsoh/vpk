@@ -16,7 +16,7 @@ import {
 	TITLE_GRIP_UV,
 	type TitleCarry,
 } from "./finale-title-drag";
-import { wallPrintCards, wallPrintGap, type FinaleWall, type WallContent, type WallGeometry, type WallPrintShapes, type WallSlot } from "./finale-wall-layout";
+import { WALL_SCALE, wallSlotRadius, wallPrintCards, wallPrintGap, type FinaleWall, type WallContent, type WallGeometry, type WallPrintShapes, type WallSlot } from "./finale-wall-layout";
 
 /*
  * Act III on the finale clock. Every beat is a pure function of the time, so
@@ -129,8 +129,8 @@ export function wallTimeAt(offset: number, geometry: WallGeometry): number {
 }
 
 /** Seconds the wall takes to come round once at full pace: its loop. */
-export function wallLoop(geometry: WallGeometry, period: number): number {
-	return (geometry.pitch * period) / wallSpeed(geometry);
+export function wallLoop(wall: FinaleWall): number {
+	return wall.periodWidth / wallSpeed(wall.geometry);
 }
 
 /** A slot's rect on screen at `offset`. */
@@ -138,12 +138,11 @@ export function slotOnScreen(slot: WallSlot, offset: number, geometry: WallGeome
 	return { ...slot.rect, x: slot.rect.x + geometry.originX - offset };
 }
 
-/** The columns that reach into the frame at `offset`, with one to spare either side. */
-export function visibleColumns(offset: number, geometry: WallGeometry): { readonly first: number; readonly last: number } {
-	const { originX, pitch, columnWidth, viewport } = geometry;
-	// A wide cell belongs to its left column, so reach one column further left.
-	const first = Math.floor((offset - originX - columnWidth * 2) / pitch) - 1;
-	const last = Math.ceil((offset - originX + viewport.width) / pitch) + 1;
+/** Spatial buckets intersecting the viewport, including any natural-width item crossing an edge. */
+export function visibleWallBuckets(offset: number, geometry: WallGeometry): { readonly first: number; readonly last: number } {
+	const { originX, bucketWidth, maxTileWidth, viewport } = geometry;
+	const first = Math.floor((offset - originX - maxTileWidth) / bucketWidth) - 1;
+	const last = Math.ceil((offset - originX + viewport.width) / bucketWidth) + 1;
 	return { first, last };
 }
 
@@ -498,7 +497,7 @@ export function perSlot<T>(store: WeakMap<FinaleWall, Map<string, T>>, wall: Fin
  * the slot's seed); null if it was already on the wall when it appeared.
  */
 function descentFrom(slot: WallSlot, geometry: WallGeometry, from: number, span: number): Descent | null {
-	const line = geometry.viewport.width - geometry.pitch * (from + span * hash01(slot.seed * 0.917 + 0.13));
+	const line = geometry.viewport.width - geometry.bucketWidth * (from + span * hash01(slot.seed * 0.917 + 0.13));
 	const start = wallTimeAt(slot.rect.x + geometry.originX + slot.rect.width / 2 - line, geometry);
 	return start === Number.NEGATIVE_INFINITY ? null : { start, touchdown: start + WALL_CUE.descendS * lerp(0.85, 1.25, hash01(slot.seed * 1.37 + 0.5)) };
 }
@@ -619,7 +618,7 @@ export function slotArrivals(slot: WallSlot, wall: FinaleWall, prints?: WallPrin
 	}
 	const known = wholeArrivals.get(slot);
 	if (known) return known;
-	const whole: readonly WallArrival[] = [{ key: slot.key, index: null, code: null, rect: { x: 0, y: 0, width: slot.rect.width, height: slot.rect.height }, radius: wall.geometry.radius, descent }];
+	const whole: readonly WallArrival[] = [{ key: slot.key, index: null, code: null, rect: { x: 0, y: 0, width: slot.rect.width, height: slot.rect.height }, radius: wallSlotRadius(slot, wall.geometry), descent }];
 	wholeArrivals.set(slot, whole);
 	return whole;
 }
@@ -762,6 +761,9 @@ export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly Ben
 		const shadowFrom = title ? titleGrabTime() : bentoFallStart(drop, drops);
 		const shadowed = time >= (title ? titleGrabTime() : bentoTossTime());
 		const launch = launchTime(drop);
+		const sourceCorner = (geometry.radius * geometry.typeScale / WALL_SCALE) / drop.from.width;
+		const landedCorner = wallSlotRadius(drop.slot, geometry) / drop.slot.rect.width;
+		const corner = lerp(sourceCorner, landedCorner, progress(time, title ? titleGrabTime() : bentoTossTime(), touchdown));
 		sheets.push({
 			key: `bento-${drop.order}`,
 			kind: "bento",
@@ -772,23 +774,23 @@ export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly Ben
 			print: null,
 			shadow: shadowed ? { start: shadowFrom, settled: touchdown, pose } : null,
 			velocity: bentoSheetVelocity(drop, drops, time, pose, geometry, viewport),
-			// The bento card's radius, scaling down with it to the wall's.
-			radius: (geometry.radius * pose.width) / drop.slot.rect.width,
+			// Its original corners become the wall's corners continuously through the flight.
+			radius: corner * pose.width,
 			// It swells in as it leaves the hand and clears over its swoop down, landing crisp: eased at both ends, so it never snaps.
 			chroma: title ? titleCarrySmear(time) : smooth(launch, launch + BENTO_SMEAR_IN_S, time) * (1 - smooth(bentoFallStart(drop, drops), touchdown, time)),
 			waveFrom: title ? TITLE_GRIP_UV : null,
 		});
 	}
 	const offset = wallOffset(time, geometry);
-	const { first, last } = visibleColumns(offset, geometry);
+	const { first, last } = visibleWallBuckets(offset, geometry);
 	const reach = Math.ceil(ARRIVAL_LEAD);
 	for (let column = first; column <= last + reach; column += 1) {
-		for (const slot of wall.column(column)) {
+		for (const slot of wall.bucket(column)) {
 			if (slot.reserved !== undefined) continue;
 			const cards = slotArrivals(slot, wall, prints);
 			if (cards.length === 0) continue;
 			const rect = slotOnScreen(slot, offset, geometry);
-			if (rect.x > viewport.width + geometry.pitch * ARRIVAL_LEAD) continue;
+			if (rect.x > viewport.width + geometry.bucketWidth * ARRIVAL_LEAD) continue;
 			const earlier = slotOnScreen(slot, wallOffset(time - CLOTH_LAG, geometry), geometry);
 			// Waiting cards appear with the rest of the wall, where they wait.
 			const shown = wallRevealAt({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }, slot.seed, time, viewport);
@@ -884,11 +886,11 @@ export function wallLandingsAt(time: number, wall: FinaleWall, drops: readonly B
 	const live = (touchdown: number) => time >= touchdown && time <= landingSettled(touchdown);
 	for (const drop of drops) {
 		const touchdown = bentoTouchdown(drop, drops);
-		if (live(touchdown)) landings.push({ key: `bento-${drop.order}`, rect: slotOnScreen(drop.slot, offset, geometry), touchdown, seed: drop.order, radius: geometry.radius });
+		if (live(touchdown)) landings.push({ key: `bento-${drop.order}`, rect: slotOnScreen(drop.slot, offset, geometry), touchdown, seed: drop.order, radius: wallSlotRadius(drop.slot, geometry) });
 	}
-	const { first, last } = visibleColumns(offset, geometry);
+	const { first, last } = visibleWallBuckets(offset, geometry);
 	for (let index = first; index <= last; index += 1) {
-		for (const slot of wall.column(index)) {
+		for (const slot of wall.bucket(index)) {
 			if (slot.reserved !== undefined) continue;
 			for (const card of slotArrivals(slot, wall, prints)) {
 				const { touchdown } = card.descent;

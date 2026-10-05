@@ -129,7 +129,7 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 	);
 	const ripples = useMemo(() => fieldRipples(slotRects), [slotRects]);
 	// Act III: the mega bento, and the gap each bento card is thrown into.
-	const geometry = useMemo(() => wallGeometry(bento, fit.scale, viewport), [bento, fit.scale, viewport]);
+	const geometry = useMemo(() => wallGeometry(fit.scale, viewport), [fit.scale, viewport]);
 	const wall = useMemo(() => buildFinaleWall(geometry, bento, features, dragOrder), [geometry, bento, features, dragOrder]);
 	const drops = useMemo(() => bentoDrops(wall, slotRects, bento.title), [wall, slotRects, bento.title]);
 	// The Done cards' print shapes: a print slot's cards land, show and glow each on its own rect.

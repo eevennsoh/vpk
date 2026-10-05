@@ -53,7 +53,7 @@ function sceneFor(viewport, missing = new Set()) {
 	const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
 	const bento = m.finaleBentoLayout(viewport, scale);
 	const features = m.FINALE_FEATURES;
-	const geometry = m.wallGeometry(bento, scale, viewport);
+	const geometry = m.wallGeometry(scale, viewport);
 	const wall = m.buildFinaleWall(geometry, bento, features, []);
 	const drops = m.bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);
 	const prints = m.wallPrintShapes((code) => (missing.has(code) ? undefined : printOf(code)));
@@ -64,8 +64,8 @@ function sceneFor(viewport, missing = new Set()) {
 function arrivingPrints(m, wall, count, take = 2) {
 	const found = [];
 	for (let column = 0; column < 80 && found.length < take; column += 1) {
-		for (const slot of wall.column(column)) {
-			if (slot.content.kind === "print" && slot.content.codes.length === count && m.slotDescent(slot, wall)) found.push(slot);
+		for (const slot of wall.bucket(column)) {
+			if (slot.content.kind === "print" && slot.content.codes.length === count && m.slotDescent(slot, wall) && found.length < take) found.push(slot);
 		}
 	}
 	assert.equal(found.length, take, `arriving ${count}-card print slots`);
@@ -227,8 +227,8 @@ test("a stack waits in the air as the one sheet did, then its cards peel off it 
 	}
 	assert.equal(m.wallSlotPresence(slot, wall, drops, downs.at(-1) + m.CUE.handoff + 0.2, prints).cards.every((shown) => shown === 1), true);
 	// The whole stack lands a period later on the next pass, exactly alike.
-	const next = wall.column(slot.column + m.WALL_PERIOD).find((each) => each.band === slot.band && each.content.kind === "print");
-	const loop = m.wallLoop(geometry, m.WALL_PERIOD);
+	const next = wall.bucket(slot.bucket + wall.periodBuckets).find((each) => each.key.split(":").slice(1).join(":") === slot.key.split(":").slice(1).join(":"));
+	const loop = m.wallLoop(wall);
 	touchdowns(m, next, wall, drops, prints).forEach((touchdown, index) => assert.ok(close(touchdown - downs[index], loop, 1e-6), "seamless round the loop"));
 });
 
@@ -249,7 +249,7 @@ test("a teammate holding a print slot holds it by its top card's middle", () => 
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, wall, drops, prints } = sceneFor(viewport);
 		for (let column = 0; column < 120; column += 1) {
-			for (const slot of wall.column(column)) {
+			for (const slot of wall.bucket(column)) {
 				if (slot.content.kind !== "print") continue;
 				const descent = m.slotDescent(slot, wall);
 				const cursor = descent && m.wallCursorsAt(descent.touchdown, wall, drops, viewport, prints).find((each) => each.key === slot.key);

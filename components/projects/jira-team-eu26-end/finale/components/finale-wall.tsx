@@ -5,7 +5,7 @@ import { memo, useCallback, useRef, useState } from "react";
 import { WALL_CUE } from "../data/finale-cues";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { wallPrintOpacity, type FinaleWall as FinaleWallModel, type WallPrintShapes, type WallSlot } from "../lib/finale-wall-layout";
-import { visibleColumns, wallActive, wallMounted, wallOffset, wallSlotPresence, type BentoDrop } from "../lib/finale-wall-motion";
+import { visibleWallBuckets, wallActive, wallMounted, wallOffset, wallSlotPresence, type BentoDrop } from "../lib/finale-wall-motion";
 import { FinaleWallPieceFrame, WallPieceHostContext, WallSlotMirrorContext, type WallPieceHost } from "./finale-wall-pieces";
 import { FinaleWallTileContent } from "./finale-wall-tiles";
 
@@ -82,7 +82,7 @@ function WallSlotCard({ slot, wall, drops, cardPrint, prints }: Readonly<WallSlo
 	);
 }
 
-interface WallColumnProps {
+interface WallBucketProps {
 	readonly slots: readonly WallSlot[];
 	readonly wall: FinaleWallModel;
 	readonly drops: readonly BentoDrop[];
@@ -90,8 +90,8 @@ interface WallColumnProps {
 	readonly prints: WallPrintShapes;
 }
 
-/** One column of the wall; it renders once, when it comes into range. */
-const WallColumn = memo(function WallColumn({ slots, wall, drops, cardPrint, prints }: Readonly<WallColumnProps>) {
+/** One bucket of the wall; it renders once, when it comes into range. */
+const WallBucket = memo(function WallBucket({ slots, wall, drops, cardPrint, prints }: Readonly<WallBucketProps>) {
 	return slots.map((slot) => <WallSlotCard key={slot.key} slot={slot} wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />);
 });
 
@@ -106,11 +106,11 @@ interface FinaleWallProps {
 
 /**
  * Act III's mega bento, as DOM: the crisp faces of every card on it. One
- * track carries every column left at the wall's pace; only the columns in or
+ * track carries every bucket left at the wall's pace; only the buckets in or
  * beside the frame are mounted, so React renders only as one comes in or
  * leaves. Its cards come up around the throw from the middle of the frame
  * out, or take over from the GL sheets landing on it (`FinaleWallGl`, drawn
- * above). Its columns mount hidden on the bento's held final frame
+ * above). Its buckets mount hidden on the bento's held final frame
  * (`wallMounted`) and show once the act starts. Its product tiles' pieces
  * are drawn by the Rovo Stage Kit in a frame laid over the cards, on a track
  * of its own that moves with this one (`FinaleWallPieceFrame`).
@@ -151,23 +151,23 @@ export function FinaleWall({ wall, drops, cardPrint, prints }: Readonly<FinaleWa
 			track.style.transform = transform;
 			if (pieceTrackRef.current) pieceTrackRef.current.style.transform = transform;
 		}
-		const next = visibleColumns(offset, geometry);
+		const next = visibleWallBuckets(offset, geometry);
 		const current = rangeRef.current;
-		// A column enters or leaves every few seconds; only then does the wall re-render.
+		// A bucket enters or leaves every few seconds; only then does the wall re-render.
 		if (!current || current.first !== next.first || current.last !== next.last) {
 			rangeRef.current = next;
 			setRange(next);
 		}
 	});
 
-	const columns = range ? Array.from({ length: range.last - range.first + 1 }, (_, index) => range.first + index) : [];
+	const buckets = range ? Array.from({ length: range.last - range.first + 1 }, (_, index) => range.first + index) : [];
 
 	return (
 		<div ref={rootRef} aria-hidden className="absolute inset-0 overflow-hidden" style={{ visibility: "hidden" }}>
 			<WallPieceHostContext value={pieceHost}>
 				<div ref={trackRef} className="absolute top-0 left-0" style={{ willChange: "transform" }}>
-					{columns.map((column) => (
-						<WallColumn key={column} slots={wall.column(column)} wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />
+					{buckets.map((bucket) => (
+						<WallBucket key={bucket} slots={wall.bucket(bucket)} wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />
 					))}
 				</div>
 			</WallPieceHostContext>

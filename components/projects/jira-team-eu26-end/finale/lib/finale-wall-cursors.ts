@@ -17,7 +17,7 @@ import {
 	slotDescent,
 	slotOnScreen,
 	titleCarryOf,
-	visibleColumns,
+	visibleWallBuckets,
 	wallActive,
 	wallOffset,
 	wallSpeed,
@@ -293,11 +293,13 @@ function holdCandidate(slot: WallSlot, wall: FinaleWall): WallHold | null {
 		const from = arrive - ENTER_S;
 		if (from < titleCarrierGoneTime()) return null;
 		// Each leg reaches from the card to wholly off the frame (with room to spare): in from where the card is as the hand sets off, out from where it is as the hand is gone.
+		// It is never shorter than the cursor itself, so a hand whose card is still coming in over the frame's edge glides onto it rather than riding in on it.
 		const spare = CURSOR_APART * fit;
 		const leaveEnd = descent.touchdown + LEAVE_S;
+		const legOff = (angle: number, bow: number, box: Box) => handLeg(angle, Math.max(offFrame(box, angle, viewport), box.right - box.left) + spare, bow);
 		const hand: Hand = {
-			reach: handLeg(ways.reach, offFrame(boxAt(from), ways.reach, viewport) + spare, ways.reachBow),
-			leave: handLeg(ways.leave, offFrame(boxAt(leaveEnd), ways.leave, viewport) + spare, ways.leaveBow),
+			reach: legOff(ways.reach, ways.reachBow, boxAt(from)),
+			leave: legOff(ways.leave, ways.leaveBow, boxAt(leaveEnd)),
 			pillAbove: ways.pillAbove,
 		};
 		const held: Holder = { name, lane, hand, from, arrive };
@@ -336,10 +338,10 @@ function wallHold(slot: WallSlot, wall: FinaleWall): WallHold | null {
 		if (!own) return null;
 		const { geometry } = wall;
 		const apart = (CURSOR_APART * geometry.typeScale) / WALL_SCALE;
-		// Any hold that can overlap this one in time is within this many columns of it (its line up to the deepest away; a wide cell belongs to its left column).
-		const around = Math.ceil(((own.to - own.from + LANE_REST_S) * wallSpeed(geometry)) / geometry.pitch + DESCEND_SPAN) + 2;
-		for (let column = slot.column - around; column <= slot.column + around; column += 1) {
-			for (const other of wall.column(column)) {
+		// Search every spatial bucket whose card width and travel time can overlap this hold.
+		const around = Math.ceil(((own.to - own.from + LANE_REST_S) * wallSpeed(geometry)) / geometry.bucketWidth + DESCEND_SPAN + geometry.maxTileWidth / geometry.bucketWidth) + 1;
+		for (let column = slot.bucket - around; column <= slot.bucket + around; column += 1) {
+			for (const other of wall.bucket(column)) {
 				if (other.key === slot.key) continue;
 				const theirs = holdCandidate(other, wall);
 				if (!theirs || theirs.from > own.from || (theirs.from === own.from && other.key > slot.key)) continue;
@@ -381,11 +383,11 @@ function titleCarrierCursor(time: number, wall: FinaleWall, drops: readonly Bent
 export function wallCursorsAt(time: number, wall: FinaleWall, drops: readonly BentoDrop[], viewport: FinaleViewport, prints?: WallPrintShapes): readonly PageCursor[] {
 	if (!wallActive(time)) return [];
 	const { geometry } = wall;
-	const { first, last } = visibleColumns(wallOffset(time, geometry), geometry);
+	const { first, last } = visibleWallBuckets(wallOffset(time, geometry), geometry);
 	const carrier = titleCarrierCursor(time, wall, drops, viewport);
 	const cursors: PageCursor[] = carrier ? [carrier] : [];
 	for (let column = first; column <= last + 1; column += 1) {
-		for (const slot of wall.column(column)) {
+		for (const slot of wall.bucket(column)) {
 			const hold = wallHold(slot, wall);
 			if (!hold) continue;
 			// The card it takes: the slot's own, or the top one of a print slot's stack.

@@ -13,7 +13,7 @@ import { SHAPE_HOLD_S, alignRing, blendRings, ringPath, shapeStepAt, svgPathSamp
 import { hash01, spring } from "../lib/finale-math";
 import { buildAfter } from "../lib/finale-build-style";
 import { FinaleBuildSpan } from "./finale-build-text";
-import { FINALE_TILE_RADIUS } from "./finale-tile";
+import { FINALE_TILE_RADIUS_CSS } from "./finale-tile";
 
 const RING_POINTS = 96;
 const rings = new Map<string, MorphRing>();
@@ -106,7 +106,7 @@ export function FinaleWallShape({ shape, fill, portrait, seed, width, height, re
 
 	const art = Math.min(height * 0.74, width * 0.8);
 	return (
-		<div className="absolute inset-0 overflow-hidden" style={{ background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS }}>
+		<div className="absolute inset-0 overflow-hidden" style={{ background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS_CSS }}>
 			<svg viewBox="0 0 100 100" aria-hidden className="absolute" style={{ width: art, height: art, left: (width - art) / 2, top: (height - art) / 2, overflow: "visible" }}>
 				<defs>
 					<clipPath id={clipId}>

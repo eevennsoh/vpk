@@ -51,7 +51,7 @@ function sceneFor(viewport) {
 	const m = load();
 	const fit = Math.min(viewport.width / 1920, viewport.height / 1080);
 	const bento = m.finaleBentoLayout(viewport, fit);
-	const geometry = m.wallGeometry(bento, fit, viewport);
+	const geometry = m.wallGeometry(fit, viewport);
 	const wall = m.buildFinaleWall(geometry, bento, m.FINALE_FEATURES, []);
 	const drops = m.bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);
 	const title = drops.find((drop) => drop.kind === "title");

@@ -12,7 +12,7 @@ export { WALL_CUE } from "../data/finale-cues";
 export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 export { FINALE_WALL_CURSOR_NAMES } from "../data/finale-wall-cursor-names";
 export { FINALE_CURSORS, finaleCursorBox } from "./finale-cursor-path";
-export { WALL_PERIOD, WALL_SCALE, buildFinaleWall, wallGeometry } from "./finale-wall-layout";
+export { WALL_SCALE, buildFinaleWall, wallGeometry } from "./finale-wall-layout";
 export { wallCursorsAt } from "./finale-wall-cursors";
 export { arrivalCardPose, bentoDrops, slotArrivals, slotDescent, slotOnScreen, wallOffset, wallTimeAt } from "./finale-wall-motion";
 export { projectLifted } from "./finale-camera";
@@ -48,7 +48,7 @@ function wallFor(viewport) {
 	const { bentoDrops, buildFinaleWall, finaleBentoLayout, FINALE_FEATURES, wallGeometry } = load();
 	const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
 	const bento = finaleBentoLayout(viewport, scale);
-	const wall = buildFinaleWall(wallGeometry(bento, scale, viewport), bento, FINALE_FEATURES, []);
+	const wall = buildFinaleWall(wallGeometry(scale, viewport), bento, FINALE_FEATURES, []);
 	return { wall, drops: bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title) };
 }
 
@@ -64,16 +64,16 @@ test("the wall's cursors are named from the avatar roster, once each, and never 
 });
 
 test("each held card's cursor is the slot's own teammate on every pass, one per lane and nobody twice at once, once MCB has carried the title in", () => {
-	const { FINALE_CURSORS, FINALE_WALL_CURSOR_NAMES, WALL_CUE, WALL_PERIOD, titleCarrierGoneTime, titleReachTime, wallCursorsAt, wallTimeAt } = load();
+	const { FINALE_CURSORS, FINALE_WALL_CURSOR_NAMES, WALL_CUE, titleCarrierGoneTime, titleReachTime, wallCursorsAt, wallTimeAt } = load();
 	const pool = new Set(FINALE_WALL_CURSOR_NAMES);
 	const presenters = new Set(FINALE_CURSORS.map((cursor) => cursor.label));
 	const mcb = FINALE_CURSORS.findIndex((cursor) => cursor.id === "mcb");
 	const viewport = { width: 1728, height: 1117 };
 	const { wall, drops } = wallFor(viewport);
 	const { geometry } = wall;
-	const seedOf = (key) => wall.column(Number(key.split(":")[0])).find((slot) => slot.key === key).seed;
+	const seedOf = (key) => wall.bucket(Number(key.split(":")[0])).find((slot) => slot.key === key).seed;
 	// Three periods of travel: at least two whole loops past the wall's run-up, so every slot comes round again.
-	const end = wallTimeAt(3 * WALL_PERIOD * geometry.pitch, geometry);
+	const end = wallTimeAt(3 * wall.periodWidth, geometry);
 	assert.ok(Number.isFinite(end) && end > WALL_CUE.start, "the wall glides");
 
 	const byKey = new Map();
@@ -139,7 +139,7 @@ test("a teammate's cursor glides in from wholly off the frame onto its card, hol
 		const { geometry } = wall;
 		const fit = geometry.typeScale / m.WALL_SCALE;
 		const at = (time, key) => m.wallCursorsAt(time, wall, drops, viewport).find((cursor) => cursor.key === key) ?? null;
-		const slotOf = (key) => wall.column(Number(key.split(":")[0])).find((slot) => slot.key === key);
+		const slotOf = (key) => wall.bucket(Number(key.split(":")[0])).find((slot) => slot.key === key);
 		// The tip of a hand resting on its card: the card's middle as it comes down, then as the wall carries it on.
 		const cardMiddle = (slot, time) => {
 			const [card] = m.slotArrivals(slot, wall);
@@ -161,7 +161,7 @@ test("a teammate's cursor glides in from wholly off the frame onto its card, hol
 		};
 
 		// One loop's teammates, each first seen on a coarse pass that runs on until the last of them is gone.
-		const end = m.wallTimeAt(m.WALL_PERIOD * geometry.pitch, geometry) + 30;
+		const end = m.wallTimeAt(wall.periodWidth, geometry) + 30;
 		const seen = new Map();
 		for (let time = m.WALL_CUE.start; time < end + 3; time += 0.1) {
 			for (const cursor of m.wallCursorsAt(time, wall, drops, viewport)) {
@@ -190,7 +190,7 @@ test("a teammate's cursor glides in from wholly off the frame onto its card, hol
 				const off = offCard(cursor, slot, time);
 				assert.equal(cursor.opacity, 1, `${who} comes in opaque, never fading in on its card (${time.toFixed(3)}s)`);
 				assert.ok(off <= previous.off + 1e-6, `${who} only ever closes in on its card (${time.toFixed(3)}s)`);
-				assert.ok(Math.hypot(cursor.x - previous.cursor.x, cursor.y - previous.cursor.y) < 0.06 * viewport.width, `${who} glides, never jumps (${time.toFixed(3)}s)`);
+				assert.ok(Math.hypot(cursor.x - previous.cursor.x, cursor.y - previous.cursor.y) < 0.06 * Math.max(viewport.width, viewport.height), `${who} glides, never jumps (${time.toFixed(3)}s)`);
 				previous = { cursor, off };
 			}
 

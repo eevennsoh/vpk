@@ -38,7 +38,7 @@ function sceneFor(viewport, dragOrder = []) {
 	const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
 	const bento = m.finaleBentoLayout(viewport, scale);
 	const features = m.FINALE_FEATURES;
-	const geometry = m.wallGeometry(bento, scale, viewport);
+	const geometry = m.wallGeometry(scale, viewport);
 	const wall = m.buildFinaleWall(geometry, bento, features, dragOrder);
 	const drops = m.bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title);
 	return { m, viewport, scale, bento, features, geometry, wall, drops };
@@ -46,7 +46,7 @@ function sceneFor(viewport, dragOrder = []) {
 
 /** Arriving slots (not on the wall when it appears) of a column, with their descents. */
 function arrivals(m, wall, column) {
-	return wall.column(column).filter((slot) => slot.reserved === undefined).map((slot) => ({ slot, descent: m.slotDescent(slot, wall) })).filter((each) => each.descent);
+	return wall.bucket(column).filter((slot) => slot.reserved === undefined).map((slot) => ({ slot, descent: m.slotDescent(slot, wall) })).filter((each) => each.descent);
 }
 
 function firstArrivingColumn(m, wall) {
@@ -79,6 +79,17 @@ test("the mega bento never exists on the bento's rest frame (reduced motion)", (
 	assert.equal(m.wallMounted(m.FINALE_REST_TIME), true);
 });
 
+test("a grey container's landing sheet and accents match its 20px DOM corners", () => {
+	const { m, wall, drops, viewport } = sceneFor(VIEWPORTS[1]);
+	const slot = wall.items.find((slot) => slot.content.kind === "piece" && m.slotDescent(slot, wall));
+	assert.ok(slot);
+	const time = m.slotDescent(slot, wall).touchdown + 0.05;
+	const sheet = m.wallSheetsAt(time, wall, drops, viewport).find((sheet) => sheet.key === `card-${slot.key}`);
+	assert.equal(sheet.radius, 20);
+	const landing = m.wallLandingsAt(time, wall, drops).find((landing) => landing.key === slot.key);
+	assert.equal(landing.radius, 20);
+});
+
 test("the bento's six tiles are thrown faces and all from exactly where they lie", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, drops } = sceneFor(viewport);
@@ -100,7 +111,7 @@ test("the bento's six tiles are thrown faces and all from exactly where they lie
 
 test("the mega bento appears only from the throw on, from the middle of the frame out", () => {
 	const { m, wall, drops, viewport, geometry } = sceneFor(VIEWPORTS[0]);
-	const present = Array.from({ length: m.WALL_PERIOD }, (_, column) => wall.column(column)).flat().filter((slot) => slot.reserved === undefined && !m.slotDescent(slot, wall));
+	const present = Array.from({ length: wall.periodBuckets }, (_, column) => wall.bucket(column)).flat().filter((slot) => slot.reserved === undefined && !m.slotDescent(slot, wall));
 	assert.ok(present.length > 10);
 	for (const slot of present) assert.equal(m.wallSlotPresence(slot, wall, drops, m.bentoTossTime() - 0.01).opacity, 0, "nothing before the throw");
 	const settled = m.WALL_CUE.start + m.WALL_CUE.revealAt + m.WALL_CUE.revealS + m.WALL_CUE.revealFadeS;
@@ -351,10 +362,10 @@ test("the wall glides at a steady pace and its arrivals loop without a seam", ()
 	const paced = m.wallDriftStart() + m.WALL_CUE.driftRamp;
 	for (const time of [paced, paced + 7.3, paced + 60]) assert.ok(close(m.wallOffset(time + 1, geometry) - m.wallOffset(time, geometry), m.wallSpeed(geometry), 1e-6), "a steady pace once up to speed");
 	for (const offset of [0.5, 12, 80, 400, 5000]) assert.ok(close(m.wallOffset(m.wallTimeAt(offset, geometry), geometry), offset), `${offset}px inverts`);
-	const loop = m.wallLoop(geometry, m.WALL_PERIOD);
-	for (const column of [m.WALL_PERIOD + 2, m.WALL_PERIOD + 5]) {
-		wall.column(column).forEach((slot, index) => {
-			const next = wall.column(column + m.WALL_PERIOD)[index];
+	const loop = m.wallLoop(wall);
+	for (const column of [wall.periodBuckets + 2, wall.periodBuckets + 5]) {
+		wall.bucket(column).forEach((slot, index) => {
+			const next = wall.bucket(column + wall.periodBuckets)[index];
 			assert.deepEqual(next.content, slot.content, "the next copy holds the same card");
 			const now = m.slotDescent(slot, wall);
 			const later = m.slotDescent(next, wall);

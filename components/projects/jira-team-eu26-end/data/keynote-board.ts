@@ -34,7 +34,6 @@ const KEYNOTE_STORIES = [
 	{ code: "TEU-1", section: "Context", heading: "Rovo\nDesktop", title: "Rovo Desktop", cover: "rovo-desktop.jpeg", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ code: "TEU-101", section: "Context", heading: "Data\nContext", title: "Data Context", cover: "data-context.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ code: "TEU-2", section: "Context", heading: "Code\nContext", title: "Code Context", cover: "code-context.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
-	{ code: "TEU-113", section: "Context", heading: "Code\nContext", title: "Code Context", cover: "code-context.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ code: "TEU-102", section: "Context", heading: "Code Search\nApp", title: "Code Search App", cover: "code-search-app.jpeg", apps: [COVER_APPS.search], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ code: "TEU-3", section: "Context", heading: "Rovo\nFor Work", title: "Rovo For Work", cover: "rovo-for-work.jpeg", apps: [COVER_APPS.rovo], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
 	{ code: "TEU-103", section: "Context", heading: "People\nContext", title: "People Context", cover: "people-context.jpeg", apps: [COVER_APPS.graph], assignee: JIRA_TEAM_EU26_END_PRESENTERS.tamar },
@@ -134,7 +133,6 @@ export function restoreJiraTeamEu26EndKeynoteCoverArtwork(columns: readonly Jira
 				coverImage = expected;
 			} else if (cover && (cover.src === expected.src
 				|| (story.code === "TEU-4" && cover.src === "/illustration/jira-team-eu26-end/artifacts-no-fade.png")
-				|| (story.code === "TEU-113" && cover.src === "/illustration/jira-team-eu26-end/code-context-search.jpeg")
 				|| (story.code === "TEU-103" && cover.src === "/illustration/jira-team-eu26-end/people-context-solid.svg"))) {
 				const authoredAlt = legacy?.title.endsWith(" (Confirm Visual)") === true && cover.alt === `${legacy.title} preview`;
 				if (cover.src !== expected.src || cover.maxHeight !== KEYNOTE_COVER_MAX_HEIGHT || cover.fit !== "cover" || cover.zoom !== undefined || cover.mask !== undefined || !appsMatch(cover.appSources, story.apps) || authoredAlt) {
