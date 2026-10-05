@@ -1,3 +1,5 @@
+import type { PieceId } from "@/public/1p/rovo-stage-kit/types/stage-file";
+
 import { FINALE_SLOT_COUNT, FINALE_STORIES, finaleBentoLayout, type FinaleBentoLayout, type FinalePresenterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import type { FinaleBrandColor } from "../data/finale-palette";
 import type { FinaleShapeKind } from "../data/finale-identity-shapes";
@@ -15,7 +17,8 @@ import type { FinaleShapeKind } from "../data/finale-identity-shapes";
  * "Team ’26" title), the one whose place on the slide it is nearest, so the
  * seven are thrown to seven different places. Everything else is the rest of
  * the keynote: the Done cards as printed, the featured stories' benefits,
- * Team ’26 posters, the identity's shapes and the products on show.
+ * Team ’26 posters, the presenters in the identity's shapes, and the
+ * products on show as Rovo Stage Kit pieces.
  *
  * New cards come in at the leading edge, each waiting in the air over its
  * slot until it comes down (`lib/finale-wall-motion.ts`). The wall repeats
@@ -49,10 +52,8 @@ export const WALL_TITLE_ORDER = FINALE_SLOT_COUNT;
 /** A slot's height: a bento tall or short tile, the title's box, a strip, or the whole band. */
 export type WallHeight = "tall" | "short" | "title" | "strip" | "band";
 
-export type WallStatId = "shipped" | "presenters" | "chapters";
-export type WallStripId = "apps" | "presenters" | "flow" | "search";
-/** The agents on the keynote board's header (`JIRA_TEAM_EU26_HEADER_AGENT_ASSIGNEES`). */
-export type WallAgentId = "claude-code" | "review-agent" | "test-agent";
+export type WallStatId = "presenters" | "chapters";
+export type WallStripId = "presenters" | "flow";
 
 export type WallContent =
 	| { readonly kind: "story"; readonly story: FinaleStory }
@@ -61,14 +62,12 @@ export type WallContent =
 	/** Done cards as printed for the finale, stacked like a column (as many as fit the slot). */
 	| { readonly kind: "print"; readonly codes: readonly string[] }
 	| { readonly kind: "poster"; readonly word: string; readonly fill: FinaleBrandColor; readonly ink: FinaleBrandColor }
-	| { readonly kind: "shape"; readonly shape: FinaleShapeKind; readonly fill: FinaleBrandColor; readonly portrait?: FinalePresenterId }
+	/** A presenter's portrait in one of the identity's shapes. */
+	| { readonly kind: "shape"; readonly shape: FinaleShapeKind; readonly fill: FinaleBrandColor; readonly portrait: FinalePresenterId }
 	| { readonly kind: "stat"; readonly stat: WallStatId }
 	| { readonly kind: "strip"; readonly strip: WallStripId }
-	/** A few lines of the keynote's Claude session, in its terminal. */
-	| { readonly kind: "terminal"; readonly script: number }
-	| { readonly kind: "agent"; readonly agent: WallAgentId }
-	/** Rovo's chat composer, mid-question. */
-	| { readonly kind: "composer"; readonly prompt: number }
+	/** The products on show: Rovo Stage Kit pieces, in a row on a grey tile (`lib/finale-wall-pieces.ts`). */
+	| { readonly kind: "piece"; readonly pieces: readonly PieceId[] }
 	/** The black "Team ’26" tile: the bento's title, a card on the wall like its tiles. */
 	| { readonly kind: "title" };
 
@@ -104,13 +103,11 @@ const print: Token = { kind: "print" };
 const gap: Token = { kind: "gap" };
 const air: Token = { kind: "air" };
 const poster = (word: string, fill: FinaleBrandColor, ink: FinaleBrandColor): Token => ({ kind: "poster", word, fill, ink });
-const shape = (kind: FinaleShapeKind, fill: FinaleBrandColor): Token => ({ kind: "shape", shape: kind, fill });
 const portrait = (presenter: FinalePresenterId, kind: FinaleShapeKind, fill: FinaleBrandColor): Token => ({ kind: "shape", shape: kind, fill, portrait: presenter });
 const stat = (id: WallStatId): Token => ({ kind: "stat", stat: id });
 const strip = (id: WallStripId): Token => ({ kind: "strip", strip: id });
-const terminal = (script: number): Token => ({ kind: "terminal", script });
-const agent = (id: WallAgentId): Token => ({ kind: "agent", agent: id });
-const composer = (prompt: number): Token => ({ kind: "composer", prompt });
+const piece = (...pieces: PieceId[]): Token => ({ kind: "piece", pieces });
+const APP_LOGOS = piece("appJira", "appConfluence", "appLoom", "appGithub", "appFigma");
 
 /** The band patterns: each sums, with its gutters, to exactly one band. */
 const tt = (a: Token, b: Token): Cell => ({ heights: ["tall", "tall"], tokens: [a, b] });
@@ -139,21 +136,21 @@ const covered = "covered" as const;
  * the opening frame hold the expanded board at the same card scale.
  */
 const PERIOD: readonly (readonly [CellRecipe, CellRecipe, CellRecipe])[] = [
-	[tt(shape("banner", "lime"), benefit), wide(tt(poster("Context", "lime", "black"), print)), rst(air, stat("presenters"), terminal(0))],
-	[tt(air, gap), covered, sxs(shape("circle", "lime"), strip("apps"), composer(0))],
-	[band(portrait("tamar", "arch", "purple")), tt(print, agent("claude-code")), tt(gap, poster("Done", "saffron", "black"))],
-	[tsr(shape("star", "purple"), gap, air), tt(composer(1), air), wide(tt(terminal(1), poster("Collaboration", "purple", "black")))],
-	[sxs(shape("hexagon", "blue"), strip("search"), air), rst(air, gap, stat("shipped")), covered],
-	[tt(poster("Loom", "purple", "black"), benefit), band(print), rst(air, gap, shape("shield", "blue"))],
-	[tt(portrait("sherif", "circle", "purple"), gap), tsr(benefit, composer(2), air), tt(agent("review-agent"), shape("circle", "saffron"))],
-	[tt(shape("hexagon", "saffron"), benefit), sxs(terminal(2), strip("flow"), air), tt(gap, poster("Jira", "blue", "white"))],
-	[sxs(stat("chapters"), poster("DX", "purple", "black"), composer(3)), tt(poster("Guard", "saffron", "black"), shape("arch", "blue")), tt(air, poster("Agents", "saffron", "black"))],
-	[tt(portrait("mcb", "shield", "blue"), benefit), tt(poster("Rovo", "black", "lime"), shape("star", "lime")), sxs(shape("banner", "blue"), poster("Shipped", "lime", "black"), air)],
-	[wide(band(poster("Confidence", "blue", "white"))), tt(portrait("taroon", "hexagon", "blue"), benefit), tt(terminal(3), agent("test-agent"))],
-	[covered, sxs(air, strip("presenters"), shape("circle", "purple")), band(poster("Done", "lime", "black"))],
-	[band(print), tt(poster("Context", "lime", "black"), shape("star", "lime")), tt(air, shape("hexagon", "blue"))],
-	[tt(shape("circle", "purple"), air), band(print), tt(poster("Collaboration", "purple", "black"), shape("shield", "blue"))],
-	[tt(poster("Confidence", "blue", "white"), shape("banner", "saffron")), tt(shape("arch", "purple"), air), band(print)],
+	[tt(piece("stampShapes"), benefit), wide(tt(poster("Context", "lime", "black"), print)), rst(air, stat("presenters"), piece("rovoDevCli"))],
+	[tt(air, gap), covered, sxs(piece("governance"), APP_LOGOS, piece("composer"))],
+	[band(portrait("tamar", "arch", "purple")), tt(print, piece("agentPresence")), tt(gap, poster("Done", "saffron", "black"))],
+	[tsr(piece("stampSparkle"), gap, air), tt(piece("skills"), air), wide(tt(piece("codeCard"), poster("Collaboration", "purple", "black")))],
+	[sxs(piece("stampShield"), piece("switch"), air), rst(air, gap, piece("statTokens")), covered],
+	[tt(poster("Loom", "purple", "black"), benefit), band(print), rst(air, gap, piece("governance"))],
+	[tt(portrait("sherif", "circle", "purple"), gap), tsr(benefit, piece("hold"), air), tt(piece("scheduledTask"), piece("stampShapes"))],
+	[tt(piece("stampShield"), benefit), sxs(piece("rovoDevCli"), strip("flow"), air), tt(gap, poster("Jira", "blue", "white"))],
+	[sxs(stat("chapters"), poster("DX", "purple", "black"), piece("bubbles")), tt(poster("Guard", "saffron", "black"), piece("stampShapes")), tt(air, poster("Agents", "saffron", "black"))],
+	[tt(portrait("mcb", "shield", "blue"), benefit), tt(poster("Rovo", "black", "lime"), piece("stampSparkle")), sxs(piece("governance"), poster("Shipped", "lime", "black"), air)],
+	[wide(band(poster("Confidence", "blue", "white"))), tt(portrait("taroon", "hexagon", "blue"), benefit), tt(piece("codeCard"), piece("badgeRovo"))],
+	[covered, sxs(air, strip("presenters"), piece("stampShapes")), band(poster("Done", "lime", "black"))],
+	[band(print), tt(poster("Context", "lime", "black"), piece("stampSparkle")), tt(air, piece("stampShield"))],
+	[tt(piece("stampShapes"), air), band(print), tt(poster("Collaboration", "purple", "black"), piece("governance"))],
+	[tt(poster("Confidence", "blue", "white"), piece("stampSparkle")), tt(piece("stampShield"), air), band(print)],
 ];
 
 /** Columns before the wall repeats. */

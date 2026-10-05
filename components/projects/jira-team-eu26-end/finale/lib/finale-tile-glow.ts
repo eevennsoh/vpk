@@ -85,7 +85,7 @@ export const TILE_GLOW = {
 	pad: 36,
 	/** Bloom opacity relative to the stroke core. */
 	bloomOpacity: 0.6,
-	/** Share of the bloom kept over the white face (it reads mostly outside). */
+	/** Share of the bloom kept over the tile's face (it reads mostly outside). */
 	innerBloom: 0.3,
 	/** Rovo blue → purple → amber → green. */
 	colors: [BLUE, PURPLE, ORANGE, LIME],
@@ -333,7 +333,7 @@ export interface TileGlowShape {
 	readonly length: number;
 }
 
-/** The line sits just outside the white face, concentric with its corners. */
+/** The line sits just outside the tile's face, concentric with its corners. */
 export function tileGlowShape(tile: FinaleRect, radius: number, scale: number, lineWidth: number): TileGlowShape {
 	const out = (lineWidth * scale) / 2;
 	const rect = { x: tile.x - out, y: tile.y - out, width: tile.width + out * 2, height: tile.height + out * 2 };
@@ -784,7 +784,7 @@ void main() {
 	float core = exp(-pow(d / (0.6 * width), 2.0));
 	float bloomLength = uScale * 0.8 + uLook.y * clamp(hot, 0.0, 1.2) * (0.8 + 0.2 * drift + 0.4 * pulseBeat);
 	float bloom = exp(-abs(d) / max(bloomLength, 0.0001));
-	// Held back over the white face, and spent well inside the quad.
+	// Held back over the tile's face, and spent well inside the quad.
 	bloom *= mix(${f(TILE_GLOW.innerBloom)}, 1.0, smoothstep(-2.0 * width, 0.0, d));
 	bloom *= 1.0 - smoothstep(0.5, 0.9, abs(d) / (${f(TILE_GLOW.pad)} * uScale));
 

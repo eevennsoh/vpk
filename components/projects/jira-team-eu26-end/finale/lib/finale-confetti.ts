@@ -25,6 +25,15 @@
  * from it, behind the page (small, soft and faint); the vortex draws both back
  * to the page, into focus.
  *
+ * A drop that does not complete the board (one card or a bulk drag) puffs
+ * instead (`createFinaleConfettiPuff`). Seen from above, the cards slam onto
+ * the page and the confetti squirts out from under every edge of their
+ * footprint at once: a low ring of the finale's own variety (paper, sequins
+ * and coiled ribbons, smaller) that spreads along the page, decelerates hard,
+ * settles in a mixed scatter and fades (`SMALL_CONFETTI_TIMING`). It has no
+ * vortex, no glow and no depth layers, and it never crosses back over the
+ * cards it came from.
+ *
  * Space: viewport CSS px, y DOWN, z toward the viewer (z = 0 is the page, which
  * a perspective camera maps 1:1 onto CSS px). `finaleConfettiCenter` is ported
  * line for line to `FINALE_CONFETTI_MOTION_GLSL`, which moves every vertex on
@@ -32,7 +41,7 @@
  */
 
 import { FLASH_ROVO_COLORS, FLASH_TIMING } from "./finale-column-flash";
-import { progress } from "./finale-math";
+import { clamp, lerp, progress } from "./finale-math";
 
 // Seconds, resolved from the VPK duration tokens. The token contract test
 // checks these against app/tailwind-theme.css to prevent drift.
@@ -72,9 +81,14 @@ export const FINALE_CONFETTI_TIMING = {
 	release: FLASH_TIMING.rise,
 } as const;
 
+/**
+ * A drop's puff, in real seconds (it has no show clock): the launch is all but
+ * spent by ~0.4s (`PUFF.drag`), the dust lies all but still for a beat, then
+ * fades away as dust settles rather than snapping off.
+ */
 export const SMALL_CONFETTI_TIMING = {
-	fadeStart: MOTION_DURATION.slowest * 2,
-	fade: MOTION_DURATION.slow,
+	fadeStart: MOTION_DURATION.slowest,
+	fade: MOTION_DURATION.slower,
 } as const;
 
 /**
@@ -138,18 +152,160 @@ export function finaleConfettiCameraDistance(height: number): number {
 
 const PIECES_PER_CORNER = 300;
 /**
- * A drop that does not complete the board (one card or a bulk drag): a
- * denser, lower burst of smaller pieces than the finale's. `power` scales the
- * launch, the depth and the lens, so the plume tops out lower on the page.
+ * The puff out from under a drop's landing (`createFinaleConfettiPuff`), in
+ * CSS px like the cards themselves: the board does not scale with the
+ * viewport, so neither does the dust it pushes out.
  */
-const SMALL_BURST = { piecesPerCorner: 150, power: 0.38, pieceSize: 0.7 } as const;
+const PUFF = {
+	/**
+	 * One piece per this many px of the landing's border, within `count`: a
+	 * sparse but unbroken ring round a card (~110 pieces on the board's
+	 * cards), capped for a tall stack. It answers one card landing in one
+	 * column, so it stays light beside the finale's 600.
+	 */
+	spacing: 11,
+	count: [40, 120],
+	/**
+	 * How far past the edge (px) one card's dust skids. The draw is skewed
+	 * (`reachBias`), so most settles close in and only a few flecks fly far:
+	 * dense at the edge, thinning outward, as a puff does.
+	 */
+	reach: [12, 105],
+	reachBias: 2,
+	/**
+	 * √area (px) of one card's footprint (~300 × 100), and how much wider a
+	 * heavier stack pushes its dust (√ of the ratio, within `heft`): a bulk
+	 * drop's puff spreads a little wider than a single card's, never a blast.
+	 */
+	card: 175,
+	heft: [0.85, 1.45],
+	/**
+	 * Linear drag (1/s), three times the cannons': the launch is a fast outward
+	 * squirt that is 95% spent within ~0.4s, so it reads as dust, not paper
+	 * thrown. Launch speed is reach × drag, so the reach is exact.
+	 */
+	drag: [6.5, 9.5],
+	/**
+	 * Half-angle (rad) of each piece's spread about its outward direction,
+	 * drawn triangular so most leave square to their edge, and well short of
+	 * the edge itself, so none heads back along it.
+	 */
+	spread: 24 * Math.PI / 180,
+	/**
+	 * Toward each corner (within this share of the landing's shorter side) the
+	 * outward direction fans round from one edge's to the next, as if the
+	 * corner were rounder, so the ring rounds the corners rather than leaving
+	 * a notch at each where two straight-out sheets part.
+	 */
+	fan: 0.35,
+	/**
+	 * Lift off the page as a share of the reach: dust rising slightly, low
+	 * enough to stay in focus (well short of `FINALE_CONFETTI_LOOK.focus`) and
+	 * never to project back over the card, even on an edge facing the
+	 * viewport's centre (that would take a lift near the reach itself).
+	 */
+	lift: [0.05, 0.25],
+	/** Every piece leaves inside this window (s), front-loaded: one impact, not a stream. */
+	impact: MOTION_DURATION.xxshort,
+	/** The finale's own variety (`VARIETY`), smaller, as the earlier small burst's was. */
+	pieceSize: 0.7,
+	/**
+	 * Every piece skids at least this far (px) from where it sets off. A
+	 * coiled ribbon starts so far out (its quad's reach) that its reach from
+	 * the edge may not cover it, and none should sit still. It is also more
+	 * than twice the sway, so the sway never carries one back toward the card.
+	 */
+	travel: 8,
+	/**
+	 * The tumble from a random pose (the finale's mixed scatter, both faces
+	 * showing). Paper's is calmer than the cannons': it dies with the launch
+	 * (`decay` matches the drag's order) to a slow `rest`. A ribbon keeps the
+	 * cannons' livelier, slower-dying twist, so its coil keeps turning.
+	 */
+	spin: { paper: { start: [6, 14], rest: [0.3, 0.9], decay: 5 }, ribbon: { start: [5, 10], rest: [2, 4], decay: 3 } },
+	/** A gentle sway (px, rad/s) as the dust hangs: small beside the shortest reach, so it never drifts back over the card. */
+	flutter: { amplitude: [1, 3], frequency: [3, 6] },
+} as const;
 /** Launch speed (px/s) of a full-strength piece on a 900px-tall viewport. */
 const LAUNCH_SPEED = 2200;
 /** Fixed, so every rehearsal of the show is the same show. */
 export const FINALE_CONFETTI_SEED = 2026;
+/**
+ * The margin (px) the renderer's quad leaves round each piece's footprint for
+ * its antialiased edge, before defocus widens it (`pad` in its vertex
+ * shader). A puff's piece sets off clear of its landing by as far as its
+ * padded quad reaches (`finaleConfettiQuadReach`), and that margin also covers
+ * the few per cent a turn toward the lens adds in perspective.
+ */
+export const FINALE_CONFETTI_PAD = 1.5;
 
 export type FinaleConfettiMaterial = "paper" | "sequin" | "ribbon";
 export type FinaleConfettiShape = "rect" | "disc" | "ribbon";
+
+interface VarietyRange {
+	readonly min: number;
+	readonly span: number;
+}
+
+/**
+ * The confetti's variety: one owner for the finale's cannons and a drop's
+ * puff, so the two never drift apart. Each range is drawn as `min + random()
+ * × span`, the very expression the finale was tuned on (a stored max would
+ * round differently, and so change its show).
+ */
+const VARIETY = {
+	/**
+	 * One draw's cumulative shares: satin ribbons below `ribbon`, iridescent
+	 * sequins below `sequin`, Rovo paper above, of which `disc` is round.
+	 */
+	mix: { ribbon: 0.07, sequin: 0.28, disc: 0.12 },
+	/** Footprints (px) at full size: long ribbons, paper rectangles `aspect` of their length wide, and discs (paper or sequin). */
+	ribbon: { length: { min: 80, span: 45 }, width: { min: 4.5, span: 1.5 } },
+	rect: { length: { min: 9, span: 5 }, aspect: { min: 0.45, span: 0.2 } },
+	disc: { length: { min: 6, span: 3 } },
+	/**
+	 * Curl along the length: a ribbon coils through whole `turns`, advancing
+	 * by its helical `pitch` across its width (the swirly ones); paper bends
+	 * through `paper` (rad); a sequin is all but flat.
+	 */
+	curl: { turns: { min: 0.8, span: 0.6 }, pitch: { min: 0.24, span: 0.16 }, paper: { min: 0.2, span: 0.8 }, sequin: 0.05 },
+} as const;
+
+function vary(range: VarietyRange, random: () => number): number {
+	return range.min + random() * range.span;
+}
+
+function confettiMaterial(roll: number): FinaleConfettiMaterial {
+	return roll < VARIETY.mix.ribbon ? "ribbon" : roll < VARIETY.mix.sequin ? "sequin" : "paper";
+}
+
+/** Draws only for paper: a sequin is always a disc, a ribbon a ribbon. */
+function confettiShape(material: FinaleConfettiMaterial, random: () => number): FinaleConfettiShape {
+	return material === "ribbon" ? "ribbon" : material === "sequin" || random() < VARIETY.mix.disc ? "disc" : "rect";
+}
+
+/** Length (px) at full size. */
+function confettiLength(shape: FinaleConfettiShape, random: () => number): number {
+	return vary(VARIETY[shape].length, random);
+}
+
+/** Draws only for a rectangle: its width as a share of its length. */
+function confettiAspect(shape: FinaleConfettiShape, random: () => number): number {
+	return shape === "rect" ? vary(VARIETY.rect.aspect, random) : 1;
+}
+
+/** Width (px) at full size: a ribbon's own, otherwise its length × aspect. */
+function confettiWidth(shape: FinaleConfettiShape, length: number, aspect: number, random: () => number): number {
+	return shape === "ribbon" ? vary(VARIETY.ribbon.width, random) : length * aspect;
+}
+
+/** Bend (rad) along the length and helical pitch, drawn in that order. */
+function confettiCurl(material: FinaleConfettiMaterial, random: () => number): { readonly arc: number; readonly pitch: number } {
+	const { curl } = VARIETY;
+	const arc = material === "ribbon" ? vary(curl.turns, random) * Math.PI * 2 : material === "sequin" ? curl.sequin : vary(curl.paper, random);
+	const pitch = material === "ribbon" ? vary(curl.pitch, random) : 0;
+	return { arc, pitch };
+}
 
 interface Vec3 {
 	readonly x: number;
@@ -157,8 +313,8 @@ interface Vec3 {
 	readonly z: number;
 }
 
-/** The Done column (viewport px) and its corner radius: the vortex drains onto its bottom border. */
-export interface FinaleConfettiColumn {
+/** A box on the page (viewport px) and its corner radius. */
+export interface FinaleConfettiBox {
 	readonly x: number;
 	readonly y: number;
 	readonly width: number;
@@ -166,12 +322,18 @@ export interface FinaleConfettiColumn {
 	readonly radius: number;
 }
 
-export interface FinaleConfettiStage {
-	readonly width: number;
-	readonly height: number;
-	readonly column: FinaleConfettiColumn;
-	readonly size?: "small" | "large";
-}
+/** The Done column: the vortex drains onto its bottom border. */
+export type FinaleConfettiColumn = FinaleConfettiBox;
+
+/**
+ * Where a show plays: the finale's burst drains onto the Done column; a small
+ * one puffs out from under the cards a drop has just landed (their union).
+ */
+export type FinaleConfettiTarget =
+	| { readonly size?: "large"; readonly column: FinaleConfettiColumn }
+	| { readonly size: "small"; readonly landing: FinaleConfettiBox };
+
+export type FinaleConfettiStage = { readonly width: number; readonly height: number } & FinaleConfettiTarget;
 
 /** Share of the launching (non-trail) pieces in each depth layer; the rest fly near the page. */
 export const FINALE_CONFETTI_DEPTH = {
@@ -182,7 +344,8 @@ export const FINALE_CONFETTI_DEPTH = {
 } as const;
 
 export interface FinaleConfettiPiece {
-	readonly corner: "left" | "right";
+	/** The cannon that fired it; `null` for a puff's, which leaves from under its landing. */
+	readonly corner: "left" | "right" | null;
 	readonly material: FinaleConfettiMaterial;
 	readonly shape: FinaleConfettiShape;
 	/** Rovo hues of the two faces (sequins show their film instead). */
@@ -330,21 +493,22 @@ function unitVector(random: () => number): Vec3 {
 	return { x: ring * Math.cos(angle), y: ring * Math.sin(angle), z };
 }
 
+/**
+ * The show for `stage`: the finale's cannons, or a drop's puff (its own
+ * builder, so the finale's random stream, and so its pieces, never depend on it).
+ */
 export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = finaleConfettiRandom(FINALE_CONFETTI_SEED)): FinaleConfettiBurst {
-	const { width, height } = stage;
-	const small = stage.size === "small";
-	const piecesPerCorner = small ? SMALL_BURST.piecesPerCorner : PIECES_PER_CORNER;
-	const power = small ? SMALL_BURST.power : 1;
-	const scale = height / 900 * power;
-	const sizeScale = Math.min(1.3, Math.max(0.85, Math.sqrt(height / 900))) * (small ? SMALL_BURST.pieceSize : 1);
-	const lens = finaleConfettiCameraDistance(height) * power;
+	if (stage.size === "small") return createFinaleConfettiPuff(stage, random);
+	const { width, height, column } = stage;
+	const scale = height / 900;
+	const sizeScale = Math.min(1.3, Math.max(0.85, Math.sqrt(height / 900)));
+	const lens = finaleConfettiCameraDistance(height);
 	const T = FINALE_CONFETTI_TIMING;
 	const { near, far } = FINALE_CONFETTI_DEPTH;
-	const draft = Array.from({ length: piecesPerCorner * 2 }, (_, index): Omit<FinaleConfettiPiece, "gather"> & { swirl: number; jitter: number; sink: { x: number; y: number } } => {
-		const corner = index < piecesPerCorner ? "left" : "right";
-		const roll = random();
-		const material: FinaleConfettiMaterial = roll < 0.07 ? "ribbon" : roll < 0.28 ? "sequin" : "paper";
-		const shape: FinaleConfettiShape = material === "ribbon" ? "ribbon" : material === "sequin" || random() < 0.12 ? "disc" : "rect";
+	const draft = Array.from({ length: PIECES_PER_CORNER * 2 }, (_, index): Omit<FinaleConfettiPiece, "gather"> & { swirl: number; jitter: number; sink: { x: number; y: number } } => {
+		const corner = index < PIECES_PER_CORNER ? "left" : "right";
+		const material = confettiMaterial(random());
+		const shape = confettiShape(material, random);
 		// The forceful broad diagonal fan, never past vertical (off the edge of
 		// the screen). A quarter travels gently and falls slowly, keeping a
 		// trail near each corner.
@@ -360,8 +524,8 @@ export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = f
 		const depth = layer === "near" ? lens * reach(near.reach) : layer === "far" ? -lens * reach(far.reach) : speed / drag * (random() * 0.4 - 0.05);
 		const hero = layer === "near";
 		const fallBase = material === "sequin" ? 190 + random() * 80 : material === "ribbon" ? 90 + random() * 60 : 120 + random() * 110;
-		const length = material === "ribbon" ? 80 + random() * 45 : shape === "disc" ? 6 + random() * 3 : 9 + random() * 5;
-		const aspect = shape === "rect" ? 0.45 + random() * 0.2 : 1;
+		const length = confettiLength(shape, random);
+		const aspect = confettiAspect(shape, random);
 		return {
 			corner,
 			material,
@@ -371,7 +535,7 @@ export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = f
 			origin: {
 				x: corner === "left" ? 0 : width,
 				y: height + 8,
-				z: random() * 40 * power,
+				z: random() * 40,
 			},
 			// One draw, as before: the plume's head leaves first, the gentle trail last.
 			delay: ((roll) => T.volley * (gentle ? 0.35 + 0.65 * roll : roll ** 1.5))(random()),
@@ -389,14 +553,13 @@ export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = f
 				: { phase: random() * Math.PI * 2, start: 10 + random() * 14, rest: 3.5 + random() * 4, decay: 3, gather: 6 + random() * 6 },
 			size: {
 				length: length * sizeScale * (hero ? 1.1 : 1),
-				width: (material === "ribbon" ? 4.5 + random() * 1.5 : length * aspect) * sizeScale * (hero ? 1.1 : 1),
-				arc: material === "ribbon" ? (0.8 + random() * 0.6) * Math.PI * 2 : material === "sequin" ? 0.05 : 0.2 + random() * 0.8,
-				pitch: material === "ribbon" ? 0.24 + random() * 0.16 : 0,
+				width: confettiWidth(shape, length, aspect, random) * sizeScale * (hero ? 1.1 : 1),
+				...confettiCurl(material, random),
 			},
 			seed: random(),
 			swirl: 0.7 + random() * 0.6,
 			jitter: (random() - 0.5) * 0.06,
-			sink: finaleConfettiSink(stage.column, random(), random()),
+			sink: finaleConfettiSink(column, random(), random()),
 		};
 	});
 	// Rank by distance from its sink when the vortex opens: the farthest
@@ -405,19 +568,150 @@ export function createFinaleConfettiBurst(stage: FinaleConfettiStage, random = f
 		const at = finaleConfettiFree(piece, T.gatherStart);
 		return Math.hypot(at.x - piece.sink.x, at.y - piece.sink.y, at.z);
 	};
-	const order = small ? [] : draft.map((piece, index) => ({ index, distance: probe(piece) })).sort((a, b) => a.distance - b.distance);
+	const order = draft.map((piece, index) => ({ index, distance: probe(piece) })).sort((a, b) => a.distance - b.distance);
 	const rank = new Array<number>(draft.length);
 	order.forEach(({ index }, position) => {
 		rank[index] = order.length > 1 ? position / (order.length - 1) : 1;
 	});
 	const pieces = draft.map(({ swirl, jitter, sink, ...piece }, index): FinaleConfettiPiece => {
-		if (small) return { ...piece, gather: null };
 		const end = T.firstArrival + (T.gathered - T.firstArrival) * rank[index];
 		const start = Math.min(T.gatherStart + T.gatherSpread * (1 - rank[index]) + jitter, end - MIN_GATHER);
 		return { ...piece, gather: { start: Math.max(start, T.gatherStart - 0.03), end, swirl, sink } };
 	});
 	// Draw far to near, by depth mid-flight.
 	const depthAt = (piece: FinaleConfettiPiece) => finaleConfettiFree(piece, T.gatherStart * 0.75).z;
+	return { stage, pieces: pieces.map((piece) => ({ piece, depth: depthAt(piece) })).sort((a, b) => a.depth - b.depth).map(({ piece }) => piece) };
+}
+
+type FinaleConfettiPuffStage = Extract<FinaleConfettiStage, { readonly size: "small" }>;
+
+interface FinaleConfettiBorder {
+	/** Its length (px), corners included. */
+	readonly length: number;
+	/** The point `along` (0 → 1) of the way round it by arc length, clockwise from the top edge's left end, and the outward normal there (rad, y down). */
+	readonly at: (along: number) => { readonly x: number; readonly y: number; readonly normal: number };
+}
+
+/**
+ * A box's rounded border: square to each side, radial round each corner. A
+ * box with no extent is a point, outward every way.
+ */
+function finaleConfettiBorder(box: FinaleConfettiBox): FinaleConfettiBorder {
+	const r = clamp(box.radius, 0, Math.min(box.width, box.height) / 2);
+	const across = box.width - 2 * r;
+	const down = box.height - 2 * r;
+	const corner = Math.PI * r / 2;
+	const length = 2 * (across + down) + 4 * corner;
+	if (!(length > 0)) return { length: 0, at: (along) => ({ x: box.x, y: box.y, normal: along * Math.PI * 2 }) };
+	const right = box.x + box.width;
+	const bottom = box.y + box.height;
+	// Each side from its start, then the corner it runs into, about that corner's centre.
+	const sides = [
+		{ length: across, x: box.x + r, y: box.y, dx: 1, dy: 0, normal: -Math.PI / 2, cx: right - r, cy: box.y + r },
+		{ length: down, x: right, y: box.y + r, dx: 0, dy: 1, normal: 0, cx: right - r, cy: bottom - r },
+		{ length: across, x: right - r, y: bottom, dx: -1, dy: 0, normal: Math.PI / 2, cx: box.x + r, cy: bottom - r },
+		{ length: down, x: box.x, y: bottom - r, dx: 0, dy: -1, normal: Math.PI, cx: box.x + r, cy: box.y + r },
+	];
+	return {
+		length,
+		at: (along) => {
+			let rest = clamp(along) * length;
+			for (const side of sides) {
+				if (rest <= side.length) return { x: side.x + side.dx * rest, y: side.y + side.dy * rest, normal: side.normal };
+				rest -= side.length;
+				if (rest <= corner) {
+					const normal = side.normal + rest / r;
+					return { x: side.cx + r * Math.cos(normal), y: side.cy + r * Math.sin(normal), normal };
+				}
+				rest -= corner;
+			}
+			// Round-off past the last corner: the top edge's left end, where the border began.
+			return { x: sides[0].x, y: sides[0].y, normal: sides[0].normal };
+		},
+	};
+}
+
+/**
+ * The way dust leaves `point` on `box`'s border: square to its side, fanning
+ * round toward each corner as if that corner had radius `fan` (never less
+ * than its own). Within 45° of the border's own normal, so always outward.
+ */
+function finaleConfettiPuffHeading(box: FinaleConfettiBox, point: ReturnType<FinaleConfettiBorder["at"]>, fan: number): number {
+	const inset = Math.min(Math.max(box.radius, fan), box.width / 2, box.height / 2);
+	const dx = point.x - clamp(point.x, box.x + inset, box.x + box.width - inset);
+	const dy = point.y - clamp(point.y, box.y + inset, box.y + box.height - inset);
+	return Math.hypot(dx, dy) > 1e-6 ? Math.atan2(dy, dx) : point.normal;
+}
+
+/**
+ * The farthest the renderer's quad for a piece of `size` reaches from its
+ * centre, whatever its turn. It is padded by `FINALE_CONFETTI_PAD` all round,
+ * then bent along its length (`confettiSurface`): each point sits at the chord
+ * of its bend (no longer than the length bent, nor than the curl's diameter,
+ * 2 × length / arc), pitched across by `along × pitch`. Paper and sequins
+ * reach their padded half-diagonal; a coiled ribbon, far less than its length.
+ */
+function finaleConfettiQuadReach(size: FinaleConfettiPiece["size"]): number {
+	const along = size.length / 2 + FINALE_CONFETTI_PAD;
+	const chord = Math.min(along, 2 * size.length / Math.max(size.arc, 0.001));
+	return Math.hypot(chord, size.width / 2 + FINALE_CONFETTI_PAD + along * size.pitch);
+}
+
+/**
+ * A drop's puff, seen from above: as the cards slam onto the page, confetti
+ * squirts out from under every edge of their footprint (`landing`) at once.
+ * Each piece leaves from its own slot round the border (evenly by arc length,
+ * corners included), just clear of it, outward, and skids to a stop along the
+ * page (`PUFF`): a slight lift, no fall (a top-down view has no down), a
+ * tumble from a random pose, and a sway far shorter than its travel, so none
+ * drifts back over the cards. Its looks are the finale's (`VARIETY`).
+ */
+function createFinaleConfettiPuff(stage: FinaleConfettiPuffStage, random: () => number): FinaleConfettiBurst {
+	const { landing } = stage;
+	const border = finaleConfettiBorder(landing);
+	const count = Math.round(clamp(border.length / PUFF.spacing, PUFF.count[0], PUFF.count[1]));
+	const heft = clamp(Math.sqrt(Math.sqrt(landing.width * landing.height) / PUFF.card), PUFF.heft[0], PUFF.heft[1]);
+	const fan = PUFF.fan * Math.min(landing.width, landing.height);
+	const within = (bounds: readonly [number, number], amount: number) => lerp(bounds[0], bounds[1], amount);
+	const { spin, flutter } = PUFF;
+	const pieces = Array.from({ length: count }, (_, index): FinaleConfettiPiece => {
+		const point = border.at((index + random()) / count);
+		const heading = finaleConfettiPuffHeading(landing, point, fan) + PUFF.spread * (random() - random());
+		const material = confettiMaterial(random());
+		const shape = confettiShape(material, random);
+		const length = confettiLength(shape, random);
+		const aspect = confettiAspect(shape, random);
+		const size = { length: length * PUFF.pieceSize, width: confettiWidth(shape, length, aspect, random) * PUFF.pieceSize, ...confettiCurl(material, random) };
+		// It sets off as far out as its drawn quad reaches, whatever its turn, so the
+		// launch streak swept back to here stops at the edge rather than over the card.
+		const clearance = finaleConfettiQuadReach(size);
+		const drag = within(PUFF.drag, random());
+		// The reach is from the edge, so the clearance it starts at is already part of it.
+		const speed = Math.max(heft * within(PUFF.reach, random() ** PUFF.reachBias) - clearance, PUFF.travel) * drag;
+		const lift = within(PUFF.lift, random());
+		const delay = PUFF.impact * random() ** 3;
+		const tumble = material === "ribbon" ? spin.ribbon : spin.paper;
+		return {
+			corner: null,
+			material,
+			shape,
+			front: FLASH_ROVO_COLORS[index % FLASH_ROVO_COLORS.length],
+			back: FLASH_ROVO_COLORS[(index + 1) % FLASH_ROVO_COLORS.length],
+			origin: { x: point.x + Math.cos(point.normal) * clearance, y: point.y + Math.sin(point.normal) * clearance, z: 0 },
+			delay,
+			velocity: { x: Math.cos(heading) * speed, y: Math.sin(heading) * speed, z: lift * speed },
+			drag,
+			fall: 0,
+			flutter: { amplitude: within(flutter.amplitude, random()), frequency: within(flutter.frequency, random()), phase: random() * Math.PI * 2 },
+			axis: unitVector(random),
+			spin: { phase: random() * Math.PI * 2, start: within(tumble.start, random()), rest: within(tumble.rest, random()), decay: tumble.decay, gather: 0 },
+			size,
+			gather: null,
+			seed: random(),
+		};
+	});
+	// Draw far to near: the dust lifted highest lies on top.
+	const depthAt = (piece: FinaleConfettiPiece) => finaleConfettiFree(piece, SMALL_CONFETTI_TIMING.fadeStart).z;
 	return { stage, pieces: pieces.map((piece) => ({ piece, depth: depthAt(piece) })).sort((a, b) => a.depth - b.depth).map(({ piece }) => piece) };
 }
 

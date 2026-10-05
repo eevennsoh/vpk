@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Rovo stage pieces</title>
+        <style>
+            body {
+                margin: 0;
+                font: 13px / 18px system-ui, -apple-system, sans-serif;
+                color: #292a2e;
+                background: #f1f2f4;
+            }
+
+            header {
+                padding: 24px 32px 0;
+            }
+
+            h1 {
+                margin: 0 0 4px;
+                font-size: 20px;
+            }
+
+            header p {
+                margin: 0;
+                color: #6b6e76;
+            }
+
+            main {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+                gap: 20px;
+                padding: 20px 32px 48px;
+            }
+
+            figure {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin: 0;
+                padding: 16px;
+                border-radius: 12px;
+                background: #ffffff;
+            }
+
+            .room {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 280px;
+                overflow: hidden;
+                border-radius: 8px;
+                background: linear-gradient(180deg, #eaedf1 0%, #e2e6eb 100%);
+            }
+
+            figcaption {
+                color: #6b6e76;
+            }
+
+            figcaption strong {
+                color: #292a2e;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Pieces</h1>
+            <p>
+                Every piece the kit draws, with the stage file's styles. Pieces that hold after
+                their moment replay here every few seconds; open with ?play=own to see each play as
+                the stage plays it.
+            </p>
+        </header>
+        <main id="grid"></main>
+        <script type="module">
+            import { PIECES } from './dist/rovo-stage.js';
+
+            const own = new URLSearchParams(location.search).get('play') === 'own';
+            const stage = await fetch('rovo-stage.json')
+                .then((response) => response.json())
+                .catch(() => null);
+            const grid = document.getElementById('grid');
+            for (const piece of PIECES) {
+                const element = document.createElement('rovo-piece');
+                element.setAttribute('piece', piece.id);
+                element.setAttribute('scale', String(Math.min(1, 320 / piece.w, 240 / piece.h)));
+                if (!own && piece.holds !== null) {
+                    element.setAttribute('play', 'loop');
+                    element.setAttribute('rest', '1.5');
+                }
+                if (stage?.pieceStyles) element.pieceStyles = stage.pieceStyles;
+                const room = document.createElement('div');
+                room.className = 'room';
+                room.append(element);
+                const name = document.createElement('strong');
+                name.textContent = piece.name;
+                const caption = document.createElement('figcaption');
+                caption.append(
+                    name,
+                    ` · ${piece.id} · ${piece.w} × ${piece.h} pt`,
+                    document.createElement('br'),
+                    piece.moment,
+                );
+                const figure = document.createElement('figure');
+                figure.append(room, caption);
+                grid.append(figure);
+            }
+        </script>
+    </body>
+</html>

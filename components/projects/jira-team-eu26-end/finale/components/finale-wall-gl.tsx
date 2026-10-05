@@ -100,7 +100,7 @@ interface TitleInk {
 	readonly height: number;
 }
 
-/** The title card's two faces: white type on its black front, ink on the white back it formed as. */
+/** The title card's two faces: white type on its black front, ink on the grey tile back it formed as. */
 interface TitleFaces<T> {
 	readonly front: T;
 	readonly back: T;

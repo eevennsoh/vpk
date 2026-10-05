@@ -23,7 +23,10 @@ interface FinaleTelepointerProps {
 /**
  * Multiplayer cursor from the Figma bento frame: an arrow plus a lozenge name
  * tag in the collaborator's colour, drawn at the 1920 stage size. Decorative:
- * it starts hidden and is placed imperatively by its owner.
+ * it starts hidden and is placed imperatively by its owner, which may turn it
+ * over (`data-pill="above"`): mirrored top to bottom about its tip, the arrow
+ * points down onto what it holds and its name sits above, still upright, its
+ * shadow still below.
  */
 export function FinaleTelepointer({ color, ink, label, ref }: Readonly<FinaleTelepointerProps>) {
 	return (
@@ -31,7 +34,7 @@ export function FinaleTelepointer({ color, ink, label, ref }: Readonly<FinaleTel
 			ref={ref}
 			aria-hidden
 			data-finale-cursor={label}
-			className="pointer-events-none absolute top-0 left-0 flex items-start"
+			className="group pointer-events-none absolute top-0 left-0"
 			style={{
 				opacity: 0,
 				visibility: "hidden",
@@ -40,21 +43,23 @@ export function FinaleTelepointer({ color, ink, label, ref }: Readonly<FinaleTel
 				filter: "drop-shadow(0 0 0.5px rgba(30, 31, 33, 0.31)) drop-shadow(0 8px 6px rgba(30, 31, 33, 0.15))",
 			}}
 		>
-			<svg width={30} height={30} viewBox="0 0 30 30" className="shrink-0">
-				<path
-					d="M3 2.5 L26.5 12.2 L15.6 15.6 L12.2 26.5 Z"
-					fill={color}
-					stroke="#FFFFFF"
-					strokeWidth={2.4}
-					strokeLinejoin="round"
-				/>
-			</svg>
-			<span
-				className="mt-5 -ml-1 rounded-full font-sans font-semibold whitespace-nowrap"
-				style={{ background: color, color: ink, fontSize: 20, lineHeight: 1, padding: "10px 16px" }}
-			>
-				{label}
-			</span>
+			<div className="flex items-start group-data-[pill=above]:-scale-y-100" style={{ transformOrigin: `${TIP.x}px ${TIP.y}px` }}>
+				<svg width={30} height={30} viewBox="0 0 30 30" className="shrink-0">
+					<path
+						d="M3 2.5 L26.5 12.2 L15.6 15.6 L12.2 26.5 Z"
+						fill={color}
+						stroke="#FFFFFF"
+						strokeWidth={2.4}
+						strokeLinejoin="round"
+					/>
+				</svg>
+				<span
+					className="mt-5 -ml-1 rounded-full font-sans font-semibold whitespace-nowrap group-data-[pill=above]:-scale-y-100"
+					style={{ background: color, color: ink, fontSize: 20, lineHeight: 1, padding: "10px 16px" }}
+				>
+					{label}
+				</span>
+			</div>
 		</div>
 	);
 }
@@ -71,9 +76,10 @@ interface FinaleTelepointersProps {
 	readonly looks: readonly FinaleTelepointerLook[];
 	/**
 	 * Cursor `index` (of `looks`) at `time`: its tip in viewport px, press or
-	 * perspective scale, and opacity; null while it is off.
+	 * perspective scale, opacity, and whether it is turned over with its name
+	 * above (`pillAbove`); null while it is off.
 	 */
-	readonly poseAt: (time: number, index: number) => FinaleCursorPose | null;
+	readonly poseAt: (time: number, index: number) => (FinaleCursorPose & { readonly pillAbove?: boolean }) | null;
 	/** Stage fit: the cursors are drawn at the 1920 stage size and scaled with the type. */
 	readonly scale: number;
 }
@@ -98,6 +104,8 @@ function FinaleTelepointers({ looks, poseAt, scale }: Readonly<FinaleTelepointer
 			if (element.style.visibility !== visibility) element.style.visibility = visibility;
 			if (!pose || visibility === "hidden") return;
 			const last = (written.current[index] ??= { opacity: "", transform: "" });
+			const pill = pose.pillAbove ? "above" : "below";
+			if (element.dataset.pill !== pill) element.dataset.pill = pill;
 			const opacity = String(pose.opacity);
 			const transform = `translate3d(${pose.x - TIP.x}px, ${pose.y - TIP.y}px, 0) scale(${scale * pose.scale})`;
 			if (last.opacity !== opacity) {

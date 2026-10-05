@@ -37,6 +37,12 @@ test("budgets only tracked source and documentation text extensions", () => {
 	assert.equal(isBudgetedTextFile("public/icon.svg"), false);
 });
 
+test("leaves vendored builds, replaced whole, out of the budget", () => {
+	assert.equal(isBudgetedTextFile("public/1p/rovo-stage-kit/dist/rovo-stage.js"), false);
+	assert.equal(isBudgetedTextFile("public/1p/rovo-stage-kit/GUIDE.md"), false);
+	assert.equal(isBudgetedTextFile("public/1p/rovo-stage-kit-notes.md"), true);
+});
+
 test("detects new oversized files, growth, and stale allowlist entries", () => {
 	const failures = evaluateFileSizeBudget([
 		{

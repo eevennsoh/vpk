@@ -4,9 +4,9 @@
  * these are deliberate literals rather than ADS semantic tokens.
  */
 export const FINALE_COLORS = {
-	/** Slide background behind the Founder Keynote "Bento" frame. */
+	/** Slide background behind the bento and the mega bento: pure white. */
 	slide: "#FFFFFF",
-	/** Bento tile fill (Figma "Neutral/Light/100"): soft grey cards on the white slide. */
+	/** Bento tile fill — ADS Neutral100, light grey cards on the white slide. */
 	tile: "#F8F8F8",
 } as const;
 

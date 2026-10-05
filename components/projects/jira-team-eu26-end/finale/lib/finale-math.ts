@@ -105,7 +105,7 @@ export function hash01(seed: number): number {
 
 /**
  * Parses `#rrggbb` or `rgb()/rgba()` into channels. Hex is checked first: its
- * digits would otherwise be misread as decimal channels (#F1F2F4 → 1, 2, 4).
+ * digits would otherwise be misread as decimal channels (#F8F8F8 → 8, 8, 8).
  */
 export function parseRgb(colour: string): readonly [number, number, number] {
 	const value = colour.trim();
