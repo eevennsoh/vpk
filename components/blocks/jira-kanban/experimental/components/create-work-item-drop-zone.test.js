@@ -174,3 +174,47 @@ test("normal create uses the full-width compact button and the shared creation f
 	assert.match(FOOTER, /aria-label=\{control\?\.active \? [^\n]+ : `Create in \$\{title\}`\}[\s\S]*"w-full border-dashed group-hover\/board-column:border-solid"[\s\S]*size=\{size\}[\s\S]*variant="outline"/u);
 	assert.match(FOOTER, /<CreateWorkItemField/u);
 });
+
+test("scrolling dismisses a hovered creation gap until the pointer moves again", async () => {
+	const { renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
+	const { act } = require("react");
+	const view = await renderComponent({
+		source: `
+			import { use } from "react";
+			import { BoardColumnCardList } from "@/components/blocks/jira-kanban/experimental/components/board-column-card-list";
+			import { BoardCardHoverInsertionContext } from "@/components/blocks/jira-kanban/experimental/components/board-card-hover-insertion-context";
+			function GapState() {
+				const insertion = use(BoardCardHoverInsertionContext);
+				return <output>{insertion ? "Gap visible" : "Gap hidden"}</output>;
+			}
+			export default function Fixture() {
+				return <BoardColumnCardList chrome={{ cardList: { gap: "4px" } }} columnTitle="Done"
+					columnSizing="content" count={2} insertionArmed={false} isEmpty={false}>
+					{[0, 1].map(index => <div key={index} data-board-agent-session-drop-zone="issue"
+						data-board-column-title="Done" data-issue-key={"TEU-" + index}
+						data-board-card-index={index} data-board-card-count="2">Card {index}</div>)}
+					<GapState />
+				</BoardColumnCardList>;
+			}
+		`,
+	});
+	const viewport = view.getByRole("region", { name: "Done work items" });
+	viewport.getBoundingClientRect = () => new DOMRect(0, 0, 200, 300);
+	const cards = viewport.querySelectorAll('[data-board-agent-session-drop-zone="issue"]');
+	cards.forEach((card, index) => {
+		card.getBoundingClientRect = () => new DOMRect(0, index * 104, 200, 100);
+	});
+	const hoverGap = () => act(async () => {
+		viewport.dispatchEvent(new PointerEvent("pointermove", {
+			bubbles: true, pointerType: "mouse", clientX: 100, clientY: 102,
+		}));
+	});
+	for (const event of [new WheelEvent("wheel", { bubbles: true, deltaY: 50 }), new Event("scroll")]) {
+		await hoverGap();
+		assert.equal(view.queryByText("Gap visible") !== null, true);
+		await act(async () => { viewport.dispatchEvent(event); });
+		assert.equal(view.queryByText("Gap hidden") !== null, true, `${event.type} clears the stale gap`);
+	}
+	await hoverGap();
+	assert.equal(view.queryByText("Gap visible") !== null, true, "fresh hover restores creation");
+});
