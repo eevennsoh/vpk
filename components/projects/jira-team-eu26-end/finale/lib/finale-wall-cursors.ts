@@ -339,7 +339,7 @@ function wallHold(slot: WallSlot, wall: FinaleWall): WallHold | null {
 		const { geometry } = wall;
 		const apart = (CURSOR_APART * geometry.typeScale) / WALL_SCALE;
 		// Search every spatial bucket whose card width and travel time can overlap this hold.
-		const around = Math.ceil(((own.to - own.from + LANE_REST_S) * wallSpeed(geometry)) / geometry.bucketWidth + DESCEND_SPAN + geometry.maxTileWidth / geometry.bucketWidth) + 1;
+		const around = Math.ceil(((own.to - own.from + LANE_REST_S) * wallSpeed(geometry) + DESCEND_SPAN * geometry.arrivalReach + geometry.maxTileWidth) / geometry.bucketWidth) + 1;
 		for (let column = slot.bucket - around; column <= slot.bucket + around; column += 1) {
 			for (const other of wall.bucket(column)) {
 				if (other.key === slot.key) continue;

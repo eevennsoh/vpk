@@ -2,7 +2,7 @@ import kitPieces from "@/public/1p/rovo-stage-kit/pieces.json";
 import stageFile from "@/public/1p/rovo-stage-kit/rovo-stage.json";
 import type { KitPiece, PieceId } from "@/public/1p/rovo-stage-kit/types/stage-file";
 
-import { FINALE_STORIES, type FinaleBentoLayout, type FinalePresenterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
+import { FINALE_STORIES, finaleBentoLayout, type FinaleBentoLayout, type FinalePresenterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import type { FinaleBrandColor } from "../data/finale-palette";
 import type { FinaleShapeKind } from "../data/finale-identity-shapes";
 import { packWallMasonry } from "./finale-wall-masonry";
@@ -11,6 +11,8 @@ import { wallPiecesLayout } from "./finale-wall-pieces";
 /** Scale of the keynote tiles and their typography after the throw. */
 export const WALL_SCALE = 0.3;
 export const WALL_TITLE_ORDER = 6;
+/** Original entry-camera calibration, independent of tile sizing and spatial indexing. */
+const WALL_ENTRY_SCALE = 68 / 231;
 
 export type WallStatId = "presenters" | "chapters";
 export type WallStripId = "presenters" | "flow";
@@ -30,6 +32,10 @@ export interface WallGeometry {
 	readonly gutter: number;
 	/** Spatial indexing only. Items never snap to these buckets. */
 	readonly bucketWidth: number;
+	/** Widest original card for the arrival's leading edge, in viewport px. */
+	readonly arrivalWidth: number;
+	/** Original right-edge entry distance, in viewport px. */
+	readonly arrivalReach: number;
 	readonly maxTileWidth: number;
 	readonly originX: number;
 	readonly typeScale: number;
@@ -68,6 +74,7 @@ export function wrap(value: number, period: number): number {
 }
 
 export function wallGeometry(fitScale: number, viewport: { readonly width: number; readonly height: number }): WallGeometry {
+	const referenceWidth = finaleBentoLayout(viewport, fitScale).slots[0].rect.width * WALL_ENTRY_SCALE;
 	// The exported zoom frames the kit; a shared 1.25 enlargement makes its animated UI readable.
 	const pieceScale = fitScale * stageFile.board.cells.a.zoom * 1.25;
 	const maxPieceWidth = Math.max(...stageFile.composition.pieces.map((placed) => {
@@ -77,6 +84,8 @@ export function wallGeometry(fitScale: number, viewport: { readonly width: numbe
 	return {
 		gutter: 24 * fitScale,
 		bucketWidth: 256 * fitScale,
+		arrivalWidth: referenceWidth * 2 + 32 * fitScale,
+		arrivalReach: referenceWidth + 32 * fitScale,
 		maxTileWidth: Math.max(maxPieceWidth, 480 * fitScale),
 		originX: 0,
 		typeScale: fitScale * WALL_SCALE,

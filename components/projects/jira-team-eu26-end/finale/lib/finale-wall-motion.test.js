@@ -67,6 +67,24 @@ function seen(m, pose, viewport) {
 }
 const turned = (pose) => Math.max(Math.abs(pose.rotateX), Math.abs(pose.rotateY), Math.abs(pose.rotateZ));
 
+test("arrival timing does not change with the spatial bucket size", () => {
+	const { m, wall, geometry } = sceneFor(VIEWPORTS[1]);
+	const slot = { ...wall.items[0], key: "entry-probe", seed: 42, rect: { x: 2600, y: 200, width: 170, height: 140 } };
+	const normal = m.slotDescent(slot, wall);
+	assert.ok(close(normal.start, 21.747299814740884), "the pre-masonry entry time");
+	assert.ok(close(normal.touchdown, 22.726097591474147), "the pre-masonry landing time");
+	const reindexed = m.slotDescent(slot, { ...wall, geometry: { ...geometry, bucketWidth: geometry.bucketWidth * 2 } });
+	assert.deepEqual(reindexed, normal);
+});
+
+test("an oversized card starts settling at the same leading-edge position as the original wide card", () => {
+	const { m, wall } = sceneFor(VIEWPORTS[1]);
+	const slot = { ...wall.items[0], key: "small-entry", seed: 42, rect: { x: 2600, y: 200, width: 377.3968253968254, height: 140 } };
+	const reference = m.slotDescent(slot, wall);
+	const larger = m.slotDescent({ ...slot, key: "wide-entry", rect: { ...slot.rect, width: 650 } }, wall);
+	assert.deepEqual(larger, reference);
+});
+
 test("the mega bento never exists on the bento's rest frame (reduced motion)", () => {
 	const { m, wall, drops, viewport } = sceneFor(VIEWPORTS[0]);
 	assert.equal(m.WALL_CUE.start, m.CUE.end);
