@@ -147,7 +147,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 				})
 				: Promise.resolve();
 			// Never hold the show for a print: late ones fall back to plain sheets.
-			// The "Team 26" title face: resolves at once when the page already uses it.
+			// The "Team ’26 Europe" title face: resolves at once when the page already uses it.
 			// The whole column, which the flash refracts under the card sheets.
 			let columnPrint: HTMLCanvasElement | undefined;
 			const chrome = printFinaleColumn(controller.signal).then((canvas) => {

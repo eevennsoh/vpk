@@ -68,10 +68,10 @@ function RecorderControl() {
 			<ControlButton icon={ShowMoreHorizontalIcon} />
 			<div className="relative isolate flex h-[60px] w-[240px] shrink-0 items-center">
 				<div className="relative z-[2] flex h-[60px] items-center gap-[6px] overflow-hidden rounded-full bg-[#292A2E] py-[12px] pr-[18px] pl-[3px]">
-					<div className="relative flex size-[54px] shrink-0 items-center justify-center rounded-full bg-linear-to-b from-white to-[#ECECEC] drop-shadow-[0_5.4px_5.4px_rgba(0,0,0,0.16)]">
+					<div className="relative flex size-[54px] shrink-0 items-center justify-center rounded-full bg-linear-to-b from-[#FFFFFF] to-[#ECECEC] drop-shadow-[0_5.4px_5.4px_rgba(0,0,0,0.16)]">
 						<Image src={`${ASSET}/record-ai-cursor.svg`} alt="" width={21} height={25} className="h-[24.75px] w-[21.409px] max-w-none" />
 					</div>
-					<p className="text-[19.5px] leading-[24px] font-medium whitespace-nowrap text-white">Record for agent</p>
+					<p className="text-[19.5px] leading-[24px] font-medium whitespace-nowrap text-[#FFFFFF]">Record for agent</p>
 				</div>
 				<div className="absolute top-0 left-0 z-[1] h-[60px] w-[241.5px] rounded-[200px] opacity-50 blur-[24px]" style={{ backgroundImage: BUTTON_GLOW }} />
 			</div>

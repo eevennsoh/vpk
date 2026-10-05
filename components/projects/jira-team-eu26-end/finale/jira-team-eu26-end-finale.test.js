@@ -290,9 +290,9 @@ test("the bento shows the Figma's six features in its slots, each a keynote stor
 	assert.deepEqual(bySlot, {
 		a: "Agent Session Tracking",
 		e: "Artifacts",
-		c: "Agent Effectiveness",
+		c: "Rovo For Work",
 		b: "AI Capital Management",
-		f: "Rovo For Work",
+		f: "Agent Effectiveness",
 		d: "Loom Record for Agent",
 	});
 	for (const feature of FINALE_FEATURES) assert.ok(FINALE_STORIES.includes(feature), `${feature.code} is a keynote story`);

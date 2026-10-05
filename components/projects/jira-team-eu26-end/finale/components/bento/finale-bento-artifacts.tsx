@@ -18,7 +18,7 @@ function ArtifactAvatars({ authorAvatar }: Readonly<{ authorAvatar: string }>) {
 				<Image src={`${ASSET}/artifacts-agent-hex.svg`} alt="" width={29} height={31} className="absolute top-[0.856px] left-[2.223px] h-[31.472px] w-[28.738px] max-w-none" />
 				<Image src={`${ASSET}/artifacts-agent-glyph.svg`} alt="" width={21} height={21} className="absolute top-[6.222px] left-[6.222px] h-[20.74px] w-[20.724px] max-w-none" />
 			</div>
-			<Image src="/avatar-user/mcb.png" alt="" width={17} height={17} className="absolute top-[19.36px] left-[19.36px] size-[16.592px] rounded-full border-[1.383px] border-white object-cover" />
+			<Image src="/avatar-user/mcb.png" alt="" width={17} height={17} className="absolute top-[19.36px] left-[19.36px] size-[16.592px] rounded-full border-[1.383px] border-[#FFFFFF] object-cover" />
 			<Image src={authorAvatar} alt="" width={17} height={17} className="absolute top-[19.36px] left-[19.21px] size-[16.6px] rounded-full object-cover" />
 		</div>
 	);
