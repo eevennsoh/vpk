@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const TOP_NAVIGATION_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
 const USE_TOP_NAVIGATION_SOURCE = fs.readFileSync(path.join(__dirname, "hooks", "use-top-navigation.ts"), "utf8");
@@ -194,16 +195,28 @@ test("standalone top navigation releases its pinned shell sidebar in small conta
 	assert.doesNotMatch(TOP_NAVIGATION_SOURCE, /setSidebarOpen\(\(current\) =>/u);
 });
 
-test("top navigation places the shared theme toggle in the profile popover", () => {
-	assert.match(
-		RIGHT_NAVIGATION_ACTIONS_SOURCE,
-		/import \{ ThemeToggle \} from "@\/components\/utils\/theme-wrapper";/u,
-	);
-	assert.match(
-		RIGHT_NAVIGATION_ACTIONS_SOURCE,
-		/aria-label="Profile menu"[\s\S]*<Avatar[\s\S]*<PopoverContent align="end" className="w-44">[\s\S]*<ThemeToggle className="w-full justify-between" label="Theme" \/>/u,
-	);
-	assert.doesNotMatch(RIGHT_NAVIGATION_ACTIONS_SOURCE, /aria-label="Toggle theme"/u);
+test("profile theme is a menu item that stays open while cycling themes", async () => {
+	const view = await renderComponent({
+		source: `
+			import { RightNavigationActions } from "@/components/blocks/top-navigation/components/right-navigation-actions";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			export default function ProfileMenu() {
+				return <ThemeWrapper storageKey="profile-menu-test"><RightNavigationActions showRovoAction={false} isChatOpen={false} onToggleChat={() => {}} /></ThemeWrapper>;
+			}
+		`,
+		mocks: {
+			"@/components/hooks/use-design-variants": "export const useDesignVariants = () => ({ designVariants: {}, setDesignVariant: () => {} });",
+			"@atlaskit/tokens/set-global-theme": "export const setGlobalTheme = async () => () => {};",
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Profile menu" }));
+	assert.equal(view.getAllByRole("menu").length, 1);
+	assert.equal(view.queryByRole("button", { name: "Theme: Light theme" }) === null, true);
+	await view.click(view.getByRole("menuitem", { name: "Theme: Light theme" }));
+	assert.equal(view.getAllByRole("menu").length, 1);
+	await view.click(view.getByRole("menuitem", { name: "Theme: Dark theme" }));
+	await view.click(view.getByRole("menuitem", { name: "Theme: System theme" }));
+	assert.equal(view.getAllByRole("menuitem", { name: "Theme: Light theme" }).length, 1);
 });
 
 test("right navigation settings button can render optional dropdown actions", () => {

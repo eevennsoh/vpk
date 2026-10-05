@@ -1714,7 +1714,7 @@
   },
   "components/blocks/top-navigation/top-navigation-chat-state.test.js": {
     "no-restricted-syntax": {
-      "count": 111
+      "count": 108
     }
   },
   "components/blocks/trigger-config/trigger-config.test.js": {
