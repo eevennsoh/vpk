@@ -34,9 +34,10 @@ import {
  * bento's cards, drags "Team ’26" into its gap (`finale-title-drag.ts`) and
  * leaves. Then the teammates take over at the leading edge: now and then one
  * reaches in, catches a card coming down from the air by its middle, rides
- * it into its slot and lets go. The cards come down exactly as they would
- * alone (`finale-wall-motion.ts`); only who holds which card, and when, is
- * planned here, the same on every pass of the loop.
+ * it into its slot and lets go. A held card is lowered steady rather than let
+ * fall over as paper (`finale-wall-motion.ts`'s `held`), on the path it would
+ * take alone; only who holds which card, and when, is planned here, the same
+ * on every pass of the loop.
  */
 
 export interface PageCursor {
@@ -194,7 +195,7 @@ interface WallHold extends Holder {
  * `waitingPose`).
  */
 function onCard(slot: WallSlot, card: WallArrival, time: number, geometry: WallGeometry, viewport: FinaleViewport, breathing = true): { readonly x: number; readonly y: number; readonly scale: number } {
-	const pose = arrivalCardPose(slot, card, slotOnScreen(slot, wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport, breathing);
+	const pose = arrivalCardPose(slot, card, slotOnScreen(slot, wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport, { breathing });
 	return projectLifted(pose, viewport);
 }
 

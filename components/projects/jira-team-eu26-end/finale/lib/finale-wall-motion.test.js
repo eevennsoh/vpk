@@ -161,7 +161,7 @@ test("the mega bento appears only from the throw on, from the middle of the fram
 	}
 });
 
-test("a thrown card falls away from the lens onto the wall like paper: never toward the viewer, turning as it leaves", () => {
+test("a thrown card falls away from the lens onto the wall like paper: never toward the viewer, going over as it leaves", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, drops } = sceneFor(viewport);
 		const distance = m.cameraDistance(viewport);
@@ -190,7 +190,7 @@ test("a thrown card falls away from the lens onto the wall like paper: never tow
 			assert.ok(turned(falling) < 1.2, `card ${drop.order}'s turns are spent before it comes down`);
 			assert.ok(falling.lift === 1, "airborne cloth");
 		}
-		assert.ok(spins.some((spin) => spin > 1.5), "some flip or spin through whole turns as they leave");
+		assert.ok(spins.some((spin) => spin > 1.5), "some are going over a quarter of the way down");
 	}
 });
 
@@ -386,7 +386,7 @@ test("new cards wait in the air at the leading edge, tilted and turned, and come
 	}
 });
 
-test("arrivals do not linger visibly smeared before their short entrance preview", () => {
+test("arrivals show their chromatic approach before they start settling", () => {
 	const { m, wall, drops, viewport } = sceneFor(VIEWPORTS[1]);
 	const candidates = wall.items.filter((slot) => slot.reserved === undefined && m.slotDescent(slot, wall)?.start > 20).slice(0, 12);
 	assert.ok(candidates.length >= 8);
@@ -394,9 +394,9 @@ test("arrivals do not linger visibly smeared before their short entrance preview
 		const descent = m.slotDescent(slot, wall);
 		const sheetAt = (time) => m.wallSheetsAt(time, wall, drops, viewport).find((sheet) => sheet.key === `card-${slot.key}`);
 		const early = sheetAt(descent.start - 0.5);
-		assert.ok(!early || early.pose.opacity === 0, `${slot.key}: no early chromatic ghost`);
+		assert.ok(early && early.pose.opacity > 0.99 && early.chroma === 1, `${slot.key}: the chromatic approach is visible before descent`);
 		const waiting = sheetAt(descent.start - 0.05);
-		assert.ok(waiting && waiting.pose.opacity > 0.99, "the brief waiting pose is fully visible");
+		assert.ok(waiting && waiting.pose.opacity > 0.99, "the waiting pose stays fully visible");
 		assert.equal(waiting.chroma, 1, "the timing change preserves the original chromatic strength");
 		const settled = sheetAt(descent.touchdown + 0.1);
 		assert.ok(settled && settled.chroma === 0, "clear on landing");
@@ -457,6 +457,22 @@ test("landing accents live from touchdown until the content has built", () => {
 	const column = firstArrivingColumn(m, wall);
 	const { slot, descent } = arrivals(m, wall, column)[0];
 	assert.ok(m.wallLandingsAt(descent.touchdown + 0.4, wall, drops).some((landing) => landing.key === slot.key));
+});
+
+test("landing accents distinguish new content reveals from already-built bento cards", () => {
+	const { m, wall, drops } = sceneFor(VIEWPORTS[1]);
+	for (const drop of drops) {
+		const touchdown = m.bentoTouchdown(drop, drops);
+		const landing = m.wallLandingsAt(touchdown + 0.2, wall, drops).find((each) => each.key === `bento-${drop.order}`);
+		assert.equal(landing.revealStart, null, "the bento card already carries its content");
+	}
+	const slots = wall.items.filter((slot) => slot.reserved === undefined && slot.content.kind !== "print" && m.slotDescent(slot, wall));
+	assert.ok(slots.length > 0);
+	for (const slot of slots) {
+		const { touchdown } = m.slotDescent(slot, wall);
+		const landing = m.wallLandingsAt(touchdown + 0.2, wall, drops).find((each) => each.key === slot.key);
+		assert.equal(landing.revealStart, m.landingRevealStart(touchdown), `${slot.content.kind}: pulse before the content builds`);
+	}
 });
 
 test("identity shapes morph by resampled, aligned rings and rest between morphs", () => {

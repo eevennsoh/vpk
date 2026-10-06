@@ -67,12 +67,16 @@ test("cards already in Done keep their order ahead of the bulk-moved cards", () 
 });
 
 test("board order follows the current column positions, not issue numbers", () => {
-	let columns = createJiraTeamEu26EndKeynoteBoardColumns();
+	let columns = [
+		{ title: "Context", cards: [{ code: "TEU-4" }, { code: "TEU-1" }] },
+		{ title: "Confidence", cards: [{ code: "TEU-12" }] },
+		{ title: "Done", cards: [] },
+	];
 	// TEU-12 was dragged back to the top of Context.
 	columns = moveJiraKanbanCardsToDropTarget(columns, ["TEU-12"], "Context", { beforeCardCode: "TEU-4" });
 
 	const done = moveJiraTeamEu26EndKeynoteCardsToDone(columns).find((column) => column.title === "Done");
-	assert.deepEqual(done.cards.map((card) => card.code).slice(0, 2), ["TEU-12", "TEU-4"]);
+	assert.deepEqual(done.cards.map((card) => card.code), ["TEU-12", "TEU-4", "TEU-1"]);
 });
 
 test("live-created work items stay where they are", () => {

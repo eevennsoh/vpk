@@ -12,6 +12,7 @@ import {
 	cameraDistance,
 	cardPose,
 	cardVelocity,
+	fieldDrawOrders,
 	chromaStrength,
 	fogAtDepth,
 	sphereWarp,
@@ -128,7 +129,8 @@ export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, t
 		const lateResolvers = latePrintResolvers(cards);
 		const faces: GlState["faces"] = new Map();
 		const pendingFaces: GlState["pendingFaces"] = new Set();
-		const sheets = cards.map((card) => {
+		const drawOrders = fieldDrawOrders(cards.map((card) => card.input), viewport);
+		const sheets = cards.map((card, index) => {
 			let entry = textures.get(card.printKey);
 			if (!entry) {
 				const source = card.print ?? fallbackPrint(card.input.rect.width, card.input.rect.height, 8);
@@ -148,6 +150,7 @@ export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, t
 				clipUv: new THREE.Vector4(...restClipUv(card.input.rect, clip)),
 			});
 			const mesh = new THREE.Mesh(geometry, material);
+			mesh.renderOrder = drawOrders[index];
 			scene.add(mesh);
 			if (card.faceKey) {
 				const print = facePrint(card.faceKey);
@@ -160,6 +163,7 @@ export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, t
 			let shadow: SheetMesh | null = null;
 			if (card.tileOrder !== undefined) {
 				shadow = new THREE.Mesh(shadowGeometry, createShadowMaterial(tileRadius));
+				shadow.renderOrder = mesh.renderOrder - 1;
 				shadow.visible = false;
 				scene.add(shadow);
 			}
@@ -275,9 +279,6 @@ export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, t
 			if (!mesh.visible) return;
 			anyVisible = true;
 			poseSheet(mesh, pose, world, sheet.cardAspect);
-			// Far to near from the lens; the tie-break keeps overlapping sheets stable.
-			mesh.renderOrder = -Math.round(depth) * 64 + index;
-			if (sheet.shadow) sheet.shadow.renderOrder = mesh.renderOrder - 32;
 			const uniforms = mesh.material.uniforms;
 			uniforms.uFog.value = fogAtDepth(depth, viewport);
 			uniforms.uOpacity.value = opacity;

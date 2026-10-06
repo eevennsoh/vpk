@@ -152,6 +152,17 @@ function heroHome(viewport: FinaleViewport): FieldHome {
 	return { x: anchor.x, y: -anchor.y, z: anchor.z, rotateX: 0.18, rotateY: -0.35, rotateZ: 0.06, seed: 1 };
 }
 
+/** Fixed back-to-front layers from the field's layout; camera motion must not swap overlapping cards. */
+export function fieldDrawOrders(inputs: readonly FinaleCardInput[], viewport: FinaleViewport): readonly number[] {
+	const sorted = inputs.map((input, index) => {
+		const home = input.role.kind === "hero" ? heroHome(viewport) : fieldHome(input.fieldIndex, input.fieldCount, input.role.kind === "echo", viewport);
+		return { index, z: home.z };
+	}).sort((a, b) => a.z - b.z || a.index - b.index);
+	const orders = new Array<number>(inputs.length);
+	for (const [rank, card] of sorted.entries()) orders[card.index] = rank * 2 + 1;
+	return orders;
+}
+
 export function flatPose(rect: FinaleRect, face: number): FinaleCardPose {
 	const centre = rectCentre(rect);
 	return { x: centre.x, y: centre.y, z: 0, width: rect.width, height: rect.height, rotateX: 0, rotateY: 0, rotateZ: 0, opacity: 1, face, lift: 0, waveAge: -1, clip: 0 };
@@ -871,18 +882,9 @@ export function sphereWarp(time: number): number {
 	return field * 0.22 + bump(time, CUE.zoom, CUE.zoom + 0.45, CUE.zoomEnd + 0.2) * 0.35;
 }
 
-/* ─── Dot grid ────────────────────────────────────────────────────────── */
-
 export interface FinaleFieldRipple {
-	/** Footprint the ring expands from. */
 	readonly from: FinaleRect;
 	readonly start: number;
 	readonly amp: number;
-	/** The footprint's own corner radius (viewport px), for a card not rounded as the tiles are. */
 	readonly radius?: number;
-}
-
-/** The dot grid only exists as one pulse around each tile as it touches down. */
-export function fieldRipples(slots: readonly FinaleRect[]): readonly FinaleFieldRipple[] {
-	return slots.map((from, order) => ({ from, start: touchdownTime(order), amp: 1 }));
 }

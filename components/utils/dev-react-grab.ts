@@ -23,6 +23,7 @@ export function isReactGrabDisabledPath(pathname: string | null): boolean {
 		|| pathname.startsWith("/preview/projects/html/")
 		|| pathname === "/awake"
 		|| pathname.startsWith("/awake/")
+		|| pathname === "/jira-team-eu26-end"
 	);
 }
 

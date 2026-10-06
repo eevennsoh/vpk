@@ -66,13 +66,16 @@ const APPSTACK_ENTER_OFFSET = 10;
 const APPSTACK_ENTER_ROTATION_OFFSET = 18;
 const APPSTACK_TILE_FILL_CLASS = "bg-surface";
 const APPSTACK_ROTATIONS = [
-	0,
-	6,
-	0,
+	-10,
+	8,
+	-12,
+	10,
 	-8,
+	12,
 ] as const;
 
-function getAppstackRotation(index: number) {
+function getAppstackRotation(index: number, itemCount: number) {
+	if (itemCount === 1) return 0;
 	return APPSTACK_ROTATIONS[index % APPSTACK_ROTATIONS.length];
 }
 
@@ -82,7 +85,7 @@ function getAppstackDelay(index: number, itemCount: number, direction: TwgAppsta
 }
 
 function getAppstackInitialRotation(rotation: number) {
-	return rotation + (rotation < 0 ? APPSTACK_ENTER_ROTATION_OFFSET : -APPSTACK_ENTER_ROTATION_OFFSET);
+	return rotation === 0 ? 0 : rotation + (rotation < 0 ? APPSTACK_ENTER_ROTATION_OFFSET : -APPSTACK_ENTER_ROTATION_OFFSET);
 }
 
 function getAppstackTransition(delay: number): Transition {
@@ -358,7 +361,7 @@ export function TWGAppstack({
 		key: string,
 		index: number,
 		children: ReactNode,
-		rotation = getAppstackRotation(index),
+		rotation = getAppstackRotation(index, itemCount),
 		boxClassName: string = sizing.box,
 	) => {
 		const itemClassName = cn(

@@ -27,6 +27,17 @@ function freezeSingleLineText(source: HTMLElement, copy: HTMLElement): void {
 	}
 }
 
+/** html-to-image rounds font sizes down; restore the measured sizes in its serialized copy. */
+function exactPrintFontCss(copy: HTMLElement): string {
+	const sizes = new Set<string>();
+	for (const element of [copy, ...copy.querySelectorAll("*")]) {
+		const size = getComputedStyle(element).fontSize;
+		element.setAttribute("data-finale-print-font", size);
+		sizes.add(size);
+	}
+	return [...sizes].map((size) => `[data-finale-print-font="${size}"] { font-size: ${size} !important; }`).join("\n");
+}
+
 /** A DOM clone loses scroll offsets; bake them into its content before rasterising. */
 export function freezeFinalePrintScroll(source: HTMLElement, copy: HTMLElement): void {
 	const originals = [...source.children];
@@ -95,9 +106,10 @@ export function settleFinaleColumnCopy(column: HTMLElement): void {
 export async function printFinaleElement(element: HTMLElement, options: FinalePrintOptions = {}): Promise<HTMLCanvasElement> {
 	const { getFontEmbedCSS, toCanvas } = await import("html-to-image");
 	await document.fonts.ready;
-	fontEmbedCss ??= getFontEmbedCSS(document.body, { preferredFontFormat: "woff2" }).catch(() => "");
+	fontEmbedCss ??= getFontEmbedCSS(document.body).catch(() => "");
 	let target = element;
 	let host: HTMLDivElement | null = null;
+	let exactFonts = "";
 	if (options.detach) {
 		host = document.createElement("div");
 		host.setAttribute("aria-hidden", "true");
@@ -113,12 +125,13 @@ export async function printFinaleElement(element: HTMLElement, options: FinalePr
 		host.append(copy);
 		target = copy;
 		document.body.append(host);
+		exactFonts = exactPrintFontCss(copy);
 	}
 	try {
 		await loadFinalePrintImages(target);
 		return await toCanvas(target, {
 			pixelRatio: options.pixelRatio ?? Math.min(window.devicePixelRatio || 1, 2),
-			fontEmbedCSS: await fontEmbedCss,
+			fontEmbedCSS: `${await fontEmbedCss}\n${exactFonts}`,
 			style: { margin: "0", transform: "none" },
 		});
 	} finally {

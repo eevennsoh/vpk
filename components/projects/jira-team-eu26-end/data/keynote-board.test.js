@@ -24,10 +24,10 @@ function loadKeynoteModule() {
 
 const EXPECTED_SECTIONS = [
 	[
-		["TEU-4", "Artifacts"],
 		["TEU-1", "Rovo Desktop"],
 		["TEU-101", "Data Context"],
 		["TEU-2", "Code Context"],
+		["TEU-4", "Artifacts"],
 		["TEU-102", "Code Search App"],
 		["TEU-3", "Rovo For Work"],
 		["TEU-103", "People Context"],
@@ -43,12 +43,11 @@ const EXPECTED_SECTIONS = [
 	],
 	[
 		["TEU-9", "Loom PR Reviews"],
-		["TEU-108", "EU AI Inference"],
+		["TEU-10", "Agent Session Tracking"],
 		["TEU-11", "Agent Effectiveness"],
 		["TEU-109", "Change Risk Assessment"],
-		["TEU-110", "Agent Identities"],
-		["TEU-10", "Agent Session Tracking"],
 		["TEU-111", "Incident Command Center"],
+		["TEU-108", "EU AI Inference"],
 		["TEU-112", "Employee Onboarding"],
 		["TEU-12", "AI Capital Management"],
 		["TEU-13", "Guard Scanning"],
@@ -81,13 +80,13 @@ test("all keynote items, including retained and newly created ones, auto arrange
 	columns[0].cards.push({ ...columns[0].cards[0], code: "TEU-14", title: "New keynote item", autoArrangeStatus: undefined });
 	const prepared = keynote.withJiraTeamEu26EndDoneDestinations(columns);
 	const codes = new Set(prepared.flatMap((column) => column.cards.map((card) => card.code)));
-	assert.equal(codes.size, 25);
+	assert.equal(codes.size, 24);
 	assert.ok(prepared.every((column) => column.cards.every((card) => card.autoArrangeStatus === "Done")));
 	const plan = getAutoArrangePlan(prepared, codes);
-	assert.equal(plan.length, 25);
+	assert.equal(plan.length, 24);
 	assert.ok(plan.every((move) => move.columnTitle === "Done" && move.status === "Done"));
 	const moved = autoArrangeCards(prepared, codes);
-	assert.deepEqual(moved.map((column) => column.cards.length), [0, 0, 0, 25]);
+	assert.deepEqual(moved.map((column) => column.cards.length), [0, 0, 0, 24]);
 	assert.equal(cardByCode(moved, "TEU-14").title, "New keynote item");
 	assert.deepEqual(getAutoArrangePlan(moved, codes), []);
 	assert.equal(keynote.withJiraTeamEu26EndDoneDestinations(prepared), prepared);
@@ -105,16 +104,16 @@ test("the toolbar roster retains the four keynote presenters and all three codin
 	}
 });
 
-test("the reference groups all 24 stories in authored order with stable existing issue identities", async () => {
+test("the reference groups all 23 stories in authored order with stable existing issue identities", async () => {
 	const keynote = await loadKeynoteModule();
 	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
 	assert.equal(keynote.JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE, "Team ’26 EU keynote");
 	assert.deepEqual(columns.map((column) => column.title), ["Context", "Collaboration", "Confidence", "Done"]);
-	assert.deepEqual(columns.map((column) => column.count), [8, 6, 10, 0]);
+	assert.deepEqual(columns.map((column) => column.count), [8, 6, 9, 0]);
 	assert.deepEqual(columns.map((column) => column.cards.map((card) => [card.code, card.title])), EXPECTED_SECTIONS);
 	const cards = columns.flatMap((column) => column.cards);
 	assert.deepEqual(keynote.JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES, EXPECTED_SECTIONS.flat().map(([code]) => code));
-	assert.equal(new Set(cards.map((card) => card.code)).size, 24);
+	assert.equal(new Set(cards.map((card) => card.code)).size, 23);
 	assert.ok(columns.every((column) => column.cards.every((card) => card.status === column.title)));
 	assert.equal(cards.some((card) => card.code === "TEU-6"), false);
 	assert.equal(cards.some((card) => card.code === "TEU-14"), false, "previously live-created issues keep their numeric range");
@@ -132,19 +131,25 @@ test("section presenter rosters and existing announcement ownership remain stabl
 	assert.ok(columns.every((column) => column.title !== "Intro"));
 });
 
-test("all story covers use reference image assets and the same 140px cover height", async () => {
+test("all story covers use their reference artwork inside a 160px canvas", async () => {
 	const keynote = await loadKeynoteModule();
 	const cards = keynote.createJiraTeamEu26EndKeynoteBoardColumns().flatMap((column) => column.cards);
-	const slugs = [
-		"artifacts", "rovo-desktop", "data-context", "code-context", "code-search-app", "rovo-for-work", "people-context", "communications-context",
-		"atlassian-mcp", "loom-desktop", "loom-record-for-agent", "planner", "loom-overlay", "chatgpt-codex-from-jira",
-		"loom-pr-reviews", "eu-ai-inference", "agent-effectiveness", "change-risk-assessment", "agent-identities", "agent-session-tracking",
-		"incident-command-center", "employee-onboarding", "ai-capital-management", "guard-scanning",
+	const filenames = [
+		"rovo-desktop.svg", "data-context.svg", "code-context.svg", "artifacts.svg", "code-search-app.svg", "rovo-for-work.svg", "people-context-no-app.svg", "communications-context.svg",
+		"atlassian-mcp.svg", "loom-desktop.svg", "loom-record-for-agent-browser.svg", "planner-copy.svg", "loom-overlay.svg", "chatgpt-codex-from-jira.svg",
+		"loom-pr-reviews.svg", "agent-session-tracking.svg", "agent-effectiveness.svg", "change-risk-assessment.svg", "incident-command-center.svg",
+		"eu-ai-inference.svg", "employee-onboarding.svg", "ai-capital-management.svg", "guard-scanning.svg",
 	];
-	const artworkSources = slugs.map((slug) => `/illustration/jira-team-eu26-end/${slug}.jpeg`);
+	const artworkSources = filenames.map((filename) => `/illustration/jira-team-eu26-end/${filename}`);
 	assert.deepEqual(cards.map((card) => card.coverImage.src), artworkSources);
+	assert.deepEqual(cards.find((card) => card.code === "TEU-1").coverImage.padding, { blockStart: 0, blockEnd: 0, backgroundColor: "var(--ds-surface-sunken)" });
+	assert.deepEqual(cards.find((card) => card.code === "TEU-5").coverImage.padding, { blockStart: 0, blockEnd: 0, backgroundColor: "var(--ds-surface-sunken)" });
+	assert.deepEqual(cards.find((card) => card.code === "TEU-108").coverImage.padding, { blockStart: 0, blockEnd: 0, backgroundColor: "var(--ds-surface-sunken)" });
 	for (const card of cards) {
-		assert.equal(card.coverImage.maxHeight, 140);
+		assert.equal(card.coverImage.height, 160);
+		assert.equal(card.coverImage.maxHeight, 160);
+		assert.equal(card.coverImage.maxHeight + card.coverImage.padding.blockStart + card.coverImage.padding.blockEnd, 160);
+		assert.equal(card.coverImage.padding.backgroundColor, "var(--ds-surface-sunken)");
 		assert.equal(card.coverImage.fit, "cover");
 		assert.equal(card.coverImage.alt, `${card.title} preview`);
 		assert.equal(card.coverImage.heading, undefined);
@@ -152,18 +157,107 @@ test("all story covers use reference image assets and the same 140px cover heigh
 		assert.equal(card.coverImage.backgroundPattern, undefined);
 		assert.equal(card.coverImage.backgroundClassName, undefined);
 		assert.equal(card.coverImage.mask, undefined);
+		assert.deepEqual(card.coverImage.layers, {
+			"TEU-106": ["/illustration/jira-team-eu26-end/loom-record-for-agent-edge-fade.svg"],
+			"TEU-7": ["/illustration/jira-team-eu26-end/planner-left-fade.svg", "/illustration/jira-team-eu26-end/planner-readiness.svg"],
+			"TEU-8": ["/illustration/jira-team-eu26-end/loom-overlay-photo-layer.svg"],
+		}[card.code]);
 		assert.equal(card.coverImage.zoom, undefined);
 		assert.ok(fs.existsSync(path.join(process.cwd(), "public", card.coverImage.src)), card.coverImage.src);
+		if (card.coverImage.mask) assert.ok(fs.existsSync(path.join(process.cwd(), "public", card.coverImage.mask.src)), card.coverImage.mask.src);
+		for (const layer of card.coverImage.layers ?? []) assert.ok(fs.existsSync(path.join(process.cwd(), "public", layer)), layer);
+		assert.equal(card.coverImage.foreground, undefined);
 	}
+});
+
+test("reference SVG artwork excludes separate Figma corner app tiles", async () => {
+	const keynote = await loadKeynoteModule();
+	const cards = keynote.createJiraTeamEu26EndKeynoteBoardColumns().flatMap((column) => column.cards);
+	for (const card of cards) {
+		const sources = [card.coverImage.src, ...(card.coverImage.layers ?? []), card.coverImage.foreground?.src].filter((src) => src?.endsWith(".svg"));
+		for (const src of sources) {
+			const svg = fs.readFileSync(path.join(process.cwd(), "public", src), "utf8");
+			const cornerApps = [...svg.matchAll(/<g id="Apps-(?:light|dark)(?:_\d+)?">\s*<rect\b([^>]*)>/gu)].filter((match) => {
+				const attributes = Object.fromEntries([...match[1].matchAll(/([\w-]+)="([^"]*)"/gu)].map((attribute) => [attribute[1], attribute[2]]));
+				return Number(attributes.x) >= 0 && Number(attributes.x) <= 40
+					&& Number(attributes.y) >= 0 && Number(attributes.y) <= 40
+					&& Number(attributes.width) <= 32 && Number(attributes.height) <= 32;
+			});
+			assert.equal(cornerApps.length, 0, `${card.code}: remove the Figma corner app tile from ${src}`);
+			const cornerIconTiles = [...svg.matchAll(/<g id="[^"]*Icon tile[^"]*">\s*<path\b[^>]*\bd="M16 22C16 18\.6863/gu)];
+			assert.equal(cornerIconTiles.length, 0, `${card.code}: remove the Figma corner icon tile from ${src}`);
+		}
+	}
+});
+
+test("Artifacts and context covers replace imported corner tiles without resetting live card data", async () => {
+	const keynote = await loadKeynoteModule();
+	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+	const covers = [
+		["TEU-4", "artifacts.jpeg", "artifacts.svg"],
+		["TEU-103", "people-context.jpeg", "people-context-no-app.svg"],
+		["TEU-104", "communications-context-figma.jpeg", "communications-context.svg"],
+	];
+	for (const [code, previous] of covers) {
+		const card = cardByCode(columns, code);
+		card.title = `${card.title} rehearsal`;
+		card.coverImage = {
+			...card.coverImage, src: `/illustration/jira-team-eu26-end/${previous}`,
+			mask: { src: "/illustration/jira-team-eu26-end/cover-corner-app-mask.svg", backgroundColor: "#f8f8f8" },
+		};
+	}
+	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
+	for (const [code, , next] of covers) {
+		const before = cardByCode(columns, code);
+		const after = cardByCode(restored, code);
+		assert.equal(after.coverImage.src, `/illustration/jira-team-eu26-end/${next}`);
+		assert.equal(after.coverImage.mask, undefined);
+		assert.deepEqual(after.coverImage.appSources, before.coverImage.appSources);
+		assert.equal(after.title, before.title);
+		assert.equal(after.tags, before.tags);
+	}
+	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
+});
+
+test("Code Context upgrades its old cropped cover without changing neighboring cards", async () => {
+	const keynote = await loadKeynoteModule();
+	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+	const codeContext = cardByCode(columns, "TEU-2");
+	const dataContext = cardByCode(columns, "TEU-101");
+	codeContext.coverImage = {
+		...codeContext.coverImage,
+		src: "/illustration/jira-team-eu26-end/code-context.jpeg",
+		maxHeight: 140,
+		padding: { blockStart: 10, blockEnd: 10, backgroundColor: "#f8f8f8" },
+		mask: { src: "/illustration/jira-team-eu26-end/code-context-edge-mask.svg", backgroundColor: "#f8f8f8" },
+	};
+	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
+	assert.equal(cardByCode(restored, "TEU-2").coverImage.src, "/illustration/jira-team-eu26-end/code-context.svg");
+	assert.equal(cardByCode(restored, "TEU-2").coverImage.maxHeight, 160);
+	assert.equal(cardByCode(restored, "TEU-2").coverImage.mask, undefined);
+	assert.equal(cardByCode(restored, "TEU-101"), dataContext);
+	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
+});
+
+test("Guard Scanning drops its old JPEG mask while retaining the live Guard icon", async () => {
+	const keynote = await loadKeynoteModule();
+	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+	const guard = cardByCode(columns, "TEU-13");
+	const apps = guard.coverImage.appSources;
+	guard.coverImage = { ...guard.coverImage, mask: { src: "/illustration/jira-team-eu26-end/guard-scanning-app-mask.svg", backgroundColor: "#f8f8f8" } };
+	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
+	assert.equal(cardByCode(restored, "TEU-13").coverImage.mask, undefined);
+	assert.deepEqual(cardByCode(restored, "TEU-13").coverImage.appSources, apps);
+	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
 });
 
 test("each cover reuses the app-stack sources for its reference product marks", async () => {
 	const keynote = await loadKeynoteModule();
 	const cards = keynote.createJiraTeamEu26EndKeynoteBoardColumns().flatMap((column) => column.cards);
 	assert.deepEqual(cards.map((card) => card.coverImage.appSources.map((app) => app.label)), [
-		["Artifacts"], ["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"], ["Code Search"], ["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"],
+		["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"], ["Artifacts"], ["Code Search"], ["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"],
 		["Teamwork Graph"], ["Loom"], ["Loom"], ["Jira", "Confluence", "Teamwork Graph"], ["Loom"], ["Jira"],
-		["Loom"], ["European Union"], ["DX"], ["Jira Service Management"], [], ["Jira"], ["Jira Service Management"], ["Jira Service Management"], ["Talent"], ["Guard"],
+		["Loom"], ["Jira"], ["DX"], ["Jira Service Management"], ["Jira Service Management"], ["Admin"], ["Jira Service Management"], ["Talent"], ["Guard"],
 	]);
 });
 
@@ -180,10 +274,10 @@ test("separate keynote board instances do not share mutable card or cover data",
 	first[3].cards.push(card);
 	assert.equal(second[0].cards.length, 8);
 	assert.equal(second[3].cards.length, 0);
-	assert.equal(second[0].cards[0].title, "Artifacts");
+	assert.equal(second[0].cards[0].title, "Rovo Desktop");
 	assert.equal(second[0].cards[0].status, "Context");
-	assert.equal(second[0].cards[0].coverImage.src, "/illustration/jira-team-eu26-end/artifacts.jpeg");
-	assert.equal(second[0].cards[0].coverImage.appSources[0].label, "Artifacts");
+	assert.equal(second[0].cards[0].coverImage.src, "/illustration/jira-team-eu26-end/rovo-desktop.svg");
+	assert.equal(second[0].cards[0].coverImage.appSources[0].label, "Rovo");
 	assert.deepEqual(second[0].cards[0].tags, []);
 });
 
@@ -207,7 +301,7 @@ test("older authored covers upgrade without resetting moved items, edits or agen
 	assert.equal(updated.tags, card.tags);
 	assert.equal(updated.agentActivities, card.agentActivities);
 	assert.equal(updated.assignee, card.assignee);
-	assert.equal(updated.coverImage.src, "/illustration/jira-team-eu26-end/rovo-desktop.jpeg");
+	assert.equal(updated.coverImage.src, "/illustration/jira-team-eu26-end/rovo-desktop.svg");
 	assert.equal(updated.coverImage.heading, undefined);
 	assert.equal(restored[2].cards[1], untouchedCard);
 	assert.equal(restored[1], columns[1]);
@@ -238,7 +332,7 @@ test("the original gray placeholders upgrade while custom images and live-create
 	const created = { ...customImage, code: "TEU-14", title: "Live demo", coverImage: { heading: "New item" } };
 	columns[0].cards.push(created);
 	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
-	assert.equal(cardByCode(restored, "TEU-1").coverImage.src, "/illustration/jira-team-eu26-end/rovo-desktop.jpeg");
+	assert.equal(cardByCode(restored, "TEU-1").coverImage.src, "/illustration/jira-team-eu26-end/rovo-desktop.svg");
 	assert.equal(cardByCode(restored, "TEU-1").assignee, placeholder.assignee);
 	assert.equal(cardByCode(restored, "TEU-2"), customImage);
 	assert.equal(restored[0].cards.at(-1), created);
@@ -297,20 +391,25 @@ test("a retained reference cover repairs stale product marks even when source ID
 	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
 });
 
-test("a retained EU AI Inference cover gains the European flag mark without resetting live edits", async () => {
+test("a retained EU AI Inference cover gains the latest artwork and Admin mark without resetting live edits", async () => {
 	const keynote = await loadKeynoteModule();
-	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
-	const inference = cardByCode(columns, "TEU-108");
-	inference.title = "EU AI Inference (rehearsal)";
-	inference.coverImage.appSources = [];
-	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
-	const [flag] = cardByCode(restored, "TEU-108").coverImage.appSources;
-	assert.equal(flag.label, "European Union");
-	assert.equal(flag.iconSrc, "/illustration/jira-team-eu26-end/eu-flag.svg");
-	assert.ok(fs.existsSync(path.join(process.cwd(), "public", flag.iconSrc)), flag.iconSrc);
-	assert.equal(cardByCode(restored, "TEU-108").title, "EU AI Inference (rehearsal)");
-	assert.equal(restored[0], columns[0]);
-	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
+	for (const oldSource of ["eu-ai-inference.jpeg", "eu-ai-inference-map.svg"]) {
+		const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+		const inference = cardByCode(columns, "TEU-108");
+		inference.title = "EU AI Inference (rehearsal)";
+		inference.coverImage.src = `/illustration/jira-team-eu26-end/${oldSource}`;
+		inference.coverImage.foreground = { src: "/illustration/jira-team-eu26-end/eu-ai-inference-icons.svg", width: 164, height: 48, canvasWidth: 379 };
+		inference.coverImage.appSources = [];
+		const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
+		const updated = cardByCode(restored, "TEU-108");
+		const [admin] = updated.coverImage.appSources;
+		assert.deepEqual(admin, { id: "admin", label: "Admin", provider: "admin" });
+		assert.equal(updated.coverImage.src, "/illustration/jira-team-eu26-end/eu-ai-inference.svg");
+		assert.equal(updated.coverImage.foreground, undefined);
+		assert.equal(updated.title, "EU AI Inference (rehearsal)");
+		assert.equal(restored[0], columns[0]);
+		assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
+	}
 });
 
 test("retained artwork removes obsolete image geometry without changing live board edits", async () => {
@@ -332,12 +431,12 @@ test("retained artwork removes obsolete image geometry without changing live boa
 	const untouched = columns[0].cards[0];
 	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
 	const updated = cardByCode(restored, "TEU-1");
-	assert.equal(updated.coverImage.src, "/illustration/jira-team-eu26-end/rovo-desktop.jpeg");
+	assert.equal(updated.coverImage.src, "/illustration/jira-team-eu26-end/rovo-desktop.svg");
 	assert.equal(updated.coverImage.mask, undefined);
 	assert.equal(updated.coverImage.zoom, undefined);
 	assert.equal(updated.coverImage.fit, "cover");
 	assert.equal(updated.coverImage.alt, "Rehearsal desktop preview");
-	assert.equal(updated.coverImage.maxHeight, 140);
+	assert.equal(updated.coverImage.maxHeight, 160);
 	assert.deepEqual(updated.coverImage.appSources.map((app) => app.label), ["Rovo"]);
 	assert.equal(updated.title, card.title);
 	assert.equal(updated.status, "Done");
@@ -357,8 +456,8 @@ test("previous People sources and planner images refresh with obsolete image geo
 	planner.coverImage.zoom = 379 / 371;
 	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
 	for (const [code, source] of [
-		["TEU-103", "people-context.jpeg"],
-		["TEU-7", "planner.jpeg"],
+		["TEU-103", "people-context-no-app.svg"],
+		["TEU-7", "planner-copy.svg"],
 	]) {
 		const image = cardByCode(restored, code).coverImage;
 		assert.equal(image.src, `/illustration/jira-team-eu26-end/${source}`);
@@ -377,7 +476,7 @@ test("the original Artifacts fade returns on an existing card without replacing 
 	card.title = "My artifact draft";
 	const unrelated = cardByCode(columns, "TEU-1");
 	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
-	assert.equal(cardByCode(restored, "TEU-4").coverImage.src, "/illustration/jira-team-eu26-end/artifacts.jpeg");
+	assert.equal(cardByCode(restored, "TEU-4").coverImage.src, "/illustration/jira-team-eu26-end/artifacts.svg");
 	assert.equal(cardByCode(restored, "TEU-4").title, "My artifact draft");
 	assert.equal(cardByCode(restored, "TEU-1"), unrelated);
 	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
@@ -396,7 +495,7 @@ test("placeholder captions and the gridded People cover refresh without resettin
 	const unrelated = cardByCode(columns, "TEU-1");
 	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
 	assert.equal(cardByCode(restored, "TEU-103").title, "People Context");
-	assert.equal(cardByCode(restored, "TEU-103").coverImage.src, "/illustration/jira-team-eu26-end/people-context.jpeg");
+	assert.equal(cardByCode(restored, "TEU-103").coverImage.src, "/illustration/jira-team-eu26-end/people-context-no-app.svg");
 	assert.equal(cardByCode(restored, "TEU-103").coverImage.alt, "People Context preview");
 	assert.equal(cardByCode(restored, "TEU-104").title, "Communications Context");
 	assert.equal(cardByCode(restored, "TEU-104").coverImage.alt, "Communications Context preview");
@@ -414,4 +513,64 @@ test("cover refresh never resurrects removed items or rewrites retired and live-
 	assert.equal(cardByCode(columns, "TEU-101"), undefined);
 	assert.equal(cardByCode(columns, "TEU-1"), undefined);
 	assert.equal(cardByCode(columns, "TEU-6"), retired);
+});
+
+test("every authored cover and layer has a local light and dark source", async () => {
+	const keynote = await loadKeynoteModule();
+	for (const theme of ["light", "dark"]) {
+		const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns(theme);
+		const cards = columns.flatMap((column) => column.cards);
+		assert.equal(cards.length, 23);
+		for (const card of cards) {
+			for (const src of [card.coverImage.src, ...(card.coverImage.layers ?? [])]) {
+				assert.equal(src.endsWith("-dark.svg"), theme === "dark", src);
+				assert.ok(fs.statSync(path.join(process.cwd(), "public", src)).size > 0, src);
+			}
+		}
+		assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns, theme), columns);
+	}
+});
+
+test("theme changes preserve card moves, edits, drafts and custom artwork", async () => {
+	const keynote = await loadKeynoteModule();
+	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+	const moved = columns[0].cards.shift();
+	moved.status = "Done";
+	moved.title = "Rehearsal desktop";
+	moved.agentActivities = [{ id: "draft", draft: "Keep the discussion" }];
+	columns[3].cards.push(moved);
+	const custom = cardByCode(columns, "TEU-2");
+	custom.coverImage = { src: "/custom.svg", alt: "Custom cover" };
+	const dark = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns, "dark");
+	assert.deepEqual(dark.map((column) => column.cards.map((card) => card.code)), columns.map((column) => column.cards.map((card) => card.code)));
+	assert.equal(cardByCode(dark, "TEU-1").title, "Rehearsal desktop");
+	assert.equal(cardByCode(dark, "TEU-1").status, "Done");
+	assert.equal(cardByCode(dark, "TEU-1").agentActivities, moved.agentActivities);
+	assert.equal(cardByCode(dark, "TEU-1").coverImage.src, "/illustration/jira-team-eu26-end/rovo-desktop-dark.svg");
+	assert.equal(cardByCode(dark, "TEU-2"), custom);
+	assert.deepEqual(cardByCode(dark, "TEU-7").coverImage.layers, [
+		"/illustration/jira-team-eu26-end/planner-left-fade-dark.svg",
+		"/illustration/jira-team-eu26-end/planner-readiness-dark.svg",
+	]);
+	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(dark, "dark"), dark);
+	const light = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(dark, "light");
+	assert.equal(cardByCode(light, "TEU-1").coverImage.src, moved.coverImage.src);
+	assert.equal(cardByCode(light, "TEU-1").agentActivities, moved.agentActivities);
+	assert.equal(cardByCode(light, "TEU-2"), custom);
+	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(light, "light"), light);
+});
+
+test("custom sources remain custom even when old authored metadata is retained", async () => {
+	const keynote = await loadKeynoteModule();
+	for (const metadata of [
+		{ heading: "Rovo\nDesktop" },
+		{ heading: "Custom heading", maxHeight: 250 },
+		{ backgroundClassName: "bg-bg-accent-gray-subtler", maxHeight: 120 },
+	]) {
+		const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+		const custom = cardByCode(columns, "TEU-1");
+		custom.coverImage = { src: "/custom.png", alt: "Custom", ...metadata };
+		const dark = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns, "dark");
+		assert.equal(cardByCode(dark, "TEU-1"), custom);
+	}
 });

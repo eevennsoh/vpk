@@ -50,6 +50,7 @@ function doneCodesOf(columns: readonly JiraKanbanColumnData[]): readonly string[
  */
 interface JiraTeamEu26EndFinaleProps {
 	readonly boardColumns: readonly JiraKanbanColumnData[];
+	readonly pauseMegaBento: boolean;
 	/**
 	 * Bump to replay the finale when every keynote card is already in Done (the
 	 * board no longer changes, so the "all Done" transition cannot fire again).
@@ -57,7 +58,7 @@ interface JiraTeamEu26EndFinaleProps {
 	readonly replayRequest?: number;
 }
 
-export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Readonly<JiraTeamEu26EndFinaleProps>) {
+export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0, pauseMegaBento }: Readonly<JiraTeamEu26EndFinaleProps>) {
 	const clock = useFinaleAudioClock();
 	const prints = useFinaleCardPrints();
 	const facePrints = useFinaleFacePrints();
@@ -299,7 +300,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 	return (
 		<>
 			<FinaleFacePrintStage prints={facePrints} />
-			{scene ? <FinaleOverlay scene={scene} clock={clock} reducedMotion={reducedMotion} closing={closing} /> : null}
+			{scene ? <FinaleOverlay scene={scene} clock={clock} reducedMotion={reducedMotion} closing={closing} pauseMegaBento={pauseMegaBento} /> : null}
 		</>
 	);
 }

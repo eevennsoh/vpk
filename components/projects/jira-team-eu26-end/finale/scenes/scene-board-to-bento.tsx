@@ -5,7 +5,6 @@ import { useMemo, useRef } from "react";
 import { FinaleCardSpaceGl, type FinaleGlCard } from "../components/finale-card-space-gl";
 import { FinaleColumnFlash } from "../components/finale-column-flash";
 import { FinaleCursors } from "../components/finale-cursor";
-import { FinaleDotField } from "../components/finale-dot-field";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FinaleTeamTitle } from "../components/finale-team-title";
 import { FinaleBentoTile } from "../components/finale-bento-tile";
@@ -19,7 +18,6 @@ import { useFinaleBoardExit } from "../hooks/use-finale-board-exit";
 import { finaleFacePrintKey } from "../hooks/use-finale-face-prints";
 import type { FinaleHandoffSnapshot } from "../lib/capture-done-column";
 import {
-	fieldRipples,
 	tileHandoff,
 	type FinaleCardRole,
 	type FinaleFit,
@@ -127,7 +125,6 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		() => buildField({ snapshot, dragOrder, features, cardPrint }, column, slotRects),
 		[snapshot, dragOrder, features, cardPrint, column, slotRects],
 	);
-	const ripples = useMemo(() => fieldRipples(slotRects), [slotRects]);
 	// Act III: the mega bento, and the gap each bento card is thrown into.
 	const geometry = useMemo(() => wallGeometry(fit.scale, viewport), [fit.scale, viewport]);
 	const wall = useMemo(() => buildFinaleWall(geometry, bento, features, dragOrder), [geometry, bento, features, dragOrder]);
@@ -158,25 +155,26 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 			{/* Act III: the mega bento's DOM cards (its sheets and accents are drawn over the bento, below). */}
 			{reducedMotion ? null : <FinaleWall wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />}
 			<FinaleTeamTitle rect={bento.title} scale={fit.scale} />
-			<FinaleCardSpaceGl cards={cards} facePrint={facePrint} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
-			{/* The column "completes" in a sweep of light before its cards are tossed. */}
-			<FinaleColumnFlash column={column} print={columnPrint} occluders={snapshot?.occluders} />
-			{/* Each tile is there in full from its hand-off: its sheet landed as its face's print. */}
-			{features.map((story, order) => (
-				<FinaleBentoTile
-					key={story.code}
-					ref={(element) => { tileRefs.current[order] = element; }}
-					story={story}
-					slot={bento.slots[order]}
-					scale={fit.scale}
-					className="absolute"
-					style={{ left: slotRects[order].x, top: slotRects[order].y, opacity: 0, visibility: "hidden" }}
-				/>
-			))}
+			{/* Add the complementary image opacities before compositing onto the slide. */}
+			<div className="absolute inset-0 isolate">
+				<FinaleCardSpaceGl cards={cards} facePrint={facePrint} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
+				{/* The column "completes" in a sweep of light before its cards are tossed. */}
+				<FinaleColumnFlash column={column} print={columnPrint} occluders={snapshot?.occluders} />
+				{/* Each tile is there in full from its hand-off: its sheet landed as its face's print. */}
+				{features.map((story, order) => (
+					<FinaleBentoTile
+						key={story.code}
+						ref={(element) => { tileRefs.current[order] = element; }}
+						story={story}
+						slot={bento.slots[order]}
+						scale={fit.scale}
+						className="absolute mix-blend-plus-lighter"
+						style={{ left: slotRects[order].x, top: slotRects[order].y, opacity: 0, visibility: "hidden" }}
+					/>
+				))}
+			</div>
 			{/* One shared WebGL layer: each tile's whole border glows once, Pulsing Border style, as it settles. */}
 			<FinaleTileGlow tiles={slotRects} radius={FINALE_TILE_RADIUS * fit.scale} scale={fit.scale} viewport={viewport} />
-			{/* Above the tiles: each touchdown pulses a dot lattice inside its own tile. */}
-			<FinaleDotField fit={fit} viewport={viewport} ripples={ripples} radius={FINALE_TILE_RADIUS * fit.scale} />
 			{/* Act III's sheets and landing accents, over the bento's tiles: the title card hops over its neighbours as it flips. */}
 			{reducedMotion ? null : (
 				<>
