@@ -159,7 +159,8 @@ export function ambientSwing(time: number) {
 }
 function rearAngle(time: number, amount: number, revealAngle?: number) {
 	const key = Math.round(clamp(amount, 0, 1.6) * 100) / 100;
-	if (!cardMotions.has(key)) {
+	let frames = cardMotions.get(key);
+	if (!frames) {
 		const angles = new Float32Array(physicsDuration * STEPS + 1);
 		let angle = 20 - 12 * key, velocity = 0, lastRoll = null, lastVelocity = 0;
 		for (let i = 0; i < angles.length; i++) {
@@ -176,8 +177,9 @@ function rearAngle(time: number, amount: number, revealAngle?: number) {
 		}
 		cardMotions.set(key, angles);
 		if (cardMotions.size > 3) cardMotions.delete(cardMotions.keys().next().value!);
+		frames = angles;
 	}
-	const frames = cardMotions.get(key)!, raw = clamp(time, 0, physicsDuration) * STEPS, i = Math.floor(raw);
+	const raw = clamp(time, 0, physicsDuration) * STEPS, i = Math.floor(raw);
 	const settled = frames[i] + (frames[Math.min(frames.length - 1, i + 1)] - frames[i]) * (raw - i);
 	// Preserve the catch, then fade out its opening offset completely so the
 	// diminishing pendulum stays centered on vertical as the cards swap sides.

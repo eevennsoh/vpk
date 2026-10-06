@@ -18,7 +18,7 @@ interface Lanyard3DProfileSectionProps {
 
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 
-export function profileInitials(name: string) {
+function profileInitials(name: string) {
 	return name.trim().split(/\s+/).filter(Boolean).map((word) => word[0]).slice(0, 2).join("").toUpperCase();
 }
 

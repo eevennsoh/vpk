@@ -25,7 +25,7 @@ function headerPattern(sources: CardArtSources, dark: boolean) {
 		darkHeaderPattern.width = sources.headerPattern.width; darkHeaderPattern.height = sources.headerPattern.height;
 		const c = darkHeaderPattern.getContext('2d')!; c.drawImage(sources.headerPattern, 0, 0);
 		const pixels = c.getImageData(0, 0, darkHeaderPattern.width, darkHeaderPattern.height);
-		const rgb = (hex: string) => hex.match(/[a-f\d]{2}/gi)!.map((channel) => parseInt(channel, 16));
+		const rgb = (hex: string) => (hex.match(/[a-f\d]{2}/gi) ?? []).map((channel) => parseInt(channel, 16));
 		const background = rgb(cardPalettes.dark.header), grid = rgb(cardPalettes.dark.grid);
 		for (let i = 0; i < pixels.data.length; i += 4) {
 			const ink = 1 - pixels.data[i] / 255;

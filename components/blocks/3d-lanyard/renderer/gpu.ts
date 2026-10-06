@@ -163,7 +163,7 @@ export function makeGPU(): GpuRenderer | null {
 		gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.DYNAMIC_DRAW);
 		function batch(faces: Face[]) {
 		for (let i = 0; i < faces.length;) {
-			const image = faces[i].image, start=offsets.get(faces[i])!;let count=0;
+			const image = faces[i].image, start=offsets.get(faces[i]) ?? 0;let count=0;
 			while(i<faces.length&&faces[i].image===image&&offsets.get(faces[i])===start+count){count+=3;i++;}
 			let texture = cache.get(image);
 			if (!texture) {
