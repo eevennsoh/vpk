@@ -19,7 +19,7 @@ export type WallPiece = Pick<KitPiece, "id" | "scale">;
 export type WallContent =
 	| { readonly kind: "story"; readonly story: FinaleStory }
 	| { readonly kind: "benefit"; readonly story: FinaleStory }
-	| { readonly kind: "print"; readonly codes: readonly string[] }
+	| { readonly kind: "print"; readonly codes: readonly [string] }
 	| { readonly kind: "poster"; readonly word: FinaleChapterId; readonly fill: FinaleBrandColor; readonly ink: FinaleBrandColor }
 	| { readonly kind: "stat"; readonly stat: WallStatId }
 	| { readonly kind: "strip"; readonly strip: WallStripId }
@@ -130,10 +130,9 @@ export function wallGeometry(fitScale: number, viewport: { readonly width: numbe
 	};
 }
 
-/** Grey containers have viewport-pixel corners; coloured tiles retain their stage-scaled corners. */
-export function wallSlotRadius(slot: WallSlot, geometry: WallGeometry): number {
-	const kind = slot.content.kind;
-	return kind === "poster" || kind === "benefit" || kind === "title" ? geometry.radius * geometry.typeScale : geometry.radius;
+/** Every wall container keeps its corners in viewport pixels, including custom coloured tiles. */
+export function wallSlotRadius(_slot: WallSlot, geometry: WallGeometry): number {
+	return geometry.radius;
 }
 
 interface WallItem extends MasonryItem {
@@ -167,15 +166,8 @@ function keynoteItems(geometry: WallGeometry, features: readonly FinaleStory[], 
 		{ word: "Confidence", width: 280, height: 220, fill: "blue", ink: "white" },
 	] satisfies readonly { word: FinaleChapterId; width: number; height: number; fill: FinaleBrandColor; ink: FinaleBrandColor }[];
 	posters.forEach(({ word, width, height, fill, ink }, index) => extras.push(item(`poster-${index}`, width, height, { kind: "poster", word, fill, ink })));
-	let dealt = 0;
-	while (dealt < ordered.length) {
-		const remaining = ordered.length - dealt;
-		const count = Math.min(dealt < 8 ? 4 : 2, remaining === 2 ? 1 : remaining);
-		const codes = ordered.slice(dealt, dealt + count);
-		if (codes.length > 0) extras.push(item(`print-${dealt}`, 260, codes.length * 115 + (codes.length - 1) * 8, { kind: "print", codes }));
-		dealt += count;
-	}
-	extras.push(item("presenters", 240, 180, { kind: "stat", stat: "presenters" }), item("chapters", 180, 125, { kind: "stat", stat: "chapters" }), item("flow", 330, 65, { kind: "strip", strip: "flow" }));
+	ordered.forEach((code, index) => extras.push(item(`print-${index}`, 260, 140, { kind: "print", codes: [code] })));
+	extras.push(item("chapters", 180, 125, { kind: "stat", stat: "chapters" }), item("flow", 330, 65, { kind: "strip", strip: "flow" }));
 	return extras;
 }
 

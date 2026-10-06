@@ -368,13 +368,42 @@ test("new cards wait in the air at the leading edge, tilted and turned, and come
 		if (aloft) {
 			assert.ok(aloft.pose.z > 0 && aloft.pose.lift === 1, "up in the air");
 			assert.ok(turned(aloft.pose) > 0.15, "tilted");
-			assert.ok(close(aloft.chroma, 1), "filmed through the field's smear");
+			assert.ok(close(aloft.chroma, 1), "filmed through the original full-strength smear");
 		}
 		const landed = sheet(descent.touchdown + 0.2);
 		assert.ok(landed && landed.pose.z === 0 && turned(landed.pose) < 0.01 && landed.chroma === 0, "flat in its slot, the smear gone");
 		assert.ok(close(landed.pose.waveAge, 0.2), "with the landing wave");
 		const presence = m.wallSlotPresence(slot, wall, drops, descent.touchdown + m.CUE.handoff + 0.2);
 		assert.ok(presence.opacity === 1 && close(presence.revealStart, m.landingRevealStart(descent.touchdown)), "then its DOM card builds");
+	}
+});
+
+test("arrivals do not linger visibly smeared before their short entrance preview", () => {
+	const { m, wall, drops, viewport } = sceneFor(VIEWPORTS[1]);
+	const candidates = wall.items.filter((slot) => slot.reserved === undefined && m.slotDescent(slot, wall)?.start > 20).slice(0, 12);
+	assert.ok(candidates.length >= 8);
+	for (const slot of candidates) {
+		const descent = m.slotDescent(slot, wall);
+		const sheetAt = (time) => m.wallSheetsAt(time, wall, drops, viewport).find((sheet) => sheet.key === `card-${slot.key}`);
+		const early = sheetAt(descent.start - 0.5);
+		assert.ok(!early || early.pose.opacity === 0, `${slot.key}: no early chromatic ghost`);
+		const waiting = sheetAt(descent.start - 0.05);
+		assert.ok(waiting && waiting.pose.opacity > 0.99, "the brief waiting pose is fully visible");
+		assert.equal(waiting.chroma, 1, "the timing change preserves the original chromatic strength");
+		const settled = sheetAt(descent.touchdown + 0.1);
+		assert.ok(settled && settled.chroma === 0, "clear on landing");
+	}
+});
+
+test("every arriving card keeps its original rainbow trail while its shadow stays subtle", () => {
+	const { m, wall, drops, viewport } = sceneFor(VIEWPORTS[1]);
+	const arrivals = wall.items.filter((slot) => slot.reserved === undefined && m.slotDescent(slot, wall)?.start > 20);
+	for (const slot of arrivals) {
+		const descent = m.slotDescent(slot, wall);
+		const waiting = m.wallSheetsAt(descent.start - 0.05, wall, drops, viewport).find((sheet) => sheet.key === `card-${slot.key}`);
+		assert.ok(waiting);
+		assert.equal(waiting.chroma, 1, `${slot.key}: every arrival keeps the full effect`);
+		assert.ok(waiting.shadow.strength <= 0.15, "no heavy cast-shadow band under a routine arrival");
 	}
 });
 

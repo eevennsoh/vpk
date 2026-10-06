@@ -145,7 +145,8 @@ test("every sheet's share of the lens is spent, and stays spent, before its shee
 		const share = (sheet) => m.lensShare(sheet.chroma, sheet.pose.opacity * m.lensFade(distance - sheet.pose.z, viewport));
 		/** When each sheet in the list last had any share of the lens. */
 		const lastSmeared = new Map();
-		let gone = 0;
+		let goneBento = 0;
+		let goneArrivals = 0;
 		let previous = new Map();
 		for (let time = m.WALL_CUE.start; time < m.WALL_CUE.start + 40; time += FRAME) {
 			const sheets = new Map(m.wallSheetsAt(time, wall, drops, viewport).map((sheet) => [sheet.key, sheet]));
@@ -160,11 +161,12 @@ test("every sheet's share of the lens is spent, and stays spent, before its shee
 				const spent = time - lastSmeared.get(key);
 				assert.ok(spent >= m.CUE.handoff * 0.5, `${viewport.width}: ${key} goes ${spent.toFixed(3)} s after its last smear`);
 				lastSmeared.delete(key);
-				gone += 1;
+				if (key.startsWith("bento-")) goneBento += 1;
+				else goneArrivals += 1;
 			}
 			previous = sheets;
 		}
-		// The bento's cards and many arrivals came down and handed over.
-		assert.ok(gone > 30, `${viewport.width}: ${gone} smeared sheets went`);
+		assert.equal(goneBento, 7, "all six bento tiles and the title clear their smear before handing over");
+		assert.ok(goneArrivals >= 24, `${viewport.width}: chromatic arrivals clear their smear (${goneArrivals})`);
 	}
 });

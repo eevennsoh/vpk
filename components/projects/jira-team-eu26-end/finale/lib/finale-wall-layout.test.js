@@ -40,6 +40,15 @@ function sceneFor(viewport, dragOrder = []) {
 	return { m, bento, geometry, wall };
 }
 
+test("every remaining work item has its own print slot instead of a bulk-drag stack", () => {
+	for (const viewport of VIEWPORTS) {
+		const { m, wall } = sceneFor(viewport);
+		const prints = wall.items.filter((slot) => slot.content.kind === "print");
+		assert.equal(prints.length, m.FINALE_STORIES.length - m.FINALE_FEATURES.length);
+		for (const slot of prints) assert.equal(slot.content.codes.length, 1, `${slot.key} holds one work item`);
+	}
+});
+
 test("the wall has three varied chapter word tiles separated by product content", () => {
 	for (const viewport of VIEWPORTS) {
 		const { wall, geometry } = sceneFor(viewport);
@@ -111,12 +120,12 @@ test("masonry honors horizontal and vertical gaps independently", () => {
 	]);
 });
 
-test("every grey container has a fixed 20px radius on every viewport", () => {
+test("every wall container, including custom coloured tiles, has a fixed 20px radius on every viewport", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, wall, geometry } = sceneFor(viewport);
-		const grey = wall.items.filter((slot) => ["story", "piece", "stat", "strip"].includes(slot.content.kind));
-		assert.ok(grey.length > 0);
-		for (const slot of grey) assert.equal(m.wallSlotRadius(slot, geometry), 20, slot.key);
+		const tiles = wall.items.filter((slot) => slot.content.kind !== "print");
+		assert.ok(tiles.length > 0);
+		for (const slot of tiles) assert.equal(m.wallSlotRadius(slot, geometry), 20, slot.key);
 	}
 });
 
