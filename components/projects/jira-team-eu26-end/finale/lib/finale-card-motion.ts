@@ -15,7 +15,7 @@ import {
 	type FinaleViewport,
 	type Vec3,
 } from "./finale-camera";
-import { EASE, clamp, eased, hash01, lerp, progress } from "./finale-math";
+import { EASE, HANDOVER_FACE_SHARE, clamp, eased, hash01, lerp, progress } from "./finale-math";
 
 export { FINALE_CAMERA_FOV, cameraDistance, type FinaleViewport } from "./finale-camera";
 
@@ -150,6 +150,17 @@ export function fieldHome(index: number, count: number, echo: boolean, viewport:
 function heroHome(viewport: FinaleViewport): FieldHome {
 	const anchor = heroAnchor(viewport);
 	return { x: anchor.x, y: -anchor.y, z: anchor.z, rotateX: 0.18, rotateY: -0.35, rotateZ: 0.06, seed: 1 };
+}
+
+/** Fixed back-to-front layers from the field's layout; camera motion must not swap overlapping cards. */
+export function fieldDrawOrders(inputs: readonly FinaleCardInput[], viewport: FinaleViewport): readonly number[] {
+	const sorted = inputs.map((input, index) => {
+		const home = input.role.kind === "hero" ? heroHome(viewport) : fieldHome(input.fieldIndex, input.fieldCount, input.role.kind === "echo", viewport);
+		return { index, z: home.z };
+	}).sort((a, b) => a.z - b.z || a.index - b.index);
+	const orders = new Array<number>(inputs.length);
+	for (const [rank, card] of sorted.entries()) orders[card.index] = rank * 2 + 1;
+	return orders;
 }
 
 export function flatPose(rect: FinaleRect, face: number): FinaleCardPose {
@@ -775,7 +786,9 @@ function smearRiseAfterLanding(order: number, tileCount = 6): number {
  */
 export function tileHandoff(time: number, order: number): number {
 	const end = touchdownTime(order) + CUE.tileHandoff + TILE_DISSOLVE;
-	return progress(time, end - Math.max(TILE_DISSOLVE, smearRiseAfterLanding(order)), end);
+	// Start the overlap earlier so the live face retains its original fade speed and completion cue.
+	const span = Math.max(TILE_DISSOLVE, smearRiseAfterLanding(order)) / HANDOVER_FACE_SHARE;
+	return progress(time, end - span, end);
 }
 
 /* ─── Through the lens ────────────────────────────────────────────────── */
@@ -871,18 +884,9 @@ export function sphereWarp(time: number): number {
 	return field * 0.22 + bump(time, CUE.zoom, CUE.zoom + 0.45, CUE.zoomEnd + 0.2) * 0.35;
 }
 
-/* ─── Dot grid ────────────────────────────────────────────────────────── */
-
 export interface FinaleFieldRipple {
-	/** Footprint the ring expands from. */
 	readonly from: FinaleRect;
 	readonly start: number;
 	readonly amp: number;
-	/** The footprint's own corner radius (viewport px), for a card not rounded as the tiles are. */
 	readonly radius?: number;
-}
-
-/** The dot grid only exists as one pulse around each tile as it touches down. */
-export function fieldRipples(slots: readonly FinaleRect[]): readonly FinaleFieldRipple[] {
-	return slots.map((from, order) => ({ from, start: touchdownTime(order), amp: 1 }));
 }

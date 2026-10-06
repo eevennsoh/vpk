@@ -46,15 +46,15 @@ test("retained human session members use only the keynote presenter identities",
 	const humans = story.JIRA_TEAM_EU26_PAY_SESSION_MEMBERS.filter((member) => member.kind === "human");
 	assert.deepEqual(new Set(humans.map((member) => member.name)), new Set(["MCB", "Tamar", "Sherif", "Taroon"]));
 	assert.deepEqual(new Set(humans.map((member) => member.avatarSrc)), new Set([
-		"/avatar-user/mcb.png",
+		"/avatar-user/mike.png",
 		"/avatar-user/tamar.png",
 		"/avatar-user/sherif.png",
 		"/avatar-user/taroon.png",
 	]));
-	assert.ok(humans.some((member) => member.id === "mcb" && member.name === "MCB"));
+	assert.ok(humans.some((member) => member.id === "mike" && member.name === "MCB"));
 	assert.ok(humans.every((member) => member.id !== "venn"));
 	assert.equal(humans.length, 4);
-	assert.deepEqual(new Set(humans.map((member) => member.id)), new Set(["mcb", "tamar", "sherif", "taroon"]));
+	assert.deepEqual(new Set(humans.map((member) => member.id)), new Set(["mike", "tamar", "sherif", "taroon"]));
 });
 
 test("PAY-101 finished run retains the human from its original prompt", async () => {
@@ -95,7 +95,7 @@ test("the PAY board fills every existing status with coding work and the full st
 			card.assignee ? [[card.assignee.id, card.assignee.avatarSrc]] : []
 		))),
 		new Map([
-			["mcb", "/avatar-user/mcb.png"],
+			["mike", "/avatar-user/mike.png"],
 			["tamar", "/avatar-user/tamar.png"],
 			["sherif", "/avatar-user/sherif.png"],
 			["taroon", "/avatar-user/taroon.png"],
@@ -107,7 +107,7 @@ test("the PAY board fills every existing status with coding work and the full st
 			.filter((member) => member.kind === "human")
 			.map((member) => [member.id, member.avatarSrc])),
 		new Map([
-			["mcb", "/avatar-user/mcb.png"],
+			["mike", "/avatar-user/mike.png"],
 			["tamar", "/avatar-user/tamar.png"],
 			["sherif", "/avatar-user/sherif.png"],
 			["taroon", "/avatar-user/taroon.png"],
@@ -198,19 +198,19 @@ test("the PAY board fills every existing status with coding work and the full st
 		&& activity.invokedBy.avatarSrc === currentUserInvoker.avatarSrc
 	)));
 
-	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.id, "mcb");
+	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.id, "mike");
 	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.name, "MCB");
-	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc, "/avatar-user/mcb.png");
+	assert.equal(story.JIRA_TEAM_EU26_PAY_CURRENT_USER.avatarSrc, "/avatar-user/mike.png");
 	assert.deepEqual(
 		story.JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES.map((assignee) => assignee.id),
-		["mcb", "review-agent", "test-agent", "release-agent"],
+		["mike", "review-agent", "test-agent", "release-agent"],
 	);
 	assert.deepEqual(
 		story.JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES.map((assignee) => assignee.name),
 		["MCB", "Codex", "Cursor", "GitHub Copilot"],
 	);
 	assert.ok(story.JIRA_TEAM_EU26_PAY_HEADER_ASSIGNEES.every((assignee) => (
-		assignee.id === "mcb" || assignee.avatarSrc.startsWith("/avatar-agent/")
+		assignee.id === "mike" || assignee.avatarSrc.startsWith("/avatar-agent/")
 	)));
 
 	assert.deepEqual(

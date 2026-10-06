@@ -34,6 +34,7 @@ interface FinaleOverlayProps {
 	readonly clock: FinaleClock;
 	readonly reducedMotion: boolean;
 	readonly closing: boolean;
+	readonly pauseMegaBento: boolean;
 }
 
 /**
@@ -42,7 +43,7 @@ interface FinaleOverlayProps {
  * share one pixel grid); the bento slots are Figma's 1920×1080 stage
  * letterboxed into the display.
  */
-export function FinaleOverlay({ scene, clock, reducedMotion, closing }: Readonly<FinaleOverlayProps>) {
+export function FinaleOverlay({ scene, clock, reducedMotion, closing, pauseMegaBento }: Readonly<FinaleOverlayProps>) {
 	const registry = useMemo(() => createFinaleFrameRegistry(), []);
 	const fit = useStageFit();
 	const viewport = useMemo(() => ({ width: fit.width, height: fit.height }), [fit.width, fit.height]);
@@ -52,8 +53,11 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing }: Readonly
 		let frame = 0;
 		let last = Number.NaN;
 		const tick = () => {
-			// The bento is the rest frame; with motion on, the wall after it glides on until Esc.
-			const time = reducedMotion ? FINALE_REST_TIME : clock.time();
+			let time = reducedMotion ? FINALE_REST_TIME : clock.time();
+			if (pauseMegaBento && time > FINALE_REST_TIME) {
+				time = FINALE_REST_TIME;
+				clock.hold(time);
+			}
 			if (time !== last) {
 				registry.emit(time);
 				last = time;
@@ -62,7 +66,7 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing }: Readonly
 		};
 		frame = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(frame);
-	}, [clock, reducedMotion, registry]);
+	}, [clock, pauseMegaBento, reducedMotion, registry]);
 
 	// Dev-only: render an exact frame synchronously (scrubbing, or a hidden tab
 	// where requestAnimationFrame never fires).

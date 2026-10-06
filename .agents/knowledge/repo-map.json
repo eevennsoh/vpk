@@ -4491,10 +4491,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 451,
+			"manifestEntryCount": 452,
 			"categoryCount": 9,
 			"statusCounts": {
-				"live": 446,
+				"live": 447,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -4543,8 +4543,15 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 115,
+				"entryCount": 116,
 				"entries": [
+					{
+						"category": "blocks",
+						"slug": "3d-lanyard",
+						"name": "3D Lanyard",
+						"importPath": "@/components/blocks/3d-lanyard",
+						"status": "live"
+					},
 					{
 						"category": "blocks",
 						"slug": "agent",

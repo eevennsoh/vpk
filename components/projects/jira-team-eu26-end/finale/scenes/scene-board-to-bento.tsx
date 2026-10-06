@@ -5,7 +5,6 @@ import { useMemo, useRef } from "react";
 import { FinaleCardSpaceGl, type FinaleGlCard } from "../components/finale-card-space-gl";
 import { FinaleColumnFlash } from "../components/finale-column-flash";
 import { FinaleCursors } from "../components/finale-cursor";
-import { FinaleDotField } from "../components/finale-dot-field";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FinaleTeamTitle } from "../components/finale-team-title";
 import { FinaleBentoTile } from "../components/finale-bento-tile";
@@ -19,7 +18,6 @@ import { useFinaleBoardExit } from "../hooks/use-finale-board-exit";
 import { finaleFacePrintKey } from "../hooks/use-finale-face-prints";
 import type { FinaleHandoffSnapshot } from "../lib/capture-done-column";
 import {
-	fieldRipples,
 	tileHandoff,
 	type FinaleCardRole,
 	type FinaleFit,
@@ -27,6 +25,7 @@ import {
 } from "../lib/finale-card-motion";
 import { buildFinaleWall, wallGeometry, wallPrintShapes } from "../lib/finale-wall-layout";
 import { bentoDrops, bentoTossTime } from "../lib/finale-wall-motion";
+import { handoverFaceOpacity } from "../lib/finale-math";
 
 /** The field always carries a full board, padding with blank sheets in rehearsal. */
 const FIELD_SIZE = 13;
@@ -127,7 +126,6 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		() => buildField({ snapshot, dragOrder, features, cardPrint }, column, slotRects),
 		[snapshot, dragOrder, features, cardPrint, column, slotRects],
 	);
-	const ripples = useMemo(() => fieldRipples(slotRects), [slotRects]);
 	// Act III: the mega bento, and the gap each bento card is thrown into.
 	const geometry = useMemo(() => wallGeometry(fit.scale, viewport), [fit.scale, viewport]);
 	const wall = useMemo(() => buildFinaleWall(geometry, bento, features, dragOrder), [geometry, bento, features, dragOrder]);
@@ -143,7 +141,7 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		const tossed = time >= bentoTossTime();
 		tileRefs.current.forEach((tile, order) => {
 			if (!tile) return;
-			const shown = tossed ? 0 : tileHandoff(time, order);
+			const shown = tossed ? 0 : handoverFaceOpacity(tileHandoff(time, order));
 			if (writtenRefs.current[order] === shown) return;
 			writtenRefs.current[order] = shown;
 			tile.style.opacity = String(shown);
@@ -175,8 +173,6 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 			))}
 			{/* One shared WebGL layer: each tile's whole border glows once, Pulsing Border style, as it settles. */}
 			<FinaleTileGlow tiles={slotRects} radius={FINALE_TILE_RADIUS * fit.scale} scale={fit.scale} viewport={viewport} />
-			{/* Above the tiles: each touchdown pulses a dot lattice inside its own tile. */}
-			<FinaleDotField fit={fit} viewport={viewport} ripples={ripples} radius={FINALE_TILE_RADIUS * fit.scale} />
 			{/* Act III's sheets and landing accents, over the bento's tiles: the title card hops over its neighbours as it flips. */}
 			{reducedMotion ? null : (
 				<>

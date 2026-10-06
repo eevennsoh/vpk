@@ -72,7 +72,7 @@ const LIGHT_INK = "#FFFFFF";
  */
 export const FINALE_CURSORS: readonly FinaleCursorSpec[] = [
 	// The board's "MCB" goes by first name on the closing cursor.
-	{ id: "mcb", label: "Mike", color: GREEN.hex, ink: DARK_INK, entry: "top-right", slot: "e", rest: { u: 0.22, v: 0.68 } },
+	{ id: "mike", label: "Mike", color: GREEN.hex, ink: DARK_INK, entry: "top-right", slot: "e", rest: { u: 0.22, v: 0.68 } },
 	{ id: "tamar", label: JIRA_TEAM_EU26_END_PRESENTERS.tamar.name, color: BLUE.hex, ink: LIGHT_INK, entry: "top", slot: "c", rest: { u: 0.42, v: 0.3 } },
 	{ id: "sherif", label: JIRA_TEAM_EU26_END_PRESENTERS.sherif.name, color: PURPLE.hex, ink: LIGHT_INK, entry: "bottom-left", slot: "b", rest: { u: 0.6, v: 0.26 } },
 	{ id: "taroon", label: JIRA_TEAM_EU26_END_PRESENTERS.taroon.name, color: AMBER.hex, ink: DARK_INK, entry: "bottom-right", slot: "f", rest: { u: 0.22, v: 0.26 } },

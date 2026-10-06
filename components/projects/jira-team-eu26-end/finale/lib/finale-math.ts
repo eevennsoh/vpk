@@ -25,6 +25,18 @@ export function smoothstep(edge0: number, edge1: number, value: number): number 
 	return x * x * (3 - 2 * x);
 }
 
+export const HANDOVER_FACE_SHARE = 0.6;
+
+/** The live face comes up before its printed sheet fades, keeping coverage above 98%. */
+export function handoverFaceOpacity(amount: number): number {
+	return progress(amount, 0, HANDOVER_FACE_SHARE);
+}
+
+/** The sheet's distortion clears continuously while the live face takes over. */
+export function handoverSheetOpacity(amount: number): number {
+	return 1 - smoothstep(0.4, 1, amount);
+}
+
 /** CSS-style cubic-bezier easing solved with Newton-Raphson plus bisection fallback. */
 export function cubicBezier(x1: number, y1: number, x2: number, y2: number): Ease {
 	const cx = 3 * x1;

@@ -1,4 +1,4 @@
-// rovo-stage-kit/react: the Rovo Stage Kit for a React 18 host. Rovo Stage Kit 1.0.0.
+// rovo-stage-kit/react: the Rovo Stage Kit for a React 18 host. Rovo Stage Kit 1.3.0.
 import type { CSSProperties, ForwardRefExoticComponent, RefAttributes } from 'react';
 
 import type {

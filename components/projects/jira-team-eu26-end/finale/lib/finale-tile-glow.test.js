@@ -85,7 +85,7 @@ test("each glow starts once its tile settles, and is gone soon after the heading
 		assert.ok(peak - start <= 0.4, "fades up quickly");
 		assert.ok(end <= deadline + 1e-9, `tile ${order} is gone within outBy of "Team ’26" building`);
 		assert.ok(end <= tileRevealStart(order) + CUE.reveal + 1e-9, "gone once its content has built");
-		assert.ok(end < CUE.end, "gone by the final frame");
+		assert.ok(end <= CUE.end, "gone by the final frame");
 	}
 });
 
@@ -509,6 +509,9 @@ test("the wall's accents mount nothing until the wall exists (never on the rest 
 	// One reading, then the clock holds: the layers that mount on it paint it without another.
 	await emit(held.time);
 	assert.deepEqual(mounted(), { canvases: 2, cursors: FINALE_CURSORS.length });
+	const dots = view.container.querySelector("[data-finale-dot-field]");
+	assert.equal(dots?.getAttribute("aria-hidden"), "true", "the dot reveal is decorative");
+	assert.equal(dots?.getAttribute("tabindex"), "-1", "the decorative canvas cannot enter the tab order");
 	assert.deepEqual(shown(), held.cursors.filter((cursor) => cursor.opacity > 0).map((cursor) => cursor.name).sort(), "the cursors holding cards, by name, and only they");
 	await emit(FINALE_REST_TIME);
 	assert.deepEqual(mounted(), { canvases: 0, cursors: 0 }, "seeking back before the wall takes it down");

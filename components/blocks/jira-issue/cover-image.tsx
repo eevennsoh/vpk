@@ -19,7 +19,8 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 	const hasSubheading = image.subheading !== undefined;
 	const hasGrid = image.backgroundPattern === "grid";
 	const appSources = image.appSources ?? [];
-	const appIconSize = image.src ? "xsmall" : "small";
+	const appIconSize = "small";
+	const imagePadding = image.src ? image.padding : undefined;
 	const imageMaskStyle = image.mask ? {
 		maskImage: `url("${image.mask.src}")`,
 		maskMode: "luminance",
@@ -40,8 +41,12 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 			aria-hidden={image.src || isTextCover ? undefined : true}
 			data-slot="jira-issue-cover"
 			style={{
+				height: image.height,
 				maxHeight: image.maxHeight,
-				backgroundColor: image.mask?.backgroundColor,
+				boxSizing: imagePadding ? "content-box" : undefined,
+				paddingBlockStart: imagePadding?.blockStart,
+				paddingBlockEnd: imagePadding?.blockEnd,
+				backgroundColor: image.mask?.backgroundColor ?? imagePadding?.backgroundColor,
 				clipPath: `inset(${COVER_TOP_INSET} ${COVER_SIDE_INSET} 0px round ${COVER_RADIUS} ${COVER_RADIUS} 0px 0px)`,
 			}}
 		>
@@ -74,17 +79,49 @@ export function JiraIssueCover({ image }: Readonly<{ image: JiraIssueCoverImage 
 					) : null}
 				</div>
 			) : null}
-			{image.src ? <Image
-				alt={image.alt}
-				className={image.fit === "cover" ? "object-cover" : "object-contain"}
-				style={{
-					...imageMaskStyle,
-					transform: image.zoom ? `scale(${image.zoom})` : undefined,
-				}}
+			{image.src ? (
+				<div
+					className="absolute inset-x-0"
+					data-slot="jira-issue-cover-artwork"
+					style={{ top: imagePadding?.blockStart ?? 0, bottom: imagePadding?.blockEnd ?? 0, containerType: image.objectPosition ? "inline-size" : undefined }}
+				>
+					<Image
+						alt={image.alt}
+						className={image.fit === "cover" ? "object-cover object-center" : "object-contain"}
+						style={{
+							...imageMaskStyle,
+							objectPosition: image.objectPosition,
+							transform: image.zoom ? `scale(${image.zoom})` : undefined,
+						}}
+						draggable={false}
+						fill
+						sizes="(max-width: 768px) 100vw, 50vw"
+						src={image.src}
+					/>
+					{image.layers?.map((src) => <Image
+						key={src}
+						alt=""
+						aria-hidden="true"
+						className={image.fit === "cover" ? "pointer-events-none object-cover object-center" : "pointer-events-none object-contain"}
+						data-slot="jira-issue-cover-layer"
+						draggable={false}
+						fill
+						sizes="(max-width: 768px) 100vw, 50vw"
+						src={src}
+						style={{ objectPosition: image.objectPosition }}
+					/>)}
+				</div>
+			) : null}
+			{image.foreground ? <Image
+				alt=""
+				aria-hidden="true"
+				className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+				data-slot="jira-issue-cover-foreground"
 				draggable={false}
-				fill
-				sizes="(max-width: 768px) 100vw, 50vw"
-				src={image.src}
+				height={image.foreground.height}
+				src={image.foreground.src}
+				style={{ width: `max(${image.foreground.width}px, ${image.foreground.width / image.foreground.canvasWidth * 100}%)`, height: "auto" }}
+				width={image.foreground.width}
 			/> : null}
 		</div>
 	);

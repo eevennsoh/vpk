@@ -68,12 +68,12 @@ test("the route renders the keynote board directly inside Jira app chrome", () =
 	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{false\}[\s\S]*product="jira"/u);
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
 	assert.match(PAGE_SOURCE, /createJiraTeamEu26EndKeynoteBoardColumns/u);
-	assert.match(PAGE_SOURCE, /boardColumns=\{withJiraTeamEu26EndDoneDestinations\(restoreJiraTeamEu26EndKeynoteCoverArtwork\(boardColumns\)\)\}/u);
+	assert.match(PAGE_SOURCE, /boardColumns=\{themedBoardColumns\}/u);
 	assert.match(PAGE_SOURCE, /boardTitle=\{JIRA_TEAM_EU26_END_KEYNOTE_BOARD_TITLE\}/u);
 	assert.match(PAGE_SOURCE, /columnWidth="fluid"/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_BOARD_AGENTS/u);
 	assert.match(PAGE_SOURCE, /headerAssignees=\{JIRA_TEAM_EU26_END_HEADER_ASSIGNEES\}/u);
-	assert.match(PAGE_SOURCE, /currentUser=\{JIRA_TEAM_EU26_END_PRESENTERS\.mcb\}/u);
+	assert.match(PAGE_SOURCE, /currentUser=\{JIRA_TEAM_EU26_END_PRESENTERS\.mike\}/u);
 	assert.match(PAGE_SOURCE, /showUnassignedHeaderAvatar=\{false\}/u);
 	assert.match(PAGE_SOURCE, /agentSessionMembers=\{JIRA_TEAM_EU26_PAY_SESSION_MEMBERS\}/u);
 	assert.match(PAGE_SOURCE, /h-full min-h-0 min-w-0 overflow-hidden \[&>div\]:min-h-0/u);
@@ -93,7 +93,7 @@ test("the keynote uses the same card movement presentation as Team EU26", () => 
 
 test("the keynote floating chat retains MCB creator attribution through its active overlay", () => {
 	const overlay = readProjectFile("components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx");
-	assert.match(PAGE_SOURCE, /<JgpRovoOverlay\s+agentCreator=\{JIRA_TEAM_EU26_END_PRESENTERS\.mcb\}/u);
+	assert.match(PAGE_SOURCE, /<JgpRovoOverlay\s+agentCreator=\{JIRA_TEAM_EU26_END_PRESENTERS\.mike\}/u);
 	assert.match(overlay, /agentCreator\?: AgentResultCreator;/u);
 	assert.match(overlay, /<RovoFloatingChat\s+agentCreator=\{agentCreator\}/u);
 });
@@ -126,7 +126,7 @@ test("Settings ends with a Play closing action that plays the board's cohort dro
 	assert.match(PAGE_SOURCE, /const \{ closingMoveRequest, finaleReplayRequest, settingsMenuItems \} = useJiraTeamEu26EndPlayClosing\(\{/u);
 	assert.match(PAGE_SOURCE, /settingsMenuItems=\{settingsMenuItems\}/u);
 	assert.match(PAGE_SOURCE, /issueMoveRequest=\{closingMoveRequest\}/u);
-	assert.match(PAGE_SOURCE, /<JiraTeamEu26EndFinale boardColumns=\{boardColumns\} replayRequest=\{finaleReplayRequest\} \/>/u);
+	assert.match(PAGE_SOURCE, /<JiraTeamEu26EndFinale boardColumns=\{themedBoardColumns\} replayRequest=\{finaleReplayRequest\} pauseMegaBento=\{designVariants\.pauseMegaBento\} \/>/u);
 });
 
 test("Background color paints the Kanban plane while preserving the Agent Session surface", () => {
@@ -152,7 +152,7 @@ test("Background color paints the Kanban plane while preserving the Agent Sessio
 test("the Dragging property controls session-column width resizing", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*"sessionStroke",\s*"sessionBloom",\s*"sessionProximity",\s*"sessionPeel",\s*"moveVisual",\s*\] as const;/u,
+		/const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = \[\s*"kanbanBackground",\s*"advancedTimeline",\s*"agentSessionColumnResizing",\s*"manualLink",\s*"sessionStroke",\s*"sessionBloom",\s*"sessionProximity",\s*"sessionPeel",\s*"moveVisual",\s*"pauseMegaBento",\s*\] as const;/u,
 	);
 	// The three chrome layers are separately switchable so the effect can be judged
 	// on the route: stroke alone, stroke plus column-wide reach, or neither.

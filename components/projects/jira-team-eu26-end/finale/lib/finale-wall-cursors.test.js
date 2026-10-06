@@ -13,7 +13,7 @@ export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 export { FINALE_WALL_CURSOR_NAMES } from "../data/finale-wall-cursor-names";
 export { FINALE_CURSORS, finaleCursorBox } from "./finale-cursor-path";
 export { WALL_SCALE, buildFinaleWall, wallGeometry } from "./finale-wall-layout";
-export { wallCursorsAt } from "./finale-wall-cursors";
+export { wallCardHoldable, wallCursorsAt } from "./finale-wall-cursors";
 export { arrivalCardPose, bentoDrops, slotArrivals, slotDescent, slotOnScreen, wallOffset, wallTimeAt } from "./finale-wall-motion";
 export { projectLifted } from "./finale-camera";
 export { titleCarrierGoneTime, titleReachTime } from "./finale-title-drag";
@@ -63,11 +63,33 @@ test("the wall's cursors are named from the avatar roster, once each, and never 
 	assert.deepEqual(FINALE_CURSORS.map((cursor) => cursor.label).sort(), ["Mike", "Sherif", "Tamar", "Taroon"], "the bento keeps its presenters");
 });
 
+test("human drags recur regularly through the steady wall without long empty stretches", () => {
+	const m = load();
+	for (const viewport of [{ width: 1920, height: 1080 }, { width: 1728, height: 1117 }, { width: 1024, height: 768 }]) {
+		const { wall, drops } = wallFor(viewport);
+		const firstSeen = new Map();
+		for (let time = 20; time < 120; time += 0.1) {
+			for (const cursor of m.wallCursorsAt(time, wall, drops, viewport)) {
+				if (cursor.key !== "title" && !firstSeen.has(cursor.key)) firstSeen.set(cursor.key, time);
+			}
+		}
+		const times = [...firstSeen.values()].sort((a, b) => a - b);
+		assert.ok(times.length >= 45, `${viewport.width}: at least 27 human drags per minute (${times.length} in 100 seconds)`);
+		// Only cards a teammate could hold count: one that comes down still over the frame's edge never can be.
+		const arrivals = Array.from({ length: wall.periodBuckets * 2 }, (_, bucket) => wall.bucket(bucket)).flat().filter((slot) => m.wallCardHoldable(slot, wall)).map((slot) => m.slotDescent(slot, wall).start);
+		assert.ok(arrivals.length > 0, `${viewport.width}: the wall has holdable cards`);
+		for (let index = 1; index < times.length; index += 1) {
+			if (times[index] - times[index - 1] <= 8) continue;
+			assert.equal(arrivals.some((time) => time > times[index - 1] + 1 && time < times[index] - 1), false, "a longer gap only occurs when no holdable cards arrive between the adjacent drags");
+		}
+	}
+});
+
 test("each held card's cursor is the slot's own teammate on every pass, one per lane and nobody twice at once, once MCB has carried the title in", () => {
 	const { FINALE_CURSORS, FINALE_WALL_CURSOR_NAMES, WALL_CUE, titleCarrierGoneTime, titleReachTime, wallCursorsAt, wallTimeAt } = load();
 	const pool = new Set(FINALE_WALL_CURSOR_NAMES);
 	const presenters = new Set(FINALE_CURSORS.map((cursor) => cursor.label));
-	const mcb = FINALE_CURSORS.findIndex((cursor) => cursor.id === "mcb");
+	const mike = FINALE_CURSORS.findIndex((cursor) => cursor.id === "mike");
 	const viewport = { width: 1728, height: 1117 };
 	const { wall, drops } = wallFor(viewport);
 	const { geometry } = wall;
@@ -91,8 +113,8 @@ test("each held card's cursor is the slot's own teammate on every pass, one per 
 		const during = time >= titleReachTime() && time <= titleCarrierGoneTime();
 		assert.equal(title.length, during ? 1 : 0, `MCB's cursor is on the wall only while he carries the title (${time.toFixed(2)}s)`);
 		for (const cursor of title) {
-			assert.equal(cursor.lane, mcb);
-			assert.equal(cursor.name, FINALE_CURSORS[mcb].label);
+			assert.equal(cursor.lane, mike);
+			assert.equal(cursor.name, FINALE_CURSORS[mike].label);
 			carried += 1;
 		}
 		const cursors = all.filter((cursor) => cursor.key !== "title");
@@ -132,7 +154,7 @@ function paintedBox(m, cursor, fit) {
 const whollyOff = (box, viewport) => box.right <= 0 || box.left >= viewport.width || box.bottom <= 0 || box.top >= viewport.height;
 const whollyIn = (box, viewport) => box.left >= 0 && box.top >= 0 && box.right <= viewport.width && box.bottom <= viewport.height;
 
-test("a teammate's cursor glides in from wholly off the frame onto its card, holds it as before, then heads back off the frame, fading as it goes", () => {
+test("a teammate's cursor glides onto its card, then gradually fades during a brief return toward its entry edge", () => {
 	const m = load();
 	for (const viewport of [{ width: 1920, height: 1080 }, { width: 1440, height: 900 }, { width: 1130, height: 2296 }]) {
 		const { wall, drops } = wallFor(viewport);
@@ -185,6 +207,13 @@ test("a teammate's cursor glides in from wholly off the frame onto its card, hol
 			let previous = { cursor: first, off: offCard(first, slot, from) };
 			const own = paintedBox(m, first, fit);
 			assert.ok(previous.off >= own.right - own.left, `${who} travels at least its own length onto its card`);
+			const entryOrigin = cardMiddle(slot, from);
+			const entryDirection = { x: first.x - entryOrigin.x, y: first.y - entryOrigin.y };
+			const midwayIn = at(from + 0.3, key);
+			const midwayOrigin = cardMiddle(slot, from + 0.3);
+			const midwayOffset = { x: midwayIn.x - midwayOrigin.x, y: midwayIn.y - midwayOrigin.y };
+			const approachBow = Math.abs(entryDirection.x * midwayOffset.y - entryDirection.y * midwayOffset.x) / Math.hypot(entryDirection.x, entryDirection.y);
+			assert.ok(approachBow < previous.off * 0.09, `${who} keeps the original subtle approach instead of the stronger exit arc`);
 			for (let time = from + 1 / 60; time <= touchdown - 0.05; time += 1 / 60) {
 				const cursor = at(time, key);
 				const off = offCard(cursor, slot, time);
@@ -202,7 +231,7 @@ test("a teammate's cursor glides in from wholly off the frame onto its card, hol
 				assert.ok(whollyIn(paintedBox(m, cursor, fit), viewport), `${who} holds its card wholly in the frame`);
 			}
 
-			// Leaving: as the card lands it heads away, fading only as it travels, and is gone wholly off the frame.
+			// Leaving: return toward the entry edge, with a brief visible retreat and a gradual fade.
 			const gone = edge(key, span.last + 0.1, span.last);
 			const last = at(gone, key);
 			const away = offCard(last, slot, gone);
@@ -216,7 +245,32 @@ test("a teammate's cursor glides in from wholly off the frame onto its card, hol
 				if (halfFaded === null && cursor.opacity <= 0.5) halfFaded = off;
 				previous = { cursor, off };
 			}
-			assert.ok(halfFaded !== null && halfFaded >= 0.4 * away, `${who} is well on its way out by the time it is half faded, not fading where it stood`);
+			assert.ok(halfFaded !== null && halfFaded > 0 && halfFaded < 0.3 * away, `${who} fades during a brief retreat`);
+			const earlyFade = at(touchdown + 0.05, key);
+			const middleFade = at(touchdown + 0.1, key);
+			const lateFade = at(touchdown + 0.15, key);
+			assert.ok(earlyFade.opacity > 0.7 && earlyFade.opacity < 1, `${who} remains clearly visible while starting back`);
+			assert.ok(middleFade.opacity > 0.25 && middleFade.opacity < 0.75, `${who} fades through a visible middle state`);
+			assert.ok(lateFade.opacity > 0 && lateFade.opacity < middleFade.opacity, `${who} fades smoothly toward transparent`);
+			const entryMiddle = cardMiddle(slot, from);
+			const exitMiddle = cardMiddle(slot, gone);
+			const entry = { x: first.x - entryMiddle.x, y: first.y - entryMiddle.y };
+			const returning = { x: last.x - exitMiddle.x, y: last.y - exitMiddle.y };
+			const alignment = (entry.x * returning.x + entry.y * returning.y) / (Math.hypot(entry.x, entry.y) * Math.hypot(returning.x, returning.y));
+			assert.ok(alignment > 0.99, `${who} returns toward the edge it came from`);
+			const earlyMiddle = cardMiddle(slot, touchdown + 0.05);
+			const visibleRetreat = { x: earlyFade.x - earlyMiddle.x, y: earlyFade.y - earlyMiddle.y };
+			assert.ok(Math.hypot(visibleRetreat.x, visibleRetreat.y) > 0.5 * fit, `${who} visibly starts back before fading away`);
+			const visibleAlignment = (entry.x * visibleRetreat.x + entry.y * visibleRetreat.y) / (Math.hypot(entry.x, entry.y) * Math.hypot(visibleRetreat.x, visibleRetreat.y));
+			assert.ok(visibleAlignment > 0.7, `${who} retreats toward its entry side while still visible`);
+			const lateMiddle = cardMiddle(slot, touchdown + 0.15);
+			const lateRetreat = { x: lateFade.x - lateMiddle.x, y: lateFade.y - lateMiddle.y };
+			const returnBow = Math.abs(entry.x * lateRetreat.y - entry.y * lateRetreat.x) / Math.hypot(entry.x, entry.y);
+			assert.ok(returnBow > away * 0.02, `${who} follows a visible arc back while fading`);
+			const fadeEnd = touchdown + 0.2 + 1e-6;
+			const faded = at(fadeEnd, key);
+			assert.equal(faded.opacity, 0, `${who} is invisible within 200ms of release`);
+			assert.ok(offCard(faded, slot, fadeEnd) > 0 && offCard(faded, slot, fadeEnd) < 0.4 * away, `${who} only moves a short distance while visible`);
 		}
 	}
 });

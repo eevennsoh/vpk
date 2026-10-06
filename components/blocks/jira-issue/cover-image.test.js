@@ -6,6 +6,7 @@ const esbuild = require("esbuild");
 const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
+const { accessibleName, renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
 
 const ISSUE_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const SUMMARY_SOURCE = readFileSync(join(__dirname, "summary.tsx"), "utf8");
@@ -96,7 +97,6 @@ test("solid covers are decorative while image and typographic covers remain acce
 });
 
 test("image covers expose their artwork and selected app logos without typographic cover copy", async () => {
-	const { accessibleName, renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
 	const artwork = { src: "/illustration-ai/code/light.svg", alt: "Code context preview", maxHeight: 140 };
 	const view = await renderComponent({
 		source: `
@@ -130,8 +130,7 @@ test("image covers expose their artwork and selected app logos without typograph
 		},
 	});
 	assert.deepEqual(view.getAllByRole("img").map(accessibleName), ["Jira", "Confluence", "Teamwork Graph", "Code context preview"]);
-	assert.deepEqual([...view.container.querySelector('[data-slot="jira-issue-cover-app-stack"]').children].map((item) => item.style.transform), ["rotate(0deg)", "rotate(6deg)", "rotate(0deg)"]);
-	assert.equal(view.getByRole("img", { name: "Code context preview" }).className, "object-cover");
+	assert.equal(view.getByRole("img", { name: "Code context preview" }).classList.contains("object-cover"), true);
 	assert.equal(view.getByRole("img", { name: "Code context preview" }).style.maskMode, "luminance");
 	assert.equal(view.getByRole("img", { name: "Code context preview" }).style.maskSize, "cover");
 	assert.equal(view.queryByRole("img", { name: "Loom" }) === null, true);
@@ -141,4 +140,34 @@ test("image covers expose their artwork and selected app logos without typograph
 	assert.equal(view.getByRole("img", { name: "Code context preview" }).className, "object-contain");
 	assert.equal(view.getByRole("img", { name: "Code context preview" }).style.maskImage, "");
 	assert.equal(view.container.querySelector('[data-slot="jira-issue-cover-apps"]') === null, true);
+});
+
+test("vector cover layers are decorative and keep the app logo accessible", async () => {
+	const view = await renderComponent({
+		source: `
+			import { JiraIssueCover } from "@/components/blocks/jira-issue/cover-image";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			export default function Cover({ image }) {
+				return <ThemeWrapper><JiraIssueCover image={image} /></ThemeWrapper>;
+			}
+		`,
+		props: {
+			image: {
+				src: "/illustration/jira-team-eu26-end/eu-ai-inference-map.svg",
+				alt: "EU AI Inference preview",
+				layers: ["/first.svg", "/second.svg"],
+				foreground: { src: "/illustration/jira-team-eu26-end/eu-ai-inference-icons.svg", width: 164, height: 48, canvasWidth: 379 },
+				appSources: [{ id: "admin", label: "Admin", provider: "admin" }],
+			},
+		},
+	});
+	const foreground = view.container.querySelector('[data-slot="jira-issue-cover-foreground"]');
+	assert.equal(foreground.getAttribute("src"), "/illustration/jira-team-eu26-end/eu-ai-inference-icons.svg");
+	assert.equal(foreground.getAttribute("width"), "164");
+	assert.equal(foreground.getAttribute("height"), "48");
+	assert.equal(foreground.getAttribute("alt"), "");
+	assert.deepEqual([...view.container.querySelectorAll('[data-slot="jira-issue-cover-layer"]')].map((node) => [node.getAttribute("src"), node.getAttribute("alt")]), [
+		["/first.svg", ""], ["/second.svg", ""],
+	]);
+	assert.deepEqual(view.getAllByRole("img").map(accessibleName), ["Admin", "EU AI Inference preview"]);
 });

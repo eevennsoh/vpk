@@ -23,28 +23,27 @@ function perFrame<T>(compute: (time: number) => T): (time: number) => T {
 	};
 }
 
-const NO_RIPPLES: readonly FinaleFieldRipple[] = [];
-
 interface FinaleWallAccentsProps {
 	readonly wall: FinaleWall;
 	readonly drops: readonly BentoDrop[];
 	readonly fit: FinaleFit;
 	readonly viewport: FinaleViewport;
-	/** The Done cards' print shapes: each of a print slot's cards glows, pulses and is held on its own. */
+	/** The Done cards' print shapes: each of a print slot's cards glows and is held on its own. */
 	readonly prints: WallPrintShapes;
 }
 
 /**
  * The mega bento's landing accents, as on the slide: every card that lands
  * on it — the bento's tiles and title in their gaps, then each card that
- * comes down from the leading edge — gets the border glow and the dot pulse
- * the bento's tiles got, on its rect as the wall carries it. MCB drags the
- * title into its gap, and then now and then a teammate takes a waiting card
- * and sets it down.
+ * comes down from the leading edge — gets the border glow the bento's tiles
+ * got, on its rect as the wall carries it. MCB drags the title into its gap,
+ * and then now and then a teammate takes a waiting card and sets it down.
+ * Cards that build their content after landing also pulse the dot lattice;
+ * captured cards and the already-built bento cards skip that reveal.
  *
  * The accents were authored for the bento's tiles; on the wall's smaller ones
- * the bloom, smoke, lattice and rings shrink with the wall's type scale, so
- * they read in proportion. The glow's core stays the slide's hairline: thinner,
+ * the bloom and smoke shrink with the wall's type scale, so they read in
+ * proportion. The glow's core stays the slide's hairline: thinner,
  * it would fall between pixels and shimmer as the wall glides. The cursors
  * are drawn as the slide's, in its four colours, MCB's named as on the slide
  * and the rest for teammates from the avatar roster, at the stage fit, larger
@@ -59,13 +58,11 @@ export function FinaleWallAccents({ wall, drops, fit, viewport, prints }: Readon
 	const activeRef = useRef(false);
 	const { geometry } = wall;
 
-	// The glow and the dot pulse share one reading of the landings each frame.
 	const landingsAt = useMemo(() => perFrame((time) => wallLandingsAt(time, wall, drops, prints)), [wall, drops, prints]);
 	const ripplesAt = useMemo(
-		() => perFrame((time): readonly FinaleFieldRipple[] => {
-			const landings = landingsAt(time);
-			return landings.length === 0 ? NO_RIPPLES : landings.map((landing) => ({ from: landing.rect, start: landing.touchdown, amp: 1, radius: landing.radius }));
-		}),
+		() => perFrame((time): readonly FinaleFieldRipple[] => landingsAt(time)
+			.filter((landing) => landing.revealStart !== null)
+			.map((landing) => ({ from: landing.rect, start: landing.touchdown, amp: 1, radius: landing.radius }))),
 		[landingsAt],
 	);
 	const cursorsAt = useMemo(() => perFrame((time) => wallCursorsAt(time, wall, drops, viewport, prints)), [wall, drops, viewport, prints]);
