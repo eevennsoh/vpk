@@ -8,7 +8,11 @@ const dir = __dirname;
 const { outputFiles } = buildSync({
 	stdin: {
 		contents: `
-			export { inspectPhysics, inspectAttachment, pose } from ${JSON.stringify(path.join(dir, "renderer/physics.ts"))};
+			export { hasSimulation, inspectPhysics, inspectAttachment, pose, primeSimulation, simulate } from ${JSON.stringify(path.join(dir, "renderer/physics.ts"))};
+			export { primeLanyardPhysics } from ${JSON.stringify(path.join(dir, "renderer/prime-lanyard-physics.ts"))};
+			export { createPrimedSwing } from ${JSON.stringify(path.join(dir, "renderer/primed-swing.ts"))};
+			export { hardwareDetail, hardwareMesh } from ${JSON.stringify(path.join(dir, "renderer/hardware.ts"))};
+			export { attachment } from ${JSON.stringify(path.join(dir, "renderer/physics.ts"))};
 			export { duration, dimensions } from ${JSON.stringify(path.join(dir, "renderer/constants.ts"))};
 			export { LanyardPlayer } from ${JSON.stringify(path.join(dir, "lanyard-player.ts"))};
 			export { LANYARD_3D_PROFILES, LANYARD_3D_AGENTS, LANYARD_3D_ASSETS } from ${JSON.stringify(path.join(dir, "data.ts"))};
@@ -16,8 +20,10 @@ const { outputFiles } = buildSync({
 		resolveDir: process.cwd(), loader: "ts",
 	},
 	bundle: true, platform: "node", format: "cjs", write: false,
+	// Lets `new Worker(new URL(...))` resolve, so a test can stand a worker in.
+	define: { "import.meta.url": JSON.stringify("file:///lanyard-3d-test/") },
 });
-const { inspectPhysics, inspectAttachment, pose, duration, dimensions, LanyardPlayer, LANYARD_3D_PROFILES, LANYARD_3D_AGENTS, LANYARD_3D_ASSETS } = loadCjsModuleFromText(outputFiles[0].text, path.join(dir, "index.ts"));
+const { hasSimulation, inspectPhysics, inspectAttachment, pose, primeSimulation, simulate, primeLanyardPhysics, createPrimedSwing, hardwareDetail, hardwareMesh, attachment, duration, dimensions, LanyardPlayer, LANYARD_3D_PROFILES, LANYARD_3D_AGENTS, LANYARD_3D_ASSETS } = loadCjsModuleFromText(outputFiles[0].text, path.join(dir, "index.ts"));
 
 /** rAF stand-in that cancels by id, like the browser, so a leaked second loop stays visible. */
 function fakeFrames() {
@@ -57,6 +63,42 @@ test("both cards turn about one hole axis without crossing", () => {
 test("the lanyard settles to rest facing the audience", () => {
 	const rest = pose(duration, 1);
 	assert.ok(Math.abs(rest.yaw) < 1 && Math.abs(rest.angle) < 1, `settled yaw ${rest.yaw}, roll ${rest.angle}`);
+});
+
+test("a drop simulated elsewhere is drawn as handed in, never simulated again here", () => {
+	// A worker's result for swing 0.37, stood in for by swing 1's physics carried 1000 to the right.
+	const source = simulate(1);
+	const data = new Float32Array(source.data);
+	for (let index = 0; index < data.length; index += 3) data[index] += 1000;
+	primeSimulation(0.37, { ...source, data });
+	for (const time of [0, 1.5, 4]) assert.ok(Math.abs(pose(time, 0.37).x - pose(time, 1).x - 1000) < 1e-3, `primed physics drawn at ${time}s`);
+});
+
+test("without a worker, priming still settles, leaving each swing to its first draw", async () => {
+	assert.equal(typeof globalThis.Worker, "undefined");
+	await primeLanyardPhysics([0.6, 0.6]);
+});
+
+test("a small render tessellates the clasp coarser, a full-size one exactly as before", () => {
+	assert.equal(hardwareDetail(2.7), 1, "the block's own stage");
+	assert.equal(hardwareDetail(1.5), 1);
+	assert.equal(hardwareDetail(0.93), 0.5);
+	assert.equal(hardwareDetail(0.68), 1 / 3, "a mega bento tile");
+	const p = pose(3.3, 1), a = attachment(3.3, 1, p, 15), metal = { width: 2, height: 2 };
+	const clasp = (detail) => { const faces = []; hardwareMesh(faces, metal, a.origin, p.body, detail); return faces; };
+	const bounds = (faces) => { const xs = faces.flatMap((face) => face.v.map((v) => v.x)), ys = faces.flatMap((face) => face.v.map((v) => v.y)); return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]; };
+	const full = clasp(1);
+	assert.equal(full.length, 37088, "full detail keeps every triangle it had");
+	let previous = full.length;
+	for (const detail of [0.5, 1 / 3]) {
+		const faces = clasp(detail);
+		assert.ok(faces.length < previous * 0.5, `detail ${detail}: ${faces.length} triangles`);
+		previous = faces.length;
+		assert.ok(faces.every((face) => face.v.every((v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z))), `detail ${detail} stays finite`);
+		// Same silhouette: its extent matches full detail's to within a unit (a wall tile's pixel is about 1.5).
+		bounds(faces).forEach((edge, index) => assert.ok(Math.abs(edge - bounds(full)[index]) < 1, `detail ${detail} edge ${index}: ${edge} vs ${bounds(full)[index]}`));
+	}
+	assert.ok(previous < full.length * 0.2, "a wall tile draws under a fifth of the clasp");
 });
 
 test("every format is a real aspect ratio", () => {
@@ -151,4 +193,101 @@ test("under reduced motion, play, replay and loop settle without animating", () 
 	}
 	player.seek(2);
 	assert.equal(player.getSnapshot().time, 2, "scrubbing still works");
+});
+
+/* ─── A Swing change never simulates on the main thread ───────────────── */
+
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+/** A worker stand-in for `createPrimedSwing`: each ask waits for `land()`, which primes its swings (or none, as a failed worker). */
+function standInPrime(source) {
+	const asks = [];
+	const prime = (swings) => new Promise((resolve) => asks.push({
+		swings,
+		land(failed = false) {
+			if (!failed) for (const swing of swings) primeSimulation(swing, { ...source });
+			resolve();
+		},
+	}));
+	return { asks, prime };
+}
+
+test("dragging Swing draws the last simulated swing while a worker simulates the newest, one at a time", async () => {
+	const worker = standInPrime(simulate(1));
+	let landed = 0;
+	const swing = createPrimedSwing(0.81, () => { landed += 1; }, worker.prime);
+	assert.deepEqual(worker.asks.map((ask) => ask.swings), [[0.81]], "the first swing is simulated before the stage draws");
+	worker.asks[0].land();
+	await swing.ready;
+	assert.equal(swing.current(), 0.81);
+	for (const value of [0.82, 0.83, 0.84]) {
+		swing.want(value);
+		assert.ok(hasSimulation(swing.current()), `still drawable at ${value}`);
+	}
+	assert.deepEqual(worker.asks.map((ask) => ask.swings), [[0.81], [0.82]], "one simulation at a time");
+	assert.equal(swing.current(), 0.81, "keeps drawing the last swing whose physics is in");
+	worker.asks[1].land();
+	await flush();
+	assert.equal(swing.current(), 0.82, "shows the nearer one as it lands");
+	assert.deepEqual(worker.asks[2].swings, [0.84], "skips the swings passed on the way");
+	assert.ok(hasSimulation(swing.current()));
+	worker.asks[2].land();
+	await flush();
+	assert.equal(swing.current(), 0.84);
+	assert.equal(landed, 3, "a redraw for each swing that landed");
+	swing.dispose();
+});
+
+test("a swing whose physics is kept is drawn at once, with nothing simulated", async () => {
+	primeSimulation(0.85, { ...simulate(1) });
+	const worker = standInPrime(simulate(1));
+	const swing = createPrimedSwing(0.85, () => assert.fail("nothing to land"), worker.prime);
+	await swing.ready;
+	assert.equal(worker.asks.length, 0);
+	assert.equal(swing.current(), 0.85);
+});
+
+test("without a worker, the swing asked for is drawn anyway, simulated on its first draw as before", async () => {
+	const worker = standInPrime(simulate(1));
+	let landed = 0;
+	const swing = createPrimedSwing(0.86, () => { landed += 1; }, worker.prime);
+	worker.asks[0].land(true);
+	await swing.ready;
+	assert.equal(hasSimulation(0.86), false);
+	assert.equal(swing.current(), 0.86);
+	assert.equal(landed, 1);
+});
+
+test("the physics cache drops the least recently drawn swing, never the one on screen", () => {
+	const source = simulate(1);
+	for (const swing of [0.91, 0.92, 0.93]) primeSimulation(swing, { ...source });
+	pose(2, 0.91);
+	primeSimulation(0.94, { ...source });
+	assert.equal(hasSimulation(0.91), true, "drawn last, so kept");
+	assert.equal(hasSimulation(0.92), false, "least recently drawn, so dropped");
+});
+
+test("priming simulates a swing the cache has dropped again, and a kept one not at all", async () => {
+	const source = simulate(1);
+	const asked = [];
+	globalThis.Worker = class StandInWorker {
+		postMessage(message) {
+			asked.push(...message.amounts);
+			setImmediate(() => { for (const amount of message.amounts) this.onmessage({ data: { amount, simulation: { ...source } } }); });
+		}
+		terminate() {}
+	};
+	try {
+		await primeLanyardPhysics([0.95]);
+		assert.deepEqual(asked, [0.95]);
+		await primeLanyardPhysics([0.95, 0.95]);
+		assert.deepEqual(asked, [0.95], "kept: nothing to simulate");
+		for (const swing of [0.96, 0.97, 0.98]) primeSimulation(swing, { ...source });
+		assert.equal(hasSimulation(0.95), false);
+		await primeLanyardPhysics([0.95]);
+		assert.deepEqual(asked, [0.95, 0.95], "dropped: simulated again rather than drawn on the main thread");
+		assert.equal(hasSimulation(0.95), true);
+	} finally {
+		delete globalThis.Worker;
+	}
 });

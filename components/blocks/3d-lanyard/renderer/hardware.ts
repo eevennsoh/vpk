@@ -30,8 +30,19 @@ interface CastOptions {
 	profile?: (p: { x: number; y: number }) => number;
 }
 
-let hookGeometry: MetalFace[] | undefined;
-export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec3, axes: Axes) {
+/**
+ * How finely to tessellate the hardware for a stage drawn at `scale` canvas
+ * pixels per unit. Full detail suits the block's own stage; a small render (a
+ * wall tile's clasp is a few dozen pixels tall) gets a third of the segments
+ * each way, about a ninth of the triangles, none of them visible as facets.
+ * The clasp is most of the lanyard's triangles and of each frame's work.
+ */
+export function hardwareDetail(scale: number): number {
+	return scale >= 1.5 ? 1 : scale >= .75 ? .5 : 1 / 3;
+}
+
+const hookGeometries = new Map<number, MetalFace[]>();
+export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec3, axes: Axes, detail = 1) {
 	const uv = [{x:0,y:0},{x:2,y:0},{x:2,y:2},{x:0,y:2}];
 	const light = normalize({x:-.65,y:-.8,z:1}), half = normalize({x:-.45,y:-.4,z:1});
 	function world(v: Vec3): Vec3 { const r = transform(v, axes); return {x:origin.x+r.x,y:origin.y+r.y,z:origin.z+r.z}; }
@@ -41,14 +52,17 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 		pushQuad(list, material, quad.map(world), uv, (1-luminance)/.92,
 			(normals || [normal, normal, normal, normal]).map((v) => transform(v, axes)));
 	}
-	if (hookGeometry) {
-		for (const face of hookGeometry) renderMetal(face.quad, face.normal, face.normals);
+	const known = hookGeometries.get(detail);
+	if (known) {
+		for (const face of known) renderMetal(face.quad, face.normal, face.normals);
 		return;
 	}
 	const geometry: MetalFace[] = [];
+	// A segment count at this detail, never below `least`.
+	const seg = (count: number, least: number) => Math.max(least, Math.round(count * detail));
 	// quad: four local points; normal: face normal; normals: optional per-vertex normals.
 	function metal(quad: Vec3[], normal: Vec3, normals?: Vec3[]) { geometry.push({quad, normal, normals}); renderMetal(quad, normal, normals); }
-	function smooth(points: Vec3[], perSegment = 6): Vec3[] {
+	function smooth(points: Vec3[], perSegment = seg(6, 2)): Vec3[] {
 		const result: Vec3[] = [];
 		for (let i = 0; i < points.length - 1; i++) {
 			const a=points[Math.max(0,i-1)], b=points[i], c=points[i+1], d=points[Math.min(points.length-1,i+2)];
@@ -61,7 +75,7 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 		result.push(points.at(-1)!); return result;
 	}
 	function tube(points: Vec3[], radius: number | ((p: Vec3) => number), smoothPath = true) {
-		const path = smoothPath ? smooth(points) : points, rings: { n: Vec3; v: Vec3 }[][]=[];
+		const path = smoothPath ? smooth(points) : points, rings: { n: Vec3; v: Vec3 }[][]=[], around=seg(24, 6);
 		let frame: Vec3 | undefined;
 		for(let i=0;i<path.length;i++) {
 			const tangent=normalize(subtract(path[Math.min(path.length-1,i+1)],path[Math.max(0,i-1)]));
@@ -72,19 +86,19 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 			const a=frame?normalize({x:frame.x-tangent.x*along,y:frame.y-tangent.y*along,z:frame.z-tangent.z*along}):normalize(cross(tangent,reference));
 			const b=normalize(cross(tangent,a));frame=a;
 			const thickness = typeof radius === 'function' ? radius(path[i]) : radius;
-			rings.push(Array.from({length:24},(_,j)=>{
-				const theta=j/24*Math.PI*2,n={x:a.x*Math.cos(theta)+b.x*Math.sin(theta),y:a.y*Math.cos(theta)+b.y*Math.sin(theta),z:a.z*Math.cos(theta)+b.z*Math.sin(theta)};
+			rings.push(Array.from({length:around},(_,j)=>{
+				const theta=j/around*Math.PI*2,n={x:a.x*Math.cos(theta)+b.x*Math.sin(theta),y:a.y*Math.cos(theta)+b.y*Math.sin(theta),z:a.z*Math.cos(theta)+b.z*Math.sin(theta)};
 				return {n,v:{x:path[i].x+n.x*thickness,y:path[i].y+n.y*thickness,z:path[i].z+n.z*thickness}};
 			}));
 		}
-		for(let i=0;i<rings.length-1;i++) for(let j=0;j<24;j++) {
-			const k=(j+1)%24, ns=[rings[i][j].n,rings[i][k].n,rings[i+1][k].n,rings[i+1][j].n];
+		for(let i=0;i<rings.length-1;i++) for(let j=0;j<around;j++) {
+			const k=(j+1)%around, ns=[rings[i][j].n,rings[i][k].n,rings[i+1][k].n,rings[i+1][j].n];
 			const normal=normalize(ns.reduce((r,n)=>({x:r.x+n.x,y:r.y+n.y,z:r.z+n.z}),{x:0,y:0,z:0}));
 			metal([rings[i][j].v,rings[i][k].v,rings[i+1][k].v,rings[i+1][j].v],normal,ns);
 		}
 		if(Math.hypot(...AXES.map((k)=>path[0][k]-path.at(-1)![k]))>.1)for(const end of [0,path.length-1]) {
 			const normal=normalize(subtract(path[end],path[end===0?1:end-1]));
-			for(let j=0;j<24;j++)metal([path[end],rings[end][j].v,rings[end][(j+1)%24].v,path[end]],normal);
+			for(let j=0;j<around;j++)metal([path[end],rings[end][j].v,rings[end][(j+1)%around].v,path[end]],normal);
 		}
 	}
 	const pts = (values: number[][]): Vec3[] => values.map(([x,y,z=0])=>({x,y,z}));
@@ -93,36 +107,38 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 	// The entire ring lies in one plane; its upper bar sits inside the fabric.
 	const hardwareStroke=1.3;
 	const ringSections: { n: Vec3; v: Vec3 }[][]=[], halfBar=24, bendRadius=15.9, ringY=-14, ringZ=-3, wireRadius=3.6*hardwareStroke;
-	const section=(x: number,y: number,nx: number,ny: number)=>ringSections.push(Array.from({length:32},(_,j)=>{
-		const a=j/32*Math.PI*2,n={x:nx*Math.cos(a),y:ny*Math.cos(a),z:Math.sin(a)};
+	const wireAround=seg(32, 6), bar=seg(8, 2), bend=seg(32, 6);
+	const section=(x: number,y: number,nx: number,ny: number)=>ringSections.push(Array.from({length:wireAround},(_,j)=>{
+		const a=j/wireAround*Math.PI*2,n={x:nx*Math.cos(a),y:ny*Math.cos(a),z:Math.sin(a)};
 		return {n,v:{x:x+n.x*wireRadius,y:y+n.y*wireRadius,z:ringZ+n.z*wireRadius}};
 	}));
-	for(let i=0;i<8;i++)section(-halfBar+2*halfBar*i/8,ringY-bendRadius,0,-1);
-	for(let i=0;i<32;i++){
-		const a=-Math.PI/2+i/32*Math.PI;
+	for(let i=0;i<bar;i++)section(-halfBar+2*halfBar*i/bar,ringY-bendRadius,0,-1);
+	for(let i=0;i<bend;i++){
+		const a=-Math.PI/2+i/bend*Math.PI;
 		section(halfBar+bendRadius*Math.cos(a),ringY+bendRadius*Math.sin(a),Math.cos(a),Math.sin(a));
 	}
-	for(let i=0;i<8;i++)section(halfBar-2*halfBar*i/8,ringY+bendRadius,0,1);
-	for(let i=0;i<32;i++){
-		const a=Math.PI/2+i/32*Math.PI;
+	for(let i=0;i<bar;i++)section(halfBar-2*halfBar*i/bar,ringY+bendRadius,0,1);
+	for(let i=0;i<bend;i++){
+		const a=Math.PI/2+i/bend*Math.PI;
 		section(-halfBar+bendRadius*Math.cos(a),ringY+bendRadius*Math.sin(a),Math.cos(a),Math.sin(a));
 	}
-	for(let i=0;i<ringSections.length;i++)for(let j=0;j<32;j++){
-		const next=ringSections[(i+1)%ringSections.length],here=ringSections[i],k=(j+1)%32;
+	for(let i=0;i<ringSections.length;i++)for(let j=0;j<wireAround;j++){
+		const next=ringSections[(i+1)%ringSections.length],here=ringSections[i],k=(j+1)%wireAround;
 		const vertices=[here[j],here[k],next[k],next[j]],normals=vertices.map(v=>v.n);
 		metal(vertices.map(v=>v.v),normalize(normals.reduce((s,n)=>({x:s.x+n.x,y:s.y+n.y,z:s.z+n.z}),{x:0,y:0,z:0})),normals);
 	}
 	// Three rounded collars and a narrower axle form the stepped swivel.
 	const profile=smooth(pts([[-10,0],[-10,8],[-9.5,10],[-8,10.7],[-4.5,10.7],[-3,10],
 		[-2.5,13],[-1,14.8],[0,15.2],[6,15.2],[7.5,14],[8,9],
-		[10.5,9],[11,13],[12,14.2],[15.5,14.2],[17,13],[18,10],[20,10],[20,0]]),3).map(p=>[p.x,Math.max(0,p.y)]);
-	for(let i=0;i<profile.length-1;i++) for(let j=0;j<40;j++) {
-		const a=j/40*Math.PI*2,b=(j+1)/40*Math.PI*2,[y0,r0]=profile[i],[y1,r1]=profile[i+1];
+		[10.5,9],[11,13],[12,14.2],[15.5,14.2],[17,13],[18,10],[20,10],[20,0]]),seg(3, 1)).map(p=>[p.x,Math.max(0,p.y)]);
+	const swivelAround=seg(40, 8);
+	for(let i=0;i<profile.length-1;i++) for(let j=0;j<swivelAround;j++) {
+		const a=j/swivelAround*Math.PI*2,b=(j+1)/swivelAround*Math.PI*2,[y0,r0]=profile[i],[y1,r1]=profile[i+1];
 		const normal=(t: number,q=i)=>{const [ya,ra]=profile[Math.max(0,q-1)],[yb,rb]=profile[Math.min(profile.length-1,q+1)];return normalize({x:Math.cos(t)*(yb-ya),y:ra-rb,z:Math.sin(t)*(yb-ya)});};
 		metal([{x:r0*Math.cos(a),y:y0,z:r0*Math.sin(a)},{x:r0*Math.cos(b),y:y0,z:r0*Math.sin(b)},
 			{x:r1*Math.cos(b),y:y1,z:r1*Math.sin(b)},{x:r1*Math.cos(a),y:y1,z:r1*Math.sin(a)}],normal((a+b)/2),[normal(a,i),normal(b,i),normal(b,i+1),normal(a,i+1)]);
 	}
-	function closedContour(points: Vec3[], subdivisions=5) {
+	function closedContour(points: Vec3[], subdivisions=seg(5, 2)) {
 		const c=smooth([points.at(-1)!,...points,points[0],points[1]],subdivisions);
 		return c.slice(subdivisions,-subdivisions-1);
 	}
@@ -144,8 +160,8 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 	// A flared casting with a concave lower arch and a real through-hole.
 	// Radial strips triangulate around the opening without covering it.
 	const outline=closedContour(pts([[-10,18],[10,18],[12,27],[17,46],[22,61],
-		[17,60],[10,55],[0,52],[-10,55],[-17,62],[-21,60],[-18,46],[-13,27]]),8);
-	const center={x:0,y:43},N=128,hole=3.45,bevel=1.35;
+		[17,60],[10,55],[0,52],[-10,55],[-17,62],[-21,60],[-18,46],[-13,27]]),seg(8, 3));
+	const center={x:0,y:43},N=seg(128, 24),hole=3.45,bevel=1.35;
 	const outside: Vec3[]=[];
 	for(let i=0;i<N;i++) {
 		const theta=i/N*Math.PI*2,dx=Math.cos(theta),dy=Math.sin(theta);let distance=Infinity;
@@ -178,14 +194,14 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 	}
 	// Raised rolled rims on the casting's small circular opening.
 	for(const side of [-1,1]) {
-		const circle=Array.from({length:65},(_,i)=>({x:4.55*Math.cos(i/64*Math.PI*2),y:43+4.55*Math.sin(i/64*Math.PI*2),z:side*7.2}));
+		const rim=seg(64, 12), circle=Array.from({length:rim+1},(_,i)=>({x:4.55*Math.cos(i/rim*Math.PI*2),y:43+4.55*Math.sin(i/rim*Math.PI*2),z:side*7.2}));
 		tube(circle,.85,false);
 	}
 	// The jaw has an exact circular lower outline and a tangent upper rail.
 	// Sweep a round section in that outline's plane, then bend its depth through
 	// the two holes. This preserves the smooth cast silhouette at the return.
 	function castTube(path: CastPoint[], radius: number, depth: (x: number, y: number) => number, options: CastOptions={}) {
-		const count=32,distances=[0];
+		const count=seg(32, 8),mitre=seg(8, 2),distances=[0];
 		for(let i=1;i<path.length;i++)distances.push(distances.at(-1)!+Math.hypot(path[i].x-path[i-1].x,path[i].y-path[i-1].y));
 		const length=distances.at(-1)!,bevel=.75;
 		function frame(s: number) {
@@ -211,15 +227,15 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 		}
 		const rings: Vec3[][]=[];
 		// Rounded, matching mitres replace the square ends of the spring gate.
-		if(options.startCut)for(let i=8;i>0;i--){
-			const a=i/8*Math.PI/2,r=radius-bevel+bevel*Math.cos(a);
+		if(options.startCut)for(let i=mitre;i>0;i--){
+			const a=i/mitre*Math.PI/2,r=radius-bevel+bevel*Math.cos(a);
 			rings.push(Array.from({length:count},(_,j)=>point(boundary(options.startCut,j,r,true)+bevel*(1-Math.sin(a)),j,r)));
 		}
 		const starts=Array.from({length:count},(_,j)=>boundary(options.startCut,j,radius,true)+(options.startCut?bevel:0));
 		const ends=Array.from({length:count},(_,j)=>boundary(options.endCut,j,radius,false)-(options.endCut?bevel:0));
 		for(let i=0;i<path.length;i++)rings.push(Array.from({length:count},(_,j)=>point(starts[j]+(ends[j]-starts[j])*i/(path.length-1),j,radius)));
-		if(options.endCut)for(let i=1;i<=8;i++){
-			const a=i/8*Math.PI/2,r=radius-bevel+bevel*Math.cos(a);
+		if(options.endCut)for(let i=1;i<=mitre;i++){
+			const a=i/mitre*Math.PI/2,r=radius-bevel+bevel*Math.cos(a);
 			rings.push(Array.from({length:count},(_,j)=>point(boundary(options.endCut,j,r,false)-bevel*(1-Math.sin(a)),j,r)));
 		}
 		const normals=rings.map((ring,i)=>ring.map((v,j)=>{
@@ -241,7 +257,7 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 			for(let j=0;j<count;j++)metal([center,rings[end][j],rings[end][(j+1)%count],center],normal);
 		}
 	}
-	function bezierRail(a: number[],b: number[],c: number[],d: number[],segments=32): CastPoint[] {
+	function bezierRail(a: number[],b: number[],c: number[],d: number[],segments=seg(32, 6)): CastPoint[] {
 		return Array.from({length:segments+1},(_,i)=>{
 			const t=i/segments,u=1-t;
 			const x=u*u*u*a[0]+3*u*u*t*b[0]+3*u*t*t*c[0]+t*t*t*d[0];
@@ -254,8 +270,9 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 	const jawRadius=27,jawY=88.5,arcStart=-.28,arcEnd=Math.PI+.36,closureAngle=Math.PI+.12;
 	const join=[jawRadius*Math.cos(arcStart),jawY+jawRadius*Math.sin(arcStart)];
 	const jaw=bezierRail([10,19],[13,34],[join[0]+Math.sin(arcStart)*11,join[1]-Math.cos(arcStart)*11],join);
-	for(let i=1;i<=128;i++){
-		const a=arcStart+(arcEnd-arcStart)*i/128;
+	const arc=seg(128, 16);
+	for(let i=1;i<=arc;i++){
+		const a=arcStart+(arcEnd-arcStart)*i/arc;
 		jaw.push({x:jawRadius*Math.cos(a),y:jawY+jawRadius*Math.sin(a),nx:Math.cos(a),ny:Math.sin(a)});
 	}
 	const ease=(t: number)=>{t=clamp(t,0,1);return t*t*(3-2*t);};
@@ -272,7 +289,7 @@ export function hardwareMesh(list: Face[], material: LanyardSurface, origin: Vec
 	solidBody(pts([[17,43],[27,46],[37,49],[41,53],[41,57],[37,61],[31,61],[22,58]]),-3.5,3.5,1.4);
 	// Pivot axle and spring visible from oblique/side views.
 	tube(pts([[14,48,-8.5],[14,48,8.5]]),2.6,false);
-	const spring=Array.from({length:81},(_,i)=>({x:14+2*Math.cos(i/80*Math.PI*10),y:32+i/80*10,z:2*Math.sin(i/80*Math.PI*10)}));
+	const coil=seg(80, 20), spring=Array.from({length:coil+1},(_,i)=>({x:14+2*Math.cos(i/coil*Math.PI*10),y:32+i/coil*10,z:2*Math.sin(i/coil*Math.PI*10)}));
 	tube(spring,.65,false);
-	hookGeometry = geometry;
+	hookGeometries.set(detail, geometry);
 }

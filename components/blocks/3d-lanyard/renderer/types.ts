@@ -53,6 +53,12 @@ export interface LanyardConfig extends CardContent {
 	background: string;
 	format: LanyardFormat;
 	swing: number;
+	/**
+	 * The swing the stage is framed for; defaults to `swing`. Pin it to the
+	 * largest swing a sequence of drops uses and the card keeps one size while
+	 * each drop's swing varies.
+	 */
+	framingSwing?: number;
 	revealAngle: number;
 	backCard: AgentCardArt;
 	backCardTheme: CardTheme;
@@ -81,6 +87,17 @@ export interface Pose {
 	body: Axes;
 	collar: Axes;
 	ropes: Vec3[][];
+}
+
+/** Asks `physics.worker.ts` to simulate these swing amounts. */
+export interface PhysicsRequest {
+	amounts: readonly number[];
+}
+
+/** One simulated swing amount, as `physics.worker.ts` posts it back. */
+export interface PhysicsResult {
+	amount: number;
+	simulation: Simulation;
 }
 
 export interface Simulation {

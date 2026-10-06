@@ -67,6 +67,31 @@ test("the wall has three varied chapter word tiles separated by product content"
 	}
 });
 
+test("three 3:4 lanyard tiles hang from the top edge through every period, evenly spaced, never two in frame at once", () => {
+	for (const viewport of VIEWPORTS) {
+		const { m, wall, geometry } = sceneFor(viewport);
+		const lanyards = wall.items.filter((slot) => slot.content.kind === "lanyard").sort((a, b) => a.rect.x - b.rect.x);
+		assert.equal(lanyards.length, m.WALL_LANYARDS.count);
+		const scale = geometry.typeScale / 0.3;
+		// The first hangs just past the opening frame, clear of the keynote gaps, so it glides in.
+		assert.ok(lanyards[0].rect.x >= viewport.width, `${viewport.width}: first lanyard at ${lanyards[0].rect.x}`);
+		for (const slot of lanyards) {
+			// Its top corners sit just above the frame, so the strap's straight cut is the frame's own edge.
+			assert.equal(slot.rect.y, -geometry.radius, slot.key);
+			assert.ok(close(slot.rect.width, m.WALL_LANYARDS.width * scale), slot.key);
+			assert.ok(close(slot.rect.height, m.WALL_LANYARDS.height * scale), slot.key);
+			assert.ok(close(slot.rect.width / slot.rect.height, 3 / 4), slot.key);
+		}
+		// Neighbours (round the seam too) never share the frame, and no stretch of the loop goes much longer than its share without one.
+		const centres = lanyards.map((slot) => slot.rect.x + slot.rect.width / 2);
+		const spacings = centres.map((centre, index) => (index === 0 ? centre + wall.periodWidth - centres.at(-1) : centre - centres[index - 1]));
+		for (const spacing of spacings) {
+			assert.ok(spacing >= viewport.width + lanyards[0].rect.width, `${viewport.width}: lanyards ${Math.round(spacing)}px apart`);
+			assert.ok(spacing <= (wall.periodWidth / lanyards.length) * 1.2, `${viewport.width}: a ${Math.round(spacing)}px stretch without a lanyard`);
+		}
+	}
+});
+
 test("the mega bento contains no standalone presenter portraits or facepiles", () => {
 	const { wall } = sceneFor(VIEWPORTS[1]);
 	assert.equal(wall.items.some((slot) => slot.content.kind === "shape"), false);
@@ -156,7 +181,9 @@ test("no items overlap, including the repeat seam, and the wall retains its vert
 		const items = [...wall.items, ...next];
 		for (let a = 0; a < items.length; a += 1) {
 			const rect = items[a].rect;
-			assert.ok(rect.y >= geometry.gutter - 1e-6 && rect.y + rect.height <= viewport.height - geometry.gutter + 1e-6);
+			// A lanyard tile hangs from the top edge (its strap is cut straight there); every other card keeps the margins.
+			const top = items[a].content.kind === "lanyard" ? -geometry.radius : geometry.gutter;
+			assert.ok(rect.y >= top - 1e-6 && rect.y + rect.height <= viewport.height - geometry.gutter + 1e-6, items[a].key);
 			for (let b = a + 1; b < items.length; b += 1) assert.equal(overlaps(rect, items[b].rect, geometry.gutter), false, `${items[a].key} and ${items[b].key}`);
 		}
 	}
@@ -191,8 +218,8 @@ test("every story is dealt once, as a featured tile or a print, and drag order s
 	assert.deepEqual(printed.slice(0, expected.length), expected);
 });
 
-test("spatial buckets only index the natural rectangles, and copies repeat exactly", () => {
-	const { wall } = sceneFor(VIEWPORTS[0]);
+test("spatial buckets only index the natural rectangles, and copies repeat exactly but for the lanyards' run", () => {
+	const { m, wall } = sceneFor(VIEWPORTS[0]);
 	assert.deepEqual(sceneFor(VIEWPORTS[0]).wall.items, wall.items, "deterministic packing");
 	assert.ok(wall.items.some((slot) => !close(slot.rect.x, slot.bucket * wall.geometry.bucketWidth)), "buckets never impose a left edge");
 	for (let index = -2; index < wall.periodBuckets + 2; index += 1) {
@@ -200,7 +227,9 @@ test("spatial buckets only index the natural rectangles, and copies repeat exact
 		const next = wall.bucket(index + wall.periodBuckets);
 		assert.equal(items.length, next.length);
 		items.forEach((slot, item) => {
-			assert.deepEqual(next[item].content, slot.content);
+			// A lanyard is the one card each pass deals anew: the next copy carries its run on by a period's worth.
+			const content = slot.content.kind === "lanyard" ? { ...slot.content, order: slot.content.order + m.WALL_LANYARDS.count } : slot.content;
+			assert.deepEqual(next[item].content, content);
 			assert.ok(close(next[item].rect.x - slot.rect.x, wall.periodWidth));
 			assert.equal(next[item].rect.y, slot.rect.y);
 			assert.equal(next[item].seed, slot.seed);

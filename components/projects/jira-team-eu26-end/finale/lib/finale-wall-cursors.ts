@@ -315,6 +315,16 @@ function holdCandidate(slot: WallSlot, wall: FinaleWall): WallHold | null {
 	});
 }
 
+/**
+ * Whether a teammate could ever hold `slot`'s card: it comes down at the
+ * leading edge, and its cursor fits inside the frame before it lands. A card
+ * that comes down while still over the frame's edge never can, so a lull in
+ * drags while only such cards arrive is the wall's packing, not the planner.
+ */
+export function wallCardHoldable(slot: WallSlot, wall: FinaleWall): boolean {
+	return holdCandidate(slot, wall) !== null;
+}
+
 /** Whether two teammates' holds would get in each other's way: one lane twice at once, or two cursors near or over each other in the frame. */
 function holdsClash(a: WallHold, b: WallHold, apart: number): boolean {
 	if (a.to + LANE_REST_S <= b.from || b.to + LANE_REST_S <= a.from) return false;

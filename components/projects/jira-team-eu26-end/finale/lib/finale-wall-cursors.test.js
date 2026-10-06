@@ -13,7 +13,7 @@ export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 export { FINALE_WALL_CURSOR_NAMES } from "../data/finale-wall-cursor-names";
 export { FINALE_CURSORS, finaleCursorBox } from "./finale-cursor-path";
 export { WALL_SCALE, buildFinaleWall, wallGeometry } from "./finale-wall-layout";
-export { wallCursorsAt } from "./finale-wall-cursors";
+export { wallCardHoldable, wallCursorsAt } from "./finale-wall-cursors";
 export { arrivalCardPose, bentoDrops, slotArrivals, slotDescent, slotOnScreen, wallOffset, wallTimeAt } from "./finale-wall-motion";
 export { projectLifted } from "./finale-camera";
 export { titleCarrierGoneTime, titleReachTime } from "./finale-title-drag";
@@ -75,10 +75,12 @@ test("human drags recur regularly through the steady wall without long empty str
 		}
 		const times = [...firstSeen.values()].sort((a, b) => a - b);
 		assert.ok(times.length >= 45, `${viewport.width}: at least 27 human drags per minute (${times.length} in 100 seconds)`);
-		const arrivals = Array.from({ length: wall.periodBuckets * 2 }, (_, bucket) => wall.bucket(bucket)).flat().map((slot) => m.slotDescent(slot, wall)?.start).filter(Number.isFinite);
+		// Only cards a teammate could hold count: one that comes down still over the frame's edge never can be.
+		const arrivals = Array.from({ length: wall.periodBuckets * 2 }, (_, bucket) => wall.bucket(bucket)).flat().filter((slot) => m.wallCardHoldable(slot, wall)).map((slot) => m.slotDescent(slot, wall).start);
+		assert.ok(arrivals.length > 0, `${viewport.width}: the wall has holdable cards`);
 		for (let index = 1; index < times.length; index += 1) {
 			if (times[index] - times[index - 1] <= 8) continue;
-			assert.equal(arrivals.some((time) => time > times[index - 1] + 1 && time < times[index] - 1), false, "a longer gap only occurs when no cards arrive between the adjacent drags");
+			assert.equal(arrivals.some((time) => time > times[index - 1] + 1 && time < times[index] - 1), false, "a longer gap only occurs when no holdable cards arrive between the adjacent drags");
 		}
 	}
 });
