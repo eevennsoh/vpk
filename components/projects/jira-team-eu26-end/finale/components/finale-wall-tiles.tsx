@@ -6,7 +6,7 @@ import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-e
 
 import { CUE } from "../data/finale-cues";
 import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
-import { FINALE_STORIES, type FinaleChapterId, type FinaleStory } from "../data/finale-stories";
+import { FINALE_STORIES } from "../data/finale-stories";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FINALE_INK, applyFinaleBuild, buildAfter, finaleBuildPaint } from "../lib/finale-build-style";
 import { EASE, progress } from "../lib/finale-math";
@@ -23,8 +23,8 @@ import {
 	type WallSlot,
 	type WallStatId,
 } from "../lib/finale-wall-layout";
-import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
-import { FinaleDealt, FinaleTileLogos, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
+import { FinaleBuildSpan, useFinaleBuild } from "./finale-build-text";
+import { FinaleDealt, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
 import { FinaleTileFace } from "./finale-tile-face";
 import { WallLanyard } from "./finale-wall-lanyard";
 import { WallPieces } from "./finale-wall-pieces";
@@ -49,8 +49,6 @@ const STATUS = {
 	progress: { background: "#E9F2FE", color: "#1558BC" },
 	done: { background: "#DCFFF1", color: "#216E4E" },
 } as const;
-/** Each chapter's tint: the 200 steps of its poster's colour in the Team ’26 palette. */
-const CHAPTER_TINT: Readonly<Record<FinaleChapterId, string>> = { Context: "#DAF0AF", Collaboration: "#E9D8F8", Confidence: "#D0E1FD" };
 /** A poster's word picks up its glide over this long once it has built. */
 const POSTER_RAMP_S = 1.2;
 
@@ -140,20 +138,6 @@ function Poster({ word, fill, ink, width, height, revealStart }: Readonly<Poster
 						{word}
 					</span>
 				))}
-			</div>
-		</div>
-	);
-}
-
-/** A featured story's benefit line, set large on its chapter's tint, its products underneath. */
-function Benefit({ story, width, height, revealStart }: Readonly<{ story: FinaleStory; width: number; height: number; revealStart: number | null }>) {
-	const fontSize = Math.min(80, Math.max(52, height * 0.14), width * 0.13);
-	return (
-		<div className="absolute inset-0 flex flex-col justify-between overflow-hidden" style={{ ...SANS, background: CHAPTER_TINT[story.chapter], borderRadius: FINALE_TILE_RADIUS_CSS, padding: 40, color: FINALE_INK }}>
-			<FinaleBuildText text={story.title} start={revealStart} tracking="-0.03em" style={{ fontSize, lineHeight: 1.04, fontWeight: 500, textWrap: "balance" }} />
-			<div className="flex items-center justify-between">
-				<FinaleTileLogos sources={story.apps} revealStart={revealStart} className="origin-left scale-150" />
-				<FinaleBuildSpan text={story.chapter} start={buildAfter(revealStart, 0.45)} duration={CUE.reveal * 0.6} className="inline-block text-[28px] leading-none" />
 			</div>
 		</div>
 	);
@@ -306,8 +290,6 @@ export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot,
 				switch (content.kind) {
 					case "story":
 						return <FinaleTileFace story={content.story} slot={{ rect: { x: 0, y: 0, ...size }, short: slot.rect.height < slot.rect.width }} scale={1} revealStart={revealStart} />;
-					case "benefit":
-						return <Benefit story={content.story} {...size} revealStart={revealStart} />;
 					case "poster":
 						return <Poster word={content.word} fill={FINALE_BRAND[content.fill]} ink={FINALE_BRAND[content.ink]} {...size} revealStart={revealStart} />;
 					case "stat":
