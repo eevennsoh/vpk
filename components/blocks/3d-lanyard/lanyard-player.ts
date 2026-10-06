@@ -15,9 +15,14 @@ export class LanyardPlayer {
 	private frame = 0;
 	private last = 0;
 
+	/**
+	 * `prefersReducedMotion` is read on every play request, so a preference
+	 * change applies immediately. While it holds, play settles to the end pose.
+	 */
 	constructor(
 		readonly duration: number,
 		private readonly render: (time: number) => void,
+		private readonly prefersReducedMotion: () => boolean = () => false,
 	) {}
 
 	subscribe = (listener: () => void) => {
@@ -38,6 +43,12 @@ export class LanyardPlayer {
 	}
 
 	play() {
+		if (this.prefersReducedMotion()) {
+			this.finish();
+			return;
+		}
+		// Exactly one frame loop: a replay during playback must not start a second.
+		this.halt();
 		const time = this.state.time >= this.duration ? 0 : this.state.time;
 		this.last = 0;
 		this.set({ playing: true, time });
@@ -51,6 +62,7 @@ export class LanyardPlayer {
 	}
 
 	replay() {
+		this.halt();
 		this.set({ time: 0 });
 		this.play();
 	}

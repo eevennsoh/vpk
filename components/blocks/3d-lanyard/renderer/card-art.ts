@@ -134,7 +134,7 @@ export function drawCard(ctx: CanvasRenderingContext2D, sources: CardArtSources,
 	if (agent) {
 		// Figma's 128px badge slot includes a 4.686px vertical hexagon overhang.
 		ctx.drawImage(sources.agentImages[agent.asset], x + 116, y + 58.5 - 4.685714, 128, 137.386658);
-		if (agent.id === 'rovo') ctx.drawImage(sources.rovoMark, x + 139, y + 82, 82, 82);
+		if (agent.asset === 'rovo') ctx.drawImage(sources.rovoMark, x + 139, y + 82, 82, 82);
 	} else drawPortrait(ctx, sources, config);
 	ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 	const nameText = config.name || 'Your name', roleText = String(config.role || '').toUpperCase();

@@ -19,13 +19,15 @@ const { outputFiles } = buildSync({
 });
 const { inspectPhysics, inspectAttachment, pose, duration, dimensions, LanyardPlayer, LANYARD_3D_PROFILES, LANYARD_3D_AGENTS, LANYARD_3D_ASSETS } = loadCjsModuleFromText(outputFiles[0].text, path.join(dir, "index.ts"));
 
+/** rAF stand-in that cancels by id, like the browser, so a leaked second loop stays visible. */
 function fakeFrames() {
-	const queue = [];
-	globalThis.requestAnimationFrame = (callback) => { queue.push(callback); return queue.length; };
-	globalThis.cancelAnimationFrame = () => { queue.length = 0; };
+	const queue = new Map();
+	let nextId = 1;
+	globalThis.requestAnimationFrame = (callback) => { const id = nextId++; queue.set(id, callback); return id; };
+	globalThis.cancelAnimationFrame = (id) => { queue.delete(id); };
 	return {
-		step(now) { const next = queue.splice(0); next.forEach((callback) => callback(now)); },
-		pending: () => queue.length,
+		step(now) { const due = [...queue.values()]; queue.clear(); due.forEach((callback) => callback(now)); },
+		pending: () => queue.size,
 	};
 }
 
@@ -122,4 +124,31 @@ test("subscribers are notified with a fresh snapshot and can unsubscribe", () =>
 	unsubscribe();
 	player.seek(2);
 	assert.equal(calls, 1);
+});
+
+test("replaying mid-playback keeps exactly one frame loop", () => {
+	const frames = fakeFrames();
+	const player = new LanyardPlayer(5, () => undefined);
+	player.play();
+	frames.step(1000);
+	for (let i = 0; i < 3; i++) player.replay();
+	assert.equal(frames.pending(), 1, "repeated replays must not stack render loops");
+	frames.step(1100);
+	assert.equal(frames.pending(), 1);
+});
+
+test("under reduced motion, play, replay and loop settle without animating", () => {
+	const frames = fakeFrames();
+	const rendered = [];
+	const player = new LanyardPlayer(4, (time) => rendered.push(time), () => true);
+	for (const start of [() => player.play(), () => player.replay(), () => player.setLooping(true)]) {
+		player.seek(1);
+		start();
+		assert.equal(frames.pending(), 0, "no frame loop is scheduled");
+		assert.equal(player.getSnapshot().playing, false);
+		assert.equal(player.getSnapshot().time, 4);
+		assert.equal(rendered.at(-1), 4, "the settled pose is drawn");
+	}
+	player.seek(2);
+	assert.equal(player.getSnapshot().time, 2, "scrubbing still works");
 });

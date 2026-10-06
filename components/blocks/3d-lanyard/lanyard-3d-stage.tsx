@@ -32,7 +32,8 @@ export function Lanyard3DStage({ config, autoPlay = true, className }: Readonly<
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 		const renderer = createLanyardRenderer(canvas, LANYARD_3D_ASSETS);
-		const next = new LanyardPlayer(renderer.duration, (time) => renderer.draw(time, configRef.current));
+		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		const next = new LanyardPlayer(renderer.duration, (time) => renderer.draw(time, configRef.current), () => reducedMotion.matches);
 		let cancelled = false;
 
 		const fit = () => {
@@ -50,7 +51,7 @@ export function Lanyard3DStage({ config, autoPlay = true, className }: Readonly<
 				if (cancelled) return;
 				fit();
 				setPlayer(next);
-				if (autoPlay && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) next.play();
+				if (autoPlay) next.play();
 				else next.finish();
 			})
 			.catch(() => { if (!cancelled) setFailed(true); });
@@ -58,8 +59,11 @@ export function Lanyard3DStage({ config, autoPlay = true, className }: Readonly<
 		// The renderer is built once; config flows in through syncRef. Changes redraw the current frame and swap the portrait without restarting playback.
 		const syncConfig = (config: LanyardConfig) => {
 			configRef.current = config;
+			// setPortrait clears the previous image synchronously, so this redraw never pairs
+			// the new name with the old face; initials show until the new photo decodes.
+			const portrait = renderer.setPortrait(config.photo);
 			next.redraw();
-			renderer.setPortrait(config.photo).then(() => next.redraw(), () => next.redraw());
+			portrait.then(() => next.redraw(), () => next.redraw());
 		};
 		syncRef.current = syncConfig;
 
