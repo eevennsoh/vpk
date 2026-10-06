@@ -13,7 +13,8 @@ export function backdropDepth(faces: Face[]) {
 	return z;
 }
 
-export function makeGPU(): GpuRenderer | null {
+/** `maxSamples`: the most it supersamples each way (see `LanyardRendererOptions.supersampling`). */
+export function makeGPU(maxSamples = 2): GpuRenderer | null {
 	const surface = document.createElement('canvas');
 	const context = surface.getContext('webgl2', { alpha: true, antialias: false, premultipliedAlpha: true, preserveDrawingBuffer: true });
 	if (!context) return null;
@@ -125,7 +126,7 @@ export function makeGPU(): GpuRenderer | null {
 	function draw(faces: Face[], width: number, height: number, ox: number, oy: number, zoom: number, ribbonCount: number) {
 		// Multisample depth extrapolation on subpixel-thin card walls can leak
 		// rear edges through the front. Supersample instead, then resolve in 2D.
-		const samples = Math.min(2, 4096 / Math.max(width, height));
+		const samples = Math.min(maxSamples, 4096 / Math.max(width, height));
 		width = Math.round(width * samples); height = Math.round(height * samples);
 		ox *= samples; oy *= samples; zoom *= samples;
 		if (surface.width !== width) surface.width = width;

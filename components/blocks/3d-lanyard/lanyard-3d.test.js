@@ -8,7 +8,10 @@ const dir = __dirname;
 const { outputFiles } = buildSync({
 	stdin: {
 		contents: `
-			export { inspectPhysics, inspectAttachment, pose } from ${JSON.stringify(path.join(dir, "renderer/physics.ts"))};
+			export { inspectPhysics, inspectAttachment, pose, primeSimulation, simulate } from ${JSON.stringify(path.join(dir, "renderer/physics.ts"))};
+			export { primeLanyardPhysics } from ${JSON.stringify(path.join(dir, "renderer/prime-lanyard-physics.ts"))};
+			export { hardwareDetail, hardwareMesh } from ${JSON.stringify(path.join(dir, "renderer/hardware.ts"))};
+			export { attachment } from ${JSON.stringify(path.join(dir, "renderer/physics.ts"))};
 			export { duration, dimensions } from ${JSON.stringify(path.join(dir, "renderer/constants.ts"))};
 			export { LanyardPlayer } from ${JSON.stringify(path.join(dir, "lanyard-player.ts"))};
 			export { LANYARD_3D_PROFILES, LANYARD_3D_AGENTS, LANYARD_3D_ASSETS } from ${JSON.stringify(path.join(dir, "data.ts"))};
@@ -17,7 +20,7 @@ const { outputFiles } = buildSync({
 	},
 	bundle: true, platform: "node", format: "cjs", write: false,
 });
-const { inspectPhysics, inspectAttachment, pose, duration, dimensions, LanyardPlayer, LANYARD_3D_PROFILES, LANYARD_3D_AGENTS, LANYARD_3D_ASSETS } = loadCjsModuleFromText(outputFiles[0].text, path.join(dir, "index.ts"));
+const { inspectPhysics, inspectAttachment, pose, primeSimulation, simulate, primeLanyardPhysics, hardwareDetail, hardwareMesh, attachment, duration, dimensions, LanyardPlayer, LANYARD_3D_PROFILES, LANYARD_3D_AGENTS, LANYARD_3D_ASSETS } = loadCjsModuleFromText(outputFiles[0].text, path.join(dir, "index.ts"));
 
 /** rAF stand-in that cancels by id, like the browser, so a leaked second loop stays visible. */
 function fakeFrames() {
@@ -57,6 +60,42 @@ test("both cards turn about one hole axis without crossing", () => {
 test("the lanyard settles to rest facing the audience", () => {
 	const rest = pose(duration, 1);
 	assert.ok(Math.abs(rest.yaw) < 1 && Math.abs(rest.angle) < 1, `settled yaw ${rest.yaw}, roll ${rest.angle}`);
+});
+
+test("a drop simulated elsewhere is drawn as handed in, never simulated again here", () => {
+	// A worker's result for swing 0.37, stood in for by swing 1's physics carried 1000 to the right.
+	const source = simulate(1);
+	const data = new Float32Array(source.data);
+	for (let index = 0; index < data.length; index += 3) data[index] += 1000;
+	primeSimulation(0.37, { ...source, data });
+	for (const time of [0, 1.5, 4]) assert.ok(Math.abs(pose(time, 0.37).x - pose(time, 1).x - 1000) < 1e-3, `primed physics drawn at ${time}s`);
+});
+
+test("without a worker, priming still settles, leaving each swing to its first draw", async () => {
+	assert.equal(typeof globalThis.Worker, "undefined");
+	await primeLanyardPhysics([0.6, 0.6]);
+});
+
+test("a small render tessellates the clasp coarser, a full-size one exactly as before", () => {
+	assert.equal(hardwareDetail(2.7), 1, "the block's own stage");
+	assert.equal(hardwareDetail(1.5), 1);
+	assert.equal(hardwareDetail(0.93), 0.5);
+	assert.equal(hardwareDetail(0.68), 1 / 3, "a mega bento tile");
+	const p = pose(3.3, 1), a = attachment(3.3, 1, p, 15), metal = { width: 2, height: 2 };
+	const clasp = (detail) => { const faces = []; hardwareMesh(faces, metal, a.origin, p.body, detail); return faces; };
+	const bounds = (faces) => { const xs = faces.flatMap((face) => face.v.map((v) => v.x)), ys = faces.flatMap((face) => face.v.map((v) => v.y)); return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]; };
+	const full = clasp(1);
+	assert.equal(full.length, 37088, "full detail keeps every triangle it had");
+	let previous = full.length;
+	for (const detail of [0.5, 1 / 3]) {
+		const faces = clasp(detail);
+		assert.ok(faces.length < previous * 0.5, `detail ${detail}: ${faces.length} triangles`);
+		previous = faces.length;
+		assert.ok(faces.every((face) => face.v.every((v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z))), `detail ${detail} stays finite`);
+		// Same silhouette: its extent matches full detail's to within a unit (a wall tile's pixel is about 1.5).
+		bounds(faces).forEach((edge, index) => assert.ok(Math.abs(edge - bounds(full)[index]) < 1, `detail ${detail} edge ${index}: ${edge} vs ${bounds(full)[index]}`));
+	}
+	assert.ok(previous < full.length * 0.2, "a wall tile draws under a fifth of the clasp");
 });
 
 test("every format is a real aspect ratio", () => {

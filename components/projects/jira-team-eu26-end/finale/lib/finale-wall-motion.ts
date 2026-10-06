@@ -510,9 +510,11 @@ const descents = new WeakMap<FinaleWall, Map<string, Descent | null>>();
  * When a card at the leading edge comes down from the air into its slot:
  * each at its own place across the frame (so at its own moment), whether or
  * not a teammate sets it down; null for a card already on the wall when it
- * appeared.
+ * appeared, and for a lanyard tile, which hangs from the top of the frame and
+ * glides in with the wall: only its lanyard drops (`finale-wall-lanyard.ts`).
  */
 export function slotDescent(slot: WallSlot, wall: FinaleWall): Descent | null {
+	if (slot.content.kind === "lanyard") return null;
 	return perSlot(descents, wall, slot, () => descentFrom(slot, wall.geometry, DESCEND_FROM, DESCEND_SPAN));
 }
 

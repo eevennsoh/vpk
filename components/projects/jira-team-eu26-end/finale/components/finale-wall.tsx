@@ -1,11 +1,12 @@
 "use client";
 
-import { memo, useCallback, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import { WALL_CUE } from "../data/finale-cues";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { wallPrintOpacity, type FinaleWall as FinaleWallModel, type WallPrintShapes, type WallSlot } from "../lib/finale-wall-layout";
 import { visibleWallBuckets, wallActive, wallMounted, wallOffset, wallSlotPresence, type BentoDrop } from "../lib/finale-wall-motion";
+import { loadFinaleWallLanyard } from "../lib/load-finale-wall-lanyard";
 import { FinaleWallPieceFrame, WallPieceHostContext, WallSlotMirrorContext, type WallPieceHost } from "./finale-wall-pieces";
 import { FinaleWallTileContent } from "./finale-wall-tiles";
 
@@ -124,6 +125,11 @@ export function FinaleWall({ wall, drops, cardPrint, prints }: Readonly<FinaleWa
 	const [pieceHost, setPieceHost] = useState<WallPieceHost | null>(null);
 	const pieceTrackRef = useRef<HTMLDivElement | null>(null);
 	const { geometry } = wall;
+
+	// The wall mounts with the scene: its lanyard tiles' renderer and artwork load while the bento plays.
+	useEffect(() => {
+		loadFinaleWallLanyard().catch(() => undefined);
+	}, []);
 
 	// The kit's frame keeps its own track; it moves exactly as the wall's does, from wherever the wall is now.
 	const hostPieces = useCallback((host: WallPieceHost | null) => {

@@ -12,6 +12,13 @@ export const WALL_SCALE = 0.3;
 export const WALL_TITLE_ORDER = 6;
 /** Original entry-camera calibration, independent of tile sizing and spatial indexing. */
 const WALL_ENTRY_SCALE = 68 / 231;
+/**
+ * Lanyard tiles a period carries, spread evenly through it, each in the
+ * lanyard's own 3:4 portrait box at the 1920 stage. Their straps are cut
+ * straight at the top of the box, so every one hangs from the top edge of the
+ * frame (`wallLanyardRect`), never mid-wall.
+ */
+export const WALL_LANYARDS = { count: 4, width: 360, height: 480 } as const;
 
 export type WallStatId = "presenters" | "chapters";
 export type WallStripId = "flow";
@@ -24,6 +31,7 @@ export type WallContent =
 	| { readonly kind: "stat"; readonly stat: WallStatId }
 	| { readonly kind: "strip"; readonly strip: WallStripId }
 	| { readonly kind: "piece"; readonly pieces: readonly WallPiece[] }
+	| { readonly kind: "lanyard" }
 	| { readonly kind: "title" };
 
 export interface WallGeometry {
@@ -179,6 +187,18 @@ function keynoteItems(geometry: WallGeometry, features: readonly FinaleStory[], 
 	return extras;
 }
 
+/**
+ * Lanyard tile `index` of a period `spacing` apart (`finale-wall-lanyard.ts`):
+ * reserved before the masonry packs, like the keynote gaps, stuck to the top
+ * of the frame with its top corners just above it, so the strap's straight cut
+ * is the frame's own edge. The first waits just past the opening frame, clear
+ * of the keynote gaps, and glides in with the wall.
+ */
+function wallLanyardRect(geometry: WallGeometry, index: number, spacing: number): FinaleRect {
+	const scale = geometry.typeScale / WALL_SCALE;
+	return { x: geometry.viewport.width + geometry.gutter + index * spacing, y: -geometry.radius, width: WALL_LANYARDS.width * scale, height: WALL_LANYARDS.height * scale };
+}
+
 /** Intrinsic rectangles packed edge to edge, with the keynote landing spaces reserved first. */
 export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout, features: readonly FinaleStory[], dragOrder: readonly string[]): FinaleWall {
 	const { gutter, gutterY, bucketWidth, viewport } = geometry;
@@ -196,8 +216,15 @@ export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout
 		if (library[index]) items.push(library[index]);
 		if (extras[index]) items.push(extras[index]);
 	}
-	const rects = packWallMasonry(items, reserved, viewport.height, gutter, gutterY, 900 * geometry.typeScale / WALL_SCALE);
+	const groupGap = 900 * geometry.typeScale / WALL_SCALE;
+	// The period is only known once packed, so pack once without the lanyards to space them evenly round it, then for real.
+	const unhung = packWallMasonry(items, reserved, viewport.height, gutter, gutterY, groupGap);
+	const lanyardWidth = wallLanyardRect(geometry, 0, 0).width + gutter;
+	const spacing = (Math.max(...[...reserved, ...unhung].map((rect) => rect.x + rect.width)) + gutter + WALL_LANYARDS.count * lanyardWidth) / WALL_LANYARDS.count;
+	const lanyards = Array.from({ length: WALL_LANYARDS.count }, (_, index) => wallLanyardRect(geometry, index, spacing));
+	const rects = packWallMasonry(items, [...reserved, ...lanyards], viewport.height, gutter, gutterY, groupGap);
 	const base = anchors.map(({ order, content }, index): WallSlot => ({ key: `gap-${order}`, bucket: 0, rect: reserved[index], content, seed: order * 31, reserved: order }));
+	lanyards.forEach((rect, index) => base.push({ key: `lanyard-${index}`, bucket: 0, rect, content: { kind: "lanyard" }, seed: 977 + index * 53 }));
 	items.forEach((item, index) => base.push({ key: item.key, bucket: 0, rect: rects[index], content: item.content, seed: 211 + index * 37 }));
 	const periodBuckets = Math.ceil((Math.max(...base.map((slot) => slot.rect.x + slot.rect.width)) + gutter) / bucketWidth);
 	const periodWidth = periodBuckets * bucketWidth;

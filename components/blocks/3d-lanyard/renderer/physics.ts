@@ -28,9 +28,23 @@ export function pose(time: number, amount = 1): Pose {
 		body, collar, ropes: frame.ropes };
 }
 
+/** Simulations kept, one per swing amount; each is about 0.85 MB. */
+const SIMULATIONS_KEPT = 3;
 const simulations = new Map<number, Simulation>();
-function simulate(amount: number): Simulation {
-	const key = Math.round(clamp(amount, 0, 1.6) * 100) / 100;
+const simulationKey = (amount: number) => Math.round(clamp(amount, 0, 1.6) * 100) / 100;
+
+/**
+ * Hands in a drop simulated elsewhere (`simulate` is a long task, hundreds of
+ * milliseconds per swing amount), so drawing that amount never runs it here.
+ * See `primeLanyardPhysics`.
+ */
+export function primeSimulation(amount: number, simulation: Simulation) {
+	simulations.set(simulationKey(amount), simulation);
+	if (simulations.size > SIMULATIONS_KEPT) simulations.delete(simulations.keys().next().value!);
+}
+
+export function simulate(amount: number): Simulation {
+	const key = simulationKey(amount);
 	const cached = simulations.get(key);
 	if (cached) return cached;
 	const dt = 1 / STEPS, frames = physicsDuration * STEPS + 1;
@@ -130,8 +144,7 @@ function simulate(amount: number): Simulation {
 		particles.forEach((p, i) => { const n = (frame * count + i) * 3; data[n] = p.x; data[n + 1] = p.y; data[n + 2] = p.z; });
 	}
 	const result = { data, count, body: body.map(p => particles.indexOf(p)), chains: chains.map(c => c.map(p => particles.indexOf(p))) };
-	simulations.set(key, result);
-	if (simulations.size > 3) simulations.delete(simulations.keys().next().value!);
+	primeSimulation(key, result);
 	return result;
 }
 function stateAt(time: number, amount = 1) {

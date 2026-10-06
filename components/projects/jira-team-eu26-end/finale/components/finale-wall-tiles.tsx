@@ -26,6 +26,7 @@ import {
 import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
 import { FinaleDealt, FinaleTileLogos, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
 import { FinaleTileFace } from "./finale-tile-face";
+import { WallLanyard } from "./finale-wall-lanyard";
 import { WallPieces } from "./finale-wall-pieces";
 import { FinaleTitleLockup } from "./finale-title-lockup";
 
@@ -297,6 +298,8 @@ interface WallTileContentProps {
 export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot, geometry, cardPrint, revealStart }: Readonly<WallTileContentProps>) {
 	const content: WallContent = slot.content;
 	if (content.kind === "print") return <WallPrints slot={slot} geometry={geometry} codes={content.codes} cardPrint={cardPrint} revealStart={revealStart} />;
+	// Drawn at the slot's own pixels, not the stage box's scale, so the canvas stays sharp. It never lands, so never builds.
+	if (content.kind === "lanyard") return <WallLanyard slot={slot} geometry={geometry} />;
 	return (
 		<StageBox slot={slot} geometry={geometry}>
 			{(size) => {
