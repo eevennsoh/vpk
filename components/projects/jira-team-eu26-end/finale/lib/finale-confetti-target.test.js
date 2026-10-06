@@ -346,8 +346,8 @@ test("two quick drops each puff at their own cards, and unmounting abandons a pu
 		source: `
 import { useEffect } from "react";
 import { useFinaleDropPuff } from "@/components/projects/jira-team-eu26-end/finale/hooks/use-finale-drop-puff";
-export function DropPuffHarness({ confetti, expose }) {
-	const puff = useFinaleDropPuff(confetti);
+export function DropPuffHarness({ confetti, expose, enabled = true }) {
+	const puff = useFinaleDropPuff(confetti, enabled);
 	useEffect(() => expose(puff), [expose, puff]);
 	return null;
 }
@@ -368,11 +368,27 @@ export function DropPuffHarness({ confetti, expose }) {
 	assert.deepEqual(plays.map(({ landing }) => landing.y), [284, 128], "the first then puffs at its own card");
 	assert.deepEqual(plays[1], { size: "small", landing: { x: 608, y: 128, width: 304, height: 148, radius: 8 } });
 	puff(["TEU-3"]);
+	const expose = (next) => { puff = next; };
+	await view.rerender({ confetti, expose, enabled: false });
+	board.reveal("TEU-3");
+	frames.next();
+	await settle();
+	assert.equal(plays.length, 2, "reduced motion abandons a pending puff");
+	puff(["TEU-3"]);
+	frames.next();
+	await settle();
+	assert.equal(plays.length, 2, "disabled puffs cannot start a new wait");
+	await view.rerender({ confetti, expose, enabled: true });
+	puff(["TEU-3"]);
+	frames.next();
+	await settle();
+	assert.equal(plays.length, 3, "puffs work again after reduced motion is disabled");
+	puff(["TEU-3"]);
 	await view.unmount();
 	board.reveal("TEU-3");
 	frames.next();
 	frames.next();
 	await settle();
-	assert.equal(plays.length, 2, "an unmounted board throws no dust");
+	assert.equal(plays.length, 3, "an unmounted board throws no dust");
 	assert.equal(frames.pending(), 0, "and leaves no frame loop behind");
 });
