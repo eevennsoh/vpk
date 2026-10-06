@@ -1,3 +1,5 @@
+import { motionDuration } from "@/lib/motion";
+
 import { CUE, WALL_CUE } from "../data/finale-cues";
 import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
 import type { FinaleRect } from "../data/finale-stories";
@@ -686,7 +688,7 @@ export interface WallSheet {
 	 */
 	readonly print: string | null;
 	/** Its landing shadow: when it exists and the pose to cast it from; null for none. */
-	readonly shadow: { readonly start: number; readonly settled: number; readonly pose: FinaleCardPose } | null;
+	readonly shadow: { readonly start: number; readonly settled: number; readonly pose: FinaleCardPose; readonly strength: number } | null;
 	/** World px/s (x right, y up, z toward the lens), for the cloth. */
 	readonly velocity: { readonly x: number; readonly y: number; readonly z: number };
 	/** Corner radius, sheet px. */
@@ -738,6 +740,7 @@ function bentoSheetVelocity(drop: BentoDrop, drops: readonly BentoDrop[], time: 
 
 /** How many entry-camera distances past the right edge a waiting card is still drawn. */
 const ARRIVAL_LEAD = 1.2;
+const ARRIVAL_PREVIEW_S = motionDuration.slower;
 
 /** How long a thrown card's smear takes to swell in as it leaves the hand. */
 const BENTO_SMEAR_IN_S = 0.4;
@@ -774,7 +777,7 @@ export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly Ben
 			back: FINALE_COLORS.tile,
 			texture: title ? "title" : `bento-${drop.order}`,
 			print: null,
-			shadow: shadowed ? { start: shadowFrom, settled: touchdown, pose } : null,
+			shadow: shadowed ? { start: shadowFrom, settled: touchdown, pose, strength: 1 } : null,
 			velocity: bentoSheetVelocity(drop, drops, time, pose, geometry, viewport),
 			// Its original corners become the wall's corners continuously through the flight.
 			radius: corner * pose.width,
@@ -802,16 +805,17 @@ export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly Ben
 				if (landingHandover(time, descent.touchdown) >= 1) continue;
 				const pose = arrivalCardPose(slot, card, rect, time, viewport);
 				const before = arrivalCardPose(slot, card, earlier, time - CLOTH_LAG, viewport);
+				const appearance = smooth(descent.start - ARRIVAL_PREVIEW_S, descent.start - ARRIVAL_PREVIEW_S + motionDuration.normal, time);
 				sheets.push({
 					key: `card-${card.key}`,
 					kind: "card",
 					// A print slot with nothing printed yet comes down as the blank tile its stand-in builds on.
-					pose: { ...pose, opacity: pose.opacity * shown, face: slot.content.kind === "print" && card.code === null ? 1 : pose.face },
+					pose: { ...pose, opacity: pose.opacity * shown * appearance, face: slot.content.kind === "print" && card.code === null ? 1 : pose.face },
 					color,
 					back: color,
 					texture: null,
 					print: card.code,
-					shadow: { start: descent.start, settled: descent.touchdown, pose },
+					shadow: { start: descent.start, settled: descent.touchdown, pose, strength: 0.15 },
 					velocity: velocityOf(pose, before),
 					radius: card.radius,
 					chroma: 1 - smooth(descent.start, descent.touchdown, time),
