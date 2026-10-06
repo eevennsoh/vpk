@@ -98,6 +98,7 @@ const JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS = [
 	"sessionProximity",
 	"sessionPeel",
 	"moveVisual",
+	"pauseMegaBento",
 ] as const;
 const isJiraTeamEu26LooseWorkResumable = () => true;
 
@@ -524,7 +525,7 @@ function JiraTeamEu26App(): React.ReactElement {
 				/>
 			</MountOnFirstUse>
 			{/* Closing keynote: once every announcement is Done, hand off to the recap slide. */}
-			<JiraTeamEu26EndFinale boardColumns={themedBoardColumns} replayRequest={finaleReplayRequest} />
+			<JiraTeamEu26EndFinale boardColumns={themedBoardColumns} replayRequest={finaleReplayRequest} pauseMegaBento={designVariants.pauseMegaBento} />
 			<JgpRovoOverlay
 				agentCreator={JIRA_TEAM_EU26_END_PRESENTERS.mike}
 				chatContextBar={chatContextBar}
