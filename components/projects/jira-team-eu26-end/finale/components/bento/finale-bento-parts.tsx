@@ -49,7 +49,8 @@ const FADE_TOWARD = { bottom: "to top", top: "to bottom", left: "to right" } as 
 
 interface BentoFadeProps {
 	readonly edge?: keyof typeof FADE_TOWARD;
-	readonly size: number;
+	/** Px, or a CSS length for a fade that grows with the tile. */
+	readonly size: number | string;
 	/** How much of the fade, from the edge in, stays solid before it clears. */
 	readonly hold?: number;
 }
