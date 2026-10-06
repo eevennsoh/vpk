@@ -180,16 +180,18 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - Classify every new or renamed `components/**` `node:test` suite in `scripts/js-unit-test-manifest.mjs` as `stable` or `source-contract`; unfiltered `node scripts/run-js-unit-tests.mjs` fails CI on unclassified suites. `legacy-drift` is a frozen skipped baseline that must only shrink. `--file` force-runs a named path and does not prove manifest inclusion.
 - Modules that a `node:test` suite loads directly cannot resolve the `@/` alias; they import siblings by relative path with the `.ts` extension (`allowImportingTsExtensions` is on, so no `@ts-expect-error` is needed).
 - Browser coverage is under `tests/**/*.spec.ts` (`playwright.config.ts`); run targeted specs with `pnpm exec playwright test <spec>` after `pnpm install`. Specs reach the app through `appUrl()` in `tests/helpers/origin.ts` (lint rejects hardcoded ports and `*.localhost` hosts) and seed design settings with `?variants=` via `tests/helpers/design-variants.ts`.
-- GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, typecheck, and tests. It is required by branch protection on `main` — `/vpk-git-ship` auto-merge waits for it.
+- GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, design-system lint, typecheck, and tests. It is required by branch protection on `main` — `/vpk-git-ship` auto-merge waits for it.
 - Validation freshness:
   <!-- validation-freshness:begin -->
-  Last validated: 2026-09-30
-  Commands: `pnpm run validate:preflight`, `pnpm run verify:fast` (bundles the next
-  eleven), `pnpm run verify:route-manifest`, `pnpm run verify:api-surfaces`,
+  Last validated: 2026-10-06
+  Commands: `pnpm run validate:preflight`, `pnpm run verify:fast` (bundles the
+  following checks), `pnpm run verify:root-artifacts`,
+  `pnpm run verify:route-manifest`, `pnpm run verify:api-surfaces`,
   `pnpm run verify:repo-map`, `pnpm run verify:vpk-feature-map`, `pnpm run verify:file-size`,
   `pnpm run verify:catalog`, `pnpm run verify:lazy-load`, `pnpm run verify:source-guardrails`,
-  `pnpm run verify:eslint-suppressions`, `pnpm run verify:doc-scripts`, `pnpm run lint`,
-  `pnpm run lint:design-system`, `pnpm run typecheck`.
+  `pnpm run verify:eslint-suppressions`, `pnpm run verify:cursor-rules`,
+  `pnpm run verify:doc-scripts`, `pnpm run validate:agents`, `pnpm run validate:skills`.
+  Additional checks: `pnpm run lint`, `pnpm run lint:design-system`, `pnpm run typecheck`.
   Reference docs: `.agents/docs/architecture-overview.md`,
   `.agents/docs/workflows-extended.md`, `.agents/rules/api-surfaces.md`,
   `.agents/rules/token-priority.md`,
