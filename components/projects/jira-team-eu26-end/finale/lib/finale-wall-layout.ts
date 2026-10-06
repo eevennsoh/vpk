@@ -129,7 +129,7 @@ function keynoteItems(geometry: WallGeometry, features: readonly FinaleStory[], 
 	const remaining = FINALE_STORIES.map((story) => story.code).filter((code) => !featured.has(code));
 	const ordered = [...dragOrder.filter((code) => remaining.includes(code)), ...remaining.filter((code) => !dragOrder.includes(code))];
 	const extras: WallItem[] = features.map((story, index) => item(`benefit-${index}`, 240 + (index % 3) * 55, 155 + (index % 2) * 55, { kind: "benefit", story }));
-	const portraits: readonly [FinalePresenterId, FinaleShapeKind, FinaleBrandColor][] = [["tamar", "arch", "purple"], ["sherif", "circle", "purple"], ["mcb", "shield", "blue"], ["taroon", "hexagon", "blue"]];
+	const portraits: readonly [FinalePresenterId, FinaleShapeKind, FinaleBrandColor][] = [["tamar", "arch", "purple"], ["sherif", "circle", "purple"], ["mike", "shield", "blue"], ["taroon", "hexagon", "blue"]];
 	portraits.forEach(([portrait, shape, fill], index) => extras.push(item(`portrait-${portrait}`, 160 + index * 18, index % 2 === 0 ? 310 : 185, { kind: "shape", portrait, shape, fill })));
 	const posters: readonly [string, FinaleBrandColor, FinaleBrandColor][] = [["Context", "lime", "black"], ["Collaboration", "purple", "black"], ["Confidence", "blue", "white"], ["Loom", "purple", "black"], ["Jira", "blue", "white"], ["Guard", "saffron", "black"]];
 	posters.forEach(([word, fill, ink], index) => extras.push(item(`poster-${index}`, index % 2 === 0 ? 420 : 215, index % 3 === 0 ? 160 : 245, { kind: "poster", word, fill, ink })));

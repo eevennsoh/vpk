@@ -366,7 +366,7 @@ function JiraTeamEu26App(): React.ReactElement {
 				defaultSidebarOpen={false}
 				hideFloatingRovo
 				product="jira"
-				currentUser={JIRA_TEAM_EU26_END_PRESENTERS.mcb}
+				currentUser={JIRA_TEAM_EU26_END_PRESENTERS.mike}
 				chatGreeting={{ heading: "What can I help you with, MCB?" }}
 				settingsDesignVariantIds={JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
 				settingsMenuItems={settingsMenuItems}
@@ -513,7 +513,7 @@ function JiraTeamEu26App(): React.ReactElement {
 			{/* Closing keynote: once every announcement is Done, hand off to the recap slide. */}
 			<JiraTeamEu26EndFinale boardColumns={boardColumns} replayRequest={finaleReplayRequest} />
 			<JgpRovoOverlay
-				agentCreator={JIRA_TEAM_EU26_END_PRESENTERS.mcb}
+				agentCreator={JIRA_TEAM_EU26_END_PRESENTERS.mike}
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}

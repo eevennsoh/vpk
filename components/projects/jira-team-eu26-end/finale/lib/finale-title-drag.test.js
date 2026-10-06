@@ -245,9 +245,9 @@ test("he sets it down on its moving gap, lets go as it touches down, and leaves 
 		const under = scene.gap(touchdown + 0.4);
 		assert.ok(lifting.y < under.y + grip.v * under.height - 0.03 * viewport.height, "lifting up and away off the card");
 		assert.equal(scene.cursor(gone + 1e-3), null, "gone");
-		const mcb = m.FINALE_CURSORS.findIndex((cursor) => cursor.id === "mcb");
-		assert.equal(down.lane, mcb, "in his own lane");
-		assert.equal(down.name, m.FINALE_CURSORS[mcb].label, "and name, as on the slide");
+		const mike = m.FINALE_CURSORS.findIndex((cursor) => cursor.id === "mike");
+		assert.equal(down.lane, mike, "in his own lane");
+		assert.equal(down.name, m.FINALE_CURSORS[mike].label, "and name, as on the slide");
 		for (let time = m.titleReachTime(); time <= gone; time += 0.05) {
 			const others = m.wallCursorsAt(time, scene.wall, drops, viewport).filter((cursor) => cursor.key !== "title");
 			assert.deepEqual(others, [], `nobody else's cursor while his is in (${time.toFixed(2)}s)`);
@@ -282,7 +282,7 @@ test("his cursor, name pill and all, stays well inside the frame on every screen
 	for (const viewport of [...VIEWPORTS, { width: 2560, height: 1080 }, { width: 1080, height: 1350 }]) {
 		const scene = sceneFor(viewport);
 		const { m, fit } = scene;
-		const box = m.finaleCursorBox(m.FINALE_CURSORS.find((cursor) => cursor.id === "mcb").label);
+		const box = m.finaleCursorBox(m.FINALE_CURSORS.find((cursor) => cursor.id === "mike").label);
 		const margin = 24 * fit;
 		for (let time = m.titleReachTime(); time <= m.titleCarrierGoneTime(); time += 1 / 60) {
 			const cursor = scene.cursor(time);
