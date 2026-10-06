@@ -49,14 +49,16 @@ const FADE_TOWARD = { bottom: "to top", top: "to bottom", left: "to right" } as 
 
 interface BentoFadeProps {
 	readonly edge?: keyof typeof FADE_TOWARD;
-	readonly size: number;
-	/** How much of the fade, from the edge in, stays solid before it clears. */
-	readonly hold?: number;
+	/** Px, or a CSS length for a fade that grows with the tile. */
+	readonly size: number | string;
+	/** How much of the fade, from the edge in, stays solid before it clears: a share of `size`, or a CSS length. */
+	readonly hold?: number | string;
 }
 
 /** The tile's own fill rising over whatever runs off one of its edges. */
 export function BentoFade({ edge = "bottom", size, hold = 0 }: Readonly<BentoFadeProps>) {
-	const backgroundImage = `linear-gradient(${FADE_TOWARD[edge]}, ${FINALE_COLORS.tile} ${(hold * 100).toFixed(3)}%, ${TILE_CLEAR})`;
+	const solid = typeof hold === "number" ? `${(hold * 100).toFixed(3)}%` : hold;
+	const backgroundImage = `linear-gradient(${FADE_TOWARD[edge]}, ${FINALE_COLORS.tile} ${solid}, ${TILE_CLEAR})`;
 	const style = edge === "left"
 		? { top: 0, bottom: 0, left: 0, width: size, backgroundImage }
 		: { left: 0, right: 0, height: size, backgroundImage, ...(edge === "top" ? { top: 0 } : { bottom: 0 }) };
