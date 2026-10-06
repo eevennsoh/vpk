@@ -15,7 +15,7 @@ import {
 	type FinaleViewport,
 	type Vec3,
 } from "./finale-camera";
-import { EASE, HANDOVER_FACE_SHARE, clamp, eased, hash01, lerp, progress } from "./finale-math";
+import { EASE, clamp, eased, hash01, lerp, progress } from "./finale-math";
 
 export { FINALE_CAMERA_FOV, cameraDistance, type FinaleViewport } from "./finale-camera";
 
@@ -786,9 +786,7 @@ function smearRiseAfterLanding(order: number, tileCount = 6): number {
  */
 export function tileHandoff(time: number, order: number): number {
 	const end = touchdownTime(order) + CUE.tileHandoff + TILE_DISSOLVE;
-	// Start the overlap earlier so the live face retains its original fade speed and completion cue.
-	const span = Math.max(TILE_DISSOLVE, smearRiseAfterLanding(order)) / HANDOVER_FACE_SHARE;
-	return progress(time, end - span, end);
+	return progress(time, end - Math.max(TILE_DISSOLVE, smearRiseAfterLanding(order)), end);
 }
 
 /* ─── Through the lens ────────────────────────────────────────────────── */

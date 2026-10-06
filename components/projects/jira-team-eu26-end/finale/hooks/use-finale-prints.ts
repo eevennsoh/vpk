@@ -106,7 +106,7 @@ export function settleFinaleColumnCopy(column: HTMLElement): void {
 export async function printFinaleElement(element: HTMLElement, options: FinalePrintOptions = {}): Promise<HTMLCanvasElement> {
 	const { getFontEmbedCSS, toCanvas } = await import("html-to-image");
 	await document.fonts.ready;
-	fontEmbedCss ??= getFontEmbedCSS(document.body, { preferredFontFormat: "woff2" }).catch(() => "");
+	fontEmbedCss ??= getFontEmbedCSS(document.body).catch(() => "");
 	let target = element;
 	let host: HTMLDivElement | null = null;
 	let exactFonts = "";
