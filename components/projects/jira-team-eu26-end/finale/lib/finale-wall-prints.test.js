@@ -226,10 +226,16 @@ test("a stack waits in the air as the one sheet did, then its cards peel off it 
 		assert.ok(!m.wallSheetsAt(touchdown + m.CUE.handoff + 0.13, wall, drops, viewport, prints).some((each) => each.key === `card-${slot.key}#${index}`), "then gone");
 	}
 	assert.equal(m.wallSlotPresence(slot, wall, drops, downs.at(-1) + m.CUE.handoff + 0.2, prints).cards.every((shown) => shown === 1), true);
-	// The whole stack lands a period later on the next pass, exactly alike.
+	// A first arrival can be in the startup ramp. The next pass crosses the same entry line one wall period farther on.
 	const next = wall.bucket(slot.bucket + wall.periodBuckets).find((each) => each.key.split(":").slice(1).join(":") === slot.key.split(":").slice(1).join(":"));
+	const nextDescent = m.slotDescent(next, wall);
+	assert.ok(close(m.wallOffset(nextDescent.start, geometry) - m.wallOffset(descent.start, geometry), wall.periodWidth), "the same entry position on the next pass");
+	const nextDowns = touchdowns(m, next, wall, drops, prints);
+	nextDowns.forEach((touchdown, index) => assert.ok(close(touchdown - downs[index], nextDescent.start - descent.start), "the same peel timing after the startup ramp"));
+	// Both later passes are at full pace, so every card lands exactly one loop later.
+	const third = wall.bucket(next.bucket + wall.periodBuckets).find((each) => each.key.split(":").slice(1).join(":") === slot.key.split(":").slice(1).join(":"));
 	const loop = m.wallLoop(wall);
-	touchdowns(m, next, wall, drops, prints).forEach((touchdown, index) => assert.ok(close(touchdown - downs[index], loop, 1e-6), "seamless round the loop"));
+	touchdowns(m, third, wall, drops, prints).forEach((touchdown, index) => assert.ok(close(touchdown - nextDowns[index], loop, 1e-6), "seamless round the loop at full pace"));
 });
 
 test("a print slot with nothing printed yet comes down as one blank card over its slot, as its DOM stand-in fills it", () => {

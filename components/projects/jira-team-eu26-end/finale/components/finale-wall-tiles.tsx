@@ -1,7 +1,6 @@
 "use client";
 
 import { Fragment, memo, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
-import Image from "next/image";
 
 import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-eu26-end/data/keynote-presenters";
 
@@ -23,13 +22,11 @@ import {
 	type WallPrintCard,
 	type WallSlot,
 	type WallStatId,
-	type WallStripId,
 } from "../lib/finale-wall-layout";
 import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
 import { FinaleDealt, FinaleTileLogos, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
 import { FinaleTileFace } from "./finale-tile-face";
 import { WallPieces } from "./finale-wall-pieces";
-import { FinaleWallShape } from "./finale-wall-shape";
 import { FinaleTitleLockup } from "./finale-title-lockup";
 
 /*
@@ -37,7 +34,7 @@ import { FinaleTitleLockup } from "./finale-title-lockup";
  * blank sheet of its tile's colour and builds its content once its DOM face
  * takes over (`revealStart`), in the bento's own vocabulary: logos deal in
  * with the app stack's entrance, text builds through the colour band, and
- * what moves (a poster's word, a shape) only starts once it is there. A card
+ * a poster's word only starts moving once it is there. A card
  * already on the wall when it faded in (`revealStart` null) shows built.
  */
 
@@ -101,14 +98,14 @@ interface PosterProps {
 	readonly revealStart: number | null;
 }
 
-/** A big word cropped by its tile, gliding through it a little faster than the wall; landed, it builds before it glides. */
+/** A centred chapter word glides through its compact tile; landed, it builds before it glides. */
 function Poster({ word, fill, ink, width, height, revealStart }: Readonly<PosterProps>) {
 	const lineRef = useRef<HTMLDivElement>(null);
 	const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
 	const repeatRef = useRef(0);
 	const builtRef = useRef(Number.NaN);
 	const travelRef = useRef(Number.NaN);
-	const fontSize = Math.min(width / 1.9, height * 0.82);
+	const fontSize = Math.min(width / 2.8, height * 0.5);
 	const speed = fontSize * 0.16;
 	// Measured before the first frame paints the glide (a held frame paints once, at mount).
 	useLayoutEffect(() => {
@@ -135,10 +132,10 @@ function Poster({ word, fill, ink, width, height, revealStart }: Readonly<Poster
 		line.style.transform = `translate(${(-travel).toFixed(1)}px, 0)`;
 	});
 	return (
-		<div className="absolute inset-0 overflow-hidden" style={{ background: fill, borderRadius: FINALE_TILE_RADIUS_CSS }}>
-			<div ref={lineRef} className="absolute flex whitespace-nowrap" style={{ fontFamily: "var(--font-sans)", left: 0, bottom: -fontSize * 0.2, fontSize, lineHeight: 1, fontWeight: 600 }}>
+		<div className="absolute inset-0 flex items-center overflow-hidden" style={{ background: fill, borderRadius: FINALE_TILE_RADIUS_CSS }}>
+			<div ref={lineRef} className="flex shrink-0 whitespace-nowrap" style={{ fontFamily: "var(--font-sans)", fontSize, lineHeight: 1, fontWeight: 600 }}>
 				{[0, 1, 2].map((copy) => (
-					<span key={copy} ref={(element) => { wordRefs.current[copy] = element; }} style={{ ...finaleBuildPaint(ink, revealStart === null, "-0.045em"), paddingRight: fontSize * 0.28 }}>
+					<span key={copy} ref={(element) => { wordRefs.current[copy] = element; }} style={{ ...finaleBuildPaint(ink, revealStart === null, "-0.045em"), textBox: "trim-both cap alphabetic", paddingRight: fontSize * 0.28 }}>
 						{word}
 					</span>
 				))}
@@ -228,27 +225,6 @@ function Flow({ revealStart }: Readonly<{ revealStart: number | null }>) {
 	);
 }
 
-function Strip({ strip, revealStart }: Readonly<{ strip: WallStripId; revealStart: number | null }>) {
-	if (strip === "flow") return <Flow revealStart={revealStart} />;
-	return (
-		<div className="absolute inset-0 flex items-center gap-5 overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS_CSS, paddingInline: 32, color: FINALE_INK }}>
-			{/* The presenters are dealt in like the logos, then their names build. */}
-			<div className="flex shrink-0">
-				{PRESENTERS.map((presenter, index) => (
-					<FinaleDealt key={presenter.id} start={revealStart} index={index} style={{ marginLeft: index === 0 ? 0 : -18 }}>
-						{/* Ringed in the tile's own fill, so each overlap reads as a cut-out of the card. */}
-						<Image src={presenter.avatarSrc} alt="" width={76} height={76} className="size-[76px] rounded-full object-cover" style={{ boxShadow: `0 0 0 4px ${FINALE_COLORS.tile}` }} />
-					</FinaleDealt>
-				))}
-			</div>
-			<span className="flex min-w-0 flex-col text-[28px] leading-[1.15]">
-				<FinaleBuildSpan text={PRESENTERS.slice(0, 2).map((presenter) => presenter.name).join(" · ")} start={buildAfter(revealStart, 0.3)} duration={CUE.reveal * 0.7} />
-				<FinaleBuildSpan text={PRESENTERS.slice(2).map((presenter) => presenter.name).join(" · ")} start={buildAfter(revealStart, 0.5)} duration={CUE.reveal * 0.7} />
-			</span>
-		</div>
-	);
-}
-
 /**
  * One of a print slot's Done cards exactly as it was printed for the finale,
  * on its own rect, painted as its GL sheet is (`paintWallPrint`) at the same
@@ -331,12 +307,10 @@ export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot,
 						return <Benefit story={content.story} {...size} revealStart={revealStart} />;
 					case "poster":
 						return <Poster word={content.word} fill={FINALE_BRAND[content.fill]} ink={FINALE_BRAND[content.ink]} {...size} revealStart={revealStart} />;
-					case "shape":
-						return <FinaleWallShape shape={content.shape} fill={FINALE_BRAND[content.fill]} portrait={content.portrait} seed={slot.seed} {...size} revealStart={revealStart} />;
 					case "stat":
 						return <Stat stat={content.stat} {...size} revealStart={revealStart} />;
 					case "strip":
-						return <Strip strip={content.strip} revealStart={revealStart} />;
+						return <Flow revealStart={revealStart} />;
 					case "piece":
 						return <WallPieces slot={slot} geometry={geometry} pieces={content.pieces} revealStart={revealStart} />;
 					case "title":

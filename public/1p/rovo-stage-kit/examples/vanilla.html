@@ -8,7 +8,9 @@
             body {
                 margin: 0;
                 padding: 32px;
-                font: 14px / 20px system-ui, sans-serif;
+                font:
+                    14px / 20px system-ui,
+                    sans-serif;
             }
 
             .hero {
@@ -47,7 +49,9 @@
             stage.addEventListener('stageerror', (event) => console.error(event.detail));
             // Pause it while it is off screen.
             new IntersectionObserver(([entry]) =>
-                entry.isIntersecting ? stage.removeAttribute('paused') : stage.setAttribute('paused', ''),
+                entry.isIntersecting
+                    ? stage.removeAttribute('paused')
+                    : stage.setAttribute('paused', ''),
             ).observe(stage);
             // The pieces take the stage file's styles (their cards, how they play).
             const file = await fetch('../rovo-stage.json').then((response) => response.json());

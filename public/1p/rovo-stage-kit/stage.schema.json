@@ -129,6 +129,7 @@
                       "title": "View",
                       "enum": [
                         "stage",
+                        "masonry",
                         "mosaic",
                         "scatter",
                         "grid",
@@ -136,7 +137,19 @@
                         "orbit",
                         "scroll"
                       ],
-                      "description": "stage: Stage: a wall gliding past · mosaic: Mosaic: cells taking turns · scatter: Scatter: the frame full, at many heights · grid: Grid: a piece in each cell · gravity: Gravity: they fall and pile up · orbit: Orbit: two rings round the greeting · scroll: Scrolling background: columns"
+                      "description": "stage: Stage: a wall gliding past · masonry: Masonry: packed edge to edge, even gaps · mosaic: Mosaic: cells taking turns · scatter: Scatter: the frame full, at many heights · grid: Grid: a piece in each cell · gravity: Gravity: they fall and pile up · orbit: Orbit: two rings round the greeting · scroll: Scrolling background: columns"
+                    },
+                    "masonryGapX": {
+                      "title": "Horizontal gap",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0 to 160, written as text."
+                    },
+                    "masonryGapY": {
+                      "title": "Vertical gap",
+                      "type": "string",
+                      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+                      "description": "A number from 0 to 160, written as text."
                     },
                     "camera": {
                       "title": "Camera",
@@ -253,6 +266,10 @@
                     },
                     "showTrust": {
                       "title": "Show Trust and numbers",
+                      "type": "boolean"
+                    },
+                    "showConfidence": {
+                      "title": "Show Confidence: control, cost and risk",
                       "type": "boolean"
                     },
                     "showMosaic": {
@@ -452,7 +469,30 @@
         "stampSparkle",
         "stampFields",
         "stampSquiggle",
-        "stampSmile"
+        "stampSmile",
+        "agentIdentities",
+        "atlassianMcp",
+        "redactedPrompt",
+        "needsInput",
+        "agentSessions",
+        "requestResolver",
+        "jiraList",
+        "riskStack",
+        "costByModel",
+        "spendCard",
+        "dimensions",
+        "potentialSavings",
+        "sessionCard",
+        "readiness",
+        "highReadiness",
+        "cursorActivity",
+        "presenceFacepile",
+        "rovoWithYou",
+        "workflowCard",
+        "conversation",
+        "agentCard",
+        "codeSearchQuery",
+        "twgSearchCli"
       ]
     },
     "playMode": {

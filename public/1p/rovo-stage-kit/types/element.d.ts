@@ -1,5 +1,5 @@
 // rovo-stage-kit: the Rovo Stage Kit for any page (React rides inside). Importing it defines
-// <rovo-stage> and <rovo-piece>. Rovo Stage Kit 1.0.0.
+// <rovo-stage> and <rovo-piece>. Rovo Stage Kit 1.3.0.
 import type {
     Appearance,
     KitPiece,

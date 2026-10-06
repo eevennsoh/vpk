@@ -1,4 +1,4 @@
-# Rovo Stage Kit 1.0.0
+# Rovo Stage Kit 1.3.0
 
 The Rovo stage, the wall of animated product pieces from Rovo Desktop's stage lab, packaged so another codebase can draw it exactly as the lab's composer shows it.
 

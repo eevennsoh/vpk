@@ -1,11 +1,10 @@
 import kitPieces from "@/public/1p/rovo-stage-kit/pieces.json";
 import stageFile from "@/public/1p/rovo-stage-kit/rovo-stage.json";
-import type { KitPiece, PieceId } from "@/public/1p/rovo-stage-kit/types/stage-file";
+import type { ComposedPiece, KitPiece, PieceId, StageFile } from "@/public/1p/rovo-stage-kit/types/stage-file";
 
-import { FINALE_STORIES, finaleBentoLayout, type FinaleBentoLayout, type FinalePresenterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
+import { FINALE_STORIES, finaleBentoLayout, type FinaleBentoLayout, type FinaleChapterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import type { FinaleBrandColor } from "../data/finale-palette";
-import type { FinaleShapeKind } from "../data/finale-identity-shapes";
-import { packWallMasonry } from "./finale-wall-masonry";
+import { packWallMasonry, type MasonryItem } from "./finale-wall-masonry";
 import { wallPiecesLayout } from "./finale-wall-pieces";
 
 /** Scale of the keynote tiles and their typography after the throw. */
@@ -15,14 +14,13 @@ export const WALL_TITLE_ORDER = 6;
 const WALL_ENTRY_SCALE = 68 / 231;
 
 export type WallStatId = "presenters" | "chapters";
-export type WallStripId = "presenters" | "flow";
+export type WallStripId = "flow";
 export type WallPiece = Pick<KitPiece, "id" | "scale">;
 export type WallContent =
 	| { readonly kind: "story"; readonly story: FinaleStory }
 	| { readonly kind: "benefit"; readonly story: FinaleStory }
 	| { readonly kind: "print"; readonly codes: readonly string[] }
-	| { readonly kind: "poster"; readonly word: string; readonly fill: FinaleBrandColor; readonly ink: FinaleBrandColor }
-	| { readonly kind: "shape"; readonly shape: FinaleShapeKind; readonly fill: FinaleBrandColor; readonly portrait: FinalePresenterId }
+	| { readonly kind: "poster"; readonly word: FinaleChapterId; readonly fill: FinaleBrandColor; readonly ink: FinaleBrandColor }
 	| { readonly kind: "stat"; readonly stat: WallStatId }
 	| { readonly kind: "strip"; readonly strip: WallStripId }
 	| { readonly kind: "piece"; readonly pieces: readonly WallPiece[] }
@@ -30,6 +28,7 @@ export type WallContent =
 
 export interface WallGeometry {
 	readonly gutter: number;
+	readonly gutterY: number;
 	/** Spatial indexing only. Items never snap to these buckets. */
 	readonly bucketWidth: number;
 	/** Widest original card for the arrival's leading edge, in viewport px. */
@@ -73,16 +72,52 @@ export function wrap(value: number, period: number): number {
 	return ((value % period) + period) % period;
 }
 
+type WallStagePiece = Pick<ComposedPiece, "key" | "scale"> & { readonly id: string };
+type WallStageSource = {
+	readonly composition: { readonly pieces: readonly WallStagePiece[] } | null;
+	readonly board: { readonly cells: { readonly a: Pick<StageFile["board"]["cells"]["a"], "options"> } };
+};
+
+/** Explicit instances keep their scales; automatic stages use the enabled catalogue and density. */
+export function resolveWallStagePieces(stage: WallStageSource): readonly WallStagePiece[] {
+	if (stage.composition !== null) return stage.composition.pieces;
+	const options = stage.board.cells.a.options ?? {};
+	const density = options.density === "gallery" ? 1 : options.density === "dense" ? 0.76 : 0.88;
+	const enabled = kitPieces.filter((piece) => {
+		const shown = options[`show${piece.group[0].toUpperCase()}${piece.group.slice(1)}`];
+		return typeof shown === "boolean" ? shown : piece.group !== "apps";
+	});
+	const groups = [...new Set(enabled.map((piece) => piece.group))].map((group) => enabled.filter((piece) => piece.group === group));
+	const ordered: typeof kitPieces = [];
+	for (let index = 0; index < Math.max(0, ...groups.map((group) => group.length)); index += 1) {
+		for (const group of groups) {
+			const piece = group[index];
+			if (piece) ordered.push(piece);
+		}
+	}
+	return ordered.map((piece) => ({
+		key: `library-${piece.id}`,
+		id: piece.id,
+		scale: piece.scale * density,
+	}));
+}
+
+function wallStageGap(option: string | boolean | undefined): number {
+	const value = typeof option === "string" ? Number(option) : Number.NaN;
+	return Number.isFinite(value) ? Math.min(160, Math.max(0, value)) : 28;
+}
+
 export function wallGeometry(fitScale: number, viewport: { readonly width: number; readonly height: number }): WallGeometry {
 	const referenceWidth = finaleBentoLayout(viewport, fitScale).slots[0].rect.width * WALL_ENTRY_SCALE;
 	// The exported zoom frames the kit; a shared 1.25 enlargement makes its animated UI readable.
 	const pieceScale = fitScale * stageFile.board.cells.a.zoom * 1.25;
-	const maxPieceWidth = Math.max(...stageFile.composition.pieces.map((placed) => {
+	const maxPieceWidth = Math.max(...resolveWallStagePieces(stageFile).map((placed) => {
 		const piece = kitPieces.find((each) => each.id === placed.id);
 		return piece ? (piece.w * placed.scale + 80) * pieceScale : 0;
 	}));
 	return {
-		gutter: 24 * fitScale,
+		gutter: wallStageGap(stageFile.board.cells.a.options.masonryGapX) * fitScale,
+		gutterY: wallStageGap(stageFile.board.cells.a.options.masonryGapY) * fitScale,
 		bucketWidth: 256 * fitScale,
 		arrivalWidth: referenceWidth * 2 + 32 * fitScale,
 		arrivalReach: referenceWidth + 32 * fitScale,
@@ -101,10 +136,7 @@ export function wallSlotRadius(slot: WallSlot, geometry: WallGeometry): number {
 	return kind === "poster" || kind === "benefit" || kind === "title" ? geometry.radius * geometry.typeScale : geometry.radius;
 }
 
-interface WallItem {
-	readonly key: string;
-	readonly width: number;
-	readonly height: number;
+interface WallItem extends MasonryItem {
 	readonly content: WallContent;
 }
 
@@ -113,7 +145,7 @@ function isPieceId(id: string): id is PieceId {
 }
 
 function libraryItems(geometry: WallGeometry): readonly WallItem[] {
-	return stageFile.composition.pieces.flatMap((placed) => {
+	return resolveWallStagePieces(stageFile).flatMap((placed) => {
 		if (!isPieceId(placed.id)) return [];
 		const piece = kitPieces.find((each) => each.id === placed.id);
 		if (!piece) return [];
@@ -124,15 +156,17 @@ function libraryItems(geometry: WallGeometry): readonly WallItem[] {
 
 function keynoteItems(geometry: WallGeometry, features: readonly FinaleStory[], dragOrder: readonly string[]): readonly WallItem[] {
 	const scale = geometry.typeScale / WALL_SCALE;
-	const item = (key: string, width: number, height: number, content: WallContent): WallItem => ({ key, width: width * scale, height: height * scale, content });
+	const item = (key: string, width: number, height: number, content: WallContent): WallItem => ({ key, width: width * scale, height: height * scale, content, ...(content.kind === "poster" ? { group: "chapter" } : {}) });
 	const featured = new Set(features.map((story) => story.code));
 	const remaining = FINALE_STORIES.map((story) => story.code).filter((code) => !featured.has(code));
 	const ordered = [...dragOrder.filter((code) => remaining.includes(code)), ...remaining.filter((code) => !dragOrder.includes(code))];
 	const extras: WallItem[] = features.map((story, index) => item(`benefit-${index}`, 240 + (index % 3) * 55, 155 + (index % 2) * 55, { kind: "benefit", story }));
-	const portraits: readonly [FinalePresenterId, FinaleShapeKind, FinaleBrandColor][] = [["tamar", "arch", "purple"], ["sherif", "circle", "purple"], ["mike", "shield", "blue"], ["taroon", "hexagon", "blue"]];
-	portraits.forEach(([portrait, shape, fill], index) => extras.push(item(`portrait-${portrait}`, 160 + index * 18, index % 2 === 0 ? 310 : 185, { kind: "shape", portrait, shape, fill })));
-	const posters: readonly [string, FinaleBrandColor, FinaleBrandColor][] = [["Context", "lime", "black"], ["Collaboration", "purple", "black"], ["Confidence", "blue", "white"], ["Loom", "purple", "black"], ["Jira", "blue", "white"], ["Guard", "saffron", "black"]];
-	posters.forEach(([word, fill, ink], index) => extras.push(item(`poster-${index}`, index % 2 === 0 ? 420 : 215, index % 3 === 0 ? 160 : 245, { kind: "poster", word, fill, ink })));
+	const posters = [
+		{ word: "Context", width: 300, height: 160, fill: "lime", ink: "black" },
+		{ word: "Collaboration", width: 360, height: 200, fill: "purple", ink: "black" },
+		{ word: "Confidence", width: 280, height: 220, fill: "blue", ink: "white" },
+	] satisfies readonly { word: FinaleChapterId; width: number; height: number; fill: FinaleBrandColor; ink: FinaleBrandColor }[];
+	posters.forEach(({ word, width, height, fill, ink }, index) => extras.push(item(`poster-${index}`, width, height, { kind: "poster", word, fill, ink })));
 	let dealt = 0;
 	while (dealt < ordered.length) {
 		const remaining = ordered.length - dealt;
@@ -147,7 +181,7 @@ function keynoteItems(geometry: WallGeometry, features: readonly FinaleStory[], 
 
 /** Intrinsic rectangles packed edge to edge, with the keynote landing spaces reserved first. */
 export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout, features: readonly FinaleStory[], dragOrder: readonly string[]): FinaleWall {
-	const { gutter, bucketWidth, viewport } = geometry;
+	const { gutter, gutterY, bucketWidth, viewport } = geometry;
 	const anchors = [...bento.slots.slice(0, features.length).map((slot, order) => ({ order, rect: slot.rect, content: { kind: "story" as const, story: features[order] } })), { order: WALL_TITLE_ORDER, rect: bento.title, content: { kind: "title" as const } }];
 	const reserved = anchors.map(({ order, rect }) => ({
 		x: rect.x + rect.width * (1 - WALL_SCALE) / 2 - (order === WALL_TITLE_ORDER ? viewport.width * 0.12 : 0),
@@ -162,7 +196,7 @@ export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout
 		if (library[index]) items.push(library[index]);
 		if (extras[index]) items.push(extras[index]);
 	}
-	const rects = packWallMasonry(items, reserved, viewport.height, gutter);
+	const rects = packWallMasonry(items, reserved, viewport.height, gutter, gutterY, 900 * geometry.typeScale / WALL_SCALE);
 	const base = anchors.map(({ order, content }, index): WallSlot => ({ key: `gap-${order}`, bucket: 0, rect: reserved[index], content, seed: order * 31, reserved: order }));
 	items.forEach((item, index) => base.push({ key: item.key, bucket: 0, rect: rects[index], content: item.content, seed: 211 + index * 37 }));
 	const periodBuckets = Math.ceil((Math.max(...base.map((slot) => slot.rect.x + slot.rect.width)) + gutter) / bucketWidth);
