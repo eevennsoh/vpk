@@ -73,7 +73,7 @@ test("the route renders the keynote board directly inside Jira app chrome", () =
 	assert.match(PAGE_SOURCE, /columnWidth="fluid"/u);
 	assert.match(PAGE_SOURCE, /JIRA_TEAM_EU26_PAY_BOARD_AGENTS/u);
 	assert.match(PAGE_SOURCE, /headerAssignees=\{JIRA_TEAM_EU26_END_HEADER_ASSIGNEES\}/u);
-	assert.match(PAGE_SOURCE, /currentUser=\{JIRA_TEAM_EU26_END_PRESENTERS\.mcb\}/u);
+	assert.match(PAGE_SOURCE, /currentUser=\{JIRA_TEAM_EU26_END_PRESENTERS\.mike\}/u);
 	assert.match(PAGE_SOURCE, /showUnassignedHeaderAvatar=\{false\}/u);
 	assert.match(PAGE_SOURCE, /agentSessionMembers=\{JIRA_TEAM_EU26_PAY_SESSION_MEMBERS\}/u);
 	assert.match(PAGE_SOURCE, /h-full min-h-0 min-w-0 overflow-hidden \[&>div\]:min-h-0/u);
@@ -93,7 +93,7 @@ test("the keynote uses the same card movement presentation as Team EU26", () => 
 
 test("the keynote floating chat retains MCB creator attribution through its active overlay", () => {
 	const overlay = readProjectFile("components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx");
-	assert.match(PAGE_SOURCE, /<JgpRovoOverlay\s+agentCreator=\{JIRA_TEAM_EU26_END_PRESENTERS\.mcb\}/u);
+	assert.match(PAGE_SOURCE, /<JgpRovoOverlay\s+agentCreator=\{JIRA_TEAM_EU26_END_PRESENTERS\.mike\}/u);
 	assert.match(overlay, /agentCreator\?: AgentResultCreator;/u);
 	assert.match(overlay, /<RovoFloatingChat\s+agentCreator=\{agentCreator\}/u);
 });

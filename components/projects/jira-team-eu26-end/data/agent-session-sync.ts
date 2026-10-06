@@ -698,11 +698,11 @@ function toFinishedSessionCopy(session: PulseAgentSession): Pick<PulseAgentSessi
 }
 
 const KEYNOTE_SESSION_PERSON_NAMES: Readonly<Record<string, string>> = {
-	Venn: JIRA_TEAM_EU26_END_PRESENTERS.mcb.name,
+	Venn: JIRA_TEAM_EU26_END_PRESENTERS.mike.name,
 	Maya: JIRA_TEAM_EU26_END_PRESENTERS.sherif.name,
 	Jordan: JIRA_TEAM_EU26_END_PRESENTERS.tamar.name,
 	Priya: JIRA_TEAM_EU26_END_PRESENTERS.taroon.name,
-	Diego: JIRA_TEAM_EU26_END_PRESENTERS.mcb.name,
+	Diego: JIRA_TEAM_EU26_END_PRESENTERS.mike.name,
 };
 
 function toKeynoteSessionAttribution<T extends PulseAgentSession>(session: T): T {

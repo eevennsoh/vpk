@@ -530,12 +530,12 @@ function BoardHeaderControlsRow({
 
 			{needsInputCount !== undefined ? (
 				<>
+					<BoardGroupByMenu />
 					<BoardNeedsInputButton
 						agentFilterId={agentFilterId}
 						count={needsInputCount}
 						onAgentFilterIdChange={onAgentFilterIdChange}
 					/>
-					<BoardGroupByMenu />
 				</>
 			) : (
 				<BoardViewMenu

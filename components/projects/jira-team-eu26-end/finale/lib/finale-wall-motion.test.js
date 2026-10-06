@@ -11,6 +11,7 @@ export * from "./finale-shape-morph";
 export { titleGrabTime, titleHeldTime } from "./finale-title-drag";
 export { cameraDistance, tileRevealStart } from "./finale-card-motion";
 export { CUE, FINALE_REST_TIME, WALL_CUE } from "../data/finale-cues";
+export { tileGlowWindow } from "./finale-tile-glow";
 export { FINALE_STORIES, finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 `;
 
@@ -71,8 +72,8 @@ test("arrival timing does not change with the spatial bucket size", () => {
 	const { m, wall, geometry } = sceneFor(VIEWPORTS[1]);
 	const slot = { ...wall.items[0], key: "entry-probe", seed: 42, rect: { x: 2600, y: 200, width: 170, height: 140 } };
 	const normal = m.slotDescent(slot, wall);
-	assert.ok(close(normal.start, 21.747299814740884), "the pre-masonry entry time");
-	assert.ok(close(normal.touchdown, 22.726097591474147), "the pre-masonry landing time");
+	assert.ok(close(normal.start - m.wallDriftStart(), 11.977299814740884), "the pre-masonry entry time relative to the glide");
+	assert.ok(close(normal.touchdown - m.wallDriftStart(), 12.956097591474147), "the pre-masonry landing time relative to the glide");
 	const reindexed = m.slotDescent(slot, { ...wall, geometry: { ...geometry, bucketWidth: geometry.bucketWidth * 2 } });
 	assert.deepEqual(reindexed, normal);
 });
@@ -91,10 +92,17 @@ test("the mega bento never exists on the bento's rest frame (reduced motion)", (
 	assert.equal(m.wallActive(m.FINALE_REST_TIME), false);
 	assert.equal(m.wallActive(m.FINALE_REST_TIME + 1 / 120), true);
 	assert.deepEqual(m.wallSheetsAt(m.FINALE_REST_TIME, wall, drops, viewport), []);
-	// Its columns mount, hidden, on the held frame after the last tile has built, not on the act's first frame.
-	const lastBuilt = m.tileRevealStart(5) + m.CUE.reveal;
-	assert.equal(m.wallMounted(lastBuilt), false);
+	assert.equal(m.wallMounted(m.WALL_CUE.start - 0.31), false);
 	assert.equal(m.wallMounted(m.FINALE_REST_TIME), true);
+});
+
+test("the title becomes its black card immediately after the last bento glow", () => {
+	const m = load();
+	const glowEnd = Math.max(...Array.from({ length: 6 }, (_, order) => m.tileGlowWindow(order).end));
+	assert.ok(Math.abs(m.WALL_CUE.start - glowEnd) < 1e-9, "no hold after the glow");
+	assert.ok(m.bentoTitleForm(glowEnd + 1 / 60) > 0, "card formation starts on the next frame");
+	const gap = m.bentoTitleFlipTime() - glowEnd;
+	assert.ok(gap >= 0 && gap <= 0.1, `flip follows the glow within 100ms (${gap}s)`);
 });
 
 test("a grey container's landing sheet and accents match its 20px DOM corners", () => {

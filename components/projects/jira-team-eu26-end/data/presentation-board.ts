@@ -65,7 +65,7 @@ export const JIRA_TEAM_EU26_PAY_112_RETENTION_MESSAGE =
 	"I confirmed the sandbox can 401 when a replayed key is still retained, but I need a human call before I keep going. Replaying against live accounts without a signed retention window would change the blast radius of PAY-112.";
 
 export const JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID = {
-	mcb: "mcb",
+	mike: "mike",
 	tamar: "tamar",
 	sherif: "sherif",
 	taroon: "taroon",

@@ -32,7 +32,7 @@ const { getJiraKanbanAssignees, moveJiraKanbanCardsToColumn } = require("../../s
 
 test("column presenter metadata survives moves without header faces or work-item assignees", () => {
 	const presenters = [
-		{ id: "mcb", name: "MCB", avatarSrc: "/avatar-user/mcb.png" },
+		{ id: "mike", name: "MCB", avatarSrc: "/avatar-user/mike.png" },
 		{ id: "tamar", name: "Tamar", avatarSrc: "/avatar-user/tamar.png" },
 	];
 	const columns = [

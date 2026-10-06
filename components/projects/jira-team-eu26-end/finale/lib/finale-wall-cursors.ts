@@ -360,7 +360,7 @@ function wallHold(slot: WallSlot, wall: FinaleWall): WallHold | null {
 }
 
 /** MCB's lane: his own colour and name, from the slide. */
-const CARRIER_LANE = Math.max(0, FINALE_CURSORS.findIndex((cursor) => cursor.id === "mcb"));
+const CARRIER_LANE = Math.max(0, FINALE_CURSORS.findIndex((cursor) => cursor.id === "mike"));
 
 /**
  * MCB's cursor dragging the title (`drops`' title card) into its gap, as a

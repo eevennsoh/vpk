@@ -479,17 +479,15 @@ test("the hero flips end over end once on its rush, wherever MCB dropped it in t
 	}
 });
 
-test("tiles land one by one and every heading has built with a hold before the final frame", () => {
+test("tiles land one by one and the last heading finishes during the title transition", () => {
 	const { CUE, FINALE_SLOT_COUNT, touchdownTime, tileRevealStart } = loadFinale();
 	const landings = Array.from({ length: FINALE_SLOT_COUNT }, (_, order) => touchdownTime(order));
 	landings.forEach((time, order) => {
 		if (order > 0) assert.ok(time > landings[order - 1], "tiles land one after another");
 	});
 	const lastHeadingBuilt = tileRevealStart(FINALE_SLOT_COUNT - 1) + CUE.reveal;
-	// A short hold: the title turns into its black card soon after, without a wait.
-	const hold = CUE.end - lastHeadingBuilt;
-	assert.ok(hold >= 0.5 && hold <= 0.8, `final frame holds ${hold.toFixed(2)}s after the last heading builds`);
-	assert.ok(CUE.end - CUE.yearLand >= 1, "the year has landed well before the final frame");
+	assert.ok(lastHeadingBuilt - CUE.end <= 0.35, "the heading's reveal overlaps the transition by at most 350ms");
+	assert.ok(CUE.end > CUE.yearLand, "the year has landed before the title transition");
 });
 
 test("the dot grid only exists as one pulse per tile touchdown", () => {

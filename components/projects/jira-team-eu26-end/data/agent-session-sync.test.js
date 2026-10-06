@@ -177,11 +177,11 @@ test("retained and queued sessions attribute the local viewer to MCB", async () 
 		...sync.JIRA_TEAM_EU26_SYNC_SESSIONS,
 	];
 
-	assert.ok(sessions.some((session) => session.memberIds.includes("mcb")));
+	assert.ok(sessions.some((session) => session.memberIds.includes("mike")));
 	assert.ok(sessions.every((session) => !session.memberIds.includes("venn")));
 	assert.ok(sessions.every((session) => session.memberIds.every((id) => !["diego", "jordan", "maya", "priya"].includes(id))));
 	assert.ok(sessions.every((session) => new Set(session.memberIds).size === session.memberIds.length));
-	for (const id of ["mcb", "tamar", "sherif", "taroon"]) {
+	for (const id of ["mike", "tamar", "sherif", "taroon"]) {
 		assert.ok(sessions.some((session) => session.memberIds.includes(id)));
 	}
 	assert.ok(sessions.every((session) => !session.machineName.includes("Venn")));
