@@ -40,6 +40,15 @@ function sceneFor(viewport, dragOrder = []) {
 	return { m, bento, geometry, wall };
 }
 
+test("every remaining work item has its own print slot instead of a bulk-drag stack", () => {
+	for (const viewport of VIEWPORTS) {
+		const { m, wall } = sceneFor(viewport);
+		const prints = wall.items.filter((slot) => slot.content.kind === "print");
+		assert.equal(prints.length, m.FINALE_STORIES.length - m.FINALE_FEATURES.length);
+		for (const slot of prints) assert.equal(slot.content.codes.length, 1, `${slot.key} holds one work item`);
+	}
+});
+
 test("the wall has three varied chapter word tiles separated by product content", () => {
 	for (const viewport of VIEWPORTS) {
 		const { wall, geometry } = sceneFor(viewport);
@@ -58,7 +67,7 @@ test("the wall has three varied chapter word tiles separated by product content"
 	}
 });
 
-test("four 3:4 lanyard tiles hang from the top edge through every period, spaced so about one is in frame at a time", () => {
+test("three 3:4 lanyard tiles hang from the top edge through every period, evenly spaced, never two in frame at once", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, wall, geometry } = sceneFor(viewport);
 		const lanyards = wall.items.filter((slot) => slot.content.kind === "lanyard").sort((a, b) => a.rect.x - b.rect.x);
@@ -73,12 +82,12 @@ test("four 3:4 lanyard tiles hang from the top edge through every period, spaced
 			assert.ok(close(slot.rect.height, m.WALL_LANYARDS.height * scale), slot.key);
 			assert.ok(close(slot.rect.width / slot.rect.height, 3 / 4), slot.key);
 		}
-		// Neighbours (round the seam too) sit at least a frame apart, and no stretch of the loop goes much longer without one.
+		// Neighbours (round the seam too) never share the frame, and no stretch of the loop goes much longer than its share without one.
 		const centres = lanyards.map((slot) => slot.rect.x + slot.rect.width / 2);
 		const spacings = centres.map((centre, index) => (index === 0 ? centre + wall.periodWidth - centres.at(-1) : centre - centres[index - 1]));
 		for (const spacing of spacings) {
-			assert.ok(spacing >= viewport.width * 0.9, `${viewport.width}: lanyards ${Math.round(spacing)}px apart`);
-			assert.ok(spacing <= wall.periodWidth * 0.4, `${viewport.width}: a ${Math.round(spacing)}px stretch without a lanyard`);
+			assert.ok(spacing >= viewport.width + lanyards[0].rect.width, `${viewport.width}: lanyards ${Math.round(spacing)}px apart`);
+			assert.ok(spacing <= (wall.periodWidth / lanyards.length) * 1.2, `${viewport.width}: a ${Math.round(spacing)}px stretch without a lanyard`);
 		}
 	}
 });
@@ -136,12 +145,12 @@ test("masonry honors horizontal and vertical gaps independently", () => {
 	]);
 });
 
-test("every grey container has a fixed 20px radius on every viewport", () => {
+test("every wall container, including custom coloured tiles, has a fixed 20px radius on every viewport", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, wall, geometry } = sceneFor(viewport);
-		const grey = wall.items.filter((slot) => ["story", "piece", "stat", "strip", "lanyard"].includes(slot.content.kind));
-		assert.ok(grey.length > 0);
-		for (const slot of grey) assert.equal(m.wallSlotRadius(slot, geometry), 20, slot.key);
+		const tiles = wall.items.filter((slot) => slot.content.kind !== "print");
+		assert.ok(tiles.length > 0);
+		for (const slot of tiles) assert.equal(m.wallSlotRadius(slot, geometry), 20, slot.key);
 	}
 });
 

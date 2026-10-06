@@ -11,6 +11,7 @@ export * from "./finale-shape-morph";
 export { titleGrabTime, titleHeldTime } from "./finale-title-drag";
 export { cameraDistance, tileRevealStart } from "./finale-card-motion";
 export { CUE, FINALE_REST_TIME, WALL_CUE } from "../data/finale-cues";
+export { tileGlowWindow } from "./finale-tile-glow";
 export { FINALE_STORIES, finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 `;
 
@@ -71,8 +72,8 @@ test("arrival timing does not change with the spatial bucket size", () => {
 	const { m, wall, geometry } = sceneFor(VIEWPORTS[1]);
 	const slot = { ...wall.items[0], key: "entry-probe", seed: 42, rect: { x: 2600, y: 200, width: 170, height: 140 } };
 	const normal = m.slotDescent(slot, wall);
-	assert.ok(close(normal.start, 21.747299814740884), "the pre-masonry entry time");
-	assert.ok(close(normal.touchdown, 22.726097591474147), "the pre-masonry landing time");
+	assert.ok(close(normal.start - m.wallDriftStart(), 11.977299814740884), "the pre-masonry entry time relative to the glide");
+	assert.ok(close(normal.touchdown - m.wallDriftStart(), 12.956097591474147), "the pre-masonry landing time relative to the glide");
 	const reindexed = m.slotDescent(slot, { ...wall, geometry: { ...geometry, bucketWidth: geometry.bucketWidth * 2 } });
 	assert.deepEqual(reindexed, normal);
 });
@@ -91,10 +92,17 @@ test("the mega bento never exists on the bento's rest frame (reduced motion)", (
 	assert.equal(m.wallActive(m.FINALE_REST_TIME), false);
 	assert.equal(m.wallActive(m.FINALE_REST_TIME + 1 / 120), true);
 	assert.deepEqual(m.wallSheetsAt(m.FINALE_REST_TIME, wall, drops, viewport), []);
-	// Its columns mount, hidden, on the held frame after the last tile has built, not on the act's first frame.
-	const lastBuilt = m.tileRevealStart(5) + m.CUE.reveal;
-	assert.equal(m.wallMounted(lastBuilt), false);
+	assert.equal(m.wallMounted(m.WALL_CUE.start - 0.31), false);
 	assert.equal(m.wallMounted(m.FINALE_REST_TIME), true);
+});
+
+test("the title becomes its black card immediately after the last bento glow", () => {
+	const m = load();
+	const glowEnd = Math.max(...Array.from({ length: 6 }, (_, order) => m.tileGlowWindow(order).end));
+	assert.ok(Math.abs(m.WALL_CUE.start - glowEnd) < 1e-9, "no hold after the glow");
+	assert.ok(m.bentoTitleForm(glowEnd + 1 / 60) > 0, "card formation starts on the next frame");
+	const gap = m.bentoTitleFlipTime() - glowEnd;
+	assert.ok(gap >= 0 && gap <= 0.1, `flip follows the glow within 100ms (${gap}s)`);
 });
 
 test("a grey container's landing sheet and accents match its 20px DOM corners", () => {
@@ -368,13 +376,42 @@ test("new cards wait in the air at the leading edge, tilted and turned, and come
 		if (aloft) {
 			assert.ok(aloft.pose.z > 0 && aloft.pose.lift === 1, "up in the air");
 			assert.ok(turned(aloft.pose) > 0.15, "tilted");
-			assert.ok(close(aloft.chroma, 1), "filmed through the field's smear");
+			assert.ok(close(aloft.chroma, 1), "filmed through the original full-strength smear");
 		}
 		const landed = sheet(descent.touchdown + 0.2);
 		assert.ok(landed && landed.pose.z === 0 && turned(landed.pose) < 0.01 && landed.chroma === 0, "flat in its slot, the smear gone");
 		assert.ok(close(landed.pose.waveAge, 0.2), "with the landing wave");
 		const presence = m.wallSlotPresence(slot, wall, drops, descent.touchdown + m.CUE.handoff + 0.2);
 		assert.ok(presence.opacity === 1 && close(presence.revealStart, m.landingRevealStart(descent.touchdown)), "then its DOM card builds");
+	}
+});
+
+test("arrivals do not linger visibly smeared before their short entrance preview", () => {
+	const { m, wall, drops, viewport } = sceneFor(VIEWPORTS[1]);
+	const candidates = wall.items.filter((slot) => slot.reserved === undefined && m.slotDescent(slot, wall)?.start > 20).slice(0, 12);
+	assert.ok(candidates.length >= 8);
+	for (const slot of candidates) {
+		const descent = m.slotDescent(slot, wall);
+		const sheetAt = (time) => m.wallSheetsAt(time, wall, drops, viewport).find((sheet) => sheet.key === `card-${slot.key}`);
+		const early = sheetAt(descent.start - 0.5);
+		assert.ok(!early || early.pose.opacity === 0, `${slot.key}: no early chromatic ghost`);
+		const waiting = sheetAt(descent.start - 0.05);
+		assert.ok(waiting && waiting.pose.opacity > 0.99, "the brief waiting pose is fully visible");
+		assert.equal(waiting.chroma, 1, "the timing change preserves the original chromatic strength");
+		const settled = sheetAt(descent.touchdown + 0.1);
+		assert.ok(settled && settled.chroma === 0, "clear on landing");
+	}
+});
+
+test("every arriving card keeps its original rainbow trail while its shadow stays subtle", () => {
+	const { m, wall, drops, viewport } = sceneFor(VIEWPORTS[1]);
+	const arrivals = wall.items.filter((slot) => slot.reserved === undefined && m.slotDescent(slot, wall)?.start > 20);
+	for (const slot of arrivals) {
+		const descent = m.slotDescent(slot, wall);
+		const waiting = m.wallSheetsAt(descent.start - 0.05, wall, drops, viewport).find((sheet) => sheet.key === `card-${slot.key}`);
+		assert.ok(waiting);
+		assert.equal(waiting.chroma, 1, `${slot.key}: every arrival keeps the full effect`);
+		assert.ok(waiting.shadow.strength <= 0.15, "no heavy cast-shadow band under a routine arrival");
 	}
 });
 

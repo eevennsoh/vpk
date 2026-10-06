@@ -456,11 +456,11 @@ function drawSheet(state: WallGlState, held: PooledSheet, sheet: WallSheet, inpu
 	uniforms.uFog.value = fogAtDepth(depth, viewport);
 	uniforms.uOpacity.value = opacity;
 	uniforms.uTime.value = time;
-	setLandingWave(uniforms, pose, sheet.waveFrom);
+	setLandingWave(uniforms, pose, sheet.waveFrom, "flat");
 	setCloth(uniforms.uCloth.value, sheet.velocity, pose.lift * pose.opacity, mesh.rotation);
 	if (sheet.shadow) {
 		const cast = landingShadowIn(sheet.shadow, time, sheet.shadow.pose, viewport, state.ground, sheet.radius);
-		placeShadow(shadow, cast, state.ground, opacity);
+		placeShadow(shadow, cast, state.ground, opacity * sheet.shadow.strength);
 	}
 	return true;
 }

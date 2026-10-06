@@ -107,7 +107,7 @@ test("a lanyard tile never flies in: it glides in hanging from the top, and drop
 	for (const viewport of [VIEWPORT, { width: 1024, height: 768 }, { width: 2560, height: 1440 }]) {
 		const { m, geometry, wall } = sceneFor(viewport);
 		const lanyards = Array.from({ length: wall.periodBuckets * 2 }, (_, index) => wall.bucket(index)).flat().filter((slot) => slot.content.kind === "lanyard");
-		assert.equal(lanyards.length, 8, "four a period");
+		assert.equal(lanyards.length, 6, "three a period");
 		const settled = m.WALL_CUE.start + m.WALL_CUE.carryDownAt + m.WALL_LANYARD.afterCarryS;
 		const [least, most] = m.WALL_LANYARD.enterShown;
 		for (const slot of lanyards) {
