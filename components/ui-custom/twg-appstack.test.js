@@ -65,11 +65,31 @@ test("TWG Appstack animation is optional and preserves source stack rotation", (
 	assert.match(SOURCE, /animated = true/u);
 	assert.match(SOURCE, /const shouldAnimate = animated && !shouldReduceMotion/u);
 	assert.match(SOURCE, /if \(!shouldAnimate\)/u);
-	assert.match(SOURCE, /const APPSTACK_ROTATIONS = \[\s*0,\s*6,\s*0,\s*-8,\s*\] as const/u);
+	assert.match(SOURCE, /const APPSTACK_ROTATIONS = \[\s*-10,\s*8,\s*-12,\s*10,\s*-8,\s*12,\s*\] as const/u);
 	assert.match(SOURCE, /const APPSTACK_ENTER_ROTATION_OFFSET = 18/u);
 	assert.match(SOURCE, /rotate: \{ type: "spring", stiffness: 260, damping: 30, mass: 0\.85/u);
 	assert.match(SOURCE, /transform: `rotate\(\$\{rotation\}deg\)`/u);
 	assert.match(SOURCE, /animate=\{\{ filter: "blur\(0px\)", opacity: 1, rotate: rotation, scale: 1, x: 0 \}\}/u);
+});
+
+test("only multi-source app stacks use the shared deterministic rotation cycle", async () => {
+	const sources = [
+		{ id: "jira", label: "Jira", provider: "teamwork-graph" },
+		{ id: "confluence", label: "Confluence", provider: "teamwork-graph" },
+		{ id: "teamwork-graph", label: "Teamwork Graph", provider: "teamwork-graph" },
+		{ id: "rovo", label: "Rovo", provider: "teamwork-graph" },
+	];
+	const view = await renderComponent({
+		entry: "components/ui-custom/twg-appstack.tsx",
+		exportName: "TWGAppstack",
+		props: { animated: false, sources: [sources[0]] },
+	});
+	const getRotations = () => [...view.container.querySelectorAll("[style]")]
+			.map((element) => element.style.transform)
+			.filter((transform) => transform.startsWith("rotate("));
+	assert.deepEqual(getRotations(), ["rotate(0deg)"]);
+	await view.rerender({ animated: false, sources });
+	assert.deepEqual(getRotations(), ["rotate(-10deg)", "rotate(8deg)", "rotate(-12deg)", "rotate(10deg)"]);
 });
 
 test("TWG Appstack only staggers its first reveal and layout-animates later sources", () => {

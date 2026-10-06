@@ -6,28 +6,128 @@ const origin = resolveAppOrigin();
 const issue = (page: Page, code: string) => page.locator(`[data-board-agent-session-drop-zone="issue"][data-issue-key="${code}"]`);
 const column = (page: Page, title: string) => page.locator(`[data-jira-kanban-column="${title}"]`);
 const storySections = [
-	{ title: "Context", stories: ["Artifacts", "Rovo Desktop", "Data Context", "Code Context", "Code Context", "Code Search App", "Rovo For Work", "People Context", "Communications Context"] },
+	{ title: "Context", stories: ["Rovo Desktop", "Data Context", "Code Context", "Artifacts", "Code Search App", "Rovo For Work", "People Context", "Communications Context"] },
 	{ title: "Collaboration", stories: ["Atlassian MCP", "Loom Desktop", "Loom Record for Agent", "Planner", "Loom Overlay", "ChatGPT Codex from Jira"] },
-	{ title: "Confidence", stories: ["Loom PR Reviews", "EU AI Inference", "Agent Effectiveness", "Change Risk Assessment", "Agent Identities", "Agent Session Tracking", "Incident Command Center", "Employee Onboarding", "AI Capital Management", "Guard Scanning"] },
+	{ title: "Confidence", stories: ["Loom PR Reviews", "Agent Session Tracking", "Agent Effectiveness", "Change Risk Assessment", "Incident Command Center", "EU AI Inference", "Employee Onboarding", "AI Capital Management", "Guard Scanning"] },
 ];
 const issueTitles = storySections.flatMap((section) => section.stories);
 const issueCodes = [
-	"TEU-4", "TEU-1", "TEU-101", "TEU-2", "TEU-102", "TEU-3", "TEU-103", "TEU-104",
+	"TEU-1", "TEU-101", "TEU-2", "TEU-4", "TEU-102", "TEU-3", "TEU-103", "TEU-104",
 	"TEU-105", "TEU-5", "TEU-106", "TEU-7", "TEU-8", "TEU-107",
-	"TEU-9", "TEU-108", "TEU-11", "TEU-109", "TEU-110", "TEU-10", "TEU-111", "TEU-112", "TEU-12", "TEU-13",
+	"TEU-9", "TEU-10", "TEU-11", "TEU-109", "TEU-111", "TEU-108", "TEU-112", "TEU-12", "TEU-13",
 ];
 const coverApps = [
-	["Artifacts"], ["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"], ["Teamwork Graph"], ["Code Search"], ["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"],
+	["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"], ["Artifacts"], ["Code Search"], ["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"],
 	["Teamwork Graph"], ["Loom"], ["Loom"], ["Jira", "Confluence", "Teamwork Graph"], ["Loom"], ["Jira"],
-	["Loom"], [], ["DX"], ["Jira Service Management"], [], ["Jira"], ["Jira Service Management"], ["Jira Service Management"], ["Talent"], ["Guard"],
+	["Loom"], ["Jira"], ["DX"], ["Jira Service Management"], ["Jira Service Management"], ["Admin"], ["Jira Service Management"], ["Talent"], ["Guard"],
 ];
 
 test.use({ viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true });
 
 async function openBoard(page: Page) {
-	await page.goto(`${origin}/preview/projects/jira-team-eu26-end?embedded=1`, { waitUntil: "networkidle" });
+	await page.goto(`${origin}/preview/projects/jira-team-eu26-end?embedded=1`, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Team ’26 EU keynote", exact: true })).toBeVisible();
 }
+
+test("bulk Add agent shares the complete grouped board agent picker", async ({ page }) => {
+	await openBoard(page);
+	const trigger = page.getByRole("button", { name: "More actions for TEU-105", exact: true });
+	await trigger.focus();
+	await trigger.press("Enter");
+	await page.getByRole("menuitem", { name: "Select", exact: true }).click();
+	await page.getByRole("button", { name: "Add agent", exact: true }).click();
+	const picker = page.locator('[data-slot="command"]');
+	await expect(picker.getByText("Pinned by space", { exact: true })).toBeVisible();
+	await expect(picker.getByText("More agents", { exact: true })).toBeVisible();
+	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot"]) {
+		await expect(picker.getByRole("button", { name: `Unpin ${name}`, exact: true })).toBeAttached();
+	}
+	await expect(picker.getByRole("option")).toHaveCount(8);
+	for (const name of ["Figma", "Code Reviewer", "Release Notes Drafter", "Bug Report Assistant"]) {
+		await picker.getByPlaceholder("Search agents").fill(name);
+		await expect(picker.getByRole("option")).toHaveCount(1);
+		await expect(picker.getByText(name, { exact: true })).toBeVisible();
+	}
+	await picker.getByPlaceholder("Search agents").fill("");
+	await expect(picker.getByRole("option")).toHaveCount(8);
+});
+
+test("floating keynote artwork keeps its visible subject vertically centered", async ({ page }) => {
+	await openBoard(page);
+	for (const width of [1440, 1920]) {
+		await page.setViewportSize({ width, height: 1080 });
+		for (const [code, sourceCenterY] of [["TEU-105", 288], ["TEU-5", 280], ["TEU-106", 328], ["TEU-109", 280], ["TEU-107", 280]] as const) {
+			const artwork = issue(page, code).locator('img[alt$="preview"]');
+			await artwork.scrollIntoViewIfNeeded();
+			await expect.poll(() => artwork.evaluate(node => node instanceof HTMLImageElement && node.complete && node.naturalWidth > 0)).toBe(true);
+			const centerError = await artwork.evaluate((node, centerY) => {
+				if (!(node instanceof HTMLImageElement)) throw new Error("Expected cover artwork");
+				const cover = node.closest('[data-slot="jira-issue-cover"]');
+				if (!cover) throw new Error("Expected cover frame");
+				const frame = cover.getBoundingClientRect();
+				const image = node.getBoundingClientRect();
+				const scale = Math.max(image.width / node.naturalWidth, image.height / node.naturalHeight);
+				const correction = /calc\(50% - ([\d.]+)px\)/u.exec(getComputedStyle(node).objectPosition);
+				const visibleCenter = image.top + image.height / 2 + (centerY - node.naturalHeight / 2) * scale - Number(correction?.[1] ?? 0);
+				return Math.abs(visibleCenter - (frame.top + frame.height / 2));
+			}, sourceCenterY);
+			expect(centerError, `${code} at ${width}px`).toBeLessThan(0.5);
+		}
+	}
+});
+
+test("keynote cards keep a grey right gutter inside each column", async ({ page }) => {
+	await page.addInitScript(() => localStorage.setItem("ui-theme", "light"));
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Team ’26 EU keynote", exact: true })).toBeVisible();
+	const gutters = await page.locator("[data-jira-kanban-column]").evaluateAll((columns) => columns.slice(0, 3).map((column) => {
+		const card = column.querySelector('[data-board-agent-session-drop-zone="issue"]');
+		const content = column.querySelector("[data-jira-kanban-column-content]");
+		const backdrop = column.querySelector("[data-jira-kanban-column-backdrop]");
+		if (!card || !content || !backdrop) return null;
+		return {
+			gap: Math.round(column.getBoundingClientRect().right - card.getBoundingClientRect().right),
+			gutter: getComputedStyle(content).backgroundColor,
+			backdrop: getComputedStyle(backdrop).backgroundColor,
+		};
+	}));
+	expect(gutters).toHaveLength(3);
+	for (const gutter of gutters) {
+		expect(gutter?.gap).toBe(7);
+		expect(gutter?.gutter).toBe(gutter?.backdrop);
+	}
+});
+
+test("EU AI Inference keeps its Admin app size over the latest vector cover", async ({ page }) => {
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "domcontentloaded" });
+	const cover = issue(page, "TEU-108").locator('[data-slot="jira-issue-cover"]');
+	await cover.scrollIntoViewIfNeeded();
+	const background = cover.getByRole("img", { name: "EU AI Inference preview" });
+	const foreground = cover.locator('[data-slot="jira-issue-cover-foreground"]');
+	await expect(background).toHaveAttribute("src", "/illustration/jira-team-eu26-end/eu-ai-inference.svg");
+	await expect(foreground).toHaveCount(0);
+	await expect.poll(() => background.evaluate((node) => node instanceof HTMLImageElement && node.complete && node.naturalWidth > 0)).toBe(true);
+	const mapPlacement = await cover.evaluate((node) => {
+		const artwork = node.querySelector('[data-slot="jira-issue-cover-artwork"]');
+		const coverBounds = node.getBoundingClientRect();
+		const artworkBounds = artwork?.getBoundingClientRect();
+		return artworkBounds ? {
+			top: artworkBounds.top - coverBounds.top,
+			height: artworkBounds.height,
+			canvasHeight: coverBounds.height,
+		} : null;
+	});
+	expect(mapPlacement).toEqual({ top: 0, height: 160, canvasHeight: 160 });
+	const app = cover.locator('[data-slot="jira-issue-cover-apps"]');
+	await expect(app.getByRole("img", { name: "Admin" })).toBeVisible();
+	const bounds = await app.boundingBox();
+	expect(bounds?.width).toBe(24);
+	expect(bounds?.height).toBe(24);
+	await page.setViewportSize({ width: 2048, height: 1191 });
+	await cover.scrollIntoViewIfNeeded();
+	const wideApp = await app.boundingBox();
+	expect(wideApp?.width).toBe(24);
+});
 
 test("keynote cards keep More actions by the summary, omit the work item key, and hide footer metadata", async ({ page }) => {
 	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
@@ -65,9 +165,10 @@ async function coverThemeColors(page: Page) {
 test("keynote covers follow live light, dark and system theme changes", async ({ page }) => {
 	await page.emulateMedia({ colorScheme: "light" });
 	await page.addInitScript(() => localStorage.setItem("ui-theme", "light"));
-	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
+	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Team ’26 EU keynote", exact: true })).toBeVisible();
 	const covers = page.locator('[data-jira-kanban-scrollport] [data-slot="jira-issue-cover"]');
-	await expect(covers).toHaveCount(24);
+	await expect(covers).toHaveCount(23);
 	const geometry = () => covers.evaluateAll(nodes => nodes.map(node => {
 		const bounds = node.getBoundingClientRect();
 		return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
@@ -76,13 +177,13 @@ test("keynote covers follow live light, dark and system theme changes", async ({
 	await page.getByRole("button", { name: "Profile menu", exact: true }).click();
 	const palettes: Awaited<ReturnType<typeof coverThemeColors>>[] = [];
 	for (const mode of ["light", "dark", "system", "light"] as const) {
-		const themeToggle = page.getByRole("button", { name: `Theme: ${mode[0].toUpperCase()}${mode.slice(1)} theme`, exact: true });
+		const themeToggle = page.getByRole("menuitem", { name: `Theme: ${mode[0].toUpperCase()}${mode.slice(1)} theme`, exact: true });
 		await expect(themeToggle).toBeVisible();
 		await expect(page.locator("html")).toHaveAttribute("data-color-mode", mode === "dark" ? "dark" : "light");
 		const colors = await coverThemeColors(page);
 		palettes.push(colors);
 		for (const cover of await covers.all()) {
-			await expect(cover.locator('img[src^="/illustration/jira-team-eu26-end/"]')).toBeVisible();
+			await expect(cover.getByRole("img", { name: /preview$/u })).toBeVisible();
 			const surfaces = await cover.evaluate(node => ({
 				apps: getComputedStyle(node).getPropertyValue("--ds-surface"),
 				page: getComputedStyle(document.documentElement).getPropertyValue("--ds-surface"),
@@ -240,7 +341,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 for (const width of [1440, 1920, 1024]) {
-	test(`24 keynote stories show their artwork and app logos at ${width}px`, async ({ page }) => {
+	test(`23 keynote stories show their artwork and app logos at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: 1080 });
 		await openBoard(page);
 		await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(4);
@@ -255,7 +356,7 @@ for (const width of [1440, 1920, 1024]) {
 			await card.scrollIntoViewIfNeeded();
 			await expect(card.getByText(title, { exact: true }).last()).toBeVisible();
 			const cover = card.locator('[data-slot="jira-issue-cover"]');
-			const artwork = cover.locator('img[src^="/illustration/jira-team-eu26-end/"]');
+			const artwork = cover.getByRole("img", { name: `${title} preview`, exact: true });
 			await expect(artwork).toBeVisible();
 			await expect(artwork).toHaveCSS("object-fit", "cover");
 			await expect.poll(() => artwork.evaluate(node => node instanceof HTMLImageElement && node.complete && node.naturalWidth > 0)).toBe(true);
@@ -270,17 +371,21 @@ for (const width of [1440, 1920, 1024]) {
 				const bounds = node.getBoundingClientRect();
 				const card = node.closest("article,button")!.getBoundingClientRect();
 				const apps = node.querySelector('[data-slot="jira-issue-cover-apps"]')?.getBoundingClientRect();
+				const artwork = node.querySelector('[data-slot="jira-issue-cover-artwork"]')!.getBoundingClientRect();
 				return { height: bounds.height, leftGap: bounds.left - card.left, rightGap: card.right - bounds.right, topGap: bounds.top - card.top,
+					artworkHeight: artwork.height, artworkPadding: bounds.height - artwork.height,
 					appLeft: apps ? apps.left - bounds.left : null, appTop: apps ? apps.top - bounds.top : null, appHeight: apps?.height };
 			});
-			expect(geometry.height).toBe(140);
+			expect(geometry.height).toBe(160);
+			expect(geometry.artworkHeight).toBe(160);
+			expect(geometry.artworkPadding).toBe(0);
 			expect(geometry.leftGap).toBe(0);
 			expect(geometry.rightGap).toBe(0);
 			expect(geometry.topGap).toBe(0);
 			if (coverApps[index].length) {
 				expect(geometry.appLeft).toBe(16);
 				expect(geometry.appTop).toBe(16);
-				expect(geometry.appHeight).toBe(20);
+				expect(geometry.appHeight).toBe(24);
 			}
 		}
 	});
@@ -472,7 +577,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
 		await expect.poll(sizes, { timeout: 15000 }).toEqual(reducedMotion === "reduce" ? [] : ["small", "small", "large"]);
 		await expect(page.locator('[data-jira-team-eu26-end-finale]')).toBeVisible({ timeout: 20000 });
-		await expect(column(page, "Done").locator("[data-issue-key]")).toHaveCount(24);
+		await expect(column(page, "Done").locator("[data-issue-key]")).toHaveCount(23);
 	});
 }
 

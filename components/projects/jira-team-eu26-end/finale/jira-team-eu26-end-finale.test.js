@@ -225,7 +225,7 @@ test("a scrolled board's print keeps the column in its visible position", () => 
 
 test("the finale is ready only once every keynote announcement sits in Done", () => {
 	const { isJiraTeamEu26FinaleReady, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES: codes } = loadFinale();
-	assert.equal(codes.length, 24);
+	assert.equal(codes.length, 23);
 	assert.equal(isJiraTeamEu26FinaleReady(columns(codes), codes), true);
 	assert.equal(isJiraTeamEu26FinaleReady(columns(codes.slice(0, -1), codes.slice(-1)), codes), false);
 	// Cards created live during the demo neither block nor trigger the finale.
@@ -300,10 +300,10 @@ test("the bento shows the Figma's six features in its slots, each a keynote stor
 
 test("the recap retains each reference story's issue identity and updated name", () => {
 	const { FINALE_STORIES } = loadFinale();
-	assert.equal(FINALE_STORIES.length, 24);
+	assert.equal(FINALE_STORIES.length, 23);
 	assert.deepEqual(FINALE_STORIES.filter((story) => ["TEU-4", "TEU-101", "TEU-107", "TEU-10"].includes(story.code)).map((story) => [story.code, story.title, story.chapter]), [
-		["TEU-4", "Artifacts", "Context"],
 		["TEU-101", "Data Context", "Context"],
+		["TEU-4", "Artifacts", "Context"],
 		["TEU-107", "ChatGPT Codex from Jira", "Collaboration"],
 		["TEU-10", "Agent Session Tracking", "Confidence"],
 	]);
