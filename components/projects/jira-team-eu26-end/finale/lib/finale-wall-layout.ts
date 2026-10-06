@@ -21,13 +21,20 @@ const WALL_ENTRY_SCALE = 68 / 231;
  * teammates' drags below their cadence (`finale-wall-cursors.test.js`).
  */
 export const WALL_LANYARDS = { count: 3, width: 360, height: 480 } as const;
+/**
+ * Done cards dealt a second time each loop, where the feature-name tiles once
+ * were, so teammates still have as many cards to set down (the drag cadence
+ * in `finale-wall-cursors.test.js`). Eight, measured: the cadence moves with
+ * the masonry's packing, and eight keeps every screen from 1024 to 2560 wide
+ * over its floor, where six, seven and nine each leave one under it.
+ */
+export const WALL_RECYCLED_PRINTS = 8;
 
 export type WallStatId = "presenters" | "chapters";
 export type WallStripId = "flow";
 export type WallPiece = Pick<KitPiece, "id" | "scale">;
 export type WallContent =
 	| { readonly kind: "story"; readonly story: FinaleStory }
-	| { readonly kind: "benefit"; readonly story: FinaleStory }
 	| { readonly kind: "print"; readonly codes: readonly [string] }
 	| { readonly kind: "poster"; readonly word: FinaleChapterId; readonly fill: FinaleBrandColor; readonly ink: FinaleBrandColor }
 	| { readonly kind: "stat"; readonly stat: WallStatId }
@@ -170,14 +177,16 @@ function keynoteItems(geometry: WallGeometry, features: readonly FinaleStory[], 
 	const featured = new Set(features.map((story) => story.code));
 	const remaining = FINALE_STORIES.map((story) => story.code).filter((code) => !featured.has(code));
 	const ordered = [...dragOrder.filter((code) => remaining.includes(code)), ...remaining.filter((code) => !dragOrder.includes(code))];
-	const extras: WallItem[] = features.map((story, index) => item(`benefit-${index}`, 240 + (index % 3) * 55, 155 + (index % 2) * 55, { kind: "benefit", story }));
+	const print = (key: string, code: string) => item(key, 260, 140, { kind: "print", codes: [code] });
+	// The run's last cards come round again first, so a card's two copies sit far apart on the wall.
+	const extras: WallItem[] = ordered.slice(-WALL_RECYCLED_PRINTS).map((code, index) => print(`print-again-${index}`, code));
 	const posters = [
 		{ word: "Context", width: 300, height: 160, fill: "lime", ink: "black" },
 		{ word: "Collaboration", width: 360, height: 200, fill: "purple", ink: "black" },
 		{ word: "Confidence", width: 280, height: 220, fill: "blue", ink: "white" },
 	] satisfies readonly { word: FinaleChapterId; width: number; height: number; fill: FinaleBrandColor; ink: FinaleBrandColor }[];
 	posters.forEach(({ word, width, height, fill, ink }, index) => extras.push(item(`poster-${index}`, width, height, { kind: "poster", word, fill, ink })));
-	ordered.forEach((code, index) => extras.push(item(`print-${index}`, 260, 140, { kind: "print", codes: [code] })));
+	ordered.forEach((code, index) => extras.push(print(`print-${index}`, code)));
 	extras.push(item("chapters", 180, 125, { kind: "stat", stat: "chapters" }), item("flow", 330, 65, { kind: "strip", strip: "flow" }));
 	return extras;
 }

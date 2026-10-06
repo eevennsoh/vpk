@@ -44,7 +44,8 @@ test("every remaining work item has its own print slot instead of a bulk-drag st
 	for (const viewport of VIEWPORTS) {
 		const { m, wall } = sceneFor(viewport);
 		const prints = wall.items.filter((slot) => slot.content.kind === "print");
-		assert.equal(prints.length, m.FINALE_STORIES.length - m.FINALE_FEATURES.length);
+		// Each remaining work item once, and the recycled ones a second time.
+		assert.equal(prints.length, m.FINALE_STORIES.length - m.FINALE_FEATURES.length + m.WALL_RECYCLED_PRINTS);
 		for (const slot of prints) assert.equal(slot.content.codes.length, 1, `${slot.key} holds one work item`);
 	}
 });
@@ -206,16 +207,21 @@ test("seven keynote landing spaces retain each card's aspect and centre before t
 	}
 });
 
-test("every story is dealt once, as a featured tile or a print, and drag order survives", () => {
+test("every story is dealt once as a featured tile or a print, the run's last prints come round again, and drag order survives", () => {
 	const dragged = ["TEU-7", "TEU-4", "TEU-12", "TEU-1", "TEU-9", "TEU-3", "TEU-13"];
 	const { m, wall } = sceneFor(VIEWPORTS[1], dragged);
 	const featured = new Set(m.FINALE_FEATURES.map((story) => story.code));
-	const codes = wall.items.flatMap((slot) => slot.content.kind === "print" ? slot.content.codes : slot.content.kind === "story" ? [slot.content.story.code] : []);
-	assert.deepEqual(codes.sort(), m.FINALE_STORIES.map((story) => story.code).sort());
+	// The run is `print-<n>`; the recycled cards are `print-again-<n>` (each key after its bucket, `<bucket>:`).
+	const dealt = (pattern) => wall.items.filter((slot) => slot.content.kind === "print" && pattern.test(slot.key)).sort((a, b) => Number(a.key.match(/\d+$/)[0]) - Number(b.key.match(/\d+$/)[0])).flatMap((slot) => slot.content.codes);
+	const run = dealt(/:print-\d+$/);
+	const codes = [...run, ...wall.items.flatMap((slot) => (slot.content.kind === "story" ? [slot.content.story.code] : []))];
+	assert.deepEqual(codes.sort(), m.FINALE_STORIES.map((story) => story.code).sort(), "each story once in the run");
+	assert.deepEqual(dealt(/:print-again-\d+$/), run.slice(-m.WALL_RECYCLED_PRINTS), "the run's last cards come round again");
+	// A featured story shows only as its own bento tile: no feature-name block repeats it.
+	assert.equal(wall.items.filter((slot) => "story" in slot.content && slot.content.kind !== "story").length, 0);
 	assert.equal(wall.items.filter((slot) => slot.content.kind === "title").length, 1);
-	const printed = wall.items.filter((slot) => slot.content.kind === "print").sort((a, b) => Number(a.key.split("print-")[1]) - Number(b.key.split("print-")[1])).flatMap((slot) => slot.content.codes);
 	const expected = dragged.filter((code) => !featured.has(code));
-	assert.deepEqual(printed.slice(0, expected.length), expected);
+	assert.deepEqual(run.slice(0, expected.length), expected);
 });
 
 test("spatial buckets only index the natural rectangles, and copies repeat exactly but for the lanyards' run", () => {

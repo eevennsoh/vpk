@@ -651,15 +651,11 @@ function carried(pose: FinaleCardPose, rect: FinaleRect, stack: FinaleRect): Fin
 
 /* ─── What a slot's card looks like as a blank sheet ──────────────────── */
 
-const CHAPTER_TINT = { Context: "#DAF0AF", Collaboration: "#E9D8F8", Confidence: "#D0E1FD" } as const;
-
 /** A card's blank colour: its tile's own fill, before its content builds. */
 export function slotSheetColor(content: WallContent): string {
 	switch (content.kind) {
 		case "poster":
 			return FINALE_BRAND[content.fill];
-		case "benefit":
-			return CHAPTER_TINT[content.story.chapter];
 		case "title":
 			return FINALE_BRAND.black;
 		default:
