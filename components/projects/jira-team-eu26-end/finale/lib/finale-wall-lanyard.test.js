@@ -30,14 +30,6 @@ function load() {
 
 const VIEWPORT = { width: 1920, height: 1080 };
 
-/** A frame as expected, its times to within float error. */
-function assertFrame(actual, expected, message) {
-	assert.ok(actual, message);
-	assert.equal(actual.drop, expected.drop, message);
-	assert.ok(Math.abs(actual.time - expected.time) < 1e-9, `${message ?? "time"}: ${actual.time} ≠ ${expected.time}`);
-	assert.ok(Math.abs(actual.lift - expected.lift) < 1e-9, `${message ?? "lift"}: ${actual.lift} ≠ ${expected.lift}`);
-}
-
 function sceneFor(viewport = VIEWPORT) {
 	const m = load();
 	const { scale } = m.finaleStageFit(viewport.width, viewport.height);
@@ -46,76 +38,65 @@ function sceneFor(viewport = VIEWPORT) {
 	return { m, geometry, wall };
 }
 
-test("a lanyard drops on the renderer's own clock, holds still, reels up and leaves the tile empty before the next", () => {
+const close = (actual, expected, message) => assert.ok(actual !== null && Math.abs(actual - expected) < 1e-9, `${message ?? "time"}: ${actual} ≠ ${expected}`);
+
+test("a lanyard drops once on the renderer's own clock, then hangs still on its end pose for good", () => {
 	const m = load();
 	const duration = m.LANYARD_DURATION;
-	const first = 40;
-	const { holdS, liftS, restS } = m.WALL_LANYARD;
-	const cycle = m.wallLanyardCycle(duration);
-	assert.equal(cycle, duration + holdS + liftS + restS);
-	assert.equal(m.wallLanyardFrame(first - 0.01, first, duration), null, "nothing hangs before its first drop");
-	assertFrame(m.wallLanyardFrame(first, first, duration), { drop: 0, time: 0, lift: 0 });
-	assertFrame(m.wallLanyardFrame(first + 3, first, duration), { drop: 0, time: 3, lift: 0 });
-	// Held on the still end pose until it is reeled up, which eases in (an exit).
-	assertFrame(m.wallLanyardFrame(first + duration + holdS * 0.5, first, duration), { drop: 0, time: duration, lift: 0 });
-	const reeling = m.wallLanyardFrame(first + duration + holdS + liftS * 0.5, first, duration);
-	assert.equal(reeling.time, duration);
-	assert.ok(reeling.lift > 0 && reeling.lift < 0.5, `reel-up starts slowly (${reeling.lift})`);
-	assert.equal(m.wallLanyardFrame(first + duration + holdS + liftS + restS * 0.5, first, duration), null, "the tile rests empty");
-	assertFrame(m.wallLanyardFrame(first + cycle, first, duration), { drop: 1, time: 0, lift: 0 });
-	assertFrame(m.wallLanyardFrame(first + cycle * 5 + 2, first, duration), { drop: 5, time: 2, lift: 0 }, "a scrubbed clock lands on the same drop");
+	const drop = 40;
+	assert.equal(m.wallLanyardTime(drop - 0.01, drop, duration), null, "nothing hangs before it drops");
+	close(m.wallLanyardTime(drop, drop, duration), 0);
+	close(m.wallLanyardTime(drop + 3, drop, duration), 3, "mid-swing");
+	for (const later of [0, 1, 13, 60]) {
+		close(m.wallLanyardTime(drop + duration + later, drop, duration), duration, "held still: never reeled up or dropped again");
+	}
 });
 
-test("every drop is dealt afresh: no presenter, agent or swing twice in a row, and every copy of a tile differs", () => {
+test("each tile along the wall is a new lanyard: no presenter, agent or swing twice in a row, and every round uses them all", () => {
 	const m = load();
 	const people = m.LANYARD_3D_PROFILES.length;
 	const agents = m.LANYARD_3D_AGENTS.length;
 	assert.equal(people, 4);
 	assert.equal(agents, 5);
-	const sequences = [];
-	const reveals = [];
-	for (const seed of [729, 1802, 2838, 3911]) {
-		for (const bucket of [6, 51, 96]) {
-			const casts = Array.from({ length: 12 }, (_, drop) => m.wallLanyardDrop({ seed, bucket }, drop, people, agents));
-			for (let drop = 1; drop < casts.length; drop += 1) {
-				assert.notEqual(casts[drop].person, casts[drop - 1].person, `seed ${seed} copy ${bucket} drop ${drop}`);
-				assert.notEqual(casts[drop].agent, casts[drop - 1].agent, `seed ${seed} copy ${bucket} drop ${drop}`);
-				assert.notEqual(casts[drop].swing, casts[drop - 1].swing, `seed ${seed} copy ${bucket} drop ${drop}`);
-			}
-			for (const cast of casts) {
-				assert.ok(m.WALL_LANYARD.swings.includes(cast.swing), "only swings whose physics is primed");
-				assert.ok(cast.revealAngle >= m.WALL_LANYARD.reveal[0] && cast.revealAngle <= m.WALL_LANYARD.reveal[1], `reveal ${cast.revealAngle}`);
-			}
-			assert.equal(new Set(casts.slice(0, 3).map((cast) => cast.swing)).size, 3, "all three swings within any three drops");
-			// Each presenter wears it within any four drops, and each agent within any five.
-			assert.equal(new Set(casts.slice(0, people).map((cast) => cast.person)).size, people);
-			assert.equal(new Set(casts.slice(0, agents).map((cast) => cast.agent)).size, agents);
-			assert.deepEqual(m.wallLanyardDrop({ seed, bucket }, 7, people, agents), casts[7], "the same drop is always dealt the same");
-			sequences.push(casts.map((cast) => `${cast.person}${cast.agent}${cast.swing}`).join(","));
-			reveals.push(...casts.map((cast) => cast.revealAngle));
-		}
+	// Copies before the wall's first period deal too (their orders are negative).
+	const orders = Array.from({ length: 60 }, (_, index) => index - 20);
+	const deals = orders.map((order) => m.wallLanyardDeal(order, people, agents));
+	for (let index = 1; index < deals.length; index += 1) {
+		const order = orders[index];
+		assert.notEqual(deals[index].person, deals[index - 1].person, `presenter at ${order}`);
+		assert.notEqual(deals[index].agent, deals[index - 1].agent, `agent at ${order}`);
+		assert.notEqual(deals[index].swing, deals[index - 1].swing, `swing at ${order}`);
 	}
-	assert.ok(new Set(sequences).size > sequences.length * 0.75, "tiles and their copies deal differently");
+	const round = (count, from) => deals.slice(orders.indexOf(from), orders.indexOf(from) + count);
+	for (const from of [-20, -4, 0, 8, 20]) assert.equal(new Set(round(people, from).map((deal) => deal.person)).size, people, `every presenter from ${from}`);
+	for (const from of [-20, -5, 0, 10, 25]) assert.equal(new Set(round(agents, from).map((deal) => deal.agent)).size, agents, `every agent from ${from}`);
+	for (const from of [-18, -3, 0, 9, 24]) assert.equal(new Set(round(3, from).map((deal) => deal.swing)).size, 3, `every swing from ${from}`);
+	for (const deal of deals) {
+		assert.ok(m.WALL_LANYARD.swings.includes(deal.swing), "only swings whose physics is primed");
+		assert.ok(deal.revealAngle >= m.WALL_LANYARD.reveal[0] && deal.revealAngle <= m.WALL_LANYARD.reveal[1], `reveal ${deal.revealAngle}`);
+	}
+	assert.deepEqual(m.wallLanyardDeal(7, people, agents), deals[orders.indexOf(7)], "the same tile is always dealt the same");
 	// The reveal is spread across its range, not bunched at one end.
 	const [low, high] = m.WALL_LANYARD.reveal;
 	const middle = (low + high) / 2;
-	assert.ok(reveals.some((angle) => angle < middle - 3) && reveals.some((angle) => angle > middle + 3), "reveals vary across the range");
+	assert.ok(deals.some((deal) => deal.revealAngle < middle - 3) && deals.some((deal) => deal.revealAngle > middle + 3), "reveals vary across the range");
 	assert.equal(m.WALL_LANYARD_FRAMING_SWING, Math.max(...m.WALL_LANYARD.swings), "framed for the liveliest swing");
 });
 
-test("a lanyard tile never flies in: it glides in hanging from the top, and drops its first once most of it is in frame", () => {
+test("a lanyard tile never flies in: it glides in hanging from the top, and drops once most of it is in frame", () => {
 	for (const viewport of [VIEWPORT, { width: 1024, height: 768 }, { width: 2560, height: 1440 }]) {
 		const { m, geometry, wall } = sceneFor(viewport);
-		const lanyards = Array.from({ length: wall.periodBuckets * 2 }, (_, index) => wall.bucket(index)).flat().filter((slot) => slot.content.kind === "lanyard");
-		assert.equal(lanyards.length, 6, "three a period");
+		const lanyards = Array.from({ length: wall.periodBuckets * 3 }, (_, index) => wall.bucket(index)).flat().filter((slot) => slot.content.kind === "lanyard").sort((a, b) => a.rect.x - b.rect.x);
+		assert.equal(lanyards.length, 9, "three a period");
+		assert.deepEqual(lanyards.map((slot) => slot.content.order), [0, 1, 2, 3, 4, 5, 6, 7, 8], "each copy of the period carries on the run, in order along the wall");
 		const settled = m.WALL_CUE.start + m.WALL_CUE.carryDownAt + m.WALL_LANYARD.afterCarryS;
 		const [least, most] = m.WALL_LANYARD.enterShown;
 		for (const slot of lanyards) {
 			assert.equal(m.slotDescent(slot, wall), null, `${slot.key} never waits in the air, which would show its cut strap`);
 			assert.equal(m.wallSlotPresence(slot, wall, [], m.WALL_CUE.start + 30).revealStart, null, `${slot.key} never builds`);
-			const first = m.wallLanyardFirstDrop(slot, geometry);
-			assert.ok(first >= settled, `${slot.key} drops after the title is set down`);
-			const rect = m.slotOnScreen(slot, m.wallOffset(first, geometry), geometry);
+			const drop = m.wallLanyardDropTime(slot, geometry);
+			assert.ok(drop >= settled, `${slot.key} drops after the title is set down`);
+			const rect = m.slotOnScreen(slot, m.wallOffset(drop, geometry), geometry);
 			const inFrame = (viewport.width - rect.x) / rect.width;
 			assert.ok(inFrame >= least - 1e-3 && inFrame <= most + 1e-3, `${viewport.width}: ${slot.key} drops with ${inFrame.toFixed(2)} of it in frame`);
 		}

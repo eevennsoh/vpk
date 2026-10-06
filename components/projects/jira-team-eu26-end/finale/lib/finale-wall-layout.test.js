@@ -218,8 +218,8 @@ test("every story is dealt once, as a featured tile or a print, and drag order s
 	assert.deepEqual(printed.slice(0, expected.length), expected);
 });
 
-test("spatial buckets only index the natural rectangles, and copies repeat exactly", () => {
-	const { wall } = sceneFor(VIEWPORTS[0]);
+test("spatial buckets only index the natural rectangles, and copies repeat exactly but for the lanyards' run", () => {
+	const { m, wall } = sceneFor(VIEWPORTS[0]);
 	assert.deepEqual(sceneFor(VIEWPORTS[0]).wall.items, wall.items, "deterministic packing");
 	assert.ok(wall.items.some((slot) => !close(slot.rect.x, slot.bucket * wall.geometry.bucketWidth)), "buckets never impose a left edge");
 	for (let index = -2; index < wall.periodBuckets + 2; index += 1) {
@@ -227,7 +227,9 @@ test("spatial buckets only index the natural rectangles, and copies repeat exact
 		const next = wall.bucket(index + wall.periodBuckets);
 		assert.equal(items.length, next.length);
 		items.forEach((slot, item) => {
-			assert.deepEqual(next[item].content, slot.content);
+			// A lanyard is the one card each pass deals anew: the next copy carries its run on by a period's worth.
+			const content = slot.content.kind === "lanyard" ? { ...slot.content, order: slot.content.order + m.WALL_LANYARDS.count } : slot.content;
+			assert.deepEqual(next[item].content, content);
 			assert.ok(close(next[item].rect.x - slot.rect.x, wall.periodWidth));
 			assert.equal(next[item].rect.y, slot.rect.y);
 			assert.equal(next[item].seed, slot.seed);

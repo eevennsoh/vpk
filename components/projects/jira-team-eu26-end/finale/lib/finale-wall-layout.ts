@@ -33,7 +33,8 @@ export type WallContent =
 	| { readonly kind: "stat"; readonly stat: WallStatId }
 	| { readonly kind: "strip"; readonly strip: WallStripId }
 	| { readonly kind: "piece"; readonly pieces: readonly WallPiece[] }
-	| { readonly kind: "lanyard" }
+	/** `order`: its place in the wall's endless run of lanyards (each copy of the period continues it), which deals its presenter and agent. */
+	| { readonly kind: "lanyard"; readonly order: number }
 	| { readonly kind: "title" };
 
 export interface WallGeometry {
@@ -218,7 +219,7 @@ export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout
 	const lanyards = Array.from({ length: WALL_LANYARDS.count }, (_, index) => wallLanyardRect(geometry, index, spacing));
 	const rects = packWallMasonry(items, [...reserved, ...lanyards], viewport.height, gutter, gutterY, groupGap);
 	const base = anchors.map(({ order, content }, index): WallSlot => ({ key: `gap-${order}`, bucket: 0, rect: reserved[index], content, seed: order * 31, reserved: order }));
-	lanyards.forEach((rect, index) => base.push({ key: `lanyard-${index}`, bucket: 0, rect, content: { kind: "lanyard" }, seed: 977 + index * 53 }));
+	lanyards.forEach((rect, index) => base.push({ key: `lanyard-${index}`, bucket: 0, rect, content: { kind: "lanyard", order: index }, seed: 977 + index * 53 }));
 	items.forEach((item, index) => base.push({ key: item.key, bucket: 0, rect: rects[index], content: item.content, seed: 211 + index * 37 }));
 	const periodBuckets = Math.ceil((Math.max(...base.map((slot) => slot.rect.x + slot.rect.width)) + gutter) / bucketWidth);
 	const periodWidth = periodBuckets * bucketWidth;
@@ -234,6 +235,8 @@ export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout
 			key: `${index}:${slot.key}`,
 			bucket: index,
 			rect: { ...slot.rect, x: slot.rect.x + copy * periodWidth },
+			// Each copy's lanyards carry on the run, so the next one along is always a new lanyard.
+			...(slot.content.kind === "lanyard" ? { content: { kind: "lanyard", order: copy * WALL_LANYARDS.count + slot.content.order } } : {}),
 			...(copy === 0 && order !== undefined ? { reserved: order } : {}),
 		}));
 		if (buckets.size >= 96) {

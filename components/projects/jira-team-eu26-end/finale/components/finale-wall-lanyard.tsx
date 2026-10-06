@@ -8,7 +8,7 @@ import type { LanyardConfig } from "@/components/blocks/3d-lanyard/renderer/type
 
 import { FINALE_COLORS } from "../data/finale-palette";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
-import { WALL_LANYARD_FRAMING_SWING, wallLanyardDrop, wallLanyardFirstDrop, wallLanyardFrame } from "../lib/finale-wall-lanyard";
+import { WALL_LANYARD_FRAMING_SWING, wallLanyardDeal, wallLanyardDropTime, wallLanyardTime } from "../lib/finale-wall-lanyard";
 import { wallSlotRadius, type WallGeometry, type WallSlot } from "../lib/finale-wall-layout";
 import { slotOnScreen, wallOffset } from "../lib/finale-wall-motion";
 import { loadFinaleWallLanyard } from "../lib/load-finale-wall-lanyard";
@@ -16,12 +16,13 @@ import { loadFinaleWallLanyard } from "../lib/load-finale-wall-lanyard";
 const MAX_PIXEL_RATIO = 2;
 
 /**
- * Drop `drop` of `slot` as the renderer draws it: its presenter in front, its
- * agent behind, at its own swing and reveal, framed for the liveliest swing so
- * the card keeps its size, on a clear ground (the tile is the card).
+ * Lanyard `order` along the wall as the renderer draws it: its presenter in
+ * front, its agent behind, at its own swing and reveal, framed for the
+ * liveliest swing so the card keeps its size, on a clear ground (the tile is
+ * the card).
  */
-function lanyardConfig(slot: WallSlot, drop: number): LanyardConfig {
-	const { person, agent, swing, revealAngle } = wallLanyardDrop(slot, drop, LANYARD_3D_PROFILES.length, LANYARD_3D_AGENTS.length);
+function lanyardConfig(order: number): LanyardConfig {
+	const { person, agent, swing, revealAngle } = wallLanyardDeal(order, LANYARD_3D_PROFILES.length, LANYARD_3D_AGENTS.length);
 	const profile = LANYARD_3D_PROFILES[person];
 	return {
 		name: profile.name, role: profile.role, photo: profile.photo,
@@ -30,33 +31,27 @@ function lanyardConfig(slot: WallSlot, drop: number): LanyardConfig {
 	};
 }
 
-interface Painted {
-	drop: number;
-	config: LanyardConfig | null;
-	time: number;
-	lift: number;
-	shown: boolean;
-}
-
 interface WallLanyardProps {
 	readonly slot: WallSlot;
 	readonly geometry: WallGeometry;
+	/** Its place in the wall's run of lanyards, which deals it. */
+	readonly order: number;
 }
 
 /**
  * A lanyard tile: a grey card hanging from the top of the frame, whose
- * lanyard drops in from that edge, swings out, and is reeled back up for the
- * next presenter and agent (`finale-wall-lanyard.ts`). The renderer is
+ * lanyard drops in from that edge once, swings out, and hangs still until the
+ * wall carries it off (`finale-wall-lanyard.ts`). The renderer is
  * deterministic in its time, so it is drawn straight from the finale clock,
- * and only while it moves and its tile is on screen; the reel-up is the
- * canvas's own transform.
+ * and only while it moves and its tile is on screen.
  */
-export function WallLanyard({ slot, geometry }: Readonly<WallLanyardProps>) {
+export function WallLanyard({ slot, geometry, order }: Readonly<WallLanyardProps>) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const rendererRef = useRef<LanyardRenderer | null>(null);
 	const timeRef = useRef<number | null>(null);
-	const paintedRef = useRef<Painted>({ drop: -1, config: null, time: Number.NaN, lift: Number.NaN, shown: false });
-	const firstDrop = useMemo(() => wallLanyardFirstDrop(slot, geometry), [geometry, slot]);
+	const paintedRef = useRef({ time: Number.NaN, shown: false });
+	const dropTime = useMemo(() => wallLanyardDropTime(slot, geometry), [geometry, slot]);
+	const config = useMemo(() => lanyardConfig(order), [order]);
 	const { width, height } = slot.rect;
 
 	const paint = (time: number) => {
@@ -66,28 +61,15 @@ export function WallLanyard({ slot, geometry }: Readonly<WallLanyardProps>) {
 		const rect = slotOnScreen(slot, wallOffset(time, geometry), geometry);
 		if (rect.x > geometry.viewport.width || rect.x + rect.width < 0) return;
 		const painted = paintedRef.current;
-		const frame = wallLanyardFrame(time, firstDrop, renderer.duration);
-		if (!frame) {
+		const at = wallLanyardTime(time, dropTime, renderer.duration);
+		if (at === null) {
 			if (painted.shown) canvas.style.visibility = "hidden";
 			painted.shown = false;
 			return;
 		}
-		if (frame.drop !== painted.drop || !painted.config) {
-			const config = lanyardConfig(slot, frame.drop);
-			Object.assign(painted, { drop: frame.drop, config, time: Number.NaN });
-			// Its face swaps in as it decodes (prewarmed, so within a frame); until then the card shows initials, still above the tile.
-			const redraw = () => {
-				if (rendererRef.current === renderer && painted.config === config && Number.isFinite(painted.time)) renderer.draw(painted.time, config);
-			};
-			renderer.setPortrait(config.photo).then(redraw, redraw);
-		}
-		if (frame.time !== painted.time && painted.config) {
-			painted.time = frame.time;
-			renderer.draw(frame.time, painted.config);
-		}
-		if (frame.lift !== painted.lift) {
-			painted.lift = frame.lift;
-			canvas.style.transform = frame.lift > 0 ? `translateY(${(-frame.lift * 100).toFixed(2)}%)` : "";
+		if (at !== painted.time) {
+			painted.time = at;
+			renderer.draw(at, config);
 		}
 		if (!painted.shown) canvas.style.visibility = "visible";
 		painted.shown = true;
@@ -111,10 +93,11 @@ export function WallLanyard({ slot, geometry }: Readonly<WallLanyardProps>) {
 				if (cancelled) return undefined;
 				const created = create(canvas);
 				renderer = created;
-				return created.ready.then(() => {
+				// Its face is prewarmed, so it decodes at once; a missing one draws initials.
+				return created.ready.then(() => created.setPortrait(config.photo).catch(() => undefined)).then(() => {
 					if (cancelled) return;
 					rendererRef.current = created;
-					paintedRef.current = { drop: -1, config: null, time: Number.NaN, lift: Number.NaN, shown: false };
+					paintedRef.current = { time: Number.NaN, shown: false };
 					// The clock may be held, emitting no new reading.
 					if (timeRef.current !== null) paintRef.current(timeRef.current);
 				});
@@ -126,7 +109,7 @@ export function WallLanyard({ slot, geometry }: Readonly<WallLanyardProps>) {
 			rendererRef.current = null;
 			renderer?.dispose();
 		};
-	}, [width, height]);
+	}, [config, width, height]);
 
 	useFinaleFrame((time) => {
 		timeRef.current = time;
