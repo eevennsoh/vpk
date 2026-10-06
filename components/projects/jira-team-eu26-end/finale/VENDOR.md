@@ -2,8 +2,8 @@
 
 - Upstream: the Rovo stage lab in Rovo Desktop, packaged by
   `libs/features/welcome/scripts/stage-kit.mjs` (Rovo Desktop repo).
-- Release: kit `1.0.0`, built 2026-10-05. Its stage file was exported
-  2026-10-05T07:35:14Z and names kit `1.0.0`.
+- Release: kit `1.3.0`, built 2026-10-05. Its stage file was exported
+  2026-10-05T21:22:47Z and names kit `1.3.0`.
 - Status: **vendored built output, not source.** The kit lives whole and
   unedited in `public/1p/rovo-stage-kit/`. VPK owns only the adapter:
   `lib/finale-wall-pieces.ts` (loader, layout, timing) and
@@ -17,14 +17,14 @@
 Only one build of the runtime exists: the one exported from Rovo Desktop on
 2026-10-05. That checkout is not on this machine, so the kit can't be rebuilt
 from source here. Every copy of `dist/` found was that build, byte for byte.
-It agrees with the catalogue and stage file beside it: all 68 pieces in
+It agrees with the catalogue and stage file beside it: all 91 pieces in
 `pieces.json` are in the bundle, and so is every piece the wall places.
 
 | File | SHA-256 |
 | --- | --- |
-| `dist/rovo-stage.js` | `569713d924b3951c0d37ab7654293c7e351e9bdd27a6fef7b7fd60a98ac048df` |
-| `dist/react/index.js` | `2b82aadd9d8ebdc3db98f28ccc6c6526c03d03b04474bbaebee286e1ca1bf185` |
-| `rovo-stage.json` | `60b41ba3eb8f6a938cea2d2e592d1c04b8ea0bdd07e4bcea6fb690093a6983fe` |
+| `dist/rovo-stage.js` | `27555f5e54ec967b409602e9dbaf8354d5c99723c7ae45babeed6f995d229f83` |
+| `dist/react/index.js` | `3237640cf89549bf7200635793f671631f3a9bb53362035cedcdffee2ffbd3b4` |
+| `rovo-stage.json` | `bfc3005de2977759af55ccac87ba83f74be096c72a3a9d3943775df12e476d55` |
 
 ## Why it lives in `public/`
 
@@ -53,7 +53,7 @@ These alternatives were weighed and rejected for now:
 | Kit file | Used by | How |
 | --- | --- | --- |
 | `dist/rovo-stage.js` | `lib/finale-wall-pieces.ts` | Imported as a module in the frame; draws every `<rovo-piece>` |
-| `rovo-stage.json` | `lib/finale-wall-layout.ts`, `lib/finale-wall-pieces.ts` | Supplies instance scales and camera zoom to the masonry layout; fetched and checked with `stageInfo` in the frame for `pieceStyles` |
+| `rovo-stage.json` | `lib/finale-wall-layout.ts`, `lib/finale-wall-pieces.ts` | Supplies composition or automatic group/density settings, masonry gaps and camera zoom; fetched and checked with `stageInfo` in the frame for `pieceStyles` |
 | `pieces.json` | `lib/finale-wall-layout.ts`, adapter tests | Intrinsic piece boxes for masonry packing and sizing proof |
 | `types/stage-file.d.ts` | the adapter | Types, via `@/public/1p/rovo-stage-kit/types/stage-file` |
 
@@ -62,6 +62,17 @@ guide and prompt, the examples, the reference frames, and the schema. The
 kit's own pages are served too: `/1p/rovo-stage-kit/pieces.html` plays every
 piece and `/1p/rovo-stage-kit/stage.html` plays the stage. Both are handy for
 checking a piece outside the finale.
+
+The supplied 1.3.0 JSON has `composition: null`. The wall resolves all 91
+enabled catalogue pieces, including the 14 mosaic stamps, with the kit's
+balanced density multiplier (`0.88`). Groups alternate through the wall so
+new UI and mosaic pieces appear throughout the loop. Explicit compositions still keep their
+instance scales and repeated pieces. The shared camera scale is the JSON's
+`0.61` zoom times the existing `1.25` UI enlargement and viewport fit. Pieces
+retain their intrinsic rectangles plus 40 kit points of room on each side;
+horizontal and vertical gaps come from `masonryGapX` and `masonryGapY` (28
+points in this export). VPK packs these rectangles around the seven keynote
+landing spaces; its finale clock and entry effects remain VPK-owned.
 
 The kit is exempt from the repo's usual rules: `.gitignore` re-includes its
 `dist/` (the repo ignores `dist/` everywhere else), `tsconfig.json` and
@@ -97,8 +108,8 @@ node --test components/projects/jira-team-eu26-end/finale/lib/finale-wall-pieces
 
 ## Known limitations
 
-- **Size.** `dist/rovo-stage.js` is 4.6 MB (2.2 MB gzipped) and the unused
-  React build adds 4.4 MB to the deploy. Shrinking them is planned for once the
+- **Size.** `dist/rovo-stage.js` is about 5.0 MB and the unused React build
+  adds about 4.8 MB to the deploy. Shrinking them is planned for once the
   wall looks right. Start by not serving the React build and dev-only files,
   then ask upstream for a slimmer build. Don't re-minify `dist/` here.
 - **One appearance per page.** The frame is light only; the wall never follows

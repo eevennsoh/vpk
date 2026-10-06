@@ -4,14 +4,14 @@ Copy everything below the line into the other codebase's coding agent. First fil
 
 ---
 
-You're integrating the **Rovo Stage Kit 1.0.0** into this codebase. The kit is at `«path, e.g. vendor/rovo-stage-kit»`.
+You're integrating the **Rovo Stage Kit 1.3.0** into this codebase. The kit is at `«path, e.g. vendor/rovo-stage-kit»`.
 
 **Goal:** «where and how the stage should appear, e.g. "the hero of /launch, full width above the fold, playing; paused off screen; the poster frame for reduced motion"».
 
 **Before you write any code:**
 
 1. Read `«path»/GUIDE.md` from start to end. It is the contract: integrations, sizing, time, the stage file, isolation, and how to check your work.
-2. Look at `«path»/rovo-stage.json`, `pieces.json` and `examples/`. Note this stage's size (1600 × 900 points) and loop (46.45 s).
+2. Look at `«path»/rovo-stage.json`, `pieces.json` and `examples/`. Note this stage's size (1600 × 900 points) and loop (89.72 s).
 3. Check this codebase for:
     - its framework and React version;
     - whether it uses Atlaskit or Atlassian design tokens;

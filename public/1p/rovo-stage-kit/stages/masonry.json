@@ -14,7 +14,7 @@
       "a": {
         "module": "stage",
         "options": {
-          "view": "stage",
+          "view": "masonry",
           "camera": "glide",
           "pace": "brisk",
           "density": "balanced",
