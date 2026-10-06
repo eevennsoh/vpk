@@ -14,6 +14,8 @@ test("treats Atlas Tunnel public and private hosts as share hosts", () => {
 
 test("keeps existing local-dev path exclusions", () => {
 	assert.equal(isReactGrabDisabledPath("/make"), true);
+	assert.equal(isReactGrabDisabledPath("/jira-team-eu26-end"), true);
+	assert.equal(isReactGrabDisabledPath("/jira-team-eu26"), false);
 	assert.equal(isReactGrabDisabledPath("/jira-golden-journeys-v4"), false);
 });
 

@@ -27,7 +27,6 @@ import {
 	type FinaleViewport,
 } from "../lib/finale-card-motion";
 import { latePrintResolvers } from "../lib/finale-late-prints";
-import { handoverSheetOpacity } from "../lib/finale-math";
 import {
 	createLensMaterial,
 	createShadowMaterial,
@@ -273,7 +272,7 @@ export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, t
 			const world = poseToWorld(pose, viewport);
 			const depth = toView(world, rig, basis).z;
 			const handoff = card.tileOrder === undefined ? 0 : tileHandoff(time, card.tileOrder);
-			const opacity = pose.opacity * handoverSheetOpacity(handoff) * lensFade(depth, viewport);
+			const opacity = pose.opacity * (1 - handoff) * lensFade(depth, viewport);
 			const { mesh } = sheet;
 			mesh.visible = opacity > 0.002;
 			if (sheet.shadow) sheet.shadow.visible = false;

@@ -25,7 +25,6 @@ import {
 } from "../lib/finale-card-motion";
 import { buildFinaleWall, wallGeometry, wallPrintShapes } from "../lib/finale-wall-layout";
 import { bentoDrops, bentoTossTime } from "../lib/finale-wall-motion";
-import { handoverFaceOpacity } from "../lib/finale-math";
 
 /** The field always carries a full board, padding with blank sheets in rehearsal. */
 const FIELD_SIZE = 13;
@@ -141,7 +140,7 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		const tossed = time >= bentoTossTime();
 		tileRefs.current.forEach((tile, order) => {
 			if (!tile) return;
-			const shown = tossed ? 0 : handoverFaceOpacity(tileHandoff(time, order));
+			const shown = tossed ? 0 : tileHandoff(time, order);
 			if (writtenRefs.current[order] === shown) return;
 			writtenRefs.current[order] = shown;
 			tile.style.opacity = String(shown);
@@ -156,21 +155,24 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 			{/* Act III: the mega bento's DOM cards (its sheets and accents are drawn over the bento, below). */}
 			{reducedMotion ? null : <FinaleWall wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />}
 			<FinaleTeamTitle rect={bento.title} scale={fit.scale} />
-			<FinaleCardSpaceGl cards={cards} facePrint={facePrint} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
-			{/* The column "completes" in a sweep of light before its cards are tossed. */}
-			<FinaleColumnFlash column={column} print={columnPrint} occluders={snapshot?.occluders} />
-			{/* Each tile is there in full from its hand-off: its sheet landed as its face's print. */}
-			{features.map((story, order) => (
-				<FinaleBentoTile
-					key={story.code}
-					ref={(element) => { tileRefs.current[order] = element; }}
-					story={story}
-					slot={bento.slots[order]}
-					scale={fit.scale}
-					className="absolute"
-					style={{ left: slotRects[order].x, top: slotRects[order].y, opacity: 0, visibility: "hidden" }}
-				/>
-			))}
+			{/* Add the complementary image opacities before compositing onto the slide. */}
+			<div className="absolute inset-0 isolate">
+				<FinaleCardSpaceGl cards={cards} facePrint={facePrint} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
+				{/* The column "completes" in a sweep of light before its cards are tossed. */}
+				<FinaleColumnFlash column={column} print={columnPrint} occluders={snapshot?.occluders} />
+				{/* Each tile is there in full from its hand-off: its sheet landed as its face's print. */}
+				{features.map((story, order) => (
+					<FinaleBentoTile
+						key={story.code}
+						ref={(element) => { tileRefs.current[order] = element; }}
+						story={story}
+						slot={bento.slots[order]}
+						scale={fit.scale}
+						className="absolute mix-blend-plus-lighter"
+						style={{ left: slotRects[order].x, top: slotRects[order].y, opacity: 0, visibility: "hidden" }}
+					/>
+				))}
+			</div>
 			{/* One shared WebGL layer: each tile's whole border glows once, Pulsing Border style, as it settles. */}
 			<FinaleTileGlow tiles={slotRects} radius={FINALE_TILE_RADIUS * fit.scale} scale={fit.scale} viewport={viewport} />
 			{/* Act III's sheets and landing accents, over the bento's tiles: the title card hops over its neighbours as it flips. */}
