@@ -1,6 +1,6 @@
 {
   "name": "rovo-stage-kit",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "private": true,
   "description": "The Rovo stage from Rovo Desktop’s stage lab: draws rovo-stage.json and its animated pieces exactly as the lab composes them.",
   "type": "module",

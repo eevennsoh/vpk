@@ -146,7 +146,11 @@ test("the mega bento appears only from the throw on, from the middle of the fram
 	const midway = m.WALL_CUE.start + m.WALL_CUE.revealAt + m.WALL_CUE.revealS * 0.45;
 	const near = byDistance.slice(0, 4).map((slot) => m.wallSlotPresence(slot, wall, drops, midway).opacity);
 	const far = byDistance.slice(-4).map((slot) => m.wallSlotPresence(slot, wall, drops, midway).opacity);
-	assert.ok(Math.min(...near) > Math.max(...far), "the middle first");
+	const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+	assert.ok(average(near) > average(far), "the middle first, with the authored per-card scatter");
+	for (const seed of [0, 3, 17, 53]) {
+		assert.ok(m.wallRevealAt(centre, seed, midway, viewport) > m.wallRevealAt({ x: 0, y: 0 }, seed, midway, viewport), "the same card reveals earlier at the centre than the edge");
+	}
 });
 
 test("a thrown card falls away from the lens onto the wall like paper: never toward the viewer, turning as it leaves", () => {

@@ -147,7 +147,7 @@ test("every sheet's share of the lens is spent, and stays spent, before its shee
 		const lastSmeared = new Map();
 		let gone = 0;
 		let previous = new Map();
-		for (let time = m.WALL_CUE.start; time < m.WALL_CUE.start + 32; time += FRAME) {
+		for (let time = m.WALL_CUE.start; time < m.WALL_CUE.start + 40; time += FRAME) {
 			const sheets = new Map(m.wallSheetsAt(time, wall, drops, viewport).map((sheet) => [sheet.key, sheet]));
 			for (const [key, sheet] of sheets) {
 				if (share(sheet) > 0.001) lastSmeared.set(key, time);

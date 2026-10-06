@@ -1,4 +1,4 @@
-// The Rovo stage file (rovo-stage.json) and the kit's data, as types. Rovo Stage Kit 1.0.0.
+// The Rovo stage file (rovo-stage.json) and the kit's data, as types. Rovo Stage Kit 1.3.0.
 
 /** A piece the kit draws (pieces.json lists each with its name, size and moment). */
 export type PieceId = 
@@ -69,7 +69,30 @@ export type PieceId =
     | 'stampSparkle'
     | 'stampFields'
     | 'stampSquiggle'
-    | 'stampSmile';
+    | 'stampSmile'
+    | 'agentIdentities'
+    | 'atlassianMcp'
+    | 'redactedPrompt'
+    | 'needsInput'
+    | 'agentSessions'
+    | 'requestResolver'
+    | 'jiraList'
+    | 'riskStack'
+    | 'costByModel'
+    | 'spendCard'
+    | 'dimensions'
+    | 'potentialSavings'
+    | 'sessionCard'
+    | 'readiness'
+    | 'highReadiness'
+    | 'cursorActivity'
+    | 'presenceFacepile'
+    | 'rovoWithYou'
+    | 'workflowCard'
+    | 'conversation'
+    | 'agentCard'
+    | 'codeSearchQuery'
+    | 'twgSearchCli';
 
 /** once: plays its moment and holds its last frame · loop: plays again after a rest · live: never
  * stops. */

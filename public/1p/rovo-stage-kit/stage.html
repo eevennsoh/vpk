@@ -92,7 +92,8 @@
                     if (stage.hasAttribute('time') || stage.hasAttribute('paused')) stage.play();
                     else stage.pause();
                 } else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
-                    const step = (event.shiftKey ? 1 / 60 : 1) * (event.key === 'ArrowLeft' ? -1 : 1);
+                    const step =
+                        (event.shiftKey ? 1 / 60 : 1) * (event.key === 'ArrowLeft' ? -1 : 1);
                     stage.setAttribute('time', String(Math.max(0, stage.currentTime + step)));
                 } else if (event.key === 'r' || event.key === 'R') {
                     stage.redraw();
