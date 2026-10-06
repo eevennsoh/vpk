@@ -28,7 +28,6 @@ function load() {
 
 const { readFileSync } = require("node:fs");
 const KIT = JSON.parse(readFileSync("public/1p/rovo-stage-kit/pieces.json", "utf8"));
-const STAGE = JSON.parse(readFileSync("public/1p/rovo-stage-kit/rovo-stage.json", "utf8"));
 const VIEWPORTS = [{ width: 1728, height: 1117 }, { width: 1920, height: 1080 }, { width: 1024, height: 768 }, { width: 2560, height: 1440 }];
 const close = (a, b) => Math.abs(a - b) < 1e-6;
 const overlaps = (a, b, gap = 0) => a.x < b.x + b.width + gap - 1e-6 && a.x + a.width + gap > b.x + 1e-6 && a.y < b.y + b.height + gap - 1e-6 && a.y + a.height + gap > b.y + 1e-6;
@@ -41,6 +40,30 @@ function sceneFor(viewport, dragOrder = []) {
 	return { m, bento, geometry, wall };
 }
 
+test("the wall has three varied chapter word tiles separated by product content", () => {
+	for (const viewport of VIEWPORTS) {
+		const { wall, geometry } = sceneFor(viewport);
+		const posters = wall.items.filter((slot) => slot.content.kind === "poster");
+		assert.deepEqual(posters.map((slot) => slot.content.word).sort(), ["Collaboration", "Confidence", "Context"]);
+		const sizes = { Context: [300, 160], Collaboration: [360, 200], Confidence: [280, 220] };
+		const scale = geometry.typeScale / 0.3;
+		for (const slot of posters) {
+			const [width, height] = sizes[slot.content.word];
+			assert.ok(close(slot.rect.width, width * scale));
+			assert.ok(close(slot.rect.height, height * scale));
+			for (const other of posters.filter((other) => other !== slot)) {
+				assert.ok(Math.abs(slot.rect.x + slot.rect.width / 2 - other.rect.x - other.rect.width / 2) >= 900 * scale - 1e-6, "chapter blocks are spread along the wall");
+			}
+		}
+	}
+});
+
+test("the mega bento contains no standalone presenter portraits or facepiles", () => {
+	const { wall } = sceneFor(VIEWPORTS[1]);
+	assert.equal(wall.items.some((slot) => slot.content.kind === "shape"), false);
+	assert.equal(wall.items.some((slot) => slot.content.kind === "strip" && slot.content.strip === "presenters"), false);
+});
+
 test("masonry packs actual widths and heights on occupied edges, without column snapping", () => {
 	assert.deepEqual(load().packWallMasonry([{ key: "a", width: 100, height: 80 }, { key: "b", width: 60, height: 30 }, { key: "c", width: 140, height: 30 }], [], 120, 10), [
 		{ x: 10, y: 10, width: 100, height: 80 },
@@ -49,25 +72,68 @@ test("masonry packs actual widths and heights on occupied edges, without column 
 	]);
 });
 
+test("separated accents pack beyond the current edge while product items fill the space between", () => {
+	assert.deepEqual(load().packWallMasonry([{ key: "a", width: 100, height: 30, group: "chapter" }, { key: "b", width: 100, height: 30, group: "chapter" }, { key: "ui", width: 100, height: 30 }], [], 100, 10, 10, 300), [
+		{ x: 10, y: 10, width: 100, height: 30 },
+		{ x: 310, y: 10, width: 100, height: 30 },
+		{ x: 10, y: 50, width: 100, height: 30 },
+	]);
+});
+
+test("an automatic stage resolves enabled library pieces at the authored density", () => {
+	const m = load();
+	const stage = { composition: null, board: { cells: { a: { options: { density: "balanced", showApps: true, showMosaic: false, showConfidence: false } } } } };
+	const pieces = m.resolveWallStagePieces(stage);
+	assert.equal(pieces.length, KIT.filter((piece) => !["mosaic", "confidence"].includes(piece.group)).length);
+	assert.equal(pieces.some((piece) => piece.id.startsWith("stamp")), false);
+	assert.equal(pieces.some((piece) => piece.id === "agentIdentities"), false);
+	assert.ok(close(pieces.find((piece) => piece.id === "codeCard").scale, 1.408));
+	assert.equal(new Set(pieces.map((piece) => piece.key)).size, pieces.length);
+});
+
+test("automatic stages honor density changes and the kit's app visibility default", () => {
+	const stage = (density) => ({ composition: null, board: { cells: { a: { options: { density } } } } });
+	assert.equal(load().resolveWallStagePieces(stage("gallery")).find((piece) => piece.id === "codeCard").scale, 1.6);
+	assert.ok(close(load().resolveWallStagePieces(stage("dense")).find((piece) => piece.id === "codeCard").scale, 1.216));
+	assert.equal(load().resolveWallStagePieces(stage("balanced")).some((piece) => piece.id === "appJira"), false);
+});
+
+test("an explicit composition keeps its instance scales and repeated pieces", () => {
+	const pieces = [{ key: "first", id: "codeCard", scale: 1.408 }, { key: "second", id: "codeCard", scale: 0.7 }];
+	assert.deepEqual(load().resolveWallStagePieces({ composition: { pieces }, board: { cells: { a: { options: { density: "dense" } } } } }), pieces);
+});
+
+test("masonry honors horizontal and vertical gaps independently", () => {
+	assert.deepEqual(load().packWallMasonry([{ key: "a", width: 100, height: 40 }, { key: "b", width: 100, height: 40 }, { key: "c", width: 50, height: 80 }], [], 140, 10, 20), [
+		{ x: 10, y: 20, width: 100, height: 40 },
+		{ x: 10, y: 80, width: 100, height: 40 },
+		{ x: 120, y: 20, width: 50, height: 80 },
+	]);
+});
+
 test("every grey container has a fixed 20px radius on every viewport", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, wall, geometry } = sceneFor(viewport);
-		const grey = wall.items.filter((slot) => ["story", "piece", "shape", "stat", "strip"].includes(slot.content.kind));
+		const grey = wall.items.filter((slot) => ["story", "piece", "stat", "strip"].includes(slot.content.kind));
 		assert.ok(grey.length > 0);
 		for (const slot of grey) assert.equal(m.wallSlotRadius(slot, geometry), 20, slot.key);
 	}
 });
 
-test("every exported instance keeps its library dimensions and JSON scale under one camera scale", () => {
+test("all 91 enabled pieces keep their library dimensions and balanced scale under one camera scale", () => {
 	for (const viewport of VIEWPORTS) {
 		const { geometry, wall } = sceneFor(viewport);
-		for (const placed of STAGE.composition.pieces) {
-			const slot = wall.items.find((item) => item.key.endsWith(`:${placed.key}`));
-			const piece = KIT.find((item) => item.id === placed.id);
-			assert.ok(slot, `${placed.key} is present`);
-			assert.equal(slot.content.pieces[0].scale, placed.scale);
-			assert.ok(close(slot.rect.width, (piece.w * placed.scale + 80) * geometry.pieceScale), `${placed.key}: natural width and shadow room`);
-			assert.ok(close(slot.rect.height, (piece.h * placed.scale + 80) * geometry.pieceScale), `${placed.key}: natural height and shadow room`);
+		const library = wall.items.filter((item) => item.content.kind === "piece");
+		assert.equal(library.length, 91);
+		assert.equal(library.filter((slot) => slot.content.pieces[0].id.startsWith("stamp")).length, 14);
+		assert.ok(close(geometry.gutter, 28 * geometry.typeScale / 0.3));
+		assert.equal(geometry.gutterY, geometry.gutter);
+		for (const piece of KIT) {
+			const slot = library.find((item) => item.content.pieces[0].id === piece.id);
+			assert.ok(slot, `${piece.id} is present`);
+			assert.ok(close(slot.content.pieces[0].scale, piece.scale * 0.88));
+			assert.ok(close(slot.rect.width, (piece.w * piece.scale * 0.88 + 80) * geometry.pieceScale), `${piece.id}: natural width and shadow room`);
+			assert.ok(close(slot.rect.height, (piece.h * piece.scale * 0.88 + 80) * geometry.pieceScale), `${piece.id}: natural height and shadow room`);
 		}
 		const widths = new Set(wall.items.filter((item) => item.content.kind === "piece").map((item) => item.rect.width.toFixed(3)));
 		assert.ok(widths.size > 25, "pieces have many distinct widths, rather than one-column and two-column sizes");
