@@ -44,7 +44,7 @@ test("toolbar Delete is disabled when its owner does not provide the removal cap
 
 test("Jira Toolbar preserves agent assignment and launches real Rovo navigation", () => {
 	assert.match(SOURCE, /defaultPinnedAgentIds=\{defaultPinnedAgentIds\}/u);
-	assert.match(SOURCE, /<AgentSelector[\s\S]*selectionMode="single"/u);
+	assert.match(SOURCE, /<AgentSelector[\s\S]*searchVariant="palette"[\s\S]*selectionMode="single"/u);
 	assert.match(SOURCE, /disabled=\{!onSelectAll\}/u);
 	assert.match(SOURCE, /rovoChat\.openChat\("sidebar"\)/u);
 	assert.match(SOURCE, /router\.push\("\/rovo"\)/u);

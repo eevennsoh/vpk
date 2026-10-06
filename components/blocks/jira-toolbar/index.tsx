@@ -234,6 +234,7 @@ export function JiraToolbar({
 			pinnedItemsLabel={pinnedItemsLabel}
 			query={agentQuery}
 			selectedAgentIds={selectedAgentIds}
+			searchVariant="palette"
 			selectionMode="single"
 		/>
 	);
