@@ -110,3 +110,13 @@ export const DEFAULT_PINNED_WORK_ITEM_SKILL_IDS = [
 ] as const;
 
 export const WORK_ITEM_PINNED_ITEMS_LABEL = "Pinned by space";
+
+export function resolveWorkItemPickerOptions(
+	overrides: { defaultPinnedAgentIds?: readonly string[]; pinnedItemsLabel?: string } | undefined,
+	spacePinnedAgentIds: readonly string[] | undefined,
+) {
+	return {
+		defaultPinnedAgentIds: overrides?.defaultPinnedAgentIds ?? spacePinnedAgentIds ?? DEFAULT_PINNED_SPACE_AGENT_IDS,
+		pinnedItemsLabel: overrides?.pinnedItemsLabel ?? WORK_ITEM_PINNED_ITEMS_LABEL,
+	};
+}
