@@ -3,7 +3,7 @@ import { JIRA_TEAM_EU26_END_PRESENTERS } from "./keynote-presenters";
 
 /** Legacy story aliases reuse the keynote's canonical presenter identities. */
 export const PAY_STORY_PEOPLE = {
-	diego: JIRA_TEAM_EU26_END_PRESENTERS.mcb,
+	diego: JIRA_TEAM_EU26_END_PRESENTERS.mike,
 	jordan: JIRA_TEAM_EU26_END_PRESENTERS.tamar,
 	maya: JIRA_TEAM_EU26_END_PRESENTERS.sherif,
 	priya: JIRA_TEAM_EU26_END_PRESENTERS.taroon,
@@ -14,7 +14,7 @@ const PAY_STORY_PEOPLE_BY_SESSION_MEMBER_ID: Readonly<Record<string, { id: strin
 	jordan: PAY_STORY_PEOPLE.jordan,
 	maya: PAY_STORY_PEOPLE.maya,
 	priya: PAY_STORY_PEOPLE.priya,
-	venn: JIRA_TEAM_EU26_END_PRESENTERS.mcb,
+	venn: JIRA_TEAM_EU26_END_PRESENTERS.mike,
 };
 
 export const JIRA_TEAM_EU26_END_SESSION_MEMBER_ID_BY_LEGACY_ID: Readonly<Record<string, string>> = Object.fromEntries(

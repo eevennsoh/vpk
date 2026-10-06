@@ -376,7 +376,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 test("MCB views the board with four presenter filters and no faces in column headers", async ({ page }) => {
 	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	await expect(page.getByRole("heading", { name: "Team ’26 EU keynote", exact: true })).toBeVisible();
-	await expect(page.locator('[data-current-user-id="mcb"] img')).toHaveAttribute("src", "/avatar-user/mcb.png");
+	await expect(page.locator('[data-current-user-id="mike"] img')).toHaveAttribute("src", "/avatar-user/mike.png");
 	const filters = page.getByRole("button", { name: /^Filter board by /u });
 	await expect(filters).toHaveCount(4);
 	for (const name of ["MCB", "Tamar", "Sherif", "Taroon"]) {
@@ -388,7 +388,7 @@ test("MCB views the board with four presenter filters and no faces in column hea
 			.locator("..").locator("..");
 		await expect(header.locator('img[src^="/avatar-user/"]')).toHaveCount(0);
 	}
-	for (const [code, presenter] of [["TEU-1", "mcb"], ["TEU-2", "mcb"], ["TEU-3", "tamar"], ["TEU-4", "tamar"]]) {
+	for (const [code, presenter] of [["TEU-1", "mike"], ["TEU-2", "mike"], ["TEU-3", "tamar"], ["TEU-4", "tamar"]]) {
 		await expect(issue(page, code).locator(`img[src="/avatar-user/${presenter}.png"]`)).toHaveCount(1);
 	}
 });

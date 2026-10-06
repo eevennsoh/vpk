@@ -40,6 +40,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-kanban/experimental/hooks/use-page-issue-selection.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-auto-arrange.test.js",
 		"components/blocks/agent-lanyard/agent-lanyard.test.js",
+		"components/blocks/3d-lanyard/lanyard-3d.test.js",
 		"components/blocks/agent-session/agent-session-card-activation.test.js",
 		".agents/skills/vpk-deploy/scripts/deployment-status.test.js",
 		".agents/skills/vpk-deploy/scripts/image-upload.test.js",

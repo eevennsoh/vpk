@@ -127,7 +127,7 @@ test("section presenter rosters and existing announcement ownership remain stabl
 		["MCB", "Tamar"], ["MCB", "Sherif"], ["MCB", "Taroon"], [],
 	]);
 	assert.deepEqual([1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13].map((id) => cardByCode(columns, `TEU-${id}`).assignee.id), [
-		"mcb", "mcb", "tamar", "tamar", "mcb", "sherif", "taroon", "taroon", "mcb", "taroon", "mcb", "mcb",
+		"mike", "mike", "tamar", "tamar", "mike", "sherif", "taroon", "taroon", "mike", "taroon", "mike", "mike",
 	]);
 	assert.ok(columns.every((column) => column.title !== "Intro"));
 });

@@ -67,7 +67,7 @@ test("each held card's cursor is the slot's own teammate on every pass, one per 
 	const { FINALE_CURSORS, FINALE_WALL_CURSOR_NAMES, WALL_CUE, titleCarrierGoneTime, titleReachTime, wallCursorsAt, wallTimeAt } = load();
 	const pool = new Set(FINALE_WALL_CURSOR_NAMES);
 	const presenters = new Set(FINALE_CURSORS.map((cursor) => cursor.label));
-	const mcb = FINALE_CURSORS.findIndex((cursor) => cursor.id === "mcb");
+	const mike = FINALE_CURSORS.findIndex((cursor) => cursor.id === "mike");
 	const viewport = { width: 1728, height: 1117 };
 	const { wall, drops } = wallFor(viewport);
 	const { geometry } = wall;
@@ -91,8 +91,8 @@ test("each held card's cursor is the slot's own teammate on every pass, one per 
 		const during = time >= titleReachTime() && time <= titleCarrierGoneTime();
 		assert.equal(title.length, during ? 1 : 0, `MCB's cursor is on the wall only while he carries the title (${time.toFixed(2)}s)`);
 		for (const cursor of title) {
-			assert.equal(cursor.lane, mcb);
-			assert.equal(cursor.name, FINALE_CURSORS[mcb].label);
+			assert.equal(cursor.lane, mike);
+			assert.equal(cursor.name, FINALE_CURSORS[mike].label);
 			carried += 1;
 		}
 		const cursors = all.filter((cursor) => cursor.key !== "title");

@@ -396,6 +396,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("agent-evaluation", "Agent Evaluation"),
 	blockComponent("agent-insights", "Agent Insights"),
 	blockComponent("agent-lanyard", "Agent Lanyard"),
+	blockComponent("3d-lanyard", "3D Lanyard"),
 	blockComponent("agent-test", "Agent Test"),
 	blockComponent("agent-surfaces", "Agent Surfaces"),
 	blockComponent("skills-directory", "Skills Directory"),

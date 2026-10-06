@@ -83,6 +83,6 @@ export interface BentoArtifact {
 
 export const BENTO_ARTIFACTS = {
 	report: { title: "AI Usage Report", author: "Tamar Yehoshua", authorAvatar: "/illustration/jira-team-eu26-end/bento/artifacts-avatar-reviewer.png" },
-	concept: { title: "Design Studio Concept.html", author: "Mike Cannon Brookes", authorAvatar: "/avatar-user/mcb.png" },
+	concept: { title: "Design Studio Concept.html", author: "Mike Cannon Brookes", authorAvatar: "/avatar-user/mike.png" },
 	studio: { title: "Design Studio", author: "Tamar Yehoshua", authorAvatar: "/avatar-user/tamar.png" },
 } as const satisfies Record<string, BentoArtifact>;
