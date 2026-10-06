@@ -69,7 +69,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0, pauseMe
 	const [closing, setClosing] = useState(false);
 	const startAfterMountRef = useRef<number | null>(null);
 	const confetti = useMemo(() => createFinaleConfetti(), []);
-	const puffDrop = useFinaleDropPuff(confetti);
+	const puffDrop = useFinaleDropPuff(confetti, !reducedMotion);
 	/** A burst the mounted finale has yet to ignite from. */
 	const confettiShowRef = useRef<FinaleConfettiShow | null>(null);
 	const ready = isJiraTeamEu26FinaleReady(boardColumns, JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES);
@@ -100,10 +100,17 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0, pauseMe
 
 	// Boot the confetti renderer (worker, GL context, shaders) while the board is idle.
 	useEffect(() => {
-		if (reducedMotion) return undefined;
+		if (reducedMotion) {
+			confetti.dispose();
+			if (confettiShowRef.current) {
+				confettiShowRef.current = null;
+				void clock.start(clock.time());
+			}
+			return undefined;
+		}
 		const timer = window.setTimeout(() => confetti.prewarm(), FINALE_PREWARM_DELAY_MS);
 		return () => window.clearTimeout(timer);
-	}, [confetti, reducedMotion]);
+	}, [clock, confetti, reducedMotion]);
 	useEffect(() => () => confetti.dispose(), [confetti]);
 
 	// Record MCB's drag order and print each card shortly after it lands.
