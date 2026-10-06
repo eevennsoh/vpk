@@ -1,12 +1,10 @@
-import { motionDuration } from "@/lib/motion";
-
 import { CUE, WALL_CUE } from "../data/finale-cues";
 import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
 import type { FinaleRect } from "../data/finale-stories";
 import type { Vec3 } from "./finale-camera";
 import { blendPose, cameraDistance, flatPose, landingWaveAge, withLandingWave, type FinaleCardPose, type FinalePoint, type FinaleViewport } from "./finale-card-motion";
-import { EASE, clamp, hash01, lerp, progress, smoothstep as smooth, spring } from "./finale-math";
-import { letGoPaperFall, paperAttitude, thrownPaperFall, type PaperFall } from "./finale-paper-fall";
+import { EASE, clamp, handoverFaceOpacity, handoverSheetOpacity, hash01, lerp, progress, smoothstep as smooth, spring } from "./finale-math";
+import { paperAttitude, thrownPaperFall, type PaperFall } from "./finale-paper-fall";
 import {
 	titleCarriedPose,
 	titleCarrySmear,
@@ -43,9 +41,8 @@ import { WALL_SCALE, wallSlotRadius, wallPrintCards, wallPrintGap, type FinaleWa
  *   gaps, then travels at that steady pace, one period a loop, forever.
  * - Arrivals: a card coming in at the leading edge waits in the air above its
  *   slot, leaning like a card in the field, breathing, filmed through the
- *   field's chromatic smear; each is let go at its own moment, so a column
- *   fills raggedly, never as a block, and falls over the way it leans,
- *   rocking into its slot. Now and then a teammate reaches in, takes a card
+ *   field's chromatic smear; each settles face up at its own moment, so a
+ *   column fills raggedly, never as a block. Now and then a teammate takes a card
  *   by its middle and sets it down instead.
  *
  * Coordinates: screen px (x right, y down) for flat positions; z toward the
@@ -156,23 +153,14 @@ export function landingHandover(time: number, touchdown: number): number {
 	return progress(time, at, at + 0.12);
 }
 
-/**
- * The DOM card comes up under its still opaque sheet over the hand-over's
- * first `faceUp`, and the sheet dissolves off it from `sheetFrom` on. They
- * overlap only while the face is nearly up, so the swap never dips through
- * to the page (it stays over 98% covered), and what only the sheet shows (a
- * neighbour's smear through the lens) fades out rather than vanishing in a frame.
- */
-const HANDOVER = { faceUp: 0.6, sheetFrom: 0.4 } as const;
-
 /** A landed card's DOM face through its hand-over (0 → 1), up before its sheet has gone. */
 export function landingFaceShown(time: number, touchdown: number): number {
-	return progress(landingHandover(time, touchdown), 0, HANDOVER.faceUp);
+	return handoverFaceOpacity(landingHandover(time, touchdown));
 }
 
 /** A landed card's GL sheet through its hand-over (1 → 0), dissolving off its DOM face, gone as the hand-over ends. */
 export function landingSheetShown(time: number, touchdown: number): number {
-	return 1 - smooth(HANDOVER.sheetFrom, 1, landingHandover(time, touchdown));
+	return handoverSheetOpacity(landingHandover(time, touchdown));
 }
 
 /** When a landed card's DOM content starts to build, as `tileRevealStart`. */
@@ -552,7 +540,7 @@ function waitingLean(slot: WallSlot): { readonly rotateX: number; readonly rotat
 /**
  * A card waiting in the air above its slot, as cards float in the field:
  * up toward the lens at its own height, leaning its own way (`waitingLean`)
- * but square to the wall, a little off its slot, breathing (`breathing`:
+ * a little turned and off its slot, breathing (`breathing`:
  * off, it holds the middle of its breath, the same on every pass of the loop).
  */
 function waitingPose(slot: WallSlot, rect: FinaleRect, time: number, viewport: FinaleViewport, face: number, breathing = true): FinaleCardPose {
@@ -568,26 +556,24 @@ function waitingPose(slot: WallSlot, rect: FinaleRect, time: number, viewport: F
 		z: distance * lerp(0.1, 0.32, hash01(seed * 5.3)),
 		rotateX: lean.rotateX + Math.sin(breath * 0.6) * BREATH.tip * sway,
 		rotateY: lean.rotateY + Math.cos(breath * 0.5) * BREATH.turn * sway,
+		rotateZ: (hash01(seed * 8.9) - 0.5) * 0.6,
 		lift: 1,
 	};
 }
 
-/** How an arrival comes down: on its own (`held` false), or set down by a teammate's hand. */
+/** Whether an arrival breathes while it waits and settles. */
 export interface ArrivalOptions {
 	/** As `waitingPose`'s. */
 	readonly breathing?: boolean;
-	/** A teammate's cursor holds it by its middle (`finale-wall-cursors.ts`): it is lowered steady, not let fall. */
-	readonly held?: boolean;
 }
 
 /**
- * An arrival's pose at `time`: waiting, coming down, or landed. Let go, it
- * falls as paper does, going over the way it leans and rocking into its slot,
- * still square to the wall; held, its hand lowers it, its lean easing out.
+ * An arrival stays face up as its waiting tilt eases into its slot.
+ * Teammate cursors follow this same settling path.
  */
 function arrivalPose(slot: WallSlot, card: WallArrival, rect: FinaleRect, time: number, viewport: FinaleViewport, stack: FinaleRect | undefined, options: ArrivalOptions): FinaleCardPose {
 	const { descent } = card;
-	const { breathing = true, held = false } = options;
+	const { breathing = true } = options;
 	const face = slot.content.kind === "print" ? 0 : 1;
 	if (time >= descent.touchdown) return landedPose(rect, descent.touchdown, time, face);
 	// One of a print slot's cards (`rect`) waits in its stack (`stack`, the slot on screen), carried as the stack turns.
@@ -595,20 +581,7 @@ function arrivalPose(slot: WallSlot, card: WallArrival, rect: FinaleRect, time: 
 	const through = progress(time, descent.start, descent.touchdown);
 	const down = EASE.inOut(through);
 	if (down <= 0) return waiting;
-	const pose = { ...blendPose(waiting, flatPose(rect, face), down), lift: 1 - down, waveAge: landingWaveAge(time, descent.touchdown) };
-	if (held) return pose;
-	// A print slot's cards lean as their stack does, so they all go over the same way, each its own rock.
-	const fall = letGoPaperFall(slot.seed + (card.index ?? 0) * 0.37, waitingLean(slot));
-	const attitude = paperAttitude(fall, through);
-	// Its lean is spent as it goes over, so the turn picks up from exactly how it waited.
-	const leaning = 1 - smooth(0, fall.over[1], through);
-	return {
-		...pose,
-		x: pose.x + attitude.glideX * rect.width,
-		y: pose.y + attitude.glideY * rect.height,
-		rotateX: waiting.rotateX * leaning + attitude.rotateX,
-		rotateY: waiting.rotateY * leaning + attitude.rotateY,
-	};
+	return { ...blendPose(waiting, flatPose(rect, face), down), lift: 1 - down, waveAge: landingWaveAge(time, descent.touchdown) };
 }
 
 /* ─── A print slot's Done cards, each a card of its own ───────────────── */
@@ -778,7 +751,6 @@ function bentoSheetVelocity(drop: BentoDrop, drops: readonly BentoDrop[], time: 
 
 /** How many entry-camera distances past the right edge a waiting card is still drawn. */
 const ARRIVAL_LEAD = 1.2;
-const ARRIVAL_PREVIEW_S = motionDuration.slower;
 
 /** How long a thrown card's smear takes to swell in as it leaves the hand. */
 const BENTO_SMEAR_IN_S = 0.4;
@@ -789,11 +761,9 @@ const BENTO_SMEAR_IN_S = 0.4;
  * and each arriving card from when it waits in view until its DOM card has
  * taken over: a print slot's Done cards each a sheet of its own, on its
  * printed card's rect (`prints`: the prints' shapes; without it, or before
- * any is printed, the slot comes down as one blank card). A slot `isHeld`
- * names has its top card set down by a teammate's hand (`wallCardHeld`);
- * every other card is let fall.
+ * any is printed, the slot comes down as one blank card).
  */
-export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly BentoDrop[], viewport: FinaleViewport, prints?: WallPrintShapes, isHeld?: (slot: WallSlot) => boolean): readonly WallSheet[] {
+export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly BentoDrop[], viewport: FinaleViewport, prints?: WallPrintShapes): readonly WallSheet[] {
 	if (!wallActive(time)) return [];
 	const { geometry } = wall;
 	const sheets: WallSheet[] = [];
@@ -840,20 +810,16 @@ export function wallSheetsAt(time: number, wall: FinaleWall, drops: readonly Ben
 			// Waiting cards appear with the rest of the wall, where they wait.
 			const shown = wallRevealAt({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }, slot.seed, time, viewport);
 			const color = slotSheetColor(slot.content);
-			// A teammate takes a stack by its top card, as `wallCursorsAt` does.
-			const heldCard = isHeld?.(slot) ? cards[0] : null;
 			for (const card of cards) {
 				const { descent } = card;
 				if (landingHandover(time, descent.touchdown) >= 1) continue;
-				const options = { held: card === heldCard };
-				const pose = arrivalCardPose(slot, card, rect, time, viewport, options);
-				const before = arrivalCardPose(slot, card, earlier, time - CLOTH_LAG, viewport, options);
-				const appearance = smooth(descent.start - ARRIVAL_PREVIEW_S, descent.start - ARRIVAL_PREVIEW_S + motionDuration.normal, time);
+				const pose = arrivalCardPose(slot, card, rect, time, viewport);
+				const before = arrivalCardPose(slot, card, earlier, time - CLOTH_LAG, viewport);
 				sheets.push({
 					key: `card-${card.key}`,
 					kind: "card",
 					// A print slot with nothing printed yet comes down as the blank tile its stand-in builds on.
-					pose: { ...pose, opacity: pose.opacity * shown * appearance, face: slot.content.kind === "print" && card.code === null ? 1 : pose.face },
+					pose: { ...pose, opacity: pose.opacity * shown, face: slot.content.kind === "print" && card.code === null ? 1 : pose.face },
 					color,
 					back: color,
 					texture: null,
@@ -916,6 +882,8 @@ export interface WallLanding {
 	/** The landed card's rect on screen at `time`. */
 	readonly rect: FinaleRect;
 	readonly touchdown: number;
+	/** Content builds after landing, or null when its artwork is already present. */
+	readonly revealStart: number | null;
 	/** Seeds its glow's look (as the bento's landing order did). */
 	readonly seed: number;
 	/** The landed card's corner radius, px: its glow traces its own rounded rect. */
@@ -935,7 +903,7 @@ export function wallLandingsAt(time: number, wall: FinaleWall, drops: readonly B
 	const live = (touchdown: number) => time >= touchdown && time <= landingSettled(touchdown);
 	for (const drop of drops) {
 		const touchdown = bentoTouchdown(drop, drops);
-		if (live(touchdown)) landings.push({ key: `bento-${drop.order}`, rect: slotOnScreen(drop.slot, offset, geometry), touchdown, seed: drop.order, radius: wallSlotRadius(drop.slot, geometry) });
+		if (live(touchdown)) landings.push({ key: `bento-${drop.order}`, rect: slotOnScreen(drop.slot, offset, geometry), touchdown, revealStart: null, seed: drop.order, radius: wallSlotRadius(drop.slot, geometry) });
 	}
 	const { first, last } = visibleWallBuckets(offset, geometry);
 	for (let index = first; index <= last; index += 1) {
@@ -946,7 +914,8 @@ export function wallLandingsAt(time: number, wall: FinaleWall, drops: readonly B
 				if (!live(touchdown)) continue;
 				// Each of a stack's cards glows with a look of its own.
 				const seed = card.index === null ? slot.seed : slot.seed + card.index * 0.37;
-				landings.push({ key: card.key, rect: arrivalOnScreen(card, slotOnScreen(slot, offset, geometry)), touchdown, seed, radius: card.radius });
+				const revealStart = card.code === null ? landingRevealStart(touchdown) : null;
+				landings.push({ key: card.key, rect: arrivalOnScreen(card, slotOnScreen(slot, offset, geometry)), touchdown, revealStart, seed, radius: card.radius });
 			}
 		}
 	}

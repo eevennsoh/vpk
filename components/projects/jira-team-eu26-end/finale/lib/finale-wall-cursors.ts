@@ -195,7 +195,7 @@ interface WallHold extends Holder {
  * `waitingPose`).
  */
 function onCard(slot: WallSlot, card: WallArrival, time: number, geometry: WallGeometry, viewport: FinaleViewport, breathing = true): { readonly x: number; readonly y: number; readonly scale: number } {
-	const pose = arrivalCardPose(slot, card, slotOnScreen(slot, wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport, { breathing, held: true });
+	const pose = arrivalCardPose(slot, card, slotOnScreen(slot, wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport, { breathing });
 	return projectLifted(pose, viewport);
 }
 
@@ -324,14 +324,6 @@ function holdCandidate(slot: WallSlot, wall: FinaleWall): WallHold | null {
  */
 export function wallCardHoldable(slot: WallSlot, wall: FinaleWall): boolean {
 	return holdCandidate(slot, wall) !== null;
-}
-
-/**
- * Whether a teammate takes `slot`'s card (a print slot's top card) and sets
- * it down, so the GL layer lowers it in their hand rather than letting it fall.
- */
-export function wallCardHeld(slot: WallSlot, wall: FinaleWall): boolean {
-	return wallHold(slot, wall) !== null;
 }
 
 /** Whether two teammates' holds would get in each other's way: one lane twice at once, or two cursors near or over each other in the frame. */

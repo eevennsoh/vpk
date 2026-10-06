@@ -25,6 +25,7 @@ import {
 } from "../lib/finale-card-motion";
 import { buildFinaleWall, wallGeometry, wallPrintShapes } from "../lib/finale-wall-layout";
 import { bentoDrops, bentoTossTime } from "../lib/finale-wall-motion";
+import { handoverFaceOpacity } from "../lib/finale-math";
 
 /** The field always carries a full board, padding with blank sheets in rehearsal. */
 const FIELD_SIZE = 13;
@@ -140,7 +141,7 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		const tossed = time >= bentoTossTime();
 		tileRefs.current.forEach((tile, order) => {
 			if (!tile) return;
-			const shown = tossed ? 0 : tileHandoff(time, order);
+			const shown = tossed ? 0 : handoverFaceOpacity(tileHandoff(time, order));
 			if (writtenRefs.current[order] === shown) return;
 			writtenRefs.current[order] = shown;
 			tile.style.opacity = String(shown);

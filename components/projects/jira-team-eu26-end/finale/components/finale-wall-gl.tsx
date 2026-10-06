@@ -34,8 +34,7 @@ import {
 	type SheetMesh,
 } from "../lib/finale-sheet-gl";
 import { finaleFieldPixelRatio } from "../lib/finale-stage-fit";
-import { wallCardHeld } from "../lib/finale-wall-cursors";
-import { paintWallPrint, type FinaleWall, type WallPrintShapes, type WallSlot } from "../lib/finale-wall-layout";
+import { paintWallPrint, type FinaleWall, type WallPrintShapes } from "../lib/finale-wall-layout";
 import { wallActive, wallSheetsAt, type BentoDrop, type WallSheet } from "../lib/finale-wall-motion";
 import { wallDrawOrder, wallSheetLifted, type WallDrawOrder } from "../lib/finale-wall-order";
 
@@ -757,8 +756,7 @@ export function FinaleWallGl({ wall, drops, viewport, fit, cardPrint, prints, fa
 		}
 		state.pending = false;
 		// Nothing draws before the curtain call (reduced motion holds the bento's final frame, so it never does).
-		// A card a teammate's cursor takes is lowered in their hand; every other is let fall.
-		const sheets = wallActive(time) ? wallSheetsAt(time, wall, drops, viewport, prints, (slot: WallSlot) => wallCardHeld(slot, wall)) : NO_SHEETS;
+		const sheets = wallActive(time) ? wallSheetsAt(time, wall, drops, viewport, prints) : NO_SHEETS;
 
 		// Sheets keep their pooled mesh for their whole flight; the ones that have gone are recycled.
 		state.frame += 1;

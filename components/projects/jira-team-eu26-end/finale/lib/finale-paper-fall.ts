@@ -153,23 +153,3 @@ export function thrownPaperFall({ seed, travel, flight, rank }: PaperThrow): Pap
 		phase: hash01(seed * 8.3) * TAU,
 	};
 }
-
-/**
- * How a card waiting in the air falls once it is let go, leaning `lean` (its
- * pose's own, which the caller eases out as it goes over): over the way it
- * leans, about the axis it leans on most, once, from the moment it is let go,
- * then rocking into its slot.
- */
-export function letGoPaperFall(seed: number, lean: { readonly rotateX: number; readonly rotateY: number }): PaperFall {
-	const endOver = Math.abs(lean.rotateX) >= Math.abs(lean.rotateY);
-	return {
-		axis: endOver ? "x" : "y",
-		turns: Math.sign((endOver ? lean.rotateX : lean.rotateY) || 1),
-		over: [0, lerp(0.5, 0.58, hash01(seed * 2.9))],
-		lean: 0,
-		rock: lerp(0.3, 0.42, hash01(seed * 4.1)),
-		swings: lerp(1.6, 2.2, hash01(seed * 5.7)),
-		wobble: lerp(0.08, 0.14, hash01(seed * 6.9)),
-		phase: hash01(seed * 7.9) * TAU,
-	};
-}

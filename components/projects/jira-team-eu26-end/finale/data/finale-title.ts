@@ -8,6 +8,9 @@
 export const FINALE_TITLE = {
 	lines: ["Team ’26", "Europe"],
 	fontSize: 90,
+	/** Measured ink bounds of both lines at this font size, including Europe's descender. */
+	inkWidth: 343,
+	inkHeight: 171,
 	line: 0.8,
 	gap: 0.16,
 	tracking: -0.02,

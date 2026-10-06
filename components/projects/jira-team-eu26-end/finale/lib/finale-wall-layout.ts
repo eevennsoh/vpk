@@ -4,6 +4,7 @@ import type { ComposedPiece, KitPiece, PieceId, StageFile } from "@/public/1p/ro
 
 import { FINALE_STORIES, finaleBentoLayout, type FinaleBentoLayout, type FinaleChapterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import type { FinaleBrandColor } from "../data/finale-palette";
+import { FINALE_TITLE } from "../data/finale-title";
 import { packWallMasonry, type MasonryItem } from "./finale-wall-masonry";
 import { wallPiecesLayout } from "./finale-wall-pieces";
 
@@ -207,12 +208,18 @@ function wallLanyardRect(geometry: WallGeometry, index: number, spacing: number)
 export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout, features: readonly FinaleStory[], dragOrder: readonly string[]): FinaleWall {
 	const { gutter, gutterY, bucketWidth, viewport } = geometry;
 	const anchors = [...bento.slots.slice(0, features.length).map((slot, order) => ({ order, rect: slot.rect, content: { kind: "story" as const, story: features[order] } })), { order: WALL_TITLE_ORDER, rect: bento.title, content: { kind: "title" as const } }];
-	const reserved = anchors.map(({ order, rect }) => ({
-		x: rect.x + rect.width * (1 - WALL_SCALE) / 2 - (order === WALL_TITLE_ORDER ? viewport.width * 0.12 : 0),
-		y: rect.y + rect.height * (1 - WALL_SCALE) / 2,
-		width: rect.width * WALL_SCALE,
-		height: rect.height * WALL_SCALE,
-	}));
+	const reserved = anchors.map(({ order, rect }) => {
+		const width = rect.width * WALL_SCALE;
+		const height = order === WALL_TITLE_ORDER
+			? width - (FINALE_TITLE.inkWidth - FINALE_TITLE.inkHeight) * geometry.typeScale
+			: rect.height * WALL_SCALE;
+		return {
+			x: rect.x + (rect.width - width) / 2 - (order === WALL_TITLE_ORDER ? viewport.width * 0.12 : 0),
+			y: rect.y + (rect.height - height) / 2,
+			width,
+			height,
+		};
+	});
 	const library = libraryItems(geometry);
 	const extras = keynoteItems(geometry, features, dragOrder);
 	const items: WallItem[] = [];

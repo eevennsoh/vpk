@@ -190,13 +190,13 @@ test("no items overlap, including the repeat seam, and the wall retains its vert
 	}
 });
 
-test("seven keynote landing spaces retain each card's aspect and centre before the wall moves", () => {
+test("seven keynote landing spaces retain their centres and the six story tiles retain their aspects", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, bento, wall } = sceneFor(viewport);
 		assert.deepEqual(wall.gaps.map((gap) => gap.order), [0, 1, 2, 3, 4, 5, 6]);
 		const from = [...bento.slots.map((slot) => slot.rect), bento.title];
 		for (const { order, slot } of wall.gaps) {
-			assert.ok(close(slot.rect.width / slot.rect.height, from[order].width / from[order].height));
+			if (order !== m.WALL_TITLE_ORDER) assert.ok(close(slot.rect.width / slot.rect.height, from[order].width / from[order].height));
 			const carryOffset = order === m.WALL_TITLE_ORDER ? viewport.width * 0.12 : 0;
 			assert.ok(close(slot.rect.x + slot.rect.width / 2, from[order].x + from[order].width / 2 - carryOffset));
 			assert.ok(close(slot.rect.y + slot.rect.height / 2, from[order].y + from[order].height / 2));
@@ -205,6 +205,20 @@ test("seven keynote landing spaces retain each card's aspect and centre before t
 		assert.equal(wall.items.filter((slot) => slot.reserved !== undefined).length, 7);
 		assert.equal(m.WALL_TITLE_ORDER, 6);
 	}
+});
+
+test("the landed title adds vertical room to match its horizontal padding without widening the card", () => {
+	for (const viewport of VIEWPORTS) {
+		const { bento, geometry, wall } = sceneFor(viewport);
+		const { rect } = wall.gaps.find((gap) => gap.kind === "title").slot;
+		const horizontalPadding = (rect.width - 343 * geometry.typeScale) / 2;
+		const verticalPadding = (rect.height - 171 * geometry.typeScale) / 2;
+		assert.ok(close(rect.width, bento.title.width * 0.3));
+		assert.ok(rect.height > bento.title.height * 0.3);
+		assert.ok(close(verticalPadding, horizontalPadding), `${viewport.width}: ${verticalPadding}px vertical, ${horizontalPadding}px horizontal`);
+	}
+	const { wall } = sceneFor({ width: 1920, height: 1080 });
+	assert.ok(close(wall.gaps.find((gap) => gap.kind === "title").slot.rect.height, 124.4));
 });
 
 test("every story is dealt once as a featured tile or a print, the run's last prints come round again, and drag order survives", () => {

@@ -370,7 +370,7 @@ test("the camera rests on the slide at frame 0 and from the hero's landing on, a
 });
 
 test("each card is one continuous layer from the Done column to its bento tile, as the camera films it", () => {
-	const { CUE, finaleBentoLayout, cameraDistance, cardPose, finaleCameraRig, landingWaveEnergy, projectPose, tileFallStart, tileHandoff, touchdownTime } = loadFinale();
+	const { CUE, finaleBentoLayout, cameraDistance, cardPose, finaleCameraRig, handoverSheetOpacity, landingWaveEnergy, projectPose, tileFallStart, tileHandoff, touchdownTime } = loadFinale();
 	const fit = { scale: 0.5, x: 0, y: 30 };
 	const viewport = { width: 960, height: 600 };
 	const card = { x: 708, y: 160, width: 224, height: 150 };
@@ -411,9 +411,9 @@ test("each card is one continuous layer from the Done column to its bento tile, 
 		for (const key of ["x", "y", "width", "height"]) assert.ok(Math.abs(rest[key] - role.slot[key]) < 0.5, `${role.kind} ${key}`);
 		assert.equal(pose(touchdownTime(order) + 0.01).face, 1);
 		assert.ok(pose(touchdownTime(order) + 0.2).waveAge > 0, "Peel landing wave runs after touchdown");
-		// The GL sheet owns the wave through its strongest: its DOM tile comes up only once the wave has relaxed below half its height.
+		// The GL sheet stays opaque until the landing wave has relaxed below half its height.
 		let handover = touchdownTime(order);
-		while (tileHandoff(handover, order) === 0) handover += 1 / 240;
+		while (handoverSheetOpacity(tileHandoff(handover, order)) === 1) handover += 1 / 240;
 		let wavePeak = 0;
 		for (let age = 0; age < CUE.handoff; age += 1 / 240) wavePeak = Math.max(wavePeak, landingWaveEnergy(age));
 		assert.ok(landingWaveEnergy(handover - touchdownTime(order)) < wavePeak / 2, "GL sheet still owns the wave");
@@ -508,12 +508,33 @@ test("the chromatic smear is off on frame 0 and the final bento, and peaks on th
 	assert.ok(chroma(CUE.burst + 0.4) > 0.3, "the burst smears at the edges");
 });
 
+test("bento handoff keeps the printed face covered while the live UI takes over", () => {
+	const { FINALE_SLOT_COUNT, CUE, touchdownTime, tileHandoff, handoverFaceOpacity, handoverSheetOpacity } = loadFinale();
+	for (let order = 0; order < FINALE_SLOT_COUNT; order += 1) {
+		const touchdown = touchdownTime(order);
+		for (let time = touchdown; time <= touchdown + CUE.handoff; time += 1 / 240) {
+			const handoff = tileHandoff(time, order);
+			const face = handoverFaceOpacity(handoff);
+			const sheet = handoverSheetOpacity(handoff);
+			const coverage = face + sheet * (1 - face);
+			assert.ok(coverage >= 0.98, `tile ${order}: coverage dips to ${coverage.toFixed(3)} at ${time.toFixed(3)}s`);
+		}
+	}
+	assert.equal(handoverFaceOpacity(0), 0);
+	assert.equal(handoverSheetOpacity(0), 1);
+	assert.equal(handoverFaceOpacity(1), 1);
+	assert.equal(handoverSheetOpacity(1), 0);
+});
+
 test("a landed bento tile lingers in the frame's smear no longer than the bottom corners did, clears as gently as the top right, and flies through it as before", () => {
-	const { CUE, FINALE_SLOT_COUNT, chromaStrength, tileFallStart, tileHandoff, tileRevealStart, touchdownTime } = loadFinale();
+	const { CUE, FINALE_SLOT_COUNT, chromaStrength, handoverFaceOpacity, handoverSheetOpacity, tileFallStart, tileHandoff, tileRevealStart, touchdownTime } = loadFinale();
 	const viewport = { width: 1920, height: 1080 };
 	const subject = { x: 0, y: 0, width: 436, height: 199 };
 	// The frame's smear films a tile's GL sheet until it has handed over to its crisp DOM face.
-	const onSheet = (time, order) => chromaStrength(time, viewport, subject) * (1 - tileHandoff(time, order));
+	const onSheet = (time, order) => {
+		const handoff = tileHandoff(time, order);
+		return chromaStrength(time, viewport, subject) * handoverSheetOpacity(handoff) * (1 - handoverFaceOpacity(handoff));
+	};
 	const lingers = Array.from({ length: FINALE_SLOT_COUNT }, (_, order) => {
 		const touchdown = touchdownTime(order);
 		let last = touchdown;
@@ -545,8 +566,8 @@ test("a landed bento tile lingers in the frame's smear no longer than the bottom
 		// The tiles that land mid-swoop hand over as they did: one 0.12 s dissolve from `CUE.tileHandoff`.
 		const at = touchdownTime(order) + CUE.tileHandoff;
 		if (order > 0) {
-			assert.equal(tileHandoff(at, order), 0, `tile ${order} starts to dissolve at CUE.tileHandoff`);
-			assert.ok(Math.abs(tileHandoff(at + 0.06, order) - 0.5) < 1e-9, `tile ${order} is half dissolved 0.06 s in`);
+			assert.equal(handoverSheetOpacity(tileHandoff(at, order)), 1, `tile ${order} starts to dissolve at CUE.tileHandoff`);
+			assert.ok(Math.abs(handoverSheetOpacity(tileHandoff(at + 0.06, order)) - 0.5) < 1e-9, `tile ${order} is half dissolved 0.06 s in`);
 		}
 		// The hand-over dissolves rather than cuts, and its DOM face is up before its logo and heading build.
 		for (let time = touchdownTime(order); time <= at + 0.12; time += 1 / 60) assert.ok(tileHandoff(time + 1 / 60, order) - tileHandoff(time, order) < 0.15);
@@ -758,4 +779,81 @@ test("a tossed card's column clip rides on the sheet, never on screen", () => {
 	// Scrolled out entirely: the whole sheet is outside, so it fades in as a whole.
 	const hidden = restClipUv({ x: 1208, y: 1200, width: 364, height: 190 }, list);
 	assert.ok(hidden[1] > 1, "a card scrolled out of the column is hidden on its whole sheet");
+});
+
+const FIELD_ORDER_HARNESS = `
+import { useLayoutEffect, useMemo } from "react";
+import { FinaleCardSpaceGl } from "@/components/projects/jira-team-eu26-end/finale/components/finale-card-space-gl";
+import { FinaleFrameContext, createFinaleFrameRegistry } from "@/components/projects/jira-team-eu26-end/finale/hooks/use-finale-frame";
+export default function Harness({ onClock, ...props }) {
+	const registry = useMemo(() => createFinaleFrameRegistry(), []);
+	useLayoutEffect(() => onClock(registry), [onClock, registry]);
+	return <FinaleFrameContext value={registry}><FinaleCardSpaceGl {...props} /></FinaleFrameContext>;
+}
+`;
+
+// Keep Three's real scenes, meshes, materials and camera maths; replace only GPU submission.
+const FIELD_RENDERER = `
+export * from ${JSON.stringify(require.resolve("three"))};
+export class WebGLRenderer {
+	setPixelRatio() {}
+	setSize() {}
+	setClearColor() {}
+	setRenderTarget() {}
+	compile() {}
+	initTexture() {}
+	initRenderTarget() {}
+	clear() {}
+	dispose() {}
+	render(scene) {
+		if (scene.children.some((mesh) => mesh.material?.uniforms?.uCard)) globalThis.__finaleFieldScene = scene;
+	}
+}
+`;
+
+test("the 3D field keeps each card and its shadow in one layer through camera sweeps and replay", async (t) => {
+	const React = require("react");
+	const m = loadFinale();
+	t.after(() => { delete globalThis.__finaleFieldScene; });
+	for (const viewport of [{ width: 1920, height: 1080 }, { width: 1024, height: 768 }]) {
+		const rect = { x: viewport.width - 340, y: 180, width: 320, height: 180 };
+		const bento = m.finaleBentoLayout(viewport, Math.min(viewport.width / 1920, viewport.height / 1080));
+		const print = document.createElement("canvas");
+		print.width = rect.width;
+		print.height = rect.height;
+		const cards = Array.from({ length: 49 }, (_, index) => {
+			const echo = index < 26;
+			const fieldIndex = echo ? index : index - 26;
+			const role = echo ? { kind: "echo" } : fieldIndex === 0 ? { kind: "hero", slot: bento.slots[0].rect }
+				: fieldIndex < 6 ? { kind: "tile", order: fieldIndex, slot: bento.slots[fieldIndex].rect } : { kind: "extra" };
+			return {
+				key: `card-${index}`, printKey: `print-${index}`, print,
+				input: { rect, fieldIndex, fieldCount: echo ? 26 : 23, burstIndex: fieldIndex, role },
+				tileOrder: !echo && fieldIndex < 6 ? fieldIndex : undefined,
+			};
+		});
+		let clock;
+		const view = await renderComponent({ source: FIELD_ORDER_HARNESS, mocks: { three: FIELD_RENDERER }, props: {
+			cards, viewport, clip: rect, subject: rect, tileRadius: 20, facePrint: () => undefined,
+			onClock: (value) => { clock = value; },
+		} });
+		const emit = (time) => React.act(async () => { clock.emit(time); });
+		await emit(m.CUE.wide);
+		const meshes = globalThis.__finaleFieldScene.children;
+		const orders = meshes.map((mesh) => mesh.renderOrder);
+		assert.equal(new Set(orders).size, meshes.length, "every card and shadow has its own layer");
+		const stack = () => meshes.map((mesh, index) => ({ order: mesh.renderOrder, index })).sort((a, b) => a.order - b.order).map((entry) => entry.index);
+		const arranged = stack();
+		const times = Array.from({ length: 180 }, (_, frame) => m.CUE.recoil + frame / 60);
+		for (const time of [...times, m.CUE.zoomEnd, m.CUE.heroLand, m.CUE.wide, m.CUE.burst + 0.1]) {
+			await emit(time);
+			assert.deepEqual(stack(), arranged, `${viewport.width}: no foreground swap at ${time.toFixed(3)}s`);
+		}
+		for (let index = 0; index < meshes.length; index += 1) {
+			const mesh = meshes[index];
+			if (mesh.material.uniforms.uCard) continue;
+			assert.equal(arranged[arranged.indexOf(index) + 1], index - 1, "the shadow stays directly behind its card");
+		}
+		await view.unmount();
+	}
 });

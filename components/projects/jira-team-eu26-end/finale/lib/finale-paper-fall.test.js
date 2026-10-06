@@ -14,7 +14,6 @@ const ENTRY = `
 export * from "./finale-paper-fall";
 export * from "./finale-wall-layout";
 export * from "./finale-wall-motion";
-export { wallCardHeld } from "./finale-wall-cursors";
 export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 `;
 
@@ -169,38 +168,33 @@ test("the bento's thrown tiles go over as paper, never spun flat, and never all 
 	}
 });
 
-test("a card let go at the leading edge goes over the way it leans, while one a teammate holds is lowered steady", () => {
+test("leading-edge arrivals settle face up without a full turn while their chromatic trail clears", () => {
 	const m = load();
-	const { viewport, geometry, wall, drops } = wallScene(m);
-	const arrivals = [];
-	for (let column = 0; column < 80; column += 1) for (const slot of wall.bucket(column)) {
-		if (slot.reserved !== undefined || !m.slotDescent(slot, wall)) continue;
-		arrivals.push(slot);
-	}
-	const held = arrivals.filter((slot) => m.wallCardHeld(slot, wall));
-	const free = arrivals.filter((slot) => !m.wallCardHeld(slot, wall));
-	assert.ok(held.length >= 3 && free.length >= 3, "the wall has both");
-	const goesOver = (slot) => {
-		const [card] = m.slotArrivals(slot, wall);
-		const options = { held: m.wallCardHeld(slot, wall) };
-		let over = false;
-		for (let time = card.descent.start - 0.2; time < card.descent.touchdown; time += 1 / 240) {
-			const rect = m.slotOnScreen(slot, m.wallOffset(time, geometry), geometry);
-			const pose = m.arrivalCardPose(slot, card, rect, time, viewport, options);
-			assert.equal(pose.rotateZ, 0, `${slot.key} waits and comes down square to the wall`);
-			if (Math.cos(pose.rotateX) * Math.cos(pose.rotateY) < 0) over = true;
+	for (const viewport of VIEWPORTS) {
+		const { geometry, wall, drops } = wallScene(m, viewport);
+		const slots = wall.items.filter((slot) => slot.reserved === undefined && m.slotDescent(slot, wall)?.start > 20);
+		assert.ok(slots.length >= 8, "sample arrivals across the wall");
+		for (const slot of slots) {
+			for (const card of m.slotArrivals(slot, wall)) {
+				let previousTilt = Infinity;
+				for (let frame = 0; frame <= 60; frame += 1) {
+					const time = card.descent.start + (card.descent.touchdown - card.descent.start) * frame / 60;
+					const rect = m.slotOnScreen(slot, m.wallOffset(time, geometry), geometry);
+					const pose = m.arrivalCardPose(slot, card, rect, time, viewport, { breathing: false });
+					assert.ok(Math.cos(pose.rotateX) * Math.cos(pose.rotateY) > 0, `${slot.key}: the printed face stays toward the viewer`);
+					const tilt = Math.hypot(pose.rotateX, pose.rotateY, pose.rotateZ);
+					assert.ok(tilt <= previousTilt + 1e-9, `${slot.key}: settles without another swing`);
+					previousTilt = tilt;
+				}
+				assert.ok(previousTilt < 1e-9, "lands flat");
+			}
+			const descent = m.slotDescent(slot, wall);
+			const sheetAt = (time) => m.wallSheetsAt(time, wall, drops, viewport).find((sheet) => sheet.key === `card-${slot.key}`);
+			const waiting = sheetAt(descent.start - 0.05);
+			assert.ok(waiting && waiting.pose.opacity > 0.99 && waiting.chroma === 1, "full chromatic distortion before descent");
+			const midway = sheetAt((descent.start + descent.touchdown) / 2);
+			assert.ok(midway && midway.chroma > 0.45 && midway.chroma < 0.55, "distortion fades through the descent");
+			assert.equal(sheetAt(descent.touchdown).chroma, 0, "crisp at touchdown");
 		}
-		return over;
-	};
-	for (const slot of free) assert.ok(goesOver(slot), `${slot.key}, let go, goes over`);
-	for (const slot of held) assert.ok(!goesOver(slot), `${slot.key}, held, never shows its back`);
-	// The GL layer lets fall exactly the cards no teammate holds.
-	const [slot] = held;
-	const [card] = m.slotArrivals(slot, wall);
-	const time = (card.descent.start + card.descent.touchdown) / 2;
-	const lies = ({ x, y, rotateX, rotateY }) => ({ x, y, rotateX, rotateY });
-	const sheet = (isHeld) => lies(m.wallSheetsAt(time, wall, drops, viewport, undefined, isHeld).find((each) => each.key === `card-${slot.key}`).pose);
-	const rect = m.slotOnScreen(slot, m.wallOffset(time, geometry), geometry);
-	assert.deepEqual(sheet((each) => m.wallCardHeld(each, wall)), lies(m.arrivalCardPose(slot, card, rect, time, viewport, { held: true })));
-	assert.deepEqual(sheet(undefined), lies(m.arrivalCardPose(slot, card, rect, time, viewport)));
+	}
 });

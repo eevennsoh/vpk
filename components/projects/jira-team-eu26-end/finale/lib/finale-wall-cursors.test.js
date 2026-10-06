@@ -165,7 +165,7 @@ test("a teammate's cursor glides onto its card, then gradually fades during a br
 		// The tip of a hand resting on its card: the card's middle as it comes down, then as the wall carries it on.
 		const cardMiddle = (slot, time) => {
 			const [card] = m.slotArrivals(slot, wall);
-			const pose = m.arrivalCardPose(slot, card, m.slotOnScreen(slot, m.wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport, { held: true });
+			const pose = m.arrivalCardPose(slot, card, m.slotOnScreen(slot, m.wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport);
 			return m.projectLifted(pose, viewport);
 		};
 		const offCard = (cursor, slot, time) => {

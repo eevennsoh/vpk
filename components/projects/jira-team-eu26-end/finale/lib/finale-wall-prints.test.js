@@ -68,6 +68,19 @@ function arrivingPrints(m, wall, count, take = 2) {
 	return found;
 }
 
+test("captured Kanban cards skip the dot reveal, while an unprinted fallback builds its content", () => {
+	const { m, wall, drops, prints } = sceneFor(VIEWPORTS[1]);
+	for (const slot of arrivingPrints(m, wall, 1)) {
+		const { touchdown } = m.slotDescent(slot, wall);
+		const at = touchdown + 0.2;
+		const printed = m.wallLandingsAt(at, wall, drops, prints).filter((landing) => landing.key.startsWith(`${slot.key}#`));
+		assert.equal(printed.length, 1);
+		assert.equal(printed[0].revealStart, null, "the cover image is already visible in flight");
+		const fallback = m.wallLandingsAt(at, wall, drops).find((landing) => landing.key === slot.key);
+		assert.equal(fallback.revealStart, m.landingRevealStart(touchdown), "the blank stand-in still needs a content reveal");
+	}
+});
+
 /** The old DOM stack (`Prints`, before each card was its own), in slot px: the layout every card must keep. */
 function oldStack(size, codes, print, gap) {
 	const share = (size.height - gap * (codes.length - 1)) / codes.length;
