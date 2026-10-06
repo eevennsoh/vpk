@@ -27,10 +27,7 @@ import {
 	mapSkillToMentionItem,
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
-import {
-	DEFAULT_PINNED_SPACE_AGENT_IDS,
-	WORK_ITEM_PINNED_ITEMS_LABEL,
-} from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
+import { resolveWorkItemPickerOptions } from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
 import { useJiraDropzoneReceiving } from "@/components/blocks/jira-dropzone";
 import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
@@ -757,6 +754,7 @@ function ExperimentalJiraKanbanView({
 	};
 	const sessionFlyoutsSuspended = boardSessionDrag.transaction !== null || draggedCardCode !== null;
 	const untrackedDropArmed = boardSessionDrag.transaction?.target?.kind === "untracked";
+	const selectionToolbarPickerOptions = resolveWorkItemPickerOptions(selectionToolbar, cardGenerativeActionPinnedAgentIds);
 
 	return (
 		<div
@@ -1015,7 +1013,7 @@ function ExperimentalJiraKanbanView({
 						className={selectionToolbar.className}
 						dismissOnEscape={selectionToolbar.dismissOnEscape}
 						getStatusVariant={selectionToolbar.getStatusVariant}
-						defaultPinnedAgentIds={selectionToolbar.defaultPinnedAgentIds ?? cardGenerativeActionPinnedAgentIds ?? DEFAULT_PINNED_SPACE_AGENT_IDS}
+						defaultPinnedAgentIds={selectionToolbarPickerOptions.defaultPinnedAgentIds}
 						onSelectAll={selectionToolbar.onSelectAll}
 						onAskRovo={selectionToolbar.onAskRovo}
 						onAgentAssignmentChange={selectionToolbar.onAgentAssignmentChange}
@@ -1029,7 +1027,7 @@ function ExperimentalJiraKanbanView({
 						onMerge={selectionToolbar.onMerge}
 						onStatusChange={selectionToolbar.onStatusChange}
 						onWatchOptions={selectionToolbar.onWatchOptions}
-						pinnedItemsLabel={selectionToolbar.pinnedItemsLabel ?? WORK_ITEM_PINNED_ITEMS_LABEL}
+						pinnedItemsLabel={selectionToolbarPickerOptions.pinnedItemsLabel}
 						selectedAgentIds={selectionToolbar.selectedAgentIds}
 						selectedCount={onAutoArrange ? autoArrange.codes.size : selectedCount}
 						selectedStatus={selectedStatus}
