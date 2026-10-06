@@ -12,9 +12,10 @@ import type { FinaleConfetti } from "@/components/projects/jira-team-eu26-end/fi
  * so each lands on its own cards, and neither holds up the finale. Unmounting
  * abandons every wait still pending; a landing that never settles is skipped.
  */
-export function useFinaleDropPuff(confetti: FinaleConfetti): (codes: readonly string[]) => void {
+export function useFinaleDropPuff(confetti: FinaleConfetti, enabled: boolean): (codes: readonly string[]) => void {
 	const waitsRef = useRef<Set<AbortController> | null>(null);
 	useEffect(() => {
+		if (!enabled) return undefined;
 		const waits = new Set<AbortController>();
 		waitsRef.current = waits;
 		return () => {
@@ -22,7 +23,7 @@ export function useFinaleDropPuff(confetti: FinaleConfetti): (codes: readonly st
 			for (const wait of waits) wait.abort();
 			waits.clear();
 		};
-	}, []);
+	}, [enabled]);
 	return useCallback((codes: readonly string[]) => {
 		const waits = waitsRef.current;
 		if (!waits || codes.length === 0) return;
