@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useReducedMotion } from "motion/react";
 
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 import { JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES } from "../data/keynote-board";
 import { FinaleFacePrintStage } from "./components/finale-face-print-stage";
@@ -62,7 +62,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0 }: Reado
 	const prints = useFinaleCardPrints();
 	const facePrints = useFinaleFacePrints();
 	const { ensure: ensureFaces, get: facePrint } = facePrints;
-	const reducedMotion = useReducedMotion() ?? false;
+	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const [preparation, setPreparation] = useState<FinalePreparation | null>(null);
 	const [scene, setScene] = useState<FinaleSceneInput | null>(null);
 	const [closing, setClosing] = useState(false);

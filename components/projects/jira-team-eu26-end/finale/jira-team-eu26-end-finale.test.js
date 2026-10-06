@@ -243,6 +243,52 @@ test("rehearsal URLs arm, seek and freeze the finale", () => {
 	assert.deepEqual(parseFinaleSearch("?finale=-4"), { autostart: true, seek: 0, hold: false });
 });
 
+test("a mounted finale follows a changed reduced-motion preference", async (t) => {
+	const { act } = require("react");
+	const originalMatchMedia = window.matchMedia;
+	const originalFonts = document.fonts;
+	let reduced = false;
+	const listeners = new Set();
+	window.matchMedia = () => ({
+		get matches() { return reduced; },
+		addEventListener: (_type, listener) => listeners.add(listener),
+		removeEventListener: (_type, listener) => listeners.delete(listener),
+	});
+	t.after(() => { window.matchMedia = originalMatchMedia; });
+	document.fonts = { load: async () => [] };
+	t.after(() => { document.fonts = originalFonts; });
+	const mock = (name, body) => [`@/components/projects/jira-team-eu26-end/finale/${name}`, body];
+	const mocks = Object.fromEntries([
+		["motion/react", "export const useReducedMotion = () => false;"],
+		mock("components/finale-face-print-stage", "export const FinaleFacePrintStage = () => <button>Open finale</button>;"),
+		mock("components/finale-overlay", "export const FinaleOverlay = ({ reducedMotion }) => <output data-testid='motion-state'>{reducedMotion ? 'reduced' : 'full'}</output>;"),
+		mock("data/finale-stories", "export const FINALE_FEATURES = [];"),
+		mock("hooks/use-finale-audio-clock", "export const useFinaleAudioClock = () => ({ hold() {}, start() {}, stop() {}, time() { return 9.07; }, togglePause() {}, seekBy() {} });"),
+		mock("hooks/use-finale-controls", "export const useFinaleControls = () => {};"),
+		mock("hooks/use-finale-drop-puff", "export const useFinaleDropPuff = () => () => {};"),
+		mock("hooks/use-finale-face-prints", "export const useFinaleFacePrints = () => ({ ensure: () => Promise.resolve(), get: () => null });"),
+		mock("hooks/use-finale-prints", "export const printFinaleColumn = async () => document.createElement('canvas'); export const useFinaleCardPrints = () => ({ prewarm() {}, schedule() {}, ensure: () => Promise.resolve(), get: () => null });"),
+		mock("lib/capture-done-column", "export const captureJiraTeamEu26DoneColumn = () => ({}); export const waitForFinaleColumnCapture = async () => null;"),
+		mock("lib/finale-confetti-target", "export const confettiBoxOf = () => ({});"),
+		mock("lib/finale-drag-order", "export const finaleArrivals = () => []; export const finaleSmallConfettiDue = () => false; export const nextFinaleDragOrder = (order) => order;"),
+		mock("lib/play-finale-confetti", "export const createFinaleConfetti = () => ({ prewarm() {}, dispose() {}, hold() {} });"),
+		mock("lib/finale-trigger", "export const FINALE_DONE_COLUMN_TITLE = 'Done'; export const isJiraTeamEu26FinaleReady = () => false; export const parseFinaleSearch = () => ({ autostart: true, seek: 9.07, hold: true });"),
+	]);
+	const view = await renderComponent({
+		entry: "components/projects/jira-team-eu26-end/finale/jira-team-eu26-end-finale.tsx",
+		exportName: "JiraTeamEu26EndFinale",
+		mocks,
+		props: { boardColumns: [] },
+	});
+	await view.click(view.getByRole("button", { name: "Open finale" }));
+	assert.equal(view.container.querySelector("[data-testid='motion-state']")?.textContent, "full");
+	await act(async () => {
+		reduced = true;
+		for (const listener of listeners) listener();
+	});
+	assert.equal(view.container.querySelector("[data-testid='motion-state']")?.textContent, "reduced");
+});
+
 test("the cue sheet runs in order, stays silent for now, and fits the transition budget", () => {
 	const { CUE, FINALE_SOUND_ENABLED, touchdownTime } = loadFinale();
 	const order = [CUE.hit, CUE.burst, CUE.recoil, CUE.wide, CUE.sweep, CUE.zoom, CUE.zoomEnd, CUE.heroLand, CUE.title, CUE.yearStart, CUE.yearLand, CUE.end];
