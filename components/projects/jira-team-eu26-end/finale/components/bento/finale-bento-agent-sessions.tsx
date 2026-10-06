@@ -13,7 +13,7 @@ const BODY = { fontSize: 23.341, lineHeight: "33.344px" } as const;
  * The Figma frame (587 × 480 at the 1920 stage), centred on the tile and as
  * tall as it. The board slice keeps the Figma's coordinates inside it, pinned
  * under the label, so the dragged session stays on its card whatever shape
- * the screen gives the tile; a taller tile shows more of the faded foot.
+ * the screen gives the tile; a taller tile adds plain tile below the fade.
  */
 const FRAME = "absolute inset-y-0 left-1/2 w-[586.667px] -translate-x-1/2";
 /**
@@ -107,8 +107,8 @@ export function FinaleBentoAgentSessions() {
 				<div className={`${COLUMN} left-[-388px]`} />
 				<SessionSlot summary="Publish and link the rollback rehearsal runbook" className="top-[370px]" />
 			</div>
-			{/* The Figma's 186px fade, starting where it does: a taller tile lengthens it, so the second card always fades out. */}
-			<BentoFade size="calc(100% - 294px)" />
+			{/* The Figma's 186px fade from y=294, solid tile below it on a taller tile, so the second card fades as it does in the Figma. */}
+			<BentoFade size="calc(100% - 294px)" hold="calc(100% - 186px)" />
 			<div className={FRAME}>
 				<SessionSlot summary="Confirm the sandbox key retention window before replay" target className="top-[127px] overflow-hidden" />
 				<SessionChip />
