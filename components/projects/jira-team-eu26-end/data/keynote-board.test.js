@@ -163,7 +163,7 @@ test("each cover reuses the app-stack sources for its reference product marks", 
 	assert.deepEqual(cards.map((card) => card.coverImage.appSources.map((app) => app.label)), [
 		["Artifacts"], ["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"], ["Code Search"], ["Rovo"], ["Teamwork Graph"], ["Teamwork Graph"],
 		["Teamwork Graph"], ["Loom"], ["Loom"], ["Jira", "Confluence", "Teamwork Graph"], ["Loom"], ["Jira"],
-		["Loom"], [], ["DX"], ["Jira Service Management"], [], ["Jira"], ["Jira Service Management"], ["Jira Service Management"], ["Talent"], ["Guard"],
+		["Loom"], ["European Union"], ["DX"], ["Jira Service Management"], [], ["Jira"], ["Jira Service Management"], ["Jira Service Management"], ["Talent"], ["Guard"],
 	]);
 });
 
@@ -293,6 +293,22 @@ test("a retained reference cover repairs stale product marks even when source ID
 	assert.deepEqual(cardByCode(restored, "TEU-7").coverImage.appSources.map((app) => app.provider), ["jira", "confluence", "teamwork-graph"]);
 	assert.equal(cardByCode(restored, "TEU-7").coverImage.fit, "cover");
 	assert.equal(planner.coverImage.appSources[2].provider, "twg");
+	assert.equal(restored[0], columns[0]);
+	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
+});
+
+test("a retained EU AI Inference cover gains the European flag mark without resetting live edits", async () => {
+	const keynote = await loadKeynoteModule();
+	const columns = keynote.createJiraTeamEu26EndKeynoteBoardColumns();
+	const inference = cardByCode(columns, "TEU-108");
+	inference.title = "EU AI Inference (rehearsal)";
+	inference.coverImage.appSources = [];
+	const restored = keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(columns);
+	const [flag] = cardByCode(restored, "TEU-108").coverImage.appSources;
+	assert.equal(flag.label, "European Union");
+	assert.equal(flag.iconSrc, "/illustration/jira-team-eu26-end/eu-flag.svg");
+	assert.ok(fs.existsSync(path.join(process.cwd(), "public", flag.iconSrc)), flag.iconSrc);
+	assert.equal(cardByCode(restored, "TEU-108").title, "EU AI Inference (rehearsal)");
 	assert.equal(restored[0], columns[0]);
 	assert.equal(keynote.restoreJiraTeamEu26EndKeynoteCoverArtwork(restored), restored);
 });

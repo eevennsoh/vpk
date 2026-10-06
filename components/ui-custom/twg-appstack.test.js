@@ -176,6 +176,24 @@ test("Code Search uses its existing glyph in the lime app tile", async () => {
 	assert.equal(view.queryByRole("img", { name: "Search" }) === null, true);
 });
 
+test("image-source tiles expose their label as an image and can be decorative", async () => {
+	const source = { id: "european-union", label: "European Union", provider: "twg", iconSrc: "/illustration/jira-team-eu26-end/eu-flag.svg" };
+	const view = await renderComponent({
+		entry: "components/ui-custom/twg-appstack.tsx",
+		exportName: "TwgToolSourceIcon",
+		props: { source, size: "xsmall" },
+	});
+	const tile = view.getByRole("img", { name: "European Union" });
+	assert.equal(accessibleName(tile), "European Union");
+	assert.equal(tile.querySelector("img").getAttribute("aria-hidden"), "true");
+	assert.equal(tile.querySelector("img").getAttribute("width"), "20");
+	assert.deepEqual(view.tabOrder(), []);
+
+	await view.rerender({ source, size: "xsmall", "aria-hidden": true });
+	assert.equal(view.queryByRole("img", { name: "European Union" }) === null, true);
+	assert.equal(view.container.querySelector('[aria-label="European Union"]') === null, true);
+});
+
 test("TWG Appstack keeps the legacy TwgToolSourceStack adapter", () => {
 	assert.match(SOURCE, /export function TwgToolSourceStack\(props: TWGAppstackProps\)/u);
 	assert.match(SOURCE, /return <TWGAppstack \{\.\.\.props\} \/>/u);
