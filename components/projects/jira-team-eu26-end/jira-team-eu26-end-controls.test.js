@@ -55,7 +55,7 @@ test("Team EU26 replaces View with Needs input and a dedicated Group by control"
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /needsInputCount\?: number;/u);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/<BoardNeedsInputButton[\s\S]*<BoardGroupByMenu/u,
+		/<BoardGroupByMenu[\s\S]*<BoardNeedsInputButton/u,
 	);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /export function BoardNeedsInputButton/u);
 	assert.match(BOARD_VIEW_MENU_SOURCE, /Needs input/u);

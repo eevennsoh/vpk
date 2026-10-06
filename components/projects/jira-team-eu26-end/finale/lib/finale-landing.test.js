@@ -16,7 +16,8 @@ const ENTRY = `
 export * from "./finale-card-motion";
 export * from "./finale-wall-layout";
 export * from "./finale-wall-motion";
-export { landingWaveEnergy } from "./finale-sheet-gl";
+export { landingWaveEnergy, setLandingWave } from "./finale-sheet-gl";
+export { Vector4 } from "three";
 export { CUE } from "../data/finale-cues";
 export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 `;
@@ -38,6 +39,19 @@ function load() {
 const VIEWPORT = { width: 1728, height: 1117 };
 const FRAME = 1 / 60;
 const STEP = 1 / 240;
+
+test("flat-lit mega bento faces keep the shared ripple without painting fold shadow bands", () => {
+	const m = load();
+	const uniforms = { uLit: { value: 1 }, uImpulse: { value: new m.Vector4() } };
+	const pose = { lift: 0, waveAge: 0.035 };
+	m.setLandingWave(uniforms, pose, undefined, "flat");
+	assert.equal(uniforms.uLit.value, 0, "no fold shading on the card face");
+	assert.ok(uniforms.uImpulse.value.w > 0, "the landing ripple still bends the sheet");
+	const ripple = uniforms.uImpulse.value.toArray();
+	m.setLandingWave(uniforms, pose);
+	assert.ok(uniforms.uLit.value > 0, "the original six-tile lighting is preserved");
+	assert.deepEqual(uniforms.uImpulse.value.toArray(), ripple, "both appearances use the same landing wave");
+});
 
 /** Every way a card lands on the page: bento tiles on the slide, thrown cards in their gaps, the title set down by MCB, arrivals at the leading edge. */
 function landings() {
