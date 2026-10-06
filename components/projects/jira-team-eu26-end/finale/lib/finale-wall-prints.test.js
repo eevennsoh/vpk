@@ -158,7 +158,7 @@ test("each of a print slot's Done cards is a GL sheet of its own, no larger than
 					const rect = cardOnScreen(m, slot, card, landedAt, geometry);
 					assert.ok(sheet.pose.z === 0 && close(sheet.pose.x, centre(rect).x) && close(sheet.pose.y, centre(rect).y), "on its DOM card's rect");
 				}
-				// Each card's border glow and dot pulse trace that card.
+				// Each card's border glow traces that card.
 				const landings = m.wallLandingsAt(Math.max(...downs) + 0.1, wall, drops, prints).filter((landing) => landing.key.startsWith(slot.key));
 				assert.ok(!landings.some((landing) => landing.key === slot.key), "no accent traces the slot");
 				assert.equal(landings.length, count, "one landing per card");

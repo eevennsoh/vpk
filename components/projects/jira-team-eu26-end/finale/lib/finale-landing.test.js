@@ -105,6 +105,18 @@ test("a card comes to rest in its slot without an in-plane kick: its turn eases 
 	}
 });
 
+test("a thrown or let-go card has stopped going over and rocking as it touches down, so it never slaps flat", () => {
+	const { wallCards } = landings();
+	const degrees = (radians) => (radians * 180) / Math.PI;
+	for (const landing of wallCards) {
+		// MCB lowers the title by hand (`finale-title-drag.test.js`).
+		if (landing.label.startsWith("the title")) continue;
+		const rate = (key) => degrees((landing.pose(landing.touchdown - FRAME + STEP / 2)[key] - landing.pose(landing.touchdown - FRAME - STEP / 2)[key]) / STEP);
+		// Going over it turns at over 1000°/s; a frame from touchdown it has all but stopped.
+		for (const key of ["rotateX", "rotateY"]) assert.ok(Math.abs(rate(key)) < 25, `${landing.label} has all but stopped turning (${key} ${rate(key).toFixed(1)}°/s)`);
+	}
+});
+
 test("the landing wave gathers before touchdown, swells once and relaxes, never bending the sheet in a single frame", () => {
 	const { m, all } = landings();
 	for (const landing of all) {

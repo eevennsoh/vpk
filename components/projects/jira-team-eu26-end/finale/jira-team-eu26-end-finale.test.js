@@ -490,16 +490,6 @@ test("tiles land one by one and the last heading finishes during the title trans
 	assert.ok(CUE.end > CUE.yearLand, "the year has landed before the title transition");
 });
 
-test("the dot grid only exists as one pulse per tile touchdown", () => {
-	const { finaleBentoLayout, fieldRipples, touchdownTime } = loadFinale();
-	const slots = finaleBentoLayout({ width: 1920, height: 1080 }, 1).slots.map((slot) => slot.rect);
-	const ripples = fieldRipples(slots);
-	assert.equal(ripples.length, slots.length);
-	slots.forEach((rect, order) => {
-		assert.ok(ripples.some((ripple) => ripple.from === rect && ripple.start === touchdownTime(order)), `tile ${order} pulses on landing`);
-	});
-});
-
 test("the chromatic smear is off on frame 0 and the final bento, and peaks on the rush", () => {
 	const { CUE, chromaStrength, touchdownTime } = loadFinale();
 	const viewport = { width: 1920, height: 1080 };
