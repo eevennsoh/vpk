@@ -5,11 +5,8 @@ const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
 
 /*
- * A print slot's Done cards are cards of their own. Regression: a print slot
- * was one GL sheet the size of the whole slot, its prints stacked on it with
- * clear paper round and between them, so its landing shadow showed through
- * as grey bands beside the card and in the stack's gaps, and its border glow
- * and dot pulse traced the slot, not the card.
+ * Each work item has its own print slot, GL sheet, cursor hold and landing
+ * accents. The slot's spare space must not become extra paper or shadow.
  */
 
 const ENTRY = `
@@ -19,7 +16,6 @@ export * from "./finale-wall-cursors";
 export { hash01 } from "./finale-math";
 export { CUE } from "../data/finale-cues";
 export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
-export { Euler, Vector3 } from "three";
 `;
 
 let motionModule;
@@ -72,6 +68,19 @@ function arrivingPrints(m, wall, count, take = 2) {
 	return found;
 }
 
+test("captured Kanban cards skip the dot reveal, while an unprinted fallback builds its content", () => {
+	const { m, wall, drops, prints } = sceneFor(VIEWPORTS[1]);
+	for (const slot of arrivingPrints(m, wall, 1)) {
+		const { touchdown } = m.slotDescent(slot, wall);
+		const at = touchdown + 0.2;
+		const printed = m.wallLandingsAt(at, wall, drops, prints).filter((landing) => landing.key.startsWith(`${slot.key}#`));
+		assert.equal(printed.length, 1);
+		assert.equal(printed[0].revealStart, null, "the cover image is already visible in flight");
+		const fallback = m.wallLandingsAt(at, wall, drops).find((landing) => landing.key === slot.key);
+		assert.equal(fallback.revealStart, m.landingRevealStart(touchdown), "the blank stand-in still needs a content reveal");
+	}
+});
+
 /** The old DOM stack (`Prints`, before each card was its own), in slot px: the layout every card must keep. */
 function oldStack(size, codes, print, gap) {
 	const share = (size.height - gap * (codes.length - 1)) / codes.length;
@@ -104,13 +113,12 @@ function touchdowns(m, slot, wall, drops, prints) {
 	return slot.content.codes.map((_, index) => landings.find((landing) => landing.key === `${slot.key}#${index}`)?.touchdown);
 }
 
-test("a print slot's Done cards keep the stack's layout exactly, each on the rect its print fills", () => {
+test("an individual work item keeps its print's aspect and its own fitted rectangle", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, wall, prints } = sceneFor(viewport);
 		const gap = m.wallPrintGap(geometry);
 		assert.ok(close(gap, (8 * geometry.typeScale) / m.WALL_SCALE), "the DOM stack's gap, scaled with the type");
-		const sheetShows = [];
-		for (const count of [1, 2, 4]) {
+		for (const count of [1]) {
 			const [slot] = arrivingPrints(m, wall, count, 1);
 			const cards = m.wallPrintCards(slot.rect, slot.content.codes, prints, gap);
 			const before = oldStack(slot.rect, slot.content.codes, printOf, gap);
@@ -124,17 +132,13 @@ test("a print slot's Done cards keep the stack's layout exactly, each on the rec
 				assert.ok(close(card.radius, (8 / 388.5) * card.rect.width), "rounded as the board's card");
 				if (index > 0) assert.ok(close(card.rect.y - (cards[index - 1].rect.y + cards[index - 1].rect.height), gap), "the stack's gap between cards");
 			});
-			sheetShows.push(cards.some((card) => card.rect.width < slot.rect.width - 1) || cards.reduce((sum, card) => sum + card.rect.height, 0) < slot.rect.height - 1);
 		}
-		// Smaller than the slot somewhere: the grey bands were the slot's sheet showing round the card.
-		// (A card can match its slot's shape exactly, as the one-card slot does at 1024 × 768.)
-		assert.ok(sheetShows.some(Boolean), `a slot's sheet shows round its cards at ${viewport.width}×${viewport.height}`);
-		// A card not yet printed is left out, and the rest re-centre, as the DOM stack does.
-		const [band] = arrivingPrints(m, wall, 4, 1);
-		const missing = new Set([band.content.codes[1]]);
+		// An image that has not loaded must leave its single print absent.
+		const [band] = arrivingPrints(m, wall, 1, 1);
+		const missing = new Set([band.content.codes[0]]);
 		const partial = m.wallPrintCards(band.rect, band.content.codes, sceneFor(viewport, missing).prints, gap);
 		const expected = oldStack(band.rect, band.content.codes, (code) => (missing.has(code) ? undefined : printOf(code)), gap);
-		assert.deepEqual(partial.map((card) => card.index), [0, 2, 3]);
+		assert.deepEqual(partial.map((card) => card.index), []);
 		partial.forEach((card, index) => assert.ok(sameRect(card.rect, expected[index])));
 	}
 });
@@ -142,7 +146,7 @@ test("a print slot's Done cards keep the stack's layout exactly, each on the rec
 test("each of a print slot's Done cards is a GL sheet of its own, no larger than the card it shows, as are its shadow and landing accents", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, wall, drops, prints } = sceneFor(viewport);
-		for (const count of [1, 2, 4]) {
+		for (const count of [1]) {
 			for (const slot of arrivingPrints(m, wall, count)) {
 				const cards = m.wallPrintCards(slot.rect, slot.content.codes, prints, m.wallPrintGap(geometry));
 				const descent = m.slotDescent(slot, wall);
@@ -167,7 +171,7 @@ test("each of a print slot's Done cards is a GL sheet of its own, no larger than
 					const rect = cardOnScreen(m, slot, card, landedAt, geometry);
 					assert.ok(sheet.pose.z === 0 && close(sheet.pose.x, centre(rect).x) && close(sheet.pose.y, centre(rect).y), "on its DOM card's rect");
 				}
-				// Each card's border glow and dot pulse trace that card.
+				// Each card's border glow traces that card.
 				const landings = m.wallLandingsAt(Math.max(...downs) + 0.1, wall, drops, prints).filter((landing) => landing.key.startsWith(slot.key));
 				assert.ok(!landings.some((landing) => landing.key === slot.key), "no accent traces the slot");
 				assert.equal(landings.length, count, "one landing per card");
@@ -182,33 +186,21 @@ test("each of a print slot's Done cards is a GL sheet of its own, no larger than
 	}
 });
 
-test("a stack waits in the air as the one sheet did, then its cards peel off it one by one, top first, each handing over to its own DOM card", () => {
+test("one printed work item arrives on its own and hands over to its own DOM card on every pass", () => {
 	const { m, geometry, wall, drops, prints, viewport } = sceneFor(VIEWPORTS[0]);
-	const [slot] = arrivingPrints(m, wall, 4, 1);
+	const [slot] = arrivingPrints(m, wall, 1, 1);
 	const cards = m.wallPrintCards(slot.rect, slot.content.codes, prints, m.wallPrintGap(geometry));
 	const descent = m.slotDescent(slot, wall);
-	// Waiting, each card is exactly where the whole slot's sheet carried its print: on that sheet's turned plane.
+	assert.equal(cards.length, 1, "one independently carried card");
 	const waitingAt = descent.start - 0.2;
-	const whole = m.wallSheetsAt(waitingAt, wall, drops, viewport).find((sheet) => sheet.key === `card-${slot.key}`);
-	assert.ok(whole && whole.pose.z > 0, "the slot's sheet waits up in the air");
-	const turn = new m.Euler(whole.pose.rotateX, whole.pose.rotateY, -whole.pose.rotateZ, "XYZ");
-	const sheets = m.wallSheetsAt(waitingAt, wall, drops, viewport, prints);
-	for (const card of cards) {
-		const sheet = sheets.find((each) => each.key === `card-${slot.key}#${card.index}`);
-		const offset = new m.Vector3(centre(card.rect).x - slot.rect.width / 2, slot.rect.height / 2 - centre(card.rect).y, 0).applyEuler(turn);
-		assert.ok(close(sheet.pose.x, whole.pose.x + offset.x, 1e-6) && close(sheet.pose.y, whole.pose.y - offset.y, 1e-6) && close(sheet.pose.z, whole.pose.z + offset.z, 1e-6), `card ${card.index} rides the stack`);
-		assert.ok(close(sheet.pose.rotateX, whole.pose.rotateX) && close(sheet.pose.rotateY, whole.pose.rotateY) && close(sheet.pose.rotateZ, whole.pose.rotateZ), "turned as it is");
-	}
-	// They come down one after another, top first, each a beat after the one above it.
+	const waiting = m.wallSheetsAt(waitingAt, wall, drops, viewport, prints).filter((sheet) => sheet.key.startsWith(`card-${slot.key}`));
+	assert.equal(waiting.length, 1);
+	assert.ok(waiting[0].pose.z > 0, "the single card waits up in the air");
 	const downs = touchdowns(m, slot, wall, drops, prints);
-	assert.ok(close(downs[0], descent.touchdown), "the top card first, on the slot's own beat");
-	downs.slice(1).forEach((touchdown, index) => {
-		const beat = touchdown - downs[index];
-		assert.ok(beat >= 0.09 * 0.7 - 1e-9 && beat <= 0.09 * 1.3 + 1e-9, `card ${index + 1} a beat after the one above (${beat.toFixed(3)}s)`);
-	});
+	assert.ok(close(downs[0], descent.touchdown), "the one card lands on its own beat");
 	// Each card's DOM card takes over from its own sheet, in the same place.
 	const before = m.wallSlotPresence(slot, wall, drops, descent.touchdown, prints);
-	assert.deepEqual(before.cards, [0, 0, 0, 0]);
+	assert.deepEqual(before.cards, [0]);
 	assert.equal(before.opacity, 0, "nothing shows before the first hand-over");
 	for (const [index, touchdown] of downs.entries()) {
 		// Early in its hand-over: its DOM card coming up, its sheet still there.
@@ -226,15 +218,21 @@ test("a stack waits in the air as the one sheet did, then its cards peel off it 
 		assert.ok(!m.wallSheetsAt(touchdown + m.CUE.handoff + 0.13, wall, drops, viewport, prints).some((each) => each.key === `card-${slot.key}#${index}`), "then gone");
 	}
 	assert.equal(m.wallSlotPresence(slot, wall, drops, downs.at(-1) + m.CUE.handoff + 0.2, prints).cards.every((shown) => shown === 1), true);
-	// The whole stack lands a period later on the next pass, exactly alike.
+	// A first arrival can be in the startup ramp. The next pass crosses the same entry line one wall period farther on.
 	const next = wall.bucket(slot.bucket + wall.periodBuckets).find((each) => each.key.split(":").slice(1).join(":") === slot.key.split(":").slice(1).join(":"));
+	const nextDescent = m.slotDescent(next, wall);
+	assert.ok(close(m.wallOffset(nextDescent.start, geometry) - m.wallOffset(descent.start, geometry), wall.periodWidth), "the same entry position on the next pass");
+	const nextDowns = touchdowns(m, next, wall, drops, prints);
+	nextDowns.forEach((touchdown, index) => assert.ok(close(touchdown - downs[index], nextDescent.start - descent.start), "the same peel timing after the startup ramp"));
+	// Both later passes are at full pace, so every card lands exactly one loop later.
+	const third = wall.bucket(next.bucket + wall.periodBuckets).find((each) => each.key.split(":").slice(1).join(":") === slot.key.split(":").slice(1).join(":"));
 	const loop = m.wallLoop(wall);
-	touchdowns(m, next, wall, drops, prints).forEach((touchdown, index) => assert.ok(close(touchdown - downs[index], loop, 1e-6), "seamless round the loop"));
+	touchdowns(m, third, wall, drops, prints).forEach((touchdown, index) => assert.ok(close(touchdown - nextDowns[index], loop, 1e-6), "seamless round the loop at full pace"));
 });
 
 test("a print slot with nothing printed yet comes down as one blank card over its slot, as its DOM stand-in fills it", () => {
 	const { m, geometry, wall, drops, viewport } = sceneFor(VIEWPORTS[1]);
-	const [slot] = arrivingPrints(m, wall, 4, 1);
+	const [slot] = arrivingPrints(m, wall, 1, 1);
 	const none = m.wallPrintShapes(() => undefined);
 	const descent = m.slotDescent(slot, wall);
 	const sheet = m.wallSheetsAt(descent.touchdown + 0.1, wall, drops, viewport, none).find((each) => each.key.startsWith(`card-${slot.key}`));
@@ -244,13 +242,14 @@ test("a print slot with nothing printed yet comes down as one blank card over it
 	assert.equal(m.wallSlotPresence(slot, wall, drops, descent.touchdown + 0.1, none).cards, null, "its DOM slot shows as one card");
 });
 
-test("a teammate holding a print slot holds it by its top card's middle", () => {
+test("a teammate holding a work-item print carries exactly one card by its middle", () => {
 	let found = 0;
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, wall, drops, prints } = sceneFor(viewport);
 		for (let column = 0; column < 120; column += 1) {
 			for (const slot of wall.bucket(column)) {
 				if (slot.content.kind !== "print") continue;
+				assert.equal(slot.content.codes.length, 1, "a cursor never carries a group of work items");
 				const descent = m.slotDescent(slot, wall);
 				const cursor = descent && m.wallCursorsAt(descent.touchdown, wall, drops, viewport, prints).find((each) => each.key === slot.key);
 				if (!cursor) continue;
@@ -258,10 +257,6 @@ test("a teammate holding a print slot holds it by its top card's middle", () => 
 				const [top] = m.wallPrintCards(slot.rect, slot.content.codes, prints, m.wallPrintGap(geometry));
 				const rect = cardOnScreen(m, slot, top, descent.touchdown, geometry);
 				assert.ok(close(cursor.x, rect.x + rect.width / 2, 0.5) && close(cursor.y, rect.y + rect.height / 2, 0.5), "its tip on the top card's middle as it lands");
-				if (slot.content.codes.length < 2) continue;
-				// A stack's top card sits above the slot's middle: the cursor holds the card, not the gap between cards.
-				const slotRect = m.slotOnScreen(slot, m.wallOffset(descent.touchdown, geometry), geometry);
-				assert.ok(Math.hypot(cursor.x - (slotRect.x + slotRect.width / 2), cursor.y - (slotRect.y + slotRect.height / 2)) > 4, "not on the slot's middle, between the cards");
 			}
 		}
 	}

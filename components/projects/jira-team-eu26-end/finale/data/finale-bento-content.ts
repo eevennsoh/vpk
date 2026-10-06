@@ -74,15 +74,19 @@ export const BENTO_MODEL_SPLIT: readonly { readonly color: string; readonly widt
 	{ color: SILVER, width: 152.348 },
 ];
 
-/** Artifacts: three Rovo artifacts as their cards show them, bottom of the pile first. */
+/** The coding agent that made an artifact, as its card's hexagon shows it. */
+export type BentoArtifactAgent = "cursor" | "claude" | "rovo-dev";
+
+/** Artifacts: three artifacts as their cards show them, bottom of the pile first. */
 export interface BentoArtifact {
 	readonly title: string;
 	readonly author: string;
 	readonly authorAvatar: string;
+	readonly agent: BentoArtifactAgent;
 }
 
 export const BENTO_ARTIFACTS = {
-	report: { title: "AI Usage Report", author: "Tamar Yehoshua", authorAvatar: "/illustration/jira-team-eu26-end/bento/artifacts-avatar-reviewer.png" },
-	concept: { title: "Design Studio Concept.html", author: "Mike Cannon Brookes", authorAvatar: "/avatar-user/mcb.png" },
-	studio: { title: "Design Studio", author: "Tamar Yehoshua", authorAvatar: "/avatar-user/tamar.png" },
+	report: { title: "AI Usage Report", author: "Tamar Yehoshua", authorAvatar: "/illustration/jira-team-eu26-end/bento/artifacts-avatar-reviewer.png", agent: "cursor" },
+	concept: { title: "Design Studio Concept.html", author: "Mike Cannon Brookes", authorAvatar: "/avatar-user/mike.png", agent: "rovo-dev" },
+	studio: { title: "Design Studio", author: "Tamar Yehoshua", authorAvatar: "/avatar-user/tamar.png", agent: "claude" },
 } as const satisfies Record<string, BentoArtifact>;

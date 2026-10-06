@@ -11,12 +11,14 @@ export type JiraIssueVariant = "default" | "uncaptured-work";
 
 /** Optional image, decorative solid color, or typographic cover with a host-owned height cap. */
 export type JiraIssueCoverImage = {
+	height?: number;
+	/** Image padding adds canvas space outside this artwork height cap. */
 	maxHeight?: number;
 	backgroundPattern?: "grid";
 } & (
-	| { src: string; alt: string; fit?: "contain" | "cover"; zoom?: number; mask?: Readonly<{ src: string; backgroundColor: string }>; appSources?: readonly TwgToolSource[]; backgroundClassName?: never; heading?: never; subheading?: never }
-	| { backgroundClassName: string; src?: never; alt?: never; fit?: never; mask?: never; heading?: never; subheading?: never; appSources?: never }
-	| { heading: string; subheading?: string; appSources?: readonly TwgToolSource[]; src?: never; alt?: never; fit?: never; mask?: never; backgroundClassName?: never }
+	| { src: string; alt: string; fit?: "contain" | "cover"; objectPosition?: string; zoom?: number; padding?: Readonly<{ blockStart: number; blockEnd: number; backgroundColor: string }>; mask?: Readonly<{ src: string; backgroundColor: string }>; layers?: readonly string[]; foreground?: Readonly<{ src: string; width: number; height: number; canvasWidth: number }>; appSources?: readonly TwgToolSource[]; backgroundClassName?: never; heading?: never; subheading?: never }
+	| { backgroundClassName: string; src?: never; alt?: never; fit?: never; mask?: never; layers?: never; foreground?: never; heading?: never; subheading?: never; appSources?: never }
+	| { heading: string; subheading?: string; appSources?: readonly TwgToolSource[]; src?: never; alt?: never; fit?: never; mask?: never; layers?: never; foreground?: never; backgroundClassName?: never }
 );
 
 /** Dummy or live overlay fields for the Pull Request hover flyout. */

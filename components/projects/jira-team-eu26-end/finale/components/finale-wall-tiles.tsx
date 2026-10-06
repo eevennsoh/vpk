@@ -1,13 +1,12 @@
 "use client";
 
 import { Fragment, memo, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
-import Image from "next/image";
 
 import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-eu26-end/data/keynote-presenters";
 
 import { CUE } from "../data/finale-cues";
 import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
-import { FINALE_STORIES, type FinaleChapterId, type FinaleStory } from "../data/finale-stories";
+import { FINALE_STORIES } from "../data/finale-stories";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FINALE_INK, applyFinaleBuild, buildAfter, finaleBuildPaint } from "../lib/finale-build-style";
 import { EASE, progress } from "../lib/finale-math";
@@ -23,13 +22,12 @@ import {
 	type WallPrintCard,
 	type WallSlot,
 	type WallStatId,
-	type WallStripId,
 } from "../lib/finale-wall-layout";
-import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
-import { FinaleDealt, FinaleTileLogos, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
+import { FinaleBuildSpan, useFinaleBuild } from "./finale-build-text";
+import { FinaleDealt, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
 import { FinaleTileFace } from "./finale-tile-face";
+import { WallLanyard } from "./finale-wall-lanyard";
 import { WallPieces } from "./finale-wall-pieces";
-import { FinaleWallShape } from "./finale-wall-shape";
 import { FinaleTitleLockup } from "./finale-title-lockup";
 
 /*
@@ -37,7 +35,7 @@ import { FinaleTitleLockup } from "./finale-title-lockup";
  * blank sheet of its tile's colour and builds its content once its DOM face
  * takes over (`revealStart`), in the bento's own vocabulary: logos deal in
  * with the app stack's entrance, text builds through the colour band, and
- * what moves (a poster's word, a shape) only starts once it is there. A card
+ * a poster's word only starts moving once it is there. A card
  * already on the wall when it faded in (`revealStart` null) shows built.
  */
 
@@ -51,8 +49,6 @@ const STATUS = {
 	progress: { background: "#E9F2FE", color: "#1558BC" },
 	done: { background: "#DCFFF1", color: "#216E4E" },
 } as const;
-/** Each chapter's tint: the 200 steps of its poster's colour in the Team ’26 palette. */
-const CHAPTER_TINT: Readonly<Record<FinaleChapterId, string>> = { Context: "#DAF0AF", Collaboration: "#E9D8F8", Confidence: "#D0E1FD" };
 /** A poster's word picks up its glide over this long once it has built. */
 const POSTER_RAMP_S = 1.2;
 
@@ -101,14 +97,14 @@ interface PosterProps {
 	readonly revealStart: number | null;
 }
 
-/** A big word cropped by its tile, gliding through it a little faster than the wall; landed, it builds before it glides. */
+/** A centred chapter word glides through its compact tile; landed, it builds before it glides. */
 function Poster({ word, fill, ink, width, height, revealStart }: Readonly<PosterProps>) {
 	const lineRef = useRef<HTMLDivElement>(null);
 	const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
 	const repeatRef = useRef(0);
 	const builtRef = useRef(Number.NaN);
 	const travelRef = useRef(Number.NaN);
-	const fontSize = Math.min(width / 1.9, height * 0.82);
+	const fontSize = Math.min(width / 2.8, height * 0.5);
 	const speed = fontSize * 0.16;
 	// Measured before the first frame paints the glide (a held frame paints once, at mount).
 	useLayoutEffect(() => {
@@ -135,27 +131,13 @@ function Poster({ word, fill, ink, width, height, revealStart }: Readonly<Poster
 		line.style.transform = `translate(${(-travel).toFixed(1)}px, 0)`;
 	});
 	return (
-		<div className="absolute inset-0 overflow-hidden" style={{ background: fill, borderRadius: FINALE_TILE_RADIUS_CSS }}>
-			<div ref={lineRef} className="absolute flex whitespace-nowrap" style={{ fontFamily: "var(--font-sans)", left: 0, bottom: -fontSize * 0.2, fontSize, lineHeight: 1, fontWeight: 600 }}>
+		<div className="absolute inset-0 flex items-center overflow-hidden" style={{ background: fill, borderRadius: FINALE_TILE_RADIUS_CSS }}>
+			<div ref={lineRef} className="flex shrink-0 whitespace-nowrap" style={{ fontFamily: "var(--font-sans)", fontSize, lineHeight: 1, fontWeight: 600 }}>
 				{[0, 1, 2].map((copy) => (
-					<span key={copy} ref={(element) => { wordRefs.current[copy] = element; }} style={{ ...finaleBuildPaint(ink, revealStart === null, "-0.045em"), paddingRight: fontSize * 0.28 }}>
+					<span key={copy} ref={(element) => { wordRefs.current[copy] = element; }} style={{ ...finaleBuildPaint(ink, revealStart === null, "-0.045em"), textBox: "trim-both cap alphabetic", paddingRight: fontSize * 0.28 }}>
 						{word}
 					</span>
 				))}
-			</div>
-		</div>
-	);
-}
-
-/** A featured story's benefit line, set large on its chapter's tint, its products underneath. */
-function Benefit({ story, width, height, revealStart }: Readonly<{ story: FinaleStory; width: number; height: number; revealStart: number | null }>) {
-	const fontSize = Math.min(80, Math.max(52, height * 0.14), width * 0.13);
-	return (
-		<div className="absolute inset-0 flex flex-col justify-between overflow-hidden" style={{ ...SANS, background: CHAPTER_TINT[story.chapter], borderRadius: FINALE_TILE_RADIUS_CSS, padding: 40, color: FINALE_INK }}>
-			<FinaleBuildText text={story.title} start={revealStart} tracking="-0.03em" style={{ fontSize, lineHeight: 1.04, fontWeight: 500, textWrap: "balance" }} />
-			<div className="flex items-center justify-between">
-				<FinaleTileLogos sources={story.apps} revealStart={revealStart} className="origin-left scale-150" />
-				<FinaleBuildSpan text={story.chapter} start={buildAfter(revealStart, 0.45)} duration={CUE.reveal * 0.6} className="inline-block text-[28px] leading-none" />
 			</div>
 		</div>
 	);
@@ -224,27 +206,6 @@ function Flow({ revealStart }: Readonly<{ revealStart: number | null }>) {
 					<FinaleDealt start={revealStart} index={index * 2}><span className={LOZENGE} style={step.tone}>{step.label}</span></FinaleDealt>
 				</Fragment>
 			))}
-		</div>
-	);
-}
-
-function Strip({ strip, revealStart }: Readonly<{ strip: WallStripId; revealStart: number | null }>) {
-	if (strip === "flow") return <Flow revealStart={revealStart} />;
-	return (
-		<div className="absolute inset-0 flex items-center gap-5 overflow-hidden" style={{ ...SANS, background: FINALE_COLORS.tile, borderRadius: FINALE_TILE_RADIUS_CSS, paddingInline: 32, color: FINALE_INK }}>
-			{/* The presenters are dealt in like the logos, then their names build. */}
-			<div className="flex shrink-0">
-				{PRESENTERS.map((presenter, index) => (
-					<FinaleDealt key={presenter.id} start={revealStart} index={index} style={{ marginLeft: index === 0 ? 0 : -18 }}>
-						{/* Ringed in the tile's own fill, so each overlap reads as a cut-out of the card. */}
-						<Image src={presenter.avatarSrc} alt="" width={76} height={76} className="size-[76px] rounded-full object-cover" style={{ boxShadow: `0 0 0 4px ${FINALE_COLORS.tile}` }} />
-					</FinaleDealt>
-				))}
-			</div>
-			<span className="flex min-w-0 flex-col text-[28px] leading-[1.15]">
-				<FinaleBuildSpan text={PRESENTERS.slice(0, 2).map((presenter) => presenter.name).join(" · ")} start={buildAfter(revealStart, 0.3)} duration={CUE.reveal * 0.7} />
-				<FinaleBuildSpan text={PRESENTERS.slice(2).map((presenter) => presenter.name).join(" · ")} start={buildAfter(revealStart, 0.5)} duration={CUE.reveal * 0.7} />
-			</span>
 		</div>
 	);
 }
@@ -321,22 +282,20 @@ interface WallTileContentProps {
 export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot, geometry, cardPrint, revealStart }: Readonly<WallTileContentProps>) {
 	const content: WallContent = slot.content;
 	if (content.kind === "print") return <WallPrints slot={slot} geometry={geometry} codes={content.codes} cardPrint={cardPrint} revealStart={revealStart} />;
+	// Drawn at the slot's own pixels, not the stage box's scale, so the canvas stays sharp. It never lands, so never builds.
+	if (content.kind === "lanyard") return <WallLanyard slot={slot} geometry={geometry} order={content.order} />;
 	return (
 		<StageBox slot={slot} geometry={geometry}>
 			{(size) => {
 				switch (content.kind) {
 					case "story":
 						return <FinaleTileFace story={content.story} slot={{ rect: { x: 0, y: 0, ...size }, short: slot.rect.height < slot.rect.width }} scale={1} revealStart={revealStart} />;
-					case "benefit":
-						return <Benefit story={content.story} {...size} revealStart={revealStart} />;
 					case "poster":
 						return <Poster word={content.word} fill={FINALE_BRAND[content.fill]} ink={FINALE_BRAND[content.ink]} {...size} revealStart={revealStart} />;
-					case "shape":
-						return <FinaleWallShape shape={content.shape} fill={FINALE_BRAND[content.fill]} portrait={content.portrait} seed={slot.seed} {...size} revealStart={revealStart} />;
 					case "stat":
 						return <Stat stat={content.stat} {...size} revealStart={revealStart} />;
 					case "strip":
-						return <Strip strip={content.strip} revealStart={revealStart} />;
+						return <Flow revealStart={revealStart} />;
 					case "piece":
 						return <WallPieces slot={slot} geometry={geometry} pieces={content.pieces} revealStart={revealStart} />;
 					case "title":

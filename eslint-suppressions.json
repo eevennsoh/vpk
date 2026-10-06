@@ -2030,11 +2030,6 @@
       "count": 1
     }
   },
-  "components/projects/jira-team-eu26-end/finale/components/finale-dot-field.tsx": {
-    "jsx-a11y/no-aria-hidden-on-focusable": {
-      "count": 1
-    }
-  },
   "components/projects/jira-team-eu26-end/finale/components/finale-overlay.tsx": {
     "no-restricted-syntax": {
       "count": 1

@@ -12,18 +12,18 @@ const {
 const { filterJiraKanbanColumnsByAssignee } = require("../../state.ts");
 
 test("section presenters own unassigned cards while explicit assignees keep the Context split", () => {
-	const mcb = { id: "mcb", name: "MCB", avatarSrc: "/avatar-user/mcb.png" };
+	const mike = { id: "mike", name: "MCB", avatarSrc: "/avatar-user/mike.png" };
 	const tamar = { id: "tamar", name: "Tamar", avatarSrc: "/avatar-user/tamar.png" };
 	const sherif = { id: "sherif", name: "Sherif", avatarSrc: "/avatar-user/sherif.png" };
 	const taroon = { id: "taroon", name: "Taroon", avatarSrc: "/avatar-user/taroon.png" };
 	const card = (code, assignee) => ({ code, title: code, tags: [], priority: "medium", ...(assignee ? { assignee } : {}) });
 	const columns = [
-		{ title: "Context", count: 4, presenters: [mcb, tamar], cards: [card("search", mcb), card("code", mcb), card("work", tamar), card("artifacts", tamar)] },
-		{ title: "Collaboration", count: 2, presenters: [mcb, sherif], cards: [card("jira"), card("confluence")] },
-		{ title: "Confidence", count: 2, presenters: [mcb, taroon], cards: [card("dx"), card("guard")] },
+		{ title: "Context", count: 4, presenters: [mike, tamar], cards: [card("search", mike), card("code", mike), card("work", tamar), card("artifacts", tamar)] },
+		{ title: "Collaboration", count: 2, presenters: [mike, sherif], cards: [card("jira"), card("confluence")] },
+		{ title: "Confidence", count: 2, presenters: [mike, taroon], cards: [card("dx"), card("guard")] },
 	];
 	const matchingCodes = (...ids) => filterJiraKanbanColumnsByAssignee(columns, new Set(ids)).map((column) => column.cards.map((item) => item.code));
-	assert.deepEqual(matchingCodes("mcb"), [["search", "code"], ["jira", "confluence"], ["dx", "guard"]]);
+	assert.deepEqual(matchingCodes("mike"), [["search", "code"], ["jira", "confluence"], ["dx", "guard"]]);
 	assert.deepEqual(matchingCodes("tamar"), [["work", "artifacts"], [], []]);
 	assert.deepEqual(matchingCodes("sherif"), [[], ["jira", "confluence"], []]);
 	assert.deepEqual(matchingCodes("taroon"), [[], [], ["dx", "guard"]]);

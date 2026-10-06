@@ -16,7 +16,8 @@ const ENTRY = `
 export * from "./finale-card-motion";
 export * from "./finale-wall-layout";
 export * from "./finale-wall-motion";
-export { landingWaveEnergy } from "./finale-sheet-gl";
+export { landingWaveEnergy, setLandingWave } from "./finale-sheet-gl";
+export { Vector4 } from "three";
 export { CUE } from "../data/finale-cues";
 export { finaleBentoLayout, FINALE_FEATURES } from "../data/finale-stories";
 `;
@@ -38,6 +39,19 @@ function load() {
 const VIEWPORT = { width: 1728, height: 1117 };
 const FRAME = 1 / 60;
 const STEP = 1 / 240;
+
+test("flat-lit mega bento faces keep the shared ripple without painting fold shadow bands", () => {
+	const m = load();
+	const uniforms = { uLit: { value: 1 }, uImpulse: { value: new m.Vector4() } };
+	const pose = { lift: 0, waveAge: 0.035 };
+	m.setLandingWave(uniforms, pose, undefined, "flat");
+	assert.equal(uniforms.uLit.value, 0, "no fold shading on the card face");
+	assert.ok(uniforms.uImpulse.value.w > 0, "the landing ripple still bends the sheet");
+	const ripple = uniforms.uImpulse.value.toArray();
+	m.setLandingWave(uniforms, pose);
+	assert.ok(uniforms.uLit.value > 0, "the original six-tile lighting is preserved");
+	assert.deepEqual(uniforms.uImpulse.value.toArray(), ripple, "both appearances use the same landing wave");
+});
 
 /** Every way a card lands on the page: bento tiles on the slide, thrown cards in their gaps, the title set down by MCB, arrivals at the leading edge. */
 function landings() {
@@ -88,6 +102,18 @@ test("a card comes to rest in its slot without an in-plane kick: its turn eases 
 			const pose = landing.pose(time);
 			assert.ok(pose && Math.abs(pose.rotateX) + Math.abs(pose.rotateY) + Math.abs(pose.rotateZ) < 1e-9, `${landing.label} lies square once down (${((time - landing.touchdown) * 1000).toFixed(0)}ms)`);
 		}
+	}
+});
+
+test("a thrown or let-go card has stopped going over and rocking as it touches down, so it never slaps flat", () => {
+	const { wallCards } = landings();
+	const degrees = (radians) => (radians * 180) / Math.PI;
+	for (const landing of wallCards) {
+		// MCB lowers the title by hand (`finale-title-drag.test.js`).
+		if (landing.label.startsWith("the title")) continue;
+		const rate = (key) => degrees((landing.pose(landing.touchdown - FRAME + STEP / 2)[key] - landing.pose(landing.touchdown - FRAME - STEP / 2)[key]) / STEP);
+		// Going over it turns at over 1000°/s; a frame from touchdown it has all but stopped.
+		for (const key of ["rotateX", "rotateY"]) assert.ok(Math.abs(rate(key)) < 25, `${landing.label} has all but stopped turning (${key} ${rate(key).toFixed(1)}°/s)`);
 	}
 });
 

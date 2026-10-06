@@ -71,6 +71,7 @@ export const DESIGN_VARIANTS = [
 	{ id: "sessionProximity", label: "Proximity sensor" },
 	{ id: "sessionPeel", label: "Peel visual" },
 	{ id: "moveVisual", label: "Move visual" },
+	{ id: "pauseMegaBento", label: "Pause mega-bento" },
 ] as const;
 
 export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
@@ -132,6 +133,7 @@ const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	manualLink: false,
 	moveVisual: true,
 	panel: false,
+	pauseMegaBento: true,
 	sessionBloom: true,
 	sessionPeel: false,
 	sessionProximity: false,

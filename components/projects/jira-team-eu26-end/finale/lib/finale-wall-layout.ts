@@ -1,11 +1,11 @@
 import kitPieces from "@/public/1p/rovo-stage-kit/pieces.json";
 import stageFile from "@/public/1p/rovo-stage-kit/rovo-stage.json";
-import type { KitPiece, PieceId } from "@/public/1p/rovo-stage-kit/types/stage-file";
+import type { ComposedPiece, KitPiece, PieceId, StageFile } from "@/public/1p/rovo-stage-kit/types/stage-file";
 
-import { FINALE_STORIES, finaleBentoLayout, type FinaleBentoLayout, type FinalePresenterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
+import { FINALE_STORIES, finaleBentoLayout, type FinaleBentoLayout, type FinaleChapterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import type { FinaleBrandColor } from "../data/finale-palette";
-import type { FinaleShapeKind } from "../data/finale-identity-shapes";
-import { packWallMasonry } from "./finale-wall-masonry";
+import { FINALE_TITLE } from "../data/finale-title";
+import { packWallMasonry, type MasonryItem } from "./finale-wall-masonry";
 import { wallPiecesLayout } from "./finale-wall-pieces";
 
 /** Scale of the keynote tiles and their typography after the throw. */
@@ -13,23 +13,41 @@ export const WALL_SCALE = 0.3;
 export const WALL_TITLE_ORDER = 6;
 /** Original entry-camera calibration, independent of tile sizing and spatial indexing. */
 const WALL_ENTRY_SCALE = 68 / 231;
+/**
+ * Lanyard tiles a period carries, spread evenly through it, each in the
+ * lanyard's own 3:4 portrait box at the 1920 stage. Their straps are cut
+ * straight at the top of the box, so every one hangs from the top edge of the
+ * frame (`wallLanyardRect`), never mid-wall. Three, not four: each takes the
+ * space of cards that would arrive and be set down, and four dropped the
+ * teammates' drags below their cadence (`finale-wall-cursors.test.js`).
+ */
+export const WALL_LANYARDS = { count: 3, width: 360, height: 480 } as const;
+/**
+ * Done cards dealt a second time each loop, where the feature-name tiles once
+ * were, so teammates still have as many cards to set down (the drag cadence
+ * in `finale-wall-cursors.test.js`). Eight, measured: the cadence moves with
+ * the masonry's packing, and eight keeps every screen from 1024 to 2560 wide
+ * over its floor, where six, seven and nine each leave one under it.
+ */
+export const WALL_RECYCLED_PRINTS = 8;
 
 export type WallStatId = "presenters" | "chapters";
-export type WallStripId = "presenters" | "flow";
+export type WallStripId = "flow";
 export type WallPiece = Pick<KitPiece, "id" | "scale">;
 export type WallContent =
 	| { readonly kind: "story"; readonly story: FinaleStory }
-	| { readonly kind: "benefit"; readonly story: FinaleStory }
-	| { readonly kind: "print"; readonly codes: readonly string[] }
-	| { readonly kind: "poster"; readonly word: string; readonly fill: FinaleBrandColor; readonly ink: FinaleBrandColor }
-	| { readonly kind: "shape"; readonly shape: FinaleShapeKind; readonly fill: FinaleBrandColor; readonly portrait: FinalePresenterId }
+	| { readonly kind: "print"; readonly codes: readonly [string] }
+	| { readonly kind: "poster"; readonly word: FinaleChapterId; readonly fill: FinaleBrandColor; readonly ink: FinaleBrandColor }
 	| { readonly kind: "stat"; readonly stat: WallStatId }
 	| { readonly kind: "strip"; readonly strip: WallStripId }
 	| { readonly kind: "piece"; readonly pieces: readonly WallPiece[] }
+	/** `order`: its place in the wall's endless run of lanyards (each copy of the period continues it), which deals its presenter and agent. */
+	| { readonly kind: "lanyard"; readonly order: number }
 	| { readonly kind: "title" };
 
 export interface WallGeometry {
 	readonly gutter: number;
+	readonly gutterY: number;
 	/** Spatial indexing only. Items never snap to these buckets. */
 	readonly bucketWidth: number;
 	/** Widest original card for the arrival's leading edge, in viewport px. */
@@ -73,16 +91,52 @@ export function wrap(value: number, period: number): number {
 	return ((value % period) + period) % period;
 }
 
+type WallStagePiece = Pick<ComposedPiece, "key" | "scale"> & { readonly id: string };
+type WallStageSource = {
+	readonly composition: { readonly pieces: readonly WallStagePiece[] } | null;
+	readonly board: { readonly cells: { readonly a: Pick<StageFile["board"]["cells"]["a"], "options"> } };
+};
+
+/** Explicit instances keep their scales; automatic stages use the enabled catalogue and density. */
+export function resolveWallStagePieces(stage: WallStageSource): readonly WallStagePiece[] {
+	if (stage.composition !== null) return stage.composition.pieces;
+	const options = stage.board.cells.a.options ?? {};
+	const density = options.density === "gallery" ? 1 : options.density === "dense" ? 0.76 : 0.88;
+	const enabled = kitPieces.filter((piece) => {
+		const shown = options[`show${piece.group[0].toUpperCase()}${piece.group.slice(1)}`];
+		return typeof shown === "boolean" ? shown : piece.group !== "apps";
+	});
+	const groups = [...new Set(enabled.map((piece) => piece.group))].map((group) => enabled.filter((piece) => piece.group === group));
+	const ordered: typeof kitPieces = [];
+	for (let index = 0; index < Math.max(0, ...groups.map((group) => group.length)); index += 1) {
+		for (const group of groups) {
+			const piece = group[index];
+			if (piece) ordered.push(piece);
+		}
+	}
+	return ordered.map((piece) => ({
+		key: `library-${piece.id}`,
+		id: piece.id,
+		scale: piece.scale * density,
+	}));
+}
+
+function wallStageGap(option: string | boolean | undefined): number {
+	const value = typeof option === "string" ? Number(option) : Number.NaN;
+	return Number.isFinite(value) ? Math.min(160, Math.max(0, value)) : 28;
+}
+
 export function wallGeometry(fitScale: number, viewport: { readonly width: number; readonly height: number }): WallGeometry {
 	const referenceWidth = finaleBentoLayout(viewport, fitScale).slots[0].rect.width * WALL_ENTRY_SCALE;
 	// The exported zoom frames the kit; a shared 1.25 enlargement makes its animated UI readable.
 	const pieceScale = fitScale * stageFile.board.cells.a.zoom * 1.25;
-	const maxPieceWidth = Math.max(...stageFile.composition.pieces.map((placed) => {
+	const maxPieceWidth = Math.max(...resolveWallStagePieces(stageFile).map((placed) => {
 		const piece = kitPieces.find((each) => each.id === placed.id);
 		return piece ? (piece.w * placed.scale + 80) * pieceScale : 0;
 	}));
 	return {
-		gutter: 24 * fitScale,
+		gutter: wallStageGap(stageFile.board.cells.a.options.masonryGapX) * fitScale,
+		gutterY: wallStageGap(stageFile.board.cells.a.options.masonryGapY) * fitScale,
 		bucketWidth: 256 * fitScale,
 		arrivalWidth: referenceWidth * 2 + 32 * fitScale,
 		arrivalReach: referenceWidth + 32 * fitScale,
@@ -95,16 +149,12 @@ export function wallGeometry(fitScale: number, viewport: { readonly width: numbe
 	};
 }
 
-/** Grey containers have viewport-pixel corners; coloured tiles retain their stage-scaled corners. */
-export function wallSlotRadius(slot: WallSlot, geometry: WallGeometry): number {
-	const kind = slot.content.kind;
-	return kind === "poster" || kind === "benefit" || kind === "title" ? geometry.radius * geometry.typeScale : geometry.radius;
+/** Every wall container keeps its corners in viewport pixels, including custom coloured tiles. */
+export function wallSlotRadius(_slot: WallSlot, geometry: WallGeometry): number {
+	return geometry.radius;
 }
 
-interface WallItem {
-	readonly key: string;
-	readonly width: number;
-	readonly height: number;
+interface WallItem extends MasonryItem {
 	readonly content: WallContent;
 }
 
@@ -113,7 +163,7 @@ function isPieceId(id: string): id is PieceId {
 }
 
 function libraryItems(geometry: WallGeometry): readonly WallItem[] {
-	return stageFile.composition.pieces.flatMap((placed) => {
+	return resolveWallStagePieces(stageFile).flatMap((placed) => {
 		if (!isPieceId(placed.id)) return [];
 		const piece = kitPieces.find((each) => each.id === placed.id);
 		if (!piece) return [];
@@ -124,37 +174,52 @@ function libraryItems(geometry: WallGeometry): readonly WallItem[] {
 
 function keynoteItems(geometry: WallGeometry, features: readonly FinaleStory[], dragOrder: readonly string[]): readonly WallItem[] {
 	const scale = geometry.typeScale / WALL_SCALE;
-	const item = (key: string, width: number, height: number, content: WallContent): WallItem => ({ key, width: width * scale, height: height * scale, content });
+	const item = (key: string, width: number, height: number, content: WallContent): WallItem => ({ key, width: width * scale, height: height * scale, content, ...(content.kind === "poster" ? { group: "chapter" } : {}) });
 	const featured = new Set(features.map((story) => story.code));
 	const remaining = FINALE_STORIES.map((story) => story.code).filter((code) => !featured.has(code));
 	const ordered = [...dragOrder.filter((code) => remaining.includes(code)), ...remaining.filter((code) => !dragOrder.includes(code))];
-	const extras: WallItem[] = features.map((story, index) => item(`benefit-${index}`, 240 + (index % 3) * 55, 155 + (index % 2) * 55, { kind: "benefit", story }));
-	const portraits: readonly [FinalePresenterId, FinaleShapeKind, FinaleBrandColor][] = [["tamar", "arch", "purple"], ["sherif", "circle", "purple"], ["mcb", "shield", "blue"], ["taroon", "hexagon", "blue"]];
-	portraits.forEach(([portrait, shape, fill], index) => extras.push(item(`portrait-${portrait}`, 160 + index * 18, index % 2 === 0 ? 310 : 185, { kind: "shape", portrait, shape, fill })));
-	const posters: readonly [string, FinaleBrandColor, FinaleBrandColor][] = [["Context", "lime", "black"], ["Collaboration", "purple", "black"], ["Confidence", "blue", "white"], ["Loom", "purple", "black"], ["Jira", "blue", "white"], ["Guard", "saffron", "black"]];
-	posters.forEach(([word, fill, ink], index) => extras.push(item(`poster-${index}`, index % 2 === 0 ? 420 : 215, index % 3 === 0 ? 160 : 245, { kind: "poster", word, fill, ink })));
-	let dealt = 0;
-	while (dealt < ordered.length) {
-		const remaining = ordered.length - dealt;
-		const count = Math.min(dealt < 8 ? 4 : 2, remaining === 2 ? 1 : remaining);
-		const codes = ordered.slice(dealt, dealt + count);
-		if (codes.length > 0) extras.push(item(`print-${dealt}`, 260, codes.length * 115 + (codes.length - 1) * 8, { kind: "print", codes }));
-		dealt += count;
-	}
-	extras.push(item("presenters", 240, 180, { kind: "stat", stat: "presenters" }), item("chapters", 180, 125, { kind: "stat", stat: "chapters" }), item("flow", 330, 65, { kind: "strip", strip: "flow" }));
+	const print = (key: string, code: string) => item(key, 260, 140, { kind: "print", codes: [code] });
+	// The run's last cards come round again first, so a card's two copies sit far apart on the wall.
+	const extras: WallItem[] = ordered.slice(-WALL_RECYCLED_PRINTS).map((code, index) => print(`print-again-${index}`, code));
+	const posters = [
+		{ word: "Context", width: 300, height: 160, fill: "lime", ink: "black" },
+		{ word: "Collaboration", width: 360, height: 200, fill: "purple", ink: "black" },
+		{ word: "Confidence", width: 280, height: 220, fill: "blue", ink: "white" },
+	] satisfies readonly { word: FinaleChapterId; width: number; height: number; fill: FinaleBrandColor; ink: FinaleBrandColor }[];
+	posters.forEach(({ word, width, height, fill, ink }, index) => extras.push(item(`poster-${index}`, width, height, { kind: "poster", word, fill, ink })));
+	ordered.forEach((code, index) => extras.push(print(`print-${index}`, code)));
+	extras.push(item("chapters", 180, 125, { kind: "stat", stat: "chapters" }), item("flow", 330, 65, { kind: "strip", strip: "flow" }));
 	return extras;
+}
+
+/**
+ * Lanyard tile `index` of a period `spacing` apart (`finale-wall-lanyard.ts`):
+ * reserved before the masonry packs, like the keynote gaps, stuck to the top
+ * of the frame with its top corners just above it, so the strap's straight cut
+ * is the frame's own edge. The first waits just past the opening frame, clear
+ * of the keynote gaps, and glides in with the wall.
+ */
+function wallLanyardRect(geometry: WallGeometry, index: number, spacing: number): FinaleRect {
+	const scale = geometry.typeScale / WALL_SCALE;
+	return { x: geometry.viewport.width + geometry.gutter + index * spacing, y: -geometry.radius, width: WALL_LANYARDS.width * scale, height: WALL_LANYARDS.height * scale };
 }
 
 /** Intrinsic rectangles packed edge to edge, with the keynote landing spaces reserved first. */
 export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout, features: readonly FinaleStory[], dragOrder: readonly string[]): FinaleWall {
-	const { gutter, bucketWidth, viewport } = geometry;
+	const { gutter, gutterY, bucketWidth, viewport } = geometry;
 	const anchors = [...bento.slots.slice(0, features.length).map((slot, order) => ({ order, rect: slot.rect, content: { kind: "story" as const, story: features[order] } })), { order: WALL_TITLE_ORDER, rect: bento.title, content: { kind: "title" as const } }];
-	const reserved = anchors.map(({ order, rect }) => ({
-		x: rect.x + rect.width * (1 - WALL_SCALE) / 2 - (order === WALL_TITLE_ORDER ? viewport.width * 0.12 : 0),
-		y: rect.y + rect.height * (1 - WALL_SCALE) / 2,
-		width: rect.width * WALL_SCALE,
-		height: rect.height * WALL_SCALE,
-	}));
+	const reserved = anchors.map(({ order, rect }) => {
+		const width = rect.width * WALL_SCALE;
+		const height = order === WALL_TITLE_ORDER
+			? width - (FINALE_TITLE.inkWidth - FINALE_TITLE.inkHeight) * geometry.typeScale
+			: rect.height * WALL_SCALE;
+		return {
+			x: rect.x + (rect.width - width) / 2 - (order === WALL_TITLE_ORDER ? viewport.width * 0.12 : 0),
+			y: rect.y + (rect.height - height) / 2,
+			width,
+			height,
+		};
+	});
 	const library = libraryItems(geometry);
 	const extras = keynoteItems(geometry, features, dragOrder);
 	const items: WallItem[] = [];
@@ -162,8 +227,15 @@ export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout
 		if (library[index]) items.push(library[index]);
 		if (extras[index]) items.push(extras[index]);
 	}
-	const rects = packWallMasonry(items, reserved, viewport.height, gutter);
+	const groupGap = 900 * geometry.typeScale / WALL_SCALE;
+	// The period is only known once packed, so pack once without the lanyards to space them evenly round it, then for real.
+	const unhung = packWallMasonry(items, reserved, viewport.height, gutter, gutterY, groupGap);
+	const lanyardWidth = wallLanyardRect(geometry, 0, 0).width + gutter;
+	const spacing = (Math.max(...[...reserved, ...unhung].map((rect) => rect.x + rect.width)) + gutter + WALL_LANYARDS.count * lanyardWidth) / WALL_LANYARDS.count;
+	const lanyards = Array.from({ length: WALL_LANYARDS.count }, (_, index) => wallLanyardRect(geometry, index, spacing));
+	const rects = packWallMasonry(items, [...reserved, ...lanyards], viewport.height, gutter, gutterY, groupGap);
 	const base = anchors.map(({ order, content }, index): WallSlot => ({ key: `gap-${order}`, bucket: 0, rect: reserved[index], content, seed: order * 31, reserved: order }));
+	lanyards.forEach((rect, index) => base.push({ key: `lanyard-${index}`, bucket: 0, rect, content: { kind: "lanyard", order: index }, seed: 977 + index * 53 }));
 	items.forEach((item, index) => base.push({ key: item.key, bucket: 0, rect: rects[index], content: item.content, seed: 211 + index * 37 }));
 	const periodBuckets = Math.ceil((Math.max(...base.map((slot) => slot.rect.x + slot.rect.width)) + gutter) / bucketWidth);
 	const periodWidth = periodBuckets * bucketWidth;
@@ -179,6 +251,8 @@ export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout
 			key: `${index}:${slot.key}`,
 			bucket: index,
 			rect: { ...slot.rect, x: slot.rect.x + copy * periodWidth },
+			// Each copy's lanyards carry on the run, so the next one along is always a new lanyard.
+			...(slot.content.kind === "lanyard" ? { content: { kind: "lanyard", order: copy * WALL_LANYARDS.count + slot.content.order } } : {}),
 			...(copy === 0 && order !== undefined ? { reserved: order } : {}),
 		}));
 		if (buckets.size >= 96) {

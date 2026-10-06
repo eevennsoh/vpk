@@ -32,6 +32,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { Kbd } from "@/components/ui/kbd";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import { token } from "@/lib/tokens";
@@ -97,6 +98,7 @@ export interface JiraToolbarProps {
 interface JiraToolbarActionProps {
 	children: ReactNode;
 	icon: ReactNode;
+	keyShortcuts?: string;
 	disabled?: boolean;
 	onClick?: () => void;
 }
@@ -104,11 +106,13 @@ interface JiraToolbarActionProps {
 function JiraToolbarAction({
 	children,
 	icon,
+	keyShortcuts,
 	disabled,
 	onClick,
 }: Readonly<JiraToolbarActionProps>) {
 	return (
 		<Button
+			aria-keyshortcuts={keyShortcuts}
 			disabled={disabled}
 			className={ACTION_BUTTON_CLASS}
 			onClick={onClick}
@@ -234,6 +238,7 @@ export function JiraToolbar({
 			pinnedItemsLabel={pinnedItemsLabel}
 			query={agentQuery}
 			selectedAgentIds={selectedAgentIds}
+			searchVariant="palette"
 			selectionMode="single"
 		/>
 	);
@@ -459,6 +464,24 @@ export function JiraToolbar({
 	const inlineActionCount = inlineEligibleActions.length;
 	const hasSelection = selectedCount > 0;
 
+	useEffect(() => {
+		if (!hasSelection || primaryActionOnly || !onSelectAll) return;
+		const handleSelectAll = (event: KeyboardEvent) => {
+			if (event.key.toLowerCase() !== "a" || !(event.metaKey || event.ctrlKey) || event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.shiftKey) return;
+			const target = event.target;
+			const positioner = positionerRef.current;
+			if (!(target instanceof Element) || !positioner?.parentElement?.contains(target)) return;
+			if (positioner.closest('[inert], [aria-hidden="true"]') || target.closest('a, input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"], [role="menu"], [role="menuitem"], [role="listbox"], [role="dialog"], [inert], [aria-hidden="true"]')) return;
+			const cardControl = target.closest('[data-jira-issue-activation-control], [data-jira-issue-selection-control]');
+			const toolbarControl = positioner.contains(target);
+			if (!cardControl && !toolbarControl && target.closest('button, [role="button"], [role="checkbox"], [role="switch"], [role="tab"]')) return;
+			event.preventDefault();
+			onSelectAll();
+		};
+		window.addEventListener("keydown", handleSelectAll);
+		return () => window.removeEventListener("keydown", handleSelectAll);
+	}, [hasSelection, onSelectAll, primaryActionOnly]);
+
 	useLayoutEffect(() => {
 		if (!hasSelection || primaryActionOnly) return;
 		const positioner = positionerRef.current;
@@ -573,8 +596,9 @@ export function JiraToolbar({
 											<Badge max={false}>{selectedCount}</Badge>
 											<span>selected</span>
 										</div>
-										<JiraToolbarAction disabled={!onSelectAll} icon={<Icon render={<PresenterModeIcon label="" size="small" />} />} onClick={onSelectAll}>
-											Select all
+										<JiraToolbarAction disabled={!onSelectAll} icon={<Icon render={<PresenterModeIcon label="" size="small" />} />} keyShortcuts={onSelectAll ? "Meta+A Control+A" : undefined} onClick={onSelectAll}>
+											<span>Select all</span>
+											{onSelectAll ? <span aria-hidden="true"><Kbd>Cmd + A</Kbd></span> : null}
 										</JiraToolbarAction>
 										{primaryAction}
 										<ToolbarSeparator />

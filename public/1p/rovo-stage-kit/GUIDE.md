@@ -1,4 +1,4 @@
-# Rovo Stage Kit 1.0.0: guide for the agent integrating it
+# Rovo Stage Kit 1.3.0: guide for the agent integrating it
 
 You are integrating the **Rovo Stage Kit** into this codebase. Read this whole guide before you change anything.
 
@@ -17,10 +17,13 @@ The kit draws the **Rovo stage**: a wall of small animated product pieces (chat,
 | Path | What it is |
 | --- | --- |
 | `rovo-stage.json` | **The stage**: the lab's export, which the kit draws. |
+| `stages/` | More stages, when the kit ships some: the same file format, for other views or walls. |
+| `CHANGELOG.md` | What this kit adds since the last one. |
+| `UPDATE.md` | The prompt for updating from the last kit. |
 | `stage.schema.json` | JSON Schema (2020-12) of the stage file. |
 | `pieces.json` | Every piece the kit draws: its id, name, group, size in points, moment, and whether it has a card. |
-| `dist/rovo-stage.js` | **Self-contained build** (ES module, React 18 inside). Defines `<rovo-stage>` and `<rovo-piece>`, and exports `mountStage`, `mountPiece`, `stageInfo`, `PIECES`. 4.4 MB, 2.2 MB gzipped. |
-| `dist/react/index.js` | **React 18 build** (ES module; `react` and `react-dom` come from your app). Exports `RovoStage`, `RovoPiece`, `stageInfo`, `PIECES`. 4.2 MB, 2.2 MB gzipped. |
+| `dist/rovo-stage.js` | **Self-contained build** (ES module, React 18 inside). Defines `<rovo-stage>` and `<rovo-piece>`, and exports `mountStage`, `mountPiece`, `stageInfo`, `PIECES`. 4.8 MB, 2.4 MB gzipped. |
+| `dist/react/index.js` | **React 18 build** (ES module; `react` and `react-dom` come from your app). Exports `RovoStage`, `RovoPiece`, `stageInfo`, `PIECES`. 4.6 MB, 2.4 MB gzipped. |
 | `types/` | TypeScript declarations for both builds and for the stage file. |
 | `stage.html` | A ready player page: the stage file fitted to the window. Use it in an iframe or for headless capture. |
 | `pieces.html` | Every piece, playing: a browsable catalogue. |
@@ -33,12 +36,12 @@ Fonts (Atlassian Sans and Mono), images and styles are **inside the JS**, so the
 ## The stage this kit ships
 
 - **Board:** 1600 × 900 points (16:9 · one screen), light.
-- **Loop:** 46.45 s, one seamless cycle.
-- **Wall:** composed by hand, 67 pieces (“Composed wall”).
+- **Loop:** 89.72 s, one seamless cycle.
+- **Wall:** packed by the stage itself (no hand-composed wall).
 - **Piece styles:** every piece plays its own way.
 - **Curtain:** it can open on the keynote curtain.
 - **Poster:** second 6.
-- **Exported:** 2026-10-05T07:35:14.192607Z, by kit 1.0.0.
+- **Exported:** 2026-10-05T21:22:47.000Z, by kit 1.3.0.
 
 ## Choose an integration
 
@@ -213,7 +216,7 @@ The recipe, if you write your own:
 - **The film clock:** time is in **seconds of film**, and `t = 0` is the start.
     - **Playing:** without `time`, the stage plays on its own clock (`requestAnimationFrame`).
     - **Held:** with `time`, it holds that frame. Drive it from your own clock (a video's time, a scroll position) by updating `time`.
-- **Loop:** this stage's loop is **46.45 s**. The frame at `t + 46.45` is the frame at `t`, so one loop is a seamless cycle for a looping video.
+- **Loop:** this stage's loop is **89.72 s**. The frame at `t + 89.72` is the frame at `t`, so one loop is a seamless cycle for a looping video.
 - **Curtain:** `curtain = s` holds the keynote's curtain down for `s` seconds, then raises it into the stage. The stage's own clock starts at the raise: film `t` is stage `t − s`. The curtain plays once, so a film with a curtain is not a loop from 0. It only fits boards 16:9 or wider.
 - **Pace:** the stage's `pace` option (in the file) sets how fast the wall travels. Don't speed it up or slow it down by scaling `time`; change it in the lab.
 - **Stills:** for a still (a poster, or reduced motion), hold `time` on `stageInfo(stage).poster`, the frame the lab chose. A file whose `still` is true holds that frame whatever the time.
@@ -227,7 +230,7 @@ The recipe, if you write your own:
 {
   "format": "rovo-stage",          // always
   "version": 1,                    // the format; a newer one is refused, not guessed at
-  "kit": "1.0.0",               // the kit that wrote it
+  "kit": "1.3.0",               // the kit that wrote it
   "exportedAt": "…",               // ISO date
   "board": { … },                  // the canvas and the stage's options
   "composition": { … } | null,     // the hand-composed wall; null = the stage packs its own
@@ -258,7 +261,9 @@ The stage's options (`board.cells.a.options`; numbers are kept as text):
 
 | Option | Key | Values | Default |
 | --- | --- | --- | --- |
-| View | `view` | `stage` Stage: a wall gliding past · `mosaic` Mosaic: cells taking turns · `scatter` Scatter: the frame full, at many heights · `grid` Grid: a piece in each cell · `gravity` Gravity: they fall and pile up · `orbit` Orbit: two rings round the greeting · `scroll` Scrolling background: columns | `stage` |
+| View | `view` | `stage` Stage: a wall gliding past · `masonry` Masonry: packed edge to edge, even gaps · `mosaic` Mosaic: cells taking turns · `scatter` Scatter: the frame full, at many heights · `grid` Grid: a piece in each cell · `gravity` Gravity: they fall and pile up · `orbit` Orbit: two rings round the greeting · `scroll` Scrolling background: columns | `stage` |
+| Horizontal gap | `masonryGapX` | 0 to 160 | `28` |
+| Vertical gap | `masonryGapY` | 0 to 160 | `28` |
 | Camera | `camera` | `glide` Glide: square on · `angle` Angle: along the shelf · `low` Low: looking up the wall · `close` Close: pieces large | `close` |
 | Speed | `pace` | `slow` Slow: 60 pt a second · `calm` Calm: 95 pt a second · `brisk` Brisk: 140 pt a second · `quick` Quick: 200 pt a second | `slow` |
 | Density | `density` | `gallery` Gallery: a few pieces, room round each · `balanced` Balanced · `dense` Dense: close together | `balanced` |
@@ -281,6 +286,7 @@ The stage's options (`board.cells.a.options`; numbers are kept as text):
 | Show Working together | `showCollab` | `true` / `false` | `true` |
 | Show Loom | `showLoom` | `true` / `false` | `true` |
 | Show Trust and numbers | `showTrust` | `true` / `false` | `true` |
+| Show Confidence: control, cost and risk | `showConfidence` | `true` / `false` | `true` |
 | Show Mosaic tiles | `showMosaic` | `true` / `false` | `true` |
 | Tilt at the start (entrance) | `entryTilt` | 0 to 70 | `20` |
 | Tilt curve (entrance) | `entryTiltCurve` | `settle` Settle: it straightens as it lands · `hold` Hold: it keeps its tilt, then rights itself · `wobble` Wobble: it overshoots flat and settles · `even` Even: it rights itself steadily | `settle` |
@@ -393,6 +399,29 @@ The stage's options (`board.cells.a.options`; numbers are kept as text):
 | Colour fields | `stampFields` | Mosaic tiles | 321.68 × 225.54 | Two colour fields slide over each other, a third where they cross. | never stops | yes |
 | The first squiggle | `stampSquiggle` | Mosaic tiles | 90.8 × 96.31 | The welcome’s original curling line drifting through its tile. | never stops | yes |
 | The first smile | `stampSmile` | Mosaic tiles | 129.52 × 96.31 | The welcome’s original smile, bobbing and tipping. | never stops | yes |
+| Agent identities | `agentIdentities` | Confidence: control, cost and risk | 564 × 377 | Its counts tick up, each agent’s row rises in, and its status lands Active. | 2.95 s | yes |
+| Atlassian MCP | `atlassianMcp` | Confidence: control, cost and risk | 583 × 230 | Its eyebrow types in, the line under it rises, and the four tools land one after another, each settling into its tilt. | 3 s | yes |
+| Redacted by your organization | `redactedPrompt` | Confidence: control, cost and risk | 539 × 354 | The question types in, a marker swipes over its product code, and the organization’s note comes up. | 4.4 s | yes |
+| Needs input | `needsInput` | Confidence: control, cost and risk | 539 × 412.1 | The work item comes in, then the tray grows out from under it with Claude’s Needs input, and the blue dot pops. | 3 s | yes |
+| Unlinked agent sessions | `agentSessions` | Confidence: control, cost and risk | 523 × 560 | Refresh turns, Canva’s new session lands on top, lit, the count ticks to 7, and every orb keeps working. | never stops | yes |
+| Request Resolver’s steps | `requestResolver` | Confidence: control, cost and risk | 946.5 × 402 | Each step ticks in turn, its line running down to the next, @Victoria is called on the last, and the sources land. | 3.6 s | yes |
+| Onboarding work items | `jiraList` | Confidence: control, cost and risk | 1000.14 × 294 | The rows fill in, Request Resolver takes the licences, and the desk turns from In progress to Done. | 3.2 s | yes |
+| Risk, by kind | `riskStack` | Confidence: control, cost and risk | 674 × 593 | The cards are dealt down the diagonal, their statuses pulse, and Business flags its high risks. | 3 s | yes |
+| Cost by provider and model | `costByModel` | Confidence: control, cost and risk | 495 × 683 | The ring sweeps round as its total counts up to $5.6M, each provider joining the key, then the models’ bar fills. | 4 s | yes |
+| Spend this month | `spendCard` | Confidence: control, cost and risk | 450 × 476 | The line draws across as the total counts up, turning orange past the budget, on to $786K. | 3 s | yes |
+| Dimensions | `dimensions` | Confidence: control, cost and risk | 634 × 362 | Each bar fills segment by segment as its score counts up, the rows a beat apart. | 3 s | yes |
+| Potential savings | `potentialSavings` | Confidence: control, cost and risk | 742 × 162 | The lozenge pops with a glint, and the finding streams in a few words at a time. | 3 s | yes |
+| An agent session, working | `sessionCard` | Confidence: control, cost and risk | 1594.71 × 136.13 | Claude’s mark lands, the title streams in, and Working shimmers beside the turning orb. | never stops | yes |
+| Readiness | `readiness` | Working together | 432 × 385 | The toolbar’s ring fills to Medium, its menu opens to say why, and the highlight settles on Annie’s comments. | 3.3 s | yes |
+| High readiness | `highReadiness` | Working together | 294 × 85 | The ring sweeps round its dotted track to three quarters, and High readiness lands with a beat. | 3.05 s | yes |
+| Cursor activity | `cursorActivity` | Working together | 873 × 325 | The timeline draws out as the activity lands, and the pointer comes to rest on it, the session’s time lifting above. | 3.7 s | yes |
+| Who’s here | `presenceFacepile` | Working together | 590 × 241 | Teammates and agents pop in apart, then gather into one facepile. | 2.4 s | yes |
+| Rovo, with a teammate | `rovoWithYou` | Working together | 396 × 302 | Rovo’s tile lands, its four facets come together, and Aoife tucks in. | 2.3 s | yes |
+| Agent takes the card | `workflowCard` | Working together | 603 × 433 | The card is set down in In Progress, and the agent’s row slides out from under it, Working shimmering as the orb turns. | never stops | yes |
+| Planner, in the thread | `conversation` | Working together | 603 × 348 | Liam mentions Planner and types his ask, a reaction lands, and Planner starts thinking. | 4.8 s | yes |
+| Claude’s agent card | `agentCard` | Agents | 544 × 610 | The card drops onto its slot and swings, its spark turns in, and its description writes itself in. | 3.2 s | yes |
+| Code search, by its syntax | `codeSearchQuery` | Rovo Dev and code | 982 × 63 | searchMode, repo and branch type in, each key turning blue as its colon lands, then the query itself. | 3.84 s | — |
+| Code search in the terminal | `twgSearchCli` | Rovo Dev and code | 615 × 167 | The twg command types in at the prompt, and the search starts, its half-moon turning as its dots count up. | 3.7 s | — |
 
 ## Isolation: what the kit does to the page
 
@@ -414,7 +443,7 @@ The stage's options (`board.cells.a.options`; numbers are kept as text):
 ## Performance
 
 - **One stage per page:** each stage is a few hundred composited layers. Pause it when it is off screen or the tab is hidden.
-- **Download:** the JS is 4.4 MB, 2.2 MB gzipped uncompressed, fonts and images included. Serve it compressed (gzip or brotli) with long-lived caching, and preload it on pages that open on the stage: `<link rel="modulepreload" href="…/dist/rovo-stage.js">`.
+- **Download:** the JS is 4.8 MB, 2.4 MB gzipped uncompressed, fonts and images included. Serve it compressed (gzip or brotli) with long-lived caching, and preload it on pages that open on the stage: `<link rel="modulepreload" href="…/dist/rovo-stage.js">`.
 - **Many pieces:** each `RovoPiece` / `<rovo-piece>` runs its own clock. A page of many pieces is fine, but don't expect a hundred to stay at 60 fps on a low-end machine.
 
 ## Updating
@@ -441,7 +470,7 @@ The stage's options (`board.cells.a.options`; numbers are kept as text):
     - The board fills its element without distortion.
     - Text is in Atlassian Sans.
     - Pieces move.
-    - The loop is seamless at `t = 46.45`.
+    - The loop is seamless at `t = 89.72`.
     - Light and dark don't mix on one page.
 3. **Behaviour:**
     - It pauses off screen.
@@ -464,10 +493,10 @@ The stage's options (`board.cells.a.options`; numbers are kept as text):
 
 | File | Film second | Curtain | Drawn by | Kit vs lab |
 | --- | --- | --- | --- | --- |
-| `reference/stage-0s.png` | 0 | — | the lab | 0.012 % of pixels over 8/255 |
-| `reference/stage-4s.png` | 4 | — | the lab | 0.020 % of pixels over 8/255 |
-| `reference/stage-12s.png` | 12 | — | the lab | 0.072 % of pixels over 8/255 |
+| `reference/stage-0s.png` | 0 | — | the lab | 0.001 % of pixels over 8/255 |
+| `reference/stage-4s.png` | 4 | — | the lab | 0.000 % of pixels over 8/255 |
+| `reference/stage-12s.png` | 12 | — | the lab | 0.017 % of pixels over 8/255 |
 | `reference/curtain-2s-at-1s.png` | 1 | 2 s | the lab | 0.000 % of pixels over 8/255 |
-| `reference/curtain-2s-at-3.5s.png` | 3.5 | 2 s | the lab | 0.017 % of pixels over 8/255 |
+| `reference/curtain-2s-at-3.5s.png` | 3.5 | 2 s | the lab | 0.000 % of pixels over 8/255 |
 
-Kit 1.0.0 · stage format 1 · built 2026-10-05 from Rovo Desktop's stage lab (`libs/features/welcome/src/renderer/bento`, `scripts/stage-kit.mjs`).
+Kit 1.3.0 · stage format 1 · built 2026-10-05 from Rovo Desktop's stage lab (`libs/features/welcome/src/renderer/bento`, `scripts/stage-kit.mjs`).

@@ -198,5 +198,5 @@ export function FinaleDotField({ fit, scale = fit.scale, viewport, ripples, ripp
 		if (lastTimeRef.current !== null) paint(lastTimeRef.current);
 	});
 
-	return <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 size-full" style={{ visibility: "hidden" }} />;
+	return <canvas ref={canvasRef} data-finale-dot-field="" aria-hidden tabIndex={-1} className="pointer-events-none absolute inset-0 size-full" style={{ visibility: "hidden" }} />;
 }
