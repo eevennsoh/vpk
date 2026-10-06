@@ -24,6 +24,7 @@ const COVER_APPS = {
 	service: { id: "jira-service-management", label: "Jira Service Management", provider: "jira-service-management" },
 	talent: { id: "talent", label: "Talent", provider: "talent" },
 	guard: { id: "guard", label: "Guard", provider: "guard" },
+	eu: { id: "european-union", label: "European Union", provider: "twg", iconSrc: "/illustration/jira-team-eu26-end/eu-flag.svg" },
 } as const satisfies Record<string, TwgToolSource>;
 
 /** Shared product marks for keynote covers and the finale wall. */
@@ -45,7 +46,7 @@ const KEYNOTE_STORIES = [
 	{ code: "TEU-8", section: "Collaboration", heading: "Loom\nOverlay", title: "Loom Overlay", cover: "loom-overlay.jpeg", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
 	{ code: "TEU-107", section: "Collaboration", heading: "ChatGPT Codex\nfrom Jira", title: "ChatGPT Codex from Jira", cover: "chatgpt-codex-from-jira.jpeg", apps: [COVER_APPS.jira], assignee: JIRA_TEAM_EU26_END_PRESENTERS.sherif },
 	{ code: "TEU-9", section: "Confidence", heading: "Loom\nPR Reviews", title: "Loom PR Reviews", cover: "loom-pr-reviews.jpeg", apps: [COVER_APPS.loom], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
-	{ code: "TEU-108", section: "Confidence", heading: "EU AI\nInference", title: "EU AI Inference", cover: "eu-ai-inference.jpeg", apps: [], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
+	{ code: "TEU-108", section: "Confidence", heading: "EU AI\nInference", title: "EU AI Inference", cover: "eu-ai-inference.jpeg", apps: [COVER_APPS.eu], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
 	{ code: "TEU-11", section: "Confidence", heading: "Agent\nEffectiveness", title: "Agent Effectiveness", cover: "agent-effectiveness.jpeg", apps: [COVER_APPS.dx], assignee: JIRA_TEAM_EU26_END_PRESENTERS.taroon },
 	{ code: "TEU-109", section: "Confidence", heading: "Change Risk\nAssessment", title: "Change Risk Assessment", cover: "change-risk-assessment.jpeg", apps: [COVER_APPS.service], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },
 	{ code: "TEU-110", section: "Confidence", heading: "Agent\nIdentities", title: "Agent Identities", cover: "agent-identities.jpeg", apps: [], assignee: JIRA_TEAM_EU26_END_PRESENTERS.mcb },

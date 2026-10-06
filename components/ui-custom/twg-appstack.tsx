@@ -205,6 +205,7 @@ export function TwgToolSourceIcon({
 				className={cn("shrink-0", APPSTACK_TILE_FILL_CLASS, className)}
 				isInset={false}
 				label={source.label}
+				role={props["aria-hidden"] ? undefined : "img"}
 				size={size}
 				variant="transparent"
 				{...props}
