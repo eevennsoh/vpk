@@ -161,7 +161,7 @@ test("the mega bento appears only from the throw on, from the middle of the fram
 	}
 });
 
-test("a thrown card falls away from the lens onto the wall like paper: never toward the viewer, turning as it leaves", () => {
+test("a thrown card falls away from the lens onto the wall like paper: never toward the viewer, going over as it leaves", () => {
 	for (const viewport of VIEWPORTS) {
 		const { m, geometry, drops } = sceneFor(viewport);
 		const distance = m.cameraDistance(viewport);
@@ -190,7 +190,7 @@ test("a thrown card falls away from the lens onto the wall like paper: never tow
 			assert.ok(turned(falling) < 1.2, `card ${drop.order}'s turns are spent before it comes down`);
 			assert.ok(falling.lift === 1, "airborne cloth");
 		}
-		assert.ok(spins.some((spin) => spin > 1.5), "some flip or spin through whole turns as they leave");
+		assert.ok(spins.some((spin) => spin > 1.5), "some are going over a quarter of the way down");
 	}
 });
 

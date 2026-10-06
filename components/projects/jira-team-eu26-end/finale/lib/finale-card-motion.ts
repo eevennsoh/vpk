@@ -870,19 +870,3 @@ export function sphereWarp(time: number): number {
 	const field = smooth(progress(time, CUE.burst + 0.6, CUE.burst + 1.4)) * (1 - smooth(progress(time, CUE.zoomEnd, CUE.heroLand)));
 	return field * 0.22 + bump(time, CUE.zoom, CUE.zoom + 0.45, CUE.zoomEnd + 0.2) * 0.35;
 }
-
-/* ─── Dot grid ────────────────────────────────────────────────────────── */
-
-export interface FinaleFieldRipple {
-	/** Footprint the ring expands from. */
-	readonly from: FinaleRect;
-	readonly start: number;
-	readonly amp: number;
-	/** The footprint's own corner radius (viewport px), for a card not rounded as the tiles are. */
-	readonly radius?: number;
-}
-
-/** The dot grid only exists as one pulse around each tile as it touches down. */
-export function fieldRipples(slots: readonly FinaleRect[]): readonly FinaleFieldRipple[] {
-	return slots.map((from, order) => ({ from, start: touchdownTime(order), amp: 1 }));
-}

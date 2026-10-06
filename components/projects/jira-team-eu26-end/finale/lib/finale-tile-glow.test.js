@@ -508,7 +508,8 @@ test("the wall's accents mount nothing until the wall exists (never on the rest 
 	assert.ok(held, "a cursor holds a card (MCB the title, first)");
 	// One reading, then the clock holds: the layers that mount on it paint it without another.
 	await emit(held.time);
-	assert.deepEqual(mounted(), { canvases: 2, cursors: FINALE_CURSORS.length });
+	// One canvas: the border glow's.
+	assert.deepEqual(mounted(), { canvases: 1, cursors: FINALE_CURSORS.length });
 	assert.deepEqual(shown(), held.cursors.filter((cursor) => cursor.opacity > 0).map((cursor) => cursor.name).sort(), "the cursors holding cards, by name, and only they");
 	await emit(FINALE_REST_TIME);
 	assert.deepEqual(mounted(), { canvases: 0, cursors: 0 }, "seeking back before the wall takes it down");
