@@ -85,7 +85,7 @@ test("each glow starts once its tile settles, and is gone soon after the heading
 		assert.ok(peak - start <= 0.4, "fades up quickly");
 		assert.ok(end <= deadline + 1e-9, `tile ${order} is gone within outBy of "Team ’26" building`);
 		assert.ok(end <= tileRevealStart(order) + CUE.reveal + 1e-9, "gone once its content has built");
-		assert.ok(end < CUE.end, "gone by the final frame");
+		assert.ok(end <= CUE.end, "gone by the final frame");
 	}
 });
 

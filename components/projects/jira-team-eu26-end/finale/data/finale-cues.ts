@@ -89,18 +89,17 @@ export const CUE = {
 	yearStart: FLASH_DURATION + 6.1,
 	yearLand: FLASH_DURATION + 6.95,
 	/**
-	 * Final frame: "Team ’26" holds at full size. The last tile's heading has
-	 * built before this cue (`tileRevealStart(5) + reveal`), leaving just over
-	 * half a second of hold before the title turns into its black card.
+	 * Final frame: the last border glow is spent. The title becomes its card
+	 * immediately, while the last heading finishes its reveal.
 	 */
-	end: FLASH_DURATION + 8.45,
+	end: FLASH_DURATION + 7.55,
 } as const;
 
 /** The bento's final frame: what reduced motion shows, and where the wall takes over. */
 export const FINALE_REST_TIME = CUE.end;
 
 /** Act III's title flip, and the throw it flows into (see `WALL_CUE`). */
-const TITLE_FLIP_AT = 0.22;
+const TITLE_FLIP_AT = 0.08;
 const TOSS_AT = TITLE_FLIP_AT + 0.12;
 
 /**
@@ -118,7 +117,7 @@ const TOSS_AT = TITLE_FLIP_AT + 0.12;
 export const WALL_CUE = {
 	start: CUE.end,
 	/** "Team ’26" gains a grey card under its type at once… */
-	titleCardAt: 0.02,
+	titleCardAt: 0,
 	/** …which flips end over end, as the field's cards do, to its black back… */
 	titleFlipAt: TITLE_FLIP_AT,
 	/**
