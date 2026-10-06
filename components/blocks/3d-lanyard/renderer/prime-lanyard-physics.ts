@@ -1,20 +1,25 @@
-import { primeSimulation } from "./physics";
+import { hasSimulation, primeSimulation, simulationKey } from "./physics";
 import type { PhysicsRequest, PhysicsResult } from "./types";
 
-const primed = new Map<number, Promise<void>>();
+/** Swings a worker is simulating now, by `simulationKey`. */
+const inFlight = new Map<number, Promise<void>>();
 
 /**
  * Simulates the drop for each of `swings` in a worker and primes the
  * renderer's cache with it, so no frame drawn at those swings ever runs the
  * physics (a long task) on the main thread. Resolves once every one is in.
- * Without a worker, or if it fails, it resolves anyway and each swing is
- * simulated on its first draw, as before. The cache keeps three swings.
+ * A swing already kept resolves at once; one the cache has since dropped (it
+ * keeps three) is simulated again. Without a worker, or if it fails, it
+ * resolves anyway and each swing is simulated on its first draw, as before.
  */
 export function primeLanyardPhysics(swings: readonly number[]): Promise<void> {
-	const wanted = [...new Set(swings)].filter((swing) => !primed.has(swing));
+	const keys = [...new Set(swings.map(simulationKey))];
+	const wanted = keys.filter((key) => !inFlight.has(key) && !hasSimulation(key));
 	if (wanted.length > 0) {
 		const settled = new Map<number, () => void>();
-		for (const swing of wanted) primed.set(swing, new Promise((resolve) => settled.set(swing, resolve)));
+		for (const key of wanted) {
+			inFlight.set(key, new Promise<void>((resolve) => settled.set(key, resolve)).finally(() => inFlight.delete(key)));
+		}
 		const finish = () => {
 			for (const resolve of settled.values()) resolve();
 			settled.clear();
@@ -27,9 +32,10 @@ export function primeLanyardPhysics(swings: readonly number[]): Promise<void> {
 			};
 			worker.onmessage = (event: MessageEvent<PhysicsResult>) => {
 				const { amount, simulation } = event.data;
-				primeSimulation(amount, simulation);
-				settled.get(amount)?.();
-				settled.delete(amount);
+				const key = simulationKey(amount);
+				primeSimulation(key, simulation);
+				settled.get(key)?.();
+				settled.delete(key);
 				if (settled.size === 0) worker.terminate();
 			};
 			worker.onerror = close;
@@ -39,5 +45,5 @@ export function primeLanyardPhysics(swings: readonly number[]): Promise<void> {
 			finish();
 		}
 	}
-	return Promise.all(swings.map((swing) => primed.get(swing))).then(() => undefined);
+	return Promise.all(keys.map((key) => inFlight.get(key))).then(() => undefined);
 }

@@ -28,10 +28,27 @@ export function pose(time: number, amount = 1): Pose {
 		body, collar, ropes: frame.ropes };
 }
 
-/** Simulations kept, one per swing amount; each is about 0.85 MB. */
+/**
+ * Simulations kept, one per swing amount; each is about 0.85 MB. The least
+ * recently drawn goes first, so the swing on screen is never the one dropped
+ * for a newly primed one.
+ */
 const SIMULATIONS_KEPT = 3;
 const simulations = new Map<number, Simulation>();
-const simulationKey = (amount: number) => Math.round(clamp(amount, 0, 1.6) * 100) / 100;
+
+/** The swing amounts that share one simulation (hundredths, 0 to 1.6). */
+export const simulationKey = (amount: number) => Math.round(clamp(amount, 0, 1.6) * 100) / 100;
+
+/** Whether drawing at `amount` is free of the physics: its simulation is kept. */
+export function hasSimulation(amount: number) {
+	return simulations.has(simulationKey(amount));
+}
+
+function keep(key: number, simulation: Simulation) {
+	simulations.delete(key);
+	simulations.set(key, simulation);
+	if (simulations.size > SIMULATIONS_KEPT) simulations.delete(simulations.keys().next().value!);
+}
 
 /**
  * Hands in a drop simulated elsewhere (`simulate` is a long task, hundreds of
@@ -39,14 +56,16 @@ const simulationKey = (amount: number) => Math.round(clamp(amount, 0, 1.6) * 100
  * See `primeLanyardPhysics`.
  */
 export function primeSimulation(amount: number, simulation: Simulation) {
-	simulations.set(simulationKey(amount), simulation);
-	if (simulations.size > SIMULATIONS_KEPT) simulations.delete(simulations.keys().next().value!);
+	keep(simulationKey(amount), simulation);
 }
 
 export function simulate(amount: number): Simulation {
 	const key = simulationKey(amount);
 	const cached = simulations.get(key);
-	if (cached) return cached;
+	if (cached) {
+		keep(key, cached);
+		return cached;
+	}
 	const dt = 1 / STEPS, frames = physicsDuration * STEPS + 1;
 	const particles: Particle[] = [], constraints: Constraint[] = [], chains: Particle[][] = [];
 	function particle(v: Vec3, mass: number, velocity: Vec3 = { x: 0, y: 0, z: 0 }): Particle {
@@ -144,7 +163,7 @@ export function simulate(amount: number): Simulation {
 		particles.forEach((p, i) => { const n = (frame * count + i) * 3; data[n] = p.x; data[n + 1] = p.y; data[n + 2] = p.z; });
 	}
 	const result = { data, count, body: body.map(p => particles.indexOf(p)), chains: chains.map(c => c.map(p => particles.indexOf(p))) };
-	primeSimulation(key, result);
+	keep(key, result);
 	return result;
 }
 function stateAt(time: number, amount = 1) {

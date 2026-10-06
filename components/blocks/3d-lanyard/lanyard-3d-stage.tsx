@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { dimensions } from "./renderer/constants";
 import { createLanyardRenderer } from "./renderer/lanyard-renderer";
+import { createPrimedSwing } from "./renderer/primed-swing";
 import type { LanyardConfig } from "./renderer/types";
 import { LANYARD_3D_ASSETS } from "./data";
 import { LanyardPlayer } from "./lanyard-player";
@@ -18,6 +19,11 @@ export interface Lanyard3DStageProps {
 }
 
 const MAX_PIXEL_RATIO = 2;
+
+/** `config`, drawn at `swing` (the last one whose physics is in) rather than its own. */
+function atSwing(config: LanyardConfig, swing: number): LanyardConfig {
+	return config.swing === swing ? config : { ...config, swing };
+}
 
 /** Draws the lanyard into a canvas that fits its container at the chosen aspect ratio. */
 export function Lanyard3DStage({ config, autoPlay = true, className }: Readonly<Lanyard3DStageProps>) {
@@ -33,7 +39,9 @@ export function Lanyard3DStage({ config, autoPlay = true, className }: Readonly<
 		if (!canvas) return;
 		const renderer = createLanyardRenderer(canvas, LANYARD_3D_ASSETS);
 		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-		const next = new LanyardPlayer(renderer.duration, (time) => renderer.draw(time, configRef.current), () => reducedMotion.matches);
+		// A new swing is simulated off the main thread; until it lands, the stage draws the last one that has.
+		const swing = createPrimedSwing(configRef.current.swing, () => next.redraw());
+		const next = new LanyardPlayer(renderer.duration, (time) => renderer.draw(time, atSwing(configRef.current, swing.current())), () => reducedMotion.matches);
 		let cancelled = false;
 
 		const fit = () => {
@@ -45,8 +53,7 @@ export function Lanyard3DStage({ config, autoPlay = true, className }: Readonly<
 		const observer = new ResizeObserver(fit);
 		observer.observe(canvas);
 
-		renderer.ready
-			.then(() => renderer.setPortrait(configRef.current.photo).catch(() => undefined))
+		Promise.all([renderer.ready.then(() => renderer.setPortrait(configRef.current.photo).catch(() => undefined)), swing.ready])
 			.then(() => {
 				if (cancelled) return;
 				fit();
@@ -59,6 +66,7 @@ export function Lanyard3DStage({ config, autoPlay = true, className }: Readonly<
 		// The renderer is built once; config flows in through syncRef. Changes redraw the current frame and swap the portrait without restarting playback.
 		const syncConfig = (config: LanyardConfig) => {
 			configRef.current = config;
+			swing.want(config.swing);
 			// setPortrait clears the previous image synchronously, so this redraw never pairs
 			// the new name with the old face; initials show until the new photo decodes.
 			const portrait = renderer.setPortrait(config.photo);
@@ -70,6 +78,7 @@ export function Lanyard3DStage({ config, autoPlay = true, className }: Readonly<
 		return () => {
 			cancelled = true;
 			syncRef.current = null;
+			swing.dispose();
 			observer.disconnect();
 			next.dispose();
 			renderer.dispose();

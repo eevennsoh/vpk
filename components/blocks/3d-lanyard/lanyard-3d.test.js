@@ -8,8 +8,9 @@ const dir = __dirname;
 const { outputFiles } = buildSync({
 	stdin: {
 		contents: `
-			export { inspectPhysics, inspectAttachment, pose, primeSimulation, simulate } from ${JSON.stringify(path.join(dir, "renderer/physics.ts"))};
+			export { hasSimulation, inspectPhysics, inspectAttachment, pose, primeSimulation, simulate } from ${JSON.stringify(path.join(dir, "renderer/physics.ts"))};
 			export { primeLanyardPhysics } from ${JSON.stringify(path.join(dir, "renderer/prime-lanyard-physics.ts"))};
+			export { createPrimedSwing } from ${JSON.stringify(path.join(dir, "renderer/primed-swing.ts"))};
 			export { hardwareDetail, hardwareMesh } from ${JSON.stringify(path.join(dir, "renderer/hardware.ts"))};
 			export { attachment } from ${JSON.stringify(path.join(dir, "renderer/physics.ts"))};
 			export { duration, dimensions } from ${JSON.stringify(path.join(dir, "renderer/constants.ts"))};
@@ -19,8 +20,10 @@ const { outputFiles } = buildSync({
 		resolveDir: process.cwd(), loader: "ts",
 	},
 	bundle: true, platform: "node", format: "cjs", write: false,
+	// Lets `new Worker(new URL(...))` resolve, so a test can stand a worker in.
+	define: { "import.meta.url": JSON.stringify("file:///lanyard-3d-test/") },
 });
-const { inspectPhysics, inspectAttachment, pose, primeSimulation, simulate, primeLanyardPhysics, hardwareDetail, hardwareMesh, attachment, duration, dimensions, LanyardPlayer, LANYARD_3D_PROFILES, LANYARD_3D_AGENTS, LANYARD_3D_ASSETS } = loadCjsModuleFromText(outputFiles[0].text, path.join(dir, "index.ts"));
+const { hasSimulation, inspectPhysics, inspectAttachment, pose, primeSimulation, simulate, primeLanyardPhysics, createPrimedSwing, hardwareDetail, hardwareMesh, attachment, duration, dimensions, LanyardPlayer, LANYARD_3D_PROFILES, LANYARD_3D_AGENTS, LANYARD_3D_ASSETS } = loadCjsModuleFromText(outputFiles[0].text, path.join(dir, "index.ts"));
 
 /** rAF stand-in that cancels by id, like the browser, so a leaked second loop stays visible. */
 function fakeFrames() {
@@ -190,4 +193,101 @@ test("under reduced motion, play, replay and loop settle without animating", () 
 	}
 	player.seek(2);
 	assert.equal(player.getSnapshot().time, 2, "scrubbing still works");
+});
+
+/* ─── A Swing change never simulates on the main thread ───────────────── */
+
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+/** A worker stand-in for `createPrimedSwing`: each ask waits for `land()`, which primes its swings (or none, as a failed worker). */
+function standInPrime(source) {
+	const asks = [];
+	const prime = (swings) => new Promise((resolve) => asks.push({
+		swings,
+		land(failed = false) {
+			if (!failed) for (const swing of swings) primeSimulation(swing, { ...source });
+			resolve();
+		},
+	}));
+	return { asks, prime };
+}
+
+test("dragging Swing draws the last simulated swing while a worker simulates the newest, one at a time", async () => {
+	const worker = standInPrime(simulate(1));
+	let landed = 0;
+	const swing = createPrimedSwing(0.81, () => { landed += 1; }, worker.prime);
+	assert.deepEqual(worker.asks.map((ask) => ask.swings), [[0.81]], "the first swing is simulated before the stage draws");
+	worker.asks[0].land();
+	await swing.ready;
+	assert.equal(swing.current(), 0.81);
+	for (const value of [0.82, 0.83, 0.84]) {
+		swing.want(value);
+		assert.ok(hasSimulation(swing.current()), `still drawable at ${value}`);
+	}
+	assert.deepEqual(worker.asks.map((ask) => ask.swings), [[0.81], [0.82]], "one simulation at a time");
+	assert.equal(swing.current(), 0.81, "keeps drawing the last swing whose physics is in");
+	worker.asks[1].land();
+	await flush();
+	assert.equal(swing.current(), 0.82, "shows the nearer one as it lands");
+	assert.deepEqual(worker.asks[2].swings, [0.84], "skips the swings passed on the way");
+	assert.ok(hasSimulation(swing.current()));
+	worker.asks[2].land();
+	await flush();
+	assert.equal(swing.current(), 0.84);
+	assert.equal(landed, 3, "a redraw for each swing that landed");
+	swing.dispose();
+});
+
+test("a swing whose physics is kept is drawn at once, with nothing simulated", async () => {
+	primeSimulation(0.85, { ...simulate(1) });
+	const worker = standInPrime(simulate(1));
+	const swing = createPrimedSwing(0.85, () => assert.fail("nothing to land"), worker.prime);
+	await swing.ready;
+	assert.equal(worker.asks.length, 0);
+	assert.equal(swing.current(), 0.85);
+});
+
+test("without a worker, the swing asked for is drawn anyway, simulated on its first draw as before", async () => {
+	const worker = standInPrime(simulate(1));
+	let landed = 0;
+	const swing = createPrimedSwing(0.86, () => { landed += 1; }, worker.prime);
+	worker.asks[0].land(true);
+	await swing.ready;
+	assert.equal(hasSimulation(0.86), false);
+	assert.equal(swing.current(), 0.86);
+	assert.equal(landed, 1);
+});
+
+test("the physics cache drops the least recently drawn swing, never the one on screen", () => {
+	const source = simulate(1);
+	for (const swing of [0.91, 0.92, 0.93]) primeSimulation(swing, { ...source });
+	pose(2, 0.91);
+	primeSimulation(0.94, { ...source });
+	assert.equal(hasSimulation(0.91), true, "drawn last, so kept");
+	assert.equal(hasSimulation(0.92), false, "least recently drawn, so dropped");
+});
+
+test("priming simulates a swing the cache has dropped again, and a kept one not at all", async () => {
+	const source = simulate(1);
+	const asked = [];
+	globalThis.Worker = class StandInWorker {
+		postMessage(message) {
+			asked.push(...message.amounts);
+			setImmediate(() => { for (const amount of message.amounts) this.onmessage({ data: { amount, simulation: { ...source } } }); });
+		}
+		terminate() {}
+	};
+	try {
+		await primeLanyardPhysics([0.95]);
+		assert.deepEqual(asked, [0.95]);
+		await primeLanyardPhysics([0.95, 0.95]);
+		assert.deepEqual(asked, [0.95], "kept: nothing to simulate");
+		for (const swing of [0.96, 0.97, 0.98]) primeSimulation(swing, { ...source });
+		assert.equal(hasSimulation(0.95), false);
+		await primeLanyardPhysics([0.95]);
+		assert.deepEqual(asked, [0.95, 0.95], "dropped: simulated again rather than drawn on the main thread");
+		assert.equal(hasSimulation(0.95), true);
+	} finally {
+		delete globalThis.Worker;
+	}
 });
