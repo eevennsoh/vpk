@@ -16,8 +16,8 @@ export class LanyardPlayer {
 	private last = 0;
 
 	/**
-	 * `prefersReducedMotion` is read on every play request, so a preference
-	 * change applies immediately. While it holds, play settles to the end pose.
+	 * `prefersReducedMotion` is read on play and each frame, so a preference
+	 * change settles active playback on its next frame.
 	 */
 	constructor(
 		readonly duration: number,
@@ -102,6 +102,10 @@ export class LanyardPlayer {
 	private tick = (now: number) => {
 		this.frame = 0;
 		if (!this.state.playing) return;
+		if (this.prefersReducedMotion()) {
+			this.finish();
+			return;
+		}
 		let time = this.state.time + (this.last ? Math.min((now - this.last) / 1000, .1) : 0);
 		this.last = now;
 		if (time >= this.duration) {
