@@ -195,6 +195,22 @@ test("under reduced motion, play, replay and loop settle without animating", () 
 	assert.equal(player.getSnapshot().time, 2, "scrubbing still works");
 });
 
+test("turning on reduced motion during playback settles on the next frame", () => {
+	const frames = fakeFrames();
+	const rendered = [];
+	let reducedMotion = false;
+	const player = new LanyardPlayer(4, (time) => rendered.push(time), () => reducedMotion);
+	player.play();
+	frames.step(1000);
+	frames.step(1100);
+	assert.equal(player.getSnapshot().playing, true);
+	reducedMotion = true;
+	frames.step(1200);
+	assert.deepEqual(player.getSnapshot(), { time: 4, playing: false, looping: false });
+	assert.equal(rendered.at(-1), 4, "the settled pose replaces the moving frame");
+	assert.equal(frames.pending(), 0, "the animation loop stops");
+});
+
 /* ─── A Swing change never simulates on the main thread ───────────────── */
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
