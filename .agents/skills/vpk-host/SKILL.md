@@ -26,9 +26,16 @@ Examples of skill requests:
 These identify the input and hosting destination; there is no separate
 `vpk-host` executable. Resolve the actual namespace, publishing Slauth group,
 optional subdirectory, entry file, and any requested lifecycle before uploading.
-Reuse a supplied URL or existing binding. Do not guess group membership or
-replace another project's namespace. If a required choice is missing, ask for
-it while preparing the local export.
+Reuse a supplied URL or existing binding. Before asking for missing setup,
+inspect saved publishing configuration and verify the user's directory groups
+with `atlas rollcall person --person <staff-id> --groups --output json`.
+For an existing prototype, its verified service owner and project-specific
+administrator group can establish the namespace owner/publisher. Verify group
+membership and namespace availability; saved configuration alone is not proof
+of access or ownership. When the user asks you to handle setup, select an unused
+route-derived namespace and the verified project group, then continue. Ask only
+when live discovery leaves a material ownership or destination choice unresolved.
+Do not create directory groups or replace another project's namespace.
 
 For a new publication, prefer a separate project/release subdirectory when
 appropriate. Changing the prefix requires rebuilding a Next.js project.
@@ -52,6 +59,15 @@ Classify the requested experience before claiming that Statlas can host it:
   required streaming/WebSocket transport. Verify those interactions.
 - Same-origin `/api/*`, Next server features, and an undeployed VPK backend
   require a runtime plan. Explain the gap and use `vpk-deploy` when authorized.
+
+`vpk-host` keeps the frontend on Statlas. When the user selects an existing
+backend, inspect that service and test a preflight with the exact Statlas origin
+before asking for another URL. If setup is authorized and the user owns the
+backend, preserve its existing origins and deployed image while making the
+narrow configuration change needed for Statlas. Use `vpk-deploy`'s configuration
+and status procedures for that backend operation; it does not change the
+frontend hosting destination. Verify the new runtime state and cross-origin
+requests before claiming compatibility.
 
 Do not strip working features, inject mock APIs, put gateway credentials in
 browser code, or silently turn a backend-dependent project into a static demo.

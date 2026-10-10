@@ -8,10 +8,9 @@ Source guidance read on 2026-10-05:
   `node_modules/next/dist/docs/01-app/02-guides/static-exports.md` and
   `node_modules/next/dist/docs/01-app/03-api-reference/05-config/01-next-config-js/basePath.md`.
 
-The sources disagree on some CLI flags and ZIP reliability. The local Atlas
-CLI had no Statlas plugin when this skill was written, so the upload examples
-below are source-derived and were not verified against an installed plugin.
-Read live help before an actual run; do not guess replacements for rejected flags.
+The sources disagree on some CLI flags and ZIP reliability. Statlas plugin
+1.1.19 help was verified on 2026-10-08. Read live help before an actual run;
+do not guess replacements for rejected flags.
 
 ## CLI and authentication
 
@@ -21,6 +20,14 @@ Start with read-only inspection:
 atlas statlas --help
 klist
 ```
+
+Resolve and retain the Atlassian executable before changing directories.
+This machine also has the unrelated Ariga database CLI at
+`/opt/homebrew/bin/atlas`; changing the working directory can change which
+binary a bare `atlas` selects. `/opt/atlassian/bin/atlas` is the verified
+Atlassian executable here. Use its absolute path for uploads from the archive
+directory. A missing `statlas` command in the Ariga CLI is not a Statlas upload
+or authentication failure.
 
 When hosting requires the missing official plugin, install it with the Atlas
 plugin command supported by local help:
@@ -55,6 +62,21 @@ Avoid repeated uploads while diagnosing the same authentication failure.
 
 ## Namespace permissions
 
+Discover existing access before asking the user to name a group:
+
+```bash
+twg statlas auth status
+atlas rollcall person --person <staff-id> --groups --output json
+atlas rollcall group --group <project-group> --output json
+```
+
+The TWG status command is optional when TWG is installed. Treat saved namespace,
+group, and prefix values as hints: they may belong to another user. Inspect only
+the relevant directory membership fields. For an existing Micros prototype,
+`atlas micros service show` identifies its owner and authorization container;
+verify the actual project administrator group with Rollcall. Reusing that
+verified group for a new project namespace avoids creating a directory group.
+
 ```bash
 atlas statlas auth get --namespace <namespace>
 atlas statlas list --namespace <namespace> --subdirectory <project>/
@@ -76,6 +98,16 @@ Use the installed help to resolve that difference. Preserve any existing
 namespace and grants. Ask for missing ownership/group choices; do not create
 an AD group or widen access just to make publishing succeed. New membership
 can take time to propagate; the prototype guide reports 5 to 10 minutes.
+
+Plugin 1.1.19 supports explicit `--owner`, `--groups`, and `--auth-group`.
+After confirming an unused namespace and the user's membership in the selected
+project group, create its initial owner and publishing grant with:
+
+```bash
+atlas statlas auth set --namespace <namespace> --owner <owner-group> \
+  --groups <publishing-group> --auth-group <verified-member-group>
+atlas statlas auth get --namespace <namespace>
+```
 
 Namespace permissions govern upload/delete access. The September guide says
 files are publicly accessible within the Atlassian network without additional
@@ -114,6 +146,14 @@ exported files rather than only `index.html` and obvious JS/CSS assets.
 The prototype guide warns that ZIP uploads can hang. Check auth and remote
 state once, then choose a deliberate retry or individual-file fallback.
 Do not repeat a failed upload indefinitely.
+
+The live service rejected ZIP objects over 250 MB on 2026-10-08 with HTTP 413.
+For a larger reviewed export, make fresh independent ZIPs below that limit,
+each retaining the original export-relative paths. Verify their combined file
+inventory matches the selected export. Upload assets and navigation payloads
+first and HTML in the last archive. Do not use byte-split ZIP fragments, which
+cannot be unpacked independently. Retain a checksum and completion record for
+each part so interrupted publication can resume without guessing remote state.
 
 ## Individual-file fallback
 
