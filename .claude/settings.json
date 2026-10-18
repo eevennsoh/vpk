@@ -10,16 +10,6 @@
 					}
 				]
 			}
-		],
-		"WorktreeCreate": [
-			{
-				"hooks": [
-					{
-						"type": "command",
-						"command": "cd \"$CLAUDE_PROJECT_DIR\" && exec bash \"$CLAUDE_PROJECT_DIR/.agents/hooks/worktree-create.sh\""
-					}
-				]
-			}
 		]
 	},
 	"sandbox": {
