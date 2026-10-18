@@ -55,6 +55,8 @@ export type TWGAppstackProps = Omit<ComponentProps<"div">, "children"> & {
 	sources: ReadonlyArray<TwgToolSource>;
 	iconSize?: TwgToolSourceIconSize;
 	maxVisible?: number;
+	/** Known additional sources when only the visible source preview is loaded. */
+	overflowCount?: number;
 	animated?: boolean;
 	direction?: TwgAppstackAnimationDirection;
 };
@@ -285,7 +287,6 @@ export function TwgToolSourceIcon({
 				<span className="inline-flex size-full items-center justify-center">
 					<AtlassianLogo
 						name="jira-service-management"
-						hasBorder
 						label={source.label}
 						size={size}
 						themeAware={false}
@@ -320,7 +321,6 @@ export function TwgToolSourceIcon({
 			<span className="inline-flex size-full items-center justify-center">
 				<AtlassianLogo
 					name={source.provider}
-					hasBorder
 					label={source.label}
 					size={size}
 					themeAware={false}
@@ -336,6 +336,7 @@ export function TWGAppstack({
 	direction = "right-to-left",
 	iconSize = "small",
 	maxVisible = 6,
+	overflowCount,
 	sources,
 	...props
 }: TWGAppstackProps) {
@@ -354,7 +355,7 @@ export function TWGAppstack({
 	}
 
 	const visibleSources = sources.slice(0, maxVisible);
-	const hiddenCount = Math.max(0, sources.length - visibleSources.length);
+	const hiddenCount = Math.max(0, overflowCount ?? sources.length - visibleSources.length);
 	const itemCount = visibleSources.length + (hiddenCount > 0 ? 1 : 0);
 
 	const renderItem = (

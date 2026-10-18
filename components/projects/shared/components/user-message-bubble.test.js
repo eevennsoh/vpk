@@ -53,7 +53,7 @@ test("Improve description renders as a skill tag without changing the raw messag
 	);
 	assert.match(
 		USER_MESSAGE_BUBBLE_SOURCE,
-		/skillInvocationLabel && skillTagProps \? \([\s\S]*<SkillTag[\s\S]*variant="on-colored"[\s\S]*\{skillInvocationLabel\}[\s\S]*<\/SkillTag>[\s\S]*\) : \([\s\S]*<MessageResponse/u,
+		/skillInvocationLabel && skillTagProps \? \([\s\S]*<SkillTag[\s\S]*\{skillInvocationLabel\}[\s\S]*<\/SkillTag>[\s\S]*\) : \([\s\S]*<MessageResponse/u,
 	);
 	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /<MessageCopyAction text=\{messageText\} \/>/u);
 	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /value=\{messageText\}/u);
@@ -71,7 +71,7 @@ test("structured skill invocations keep normal inline text flow around the skill
 	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /skillInvocationLabel && skillTagProps \? \(/u);
 	assert.match(
 		USER_MESSAGE_BUBBLE_SOURCE,
-		/<p className="font-medium leading-5">[\s\S]*skillInvocation \? <>Use\{" "\}<\/> : null[\s\S]*<SkillTag[\s\S]*color=\{skillTagProps\.color\}[\s\S]*icon=\{skillTagProps\.icon\}[\s\S]*variant="on-colored"[\s\S]*\{skillInvocationLabel\}[\s\S]*<\/SkillTag>[\s\S]*skillInvocation\?\.instruction \? <>\{" "\}\{skillInvocation\.instruction\}<\/> : null[\s\S]*<\/p>/u,
+		/<p className="font-medium leading-5">[\s\S]*skillInvocation \? <>Use\{" "\}<\/> : null[\s\S]*<SkillTag[\s\S]*color=\{skillTagProps\.color\}[\s\S]*icon=\{skillTagProps\.icon\}[\s\S]*\{skillInvocationLabel\}[\s\S]*<\/SkillTag>[\s\S]*skillInvocation\?\.instruction \? <>\{" "\}\{skillInvocation\.instruction\}<\/> : null[\s\S]*<\/p>/u,
 	);
 	assert.doesNotMatch(USER_MESSAGE_BUBBLE_SOURCE, /flex flex-wrap items-center/u);
 });

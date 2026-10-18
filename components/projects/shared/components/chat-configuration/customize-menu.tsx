@@ -5,11 +5,15 @@
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
 import { token } from "@/lib/tokens";
-import { Switch as Toggle } from "@/components/ui/switch";
+import { SwitchIndicator } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { MenuItemButton, CircleIcon } from "./menu-item-button";
 import { REASONING_OPTIONS, FILTER_BY_APPS_ICON, SELECTED_CHECK_ICON } from "./customize-menu-data";
 import GlobeIcon from "@atlaskit/icon/core/globe";
 import OfficeBuildingIcon from "@atlaskit/icon/core/office-building";
+
+const SOURCE_MENU_ROW_CLASS_NAME = "h-8 min-h-8 gap-3 pl-2 pr-3 py-0 font-normal leading-5";
+const SOURCE_MENU_ICON_CLASS_NAME = "grid size-6 shrink-0 place-items-center";
 
 export interface CustomizeMenuProps {
 	selectedReasoning: string;
@@ -101,48 +105,19 @@ interface SourcesSectionProps {
 
 function SourcesSection({ webResultsEnabled, onWebResultsChange, companyKnowledgeEnabled, onCompanyKnowledgeChange, onClose }: Readonly<SourcesSectionProps>) {
 	return (
-		<div>
-			<div style={{ padding: `${token("space.150")} ${token("space.200")} 0` }}>
-				<h3 style={{ font: token("font.heading.xxsmall") }} className="text-text-subtle">
-					Sources
-				</h3>
-			</div>
-			<div
-				style={{
-					borderRadius: "12px",
-					marginTop: token("space.100"),
-				}}
-			>
-				<SourceToggleRow icon={<GlobeIcon label="Web results" />} label="Include web results" checked={webResultsEnabled} onCheckedChange={() => onWebResultsChange(!webResultsEnabled)} />
-
-				<SourceToggleRow
-					icon={<OfficeBuildingIcon label="Company knowledge" />}
-					label="Search company knowledge"
-					checked={companyKnowledgeEnabled}
-					onCheckedChange={() => onCompanyKnowledgeChange(!companyKnowledgeEnabled)}
-				/>
-
-				<div
-					style={{
-						height: "16px",
-						display: "flex",
-						alignItems: "center",
-						padding: `0 ${token("space.200")}`,
-					}}
-				>
-					<div
-						style={{
-							height: "1px",
-							width: "100%",
-							backgroundColor: token("color.border"),
-						}}
-					/>
-				</div>
-
-				<MenuItemButton elemBefore={<CircleIcon>{FILTER_BY_APPS_ICON}</CircleIcon>} onClick={onClose}>
-					Filter by apps
-				</MenuItemButton>
-			</div>
+		<div className="min-w-64">
+			<h3 className="px-2 pt-1 pb-2 text-xs font-semibold text-text-subtle">Sources</h3>
+			<SourceToggleRow icon={<GlobeIcon label="" />} label="Include web results" checked={webResultsEnabled} onCheckedChange={() => onWebResultsChange(!webResultsEnabled)} />
+			<SourceToggleRow
+				icon={<OfficeBuildingIcon label="" />}
+				label="Search company knowledge"
+				checked={companyKnowledgeEnabled}
+				onCheckedChange={() => onCompanyKnowledgeChange(!companyKnowledgeEnabled)}
+			/>
+			<Separator className="my-1" />
+			<MenuItemButton className={SOURCE_MENU_ROW_CLASS_NAME} elemBefore={<span className={SOURCE_MENU_ICON_CLASS_NAME}>{FILTER_BY_APPS_ICON}</span>} onClick={onClose}>
+				Filter by apps
+			</MenuItemButton>
 		</div>
 	);
 }
@@ -156,24 +131,16 @@ interface SourceToggleRowProps {
 
 function SourceToggleRow({ icon, label, checked, onCheckedChange }: Readonly<SourceToggleRowProps>) {
 	return (
-		<div
-			role="button"
-			tabIndex={0}
+		<MenuItemButton
+			role="switch"
+			aria-checked={checked}
+			aria-label={label}
+			className={SOURCE_MENU_ROW_CLASS_NAME}
+			elemBefore={<span className={SOURCE_MENU_ICON_CLASS_NAME}>{icon}</span>}
+			elemAfter={<SwitchIndicator checked={checked} />}
 			onClick={onCheckedChange}
-			onKeyDown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
-					onCheckedChange();
-				}
-			}}
-			className="flex w-full cursor-default items-center justify-between gap-3 rounded-md px-4 select-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground outline-hidden"
-			style={{ height: "52px" }}
 		>
-			<div style={{ display: "flex", alignItems: "center", gap: token("space.150"), flex: 1, minWidth: 0 }}>
-				<CircleIcon isSelected={checked}>{icon}</CircleIcon>
-				<span style={{ font: token("font.body") }}>{label}</span>
-			</div>
-			<Toggle checked={checked} onCheckedChange={onCheckedChange} label={label} onClick={(e) => e.stopPropagation()} />
-		</div>
+			{label}
+		</MenuItemButton>
 	);
 }

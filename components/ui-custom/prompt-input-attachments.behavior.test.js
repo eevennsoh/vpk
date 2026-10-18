@@ -173,3 +173,34 @@ test("root StrictMode effect replay releases only the previous setup's URLs", as
 	}
 	assert.deepEqual(revoked, allocated);
 });
+
+test("submit retains disabled state and stops submitted or streaming work without submitting the form", async (t) => {
+	const stops = [];
+	const submissions = [];
+	const view = await renderComponent({
+		source: `
+import { PromptInputSubmit } from "@/components/ui-custom/prompt-input";
+export default function SubmitHarness({ status, disabled, onStop, onSubmit }) {
+	return <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
+		<PromptInputSubmit status={status} disabled={disabled} onStop={onStop} />
+	</form>;
+}`,
+		props: { status: "ready", disabled: true },
+	});
+	t.after(() => view.unmount());
+	assert.equal(view.getByRole("button", { name: "Submit" }).disabled, true);
+	for (const status of ["submitted", "streaming"]) {
+		await view.rerender({ status, disabled: true, onStop: () => stops.push(status), onSubmit: () => submissions.push(status) });
+		const stop = view.getByRole("button", { name: "Stop" });
+		assert.equal(stop.disabled, false);
+		assert.equal(stop.type, "button");
+		assert.equal(stop.className.includes("bg-transparent"), true);
+		assert.equal(stop.className.includes("text-icon-danger"), false);
+		await view.click(stop);
+	}
+	assert.deepEqual(stops, ["submitted", "streaming"]);
+	assert.deepEqual(submissions, []);
+	await view.rerender({ status: "ready", disabled: false, onSubmit: () => submissions.push("ready") });
+	await view.click(view.getByRole("button", { name: "Submit" }));
+	assert.deepEqual(submissions, ["ready"]);
+});

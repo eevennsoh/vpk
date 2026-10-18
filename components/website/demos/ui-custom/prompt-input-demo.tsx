@@ -167,7 +167,7 @@ function ChatComposerDemo({
 									<PopoverTrigger
 										render={<PromptInputPreferencesButton aria-label="Customize" />}
 									/>
-									<PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-2">
+									<PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-1">
 										<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
 										<CustomizeMenu
 											selectedReasoning={selectedReasoning}
@@ -228,13 +228,7 @@ export function PromptInputDemoChatComposerLiveVoice() {
 	return <ChatComposerDemo liveVoiceEnabled />;
 }
 
-interface FloatingBarDemoProps {
-	// Renders the action button with the experimental dark/black CTA styling used
-	// in the Studio floating composer (neutral-bold background, inverse icon).
-	experimentalDarkCta?: boolean;
-}
-
-function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDemoProps>) {
+function FloatingBarDemo() {
 	const [prompt, setPrompt] = useState("");
 	const voice = usePromptInputDemoVoice({ prompt, onPromptChange: setPrompt });
 
@@ -256,7 +250,6 @@ function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDe
 						composerStatus="ready"
 						dictationState={voice.dictationState}
 						dictationTranscriptPreview={voice.dictationTranscriptPreview}
-						experimentalDarkCta={experimentalDarkCta}
 						liveVoiceEnabled
 						clickyActive={voice.clickyActive}
 						micStream={voice.micStream}
@@ -290,10 +283,6 @@ export function PromptInputDemoFloatingBar() {
 	return <FloatingBarDemo />;
 }
 
-export function PromptInputDemoFloatingBarDarkCta() {
-	return <FloatingBarDemo experimentalDarkCta />;
-}
-
 interface FloatingBarTextSendDemoProps {
 	size?: "icon-sm" | "icon-xs";
 }
@@ -314,7 +303,6 @@ function FloatingBarTextSendDemo({
 						composerStatus="ready"
 						dictationState={voice.dictationState}
 						dictationTranscriptPreview={voice.dictationTranscriptPreview}
-						experimentalDarkCta
 						micStream={voice.micStream}
 						onStartDictation={voice.handleStartDictation}
 						onStop={voice.handleStop}

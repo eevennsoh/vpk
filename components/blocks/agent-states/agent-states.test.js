@@ -76,7 +76,7 @@ test("Agent States composer opts into 24px prompt-input action hits", () => {
 	assert.match(SOURCE, /<AddIcon label="" size="small" \/>/u);
 	assert.match(
 		SOURCE,
-		/<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*showSubmitWhenEmpty[\s\S]*size="icon-xs"/u,
+		/<RovoComposerActionButton[\s\S]*showSubmitWhenEmpty[\s\S]*size="icon-xs"/u,
 	);
 	assert.doesNotMatch(SOURCE, /size="icon-sm"/u);
 });
@@ -163,7 +163,7 @@ test("compact agent surfaces use their intended elevation treatment", () => {
 	assert.doesNotMatch(SOURCE, /\bshadow-md\b/u);
 	assert.match(
 		SOURCE,
-		/<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*onStartDictation=\{startPreviewDictation\}[\s\S]*showSubmitWhenEmpty/u,
+		/<RovoComposerActionButton[\s\S]*onStartDictation=\{startPreviewDictation\}[\s\S]*showSubmitWhenEmpty/u,
 	);
 	assert.doesNotMatch(SOURCE, /liveVoiceEnabled/u);
 	assert.doesNotMatch(SOURCE, /onToggleRealtimeVoice/u);

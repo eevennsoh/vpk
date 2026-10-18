@@ -116,8 +116,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 	examples: [
 		{ title: "Microphone + text send — default", description: "The default Rovo-style composer keeps dictation available and the send CTA visible. Send is disabled until text is ready; live chat is not enabled.", demoSlug: "prompt-input-demo-chat-composer" },
 		{ title: "Microphone + live chat — opt-in", description: "An explicit live-chat variant that retains dictation. With an empty prompt, the live chat CTA replaces the disabled send CTA; while live chat is active, the action rail also exposes the AI cursor control.", demoSlug: "prompt-input-demo-chat-composer-live-voice" },
-		{ title: "Microphone + live chat — compact", description: "A compact floating composer with both dictation and the opt-in live chat CTA.", demoSlug: "prompt-input-demo-floating-bar" },
-		{ title: "Microphone + live chat — compact dark CTA", description: "The compact live-chat composer with the experimental neutral-bold CTA treatment used in Studio.", demoSlug: "prompt-input-demo-floating-bar-dark-cta" },
+		{ title: "Microphone + live chat — compact", description: "A compact floating composer with dictation and the opt-in live chat CTA, using the default black Rovo button treatment.", demoSlug: "prompt-input-demo-floating-bar" },
 		{ title: "Microphone + text send — compact", description: "A compact text-send composer that keeps dictation available and the send CTA visible, disabled while the prompt is empty and enabled once text is entered.", demoSlug: "prompt-input-demo-floating-bar-text-send" },
 		{ title: "Microphone + text send — 24px", description: "The same compact text-send composer with 24×24 (`icon-xs`) Add, microphone, and send hits instead of the default 32/36 cluster.", demoSlug: "prompt-input-demo-floating-bar-text-send-icon-xs" },
 	],

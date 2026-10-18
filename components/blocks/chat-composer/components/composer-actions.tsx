@@ -68,7 +68,7 @@ export default function ComposerActions({
 						>
 							<CustomizeIcon label="" />
 						</PopoverTrigger>
-						{customizeMenuProps ? <PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-2">
+						{customizeMenuProps ? <PopoverContent side="top" align="start" sideOffset={8} className={customizeMenuProps.showReasoning === false ? "w-auto p-1" : "w-auto p-2"}>
 								<PopoverTitle className="sr-only">Customize response</PopoverTitle>
 								<CustomizeMenu {...customizeMenuProps} onClose={() => setIsCustomizeMenuOpen(false)} />
 							</PopoverContent> : null}

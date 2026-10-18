@@ -27,7 +27,6 @@ import { type ComposerBodyBaseProps, usePrefillEffect } from "@/components/proje
 export interface ComposerCardBodyProps extends ComposerBodyBaseProps {
 	artifactTitle: string | null | undefined;
 	compact: boolean;
-	experimentalDarkCta: boolean;
 	galleryExpanded: boolean;
 	hideReasoningSelector: boolean;
 	hideSourceAndModelControls: boolean;
@@ -54,7 +53,6 @@ export function ComposerCardBody({
 	directoryAutocompleteLimit,
 	dictationState,
 	dictationTranscriptPreview,
-	experimentalDarkCta,
 	focusRequestKey,
 	galleryExpanded,
 	hideReasoningSelector,
@@ -200,7 +198,7 @@ export function ComposerCardBody({
 						{hideSourceAndModelControls ? null : (
 							<Popover open={resolvedCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
 								<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
-								<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
+								<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-1">
 									<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
 									<CustomizeMenu
 										selectedReasoning={resolvedSelectedReasoning}
@@ -224,7 +222,6 @@ export function ComposerCardBody({
 						composerStatus={composerStatus}
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
-						experimentalDarkCta={experimentalDarkCta}
 						hideReasoningSelector={hideSourceAndModelControls || hideReasoningSelector}
 						isComposerBusy={isComposerBusy}
 						clickyActive={clickyActive}

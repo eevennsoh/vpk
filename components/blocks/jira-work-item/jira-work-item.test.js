@@ -401,7 +401,7 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.doesNotMatch(plannerPanelSource, /Planned by Rovo/u);
 	assert.match(plannerPanelSource, /<CrossIcon label="" size="small" \/>[\s\S]*Reject/u);
 	assert.match(plannerPanelSource, /<CheckMarkIcon label="" size="small" \/>[\s\S]*Accept suggestions/u);
-	assert.match(plannerPanelSource, /<RovoComposerActionButton[\s\S]*experimentalDarkCta/u);
+	assert.match(plannerPanelSource, /<RovoComposerActionButton/u);
 	assert.doesNotMatch(plannerPanelSource, /PromptInputFooter|PromptInputSubmit/u);
 	assert.match(plannerPanelSource, /const hasPlanner = planner\.status === "searching" \|\| isReviewing;/u);
 	assert.match(plannerPanelSource, /data-ai-planner-scope=\{hasPlanner \? "active" : undefined\}/u);

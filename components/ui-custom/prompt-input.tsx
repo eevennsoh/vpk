@@ -18,7 +18,6 @@ import type {
   RefObject,
 } from "react";
 
-import Image from "next/image";
 
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
@@ -52,8 +51,7 @@ import {
   type DirectoryAutocompleteState,
 } from "@/lib/directory-autocomplete";
 
-import { Badge } from "@/components/ui/badge";
-import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import {
   Command,
   CommandEmpty,
@@ -1681,16 +1679,12 @@ export const PromptInputSendControls = ({
   );
 };
 
-const PROMPT_INPUT_PREFERENCE_SOURCES = [
-  {
-    name: "google-drive",
-    label: "Google Drive",
-  },
-  {
-    name: "microsoft-teams",
-    label: "Microsoft Teams",
-  },
-] as const;
+const PROMPT_INPUT_PREFERENCE_SOURCES: ReadonlyArray<TwgToolSource> = [
+	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
+	{ id: "microsoft-teams", label: "Microsoft Teams", provider: "twg", name: "microsoft-teams" },
+	{ id: "teams", label: "Teams", provider: "teams" },
+	{ id: "jira", label: "Jira", provider: "jira" },
+];
 
 export type PromptInputPreferencesButtonProps = Omit<
   PromptInputButtonProps,
@@ -1709,7 +1703,7 @@ export const PromptInputPreferencesButton = ({
   <PromptInputButton
     aria-label={ariaLabel}
     className={cn(
-      "h-8 w-[110px] min-w-[110px] gap-1 rounded-lg px-3 text-text hover:text-text",
+      "h-8 gap-1 px-3 text-text hover:text-text",
       className
     )}
     size="sm"
@@ -1717,34 +1711,14 @@ export const PromptInputPreferencesButton = ({
     variant={variant}
     {...props}
   >
-    {PROMPT_INPUT_PREFERENCE_SOURCES.map((source) => (
-      <LogoThirdParty
-        borderless
-        className="size-4 shrink-0"
-        key={source.label}
-        label=""
-        name={source.name}
-        size="xxsmall"
-      />
-    ))}
-    <span aria-hidden className="inline-flex size-4 shrink-0 items-center justify-center rounded bg-primary">
-      <Image
-        alt=""
-        aria-hidden
-        className="size-3 invert"
-        height={12}
-        src="/brand-icons/teams.svg"
-        width={12}
-      />
-    </span>
-    <Badge
-      aria-hidden
-      className="pointer-events-none h-4 min-w-0 rounded-xs bg-surface-pressed px-1.5 text-xs font-normal leading-4 text-text hover:bg-surface-pressed active:bg-surface-pressed"
-      max={false}
-      variant="neutral"
-    >
-      +{overflowCount}
-    </Badge>
+	<TWGAppstack
+		aria-hidden
+		animated={false}
+		iconSize="xxsmall"
+		maxVisible={4}
+		overflowCount={overflowCount}
+		sources={PROMPT_INPUT_PREFERENCE_SOURCES}
+	/>
   </PromptInputButton>
 );
 
@@ -1833,10 +1807,12 @@ export const PromptInputSubmit = ({
   const canStopGeneration = isGenerating && Boolean(onStop);
   const shouldUseStatusIcon =
     status === "submitted" || status === "streaming" || status === "error";
-  const resolvedVariant = canStopGeneration ? "outline" : variant;
-  const stateClassName = canStopGeneration
-    ? "border-border bg-surface-raised text-icon-danger hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed"
-    : undefined;
+  const resolvedVariant = isGenerating ? "ghost" : variant;
+  const stateClassName = isGenerating
+    ? "bg-transparent text-icon-rovo [&_svg]:text-icon-rovo hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed"
+    : variant === "default" && status !== "error"
+      ? "enabled:bg-rovo-brand enabled:text-rovo-icon-inverse enabled:hover:bg-rovo-brand/90 enabled:active:bg-rovo-brand/80"
+      : undefined;
 
   const glyphSize = size === "icon-xs" ? "small" : undefined;
   let Icon = glyphSize ? (
@@ -1866,7 +1842,7 @@ export const PromptInputSubmit = ({
   return (
     <InputGroupButton
       aria-label={isGenerating ? "Stop" : "Submit"}
-      className={cn(stateClassName, className)}
+      className={cn("rounded-md", stateClassName, className)}
       disabled={canStopGeneration ? false : disabled}
       onClick={handleClick}
       size={size}

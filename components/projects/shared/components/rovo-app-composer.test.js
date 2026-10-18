@@ -213,7 +213,7 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(SEND_CONTROLS_SOURCE, /"icon-xs": \{ active: "w-12", idle: "w-6" \}/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /aria-label="Paint screen area"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /HighlightIcon/u);
-	assert.match(SEND_CONTROLS_SOURCE, /<ComposerActionFrame size=\{size\}>[\s\S]*<div className=\{ACTION_CLUSTER_CLASS_NAME_BY_SIZE\[size\]\}>[\s\S]*aria-label="Start live voice"[\s\S]*className=\{cn\(ACTION_ICON_BUTTON_CLASS_NAME_BY_SIZE\[size\], liveVoiceCtaClassName, voiceStartButtonClassName\)\}/u);
+	assert.match(SEND_CONTROLS_SOURCE, /<ComposerActionFrame size=\{size\}>[\s\S]*<div className=\{ACTION_CLUSTER_CLASS_NAME_BY_SIZE\[size\]\}>[\s\S]*aria-label="Start live voice"[\s\S]*className=\{cn\(ACTION_ICON_BUTTON_CLASS_NAME_BY_SIZE\[size\], LIVE_VOICE_CTA_CLASS_NAME, voiceStartButtonClassName\)\}/u);
 	assert.match(SEND_CONTROLS_SOURCE, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1", className\)\}/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /className="flex h-8 w-16 overflow-hidden rounded-md bg-bg-neutral-bold text-text-inverse shadow-sm"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);

@@ -26,11 +26,7 @@ import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 
 const ROVO_COMPOSER_WAVEFORM_INTRO_MS = 500;
-const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
-// Default CTA styling: matches the VPK primary button (brand blue). Applied when the
-// experimental dark CTA flag is off. The [&_svg] override re-tints the icon because the
-// underlying ghost button pins it to text-icon-subtle.
-const BRAND_CTA_CLASS_NAME = "bg-primary text-primary-foreground [&_svg]:text-primary-foreground hover:bg-primary-hovered active:bg-primary-pressed";
+const LIVE_VOICE_CTA_CLASS_NAME = "bg-rovo-brand text-rovo-icon-inverse [&_svg]:text-rovo-icon-inverse hover:bg-rovo-brand/90 active:bg-rovo-brand/80";
 const ACTION_FRAME_CLASS_NAME = "flex h-9 shrink-0 items-center justify-center";
 const ACTION_FRAME_CLASS_NAME_BY_SIZE = {
 	"icon-sm": ACTION_FRAME_CLASS_NAME,
@@ -203,7 +199,6 @@ export interface RovoComposerActionButtonProps {
 	composerStatus: ChatStatus;
 	dictationState?: RovoComposerDictationState;
 	dictationTranscriptPreview?: string | null;
-	experimentalDarkCta?: boolean;
 	isComposerBusy?: boolean;
 	liveVoiceEnabled?: boolean;
 	clickyActive?: boolean;
@@ -229,7 +224,6 @@ export function RovoComposerActionButton({
 	composerStatus,
 	dictationState = "idle",
 	dictationTranscriptPreview = null,
-	experimentalDarkCta = false,
 	isComposerBusy,
 	liveVoiceEnabled = false,
 	clickyActive = false,
@@ -279,8 +273,6 @@ export function RovoComposerActionButton({
 	const isRealtimeMicWaveformActive = realtimeVoiceState === "listening" && realtimeWaveformState.active;
 	const isRealtimeWaveformProcessing = !isRealtimeMicWaveformActive && resolvedRealtimeVoiceActive;
 	const isDictationRecording = dictationState === "recording" && micStream !== null;
-	const experimentalDarkCtaClassName = experimentalDarkCta ? EXPERIMENTAL_DARK_CTA_CLASS_NAME : undefined;
-	const liveVoiceCtaClassName = experimentalDarkCtaClassName ?? BRAND_CTA_CLASS_NAME;
 	const shouldShowDictationStart = Boolean(onStartDictation) && !resolvedComposerBusy && !resolvedRealtimeVoiceActive && !submitDisabled;
 	const shouldShowRealtimeVoiceStart = liveVoiceEnabled && idleAction === "voice-start" && !canSubmit && Boolean(onToggleRealtimeVoice);
 	const shouldShowRealtimeVoiceRail = resolvedRealtimeVoiceActive && Boolean(onToggleClicky);
@@ -478,14 +470,14 @@ export function RovoComposerActionButton({
 									/>
 								) : null}
 								{idleAction === "submit" ? (
-									<PromptInputSubmit aria-label="Submit" className={cn("hover:opacity-90 active:opacity-80", experimentalDarkCtaClassName, submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size={size} status={composerStatus}>
+									<PromptInputSubmit aria-label="Submit" className={cn("hover:opacity-90 active:opacity-80", submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size={size} status={composerStatus}>
 										<ArrowUpIcon label="" size={glyphSize} />
 									</PromptInputSubmit>
 								) : null}
 								{shouldShowRealtimeVoiceStart ? (
 									<PromptInputButton
 										aria-label="Start live voice"
-										className={cn(ACTION_ICON_BUTTON_CLASS_NAME_BY_SIZE[size], liveVoiceCtaClassName, voiceStartButtonClassName)}
+										className={cn(ACTION_ICON_BUTTON_CLASS_NAME_BY_SIZE[size], LIVE_VOICE_CTA_CLASS_NAME, voiceStartButtonClassName)}
 										data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:voice` : undefined}
 										onClick={handleToggleRealtimeVoice}
 										size={size}
@@ -555,7 +547,6 @@ export function RovoComposerSendControls({
 	composerStatus,
 	dictationState,
 	dictationTranscriptPreview,
-	experimentalDarkCta,
 	hideReasoningSelector = false,
 	isComposerBusy,
 	liveVoiceEnabled = false,
@@ -620,7 +611,6 @@ export function RovoComposerSendControls({
 				composerStatus={composerStatus}
 				dictationState={dictationState}
 				dictationTranscriptPreview={dictationTranscriptPreview}
-				experimentalDarkCta={experimentalDarkCta}
 				isComposerBusy={isComposerBusy}
 				liveVoiceEnabled={liveVoiceEnabled}
 				clickyActive={clickyActive}
