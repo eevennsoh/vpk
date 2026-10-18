@@ -87,7 +87,6 @@ export function AgentStatesComposer({
 				<RovoComposerActionButton
 					canSubmit={canSubmit}
 					composerStatus="ready"
-					experimentalDarkCta
 					onStartDictation={startPreviewDictation}
 					onStop={() => undefined}
 					showSubmitWhenEmpty

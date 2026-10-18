@@ -1651,7 +1651,6 @@ test("Studio composer opts into experimental dark composer CTAs", () => {
 	assert.match(COMPOSER_SOURCE, /screenAssistantTargetPrefix = "studio-composer"/u);
 	assert.match(COMPOSER_SOURCE, /data-screen-assistant-target=\{screenAssistantTargetPrefix\}/u);
 	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? FLOATING_COMPOSER_SESSION_MAX_WIDTH_CLASS : FLOATING_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
-	assert.match(COMPOSER_SOURCE, /experimentalDarkCta/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /voiceStartButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /submitButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
 });

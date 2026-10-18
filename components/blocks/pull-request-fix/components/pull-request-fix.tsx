@@ -23,10 +23,6 @@ import type {
 	PullRequestFixVariant,
 } from "./pull-request-fix-types";
 
-/** Match RovoComposerActionButton's `experimentalDarkCta` (black CTA, not brand blue). */
-const EXPERIMENTAL_DARK_CTA_CLASS_NAME =
-	"bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
-
 /** Send stays off until the reviewer has typed a non-empty comment body. */
 function canSubmitFix(body: string): boolean {
 	return body.trim().length > 0;
@@ -191,7 +187,7 @@ export function PullRequestFix({
 						/>
 					) : null}
 					<PromptInputSubmit
-						className={cn("hover:opacity-90 active:opacity-80", EXPERIMENTAL_DARK_CTA_CLASS_NAME)}
+						className="hover:opacity-90 active:opacity-80"
 						disabled={!canSubmit}
 						status="ready"
 					/>

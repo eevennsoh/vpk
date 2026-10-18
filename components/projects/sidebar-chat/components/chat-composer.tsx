@@ -45,7 +45,6 @@ interface ChatComposerProps {
 	addMenuItemsBefore?: ReactNode;
 	/** Optional host-owned controls rendered immediately after the Add menu trigger. */
 	composerToolsAfterAdd?: ReactNode;
-	experimentalDarkCta?: boolean;
 	hideAiCursor?: boolean;
 	hideAiDisclaimer?: boolean;
 	hideSourceAndModelControls?: boolean;
@@ -97,7 +96,6 @@ interface ChatComposerSendControlsProps {
 	composerStatus: ChatStatus;
 	dictationState: RovoComposerDictationState;
 	dictationTranscriptPreview?: string | null;
-	experimentalDarkCta?: boolean;
 	hideReasoningSelector?: boolean;
 	isComposerBusy: boolean;
 	liveVoiceEnabled: boolean;
@@ -147,7 +145,6 @@ function ChatComposerSendControls({
 	composerStatus,
 	dictationState,
 	dictationTranscriptPreview = null,
-	experimentalDarkCta = false,
 	hideReasoningSelector = false,
 	isComposerBusy,
 	liveVoiceEnabled,
@@ -181,7 +178,6 @@ function ChatComposerSendControls({
 			composerStatus={composerStatus}
 			dictationState={dictationState}
 			dictationTranscriptPreview={dictationTranscriptPreview}
-			experimentalDarkCta={experimentalDarkCta}
 			hideReasoningSelector={hideReasoningSelector}
 			isComposerBusy={isComposerBusy}
 			liveVoiceEnabled={liveVoiceEnabled}
@@ -207,7 +203,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, composerToolsAfterAdd, experimentalDarkCta = false, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, liveVoiceEnabled = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerSurfaceHeader, composerSurfaceHeaderTooltip, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, onPrefillMentionConsumed, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, composerToolsAfterAdd, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, liveVoiceEnabled = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerSurfaceHeader, composerSurfaceHeaderTooltip, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, onPrefillMentionConsumed, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -362,7 +358,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 									>
 										<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
 											<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
-											<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
+											<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-1">
 												<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
 												<CustomizeMenu
 													selectedReasoning={selectedReasoning}
@@ -386,7 +382,6 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							composerStatus={submitStatus}
 							dictationState={dictationState}
 							dictationTranscriptPreview={dictationTranscriptPreview}
-							experimentalDarkCta={experimentalDarkCta}
 							hideReasoningSelector={hideSourceAndModelControls}
 							isComposerBusy={isComposerBusy}
 							liveVoiceEnabled={liveVoiceEnabled}

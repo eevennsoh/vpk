@@ -117,7 +117,7 @@ export default function ChatGalleryDemo() {
 
 									<Popover open={isCustomizeMenuOpen} onOpenChange={setIsCustomizeMenuOpen}>
 										<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
-										<PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-2">
+										<PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-1">
 											<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
 											<CustomizeMenu
 												selectedReasoning={selectedReasoning}

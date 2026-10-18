@@ -292,7 +292,6 @@ export function JiraActivityComposer({
 						composerStatus="ready"
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
-						experimentalDarkCta
 						micStream={micStream}
 						onStartDictation={onStartDictation}
 						onStop={onStopDictation}

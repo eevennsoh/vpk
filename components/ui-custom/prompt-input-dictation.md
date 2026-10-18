@@ -33,7 +33,6 @@ the right. Use these integration props:
 	composerStatus="ready"
 	dictationState={dictationState}
 	dictationTranscriptPreview={dictationTranscriptPreview}
-	experimentalDarkCta
 	hideReasoningSelector
 	micStream={micStream}
 	onStartDictation={startDictation}
@@ -48,7 +47,7 @@ the right. Use these integration props:
 />
 ```
 
-- `experimentalDarkCta` gives Live chat and submit the black CTA treatment.
+- Live chat and submit use the black Rovo CTA treatment by default.
 - `hideReasoningSelector` removes the model/reasoning selector without removing
   the attachment menu.
 - Keep the final transcript in the host. Increment `prefillRequestKey` and pass

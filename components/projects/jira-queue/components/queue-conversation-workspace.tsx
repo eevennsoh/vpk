@@ -317,7 +317,6 @@ export function QueueConversationWorkspace({
 									/>
 									<RovoAppComposer
 										composerStatus="ready"
-										experimentalDarkCta
 										hideSourceAndModelControls
 										micStream={realtime.micStream}
 										onStop={async () => realtime.disconnect()}

@@ -143,11 +143,7 @@ test("submit enables when the editor has non-empty content", () => {
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<PromptInputSubmit[\s\S]*className=\{cn\("hover:opacity-90 active:opacity-80", EXPERIMENTAL_DARK_CTA_CLASS_NAME\)\}[\s\S]*disabled=\{!canSubmit\}/u,
-	);
-	assert.match(
-		COMPONENT_SOURCE,
-		/EXPERIMENTAL_DARK_CTA_CLASS_NAME =\s*"bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u,
+		/<PromptInputSubmit[\s\S]*className="hover:opacity-90 active:opacity-80"[\s\S]*disabled=\{!canSubmit\}/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,

@@ -257,7 +257,6 @@ export function JiraForYouConversation({
 										<div className="min-w-0 max-w-full" data-testid="jira-for-you-composer">
 											<RovoAppComposer
 												composerStatus="ready"
-												experimentalDarkCta
 												hideReasoningSelector
 												hideSourceAndModelControls
 												micStream={realtime.micStream}
