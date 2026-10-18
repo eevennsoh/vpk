@@ -72,7 +72,7 @@ export interface AgentSelectorProps {
 	 *
 	 * - `"boxed"` (default) — the bordered `CommandInput` used across directory
 	 *   and toolbar surfaces.
-	 * - `"palette"` — the borderless 44px editor-palette search bar shared with
+	 * - `"palette"` — the borderless 32px editor-palette search bar shared with
 	 *   the "/" and "@" command menus and the work-item metadata pickers, so a
 	 *   selector opened from those surfaces reads as one family.
 	 */
@@ -643,8 +643,8 @@ export function AgentSelector({
 					<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">{heading}</p>
 				) : null}
 				{searchVariant === "palette" ? (
-					// Bleed past the Command root's p-1 so the 44px palette bar spans the
-					// popup edge-to-edge, exactly like the "/" menu and metadata pickers.
+					// Let the shared search field own its inset, like the "/" menu
+					// and metadata pickers.
 					// `hostOwnsKeyNavigation` hands Arrow/Enter back to the cmdk root,
 					// which owns row highlighting and activation for this list.
 					<div className="-mx-1 -mt-1 mb-1 overflow-hidden rounded-t-xl">
@@ -673,6 +673,7 @@ export function AgentSelector({
 				aria-label={listLabel}
 				className={cn(
 					"min-h-0 max-h-none flex-1 p-0",
+					searchVariant === "palette" && "[&_[cmdk-group]:first-child]:!pt-0",
 					// Fade the list under the sticky search header once it has scrolled,
 					// matching the editor-palette command menus. `scroll-mask-top` keeps
 					// the scrollbar gutter opaque so only the content column fades; the
