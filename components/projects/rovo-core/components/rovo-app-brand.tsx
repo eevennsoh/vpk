@@ -215,6 +215,7 @@ export function RovoAppBrand({
 					query={query}
 					selectedAgentActions={selectedAgentActions}
 					selectionMode="single"
+					searchVariant="palette"
 				/>
 			</DropdownMenuContent>
 		</DropdownMenu>

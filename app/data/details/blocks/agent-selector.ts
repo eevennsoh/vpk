@@ -79,7 +79,7 @@ const agents: AgentSelectorAgent[] = [
 				name: "searchVariant",
 				type: '"boxed" | "palette"',
 				default: '"boxed"',
-				description: "Search field treatment. \"boxed\" is the bordered CommandInput used on directory/toolbar surfaces; \"palette\" is the borderless 44px editor-palette bar (RichTextCommandMenuSearchField) shared with Assign agents and \"/\" / \"@\" command menus.",
+				description: "Search field treatment. \"boxed\" is the bordered CommandInput used on directory/toolbar surfaces; \"palette\" is the borderless 32px editor-palette bar (RichTextCommandMenuSearchField) shared with Assign agents and \"/\" / \"@\" command menus.",
 			},
 			{
 				name: "selectionMode",
