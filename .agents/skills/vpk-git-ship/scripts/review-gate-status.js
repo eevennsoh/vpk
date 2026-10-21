@@ -17,6 +17,9 @@ const GRAPHQL_QUERY = `query($owner:String!,$name:String!,$number:Int!,$after:St
 
 const PASSING_CONCLUSIONS = new Set(["NEUTRAL", "SKIPPED", "SUCCESS"]);
 const PENDING_STATES = new Set(["EXPECTED", "IN_PROGRESS", "PENDING", "QUEUED", "REQUESTED", "WAITING"]);
+// GitHub branch protection is not enforced on this private repo, so the merge gate
+// itself must require CI. A required check that has not reported yet counts as pending.
+const DEFAULT_REQUIRED_CHECKS = ["PR checks"];
 
 function spawnGhJson(spawn, args, env) {
 	return spawn("gh", args, {
@@ -125,8 +128,12 @@ function normalizeCheck(check) {
 	};
 }
 
-function classifyChecks(checks) {
+function classifyChecks(checks, requiredChecks = []) {
 	const normalized = checks.map(normalizeCheck);
+	const reported = new Set(normalized.map((check) => check.name));
+	for (const name of requiredChecks) {
+		if (!reported.has(name)) normalized.push({ conclusion: null, name, status: "MISSING", url: null });
+	}
 	const failing = [];
 	const pending = [];
 	const passing = [];
@@ -163,7 +170,7 @@ function summarizeThread(thread) {
 	};
 }
 
-function reconcileSnapshot(snapshot) {
+function reconcileSnapshot(snapshot, requiredChecks = DEFAULT_REQUIRED_CHECKS) {
 	const graphCommentIds = new Set(
 		snapshot.graphql.threads.flatMap((thread) => (
 			threadComments(thread).map((comment) => comment.databaseId).filter(Number.isInteger)
@@ -184,7 +191,7 @@ function reconcileSnapshot(snapshot) {
 			state: review.state,
 			user: review.user?.login ?? null,
 		}));
-	const checks = classifyChecks(snapshot.pullRequest.statusCheckRollup ?? []);
+	const checks = classifyChecks(snapshot.pullRequest.statusCheckRollup ?? [], requiredChecks);
 	const reviewDecision = snapshot.pullRequest.reviewDecision ?? snapshot.graphql.reviewDecision;
 	const mergeStateStatus = snapshot.pullRequest.mergeStateStatus ?? snapshot.graphql.mergeStateStatus;
 	const reviewGateClear = (
@@ -241,26 +248,40 @@ async function collectReviewGateStatus({
 	delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 	prNumber,
 	repository,
+	requiredChecks = DEFAULT_REQUIRED_CHECKS,
 	runGh = runGhJson,
+	waitSeconds = 0,
+	pollSeconds = 30,
+	now = () => Date.now(),
 } = {}) {
 	if (!Number.isInteger(prNumber) || prNumber < 1) {
 		throw new Error("prNumber must be a positive integer");
 	}
 	const resolvedRepository = await resolveRepository(runGh, repository);
+	const deadline = now() + waitSeconds * 1000;
+	let checkPolls = 0;
 	let consistencyAttempts = 0;
 	let status;
-	do {
-		consistencyAttempts += 1;
-		status = reconcileSnapshot(await collectSnapshot({
-			prNumber,
-			repository: resolvedRepository,
-			runGh,
-		}));
-		if (status.missingRestCommentIds.length === 0 || consistencyAttempts > consistencyRetries) break;
-		await delay(5000);
-	} while (true);
+	// Poll while required checks are still running, up to waitSeconds.
+	while (true) {
+		checkPolls += 1;
+		consistencyAttempts = 0;
+		do {
+			consistencyAttempts += 1;
+			status = reconcileSnapshot(await collectSnapshot({
+				prNumber,
+				repository: resolvedRepository,
+				runGh,
+			}), requiredChecks);
+			if (status.missingRestCommentIds.length === 0 || consistencyAttempts > consistencyRetries) break;
+			await delay(5000);
+		} while (true);
+		if (status.checks.state !== "pending" || now() >= deadline) break;
+		await delay(pollSeconds * 1000);
+	}
 	return {
 		...status,
+		checkPolls,
 		consistencyAttempts,
 		queriedAt: new Date().toISOString(),
 	};
@@ -271,6 +292,8 @@ function parseArgs(argv) {
 		consistencyRetries: 6,
 		json: false,
 		requireClear: false,
+		requiredChecks: [...DEFAULT_REQUIRED_CHECKS],
+		waitSeconds: 0,
 	};
 	for (let index = 0; index < argv.length; index += 1) {
 		const argument = argv[index];
@@ -282,13 +305,19 @@ function parseArgs(argv) {
 			options.requireClear = true;
 			continue;
 		}
-		if (["--pr", "--repo", "--consistency-retries"].includes(argument)) {
+		if (["--pr", "--repo", "--consistency-retries", "--wait", "--required-check"].includes(argument)) {
 			const value = argv[index + 1];
 			if (!value) throw new Error(`${argument} requires a value`);
 			index += 1;
 			if (argument === "--pr") options.prNumber = Number(value);
 			if (argument === "--repo") options.repository = value;
 			if (argument === "--consistency-retries") options.consistencyRetries = Number(value);
+			if (argument === "--wait") options.waitSeconds = Number(value);
+			if (argument === "--required-check") {
+				if (!options.requiredChecksSet) options.requiredChecks = [];
+				options.requiredChecksSet = true;
+				options.requiredChecks.push(value);
+			}
 			continue;
 		}
 		if (argument === "--help" || argument === "-h") {
@@ -300,15 +329,22 @@ function parseArgs(argv) {
 	if (!Number.isInteger(options.consistencyRetries) || options.consistencyRetries < 0) {
 		throw new Error("--consistency-retries must be a non-negative integer");
 	}
+	if (!Number.isFinite(options.waitSeconds) || options.waitSeconds < 0) {
+		throw new Error("--wait must be a non-negative number of seconds");
+	}
+	delete options.requiredChecksSet;
 	return options;
 }
 
 function printHelp() {
 	process.stdout.write([
 		"Usage: review-gate-status --pr <number> [--repo owner/name] [--json] [--require-clear]",
+		"                          [--wait <seconds>] [--required-check <name>]...",
 		"",
 		"Fetches current-head PR checks, every GraphQL review thread page, and paginated REST review surfaces.",
 		"Use --require-clear to exit non-zero unless checks pass, review surfaces agree, and merge state is CLEAN.",
+		"Use --wait to keep polling while checks are pending. A required check that has not reported yet",
+		`counts as pending (default required: ${DEFAULT_REQUIRED_CHECKS.join(", ")}).`,
 	].join("\n") + "\n");
 }
 

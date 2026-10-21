@@ -31,9 +31,12 @@ Symphony issue already following `vpk-symphony/references/git/land.md`.
   staging, stashing, switching, rebasing, or syncing another worktree.
 - Never commit changes to `main` in the PR flow. A detached HEAD is normal;
   attach a contextual feature branch when there is work to ship.
-- Required `CI / PR checks` are enforced by branch protection on `main`, and
-  auto-merge waits for them. Unresolved review threads block merge server-side.
-  Never bypass either gate with admin flags. Follow
+- **Merge only after `CI / PR checks` passes.** GitHub does not enforce branch
+  protection on this private repo (the protection API returns 403 on the
+  current plan), so `gh pr merge --auto` merges immediately, without waiting
+  for CI (PR #1973 merged while CI was still running). The skill is the gate:
+  wait with `review-gate-status.js --wait`, then merge only when
+  `--require-clear` exits 0. Never bypass it with admin flags. Follow
   [review-gate.md](references/review-gate.md) before every merge.
 - Missing or timed-out Codex auto-review is non-blocking once its status is
   recorded; unresolved conversations are blocking.
@@ -95,7 +98,7 @@ surface requires them.
    new head. With `--bypass`, record `bypassed/no credit` and continue.
 3. Execute [review-gate.md](references/review-gate.md). Fix valid findings,
    explain invalid ones, and stop on ambiguous product judgment.
-4. Queue and monitor auto-merge, then synchronize persistent `main` using
+4. Wait for checks, merge only on a clear gate, then synchronize persistent `main` using
    [merge-and-sync.md](references/merge-and-sync.md).
 5. Report the merge commit, remote branch deletion, main-sync state, review and
    validation evidence, plus the deferred `vpk-git-clean` handoff.

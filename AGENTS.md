@@ -180,7 +180,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - Classify every new or renamed `components/**` `node:test` suite in `scripts/js-unit-test-manifest.mjs` as `stable` or `source-contract`; unfiltered `node scripts/run-js-unit-tests.mjs` fails CI on unclassified suites. `legacy-drift` is a frozen skipped baseline that must only shrink. `--file` force-runs a named path and does not prove manifest inclusion.
 - Modules that a `node:test` suite loads directly cannot resolve the `@/` alias; they import siblings by relative path with the `.ts` extension (`allowImportingTsExtensions` is on, so no `@ts-expect-error` is needed).
 - Browser coverage is under `tests/**/*.spec.ts` (`playwright.config.ts`); run targeted specs with `pnpm exec playwright test <spec>` after `pnpm install`. Specs reach the app through `appUrl()` in `tests/helpers/origin.ts` (lint rejects hardcoded ports and `*.localhost` hosts) and seed design settings with `?variants=` via `tests/helpers/design-variants.ts`.
-- GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, design-system lint, typecheck, and tests. It is required by branch protection on `main` — `/vpk-git-ship` auto-merge waits for it.
+- GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, design-system lint, typecheck, and tests. GitHub does not enforce branch protection on this private repo, so `/vpk-git-ship` enforces it: the merge waits until `PR checks` passes.
 - Validation freshness:
   <!-- validation-freshness:begin -->
   Last validated: 2026-10-06
