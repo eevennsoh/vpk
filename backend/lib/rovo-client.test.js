@@ -445,6 +445,7 @@ test("sendMessageStreaming reports timing milestones for queued and streamed tur
 				"rovo_set_chat_message_complete",
 				"rovo_stream_connected",
 				"rovo_first_sse_event",
+				"rovo_first_text_delta",
 				"rovo_stream_complete",
 			]
 		);
@@ -908,6 +909,56 @@ test("sendMessageStreaming treats exception events as fatal", async () => {
 		});
 
 		assert.match(error.message, /Model crashed/i);
+	} finally {
+		await close(server);
+	}
+});
+
+test("sendMessageStreaming keeps the SSE event name when data arrives in a later chunk", async () => {
+	const chunks = [];
+
+	const server = http.createServer((req, res) => {
+		if (req.url === "/v3/set_chat_message" && req.method === "POST") {
+			req.resume();
+			res.writeHead(200, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ ok: true }));
+			return;
+		}
+
+		if (req.url?.startsWith("/v3/stream_chat") && req.method === "GET") {
+			res.writeHead(200, { "Content-Type": "text/event-stream" });
+			res.flushHeaders();
+			// Delay the data line so it reaches the client as a separate network chunk.
+			res.write("event: content_block_delta\n");
+			setTimeout(() => {
+				res.write("data: Hello\n\n");
+				res.end();
+			}, 50);
+			return;
+		}
+
+		req.resume();
+		res.writeHead(200, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ ok: true }));
+	});
+
+	const port = await listen(server);
+
+	try {
+		const text = await new Promise((resolve, reject) => {
+			sendMessageStreaming(
+				"hello",
+				{
+					onChunk: (chunk) => chunks.push(chunk),
+					onDone: resolve,
+					onError: reject,
+				},
+				port,
+			);
+		});
+
+		assert.equal(text, "Hello");
+		assert.deepEqual(chunks, [{ type: "text", text: "Hello" }]);
 	} finally {
 		await close(server);
 	}

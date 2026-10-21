@@ -1153,6 +1153,9 @@ function openSseStream({
 			armStreamSilenceTimer();
 
 			let buffer = "";
+			// An SSE event can span network chunks ("event:" in one, "data:" in the next),
+			// so the pending event name lives with the stream, not with each chunk.
+			let currentEvent = "";
 
 			res.on("data", (chunk) => {
 				void (async () => {
@@ -1166,7 +1169,6 @@ function openSseStream({
 					const lines = buffer.split("\n");
 					buffer = lines.pop() ?? "";
 
-					let currentEvent = "";
 					for (const line of lines) {
 						if (line.startsWith("event: ")) {
 							currentEvent = line.slice(7).trim();
