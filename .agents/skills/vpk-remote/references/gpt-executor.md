@@ -24,7 +24,8 @@ check is a blocker — never substitute the planner's provider or login.
 
 ## Canonical first run
 
-Substitute `<model>` (`gpt-5.6-sol` | `gpt-5.6-terra` | `gpt-5.6-luna`) and
+Substitute `<model>` (the full GPT ID — resolve aliases and defaults from
+`~/.config/litellm-proximity/defaults.env`) and
 `<effort>` (`medium` | `high` | `xhigh` | `max`; `low` is accepted by the CLI
 but deliberately not offered by this skill — see *Choosing effort* in
 SKILL.md) from the dispatch grammar. Create one directory per worker; never

@@ -25,7 +25,7 @@ What a consult buys is **perspective diversity**. A model reviewing its own
 family's output re-runs largely the same priors and tends to ratify; a
 different family fails differently and is far likelier to surface the thing
 that was missed. So default the consult to the family that did *not* do the
-work: **Opus 5 xhigh only when reviewing GPT-lane output; Sol xhigh
+work: **`opus` xhigh only when reviewing GPT-lane output; `sol` xhigh
 otherwise** — Claude-lane output, a plan the planner authored, or a question
 with nothing dispatched yet. Explicit `--model` / `--effort` flags override.
 

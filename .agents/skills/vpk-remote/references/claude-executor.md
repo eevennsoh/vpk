@@ -21,7 +21,8 @@ skill references it by path and never copies its contents anywhere.
 
 ## Canonical run
 
-Substitute `<model>` (`claude-opus-5[1m]` | `claude-sonnet-5`) and `<effort>`
+Substitute `<model>` (the full Claude ID — resolve aliases and defaults from
+`~/.config/litellm-proximity/defaults.env`) and `<effort>`
 (`medium` | `high` | `xhigh` | `max`, all verified accepted; `low` works but
 is deliberately not offered — see *Choosing effort* in SKILL.md). The model
 ID **must be quoted** — `[1m]` is a shell glob pattern.
