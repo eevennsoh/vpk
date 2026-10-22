@@ -1,0 +1,20 @@
+# Warms up new VPK git worktrees: copies ignored .env* files from the source
+# checkout and runs `CI=true pnpm install --prefer-offline` in a "vpk warmup"
+# tab of the worktree's herdr workspace. Non-VPK repos are ignored.
+# Link once per machine: herdr plugin link <abs path to this directory>
+id = "vpk.worktree"
+name = "VPK Worktree Warmup"
+version = "0.1.0"
+min_herdr_version = "0.9.5"
+description = "Copy env files and install dependencies in new VPK worktrees"
+platforms = ["macos", "linux"]
+
+[[actions]]
+id = "warmup"
+title = "Warm up VPK worktree"
+contexts = ["workspace"]
+command = ["node", "warmup.js"]
+
+[[events]]
+on = "worktree.created"
+command = ["node", "warmup.js"]

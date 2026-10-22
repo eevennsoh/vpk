@@ -273,6 +273,9 @@ dirty tree it will silently fold into its diff.
 4. **Dispatch** via background Bash using the lane's canonical command:
    [references/gpt-executor.md](references/gpt-executor.md) or
    [references/claude-executor.md](references/claude-executor.md).
+   Write that command to `run.sh` in the worker directory and launch it
+   through the surface wrapper (see *Terminal surfaces*) rather than running
+   it bare, so the user can watch the worker in herdr.
 5. **Read only the report file.** Never stream or parse raw worker output —
    raw material stays in worker contexts; that is where the credit and
    context-window savings come from. An absent or empty report does **not**
@@ -389,6 +392,36 @@ concurrently dispatched tasks; see *Worktree isolation*.
 
 Full shape, sizing, and completion rules:
 [references/dispatch-patterns.md](references/dispatch-patterns.md).
+
+## Terminal surfaces
+
+When the planner runs inside herdr (`HERDR_ENV=1`), every worker, advisor, and
+handoff gets a visible, labelled surface instead of an invisible background
+process. The planner launches the wrapper with background Bash exactly as
+before; the wrapper places the run, waits, and exits with the worker's status,
+so the harness still notifies on completion. Outside herdr the same command
+runs the worker inline, so there is one recipe for both.
+
+```bash
+node scripts/agent-surface.js run \
+  --script "$worker_root/run.sh" --label "<task-slug>-worker-1" \
+  [--worktree "$tree"] [--group "<task-slug>"]
+```
+
+| Run | Flags | herdr surface |
+| --- | --- | --- |
+| Writing worker in its task worktree | `--worktree "$tree"` | the worktree's own **workspace** |
+| Fan-out (2–5 read-only workers) | `--group "<task-slug>"` on every worker | one **tab**, one **pane** per worker |
+| Single read-only worker or advisor | *(neither)* | a new **tab** in the planner's workspace |
+| Handoff `--new-window` | handled by `ai-api` | a new **tab** running the forked session |
+
+The `run.sh` keeps the lane's redirects: the report still lands in
+`report.md`, and the pane shows `stderr` and progress for the user. The
+planner reads only the report, as before. Each pane reports its state to
+herdr, so the sidebar shows the worker as `working`, then `done` (with `exit N`
+on failure), and `herdr agent wait <label-slug>` can block on it. Panes are left
+open after exit so the user can scroll them; close them only when the user
+asks. Conventions, status reporting, and cleanup: `.agents/docs/herdr.md`.
 
 ## Artifacts
 
