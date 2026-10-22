@@ -157,7 +157,7 @@ requirements. Apply with `herdr server reload-config`.
 
   ```toml
   [[keys.command]]
-  key = "prefix+alt+p"
+  key = "prefix+u"
   type = "popup"
   command = 'cd "${HERDR_ACTIVE_PANE_CWD:-$PWD}" && pnpm ports watch'
   description = "VPK ports dashboard"
