@@ -28,8 +28,10 @@ ai-api <claude|codex> [--model M] [--effort E]
   Anthropic `output_config.effort` (verified 2026-10-21 for `medium`,
   `xhigh`, `max`).
 - `--dry-run` prints the exact command and changes nothing. `--new-window`
-  opens the session in a new window of the macOS default terminal (whatever
-  app opens `.command` files; Terminal.app unless changed). `--background
+  opens the session in a new labelled **herdr tab** (`api-<model>`) in the
+  caller's workspace when run inside herdr (`HERDR_ENV=1`), where herdr tracks
+  the agent's state; elsewhere it opens a new window of the macOS default
+  terminal (whatever app opens `.command` files; Terminal.app unless changed). `--background
   "task"` runs headless instead: nothing opens. `ai-api` appends a verify step
   to the task (run the relevant test plus lint and typecheck where they exist,
   never claim an unrun check) and asks for a fixed `RESULT / CHANGED / CHECKS /

@@ -50,6 +50,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-deploy/scripts/release-receipt.test.js",
 		".agents/skills/vpk-deploy/scripts/verify-browser.test.js",
 		".agents/skills/vpk-tunnel/scripts/vpk-tunnel.test.js",
+		"scripts/agent-surface.test.js",
+		".agents/herdr/plugins/vpk-worktree/lib.test.js",
 		".agents/skills/vpk-build/scripts/plan-target-refresh.test.js",
 		".agents/skills/vpk-build/scripts/verify-target.test.js",
 		".agents/skills/vpk-deploy/scripts/plan-frontend-delta.test.js",

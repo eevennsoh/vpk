@@ -106,7 +106,10 @@ exists, retry read-only GitHub commands with
    candidate path. Send TERM, recheck, then KILL only the same surviving PID.
 5. Recheck status, HEAD, PR ownership, and exact-path process state immediately
    before removal. Remove a registered, clean, landed, process-safe worktree
-   with plain `git worktree remove <path>`. Use `git worktree prune --verbose`
+   with plain `git worktree remove <path>`. Inside herdr (`HERDR_ENV=1`), first
+   read `open_workspace_id` for that path from `herdr worktree list --cwd <repo>`
+   and close it with `herdr workspace close <id>` (never `--group`); skip if the
+   workspace hosts a live agent and report it instead. Use `git worktree prune --verbose`
    only when the directory is already gone and registered admin metadata is stale.
 6. Recheck that no worktree uses the branch, then delete the local ref with
    `git branch -d <branch>` or the narrow merged-PR `-D` exception above. If
