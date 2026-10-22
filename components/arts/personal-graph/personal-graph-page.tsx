@@ -1,7 +1,5 @@
 "use client";
 
-import "katex/dist/katex.min.css";
-
 import { useEffect, useMemo, useState } from "react";
 import { cjk } from "@streamdown/cjk";
 import { code as baseCodePlugin } from "@streamdown/code";

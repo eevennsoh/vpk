@@ -1,7 +1,5 @@
 "use client";
 
-import "katex/dist/katex.min.css";
-
 /* eslint-disable @next/next/no-img-element -- MarkdownImage renders arbitrary markdown image payloads where Next Image sizing/loading would change the rendering contract. */
 
 import type {
