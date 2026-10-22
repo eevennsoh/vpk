@@ -5,6 +5,7 @@ import type {
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { clamp } from "@/lib/utils";
+import { createLatestAnimationFrame } from "@/lib/latest-animation-frame";
 
 const COLLAPSE_THRESHOLD_OFFSET = 40;
 const COLLAPSE_VISUAL_MIN_WIDTH = 80;
@@ -75,7 +76,6 @@ export function useSidebarResize({
 	const startXRef = useRef(0);
 	const startWidthRef = useRef(defaultWidth);
 	const lastValidWidthRef = useRef(defaultWidth);
-	const willCollapseRef = useRef(false);
 	const collapseThreshold = minWidth - COLLAPSE_THRESHOLD_OFFSET;
 
 	// Re-clamp the committed width when the bounds change so a shrinking
@@ -99,7 +99,6 @@ export function useSidebarResize({
 			event.stopPropagation();
 			setSidebarWidth(defaultWidth);
 			lastValidWidthRef.current = defaultWidth;
-			willCollapseRef.current = false;
 			setWillCollapse(false);
 		},
 		[defaultWidth],
@@ -110,7 +109,6 @@ export function useSidebarResize({
 			event.preventDefault();
 			startXRef.current = event.clientX;
 			startWidthRef.current = sidebarWidth;
-			willCollapseRef.current = false;
 			setWillCollapse(false);
 			setIsResizing(true);
 			(event.target as HTMLElement).setPointerCapture(event.pointerId);
@@ -144,7 +142,6 @@ export function useSidebarResize({
 			const clampedWidth = clamp(nextWidth, minWidth, maxWidth);
 			setSidebarWidth(clampedWidth);
 			lastValidWidthRef.current = clampedWidth;
-			willCollapseRef.current = false;
 			setWillCollapse(false);
 		},
 		[deltaSign, maxWidth, minWidth, sidebarWidth],
@@ -164,31 +161,39 @@ export function useSidebarResize({
 			return clamp(Math.round(nextWidth), minWidth, maxWidth);
 		};
 
+		const resizeFrame = createLatestAnimationFrame<number>({
+			requestFrame: (callback) => requestAnimationFrame(callback),
+			cancelFrame: (id) => cancelAnimationFrame(id),
+			onFrame: (clientX) => {
+				const delta = (clientX - startXRef.current) * deltaSign;
+				const rawWidth = startWidthRef.current + delta;
+				if (minWidthResistance) {
+					setSidebarWidth(getPointerWidth(clientX));
+					return;
+				}
+
+				const shouldCollapse = rawWidth < collapseThreshold;
+				setWillCollapse(shouldCollapse);
+
+				if (shouldCollapse) {
+					setSidebarWidth(Math.max(rawWidth, COLLAPSE_VISUAL_MIN_WIDTH));
+				} else {
+					setSidebarWidth(clamp(rawWidth, minWidth, maxWidth));
+				}
+			},
+		});
 		const handlePointerMove = (event: PointerEvent) => {
-			const delta = (event.clientX - startXRef.current) * deltaSign;
-			const rawWidth = startWidthRef.current + delta;
-			if (minWidthResistance) {
-				setSidebarWidth(getPointerWidth(event.clientX));
-				return;
-			}
-
-			const shouldCollapse = rawWidth < collapseThreshold;
-			willCollapseRef.current = shouldCollapse;
-			setWillCollapse(shouldCollapse);
-
-			if (shouldCollapse) {
-				setSidebarWidth(Math.max(rawWidth, COLLAPSE_VISUAL_MIN_WIDTH));
-			} else {
-				setSidebarWidth(clamp(rawWidth, minWidth, maxWidth));
-			}
+			resizeFrame.schedule(event.clientX);
 		};
 
 		const handlePointerUp = (event: PointerEvent) => {
+			resizeFrame.cancel();
+			const rawWidth = startWidthRef.current + (event.clientX - startXRef.current) * deltaSign;
 			if (minWidthResistance) {
 				const finalWidth = getPointerWidth(event.clientX);
 				lastValidWidthRef.current = finalWidth;
 				setSidebarWidth(finalWidth);
-			} else if (willCollapseRef.current && onCollapse) {
+			} else if (rawWidth < collapseThreshold && onCollapse) {
 				setSidebarWidth(lastValidWidthRef.current);
 				onCollapse();
 			} else {
@@ -197,13 +202,12 @@ export function useSidebarResize({
 				lastValidWidthRef.current = finalWidth;
 				setSidebarWidth(finalWidth);
 			}
-			willCollapseRef.current = false;
 			setWillCollapse(false);
 			setIsResizing(false);
 		};
 		const handlePointerCancel = () => {
+			resizeFrame.cancel();
 			setSidebarWidth(lastValidWidthRef.current);
-			willCollapseRef.current = false;
 			setWillCollapse(false);
 			setIsResizing(false);
 		};
@@ -212,6 +216,7 @@ export function useSidebarResize({
 		document.addEventListener("pointerup", handlePointerUp);
 		document.addEventListener("pointercancel", handlePointerCancel);
 		return () => {
+			resizeFrame.dispose();
 			document.removeEventListener("pointermove", handlePointerMove);
 			document.removeEventListener("pointerup", handlePointerUp);
 			document.removeEventListener("pointercancel", handlePointerCancel);

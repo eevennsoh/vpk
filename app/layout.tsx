@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-page-custom-font -- App Router root layout applies these fonts globally. */
 import type { Metadata } from "next";
 import "./globals.css";
-import "katex/dist/katex.min.css";
 import "streamdown/styles.css";
 import "leaflet/dist/leaflet.css";
 import { getSSRAutoScript } from "@atlaskit/tokens/get-ssr-auto-script";
@@ -11,26 +10,7 @@ import { Providers } from "@/app/providers";
 import { DevRootTools } from "@/components/utils/dev-root-tools";
 import { DocumentTitlePrefix } from "@/components/utils/document-title-prefix";
 import { PreHydrationScript } from "@/components/utils/pre-hydration-script";
-import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
-
-const arkEsSolidLight = localFont({
-	src: "../public/fonts/ark-es/ARK-ES-SolidLight.woff",
-	variable: "--font-ark-es",
-	display: "swap",
-});
-
-const affigere = localFont({
-	src: "../public/fonts/affigere/Affigere-Regular.woff2",
-	variable: "--font-affigere",
-	display: "swap",
-});
-
-const departureMono = localFont({
-	src: "../public/fonts/DepartureMono/DepartureMono-Regular.woff2",
-	variable: "--font-departure-mono",
-	display: "swap",
-});
 
 // Prevent @atlaskit/tokens from falling back to uninitialized FeatureGates client.
 // Sets the resolver on the same global that @atlaskit/platform-feature-flags uses internally.
@@ -211,9 +191,6 @@ ${devStylesheetGuardScript}
 			className={cn(
 				colorMode,
 				"font-sans",
-				arkEsSolidLight.variable,
-				affigere.variable,
-				departureMono.variable,
 			)}
 			data-theme={themeData}
 			data-color-mode={colorMode}

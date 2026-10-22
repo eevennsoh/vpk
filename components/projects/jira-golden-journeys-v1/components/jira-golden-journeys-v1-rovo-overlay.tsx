@@ -5,13 +5,16 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
-import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
+import dynamic from "next/dynamic";
+
 import type { ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { AgentResultCreator } from "@/components/projects/sidebar-chat/components/agent-result-card";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type { FloatingRovoButtonInsightsConfig } from "@/components/projects/shared/components/floating-rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
+
+const RovoFloatingChat = dynamic(() => import("@/components/projects/rovo-floating-chat/components/rovo-floating-chat"));
 
 interface JgpRovoOverlayProps {
 	agentCreator?: AgentResultCreator;

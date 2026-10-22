@@ -12,6 +12,7 @@ import {
 	type SampleAction,
 } from "@/tests/helpers/interaction-performance";
 import { appUrl } from "@/tests/helpers/origin";
+import { withDesignVariants } from "@/tests/helpers/design-variants";
 
 const eventTimingDeliveryTimeoutMs = 1_000;
 const journeyDeliveryTimeoutMs = 30_000;
@@ -41,8 +42,8 @@ function localCheckout() {
 	}
 }
 
-async function openBoard(page: Page) {
-	await page.goto(appUrl("/jira-team-eu26"), { waitUntil: "domcontentloaded" });
+async function openBoard(page: Page, route = "/jira-team-eu26") {
+	await page.goto(appUrl(route), { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 30_000 });
 	await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(4);
 }
@@ -237,7 +238,7 @@ test("record repeatable cold and warm Board and List interaction samples", async
 			phases: "input, processing and presentation of that maximum-duration event",
 			durationRoundingMs: 8,
 			durationThresholdMs: 16,
-			eventDeliveryMinimumWaitMs: eventTimingDeliveryTimeoutMs,
+			eventDeliveryFallbackWaitMs: eventTimingDeliveryTimeoutMs,
 			journeyDeliveryTimeoutMs,
 			percentileMethod: "nearest-rank",
 			varianceMethod: "population",
@@ -335,7 +336,7 @@ test("EU26 keeps retained board agent chins anchored when returning from List", 
 });
 
 
-test("EU26 opens the deferred assignee picker with keyboard and keeps its List draft", async ({ page }) => {
+test("EU26 opens the assignee picker with keyboard and keeps its List draft", async ({ page }) => {
 	await openBoard(page);
 	await page.getByRole("tab", { name: "List", exact: true }).click();
 	await page.getByTestId("jira-list-footer-controls").getByRole("button").click();
@@ -360,8 +361,7 @@ test("EU26 opens the deferred assignee picker with keyboard and keeps its List d
 
 
 test("EU26 frame-batched resize preserves keyboard bounds, release, and cancellation", async ({ page }) => {
-	await page.addInitScript(() => localStorage.setItem("ui-design-variants", JSON.stringify({ schemaVersion: 2, agentSessionColumnResizing: true })));
-	await openBoard(page);
+	await openBoard(page, withDesignVariants("/jira-team-eu26", { agentSessionColumnResizing: true }));
 	const handle = page.getByRole("separator", { name: "Resize Unlink sessions column" });
 	await expect(handle).toBeVisible();
 	for (const key of ["End", "Home", "End", "Home"]) {
@@ -388,4 +388,20 @@ test("EU26 frame-batched resize preserves keyboard bounds, release, and cancella
 	await expect(handle).toHaveAttribute("aria-valuenow", "360");
 	await handle.dblclick();
 	await expect(handle).toHaveAttribute("aria-valuenow", "280");
+});
+
+
+test("shared shell keeps eager chat lifetime and draft on Golden Journeys v4", async ({ page }) => {
+	await page.goto(appUrl("/jira-golden-journeys-v4"), { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 30_000 });
+	await expect(page.locator("[contenteditable=true]")).toHaveCount(1);
+	const composer = page.getByRole("textbox", { name: "Chat message input" });
+	await expect(composer).toHaveCount(0);
+	await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
+	await expect(composer).toBeVisible();
+	await composer.fill("Keep the eager shell draft");
+	await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
+	await expect(composer).not.toBeVisible();
+	await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
+	await expect(composer).toContainText("Keep the eager shell draft");
 });

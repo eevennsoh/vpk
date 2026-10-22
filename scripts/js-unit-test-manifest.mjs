@@ -14,6 +14,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/ui-custom/code-block-cache-key.test.js",
 		"components/projects/jira-team-eu26/hooks/use-jira-team-eu26-agent-session-sync.behavior.test.js",
 		".agents/skills/vpk-build/scripts/extraction-dependencies.test.js",
 		"app/contexts/context-rovo-chat-lifecycle.behavior.test.js",
