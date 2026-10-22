@@ -232,8 +232,8 @@ export function JiraToolbar({
 			onAgentToggle={(agentId) => {
 				onAgentAssignmentChange(agentId, !selectedAgentIdSet.has(agentId));
 			}}
-			onBrowseAgents={() => onBrowseAgents?.()}
-			onCreateAgent={() => onCreateAgent?.()}
+			onBrowseAgents={onBrowseAgents}
+			onCreateAgent={onCreateAgent}
 			onQueryChange={setAgentQuery}
 			pinnedItemsLabel={pinnedItemsLabel}
 			query={agentQuery}
