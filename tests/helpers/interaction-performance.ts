@@ -156,3 +156,51 @@ export function summarizeInteractionSamples(samples: readonly InteractionSample[
 		};
 	});
 }
+
+
+export type JourneyMarkers = Readonly<{
+	startedAtMs: number | null;
+	acknowledgedAtMs: number | null;
+	readyAtMs: number | null;
+}>;
+
+export function selectJourneyTiming(markers: JourneyMarkers) {
+	const { startedAtMs, acknowledgedAtMs, readyAtMs } = markers;
+	const observed = [startedAtMs, acknowledgedAtMs, readyAtMs].filter((value) => value !== null);
+	const invalid = observed.some((value) => !Number.isFinite(value) || value < 0)
+		|| (startedAtMs !== null && acknowledgedAtMs !== null && acknowledgedAtMs < startedAtMs)
+		|| (acknowledgedAtMs !== null && readyAtMs !== null && readyAtMs < acknowledgedAtMs);
+	if (invalid) {
+		return { status: "missing" as const, reason: "invalid-journey-markers", acknowledgementMs: null, visibleReadyMs: null };
+	}
+	const acknowledgementMs = startedAtMs !== null && acknowledgedAtMs !== null
+		? acknowledgedAtMs - startedAtMs : null;
+	const visibleReadyMs = acknowledgementMs !== null && readyAtMs !== null && startedAtMs !== null
+		? readyAtMs - startedAtMs : null;
+	return {
+		status: visibleReadyMs === null ? "missing" as const : "valid" as const,
+		reason: visibleReadyMs === null ? "journey-marker-not-observed" : null,
+		acknowledgementMs,
+		visibleReadyMs,
+	};
+}
+
+export function summarizeJourneyTimings(journeys: readonly (ReturnType<typeof selectJourneyTiming> & { view: string; visit: "cold" | "warm" })[]) {
+	const groups = new Map<string, typeof journeys[number][]>();
+	for (const journey of journeys) {
+		const key = JSON.stringify([journey.view, journey.visit]);
+		const group = groups.get(key) ?? [];
+		group.push(journey);
+		groups.set(key, group);
+	}
+	return [...groups.values()].map((group) => {
+		const valid = group.filter((journey) => journey.status === "valid");
+		return {
+			view: group[0].view, visit: group[0].visit,
+			totalCount: group.length, validCount: valid.length, missingCount: group.length - valid.length,
+			acknowledgementCount: group.filter((journey) => journey.acknowledgementMs !== null).length,
+			acknowledgementMs: statistics(group.flatMap((journey) => journey.acknowledgementMs === null ? [] : [journey.acknowledgementMs])),
+			visibleReadyMs: statistics(valid.flatMap((journey) => journey.visibleReadyMs === null ? [] : [journey.visibleReadyMs])),
+		};
+	});
+}
