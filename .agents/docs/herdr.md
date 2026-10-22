@@ -143,26 +143,13 @@ requirements. Apply with `herdr server reload-config`.
   delivery tries it before `osascript`. Allow it once in System Settings >
   Notifications (run `terminal-notifier -message test`), or herdr keeps
   falling back to Script Editor toasts.
-- **Pane names in the sidebar:** add the `pane` token so worker labels show:
+- **Pane names and state text in the sidebar:** add the `pane` token so
+  worker labels show, and `state_text` so states read as words, not only icons:
 
   ```toml
   [ui.sidebar.agents]
   row_gap = 0
-  rows = [["state_icon", "machine", "workspace", "tab", "pane"], ["agent"]]
-  ```
-
-- **Ports popup:** a popup key for the live ports dashboard. Use `pnpm ports
-  watch`; bare `pnpm ports` prints once and the popup closes immediately.
-  Alt keys need the terminal to send Option as Meta.
-
-  ```toml
-  [[keys.command]]
-  key = "prefix+u"
-  type = "popup"
-  command = 'cd "${HERDR_ACTIVE_PANE_CWD:-$PWD}" && pnpm ports watch'
-  description = "VPK ports dashboard"
-  width = "80%"
-  height = "80%"
+  rows = [["state_icon", "machine", "workspace", "tab", "pane"], ["agent", "state_text"]]
   ```
 
 ## Cleanup
