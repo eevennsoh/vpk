@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { writeFile } from "node:fs/promises";
 import { arch, cpus, platform, release } from "node:os";
 import { expect, test, type Page } from "@playwright/test";
 import {
@@ -262,7 +263,9 @@ test("record repeatable cold and warm Board and List interaction samples", async
 		journeySummaries: summarizeJourneyTimings(journeys),
 		summaries: summarizeInteractionSamples(samples),
 	};
-	await testInfo.attach("interaction-samples", { body: JSON.stringify(artifact, null, 2), contentType: "application/json" });
+	const artifactPath = testInfo.outputPath("interaction-samples.json");
+	await writeFile(artifactPath, JSON.stringify(artifact, null, 2));
+	await testInfo.attach("interaction-samples", { path: artifactPath, contentType: "application/json" });
 	console.log(JSON.stringify(artifact));
 });
 
