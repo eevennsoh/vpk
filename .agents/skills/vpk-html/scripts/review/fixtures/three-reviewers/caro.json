@@ -1,0 +1,129 @@
+{
+	"schema": "vpk-review/1",
+	"doc": {
+		"id": "67mydhslnha8",
+		"revision": "r1",
+		"title": "Drag it to Done"
+	},
+	"exportedAt": "2026-10-11T10:10:00.000Z",
+	"exportedBy": "u_caro5n8v1",
+	"reviewers": [
+		{
+			"id": "u_caro5n8v1",
+			"name": "Caro Lind",
+			"initials": "CL",
+			"tone": 2,
+			"updatedAt": "2026-10-11T09:00:00.000Z"
+		}
+	],
+	"comments": [
+		{
+			"id": "c_mgl3x1c0_caro001a",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_caro5n8v1",
+			"createdAt": "2026-10-11T09:30:00.000Z",
+			"revision": "r1",
+			"body": "Second occurrence on purpose? Reads like a typo.",
+			"bodyAt": "2026-10-11T09:30:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "xi0v3s",
+				"blockTag": "p",
+				"blockHash": "08aevja",
+				"blockText": "We measured the same phrase twice: the same phrase appears here again on purpose.",
+				"quote": {
+					"exact": "the same phrase",
+					"prefix": "measured the same phrase twice: ",
+					"suffix": " appears here again on purpose. "
+				},
+				"position": {
+					"start": 35,
+					"end": 50
+				},
+				"css": {
+					"path": "[id=\"scope\"] > p:nth-of-type(4)",
+					"start": {
+						"path": [
+							0
+						],
+						"offset": 35
+					},
+					"end": {
+						"path": [
+							0
+						],
+						"offset": 50
+					}
+				},
+				"headingPath": [
+					"Drag it to Done",
+					"Scope"
+				],
+				"sectionId": "scope"
+			}
+		},
+		{
+			"id": "c_mgl3x1c3_caro002b",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_caro5n8v1",
+			"createdAt": "2026-10-11T09:32:00.000Z",
+			"revision": "r1",
+			"body": "Move this into the footer.",
+			"bodyAt": "2026-10-11T09:32:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "upnonz",
+				"blockTag": "p",
+				"blockHash": "1y9277a",
+				"blockText": "Rollout starts with internal teams. This sentence will move to another paragraph later.",
+				"quote": {
+					"exact": "This sentence will move to another paragraph later.",
+					"prefix": "out starts with internal teams. ",
+					"suffix": " This paragraph will be deleted "
+				},
+				"position": {
+					"start": 36,
+					"end": 87
+				},
+				"css": {
+					"path": "[id=\"rollout\"] > p:nth-of-type(1)",
+					"start": {
+						"path": [
+							0
+						],
+						"offset": 36
+					},
+					"end": {
+						"path": [
+							0
+						],
+						"offset": 87
+					}
+				},
+				"headingPath": [
+					"Drag it to Done",
+					"Rollout"
+				],
+				"sectionId": "rollout"
+			}
+		},
+		{
+			"id": "c_mgl3x1c6_caro003c",
+			"parentId": "c_mgl3x1a0_ana0001a",
+			"kind": "text",
+			"authorId": "u_caro5n8v1",
+			"createdAt": "2026-10-11T09:35:00.000Z",
+			"revision": "r1",
+			"body": "Agreed, the 43 seconds are the hook.",
+			"bodyAt": "2026-10-11T09:35:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": null
+		}
+	],
+	"decisions": []
+}

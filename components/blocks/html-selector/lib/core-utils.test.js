@@ -5,6 +5,8 @@ const test = require("node:test");
 const {
 	buildAncestryChain,
 	buildSelectorPath,
+	getComposedTarget,
+	isReviewUiEvent,
 	resolveVarChain,
 	splitSharedAndLocalCss,
 	truncateOuterHtml,
@@ -138,4 +140,33 @@ test("truncateOuterHtml caps long snippets with an ASCII suffix", () => {
 
 	assert.equal(snippet.length, 24);
 	assert.ok(snippet.endsWith("..."));
+});
+
+function fakeNode(attributes = {}) {
+	return {
+		nodeType: 1,
+		hasAttribute(name) {
+			return Object.prototype.hasOwnProperty.call(attributes, name);
+		},
+	};
+}
+
+test("T-SEL1 getComposedTarget returns composedPath()[0] and falls back to target", () => {
+	const textarea = fakeNode();
+	const host = fakeNode({ "data-vpk-review-ui": "" });
+	const retargeted = { target: host, composedPath: () => [textarea, host] };
+	assert.equal(getComposedTarget(retargeted), textarea);
+	const textNode = { nodeType: 3 };
+	assert.equal(getComposedTarget({ target: host, composedPath: () => [textNode, host] }), host);
+	assert.equal(getComposedTarget({ target: host }), host);
+	assert.equal(getComposedTarget(null), null);
+});
+
+test("T-SEL2 isReviewUiEvent is true when the composed path holds the review UI host", () => {
+	const host = fakeNode({ "data-vpk-review-ui": "" });
+	const button = fakeNode();
+	assert.equal(isReviewUiEvent({ composedPath: () => [button, host, fakeNode()] }), true);
+	assert.equal(isReviewUiEvent({ composedPath: () => [fakeNode({ "data-vpk-review": "" })] }), false);
+	assert.equal(isReviewUiEvent({ target: host }), false);
+	assert.equal(isReviewUiEvent({ composedPath: () => [{ nodeType: 9 }] }), false);
 });

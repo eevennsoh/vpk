@@ -5,6 +5,7 @@ const {
 	cleanupListeningProcessesForWorktree,
 	findListeningPidsForWorktree,
 	findRovoSupervisorPidsForWorktree,
+	listAncestorPids,
 } = require("./worktree-listener-cleanup");
 
 test("findListeningPidsForWorktree only returns listeners whose cwd matches the target worktree", () => {
@@ -179,4 +180,42 @@ test("cleanupListeningProcessesForWorktree also stops orphaned rovo supervisors 
 		gracefulCount: 1,
 		forceKilledCount: 0,
 	});
+});
+
+test("cleanupListeningProcessesForWorktree never signals its own ancestors, such as an agent session listening in the worktree", async () => {
+	const worktreePath = "/tmp/repo-a";
+	const agentSessionPid = 66593;
+	const devServerPid = 540;
+	const killCalls = [];
+
+	const result = await cleanupListeningProcessesForWorktree({
+		worktreePath,
+		listListeningPidsFn: () => [agentSessionPid, devServerPid],
+		listProcessInfoFn: () => [],
+		getProcessCwdFn: () => worktreePath,
+		listAncestorPidsFn: () => [7001, agentSessionPid],
+		killFn: (pid, signal) => {
+			killCalls.push([pid, signal]);
+			if (signal === 0) {
+				throw new Error("gone");
+			}
+		},
+		sleepFn: async () => {},
+		logger: { log: () => {}, warn: () => {} },
+	});
+
+	assert.deepEqual(killCalls, [
+		[devServerPid, "SIGTERM"],
+		[devServerPid, 0],
+	]);
+	assert.deepEqual(result.matchedPids, [devServerPid]);
+});
+
+test("listAncestorPids walks the parent chain from the given pid and stops at launchd", () => {
+	const ancestors = listAncestorPids({
+		pid: 300,
+		execSyncFn: () => "  1     0\n 100     1\n 200   100\n 300   200\n 400   300\n",
+	});
+
+	assert.deepEqual(ancestors, [200, 100]);
 });

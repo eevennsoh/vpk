@@ -34,6 +34,14 @@ Forbidden in SVGs:
 - `var(--link*)`
 - gradients, filters, blur, glow, drop shadows
 
+Exceptions in the iso kit (`references/illustrations.md` § 4): its flat cast shadows are plain token-filled paths (one fill on
+`g[data-vpk-iso-shadows]`, `color-mix(in srgb, var(--ill-line) 12%, var(--paper))`, no filter, blur, gradient or opacity), so
+they are figure paint, not a drop-shadow effect; and the one accent pair (`--ill-accent`, `--ill-accent-ink`) marks only the
+focal or active part, its motion arrow, the focal leader dot and, during the one-shot entry, the layer that is dropping (a SMIL
+`class` animation on the scene group switches the accent faces on and hands them back to the neutral tone map; the rest pose
+carries no class). Neither is a `var(--accent*)` token. The iso kit draws no hatching, no entry arrow and no ghost outline, and
+no `opacity` attribute anywhere.
+
 ## Focal Rule
 
 One element may be the darkest-ink focal element:
@@ -64,6 +72,54 @@ classes, transforms, CSS custom properties such as `--vpk-draw-length`,
 are allowed when the SVG still renders complete without JavaScript and every
 paint value remains token-safe.
 
+## SMIL motion
+
+One contract for every SVG that uses `<animate>`, `<animateTransform>`,
+`<animateMotion>` or `<set>`: diagrams, charts, illustrations and figure-engine
+output alike.
+
+1. The rules apply to every SVG in a document, not only illustrations.
+2. Each SMIL element uses `begin="indefinite"`, or chains from one by syncbase
+   (`begin="a1.end+0.2s"`; a `;`-list of syncbase values is also gated).
+   Nothing autoplays on load.
+3. The authored offset goes in `data-vpk-begin="80ms"`. Without it, elements
+   are staggered by their index: 70 ms by default, overridden per figure with
+   `data-vpk-smil-stagger="<ms>"` on the root `<svg>` (`0` is allowed).
+4. Each root `<svg>` picks one mode:
+
+   | Mode | Authored as | Starter behaviour |
+   |---|---|---|
+   | offset (default; diagrams, charts, v1 illustrations) | `begin="indefinite"` plus `data-vpk-begin`, or the index stagger | starts on viewport entry; before its offset an element shows its base (final) pose |
+   | shared begin (iso kit) | `data-vpk-smil-stagger="0"`, the stagger baked into `keyTimes` | every animation begins together |
+   | armed (opt-in) | `data-vpk-smil-arm` on the root, with shared begin | on load it pauses at t = 0 so an off-screen figure holds keyframe 0; it plays on entry |
+
+   Use `data-vpk-smil-arm` only when every element shares one begin and the
+   stagger is baked into `keyTimes`. Arming an offset-mode figure would hold
+   only its offset-0 elements at their start pose.
+5. Base attributes are the final pose, so static, PDF and reduced-motion
+   renders show the assembled figure.
+6. Animate `transform` only with `<animateTransform type="translate|scale|rotate|skewX|skewY">`.
+   Chromium ignores `<animate attributeName="transform">`.
+7. No infinite repeats (`repeatCount`/`repeatDur="indefinite"`): WCAG 2.2.2
+   would need a pause control. Use a finite repeat.
+8. SMIL paint values (`fill`, `stroke`, `stop-color`, `color`, `flood-color`,
+   `lighting-color` animations: every `values` item and `from`/`to`/`by`) use
+   the grayscale figure tokens.
+9. One shared `data-vpk-smil-starter` block (`<!-- vpk-smil-starter:start -->`)
+   starts each figure once on viewport entry, does nothing under
+   `prefers-reduced-motion: reduce`, lands every figure when reduced motion
+   turns on, and lands on print. No other script starts, arms or strips SMIL.
+   Runtimes control figures only through `window.vpkSmil`
+   (`version`, `figures()`, `start(svg?)`, `land(svg?)`, `hold(t, svg?)`,
+   `duration(svg?)`), read lazily at call time because block order is not
+   guaranteed.
+10. `build.mjs --inject-runtime <file>` (artifacts) and `--refresh-library`
+    (skill assets) normalise autoplay SMIL to the gated form and insert the
+    starter. `check-html.mjs` enforces the static rules; `--verify` and
+    `scripts/runtime/smil-starter.mjs --sweep` check behaviour in Chromium.
+11. Prefer the `.vpk-chart-*` CSS utilities (`references/charts.md`) for
+    single-step chart entrances; use SMIL for choreography they cannot express.
+
 ## Line Grammar
 
 - SVG root: `fill="none"`
@@ -88,6 +144,23 @@ Dark mode works only when figures route all paint through tokens. Raw grayscale
 is not an exception. The lint rejects raw `#000000`, `#333333`, `#636363`,
 `#bababa`, `#d3d3d3`, `#c9c9c9`, `#eaeaea`, `#f6f6f6`, and every other fixed
 color inside generated SVGs.
+
+## Patterns and hatching
+
+`fill`/`stroke` may reference `url(#id)` only when `id` is a `<pattern>` in the same SVG
+(check-html: "fill references url(#x) that is not a local <pattern>"). Prefix ids `vpk-…` so
+`#id` never reads as a hex colour, bake the 45° diagonals into the tile, and never use
+`patternTransform`; the print CSS neutralises transforms, so a rotated hatch prints vertical. This applies to hand-drawn
+figures (the v1 `hatched-cross-section` exemplar strokes its hatch directly). The iso kit no longer hatches: its side faces are
+plain flat faces, a brief part with `cut` fails validation, and the audit (A15) rejects a stale `cut` face or `-hatch` pattern.
+
+## Print
+
+The print stylesheet sets `transform: none` and `opacity: 1` on everything, so static figures must
+not rely on `transform` attributes, rotated text or `opacity < 1`: the base pose is what prints.
+Use `writing-mode` for vertical labels. Anatomy heroes are class-painted through `--ill-*` and
+`--focal` tokens; their rest pose carries no `transform` or `opacity` attribute (live code moves
+parts by delta from rest), and engraved face text is hidden in print.
 
 ## Status Quarantine
 

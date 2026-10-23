@@ -1,0 +1,47 @@
+{
+	"type": "x-thread",
+	"lang": "en",
+	"brief": {
+		"reader_job": {
+			"quick_read": "Check that hostile post text survives the islands verbatim.",
+			"deep_audit": "Round-trip every hostile string through serializeJsonIsland and the page checks."
+		},
+		"template": "x-thread.html",
+		"formats": [
+			"html"
+		],
+		"acceptance_checks": [
+			"x-thread.mjs check"
+		],
+		"figure_engine": "none",
+		"review": {
+			"runtime": false
+		}
+	},
+	"content": {
+		"title": "Why rgb(0,0,0) matters #cafe {{x}}",
+		"author": {
+			"name": "Hostile {{name}} #dead",
+			"handle": "@hostile_1"
+		},
+		"posts": [
+			{
+				"id": "p1",
+				"text": "Ship </script><svg onload=x> today #dead #2026 {{x}} {{{y}}}"
+			},
+			{
+				"id": "p2",
+				"text": "Raised $1 billion $& $` $' with rgb(1,2,3) and hsl(1 2 3) colours"
+			},
+			{
+				"id": "p3",
+				"text": "Line\u2028separator and paragraph\u2029separator, é and 👍🏽 and <!-- note --> and &amp;"
+			},
+			{
+				"id": "p4",
+				"text": "Hashtags #cafe #face #bad #fade #c0ffee @at (paren) 'quote' \"double\"",
+				"note": "Note with {{braces}} and #abc"
+			}
+		]
+	}
+}

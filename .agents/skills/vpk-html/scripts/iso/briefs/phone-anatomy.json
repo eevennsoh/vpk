@@ -1,0 +1,224 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "phone-anatomy",
+	"figId": "FIG_001",
+	"title": "Anatomy of a phone",
+	"label": "Isometric phone pulled apart into stacked layers: back glass, aluminium frame, logic board, battery and camera module, display panel and cover glass. The battery is accented.",
+	"caption": "The battery takes the largest share of the frame; the board and camera fit into the space it leaves.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "back",
+			"kind": "slab",
+			"at": [
+				90,
+				0,
+				0
+			],
+			"size": [
+				70,
+				140,
+				3
+			],
+			"r": 8,
+			"label": "Back glass"
+		},
+		{
+			"id": "frame",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				10
+			],
+			"size": [
+				70,
+				140,
+				6
+			],
+			"r": 8,
+			"label": "Frame"
+		},
+		{
+			"id": "board",
+			"kind": "slab",
+			"at": [
+				28,
+				8,
+				14
+			],
+			"size": [
+				34,
+				40,
+				2
+			],
+			"marks": [
+				[
+					[
+						4,
+						10
+					],
+					[
+						26,
+						10
+					]
+				],
+				[
+					[
+						4,
+						18
+					],
+					[
+						18,
+						18
+					]
+				]
+			],
+			"label": "Logic board"
+		},
+		{
+			"id": "battery",
+			"kind": "box",
+			"at": [
+				8,
+				56,
+				14
+			],
+			"size": [
+				54,
+				76,
+				4
+			],
+			"r": 3,
+			"label": "Battery"
+		},
+		{
+			"id": "camera",
+			"kind": "cylinder",
+			"at": [
+				14,
+				16,
+				14
+			],
+			"size": [
+				6,
+				6,
+				4
+			],
+			"label": "Camera module"
+		},
+		{
+			"id": "display",
+			"kind": "slab",
+			"at": [
+				-90,
+				2,
+				20
+			],
+			"size": [
+				66,
+				136,
+				2
+			],
+			"r": 7,
+			"label": "Display panel"
+		},
+		{
+			"id": "glass",
+			"kind": "plate",
+			"at": [
+				-180,
+				0,
+				30
+			],
+			"size": [
+				70,
+				140,
+				1
+			],
+			"r": 8,
+			"label": "Cover glass"
+		}
+	],
+	"focal": "battery",
+	"labels": [
+		{
+			"text": "Cover glass",
+			"target": "glass",
+			"side": "left"
+		},
+		{
+			"text": "Display panel",
+			"target": "display",
+			"side": "left"
+		},
+		{
+			"text": "Camera module",
+			"target": "camera",
+			"side": "right"
+		},
+		{
+			"text": "Logic board",
+			"target": "board",
+			"side": "right"
+		},
+		{
+			"text": "Battery",
+			"target": "battery",
+			"side": "left",
+			"anchor": [
+				10,
+				110,
+				18
+			]
+		},
+		{
+			"text": "Frame",
+			"target": "frame",
+			"side": "left",
+			"anchor": [
+				0,
+				140,
+				13
+			]
+		},
+		{
+			"text": "Back glass",
+			"target": "back",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"back"
+			],
+			[
+				"frame"
+			],
+			[
+				"board",
+				"battery",
+				"camera"
+			],
+			[
+				"display"
+			],
+			[
+				"glass"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"rest": "Phone at rest",
+		"lift": 10
+	},
+	"meta": {
+		"margin": "[ PHONE ANATOMY ]",
+		"corner": "VPK-HTML"
+	}
+}

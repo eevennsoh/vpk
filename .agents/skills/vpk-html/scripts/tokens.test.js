@@ -7,6 +7,7 @@ const test = require("node:test");
 
 const TOKENS = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "references", "tokens.json"), "utf8"));
 const MIN_TEXT_CONTRAST = 4.5;
+const MIN_MUTED_TEXT_CONTRAST = 4.6;
 
 function parseColor(value) {
 	const normalized = value.trim();
@@ -108,6 +109,34 @@ test("functional tokens meet contrast guarantees in both themes", () => {
 		assertContrast(`${themeName}.diffDelText on diffDelTint`, theme.diffDelText, composite(theme.diffDelTint, theme.paper));
 		assertContrast(`${themeName}.bodyText on paper`, theme.bodyText, theme.paper);
 		assertContrast(`${themeName}.bodyText on surfaceRaised`, theme.bodyText, theme.surfaceRaised);
+		// B2 decision 16: figcaptions, anatomy hero text and iso captions are body-size muted text. The light
+		// value was #706e6e (4.44:1 on paper, below 4.5); it must clear 4.6 so a rounding step cannot slip under AA.
+		assertContrast(`${themeName}.mutedText on paper`, theme.mutedText, theme.paper, MIN_MUTED_TEXT_CONTRAST);
+		assertContrast(`${themeName}.mutedText on surfaceRaised`, theme.mutedText, theme.surfaceRaised, MIN_MUTED_TEXT_CONTRAST);
 		assertDistinct(themeName, ["accentSaffron", "accentGreen", "collectionSoftware", "ruleStrong"]);
 	}
+});
+
+test("check-html still accepts the pre-decision-16 light --muted-text in documents built earlier (B2 decision 16)", async () => {
+	const { collectColorTokenIssues } = await import(require("node:url").pathToFileURL(path.join(__dirname, "check-html.mjs")).href);
+	const block = value => `<style>\n:root {\n\t--muted-text: ${value};\n}\n</style>`;
+	assert.deepEqual(collectColorTokenIssues(block("#706e6e")), [], "an inline token block from before the change keeps validating");
+	assert.deepEqual(collectColorTokenIssues(block(TOKENS.light.mutedText)), [], "the current value validates");
+	assert.equal(collectColorTokenIssues(block("#706e6f")).length, 1, "any other literal is still a raw colour");
+});
+
+// Redline 2c: every colour role comes from the VPK app's ADS tokens (scripts/ads-tokens.mjs), with a white page in light.
+test("tokens.json is the ADS map resolved from @atlaskit/tokens, white paper in light, and the iso accent matches it", async () => {
+	const { ADS_TOKEN_MAP, buildTokensJson, loadAdsThemes } = await import(require("node:url").pathToFileURL(path.join(__dirname, "ads-tokens.mjs")).href);
+	const { ACCENT } = await import(require("node:url").pathToFileURL(path.join(__dirname, "iso", "accent.mjs")).href);
+	assert.equal(TOKENS.light.paper, "#ffffff", "light paper is ADS elevation.surface: pure white");
+	assert.equal(ADS_TOKEN_MAP.paper, "elevation.surface");
+	for (const theme of ["light", "dark"]) {
+		assert.equal(ACCENT[theme].accent, TOKENS[theme].illAccent, `${theme} --ill-accent`);
+		assert.equal(ACCENT[theme].ink, TOKENS[theme].illAccentInk, `${theme} --ill-accent-ink`);
+		assertContrast(`${theme} accent ink on accent`, ACCENT[theme].ink, ACCENT[theme].accent);
+	}
+	const { resolveRepoRoot } = await import(require("node:url").pathToFileURL(path.join(__dirname, "repo-root.mjs")).href);
+	if (!resolveRepoRoot()) return; // a standalone skill install has no @atlaskit/tokens; tokens.json stays as committed
+	assert.deepEqual(await buildTokensJson(await loadAdsThemes()), TOKENS, "run: node scripts/ads-tokens.mjs");
 });

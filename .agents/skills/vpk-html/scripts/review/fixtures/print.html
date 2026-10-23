@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Print fixture</title>
+	<style>
+		@font-face { font-family: "VPK Fixture"; src: url(data:font/woff2;base64,AAAA) format("woff2"); }
+		:root { color-scheme: light dark; --paper: Canvas; --ink: CanvasText; }
+		[data-theme="dark"] { color-scheme: dark; }
+		body { font-family: system-ui, sans-serif; margin: 0; background: var(--paper); color: var(--ink); }
+		main { max-width: 64ch; margin: 0 auto; padding: 32px; }
+	</style>
+</head>
+<body>
+<main>
+	<h1>Print fixture</h1>
+	<p>This page has no decisions, video or canvas, so its print output must be identical with and without the review runtime.</p>
+	<h2>Section</h2>
+	<p>A paragraph that reviewers comment on. The highlight must never reach the printed page.</p>
+	<ul>
+		<li>First item</li>
+		<li>Second item</li>
+	</ul>
+</main>
+</body>
+</html>

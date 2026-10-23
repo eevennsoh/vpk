@@ -12,7 +12,7 @@ this profile while filling the template and bakes values into the output.
 - Primary: `~/.config/vpk-html/brand.md`
 - Fallback: `~/.vpk-html/brand.md`
 
-If neither exists, render with the built-in identity: warm paper, ink links,
+If neither exists, render with the built-in identity: a white ADS surface, ink links,
 grayscale ink chrome, grayscale figures, and no logo.
 
 ## Format

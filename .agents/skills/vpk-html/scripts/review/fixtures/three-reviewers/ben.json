@@ -1,0 +1,120 @@
+{
+	"schema": "vpk-review/1",
+	"doc": {
+		"id": "67mydhslnha8",
+		"revision": "r1",
+		"title": "Drag it to Done"
+	},
+	"exportedAt": "2026-10-11T10:05:00.000Z",
+	"exportedBy": "u_ben7p3x2w",
+	"reviewers": [
+		{
+			"id": "u_ben7p3x2w",
+			"name": "Ben Okafor",
+			"initials": "BO",
+			"tone": 1,
+			"updatedAt": "2026-10-11T09:00:00.000Z"
+		}
+	],
+	"comments": [
+		{
+			"id": "c_mgl3x1b0_ben0001a",
+			"parentId": null,
+			"kind": "block",
+			"authorId": "u_ben7p3x2w",
+			"createdAt": "2026-10-11T09:20:00.000Z",
+			"revision": "r1",
+			"body": "The diagram needs a Doing column.",
+			"bodyAt": "2026-10-11T09:20:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "bumw7t",
+				"blockTag": "svg",
+				"blockHash": "0y9odg3",
+				"blockText": "Board columns diagram",
+				"headingPath": [
+					"Drag it to Done",
+					"Rollout"
+				],
+				"sectionId": "rollout"
+			}
+		},
+		{
+			"id": "c_mgl3x1b4_ben0002b",
+			"parentId": null,
+			"kind": "doc",
+			"authorId": "u_ben7p3x2w",
+			"createdAt": "2026-10-11T09:22:00.000Z",
+			"revision": "r1",
+			"body": "Overall this reads well; tighten the rollout section.",
+			"bodyAt": "2026-10-11T09:22:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": null
+		},
+		{
+			"id": "c_mgl3x1b8_ben0003c",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_ben7p3x2w",
+			"createdAt": "2026-10-11T09:25:00.000Z",
+			"revision": "r1",
+			"body": "Is this paragraph still needed?",
+			"bodyAt": "2026-10-11T09:25:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "i1qit0",
+				"blockTag": "p",
+				"blockHash": "1tmsefx",
+				"blockText": "This paragraph will be deleted entirely in the edited version of the document.",
+				"quote": {
+					"exact": "deleted entirely in the edited version",
+					"prefix": "h later. This paragraph will be ",
+					"suffix": " of the document. Owner Dana Lee"
+				},
+				"position": {
+					"start": 23,
+					"end": 61
+				},
+				"css": {
+					"path": "[id=\"rollout\"] > p:nth-of-type(2)",
+					"start": {
+						"path": [
+							0
+						],
+						"offset": 23
+					},
+					"end": {
+						"path": [
+							0
+						],
+						"offset": 61
+					}
+				},
+				"headingPath": [
+					"Drag it to Done",
+					"Rollout"
+				],
+				"sectionId": "rollout"
+			}
+		}
+	],
+	"decisions": [
+		{
+			"key": "retry",
+			"reviewerId": "u_ben7p3x2w",
+			"question": "Should a failed send retry on its own?",
+			"value": [
+				"3"
+			],
+			"defaultValue": [
+				"3"
+			],
+			"changed": false,
+			"seen": false,
+			"updatedAt": "2026-10-11T09:20:00.000Z"
+		}
+	]
+}

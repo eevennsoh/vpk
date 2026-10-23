@@ -1,0 +1,130 @@
+{
+	"schema": "vpk-review/1",
+	"doc": {
+		"id": "67mydhslnha8",
+		"revision": "r1",
+		"title": "Drag it to Done"
+	},
+	"exportedAt": "2026-10-11T10:00:00.000Z",
+	"exportedBy": "u_ana4k2m9q",
+	"reviewers": [
+		{
+			"id": "u_ana4k2m9q",
+			"name": "Ana Ortiz",
+			"initials": "AO",
+			"tone": 0,
+			"updatedAt": "2026-10-11T09:00:00.000Z"
+		}
+	],
+	"comments": [
+		{
+			"id": "c_mgl3x1a0_ana0001a",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_ana4k2m9q",
+			"createdAt": "2026-10-11T09:10:00.000Z",
+			"revision": "r1",
+			"body": "Lead with the 43 seconds, not \"Everything\".",
+			"bodyAt": "2026-10-11T09:10:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "x0qaqe",
+				"blockTag": "p",
+				"blockHash": "1nsjy9w",
+				"blockText": "Everything below is about this film. The board shows how a card moves from To Do to Done in forty-three seconds.",
+				"quote": {
+					"exact": "Everything below is about this film.",
+					"prefix": "Overview Drag it to Done ",
+					"suffix": " The board shows how a card move"
+				},
+				"position": {
+					"start": 0,
+					"end": 36
+				},
+				"css": {
+					"path": "html > body > main > header > p:nth-of-type(2)",
+					"start": {
+						"path": [
+							0
+						],
+						"offset": 0
+					},
+					"end": {
+						"path": [
+							0
+						],
+						"offset": 36
+					}
+				},
+				"headingPath": [
+					"Drag it to Done"
+				]
+			}
+		},
+		{
+			"id": "c_mgl3x1a5_ana0002b",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_ana4k2m9q",
+			"createdAt": "2026-10-11T09:15:00.000Z",
+			"revision": "r1",
+			"body": "Should this be configurable per team?",
+			"bodyAt": "2026-10-11T09:15:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "zutpyd",
+				"blockTag": "p",
+				"blockHash": "0unz0eo",
+				"blockText": "A failed send retries three times before giving up, with five minutes between attempts.",
+				"quote": {
+					"exact": "three times",
+					"prefix": "last move A failed send retries ",
+					"suffix": " before giving up, with five min"
+				},
+				"position": {
+					"start": 22,
+					"end": 33
+				},
+				"css": {
+					"path": "[id=\"scope\"] > p:nth-of-type(2)",
+					"start": {
+						"path": [
+							0
+						],
+						"offset": 22
+					},
+					"end": {
+						"path": [
+							0
+						],
+						"offset": 33
+					}
+				},
+				"headingPath": [
+					"Drag it to Done",
+					"Scope"
+				],
+				"sectionId": "scope"
+			}
+		}
+	],
+	"decisions": [
+		{
+			"key": "retry",
+			"reviewerId": "u_ana4k2m9q",
+			"question": "Should a failed send retry on its own?",
+			"value": [
+				"no"
+			],
+			"defaultValue": [
+				"3"
+			],
+			"changed": true,
+			"seen": true,
+			"seenAt": "2026-10-11T09:12:00.000Z",
+			"updatedAt": "2026-10-11T09:13:00.000Z"
+		}
+	]
+}

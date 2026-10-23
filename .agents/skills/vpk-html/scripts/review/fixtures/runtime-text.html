@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Script-rewritten heading</title>
+	<style>
+		@font-face { font-family: "VPK Fixture"; src: url(data:font/woff2;base64,AAAA) format("woff2"); }
+		:root { color-scheme: light dark; }
+		[data-theme="dark"] { color-scheme: dark; }
+		body { font-family: "VPK Fixture", system-ui, sans-serif; margin: 0; }
+	</style>
+</head>
+<body>
+<main>
+	<section>
+		<h2 id="stage-title">Static stage title</h2>
+		<p>The paragraph under the stage title never changes.</p>
+	</section>
+</main>
+<script>document.getElementById("stage-title").textContent = "Live stage title";</script>
+</body>
+</html>

@@ -132,12 +132,12 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 122; runtim
 | `GET` | `/api/status/rovo` | no | `backend/routes/status.js:50` |
 | `POST` | `/api/studio/agent-data-flow` | no | `backend/routes/ai-utilities.js:144` |
 | `POST` | `/api/ticket-classify` | no | `backend/routes/demos.js:69` |
-| `GET` | `/api/vpk-html` | no | `backend/routes/vpk-html.js:417` |
-| `GET` | `/api/vpk-html/*assetPath` | no | `backend/routes/vpk-html.js:418` |
-| `POST` | `/api/vpk-html/apply-tokens` | no | `backend/routes/vpk-html.js:310` |
-| `GET` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:335` |
-| `PUT` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:356` |
-| `POST` | `/api/vpk-html/publish-gist` | no | `backend/routes/vpk-html.js:383` |
+| `GET` | `/api/vpk-html` | no | `backend/routes/vpk-html.js:486` |
+| `GET` | `/api/vpk-html/*assetPath` | no | `backend/routes/vpk-html.js:487` |
+| `POST` | `/api/vpk-html/apply-tokens` | no | `backend/routes/vpk-html.js:379` |
+| `GET` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:404` |
+| `PUT` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:425` |
+| `POST` | `/api/vpk-html/publish-gist` | no | `backend/routes/vpk-html.js:452` |
 | `GET` | `/healthcheck` | no | `backend/routes/status.js:167` |
 
 ### Next API Proxy Routes

@@ -1,0 +1,419 @@
+/* vpk-html x-thread template. Grayscale chrome on the shared tokens: approved and posted use
+   tone, weight and a text label, never --success. Only --warning and --danger keep their tints. */
+/* --muted-text alone is 4.44:1 on --paper in light; a token-only mix toward --ink clears 4.5:1 in both themes. */
+body[data-vpk-x-thread] {
+	--xt-muted: color-mix(in srgb, var(--muted-text) 82%, var(--ink));
+	background: var(--paper-background);
+	color: var(--body-text);
+	box-sizing: border-box;
+	font-family: var(--font-body);
+	line-height: 1.5;
+	margin: 0;
+	max-width: none;
+	padding: 0;
+	width: auto;
+}
+
+body[data-vpk-x-thread] *,
+body[data-vpk-x-thread] *::before,
+body[data-vpk-x-thread] *::after { box-sizing: border-box; }
+
+/* The shared button and .btn rules set display, which would beat the hidden attribute. */
+body[data-vpk-x-thread] [hidden] { display: none !important; }
+
+.xt-page {
+	margin: 0 auto;
+	max-width: 72rem;
+	padding: clamp(24px, 4vw, 48px);
+}
+
+.xt-masthead {
+	display: grid;
+	gap: 10px;
+	margin-bottom: 32px;
+	max-width: 46rem;
+}
+
+.xt-masthead h1 {
+	color: var(--headline);
+	font-family: var(--font-display);
+	font-size: clamp(28px, 4vw, 40px);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 1.15;
+	margin: 0;
+}
+
+.xt-byline,
+.xt-status-line,
+.xt-hint,
+.xt-footer {
+	color: var(--xt-muted);
+	font-size: 14px;
+	margin: 0;
+}
+
+.xt-status-line { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.xt-status-line p,
+.xt-banner p,
+#xt-queue-body p { margin: 0; }
+
+#xt-summary,
+.xt-count,
+.xt-post__no,
+.xt-chip,
+.xt-queue__row-no {
+	font-family: var(--font-mono);
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+.xt-banner,
+.xt-copy-box,
+.xt-noscript {
+	background: var(--surface-raised);
+	border: 1px solid var(--rule-strong);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	padding: 12px 14px;
+}
+
+.xt-banner[hidden],
+.xt-copy-box[hidden] { display: none; }
+/* A long rebuilt link in a banner message must wrap, or it widens the page at 390 px (B3 decision 29b). */
+.xt-banner { overflow-wrap: anywhere; }
+.xt-banner[data-tone="warning"] { background: var(--warning-tint); border-color: var(--warning); }
+/* --xt-muted on the warning tint is 4.31:1 in light: the drift choices sit on paper, in ink. */
+.xt-banner .xt-btn-sm { background: var(--paper); color: var(--ink); }
+
+.xt-banner__actions,
+.xt-composer__actions,
+.xt-composer__options,
+.xt-post__actions,
+.xt-toolbar,
+.xt-media__tools,
+.xt-queue__actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.xt-layout {
+	align-items: start;
+	display: grid;
+	gap: 48px;
+	grid-template-columns: minmax(0, 40rem) minmax(16rem, 20rem);
+}
+
+.xt-column { display: grid; gap: 24px; min-width: 0; }
+
+.xt-thread h2,
+.xt-queue h2 {
+	color: var(--headline);
+	font-family: var(--font-display);
+	font-size: 20px;
+	font-weight: 500;
+	margin: 0 0 12px;
+}
+
+.xt-toolbar { margin-bottom: 20px; }
+.xt-toolbar svg,
+.xt-btn-sm svg,
+.xt-queue svg { flex: none; max-width: none; }
+.xt-toolbar .btn,
+.xt-btn-sm,
+.xt-queue .btn { gap: 6px; }
+
+.xt-btn-sm,
+button.xt-btn-sm,
+a.xt-btn-sm,
+label.xt-btn-sm {
+	align-items: center;
+	border: 1px solid var(--pill-border);
+	border-radius: 24px;
+	color: var(--xt-muted);
+	cursor: pointer;
+	display: inline-flex;
+	font-family: var(--font-body);
+	font-size: 12px;
+	font-weight: 500;
+	height: 28px;
+	padding: 0 10px;
+	text-decoration-line: none;
+}
+
+.xt-btn-sm.xt-icon-btn { justify-content: center; padding: 0; width: 28px; }
+.xt-btn-sm[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--inverse-text); }
+.xt-btn-sm[aria-disabled="true"],
+.btn[aria-disabled="true"] { cursor: not-allowed; opacity: 0.5; }
+.xt-btn-sm:hover:not([aria-disabled="true"], [aria-pressed="true"]) { border-color: var(--rule-strong); color: var(--ink); }
+
+.xt-label { color: var(--ink); font-size: 13px; font-weight: 500; }
+.xt-masthead .eyebrow { color: var(--xt-muted); }
+.xt-page .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--inverse-text); }
+.xt-page .btn.primary:hover { background: color-mix(in srgb, var(--ink) 86%, var(--muted-text)); border-color: color-mix(in srgb, var(--ink) 86%, var(--muted-text)); }
+.xt-page .btn:not(.primary) { color: var(--xt-muted); }
+
+.xt-check {
+	align-items: center;
+	color: var(--xt-muted);
+	display: inline-flex;
+	font-size: 13px;
+	gap: 6px;
+}
+
+/* Grayscale only (locked decision 2): the native checkbox would otherwise draw the browser's blue accent. */
+.xt-check input { accent-color: var(--ink); }
+
+.xt-field {
+	background: var(--paper);
+	border: 1px solid var(--rule-strong);
+	border-radius: 6px;
+	color: var(--ink);
+	font: 400 15px/1.5 var(--font-body);
+	padding: 8px 10px;
+	width: 100%;
+}
+
+select.xt-field { width: auto; }
+
+.xt-field:focus-visible,
+.xt-check input:focus-visible,
+.xt-composer summary:focus-visible,
+a.xt-btn-sm:focus-visible,
+label.xt-btn-sm:focus-within,
+label.btn:focus-within,
+.xt-post__editor:focus-visible {
+	box-shadow: 0 0 0 2px var(--focus-ring);
+	outline: 0;
+}
+
+.xt-composer {
+	background: var(--surface-raised);
+	border: 1px solid var(--rule);
+	border-radius: 8px;
+	padding: 12px 16px;
+}
+
+.xt-composer summary { color: var(--ink); cursor: pointer; font-weight: 500; }
+.xt-composer__body { display: grid; gap: 10px; margin-top: 12px; }
+.xt-composer__preview { display: grid; gap: 4px; }
+.xt-composer__preview p { margin: 0; }
+.xt-composer__preview ol { display: grid; gap: 4px; margin: 2px 0 0; padding-left: 20px; }
+
+.xt-posts,
+.xt-queue__list { display: grid; list-style: none; margin: 0; padding: 0; }
+
+.xt-post {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: 40px minmax(0, 1fr);
+	padding-bottom: 28px;
+	position: relative;
+}
+
+/* The thread rail is a pseudo-element hairline, not a side border. */
+.xt-post::before {
+	background: var(--rule-strong);
+	bottom: 0;
+	content: "";
+	left: 19.5px;
+	position: absolute;
+	top: 40px;
+	width: 1px;
+}
+
+.xt-post:last-child::before { display: none; }
+.xt-post[data-drop="before"] { box-shadow: 0 -2px 0 var(--ink); }
+.xt-post[data-drop="after"] { box-shadow: 0 2px 0 var(--ink); }
+.xt-post[data-dragging] { opacity: 0.55; }
+
+.xt-post__no {
+	align-items: center;
+	background: var(--paper);
+	border: 1px solid var(--rule-strong);
+	border-radius: 50%;
+	color: var(--ink);
+	display: flex;
+	height: 40px;
+	justify-content: center;
+	width: 40px;
+}
+
+.xt-post__body { display: grid; gap: 10px; min-width: 0; }
+.xt-post__head { align-items: baseline; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.xt-post__head h3 { color: var(--headline); font-size: 14px; font-weight: 500; margin: 0; }
+.xt-author { color: var(--xt-muted); font-size: 13px; }
+.xt-handle { color: var(--xt-muted); }
+
+.xt-chip {
+	align-items: center;
+	border: 1px solid var(--rule);
+	border-radius: 24px;
+	color: var(--xt-muted);
+	display: inline-flex;
+	gap: 4px;
+	margin-left: auto;
+	padding: 2px 8px;
+}
+
+.xt-chip__icon { display: none; }
+.xt-chip[data-status="approved"] { border-color: var(--ink); color: var(--ink); font-weight: 500; }
+.xt-chip[data-status="approved"] .xt-chip__icon { display: inline-flex; }
+.xt-chip[data-status="posted"] { background: var(--ink); border-color: var(--ink); color: var(--inverse-text); }
+.xt-chip[data-status="skipped"] { border-style: dashed; }
+/* A skipped card keeps its controls at full contrast (they stay active, WCAG 1.4.3); only the
+   post's own words and images step back. */
+.xt-post[data-status="skipped"] :is(.xt-post__title, .xt-post__text) { color: var(--xt-muted); }
+.xt-post[data-status="skipped"] .xt-media__preview { opacity: 0.55; }
+
+.xt-post__text,
+.xt-post__editor {
+	color: var(--ink);
+	font: 400 17px/1.5 var(--font-body);
+	margin: 0;
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+}
+
+.xt-post__text:empty::before { color: var(--xt-muted); content: "Empty post: edit it to add text"; }
+.xt-post__editor { field-sizing: content; min-height: 7.5em; resize: vertical; }
+.xt-url,
+.xt-tag { font-weight: 500; }
+.xt-url { text-decoration-color: var(--rule-strong); text-decoration-line: underline; }
+.xt-overflow { background: var(--danger-tint); color: var(--ink); }
+.xt-post__note,
+.xt-post__posted { color: var(--xt-muted); font-size: 13px; margin: 0; overflow-wrap: anywhere; }
+
+.xt-media { display: grid; gap: 10px; }
+.xt-media[data-dropping] { box-shadow: 0 0 0 2px var(--focus-ring); }
+
+.xt-media__item,
+.xt-media__slot {
+	border: 1px solid var(--rule);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	padding: 10px;
+}
+
+.xt-media__slot { border-style: dashed; }
+.xt-media__planned { color: var(--xt-muted); font-family: var(--font-mono); font-size: 12px; margin: 0; }
+
+.xt-media__preview {
+	border-radius: 4px;
+	display: block;
+	max-height: 180px;
+	max-width: 100%;
+	object-fit: contain;
+}
+
+.xt-count { color: var(--xt-muted); margin: 0; }
+.xt-count[data-state="warn"] { color: var(--warning); }
+
+.xt-count[data-state="over"] {
+	background: var(--danger-tint);
+	border-radius: 4px;
+	color: var(--danger);
+	justify-self: start;
+	padding: 0 6px;
+}
+
+/* A refusal is shown where it was asked for (.xt-error: post notice, thread notice, composer preview,
+   media box), never only spoken by the hidden #xt-live (WCAG 3.3.1). */
+.xt-post__reason,
+.xt-queue__error,
+.xt-error { color: var(--danger); font-size: 13px; margin: 0; }
+.xt-notice { margin: -8px 0 16px; }
+.xt-media__note { display: grid; gap: 4px; }
+
+.xt-rail { position: sticky; top: 24px; }
+/* A control the runtime focuses (queue hand-offs, a moved post, Undo, the copy box) scrolls clear
+   of the page's top and bottom fades. */
+#xt-main :is(a, button, input, textarea, h2, .xt-copy-box) { scroll-margin-block: 80px; }
+
+/* The stuck panel never runs past the fold: once taller than the viewport it scrolls inside its
+   border, and it ends above the page's 72px bottom fade (24px top offset + 72px). */
+.xt-queue {
+	background: var(--surface-raised);
+	border: 1px solid var(--rule);
+	border-radius: 8px;
+	max-height: calc(100dvh - 96px);
+	overflow-y: auto;
+	padding: 16px;
+}
+
+#xt-queue-body { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+/* Links inside queue sentences carry an underline, not only colour (link-in-text-block). */
+#xt-queue-body a:not(.btn, .xt-btn-sm) { overflow-wrap: anywhere; text-decoration-color: var(--rule-strong); text-decoration-line: underline; }
+.xt-queue__card > .btn { justify-self: start; max-width: 100%; }
+.xt-queue__list { gap: 4px; }
+.xt-queue__row { color: var(--xt-muted); display: flex; font-size: 13px; gap: 8px; }
+.xt-queue__row[data-state="next"] { color: var(--ink); font-weight: 500; }
+.xt-queue__card { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+/* The next action comes first; the progress list follows it, so a long thread never pushes the card down. */
+.xt-queue__progress { border-top: 1px solid var(--rule); padding-top: 14px; }
+
+.xt-queue__toast {
+	background: var(--accent-soft);
+	border-radius: 6px;
+	display: grid;
+	gap: 6px;
+	padding: 8px 10px;
+}
+
+.xt-queue .btn.primary { justify-self: start; }
+
+.xt-footer {
+	margin: 48px auto 0;
+	max-width: 72rem;
+	padding: 0 clamp(24px, 4vw, 48px) 40px;
+}
+
+.xt-sr-only {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+@media (max-width: 1079px) {
+	.xt-layout { grid-template-columns: minmax(0, 1fr); }
+	.xt-rail { position: static; }
+	.xt-queue { max-height: none; overflow-y: visible; }
+}
+
+@media (max-width: 480px) {
+	.xt-post { gap: 10px; grid-template-columns: 28px minmax(0, 1fr); }
+	.xt-post__no { height: 28px; width: 28px; }
+	.xt-post::before { left: 13.5px; top: 28px; }
+}
+
+@media print {
+	.xt-rail,
+	.xt-toolbar,
+	.xt-composer,
+	.xt-post__actions,
+	.xt-post__reason,
+	.xt-post__notice,
+	.xt-notice,
+	.xt-media__note,
+	.xt-media__tools,
+	.xt-media input,
+	.xt-media label,
+	.xt-post__editor,
+	.xt-banner,
+	.xt-copy-box,
+	.xt-status-line { display: none !important; }
+
+	body[data-vpk-x-thread] .xt-post__text[hidden] { display: block !important; }
+	.xt-layout { display: block; }
+	.xt-post { break-inside: avoid; }
+	.xt-post[data-status="skipped"] :is(.xt-post__title, .xt-post__text) { color: var(--ink); }
+	.xt-post[data-status="skipped"] .xt-media__preview { opacity: 1; }
+}

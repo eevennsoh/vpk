@@ -1,4 +1,5 @@
 import { inlineIcon } from "./icons.mjs";
+import { insertBeforeBodyEnd, replaceMarkedBlock } from "./runtime/blocks.mjs";
 
 // Inline @atlaskit contrast/theme glyph baked in at build time (pure HTML — no React import).
 const ICON_THEME = inlineIcon("theme");
@@ -8,16 +9,6 @@ const INIT_START = "<!-- vpk-theme-init:start -->";
 const INIT_END = "<!-- vpk-theme-init:end -->";
 const RUNTIME_START = "<!-- vpk-theme-runtime:start -->";
 const RUNTIME_END = "<!-- vpk-theme-runtime:end -->";
-
-function escapeRegExp(value) {
-	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function replaceMarkedBlock(html, start, end, block) {
-	if (!html.includes(start) || !html.includes(end)) return null;
-	const pattern = new RegExp(`${escapeRegExp(start)}[\\s\\S]*?${escapeRegExp(end)}`, "i");
-	return html.replace(pattern, block);
-}
 
 export function buildThemeInitScript() {
 	return `(() => {
@@ -147,7 +138,7 @@ export function retrofitThemeRuntime(html) {
 	const initBlock = buildThemeInitBlock();
 	const runtimeBlock = buildThemeRuntimeBlock();
 	let out = replaceMarkedBlock(html, INIT_START, INIT_END, initBlock) ?? html.replace(/(<style\b)/i, `${initBlock}\n$1`);
-	out = replaceMarkedBlock(out, RUNTIME_START, RUNTIME_END, runtimeBlock) ?? out.replace(/<\/body>/i, `${runtimeBlock}\n</body>`);
+	out = replaceMarkedBlock(out, RUNTIME_START, RUNTIME_END, runtimeBlock) ?? insertBeforeBodyEnd(out, runtimeBlock);
 	return out;
 }
 

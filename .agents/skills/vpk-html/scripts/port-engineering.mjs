@@ -339,7 +339,7 @@ function renderChecklist(items) {
 }
 
 function renderStats(items) {
-	return items.map(item => `\t\t<div><strong>${item}</strong><span>metric</span></div>`).join("\n");
+	return items.map(item => `\t\t<div data-vpk-block><strong>${item}</strong><span>metric</span></div>`).join("\n");
 }
 
 function renderTemplate(def, sharedCss) {
@@ -577,16 +577,6 @@ section h2 {
 \tpadding-top: 8px;
 }
 
-.source {
-\tborder-top: 1px solid var(--border);
-\tcolor: var(--stone);
-\tfont-family: var(--mono);
-\tfont-size: 12px;
-\tline-height: 1.5;
-\tmargin-top: 30px;
-\tpadding-top: 14px;
-}
-
 @media print {
 \tbody { background: var(--parchment); font-size: 10.5pt; }
 \t.page { max-width: none; padding: 16mm 18mm; }
@@ -609,6 +599,7 @@ section h2 {
 </head>
 <body>
 <div class="page">
+\t<main>
 \t<header class="masthead">
 \t\t<div>
 \t\t\t<p class="eyebrow">${def.category} · Phase 2 engineering template</p>
@@ -627,7 +618,6 @@ section h2 {
 ${renderStats(def.stats)}
 \t</div>
 
-\t<main>
 ${renderSections(def.sections)}
 \t\t<aside class="checklist">
 \t\t\t<h2>Acceptance checklist</h2>
@@ -637,9 +627,6 @@ ${renderChecklist(def.checklist)}
 \t\t</aside>
 \t</main>
 
-\t<footer class="source">
-\t\t<p>Pattern reference: <a href="${UPSTREAM}/blob/main/${def.source}">${def.source}</a>. This vpk-html shell is original and uses the local offline template-edit contract.</p>
-\t</footer>
 </div>
 </body>
 </html>
