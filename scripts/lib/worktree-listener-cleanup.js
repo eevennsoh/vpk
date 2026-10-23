@@ -113,16 +113,52 @@ function getProcessCwd(pid, { execSyncFn = execSync } = {}) {
 	}
 }
 
+// The cleanup's own ancestors (the shell, pnpm, and an agent session such as Claude Code that
+// listens on a port with its cwd in the worktree) must never be signalled: killing them ends
+// the caller's session.
+function listAncestorPids({ pid = process.pid, execSyncFn = execSync } = {}) {
+	let output;
+	try {
+		output = execSyncFn("ps -axo pid=,ppid=", {
+			encoding: "utf8",
+			stdio: ["pipe", "pipe", "pipe"],
+		});
+	} catch {
+		return [];
+	}
+
+	const parentByPid = new Map();
+	for (const line of output.split("\n")) {
+		const match = line.trim().match(/^(\d+)\s+(\d+)$/);
+		if (match) {
+			parentByPid.set(Number.parseInt(match[1], 10), Number.parseInt(match[2], 10));
+		}
+	}
+
+	const ancestors = [];
+	let current = parentByPid.get(pid);
+	while (Number.isInteger(current) && current > 1 && !ancestors.includes(current)) {
+		ancestors.push(current);
+		current = parentByPid.get(current);
+	}
+	return ancestors;
+}
+
+function getProtectedPids(listAncestorPidsFn = listAncestorPids) {
+	return new Set([process.pid, ...listAncestorPidsFn()]);
+}
+
 function findListeningPidsForWorktree({
 	worktreePath = process.cwd(),
 	listListeningPidsFn = listListeningPids,
 	getProcessCwdFn = getProcessCwd,
+	protectedPids = getProtectedPids(),
 } = {}) {
 	const normalizedWorktreePath = path.resolve(worktreePath);
 
 	return getUniqueSortedPids(
 		listListeningPidsFn()
-			.filter((pid) => pid !== process.pid)
+			.filter((pid) => !protectedPids.has(pid))
 			.filter((pid) => getProcessCwdFn(pid) === normalizedWorktreePath)
 	);
 }
@@ -131,12 +167,13 @@ function findRovoSupervisorPidsForWorktree({
 	worktreePath = process.cwd(),
 	listProcessInfoFn = listProcessInfo,
 	getProcessCwdFn = getProcessCwd,
+	protectedPids = getProtectedPids(),
 } = {}) {
 	const normalizedWorktreePath = path.resolve(worktreePath);
 
 	return getUniqueSortedPids(
 		listProcessInfoFn()
-			.filter((entry) => entry && entry.pid !== process.pid)
+			.filter((entry) => entry && !protectedPids.has(entry.pid))
 			.filter((entry) => ROVO_SUPERVISOR_COMMAND_PATTERN.test(entry.command))
 			.filter((entry) => getProcessCwdFn(entry.pid) === normalizedWorktreePath)
 			.map((entry) => entry.pid)
@@ -148,21 +185,25 @@ async function cleanupListeningProcessesForWorktree({
 	listListeningPidsFn = listListeningPids,
 	listProcessInfoFn = listProcessInfo,
 	getProcessCwdFn = getProcessCwd,
+	listAncestorPidsFn = listAncestorPids,
 	killFn = process.kill,
 	sleepFn = sleep,
 	gracePeriodMs = 2_000,
 	logger = console,
 } = {}) {
 	const normalizedWorktreePath = path.resolve(worktreePath);
+	const protectedPids = getProtectedPids(listAncestorPidsFn);
 	const matchedListenerPids = findListeningPidsForWorktree({
 		worktreePath: normalizedWorktreePath,
 		listListeningPidsFn,
 		getProcessCwdFn,
+		protectedPids,
 	});
 	const matchedSupervisorPids = findRovoSupervisorPidsForWorktree({
 		worktreePath: normalizedWorktreePath,
 		listProcessInfoFn,
 		getProcessCwdFn,
+		protectedPids,
 	});
 	const initialResult = buildCleanupResult({
 		worktreePath: normalizedWorktreePath,
@@ -231,6 +272,7 @@ module.exports = {
 	findListeningPidsForWorktree,
 	findRovoSupervisorPidsForWorktree,
 	getProcessCwd,
+	listAncestorPids,
 	listProcessInfo,
 	listListeningPids,
 };

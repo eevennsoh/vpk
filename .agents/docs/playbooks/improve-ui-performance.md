@@ -13,23 +13,23 @@ Use `next-dev-loop` and [Browser Verify Worktree](browser-verify-worktree.md) fo
 
 ## Reuse the opt-in interaction sampler
 
-`tests/projects/jira-team-eu26-performance.spec.ts` records Board/List interactions on `/jira-team-eu26`. Use its existing sampler and `tests/helpers/interaction-performance.ts` when extending a measured journey, rather than inventing a second timing collector. It opens the project directly, uses `PLAYWRIGHT_BASE_URL` or the current worktree's `control-vpk url`, and waits for the finite 24-session fixture before sampling.
+`tests/projects/jira-team-eu26-performance.spec.ts` records Board/List interactions on `/jira-team-eu26`. Use its existing sampler and `tests/helpers/interaction-performance.ts` when extending a measured journey, rather than inventing a second timing collector. It opens the project directly, uses `PLAYWRIGHT_BASE_URL` or the current worktree's `control-vpk url`, and waits for the authored arrival and state-transition queue to settle before sampling, and records the observed session count. A hardcoded intermediate count is not fixture completion.
 
 For a known development stack:
 
 ```bash
 PLAYWRIGHT_BASE_URL="$(.agents/skills/vpk-verify/scripts/control-vpk url)" \
-VPK_PERF_SAMPLES=30 VPK_PERF_BUILD_MODE=development \
+VPK_PERF_SAMPLES=30 VPK_PERF_TRIALS=3 VPK_PERF_BUILD_MODE=development \
 pnpm exec playwright test tests/projects/jira-team-eu26-performance.spec.ts \
   --grep "record repeatable" --workers=1 \
   --output=output/agent-browser/eu26-performance
 ```
 
-`VPK_PERF_SAMPLES` is a positive integer repeat count. Declare `VPK_PERF_REVISION` only after confirming the served source revision; the observed local checkout may differ from the server. `VPK_PERF_BUILD_MODE` accepts `development` or `production`. `VPK_PERF_CACHE_STATE` and `VPK_PERF_BACKGROUND` record declared comparison conditions. Unobserved conditions stay unknown; a fresh browser context does not prove cold server/build caches.
+`VPK_PERF_SAMPLES` is a positive integer repeat count. `VPK_PERF_TRIALS` is a positive integer navigation count (default 1), yielding repeated first-use samples without changing browser/server/build caches. Declare `VPK_PERF_REVISION` only after confirming the served source revision; the observed local checkout may differ from the server. `VPK_PERF_BUILD_MODE` accepts `development` or `production`. `VPK_PERF_CACHE_STATE` and `VPK_PERF_BACKGROUND` record declared comparison conditions. Unobserved conditions stay unknown; a fresh browser context does not prove cold server/build caches.
 
 The `interaction-samples` JSON attachment records condition provenance, browser/viewport/host observations, each action's target and interaction ID, and cold/warm view groups. Cold means first activation of an unvisited view, not a cold page or cache. Summaries report valid/missing counts, median, nearest-rank p95, range and population variance. Compare equivalent warm groups and disclose missing counts; the Event Timing reporting threshold can censor fast events.
 
-Timing is the maximum observed event duration within the attributed click interaction, with input, processing and presentation phases for that event. Duration is rounded to 8ms and the observer requests a 16ms reporting threshold. Unsupported, absent, ambiguous or invalid timing stays missing, never zero-filled. These phases do not separately measure visible acknowledgement, usable-content completion or network/model waits; add explicit journey markers when those are the question. Keep timing thresholds out of functional tests and record neutral or rejected experiments alongside accepted results.
+Timing is the maximum observed event duration within the attributed click interaction, with input, processing and presentation phases for that event. Duration is rounded to 8ms and the observer requests a 16ms reporting threshold. Unsupported, absent, ambiguous or invalid timing stays missing, never zero-filled. The separate `journeys` records measure click dispatch to selected-tab acknowledgement and visible view rows or columns on an animation frame. They exclude earlier input delay and do not capture screen pixels or network/model waits. Missing visible-ready content retains an observed acknowledgement. Each action cancels unfinished frame sampling, and final cleanup retires the observer/listener/frame. Event Timing uses a one-second fallback wait when no click entry is observed, then a 100ms post-delivery grace period; content readiness can wait up to 30 seconds. Keep these observation windows separate from speed budgets. Keep timing thresholds out of functional tests and record neutral or rejected experiments alongside accepted results.
 
 ## Existing shared mechanisms
 

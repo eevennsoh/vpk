@@ -1,0 +1,254 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "flatpack-shelf",
+	"figId": "FIG_001",
+	"title": "Flat-pack shelf, step 3",
+	"label": "Assembly-manual exploded view of a small wall shelf: floor board, two side panels, back panel, bottom, middle and top shelves and a dowel. The middle shelf, added in this step, is highlighted.",
+	"caption": "Step 3 adds only the middle shelf: push the dowel in, close the right side panel, then seat the shelf. Hover to pull the panels apart along the dowel axis and see where it seats.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "base",
+			"kind": "plate",
+			"at": [
+				6,
+				2,
+				0
+			],
+			"size": [
+				128,
+				58,
+				2
+			],
+			"label": "floor board"
+		},
+		{
+			"id": "side-l",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				6,
+				60,
+				92
+			],
+			"label": "left side panel",
+			"explode": [
+				-30,
+				0,
+				0
+			]
+		},
+		{
+			"id": "side-r",
+			"kind": "slab",
+			"at": [
+				134,
+				0,
+				0
+			],
+			"size": [
+				6,
+				60,
+				92
+			],
+			"label": "right side panel",
+			"explode": [
+				30,
+				0,
+				0
+			]
+		},
+		{
+			"id": "back",
+			"kind": "slab",
+			"at": [
+				6,
+				0,
+				2
+			],
+			"size": [
+				128,
+				2,
+				100
+			],
+			"label": "back panel",
+			"explode": [
+				0,
+				-26,
+				0
+			]
+		},
+		{
+			"id": "shelf-low",
+			"kind": "slab",
+			"at": [
+				6,
+				2,
+				14
+			],
+			"size": [
+				128,
+				58,
+				4
+			],
+			"label": "bottom shelf"
+		},
+		{
+			"id": "shelf-mid",
+			"kind": "slab",
+			"at": [
+				6,
+				2,
+				46
+			],
+			"size": [
+				128,
+				58,
+				4
+			],
+			"label": "middle shelf",
+			"explode": [
+				0,
+				0,
+				14
+			]
+		},
+		{
+			"id": "dowel",
+			"kind": "cylinder",
+			"at": [
+				70,
+				48,
+				50
+			],
+			"size": [
+				3,
+				3,
+				8
+			],
+			"label": "dowel",
+			"explode": [
+				0,
+				0,
+				28
+			]
+		},
+		{
+			"id": "shelf-top",
+			"kind": "slab",
+			"at": [
+				6,
+				2,
+				82
+			],
+			"size": [
+				128,
+				58,
+				4
+			],
+			"label": "top shelf",
+			"explode": [
+				0,
+				0,
+				32
+			]
+		}
+	],
+	"focal": "shelf-mid",
+	"labels": [
+		{
+			"text": "Middle shelf",
+			"target": "shelf-mid",
+			"side": "left",
+			"anchor": [
+				20,
+				40,
+				50
+			]
+		},
+		{
+			"text": "Top shelf",
+			"target": "shelf-top",
+			"side": "right"
+		},
+		{
+			"text": "Left side panel",
+			"target": "side-l",
+			"side": "left"
+		},
+		{
+			"text": "Back panel",
+			"target": "back",
+			"side": "right",
+			"anchor": [
+				120,
+				1,
+				100
+			]
+		},
+		{
+			"text": "Bottom shelf",
+			"target": "shelf-low",
+			"side": "left"
+		}
+	],
+	"dims": [
+		{
+			"from": [
+				0,
+				60,
+				0
+			],
+			"to": [
+				140,
+				60,
+				0
+			],
+			"text": "640 mm",
+			"offset": 30
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"base",
+				"side-l"
+			],
+			[
+				"shelf-low"
+			],
+			[
+				"side-r",
+				"back"
+			],
+			[
+				"shelf-mid",
+				"dowel"
+			],
+			[
+				"shelf-top"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0.4,
+			"min": 0.4,
+			"max": 0.7,
+			"step": 0.1,
+			"unit": "gap"
+		}
+	},
+	"meta": {
+		"margin": "[ STEP 3 OF 5 ]",
+		"corner": "VPK-HTML"
+	}
+}

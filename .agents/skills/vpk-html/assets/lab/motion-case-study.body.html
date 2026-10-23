@@ -1,0 +1,184 @@
+<body data-vpk-motion="document" data-vpk-docnav="true">
+<main class="essay-page">
+<header class="essay-header" id="opening">
+	<div class="eyebrow">{{Case study · project · moment}}</div>
+	<h1>{{Case study headline}}</h1>
+	<p class="essay-dek">{{One or two sentences: what shipped, and what this page lets the reader check.}}</p>
+	<p class="byline"><strong>{{Author}}</strong> · {{role on the work}} · {{when and from which sources this was written}}</p>
+	<dl class="fact-strip">
+		<div><dt>{{N}}</dt><dd>{{What the number counts}}</dd></div>
+		<div><dt>{{N}}</dt><dd>{{What the number counts}}</dd></div>
+		<div><dt>{{N}}</dt><dd>{{What the number counts}}</dd></div>
+		<div><dt>{{N}}</dt><dd>{{What the number counts}}</dd></div>
+	</dl>
+	<aside class="speaker-notes" aria-hidden="true">{{Speaker note: the one sentence to open with, then scroll to the film.}}</aside>
+</header>
+
+<section id="film">
+	<p class="section-kicker">00 · Watch it first</p>
+	<h2>{{Film heading}}</h2>
+	<div class="prose">
+		<p class="lede">{{What the film shows and how it was captured: from the running work, one frame at a time through its own clock, or a supplied recording.}}</p>
+	</div>
+	<div class="vpk-film" id="film-player" data-vpk-film data-vpkh-no-lightbox tabindex="-1" role="region" aria-label="Film player" data-nudge="0.5">
+		<div class="vpk-film-screen">
+			<video class="vpk-film-video" data-vpk-film-video muted playsinline preload="auto" aria-label="Film of the work this case study describes"></video>
+			<button type="button" class="vpk-film-big-play" data-vpk-film-bigplay>Play the film</button>
+			<p class="vpk-film-empty" data-vpk-film-empty hidden>No film is embedded yet. Capture or supply one, then run media/embed.mjs (references/media-pipeline.md).</p>
+		</div>
+		<div class="vpk-film-bar">
+			<div class="vpk-ctl-row">
+				<button type="button" class="vpk-btn vpk-btn-sm vpk-btn-ink" data-vpk-film-play aria-label="Play">Play</button>
+				<button type="button" class="vpk-btn vpk-btn-sm" data-vpk-film-step="-1" aria-label="Back one frame">‹ Frame</button>
+				<button type="button" class="vpk-btn vpk-btn-sm" data-vpk-film-step="1" aria-label="Forward one frame">Frame ›</button>
+				<span class="vpk-ctl" role="group" aria-label="Playback speed" data-vpk-film-rate>Speed
+					<button type="button" class="vpk-btn vpk-btn-sm" data-rate="0.25" aria-pressed="false">0.25×</button>
+					<button type="button" class="vpk-btn vpk-btn-sm" data-rate="0.5" aria-pressed="false">0.5×</button>
+					<button type="button" class="vpk-btn vpk-btn-sm" data-rate="1" aria-pressed="true">1×</button>
+				</span>
+				<span class="vpk-film-time" data-vpk-film-time data-vpk-review-ignore>film 0.00 s</span>
+			</div>
+			<div class="vpk-film-track">
+				<label class="vpk-sr-only" for="film-player-scrub">Film position in seconds</label>
+				<input type="range" class="vpk-range" id="film-player-scrub" data-vpk-film-scrub min="0" max="1" step="0.0333" value="0">
+				<div class="vpk-film-ticks" data-vpk-film-ticks aria-hidden="true"></div>
+			</div>
+			<div class="vpk-film-chapters" data-vpk-film-chapters role="group" aria-label="Chapters"></div>
+			<p class="vpk-kbd-hint">With the film focused: <kbd class="vpk-kbd">Space</kbd> play or pause · <kbd class="vpk-kbd">←</kbd> <kbd class="vpk-kbd">→</kbd> half a second · <kbd class="vpk-kbd">,</kbd> <kbd class="vpk-kbd">.</kbd> one frame · <kbd class="vpk-kbd">1</kbd>–<kbd class="vpk-kbd">9</kbd> chapters</p>
+		</div>
+		<div class="vpk-beat" data-vpk-beat data-vpk-review-ignore aria-live="polite">
+			<div><span class="vpk-beat-act" data-vpk-beat-act></span><span class="vpk-beat-clock" data-vpk-beat-clock></span></div>
+			<div><p class="vpk-beat-title" data-vpk-beat-title></p><p class="vpk-beat-body" data-vpk-beat-body></p></div>
+			<p class="vpk-beat-nums" data-vpk-beat-nums></p>
+		</div>
+		<script type="application/json" data-vpk-film-data>{"version":1,"fps":30,"duration":0,"segments":[{"id":"film","label":"film","kind":"real","film":[0,0],"clock":{"kind":"real"}}],"chapters":[{"label":"{{Chapter label}}","film":0}]}</script>
+	</div>
+	<aside class="speaker-notes" aria-hidden="true">{{Speaker note: play the film once without talking, then step the key beat frame by frame.}}</aside>
+</section>
+
+<section id="brief">
+	<p class="section-kicker">01 · The brief</p>
+	<h2>{{Brief heading}}</h2>
+	<div class="prose">
+		<p>{{The problem as it was posed, in the asker's words where you have them.}}</p>
+	</div>
+	<ol class="ledger" aria-label="The questions the brief asked and where this page answers them">
+		<li><span>Question 1</span><div>{{The question, and the section that answers it.}}</div></li>
+		<li><span>Question 2</span><div>{{The question, and the section that answers it.}}</div></li>
+	</ol>
+	<aside class="speaker-notes" aria-hidden="true">{{Speaker note: the decision that shaped everything after.}}</aside>
+</section>
+
+<section id="process">
+	<p class="section-kicker">02 · Process</p>
+	<h2>{{Process heading}}</h2>
+	<div class="prose">
+		<p>{{How the work unfolded, and what each row of the timeline records.}}</p>
+	</div>
+	<!-- vpk-region process -->
+	<div class="vpk-filters" data-vpk-filters="process" data-vpkh-no-lightbox role="group" aria-label="Filter the timeline by theme"><button type="button" class="vpk-btn vpk-btn-sm" data-vpk-filter="all" aria-pressed="true">All</button><button type="button" class="vpk-btn vpk-btn-sm" data-vpk-filter="design" aria-pressed="false">Design</button><button type="button" class="vpk-btn vpk-btn-sm" data-vpk-filter="build" aria-pressed="false">Build</button></div>
+	<ol class="days" data-vpk-filter-scope="process">
+		<li class="day" data-vpk-filter-group><div class="day-date">{{Date}}<small>{{Weekday}}</small></div><div class="day-commits"><span class="bar" style="width:76px"></span><span>{{N}} commits</span></div><ul class="events"><li class="event" data-kind="design"><span class="event-kind">Design</span><p><span class="who">{{Who}}</span> {{What moved the design that day.}}</p></li></ul></li>
+		<li class="day" data-vpk-filter-group><div class="day-date">{{Date}}<small>{{Weekday}}</small></div><div class="day-commits"><span class="bar" style="width:38px"></span><span>{{N}} commits</span></div><ul class="events"><li class="event" data-kind="build"><span class="event-kind">Build</span><p><span class="who">{{Who}}</span> {{What landed in the code that day.}}</p></li></ul></li>
+	</ol>
+	<!-- /vpk-region process -->
+	<aside class="speaker-notes" aria-hidden="true">{{Speaker note: filter to one theme to tell the story of the decisions.}}</aside>
+</section>
+
+<section id="run-of-show">
+	<p class="section-kicker">03 · Run of show</p>
+	<h2>{{Run-of-show heading}}</h2>
+	<div class="prose">
+		<p>{{How one clock drives every beat. Click the chart or a cue to send the film there.}}</p>
+	</div>
+	<!-- vpk-region gantt -->
+	<div class="vpk-gantt" id="run-gantt" data-vpk-gantt data-vpkh-no-lightbox role="slider" tabindex="0" aria-label="Gantt of the run of show on the film&#39;s clock; click to seek the film" aria-describedby="run-gantt-desc" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-valuetext="0 s" data-clock="clock" data-t0="0" data-t1="6" data-x0="110" data-x1="984" data-film-target="film-player">
+<p class="vpk-sr-only" id="run-gantt-desc">Three sample rows on the film&#39;s clock. Replace them with the beats of the motion being studied.</p>
+<svg class="vpk-gantt-svg" viewBox="0 0 1000 144" aria-hidden="true" focusable="false"><path d="M110 34 V118" stroke="var(--ill-guide-dashed)" stroke-width="1"/><text x="110" y="134" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11" text-anchor="middle">0</text><path d="M255.67 34 V118" stroke="var(--ill-guide-dashed)" stroke-width="1"/><text x="255.67" y="134" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11" text-anchor="middle">1</text><path d="M401.33 34 V118" stroke="var(--ill-guide-dashed)" stroke-width="1"/><text x="401.33" y="134" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11" text-anchor="middle">2</text><path d="M547 34 V118" stroke="var(--ill-guide-dashed)" stroke-width="1"/><text x="547" y="134" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11" text-anchor="middle">3</text><path d="M692.67 34 V118" stroke="var(--ill-guide-dashed)" stroke-width="1"/><text x="692.67" y="134" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11" text-anchor="middle">4</text><path d="M838.33 34 V118" stroke="var(--ill-guide-dashed)" stroke-width="1"/><text x="838.33" y="134" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11" text-anchor="middle">5</text><path d="M984 34 V118" stroke="var(--ill-guide-dashed)" stroke-width="1"/><text x="984" y="134" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11" text-anchor="middle">6</text><path data-vpk-gantt-mark="0" d="M110 14 V118" stroke="var(--ill-line)" stroke-width="1.5"/><text x="116" y="24" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11" letter-spacing="1.5">ACT I</text><path data-vpk-gantt-mark="3" d="M547 14 V118" stroke="var(--ill-line)" stroke-width="1.5"/><text x="553" y="24" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11" letter-spacing="1.5">ACT II</text><text x="0" y="56" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11">Beat A</text><text x="0" y="82" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11">Beat B</text><text x="0" y="108" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="11">Beat C</text><rect x="110" y="46" width="218.5" height="12" rx="2" fill="var(--ill-tone1)" stroke="var(--ill-line)" stroke-width="1"/><rect x="328.5" y="72" width="291.33" height="12" rx="2" fill="var(--ill-tone2)" stroke="var(--ill-line)" stroke-width="1"/><text x="332.5" y="70" font-family="Geist Mono, monospace" fill="var(--ill-ink50)" font-size="10">sample</text><rect x="619.83" y="98" width="218.5" height="12" rx="2" fill="var(--ill-tone3)" stroke="var(--ill-line)" stroke-width="1"/><rect x="470.17" y="74" width="8" height="8" transform="rotate(45 474.17 78)" fill="var(--ill-tone3)" stroke="var(--ill-line)" stroke-width="1"/><line data-vpk-gantt-head x1="110" x2="110" y1="10" y2="118" stroke="var(--focal)" stroke-width="2" opacity="0.25"/></svg>
+</div>
+	<!-- /vpk-region gantt -->
+	<p class="section-note">Seconds on the film's clock. Use the arrow keys on the focused chart to move by a tenth of a second.</p>
+	<div class="vpk-cues" data-vpk-cues data-vpkh-no-lightbox data-film-target="film-player" role="group" aria-label="Cue sheet: each cue seeks the film">
+	<!-- vpk-region cues -->
+	<button type="button" class="vpk-cue" data-vpk-cue="cue-1" data-act="{{Act}}" data-film="0"><canvas class="vpk-cue-thumb" width="240" height="135" aria-hidden="true"></canvas><span><span class="vpk-cue-t"></span><span class="vpk-cue-name">{{Cue title}}</span><span class="vpk-cue-nums">{{Cue numbers}}</span><span class="vpk-cue-body" hidden>{{What happens on screen at this cue.}}</span></span></button>
+	<button type="button" class="vpk-cue" data-vpk-cue="cue-2" data-act="{{Act}}" data-film="2"><canvas class="vpk-cue-thumb" width="240" height="135" aria-hidden="true"></canvas><span><span class="vpk-cue-t"></span><span class="vpk-cue-name">{{Cue title}}</span><span class="vpk-cue-nums">{{Cue numbers}}</span><span class="vpk-cue-body" hidden>{{What happens on screen at this cue.}}</span></span></button>
+	<button type="button" class="vpk-cue" data-vpk-cue="cue-3" data-act="{{Act}}" data-film="4"><canvas class="vpk-cue-thumb" width="240" height="135" aria-hidden="true"></canvas><span><span class="vpk-cue-t"></span><span class="vpk-cue-name">{{Cue title}}</span><span class="vpk-cue-nums">{{Cue numbers}}</span><span class="vpk-cue-body" hidden>{{What happens on screen at this cue.}}</span></span></button>
+	<!-- /vpk-region cues -->
+	</div>
+	<aside class="speaker-notes" aria-hidden="true">{{Speaker note: click two cues to show the film jumping; every beat is a function of one clock.}}</aside>
+</section>
+
+<section id="lab-1">
+	<p class="section-kicker">04 · Lab</p>
+	<h2>{{Lab section heading}}</h2>
+	<div class="prose">
+		<p>{{What the lab lets the reader try, and which real maths it runs.}}</p>
+	</div>
+	<div class="vpk-lab" data-vpk-lab="easing" data-vpkh-no-lightbox>
+		<div class="vpk-lab-head"><h3 class="vpk-lab-title">Easing the throw</h3><span class="vpk-lab-tag">Lab 1 · sample</span></div>
+		<div class="vpk-lab-body"><canvas class="vpk-lab-canvas" data-vpk-lab-canvas data-vpk-canvas-min-height="200" width="960" height="300" role="img" aria-label="A card lifted off a pile, thrown along an arc to a slot and landed on a spring, eased by the chosen curve"></canvas></div>
+		<div class="vpk-lab-foot">
+			<div class="vpk-ctl-row">
+				<button type="button" class="vpk-btn vpk-btn-ink" data-vpk-lab-play data-pause-label="Pause">Play</button>
+				<button type="button" class="vpk-btn" data-vpk-lab-reset>Reset</button>
+				<label class="vpk-ctl" for="easing-t">Time <input type="range" class="vpk-range" id="easing-t" data-vpk-param="t" min="0" max="1.95" step="0.01" value="1.1"><output class="vpk-out" for="easing-t" data-vpk-out="t" data-format="s" data-vpk-review-ignore>1.10 s</output></label>
+				<label class="vpk-ctl" for="easing-curve">Curve <select class="vpk-select" id="easing-curve" data-vpk-param="curve"><option value="vpkOut" selected>vpkOut</option><option value="inOut">inOut</option><option value="outBold">outBold</option><option value="linear">linear</option></select></label>
+			</div>
+			<p class="vpk-readout" data-vpk-readout data-vpk-review-ignore></p>
+			<p class="vpk-lab-note">{{One or two sentences on what the reader should notice while scrubbing.}}</p>
+			<p class="vpk-lab-source" data-vpk-lab-source>Maths ported from <code class="vpk-code">{{source file:lines}}</code></p>
+		</div>
+	</div>
+	<aside class="speaker-notes" aria-hidden="true">{{Speaker note: scrub to the middle of the throw, then switch the curve.}}</aside>
+</section>
+
+<section id="engineering">
+	<p class="section-kicker">05 · Engineering</p>
+	<h2>{{Engineering heading}}</h2>
+	<ul class="ledger wide">
+		<li><span>{{Decision}}</span><div>{{What was decided, and the constraint that forced it.}}</div></li>
+		<li><span>{{Decision}}</span><div>{{What was decided, and the constraint that forced it.}}</div></li>
+	</ul>
+	<!-- vpk-region layers -->
+	<div class="vpk-layers" data-vpk-layers data-vpkh-no-lightbox>
+		<svg class="vpk-layers-svg" viewBox="0 0 520 260" aria-hidden="true" data-vpk-select-target="layers"><g class="vpk-layer-plane" data-index="0"><path class="vpk-layer-face" d="M70 200 L250 160 L470 200 L290 240 Z" fill="var(--ill-tone2)" stroke="var(--ill-line)" stroke-width="1"/><text x="40" y="204" font-family="Geist Mono, monospace" font-size="11" fill="var(--ill-ink50)" text-anchor="end">01</text></g><g class="vpk-layer-plane" data-index="1"><path class="vpk-layer-face" d="M70 150 L250 110 L470 150 L290 190 Z" fill="var(--ill-tone1)" stroke="var(--ill-line)" stroke-width="1"/><text x="40" y="154" font-family="Geist Mono, monospace" font-size="11" fill="var(--ill-ink50)" text-anchor="end">02</text></g></svg>
+		<div>
+			<ul class="vpk-layer-list">
+				<li><button type="button" class="vpk-layer-button" data-vpk-select="layers" data-index="0" aria-pressed="true"><span class="vpk-layer-n">01</span><span class="vpk-select-title">{{Layer}}</span><span class="vpk-layer-tech">{{tech}}</span><span class="vpk-select-body" hidden>{{What this layer does.}}</span></button></li>
+				<li><button type="button" class="vpk-layer-button" data-vpk-select="layers" data-index="1" aria-pressed="false"><span class="vpk-layer-n">02</span><span class="vpk-select-title">{{Layer}}</span><span class="vpk-layer-tech">{{tech}}</span><span class="vpk-select-body" hidden>{{What this layer does.}}</span></button></li>
+			</ul>
+			<div class="vpk-select-detail" data-vpk-select-detail="layers" data-vpk-review-ignore aria-live="polite"><h3 class="vpk-select-title"></h3><p class="vpk-select-body"></p></div>
+		</div>
+	</div>
+	<!-- /vpk-region layers -->
+	<!-- figure slot: place vpk-figure markers here when the contract picks iso-kit, anatomy-hero or both (references/figure-engines.md) -->
+	<aside class="speaker-notes" aria-hidden="true">{{Speaker note: walk the layers bottom to top.}}</aside>
+</section>
+
+<section id="discards">
+	<p class="section-kicker">06 · Discards</p>
+	<h2>{{What did not make it}}</h2>
+	<!-- vpk-region discards -->
+	<div class="vpk-flip-deck" data-vpk-flip-deck data-vpkh-no-lightbox>
+		<button type="button" class="vpk-flip" data-vpk-flip aria-pressed="false"><span class="vpk-flip-inner"><span class="vpk-flip-face" data-face="front"><span class="vpk-flip-tag">{{Tag}} · tried</span><span class="vpk-flip-what">{{The discarded idea}}</span><span class="vpk-flip-hint">Turn over ›</span></span><span class="vpk-flip-face vpk-flip-back" data-face="back" aria-hidden="true"><span class="vpk-flip-tag">Why it lost</span><span class="vpk-flip-why">{{Why it lost.}}</span><span class="vpk-flip-src">{{Source}}</span></span></span></button>
+		<button type="button" class="vpk-flip" data-vpk-flip aria-pressed="false"><span class="vpk-flip-inner"><span class="vpk-flip-face" data-face="front"><span class="vpk-flip-tag">{{Tag}} · tried</span><span class="vpk-flip-what">{{The discarded idea}}</span><span class="vpk-flip-hint">Turn over ›</span></span><span class="vpk-flip-face vpk-flip-back" data-face="back" aria-hidden="true"><span class="vpk-flip-tag">Why it lost</span><span class="vpk-flip-why">{{Why it lost.}}</span><span class="vpk-flip-src">{{Source}}</span></span></span></button>
+	</div>
+	<!-- /vpk-region discards -->
+	<aside class="speaker-notes" aria-hidden="true">{{Speaker note: turn over the discard that taught the most.}}</aside>
+</section>
+
+<section id="credits">
+	<p class="section-kicker">07 · Credits</p>
+	<h2>{{Who made it}}</h2>
+	<ul class="people">
+		<li><b>{{Name}}</b><span>{{Role}}</span></li>
+		<li><b>{{Name}}</b><span>{{Role}}</span></li>
+	</ul>
+	<h3>Sources</h3>
+	<ol class="sources">
+		<li>{{Source: code, history, channel or document, with dates}}</li>
+	</ol>
+	<p class="film-provenance" data-vpk-film-provenance>{{Film provenance: media/embed.mjs fills this line.}}</p>
+	<aside class="speaker-notes" aria-hidden="true">{{Speaker note: thank the people by name.}}</aside>
+</section>
+</main>

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { selectInteractionSample, summarizeInteractionSamples, type EventTimingRecord, type SampleAction } from "../tests/helpers/interaction-performance.ts";
+import { selectInteractionSample, summarizeInteractionSamples, selectJourneyTiming, summarizeJourneyTimings, type EventTimingRecord, type SampleAction } from "../tests/helpers/interaction-performance.ts";
 
 const action: SampleAction = {
 	armedAtMs: 100,
@@ -116,4 +116,36 @@ test("a wholly missing summary has null statistics and an empty input has no gro
 	assert.equal(summary.durationMs, null);
 	assert.equal(summary.inputDelayMs, null);
 	assert.deepEqual(summarizeInteractionSamples([]), []);
+});
+
+
+test("journey markers distinguish acknowledgement from usable content and preserve missing data", () => {
+	assert.deepEqual(selectJourneyTiming({ startedAtMs: 100, acknowledgedAtMs: 110, readyAtMs: 140 }), {
+		status: "valid", reason: null, acknowledgementMs: 10, visibleReadyMs: 40,
+	});
+	assert.equal(selectJourneyTiming({ startedAtMs: 100, acknowledgedAtMs: 110, readyAtMs: null }).visibleReadyMs, null);
+	assert.equal(selectJourneyTiming({ startedAtMs: 100, acknowledgedAtMs: 110, readyAtMs: null }).acknowledgementMs, 10);
+	assert.equal(selectJourneyTiming({ startedAtMs: 100, acknowledgedAtMs: 90, readyAtMs: 140 }).reason, "invalid-journey-markers");
+	assert.equal(selectJourneyTiming({ startedAtMs: 100, acknowledgedAtMs: 110, readyAtMs: Number.NaN }).status, "missing");
+});
+
+test("journey summaries separate first and repeat use and ignore missing markers", () => {
+	const summaries = summarizeJourneyTimings([
+		{ ...selectJourneyTiming({ startedAtMs: 100, acknowledgedAtMs: 110, readyAtMs: 140 }), view: "List", visit: "cold" },
+		{ ...selectJourneyTiming({ startedAtMs: 100, acknowledgedAtMs: 120, readyAtMs: 160 }), view: "List", visit: "cold" },
+		{ ...selectJourneyTiming({ startedAtMs: 100, acknowledgedAtMs: null, readyAtMs: null }), view: "List", visit: "cold" },
+		{ ...selectJourneyTiming({ startedAtMs: 100, acknowledgedAtMs: 105, readyAtMs: 120 }), view: "List", visit: "warm" },
+	]);
+	assert.equal(summaries[0].visibleReadyMs?.median, 50);
+	assert.equal(summaries[0].missingCount, 1);
+	assert.equal(summaries[1].acknowledgementMs?.median, 5);
+});
+
+test("journey timing retains observed zeros and rejects reordered or nonfinite markers", () => {
+	assert.deepEqual(selectJourneyTiming({ startedAtMs: 0, acknowledgedAtMs: 0, readyAtMs: 0 }), {
+		status: "valid", reason: null, acknowledgementMs: 0, visibleReadyMs: 0,
+	});
+	assert.equal(selectJourneyTiming({ startedAtMs: 10, acknowledgedAtMs: 20, readyAtMs: 15 }).reason, "invalid-journey-markers");
+	assert.equal(selectJourneyTiming({ startedAtMs: Infinity, acknowledgedAtMs: 20, readyAtMs: 30 }).reason, "invalid-journey-markers");
+	assert.equal(selectJourneyTiming({ startedAtMs: null, acknowledgedAtMs: 20, readyAtMs: 30 }).visibleReadyMs, null);
 });

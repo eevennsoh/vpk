@@ -5,13 +5,8 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import {
-	DEMOS,
-	DIAGRAMS,
-	ILLUSTRATIONS,
-	ROOT,
 	SHARED_CSS_END,
 	SHARED_CSS_START,
-	TEMPLATES,
 	addLabeledMainLandmark,
 	buildChartInteractionScriptBlock,
 	ensureFaviconLinks,
@@ -19,13 +14,7 @@ import {
 	wrapSharedCss,
 } from "./shared.mjs";
 import { isDeck, retrofitDeck, retrofitDocumentNav } from "./presentation.mjs";
-
-function listHtmlFiles(directory) {
-	if (!fs.existsSync(directory)) return [];
-	return fs.readdirSync(directory)
-		.filter(name => name.endsWith(".html"))
-		.map(name => path.join(directory, name));
-}
+import { escapeRegExp } from "./runtime/blocks.mjs";
 
 function replaceRange(source, start, end, replacement) {
 	return `${source.slice(0, start)}${replacement}${source.slice(end)}`;
@@ -69,10 +58,6 @@ function findSharedRange(html) {
 	return { start, end: mediaEnd };
 }
 
-function escapeRegExp(value) {
-	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 export function refreshSharedCss(html) {
 	const range = findSharedRange(html);
 	if (!range) return html;
@@ -103,10 +88,12 @@ function normalizeDiagramPage(html, filePath) {
 	return output;
 }
 
-function retrofitFile(filePath) {
-	if (/[/\\]assets[/\\]html-effectiveness[/\\]/.test(filePath)) return { changed: false, skipped: true };
-	const before = fs.readFileSync(filePath, "utf8");
-	let after = refreshSharedCss(before);
+// Pure: the shared-CSS, chart-runtime, favicon, deck/docnav, and diagram-page refresh for one
+// committed file. html-effectiveness snapshots are returned unchanged. runtime/pipeline.mjs
+// runs this as its `retrofit` step for templates, demos, index, diagrams, and illustrations.
+export function retrofitHtml(html, filePath) {
+	if (/[/\\]assets[/\\]html-effectiveness[/\\]/.test(filePath)) return html;
+	let after = refreshSharedCss(html);
 	after = refreshChartRuntime(after);
 	after = ensureFaviconLinks(after);
 
@@ -118,33 +105,24 @@ function retrofitFile(filePath) {
 	} else {
 		after = after.replace(/<body\b(?![^>]*\bdata-vpk-motion=)([^>]*)>/i, `<body$1 data-vpk-motion="document">`);
 	}
-	after = normalizeDiagramPage(after, filePath);
-
-	if (after === before) return { changed: false, skipped: false };
-	fs.writeFileSync(filePath, after, "utf8");
-	return { changed: true, skipped: false };
+	return normalizeDiagramPage(after, filePath);
 }
 
-function main() {
-	const files = [
-		...listHtmlFiles(TEMPLATES),
-		...listHtmlFiles(DIAGRAMS),
-		...listHtmlFiles(ILLUSTRATIONS),
-		...listHtmlFiles(DEMOS),
-		path.join(ROOT, "index.html"),
-	].filter(file => fs.existsSync(file));
+// Alias CLI: the per-file retrofit now runs inside the full library refresh.
+async function main() {
+	const { runLibraryRefreshCli } = await import("./runtime/pipeline.mjs");
+	process.exitCode = await runLibraryRefreshCli({ script: "retrofit.mjs", argv: process.argv.slice(2) });
+}
 
-	let changed = 0;
-	let skipped = 0;
-	for (const file of files) {
-		const result = retrofitFile(file);
-		if (result.skipped) skipped += 1;
-		else if (result.changed) changed += 1;
+function isMainModule() {
+	try {
+		return Boolean(process.argv[1]) && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+	} catch {
+		return false;
 	}
-
-	console.log(`retrofit complete: ${changed} changed, ${files.length - changed - skipped} unchanged, ${skipped} skipped`);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-	main();
+// Not awaited: pipeline.mjs imports this module, so its evaluation must finish first.
+if (isMainModule()) {
+	main().catch(error => { console.error(error); process.exitCode = 1; });
 }

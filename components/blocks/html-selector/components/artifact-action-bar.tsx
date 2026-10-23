@@ -5,6 +5,7 @@ import type { ReactNode, RefObject } from "react";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import DownloadIcon from "@atlaskit/icon/core/download";
 import PrinterIcon from "@atlaskit/icon/core/printer";
+import ShareIcon from "@atlaskit/icon/core/share";
 import ThemeIcon from "@atlaskit/icon/core/theme";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,12 +20,15 @@ import {
 	getJsonErrorMessage,
 	getVpkHtmlArtifactApiPath,
 } from "@/components/blocks/html-selector/lib/artifact-actions";
+import { isLocalArtifactPage } from "@/components/blocks/html-selector/lib/page-path";
 import { useArtifactTheme } from "../hooks/use-artifact-theme";
 import { useArtifactNotes } from "../hooks/use-artifact-notes";
 import type { AgentId, HtmlSelectorNotification } from "../lib/types";
 import { ArtifactNotesPopover } from "./artifact-notes-popover";
 import { ArtifactPublishDialog } from "./artifact-publish-dialog";
 import { ArtifactVideoDialog } from "./artifact-video-dialog";
+
+const LOCAL_PUBLISH_HINT = "Publish artifacts with build.mjs --publish (runs the preflight scan)";
 
 interface ArtifactActionBarProps {
 	agent: AgentId;
@@ -68,6 +72,7 @@ export function ArtifactActionBar({
 	repoRoot,
 }: Readonly<ArtifactActionBarProps>) {
 	const isArtifactPage = pagePath !== "srcdoc";
+	const isLocalPage = isLocalArtifactPage(pagePath);
 	const notesState = useArtifactNotes(pagePath, onNotify);
 	const {
 		cycleTheme,
@@ -179,11 +184,26 @@ export function ArtifactActionBar({
 						pagePath={pagePath}
 						repoRoot={repoRoot}
 					/>
-					<ArtifactPublishDialog
-						disabled={!isArtifactPage}
-						onNotify={onNotify}
-						pagePath={pagePath}
-					/>
+					{isLocalPage ? (
+						<ToolbarTooltip content={LOCAL_PUBLISH_HINT}>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-compact"
+								disabled
+								title={LOCAL_PUBLISH_HINT}
+								aria-label="Publish to GitHub Gist"
+							>
+								<ShareIcon label="" />
+							</Button>
+						</ToolbarTooltip>
+					) : (
+						<ArtifactPublishDialog
+							disabled={!isArtifactPage}
+							onNotify={onNotify}
+							pagePath={pagePath}
+						/>
+					)}
 					<ToolbarTooltip content={artifactThemeLabel}>
 						<Button
 							type="button"

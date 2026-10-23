@@ -1,0 +1,46 @@
+{
+	"$comment": "Content schema for the x-thread template (ws5, integration R8). The page renders from this object: <slug>.content.json .content and the in-file island <script type=\"application/json\" data-vpk-content=\"x-thread\"> hold the same value. Runtime state (approvals, intents, posted links, image bytes) never goes here; it lives in the data-vpk-x-thread-state island and in the browser. Post ids are stable review anchors (xtpost<n>), so splits may mint them out of order.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["title", "posts"],
+	"properties": {
+		"title": { "type": "string", "minLength": 2, "maxLength": 80, "$comment": "The page heading. Agent-owned: the browser never edits it." },
+		"author": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"name": { "type": "string", "minLength": 1, "maxLength": 80 },
+				"handle": { "type": "string", "pattern": "^@?[A-Za-z0-9_]{1,15}$", "$comment": "The posting account. A pasted post link from another handle gets a warning." }
+			}
+		},
+		"posts": {
+			"type": "array",
+			"minItems": 1,
+			"maxItems": 25,
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["id", "text"],
+				"properties": {
+					"id": { "type": "string", "pattern": "^p[0-9]{1,2}$", "x-coverage": "skip" },
+					"text": { "type": "string", "minLength": 1, "maxLength": 1000, "x-coverage": "verbatim", "$comment": "Post text exactly as it should go out. Do not add 3/6 numbering; X counts it." },
+					"media": {
+						"type": "array",
+						"maxItems": 4,
+						"items": {
+							"type": "object",
+							"additionalProperties": false,
+							"required": ["kind", "alt"],
+							"properties": {
+								"kind": { "type": "string", "enum": ["image", "gif", "video"], "x-coverage": "skip" },
+								"alt": { "type": "string", "minLength": 1, "maxLength": 1000, "$comment": "Alt text. Without asset, it describes the screenshot still needed: the page shows a [DATA NEEDED: image · <alt>] slot." },
+								"asset": { "type": "string", "pattern": "^[A-Za-z0-9_][A-Za-z0-9._-]*(?:/[A-Za-z0-9_][A-Za-z0-9._-]*)*$", "x-coverage": "skip", "$comment": "Path relative to the folder of <slug>.content.json, for example media/p2-1.png. No absolute paths and no parent segments. fill inlines the bytes." }
+							}
+						}
+					},
+					"note": { "type": "string", "maxLength": 240, "x-coverage": "skip", "$comment": "Agent note shown under the post, never posted." }
+				}
+			}
+		}
+	}
+}

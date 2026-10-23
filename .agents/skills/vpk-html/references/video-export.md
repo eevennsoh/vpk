@@ -1,5 +1,12 @@
 # Video Export
 
+Two different things are called video here. A **captured film** goes the other
+way: a running page is held one frame at a time (or screencast), encoded to
+H.264 and embedded *into* an HTML document, as in `motion-case-study.html`. That
+pipeline is `scripts/media/{capture,encode,embed}.mjs`; see
+[media pipeline](media-pipeline.md). This page covers the second thing: turning
+a **deck into an MP4** deliverable.
+
 vpk-html's browser presentation mode does not render MP4. Video export is a
 conversion contract: re-author the deck into a HyperFrames general-video
 composition.

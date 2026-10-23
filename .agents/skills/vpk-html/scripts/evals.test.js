@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
@@ -16,11 +17,12 @@ test("committed vpk-html evaluation corpus is complete and catalog claims are cu
 	const result = checkEvaluationSystem();
 
 	assert.equal(result.ok, true, result.issues.join("\n"));
-	assert.equal(result.evalCount, 7);
+	assert.equal(result.evalCount, 11);
+	assert.equal(result.playbookCount, 4);
 	assert.deepEqual(result.catalogCounts, {
-		demos: 105,
+		demos: 118,
 		diagrams: 61,
-		templates: 33,
+		templates: 35,
 	});
 });
 
@@ -73,28 +75,59 @@ test("catalog documentation check reports stale generated counts", async () => {
 		"README.md": "<!-- vpk-html-catalog-counts: templates=28 diagrams=39 demos=77 -->",
 		"llms.txt": "# vpk-html-catalog-counts: templates=28 diagrams=39 demos=77",
 	};
-	const counts = { templates: 33, diagrams: 61, demos: 105 };
+	const counts = { templates: 35, diagrams: 61, demos: 111 };
 
 	const issues = validateCatalogSnapshot(documents, counts);
 	assert.equal(issues.length, 2);
 	assert.match(issues[0], /README\.md/);
-	assert.match(issues.join("\n"), /expected templates=33 diagrams=61 demos=105/);
+	assert.match(issues.join("\n"), /expected templates=35 diagrams=61 demos=111/);
 });
 
 test("catalog documentation check catches stale prose even when its snapshot is current", async () => {
 	const { validateCatalogClaims } = await loadEvals();
 	const documents = {
 		"README.md": [
-			"<!-- vpk-html-catalog-counts: templates=33 diagrams=61 demos=105 -->",
+			"<!-- vpk-html-catalog-counts: templates=35 diagrams=61 demos=111 -->",
 			"- **28 document templates**",
 			"- **61 SVG diagram/chart primitives**",
-			"- **105 HTML demos**",
+			"- **111 HTML demos**",
 		].join("\n"),
 	};
 
-	const issues = validateCatalogClaims(documents, { templates: 33, diagrams: 61, demos: 105 });
+	const issues = validateCatalogClaims(documents, { templates: 35, diagrams: 61, demos: 111 });
 	assert.equal(issues.length, 1);
-	assert.match(issues[0], /README\.md: documented template count is 28; expected 33/);
+	assert.match(issues[0], /README\.md: documented template count is 28; expected 35/);
+});
+
+test("catalog check reports routing drift, stale playbook baselines and unknown eval names", async () => {
+	const { checkEvaluationSystem } = await loadEvals();
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-evals-routing-"));
+	const write = (relativePath, text) => {
+		fs.mkdirSync(path.dirname(path.join(root, relativePath)), { recursive: true });
+		fs.writeFileSync(path.join(root, relativePath), text);
+	};
+	try {
+		write("assets/templates/letter.html", "<!doctype html>");
+		write("assets/templates/resume.html", "<!doctype html>");
+		write("assets/demos/demo-letter.html", "<!doctype html>");
+		write("index.html", `<a class="demo-row" href="assets/demos/demo-letter.html">Letter</a>`);
+		write("CHEATSHEET.md", "| Memo | `assets/templates/letter.html` |\n");
+		write("references/authoring-detail.md", "| Memo | `letter.html` |\n| Resume | `resume.html` |\n");
+		write("references/playbooks/letter.md", [
+			"---", "template: letter.html", "demo: demo-letter.html", "evals: [no-such-scenario]", "figure_engines: [none]", "---", "",
+			"## Use when", "- a memo", "## Choose", "- one-pager.html for a decision", "## Structure", "- salutation, body", "## Pitfalls", "- no ask", "",
+		].join("\n"));
+		write("evals/evals.json", JSON.stringify({ version: 1, skill_name: "vpk-html", evals: [] }));
+		const result = checkEvaluationSystem({ corpusPath: path.join(root, "evals", "evals.json"), skillRoot: root });
+		const issues = result.issues.join("\n");
+		assert.equal(result.ok, false);
+		assert.equal(result.playbookCount, 1);
+		assert.match(issues, /CHEATSHEET\.md does not route assets\/templates\/resume\.html/);
+		assert.match(issues, /LEGACY_TEMPLATES_WITHOUT_PLAYBOOK lists letter\.html, which now has a playbook: remove it; the baseline may only shrink/);
+		assert.match(issues, /evals entry "no-such-scenario" names no scenario in evals\/evals\.json/);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
 });
 
 test("build command exposes the vpk-html evaluation health check", () => {
@@ -113,6 +146,9 @@ test("design-system demo derives catalog metrics instead of hard-coding them", (
 	const source = fs.readFileSync(path.join(__dirname, "generate-design-pages.mjs"), "utf8");
 
 	assert.match(source, /collectCatalogCounts/);
+	assert.doesNotMatch(source, /<strong>111<\/strong>/);
+	assert.doesNotMatch(source, /<strong>110<\/strong>/);
+	assert.doesNotMatch(source, /<strong>35<\/strong>/);
 	assert.doesNotMatch(source, /<strong>105<\/strong>/);
 	assert.doesNotMatch(source, /<strong>33<\/strong>/);
 });

@@ -9,6 +9,10 @@ function scrollHarness(pointerY = 288.5) {
 	const frames = new Map();
 	let nextId = 0;
 	let cleanup;
+	let geometryChanges = 0;
+	const documentListeners = new Map();
+	const rootListeners = new Map();
+	let resizeCallback;
 	let scrollTop = 0;
 	const list = {
 		clientHeight: 432,
@@ -20,8 +24,8 @@ function scrollHarness(pointerY = 288.5) {
 	const root = {
 		querySelector: () => null,
 		querySelectorAll: () => [list],
-		addEventListener() {},
-		removeEventListener() {},
+		addEventListener: (name, callback) => rootListeners.set(name, callback),
+		removeEventListener: (name) => rootListeners.delete(name),
 	};
 	const loadedModule = { exports: {} };
 	const source = fs.readFileSync(path.join(__dirname, "use-board-session-drag-scroll.ts"), "utf8");
@@ -35,19 +39,23 @@ function scrollHarness(pointerY = 288.5) {
 		},
 		requestAnimationFrame: (callback) => { frames.set(++nextId, callback); return nextId; },
 		cancelAnimationFrame: (id) => frames.delete(id),
-		ResizeObserver: class { observe() {} disconnect() {} },
-		document: { addEventListener() {}, removeEventListener() {} },
+		ResizeObserver: class { constructor(callback) { resizeCallback = callback; } observe() {} disconnect() {} },
+		document: { addEventListener: (name, callback) => documentListeners.set(name, callback), removeEventListener: (name) => documentListeners.delete(name) },
 		window: { addEventListener() {}, removeEventListener() {} },
 	});
 	loadedModule.exports.useBoardSessionDragScroll({
 		active: true,
 		rootRef: { current: root },
 		transactionRef: { current: { pointer: { x: 100, y: pointerY }, target: { kind: "attach" } } },
-		onGeometryChange() {},
+		onGeometryChange() { geometryChanges += 1; },
 	});
 	return {
 		list,
 		frames,
+		get geometryChanges() { return geometryChanges; },
+		pointerMove: () => documentListeners.get("pointermove")?.(),
+		scroll: () => rootListeners.get("scroll")?.(),
+		resize: () => resizeCallback(),
 		cleanup: () => cleanup(),
 		tick(time) {
 			assert.equal(frames.size, 1, "the scrolling frame remains scheduled");
@@ -80,4 +88,24 @@ test("neutral pointer positions and reached boundaries stop the scroll loop", ()
 	bounded.tick(100);
 	assert.equal(bounded.frames.size, 0);
 	bounded.cleanup();
+});
+
+
+test("neutral pointer frames reuse owner geometry; scroll and resize still invalidate it", () => {
+	const h = scrollHarness(216);
+	h.tick(100);
+	assert.equal(h.geometryChanges, 1);
+	for (let frame = 0; frame < 20; frame += 1) {
+		h.pointerMove();
+		h.tick(116 + frame * 16);
+	}
+	assert.equal(h.geometryChanges, 1, "pointer movement does not duplicate the owning drag scan");
+	h.scroll(); h.resize();
+	assert.equal(h.frames.size, 1);
+	h.tick(500);
+	assert.equal(h.geometryChanges, 2, "coalesced geometry changes refresh stationary drags");
+	h.cleanup();
+	assert.equal(h.frames.size, 0);
+	h.pointerMove();
+	assert.equal(h.frames.size, 0);
 });

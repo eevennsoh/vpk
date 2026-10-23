@@ -1,0 +1,106 @@
+{
+	"schema": "vpk-review/1",
+	"doc": {
+		"id": "67mydhslnha8",
+		"revision": "r1",
+		"title": "Drag it to Done"
+	},
+	"exportedAt": "2026-10-11T11:00:00.000Z",
+	"reviewers": [
+		{
+			"id": "u_mal0ry666",
+			"name": "Mallory </script><svg>",
+			"initials": "M<",
+			"tone": 3,
+			"updatedAt": "2026-10-11T09:00:00.000Z"
+		}
+	],
+	"comments": [
+		{
+			"id": "c_mgl3x1d0_mal0001a",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_mal0ry666",
+			"createdAt": "2026-10-11T10:30:00.000Z",
+			"revision": "r1",
+			"body": "#fff rgb(0,0,0) hsl(1,2%,3%) {{x}} </script><svg onload=x> <!-- /Users/x --> \u2028 next \u2029 line \u202eevil",
+			"bodyAt": "2026-10-11T10:30:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "x0qaqe",
+				"blockTag": "p",
+				"blockHash": "1nsjy9w",
+				"blockText": "Everything below is about this film. The board shows how a card moves from To Do to Done in forty-three seconds.",
+				"quote": {
+					"exact": "Everything below is about this film.",
+					"prefix": "Overview Drag it to Done ",
+					"suffix": " The board shows how a card move"
+				},
+				"position": {
+					"start": 0,
+					"end": 36
+				},
+				"css": {
+					"path": "html > body > main > header > p:nth-of-type(2)",
+					"start": {
+						"path": [
+							0
+						],
+						"offset": 0
+					},
+					"end": {
+						"path": [
+							0
+						],
+						"offset": 36
+					}
+				},
+				"headingPath": [
+					"Drag it to Done"
+				]
+			}
+		},
+		{
+			"id": "c_mgl3x1d4_mal0002b",
+			"parentId": null,
+			"kind": "doc",
+			"authorId": "u_mal0ry666",
+			"createdAt": "2026-10-11T10:31:00.000Z",
+			"revision": "r1",
+			"body": "```\n`code` and <button>go</button> url(https://x.example) @import https://x.example/s.css style='border-left:4px solid'\n```",
+			"bodyAt": "2026-10-11T10:31:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": null
+		}
+	],
+	"decisions": [
+		{
+			"key": "retry",
+			"reviewerId": "u_mal0ry666",
+			"question": "Should a failed send retry on its own? {{q}}",
+			"value": [
+				"</textarea><script>alert(1)</script>"
+			],
+			"defaultValue": [
+				"3"
+			],
+			"changed": true,
+			"seen": true,
+			"updatedAt": "2026-10-11T10:32:00.000Z"
+		}
+	],
+	"ext": {
+		"note": "#000 {{ext}}",
+		"nested": {
+			"list": [
+				1,
+				"two",
+				{
+					"three": true
+				}
+			]
+		}
+	}
+}

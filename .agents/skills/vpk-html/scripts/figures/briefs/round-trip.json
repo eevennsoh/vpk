@@ -1,0 +1,25 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "round-trip",
+	"figId": "FIG_001",
+	"title": "Review round trip",
+	"label": "Isometric review round trip: a document, the comments a reader leaves on it and the agent that reads them, three plates on one shared base.",
+	"caption": "A document goes out, comments come back, and the agent reads them against the same blocks; the comments plate is the only one that changes hands.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "base", "kind": "tray", "at": [0, 0, 0], "size": [160, 64, 6], "label": "shared base" },
+		{ "id": "document", "kind": "slab", "at": [8, 8, 4], "size": [40, 48, 6], "marks": [[[6, 10], [34, 10]], [[6, 18], [34, 18]], [[6, 26], [26, 26]], [[6, 34], [34, 34]]], "label": "document" },
+		{ "id": "comments", "kind": "slab", "at": [60, 8, 4], "size": [40, 48, 6], "marks": [[[6, 12], [22, 12]], [[6, 24], [30, 24]], [[6, 36], [18, 36]]], "label": "comments" },
+		{ "id": "agent", "kind": "slab", "at": [112, 8, 4], "size": [40, 48, 6], "marks": [[[6, 14], [34, 14]], [[6, 24], [34, 24]], [[6, 34], [20, 34]]], "label": "agent" }
+	],
+	"focal": "comments",
+	"labels": [
+		{ "text": "Document", "target": "document", "side": "left" },
+		{ "text": "Comments", "target": "comments", "side": "right" },
+		{ "text": "Agent", "target": "agent", "side": "right" },
+		{ "text": "Shared base", "target": "base", "side": "left" }
+	],
+	"assemble": { "layers": [["base"], ["document"], ["comments"], ["agent"]], "staggerMs": 240 },
+	"interact": { "behavior": "select", "lift": 8 },
+	"meta": { "margin": "[ REVIEW ROUND TRIP ]", "corner": "VPK-HTML" }
+}

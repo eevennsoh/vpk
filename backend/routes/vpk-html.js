@@ -88,10 +88,68 @@ function isAllowedVpkHtmlAssetPath(relativePath) {
 	return CATALOG_MEDIA_EXTENSIONS.has(extension);
 }
 
-function getVpkHtmlPageReference(assetPath, {
+// Dev-only, read-only artifact pages for the review loop (ws1 §4.14): `local/<rel>` serves
+// repo-relative .html files under artifacts/vpk-html/** or output/vpk-html*/** only. No dot or
+// underscore segments (so no traversal and no _src/ sources), and the realpath must stay under
+// the matched root (no symlink escape). A missing file resolves so the caller can return 404.
+const LOCAL_PAGE_PREFIX = "local/";
+const LOCAL_ARTIFACT_PATTERN = /^(artifacts\/vpk-html|output\/vpk-html[a-z0-9-]*)\/(?:[A-Za-z0-9][A-Za-z0-9._-]*\/)*[A-Za-z0-9][A-Za-z0-9._-]*\.html$/u;
+
+function isLocalPagePath(pagePath) {
+	return typeof pagePath === "string" && pagePath.startsWith(LOCAL_PAGE_PREFIX);
+}
+
+function resolveLocalArtifactFilePath(localPath, {
+	fsModule = fs,
 	pathModule = path,
+	repoRoot = DEFAULT_REPO_ROOT,
+} = {}) {
+	if (typeof localPath !== "string" || localPath.includes("\0") || localPath.includes("\\")) {
+		return null;
+	}
+	const match = LOCAL_ARTIFACT_PATTERN.exec(localPath);
+	if (!match) {
+		return null;
+	}
+
+	const resolvedRepoRoot = pathModule.resolve(repoRoot);
+	const filePath = pathModule.resolve(resolvedRepoRoot, localPath);
+	const rootPath = pathModule.resolve(resolvedRepoRoot, match[1]);
+	if (!filePath.startsWith(`${rootPath}${pathModule.sep}`)) {
+		return null;
+	}
+
+	let realRoot;
+	let realFile;
+	try {
+		realRoot = fsModule.realpathSync(rootPath);
+	} catch {
+		return filePath;
+	}
+	try {
+		realFile = fsModule.realpathSync(filePath);
+	} catch {
+		return filePath;
+	}
+	return realFile.startsWith(`${realRoot}${pathModule.sep}`) ? filePath : null;
+}
+
+function getVpkHtmlPageReference(assetPath, {
+	allowLocal = false,
+	fsModule = fs,
+	pathModule = path,
+	repoRoot = DEFAULT_REPO_ROOT,
 	rootDir = DEFAULT_VPK_HTML_ROOT,
 } = {}) {
+	if (isLocalPagePath(assetPath)) {
+		if (!allowLocal) {
+			return null;
+		}
+		const localPath = assetPath.slice(LOCAL_PAGE_PREFIX.length);
+		const localFile = resolveLocalArtifactFilePath(localPath, { fsModule, pathModule, repoRoot });
+		return localFile ? { filePath: localFile, pagePath: `${LOCAL_PAGE_PREFIX}${localPath}` } : null;
+	}
+
 	const filePath = resolveVpkHtmlFilePath(assetPath, { pathModule, rootDir });
 	if (!filePath) {
 		return null;
@@ -263,16 +321,27 @@ function createVpkHtmlRouter({
 	fsModule = fs,
 	notesPath = DEFAULT_NOTES_PATH,
 	pathModule = path,
+	repoRoot = DEFAULT_REPO_ROOT,
 	rootDir = DEFAULT_VPK_HTML_ROOT,
 } = {}) {
 	const router = express.Router();
 
 	function sendVpkHtmlAsset(req, res) {
 		const assetPath = getWildcardRouteValue(req.params.assetPath) ?? "index.html";
-		const filePath = resolveVpkHtmlFilePath(assetPath, { pathModule, rootDir });
+		const isLocal = isLocalPagePath(assetPath);
+		if (isLocal && isProduction(env)) {
+			return res.status(404).json({ error: "Not available" });
+		}
+		const filePath = isLocal
+			? resolveLocalArtifactFilePath(assetPath.slice(LOCAL_PAGE_PREFIX.length), { fsModule, pathModule, repoRoot })
+			: resolveVpkHtmlFilePath(assetPath, { pathModule, rootDir });
 
 		if (!filePath) {
 			return res.status(400).json({ error: "Invalid vpk-html asset path" });
+		}
+		if (isLocal) {
+			res.set("Cache-Control", "no-store");
+			res.set("X-Content-Type-Options", "nosniff");
 		}
 
 		return fsModule.stat(filePath, (statError, stats) => {
@@ -295,7 +364,7 @@ function createVpkHtmlRouter({
 
 	function resolvePageRequest(req, res) {
 		const page = typeof req.query.page === "string" ? req.query.page : "";
-		const reference = getVpkHtmlPageReference(page, { pathModule, rootDir });
+		const reference = getVpkHtmlPageReference(page, { allowLocal: true, fsModule, pathModule, repoRoot, rootDir });
 		if (!reference) {
 			res.status(400).json({ error: "Invalid vpk-html asset path" });
 			return null;
@@ -386,9 +455,9 @@ function createVpkHtmlRouter({
 		}
 
 		const page = req.body && typeof req.body.page === "string" ? req.body.page : "";
-		const reference = getVpkHtmlPageReference(page, { pathModule, rootDir });
+		const reference = getVpkHtmlPageReference(page, { allowLocal: false, fsModule, pathModule, repoRoot, rootDir });
 		if (!reference) {
-			return res.status(400).json({ error: "Invalid vpk-html asset path" });
+			return res.status(400).json({ error: isLocalPagePath(page) ? "Publish local artifacts with build.mjs --publish (it runs the preflight scan)" : "Invalid vpk-html asset path" });
 		}
 		if (!statFile(fsModule, reference.filePath)) {
 			return res.status(404).json({ error: "vpk-html asset not found" });
@@ -430,7 +499,9 @@ module.exports = {
 	getWildcardRouteValue,
 	getVpkHtmlPageReference,
 	isAllowedVpkHtmlAssetPath,
+	isLocalPagePath,
 	registerVpkHtmlRoutes,
+	resolveLocalArtifactFilePath,
 	resolveVpkHtmlFilePath,
 	validateTokenPayload,
 };

@@ -37,6 +37,10 @@ import {
   useState,
 } from "react";
 import { createHighlighter } from "shiki";
+import { getTokensCacheKey } from "@/components/ui-custom/code-block-cache-key";
+
+// react-doctor-disable-next-line react-doctor/only-export-components -- Preserve the existing public cache-key API.
+export { getTokensCacheKey } from "@/components/ui-custom/code-block-cache-key";
 
 // Shiki uses bitflags for font styles: 1=italic, 2=bold, 4=underline
 // biome-ignore lint/suspicious/noBitwiseOperators: shiki bitflag check
@@ -148,13 +152,6 @@ const tokensCache = new Map<string, TokenizedCode>();
 
 // Subscribers for async token updates
 const subscribers = new Map<string, Set<(result: TokenizedCode) => void>>();
-
-// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
-export const getTokensCacheKey = (code: string, language: BundledLanguage) => {
-  const start = code.slice(0, 100);
-  const end = code.length > 100 ? code.slice(-100) : "";
-  return `${language}:${code.length}:${start}:${end}`;
-};
 
 const getHighlighter = (
   language: BundledLanguage

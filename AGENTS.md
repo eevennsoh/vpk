@@ -46,7 +46,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 | Repository skills for Rovo            | `scripts/sync-rovo-skills.js`, `backend/lib/rovo-skills-overlay.js` |
 | Architecture overview                  | `.agents/docs/architecture-overview.md`                     |
 | Extended workflows                     | `.agents/docs/workflows-extended.md`                        |
-| cmux inter-agent messaging             | `.agents/docs/cmux-messaging.md`                            |
+| herdr panes, tabs, and agent topology  | `.agents/docs/herdr.md`, `scripts/agent-surface.js`         |
 | Step-by-step task playbooks            | `.agents/docs/playbooks/`                                   |
 | Cursor Cloud environment setup         | `.agents/docs/cursor-cloud.md`                               |
 | Symphony orchestrator                  | `.agents/skills/vpk-symphony/SKILL.md`, `.agents/docs/symphony.md`, `WORKFLOW.md`, `scripts/symphony.sh` |
@@ -180,7 +180,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - Classify every new or renamed `components/**` `node:test` suite in `scripts/js-unit-test-manifest.mjs` as `stable` or `source-contract`; unfiltered `node scripts/run-js-unit-tests.mjs` fails CI on unclassified suites. `legacy-drift` is a frozen skipped baseline that must only shrink. `--file` force-runs a named path and does not prove manifest inclusion.
 - Modules that a `node:test` suite loads directly cannot resolve the `@/` alias; they import siblings by relative path with the `.ts` extension (`allowImportingTsExtensions` is on, so no `@ts-expect-error` is needed).
 - Browser coverage is under `tests/**/*.spec.ts` (`playwright.config.ts`); run targeted specs with `pnpm exec playwright test <spec>` after `pnpm install`. Specs reach the app through `appUrl()` in `tests/helpers/origin.ts` (lint rejects hardcoded ports and `*.localhost` hosts) and seed design settings with `?variants=` via `tests/helpers/design-variants.ts`.
-- GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, design-system lint, typecheck, and tests. It is required by branch protection on `main` — `/vpk-git-ship` auto-merge waits for it.
+- GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, design-system lint, typecheck, and tests. GitHub does not enforce branch protection on this private repo, so `/vpk-git-ship` enforces it: the merge waits until `PR checks` passes.
 - Validation freshness:
   <!-- validation-freshness:begin -->
   Last validated: 2026-10-06
@@ -203,7 +203,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 
 ### Debugging
 
-Inside cmux, use the `/cmux` skill and `cmux read-screen` to inspect the failing pane before guessing. Outside cmux, inspect `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, and `.dev-backend-port`. Details: `.agents/docs/cmux-messaging.md`.
+Inside herdr (`HERDR_ENV=1`), use the `herdr` skill and `herdr pane read <pane> --source recent-unwrapped` to inspect the failing pane before guessing. Outside herdr, inspect `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, and `.dev-backend-port`. Details: `.agents/docs/herdr.md`.
 
 ## Gotchas
 

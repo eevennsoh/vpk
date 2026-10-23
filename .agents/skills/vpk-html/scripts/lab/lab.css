@@ -1,0 +1,640 @@
+/* vpk-lab kit CSS (references/lab-kit.md). lab/kit.mjs replaces each "@kit {" with ":where(<kit roots>) {" (CSS nesting): nested rules
+   are scoped to kit roots at one-class specificity. Root rules are single classes. No element selectors, tokens only, no status hue on any figure (decision 2): status colour appears only as the .is-warn note text. */
+.vpk-sr-only {
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+.vpk-lab {
+	background: var(--surface-raised);
+	border: 1px solid var(--rule-strong);
+	border-radius: 6px;
+	margin: 36px 0 44px;
+	overflow: hidden;
+}
+.vpk-film {
+	background: var(--surface-raised);
+	border: 1px solid var(--rule);
+	border-radius: 6px;
+	margin: 32px 0 20px;
+	overflow: hidden;
+}
+.vpk-film:focus-visible,
+.vpk-gantt:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+.vpk-cues {
+	border-top: 1px solid var(--rule-strong);
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	margin: 28px 0 40px;
+}
+.vpk-gantt {
+	border-bottom: 1px solid var(--rule-strong);
+	border-top: 1px solid var(--rule-strong);
+	cursor: pointer;
+	margin: 32px 0 12px;
+	overflow-x: auto;
+	padding: 12px 0 4px;
+}
+.vpk-filters {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 8px 0 18px;
+}
+.vpk-is-filtered {
+	display: none !important;
+}
+.vpk-layers {
+	display: grid;
+	gap: 24px;
+	grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+	margin: 28px 0 40px;
+}
+.vpk-flip-deck {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	margin: 28px 0 32px;
+}
+@kit {
+	/* Muted text that keeps WCAG AA (4.5:1) on paper, raised and selected surfaces in both themes. */
+	--vpk-muted: color-mix(in srgb, var(--muted-text) 75%, var(--ink));
+	.vpk-ctl-row {
+		align-items: center;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px 10px;
+	}
+	.vpk-btn {
+		align-items: center;
+		background: transparent;
+		border: 2px solid var(--pill-border);
+		border-radius: 24px;
+		color: var(--vpk-muted);
+		cursor: pointer;
+		display: inline-flex;
+		font-family: var(--font-body);
+		font-size: 13px;
+		font-weight: 500;
+		height: 34px;
+		justify-content: center;
+		padding: 0 14px;
+	}
+	.vpk-btn:not(.vpk-btn-ink):hover {
+		color: var(--ink);
+	}
+	.vpk-btn:focus-visible,
+	.vpk-range:focus-visible,
+	.vpk-check:focus-visible,
+	.vpk-select:focus-visible,
+	.vpk-cue:focus-visible,
+	.vpk-flip:focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 2px;
+	}
+	.vpk-btn-ink {
+		background: var(--ink);
+		border-color: var(--ink);
+		color: var(--inverse-text);
+	}
+	.vpk-btn-ink:hover {
+		background: color-mix(in srgb, var(--ink) 82%, var(--paper));
+		border-color: color-mix(in srgb, var(--ink) 82%, var(--paper));
+	}
+	.vpk-btn[aria-pressed="true"]:not(.vpk-btn-ink) {
+		background: var(--accent-soft-strong);
+		border-color: var(--accent-soft-strong);
+		color: var(--ink);
+	}
+	.vpk-btn-sm {
+		font-size: 12px;
+		height: 28px;
+		padding: 0 11px;
+	}
+	.vpk-ctl {
+		align-items: center;
+		color: var(--vpk-muted);
+		display: inline-flex;
+		font-size: 13px;
+		gap: 8px;
+	}
+	.vpk-out,
+	.vpk-num {
+		color: var(--ink);
+		font-family: var(--font-numeric);
+		font-variant-numeric: tabular-nums;
+		font-weight: 500;
+	}
+	.vpk-range {
+		accent-color: var(--ink);
+		height: 24px;
+		width: 160px;
+	}
+	.vpk-check {
+		accent-color: var(--ink);
+		height: 16px;
+		width: 16px;
+	}
+	.vpk-select {
+		background: var(--surface-raised);
+		border: 1px solid var(--rule-strong);
+		border-radius: 6px;
+		color: var(--ink);
+		font: inherit;
+		font-size: 13px;
+		height: 30px;
+		padding: 0 8px;
+	}
+	.vpk-readout {
+		color: var(--vpk-muted);
+		display: flex;
+		flex-wrap: wrap;
+		font-size: 13px;
+		gap: 6px 18px;
+		margin: 0;
+		min-height: 1.2em;
+	}
+	.vpk-kbd-hint {
+		color: var(--vpk-muted);
+		font-size: 12px;
+		margin: 0;
+	}
+	.vpk-kbd {
+		border: 1px solid var(--rule-strong);
+		border-radius: 4px;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		padding: 0 5px;
+	}
+	/* ---------- Lab frame ---------- */
+	.vpk-lab-head {
+		align-items: baseline;
+		border-bottom: 1px solid var(--rule);
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 16px;
+		justify-content: space-between;
+		padding: 14px 18px;
+	}
+	.vpk-lab-title {
+		color: var(--ink);
+		font-size: 15px;
+		font-weight: 500;
+		margin: 0;
+	}
+	.vpk-lab-tag,
+	.vpk-lab-pane-label {
+		color: var(--vpk-muted);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 1.5px;
+		text-transform: uppercase;
+	}
+	.vpk-lab-pane-label {
+		margin: 0;
+		padding: 10px 14px 0;
+	}
+	.vpk-lab-body {
+		position: relative;
+	}
+	.vpk-lab-canvas,
+	.vpk-gantt-svg,
+	.vpk-layers-svg {
+		display: block;
+		height: auto;
+		width: 100%;
+	}
+	.vpk-lab-split {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	}
+	.vpk-lab-split > .vpk-lab-pane + .vpk-lab-pane {
+		border-left: 1px solid var(--rule);
+	}
+	.vpk-lab-foot {
+		border-top: 1px solid var(--rule);
+		display: grid;
+		gap: 12px;
+		padding: 14px 18px 16px;
+	}
+	.vpk-lab-note {
+		color: var(--vpk-muted);
+		font-size: 13px;
+		line-height: 1.5;
+		margin: 0;
+		max-width: 80ch;
+	}
+	.vpk-lab-note.is-warn {
+		color: var(--warning);
+		outline: 1px solid var(--rule-strong);
+		outline-offset: 4px;
+	}
+	.vpk-lab-source {
+		color: var(--vpk-muted);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		margin: 0;
+	}
+	.vpk-code {
+		background: var(--code-surface);
+		border-radius: 4px;
+		color: var(--code-ink);
+		font-family: var(--font-mono);
+		font-size: 0.92em;
+		padding: 1px 5px;
+	}
+	/* ---------- Film, beat panel, cue sheet ---------- */
+	.vpk-film-screen {
+		aspect-ratio: 16 / 9;
+		background: var(--surface-sunken);
+		border-bottom: 1px solid var(--rule);
+		position: relative;
+	}
+	.vpk-film-video {
+		display: block;
+		height: 100%;
+		width: 100%;
+	}
+	.vpk-film-big-play {
+		background: color-mix(in srgb, var(--paper) 86%, transparent);
+		border: 1px solid var(--rule-strong);
+		border-radius: 999px;
+		color: var(--ink);
+		cursor: pointer;
+		font-size: 15px;
+		height: 52px;
+		inset: 0;
+		margin: auto;
+		padding: 0 24px;
+		position: absolute;
+		width: fit-content;
+	}
+	.vpk-film-empty {
+		color: var(--vpk-muted);
+		display: grid;
+		font-size: 14px;
+		inset: 0;
+		margin: 0;
+		padding: 24px;
+		place-content: center;
+		position: absolute;
+		text-align: center;
+	}
+	.vpk-film-big-play[hidden],
+	.vpk-film-empty[hidden],
+	.vpk-tip[hidden],
+	.vpk-cue-thumb + .vpk-cue-thumb {
+		display: none;
+	}
+	.vpk-film-bar {
+		display: grid;
+		gap: 10px;
+		padding: 12px 16px 14px;
+	}
+	.vpk-film-track {
+		height: 34px;
+		position: relative;
+	}
+	.vpk-film-track .vpk-range {
+		inset: 4px 0 auto;
+		position: absolute;
+		width: 100%;
+	}
+	.vpk-film-ticks {
+		inset: 26px 0 0;
+		pointer-events: none;
+		position: absolute;
+	}
+	.vpk-film-ticks > .vpk-film-tick {
+		background: var(--rule-strong);
+		height: 6px;
+		position: absolute;
+		top: 0;
+		width: 1px;
+	}
+	.vpk-film-ticks > .is-major {
+		background: var(--ink);
+		height: 8px;
+	}
+	.vpk-film-chapters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.vpk-film-time {
+		color: var(--vpk-muted);
+		font-family: var(--font-numeric);
+		font-size: 13px;
+		font-variant-numeric: tabular-nums;
+		margin-left: auto;
+	}
+	.vpk-film-lite-note {
+		border-top: 1px solid var(--rule);
+		color: var(--vpk-muted);
+		font-size: 13px;
+		margin: 0;
+		padding: 10px 16px;
+	}
+	.vpk-beat {
+		border-top: 1px solid var(--rule);
+		display: grid;
+		gap: 6px 28px;
+		grid-template-columns: 11rem minmax(0, 1fr) minmax(0, 20rem);
+		padding: 16px 16px 18px;
+	}
+	.vpk-beat-act {
+		color: var(--vpk-muted);
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 1.5px;
+		text-transform: uppercase;
+	}
+	.vpk-beat-clock {
+		color: var(--ink);
+		display: block;
+		font-family: var(--font-numeric);
+		font-size: 28px;
+		font-weight: 500;
+		letter-spacing: -0.02em;
+		margin-top: 6px;
+	}
+	.vpk-beat-title {
+		color: var(--headline);
+		font-size: 20px;
+		font-weight: 500;
+		margin: 0 0 6px;
+	}
+	.vpk-beat-body {
+		color: var(--body-text);
+		font-size: 15px;
+		line-height: 1.5;
+		margin: 0;
+		text-wrap: pretty;
+	}
+	.vpk-beat-nums {
+		color: var(--vpk-muted);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		line-height: 1.6;
+		margin: 0;
+	}
+	.vpk-cue,
+	.vpk-layer-button {
+		background: transparent;
+		border: 0;
+		border-bottom: 1px solid var(--rule);
+		border-radius: 0;
+		color: var(--ink);
+		cursor: pointer;
+		display: grid;
+		font: inherit;
+		height: auto;
+		justify-content: stretch;
+		text-align: left;
+	}
+	.vpk-cue {
+		align-items: start;
+		gap: 12px;
+		grid-template-columns: 120px minmax(0, 1fr);
+		padding: 12px 10px 12px 0;
+	}
+	.vpk-cue:hover {
+		background: var(--surface-sunken);
+	}
+	.vpk-cue.is-current,
+	.vpk-layer-button[aria-pressed="true"] {
+		background: var(--selected);
+	}
+	.vpk-cue-thumb {
+		aspect-ratio: 16 / 9;
+		background: var(--surface-sunken);
+		border: 1px solid var(--rule);
+		border-radius: 3px;
+		display: block;
+		height: auto;
+		object-fit: cover;
+		width: 120px;
+	}
+	.vpk-cue-t {
+		color: var(--vpk-muted);
+		display: block;
+		font-family: var(--font-numeric);
+		font-size: 12px;
+		font-variant-numeric: tabular-nums;
+	}
+	.vpk-cue-name {
+		color: var(--ink);
+		display: block;
+		font-size: 14px;
+		font-weight: 500;
+		line-height: 1.3;
+		margin-top: 3px;
+	}
+	.vpk-cue-nums {
+		color: var(--vpk-muted);
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		line-height: 1.45;
+		margin-top: 4px;
+	}
+	/* ---------- Layer stack (select group) ---------- */
+	.vpk-layer-face {
+		transition: fill var(--vpk-dur-fast) var(--ease-out);
+	}
+	.vpk-layer-plane.is-selected .vpk-layer-face {
+		fill: var(--ill-tone3);
+	}
+	.vpk-layer-list {
+		display: grid;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.vpk-layer-button {
+		gap: 10px;
+		grid-template-columns: 2rem minmax(0, 1fr) auto;
+		padding: 8px 6px;
+		width: 100%;
+	}
+	.vpk-layer-n,
+	.vpk-layer-tech {
+		color: var(--vpk-muted);
+		font-family: var(--font-mono);
+		font-size: 11px;
+	}
+	.vpk-select-detail {
+		border-top: 1px solid var(--rule-strong);
+		font-size: 15px;
+		line-height: 1.5;
+		margin-top: 14px;
+		padding-top: 14px;
+	}
+	.vpk-select-detail .vpk-select-title {
+		font-size: 17px;
+		font-weight: 500;
+		margin: 0 0 6px;
+	}
+	/* ---------- Flip deck ---------- */
+	.vpk-flip {
+		background: transparent;
+		border: 0;
+		border-radius: 8px;
+		color: var(--ink);
+		cursor: pointer;
+		display: block;
+		font: inherit;
+		height: 230px;
+		padding: 0;
+		perspective: 1100px;
+		text-align: left;
+		width: 100%;
+	}
+	.vpk-flip:active {
+		transform: none;
+	}
+	.vpk-flip-inner {
+		display: block;
+		height: 100%;
+		position: relative;
+		transform-style: preserve-3d;
+		transition: transform 280ms var(--ease-in-out);
+		width: 100%;
+	}
+	.vpk-flip[aria-pressed="true"] .vpk-flip-inner {
+		transform: rotateY(180deg);
+	}
+	.vpk-flip-face {
+		backface-visibility: hidden;
+		background: var(--surface-raised);
+		border: 1px solid var(--rule-strong);
+		border-radius: 8px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		inset: 0;
+		padding: 18px;
+		position: absolute;
+	}
+	.vpk-flip-back {
+		background: var(--focal);
+		border-color: var(--focal);
+		color: var(--inverse-text);
+		transform: rotateY(180deg);
+	}
+	.vpk-flip-tag,
+	.vpk-flip-src {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 1.5px;
+		opacity: 0.7;
+		text-transform: uppercase;
+	}
+	.vpk-flip-src {
+		letter-spacing: 0;
+		margin-top: auto;
+		text-transform: none;
+	}
+	.vpk-flip-what {
+		font-size: 17px;
+		font-weight: 500;
+		line-height: 1.3;
+	}
+	.vpk-flip-why {
+		font-size: 14px;
+		line-height: 1.45;
+	}
+	.vpk-flip-hint {
+		color: var(--vpk-muted);
+		font-size: 12px;
+		margin-top: auto;
+	}
+	.vpk-tip {
+		background: var(--surface-overlay);
+		border: 1px solid var(--rule-strong);
+		border-radius: 6px;
+		color: var(--ink);
+		font-size: 13px;
+		line-height: 1.4;
+		max-width: 260px;
+		padding: 8px 10px;
+		pointer-events: none;
+		position: absolute;
+		z-index: 2;
+	}
+	.vpk-meter {
+		background: var(--surface-sunken);
+		border-radius: 3px;
+		height: 10px;
+		overflow: hidden;
+		position: relative;
+	}
+	.vpk-meter-fill {
+		background: var(--ink);
+		display: block;
+		height: 100%;
+	}
+}
+@media (max-width: 760px) {
+	@kit {
+		.vpk-gantt-svg {
+			min-width: 900px;
+		}
+		.vpk-lab-split {
+			grid-template-columns: 1fr;
+		}
+		.vpk-lab-split > .vpk-lab-pane + .vpk-lab-pane {
+			border-left: 0;
+			border-top: 1px solid var(--rule);
+		}
+	}
+}
+@media (max-width: 860px) {
+	.vpk-layers {
+		grid-template-columns: 1fr;
+	}
+	@kit {
+		.vpk-beat {
+			grid-template-columns: 1fr;
+		}
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	@kit {
+		.vpk-flip-inner,
+		.vpk-flip-face,
+		.vpk-layer-face {
+			transition: none;
+		}
+	}
+}
+@media print {
+	@kit {
+		&.vpk-filters,
+		.vpk-film-bar,
+		.vpk-film-big-play,
+		.vpk-film-empty,
+		.vpk-flip-hint,
+		.vpk-lab-foot .vpk-ctl-row {
+			display: none !important;
+		}
+		.vpk-cue-thumb.is-pending {
+			visibility: hidden;
+		}
+		/* The shell's print rule drops every transform, so each card prints both faces stacked: the idea, then why it lost. */
+		.vpk-flip {
+			height: auto;
+		}
+		.vpk-flip-face {
+			position: static;
+		}
+	}
+}

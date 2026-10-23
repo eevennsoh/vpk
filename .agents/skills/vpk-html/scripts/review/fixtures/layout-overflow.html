@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="vpk-html">
+<title>Layout issues fixture</title>
+<style>
+	body { margin: 0; font: 16px/1.5 system-ui, sans-serif; }
+	main { padding: 24px; }
+	.wide { width: 1600px; padding: 8px; background: #eeeeee; white-space: nowrap; font-size: 40px; }
+	.clip { width: 120px; overflow: hidden; white-space: nowrap; border: 1px solid #000000; }
+	.cover { position: relative; }
+	.cover > div { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: #ffffff; }
+</style>
+</head>
+<body>
+<main>
+<h1 data-vpk-id="fxtitl">Layout issues fixture</h1>
+<p data-vpk-id="fxwide" class="wide">This paragraph is far wider than the viewport, so the page scrolls sideways and the end of the sentence cannot be seen.</p>
+<p data-vpk-id="fxclip" class="clip">This sentence is much longer than its box and is cut off by overflow hidden.</p>
+<div class="cover"><p data-vpk-id="fxcovr">Covered text that nothing can read because an opaque panel sits on top of it.</p><div></div></div>
+<p data-vpk-id="fxfine">A normal paragraph that fits its container and shows no issue at all.</p>
+</main>
+</body>
+</html>

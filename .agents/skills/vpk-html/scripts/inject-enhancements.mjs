@@ -1,20 +1,42 @@
 #!/usr/bin/env node
-
-// Run from the repo root: node .agents/skills/vpk-html/scripts/inject-enhancements.mjs
+/*
+ * inject-enhancements — the shared artifact enhancement block (`vpkh-enhance`).
+ *
+ * The block (<style data-vpkh-enhance> + <script data-vpkh-enhance>) carries:
+ *   - the artifact control-chrome palette shared by the pager, theme toggle, and lightbox;
+ *   - theme-toggle overrides, including the CSS that hides .vpk-theme-toggle__label/__state
+ *     so older pages show the icon-only 34px toggle;
+ *   - scroll fades scoped to the active page container;
+ *   - the figure lightbox with zoom and pan;
+ *   - design-token overrides read from localStorage["vpkh-token-overrides"], written by the
+ *     design pages' token editor.
+ *
+ * Markers: <!-- vpkh-enhance:begin --> … <!-- vpkh-enhance:end -->. The block is stripped and
+ * re-appended before the last </body>, so runtime/pipeline.mjs applies it LAST, after every
+ * other runtime step (a second move-to-end step would never reach a fixed point).
+ *
+ * Kinds that receive it: template, demo, index, and user artifacts. Diagram and illustration
+ * primitives do not: they are copy sources whose <svg> blocks are pasted into documents that
+ * already carry this chrome. Landing pages keep the shells landing.mjs emits.
+ *
+ * CLI (alias): `node .agents/skills/vpk-html/scripts/inject-enhancements.mjs [--check]` runs the
+ * full library refresh, `build.mjs --refresh-library` (unsandboxed: it writes under .agents/skills/).
+ */
 
 import fs from "node:fs";
-import path from "node:path";
-import { DEMOS, ROOT, TEMPLATES } from "./shared.mjs";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { inlineIcon } from "./icons.mjs";
+import { moveMarkedBlockToBodyEnd } from "./runtime/blocks.mjs";
 
-const START = "<!-- vpkh-enhance:begin -->";
-const END = "<!-- vpkh-enhance:end -->";
+export const START = "<!-- vpkh-enhance:begin -->";
+export const END = "<!-- vpkh-enhance:end -->";
 
 // Inline @atlaskit glyphs baked in at build time (pure HTML — no React import).
 const ICON_ZOOM_IN = inlineIcon("zoom-in");
 const ICON_ZOOM_OUT = inlineIcon("zoom-out");
 
-const ENHANCEMENT_BLOCK = `${START}
+export const ENHANCEMENT_BLOCK = `${START}
 <style data-vpkh-enhance>
 /*
  * Artifact control chrome palette. Shared by the pager, theme toggle, and lightbox controls,
@@ -312,6 +334,16 @@ body.vpkh-lightbox-open {
 		transition: none !important;
 	}
 }
+
+/*
+ * Print: the fixed edge fades are screen chrome. In print they repeat on every page and clip real
+ * content (an eyebrow, a one-pager's foot), so they never print. Amended at B2, decision 13.
+ */
+@media print {
+	.vpkh-scroll-fade {
+		display: none !important;
+	}
+}
 </style>
 <script data-vpkh-enhance>
 (() => {
@@ -320,7 +352,8 @@ body.vpkh-lightbox-open {
 	const appliedTokens = new Set();
 	const visualSelector = "img, svg, video, canvas";
 	const containerSelector = "figure, .chart-figure, .figure-frame, .frame, .diagram, .illustration, .visual, .media, .svg-frame";
-	const skipSelector = "a, button, input, select, textarea, summary, label, [role='button'], [contenteditable='true'], .vpkh-lightbox";
+	const optOutSelector = "[data-vpkh-no-lightbox]";
+	const skipSelector = "a, button, input, select, textarea, summary, label, [role='button'], [contenteditable='true'], .vpkh-lightbox, " + optOutSelector;
 	const scrollFades = new Map();
 	let lightbox = null;
 	let activeTrigger = null;
@@ -392,16 +425,21 @@ body.vpkh-lightbox-open {
 		return { left: 0, width: window.innerWidth };
 	}
 
+	function setStyleProperty(node, name, value) {
+		if (node.style.getPropertyValue(name) !== value) node.style.setProperty(name, value);
+	}
+
 	function positionScrollFade(node, region) {
-		node.style.setProperty("--vpkh-scroll-fade-left", Math.round(region.left) + "px");
-		node.style.setProperty("--vpkh-scroll-fade-width", Math.round(region.width) + "px");
+		setStyleProperty(node, "--vpkh-scroll-fade-left", Math.round(region.left) + "px");
+		setStyleProperty(node, "--vpkh-scroll-fade-width", Math.round(region.width) + "px");
 	}
 
 	function setScrollFade(edge, visible, region) {
 		const node = scrollFades.get(edge);
 		if (!node) return;
 		positionScrollFade(node, region);
-		node.dataset.visible = visible ? "true" : "false";
+		const next = visible ? "true" : "false";
+		if (node.dataset.visible !== next) node.dataset.visible = next;
 	}
 
 	function updateScrollFades() {
@@ -451,10 +489,10 @@ body.vpkh-lightbox-open {
 
 	function refreshZoomables() {
 		for (const node of document.querySelectorAll(".vpkh-zoomable")) {
-			if (!isSubstantial(findVisualFromContainer(node) || node)) node.classList.remove("vpkh-zoomable");
+			if (node.closest(optOutSelector) || !isSubstantial(findVisualFromContainer(node) || node)) node.classList.remove("vpkh-zoomable");
 		}
 		for (const node of document.querySelectorAll(visualSelector + ", " + containerSelector)) {
-			if (node.closest(".vpkh-lightbox")) continue;
+			if (node.classList.contains("vpkh-zoomable") || node.closest(".vpkh-lightbox, " + optOutSelector)) continue;
 			if (findVisualFromContainer(node)) node.classList.add("vpkh-zoomable");
 		}
 	}
@@ -675,7 +713,9 @@ body.vpkh-lightbox-open {
 		window.addEventListener("resize", scheduleScrollUpdate, { passive: true });
 		window.setInterval(pollScrollFades, 250);
 		if ("ResizeObserver" in window) new ResizeObserver(scheduleScrollUpdate).observe(document.body);
-		new MutationObserver(scheduleScrollUpdate).observe(document.body, { childList: true, subtree: true, attributes: true });
+		new MutationObserver(records => {
+			if (records.some(record => !(record.target.nodeType === 1 ? record.target : record.target.parentElement)?.closest(optOutSelector))) scheduleScrollUpdate();
+		}).observe(document.body, { childList: true, subtree: true, attributes: true });
 	}
 
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
@@ -684,51 +724,26 @@ body.vpkh-lightbox-open {
 </script>
 ${END}`;
 
-function htmlFilesIn(directory) {
-	return fs.readdirSync(directory)
-		.filter(file => file.endsWith(".html"))
-		.sort((a, b) => a.localeCompare(b))
-		.map(file => path.join(directory, file));
+// Pure: strip any existing block and re-append the current one before the last </body>.
+export function injectEnhancements(html, filePath) {
+	return moveMarkedBlockToBodyEnd(html, { start: START, end: END, block: ENHANCEMENT_BLOCK, label: filePath });
 }
 
-function targetFiles() {
-	return [
-		path.join(ROOT, "index.html"),
-		...htmlFilesIn(DEMOS),
-		...htmlFilesIn(TEMPLATES),
-	];
+// Alias CLI: refreshing the enhancement block is part of the full library refresh.
+async function main() {
+	const { runLibraryRefreshCli } = await import("./runtime/pipeline.mjs");
+	process.exitCode = await runLibraryRefreshCli({ script: "inject-enhancements.mjs", argv: process.argv.slice(2) });
 }
 
-function inject(html, filePath) {
-	const markerPattern = new RegExp(`${START.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s\\S]*?${END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*`, "i");
-	const withoutExisting = html.replace(markerPattern, "");
-	if (/<\/body>/i.test(withoutExisting)) {
-		return withoutExisting.replace(/<\/body>/i, `${ENHANCEMENT_BLOCK}\n</body>`);
-	}
-	if (/<body\b/i.test(withoutExisting) && /<\/html>/i.test(withoutExisting)) {
-		return withoutExisting.replace(/<\/html>/i, `${ENHANCEMENT_BLOCK}\n</body>\n</html>`);
-	}
-	if (!/<\/body>/i.test(withoutExisting)) {
-		throw new Error(`missing </body>: ${filePath}`);
-	}
-	return withoutExisting;
-}
-
-function main() {
-	let changed = 0;
-	const targets = targetFiles();
-	for (const filePath of targets) {
-		const before = fs.readFileSync(filePath, "utf8");
-		const after = inject(before, filePath);
-		if (after !== before) {
-			fs.writeFileSync(filePath, after);
-			changed += 1;
-		}
-	}
-	console.log(`vpkh inject complete: injected=${targets.length} changed=${changed}`);
-	for (const filePath of targets) {
-		console.log(`- ${path.relative(ROOT, filePath)}`);
+function isMainModule() {
+	try {
+		return Boolean(process.argv[1]) && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+	} catch {
+		return false;
 	}
 }
 
-main();
+// Not awaited: pipeline.mjs imports this module, so its evaluation must finish first.
+if (isMainModule()) {
+	main().catch(error => { console.error(error); process.exitCode = 1; });
+}

@@ -10,8 +10,9 @@ never inline it into a shell command. Every brief carries, in order:
 1. **Goal** — one concrete outcome, no ambiguity.
 2. **Exact repo paths** — files and directories in scope, written relative to
    the worktree the worker runs in. Under the default, a writing brief runs in
-   its own task worktree branched from `main` (see *Worktree isolation* in
-   SKILL.md), so paths resolve there, not in the user's checkout.
+   its own task worktree branched from a freshly fetched `origin/main` (see
+   *Worktree isolation* in SKILL.md), so paths resolve there, not in the
+   user's checkout.
 3. **Constraints** — the specific repo rules that apply (tabs, `@/` imports,
    token classes, pnpm; name only the relevant ones).
 4. **Non-goals** — what the worker must not touch or expand into. For
@@ -101,10 +102,6 @@ never silently takes over implementation.
 - **Warm reuse:** sequential briefs in the same area go to the same worker
   (GPT lane `resume` keeps the prompt cache warm; a fresh run re-pays the
   cold-start read).
-- **The OAuth twist:** on this skill the planner's tokens are the scarce
-  resource, not the expensive one. Even when delegation looks token-inefficient
-  in total, moving reading/writing off the OAuth session is usually still
-  correct — the threshold question is planner-side overhead (brief + report
-  reading), not worker-side volume. Tiny read-only questions the planner can
-  answer from context stay with the planner; any non-trivial mutation goes
-  to a worker regardless.
+- **Planner context:** the planner's context window is for decisions and
+  review. Tiny read-only questions it can answer from context stay with the
+  planner; any non-trivial mutation goes to a worker.

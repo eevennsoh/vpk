@@ -41,6 +41,10 @@ test("leaves vendored builds, replaced whole, out of the budget", () => {
 	assert.equal(isBudgetedTextFile("public/1p/rovo-stage-kit/dist/rovo-stage.js"), false);
 	assert.equal(isBudgetedTextFile("public/1p/rovo-stage-kit/GUIDE.md"), false);
 	assert.equal(isBudgetedTextFile("public/1p/rovo-stage-kit-notes.md"), true);
+	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/anatomy/vendor/kit/audit.mjs"), false);
+	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/anatomy/vendor/kit/lathe.mjs"), false);
+	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/anatomy/hero.mjs"), true);
+	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/anatomy/vendor-notes.md"), true);
 });
 
 test("detects new oversized files, growth, and stale allowlist entries", () => {

@@ -839,37 +839,37 @@
 					{
 						"method": "GET",
 						"path": "/api/vpk-html",
-						"source": "backend/routes/vpk-html.js:417",
+						"source": "backend/routes/vpk-html.js:486",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/*assetPath",
-						"source": "backend/routes/vpk-html.js:418",
+						"source": "backend/routes/vpk-html.js:487",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/apply-tokens",
-						"source": "backend/routes/vpk-html.js:310",
+						"source": "backend/routes/vpk-html.js:379",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/notes",
-						"source": "backend/routes/vpk-html.js:335",
+						"source": "backend/routes/vpk-html.js:404",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/vpk-html/notes",
-						"source": "backend/routes/vpk-html.js:356",
+						"source": "backend/routes/vpk-html.js:425",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/publish-gist",
-						"source": "backend/routes/vpk-html.js:383",
+						"source": "backend/routes/vpk-html.js:452",
 						"runtimeAdmin": false
 					}
 				]
@@ -7887,7 +7887,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-html"
 			},
 			{
-				"description": "Delegate all implementation from a token-limited Claude OAuth session to headless workers billed through the local Proximity AI Gateway (localhost:29576) — GPT-5.6 Sol/Terra/Luna via the Codex CLI or Claude Opus 5/Sonnet 5 via headless claude -p. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. The main session only plans, dispatches, verifies, and reports. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context.",
+				"description": "Plan in this Claude Code or Codex session — started on a subscription login (`claude`, `codex`) or API (`claude-gw`, `codex-gw`), detected automatically — and delegate implementation to headless workers billed through the local Proximity AI Gateway (localhost:29576): GPT (Sol/Terra/Luna) via the Codex CLI or Claude (Opus/Sonnet) via headless claude -p. Workers report back here for verification and an advisor review. Can also move the conversation itself onto API on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context.",
 				"name": "vpk-remote",
 				"path": ".agents/skills/vpk-remote/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-remote"

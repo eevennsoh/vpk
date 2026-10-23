@@ -13,7 +13,8 @@
 	},
 	"orphans": {
 		"minLastLineChars": 12,
-		"minLastLineWidthRatio": 0.15
+		"minLastLineWidthRatio": 0.15,
+		"minHeadingLastLineWidthRatio": 0.5
 	},
 	"focal": {
 		"maxFocalElements": 1
@@ -25,6 +26,28 @@
 	"captionEcho": {
 		"minCaptionChars": 16,
 		"minSharedWords": 3,
+		"minCaptionCoverage": 0.6,
 		"maxFindings": 12
+	},
+	"layout": {
+		"minOutsidePx": 4,
+		"minOutsideRatio": 0.2,
+		"minOcclusionRatio": 0.9,
+		"minOcclusionSamples": 5,
+		"maxFindings": 20
+	},
+	"sizeBudget": {
+		"warnBytes": 1572846
+	},
+	"figures": {
+		"maxHeroes": 1,
+		"heroWarnBytes": 300000,
+		"heroFailBytes": 450000,
+		"liveWarnBytes": 30000,
+		"figuresWarnBytes": 600000,
+		"parts": {
+			"figure": [40, 80],
+			"hero": [80, 150]
+		}
 	}
 }

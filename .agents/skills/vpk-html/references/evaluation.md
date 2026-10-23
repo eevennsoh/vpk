@@ -33,19 +33,27 @@ deck. Each scenario freezes:
 Do not tune a prompt to make one saved output win. A useful correction should
 improve the underlying reader job across multiple scenarios.
 
+Every template outside the legacy baseline in `scripts/playbooks.mjs` must have
+at least one scenario, and `--check-evals` enforces it. Playbooks name scenarios
+by `name`, never by id.
+
 ## Run a comparison round
 
 1. Snapshot the current skill before editing it. That snapshot is the baseline
    for an existing-skill comparison.
 2. Keep the scenario prompt, inputs, model configuration, and viewport fixed.
-   Generate one first attempt from the baseline and one from the candidate; do
-   not reroll a weak result.
+   Append the scenario's frozen viewport to each run prompt (for example
+   "Review viewport 1440x1000."), because `evals.json` prompts do not carry it.
+   Record the skill revision and model beside each run. Generate one first
+   attempt from the baseline and one from the candidate. Do not reroll a weak
+   result.
 3. Run the required placeholder, browser-render, and HTML checks against every
    generated artifact. Record their output beside the artifact.
 4. Save run evidence under `output/vpk-html-evals/<round>/<scenario>/`, including
    the prompt, skill revision, model, viewport, artifact, screenshot, timing,
    check results, and reviewer feedback. Evaluation output is disposable review
-   evidence, not a durable user artifact.
+   evidence, not a durable user artifact. Graders read `artifacts/vpk-html` in
+   an expectation as this round folder for eval runs.
 5. Review outputs blind when practical. If an installed `skill-creator` provides
    `eval-viewer/generate_review.py`, use its documented static or local-server
    command for side-by-side human review. If no compatible viewer is installed,

@@ -21,7 +21,10 @@ export function getVpkHtmlNotesApiPath(pagePath: string): string {
 
 export function getVpkHtmlArtifactDiskPath(pagePath: string, repoRoot?: string): string {
 	const normalizedPagePath = (pagePath || "index.html").replace(/^\/+/u, "");
-	const relativePath = `.agents/skills/vpk-html/${normalizedPagePath}`;
+	// Dev-only local artifact pages (local/<repo-relative path>) map to their repo path.
+	const relativePath = normalizedPagePath.startsWith("local/")
+		? normalizedPagePath.slice("local/".length)
+		: `.agents/skills/vpk-html/${normalizedPagePath}`;
 	const normalizedRepoRoot = repoRoot?.trim().replace(/\/+$/u, "");
 
 	return normalizedRepoRoot

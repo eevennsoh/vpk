@@ -35,7 +35,7 @@ const VIDEOS = [
 			["Duration", "1:22"],
 			["Resolution", "1920 × 1080"],
 			["Format", "MP4 · H.264"],
-			["Size", "4.8 MB"],
+			["Size", "5.4 MB"],
 		],
 	},
 ];

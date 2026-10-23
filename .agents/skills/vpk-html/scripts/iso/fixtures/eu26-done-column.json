@@ -1,0 +1,29 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "eu26-done-column",
+	"figId": "FIG_001",
+	"title": "Done column flash",
+	"label": "Isometric tray of four done cards on a floor washed by a flash disc, with the radius, the toss time and the card count marked; the cards lift out as the Gap slider moves.",
+	"caption": "Cleared the column top at 0.53 s, the flash is spent before the 0.62 s toss.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "column", "kind": "tray", "at": [0, 0, 0], "size": [60, 150, 6], "label": "DONE · 23" },
+		{ "id": "card-1", "kind": "slab", "at": [5, 8, 4], "size": [50, 32, 2.4], "r": 2, "marks": [[[4, 4], [46, 4]], [[4, 14], [34, 14]], [[44, 25], [45, 25]]], "label": "Card 1 of 23", "explode": [0, 0, 30] },
+		{ "id": "card-2", "kind": "slab", "at": [5, 44, 4], "size": [50, 32, 2.4], "r": 2, "marks": [[[4, 4], [46, 4]], [[4, 14], [34, 14]], [[44, 25], [45, 25]]], "label": "Card 2 of 23", "explode": [0, 0, 45] },
+		{ "id": "card-3", "kind": "slab", "at": [5, 80, 4], "size": [50, 32, 2.4], "r": 2, "marks": [[[4, 4], [46, 4]], [[4, 14], [34, 14]], [[44, 25], [45, 25]]], "label": "Card 3 of 23", "explode": [0, 0, 60] },
+		{ "id": "card-4", "kind": "slab", "at": [5, 116, 4], "size": [50, 32, 2.4], "r": 2, "marks": [[[4, 4], [46, 4]], [[4, 14], [34, 14]], [[44, 25], [45, 25]]], "label": "Card 4 of 23", "explode": [0, 0, 75] },
+		{ "id": "flash-ring", "kind": "ring", "at": [30, 3, 4], "size": [171.3, 171.3, 0], "clipTo": "column", "clipPad": 28,
+			"explode": [0, 0, 0], "label": "Flash ring · 0.53 s" }
+	],
+	"focal": "flash-ring",
+	"labels": [
+		{ "text": "Done column", "target": "column", "side": "left", "anchor": [0, 120, 3] },
+		{ "text": "Card · 1 of 23", "target": "card-1", "side": "right" },
+		{ "text": "Flash ring", "target": "flash-ring", "side": "left", "anchor": [-20, 166.8, 4] },
+		{ "text": "Ring clears top · 0.53 s", "target": "flash-ring", "side": "left", "anchor": [16, 173.5, 4] }
+	],
+	"annotations": [{ "kind": "dimension", "from": [70, 0, 0], "to": [70, 150, 0], "text": "Toss · 0.62 s", "offset": 55 }],
+	"assemble": { "layers": [["column"], ["card-1", "card-2"], ["card-3", "card-4"], ["flash-ring"]], "staggerMs": 280 },
+	"interact": { "behavior": "explode", "explode": { "rest": 0, "min": 0, "max": 1, "step": 0.05, "unit": "gap" } },
+	"meta": { "margin": "[ DONE COLUMN ]", "corner": "VPK-HTML" }
+}

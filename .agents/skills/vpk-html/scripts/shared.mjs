@@ -232,6 +232,7 @@ function pushThemeAliases(lines) {
 	lines.push("\t--vpk-chart-grow-duration: 520ms;");
 	lines.push("\t--vpk-chart-pulse-duration: 900ms;");
 	lines.push("\t--vpk-enter-y: 8px;");
+	lines.push("\t--vpk-enter-blur: 2px;");
 	lines.push("\t--collection-accent-software: var(--collection-software);");
 	lines.push("\t--collection-accent-product: var(--collection-product);");
 	lines.push("\t--collection-accent-service: var(--collection-service);");
@@ -253,6 +254,15 @@ export function buildMotionCssBlock() {
 \tto {
 \t\topacity: 1;
 \t\ttransform: translateY(0);
+\t}
+}
+
+/* Page text blurs into focus as it enters (the house-catalogue reference video), 2px (--vpk-enter-blur) over the enter
+   duration. A separate animation with backwards fill, on text blocks only (never a figure or its SVG): once it ends no filter
+   remains, so nothing stays a composited layer. Only under prefers-reduced-motion: no-preference; print sets animation: none. */
+@keyframes vpk-focus {
+\tfrom {
+\t\tfilter: blur(var(--vpk-enter-blur));
 \t}
 }
 
@@ -314,6 +324,12 @@ body[data-vpk-motion] main > * {
 \tanimation: vpk-enter var(--vpk-dur-enter) var(--ease-out) both;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+\tbody[data-vpk-motion] main > :is(h1, h2, h3, p, header, hgroup) {
+\t\tanimation: vpk-enter var(--vpk-dur-enter) var(--ease-out) both, vpk-focus var(--vpk-dur-enter) var(--ease-out) backwards;
+\t}
+}
+
 body[data-vpk-motion] main > *:nth-child(1) { animation-delay: 0ms; }
 body[data-vpk-motion] main > *:nth-child(2) { animation-delay: calc(var(--vpk-stagger) * 1); }
 body[data-vpk-motion] main > *:nth-child(3) { animation-delay: calc(var(--vpk-stagger) * 2); }
@@ -321,14 +337,18 @@ body[data-vpk-motion] main > *:nth-child(4) { animation-delay: calc(var(--vpk-st
 body[data-vpk-motion] main > *:nth-child(5) { animation-delay: calc(var(--vpk-stagger) * 4); }
 body[data-vpk-motion] main > *:nth-child(n + 6) { animation-delay: calc(var(--vpk-stagger) * 5); }
 
-@supports (animation-timeline: view()) {
-\tbody[data-vpk-motion="document"] main section {
-\t\tanimation-name: vpk-enter;
-\t\tanimation-duration: var(--vpk-dur-enter);
-\t\tanimation-fill-mode: both;
-\t\tanimation-timing-function: var(--ease-out);
-\t\tanimation-timeline: view();
-\t\tanimation-range: entry 0% entry 40%;
+/* Scroll-driven section reveal. Not under prefers-reduced-motion: reduce, where a section would stay
+   faint until it scrolled into view (B2 decision 14); there the time-based vpk-enter above still lands. */
+@media (prefers-reduced-motion: no-preference) {
+\t@supports (animation-timeline: view()) {
+\t\tbody[data-vpk-motion="document"] main section {
+\t\t\tanimation-name: vpk-enter;
+\t\t\tanimation-duration: var(--vpk-dur-enter);
+\t\t\tanimation-fill-mode: both;
+\t\t\tanimation-timing-function: var(--ease-out);
+\t\t\tanimation-timeline: view();
+\t\t\tanimation-range: entry 0% entry 40%;
+\t\t}
 \t}
 }
 
@@ -460,6 +480,7 @@ button:active,
 @media (prefers-reduced-motion: reduce) {
 \t:root {
 \t\t--vpk-enter-y: 0px;
+\t\t--vpk-enter-blur: 0px;
 \t\t--vpk-stagger: 0ms;
 \t}
 

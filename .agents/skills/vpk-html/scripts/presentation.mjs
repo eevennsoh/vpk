@@ -51,8 +51,11 @@ function injectBodyScript(html, js, marker) {
 	return html.replace(/<\/body>/i, `\n<script ${marker}>\n${js}\n</script>\n</body>`);
 }
 
+// Tempered: a match never crosses a `</script>`, so a bare `<script>` that is not
+// the legacy deck runtime cannot reach into a later runtime block (iso, lab,
+// anatomy) that also mentions IntersectionObserver.
 function removeLegacyDeckRuntime(html) {
-	return html.replace(/\n?<script>\s*[\s\S]*?(?:IntersectionObserver|scrollIntoView)[\s\S]*?<\/script>\s*/gi, "\n");
+	return html.replace(/\n?<script>(?:(?!<\/script>)[\s\S])*?(?:IntersectionObserver|scrollIntoView)(?:(?!<\/script>)[\s\S])*?<\/script>\s*/gi, "\n");
 }
 
 export function isDeck(html) {
@@ -498,7 +501,7 @@ export function buildPresentationJs() {
 
 export function buildDocNavJs() {
 	return `(() => {
-\tif (!document.body.matches('[data-vpk-docnav]')) return;
+\tif (!document.body.matches('[data-vpk-docnav]:not([data-vpk-docnav="off"])')) return;
 \tconst sectionTargets = [...document.querySelectorAll('main > section')]
 \t\t.filter(el => el.getBoundingClientRect().height > 0);
 \tconst targets = sectionTargets.length >= 2
@@ -722,6 +725,7 @@ export function retrofitDeck(html, { speakerNotePlaceholders = false } = {}) {
 }
 
 export function retrofitDocumentNav(html) {
+	if (/<body\b[^>]*\bdata-vpk-docnav=["']off["']/i.test(html)) return html;
 	if (isDeck(html)) return html;
 	let out = ensureBodyAttribute(html, "data-vpk-motion", "document");
 	out = ensureBodyAttribute(out, "data-vpk-docnav", "true");

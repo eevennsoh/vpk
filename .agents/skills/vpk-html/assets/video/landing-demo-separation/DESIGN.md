@@ -10,7 +10,7 @@
 
 - Format: HyperFrames `general-video`, 1920x1080, 82 seconds.
 - Scene timing: each scene dwell equals narration duration plus 1.2 seconds of lead-in and 0.8 seconds of tail, rounded to one decimal.
-- Visual identity: Algebrica editorial video treatment using literal token values from vpk-html: warm paper `#f4efee`, ink `#312f2f`, muted text `#706e6e`, raised paper `#fffaf8`, and hairline rules `#ded5d4`.
+- Visual identity: Algebrica editorial video treatment using literal ADS token values from vpk-html (`references/tokens.json`): pure white surface `#ffffff`, ink `#292a2e`, muted text `#505258`, and hairline rules `#dddedd`.
 - Typography: `"Geist", -apple-system, "Helvetica Neue", sans-serif` for display/body and `"Geist Mono", "SFMono-Regular", Menlo, Consolas, monospace` for labels, paths, and numbers. No webfont or base64 font dependency.
 - Motion: a single paused GSAP timeline registered at `window.__timelines["landing-demo-separation"]`, with restrained opacity and 8-16px transform entrances. No autoplay, loops, randomness, visibility animation, or display animation.
 
