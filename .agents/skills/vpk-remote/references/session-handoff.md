@@ -1,8 +1,9 @@
 # Session handoff — move a conversation onto API billing
 
-Handoff mode moves the **conversation itself** off the OAuth login, rather than
-delegating a task to a worker. The user keeps chatting in the same context,
-billed through Proximity, on any Claude or GPT model at any effort.
+This moves the **conversation itself** onto API billing, on any Claude or GPT
+model at any effort. Use it only when the user asks to move or switch the
+chat ("out of credits", "move this chat to sol"). A task always runs as a
+worker per SKILL.md, so its result returns to the planner for verification.
 
 Everything runs through one launcher, `ai-api`, kept outside the repo in
 `~/.config/litellm-proximity/` (it is machine plumbing shared by Claude Code
@@ -68,26 +69,17 @@ session in the other app with a short summary as its first prompt instead.
    rules in SKILL.md. Unstated values take the defaults.
 2. **Echo the plan in one line** before launching — for example
    `Forking this session → Claude Code · gpt-6.1-sol · effort high`.
-3. **Launch.** The starting session may itself be on API (started with
-   `ai-api` or `claude-gw`); the handoff works the same and costs no OAuth.
-   Use it to switch model or effort mid-conversation. A running session cannot switch itself to API, so pick:
-   - **Background** (`--background "<task>"`) when the request carries a
-     self-contained task and the user does not need to watch it — "fix X",
-     "do this in the background". No window opens; report the log path and
-     that a notification will fire.
-   - **New window** (`--new-window`, plus `-- "<task>"` if there is one)
-     when the user wants to keep chatting or steer — "move this chat",
-     "continue on sol", or a bare `/vpk-remote`.
-   A background run is one task, not a conversation. Report the summary file
-   path. Results stay in the summary and the forked session, not in this
-   thread: if the user later asks how it went, read the summary file (a few
-   lines), never the log.
-4. **Tell the user to stop typing in the OAuth session** once the API one is
-   open, so further turns stop drawing OAuth credit. Nothing else is needed;
-   the OAuth login itself stays signed in.
+3. **Launch** with `--new-window` (plus `-- "<task>"` if the user gave one).
+   The starting session may itself be on API (started with `ai-api` or
+   `claude-gw`); moving works the same and switches model or effort
+   mid-conversation. Do not use `ai-api --background` from this skill: it
+   detaches the run, so this session is never told when it finishes and cannot
+   verify it. Tasks go to a worker instead.
+4. **Tell the user to continue in the new tab.** The original session stays
+   intact and the user can return to it.
 
-A handoff costs one short OAuth turn. Never summarize or re-read the
-conversation to perform it — the fork carries the history for free.
+Never summarize or re-read the conversation to perform the move — the fork
+carries the history for free.
 
 ## Spending no OAuth at all
 

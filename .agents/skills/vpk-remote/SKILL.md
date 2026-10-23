@@ -1,53 +1,93 @@
 ---
 name: vpk-remote
-description: "Delegate all implementation from a token-limited Claude OAuth session to headless workers billed through the local Proximity AI Gateway (localhost:29576) — GPT (Sol/Terra/Luna) via the Codex CLI or Claude (Opus/Sonnet) via headless claude -p — or hand the whole conversation off to API billing on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. The main session only plans, dispatches, verifies, and reports. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context."
+description: "Plan in this Claude Code or Codex session — started on a subscription login (`claude`, `codex`) or API (`claude-gw`, `codex-gw`), detected automatically — and delegate implementation to headless workers billed through the local Proximity AI Gateway (localhost:29576): GPT (Sol/Terra/Luna) via the Codex CLI or Claude (Opus/Sonnet) via headless claude -p. Workers report back here for verification and an advisor review. Can also move the conversation itself onto API on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context."
 validation_command: node scripts/validate-skills.js --target .agents/skills/vpk-remote
 ---
 
-# VPK Remote — OAuth Planner, Proximity Workers
+# VPK Remote — Planner Session, Proximity Workers
 
-The main session runs on a Claude desktop OAuth login with a very low token
-credit limit, steered from a phone against an always-on Mac. It does
-**planning, steering, dispatch, verification, and synthesis only**. All
-implementation, token-heavy exploration, and even second-opinion consults run
-as headless CLI worker processes billed through the Proximity AI Gateway on
-`localhost:29576` — GPT models via `codex exec`, Claude models via
-`claude -p`.
+The user steers this session, often from a phone against an always-on Mac. It
+**plans, dispatches, verifies, and reports**. Implementation, token-heavy
+exploration, and second-opinion consults run as headless CLI workers billed
+through the Proximity AI Gateway on `localhost:29576` — GPT models via
+`codex exec`, Claude models via `claude -p`. Each worker reports back to
+this session, which reviews the diff before calling the task done.
 
-**The hard rule, up front:** if workers are unavailable, the outcome of a
-`/vpk-remote` task is a reported blocker — never local implementation in the
-OAuth session. Burning the OAuth credit on implementation defeats the reason
-this skill exists.
+## One flow, any planner
 
-**Never spawn Claude Code subagents** for delegable work. A subagent bills
-the OAuth session, which is the one thing this skill exists to prevent, and
-no model or brief makes that safe. Every worker is an external CLI process.
+There is no mode to pick. `/vpk-remote <task>` always runs the same loop —
+dispatch a worker, wait for its report, verify, consult an advisor, report —
+whether this session is Claude Code or Codex, and whether it was started on
+API (`claude-gw`, `codex-gw`, `ai-api`) or on a subscription login (`claude`,
+`codex`). Workers bill Proximity in every case; the planner's own turns bill
+whichever login started it, and that cost is accepted.
+
+Detect the planner once, at the start of the run:
+
+```bash
+if [ -n "${CODEX_THREAD_ID:-}" ]; then
+  app=codex
+  # Codex picks its provider in config.toml, not the environment.
+  grep -qE '^model_provider *= *"openai-gw"' "${CODEX_HOME:-$HOME/.codex}/config.toml" 2>/dev/null \
+    && billing=api || billing=oauth
+else
+  app=claude
+  if [ "${CLAUDE_CODE_DISABLE_OAUTH:-}" = 1 ] || [[ "${ANTHROPIC_BASE_URL:-}" == *localhost:29576* ]]; then
+    billing=api     # claude-gw or ai-api
+  else
+    billing=oauth   # plain claude
+  fi
+fi
+gitdir="$(git rev-parse --git-common-dir)"
+touch "$gitdir/.vpk-remote-probe" 2>/dev/null && rm "$gitdir/.vpk-remote-probe" \
+  && git_write=yes || git_write=no   # no = sandboxed; worktree creation needs approval
+```
+
+A Codex session started with `codex -c model_provider=…` can differ from its
+config file; the echoed plan is where the user catches that.
+
+| | `api` parent | `oauth` parent |
+| --- | --- | --- |
+| Implementation | gateway worker | gateway worker |
+| Planner reading, review, trivial edits | fine | fine (cost absorbed) |
+| In-app subagents (Claude Code Agent tool) | allowed — they inherit the gateway login | avoid for heavy work — they bill the subscription; use a gateway worker |
+| Credits run out mid-session | not applicable | move the conversation (below) |
+
+Echo the detected app, billing, model, and effort in the one-line plan (for
+example `codex · api · terra · high`), so a misdetection is visible.
+
+### Codex as the planner
+
+The loop is the same; three mechanics differ.
+
+- **Waiting on workers.** Codex has no background command that wakes the
+  session on exit. Run the surface wrapper in the foreground and let it block
+  until the worker exits; it still exits with the worker's status. Fan-out
+  means launching every worker first (each `run.sh` with `&`, then `wait`)
+  in one command, so they still run in parallel.
+- **Sandbox and approvals.** Enterprise-managed requirements on this Mac cap
+  Codex at `workspace-write` or `read-only` with `on-request` approvals.
+  `--dangerously-bypass-approvals-and-sandbox` (which `codex-gw` passes) is
+  overridden to **read-only**, so it does not help. Under `workspace-write`,
+  writes under `.git` are blocked (`git_write=no` above), and launching a
+  worker also needs approval because `claude -p` / `codex exec` write state
+  outside the workspace. Request approval for the worktree step and each
+  worker launch; the user approves them in the Codex UI. Never try to disable
+  the sandbox. Headless `codex exec` cannot answer approvals, so it cannot act
+  as a `/vpk-remote` planner.
+- **Advisor family.** Codex plans on a GPT model, so its own plans go to the
+  `opus` advisor; see *Mode: advisor*.
+
+### Moving the conversation itself
+
+Only when the user explicitly asks to move or switch **the chat** — "I'm out
+of credits", "move this chat to sol", "continue my last session on opus" —
+fork the conversation onto API with `ai-api --new-window`, per
+[references/session-handoff.md](references/session-handoff.md). This changes
+which model the user talks to; it is not a way to run a task. A plain task
+always takes the worker flow above, so its result comes back here.
 
 ## Invocation: plain English first
-
-`/vpk-remote` is the one command to remember. Every message typed into an
-OAuth session costs OAuth credit, including this one, so the skill's job is to
-get the user off OAuth with as few turns as possible. The starting session can
-also already be on API; a handoff from there switches model or effort without
-touching OAuth. Pick one of two modes:
-
-| Mode | The user wants to… | Signals | OAuth cost |
-| --- | --- | --- | --- |
-| **Handoff** *(default)* | keep working, billed to API | anything not clearly a worker request: a task, "switch / move / continue on API", "out of credits" | this one turn, then none |
-| **Worker** | stay in this chat and push one self-contained task out | "send this to a worker", "in the background", "have sol review…", "second opinion", "fan out" | a few turns per task (brief + report) |
-
-The model does not decide the mode: both modes run any Claude or GPT model,
-same vendor or not. Ask instead whether the user wants to keep conversing
-(handoff) or only wants a result back (worker). A handoff to the *same* model
-is the common credit-saving case.
-
-When handoff carries a self-contained task ("/vpk-remote fix the sidebar
-flicker"), fork the session and run the task **in the background** on API —
-no window opens, the run verifies its own work, and a notification shows its
-one-line result. When the user
-wants to keep chatting, open the fork in a new terminal window instead. Follow
-[references/session-handoff.md](references/session-handoff.md). The rest of
-this file describes worker mode.
 
 **Extract model and effort from prose.** Short names resolve through the
 `ALIAS_*` entries in `~/.config/litellm-proximity/defaults.env` (`opus`,
@@ -66,15 +106,14 @@ question rather than guess.
 Examples:
 
 ```text
-/vpk-remote fix the sidebar flicker                               → handoff in the background, defaults
-/vpk-remote I'm out of credits, move this chat to sol            → handoff, sol
-/vpk-remote continue my last session on opus at max             → handoff, --continue, opus, max
-/vpk-remote send a worker to rename useFoo to useBar             → worker, defaults
-/vpk-remote have terra review this diff in the background       → worker, terra
-/vpk-remote second opinion from opus on this plan               → advisor consult (worker)
+/vpk-remote fix the sidebar flicker                               → worker, defaults, verified here
+/vpk-remote rename useFoo to useBar with terra                   → worker, terra
+/vpk-remote second opinion from opus on this plan               → advisor consult
+/vpk-remote I'm out of credits, move this chat to sol            → move the conversation, sol
+/vpk-remote continue my last session on opus at max             → move the conversation, --continue, opus, max
 ```
 
-Always echo the parsed plan in one line before acting (mode, model, effort),
+Always echo the parsed plan in one line before acting (app, billing, model, effort),
 so a misread costs one glance instead of a wrong run.
 
 ### Explicit flags (optional)
@@ -85,12 +124,12 @@ Flags still work and override prose. They are never required.
 | --- | --- | --- |
 | `--model` | any alias or full ID | `defaults.env` |
 | `--effort` | `medium` `high` `xhigh` `max` | `defaults.env` |
-| `--worker` | *(no value)* — force worker mode | off (handoff is the default) |
 | `--advisor` / `--no-advisor` | *(no value)* | **on** |
 | `--fanout` / `--single` | *(no value)* | **auto** (see *Worker shapes*) |
 | `--worktree` / `--no-worktree` | *(no value)* | **on for briefs that write** (see *Worktree isolation*) |
 
-`/vpk-remote` with nothing after it hands the session off with no first prompt.
+`/vpk-remote` with nothing after it asks what to run; it does not move the
+conversation unless the user says so.
 
 All three behavioral defaults are **on**: the planner isolates writing work in
 a worktree, consults an advisor, and fans out read-only work without being
@@ -104,10 +143,9 @@ unknown model name or effort value is an error to report, never a near-match
 guess.
 
 `medium` `high` `xhigh` `max` are valid on both lanes. `low` exists in the
-CLIs but workers do not use it: the planner's credit is the scarce resource,
-and a worker that under-thinks buys a correction round on the expensive side
-of the boundary. Handoff sessions may use `low`, since the user is steering
-them directly.
+CLIs but workers do not use it: a worker that under-thinks buys a correction
+round that costs more than the thinking it skipped. A moved conversation may
+use `low`, since the user is steering it directly.
 
 ### Choosing effort
 
@@ -154,19 +192,21 @@ curl -fsS --max-time 5 http://localhost:29576/openai/v1/models >/dev/null
   `test -f "$HOME/.claude/settings-gw.json"` passes.
 
 On failure: report which check failed and stop. Never fall back to
-implementing in the OAuth session, never substitute the planner's own model,
+implementing in the planner session, never substitute the planner's own model,
 never retry through a shell alias.
 
 ## Billing boundary
 
-- **Planner:** this Claude session (OAuth, low credit). Owns decisions,
-  briefs, review, final proof, synthesis.
+- **Planner:** this Claude session, on whichever login started it (see *One
+  flow, either billing*). Owns decisions, briefs, review, final proof,
+  synthesis.
 - **Workers:** external CLI processes whose requests go only to Proximity.
   Own repo mutation and token-heavy reading.
 - **Upstream credential:** owned by Proximity. Never appears in briefs,
   reports, worker homes, or repo files.
-- **Never spawn Claude Code subagents** (Agent tool) for delegable work —
-  they bill the OAuth session.
+- **Claude Code subagents** (Agent tool) bill the planner's login. On an
+  `api` parent that is the gateway, so they are fine for review or search; on
+  an `oauth` parent, keep heavy work on gateway workers.
 - **Never invoke shell wrappers** — `claude-gw`, `codex-gw`, `vpk-codex*`,
   `codex-use-*`. They are zsh functions/aliases that do not resolve in
   non-interactive shells, and an alias change could silently redirect
@@ -257,12 +297,10 @@ dirty tree it will silently fold into its diff.
 ## Procedure
 
 1. **Ground.** Read only enough repo context to identify the owner, the
-   constraints, and the proof command. The planner judges; it does not spend
-   its scarce context on mechanical coverage. Part of grounding is the
-   **reading-volume test**: every handoff bills the brief and the report
-   twice (written by one side, read by the other), so delegation must clearly
-   dominate that overhead — for tiny read-only questions, just answer;
-   any non-trivial mutation still goes to a worker.
+   constraints, and the proof command. The planner judges; it keeps its
+   context for decisions rather than mechanical coverage. Tiny read-only
+   questions it can answer directly; any non-trivial mutation goes to a
+   worker.
 2. **Isolate.** If the brief writes files, create and warm the task worktree
    per *Worktree isolation* above, and confirm warmup finished before
    dispatch. Skip for read-only briefs and under `--no-worktree`.
@@ -270,15 +308,16 @@ dirty tree it will silently fold into its diff.
    Non-goals / Proof expected / Output shape, per
    [references/dispatch-patterns.md](references/dispatch-patterns.md). Never
    inline a brief into a shell command.
-4. **Dispatch** via background Bash using the lane's canonical command:
+4. **Dispatch** via background Bash (Codex planner: foreground; see *Codex as
+   the planner*) using the lane's canonical command:
    [references/gpt-executor.md](references/gpt-executor.md) or
    [references/claude-executor.md](references/claude-executor.md).
    Write that command to `run.sh` in the worker directory and launch it
    through the surface wrapper (see *Terminal surfaces*) rather than running
    it bare, so the user can watch the worker in herdr.
 5. **Read only the report file.** Never stream or parse raw worker output —
-   raw material stays in worker contexts; that is where the credit and
-   context-window savings come from. An absent or empty report does **not**
+   raw material stays in worker contexts, which keeps the planner's context
+   window for review. An absent or empty report does **not**
    imply an absent diff: a worker killed mid-run may have already written
    every file. Always check `git status` in the task worktree before
    re-dispatching.
@@ -327,11 +366,9 @@ the entire task; `--no-advisor` suppresses them for a run.
 
 **Where consults are skipped** — the default is on, not unconditional. Skip
 the verify for a trivial diff (a copy change, a one-line fix, a mechanical
-rename a proof command already covers), because a consult spends planner
-tokens on both sides — writing the brief and reading the advice — while the
-thinking itself bills Proximity. When a wrong call would cost less than that
-handoff, decide and move. Never consult on single-step questions or an
-obvious plan.
+rename a proof command already covers), where a proof command already
+settles the question. Never consult on single-step questions or an obvious
+plan.
 
 **Default to the family that did not do the work.** Cost no longer picks the
 advisor — every lane bills Proximity — so what a consult buys is
@@ -343,12 +380,12 @@ audit its own reasoning re-runs the same priors.
 | --- | --- |
 | GPT-lane worker output (`sol` / `terra` / `luna`) | `opus` alias at xhigh |
 | Claude-lane worker output (`opus` / `sonnet`) | `sol` alias at xhigh |
-| A plan this planner wrote, or nothing dispatched yet | `sol` alias at xhigh |
+| A plan a Claude planner wrote, or nothing dispatched yet (`app=claude`) | `sol` alias at xhigh |
+| A plan a GPT planner wrote, or nothing dispatched yet (`app=codex`, or a Claude Code session running a GPT model) | `opus` alias at xhigh |
 
-The third row follows from the second: **this planner is Claude**, so
-anything it authored is Claude-family work and a Claude advisor would review
-its own priors. GPT is the independent reviewer by default, and Opus is
-reached for only when GPT actually did the work.
+The planner rows follow the same rule: whatever the planner authored is its
+own family's work, so the reviewer comes from the other family. Judge by the
+planner's **model**, not its app — Claude Code can run on `sol` via `ai-api`.
 
 All rows are `xhigh` for the reason in *Choosing effort* above: advice is
 unverifiable, so effort is the only quality lever a consult has.
@@ -396,10 +433,11 @@ Full shape, sizing, and completion rules:
 ## Terminal surfaces
 
 When the planner runs inside herdr (`HERDR_ENV=1`), every worker, advisor, and
-handoff gets a visible, labelled surface instead of an invisible background
+moved conversation gets a visible, labelled surface instead of an invisible background
 process. The planner launches the wrapper with background Bash exactly as
-before; the wrapper places the run, waits, and exits with the worker's status,
-so the harness still notifies on completion. Outside herdr the same command
+before (a Codex planner runs it in the foreground); the wrapper places the
+run, waits, and exits with the worker's status, so the harness still notifies
+on completion. Outside herdr the same command
 runs the worker inline, so there is one recipe for both.
 
 ```bash
@@ -413,7 +451,7 @@ node scripts/agent-surface.js run \
 | Writing worker in its task worktree | `--worktree "$tree"` | the worktree's own **workspace** |
 | Fan-out (2–5 read-only workers) | `--group "<task-slug>"` on every worker | one **tab**, one **pane** per worker |
 | Single read-only worker or advisor | *(neither)* | a new **tab** in the planner's workspace |
-| Handoff `--new-window` | handled by `ai-api` | a new **tab** running the forked session |
+| Moved conversation (`--new-window`) | handled by `ai-api` | a new **tab** running the forked session |
 
 The `run.sh` keeps the lane's redirects: the report still lands in
 `report.md`, and the pane shows `stderr` and progress for the user. The
@@ -442,10 +480,9 @@ when several are in flight (`output/remote-gpt/<task-slug>-worker-1/`).
 
 ## Boundaries
 
-- The planner never edits repo files during a `/vpk-remote` task; workers own
-  mutation. (Exception: none. Even one-line fixes are a worker brief or an
-  honest "this is too small to delegate — want me to spend OAuth credit on
-  it?" question to the user.)
+- Workers own mutation during a `/vpk-remote` task. The planner may make a
+  trivial fix itself (a copy change, a one-line correction found in review)
+  in the task worktree; anything larger is a worker brief or follow-up.
 - The advisor cannot edit files, and this is **enforced by the dispatch flags**
   — `--permission-mode plan` on the Claude lane, `--sandbox read-only` on the
   GPT lane — never by the brief alone. It matters most for the pre-completion
