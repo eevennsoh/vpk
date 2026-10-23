@@ -155,7 +155,11 @@ test("importing kit.mjs and runtime/lab.mjs reads no file", () => {
 		import fs from "node:fs";
 		const original = fs.readFileSync;
 		let reads = 0;
-		fs.readFileSync = (...args) => { reads += 1; return original(...args); };
+		// Node 24.21 (CI) loads ESM source through the public fs.readFileSync; count only calls not made by Node itself.
+		fs.readFileSync = (...args) => {
+			if (!/^\s*at (?:[^(]*\()?node:/.test((new Error().stack ?? "").split("\n")[2] ?? "")) reads += 1;
+			return original(...args);
+		};
 		await import(${JSON.stringify(path.join(here, "kit.mjs"))});
 		await import(${JSON.stringify(path.join(SCRIPTS, "runtime", "lab.mjs"))});
 		const step = (await import(${JSON.stringify(path.join(SCRIPTS, "runtime", "lab.mjs"))})).labKitStep;
