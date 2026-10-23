@@ -55,11 +55,13 @@ call:
 
 ```bash
 node .agents/skills/vpk-git-ship/scripts/review-gate-status.js \
-  --pr <number> --repo <owner>/<repo> --wait 900 --require-clear
+  --pr <number> --repo <owner>/<repo> --wait 1200 --rerun-interrupted 3 --require-clear
 ```
 
 `--wait` polls every 30 seconds while any check is pending, for up to the given
-seconds. `PR checks` is required by default; pass `--required-check <name>`
+seconds. A cancelled or timed-out run is `interrupted`, not `failing`:
+`--rerun-interrupted 3` reruns it (`gh run rerun`) up to three times, waiting
+the full `--wait` after each, and never reruns a real failure. `PR checks` is required by default; pass `--required-check <name>`
 (repeatable) to replace that list. Exit 2 means at least one
 review, check, or merge-state condition remains; inspect the same JSON rather
 than weakening the gate. An API/schema failure exits 1. If a REST comment stays

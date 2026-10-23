@@ -17,6 +17,8 @@ const GRAPHQL_QUERY = `query($owner:String!,$name:String!,$number:Int!,$after:St
 
 const PASSING_CONCLUSIONS = new Set(["NEUTRAL", "SKIPPED", "SUCCESS"]);
 const PENDING_STATES = new Set(["EXPECTED", "IN_PROGRESS", "PENDING", "QUEUED", "REQUESTED", "WAITING"]);
+// A cancelled or timed-out run never reached a verdict, so it is rerunnable rather than failing.
+const INTERRUPTED_CONCLUSIONS = new Set(["CANCELLED", "TIMED_OUT"]);
 // GitHub branch protection is not enforced on this private repo, so the merge gate
 // itself must require CI. A required check that has not reported yet counts as pending.
 const DEFAULT_REQUIRED_CHECKS = ["PR checks"];
@@ -27,6 +29,19 @@ function spawnGhJson(spawn, args, env) {
 		env,
 		maxBuffer: 20 * 1024 * 1024,
 	});
+}
+
+function workflowRunId(url) {
+	const match = /\/actions\/runs\/(\d+)/u.exec(url ?? "");
+	return match ? match[1] : null;
+}
+
+function rerunWorkflowRun(runId, { env = process.env, spawn = spawnSync } = {}) {
+	const result = spawn("gh", ["run", "rerun", runId], { encoding: "utf8", env });
+	if (result.status !== 0) {
+		const detail = (result.stderr ?? "").trim().split("\n")[0] || `exit ${result.status ?? 1}`;
+		throw new Error(`gh run rerun ${runId} failed: ${detail}`);
+	}
 }
 
 function isAuthenticationFailure(result) {
@@ -135,6 +150,7 @@ function classifyChecks(checks, requiredChecks = []) {
 		if (!reported.has(name)) normalized.push({ conclusion: null, name, status: "MISSING", url: null });
 	}
 	const failing = [];
+	const interrupted = [];
 	const pending = [];
 	const passing = [];
 	for (const check of normalized) {
@@ -142,15 +158,22 @@ function classifyChecks(checks, requiredChecks = []) {
 			pending.push(check);
 		} else if (PASSING_CONCLUSIONS.has(check.conclusion)) {
 			passing.push(check);
+		} else if (INTERRUPTED_CONCLUSIONS.has(check.conclusion)) {
+			interrupted.push(check);
 		} else {
 			failing.push(check);
 		}
 	}
+	let state = "passing";
+	if (failing.length > 0) state = "failing";
+	else if (pending.length > 0) state = "pending";
+	else if (interrupted.length > 0) state = "interrupted";
 	return {
 		failing,
+		interrupted,
 		passing,
 		pending,
-		state: failing.length > 0 ? "failing" : pending.length > 0 ? "pending" : "passing",
+		state,
 	};
 }
 
@@ -250,6 +273,8 @@ async function collectReviewGateStatus({
 	repository,
 	requiredChecks = DEFAULT_REQUIRED_CHECKS,
 	runGh = runGhJson,
+	rerunInterrupted = 0,
+	rerunRun = rerunWorkflowRun,
 	waitSeconds = 0,
 	pollSeconds = 30,
 	now = () => Date.now(),
@@ -258,8 +283,11 @@ async function collectReviewGateStatus({
 		throw new Error("prNumber must be a positive integer");
 	}
 	const resolvedRepository = await resolveRepository(runGh, repository);
-	const deadline = now() + waitSeconds * 1000;
+	let deadline = now() + waitSeconds * 1000;
 	let checkPolls = 0;
+	const reruns = [];
+	// A rerun job gets a new URL, so a URL already rerun is a stale rollup entry, not a new interruption.
+	const rerunJobUrls = new Set();
 	let consistencyAttempts = 0;
 	let status;
 	// Poll while required checks are still running, up to waitSeconds.
@@ -276,13 +304,28 @@ async function collectReviewGateStatus({
 			if (status.missingRestCommentIds.length === 0 || consistencyAttempts > consistencyRetries) break;
 			await delay(5000);
 		} while (true);
-		if (status.checks.state !== "pending" || now() >= deadline) break;
+		if (status.checks.state === "interrupted" && reruns.length < rerunInterrupted) {
+			const fresh = status.checks.interrupted.filter((check) => !rerunJobUrls.has(check.url));
+			const runIds = [...new Set(fresh.map((check) => workflowRunId(check.url)).filter(Boolean))];
+			if (runIds.length > 0) {
+				for (const check of fresh) rerunJobUrls.add(check.url);
+				for (const runId of runIds) await rerunRun(runId);
+				reruns.push(...runIds);
+				deadline = now() + waitSeconds * 1000;
+				await delay(pollSeconds * 1000);
+				continue;
+			}
+		}
+		const rerunSettling = status.checks.state === "interrupted" &&
+			status.checks.interrupted.every((check) => rerunJobUrls.has(check.url));
+		if ((status.checks.state !== "pending" && !rerunSettling) || now() >= deadline) break;
 		await delay(pollSeconds * 1000);
 	}
 	return {
 		...status,
 		checkPolls,
 		consistencyAttempts,
+		reruns,
 		queriedAt: new Date().toISOString(),
 	};
 }
@@ -293,6 +336,7 @@ function parseArgs(argv) {
 		json: false,
 		requireClear: false,
 		requiredChecks: [...DEFAULT_REQUIRED_CHECKS],
+		rerunInterrupted: 0,
 		waitSeconds: 0,
 	};
 	for (let index = 0; index < argv.length; index += 1) {
@@ -305,7 +349,7 @@ function parseArgs(argv) {
 			options.requireClear = true;
 			continue;
 		}
-		if (["--pr", "--repo", "--consistency-retries", "--wait", "--required-check"].includes(argument)) {
+		if (["--pr", "--repo", "--consistency-retries", "--wait", "--required-check", "--rerun-interrupted"].includes(argument)) {
 			const value = argv[index + 1];
 			if (!value) throw new Error(`${argument} requires a value`);
 			index += 1;
@@ -313,6 +357,7 @@ function parseArgs(argv) {
 			if (argument === "--repo") options.repository = value;
 			if (argument === "--consistency-retries") options.consistencyRetries = Number(value);
 			if (argument === "--wait") options.waitSeconds = Number(value);
+			if (argument === "--rerun-interrupted") options.rerunInterrupted = Number(value);
 			if (argument === "--required-check") {
 				if (!options.requiredChecksSet) options.requiredChecks = [];
 				options.requiredChecksSet = true;
@@ -329,6 +374,9 @@ function parseArgs(argv) {
 	if (!Number.isInteger(options.consistencyRetries) || options.consistencyRetries < 0) {
 		throw new Error("--consistency-retries must be a non-negative integer");
 	}
+	if (!Number.isInteger(options.rerunInterrupted) || options.rerunInterrupted < 0) {
+		throw new Error("--rerun-interrupted must be a non-negative integer");
+	}
 	if (!Number.isFinite(options.waitSeconds) || options.waitSeconds < 0) {
 		throw new Error("--wait must be a non-negative number of seconds");
 	}
@@ -339,12 +387,14 @@ function parseArgs(argv) {
 function printHelp() {
 	process.stdout.write([
 		"Usage: review-gate-status --pr <number> [--repo owner/name] [--json] [--require-clear]",
-		"                          [--wait <seconds>] [--required-check <name>]...",
+		"                          [--wait <seconds>] [--rerun-interrupted <count>] [--required-check <name>]...",
 		"",
 		"Fetches current-head PR checks, every GraphQL review thread page, and paginated REST review surfaces.",
 		"Use --require-clear to exit non-zero unless checks pass, review surfaces agree, and merge state is CLEAN.",
 		"Use --wait to keep polling while checks are pending. A required check that has not reported yet",
 		`counts as pending (default required: ${DEFAULT_REQUIRED_CHECKS.join(", ")}).`,
+		"Use --rerun-interrupted to rerun cancelled or timed-out workflow runs up to <count> times, waiting",
+		"the full --wait again after each rerun. Real failures are never rerun.",
 	].join("\n") + "\n");
 }
 
@@ -353,7 +403,8 @@ function formatStatus(status) {
 		`PR: ${status.url}`,
 		`Head: ${status.headRefOid}`,
 		`Review gate: ${status.reviewGateClear ? "clear" : "blocked"} (${status.unresolvedThreads.length} unresolved, ${status.missingRestCommentIds.length} REST mismatches)`,
-		`Checks: ${status.checks.state} (${status.checks.passing.length} passing, ${status.checks.pending.length} pending, ${status.checks.failing.length} failing)`,
+		`Checks: ${status.checks.state} (${status.checks.passing.length} passing, ${status.checks.pending.length} pending, ${status.checks.interrupted.length} interrupted, ${status.checks.failing.length} failing)`,
+		`Reruns: ${status.reruns.length > 0 ? status.reruns.join(", ") : "none"}`,
 		`Merge state: ${status.mergeStateStatus}`,
 		`Ready to merge: ${status.readyToMerge ? "yes" : "no"}`,
 	].join("\n") + "\n";
@@ -382,5 +433,7 @@ module.exports = {
 	collectReviewGateStatus,
 	flattenPages,
 	reconcileSnapshot,
+	rerunWorkflowRun,
 	runGhJson,
+	workflowRunId,
 };

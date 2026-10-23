@@ -18,8 +18,9 @@ jobs:
   validate:
     name: PR checks
     runs-on: ubuntu-latest
-    # Hosted pnpm bootstrap can consume six minutes before repository checks run.
-    timeout-minutes: 15
+    # Install is cached (under a minute); `Run fast PR checks` alone takes 9-13 minutes,
+    # so 15 left no headroom and cancelled passing runs.
+    timeout-minutes: 25
 
     steps:
       - name: Check out repository

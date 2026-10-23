@@ -264,3 +264,95 @@ test("stops waiting at the deadline and stays not ready", async () => {
 	assert.equal(status.checks.state, "pending");
 	assert.equal(status.readyToMerge, false);
 });
+
+test("classifies cancelled and timed-out checks as interrupted, not failing", async () => {
+	const runner = fixtureRunner({
+		checks: [{
+			conclusion: "CANCELLED",
+			detailsUrl: "https://github.com/owner/repo/actions/runs/777/job/1",
+			name: "PR checks",
+			status: "COMPLETED",
+		}],
+	});
+
+	const status = await collectReviewGateStatus({
+		consistencyRetries: 0,
+		prNumber: 42,
+		runGh: runner.runGh,
+	});
+
+	assert.equal(status.checks.state, "interrupted");
+	assert.equal(status.checks.failing.length, 0);
+	assert.deepEqual(status.reruns, []);
+	assert.equal(status.readyToMerge, false);
+});
+
+test("reruns an interrupted run and reports ready once the rerun passes", async () => {
+	const runner = fixtureRunner({
+		checks: (prCalls) => {
+			if (prCalls === 1) {
+				return [{ conclusion: "TIMED_OUT", detailsUrl: "https://github.com/owner/repo/actions/runs/777/job/1", name: "PR checks", status: "COMPLETED" }];
+			}
+			if (prCalls === 2) {
+				return [{ conclusion: "TIMED_OUT", detailsUrl: "https://github.com/owner/repo/actions/runs/777/job/1", name: "PR checks", status: "COMPLETED" }];
+			}
+			const done = prCalls >= 4;
+			return [{ conclusion: done ? "SUCCESS" : null, detailsUrl: "https://github.com/owner/repo/actions/runs/777/job/2", name: "PR checks", status: done ? "COMPLETED" : "IN_PROGRESS" }];
+		},
+	});
+	const rerunCalls = [];
+	let clock = 0;
+
+	const status = await collectReviewGateStatus({
+		consistencyRetries: 0,
+		delay: async (ms) => { clock += ms; },
+		now: () => clock,
+		pollSeconds: 30,
+		prNumber: 42,
+		rerunInterrupted: 3,
+		rerunRun: async (runId) => { rerunCalls.push(runId); },
+		runGh: runner.runGh,
+		waitSeconds: 600,
+	});
+
+	assert.deepEqual(rerunCalls, ["777"]);
+	assert.deepEqual(status.reruns, ["777"]);
+	assert.equal(status.checks.state, "passing");
+	assert.equal(status.readyToMerge, true);
+});
+
+test("never reruns a real failure and stops after the rerun budget", async () => {
+	const failing = fixtureRunner({
+		checks: [{ conclusion: "FAILURE", detailsUrl: "https://github.com/owner/repo/actions/runs/777/job/1", name: "PR checks", status: "COMPLETED" }],
+	});
+	const rerunCalls = [];
+	const failed = await collectReviewGateStatus({
+		consistencyRetries: 0,
+		prNumber: 42,
+		rerunInterrupted: 3,
+		rerunRun: async (runId) => { rerunCalls.push(runId); },
+		runGh: failing.runGh,
+	});
+	assert.equal(failed.checks.state, "failing");
+	assert.deepEqual(rerunCalls, []);
+
+	let job = 0;
+	const flaky = fixtureRunner({
+		checks: () => [{ conclusion: "CANCELLED", detailsUrl: `https://github.com/owner/repo/actions/runs/777/job/${job}`, name: "PR checks", status: "COMPLETED" }],
+	});
+	let clock = 0;
+	const exhausted = await collectReviewGateStatus({
+		consistencyRetries: 0,
+		delay: async (ms) => { clock += ms; },
+		now: () => clock,
+		pollSeconds: 30,
+		prNumber: 42,
+		rerunInterrupted: 2,
+		rerunRun: async (runId) => { job += 1; rerunCalls.push(runId); },
+		runGh: flaky.runGh,
+		waitSeconds: 60,
+	});
+	assert.deepEqual(rerunCalls, ["777", "777"]);
+	assert.equal(exhausted.checks.state, "interrupted");
+	assert.equal(exhausted.readyToMerge, false);
+});
