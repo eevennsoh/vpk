@@ -11,14 +11,22 @@ at once, before CI finishes. Wait on the gate first:
 
 ```bash
 node .agents/skills/vpk-git-ship/scripts/review-gate-status.js \
-  --pr <number> --repo <owner>/<repo> --wait 900 --require-clear --json
+  --pr <number> --repo <owner>/<repo> --wait 1200 --rerun-interrupted 3 --require-clear --json
 ```
+
+Run it as a background command so the harness notifies on exit; a full wait
+plus reruns can take an hour.
 
 - Exit 0: checks passed, review gate clear, merge state `CLEAN`. Merge now:
   `gh pr merge <number> --merge --delete-branch`.
 - Exit 2 with `checks.state: "failing"`: stop and report each failing check's
   name and URL. Do not retry or fix unless the user asked for remediation.
-- Exit 2 with `checks.state: "pending"`: the 15-minute wait ran out. Stop and
+- Exit 2 with `checks.state: "interrupted"`: a run was cancelled or timed out
+  three times without a verdict (`reruns` lists the run IDs). This is not a
+  test failure. Stop, preserve the PR, and report it as a CI capacity problem
+  (usually the job `timeout-minutes` in `.github/workflows/ci.yml`). Never
+  merge on an interrupted run.
+- Exit 2 with `checks.state: "pending"`: the wait ran out. Stop and
   preserve the PR; report the pending checks.
 - Exit 2 with checks passing: a review or merge-state condition remains; see
   [review-gate.md](review-gate.md).
@@ -48,7 +56,8 @@ Prefer merge commits unless the user explicitly asks for squash or rebase.
 - If review is re-requested or approval is dismissed after a push, wait for the
   current-head policy result. Old-head approval is not reusable proof.
 - Treat Codex review timeout or unavailability as non-blocking once recorded;
-  treat unresolved conversations and failing or pending checks as blocking.
+  treat unresolved conversations and failing, interrupted, or pending checks as
+  blocking.
 
 ## Sync persistent main
 

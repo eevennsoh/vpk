@@ -35,8 +35,9 @@ Symphony issue already following `vpk-symphony/references/git/land.md`.
   protection on this private repo (the protection API returns 403 on the
   current plan), so `gh pr merge --auto` merges immediately, without waiting
   for CI (PR #1973 merged while CI was still running). The skill is the gate:
-  wait with `review-gate-status.js --wait`, then merge only when
-  `--require-clear` exits 0. Never bypass it with admin flags. Follow
+  wait with `review-gate-status.js --wait --rerun-interrupted 3`, then merge
+  only when `--require-clear` exits 0. A cancelled or timed-out CI run is
+  rerun, never merged on. Never bypass it with admin flags. Follow
   [review-gate.md](references/review-gate.md) before every merge.
 - Missing or timed-out Codex auto-review is non-blocking once its status is
   recorded; unresolved conversations are blocking.
@@ -80,7 +81,11 @@ unavailable.
    contains unrelated experiments, secrets, or `.env*`; report every skipped
    path. Generate a concise imperative commit subject from the diff, with no
    co-author footer unless requested.
-6. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
+6. Regenerate derived files before verifying, then fold any changes into the
+   commit: `node scripts/generate-repo-map.js`,
+   `node scripts/generate-api-surfaces.js`,
+   `node scripts/generate-cursor-rules.js`, and
+   `node scripts/validate-skills.js --update-index`. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
    guardrails, ESLint suppression ratchet — about half of first-run CI
    failures). Then push with upstream when needed and create the PR with
    `gh pr create` or capture the updated PR URL. List only checks actually run.
@@ -117,7 +122,7 @@ sync, and local branch/worktree edge cases.
 ## Stop rules
 
 Stop without destroying state when the checkout has overlapping edits with no
-safe preservation path; required checks fail; merge state is `DIRTY`; review
+safe preservation path; required checks fail or stay interrupted after three reruns; merge state is `DIRTY`; review
 threads remain unresolved or cannot be reconciled through documented APIs;
 GitHub ownership or ancestry is ambiguous; or the merge poll times out. Preserve
 the branch, commit, and PR so the user can resume the same flow.
