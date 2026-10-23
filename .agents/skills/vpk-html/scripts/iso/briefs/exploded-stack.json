@@ -1,0 +1,25 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "exploded-stack",
+	"figId": "FIG_001",
+	"title": "Exploded stack",
+	"label": "Exploded isometric stack: base plate, core board, focal module and top shell, with dashed guides showing how they assemble.",
+	"caption": "The module is the only part that changes between revisions; everything around it is fixed housing.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "base", "kind": "slab", "at": [0, 0, 0], "size": [120, 84, 6], "label": "base plate" },
+		{ "id": "core", "kind": "slab", "at": [8, 8, 22], "size": [104, 68, 3], "marks": [[[6, 46], [46, 46]], [[6, 54], [62, 54]], [[6, 62], [34, 62]]], "label": "core board", "explode": [0, 0, 20] },
+		{ "id": "module", "kind": "box", "at": [52, 36, 38], "size": [40, 28, 10], "label": "module", "explode": [0, 0, 40] },
+		{ "id": "shell", "kind": "slab", "at": [0, 0, 74], "size": [120, 84, 4], "r": 4, "label": "top shell", "explode": [0, 0, 70] }
+	],
+	"focal": "module",
+	"labels": [
+		{ "text": "Top shell", "target": "shell", "side": "right" },
+		{ "text": "Module", "target": "module", "side": "right", "anchor": [88, 64, 43] },
+		{ "text": "Core board", "target": "core", "side": "left" },
+		{ "text": "Base plate", "target": "base", "side": "left" }
+	],
+	"assemble": { "layers": [["base"], ["core"], ["module"], ["shell"]], "staggerMs": 280 },
+	"interact": { "behavior": "explode", "explode": { "rest": 0.6, "min": 0.4, "max": 1, "step": 0.05, "unit": "gap" } },
+	"meta": { "margin": "[ EXPLODED STACK ]", "corner": "VPK-HTML" }
+}

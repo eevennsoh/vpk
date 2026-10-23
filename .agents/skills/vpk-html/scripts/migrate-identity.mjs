@@ -511,7 +511,18 @@ function migrateFile(filePath) {
 	return true;
 }
 
+export function shouldRunLegacyMigration(argv) {
+	return argv.includes("--legacy-one-shot");
+}
+
+const RETIRED_MESSAGE = "migrate-identity is the 2026-07 one-shot identity migration. Re-running it rewrites 207 committed files (+46k lines) and corrupts @font-face descriptors. Use build.mjs --refresh-library. Pass --legacy-one-shot only to replay the historical migration on a scratch copy.";
+
 function main() {
+	if (!shouldRunLegacyMigration(process.argv.slice(2))) {
+		console.error(RETIRED_MESSAGE);
+		process.exitCode = 1;
+		return;
+	}
 	const files = [
 		...listHtmlFiles(TEMPLATES),
 		...listHtmlFiles(DIAGRAMS),

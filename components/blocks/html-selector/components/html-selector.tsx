@@ -9,6 +9,7 @@ import { composeHtmlSelectorPrompt } from "../lib/prompt-composer";
 import { useAgentPreference } from "../hooks/use-agent-preference";
 import { useSelectorBridge } from "../hooks/use-selector-bridge";
 import { useSelectorPins } from "../hooks/use-selector-pins";
+import { useVpkReviewHost } from "../hooks/use-vpk-review-host";
 import { ArtifactActionBar } from "./artifact-action-bar";
 import type {
 	AgentId,
@@ -99,6 +100,19 @@ export function HtmlSelector({
 		getBridge(iframeRef.current)?.notify(notification);
 	}, []);
 
+	// A reviewable page's Send carries the review plus this page's selector pins (ws1 §4.14).
+	const getSelectorPrompt = useCallback(
+		(reviewPagePath: string) => composeHtmlSelectorPrompt(pinsByPage[reviewPagePath] ?? EMPTY_PINS),
+		[pinsByPage],
+	);
+	const { getReviewCounts } = useVpkReviewHost({
+		agent,
+		enabled: process.env.NODE_ENV === "development",
+		getSelectorPrompt,
+		iframeRef,
+		onNotify: notifyBridge,
+	});
+
 	const savePinFromPayload = useCallback((payload: SelectorPinSavePayload): SelectorPin => {
 		const resolvedPagePath = payload.pagePath || pagePath;
 		const existingPin = (pinsByPage[resolvedPagePath] ?? []).find((pin) => pin.selector === payload.selector);
@@ -181,9 +195,13 @@ export function HtmlSelector({
 					throw new Error(getDispatchErrorMessage(payload.error ?? "Failed to dispatch prompt."));
 				}
 				const payload = parseDispatchResponseBody(await response.text());
+				const openReviewComments = getReviewCounts(pagePath)?.open ?? 0;
+				const reviewNote = openReviewComments > 0
+					? ` This page also has ${openReviewComments} open review comment${openReviewComments === 1 ? "" : "s"}. Send them from Review → Share → Send to agent; that send includes your pins.`
+					: "";
 				notifyBridge({
 					type: "success",
-					message: `Opened tmux window ${payload.windowName} in ${payload.sessionName}`,
+					message: `Opened tmux window ${payload.windowName} in ${payload.sessionName}.${reviewNote}`,
 				});
 			})
 			.catch((error) => {
@@ -192,7 +210,7 @@ export function HtmlSelector({
 					message: getDispatchErrorMessage(error instanceof Error ? error.message : String(error)),
 				});
 			});
-	}, [agent, allPins, notifyBridge]);
+	}, [agent, allPins, getReviewCounts, notifyBridge, pagePath]);
 
 	const callbacks = useMemo(() => ({
 		onAgentChange: ({ agent: nextAgent }: { agent: AgentId }) => setAgent(nextAgent),

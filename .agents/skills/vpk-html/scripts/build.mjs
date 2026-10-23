@@ -13,19 +13,36 @@
  *   node scripts/build.mjs --check-evals           # eval corpus + catalog documentation health
  *   node scripts/build.mjs --verify <file>         # Playwright render + load check
  *   node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF export
- *   node scripts/build.mjs --github <file> [--repo owner/name] [--private]  # publish to GitHub Pages
+ *   node scripts/build.mjs --github <file> [--repo owner/name] [--private] [--include-review] [--allow-local-paths]  # publish to GitHub Pages (runs the publish preflight)
+ *   node scripts/build.mjs --doctor [--json] [--online] [--no-launch]   # environment + capability check
+ *   node scripts/build.mjs --check-content <file.html|content.json> [<file.html>] [--json]   # contract + content IR + coverage
+ *   node scripts/build.mjs --playbook [<template>] [--json]   # list or print template playbooks
+ *   node scripts/build.mjs --screenshot <file> [--out <dir>] [--theme light|dark|both] [--viewport WxH]   # review captures
+ *   node scripts/build.mjs --publish <artifacts|gist> <file> [--confirm] [--access private|open|shared] [--name <t>] [--description <t>] [--new] [--public|--private] [--include-review] [--allow-local-paths]
  *   node scripts/build.mjs --write-styles          # regenerate styles.css from tokens.json
- *   node scripts/build.mjs --inject-runtime <file...>  # refresh theme + presentation/docnav runtime
+ *   node scripts/build.mjs --refresh-library [--check]  # refresh every committed skill HTML through the runtime pipeline (--check: drift guard)
+ *   node scripts/build.mjs --inject-runtime <file...>  # apply the runtime pipeline (fonts, theme, nav, runtime modules, enhancements) to artifacts
+ *   node scripts/build.mjs --build-hero <file> [--audit] [--check] [--json]   # rebuild anatomy hero regions from _figures/<id>.hero.mjs (anatomy/build-hero.mjs)
+ *   node scripts/build.mjs --check-figures <file> [--strict] [--json]   # figure-engine record, anatomy structure and advisories (figures/check-figures.mjs)
+ *   node scripts/build.mjs --check-iso <file> [--strict] [--json]   # iso-kit figure audit A1–A12, A15–A17 (iso/audit.mjs); advisory unless --strict
+ *   node scripts/build.mjs --inject-review <file.html>... [--seed <s>] [--ledger <path>|--no-ledger] [--new-doc-id]   # make reviewable (review/cli.mjs)
+ *   node scripts/build.mjs --review <review.json|reviewed.html>... <artifact.html> [--format md|json] [--include-resolved] [--out <f>] [--force-doc] [--browser]
+ *   node scripts/build.mjs --stamp <artifact.html> [--from <prev.html|ledger.json>] [--revision-label <t>] [--summary <t>] [--addresses <ids|files>...] [--no-revision]
+ *   node scripts/build.mjs --embed-review <review.json|reviewed.html>... <artifact.html>   |   --strip-review <file.html> [--out <f>] [--all]
+ *   node scripts/lab/kit.mjs --inject|--check <file.html…>   # vpk-lab kit block (film, cue sheet, Gantt, labs); refreshed by the runtime pipeline step "lab"
+ *   node scripts/lab/render-case-study.mjs <content.json> --into <file.html> [--check]   # motion-case-study regions + data-vpk-content island from the content IR
+ *   node scripts/media/{capture,encode,embed}.mjs …   # captured film: capture → encode → embed (references/media-pipeline.md)
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { collectColorTokenIssues, collectPresentationIssues, collectSelfReferentialCustomPropertyIssues, collectSmilMotionIssues, collectSvgGrammarIssues, validateHtmlFile } from "./check-html.mjs";
-import { isDeck, retrofitDeck, retrofitDocumentNav } from "./presentation.mjs";
+import { collectColorTokenIssues, collectPresentationIssues, collectSelfReferentialCustomPropertyIssues, collectSmilMotionIssues, collectSvgGrammarIssues, collectTemplateReviewIssues, validateHtmlFile } from "./check-html.mjs";
+import { collectFontFaceIssues, verifyRegisteredFonts } from "./font-faces.mjs";
+import { formatHtmlWeight, measureHtmlWeight, weightWarnings } from "./media/size-budget.mjs";
+import { listSmilElements, verifySmilMotion } from "./runtime/smil-starter.mjs";
 import { checkStyleConsumers, checkStyleSource, collectFaviconIssues, writeStylesCssFromTokens } from "./shared.mjs";
-import { retrofitThemeRuntime } from "./theme.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,8 +73,15 @@ const FORBIDDEN_KAMI_LEAKAGE = [
 	{ pattern: /<meta\s+name="generator"\s+content="Kami"/i, label: "kami generator tag (should be vpk-html)" },
 ];
 
+// ws1 review commands (whole-token match): everything from the command on goes to review/cli.mjs.
+const REVIEW_COMMANDS = new Set(["--inject-review", "--review", "--stamp", "--embed-review", "--strip-review"]);
+
 function parseArgs(argv) {
-	const args = { mode: "default", file: null, files: [], out: null, gate: null, strict: false, origin: null, repo: null, visibility: "public" };
+	const args = {
+		mode: "default", file: null, files: [], out: null, gate: null, strict: false, check: false, origin: null, repo: null, visibility: "public",
+		json: false, online: false, launch: true, html: null, target: null, confirm: false, access: null, name: null, description: null, forceNew: false,
+		includeReview: false, allowLocalPaths: false, theme: "both", viewport: null, playbook: null, visibilityExplicit: false, audit: false,
+	};
 	const GATE_FLAGS = {
 		"--check-density": "density",
 		"--check-resume-balance": "resume-balance",
@@ -66,10 +90,12 @@ function parseArgs(argv) {
 		"--check-focal": "focal",
 		"--check-motion-budget": "motion-budget",
 		"--check-caption-echo": "caption-echo",
+		"--check-layout": "layout",
 	};
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i];
-		if (arg === "--check-placeholders") { args.mode = "placeholders"; args.file = argv[++i]; }
+		if (REVIEW_COMMANDS.has(arg)) { args.mode = "review"; args.reviewArgv = argv.slice(i); break; }
+		else if (arg === "--check-placeholders") { args.mode = "placeholders"; args.file = argv[++i]; }
 		else if (arg === "--sync" || arg === "--check-theme") { args.mode = "sync"; }
 		else if (arg === "--write-styles" || arg === "--write-theme") { args.mode = "write-styles"; }
 		else if (arg === "--check-templates") { args.mode = "templates"; }
@@ -79,12 +105,35 @@ function parseArgs(argv) {
 		else if (arg === "--landing") { args.mode = "landing"; args.file = argv[++i]; }
 		else if (arg === "--github") { args.mode = "github"; args.file = argv[++i]; }
 		else if (arg === "--inject-runtime") { args.mode = "inject-runtime"; args.files = argv.slice(i + 1); break; }
+		else if (arg === "--refresh-library") { args.mode = "refresh-library"; }
+		else if (arg === "--check") { args.check = true; }
 		else if (arg in GATE_FLAGS) { args.mode = "gate"; args.gate = GATE_FLAGS[arg]; args.file = argv[++i]; }
+		else if (arg === "--doctor") { args.mode = "doctor"; }
+		else if (arg === "--check-content") { args.mode = "content"; args.file = argv[++i]; if (argv[i + 1] && !argv[i + 1].startsWith("--")) args.html = argv[++i]; }
+		else if (arg === "--playbook") { args.mode = "playbook"; if (argv[i + 1] && !argv[i + 1].startsWith("--")) args.playbook = argv[++i]; }
+		else if (arg === "--publish") { args.mode = "publish"; args.target = argv[++i]; args.file = argv[++i]; }
+		else if (arg === "--screenshot") { args.mode = "screenshot"; args.file = argv[++i]; }
+		else if (arg === "--build-hero") { args.mode = "build-hero"; args.file = argv[++i]; }
+		else if (arg === "--check-figures") { args.mode = "check-figures"; args.file = argv[++i]; }
+		else if (arg === "--check-iso") { args.mode = "check-iso"; args.file = argv[++i]; }
+		else if (arg === "--audit") { args.audit = true; }
+		else if (arg === "--json") { args.json = true; }
+		else if (arg === "--online") { args.online = true; }
+		else if (arg === "--no-launch") { args.launch = false; }
+		else if (arg === "--confirm") { args.confirm = true; }
+		else if (arg === "--access") { args.access = argv[++i]; }
+		else if (arg === "--name") { args.name = argv[++i]; }
+		else if (arg === "--description") { args.description = argv[++i]; }
+		else if (arg === "--new") { args.forceNew = true; }
+		else if (arg === "--include-review") { args.includeReview = true; }
+		else if (arg === "--allow-local-paths") { args.allowLocalPaths = true; }
+		else if (arg === "--theme") { args.theme = argv[++i]; }
+		else if (arg === "--viewport") { args.viewport = argv[++i]; }
 		else if (arg === "--out") { args.out = argv[++i]; }
 		else if (arg === "--origin") { args.origin = argv[++i]; }
 		else if (arg === "--repo") { args.repo = argv[++i]; }
-		else if (arg === "--public") { args.visibility = "public"; }
-		else if (arg === "--private") { args.visibility = "private"; }
+		else if (arg === "--public") { args.visibility = "public"; args.visibilityExplicit = true; }
+		else if (arg === "--private") { args.visibility = "private"; args.visibilityExplicit = true; }
 		else if (arg === "--strict") { args.strict = true; }
 		else if (arg === "--help" || arg === "-h") { args.mode = "help"; }
 		else throw new Error(`Unknown argument: ${arg}`);
@@ -128,30 +177,10 @@ function checkPlaceholders(filePath) {
 
 /* ============ --inject-runtime ============ */
 
-function injectRuntime(filePaths) {
-	if (!filePaths || filePaths.length === 0) throw new Error("--inject-runtime requires at least one file path");
-
-	let changed = 0;
-	let unchanged = 0;
-	for (const filePath of filePaths) {
-		const abs = path.resolve(filePath);
-		if (!fs.existsSync(abs)) throw new Error(`File not found: ${abs}`);
-
-		const before = fs.readFileSync(abs, "utf8");
-		let after = retrofitThemeRuntime(before);
-		after = isDeck(after) ? retrofitDeck(after) : retrofitDocumentNav(after);
-
-		if (after === before) {
-			unchanged += 1;
-			continue;
-		}
-
-		fs.writeFileSync(abs, after, "utf8");
-		changed += 1;
-	}
-
-	console.log(`✓ injected runtime into ${changed} changed, ${unchanged} unchanged file${filePaths.length === 1 ? "" : "s"}`);
-	return { ok: true, changed, unchanged };
+// The runtime pipeline (scripts/runtime/pipeline.mjs) picks the steps by each file's kind.
+async function injectRuntime(filePaths) {
+	const { injectRuntimeFiles } = await import("./runtime/pipeline.mjs");
+	return injectRuntimeFiles(filePaths);
 }
 
 /* ============ --check-templates ============ */
@@ -180,6 +209,7 @@ function checkTemplate(filePath) {
 			failures.push(`missing @font-face declaration for "${family}"`);
 		}
 	}
+	failures.push(...collectFontFaceIssues(content));
 
 	for (const { pattern, label } of FORBIDDEN_KAMI_LEAKAGE) {
 		if (pattern.test(content)) failures.push(`kami leakage: ${label}`);
@@ -190,6 +220,7 @@ function checkTemplate(filePath) {
 	failures.push(...collectPresentationIssues(content));
 	failures.push(...collectSmilMotionIssues(content));
 	failures.push(...collectSvgGrammarIssues(content));
+	failures.push(...collectTemplateReviewIssues(content));
 
 	if (!/--ease-out:\s*cubic-bezier\(0\.16,1,0\.3,1\)/.test(content)) {
 		failures.push("missing vpk motion easing token --ease-out");
@@ -269,37 +300,34 @@ async function verify(filePath) {
 		await page.goto(pathToFileURL(abs).href, { waitUntil: "domcontentloaded", timeout: 15_000 });
 		try { await page.waitForLoadState("networkidle", { timeout: 4_000 }); } catch { /* fine */ }
 		await page.waitForTimeout(400);
-		const fontsReady = await page.evaluate(async () => {
-			try { await document.fonts.ready; } catch { /* noop */ }
-			const required = ["Geist", "Geist Mono", "Geist Mono Numeric"];
-			const results = [];
-			for (const family of required) {
-				try {
-					// Force-load even if no element on the page currently uses this font.
-					await document.fonts.load(`16px "${family}"`);
-					results.push({ family, loaded: document.fonts.check(`16px "${family}"`) });
-				} catch (error) {
-					results.push({ family, loaded: false, error: String(error) });
-				}
-			}
-			return results;
-		});
+		// document.fonts.check() is true when no face matches, so require a registered face per family.
+		const fontsReady = await verifyRegisteredFonts(page);
 
 		const issues = [];
 		for (const { family, loaded, error } of fontsReady) {
 			if (!loaded) issues.push(`font "${family}" did not load${error ? ` (${error})` : ""}`);
 		}
+
+		const rel = path.relative(process.cwd(), abs);
+		const html = fs.readFileSync(abs, "utf8");
+		const warnings = weightWarnings(html, { label: rel });
+		if (listSmilElements(html).length > 0) {
+			const smil = await verifySmilMotion({ browser, url: pathToFileURL(abs).href, html });
+			issues.push(...smil.issues);
+			warnings.push(...smil.warnings);
+		}
 		issues.push(...consoleErrors);
 		issues.push(...failedRequests.map(req => `failed request: ${req}`));
 
-		const rel = path.relative(process.cwd(), abs);
 		if (issues.length === 0) {
 			console.log(`✓ ${rel} — renders clean, fonts loaded, no console errors`);
 		} else {
 			console.log(`✗ ${rel}`);
 			for (const issue of issues) console.log(`  ${issue}`);
 		}
-		return { ok: issues.length === 0, issues };
+		console.log(`  page weight ${formatHtmlWeight(measureHtmlWeight(html))}`);
+		for (const warning of warnings) console.log(`  ⚠ ${warning}`);
+		return { ok: issues.length === 0, issues, warnings };
 	} finally {
 		await ctx.close();
 		await browser.close();
@@ -320,9 +348,28 @@ Usage:
   node scripts/build.mjs --verify <file>
   node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
   node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   # emit companions + responsive verify
-  node scripts/build.mjs --github <file> [--repo owner/name] [--public|--private]   # publish index.html to GitHub Pages
-  node scripts/build.mjs --inject-runtime <file...>   # refresh theme + presentation/docnav runtime in artifacts
-  node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo <file> [--strict]
+  node scripts/build.mjs --github <file> [--repo owner/name] [--public|--private] [--include-review] [--allow-local-paths]   # publish index.html to GitHub Pages (runs the publish preflight)
+  node scripts/build.mjs --doctor [--json] [--online] [--no-launch]   # environment + capability check
+  node scripts/build.mjs --check-content <file.html|content.json> [<file.html>] [--json]   # contract + content IR + coverage
+  node scripts/build.mjs --playbook [<template>] [--json]   # list or print template playbooks
+  node scripts/build.mjs --screenshot <file> [--out <dir>] [--theme light|dark|both] [--viewport WxH]   # review captures, light + dark + mobile
+  node scripts/build.mjs --publish <artifacts|gist> <file> [--confirm] [--access private|open|shared] [--name <t>] [--description <t>] [--new] [--public|--private] [--include-review] [--allow-local-paths]   # plan, then --confirm
+  node scripts/build.mjs --refresh-library [--check]   # refresh committed skill HTML through the runtime pipeline; --check fails on drift
+  node scripts/build.mjs --inject-runtime <file...>   # apply the runtime pipeline (fonts, theme, nav, runtime modules, enhancements) to artifacts
+  node scripts/build.mjs --build-hero <file> [--audit] [--check] [--json]   # rebuild anatomy hero regions from their _figures/<id>.hero.mjs; --check fails when stale
+  node scripts/build.mjs --check-figures <file> [--strict] [--json]   # figure-engine record (E1–E3), anatomy structure (H1–H8) and advisories (A1–A6)
+  node scripts/build.mjs --check-iso <file> [--strict] [--json]   # iso-kit figure audit (A1–A12, A15–A17); advisory, --strict exits 1 on errors
+  node scripts/build.mjs --inject-review <file.html>... [--seed <s>] [--ledger <path>|--no-ledger] [--new-doc-id]   # make reviewable: doc id, block ids, ledger, review runtime
+  node scripts/build.mjs --review <review.json|reviewed.html>... <artifact.html> [--format md|json] [--include-resolved] [--out <f>] [--force-doc] [--browser]   # numbered task list (--browser: statuses from Chromium)
+  node scripts/build.mjs --stamp <artifact.html> [--from <prev.html|ledger.json>] [--revision-label <t>] [--summary <t>] [--addresses <ids|files>...] [--no-revision]   # carry ids, record a revision
+  node scripts/build.mjs --embed-review <review.json|reviewed.html>... <artifact.html>   # carry merged comments into the file
+  node scripts/build.mjs --strip-review <file.html> [--out <clean.html>] [--all]   # remove the runtime and embedded comments (--all: every review mark)
+  node scripts/lab/kit.mjs --inject|--check <file.html...>   # add/refresh or check the vpk-lab kit block (references/lab-kit.md)
+  node scripts/lab/render-case-study.mjs <content.json> --into <file.html> [--check]   # render motion-case-study regions and island from the content IR
+  node scripts/media/capture.mjs <spec.mjs> | --url <url> --end <s> [--fps 30] [--virtual] [--cursor]   # held, virtual-clock or CDP screencast frames → frames.ffconcat + capture.json
+  node scripts/media/encode.mjs <capture-dir|frames.ffconcat|film.mp4> [--preset film|lite|hq] [--target-bytes N]   # H.264 film, no audio, + encode.json; hq is a derived 1920-wide MP4, never embedded
+  node scripts/media/embed.mjs <file.html> --film <film.mp4> [--manifest capture.json] [--lite auto|always|never]   # embed the film; over budget also writes <slug>.lite.html
+  node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo|--check-layout <file> [--strict]
   node scripts/build.mjs --write-styles
   node scripts/build.mjs --help`);
 }
@@ -333,13 +380,25 @@ async function main() {
 	catch (error) { console.error(error.message); process.exitCode = 1; return; }
 
 	if (args.mode === "help") return help();
+	if (args.mode === "review") {
+		const { runReviewCli } = await import("./review/cli.mjs");
+		process.exitCode = await runReviewCli(args.reviewArgv);
+		return;
+	}
 	if (args.mode === "placeholders") {
 		const result = checkPlaceholders(args.file);
 		if (!result.ok) process.exitCode = 1;
 		return;
 	}
 	if (args.mode === "inject-runtime") {
-		injectRuntime(args.files);
+		await injectRuntime(args.files);
+		return;
+	}
+	if (args.mode === "refresh-library") {
+		const { refreshLibrary, formatRefreshReport } = await import("./runtime/pipeline.mjs");
+		const result = await refreshLibrary({ write: !args.check });
+		console.log(formatRefreshReport(result, { check: args.check }));
+		if (args.check && result.changed.length) process.exitCode = 1;
 		return;
 	}
 	if (args.mode === "sync") {
@@ -367,7 +426,7 @@ async function main() {
 			return;
 		}
 		const { demos, diagrams, templates } = result.catalogCounts;
-		console.log(`✓ vpk-html evaluation system: ${result.evalCount} scenarios; ${templates} templates, ${diagrams} diagrams, ${demos} demos`);
+		console.log(`✓ vpk-html evaluation system: ${result.evalCount} scenarios; ${templates} templates, ${diagrams} diagrams, ${demos} demos; ${result.playbookCount} playbooks`);
 		return;
 	}
 	if (args.mode === "verify") {
@@ -415,6 +474,10 @@ async function main() {
 			return;
 		}
 		console.log(`ok ${htmlResult.label}`);
+		const { runPreflight, formatPreflight } = await import("./publish.mjs");
+		const pre = await runPreflight(args.file, { target: "github", includeReview: args.includeReview, allowLocalPaths: args.allowLocalPaths });
+		console.log(formatPreflight(pre));
+		if (!pre.ok) { process.exitCode = 1; return; }
 		const { publishGithubPages } = await import("./github-pages.mjs");
 		const result = await publishGithubPages(args.file, { repo: args.repo, visibility: args.visibility });
 		console.log(`✓ published ${result.repo} from ${path.relative(process.cwd(), result.publishDir)}`);
@@ -427,6 +490,18 @@ async function main() {
 		}
 		return;
 	}
+	// ws6 agent tooling (references/contract.md, references/publish.md). Every runner returns an exit code and is awaited.
+	if (args.mode === "doctor") { const { runDoctor } = await import("./doctor.mjs"); process.exitCode = await runDoctor(args); return; }
+	if (args.mode === "content") { const { runCheckContent } = await import("./content-ir.mjs"); process.exitCode = await runCheckContent(args); return; }
+	if (args.mode === "playbook") { const { runPlaybook } = await import("./playbooks.mjs"); process.exitCode = runPlaybook(args.playbook, args); return; }
+	if (args.mode === "publish") { const { runPublish } = await import("./publish.mjs"); process.exitCode = await runPublish(args, { checkPlaceholders, verify, validateHtmlFile }); return; }
+	if (args.mode === "screenshot") { const { runScreenshot } = await import("./screenshot.mjs"); process.exitCode = await runScreenshot(args); return; }
+	// ws4b figure engines (references/figure-engines.md). Both runners return an exit code and are awaited.
+	if (args.mode === "build-hero") { const { runBuildHero } = await import("./anatomy/build-hero.mjs"); process.exitCode = await runBuildHero({ file: args.file, audit: args.audit, check: args.check, json: args.json }); return; }
+	if (args.mode === "check-figures") { const { runCheckFigures } = await import("./figures/check-figures.mjs"); process.exitCode = await runCheckFigures({ file: args.file, strict: args.strict, json: args.json }); return; }
+	// ws3 iso kit (references/illustrations.md § Acceptance checks): advisory unless --strict. The runner returns an
+	// exit code: 0 ok, 1 errors under --strict, 2 missing argument or unreadable file (a clean message, no stack).
+	if (args.mode === "check-iso") { const { runCheckIso } = await import("./iso/audit.mjs"); process.exitCode = runCheckIso({ file: args.file, strict: args.strict, json: args.json }); return; }
 	if (args.mode === "gate") {
 		const { runGates } = await import("./gates.mjs");
 		const { results } = await runGates(args.file, { gates: [args.gate] });

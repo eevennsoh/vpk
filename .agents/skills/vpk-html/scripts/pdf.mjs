@@ -11,11 +11,16 @@
  *
  * Programmatic use:  import { exportPdf } from "./pdf.mjs";
  * CLI is exposed through scripts/build.mjs --pdf <file> [--out <file.pdf>].
+ *
+ * Reduced motion keeps SMIL starters and CSS entrances idle, so the PDF shows each figure's
+ * assembled base pose.
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+
+export const PDF_PAGE_OPTIONS = { reducedMotion: "reduce" };
 
 /**
  * Export a single HTML file to PDF.
@@ -31,11 +36,13 @@ export async function exportPdf(htmlPath, outPath) {
 	const { chromium } = await import("@playwright/test");
 	const browser = await chromium.launch();
 	try {
-		const page = await browser.newPage();
+		const page = await browser.newPage(PDF_PAGE_OPTIONS);
 		await page.goto(pathToFileURL(abs).href, { waitUntil: "domcontentloaded", timeout: 15_000 });
 		try { await page.waitForLoadState("networkidle", { timeout: 4_000 }); } catch { /* fine */ }
 		// Ensure embedded fonts are resolved before snapshotting to PDF.
 		await page.evaluate(async () => { try { await document.fonts.ready; } catch { /* noop */ } });
+		// vpk-lab documents: wait for the kit's ready signal (labs drawn, runtime thumbnails done), capped at 5 s.
+		await page.evaluate(() => Promise.race([window.vpkLab?.ready, new Promise(resolve => setTimeout(resolve, 5000))]));
 		await page.pdf({
 			path: out,
 			printBackground: true,

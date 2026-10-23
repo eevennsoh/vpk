@@ -695,37 +695,37 @@
 			"method": "GET",
 			"path": "/api/vpk-html",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:417"
+			"source": "backend/routes/vpk-html.js:486"
 		},
 		{
 			"method": "GET",
 			"path": "/api/vpk-html/*assetPath",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:418"
+			"source": "backend/routes/vpk-html.js:487"
 		},
 		{
 			"method": "POST",
 			"path": "/api/vpk-html/apply-tokens",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:310"
+			"source": "backend/routes/vpk-html.js:379"
 		},
 		{
 			"method": "GET",
 			"path": "/api/vpk-html/notes",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:335"
+			"source": "backend/routes/vpk-html.js:404"
 		},
 		{
 			"method": "PUT",
 			"path": "/api/vpk-html/notes",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:356"
+			"source": "backend/routes/vpk-html.js:425"
 		},
 		{
 			"method": "POST",
 			"path": "/api/vpk-html/publish-gist",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:383"
+			"source": "backend/routes/vpk-html.js:452"
 		},
 		{
 			"method": "GET",

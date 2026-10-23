@@ -48,6 +48,9 @@ Reduced motion forces draw/grow/reveal/pulse utilities to their final visible
 state. Do not write chart-specific keyframes unless the shared vocabulary cannot
 express the behavior.
 
+Prefer these utilities. SMIL is allowed for motion they can't express, under
+`svg-style.md` § SMIL motion; 22 shipped chart primitives use it.
+
 ## Interaction Pattern
 
 Use the inline `data-vpk-chart-runtime` pattern from `scripts/shared.mjs` or the

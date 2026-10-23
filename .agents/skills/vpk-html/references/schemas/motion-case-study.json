@@ -1,0 +1,186 @@
+{
+	"$comment": "Content schema for motion-case-study.html (owned by ws4a; integration R8). scripts/lab/render-case-study.mjs renders the cue sheet, process timeline, Gantt, layer stack and discard deck from it and writes it as the data-vpk-content=\"motion-case-study\" island. Times keep unit suffixes (film_s is film time, t_s is time on the film's clock segment); the runtime film data uses unit-free names (references/lab-kit.md, Film data). Numbers, ids and the Gantt spec are bookkeeping and are not coverage-checked.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["title", "film", "chapters", "cues"],
+	"properties": {
+		"title": { "type": "string", "minLength": 2, "maxLength": 120 },
+		"dek": { "type": "string", "maxLength": 400 },
+		"film": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["duration_s", "fps"],
+			"properties": {
+				"duration_s": { "type": "number", "minimum": 0.1, "maximum": 600, "x-coverage": "skip" },
+				"fps": { "type": "integer", "minimum": 1, "maximum": 120, "x-coverage": "skip" },
+				"width": { "type": "integer", "minimum": 16, "maximum": 7680, "x-coverage": "skip", "$comment": "Informational." },
+				"height": { "type": "integer", "minimum": 16, "maximum": 4320, "x-coverage": "skip", "$comment": "Informational." },
+				"clock_offset_s": { "type": "number", "minimum": 0, "maximum": 600, "x-coverage": "skip", "$comment": "Film time where the clock segment starts. t_s cue times resolve through that segment: film = clock_offset_s + t_s. A capture manifest replaces these segments at embed; embed warns when they disagree by more than a frame." },
+				"clock_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,64}$", "x-coverage": "skip", "$comment": "Id of the clock segment (default clock); match the capture spec's hold segment id." },
+				"clock_label": { "type": "string", "minLength": 1, "maxLength": 40, "$comment": "Name the film readout gives the clock, such as finale or rehearsal clock." },
+				"poster_s": { "type": "number", "minimum": 0, "maximum": 600, "x-coverage": "skip" },
+				"source": { "type": "string", "maxLength": 240, "x-coverage": "skip", "$comment": "Where the film came from: a supplied MP4 path or the capture spec." }
+			}
+		},
+		"chapters": {
+			"type": "array",
+			"maxItems": 9,
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["label", "film_s"],
+				"properties": {
+					"label": { "type": "string", "minLength": 1, "maxLength": 40 },
+					"film_s": { "type": "number", "minimum": 0, "maximum": 600, "x-coverage": "skip" }
+				}
+			}
+		},
+		"cues": {
+			"type": "array",
+			"minItems": 1,
+			"maxItems": 60,
+			"$comment": "Cue ids are unique, as are labs[].id and timeline.kinds[].id. The schema language has no per-field uniqueness keyword, so caseStudyContentIssues in scripts/lab/render-case-study.mjs enforces it: render-case-study refuses repeats, and --check-content runs it as this type's contract and island hook.",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["id", "act", "title"],
+				"properties": {
+					"id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,39}$", "x-coverage": "skip" },
+					"act": { "type": "string", "minLength": 1, "maxLength": 40 },
+					"film_s": { "type": "number", "minimum": 0, "maximum": 600, "x-coverage": "skip", "$comment": "Give film_s or t_s." },
+					"t_s": { "type": "number", "minimum": 0, "maximum": 600, "x-coverage": "skip" },
+					"title": { "type": "string", "minLength": 1, "maxLength": 120 },
+					"body": { "type": "string", "maxLength": 600 },
+					"nums": { "type": "string", "maxLength": 200 }
+				}
+			}
+		},
+		"timeline": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["kinds", "days"],
+			"properties": {
+				"label": { "type": "string", "minLength": 4, "maxLength": 200 },
+				"kinds": {
+					"type": "array",
+					"minItems": 1,
+					"maxItems": 8,
+					"items": {
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["id", "label"],
+						"properties": {
+							"id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$", "x-coverage": "skip" },
+							"label": { "type": "string", "minLength": 1, "maxLength": 40 }
+						}
+					}
+				},
+				"days": {
+					"type": "array",
+					"minItems": 1,
+					"maxItems": 60,
+					"items": {
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["date", "events"],
+						"properties": {
+							"date": { "type": "string", "minLength": 1, "maxLength": 40 },
+							"dow": { "type": "string", "maxLength": 20 },
+							"commits": { "type": "integer", "minimum": 0, "maximum": 10000, "x-coverage": "skip" },
+							"events": {
+								"type": "array",
+								"maxItems": 40,
+								"items": {
+									"type": "object",
+									"additionalProperties": false,
+									"required": ["kind", "text"],
+									"properties": {
+										"kind": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$", "x-coverage": "skip" },
+										"who": { "type": "string", "maxLength": 80 },
+										"text": { "type": "string", "minLength": 1, "maxLength": 600 }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"discards": {
+			"type": "array",
+			"maxItems": 24,
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["what", "why"],
+				"properties": {
+					"tag": { "type": "string", "maxLength": 40 },
+					"what": { "type": "string", "minLength": 1, "maxLength": 160 },
+					"why": { "type": "string", "minLength": 1, "maxLength": 400 },
+					"src": { "type": "string", "maxLength": 160 }
+				}
+			}
+		},
+		"layers": {
+			"type": "array",
+			"maxItems": 16,
+			"$comment": "Up to 16: the EU26 reference case study stacks 14 layers.",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["name", "body"],
+				"properties": {
+					"name": { "type": "string", "minLength": 1, "maxLength": 80 },
+					"tech": { "type": "string", "maxLength": 80 },
+					"body": { "type": "string", "minLength": 1, "maxLength": 600 }
+				}
+			}
+		},
+		"labs": {
+			"type": "array",
+			"maxItems": 16,
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["id", "kind", "title", "source"],
+				"properties": {
+					"id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$", "x-coverage": "skip" },
+					"kind": { "type": "string", "enum": ["time", "simulation"], "x-coverage": "skip" },
+					"title": { "type": "string", "minLength": 1, "maxLength": 120 },
+					"source": { "type": "string", "minLength": 3, "maxLength": 200, "$comment": "The file:lines of the real maths the lab ports, shown in its [data-vpk-lab-source]." }
+				}
+			}
+		},
+		"gantt": {
+			"type": "object",
+			"x-coverage": "skip",
+			"$comment": "A scripts/lab/gantt.mjs spec (normalizeGanttSpec validates the rest at render time). Its clock is the segment id the head follows.",
+			"additionalProperties": false,
+			"required": ["id", "label", "description", "tMax", "rows"],
+			"properties": {
+				"id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+				"clock": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,64}$" },
+				"label": { "type": "string", "minLength": 4, "maxLength": 200 },
+				"description": { "type": "string", "minLength": 4, "maxLength": 400 },
+				"tMin": { "type": "number" },
+				"tMax": { "type": "number" },
+				"tickEvery": { "type": "number", "minimum": 0 },
+				"viewBox": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"width": { "type": "number" }, "x0": { "type": "number" }, "x1": { "type": "number" },
+						"top": { "type": "number" }, "rowHeight": { "type": "number" }, "bottom": { "type": "number" }
+					}
+				},
+				"rows": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "type": ["string", "object"] } },
+				"marks": { "type": "array", "maxItems": 40, "items": { "type": "object" } },
+				"bars": { "type": "array", "maxItems": 200, "items": { "type": "object" } },
+				"keys": { "type": "array", "maxItems": 200, "items": { "type": "object" } },
+				"spans": { "type": "array", "maxItems": 200, "items": { "type": "object" } },
+				"ticks": { "type": "array", "maxItems": 200, "items": { "type": "object" } },
+				"tails": { "type": "array", "maxItems": 40, "items": { "type": "object" } }
+			}
+		}
+	}
+}

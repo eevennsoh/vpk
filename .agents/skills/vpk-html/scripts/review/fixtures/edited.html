@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Drag it to Done</title>
+	<style>
+		@font-face { font-family: "VPK Fixture"; src: url(data:font/woff2;base64,AAAA) format("woff2"); }
+		:root { color-scheme: light dark; }
+		[data-theme="dark"] { color-scheme: dark; }
+		body { font-family: "VPK Fixture", system-ui, sans-serif; margin: 0; }
+		main { max-width: 72ch; margin: 0 auto; padding: 24px; }
+	</style>
+</head>
+<body>
+<main>
+	<header>
+		<p class="eyebrow">Overview</p>
+		<h1>Drag it to Done</h1>
+		<p class="lede">Everything below is about this film. The board shows how a card moves from To Do to Done in forty-three seconds.</p>
+	</header>
+	<section id="scope">
+		<h2>Scope</h2>
+		<p>New in this revision: a short summary paragraph at the top of the scope section.</p>
+		<p>The first release covers the board view only. Lists and timelines follow once the &ldquo;Done&rdquo; column ships to everyone.</p>
+		<ul>
+			<li>Board view with drag and drop</li>
+			<li>Keyboard moves between columns</li>
+			<li>Undo for the last move</li>
+		</ul>
+		<p>A failed send retries five times before giving up, with five minutes between attempts.</p>
+		<p>Alpha teams try it first. Beta teams follow two weeks later.</p>
+		<p>We measured the same phrase twice: the same phrase appears here again on purpose.</p>
+	</section>
+	<section id="rollout">
+		<h2>Rollout</h2>
+		<p>Rollout starts with internal teams.</p>
+		<dl>
+			<dt>Owner</dt>
+			<dd>Dana Lee</dd>
+			<dt>Target</dt>
+			<dd>Fourth quarter of 2026</dd>
+		</dl>
+		<figure>
+			<svg viewBox="0 0 120 40" role="img" aria-label="Board columns diagram"><rect x="1" y="1" width="36" height="38" fill="none" stroke="currentColor"></rect><rect x="42" y="1" width="36" height="38" fill="none" stroke="currentColor"></rect><text x="4" y="22">To Do</text><text x="45" y="22">Done</text></svg>
+			<figcaption>The board has two columns in this sketch.</figcaption>
+		</figure>
+		<table>
+			<caption>Move timings</caption>
+			<thead>
+				<tr><th>Move</th><th>Seconds</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>To Do to Doing</td><td>12</td></tr>
+				<tr><td>Doing to Done</td><td>31</td></tr>
+			</tbody>
+		</table>
+		<div class="note">A div with direct text is a block.</div>
+		<div class="wrapper"><p>Wrapped paragraph inside a div without direct text.</p></div>
+		<button type="button">Copy link</button>
+		<p aria-live="polite">Live region text is excluded.</p>
+		<aside class="speaker-notes"><p>Speaker notes are excluded.</p></aside>
+		<div data-vpk-review-ignore><p>Ignored subtree text.</p></div>
+		<script>/* <p>not a tag</p> */ window.fixtureFlag = "<section>";</script>
+		<!-- <p>commented out</p> -->
+		<p title="a > b <c>">Attribute values with angle brackets.</p>
+	</section>
+	<section id="css-case">
+		<h2>Fallback</h2>
+		<p>Repeated paragraph text for the css fallback test.</p>
+		<p>Repeated paragraph text for the css fallback test.</p>
+	</section>
+	<footer>
+		<p>Last updated on the eleventh of October. This sentence will move to another paragraph later.</p>
+	</footer>
+</main>
+</body>
+</html>

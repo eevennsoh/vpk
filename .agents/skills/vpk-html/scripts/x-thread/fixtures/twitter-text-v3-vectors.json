@@ -1,0 +1,1815 @@
+{
+	"_source": {
+		"repository": "https://github.com/twitter/twitter-text",
+		"commit": "30e2430d90cff3b46393ea54caf511441983c260",
+		"files": [
+			"conformance/validate.yml",
+			"conformance/extract.yml"
+		],
+		"license": "Apache-2.0 (https://www.apache.org/licenses/LICENSE-2.0)",
+		"copyright": "Copyright 2018 Twitter, Inc.",
+		"modified": "Converted from YAML to JSON. Only the groups under weighted and urls are kept, verbatim; invisible and combining characters are written as JSON \\u escapes. The local group is vpk-html's own, not upstream.",
+		"groups": {
+			"validate.yml": [
+				"WeightedTweetsWithDiscountedEmojiCounterTest",
+				"UnicodeDirectionalMarkerCounterTest"
+			],
+			"extract.yml": [
+				"urls",
+				"urls_with_indices",
+				"urls_with_directional_markers",
+				"tco_urls_with_params"
+			]
+		}
+	},
+	"weighted": {
+		"WeightedTweetsWithDiscountedEmojiCounterTest": [
+			{
+				"description": "Regular Tweet with url",
+				"text": "Hi http://test.co",
+				"expected": {
+					"weightedLength": 26,
+					"valid": true,
+					"permillage": 92,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 16,
+					"validRangeStart": 0,
+					"validRangeEnd": 16
+				}
+			},
+			{
+				"description": "Just url",
+				"text": "http://test.co",
+				"expected": {
+					"weightedLength": 23,
+					"valid": true,
+					"permillage": 82,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 13,
+					"validRangeStart": 0,
+					"validRangeEnd": 13
+				}
+			},
+			{
+				"description": "Long tweet, overflow at char index 280",
+				"text": "285 chars-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-",
+				"expected": {
+					"weightedLength": 285,
+					"valid": false,
+					"permillage": 1017,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 284,
+					"validRangeStart": 0,
+					"validRangeEnd": 279
+				}
+			},
+			{
+				"description": "Long tweet with url in the middle, overflow at char index 284",
+				"text": "285 chars- http://www.twitter.com/jack xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-",
+				"expected": {
+					"weightedLength": 299,
+					"valid": false,
+					"permillage": 1067,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 302,
+					"validRangeStart": 0,
+					"validRangeEnd": 283
+				}
+			},
+			{
+				"description": "Long tweet with url at the end, overflow at char index 265",
+				"text": "xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx- http://www.twitter.com/jack ",
+				"expected": {
+					"weightedLength": 289,
+					"valid": false,
+					"permillage": 1032,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 292,
+					"validRangeStart": 0,
+					"validRangeEnd": 264
+				}
+			},
+			{
+				"description": "10 url string, no overflow",
+				"text": "https://www.twitter.com/aloha https://www.twitter.com/aloha https://www.twitter.com/aloha https://www.twitter.com/aloha https://www.twitter.com/aloha https://www.twitter.com/aloha https://www.twitter.com/aloha https://www.twitter.com/aloha https://www.twitter.com/aloha https://www.twitter.com/aloha ",
+				"expected": {
+					"weightedLength": 240,
+					"valid": true,
+					"permillage": 857,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 299,
+					"validRangeStart": 0,
+					"validRangeEnd": 299
+				}
+			},
+			{
+				"description": "160 CJK char, overflow at char index 140",
+				"text": "故人西辞黄鹤楼，烟花三月下扬州。孤帆远影碧空尽，唯见长江天际流。朱雀桥边野草花，乌衣巷口夕阳斜。旧时王谢堂前燕，飞入寻常百姓家。朝辞白帝彩云间，千里江陵一日还。两岸猿声啼不住，轻舟已过万重山。泪湿罗巾梦不成，夜深前殿按歌声。红颜未老恩先断，斜倚薰笼坐到明。独在异乡为异客，每逢佳节倍思亲。遥知兄弟登高处，遍插茱萸少一人。",
+				"expected": {
+					"weightedLength": 320,
+					"valid": false,
+					"permillage": 1142,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 159,
+					"validRangeStart": 0,
+					"validRangeEnd": 139
+				}
+			},
+			{
+				"description": "160 emoji char, overflow at char index 140",
+				"text": "😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷😷",
+				"expected": {
+					"weightedLength": 320,
+					"valid": false,
+					"permillage": 1142,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 319,
+					"validRangeStart": 0,
+					"validRangeEnd": 279
+				}
+			},
+			{
+				"description": "3 latin char + 160 CJK char, overflow at char index 141",
+				"text": "the故人西辞黄鹤楼，烟花三月下扬州。孤帆远影碧空尽，唯见长江天际流。朱雀桥边野草花，乌衣巷口夕阳斜。旧时王谢堂前燕，飞入寻常百姓家。朝辞白帝彩云间，千里江陵一日还。两岸猿声啼不住，轻舟已过万重山。泪湿罗巾梦不成，夜深前殿按歌声。红颜未老恩先断，斜倚薰笼坐到明。独在异乡为异客，每逢佳节倍思亲。遥知兄弟登高处，遍插茱萸少一人。",
+				"expected": {
+					"weightedLength": 323,
+					"valid": false,
+					"permillage": 1153,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 162,
+					"validRangeStart": 0,
+					"validRangeEnd": 140
+				}
+			},
+			{
+				"description": "282 chars with a normalized character within valid range but outside 280",
+				"text": "282 chars-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxA\u0301x",
+				"expected": {
+					"weightedLength": 281,
+					"valid": false,
+					"permillage": 1003,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 281,
+					"validRangeStart": 0,
+					"validRangeEnd": 280
+				}
+			},
+			{
+				"description": "Count a mix of single byte single word, and double word unicode characters",
+				"text": "H🐱☺👨\u200D👩\u200D👧\u200D👦",
+				"expected": {
+					"weightedLength": 7,
+					"valid": true,
+					"permillage": 25,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 14,
+					"validRangeStart": 0,
+					"validRangeEnd": 14
+				}
+			},
+			{
+				"description": "Count unicode emoji chars inside the basic multilingual plane",
+				"text": "😷👾😡🔥💩",
+				"expected": {
+					"weightedLength": 10,
+					"valid": true,
+					"permillage": 35,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 9,
+					"validRangeStart": 0,
+					"validRangeEnd": 9
+				}
+			},
+			{
+				"description": "Count unicode emoji chars outside the basic multilingual plane with skin tone modifiers",
+				"text": "🙋🏽👨\u200D🎤",
+				"expected": {
+					"weightedLength": 4,
+					"valid": true,
+					"permillage": 14,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 8,
+					"validRangeStart": 0,
+					"validRangeEnd": 8
+				}
+			},
+			{
+				"description": "Handle General Punctuation Characters with visible spaces(u2000-200A), no ZWJ/ZWNJ",
+				"text": "This is a tweet with general punctuation characters: \u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B ‐ ‑ ‒ – — ― ‖  ‗ ‘ ’ ‚ ‛ “ ” „ ‟ ′ ″ ‴ ‵ ‶ ‷",
+				"expected": {
+					"weightedLength": 110,
+					"valid": true,
+					"permillage": 392,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 109,
+					"validRangeStart": 0,
+					"validRangeEnd": 109
+				}
+			},
+			{
+				"description": "Handle long url with invalid domain labels and short url",
+				"text": "Long url with invalid domain labels and a short url: https://somesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurl.com/foo https://somesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurl.com/foo https://somesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurlsomesuperlongurl.com/foo https://validurl.com",
+				"expected": {
+					"weightedLength": 12079,
+					"valid": false,
+					"permillage": 43139,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 12075,
+					"validRangeStart": 0,
+					"validRangeEnd": 279
+				}
+			},
+			{
+				"description": "Handle a 64 character domain without protocol",
+				"text": "randomurlrandomurlrandomurlrandomurlrandomurlrandomurlrandomurls.com",
+				"expected": {
+					"weightedLength": 68,
+					"valid": true,
+					"permillage": 242,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 67,
+					"validRangeStart": 0,
+					"validRangeEnd": 67
+				}
+			},
+			{
+				"description": "Do not allow > 140 CJK characters by virtue of CJK chars greater than 63 punycode encoded chars in the host",
+				"text": "あいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこ http://あいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいう.com",
+				"expected": {
+					"weightedLength": 358,
+					"valid": false,
+					"permillage": 1278,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 184,
+					"validRangeStart": 0,
+					"validRangeEnd": 143
+				}
+			},
+			{
+				"description": "Allow > 140 CJK characters by virtue of CJK chars less than 63 punycode encoded chars in the host",
+				"text": "あいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこ http://あいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあいうえおかきくけこあい.com",
+				"expected": {
+					"weightedLength": 264,
+					"valid": true,
+					"permillage": 942,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 183,
+					"validRangeStart": 0,
+					"validRangeEnd": 183
+				}
+			},
+			{
+				"description": "140 family emoji",
+				"text": "👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦👨\u200D👩\u200D👧\u200D👦",
+				"expected": {
+					"weightedLength": 280,
+					"valid": true,
+					"permillage": 1000,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 1539,
+					"validRangeStart": 0,
+					"validRangeEnd": 1539
+				}
+			},
+			{
+				"description": "Emoji with a leading character in the latin range is counted as 2",
+				"text": "1\u20E3",
+				"expected": {
+					"weightedLength": 2,
+					"valid": true,
+					"permillage": 7,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 1,
+					"validRangeStart": 0,
+					"validRangeEnd": 1
+				}
+			},
+			{
+				"description": "Unicode 10.0 emoji",
+				"text": "Unicode 10.0 emoji: 🤪; 🧕; 🧕🏾; 🏴\uDB40\uDC67\uDB40\uDC62\uDB40\uDC65\uDB40\uDC6E\uDB40\uDC67\uDB40\uDC7F",
+				"expected": {
+					"weightedLength": 34,
+					"valid": true,
+					"permillage": 121,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 47,
+					"validRangeStart": 0,
+					"validRangeEnd": 47
+				}
+			},
+			{
+				"description": "Unicode 9.0 emoji",
+				"text": "Unicode 9.0 emoji: 🤠; 💃; 💃🏾",
+				"expected": {
+					"weightedLength": 29,
+					"valid": true,
+					"permillage": 103,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 30,
+					"validRangeStart": 0,
+					"validRangeEnd": 30
+				}
+			}
+		],
+		"UnicodeDirectionalMarkerCounterTest": [
+			{
+				"description": "Handle invalid characters",
+				"text": "ABC\u202A\uFFFFABC\uFFFE",
+				"expected": {
+					"weightedLength": 12,
+					"valid": false,
+					"permillage": 42,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 8,
+					"validRangeStart": 0,
+					"validRangeEnd": 3
+				}
+			},
+			{
+				"description": "Tweet text containing directional characters should be considered valid",
+				"text": "\u2066\u202Ahttp://foobar.پاکستان/\u202C\u2069",
+				"expected": {
+					"weightedLength": 31,
+					"valid": true,
+					"permillage": 110,
+					"displayRangeStart": 0,
+					"displayRangeEnd": 25,
+					"validRangeStart": 0,
+					"validRangeEnd": 25
+				}
+			}
+		]
+	},
+	"urls": {
+		"urls": [
+			{
+				"description": "Extract a lone URL",
+				"text": "http://example.com",
+				"expected": [
+					"http://example.com"
+				]
+			},
+			{
+				"description": "Extract a lone unicode url",
+				"text": "http://ああ.com",
+				"expected": [
+					"http://ああ.com"
+				]
+			},
+			{
+				"description": "Extract a lone unicode url with -",
+				"text": "http://あ-あ.com",
+				"expected": [
+					"http://あ-あ.com"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://google.com",
+				"text": "text http://google.com",
+				"expected": [
+					"http://google.com"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://foobar.com/#",
+				"text": "text http://foobar.com/#",
+				"expected": [
+					"http://foobar.com/#"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://google.com/#foo",
+				"text": "text http://google.com/#foo",
+				"expected": [
+					"http://google.com/#foo"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://google.com/#search?q=iphone%20-filter%3Alinks",
+				"text": "text http://google.com/#search?q=iphone%20-filter%3Alinks",
+				"expected": [
+					"http://google.com/#search?q=iphone%20-filter%3Alinks"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://twitter.com/#search?q=iphone%20-filter%3Alinks",
+				"text": "text http://twitter.com/#search?q=iphone%20-filter%3Alinks",
+				"expected": [
+					"http://twitter.com/#search?q=iphone%20-filter%3Alinks"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://somedomain.com/index.php?path=/abc/def/",
+				"text": "text http://somedomain.com/index.php?path=/abc/def/",
+				"expected": [
+					"http://somedomain.com/index.php?path=/abc/def/"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://www.boingboing.net/2007/02/14/katamari_damacy_phon.html",
+				"text": "text http://www.boingboing.net/2007/02/14/katamari_damacy_phon.html",
+				"expected": [
+					"http://www.boingboing.net/2007/02/14/katamari_damacy_phon.html"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://somehost.com:3000",
+				"text": "text http://somehost.com:3000",
+				"expected": [
+					"http://somehost.com:3000"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://xo.com/~matthew+%ff-x",
+				"text": "text http://xo.com/~matthew+%ff-x",
+				"expected": [
+					"http://xo.com/~matthew+%ff-x"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://xo.com/~matthew+%ff-,.;x",
+				"text": "text http://xo.com/~matthew+%ff-,.;x",
+				"expected": [
+					"http://xo.com/~matthew+%ff-,.;x"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://xo.com/,.;x",
+				"text": "text http://xo.com/,.;x",
+				"expected": [
+					"http://xo.com/,.;x"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://en.wikipedia.org/wiki/Primer_(film)",
+				"text": "text http://en.wikipedia.org/wiki/Primer_(film)",
+				"expected": [
+					"http://en.wikipedia.org/wiki/Primer_(film)"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://www.ams.org/bookstore-getitem/item=mbk-59",
+				"text": "text http://www.ams.org/bookstore-getitem/item=mbk-59",
+				"expected": [
+					"http://www.ams.org/bookstore-getitem/item=mbk-59"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://✪df.ws/ejp",
+				"text": "text http://✪df.ws/ejp",
+				"expected": [
+					"http://✪df.ws/ejp"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://example.com/",
+				"text": "test http://example.comだよね.comtest/hogehoge",
+				"expected": [
+					"http://example.com"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://chilp.it/?77e8fd",
+				"text": "text http://chilp.it/?77e8fd",
+				"expected": [
+					"http://chilp.it/?77e8fd"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://x.com/oneletterdomain",
+				"text": "text http://x.com/oneletterdomain",
+				"expected": [
+					"http://x.com/oneletterdomain"
+				]
+			},
+			{
+				"description": "Extract valid URL: http://msdn.microsoft.com/ja-jp/library/system.net.httpwebrequest(v=VS.100).aspx",
+				"text": "text http://msdn.microsoft.com/ja-jp/library/system.net.httpwebrequest(v=VS.100).aspx",
+				"expected": [
+					"http://msdn.microsoft.com/ja-jp/library/system.net.httpwebrequest(v=VS.100).aspx"
+				]
+			},
+			{
+				"description": "Extract valid URL with hyphen as query ending char: https://www.youtube.com/watch?v=LOxOAuDHzaw&list=PLPoq910Q9jXhuH6pit_KwIsck9fEz_9U-",
+				"text": "text https://www.youtube.com/watch?v=LOxOAuDHzaw&list=PLPoq910Q9jXhuH6pit_KwIsck9fEz_9U-",
+				"expected": [
+					"https://www.youtube.com/watch?v=LOxOAuDHzaw&list=PLPoq910Q9jXhuH6pit_KwIsck9fEz_9U-"
+				]
+			},
+			{
+				"description": "DO NOT extract invalid URL: http://no-tld",
+				"text": "text http://no-tld",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract invalid URL: http://tld-too-short.x",
+				"text": "text http://tld-too-short.x",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract invalid URL with invalid preceding character: (http://twitter.com",
+				"text": "(http://twitter.com",
+				"expected": [
+					"http://twitter.com"
+				]
+			},
+			{
+				"description": "Extract a very long hyphenated sub-domain URL (single letter hyphens)",
+				"text": "text http://word-and-a-number-8-ftw.domain.com/",
+				"expected": [
+					"http://word-and-a-number-8-ftw.domain.com/"
+				]
+			},
+			{
+				"description": "DO NOT Extract a hyphenated TLD (even though it's usually a typo)",
+				"text": "text http://domain.com-that-you-should-have-put-a-space-after",
+				"expected": []
+			},
+			{
+				"description": "Extract URL ending with # value",
+				"text": "text http://foo.com?#foo text",
+				"expected": [
+					"http://foo.com?#foo"
+				]
+			},
+			{
+				"description": "Extract URLs without protocol on (com|org|edu|gov|net) domains",
+				"text": "foo.com foo.net foo.org foo.edu foo.gov",
+				"expected": [
+					"foo.com",
+					"foo.net",
+					"foo.org",
+					"foo.edu",
+					"foo.gov"
+				]
+			},
+			{
+				"description": "Extract URLs without protocol not on (com|org|edu|gov|net) domains",
+				"text": "foo.baz foo.co.jp www.xxxxxxx.baz www.foo.co.uk wwwww.xxxxxxx foo.comm foo.somecom foo.govedu foo.jp",
+				"expected": [
+					"foo.co.jp",
+					"www.foo.co.uk",
+					"foo.jp"
+				]
+			},
+			{
+				"description": "Extract URLs without protocol on ccTLD with slash",
+				"text": "t.co/abcde bit.ly/abcde",
+				"expected": [
+					"t.co/abcde",
+					"bit.ly/abcde"
+				]
+			},
+			{
+				"description": "Extract URLs with protocol on ccTLD domains",
+				"text": "http://foo.jp http://fooooo.jp",
+				"expected": [
+					"http://foo.jp",
+					"http://fooooo.jp"
+				]
+			},
+			{
+				"description": "Extract URLs with a - or + at the end of the path",
+				"text": "Go to http://example.com/a+ or http://example.com/a-",
+				"expected": [
+					"http://example.com/a+",
+					"http://example.com/a-"
+				]
+			},
+			{
+				"description": "Extract URLs with longer paths ending in -",
+				"text": "Go to http://example.com/view/slug-url-?foo=bar",
+				"expected": [
+					"http://example.com/view/slug-url-?foo=bar"
+				]
+			},
+			{
+				"description": "Extract URLs with an en dash in the path",
+				"text": "Go to https://en.m.wikipedia.org/wiki/Hatfield–McCoy_feud please",
+				"expected": [
+					"https://en.m.wikipedia.org/wiki/Hatfield–McCoy_feud"
+				]
+			},
+			{
+				"description": "Extract URLs beginning with a space",
+				"text": "@user Try http:// example.com/path",
+				"expected": [
+					"example.com/path"
+				]
+			},
+			{
+				"description": "Extract long URL without protocol surrounded by CJK characters",
+				"text": "これは日本語です。example.com/path/index.html中国語example.com/path한국",
+				"expected": [
+					"example.com/path/index.html",
+					"example.com/path"
+				]
+			},
+			{
+				"description": "Extract short URL without protocol surrounded by CJK characters",
+				"text": "twitter.comこれは日本語です。example.com中国語t.co/abcde한국twitter.com example2.comテストtwitter.com/abcde",
+				"expected": [
+					"twitter.com",
+					"example.com",
+					"t.co/abcde",
+					"twitter.com",
+					"example2.com",
+					"twitter.com/abcde"
+				]
+			},
+			{
+				"description": "Extract URLs with and without protocol surrounded by CJK characters",
+				"text": "http://twitter.com/これは日本語です。example.com中国語http://t.co/abcde한국twitter.comテストexample2.comテストhttp://twitter.com/abcde",
+				"expected": [
+					"http://twitter.com/",
+					"example.com",
+					"http://t.co/abcde",
+					"twitter.com",
+					"example2.com",
+					"http://twitter.com/abcde"
+				]
+			},
+			{
+				"description": "Extract URLs with protocol and path containing Cyrillic characters",
+				"text": "Go to http://twitter.com/Русские_слова",
+				"expected": [
+					"http://twitter.com/Русские_слова"
+				]
+			},
+			{
+				"description": "Extract non-ASCII host name URLs with protocol, but ignore host names bigger than 63 characters. Also handle exceptions for non-ASCII hostnames longer than 256 characters",
+				"text": "http://exampleこれは日本語です.com/path/index.html http://あああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ.com/path/index.html",
+				"expected": [
+					"http://exampleこれは日本語です.com/path/index.html"
+				]
+			},
+			{
+				"description": "Extract short URLs without protocol on ccTLD domains without path",
+				"text": "twitter.jp日本語it.so中国語foo.jp it.so foo.jp",
+				"expected": [
+					"twitter.jp",
+					"it.so",
+					"foo.jp",
+					"it.so",
+					"foo.jp"
+				]
+			},
+			{
+				"description": "DO NOT extract invalid URL",
+				"text": "Hello http://xn--はじめよう.com/index.html",
+				"expected": []
+			},
+			{
+				"description": "DO NOT Extract URL with domain preceeded by underscore: http://domain-begin_dash_2314352345_dfasd.foo-cow_4352.com",
+				"text": "text http://domain-dash_2314352345_dfasd.foo-cow_4352.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT Extract URLs with a - or + in the middle of an email address",
+				"text": "Email me at name.al-lastname@foo.com or name.al+lastname@foo.com",
+				"expected": []
+			},
+			{
+				"description": "Extract URLs with a - in the middle",
+				"text": "Find my page at name.al-lastname.com",
+				"expected": [
+					"name.al-lastname.com"
+				]
+			},
+			{
+				"description": "Extract some (tv|co) short URLs without protocol on ccTLD domains without path",
+				"text": "MLB.tv vine.co twitch.tv t.co",
+				"expected": [
+					"MLB.tv",
+					"vine.co",
+					"twitch.tv",
+					"t.co"
+				]
+			},
+			{
+				"description": "Extract URLs beginning with a non-breaking space (U+00A0)",
+				"text": "@user Try http://\u00A0example.com/path",
+				"expected": [
+					"example.com/path"
+				]
+			},
+			{
+				"description": "Extract URLs with underscores and dashes in the subdomain",
+				"text": "test http://sub_domain-dash.twitter.com",
+				"expected": [
+					"http://sub_domain-dash.twitter.com"
+				]
+			},
+			{
+				"description": "Extract URL with minimum number of valid characters",
+				"text": "test http://a.b.cd",
+				"expected": [
+					"http://a.b.cd"
+				]
+			},
+			{
+				"description": "Extract URLs containing underscores and dashes",
+				"text": "test http://a_b.c-d.com",
+				"expected": [
+					"http://a_b.c-d.com"
+				]
+			},
+			{
+				"description": "Extract URLs containing dashes in the subdomain",
+				"text": "test http://a-b.c.com",
+				"expected": [
+					"http://a-b.c.com"
+				]
+			},
+			{
+				"description": "Extract URLs with dashes in the domain name",
+				"text": "test http://twitter-dash.com",
+				"expected": [
+					"http://twitter-dash.com"
+				]
+			},
+			{
+				"description": "Extract URLs with lots of symbols then a period",
+				"text": "http://www.bestbuy.com/site/Currie+Technologies+-+Ezip+400+Scooter/9885188.p?id=1218189013070&skuId=9885188",
+				"expected": [
+					"http://www.bestbuy.com/site/Currie+Technologies+-+Ezip+400+Scooter/9885188.p?id=1218189013070&skuId=9885188"
+				]
+			},
+			{
+				"description": "DO NOT extract URLs containing leading dashes in the subdomain",
+				"text": "test http://-leadingdash.twitter.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing leading dashes in the domain with a subdomain",
+				"text": "test http://leadingdash.-twitter.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing trailing dashes in the subdomain",
+				"text": "test http://trailingdash-.twitter.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing trailing dashes in the domain with a subdomain",
+				"text": "test http://trailingdash.twitter-.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing leading underscores in the subdomain",
+				"text": "test http://_leadingunderscore.twitter.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing leading underscores in the domain with a subdomain",
+				"text": "test http://leadingunderscore._twitter.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing trailing underscores in the subdomain",
+				"text": "test http://trailingunderscore_.twitter.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing trailing underscores in the domain with a subdomain",
+				"text": "test http://trailingunderscore.twitter_.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing leading dashes in the domain name",
+				"text": "test http://-twitter.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing trailing dashes in the domain name",
+				"text": "test http://twitter-.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing underscores in the domain name",
+				"text": "test http://twitter_underscore.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URLs containing underscores in the tld",
+				"text": "test http://twitter.c_o_m",
+				"expected": []
+			},
+			{
+				"description": "Extract valid URL http://www.foo.com/foo/path-with-period./",
+				"text": "test http://www.foo.com/foo/path-with-period./",
+				"expected": [
+					"http://www.foo.com/foo/path-with-period./"
+				]
+			},
+			{
+				"description": "Extract valid URL http://www.foo.org.za/foo/bar/688.1",
+				"text": "test http://www.foo.org.za/foo/bar/688.1",
+				"expected": [
+					"http://www.foo.org.za/foo/bar/688.1"
+				]
+			},
+			{
+				"description": "Extract valid URL http://www.foo.com/bar-path/some.stm?param1=foo;param2=P1|0||P2|0",
+				"text": "test http://www.foo.com/bar-path/some.stm?param1=foo;param2=P1|0||P2|0",
+				"expected": [
+					"http://www.foo.com/bar-path/some.stm?param1=foo;param2=P1|0||P2|0"
+				]
+			},
+			{
+				"description": "Extract valid URL http://foo.com/bar/123/foo_&_bar/",
+				"text": "test http://foo.com/bar/123/foo_&_bar/",
+				"expected": [
+					"http://foo.com/bar/123/foo_&_bar/"
+				]
+			},
+			{
+				"description": "Extract valid URL http://www.cp.sc.edu/events/65",
+				"text": "test http://www.cp.sc.edu/events/65 test",
+				"expected": [
+					"http://www.cp.sc.edu/events/65"
+				]
+			},
+			{
+				"description": "Extract valid URL http://www.andersondaradio.no.comunidades.net/",
+				"text": "http://www.andersondaradio.no.comunidades.net/ test test",
+				"expected": [
+					"http://www.andersondaradio.no.comunidades.net/"
+				]
+			},
+			{
+				"description": "Extract valid URL ELPAÍS.com",
+				"text": "test ELPAÍS.com",
+				"expected": [
+					"ELPAÍS.com"
+				]
+			},
+			{
+				"description": "DO NOT include period at the end of URL",
+				"text": "test http://twitter.com/.",
+				"expected": [
+					"http://twitter.com/"
+				]
+			},
+			{
+				"description": "Extract a URL with '?' in fragment",
+				"text": "http://tn.com.ar/show/00056158/la-estrella-del-certamen-el-turno-de-pamela-anderson?fb_xd_fragment#?=&cb=fe17523f223b7&relation=parent.parent&transport=fragment&type=resize&height=20&ackdata",
+				"expected": [
+					"http://tn.com.ar/show/00056158/la-estrella-del-certamen-el-turno-de-pamela-anderson?fb_xd_fragment#?=&cb=fe17523f223b7&relation=parent.parent&transport=fragment&type=resize&height=20&ackdata"
+				]
+			},
+			{
+				"description": "Extract a URL with '?' in fragment in a text",
+				"text": "text http://tn.com.ar/show/00056158/la-estrella-del-certamen-el-turno-de-pamela-anderson?fb_xd_fragment#?=&cb=fe17523f223b7&relation=parent.parent&transport=fragment&type=resize&height=20&ackdata text",
+				"expected": [
+					"http://tn.com.ar/show/00056158/la-estrella-del-certamen-el-turno-de-pamela-anderson?fb_xd_fragment#?=&cb=fe17523f223b7&relation=parent.parent&transport=fragment&type=resize&height=20&ackdata"
+				]
+			},
+			{
+				"description": "Extract a URL with a ton of trailing periods",
+				"text": "Test a ton of periods http://example.com/path..........................................",
+				"expected": [
+					"http://example.com/path"
+				]
+			},
+			{
+				"description": "Extract a URL with a ton of trailing commas",
+				"text": "Test a ton of periods http://example.com/,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",
+				"expected": [
+					"http://example.com/"
+				]
+			},
+			{
+				"description": "Extract a URL with a ton of trailing '!'",
+				"text": "Test a ton of periods http://example.com/path/!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+				"expected": [
+					"http://example.com/path/"
+				]
+			},
+			{
+				"description": "DO NOT extract URLs in hashtag or @mention",
+				"text": "#test.com @test.com #http://test.com @http://test.com #t.co/abcde @t.co/abcde",
+				"expected": []
+			},
+			{
+				"description": "Extract a t.co URL with a trailing apostrophe",
+				"text": "I really like http://t.co/pbY2NfTZ's website",
+				"expected": [
+					"http://t.co/pbY2NfTZ"
+				]
+			},
+			{
+				"description": "Extract a t.co URL with a trailing hyphen",
+				"text": "Check this site out http://t.co/FNkPfmii- it's great",
+				"expected": [
+					"http://t.co/FNkPfmii"
+				]
+			},
+			{
+				"description": "Extract a t.co URL with a trailing colon",
+				"text": "According to http://t.co/ulYGBYSo: the internet is cool",
+				"expected": [
+					"http://t.co/ulYGBYSo"
+				]
+			},
+			{
+				"description": "Extract a t.co URL with a long path",
+				"text": "I really like http://t.co/abcdefghijklmnopqrstuvwxyz0123456789",
+				"expected": [
+					"http://t.co/abcdefghijklmnopqrstuvwxyz0123456789"
+				]
+			},
+			{
+				"description": "DO NOT extract URLs with > 40 characters in a t.co slug",
+				"text": "I really like http://t.co/abcdefghijklmnopqrstuvwxyz012345678901234",
+				"expected": []
+			},
+			{
+				"description": "Extract domain followed by Japanese characters",
+				"text": "example.comてすとですtwitter.みんなです",
+				"expected": [
+					"example.com",
+					"twitter.みんな"
+				]
+			},
+			{
+				"description": "Extract URL before newline",
+				"text": "http://twitter.com\nhttp://example.com\nhttp://example.com/path\nexample.com/path\nit.so\nit.so/abcde",
+				"expected": [
+					"http://twitter.com",
+					"http://example.com",
+					"http://example.com/path",
+					"example.com/path",
+					"it.so",
+					"it.so/abcde"
+				]
+			},
+			{
+				"description": "DO NOT extract URL if preceded by $",
+				"text": "$http://twitter.com $twitter.com $http://t.co/abcde $t.co/abcde $t.co $TVI.CA $RBS.CA",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract .bz2 file name as URL",
+				"text": "long.test.tar.bz2 test.tar.bz2 tar.bz2",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URL with gTLD followed by @ sign",
+				"text": "john.doe.gov@mail.com",
+				"expected": []
+			},
+			{
+				"description": "DO NOT extract URL with ccTLD followed by @ sign",
+				"text": "john.doe.jp@mail.com",
+				"expected": []
+			}
+		],
+		"urls_with_indices": [
+			{
+				"description": "Extract a URL",
+				"text": "text http://google.com",
+				"expected": [
+					{
+						"url": "http://google.com",
+						"indices": [
+							5,
+							22
+						]
+					}
+				]
+			},
+			{
+				"description": "Extract a URL from a Japanese tweet",
+				"text": "皆さん見てください！ http://google.com",
+				"expected": [
+					{
+						"url": "http://google.com",
+						"indices": [
+							11,
+							28
+						]
+					}
+				]
+			},
+			{
+				"description": "Extract URLs without protocol on ccTLD with slash",
+				"text": "t.co/abcde bit.ly/abcde",
+				"expected": [
+					{
+						"url": "t.co/abcde",
+						"indices": [
+							0,
+							10
+						]
+					},
+					{
+						"url": "bit.ly/abcde",
+						"indices": [
+							11,
+							23
+						]
+					}
+				]
+			},
+			{
+				"description": "Extract URLs without protocol surrounded by CJK characters",
+				"text": "twitter.comこれは日本語です。example.com中国語t.co/abcde한국twitter.com example2.comテストtwitter.com/abcde",
+				"expected": [
+					{
+						"url": "twitter.com",
+						"indices": [
+							0,
+							11
+						]
+					},
+					{
+						"url": "example.com",
+						"indices": [
+							20,
+							31
+						]
+					},
+					{
+						"url": "t.co/abcde",
+						"indices": [
+							34,
+							44
+						]
+					},
+					{
+						"url": "twitter.com",
+						"indices": [
+							46,
+							57
+						]
+					},
+					{
+						"url": "example2.com",
+						"indices": [
+							58,
+							70
+						]
+					},
+					{
+						"url": "twitter.com/abcde",
+						"indices": [
+							73,
+							90
+						]
+					}
+				]
+			},
+			{
+				"description": "Extract URLs with and without protocol surrounded by CJK characters",
+				"text": "http://twitter.com/これは日本語です。example.com中国語http://t.co/abcde한국twitter.comテストexample2.comテストhttp://twitter.com/abcde",
+				"expected": [
+					{
+						"url": "http://twitter.com/",
+						"indices": [
+							0,
+							19
+						]
+					},
+					{
+						"url": "example.com",
+						"indices": [
+							28,
+							39
+						]
+					},
+					{
+						"url": "http://t.co/abcde",
+						"indices": [
+							42,
+							59
+						]
+					},
+					{
+						"url": "twitter.com",
+						"indices": [
+							61,
+							72
+						]
+					},
+					{
+						"url": "example2.com",
+						"indices": [
+							75,
+							87
+						]
+					},
+					{
+						"url": "http://twitter.com/abcde",
+						"indices": [
+							90,
+							114
+						]
+					}
+				]
+			},
+			{
+				"description": "Extract t.co URLs skipping trailing characters and adjusting indices correctly",
+				"text": "http://t.co/pbY2NfTZ's http://t.co/2vYHpAc5; http://t.co/ulYGBYSo: http://t.co/8MkmHU0k+c http://t.co/TKLp64dY.x http://t.co/8t7G3ddS#a http://t.co/FNkPfmii-",
+				"expected": [
+					{
+						"url": "http://t.co/pbY2NfTZ",
+						"indices": [
+							0,
+							20
+						]
+					},
+					{
+						"url": "http://t.co/2vYHpAc5",
+						"indices": [
+							23,
+							43
+						]
+					},
+					{
+						"url": "http://t.co/ulYGBYSo",
+						"indices": [
+							45,
+							65
+						]
+					},
+					{
+						"url": "http://t.co/8MkmHU0k",
+						"indices": [
+							67,
+							87
+						]
+					},
+					{
+						"url": "http://t.co/TKLp64dY",
+						"indices": [
+							90,
+							110
+						]
+					},
+					{
+						"url": "http://t.co/8t7G3ddS",
+						"indices": [
+							113,
+							133
+						]
+					},
+					{
+						"url": "http://t.co/FNkPfmii",
+						"indices": [
+							136,
+							156
+						]
+					}
+				]
+			},
+			{
+				"description": "Properly extract URL that contains t.co in referer",
+				"text": "http://www.foo.com?referer=https://t.co/abcde http://t.co/xyzzy",
+				"expected": [
+					{
+						"url": "http://www.foo.com?referer=https://t.co/abcde",
+						"indices": [
+							0,
+							45
+						]
+					},
+					{
+						"url": "http://t.co/xyzzy",
+						"indices": [
+							46,
+							63
+						]
+					}
+				]
+			},
+			{
+				"description": "Extract correct indices for duplicate instances of the same URL",
+				"text": "http://t.co http://t.co",
+				"expected": [
+					{
+						"url": "http://t.co",
+						"indices": [
+							0,
+							11
+						]
+					},
+					{
+						"url": "http://t.co",
+						"indices": [
+							12,
+							23
+						]
+					}
+				]
+			},
+			{
+				"description": "Extract I18N URL",
+				"text": "test http://xn--ls8h.XN--ls8h.la/",
+				"expected": [
+					{
+						"url": "http://xn--ls8h.XN--ls8h.la/",
+						"indices": [
+							5,
+							33
+						]
+					}
+				]
+			},
+			{
+				"description": "Extract URLs with IDN(not encoded)",
+				"text": "test http://foobar.みんな/ http://foobar.中国/ http://foobar.پاکستان/ ",
+				"expected": [
+					{
+						"url": "http://foobar.みんな/",
+						"indices": [
+							5,
+							23
+						]
+					},
+					{
+						"url": "http://foobar.中国/",
+						"indices": [
+							24,
+							41
+						]
+					},
+					{
+						"url": "http://foobar.پاکستان/",
+						"indices": [
+							42,
+							64
+						]
+					}
+				]
+			}
+		],
+		"urls_with_directional_markers": [
+			{
+				"description": "Extract URLs from RTL text",
+				"text": "\u2066\u202Atest abcdef.com پاکستان http://twitter.com/\u202C\u2069",
+				"expected": [
+					{
+						"url": "abcdef.com",
+						"indices": [
+							7,
+							17
+						]
+					},
+					{
+						"url": "http://twitter.com/",
+						"indices": [
+							26,
+							45
+						]
+					}
+				]
+			},
+			{
+				"description": "Extract URLs from RTL text with embedded directional marks",
+				"text": "This is a test \u2066\u202Atwitter.com\u202C\u2069 \u2066\u202Ahttp://foobar.پاکستان/\u202C\u2069\u2069 قطر فلسطين عمان",
+				"expected": [
+					{
+						"url": "twitter.com",
+						"indices": [
+							17,
+							28
+						]
+					},
+					{
+						"url": "http://foobar.پاکستان/",
+						"indices": [
+							33,
+							55
+						]
+					}
+				]
+			}
+		],
+		"tco_urls_with_params": [
+			{
+				"description": "Extract valid URL with params: https://t.co/UqIyJAJTfo?amp=1",
+				"text": "text https://t.co/UqIyJAJTfo?amp=1",
+				"expected": [
+					"https://t.co/UqIyJAJTfo?amp=1"
+				]
+			},
+			{
+				"description": "Extract valid URL with params: https://t.co/UqIyJAJTfo?type=js",
+				"text": "text https://t.co/UqIyJAJTfo?type=js",
+				"expected": [
+					"https://t.co/UqIyJAJTfo?type=js"
+				]
+			},
+			{
+				"description": "Extract valid URL with params: https://t.co/UqIyJAJTfo?ssr=true",
+				"text": "text https://t.co/UqIyJAJTfo?ssr=true",
+				"expected": [
+					"https://t.co/UqIyJAJTfo?ssr=true"
+				]
+			},
+			{
+				"description": "Extract a valid URL with params: https://t.co/asdfdf?a=b#123",
+				"text": "text https://t.co/asdfdf?a=b#123",
+				"expected": [
+					"https://t.co/asdfdf?a=b#123"
+				]
+			},
+			{
+				"description": "Extract a valid URL with params: https://t.co/sadfasdf?a=b&c=d",
+				"text": "text https://t.co/sadfasdf?a=b&c=d",
+				"expected": [
+					"https://t.co/sadfasdf?a=b&c=d"
+				]
+			}
+		]
+	},
+	"local": {
+		"_source": "vpk-html (not upstream): ws5-xthread spec T1 local vectors, plus URL-path regressions whose expected values come from npm twitter-text 3.1.0 (its dist regexp/* equals the pinned commit). repeat/times entries expand to repeat.repeat(times).",
+		"weighted": [
+			{
+				"description": "horizontal ellipsis U+2026 is outside the weight-1 ranges",
+				"text": "…",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "rightwards arrow U+2192",
+				"text": "→",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "em dash U+2014 is inside 8208-8223",
+				"text": "—",
+				"expected": {
+					"weightedLength": 1
+				}
+			},
+			{
+				"description": "right single quote U+2019",
+				"text": "’",
+				"expected": {
+					"weightedLength": 1
+				}
+			},
+			{
+				"description": "euro sign U+20AC",
+				"text": "€",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "trade mark U+2122 without VS16 is not an emoji but weighs 2",
+				"text": "™",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "hashtag that looks like a hex colour",
+				"text": "#cafe",
+				"expected": {
+					"weightedLength": 5
+				}
+			},
+			{
+				"description": "bare domain counts as a URL",
+				"text": "vpk.dev",
+				"expected": {
+					"weightedLength": 23
+				}
+			},
+			{
+				"description": "bare domain with path and query",
+				"text": "example.com/path?x=1",
+				"expected": {
+					"weightedLength": 23
+				}
+			},
+			{
+				"description": "two-letter ccTLD",
+				"text": "x.co",
+				"expected": {
+					"weightedLength": 23
+				}
+			},
+			{
+				"description": "file name is not a URL",
+				"text": "index.html",
+				"expected": {
+					"weightedLength": 10
+				}
+			},
+			{
+				"description": "js is not a TLD",
+				"text": "node.js",
+				"expected": {
+					"weightedLength": 7
+				}
+			},
+			{
+				"description": "two URLs",
+				"text": "see https://x.com/a and https://example.com",
+				"expected": {
+					"weightedLength": 55
+				}
+			},
+			{
+				"description": "newline weighs 1",
+				"text": "a\nb",
+				"expected": {
+					"weightedLength": 3
+				}
+			},
+			{
+				"description": "precomposed e acute",
+				"text": "é",
+				"expected": {
+					"weightedLength": 1
+				}
+			},
+			{
+				"description": "decomposed e acute is NFC-normalised first",
+				"text": "e\u0301",
+				"expected": {
+					"weightedLength": 1
+				}
+			},
+			{
+				"description": "thumbs up with skin tone is one emoji",
+				"text": "👍🏽",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "flag sequence is one emoji",
+				"text": "🇦🇺",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "keycap with VS16",
+				"text": "1\uFE0F\u20E3",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "keycap without VS16",
+				"text": "1\u20E3",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "copyright without VS16 weighs 1",
+				"text": "©",
+				"expected": {
+					"weightedLength": 1
+				}
+			},
+			{
+				"description": "copyright with VS16 is an emoji",
+				"text": "©\uFE0F",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "registered without VS16 weighs 1",
+				"text": "®",
+				"expected": {
+					"weightedLength": 1
+				}
+			},
+			{
+				"description": "Japanese weighs 2 per character",
+				"text": "日本語",
+				"expected": {
+					"weightedLength": 6
+				}
+			},
+			{
+				"description": "ZWJ family is one emoji",
+				"text": "👨\u200D👩\u200D👧\u200D👦",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "thread emoji",
+				"text": "🧵",
+				"expected": {
+					"weightedLength": 2
+				}
+			},
+			{
+				"description": "suffix numbering reserve",
+				"text": "\n\n25/25",
+				"expected": {
+					"weightedLength": 7
+				}
+			},
+			{
+				"description": "prefix numbering",
+				"text": "25/25 ",
+				"expected": {
+					"weightedLength": 6
+				}
+			},
+			{
+				"description": "280 ASCII characters are valid",
+				"repeat": "a",
+				"times": 280,
+				"expected": {
+					"weightedLength": 280,
+					"valid": true
+				}
+			},
+			{
+				"description": "281 ASCII characters are over the limit",
+				"repeat": "a",
+				"times": 281,
+				"expected": {
+					"weightedLength": 281,
+					"valid": false
+				}
+			},
+			{
+				"description": "empty text is not valid",
+				"text": "",
+				"expected": {
+					"weightedLength": 0,
+					"valid": false
+				}
+			},
+			{
+				"description": "a URL path with ',(' counts the URL as 23 and the rest as text",
+				"text": "Notes: https://example.com/notes,(draft) are up",
+				"expected": {
+					"weightedLength": 45,
+					"valid": true,
+					"permillage": 160,
+					"validRangeEnd": 46,
+					"displayRangeEnd": 46
+				}
+			},
+			{
+				"description": "a parenthesised tail after ',' is text, so this post is over the limit",
+				"text": "Benchmarks: https://example.com/run,(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa)",
+				"expected": {
+					"weightedLength": 308,
+					"valid": false,
+					"permillage": 1100,
+					"validRangeEnd": 279,
+					"displayRangeEnd": 307
+				}
+			}
+		],
+		"urls": [
+			{
+				"description": "a non-ending path character before parentheses ends the URL before it",
+				"text": "x.com/a*(b)",
+				"expected": [
+					{
+						"url": "x.com/a",
+						"indices": [
+							0,
+							7
+						]
+					}
+				]
+			},
+			{
+				"description": "the same with a protocol",
+				"text": "http://x.com/a*(b)",
+				"expected": [
+					{
+						"url": "http://x.com/a",
+						"indices": [
+							0,
+							14
+						]
+					}
+				]
+			},
+			{
+				"description": "a dollar sign before parentheses, mid-sentence",
+				"text": "see x.com/a$(b) now",
+				"expected": [
+					{
+						"url": "x.com/a",
+						"indices": [
+							4,
+							11
+						]
+					}
+				]
+			},
+			{
+				"description": "a comma before parentheses",
+				"text": "http://example.com/a,(b)",
+				"expected": [
+					{
+						"url": "http://example.com/a",
+						"indices": [
+							0,
+							20
+						]
+					}
+				]
+			},
+			{
+				"description": "a colon before parentheses",
+				"text": "http://example.com/a:(b)",
+				"expected": [
+					{
+						"url": "http://example.com/a",
+						"indices": [
+							0,
+							20
+						]
+					}
+				]
+			},
+			{
+				"description": "an exclamation mark before parentheses",
+				"text": "http://example.com/a!(b)",
+				"expected": [
+					{
+						"url": "http://example.com/a",
+						"indices": [
+							0,
+							20
+						]
+					}
+				]
+			},
+			{
+				"description": "a colon before parentheses holding only a comma",
+				"text": "x.com/a:(,)",
+				"expected": [
+					{
+						"url": "x.com/a",
+						"indices": [
+							0,
+							7
+						]
+					}
+				]
+			},
+			{
+				"description": "a t.co link followed by a colon and parentheses",
+				"text": "t.co/X:(,)",
+				"expected": [
+					{
+						"url": "t.co/X",
+						"indices": [
+							0,
+							6
+						]
+					}
+				]
+			},
+			{
+				"description": "a closing bracket before parentheses",
+				"text": "example.com/foo](u)",
+				"expected": [
+					{
+						"url": "example.com/foo",
+						"indices": [
+							0,
+							15
+						]
+					}
+				]
+			},
+			{
+				"description": "an @-segment path stops at the closing bracket",
+				"text": "x.com/@user/b.de](u)",
+				"expected": [
+					{
+						"url": "x.com/@user/b.de",
+						"indices": [
+							0,
+							16
+						]
+					}
+				]
+			},
+			{
+				"description": "two non-ending characters before nested parentheses",
+				"text": "x.com/Xa*$(/(x))",
+				"expected": [
+					{
+						"url": "x.com/Xa",
+						"indices": [
+							0,
+							8
+						]
+					}
+				]
+			},
+			{
+				"description": "parentheses after a non-ending character, then more path",
+				"text": "http://example.com/a*(b)c",
+				"expected": [
+					{
+						"url": "http://example.com/a*(b)c",
+						"indices": [
+							0,
+							25
+						]
+					}
+				]
+			},
+			{
+				"description": "balanced parentheses straight after an ending character stay in the URL",
+				"text": "x.com/a(b)",
+				"expected": [
+					{
+						"url": "x.com/a(b)",
+						"indices": [
+							0,
+							10
+						]
+					}
+				]
+			},
+			{
+				"description": "a Wikipedia-style trailing (bar) stays in the URL",
+				"text": "https://en.wikipedia.org/wiki/Foo_(bar)",
+				"expected": [
+					{
+						"url": "https://en.wikipedia.org/wiki/Foo_(bar)",
+						"indices": [
+							0,
+							39
+						]
+					}
+				]
+			},
+			{
+				"description": "nested balanced parentheses stay in the URL",
+				"text": "http://rdio.com/track/We_Up_(Album_Version_(Edited))/",
+				"expected": [
+					{
+						"url": "http://rdio.com/track/We_Up_(Album_Version_(Edited))/",
+						"indices": [
+							0,
+							53
+						]
+					}
+				]
+			},
+			{
+				"description": "a path made only of parentheses stays in the URL",
+				"text": "http://example.com/(a)",
+				"expected": [
+					{
+						"url": "http://example.com/(a)",
+						"indices": [
+							0,
+							22
+						]
+					}
+				]
+			}
+		]
+	},
+	"evalPosts": {
+		"_source": "vpk-html (not upstream): the six supplied posts of eval x-launch-thread (id 10). references/schemas/examples/x-thread.content.json carries these texts byte-identically as posts p1-p6; weighted lengths are pinned here once (integration K23).",
+		"posts": [
+			{
+				"id": "p1",
+				"text": "Larkspur 3.0 ships today 🚀 Three changes: sync that survives flaky networks, search that is 6x faster on large vaults, and a plugin API with typed events. A thread on what we built and how we measured it."
+			},
+			{
+				"id": "p2",
+				"text": "Offline sync first. Edits now queue on your device and replay in order when you reconnect, and conflicts land in a visible list instead of overwriting each other. The screenshot shows the sync panel after a 40-minute train ride with no signal."
+			},
+			{
+				"id": "p3",
+				"text": "Search on a 50,000-note vault dropped from 2.4 s to 0.4 s at the 95th percentile, and opening a large vault no longer blocks typing. Benchmark scripts and raw numbers: https://example.com/larkspur-3-benchmarks"
+			},
+			{
+				"id": "p4",
+				"text": "Why search got faster: we replaced the full index rebuild on every launch with an append-only log that is compacted in the background, and moved tokenisation into a worker so the editor never waits on it. We also stopped re-reading unchanged attachments. Results are unchanged: the same 2,000 test queries return identical hits in 2.x and 3.0, and CI checks that on every commit."
+			},
+			{
+				"id": "p5",
+				"text": "The plugin API has 28 typed events, one versioned schema, and a sandbox that blocks network access unless you allow it. Existing plugins keep working until 4.0. 日本語のドキュメントも公開しました。"
+			},
+			{
+				"id": "p6",
+				"text": "Update from the app menu, or download 3.0 from the releases page. The changelog lists every change and one known issue with very long file paths on Windows. Thanks to the 64 people who tested the betas."
+			}
+		]
+	}
+}

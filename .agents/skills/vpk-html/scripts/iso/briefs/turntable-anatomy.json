@@ -1,0 +1,234 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "turntable-anatomy",
+	"figId": "FIG_001",
+	"title": "Anatomy of a turntable",
+	"label": "Dimetric record player: a plinth, a cylindrical platter, a 12-inch record with its centre label and spindle, and a tonearm on its pivot block, with its true depth dimensioned. The record is accented.",
+	"caption": "The record is the part that matters: everything else turns it, holds it still or reads from it.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "plinth",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				168,
+				140,
+				12
+			],
+			"r": 4,
+			"marks": [
+				[
+					[
+						10,
+						128
+					],
+					[
+						44,
+						128
+					]
+				]
+			],
+			"label": "plinth"
+		},
+		{
+			"id": "platter",
+			"kind": "cylinder",
+			"at": [
+				74,
+				72,
+				12
+			],
+			"size": [
+				60,
+				60,
+				8
+			],
+			"label": "platter",
+			"explode": [
+				0,
+				0,
+				16
+			]
+		},
+		{
+			"id": "record",
+			"kind": "cylinder",
+			"at": [
+				74,
+				72,
+				20
+			],
+			"size": [
+				60,
+				60,
+				2
+			],
+			"label": "record",
+			"explode": [
+				0,
+				0,
+				30
+			]
+		},
+		{
+			"id": "record-label",
+			"kind": "ring",
+			"at": [
+				74,
+				72,
+				22
+			],
+			"size": [
+				18,
+				18,
+				0
+			],
+			"label": "record label",
+			"explode": [
+				0,
+				0,
+				30
+			]
+		},
+		{
+			"id": "spindle",
+			"kind": "cylinder",
+			"at": [
+				74,
+				72,
+				20
+			],
+			"size": [
+				2,
+				2,
+				8
+			],
+			"label": "spindle",
+			"explode": [
+				0,
+				0,
+				30
+			]
+		},
+		{
+			"id": "arm-base",
+			"kind": "box",
+			"at": [
+				140,
+				8,
+				12
+			],
+			"size": [
+				18,
+				18,
+				10
+			],
+			"label": "tonearm pivot",
+			"explode": [
+				0,
+				0,
+				14
+			]
+		},
+		{
+			"id": "arm",
+			"kind": "slab",
+			"at": [
+				147,
+				14,
+				24
+			],
+			"size": [
+				4,
+				62,
+				3
+			],
+			"label": "tonearm",
+			"explode": [
+				0,
+				0,
+				30
+			]
+		}
+	],
+	"focal": "record",
+	"labels": [
+		{
+			"text": "Record",
+			"target": "record",
+			"side": "left"
+		},
+		{
+			"text": "Platter",
+			"target": "platter",
+			"side": "left"
+		},
+		{
+			"text": "Tonearm",
+			"target": "arm",
+			"side": "right"
+		},
+		{
+			"text": "Plinth",
+			"target": "plinth",
+			"side": "left"
+		}
+	],
+	"dims": [
+		{
+			"from": [
+				168,
+				0,
+				0
+			],
+			"to": [
+				168,
+				140,
+				0
+			],
+			"text": "350 mm",
+			"offset": 36
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"plinth"
+			],
+			[
+				"platter",
+				"arm-base"
+			],
+			[
+				"record",
+				"record-label",
+				"spindle"
+			],
+			[
+				"arm"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0.2,
+			"min": 0.2,
+			"max": 0.8,
+			"step": 0.2,
+			"unit": "gap"
+		}
+	},
+	"meta": {
+		"margin": "[ 1 : 4 ]",
+		"corner": "VPK-HTML"
+	}
+}

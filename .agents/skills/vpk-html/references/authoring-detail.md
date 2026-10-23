@@ -11,18 +11,26 @@ Use this reference after the skill interface has selected the authoring track.
 - [Filling the template](#filling-the-template)
 - [Metadata](#metadata)
 - [Long documents and presentations](#long-documents-and-presentations)
+- [Reviewable documents and decision blocks](#reviewable-documents-and-decision-blocks)
 
 ## Artifact layout
 
 Every user artifact lives at `artifacts/vpk-html/<slug>/<slug>.html`. Keep its
-PDFs, screenshots, validation images, and iteration captures inside the same
-slug folder; use a `screenshots/` child when there are many captures. Do not put
+contract sidecar `<slug>.content.json`, PDFs, screenshots, validation images,
+and iteration captures inside the same slug folder; use a `screenshots/` child
+when there are many captures. `build.mjs --screenshot` writes to `screenshots/`
+in the same folder. Do not put
 generated HTML in the repository root, `docs/html`, or directly at the top of
 `artifacts/vpk-html`.
 
 Artifacts are durable local deliverables even though Git ignores the directory.
 Automation and housekeeping must not delete or rewrite them. Deletion requires
 a separate explicit request naming the exact artifact path.
+
+Figure-engine sources live in a `_figures/` child: `_figures/<id>.hero.mjs` for
+an anatomy hero (between `<!-- vpk-anatomy-hero:start … -->`/`:end` markers) and
+`_figures/<id>.iso.json` for iso-kit figures (between `vpk-figure:begin`/`:end`
+markers); the builders rebuild each region from its `src`.
 
 ## Intent and template selection
 
@@ -33,6 +41,9 @@ choosing a template, write a private two-line reader-job note:
   about 30 seconds?
 - **Deep audit:** what evidence must remain available when they inspect the
   artifact closely?
+
+Read `playbooks/<template>.md` when it exists, then lock the contract
+(`contract.md`) and write `<slug>.content.json`.
 
 Use that job to choose and adapt the template. Do not let available slots decide
 the information architecture. Ask one compact question only when at least two
@@ -55,6 +66,8 @@ dimensions are genuinely unclear.
 | Interview, Q&A, profile | `interview.html` |
 | Lookbook or artifact gallery | `lookbook.html` |
 | Long-form or data essay | `feature-essay.html` |
+| Motion case study: captured film, cue sheet, Gantt, labs | `motion-case-study.html` |
+| X thread (draft, approve, post) | `x-thread.html` |
 
 ### Engineering artifacts
 
@@ -103,6 +116,10 @@ Do not use remote URLs, `file:` paths, stock-image descriptions, or data that is
 not licensed or supplied for the task. The checker treats unresolved external
 assets as a failure.
 
+Embed films only with `scripts/media/embed.mjs` (data URL, fence-checked); film
+documents over the data-URL budget get `<slug>.lite.html` automatically; see
+[media pipeline](media-pipeline.md).
+
 ## Filling the template
 
 1. Copy the selected template into the artifact folder.
@@ -132,6 +149,7 @@ Fill each template's title placeholder and these head values:
 | Description | One sentence, no more than 150 characters, derived from opening content |
 | Keywords | Three to five terms from title and headings |
 | Document title | Match the visible primary heading |
+| Figure engine | `<meta name="vpk-figure-engine" content="none\|iso-kit\|anatomy-hero\|both">` once any engine figure exists; the builders insert it when absent |
 
 Keep `<meta name="generator" content="vpk-html">` unchanged.
 
@@ -147,3 +165,18 @@ Speaker notes are the last child of each `main > section` and remain hidden from
 the audience and print output. Scope dimming to navigation focus and release it
 on manual wheel or touch scrolling. Read `presentation.md` for the full runtime
 contract.
+
+## Reviewable documents and decision blocks
+
+When the contract turns the review runtime on (reviewers, comments, sign-off,
+or decision blocks), run `build.mjs --inject-review <file>` after filling and
+before the required checks; it adds the doc-id metas, a `data-vpk-id` on every
+content block, the `<slug>.vpk-blocks.json` ledger and the runtime. Keep every
+`data-vpk-id` when you edit, never delete the ledger, and run `--stamp` after
+each later edit (it restores ids a regeneration dropped). Mark subtrees your own
+scripts rewrite after load `data-vpk-generated` or `aria-live`. A decision is
+`<fieldset class="vpk-decision" data-vpk-decision="<key>">` with a `<legend>`
+question and radio, checkbox, select, textarea or text/range controls; the
+`checked`/`selected` option is the recommendation. Place each decision on the
+claim it changes. Templates never carry review state (ids, metas, islands, runtime). Full rules, commands and
+contracts: [review loop](review-loop.md).

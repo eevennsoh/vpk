@@ -157,12 +157,12 @@ intensity charts, use the warm mauve ramp `--heat0` through `--heat4`.
 
 ## Regenerating Diagrams
 
-The committed diagrams are migrated in place because the local Kami upstream
-has no source assets. For shared CSS/font/token refreshes, use:
+The committed diagrams are maintained in place; `port-kami.mjs` re-ports from a
+Kami checkout into a scratch folder for comparison only. For shared
+CSS/font/token/runtime refreshes, use (unsandboxed):
 
 ```bash
-node .agents/skills/vpk-html/scripts/migrate-identity.mjs
-node .agents/skills/vpk-html/scripts/retrofit.mjs
+node .agents/skills/vpk-html/scripts/build.mjs --refresh-library
 node .agents/skills/vpk-html/scripts/build.mjs --check-templates
 ```
 

@@ -1,0 +1,48 @@
+{
+	"type": "document",
+	"lang": "en",
+	"brief": {
+		"reader_job": {
+			"quick_read": "See whether week 11 shipped safely: merges, deploys, and the one SEV-2.",
+			"deep_audit": "Audit the shipped PRs, the sync API latency change, the incident, and the carryover risks."
+		},
+		"template": "status-report.html",
+		"formats": ["html"],
+		"acceptance_checks": [
+			"build.mjs --check-placeholders",
+			"build.mjs --verify",
+			"check-html.mjs",
+			"build.mjs --check-content"
+		],
+		"audience": "Engineering leads at the weekly review",
+		"length_target": "At most 2 screens at 1440 px",
+		"viewport": { "width": 1440, "height": 900 },
+		"figure_engine": "none",
+		"figures": [
+			{ "id": "velocity", "kind": "chart", "engine": "static", "job": "Show PRs merged per day and the Thursday feature-train spike." }
+		],
+		"review": { "runtime": false },
+		"required_facts": [
+			"14 PRs merged",
+			"one SEV-2 mitigated in 47 minutes",
+			"sync API p95 410ms to 255ms"
+		],
+		"assumptions": []
+	},
+	"content": {
+		"title": "Engineering Status — Week 11",
+		"summary": "Bulk task editing shipped to every workspace, the sync API hot path got 38% faster, and one SEV-2 from a bad connection-pool rollout was mitigated within the hour.",
+		"facts": [
+			{ "label": "PRs merged", "value": "14", "source": "git log main..HEAD" },
+			{ "label": "Deploys", "value": "6", "source": "deploy log" },
+			{ "label": "Incidents", "value": "1", "source": "incident tracker" },
+			{ "label": "Incident severity", "value": "SEV-2" },
+			{ "label": "Time to mitigate", "value": "47 minutes" },
+			{ "label": "Flaky tests fixed", "value": "3", "source": "CI dashboard" },
+			{ "label": "Suite pass rate", "value": "99.1%", "source": "CI dashboard" },
+			{ "label": "Sync API p95 before", "value": "410ms", "source": "staging load test" },
+			{ "label": "Sync API p95 after", "value": "255ms", "source": "staging load test" },
+			{ "label": "Sync API p95 change", "value": "down 38%" }
+		]
+	}
+}

@@ -1,0 +1,27 @@
+{
+	"$comment": "Generic content schema for prose templates (ws6). The supplied facts a document must carry: every value of 80 characters or fewer must appear verbatim in the rendered HTML. Labels and sources are bookkeeping and are not coverage-checked.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["title", "facts"],
+	"properties": {
+		"title": { "type": "string", "minLength": 2, "maxLength": 120 },
+		"summary": { "type": "string", "maxLength": 400, "$comment": "One paragraph in the author's words; long prose is counted, not matched." },
+		"facts": {
+			"type": "array",
+			"minItems": 1,
+			"maxItems": 300,
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["label", "value"],
+				"properties": {
+					"label": { "type": "string", "minLength": 1, "maxLength": 80, "x-coverage": "skip" },
+					"value": { "type": "string", "minLength": 1, "maxLength": 80, "$comment": "Write the value exactly as the document shows it: 99.1%, 410ms, SEV-2." },
+					"source": { "type": "string", "maxLength": 240, "x-coverage": "skip" }
+				}
+			}
+		},
+		"caveats": { "type": "array", "maxItems": 40, "items": { "type": "string", "minLength": 1, "maxLength": 240 } },
+		"decisions": { "type": "array", "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 240 } }
+	}
+}

@@ -8,11 +8,17 @@
  *
  * Source: https://github.com/tw93/Kami (MIT)
  *
+ * The committed templates and diagrams were edited after the original port, so a re-port is a
+ * comparison tool: write to a scratch folder with --out and diff it. --in-place overwrites
+ * committed assets and must be chosen explicitly.
+ *
  * Usage:
- *   node scripts/port-kami.mjs                 # all three modes
- *   node scripts/port-kami.mjs --templates
- *   node scripts/port-kami.mjs --diagrams
- *   node scripts/port-kami.mjs --demos
+ *   node scripts/port-kami.mjs --source <kami-checkout> --out <dir> [--templates] [--diagrams] [--demos]
+ *   node scripts/port-kami.mjs --source <kami-checkout> --in-place [--templates] [--diagrams] [--demos]
+ * Source resolution: --source, then $VPK_HTML_KAMI_SOURCE, then ~/.agents/skills/kami. Each mode
+ * uses the first layout whose directory exists: repo (skills/kami/assets/…, site/assets/demos),
+ * plugin (plugins/kami/skills/kami/assets/…), or an installed skill (assets/…). With no mode
+ * flag, all three modes run. The source is checked before anything is written.
  */
 
 import fs from "node:fs";
@@ -36,13 +42,95 @@ import { isDeck, retrofitDeck, retrofitDocumentNav } from "./presentation.mjs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SKILL_ROOT = path.resolve(__dirname, "..");
-const KAMI_ROOT = path.join(os.homedir(), ".agents/skills/kami");
-const KAMI_TEMPLATES = path.join(KAMI_ROOT, "assets/templates");
-const KAMI_DIAGRAMS = path.join(KAMI_ROOT, "assets/diagrams");
-const KAMI_DEMOS = path.join(KAMI_ROOT, "assets/demos");
-const VPK_TEMPLATES = path.join(SKILL_ROOT, "assets/templates");
-const VPK_DIAGRAMS = path.join(SKILL_ROOT, "assets/diagrams");
-const VPK_DEMOS = path.join(SKILL_ROOT, "assets/demos");
+
+export const KAMI_SOURCE_ENV = "VPK_HTML_KAMI_SOURCE";
+export const KAMI_LAYOUTS = [
+	{ name: "repo", templates: "skills/kami/assets/templates", diagrams: "skills/kami/assets/diagrams", demos: "site/assets/demos" },
+	{ name: "plugin", templates: "plugins/kami/skills/kami/assets/templates", diagrams: "plugins/kami/skills/kami/assets/diagrams", demos: "site/assets/demos" },
+	{ name: "skill", templates: "assets/templates", diagrams: "assets/diagrams", demos: "assets/demos" },
+];
+const MODE_FLAGS = { "--templates": "templates", "--diagrams": "diagrams", "--demos": "demos" };
+const ALL_MODES = ["templates", "diagrams", "demos"];
+
+function isDirectory(target) {
+	try {
+		return fs.statSync(target).isDirectory();
+	} catch {
+		return false;
+	}
+}
+
+function expandHome(target, home) {
+	return target === "~" || target.startsWith("~/") ? path.join(home, target.slice(1)) : target;
+}
+
+export function parsePortKamiArgs(argv) {
+	const result = { modes: [], source: undefined, out: undefined, inPlace: false, errors: [] };
+	for (let index = 0; index < argv.length; index++) {
+		const arg = argv[index];
+		if (arg in MODE_FLAGS) {
+			if (!result.modes.includes(MODE_FLAGS[arg])) result.modes.push(MODE_FLAGS[arg]);
+		} else if (arg === "--source" || arg === "--out") {
+			const value = argv[index + 1];
+			if (!value || value.startsWith("--")) result.errors.push(`${arg} requires a path`);
+			else result[arg.slice(2)] = value;
+			index += 1;
+		} else if (arg === "--in-place") {
+			result.inPlace = true;
+		} else {
+			result.errors.push(`Unknown argument: ${arg}`);
+		}
+	}
+	if (result.out && result.inPlace) result.errors.push("pass exactly one of --out <dir> or --in-place, not both");
+	else if (!result.out && !result.inPlace) result.errors.push("pass exactly one of --out <dir> (recommended) or --in-place");
+	if (result.modes.length === 0) result.modes = [...ALL_MODES];
+	return result;
+}
+
+function layoutDirs(root) {
+	const dirs = { templates: null, diagrams: null, demos: null };
+	const layouts = { templates: null, diagrams: null, demos: null };
+	for (const mode of ALL_MODES) {
+		const layout = KAMI_LAYOUTS.find(candidate => isDirectory(path.join(root, candidate[mode])));
+		if (layout) {
+			dirs[mode] = path.join(root, layout[mode]);
+			layouts[mode] = layout.name;
+		}
+	}
+	return { dirs, layouts };
+}
+
+// → { root, tried, dirs: { templates, diagrams, demos }, layouts, error? }. An explicit --source never falls through.
+export function resolveKamiSource({ source, env = process.env, home = os.homedir() } = {}) {
+	const candidates = source ? [source] : [env?.[KAMI_SOURCE_ENV], path.join(home, ".agents/skills/kami")].filter(Boolean);
+	const tried = candidates.map(candidate => path.resolve(expandHome(candidate, home)));
+	const root = tried.find(isDirectory) ?? null;
+	if (!root) {
+		const error = source ? `--source ${tried[0]} does not exist` : "no Kami checkout found";
+		return { root: null, tried, dirs: { templates: null, diagrams: null, demos: null }, layouts: { templates: null, diagrams: null, demos: null }, error };
+	}
+	return { root, tried, ...layoutDirs(root) };
+}
+
+function describeRoot(root) {
+	if (!isDirectory(root)) return [`  ${root} (missing)`];
+	return KAMI_LAYOUTS.map(layout => {
+		const marks = ALL_MODES.map(mode => `${layout[mode]} ${isDirectory(path.join(root, layout[mode])) ? "✓" : "✗"}`);
+		return `  ${root} (${layout.name} layout: ${marks.join(", ")})`;
+	});
+}
+
+function preflightMessage(resolved, missingModes) {
+	return [
+		`port-kami: Kami source not found for ${missingModes.map(mode => `--${mode}`).join(", ")}.`,
+		"Looked in:",
+		...resolved.tried.flatMap(describeRoot),
+		"Clone the upstream (MIT) and pass it explicitly:",
+		"  git clone --depth 1 https://github.com/tw93/Kami ~/src/Kami",
+		"  node .agents/skills/vpk-html/scripts/port-kami.mjs --source ~/src/Kami --out \"$TMPDIR/kami-port\"",
+		"Committed vpk-html templates and diagrams were edited after the original port; diff the --out folder before using --in-place.",
+	].join("\n");
+}
 
 /* ============================ shared plumbing ============================ */
 
@@ -262,17 +350,14 @@ function transformTemplate(rawHtml, slug, fontFaceBlock, themeBlock) {
 	return out;
 }
 
-function portTemplates() {
-	if (!fs.existsSync(KAMI_TEMPLATES)) {
-		throw new Error(`Kami templates not found at ${KAMI_TEMPLATES}`);
-	}
-	fs.mkdirSync(VPK_TEMPLATES, { recursive: true });
+function portTemplates({ sourceDir, targetDir }) {
+	fs.mkdirSync(targetDir, { recursive: true });
 	const fontFaceBlock = buildFontFaceBlock();
 	const themeBlock = wrapSharedCss(readStylesCss());
 	let missing = [];
 	for (const { source, slug } of TEMPLATES) {
-		const sourcePath = path.join(KAMI_TEMPLATES, source);
-		const targetPath = path.join(VPK_TEMPLATES, `${slug}.html`);
+		const sourcePath = path.join(sourceDir, source);
+		const targetPath = path.join(targetDir, `${slug}.html`);
 		if (!fs.existsSync(sourcePath)) {
 			missing.push(source);
 			console.warn(`skip ${slug} — ${source} not found in kami source`);
@@ -282,7 +367,7 @@ function portTemplates() {
 		fs.writeFileSync(targetPath, transformTemplate(raw, slug, fontFaceBlock, themeBlock), "utf8");
 		console.log(`✓ template ${slug} (from ${source})`);
 	}
-	console.log(`Ported ${TEMPLATES.length - missing.length}/${TEMPLATES.length} templates → ${path.relative(process.cwd(), VPK_TEMPLATES)}`);
+	console.log(`Ported ${TEMPLATES.length - missing.length}/${TEMPLATES.length} templates → ${path.relative(process.cwd(), targetDir)}`);
 	return { missing };
 }
 
@@ -397,20 +482,17 @@ function transformDiagram(rawHtml, slug, headBlock) {
 		.replace(/<!--[\s\S]*?-->\n?/, `${headerComment}\n`);
 }
 
-function portDiagrams() {
-	if (!fs.existsSync(KAMI_DIAGRAMS)) {
-		throw new Error(`Kami diagrams not found at ${KAMI_DIAGRAMS}`);
-	}
-	fs.mkdirSync(VPK_DIAGRAMS, { recursive: true });
+function portDiagrams({ sourceDir, targetDir }) {
+	fs.mkdirSync(targetDir, { recursive: true });
 	const headBlock = buildDiagramHead();
-	const files = fs.readdirSync(KAMI_DIAGRAMS).filter(name => name.endsWith(".html"));
+	const files = fs.readdirSync(sourceDir).filter(name => name.endsWith(".html"));
 	for (const file of files) {
 		const slug = file.replace(/\.html$/, "");
-		const raw = fs.readFileSync(path.join(KAMI_DIAGRAMS, file), "utf8");
-		fs.writeFileSync(path.join(VPK_DIAGRAMS, file), transformDiagram(raw, slug, headBlock), "utf8");
+		const raw = fs.readFileSync(path.join(sourceDir, file), "utf8");
+		fs.writeFileSync(path.join(targetDir, file), transformDiagram(raw, slug, headBlock), "utf8");
 		console.log(`✓ diagram ${slug}`);
 	}
-	console.log(`Ported ${files.length} diagrams → ${path.relative(process.cwd(), VPK_DIAGRAMS)}`);
+	console.log(`Ported ${files.length} diagrams → ${path.relative(process.cwd(), targetDir)}`);
 	return { count: files.length };
 }
 
@@ -538,56 +620,71 @@ function transformDemo(rawHtml, slug, fontFaceBlock, themeBlock) {
 	return out;
 }
 
-function portDemos() {
-	if (!fs.existsSync(KAMI_DEMOS)) {
-		throw new Error(`Kami demos not found at ${KAMI_DEMOS}`);
-	}
-	fs.mkdirSync(VPK_DEMOS, { recursive: true });
+function portDemos({ sourceDir, targetDir }) {
+	fs.mkdirSync(targetDir, { recursive: true });
 	const fontFaceBlock = buildFontFaceBlock();
 	const themeBlock = wrapSharedCss(readStylesCss());
 	let missing = [];
 	for (const file of DEMOS) {
 		const slug = file.replace(/\.html$/, "");
-		const sourcePath = path.join(KAMI_DEMOS, file);
+		const sourcePath = path.join(sourceDir, file);
 		if (!fs.existsSync(sourcePath)) {
 			missing.push(file);
 			console.warn(`skip ${slug} — not found in kami source`);
 			continue;
 		}
 		const raw = fs.readFileSync(sourcePath, "utf8");
-		fs.writeFileSync(path.join(VPK_DEMOS, file), transformDemo(raw, slug, fontFaceBlock, themeBlock), "utf8");
+		fs.writeFileSync(path.join(targetDir, file), transformDemo(raw, slug, fontFaceBlock, themeBlock), "utf8");
 		console.log(`✓ demo ${slug}`);
 	}
-	console.log(`Ported ${DEMOS.length - missing.length}/${DEMOS.length} curated demos → ${path.relative(process.cwd(), VPK_DEMOS)}`);
+	console.log(`Ported ${DEMOS.length - missing.length}/${DEMOS.length} curated demos → ${path.relative(process.cwd(), targetDir)}`);
 	return { missing };
 }
 
 /* ============================ main ============================ */
 
-const MODES = { "--templates": portTemplates, "--diagrams": portDiagrams, "--demos": portDemos };
+const RUNNERS = { templates: portTemplates, diagrams: portDiagrams, demos: portDemos };
+const USAGE = "Usage: node .agents/skills/vpk-html/scripts/port-kami.mjs --source <kami-checkout> (--out <dir> | --in-place) [--templates] [--diagrams] [--demos]";
 
 function main() {
-	const args = process.argv.slice(2);
-	const unknown = args.filter(a => !(a in MODES));
-	if (unknown.length > 0) {
-		console.error(`Unknown argument(s): ${unknown.join(", ")}`);
-		console.error("Usage: node scripts/port-kami.mjs [--templates] [--diagrams] [--demos]");
+	const args = parsePortKamiArgs(process.argv.slice(2));
+	if (args.errors.length > 0) {
+		for (const error of args.errors) console.error(`port-kami: ${error}`);
+		console.error(USAGE);
 		process.exitCode = 1;
 		return;
 	}
-	const selected = args.length > 0 ? args : ["--templates", "--diagrams", "--demos"];
+	// Preflight: resolve every selected mode before the first log line or write.
+	const resolved = resolveKamiSource({ source: args.source });
+	const missing = args.modes.filter(mode => !resolved.dirs[mode]);
+	if (missing.length > 0) {
+		console.error(preflightMessage(resolved, missing));
+		process.exitCode = 1;
+		return;
+	}
+	const targetRoot = args.inPlace ? path.join(SKILL_ROOT, "assets") : path.resolve(args.out);
+	console.log(`Kami source: ${resolved.root} (${args.modes.map(mode => `${mode}: ${resolved.layouts[mode]} layout`).join(", ")})`);
 	console.log("Inlining local Geist fonts as base64 data URIs…");
-	for (const mode of selected) {
+	for (const mode of args.modes) {
 		try {
-			MODES[mode]();
+			RUNNERS[mode]({ sourceDir: resolved.dirs[mode], targetDir: path.join(targetRoot, mode) });
 		} catch (error) {
 			console.error(error.message);
 			process.exitCode = 1;
 		}
 	}
+	if (args.inPlace) console.log("⚠ overwrote committed assets — review git diff, then run build.mjs --refresh-library and --check-evals (upstream may add diagrams)");
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+function isMainModule() {
+	try {
+		return Boolean(process.argv[1]) && fs.realpathSync(process.argv[1]) === __filename;
+	} catch {
+		return false;
+	}
+}
+
+if (isMainModule()) {
 	main();
 }
 

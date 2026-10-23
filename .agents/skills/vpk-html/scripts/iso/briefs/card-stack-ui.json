@@ -1,0 +1,29 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "card-stack-ui",
+	"figId": "FIG_001",
+	"title": "Anatomy of a card",
+	"label": "A UI card pulled apart into stacked isometric layers: card surface, media, heading, body text, and the primary button inside its dashed focus ring. The button is accented.",
+	"caption": "Every layer is static chrome except the primary button: it is the one part that carries the action and the focus state.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "surface", "kind": "tray", "at": [0, 0, 0], "size": [120, 160, 5], "r": 8, "label": "Card surface" },
+		{ "id": "media", "kind": "slab", "at": [8, 96, 14], "size": [104, 56, 2], "r": 4, "label": "Media" },
+		{ "id": "title", "kind": "plate", "at": [8, 72, 26], "size": [80, 10, 1], "marks": [[[4, 5], [60, 5]]], "label": "Heading" },
+		{ "id": "body", "kind": "plate", "at": [8, 44, 26], "size": [104, 16, 1], "marks": [[[4, 8], [88, 8]]], "label": "Body text" },
+		{ "id": "focus", "kind": "gap", "at": [2, 4, 38], "size": [60, 28, 0], "r": 6, "label": "Focus ring" },
+		{ "id": "button", "kind": "box", "at": [8, 10, 38], "size": [48, 16, 5], "r": 4, "label": "Primary button" }
+	],
+	"focal": "button",
+	"labels": [
+		{ "text": "Primary button", "target": "button", "side": "right" },
+		{ "text": "Focus ring", "target": "focus", "side": "left", "anchor": [20, 32, 38] },
+		{ "text": "Media", "target": "media", "side": "left" },
+		{ "text": "Heading", "target": "title", "side": "left" },
+		{ "text": "Body text", "target": "body", "side": "right" },
+		{ "text": "Card surface", "target": "surface", "side": "right" }
+	],
+	"assemble": { "layers": [["surface"], ["media"], ["title", "body"], ["focus", "button"]] },
+	"interact": { "behavior": "select", "lift": 12, "rest": "Card at rest" },
+	"meta": { "margin": "[ CARD ANATOMY ]", "corner": "VPK-HTML" }
+}

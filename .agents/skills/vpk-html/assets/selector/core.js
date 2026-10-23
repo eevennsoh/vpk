@@ -9,6 +9,8 @@
 	var getRect = utils.getRect;
 	var summarizeTag = utils.summarizeTag;
 	var matchesShortcut = utils.matchesShortcut;
+	var getComposedTarget = utils.getComposedTarget;
+	var isReviewUiEvent = utils.isReviewUiEvent;
 	if (!utils || !inspectApi) {
 		return;
 	}
@@ -447,6 +449,9 @@
 		if (!state.configured || !state.enabled || !state.active || state.mode !== "cursor") {
 			return;
 		}
+		if (isReviewUiEvent(event)) {
+			return;
+		}
 		if (isSelectorChrome(event.target)) {
 			return;
 		}
@@ -458,6 +463,9 @@
 
 	function handleClick(event) {
 		if (!state.configured || !state.enabled || !state.active || state.mode !== "cursor") {
+			return;
+		}
+		if (isReviewUiEvent(event)) {
 			return;
 		}
 		if (isSelectorChrome(event.target)) {
@@ -476,6 +484,9 @@
 		if (!state.configured) {
 			return;
 		}
+		if (isReviewUiEvent(event)) {
+			return;
+		}
 
 			if (event.key === "Escape") {
 				if (handleEscapeKey(event)) {
@@ -485,7 +496,7 @@
 				return;
 			}
 
-		if (isEditableTarget(event.target)) {
+		if (isEditableTarget(getComposedTarget(event))) {
 			return;
 		}
 
@@ -554,6 +565,9 @@
 		}
 
 	function handleKeyUp(event) {
+		if (isReviewUiEvent(event)) {
+			return;
+		}
 		if (
 			state.configured
 			&& state.activationMode === "hold"

@@ -1,0 +1,119 @@
+{
+	"type": "motion-case-study",
+	"lang": "en",
+	"brief": {
+		"reader_job": {
+			"quick_read": "Watch three throws of one card and see which easing reads as a release.",
+			"deep_audit": "Check every cue, the spring landing and the three easing curves against the film's rehearsal clock."
+		},
+		"template": "motion-case-study.html",
+		"formats": ["html"],
+		"acceptance_checks": [
+			"check-html.mjs",
+			"build.mjs --check-placeholders",
+			"build.mjs --check-content",
+			"lab/kit.mjs --check",
+			"lab/render-case-study.mjs --check"
+		],
+		"audience": "Designers and engineers reviewing a motion decision",
+		"length_target": "One film, one cue sheet, one lab",
+		"viewport": { "width": 1440, "height": 900 },
+		"size_budget_kb": 1536,
+		"figure_engine": "none",
+		"figures": [
+			{ "id": "film", "kind": "film", "engine": "static", "job": "Show the three throws as captured from the rehearsal fixture, frame by frame." },
+			{ "id": "easing", "kind": "lab", "engine": "static", "job": "Let the reader scrub one throw and swap its easing." }
+		],
+		"review": { "runtime": false },
+		"assumptions": []
+	},
+	"content": {
+		"title": "Three throws, one clock",
+		"dek": "A six-second rehearsal film of one card throw, eased three ways. Every time on this page is a time on the film's clock, so the cues, the Gantt and the lab all land on the same frame.",
+		"film": {
+			"duration_s": 6.0333,
+			"fps": 30,
+			"width": 1280,
+			"height": 720,
+			"clock_offset_s": 0,
+			"clock_id": "clock",
+			"clock_label": "clock",
+			"poster_s": 3.3,
+			"source": "assets/lab/fixtures/rehearsal-target.capture.mjs"
+		},
+		"chapters": [
+			{ "label": "Throw 1", "film_s": 0 },
+			{ "label": "Throw 2", "film_s": 2 },
+			{ "label": "Throw 3", "film_s": 4 }
+		],
+		"cues": [
+			{ "id": "t1-lift", "act": "Throw 1", "t_s": 0, "title": "Lift off the pile", "body": "The card rises 40 px in 0.6 s on vpkOut: quick out of the pile, gentle at the top, so the eye is already on it when it leaves.", "nums": "0–0.6 s · vpkOut · 40 px" },
+			{ "id": "t1-throw", "act": "Throw 1", "t_s": 0.6, "title": "The throw, eased vpkOut", "body": "Most of the 890 px is covered in the first third of the second, so the card reads as flung rather than carried.", "nums": "0.6–1.6 s · 890 px · arc 120 px" },
+			{ "id": "t1-land", "act": "Throw 1", "t_s": 1.6, "title": "A spring landing", "body": "A spring with stiffness 220 and damping 20 settles the card with a small overshoot; it covers half its 40 px drop in about 0.1 s.", "nums": "1.6–1.95 s · k 220 · c 20" },
+			{ "id": "t2-throw", "act": "Throw 2", "t_s": 2.6, "title": "Same path, eased inOut", "body": "inOut starts slowly, so the card hangs at the pile before it travels and the arc peaks late.", "nums": "2.6–3.6 s · inOut" },
+			{ "id": "t2-land", "act": "Throw 2", "t_s": 3.6, "title": "A late arrival", "body": "Because inOut decelerates hard at the end, the landing spring starts from almost no speed and the overshoot is barely visible.", "nums": "3.6–3.95 s · k 220 · c 20" },
+			{ "id": "t3-throw", "act": "Throw 3", "t_s": 4.6, "title": "Same path, eased outBold", "body": "outBold is the most front-loaded curve: the card covers 60% of the way in the first 0.1 s and drifts the rest.", "nums": "4.6–5.6 s · outBold" },
+			{ "id": "t3-land", "act": "Throw 3", "t_s": 5.6, "title": "The settled stack", "body": "All three cards rest in their slots. The film ends a frame after the last spring settles.", "nums": "5.6–6.03 s" }
+		],
+		"timeline": {
+			"label": "Filter the making-of timeline by theme",
+			"kinds": [
+				{ "id": "design", "label": "Design" },
+				{ "id": "build", "label": "Build" },
+				{ "id": "review", "label": "Review" }
+			],
+			"days": [
+				{ "date": "Day 1", "dow": "Mon", "commits": 4, "events": [
+					{ "kind": "design", "who": "Design", "text": "Sketched the throw as three beats: lift, travel on an arc, land." },
+					{ "kind": "build", "who": "Engineering", "text": "Wrote the throw as a pure function of one clock, so any frame can be drawn on its own." }
+				] },
+				{ "date": "Day 2", "dow": "Tue", "commits": 7, "events": [
+					{ "kind": "build", "who": "Engineering", "text": "Exposed the clock as a rehearsal hook, so the capture can hold any time and photograph it." },
+					{ "kind": "review", "who": "Review", "text": "Compared three easings side by side; vpkOut kept, the other two left in as a comparison." }
+				] },
+				{ "date": "Day 3", "dow": "Wed", "commits": 2, "events": [
+					{ "kind": "review", "who": "Review", "text": "Captured the film one frame at a time and checked every cue against it." }
+				] }
+			]
+		},
+		"discards": [
+			{ "tag": "Throw", "what": "A linear throw", "why": "Constant speed looked like the card was dragged on a rail. Nothing in the motion read as a release.", "src": "Fixture notes, day 1" },
+			{ "tag": "Landing", "what": "A bouncing landing", "why": "Two visible bounces kept pulling the eye back after the card had already arrived.", "src": "Fixture notes, day 2" }
+		],
+		"layers": [
+			{ "name": "Rehearsal clock", "tech": "window.__vpkRehearsal", "body": "One number drives the page. hold(t) draws the frame for time t, which is what makes a frame-exact capture possible." },
+			{ "name": "Throw maths", "tech": "cubicBezier + spring", "body": "Lift, arc and landing are closed-form functions of the clock: no state, so the film and the lab compute the same pose." },
+			{ "name": "Capture", "tech": "media/capture.mjs hold", "body": "Each of the 181 frames is held, given two animation frames to paint, then photographed and listed in frames.ffconcat." }
+		],
+		"labs": [
+			{ "id": "easing", "kind": "time", "title": "Easing the throw", "source": "assets/lab/fixtures/rehearsal-target.html:26-66" }
+		],
+		"gantt": {
+			"id": "throws-gantt",
+			"clock": "clock",
+			"label": "Gantt of the three throws on the rehearsal clock; click to seek the film",
+			"description": "Lift, throw and land for each of the three cards, from 0 to 6 seconds on the rehearsal clock.",
+			"tMin": 0,
+			"tMax": 6,
+			"tickEvery": 1,
+			"viewBox": { "width": 1000, "x0": 110, "x1": 984, "top": 40, "rowHeight": 26, "bottom": 26 },
+			"rows": ["Lift", "Throw", "Land"],
+			"marks": [
+				{ "t": 0, "label": "THROW 1" },
+				{ "t": 2, "label": "THROW 2" },
+				{ "t": 4, "label": "THROW 3" }
+			],
+			"bars": [
+				{ "row": 0, "start": 0, "end": 0.6, "tone": 1 },
+				{ "row": 1, "start": 0.6, "end": 1.6, "tone": 2, "label": "vpkOut" },
+				{ "row": 2, "start": 1.6, "end": 1.95, "tone": 3 },
+				{ "row": 0, "start": 2, "end": 2.6, "tone": 1 },
+				{ "row": 1, "start": 2.6, "end": 3.6, "tone": 2, "label": "inOut" },
+				{ "row": 2, "start": 3.6, "end": 3.95, "tone": 3 },
+				{ "row": 0, "start": 4, "end": 4.6, "tone": 1 },
+				{ "row": 1, "start": 4.6, "end": 5.6, "tone": 2, "label": "outBold" },
+				{ "row": 2, "start": 5.6, "end": 5.95, "tone": 3 }
+			]
+		}
+	}
+}
