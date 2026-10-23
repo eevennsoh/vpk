@@ -46,7 +46,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 | Repository skills for Rovo            | `scripts/sync-rovo-skills.js`, `backend/lib/rovo-skills-overlay.js` |
 | Architecture overview                  | `.agents/docs/architecture-overview.md`                     |
 | Extended workflows                     | `.agents/docs/workflows-extended.md`                        |
-| cmux inter-agent messaging             | `.agents/docs/cmux-messaging.md`                            |
+| herdr panes, tabs, and agent topology  | `.agents/docs/herdr.md`, `scripts/agent-surface.js`         |
 | Step-by-step task playbooks            | `.agents/docs/playbooks/`                                   |
 | Cursor Cloud environment setup         | `.agents/docs/cursor-cloud.md`                               |
 | Symphony orchestrator                  | `.agents/skills/vpk-symphony/SKILL.md`, `.agents/docs/symphony.md`, `WORKFLOW.md`, `scripts/symphony.sh` |
@@ -203,7 +203,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 
 ### Debugging
 
-Inside cmux, use the `/cmux` skill and `cmux read-screen` to inspect the failing pane before guessing. Outside cmux, inspect `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, and `.dev-backend-port`. Details: `.agents/docs/cmux-messaging.md`.
+Inside herdr (`HERDR_ENV=1`), use the `herdr` skill and `herdr pane read <pane> --source recent-unwrapped` to inspect the failing pane before guessing. Outside herdr, inspect `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, and `.dev-backend-port`. Details: `.agents/docs/herdr.md`.
 
 ## Gotchas
 
