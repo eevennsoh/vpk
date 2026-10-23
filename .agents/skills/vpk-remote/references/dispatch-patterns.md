@@ -101,10 +101,6 @@ never silently takes over implementation.
 - **Warm reuse:** sequential briefs in the same area go to the same worker
   (GPT lane `resume` keeps the prompt cache warm; a fresh run re-pays the
   cold-start read).
-- **The OAuth twist:** on this skill the planner's tokens are the scarce
-  resource, not the expensive one. Even when delegation looks token-inefficient
-  in total, moving reading/writing off the OAuth session is usually still
-  correct — the threshold question is planner-side overhead (brief + report
-  reading), not worker-side volume. Tiny read-only questions the planner can
-  answer from context stay with the planner; any non-trivial mutation goes
-  to a worker regardless.
+- **Planner context:** the planner's context window is for decisions and
+  review. Tiny read-only questions it can answer from context stay with the
+  planner; any non-trivial mutation goes to a worker.

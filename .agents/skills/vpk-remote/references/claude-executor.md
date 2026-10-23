@@ -42,7 +42,8 @@ env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
   2> "$worker_root/stderr.log"
 ```
 
-Run via Bash with `run_in_background: true`. `claude -p` writes its result to
+Run via Bash with `run_in_background: true` (a Codex planner runs it in the
+foreground; see *Codex as the planner* in SKILL.md). `claude -p` writes its result to
 **stdout**, so the stdout redirect is the report channel (the analogue of
 codex's `--output-last-message`). Read `stderr.log` only when `report.md`
 comes back empty.
@@ -50,8 +51,7 @@ comes back empty.
 Why each layer exists:
 
 - Unsetting `ANTHROPIC_AUTH_TOKEN` / `CLAUDE_CODE_OAUTH_TOKEN` guarantees the
-  worker cannot ride the planner's OAuth login — the exact billing leak this
-  skill exists to prevent.
+  worker cannot ride an OAuth login, so workers always bill Proximity.
 - The parent Claude session **exports its own `ANTHROPIC_BASE_URL` and
   `CLAUDE_EFFORT`** into Bash (observed). Set the gateway URL explicitly and
   unset `CLAUDE_EFFORT` rather than trusting inheritance or settings-file

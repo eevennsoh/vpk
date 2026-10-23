@@ -54,6 +54,8 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
 ```
 
 Run via Bash with `run_in_background: true`; the harness notifies on exit.
+A Codex planner has no background notification: run it in the foreground
+(see *Codex as the planner* in SKILL.md).
 Fan-out = several of these in one message, each with its own `worker_root`.
 For read-only briefs, `--sandbox read-only` is a tighter fit.
 
@@ -117,7 +119,7 @@ or immediately after fan-out** (the selected session is ambiguous).
 
 This lane serves advisor consults at `gpt-5.6-sol` `xhigh` when the work
 under review came from the **Claude** lane, including plans written by the
-OAuth planner itself — see the independence rule in
+Claude planner itself — see the independence rule in
 [advisor-pattern.md](advisor-pattern.md). Use `--sandbox read-only`, an
 `advisor-<n>/` directory, and a read-only brief.
 

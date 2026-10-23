@@ -3,17 +3,15 @@
 An advisor consult is a one-shot, **read-only** worker on either lane —
 [gpt-executor.md](gpt-executor.md) or
 [claude-executor.md](claude-executor.md) — writing to
-`output/remote-<lane>/advisor-<n>/`. It is never a Claude Code subagent: a
-subagent bills the OAuth session, and the model is chosen per consult rather
-than pinned.
+`output/remote-<lane>/advisor-<n>/`. It runs as an external CLI process, not
+a Claude Code subagent, so the model and family can be chosen per consult.
 
 ## The idea
 
-The token-limited OAuth session runs the loop. A high-judgment model is
+The planner session runs the loop. A high-judgment model is
 consulted mid-task for strategic guidance: it reads the situation, produces a
 decision or course-correction, and the planner continues. The advisor never
-generates the final output and never edits files — that is where the savings
-come from.
+generates the final output and never edits files.
 
 ## Picking the advisor: independence, not tier
 
@@ -32,7 +30,7 @@ with nothing dispatched yet. Explicit `--model` / `--effort` flags override.
 Two corollaries worth remembering:
 
 - **Reviewing your own planner counts too.** When the consult is about a plan
-  the OAuth Claude session wrote, the GPT lane is the independent reviewer,
+  the Claude planner session wrote, the GPT lane is the independent reviewer,
   even though no worker has run yet.
 - **Do not stack same-family consults.** A second opinion from the same
   family as the first advisor adds cost without adding independence; if the
@@ -63,10 +61,7 @@ a trigger.
 
 Consults are on by default, not unconditional. Skip them for single-step
 questions, mechanical edits, an obvious plan, or anything a proof command
-verifies more cheaply than the consult costs. The bar is a cost comparison
-you can actually run: a consult spends planner tokens on both sides — one
-brief written, one piece of advice read — while the thinking itself bills
-Proximity. Consult when a wrong call would cost more than that handoff.
+already settles. Consult when a wrong call would be costly to undo.
 Good advice is a 400–700 token course-correction, not an essay.
 
 ## Context packaging (the consult starts cold)
