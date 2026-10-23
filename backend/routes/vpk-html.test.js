@@ -408,3 +408,92 @@ test("vpk-html publish-gist maps validation and gh failures", async (t) => {
 		assert.deepEqual(await response.json(), { error: "Not available" });
 	}, { env: { NODE_ENV: "production" }, execFileImpl });
 });
+
+function createLocalRepo(t) {
+	const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-html-local-"));
+	t.after(() => {
+		fs.rmSync(repoRoot, { force: true, recursive: true });
+	});
+	const rootDir = path.join(repoRoot, ".agents", "skills", "vpk-html");
+	fs.mkdirSync(path.join(rootDir, "assets", "demos"), { recursive: true });
+	fs.writeFileSync(path.join(rootDir, "index.html"), "<!doctype html><title>index</title>");
+	fs.mkdirSync(path.join(repoRoot, "artifacts", "vpk-html", "eu26", "_src"), { recursive: true });
+	fs.mkdirSync(path.join(repoRoot, "output", "vpk-html-v2", "spike"), { recursive: true });
+	fs.mkdirSync(path.join(repoRoot, "elsewhere"), { recursive: true });
+	fs.writeFileSync(path.join(repoRoot, "artifacts", "vpk-html", "eu26", "eu26.html"), "<!doctype html><title>EU26</title>");
+	fs.writeFileSync(path.join(repoRoot, "artifacts", "vpk-html", "eu26", "_src", "body.html"), "<p>source</p>");
+	fs.writeFileSync(path.join(repoRoot, "artifacts", "vpk-html", "eu26", "notes.md"), "# notes");
+	fs.writeFileSync(path.join(repoRoot, "output", "vpk-html-v2", "spike", "copy.html"), "<!doctype html><title>Spike</title>");
+	fs.writeFileSync(path.join(repoRoot, "elsewhere", "secret.html"), "<!doctype html><title>Secret</title>");
+	fs.writeFileSync(path.join(repoRoot, ".env"), "SECRET=1");
+	fs.symlinkSync(path.join(repoRoot, "elsewhere", "secret.html"), path.join(repoRoot, "output", "vpk-html-v2", "spike", "escape.html"));
+	return { repoRoot, rootDir };
+}
+
+test("T-BE1 dev serves allowed local artifact html with no-store and nosniff", async (t) => {
+	const { repoRoot, rootDir } = createLocalRepo(t);
+	await withServer(rootDir, async (baseUrl) => {
+		for (const page of ["local/artifacts/vpk-html/eu26/eu26.html", "local/output/vpk-html-v2/spike/copy.html"]) {
+			const response = await fetch(`${baseUrl}/api/vpk-html/${page}`);
+			assert.equal(response.status, 200, page);
+			assert.equal(response.headers.get("cache-control"), "no-store");
+			assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+			assert.match(await response.text(), /<title>/);
+		}
+		const missing = await fetch(`${baseUrl}/api/vpk-html/local/output/vpk-html-v2/spike/missing.html`);
+		assert.equal(missing.status, 404);
+	}, { env: { NODE_ENV: "development" }, repoRoot });
+});
+
+test("T-BE2 local pages reject traversal, dot files, _src sources, other roots, non-html and symlink escapes", async (t) => {
+	const { repoRoot, rootDir } = createLocalRepo(t);
+	const { resolveLocalArtifactFilePath } = require("./vpk-html");
+	for (const bad of ["artifacts/vpk-html/../../.env", "artifacts/vpk-html/eu26/_src/body.html", "artifacts/vpk-html/eu26/notes.md", "elsewhere/secret.html", ".env", "output/vpk-html-v2/spike/escape.html", "output/vpk-html-v2/.hidden/x.html", "artifacts/other/x.html"]) {
+		assert.equal(resolveLocalArtifactFilePath(bad, { repoRoot }), null, bad);
+	}
+	assert.equal(resolveLocalArtifactFilePath("output/vpk-html/a/b.html", { repoRoot }), path.join(repoRoot, "output/vpk-html/a/b.html"), "a missing file under an allowed root resolves (404 later)");
+	await withServer(rootDir, async (baseUrl) => {
+		for (const page of ["local/artifacts/vpk-html/eu26/_src/body.html", "local/artifacts/vpk-html/eu26/notes.md", "local/elsewhere/secret.html", "local/output/vpk-html-v2/spike/escape.html", "local/%2e%2e/.env"]) {
+			const response = await fetch(`${baseUrl}/api/vpk-html/${page}`);
+			assert.ok([400, 404].includes(response.status), `${page} -> ${response.status}`);
+			assert.doesNotMatch(await response.text(), /Secret|SECRET|source/);
+		}
+	}, { env: { NODE_ENV: "development" }, repoRoot });
+});
+
+test("T-BE3 local pages are 404 in production", async (t) => {
+	const { repoRoot, rootDir } = createLocalRepo(t);
+	await withServer(rootDir, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/vpk-html/local/artifacts/vpk-html/eu26/eu26.html`);
+		assert.equal(response.status, 404);
+		assert.deepEqual(await response.json(), { error: "Not available" });
+		const index = await fetch(`${baseUrl}/api/vpk-html/index.html`);
+		assert.equal(index.status, 200, "catalog pages still serve");
+	}, { env: { NODE_ENV: "production" }, repoRoot });
+});
+
+test("T-BE4 speaker notes round-trip for local pages", async (t) => {
+	const { repoRoot, rootDir } = createLocalRepo(t);
+	const notesPath = path.join(repoRoot, "output", "vpk-html", "notes.json");
+	await withServer(rootDir, async (baseUrl) => {
+		const page = encodeURIComponent("local/output/vpk-html-v2/spike/copy.html");
+		const put = await fetch(`${baseUrl}/api/vpk-html/notes?page=${page}`, { body: JSON.stringify({ notes: "Narrate the spike." }), headers: { "Content-Type": "application/json" }, method: "PUT" });
+		assert.equal(put.status, 200);
+		const get = await fetch(`${baseUrl}/api/vpk-html/notes?page=${page}`);
+		assert.deepEqual(await get.json(), { notes: "Narrate the spike." });
+		assert.equal(JSON.parse(fs.readFileSync(notesPath, "utf8"))["local/output/vpk-html-v2/spike/copy.html"], "Narrate the spike.");
+		const bad = await fetch(`${baseUrl}/api/vpk-html/notes?page=${encodeURIComponent("local/elsewhere/secret.html")}`);
+		assert.equal(bad.status, 400);
+	}, { env: { NODE_ENV: "development" }, notesPath, repoRoot });
+});
+
+test("T-BE5 publish-gist refuses local pages", async (t) => {
+	const { repoRoot, rootDir } = createLocalRepo(t);
+	let called = false;
+	await withServer(rootDir, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/vpk-html/publish-gist`, { body: JSON.stringify({ page: "local/artifacts/vpk-html/eu26/eu26.html" }), headers: { "Content-Type": "application/json" }, method: "POST" });
+		assert.equal(response.status, 400);
+		assert.match((await response.json()).error, /build\.mjs --publish/);
+	}, { env: { NODE_ENV: "development" }, execFileImpl: () => { called = true; }, repoRoot });
+	assert.equal(called, false, "gh never runs for local pages");
+});

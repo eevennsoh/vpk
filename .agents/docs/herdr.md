@@ -1,0 +1,163 @@
+# herdr Terminal Topology
+
+VPK agents run inside [herdr](https://herdr.dev/docs/) when `HERDR_ENV=1`.
+herdr organizes terminals into workspaces, tabs, and panes, detects coding
+agents in panes (`working`, `blocked`, `done`, `idle`, `unknown`), and exposes
+the session through the `herdr` CLI. The global `herdr` skill owns the full CLI
+contract; this page covers the VPK conventions on top of it.
+
+Outside herdr, every recipe below falls back to inline/background behavior.
+Never drive a herdr session from a process that is not inside one.
+
+## Topology Conventions
+
+| Work | Surface | Why |
+| --- | --- | --- |
+| Writing task in its own git worktree | herdr **workspace** for that worktree (`herdr worktree open`) | herdr links worktree workspaces to the repo, and `vpk-git-clean` can find them |
+| Several workers on one task (fan-out) | one **tab** per task, one **pane** per worker | the user sees the whole fan-out side by side |
+| One-off worker, consult, or API handoff | a new **tab** in the caller's workspace | keeps the caller's pane and focus untouched |
+| Quick command the caller watches (tests, a dev server log) | a **pane** split beside the caller | the herdr skill's default |
+
+Always pass `--no-focus`; the user's focus stays where it was. Label every tab
+and pane after the task or worker (`worker-1`, `fix-sidebar-flicker`) so the
+sidebar is readable from a glance or a phone.
+
+## Run a Script in a Visible Surface
+
+`scripts/agent-surface.js` is the paved path. It places a prepared shell script
+according to the table above, runs it, waits, and exits with the script's
+status. Outside herdr it runs the script inline with the same contract, so
+callers never branch on terminal.
+
+```bash
+node scripts/agent-surface.js run --script <file> --label <slug> \
+  [--cwd <dir>] [--worktree <path>] [--group <tab-label>] \
+  [--no-wait] [--timeout-ms <n>] [--surface auto|herdr|inline]
+```
+
+- The script's exit code lands in `<script>.exit`; the wrapper reads it, so
+  it works the same for background Bash calls and for `--no-wait` callers that
+  poll later.
+- An already-open worktree workspace gets a new tab; its root pane is never
+  reused because the user may be typing there.
+- Closing the pane before the script finishes is reported as an error, not a
+  silent hang.
+- The full runner is written to `<script>.pane.sh` and the pane only runs
+  `bash '<that file>'`, because `herdr pane run` rejects lines over 1024 bytes.
+  Like `<script>.exit`, it is left beside the script.
+
+### Worker status in the sidebar
+
+The pane reports its own state, so workers show in the sidebar and
+`herdr agent list` as agent `vpk-worker` instead of `unknown`:
+
+| Phase | Reported state | Sidebar |
+| --- | --- | --- |
+| Script starts | `working`, title = `--label` | `working` |
+| Script exits 0 | `idle` | `done` |
+| Script exits N | `idle` with message and state label `exit N` | `done`, label `exit N` |
+| 15 s after exit | released | gone |
+
+The pane is also named after the label (`Live Probe` → `live-probe`; a
+leading digit gets a `w-` prefix), so another pane can block on it:
+
+```bash
+herdr agent wait live-probe --timeout 20000
+```
+
+herdr's own "vpk-worker finished" notification fires on completion; it needs
+the pane to stay busy after the `idle` report, which is why the pane lingers
+15 s (`Ctrl-C` skips the linger). Reports run in the background and never
+change the exit status, so a missing or broken `herdr` cannot fail a run. Two
+concurrent runs whose labels reduce to the same name cannot both hold it;
+target the second by pane ID.
+
+## Inspect and Coordinate
+
+Resolve live IDs at the time of use; never save one in a prompt.
+
+```bash
+herdr workspace list
+herdr tab list --workspace "$HERDR_WORKSPACE_ID"
+herdr pane list --workspace "$HERDR_WORKSPACE_ID"
+herdr agent list
+```
+
+For an interactive agent in another pane, use the agent surface so herdr
+validates identity and state before typing:
+
+```bash
+herdr agent get <name-or-pane>
+herdr agent read <name-or-pane> --source recent-unwrapped --lines 80
+herdr agent prompt <name-or-pane> "Run typecheck and report the result." --wait --timeout 120000
+```
+
+`agent prompt` refuses an agent that is `blocked` on an approval dialog;
+inspect it and ask the user before answering. A delivered prompt is
+coordination evidence, not implementation proof: re-read Git state and tests in
+the owning checkout after any cross-pane handoff.
+
+Codex subagents in one task and Claude agent teams already share an
+orchestrator; use their native messaging instead of typing into panes.
+
+## Integrations
+
+`herdr integration status` should report `claude` and `codex` as `current`.
+Those hooks report session IDs so herdr can restore native sessions after a
+restart. Install a missing one with `herdr integration install <agent>`; the
+hook files are herdr-managed and must not be edited.
+
+## vpk-worktree Plugin
+
+`.agents/herdr/plugins/vpk-worktree/` is a local herdr plugin (`vpk.worktree`)
+that warms up new VPK worktrees:
+
+- On `worktree.created` it checks the new checkout belongs to this repo (git
+  common dir), copies missing ignored `.env*` files from the source checkout
+  (never overwriting), and runs `CI=true pnpm install --prefer-offline` in an
+  unfocused `vpk warmup` tab of the worktree's workspace. The tab ends with
+  `[vpk-worktree] warmup done` or `warmup FAILED (exit N)`. Other repos are
+  skipped, and the hook always exits 0.
+- The workspace action `vpk.worktree.warmup` does the same on demand for a
+  worktree created outside herdr; it skips the env copy in the main checkout.
+  It acts on the focused workspace, so focus the worktree's workspace first,
+  never the main checkout while other agents work there. Each run opens a new
+  tab; close old ones by hand.
+- If no tab can be opened, the install runs in the background and logs to
+  `warmup.log` under herdr's plugin state dir.
+
+Link it once per machine, with an absolute path:
+
+```bash
+herdr plugin link "$(git rev-parse --show-toplevel)/.agents/herdr/plugins/vpk-worktree"
+herdr plugin list                      # vpk.worktree ... enabled
+herdr plugin log list --plugin vpk.worktree
+```
+
+## Recommended herdr Config (optional)
+
+These are personal settings in `~/.config/herdr/config.toml`, not repo
+requirements. Apply with `herdr server reload-config`.
+
+- **Notifications:** `brew install terminal-notifier`; herdr's `system` toast
+  delivery tries it before `osascript`. Allow it once in System Settings >
+  Notifications (run `terminal-notifier -message test`), or herdr keeps
+  falling back to Script Editor toasts.
+- **Pane names and state text in the sidebar:** add the `pane` token so
+  worker labels show, and `state_text` so states read as words, not only icons:
+
+  ```toml
+  [ui.sidebar.agents]
+  row_gap = 0
+  rows = [["state_icon", "machine", "workspace", "tab", "pane"], ["agent", "state_text"]]
+  ```
+
+## Cleanup
+
+- Close only the tabs, panes, and workspaces you created, and only when the
+  user asked or the surface held a finished background run.
+- Never use `herdr workspace close --group` to bypass a worktree-group
+  confirmation, and never run `herdr server stop` from inside a session.
+- Removing a git worktree does not close its herdr workspace. `vpk-git-clean`
+  closes the matching workspace (`herdr worktree list` shows
+  `open_workspace_id`) before `git worktree remove`.

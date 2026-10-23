@@ -1,0 +1,139 @@
+<body data-vpk-motion="document" data-vpk-docnav="off" data-vpk-x-thread>
+<main class="xt-page" id="xt-main" aria-labelledby="xt-title">
+	<header class="xt-masthead">
+		<p class="eyebrow">X thread · draft, approve, post</p>
+		<h1 id="xt-title">@@TITLE_HTML@@</h1>
+		<p class="xt-byline">@@BYLINE_HTML@@</p>
+		<div class="xt-status-line" data-vpk-review-ignore>
+			<p id="xt-summary"></p>
+			<p id="xt-save"></p>
+		</div>
+		<div class="xt-banner" id="xt-banner" role="status" hidden data-vpk-review-ignore></div>
+		<div class="xt-copy-box" id="xt-copy-box" hidden data-vpk-review-ignore>
+			<p id="xt-copy-label">Couldn't copy: select the text below and copy it yourself.</p>
+			<textarea id="xt-copy-text" class="xt-field" readonly rows="6" aria-labelledby="xt-copy-label"></textarea>
+			<button type="button" class="xt-btn-sm" data-action="close-copy">Close</button>
+		</div>
+		<noscript><p class="xt-noscript">Open this file in a browser with JavaScript to read, approve and post the thread. Its content is also in the content.json file beside it.</p></noscript>
+	</header>
+	<div class="xt-layout" data-vpkh-no-lightbox>
+		<div class="xt-column">
+			<details class="xt-composer" id="xt-composer" data-vpk-review-ignore>
+				<summary>Compose from text</summary>
+				<div class="xt-composer__body">
+					<label class="xt-label" for="xt-source">Paste notes, a numbered or bulleted list, markdown, or JSON</label>
+					<textarea id="xt-source" class="xt-field" rows="8" spellcheck="true" aria-describedby="xt-source-hint"></textarea>
+					<p class="xt-hint" id="xt-source-hint">Separate posts with a line of three dashes, number them, or leave a blank line between them.</p>
+					<div class="xt-composer__options">
+						<label class="xt-label" for="xt-split-mode">Split by</label>
+						<select id="xt-split-mode" class="xt-field">
+							<option value="auto">Detect automatically</option>
+							<option value="separators">Separator lines</option>
+							<option value="numbered">Numbered items</option>
+							<option value="bullets">Bullet items</option>
+							<option value="paragraphs">Blank lines</option>
+							<option value="json">JSON</option>
+						</select>
+						<label class="xt-check"><input type="checkbox" id="xt-strip-md" checked> Strip markdown</label>
+						<label class="xt-check"><input type="checkbox" id="xt-fit"> Fit long posts</label>
+					</div>
+					<div class="xt-composer__options">
+						<label class="xt-label" for="xt-numbering">Numbering</label>
+						<select id="xt-numbering" class="xt-field" aria-describedby="xt-numbering-hint">
+							<option value="none">None</option>
+							<option value="suffix">After the text (3/6)</option>
+							<option value="prefix">Before the text (3/6)</option>
+						</select>
+					</div>
+					<p class="xt-hint" id="xt-numbering-hint"></p>
+					<div class="xt-composer__options">
+						<label class="xt-label" for="xt-reply-to">Reply to</label>
+						<input type="text" id="xt-reply-to" class="xt-field" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Link to a post on X (optional)" aria-describedby="xt-reply-hint">
+					</div>
+					<p class="xt-hint" id="xt-reply-hint">Makes post 1 a reply to a post that is already on X. Locks once a post is open in X.</p>
+					<div class="xt-composer__actions">
+						<button type="button" class="xt-btn-sm" data-action="composer-preview">Preview split</button>
+						<button type="button" class="xt-btn-sm" data-action="composer-replace">Replace thread</button>
+						<button type="button" class="xt-btn-sm" data-action="composer-append">Append posts</button>
+					</div>
+					<div class="xt-composer__preview" id="xt-composer-preview" aria-live="polite"></div>
+				</div>
+			</details>
+			<section class="xt-thread" aria-labelledby="xt-thread-title">
+				<h2 id="xt-thread-title" tabindex="-1">Thread</h2>
+				<div class="xt-toolbar" role="toolbar" aria-label="Thread actions" data-vpk-review-ignore>
+					<button type="button" class="btn primary" data-action="approve-all">@@ICON_CHECK_MARK@@<span>Approve all</span></button>
+					<button type="button" class="btn" data-action="clear-approvals">Clear approvals</button>
+					<button type="button" class="btn" data-action="copy-thread">@@ICON_COPY@@<span>Copy thread</span></button>
+					<button type="button" class="btn" data-action="export-json">@@ICON_DOWNLOAD@@<span>Export JSON</span></button>
+					<button type="button" class="btn" data-action="copy-json">@@ICON_COPY@@<span>Copy JSON</span></button>
+					<label class="xt-check"><input type="checkbox" id="xt-export-images" checked> Include images</label>
+					<label class="btn"><span>Import JSON</span><input type="file" class="xt-sr-only" accept="application/json,.json" data-role="import-input" aria-label="Import a JSON export of this thread"></label>
+					<button type="button" class="btn" data-action="reset-draft">Reset to agent draft</button>
+					<button type="button" class="btn" data-action="undo" hidden>@@ICON_UNDO@@<span data-role="undo-label">Undo</span></button>
+				</div>
+				<p class="xt-error xt-notice" id="xt-notice" hidden data-vpk-review-ignore></p>
+				<ol class="xt-posts" id="xt-posts" aria-label="Thread posts"></ol>
+			</section>
+		</div>
+		<aside class="xt-rail" aria-labelledby="xt-queue-title" data-vpk-review-ignore>
+			<section class="xt-queue" id="xt-queue">
+				<h2 id="xt-queue-title" tabindex="-1">Post the thread</h2>
+				<div id="xt-queue-body"></div>
+			</section>
+		</aside>
+	</div>
+</main>
+<footer class="xt-footer"><p>Posting uses X web intents. This page never posts for you: each post opens in X, where you press Post.</p></footer>
+<p class="xt-sr-only" id="xt-live" aria-live="polite"></p>
+<template id="xt-post-template">
+<li class="xt-post" data-status="draft" data-mode="read">
+	<div class="xt-post__no" aria-hidden="true" data-vpk-generated></div>
+	<div class="xt-post__body">
+		<header class="xt-post__head" data-vpk-generated>
+			<h3 class="xt-post__title">Post</h3>
+			<span class="xt-author"></span>
+			<span class="xt-chip" data-status="draft"><span class="xt-chip__icon">@@ICON_CHECK_MARK@@</span><span class="xt-chip__label">Draft</span></span>
+		</header>
+		<p class="xt-post__text"></p>
+		<textarea class="xt-post__editor xt-field" rows="5" hidden></textarea>
+		<p class="xt-post__note" hidden></p>
+		<div class="xt-media" data-vpk-generated data-vpk-file-drop></div>
+		<p class="xt-count" data-state="ok" data-vpk-generated></p>
+		<p class="xt-post__reason" data-vpk-generated hidden></p>
+		<div class="xt-post__actions" data-vpk-generated>
+			<button type="button" class="xt-btn-sm" data-action="approve" aria-pressed="false" aria-keyshortcuts="Control+Enter Meta+Enter" title="Approve (Ctrl or Cmd+Enter)">@@ICON_CHECK_MARK@@<span>Approve</span></button>
+			<button type="button" class="xt-btn-sm" data-action="skip" aria-pressed="false">@@ICON_CROSS@@<span>Skip</span></button>
+			<button type="button" class="xt-btn-sm" data-action="edit">@@ICON_EDIT@@<span data-role="edit-label">Edit</span></button>
+			<button type="button" class="xt-btn-sm" data-action="split" hidden><span>Split at caret</span></button>
+			<button type="button" class="xt-btn-sm" data-action="fit" hidden><span>Fit into posts</span></button>
+			<button type="button" class="xt-btn-sm xt-icon-btn" data-action="copy" aria-label="Copy post" title="Copy post">@@ICON_COPY@@</button>
+			<button type="button" class="xt-btn-sm xt-icon-btn" data-action="move-up" aria-label="Move post up" aria-keyshortcuts="Alt+ArrowUp" title="Move up (Alt+Up)">@@ICON_ARROW_UP@@</button>
+			<button type="button" class="xt-btn-sm xt-icon-btn" data-action="move-down" aria-label="Move post down" aria-keyshortcuts="Alt+ArrowDown" title="Move down (Alt+Down)">@@ICON_ARROW_DOWN@@</button>
+			<button type="button" class="xt-btn-sm xt-icon-btn" data-action="drag" draggable="true" aria-label="Drag to reorder" title="Drag to reorder">@@ICON_DRAG_HANDLE_VERTICAL@@</button>
+			<button type="button" class="xt-btn-sm" data-action="merge-next"><span>Merge with next</span></button>
+			<button type="button" class="xt-btn-sm xt-icon-btn" data-action="delete" aria-label="Delete post" title="Delete post">@@ICON_DELETE@@</button>
+			<button type="button" class="xt-btn-sm" data-action="cancel-intent" hidden><span>Cancel open post</span></button>
+			<button type="button" class="xt-btn-sm" data-action="unlock-posted" hidden>@@ICON_LOCK_LOCKED@@<span>Unlock</span></button>
+		</div>
+		<p class="xt-post__notice xt-error" data-vpk-generated hidden></p>
+		<p class="xt-post__posted" data-vpk-generated hidden></p>
+	</div>
+</li>
+</template>
+<template id="xt-icon-set">
+<span data-xt-icon="image">@@ICON_IMAGE@@</span>
+<span data-xt-icon="download">@@ICON_DOWNLOAD@@</span>
+<span data-xt-icon="link-external">@@ICON_LINK_EXTERNAL@@</span>
+<span data-xt-icon="cross">@@ICON_CROSS@@</span>
+<span data-xt-icon="copy">@@ICON_COPY@@</span>
+<span data-xt-icon="lock-locked">@@ICON_LOCK_LOCKED@@</span>
+<span data-xt-icon="check-mark">@@ICON_CHECK_MARK@@</span>
+<span data-xt-icon="undo">@@ICON_UNDO@@</span>
+</template>
+@@CONTENT_ISLAND@@
+@@STATE_ISLAND@@
+<script data-vpk-x-thread-runtime>
+@@RUNTIME@@
+</script>
+</body>

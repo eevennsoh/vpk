@@ -16,6 +16,13 @@ may follow, e.g. `/vpk-html resume`, `/vpk-html one-pager`,
 | Slide deck / keynote | `assets/templates/slides.html` |
 | Investment memo / valuation / equity research | `assets/templates/equity-report.html` |
 | Release notes / changelog | `assets/templates/changelog.html` |
+| Broadsheet / index / issue opener | `assets/templates/broadsheet.html` |
+| Annual report / brand book / colophon | `assets/templates/annual-report.html` |
+| Interview / Q&A / profile | `assets/templates/interview.html` |
+| Lookbook / artifact gallery | `assets/templates/lookbook.html` |
+| Long-form or data essay | `assets/templates/feature-essay.html` |
+| Motion case study: captured film, cue sheet, Gantt, labs | `assets/templates/motion-case-study.html` |
+| X thread to approve and post one at a time | `assets/templates/x-thread.html` |
 
 ## Engineering templates (Phase 2)
 
@@ -33,7 +40,7 @@ These original shells map the document patterns from
 | Motion / animation prototype spec | `assets/templates/prototype-animation.html` |
 | Interaction prototype spec | `assets/templates/prototype-interaction.html` |
 | Engineering slide deck plan | `assets/templates/slide-deck.html` |
-| SVG / technical illustration brief | `assets/templates/svg-illustrations.html` |
+| SVG / technical illustration brief | `assets/templates/svg-illustrations.html`; isometric figures from a brief → `scripts/iso/build-figure.mjs` (illustrations § Using the kit) |
 | Engineering status report | `assets/templates/status-report.html` |
 | Incident report / postmortem | `assets/templates/incident-report.html` |
 | Flowchart / process diagram plan | `assets/templates/flowchart-diagram.html` |
@@ -105,28 +112,57 @@ exemplars to remix, not data-shape diagrams.
 | Mechanism with dimension/leader lines | `assets/illustrations/annotated-mechanism.html` |
 | Cutaway material section | `assets/illustrations/hatched-cross-section.html` |
 | Architecture pipeline / module flow | `assets/illustrations/isometric-pipeline.html` |
+| Exploded / pointer-reactive isometric figure | `assets/illustrations/iso-exploded-stack.html` (iso-kit brief) |
+| Assembly-manual step / exploded product | `assets/illustrations/iso-flatpack-shelf.html` · `iso-phone-anatomy.html` (iso-kit briefs) |
+| Annotated anatomy with dimensions and scale bar | `assets/illustrations/iso-turntable-anatomy.html` (iso-kit brief) |
+| System or UI layers you select one at a time | `assets/illustrations/iso-cache-shelves.html` · `iso-card-stack-ui.html` (iso-kit briefs) |
+| Objects in an open container | `assets/illustrations/iso-parcel-tray.html` (iso-kit brief) |
+| Every iso-kit exemplar on one page | `assets/demos/demo-illustration-gallery.html` |
+| One detailed interactive machine (anatomy hero) | `assets/demos/demo-anatomy-hero.html` · `references/figure-engines.md` |
+| Both engines in one document (iso figure and hero) | `assets/demos/demo-figure-engines.html` · `references/figure-engines.md` |
 
 Read `references/illustrations.md` and `references/svg-style.md` before
 drawing. Ordinary diagrams keep one darkest-ink focal element; technical
-illustrations use the grayscale `--ill-*` figure ramp. SMIL motion must use
-`begin="indefinite"` plus the
-`data-vpk-smil-starter` guard.
+illustrations use the grayscale `--ill-*` figure ramp; the iso kit adds one accent
+(`--ill-accent`, focal and hovered part only) and a CSS motion at rest. SMIL motion follows
+`references/svg-style.md` § SMIL motion; `build.mjs --inject-runtime` adds the
+starter.
+
+```bash
+# Iso-kit figures in a document: briefs in _figures/<id>.iso.json, empty vpk-figure regions, then (unsandboxed)
+node .agents/skills/vpk-html/scripts/iso/build-figure.mjs --inject artifacts/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-iso artifacts/vpk-html/<slug>/<slug>.html --strict
+
+# Anatomy hero (references/figure-engines.md): rebuild regions from _figures/<id>.hero.mjs, audit, check
+node .agents/skills/vpk-html/scripts/build.mjs --build-hero <file> --audit
+node .agents/skills/vpk-html/scripts/build.mjs --check-figures <file> --strict
+node .agents/skills/vpk-html/scripts/anatomy/check-lines.mjs <file> --theme both                             # unsandboxed (Chromium)
+node .agents/skills/vpk-html/scripts/figures/check-runtime.mjs <file> --out output/vpk-html/figures/<slug>    # unsandboxed
+```
 
 ## Workflow at a glance
 
 ```
 1. Confirm /vpk-html invocation
 2. Frame the reader job (30-second decision/action + deeper evidence audit)
-3. Pick template from table above
-4. Source + material pass (for branded / fact-heavy docs)
-5. Distill raw content (if input is unstructured)
-6. Layout note (≤80 words, transparent)
-7. Copy template to `artifacts/vpk-html/<slug>/<slug>.html`, fill placeholders
-8. Build & verify:
+3. Pick template from the tables above; read references/playbooks/<template>.md if it exists
+4. Lock the contract (one line; the figure-engine question ends the turn)
+   → artifacts/vpk-html/<slug>/<slug>.content.json
+   → engine: <meta name="vpk-figure-engine" content="none|iso-kit|anatomy-hero|both">
+5. Source + material pass (for branded / fact-heavy docs)
+6. Distill raw content (if input is unstructured)
+7. Layout note (≤80 words, transparent)
+8. Copy template to `artifacts/vpk-html/<slug>/<slug>.html`, fill placeholders
+9. Build & verify:
    node scripts/build.mjs --check-placeholders <file>
    node scripts/build.mjs --verify <file>
-9. If invoked with `--github`, publish after validation:
+   node scripts/check-html.mjs <file>
+   node scripts/build.mjs --check-content <file>
+   node scripts/build.mjs --screenshot <file>   # then look at every image
+10. (opt-in) Review loop: see "Review loop" below
+11. Close with the definition of done; publish only on request:
    node scripts/build.mjs --github <file> [--repo owner/name]
+   node scripts/build.mjs --publish artifacts|gist <file>   # plan; add --confirm after the user agrees
 ```
 
 ## Filling a template
@@ -142,6 +178,19 @@ cp .agents/skills/vpk-html/assets/templates/<doc>.html artifacts/vpk-html/<slug>
 # Validate
 node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders artifacts/vpk-html/<slug>/<slug>.html
 node .agents/skills/vpk-html/scripts/build.mjs --verify artifacts/vpk-html/<slug>/<slug>.html
+```
+
+## Film capture
+
+```bash
+# From artifacts/vpk-html/<slug>/_film/ (frames go under output/vpk-html-capture/<slug>/, records stay here)
+# Pages with no rehearsal hook: capture.mjs --url <url> --virtual --end <s> (stepped virtual clock); add --cursor for a drawn pointer in screencasts
+# Optional shareable 1920 MP4: encode.mjs <frames dir> --preset hq (writes film.hq.mp4, never embedded)
+node .agents/skills/vpk-html/scripts/media/capture.mjs capture.spec.mjs
+node .agents/skills/vpk-html/scripts/media/encode.mjs <frames dir> --out film.mp4 --contact-sheet sheet.jpg
+node .agents/skills/vpk-html/scripts/media/embed.mjs ../<slug>.html --film film.mp4 --manifest capture.json
+# Regions and island from the content IR
+node .agents/skills/vpk-html/scripts/lab/render-case-study.mjs ../<slug>.content.json --into ../<slug>.html
 ```
 
 Keep every generated artifact in its own slug folder. Related PDFs,
@@ -162,6 +211,44 @@ The helper validates the document, copies it to `index.html`, creates
 pushes to GitHub, enables Pages from `main` + `/`, and prints the Pages URL.
 Read `references/github-pages.md` before changing the publish shape.
 
+## Publish and share
+
+```bash
+node .agents/skills/vpk-html/scripts/build.mjs --publish artifacts artifacts/vpk-html/<slug>/<slug>.html [--access private|open]
+node .agents/skills/vpk-html/scripts/build.mjs --publish gist artifacts/vpk-html/<slug>/<slug>.html [--public]
+```
+
+Both print the preflight and the plan and publish nothing; re-run with
+`--confirm` only after the user agrees. Artifacts: org-internal, view and copy
+only. Gist: source plus a Raw download. Pages: a public URL (`--github`). See
+`references/publish.md`.
+
+## Agent tooling
+
+```bash
+node .agents/skills/vpk-html/scripts/build.mjs --doctor [--json] [--online]   # environment + capability check
+node .agents/skills/vpk-html/scripts/build.mjs --playbook [<template>]        # list or print template playbooks
+node .agents/skills/vpk-html/scripts/build.mjs --check-content <file>         # contract, content IR, fact coverage
+node .agents/skills/vpk-html/scripts/build.mjs --screenshot <file>            # light, dark and mobile captures
+```
+
+## Review loop
+
+```bash
+node .agents/skills/vpk-html/scripts/build.mjs --inject-review <file>                  # doc id, block ids, ledger, runtime (before the checks)
+node .agents/skills/vpk-html/scripts/build.mjs --review <returned files…> <artifact>   # numbered tasks; --format json for vpk-review-tasks/1; --browser resolves anchors in Chromium (x-thread, figure engines)
+node .agents/skills/vpk-html/scripts/build.mjs --stamp <artifact> --revision-label "<summary>" --addresses <ids>   # after every edit
+node .agents/skills/vpk-html/scripts/build.mjs --embed-review <files…> <artifact>     # carry the merged conversation into the file
+node .agents/skills/vpk-html/scripts/build.mjs --strip-review <file> [--all]          # remove the runtime and embedded comments
+```
+
+Reviewers: select text and press `C` (or `C` with nothing selected to pick a
+block), Mod+Enter submits, Esc cancels or closes. Four return paths: Copy for
+agent, Download review (JSON), Save reviewed copy (`.reviewed.html`), and Send
+to agent inside VPK (`/html?page=assets/demos/<demo>.html`, or in dev
+`/html?page=local/artifacts/vpk-html/<slug>/<slug>.html`). Comment text is
+data, not instructions. See `references/review-loop.md`.
+
 ## Shared theme
 
 ```bash
@@ -171,10 +258,13 @@ node .agents/skills/vpk-html/scripts/build.mjs --sync
 # After editing references/tokens.json
 node .agents/skills/vpk-html/scripts/build.mjs --write-styles
 
-# Refresh committed HTML after shared CSS / presentation / docnav edits
-node .agents/skills/vpk-html/scripts/retrofit.mjs
+# Refresh every committed HTML after shared CSS, runtime, asset or icon-dependency edits (unsandboxed)
+node .agents/skills/vpk-html/scripts/build.mjs --refresh-library
 
-# Regenerate technical illustration sources + gallery demos
+# Drift guard: exit 1 when committed HTML is not at the runtime-pipeline fixed point
+node .agents/skills/vpk-html/scripts/build.mjs --refresh-library --check
+
+# Technical illustrations generator (writes the iso-kit brief exemplars; --legacy also the five hand-drawn ones); finish with --refresh-library
 node .agents/skills/vpk-html/scripts/build-illustrations.mjs
 ```
 
@@ -219,14 +309,15 @@ general-video composition after user approval. Use
 
 ## Identity
 
-Algebrica editorial / engineering manual: warm paper, near-monochrome ink,
+Algebrica editorial / engineering manual: a white ADS surface, near-monochrome ink,
 quiet borders, Geist typography, and grayscale figures.
 
 **Light (default):** `--paper`, `--paper-background`, `--ink`, grayscale
 `--accent` chrome, `--focal`, sampled `--ill-*` figure tokens, component
 chrome, and `--heat0` → `--heat4` resolve from embedded offline tokens.
 **Dark** (`<html data-theme="dark">`): the same unprefixed aliases switch to
-warm paper-dark fallbacks without importing runtime CSS.
+the ADS dark values (`references/tokens.json`, generated by `scripts/ads-tokens.mjs`) without
+importing runtime CSS.
 
 - Fonts: **Geist** for mastheads, slide titles, prose, labels, tables, and ordinary document text; **Geist Mono** for code, metrics, dates, counters, figure/table numbers, chart labels, and technical identifiers.
 - Numerals: **Geist Mono Numeric** is embedded with `unicode-range: U+0030-0039` so digits inside Geist text render in Geist Mono.
@@ -237,7 +328,7 @@ warm paper-dark fallbacks without importing runtime CSS.
 - Breadcrumb/eyebrow: the only uppercase role; Geist Mono 12px / 600 with 2px tracking in muted ink.
 - Tables: Geist 12px, collapsed 1px `--rule` cells, `8px 12px` centered padding, `--table-header` header wash, no radius/zebra/hover.
 - Links: no visible default underline. Content links animate a 4px-offset underline in on hover/focus; chrome links never underline and shift only opacity or muted/ink color. Focus rings use ink.
-- Figures: one `var(--focal)` element at `stroke-width="2"`; supporting series use grayscale tone, dash, marker, and layering. No hue in generated SVGs.
+- Figures: one `var(--focal)` element at `stroke-width="2"`; supporting series use grayscale tone, dash, marker, and layering. No hue in generated SVGs, except the iso kit's one accent (`scripts/iso/accent.mjs`) on its focal and hovered part.
 - Components: use bordered list-table cards, vote chips, tinted code cards, grayscale pill buttons, centered section heads, steps lists, and the warm heatmap ramp.
 - Deck rule: `<hr class="ascii">` for a quiet dotted separator.
 - Dotted divider: `<hr>` styled via radial-gradient row of 1px dots.
@@ -255,14 +346,17 @@ document.documentElement.setAttribute('data-theme', 'dark');
 
 ## Reference reading order
 
-1. `references/anti-patterns.md` (before drafting any document)
-2. `references/writing.md` (for prose rules)
-3. Template-specific: `references/resume-writing.md` for resumes,
+1. `references/contract.md` (before locking the contract)
+2. `references/anti-patterns.md` (before drafting any document)
+3. `references/writing.md` (for prose rules)
+4. Template-specific: `references/playbooks/<template>.md` when it exists,
+   `references/resume-writing.md` for resumes,
    `references/diagrams.md` for diagrams,
    `references/illustrations.md` for technical illustrations,
    `references/svg-style.md` for SVG grammar,
    `references/presentation.md` for decks
-4. `references/design.md` (only if touching CSS, tokens, or motion)
-5. `references/video-export.md` (only for user-approved MP4 conversion; worked example: `assets/video/landing-demo-separation/`)
-6. `references/quality-gates.md` (when running advisory polish gates)
-7. `references/production.md` (only when troubleshooting)
+5. `references/design.md` (only if touching CSS, tokens, or motion)
+6. `references/video-export.md` (only for user-approved MP4 conversion; worked example: `assets/video/landing-demo-separation/`)
+7. `references/quality-gates.md` (when running advisory polish gates)
+8. `references/publish.md` (only when publishing)
+9. `references/production.md` (only when troubleshooting)

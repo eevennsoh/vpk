@@ -1,0 +1,397 @@
+/* ===== Motion case study: the page layer over the feature-essay shell (scripts/lab/build-template.mjs) =====
+   Essay page, fact strip, kickers, prose, ledger rows, pull quotes, two columns, the process timeline, people and
+   sources. The film, cue sheet, Gantt, labs and widgets are styled by the vpk-lab kit block (scripts/lab/lab.css). */
+body > main.essay-page {
+	/* Muted text that keeps WCAG AA on paper in both themes (plain --muted-text is 4.45:1 on light paper). */
+	--case-muted: color-mix(in srgb, var(--muted-text) 75%, var(--ink));
+	max-width: 1240px;
+	padding: 72px clamp(20px, 5vw, 64px) 120px;
+}
+.essay-header .eyebrow {
+	color: var(--case-muted);
+}
+.essay-header {
+	padding-bottom: 48px;
+}
+.essay-header h1 {
+	font-size: clamp(56px, 10vw, 128px);
+	letter-spacing: -0.03em;
+	max-width: none;
+}
+.essay-dek {
+	font-size: clamp(18px, 2.1vw, 22px);
+	max-width: 46ch;
+}
+.byline {
+	color: var(--case-muted);
+	font-size: 14px;
+	margin: 28px 0 0;
+}
+.byline strong {
+	color: var(--ink);
+	font-weight: 500;
+}
+.fact-strip {
+	border-top: 1px solid var(--rule-strong);
+	display: grid;
+	gap: 0;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	margin: 40px 0 0;
+}
+.fact-strip > div {
+	border-right: 1px solid var(--rule);
+	padding: 18px 16px 4px 0;
+}
+.fact-strip > div + div {
+	padding-left: 16px;
+}
+.fact-strip > div:last-child {
+	border-right: 0;
+}
+.fact-strip dt {
+	color: var(--headline);
+	font-family: var(--font-numeric);
+	font-size: clamp(26px, 3.4vw, 40px);
+	font-weight: 500;
+	letter-spacing: -0.02em;
+	line-height: 1;
+}
+.fact-strip dd {
+	color: var(--case-muted);
+	font-size: 13px;
+	line-height: 1.4;
+	margin: 10px 0 0;
+}
+@media (max-width: 900px) {
+	.fact-strip {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.fact-strip > div,
+	.fact-strip > div + div {
+		border-right: 0;
+		border-top: 1px solid var(--rule);
+		padding: 16px 12px 4px 0;
+	}
+}
+
+/* Sections */
+main.essay-page > section {
+	border-top: 1px solid var(--rule-strong);
+	padding: 64px 0 24px;
+	scroll-margin-top: 24px;
+}
+/* The shell's scroll-linked entrance (styles.css: animation-timeline view(), range entry 0–40%) holds a section that
+   starts near the fold part-faded while the page rests, which drops kickers and film controls below 4.5:1. Case-study
+   sections take the shell's time-based path instead (the load stagger every other browser gets): opaque at rest. */
+body[data-vpk-motion="document"] main.essay-page section {
+	animation-timeline: auto;
+}
+.section-kicker {
+	color: var(--case-muted);
+	font-family: var(--font-mono);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	margin: 0 0 18px;
+	text-transform: uppercase;
+}
+main.essay-page > section > h2 {
+	color: var(--headline);
+	font-size: clamp(32px, 4.4vw, 52px);
+	font-weight: 500;
+	letter-spacing: -0.02em;
+	line-height: 1.05;
+	margin: 0 0 28px;
+	max-width: 20ch;
+}
+main.essay-page > section > h3 {
+	color: var(--headline);
+	font-size: 24px;
+	font-weight: 500;
+	letter-spacing: -0.01em;
+	line-height: 1.25;
+	margin: 40px 0 16px;
+}
+.prose {
+	font-size: 17px;
+	line-height: 1.6;
+	max-width: 68ch;
+}
+.prose p {
+	margin: 0 0 22px;
+}
+.prose h3 {
+	color: var(--headline);
+	font-size: 24px;
+	font-weight: 500;
+	letter-spacing: -0.01em;
+	line-height: 1.25;
+	margin: 56px 0 18px;
+}
+.prose ul,
+.prose ol {
+	margin: 0 0 22px;
+	padding-left: 22px;
+}
+.prose li + li {
+	margin-top: 8px;
+}
+.prose code,
+.ledger code {
+	background: var(--code-surface);
+	border-radius: 4px;
+	color: var(--code-ink);
+	font-family: var(--font-mono);
+	font-size: 0.86em;
+	padding: 1px 5px;
+}
+.prose .lede {
+	font-size: 20px;
+	line-height: 1.5;
+}
+.num {
+	font-family: var(--font-numeric);
+	font-variant-numeric: tabular-nums;
+}
+.section-note {
+	color: var(--case-muted);
+	font-size: 13px;
+	line-height: 1.5;
+	margin: 0 0 24px;
+	max-width: 80ch;
+}
+.pull {
+	border-bottom: 1px solid var(--rule-strong);
+	border-top: 1px solid var(--rule-strong);
+	color: var(--headline);
+	font-size: clamp(22px, 2.6vw, 30px);
+	font-weight: 400;
+	letter-spacing: -0.01em;
+	line-height: 1.3;
+	margin: 36px 0;
+	max-width: 34ch;
+	padding: 22px 0;
+}
+.pull cite {
+	color: var(--case-muted);
+	display: block;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	font-style: normal;
+	letter-spacing: 1px;
+	margin-top: 14px;
+	text-transform: uppercase;
+}
+.two-col {
+	align-items: start;
+	display: grid;
+	gap: 40px;
+	grid-template-columns: minmax(0, 68ch) minmax(0, 1fr);
+}
+.aside-note {
+	border-top: 1px solid var(--rule-strong);
+	color: var(--case-muted);
+	font-size: 14px;
+	line-height: 1.5;
+	padding-top: 14px;
+	position: sticky;
+	top: 24px;
+}
+.aside-note strong {
+	color: var(--ink);
+	display: block;
+	font-family: var(--font-numeric);
+	font-size: 44px;
+	font-weight: 500;
+	letter-spacing: -0.02em;
+	line-height: 1;
+	margin-bottom: 10px;
+}
+@media (max-width: 960px) {
+	.two-col {
+		grid-template-columns: 1fr;
+	}
+	.aside-note {
+		position: static;
+	}
+}
+
+/* Ledger rows (questions, decisions, stage notes) */
+.ledger {
+	border-top: 1px solid var(--rule-strong);
+	list-style: none;
+	margin: 28px 0 32px;
+	max-width: 68ch;
+	padding: 0;
+}
+.ledger li {
+	border-bottom: 1px solid var(--rule);
+	display: grid;
+	gap: 16px;
+	grid-template-columns: 9rem minmax(0, 1fr);
+	padding: 14px 0;
+}
+.ledger li > span:first-child {
+	color: var(--case-muted);
+	font-family: var(--font-mono);
+	font-size: 12px;
+	letter-spacing: 1px;
+	padding-top: 3px;
+	text-transform: uppercase;
+}
+.ledger.wide {
+	max-width: none;
+}
+.ledger.wide li {
+	grid-template-columns: 14rem minmax(0, 1fr);
+}
+@media (max-width: 640px) {
+	.ledger li,
+	.ledger.wide li {
+		gap: 4px;
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Process timeline (filtered by the kit's [data-vpk-filters]) */
+.days {
+	border-top: 1px solid var(--rule-strong);
+	list-style: none;
+	margin: 0 0 32px;
+	padding: 0;
+}
+.day {
+	border-bottom: 1px solid var(--rule);
+	display: grid;
+	gap: 18px;
+	grid-template-columns: 7.5rem 5.5rem minmax(0, 1fr);
+	padding: 16px 0;
+}
+.day-date {
+	color: var(--ink);
+	font-family: var(--font-mono);
+	font-size: 13px;
+	font-weight: 500;
+}
+.day-date small {
+	color: var(--case-muted);
+	display: block;
+	font-size: 11px;
+	font-weight: 400;
+	margin-top: 2px;
+}
+.day-commits {
+	align-items: flex-start;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.day-commits .bar {
+	background: var(--ink);
+	border-radius: 2px;
+	display: block;
+	height: 6px;
+	min-width: 2px;
+}
+.day-commits .bar.zero {
+	background: var(--rule-strong);
+}
+.day-commits span:last-child {
+	color: var(--case-muted);
+	font-family: var(--font-numeric);
+	font-size: 12px;
+}
+.events {
+	display: grid;
+	gap: 12px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.event {
+	display: grid;
+	gap: 2px 12px;
+	grid-template-columns: 7.5rem minmax(0, 1fr);
+}
+.event-kind {
+	color: var(--case-muted);
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: 1px;
+	padding-top: 3px;
+	text-transform: uppercase;
+}
+.event p {
+	font-size: 15px;
+	line-height: 1.5;
+	margin: 0;
+}
+.event .who {
+	color: var(--ink);
+	font-weight: 500;
+}
+.event q {
+	color: var(--headline);
+}
+@media (max-width: 760px) {
+	.day,
+	.event {
+		gap: 6px;
+		grid-template-columns: 1fr;
+	}
+}
+
+/* People, sources, provenance */
+.people {
+	display: grid;
+	gap: 0 32px;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	list-style: none;
+	margin: 24px 0 36px;
+	padding: 0;
+}
+.people li {
+	border-top: 1px solid var(--rule);
+	font-size: 14px;
+	line-height: 1.45;
+	padding: 12px 0;
+}
+.people b {
+	display: block;
+	font-weight: 500;
+}
+.people span {
+	color: var(--case-muted);
+}
+.sources {
+	color: var(--case-muted);
+	font-size: 14px;
+	line-height: 1.55;
+	max-width: 80ch;
+}
+.sources li + li {
+	margin-top: 6px;
+}
+.film-provenance {
+	border-top: 1px solid var(--rule);
+	color: var(--case-muted);
+	font-family: var(--font-mono);
+	font-size: 12px;
+	line-height: 1.6;
+	margin: 28px 0 0;
+	max-width: 100ch;
+	padding-top: 12px;
+}
+.prose p,
+.prose li,
+.event p,
+.ledger li > div,
+figcaption {
+	text-wrap: pretty;
+}
+.essay-header h1,
+main.essay-page > section > h2,
+main.essay-page > section > h3,
+.prose h3 {
+	text-wrap: balance;
+}

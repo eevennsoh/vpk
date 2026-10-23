@@ -1,0 +1,19 @@
+{
+	"name": "anatomy",
+	"repo": "github.com/wheresryan22/anatomy",
+	"license": "MIT",
+	"copyright": "Copyright (c) 2026 Ryan",
+	"notice": "Verbatim upstream files, never edited here; replace the folder whole on re-vendor. MIT License, Copyright (c) 2026 Ryan; the full text is LICENSE in this folder.",
+	"commit": "dbf697a527bbf7d358668e1557cb1e35ff725d46",
+	"fetched": "2026-10-11",
+	"hash": "sha256",
+	"fetch": "/usr/bin/env -u GITHUB_TOKEN gh api \"repos/wheresryan22/anatomy/contents/<file>?ref=<commit>\" -H \"Accept: application/vnd.github.raw\" > <file>",
+	"files": {
+		"LICENSE": "87c078ab9d90a3044f359e6b563d4e6afea7aa060897cf4f21618687b3856796",
+		"kit/iso-kit.mjs": "6d3ecc725d30c3b0346da309cf61dfa5a65017c23620bbd4093009d4fb104018",
+		"kit/lathe.mjs": "a4e7e974b1a37e603ad2b76363b6f9815cc101dfff0ad277a5d4e8f1dc56fccb",
+		"kit/tube.mjs": "bcb3cc360f6d83e6a5753f4c464b4587ab7965028b05a5d58e285abce58667c9",
+		"kit/audit.mjs": "2e92d6e4c18b05c4cb55d72d378bba3cb854a169b19e16d5ca8eb5ebc2fe234b",
+		"scripts/line-ends.mjs": "70a4209a19e2ea1cca39d7f5afd32ea4fbfdfff2ac04c114a7e8d9a10584cf3d"
+	}
+}

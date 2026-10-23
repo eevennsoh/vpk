@@ -6,6 +6,13 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { collectFaviconIssues, cssVarName, loadTokens } from "./shared.mjs";
 import { isDeck } from "./presentation.mjs";
+import { collectFigureEngineIssues } from "./figures/check-figures.mjs";
+import { collectFontFaceIssues } from "./font-faces.mjs";
+import { weightWarnings } from "./media/size-budget.mjs";
+import { collectSmilMotionIssues, listSmilElements, readSmilAttribute } from "./runtime/smil-starter.mjs";
+
+// Timing and gating rules live with the starter; build.mjs and callers import them from here.
+export { collectSmilMotionIssues };
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -61,6 +68,13 @@ function normalizeColorDeclarationValue(value) {
 	return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+// Token values that earlier releases shipped and later changed. Documents built before the change keep an
+// inline copy of the shared token block, so they stay valid here; new builds always use references/tokens.json.
+// B2 decision 16: light --muted-text moved from #706e6e (4.44:1 on --paper) to a value that clears AA.
+const LEGACY_TOKEN_DECLARATIONS = {
+	"--muted-text": ["#706e6e"],
+};
+
 function buildAllowedTokenDeclarations() {
 	const tokens = loadTokens();
 	const declarations = new Map();
@@ -70,6 +84,10 @@ function buildAllowedTokenDeclarations() {
 			if (!declarations.has(cssName)) declarations.set(cssName, new Set());
 			declarations.get(cssName).add(normalizeColorDeclarationValue(value));
 		}
+	}
+	for (const [cssName, values] of Object.entries(LEGACY_TOKEN_DECLARATIONS)) {
+		if (!declarations.has(cssName)) declarations.set(cssName, new Set());
+		for (const value of values) declarations.get(cssName).add(normalizeColorDeclarationValue(value));
 	}
 	return declarations;
 }
@@ -84,7 +102,8 @@ function isAllowedTokenColorDeclaration(line) {
 	return allowedValues?.has(normalizeColorDeclarationValue(match[2])) ?? false;
 }
 
-const ALLOWED_FIGURE_TOKENS = new Set([
+// Exported read-only for iso/palette.test.mjs (ws3 S1c): the iso kit's tokens must be a subset.
+export const ALLOWED_FIGURE_TOKENS = new Set([
 	"--paper",
 	"--paper-background",
 	"--surface-raised",
@@ -108,6 +127,8 @@ const ALLOWED_FIGURE_TOKENS = new Set([
 	"--ill-frame",
 	"--ill-fill",
 	"--ill-fill-alt",
+	"--ill-accent",
+	"--ill-accent-ink",
 	"--rule",
 	"--rule-strong",
 	"--selected",
@@ -130,7 +151,7 @@ const ALLOWED_FIGURE_TOKENS = new Set([
 	"--info-tint",
 ]);
 
-function isAllowedFigureColorValue(value) {
+export function isAllowedFigureColorValue(value) {
 	const normalized = value.trim().replace(/\s+/g, " ");
 	if (/^(none|transparent|currentColor|inherit)$/i.test(normalized)) return true;
 	const token = normalized.match(/^var\((--[\w-]+)\)$/);
@@ -146,8 +167,28 @@ function findLineNumber(source, index) {
 	return source.slice(0, index).split("\n").length;
 }
 
+// ws3 S1b: `url(#id)` paint is legal for fill/stroke only when it names a <pattern> in the same
+// SVG (hatching). Returns null when the value is not a url() paint, "" when it is legal, else the
+// issue text.
+function localPatternIds(svg) {
+	return new Set([...svg.matchAll(/<pattern\b[^>]*\bid=["']([^"']+)["']/gi)].map(match => match[1]));
+}
+
+function localPaintUrlIssue(property, value, patternIds) {
+	const url = /^url\(\s*["']?#([^"')\s]+)["']?\s*\)$/i.exec(value.trim());
+	if (!url || !/^(?:fill|stroke)$/i.test(property)) return null;
+	return patternIds.has(url[1]) ? "" : `${property} references url(#${url[1]}) that is not a local <pattern>`;
+}
+
 function collectSvgColorIssues(svg, baseLine) {
 	const issues = [];
+	const patternIds = localPatternIds(svg);
+	const check = (property, value, index, render) => {
+		const urlIssue = localPaintUrlIssue(property, value, patternIds);
+		if (urlIssue === "") return;
+		if (urlIssue) issues.push(`line ${baseLine + findLineNumber(svg, index) - 1}: ${urlIssue}`);
+		else if (!isAllowedFigureColorValue(value)) issues.push(`line ${baseLine + findLineNumber(svg, index) - 1}: ${render} must use grayscale figure tokens`);
+	};
 	const attrPattern = /\b(fill|stroke|stop-color|color)=["']([^"']+)["']/gi;
 	let match;
 	while ((match = attrPattern.exec(svg)) !== null) {
@@ -156,26 +197,42 @@ function collectSvgColorIssues(svg, baseLine) {
 			const tag = tagStart >= 0 ? svg.slice(tagStart, match.index) : "";
 			if (/^<\s*(?:animate|animateTransform|animateMotion|set)\b/i.test(tag)) continue;
 		}
-		if (!isAllowedFigureColorValue(match[2])) {
-			issues.push(`line ${baseLine + findLineNumber(svg, match.index) - 1}: ${match[1]}="${match[2]}" must use grayscale figure tokens`);
-		}
+		check(match[1], match[2], match.index, `${match[1]}="${match[2]}"`);
 	}
 
 	const styleAttrPattern = /\bstyle=["']([^"']+)["']/gi;
 	while ((match = styleAttrPattern.exec(svg)) !== null) {
 		const style = match[1];
 		for (const property of style.matchAll(/\b(fill|stroke|stop-color|color)\s*:\s*([^;]+)/gi)) {
-			if (!isAllowedFigureColorValue(property[2])) {
-				issues.push(`line ${baseLine + findLineNumber(svg, match.index) - 1}: ${property[1]}:${property[2].trim()} must use grayscale figure tokens`);
-			}
+			check(property[1], property[2], match.index, `${property[1]}:${property[2].trim()}`);
 		}
 	}
 
 	const styleBlockPattern = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
 	while ((match = styleBlockPattern.exec(svg)) !== null) {
 		for (const property of match[1].matchAll(/\b(fill|stroke|stop-color|color)\s*:\s*([^;}]+)/gi)) {
-			if (!isAllowedFigureColorValue(property[2])) {
-				issues.push(`line ${baseLine + findLineNumber(svg, match.index) - 1}: ${property[1]}:${property[2].trim()} must use grayscale figure tokens`);
+			check(property[1], property[2], match.index, `${property[1]}:${property[2].trim()}`);
+		}
+	}
+	return issues;
+}
+
+const SMIL_PAINT_ATTRIBUTES = new Set(["fill", "stroke", "stop-color", "color", "flood-color", "lighting-color"]);
+
+// SMIL paint animations (locked decision 2): every values item and from/to/by use grayscale figure tokens.
+function collectSmilPaintIssues(svg, baseLine) {
+	const issues = [];
+	for (const element of listSmilElements(svg)) {
+		const attributeName = readSmilAttribute(element.attrs, "attributeName")?.trim();
+		if (!attributeName || !SMIL_PAINT_ATTRIBUTES.has(attributeName)) continue;
+		const values = (readSmilAttribute(element.attrs, "values") ?? "").split(";").map(value => value.trim()).filter(Boolean);
+		for (const name of ["from", "to", "by"]) {
+			const value = readSmilAttribute(element.attrs, name);
+			if (value !== null) values.push(value.trim());
+		}
+		for (const value of values) {
+			if (!isAllowedFigureColorValue(value)) {
+				issues.push(`line ${baseLine + findLineNumber(svg, element.index) - 1}: SMIL ${element.name} attributeName="${attributeName}" value "${value}" must use grayscale figure tokens`);
 			}
 		}
 	}
@@ -227,6 +284,7 @@ export function collectSvgGrammarIssues(source) {
 			issues.push(`line ${baseLine}: SVG must not use accent or link tokens`);
 		}
 		issues.push(...collectSvgColorIssues(svg, baseLine));
+		issues.push(...collectSmilPaintIssues(svg, baseLine));
 		issues.push(...collectSvgFontIssues(svg, baseLine));
 		issues.push(...collectSvgStrokeWidthIssues(svg, baseLine));
 		if (issues.length >= 12) return [`SVG grammar violations (${issues.slice(0, 12).join("; ")})`];
@@ -346,18 +404,126 @@ export function collectPresentationIssues(source) {
 	return issues;
 }
 
-export function collectSmilMotionIssues(source) {
-	const animations = collectMatches(/<animateTransform\b[^>]*>/gi, source);
-	if (animations.length === 0) return [];
+// ws1 review markup (ws1 §4.16; integration K6 collector 4). Static markup only: comments are
+// dropped and <template>, <script> and <style> contents are blanked (their tags stay, so
+// script attributes still count). Attribute names match exactly (data-vpk-review never
+// matches data-vpk-review-runtime). Inert without review markup.
+const REVIEW_MARKER_IDS = ["review", "review-data", "revisions", "review-content"];
 
+function reviewStaticMarkup(source) {
+	return source
+		.replace(/<!--[\s\S]*?-->/g, "")
+		.replace(/<template\b[\s\S]*?<\/template\s*>/gi, "")
+		.replace(/(<(script|style)\b[^>]*>)[\s\S]*?(<\/\2\s*>)/gi, "$1$3");
+}
+
+function reviewIslands(source, attribute) {
+	const islands = [];
+	const pattern = /<script\b((?:[^"'>]|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/script\s*>/gi;
+	const named = new RegExp(`(?:^|\\s)${attribute}(?=[\\s>=/]|$)`, "i");
+	let match;
+	while ((match = pattern.exec(source)) !== null) {
+		if (/\btype\s*=\s*["']?application\/json/i.test(match[1]) && named.test(match[1])) islands.push(match[2]);
+	}
+	return islands;
+}
+
+function reviewMetaContent(markup, name) {
+	for (const tag of markup.match(/<meta\b[^>]*>/gi) ?? []) {
+		if (!new RegExp(`\\bname\\s*=\\s*["']?${name}["'\\s>]`, "i").test(tag)) continue;
+		const content = /\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(tag);
+		return content ? (content[1] ?? content[2] ?? content[3] ?? "") : "";
+	}
+	return null;
+}
+
+// Review blocks are indexed and stamped only inside <main>. Returns the visible text of the
+// block elements that sit in <body> outside <main> (headings, paragraphs, list items, cells).
+const OUTSIDE_MAIN_BLOCKS = /<(h[1-6]|p|li|td|th|dt|dd|blockquote|figcaption)\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi;
+const REVIEW_IGNORED_ATTRIBUTE = /data-vpk-review-ignore|data-vpk-generated|data-vpk-review-ui|speaker-notes/;
+
+function textOutsideMain(markup) {
+	const open = markup.search(/<main\b/i);
+	const close = markup.toLowerCase().lastIndexOf("</main");
+	const body = markup.search(/<body\b/i);
+	if (open < 0 || close < open || body < 0) return [];
+	const outside = (markup.slice(body, open) + markup.slice(close))
+		.replace(/<(svg|nav|noscript|script|style|template|select|button)\b[\s\S]*?<\/\1\s*>/gi, "");
+	const found = [];
+	for (const [, , attrs, inner] of outside.matchAll(OUTSIDE_MAIN_BLOCKS)) {
+		if (REVIEW_IGNORED_ATTRIBUTE.test(attrs)) continue;
+		const text = inner.replace(/<[^>]*>/g, "").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim();
+		if (text) found.push(text);
+	}
+	return found;
+}
+
+export function collectReviewIssues(source) {
+	const failures = [];
+	const warnings = [];
+	if (!/data-vpk-|vpk-doc-|<!-- vpk-review/.test(source)) return { failures, warnings };
+	const markup = reviewStaticMarkup(source);
+	const hasRuntime = /<script\b[^>]*\bdata-vpk-review-runtime(?=[\s>=/])/i.test(markup);
+	if (hasRuntime || reviewMetaContent(markup, "vpk-doc-id") !== null || /\sdata-vpk-id\s*=/i.test(markup)) {
+		const outside = textOutsideMain(markup);
+		if (outside.length) {
+			const sample = outside.slice(0, 3).map(text => `"${text.length > 40 ? `${text.slice(0, 37)}...` : text}"`).join(", ");
+			warnings.push(`${outside.length} text block${outside.length === 1 ? "" : "s"} outside <main> cannot take review comments (the review loop indexes and stamps only <main>): ${sample}. Move them inside <main>.`);
+		}
+	}
+	if (/<fieldset\b[^>]*\bdata-vpk-decision\s*=/i.test(markup) && !hasRuntime) {
+		warnings.push("decision blocks are inert without the review runtime (answers are not captured); run build.mjs --inject-review");
+	}
+	const docId = reviewMetaContent(markup, "vpk-doc-id");
+	if (hasRuntime && !/^[a-z0-9]{8,32}$/.test(docId ?? "")) failures.push("review runtime present without a valid vpk-doc-id meta");
+	const counts = new Map();
+	for (const match of markup.matchAll(/<[a-zA-Z][^\s/>]*\b[^>]*?\sdata-vpk-id\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+		const id = match[1] ?? match[2];
+		counts.set(id, (counts.get(id) ?? 0) + 1);
+	}
+	const duplicates = [...counts].filter(([, count]) => count > 1).map(([id]) => id);
+	if (duplicates.length) failures.push(`duplicate data-vpk-id values: ${duplicates.slice(0, 12).join(", ")}${duplicates.length > 12 ? ` and ${duplicates.length - 12} more` : ""}`);
+	let registry = null;
+	for (const attribute of ["data-vpk-review", "data-vpk-revisions"]) {
+		for (const text of reviewIslands(source, attribute)) {
+			if (text.includes("<")) {
+				failures.push(`${attribute} island contains a raw "<" (write it with serializeJsonIsland)`);
+				continue;
+			}
+			try {
+				const value = JSON.parse(text);
+				if (attribute === "data-vpk-revisions") registry = value;
+			} catch (error) {
+				failures.push(`${attribute} island is not valid JSON (${error.message})`);
+			}
+		}
+	}
+	const entries = registry && Array.isArray(registry.entries) ? registry.entries : [];
+	if (entries.length) {
+		const last = entries[entries.length - 1]?.id;
+		const revision = reviewMetaContent(markup, "vpk-doc-revision");
+		if (revision !== last) failures.push(`vpk-doc-revision meta (${revision ?? "missing"}) does not match the last revision entry (${last})`);
+	}
+	for (const id of REVIEW_MARKER_IDS) {
+		const start = source.split(`<!-- vpk-${id}:start -->`).length - 1;
+		const end = source.split(`<!-- vpk-${id}:end -->`).length - 1;
+		if (start > 1 || end > 1) failures.push(`duplicated vpk-${id} markers`);
+		else if (start !== end || (start === 1 && source.indexOf(`<!-- vpk-${id}:end -->`) < source.indexOf(`<!-- vpk-${id}:start -->`))) failures.push(`unbalanced vpk-${id} markers`);
+	}
+	return { failures, warnings };
+}
+
+// Templates stay review-free (ws1 §4.16 template guard; build.mjs --check-templates).
+export function collectTemplateReviewIssues(source) {
+	if (!/data-vpk-|vpk-doc-|<!-- vpk-review/.test(source)) return [];
+	const markup = reviewStaticMarkup(source);
 	const issues = [];
-	const unsafe = animations.find(tag => !/\bbegin=["']indefinite["']/i.test(tag));
-	if (unsafe) {
-		issues.push(`animateTransform must use begin="indefinite": ${unsafe}`);
-	}
-	if (!/<script\b[^>]*\bdata-vpk-smil-starter\b/i.test(source)) {
-		issues.push("animateTransform requires a data-vpk-smil-starter script");
-	}
+	if (/\sdata-vpk-id\s*=/i.test(markup)) issues.push("template carries data-vpk-id (stamp copies, never templates)");
+	if (/\sdata-vpk-revision\s*=/i.test(markup)) issues.push("template carries data-vpk-revision marks");
+	if (reviewMetaContent(markup, "vpk-doc-id") !== null || reviewMetaContent(markup, "vpk-doc-revision") !== null) issues.push("template carries a vpk-doc-id or vpk-doc-revision meta");
+	if (reviewIslands(source, "data-vpk-review").length || reviewIslands(source, "data-vpk-revisions").length) issues.push("template carries a review or revisions island");
+	if (/<script\b[^>]*\bdata-vpk-review-runtime(?=[\s>=/])/i.test(markup)) issues.push("template carries the review runtime");
+	if (/<style\b[^>]*\bdata-vpk-review-content(?=[\s>=/])/i.test(markup) || source.includes("<!-- vpk-review-content:start -->")) issues.push("template carries the review-content block");
 	return issues;
 }
 
@@ -399,6 +565,7 @@ export function validateHtmlString(html, label = "document") {
 	if (!/@font-face[\s\S]+data:font\/(?:woff2|otf|ttf);base64,/.test(html)) {
 		failures.push("does not embed local fonts as data URIs");
 	}
+	failures.push(...collectFontFaceIssues(html));
 
 	if (!isLanding && /<link\b[^>]*rel=["'][^"']*stylesheet/i.test(html)) {
 		failures.push("contains an external stylesheet link instead of inline CSS");
@@ -419,6 +586,11 @@ export function validateHtmlString(html, label = "document") {
 	failures.push(...collectPresentationIssues(html));
 	failures.push(...collectSmilMotionIssues(html));
 	failures.push(...collectSvgGrammarIssues(html));
+	const reviewIssues = collectReviewIssues(html);
+	failures.push(...reviewIssues.failures);
+	// Figure engines (ws4b, K6 row 5): engine record E1–E3 and anatomy hero H1–H8; inert without their markup.
+	const figureIssues = collectFigureEngineIssues(html);
+	failures.push(...figureIssues.failures);
 
 	if (!/\[data-theme="dark"\]/.test(html) || !/color-scheme:\s*light dark/.test(html)) {
 		failures.push("does not contain the dark-mode token block");
@@ -469,10 +641,14 @@ export function validateHtmlString(html, label = "document") {
 		failures.push("does not contain a main landmark");
 	}
 
+	// Advisory only: warnings never change `ok` or the exit code.
+	const warnings = [...reviewIssues.warnings, ...figureIssues.warnings, ...weightWarnings(html, { label })];
+
 	return {
 		ok: failures.length === 0,
 		label,
 		failures,
+		warnings,
 	};
 }
 
@@ -508,6 +684,7 @@ async function main() {
 				console.error(`- ${failure}`);
 			}
 		}
+		for (const warning of result.warnings) console.warn(`warn ${warning}`);
 	}
 
 	if (results.some(result => !result.ok)) {

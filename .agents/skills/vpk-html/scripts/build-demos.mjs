@@ -358,8 +358,14 @@ function readSource(directory, slug) {
 	return fs.readFileSync(path.join(directory, `${slug}.html`), "utf8");
 }
 
+/** A filled document demo has no placeholders left, so the template's literal-braces opt-out would only switch off
+ * check-html's unresolved-placeholder check. Diagram demos keep it (retrofit marks them). */
+function dropLiteralOptOut(slug, html) {
+	return slug.startsWith("demo-diagram-") || /\{\{/.test(html) ? html : html.replace(' data-vpk-literal-double-braces="true"', "");
+}
+
 function writeDemo(slug, html) {
-	fs.writeFileSync(path.join(DEMOS, `${slug}.html`), ensureFaviconLinks(html), "utf8");
+	fs.writeFileSync(path.join(DEMOS, `${slug}.html`), ensureFaviconLinks(dropLiteralOptOut(slug, html)), "utf8");
 }
 
 function replaceAll(html, replacements) {
@@ -519,7 +525,7 @@ function curatedAddMainLandmark(html) {
 }
 
 function curatedWriteDemo(slug, html) {
-	fs.writeFileSync(path.join(DEMOS, `${slug}.html`), ensureFaviconLinks(curatedAddMainLandmark(html)), "utf8");
+	fs.writeFileSync(path.join(DEMOS, `${slug}.html`), ensureFaviconLinks(dropLiteralOptOut(slug, curatedAddMainLandmark(html))), "utf8");
 }
 
 /* ============ Q2 status — one-pager ============ */

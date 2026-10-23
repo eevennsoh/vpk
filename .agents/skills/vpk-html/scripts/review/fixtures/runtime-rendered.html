@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Launch thread</title>
+	<style>
+		@font-face { font-family: "VPK Fixture"; src: url(data:font/woff2;base64,AAAA) format("woff2"); }
+		:root { color-scheme: light dark; }
+		[data-theme="dark"] { color-scheme: dark; }
+		body { font-family: "VPK Fixture", system-ui, sans-serif; margin: 0; }
+	</style>
+</head>
+<body>
+<main>
+	<h1>Launch thread</h1>
+	<p>Posts below are rendered at runtime from the content island.</p>
+	<ol id="xt-posts"></ol>
+</main>
+<script type="application/json" data-vpk-content="x-thread">{"posts":[{"id":"p1","text":"Shipping today"},{"id":"p2","text":"Here is what changed"}]}</script>
+</body>
+</html>

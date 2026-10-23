@@ -1,0 +1,310 @@
+{
+	"schema": "vpk-review/1",
+	"doc": {
+		"id": "iebsynflyxco",
+		"revision": "r1",
+		"title": "Review loop: Comment threads on task cards"
+	},
+	"exportedAt": "2026-10-11T10:40:00.000Z",
+	"reviewers": [
+		{
+			"id": "u_dana00001",
+			"name": "Dana Lee",
+			"initials": "DL",
+			"tone": 0,
+			"updatedAt": "2026-10-11T09:00:00.000Z"
+		},
+		{
+			"id": "u_sam000002",
+			"name": "Sam Roe",
+			"initials": "SR",
+			"tone": 3,
+			"updatedAt": "2026-10-11T09:05:00.000Z"
+		},
+		{
+			"id": "u_priya0003",
+			"name": "Priya Nair",
+			"initials": "PN",
+			"tone": 4,
+			"updatedAt": "2026-10-11T09:10:00.000Z"
+		}
+	],
+	"comments": [
+		{
+			"id": "c_mgm1a001_demo0001",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_dana00001",
+			"createdAt": "2026-10-11T09:12:00.000Z",
+			"revision": "r1",
+			"body": "Say what the rollback is for each slice, not only that it ships behind the flag.",
+			"bodyAt": "2026-10-11T09:12:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "x0qhlg",
+				"blockTag": "p",
+				"blockHash": "1j0d5vh",
+				"blockText": "Ship in four slices, each independently reviewable and each behind the flag. Nothing is user-visible until slice 4.",
+				"quote": {
+					"exact": "Nothing is user-visible until slice 4.",
+					"prefix": "wable and each behind the flag. ",
+					"suffix": " How should slice 4 reach users?"
+				},
+				"position": {
+					"start": 77,
+					"end": 115
+				},
+				"css": {
+					"path": "html > body > main > div > section:nth-of-type(1) > p",
+					"start": {
+						"path": [
+							0
+						],
+						"offset": 77
+					},
+					"end": {
+						"path": [
+							2
+						],
+						"offset": 2
+					}
+				},
+				"headingPath": [
+					"Comment threads on task cards",
+					"Milestones"
+				]
+			}
+		},
+		{
+			"id": "c_mgm1a002_demo0002",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_sam000002",
+			"createdAt": "2026-10-11T09:20:00.000Z",
+			"revision": "r1",
+			"body": "What happens if the cursor write fails three times in a row? Worth a line.",
+			"bodyAt": "2026-10-11T09:20:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "c6vwdz",
+				"blockTag": "p",
+				"blockHash": "0x7rbo9",
+				"blockText": "Optimistic write path on the left, fan-out on the right. The read cursor update is fire-and-forget — we never block the thread render on it.",
+				"quote": {
+					"exact": "The read cursor update is fire-and-forget",
+					"prefix": "the left, fan-out on the right. ",
+					"suffix": " — we never block the thread ren"
+				},
+				"position": {
+					"start": 57,
+					"end": 98
+				},
+				"css": {
+					"path": "html > body > main > div > section:nth-of-type(2) > p",
+					"start": {
+						"path": [
+							0
+						],
+						"offset": 57
+					},
+					"end": {
+						"path": [
+							0
+						],
+						"offset": 98
+					}
+				},
+				"headingPath": [
+					"Comment threads on task cards",
+					"Data flow"
+				]
+			}
+		},
+		{
+			"id": "c_mgm1a003_demo0003",
+			"parentId": "c_mgm1a002_demo0002",
+			"kind": "doc",
+			"authorId": "u_priya0003",
+			"createdAt": "2026-10-11T09:31:00.000Z",
+			"revision": "r1",
+			"body": "It retries on the next read, so the worst case is a stale unread badge.",
+			"bodyAt": "2026-10-11T09:31:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": null
+		},
+		{
+			"id": "c_mgm1a004_demo0004",
+			"parentId": null,
+			"kind": "block",
+			"authorId": "u_priya0003",
+			"createdAt": "2026-10-11T09:40:00.000Z",
+			"revision": "r1",
+			"body": "Label the socket hop in this diagram; it reads like a direct database write.",
+			"bodyAt": "2026-10-11T09:40:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "fyatru",
+				"blockTag": "svg",
+				"blockHash": "0zolclr",
+				"blockText": "<CommentComposer> apps/web React Query cache optimistic insert comments.create tRPC · packages/api comments table postgres · packages/db realtime channel…",
+				"headingPath": [
+					"Comment threads on task cards",
+					"Data flow"
+				]
+			}
+		},
+		{
+			"id": "c_mgm1a005_demo0005",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_dana00001",
+			"createdAt": "2026-10-11T09:45:00.000Z",
+			"revision": "r1",
+			"body": "Agree with delete-only for v1. Can we say who signs off?",
+			"bodyAt": "2026-10-11T09:45:00.000Z",
+			"status": "resolved",
+			"deleted": false,
+			"anchor": {
+				"blockId": "h13r16",
+				"blockTag": "div",
+				"blockHash": "1mnzrzf",
+				"blockText": "Editing needs an edited_at column and an \"edited\" affordance. Delete-and-repost is simpler but loses the reply anchor. Leaning toward delete-only for v1.",
+				"quote": {
+					"exact": "Leaning toward delete-only for v1.",
+					"prefix": "ler but loses the reply anchor. ",
+					"suffix": " Decide with · design, before sl"
+				},
+				"position": {
+					"start": 119,
+					"end": 153
+				},
+				"css": {
+					"path": "html > body > main > div > section:nth-of-type(6) > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2)",
+					"start": {
+						"path": [
+							2
+						],
+						"offset": 93
+					},
+					"end": {
+						"path": [
+							2
+						],
+						"offset": 127
+					}
+				},
+				"headingPath": [
+					"Comment threads on task cards",
+					"Open questions"
+				]
+			},
+			"statusAt": "2026-10-11T10:30:00.000Z",
+			"statusBy": "u_sam000002"
+		},
+		{
+			"id": "c_mgm1a006_demo0006",
+			"parentId": null,
+			"kind": "text",
+			"authorId": "u_sam000002",
+			"createdAt": "2026-10-11T09:50:00.000Z",
+			"revision": "r1",
+			"body": "This kill-switch note disappeared; was it moved?",
+			"bodyAt": "2026-10-11T09:50:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": {
+				"blockId": "zq9x2w",
+				"blockTag": "p",
+				"blockHash": "0zzzzzz",
+				"blockText": "Every slice ships behind a kill switch that support can flip.",
+				"quote": {
+					"exact": "ships behind a kill switch that support can flip",
+					"prefix": "Every slice ",
+					"suffix": "."
+				},
+				"headingPath": [
+					"Comment threads on task cards",
+					"Milestones"
+				]
+			}
+		},
+		{
+			"id": "c_mgm1a007_demo0007",
+			"parentId": null,
+			"kind": "doc",
+			"authorId": "u_priya0003",
+			"createdAt": "2026-10-11T10:05:00.000Z",
+			"revision": "r1",
+			"body": "Can we add a rough cost estimate for the realtime channel?",
+			"bodyAt": "2026-10-11T10:05:00.000Z",
+			"status": "open",
+			"deleted": false,
+			"anchor": null
+		}
+	],
+	"decisions": [
+		{
+			"key": "rollout",
+			"reviewerId": "u_dana00001",
+			"question": "How should slice 4 reach users?",
+			"value": [
+				"all-at-once"
+			],
+			"defaultValue": [
+				"ramp"
+			],
+			"changed": true,
+			"seen": true,
+			"seenAt": "2026-10-11T09:13:00.000Z",
+			"updatedAt": "2026-10-11T09:14:00.000Z"
+		},
+		{
+			"key": "rollout",
+			"reviewerId": "u_sam000002",
+			"question": "How should slice 4 reach users?",
+			"value": [
+				"ramp"
+			],
+			"defaultValue": [
+				"ramp"
+			],
+			"changed": false,
+			"seen": false,
+			"updatedAt": "2026-10-11T09:21:00.000Z"
+		},
+		{
+			"key": "editing",
+			"reviewerId": "u_dana00001",
+			"question": "Can people edit a comment after posting it?",
+			"value": [
+				"delete-only"
+			],
+			"defaultValue": [
+				"delete-only"
+			],
+			"changed": false,
+			"seen": true,
+			"seenAt": "2026-10-11T09:46:00.000Z",
+			"updatedAt": "2026-10-11T09:46:00.000Z"
+		},
+		{
+			"key": "editing",
+			"reviewerId": "u_priya0003",
+			"question": "Can people edit a comment after posting it?",
+			"value": [
+				"edit"
+			],
+			"defaultValue": [
+				"delete-only"
+			],
+			"changed": true,
+			"seen": true,
+			"seenAt": "2026-10-11T10:00:00.000Z",
+			"updatedAt": "2026-10-11T10:01:00.000Z"
+		}
+	]
+}

@@ -171,6 +171,50 @@ test("module index heading and rows keep matching gap", () => {
 	assert.equal(cssDeclaration(post, "gap"), "5px");
 });
 
+// Every `property: value` declaration in `css` with the stack of enclosing at-rule preludes
+// (`@media ...`, `@supports ...`) it sits in. Comments are dropped first; plain rule blocks do not
+// extend the stack, so only conditional-group at-rules appear in `context`.
+function declarationsWithContext(css, property) {
+	const found = [];
+	const stack = [];
+	let prelude = "";
+	const text = css.replace(/\/\*[\s\S]*?\*\//g, "");
+	for (let index = 0; index < text.length; index += 1) {
+		const char = text[index];
+		if (char === "{") {
+			stack.push(prelude.trim().startsWith("@") ? prelude.trim() : "");
+			prelude = "";
+		} else if (char === "}") {
+			stack.pop();
+			prelude = "";
+		} else if (char === ";") {
+			const declaration = prelude.trim();
+			if (declaration.startsWith(`${property}:`)) found.push({ value: declaration.slice(property.length + 1).trim(), context: stack.filter(Boolean) });
+			prelude = "";
+		} else {
+			prelude += char;
+		}
+	}
+	return found;
+}
+
+test("B2 decision 14: the view() section reveal never applies under prefers-reduced-motion: reduce", async () => {
+	const { buildMotionCssBlock } = await loadShared();
+	const styles = fs.readFileSync(path.join(__dirname, "..", "styles.css"), "utf8");
+	for (const [label, css] of [["buildMotionCssBlock()", buildMotionCssBlock()], ["styles.css", styles]]) {
+		const timelines = declarationsWithContext(css, "animation-timeline");
+		assert.ok(timelines.length >= 1, `${label} still declares the scroll-driven section reveal`);
+		for (const { value, context } of timelines) {
+			assert.equal(value, "view()", `${label}: the only animation-timeline is view()`);
+			assert.ok(context.includes("@media (prefers-reduced-motion: no-preference)"), `${label}: view() is declared outside @media (prefers-reduced-motion: no-preference): ${JSON.stringify(context)}`);
+			assert.ok(context.includes("@supports (animation-timeline: view())"), `${label}: view() keeps its @supports guard`);
+		}
+	}
+	// The helper sees an unguarded declaration (control), so the assertions above can fail.
+	assert.deepEqual(declarationsWithContext("a { animation-timeline: view(); }", "animation-timeline"), [{ value: "view()", context: [] }]);
+	assert.deepEqual(declarationsWithContext("@media (prefers-reduced-motion: reduce) { a { animation-timeline: view(); } }", "animation-timeline"), [{ value: "view()", context: ["@media (prefers-reduced-motion: reduce)"] }]);
+});
+
 test("github publishing helpers derive stable repo names and validate repo specs", async () => {
 	const { deriveRepoName, parseRepoSpec } = await import("./github-pages.mjs");
 
@@ -204,6 +248,8 @@ test("user render docs route generated HTML into per-slug artifact folders", () 
 		"references/landing.md",
 		"references/pdf-export.md",
 		"references/production.md",
+		"references/contract.md",
+		"references/publish.md",
 	];
 	const skillRoot = path.join(__dirname, "..");
 
@@ -325,6 +371,29 @@ test("document nav retrofit is idempotent and skips decks", async () => {
 	assert.equal(retrofitDocumentNav(deck), deck);
 });
 
+test("document nav retrofit leaves data-vpk-docnav=off bodies unchanged", async () => {
+	const { buildDocNavJs, retrofitDocumentNav } = await import("./presentation.mjs");
+	const html = `<!doctype html><html><head><style></style></head><body data-vpk-motion="document" data-vpk-docnav="off"><main><section><h2>One</h2></section><section><h2>Two</h2></section></main></body></html>`;
+	assert.equal(retrofitDocumentNav(html), html);
+	assert.equal(retrofitDocumentNav(html.replace(`data-vpk-docnav="off"`, "data-vpk-docnav='off'")), html.replace(`data-vpk-docnav="off"`, "data-vpk-docnav='off'"));
+	// A page that already carries the runtime still opts out at run time.
+	assert.match(buildDocNavJs(), /document\.body\.matches\('\[data-vpk-docnav\]:not\(\[data-vpk-docnav="off"\]\)'\)/);
+});
+
+test("deck retrofit removes only legacy bare deck scripts, never a runtime block after a bare script", async () => {
+	const { retrofitDeck } = await import("./presentation.mjs");
+	const isoBlock = `<!-- vpk-iso:start -->\n<script data-vpk-iso-runtime>\n(() => { const io = new IntersectionObserver(() => {}); io.disconnect(); })();\n</script>\n<!-- vpk-iso:end -->`;
+	const slides = `<main><section class="slide"><h1>One</h1></section><section class="slide"><h1>Two</h1></section></main>`;
+	const deck = `<!doctype html><html><head><style></style></head><body>${slides}\n<script>\nwindow.deckBoot = 1;\n</script>\n${isoBlock}\n</body></html>`;
+	const out = retrofitDeck(deck);
+	assert.ok(out.includes(isoBlock), "the iso runtime block after a bare <script> survives");
+	assert.match(out, /<script>\nwindow\.deckBoot = 1;\n<\/script>/);
+	const legacy = `<!doctype html><html><head><style></style></head><body>${slides}\n<script>\ndocument.querySelector('.slide').scrollIntoView();\n</script>\n${isoBlock}\n</body></html>`;
+	const cleaned = retrofitDeck(legacy);
+	assert.doesNotMatch(cleaned, /<script>\s*document\.querySelector\('\.slide'\)\.scrollIntoView/);
+	assert.ok(cleaned.includes(isoBlock), "removing the legacy deck script keeps the runtime block");
+});
+
 test("presentation CSS hides speaker notes for decks and docnav without duplicating note text", async () => {
 	const { retrofitDeck, retrofitDocumentNav } = await import("./presentation.mjs");
 	const deck = `<!doctype html><html><head><style>:root { color-scheme: light dark; }</style></head><body><main><section class="slide"><h1>One</h1><aside class="speaker-notes" aria-hidden="true">Deck private note</aside></section><section class="slide"><h1>Two</h1></section></main></body></html>`;
@@ -398,6 +467,7 @@ test("inject-runtime CLI refreshes theme and presentation runtimes idempotently"
 		assert.match(once, /data-vpk-docnav-runtime/);
 		assert.match(once, /vpk presentation mode/);
 		assert.match(once, /data-vpk-progress-arc/);
+		assert.equal((once.match(/<!-- vpkh-enhance:begin -->/g) || []).length, 1, "artifacts get exactly one enhancement block");
 	} finally {
 		fs.rmSync(tmp, { recursive: true, force: true });
 	}
@@ -414,6 +484,10 @@ test("check-html enforces the SMIL starter contract", async () => {
 	assert.match(
 		validateHtmlString(base.replace('begin="indefinite"', 'begin="0s"')).failures.join("\n"),
 		/begin="indefinite"/,
+	);
+	assert.match(
+		validateHtmlString(base.replace(/<animateTransform[^>]*\/>/, '<animate attributeName="width" from="0" to="10" begin="0s" dur="200ms" fill="freeze"/>')).failures.join("\n"),
+		/is not gated/,
 	);
 });
 
@@ -484,4 +558,61 @@ test("check-html enforces the Algebrica SVG grammar", async () => {
 		collectColorTokenIssues(valid.replace("<svg ", "<svg data-vpk-external-asset ").replace('stroke="var(--focal)"', 'stroke="#0c66e4"')),
 		[],
 	);
+});
+
+test("v2 agent tooling surface", () => {
+	const help = execFileSync(process.execPath, [path.join(__dirname, "build.mjs"), "--help"], { encoding: "utf8", env: { ...process.env, OPENSSL_CONF: "/dev/null" } });
+	for (const flag of ["--doctor", "--check-content", "--playbook", "--screenshot", "--publish <artifacts|gist>", "--include-review", "--allow-local-paths", "--confirm", "--inject-review", "--review <review.json|reviewed.html>", "--stamp", "--embed-review", "--strip-review", "--check-iso", "--build-hero", "--check-figures", "scripts/lab/kit.mjs", "scripts/lab/render-case-study.mjs", "scripts/media/capture.mjs", "scripts/media/encode.mjs", "scripts/media/embed.mjs"]) {
+		assert.ok(help.includes(flag), `--help lists ${flag}`);
+	}
+});
+
+test("SKILL.md workflow skeleton", () => {
+	const skill = fs.readFileSync(path.join(__dirname, "..", "SKILL.md"), "utf8");
+	const steps = [...skill.matchAll(/^### (\d+)\. (.+)$/gm)].map(match => [Number(match[1]), match[2].trim()]);
+	assert.deepEqual(steps, [
+		[1, "Frame the reader's job and choose a template"],
+		[2, "Lock the contract"],
+		[3, "Distill and source the material"],
+		[4, "Copy and fill"],
+		[5, "Validate the source artifact"],
+		[6, "Review loop (opt-in)"],
+		[7, "Produce optional derivatives and publish"],
+		[8, "Close with the definition of done"],
+	]);
+	// The body of one step: from its heading line to the next heading of any level.
+	const step = number => skill.split(/^### /m).find(chunk => chunk.startsWith(`${number}. `)).split(/^## /m)[0].replace(/^.*\n/, "");
+	const lock = step(2);
+	for (const engine of ["iso kit", "anatomy hero", "both"]) assert.ok(lock.includes(`**${engine}**`), `step 2 offers ${engine}`);
+	assert.ok(lock.includes(`<meta name="vpk-figure-engine" content="none|iso-kit|anatomy-hero|both">`));
+	assert.match(lock, /With nobody to ask, use the iso kit/);
+	assert.match(lock, /If you ask, stop and wait for the answer/);
+	assert.match(lock, /never an Epic\s+tier\. A page has at most one\./);
+	assert.match(lock, /When you ask, say which planned figure each option would draw and what the\s+others become\. With the anatomy hero alone, the other figures are static\s+diagrams\./);
+	assert.ok(!/[;] /.test(lock.slice(lock.indexOf("- **iso kit**"), lock.indexOf("When you ask, say"))), "the engine options use full stops, not semicolons");
+	assert.equal(step(8).match(/^\d+\. /gm).length, 6, "the definition of done has six items");
+});
+
+test("P4 cycle 2 item 1: a question turn still ends with the one-line contract", () => {
+	const contract = fs.readFileSync(path.join(__dirname, "..", "references", "contract.md"), "utf8");
+	const budget = contract.split(/^## Question budget$/m)[1].split(/^## /m)[0].replace(/\s+/g, " ");
+	assert.ok(budget.includes("When you ask, end the message with the rest of the contract as one line in the usual format (all seven fields, including the length/viewport target and the verification commands), with the engine marked open."), "the question budget says what the contract line looks like on a question turn");
+	assert.ok(budget.indexOf("When you ask") < budget.indexOf("When nothing needs asking"), "the question-turn rule comes before the no-question rule");
+});
+
+test("P4 items 1, 8, 14: engineering shells open <main> before the masthead and carry no provenance footer", () => {
+	const dir = path.join(__dirname, "..", "assets", "templates");
+	const shells = fs.readdirSync(dir).filter(name => name.endsWith(".html")).map(name => [name, fs.readFileSync(path.join(dir, name), "utf8")]).filter(([, html]) => html.includes('class="masthead"') && html.includes('class="stat"'));
+	assert.ok(shells.length >= 20, `found the engineering shells (${shells.length})`);
+	for (const [name, html] of shells) {
+		const main = html.indexOf("<main>");
+		assert.ok(main >= 0 && main < html.indexOf('<header class="masthead">'), `${name}: <main> opens before the masthead`);
+		assert.ok(main < html.indexOf('<div class="stat"'), `${name}: the stat strip is inside <main>`);
+		assert.ok(html.indexOf("</main>") > html.indexOf("Acceptance checklist") || !html.includes("Acceptance checklist"), `${name}: main closes after the shell content`);
+		assert.equal(html.split("<main>").length - 1, 1, `${name}: one main landmark`);
+		assert.match(html, /<div class="stat"[^>]*>\s*<div data-vpk-block>/, `${name}: stat cells are review blocks`);
+		assert.ok(!html.includes('<footer class="source">'), `${name}: no reader-visible provenance footer`);
+		assert.ok(!html.includes("local offline template-edit contract"), `${name}: no author jargon in reader copy`);
+		assert.match(html.slice(0, 600), /Pattern reference: https:\/\//, `${name}: the head comment keeps the pattern reference`);
+	}
 });

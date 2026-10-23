@@ -1,9 +1,10 @@
 # Review gate
 
 Run this gate before every merge, including merge-back of an existing PR. The
-required `CI / PR checks` status is protected on `main`; auto-merge waits for it.
-GitHub also blocks unresolved conversations. Never use `--admin` to bypass
-checks or conversation resolution.
+`CI / PR checks` status must pass before merge. GitHub does not enforce this on
+the current plan, so this gate does: an unreported or running required check
+counts as pending, never as passing. Never use `--admin` to bypass checks or
+conversation resolution.
 
 ## Codex auto-review status
 
@@ -49,7 +50,19 @@ Only declare the review gate clear when `reviewGateClear` is true and those
 reviews are classified. Older-commit conversations still block when unresolved.
 `mergeStateStatus: CLEAN` and passing checks are separate supporting evidence.
 
-Immediately before merge, add `--require-clear`. Exit 2 means at least one
+Immediately before merge, wait for checks and require a clear gate in one
+call:
+
+```bash
+node .agents/skills/vpk-git-ship/scripts/review-gate-status.js \
+  --pr <number> --repo <owner>/<repo> --wait 1200 --rerun-interrupted 3 --require-clear
+```
+
+`--wait` polls every 30 seconds while any check is pending, for up to the given
+seconds. A cancelled or timed-out run is `interrupted`, not `failing`:
+`--rerun-interrupted 3` reruns it (`gh run rerun`) up to three times, waiting
+the full `--wait` after each, and never reruns a real failure. `PR checks` is required by default; pass `--required-check <name>`
+(repeatable) to replace that list. Exit 2 means at least one
 review, check, or merge-state condition remains; inspect the same JSON rather
 than weakening the gate. An API/schema failure exits 1. If a REST comment stays
 missing after the bounded retries, or any surface cannot be fetched, stop and

@@ -1,0 +1,211 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "parcel-tray",
+	"figId": "FIG_001",
+	"title": "Parcel sorting tray",
+	"label": "Isometric sorting tray holding three parcels and a tape roll; the urgent parcel is highlighted, and hovering lifts the parcels out of the tray.",
+	"caption": "Only the urgent parcel jumps the queue; everything else waits its turn in the tray.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "tray",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				150,
+				96,
+				12
+			],
+			"r": 4,
+			"label": "sorting tray"
+		},
+		{
+			"id": "label-slot",
+			"kind": "ring",
+			"at": [
+				100,
+				74,
+				2
+			],
+			"size": [
+				10,
+				10,
+				0
+			],
+			"clipTo": "tray",
+			"label": "stamp"
+		},
+		{
+			"id": "parcel-a",
+			"kind": "box",
+			"at": [
+				38,
+				54,
+				2
+			],
+			"size": [
+				44,
+				36,
+				18
+			],
+			"marks": [
+				[
+					[
+						22,
+						0
+					],
+					[
+						22,
+						36
+					]
+				]
+			],
+			"label": "small parcel",
+			"explode": [
+				0,
+				0,
+				30
+			]
+		},
+		{
+			"id": "parcel-c",
+			"kind": "box",
+			"at": [
+				26,
+				6,
+				2
+			],
+			"size": [
+				40,
+				44,
+				20
+			],
+			"marks": [
+				[
+					[
+						0,
+						22
+					],
+					[
+						40,
+						22
+					]
+				]
+			],
+			"label": "large parcel",
+			"explode": [
+				0,
+				0,
+				24
+			]
+		},
+		{
+			"id": "tape",
+			"kind": "cylinder",
+			"at": [
+				130,
+				28,
+				2
+			],
+			"size": [
+				12,
+				12,
+				16
+			],
+			"label": "tape roll",
+			"explode": [
+				0,
+				0,
+				18
+			]
+		},
+		{
+			"id": "parcel-b",
+			"kind": "box",
+			"at": [
+				84,
+				26,
+				2
+			],
+			"size": [
+				34,
+				30,
+				14
+			],
+			"r": 2,
+			"label": "urgent parcel",
+			"explode": [
+				0,
+				0,
+				40
+			]
+		}
+	],
+	"focal": "parcel-b",
+	"labels": [
+		{
+			"text": "Urgent parcel",
+			"target": "parcel-b",
+			"side": "right"
+		},
+		{
+			"text": "Large parcel",
+			"target": "parcel-c",
+			"side": "left"
+		},
+		{
+			"text": "Small parcel",
+			"target": "parcel-a",
+			"side": "left"
+		},
+		{
+			"text": "Tape roll",
+			"target": "tape",
+			"side": "right"
+		},
+		{
+			"text": "Sorting tray",
+			"target": "tray",
+			"side": "left"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"tray",
+				"label-slot"
+			],
+			[
+				"parcel-a",
+				"parcel-c"
+			],
+			[
+				"tape"
+			],
+			[
+				"parcel-b"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 0.75,
+			"step": 0.25,
+			"unit": "lift"
+		}
+	},
+	"meta": {
+		"margin": "[ SORTING TRAY ]",
+		"corner": "VPK-HTML"
+	}
+}

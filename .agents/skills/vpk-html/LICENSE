@@ -17,6 +17,63 @@ are kami's work, used under the MIT License.
   kami — Copyright (c) tw93
   MIT License — https://github.com/tw93/Kami/blob/main/LICENSE
 
+The content-IR coverage algorithm (`scripts/content-ir.mjs`), the contract and
+definition-of-done wording (`references/contract.md`), and the doctor report
+format (`scripts/doctor.mjs`) are adapted from kami's `content.py`, `SKILL.md`
+and `build.py --doctor`, under the same MIT License.
+
+`scripts/secret-scan.mjs` adapts the `SECRET_TEXT` credential patterns of
+html-plan's `runtime/pack.mjs` (anthropics/claude-plugins-community; the plugin
+manifest declares MIT and the repository is Apache-2.0). The review loop's
+comment, decision and seen-tracking ideas and its data-not-instructions footer
+wording come from html-plan's `runtime/htmlplan.js` (ideas and wording only, no code).
+
+  html-plan — Copyright Anthropic PBC and contributors
+  MIT (plugin) / Apache-2.0 (repository) — https://github.com/anthropics/claude-plugins-community
+
+The template playbook format (`references/playbooks/`) follows the structure
+of lavish-axi's `src/playbooks.js` (use when, choose, structure, pitfalls).
+The review loop's node-path selector (`scripts/review/anchor.mjs` `cssPathFor`,
+ported from `revisionSelectorFor` in `src/artifact-revisions.js`) and its
+revision-registry and "reveal changes" design follow lavish-axi too; the
+inlined review runtime carries this notice in a `/*! */` comment. The review
+loop's layout audit (`scripts/review/layout-audit.mjs`) adapts detectors from
+`src/artifact-sdk.js` and `src/layout-warnings.js`; it carries this notice in a
+`/*! */` comment.
+
+  lavish-axi — Copyright (c) 2026 Kun Chen
+  MIT License — https://github.com/kunchenguid/lavish-axi
+
+The figure engines below are self-contained: the upstream anatomy, hairline and 3d-assembly-manual
+code is vendored or ported into this skill and their authoring guidance is restated in
+`references/figure-craft.md`, so none of those skills needs to be installed. The notices below credit them.
+
+`scripts/anatomy/vendor/` holds files copied verbatim from wheresryan22/anatomy
+at commit dbf697a (each pinned by sha256 in `VENDOR.json`, with the upstream
+LICENSE beside them). The anatomy-hero runtime subset inlined into documents,
+and the iso kit's ported side shading and fit, derive from the same kit; the
+inlined runtime carries this notice in a comment.
+
+  anatomy — Copyright (c) 2026 Ryan
+  MIT License — https://github.com/wheresryan22/anatomy/blob/main/LICENSE
+
+`scripts/iso/` ports hairline's motion clocks (spring and 700 ms tween), its select/explode
+behaviour semantics, its zero-specificity CSS approach and its figure rules; the inlined iso
+runtime carries this notice in a comment. Details: scripts/iso/NOTICE.md.
+
+  hairline — Copyright (c) 2026 Lucas Marques
+  MIT License — https://github.com/lucasmarkes/hairline
+
+The iso kit's one style, `manual` (`scripts/iso/`: palette, scene, emit, motion and layout; documented in
+`references/illustrations.md` § 7 "Style") adapts the visual treatment of the `design/3d-assembly-manual`
+skill in SkylarKitchen/skills: a white model with ink hairline edges, numbered ink-disc marks, boxed
+dimension labels, a scale bar, and 700 ms ease-out landings (the kit now runs them on an even, overlapping
+stagger and draws no ghost outline). Only the drawing language, constants and timing rules were taken; no
+code was copied (the source is Three.js and WebGL, the kit emits SVG).
+
+  3d-assembly-manual — Copyright (c) SkylarKitchen and contributors
+  MIT License — https://github.com/SkylarKitchen/skills
+
 The 20 example pages snapshotted in `assets/html-effectiveness/`, and the
 demos derived from them (`assets/demos/demo-*.html` restyled by
 `scripts/port-engineering-demos.mjs`), originate from
@@ -25,6 +82,22 @@ used under the Apache License 2.0.
 
   html-effectiveness — Copyright 2026 Anthropic PBC
   Apache-2.0 — https://github.com/ThariqS/html-effectiveness/blob/main/LICENSE
+
+`scripts/x-thread/twitter-text.mjs`, `scripts/x-thread/tlds.mjs`,
+`scripts/x-thread/fixtures/twitter-text-v3-vectors.json` and the runtime bundled into
+`assets/templates/x-thread.html`, `assets/demos/demo-x-thread.html` and every filled x-thread
+artifact port or vendor twitter/twitter-text (https://github.com/twitter/twitter-text) at
+30e2430, modified, under the Apache License 2.0
+(https://www.apache.org/licenses/LICENSE-2.0). The emoji keycap and text-presentation rule
+follows twitter/twemoji-parser (MIT).
+
+  twitter-text — Copyright 2018 Twitter, Inc.
+  Apache-2.0 — https://www.apache.org/licenses/LICENSE-2.0
+
+`references/writing.md` adapts vpk-explain's writing guide, whose checklist adapts
+danyuchn/asd-ste100-skill (https://github.com/danyuchn/asd-ste100-skill, MIT License,
+Copyright (c) Dustin Yuchen Teng); the upstream notice is kept in
+`.agents/skills/vpk-explain/references/upstream-license.txt`.
 
 The fonts shipped under `assets/fonts/` are committed local font assets used
 to preserve the offline HTML artifact contract:

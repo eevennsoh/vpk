@@ -183,6 +183,117 @@
 				"The deck supports both presentation flow and later audit.",
 				"Speaker notes add presenter value without duplicating visible content."
 			]
+		},
+		{
+			"id": 8,
+			"name": "review-round-trip",
+			"category": "review-loop",
+			"template": "implementation-plan.html",
+			"viewport": { "width": 1440, "height": 1000 },
+			"reader_job": {
+				"quick_read": "Three teammates see what the plan commits to and answer the two open decisions in place.",
+				"deep_audit": "Every claim can be commented on at the sentence level, and the returned comments come back to the agent as tasks tied to stable block ids."
+			},
+			"prompt": "/vpk-html implementation-plan Create an offline implementation plan for adding offline-first sync to the Acme mobile client, and make the plan reviewable by three teammates (Dana Lee, Sam Roe, Priya Nair). Supplied facts: four milestones over six weeks (local write queue, conflict resolution, background sync, rollout); the write queue holds at most 500 pending edits per device; conflicts resolve last-writer-wins per field with a visible \"edited elsewhere\" note; background sync runs at most every 15 minutes on battery and on every app foreground; the rollout goes through an internal ring, then 10% and 100%. Two decisions are still open and belong to the reviewers: the rollout order (internal ring, then 10%, then 100% over a week, recommended; or straight to 100% behind a kill switch) and the retry policy for a failed sync (retry 3 times, 5 minutes apart, recommended; or no automatic retry, the user presses Try again). Place each decision on the claim it changes. The reviewers will return comments through the file itself.",
+			"expected_output": "One offline, reviewable implementation-plan HTML file with stable block ids, the review runtime, and two decision blocks placed on the claims they change.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file under artifacts/vpk-html with a vpk-doc-id meta and a data-vpk-id on every content block inside main.",
+				"The contract line says \"review runtime on\", and the review runtime was injected with build.mjs --inject-review before the required checks.",
+				"The two decisions (rollout order; retry policy) are fieldset.vpk-decision blocks, each with a checked recommendation and placed in the section whose claim it changes.",
+				"The three required checks (placeholders, verify, check-html) pass on the reviewable file, and no template under assets/templates carries review markup.",
+				"The closing message tells reviewers to select text and press C (or use the Review button) and names the four return paths and build.mjs --review."
+			],
+			"human_rubric": [
+				"Each decision sits on the claim it changes rather than in a separate questions section.",
+				"A reviewer can comment on any sentence without instructions beyond the closing message.",
+				"Copy-for-agent output from a reviewer is actionable without the page open.",
+				"The plan stays skimmable on a phone with the review launcher present."
+			]
+		},
+		{
+			"id": 9,
+			"name": "cache-key-lock-explainer",
+			"category": "interactive-explainer",
+			"template": "research-concept-explainer.html",
+			"viewport": { "width": 1440, "height": 900 },
+			"reader_job": {
+				"quick_read": "Understand why a cache hit skips work: every input must match, like every pin in a lock.",
+				"deep_audit": "Verify the five key inputs, the 3 ms hit versus 180 ms miss latency and the 92% seven-day hit rate, and that the hero's readout comes from the same model that moves its pins."
+			},
+			"prompt": "/vpk-html research-concept-explainer Explain to new backend engineers how our render cache decides to skip work. Figure engine: both. Use one anatomy hero showing a pin-tumbler lock with five pin stacks, one per key input (route, locale, feature flags, data version, template hash): when every pin lines up the plug turns and the cached page is served. Add two iso-kit figures: the request path (request → key → hit or miss → render) and invalidation (a data-version bump re-cuts one pin). Supplied facts: a hit returns in 3 ms, a miss renders in 180 ms, and the seven-day hit rate is 92%. Keep the figures grayscale and do not invent other metrics.",
+			"expected_output": "A single offline HTML explainer with one interactive anatomy hero and two iso-kit figures that share one camera and one animation loop.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file, and its content IR records figure_engine both with exactly one anatomy-hero figure and two iso-kit figures.",
+				"The head carries meta vpk-figure-engine with content both; every figure root carries data-vpk-engine and data-vpk-figure, both engines' roots carry data-vpk-camera=\"45 30\", and the hero has at least 40 parts.",
+				"Every supplied number appears unchanged, and the hero's static readout equals present(model(rest)) from its hero module.",
+				"The artifact passes the placeholder, verify and HTML checks, build-hero --audit and --check, check-lines in both themes, check-figures --strict and check-iso --strict, and figures/check-runtime passes in both themes: B6 clean across the reduced-motion and full-motion phases, B12 grayscale across both engines, and the hero's plate filling its column (B18 layout).",
+				"The engines share one frame loop and stay out of each other's way: the page has one vpkFrameLoop, one runtime block per engine and one lightbox opt-out per interactive root, and the enhancer runs 0 requestAnimationFrame calls per second once the page has settled under reduced motion (B10)."
+			],
+			"human_rubric": [
+				"The hero reads as a real lock at 1x and still rewards a 4x zoom.",
+				"The iso-kit figures and the hero look like one system: camera, face tones, frame.",
+				"Motion is calm, stops off-screen, and stays still under reduced motion while still answering the pointer.",
+				"The prose explains the mechanism without restating the captions."
+			]
+		},
+		{
+			"id": 10,
+			"name": "x-launch-thread",
+			"category": "social-thread",
+			"template": "x-thread.html",
+			"viewport": { "width": 1440, "height": 900 },
+			"reader_job": {
+				"quick_read": "See which of the six launch posts are ready, then post them in order one at a time.",
+				"deep_audit": "Check each post's weighted count, the screenshot slot, the reply chain and every recorded post link before handing the thread back."
+			},
+			"prompt": "/vpk-html x-thread Make an offline X thread page for the Larkspur 3.0 launch, posted from @larkspurapp (name: Larkspur). Title: \"Larkspur 3.0 launch thread\". Keep these six posts verbatim and in this order. Post 1: \"Larkspur 3.0 ships today 🚀 Three changes: sync that survives flaky networks, search that is 6x faster on large vaults, and a plugin API with typed events. A thread on what we built and how we measured it.\" Post 2: \"Offline sync first. Edits now queue on your device and replay in order when you reconnect, and conflicts land in a visible list instead of overwriting each other. The screenshot shows the sync panel after a 40-minute train ride with no signal.\" Post 3: \"Search on a 50,000-note vault dropped from 2.4 s to 0.4 s at the 95th percentile, and opening a large vault no longer blocks typing. Benchmark scripts and raw numbers: https://example.com/larkspur-3-benchmarks\" Post 4: \"Why search got faster: we replaced the full index rebuild on every launch with an append-only log that is compacted in the background, and moved tokenisation into a worker so the editor never waits on it. We also stopped re-reading unchanged attachments. Results are unchanged: the same 2,000 test queries return identical hits in 2.x and 3.0, and CI checks that on every commit.\" Post 5: \"The plugin API has 28 typed events, one versioned schema, and a sandbox that blocks network access unless you allow it. Existing plugins keep working until 4.0. 日本語のドキュメントも公開しました。\" Post 6: \"Update from the app menu, or download 3.0 from the releases page. The changelog lists every change and one known issue with very long file paths on Windows. Thanks to the 64 people who tested the betas.\" Post 2 needs a screenshot of the sync panel listing queued edits and one conflict after reconnecting; I will attach it myself. I will post the thread myself from the page.",
+			"expected_output": "One offline x-thread HTML page rendered from its content.json, with weighted counts, approvals, a screenshot slot and a free web-intent posting chain.",
+			"files": [],
+			"expectations": [
+				"The page sits under artifacts/vpk-html/<slug>/ with <slug>.content.json beside it, rendered by x-thread.mjs fill rather than by hand-filling the template.",
+				"The supplied post text stays verbatim and in order; post 4 is either split into consecutive posts without losing a fact (with a note saying so) or left as a flagged over-limit draft.",
+				"The URL counts 23, the Japanese characters count 2 each and the emoji counts 2, and the post over 280 weighted characters cannot be approved.",
+				"Each post can be approved or skipped and Approve all works; the queue opens one web intent per click, adds in_reply_to from post 2 on, and offers Copy post and Copy thread fallbacks.",
+				"Post 2 carries a planned screenshot slot shown as [DATA NEEDED: image · …] with alt text describing the sync panel, and no image is invented.",
+				"x-thread.mjs check, build.mjs --check-content, --check-placeholders, check-html.mjs and --verify all pass.",
+				"After a post URL is pasted, the recorded URL survives a reload and appears in the JSON export."
+			],
+			"human_rubric": [
+				"The person posting can tell at a glance which posts are ready, which need a fix and what to do next.",
+				"Over-limit, empty and [DATA NEEDED] states are explained in words next to the post, not only by colour.",
+				"The page never implies that it posts for the user: every step is a click the user makes in X.",
+				"The agent's summary reports the split decision for post 4 and the open screenshot slot without inventing facts."
+			]
+		},
+		{
+			"id": 11,
+			"name": "motion-case-study-film-labs",
+			"category": "motion-retrospective",
+			"template": "motion-case-study.html",
+			"viewport": { "width": 1440, "height": 1000 },
+			"reader_job": {
+				"quick_read": "Watch the film and jump to any of its five scenes from the cue sheet or the Gantt.",
+				"deep_audit": "Check each scene's start and dwell against the film, and the lab's arithmetic against its cited source."
+			},
+			"prompt": "/vpk-html motion-case-study Write an offline motion case study of the supplied film assets/demos/media/landing-demo-separation.mp4 (1920 × 1080, 82.03 s, H.264 with an audio track). Use the supplied-film path: encode it with the film preset and embed it with scripts/media/embed.mjs, with no audio. The film has five scenes. They start at 0, 20.3, 36.4, 57.8 and 70.5 s and dwell 20.3, 16.1, 21.4, 12.7 and 11.5 s: the title (landing demos use filled mock previews), before and after, what changed (document mocks, diagram mocks, a regression guard, linked-file validation), why source templates keep their placeholders, and the contract for new templates and diagrams. Make each scene a chapter and a cue, and add a Gantt of the five dwell times on the film's clock. Add one time lab that ports the real arithmetic of the dwell plan from assets/video/landing-demo-separation/index.html (each scene starts where the previous one ends) and cite that file and its lines. Keep lab canvases and the Gantt grayscale. Keep the document under the data-URL budget, or ship the lite copy.",
+			"expected_output": "One offline motion-case-study HTML file with the supplied film embedded, five chapters and cues that seek it, a Gantt of the dwell plan on the film's clock, and one grayscale lab that cites the source of its arithmetic.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file in its slug folder (artifacts/vpk-html/<slug>/ outside an eval round) built from motion-case-study.html, with the supplied film embedded by scripts/media/embed.mjs as an H.264 data URL and no audio track.",
+				"Clicking each of the five cues, and the Gantt at each scene start, lands on each scene's first frame (at most one frame after 0, 20.3, 36.4, 57.8 and 70.5 s) and the beat panel names that scene.",
+				"Every lab carries a [data-vpk-lab-source] that names the file and lines of the arithmetic it ports.",
+				"The document is at most 1,572,846 bytes, or <slug>.lite.html ships beside it, is at most 1,572,846 bytes and passes check-html.",
+				"Lab canvases and the Gantt paint with grayscale tokens and one focal only; no status hue appears on any figure.",
+				"check-html.mjs, build.mjs --check-placeholders, build.mjs --check-content <slug>.content.json <slug>.html, lab/kit.mjs --check and lab/render-case-study.mjs --check all pass."
+			],
+			"human_rubric": [
+				"A reader can play the film, step it frame by frame and jump to any scene from the cue sheet or the Gantt without hunting for controls.",
+				"The five dwell times read as one plan on one clock, not as a list of numbers.",
+				"The lab lets the reader change a dwell and see where every later scene would start, using the same arithmetic as the cited source.",
+				"The page reads as an Algebrica editorial case study, not as a video player with a caption."
+			]
 		}
 	]
 }

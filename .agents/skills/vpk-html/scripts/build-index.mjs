@@ -1,12 +1,19 @@
 #!/usr/bin/env node
+/*
+ * build-index — the catalog index generator. index.html is regenerated only by the library
+ * refresh (`build.mjs --refresh-library`), which passes buildIndexHtml() through the runtime
+ * pipeline (docnav, fonts, theme, runtimes, enhancements) with sizes of the refreshed demos.
+ * Running this script directly is an alias of that refresh. Edit SECTIONS, not index.html.
+ */
 
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { buildFaviconLinkBlock, buildSharedCssBlock, ROOT } from "./shared.mjs";
 import { retrofitThemeRuntime } from "./theme.mjs";
 
 const DEMOS_DIR = path.join(ROOT, "assets", "demos");
-const INDEX_FILE = path.join(ROOT, "index.html");
 
 const SECTIONS = [
 	{
@@ -26,6 +33,8 @@ const SECTIONS = [
 			["demo-interview.html", "Interview"],
 			["demo-lookbook.html", "Lookbook"],
 			["demo-feature-essay.html", "Feature Essay"],
+			["demo-motion-case-study.html", "Motion Case Study"],
+			["demo-x-thread.html", "X Thread"],
 		],
 	},
 	{
@@ -81,6 +90,22 @@ const SECTIONS = [
 			["demo-illustration-annotated-mechanism.html", "Annotated Mechanism"],
 			["demo-illustration-hatched-cross-section.html", "Hatched Cross Section"],
 			["demo-illustration-isometric-pipeline.html", "Isometric Pipeline"],
+			["demo-illustration-iso-exploded-stack.html", "Exploded Stack (iso kit)"],
+			["demo-anatomy-hero.html", "Anatomy Hero"],
+			["demo-figure-engines.html", "Figure Engines"],
+		],
+	},
+	{
+		id: "generated-illustrations",
+		title: "Generated illustrations (iso kit)",
+		items: [
+			["demo-illustration-gallery.html", "Illustration Gallery"],
+			["demo-illustration-iso-flatpack-shelf.html", "Flat-pack Shelf"],
+			["demo-illustration-iso-phone-anatomy.html", "Phone Anatomy"],
+			["demo-illustration-iso-cache-shelves.html", "Cache Tiers"],
+			["demo-illustration-iso-parcel-tray.html", "Parcel Tray"],
+			["demo-illustration-iso-turntable-anatomy.html", "Turntable Anatomy"],
+			["demo-illustration-iso-card-stack-ui.html", "Card Anatomy"],
 		],
 	},
 	{
@@ -117,6 +142,7 @@ const SECTIONS = [
 			["demo-editor-triage-board.html", "Ticket Triage Board"],
 			["demo-editor-feature-flags.html", "Feature Flag Editor"],
 			["demo-editor-prompt-tuner.html", "Prompt Tuner"],
+			["demo-review-loop.html", "Review Loop"],
 		],
 	},
 	{
@@ -226,10 +252,11 @@ function escapeHtml(value) {
 		.replace(/"/g, "&quot;");
 }
 
-function fileSizeMeta(fileName) {
+// sizeOf(fileName) → bytes | null lets the library refresh label demos with their refreshed sizes.
+function fileSizeMeta(fileName, sizeOf) {
 	const filePath = path.join(DEMOS_DIR, fileName);
-	if (!fs.existsSync(filePath)) return "missing";
-	const bytes = fs.statSync(filePath).size;
+	const bytes = sizeOf ? sizeOf(fileName) : (fs.existsSync(filePath) ? fs.statSync(filePath).size : null);
+	if (bytes == null) return "missing";
 	return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
@@ -261,12 +288,12 @@ function renderSidebar() {
 </aside>`;
 }
 
-function renderSections() {
+function renderSections(sizeOf) {
 	return SECTIONS.map((section, sectionIndex) => {
 		const rows = section.items.map(([fileName, label], itemIndex) => {
 			const number = `${sectionIndex + 1}.${itemIndex + 1}`;
 			const href = `assets/demos/${fileName}`;
-			const meta = fileSizeMeta(fileName);
+			const meta = fileSizeMeta(fileName, sizeOf);
 			return `<div class="module-index-post">
 					<span class="module-index-number module-index-post__number">${number}</span>
 					<div class="module-index-post__title"><a class="demo-row" href="${href}">${escapeHtml(label)}</a></div>
@@ -288,7 +315,7 @@ function renderSections() {
 	}).join("\n");
 }
 
-function buildIndexHtml() {
+export function buildIndexHtml({ sizeOf } = {}) {
 	return retrofitThemeRuntime(`<!doctype html>
 <html lang="en">
 <head>
@@ -451,7 +478,7 @@ main {
 	color: var(--muted-text);
 	font-size: 15px;
 	line-height: 1.5;
-	margin: 0 0 50px 52px;
+	margin: 0 0 50px;
 	max-width: 500px;
 }
 
@@ -575,7 +602,7 @@ main {
 				<div class="module-index__title" id="catalog-title">Index</div>
 				<p class="hero-intro">A compact catalog of document templates, technical diagrams, demos, and editing surfaces.</p>
 				<div class="demo-contents" aria-label="Catalog groups">
-					${renderSections()}
+					${renderSections(sizeOf)}
 				</div>
 			</div>
 		</main>
@@ -586,11 +613,21 @@ main {
 `);
 }
 
-function main() {
-	fs.writeFileSync(INDEX_FILE, buildIndexHtml(), "utf8");
-	console.log(`wrote ${path.relative(process.cwd(), INDEX_FILE)}`);
+// Alias CLI: writing index.html alone would drop its docnav and enhancement chrome.
+async function main() {
+	const { runLibraryRefreshCli } = await import("./runtime/pipeline.mjs");
+	process.exitCode = await runLibraryRefreshCli({ script: "build-index.mjs", argv: process.argv.slice(2) });
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
-	main();
+function isMainModule() {
+	try {
+		return Boolean(process.argv[1]) && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+	} catch {
+		return false;
+	}
+}
+
+// Not awaited: pipeline.mjs imports this module, so its evaluation must finish first.
+if (isMainModule()) {
+	main().catch(error => { console.error(error); process.exitCode = 1; });
 }

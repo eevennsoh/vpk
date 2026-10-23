@@ -413,7 +413,32 @@
 		return true;
 	}
 
+	// The element an event really started on. Events from a shadow root (the vpk-review UI)
+	// retarget to their host, so capture-phase document handlers read composedPath()[0].
+	function getComposedTarget(event) {
+		var path = event && typeof event.composedPath === "function" ? event.composedPath() : [];
+		var first = path && path.length ? path[0] : null;
+		if (first && first.nodeType === 1) {
+			return first;
+		}
+		return event ? event.target : null;
+	}
+
+	// True when the event passed through the vpk-review UI host ([data-vpk-review-ui]).
+	function isReviewUiEvent(event) {
+		var path = event && typeof event.composedPath === "function" ? event.composedPath() : [];
+		for (var index = 0; path && index < path.length; index++) {
+			var node = path[index];
+			if (node && node.nodeType === 1 && typeof node.hasAttribute === "function" && node.hasAttribute("data-vpk-review-ui")) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	var api = {
+		getComposedTarget: getComposedTarget,
+		isReviewUiEvent: isReviewUiEvent,
 		selectorIcons: SELECTOR_ICONS,
 		getRect: getRect,
 		summarizeTag: summarizeTag,

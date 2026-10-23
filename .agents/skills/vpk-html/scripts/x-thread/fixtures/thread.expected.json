@@ -1,0 +1,31 @@
+{
+	"title": "Ledger 3.0 launch",
+	"mode": "separators",
+	"posts": [
+		{
+			"text": "Ledger 3.0 is out today. Three things changed: imports are 5x faster, budgets sync across devices, and every report exports to CSV. A thread on what we measured #cafe #2026"
+		},
+		{
+			"text": "Imports first. A 40,000-row bank file now loads in 1.2 s instead of 6.1 s, and the preview shows the first 50 rows before you commit.",
+			"note": "Numbers from the release notes, section 2",
+			"media": [
+				{
+					"kind": "image",
+					"alt": "Import preview showing the first 50 rows of a bank file"
+				}
+			]
+		},
+		{
+			"text": "Budgets now sync through your own storage, not ours. Full method and raw timings: benchmarks https://example.com/ledger-3-benchmarks"
+		},
+		{
+			"text": "Literal text stays literal\n\nTemplate tokens like {{x}} stay as typed, and so do amounts like $1, $& and $'. Field names such as opening_balance and snake_case keys survive unchanged, and *stars* stay."
+		},
+		{
+			"text": "CSV export covers every report, with one schema and stable column names."
+		},
+		{
+			"text": "Upgrade from the app menu. Thanks to the 64 people who tested the betas. 🙏"
+		}
+	]
+}

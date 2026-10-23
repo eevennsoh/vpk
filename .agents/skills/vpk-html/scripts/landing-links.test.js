@@ -130,3 +130,15 @@ test("landing demo targets exist and validate", async () => {
 		);
 	}
 });
+
+test("every demo appears in exactly one catalog row", async () => {
+	const { ROOT } = await loadModules();
+	const rows = readLandingRows(path.join(ROOT, "index.html"));
+	const duplicates = rows.filter((href, index) => rows.indexOf(href) !== index);
+	assert.deepEqual(duplicates, [], "a demo is listed more than once");
+	const demos = fs.readdirSync(path.join(ROOT, "assets", "demos"))
+		.filter(name => name.endsWith(".html"))
+		.map(name => `assets/demos/${name}`)
+		.sort();
+	assert.deepEqual([...rows].sort(), demos, "the catalog lists every demo");
+});

@@ -15,6 +15,9 @@
  *   focal          ordinary SVG diagrams with too many darkest-ink focal elements
  *   motion-budget  long authored CSS durations that make artifacts feel slow
  *   caption-echo   figure captions that restate the nearby title
+ *   layout         sideways page overflow, clipped text or controls, and overlapping text
+ *                  at the gate viewport (review/layout-audit.mjs, the same audit as the review
+ *                  runtime's Layout tab)
  *
  * Thresholds: references/checks-thresholds.json
  * Semantics:  references/quality-gates.md
@@ -27,12 +30,14 @@
  *   node scripts/build.mjs --check-focal <file> [--strict]
  *   node scripts/build.mjs --check-motion-budget <file> [--strict]
  *   node scripts/build.mjs --check-caption-echo <file> [--strict]
+ *   node scripts/build.mjs --check-layout <file> [--strict]
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { measureLayout } from "./review/layout-audit.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -116,6 +121,42 @@ function measureOrphans(t) {
 			if (findings.length >= 12) break;
 		}
 	}
+	// Headings are too short for the 40-character floor, so they get their own test: a heading of 3+ words that wraps
+	// with its last word alone on a narrow last line ("one / clock") is widowed. `text-wrap: balance` fixes it.
+	for (const el of document.querySelectorAll("h1, h2, h3")) {
+		if (findings.length >= 12) break;
+		const text = (el.textContent || "").trim().replace(/\s+/g, " ");
+		if (text.split(" ").length < 3) continue;
+		const range = document.createRange();
+		range.selectNodeContents(el);
+		// Group the boxes into lines. Glyph boxes of a tight line-height overlap the next line, so a box joins a line
+		// when its vertical centre falls inside that line, not when the boxes merely touch.
+		const lines = [];
+		for (const r of [...range.getClientRects()].filter(box => box.width > 0).sort((a, b) => a.top - b.top)) {
+			const line = lines[lines.length - 1];
+			if (line && (r.top + r.bottom) / 2 < line.bottom) {
+				line.left = Math.min(line.left, r.left);
+				line.right = Math.max(line.right, r.right);
+				line.bottom = Math.max(line.bottom, r.bottom);
+			} else lines.push({ left: r.left, right: r.right, bottom: r.bottom });
+		}
+		if (lines.length < 2) continue;
+		const last = lines[lines.length - 1];
+		if (last.right - last.left >= t.minHeadingLastLineWidthRatio * Math.max(...lines.map(line => line.right - line.left))) continue;
+		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+		let node = null;
+		for (let next = walker.nextNode(); next; next = walker.nextNode()) if (/\S/.test(next.data)) node = next;
+		const end = node ? node.data.trimEnd().length : 0;
+		const start = node ? node.data.slice(0, end).search(/\S+$/) : -1;
+		if (start < 0) continue;
+		const word = document.createRange();
+		word.setStart(node, start);
+		word.setEnd(node, end);
+		const box = [...word.getClientRects()].filter(r => r.width > 0).pop();
+		if (box && box.left - last.left < 1) {
+			findings.push(`widowed heading ("${node.data.slice(start, end)}" alone on the last line) in: "${text.slice(0, 48)}${text.length > 48 ? "…" : ""}"`);
+		}
+	}
 	return findings;
 }
 
@@ -139,8 +180,15 @@ function measureFocal(t) {
 	return findings;
 }
 
-function measureMotionBudget(t) {
+// Runs in the page (runGates serialises it), so it must stay self-contained. Exported for the happy-dom test.
+export function measureMotionBudget(t) {
 	const findings = [];
+	// The shared house style (the shared CSS, the Algebrica v2 layer and the presentation/docnav CSS the pipeline
+	// appends) ships in every document, so its durations are not the author's. Skip it and report authored motion only.
+	const authored = css => css
+		.replace(/\/\* vpk-shared:start \*\/[\s\S]*?\/\* vpk-shared:end \*\//g, "")
+		.replace(/\/\* vpk-algebrica-v2:start \*\/[\s\S]*?\/\* vpk-algebrica-v2:end \*\//g, "")
+		.replace(/\/\* vpk presentation mode \*\/[\s\S]*$/, "");
 	const durationPattern = /\b(?:animation|transition)(?:-duration)?\s*:\s*([^;}]*)/gi;
 	const tokenPattern = /var\((--[^),\s]+)/g;
 	const numericPattern = /(\d*\.?\d+)\s*(ms|s)\b/gi;
@@ -177,18 +225,20 @@ function measureMotionBudget(t) {
 			}
 		}
 	};
-	document.querySelectorAll("style").forEach((style, index) => scan(style.textContent || "", `style block #${index + 1}`));
+	document.querySelectorAll("style").forEach((style, index) => scan(authored(style.textContent || ""), `style block #${index + 1}`));
 	document.querySelectorAll("[style]").forEach((el, index) => scan(el.getAttribute("style") || "", `inline style #${index + 1}`));
 	return findings;
 }
 
-function measureCaptionEcho(t) {
+// Runs in the page (runGates serialises it), so it must stay self-contained. Exported for the happy-dom test.
+export function measureCaptionEcho(t) {
 	const normalize = (value) => (value || "")
 		.toLowerCase()
 		.replace(/\b(?:fig(?:ure)?|diagram|chart|table|illustration|of|the|a|an|this|that|shows?|showing|illustrates?|illustrating)\b/g, " ")
 		.replace(/[^a-z0-9]+/g, " ")
 		.trim();
-	const words = (value) => normalize(value).split(/\s+/).filter(Boolean);
+	// Distinct content words: a repeated word counts once, and words of 2 characters or fewer ("on", "to") never count.
+	const words = (value) => [...new Set(normalize(value).split(/\s+/).filter(word => word.length > 2))];
 	const findHeading = (figure) => {
 		const scope = figure.closest("section, article, main") || document.body;
 		const headings = [...scope.querySelectorAll("h1,h2,h3,h4,h5,h6")].filter(heading => {
@@ -203,20 +253,23 @@ function measureCaptionEcho(t) {
 		if (!caption) continue;
 		const captionText = caption.textContent.trim();
 		if (captionText.length < t.minCaptionChars) continue;
+		// A heading is short, so sharing minSharedWords of its words is an echo. An SVG title or aria-label is a long
+		// sentence, so any caption naming its subject shares 3 words; there the shared words must also make up
+		// minCaptionCoverage of the caption's own content words.
 		const references = [
-			findHeading(figure)?.textContent || "",
-			figure.querySelector("svg title")?.textContent || "",
-			figure.querySelector("svg")?.getAttribute("aria-label") || "",
-		].filter(Boolean);
-		for (const reference of references) {
-			const captionWords = new Set(words(captionText));
-			const referenceWords = words(reference);
+			{ text: findHeading(figure)?.textContent || "", coverage: false },
+			{ text: figure.querySelector("svg title")?.textContent || "", coverage: true },
+			{ text: figure.querySelector("svg")?.getAttribute("aria-label") || "", coverage: true },
+		].filter(reference => reference.text);
+		const captionWords = new Set(words(captionText));
+		for (const { text, coverage } of references) {
+			const referenceWords = words(text);
 			if (referenceWords.length < t.minSharedWords) continue;
 			const shared = referenceWords.filter(word => captionWords.has(word));
-			if (shared.length >= Math.min(t.minSharedWords, referenceWords.length)) {
-				findings.push(`caption echoes "${reference.trim().slice(0, 60)}": "${captionText.slice(0, 72)}${captionText.length > 72 ? "..." : ""}"`);
-				break;
-			}
+			if (shared.length < t.minSharedWords) continue;
+			if (coverage && shared.length < t.minCaptionCoverage * captionWords.size) continue;
+			findings.push(`caption echoes "${text.trim().slice(0, 60)}": "${captionText.slice(0, 72)}${captionText.length > 72 ? "..." : ""}"`);
+			break;
 		}
 		if (findings.length >= t.maxFindings) break;
 	}
@@ -231,6 +284,7 @@ const GATES = {
 	focal: { label: "focal", key: "focal" },
 	"motion-budget": { label: "motion-budget", key: "motionBudget" },
 	"caption-echo": { label: "caption-echo", key: "captionEcho" },
+	layout: { label: "layout", key: "layout" },
 };
 const MEASURERS = {
 	density: measureDensity,
@@ -240,6 +294,7 @@ const MEASURERS = {
 	focal: measureFocal,
 	"motion-budget": measureMotionBudget,
 	"caption-echo": measureCaptionEcho,
+	layout: measureLayout,
 };
 
 /**
@@ -287,7 +342,7 @@ async function main() {
 	const flagGates = argv.filter(a => a.startsWith("--check-")).map(a => a.replace("--check-", ""));
 	const file = positional[0];
 	if (!file) {
-		console.error("Usage: gates.mjs <file.html> [--check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo] [--strict]");
+		console.error("Usage: gates.mjs <file.html> [--check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo|--check-layout] [--strict]");
 		process.exitCode = 1;
 		return;
 	}

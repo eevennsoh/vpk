@@ -82,9 +82,6 @@ tmux-*.log
 # Deploy configuration (contains Docker credentials)
 .deploy.local
 
-# cmux
-cmux.json
-
 # Dev process management
 .dev-pids
 .dev-backend-port
@@ -174,6 +171,9 @@ target/
 vendor/
 !components/visual/liquid-metal/vendor/
 !components/visual/liquid-metal/vendor/**
+# The vendored anatomy kit (MIT, pinned in VENDOR.json) is committed verbatim; vpk-html heroes and its audit run from it.
+!.agents/skills/vpk-html/scripts/anatomy/vendor/
+!.agents/skills/vpk-html/scripts/anatomy/vendor/**
 *.log
 coverage/
 .cache/

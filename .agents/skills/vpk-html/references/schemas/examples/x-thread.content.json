@@ -1,0 +1,65 @@
+{
+	"type": "x-thread",
+	"lang": "en",
+	"brief": {
+		"reader_job": {
+			"quick_read": "Read the six launch posts in order, see which are ready, and post them one at a time.",
+			"deep_audit": "Check each post's weighted count, the screenshot slot, the reply chain and the recorded post links before handing back."
+		},
+		"template": "x-thread.html",
+		"formats": ["html"],
+		"acceptance_checks": [
+			"build.mjs --check-placeholders",
+			"build.mjs --verify",
+			"check-html.mjs",
+			"build.mjs --check-content",
+			"x-thread.mjs check"
+		],
+		"audience": "The Larkspur team member who posts the launch thread from the company account",
+		"length_target": "Six posts, each at most 280 weighted characters before it is approved",
+		"figure_engine": "none",
+		"review": { "runtime": false },
+		"required_facts": [
+			"The six supplied posts stay verbatim and in order",
+			"Post 2 carries the sync panel screenshot",
+			"Post 4 is over 280 weighted characters and must be split before it can be approved"
+		],
+		"assumptions": [
+			"The posting account is @larkspurapp"
+		]
+	},
+	"content": {
+		"title": "Larkspur 3.0 launch thread",
+		"author": { "name": "Larkspur", "handle": "@larkspurapp" },
+		"posts": [
+			{
+				"id": "p1",
+				"text": "Larkspur 3.0 ships today 🚀 Three changes: sync that survives flaky networks, search that is 6x faster on large vaults, and a plugin API with typed events. A thread on what we built and how we measured it."
+			},
+			{
+				"id": "p2",
+				"text": "Offline sync first. Edits now queue on your device and replay in order when you reconnect, and conflicts land in a visible list instead of overwriting each other. The screenshot shows the sync panel after a 40-minute train ride with no signal.",
+				"media": [
+					{ "kind": "image", "alt": "Sync panel listing queued edits and one conflict after reconnecting" }
+				],
+				"note": "Attach the sync panel screenshot from the release build."
+			},
+			{
+				"id": "p3",
+				"text": "Search on a 50,000-note vault dropped from 2.4 s to 0.4 s at the 95th percentile, and opening a large vault no longer blocks typing. Benchmark scripts and raw numbers: https://example.com/larkspur-3-benchmarks"
+			},
+			{
+				"id": "p4",
+				"text": "Why search got faster: we replaced the full index rebuild on every launch with an append-only log that is compacted in the background, and moved tokenisation into a worker so the editor never waits on it. We also stopped re-reading unchanged attachments. Results are unchanged: the same 2,000 test queries return identical hits in 2.x and 3.0, and CI checks that on every commit."
+			},
+			{
+				"id": "p5",
+				"text": "The plugin API has 28 typed events, one versioned schema, and a sandbox that blocks network access unless you allow it. Existing plugins keep working until 4.0. 日本語のドキュメントも公開しました。"
+			},
+			{
+				"id": "p6",
+				"text": "Update from the app menu, or download 3.0 from the releases page. The changelog lists every change and one known issue with very long file paths on Windows. Thanks to the 64 people who tested the betas."
+			}
+		]
+	}
+}

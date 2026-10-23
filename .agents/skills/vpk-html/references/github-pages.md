@@ -25,6 +25,10 @@ node .agents/skills/vpk-html/scripts/build.mjs --github artifacts/vpk-html/<slug
 node .agents/skills/vpk-html/scripts/build.mjs --github artifacts/vpk-html/<slug>/<slug>.html --private
 ```
 
+`--github` now also runs the shared publish preflight (secrets, local paths,
+embedded review data, content IR, size); see `publish.md`. Pass
+`--include-review` or `--allow-local-paths` to relax those two rules.
+
 ## Publishing contract
 
 The helper publishes from the artifact folder itself as a nested standalone Git

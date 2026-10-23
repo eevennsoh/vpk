@@ -21,7 +21,7 @@ completely unaffected — without the attribute, the strict single-file rules ho
 - `landing-page.html` — hero + features + grayscale pill CTA + footer.
 - `docs-site.html` — sticky two-column nav + content.
 
-Both use the shared vpk-html identity (Geist + Geist Mono, warm paper/ink
+Both use the shared vpk-html identity (Geist + Geist Mono, ADS paper/ink
 tokens, grayscale ink chrome), inline their fonts, and are responsive at
 **1280 / 880 / 480** with `prefers-reduced-motion` honored. The page eyebrow
 uses the single breadcrumb-style uppercase role; CTA chrome uses the 34px

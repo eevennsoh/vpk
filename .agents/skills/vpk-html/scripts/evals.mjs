@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { collectPlaybookIssues, collectRoutingIssues, loadPlaybooks } from "./playbooks.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -190,12 +191,15 @@ export function checkEvaluationSystem({
 	const snapshotDocuments = Object.fromEntries(CATALOG_SNAPSHOT_DOCUMENTS.map(file => [file, documents[file]]));
 	issues.push(...validateCatalogSnapshot(snapshotDocuments, catalogCounts));
 	issues.push(...validateCatalogClaims(documents, catalogCounts));
+	issues.push(...collectRoutingIssues(skillRoot));
+	issues.push(...collectPlaybookIssues(skillRoot, { corpus }));
 
 	return {
 		catalogCounts,
 		evalCount: corpus?.evals?.length ?? 0,
 		issues,
 		ok: issues.length === 0,
+		playbookCount: loadPlaybooks(skillRoot).length,
 	};
 }
 

@@ -1,0 +1,209 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "cache-shelves",
+	"figId": "FIG_001",
+	"title": "Select a cache tier",
+	"label": "Isometric system figure of a three-tier read path on a board: processor, L1 cache, L2 cache and main memory as stacked plates joined by a memory bus, with a reserved slot for a disk. The L2 cache is highlighted.",
+	"caption": "A read walks outward: processor, then L1 cache, then L2 cache, then main memory, and stops at the first tier that holds the line; the L2 cache decides how often the walk reaches main memory.",
+	"camera": {
+		"preset": "true-iso",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "board",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				180,
+				100,
+				4
+			],
+			"label": "Board"
+		},
+		{
+			"id": "cpu",
+			"kind": "box",
+			"at": [
+				20,
+				30,
+				4
+			],
+			"size": [
+				36,
+				36,
+				8
+			],
+			"r": 2,
+			"label": "Processor"
+		},
+		{
+			"id": "l1",
+			"kind": "slab",
+			"at": [
+				66,
+				30,
+				4
+			],
+			"size": [
+				24,
+				36,
+				4
+			],
+			"label": "L1 cache"
+		},
+		{
+			"id": "l2",
+			"kind": "slab",
+			"at": [
+				96,
+				24,
+				4
+			],
+			"size": [
+				32,
+				48,
+				6
+			],
+			"label": "L2 cache"
+		},
+		{
+			"id": "ram",
+			"kind": "slab",
+			"at": [
+				138,
+				10,
+				4
+			],
+			"size": [
+				30,
+				78,
+				10
+			],
+			"marks": [
+				[
+					[
+						4,
+						10
+					],
+					[
+						26,
+						10
+					]
+				]
+			],
+			"label": "Main memory"
+		},
+		{
+			"id": "bus",
+			"kind": "plate",
+			"at": [
+				20,
+				12,
+				4
+			],
+			"size": [
+				110,
+				8,
+				1
+			],
+			"label": "Memory bus"
+		},
+		{
+			"id": "disk-slot",
+			"kind": "gap",
+			"at": [
+				20,
+				74,
+				4
+			],
+			"size": [
+				40,
+				14,
+				0
+			],
+			"label": "Disk slot"
+		}
+	],
+	"focal": "l2",
+	"labels": [
+		{
+			"text": "Processor",
+			"target": "cpu",
+			"side": "left"
+		},
+		{
+			"text": "L1 cache",
+			"target": "l1",
+			"side": "left"
+		},
+		{
+			"text": "L2 cache",
+			"target": "l2",
+			"side": "right",
+			"anchor": [
+				100,
+				26,
+				10
+			]
+		},
+		{
+			"text": "Main memory",
+			"target": "ram",
+			"side": "right"
+		},
+		{
+			"text": "Memory bus",
+			"target": "bus",
+			"side": "left"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				56,
+				48,
+				10
+			],
+			"to": [
+				96,
+				48,
+				10
+			],
+			"of": "l2"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"board"
+			],
+			[
+				"bus",
+				"disk-slot"
+			],
+			[
+				"cpu",
+				"l1",
+				"l2"
+			],
+			[
+				"ram"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "Read path"
+	},
+	"meta": {
+		"margin": "[ CACHE TIERS ]",
+		"corner": "VPK-HTML"
+	}
+}

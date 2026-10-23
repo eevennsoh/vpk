@@ -104,7 +104,7 @@ function landingPageBody() {
   <hr class="rule">
   <h2 id="features">What's in the box</h2>
   <div class="features">
-    <div class="feature"><h3>Tokenised theme</h3><p>Light and dark via the same warm paper, ink, and figure-tone tokens the documents use.</p></div>
+    <div class="feature"><h3>Tokenised theme</h3><p>Light and dark via the same white surface, ink, and figure-tone tokens the documents use.</p></div>
     <div class="feature"><h3>Embedded fonts</h3><p>Geist and Geist Mono are inlined as data URIs — no network fetch.</p></div>
     <div class="feature"><h3>Companion files</h3><p>sitemap, robots, llms.txt, and vercel.json emitted on export.</p></div>
   </div>

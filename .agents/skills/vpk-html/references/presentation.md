@@ -8,8 +8,9 @@ surface, and presenter surface separate.
 - A deck is any HTML file with at least two `section.slide` elements.
 - Print geometry stays fixed at the template's `@page` size (`slides.html` uses
   `280mm x 158mm`).
-- Screen mode is added by `scripts/presentation.mjs` and injected by
-  `scripts/retrofit.mjs`, `scripts/port-kami.mjs`, and the demo porters.
+- Screen mode is added by `scripts/presentation.mjs` and injected by the
+  runtime pipeline: `build.mjs --refresh-library` for the skill library and
+  `--inject-runtime` for artifacts.
 - Speaker notes live as the last child of a slide:
   `<aside class="speaker-notes" aria-hidden="true">...</aside>`.
 - `.speaker-notes` is hidden in the main window and in print. The presenter
@@ -58,6 +59,10 @@ it can navigate independently.
 Non-deck documents can opt into section navigation with
 `data-vpk-docnav="true"` on `<body>`. ArrowUp and ArrowDown jump between section
 headings; PageUp, PageDown, wheel, and space keep native browser behavior.
+
+App-like pages opt out with `data-vpk-docnav="off"`: retrofit, `--inject-runtime`
+and the runtime pipeline then add no section pager, arrow-key jumps or presenter
+key (the x-thread template uses it).
 
 Docnav speaker notes use the same source shape as decks:
 `<aside class="speaker-notes" aria-hidden="true">...</aside>` as the last child

@@ -432,7 +432,7 @@ function standaloneTmuxBinary() {
 		"/usr/local/bin/tmux",
 		"/usr/bin/tmux",
 	]) {
-		if (!candidate || candidate.includes(".cmuxterm")) continue;
+		if (!candidate) continue;
 		try {
 			fs.accessSync(candidate, fs.constants.X_OK);
 			return candidate;

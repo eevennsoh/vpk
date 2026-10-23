@@ -1,6 +1,6 @@
 # vpk-html Design System
 
-The visual system is the Algebrica editorial identity: warm paper, black-ink
+The visual system is the Algebrica editorial identity: white paper, dark ink
 typography, quiet rules, and figures that look like media-library line art
 rather than product UI chrome. It is built for technical briefs, strategy
 decks, reports, and code explanations that need to feel printed and precise.
@@ -17,22 +17,120 @@ SVG text must use Geist Mono. Do not put the body face inside figures.
 
 ## Tokens
 
-Tokens are authored once in `references/tokens.json` and mirrored in root
-`styles.css`. The renderer embeds the resolved theme block in every HTML
-document; individual templates do not own independent palettes.
+Every colour comes from the VPK app's design tokens (ADS, `@atlaskit/tokens`), on a pure white page in light. `scripts/ads-tokens.mjs` holds the role-to-ADS map below, resolves each token from the
+`atlassian-light` and `atlassian-dark` themes (the pair VPK's `theme-wrapper` passes to `setGlobalTheme`) and writes
+plain hex into `references/tokens.json`. `build.mjs --write-styles` mirrors that into root `styles.css`, and the
+renderer embeds the resolved block in every HTML document, so documents stay offline single files and never link
+`@atlaskit/tokens`. ADS tokens that carry alpha (`color.border`, `color.background.neutral`) are flattened over
+`elevation.surface`. Templates do not own independent palettes.
 
-The core groups are paper/background, ink, muted ink, rules, raised/sunken
-surfaces, grayscale `--accent` chrome, `--focal` figure emphasis, the sampled
-Algebrica `--ill-*` figure ramp, table header wash, pill/search/chip chrome,
-warm heatmap ramp, tinted code cards, and muted success/warning/danger status
-tokens. Values are plain offline colors, not `var(--ds-*)` wrappers.
+```sh
+node scripts/ads-tokens.mjs            # regenerate references/tokens.json from @atlaskit/tokens
+node scripts/build.mjs --write-styles  # mirror it into styles.css, then build.mjs --refresh-library
+node scripts/ads-tokens.mjs --check    # fail when tokens.json or iso/accent.mjs drifts from ADS
+```
+
+The figure tones are one stepped neutral scale (`gray.subtlest` rest, hovered, pressed). Iso tops are
+`elevation.surface.raised`, so tops stay the lightest face in both themes and the tone order holds: light tops
+`#ffffff` > near side `#f0f1f2` > far side `#dddee1`; dark tops take tone 2 `#3d3f43` > `#303134` > `#18191a`. Chrome
+stays grayscale (`--accent` is `color.background.neutral.bold`; links are ink, underlined on hover/focus). The one
+saturated hue in figures is the iso accent pair, ADS orange (`scripts/iso/accent.mjs`, also read by the 3D prototype).
+
+### ADS token map
+
+| Role | ADS token | Light | Dark |
+|---|---|---|---|
+| `--paper` | `elevation.surface` | `#ffffff` | `#1f1f21` |
+| `--paper-background` | `elevation.surface` | `#ffffff` | `#1f1f21` |
+| `--surface-raised` | `elevation.surface.raised` | `#ffffff` | `#242528` |
+| `--surface-overlay` | `elevation.surface.overlay` | `#ffffff` | `#2b2c2f` |
+| `--surface-sunken` | `elevation.surface.sunken` | `#f8f8f8` | `#18191a` |
+| `--headline` | `color.text` | `#292a2e` | `#cecfd2` |
+| `--body-text` | `color.text` | `#292a2e` | `#cecfd2` |
+| `--ink` | `color.text` | `#292a2e` | `#cecfd2` |
+| `--muted-text` | `color.text.subtle` | `#505258` | `#a9abaf` |
+| `--subtlest-text` | `color.text.subtlest` | `#6b6e76` | `#96999e` |
+| `--inverse-text` | `color.text.inverse` | `#ffffff` | `#1f1f21` |
+| `--accent` | `color.background.neutral.bold` | `#292a2e` | `#cecfd2` |
+| `--accent-soft` | `color.background.accent.gray.subtlest` | `#f0f1f2` | `#303134` |
+| `--accent-soft-strong` | `color.background.accent.gray.subtler` | `#dddee1` | `#4b4d51` |
+| `--focal` | `color.text.accent.gray.bolder` | `#1e1f21` | `#e2e3e4` |
+| `--ill-line` | `color.icon` | `#292a2e` | `#cecfd2` |
+| `--ill-tone1` | `color.background.accent.gray.subtlest` | `#f0f1f2` | `#303134` |
+| `--ill-tone2` | `color.background.accent.gray.subtlest.hovered` | `#dddee1` | `#3d3f43` |
+| `--ill-tone3` | `color.background.accent.gray.subtlest.pressed` | `#b7b9be` | `#4b4d51` |
+| `--ill-hatch` | `color.background.accent.gray.subtler.hovered` | `#b7b9be` | `#63666b` |
+| `--ill-ink50` | `color.icon.subtle` | `#505258` | `#a9abaf` |
+| `--ill-guide` | `color.background.accent.gray.subtler.hovered` | `#b7b9be` | `#63666b` |
+| `--ill-guide-dashed` | `color.background.accent.gray.subtler` | `#dddee1` | `#4b4d51` |
+| `--ill-frame` | `color.border.accent.gray.subtle` | `#b7b9be` | `#4b4d51` |
+| `--ill-fill` | `color.background.accent.gray.subtlest.hovered` | `#dddee1` | `#3d3f43` |
+| `--ill-fill-alt` | `color.background.accent.gray.subtlest` | `#f0f1f2` | `#303134` |
+| `--rule` | `color.border` | `#dddedd` | `#37373a` |
+| `--rule-strong` | `color.border.accent.gray.subtle` | `#b7b9be` | `#4b4d51` |
+| `--table-header` | `color.background.neutral` | `#f0f1f2` | `#2b2b2e` |
+| `--chip-border` | `color.border` | `#dddedd` | `#37373a` |
+| `--chip-text` | `color.text.subtlest` | `#6b6e76` | `#96999e` |
+| `--chip-selected` | `color.text.subtle` | `#505258` | `#a9abaf` |
+| `--pill-border` | `color.border` | `#dddedd` | `#37373a` |
+| `--pill-fill` | `color.background.neutral.bold` | `#292a2e` | `#cecfd2` |
+| `--pill-fill-hover` | `color.background.neutral.bold.hovered` | `#3b3d42` | `#bfc1c4` |
+| `--search-border` | `color.border.input` | `#8c8f97` | `#7e8188` |
+| `--search-focus` | `color.border.focused` | `#4688ec` | `#8fb8f6` |
+| `--meta-text` | `color.text.subtlest` | `#6b6e76` | `#96999e` |
+| `--review-meta` | `color.text.subtlest` | `#6b6e76` | `#96999e` |
+| `--heat0` | `color.background.accent.gray.subtlest` | `#f0f1f2` | `#303134` |
+| `--heat1` | `color.background.accent.gray.subtler` | `#dddee1` | `#4b4d51` |
+| `--heat2` | `color.background.accent.gray.subtle` | `#8c8f97` | `#63666b` |
+| `--heat3` | `color.background.accent.gray.bolder` | `#6b6e76` | `#96999e` |
+| `--heat4` | `color.text.subtle` | `#505258` | `#a9abaf` |
+| `--link` | `color.text` | `#292a2e` | `#cecfd2` |
+| `--link-pressed` | `color.text` | `#292a2e` | `#cecfd2` |
+| `--selected` | `color.background.selected` | `#e9f2fe` | `#1c2b42` |
+| `--accent-lime` | `color.background.accent.lime.subtler` | `#d3f1a7` | `#37471f` |
+| `--accent-purple` | `color.background.accent.purple.subtler` | `#eed7fc` | `#48245d` |
+| `--accent-saffron` | `color.background.accent.yellow.subtler` | `#f5e989` | `#533f04` |
+| `--accent-orange` | `color.background.accent.orange.subtler` | `#fce4a6` | `#693200` |
+| `--accent-navy` | `color.text.accent.blue.bolder` | `#123263` | `#cfe1fd` |
+| `--accent-green` | `color.background.accent.green.subtler` | `#baf3db` | `#164b35` |
+| `--accent-red` | `color.text.accent.red` | `#ae2e24` | `#fd9891` |
+| `--collection-software` | `color.background.accent.blue.subtler` | `#cfe1fd` | `#123263` |
+| `--collection-product` | `color.background.accent.teal.subtler` | `#c6edfb` | `#164555` |
+| `--collection-service` | `color.background.accent.magenta.subtler` | `#fdd0ec` | `#50253f` |
+| `--focus-ring` | `color.border.focused` | `#4688ec` | `#8fb8f6` |
+| `--code-surface` | `color.background.neutral` | `#f0f1f2` | `#2b2b2e` |
+| `--code-ink` | `color.text` | `#292a2e` | `#cecfd2` |
+| `--code-inverse` | `color.text.inverse` | `#ffffff` | `#1f1f21` |
+| `--syntax-keyword` | `color.text.code.keywords` | `#ae2e24` | `#fd9891` |
+| `--syntax-identifier` | `color.text` | `#292a2e` | `#cecfd2` |
+| `--syntax-string` | `color.text.code.strings` | `#4c6b1f` | `#b3df72` |
+| `--syntax-comment` | `color.text.code.comments` | `#505258` | `#a9abaf` |
+| `--syntax-literal` | `color.text.code.numbers` | `#7f5f01` | `#eed12b` |
+| `--math-highlight` | `color.background.accent.yellow.subtlest` | `#fef7c8` | `#332e1b` |
+| `--success` | `color.text.success` | `#4c6b1f` | `#b3df72` |
+| `--success-tint` | `color.background.success` | `#efffd6` | `#28311b` |
+| `--warning` | `color.text.warning` | `#9e4c00` | `#fbc828` |
+| `--warning-tint` | `color.background.warning` | `#fff5db` | `#3a2c1f` |
+| `--danger` | `color.text.danger` | `#ae2e24` | `#fd9891` |
+| `--danger-tint` | `color.background.danger` | `#ffeceb` | `#42221f` |
+| `--info` | `color.text.information` | `#1558bc` | `#8fb8f6` |
+| `--info-tint` | `color.background.information` | `#e9f2fe` | `#1c2b42` |
+| `--diff-add-text` | `color.text.accent.green` | `#216e4e` | `#7ee2b8` |
+| `--diff-del-text` | `color.text.accent.red` | `#ae2e24` | `#fd9891` |
+| `--diff-add-tint` | `color.background.accent.green.subtlest` | `#dcfff1` | `#1c3329` |
+| `--diff-del-tint` | `color.background.accent.red.subtlest` | `#ffeceb` | `#42221f` |
+| `--ill-accent` (iso block) | `color.background.accent.orange.bolder` | `#bd5b00` | `#fca700` |
+| `--ill-accent-ink` (iso block) | `color.text.inverse` | `#ffffff` | `#1f1f21` |
+
+Contrast (WCAG 2, checked by `tokens.test.js` and `iso/palette.test.mjs`): body text on paper 14.34:1 light, 10.56:1
+dark; muted text 7.81:1 / 7.15:1; subtlest text 5.10:1 / 5.76:1; SVG labels (`--ill-line`) 14.34:1 / 10.56:1; accent
+ink on the accent 4.51:1 light (white on `#bd5b00`), 8.36:1 dark (`#1f1f21` on `#fca700`).
 
 ## Dark Mode
 
 Every rendered document includes `color-scheme: light dark` and a full
-`[data-theme="dark"]` token block. Dark mode is warm paper-dark
-(`#171614`-biased), never cold gray. Figure colors must route through tokens so
-SVGs invert correctly under `data-theme="dark"`.
+`[data-theme="dark"]` token block with the ADS `atlassian-dark` values (surface `#1f1f21`, a neutral gray). Figure
+colors must route through tokens so SVGs invert correctly under `data-theme="dark"`.
 
 ## Operative Rules
 
@@ -84,10 +182,11 @@ header/meta, footer links, breadcrumbs, and docnav controls) never underline;
 they shift opacity or muted/ink color on hover. Focus-visible states keep the
 ink focus ring and do not rely on hover-only affordance. `--accent` resolves to
 ink, while `--accent-soft` and
-`--accent-soft-strong` are warm gray washes for pill controls, selection, and
+`--accent-soft-strong` are neutral gray washes for pill controls, selection, and
 key-insight emphasis.
 
-There is no hue accent in the built-in identity. Figure emphasis uses `--focal`
+There is no hue accent in the built-in identity (the iso kit's single figure accent,
+`--ill-accent`, is the one exception; see `references/illustrations.md` § 4). Figure emphasis uses `--focal`
 plus stroke-width 2-2.5. Series are distinguished by tone, dash, and markers,
 not hue. Heatmap and intensity charts use the official warm ramp
 `--heat0` -> `--heat4`.
@@ -116,7 +215,8 @@ micro-interaction motion should sit around 140ms unless a document-specific
 runtime has a reason to go slower. Print CSS neutralizes motion, and
 reduced-motion removes movement while preserving legibility.
 
-Chart motion uses the shared `.vpk-chart-*` utilities only: draw strokes with
+Chart motion prefers the shared `.vpk-chart-*` utilities; SMIL choreography
+follows `references/svg-style.md` § SMIL motion. With the utilities, draw strokes with
 `--vpk-draw-length`, grow bars/areas with transform-based scale, reveal points
 with `--vpk-stagger-index`, and reserve the focal pulse for a single focal
 value. Charts must render complete static SVGs when JavaScript is disabled and
