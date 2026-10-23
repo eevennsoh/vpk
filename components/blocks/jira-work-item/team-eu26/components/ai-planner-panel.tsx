@@ -137,7 +137,6 @@ function AiPlannerActionBar() {
 							<RovoComposerActionButton
 								canSubmit={canSubmit}
 								composerStatus="ready"
-								experimentalDarkCta
 								onStop={() => setRealtimeVoiceActive(false)}
 								onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
 								realtimeVoiceActive={realtimeVoiceActive}

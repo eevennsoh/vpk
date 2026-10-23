@@ -165,7 +165,7 @@ function JiraTeamEu26App(): React.ReactElement {
 		paused: agentSessionColumnInteracting,
 		source: WAC_AGENT_SESSION_SYNC_SOURCE,
 	});
-	const { reviewAgentSessions, newAgentSessionIds, stateChangeVersions, syncedAgentSessions } = wacContent ? wacSessionSync : defaultSessionSync;
+	const { settled: agentSessionsSettled, reviewAgentSessions, newAgentSessionIds, stateChangeVersions, syncedAgentSessions } = wacContent ? wacSessionSync : defaultSessionSync;
 	const handleTabChange = useCallback((tabLabel: string) => {
 		const tabView = tabs.find((tab) => tab.label === tabLabel)?.view;
 		if (!tabView) {
@@ -391,6 +391,7 @@ function JiraTeamEu26App(): React.ReactElement {
 					)}
 					data-jira-team-eu26-board-surface=""
 					data-jira-team-eu26-content={wacContent ? "wac" : "default"}
+					data-agent-session-sync={agentSessionsSettled ? "settled" : "pending"}
 				>
 					<ExperimentalJiraKanbanPage
 						addAgentLabel={JIRA_TEAM_EU26_ADD_AGENT_LABEL}

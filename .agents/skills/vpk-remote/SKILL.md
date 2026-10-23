@@ -1,6 +1,6 @@
 ---
 name: vpk-remote
-description: "Delegate all implementation from a token-limited Claude OAuth session to headless workers billed through the local Proximity AI Gateway (localhost:29576) — GPT-5.6 Sol/Terra/Luna via the Codex CLI or Claude Opus 5/Sonnet 5 via headless claude -p. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. The main session only plans, dispatches, verifies, and reports. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context."
+description: "Delegate all implementation from a token-limited Claude OAuth session to headless workers billed through the local Proximity AI Gateway (localhost:29576) — GPT (Sol/Terra/Luna) via the Codex CLI or Claude (Opus/Sonnet) via headless claude -p — or hand the whole conversation off to API billing on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. The main session only plans, dispatches, verifies, and reports. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context."
 validation_command: node scripts/validate-skills.js --target .agents/skills/vpk-remote
 ---
 
@@ -23,35 +23,74 @@ this skill exists.
 the OAuth session, which is the one thing this skill exists to prevent, and
 no model or brief makes that safe. Every worker is an external CLI process.
 
-## Invocation and dispatch grammar
+## Invocation: plain English first
 
-| Invocation | Behavior |
-| --- | --- |
-| `/vpk-remote <task>` | Delegate to GPT-5.6 Sol at high effort (default) |
-| `/vpk-remote --model <m> --effort <e> <task>` | Delegate to the named lane/effort |
-| `/vpk-remote --advisor <question>` | Consult-only run → the family that did *not* do the work |
-| `/vpk-remote --no-advisor <task>` | Skip the consults this task would otherwise get |
-| `/vpk-remote --single <task>` | One worker even where fan-out would apply |
-| `/vpk-remote --no-worktree <task>` | Write in the current checkout instead of an isolated worktree |
-| `/vpk-remote` (bare) | Explain the grammar and ask for a task |
+`/vpk-remote` is the one command to remember. Every message typed into an
+OAuth session costs OAuth credit, including this one, so the skill's job is to
+get the user off OAuth with as few turns as possible. The starting session can
+also already be on API; a handoff from there switches model or effort without
+touching OAuth. Pick one of two modes:
 
-Natural-language activations ("implement this remotely", "route it through
-proximity") use the defaults unless the user names a model in prose.
+| Mode | The user wants to… | Signals | OAuth cost |
+| --- | --- | --- | --- |
+| **Handoff** *(default)* | keep working, billed to API | anything not clearly a worker request: a task, "switch / move / continue on API", "out of credits" | this one turn, then none |
+| **Worker** | stay in this chat and push one self-contained task out | "send this to a worker", "in the background", "have sol review…", "second opinion", "fan out" | a few turns per task (brief + report) |
 
-**Flag parsing.** Every option is an explicit `--flag`; **no bare word is
-ever interpreted as a model, effort, or mode.** Flags come first, and
-everything after the last flag (and its value) is the task text — so
-`/vpk-remote fix the high contrast toggle` sends that entire sentence as the
-task, with no risk that `high` is mistaken for an effort setting. Use `--`
-alone to end flag parsing when the task itself starts with a dash.
+The model does not decide the mode: both modes run any Claude or GPT model,
+same vendor or not. Ask instead whether the user wants to keep conversing
+(handoff) or only wants a result back (worker). A handoff to the *same* model
+is the common credit-saving case.
+
+When handoff carries a self-contained task ("/vpk-remote fix the sidebar
+flicker"), fork the session and run the task **in the background** on API —
+no window opens, the run verifies its own work, and a notification shows its
+one-line result. When the user
+wants to keep chatting, open the fork in a new terminal window instead. Follow
+[references/session-handoff.md](references/session-handoff.md). The rest of
+this file describes worker mode.
+
+**Extract model and effort from prose.** Short names resolve through the
+`ALIAS_*` entries in `~/.config/litellm-proximity/defaults.env` (`opus`,
+`sonnet`, `haiku`, `sol`, `terra`, `luna`, …), and a full model ID is
+accepted as-is. Effort words map directly: "medium", "high", "xhigh" /
+"extra high", "max" / "maximum" / "think as hard as you can". Unstated model
+or effort takes the defaults in that same file — read it each run, never
+hardcode values here.
+
+Only treat a word as a model or effort when the sentence uses it **as a
+setting** ("on sol", "with opus", "at high effort", "use terra"). In "fix
+the high contrast toggle" or "the luna theme is broken", *high* and *luna*
+are task text. When a reading is genuinely ambiguous, ask one short
+question rather than guess.
+
+Examples:
+
+```text
+/vpk-remote fix the sidebar flicker                               → handoff in the background, defaults
+/vpk-remote I'm out of credits, move this chat to sol            → handoff, sol
+/vpk-remote continue my last session on opus at max             → handoff, --continue, opus, max
+/vpk-remote send a worker to rename useFoo to useBar             → worker, defaults
+/vpk-remote have terra review this diff in the background       → worker, terra
+/vpk-remote second opinion from opus on this plan               → advisor consult (worker)
+```
+
+Always echo the parsed plan in one line before acting (mode, model, effort),
+so a misread costs one glance instead of a wrong run.
+
+### Explicit flags (optional)
+
+Flags still work and override prose. They are never required.
 
 | Flag | Values | Default |
 | --- | --- | --- |
-| `--model` | `sol` `terra` `luna` `opus` `sonnet` | `sol` |
-| `--effort` | `medium` `high` `xhigh` `max` | `high` |
+| `--model` | any alias or full ID | `defaults.env` |
+| `--effort` | `medium` `high` `xhigh` `max` | `defaults.env` |
+| `--worker` | *(no value)* — force worker mode | off (handoff is the default) |
 | `--advisor` / `--no-advisor` | *(no value)* | **on** |
 | `--fanout` / `--single` | *(no value)* | **auto** (see *Worker shapes*) |
 | `--worktree` / `--no-worktree` | *(no value)* | **on for briefs that write** (see *Worktree isolation*) |
+
+`/vpk-remote` with nothing after it hands the session off with no first prompt.
 
 All three behavioral defaults are **on**: the planner isolates writing work in
 a worktree, consults an advisor, and fans out read-only work without being
@@ -59,26 +98,16 @@ asked. `--no-worktree`, `--no-advisor`, and `--single` are the escape hatches,
 and `--worktree` / `--advisor` / `--fanout` force the behavior in cases the
 planner would otherwise judge too small for it.
 
-| `--model` | Lane | Model ID |
-| --- | --- | --- |
-| `sol` *(default)* | GPT (codex) | `gpt-5.6-sol` |
-| `terra` | GPT (codex) | `gpt-5.6-terra` |
-| `luna` | GPT (codex) | `gpt-5.6-luna` |
-| `opus` | Claude (`claude -p`) | `claude-opus-5[1m]` |
-| `sonnet` | Claude (`claude -p`) | `claude-sonnet-5` |
+**Lane follows the model family**: a `claude-*` model runs on the Claude
+lane (`claude -p`), a `gpt-*` model on the GPT lane (`codex exec`). An
+unknown model name or effort value is an error to report, never a near-match
+guess.
 
-An unrecognized flag or flag value is an **error**: report it and ask, never
-guess a near match and never silently fold it into the task text. A typo'd
-`--effort xhigh` that quietly becomes part of the brief is exactly the
-failure this syntax exists to prevent.
-
-Every lane defaults to `--effort high`; `medium` `high` `xhigh` `max` are all
-valid on both lanes (`max` verified through Proximity on 2026-08-03 with
-Luna and Sonnet; earlier values probed working on 2026-07-31). `medium` is the
-floor — the CLIs also accept `low`, but
-this skill does not offer it: the planner's credit is the scarce resource,
-not the worker's, and a worker that under-thinks buys a correction round that
-costs a brief-write and a report-read on the expensive side of the boundary.
+`medium` `high` `xhigh` `max` are valid on both lanes. `low` exists in the
+CLIs but workers do not use it: the planner's credit is the scarce resource,
+and a worker that under-thinks buys a correction round on the expensive side
+of the boundary. Handoff sessions may use `low`, since the user is steering
+them directly.
 
 ### Choosing effort
 
@@ -90,8 +119,8 @@ doesn't, effort is the sole quality lever.
 | --- | --- | --- |
 | Advisor consults, and genuine design ambiguity — unruled-out failure modes, a call the brief cannot settle | `xhigh` | Nothing verifies judgment. No proof command backstops a wrong call, so thinking is the only lever. |
 | Explicit request for the deepest reasoning, or an exceptional judgment call where `xhigh` proved insufficient | `max` | This is opt-in because it trades the most worker time and tokens for one more reasoning tier. |
-| Implementation against a clear spec — the common case | `high` | The proof command backstops mistakes, so effort and verification share the load. |
-| Mechanical sweeps — renames, mass migrations, formatting, "apply this same edit to these 9 files" | `medium` | The brief fully determines the answer. Higher effort here buys scope creep, not correctness: a maximally-thinking worker starts finding adjacent improvements nobody asked for. |
+| Implementation against a clear spec — the common case | the default (`medium` unless `defaults.env` says otherwise) | The proof command backstops mistakes, so effort and verification share the load. Raise to `high` for multi-file or subtle changes. |
+| Mechanical sweeps — renames, mass migrations, formatting, "apply this same edit to these 9 files" | `medium` (never above) | The brief fully determines the answer. Higher effort here buys scope creep, not correctness: a maximally-thinking worker starts finding adjacent improvements nobody asked for. |
 
 Before reaching for the effort knob on a task that failed once, re-read the
 brief first. Round-trips come far more often from an underspecified brief
@@ -101,10 +130,8 @@ produces a confident wrong answer sooner.
 Examples:
 
 ```text
-/vpk-remote --effort medium rename useFoo to useBar across components/
+/vpk-remote rename useFoo to useBar across components/, medium effort is fine
 /vpk-remote --model terra --effort xhigh <task>
-/vpk-remote --model luna --effort max <task>
-/vpk-remote --advisor --model sol is this reducer the right owner for X?
 ```
 
 ## Hard preflight (blocking)
@@ -246,6 +273,9 @@ dirty tree it will silently fold into its diff.
 4. **Dispatch** via background Bash using the lane's canonical command:
    [references/gpt-executor.md](references/gpt-executor.md) or
    [references/claude-executor.md](references/claude-executor.md).
+   Write that command to `run.sh` in the worker directory and launch it
+   through the surface wrapper (see *Terminal surfaces*) rather than running
+   it bare, so the user can watch the worker in herdr.
 5. **Read only the report file.** Never stream or parse raw worker output —
    raw material stays in worker contexts; that is where the credit and
    context-window savings come from. An absent or empty report does **not**
@@ -311,9 +341,9 @@ audit its own reasoning re-runs the same priors.
 
 | Work under review | Advisor default |
 | --- | --- |
-| GPT-lane worker output (`sol` / `terra` / `luna`) | `claude-opus-5[1m]` at xhigh |
-| Claude-lane worker output (`opus` / `sonnet`) | `gpt-5.6-sol` at xhigh |
-| A plan this planner wrote, or nothing dispatched yet | `gpt-5.6-sol` at xhigh |
+| GPT-lane worker output (`sol` / `terra` / `luna`) | `opus` alias at xhigh |
+| Claude-lane worker output (`opus` / `sonnet`) | `sol` alias at xhigh |
+| A plan this planner wrote, or nothing dispatched yet | `sol` alias at xhigh |
 
 The third row follows from the second: **this planner is Claude**, so
 anything it authored is Claude-family work and a Claude advisor would review
@@ -362,6 +392,36 @@ concurrently dispatched tasks; see *Worktree isolation*.
 
 Full shape, sizing, and completion rules:
 [references/dispatch-patterns.md](references/dispatch-patterns.md).
+
+## Terminal surfaces
+
+When the planner runs inside herdr (`HERDR_ENV=1`), every worker, advisor, and
+handoff gets a visible, labelled surface instead of an invisible background
+process. The planner launches the wrapper with background Bash exactly as
+before; the wrapper places the run, waits, and exits with the worker's status,
+so the harness still notifies on completion. Outside herdr the same command
+runs the worker inline, so there is one recipe for both.
+
+```bash
+node scripts/agent-surface.js run \
+  --script "$worker_root/run.sh" --label "<task-slug>-worker-1" \
+  [--worktree "$tree"] [--group "<task-slug>"]
+```
+
+| Run | Flags | herdr surface |
+| --- | --- | --- |
+| Writing worker in its task worktree | `--worktree "$tree"` | the worktree's own **workspace** |
+| Fan-out (2–5 read-only workers) | `--group "<task-slug>"` on every worker | one **tab**, one **pane** per worker |
+| Single read-only worker or advisor | *(neither)* | a new **tab** in the planner's workspace |
+| Handoff `--new-window` | handled by `ai-api` | a new **tab** running the forked session |
+
+The `run.sh` keeps the lane's redirects: the report still lands in
+`report.md`, and the pane shows `stderr` and progress for the user. The
+planner reads only the report, as before. Each pane reports its state to
+herdr, so the sidebar shows the worker as `working`, then `done` (with `exit N`
+on failure), and `herdr agent wait <label-slug>` can block on it. Panes are left
+open after exit so the user can scroll them; close them only when the user
+asks. Conventions, status reporting, and cleanup: `.agents/docs/herdr.md`.
 
 ## Artifacts
 

@@ -463,40 +463,6 @@ test("shared composer keeps dictation beside typed submit and live voice empty-o
 	assert.match(source, /\{shouldShowRealtimeVoiceStart \? \([\s\S]*aria-label="Start live voice"[\s\S]*\) : null\}/u);
 });
 
-test("shared composer live chat CTA defaults to brand blue with opt-in dark styling", () => {
-	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
-	const neutralBoldClass = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
-	const brandClass = "bg-primary text-primary-foreground [&_svg]:text-primary-foreground hover:bg-primary-hovered active:bg-primary-pressed";
-	const submitIndex = source.indexOf('<PromptInputSubmit aria-label="Submit"');
-	const dictationStartIndex = PROMPT_INPUT_DICTATION_SOURCE.indexOf('aria-label="Start dictation"');
-	const voiceStartIndex = source.indexOf('aria-label="Start live voice"');
-
-	assert.match(source, /experimentalDarkCta\?: boolean/u);
-	assert.match(source, /experimentalDarkCta = false/u);
-	assert.ok(source.includes(`const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "${neutralBoldClass}"`));
-	assert.ok(source.includes(`const BRAND_CTA_CLASS_NAME = "${brandClass}"`));
-	// Live chat CTA defaults to the brand-blue primary style; dark styling is opt-in via experimentalDarkCta.
-	assert.match(source, /const liveVoiceCtaClassName = experimentalDarkCtaClassName \?\? BRAND_CTA_CLASS_NAME;/u);
-	assert.doesNotMatch(source, /LIVE_VOICE_CTA_CLASS_NAME/u);
-	assert.doesNotMatch(source, /<TooltipProvider delay=\{0\}>[\s\S]*aria-label="Start live voice"/u);
-	assert.match(source, /<PromptInputButton[\s\S]*aria-label="Start live voice"[\s\S]*tooltip=\{\{ content: "Live chat", delay: 0 \}\}/u);
-	assert.notEqual(submitIndex, -1);
-	assert.notEqual(dictationStartIndex, -1);
-	assert.notEqual(voiceStartIndex, -1);
-	// Submit dark styling stays opt-in (brand blue by default via the button's default variant).
-	assert.match(source.slice(submitIndex, source.indexOf("</PromptInputSubmit>", submitIndex)), /experimentalDarkCtaClassName/u);
-	const dictationButtonStartIndex = PROMPT_INPUT_DICTATION_SOURCE.lastIndexOf("<PromptInputButton", dictationStartIndex);
-	const dictationButtonSource = PROMPT_INPUT_DICTATION_SOURCE.slice(
-		dictationButtonStartIndex,
-		PROMPT_INPUT_DICTATION_SOURCE.indexOf("</PromptInputButton>", dictationStartIndex),
-	);
-	assert.match(dictationButtonSource, /variant="ghost"/u);
-	assert.doesNotMatch(dictationButtonSource, /experimentalDarkCtaClassName/u);
-	const voiceStartButtonStartIndex = source.lastIndexOf("<PromptInputButton", voiceStartIndex);
-	const voiceStartButtonSource = source.slice(voiceStartButtonStartIndex, source.indexOf("</PromptInputButton>", voiceStartIndex));
-	assert.doesNotMatch(voiceStartButtonSource, /shadow-sm/u);
-	assert.match(voiceStartButtonSource, /liveVoiceCtaClassName/u);
-});
 
 test("Rovo composers default reasoning to Auto", () => {
 	const sharedMenuData = readProjectFile("components/projects/shared/components/chat-configuration/customize-menu-data.tsx");
@@ -529,7 +495,6 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
 	const rovoComposer = readProjectFile("components/projects/shared/components/composer-card-body.tsx");
-	const rovoComposerProps = readProjectFile("components/projects/shared/components/rovo-app-composer.tsx");
 	const rovoShell = readProjectFile("components/projects/rovo/components/rovo-app-shell.tsx");
 
 	for (const source of [sidebarComposer, rovoComposer]) {
@@ -539,14 +504,8 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 		assert.match(source, /onStartDictation=\{onStartDictation\}/u);
 		assert.match(source, /onStopDictation=\{onStopDictation\}/u);
 		assert.match(source, /onToggleRealtimeVoice=\{onToggleRealtimeVoice\}/u);
-		assert.match(source, /experimentalDarkCta=\{experimentalDarkCta\}/u);
 		assert.doesNotMatch(source, /<PromptInputSendControls/u);
 	}
-
-	// experimentalDarkCta is opt-in (defaults false) — the sidebar owns its own
-	// default; the Rovo app default lives on the shared composer's prop surface.
-	assert.match(sidebarComposer, /experimentalDarkCta = false/u);
-	assert.match(rovoComposerProps, /experimentalDarkCta = false/u);
 
 	assert.match(sidebarPanel, /useRealtimeVoice/u);
 	assert.doesNotMatch(sidebarPanel, /useLiveVoice/u);
@@ -556,8 +515,6 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 	assert.doesNotMatch(sidebarPanel, /setPrompt\(transcriptText\)/u);
 	assert.doesNotMatch(sidebarPanel, /transcriptToPreserve/u);
 	assert.match(sidebarPanel, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
-	assert.match(sidebarPanel, /experimentalDarkCta/u);
-	assert.match(rovoShell, /experimentalDarkCta/u);
 	assert.doesNotMatch(rovoShell, /setVoiceTranscript\(text\)/u);
 	assert.doesNotMatch(rovoShell, /setVoiceTranscript\(transcript\)/u);
 	assert.doesNotMatch(rovoShell, /transcriptToPreserve/u);

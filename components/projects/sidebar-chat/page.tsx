@@ -1911,7 +1911,6 @@ export default function ChatPanel({ onClose, agentCreator,
 						queuedPrompts={queuedPrompts}
 						addMenuItemsBefore={addMenuItemsBefore}
 						composerToolsAfterAdd={composerToolsAfterAdd}
-						experimentalDarkCta
 						containerClassName={composerContainerClassName}
 						hideAiCursor={hideAiCursor}
 						hideAiDisclaimer={hideAiDisclaimer}

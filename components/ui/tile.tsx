@@ -120,7 +120,7 @@ function Tile({
 					? cn("p-0.5", SNUG_CHILD_CLASSES)
 					: isInset
 						? cn("p-0.5", INSET_CHILD_SIZES[size ?? "medium"])
-						: "[&_span]:flex [&_span]:size-full [&_span]:items-center [&_span]:justify-center [&_img]:size-full [&_svg]:size-full",
+						: "[&_span]:flex [&_span]:size-full [&_span]:items-center [&_span]:justify-center [&_img]:size-full [&_svg]:size-full!",
 				hasBorder && "border border-border",
 				className
 			)}

@@ -56,7 +56,6 @@ export interface RovoAppComposerProps {
 	dictationState?: RovoComposerDictationState;
 	dictationTranscriptPreview?: string | null;
 	errorMessage?: string | null;
-	experimentalDarkCta?: boolean;
 	/** Card chrome: hide only the reasoning/model selector while keeping source controls. */
 	hideReasoningSelector?: boolean;
 	hideSourceAndModelControls?: boolean;
@@ -114,7 +113,6 @@ function RovoAppComposerInner({
 	dictationState = "idle",
 	dictationTranscriptPreview = null,
 	errorMessage,
-	experimentalDarkCta = false,
 	hideReasoningSelector = false,
 	hideSourceAndModelControls = false,
 	fillWidth = false,
@@ -279,7 +277,6 @@ function RovoAppComposerInner({
 				{chrome === "floating" ? (
 					<ComposerFloatingBody
 						{...bodyBaseProps}
-						experimentalDarkCta
 						fillWidth={fillWidth}
 						onBrowseTemplates={onBrowseTemplates}
 						onStartFromScratch={onStartFromScratch}
@@ -289,7 +286,6 @@ function RovoAppComposerInner({
 						{...bodyBaseProps}
 						artifactTitle={artifactTitle}
 						compact={compact}
-						experimentalDarkCta={experimentalDarkCta}
 						galleryExpanded={galleryExpanded}
 						hideReasoningSelector={hideReasoningSelector}
 						hideSourceAndModelControls={hideSourceAndModelControls}

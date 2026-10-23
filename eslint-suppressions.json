@@ -1539,7 +1539,7 @@
   },
   "components/blocks/pull-request-fix/pull-request-fix.test.js": {
     "no-restricted-syntax": {
-      "count": 111
+      "count": 110
     }
   },
   "components/blocks/pull-request-header/pull-request-header.test.js": {
@@ -1554,7 +1554,7 @@
   },
   "components/blocks/pull-request-review/pull-request-review.test.js": {
     "no-restricted-syntax": {
-      "count": 80
+      "count": 79
     }
   },
   "components/blocks/pull-request/pull-request.test.js": {
@@ -2645,7 +2645,7 @@
   },
   "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
     "no-restricted-syntax": {
-      "count": 855
+      "count": 854
     }
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.test.js": {

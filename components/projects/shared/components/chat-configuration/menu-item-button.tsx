@@ -30,7 +30,7 @@ export function MenuItemButton({
 			{...props}
 		>
 			{elemBefore ? (
-				<span className="flex size-8 items-center justify-center text-text-subtle">{elemBefore}</span>
+				<span aria-hidden className="flex shrink-0 items-center justify-center text-icon-subtle">{elemBefore}</span>
 			) : null}
 			<span className="flex min-w-0 flex-1 flex-col">
 				<span className="truncate">{children}</span>

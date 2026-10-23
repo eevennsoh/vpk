@@ -322,3 +322,51 @@ test("TWG Appstack is wired into the ui-custom catalog", () => {
 	assert.match(DEMO_SOURCE, /setReplayKey\(\(currentKey\) => currentKey \+ 1\)/u);
 	assert.match(DEMO_SOURCE, /<div key=\{replayKey\}/u);
 });
+
+test("prompt preferences reuse the TWG stack while retaining the Customize popover trigger", async () => {
+	const view = await renderComponent({
+		mocks: { "@/components/utils/theme-wrapper": 'export const useTheme = () => ({ actualTheme: "light" });' },
+		source: `
+import { PromptInputPreferencesButton } from "@/components/ui-custom/prompt-input";
+import { Popover, PopoverTrigger, PopoverContent, PopoverTitle } from "@/components/ui/popover";
+export default function PreferencesHarness({ overflowCount = 5 }) {
+	return <Popover>
+		<PopoverTrigger render={<PromptInputPreferencesButton overflowCount={overflowCount} />} />
+		<PopoverContent><PopoverTitle>Customize sources</PopoverTitle></PopoverContent>
+	</Popover>;
+}`,
+	});
+	const trigger = view.getByRole("button", { name: "Customize" });
+	assert.equal(trigger.querySelector('[data-appstack-overflow="5"]') !== null, true);
+	assert.equal(trigger.querySelector('[aria-hidden]') !== null, true);
+	assert.equal(trigger.textContent.includes("+5"), true);
+	assert.deepEqual(view.tabOrder(), ["Customize"]);
+	await view.click(trigger);
+	assert.equal(view.getByRole("heading", { name: "Customize sources" }).textContent, "Customize sources");
+	assert.equal(trigger.getAttribute("aria-expanded"), "true");
+	await view.rerender({ overflowCount: 13 });
+	assert.equal(trigger.querySelector('[data-appstack-overflow="13"]') !== null, true);
+	assert.equal(trigger.getAttribute("aria-expanded"), "true");
+});
+
+test("app stack leaves first-party logos unoutlined and third-party logos bounded", async () => {
+	const view = await renderComponent({
+		entry: "components/ui-custom/twg-appstack.tsx",
+		exportName: "TwgToolSourceIcon",
+		mocks: { "@/components/utils/theme-wrapper": 'export const useTheme = () => ({ actualTheme: "light" });' },
+		props: { source: { id: "teams", label: "Teams", provider: "teams" } },
+	});
+	for (const provider of ["teams", "jira", "confluence", "twg"]) {
+		await view.rerender({ source: { id: provider, label: provider, provider } });
+		const hasOutline = [...view.container.querySelectorAll("[class]")].some((element) => element.className.includes?.("outline:1px_solid"));
+		assert.equal(hasOutline, false, `${provider} must use the first-party logo without a forced tile outline`);
+	}
+	for (const source of [
+		{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
+		{ id: "microsoft-teams", label: "Microsoft Teams", provider: "twg", name: "microsoft-teams" },
+	]) {
+		await view.rerender({ source });
+		assert.equal(view.getAllByRole("img", { name: source.label }).length > 0, true);
+		assert.equal(view.container.innerHTML.includes("border-0!"), false, "third-party marks keep their upstream tile chrome");
+	}
+});

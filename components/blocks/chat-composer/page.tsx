@@ -161,7 +161,7 @@ export default function ChatComposer({
 										render={<PromptInputPreferencesButton aria-label="Customize" />}
 									/>
 									{customizeMenuProps ? (
-										<PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-2">
+										<PopoverContent side="top" align="start" sideOffset={8} className={customizeMenuProps.showReasoning === true ? "w-auto p-2" : "w-auto p-1"}>
 											<PopoverTitle className="sr-only">
 												{customizeMenuProps.showReasoning === true ? "Customize response" : "Customize sources"}
 											</PopoverTitle>

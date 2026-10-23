@@ -316,7 +316,6 @@ export function EntityCardAgentProfile({
 								canSubmit={canSubmit}
 								clickyActive={clickyActive}
 								composerStatus="ready"
-								experimentalDarkCta
 								onStop={handleStop}
 								onToggleClicky={handleToggleClicky}
 								onToggleRealtimeVoice={handleToggleRealtimeVoice}

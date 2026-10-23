@@ -46,7 +46,6 @@ const FLOATING_COMPOSER_MAX_WIDTH_CLASS = "max-w-[600px]";
 const FLOATING_COMPOSER_SESSION_MAX_WIDTH_CLASS = "max-w-[800px]";
 
 export interface ComposerFloatingBodyProps extends ComposerBodyBaseProps {
-	experimentalDarkCta: boolean;
 	fillWidth: boolean;
 	onBrowseTemplates?: () => void;
 	onStartFromScratch?: () => void;
@@ -66,7 +65,6 @@ export function ComposerFloatingBody({
 	directoryAutocompleteLimit,
 	dictationState,
 	dictationTranscriptPreview,
-	experimentalDarkCta,
 	fillWidth,
 	focusRequestKey,
 	micStream,
@@ -142,7 +140,6 @@ export function ComposerFloatingBody({
 						composerStatus={composerStatus}
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
-						experimentalDarkCta={experimentalDarkCta}
 						clickyActive={clickyActive}
 						micStream={micStream}
 						onStop={onStop}

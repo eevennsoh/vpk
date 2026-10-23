@@ -4,40 +4,36 @@ Use this reference after the review gate is clear. It covers the wait/merge
 mechanics, batch behavior, conflicts and failed checks, and synchronization of
 the persistent `main` checkout.
 
-## Queue and monitor auto-merge
+## Wait for checks, then merge
 
-For the full ship sequence, queue merge without bypass flags:
-
-```bash
-gh pr merge <number> --merge --auto --delete-branch
-```
-
-`--auto` lets GitHub merge when required `CI / PR checks` pass. If all gates are
-already clear, GitHub may merge immediately. `--delete-branch` deletes the
-remote source branch; local worktrees and branches remain cleanup work.
-
-Poll after roughly 10 seconds, then every 30 seconds, for at most 15 minutes:
+Do not use `gh pr merge --auto`. Without enforced branch protection it merges
+at once, before CI finishes. Wait on the gate first:
 
 ```bash
-gh pr view <number> \
-  --json state,mergedAt,mergeCommit,mergeStateStatus,statusCheckRollup,url
+node .agents/skills/vpk-git-ship/scripts/review-gate-status.js \
+  --pr <number> --repo <owner>/<repo> --wait 900 --require-clear --json
 ```
 
-Report only meaningful transitions. Stop and preserve the PR when a required
-check fails, the state becomes `DIRTY`, or the poll times out. Do not retry a
-failed check or resolve a conflict unless the user asked for remediation.
+- Exit 0: checks passed, review gate clear, merge state `CLEAN`. Merge now:
+  `gh pr merge <number> --merge --delete-branch`.
+- Exit 2 with `checks.state: "failing"`: stop and report each failing check's
+  name and URL. Do not retry or fix unless the user asked for remediation.
+- Exit 2 with `checks.state: "pending"`: the 15-minute wait ran out. Stop and
+  preserve the PR; report the pending checks.
+- Exit 2 with checks passing: a review or merge-state condition remains; see
+  [review-gate.md](review-gate.md).
+
+`--delete-branch` deletes the remote source branch; local worktrees and
+branches remain cleanup work.
 
 If `BLOCKED` appears while checks look green, repeat the review-gate GraphQL and
-REST reconciliation once. Re-queue auto-merge only after every surfaced thread
-is resolved. When sources agree that conversations are clear, report the actual
-remaining rule (for example CODEOWNERS or a required human review); do not use
+REST reconciliation once. Merge only after every surfaced thread is resolved.
+When sources agree that conversations are clear, report the actual remaining
+rule (for example CODEOWNERS or a required human review); do not use
 `--admin`.
 
-For merge-back of a PR that is already ready, use:
-
-```bash
-gh pr merge <number> --merge --delete-branch
-```
+For merge-back of an existing PR, run the same wait-and-gate command first; the
+merge command is the same.
 
 Prefer merge commits unless the user explicitly asks for squash or rebase.
 
@@ -52,7 +48,7 @@ Prefer merge commits unless the user explicitly asks for squash or rebase.
 - If review is re-requested or approval is dismissed after a push, wait for the
   current-head policy result. Old-head approval is not reusable proof.
 - Treat Codex review timeout or unavailability as non-blocking once recorded;
-  treat unresolved conversations and protected checks as blocking.
+  treat unresolved conversations and failing or pending checks as blocking.
 
 ## Sync persistent main
 

@@ -147,7 +147,6 @@ export function UserMessageBubble({
 									<SkillTag
 										color={skillTagProps.color}
 										icon={skillTagProps.icon}
-										variant="on-colored"
 									>
 										{skillInvocationLabel}
 									</SkillTag>

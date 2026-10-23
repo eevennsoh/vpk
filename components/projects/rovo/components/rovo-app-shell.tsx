@@ -1792,7 +1792,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									dictationState={dictationState}
 									dictationTranscriptPreview={dictationTranscriptPreview}
 									errorMessage={chat.inputError}
-									experimentalDarkCta
 									focusRequestKey={composerFocusRequestKey}
 									galleryExpanded={galleryExpanded}
 									isPlanMode={chat.isPlanMode}

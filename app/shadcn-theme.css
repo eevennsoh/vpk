@@ -290,6 +290,10 @@
 	/* -----------------------------------------------------------------
 	   Background Neutral / Selected / Brand
 	   ----------------------------------------------------------------- */
+	/* Rovo composer refresh keeps the light brand and inverse icon colours in both themes. */
+	--color-rovo-brand: #000000;
+	--color-rovo-icon-inverse: #FFFFFF;
+	--color-icon-rovo: var(--ds-rovo-background-brand-bold, #000000);
 	--color-bg-neutral: var(--ds-background-neutral); /* #0515240F */
 	--color-bg-neutral-hovered: var(--ds-background-neutral-hovered); /* #0B120E24 */
 	--color-bg-neutral-pressed: var(--ds-background-neutral-pressed); /* #080F214A */

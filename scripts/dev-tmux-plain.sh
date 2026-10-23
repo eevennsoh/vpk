@@ -10,25 +10,20 @@ set -euo pipefail
 # Why this exists separately:
 #   - It only needs `pnpm run dev`, so it has none of the Rovo billing/port-pool
 #     prerequisites of dev-tmux.sh.
-#   - It resolves a *standalone* tmux binary and runs on a private socket. On
-#     machines where a managed tmux shim shadows `tmux` on PATH (e.g. cmux's
-#     ~/.cmuxterm/claude-teams-bin/tmux), control commands against that shim fail
-#     with "Failed to write to socket (Broken pipe)". A private socket on the
-#     real binary sidesteps that entirely and keeps the dev server alive across
-#     terminal/session boundaries.
+#   - It runs on a private tmux socket, which keeps the dev server alive across
+#     terminal/session boundaries without touching the user's default server.
 
 REPO_ROOT="$(pwd)"
 FRONTEND_PORT_FILE=".dev-frontend-port"
 BACKEND_PORT_FILE=".dev-backend-port"
 SOCKET="${VPK_TMUX_SOCKET:-vpk-dev}"
 
-# Resolve a real tmux binary, never the managed shim (which rejects detached
-# session control). Honor an explicit override first, then common install
-# locations, then a PATH lookup that is rejected if it points at a shim.
+# Resolve a tmux binary: an explicit override first, then common install
+# locations, then a PATH lookup.
 resolve_tmux() {
 	local candidate
 	for candidate in "${VPK_TMUX_BIN:-}" /opt/homebrew/bin/tmux /usr/local/bin/tmux /usr/bin/tmux; do
-		if [[ -n "$candidate" && -x "$candidate" && "$candidate" != *".cmuxterm"* ]]; then
+		if [[ -n "$candidate" && -x "$candidate" ]]; then
 			printf '%s' "$candidate"
 			return 0
 		fi
@@ -36,7 +31,7 @@ resolve_tmux() {
 
 	local path_tmux
 	path_tmux="$(command -v tmux 2>/dev/null || true)"
-	if [[ -n "$path_tmux" && "$path_tmux" != *".cmuxterm"* ]]; then
+	if [[ -n "$path_tmux" ]]; then
 		printf '%s' "$path_tmux"
 		return 0
 	fi
