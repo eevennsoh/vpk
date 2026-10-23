@@ -137,3 +137,30 @@ test("Select all shortcuts preserve editors, other controls, and other boards", 
 	await view.press(card, "a", { metaKey: true });
 	assert.deepEqual(calls, []);
 });
+
+test("agent picker exposes directory actions only when the toolbar owner supplies them", async () => {
+	const props = {
+		agents: [], selectedCount: 1, statusOptions: [],
+		onAgentAssignmentChange: () => {},
+		onClearSelection: () => {},
+		onStatusChange: () => {},
+	};
+	const view = await renderComponent({
+		source: SHORTCUT_FIXTURE, exportName: "SelectionBoard", props,
+		mocks: {
+			"@/app/contexts/context-rovo-chat-controls": "export function useOptionalRovoChatControls() { return null; }",
+			"@/components/blocks/agent-selector": `export function AgentSelector({ onBrowseAgents, onCreateAgent }) {
+				return <output data-agent-selector-actions>{String(Boolean(onBrowseAgents))}:{String(Boolean(onCreateAgent))}</output>;
+			}`,
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Add agent" }));
+	assert.equal(document.querySelector("[data-agent-selector-actions]")?.textContent, "false:false");
+
+	await view.rerender({
+		...props,
+		onBrowseAgents: () => {},
+		onCreateAgent: () => {},
+	});
+	assert.equal(document.querySelector("[data-agent-selector-actions]")?.textContent, "true:true");
+});
