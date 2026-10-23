@@ -302,7 +302,7 @@ test("(20) the style: no chrome, no entry ghost or arrow, a 2px outline and one 
 	expect(await page.locator(".vpk-iso-plate__chrome").count()).toBe(0);
 	expect(await page.locator("[data-vpk-iso-ghost], [data-vpk-iso-cue], [opacity]").count(), "no ghost, entry arrow or opacity attribute").toBe(0);
 	// The entry has landed: the scene rests on the hand-off's rest class, which paints nothing.
-	expect(await svg.evaluate(node => node.querySelector("[data-vpk-iso-scene]")?.className.baseVal ?? "")).toBe("");
+	expect(await svg.evaluate(node => node.querySelector("[data-vpk-iso-scene]")?.getAttribute("class") ?? "")).toBe("");
 	expect(await allAtRest(page)).toBe(true);
 	const snapshot = await svg.evaluate(node => node.outerHTML);
 	const sampleOpacity = (selector: string) => page.evaluate(async sel => {

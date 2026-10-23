@@ -401,7 +401,7 @@ test("(19) narrow stage: callouts stay legible from 320 px up (numbered tags + l
 	await page.goto(url(DEMO));
 	await page.evaluate(() => document.querySelector("[data-vpk-iso-stage]")?.scrollIntoView({ block: "center" }));
 	await page.waitForTimeout(2200);
-	const tagY = () => page.locator('[data-vpk-iso-tag="1"] [data-vpk-iso-role="leader"]').evaluate(node => { const pts = (node.getAttribute("d") ?? "").match(/-?\d+(?:\.\d+)?/g) ?? []; return Number(pts[pts.length - 1]) * ((node.ownerSVGElement as SVGSVGElement).getScreenCTM() as DOMMatrix).d; });
+	const tagY = () => page.locator('[data-vpk-iso-tag="1"] [data-vpk-iso-role="leader"]').evaluate(node => { const pts = (node.getAttribute("d") ?? "").match(/-?\d+(?:\.\d+)?/g) ?? []; return Number(pts[pts.length - 1]) * (((node as SVGElement).ownerSVGElement as SVGSVGElement).getScreenCTM() as DOMMatrix).d; });
 	const before = await tagY();
 	const box = await stageBox(page);
 	await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
