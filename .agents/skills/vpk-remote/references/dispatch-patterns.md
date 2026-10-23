@@ -10,8 +10,9 @@ never inline it into a shell command. Every brief carries, in order:
 1. **Goal** — one concrete outcome, no ambiguity.
 2. **Exact repo paths** — files and directories in scope, written relative to
    the worktree the worker runs in. Under the default, a writing brief runs in
-   its own task worktree branched from `main` (see *Worktree isolation* in
-   SKILL.md), so paths resolve there, not in the user's checkout.
+   its own task worktree branched from a freshly fetched `origin/main` (see
+   *Worktree isolation* in SKILL.md), so paths resolve there, not in the
+   user's checkout.
 3. **Constraints** — the specific repo rules that apply (tabs, `@/` imports,
    token classes, pnpm; name only the relevant ones).
 4. **Non-goals** — what the worker must not touch or expand into. For

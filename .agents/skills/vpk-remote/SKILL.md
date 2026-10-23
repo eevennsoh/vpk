@@ -249,14 +249,19 @@ nothing there and costs setup, which is why the default is keyed to the same
 
 ### Creating the worktree
 
-Branch from the current `main` and place it under the repo's ignored
-`.claude/worktrees/`, one per task:
+Fetch first, then branch from `origin/main` — not the local `main` ref, which
+goes stale in a long-lived checkout and would start the worker on old code.
+Place it under the repo's ignored `.claude/worktrees/`, one per task:
 
 ```bash
 branch="remote/<short-task-slug>"
 tree="$PWD/.claude/worktrees/<short-task-slug>"
-git worktree add -b "$branch" "$tree" main
+git fetch origin main
+git worktree add --no-track -b "$branch" "$tree" origin/main
 ```
+
+`--no-track` keeps the task branch from adopting `origin/main` as its
+upstream, so a later push sets its own upstream instead of targeting `main`.
 
 Then **warm it up before dispatching** — a fresh worktree has no
 `node_modules` and no `.env*`, and the brief's proof command is usually
