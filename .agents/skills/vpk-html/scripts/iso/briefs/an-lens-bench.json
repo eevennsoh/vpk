@@ -1,0 +1,370 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-lens-bench",
+	"figId": "FIG_245",
+	"title": "Dispersion, a lens bench",
+	"label": "Dimetric lens bench: a glass disc in a ring mount held on a jointed arm over a ruled plate, a probe near its rim, and a rail where the blue, green and red reads of one pixel land apart. The probe is highlighted.",
+	"caption": "The probe reads one pixel three times along the glass normal; near the rim the reads spread, red landing 7.4 px from blue at b 0.985, and the dashed reach line marks the farthest any read can land, 91 px past the rim.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "bench",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				200,
+				140,
+				5
+			],
+			"r": 2,
+			"label": "Ruled plate",
+			"marks": [
+				[
+					[
+						40,
+						16
+					],
+					[
+						40,
+						102
+					]
+				]
+			]
+		},
+		{
+			"id": "reach",
+			"kind": "gap",
+			"at": [
+				32,
+				96,
+				4
+			],
+			"size": [
+				16,
+				3,
+				0
+			],
+			"r": 0,
+			"label": "Reach line"
+		},
+		{
+			"id": "read-blue",
+			"kind": "box",
+			"at": [
+				37,
+				24,
+				4
+			],
+			"size": [
+				6,
+				5,
+				6
+			],
+			"r": 0,
+			"label": "Blue read",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "vernier",
+			"kind": "box",
+			"at": [
+				34,
+				46,
+				4
+			],
+			"size": [
+				12,
+				18,
+				3
+			],
+			"r": 1,
+			"label": "Vernier, green",
+			"explode": [
+				0,
+				0,
+				8
+			],
+			"marks": [
+				[
+					[
+						0,
+						9
+					],
+					[
+						12,
+						9
+					]
+				]
+			]
+		},
+		{
+			"id": "read-red",
+			"kind": "box",
+			"at": [
+				37,
+				80,
+				4
+			],
+			"size": [
+				6,
+				5,
+				6
+			],
+			"r": 0,
+			"label": "Red read",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "post",
+			"kind": "box",
+			"at": [
+				170,
+				56,
+				4
+			],
+			"size": [
+				8,
+				8,
+				26
+			],
+			"r": 1,
+			"label": "Arm post"
+		},
+		{
+			"id": "arm-1",
+			"kind": "box",
+			"at": [
+				157,
+				57.5,
+				24
+			],
+			"size": [
+				13,
+				5,
+				4
+			],
+			"r": 1,
+			"label": "Arm, inner link"
+		},
+		{
+			"id": "joint",
+			"kind": "box",
+			"at": [
+				151,
+				56.5,
+				23
+			],
+			"size": [
+				6,
+				7,
+				10
+			],
+			"r": 1,
+			"label": "Arm joint"
+		},
+		{
+			"id": "arm-2",
+			"kind": "box",
+			"at": [
+				136,
+				57.5,
+				26
+			],
+			"size": [
+				15,
+				5,
+				4
+			],
+			"r": 1,
+			"label": "Arm, outer link"
+		},
+		{
+			"id": "mount",
+			"kind": "cylinder",
+			"at": [
+				112,
+				60,
+				26
+			],
+			"size": [
+				24,
+				24,
+				4
+			],
+			"label": "Ring mount"
+		},
+		{
+			"id": "lens",
+			"kind": "cylinder",
+			"at": [
+				112,
+				60,
+				30
+			],
+			"size": [
+				20,
+				20,
+				2
+			],
+			"label": "Glass disc",
+			"explode": [
+				0,
+				0,
+				8
+			],
+			"marks": [
+				[
+					[
+						0,
+						-16
+					],
+					[
+						0,
+						16
+					]
+				]
+			]
+		},
+		{
+			"id": "probe",
+			"kind": "cylinder",
+			"at": [
+				100,
+				74,
+				32
+			],
+			"size": [
+				2,
+				2,
+				16
+			],
+			"label": "Probe",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		}
+	],
+	"focal": "probe",
+	"labels": [
+		{
+			"text": "Probe, b 0.985",
+			"target": "probe",
+			"side": "right",
+			"anchor": [
+				100,
+				74,
+				48
+			]
+		},
+		{
+			"text": "Glass disc, 72 px",
+			"target": "lens",
+			"side": "right",
+			"anchor": [
+				118,
+				50,
+				32
+			]
+		},
+		{
+			"text": "Jointed arm",
+			"target": "joint",
+			"side": "right",
+			"anchor": [
+				154,
+				60,
+				33
+			]
+		},
+		{
+			"text": "Blue read",
+			"target": "read-blue",
+			"side": "left"
+		},
+		{
+			"text": "Vernier on green",
+			"target": "vernier",
+			"side": "left"
+		},
+		{
+			"text": "Red read, 7.4 px from blue",
+			"target": "read-red",
+			"side": "left"
+		},
+		{
+			"text": "Reach, 91 px past rim",
+			"target": "reach",
+			"side": "left"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				95,
+				72,
+				35
+			],
+			"to": [
+				46,
+				28,
+				8
+			],
+			"of": "probe"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"bench"
+			],
+			[
+				"post",
+				"reach"
+			],
+			[
+				"arm-1",
+				"joint",
+				"arm-2"
+			],
+			[
+				"mount",
+				"read-blue",
+				"vernier",
+				"read-red"
+			],
+			[
+				"lens"
+			],
+			[
+				"probe"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "red-blue 7.4 px"
+	},
+	"meta": {
+		"margin": "[ B 0.985 ]",
+		"corner": "VPK-HTML"
+	}
+}

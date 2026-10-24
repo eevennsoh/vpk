@@ -42,7 +42,7 @@ Optional doc-type hints and flags: `/vpk-html resume`, `/vpk-html one-pager`,
   iso-exploded-stack, iso-flatpack-shelf, iso-phone-anatomy,
   iso-cache-shelves, iso-parcel-tray, iso-turntable-anatomy and
   iso-card-stack-ui (all seven on assets/demos/demo-illustration-gallery.html).
-- 118 HTML demos at assets/demos/: filled document showcases, restyled
+- 131 HTML demos at assets/demos/: filled document showcases, restyled
   html-effectiveness demo ports, diagram previews, illustration previews, and
   vpk-native examples.
 - Shared motion layer across generated HTML: entrance choreography, document

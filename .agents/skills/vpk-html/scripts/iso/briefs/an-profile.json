@@ -1,0 +1,53 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-profile",
+	"figId": "FIG_244",
+	"title": "Profile gauge on a pane edge",
+	"label": "Dimetric bench: a glass pane edge, flat then stepping down over the bezel; a gauge head holds spring pins resting on the glass, one per pixel, and a caliper measures the rim. The pin being read is accented.",
+	"caption": "Every pin drops until it touches the glass, so their tops trace the edge: level across the middle, then giving way over the bezel, slowly at first and quickly at the rim, where the caliper reads about 19 px below the middle.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "bench", "kind": "slab", "at": [-24, -24, 0], "size": [130, 80, 6], "r": 3, "label": "Bench" },
+		{ "id": "pane", "kind": "box", "at": [0, 0, 6], "size": [60, 40, 24], "r": 0, "label": "Clear pane", "marks": [[[0, 20], [60, 20]]] },
+		{ "id": "bezel-1", "kind": "box", "at": [60, 0, 6], "size": [12, 40, 22], "r": 0, "label": "Bezel" },
+		{ "id": "bezel-2", "kind": "box", "at": [72, 0, 6], "size": [9, 40, 18], "r": 0, "label": "Bezel" },
+		{ "id": "bezel-3", "kind": "box", "at": [81, 0, 6], "size": [6, 40, 12], "r": 0, "label": "Rim" },
+		{ "id": "head", "kind": "box", "at": [8, 26, 46], "size": [80, 6, 6], "r": 1, "label": "Gauge head", "marks": [[[0, 3], [80, 3]]] },
+		{ "id": "pin-1", "kind": "cylinder", "at": [24, 22, 30], "size": [1.6, 1.6, 22], "label": "Pin" },
+		{ "id": "pin-2", "kind": "cylinder", "at": [66, 22, 28], "size": [1.6, 1.6, 24], "label": "Pin" },
+		{ "id": "pin-3", "kind": "cylinder", "at": [76.5, 22, 24], "size": [1.6, 1.6, 28], "label": "Pin" },
+		{ "id": "pin-4", "kind": "cylinder", "at": [84, 22, 18], "size": [1.6, 1.6, 34], "label": "Pin being read" },
+		{ "id": "caliper", "kind": "box", "at": [92, -14, 6], "size": [6, 12, 28], "r": 1, "label": "Caliper", "marks": [[[0, 6], [6, 6]]] }
+	],
+	"focal": "pin-4",
+	"labels": [
+		{ "text": "Clear pane, 46 px", "target": "pane", "side": "left" },
+		{ "text": "A pin per pixel", "target": "pin-1", "side": "left" },
+		{ "text": "Gauge head", "target": "head", "side": "left" },
+		{ "text": "Bezel, falling to the rim", "target": "bezel-3", "side": "right", "anchor": [86, 40, 12] },
+		{ "text": "The pin I'm reading", "target": "pin-4", "side": "right", "anchor": [84, 23.6, 50] },
+		{ "text": "Caliper, rim 26.8 px", "target": "caliper", "side": "right" },
+		{ "text": "Bench", "target": "bench", "side": "left" }
+	],
+	"assemble": {
+		"layers": [
+			["bench"],
+			["pane", "bezel-1", "bezel-2", "bezel-3"],
+			["caliper"],
+			["head"],
+			["pin-1", "pin-2", "pin-3", "pin-4"]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 6,
+		"rest": "pin at rim, 19 px below middle"
+	},
+	"meta": {
+		"margin": "[ EDGE PROFILE ]",
+		"corner": "VPK-HTML"
+	}
+}

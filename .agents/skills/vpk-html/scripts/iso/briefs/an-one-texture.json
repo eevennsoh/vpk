@@ -1,0 +1,845 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-one-texture",
+	"figId": "FIG_237",
+	"title": "One texture, a tray of mip levels",
+	"label": "Dimetric tray: the picture stands in a slot at the back; eleven pockets in front, each narrower than the last, hold its mip levels down to a 1x1 pit. Three panes stand on the level matching their width; the frosted one is highlighted.",
+	"caption": "The picture is uploaded once and every smaller level is made from it; each pane reads the level whose width matches its own, so the shrunken frosted pane samples level 2, not the full picture.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "slot",
+			"kind": "slab",
+			"at": [
+				2,
+				-9,
+				0
+			],
+			"size": [
+				68,
+				8,
+				8
+			],
+			"r": 0,
+			"label": "Slot",
+			"marks": [
+				[
+					[
+						3,
+						6.5
+					],
+					[
+						65,
+						6.5
+					]
+				]
+			]
+		},
+		{
+			"id": "print",
+			"kind": "slab",
+			"at": [
+				4,
+				-7,
+				8
+			],
+			"size": [
+				64,
+				3,
+				40
+			],
+			"r": 1,
+			"label": "Source picture"
+		},
+		{
+			"id": "pocket-1",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				48,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pocket 1"
+		},
+		{
+			"id": "pocket-2",
+			"kind": "slab",
+			"at": [
+				48,
+				0,
+				0
+			],
+			"size": [
+				24,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pocket 2"
+		},
+		{
+			"id": "pocket-3",
+			"kind": "slab",
+			"at": [
+				72,
+				0,
+				0
+			],
+			"size": [
+				12,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pocket 3"
+		},
+		{
+			"id": "pocket-4",
+			"kind": "slab",
+			"at": [
+				84,
+				0,
+				0
+			],
+			"size": [
+				6,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pocket 4"
+		},
+		{
+			"id": "pocket-5",
+			"kind": "slab",
+			"at": [
+				90,
+				0,
+				0
+			],
+			"size": [
+				3,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pocket 5"
+		},
+		{
+			"id": "pocket-6",
+			"kind": "slab",
+			"at": [
+				93,
+				0,
+				0
+			],
+			"size": [
+				2.5,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pit 6"
+		},
+		{
+			"id": "pocket-7",
+			"kind": "slab",
+			"at": [
+				95.5,
+				0,
+				0
+			],
+			"size": [
+				2,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pit 7"
+		},
+		{
+			"id": "pocket-8",
+			"kind": "slab",
+			"at": [
+				97.5,
+				0,
+				0
+			],
+			"size": [
+				1.75,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pit 8"
+		},
+		{
+			"id": "pocket-9",
+			"kind": "slab",
+			"at": [
+				99.25,
+				0,
+				0
+			],
+			"size": [
+				1.5,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pit 9"
+		},
+		{
+			"id": "pocket-10",
+			"kind": "slab",
+			"at": [
+				100.75,
+				0,
+				0
+			],
+			"size": [
+				1.25,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pit 10"
+		},
+		{
+			"id": "pocket-11",
+			"kind": "slab",
+			"at": [
+				102,
+				0,
+				0
+			],
+			"size": [
+				1,
+				60,
+				6
+			],
+			"r": 0,
+			"label": "Pit 11"
+		},
+		{
+			"id": "level-1",
+			"kind": "slab",
+			"at": [
+				8,
+				28,
+				6
+			],
+			"size": [
+				32,
+				20,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 1",
+			"marks": [
+				[
+					[
+						16,
+						0
+					],
+					[
+						16,
+						20
+					]
+				]
+			]
+		},
+		{
+			"id": "level-2",
+			"kind": "slab",
+			"at": [
+				50,
+				33,
+				6
+			],
+			"size": [
+				16,
+				10,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 2"
+		},
+		{
+			"id": "level-3",
+			"kind": "slab",
+			"at": [
+				72,
+				35.5,
+				6
+			],
+			"size": [
+				8,
+				5,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 3"
+		},
+		{
+			"id": "level-4",
+			"kind": "slab",
+			"at": [
+				85,
+				36.75,
+				6
+			],
+			"size": [
+				4,
+				2.5,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 4"
+		},
+		{
+			"id": "level-5",
+			"kind": "slab",
+			"at": [
+				90.5,
+				37.375,
+				6
+			],
+			"size": [
+				2,
+				1.25,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 5"
+		},
+		{
+			"id": "level-6",
+			"kind": "slab",
+			"at": [
+				93.25,
+				37.375,
+				6
+			],
+			"size": [
+				2,
+				1.25,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 6"
+		},
+		{
+			"id": "level-7",
+			"kind": "slab",
+			"at": [
+				95.7,
+				37.375,
+				6
+			],
+			"size": [
+				1.6,
+				1.25,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 7"
+		},
+		{
+			"id": "level-8",
+			"kind": "slab",
+			"at": [
+				97.675,
+				37.375,
+				6
+			],
+			"size": [
+				1.4000000000000001,
+				1.25,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 8"
+		},
+		{
+			"id": "level-9",
+			"kind": "slab",
+			"at": [
+				99.4,
+				37.4,
+				6
+			],
+			"size": [
+				1.2000000000000002,
+				1.2000000000000002,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 9"
+		},
+		{
+			"id": "level-10",
+			"kind": "slab",
+			"at": [
+				100.875,
+				37.5,
+				6
+			],
+			"size": [
+				1,
+				1,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 10"
+		},
+		{
+			"id": "level-11",
+			"kind": "slab",
+			"at": [
+				102.1,
+				37.6,
+				6
+			],
+			"size": [
+				0.8,
+				0.8,
+				1.5
+			],
+			"r": 0,
+			"label": "Level 11"
+		},
+		{
+			"id": "base-wide",
+			"kind": "slab",
+			"at": [
+				8,
+				34,
+				7.5
+			],
+			"size": [
+				32,
+				8,
+				0.6
+			],
+			"r": 0,
+			"label": "Wide window"
+		},
+		{
+			"id": "loupe-wide",
+			"kind": "slab",
+			"at": [
+				8,
+				37.25,
+				8.1
+			],
+			"size": [
+				32,
+				1.5,
+				20
+			],
+			"r": 0.3,
+			"label": "Wide pane"
+		},
+		{
+			"id": "base-frosted",
+			"kind": "slab",
+			"at": [
+				50,
+				36,
+				7.5
+			],
+			"size": [
+				16,
+				4,
+				0.6
+			],
+			"r": 0,
+			"label": "Frosted window"
+		},
+		{
+			"id": "loupe-frosted",
+			"kind": "slab",
+			"at": [
+				50,
+				37.25,
+				8.1
+			],
+			"size": [
+				16,
+				1.5,
+				12
+			],
+			"r": 0.3,
+			"label": "Frosted pane"
+		},
+		{
+			"id": "base-small",
+			"kind": "slab",
+			"at": [
+				72,
+				37,
+				7.5
+			],
+			"size": [
+				8,
+				2,
+				0.6
+			],
+			"r": 0,
+			"label": "Small window"
+		},
+		{
+			"id": "loupe-small",
+			"kind": "slab",
+			"at": [
+				72,
+				37.25,
+				8.1
+			],
+			"size": [
+				8,
+				1.5,
+				7
+			],
+			"r": 0.3,
+			"label": "Small pane"
+		},
+		{
+			"id": "lamp-1",
+			"kind": "slab",
+			"at": [
+				2.5,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 1"
+		},
+		{
+			"id": "lamp-2",
+			"kind": "slab",
+			"at": [
+				9,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 2"
+		},
+		{
+			"id": "lamp-3",
+			"kind": "slab",
+			"at": [
+				15.5,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 3"
+		},
+		{
+			"id": "lamp-4",
+			"kind": "slab",
+			"at": [
+				22,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 4"
+		},
+		{
+			"id": "lamp-5",
+			"kind": "slab",
+			"at": [
+				28.5,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 5"
+		},
+		{
+			"id": "lamp-6",
+			"kind": "slab",
+			"at": [
+				35,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 6"
+		},
+		{
+			"id": "lamp-7",
+			"kind": "slab",
+			"at": [
+				41.5,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 7"
+		},
+		{
+			"id": "lamp-8",
+			"kind": "slab",
+			"at": [
+				48,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 8"
+		},
+		{
+			"id": "lamp-9",
+			"kind": "slab",
+			"at": [
+				54.5,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 9"
+		},
+		{
+			"id": "lamp-10",
+			"kind": "slab",
+			"at": [
+				61,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 10"
+		},
+		{
+			"id": "lamp-11",
+			"kind": "slab",
+			"at": [
+				67.5,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 11"
+		},
+		{
+			"id": "lamp-12",
+			"kind": "slab",
+			"at": [
+				74,
+				54,
+				6
+			],
+			"size": [
+				2,
+				2,
+				1.2
+			],
+			"r": 0,
+			"label": "Lamp 12"
+		}
+	],
+	"focal": "loupe-frosted",
+	"labels": [
+		{
+			"text": "Frosted pane reads level 2",
+			"target": "loupe-frosted",
+			"side": "right"
+		},
+		{
+			"text": "Picture, uploaded once",
+			"target": "print",
+			"side": "left"
+		},
+		{
+			"text": "Slot at the back",
+			"target": "slot",
+			"side": "left",
+			"anchor": [
+				3,
+				-2,
+				8
+			]
+		},
+		{
+			"text": "Wide pane reads level 1",
+			"target": "loupe-wide",
+			"side": "left"
+		},
+		{
+			"text": "Level 1, half the picture",
+			"target": "level-1",
+			"side": "left",
+			"anchor": [
+				12,
+				46.5,
+				7.5
+			]
+		},
+		{
+			"text": "A pocket: one level, half the last",
+			"target": "pocket-2",
+			"side": "right",
+			"anchor": [
+				62,
+				60,
+				3
+			]
+		},
+		{
+			"text": "Small pane, level 3",
+			"target": "loupe-small",
+			"side": "right"
+		},
+		{
+			"text": "Pits down to 1x1",
+			"target": "pocket-11",
+			"side": "right"
+		},
+		{
+			"text": "12 lamps, one per level",
+			"target": "lamp-4",
+			"side": "left",
+			"anchor": [
+				23,
+				55,
+				7.2
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"slot",
+				"pocket-1",
+				"pocket-2",
+				"pocket-3",
+				"pocket-4",
+				"pocket-5",
+				"pocket-6",
+				"pocket-7",
+				"pocket-8",
+				"pocket-9",
+				"pocket-10",
+				"pocket-11"
+			],
+			[
+				"print"
+			],
+			[
+				"level-1",
+				"level-2",
+				"level-3",
+				"level-4",
+				"level-5",
+				"level-6",
+				"level-7",
+				"level-8",
+				"level-9",
+				"level-10",
+				"level-11",
+				"lamp-1",
+				"lamp-2",
+				"lamp-3",
+				"lamp-4",
+				"lamp-5",
+				"lamp-6",
+				"lamp-7",
+				"lamp-8",
+				"lamp-9",
+				"lamp-10",
+				"lamp-11",
+				"lamp-12"
+			],
+			[
+				"base-wide",
+				"base-frosted",
+				"base-small"
+			],
+			[
+				"loupe-wide",
+				"loupe-small"
+			],
+			[
+				"loupe-frosted"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "1 upload, 12 levels"
+	},
+	"meta": {
+		"margin": "[ 3 LOUPES ]",
+		"corner": "VPK-HTML"
+	}
+}

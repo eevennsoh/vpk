@@ -1,0 +1,303 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-studio",
+	"figId": "FIG_246",
+	"title": "Rim light on a turntable",
+	"label": "Dimetric studio: a rounded pill on a turntable turned 20 degrees between a key lamp and a dimmed fill lamp; its edge is a full rim facing the key, a half rim facing the fill and a trace at the ends. The full rim is highlighted.",
+	"caption": "An edge is as bright as it faces a lamp: full where it faces the key, half where it faces the dimmed fill, barely there where it runs along the light, and turning the table moves the pill, never the lamps.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "key-base",
+			"kind": "slab",
+			"at": [
+				2,
+				82,
+				0
+			],
+			"size": [
+				16,
+				16,
+				3
+			],
+			"r": 2,
+			"label": "Key base"
+		},
+		{
+			"id": "key-post",
+			"kind": "cylinder",
+			"at": [
+				10,
+				90,
+				3
+			],
+			"size": [
+				2,
+				2,
+				34
+			],
+			"label": "Key stand"
+		},
+		{
+			"id": "key-head",
+			"kind": "box",
+			"at": [
+				3,
+				83,
+				37
+			],
+			"size": [
+				14,
+				14,
+				10
+			],
+			"r": 2,
+			"label": "Key lamp"
+		},
+		{
+			"id": "fill-base",
+			"kind": "slab",
+			"at": [
+				100,
+				-4,
+				0
+			],
+			"size": [
+				16,
+				16,
+				3
+			],
+			"r": 2,
+			"label": "Fill base"
+		},
+		{
+			"id": "fill-post",
+			"kind": "cylinder",
+			"at": [
+				108,
+				4,
+				3
+			],
+			"size": [
+				2,
+				2,
+				20
+			],
+			"label": "Fill stand"
+		},
+		{
+			"id": "fill-head",
+			"kind": "box",
+			"at": [
+				101,
+				-3,
+				23
+			],
+			"size": [
+				14,
+				14,
+				10
+			],
+			"r": 2,
+			"label": "Fill lamp"
+		},
+		{
+			"id": "dimmer",
+			"kind": "cylinder",
+			"at": [
+				106,
+				72,
+				0
+			],
+			"size": [
+				4,
+				4,
+				5
+			],
+			"label": "Dimmer at half"
+		},
+		{
+			"id": "table",
+			"kind": "cylinder",
+			"at": [
+				62,
+				62,
+				0
+			],
+			"size": [
+				30,
+				30,
+				5
+			],
+			"label": "Turntable"
+		},
+		{
+			"id": "rim-key",
+			"kind": "slab",
+			"at": [
+				54.5,
+				46,
+				5
+			],
+			"size": [
+				1.5,
+				32,
+				13
+			],
+			"r": 0.5,
+			"label": "Full rim"
+		},
+		{
+			"id": "pill",
+			"kind": "slab",
+			"at": [
+				56,
+				40,
+				5
+			],
+			"size": [
+				12,
+				44,
+				10
+			],
+			"r": 6,
+			"label": "Pill control"
+		},
+		{
+			"id": "rim-fill",
+			"kind": "slab",
+			"at": [
+				68,
+				46,
+				5
+			],
+			"size": [
+				1.5,
+				32,
+				8
+			],
+			"r": 0.5,
+			"label": "Half rim"
+		}
+	],
+	"focal": "rim-key",
+	"labels": [
+		{
+			"text": "Rim at full, faces the key",
+			"target": "rim-key",
+			"side": "left",
+			"anchor": [
+				55.25,
+				76,
+				18
+			]
+		},
+		{
+			"text": "Key lamp",
+			"target": "key-head",
+			"side": "left"
+		},
+		{
+			"text": "Turntable",
+			"target": "table",
+			"side": "left"
+		},
+		{
+			"text": "Pill control",
+			"target": "pill",
+			"side": "left",
+			"anchor": [
+				62,
+				84,
+				10
+			]
+		},
+		{
+			"text": "Rim at half, faces the fill",
+			"target": "rim-fill",
+			"side": "right",
+			"anchor": [
+				69.5,
+				72,
+				9
+			]
+		},
+		{
+			"text": "Fill lamp",
+			"target": "fill-head",
+			"side": "right"
+		},
+		{
+			"text": "Dimmer, 0.5",
+			"target": "dimmer",
+			"side": "right"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				18,
+				84,
+				40
+			],
+			"to": [
+				54.5,
+				66,
+				19
+			]
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				102,
+				10,
+				27
+			],
+			"to": [
+				69.5,
+				56,
+				10
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"key-base",
+				"fill-base",
+				"table",
+				"dimmer"
+			],
+			[
+				"key-post",
+				"fill-post"
+			],
+			[
+				"key-head",
+				"fill-head"
+			],
+			[
+				"rim-key"
+			],
+			[
+				"pill"
+			],
+			[
+				"rim-fill"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "turned 20° · key (−0.6, −0.8) · fill 0.5"
+	},
+	"meta": {
+		"margin": "[ RIM 0.42 ]",
+		"corner": "VPK-HTML"
+	}
+}

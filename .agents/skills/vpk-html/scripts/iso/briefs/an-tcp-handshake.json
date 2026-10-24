@@ -1,0 +1,431 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-tcp-handshake",
+	"figId": "FIG_206",
+	"title": "TCP handshake, a mail ropeway",
+	"label": "Dimetric mail ropeway between client and server stations. SYN has landed, SYN with ACK flies an ACK pennant home, and the highlighted ACK canister heads out. Client arm reads established, server arm SYN received.",
+	"caption": "Three canisters cross the rope in order: SYN out, SYN with ACK back, then ACK out; only after the third lands do both semaphores read established.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "station-a",
+			"kind": "box",
+			"at": [
+				0,
+				4,
+				0
+			],
+			"size": [
+				44,
+				32,
+				24
+			],
+			"r": 2,
+			"label": "Client station",
+			"marks": [
+				[
+					[
+						6,
+						6
+					],
+					[
+						30,
+						6
+					]
+				]
+			]
+		},
+		{
+			"id": "sem-a",
+			"kind": "box",
+			"at": [
+				4,
+				30,
+				24
+			],
+			"size": [
+				3,
+				3,
+				22
+			],
+			"r": 1,
+			"label": "Client semaphore, established"
+		},
+		{
+			"id": "arm-a",
+			"kind": "box",
+			"at": [
+				7,
+				30.5,
+				42
+			],
+			"size": [
+				9,
+				2,
+				2
+			],
+			"r": 0,
+			"label": "Client semaphore arm, raised: established"
+		},
+		{
+			"id": "wheel-a",
+			"kind": "cylinder",
+			"at": [
+				26,
+				20,
+				24
+			],
+			"size": [
+				11,
+				11,
+				4.5
+			],
+			"label": "Client bull wheel"
+		},
+		{
+			"id": "tower",
+			"kind": "box",
+			"at": [
+				100,
+				13,
+				0
+			],
+			"size": [
+				16,
+				14,
+				27
+			],
+			"r": 1,
+			"label": "Midway hut"
+		},
+		{
+			"id": "rope-1",
+			"kind": "box",
+			"at": [
+				37,
+				19,
+				27
+			],
+			"size": [
+				26,
+				2,
+				1.5
+			],
+			"r": 0,
+			"label": "Rope"
+		},
+		{
+			"id": "can-ack",
+			"kind": "cylinder",
+			"at": [
+				66,
+				20,
+				17
+			],
+			"size": [
+				3,
+				3,
+				12
+			],
+			"label": "ACK canister, closing the handshake"
+		},
+		{
+			"id": "rope-2",
+			"kind": "box",
+			"at": [
+				69,
+				19,
+				27
+			],
+			"size": [
+				55,
+				2,
+				1.5
+			],
+			"r": 0,
+			"label": "Rope"
+		},
+		{
+			"id": "can-synack",
+			"kind": "cylinder",
+			"at": [
+				127,
+				20,
+				17
+			],
+			"size": [
+				3,
+				3,
+				12
+			],
+			"label": "SYN with ACK canister, ACK-marked lid, returning",
+			"marks": [
+				[
+					[
+						-2,
+						0
+					],
+					[
+						2,
+						0
+					]
+				],
+				[
+					[
+						0,
+						-2
+					],
+					[
+						0,
+						2
+					]
+				]
+			]
+		},
+		{
+			"id": "rope-4",
+			"kind": "box",
+			"at": [
+				130,
+				19,
+				27
+			],
+			"size": [
+				17,
+				2,
+				1.5
+			],
+			"r": 0,
+			"label": "Rope"
+		},
+		{
+			"id": "rope-3",
+			"kind": "box",
+			"at": [
+				153,
+				19,
+				27
+			],
+			"size": [
+				24,
+				2,
+				1.5
+			],
+			"r": 0,
+			"label": "Rope"
+		},
+		{
+			"id": "can-syn",
+			"kind": "cylinder",
+			"at": [
+				150,
+				20,
+				17
+			],
+			"size": [
+				3,
+				3,
+				12
+			],
+			"label": "SYN canister, landed"
+		},
+		{
+			"id": "station-b",
+			"kind": "box",
+			"at": [
+				182,
+				4,
+				0
+			],
+			"size": [
+				44,
+				32,
+				24
+			],
+			"r": 2,
+			"label": "Server station",
+			"marks": [
+				[
+					[
+						6,
+						6
+					],
+					[
+						30,
+						6
+					]
+				]
+			]
+		},
+		{
+			"id": "sem-b",
+			"kind": "box",
+			"at": [
+				221,
+				30,
+				24
+			],
+			"size": [
+				3,
+				3,
+				22
+			],
+			"r": 1,
+			"label": "Server semaphore, SYN received"
+		},
+		{
+			"id": "arm-b",
+			"kind": "box",
+			"at": [
+				224,
+				30.5,
+				34
+			],
+			"size": [
+				9,
+				2,
+				2
+			],
+			"r": 0,
+			"label": "Server semaphore arm, half: SYN received"
+		},
+		{
+			"id": "wheel-b",
+			"kind": "cylinder",
+			"at": [
+				195,
+				20,
+				24
+			],
+			"size": [
+				11,
+				11,
+				4.5
+			],
+			"label": "Server bull wheel"
+		}
+	],
+	"focal": "can-ack",
+	"labels": [
+		{
+			"text": "3 ACK, established",
+			"target": "can-ack",
+			"side": "right"
+		},
+		{
+			"text": "2 SYN with ACK",
+			"target": "can-synack",
+			"side": "right",
+			"anchor": [
+				126.5,
+				20,
+				29
+			]
+		},
+		{
+			"text": "1 SYN",
+			"target": "can-syn",
+			"side": "right",
+			"anchor": [
+				149.5,
+				20,
+				29
+			]
+		},
+		{
+			"text": "Client station",
+			"target": "station-a",
+			"side": "left"
+		},
+		{
+			"text": "Server station",
+			"target": "station-b",
+			"side": "right"
+		},
+		{
+			"text": "Midway hut",
+			"target": "tower",
+			"side": "left",
+			"anchor": [
+				100,
+				13,
+				6
+			]
+		},
+		{
+			"text": "Client: established",
+			"target": "sem-a",
+			"side": "left",
+			"anchor": [
+				5.5,
+				31.5,
+				38
+			]
+		},
+		{
+			"text": "Server: SYN received",
+			"target": "sem-b",
+			"side": "right"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				70,
+				20,
+				34
+			],
+			"to": [
+				86,
+				20,
+				34
+			],
+			"of": "can-ack"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"station-a",
+				"station-b",
+				"tower"
+			],
+			[
+				"wheel-a",
+				"wheel-b",
+				"sem-a",
+				"sem-b",
+				"arm-a",
+				"arm-b"
+			],
+			[
+				"rope-1",
+				"rope-2",
+				"rope-3",
+				"rope-4"
+			],
+			[
+				"can-syn"
+			],
+			[
+				"can-synack"
+			],
+			[
+				"can-ack"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 10,
+		"rest": "3 canisters"
+	},
+	"meta": {
+		"margin": "[ MAIL ROPEWAY ]",
+		"corner": "VPK-HTML"
+	}
+}

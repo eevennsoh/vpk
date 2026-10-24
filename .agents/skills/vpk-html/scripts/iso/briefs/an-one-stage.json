@@ -1,0 +1,339 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-one-stage",
+	"figId": "FIG_239",
+	"title": "One stage as a chest of drawers",
+	"label": "Chest of seven render-target drawers: four tall half-float, three short 8-bit, glass pass output pill on top.",
+	"caption": "Each drawer is one render target and its height is its bytes per texel: four 8 B half-float targets hold the shape and are the ones the glass pass binds, three 4 B targets hold the backdrop, filled from the bottom in the order the passes write them.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "base",
+			"kind": "slab",
+			"at": [
+				0,
+				-1,
+				0
+			],
+			"size": [
+				47,
+				51,
+				5
+			],
+			"r": 0,
+			"label": "Plinth",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "sdf",
+			"kind": "slab",
+			"at": [
+				0,
+				2,
+				5.5
+			],
+			"size": [
+				44,
+				48,
+				12
+			],
+			"r": 0,
+			"label": "sdfField",
+			"explode": [
+				0,
+				10,
+				0
+			]
+		},
+		{
+			"id": "grad",
+			"kind": "slab",
+			"at": [
+				0,
+				2,
+				18
+			],
+			"size": [
+				44,
+				48,
+				12
+			],
+			"r": 0,
+			"label": "rawGradient",
+			"explode": [
+				0,
+				10,
+				0
+			]
+		},
+		{
+			"id": "ba",
+			"kind": "slab",
+			"at": [
+				0,
+				2,
+				30.5
+			],
+			"size": [
+				44,
+				48,
+				12
+			],
+			"r": 0,
+			"label": "blurA",
+			"explode": [
+				0,
+				10,
+				0
+			]
+		},
+		{
+			"id": "bb",
+			"kind": "slab",
+			"at": [
+				0,
+				2,
+				43
+			],
+			"size": [
+				44,
+				48,
+				12
+			],
+			"r": 0,
+			"label": "blurB",
+			"explode": [
+				0,
+				10,
+				0
+			]
+		},
+		{
+			"id": "src",
+			"kind": "slab",
+			"at": [
+				0,
+				2,
+				59
+			],
+			"size": [
+				44,
+				48,
+				6
+			],
+			"r": 0,
+			"label": "source",
+			"explode": [
+				0,
+				10,
+				0
+			]
+		},
+		{
+			"id": "scr",
+			"kind": "slab",
+			"at": [
+				0,
+				2,
+				65.5
+			],
+			"size": [
+				44,
+				48,
+				6
+			],
+			"r": 0,
+			"label": "scratch",
+			"explode": [
+				0,
+				10,
+				0
+			]
+		},
+		{
+			"id": "fro",
+			"kind": "slab",
+			"at": [
+				0,
+				2,
+				72
+			],
+			"size": [
+				44,
+				48,
+				6
+			],
+			"r": 0,
+			"label": "frosted",
+			"explode": [
+				0,
+				10,
+				0
+			]
+		},
+		{
+			"id": "sd",
+			"kind": "slab",
+			"at": [
+				44,
+				-1,
+				5
+			],
+			"size": [
+				3,
+				51,
+				73.5
+			],
+			"r": 0,
+			"label": "Side panel",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "lid",
+			"kind": "slab",
+			"at": [
+				0,
+				-1,
+				78.5
+			],
+			"size": [
+				47,
+				51,
+				4
+			],
+			"r": 0,
+			"label": "Top",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "pill",
+			"kind": "box",
+			"at": [
+				10,
+				18,
+				82.5
+			],
+			"size": [
+				24,
+				14,
+				6
+			],
+			"r": 6,
+			"label": "Glass pass output",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		}
+	],
+	"focal": "pill",
+	"labels": [
+		{
+			"text": "Glass pass output",
+			"target": "pill",
+			"side": "right"
+		},
+		{
+			"text": "Glass pass binds these four",
+			"target": "sd",
+			"side": "right",
+			"anchor": [
+				47,
+				25,
+				30
+			]
+		},
+		{
+			"text": "frosted, 4 B",
+			"target": "fro",
+			"side": "left"
+		},
+		{
+			"text": "scratch, 4 B",
+			"target": "scr",
+			"side": "left"
+		},
+		{
+			"text": "source, 4 B",
+			"target": "src",
+			"side": "left"
+		},
+		{
+			"text": "blurB, 8 B",
+			"target": "bb",
+			"side": "left"
+		},
+		{
+			"text": "blurA, ping-pong",
+			"target": "ba",
+			"side": "left"
+		},
+		{
+			"text": "rawGradient, 8 B",
+			"target": "grad",
+			"side": "left"
+		},
+		{
+			"text": "sdfField, 8 B",
+			"target": "sdf",
+			"side": "left"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"base"
+			],
+			[
+				"sdf",
+				"grad"
+			],
+			[
+				"ba",
+				"bb"
+			],
+			[
+				"src",
+				"scr",
+				"fro"
+			],
+			[
+				"sd",
+				"lid"
+			],
+			[
+				"pill"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 0.5,
+			"step": 0.25,
+			"unit": "pull"
+		}
+	},
+	"meta": {
+		"margin": "[ ONE STAGE ]",
+		"corner": "VPK-HTML"
+	}
+}

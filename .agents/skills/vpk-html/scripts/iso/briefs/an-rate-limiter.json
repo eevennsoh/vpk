@@ -1,0 +1,240 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-rate-limiter",
+	"figId": "FIG_227",
+	"title": "Token bucket on an air bench",
+	"label": "Dimetric air bench: a pump feeds a token tank with a relief valve on its lid; at the left a punch press and interlock stand over a paper tape along the front. Hover or arrow keys lift one part.",
+	"caption": "The pump adds two tokens a second and the relief valve vents anything past eight; every punch of the tape spends one token, and when the tank is empty the interlock holds the press shut.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "bench-a",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				56,
+				48,
+				8
+			],
+			"r": 2,
+			"label": "Press bench"
+		},
+		{
+			"id": "bench-b",
+			"kind": "box",
+			"at": [
+				56,
+				0,
+				0
+			],
+			"size": [
+				110,
+				48,
+				8
+			],
+			"r": 2,
+			"label": "Air bench"
+		},
+		{
+			"id": "tape",
+			"kind": "box",
+			"at": [
+				17,
+				36,
+				8
+			],
+			"size": [
+				36,
+				8,
+				1.5
+			],
+			"label": "Paper tape"
+		},
+		{
+			"id": "column",
+			"kind": "box",
+			"at": [
+				20,
+				4,
+				8
+			],
+			"size": [
+				16,
+				18,
+				30
+			],
+			"label": "Press column"
+		},
+		{
+			"id": "head",
+			"kind": "box",
+			"at": [
+				18,
+				14,
+				38
+			],
+			"size": [
+				20,
+				30,
+				8
+			],
+			"label": "Press head"
+		},
+		{
+			"id": "ram",
+			"kind": "cylinder",
+			"at": [
+				28,
+				40,
+				9.5
+			],
+			"size": [
+				2.5,
+				2.5,
+				28.5
+			],
+			"label": "Punch ram"
+		},
+		{
+			"id": "interlock",
+			"kind": "box",
+			"at": [
+				4,
+				34,
+				8
+			],
+			"size": [
+				9,
+				9,
+				8
+			],
+			"label": "Interlock"
+		},
+		{
+			"id": "tank",
+			"kind": "cylinder",
+			"at": [
+				100,
+				30,
+				8
+			],
+			"size": [
+				16,
+				16,
+				38
+			],
+			"label": "Token tank"
+		},
+		{
+			"id": "relief",
+			"kind": "cylinder",
+			"at": [
+				106,
+				22,
+				46
+			],
+			"size": [
+				2.5,
+				2.5,
+				9
+			],
+			"label": "Relief valve"
+		},
+		{
+			"id": "pump",
+			"kind": "box",
+			"at": [
+				126,
+				2,
+				8
+			],
+			"size": [
+				32,
+				28,
+				22
+			],
+			"r": 2,
+			"label": "Pump"
+		}
+	],
+	"focal": "tank",
+	"labels": [
+		{
+			"text": "Press",
+			"target": "head",
+			"side": "left"
+		},
+		{
+			"text": "Paper tape",
+			"target": "tape",
+			"side": "left"
+		},
+		{
+			"text": "Interlock",
+			"target": "interlock",
+			"side": "left"
+		},
+		{
+			"text": "Token tank, 8 max",
+			"target": "tank",
+			"side": "right",
+			"anchor": [
+				112,
+				38,
+				42
+			]
+		},
+		{
+			"text": "Relief valve",
+			"target": "relief",
+			"side": "right"
+		},
+		{
+			"text": "Pump, 2 tokens/s",
+			"target": "pump",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"bench-a",
+				"bench-b"
+			],
+			[
+				"tape",
+				"pump"
+			],
+			[
+				"column",
+				"interlock"
+			],
+			[
+				"head",
+				"ram"
+			],
+			[
+				"tank"
+			],
+			[
+				"relief"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 10,
+		"rest": "8 tokens, 2 per second"
+	},
+	"meta": {
+		"margin": "[ TOKEN BUCKET ]",
+		"corner": "VPK-HTML"
+	}
+}

@@ -1,0 +1,298 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-turbofan",
+	"figId": "FIG_221",
+	"title": "Turbofan on the thrust stand",
+	"label": "Dimetric turbofan on a ground-run thrust stand: the wide fan and spinner at the front, then compressors, combustor and turbines tapering to the exhaust cone, on a load cell atop the stand. The fan is highlighted.",
+	"caption": "Three spools turn at their own speeds, but the wide fan moves most of the air; its push drives the engine forward against the load cell, which reads 14 kN at idle and 334 kN at take-off.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "stand",
+			"kind": "box",
+			"at": [
+				67,
+				18,
+				0
+			],
+			"size": [
+				12,
+				28,
+				6
+			],
+			"r": 1,
+			"marks": [
+				[
+					[
+						2,
+						24
+					],
+					[
+						10,
+						24
+					]
+				]
+			],
+			"label": "Thrust stand"
+		},
+		{
+			"id": "cell",
+			"kind": "box",
+			"at": [
+				69,
+				24,
+				6
+			],
+			"size": [
+				8,
+				16,
+				8
+			],
+			"r": 1,
+			"label": "Load cell"
+		},
+		{
+			"id": "cone",
+			"kind": "box",
+			"at": [
+				3,
+				22,
+				22
+			],
+			"size": [
+				16,
+				12,
+				12
+			],
+			"r": 3,
+			"label": "Exhaust cone"
+		},
+		{
+			"id": "turbine",
+			"kind": "box",
+			"at": [
+				23,
+				18,
+				18
+			],
+			"size": [
+				14,
+				20,
+				20
+			],
+			"r": 3,
+			"label": "Turbines"
+		},
+		{
+			"id": "combustor",
+			"kind": "box",
+			"at": [
+				42,
+				19,
+				19
+			],
+			"size": [
+				14,
+				18,
+				18
+			],
+			"r": 3,
+			"label": "Combustor"
+		},
+		{
+			"id": "compressor",
+			"kind": "box",
+			"at": [
+				61,
+				14,
+				14
+			],
+			"size": [
+				20,
+				28,
+				28
+			],
+			"r": 3,
+			"label": "IP + HP compressors"
+		},
+		{
+			"id": "fan",
+			"kind": "box",
+			"at": [
+				86,
+				8,
+				8
+			],
+			"size": [
+				8,
+				40,
+				40
+			],
+			"r": 6,
+			"marks": [
+				[
+					[
+						4,
+						4
+					],
+					[
+						4,
+						36
+					]
+				]
+			],
+			"label": "Fan"
+		},
+		{
+			"id": "spinner",
+			"kind": "box",
+			"at": [
+				94,
+				22,
+				22
+			],
+			"size": [
+				6,
+				12,
+				12
+			],
+			"r": 4,
+			"label": "Spinner"
+		}
+	],
+	"focal": "fan",
+	"labels": [
+		{
+			"text": "Fan \u00b7 LP spool",
+			"target": "fan",
+			"side": "right",
+			"anchor": [
+				94,
+				44,
+				18
+			]
+		},
+		{
+			"text": "Spinner",
+			"target": "spinner",
+			"side": "right",
+			"anchor": [
+				100,
+				28,
+				28
+			]
+		},
+		{
+			"text": "IP + HP compressors",
+			"target": "compressor",
+			"side": "left",
+			"anchor": [
+				65,
+				42,
+				18
+			]
+		},
+		{
+			"text": "Combustor",
+			"target": "combustor",
+			"side": "left",
+			"anchor": [
+				46,
+				37,
+				21
+			]
+		},
+		{
+			"text": "Turbines",
+			"target": "turbine",
+			"side": "left",
+			"anchor": [
+				27,
+				38,
+				23
+			]
+		},
+		{
+			"text": "Exhaust cone",
+			"target": "cone",
+			"side": "left",
+			"anchor": [
+				7,
+				34,
+				26
+			]
+		},
+		{
+			"text": "Load cell \u00b7 thrust",
+			"target": "cell",
+			"side": "left",
+			"anchor": [
+				69,
+				40,
+				10
+			]
+		},
+		{
+			"text": "Thrust stand",
+			"target": "stand",
+			"side": "right",
+			"anchor": [
+				67,
+				46,
+				3
+			]
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				112,
+				28,
+				28
+			],
+			"to": [
+				126,
+				28,
+				28
+			],
+			"of": "fan"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"stand",
+				"cell"
+			],
+			[
+				"combustor"
+			],
+			[
+				"turbine",
+				"compressor"
+			],
+			[
+				"cone"
+			],
+			[
+				"fan"
+			],
+			[
+				"spinner"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "idle 14 kN"
+	},
+	"meta": {
+		"margin": "[ TRENT 970 ]",
+		"corner": "VPK-HTML"
+	}
+}

@@ -1,0 +1,380 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-sampling",
+	"figId": "FIG_215",
+	"title": "Temperature as a roulette wheel",
+	"label": "Dimetric roulette table: an accented pocket rotor whose sixteen frets are spaced by next-token probability, a ball in the widest pocket, a thermostat with temperature knob and thermometer, and a chip tray.",
+	"caption": "Each pocket is as wide as its token's probability; turning the temperature knob up evens the pockets out, so the ball lands on unlikely tokens more often.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "bowl",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				34,
+				34,
+				8
+			],
+			"label": "Wheel bowl"
+		},
+		{
+			"id": "rotor",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				8
+			],
+			"size": [
+				28,
+				28,
+				3
+			],
+			"label": "Pocket rotor",
+			"marks": [
+				[
+					[
+						3.4,
+						-6.7
+					],
+					[
+						11.8,
+						-23.2
+					]
+				],
+				[
+					[
+						7.2,
+						2.1
+					],
+					[
+						24.9,
+						7.4
+					]
+				],
+				[
+					[
+						2.5,
+						7.1
+					],
+					[
+						8.5,
+						24.6
+					]
+				],
+				[
+					[
+						-2.6,
+						7
+					],
+					[
+						-9.2,
+						24.3
+					]
+				],
+				[
+					[
+						-6,
+						4.5
+					],
+					[
+						-20.8,
+						15.6
+					]
+				],
+				[
+					[
+						-7.4,
+						1.5
+					],
+					[
+						-25.5,
+						5.2
+					]
+				],
+				[
+					[
+						-7.4,
+						-1.3
+					],
+					[
+						-25.6,
+						-4.6
+					]
+				],
+				[
+					[
+						-6.6,
+						-3.6
+					],
+					[
+						-22.9,
+						-12.3
+					]
+				],
+				[
+					[
+						-5.3,
+						-5.3
+					],
+					[
+						-18.5,
+						-18.3
+					]
+				],
+				[
+					[
+						-3.9,
+						-6.4
+					],
+					[
+						-13.3,
+						-22.3
+					]
+				],
+				[
+					[
+						-2.3,
+						-7.1
+					],
+					[
+						-8.1,
+						-24.7
+					]
+				],
+				[
+					[
+						-1,
+						-7.4
+					],
+					[
+						-3.3,
+						-25.8
+					]
+				],
+				[
+					[
+						0.2,
+						-7.5
+					],
+					[
+						0.8,
+						-26
+					]
+				],
+				[
+					[
+						1.2,
+						-7.4
+					],
+					[
+						4,
+						-25.7
+					]
+				],
+				[
+					[
+						2.1,
+						-7.2
+					],
+					[
+						7.2,
+						-25
+					]
+				],
+				[
+					[
+						2.8,
+						-7
+					],
+					[
+						9.6,
+						-24.2
+					]
+				]
+			]
+		},
+		{
+			"id": "hub",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				11
+			],
+			"size": [
+				5,
+				5,
+				7
+			],
+			"label": "Hub"
+		},
+		{
+			"id": "ball",
+			"kind": "cylinder",
+			"at": [
+				12,
+				-12,
+				11
+			],
+			"size": [
+				2,
+				2,
+				1.5
+			],
+			"label": "Ball"
+		},
+		{
+			"id": "tray",
+			"kind": "tray",
+			"at": [
+				-14,
+				44,
+				0
+			],
+			"size": [
+				34,
+				16,
+				4
+			],
+			"label": "Chip tray"
+		},
+		{
+			"id": "chip",
+			"kind": "cylinder",
+			"at": [
+				-4,
+				52,
+				1
+			],
+			"size": [
+				4,
+				4,
+				5
+			],
+			"label": "Sampled chip"
+		},
+		{
+			"id": "thermostat",
+			"kind": "box",
+			"at": [
+				44,
+				-12,
+				0
+			],
+			"size": [
+				22,
+				22,
+				7
+			],
+			"r": 2,
+			"label": "Thermostat"
+		},
+		{
+			"id": "knob",
+			"kind": "cylinder",
+			"at": [
+				58,
+				-2,
+				7
+			],
+			"size": [
+				5,
+				5,
+				4
+			],
+			"label": "Temperature knob"
+		},
+		{
+			"id": "thermometer",
+			"kind": "box",
+			"at": [
+				48,
+				-8,
+				7
+			],
+			"size": [
+				3,
+				3,
+				22
+			],
+			"r": 1,
+			"label": "Thermometer"
+		}
+	],
+	"focal": "rotor",
+	"labels": [
+		{
+			"text": "Pockets sized by probability",
+			"target": "rotor",
+			"side": "left"
+		},
+		{
+			"text": "Temperature knob",
+			"target": "knob",
+			"side": "right"
+		},
+		{
+			"text": "Thermometer",
+			"target": "thermometer",
+			"side": "right"
+		},
+		{
+			"text": "Ball",
+			"target": "ball",
+			"side": "right"
+		},
+		{
+			"text": "Sampled tokens",
+			"target": "chip",
+			"side": "left"
+		},
+		{
+			"text": "Wheel bowl",
+			"target": "bowl",
+			"side": "left"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"bowl",
+				"tray",
+				"thermostat"
+			],
+			[
+				"rotor"
+			],
+			[
+				"hub",
+				"chip"
+			],
+			[
+				"thermometer"
+			],
+			[
+				"ball"
+			],
+			[
+				"knob"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "T 1.00"
+	},
+	"meta": {
+		"margin": "[ SAMPLING ]",
+		"corner": "VPK-HTML"
+	}
+}

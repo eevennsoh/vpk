@@ -1,0 +1,52 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-mark-sweep",
+	"figId": "FIG_210",
+	"title": "Mark and sweep as a modular synth",
+	"label": "Dimetric synth case: cable arrows run from the stack module to modules A and C and from A to B, so all three are marked. Module E, which no cable reaches, is highlighted for the sweep beside a dashed freed slot.",
+	"caption": "The case is the heap and cables are pointers: marking follows every cable out from the stack and tags each module it reaches, and the sweep pulls any module no cable reaches, like module E, to free its slot.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "case", "kind": "tray", "at": [0, 0, 0], "size": [104, 76, 4], "label": "Heap case" },
+		{ "id": "stack", "kind": "box", "at": [8, 44, 4], "size": [24, 24, 12], "r": 1, "label": "Stack root" },
+		{ "id": "mod-a", "kind": "box", "at": [40, 44, 4], "size": [24, 24, 5], "r": 1, "label": "Module A" },
+		{ "id": "mod-b", "kind": "box", "at": [72, 44, 4], "size": [24, 24, 5], "r": 1, "label": "Module B" },
+		{ "id": "mod-c", "kind": "box", "at": [8, 8, 4], "size": [24, 24, 5], "r": 1, "label": "Module C" },
+		{ "id": "freed", "kind": "gap", "at": [40, 8, 4], "size": [24, 24, 0], "label": "Freed slot" },
+		{ "id": "mod-e", "kind": "box", "at": [72, 8, 4], "size": [24, 24, 5], "r": 1, "label": "Module E" }
+	],
+	"focal": "mod-e",
+	"annotations": [
+		{ "kind": "arrow", "from": [26, 56, 16], "to": [50, 56, 9] },
+		{ "kind": "arrow", "from": [56, 56, 9], "to": [82, 56, 9] },
+		{ "kind": "arrow", "from": [20, 50, 16], "to": [20, 22, 9] }
+	],
+	"labels": [
+		{ "text": "Stack root", "target": "stack", "side": "left" },
+		{ "text": "Marked: A, B, C", "target": "mod-c", "side": "left", "anchor": [11, 11, 9] },
+		{ "text": "Heap case", "target": "case", "side": "left" },
+		{ "text": "Freed slot", "target": "freed", "side": "right", "anchor": [40, 14, 4] },
+		{ "text": "Unreached, swept", "target": "mod-e", "side": "right" }
+	],
+	"assemble": {
+		"layers": [
+			["case"],
+			["stack", "freed"],
+			["mod-a", "mod-c"],
+			["mod-b"],
+			["mod-e"]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 10,
+		"rest": "mark a, b, c · sweep e"
+	},
+	"meta": {
+		"margin": "[ MARK AND SWEEP ]",
+		"corner": "VPK-HTML"
+	}
+}

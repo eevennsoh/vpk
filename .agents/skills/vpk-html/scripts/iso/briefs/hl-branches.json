@@ -1,0 +1,365 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-branches",
+	"figId": "FIG_113",
+	"title": "A branch forks and merges back",
+	"label": "Isometric commit graph: main along the back, a feature branch that forks off, adds two commits along the front and rejoins main at the accented merge commit, and a new commit about to land. Hover or arrow keys lift a part.",
+	"caption": "A branch is a side track of commits that leaves main at one commit and rejoins it at a merge commit with two parents.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "board",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				158,
+				42,
+				4
+			],
+			"r": 0,
+			"label": "Repository"
+		},
+		{
+			"id": "c1",
+			"kind": "cylinder",
+			"at": [
+				9,
+				9,
+				4
+			],
+			"size": [
+				4.5,
+				4.5,
+				5
+			],
+			"label": "Commit"
+		},
+		{
+			"id": "fork",
+			"kind": "cylinder",
+			"at": [
+				26,
+				9,
+				4
+			],
+			"size": [
+				4.5,
+				4.5,
+				5
+			],
+			"label": "Fork point"
+		},
+		{
+			"id": "merge",
+			"kind": "cylinder",
+			"at": [
+				98,
+				9,
+				4
+			],
+			"size": [
+				5.5,
+				5.5,
+				8
+			],
+			"label": "Merge commit"
+		},
+		{
+			"id": "head",
+			"kind": "cylinder",
+			"at": [
+				122,
+				9,
+				4
+			],
+			"size": [
+				4.5,
+				4.5,
+				5
+			],
+			"label": "Head"
+		},
+		{
+			"id": "b1",
+			"kind": "cylinder",
+			"at": [
+				48,
+				27,
+				4
+			],
+			"size": [
+				4.5,
+				4.5,
+				5
+			],
+			"label": "Branch commit"
+		},
+		{
+			"id": "b2",
+			"kind": "cylinder",
+			"at": [
+				78,
+				27,
+				4
+			],
+			"size": [
+				4.5,
+				4.5,
+				5
+			],
+			"label": "Branch commit"
+		},
+		{
+			"id": "m1",
+			"kind": "plate",
+			"at": [
+				13.24,
+				7.5,
+				4
+			],
+			"size": [
+				8.52,
+				3,
+				1
+			],
+			"r": 0,
+			"label": "Main"
+		},
+		{
+			"id": "m2",
+			"kind": "plate",
+			"at": [
+				30.24,
+				7.5,
+				4
+			],
+			"size": [
+				62.47,
+				3,
+				1
+			],
+			"r": 0,
+			"label": "Main"
+		},
+		{
+			"id": "m3",
+			"kind": "plate",
+			"at": [
+				103.29,
+				7.5,
+				4
+			],
+			"size": [
+				14.47,
+				3,
+				1
+			],
+			"r": 0,
+			"label": "Main"
+		},
+		{
+			"id": "out",
+			"kind": "plate",
+			"at": [
+				24.5,
+				13.24,
+				4
+			],
+			"size": [
+				3,
+				15.26,
+				1
+			],
+			"r": 0,
+			"label": "Feature branch leaves main"
+		},
+		{
+			"id": "r0",
+			"kind": "plate",
+			"at": [
+				27.5,
+				25.5,
+				4
+			],
+			"size": [
+				16.26,
+				3,
+				1
+			],
+			"r": 0,
+			"label": "Feature branch"
+		},
+		{
+			"id": "r1",
+			"kind": "plate",
+			"at": [
+				52.24,
+				25.5,
+				4
+			],
+			"size": [
+				21.52,
+				3,
+				1
+			],
+			"r": 0,
+			"label": "Feature branch"
+		},
+		{
+			"id": "r2",
+			"kind": "plate",
+			"at": [
+				82.24,
+				25.5,
+				4
+			],
+			"size": [
+				14.26,
+				3,
+				1
+			],
+			"r": 0,
+			"label": "Feature branch"
+		},
+		{
+			"id": "in",
+			"kind": "plate",
+			"at": [
+				96.5,
+				14.29,
+				4
+			],
+			"size": [
+				3,
+				14.21,
+				1
+			],
+			"r": 0,
+			"label": "Branch in"
+		},
+		{
+			"id": "slot",
+			"kind": "gap",
+			"at": [
+				139.5,
+				4.5,
+				4
+			],
+			"size": [
+				9,
+				9,
+				0
+			],
+			"r": 4.5,
+			"label": "Free socket"
+		},
+		{
+			"id": "new",
+			"kind": "cylinder",
+			"at": [
+				144,
+				9,
+				18
+			],
+			"size": [
+				4.5,
+				4.5,
+				5
+			],
+			"label": "New commit",
+			"state": "new"
+		}
+	],
+	"focal": "merge",
+	"labels": [
+		{
+			"text": "Main",
+			"target": "c1",
+			"side": "right"
+		},
+		{
+			"text": "Fork point",
+			"target": "fork",
+			"side": "right"
+		},
+		{
+			"text": "Merge commit",
+			"target": "merge",
+			"side": "right"
+		},
+		{
+			"text": "Head",
+			"target": "head",
+			"side": "right"
+		},
+		{
+			"text": "New commit",
+			"target": "new",
+			"side": "right"
+		},
+		{
+			"text": "Feature branch",
+			"target": "out",
+			"side": "left",
+			"anchor": [
+				26,
+				14,
+				5
+			]
+		},
+		{
+			"text": "Branch commit",
+			"target": "b1",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"board"
+			],
+			[
+				"m1",
+				"m2",
+				"m3",
+				"out",
+				"r0",
+				"r1",
+				"r2",
+				"in",
+				"slot"
+			],
+			[
+				"c1",
+				"fork",
+				"head"
+			],
+			[
+				"b1",
+				"b2"
+			],
+			[
+				"merge"
+			],
+			[
+				"new"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"rest": "Graph at rest",
+		"lift": 12
+	},
+	"meta": {
+		"margin": "[ BRANCHES ]",
+		"corner": "VPK-HTML"
+	}
+}

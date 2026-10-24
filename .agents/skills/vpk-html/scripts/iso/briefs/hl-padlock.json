@@ -1,0 +1,45 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-padlock",
+	"figId": "FIG_119",
+	"title": "A padlock, shackle in",
+	"label": "Dimetric padlock: a squat rounded body with a keyhole slot in its face and a thin shackle whose accented bow joins two legs at its edges. Lifted, the long hinge leg stays in the body; the free leg clears a dashed socket.",
+	"caption": "Come near and the shackle rises: the long hinge leg keeps hold of the body, and only the free leg clears its socket, which is all that unlocking has to do.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "body", "kind": "box", "at": [0, 0, 0], "size": [44, 34, 40], "r": 8, "label": "Body", "explode": [0, 0, 0] },
+		{ "id": "keyway", "kind": "box", "at": [19.5, 34, 12], "size": [5, 0.6, 14], "r": 0, "state": "active", "label": "Keyhole", "explode": [0, 0, 0] },
+		{ "id": "socket", "kind": "gap", "at": [35, 14, 40], "size": [6, 6, 0], "label": "Socket", "explode": [0, 0, 0] },
+		{ "id": "hinge-shank", "kind": "box", "at": [3.3, 14.3, 40], "size": [5.4, 5.4, 22], "r": 2, "label": "Hinge shank", "explode": [0, 0, 0] },
+		{ "id": "hinge-leg", "kind": "box", "at": [3, 14, 40], "size": [6, 6, 32], "r": 2, "label": "Hinge leg", "explode": [0, 0, 22] },
+		{ "id": "free-leg", "kind": "box", "at": [35, 14, 40], "size": [6, 6, 32], "r": 2, "label": "Free leg", "explode": [0, 0, 22] },
+		{ "id": "shackle", "kind": "box", "at": [3, 14, 72], "size": [38, 6, 12], "r": 4, "label": "Shackle bow", "explode": [0, 0, 22] }
+	],
+	"focal": "shackle",
+	"labels": [
+		{ "text": "Shackle bow", "target": "shackle", "side": "right" },
+		{ "text": "Hinge leg", "target": "hinge-leg", "side": "left" },
+		{ "text": "Free leg", "target": "free-leg", "side": "right" },
+		{ "text": "Keyhole", "target": "keyway", "side": "right" },
+		{ "text": "Body", "target": "body", "side": "left" }
+	],
+	"assemble": {
+		"layers": [
+			["body", "keyway"],
+			["socket"],
+			["hinge-shank", "hinge-leg", "free-leg"],
+			["shackle"]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": { "rest": 0, "min": 0, "max": 1, "step": 0.25, "unit": "lift" }
+	},
+	"meta": {
+		"margin": "[ SHACKLE IN ]",
+		"corner": "VPK-HTML"
+	}
+}

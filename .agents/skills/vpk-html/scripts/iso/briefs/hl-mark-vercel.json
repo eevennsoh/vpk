@@ -1,0 +1,47 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-mark-vercel",
+	"figId": "FIG_134",
+	"title": "The Vercel mark, not yet seated",
+	"label": "Isometric tribute to the Vercel mark: an upright triangle of six stepped rows hovering over a pad with a dashed empty slot. The accented base row seats; hovering lowers the triangle into its slot.",
+	"caption": "Nothing is deployed yet: the triangle hovers over its empty slot, and coming near lowers it until the base seats.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "pad", "kind": "slab", "at": [-22, -26, 0], "size": [116, 64, 6], "r": 8, "label": "Pad", "explode": [0, 0, 0] },
+		{ "id": "slot", "kind": "gap", "at": [-6, -2, 6], "size": [84, 16, 0], "label": "Empty slot", "explode": [0, 0, 0] },
+		{ "id": "row1", "kind": "box", "at": [0, 2, 28], "size": [72, 8, 10], "r": 1, "label": "Base", "explode": [0, 0, -22] },
+		{ "id": "row2", "kind": "box", "at": [6, 2, 38], "size": [60, 8, 10], "r": 1, "label": "Row", "explode": [0, 0, -22] },
+		{ "id": "row3", "kind": "box", "at": [12, 2, 48], "size": [48, 8, 10], "r": 1, "label": "Row", "explode": [0, 0, -22] },
+		{ "id": "row4", "kind": "box", "at": [18, 2, 58], "size": [36, 8, 10], "r": 1, "label": "Row", "explode": [0, 0, -22] },
+		{ "id": "row5", "kind": "box", "at": [24, 2, 68], "size": [24, 8, 10], "r": 1, "label": "Row", "explode": [0, 0, -22] },
+		{ "id": "apex", "kind": "box", "at": [30, 2, 78], "size": [12, 8, 10], "r": 1, "label": "Apex", "explode": [0, 0, -22] }
+	],
+	"focal": "row1",
+	"labels": [
+		{ "text": "Apex", "target": "apex", "side": "right" },
+		{ "text": "Stepped mark", "target": "row3", "side": "left" },
+		{ "text": "Base, seats here", "target": "row1", "side": "right" },
+		{ "text": "Empty slot", "target": "slot", "side": "left", "anchor": [-6, 6, 6] },
+		{ "text": "Pad", "target": "pad", "side": "right" }
+	],
+	"assemble": {
+		"layers": [
+			["pad", "slot"],
+			["row1"],
+			["row2", "row3"],
+			["row4", "row5"],
+			["apex"]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": { "rest": 0, "min": 0, "max": 1, "step": 0.25, "unit": "seat" }
+	},
+	"meta": {
+		"margin": "[ NO DEPLOYMENTS YET ]",
+		"corner": "VPK-HTML"
+	}
+}

@@ -1,0 +1,264 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-debounce",
+	"figId": "FIG_212",
+	"title": "Debounce and throttle recorder",
+	"label": "Dimetric music-box recorder: a pin disc on a case with a crank knob at the front. Two back posts hold the dashpots; throttle has set two pins, the highlighted debounce dashpot one.",
+	"caption": "Five turns of the knob are five calls; the throttle dashpot lets one through per interval and sets two pins, while the debounce dashpot waits for the turning to stop and sets just one.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "case",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				96,
+				64,
+				10
+			],
+			"r": 2,
+			"label": "Recorder case",
+			"marks": [
+				[
+					[
+						8,
+						64
+					],
+					[
+						50,
+						64
+					]
+				]
+			]
+		},
+		{
+			"id": "disc",
+			"kind": "cylinder",
+			"at": [
+				44,
+				34,
+				10
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"label": "Pin disc"
+		},
+		{
+			"id": "call-track",
+			"kind": "ring",
+			"at": [
+				44,
+				34,
+				13
+			],
+			"size": [
+				20,
+				20,
+				0
+			],
+			"clipTo": "disc",
+			"label": "Call track"
+		},
+		{
+			"id": "knob",
+			"kind": "cylinder",
+			"at": [
+				88,
+				54,
+				10
+			],
+			"size": [
+				4,
+				4,
+				8
+			],
+			"label": "Crank knob"
+		},
+		{
+			"id": "t-post",
+			"kind": "box",
+			"at": [
+				19,
+				-14,
+				0
+			],
+			"size": [
+				14,
+				13,
+				26
+			],
+			"r": 1,
+			"label": "Throttle post"
+		},
+		{
+			"id": "d-post",
+			"kind": "box",
+			"at": [
+				49,
+				-14,
+				0
+			],
+			"size": [
+				14,
+				13,
+				26
+			],
+			"r": 1,
+			"label": "Debounce post"
+		},
+		{
+			"id": "throttle",
+			"kind": "cylinder",
+			"at": [
+				26,
+				-7.5,
+				26
+			],
+			"size": [
+				4.5,
+				4.5,
+				12
+			],
+			"label": "Throttle dashpot"
+		},
+		{
+			"id": "debounce",
+			"kind": "cylinder",
+			"at": [
+				56,
+				-7.5,
+				26
+			],
+			"size": [
+				4.5,
+				4.5,
+				17
+			],
+			"label": "Debounce dashpot"
+		},
+		{
+			"id": "t-pin-1",
+			"kind": "cylinder",
+			"at": [
+				28,
+				46,
+				13
+			],
+			"size": [
+				1.8,
+				1.8,
+				7
+			],
+			"label": "Throttle pin"
+		},
+		{
+			"id": "t-pin-2",
+			"kind": "cylinder",
+			"at": [
+				44,
+				54,
+				13
+			],
+			"size": [
+				1.8,
+				1.8,
+				7
+			],
+			"label": "Throttle pin"
+		},
+		{
+			"id": "d-pin",
+			"kind": "cylinder",
+			"at": [
+				60,
+				46,
+				13
+			],
+			"size": [
+				1.8,
+				1.8,
+				7
+			],
+			"label": "Debounce pin"
+		}
+	],
+	"focal": "debounce",
+	"labels": [
+		{
+			"text": "Throttle dashpot",
+			"target": "throttle",
+			"side": "left"
+		},
+		{
+			"text": "Debounce dashpot",
+			"target": "debounce",
+			"side": "right"
+		},
+		{
+			"text": "Throttle pins",
+			"target": "t-pin-1",
+			"side": "left"
+		},
+		{
+			"text": "Debounce pin",
+			"target": "d-pin",
+			"side": "right"
+		},
+		{
+			"text": "Crank knob, a call per turn",
+			"target": "knob",
+			"side": "right"
+		},
+		{
+			"text": "Pin disc",
+			"target": "disc",
+			"side": "left"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"case"
+			],
+			[
+				"disc",
+				"call-track",
+				"knob"
+			],
+			[
+				"t-post",
+				"d-post"
+			],
+			[
+				"throttle"
+			],
+			[
+				"t-pin-1",
+				"t-pin-2",
+				"d-pin"
+			],
+			[
+				"debounce"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 10,
+		"rest": "5 calls, throttle 2, debounce 1"
+	},
+	"meta": {
+		"margin": "[ DEBOUNCE, THROTTLE ]",
+		"corner": "VPK-HTML"
+	}
+}

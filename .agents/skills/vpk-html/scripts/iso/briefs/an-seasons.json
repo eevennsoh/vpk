@@ -1,0 +1,302 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-seasons",
+	"figId": "FIG_225",
+	"title": "Tellurion on a turntable",
+	"label": "Dimetric tellurion: a lamp on a pillar for the Sun, an orbit arm whose five gears carry a globe with its axis tilted 23.4 degrees from vertical, and a ring tracing the yearly orbit. The globe is highlighted.",
+	"caption": "Seasons come from the tilt, not the distance: five gears keep the globe's 23.4° axis pointing the same way all year, so each hemisphere takes its turn leaning into the lamp.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit",
+		"pad": 12
+	},
+	"parts": [
+		{
+			"id": "base",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				38,
+				38,
+				5
+			],
+			"label": "Turntable"
+		},
+		{
+			"id": "orbit",
+			"kind": "ring",
+			"at": [
+				0,
+				0,
+				5
+			],
+			"size": [
+				30,
+				30,
+				0
+			],
+			"label": "Yearly orbit"
+		},
+		{
+			"id": "pillar",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				5
+			],
+			"size": [
+				3,
+				3,
+				22
+			],
+			"label": "Pillar"
+		},
+		{
+			"id": "lamp",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				27
+			],
+			"size": [
+				10,
+				10,
+				12
+			],
+			"label": "Lamp"
+		},
+		{
+			"id": "gear-1",
+			"kind": "cylinder",
+			"at": [
+				-4,
+				6.93,
+				5
+			],
+			"size": [
+				5,
+				5,
+				3.5
+			],
+			"label": "Gear train"
+		},
+		{
+			"id": "gear-2",
+			"kind": "ring",
+			"at": [
+				-6.75,
+				11.69,
+				6.5
+			],
+			"size": [
+				3.4,
+				3.4,
+				0
+			],
+			"label": "Gear 2"
+		},
+		{
+			"id": "gear-3",
+			"kind": "cylinder",
+			"at": [
+				-9.5,
+				16.45,
+				5
+			],
+			"size": [
+				5,
+				5,
+				3.5
+			],
+			"label": "Gear 3"
+		},
+		{
+			"id": "gear-4",
+			"kind": "ring",
+			"at": [
+				-12.25,
+				21.22,
+				6.5
+			],
+			"size": [
+				3.4,
+				3.4,
+				0
+			],
+			"label": "Gear 4"
+		},
+		{
+			"id": "gear-5",
+			"kind": "cylinder",
+			"at": [
+				-15,
+				25.98,
+				5
+			],
+			"size": [
+				5,
+				5,
+				3.5
+			],
+			"label": "Gear 5"
+		},
+		{
+			"id": "globe-south",
+			"kind": "cylinder",
+			"at": [
+				-15,
+				25.98,
+				8
+			],
+			"size": [
+				4.5,
+				4.5,
+				4
+			],
+			"label": "Globe, south cap"
+		},
+		{
+			"id": "globe",
+			"kind": "cylinder",
+			"at": [
+				-15,
+				25.98,
+				12
+			],
+			"size": [
+				7.5,
+				7.5,
+				14
+			],
+			"label": "Globe"
+		},
+		{
+			"id": "globe-north",
+			"kind": "cylinder",
+			"at": [
+				-15,
+				25.98,
+				26
+			],
+			"size": [
+				4.5,
+				4.5,
+				4
+			],
+			"label": "Globe, north cap"
+		}
+	],
+	"focal": "globe",
+	"labels": [
+		{
+			"text": "Globe, axis tilted 23.4°",
+			"target": "globe",
+			"side": "left"
+		},
+		{
+			"text": "Lamp is the sun",
+			"target": "lamp",
+			"side": "right"
+		},
+		{
+			"text": "Five gears hold the tilt",
+			"target": "gear-1",
+			"side": "right"
+		},
+		{
+			"text": "Yearly orbit",
+			"target": "orbit",
+			"side": "right",
+			"anchor": [
+				15,
+				-25.98,
+				5
+			]
+		},
+		{
+			"text": "Turntable",
+			"target": "base",
+			"side": "right",
+			"anchor": [
+				36.72,
+				-9.77,
+				2.5
+			]
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				-20.05,
+				31.03,
+				2.48
+			],
+			"to": [
+				-9.95,
+				20.93,
+				35.52
+			],
+			"of": "globe"
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				-15,
+				25.98,
+				30
+			],
+			"to": [
+				-15,
+				25.98,
+				35.52
+			]
+		}
+	],
+	"assemble": {
+		"from": [
+			0,
+			0,
+			4
+		],
+		"layers": [
+			[
+				"base",
+				"orbit"
+			],
+			[
+				"pillar"
+			],
+			[
+				"gear-1",
+				"gear-2",
+				"gear-3",
+				"gear-4",
+				"gear-5"
+			],
+			[
+				"lamp"
+			],
+			[
+				"globe-south",
+				"globe",
+				"globe-north"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"rest": "Tellurion at rest",
+		"lift": 6
+	},
+	"meta": {
+		"margin": "[ SEASONS ]",
+		"corner": "VPK-HTML"
+	}
+}

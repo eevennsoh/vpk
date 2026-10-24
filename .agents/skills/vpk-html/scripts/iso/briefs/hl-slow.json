@@ -1,0 +1,52 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-slow",
+	"figId": "FIG_105",
+	"title": "Crates through a slow gate",
+	"label": "Dimetric conveyor: a long belt carrying five crates towards the far end, passing under a gate of two posts and a crossbeam. The crate inside the gate is accented; a flow arrow runs along the belt.",
+	"caption": "The gate sets the clock: slowing it stretches every crate's passage, but the belt never stops.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "belt", "kind": "tray", "at": [0, 0, 0], "size": [250, 36, 6], "label": "Belt" },
+		{ "id": "crate-1", "kind": "box", "at": [14, 9, 2.9], "size": [18, 18, 14], "r": 2, "label": "Crate 1" },
+		{ "id": "crate-2", "kind": "box", "at": [58, 9, 2.9], "size": [18, 18, 14], "r": 2, "label": "Crate 2" },
+		{ "id": "crate-3", "kind": "box", "at": [107, 9, 2.9], "size": [18, 18, 14], "r": 2, "label": "Crate in gate" },
+		{ "id": "crate-4", "kind": "box", "at": [160, 9, 2.9], "size": [18, 18, 14], "r": 2, "label": "Crate 4" },
+		{ "id": "crate-5", "kind": "box", "at": [206, 9, 2.9], "size": [18, 18, 14], "r": 2, "label": "Crate 5" },
+		{ "id": "post-back", "kind": "box", "at": [114, -6, 0], "size": [4, 4, 34], "label": "Gate post" },
+		{ "id": "post-front", "kind": "box", "at": [114, 38, 0], "size": [4, 4, 34], "label": "Gate post" },
+		{ "id": "beam", "kind": "box", "at": [114, -2, 29], "size": [4, 40, 4], "label": "Gate beam" }
+	],
+	"focal": "crate-3",
+	"labels": [
+		{ "text": "Crate in gate", "target": "crate-3", "side": "right", "anchor": [125, 14, 6] },
+		{ "text": "Gate", "target": "beam", "side": "right" },
+		{ "text": "Belt", "target": "belt", "side": "left" },
+		{ "text": "Next crate", "target": "crate-4", "side": "right" }
+	],
+	"annotations": [
+		{ "kind": "arrow", "from": [150, 46, 4], "to": [200, 46, 4] }
+	],
+	"assemble": {
+		"layers": [
+			["belt"],
+			["post-back", "post-front"],
+			["beam"],
+			["crate-1", "crate-2"],
+			["crate-3"],
+			["crate-4", "crate-5"]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 10,
+		"rest": "rate 1.00×"
+	},
+	"meta": {
+		"margin": "[ 1 : 4 ]",
+		"corner": "VPK-HTML"
+	}
+}

@@ -57,6 +57,8 @@ export const EASE_LIFT = bezier(0.32, 0.72, 0, 1);
 
 // The discrete clock: a 700 ms tween on EASE_LIFT; tset retargets from where it is after `delay`.
 export const tween = (v, dur = 700) => ({ from: v, to: v, t0: -1e9, dur });
+// Hover selection is quicker than other discrete moves: a slow lift and a neighbour stagger made fast pointer sweeps feel laggy.
+export const SELECT_MS = 180;
 
 export const tval = (tw, now, reduced = false) => tw.from + (tw.to - tw.from) * (reduced ? 1 : EASE_LIFT(Math.min(1, Math.max(0, (now - tw.t0) / tw.dur))));
 
@@ -70,7 +72,7 @@ export function tset(tw, to, now, delay = 0, reduced = false) {
 export const tdone = (tw, now, reduced = false) => reduced || now >= tw.t0 + tw.dur;
 
 // Neighbour stagger (rule 02): |rank − reference rank| × 40 ms.
-export const selectDelay = (rank, ref) => (ref === null || ref === undefined ? 0 : Math.abs(rank - ref) * 40);
+export const selectDelay = (rank, ref) => (ref === null || ref === undefined ? 0 : Math.abs(rank - ref) * 10);
 
 // Pure select core. Units are logical parts in painter order (tray halves share one unit).
 export function selectReducer(state, event) {
@@ -179,7 +181,7 @@ export function createIsoRuntime(win, loop, core) {
 			let points = [...el.querySelectorAll(role("fill"))].flatMap(p => core.parsePolyPath(p.getAttribute("d")) || []);
 			if (!points.length) points = core.parsePolyPath((el.querySelector(role("edge")) || el).getAttribute("d")) || [];
 			units[unit].points.push(...points);
-			return { el, i, id, unit, vec, depth: Number(attr(el, "depth")) || 0, group: el.parentNode, tw: tween(0), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
+			return { el, i, id, unit, vec, depth: Number(attr(el, "depth")) || 0, group: el.parentNode, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
 		});
 		for (const unit of units) unit.poly = core.hull(unit.points);
 		if (!parts.length || units.some(unit => unit.poly.length < 3)) throw new Error("polygon");

@@ -1,0 +1,96 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-settle",
+	"figId": "FIG_125",
+	"title": "Nodes settle around a hub",
+	"label": "Isometric network: a large hub tile, accented, at the centre, ringed by eight dashed slots, with eight small node tiles scattered and floating at different heights above them. Hovering settles every node down into its slot around the hub.",
+	"caption": "Loose nodes drift off their places at different heights; hover and each one drops and slides into its slot around the hub.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "hub", "kind": "box", "at": [32, 32, 0], "size": [20, 20, 5], "r": 3, "label": "Hub", "explode": [0, 0, 0] },
+		{ "id": "slot-nw", "kind": "gap", "at": [11, 11, 0], "size": [18, 18, 0], "label": "Slot", "explode": [0, 0, 0] },
+		{ "id": "slot-n", "kind": "gap", "at": [33, 11, 0], "size": [18, 18, 0], "label": "Slot", "explode": [0, 0, 0] },
+		{ "id": "slot-ne", "kind": "gap", "at": [55, 11, 0], "size": [18, 18, 0], "label": "Slot", "explode": [0, 0, 0] },
+		{ "id": "slot-w", "kind": "gap", "at": [11, 33, 0], "size": [18, 18, 0], "label": "Slot", "explode": [0, 0, 0] },
+		{ "id": "slot-e", "kind": "gap", "at": [55, 33, 0], "size": [18, 18, 0], "label": "Slot", "explode": [0, 0, 0] },
+		{ "id": "slot-sw", "kind": "gap", "at": [11, 55, 0], "size": [18, 18, 0], "label": "Slot", "explode": [0, 0, 0] },
+		{ "id": "slot-s", "kind": "gap", "at": [33, 55, 0], "size": [18, 18, 0], "label": "Slot", "explode": [0, 0, 0] },
+		{ "id": "slot-se", "kind": "gap", "at": [55, 55, 0], "size": [18, 18, 0], "label": "Slot", "explode": [0, 0, 0] },
+		{ "id": "tile-nw", "kind": "box", "at": [-4, 6, 10], "size": [14, 14, 3], "r": 2, "label": "Node", "explode": [17, 7, -10] },
+		{ "id": "tile-n", "kind": "box", "at": [35, -5, 12], "size": [14, 14, 3], "r": 2, "label": "Node", "explode": [0, 18, -12] },
+		{ "id": "tile-ne", "kind": "box", "at": [62, -4, 6], "size": [14, 14, 3], "r": 2, "label": "Node", "explode": [-5, 17, -6] },
+		{ "id": "tile-w", "kind": "box", "at": [-5, 43, 7], "size": [14, 14, 3], "r": 2, "label": "Node", "explode": [18, -8, -7] },
+		{ "id": "tile-e", "kind": "box", "at": [83, 35, 5], "size": [14, 14, 3], "r": 2, "label": "Node", "explode": [-26, 0, -5] },
+		{ "id": "tile-sw", "kind": "box", "at": [9, 73, 3], "size": [14, 14, 3], "r": 2, "label": "Node", "explode": [4, -16, -3] },
+		{ "id": "tile-s", "kind": "box", "at": [62, 84, 11], "size": [14, 14, 3], "r": 2, "label": "Node", "explode": [-27, -27, -11] },
+		{ "id": "tile-se", "kind": "box", "at": [76, 66, 6], "size": [14, 14, 3], "r": 2, "label": "Node", "explode": [-19, -9, -6] }
+	],
+	"focal": "hub",
+	"labels": [
+		{
+			"text": "Hub",
+			"target": "hub",
+			"side": "right",
+			"anchor": [52, 40, 2]
+		},
+		{
+			"text": "Node",
+			"target": "tile-e",
+			"side": "right"
+		},
+		{
+			"text": "Slot",
+			"target": "slot-s",
+			"side": "left",
+			"anchor": [34, 72, 0]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"hub"
+			],
+			[
+				"slot-nw",
+				"slot-n",
+				"slot-ne",
+				"slot-w",
+				"slot-e",
+				"slot-sw",
+				"slot-s",
+				"slot-se"
+			],
+			[
+				"tile-nw",
+				"tile-n",
+				"tile-ne"
+			],
+			[
+				"tile-w",
+				"tile-e"
+			],
+			[
+				"tile-sw",
+				"tile-s",
+				"tile-se"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 1,
+			"step": 0.25,
+			"unit": "settle"
+		}
+	},
+	"meta": {
+		"margin": "[ SETTLE ]",
+		"corner": "VPK-HTML"
+	}
+}

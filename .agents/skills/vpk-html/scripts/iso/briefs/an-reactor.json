@@ -1,0 +1,345 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-reactor",
+	"figId": "FIG_233",
+	"title": "Pool reactor",
+	"label": "Dimetric TRIGA pool reactor in half section: a fuel core on a grid plate at the bottom of an open water tank, a control rod hanging from a drive on the bridge, and a console. The rod is highlighted; hover pulls it out.",
+	"caption": "The water is the shield and the coolant; the rod is the throttle. Pull it from the core and the power climbs; scram and it falls back in.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "floor",
+			"kind": "box",
+			"at": [
+				4,
+				4,
+				0
+			],
+			"size": [
+				60,
+				60,
+				4
+			],
+			"r": 1,
+			"label": "Pool floor",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "wall-back",
+			"kind": "box",
+			"at": [
+				4,
+				0,
+				0
+			],
+			"size": [
+				60,
+				4,
+				64
+			],
+			"r": 1,
+			"label": "Pool wall",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "wall-side",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				4,
+				64,
+				64
+			],
+			"r": 1,
+			"label": "Pool wall",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "grid",
+			"kind": "cylinder",
+			"at": [
+				36,
+				36,
+				4
+			],
+			"size": [
+				16,
+				16,
+				3
+			],
+			"label": "Grid plate",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "reflector",
+			"kind": "ring",
+			"at": [
+				36,
+				36,
+				7
+			],
+			"size": [
+				16,
+				16,
+				0
+			],
+			"label": "Reflector",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "core",
+			"kind": "cylinder",
+			"at": [
+				36,
+				36,
+				7
+			],
+			"size": [
+				11,
+				11,
+				12
+			],
+			"label": "Fuel core",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "rod",
+			"kind": "cylinder",
+			"at": [
+				36,
+				36,
+				7
+			],
+			"size": [
+				2.5,
+				2.5,
+				32
+			],
+			"label": "Control rod",
+			"explode": [
+				0,
+				0,
+				12
+			]
+		},
+		{
+			"id": "water",
+			"kind": "gap",
+			"at": [
+				4,
+				4,
+				62
+			],
+			"size": [
+				60,
+				60,
+				0
+			],
+			"r": 1,
+			"label": "Water line",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "bridge",
+			"kind": "box",
+			"at": [
+				32,
+				0,
+				64
+			],
+			"size": [
+				8,
+				68,
+				4
+			],
+			"r": 1,
+			"label": "Bridge",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "drive",
+			"kind": "box",
+			"at": [
+				32.5,
+				31,
+				68
+			],
+			"size": [
+				7,
+				10,
+				9
+			],
+			"r": 2,
+			"label": "Rod drive",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "console",
+			"kind": "box",
+			"at": [
+				74,
+				2,
+				0
+			],
+			"size": [
+				10,
+				14,
+				14
+			],
+			"r": 2,
+			"label": "Console",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		}
+	],
+	"focal": "rod",
+	"labels": [
+		{
+			"text": "Control rod",
+			"target": "rod",
+			"side": "right",
+			"anchor": [
+				38.5,
+				36,
+				26
+			]
+		},
+		{
+			"text": "Fuel core",
+			"target": "core",
+			"side": "left",
+			"anchor": [
+				28.5,
+				43.5,
+				13
+			]
+		},
+		{
+			"text": "Reflector",
+			"target": "reflector",
+			"side": "left",
+			"anchor": [
+				47.3,
+				47.3,
+				7
+			]
+		},
+		{
+			"text": "Rod drive",
+			"target": "drive",
+			"side": "right"
+		},
+		{
+			"text": "Bridge",
+			"target": "bridge",
+			"side": "left"
+		},
+		{
+			"text": "Water line",
+			"target": "water",
+			"side": "right",
+			"anchor": [
+				64,
+				40,
+				62
+			]
+		},
+		{
+			"text": "Pool wall",
+			"target": "wall-side",
+			"side": "left"
+		},
+		{
+			"text": "Console",
+			"target": "console",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"floor",
+				"console"
+			],
+			[
+				"wall-back",
+				"wall-side",
+				"water"
+			],
+			[
+				"grid",
+				"reflector"
+			],
+			[
+				"core"
+			],
+			[
+				"rod"
+			],
+			[
+				"bridge",
+				"drive"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 1,
+			"step": 0.25,
+			"unit": "pull"
+		}
+	},
+	"meta": {
+		"margin": "[ POOL REACTOR ]",
+		"corner": "VPK-HTML"
+	}
+}

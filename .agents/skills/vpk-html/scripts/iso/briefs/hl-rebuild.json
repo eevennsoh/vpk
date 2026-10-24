@@ -1,0 +1,293 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-rebuild",
+	"figId": "FIG_115",
+	"title": "Rebuild, change ripples up",
+	"label": "Dimetric dependency tree of seven package tiles: four leaf packages feed core and UI kit, which feed the app, with an arrow to each dependent. The changed parser is accented.",
+	"caption": "Change the parser and only what depends on it rebuilds: parser, core and app rise in turn, each a little less, while the lexer, icons, theme and UI kit stay put.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "app",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				22,
+				22,
+				5
+			],
+			"r": 3,
+			"label": "App",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "core",
+			"kind": "slab",
+			"at": [
+				4,
+				84,
+				0
+			],
+			"size": [
+				22,
+				22,
+				5
+			],
+			"r": 3,
+			"label": "Core",
+			"explode": [
+				0,
+				0,
+				16
+			]
+		},
+		{
+			"id": "ui",
+			"kind": "slab",
+			"at": [
+				84,
+				4,
+				0
+			],
+			"size": [
+				22,
+				22,
+				5
+			],
+			"r": 3,
+			"label": "UI kit"
+		},
+		{
+			"id": "parser",
+			"kind": "slab",
+			"at": [
+				28,
+				148,
+				0
+			],
+			"size": [
+				22,
+				22,
+				5
+			],
+			"r": 3,
+			"label": "Parser",
+			"explode": [
+				0,
+				0,
+				24
+			],
+			"marks": [
+				[
+					[
+						5,
+						16
+					],
+					[
+						16,
+						16
+					]
+				]
+			]
+		},
+		{
+			"id": "lexer",
+			"kind": "slab",
+			"at": [
+				68,
+				108,
+				0
+			],
+			"size": [
+				22,
+				22,
+				5
+			],
+			"r": 3,
+			"label": "Lexer"
+		},
+		{
+			"id": "icons",
+			"kind": "slab",
+			"at": [
+				108,
+				68,
+				0
+			],
+			"size": [
+				22,
+				22,
+				5
+			],
+			"r": 3,
+			"label": "Icons"
+		},
+		{
+			"id": "theme",
+			"kind": "slab",
+			"at": [
+				148,
+				28,
+				0
+			],
+			"size": [
+				22,
+				22,
+				5
+			],
+			"r": 3,
+			"label": "Theme"
+		}
+	],
+	"focal": "parser",
+	"labels": [
+		{
+			"text": "App",
+			"target": "app",
+			"side": "right"
+		},
+		{
+			"text": "Core",
+			"target": "core",
+			"side": "left"
+		},
+		{
+			"text": "UI kit",
+			"target": "ui",
+			"side": "right"
+		},
+		{
+			"text": "Changed parser",
+			"target": "parser",
+			"side": "left"
+		},
+		{
+			"text": "Theme, untouched",
+			"target": "theme",
+			"side": "right"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				29,
+				149,
+				0
+			],
+			"to": [
+				25,
+				105,
+				0
+			],
+			"of": "parser"
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				69,
+				109,
+				0
+			],
+			"to": [
+				25,
+				105,
+				0
+			]
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				109,
+				69,
+				0
+			],
+			"to": [
+				105,
+				25,
+				0
+			]
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				149,
+				29,
+				0
+			],
+			"to": [
+				105,
+				25,
+				0
+			]
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				5,
+				85,
+				0
+			],
+			"to": [
+				21,
+				21,
+				0
+			]
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				85,
+				5,
+				0
+			],
+			"to": [
+				21,
+				21,
+				0
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"parser",
+				"lexer",
+				"icons",
+				"theme"
+			],
+			[
+				"core",
+				"ui"
+			],
+			[
+				"app"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 0.5,
+			"step": 0.25,
+			"unit": "rebuild"
+		}
+	},
+	"meta": {
+		"margin": "[ DEPENDENCY TREE ]",
+		"corner": "VPK-HTML"
+	}
+}

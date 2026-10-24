@@ -1,0 +1,824 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-binary-search",
+	"figId": "FIG_202",
+	"title": "Binary search on a lab balance",
+	"label": "Dimetric lab balance, pillar, beam and two hung pans: a sample on the left, the accented middle weight on the lower right pan. In front a case of sixteen graded weights; twelve sunk flush, four left in slots 9 to 12, seat 11 empty.",
+	"caption": "Each try weighs the sample against the middle weight still standing; the half that cannot hold the answer sinks into its seats, so sixteen weights take four tries.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "plinth",
+			"kind": "box",
+			"at": [
+				38,
+				-3,
+				0
+			],
+			"size": [
+				20,
+				16,
+				5
+			],
+			"r": 1,
+			"label": "Plinth"
+		},
+		{
+			"id": "pillar",
+			"kind": "box",
+			"at": [
+				46,
+				4,
+				5
+			],
+			"size": [
+				4,
+				2,
+				21
+			],
+			"r": 0.5,
+			"label": "Pillar"
+		},
+		{
+			"id": "beam-left",
+			"kind": "box",
+			"at": [
+				18,
+				4.25,
+				26
+			],
+			"size": [
+				6,
+				1.5,
+				1.5
+			],
+			"r": 0.3,
+			"label": "Beam, left end"
+		},
+		{
+			"id": "beam-arm-left",
+			"kind": "box",
+			"at": [
+				24,
+				4.25,
+				26
+			],
+			"size": [
+				12,
+				1.5,
+				1.5
+			],
+			"r": 0,
+			"label": "Beam, left arm"
+		},
+		{
+			"id": "beam-mid",
+			"kind": "box",
+			"at": [
+				36,
+				4.25,
+				26
+			],
+			"size": [
+				16,
+				1.5,
+				1.5
+			],
+			"r": 0,
+			"label": "Beam pivot"
+		},
+		{
+			"id": "beam-arm-right",
+			"kind": "box",
+			"at": [
+				52,
+				4.25,
+				26
+			],
+			"size": [
+				7,
+				1.5,
+				1.5
+			],
+			"r": 0,
+			"label": "Beam, right arm"
+		},
+		{
+			"id": "beam-right",
+			"kind": "box",
+			"at": [
+				59,
+				4.25,
+				26
+			],
+			"size": [
+				19,
+				1.5,
+				1.5
+			],
+			"r": 0.3,
+			"label": "Beam, right end"
+		},
+		{
+			"id": "hanger-left",
+			"kind": "box",
+			"at": [
+				19.5,
+				4.5,
+				8.2
+			],
+			"size": [
+				1,
+				1,
+				17.8
+			],
+			"r": 0,
+			"label": "Left hanger"
+		},
+		{
+			"id": "hanger-right",
+			"kind": "box",
+			"at": [
+				75.5,
+				4.5,
+				6.7
+			],
+			"size": [
+				1,
+				1,
+				19.3
+			],
+			"r": 0,
+			"label": "Right hanger"
+		},
+		{
+			"id": "pan-left",
+			"kind": "cylinder",
+			"at": [
+				20,
+				11,
+				7
+			],
+			"size": [
+				7,
+				7,
+				1.2
+			],
+			"label": "Left pan"
+		},
+		{
+			"id": "pan-right",
+			"kind": "cylinder",
+			"at": [
+				76,
+				11,
+				5.5
+			],
+			"size": [
+				7,
+				7,
+				1.2
+			],
+			"label": "Right pan"
+		},
+		{
+			"id": "sample",
+			"kind": "box",
+			"at": [
+				17.5,
+				8.5,
+				8.2
+			],
+			"size": [
+				5,
+				5,
+				5
+			],
+			"r": 0.8,
+			"label": "Sample"
+		},
+		{
+			"id": "test",
+			"kind": "cylinder",
+			"at": [
+				76,
+				11,
+				6.7
+			],
+			"size": [
+				2.3,
+				2.3,
+				4.1
+			],
+			"label": "Middle weight, 11"
+		},
+		{
+			"id": "seat-1",
+			"kind": "box",
+			"at": [
+				-1,
+				33,
+				0
+			],
+			"size": [
+				7,
+				10,
+				3
+			],
+			"r": 1,
+			"label": "Case, seat 1"
+		},
+		{
+			"id": "w-1",
+			"kind": "ring",
+			"at": [
+				3,
+				38,
+				3
+			],
+			"size": [
+				1.3,
+				1.3,
+				0
+			],
+			"label": "Weight 1, sunk"
+		},
+		{
+			"id": "seat-2",
+			"kind": "box",
+			"at": [
+				6,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 2"
+		},
+		{
+			"id": "w-2",
+			"kind": "ring",
+			"at": [
+				9,
+				38,
+				3
+			],
+			"size": [
+				1.4,
+				1.4,
+				0
+			],
+			"label": "Weight 2, sunk"
+		},
+		{
+			"id": "seat-3",
+			"kind": "box",
+			"at": [
+				12,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 3"
+		},
+		{
+			"id": "w-3",
+			"kind": "ring",
+			"at": [
+				15,
+				38,
+				3
+			],
+			"size": [
+				1.5,
+				1.5,
+				0
+			],
+			"label": "Weight 3, sunk"
+		},
+		{
+			"id": "seat-4",
+			"kind": "box",
+			"at": [
+				18,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 4"
+		},
+		{
+			"id": "w-4",
+			"kind": "ring",
+			"at": [
+				21,
+				38,
+				3
+			],
+			"size": [
+				1.6,
+				1.6,
+				0
+			],
+			"label": "Weight 4, sunk"
+		},
+		{
+			"id": "seat-5",
+			"kind": "box",
+			"at": [
+				24,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 5"
+		},
+		{
+			"id": "w-5",
+			"kind": "ring",
+			"at": [
+				27,
+				38,
+				3
+			],
+			"size": [
+				1.7,
+				1.7,
+				0
+			],
+			"label": "Weight 5, sunk"
+		},
+		{
+			"id": "seat-6",
+			"kind": "box",
+			"at": [
+				30,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 6"
+		},
+		{
+			"id": "w-6",
+			"kind": "ring",
+			"at": [
+				33,
+				38,
+				3
+			],
+			"size": [
+				1.8,
+				1.8,
+				0
+			],
+			"label": "Weight 6, sunk"
+		},
+		{
+			"id": "seat-7",
+			"kind": "box",
+			"at": [
+				36,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 7"
+		},
+		{
+			"id": "w-7",
+			"kind": "ring",
+			"at": [
+				39,
+				38,
+				3
+			],
+			"size": [
+				1.9,
+				1.9,
+				0
+			],
+			"label": "Weight 7, sunk"
+		},
+		{
+			"id": "seat-8",
+			"kind": "box",
+			"at": [
+				42,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 8"
+		},
+		{
+			"id": "w-8",
+			"kind": "ring",
+			"at": [
+				45,
+				38,
+				3
+			],
+			"size": [
+				2,
+				2,
+				0
+			],
+			"label": "Weight 8, sunk"
+		},
+		{
+			"id": "seat-9",
+			"kind": "box",
+			"at": [
+				48,
+				33,
+				0
+			],
+			"size": [
+				8,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 9"
+		},
+		{
+			"id": "w-9",
+			"kind": "cylinder",
+			"at": [
+				51,
+				38,
+				3
+			],
+			"size": [
+				2.1,
+				2.1,
+				3.8
+			],
+			"label": "Weight 9"
+		},
+		{
+			"id": "seat-10",
+			"kind": "box",
+			"at": [
+				56,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 10"
+		},
+		{
+			"id": "w-10",
+			"kind": "cylinder",
+			"at": [
+				57,
+				38,
+				3
+			],
+			"size": [
+				2.2,
+				2.2,
+				3.95
+			],
+			"label": "Weight 10"
+		},
+		{
+			"id": "seat-11",
+			"kind": "box",
+			"at": [
+				62,
+				33,
+				0
+			],
+			"size": [
+				4,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 11"
+		},
+		{
+			"id": "empty-11",
+			"kind": "gap",
+			"at": [
+				60.7,
+				35.7,
+				3
+			],
+			"size": [
+				4.6,
+				4.6,
+				0
+			],
+			"r": 2.3,
+			"label": "Seat 11, weight on the pan"
+		},
+		{
+			"id": "seat-12",
+			"kind": "box",
+			"at": [
+				66,
+				33,
+				0
+			],
+			"size": [
+				8,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 12"
+		},
+		{
+			"id": "w-12",
+			"kind": "cylinder",
+			"at": [
+				69,
+				38,
+				3
+			],
+			"size": [
+				2.4,
+				2.4,
+				4.25
+			],
+			"label": "Weight 12"
+		},
+		{
+			"id": "seat-13",
+			"kind": "box",
+			"at": [
+				74,
+				33,
+				0
+			],
+			"size": [
+				4,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 13"
+		},
+		{
+			"id": "w-13",
+			"kind": "ring",
+			"at": [
+				75,
+				38,
+				3
+			],
+			"size": [
+				2.5,
+				2.5,
+				0
+			],
+			"label": "Weight 13, sunk"
+		},
+		{
+			"id": "seat-14",
+			"kind": "box",
+			"at": [
+				78,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 14"
+		},
+		{
+			"id": "w-14",
+			"kind": "ring",
+			"at": [
+				81,
+				38,
+				3
+			],
+			"size": [
+				2.6,
+				2.6,
+				0
+			],
+			"label": "Weight 14, sunk"
+		},
+		{
+			"id": "seat-15",
+			"kind": "box",
+			"at": [
+				84,
+				33,
+				0
+			],
+			"size": [
+				6,
+				10,
+				3
+			],
+			"r": 0,
+			"label": "Case, seat 15"
+		},
+		{
+			"id": "w-15",
+			"kind": "ring",
+			"at": [
+				87,
+				38,
+				3
+			],
+			"size": [
+				2.7,
+				2.7,
+				0
+			],
+			"label": "Weight 15, sunk"
+		},
+		{
+			"id": "seat-16",
+			"kind": "box",
+			"at": [
+				90,
+				33,
+				0
+			],
+			"size": [
+				7,
+				10,
+				3
+			],
+			"r": 1,
+			"label": "Case, seat 16"
+		},
+		{
+			"id": "w-16",
+			"kind": "ring",
+			"at": [
+				93,
+				38,
+				3
+			],
+			"size": [
+				2.8,
+				2.8,
+				0
+			],
+			"label": "Weight 16, sunk"
+		}
+	],
+	"focal": "test",
+	"labels": [
+		{
+			"text": "Middle weight",
+			"target": "test",
+			"side": "right"
+		},
+		{
+			"text": "Sample",
+			"target": "sample",
+			"side": "left"
+		},
+		{
+			"text": "Balance beam",
+			"target": "beam-arm-left",
+			"side": "left"
+		},
+		{
+			"text": "Sunk weights",
+			"target": "w-1",
+			"side": "left",
+			"anchor": [
+				3,
+				39.3,
+				3
+			]
+		},
+		{
+			"text": "Empty seat",
+			"target": "empty-11",
+			"side": "right",
+			"anchor": [
+				63,
+				40.3,
+				3
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"plinth",
+				"seat-1",
+				"seat-2",
+				"seat-3",
+				"seat-4",
+				"seat-5",
+				"seat-6",
+				"seat-7",
+				"seat-8",
+				"seat-9",
+				"seat-10",
+				"seat-11",
+				"seat-12",
+				"seat-13",
+				"seat-14",
+				"seat-15",
+				"seat-16"
+			],
+			[
+				"pillar",
+				"w-1",
+				"w-2",
+				"w-3",
+				"w-4",
+				"w-5",
+				"w-6",
+				"w-7",
+				"w-8",
+				"w-13",
+				"w-14",
+				"w-15",
+				"w-16",
+				"empty-11"
+			],
+			[
+				"beam-left",
+				"beam-arm-left",
+				"beam-mid",
+				"beam-arm-right",
+				"beam-right",
+				"hanger-left",
+				"hanger-right",
+				"w-9",
+				"w-10",
+				"w-12"
+			],
+			[
+				"pan-left",
+				"pan-right"
+			],
+			[
+				"sample"
+			],
+			[
+				"test"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 3,
+		"rest": "try 3 of 4"
+	},
+	"meta": {
+		"margin": "[ 16 WEIGHTS ]",
+		"corner": "VPK-HTML"
+	}
+}

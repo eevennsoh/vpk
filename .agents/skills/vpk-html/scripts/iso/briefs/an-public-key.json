@@ -1,0 +1,432 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-public-key",
+	"figId": "FIG_229",
+	"title": "A strongbox with two kinds of key",
+	"label": "Dimetric strongbox with hinges, a hasp and a keyholed lid lock. Three public keys (bit, shaft, bow) lie on a rack on its left; one private key with an accented bow sits alone on a plinth on its right.",
+	"caption": "Any of the three public keys can turn the lock shut, but only the one private key turns it back open: anyone can seal the box, one person can read it.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "rack",
+			"kind": "gap",
+			"at": [
+				-6,
+				34,
+				0
+			],
+			"size": [
+				40,
+				44,
+				0
+			],
+			"r": 2,
+			"label": "Key mat"
+		},
+		{
+			"id": "pub-1-bit",
+			"kind": "box",
+			"at": [
+				0,
+				44.5,
+				0
+			],
+			"size": [
+				7,
+				3.5,
+				2.5
+			],
+			"r": 0,
+			"label": "Public key"
+		},
+		{
+			"id": "pub-1-shaft",
+			"kind": "box",
+			"at": [
+				0,
+				41.5,
+				0
+			],
+			"size": [
+				20,
+				3,
+				2.5
+			],
+			"r": 0,
+			"label": "Public key"
+		},
+		{
+			"id": "pub-1-bow",
+			"kind": "cylinder",
+			"at": [
+				24,
+				43,
+				0
+			],
+			"size": [
+				5,
+				5,
+				2.5
+			],
+			"label": "Public key"
+		},
+		{
+			"id": "pub-2-bit",
+			"kind": "box",
+			"at": [
+				0,
+				56.5,
+				0
+			],
+			"size": [
+				7,
+				3.5,
+				2.5
+			],
+			"r": 0,
+			"label": "Public key"
+		},
+		{
+			"id": "pub-2-shaft",
+			"kind": "box",
+			"at": [
+				0,
+				53.5,
+				0
+			],
+			"size": [
+				20,
+				3,
+				2.5
+			],
+			"r": 0,
+			"label": "Public key"
+		},
+		{
+			"id": "pub-2-bow",
+			"kind": "cylinder",
+			"at": [
+				24,
+				55,
+				0
+			],
+			"size": [
+				5,
+				5,
+				2.5
+			],
+			"label": "Public key"
+		},
+		{
+			"id": "pub-3-bit",
+			"kind": "box",
+			"at": [
+				0,
+				68.5,
+				0
+			],
+			"size": [
+				7,
+				3.5,
+				2.5
+			],
+			"r": 0,
+			"label": "Public key"
+		},
+		{
+			"id": "pub-3-shaft",
+			"kind": "box",
+			"at": [
+				0,
+				65.5,
+				0
+			],
+			"size": [
+				20,
+				3,
+				2.5
+			],
+			"r": 0,
+			"label": "Public key"
+		},
+		{
+			"id": "pub-3-bow",
+			"kind": "cylinder",
+			"at": [
+				24,
+				67,
+				0
+			],
+			"size": [
+				5,
+				5,
+				2.5
+			],
+			"label": "Public key"
+		},
+		{
+			"id": "hinge-1",
+			"kind": "box",
+			"at": [
+				48,
+				11.6,
+				15
+			],
+			"size": [
+				7,
+				2.4,
+				11
+			],
+			"r": 0,
+			"label": "Hinge"
+		},
+		{
+			"id": "hinge-2",
+			"kind": "box",
+			"at": [
+				70,
+				11.6,
+				15
+			],
+			"size": [
+				7,
+				2.4,
+				11
+			],
+			"r": 0,
+			"label": "Hinge"
+		},
+		{
+			"id": "box",
+			"kind": "box",
+			"at": [
+				40,
+				14,
+				0
+			],
+			"size": [
+				44,
+				32,
+				20
+			],
+			"r": 3,
+			"label": "Strongbox"
+		},
+		{
+			"id": "lid",
+			"kind": "slab",
+			"at": [
+				40,
+				14,
+				20
+			],
+			"size": [
+				44,
+				32,
+				5
+			],
+			"r": 2,
+			"label": "Lid"
+		},
+		{
+			"id": "lock",
+			"kind": "cylinder",
+			"at": [
+				62,
+				33,
+				25
+			],
+			"size": [
+				5,
+				5,
+				4
+			],
+			"label": "Lid lock"
+		},
+		{
+			"id": "keyhole",
+			"kind": "ring",
+			"at": [
+				62,
+				33,
+				29
+			],
+			"size": [
+				1.4,
+				1.4,
+				0
+			],
+			"clipTo": "lock",
+			"label": "Keyhole"
+		},
+		{
+			"id": "hasp",
+			"kind": "box",
+			"at": [
+				59,
+				46,
+				12
+			],
+			"size": [
+				6,
+				1.6,
+				12
+			],
+			"r": 0,
+			"label": "Hasp"
+		},
+		{
+			"id": "plinth",
+			"kind": "slab",
+			"at": [
+				96,
+				12,
+				0
+			],
+			"size": [
+				36,
+				28,
+				4
+			],
+			"r": 0,
+			"label": "Plinth"
+		},
+		{
+			"id": "private-bit",
+			"kind": "box",
+			"at": [
+				102,
+				33.5,
+				4
+			],
+			"size": [
+				7,
+				3.5,
+				2.5
+			],
+			"r": 0,
+			"label": "Private key"
+		},
+		{
+			"id": "private-shaft",
+			"kind": "box",
+			"at": [
+				102,
+				30.5,
+				4
+			],
+			"size": [
+				20,
+				3,
+				2.5
+			],
+			"r": 0,
+			"label": "Private key"
+		},
+		{
+			"id": "private-bow",
+			"kind": "cylinder",
+			"at": [
+				126,
+				32,
+				4
+			],
+			"size": [
+				5,
+				5,
+				2.5
+			],
+			"label": "Private key"
+		}
+	],
+	"focal": "private-bow",
+	"labels": [
+		{
+			"text": "Public keys",
+			"target": "pub-3-shaft",
+			"side": "left"
+		},
+		{
+			"text": "Lid lock",
+			"target": "lock",
+			"side": "left",
+			"anchor": [
+				59,
+				36,
+				29
+			]
+		},
+		{
+			"text": "Hinge",
+			"target": "hinge-1",
+			"side": "left",
+			"anchor": [
+				51.5,
+				12.8,
+				26
+			]
+		},
+		{
+			"text": "Strongbox",
+			"target": "box",
+			"side": "right",
+			"anchor": [
+				84,
+				22,
+				12
+			]
+		},
+		{
+			"text": "Private key",
+			"target": "private-bow",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"rack",
+				"plinth",
+				"box",
+				"hinge-1",
+				"hinge-2"
+			],
+			[
+				"lid",
+				"hasp"
+			],
+			[
+				"lock",
+				"keyhole"
+			],
+			[
+				"pub-1-bit",
+				"pub-1-shaft",
+				"pub-1-bow",
+				"pub-2-bit",
+				"pub-2-shaft",
+				"pub-2-bow",
+				"pub-3-bit",
+				"pub-3-shaft",
+				"pub-3-bow"
+			],
+			[
+				"private-bit",
+				"private-shaft",
+				"private-bow"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 6,
+		"rest": "Box sealed"
+	},
+	"meta": {
+		"margin": "[ PUBLIC KEY ]",
+		"corner": "VPK-HTML"
+	}
+}
