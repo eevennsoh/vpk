@@ -261,9 +261,11 @@ const interactions = {
 
 /**
  * Render `exportName` from `entry` (repo-relative TSX path) or from inline TSX `source`.
- * `mocks` maps import specifiers (bare or `@/…`) to TSX module source.
+ * `mocks` maps import specifiers (bare or `@/…`) to TSX module source. `strictMode` wraps the
+ * root in `<StrictMode>` so effects mount, clean up and mount again as in development; a
+ * `<StrictMode>` returned from inside the rendered component only double-renders here.
  */
-async function renderComponent({ entry, exportName = "default", mocks = {}, props = {}, source } = {}) {
+async function renderComponent({ entry, exportName = "default", mocks = {}, props = {}, source, strictMode = false } = {}) {
 	if ((entry === undefined) === (source === undefined)) {
 		throw new Error("renderComponent needs exactly one of `entry` or `source`.");
 	}
@@ -283,7 +285,10 @@ async function renderComponent({ entry, exportName = "default", mocks = {}, prop
 		 * Re-renders with `nextProps`, replacing (not merging) the previous props. State survives, as in
 		 * an in-place entity switch; a `key` in `nextProps` remounts instead, as a host keyed by entity id would.
 		 */
-		rerender: (nextProps) => run(() => root.render(React.createElement(Component, nextProps))),
+		rerender: (nextProps) => run(() => {
+			const element = React.createElement(Component, nextProps);
+			root.render(strictMode ? React.createElement(React.StrictMode, null, element) : element);
+		}),
 		/** Accessible names of everything Tab reaches, in order. */
 		tabOrder: () => tabbables().map(accessibleName),
 		unmount: async () => {

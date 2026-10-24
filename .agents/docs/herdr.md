@@ -19,8 +19,9 @@ Never drive a herdr session from a process that is not inside one.
 | Quick command the caller watches (tests, a dev server log) | a **pane** split beside the caller | the herdr skill's default |
 
 Always pass `--no-focus`; the user's focus stays where it was. Label every tab
-and pane after the task or worker (`worker-1`, `fix-sidebar-flicker`) so the
-sidebar is readable from a glance or a phone.
+and pane after the task (`vpk-fix-sidebar-flicker`, `vpk-audit-tokens-2`) so
+the sidebar is readable from a glance or a phone; `/vpk-remote` names follow
+*Naming* in `.agents/skills/vpk-remote/SKILL.md`.
 
 ## Run a Script in a Visible Surface
 
@@ -30,16 +31,32 @@ status. Outside herdr it runs the script inline with the same contract, so
 callers never branch on terminal.
 
 ```bash
-node scripts/agent-surface.js run --script <file> --label <slug> \
-  [--cwd <dir>] [--worktree <path>] [--group <tab-label>] \
+node scripts/agent-surface.js run --script <file> --label <name> \
+  [--cwd <dir>] [--worktree <path>] [--group <name>] \
   [--no-wait] [--timeout-ms <n>] [--surface auto|herdr|inline]
 ```
 
 - The script's exit code lands in `<script>.exit`; the wrapper reads it, so
   it works the same for background Bash calls and for `--no-wait` callers that
   poll later.
-- An already-open worktree workspace gets a new tab; its root pane is never
-  reused because the user may be typing there.
+- `--label` and `--group` must match `vpk-<type>-<slug>[-<pane>]`
+  (`SURFACE_NAME_PATTERN`); anything else is rejected before herdr is called.
+- `--worktree` runs `herdr worktree open` with the **main checkout** as
+  `--cwd` (derived from `git rev-parse --git-common-dir`), because herdr opens
+  worktree workspaces only from the repo parent. The worktree then gets its
+  own sidebar workspace even when the caller sits in a linked worktree. If
+  herdr still refuses, the wrapper fails with herdr's error; it never falls
+  back to a tab.
+- In an already-open worktree workspace, the run splits into the tab with the
+  same label (`--group`, else `--label`) when one exists, and otherwise gets a
+  new tab with that label. Its root pane is never reused because the user may
+  be typing there.
+- The pane closes itself the moment the script exits, success or failure,
+  right after writing `<script>.exit`, so the close cannot race the wrapper.
+  herdr drops a tab when its last pane closes, so a single-run tab goes too;
+  a `--group` tab stays until its last worker exits. The one exception is the
+  root pane of a worktree workspace the run just opened: closing it would
+  close the task's sidebar workspace, so it stays at a shell prompt.
 - Closing the pane before the script finishes is reported as an error, not a
   silent hang.
 - The full runner is written to `<script>.pane.sh` and the pane only runs
@@ -54,23 +71,36 @@ The pane reports its own state, so workers show in the sidebar and
 | Phase | Reported state | Sidebar |
 | --- | --- | --- |
 | Script starts | `working`, title = `--label` | `working` |
-| Script exits 0 | `idle` | `done` |
-| Script exits N | `idle` with message and state label `exit N` | `done`, label `exit N` |
-| 15 s after exit | released | gone |
+| Script exits, any status | pane closes | gone |
 
-The pane is also named after the label (`Live Probe` → `live-probe`; a
-leading digit gets a `w-` prefix), so another pane can block on it:
+The pane itself shows the same level of detail: a `/vpk-remote` Claude-lane
+worker prints `working · <model> · started HH:MM`, one status line rewritten
+in place, then `done · <time> · <cost> · <turns>` or `failed · <reason>`
+(`scripts/agent-stream-format.js`). The step-by-step trail is in the worker's
+`events.jsonl`; the formatter's `--feed` flag prints it to the pane for
+debugging. Headless workers cannot ask for input, so a run never reports
+`blocked`; a stuck worker ends as `exit N`, or as `done` with the blocker in
+its report.
+
+The outcome is not shown in herdr: the wrapper's exit status and the worker's
+`report.md`, `events.jsonl`, and `stderr.log` carry it, and the planner
+reports it to the user. Those files keep the full record for diagnosing a
+failure after the pane is gone.
+
+The pane is also named after the label, so another pane can block on it. A
+label over herdr's 32-character agent name limit becomes its first 25
+characters plus a 6-character hash of the full label, so long labels that
+differ only at the end stay distinct (see *Naming* in the vpk-remote skill):
 
 ```bash
-herdr agent wait live-probe --timeout 20000
+herdr agent wait vpk-fix-sidebar-flicker --timeout 20000
 ```
 
-herdr's own "vpk-worker finished" notification fires on completion; it needs
-the pane to stay busy after the `idle` report, which is why the pane lingers
-15 s (`Ctrl-C` skips the linger). Reports run in the background and never
-change the exit status, so a missing or broken `herdr` cannot fail a run. Two
-concurrent runs whose labels reduce to the same name cannot both hold it;
-target the second by pane ID.
+Because the pane closes on exit, the wait ends with `agent_not_running` (exit
+1) whichever way the run went; read `<script>.exit` for the status. Reports
+run in the background and never change the exit status, so a missing or
+broken `herdr` cannot fail a run. Two concurrent runs whose labels reduce to
+the same name cannot both hold it; target the second by pane ID.
 
 ## Inspect and Coordinate
 

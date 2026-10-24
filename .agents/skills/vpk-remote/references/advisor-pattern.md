@@ -3,8 +3,9 @@
 An advisor consult is a one-shot, **read-only** worker on either lane —
 [gpt-executor.md](gpt-executor.md) or
 [claude-executor.md](claude-executor.md) — writing to
-`output/remote-<lane>/advisor-<n>/`. It runs as an external CLI process, not
-a Claude Code subagent, so the model and family can be chosen per consult.
+`output/remote-<lane>/vpk-<type>-<slug>-review/` (see *Naming* in SKILL.md).
+It runs as an external CLI process, not a Claude Code subagent, so the model
+and family can be chosen per consult.
 
 ## The idea
 

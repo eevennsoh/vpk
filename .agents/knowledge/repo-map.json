@@ -4491,10 +4491,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 452,
+			"manifestEntryCount": 453,
 			"categoryCount": 9,
 			"statusCounts": {
-				"live": 447,
+				"live": 448,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -6969,7 +6969,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 108,
+				"entryCount": 109,
 				"entries": [
 					{
 						"category": "visual",
@@ -7697,6 +7697,13 @@
 						"slug": "typography",
 						"name": "Typography",
 						"importPath": "@/lib/tokens",
+						"status": "live"
+					},
+					{
+						"category": "visual",
+						"slug": "ui-generation",
+						"name": "UI Generation",
+						"importPath": "@/components/visual/ui-generation",
 						"status": "live"
 					},
 					{
