@@ -33,7 +33,7 @@ copy anything from `~/.codex` into it. Luna at `max` was verified end-to-end
 through Proximity on 2026-08-03.
 
 ```bash
-worker_root="$PWD/output/remote-gpt/worker-1"
+worker_root="$PWD/output/remote-gpt/vpk-<type>-<slug>"
 mkdir -p "$worker_root/home"
 
 env -u OPENAI_API_KEY -u CODEX_API_KEY \
@@ -56,7 +56,8 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
 Run via Bash with `run_in_background: true`; the harness notifies on exit.
 A Codex planner has no background notification: run it in the foreground
 (see *Codex as the planner* in SKILL.md).
-Fan-out = several of these in one message, each with its own `worker_root`.
+Fan-out = several of these in one message, each with its own `worker_root`
+(`vpk-<type>-<slug>-<n>`).
 For read-only briefs, `--sandbox read-only` is a tighter fit.
 
 Why each isolation layer exists:
@@ -91,7 +92,7 @@ come **before** the `resume` subcommand (`codex exec resume --last --sandbox …
 fails with `unexpected argument`).
 
 ```bash
-worker_root="$PWD/output/remote-gpt/worker-1"
+worker_root="$PWD/output/remote-gpt/vpk-<type>-<slug>"
 
 env -u OPENAI_API_KEY -u CODEX_API_KEY \
   CODEX_HOME="$worker_root/home" \
@@ -121,7 +122,8 @@ This lane serves advisor consults at `gpt-5.6-sol` `xhigh` when the work
 under review came from the **Claude** lane, including plans written by the
 Claude planner itself — see the independence rule in
 [advisor-pattern.md](advisor-pattern.md). Use `--sandbox read-only`, an
-`advisor-<n>/` directory, and a read-only brief.
+`output/remote-gpt/vpk-<type>-<slug>-review/` directory (see *Naming* in
+SKILL.md), and a read-only brief.
 
 ## Failure handling
 

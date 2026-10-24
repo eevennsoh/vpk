@@ -27,26 +27,56 @@ Substitute `<model>` (the full Claude ID — resolve aliases and defaults from
 is deliberately not offered — see *Choosing effort* in SKILL.md). The model
 ID **must be quoted** — `[1m]` is a shell glob pattern.
 
+Write this as the worker's `run.sh` (`agent-surface.js` runs it with
+`bash`). Expand `worker_root` and `formatter` to absolute **main-checkout**
+paths when writing the file — the surface may start it with the task worktree
+as its cwd — and add `cd "$tree" || exit 1` after `set -o pipefail` when the
+worker writes in a task worktree.
+
 ```bash
-worker_root="$PWD/output/remote-claude/worker-1"
+set -o pipefail
+worker_root="$PWD/output/remote-claude/vpk-<type>-<slug>"
+formatter="$PWD/scripts/agent-stream-format.js"
 mkdir -p "$worker_root"
 
-env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
-  ANTHROPIC_BASE_URL="http://localhost:29576/vertex/claude" \
-  "$HOME/.local/bin/claude" -p --dangerously-skip-permissions \
-  --settings "$HOME/.claude/settings-gw.json" \
-  --model "claude-opus-5[1m]" --effort high \
-  --no-session-persistence \
-  < "$worker_root/brief.md" \
-  > "$worker_root/report.md" \
-  2> "$worker_root/stderr.log"
+{
+  env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
+    ANTHROPIC_BASE_URL="http://localhost:29576/vertex/claude" \
+    "$HOME/.local/bin/claude" -p --dangerously-skip-permissions \
+    --settings "$HOME/.claude/settings-gw.json" \
+    --model "claude-opus-5[1m]" --effort high \
+    --no-session-persistence --output-format stream-json --verbose \
+    < "$worker_root/brief.md" 2>&1 >&3 3>&- \
+    | tee "$worker_root/stderr.log" >&2 3>&-
+} 3>&1 \
+  | node "$formatter" --events "$worker_root/events.jsonl" --report "$worker_root/report.md"
 ```
 
 Run via Bash with `run_in_background: true` (a Codex planner runs it in the
-foreground; see *Codex as the planner* in SKILL.md). `claude -p` writes its result to
-**stdout**, so the stdout redirect is the report channel (the analogue of
-codex's `--output-last-message`). Read `stderr.log` only when `report.md`
-comes back empty.
+foreground; see *Codex as the planner* in SKILL.md). `claude -p` streams one
+JSON event per line on **stdout**; `scripts/agent-stream-format.js` saves
+every event to `events.jsonl`, shows only a status in the pane, and writes
+the final `result` text to `report.md` — the analogue of codex's
+`--output-last-message`. The pane matches herdr's sidebar statuses:
+
+```text
+working · claude-opus-5[1m] · started 14:02
+working · 4m12s · 23 steps          # TTY only, rewritten in place at most once per second
+done · 8m54s · $5.47 · 16 turns     # or: failed · <short reason>
+```
+
+It never prints tool calls, commands, or assistant text. `events.jsonl` is the
+full trail; append `--feed` to the `node "$formatter"` line only when debugging
+a run, to get one timestamped line per step instead
+(`12:14:40  Edit   components/visual/x/index.tsx`). `--feed` changes the pane
+output only: the files, exit codes, and failure rules are the same. The report is written to a temp file and renamed
+into place, so it is either empty or complete. An error result leaves it
+empty.
+
+The pane closes itself as soon as the worker exits, success or failure, so
+the final `done` or `failed` line is gone with it. The planner reports the
+outcome; `report.md`, `events.jsonl`, and `stderr.log` keep the full record
+for diagnosing a failure.
 
 Why each layer exists:
 
@@ -64,6 +94,22 @@ Why each layer exists:
   bypasses the `claude-gw` zsh function and any alias — wrappers must never
   be invoked from this workflow.
 - `--no-session-persistence` keeps one-shot workers out of the resume list.
+- `--output-format stream-json --verbose` is what makes the run observable:
+  plain `-p` prints nothing until the end, so the pane stays blank for the
+  whole run. `--verbose` is required for stream-json in print mode.
+- `set -o pipefail` makes any failing stage fail the run, so
+  `agent-surface.js` reports it as `exit N`: `claude`'s own non-zero status,
+  or the formatter's `1` when the stream has no `result`, the result is an
+  error, or `events.jsonl` / `report.md` could not be written (it prints an
+  `error` line saying which). When several stages fail, bash reports the
+  rightmost, so a failed claude run usually shows as `exit 1`.
+- The fd swap (`2>&1 >&3`, then `3>&1` outside the braces) sends claude's
+  stdout to the formatter and its stderr through `tee`, which keeps
+  `stderr.log` and also shows stderr in the pane. `tee` is an ordinary
+  pipeline stage, so the run cannot end before `stderr.log` is complete and
+  a failing logger fails the run. A `2> >(tee …)` process substitution gets
+  neither: bash does not wait for it, and macOS's bash 3.2 does not set `$!`
+  for it, so it cannot be waited on.
 - `--dangerously-skip-permissions` lets headless implementation edit files
   without prompts, so on **writing briefs the scope boundaries are the only
   guardrail** — write Constraints and Non-goals explicitly. Read-only briefs
@@ -74,7 +120,8 @@ Why each layer exists:
 The default correction path is a fresh `-p` run in the same `worker_root`
 whose brief contains: the original goal, the prior report, a summary of the
 current diff, and the specific correction. Write it to
-`followup-<k>.md` and redirect the new report over `report.md`.
+`followup-<k>.md` and rerun the recipe with it as stdin; the formatter
+rewrites `report.md` and `events.jsonl`.
 
 There is no warm-resume contract on this lane: `--no-session-persistence`
 intentionally forfeits `--resume`, and headless resume behavior is
@@ -93,18 +140,22 @@ under review came from the **GPT** lane — see the independence rule in
 writes at the tool layer:
 
 ```bash
-advisor_root="$PWD/output/remote-claude/advisor-1"
+set -o pipefail
+advisor_root="$PWD/output/remote-claude/vpk-<type>-<slug>-review"
+formatter="$PWD/scripts/agent-stream-format.js"
 mkdir -p "$advisor_root"
 
-env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
-  ANTHROPIC_BASE_URL="http://localhost:29576/vertex/claude" \
-  "$HOME/.local/bin/claude" -p --permission-mode plan \
-  --settings "$HOME/.claude/settings-gw.json" \
-  --model "claude-opus-5[1m]" --effort xhigh \
-  --no-session-persistence \
-  < "$advisor_root/brief.md" \
-  > "$advisor_root/report.md" \
-  2> "$advisor_root/stderr.log"
+{
+  env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
+    ANTHROPIC_BASE_URL="http://localhost:29576/vertex/claude" \
+    "$HOME/.local/bin/claude" -p --permission-mode plan \
+    --settings "$HOME/.claude/settings-gw.json" \
+    --model "claude-opus-5[1m]" --effort xhigh \
+    --no-session-persistence --output-format stream-json --verbose \
+    < "$advisor_root/brief.md" 2>&1 >&3 3>&- \
+    | tee "$advisor_root/stderr.log" >&2 3>&-
+} 3>&1 \
+  | node "$formatter" --events "$advisor_root/events.jsonl" --report "$advisor_root/report.md"
 ```
 
 Verified 2026-07-31: a consult explicitly instructed to create a file
@@ -119,8 +170,11 @@ The GPT lane's equivalent is `--sandbox read-only`.
 
 ## Failure handling
 
-- Empty `report.md` + non-empty `stderr.log` = infrastructure blocker; read
-  stderr, re-dispatch once if transient, otherwise report.
+- Empty `report.md` = the run produced no successful result. Read the tail of
+  `events.jsonl` first — the final `result` event carries `is_error`,
+  `terminal_reason`, and the error text (an invalid model shows
+  `api_error` with the gateway's 400) — then `stderr.log`. Re-dispatch once
+  if transient, otherwise report it as an infrastructure blocker.
 - Any auth/OAuth traffic in `stderr.log` means the isolation failed — stop
   and report; do not retry until the cause is understood.
 - Model rejection at the gateway is a blocker; never substitute the

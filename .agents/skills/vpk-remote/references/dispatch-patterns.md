@@ -63,7 +63,8 @@ within a task.
 every brief is substantial and independent:
 
 - Dispatch all workers in **one message** (parallel background Bash calls),
-  each with its own worker directory.
+  each with its own worker directory and label, `vpk-<type>-<slug>-<n>`
+  (see *Naming* in SKILL.md).
 - Every fan-out brief carries an explicit "make no edits" constraint.
 - Keep **reading scopes** disjoint, not just write scopes — workers cannot
   see each other, so overlapping briefs pay for the same research twice.

@@ -3,15 +3,20 @@
 // Runs a prepared shell script in a visible terminal surface when the caller is
 // inside herdr, and inline otherwise, then waits for it and exits with its status.
 //
-//   node scripts/agent-surface.js run --script <file> --label <slug> [--cwd <dir>]
-//        [--worktree <path>] [--group <tab-label>] [--no-wait] [--timeout-ms <n>]
+//   node scripts/agent-surface.js run --script <file> --label <name> [--cwd <dir>]
+//        [--worktree <path>] [--group <name>] [--no-wait] [--timeout-ms <n>]
 //        [--surface auto|herdr|inline]
 //
+// --label and --group are vpk-<type>-<slug>[-<pane>] names (SURFACE_NAME_PATTERN).
+//
 // Placement inside herdr:
-//   --worktree <path>  the herdr workspace for that git worktree (opened if needed)
-//   --group <label>    a tab with that label in the caller's workspace, split per run
+//   --worktree <path>  the herdr workspace for that git worktree, opened from the main
+//                      checkout so it lands in the sidebar even when the caller sits in
+//                      a linked worktree; a new tab or split when it is already open
+//   --group <name>     a tab with that label in the caller's workspace, split per run
 //   neither            a new tab labelled --label in the caller's workspace
 
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
@@ -21,6 +26,15 @@ const PANE_CHECK_EVERY = 10;
 
 function shellQuote(value) {
 	return `'${String(value).replace(/'/gu, `'\\''`)}'`;
+}
+
+// One name for every vpk-remote surface: herdr workspace, tab, and pane labels.
+const SURFACE_NAME_PATTERN = /^vpk-(feat|fix|refactor|perf|docs|chore|audit|research)-[a-z0-9]+(-[a-z0-9]+)*$/u;
+
+function assertSurfaceName(flag, value) {
+	if (!SURFACE_NAME_PATTERN.test(value)) {
+		throw new Error(`${flag} ${JSON.stringify(value)} must be vpk-<type>-<slug>[-<pane>], lowercase kebab-case, with type one of feat, fix, refactor, perf, docs, chore, audit, research`);
+	}
 }
 
 function parseArgs(argv) {
@@ -46,9 +60,11 @@ function parseArgs(argv) {
 			default: throw new Error(`unknown option ${flag}`);
 		}
 	}
-	if (options.command !== "run") throw new Error("usage: agent-surface.js run --script <file> --label <slug> [options]");
+	if (options.command !== "run") throw new Error("usage: agent-surface.js run --script <file> --label <name> [options]");
 	if (!options.script) throw new Error("--script is required");
 	if (!options.label) throw new Error("--label is required");
+	assertSurfaceName("--label", options.label);
+	if (options.group !== undefined) assertSurfaceName("--group", options.group);
 	if (!["auto", "herdr", "inline"].includes(options.surface)) throw new Error("--surface must be auto, herdr, or inline");
 	options.cwd ??= options.worktree ?? process.cwd();
 	return options;
@@ -78,20 +94,27 @@ function runnerFileFor(script) {
 // not a recognised agent, so without these reports it shows as "unknown".
 const REPORT_SOURCE = "vpk-agent-surface";
 const REPORT_AGENT = "vpk-worker";
-// After the script ends the pane stays busy this long so the settled state is
-// visible and Herdr's own "finished" notification fires (it needs ~1s of a held
-// pane; once the shell prompt returns Herdr auto-clears the agent). Ctrl-C skips.
-const LINGER_SECONDS = 15;
 
-// `herdr agent wait <name>` needs [a-z][a-z0-9_-]{0,31}; null when the label has nothing usable.
+// `herdr agent wait <name>` needs [a-z][a-z0-9_-]{0,31}. A surface name that fits is
+// used as is; a longer one becomes its first 25 characters plus a 6-character hash of
+// the whole label, so labels that differ only past the cut stay distinct.
+const AGENT_NAME_MAX = 32;
+const AGENT_NAME_HASH_LENGTH = 6;
+
 function agentNameFor(label) {
-	const slug = String(label).toLowerCase().replace(/[^a-z0-9_-]+/gu, "-").replace(/^[-_]+|[-_]+$/gu, "");
-	if (!slug) return null;
-	return (/^[a-z]/u.test(slug) ? slug : `w-${slug}`).slice(0, 32).replace(/[-_]+$/u, "");
+	if (label.length <= AGENT_NAME_MAX) return label;
+	const hash = crypto.createHash("sha256").update(label).digest("hex").slice(0, AGENT_NAME_HASH_LENGTH);
+	const prefix = label.slice(0, AGENT_NAME_MAX - AGENT_NAME_HASH_LENGTH - 1).replace(/-+$/u, "");
+	return `${prefix}-${hash}`;
 }
 
-function buildPaneCommand({ script, exitFile, label, seq = Date.now(), lingerSeconds = LINGER_SECONDS }) {
-	// Seqs must increase per pane across runs and fit in a u64: ms * 1000 leaves room for steps.
+// The pane closes itself as soon as the exit file is written, success or failure: the
+// planner reports the outcome, and herdr drops a tab when its last pane closes. The
+// root pane of a workspace opened for the run stays (`closeOnExit: false`), because
+// closing it would close the task's sidebar workspace; herdr clears its status once
+// the shell prompt returns.
+function buildPaneCommand({ script, exitFile, label, seq = Date.now(), closeOnExit = true }) {
+	// Seqs must increase per pane across runs and fit in a u64.
 	const base = seq * 1000;
 	const name = agentNameFor(label);
 	// Reports run detached with output discarded, so a slow or failing herdr never blocks or fails the run.
@@ -100,22 +123,16 @@ function buildPaneCommand({ script, exitFile, label, seq = Date.now(), lingerSec
 	const start = [
 		herdr("pane report-agent") + ` --state working --seq ${base}`,
 		herdr("pane report-metadata") + ` --title ${shellQuote(label)}`,
-		...(name ? [`"$h" agent rename "$HERDR_PANE_ID" ${name}`] : []),
+		`"$h" agent rename "$HERDR_PANE_ID" ${name}`,
 	].join("; ");
-	const failed = `"exit $s"`;
-	const end = [
-		`if [ "$s" = 0 ]; then ${herdr("pane report-agent")} --state idle --seq ${base + 1}`,
-		`else ${herdr("pane report-agent")} --state idle --message ${failed} --seq ${base + 1}; ${herdr("pane report-metadata")} --state-label done=${failed} --state-label idle=${failed}; fi`,
-	].join("; ");
-	return [
+	const steps = [
 		`h="${"$"}{HERDR_BIN_PATH:-herdr}"`,
 		bg(start),
+		// The exit file lands before the close, so the waiting wrapper always finds it.
 		`bash ${shellQuote(script)}; s=$?; printf '%s\\n' "$s" > ${shellQuote(exitFile)}`,
-		bg(end),
-		`printf '\\n[agent-surface] exit %s; clearing herdr status in ${lingerSeconds}s (Ctrl-C skips)\\n' "$s"`,
-		`sleep ${lingerSeconds}`,
-		bg(herdr("pane release-agent") + ` --seq ${base + 2}`),
-	].join("; ");
+	];
+	if (closeOnExit) steps.push(`"$h" pane close "$HERDR_PANE_ID" >/dev/null 2>&1`);
+	return steps.join("; ");
 }
 
 function createHerdr(env = process.env) {
@@ -150,31 +167,54 @@ function createTab(herdr, workspaceId, label, cwd) {
 	return herdr(["tab", "create", "--workspace", workspaceId, "--cwd", cwd, "--label", label, "--no-focus"]).root_pane;
 }
 
+// herdr opens worktree workspaces only from the repo parent (`linked_worktree_source`
+// otherwise), so `worktree open` gets the main checkout as --cwd, never the worktree.
+// Git lists the main working tree first. With --separate-git-dir git keeps no record
+// of the main checkout and lists the git dir there instead, so that is refused too.
+function mainCheckoutFor(worktree) {
+	const git = (...args) => {
+		const result = spawnSync("git", ["-C", worktree, ...args], { encoding: "utf8" });
+		if (result.status !== 0) throw new Error(`--worktree ${worktree} is not a git worktree: ${result.stderr.trim()}`);
+		return result.stdout;
+	};
+	const lines = git("worktree", "list", "--porcelain").split("\n\n")[0].split("\n");
+	if (lines.includes("bare")) throw new Error(`--worktree ${worktree} belongs to a bare repository; herdr needs a main checkout to open it from`);
+	const main = lines.find((line) => line.startsWith("worktree "))?.slice("worktree ".length);
+	if (!main) throw new Error(`--worktree ${worktree}: git worktree list printed no main working tree`);
+	if (main === git("rev-parse", "--path-format=absolute", "--git-common-dir").trim()) {
+		throw new Error(`--worktree ${worktree}: git does not record the main checkout (separate git dir at ${main}); herdr needs one to open it from`);
+	}
+	return main;
+}
+
+// Returns the pane to run in, and whether it may close on exit: never the root pane of
+// a worktree workspace it just opened.
 function placePane(herdr, options, env = process.env) {
 	if (options.worktree) {
 		const opened = herdr([
 			"worktree", "open",
-			"--cwd", options.cwd,
+			"--cwd", mainCheckoutFor(options.worktree),
 			"--path", options.worktree,
 			"--label", options.label,
 			"--no-focus",
 		]);
-		if (!opened.already_open) return opened.root_pane;
+		if (!opened.already_open) return { pane: opened.root_pane, closeOnExit: false };
 		const tabLabel = options.group ?? options.label;
 		const existing = findTab(herdr, opened.workspace.workspace_id, tabLabel);
-		return existing
+		const pane = existing
 			? splitIntoTab(herdr, existing, options.worktree)
 			: createTab(herdr, opened.workspace.workspace_id, tabLabel, options.worktree);
+		return { pane, closeOnExit: true };
 	}
 
 	const workspaceId = env.HERDR_WORKSPACE_ID;
 	if (!workspaceId) throw new Error("HERDR_WORKSPACE_ID is not set; run inside a herdr pane or pass --surface inline");
 	if (options.group) {
 		const existing = findTab(herdr, workspaceId, options.group);
-		if (existing) return splitIntoTab(herdr, existing, options.cwd);
-		return createTab(herdr, workspaceId, options.group, options.cwd);
+		const pane = existing ? splitIntoTab(herdr, existing, options.cwd) : createTab(herdr, workspaceId, options.group, options.cwd);
+		return { pane, closeOnExit: true };
 	}
-	return createTab(herdr, workspaceId, options.label, options.cwd);
+	return { pane: createTab(herdr, workspaceId, options.label, options.cwd), closeOnExit: true };
 }
 
 function paneAlive(herdr, paneId) {
@@ -186,20 +226,30 @@ function paneAlive(herdr, paneId) {
 	}
 }
 
-async function waitForExitFile(exitFile, { timeoutMs, isAlive }) {
+// An empty file is one the shell has created but not yet written.
+function readExitFile(exitFile) {
+	const text = fs.existsSync(exitFile) ? fs.readFileSync(exitFile, "utf8").trim() : "";
+	if (!text) return null;
+	const status = Number.parseInt(text, 10);
+	return Number.isNaN(status) ? 1 : status;
+}
+
+async function waitForExitFile(exitFile, { timeoutMs, isAlive, pollIntervalMs = POLL_INTERVAL_MS }) {
 	const startedAt = Date.now();
 	for (let poll = 1; ; poll += 1) {
-		if (fs.existsSync(exitFile)) {
-			const status = Number.parseInt(fs.readFileSync(exitFile, "utf8").trim(), 10);
-			return Number.isNaN(status) ? 1 : status;
-		}
+		const status = readExitFile(exitFile);
+		if (status !== null) return status;
 		if (timeoutMs > 0 && Date.now() - startedAt > timeoutMs) {
 			throw new Error(`timed out after ${timeoutMs}ms waiting for ${exitFile}`);
 		}
+		// The pane closes itself right after writing the exit file, so look again before
+		// calling a closed pane an error.
 		if (poll % PANE_CHECK_EVERY === 0 && !isAlive()) {
+			const late = readExitFile(exitFile);
+			if (late !== null) return late;
 			throw new Error(`surface closed before ${exitFile} was written`);
 		}
-		await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+		await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
 	}
 }
 
@@ -218,10 +268,10 @@ async function run(options, { env = process.env, herdr = createHerdr(env), log =
 		return status;
 	}
 
-	const pane = placePane(herdr, options, env);
+	const { pane, closeOnExit } = placePane(herdr, options, env);
 	herdr(["pane", "rename", pane.pane_id, options.label]);
 	const runner = runnerFileFor(options.script);
-	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label })}\n`);
+	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label, closeOnExit })}\n`);
 	herdr(["pane", "run", pane.pane_id, `bash ${shellQuote(runner)}`]);
 	log(JSON.stringify({
 		surface,
@@ -252,11 +302,16 @@ if (require.main === module) {
 }
 
 module.exports = {
+	SURFACE_NAME_PATTERN,
 	agentNameFor,
+	assertSurfaceName,
 	buildPaneCommand,
+	createHerdr,
+	mainCheckoutFor,
 	parseArgs,
 	resolveSurface,
 	run,
 	shellQuote,
 	splitDirection,
+	waitForExitFile,
 };
