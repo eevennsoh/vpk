@@ -272,13 +272,30 @@ test("a linked worktree opens its own workspace from the main checkout and runs 
 	assert.equal(calls.some(([group, verb]) => group === "tab" && verb === "create"), false);
 });
 
-test("an already-open worktree gets a new tab at the worktree instead of its busy root pane", async () => {
+test("an already-open worktree without a same-label tab gets a new tab instead of its busy root pane", async () => {
 	const script = tempScript();
 	const { tree } = linkedWorktree();
 	const { herdr, calls } = fakeHerdr({ alreadyOpen: true });
 	await run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree]), { env: herdrEnv, herdr, log: () => {} });
 	const create = calls.find(([group, verb]) => group === "tab" && verb === "create");
 	assert.deepEqual(create.slice(2), ["--workspace", "w7", "--cwd", tree, "--label", "vpk-fix-x", "--no-focus"]);
+	assert.equal(calls.some(([group, verb, pane]) => group === "pane" && verb === "run" && pane === "w7:p1"), false);
+});
+
+test("an already-open worktree splits into its existing tab with the same label", async () => {
+	const script = tempScript();
+	const { tree } = linkedWorktree();
+	const { herdr, calls } = fakeHerdr({
+		alreadyOpen: true,
+		tabs: [{ label: "vpk-fix-x", tab_id: "w7:t3", workspace_id: "w7" }],
+		panes: [{ pane_id: "w7:p4", tab_id: "w7:t3" }, { pane_id: "w7:p1", tab_id: "w7:t1" }],
+	});
+	await run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree]), { env: herdrEnv, herdr, log: () => {} });
+	const list = calls.find(([group, verb]) => group === "tab" && verb === "list");
+	assert.deepEqual(list.slice(2), ["--workspace", "w7"]);
+	assert.equal(calls.some(([group, verb]) => group === "tab" && verb === "create"), false);
+	const split = calls.find(([group, verb]) => group === "pane" && verb === "split");
+	assert.deepEqual(split.slice(2), ["w7:p4", "--direction", "right", "--cwd", tree, "--no-focus"]);
 	assert.equal(calls.some(([group, verb, pane]) => group === "pane" && verb === "run" && pane === "w7:p1"), false);
 });
 

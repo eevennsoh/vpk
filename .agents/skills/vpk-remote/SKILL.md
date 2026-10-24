@@ -504,7 +504,9 @@ workspace from the main checkout (herdr refuses `worktree open` from a linked
 worktree), and if herdr still refuses, the wrapper exits with herdr's error
 rather than falling back to a tab. Report that error; do not relaunch the
 writing worker without `--worktree`. When the workspace is already open,
-the run gets a new tab in it.
+the run never takes its root pane: it splits into the workspace's tab with the
+same label (`--group`, else `--label`) when there is one, otherwise it gets a
+new tab with that label.
 
 The `run.sh` keeps the lane's redirects: the report still lands in
 `report.md`, and the pane shows live progress for the user — the GPT lane's

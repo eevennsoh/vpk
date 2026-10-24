@@ -11,9 +11,10 @@
 //             replaced atomically via a temp file + rename once the result arrives)
 //   --cwd     base for relative paths in the feed; defaults to the session's cwd
 //
-// Exits 0 only for a successful `result` with both files written. An error result,
-// a stream without a result (including empty input), or a failed write prints an
-// `error` line and exits 1, so `set -o pipefail` fails the pipeline even when claude
+// Exits 0 only for a successful `result` with text and both files written. An error
+// result, a result without text, a stream without a result (including empty input),
+// an event the formatter could not handle, or a failed write prints an `error` line
+// and exits 1, so `set -o pipefail` fails the pipeline even when claude
 // exited 0. Bad arguments exit 2 after draining stdin.
 
 const fs = require("node:fs");
@@ -163,6 +164,40 @@ function createFormatter({ eventsFile, reportFile, cwd, width = DEFAULT_WIDTH, n
 		print(formatLine({ time: now(), kind: "error", text, width }));
 	};
 
+	const handle = (event, trimmed) => {
+		if (!eventsBroken) {
+			try {
+				fs.appendFileSync(eventsFile, `${trimmed}\n`);
+			} catch (error) {
+				// Stop appending: a gap would make events.jsonl look complete.
+				eventsBroken = true;
+				fail(`events.jsonl write failed: ${error.message}`);
+			}
+		}
+		if (event?.type === "system" && event.subtype === "init" && !sessionCwd) sessionCwd = event.cwd;
+		const nested = Boolean(event?.parent_tool_use_id);
+		for (const [kind, text] of describeEvent(event, sessionCwd)) {
+			print(formatLine({ time: now(), kind, text, nested, width }));
+		}
+		if (event?.type !== "result") return;
+		result = event;
+		if (isFailedResult(event)) {
+			// The latest result decides the report; an earlier one must not survive it.
+			fs.writeFileSync(reportFile, "");
+			return;
+		}
+		if (typeof event.result !== "string") {
+			fs.writeFileSync(reportFile, "");
+			fail("result event has no result text");
+			return;
+		}
+		try {
+			writeFileAtomic(reportFile, event.result.endsWith("\n") ? event.result : `${event.result}\n`);
+		} catch (error) {
+			fail(`report.md write failed: ${error.message}`);
+		}
+	};
+
 	return {
 		line(raw) {
 			const trimmed = raw.trim();
@@ -175,29 +210,12 @@ function createFormatter({ eventsFile, reportFile, cwd, width = DEFAULT_WIDTH, n
 				print(formatLine({ time: now(), kind: "?", text: oneLine(trimmed), width }));
 				return;
 			}
-			if (!eventsBroken) {
-				try {
-					fs.appendFileSync(eventsFile, `${trimmed}\n`);
-				} catch (error) {
-					// Stop appending: a gap would make events.jsonl look complete.
-					eventsBroken = true;
-					fail(`events.jsonl write failed: ${error.message}`);
-				}
-			}
-			if (event?.type === "system" && event.subtype === "init" && !sessionCwd) sessionCwd = event.cwd;
-			const nested = Boolean(event?.parent_tool_use_id);
-			for (const [kind, text] of describeEvent(event, sessionCwd)) {
-				print(formatLine({ time: now(), kind, text, nested, width }));
-			}
-			if (event?.type === "result") {
-				result = event;
-				if (!isFailedResult(event) && typeof event.result === "string") {
-					try {
-						writeFileAtomic(reportFile, event.result.endsWith("\n") ? event.result : `${event.result}\n`);
-					} catch (error) {
-						fail(`report.md write failed: ${error.message}`);
-					}
-				}
+			// An unexpected event shape must not stop the reader (claude would die of
+			// SIGPIPE), but the run can no longer be trusted, so it fails at the end.
+			try {
+				handle(event, trimmed);
+			} catch (error) {
+				fail(`could not handle ${String(event?.type)} event: ${error.message}`);
 			}
 		},
 		// Returns the process exit code.
@@ -221,14 +239,7 @@ function main() {
 		return;
 	}
 	const input = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
-	input.on("line", (raw) => {
-		// An unexpected event shape must not stop the reader: claude would die of SIGPIPE.
-		try {
-			formatter.line(raw);
-		} catch (error) {
-			console.error(`agent-stream-format: ${error.message}`);
-		}
-	});
+	input.on("line", (raw) => formatter.line(raw));
 	input.on("close", () => {
 		process.exitCode = formatter.end();
 	});
@@ -242,4 +253,5 @@ module.exports = {
 	formatLine,
 	parseArgs,
 	summarizeTool,
+	writeFileAtomic,
 };

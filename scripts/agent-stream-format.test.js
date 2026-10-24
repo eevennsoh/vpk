@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { createFormatter, parseArgs, summarizeTool } = require("./agent-stream-format.js");
+const { createFormatter, parseArgs, summarizeTool, writeFileAtomic } = require("./agent-stream-format.js");
 
 const CWD = "/repo/wt";
 const SESSION = { session_id: "4e2e29d1-0000-0000-0000-000000000000" };
@@ -116,24 +116,77 @@ test("a failed events.jsonl write fails the run but still writes the report", ()
 	assert.equal(fs.readFileSync(reportFile, "utf8"), "Hi! I ran `echo ok` and it printed `ok`.\n");
 });
 
-test("the report is published by rename: a failed write leaves no fragment and fails the run", () => {
+// Every write fails after the target exists with half its content, as on a full disk.
+function failWritesMidway(t) {
+	const write = fs.writeFileSync;
+	t.mock.method(fs, "writeFileSync", (file, content) => {
+		write(file, String(content).slice(0, Math.floor(String(content).length / 2)));
+		throw Object.assign(new Error("ENOSPC: no space left on device, write"), { code: "ENOSPC" });
+	});
+}
+
+function failRenames(t) {
+	t.mock.method(fs, "renameSync", () => {
+		throw Object.assign(new Error("EXDEV: cross-device link not permitted, rename"), { code: "EXDEV" });
+	});
+}
+
+for (const [name, inject] of [["a write that fails after creating the temp file", failWritesMidway], ["a failed rename", failRenames]]) {
+	test(`writeFileAtomic: ${name} keeps the old report and removes the temp file`, (t) => {
+		const { dir, reportFile } = tempFiles();
+		fs.writeFileSync(reportFile, "old report\n");
+		inject(t);
+		assert.throws(() => writeFileAtomic(reportFile, "new report, long enough to cut in half\n"), /ENOSPC|EXDEV/u);
+		t.mock.restoreAll();
+		assert.equal(fs.readFileSync(reportFile, "utf8"), "old report\n");
+		assert.deepEqual(fs.readdirSync(dir), ["report.md"]);
+	});
+
+	test(`writeFileAtomic: ${name} leaves an absent report absent`, (t) => {
+		const { dir, reportFile } = tempFiles();
+		inject(t);
+		assert.throws(() => writeFileAtomic(reportFile, "new report, long enough to cut in half\n"), /ENOSPC|EXDEV/u);
+		t.mock.restoreAll();
+		assert.deepEqual(fs.readdirSync(dir), []);
+	});
+}
+
+test("a report that cannot be published fails the run and leaves report.md empty", (t) => {
 	const { dir, reportFile } = tempFiles();
 	const lines = asLines(SUCCESS_EVENTS);
 	const printed = [];
 	const formatter = createFormatter({ eventsFile: path.join(dir, "events.jsonl"), reportFile, width: 200, print: (line) => printed.push(line) });
 	for (const line of lines.slice(0, -1)) formatter.line(line);
-	// Make the directory read-only so the temp file cannot be created.
-	fs.chmodSync(dir, 0o500);
-	try {
-		formatter.line(lines.at(-1));
-	} finally {
-		fs.chmodSync(dir, 0o700);
-	}
+	failRenames(t);
+	formatter.line(lines.at(-1));
+	t.mock.restoreAll();
 	assert.equal(formatter.end(), 1);
-	assert.ok(printed.some((line) => line.includes("report.md write failed")));
+	assert.ok(printed.some((line) => line.includes("report.md write failed: EXDEV")));
 	assert.equal(fs.readFileSync(reportFile, "utf8"), "");
 	assert.deepEqual(fs.readdirSync(dir).sort(), ["events.jsonl", "report.md"]);
 });
+
+test("an event the formatter cannot handle fails the run but keeps reading", () => {
+	const bad = { type: "assistant", message: { role: "assistant", content: "plain string, not blocks" }, ...SESSION };
+	const { printed, reportFile, exitCode } = format(asLines([bad, SUCCESS_EVENTS.at(-1)]));
+	assert.equal(exitCode, 1);
+	assert.match(printed[0], /^12:07:31 {2}error {2}could not handle assistant event: /u);
+	// Later events are still shown and the report is still written.
+	assert.equal(printed.at(-1), "12:07:31  done   6.8s · $0.0084 · 2 turns");
+	assert.equal(fs.readFileSync(reportFile, "utf8"), "Hi! I ran `echo ok` and it printed `ok`.\n");
+});
+
+for (const [name, value] of [["missing", undefined], ["non-string", 42]]) {
+	test(`a success result with ${name} result text fails and leaves no report`, () => {
+		const { result: _, ...rest } = SUCCESS_EVENTS.at(-1);
+		const malformed = value === undefined ? rest : { ...rest, result: value };
+		// A good result first: the malformed one that follows must not leave it standing.
+		const { printed, reportFile, exitCode } = format(asLines([SUCCESS_EVENTS.at(-1), malformed]));
+		assert.equal(exitCode, 1);
+		assert.equal(printed.at(-1), "12:07:31  error  result event has no result text");
+		assert.equal(fs.readFileSync(reportFile, "utf8"), "");
+	});
+}
 
 test("a successful report leaves no temp file behind", () => {
 	const { dir } = format(asLines(SUCCESS_EVENTS));

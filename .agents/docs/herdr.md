@@ -47,8 +47,10 @@ node scripts/agent-surface.js run --script <file> --label <name> \
   own sidebar workspace even when the caller sits in a linked worktree. If
   herdr still refuses, the wrapper fails with herdr's error; it never falls
   back to a tab.
-- An already-open worktree workspace gets a new tab; its root pane is never
-  reused because the user may be typing there.
+- In an already-open worktree workspace, the run splits into the tab with the
+  same label (`--group`, else `--label`) when one exists, and otherwise gets a
+  new tab with that label. Its root pane is never reused because the user may
+  be typing there.
 - Closing the pane before the script finishes is reported as an error, not a
   silent hang.
 - The full runner is written to `<script>.pane.sh` and the pane only runs
