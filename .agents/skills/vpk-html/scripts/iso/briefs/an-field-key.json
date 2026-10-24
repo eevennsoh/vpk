@@ -1,0 +1,242 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-field-key",
+	"figId": "FIG_241",
+	"title": "A cache key as a pin lock",
+	"label": "Dimetric pin lock cut open: a housing with a shear line, five pins in its top, a key slid in from the right and a draw counter in front. One accented pin stands proud. Hover or arrow keys lift one part.",
+	"caption": "The stage keeps last frame's key; while every cut still matches, every pin sits at the shear line, the lock turns and nothing is drawn. Change one setting and its pin stands proud, the lock jams and the whole frame redraws.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "counter",
+			"kind": "box",
+			"at": [
+				20,
+				40,
+				0
+			],
+			"size": [
+				52,
+				7,
+				3
+			],
+			"r": 1,
+			"label": "Draw counter",
+			"marks": [
+				[
+					[
+						4,
+						1
+					],
+					[
+						48,
+						1
+					]
+				]
+			]
+		},
+		{
+			"id": "housing",
+			"kind": "box",
+			"at": [
+				10,
+				12,
+				0
+			],
+			"size": [
+				70,
+				20,
+				24
+			],
+			"r": 3,
+			"label": "Lock housing",
+			"marks": [
+				[
+					[
+						0,
+						14
+					],
+					[
+						70,
+						14
+					]
+				]
+			]
+		},
+		{
+			"id": "pin-1",
+			"kind": "cylinder",
+			"at": [
+				27,
+				29,
+				24
+			],
+			"size": [
+				3,
+				3,
+				8
+			],
+			"label": "Pin"
+		},
+		{
+			"id": "pin-2",
+			"kind": "cylinder",
+			"at": [
+				38,
+				29,
+				24
+			],
+			"size": [
+				3,
+				3,
+				8
+			],
+			"label": "Pin"
+		},
+		{
+			"id": "pin-3",
+			"kind": "cylinder",
+			"at": [
+				49,
+				29,
+				24
+			],
+			"size": [
+				3,
+				3,
+				16
+			],
+			"label": "Changed pin"
+		},
+		{
+			"id": "pin-4",
+			"kind": "cylinder",
+			"at": [
+				60,
+				29,
+				24
+			],
+			"size": [
+				3,
+				3,
+				8
+			],
+			"label": "Pin"
+		},
+		{
+			"id": "pin-5",
+			"kind": "cylinder",
+			"at": [
+				71,
+				29,
+				24
+			],
+			"size": [
+				3,
+				3,
+				8
+			],
+			"label": "Pin"
+		},
+		{
+			"id": "blade",
+			"kind": "box",
+			"at": [
+				80,
+				20,
+				9
+			],
+			"size": [
+				12,
+				4,
+				6
+			],
+			"r": 1,
+			"label": "Key blade"
+		},
+		{
+			"id": "bow",
+			"kind": "box",
+			"at": [
+				92,
+				16,
+				5
+			],
+			"size": [
+				8,
+				12,
+				14
+			],
+			"r": 4,
+			"label": "Key bow"
+		}
+	],
+	"focal": "pin-3",
+	"labels": [
+		{
+			"text": "Changed pin",
+			"target": "pin-3",
+			"side": "left"
+		},
+		{
+			"text": "Matching pins",
+			"target": "pin-1",
+			"side": "left"
+		},
+		{
+			"text": "Shear line",
+			"target": "housing",
+			"side": "left",
+			"anchor": [
+				16,
+				32,
+				24
+			]
+		},
+		{
+			"text": "Draw counter",
+			"target": "counter",
+			"side": "left"
+		},
+		{
+			"text": "Key, last frame",
+			"target": "bow",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"housing"
+			],
+			[
+				"counter"
+			],
+			[
+				"pin-1",
+				"pin-2",
+				"pin-4",
+				"pin-5"
+			],
+			[
+				"blade",
+				"bow"
+			],
+			[
+				"pin-3"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 10,
+		"rest": "Key matches"
+	},
+	"meta": {
+		"margin": "[ FIELD KEY ]",
+		"corner": "VPK-HTML"
+	}
+}

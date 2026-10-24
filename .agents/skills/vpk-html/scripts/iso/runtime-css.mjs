@@ -37,9 +37,9 @@
 // and the dark tone overrides also match a bare svg[data-vpk-iso]: the house lightbox shows a
 // static figure's SVG outside its plate, and without them the zoom inverted the dark tone order
 // (top darker than both sides) and lost the non-scaling strokes (round-4 verifier).
-// Accent (iso/accent.mjs, shared with the 3D prototype): the hovered or selected part (.is-active) takes the three accent faces
-// the focal part is drawn with and its edge, creases and marks take the darker accent stroke (ACCENT_FACES.edge; a faceless part,
-// the ring or a gap, takes the accent itself on its stroke); labels stay ink. The
+// Accent (iso/accent.mjs, shared with the 3D prototype): the hovered or selected part (.is-active) keeps its faces and takes a
+// 2 px accent outline only (a faceless part, the ring or a gap, takes the accent on its stroke too): filling a whole part made
+// large parts flood orange as the pointer crossed part boundaries; labels stay ink. The
 // rules are (0,2,0) or more, so they beat the dark tone overrides (0,1,0) and the presentation attributes.
 // Cast shadows (SHADOW): the emitted fill is the light tone (ink 12% into the paper); a dark page takes DARK_TONE, below the paper.
 // A shadow received on a top is RECEIVED (DARK_RECEIVED in dark); on an accented top (the focal, .is-active, the dropping layer)
@@ -75,13 +75,9 @@ const restCss = [
 // The line work of a part: its edge, creases and marks.
 const LINES = ':is([data-vpk-iso-role="edge"], [data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"])';
 
-// The hovered or selected part's line work (edge, crease, mark) is the darker accent (ACCENT_FACES.edge), like the focal part's.
+// The dropping entry layer's line work (edge, crease, mark) is the darker accent (ACCENT_FACES.edge), like the focal part's.
 const accentCss = [
-	`:where([data-vpk-engine="iso-kit"]) .is-active > [data-vpk-iso-role="top"] { fill: ${ACCENT_FACES.top}; }`,
-	`:where([data-vpk-engine="iso-kit"]) .is-active > [data-vpk-iso-role="fill"] { fill: ${ACCENT_FACES.light}; }`,
-	`:where([data-vpk-engine="iso-kit"]) .is-active > [data-vpk-iso-role="shade"] { fill: ${ACCENT_FACES.dark}; }`,
-	`:where([data-vpk-engine="iso-kit"]) .is-active > ${LINES} { stroke: ${ACCENT_FACES.edge}; }`,
-	`:where([data-vpk-engine="iso-kit"]) .is-active > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED_ACCENT}; }`,
+	`:where([data-vpk-engine="iso-kit"]) .is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }`,
 	`:where([data-vpk-engine="iso-kit"]) .is-active:not(:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }`,
 	"[data-vpk-iso-arrow-for].is-active > path { stroke: var(--ill-accent); fill: var(--ill-accent); }",
 ].join("\n");
@@ -101,7 +97,7 @@ const entryCss = [
 ].join("\n");
 
 export const ISO_CSS = `:where([data-vpk-engine="iso-kit"] svg, svg[data-vpk-iso]) :where(path, line, polyline, polygon, ellipse, circle, rect) { vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
-:where([data-vpk-engine="iso-kit"] [data-vpk-iso-role="edge"]) { transition: stroke var(--vpk-dur-fast, 140ms) var(--ease-out); }
+:where([data-vpk-engine="iso-kit"] [data-vpk-iso-role="edge"]) { transition: stroke var(--duration-fast, 100ms) var(--ease-out); }
 [data-vpk-iso-weight="2"] path { stroke-width: 2; }
 [data-theme="dark"] :where([data-vpk-engine="iso-kit"], svg[data-vpk-iso]) :where([data-vpk-iso-tone="top"]) { fill: var(--ill-tone2); }
 [data-theme="dark"] :where([data-vpk-engine="iso-kit"], svg[data-vpk-iso]) :where([data-vpk-iso-tone="dark"]) { fill: var(--surface-sunken); }
@@ -123,7 +119,7 @@ ${entryCss}
 :where(.vpk-iso-control) { display: inline-flex; align-items: center; gap: 10px; font: 12px/1.4 var(--font-mono); }
 :where(.vpk-iso-control input) { accent-color: var(--ink); }
 :where(.vpk-iso-live) { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-[data-vpk-engine="iso-kit"] svg[data-vpk-iso-blink] .is-active > [data-vpk-iso-role="edge"] { stroke: ${ACCENT_FACES.edge}; stroke-width: 2; }
+[data-vpk-engine="iso-kit"] svg[data-vpk-iso-blink] .is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }
 :where(.vpk-iso-plate--manual) { padding: 0; border: 0; border-radius: 0; background: none; }
 :where(.vpk-iso-frame) { padding: 20px 16px 12px; border: 1px solid var(--rule); background: var(--paper); }
 .vpk-iso-plate--manual svg[data-vpk-iso] { max-width: var(--vpk-iso-w, none); }

@@ -1,0 +1,409 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-afterburner",
+	"figId": "FIG_216",
+	"title": "Afterburner on a thrust stand",
+	"label": "Dimetric turbojet hung on a thrust stand: two pylons, an intake, the core, an accented afterburner duct cut open over a fuel spray bar and flame holder, the nozzle, and a load cell at the front that reads thrust.",
+	"caption": "Past military power the afterburner sprays fuel behind the turbine and lights it on the flame holder, the nozzle petals open, and the load cell at the front reads the thrust climb.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "anchor",
+			"kind": "box",
+			"at": [
+				-16,
+				20,
+				0
+			],
+			"size": [
+				12,
+				16,
+				32
+			],
+			"r": 1,
+			"label": "Ground anchor"
+		},
+		{
+			"id": "loadcell",
+			"kind": "box",
+			"at": [
+				-4,
+				20,
+				18
+			],
+			"size": [
+				14,
+				16,
+				10
+			],
+			"r": 1,
+			"marks": [
+				[
+					[
+						4,
+						2
+					],
+					[
+						4,
+						14
+					]
+				],
+				[
+					[
+						9,
+						2
+					],
+					[
+						9,
+						14
+					]
+				]
+			],
+			"label": "Load cell"
+		},
+		{
+			"id": "pylon-f",
+			"kind": "box",
+			"at": [
+				36,
+				20,
+				0
+			],
+			"size": [
+				12,
+				16,
+				46
+			],
+			"r": 1,
+			"label": "Front pylon"
+		},
+		{
+			"id": "pylon-r",
+			"kind": "box",
+			"at": [
+				91,
+				20,
+				0
+			],
+			"size": [
+				10,
+				16,
+				46
+			],
+			"r": 1,
+			"label": "Rear pylon"
+		},
+		{
+			"id": "intake",
+			"kind": "box",
+			"at": [
+				0,
+				10,
+				40
+			],
+			"size": [
+				10,
+				36,
+				38
+			],
+			"r": 3,
+			"label": "Intake"
+		},
+		{
+			"id": "core",
+			"kind": "box",
+			"at": [
+				10,
+				16,
+				46
+			],
+			"size": [
+				70,
+				24,
+				26
+			],
+			"r": 2,
+			"marks": [
+				[
+					[
+						24,
+						3
+					],
+					[
+						24,
+						21
+					]
+				],
+				[
+					[
+						48,
+						3
+					],
+					[
+						48,
+						21
+					]
+				]
+			],
+			"label": "Turbojet core"
+		},
+		{
+			"id": "turbine",
+			"kind": "box",
+			"at": [
+				80,
+				16,
+				46
+			],
+			"size": [
+				22,
+				24,
+				26
+			],
+			"r": 1,
+			"label": "Turbine"
+		},
+		{
+			"id": "afterburner",
+			"kind": "tray",
+			"at": [
+				102,
+				16,
+				46
+			],
+			"size": [
+				44,
+				24,
+				26
+			],
+			"r": 2,
+			"label": "Afterburner"
+		},
+		{
+			"id": "spray",
+			"kind": "box",
+			"at": [
+				108,
+				16,
+				72
+			],
+			"size": [
+				3,
+				24,
+				2
+			],
+			"r": 0.5,
+			"marks": [
+				[
+					[
+						0.5,
+						4
+					],
+					[
+						2.5,
+						4
+					]
+				],
+				[
+					[
+						0.5,
+						8
+					],
+					[
+						2.5,
+						8
+					]
+				],
+				[
+					[
+						0.5,
+						12
+					],
+					[
+						2.5,
+						12
+					]
+				],
+				[
+					[
+						0.5,
+						16
+					],
+					[
+						2.5,
+						16
+					]
+				],
+				[
+					[
+						0.5,
+						20
+					],
+					[
+						2.5,
+						20
+					]
+				]
+			],
+			"label": "Fuel spray bar"
+		},
+		{
+			"id": "holder",
+			"kind": "box",
+			"at": [
+				128,
+				18,
+				66
+			],
+			"size": [
+				7,
+				20,
+				8
+			],
+			"r": 0.5,
+			"marks": [
+				[
+					[
+						0.5,
+						1
+					],
+					[
+						6.5,
+						10
+					]
+				],
+				[
+					[
+						6.5,
+						10
+					],
+					[
+						0.5,
+						19
+					]
+				]
+			],
+			"label": "Flame holder"
+		},
+		{
+			"id": "nozzle",
+			"kind": "box",
+			"at": [
+				146,
+				10,
+				41
+			],
+			"size": [
+				16,
+				36,
+				36
+			],
+			"r": 3,
+			"label": "Nozzle petals"
+		}
+	],
+	"focal": "afterburner",
+	"labels": [
+		{
+			"text": "Afterburner",
+			"target": "afterburner",
+			"side": "right"
+		},
+		{
+			"text": "Fuel spray",
+			"target": "spray",
+			"side": "right",
+			"anchor": [
+				109.5,
+				17,
+				74
+			]
+		},
+		{
+			"text": "Flame holder",
+			"target": "holder",
+			"side": "right",
+			"anchor": [
+				131.5,
+				19,
+				74
+			]
+		},
+		{
+			"text": "Nozzle petals",
+			"target": "nozzle",
+			"side": "right"
+		},
+		{
+			"text": "Load cell",
+			"target": "loadcell",
+			"side": "left"
+		},
+		{
+			"text": "Turbojet core",
+			"target": "core",
+			"side": "left"
+		},
+		{
+			"text": "Thrust stand",
+			"target": "pylon-r",
+			"side": "right",
+			"anchor": [
+				96,
+				36,
+				10
+			]
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				166,
+				28,
+				59
+			],
+			"to": [
+				192,
+				28,
+				59
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"anchor",
+				"pylon-f",
+				"pylon-r"
+			],
+			[
+				"loadcell",
+				"intake",
+				"core",
+				"turbine"
+			],
+			[
+				"afterburner"
+			],
+			[
+				"spray",
+				"holder"
+			],
+			[
+				"nozzle"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 6
+	},
+	"meta": {
+		"margin": "[ AFTERBURNER ]",
+		"corner": "VPK-HTML"
+	}
+}

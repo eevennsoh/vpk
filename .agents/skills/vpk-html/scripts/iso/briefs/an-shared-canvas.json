@@ -1,0 +1,427 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-shared-canvas",
+	"figId": "FIG_236",
+	"title": "Shared canvas, a drafting board",
+	"label": "Dimetric drafting board in device pixels: a corner block at (0, 0), width and height rulers with ratchet stops marking a 512 by 352 canvas, and the accented draw card seated at the corner.",
+	"caption": "Every draw seats against the corner at (0, 0); when one needs more room than the canvas has, a ruler ratchets outward until it fits and never slides back.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "board",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				176,
+				136,
+				5
+			],
+			"r": 0,
+			"label": "Drafting board"
+		},
+		{
+			"id": "corner",
+			"kind": "box",
+			"at": [
+				4,
+				4,
+				2
+			],
+			"size": [
+				14,
+				14,
+				10
+			],
+			"r": 1,
+			"label": "Corner block at (0, 0)"
+		},
+		{
+			"id": "ruler-w",
+			"kind": "box",
+			"at": [
+				20,
+				8,
+				2
+			],
+			"size": [
+				31,
+				8,
+				3
+			],
+			"r": 0.5,
+			"label": "Width ruler, tooth 1",
+			"marks": [
+				[
+					[
+						0,
+						4
+					],
+					[
+						31,
+						4
+					]
+				]
+			]
+		},
+		{
+			"id": "ruler-w-2",
+			"kind": "box",
+			"at": [
+				52,
+				8,
+				2
+			],
+			"size": [
+				31,
+				8,
+				3
+			],
+			"r": 0.5,
+			"label": "Width ruler, tooth 2",
+			"marks": [
+				[
+					[
+						0,
+						4
+					],
+					[
+						31,
+						4
+					]
+				]
+			]
+		},
+		{
+			"id": "ruler-w-3",
+			"kind": "box",
+			"at": [
+				84,
+				8,
+				2
+			],
+			"size": [
+				31,
+				8,
+				3
+			],
+			"r": 0.5,
+			"label": "Width ruler, tooth 3",
+			"marks": [
+				[
+					[
+						0,
+						4
+					],
+					[
+						31,
+						4
+					]
+				]
+			]
+		},
+		{
+			"id": "ruler-w-4",
+			"kind": "box",
+			"at": [
+				116,
+				8,
+				2
+			],
+			"size": [
+				31,
+				8,
+				3
+			],
+			"r": 0.5,
+			"label": "Width ruler, tooth 4",
+			"marks": [
+				[
+					[
+						0,
+						4
+					],
+					[
+						31,
+						4
+					]
+				]
+			]
+		},
+		{
+			"id": "ruler-h",
+			"kind": "box",
+			"at": [
+				8,
+				20,
+				2
+			],
+			"size": [
+				8,
+				21,
+				3
+			],
+			"r": 0.5,
+			"label": "Height ruler, tooth 1",
+			"marks": [
+				[
+					[
+						4,
+						0
+					],
+					[
+						4,
+						21
+					]
+				]
+			]
+		},
+		{
+			"id": "ruler-h-2",
+			"kind": "box",
+			"at": [
+				8,
+				42,
+				2
+			],
+			"size": [
+				8,
+				21,
+				3
+			],
+			"r": 0.5,
+			"label": "Height ruler, tooth 2",
+			"marks": [
+				[
+					[
+						4,
+						0
+					],
+					[
+						4,
+						21
+					]
+				]
+			]
+		},
+		{
+			"id": "ruler-h-3",
+			"kind": "box",
+			"at": [
+				8,
+				64,
+				2
+			],
+			"size": [
+				8,
+				21,
+				3
+			],
+			"r": 0.5,
+			"label": "Height ruler, tooth 3",
+			"marks": [
+				[
+					[
+						4,
+						0
+					],
+					[
+						4,
+						21
+					]
+				]
+			]
+		},
+		{
+			"id": "ruler-h-4",
+			"kind": "box",
+			"at": [
+				8,
+				86,
+				2
+			],
+			"size": [
+				8,
+				21,
+				3
+			],
+			"r": 0.5,
+			"label": "Height ruler, tooth 4",
+			"marks": [
+				[
+					[
+						4,
+						0
+					],
+					[
+						4,
+						21
+					]
+				]
+			]
+		},
+		{
+			"id": "stop-w",
+			"kind": "box",
+			"at": [
+				146,
+				6,
+				2
+			],
+			"size": [
+				6,
+				12,
+				7
+			],
+			"r": 1,
+			"label": "Width ratchet"
+		},
+		{
+			"id": "stop-h",
+			"kind": "box",
+			"at": [
+				6,
+				106,
+				2
+			],
+			"size": [
+				12,
+				6,
+				7
+			],
+			"r": 1,
+			"label": "Height ratchet"
+		},
+		{
+			"id": "draw",
+			"kind": "slab",
+			"at": [
+				20,
+				20,
+				2.5
+			],
+			"size": [
+				76,
+				56,
+				2
+			],
+			"r": 0,
+			"label": "The draw, 304 × 224"
+		}
+	],
+	"focal": "draw",
+	"labels": [
+		{
+			"text": "Draw 304 × 224",
+			"target": "draw",
+			"side": "right",
+			"anchor": [
+				96,
+				40,
+				4.5
+			]
+		},
+		{
+			"text": "Corner at (0, 0)",
+			"target": "corner",
+			"side": "left"
+		},
+		{
+			"text": "Width ruler",
+			"target": "ruler-w-4",
+			"side": "right",
+			"anchor": [
+				128,
+				12,
+				5
+			]
+		},
+		{
+			"text": "Height ruler",
+			"target": "ruler-h-2",
+			"side": "left",
+			"anchor": [
+				12,
+				50,
+				5
+			]
+		},
+		{
+			"text": "Ratchets, out only",
+			"target": "stop-w",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"board"
+			],
+			[
+				"corner"
+			],
+			[
+				"ruler-w",
+				"ruler-w-2",
+				"ruler-w-3",
+				"ruler-w-4",
+				"ruler-h",
+				"ruler-h-2",
+				"ruler-h-3",
+				"ruler-h-4"
+			],
+			[
+				"stop-w",
+				"stop-h"
+			],
+			[
+				"draw"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 12,
+		"rest": "draw 4 of 4"
+	},
+	"meta": {
+		"margin": "[ DEVICE PX ]",
+		"corner": "VPK-HTML"
+	},
+	"dims": [
+		{
+			"from": [
+				20,
+				136,
+				0
+			],
+			"to": [
+				148,
+				136,
+				0
+			],
+			"text": "512 px",
+			"offset": 30
+		},
+		{
+			"from": [
+				176,
+				20,
+				0
+			],
+			"to": [
+				176,
+				108,
+				0
+			],
+			"text": "352 px",
+			"offset": 30
+		}
+	]
+}

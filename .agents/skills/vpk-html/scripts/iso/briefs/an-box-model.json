@@ -1,0 +1,47 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-box-model",
+	"figId": "FIG_231",
+	"title": "The box model as a frame jig",
+	"label": "Dimetric picture-frame jig: on a base with a fence and a clamp, a dashed margin outline holds a border frame, a padding mat inside it and the accented content print on top. Hovering lifts the nested frames apart.",
+	"caption": "Each frame wraps the one inside it: the print is the content, the mat around it is padding, the moulding is the border and the clear ring the jig keeps free is the margin, so the box's full width is all four added up.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "base", "kind": "slab", "at": [0, 0, 0], "size": [168, 100, 6], "r": 3, "label": "Jig base", "explode": [0, 0, 0] },
+		{ "id": "fence", "kind": "box", "at": [-8, 8, 0], "size": [6, 84, 14], "r": 1, "label": "Fence", "explode": [0, 0, 0] },
+		{ "id": "margin", "kind": "gap", "at": [16, 12, 6], "size": [132, 76, 0], "r": 2, "label": "Margin", "explode": [0, 0, 0] },
+		{ "id": "clamp", "kind": "box", "at": [154, 38, 6], "size": [10, 24, 10], "r": 2, "label": "Clamp", "marks": [[[0, 12], [10, 12]]], "explode": [0, 0, 0] },
+		{ "id": "border", "kind": "slab", "at": [26, 22, 6], "size": [112, 56, 4], "r": 1, "label": "Border", "explode": [0, 0, 8] },
+		{ "id": "padding", "kind": "slab", "at": [32, 28, 10], "size": [100, 44, 3], "label": "Padding", "explode": [0, 0, 16] },
+		{ "id": "content", "kind": "plate", "at": [44, 36, 13], "size": [76, 28, 2], "label": "Content", "marks": [[[6, 10], [70, 10]]], "explode": [0, 0, 26] }
+	],
+	"focal": "content",
+	"labels": [
+		{ "text": "Content", "target": "content", "side": "right" },
+		{ "text": "Padding", "target": "padding", "side": "right" },
+		{ "text": "Border", "target": "border", "side": "left" },
+		{ "text": "Margin", "target": "margin", "side": "left", "anchor": [16, 70, 6] },
+		{ "text": "Fence", "target": "fence", "side": "left" },
+		{ "text": "Clamp", "target": "clamp", "side": "right" }
+	],
+	"assemble": {
+		"layers": [
+			["base", "fence", "margin"],
+			["clamp"],
+			["border"],
+			["padding"],
+			["content"]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": { "rest": 0, "min": 0, "max": 1, "step": 0.25, "unit": "gap" }
+	},
+	"meta": {
+		"margin": "[ BOX-SIZING ]",
+		"corner": "VPK-HTML"
+	}
+}

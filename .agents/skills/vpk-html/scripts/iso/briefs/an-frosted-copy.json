@@ -1,0 +1,401 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-frosted-copy",
+	"figId": "FIG_247",
+	"title": "Frosted copy, a lightbox and a print",
+	"label": "Dimetric lightbox: a picture lies on the lit bed between two rails, a blur bar rides the rails, and beside it a half-size frosted print sits under a glass pane, with a blur dial on the front ledge. The blur bar is highlighted.",
+	"caption": "Frost is a blurred copy of what is behind the pane: the bar sweeps the picture in two passes into a half-size print, and only then does the glass bend it.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "rail-near",
+			"kind": "box",
+			"at": [
+				4,
+				0,
+				0
+			],
+			"size": [
+				142,
+				6,
+				14
+			],
+			"r": 1,
+			"label": "Rail"
+		},
+		{
+			"id": "lightbox",
+			"kind": "box",
+			"at": [
+				0,
+				8,
+				0
+			],
+			"size": [
+				150,
+				94,
+				8
+			],
+			"r": 2,
+			"label": "Lightbox",
+			"marks": [
+				[
+					[
+						10,
+						94
+					],
+					[
+						140,
+						94
+					]
+				]
+			]
+		},
+		{
+			"id": "picture",
+			"kind": "slab",
+			"at": [
+				23,
+				16,
+				8
+			],
+			"size": [
+				104,
+				78,
+				1.5
+			],
+			"r": 1,
+			"label": "Source picture"
+		},
+		{
+			"id": "spot",
+			"kind": "ring",
+			"at": [
+				86,
+				46,
+				9.5
+			],
+			"size": [
+				16,
+				16,
+				0
+			],
+			"clipTo": "picture",
+			"label": "Sharp detail"
+		},
+		{
+			"id": "rail-far",
+			"kind": "box",
+			"at": [
+				4,
+				104,
+				0
+			],
+			"size": [
+				142,
+				6,
+				14
+			],
+			"r": 1,
+			"label": "Rail 2"
+		},
+		{
+			"id": "bar",
+			"kind": "box",
+			"at": [
+				124,
+				0,
+				14
+			],
+			"size": [
+				8,
+				110,
+				6
+			],
+			"r": 1,
+			"label": "Blur bar",
+			"marks": [
+				[
+					[
+						4,
+						4
+					],
+					[
+						4,
+						106
+					]
+				]
+			]
+		},
+		{
+			"id": "ledge",
+			"kind": "slab",
+			"at": [
+				0,
+				114,
+				0
+			],
+			"size": [
+				150,
+				22,
+				4
+			],
+			"r": 1,
+			"label": "Front ledge"
+		},
+		{
+			"id": "dial",
+			"kind": "cylinder",
+			"at": [
+				-9,
+				125,
+				0
+			],
+			"size": [
+				6,
+				6,
+				6
+			],
+			"label": "Blur dial",
+			"marks": [
+				[
+					[
+						0,
+						0
+					],
+					[
+						5,
+						0
+					]
+				]
+			]
+		},
+		{
+			"id": "texel-1",
+			"kind": "slab",
+			"at": [
+				184,
+				70,
+				0
+			],
+			"size": [
+				16,
+				16,
+				3
+			],
+			"r": 0,
+			"label": "Texel 1"
+		},
+		{
+			"id": "texel-2",
+			"kind": "slab",
+			"at": [
+				202,
+				70,
+				0
+			],
+			"size": [
+				16,
+				16,
+				3
+			],
+			"r": 0,
+			"label": "Texel 2"
+		},
+		{
+			"id": "texel-3",
+			"kind": "slab",
+			"at": [
+				220,
+				70,
+				0
+			],
+			"size": [
+				16,
+				16,
+				3
+			],
+			"r": 0,
+			"label": "Texel 3"
+		},
+		{
+			"id": "texel-4",
+			"kind": "slab",
+			"at": [
+				184,
+				88,
+				0
+			],
+			"size": [
+				16,
+				16,
+				3
+			],
+			"r": 0,
+			"label": "Texel 4"
+		},
+		{
+			"id": "texel-5",
+			"kind": "slab",
+			"at": [
+				202,
+				88,
+				0
+			],
+			"size": [
+				16,
+				16,
+				3
+			],
+			"r": 0,
+			"label": "Texel 5"
+		},
+		{
+			"id": "print",
+			"kind": "slab",
+			"at": [
+				220,
+				88,
+				0
+			],
+			"size": [
+				16,
+				16,
+				3
+			],
+			"r": 0,
+			"label": "Frosted print"
+		},
+		{
+			"id": "glass",
+			"kind": "slab",
+			"at": [
+				190,
+				10,
+				0
+			],
+			"size": [
+				52,
+				40,
+				4
+			],
+			"r": 4,
+			"bevel": 1.6,
+			"label": "Glass pane"
+		}
+	],
+	"focal": "bar",
+	"labels": [
+		{
+			"text": "Blur bar, two passes",
+			"target": "bar",
+			"side": "right",
+			"anchor": [
+				128,
+				2,
+				20
+			]
+		},
+		{
+			"text": "Picture, full size",
+			"target": "picture",
+			"side": "left",
+			"anchor": [
+				30,
+				22,
+				9.5
+			]
+		},
+		{
+			"text": "Lightbox",
+			"target": "lightbox",
+			"side": "right",
+			"anchor": [
+				150,
+				22,
+				4
+			]
+		},
+		{
+			"text": "Frosted print, half size",
+			"target": "print",
+			"side": "right",
+			"anchor": [
+				233,
+				101,
+				3
+			]
+		},
+		{
+			"text": "Glass bends the copy",
+			"target": "glass",
+			"side": "right"
+		},
+		{
+			"text": "Blur 9 px",
+			"target": "dial",
+			"side": "left",
+			"anchor": [
+				-13,
+				125,
+				6
+			]
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				156,
+				60,
+				8
+			],
+			"to": [
+				178,
+				60,
+				8
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"ledge",
+				"lightbox",
+				"rail-near",
+				"rail-far"
+			],
+			[
+				"picture",
+				"spot"
+			],
+			[
+				"texel-1",
+				"texel-2",
+				"texel-3",
+				"texel-4",
+				"texel-5",
+				"print",
+				"dial"
+			],
+			[
+				"glass"
+			],
+			[
+				"bar"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "blur 9 px, 160 x 140 texels"
+	},
+	"meta": {
+		"margin": "[ FROSTED COPY ]",
+		"corner": "VPK-HTML"
+	}
+}

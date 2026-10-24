@@ -1,0 +1,249 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-dish",
+	"figId": "FIG_121",
+	"title": "Dish on a two-axis gimbal",
+	"label": "Dimetric antenna: a base, an azimuth turntable and a two-arm yoke whose elevation pivots carry a round reflector dish aimed up, two bowl rings on its face and a feed horn rising from its centre. The dish is accented.",
+	"caption": "Two axes are enough to aim anywhere: the turntable sets the heading, the pivots on the yoke set the elevation, and the dish follows.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "base",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				120,
+				120,
+				8
+			],
+			"r": 6,
+			"label": "Base",
+			"marks": [
+				[
+					[
+						10,
+						112
+					],
+					[
+						40,
+						112
+					]
+				]
+			]
+		},
+		{
+			"id": "turntable",
+			"kind": "cylinder",
+			"at": [
+				60,
+				60,
+				8
+			],
+			"size": [
+				42,
+				42,
+				5
+			],
+			"label": "Azimuth turntable"
+		},
+		{
+			"id": "yoke-left",
+			"kind": "box",
+			"at": [
+				35,
+				77,
+				13
+			],
+			"size": [
+				8,
+				8,
+				32
+			],
+			"r": 2,
+			"label": "Yoke arm"
+		},
+		{
+			"id": "yoke-right",
+			"kind": "box",
+			"at": [
+				77,
+				35,
+				13
+			],
+			"size": [
+				8,
+				8,
+				32
+			],
+			"r": 2,
+			"label": "Yoke arm"
+		},
+		{
+			"id": "pivot-left",
+			"kind": "box",
+			"at": [
+				34,
+				76,
+				45
+			],
+			"size": [
+				10,
+				10,
+				4
+			],
+			"label": "Elevation pivot",
+			"r": 2
+		},
+		{
+			"id": "pivot-right",
+			"kind": "box",
+			"at": [
+				76,
+				34,
+				45
+			],
+			"size": [
+				10,
+				10,
+				4
+			],
+			"label": "Elevation pivot",
+			"r": 2
+		},
+		{
+			"id": "dish",
+			"kind": "cylinder",
+			"at": [
+				60,
+				60,
+				49
+			],
+			"size": [
+				31,
+				31,
+				4
+			],
+			"label": "Reflector dish"
+		},
+		{
+			"id": "bowl",
+			"kind": "ring",
+			"at": [
+				60,
+				60,
+				53
+			],
+			"size": [
+				22,
+				22,
+				0
+			],
+			"label": "Reflector bowl"
+		},
+		{
+			"id": "bowl-inner",
+			"kind": "ring",
+			"at": [
+				60,
+				60,
+				53
+			],
+			"size": [
+				11,
+				11,
+				0
+			],
+			"label": "Reflector bowl"
+		},
+		{
+			"id": "feed",
+			"kind": "cylinder",
+			"at": [
+				60,
+				60,
+				53
+			],
+			"size": [
+				3,
+				3,
+				26
+			],
+			"label": "Feed horn"
+		}
+	],
+	"focal": "dish",
+	"labels": [
+		{
+			"text": "Reflector dish",
+			"target": "dish",
+			"side": "left"
+		},
+		{
+			"text": "Feed horn",
+			"target": "feed",
+			"side": "right"
+		},
+		{
+			"text": "Elevation pivot",
+			"target": "pivot-right",
+			"side": "right"
+		},
+		{
+			"text": "Yoke arm",
+			"target": "yoke-left",
+			"side": "left"
+		},
+		{
+			"text": "Azimuth turntable",
+			"target": "turntable",
+			"side": "left"
+		},
+		{
+			"text": "Base",
+			"target": "base",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"base"
+			],
+			[
+				"turntable"
+			],
+			[
+				"yoke-left",
+				"yoke-right"
+			],
+			[
+				"pivot-left",
+				"pivot-right"
+			],
+			[
+				"dish",
+				"bowl",
+				"bowl-inner"
+			],
+			[
+				"feed"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 10,
+		"rest": "aim zenith"
+	},
+	"meta": {
+		"margin": "[ AZ / EL ]",
+		"corner": "VPK-HTML"
+	}
+}

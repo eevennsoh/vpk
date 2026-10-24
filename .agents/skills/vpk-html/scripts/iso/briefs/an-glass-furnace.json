@@ -1,0 +1,335 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-glass-furnace",
+	"figId": "FIG_217",
+	"title": "Glory hole",
+	"label": "Drum furnace with a burner and a door whose framed port is the glory hole, beside a steel marver on a stand; the blowpipe rests its accented gather on it. Hover slides the pipe into the glory hole to reheat it.",
+	"caption": "On the marver the steel takes heat back out of the gather; slide the pipe into the hole and the 1,150 °C walls and burner flame reheat it toward 990 °C.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "plinth",
+			"kind": "box",
+			"at": [
+				2,
+				6,
+				0
+			],
+			"size": [
+				42,
+				30,
+				6
+			],
+			"r": 2,
+			"label": "Plinth",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "drum",
+			"kind": "box",
+			"at": [
+				4,
+				8,
+				6
+			],
+			"size": [
+				38,
+				26,
+				26
+			],
+			"r": 4,
+			"marks": [
+				[
+					[
+						4,
+						13
+					],
+					[
+						34,
+						13
+					]
+				]
+			],
+			"label": "Drum furnace",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "burner",
+			"kind": "cylinder",
+			"at": [
+				20,
+				21,
+				32
+			],
+			"size": [
+				4,
+				4,
+				7
+			],
+			"label": "Burner",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "door",
+			"kind": "box",
+			"at": [
+				42,
+				10,
+				8
+			],
+			"size": [
+				3,
+				22,
+				22
+			],
+			"r": 1,
+			"label": "Door",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "port",
+			"kind": "box",
+			"at": [
+				45,
+				14,
+				11
+			],
+			"size": [
+				2,
+				14,
+				14
+			],
+			"r": 1,
+			"label": "Glory hole",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "mouth",
+			"kind": "box",
+			"at": [
+				47,
+				16.5,
+				13.5
+			],
+			"size": [
+				0.5,
+				9,
+				9
+			],
+			"state": "active",
+			"label": "Glory hole",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "stand",
+			"kind": "box",
+			"at": [
+				70,
+				12,
+				0
+			],
+			"size": [
+				22,
+				18,
+				15
+			],
+			"r": 1,
+			"label": "Stand",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "marver",
+			"kind": "box",
+			"at": [
+				66,
+				8,
+				15
+			],
+			"size": [
+				30,
+				26,
+				3
+			],
+			"r": 1,
+			"marks": [
+				[
+					[
+						4,
+						22
+					],
+					[
+						26,
+						22
+					]
+				]
+			],
+			"label": "Marver",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "gather",
+			"kind": "box",
+			"at": [
+				76,
+				18,
+				18
+			],
+			"size": [
+				7,
+				6,
+				6
+			],
+			"r": 3,
+			"label": "Gather",
+			"explode": [
+				-30.5,
+				0,
+				0
+			]
+		},
+		{
+			"id": "pipe",
+			"kind": "box",
+			"at": [
+				83,
+				20,
+				20
+			],
+			"size": [
+				20,
+				2,
+				2
+			],
+			"r": 1,
+			"label": "Blowpipe",
+			"explode": [
+				-30.5,
+				0,
+				0
+			]
+		}
+	],
+	"focal": "gather",
+	"labels": [
+		{
+			"text": "Burner",
+			"target": "burner",
+			"side": "left"
+		},
+		{
+			"text": "Drum furnace",
+			"target": "drum",
+			"side": "left"
+		},
+		{
+			"text": "Glory hole 1,150 °C",
+			"target": "port",
+			"side": "right",
+			"anchor": [
+				46,
+				15.5,
+				25
+			]
+		},
+		{
+			"text": "Gather 990 °C",
+			"target": "gather",
+			"side": "right"
+		},
+		{
+			"text": "Blowpipe",
+			"target": "pipe",
+			"side": "right",
+			"anchor": [
+				101,
+				21,
+				22
+			]
+		},
+		{
+			"text": "Steel marver",
+			"target": "marver",
+			"side": "right",
+			"anchor": [
+				96,
+				33,
+				15.5
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"plinth",
+				"stand"
+			],
+			[
+				"drum"
+			],
+			[
+				"door",
+				"burner"
+			],
+			[
+				"port",
+				"mouth"
+			],
+			[
+				"marver"
+			],
+			[
+				"pipe",
+				"gather"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 1,
+			"step": 0.25,
+			"unit": "reheat"
+		}
+	},
+	"meta": {
+		"margin": "[ GLORY HOLE ]",
+		"corner": "VPK-HTML"
+	}
+}

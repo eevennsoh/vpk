@@ -1,0 +1,343 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-plasma-cutter",
+	"figId": "FIG_219",
+	"title": "Plasma cutter on its gantry",
+	"label": "Dimetric CNC plasma table: a frame with a water pan and slats, a steel plate on the slats, side rails carrying a gantry on uprights, and a carriage holding the accented torch, with a dashed kerf trailing behind its tip.",
+	"caption": "The gantry runs along the rails and the carriage along the beam, so the torch can reach any point of the plate; the arc cuts a narrow kerf and the sparks fall into the water below.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "frame",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				120,
+				84,
+				26
+			],
+			"r": 1,
+			"label": "Table frame",
+			"marks": [
+				[
+					[
+						6,
+						0
+					],
+					[
+						114,
+						0
+					]
+				]
+			]
+		},
+		{
+			"id": "pan",
+			"kind": "box",
+			"at": [
+				4,
+				4,
+				26
+			],
+			"size": [
+				112,
+				76,
+				6
+			],
+			"r": 0,
+			"label": "Water pan"
+		},
+		{
+			"id": "slats",
+			"kind": "box",
+			"at": [
+				8,
+				8,
+				32
+			],
+			"size": [
+				104,
+				68,
+				2
+			],
+			"r": 0,
+			"label": "Slats",
+			"marks": [
+				[
+					[
+						52,
+						0
+					],
+					[
+						52,
+						68
+					]
+				]
+			]
+		},
+		{
+			"id": "plate",
+			"kind": "slab",
+			"at": [
+				20,
+				20,
+				34
+			],
+			"size": [
+				84,
+				52,
+				2
+			],
+			"r": 0,
+			"label": "Steel plate"
+		},
+		{
+			"id": "kerf",
+			"kind": "gap",
+			"at": [
+				76,
+				47.5,
+				36
+			],
+			"size": [
+				24,
+				1,
+				0
+			],
+			"label": "Kerf"
+		},
+		{
+			"id": "rail-far",
+			"kind": "box",
+			"at": [
+				0,
+				-6,
+				14
+			],
+			"size": [
+				120,
+				6,
+				12
+			],
+			"r": 0,
+			"label": "Rail"
+		},
+		{
+			"id": "rail-near",
+			"kind": "box",
+			"at": [
+				0,
+				84,
+				14
+			],
+			"size": [
+				120,
+				6,
+				12
+			],
+			"r": 0,
+			"label": "Rail"
+		},
+		{
+			"id": "upright-far",
+			"kind": "box",
+			"at": [
+				62,
+				-6,
+				25.9
+			],
+			"size": [
+				10,
+				6,
+				48.1
+			],
+			"r": 0,
+			"label": "Upright"
+		},
+		{
+			"id": "upright-near",
+			"kind": "box",
+			"at": [
+				62,
+				84,
+				25.9
+			],
+			"size": [
+				10,
+				6,
+				48.1
+			],
+			"r": 0,
+			"label": "Upright"
+		},
+		{
+			"id": "beam",
+			"kind": "box",
+			"at": [
+				62,
+				0,
+				64
+			],
+			"size": [
+				10,
+				84,
+				10
+			],
+			"r": 1,
+			"label": "Gantry beam"
+		},
+		{
+			"id": "carriage",
+			"kind": "box",
+			"at": [
+				72,
+				41,
+				60
+			],
+			"size": [
+				6,
+				14,
+				24
+			],
+			"r": 1,
+			"label": "Carriage"
+		},
+		{
+			"id": "torch",
+			"kind": "cylinder",
+			"at": [
+				76,
+				48,
+				38
+			],
+			"size": [
+				2.5,
+				2.5,
+				24
+			],
+			"label": "Torch"
+		}
+	],
+	"focal": "torch",
+	"labels": [
+		{
+			"text": "Gantry beam",
+			"target": "beam",
+			"side": "right"
+		},
+		{
+			"text": "Carriage",
+			"target": "carriage",
+			"side": "left",
+			"anchor": [
+				74,
+				46,
+				84
+			]
+		},
+		{
+			"text": "Torch",
+			"target": "torch",
+			"side": "right",
+			"anchor": [
+				77,
+				49,
+				41
+			]
+		},
+		{
+			"text": "Kerf",
+			"target": "kerf",
+			"side": "right",
+			"anchor": [
+				94,
+				48,
+				36
+			]
+		},
+		{
+			"text": "Steel plate",
+			"target": "plate",
+			"side": "left",
+			"anchor": [
+				30,
+				66,
+				36
+			]
+		},
+		{
+			"text": "Slats",
+			"target": "slats",
+			"side": "left",
+			"anchor": [
+				10,
+				76,
+				33
+			]
+		},
+		{
+			"text": "Water pan",
+			"target": "pan",
+			"side": "right",
+			"anchor": [
+				114,
+				80,
+				27
+			]
+		},
+		{
+			"text": "Rail",
+			"target": "rail-near",
+			"side": "left"
+		},
+		{
+			"text": "Table frame",
+			"target": "frame",
+			"side": "left"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"frame"
+			],
+			[
+				"pan",
+				"rail-far",
+				"rail-near"
+			],
+			[
+				"slats",
+				"plate",
+				"kerf"
+			],
+			[
+				"upright-far",
+				"upright-near"
+			],
+			[
+				"beam",
+				"carriage"
+			],
+			[
+				"torch"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "Torch over the plate"
+	},
+	"meta": {
+		"margin": "[ CNC GANTRY ]",
+		"corner": "VPK-HTML"
+	}
+}

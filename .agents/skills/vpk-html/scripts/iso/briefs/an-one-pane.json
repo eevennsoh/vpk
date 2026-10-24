@@ -1,0 +1,922 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-one-pane",
+	"figId": "FIG_234",
+	"title": "One pane as a die set",
+	"label": "Dimetric die set: a base on four feet holds the picture bed; four guide pillars pass through the frosted copy, the ringed distance field and the glass pane on top, highlighted. A 2D canvas stands on the front ledge.",
+	"caption": "A frosted pane is drawn in layers: a blurred copy of the picture, a distance field for the box, then the glass that bends light only in its bezel, and the result is copied into a 2D canvas.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "base",
+			"kind": "slab",
+			"at": [
+				-18,
+				-10,
+				4
+			],
+			"size": [
+				116,
+				120,
+				8
+			],
+			"r": 0,
+			"label": "Base on four feet",
+			"marks": [
+				[
+					[
+						44,
+						102
+					],
+					[
+						30,
+						111
+					]
+				]
+			]
+		},
+		{
+			"id": "foot-back",
+			"kind": "box",
+			"at": [
+				-16,
+				-8,
+				0
+			],
+			"size": [
+				6,
+				6,
+				4.1
+			],
+			"r": 0,
+			"label": "Foot"
+		},
+		{
+			"id": "foot-right",
+			"kind": "box",
+			"at": [
+				92,
+				-8,
+				0
+			],
+			"size": [
+				6,
+				6,
+				4.1
+			],
+			"r": 0,
+			"label": "Foot"
+		},
+		{
+			"id": "foot-left",
+			"kind": "box",
+			"at": [
+				-16,
+				104,
+				0
+			],
+			"size": [
+				6,
+				6,
+				4.1
+			],
+			"r": 0,
+			"label": "Foot"
+		},
+		{
+			"id": "foot-front",
+			"kind": "box",
+			"at": [
+				92,
+				104,
+				0
+			],
+			"size": [
+				6,
+				6,
+				4.1
+			],
+			"r": 0,
+			"label": "Foot"
+		},
+		{
+			"id": "bed",
+			"kind": "slab",
+			"at": [
+				-4,
+				-4,
+				12
+			],
+			"size": [
+				96,
+				96,
+				5
+			],
+			"r": 0,
+			"label": "Picture behind"
+		},
+		{
+			"id": "canvas",
+			"kind": "box",
+			"at": [
+				-16,
+				101,
+				12
+			],
+			"size": [
+				30,
+				3,
+				18
+			],
+			"r": 0,
+			"label": "2D canvas"
+		},
+		{
+			"id": "frosted",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				30
+			],
+			"size": [
+				88,
+				88,
+				3
+			],
+			"r": 4,
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "field",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				52
+			],
+			"size": [
+				88,
+				88,
+				3
+			],
+			"r": 4,
+			"label": "Distance field",
+			"explode": [
+				0,
+				0,
+				20
+			]
+		},
+		{
+			"id": "glass",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				74
+			],
+			"size": [
+				88,
+				88,
+				6
+			],
+			"r": 6,
+			"bevel": 2.2,
+			"label": "Glass",
+			"explode": [
+				0,
+				0,
+				32
+			]
+		},
+		{
+			"id": "pin-left-0",
+			"kind": "cylinder",
+			"at": [
+				9,
+				79,
+				17
+			],
+			"size": [
+				2.2,
+				2.2,
+				16.2
+			],
+			"label": "Guide pillar, left"
+		},
+		{
+			"id": "collar-left-1",
+			"kind": "ring",
+			"at": [
+				9,
+				79,
+				33
+			],
+			"size": [
+				4.4,
+				4.4,
+				0
+			],
+			"label": "Guide pillar, left",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "pin-left-1",
+			"kind": "cylinder",
+			"at": [
+				9,
+				79,
+				33
+			],
+			"size": [
+				2.2,
+				2.2,
+				23.8
+			],
+			"label": "Guide pillar, left",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "collar-left-2",
+			"kind": "ring",
+			"at": [
+				9,
+				79,
+				55
+			],
+			"size": [
+				4.4,
+				4.4,
+				0
+			],
+			"label": "Guide pillar, left",
+			"explode": [
+				0,
+				0,
+				20
+			]
+		},
+		{
+			"id": "pin-left-2",
+			"kind": "cylinder",
+			"at": [
+				9,
+				79,
+				55
+			],
+			"size": [
+				2.2,
+				2.2,
+				23.8
+			],
+			"label": "Guide pillar, left",
+			"explode": [
+				0,
+				0,
+				20
+			]
+		},
+		{
+			"id": "collar-left-3",
+			"kind": "ring",
+			"at": [
+				9,
+				79,
+				80
+			],
+			"size": [
+				4.4,
+				4.4,
+				0
+			],
+			"label": "Guide pillar, left",
+			"explode": [
+				0,
+				0,
+				32
+			]
+		},
+		{
+			"id": "pin-right-0",
+			"kind": "cylinder",
+			"at": [
+				79,
+				9,
+				17
+			],
+			"size": [
+				2.2,
+				2.2,
+				16.2
+			],
+			"label": "Guide pillar, right"
+		},
+		{
+			"id": "collar-right-1",
+			"kind": "ring",
+			"at": [
+				79,
+				9,
+				33
+			],
+			"size": [
+				4.4,
+				4.4,
+				0
+			],
+			"label": "Guide pillar, right",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "pin-right-1",
+			"kind": "cylinder",
+			"at": [
+				79,
+				9,
+				33
+			],
+			"size": [
+				2.2,
+				2.2,
+				23.8
+			],
+			"label": "Guide pillar, right",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "collar-right-2",
+			"kind": "ring",
+			"at": [
+				79,
+				9,
+				55
+			],
+			"size": [
+				4.4,
+				4.4,
+				0
+			],
+			"label": "Guide pillar, right",
+			"explode": [
+				0,
+				0,
+				20
+			]
+		},
+		{
+			"id": "pin-right-2",
+			"kind": "cylinder",
+			"at": [
+				79,
+				9,
+				55
+			],
+			"size": [
+				2.2,
+				2.2,
+				23.8
+			],
+			"label": "Guide pillar, right",
+			"explode": [
+				0,
+				0,
+				20
+			]
+		},
+		{
+			"id": "collar-right-3",
+			"kind": "ring",
+			"at": [
+				79,
+				9,
+				80
+			],
+			"size": [
+				4.4,
+				4.4,
+				0
+			],
+			"label": "Guide pillar, right",
+			"explode": [
+				0,
+				0,
+				32
+			]
+		},
+		{
+			"id": "pillar-back",
+			"kind": "cylinder",
+			"at": [
+				-3,
+				-3,
+				4
+			],
+			"size": [
+				2.2,
+				2.2,
+				88
+			],
+			"label": "Guide pillar, back"
+		},
+		{
+			"id": "pillar-front",
+			"kind": "cylinder",
+			"at": [
+				91,
+				91,
+				12
+			],
+			"size": [
+				2.2,
+				2.2,
+				80
+			],
+			"label": "Guide pillar, front"
+		},
+		{
+			"id": "collar-front-1",
+			"kind": "ring",
+			"at": [
+				91,
+				91,
+				33
+			],
+			"size": [
+				4.4,
+				4.4,
+				0
+			],
+			"label": "Guide pillar, front",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "collar-front-2",
+			"kind": "ring",
+			"at": [
+				91,
+				91,
+				55
+			],
+			"size": [
+				4.4,
+				4.4,
+				0
+			],
+			"label": "Guide pillar, front",
+			"explode": [
+				0,
+				0,
+				20
+			]
+		},
+		{
+			"id": "collar-front-3",
+			"kind": "ring",
+			"at": [
+				91,
+				91,
+				80
+			],
+			"size": [
+				4.4,
+				4.4,
+				0
+			],
+			"label": "Guide pillar, front",
+			"explode": [
+				0,
+				0,
+				32
+			]
+		},
+		{
+			"id": "ring-1",
+			"kind": "ring",
+			"at": [
+				64,
+				64,
+				55
+			],
+			"size": [
+				7,
+				7,
+				0
+			],
+			"clipTo": "field",
+			"label": "Distance field",
+			"explode": [
+				0,
+				0,
+				20
+			]
+		},
+		{
+			"id": "ring-2",
+			"kind": "ring",
+			"at": [
+				64,
+				64,
+				55
+			],
+			"size": [
+				13,
+				13,
+				0
+			],
+			"clipTo": "field",
+			"label": "Distance field",
+			"explode": [
+				0,
+				0,
+				20
+			]
+		},
+		{
+			"id": "ring-3",
+			"kind": "ring",
+			"at": [
+				64,
+				64,
+				55
+			],
+			"size": [
+				19,
+				19,
+				0
+			],
+			"clipTo": "field",
+			"label": "Distance field",
+			"explode": [
+				0,
+				0,
+				20
+			]
+		},
+		{
+			"id": "grain-1",
+			"kind": "ring",
+			"at": [
+				10,
+				84,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-2",
+			"kind": "ring",
+			"at": [
+				22,
+				82,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-3",
+			"kind": "ring",
+			"at": [
+				34,
+				85,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-4",
+			"kind": "ring",
+			"at": [
+				46,
+				82,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-5",
+			"kind": "ring",
+			"at": [
+				58,
+				85,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-6",
+			"kind": "ring",
+			"at": [
+				70,
+				82,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-7",
+			"kind": "ring",
+			"at": [
+				85,
+				10,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-8",
+			"kind": "ring",
+			"at": [
+				82,
+				22,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-9",
+			"kind": "ring",
+			"at": [
+				85,
+				34,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-10",
+			"kind": "ring",
+			"at": [
+				82,
+				46,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "grain-11",
+			"kind": "ring",
+			"at": [
+				85,
+				58,
+				33
+			],
+			"size": [
+				0.8,
+				0.8,
+				0
+			],
+			"label": "Frosted copy",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		}
+	],
+	"focal": "glass",
+	"labels": [
+		{
+			"text": "Guide pillar, back",
+			"target": "pillar-back",
+			"side": "left",
+			"anchor": [
+				-4.2,
+				-1.8,
+				90
+			]
+		},
+		{
+			"text": "Glass, bezel 34 px",
+			"target": "glass",
+			"side": "right"
+		},
+		{
+			"text": "Distance field",
+			"target": "field",
+			"side": "left"
+		},
+		{
+			"text": "Frosted copy, half size",
+			"target": "frosted",
+			"side": "right"
+		},
+		{
+			"text": "Picture behind the pane",
+			"target": "bed",
+			"side": "right"
+		},
+		{
+			"text": "copyTo() 2D canvas",
+			"target": "canvas",
+			"side": "left",
+			"anchor": [
+				-16,
+				101,
+				29
+			]
+		},
+		{
+			"text": "Base on four feet",
+			"target": "base",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"base",
+				"foot-back",
+				"foot-right",
+				"foot-left",
+				"foot-front"
+			],
+			[
+				"bed",
+				"canvas",
+				"pin-left-0",
+				"pin-right-0",
+				"pillar-back",
+				"pillar-front"
+			],
+			[
+				"frosted",
+				"collar-left-1",
+				"pin-left-1",
+				"collar-right-1",
+				"pin-right-1",
+				"collar-front-1",
+				"grain-1",
+				"grain-2",
+				"grain-3",
+				"grain-4",
+				"grain-5",
+				"grain-6",
+				"grain-7",
+				"grain-8",
+				"grain-9",
+				"grain-10",
+				"grain-11"
+			],
+			[
+				"field",
+				"collar-left-2",
+				"pin-left-2",
+				"collar-right-2",
+				"pin-right-2",
+				"collar-front-2",
+				"ring-1",
+				"ring-2",
+				"ring-3"
+			],
+			[
+				"glass",
+				"collar-left-3",
+				"collar-right-3",
+				"collar-front-3"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0.6,
+			"min": 0.6,
+			"max": 1,
+			"step": 0.05,
+			"unit": "gap"
+		}
+	},
+	"meta": {
+		"margin": "[ ONE PANE ]",
+		"corner": "VPK-HTML"
+	}
+}

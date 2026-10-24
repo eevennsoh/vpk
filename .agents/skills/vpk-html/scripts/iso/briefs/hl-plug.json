@@ -1,0 +1,66 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-plug",
+	"figId": "FIG_129",
+	"title": "A plug that falls short",
+	"label": "Isometric wall with a socket plate and two pin holes; an accented plug lies on the floor in front, prongs toward the wall, cord running right. Hover lifts the plug and its cord toward the socket; the prongs stop short of the holes.",
+	"caption": "Nothing is connected yet: hover draws the plug up toward the socket, but it stops short of the holes and drops back to the floor.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "wall", "kind": "box", "at": [31, 0, 0], "size": [80, 4, 84], "r": 2, "label": "Wall", "explode": [0, 0, 0] },
+		{ "id": "socket", "kind": "box", "at": [56, 4, 22], "size": [30, 4, 34], "r": 4, "label": "Socket", "explode": [0, 0, 0] },
+		{ "id": "hole-l", "kind": "box", "at": [62, 8, 44], "size": [4, 1, 4], "r": 1, "label": "Pin hole", "explode": [0, 0, 0] },
+		{ "id": "hole-r", "kind": "box", "at": [76, 8, 44], "size": [4, 1, 4], "r": 1, "label": "Pin hole", "explode": [0, 0, 0] },
+		{ "id": "prong-l", "kind": "box", "at": [102.5, 52, 7], "size": [3, 12, 3], "r": 1, "label": "Prong", "explode": [-40, -24, 38] },
+		{ "id": "prong-r", "kind": "box", "at": [116.5, 52, 7], "size": [3, 12, 3], "r": 1, "label": "Prong", "explode": [-40, -24, 38] },
+		{ "id": "plug", "kind": "box", "at": [99, 64, 0], "size": [24, 14, 11], "r": 4, "marks": [[[4, 11], [20, 11]]], "label": "Plug", "explode": [-40, -24, 38] },
+		{ "id": "cord-a", "kind": "box", "at": [119, 78, 2], "size": [4, 8, 3], "r": 1, "label": "Strain relief", "explode": [-40, -24, 38] },
+		{ "id": "cord-b", "kind": "box", "at": [119, 86, 0], "size": [55, 4, 3], "r": 1, "label": "Cord", "explode": [-40, -24, 38] }
+	],
+	"focal": "plug",
+	"labels": [
+		{ "text": "Socket", "target": "socket", "side": "right", "anchor": [84, 8, 26] },
+		{ "text": "Pin hole", "target": "hole-r", "side": "right" },
+		{ "text": "Plug", "target": "plug", "side": "left", "anchor": [101, 78, 8] },
+		{ "text": "Cord", "target": "cord-b", "side": "right" },
+		{ "text": "Wall", "target": "wall", "side": "left", "anchor": [36, 0, 76] }
+	],
+	"assemble": {
+		"layers": [
+			[
+				"wall"
+			],
+			[
+				"socket",
+				"hole-l",
+				"hole-r"
+			],
+			[
+				"cord-b",
+				"cord-a"
+			],
+			[
+				"plug",
+				"prong-l",
+				"prong-r"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 1,
+			"step": 0.25,
+			"unit": "reach"
+		}
+	},
+	"meta": {
+		"margin": "[ PLUG ]",
+		"corner": "VPK-HTML"
+	}
+}

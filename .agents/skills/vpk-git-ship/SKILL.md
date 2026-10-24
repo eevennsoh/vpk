@@ -39,6 +39,12 @@ Symphony issue already following `vpk-symphony/references/git/land.md`.
   only when `--require-clear` exits 0. A cancelled or timed-out CI run is
   rerun, never merged on. Never bypass it with admin flags. Follow
   [review-gate.md](references/review-gate.md) before every merge.
+  **One exception: billing.** When the gate exits 3 (`checks.state:
+  "billing-blocked"`), GitHub refused to start Actions because of account
+  billing, so CI never ran. Skip GitHub CI without asking, waiting, or
+  rerunning: run `pnpm run ci:pr` locally at the PR head, and merge only if it
+  exits 0. See [Billing-blocked CI](references/review-gate.md#billing-blocked-ci).
+  A real check failure still blocks.
 - Missing or timed-out Codex auto-review is non-blocking once its status is
   recorded; unresolved conversations are blocking.
 - Never remove the current worktree or force-delete local state. After shipping,
@@ -122,7 +128,8 @@ sync, and local branch/worktree edge cases.
 ## Stop rules
 
 Stop without destroying state when the checkout has overlapping edits with no
-safe preservation path; required checks fail or stay interrupted after three reruns; merge state is `DIRTY`; review
+safe preservation path; required checks fail (or local `ci:pr` fails when
+Actions is billing-blocked) or stay interrupted after three reruns; merge state is `DIRTY`; review
 threads remain unresolved or cannot be reconciled through documented APIs;
 GitHub ownership or ancestry is ambiguous; or the merge poll times out. Preserve
 the branch, commit, and PR so the user can resume the same flow.

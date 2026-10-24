@@ -1,0 +1,426 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-lru-cache",
+	"figId": "FIG_205",
+	"title": "LRU cache as a bookcase",
+	"label": "Dimetric low bookcase with ten lettered slots, A to J, across its front; E to J hold books, A to D are empty. Four books stand on top between bookends, most recent at left; the least recent, Book D, sits over its free slot.",
+	"caption": "Using a book moves it to the left end of the top shelf; on a miss the right-hand book, the least recently used, drops back into its own slot below to make room.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "bay-1",
+			"kind": "box",
+			"at": [
+				4,
+				4,
+				0
+			],
+			"size": [
+				18,
+				14,
+				22
+			],
+			"r": 0,
+			"label": "Bookcase"
+		},
+		{
+			"id": "bay-2",
+			"kind": "box",
+			"at": [
+				22,
+				4,
+				0
+			],
+			"size": [
+				18,
+				14,
+				22
+			],
+			"r": 0,
+			"label": "Bookcase"
+		},
+		{
+			"id": "bay-3",
+			"kind": "box",
+			"at": [
+				40,
+				4,
+				0
+			],
+			"size": [
+				18,
+				14,
+				22
+			],
+			"r": 0,
+			"label": "Bookcase"
+		},
+		{
+			"id": "bay-4",
+			"kind": "box",
+			"at": [
+				58,
+				4,
+				0
+			],
+			"size": [
+				18,
+				14,
+				22
+			],
+			"r": 0,
+			"label": "Bookcase"
+		},
+		{
+			"id": "bay-5",
+			"kind": "box",
+			"at": [
+				76,
+				4,
+				0
+			],
+			"size": [
+				18,
+				14,
+				22
+			],
+			"r": 0,
+			"label": "Bookcase"
+		},
+		{
+			"id": "slot-a",
+			"kind": "box",
+			"at": [
+				5.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				0.6,
+				15
+			],
+			"r": 0,
+			"state": "new",
+			"label": "Slot A (book on top)"
+		},
+		{
+			"id": "slot-b",
+			"kind": "box",
+			"at": [
+				14.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				0.6,
+				15
+			],
+			"r": 0,
+			"state": "new",
+			"label": "Slot B (book on top)"
+		},
+		{
+			"id": "slot-c",
+			"kind": "box",
+			"at": [
+				23.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				0.6,
+				15
+			],
+			"r": 0,
+			"state": "new",
+			"label": "Slot C (book on top)"
+		},
+		{
+			"id": "slot-d",
+			"kind": "box",
+			"at": [
+				32.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				0.6,
+				15
+			],
+			"r": 0,
+			"state": "new",
+			"label": "Free slot D"
+		},
+		{
+			"id": "spine-e",
+			"kind": "box",
+			"at": [
+				41.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				1.6,
+				15
+			],
+			"r": 0,
+			"label": "Book E (shelved)"
+		},
+		{
+			"id": "spine-f",
+			"kind": "box",
+			"at": [
+				50.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				1.6,
+				13.5
+			],
+			"r": 0,
+			"label": "Book F (shelved)"
+		},
+		{
+			"id": "spine-g",
+			"kind": "box",
+			"at": [
+				59.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				1.6,
+				15
+			],
+			"r": 0,
+			"label": "Book G (shelved)"
+		},
+		{
+			"id": "spine-h",
+			"kind": "box",
+			"at": [
+				68.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				1.6,
+				14
+			],
+			"r": 0,
+			"label": "Book H (shelved)"
+		},
+		{
+			"id": "spine-i",
+			"kind": "box",
+			"at": [
+				77.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				1.6,
+				15
+			],
+			"r": 0,
+			"label": "Book I (shelved)"
+		},
+		{
+			"id": "spine-j",
+			"kind": "box",
+			"at": [
+				86.5,
+				18,
+				3
+			],
+			"size": [
+				6,
+				1.6,
+				13.5
+			],
+			"r": 0,
+			"label": "Book J (shelved)"
+		},
+		{
+			"id": "bookend-left",
+			"kind": "box",
+			"at": [
+				3,
+				5,
+				22
+			],
+			"size": [
+				1.5,
+				12,
+				8
+			],
+			"r": 0,
+			"label": "Bookend"
+		},
+		{
+			"id": "book-a",
+			"kind": "box",
+			"at": [
+				5,
+				5,
+				22
+			],
+			"size": [
+				7,
+				12,
+				26
+			],
+			"r": 1,
+			"label": "Book A"
+		},
+		{
+			"id": "book-b",
+			"kind": "box",
+			"at": [
+				14.5,
+				5,
+				22
+			],
+			"size": [
+				6,
+				12,
+				21
+			],
+			"r": 1,
+			"label": "Book B"
+		},
+		{
+			"id": "book-c",
+			"kind": "box",
+			"at": [
+				23,
+				5,
+				22
+			],
+			"size": [
+				7,
+				12,
+				24
+			],
+			"r": 1,
+			"label": "Book C"
+		},
+		{
+			"id": "book-d",
+			"kind": "box",
+			"at": [
+				32.5,
+				5,
+				22
+			],
+			"size": [
+				6,
+				12,
+				22
+			],
+			"r": 1,
+			"label": "Book D"
+		},
+		{
+			"id": "bookend-right",
+			"kind": "box",
+			"at": [
+				39,
+				5,
+				22
+			],
+			"size": [
+				1.5,
+				12,
+				8
+			],
+			"r": 0,
+			"label": "Bookend"
+		}
+	],
+	"focal": "book-d",
+	"labels": [
+		{
+			"text": "Most recent",
+			"target": "book-a",
+			"side": "left",
+			"anchor": [
+				8.5,
+				17,
+				44
+			]
+		},
+		{
+			"text": "Least recent",
+			"target": "book-d",
+			"side": "right"
+		},
+		{
+			"text": "Slots A–J",
+			"target": "spine-j",
+			"side": "right"
+		},
+		{
+			"text": "Free slot",
+			"target": "slot-d",
+			"side": "left"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"bay-1",
+				"bay-2",
+				"bay-3",
+				"bay-4",
+				"bay-5"
+			],
+			[
+				"slot-a",
+				"slot-b",
+				"slot-c",
+				"slot-d",
+				"spine-e",
+				"spine-f",
+				"spine-g",
+				"spine-h",
+				"spine-i",
+				"spine-j"
+			],
+			[
+				"bookend-left",
+				"bookend-right"
+			],
+			[
+				"book-a",
+				"book-b",
+				"book-c"
+			],
+			[
+				"book-d"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 6,
+		"rest": "Most recent at left"
+	},
+	"meta": {
+		"margin": "[ LRU CACHE ]",
+		"corner": "VPK-HTML"
+	}
+}

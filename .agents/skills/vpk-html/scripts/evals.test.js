@@ -20,7 +20,7 @@ test("committed vpk-html evaluation corpus is complete and catalog claims are cu
 	assert.equal(result.evalCount, 11);
 	assert.equal(result.playbookCount, 4);
 	assert.deepEqual(result.catalogCounts, {
-		demos: 118,
+		demos: 131,
 		diagrams: 61,
 		templates: 35,
 	});

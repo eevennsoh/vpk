@@ -1,0 +1,372 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-fit",
+	"figId": "FIG_238",
+	"title": "object-fit as a picture frame",
+	"label": "Dimetric picture frame on a steel square: the window is the element's box, the print fills it by cover, and the two overhanging strips lie cut off beside the frame. Hovering slides the cut strips away.",
+	"caption": "Cover scales the 2400 × 1500 print until it fills the square window, so the 300 px it overhangs on each side are cut away: the strips beside the frame are what cover crops.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "square",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				250,
+				140,
+				4
+			],
+			"r": 3,
+			"label": "Steel square",
+			"marks": [
+				[
+					[
+						65,
+						134
+					],
+					[
+						185,
+						134
+					]
+				]
+			],
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "carriage-l",
+			"kind": "box",
+			"at": [
+				17,
+				6,
+				4
+			],
+			"size": [
+				6,
+				8,
+				4
+			],
+			"r": 1,
+			"label": "Carriage",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "carriage-r",
+			"kind": "box",
+			"at": [
+				230,
+				0,
+				4
+			],
+			"size": [
+				8,
+				6,
+				4
+			],
+			"r": 1,
+			"label": "Carriage",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "cut-l",
+			"kind": "plate",
+			"at": [
+				20,
+				20,
+				4
+			],
+			"size": [
+				30,
+				100,
+				2
+			],
+			"label": "Cut 300 px",
+			"marks": [
+				[
+					[
+						0,
+						60
+					],
+					[
+						30,
+						60
+					]
+				]
+			],
+			"explode": [
+				-16,
+				0,
+				10
+			]
+		},
+		{
+			"id": "cut-r",
+			"kind": "plate",
+			"at": [
+				200,
+				20,
+				4
+			],
+			"size": [
+				30,
+				100,
+				2
+			],
+			"label": "Cut 300 px",
+			"marks": [
+				[
+					[
+						0,
+						60
+					],
+					[
+						30,
+						60
+					]
+				]
+			],
+			"explode": [
+				16,
+				0,
+				10
+			]
+		},
+		{
+			"id": "print",
+			"kind": "plate",
+			"at": [
+				75,
+				20,
+				4
+			],
+			"size": [
+				100,
+				100,
+				2
+			],
+			"label": "Print",
+			"marks": [
+				[
+					[
+						0,
+						60
+					],
+					[
+						100,
+						60
+					]
+				]
+			],
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "sun",
+			"kind": "ring",
+			"at": [
+				125,
+				92,
+				6
+			],
+			"size": [
+				6,
+				6,
+				0
+			],
+			"clipTo": "print",
+			"label": "Sun",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "frame-b",
+			"kind": "box",
+			"at": [
+				65,
+				120,
+				4
+			],
+			"size": [
+				120,
+				10,
+				9
+			],
+			"label": "Frame",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "frame-l",
+			"kind": "box",
+			"at": [
+				65,
+				20,
+				4
+			],
+			"size": [
+				10,
+				100,
+				9
+			],
+			"label": "Frame",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "frame-r",
+			"kind": "box",
+			"at": [
+				175,
+				20,
+				4
+			],
+			"size": [
+				10,
+				100,
+				3
+			],
+			"label": "Frame",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "frame-f",
+			"kind": "box",
+			"at": [
+				65,
+				10,
+				4
+			],
+			"size": [
+				120,
+				10,
+				9
+			],
+			"label": "Window frame",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		}
+	],
+	"focal": "cut-l",
+	"labels": [
+		{
+			"text": "Cut 300 px each side",
+			"target": "cut-l",
+			"side": "left"
+		},
+		{
+			"text": "Print, cover 0.67",
+			"target": "print",
+			"side": "right",
+			"anchor": [
+				150,
+				40,
+				6
+			]
+		},
+		{
+			"text": "Window 1000 px",
+			"target": "frame-f",
+			"side": "right",
+			"anchor": [
+				170,
+				18,
+				13
+			]
+		},
+		{
+			"text": "Steel square",
+			"target": "square",
+			"side": "left"
+		},
+		{
+			"text": "Carriage",
+			"target": "carriage-r",
+			"side": "right"
+		}
+	],
+	"scale": {
+		"length": 100,
+		"text": "1,000 PX",
+		"at": [
+			75,
+			190,
+			0
+		]
+	},
+	"assemble": {
+		"layers": [
+			[
+				"square"
+			],
+			[
+				"carriage-l",
+				"carriage-r"
+			],
+			[
+				"print",
+				"sun"
+			],
+			[
+				"cut-l",
+				"cut-r"
+			],
+			[
+				"frame-b",
+				"frame-l",
+				"frame-r",
+				"frame-f"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 1,
+			"step": 0.25,
+			"unit": "gap"
+		}
+	},
+	"meta": {
+		"margin": "[ OBJECT-FIT ]",
+		"corner": "VPK-HTML"
+	}
+}

@@ -1,0 +1,299 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-watch",
+	"figId": "FIG_224",
+	"title": "Watch movement taken apart",
+	"label": "Dimetric watch movement in a holder: main plate with mainspring barrel, gear train, escape wheel, pallet fork and balance wheel as thin discs on arbors, crown on its stem at the case edge. The balance wheel is highlighted.",
+	"caption": "The balance swings at 4 Hz and sets the beat: each swing tips the pallet fork, which lets the escape wheel through half a tooth, so the spring's power leaves the barrel in eighths of a second.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "holder",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				31,
+				31,
+				4
+			],
+			"label": "Holder",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "plate",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				4
+			],
+			"size": [
+				25,
+				25,
+				6
+			],
+			"label": "Main plate",
+			"explode": [
+				0,
+				0,
+				2
+			]
+		},
+		{
+			"id": "barrel",
+			"kind": "cylinder",
+			"at": [
+				-12,
+				9,
+				10
+			],
+			"size": [
+				6,
+				6,
+				2.5
+			],
+			"label": "Mainspring barrel",
+			"explode": [
+				0,
+				0,
+				4
+			]
+		},
+		{
+			"id": "train",
+			"kind": "cylinder",
+			"at": [
+				-2,
+				8,
+				10
+			],
+			"size": [
+				4.5,
+				4.5,
+				1.5
+			],
+			"label": "Gear train",
+			"explode": [
+				0,
+				0,
+				5
+			]
+		},
+		{
+			"id": "escape",
+			"kind": "cylinder",
+			"at": [
+				6,
+				4,
+				10
+			],
+			"size": [
+				2.2,
+				2.2,
+				1
+			],
+			"label": "Escape wheel",
+			"explode": [
+				0,
+				0,
+				6
+			]
+		},
+		{
+			"id": "fork",
+			"kind": "box",
+			"at": [
+				11,
+				-1,
+				10
+			],
+			"size": [
+				2.5,
+				2.5,
+				1
+			],
+			"r": 0.6,
+			"label": "Pallet fork",
+			"explode": [
+				0,
+				0,
+				6
+			]
+		},
+		{
+			"id": "balance",
+			"kind": "cylinder",
+			"at": [
+				13,
+				-13,
+				10
+			],
+			"size": [
+				5.5,
+				5.5,
+				1.5
+			],
+			"label": "Balance wheel",
+			"explode": [
+				0,
+				0,
+				9
+			]
+		},
+		{
+			"id": "balance-hub",
+			"kind": "cylinder",
+			"at": [
+				13,
+				-13,
+				11.5
+			],
+			"size": [
+				1.2,
+				1.2,
+				1
+			],
+			"explode": [
+				0,
+				0,
+				9
+			]
+		},
+		{
+			"id": "stem",
+			"kind": "box",
+			"at": [
+				30,
+				-1,
+				1
+			],
+			"size": [
+				4,
+				2,
+				2
+			],
+			"explode": [
+				4,
+				0,
+				0
+			]
+		},
+		{
+			"id": "crown",
+			"kind": "box",
+			"at": [
+				34,
+				-1.5,
+				0.5
+			],
+			"size": [
+				3,
+				3,
+				3
+			],
+			"r": 0.8,
+			"label": "Crown",
+			"explode": [
+				4,
+				0,
+				0
+			]
+		}
+	],
+	"focal": "balance",
+	"labels": [
+		{
+			"text": "Balance wheel",
+			"target": "balance",
+			"side": "right"
+		},
+		{
+			"text": "Pallet fork",
+			"target": "fork",
+			"side": "right"
+		},
+		{
+			"text": "Escape wheel",
+			"target": "escape",
+			"side": "left"
+		},
+		{
+			"text": "Gear train",
+			"target": "train",
+			"side": "left"
+		},
+		{
+			"text": "Mainspring barrel",
+			"target": "barrel",
+			"side": "left"
+		},
+		{
+			"text": "Main plate",
+			"target": "plate",
+			"side": "left"
+		},
+		{
+			"text": "Crown",
+			"target": "crown",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"from": [
+			0,
+			0,
+			8
+		],
+		"layers": [
+			[
+				"holder",
+				"stem",
+				"crown"
+			],
+			[
+				"plate"
+			],
+			[
+				"barrel",
+				"train"
+			],
+			[
+				"escape",
+				"fork"
+			],
+			[
+				"balance",
+				"balance-hub"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0.2,
+			"min": 0.2,
+			"max": 1,
+			"step": 0.05,
+			"unit": "gap"
+		}
+	},
+	"meta": {
+		"margin": "[ 25.6 MM ]",
+		"corner": "VPK-HTML"
+	},
+	"viewBox": [
+		720,
+		380
+	]
+}

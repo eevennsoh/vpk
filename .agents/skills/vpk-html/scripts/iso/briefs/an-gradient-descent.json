@@ -1,0 +1,311 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-gradient-descent",
+	"figId": "FIG_207",
+	"title": "Gradient descent on a contour model",
+	"label": "Dimetric contour model of a narrow V valley in stacked boards, two tiers each side of a floor; pins on a thread zigzag down, overshoot across the valley and settle at the accented pin on the floor, beside a rate knob.",
+	"caption": "Each pin is one step taken downhill from the last; too big a step overshoots across the narrow valley, so the thread zigzags before it settles at the floor.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "t2l",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				64,
+				12,
+				16
+			],
+			"r": 0,
+			"label": "Contour 3"
+		},
+		{
+			"id": "t1l",
+			"kind": "box",
+			"at": [
+				0,
+				12,
+				0
+			],
+			"size": [
+				64,
+				12,
+				10
+			],
+			"r": 0,
+			"label": "Contour 2"
+		},
+		{
+			"id": "base",
+			"kind": "box",
+			"at": [
+				0,
+				24,
+				0
+			],
+			"size": [
+				64,
+				20,
+				4
+			],
+			"r": 0,
+			"label": "Valley floor"
+		},
+		{
+			"id": "t1r",
+			"kind": "box",
+			"at": [
+				0,
+				44,
+				0
+			],
+			"size": [
+				22,
+				10,
+				7
+			],
+			"r": 0,
+			"label": "Contour 2"
+		},
+		{
+			"id": "t1r-b",
+			"kind": "box",
+			"at": [
+				22,
+				44,
+				0
+			],
+			"size": [
+				42,
+				10,
+				7
+			],
+			"r": 0,
+			"label": "Contour 2"
+		},
+		{
+			"id": "t2r",
+			"kind": "box",
+			"at": [
+				0,
+				54,
+				0
+			],
+			"size": [
+				64,
+				10,
+				11
+			],
+			"r": 0,
+			"label": "Contour 3"
+		},
+		{
+			"id": "pin1",
+			"kind": "cylinder",
+			"at": [
+				40,
+				6,
+				16
+			],
+			"size": [
+				1.2,
+				1.2,
+				10
+			],
+			"label": "Start pin"
+		},
+		{
+			"id": "pin2",
+			"kind": "cylinder",
+			"at": [
+				12,
+				49,
+				7
+			],
+			"size": [
+				1.2,
+				1.2,
+				10
+			],
+			"label": "Step 1"
+		},
+		{
+			"id": "pin3",
+			"kind": "cylinder",
+			"at": [
+				56,
+				17,
+				10
+			],
+			"size": [
+				1.2,
+				1.2,
+				10
+			],
+			"label": "Step 2"
+		},
+		{
+			"id": "pin4",
+			"kind": "cylinder",
+			"at": [
+				61,
+				40,
+				4
+			],
+			"size": [
+				1.6,
+				1.6,
+				10
+			],
+			"label": "Minimum"
+		},
+		{
+			"id": "knob",
+			"kind": "cylinder",
+			"at": [
+				30,
+				75,
+				0
+			],
+			"size": [
+				5,
+				5,
+				5
+			],
+			"label": "Rate knob"
+		}
+	],
+	"focal": "pin4",
+	"labels": [
+		{
+			"text": "Start",
+			"target": "pin1",
+			"side": "right"
+		},
+		{
+			"text": "Overshoot",
+			"target": "pin2",
+			"side": "left",
+			"anchor": [
+				12,
+				49,
+				17
+			]
+		},
+		{
+			"text": "Minimum",
+			"target": "pin4",
+			"side": "right",
+			"anchor": [
+				61.8,
+				40.8,
+				5
+			]
+		},
+		{
+			"text": "Contour board",
+			"target": "t2l",
+			"side": "right"
+		},
+		{
+			"text": "Valley floor",
+			"target": "base",
+			"side": "right",
+			"anchor": [
+				64,
+				30,
+				2
+			]
+		},
+		{
+			"text": "Learning rate",
+			"target": "knob",
+			"side": "left"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				40,
+				6,
+				26
+			],
+			"to": [
+				12,
+				49,
+				17
+			]
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				12,
+				49,
+				17
+			],
+			"to": [
+				56,
+				17,
+				20
+			]
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				56,
+				17,
+				20
+			],
+			"to": [
+				61,
+				40,
+				14
+			],
+			"of": "pin4"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"base",
+				"knob"
+			],
+			[
+				"t1l",
+				"t1r",
+				"t1r-b"
+			],
+			[
+				"t2l",
+				"t2r"
+			],
+			[
+				"pin1"
+			],
+			[
+				"pin2",
+				"pin3"
+			],
+			[
+				"pin4"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "step 3 of 3"
+	},
+	"meta": {
+		"margin": "[ LOSS SURFACE ]",
+		"corner": "VPK-HTML"
+	}
+}

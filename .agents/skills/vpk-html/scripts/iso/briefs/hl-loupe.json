@@ -1,0 +1,361 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-loupe",
+	"figId": "FIG_126",
+	"title": "A stand loupe on a ruled sheet",
+	"label": "Dimetric stand loupe: a thin sheet ruled with nine lines 11 apart, three short legs and a wide round glass above it. A dashed circle marks the field; the accented glass shows three of its rules about twice as far apart.",
+	"caption": "The glass adds nothing: the lines it shows are the same blank rules in the field below, only drawn wider apart, and lifting it higher magnifies more.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "sheet-1",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				160,
+				10,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "sheet-2",
+			"kind": "slab",
+			"at": [
+				0,
+				10,
+				0
+			],
+			"size": [
+				160,
+				11,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "sheet-3",
+			"kind": "slab",
+			"at": [
+				0,
+				21,
+				0
+			],
+			"size": [
+				160,
+				11,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "sheet-4",
+			"kind": "slab",
+			"at": [
+				0,
+				32,
+				0
+			],
+			"size": [
+				160,
+				11,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "sheet-5",
+			"kind": "slab",
+			"at": [
+				0,
+				43,
+				0
+			],
+			"size": [
+				160,
+				11,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "sheet-6",
+			"kind": "slab",
+			"at": [
+				0,
+				54,
+				0
+			],
+			"size": [
+				160,
+				11,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "sheet-7",
+			"kind": "slab",
+			"at": [
+				0,
+				65,
+				0
+			],
+			"size": [
+				160,
+				11,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "sheet-8",
+			"kind": "slab",
+			"at": [
+				0,
+				76,
+				0
+			],
+			"size": [
+				160,
+				11,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "sheet-9",
+			"kind": "slab",
+			"at": [
+				0,
+				87,
+				0
+			],
+			"size": [
+				160,
+				11,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "sheet-10",
+			"kind": "slab",
+			"at": [
+				0,
+				98,
+				0
+			],
+			"size": [
+				160,
+				10,
+				1
+			],
+			"r": 0,
+			"label": "Ruled sheet"
+		},
+		{
+			"id": "field",
+			"kind": "gap",
+			"at": [
+				74,
+				32,
+				1
+			],
+			"size": [
+				60,
+				60,
+				0
+			],
+			"r": 30,
+			"label": "Field under glass"
+		},
+		{
+			"id": "leg-1",
+			"kind": "cylinder",
+			"at": [
+				86.3,
+				79.7,
+				1
+			],
+			"size": [
+				1,
+				1,
+				15
+			],
+			"label": "Stand leg"
+		},
+		{
+			"id": "leg-2",
+			"kind": "cylinder",
+			"at": [
+				86.3,
+				44.3,
+				1
+			],
+			"size": [
+				1,
+				1,
+				15
+			],
+			"label": "Stand leg"
+		},
+		{
+			"id": "leg-3",
+			"kind": "cylinder",
+			"at": [
+				121.7,
+				44.3,
+				1
+			],
+			"size": [
+				1,
+				1,
+				15
+			],
+			"label": "Stand leg"
+		},
+		{
+			"id": "glass",
+			"kind": "cylinder",
+			"at": [
+				104,
+				62,
+				16
+			],
+			"size": [
+				30,
+				30,
+				1
+			],
+			"label": "Loupe glass",
+			"marks": [
+				[
+					[
+						-19.2,
+						-19
+					],
+					[
+						19.2,
+						-19
+					]
+				],
+				[
+					[
+						-26,
+						0
+					],
+					[
+						26,
+						0
+					]
+				],
+				[
+					[
+						-19.2,
+						19
+					],
+					[
+						19.2,
+						19
+					]
+				]
+			]
+		}
+	],
+	"focal": "glass",
+	"labels": [
+		{
+			"text": "Loupe glass",
+			"target": "glass",
+			"side": "right"
+		},
+		{
+			"text": "Stand leg",
+			"target": "leg-3",
+			"side": "right",
+			"anchor": [
+				121.7,
+				44.3,
+				3.5
+			]
+		},
+		{
+			"text": "Field under glass",
+			"target": "field",
+			"side": "right",
+			"anchor": [
+				125.2,
+				83.2,
+				1
+			]
+		},
+		{
+			"text": "Rule, actual size",
+			"target": "sheet-2",
+			"side": "left",
+			"anchor": [
+				24,
+				10,
+				1
+			]
+		},
+		{
+			"text": "Ruled sheet",
+			"target": "sheet-10",
+			"side": "left"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"sheet-1",
+				"sheet-2",
+				"sheet-3",
+				"sheet-4",
+				"sheet-5",
+				"sheet-6",
+				"sheet-7",
+				"sheet-8",
+				"sheet-9",
+				"sheet-10"
+			],
+			[
+				"field"
+			],
+			[
+				"leg-1",
+				"leg-2",
+				"leg-3"
+			],
+			[
+				"glass"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 6,
+		"rest": "rest"
+	},
+	"meta": {
+		"margin": "[ EMPTY / LOUPE ]",
+		"corner": "VPK-HTML"
+	}
+}

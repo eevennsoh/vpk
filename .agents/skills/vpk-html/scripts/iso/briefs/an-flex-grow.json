@@ -1,0 +1,54 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-flex-grow",
+	"figId": "FIG_209",
+	"title": "flex-grow as a bench vise",
+	"label": "Dimetric bench vise: a fixed and a moving jaw clamp three blocks in a row. Three equal springs share the free space: one after the grow 1 block, two after the grow 2 block, none after the grow 0 block.",
+	"caption": "Every spring takes the same share of the free space. Grow 2 holds two springs, so it gets twice the room of grow 1, and grow 0 holds no spring at all.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "jaw-fixed", "kind": "box", "at": [0, -6, 0], "size": [12, 20, 10], "r": 1, "label": "Fixed jaw" },
+		{ "id": "block-a", "kind": "box", "at": [12, 0, 0], "size": [12, 14, 18], "r": 1, "label": "Grow 1" },
+		{ "id": "spring-a", "kind": "box", "at": [24, 12, 0], "size": [30, 6, 6], "r": 0, "label": "Share 1", "marks": [[[15, 0], [15, 6]]] },
+		{ "id": "block-b", "kind": "box", "at": [54, 0, 0], "size": [12, 14, 18], "r": 1, "label": "Grow 2" },
+		{ "id": "spring-b1", "kind": "box", "at": [66, 12, 0], "size": [30, 6, 6], "r": 0, "label": "Share 2", "marks": [[[15, 0], [15, 6]]] },
+		{ "id": "spring-b2", "kind": "box", "at": [98, 12, 0], "size": [30, 6, 6], "r": 0, "label": "Share 3", "marks": [[[15, 0], [15, 6]]] },
+		{ "id": "block-c", "kind": "box", "at": [128, 0, 0], "size": [12, 14, 18], "r": 1, "label": "Grow 0" },
+		{ "id": "jaw-moving", "kind": "box", "at": [140, -6, 0], "size": [12, 20, 10], "r": 1, "label": "Moving jaw" },
+		{ "id": "screw", "kind": "box", "at": [152, 2, 3], "size": [14, 4, 4], "r": 0, "label": "Screw" },
+		{ "id": "handle", "kind": "box", "at": [166, -5, 4], "size": [3, 18, 2], "r": 0, "label": "Handle" }
+	],
+	"focal": "spring-a",
+	"labels": [
+		{ "text": "Fixed jaw", "target": "jaw-fixed", "side": "left" },
+		{ "text": "Grow 1", "target": "block-a", "side": "right" },
+		{ "text": "Share 1", "target": "spring-a", "side": "left" },
+		{ "text": "Grow 2", "target": "block-b", "side": "right" },
+		{ "text": "Share 2", "target": "spring-b1", "side": "left" },
+		{ "text": "Share 3", "target": "spring-b2", "side": "right" },
+		{ "text": "Grow 0", "target": "block-c", "side": "right" },
+		{ "text": "Moving jaw", "target": "jaw-moving", "side": "right" },
+		{ "text": "Screw handle", "target": "handle", "side": "right" }
+	],
+	"assemble": {
+		"layers": [
+			["jaw-fixed", "jaw-moving"],
+			["block-a", "block-b", "block-c"],
+			["spring-a"],
+			["spring-b1", "spring-b2"],
+			["screw", "handle"]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "Free space 90 ÷ 3 springs = 30 each"
+	},
+	"meta": {
+		"margin": "[ FLEX-GROW ]",
+		"corner": "VPK-HTML"
+	}
+}

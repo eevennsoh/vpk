@@ -1,0 +1,169 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-separable-blur",
+	"figId": "FIG_240",
+	"title": "Separable blur, two combs",
+	"label": "Dimetric blur bench: a source plate, a row comb lying along x over the scratch plate, and a column comb lying along y over the frosted plate, with a solid pin block and a blur dial in front. The row comb is highlighted.",
+	"caption": "A 49 by 49 blur splits into a row pass into scratch and a column pass into frosted, so each pixel reads 49 + 49 = 98 taps instead of the pin block's 2,401.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "source",
+			"kind": "slab",
+			"at": [10, 58, 0],
+			"size": [40, 40, 2],
+			"r": 1,
+			"label": "Source"
+		},
+		{
+			"id": "scratch",
+			"kind": "slab",
+			"at": [80, 58, 0],
+			"size": [40, 40, 2],
+			"r": 1,
+			"label": "Scratch"
+		},
+		{
+			"id": "frosted",
+			"kind": "slab",
+			"at": [150, 58, 0],
+			"size": [40, 40, 2],
+			"r": 1,
+			"label": "Frosted"
+		},
+		{
+			"id": "row-comb",
+			"kind": "box",
+			"at": [76, 76, 2],
+			"size": [48, 4, 4],
+			"r": 0,
+			"label": "Row comb",
+			"explode": [0, 0, 10],
+			"marks": [
+				[[4, 0], [4, 4]],
+				[[10, 0], [10, 4]],
+				[[16, 0], [16, 4]],
+				[[22, 0], [22, 4]],
+				[[26, 0], [26, 4]],
+				[[32, 0], [32, 4]],
+				[[38, 0], [38, 4]],
+				[[44, 0], [44, 4]]
+			]
+		},
+		{
+			"id": "column-comb",
+			"kind": "box",
+			"at": [168, 54, 2],
+			"size": [4, 48, 4],
+			"r": 0,
+			"label": "Column comb",
+			"explode": [0, 0, 10],
+			"marks": [
+				[[0, 24], [4, 24]]
+			]
+		},
+		{
+			"id": "pin-block",
+			"kind": "box",
+			"at": [80, 8, 0],
+			"size": [40, 34, 14],
+			"r": 1,
+			"label": "Pin block",
+			"explode": [0, 0, 10],
+			"marks": [
+				[[20, 0], [20, 34]]
+			]
+		},
+		{
+			"id": "dial",
+			"kind": "cylinder",
+			"at": [160, 25, 0],
+			"size": [10, 10, 6],
+			"label": "Blur dial",
+			"marks": [
+				[[0, 0], [7, 0]]
+			]
+		}
+	],
+	"focal": "row-comb",
+	"labels": [
+		{
+			"text": "Row comb, 49 taps along x",
+			"target": "row-comb",
+			"side": "left"
+		},
+		{
+			"text": "Column comb, 49 taps along y",
+			"target": "column-comb",
+			"side": "right"
+		},
+		{
+			"text": "Source",
+			"target": "source",
+			"side": "left"
+		},
+		{
+			"text": "Scratch",
+			"target": "scratch",
+			"side": "left"
+		},
+		{
+			"text": "Frosted",
+			"target": "frosted",
+			"side": "right"
+		},
+		{
+			"text": "Pin block, 2,401 reads",
+			"target": "pin-block",
+			"side": "left"
+		},
+		{
+			"text": "Blur dial, 9 px",
+			"target": "dial",
+			"side": "right"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [52, 78, 4],
+			"to": [72, 78, 4]
+		},
+		{
+			"kind": "arrow",
+			"from": [126, 78, 4],
+			"to": [146, 78, 4]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"source",
+				"scratch",
+				"frosted"
+			],
+			[
+				"pin-block",
+				"dial"
+			],
+			[
+				"column-comb"
+			],
+			[
+				"row-comb"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "98 taps, not 2,401"
+	},
+	"meta": {
+		"margin": "[ BLUR 9 PX ]",
+		"corner": "VPK-HTML"
+	}
+}

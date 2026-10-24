@@ -1,6 +1,6 @@
 # vpk-html
 
-<!-- vpk-html-catalog-counts: templates=35 diagrams=61 demos=118 -->
+<!-- vpk-html-catalog-counts: templates=35 diagrams=61 demos=131 -->
 
 > Render structured material into offline, single-file HTML documents with the
 > vpk-html Algebrica editorial identity. **[See the index →](index.html)**
@@ -45,9 +45,10 @@ status readouts, and implementation briefs.
   isometric, exploded, annotated, cross-section, and pipeline SVGs built for
   remixing inside technical docs, plus seven iso-kit figures built from JSON briefs (`iso-exploded-stack`,
   `iso-flatpack-shelf`, `iso-phone-anatomy`, `iso-cache-shelves`, `iso-parcel-tray`,
-  `iso-turntable-anatomy`, `iso-card-stack-ui`) and their gallery demo
-  `demo-illustration-gallery.html`.
-- **118 HTML demos** at `assets/demos/`: filled document showcases, Phase 2
+  `iso-turntable-anatomy`, `iso-card-stack-ui`) and their gallery hub
+  `demo-illustration-gallery.html`, which links 13 gallery pages of 88 hairline and anatomy recreations
+  (`demo-illustration-gallery-hairline-<shelf>.html`, `demo-illustration-gallery-anatomy-<n>.html`).
+- **131 HTML demos** at `assets/demos/`: filled document showcases, Phase 2
   `html-effectiveness` ports, diagram previews, technical illustration previews,
   and vpk-native examples.
 - **A reference-manual homepage** at [`index.html`](index.html).
@@ -165,7 +166,7 @@ node scripts/build-index.mjs                      # alias of --refresh-library (
 | `assets/diagrams/` | 61 standalone SVG diagram/chart primitives |
 | `assets/illustrations/` | 12 technical illustration exemplars for remixing |
 | `assets/html-effectiveness/` | Snapshot of the 20 upstream html-effectiveness HTML demos plus index |
-| `assets/demos/` | 118 demo HTML outputs plus the embedded media needed by individual demos |
+| `assets/demos/` | 131 demo HTML outputs plus the embedded media needed by individual demos |
 | `evals/evals.json` | Frozen prompts, reader jobs, expectations, viewports, and human rubrics |
 | `assets/fonts/` | Geist and Geist Mono (inlined as base64 at port time, with a numeric Geist Mono face) |
 | `artifacts/vpk-html/<slug>/` | Ignored per-artifact folders for generated user HTML, PDFs, screenshots, and review captures |

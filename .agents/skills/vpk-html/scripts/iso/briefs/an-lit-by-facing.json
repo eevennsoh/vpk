@@ -1,0 +1,267 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-lit-by-facing",
+	"figId": "FIG_250",
+	"title": "Lit by facing, a rim stage",
+	"label": "Dimetric light stage: a rounded glass rim on a stepped dais over a dotted board, a key light on a tall post at the back, a half-strength fill light at the side and a probe on the rim. The rim is highlighted.",
+	"caption": "Two fixed lights, a key and a half-strength fill, light each point of the clear rim by how squarely its normal faces them, so the probe reads bright where the rim turns towards the key and dim where it turns away.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "board",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				200,
+				160,
+				6
+			],
+			"r": 6,
+			"label": "Board",
+			"marks": [
+				[
+					[
+						12,
+						12
+					],
+					[
+						188,
+						12
+					]
+				]
+			]
+		},
+		{
+			"id": "dais",
+			"kind": "slab",
+			"at": [
+				36,
+				36,
+				6
+			],
+			"size": [
+				128,
+				88,
+				5
+			],
+			"r": 30,
+			"label": "Dais"
+		},
+		{
+			"id": "rim",
+			"kind": "slab",
+			"at": [
+				48,
+				46,
+				11
+			],
+			"size": [
+				104,
+				68,
+				6
+			],
+			"r": 26,
+			"label": "Clear rim"
+		},
+		{
+			"id": "pane",
+			"kind": "slab",
+			"at": [
+				62,
+				58,
+				17
+			],
+			"size": [
+				76,
+				44,
+				2
+			],
+			"r": 16,
+			"label": "Pane"
+		},
+		{
+			"id": "probe",
+			"kind": "cylinder",
+			"at": [
+				118,
+				109,
+				17
+			],
+			"size": [
+				3,
+				3,
+				8
+			],
+			"label": "Probe"
+		},
+		{
+			"id": "key-post",
+			"kind": "box",
+			"at": [
+				178,
+				14,
+				6
+			],
+			"size": [
+				12,
+				12,
+				40
+			],
+			"r": 1,
+			"label": "Key post"
+		},
+		{
+			"id": "key-lamp",
+			"kind": "cylinder",
+			"at": [
+				184,
+				20,
+				46
+			],
+			"size": [
+				8,
+				8,
+				10
+			],
+			"label": "Key light"
+		},
+		{
+			"id": "fill-post",
+			"kind": "box",
+			"at": [
+				30,
+				140,
+				6
+			],
+			"size": [
+				12,
+				12,
+				18
+			],
+			"r": 1,
+			"label": "Fill post"
+		},
+		{
+			"id": "fill-lamp",
+			"kind": "cylinder",
+			"at": [
+				36,
+				146,
+				24
+			],
+			"size": [
+				5,
+				5,
+				6
+			],
+			"label": "Fill light"
+		}
+	],
+	"focal": "rim",
+	"labels": [
+		{
+			"text": "Clear rim",
+			"target": "rim",
+			"side": "left",
+			"anchor": [
+				48,
+				80,
+				14
+			]
+		},
+		{
+			"text": "Key light, 1.0",
+			"target": "key-lamp",
+			"side": "right"
+		},
+		{
+			"text": "Fill light, 0.5",
+			"target": "fill-lamp",
+			"side": "left"
+		},
+		{
+			"text": "Stepped dais",
+			"target": "dais",
+			"side": "right"
+		},
+		{
+			"text": "Board",
+			"target": "board",
+			"side": "left",
+			"anchor": [
+				4,
+				150,
+				3
+			]
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				180,
+				26,
+				46
+			],
+			"to": [
+				124,
+				100,
+				24
+			]
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				42,
+				136,
+				30
+			],
+			"to": [
+				62,
+				108,
+				20
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"board"
+			],
+			[
+				"dais"
+			],
+			[
+				"key-post",
+				"fill-post"
+			],
+			[
+				"key-lamp",
+				"fill-lamp"
+			],
+			[
+				"rim",
+				"pane"
+			],
+			[
+				"probe"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "L 1.00, rim adds 0.25"
+	},
+	"meta": {
+		"margin": "[ N · L ]",
+		"corner": "VPK-HTML"
+	}
+}

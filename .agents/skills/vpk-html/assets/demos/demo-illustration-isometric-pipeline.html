@@ -3209,9 +3209,16 @@ body.vpkh-lightbox-open {
 		if (node.style.getPropertyValue(name) !== value) node.style.setProperty(name, value);
 	}
 
+	// The blur's side edges are hard (a mask on the fade would make it a backdrop root and drop the blur), so the fade
+	// runs SCROLL_FADE_GUTTER px past the content column on each side: its edges then fall on bare paper, where blurring
+	// changes nothing, instead of slicing through text that sits flush with the column edge.
+	const SCROLL_FADE_GUTTER = 64;
+
 	function positionScrollFade(node, region) {
-		setStyleProperty(node, "--vpkh-scroll-fade-left", Math.round(region.left) + "px");
-		setStyleProperty(node, "--vpkh-scroll-fade-width", Math.round(region.width) + "px");
+		const left = Math.max(0, region.left - SCROLL_FADE_GUTTER);
+		const right = Math.min(window.innerWidth, region.left + region.width + SCROLL_FADE_GUTTER);
+		setStyleProperty(node, "--vpkh-scroll-fade-left", Math.round(left) + "px");
+		setStyleProperty(node, "--vpkh-scroll-fade-width", Math.round(right - left) + "px");
 	}
 
 	function setScrollFade(edge, visible, region) {

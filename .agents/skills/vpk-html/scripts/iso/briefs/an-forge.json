@@ -1,0 +1,46 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-forge",
+	"figId": "FIG_220",
+	"title": "Forge and hammer",
+	"label": "Dimetric smithy: a forge table with firepot, hood and chimney, an accented bar in the fire, a cranked blower ducted to the fire, a quench tub, and a power hammer ram over an anvil. Hover or arrow keys lift a part.",
+	"caption": "The blower feeds the coal until the bar reaches forging heat, each blow of the ram flattens it on the anvil, and the quench tub takes it back to cold.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "table", "kind": "box", "at": [8, 10, 0], "size": [42, 34, 24], "r": 2, "label": "Forge table", "marks": [[[0, 17], [42, 17]]] },
+		{ "id": "duct", "kind": "box", "at": [22, 44, 5], "size": [4, 11, 3], "r": 0, "label": "Air duct" },
+		{ "id": "blower", "kind": "cylinder", "at": [24, 60, 0], "size": [6, 6, 12], "label": "Blower" },
+		{ "id": "crank", "kind": "box", "at": [24, 59, 12], "size": [8, 2, 2], "r": 0, "label": "Crank" },
+		{ "id": "tub", "kind": "cylinder", "at": [-16, 46, 0], "size": [9, 9, 12], "label": "Quench tub" },
+		{ "id": "firepot", "kind": "cylinder", "at": [24, 28, 24], "size": [9, 9, 2], "label": "Firepot" },
+		{ "id": "hood", "kind": "box", "at": [35, 12, 24], "size": [10, 12, 12], "r": 0, "label": "Hood" },
+		{ "id": "chimney", "kind": "cylinder", "at": [40, 18, 36], "size": [3, 3, 16], "label": "Chimney" },
+		{ "id": "bar", "kind": "box", "at": [12, 26, 26], "size": [26, 4, 3], "r": 1, "label": "Bar" },
+		{ "id": "frame", "kind": "box", "at": [98, 16, 0], "size": [12, 16, 46], "r": 2, "label": "Hammer frame" },
+		{ "id": "head", "kind": "box", "at": [98, 18, 46], "size": [30, 12, 8], "r": 0, "label": "Hammer head" },
+		{ "id": "waist", "kind": "box", "at": [117, 21, 0], "size": [8, 6, 8], "r": 0, "label": "Anvil base" },
+		{ "id": "anvil", "kind": "box", "at": [113, 18, 8], "size": [16, 12, 6], "r": 0, "label": "Anvil" },
+		{ "id": "ram", "kind": "box", "at": [116, 20, 24], "size": [10, 8, 10], "r": 0, "label": "Ram" }
+	],
+	"focal": "bar",
+	"labels": [
+		{ "text": "Bar at forging heat", "target": "bar", "side": "left", "anchor": [13.5, 27, 29] },
+		{ "text": "Chimney", "target": "chimney", "side": "left" },
+		{ "text": "Blower", "target": "blower", "side": "left" },
+		{ "text": "Quench tub", "target": "tub", "side": "left" },
+		{ "text": "Power hammer", "target": "head", "side": "right" },
+		{ "text": "Ram", "target": "ram", "side": "right" },
+		{ "text": "Anvil", "target": "anvil", "side": "right" }
+	],
+	"assemble": {
+		"layers": [
+			["table", "frame", "waist", "tub"],
+			["firepot", "hood", "chimney", "anvil"],
+			["blower", "duct", "crank"],
+			["head", "ram"],
+			["bar"]
+		]
+	},
+	"interact": { "behavior": "select", "lift": 10, "rest": "Bar in the fire" },
+	"meta": { "margin": "[ FORGE ]", "corner": "VPK-HTML" }
+}

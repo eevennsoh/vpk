@@ -1,0 +1,374 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-tokamak",
+	"figId": "FIG_218",
+	"title": "Tokamak taken apart",
+	"label": "Dimetric tokamak: a plasma ring floating inside an open vacuum vessel round a central solenoid, caged by eight upright field coils and two field rings, on a cryostat base. The plasma ring is highlighted.",
+	"caption": "No wall touches the plasma: the solenoid drives current through it while the field coils and rings around the vessel squeeze it into a ring that floats in vacuum.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "base",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				27,
+				27,
+				4
+			],
+			"label": "Cryostat base",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "vessel",
+			"kind": "tray",
+			"at": [
+				-15,
+				-15,
+				4
+			],
+			"size": [
+				30,
+				30,
+				7
+			],
+			"r": 3,
+			"label": "Vacuum vessel",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "solenoid",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				6.9
+			],
+			"size": [
+				5,
+				5,
+				62
+			],
+			"label": "Central solenoid",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "plasma",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				10
+			],
+			"size": [
+				10.5,
+				10.5,
+				3.5
+			],
+			"label": "Plasma ring",
+			"explode": [
+				0,
+				0,
+				10
+			]
+		},
+		{
+			"id": "coil-1",
+			"kind": "box",
+			"at": [
+				29.4,
+				11,
+				0
+			],
+			"size": [
+				4,
+				4,
+				36
+			],
+			"r": 0,
+			"label": "Field coil",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "coil-2",
+			"kind": "box",
+			"at": [
+				11,
+				29.4,
+				0
+			],
+			"size": [
+				4,
+				4,
+				36
+			],
+			"r": 0,
+			"label": "Field coil",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "coil-3",
+			"kind": "box",
+			"at": [
+				-15,
+				29.4,
+				0
+			],
+			"size": [
+				4,
+				4,
+				36
+			],
+			"r": 0,
+			"label": "Field coil",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "coil-4",
+			"kind": "box",
+			"at": [
+				-33.4,
+				11,
+				0
+			],
+			"size": [
+				4,
+				4,
+				36
+			],
+			"r": 0,
+			"label": "Field coil",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "coil-5",
+			"kind": "box",
+			"at": [
+				-33.4,
+				-15,
+				0
+			],
+			"size": [
+				4,
+				4,
+				36
+			],
+			"r": 0,
+			"label": "Field coil",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "coil-6",
+			"kind": "box",
+			"at": [
+				-15,
+				-33.4,
+				0
+			],
+			"size": [
+				4,
+				4,
+				36
+			],
+			"r": 0,
+			"label": "Field coil",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "coil-7",
+			"kind": "box",
+			"at": [
+				11,
+				-33.4,
+				0
+			],
+			"size": [
+				4,
+				4,
+				36
+			],
+			"r": 0,
+			"label": "Field coil",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "coil-8",
+			"kind": "box",
+			"at": [
+				29.4,
+				-15,
+				0
+			],
+			"size": [
+				4,
+				4,
+				36
+			],
+			"r": 0,
+			"label": "Field coil",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "pf-top",
+			"kind": "ring",
+			"at": [
+				0,
+				0,
+				37
+			],
+			"size": [
+				34,
+				34,
+				0
+			],
+			"label": "Field ring",
+			"explode": [
+				0,
+				0,
+				10
+			]
+		}
+	],
+	"focal": "plasma",
+	"labels": [
+		{
+			"text": "Plasma ring",
+			"target": "plasma",
+			"side": "right",
+			"anchor": [
+				6.5,
+				-6.5,
+				13.5
+			]
+		},
+		{
+			"text": "Central solenoid",
+			"target": "solenoid",
+			"side": "left",
+			"anchor": [
+				-3.5,
+				3.5,
+				64
+			]
+		},
+		{
+			"text": "Vacuum vessel",
+			"target": "vessel",
+			"side": "left"
+		},
+		{
+			"text": "Cryostat base",
+			"target": "base",
+			"side": "left"
+		},
+		{
+			"text": "Field coil",
+			"target": "coil-1",
+			"side": "right"
+		},
+		{
+			"text": "Field ring",
+			"target": "pf-top",
+			"side": "right",
+			"anchor": [
+				24,
+				-24,
+				37
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"base"
+			],
+			[
+				"vessel"
+			],
+			[
+				"solenoid"
+			],
+			[
+				"plasma"
+			],
+			[
+				"coil-1",
+				"coil-2",
+				"coil-3",
+				"coil-4",
+				"coil-5",
+				"coil-6",
+				"coil-7",
+				"coil-8"
+			],
+			[
+				"pf-top"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0.4,
+			"min": 0.4,
+			"max": 1,
+			"step": 0.05,
+			"unit": "gap"
+		}
+	},
+	"meta": {
+		"margin": "[ TOKAMAK ]",
+		"corner": "VPK-HTML"
+	}
+}
