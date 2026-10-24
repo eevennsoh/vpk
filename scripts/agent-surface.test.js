@@ -15,6 +15,7 @@ const {
 	resolveSurface,
 	run,
 	splitDirection,
+	waitForExitFile,
 } = require("./agent-surface.js");
 
 function tempScript(body = "exit 0") {
@@ -121,54 +122,91 @@ test("pane command records the exit status even when the script fails", () => {
 	assert.equal(command.includes("notification show"), false);
 });
 
-// Runs the real pane command in bash against a fake herdr that logs each call.
-async function runPaneCommand({ body, label = "vpk-feat-live-probe", herdrBody = 'printf "%s\\n" "$*" >> "$LOG"' }) {
+// Runs the real pane command in bash against a fake herdr that logs each call, and
+// whether the exit file already held the status when `pane close` ran.
+async function runPaneCommand({ body, label = "vpk-feat-live-probe", closeOnExit, herdrBody = 'printf "%s\\n" "$*" >> "$LOG"' }) {
 	const script = tempScript(body);
 	const dir = path.dirname(script);
 	const bin = path.join(dir, "fake-herdr");
 	const log = path.join(dir, "herdr.log");
-	fs.writeFileSync(bin, `#!/bin/sh\n${herdrBody}\n`, { mode: 0o755 });
 	const exitFile = `${script}.exit`;
-	const command = buildPaneCommand({ script, exitFile, label, seq: 1700000000000, lingerSeconds: 0 });
+	const closeProbe = `if [ "$1 $2" = "pane close" ]; then printf 'exit-file-at-close:%s\\n' "$(cat "$EXIT_FILE" 2>/dev/null)" >> "$LOG"; fi`;
+	fs.writeFileSync(bin, `#!/bin/sh\n${closeProbe}\n${herdrBody}\n`, { mode: 0o755 });
+	const command = buildPaneCommand({ script, exitFile, label, seq: 1700000000000, closeOnExit });
 	const result = spawnSync("bash", ["-c", command], {
 		encoding: "utf8",
-		env: { PATH: process.env.PATH, HERDR_BIN_PATH: bin, HERDR_PANE_ID: "w1:p5", LOG: log },
+		env: { PATH: process.env.PATH, HERDR_BIN_PATH: bin, HERDR_PANE_ID: "w1:p5", LOG: log, EXIT_FILE: exitFile },
 	});
-	// Reports are detached; give them a moment to land.
+	// Start reports are detached; give them a moment to land.
 	const readLog = () => (fs.existsSync(log) ? fs.readFileSync(log, "utf8").trim().split("\n") : []);
-	for (let i = 0; i < 50 && readLog().length < 5; i += 1) await new Promise((resolve) => setTimeout(resolve, 20));
-	return { result, exit: fs.readFileSync(exitFile, "utf8").trim(), calls: readLog() };
+	for (let i = 0; i < 50 && readLog().filter((line) => !line.startsWith("pane close")).length < 3; i += 1) {
+		await new Promise((resolve) => setTimeout(resolve, 20));
+	}
+	return { command, result, exit: fs.readFileSync(exitFile, "utf8").trim(), calls: readLog() };
 }
 
-test("pane reports working, then settles and releases with increasing seqs", async () => {
-	const { result, exit, calls } = await runPaneCommand({ body: "exit 0" });
-	assert.equal(result.status, 0);
-	assert.equal(exit, "0");
-	// Reports are detached, so arrival order can vary; herdr orders them by --seq.
-	const reports = calls.filter((line) => line.startsWith("pane report-agent") || line.startsWith("pane release-agent"));
-	assert.deepEqual(new Set(reports), new Set([
-		"pane report-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --state working --seq 1700000000000000",
-		"pane report-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --state idle --seq 1700000000000001",
-		"pane release-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --seq 1700000000000002",
-	]));
+test("pane reports working and names the agent after the label", async () => {
+	const { calls } = await runPaneCommand({ body: "exit 0" });
+	assert.ok(calls.includes("pane report-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --state working --seq 1700000000000000"));
 	assert.ok(calls.includes("pane report-metadata w1:p5 --source vpk-agent-surface --agent vpk-worker --title vpk-feat-live-probe"));
 	assert.ok(calls.includes("agent rename w1:p5 vpk-feat-live-probe"));
 });
 
-test("a failing script reports its exit status as the settled message", async () => {
+test("the pane closes itself on exit 0, after the exit file is written", async () => {
+	const { result, exit, calls } = await runPaneCommand({ body: "exit 0" });
+	assert.equal(result.status, 0);
+	assert.equal(exit, "0");
+	assert.ok(calls.includes("pane close w1:p5"));
+	assert.ok(calls.includes("exit-file-at-close:0"));
+});
+
+test("the pane closes itself on a non-zero exit too, after the exit file is written", async () => {
 	const { exit, calls } = await runPaneCommand({ body: "exit 7" });
 	assert.equal(exit, "7");
-	assert.ok(calls.includes("pane report-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --state idle --message exit 7 --seq 1700000000000001"));
-	assert.ok(calls.some((line) => line.startsWith("pane report-metadata") && line.includes("--state-label done=exit 7")));
+	assert.ok(calls.includes("pane close w1:p5"));
+	assert.ok(calls.includes("exit-file-at-close:7"));
+});
+
+test("the pane command has no linger, sleep, or Ctrl-C escape left", () => {
+	const command = buildPaneCommand({ script: "/tmp/a.sh", exitFile: "/tmp/a.exit", label: "vpk-fix-x" });
+	assert.doesNotMatch(command, /sleep|linger|Ctrl-C|release-agent|--state idle/u);
+	assert.match(command, /> '\/tmp\/a\.exit'; "\$h" pane close "\$HERDR_PANE_ID" >\/dev\/null 2>&1$/u);
+});
+
+test("a worktree workspace's root pane is kept: no close, and nothing after the exit file", async () => {
+	const { exit, calls, command } = await runPaneCommand({ body: "exit 3", closeOnExit: false });
+	assert.equal(exit, "3");
+	assert.equal(calls.some((line) => line.startsWith("pane close")), false);
+	assert.match(command, /> '[^']+\.exit'$/u);
 });
 
 test("a broken herdr never changes the recorded exit status", async () => {
 	const { exit } = await runPaneCommand({ body: "exit 5", herdrBody: "echo boom >&2; exit 9" });
 	assert.equal(exit, "5");
 	const missing = tempScript("exit 0");
-	const command = buildPaneCommand({ script: missing, exitFile: `${missing}.exit`, label: "vpk-fix-x", lingerSeconds: 0 });
+	const command = buildPaneCommand({ script: missing, exitFile: `${missing}.exit`, label: "vpk-fix-x" });
 	spawnSync("bash", ["-c", command], { env: { PATH: process.env.PATH, HERDR_BIN_PATH: "/nonexistent/herdr", HERDR_PANE_ID: "w1:p5" } });
 	assert.equal(fs.readFileSync(`${missing}.exit`, "utf8").trim(), "0");
+});
+
+test("a pane that closed itself after writing the exit file is a result, not an error", async () => {
+	const script = tempScript();
+	const exitFile = `${script}.exit`;
+	// The close lands between the poll that missed the file and the liveness check.
+	let checks = 0;
+	const status = await waitForExitFile(exitFile, {
+		timeoutMs: 0,
+		isAlive: () => {
+			checks += 1;
+			fs.writeFileSync(exitFile, "6\n");
+			return false;
+		},
+		pollIntervalMs: 0,
+	});
+	assert.equal(status, 6);
+	assert.equal(checks, 1);
+	fs.rmSync(exitFile);
+	await assert.rejects(waitForExitFile(exitFile, { timeoutMs: 0, isAlive: () => false, pollIntervalMs: 0 }), /surface closed before/u);
 });
 
 test("agent names are the surface name, or a hashed prefix that keeps long labels distinct", () => {
@@ -217,6 +255,7 @@ test("default herdr placement opens a labelled tab in the caller's workspace", a
 	assert.equal(paneRun[3], `bash '${script}.pane.sh'`);
 	const runner = fs.readFileSync(`${script}.pane.sh`, "utf8");
 	assert.ok(runner.includes("pane report-agent") && runner.includes("--state working"));
+	assert.ok(runner.includes(`pane close "$HERDR_PANE_ID"`));
 });
 
 test("a group reuses its tab and splits beside the last pane", async () => {
@@ -270,6 +309,8 @@ test("a linked worktree opens its own workspace from the main checkout and runs 
 	assert.deepEqual(open.slice(2), ["--cwd", main, "--path", tree, "--label", "vpk-fix-x", "--no-focus"]);
 	assert.ok(calls.some(([group, verb, pane]) => group === "pane" && verb === "run" && pane === "w7:p1"));
 	assert.equal(calls.some(([group, verb]) => group === "tab" && verb === "create"), false);
+	// Closing the root pane would close the task's sidebar workspace.
+	assert.equal(fs.readFileSync(`${script}.pane.sh`, "utf8").includes("pane close"), false);
 });
 
 test("an already-open worktree without a same-label tab gets a new tab instead of its busy root pane", async () => {
@@ -280,6 +321,7 @@ test("an already-open worktree without a same-label tab gets a new tab instead o
 	const create = calls.find(([group, verb]) => group === "tab" && verb === "create");
 	assert.deepEqual(create.slice(2), ["--workspace", "w7", "--cwd", tree, "--label", "vpk-fix-x", "--no-focus"]);
 	assert.equal(calls.some(([group, verb, pane]) => group === "pane" && verb === "run" && pane === "w7:p1"), false);
+	assert.ok(fs.readFileSync(`${script}.pane.sh`, "utf8").includes(`pane close "$HERDR_PANE_ID"`));
 });
 
 test("an already-open worktree splits into its existing tab with the same label", async () => {

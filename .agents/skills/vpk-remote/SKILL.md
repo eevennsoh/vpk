@@ -242,7 +242,8 @@ name: `vpk-<type>-<slug>[-<pane>]`, lowercase kebab-case.
 `scripts/agent-surface.js` rejects a `--label` or `--group` outside this
 scheme, so a misnamed surface fails before anything opens.
 
-The herdr agent name (what `herdr agent wait <name>` takes) is the label
+The herdr agent name (what `herdr agent wait <name>` takes; the pane closes
+on exit, so the wait only says the run ended) is the label
 itself when it fits herdr's 32-character limit. A longer label becomes its
 first 25 characters, `-`, and a 6-character hash of the whole label:
 `vpk-research-authentication-middleware-1` →
@@ -365,7 +366,9 @@ dirty tree it will silently fold into its diff.
    (see *Checking progress*). An absent or empty report does **not**
    imply an absent diff: a worker killed mid-run may have already written
    every file. Always check `git status` in the task worktree before
-   re-dispatching.
+   re-dispatching. After reading the report, close any leftover finished
+   worker tab (`herdr tab close <tab_id>`, from the wrapper's first JSON
+   line); never close the user's own tabs or the task's sidebar workspace.
 6. **Verify.** Inspect `git status` and `git diff` **in the task worktree**,
    run the brief's proof command if cheap (targeted `node --test`, a single
    grep). Delegate heavy verification (full `pnpm run lint &&
@@ -516,24 +519,27 @@ a `working · 4m12s · 23 steps` line rewritten in place, then
 `done · 8m54s · $5.47 · 16 turns` or `failed · <reason>`. Pass it `--feed`
 only to debug a run (see
 [references/claude-executor.md](references/claude-executor.md)). The planner
-reads only the report, as before. Each pane reports its state to
-herdr, so the sidebar shows the worker as `working`, then `done` (with `exit N`
-on failure), and `herdr agent wait <label>` can block on it. Panes are left
-open after exit so the user can scroll them; close them only when the user
-asks. Conventions, status reporting, and cleanup: `.agents/docs/herdr.md`.
+reads only the report, as before. Each pane reports `working` to herdr while
+it runs. Worker and advisor panes close themselves the moment they exit,
+success or failure, and an emptied tab goes with them; the planner reports
+the outcome. `report.md`, `events.jsonl`, and `stderr.log` keep the full
+record for diagnosing a failure. The only pane that stays is the root pane of
+a worktree workspace the run opened, because closing it would close the
+task's sidebar workspace. Conventions and status reporting:
+`.agents/docs/herdr.md`.
 
 ### Checking progress
 
 | Question | Where to look |
 | --- | --- |
-| Is it still running? | the herdr sidebar or the worker's pane: `working`, `done`, or `failed` |
+| Is it still running? | the herdr sidebar or the worker's pane while it shows `working`; gone means it ended, and the wrapper's exit status says how |
 | What has it done, step by step? | `events.jsonl` (Claude lane, one JSON event per line); rerun with `--feed` only to debug |
 | What has actually landed? | `git status` / `git diff` in the task worktree |
 | What did it conclude? | `report.md` |
 
 There is no "needs input" state. Workers run headless with permissions
-skipped, so they cannot stop to ask; a blocked worker ends as `failed`, or as
-`done` with the blocker written in its report.
+skipped, so they cannot stop to ask; a blocked worker exits non-zero, or
+exits 0 with the blocker written in its report.
 
 ## Artifacts
 

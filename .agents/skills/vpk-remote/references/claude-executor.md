@@ -73,6 +73,11 @@ output only: the files, exit codes, and failure rules are the same. The report i
 into place, so it is either empty or complete. An error result leaves it
 empty.
 
+The pane closes itself as soon as the worker exits, success or failure, so
+the final `done` or `failed` line is gone with it. The planner reports the
+outcome; `report.md`, `events.jsonl`, and `stderr.log` keep the full record
+for diagnosing a failure.
+
 Why each layer exists:
 
 - Unsetting `ANTHROPIC_AUTH_TOKEN` / `CLAUDE_CODE_OAUTH_TOKEN` guarantees the

@@ -51,6 +51,12 @@ node scripts/agent-surface.js run --script <file> --label <name> \
   same label (`--group`, else `--label`) when one exists, and otherwise gets a
   new tab with that label. Its root pane is never reused because the user may
   be typing there.
+- The pane closes itself the moment the script exits, success or failure,
+  right after writing `<script>.exit`, so the close cannot race the wrapper.
+  herdr drops a tab when its last pane closes, so a single-run tab goes too;
+  a `--group` tab stays until its last worker exits. The one exception is the
+  root pane of a worktree workspace the run just opened: closing it would
+  close the task's sidebar workspace, so it stays at a shell prompt.
 - Closing the pane before the script finishes is reported as an error, not a
   silent hang.
 - The full runner is written to `<script>.pane.sh` and the pane only runs
@@ -65,9 +71,7 @@ The pane reports its own state, so workers show in the sidebar and
 | Phase | Reported state | Sidebar |
 | --- | --- | --- |
 | Script starts | `working`, title = `--label` | `working` |
-| Script exits 0 | `idle` | `done` |
-| Script exits N | `idle` with message and state label `exit N` | `done`, label `exit N` |
-| 15 s after exit | released | gone |
+| Script exits, any status | pane closes | gone |
 
 The pane itself shows the same level of detail: a `/vpk-remote` Claude-lane
 worker prints `working · <model> · started HH:MM`, one status line rewritten
@@ -78,6 +82,11 @@ debugging. Headless workers cannot ask for input, so a run never reports
 `blocked`; a stuck worker ends as `exit N`, or as `done` with the blocker in
 its report.
 
+The outcome is not shown in herdr: the wrapper's exit status and the worker's
+`report.md`, `events.jsonl`, and `stderr.log` carry it, and the planner
+reports it to the user. Those files keep the full record for diagnosing a
+failure after the pane is gone.
+
 The pane is also named after the label, so another pane can block on it. A
 label over herdr's 32-character agent name limit becomes its first 25
 characters plus a 6-character hash of the full label, so long labels that
@@ -87,12 +96,11 @@ differ only at the end stay distinct (see *Naming* in the vpk-remote skill):
 herdr agent wait vpk-fix-sidebar-flicker --timeout 20000
 ```
 
-herdr's own "vpk-worker finished" notification fires on completion; it needs
-the pane to stay busy after the `idle` report, which is why the pane lingers
-15 s (`Ctrl-C` skips the linger). Reports run in the background and never
-change the exit status, so a missing or broken `herdr` cannot fail a run. Two
-concurrent runs whose labels reduce to the same name cannot both hold it;
-target the second by pane ID.
+Because the pane closes on exit, the wait ends with `agent_not_running` (exit
+1) whichever way the run went; read `<script>.exit` for the status. Reports
+run in the background and never change the exit status, so a missing or
+broken `herdr` cannot fail a run. Two concurrent runs whose labels reduce to
+the same name cannot both hold it; target the second by pane ID.
 
 ## Inspect and Coordinate
 
