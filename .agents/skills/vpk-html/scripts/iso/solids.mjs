@@ -4,7 +4,9 @@
 //
 // A piece is one DOM part (<g data-vpk-iso-part>). Most parts are one piece with one solid; a tray
 // is two pieces (<id>:back painted early, <id>:front painted late) of several solids each.
-//   piece = { id, of?, kind, depthPoint: [x, y, z], solids: Solid[], marks: string[], bottom, top }
+//   piece = { id, of?, kind, depthPoint: [x, y, z], plan: [x0, y0, x1, y1][], solids: Solid[], marks: string[], bottom, top }
+// `plan` is the piece's footprint as plan boxes (a tray's front is its two near walls); the select lift re-sorts only pieces
+// whose footprints overlap, because a part that rises straight up stays behind every part in front of it in plan.
 //   Solid = { fill, top?, shade?, edge, crease? }   (path strings; fill uses only M/L/Z)
 
 import {
@@ -80,8 +82,8 @@ export function traySplit(part, P, { r, bevel, shading }) {
 	];
 	if (bevel > 0) back[0] = solidOf(slabOf({ x, y, w, d, r }, z, t, P, 8, bevel), { shading });
 	return {
-		back: { solids: back, depthPoint: [x, y, z], top: z + h },
-		front: { solids: front, depthPoint: [x + w, y + d, z + h], top: z + h },
+		back: { solids: back, depthPoint: [x, y, z], plan: [[x, y, x + w, y + d]], top: z + h },
+		front: { solids: front, depthPoint: [x + w, y + d, z + h], plan: [[x + w - t, y, x + w, y + d], [x, y + d - t, x + w, y + d]], top: z + h },
 		wall: t,
 	};
 }
@@ -98,7 +100,8 @@ export function solidFor(part, P, style) {
 	const bevel = part.bevel ?? style.bevel;
 	const [x, y, z] = part.at;
 	const [w, d, h] = part.size;
-	const base = { of: undefined, kind: part.kind, marks: [] };
+	const box = part.kind === "cylinder" || part.kind === "ring" ? [x - w, y - w, x + w, y + w] : [x, y, x + w, y + d];
+	const base = { of: undefined, kind: part.kind, marks: [], plan: [box] };
 	switch (part.kind) {
 		case "slab":
 		case "plate":
@@ -117,8 +120,8 @@ export function solidFor(part, P, style) {
 		case "tray": {
 			const split = traySplit(part, P, { r, bevel, shading });
 			return [
-				{ ...base, id: `${part.id}:back`, of: part.id, solids: split.back.solids, marks: marksFor(part, z + split.wall, P), depthPoint: split.back.depthPoint, bottom: z, top: z + h },
-				{ ...base, id: `${part.id}:front`, of: part.id, solids: split.front.solids, depthPoint: split.front.depthPoint, bottom: z, top: z + h },
+				{ ...base, id: `${part.id}:back`, of: part.id, plan: split.back.plan, solids: split.back.solids, marks: marksFor(part, z + split.wall, P), depthPoint: split.back.depthPoint, bottom: z, top: z + h },
+				{ ...base, id: `${part.id}:front`, of: part.id, plan: split.front.plan, solids: split.front.solids, depthPoint: split.front.depthPoint, bottom: z, top: z + h },
 			];
 		}
 		default:

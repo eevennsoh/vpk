@@ -219,6 +219,10 @@ const topZ = part => part.at[2] + (part.kind === "ring" || part.kind === "gap" ?
 const planBox = part => (part.kind === "cylinder" || part.kind === "ring"
 	? [part.at[0] - part.size[0], part.at[1] - part.size[0], part.at[0] + part.size[0], part.at[1] + part.size[0]]
 	: [part.at[0], part.at[1], part.at[0] + part.size[0], part.at[1] + part.size[1]]);
+const planCentre = part => {
+	const [x0, y0, x1, y1] = planBox(part);
+	return [(x0 + x1) / 2, (y0 + y1) / 2];
+};
 // Plan containment with a half-unit tolerance (circles by radius, everything else by its box).
 function contains(part, [px, py], tolerance = 0.5) {
 	if (part.kind === "cylinder" || part.kind === "ring") return Math.hypot(px - part.at[0], py - part.at[1]) <= part.size[0] + tolerance;
@@ -309,7 +313,19 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	const liftWorld = behavior === "select" ? interact.lift ?? 8 : 0;
 	const layers = layerIndexMap(brief);
 	const zRank = new Map([...brief.parts].sort((a, b) => a.at[2] - b.at[2]).map((part, index) => [part.id, index]));
-	const vectorOf = part => part.explode ?? [0, 0, (layers.get(part.id) ?? zRank.get(part.id)) * 12];
+	// A part without its own explode vector that sits on another part (its base on that part's top, inside its plan; a tray's
+	// floor counts as its top) moves with that part: window controls stay on the window, pins on their bed. Only a part that
+	// rests on nothing falls back to its assembly layer, 12 units per layer.
+	const restsOn = part => brief.parts.find(other => other !== part && castsShadow(other) && Math.abs(receivingTop(other, 0).z - part.at[2]) < 1e-6 && contains(other, planCentre(part)));
+	const vectors = new Map();
+	const vectorOf = (part, seen = new Set()) => {
+		if (part.explode) return part.explode;
+		if (vectors.has(part.id)) return vectors.get(part.id);
+		const support = castsShadow(part) && !seen.has(part.id) ? restsOn(part) : null;
+		const vector = support && !seen.has(support.id) ? vectorOf(support, seen.add(part.id)) : [0, 0, (layers.get(part.id) ?? zRank.get(part.id)) * 12];
+		vectors.set(part.id, vector);
+		return vector;
+	};
 	const assemble = brief.assemble ?? null;
 	const from = assemble?.from ?? MANUAL_FROM;
 
@@ -465,6 +481,13 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 		if (last && last.layer === piece.layer) last.pieces.push(index);
 		else groups.push({ layer: piece.layer, pieces: [index] });
 	});
+
+	// A select lift reorders only pieces that stand over one another in plan within a motion group (runtime resort()); a
+	// piece that overlaps none keeps painter order and emits no plan.
+	if (liftWorld) {
+		const overlap = (a, b) => a.plan.some(p => b.plan.some(q => p[0] < q[2] && q[0] < p[2] && p[1] < q[3] && q[1] < p[3]));
+		for (const group of groups) for (const index of group.pieces) pieces[index].stacks = group.pieces.some(other => other !== index && overlap(pieces[index], pieces[other]));
+	}
 
 	const sceneHull = hull(pieces.flatMap(piece => piece.hit));
 	const xs = sceneHull.map(([x]) => x);

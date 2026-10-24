@@ -181,7 +181,8 @@ export function createIsoRuntime(win, loop, core) {
 			let points = [...el.querySelectorAll(role("fill"))].flatMap(p => core.parsePolyPath(p.getAttribute("d")) || []);
 			if (!points.length) points = core.parsePolyPath((el.querySelector(role("edge")) || el).getAttribute("d")) || [];
 			units[unit].points.push(...points);
-			return { el, i, id, unit, vec, depth: Number(attr(el, "depth")) || 0, group: el.parentNode, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
+			const plan = (attr(el, "plan") || "").split(";").map(box => box.trim().split(/\s+/).map(Number)).filter(box => box.length === 4 && box.every(Number.isFinite));
+			return { el, i, id, unit, vec, plan, depth: Number(attr(el, "depth")) || 0, group: el.parentNode, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
 		});
 		for (const unit of units) unit.poly = core.hull(unit.points);
 		if (!parts.length || units.some(unit => unit.poly.length < 3)) throw new Error("polygon");
@@ -213,9 +214,13 @@ export function createIsoRuntime(win, loop, core) {
 			if (!groups.has(p.group)) groups.set(p.group, []);
 			groups.get(p.group).push(p);
 		}
+		// Footprints that overlap in plan (data-vpk-iso-plan; a part without one overlaps nothing): only such a pair can trade places
+		// when one lifts.
+		const overlap = (a, b) => a.plan.some(p => b.plan.some(q => p[0] < q[2] && q[0] < p[2] && p[1] < q[3] && q[1] < p[3]));
 		for (const list of groups.values()) {
 			list.order = list.slice();
 			list.tail = list[list.length - 1].el.nextElementSibling;
+			list.over = list.map(a => list.map(b => a !== b && overlap(a, b)));
 		}
 
 		let rect = null;
@@ -304,11 +309,33 @@ export function createIsoRuntime(win, loop, core) {
 		const enhancer = doc.querySelector("script[data-vpkh-enhance]");
 		if (enhancer && !enhancer.textContent.includes("vpkh-no-lightbox")) stage.addEventListener("click", e => e.stopPropagation());
 
-		// Depth re-sort within a motion group (select lift); at rest the order is painter order again.
+		// Depth re-sort within a motion group (select lift); at rest the order is painter order again. A lift is straight up, so it
+		// reorders only pairs whose plans overlap (one stands over the other); every other pair keeps painter order, and a card that
+		// rises behind a nearer card stays behind it. The pairwise rule is a partial order: placed by a topological pass that takes
+		// the earliest ready part in painter order (and breaks a cycle the same way).
 		function resort() {
+			const key = p => p.depth + p.lv * liftZ * zd;
 			for (const [g, list] of groups) {
-				if (list.length < 2) continue;
-				const order = list.slice().sort((a, b) => a.depth + a.lv * liftZ * zd - (b.depth + b.lv * liftZ * zd) || a.i - b.i);
+				const n = list.length;
+				if (n < 2) continue;
+				const next = list.map(() => []);
+				const deg = list.map(() => 0);
+				for (let a = 0; a < n; a++) {
+					for (let b = a + 1; b < n; b++) {
+						const [u, v] = list.over[a][b] && key(list[b]) < key(list[a]) ? [b, a] : [a, b];
+						next[u].push(v);
+						deg[v]++;
+					}
+				}
+				const placed = list.map(() => false);
+				const order = [];
+				while (order.length < n) {
+					let k = deg.findIndex((d, j) => !placed[j] && d <= 0);
+					if (k < 0) k = placed.indexOf(false);
+					placed[k] = true;
+					order.push(list[k]);
+					for (const v of next[k]) deg[v]--;
+				}
 				if (order.every((p, k) => p === list.order[k])) continue;
 				list.order = order;
 				for (const p of order) g.insertBefore(p.el, list.tail);

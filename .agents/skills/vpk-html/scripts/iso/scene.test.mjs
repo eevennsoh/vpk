@@ -160,6 +160,18 @@ test("painter order is by depth; explode guides drop from the extreme corners to
 	assert.equal(scene.zdepth, 0.5);
 });
 
+// A part without its own explode vector moves with the part it rests on: the window controls stay on the window frame (a
+// tray's floor) instead of taking their assembly layer's 12 units and floating off it; a part on nothing keeps its layer.
+test("explode: a part resting on another part takes that part's vector; a free part keeps its layer's", () => {
+	const brief = JSON.parse(fs.readFileSync(new URL("./briefs/hl-exploded.json", import.meta.url), "utf8"));
+	const scene = buildScene(brief);
+	const vector = id => scene.pieces.find(piece => piece.id === id).explode.join(" ");
+	for (const dot of ["dot1", "dot2", "dot3"]) assert.equal(vector(dot), vector("window:back"), `${dot} moves with the window frame`);
+	assert.equal(vector("window:front"), vector("window:back"));
+	const free = buildScene({ ...brief, parts: brief.parts.map(part => (part.id === "dot1" ? { ...part, at: [12, 93, 9] } : part)) });
+	assert.notEqual(free.pieces.find(piece => piece.id === "dot1").explode.join(" "), vector("window:back"), "a dot above the floor keeps its layer vector");
+});
+
 test("labels anchor on a visible point of their target and sit in the gutters", () => {
 	const scene = buildScene(EXEMPLAR);
 	assert.deepEqual(scene.warnings, []);

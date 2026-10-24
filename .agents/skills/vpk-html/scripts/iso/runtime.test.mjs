@@ -258,6 +258,28 @@ test("select: rest-polygon hits, one active part, staggered lift, keyboard isola
 	});
 });
 
+// A select lift is straight up: a card that rises behind a nearer card stays behind it (their plans do not overlap, so
+// painter order holds), and only parts that stand over one another in plan may trade places as one lifts.
+const RIFFLE = JSON.parse(fs.readFileSync(new URL("./briefs/hl-riffle.json", import.meta.url), "utf8"));
+test("select lift: a lifted back card stays behind the cards in front of it", async () => {
+	await withRuntime(renderRegion(buildScene(RIFFLE)), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const svg = stage.querySelector("svg");
+		const order = () => [...svg.querySelectorAll("[data-vpk-iso-part]")].map(node => node.getAttribute("data-vpk-iso-part"));
+		const rest = order();
+		const key = name => stage.dispatchEvent(new window.KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true }));
+		key("End");
+		key("ArrowLeft");
+		step(900);
+		assert.equal(svg.querySelector(".is-active")?.getAttribute("data-vpk-iso-part"), "card-2");
+		assert.ok(svg.querySelector('[data-vpk-iso-part="card-2"]').hasAttribute("transform"), "card 2 lifts");
+		assert.deepEqual(order(), rest, "card 2 keeps its place behind card 1 and in front of card 3");
+		key("Escape");
+		step(1600);
+		assert.deepEqual(order(), rest);
+	});
+});
+
 // Verifier round 2: guide/leader `d` and the active class are runtime writes the print CSS cannot
 // reach, so the loop's `rest` (beforeprint) writes one rest frame and holds it; afterprint wakes.
 test("print: rest() lands guides, leaders, transforms and the active stroke at rest; afterprint brings the state back", async () => {

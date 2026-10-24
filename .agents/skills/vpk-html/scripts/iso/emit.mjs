@@ -84,6 +84,7 @@ export function renderPart(piece, scene, indent = "") {
 	if (piece.state) attrs.push(`data-vpk-iso-state="${piece.state}"`);
 	if (piece.explode) attrs.push(`data-vpk-iso-explode="${vec(piece.explode)}"`);
 	if (piece.lift) attrs.push(`data-vpk-iso-lift="${vec(piece.lift)}"`);
+	if (piece.stacks) attrs.push(`data-vpk-iso-plan="${piece.plan.map(box => box.map(num).join(" ")).join(";")}"`);
 	if (piece.label) attrs.push(`data-vpk-iso-label="${escapeAttr(piece.label)}"`);
 	if (piece.focal) attrs.push("data-vpk-iso-focal");
 	if (piece.clipTo) attrs.push(`clip-path="url(#${id.clip(piece.partId)})"`);
