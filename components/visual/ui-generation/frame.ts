@@ -1,4 +1,4 @@
-import { OVERLAY_CLASS, MARGIN, type Overlay, type Stroke } from "./overlay.ts";
+import { OVERLAY_CLASS, MARGIN, pointAt, type Overlay, type Stroke } from "./overlay.ts";
 import {
 	PHASES,
 	activePartIndex,
@@ -45,7 +45,7 @@ function drawStroke(s: Stroke, q: number, t: number) {
 		s.live = q > 0 && q < 1;
 		setAttr(s.head, "opacity", s.live ? 1 : 0);
 		if (s.live) {
-			s.point = s.el.getPointAtLength(Math.floor((s.length * q) / gap) * gap);
+			s.point = pointAt(s, Math.floor((s.length * q) / gap) * gap);
 			setAttr(s.head, "cx", fmt(s.point.x));
 			setAttr(s.head, "cy", fmt(s.point.y));
 		}
@@ -60,7 +60,13 @@ function scaleAt(x: number, y: number, scale: number) {
 	return `translate(${fmt(x)} ${fmt(y)}) scale(${fmt(scale)})`;
 }
 
-/** The real UI: wiped in behind the scan line, fading and sharpening. Returns the scan line's y. */
+/**
+ * The real UI: wiped in behind the scan line, fading and sharpening. Returns the scan line's y.
+ *
+ * Clip-path, blur and stroke-dash changes repaint every frame, unlike transform/opacity-only
+ * motion. That is the effect itself, so it is a deliberate exception, kept bounded: one element
+ * here, a capped dot field (`MAX_DOTS`) and at most `maxParts` traced parts, with no geometry reads.
+ */
 function drawReveal(G: Overlay, content: HTMLElement, p: number, t: number, rest: ContentStyle) {
 	const { w, h } = G;
 	const sq = revealEase(win(PHASES.reveal, p));

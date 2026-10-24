@@ -24,16 +24,18 @@ export default function UIGenerationDemo() {
 	const [maxParts, setMaxParts] = useState<number>(UI_GENERATION_DEFAULTS.maxParts);
 	const [keys, setKeys] = useState<number>(UI_GENERATION_DEFAULTS.keys);
 	const [run, setRun] = useState(0);
-	const [status, setStatus] = useState<"generating" | "ready">("generating");
+	// The builds finished for the current playKey; a new key is a new set of builds, so stale entries drop out.
+	const [finished, setFinished] = useState<{ readonly playKey: string; readonly count: number }>({ playKey: "", count: 0 });
 
 	const values = useMemo(() => ({ subject, duration, maxParts, keys }), [subject, duration, maxParts, keys]);
-	const replay = () => {
-		setStatus("generating");
-		setRun((prev) => prev + 1);
-	};
+	const replay = () => setRun((prev) => prev + 1);
 	// Every build that changes its options plays again, so the panel doubles as a scrubber.
 	const playKey = `${run}:${subject}:${duration}:${maxParts}:${keys}`;
 	const shared = { playKey, duration, maxParts, keys };
+	const builds = subject === "both" ? 2 : 1;
+	const status = finished.playKey === playKey && finished.count >= builds ? "ready" : "generating";
+	const onComplete = () =>
+		setFinished((prev) => ({ playKey, count: prev.playKey === playKey ? prev.count + 1 : 1 }));
 
 	return (
 		<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 sm:p-6">
@@ -43,7 +45,7 @@ export default function UIGenerationDemo() {
 				className="flex min-h-[560px] flex-wrap items-center justify-center gap-24 rounded-xl border border-border bg-surface px-8 py-20"
 			>
 				{subject === "both" || subject === "price" ? (
-					<UIGeneration {...shared} onComplete={() => setStatus("ready")}>
+					<UIGeneration {...shared} onComplete={onComplete}>
 						<PriceCard />
 					</UIGeneration>
 				) : null}
@@ -51,7 +53,7 @@ export default function UIGenerationDemo() {
 					<UIGeneration
 						{...shared}
 						delay={subject === "both" ? STAGGER_MS : 0}
-						onComplete={() => setStatus("ready")}
+						onComplete={onComplete}
 					>
 						<ProfileCard />
 					</UIGeneration>

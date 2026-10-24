@@ -5,6 +5,13 @@ const NS = "http://www.w3.org/2000/svg";
 /** How far the dot field and guides reach past the element. */
 export const MARGIN = 44;
 const DOT_SPACING = 15;
+/**
+ * The field is one SVG circle per dot, restyled every frame, so its size is
+ * bounded: past this many, the spacing opens up instead of adding dots.
+ */
+export const MAX_DOTS = 1200;
+/** Most precomputed points per stroke; finer than a stroke moves in one frame. */
+const MAX_STOPS = 256;
 const DOT_GAP = 4.8;
 const GUIDE_GAP = 6.5;
 const FLYERS = 44;
@@ -28,7 +35,8 @@ export const OVERLAY_CLASS = {
 
 export interface Stroke {
 	readonly el: SVGGeometryElement;
-	readonly length: number;
+	/** Read with `stops` in `measureStrokes`, once every element is in the page. */
+	length: number;
 	readonly gap: number;
 	/** Scale of an icon's own transform, so its dots match the rest of the drawing. */
 	readonly k: number;
@@ -39,7 +47,15 @@ export interface Stroke {
 	idx: number;
 	dashCount: number;
 	live: boolean;
-	point: DOMPoint | null;
+	/** Points along the line every `step` px, read once at build so frames never query SVG geometry. */
+	stops: readonly Point[];
+	step: number;
+	point: Point | null;
+}
+
+export interface Point {
+	readonly x: number;
+	readonly y: number;
 }
 
 export interface Dot {
@@ -155,7 +171,7 @@ function makeStroke(
 ): Stroke {
 	return {
 		el,
-		length: el.getTotalLength(),
+		length: 0,
 		gap: options.gap,
 		k: options.k ?? 1,
 		local: options.local ?? false,
@@ -165,8 +181,37 @@ function makeStroke(
 		idx: 0,
 		dashCount: -1,
 		live: false,
+		stops: [],
+		step: 0,
 		point: null,
 	};
+}
+
+/**
+ * Reads every stroke's length and samples the line its dot head rides along (about once per
+ * dot gap, at most `MAX_STOPS`). Runs once, after the whole drawing is appended: a geometry read
+ * after each append would force style and layout over the whole SVG every time.
+ */
+function measureStrokes(strokes: readonly Stroke[]) {
+	for (const s of strokes) {
+		s.length = s.el.getTotalLength();
+		const count = Math.min(MAX_STOPS, Math.ceil(s.length / (s.gap / s.k)) + 1);
+		s.step = count > 1 ? s.length / (count - 1) : 0;
+		s.stops = Array.from({ length: count }, (_, i) => {
+			const { x, y } = s.el.getPointAtLength(i * s.step);
+			return { x, y };
+		});
+	}
+}
+
+/** The point `at` px along a stroke, from its precomputed stops. */
+export function pointAt(s: Stroke, at: number): Point {
+	const last = s.stops.length - 1;
+	const f = s.step > 0 ? Math.min(last, at / s.step) : 0;
+	const i = Math.floor(f);
+	const a = s.stops[i];
+	const b = s.stops[Math.min(last, i + 1)];
+	return { x: a.x + (b.x - a.x) * (f - i), y: a.y + (b.y - a.y) * (f - i) };
 }
 
 function pathStroke(d: string, parent: Element, kind: "wire" | "guide", extra: Record<string, string | number> = {}): Stroke {
@@ -182,10 +227,15 @@ function buildDots(root: SVGSVGElement, w: number, h: number, n: number) {
 	const group = svg("g", {}, root);
 	const dots: Dot[] = [];
 	let maxD = 0;
-	const start = -Math.floor(MARGIN / DOT_SPACING) * DOT_SPACING;
-	for (let x = start; x <= w + MARGIN; x += DOT_SPACING) {
-		const column = Math.round(x / DOT_SPACING);
-		for (let y = start; y <= h + MARGIN; y += DOT_SPACING) {
+	// A grid of W×H at spacing s holds about (W/s + 1)(H/s + 1) dots; widen s until that fits.
+	const W = w + 2 * MARGIN;
+	const H = h + 2 * MARGIN;
+	let spacing = DOT_SPACING;
+	while ((Math.floor(W / spacing) + 2) * (Math.floor(H / spacing) + 2) > MAX_DOTS) spacing *= 1.05;
+	const start = -Math.floor(MARGIN / spacing) * spacing;
+	for (let x = start; x <= w + MARGIN; x += spacing) {
+		const column = Math.round(x / spacing);
+		for (let y = start; y <= h + MARGIN; y += spacing) {
 			const d = Math.hypot(x - w / 2, y - h / 2);
 			const outside = Math.max(0, -x, x - w, -y, y - h);
 			dots.push({
@@ -288,7 +338,7 @@ function buildFlyers(outline: readonly Stroke[], root: SVGSVGElement, n: number)
 	return Array.from({ length: FLYERS }, (_, i) => {
 		const half = outline[i % 2];
 		const f = 0.06 + 0.9 * (Math.floor(i / 2) / (FLYERS / 2 - 1));
-		const pt = half.el.getPointAtLength(half.length * f);
+		const pt = pointAt(half, half.length * f);
 		const angle = hashN(i * 9.1 + n) * Math.PI * 2;
 		const dist = 30 + 70 * hashN(i * 4.7 + n * 2);
 		const arrive = start + (stop - start) * invertDrawEase(f);
@@ -340,6 +390,7 @@ export function buildOverlay(host: HTMLElement, M: Measured): Overlay {
 
 	const parts = buildParts(M, wire);
 	const keys = buildKeyMarks(parts, root);
+	measureStrokes([...guides, ...outline, ...parts.flatMap((part) => part.strokes), ...keys.flatMap((key) => key.guides)]);
 	const flyers = buildFlyers(outline, root, n);
 
 	const reticle = svg("path", { class: OVERLAY_CLASS.reticle, "stroke-width": 1.2, "stroke-linecap": "round", opacity: 0 }, root);

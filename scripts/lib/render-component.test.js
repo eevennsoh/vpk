@@ -254,6 +254,25 @@ export function Fade({ show }) {
 	assert.equal(view.getByText("Saved").textContent, "Saved");
 });
 
+test("strictMode mounts effects twice, as development does, so setup/cleanup bugs surface", async () => {
+	const source = `
+import { useEffect } from "react";
+export function Probe({ log }) {
+	useEffect(() => {
+		log.push("setup");
+		return () => log.push("cleanup");
+	}, [log]);
+	return null;
+}
+`;
+	const strict = [];
+	await renderComponent({ exportName: "Probe", props: { log: strict }, source, strictMode: true });
+	assert.deepEqual(strict, ["setup", "cleanup", "setup"]);
+	const plain = [];
+	await renderComponent({ exportName: "Probe", props: { log: plain }, source });
+	assert.deepEqual(plain, ["setup"]);
+});
+
 test("the document starts empty for every test", () => {
 	assert.equal(document.body.childNodes.length, 0);
 	assert.ok(document.activeElement === document.body);

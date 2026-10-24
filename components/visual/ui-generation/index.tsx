@@ -24,7 +24,7 @@ export interface UIGenerationProps {
 	readonly maxParts?: number;
 	/** Key elements (interactive boxes first, then the largest) that get guides, handles and a size label. */
 	readonly keys?: number;
-	/** Called once the real UI is fully in, or at once under reduced motion. */
+	/** Called once per build (per `playKey`) when the real UI is fully in, or at once under reduced motion. */
 	readonly onComplete?: () => void;
 	readonly className?: string;
 }
@@ -50,14 +50,20 @@ export function UIGeneration({
 	const overlayRef = useRef<HTMLDivElement>(null);
 	const reduceMotion = useReducedMotion() === true;
 
+	// The build `onComplete` last fired for. StrictMode runs the effect twice, so it is a ref, not a flag.
+	const completedRef = useRef<{ readonly playKey: Key | undefined } | null>(null);
+	const complete = useEffectEvent(() => {
+		if (completedRef.current && Object.is(completedRef.current.playKey, playKey)) return;
+		completedRef.current = { playKey };
+		onComplete?.();
+	});
 	// Options are read when a build starts; changing them mid-build does not restart it.
 	const start = useEffectEvent(() => {
 		const content = contentRef.current;
 		const overlay = overlayRef.current;
 		if (!content || !overlay) return undefined;
-		return startGeneration(content, overlay, { duration, delay, maxParts, keys, onDone: onComplete });
+		return startGeneration(content, overlay, { duration, delay, maxParts, keys, onDone: complete });
 	});
-	const complete = useEffectEvent(() => onComplete?.());
 
 	// Layout effect: the content is hidden before the first paint, so it never flashes in.
 	useLayoutEffect(() => {

@@ -46,13 +46,13 @@ export function PriceCard() {
 
 	return (
 		<div
-			className="flex w-[300px] flex-col gap-4 rounded-2xl bg-bg-neutral-bold p-5 text-text-inverse"
+			className="flex w-[300px] flex-col gap-4 rounded-2xl border border-border bg-surface-raised p-5 text-text"
 			style={{ boxShadow: token("elevation.shadow.raised") }}
 		>
 			<div className="flex items-start justify-between">
 				<div>
 					<p className="text-sm font-semibold">Nova</p>
-					<p className="text-xs opacity-60">NVA / USD</p>
+					<p className="text-xs text-text-subtle">NVA / USD</p>
 				</div>
 				<span
 					className={cn(
@@ -66,14 +66,14 @@ export function PriceCard() {
 			</div>
 			<div>
 				<p style={{ font: token("font.heading.large") }}>$4,812.40</p>
-				<p className="text-xs opacity-60">{periodLabel(period)}</p>
+				<p className="text-xs text-text-subtle">{periodLabel(period)}</p>
 			</div>
 			<div className="flex items-stretch justify-between" style={{ height: CHART_HEIGHT }}>
 				{candles.map((candle, index) => (
 					<CandleBar key={index} candle={candle} />
 				))}
 			</div>
-			<div role="group" aria-label="Chart period" className="flex gap-1 rounded-full bg-bg-inverse-subtle p-1">
+			<div role="group" aria-label="Chart period" className="flex gap-1 rounded-full bg-bg-neutral p-1">
 				{PERIODS.map((item) => (
 					<button
 						key={item}
@@ -82,7 +82,7 @@ export function PriceCard() {
 						onClick={() => setPeriod(item)}
 						className={cn(
 							"h-7 flex-1 rounded-full text-xs font-medium transition-colors duration-fast ease-out-practical focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focused",
-							item === period ? "bg-bg-inverse-subtle-pressed" : "opacity-60 hover:bg-bg-inverse-subtle-hovered hover:opacity-100",
+							item === period ? "bg-surface text-text" : "text-text-subtle hover:bg-bg-neutral-hovered hover:text-text",
 						)}
 					>
 						{item}

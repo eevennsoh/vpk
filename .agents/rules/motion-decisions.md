@@ -120,6 +120,15 @@ transition={{ duration: motionDuration.medium, ease: motionEase.inOut }}
 
 Lint rejects inline cubic-bezier arrays, hand-written `cubic-bezier()` strings, and numeric `duration-NNN` classes. Older copies are baselined in `eslint-suppressions.json`; migrate them when you touch the file.
 
+**Sanctioned exception — `referenceEase`.** A recreation tuned against a reference motion may use a curve with no ADS token only through `referenceEase` in `@/lib/motion`, one named entry per curve with its source. It is not for general UI; `lib/motion.test.js` pins these entries and keeps them distinct from every `motionEase` token:
+
+| Entry | Curve | Source and use |
+| --- | --- | --- |
+| `generationDraw` | `[0.16, 1, 0.3, 1]` | transitions.dev UI generation: every stroke of the `UIGeneration` drawing |
+| `smoothOut` | `[0.22, 1, 0.36, 1]` | transitions.dev `--ease-smooth-out`: the `UIGeneration` reveal |
+
+Add a row here and to the test when you add an entry.
+
 **Two Motion idioms agents miss:**
 
 - Animating `transform` / `opacity` / `filter` / `clipPath` → set `willChange` for exactly those properties on the element.
