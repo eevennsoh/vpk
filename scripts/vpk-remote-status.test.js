@@ -257,6 +257,11 @@ test("parseRunRecords pairs start and end lines per launch and skips junk", () =
 
 // ── Pure parsing ──────────────────────────────────────────────────────────────
 
+test("parseBlockers stops at the first blank line after the section's content", () => {
+	assert.deepEqual(parseBlockers("## Blockers\nNone.\n\n`★ Insight ─────`\n- a closing note\n"), []);
+	assert.deepEqual(parseBlockers("## Blockers\n\n- Gateway returned 401\n- CI is red\n\nVerdict: request changes\n"), ["Gateway returned 401", "CI is red"]);
+});
+
 test("parseBlockers reads the section up to the next heading", () => {
 	assert.deepEqual(parseBlockers("## Findings\n- a\n\n## Blockers\n- None.\n"), []);
 	assert.deepEqual(parseBlockers("## Blockers\n- Gateway returned 401\n\n## Next\n- x\n"), ["Gateway returned 401"]);

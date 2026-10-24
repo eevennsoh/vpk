@@ -123,9 +123,12 @@ function sectionBody(markdown, heading) {
 	const lines = markdown.split("\n");
 	const start = lines.findIndex((line) => new RegExp(`^#{1,3}\\s+${heading}\\s*$`, "iu").test(line.trim()));
 	if (start === -1) return null;
+	// A section is one block: it ends at the next heading, or at the first blank line after
+	// its content, so a closing note after "## Blockers" (an insight box) isn't read as blockers.
 	const body = [];
 	for (const line of lines.slice(start + 1)) {
 		if (/^#{1,3}\s/u.test(line)) break;
+		if (!line.trim() && body.some((kept) => kept.trim())) break;
 		body.push(line);
 	}
 	return body;
