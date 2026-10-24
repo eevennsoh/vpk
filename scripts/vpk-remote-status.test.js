@@ -7,7 +7,6 @@ const test = require("node:test");
 const {
 	collectStatus,
 	deriveStatus,
-	displayWidth,
 	formatAge,
 	groupKeyFor,
 	main,
@@ -15,53 +14,50 @@ const {
 	parseBlockers,
 	parseVerdict,
 	renderMarkdown,
-	renderTable,
+	roleFor,
 	runIndexFor,
 	runIsAlive,
 	parseProcessList,
+	sanitizeTask,
 	worktreeFromRunScript,
 } = require("./vpk-remote-status.js");
 
 // ── Pure status derivation ────────────────────────────────────────────────────
 
-const exited = (exitCode, at) => ({ state: "exited", exitCode, startedAt: at - 1, endedAt: at });
+const exited = (exitCode, at, startedAt = at - 1) => ({ state: "exited", exitCode, startedAt, endedAt: at });
 const running = (at) => ({ state: "running", exitCode: null, startedAt: at, endedAt: null });
 const stopped = (at) => ({ state: "stopped", exitCode: null, startedAt: at, endedAt: null });
+const unknown = (at) => ({ state: "unknown", exitCode: null, startedAt: at, endedAt: null });
 
 function dir(runs, { blockers = [], verdict = null } = {}) {
 	return { runs, report: { nonEmpty: true, blockers, verdict } };
 }
 
+const GIT = { branch: "vpk/feat-x", localBranch: true, worktree: "/w", worktreeExists: true, ahead: 2 };
+const GONE = { branch: null, localBranch: false, worktree: null, worktreeExists: false, ahead: null };
+
 function facts(overrides = {}) {
-	return {
-		kind: "worker",
-		worker: dir([exited(0, 100)]),
-		reviews: [],
-		git: { branch: "vpk/feat-x", localBranch: true, worktree: "/w", worktreeExists: true, ahead: 2 },
-		pr: null,
-		...overrides,
-	};
+	return { readOnly: false, workers: [dir([exited(0, 100)])], reviews: [], git: GIT, pr: null, ...overrides };
 }
 
 const STATUS_CASES = [
-	["running", facts({ worker: dir([running(100)]) }), "wait; ask for status later"],
-	["stopped", facts({ worker: dir([stopped(100)]) }), "check git status, re-dispatch"],
-	["failed", facts({ worker: dir([exited(1, 100)]) }), "read stderr.log, fix brief, re-dispatch"],
-	["blocked", facts({ worker: dir([exited(0, 100)], { blockers: ["needs a token"] }) }), "resolve the report's blocker"],
+	["running", facts({ workers: [dir([running(100)])] }), "wait; ask for status later"],
+	["unknown", facts({ workers: [dir([unknown(100)])] }), "re-run status"],
+	["stopped", facts({ workers: [dir([stopped(100)])] }), "check git status, re-dispatch"],
+	["not started", facts({ workers: [dir([])] }), "launch run.sh"],
+	["failed", facts({ workers: [dir([exited(1, 100)])] }), "read stderr.log, fix brief, re-dispatch"],
+	["blocked", facts({ workers: [dir([exited(0, 100)], { blockers: ["needs a token"] })] }), "resolve the report's blocker"],
 	["reviewing", facts({ reviews: [dir([running(200)])] }), "wait for the review"],
 	["needs fixes", facts({ reviews: [dir([exited(0, 200)], { verdict: "request changes" })] }), "send a correction follow-up"],
+	["review unclear", facts({ reviews: [dir([exited(0, 200)])] }), "read the review report"],
 	["needs review", facts(), "run the advisor review"],
-	["ready to ship", facts({ reviews: [dir([exited(0, 200)], { verdict: "approve" })] }), "/vpk-git-ship"],
-	["PR open", facts({ reviews: [dir([exited(0, 200)])], pr: { number: 12, state: "OPEN" } }), "/vpk-git-ship --merge 12"],
+	["ready to ship", facts({ reviews: [dir([exited(0, 200)], { verdict: "ship" })] }), "/vpk-git-ship"],
+	["PR open", facts({ reviews: [dir([exited(0, 200)], { verdict: "ship" })], pr: { number: 12, state: "OPEN" } }), "/vpk-git-ship --merge 12"],
+	["PR closed", facts({ reviews: [dir([exited(0, 200)], { verdict: "ship" })], pr: { number: 12, state: "CLOSED" } }), "reopen, or confirm abandoned and run /vpk-git-clean"],
 	["merged", facts({ pr: { number: 12, state: "MERGED" } }), "/vpk-git-clean"],
-	["done", facts({
-		pr: { number: 12, state: "MERGED" },
-		git: { branch: "vpk/feat-x", localBranch: false, worktree: "/w", worktreeExists: false, ahead: null },
-	}), "none"],
-	["done (read-only)", facts({
-		kind: "research",
-		git: { branch: null, localBranch: false, worktree: null, worktreeExists: false, ahead: null },
-	}), "read the report"],
+	["done", facts({ pr: { number: 12, state: "MERGED" }, git: { ...GIT, localBranch: false, worktreeExists: false, ahead: null } }), "none"],
+	["done (read-only)", facts({ readOnly: true, git: GONE }), "read the report"],
+	["no commits", facts({ git: { ...GIT, ahead: 0 } }), "check git status in the worktree"],
 ];
 
 for (const [status, input, nextAction] of STATUS_CASES) {
@@ -72,7 +68,7 @@ for (const [status, input, nextAction] of STATUS_CASES) {
 
 test("deriveStatus: a worker run newer than the review clears needs fixes", () => {
 	const input = facts({
-		worker: dir([exited(0, 100), exited(0, 300)]),
+		workers: [dir([exited(0, 100), exited(0, 300)])],
 		reviews: [dir([exited(0, 200)], { verdict: "request changes" })],
 	});
 	assert.equal(deriveStatus(input).status, "needs review");
@@ -86,7 +82,7 @@ test("deriveStatus: the latest review decides, not the first", () => {
 	const input = facts({
 		reviews: [
 			dir([exited(0, 150)], { verdict: "request changes" }),
-			dir([exited(0, 250)], { verdict: "approve" }),
+			dir([exited(0, 250)], { verdict: "ship with nits" }),
 		],
 	});
 	assert.equal(deriveStatus(input).status, "ready to ship");
@@ -102,6 +98,84 @@ test("deriveStatus: a legacy run whose worktree and branch are gone is done", ()
 	assert.equal(deriveStatus(input).status, "done");
 });
 
+// ── Review findings, one test each ────────────────────────────────────────────
+
+test("finding 1: a missing or unrecognised verdict is review unclear, never approval", () => {
+	assert.equal(parseVerdict("Do not ship.\n"), null);
+	assert.equal(parseVerdict("Verdict: approve"), null);
+	assert.equal(parseVerdict("**Verdict: request changes.**"), "request changes");
+	assert.equal(parseVerdict("## Verdict — Ship with nits (two typos)"), "ship with nits");
+	assert.equal(parseVerdict("verdict: SHIP"), "ship");
+	assert.equal(parseVerdict("Verdict: shipping blocked"), null);
+	for (const verdict of [null, "approve"]) {
+		const input = facts({ reviews: [dir([exited(0, 200)], { verdict })] });
+		assert.deepEqual(deriveStatus(input), { status: "review unclear", nextAction: "read the review report" });
+	}
+	assert.equal(deriveStatus(facts({ reviews: [dir([exited(0, 200)], { verdict: "ship with nits" })] })).status, "ready to ship");
+});
+
+test("finding 2: a failed worker run stays failed after a later approving review", () => {
+	const input = facts({
+		workers: [dir([exited(1, 100)])],
+		reviews: [dir([exited(0, 200)], { verdict: "ship" })],
+	});
+	assert.equal(deriveStatus(input).status, "failed");
+});
+
+test("finding 4: a review only counts for worker runs that ended before it started", () => {
+	// The review started at 150, before the correction ended at 300, and finished at 400.
+	const startedEarly = facts({
+		workers: [dir([exited(0, 100), exited(0, 300, 200)])],
+		reviews: [dir([exited(0, 400, 150)], { verdict: "ship" })],
+	});
+	assert.equal(deriveStatus(startedEarly).status, "needs review");
+	// An older review finished after a newer one started: the running one still means reviewing.
+	const newerRunning = facts({
+		reviews: [dir([exited(0, 500, 150)], { verdict: "ship" }), dir([running(200)])],
+	});
+	assert.equal(deriveStatus(newerRunning).status, "reviewing");
+	// A stopped review is no verdict: the approved review before it still counts.
+	const stoppedLast = facts({
+		workers: [dir([exited(1, 100), exited(0, 300, 200)])],
+		reviews: [dir([exited(0, 400, 350)], { verdict: "ship" }), dir([stopped(450)])],
+	});
+	assert.equal(deriveStatus(stoppedLast).status, "ready to ship");
+});
+
+test("finding 6: unknown git or gh facts give unknown, never a negative fact", () => {
+	assert.equal(deriveStatus(facts({ git: { ...GIT, localBranch: null, ahead: null } })).status, "unknown");
+	assert.equal(deriveStatus(facts({ git: { ...GIT, ahead: null } })).status, "unknown");
+	assert.equal(deriveStatus(facts({ pr: "unknown" })).status, "unknown");
+});
+
+test("finding 8: a PR closed without merging stays active even once its branch is gone", () => {
+	const input = facts({
+		reviews: [dir([exited(0, 200)], { verdict: "ship" })],
+		pr: { number: 9, state: "CLOSED" },
+		git: { ...GIT, localBranch: false, worktreeExists: false, ahead: null },
+	});
+	assert.deepEqual(deriveStatus(input), { status: "PR closed", nextAction: "reopen, or confirm abandoned and run /vpk-git-clean" });
+});
+
+test("finding 9: read-only work is classified before any shipping check", () => {
+	const input = facts({ readOnly: true, git: GIT });
+	assert.equal(deriveStatus(input).status, "done (read-only)");
+	assert.equal(deriveStatus(facts({ readOnly: true, workers: [dir([exited(1, 100)])] })).status, "failed");
+});
+
+test("a review-only task is read-only, and its report's blockers do not block it", () => {
+	const input = facts({ readOnly: true, workers: [], reviews: [dir([exited(0, 200)], { blockers: ["The P1 findings block shipping."], verdict: "request changes" })], git: GONE });
+	assert.equal(deriveStatus(input).status, "done (read-only)");
+	assert.equal(deriveStatus({ ...input, reviews: [dir([running(300)])] }).status, "running");
+});
+
+test("finding 10: task.json fields of the wrong type are dropped", () => {
+	assert.deepEqual(sanitizeTask({ goal: 42, worktree: { path: "/x" }, branch: 7, kind: "bogus", advisor: "no", name: "vpk-fix-x" }), { name: "vpk-fix-x" });
+	assert.deepEqual(sanitizeTask({ branch: null, worktree: null, kind: "research" }), { branch: null, worktree: null, kind: "research" });
+	assert.equal(sanitizeTask([1, 2]), null);
+	assert.equal(sanitizeTask("x"), null);
+});
+
 // ── Pure parsing ──────────────────────────────────────────────────────────────
 
 test("parseBlockers ignores None and unfilled template lines", () => {
@@ -112,18 +186,13 @@ test("parseBlockers ignores None and unfilled template lines", () => {
 	assert.deepEqual(parseBlockers("no section here"), []);
 });
 
-test("parseVerdict reads explicit and implicit verdicts", () => {
-	assert.equal(parseVerdict("**Verdict: request changes.**"), "request changes");
-	assert.equal(parseVerdict("## Blockers\n\nRequest changes for findings 1–4."), "request changes");
-	assert.equal(parseVerdict("Verdict: approve"), "approve");
-	assert.equal(parseVerdict("Looks fine."), null);
-});
-
-test("groupKeyFor joins a worker with every -review run", () => {
+test("groupKeyFor and roleFor: task.json kind decides, the name only without it", () => {
 	assert.equal(groupKeyFor("vpk-fix-x-review"), "vpk-fix-x");
 	assert.equal(groupKeyFor("vpk-fix-x-review-2"), "vpk-fix-x");
-	assert.equal(groupKeyFor("vpk-fix-x"), "vpk-fix-x");
 	assert.equal(groupKeyFor("vpk-feat-reviewer"), "vpk-feat-reviewer");
+	assert.equal(roleFor("vpk-fix-x-review", null), "review");
+	assert.equal(roleFor("vpk-feat-code-review", { kind: "worker" }), "worker");
+	assert.equal(roleFor("vpk-fix-x", { kind: "review" }), "review");
 });
 
 test("runIndexFor orders run.sh before follow-ups and skips sidecar files", () => {
@@ -154,113 +223,38 @@ test("formatAge", () => {
 	assert.equal(formatAge(30_000), "<1m");
 	assert.equal(formatAge(12 * 60_000), "12m");
 	assert.equal(formatAge((2 * 60 + 10) * 60_000), "2h 10m");
-	assert.equal(formatAge(null), "—");
+	assert.equal(formatAge(null), null);
 });
 
-test("parseArgs", () => {
-	assert.deepEqual(parseArgs(["--all", "--task", "vpk-fix-x"]), { all: true, json: false, markdown: false, task: "vpk-fix-x", width: null });
-	assert.equal(parseArgs(["--width", "80"]).width, 80);
-	assert.throws(() => parseArgs(["--width", "wide"]), /positive number/u);
+test("parseArgs: --json is the default's alias; no width options remain", () => {
+	assert.deepEqual(parseArgs(["--all", "--task", "vpk-fix-x"]), { all: true, markdown: false, task: "vpk-fix-x" });
+	assert.equal(parseArgs(["--json"]).markdown, false);
+	assert.equal(parseArgs(["--markdown"]).markdown, true);
+	assert.throws(() => parseArgs(["--width", "80"]), /unknown option --width/u);
 	assert.throws(() => parseArgs(["--task"]), /needs a name/u);
-	assert.throws(() => parseArgs(["--bogus"]), /unknown option/u);
 });
 
-// ── Table layout ──────────────────────────────────────────────────────────────
+// ── Markdown ──────────────────────────────────────────────────────────────────
 
-const LAYOUT_NOW = Date.parse("2026-10-24T12:00:00Z");
-
-function layoutTask(name, status, overrides = {}) {
-	return { name, status, goal: "", nextAction: "none", createdAt: LAYOUT_NOW - 95 * 60_000, pr: null, ...overrides };
+function row(name, status, overrides = {}) {
+	return { name, status, goal: "", nextAction: "none", pr: null, ...overrides };
 }
 
-const LAYOUT_TASKS = [
-	layoutTask("vpk-feat-remote-status", "running", {
-		goal: "Add /vpk-remote --status: one table of every dispatched task, with the goal inside the Task cell and widths that fit any terminal",
-		nextAction: "wait; ask for status later",
-	}),
-	layoutTask("vpk-fix-sidebar-flicker-on-resize-in-safari", "needs fixes", {
-		goal: "Stop the sidebar flickering",
-		nextAction: "send a correction follow-up that names every finding from the advisor review and the failing check",
-	}),
-	layoutTask("vpk-feat-ui-generation", "PR open", { pr: { number: 1984, state: "OPEN" }, nextAction: "/vpk-git-ship --merge 1984" }),
-	layoutTask("vpk-docs-日本語-guide", "ready to ship", { goal: "翻訳ガイドを追加する", nextAction: "/vpk-git-ship" }),
-];
-
-for (const width of [140, 100, 80, 60]) {
-	test(`renderTable at width ${width}: every line is the same width and fits`, () => {
-		const lines = renderTable(LAYOUT_TASKS, { width, now: LAYOUT_NOW }).split("\n");
-		const widths = new Set(lines.map(displayWidth));
-		assert.equal(widths.size, 1, `line widths ${[...widths].join(", ")}\n${lines.join("\n")}`);
-		assert.ok([...widths][0] <= width, `table is ${[...widths][0]} wide\n${lines.join("\n")}`);
-		assert.equal(lines.some((line) => /\bPR open\b/u.test(line)), true, "Status stays whole");
-		assert.equal(lines.some((line) => line.includes("needs fixes")), true, "Status stays whole");
-		assert.equal(lines.some((line) => line.includes("#1984 open")), true, "PR stays whole");
-	});
-}
-
-test("renderTable puts the goal inside the Task cell with every border continuing", () => {
-	const lines = renderTable(LAYOUT_TASKS, { width: 100, now: LAYOUT_NOW }).split("\n");
-	const row = lines.findIndex((line) => line.startsWith("│ vpk-feat-remote-status"));
-	const goal = lines[row + 1];
-	assert.match(goal, /^│ {3}Add \/vpk-remote --status/u, "goal indented two spaces in the Task cell");
-	assert.equal(goal.endsWith("… │") || goal.includes("… │"), true, "a long goal is truncated with …");
-	const borders = (line) => [...line].map((char, at) => (char === "│" ? at : null)).filter((at) => at !== null);
-	assert.deepEqual(borders(goal), borders(lines[row]), "column borders line up on the goal line");
-});
-
-test("renderTable truncates goal, then next action, then task name", () => {
-	const at = (width) => renderTable(LAYOUT_TASKS, { width, now: LAYOUT_NOW });
-	const roomy = at(400);
-	assert.equal(roomy.includes("…"), false);
-	const goalOnly = at(200);
-	assert.equal(goalOnly.includes("…"), true);
-	assert.equal(goalOnly.includes("the failing check"), true, "next action whole while the goal still gives");
-	assert.equal(goalOnly.includes("vpk-fix-sidebar-flicker-on-resize-in-safari"), true);
-	const nextToo = at(120);
-	assert.equal(nextToo.includes("the failing check"), false, "next action truncated");
-	assert.equal(nextToo.includes("vpk-fix-sidebar-flicker-on-resize-in-safari"), true, "task names whole until next action is at its minimum");
-	assert.equal(at(80).includes("vpk-fix-sidebar-flicker-on-resize-in-safari"), false, "task names truncate last");
-});
-
-test("renderTable drops the Age column below 60 columns and never exceeds the width", () => {
-	assert.equal(renderTable(LAYOUT_TASKS, { width: 100, now: LAYOUT_NOW }).includes("│ Age"), true);
-	for (const width of [59, 40, 24, 17, 10]) {
-		const lines = renderTable(LAYOUT_TASKS, { width, now: LAYOUT_NOW }).split("\n");
-		assert.equal(lines.some((line) => line.includes("Age")), false, `no Age at ${width}`);
-		assert.equal(lines.every((line) => displayWidth(line) <= width), true, `fits ${width}\n${lines.join("\n")}`);
-	}
-});
-
-test("displayWidth counts wide characters as two cells", () => {
-	assert.equal(displayWidth("abc"), 3);
-	assert.equal(displayWidth("日本"), 4);
-	assert.equal(displayWidth("│ — … │"), 7);
-});
-
-test("renderMarkdown prints Task (with goal), Status, PR, Next action", () => {
+test("renderMarkdown prints a plain table and escapes pipes and newlines", () => {
 	const markdown = renderMarkdown([
-		...LAYOUT_TASKS,
-		layoutTask("vpk-research-old", "done", { goal: "old" }),
-		layoutTask("vpk-chore-e2e-ping", "failed"),
+		row("vpk-fix-pipe", "running", { goal: "split a | b\nacross lines", nextAction: "wait | then\r\nship" }),
+		row("vpk-feat-ui-generation", "PR open", { pr: { number: 1984, state: "OPEN" }, nextAction: "/vpk-git-ship --merge 1984" }),
+		row("vpk-feat-gh", "unknown", { pr: "unknown", nextAction: "re-run status" }),
 	]);
-	const lines = markdown.split("\n");
-	assert.equal(lines[0], "| Task | Status | PR | Next action |");
-	assert.equal(lines[1], "| --- | --- | --- | --- |");
-	assert.equal(lines.length, 2 + LAYOUT_TASKS.length, "done and e2e tasks hidden");
-	assert.equal(lines.includes("| `vpk-feat-ui-generation` | PR open | #1984 open | /vpk-git-ship --merge 1984 |"), true, markdown);
-	assert.match(markdown, /\| `vpk-feat-remote-status` — Add \/vpk-remote --status: .*any terminal \| running \| — \| wait; ask for status later \|/u);
-	assert.equal(renderMarkdown([layoutTask("vpk-fix-pipe", "running", { goal: "a | b" })]).includes("a \\| b"), true, "pipes escaped");
-	assert.equal(renderMarkdown([layoutTask("vpk-research-old", "done")], { all: true }).split("\n").length, 3);
-});
-
-test("vpk-chore-e2e- tasks are hidden unless --all", () => {
-	const tasks = [layoutTask("vpk-chore-e2e-badmodel", "failed"), layoutTask("vpk-fix-real", "running")];
-	const hidden = renderTable(tasks, { now: LAYOUT_NOW });
-	assert.equal(hidden.includes("vpk-chore-e2e-badmodel"), false);
-	assert.match(hidden.split("\n")[0], /1 active · 1 e2e hidden/u);
-	const all = renderTable(tasks, { now: LAYOUT_NOW, all: true });
-	assert.equal(all.includes("vpk-chore-e2e-badmodel"), true);
-	assert.match(all.split("\n")[0], /2 active/u);
+	assert.equal(markdown, [
+		"| Task | Status | PR | Next action |",
+		"| --- | --- | --- | --- |",
+		"| `vpk-fix-pipe` — split a \\| b across lines | running | — | wait \\| then ship |",
+		"| `vpk-feat-ui-generation` | PR open | #1984 open | /vpk-git-ship --merge 1984 |",
+		"| `vpk-feat-gh` | unknown | ? | re-run status |",
+	].join("\n"));
+	assert.equal(renderMarkdown([]), "No vpk-remote tasks found.");
+	assert.match(renderMarkdown([], { hidden: 3 }), /3 done or e2e hidden \(--all shows them\)/u);
 });
 
 // ── Collection against a fixture checkout ─────────────────────────────────────
@@ -274,63 +268,63 @@ function writeFile(file, text, atMs) {
 	if (atMs) fs.utimesSync(file, new Date(atMs), new Date(atMs));
 }
 
+// One run: run.sh written at `start`, its exit file (if any) at `end`.
+function writeRun(dirPath, { script = "run.sh", start, end, exitCode = 0, report }) {
+	writeFile(path.join(dirPath, script), "exit 0\n", start);
+	if (end !== undefined) writeFile(path.join(dirPath, `${script}.exit`), `${exitCode}\n`, end);
+	if (report !== undefined) writeFile(path.join(dirPath, "report.md"), report, end ?? start);
+}
+
 // A main checkout holding output/remote-*/ directories. Nothing here is a real git repo:
 // the fake runner answers every git, gh, ps, and herdr call.
 function fixtureCheckout() {
 	const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "vpk-remote-status-")));
-	const out = (lane, name, file) => path.join(root, "output", `remote-${lane}`, name, file);
+	const out = (lane, name) => path.join(root, "output", `remote-${lane}`, name);
 	const tree = path.join(root, ".claude", "worktrees", "vpk-feat-alpha");
 
 	// A worker with task.json, finished, reviewed twice; the newer review approves.
-	writeFile(out("claude", "vpk-feat-alpha", "task.json"), JSON.stringify({
-		name: "vpk-feat-alpha", goal: "Add the alpha panel with a very long goal that will need truncating at narrow widths",
+	writeFile(path.join(out("claude", "vpk-feat-alpha"), "task.json"), JSON.stringify({
+		name: "vpk-feat-alpha", goal: "Add the alpha panel",
 		type: "feat", branch: "vpk/feat-alpha", worktree: ".claude/worktrees/vpk-feat-alpha",
 		lane: "claude", kind: "worker", createdAt: new Date(NOW - 130 * MINUTE).toISOString(),
 	}));
-	writeFile(out("claude", "vpk-feat-alpha", "run.sh"), "exit 0\n", NOW - 120 * MINUTE);
-	writeFile(out("claude", "vpk-feat-alpha", "run.sh.exit"), "0\n", NOW - 90 * MINUTE);
-	writeFile(out("claude", "vpk-feat-alpha", "report.md"), "## Findings\n- done\n\n## Blockers\n- None\n", NOW - 90 * MINUTE);
-	writeFile(out("gpt", "vpk-feat-alpha-review", "run.sh"), "exit 0\n", NOW - 85 * MINUTE);
-	writeFile(out("gpt", "vpk-feat-alpha-review", "run.sh.exit"), "0\n", NOW - 80 * MINUTE);
-	writeFile(out("gpt", "vpk-feat-alpha-review", "report.md"), "**Verdict: request changes.**\n", NOW - 80 * MINUTE);
-	writeFile(out("gpt", "vpk-feat-alpha-review-2", "run.sh"), "exit 0\n", NOW - 70 * MINUTE);
-	writeFile(out("gpt", "vpk-feat-alpha-review-2", "run.sh.exit"), "0\n", NOW - 60 * MINUTE);
-	writeFile(out("gpt", "vpk-feat-alpha-review-2", "report.md"), "Verdict: approve\n", NOW - 60 * MINUTE);
+	writeRun(out("claude", "vpk-feat-alpha"), { start: NOW - 120 * MINUTE, end: NOW - 90 * MINUTE, report: "## Findings\n- done\n\n## Blockers\n- None\n" });
+	writeRun(out("gpt", "vpk-feat-alpha-review"), { start: NOW - 85 * MINUTE, end: NOW - 80 * MINUTE, report: "**Verdict: request changes.**\n" });
+	writeRun(out("gpt", "vpk-feat-alpha-review-2"), { start: NOW - 70 * MINUTE, end: NOW - 60 * MINUTE, report: "**Verdict: ship.**\n" });
 
 	// A legacy worker: no task.json, no exit file, but its process is alive.
-	writeFile(out("claude", "vpk-fix-beta", "brief.md"), "fix beta\n", NOW - 12 * MINUTE);
-	writeFile(out("claude", "vpk-fix-beta", "run.sh"), "exit 0\n", NOW - 12 * MINUTE);
+	writeFile(path.join(out("claude", "vpk-fix-beta"), "brief.md"), "fix beta\n", NOW - 12 * MINUTE);
+	writeRun(out("claude", "vpk-fix-beta"), { start: NOW - 12 * MINUTE });
 
 	// A read-only research run that finished.
-	writeFile(out("gpt", "vpk-research-gamma", "run.sh"), "exit 0\n", NOW - 300 * MINUTE);
-	writeFile(out("gpt", "vpk-research-gamma", "run.sh.exit"), "0\n", NOW - 290 * MINUTE);
-	writeFile(out("gpt", "vpk-research-gamma", "report.md"), "found it\n", NOW - 290 * MINUTE);
+	writeRun(out("gpt", "vpk-research-gamma"), { start: NOW - 300 * MINUTE, end: NOW - 290 * MINUTE, report: "found it\n" });
 
-	return { root, tree };
+	return { root, tree, out };
 }
 
-function fakeRunner({ root, tree }, { gh = "ok", ahead = "3" } = {}) {
+function fakeRunner({ root, tree }, { gh = "ok", ahead = "3", treeBranch = "vpk/feat-alpha", fail = [], extraTrees = "", prs = {} } = {}) {
 	const calls = [];
 	const ok = (stdout) => ({ ok: true, stdout, stderr: "" });
+	const failed = { ok: false, stdout: "", stderr: "timed out" };
 	const runCommand = async (command, args) => {
 		calls.push([command, ...args]);
 		const line = [command, ...args].join(" ");
 		if (line === "git worktree list --porcelain") {
-			return ok(`worktree ${root}\nHEAD abc\nbranch refs/heads/main\n\nworktree ${tree}\nHEAD def\nbranch refs/heads/vpk/feat-alpha\n`);
+			return ok(`worktree ${root}\nHEAD abc\nbranch refs/heads/main\n\nworktree ${tree}\nHEAD def\nbranch refs/heads/${treeBranch}\n${extraTrees}`);
 		}
-		if (line.startsWith("git for-each-ref")) return ok("main\nvpk/feat-alpha\n");
+		if (line.startsWith("git for-each-ref")) return fail.includes("branches") ? failed : ok(`main\n${treeBranch}\n`);
 		if (line.startsWith("git rev-list --count")) return ok(`${ahead}\n`);
 		if (line.startsWith(`git -C ${tree} status`)) return ok("");
-		if (command === "ps") return ok(`  77 bash ${path.join(root, "output", "remote-claude", "vpk-fix-beta", "run.sh")}\n`);
+		if (command === "ps") {
+			return fail.includes("ps") ? failed : ok(`  77 bash ${path.join(root, "output", "remote-claude", "vpk-fix-beta", "run.sh")}\n`);
+		}
 		if (command === "gh") {
 			if (gh === "fail") return { ok: false, stdout: "", stderr: "gh: not logged in" };
-			const index = args.findIndex((arg) => arg === "b0=vpk/feat-alpha");
 			const data = { repository: {} };
 			for (const arg of args) {
-				const match = /^(b\d+)=/u.exec(arg);
-				if (match) data.repository[match[1]] = { nodes: [] };
+				const match = /^(b\d+)=(.*)$/u.exec(arg);
+				if (match) data.repository[match[1]] = { nodes: prs[match[2]] ?? [] };
 			}
-			if (index !== -1) data.repository.b0.nodes = gh === "open" ? [{ number: 7, state: "OPEN", url: "https://x/7", mergedAt: null }] : [];
 			return ok(JSON.stringify({ data }));
 		}
 		return { ok: false, stdout: "", stderr: `unexpected ${line}` };
@@ -338,27 +332,27 @@ function fakeRunner({ root, tree }, { gh = "ok", ahead = "3" } = {}) {
 	return { runCommand, calls };
 }
 
+async function statusOf(fixture, options = {}) {
+	const { runCommand, calls } = fakeRunner(fixture, options);
+	const result = await collectStatus({ cwd: fixture.root, runCommand, env: options.env ?? {}, now: NOW });
+	return { result, calls, byName: Object.fromEntries(result.tasks.map((task) => [task.name, task])) };
+}
+
 test("collectStatus groups a worker with its -review runs and reads legacy directories", async () => {
 	const fixture = fixtureCheckout();
-	const { runCommand, calls } = fakeRunner(fixture);
-	const result = await collectStatus({ cwd: fixture.root, runCommand, env: {}, now: NOW });
+	const { result, calls, byName } = await statusOf(fixture);
 
-	assert.equal(result.gh, "ok");
-	const byName = Object.fromEntries(result.tasks.map((task) => [task.name, task]));
+	assert.deepEqual(result.observations, { ps: "ok", branches: "ok", gh: "ok" });
 	assert.deepEqual(Object.keys(byName).sort(), ["vpk-feat-alpha", "vpk-fix-beta", "vpk-research-gamma"]);
 
 	const alpha = byName["vpk-feat-alpha"];
-	assert.deepEqual(alpha.dirs.map((d) => d.name), ["vpk-feat-alpha", "vpk-feat-alpha-review", "vpk-feat-alpha-review-2"]);
+	assert.deepEqual(alpha.runs.map((run) => run.dir), ["vpk-feat-alpha", "vpk-feat-alpha-review", "vpk-feat-alpha-review-2"]);
 	assert.equal(alpha.status, "ready to ship");
-	assert.equal(alpha.git.ahead, 3);
-	assert.equal(alpha.git.dirty, false);
-	assert.equal(alpha.goal.startsWith("Add the alpha panel"), true);
+	assert.equal(alpha.ahead, 3);
+	assert.equal(alpha.dirty, false);
+	assert.equal(alpha.goal, "Add the alpha panel");
 
-	const beta = byName["vpk-fix-beta"];
-	assert.equal(beta.goal, "");
-	assert.equal(beta.status, "running");
-	assert.equal(beta.kind, "worker");
-
+	assert.deepEqual([byName["vpk-fix-beta"].status, byName["vpk-fix-beta"].goal, byName["vpk-fix-beta"].kind], ["running", "", "worker"]);
 	assert.equal(byName["vpk-research-gamma"].status, "done (read-only)");
 	assert.equal(calls.filter(([command]) => command === "gh").length, 1, "one batched gh call");
 	assert.equal(calls.some(([command]) => command === "herdr"), false, "herdr skipped outside herdr");
@@ -366,7 +360,7 @@ test("collectStatus groups a worker with its -review runs and reads legacy direc
 
 test("collectStatus reports PR open and herdr surfaces", async () => {
 	const fixture = fixtureCheckout();
-	const { runCommand: base } = fakeRunner(fixture, { gh: "open" });
+	const { runCommand: base } = fakeRunner(fixture, { prs: { "vpk/feat-alpha": [{ number: 7, state: "OPEN", url: "https://x/7" }] } });
 	const runCommand = async (command, args) => {
 		if (command === "herdr") {
 			const key = args[0] === "workspace" ? "workspaces" : "tabs";
@@ -376,143 +370,158 @@ test("collectStatus reports PR open and herdr surfaces", async () => {
 	};
 	const result = await collectStatus({ cwd: fixture.root, runCommand, env: { HERDR_ENV: "1" }, now: NOW });
 	const alpha = result.tasks.find((task) => task.name === "vpk-feat-alpha");
-	assert.equal(alpha.status, "PR open");
-	assert.equal(alpha.nextAction, "/vpk-git-ship --merge 7");
-	assert.equal(alpha.herdrOpen, true);
+	assert.deepEqual([alpha.status, alpha.nextAction, alpha.herdrOpen], ["PR open", "/vpk-git-ship --merge 7", true]);
+	assert.deepEqual(alpha.pr, { number: 7, state: "OPEN", url: "https://x/7" });
 	assert.equal(result.tasks.find((task) => task.name === "vpk-fix-beta").herdrOpen, false);
 });
 
-test("a gh failure shows ? in the PR column and never throws", async () => {
+test("a gh failure reads unknown and never throws", async () => {
 	const fixture = fixtureCheckout();
-	const { runCommand } = fakeRunner(fixture, { gh: "fail" });
-	const result = await collectStatus({ cwd: fixture.root, runCommand, env: {}, now: NOW });
-	assert.equal(result.gh, "failed");
-	const alpha = result.tasks.find((task) => task.name === "vpk-feat-alpha");
-	assert.equal(alpha.pr, "unknown");
-	const row = renderTable(result.tasks, { now: NOW }).split("\n").find((line) => line.includes("vpk-feat-alpha"));
-	assert.match(row, /│ \? +│/u);
+	const { result, byName } = await statusOf(fixture, { gh: "fail" });
+	assert.equal(result.observations.gh, "failed");
+	assert.deepEqual([byName["vpk-feat-alpha"].pr, byName["vpk-feat-alpha"].status], ["unknown", "unknown"]);
 });
 
-test("renderTable truncates the goal first and fits a narrow terminal", async () => {
+test("finding 3: the same name in both lanes is one task with both lanes' runs", async () => {
 	const fixture = fixtureCheckout();
+	// An older, finished GPT dispatch of beta; the Claude re-dispatch is still running.
+	writeRun(fixture.out("gpt", "vpk-fix-beta"), { start: NOW - 200 * MINUTE, end: NOW - 190 * MINUTE, report: "done\n" });
+	const { result, byName } = await statusOf(fixture);
+	assert.equal(result.tasks.filter((task) => task.name === "vpk-fix-beta").length, 1);
+	const beta = byName["vpk-fix-beta"];
+	assert.equal(beta.status, "running");
+	assert.deepEqual(beta.runs.map((run) => `${run.lane}:${run.state}`), ["gpt:exited", "claude:running"]);
+	assert.deepEqual(beta.reports.map((report) => report.path.includes("remote-gpt")).sort(), [false, true]);
+});
+
+test("finding 5: kind worker is never a review, and a shared legacy worktree is no tie", async () => {
+	const fixture = fixtureCheckout();
+	writeFile(path.join(fixture.out("claude", "vpk-feat-code-review"), "task.json"), JSON.stringify({ name: "vpk-feat-code-review", goal: "Build code review", kind: "worker", branch: "vpk/feat-code-review", worktree: ".claude/worktrees/vpk-feat-code-review" }));
+	writeRun(fixture.out("claude", "vpk-feat-code-review"), { start: NOW - 30 * MINUTE });
+	writeRun(fixture.out("claude", "vpk-feat-code"), { start: NOW - 40 * MINUTE, end: NOW - 35 * MINUTE });
+	// Two unrelated legacy tasks that happened to reuse one worktree path.
+	for (const name of ["vpk-fix-one", "vpk-fix-two"]) {
+		writeFile(path.join(fixture.out("claude", name), "run.sh"), `cd "${path.join(fixture.root, ".claude", "worktrees", "shared")}" || exit 1\n`, NOW - 50 * MINUTE);
+		writeFile(path.join(fixture.out("claude", name), "run.sh.exit"), "0\n", NOW - 45 * MINUTE);
+	}
+	const { byName } = await statusOf(fixture);
+	assert.equal(byName["vpk-feat-code-review"]?.goal, "Build code review");
+	assert.deepEqual(byName["vpk-feat-code"].runs.map((run) => run.dir), ["vpk-feat-code"]);
+	assert.deepEqual([byName["vpk-fix-one"]?.runs.length, byName["vpk-fix-two"]?.runs.length], [1, 1]);
+});
+
+test("finding 6: a failed ps or branch lookup records unknown, not stopped or no commits", async () => {
+	const fixture = fixtureCheckout();
+	const { result, byName } = await statusOf(fixture, { fail: ["ps", "branches"] });
+	assert.deepEqual(result.observations, { ps: "failed", branches: "failed", gh: "ok" });
+	assert.deepEqual([byName["vpk-fix-beta"].status, byName["vpk-fix-beta"].nextAction], ["unknown", "re-run status"]);
+	assert.deepEqual([byName["vpk-feat-alpha"].localBranch, byName["vpk-feat-alpha"].status], [null, "unknown"]);
+});
+
+test("finding 7: the branch checked out in the worktree beats task.json's", async () => {
+	const fixture = fixtureCheckout();
+	const { byName, calls } = await statusOf(fixture, { treeBranch: "vpk/feat-alpha-panel" });
+	assert.equal(byName["vpk-feat-alpha"].branch, "vpk/feat-alpha-panel");
+	assert.equal(byName["vpk-feat-alpha"].status, "ready to ship");
+	assert.equal(calls.some((call) => call.includes("origin/main..refs/heads/vpk/feat-alpha-panel")), true);
+});
+
+test("finding 8: a closed PR whose branch and worktree are gone shows PR closed by default", async () => {
+	const fixture = fixtureCheckout();
+	writeFile(path.join(fixture.out("claude", "vpk-fix-delta"), "task.json"), JSON.stringify({ goal: "Delta", kind: "worker", branch: "vpk/fix-delta", worktree: ".claude/worktrees/vpk-fix-delta" }));
+	writeRun(fixture.out("claude", "vpk-fix-delta"), { start: NOW - 60 * MINUTE, end: NOW - 50 * MINUTE });
+	writeRun(fixture.out("gpt", "vpk-fix-delta-review"), { start: NOW - 40 * MINUTE, end: NOW - 30 * MINUTE, report: "Verdict: ship\n" });
+	const { runCommand } = fakeRunner(fixture, { prs: { "vpk/fix-delta": [{ number: 21, state: "CLOSED", url: "https://x/21" }] } });
+	const stdout = captureStdout();
+	await main(["--markdown"], { stdout, env: {}, cwd: fixture.root, runCommand, now: NOW });
+	assert.match(stdout.text, /\| `vpk-fix-delta` — Delta \| PR closed \| #21 closed \| reopen, or confirm abandoned and run \/vpk-git-clean \|/u);
+});
+
+test("finding 9: research in an existing feature worktree is read-only, not shippable", async () => {
+	const fixture = fixtureCheckout();
+	writeFile(path.join(fixture.out("gpt", "vpk-feat-alpha-notes"), "task.json"), JSON.stringify({ goal: "Survey alpha", kind: "worker", branch: null, worktree: null }));
+	writeFile(path.join(fixture.out("gpt", "vpk-feat-alpha-notes"), "run.sh"), `codex exec -C "${fixture.tree}" \\\n`, NOW - 20 * MINUTE);
+	writeFile(path.join(fixture.out("gpt", "vpk-feat-alpha-notes"), "run.sh.exit"), "0\n", NOW - 10 * MINUTE);
+	const { byName } = await statusOf(fixture, { treeBranch: "vpk/feat-alpha" });
+	const notes = byName["vpk-feat-alpha-notes"];
+	assert.deepEqual([notes.status, notes.branch, notes.pr], ["done (read-only)", null, null]);
+});
+
+test("finding 10: malformed task.json fields neither crash collection nor rendering", async () => {
+	const fixture = fixtureCheckout();
+	writeFile(path.join(fixture.out("claude", "vpk-fix-odd"), "task.json"), JSON.stringify({ goal: 42, worktree: { path: "/x" }, branch: ["a"], kind: 7, createdAt: 5, advisor: "no" }));
+	writeRun(fixture.out("claude", "vpk-fix-odd"), { start: NOW - 5 * MINUTE, end: NOW - 4 * MINUTE });
+	writeFile(path.join(fixture.out("claude", "vpk-fix-broken"), "task.json"), "{ not json");
+	writeRun(fixture.out("claude", "vpk-fix-broken"), { start: NOW - 5 * MINUTE, end: NOW - 4 * MINUTE });
 	const { runCommand } = fakeRunner(fixture);
-	const { tasks } = await collectStatus({ cwd: fixture.root, runCommand, env: {}, now: NOW });
-
-	const wide = renderTable(tasks, { width: 200, now: NOW }).split("\n");
-	assert.equal(wide.some((line) => line.includes("…")), false, "nothing truncated when it fits");
-
-	const narrow = renderTable(tasks, { width: 80, now: NOW }).split("\n");
-	assert.equal(narrow.every((line) => displayWidth(line) <= 80), true, narrow.join("\n"));
-	const goal = narrow.find((line) => line.startsWith("│   Add the"));
-	assert.equal(goal.includes("…"), true);
-	assert.equal(narrow.some((line) => line.includes("│ vpk-feat-alpha ")), true, "task names stay whole");
+	const stdout = captureStdout();
+	await main(["--markdown", "--all"], { stdout, env: {}, cwd: fixture.root, runCommand, now: NOW });
+	assert.match(stdout.text, /\| `vpk-fix-odd` \| /u);
+	assert.match(stdout.text, /\| `vpk-fix-broken` \| /u);
 });
 
-test("renderTable hides done tasks unless --all, and says so", async () => {
-	const fixture = fixtureCheckout();
-	const { runCommand } = fakeRunner(fixture);
-	const { tasks } = await collectStatus({ cwd: fixture.root, runCommand, env: {}, now: NOW });
-
-	const hidden = renderTable(tasks, { now: NOW });
-	assert.match(hidden.split("\n")[0], /2 active · 1 done hidden/u);
-	assert.equal(hidden.includes("vpk-research-gamma"), false);
-	const lines = hidden.split("\n");
-	assert.ok(lines.findIndex((line) => line.includes("vpk-fix-beta")) < lines.findIndex((line) => line.includes("vpk-feat-alpha")), "running sorts first");
-
-	const all = renderTable(tasks, { now: NOW, all: true });
-	assert.match(all.split("\n")[0], /2 active · 1 done(?! hidden)/u);
-	assert.equal(all.includes("vpk-research-gamma"), true);
-});
-
-test("renderTable with no tasks prints one line", () => {
-	assert.equal(renderTable([], { now: NOW }), "No vpk-remote tasks found.");
-});
-
-function captureStdout({ isTTY = false, columns } = {}) {
+function captureStdout() {
 	let text = "";
-	return { isTTY, columns, write: (chunk) => { text += chunk; }, get text() { return text; } };
+	return { write: (chunk) => { text += chunk; }, get text() { return text; } };
 }
 
-test("--json prints facts plus status and next action per task", async () => {
-	const fixture = fixtureCheckout();
+async function run(fixture, argv) {
 	const { runCommand } = fakeRunner(fixture);
 	const stdout = captureStdout();
-	await main(["--json"], { stdout, env: {}, cwd: fixture.root, runCommand, now: NOW });
-	const parsed = JSON.parse(stdout.text);
+	await main(argv, { stdout, env: {}, cwd: fixture.root, runCommand, now: NOW });
+	return stdout.text;
+}
+
+test("default output is the JSON facts, and --json prints the same", async () => {
+	const fixture = fixtureCheckout();
+	const text = await run(fixture, []);
+	assert.equal(await run(fixture, ["--json"]), text);
+	const parsed = JSON.parse(text);
 	assert.equal(parsed.mainCheckout, fixture.root);
-	assert.equal(parsed.gh, "ok");
+	assert.deepEqual(parsed.hidden, { e2e: 0, done: 1 });
 	const alpha = parsed.tasks.find((task) => task.name === "vpk-feat-alpha");
-	for (const key of ["name", "goal", "kind", "status", "nextAction", "createdAt", "git", "pr", "herdrOpen", "dirs"]) {
-		assert.equal(key in alpha, true, `task has ${key}`);
-	}
-	assert.deepEqual(Object.keys(alpha.git).sort(), ["ahead", "branch", "dirty", "localBranch", "worktree", "worktreeExists"]);
-	const run = alpha.dirs[0].runs[0];
-	assert.deepEqual([run.script, run.state, run.exitCode], ["run.sh", "exited", 0]);
-	assert.equal(alpha.dirs[0].report.path.endsWith(path.join("vpk-feat-alpha", "report.md")), true);
+	assert.deepEqual(Object.keys(alpha), [
+		"name", "goal", "kind", "status", "nextAction", "pr",
+		"branch", "localBranch", "worktree", "worktreeExists", "dirty", "ahead",
+		"createdAt", "age", "lastActivityAt", "idle", "herdrOpen", "runs", "reports",
+	]);
+	assert.deepEqual([alpha.branch, alpha.worktree, alpha.age, alpha.idle], ["vpk/feat-alpha", fixture.tree, "2h 10m", "1h 0m"]);
+	assert.deepEqual(alpha.runs[0], {
+		dir: "vpk-feat-alpha", lane: "claude", role: "worker", script: "run.sh", state: "exited", exitCode: 0,
+		startedAt: new Date(NOW - 120 * MINUTE).toISOString(), endedAt: new Date(NOW - 90 * MINUTE).toISOString(),
+	});
+	assert.deepEqual(alpha.reports.at(-1).verdict, "ship");
 });
 
-test("--task shows one task in detail, matched by any of its directory names", async () => {
+test("--all shows done tasks and e2e runs; without it they are counted as hidden", async () => {
 	const fixture = fixtureCheckout();
-	const { runCommand } = fakeRunner(fixture);
-	const stdout = captureStdout();
-	await main(["--task", "vpk-feat-alpha-review"], { stdout, env: {}, cwd: fixture.root, runCommand, now: NOW });
-	assert.match(stdout.text, /^vpk-feat-alpha · ready to ship/u);
-	assert.match(stdout.text, /gpt\/vpk-feat-alpha-review-2\/run\.sh {2}exit 0/u);
-	assert.match(stdout.text, /verdict: approve/u);
-	await assert.rejects(main(["--task", "vpk-fix-nope"], { stdout, env: {}, cwd: fixture.root, runCommand, now: NOW }), /no task named/u);
-});
-
-test("colour only on a TTY with NO_COLOR unset", async () => {
-	const fixture = fixtureCheckout();
-	const { runCommand } = fakeRunner(fixture);
-	const render = async (env, isTTY) => {
-		const stdout = captureStdout({ isTTY, columns: 140 });
-		await main([], { stdout, env, cwd: fixture.root, runCommand, now: NOW });
-		return stdout.text;
-	};
-	const escape = "\x1b[";
-	assert.equal((await render({}, true)).includes(escape), true);
-	assert.equal((await render({ NO_COLOR: "1" }, true)).includes(escape), false);
-	assert.equal((await render({}, false)).includes(escape), false);
-});
-
-test("table width: --width, then stdout.columns, then COLUMNS, then 120", async () => {
-	const fixture = fixtureCheckout();
-	const { runCommand } = fakeRunner(fixture);
-	const widthOf = async (argv, { columns, env = {} } = {}) => {
-		const stdout = captureStdout({ columns });
-		await main(argv, { stdout, env, cwd: fixture.root, runCommand, now: NOW });
-		return Math.max(...stdout.text.trimEnd().split("\n").map(displayWidth));
-	};
-	assert.equal(await widthOf(["--width", "70"], { columns: 90, env: { COLUMNS: "100" } }), 70);
-	assert.equal(await widthOf([], { columns: 90, env: { COLUMNS: "100" } }), 90);
-	assert.equal(await widthOf([], { env: { COLUMNS: "75" } }), 75);
-	assert.ok(await widthOf([]) <= 120);
-});
-
-test("--markdown and --json hide e2e runs unless --all", async () => {
-	const fixture = fixtureCheckout();
-	writeFile(path.join(fixture.root, "output", "remote-claude", "vpk-chore-e2e-ping", "run.sh"), "exit 0\n", NOW - 5 * MINUTE);
-	writeFile(path.join(fixture.root, "output", "remote-claude", "vpk-chore-e2e-ping", "run.sh.exit"), "1\n", NOW - 4 * MINUTE);
-	const { runCommand } = fakeRunner(fixture);
-	const run = async (argv) => {
-		const stdout = captureStdout();
-		await main(argv, { stdout, env: {}, cwd: fixture.root, runCommand, now: NOW });
-		return stdout.text;
-	};
-	const markdown = await run(["--markdown"]);
+	writeRun(fixture.out("claude", "vpk-chore-e2e-ping"), { start: NOW - 5 * MINUTE, end: NOW - 4 * MINUTE, exitCode: 1 });
+	const names = (text) => JSON.parse(text).tasks.map((task) => task.name).sort();
+	assert.deepEqual(names(await run(fixture, [])), ["vpk-feat-alpha", "vpk-fix-beta"]);
+	assert.deepEqual(JSON.parse(await run(fixture, [])).hidden, { e2e: 1, done: 1 });
+	assert.deepEqual(names(await run(fixture, ["--all"])), ["vpk-chore-e2e-ping", "vpk-feat-alpha", "vpk-fix-beta", "vpk-research-gamma"]);
+	const markdown = await run(fixture, ["--markdown"]);
 	assert.match(markdown, /^\| Task \| Status \| PR \| Next action \|\n/u);
 	assert.equal(markdown.includes("vpk-chore-e2e-ping"), false);
-	assert.equal(markdown.includes("`vpk-feat-alpha` — Add the alpha panel"), true);
-	assert.equal((await run(["--markdown", "--all"])).includes("vpk-chore-e2e-ping"), true);
-	assert.equal(JSON.parse(await run(["--json"])).tasks.some((task) => task.name === "vpk-chore-e2e-ping"), false);
-	assert.equal(JSON.parse(await run(["--json", "--all"])).tasks.some((task) => task.name === "vpk-chore-e2e-ping"), true);
+	assert.equal((await run(fixture, ["--markdown", "--all"])).includes("vpk-chore-e2e-ping"), true);
 });
 
-test("collectStatus with no task directories returns no tasks", async () => {
+test("--task picks one task by any of its directory names, done or not", async () => {
+	const fixture = fixtureCheckout();
+	const parsed = JSON.parse(await run(fixture, ["--task", "vpk-feat-alpha-review"]));
+	assert.deepEqual(parsed.tasks.map((task) => task.name), ["vpk-feat-alpha"]);
+	assert.equal(JSON.parse(await run(fixture, ["--task", "vpk-research-gamma"])).tasks[0].status, "done (read-only)");
+	assert.match(await run(fixture, ["--task", "vpk-fix-beta", "--markdown"]), /\| `vpk-fix-beta` \| running \|/u);
+	await assert.rejects(run(fixture, ["--task", "vpk-fix-nope"]), /no task named/u);
+});
+
+test("no task directories prints an empty task list", async () => {
 	const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "vpk-remote-status-empty-")));
 	const runCommand = async () => ({ ok: true, stdout: `worktree ${root}\nHEAD abc\nbranch refs/heads/main\n`, stderr: "" });
-	const stdout = captureStdout();
-	await main([], { stdout, env: {}, cwd: root, runCommand, now: NOW });
-	assert.equal(stdout.text, "No vpk-remote tasks found.\n");
+	const json = captureStdout();
+	await main([], { stdout: json, env: {}, cwd: root, runCommand, now: NOW });
+	assert.deepEqual(JSON.parse(json.text).tasks, []);
+	const markdown = captureStdout();
+	await main(["--markdown"], { stdout: markdown, env: {}, cwd: root, runCommand, now: NOW });
+	assert.equal(markdown.text, "No vpk-remote tasks found.\n");
 });

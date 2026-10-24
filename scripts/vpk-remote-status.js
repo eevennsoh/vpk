@@ -3,13 +3,17 @@
 // Lists every task dispatched through /vpk-remote with its status and next action.
 // Read-only: it never writes under output/, dispatches, or touches a worktree.
 //
-//   node scripts/vpk-remote-status.js [--all] [--json | --markdown] [--width <n>] [--task <name>]
+//   node scripts/vpk-remote-status.js [--all] [--json | --markdown] [--task <name>]
+//
+// Prints the facts as JSON by default (--json is an alias), or with --markdown a plain
+// GitHub table. It never lays text out for a terminal: the AI tool that shows the result
+// renders the table and wraps it to its own pane.
 //
 // Facts come from the main checkout's output/remote-{claude,gpt}/<name>/ directories
-// (task.json, run*.sh and their .exit files, report.md), git, `gh pr list`, `ps`, and
-// herdr when HERDR_ENV=1. A worker and its <name>-review[-n] advisor runs form one task.
-// Every external command goes through one runner with a timeout, so a slow or missing
-// tool degrades a column to "?" instead of failing the table.
+// (task.json, run*.sh and their .exit files, report.md), git, `gh`, `ps`, and herdr when
+// HERDR_ENV=1. A worker and its <name>-review[-n] advisor runs form one task, across both
+// lanes. Every external command goes through one runner with a timeout; one that fails
+// records "unknown", never a negative fact such as "no process" or "no commits".
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -19,22 +23,24 @@ const LANES = ["claude", "gpt"];
 const COMMAND_TIMEOUT_MS = 2000;
 // gh makes a network round trip (~1 s); the rest are local and take milliseconds.
 const GH_TIMEOUT_MS = 2500;
-const DEFAULT_WIDTH = 120;
 const EVENTS_TAIL_BYTES = 64 * 1024;
 
 // Statuses in display order; the first group is active work.
 const STATUS_ORDER = [
 	"running",
+	"unknown",
 	"stopped",
 	"not started",
 	"failed",
 	"blocked",
 	"needs fixes",
+	"review unclear",
 	"reviewing",
 	"needs review",
 	"no commits",
 	"ready to ship",
 	"PR open",
+	"PR closed",
 	"merged",
 	"done (read-only)",
 	"done",
@@ -42,24 +48,11 @@ const STATUS_ORDER = [
 const DONE_STATUSES = new Set(["done", "done (read-only)"]);
 // Throwaway end-to-end runs of the skill itself; --all shows them.
 const THROWAWAY_PREFIX = "vpk-chore-e2e-";
-
-const STATUS_COLOR = {
-	running: "yellow",
-	reviewing: "yellow",
-	"needs review": "yellow",
-	"PR open": "yellow",
-	"not started": "yellow",
-	"no commits": "yellow",
-	stopped: "red",
-	failed: "red",
-	blocked: "red",
-	"needs fixes": "red",
-	"ready to ship": "green",
-	merged: "green",
-	done: "dim",
-	"done (read-only)": "dim",
-};
-const ANSI = { red: "\x1b[31m", green: "\x1b[32m", yellow: "\x1b[33m", dim: "\x1b[2m", reset: "\x1b[0m" };
+const TASK_KINDS = ["worker", "review", "research"];
+const TASK_STRING_FIELDS = ["name", "goal", "type", "lane", "model", "effort", "createdAt"];
+// Longest first, so "ship with nits" is not read as "ship".
+const VERDICTS = ["ship with nits", "request changes", "ship"];
+const APPROVALS = new Set(["ship", "ship with nits"]);
 
 function createRunner({ timeoutMs = COMMAND_TIMEOUT_MS, env = process.env } = {}) {
 	return function runCommand(command, args, { cwd, timeoutMs: callTimeoutMs = timeoutMs } = {}) {
@@ -97,8 +90,10 @@ function groupKeyFor(dirName) {
 	return dirName.replace(/-review(?:-\d+)?$/u, "");
 }
 
-function isReviewDir(dirName) {
-	return groupKeyFor(dirName) !== dirName;
+// task.json's kind decides; a directory without one is a review only by its name.
+function roleFor(dirName, task) {
+	if (task?.kind) return task.kind === "review" ? "review" : "worker";
+	return groupKeyFor(dirName) === dirName ? "worker" : "review";
 }
 
 // vpk-<type>-<slug> → vpk/<type>-<slug>, per the skill's naming scheme.
@@ -107,10 +102,20 @@ function conventionalBranchFor(name) {
 	return match ? `vpk/${match[1]}` : null;
 }
 
-function kindFor(dirName, task) {
-	if (task?.kind) return task.kind;
-	if (isReviewDir(dirName)) return "review";
-	return /^vpk-(audit|research)-/u.test(dirName) ? "research" : "worker";
+// The planner writes task.json by hand. A field of the wrong type counts as missing;
+// branch and worktree keep an explicit null, which marks a read-only task.
+function sanitizeTask(raw) {
+	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+	const task = {};
+	for (const key of TASK_STRING_FIELDS) {
+		if (typeof raw[key] === "string") task[key] = raw[key];
+	}
+	for (const key of ["branch", "worktree"]) {
+		if ((typeof raw[key] === "string" && raw[key]) || raw[key] === null) task[key] = raw[key];
+	}
+	if (TASK_KINDS.includes(raw.kind)) task.kind = raw.kind;
+	if (typeof raw.advisor === "boolean") task.advisor = raw.advisor;
+	return task;
 }
 
 function sectionBody(markdown, heading) {
@@ -134,12 +139,17 @@ function parseBlockers(markdown) {
 		.filter((line) => line && !/^\**\s*(?:none|no blockers|n\/a)\b/iu.test(line) && !/^\[.*\]$/u.test(line));
 }
 
+// The review's last "Verdict: …" line, read as ship, ship with nits, or request changes.
+// Anything else, including no verdict line at all, is null: "review unclear", never approval.
 function parseVerdict(markdown) {
-	const text = markdown ?? "";
-	const stated = /verdict\W{0,6}(request(?:s|ed)? changes|approved?|lgtm|ship it)/iu.exec(text);
-	if (stated) return /request/iu.test(stated[1]) ? "request changes" : "approve";
-	if (/\brequest(?:s|ed|ing)? changes\b/iu.test(text)) return "request changes";
-	return null;
+	let verdict = null;
+	for (const line of (markdown ?? "").split("\n")) {
+		const match = /^[\s*_#>-]*verdict[\s*_]*[:—–-][\s*_]*(.*)$/iu.exec(line);
+		if (!match) continue;
+		const value = match[1].toLowerCase();
+		verdict = VERDICTS.find((name) => new RegExp(`^${name}(?:$|[\\s*_]*[.,;:(—–!-])`, "u").test(value.replace(/[\s*_]+$/u, ""))) ?? null;
+	}
+	return verdict;
 }
 
 // The worktree a legacy run script worked in: `cd "<path>"` (Claude lane) or `-C "<path>"` (GPT lane).
@@ -179,73 +189,101 @@ function pickPr(prs) {
 
 // ── Status derivation (pure) ──────────────────────────────────────────────────
 
-function latestRun(dir) {
-	return dir?.runs.at(-1) ?? null;
+// When a run finished, or when it started if it has not.
+function runTime(run) {
+	return run.endedAt ?? run.startedAt ?? 0;
 }
 
-function runTime(run) {
-	return run?.endedAt ?? run?.startedAt ?? 0;
+// Every run in these directories, oldest first. report.md belongs to its directory's
+// newest run, because each successful run overwrites it.
+function runsOf(dirs) {
+	return dirs
+		.flatMap((dir) => dir.runs.map((run, index) => ({ ...run, report: index === dir.runs.length - 1 ? dir.report : null })))
+		.sort((a, b) => runTime(a) - runTime(b));
 }
 
 function nextActionFor(status, pr) {
 	switch (status) {
 		case "running": return "wait; ask for status later";
+		case "unknown": return "re-run status";
 		case "stopped": return "check git status, re-dispatch";
 		case "not started": return "launch run.sh";
 		case "failed": return "read stderr.log, fix brief, re-dispatch";
 		case "blocked": return "resolve the report's blocker";
 		case "needs fixes": return "send a correction follow-up";
+		case "review unclear": return "read the review report";
 		case "reviewing": return "wait for the review";
 		case "needs review": return "run the advisor review";
 		case "no commits": return "check git status in the worktree";
 		case "ready to ship": return "/vpk-git-ship";
 		case "PR open": return `/vpk-git-ship --merge ${pr.number}`;
+		case "PR closed": return "reopen, or confirm abandoned and run /vpk-git-clean";
 		case "merged": return "/vpk-git-clean";
 		case "done (read-only)": return "read the report";
 		default: return "none";
 	}
 }
 
-// First match wins, in the order of the skill's status table.
 function deriveStatus(task) {
 	const status = deriveStatusName(task);
 	return { status, nextAction: nextActionFor(status, task.pr) };
 }
 
-function deriveStatusName({ kind, worker, reviews, git, pr, advisor }) {
-	const workerRun = latestRun(worker);
-	const reviewDir = [...reviews].sort((a, b) => runTime(latestRun(a)) - runTime(latestRun(b))).at(-1) ?? null;
-	const reviewRun = latestRun(reviewDir);
-	const latest = [workerRun, reviewRun].filter(Boolean);
+// A review's "## Blockers" block the worker's change, not the review: only worker
+// reports can mark a task blocked.
+function runOutcome(run, { reportBlocks = true } = {}) {
+	if (!run) return "not started";
+	if (run.state === "running" || run.state === "unknown" || run.state === "stopped") return run.state;
+	if (run.exitCode !== 0) return "failed";
+	return reportBlocks && run.report?.blockers.length ? "blocked" : null;
+}
 
-	if (workerRun?.state === "running" || (!worker && reviewRun?.state === "running")) return "running";
+// First match wins, in the order of the skill's status list.
+function deriveStatusName({ readOnly, advisor, workers, reviews, git, pr }) {
+	// Read-only work never ships, so no branch, PR, or review check applies to it.
+	if (readOnly) {
+		const own = workers.length > 0 ? workers : reviews;
+		return runOutcome(runsOf(own).at(-1), { reportBlocks: workers.length > 0 }) ?? "done (read-only)";
+	}
+
+	const workerRuns = runsOf(workers);
+	const workerRun = workerRuns.at(-1) ?? null;
+	// Runs in two lanes can overlap, so any live one counts, not just the latest.
+	if (workerRuns.some((run) => run.state === "running")) return "running";
+	if (workerRun?.state === "unknown") return "unknown";
 	// A merged PR settles the task; older failures and review verdicts are history.
 	if (pr?.state === "MERGED") return git.worktreeExists || git.localBranch ? "merged" : "done";
-	if (latest.some((run) => run.state === "stopped")) return "stopped";
-	if (latest.length === 0) return "not started";
-	const finished = latest.filter((run) => run.state === "exited").sort((a, b) => runTime(a) - runTime(b)).at(-1);
-	if (finished && finished.exitCode !== 0) return "failed";
-	if (worker?.report.blockers.length) return "blocked";
-	if (worker && reviewRun?.state === "running") return "reviewing";
+	// The worker's latest run decides on its own: a later review cannot mask its failure.
+	const outcome = runOutcome(workerRun);
+	if (outcome) return outcome;
 
-	const reviewFresh = Boolean(worker && reviewRun && runTime(reviewRun) > runTime(workerRun));
-	if (reviewFresh && reviewDir.report.verdict === "request changes") return "needs fixes";
-	const ahead = (git.ahead ?? 0) > 0;
-	const prOpen = pr?.state === "OPEN";
-	if (worker && workerRun?.exitCode === 0 && ahead && !reviewFresh && advisor !== false && !prOpen) return "needs review";
-	if (ahead && !prOpen) return "ready to ship";
-	if (prOpen) return "PR open";
+	const reviewRuns = runsOf(reviews);
+	if (reviewRuns.some((run) => run.state === "running")) return "reviewing";
+	// A review speaks for the worker's latest run only if it started after that run ended.
+	// A stopped or failed review reached no verdict.
+	const fresh = reviewRuns.filter((run) => (run.startedAt ?? 0) >= runTime(workerRun) && run.state !== "stopped");
+	if (fresh.some((run) => run.state === "unknown")) return "unknown";
+	const review = fresh.filter((run) => run.exitCode === 0).at(-1);
+	if (review?.report?.verdict === "request changes") return "needs fixes";
+	if (review && !APPROVALS.has(review.report?.verdict)) return "review unclear";
+	const approved = Boolean(review) || advisor === false;
+
+	// Past here every answer rests on git and the PR; a failed lookup proves nothing.
+	if (pr === "unknown" || git.localBranch === null || (git.localBranch && git.ahead === null)) return "unknown";
+	if (pr?.state === "OPEN") return "PR open";
+	if (pr?.state === "CLOSED") return "PR closed";
+	if (git.ahead > 0) return approved ? "ready to ship" : "needs review";
 	// A run whose worktree and branch are both gone was landed and cleaned, even when
 	// no PR can be matched to it (legacy runs predate the branch naming).
 	if (git.worktree && !git.worktreeExists && !git.localBranch) return "done";
-	if (kind === "research" || kind === "review" || !git.branch) return "done (read-only)";
+	if (!git.branch) return "done (read-only)";
 	return "no commits";
 }
 
 // ── Formatting (pure) ─────────────────────────────────────────────────────────
 
 function formatAge(ms) {
-	if (ms === null || ms === undefined || ms < 0) return "—";
+	if (ms === null || ms === undefined || ms < 0) return null;
 	const minutes = Math.floor(ms / 60000);
 	if (minutes < 1) return "<1m";
 	if (minutes < 60) return `${minutes}m`;
@@ -254,211 +292,37 @@ function formatAge(ms) {
 	return `${Math.floor(hours / 24)}d ${hours % 24}h`;
 }
 
-function formatClock(ms) {
-	const date = new Date(ms);
-	return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-}
-
 function prLabel(pr) {
 	if (pr === "unknown") return "?";
 	if (!pr) return "—";
 	return `#${pr.number} ${pr.state.toLowerCase()}`;
 }
 
-// Terminal cells a code point occupies: 0 for combining marks and joiners, 2 for East
-// Asian wide characters and emoji, 1 otherwise. Box-drawing characters, "—", and "…" are 1.
-function charWidth(codePoint) {
-	if (codePoint < 0x20 || (codePoint >= 0x300 && codePoint <= 0x36f) || codePoint === 0x200d || (codePoint >= 0xfe00 && codePoint <= 0xfe0f)) return 0;
-	const wide = (codePoint >= 0x1100 && codePoint <= 0x115f)
-		|| (codePoint >= 0x2e80 && codePoint <= 0xa4cf)
-		|| (codePoint >= 0xac00 && codePoint <= 0xd7a3)
-		|| (codePoint >= 0xf900 && codePoint <= 0xfaff)
-		|| (codePoint >= 0xfe30 && codePoint <= 0xfe4f)
-		|| (codePoint >= 0xff00 && codePoint <= 0xff60)
-		|| (codePoint >= 0xffe0 && codePoint <= 0xffe6)
-		|| (codePoint >= 0x1f300 && codePoint <= 0x1f64f)
-		|| (codePoint >= 0x1f900 && codePoint <= 0x1f9ff)
-		|| (codePoint >= 0x20000 && codePoint <= 0x3fffd);
-	return wide ? 2 : 1;
-}
-
-function displayWidth(text) {
-	let width = 0;
-	for (const char of text) width += charWidth(char.codePointAt(0));
-	return width;
-}
-
-function truncate(text, width) {
-	if (displayWidth(text) <= width) return text;
-	if (width <= 0) return "";
-	let kept = "";
-	let used = 0;
-	for (const char of text) {
-		const charCells = charWidth(char.codePointAt(0));
-		if (used + charCells > width - 1) break;
-		kept += char;
-		used += charCells;
-	}
-	return `${kept.trimEnd()}…`;
-}
-
-function padEnd(text, width) {
-	return text + " ".repeat(Math.max(width - displayWidth(text), 0));
-}
-
-function paint(text, color, enabled) {
-	return enabled && color ? `${ANSI[color]}${text}${ANSI.reset}` : text;
-}
-
-function sortTasks(tasks) {
-	return [...tasks].sort((a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || (b.createdAt ?? 0) - (a.createdAt ?? 0));
-}
-
-function headerCounts(tasks, { all }) {
-	const throwaway = all ? 0 : tasks.filter(isThrowaway).length;
-	const counted = all ? tasks : tasks.filter((task) => !isThrowaway(task));
-	const done = counted.filter((task) => DONE_STATUSES.has(task.status)).length;
-	const merged = counted.filter((task) => task.status === "merged").length;
-	const parts = [`${counted.length - done - merged} active`];
-	if (merged) parts.push(`${merged} merged`);
-	if (done) parts.push(all ? `${done} done` : `${done} done hidden`);
-	if (throwaway) parts.push(`${throwaway} e2e hidden`);
-	return parts.join(" · ");
-}
-
-const COLUMNS = [
-	{ key: "name", title: "Task", min: 16 },
-	{ key: "status", title: "Status" },
-	{ key: "age", title: "Age" },
-	{ key: "pr", title: "PR" },
-	{ key: "next", title: "Next action", min: 12 },
-];
-const GOAL_INDENT = "  ";
-// Narrower than this, the Age column goes first.
-const AGE_MIN_WIDTH = 60;
-// Four one-cell columns and their borders; narrower terminals get plain lines.
-const MIN_WIDTH = 17;
-
 function isThrowaway(task) {
 	return task.name.startsWith(THROWAWAY_PREFIX);
 }
 
+function sortTasks(tasks) {
+	return [...tasks].sort((a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status)
+		|| (Date.parse(b.createdAt ?? "") || 0) - (Date.parse(a.createdAt ?? "") || 0));
+}
+
+// Done tasks and e2e runs show only with --all.
 function visibleTasks(tasks, all) {
 	return sortTasks(tasks.filter((task) => all || (!DONE_STATUSES.has(task.status) && !isThrowaway(task))));
 }
 
-// Natural column widths, then shrink until the table fits `width`: goal lines first
-// (the Task column narrows to its longest name), then Next action, then task names, each
-// down to its minimum. Status and PR give up width only when nothing else can.
-function fitColumns(rows, width) {
-	const fit = (columns) => {
-		const widths = Object.fromEntries(columns.map((column) => [column.key, Math.max(displayWidth(column.title), ...rows.map((row) => displayWidth(row[column.key])))]));
-		const longestName = widths.name;
-		widths.name = Math.max(longestName, ...rows.map((row) => (row.goal ? displayWidth(GOAL_INDENT + row.goal) : 0)));
-		const total = () => columns.reduce((sum, column) => sum + widths[column.key] + 3, 1);
-		const shrink = (key, floor) => {
-			widths[key] -= Math.min(Math.max(widths[key] - floor, 0), Math.max(total() - width, 0));
-		};
-		shrink("name", longestName);
-		shrink("next", COLUMNS.find((column) => column.key === "next").min);
-		shrink("name", COLUMNS.find((column) => column.key === "name").min);
-		return { columns, widths, total, shrink };
-	};
-	const withoutAge = COLUMNS.filter((column) => column.key !== "age");
-	let layout = fit(width < AGE_MIN_WIDTH ? withoutAge : COLUMNS);
-	if (layout.total() > width && layout.columns.length === COLUMNS.length) layout = fit(withoutAge);
-	// Past every soft minimum: names and actions keep three cells, then Status and PR give.
-	for (const [key, floor] of [["next", 3], ["name", 3], ["status", 1], ["pr", 1], ["next", 1], ["name", 1]]) layout.shrink(key, floor);
-	return { columns: layout.columns, widths: layout.widths, total: layout.total() };
-}
-
-function renderTable(tasks, { width = DEFAULT_WIDTH, color = false, now = Date.now(), all = false } = {}) {
-	const header = `vpk-remote tasks · ${headerCounts(tasks, { all })}`;
-	const visible = visibleTasks(tasks, all);
-	if (tasks.length === 0) return truncate("No vpk-remote tasks found.", width);
-	if (visible.length === 0) return truncate(`${header} · nothing active (--all shows them)`, width);
-	if (width < MIN_WIDTH) return visible.map((task) => truncate(`${task.name} ${task.status}`, width)).join("\n");
-
-	const rows = visible.map((task) => ({
-		name: task.name,
-		status: task.status,
-		age: formatAge(task.createdAt ? now - task.createdAt : null),
-		pr: prLabel(task.pr),
-		next: task.nextAction,
-		goal: task.goal,
-	}));
-	const { columns, widths, total } = fitColumns(rows, width);
-
-	const rule = (left, mid, right) => `${left}${columns.map((column) => "─".repeat(widths[column.key] + 2)).join(mid)}${right}`;
-	const cells = (values, colorFor = () => null) => `│ ${columns.map((column) => {
-		const text = truncate(values[column.key] ?? "", widths[column.key]);
-		return paint(text, colorFor(column.key), color) + " ".repeat(widths[column.key] - displayWidth(text));
-	}).join(" │ ")} │`;
-
-	const clock = formatClock(now);
-	const title = truncate(header, total - clock.length - 1);
-	const lines = [`${padEnd(title, total - clock.length)}${clock}`];
-	lines.push(rule("┌", "┬", "┐"));
-	lines.push(cells(Object.fromEntries(columns.map((column) => [column.key, column.title]))));
-	lines.push(rule("├", "┼", "┤"));
-	for (const row of rows) {
-		lines.push(cells(row, (key) => (key === "status" ? STATUS_COLOR[row.status] : null)));
-		// The goal is a second line of the Task cell; the other cells stay empty under it.
-		if (row.goal) lines.push(cells({ name: GOAL_INDENT + row.goal }, (key) => (key === "name" ? "dim" : null)));
+// A plain GitHub table: Task (goal in the same cell), Status, PR, Next action. The tool
+// showing it renders and wraps it, so cells are neither padded nor cut.
+function renderMarkdown(tasks, { hidden = 0 } = {}) {
+	if (tasks.length === 0) {
+		return hidden ? `No active vpk-remote tasks; ${hidden} done or e2e hidden (--all shows them).` : "No vpk-remote tasks found.";
 	}
-	lines.push(rule("└", "┴", "┘"));
-	return lines.join("\n");
-}
-
-// The table the planner shows in chat: Task (goal in the same cell), Status, PR, Next action.
-function renderMarkdown(tasks, { all = false } = {}) {
-	const visible = visibleTasks(tasks, all);
-	if (tasks.length === 0) return "No vpk-remote tasks found.";
-	if (visible.length === 0) return `Nothing active; ${headerCounts(tasks, { all })} (--all shows them).`;
-	const cell = (text) => text.replace(/\s*\n\s*/gu, " ").replace(/\|/gu, "\\|");
+	const cell = (text) => String(text).replace(/\s*[\r\n]+\s*/gu, " ").replace(/\|/gu, "\\|");
 	const lines = ["| Task | Status | PR | Next action |", "| --- | --- | --- | --- |"];
-	for (const task of visible) {
-		const name = task.goal ? `\`${task.name}\` — ${cell(task.goal)}` : `\`${task.name}\``;
+	for (const task of tasks) {
+		const name = task.goal ? `\`${cell(task.name)}\` — ${cell(task.goal)}` : `\`${cell(task.name)}\``;
 		lines.push(`| ${name} | ${task.status} | ${prLabel(task.pr)} | ${cell(task.nextAction)} |`);
-	}
-	return lines.join("\n");
-}
-
-function renderDetail(task, { color = false, now = Date.now() } = {}) {
-	const time = (ms) => (ms ? formatClock(ms) : "—");
-	const git = task.git;
-	const branch = git.branch
-		? `${git.branch}${git.localBranch ? "" : " (no local branch)"}${git.ahead === null ? "" : ` · ${git.ahead} ahead of origin/main`}`
-		: "—";
-	const worktree = git.worktree
-		? `${git.worktree} (${git.worktreeExists ? (git.dirty ? "uncommitted changes" : git.dirty === false ? "clean" : "exists") : "missing"})`
-		: "—";
-	const pr = task.pr === "unknown" ? "? (gh failed)" : task.pr ? `#${task.pr.number} ${task.pr.state.toLowerCase()} ${task.pr.url}` : "—";
-	const lines = [
-		`${task.name} · ${paint(task.status, STATUS_COLOR[task.status], color)}`,
-		`  Goal      ${task.goal || "—"}`,
-		`  Kind      ${task.kind}`,
-		`  Next      ${task.nextAction}`,
-		`  Age       ${formatAge(task.createdAt ? now - task.createdAt : null)}`,
-		`  Branch    ${branch}`,
-		`  Worktree  ${worktree}`,
-		`  PR        ${pr}`,
-	];
-	if (task.herdrOpen !== null) lines.push(`  herdr     ${task.herdrOpen ? "open" : "not open"}`);
-	lines.push("  Runs");
-	for (const dir of task.dirs) {
-		for (const run of dir.runs) {
-			const outcome = run.state === "exited" ? `exit ${run.exitCode}${run.inferred ? " (inferred)" : ""}` : run.state;
-			lines.push(`    ${dir.lane}/${dir.name}/${run.script}  ${outcome}  started ${time(run.startedAt)}  ended ${time(run.endedAt)}`);
-		}
-		if (dir.runs.length === 0) lines.push(`    ${dir.lane}/${dir.name}  no runs`);
-	}
-	lines.push("  Reports");
-	for (const dir of task.dirs) {
-		const notes = [dir.report.nonEmpty ? "written" : "empty or missing"];
-		if (dir.report.verdict) notes.push(`verdict: ${dir.report.verdict}`);
-		if (dir.role === "worker" && dir.report.blockers.length) notes.push(`blockers: ${dir.report.blockers.join("; ")}`);
-		lines.push(`    ${dir.report.path} (${notes.join(", ")})`);
 	}
 	return lines.join("\n");
 }
@@ -491,6 +355,10 @@ function readJson(file) {
 	}
 }
 
+function isoOrNull(ms) {
+	return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+}
+
 // Whether the final stream-json event in an events file is an error result.
 function eventsEndInError(file) {
 	let fd;
@@ -515,6 +383,8 @@ function eventsEndInError(file) {
 function readTaskDir(dirPath, lane, name) {
 	const reportPath = path.join(dirPath, "report.md");
 	const reportText = readText(reportPath) ?? "";
+	const task = sanitizeTask(readJson(path.join(dirPath, "task.json")));
+	const role = roleFor(name, task);
 	const runs = fs.readdirSync(dirPath)
 		.map((file) => ({ file, index: runIndexFor(file) }))
 		.filter(({ index }) => index !== null)
@@ -530,16 +400,15 @@ function readTaskDir(dirPath, lane, name) {
 				exitCode,
 				startedAt: statMs(scriptPath),
 				endedAt: exitCode === null ? null : statMs(`${scriptPath}.exit`),
-				worktreeHint: index === 0 ? worktreeFromRunScript(readText(scriptPath) ?? "") : null,
 			};
 		});
-	const task = readJson(path.join(dirPath, "task.json"));
 	return {
 		name,
 		lane,
 		path: dirPath,
-		role: isReviewDir(name) ? "review" : "worker",
+		role,
 		task,
+		worktreeHint: runs[0] ? worktreeFromRunScript(readText(runs[0].scriptPath) ?? "") : null,
 		createdAt: Date.parse(task?.createdAt ?? "") || statMs(path.join(dirPath, "brief.md")) || runs[0]?.startedAt || statMs(dirPath),
 		runs,
 		report: {
@@ -547,7 +416,7 @@ function readTaskDir(dirPath, lane, name) {
 			nonEmpty: reportText.trim().length > 0,
 			mtime: statMs(reportPath),
 			blockers: parseBlockers(reportText),
-			verdict: isReviewDir(name) ? parseVerdict(reportText) : null,
+			verdict: role === "review" ? parseVerdict(reportText) : null,
 		},
 	};
 }
@@ -555,15 +424,15 @@ function readTaskDir(dirPath, lane, name) {
 // A run with no exit file is running while its process lives. Without one, a report
 // written after the run started (the formatter only writes on success) means it exited 0,
 // and a final error result in its events file means it failed: runs from before the
-// wrapper wrote exit files still read correctly. Anything else died without reporting.
+// wrapper wrote exit files still read correctly. Anything else died without reporting,
+// unless `ps` failed (processes is null), in which case nobody can tell.
 function resolveRunStates(dir, processes) {
 	dir.runs.forEach((run, position) => {
-		delete run.worktreeHint;
 		if (run.exitCode !== null) {
 			run.state = "exited";
 			return;
 		}
-		if (runIsAlive(run.scriptPath, dir.path, processes)) {
+		if (processes && runIsAlive(run.scriptPath, dir.path, processes)) {
 			run.state = "running";
 			return;
 		}
@@ -574,7 +443,7 @@ function resolveRunStates(dir, processes) {
 		} else if (isLatest && eventsEndInError(fs.existsSync(eventsFile) ? eventsFile : path.join(dir.path, "events.jsonl"))) {
 			Object.assign(run, { state: "exited", exitCode: 1, inferred: true, endedAt: statMs(eventsFile) });
 		} else {
-			run.state = "stopped";
+			run.state = processes ? "stopped" : "unknown";
 		}
 	});
 	return dir;
@@ -607,7 +476,7 @@ async function resolveMainCheckout(runCommand, cwd) {
 
 // One GraphQL round trip for every branch, matched on headRefName exactly. `gh pr list
 // --head` takes one branch per call, and listing every PR in the repo is slower than
-// this whole script's budget. Returns null when gh fails, so the PR column shows "?".
+// this whole script's budget. Returns null when gh fails, so the PR reads "unknown".
 async function fetchPullRequests(runCommand, cwd, branches) {
 	if (branches.length === 0) return new Map();
 	const vars = branches.map((_, index) => `$b${index}:String!`).join(",");
@@ -642,60 +511,56 @@ async function herdrLabels(runCommand, env) {
 	return workspaces.ok || tabs.ok ? labels : null;
 }
 
-// A worker and its <name>-review[-n] advisors share a name. Runs from before the naming
-// scheme (ui-generation-visual-worker-1 beside vpk-feat-ui-generation-review) do not, but
-// their run scripts cd into the same worktree, so groups sharing one merge, under the name
-// that follows the scheme. The main checkout is no tie: read-only runs all start there.
-function groupTaskDirs(dirs, mainCheckout) {
+// One task per name. A worker directory joins its <name>-review[-n] advisors, and the same
+// name in both lanes (a re-dispatch on the other family) merges into one task.
+function groupTaskDirs(dirs) {
 	const byKey = new Map();
 	for (const dir of dirs) {
-		const key = groupKeyFor(dir.name);
-		if (!byKey.has(key)) byKey.set(key, { key, worker: null, reviews: [], related: [] });
-		const group = byKey.get(key);
-		if (dir.role === "review") group.reviews.push(dir);
-		else group.worker = dir;
+		const key = dir.role === "review" ? groupKeyFor(dir.name) : dir.name;
+		if (!byKey.has(key)) byKey.set(key, { key, workers: [], reviews: [] });
+		byKey.get(key)[dir.role === "review" ? "reviews" : "workers"].push(dir);
 	}
-	const byWorktree = new Map();
-	const groups = [];
-	for (const group of byKey.values()) {
-		const members = [group.worker, ...group.reviews].filter(Boolean);
-		const hint = members.some((dir) => dir.task) ? null : members.map((dir) => dir.runs[0]?.worktreeHint).find(Boolean);
-		const owner = hint && hint !== mainCheckout ? byWorktree.get(hint) : null;
-		if (!owner) {
-			if (hint && hint !== mainCheckout) byWorktree.set(hint, group);
-			groups.push(group);
-			continue;
-		}
-		if (!owner.worker && group.worker) [owner.worker, group.worker] = [group.worker, owner.worker];
-		owner.reviews.push(...group.reviews);
-		owner.related.push(...[group.worker].filter(Boolean));
-		if (!conventionalBranchFor(owner.key) && conventionalBranchFor(group.key)) owner.key = group.key;
-	}
-	return groups;
+	return [...byKey.values()];
+}
+
+function kindFor(group) {
+	const worker = group.workers.find((dir) => dir.task?.kind) ?? group.workers[0];
+	if (!worker) return "review";
+	if (worker.task?.kind) return worker.task.kind;
+	return /^vpk-(audit|research)-/u.test(worker.name) ? "research" : "worker";
+}
+
+function newestFirst(dirs) {
+	return [...dirs].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+}
+
+// The worktree, branch candidate, and kind of one task, before any git or gh call.
+function planTask(group, { mainCheckout, worktreeByPath }) {
+	const dirs = [...group.workers, ...group.reviews];
+	const record = newestFirst(group.workers).find((dir) => dir.task)?.task ?? newestFirst(group.reviews).find((dir) => dir.task)?.task ?? null;
+	const kind = kindFor(group);
+	const readOnly = kind === "research" || kind === "review" || (record?.branch === null && record?.worktree === null);
+	const worktreeHint = dirs.map((dir) => dir.worktreeHint).find(Boolean) ?? null;
+	let worktreePath = null;
+	if (typeof record?.worktree === "string") worktreePath = path.resolve(mainCheckout, record.worktree);
+	else if (record?.worktree !== null) worktreePath = worktreeHint ?? path.join(mainCheckout, ".claude", "worktrees", group.key);
+	const tree = worktreePath ? worktreeByPath.get(worktreePath) : undefined;
+	// The branch checked out in the worktree wins, so a rename after dispatch is followed;
+	// task.json's branch stands in once the worktree is gone (or its HEAD is detached).
+	const named = tree?.branch ?? record?.branch ?? null;
+	const candidate = named ?? conventionalBranchFor(group.key);
+	return { group, dirs, record, kind, readOnly, worktreeHint, worktreePath, tree, named, candidate };
 }
 
 async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(), env = process.env, now = Date.now() } = {}) {
 	const { mainCheckout, worktrees } = await resolveMainCheckout(runCommand, cwd);
 	const dirs = listTaskDirs(mainCheckout).map((dir) => readTaskDir(dir.path, dir.lane, dir.name));
-	const base = { generatedAt: new Date(now).toISOString(), mainCheckout, gh: "skipped", tasks: [] };
+	const base = { generatedAt: new Date(now).toISOString(), mainCheckout, observations: { ps: "skipped", branches: "skipped", gh: "skipped" }, tasks: [] };
 	if (dirs.length === 0) return base;
 
-	const groups = groupTaskDirs(dirs, mainCheckout);
-
 	const worktreeByPath = new Map(worktrees.map((tree) => [tree.path, tree]));
-	const plans = groups.map((group) => {
-		const all = [group.worker, ...group.reviews, ...group.related].filter(Boolean);
-		const record = group.worker?.task ?? group.reviews.find((dir) => dir.task)?.task ?? null;
-		const worktreeHint = all.map((dir) => dir.runs[0]?.worktreeHint).find(Boolean) ?? null;
-		const worktreePath = record?.worktree
-			? path.resolve(mainCheckout, record.worktree)
-			: worktreeHint ?? path.join(mainCheckout, ".claude", "worktrees", group.key);
-		const tree = worktreeByPath.get(worktreePath);
-		const candidate = record?.branch ?? tree?.branch ?? conventionalBranchFor(group.key)
-			?? all.map((dir) => conventionalBranchFor(groupKeyFor(dir.name))).find(Boolean) ?? null;
-		return { group, all, record, worktreeHint, worktreePath, tree, candidate };
-	});
-	const candidates = [...new Set(plans.map((plan) => plan.candidate).filter(Boolean))];
+	const plans = groupTaskDirs(dirs).map((group) => planTask(group, { mainCheckout, worktreeByPath }));
+	const candidates = [...new Set(plans.filter((plan) => !plan.readOnly).map((plan) => plan.candidate).filter(Boolean))];
 
 	const [branchList, processList, prs, labels] = await Promise.all([
 		runCommand("git", ["for-each-ref", "--format=%(refname:short)", "refs/heads"], { cwd: mainCheckout }),
@@ -703,57 +568,71 @@ async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(),
 		fetchPullRequests(runCommand, mainCheckout, candidates),
 		herdrLabels(runCommand, env),
 	]);
-	const localBranches = new Set(branchList.ok ? branchList.stdout.split("\n").filter(Boolean) : []);
-	const processes = parseProcessList(processList.stdout).filter((proc) => proc.pid !== process.pid);
-	base.gh = prs ? "ok" : "failed";
+	// null means the lookup failed: unknown, not empty.
+	const localBranches = branchList.ok ? new Set(branchList.stdout.split("\n").filter(Boolean)) : null;
+	const processes = processList.ok ? parseProcessList(processList.stdout).filter((proc) => proc.pid !== process.pid) : null;
+	base.observations = { ps: processes ? "ok" : "failed", branches: localBranches ? "ok" : "failed", gh: candidates.length === 0 ? "skipped" : prs ? "ok" : "failed" };
 	const prsFor = (branch) => prs?.get(branch) ?? [];
 
-	const tasks = await Promise.all(plans.map(async ({ group, all, record, worktreeHint, worktreePath, tree, candidate }) => {
-		for (const dir of all) resolveRunStates(dir, processes);
-		// task.json and git name the branch outright; the conventional name only counts
-		// once something proves it existed.
-		const branch = record?.branch ?? tree?.branch
-			?? (candidate && (localBranches.has(candidate) || prsFor(candidate).length) ? candidate : null);
+	const tasks = await Promise.all(plans.map(async ({ group, dirs: taskDirs, record, kind, readOnly, worktreeHint, worktreePath, tree, named, candidate }) => {
+		for (const dir of taskDirs) resolveRunStates(dir, processes);
+		// The conventional name only counts once something proves it existed.
+		const proven = candidate && (!localBranches || localBranches.has(candidate) || prsFor(candidate).length > 0);
+		const branch = readOnly ? null : named ?? (proven ? candidate : null);
+		const localBranch = !branch ? false : localBranches ? localBranches.has(branch) : null;
 
 		const [ahead, status] = await Promise.all([
-			branch && localBranches.has(branch)
-				? runCommand("git", ["rev-list", "--count", `origin/main..refs/heads/${branch}`], { cwd: mainCheckout })
-				: null,
+			localBranch ? runCommand("git", ["rev-list", "--count", `origin/main..refs/heads/${branch}`], { cwd: mainCheckout }) : null,
 			tree ? runCommand("git", ["-C", tree.path, "status", "--porcelain"]) : null,
 		]);
 		const git = {
 			branch,
-			localBranch: Boolean(branch && localBranches.has(branch)),
-			worktree: record?.worktree || tree || worktreeHint ? worktreePath : null,
+			localBranch,
+			worktree: worktreePath && (typeof record?.worktree === "string" || tree || worktreeHint) ? worktreePath : null,
 			worktreeExists: Boolean(tree),
 			dirty: status?.ok ? status.stdout.trim().length > 0 : null,
 			ahead: ahead?.ok ? Number.parseInt(ahead.stdout.trim(), 10) : null,
 		};
 		const pr = !branch ? null : prs ? pickPr(prsFor(branch)) : "unknown";
-		const kind = group.worker ? kindFor(group.worker.name, group.worker.task) : kindFor(group.reviews[0].name, record);
-		const facts = {
+		const { status: derived, nextAction } = deriveStatus({ readOnly, advisor: record?.advisor, workers: group.workers, reviews: group.reviews, git, pr });
+
+		const runs = runsOf(taskDirs).map((run) => {
+			const dir = taskDirs.find((candidateDir) => run.scriptPath.startsWith(`${candidateDir.path}/`));
+			return {
+				dir: dir.name,
+				lane: dir.lane,
+				role: dir.role,
+				script: run.script,
+				state: run.state,
+				exitCode: run.exitCode,
+				...(run.inferred ? { inferred: true } : {}),
+				startedAt: isoOrNull(run.startedAt),
+				endedAt: isoOrNull(run.endedAt),
+			};
+		});
+		const createdAt = Math.min(...taskDirs.map((dir) => dir.createdAt).filter(Number.isFinite));
+		const lastActivity = Math.max(...runsOf(taskDirs).map(runTime));
+		return {
 			name: group.key,
 			goal: record?.goal ?? "",
 			kind,
-			advisor: record?.advisor,
-			createdAt: Math.min(...all.map((dir) => dir.createdAt).filter(Boolean)),
-			worker: group.worker,
-			reviews: group.reviews,
-			git,
-			pr,
-		};
-		const { status: derived, nextAction } = deriveStatus(facts);
-		return {
-			name: facts.name,
-			goal: facts.goal,
-			kind,
 			status: derived,
 			nextAction,
-			createdAt: Number.isFinite(facts.createdAt) ? facts.createdAt : null,
-			git,
-			pr,
-			herdrOpen: labels ? all.some((dir) => labels.has(dir.name)) || labels.has(group.key) : null,
-			dirs: all.map(({ task, ...dir }) => dir),
+			pr: pr && pr !== "unknown" ? { number: pr.number, state: pr.state, url: pr.url } : pr,
+			...git,
+			createdAt: isoOrNull(createdAt),
+			age: Number.isFinite(createdAt) ? formatAge(now - createdAt) : null,
+			lastActivityAt: lastActivity > 0 ? isoOrNull(lastActivity) : null,
+			idle: lastActivity > 0 ? formatAge(now - lastActivity) : null,
+			herdrOpen: labels ? taskDirs.some((dir) => labels.has(dir.name)) || labels.has(group.key) : null,
+			runs,
+			reports: taskDirs.map((dir) => ({
+				dir: dir.name,
+				path: dir.report.path,
+				written: dir.report.nonEmpty,
+				verdict: dir.report.verdict,
+				blockers: dir.report.blockers,
+			})),
 		};
 	}));
 	base.tasks = sortTasks(tasks);
@@ -761,18 +640,13 @@ async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(),
 }
 
 function parseArgs(argv) {
-	const options = { all: false, json: false, markdown: false, task: null, width: null };
+	const options = { all: false, markdown: false, task: null };
 	for (let index = 0; index < argv.length; index += 1) {
 		const flag = argv[index];
 		switch (flag) {
 			case "--all": options.all = true; break;
-			case "--json": options.json = true; break;
+			case "--json": options.markdown = false; break;
 			case "--markdown": options.markdown = true; break;
-			case "--width":
-				options.width = Number.parseInt(argv[index + 1], 10);
-				if (!Number.isInteger(options.width) || options.width <= 0) throw new Error("--width needs a positive number");
-				index += 1;
-				break;
 			case "--task":
 				options.task = argv[index + 1];
 				if (!options.task) throw new Error("--task needs a name");
@@ -787,34 +661,32 @@ function parseArgs(argv) {
 }
 
 function findTask(tasks, name) {
-	return tasks.find((task) => task.name === name || task.dirs.some((dir) => dir.name === name)) ?? null;
+	return tasks.find((task) => task.name === name || task.reports.some((report) => report.dir === name)) ?? null;
 }
 
 async function main(argv = process.argv.slice(2), { stdout = process.stdout, env = process.env, cwd, runCommand, now = Date.now() } = {}) {
 	const options = parseArgs(argv);
 	if (options.help) {
-		stdout.write("usage: vpk-remote-status.js [--all] [--json | --markdown] [--width <n>] [--task <name>]\n");
+		stdout.write("usage: vpk-remote-status.js [--all] [--json | --markdown] [--task <name>]\n");
 		return 0;
 	}
-	const result = await collectStatus({ cwd, runCommand, env, now });
-	const color = Boolean(stdout.isTTY) && !env.NO_COLOR;
+	const { tasks: allTasks, ...result } = await collectStatus({ cwd, runCommand, env, now });
+	let tasks;
 	if (options.task) {
-		const task = findTask(result.tasks, options.task);
+		const task = findTask(allTasks, options.task);
 		if (!task) throw new Error(`no task named ${options.task}`);
-		stdout.write(`${options.json ? JSON.stringify(task, null, "\t") : renderDetail(task, { color, now })}\n`);
-		return 0;
+		tasks = [task];
+	} else {
+		tasks = visibleTasks(allTasks, options.all);
 	}
-	if (options.json) {
-		const tasks = options.all ? result.tasks : result.tasks.filter((task) => !isThrowaway(task));
-		stdout.write(`${JSON.stringify({ ...result, tasks }, null, "\t")}\n`);
-		return 0;
-	}
+	const shown = new Set(tasks);
+	const unshown = allTasks.filter((task) => !shown.has(task));
+	const hidden = { e2e: unshown.filter(isThrowaway).length, done: unshown.filter((task) => !isThrowaway(task) && DONE_STATUSES.has(task.status)).length };
 	if (options.markdown) {
-		stdout.write(`${renderMarkdown(result.tasks, { all: options.all })}\n`);
+		stdout.write(`${renderMarkdown(tasks, { hidden: options.task ? 0 : hidden.e2e + hidden.done })}\n`);
 		return 0;
 	}
-	const width = options.width ?? (stdout.columns || Number.parseInt(env.COLUMNS ?? "", 10) || DEFAULT_WIDTH);
-	stdout.write(`${renderTable(result.tasks, { width, color, now, all: options.all })}\n`);
+	stdout.write(`${JSON.stringify({ ...result, hidden: options.task ? undefined : hidden, tasks }, null, "\t")}\n`);
 	return 0;
 }
 
@@ -834,10 +706,8 @@ module.exports = {
 	conventionalBranchFor,
 	createRunner,
 	deriveStatus,
-	displayWidth,
 	formatAge,
 	groupKeyFor,
-	kindFor,
 	main,
 	parseArgs,
 	parseBlockers,
@@ -845,10 +715,10 @@ module.exports = {
 	parseVerdict,
 	parseWorktreeList,
 	pickPr,
-	renderDetail,
 	renderMarkdown,
-	renderTable,
+	roleFor,
 	runIndexFor,
 	runIsAlive,
+	sanitizeTask,
 	worktreeFromRunScript,
 };

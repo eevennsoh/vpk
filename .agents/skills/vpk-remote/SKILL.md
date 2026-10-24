@@ -361,7 +361,9 @@ dirty tree it will silently fold into its diff.
    `kind` is `worker`, `review` (an advisor on a worker; its name ends in
    `-review`), or `research` (read-only; `branch` and `worktree` are `null`).
    Add `"advisor": false` under `--no-advisor`, so status does not ask for a
-   review that was skipped on purpose.
+   review that was skipped on purpose. An advisor's report ends with one line,
+   `Verdict: ship`, `Verdict: ship with nits`, or `Verdict: request changes`;
+   status reads any other line, or none, as `review unclear`.
 4. **Dispatch** via background Bash (Codex planner: foreground; see *Codex as
    the planner*) using the lane's canonical command:
    [references/gpt-executor.md](references/gpt-executor.md) or
@@ -563,33 +565,46 @@ task status ("what's the status of my tasks", "what's running") run, from the
 main checkout:
 
 ```bash
-node scripts/vpk-remote-status.js --markdown        # --status
-node scripts/vpk-remote-status.js --markdown --all  # --status --all: include done tasks and e2e runs
-node scripts/vpk-remote-status.js --task <name>     # --status <name>: every run, report, branch, PR
+node scripts/vpk-remote-status.js                   # --status: JSON facts for active tasks
+node scripts/vpk-remote-status.js --all             # --status --all: include done tasks and e2e runs
+node scripts/vpk-remote-status.js --task <name>     # --status <name>: one task, every run and report
+node scripts/vpk-remote-status.js --markdown        # ready-made rows, if the planner wants them
 ```
 
-In chat, paste the `--markdown` output as is: a markdown table of Task (goal in
-the same cell), Status, PR, and Next action. Do not build the table by hand.
-Follow it with at most two sentences on what needs attention, using `--json`
-for any fact the table leaves out. Status is read-only: it never dispatches,
-moves the conversation, or runs preflight. When the planner needs the facts
-for its own decisions, it runs `--json` instead.
+The script prints facts, not a layout: per task `name`, `goal`, `status`,
+`nextAction`, `pr`, `branch`, `worktree`, ages, `runs`, and `reports` (`--json`
+is an accepted alias). Present them **as a markdown table in your own
+response**: Task (with the goal in the same cell), Status, PR, Next action.
+Never put the table in a code block or as preformatted text. Follow it with at
+most two sentences on what needs attention. This works the same in any planner,
+whether Claude Code, Codex, Cursor or another tool: each renders a markdown
+table and wraps it to its own pane, which is why the script does not lay text
+out itself. `--markdown` prints the same four columns as a plain GitHub table,
+with `|` and newlines escaped. Status is read-only: it never dispatches, moves
+the conversation, or runs preflight. Tasks named `vpk-chore-e2e-*` are
+throwaway test runs of this skill and show only with `--all`.
 
-Run with no format flag, the script prints a box table for a terminal: the
-goal sits on a second line of the Task cell, and columns shrink to fit
-`--width <n>`, else the terminal, else `COLUMNS`, else 120 (the Age column goes
-below 60). Tasks named `vpk-chore-e2e-*` are throwaway test runs of this skill
-and show only with `--all`.
+The script reads every `output/remote-<lane>/<name>/` directory. Both lanes
+share one task per name, and a worker joins its `-review` advisors
+(`task.json` `kind` decides when present). It derives one status from the run
+exit files, the report's `## Blockers`, the review's `Verdict:` line, git, the
+PR, and live `claude -p` / `codex exec` processes:
 
-The script reads every `output/remote-<lane>/<name>/` directory, joins a
-worker with its `-review` advisors into one row, and derives one status from
-the run exit files, the report's `## Blockers`, the review verdict, git, the
-PR, and live `claude -p` / `codex exec` processes: `running`, `stopped` (no
-exit file and no process), `failed`, `blocked`, `needs fixes`, `reviewing`,
-`needs review`, `ready to ship`, `PR open`, `merged`, `done`, or
-`done (read-only)`. Each comes with its next action. Directories without
-`task.json` still show, with a blank goal. If `gh` fails, the PR column shows
-`?`.
+- `running`, `stopped` (no exit file and no process), `not started`, `failed`
+  (the worker's latest run, whatever reviews followed), `blocked`;
+- `needs fixes`, `review unclear` (the verdict line is missing or is not
+  `ship`, `ship with nits`, or `request changes`), `reviewing`, `needs review`.
+  A review counts only for worker runs that ended before it started, and a
+  stopped review is ignored;
+- `no commits`, `ready to ship`, `PR open`, `PR closed`, `merged`, `done`;
+- `done (read-only)` for research, reviews, and tasks whose `task.json` has
+  null `branch` and `worktree`;
+- `unknown` when `ps`, `git` or `gh` failed, so the answer can't be
+  observed. Next action: re-run status.
+
+Each status comes with its next action. The branch is the one checked out in
+the task's worktree, else `task.json`'s. Directories without `task.json` still
+show, with a blank goal, and `task.json` fields of the wrong type are ignored.
 
 ## Artifacts
 
