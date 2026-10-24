@@ -7,12 +7,14 @@ const test = require("node:test");
 const {
 	collectStatus,
 	deriveStatus,
+	displayWidth,
 	formatAge,
 	groupKeyFor,
 	main,
 	parseArgs,
 	parseBlockers,
 	parseVerdict,
+	renderMarkdown,
 	renderTable,
 	runIndexFor,
 	runIsAlive,
@@ -156,9 +158,109 @@ test("formatAge", () => {
 });
 
 test("parseArgs", () => {
-	assert.deepEqual(parseArgs(["--all", "--task", "vpk-fix-x"]), { all: true, json: false, task: "vpk-fix-x" });
+	assert.deepEqual(parseArgs(["--all", "--task", "vpk-fix-x"]), { all: true, json: false, markdown: false, task: "vpk-fix-x", width: null });
+	assert.equal(parseArgs(["--width", "80"]).width, 80);
+	assert.throws(() => parseArgs(["--width", "wide"]), /positive number/u);
 	assert.throws(() => parseArgs(["--task"]), /needs a name/u);
 	assert.throws(() => parseArgs(["--bogus"]), /unknown option/u);
+});
+
+// ── Table layout ──────────────────────────────────────────────────────────────
+
+const LAYOUT_NOW = Date.parse("2026-10-24T12:00:00Z");
+
+function layoutTask(name, status, overrides = {}) {
+	return { name, status, goal: "", nextAction: "none", createdAt: LAYOUT_NOW - 95 * 60_000, pr: null, ...overrides };
+}
+
+const LAYOUT_TASKS = [
+	layoutTask("vpk-feat-remote-status", "running", {
+		goal: "Add /vpk-remote --status: one table of every dispatched task, with the goal inside the Task cell and widths that fit any terminal",
+		nextAction: "wait; ask for status later",
+	}),
+	layoutTask("vpk-fix-sidebar-flicker-on-resize-in-safari", "needs fixes", {
+		goal: "Stop the sidebar flickering",
+		nextAction: "send a correction follow-up that names every finding from the advisor review and the failing check",
+	}),
+	layoutTask("vpk-feat-ui-generation", "PR open", { pr: { number: 1984, state: "OPEN" }, nextAction: "/vpk-git-ship --merge 1984" }),
+	layoutTask("vpk-docs-日本語-guide", "ready to ship", { goal: "翻訳ガイドを追加する", nextAction: "/vpk-git-ship" }),
+];
+
+for (const width of [140, 100, 80, 60]) {
+	test(`renderTable at width ${width}: every line is the same width and fits`, () => {
+		const lines = renderTable(LAYOUT_TASKS, { width, now: LAYOUT_NOW }).split("\n");
+		const widths = new Set(lines.map(displayWidth));
+		assert.equal(widths.size, 1, `line widths ${[...widths].join(", ")}\n${lines.join("\n")}`);
+		assert.ok([...widths][0] <= width, `table is ${[...widths][0]} wide\n${lines.join("\n")}`);
+		assert.equal(lines.some((line) => /\bPR open\b/u.test(line)), true, "Status stays whole");
+		assert.equal(lines.some((line) => line.includes("needs fixes")), true, "Status stays whole");
+		assert.equal(lines.some((line) => line.includes("#1984 open")), true, "PR stays whole");
+	});
+}
+
+test("renderTable puts the goal inside the Task cell with every border continuing", () => {
+	const lines = renderTable(LAYOUT_TASKS, { width: 100, now: LAYOUT_NOW }).split("\n");
+	const row = lines.findIndex((line) => line.startsWith("│ vpk-feat-remote-status"));
+	const goal = lines[row + 1];
+	assert.match(goal, /^│ {3}Add \/vpk-remote --status/u, "goal indented two spaces in the Task cell");
+	assert.equal(goal.endsWith("… │") || goal.includes("… │"), true, "a long goal is truncated with …");
+	const borders = (line) => [...line].map((char, at) => (char === "│" ? at : null)).filter((at) => at !== null);
+	assert.deepEqual(borders(goal), borders(lines[row]), "column borders line up on the goal line");
+});
+
+test("renderTable truncates goal, then next action, then task name", () => {
+	const at = (width) => renderTable(LAYOUT_TASKS, { width, now: LAYOUT_NOW });
+	const roomy = at(400);
+	assert.equal(roomy.includes("…"), false);
+	const goalOnly = at(200);
+	assert.equal(goalOnly.includes("…"), true);
+	assert.equal(goalOnly.includes("the failing check"), true, "next action whole while the goal still gives");
+	assert.equal(goalOnly.includes("vpk-fix-sidebar-flicker-on-resize-in-safari"), true);
+	const nextToo = at(120);
+	assert.equal(nextToo.includes("the failing check"), false, "next action truncated");
+	assert.equal(nextToo.includes("vpk-fix-sidebar-flicker-on-resize-in-safari"), true, "task names whole until next action is at its minimum");
+	assert.equal(at(80).includes("vpk-fix-sidebar-flicker-on-resize-in-safari"), false, "task names truncate last");
+});
+
+test("renderTable drops the Age column below 60 columns and never exceeds the width", () => {
+	assert.equal(renderTable(LAYOUT_TASKS, { width: 100, now: LAYOUT_NOW }).includes("│ Age"), true);
+	for (const width of [59, 40, 24, 17, 10]) {
+		const lines = renderTable(LAYOUT_TASKS, { width, now: LAYOUT_NOW }).split("\n");
+		assert.equal(lines.some((line) => line.includes("Age")), false, `no Age at ${width}`);
+		assert.equal(lines.every((line) => displayWidth(line) <= width), true, `fits ${width}\n${lines.join("\n")}`);
+	}
+});
+
+test("displayWidth counts wide characters as two cells", () => {
+	assert.equal(displayWidth("abc"), 3);
+	assert.equal(displayWidth("日本"), 4);
+	assert.equal(displayWidth("│ — … │"), 7);
+});
+
+test("renderMarkdown prints Task (with goal), Status, PR, Next action", () => {
+	const markdown = renderMarkdown([
+		...LAYOUT_TASKS,
+		layoutTask("vpk-research-old", "done", { goal: "old" }),
+		layoutTask("vpk-chore-e2e-ping", "failed"),
+	]);
+	const lines = markdown.split("\n");
+	assert.equal(lines[0], "| Task | Status | PR | Next action |");
+	assert.equal(lines[1], "| --- | --- | --- | --- |");
+	assert.equal(lines.length, 2 + LAYOUT_TASKS.length, "done and e2e tasks hidden");
+	assert.equal(lines.includes("| `vpk-feat-ui-generation` | PR open | #1984 open | /vpk-git-ship --merge 1984 |"), true, markdown);
+	assert.match(markdown, /\| `vpk-feat-remote-status` — Add \/vpk-remote --status: .*any terminal \| running \| — \| wait; ask for status later \|/u);
+	assert.equal(renderMarkdown([layoutTask("vpk-fix-pipe", "running", { goal: "a | b" })]).includes("a \\| b"), true, "pipes escaped");
+	assert.equal(renderMarkdown([layoutTask("vpk-research-old", "done")], { all: true }).split("\n").length, 3);
+});
+
+test("vpk-chore-e2e- tasks are hidden unless --all", () => {
+	const tasks = [layoutTask("vpk-chore-e2e-badmodel", "failed"), layoutTask("vpk-fix-real", "running")];
+	const hidden = renderTable(tasks, { now: LAYOUT_NOW });
+	assert.equal(hidden.includes("vpk-chore-e2e-badmodel"), false);
+	assert.match(hidden.split("\n")[0], /1 active · 1 e2e hidden/u);
+	const all = renderTable(tasks, { now: LAYOUT_NOW, all: true });
+	assert.equal(all.includes("vpk-chore-e2e-badmodel"), true);
+	assert.match(all.split("\n")[0], /2 active/u);
 });
 
 // ── Collection against a fixture checkout ─────────────────────────────────────
@@ -300,8 +402,8 @@ test("renderTable truncates the goal first and fits a narrow terminal", async ()
 	assert.equal(wide.some((line) => line.includes("…")), false, "nothing truncated when it fits");
 
 	const narrow = renderTable(tasks, { width: 80, now: NOW }).split("\n");
-	assert.equal(narrow.every((line) => line.length <= 80), true, narrow.join("\n"));
-	const goal = narrow.find((line) => line.includes("Add the alpha panel"));
+	assert.equal(narrow.every((line) => displayWidth(line) <= 80), true, narrow.join("\n"));
+	const goal = narrow.find((line) => line.startsWith("│   Add the"));
 	assert.equal(goal.includes("…"), true);
 	assert.equal(narrow.some((line) => line.includes("│ vpk-feat-alpha ")), true, "task names stay whole");
 });
@@ -372,6 +474,39 @@ test("colour only on a TTY with NO_COLOR unset", async () => {
 	assert.equal((await render({}, true)).includes(escape), true);
 	assert.equal((await render({ NO_COLOR: "1" }, true)).includes(escape), false);
 	assert.equal((await render({}, false)).includes(escape), false);
+});
+
+test("table width: --width, then stdout.columns, then COLUMNS, then 120", async () => {
+	const fixture = fixtureCheckout();
+	const { runCommand } = fakeRunner(fixture);
+	const widthOf = async (argv, { columns, env = {} } = {}) => {
+		const stdout = captureStdout({ columns });
+		await main(argv, { stdout, env, cwd: fixture.root, runCommand, now: NOW });
+		return Math.max(...stdout.text.trimEnd().split("\n").map(displayWidth));
+	};
+	assert.equal(await widthOf(["--width", "70"], { columns: 90, env: { COLUMNS: "100" } }), 70);
+	assert.equal(await widthOf([], { columns: 90, env: { COLUMNS: "100" } }), 90);
+	assert.equal(await widthOf([], { env: { COLUMNS: "75" } }), 75);
+	assert.ok(await widthOf([]) <= 120);
+});
+
+test("--markdown and --json hide e2e runs unless --all", async () => {
+	const fixture = fixtureCheckout();
+	writeFile(path.join(fixture.root, "output", "remote-claude", "vpk-chore-e2e-ping", "run.sh"), "exit 0\n", NOW - 5 * MINUTE);
+	writeFile(path.join(fixture.root, "output", "remote-claude", "vpk-chore-e2e-ping", "run.sh.exit"), "1\n", NOW - 4 * MINUTE);
+	const { runCommand } = fakeRunner(fixture);
+	const run = async (argv) => {
+		const stdout = captureStdout();
+		await main(argv, { stdout, env: {}, cwd: fixture.root, runCommand, now: NOW });
+		return stdout.text;
+	};
+	const markdown = await run(["--markdown"]);
+	assert.match(markdown, /^\| Task \| Status \| PR \| Next action \|\n/u);
+	assert.equal(markdown.includes("vpk-chore-e2e-ping"), false);
+	assert.equal(markdown.includes("`vpk-feat-alpha` — Add the alpha panel"), true);
+	assert.equal((await run(["--markdown", "--all"])).includes("vpk-chore-e2e-ping"), true);
+	assert.equal(JSON.parse(await run(["--json"])).tasks.some((task) => task.name === "vpk-chore-e2e-ping"), false);
+	assert.equal(JSON.parse(await run(["--json", "--all"])).tasks.some((task) => task.name === "vpk-chore-e2e-ping"), true);
 });
 
 test("collectStatus with no task directories returns no tasks", async () => {

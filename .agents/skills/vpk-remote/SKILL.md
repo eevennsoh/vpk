@@ -563,15 +563,23 @@ task status ("what's the status of my tasks", "what's running") run, from the
 main checkout:
 
 ```bash
-node scripts/vpk-remote-status.js            # --status
-node scripts/vpk-remote-status.js --all      # --status --all: include done tasks
-node scripts/vpk-remote-status.js --task <name>   # --status <name>: every run, report, branch, PR
+node scripts/vpk-remote-status.js --markdown        # --status
+node scripts/vpk-remote-status.js --markdown --all  # --status --all: include done tasks and e2e runs
+node scripts/vpk-remote-status.js --task <name>     # --status <name>: every run, report, branch, PR
 ```
 
-Show its table to the user as is, in a code block, followed by at most two
-sentences on what needs attention. Status is read-only: it never dispatches,
+In chat, paste the `--markdown` output as is: a markdown table of Task (goal in
+the same cell), Status, PR, and Next action. Do not build the table by hand.
+Follow it with at most two sentences on what needs attention, using `--json`
+for any fact the table leaves out. Status is read-only: it never dispatches,
 moves the conversation, or runs preflight. When the planner needs the facts
 for its own decisions, it runs `--json` instead.
+
+Run with no format flag, the script prints a box table for a terminal: the
+goal sits on a second line of the Task cell, and columns shrink to fit
+`--width <n>`, else the terminal, else `COLUMNS`, else 120 (the Age column goes
+below 60). Tasks named `vpk-chore-e2e-*` are throwaway test runs of this skill
+and show only with `--all`.
 
 The script reads every `output/remote-<lane>/<name>/` directory, joins a
 worker with its `-review` advisors into one row, and derives one status from

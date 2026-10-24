@@ -3,7 +3,7 @@
 // Lists every task dispatched through /vpk-remote with its status and next action.
 // Read-only: it never writes under output/, dispatches, or touches a worktree.
 //
-//   node scripts/vpk-remote-status.js [--all] [--json] [--task <name>]
+//   node scripts/vpk-remote-status.js [--all] [--json | --markdown] [--width <n>] [--task <name>]
 //
 // Facts come from the main checkout's output/remote-{claude,gpt}/<name>/ directories
 // (task.json, run*.sh and their .exit files, report.md), git, `gh pr list`, `ps`, and
@@ -40,6 +40,8 @@ const STATUS_ORDER = [
 	"done",
 ];
 const DONE_STATUSES = new Set(["done", "done (read-only)"]);
+// Throwaway end-to-end runs of the skill itself; --all shows them.
+const THROWAWAY_PREFIX = "vpk-chore-e2e-";
 
 const STATUS_COLOR = {
 	running: "yellow",
@@ -263,9 +265,45 @@ function prLabel(pr) {
 	return `#${pr.number} ${pr.state.toLowerCase()}`;
 }
 
+// Terminal cells a code point occupies: 0 for combining marks and joiners, 2 for East
+// Asian wide characters and emoji, 1 otherwise. Box-drawing characters, "—", and "…" are 1.
+function charWidth(codePoint) {
+	if (codePoint < 0x20 || (codePoint >= 0x300 && codePoint <= 0x36f) || codePoint === 0x200d || (codePoint >= 0xfe00 && codePoint <= 0xfe0f)) return 0;
+	const wide = (codePoint >= 0x1100 && codePoint <= 0x115f)
+		|| (codePoint >= 0x2e80 && codePoint <= 0xa4cf)
+		|| (codePoint >= 0xac00 && codePoint <= 0xd7a3)
+		|| (codePoint >= 0xf900 && codePoint <= 0xfaff)
+		|| (codePoint >= 0xfe30 && codePoint <= 0xfe4f)
+		|| (codePoint >= 0xff00 && codePoint <= 0xff60)
+		|| (codePoint >= 0xffe0 && codePoint <= 0xffe6)
+		|| (codePoint >= 0x1f300 && codePoint <= 0x1f64f)
+		|| (codePoint >= 0x1f900 && codePoint <= 0x1f9ff)
+		|| (codePoint >= 0x20000 && codePoint <= 0x3fffd);
+	return wide ? 2 : 1;
+}
+
+function displayWidth(text) {
+	let width = 0;
+	for (const char of text) width += charWidth(char.codePointAt(0));
+	return width;
+}
+
 function truncate(text, width) {
+	if (displayWidth(text) <= width) return text;
 	if (width <= 0) return "";
-	return text.length <= width ? text : `${text.slice(0, width - 1)}…`;
+	let kept = "";
+	let used = 0;
+	for (const char of text) {
+		const charCells = charWidth(char.codePointAt(0));
+		if (used + charCells > width - 1) break;
+		kept += char;
+		used += charCells;
+	}
+	return `${kept.trimEnd()}…`;
+}
+
+function padEnd(text, width) {
+	return text + " ".repeat(Math.max(width - displayWidth(text), 0));
 }
 
 function paint(text, color, enabled) {
@@ -277,11 +315,14 @@ function sortTasks(tasks) {
 }
 
 function headerCounts(tasks, { all }) {
-	const done = tasks.filter((task) => DONE_STATUSES.has(task.status)).length;
-	const merged = tasks.filter((task) => task.status === "merged").length;
-	const parts = [`${tasks.length - done - merged} active`];
+	const throwaway = all ? 0 : tasks.filter(isThrowaway).length;
+	const counted = all ? tasks : tasks.filter((task) => !isThrowaway(task));
+	const done = counted.filter((task) => DONE_STATUSES.has(task.status)).length;
+	const merged = counted.filter((task) => task.status === "merged").length;
+	const parts = [`${counted.length - done - merged} active`];
 	if (merged) parts.push(`${merged} merged`);
 	if (done) parts.push(all ? `${done} done` : `${done} done hidden`);
+	if (throwaway) parts.push(`${throwaway} e2e hidden`);
 	return parts.join(" · ");
 }
 
@@ -292,14 +333,51 @@ const COLUMNS = [
 	{ key: "pr", title: "PR" },
 	{ key: "next", title: "Next action", min: 12 },
 ];
-// Columns give up width in this order once the goal lines are already truncated.
-const SHRINK_ORDER = ["next", "name"];
+const GOAL_INDENT = "  ";
+// Narrower than this, the Age column goes first.
+const AGE_MIN_WIDTH = 60;
+// Four one-cell columns and their borders; narrower terminals get plain lines.
+const MIN_WIDTH = 17;
+
+function isThrowaway(task) {
+	return task.name.startsWith(THROWAWAY_PREFIX);
+}
+
+function visibleTasks(tasks, all) {
+	return sortTasks(tasks.filter((task) => all || (!DONE_STATUSES.has(task.status) && !isThrowaway(task))));
+}
+
+// Natural column widths, then shrink until the table fits `width`: goal lines first
+// (the Task column narrows to its longest name), then Next action, then task names, each
+// down to its minimum. Status and PR give up width only when nothing else can.
+function fitColumns(rows, width) {
+	const fit = (columns) => {
+		const widths = Object.fromEntries(columns.map((column) => [column.key, Math.max(displayWidth(column.title), ...rows.map((row) => displayWidth(row[column.key])))]));
+		const longestName = widths.name;
+		widths.name = Math.max(longestName, ...rows.map((row) => (row.goal ? displayWidth(GOAL_INDENT + row.goal) : 0)));
+		const total = () => columns.reduce((sum, column) => sum + widths[column.key] + 3, 1);
+		const shrink = (key, floor) => {
+			widths[key] -= Math.min(Math.max(widths[key] - floor, 0), Math.max(total() - width, 0));
+		};
+		shrink("name", longestName);
+		shrink("next", COLUMNS.find((column) => column.key === "next").min);
+		shrink("name", COLUMNS.find((column) => column.key === "name").min);
+		return { columns, widths, total, shrink };
+	};
+	const withoutAge = COLUMNS.filter((column) => column.key !== "age");
+	let layout = fit(width < AGE_MIN_WIDTH ? withoutAge : COLUMNS);
+	if (layout.total() > width && layout.columns.length === COLUMNS.length) layout = fit(withoutAge);
+	// Past every soft minimum: names and actions keep three cells, then Status and PR give.
+	for (const [key, floor] of [["next", 3], ["name", 3], ["status", 1], ["pr", 1], ["next", 1], ["name", 1]]) layout.shrink(key, floor);
+	return { columns: layout.columns, widths: layout.widths, total: layout.total() };
+}
 
 function renderTable(tasks, { width = DEFAULT_WIDTH, color = false, now = Date.now(), all = false } = {}) {
 	const header = `vpk-remote tasks · ${headerCounts(tasks, { all })}`;
-	const visible = sortTasks(tasks.filter((task) => all || !DONE_STATUSES.has(task.status)));
-	if (tasks.length === 0) return "No vpk-remote tasks found.";
-	if (visible.length === 0) return `${header} · nothing active (--all shows them)`;
+	const visible = visibleTasks(tasks, all);
+	if (tasks.length === 0) return truncate("No vpk-remote tasks found.", width);
+	if (visible.length === 0) return truncate(`${header} · nothing active (--all shows them)`, width);
+	if (width < MIN_WIDTH) return visible.map((task) => truncate(`${task.name} ${task.status}`, width)).join("\n");
 
 	const rows = visible.map((task) => ({
 		name: task.name,
@@ -309,37 +387,40 @@ function renderTable(tasks, { width = DEFAULT_WIDTH, color = false, now = Date.n
 		next: task.nextAction,
 		goal: task.goal,
 	}));
-	const widths = Object.fromEntries(COLUMNS.map((column) => [column.key, Math.max(column.title.length, ...rows.map((row) => row[column.key].length))]));
-	const totalWidth = () => COLUMNS.reduce((sum, column) => sum + widths[column.key] + 3, 1);
-	for (const key of SHRINK_ORDER) {
-		const min = COLUMNS.find((column) => column.key === key).min;
-		widths[key] -= Math.min(Math.max(widths[key] - min, 0), Math.max(totalWidth() - width, 0));
-	}
-	// Goal lines span the table, so widen the last column for them while the terminal allows.
-	const longestGoal = Math.max(0, ...rows.map((row) => (row.goal ? row.goal.length + 2 : 0)));
-	widths.next += Math.max(Math.min(longestGoal + 4, width) - totalWidth(), 0);
-	const total = totalWidth();
-	const inner = total - 4;
+	const { columns, widths, total } = fitColumns(rows, width);
 
-	const rule = (left, mid, right) => `${left}${COLUMNS.map((column) => "─".repeat(widths[column.key] + 2)).join(mid)}${right}`;
-	const cells = (values, colorFor = () => null) => `│ ${COLUMNS.map((column) => {
-		const text = truncate(values[column.key], widths[column.key]);
-		return paint(text, colorFor(column.key), color) + " ".repeat(widths[column.key] - text.length);
+	const rule = (left, mid, right) => `${left}${columns.map((column) => "─".repeat(widths[column.key] + 2)).join(mid)}${right}`;
+	const cells = (values, colorFor = () => null) => `│ ${columns.map((column) => {
+		const text = truncate(values[column.key] ?? "", widths[column.key]);
+		return paint(text, colorFor(column.key), color) + " ".repeat(widths[column.key] - displayWidth(text));
 	}).join(" │ ")} │`;
 
 	const clock = formatClock(now);
-	const lines = [`${header}${" ".repeat(Math.max(total - header.length - clock.length, 1))}${clock}`];
+	const title = truncate(header, total - clock.length - 1);
+	const lines = [`${padEnd(title, total - clock.length)}${clock}`];
 	lines.push(rule("┌", "┬", "┐"));
-	lines.push(cells(Object.fromEntries(COLUMNS.map((column) => [column.key, column.title]))));
+	lines.push(cells(Object.fromEntries(columns.map((column) => [column.key, column.title]))));
 	lines.push(rule("├", "┼", "┤"));
 	for (const row of rows) {
 		lines.push(cells(row, (key) => (key === "status" ? STATUS_COLOR[row.status] : null)));
-		if (row.goal) {
-			const goal = truncate(`  ${row.goal}`, inner);
-			lines.push(`│ ${paint(goal, "dim", color)}${" ".repeat(inner - goal.length)} │`);
-		}
+		// The goal is a second line of the Task cell; the other cells stay empty under it.
+		if (row.goal) lines.push(cells({ name: GOAL_INDENT + row.goal }, (key) => (key === "name" ? "dim" : null)));
 	}
 	lines.push(rule("└", "┴", "┘"));
+	return lines.join("\n");
+}
+
+// The table the planner shows in chat: Task (goal in the same cell), Status, PR, Next action.
+function renderMarkdown(tasks, { all = false } = {}) {
+	const visible = visibleTasks(tasks, all);
+	if (tasks.length === 0) return "No vpk-remote tasks found.";
+	if (visible.length === 0) return `Nothing active; ${headerCounts(tasks, { all })} (--all shows them).`;
+	const cell = (text) => text.replace(/\s*\n\s*/gu, " ").replace(/\|/gu, "\\|");
+	const lines = ["| Task | Status | PR | Next action |", "| --- | --- | --- | --- |"];
+	for (const task of visible) {
+		const name = task.goal ? `\`${task.name}\` — ${cell(task.goal)}` : `\`${task.name}\``;
+		lines.push(`| ${name} | ${task.status} | ${prLabel(task.pr)} | ${cell(task.nextAction)} |`);
+	}
 	return lines.join("\n");
 }
 
@@ -680,12 +761,18 @@ async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(),
 }
 
 function parseArgs(argv) {
-	const options = { all: false, json: false, task: null };
+	const options = { all: false, json: false, markdown: false, task: null, width: null };
 	for (let index = 0; index < argv.length; index += 1) {
 		const flag = argv[index];
 		switch (flag) {
 			case "--all": options.all = true; break;
 			case "--json": options.json = true; break;
+			case "--markdown": options.markdown = true; break;
+			case "--width":
+				options.width = Number.parseInt(argv[index + 1], 10);
+				if (!Number.isInteger(options.width) || options.width <= 0) throw new Error("--width needs a positive number");
+				index += 1;
+				break;
 			case "--task":
 				options.task = argv[index + 1];
 				if (!options.task) throw new Error("--task needs a name");
@@ -706,7 +793,7 @@ function findTask(tasks, name) {
 async function main(argv = process.argv.slice(2), { stdout = process.stdout, env = process.env, cwd, runCommand, now = Date.now() } = {}) {
 	const options = parseArgs(argv);
 	if (options.help) {
-		stdout.write("usage: vpk-remote-status.js [--all] [--json] [--task <name>]\n");
+		stdout.write("usage: vpk-remote-status.js [--all] [--json | --markdown] [--width <n>] [--task <name>]\n");
 		return 0;
 	}
 	const result = await collectStatus({ cwd, runCommand, env, now });
@@ -718,10 +805,15 @@ async function main(argv = process.argv.slice(2), { stdout = process.stdout, env
 		return 0;
 	}
 	if (options.json) {
-		stdout.write(`${JSON.stringify(result, null, "\t")}\n`);
+		const tasks = options.all ? result.tasks : result.tasks.filter((task) => !isThrowaway(task));
+		stdout.write(`${JSON.stringify({ ...result, tasks }, null, "\t")}\n`);
 		return 0;
 	}
-	const width = stdout.isTTY && stdout.columns ? stdout.columns : DEFAULT_WIDTH;
+	if (options.markdown) {
+		stdout.write(`${renderMarkdown(result.tasks, { all: options.all })}\n`);
+		return 0;
+	}
+	const width = options.width ?? (stdout.columns || Number.parseInt(env.COLUMNS ?? "", 10) || DEFAULT_WIDTH);
 	stdout.write(`${renderTable(result.tasks, { width, color, now, all: options.all })}\n`);
 	return 0;
 }
@@ -742,6 +834,7 @@ module.exports = {
 	conventionalBranchFor,
 	createRunner,
 	deriveStatus,
+	displayWidth,
 	formatAge,
 	groupKeyFor,
 	kindFor,
@@ -753,6 +846,7 @@ module.exports = {
 	parseWorktreeList,
 	pickPr,
 	renderDetail,
+	renderMarkdown,
 	renderTable,
 	runIndexFor,
 	runIsAlive,
