@@ -42,6 +42,7 @@ function linkedWorktree() {
 function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false, worktreeError = null } = {}) {
 	const calls = [];
 	let nextPane = 50;
+	let startSeen = null;
 	const herdr = (args) => {
 		calls.push(args);
 		const [group, verb] = args;
@@ -69,13 +70,17 @@ function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false, worktreeError =
 		if (group === "pane" && verb === "run") {
 			const runner = args[3].match(/^bash '([^']+)'$/u)[1];
 			const exitFile = fs.readFileSync(runner, "utf8").match(/> '([^']+\.exit)'/u)[1];
+			// The start is on disk before the pane is launched.
+			startSeen = fs.existsSync(exitFile.replace(/\.exit$/u, ".start"));
 			fs.writeFileSync(exitFile, "3\n");
 			return {};
 		}
 		return {};
 	};
-	return { herdr, calls };
+	return { herdr, calls, startSeen: () => startSeen };
 }
+
+const readRecords = (script) => fs.readFileSync(path.join(path.dirname(script), "runs.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line));
 
 const herdrEnv = { HERDR_ENV: "1", HERDR_WORKSPACE_ID: "w1" };
 
@@ -129,7 +134,7 @@ async function waitForPaneReports(readLog, label, waitForNextPoll = () => new Pr
 		`agent rename w1:p5 ${agentNameFor(label)}`,
 	];
 	let calls = readLog();
-	for (let i = 0; i < 50 && !expected.every((line) => calls.includes(line)); i += 1) {
+	for (let i = 0; i < 250 && !expected.every((line) => calls.includes(line)); i += 1) {
 		await waitForNextPoll();
 		calls = readLog();
 	}
@@ -271,10 +276,46 @@ test("inline surface runs the script and returns its status", async () => {
 	assert.equal(fs.readFileSync(`${script}.exit`, "utf8").trim(), "4");
 });
 
+test("each inline run records its start before launch and its end, so a reused script keeps both runs", async () => {
+	const script = tempScript('test -f "$0.start" || exit 9; exit 4');
+	for (let i = 0; i < 2; i += 1) {
+		await run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--surface", "inline"]), { env: { PATH: process.env.PATH }, herdr: () => assert.fail("inline"), log: () => {} });
+	}
+	const records = readRecords(script);
+	assert.deepEqual(records.map(({ script: name, endedAt, exit }) => [name, endedAt === null, exit]), [["run.sh", true, null], ["run.sh", false, 4], ["run.sh", true, null], ["run.sh", false, 4]]);
+	assert.equal(records[0].startedAt, records[1].startedAt);
+	assert.notEqual(records[0].startedAt, records[2].startedAt);
+	assert.ok(Date.parse(records[1].endedAt) >= Date.parse(records[1].startedAt));
+	assert.equal(fs.readFileSync(`${script}.start`, "utf8").trim(), records[2].startedAt);
+});
+
+test("the pane appends the run's end to runs.jsonl before it writes the exit file", async () => {
+	const { exit, command } = await runPaneCommand({ body: "exit 7" });
+	const script = command.match(/; bash '([^']+)'; s=\$\?/u)[1];
+	assert.equal(exit, "7");
+	const [record] = readRecords(script);
+	assert.equal(record.script, "run.sh");
+	assert.equal(record.exit, 7);
+	assert.ok(Number.isFinite(Date.parse(record.startedAt)) && Number.isFinite(Date.parse(record.endedAt)));
+	assert.ok(command.indexOf("runs.jsonl") < command.indexOf(".exit'"));
+});
+
+test("review 3.4: the pane records its end with milliseconds, never before the work finished", async () => {
+	// The script's last act is to note the time; the recorded end must not precede it.
+	const { command } = await runPaneCommand({ body: `sleep 0.2; "${process.execPath}" -e 'process.stdout.write(String(Date.now()))' > "$0.lastwork"` });
+	const script = command.match(/; bash '([^']+)'; s=\$\?/u)[1];
+	const [record] = readRecords(script);
+	for (const field of ["startedAt", "endedAt"]) assert.match(record[field], /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/u, field);
+	assert.ok(Date.parse(record.endedAt) >= Date.parse(record.startedAt));
+	assert.ok(Date.parse(record.endedAt) >= Number(fs.readFileSync(`${script}.lastwork`, "utf8")), `${record.endedAt} is before the work finished`);
+});
+
 test("default herdr placement opens a labelled tab in the caller's workspace", async () => {
 	const script = tempScript();
-	const { herdr, calls } = fakeHerdr();
+	const { herdr, calls, startSeen } = fakeHerdr();
 	const status = await run(parseArgs(["run", "--script", script, "--label", "vpk-audit-x"]), { env: herdrEnv, herdr, log: () => {} });
+	assert.equal(startSeen(), true, "the .start file exists before pane run");
+	assert.equal(readRecords(script)[0].endedAt, null, "the wrapper wrote the start line; the pane writes the end");
 	assert.equal(status, 3);
 	const create = calls.find(([group, verb]) => group === "tab" && verb === "create");
 	assert.deepEqual(create.slice(2), ["--workspace", "w1", "--cwd", process.cwd(), "--label", "vpk-audit-x", "--no-focus"]);

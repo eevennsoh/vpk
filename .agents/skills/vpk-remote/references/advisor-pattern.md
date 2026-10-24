@@ -89,7 +89,8 @@ You are advising only. Make no edits of any kind. Reply with:
 1. A decision (which option, or the diagnosis).
 2. A plan — 3–7 concrete steps or the correction to the current plan.
 3. Risks / failure modes the planner should verify.
-Keep it under ~700 tokens.
+Keep it under ~700 tokens. When reviewing a diff, end with exactly one line:
+Verdict: ship | ship with nits | request changes
 ```
 
 Treat consults as stateless and re-send context as a fresh brief on repeat:

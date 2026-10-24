@@ -84,6 +84,9 @@ export function renderPart(piece, scene, indent = "") {
 	if (piece.state) attrs.push(`data-vpk-iso-state="${piece.state}"`);
 	if (piece.explode) attrs.push(`data-vpk-iso-explode="${vec(piece.explode)}"`);
 	if (piece.lift) attrs.push(`data-vpk-iso-lift="${vec(piece.lift)}"`);
+	// A fixed part is scenery (no lift, outline, keyboard stop or selection); a grown part keeps its base and raises its top.
+	if (piece.fixed) attrs.push("data-vpk-iso-fixed");
+	if (piece.grow) attrs.push("data-vpk-iso-grow");
 	if (piece.label) attrs.push(`data-vpk-iso-label="${escapeAttr(piece.label)}"`);
 	if (piece.focal) attrs.push("data-vpk-iso-focal");
 	if (piece.clipTo) attrs.push(`clip-path="url(#${id.clip(piece.partId)})"`);
@@ -361,7 +364,6 @@ export function renderSvg(scene, indent = "") {
 	// An active part blinks once and holds a 2px ink outline (select only; explode has no per-part active state).
 	if (scene.behavior === "select") attrs.push("data-vpk-iso-blink");
 	attrs.push(`data-vpk-iso-zdepth="${scene.zdepth}"`);
-	if (scene.behavior === "select") attrs.push(`data-vpk-iso-lift-z="${num(scene.liftWorld)}"`);
 	if (scene.brief.parts.length > DENSE_PARTS) attrs.push("data-vpk-iso-dense");
 	if (scene.timing) attrs.push("data-vpk-smil-arm", 'data-vpk-smil-stagger="0"');
 	// Opts the figure into the narrow-stage callouts (tags, legend, crop). A figure built before they existed has

@@ -30,6 +30,10 @@ const SCALE_GAP = 14;
 export const PART_KINDS = Object.freeze(["slab", "box", "plate", "cylinder", "tray", "ring", "gap"]);
 // A "new" or "active" part shares the focal's pale fill, without its outline (rule 4).
 export const PART_STATES = Object.freeze(["new", "active"]);
+// How a selected part answers the hover (select figures): "raise" lifts the whole part; "grow" keeps its base where it stands
+// and raises only its top, like a bar extending (vertical prisms only: a box, slab, plate or cylinder).
+export const LIFT_MODES = Object.freeze(["raise", "grow"]);
+const GROW_KINDS = Object.freeze(["box", "slab", "plate", "cylinder"]);
 
 export const CAMERA_PRESETS = Object.freeze({
 	dimetric: Object.freeze({ ...FIGURE_CAMERA }),
@@ -105,6 +109,10 @@ function validatePart(part, index, push) {
 	if (part.clipTo !== undefined && part.kind !== "ring") push(`${at}.clipTo is allowed on rings only`);
 	if (part.clipPad !== undefined && !(part.kind === "ring" && part.clipTo !== undefined && isNum(part.clipPad) && part.clipPad >= 0 && part.clipPad <= 200)) push(`${at}.clipPad is a number within 0–200, allowed on a ring with clipTo`);
 	if (part.state !== undefined && !PART_STATES.includes(part.state)) push(`${at}.state must be one of ${PART_STATES.join(", ")}`);
+	if (part.fixed !== undefined && typeof part.fixed !== "boolean") push(`${at}.fixed must be true or false`);
+	if (part.liftMode !== undefined && !LIFT_MODES.includes(part.liftMode)) push(`${at}.liftMode must be one of ${LIFT_MODES.join(", ")}`);
+	else if (part.liftMode === "grow" && !GROW_KINDS.includes(part.kind)) push(`${at}.liftMode "grow" needs a vertical prism (${GROW_KINDS.join(", ")}), not a ${part.kind}`);
+	if (part.fixed === true && part.liftMode !== undefined) push(`${at}: a fixed part never lifts, so it takes no liftMode`);
 }
 
 function validateInteract(interact, push) {
@@ -112,6 +120,8 @@ function validateInteract(interact, push) {
 	if (!["select", "explode"].includes(interact.behavior)) return push(`interact.behavior ${JSON.stringify(interact.behavior)} must be "select" or "explode"`);
 	if (interact.lift !== undefined && !(isNum(interact.lift) && interact.lift > 0 && interact.lift <= 40)) push("interact.lift must be within (0, 40]");
 	if (interact.rest !== undefined && typeof interact.rest !== "string") push("interact.rest must be a string");
+	if (interact.guides !== undefined && (interact.behavior !== "select" || typeof interact.guides !== "boolean")) push("interact.guides must be true or false, on a select figure (an explode figure always draws its guides)");
+	if (interact.liftMode !== undefined && (interact.behavior !== "select" || !LIFT_MODES.includes(interact.liftMode))) push(`interact.liftMode must be one of ${LIFT_MODES.join(", ")}, on a select figure`);
 	if (interact.behavior === "explode") {
 		const e = interact.explode;
 		if (!e || ![e.rest, e.min, e.max, e.step].every(isNum)) return push("interact.explode needs numeric rest, min, max and step");
@@ -195,6 +205,8 @@ export function validateBrief(brief) {
 	validateDims(brief.dims, push);
 	validateScale(brief.scale, push);
 	validateInteract(brief.interact, push);
+	if (parts.some(part => part?.liftMode !== undefined) && brief.interact?.behavior !== "select") push("parts[].liftMode needs interact.behavior \"select\"");
+	if (brief.interact && parts.length && parts.every(part => part?.fixed === true)) push("every part is fixed, so the figure has nothing to select or separate; drop interact or unfix a part");
 	if (brief.meta !== undefined && !(brief.meta && typeof brief.meta === "object" && ["margin", "corner"].every(key => brief.meta[key] === undefined || (typeof brief.meta[key] === "string" && brief.meta[key].length <= 40)))) push("meta.margin and meta.corner must be strings of ≤ 40 chars");
 	return errors;
 }
@@ -276,6 +288,41 @@ function chooseAnchor(part, side, pieces, P, override) {
 	return { point: visible[0], visible: true };
 }
 
+// A select figure's support: the one lowest part (not the focal, not line work) whose plan holds every other part's plan, like a
+// plinth under a terrain or a tray under its cards. It holds the figure up, so it is fixed by default (`fixed: false` opts out).
+export function supportOf(brief) {
+	const solids = brief.parts.filter(part => !["ring", "gap"].includes(part.kind));
+	const low = Math.min(...solids.map(part => part.at[2]));
+	const lowest = solids.filter(part => part.at[2] === low);
+	if (lowest.length !== 1 || lowest[0].id === brief.focal) return null;
+	const [x0, y0, x1, y1] = planBox(lowest[0]);
+	const inside = part => {
+		const [a0, b0, a1, b1] = planBox(part);
+		return a0 >= x0 - 0.5 && b0 >= y0 - 0.5 && a1 <= x1 + 0.5 && b1 <= y1 + 0.5;
+	};
+	return brief.parts.every(part => part === lowest[0] || inside(part)) ? lowest[0].id : null;
+}
+
+// A grown part (liftMode "grow") is drawn by the runtime from its rest paths: every point on its top face rides the lift and every
+// other point stays put. That is exact when the solid `lift` taller is the rest solid with its top-face points moved by the
+// screen lift, point for point; this checks it, so a solid the rule cannot draw raises instead of drawing a wrong shape.
+const POINT = /(-?[\d.]+) (-?[\d.]+)/g;
+export function growsInPlace(piece, grown, lift) {
+	if (!grown || !lift || piece.solids.length !== 1 || grown.solids.length !== 1 || !piece.solids[0].top) return false;
+	const [rest] = piece.solids;
+	const [tall] = grown.solids;
+	const top = new Set(rest.top.match(POINT));
+	const moved = d => d.replace(POINT, (pair, x, y) => (top.has(pair) ? `${Number(x) + lift[0]} ${Number(y) + lift[1]}` : pair));
+	const shape = d => d.replace(POINT, "#");
+	const numbers = d => (d.match(/-?[\d.]+/g) ?? []).map(Number);
+	return ["fill", "shade", "top", "crease", "edge"].every(role => {
+		if (!rest[role] || !tall[role]) return !rest[role] && !tall[role];
+		const [a, b] = [moved(rest[role]), tall[role]];
+		const [na, nb] = [numbers(a), numbers(b)];
+		return shape(a) === shape(b) && na.length === nb.length && na.every((value, index) => Math.abs(value - nb[index]) <= 0.15);
+	});
+}
+
 function layerIndexMap(brief) {
 	const map = new Map();
 	(brief.assemble?.layers ?? []).forEach((layer, index) => layer.forEach(id => map.set(id, index)));
@@ -309,7 +356,13 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	const liftWorld = behavior === "select" ? interact.lift ?? 8 : 0;
 	const layers = layerIndexMap(brief);
 	const zRank = new Map([...brief.parts].sort((a, b) => a.at[2] - b.at[2]).map((part, index) => [part.id, index]));
-	const vectorOf = part => part.explode ?? [0, 0, (layers.get(part.id) ?? zRank.get(part.id)) * 12];
+	// A fixed part (a plinth, a base, a housing) is scenery: it never lifts or separates, takes no hover outline, is no keyboard stop
+	// and cannot be selected. `fixed: true` marks one; a select figure's support (supportOf) is fixed unless it says `fixed: false`.
+	const support = behavior === "select" ? supportOf(brief) : null;
+	const isFixed = part => part.fixed ?? part.id === support;
+	const vectorOf = part => (isFixed(part) ? [0, 0, 0] : part.explode ?? [0, 0, (layers.get(part.id) ?? zRank.get(part.id)) * 12]);
+	const liftOf = part => (liftWorld && !isFixed(part) ? [0, 0, liftWorld] : null);
+	const growOf = part => Boolean(liftOf(part)) && GROW_KINDS.includes(part.kind) && (part.liftMode ?? interact.liftMode) === "grow";
 	const assemble = brief.assemble ?? null;
 	const from = assemble?.from ?? MANUAL_FROM;
 
@@ -331,7 +384,7 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 			const e = vectorOf(part);
 			for (const k of [explode.min - explode.rest, explode.max - explode.rest]) poses.push(...corners.map(([x, y, z]) => [x + e[0] * k, y + e[1] * k, z + e[2] * k]));
 		}
-		if (liftWorld) poses.push(...corners.map(([x, y, z]) => [x, y, z + liftWorld]));
+		if (liftOf(part)) poses.push(...corners.map(([x, y, z]) => [x, y, z + liftWorld]));
 		if (assemble) poses.push(...corners.map(([x, y, z]) => [x + from[0], y + from[1], z + Math.min(from[2], FIT_FROM_Z)]));
 		// The rest pose's shadows are fitted; a lifted or exploded shadow may run past the frame, which clips it (the stage clips).
 		if (castsShadow(part)) shadowPoses.push(...shadowCorners(part));
@@ -380,37 +433,46 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 		piece.state = piece.focal ? null : part.state ?? null;
 		piece.layer = assemble ? layers.get(part.id) : null;
 		if (explode) piece.explode = screenVector(vectorOf(part), P);
-		if (liftWorld) piece.lift = screenVector([0, 0, liftWorld], P);
+		if (liftOf(part)) piece.lift = screenVector(liftOf(part), P);
+		if (isFixed(part)) piece.fixed = true;
+		if (growOf(part)) {
+			if (growsInPlace(piece, solidFor({ ...part, size: [part.size[0], part.size[1], part.size[2] + liftWorld] }, P, preset).find(other => other.id === piece.id), piece.lift)) piece.grow = true;
+			else warnings.push(`part "${part.id}": its grown solid is not its rest solid with the top raised, so it raises instead of growing`);
+		}
 		if (part.clipTo) piece.clipTo = part.clipTo;
 	}
+	// The parts that grow as built (growOf asks; growsInPlace may have sent a part back to raising).
+	const grown = new Set(pieces.filter(piece => piece.grow).map(piece => piece.partId));
 	// One flat shadow per part that casts one, in painter order of its first piece; `cast` is the screen move of the shadow per
 	// unit of the figure's motion (the lift for select, a Gap unit for explode), so the runtime moves it with its part.
 	const shadows = [];
 	for (const piece of pieces) {
 		const part = byId.get(piece.partId);
 		if (!castsShadow(part) || shadows.some(entry => entry.partId === part.id)) continue;
-		const move = explode ? vectorOf(part) : liftWorld ? [0, 0, liftWorld] : null;
+		const move = explode ? vectorOf(part) : liftOf(part);
 		shadows.push({
 			partId: part.id,
 			layer: piece.layer,
 			hit: castShadow(part, P, { ground, r: part.r ?? preset.radius, step }),
-			cast: move ? screenVector(shadowMove(move, step), P) : null,
+			cast: move && !grown.has(part.id) ? screenVector(shadowMove(move, step), P) : null,
 		});
 	}
 	// Shadows on the parts below (illustrations.md § Shadows): one light, so a point on a part's top face is in shadow when any
 	// part above it blocks the light, and the union of those casters' projections onto the face's plane is its shadow. Each pair
 	// is the caster's full shadow on that plane, clipped live to the face (the emitter's clipPath), kept when it touches the face
 	// at some reachable pose; it moves by the caster's cast times its motion less the receiver's (runtime place()).
-	const castOf = part => {
-		const move = explode ? vectorOf(part) : liftWorld ? [0, 0, liftWorld] : null;
-		return move ? screenVector(shadowMove(move, step), P) : null;
+	// A growing caster's shadows hold still: its base stays put, so a moved shadow would come loose from it (the grown top's longer
+	// shadow is not drawn). A growing receiver's top rises like a raised one, so the shadows on it ride with it (castOn).
+	const castOf = (part, onTop = false) => {
+		const move = explode ? vectorOf(part) : liftOf(part);
+		return move && (onTop || !grown.has(part.id)) ? screenVector(shadowMove(move, step), P) : null;
 	};
 	const reach = explode ? [explode.min - explode.rest, 0, explode.max - explode.rest].map(k => [k, k]) : liftWorld ? [[0, 0], [1, 0]] : [[0, 0]];
 	const area = poly => Math.abs(poly.reduce((sum, [x, y], i) => sum + x * poly[(i + 1) % poly.length][1] - poly[(i + 1) % poly.length][0] * y, 0)) / 2;
 	for (const receiver of casters) {
 		const top = receivingTop(receiver, receiver.r ?? preset.radius);
 		const face = top.ring.map(([x, y]) => iso([x, y, top.z], P));
-		const castOn = castOf(receiver);
+		const castOn = castOf(receiver, true);
 		const list = [];
 		for (const caster of casters) {
 			if (caster === receiver || caster.at[2] < top.z - 1e-6) continue;
@@ -438,9 +500,10 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 		if (clipped.length >= 3) piece.hit = clipped;
 	}
 
-	// Explode guides: each extreme base corner drops to the highest part whose footprint lies under it.
+	// Explode guides: each extreme base corner drops to the highest part whose footprint lies under it. A select figure draws them
+	// too with `interact.guides`, so a floating layer shows what it hovers over; the upper end rides its part's lift.
 	const guides = [];
-	if (explode) {
+	if (explode || interact?.guides) {
 		for (const part of brief.parts) {
 			if (["ring", "gap", "tray"].includes(part.kind)) continue;
 			const byTarget = new Map();

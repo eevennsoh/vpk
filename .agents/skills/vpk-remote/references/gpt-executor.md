@@ -29,7 +29,9 @@ Substitute `<model>` (the full GPT ID — resolve aliases and defaults from
 `<effort>` (`medium` | `high` | `xhigh` | `max`; `low` is accepted by the CLI
 but deliberately not offered by this skill — see *Choosing effort* in
 SKILL.md) from the dispatch grammar. Create one directory per worker; never
-copy anything from `~/.codex` into it. Luna at `max` was verified end-to-end
+copy anything from `~/.codex` into it. Besides `home/`, it holds the planner's
+`brief.md` and `task.json`, this `run.sh` with the `run.sh.exit` the surface
+wrapper writes, and `report.md`; `scripts/vpk-remote-status.js` reads them. Luna at `max` was verified end-to-end
 through Proximity on 2026-08-03.
 
 ```bash

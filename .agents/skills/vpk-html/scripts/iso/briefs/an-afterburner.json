@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "anchor",
+			"fixed": true,
 			"kind": "box",
 			"at": [
 				-16,
