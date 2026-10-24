@@ -84,7 +84,7 @@ test("tween clocks: tval at 350 ms ≈ EASE_LIFT(0.5); tset to the same target i
 	assert.equal(tdone(calm, 0, true), true);
 });
 
-test("selectReducer: hover, leave, keyboard; neighbours stagger by |rank − a| × 40 ms", () => {
+test("selectReducer: hover, leave, keyboard; neighbours stagger by |rank − a| × 10 ms", () => {
 	let s = { count: 5, active: null, last: null };
 	s = selectReducer(s, { type: "hover", unit: 2 });
 	assert.equal(s.active, 2);
@@ -99,7 +99,7 @@ test("selectReducer: hover, leave, keyboard; neighbours stagger by |rank − a| 
 	}
 	assert.equal(selectReducer({ count: 5, active: null, last: null }, { type: "key", key: "Escape" }).handled, false, "Escape at rest passes through");
 	assert.equal(selectReducer({ count: 5, active: 1, last: null }, { type: "key", key: "a" }).handled, false);
-	assert.deepEqual([0, 1, 2, 3, 4].map(rank => selectDelay(rank, 2)), [80, 40, 0, 40, 80]);
+	assert.deepEqual([0, 1, 2, 3, 4].map(rank => selectDelay(rank, 2)), [20, 10, 0, 10, 20]);
 	assert.equal(selectDelay(3, null), 0);
 });
 

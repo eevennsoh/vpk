@@ -1,0 +1,448 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-four-frames",
+	"figId": "FIG_242",
+	"title": "Four frames as chip stacks",
+	"label": "Dimetric tray with four wells. Each chip is one WebGL draw and each thin chip eight blur passes: a first frame stacks 38 draws, a moving control 35, a still glass one chip and a control at rest leaves its well empty.",
+	"caption": "One chip per draw call, each thin chip eight blur passes: blur is most of both moving frames, which pay the same 32 passes, a still pane draws only its glass, and a control at rest draws nothing at all.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "tray",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				184,
+				40,
+				7
+			],
+			"r": 0,
+			"label": "Tray of four wells"
+		},
+		{
+			"id": "f4-well",
+			"kind": "gap",
+			"at": [
+				151,
+				10,
+				3.2
+			],
+			"size": [
+				20,
+				20,
+				0
+			],
+			"r": 0,
+			"label": "Empty well"
+		},
+		{
+			"id": "f1-field",
+			"kind": "box",
+			"at": [
+				13,
+				10,
+				3.2
+			],
+			"size": [
+				20,
+				20,
+				7
+			],
+			"r": 0,
+			"label": "Field and frost passes",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "f1-ground",
+			"kind": "box",
+			"at": [
+				13,
+				10,
+				10.2
+			],
+			"size": [
+				20,
+				20,
+				7
+			],
+			"r": 0,
+			"label": "Ground pass",
+			"explode": [
+				0,
+				0,
+				2
+			]
+		},
+		{
+			"id": "f1-blur-1",
+			"kind": "box",
+			"at": [
+				13,
+				10,
+				17.2
+			],
+			"size": [
+				20,
+				20,
+				4
+			],
+			"r": 0,
+			"label": "Blur chip, 8 passes",
+			"explode": [
+				0,
+				0,
+				4
+			]
+		},
+		{
+			"id": "f1-blur-2",
+			"kind": "box",
+			"at": [
+				13,
+				10,
+				21.2
+			],
+			"size": [
+				20,
+				20,
+				4
+			],
+			"r": 0,
+			"label": "Blur chip, 8 passes",
+			"explode": [
+				0,
+				0,
+				6
+			],
+			"state": "active"
+		},
+		{
+			"id": "f1-blur-3",
+			"kind": "box",
+			"at": [
+				13,
+				10,
+				25.2
+			],
+			"size": [
+				20,
+				20,
+				4
+			],
+			"r": 0,
+			"label": "Blur chip, 8 passes",
+			"explode": [
+				0,
+				0,
+				8
+			],
+			"state": "active"
+		},
+		{
+			"id": "f1-blur-4",
+			"kind": "box",
+			"at": [
+				13,
+				10,
+				29.2
+			],
+			"size": [
+				20,
+				20,
+				4
+			],
+			"r": 0,
+			"label": "Blur chip, 8 passes",
+			"explode": [
+				0,
+				0,
+				10
+			],
+			"state": "active"
+		},
+		{
+			"id": "f1-glass",
+			"kind": "box",
+			"at": [
+				13,
+				10,
+				33.2
+			],
+			"size": [
+				20,
+				20,
+				7
+			],
+			"r": 0,
+			"label": "Glass pass",
+			"explode": [
+				0,
+				0,
+				12
+			]
+		},
+		{
+			"id": "f2-field",
+			"kind": "box",
+			"at": [
+				59,
+				10,
+				3.2
+			],
+			"size": [
+				20,
+				20,
+				7
+			],
+			"r": 0,
+			"label": "Field rebake",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "f2-blur-1",
+			"kind": "box",
+			"at": [
+				59,
+				10,
+				10.2
+			],
+			"size": [
+				20,
+				20,
+				4
+			],
+			"r": 0,
+			"label": "Blur chip, 8 passes",
+			"explode": [
+				0,
+				0,
+				2
+			],
+			"state": "active"
+		},
+		{
+			"id": "f2-blur-2",
+			"kind": "box",
+			"at": [
+				59,
+				10,
+				14.2
+			],
+			"size": [
+				20,
+				20,
+				4
+			],
+			"r": 0,
+			"label": "Blur chip, 8 passes",
+			"explode": [
+				0,
+				0,
+				4
+			],
+			"state": "active"
+		},
+		{
+			"id": "f2-blur-3",
+			"kind": "box",
+			"at": [
+				59,
+				10,
+				18.2
+			],
+			"size": [
+				20,
+				20,
+				4
+			],
+			"r": 0,
+			"label": "Blur chip, 8 passes",
+			"explode": [
+				0,
+				0,
+				6
+			],
+			"state": "active"
+		},
+		{
+			"id": "f2-blur-4",
+			"kind": "box",
+			"at": [
+				59,
+				10,
+				22.2
+			],
+			"size": [
+				20,
+				20,
+				4
+			],
+			"r": 0,
+			"label": "Blur chip, 8 passes",
+			"explode": [
+				0,
+				0,
+				8
+			],
+			"state": "active"
+		},
+		{
+			"id": "f2-glass",
+			"kind": "box",
+			"at": [
+				59,
+				10,
+				26.2
+			],
+			"size": [
+				20,
+				20,
+				7
+			],
+			"r": 0,
+			"label": "Glass pass",
+			"explode": [
+				0,
+				0,
+				10
+			]
+		},
+		{
+			"id": "f3-glass",
+			"kind": "box",
+			"at": [
+				105,
+				10,
+				3.2
+			],
+			"size": [
+				20,
+				20,
+				7
+			],
+			"r": 0,
+			"label": "Still glass pass",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		}
+	],
+	"focal": "f1-blur-1",
+	"labels": [
+		{
+			"text": "32 blur passes, 8 a chip",
+			"target": "f1-blur-1",
+			"side": "left",
+			"anchor": [
+				19,
+				30,
+				19.2
+			]
+		},
+		{
+			"text": "Same 32 passes",
+			"target": "f2-blur-3",
+			"side": "right",
+			"anchor": [
+				79,
+				20,
+				20.2
+			]
+		},
+		{
+			"text": "First frame, 38 draws",
+			"target": "tray",
+			"side": "left",
+			"anchor": [
+				15,
+				40,
+				3.5
+			]
+		},
+		{
+			"text": "Moving control, 35",
+			"target": "tray",
+			"side": "left",
+			"anchor": [
+				61,
+				40,
+				3.5
+			]
+		},
+		{
+			"text": "Still glass, 1 draw",
+			"target": "tray",
+			"side": "left",
+			"anchor": [
+				107,
+				40,
+				3.5
+			]
+		},
+		{
+			"text": "At rest, nothing drawn",
+			"target": "tray",
+			"side": "left",
+			"anchor": [
+				153,
+				40,
+				3.5
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"tray",
+				"f4-well"
+			],
+			[
+				"f1-field",
+				"f1-ground",
+				"f2-field",
+				"f3-glass",
+				"f1-blur-1",
+				"f1-blur-2",
+				"f2-blur-1",
+				"f2-blur-2",
+				"f1-blur-3",
+				"f1-blur-4",
+				"f2-blur-3",
+				"f2-blur-4",
+				"f1-glass",
+				"f2-glass"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0.4,
+			"min": 0.4,
+			"max": 0.9,
+			"step": 0.05,
+			"unit": "gap"
+		}
+	},
+	"meta": {
+		"margin": "[ DRAW CALLS ]",
+		"corner": "VPK-HTML"
+	}
+}

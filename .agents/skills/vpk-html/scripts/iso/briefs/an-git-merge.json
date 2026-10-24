@@ -1,0 +1,326 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-git-merge",
+	"figId": "FIG_232",
+	"title": "Branch and merge on a model railway",
+	"label": "Dimetric model railway: stations threaded on a main line, and a feature line that branches off and crosses back into main at the accented merge station, which has one stud per parent. Hover or arrow keys lift a part.",
+	"caption": "Committing lays track: each commit is a station threaded on its line. A branch leaves main and runs its own stations; a merge joins it back at a station with two studs, one per parent.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "board",
+			"kind": "tray",
+			"at": [
+				18,
+				0,
+				0
+			],
+			"size": [
+				174,
+				62,
+				5
+			],
+			"r": 4,
+			"label": "Baseboard"
+		},
+		{
+			"id": "fork",
+			"kind": "plate",
+			"at": [
+				40,
+				16,
+				5
+			],
+			"size": [
+				6,
+				30,
+				1.5
+			],
+			"r": 0,
+			"label": "Branch leaves main"
+		},
+		{
+			"id": "main",
+			"kind": "plate",
+			"at": [
+				46,
+				16,
+				5
+			],
+			"size": [
+				68,
+				6,
+				1.5
+			],
+			"r": 0,
+			"label": "Main line"
+		},
+		{
+			"id": "main-c",
+			"kind": "plate",
+			"at": [
+				132,
+				16,
+				5
+			],
+			"size": [
+				30,
+				6,
+				1.5
+			],
+			"r": 0,
+			"label": "Main line"
+		},
+		{
+			"id": "feature",
+			"kind": "plate",
+			"at": [
+				58,
+				40,
+				5
+			],
+			"size": [
+				30,
+				6,
+				1.5
+			],
+			"r": 0,
+			"label": "Feature line"
+		},
+		{
+			"id": "feature-c",
+			"kind": "plate",
+			"at": [
+				100,
+				40,
+				5
+			],
+			"size": [
+				20,
+				6,
+				1.5
+			],
+			"r": 0,
+			"label": "Feature line"
+		},
+		{
+			"id": "join",
+			"kind": "plate",
+			"at": [
+				120,
+				24.5,
+				5
+			],
+			"size": [
+				6,
+				21.5,
+				1.5
+			],
+			"r": 0,
+			"label": "Crossover into main"
+		},
+		{
+			"id": "c1",
+			"kind": "box",
+			"at": [
+				28,
+				14.5,
+				5
+			],
+			"size": [
+				12,
+				9,
+				7
+			],
+			"r": 1,
+			"label": "Root commit on main"
+		},
+		{
+			"id": "f1",
+			"kind": "box",
+			"at": [
+				46,
+				38.5,
+				5
+			],
+			"size": [
+				12,
+				9,
+				7
+			],
+			"r": 1,
+			"label": "Branch commit 1"
+		},
+		{
+			"id": "f2",
+			"kind": "box",
+			"at": [
+				88,
+				38.5,
+				5
+			],
+			"size": [
+				12,
+				9,
+				7
+			],
+			"r": 1,
+			"label": "Branch commit 2"
+		},
+		{
+			"id": "merge",
+			"kind": "box",
+			"at": [
+				114,
+				13.5,
+				5
+			],
+			"size": [
+				18,
+				11,
+				9
+			],
+			"r": 1,
+			"label": "Merge station"
+		},
+		{
+			"id": "head",
+			"kind": "box",
+			"at": [
+				162,
+				14.5,
+				5
+			],
+			"size": [
+				12,
+				9,
+				7
+			],
+			"r": 1,
+			"label": "Head of main"
+		},
+		{
+			"id": "stud-main",
+			"kind": "cylinder",
+			"at": [
+				118.5,
+				19,
+				14
+			],
+			"size": [
+				2,
+				2,
+				4
+			],
+			"label": "Stud for main parent"
+		},
+		{
+			"id": "stud-feature",
+			"kind": "cylinder",
+			"at": [
+				124.5,
+				19,
+				14
+			],
+			"size": [
+				2,
+				2,
+				4
+			],
+			"label": "Stud for feature parent"
+		}
+	],
+	"focal": "merge",
+	"labels": [
+		{
+			"text": "Commit station",
+			"target": "c1",
+			"side": "left"
+		},
+		{
+			"text": "Main line",
+			"target": "main",
+			"side": "left"
+		},
+		{
+			"text": "Branch leaves main",
+			"target": "fork",
+			"side": "left"
+		},
+		{
+			"text": "Feature line",
+			"target": "feature",
+			"side": "left",
+			"anchor": [
+				62,
+				42,
+				6.5
+			]
+		},
+		{
+			"text": "One stud per parent",
+			"target": "merge",
+			"side": "right",
+			"anchor": [
+				121.5,
+				23.5,
+				14
+			]
+		},
+		{
+			"text": "Merge station",
+			"target": "merge",
+			"side": "right"
+		},
+		{
+			"text": "Head of main",
+			"target": "head",
+			"side": "right",
+			"anchor": [
+				164,
+				16,
+				12
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"board"
+			],
+			[
+				"fork",
+				"main",
+				"main-c",
+				"feature",
+				"feature-c",
+				"join"
+			],
+			[
+				"c1",
+				"f1",
+				"f2",
+				"head"
+			],
+			[
+				"merge"
+			],
+			[
+				"stud-main",
+				"stud-feature"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"rest": "merged · 2 parents",
+		"lift": 10
+	},
+	"meta": {
+		"margin": "[ BRANCH + MERGE ]",
+		"corner": "VPK-HTML"
+	}
+}

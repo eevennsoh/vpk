@@ -1,0 +1,80 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-patch",
+	"figId": "FIG_120",
+	"title": "A patch panel and its cables",
+	"label": "Isometric rack-mount patch panel with an ear at each end and sixteen ports. Fifteen cables plug out of the front and drop to hang below it; port 16 is empty. One cable is accented. Hover or arrow keys raise one plug or cable.",
+	"caption": "Every cable plugs into one port and hangs below the panel; pick a plug or its cable and it rises, so you can trace which port it serves.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "ear-l", "kind": "box", "at": [-10, 0, 44], "size": [10, 6, 24], "r": 1, "marks": [[[3, 3], [7, 3]]], "label": "Mounting ear" },
+		{ "id": "seg1", "kind": "box", "at": [0, 0, 44], "size": [20, 6, 24], "r": 1, "marks": [[[2, 3], [18, 3]]], "label": "Panel ports 1–2" },
+		{ "id": "seg2", "kind": "box", "at": [20, 0, 44], "size": [20, 6, 24], "r": 1, "marks": [[[2, 3], [18, 3]]], "label": "Panel ports 3–4" },
+		{ "id": "seg3", "kind": "box", "at": [40, 0, 44], "size": [20, 6, 24], "r": 1, "marks": [[[2, 3], [18, 3]]], "label": "Panel ports 5–6" },
+		{ "id": "seg4", "kind": "box", "at": [60, 0, 44], "size": [20, 6, 24], "r": 1, "marks": [[[2, 3], [18, 3]]], "label": "Panel ports 7–8" },
+		{ "id": "seg5", "kind": "box", "at": [80, 0, 44], "size": [20, 6, 24], "r": 1, "marks": [[[2, 3], [18, 3]]], "label": "Panel ports 9–10" },
+		{ "id": "seg6", "kind": "box", "at": [100, 0, 44], "size": [20, 6, 24], "r": 1, "marks": [[[2, 3], [18, 3]]], "label": "Panel ports 11–12" },
+		{ "id": "seg7", "kind": "box", "at": [120, 0, 44], "size": [20, 6, 24], "r": 1, "marks": [[[2, 3], [18, 3]]], "label": "Panel ports 13–14" },
+		{ "id": "seg8", "kind": "box", "at": [140, 0, 44], "size": [20, 6, 24], "r": 1, "marks": [[[2, 3], [18, 3]]], "label": "Panel ports 15–16" },
+		{ "id": "ear-r", "kind": "box", "at": [160, 0, 44], "size": [10, 6, 24], "r": 1, "marks": [[[3, 3], [7, 3]]], "label": "Mounting ear" },
+		{ "id": "plug1", "kind": "box", "at": [2.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 1" },
+		{ "id": "drop1", "kind": "box", "at": [2.5, 13, 0], "size": [5, 5, 51], "r": 0, "label": "Cable from port 1" },
+		{ "id": "plug2", "kind": "box", "at": [12.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 2" },
+		{ "id": "drop2", "kind": "box", "at": [12.5, 13, 18], "size": [5, 5, 33], "r": 0, "label": "Cable from port 2" },
+		{ "id": "plug3", "kind": "box", "at": [22.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 3" },
+		{ "id": "drop3", "kind": "box", "at": [22.5, 13, 6], "size": [5, 5, 45], "r": 0, "label": "Cable from port 3" },
+		{ "id": "plug4", "kind": "box", "at": [32.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 4" },
+		{ "id": "drop4", "kind": "box", "at": [32.5, 13, 14], "size": [5, 5, 37], "r": 0, "label": "Cable from port 4" },
+		{ "id": "plug5", "kind": "box", "at": [42.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 5" },
+		{ "id": "drop5", "kind": "box", "at": [42.5, 13, 22], "size": [5, 5, 29], "r": 0, "label": "Cable from port 5" },
+		{ "id": "plug6", "kind": "box", "at": [52.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 6" },
+		{ "id": "drop6", "kind": "box", "at": [52.5, 13, 10], "size": [5, 5, 41], "r": 0, "label": "Cable from port 6" },
+		{ "id": "plug7", "kind": "box", "at": [62.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 7" },
+		{ "id": "drop7", "kind": "box", "at": [62.5, 13, 16], "size": [5, 5, 35], "r": 0, "label": "Cable from port 7" },
+		{ "id": "plug8", "kind": "box", "at": [72.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 8" },
+		{ "id": "drop8", "kind": "box", "at": [72.5, 13, 4], "size": [5, 5, 47], "r": 0, "label": "Cable from port 8" },
+		{ "id": "plug9", "kind": "box", "at": [82.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 9" },
+		{ "id": "drop9", "kind": "box", "at": [82.5, 13, 20], "size": [5, 5, 31], "r": 0, "label": "Cable from port 9" },
+		{ "id": "plug10", "kind": "box", "at": [92.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 10" },
+		{ "id": "drop10", "kind": "box", "at": [92.5, 13, 12], "size": [5, 5, 39], "r": 0, "label": "Cable from port 10" },
+		{ "id": "plug11", "kind": "box", "at": [102.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 11" },
+		{ "id": "drop11", "kind": "box", "at": [102.5, 13, 24], "size": [5, 5, 27], "r": 0, "label": "Cable from port 11" },
+		{ "id": "plug12", "kind": "box", "at": [112.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 12" },
+		{ "id": "drop12", "kind": "box", "at": [112.5, 13, 8], "size": [5, 5, 43], "r": 0, "label": "Cable from port 12" },
+		{ "id": "plug13", "kind": "box", "at": [122.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 13" },
+		{ "id": "drop13", "kind": "box", "at": [122.5, 13, 2], "size": [5, 5, 49], "r": 0, "label": "Cable from port 13" },
+		{ "id": "plug14", "kind": "box", "at": [132.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 14" },
+		{ "id": "drop14", "kind": "box", "at": [132.5, 13, 15], "size": [5, 5, 36], "r": 0, "label": "Cable from port 14" },
+		{ "id": "plug15", "kind": "box", "at": [142.5, 6, 50], "size": [5, 12, 7], "r": 0, "label": "Plug in port 15" },
+		{ "id": "drop15", "kind": "box", "at": [142.5, 13, 6], "size": [5, 5, 45], "r": 0, "label": "Cable from port 15" },
+		{ "id": "port16", "kind": "box", "at": [151.5, 6, 51], "size": [7, 2, 7], "r": 0.5, "state": "new", "label": "Empty port 16" }
+	],
+	"focal": "drop1",
+	"labels": [
+		{ "text": "Mounting ear", "target": "ear-l", "side": "left" },
+		{ "text": "Selected cable", "target": "drop1", "side": "left" },
+		{ "text": "Plug", "target": "plug1", "side": "left", "anchor": [5, 18, 52.5] },
+		{ "text": "Empty port", "target": "port16", "side": "right" },
+		{ "text": "Patch panel", "target": "seg8", "side": "right", "anchor": [150, 3, 68] }
+	],
+	"assemble": {
+		"layers": [
+			["ear-l", "ear-r", "seg1", "seg2", "seg3", "seg4", "seg5", "seg6", "seg7", "seg8"],
+			["port16", "plug1", "plug2", "plug3", "plug4", "plug5", "plug6", "plug7", "plug8", "plug9", "plug10", "plug11", "plug12", "plug13", "plug14", "plug15"],
+			["drop1", "drop2", "drop3", "drop4", "drop5", "drop6", "drop7", "drop8"],
+			["drop9", "drop10", "drop11", "drop12", "drop13", "drop14", "drop15"]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"rest": "Panel at rest",
+		"lift": 10
+	},
+	"meta": {
+		"margin": "[ PATCH ]",
+		"corner": "VPK-HTML"
+	}
+}

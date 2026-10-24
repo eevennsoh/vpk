@@ -19,6 +19,11 @@ plus reruns can take an hour.
 
 - Exit 0: checks passed, review gate clear, merge state `CLEAN`. Merge now:
   `gh pr merge <number> --merge --delete-branch`.
+- Exit 3 with `checks.state: "billing-blocked"`: GitHub Actions did not run
+  because of account billing, and nothing else blocks. Skip GitHub CI without
+  asking or waiting: run `pnpm run ci:pr` locally at the PR head, comment the
+  result on the PR, and merge with the same command only if it exited 0. Follow
+  [Billing-blocked CI](review-gate.md#billing-blocked-ci).
 - Exit 2 with `checks.state: "failing"`: stop and report each failing check's
   name and URL. Do not retry or fix unless the user asked for remediation.
 - Exit 2 with `checks.state: "interrupted"`: a run was cancelled or timed out
@@ -57,7 +62,8 @@ Prefer merge commits unless the user explicitly asks for squash or rebase.
   current-head policy result. Old-head approval is not reusable proof.
 - Treat Codex review timeout or unavailability as non-blocking once recorded;
   treat unresolved conversations and failing, interrupted, or pending checks as
-  blocking.
+  blocking. Billing-blocked checks are replaced by a passing local
+  `pnpm run ci:pr`; they are not skipped silently.
 
 ## Sync persistent main
 

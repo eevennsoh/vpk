@@ -1,0 +1,246 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-laptop",
+	"figId": "FIG_110",
+	"title": "A laptop open on its hinge",
+	"label": "Isometric thin laptop standing open: a low base with a keyboard deck and trackpad, a hinge bar along its back edge, and an upright lid carrying the display panel. The display is accented.",
+	"caption": "Everything hangs off one hinge: the base stays put and the thin lid, with the display, swings on it.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "base",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				140,
+				96,
+				5
+			],
+			"r": 5,
+			"label": "Base"
+		},
+		{
+			"id": "hinge",
+			"kind": "box",
+			"at": [
+				14,
+				0,
+				5
+			],
+			"size": [
+				112,
+				7,
+				5
+			],
+			"r": 2,
+			"label": "Hinge",
+			"explode": [
+				0,
+				0,
+				6
+			]
+		},
+		{
+			"id": "keyboard",
+			"kind": "box",
+			"at": [
+				14,
+				10,
+				4
+			],
+			"size": [
+				112,
+				34,
+				2
+			],
+			"r": 2,
+			"marks": [
+				[
+					[
+						6,
+						9
+					],
+					[
+						106,
+						9
+					]
+				],
+				[
+					[
+						6,
+						17
+					],
+					[
+						106,
+						17
+					]
+				],
+				[
+					[
+						6,
+						25
+					],
+					[
+						106,
+						25
+					]
+				]
+			],
+			"label": "Keyboard",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "trackpad",
+			"kind": "box",
+			"at": [
+				46,
+				50,
+				4
+			],
+			"size": [
+				48,
+				22,
+				2
+			],
+			"r": 3,
+			"label": "Trackpad",
+			"explode": [
+				0,
+				0,
+				8
+			]
+		},
+		{
+			"id": "lid",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				10
+			],
+			"size": [
+				140,
+				4,
+				90
+			],
+			"r": 3,
+			"label": "Lid",
+			"explode": [
+				0,
+				0,
+				16
+			]
+		},
+		{
+			"id": "display",
+			"kind": "box",
+			"at": [
+				8,
+				4,
+				18
+			],
+			"size": [
+				124,
+				1,
+				74
+			],
+			"label": "Display",
+			"explode": [
+				0,
+				0,
+				16
+			]
+		}
+	],
+	"focal": "display",
+	"labels": [
+		{
+			"text": "Display",
+			"target": "display",
+			"side": "left"
+		},
+		{
+			"text": "Lid",
+			"target": "lid",
+			"side": "right",
+			"anchor": [
+				140,
+				2,
+				30
+			]
+		},
+		{
+			"text": "Hinge",
+			"target": "hinge",
+			"side": "right",
+			"anchor": [
+				120,
+				7,
+				9
+			]
+		},
+		{
+			"text": "Keyboard",
+			"target": "keyboard",
+			"side": "left"
+		},
+		{
+			"text": "Trackpad",
+			"target": "trackpad",
+			"side": "left",
+			"anchor": [
+				48,
+				52,
+				6
+			]
+		},
+		{
+			"text": "Base",
+			"target": "base",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"base"
+			],
+			[
+				"keyboard",
+				"trackpad"
+			],
+			[
+				"hinge"
+			],
+			[
+				"lid",
+				"display"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 1,
+			"step": 0.25,
+			"unit": "gap"
+		}
+	},
+	"meta": {
+		"margin": "[ LAPTOP ]",
+		"corner": "VPK-HTML"
+	}
+}

@@ -1,0 +1,389 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-b-tree",
+	"figId": "FIG_211",
+	"title": "B-tree index, a rotary card file",
+	"label": "Dimetric rotary card file: four card trays on the spokes of a crank-turned wheel above a drawer cabinet. The wheel has brought one tray down onto the reading stop, accented, leaving its spoke empty; the other three wait.",
+	"caption": "Each tray is one page of the index; the wheel brings a single tray down to the reading stop, so finding a row costs one read per level, not one per card.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "cabinet-back",
+			"kind": "box",
+			"at": [
+				-12,
+				-18,
+				0
+			],
+			"size": [
+				88,
+				66,
+				20
+			],
+			"r": 0,
+			"label": "Base cabinet"
+		},
+		{
+			"id": "cabinet",
+			"kind": "box",
+			"at": [
+				-12,
+				48,
+				0
+			],
+			"size": [
+				88,
+				30,
+				20
+			],
+			"r": 0,
+			"label": "Base cabinet"
+		},
+		{
+			"id": "post",
+			"kind": "box",
+			"at": [
+				-9,
+				24,
+				20
+			],
+			"size": [
+				5,
+				8,
+				48
+			],
+			"r": 0,
+			"label": "Wheel post"
+		},
+		{
+			"id": "axle",
+			"kind": "box",
+			"at": [
+				-4,
+				26,
+				64
+			],
+			"size": [
+				21,
+				4,
+				4
+			],
+			"r": 0,
+			"label": "Axle"
+		},
+		{
+			"id": "hub",
+			"kind": "box",
+			"at": [
+				25,
+				20,
+				58
+			],
+			"size": [
+				9,
+				16,
+				16
+			],
+			"r": 0,
+			"label": "Hub"
+		},
+		{
+			"id": "crank",
+			"kind": "box",
+			"at": [
+				34,
+				26,
+				48
+			],
+			"size": [
+				3,
+				4,
+				20
+			],
+			"r": 0,
+			"label": "Axle and crank"
+		},
+		{
+			"id": "stop",
+			"kind": "box",
+			"at": [
+				48,
+				17,
+				20
+			],
+			"size": [
+				26,
+				22,
+				3
+			],
+			"r": 0,
+			"label": "Reading stop"
+		},
+		{
+			"id": "spoke-up",
+			"kind": "box",
+			"at": [
+				30,
+				26.5,
+				74
+			],
+			"size": [
+				2,
+				3,
+				23.5
+			],
+			"r": 0,
+			"label": "Spoke"
+		},
+		{
+			"id": "spoke-down",
+			"kind": "box",
+			"at": [
+				30,
+				26.5,
+				34.5
+			],
+			"size": [
+				2,
+				3,
+				23.5
+			],
+			"r": 0,
+			"label": "Spoke"
+		},
+		{
+			"id": "spoke-back",
+			"kind": "box",
+			"at": [
+				30,
+				-2,
+				64.5
+			],
+			"size": [
+				2,
+				22,
+				3
+			],
+			"r": 0,
+			"label": "Spoke"
+		},
+		{
+			"id": "spoke-front",
+			"kind": "box",
+			"at": [
+				30,
+				36,
+				64.5
+			],
+			"size": [
+				2,
+				22,
+				3
+			],
+			"r": 0,
+			"label": "Spoke"
+		},
+		{
+			"id": "clip",
+			"kind": "box",
+			"at": [
+				27,
+				25,
+				32.5
+			],
+			"size": [
+				5,
+				6,
+				2
+			],
+			"r": 0,
+			"label": "Empty clip, its tray at the stop"
+		},
+		{
+			"id": "drawer-1",
+			"kind": "box",
+			"at": [
+				-6,
+				78,
+				5
+			],
+			"size": [
+				35,
+				0.8,
+				10
+			],
+			"r": 0,
+			"label": "Drawer 1"
+		},
+		{
+			"id": "drawer-2",
+			"kind": "box",
+			"at": [
+				35,
+				78,
+				5
+			],
+			"size": [
+				35,
+				0.8,
+				10
+			],
+			"r": 0,
+			"label": "Drawer 2"
+		},
+		{
+			"id": "tray-1",
+			"kind": "tray",
+			"at": [
+				50,
+				20,
+				23
+			],
+			"size": [
+				22,
+				16,
+				13
+			],
+			"r": 0,
+			"label": "Tray at the reading stop"
+		},
+		{
+			"id": "tray-2",
+			"kind": "box",
+			"at": [
+				10,
+				58,
+				59.5
+			],
+			"size": [
+				22,
+				16,
+				13
+			],
+			"r": 0,
+			"label": "Tray 2"
+		},
+		{
+			"id": "tray-3",
+			"kind": "box",
+			"at": [
+				10,
+				20,
+				97.5
+			],
+			"size": [
+				22,
+				16,
+				13
+			],
+			"r": 0,
+			"label": "Tray 3"
+		},
+		{
+			"id": "tray-4",
+			"kind": "box",
+			"at": [
+				10,
+				-18,
+				59.5
+			],
+			"size": [
+				22,
+				16,
+				13
+			],
+			"r": 0,
+			"label": "Tray 4"
+		}
+	],
+	"focal": "tray-1",
+	"labels": [
+		{
+			"text": "Page at the stop",
+			"target": "tray-1",
+			"side": "right",
+			"anchor": [
+				72,
+				30,
+				29.5
+			]
+		},
+		{
+			"text": "Reading stop",
+			"target": "stop",
+			"side": "right",
+			"anchor": [
+				74,
+				22,
+				21.5
+			]
+		},
+		{
+			"text": "Tray, one page",
+			"target": "tray-4",
+			"side": "right"
+		},
+		{
+			"text": "Axle and crank",
+			"target": "crank",
+			"side": "right"
+		},
+		{
+			"text": "Spoked wheel",
+			"target": "spoke-down",
+			"side": "right",
+			"anchor": [
+				32,
+				28,
+				38.5
+			]
+		},
+		{
+			"text": "Base cabinet",
+			"target": "cabinet",
+			"side": "left"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"cabinet-back",
+				"cabinet",
+				"post",
+				"stop",
+				"drawer-1",
+				"drawer-2"
+			],
+			[
+				"axle",
+				"hub",
+				"crank",
+				"clip",
+				"spoke-up",
+				"spoke-down",
+				"spoke-back",
+				"spoke-front"
+			],
+			[
+				"tray-2",
+				"tray-3",
+				"tray-4"
+			],
+			[
+				"tray-1"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "1 read per level"
+	},
+	"meta": {
+		"margin": "[ 4 TRAYS ]",
+		"corner": "VPK-HTML"
+	}
+}

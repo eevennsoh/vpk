@@ -1,0 +1,292 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-foundry",
+	"figId": "FIG_230",
+	"title": "Pouring steel",
+	"label": "Dimetric foundry: a lined ladle on a trunnion, tilted by a hand wheel through a worm gearbox, pours a steel stream into the basin of a sand mould clamped on its bottom board. Hover or arrow keys lift a part.",
+	"caption": "Forty turns of the hand wheel tip the ladle one turn on its trunnion, so the pourer can meter a 1,636 °C stream into the basin and stop before the mould overflows its riser.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "board",
+			"kind": "box",
+			"at": [
+				0,
+				10,
+				0
+			],
+			"size": [
+				44,
+				42,
+				4
+			],
+			"r": 1,
+			"label": "Bottom board"
+		},
+		{
+			"id": "mould",
+			"kind": "box",
+			"at": [
+				2,
+				12,
+				4
+			],
+			"size": [
+				40,
+				38,
+				26
+			],
+			"r": 1,
+			"marks": [
+				[
+					[
+						0,
+						19
+					],
+					[
+						40,
+						19
+					]
+				]
+			],
+			"label": "Sand mould"
+		},
+		{
+			"id": "riser",
+			"kind": "cylinder",
+			"at": [
+				12,
+				40,
+				30
+			],
+			"size": [
+				4,
+				4,
+				5
+			],
+			"label": "Riser"
+		},
+		{
+			"id": "basin",
+			"kind": "cylinder",
+			"at": [
+				37,
+				17,
+				30
+			],
+			"size": [
+				4,
+				4,
+				4
+			],
+			"label": "Basin"
+		},
+		{
+			"id": "column",
+			"kind": "box",
+			"at": [
+				-18,
+				-1,
+				0
+			],
+			"size": [
+				10,
+				10,
+				62
+			],
+			"r": 1,
+			"label": "Column"
+		},
+		{
+			"id": "gearbox",
+			"kind": "box",
+			"at": [
+				-28,
+				-1,
+				44
+			],
+			"size": [
+				10,
+				10,
+				12
+			],
+			"r": 1,
+			"label": "Worm gearbox"
+		},
+		{
+			"id": "wheel",
+			"kind": "box",
+			"at": [
+				-29.5,
+				9,
+				43.5
+			],
+			"size": [
+				13,
+				1.5,
+				13
+			],
+			"label": "Hand wheel"
+		},
+		{
+			"id": "trunnion",
+			"kind": "box",
+			"at": [
+				-8,
+				5,
+				52
+			],
+			"size": [
+				48,
+				4,
+				4
+			],
+			"label": "Trunnion"
+		},
+		{
+			"id": "ladle",
+			"kind": "cylinder",
+			"at": [
+				41,
+				9,
+				44
+			],
+			"size": [
+				5,
+				5,
+				16
+			],
+			"label": "Lined ladle"
+		},
+		{
+			"id": "lip",
+			"kind": "box",
+			"at": [
+				35,
+				13,
+				57
+			],
+			"size": [
+				4,
+				6,
+				3
+			],
+			"label": "Pouring lip"
+		},
+		{
+			"id": "stream",
+			"kind": "cylinder",
+			"at": [
+				37,
+				17,
+				34
+			],
+			"size": [
+				0.8,
+				0.8,
+				23
+			],
+			"label": "Steel stream"
+		}
+	],
+	"focal": "ladle",
+	"labels": [
+		{
+			"text": "Lined ladle",
+			"target": "ladle",
+			"side": "right",
+			"anchor": [
+				45,
+				13,
+				49
+			]
+		},
+		{
+			"text": "Stream 1,636 °C",
+			"target": "stream",
+			"side": "right",
+			"anchor": [
+				37,
+				17.8,
+				42
+			]
+		},
+		{
+			"text": "Basin",
+			"target": "basin",
+			"side": "right"
+		},
+		{
+			"text": "Trunnion",
+			"target": "trunnion",
+			"side": "right",
+			"anchor": [
+				22,
+				7,
+				56
+			]
+		},
+		{
+			"text": "Worm gearbox 40:1",
+			"target": "gearbox",
+			"side": "left"
+		},
+		{
+			"text": "Hand wheel",
+			"target": "wheel",
+			"side": "left"
+		},
+		{
+			"text": "Riser",
+			"target": "riser",
+			"side": "left"
+		},
+		{
+			"text": "Sand mould",
+			"target": "mould",
+			"side": "left"
+		},
+		{
+			"text": "Bottom board",
+			"target": "board",
+			"side": "left"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"board",
+				"column"
+			],
+			[
+				"mould",
+				"gearbox"
+			],
+			[
+				"trunnion",
+				"wheel"
+			],
+			[
+				"basin",
+				"riser",
+				"ladle"
+			],
+			[
+				"lip",
+				"stream"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 10,
+		"rest": "Ladle pouring from its lip"
+	},
+	"meta": {
+		"margin": "[ FOUNDRY ]",
+		"corner": "VPK-HTML"
+	}
+}

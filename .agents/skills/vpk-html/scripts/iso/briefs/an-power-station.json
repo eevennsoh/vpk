@@ -1,0 +1,437 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-power-station",
+	"figId": "FIG_222",
+	"title": "Power station",
+	"label": "Dimetric generating unit: generator and exciter on a pedestal, a step-up transformer with its bushing, a breaker, and a switchyard gantry over a disconnector blade on two insulator posts. The blade is highlighted; hover lifts it open.",
+	"caption": "The breaker is built to interrupt 660 MW; the disconnector is not. Open the breaker first, then lift the blade, or an arc climbs between the blade and its contact until the breaker clears it.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "plinth-gen",
+			"kind": "box",
+			"at": [
+				0,
+				10,
+				0
+			],
+			"size": [
+				74,
+				38,
+				4
+			],
+			"r": 0,
+			"marks": [
+				[
+					[
+						4,
+						34
+					],
+					[
+						70,
+						34
+					]
+				]
+			],
+			"label": "Generator plinth",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "pedestal",
+			"kind": "box",
+			"at": [
+				6,
+				16,
+				4
+			],
+			"size": [
+				62,
+				24,
+				6
+			],
+			"r": 0,
+			"label": "Pedestal",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "generator",
+			"kind": "box",
+			"at": [
+				8,
+				18,
+				10
+			],
+			"size": [
+				52,
+				20,
+				20
+			],
+			"r": 9,
+			"marks": [
+				[
+					[
+						14,
+						2
+					],
+					[
+						14,
+						18
+					]
+				]
+			],
+			"label": "Generator",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "exciter",
+			"kind": "box",
+			"at": [
+				60,
+				22,
+				10
+			],
+			"size": [
+				8,
+				12,
+				12
+			],
+			"r": 4,
+			"label": "Exciter",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "plinth-tx",
+			"kind": "box",
+			"at": [
+				86,
+				14,
+				0
+			],
+			"size": [
+				36,
+				44,
+				4
+			],
+			"r": 0,
+			"label": "Transformer plinth",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "transformer",
+			"kind": "box",
+			"at": [
+				86,
+				30,
+				4
+			],
+			"size": [
+				26,
+				28,
+				26
+			],
+			"r": 2,
+			"marks": [
+				[
+					[
+						6,
+						2
+					],
+					[
+						6,
+						26
+					]
+				]
+			],
+			"label": "Transformer",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "bushing",
+			"kind": "cylinder",
+			"at": [
+				99,
+				44,
+				30
+			],
+			"size": [
+				2.5,
+				2.5,
+				8
+			],
+			"label": "Bushing",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "breaker",
+			"kind": "cylinder",
+			"at": [
+				134,
+				66,
+				0
+			],
+			"size": [
+				4,
+				4,
+				24
+			],
+			"label": "Breaker",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "leg-a",
+			"kind": "box",
+			"at": [
+				148,
+				4,
+				0
+			],
+			"size": [
+				4,
+				4,
+				62
+			],
+			"r": 0,
+			"label": "Gantry leg",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "leg-b",
+			"kind": "box",
+			"at": [
+				148,
+				54,
+				0
+			],
+			"size": [
+				4,
+				4,
+				62
+			],
+			"r": 0,
+			"label": "Gantry leg",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "beam",
+			"kind": "box",
+			"at": [
+				148.5,
+				8,
+				55
+			],
+			"size": [
+				3,
+				46,
+				4
+			],
+			"r": 0,
+			"label": "Gantry beam",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "post-a",
+			"kind": "cylinder",
+			"at": [
+				164,
+				16,
+				0
+			],
+			"size": [
+				2.5,
+				2.5,
+				34
+			],
+			"label": "Insulator",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "post-b",
+			"kind": "cylinder",
+			"at": [
+				164,
+				36,
+				0
+			],
+			"size": [
+				2.5,
+				2.5,
+				34
+			],
+			"label": "Insulator",
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "blade",
+			"kind": "box",
+			"at": [
+				163,
+				14.5,
+				34
+			],
+			"size": [
+				2,
+				23,
+				3
+			],
+			"r": 1,
+			"explode": [
+				0,
+				0,
+				10
+			],
+			"label": "Disconnector"
+		}
+	],
+	"focal": "blade",
+	"labels": [
+		{
+			"text": "Generator 3,000 rpm",
+			"target": "generator",
+			"side": "left"
+		},
+		{
+			"text": "Transformer 22 to 400 kV",
+			"target": "transformer",
+			"side": "left",
+			"anchor": [
+				88,
+				58,
+				6
+			]
+		},
+		{
+			"text": "Breaker",
+			"target": "breaker",
+			"side": "left",
+			"anchor": [
+				131.2,
+				68.8,
+				4
+			]
+		},
+		{
+			"text": "Gantry",
+			"target": "leg-a",
+			"side": "right",
+			"anchor": [
+				152,
+				6,
+				50
+			]
+		},
+		{
+			"text": "Disconnector",
+			"target": "blade",
+			"side": "right",
+			"anchor": [
+				164,
+				15.5,
+				37
+			]
+		},
+		{
+			"text": "Insulator",
+			"target": "post-a",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"plinth-gen",
+				"plinth-tx"
+			],
+			[
+				"pedestal",
+				"transformer"
+			],
+			[
+				"generator",
+				"exciter",
+				"bushing"
+			],
+			[
+				"breaker",
+				"leg-a",
+				"leg-b"
+			],
+			[
+				"post-a",
+				"post-b",
+				"beam"
+			],
+			[
+				"blade"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 1,
+			"step": 0.25,
+			"unit": "open"
+		}
+	},
+	"meta": {
+		"margin": "[ POWER STATION ]",
+		"corner": "VPK-HTML"
+	}
+}

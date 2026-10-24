@@ -1,0 +1,273 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-dns",
+	"figId": "FIG_203",
+	"title": "DNS resolution by pneumatic tube",
+	"label": "Dimetric pneumatic tube desk: a resolver drum at the centre, three tubes of rising height up to the root, com and example.com servers, and a row of cache flags. The resolver is accented.",
+	"caption": "The resolver sends one capsule up each tube in turn, root, then com, then example.com, each tube as long as its round trip, and every answer raises a cache flag that stands until its time to live runs out.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "desk",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				40,
+				40,
+				6
+			],
+			"label": "Dispatch desk"
+		},
+		{
+			"id": "track",
+			"kind": "ring",
+			"at": [
+				12,
+				12,
+				6
+			],
+			"size": [
+				14,
+				14,
+				0
+			],
+			"label": "Capsule track"
+		},
+		{
+			"id": "resolver",
+			"kind": "cylinder",
+			"at": [
+				12,
+				12,
+				6
+			],
+			"size": [
+				8,
+				8,
+				10
+			],
+			"label": "Resolver"
+		},
+		{
+			"id": "tube-root",
+			"kind": "box",
+			"at": [
+				-28,
+				12,
+				6
+			],
+			"size": [
+				4,
+				4,
+				30
+			],
+			"label": "Root tube",
+			"r": 0
+		},
+		{
+			"id": "srv-root",
+			"kind": "box",
+			"at": [
+				-32,
+				8,
+				36
+			],
+			"size": [
+				12,
+				12,
+				8
+			],
+			"r": 2,
+			"label": "Root server"
+		},
+		{
+			"id": "tube-com",
+			"kind": "box",
+			"at": [
+				-7,
+				-7,
+				6
+			],
+			"size": [
+				4,
+				4,
+				52
+			],
+			"label": "Com tube",
+			"r": 0
+		},
+		{
+			"id": "srv-com",
+			"kind": "box",
+			"at": [
+				-11,
+				-11,
+				58
+			],
+			"size": [
+				12,
+				12,
+				8
+			],
+			"r": 2,
+			"label": "Com server"
+		},
+		{
+			"id": "tube-ex",
+			"kind": "box",
+			"at": [
+				14,
+				-28,
+				6
+			],
+			"size": [
+				4,
+				4,
+				76
+			],
+			"label": "example.com tube",
+			"r": 0
+		},
+		{
+			"id": "srv-ex",
+			"kind": "box",
+			"at": [
+				10,
+				-32,
+				82
+			],
+			"size": [
+				12,
+				12,
+				8
+			],
+			"r": 2,
+			"label": "example.com server"
+		},
+		{
+			"id": "flag-1",
+			"kind": "box",
+			"at": [
+				-20,
+				20,
+				6
+			],
+			"size": [
+				3,
+				3,
+				16
+			],
+			"label": "Cache flag",
+			"r": 0
+		},
+		{
+			"id": "flag-2",
+			"kind": "box",
+			"at": [
+				-15,
+				20,
+				6
+			],
+			"size": [
+				3,
+				3,
+				13
+			],
+			"label": "Cache flag",
+			"r": 0
+		},
+		{
+			"id": "flag-3",
+			"kind": "box",
+			"at": [
+				-10,
+				20,
+				6
+			],
+			"size": [
+				3,
+				3,
+				9
+			],
+			"label": "Cache flag",
+			"r": 0
+		}
+	],
+	"focal": "resolver",
+	"labels": [
+		{
+			"text": "Resolver",
+			"target": "resolver",
+			"side": "right"
+		},
+		{
+			"text": "Root server",
+			"target": "srv-root",
+			"side": "left"
+		},
+		{
+			"text": "Com server",
+			"target": "srv-com",
+			"side": "left"
+		},
+		{
+			"text": "example.com server",
+			"target": "srv-ex",
+			"side": "right"
+		},
+		{
+			"text": "Cache flags",
+			"target": "flag-1",
+			"side": "left"
+		},
+		{
+			"text": "Dispatch desk",
+			"target": "desk",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"desk",
+				"track"
+			],
+			[
+				"resolver"
+			],
+			[
+				"tube-root",
+				"tube-com",
+				"tube-ex"
+			],
+			[
+				"srv-root"
+			],
+			[
+				"srv-com"
+			],
+			[
+				"srv-ex",
+				"flag-1",
+				"flag-2",
+				"flag-3"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"rest": "Lookup at rest",
+		"lift": 8
+	},
+	"meta": {
+		"margin": "[ ROOT · COM · EXAMPLE ]",
+		"corner": "VPK-HTML"
+	}
+}

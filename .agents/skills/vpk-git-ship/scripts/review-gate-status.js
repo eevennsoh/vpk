@@ -22,6 +22,14 @@ const INTERRUPTED_CONCLUSIONS = new Set(["CANCELLED", "TIMED_OUT"]);
 // GitHub branch protection is not enforced on this private repo, so the merge gate
 // itself must require CI. A required check that has not reported yet counts as pending.
 const DEFAULT_REQUIRED_CHECKS = ["PR checks"];
+// GitHub refuses to start Actions jobs when account billing fails. The check then reports
+// FAILURE after 1-2 seconds with this annotation, so it says nothing about the code.
+const BILLING_ANNOTATION_PATTERN = /spending limit|payments have failed|billing & plans/iu;
+// Billing-blocked is not clear, but it is the one CI state the caller may replace with a
+// local `pnpm run ci:pr` run on the PR head. Real failures still exit 2.
+const BILLING_BLOCKED_EXIT_CODE = 3;
+// A failed check makes an unprotected PR UNSTABLE; anything else (DIRTY, BLOCKED, ...) still blocks.
+const LOCAL_CI_MERGE_STATES = new Set(["CLEAN", "UNSTABLE"]);
 
 function spawnGhJson(spawn, args, env) {
 	return spawn("gh", args, {
@@ -34,6 +42,15 @@ function spawnGhJson(spawn, args, env) {
 function workflowRunId(url) {
 	const match = /\/actions\/runs\/(\d+)/u.exec(url ?? "");
 	return match ? match[1] : null;
+}
+
+function checkRunId(url) {
+	const match = /\/job\/(\d+)/u.exec(url ?? "");
+	return match ? match[1] : null;
+}
+
+function isBillingAnnotation(annotation) {
+	return BILLING_ANNOTATION_PATTERN.test(`${annotation?.title ?? ""}\n${annotation?.message ?? ""}`);
 }
 
 function rerunWorkflowRun(runId, { env = process.env, spawn = spawnSync } = {}) {
@@ -132,10 +149,15 @@ async function fetchGraphqlThreads({ name, owner, prNumber, runGh }) {
 	};
 }
 
+function checkConclusion(check) {
+	return String(check.conclusion ?? check.state ?? "").toUpperCase();
+}
+
 function normalizeCheck(check) {
-	const conclusion = String(check.conclusion ?? check.state ?? "").toUpperCase();
+	const conclusion = checkConclusion(check);
 	const status = String(check.status ?? "").toUpperCase();
 	return {
+		billingBlocked: check.billingBlocked === true,
 		conclusion: conclusion || null,
 		name: check.name ?? check.context ?? "Unnamed check",
 		status: status || null,
@@ -149,6 +171,7 @@ function classifyChecks(checks, requiredChecks = []) {
 	for (const name of requiredChecks) {
 		if (!reported.has(name)) normalized.push({ conclusion: null, name, status: "MISSING", url: null });
 	}
+	const billingBlocked = [];
 	const failing = [];
 	const interrupted = [];
 	const pending = [];
@@ -160,6 +183,8 @@ function classifyChecks(checks, requiredChecks = []) {
 			passing.push(check);
 		} else if (INTERRUPTED_CONCLUSIONS.has(check.conclusion)) {
 			interrupted.push(check);
+		} else if (check.billingBlocked) {
+			billingBlocked.push(check);
 		} else {
 			failing.push(check);
 		}
@@ -168,7 +193,9 @@ function classifyChecks(checks, requiredChecks = []) {
 	if (failing.length > 0) state = "failing";
 	else if (pending.length > 0) state = "pending";
 	else if (interrupted.length > 0) state = "interrupted";
+	else if (billingBlocked.length > 0) state = "billing-blocked";
 	return {
+		billingBlocked,
 		failing,
 		interrupted,
 		passing,
@@ -224,6 +251,12 @@ function reconcileSnapshot(snapshot, requiredChecks = DEFAULT_REQUIRED_CHECKS) {
 	);
 	return {
 		checks,
+		// Everything but CI is clear and CI never ran because of billing: a local ci:pr pass may stand in.
+		clearExceptBillingBlockedChecks: (
+			reviewGateClear &&
+			checks.state === "billing-blocked" &&
+			LOCAL_CI_MERGE_STATES.has(mergeStateStatus)
+		),
 		graphqlPageCount: snapshot.graphql.pageCount,
 		headRefOid: snapshot.pullRequest.headRefOid,
 		mergeStateStatus,
@@ -239,6 +272,26 @@ function reconcileSnapshot(snapshot, requiredChecks = DEFAULT_REQUIRED_CHECKS) {
 		updatedAt: snapshot.pullRequest.updatedAt,
 		url: snapshot.pullRequest.url,
 	};
+}
+
+// Marks FAILURE checks whose check-run annotations say GitHub never started the job for billing.
+// An annotation fetch error leaves the check failing, the stricter classification.
+async function markBillingBlockedChecks({ checks, repository, runGh }) {
+	return Promise.all(checks.map(async (check) => {
+		const id = checkConclusion(check) === "FAILURE" ? checkRunId(check.detailsUrl ?? check.targetUrl) : null;
+		if (!id) return check;
+		try {
+			const annotations = flattenPages(await runGh([
+				"api",
+				`repos/${repository}/check-runs/${id}/annotations`,
+				"--paginate",
+				"--slurp",
+			]));
+			return annotations.some(isBillingAnnotation) ? { ...check, billingBlocked: true } : check;
+		} catch {
+			return check;
+		}
+	}));
 }
 
 async function collectSnapshot({ prNumber, repository, runGh }) {
@@ -257,9 +310,14 @@ async function collectSnapshot({ prNumber, repository, runGh }) {
 		runGh(["api", `repos/${repository}/pulls/${prNumber}/comments`, "--paginate", "--slurp"]),
 		runGh(["api", `repos/${repository}/pulls/${prNumber}/reviews`, "--paginate", "--slurp"]),
 	]);
+	const statusCheckRollup = await markBillingBlockedChecks({
+		checks: pullRequest.statusCheckRollup ?? [],
+		repository,
+		runGh,
+	});
 	return {
 		graphql,
-		pullRequest,
+		pullRequest: { ...pullRequest, statusCheckRollup },
 		repository,
 		restComments: flattenPages(commentsPages),
 		restReviews: flattenPages(reviewsPages),
@@ -306,7 +364,10 @@ async function collectReviewGateStatus({
 		} while (true);
 		if (status.checks.state === "interrupted" && reruns.length < rerunInterrupted) {
 			const fresh = status.checks.interrupted.filter((check) => !rerunJobUrls.has(check.url));
-			const runIds = [...new Set(fresh.map((check) => workflowRunId(check.url)).filter(Boolean))];
+			// Never rerun a run GitHub refused to start for billing; it would be refused again.
+			const billingRunIds = new Set(status.checks.billingBlocked.map((check) => workflowRunId(check.url)));
+			const runIds = [...new Set(fresh.map((check) => workflowRunId(check.url)).filter(Boolean))]
+				.filter((runId) => !billingRunIds.has(runId));
 			if (runIds.length > 0) {
 				for (const check of fresh) rerunJobUrls.add(check.url);
 				for (const runId of runIds) await rerunRun(runId);
@@ -395,6 +456,9 @@ function printHelp() {
 		`counts as pending (default required: ${DEFAULT_REQUIRED_CHECKS.join(", ")}).`,
 		"Use --rerun-interrupted to rerun cancelled or timed-out workflow runs up to <count> times, waiting",
 		"the full --wait again after each rerun. Real failures are never rerun.",
+		"A failed check whose annotation says GitHub did not start the job for billing is billing-blocked,",
+		`not failing. It is never rerun. With --require-clear, exit ${BILLING_BLOCKED_EXIT_CODE} means billing-blocked checks are`,
+		"the only blocker: run `pnpm run ci:pr` locally on the PR head instead. Other blockers exit 2.",
 	].join("\n") + "\n");
 }
 
@@ -403,11 +467,25 @@ function formatStatus(status) {
 		`PR: ${status.url}`,
 		`Head: ${status.headRefOid}`,
 		`Review gate: ${status.reviewGateClear ? "clear" : "blocked"} (${status.unresolvedThreads.length} unresolved, ${status.missingRestCommentIds.length} REST mismatches)`,
-		`Checks: ${status.checks.state} (${status.checks.passing.length} passing, ${status.checks.pending.length} pending, ${status.checks.interrupted.length} interrupted, ${status.checks.failing.length} failing)`,
+		`Checks: ${status.checks.state} (${status.checks.passing.length} passing, ${status.checks.pending.length} pending, ${status.checks.interrupted.length} interrupted, ${status.checks.billingBlocked.length} billing-blocked, ${status.checks.failing.length} failing)`,
 		`Reruns: ${status.reruns.length > 0 ? status.reruns.join(", ") : "none"}`,
 		`Merge state: ${status.mergeStateStatus}`,
 		`Ready to merge: ${status.readyToMerge ? "yes" : "no"}`,
 	].join("\n") + "\n";
+}
+
+function billingBlockedNotice(status) {
+	if (status.checks.state !== "billing-blocked") return null;
+	const names = status.checks.billingBlocked.map((check) => check.name).join(", ");
+	return [
+		`GitHub Actions did not run because of account billing (failed payment or spending limit): ${names}.`,
+		`Skip GitHub CI: run \`pnpm run ci:pr\` locally on PR head ${status.headRefOid} and merge only if it exits 0.`,
+	].join("\n") + "\n";
+}
+
+function gateExitCode(status, { requireClear = false } = {}) {
+	if (!requireClear || status.readyToMerge) return 0;
+	return status.clearExceptBillingBlockedChecks ? BILLING_BLOCKED_EXIT_CODE : 2;
 }
 
 async function main(argv = process.argv.slice(2)) {
@@ -418,7 +496,10 @@ async function main(argv = process.argv.slice(2)) {
 	}
 	const status = await collectReviewGateStatus(options);
 	process.stdout.write(options.json ? `${JSON.stringify(status, null, "\t")}\n` : formatStatus(status));
-	if (options.requireClear && !status.readyToMerge) process.exitCode = 2;
+	// stderr keeps --json output parseable.
+	const notice = billingBlockedNotice(status);
+	if (notice) process.stderr.write(notice);
+	process.exitCode = gateExitCode(status, options);
 }
 
 if (require.main === module) {
@@ -429,9 +510,13 @@ if (require.main === module) {
 }
 
 module.exports = {
+	BILLING_BLOCKED_EXIT_CODE,
+	checkRunId,
 	classifyChecks,
 	collectReviewGateStatus,
 	flattenPages,
+	gateExitCode,
+	isBillingAnnotation,
 	reconcileSnapshot,
 	rerunWorkflowRun,
 	runGhJson,

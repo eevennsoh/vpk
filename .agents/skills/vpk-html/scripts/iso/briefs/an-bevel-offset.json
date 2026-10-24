@@ -1,0 +1,272 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-bevel-offset",
+	"figId": "FIG_249",
+	"title": "Bevel offset on a glass bench",
+	"label": "Dimetric glass bench: a bevelled glass block under a clamp, a comb of teeth stepping out from its rim, and a carriage on a ruler that sets the IOR. The glass is highlighted.",
+	"caption": "A bevel bends light, so each rim pixel reads from further out: the comb steps away from the rim, and sliding the carriage to raise the IOR stretches its reach.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "base",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				82,
+				50,
+				8
+			],
+			"r": 2,
+			"label": "Clamp base"
+		},
+		{
+			"id": "bench",
+			"kind": "box",
+			"at": [
+				82,
+				0,
+				0
+			],
+			"size": [
+				118,
+				50,
+				8
+			],
+			"r": 2,
+			"label": "Bench"
+		},
+		{
+			"id": "post",
+			"kind": "box",
+			"at": [
+				36,
+				4,
+				8
+			],
+			"size": [
+				10,
+				6,
+				37
+			],
+			"label": "Clamp post",
+			"r": 1
+		},
+		{
+			"id": "glass",
+			"kind": "slab",
+			"at": [
+				20,
+				10,
+				8
+			],
+			"size": [
+				28,
+				28,
+				37
+			],
+			"r": 2,
+			"bevel": 2.2,
+			"label": "Glass block"
+		},
+		{
+			"id": "arm",
+			"kind": "box",
+			"at": [
+				36,
+				4,
+				45
+			],
+			"size": [
+				10,
+				34,
+				5
+			],
+			"label": "Clamp arm",
+			"r": 1
+		},
+		{
+			"id": "tooth1",
+			"kind": "box",
+			"at": [
+				50,
+				20,
+				8
+			],
+			"size": [
+				2.4,
+				6,
+				30
+			],
+			"label": "Comb tooth at the rim"
+		},
+		{
+			"id": "tooth2",
+			"kind": "box",
+			"at": [
+				54,
+				20,
+				8
+			],
+			"size": [
+				2.4,
+				6,
+				23
+			],
+			"label": "Tooth 2"
+		},
+		{
+			"id": "tooth3",
+			"kind": "box",
+			"at": [
+				58,
+				20,
+				8
+			],
+			"size": [
+				2.4,
+				6,
+				16
+			],
+			"label": "Tooth 3"
+		},
+		{
+			"id": "tooth4",
+			"kind": "box",
+			"at": [
+				62,
+				20,
+				8
+			],
+			"size": [
+				2.4,
+				6,
+				9
+			],
+			"label": "Tooth 4"
+		},
+		{
+			"id": "ruler",
+			"kind": "slab",
+			"at": [
+				92,
+				20,
+				8
+			],
+			"size": [
+				100,
+				8,
+				2
+			],
+			"label": "Ruler",
+			"r": 1
+		},
+		{
+			"id": "carriage",
+			"kind": "box",
+			"at": [
+				140,
+				20,
+				10
+			],
+			"size": [
+				12,
+				8,
+				7
+			],
+			"label": "Carriage",
+			"r": 1
+		}
+	],
+	"focal": "glass",
+	"labels": [
+		{
+			"text": "Glass block, bevelled rim",
+			"target": "glass",
+			"side": "left"
+		},
+		{
+			"text": "Clamp arm",
+			"target": "arm",
+			"side": "left"
+		},
+		{
+			"text": "Comb, rim reads 87 px",
+			"target": "tooth4",
+			"side": "right"
+		},
+		{
+			"text": "Carriage sets IOR 1.46",
+			"target": "carriage",
+			"side": "right"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				100,
+				24,
+				11
+			],
+			"to": [
+				136,
+				24,
+				11
+			]
+		},
+		{
+			"kind": "arrow",
+			"from": [
+				49,
+				30,
+				40
+			],
+			"to": [
+				62,
+				30,
+				19
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"base",
+				"bench"
+			],
+			[
+				"post",
+				"ruler"
+			],
+			[
+				"glass"
+			],
+			[
+				"arm"
+			],
+			[
+				"tooth1",
+				"tooth2",
+				"tooth3",
+				"tooth4",
+				"carriage"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "IOR 1.46, rim 87 px"
+	},
+	"meta": {
+		"margin": "[ BEVEL OFFSET ]",
+		"corner": "VPK-HTML"
+	}
+}

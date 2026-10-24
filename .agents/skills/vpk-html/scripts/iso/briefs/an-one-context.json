@@ -1,0 +1,602 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-one-context",
+	"figId": "FIG_235",
+	"title": "One context as a plotter",
+	"label": "Dimetric plotter: sixteen tiles, one 2D canvas per pane, each holding a stamped shape. A carriage on a back rail holds one print head over pane 16, and pane 15 beside it holds the image just stamped. Hover or arrow keys lift one part.",
+	"caption": "One WebGL2 context renders every pane in turn and stamps each image into that pane's own canvas, which keeps it until the head comes back.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit",
+		"pad": 18
+	},
+	"parts": [
+		{
+			"id": "tile-4",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 4 canvas"
+		},
+		{
+			"id": "glyph-4",
+			"kind": "ring",
+			"at": [
+				12,
+				12,
+				3
+			],
+			"size": [
+				6,
+				6,
+				0
+			],
+			"clipTo": "tile-4",
+			"label": "Pane 4 image"
+		},
+		{
+			"id": "tile-8",
+			"kind": "box",
+			"at": [
+				28,
+				0,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 8 canvas"
+		},
+		{
+			"id": "glyph-8",
+			"kind": "plate",
+			"at": [
+				35,
+				7,
+				3
+			],
+			"size": [
+				10,
+				10,
+				1
+			],
+			"r": 0,
+			"label": "Pane 8 image"
+		},
+		{
+			"id": "tile-12",
+			"kind": "box",
+			"at": [
+				56,
+				0,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 12 canvas",
+			"marks": [
+				[
+					[
+						5,
+						12
+					],
+					[
+						19,
+						12
+					]
+				]
+			]
+		},
+		{
+			"id": "tile-16",
+			"kind": "box",
+			"at": [
+				84,
+				0,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 16 canvas"
+		},
+		{
+			"id": "tile-3",
+			"kind": "box",
+			"at": [
+				0,
+				28,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 3 canvas",
+			"marks": [
+				[
+					[
+						7,
+						17
+					],
+					[
+						17,
+						7
+					]
+				]
+			]
+		},
+		{
+			"id": "tile-7",
+			"kind": "box",
+			"at": [
+				28,
+				28,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 7 canvas"
+		},
+		{
+			"id": "glyph-7",
+			"kind": "ring",
+			"at": [
+				40,
+				40,
+				3
+			],
+			"size": [
+				6,
+				6,
+				0
+			],
+			"clipTo": "tile-7",
+			"label": "Pane 7 image"
+		},
+		{
+			"id": "tile-11",
+			"kind": "box",
+			"at": [
+				56,
+				28,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 11 canvas"
+		},
+		{
+			"id": "glyph-11",
+			"kind": "plate",
+			"at": [
+				63,
+				35,
+				3
+			],
+			"size": [
+				10,
+				10,
+				1
+			],
+			"r": 0,
+			"label": "Pane 11 image"
+		},
+		{
+			"id": "tile-15",
+			"kind": "box",
+			"at": [
+				84,
+				28,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 15 canvas",
+			"state": "new",
+			"marks": [
+				[
+					[
+						5,
+						12
+					],
+					[
+						19,
+						12
+					]
+				]
+			]
+		},
+		{
+			"id": "tile-2",
+			"kind": "box",
+			"at": [
+				0,
+				56,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 2 canvas",
+			"marks": [
+				[
+					[
+						12,
+						5
+					],
+					[
+						12,
+						19
+					]
+				]
+			]
+		},
+		{
+			"id": "tile-6",
+			"kind": "box",
+			"at": [
+				28,
+				56,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 6 canvas",
+			"marks": [
+				[
+					[
+						7,
+						17
+					],
+					[
+						17,
+						7
+					]
+				]
+			]
+		},
+		{
+			"id": "tile-10",
+			"kind": "box",
+			"at": [
+				56,
+				56,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 10 canvas"
+		},
+		{
+			"id": "glyph-10",
+			"kind": "ring",
+			"at": [
+				68,
+				68,
+				3
+			],
+			"size": [
+				6,
+				6,
+				0
+			],
+			"clipTo": "tile-10",
+			"label": "Pane 10 image"
+		},
+		{
+			"id": "tile-14",
+			"kind": "box",
+			"at": [
+				84,
+				56,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 14 canvas"
+		},
+		{
+			"id": "glyph-14",
+			"kind": "plate",
+			"at": [
+				91,
+				63,
+				3
+			],
+			"size": [
+				10,
+				10,
+				1
+			],
+			"r": 0,
+			"label": "Pane 14 image"
+		},
+		{
+			"id": "tile-1",
+			"kind": "box",
+			"at": [
+				0,
+				84,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 1 canvas",
+			"marks": [
+				[
+					[
+						5,
+						12
+					],
+					[
+						19,
+						12
+					]
+				]
+			]
+		},
+		{
+			"id": "tile-5",
+			"kind": "box",
+			"at": [
+				28,
+				84,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 5 canvas",
+			"marks": [
+				[
+					[
+						12,
+						5
+					],
+					[
+						12,
+						19
+					]
+				]
+			]
+		},
+		{
+			"id": "tile-9",
+			"kind": "box",
+			"at": [
+				56,
+				84,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 9 canvas",
+			"marks": [
+				[
+					[
+						7,
+						17
+					],
+					[
+						17,
+						7
+					]
+				]
+			]
+		},
+		{
+			"id": "tile-13",
+			"kind": "box",
+			"at": [
+				84,
+				84,
+				0
+			],
+			"size": [
+				24,
+				24,
+				3
+			],
+			"r": 0,
+			"label": "Pane 13 canvas"
+		},
+		{
+			"id": "glyph-13",
+			"kind": "ring",
+			"at": [
+				96,
+				96,
+				3
+			],
+			"size": [
+				6,
+				6,
+				0
+			],
+			"clipTo": "tile-13",
+			"label": "Pane 13 image"
+		},
+		{
+			"id": "rail",
+			"kind": "box",
+			"at": [
+				-6,
+				-16,
+				0
+			],
+			"size": [
+				120,
+				8,
+				6
+			],
+			"r": 1,
+			"label": "Rail"
+		},
+		{
+			"id": "carriage",
+			"kind": "box",
+			"at": [
+				90,
+				-21,
+				6
+			],
+			"size": [
+				12,
+				15,
+				16
+			],
+			"r": 1,
+			"label": "Carriage"
+		},
+		{
+			"id": "head",
+			"kind": "box",
+			"at": [
+				88,
+				-4,
+				7
+			],
+			"size": [
+				16,
+				20,
+				12
+			],
+			"r": 2,
+			"label": "Print head"
+		}
+	],
+	"focal": "head",
+	"labels": [
+		{
+			"text": "One WebGL2 context",
+			"target": "head",
+			"side": "right",
+			"anchor": [
+				104,
+				14,
+				10
+			]
+		},
+		{
+			"text": "Just stamped by copyTo()",
+			"target": "tile-15",
+			"side": "right"
+		},
+		{
+			"text": "A tile: one pane's own 2D canvas",
+			"target": "tile-13",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"rail"
+			],
+			[
+				"tile-4",
+				"tile-8",
+				"tile-12",
+				"tile-16",
+				"tile-3",
+				"tile-7",
+				"tile-11",
+				"tile-15"
+			],
+			[
+				"tile-2",
+				"tile-6",
+				"tile-10",
+				"tile-14",
+				"tile-1",
+				"tile-5",
+				"tile-9",
+				"tile-13"
+			],
+			[
+				"glyph-4",
+				"glyph-8",
+				"glyph-7",
+				"glyph-11",
+				"glyph-10",
+				"glyph-14",
+				"glyph-13"
+			],
+			[
+				"carriage"
+			],
+			[
+				"head"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"rest": "Head over pane 16 of 16",
+		"lift": 10
+	},
+	"meta": {
+		"margin": "[ ONE CONTEXT ]",
+		"corner": "VPK-HTML"
+	}
+}

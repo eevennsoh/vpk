@@ -1,0 +1,218 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-riffle",
+	"figId": "FIG_104",
+	"title": "Riffle through a card tray",
+	"label": "Isometric tray of eight upright index cards; the fourth card is highlighted, and hovering or arrow keys lift one card out of the row.",
+	"caption": "Eight index cards stand in one tray; pulling one lifts it clear of its neighbours so it can be read without disturbing the order.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "tray",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				100,
+				86,
+				18
+			],
+			"r": 3,
+			"label": "Card tray"
+		},
+		{
+			"id": "card-1",
+			"kind": "slab",
+			"at": [
+				10,
+				73,
+				3
+			],
+			"size": [
+				80,
+				2,
+				44
+			],
+			"r": 1,
+			"label": "Card 1 of 8"
+		},
+		{
+			"id": "card-2",
+			"kind": "slab",
+			"at": [
+				10,
+				64,
+				3
+			],
+			"size": [
+				80,
+				2,
+				48
+			],
+			"r": 1,
+			"label": "Card 2 of 8"
+		},
+		{
+			"id": "card-3",
+			"kind": "slab",
+			"at": [
+				10,
+				55,
+				3
+			],
+			"size": [
+				80,
+				2,
+				52
+			],
+			"r": 1,
+			"label": "Card 3 of 8"
+		},
+		{
+			"id": "card-4",
+			"kind": "slab",
+			"at": [
+				10,
+				46,
+				3
+			],
+			"size": [
+				80,
+				2,
+				58
+			],
+			"r": 1,
+			"label": "Card 4 of 8"
+		},
+		{
+			"id": "card-5",
+			"kind": "slab",
+			"at": [
+				10,
+				37,
+				3
+			],
+			"size": [
+				80,
+				2,
+				56
+			],
+			"r": 1,
+			"label": "Card 5 of 8"
+		},
+		{
+			"id": "card-6",
+			"kind": "slab",
+			"at": [
+				10,
+				28,
+				3
+			],
+			"size": [
+				80,
+				2,
+				60
+			],
+			"r": 1,
+			"label": "Card 6 of 8"
+		},
+		{
+			"id": "card-7",
+			"kind": "slab",
+			"at": [
+				10,
+				19,
+				3
+			],
+			"size": [
+				80,
+				2,
+				58
+			],
+			"r": 1,
+			"label": "Card 7 of 8"
+		},
+		{
+			"id": "card-8",
+			"kind": "slab",
+			"at": [
+				10,
+				10,
+				3
+			],
+			"size": [
+				80,
+				2,
+				62
+			],
+			"r": 1,
+			"label": "Card 8 of 8"
+		}
+	],
+	"focal": "card-4",
+	"labels": [
+		{
+			"text": "Selected card",
+			"target": "card-4",
+			"side": "left"
+		},
+		{
+			"text": "Front card",
+			"target": "card-1",
+			"side": "left",
+			"anchor": [
+				14,
+				74,
+				38
+			]
+		},
+		{
+			"text": "Back card",
+			"target": "card-8",
+			"side": "right"
+		},
+		{
+			"text": "Card tray",
+			"target": "tray",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"tray"
+			],
+			[
+				"card-1",
+				"card-2"
+			],
+			[
+				"card-3",
+				"card-4"
+			],
+			[
+				"card-5",
+				"card-6"
+			],
+			[
+				"card-7",
+				"card-8"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 16,
+		"rest": "8 cards"
+	},
+	"meta": {
+		"margin": "[ RIFFLE ]",
+		"corner": "VPK-HTML"
+	}
+}

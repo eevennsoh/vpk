@@ -1,0 +1,33 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-exploded",
+	"figId": "FIG_101",
+	"title": "Exploded app window",
+	"label": "An app window taken apart into stacked isometric layers: the window frame with its three controls, the sidebar and content panes, a dialog card and its primary button. The button is accented.",
+	"caption": "A screen is a stack: open the gap and the button you click turns out to sit three layers above the window that holds it.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "window", "kind": "tray", "at": [0, 0, 0], "size": [168, 116, 4.6], "r": 8, "label": "Window" },
+		{ "id": "dot1", "kind": "cylinder", "at": [12, 93, 4], "size": [2.2, 2.2, 1.4], "label": "Close" },
+		{ "id": "dot2", "kind": "cylinder", "at": [19, 93, 4], "size": [2.2, 2.2, 1.4], "label": "Minimise" },
+		{ "id": "dot3", "kind": "cylinder", "at": [26, 93, 4], "size": [2.2, 2.2, 1.4], "label": "Zoom" },
+		{ "id": "sidebar", "kind": "slab", "at": [8, 8, 22], "size": [44, 80, 3], "r": 4, "marks": [[[6, 50], [34, 50]]], "label": "Sidebar", "explode": [0, 0, 12] },
+		{ "id": "content", "kind": "slab", "at": [60, 8, 22], "size": [100, 80, 3], "r": 4, "marks": [[[8, 52], [88, 52]]], "label": "Content", "explode": [0, 0, 12] },
+		{ "id": "content-title", "kind": "plate", "at": [68, 74, 25], "size": [44, 3, 0.6], "r": 0, "label": "Content title", "explode": [0, 0, 12] },
+		{ "id": "dialog", "kind": "slab", "at": [78, 18, 42], "size": [64, 44, 3], "r": 4, "marks": [[[6, 30], [52, 30]]], "label": "Dialog", "explode": [0, 0, 22] },
+		{ "id": "dialog-title", "kind": "plate", "at": [96, 52, 45], "size": [26, 3, 0.6], "r": 0, "label": "Dialog title", "explode": [0, 0, 22] },
+		{ "id": "button", "kind": "box", "at": [100, 20, 56], "size": [40, 12, 4], "r": 3, "label": "Primary button", "explode": [0, 0, 30] }
+	],
+	"focal": "button",
+	"labels": [
+		{ "text": "Primary button", "target": "button", "side": "right", "anchor": [140, 28, 60] },
+		{ "text": "Dialog", "target": "dialog", "side": "right" },
+		{ "text": "Content pane", "target": "content", "side": "right" },
+		{ "text": "Sidebar", "target": "sidebar", "side": "left", "anchor": [26, 66, 25] },
+		{ "text": "Window controls", "target": "dot2", "side": "left", "anchor": [19, 93, 5.4] },
+		{ "text": "Window frame", "target": "window", "side": "left" }
+	],
+	"assemble": { "layers": [["window"], ["dot1", "dot2", "dot3", "sidebar", "content", "content-title"], ["dialog", "dialog-title"], ["button"]] },
+	"interact": { "behavior": "explode", "explode": { "rest": 0.45, "min": 0.4, "max": 1, "step": 0.05, "unit": "gap" } },
+	"meta": { "margin": "[ EXPLODED WINDOW ]", "corner": "VPK-HTML" }
+}

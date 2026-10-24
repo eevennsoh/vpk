@@ -1,0 +1,434 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-lookup",
+	"figId": "FIG_243",
+	"title": "Lookup, a reading stand",
+	"label": "Dimetric reading stand: a clear pane on four posts over a frosted plate, grid lines crowding to the rim, and a bezel probe whose wire leans outward from the plumb line to the highlighted spot, short of the sled stop.",
+	"caption": "In the flat middle a pixel reads straight down, but in the bezel the lookup leans outward along the surface normal, so the pane samples the frosted plate further out, up to the sled stop.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "plate",
+			"kind": "slab",
+			"at": [
+				6,
+				6,
+				0
+			],
+			"size": [
+				188,
+				92,
+				4
+			],
+			"r": 2,
+			"label": "Frost plate"
+		},
+		{
+			"id": "stop",
+			"kind": "box",
+			"at": [
+				182,
+				34,
+				4
+			],
+			"size": [
+				6,
+				34,
+				7
+			],
+			"r": 1,
+			"label": "Sled stop"
+		},
+		{
+			"id": "spot",
+			"kind": "plate",
+			"at": [
+				150,
+				9,
+				4
+			],
+			"size": [
+				12,
+				12,
+				1
+			],
+			"r": 1,
+			"label": "Read spot"
+		},
+		{
+			"id": "plumb",
+			"kind": "cylinder",
+			"at": [
+				126,
+				15,
+				4
+			],
+			"size": [
+				0.4,
+				0.4,
+				44
+			],
+			"label": "Straight down"
+		},
+		{
+			"id": "post-bl",
+			"kind": "cylinder",
+			"at": [
+				-4,
+				104,
+				0
+			],
+			"size": [
+				3,
+				3,
+				56
+			],
+			"label": "Post 1"
+		},
+		{
+			"id": "post-br",
+			"kind": "cylinder",
+			"at": [
+				140,
+				104,
+				0
+			],
+			"size": [
+				3,
+				3,
+				56
+			],
+			"label": "Post 2"
+		},
+		{
+			"id": "post-fl",
+			"kind": "cylinder",
+			"at": [
+				-4,
+				-4,
+				0
+			],
+			"size": [
+				3,
+				3,
+				56
+			],
+			"label": "Threaded post"
+		},
+		{
+			"id": "post-fr",
+			"kind": "cylinder",
+			"at": [
+				140,
+				-4,
+				0
+			],
+			"size": [
+				3,
+				3,
+				56
+			],
+			"label": "Post 4"
+		},
+		{
+			"id": "pane",
+			"kind": "slab",
+			"at": [
+				2,
+				2,
+				48
+			],
+			"size": [
+				132,
+				96,
+				3
+			],
+			"r": 3,
+			"label": "Clear pane"
+		},
+		{
+			"id": "ring-1",
+			"kind": "gap",
+			"at": [
+				10,
+				10,
+				51
+			],
+			"size": [
+				116,
+				80,
+				0
+			],
+			"r": 2,
+			"label": "Bezel grid"
+		},
+		{
+			"id": "ring-2",
+			"kind": "gap",
+			"at": [
+				6,
+				6,
+				51
+			],
+			"size": [
+				124,
+				88,
+				0
+			],
+			"r": 2,
+			"label": "Bezel grid"
+		},
+		{
+			"id": "ring-3",
+			"kind": "gap",
+			"at": [
+				4,
+				4,
+				51
+			],
+			"size": [
+				128,
+				92,
+				0
+			],
+			"r": 2,
+			"label": "Bezel grid"
+		},
+		{
+			"id": "middle",
+			"kind": "gap",
+			"at": [
+				18,
+				18,
+				51
+			],
+			"size": [
+				100,
+				64,
+				0
+			],
+			"r": 2,
+			"label": "Flat middle"
+		},
+		{
+			"id": "gx-1",
+			"kind": "gap",
+			"at": [
+				43,
+				18,
+				51
+			],
+			"size": [
+				0.3,
+				64,
+				0
+			],
+			"label": "Grid line"
+		},
+		{
+			"id": "gx-2",
+			"kind": "gap",
+			"at": [
+				68,
+				18,
+				51
+			],
+			"size": [
+				0.3,
+				64,
+				0
+			],
+			"label": "Grid line"
+		},
+		{
+			"id": "gx-3",
+			"kind": "gap",
+			"at": [
+				93,
+				18,
+				51
+			],
+			"size": [
+				0.3,
+				64,
+				0
+			],
+			"label": "Grid line"
+		},
+		{
+			"id": "gy-1",
+			"kind": "gap",
+			"at": [
+				18,
+				39,
+				51
+			],
+			"size": [
+				100,
+				0.3,
+				0
+			],
+			"label": "Grid line"
+		},
+		{
+			"id": "gy-2",
+			"kind": "gap",
+			"at": [
+				18,
+				61,
+				51
+			],
+			"size": [
+				100,
+				0.3,
+				0
+			],
+			"label": "Grid line"
+		},
+		{
+			"id": "probe",
+			"kind": "box",
+			"at": [
+				122,
+				11,
+				51
+			],
+			"size": [
+				8,
+				8,
+				10
+			],
+			"r": 1,
+			"label": "Probe"
+		}
+	],
+	"focal": "spot",
+	"labels": [
+		{
+			"text": "Where that pixel reads",
+			"target": "spot",
+			"side": "right"
+		},
+		{
+			"text": "Probe, one pixel",
+			"target": "probe",
+			"side": "right",
+			"anchor": [
+				130,
+				15,
+				53
+			]
+		},
+		{
+			"text": "Straight down",
+			"target": "plumb",
+			"side": "right",
+			"anchor": [
+				126,
+				15,
+				26
+			]
+		},
+		{
+			"text": "12 px grid crowds to the rim",
+			"target": "ring-3",
+			"side": "left",
+			"anchor": [
+				30,
+				96,
+				51
+			]
+		},
+		{
+			"text": "Frost plate",
+			"target": "plate",
+			"side": "left",
+			"anchor": [
+				70,
+				98,
+				2
+			]
+		},
+		{
+			"text": "Sled stop, 87 px",
+			"target": "stop",
+			"side": "right"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "arrow",
+			"from": [
+				126,
+				15,
+				49
+			],
+			"to": [
+				151,
+				15,
+				5.5
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"plate"
+			],
+			[
+				"stop",
+				"spot",
+				"plumb"
+			],
+			[
+				"post-bl",
+				"post-br",
+				"post-fl",
+				"post-fr"
+			],
+			[
+				"pane",
+				"middle",
+				"ring-1",
+				"ring-2",
+				"ring-3",
+				"gx-1",
+				"gx-2",
+				"gx-3",
+				"gy-1",
+				"gy-2"
+			],
+			[
+				"probe"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 12,
+		"rest": "b 0.90"
+	},
+	"meta": {
+		"margin": "[LOOKUP]",
+		"corner": "VPK-HTML"
+	},
+	"dims": [
+		{
+			"from": [
+				118,
+				2,
+				51
+			],
+			"to": [
+				134,
+				2,
+				51
+			],
+			"text": "Bezel, 26 px",
+			"offset": 40
+		}
+	]
+}

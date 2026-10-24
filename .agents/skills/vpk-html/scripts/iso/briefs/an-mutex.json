@@ -1,0 +1,276 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-mutex",
+	"figId": "FIG_213",
+	"title": "A mutex as a tank and key",
+	"label": "Dimetric water tank on a stand, filled by two pumps, one at each side, each run by its own controller with a key slot on top. Between them a lock box holds a single accented interlock key. Hover or arrow keys lift one part.",
+	"caption": "Both controllers want to read the level and run their pump; only the one holding the single key may, so two pumps never fill the tank at once and it never overflows.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "stand",
+			"kind": "box",
+			"at": [
+				48,
+				14,
+				0
+			],
+			"size": [
+				44,
+				36,
+				26
+			],
+			"r": 2,
+			"label": "Tank stand"
+		},
+		{
+			"id": "tank",
+			"kind": "cylinder",
+			"at": [
+				70,
+				32,
+				26
+			],
+			"size": [
+				16,
+				16,
+				40
+			],
+			"label": "Tank"
+		},
+		{
+			"id": "pipe-a",
+			"kind": "box",
+			"at": [
+				13,
+				28,
+				0
+			],
+			"size": [
+				35,
+				6,
+				5
+			],
+			"r": 1,
+			"label": "Feed pipe"
+		},
+		{
+			"id": "pipe-b",
+			"kind": "box",
+			"at": [
+				92,
+				28,
+				0
+			],
+			"size": [
+				28,
+				6,
+				5
+			],
+			"r": 1,
+			"label": "Feed pipe"
+		},
+		{
+			"id": "pump-a",
+			"kind": "cylinder",
+			"at": [
+				8,
+				31,
+				0
+			],
+			"size": [
+				5,
+				5,
+				18
+			],
+			"label": "Pump A"
+		},
+		{
+			"id": "pump-b",
+			"kind": "cylinder",
+			"at": [
+				122,
+				31,
+				0
+			],
+			"size": [
+				5,
+				5,
+				18
+			],
+			"label": "Pump B"
+		},
+		{
+			"id": "ctrl-a",
+			"kind": "box",
+			"at": [
+				8,
+				62,
+				0
+			],
+			"size": [
+				20,
+				14,
+				16
+			],
+			"r": 2,
+			"label": "Controller A",
+			"marks": [
+				[
+					[
+						6,
+						7
+					],
+					[
+						14,
+						7
+					]
+				]
+			]
+		},
+		{
+			"id": "ctrl-b",
+			"kind": "box",
+			"at": [
+				112,
+				62,
+				0
+			],
+			"size": [
+				20,
+				14,
+				16
+			],
+			"r": 2,
+			"label": "Controller B",
+			"marks": [
+				[
+					[
+						6,
+						7
+					],
+					[
+						14,
+						7
+					]
+				]
+			]
+		},
+		{
+			"id": "lockbox",
+			"kind": "box",
+			"at": [
+				54,
+				84,
+				0
+			],
+			"size": [
+				32,
+				22,
+				12
+			],
+			"r": 2,
+			"label": "Lock box"
+		},
+		{
+			"id": "key",
+			"kind": "box",
+			"at": [
+				66,
+				92,
+				12
+			],
+			"size": [
+				8,
+				5,
+				14
+			],
+			"r": 1,
+			"label": "Interlock key"
+		}
+	],
+	"focal": "key",
+	"labels": [
+		{
+			"text": "Tank",
+			"target": "tank",
+			"side": "right"
+		},
+		{
+			"text": "Pump A",
+			"target": "pump-a",
+			"side": "left"
+		},
+		{
+			"text": "Pump B",
+			"target": "pump-b",
+			"side": "right"
+		},
+		{
+			"text": "Controller A",
+			"target": "ctrl-a",
+			"side": "left"
+		},
+		{
+			"text": "Controller B",
+			"target": "ctrl-b",
+			"side": "right"
+		},
+		{
+			"text": "Interlock key",
+			"target": "key",
+			"side": "left",
+			"anchor": [
+				68,
+				97,
+				20
+			]
+		},
+		{
+			"target": "lockbox",
+			"text": "Lock box",
+			"side": "left",
+			"anchor": [
+				60,
+				106,
+				5
+			]
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"stand",
+				"pipe-a",
+				"pipe-b"
+			],
+			[
+				"tank"
+			],
+			[
+				"pump-a",
+				"pump-b",
+				"ctrl-a",
+				"ctrl-b"
+			],
+			[
+				"lockbox"
+			],
+			[
+				"key"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 10,
+		"rest": "Key in the lock box"
+	},
+	"meta": {
+		"margin": "[ MUTEX ]",
+		"corner": "VPK-HTML"
+	}
+}

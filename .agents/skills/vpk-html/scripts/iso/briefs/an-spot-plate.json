@@ -1,0 +1,53 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-spot-plate",
+	"figId": "FIG_248",
+	"title": "Spot plate, drops that merge",
+	"label": "Dimetric spot plate with three channels, one pair of glass drops in each: far apart, almost touching but still two, and run together into one highlighted stadium-shaped piece.",
+	"caption": "Inside the merge distance two drops stop being two shapes and run together into one piece of glass; outside it they stay apart, however close they sit.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "plate", "kind": "tray", "at": [0, 0, 0], "size": [96, 104, 5], "r": 2, "label": "Spot plate" },
+		{ "id": "rib-1", "kind": "box", "at": [31, 4, 4], "size": [2, 96, 1], "label": "Channel wall" },
+		{ "id": "rib-2", "kind": "box", "at": [63, 4, 4], "size": [2, 96, 1], "label": "Channel wall" },
+		{ "id": "well-far-1", "kind": "ring", "at": [17.5, 16, 4], "size": [4.5, 4.5, 0], "label": "Well" },
+		{ "id": "well-far-2", "kind": "ring", "at": [17.5, 80, 4], "size": [4.5, 4.5, 0], "label": "Well" },
+		{ "id": "well-near-1", "kind": "ring", "at": [48, 14, 4], "size": [4.5, 4.5, 0], "label": "Well" },
+		{ "id": "well-near-2", "kind": "ring", "at": [48, 24, 4], "size": [4.5, 4.5, 0], "label": "Well" },
+		{ "id": "drop-far-1", "kind": "cylinder", "at": [17.5, 16, 4], "size": [3.5, 3.5, 3], "label": "Far drop", "explode": [0, 0, 8] },
+		{ "id": "drop-far-2", "kind": "cylinder", "at": [17.5, 80, 4], "size": [3.5, 3.5, 3], "label": "Far drop", "explode": [0, 0, 8] },
+		{ "id": "drop-near-1", "kind": "cylinder", "at": [48, 14, 4], "size": [3.5, 3.5, 3], "label": "Close drop", "explode": [0, 0, 8] },
+		{ "id": "drop-near-2", "kind": "cylinder", "at": [48, 24, 4], "size": [3.5, 3.5, 3], "label": "Close drop", "explode": [0, 0, 8] },
+		{ "id": "merged", "kind": "slab", "at": [76.5, 10.5, 4], "size": [7, 14, 3], "r": 3.5, "label": "Merged drop", "explode": [0, 0, 8] },
+		{ "id": "dial", "kind": "cylinder", "at": [118, 84, 0], "size": [11, 11, 8], "label": "Merge dial", "marks": [[[0, 0], [0, -11]]], "explode": [0, 0, 8] }
+	],
+	"focal": "merged",
+	"labels": [
+		{ "text": "Merged, one piece", "target": "merged", "side": "right", "anchor": [80, 11, 7] },
+		{ "text": "Close, still two", "target": "drop-near-1", "side": "right" },
+		{ "text": "Far apart, two drops", "target": "drop-far-1", "side": "left" },
+		{ "text": "Spot plate", "target": "plate", "side": "left", "anchor": [0, 50, 5] },
+		{ "text": "Merge dial 20 px", "target": "dial", "side": "right" }
+	],
+	"assemble": {
+		"layers": [
+			["plate", "rib-1", "rib-2", "well-far-1", "well-far-2", "well-near-1", "well-near-2"],
+			["drop-far-1", "drop-far-2"],
+			["drop-near-1", "drop-near-2"],
+			["merged"],
+			["dial"]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "merge 20 px, 1 of 3 joined"
+	},
+	"meta": {
+		"margin": "[ 3 CHANNELS ]",
+		"corner": "VPK-HTML"
+	}
+}

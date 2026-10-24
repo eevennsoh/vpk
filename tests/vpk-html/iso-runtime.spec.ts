@@ -354,6 +354,7 @@ test("(21) accent and motion at rest: accent focal and hover, rest after 3 s idl
 	const svg = page.locator("svg[data-vpk-iso-id]");
 	const stage = page.locator("[data-vpk-iso-stage]");
 	const fillOf = (selector: string) => page.locator(selector).first().evaluate(node => getComputedStyle(node).fill);
+	const strokeOf = (selector: string) => page.locator(selector).first().evaluate(node => getComputedStyle(node).stroke);
 	const accent = await page.evaluate(() => {
 		const probe = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 		const host = document.querySelector("svg[data-vpk-iso-id]") as SVGSVGElement;
@@ -388,7 +389,8 @@ test("(21) accent and motion at rest: accent focal and hover, rest after 3 s idl
 	await page.mouse.move(point.x, point.y, { steps: 3 });
 	expect(await stage.getAttribute("data-vpk-iso-rest"), "paused where it is").toBe("paused");
 	await expect.poll(() => activeParts(page)).toEqual(["tile-b"]);
-	await expect.poll(() => fillOf('[data-vpk-iso-part="tile-b"] > [data-vpk-iso-role="top"]')).toBe(accent.top);
+	await expect.poll(() => strokeOf('[data-vpk-iso-part="tile-b"] > [data-vpk-iso-role="edge"]'), "the hovered part takes an accent outline").toBe(accent.top);
+	expect(await fillOf('[data-vpk-iso-part="tile-b"] > [data-vpk-iso-role="top"]'), "its faces keep their tone").not.toBe(accent.top);
 	expect(await fillOf('[data-vpk-iso-label-for="tile-b"] > [data-vpk-iso-chip]')).not.toBe(accent.top);
 	await page.mouse.move(2, 2);
 	await page.waitForTimeout(2000);

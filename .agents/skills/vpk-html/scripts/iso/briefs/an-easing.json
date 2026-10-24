@@ -1,0 +1,821 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-easing",
+	"figId": "FIG_228",
+	"title": "Easing curves on a bench",
+	"label": "Dimetric easing bench: a lead screw moves a carriage at a constant rate (time); its follower, highlighted, rides a raised ease-in-out band on an upright graph plate, and a lift arm sets the element's height on the progress rail.",
+	"caption": "The screw turns at a constant rate, so the carriage is time; the follower rides the band and the arm lifts the element to the eased progress, slow at both ends and fast through the middle.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "bench",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				112,
+				38,
+				4.6
+			],
+			"r": 1,
+			"label": "Bench"
+		},
+		{
+			"id": "post-0",
+			"kind": "box",
+			"at": [
+				12,
+				10.5,
+				4
+			],
+			"size": [
+				2,
+				1.6,
+				4.8
+			],
+			"r": 0,
+			"label": "Band post, p 0"
+		},
+		{
+			"id": "post-1",
+			"kind": "box",
+			"at": [
+				66,
+				10.5,
+				4
+			],
+			"size": [
+				2,
+				1.6,
+				48.8
+			],
+			"r": 0,
+			"label": "Band post, p 1"
+		},
+		{
+			"id": "band-01",
+			"kind": "box",
+			"at": [
+				11.8,
+				10.5,
+				8.8
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-02",
+			"kind": "box",
+			"at": [
+				15.3,
+				10.5,
+				9.2
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-03",
+			"kind": "box",
+			"at": [
+				18.6,
+				10.5,
+				10.2
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-04",
+			"kind": "box",
+			"at": [
+				21.7,
+				10.5,
+				11.8
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-05",
+			"kind": "box",
+			"at": [
+				24.6,
+				10.5,
+				13.9
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-06",
+			"kind": "box",
+			"at": [
+				27.2,
+				10.5,
+				16.3
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-07",
+			"kind": "box",
+			"at": [
+				29.6,
+				10.5,
+				18.8
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-08",
+			"kind": "box",
+			"at": [
+				31.9,
+				10.5,
+				21.5
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-09",
+			"kind": "box",
+			"at": [
+				34.1,
+				10.5,
+				24.3
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-10",
+			"kind": "box",
+			"at": [
+				36.2,
+				10.5,
+				27.1
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-11",
+			"kind": "box",
+			"at": [
+				38.2,
+				10.5,
+				30
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-12",
+			"kind": "box",
+			"at": [
+				40.3,
+				10.5,
+				32.8
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-13",
+			"kind": "box",
+			"at": [
+				42.3,
+				10.5,
+				35.7
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-14",
+			"kind": "box",
+			"at": [
+				49,
+				10.5,
+				43.9
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-15",
+			"kind": "box",
+			"at": [
+				51.5,
+				10.5,
+				46.4
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-16",
+			"kind": "box",
+			"at": [
+				54.2,
+				10.5,
+				48.6
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-17",
+			"kind": "box",
+			"at": [
+				57.1,
+				10.5,
+				50.5
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-18",
+			"kind": "box",
+			"at": [
+				60.3,
+				10.5,
+				51.9
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-19",
+			"kind": "box",
+			"at": [
+				63.8,
+				10.5,
+				52.7
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "band-20",
+			"kind": "box",
+			"at": [
+				65.8,
+				10.5,
+				52.8
+			],
+			"size": [
+				2.4,
+				1.6,
+				2.4
+			],
+			"r": 0,
+			"label": "Ease-in-out band",
+			"state": "active"
+		},
+		{
+			"id": "screw-l",
+			"kind": "box",
+			"at": [
+				6,
+				24.6,
+				4.9
+			],
+			"size": [
+				34.5,
+				2.8,
+				2.8
+			],
+			"r": 0,
+			"label": "Lead screw"
+		},
+		{
+			"id": "screw-r",
+			"kind": "box",
+			"at": [
+				52.5,
+				24.6,
+				4.9
+			],
+			"size": [
+				61.5,
+				2.8,
+				2.8
+			],
+			"r": 0,
+			"label": "Lead screw"
+		},
+		{
+			"id": "thread-01",
+			"kind": "box",
+			"at": [
+				9,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "thread-02",
+			"kind": "box",
+			"at": [
+				18,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "thread-03",
+			"kind": "box",
+			"at": [
+				27,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "thread-04",
+			"kind": "box",
+			"at": [
+				36,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "thread-05",
+			"kind": "box",
+			"at": [
+				54,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "thread-06",
+			"kind": "box",
+			"at": [
+				63,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "thread-07",
+			"kind": "box",
+			"at": [
+				72,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "thread-08",
+			"kind": "box",
+			"at": [
+				81,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "thread-09",
+			"kind": "box",
+			"at": [
+				90,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "thread-10",
+			"kind": "box",
+			"at": [
+				99,
+				23.7,
+				4
+			],
+			"size": [
+				1.4,
+				4.6,
+				4.6
+			],
+			"r": 0,
+			"label": "Lead screw thread"
+		},
+		{
+			"id": "motor",
+			"kind": "box",
+			"at": [
+				114,
+				22,
+				0
+			],
+			"size": [
+				14,
+				14,
+				16
+			],
+			"r": 1,
+			"label": "Motor"
+		},
+		{
+			"id": "carriage",
+			"kind": "box",
+			"at": [
+				40.5,
+				16,
+				4
+			],
+			"size": [
+				12,
+				17,
+				9
+			],
+			"r": 1,
+			"label": "Carriage"
+		},
+		{
+			"id": "mast",
+			"kind": "box",
+			"at": [
+				45.5,
+				16.5,
+				13
+			],
+			"size": [
+				2,
+				2,
+				31.8
+			],
+			"r": 0,
+			"label": "Mast"
+		},
+		{
+			"id": "follower",
+			"kind": "box",
+			"at": [
+				44.5,
+				10.5,
+				38.8
+			],
+			"size": [
+				4,
+				8.5,
+				4
+			],
+			"r": 0.5,
+			"label": "Follower"
+		},
+		{
+			"id": "lift-arm",
+			"kind": "box",
+			"at": [
+				48.5,
+				16.7,
+				40
+			],
+			"size": [
+				35.5,
+				1.6,
+				1.6
+			],
+			"r": 0,
+			"label": "Lift arm"
+		},
+		{
+			"id": "rail",
+			"kind": "box",
+			"at": [
+				85.5,
+				8.5,
+				4
+			],
+			"size": [
+				3,
+				3,
+				56
+			],
+			"r": 0.5,
+			"label": "Progress rail"
+		},
+		{
+			"id": "element",
+			"kind": "box",
+			"at": [
+				84,
+				15,
+				37.8
+			],
+			"size": [
+				6,
+				6,
+				6
+			],
+			"r": 1,
+			"label": "Element"
+		}
+	],
+	"focal": "follower",
+	"labels": [
+		{
+			"text": "Ease-in-out band",
+			"target": "band-01",
+			"side": "left",
+			"anchor": [
+				12.2,
+				12.1,
+				10
+			]
+		},
+		{
+			"text": "Follower rides the curve",
+			"target": "follower",
+			"side": "left"
+		},
+		{
+			"text": "Lead screw: time, constant rate",
+			"target": "screw-l",
+			"side": "left"
+		},
+		{
+			"text": "Carriage",
+			"target": "carriage",
+			"side": "left",
+			"anchor": [
+				42,
+				30,
+				13
+			]
+		},
+		{
+			"text": "Element at eased progress",
+			"target": "element",
+			"side": "right"
+		},
+		{
+			"text": "Progress rail, 0 to 1",
+			"target": "rail",
+			"side": "right"
+		},
+		{
+			"text": "Motor",
+			"target": "motor",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"bench",
+				"post-0",
+				"post-1"
+			],
+			[
+				"band-01",
+				"band-02",
+				"band-03",
+				"band-04",
+				"band-05",
+				"band-06",
+				"band-07",
+				"band-08",
+				"band-09",
+				"band-10",
+				"band-11",
+				"band-12",
+				"band-13",
+				"band-14",
+				"band-15",
+				"band-16",
+				"band-17",
+				"band-18",
+				"band-19",
+				"band-20"
+			],
+			[
+				"screw-l",
+				"screw-r",
+				"motor",
+				"thread-01",
+				"thread-02",
+				"thread-03",
+				"thread-04",
+				"thread-05",
+				"thread-06",
+				"thread-07",
+				"thread-08",
+				"thread-09",
+				"thread-10"
+			],
+			[
+				"carriage",
+				"rail",
+				"mast"
+			],
+			[
+				"follower",
+				"lift-arm"
+			],
+			[
+				"element"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "ease-in-out, t 0.62, p 0.70"
+	},
+	"meta": {
+		"margin": "[ EASING CURVES ]",
+		"corner": "VPK-HTML"
+	}
+}

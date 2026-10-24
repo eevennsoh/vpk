@@ -1,0 +1,271 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-process-pump",
+	"figId": "FIG_223",
+	"title": "Refinery process pump",
+	"label": "Dimetric refinery pump: a suction drum with a level glass, a suction line through a strainer, an open pump casing showing the accented impeller, coupling and motor, and a discharge riser up to the control valve.",
+	"caption": "Hot gas oil falls from the suction drum to the impeller eye; let the drum level drop or the strainer clog and the suction head runs short, vapour forms on the vanes and the pump's head collapses.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "drum",
+			"kind": "cylinder",
+			"at": [
+				8,
+				20,
+				0
+			],
+			"size": [
+				15,
+				15,
+				66
+			],
+			"label": "Suction drum"
+		},
+		{
+			"id": "glass",
+			"kind": "box",
+			"at": [
+				0,
+				34,
+				8
+			],
+			"size": [
+				3,
+				3,
+				50
+			],
+			"r": 1,
+			"label": "Level glass"
+		},
+		{
+			"id": "suction",
+			"kind": "box",
+			"at": [
+				22,
+				17,
+				3
+			],
+			"size": [
+				25,
+				6,
+				6
+			],
+			"r": 3,
+			"label": "Suction line"
+		},
+		{
+			"id": "eye-line",
+			"kind": "box",
+			"at": [
+				56,
+				17,
+				3
+			],
+			"size": [
+				17,
+				6,
+				6
+			],
+			"r": 3,
+			"label": "Suction line"
+		},
+		{
+			"id": "strainer",
+			"kind": "box",
+			"at": [
+				46,
+				13,
+				0
+			],
+			"size": [
+				10,
+				14,
+				20
+			],
+			"r": 2,
+			"label": "Strainer"
+		},
+		{
+			"id": "casing",
+			"kind": "tray",
+			"at": [
+				72,
+				8,
+				0
+			],
+			"size": [
+				26,
+				26,
+				10
+			],
+			"r": 4,
+			"label": "Pump casing"
+		},
+		{
+			"id": "impeller",
+			"kind": "cylinder",
+			"at": [
+				85,
+				21,
+				2
+			],
+			"size": [
+				8,
+				8,
+				12
+			],
+			"label": "Impeller"
+		},
+		{
+			"id": "riser",
+			"kind": "cylinder",
+			"at": [
+				76,
+				12,
+				0
+			],
+			"size": [
+				3.5,
+				3.5,
+				46
+			],
+			"label": "Discharge riser"
+		},
+		{
+			"id": "valve",
+			"kind": "box",
+			"at": [
+				69,
+				5,
+				46
+			],
+			"size": [
+				14,
+				14,
+				12
+			],
+			"r": 3,
+			"label": "Control valve"
+		},
+		{
+			"id": "coupling",
+			"kind": "box",
+			"at": [
+				98,
+				16,
+				3
+			],
+			"size": [
+				14,
+				10,
+				8
+			],
+			"r": 2,
+			"label": "Coupling"
+		},
+		{
+			"id": "motor",
+			"kind": "box",
+			"at": [
+				112,
+				11,
+				0
+			],
+			"size": [
+				30,
+				20,
+				15
+			],
+			"r": 5,
+			"marks": [
+				[
+					[
+						15,
+						2
+					],
+					[
+						15,
+						18
+					]
+				]
+			],
+			"label": "Motor"
+		}
+	],
+	"focal": "impeller",
+	"labels": [
+		{
+			"text": "Impeller eye",
+			"target": "impeller",
+			"side": "right"
+		},
+		{
+			"text": "Suction drum",
+			"target": "drum",
+			"side": "left"
+		},
+		{
+			"text": "Level glass",
+			"target": "glass",
+			"side": "left"
+		},
+		{
+			"text": "Strainer",
+			"target": "strainer",
+			"side": "left",
+			"anchor": [
+				48,
+				27,
+				2
+			]
+		},
+		{
+			"text": "Motor",
+			"target": "motor",
+			"side": "right"
+		},
+		{
+			"text": "Control valve",
+			"target": "valve",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"drum",
+				"casing",
+				"motor"
+			],
+			[
+				"glass",
+				"suction",
+				"strainer",
+				"eye-line"
+			],
+			[
+				"coupling",
+				"riser"
+			],
+			[
+				"impeller"
+			],
+			[
+				"valve"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 8,
+		"rest": "Suction head full"
+	},
+	"meta": {
+		"margin": "[ PROCESS PUMP ]",
+		"corner": "VPK-HTML"
+	}
+}

@@ -214,7 +214,8 @@ test("entry hand-off CSS: hide, accent and hand-off rules from the shared consta
 test("accent parts use the accent stroke: focal roles, hover and entry CSS; darker than the far face in both themes", () => {
 	assert.ok(isAccentPaint(ACCENT_FACES.edge) && isAllowedIsoPaint(ACCENT_FACES.edge) && isAllowedFigureColorValue(ACCENT_FACES.edge), ACCENT_FACES.edge);
 	const lines = ':is([data-vpk-iso-role="edge"], [data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"])';
-	assert.ok(ISO_CSS.includes(`.is-active > ${lines} { stroke: ${ACCENT_FACES.edge}; }`), "hovered or selected part");
+	assert.ok(ISO_CSS.includes('.is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }'), "hovered or selected part: a 2 px accent outline");
+	assert.doesNotMatch(ISO_CSS, /\.is-active > \[data-vpk-iso-role="(?:top|fill|shade)"\]/, "hover never fills the faces (large parts flooded orange)");
 	assert.ok(ISO_CSS.includes(`[data-vpk-iso-enter="5"]) > * > ${lines} { stroke: ${ACCENT_FACES.edge}; }`), "dropping entry layer");
 	assert.doesNotMatch(ISO_CSS, /\.is-active > \[data-vpk-iso-role="edge"\]\) \{ stroke: var\(--focal\)/, "no ink hover edge");
 	assert.ok(ISO_CSS.includes('[data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }'), "a faceless part keeps the accent itself");

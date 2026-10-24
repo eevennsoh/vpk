@@ -1,0 +1,257 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-hash-map",
+	"figId": "FIG_201",
+	"title": "Hash map collisions, pigeonhole buckets",
+	"label": "Four pigeonhole buckets numbered 0 to 3 in a row, with a coding machine at the end feeding bucket 3 an incoming letter. Bucket 1 holds one letter; bucket 3 holds a chain of three, the newest highlighted.",
+	"caption": "The coding machine hashes each letter's name to a bucket; two names that land on the same bucket do not clash, the new letter just goes on top of the chain already there.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit",
+		"pad": 14
+	},
+	"parts": [
+		{
+			"id": "bucket-0",
+			"kind": "tray",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				36,
+				38,
+				6
+			],
+			"r": 0,
+			"label": "Bucket 0"
+		},
+		{
+			"id": "bucket-1",
+			"kind": "tray",
+			"at": [
+				42,
+				0,
+				0
+			],
+			"size": [
+				36,
+				38,
+				6
+			],
+			"r": 0,
+			"label": "Bucket 1"
+		},
+		{
+			"id": "bucket-2",
+			"kind": "tray",
+			"at": [
+				84,
+				0,
+				0
+			],
+			"size": [
+				36,
+				38,
+				6
+			],
+			"r": 0,
+			"label": "Bucket 2"
+		},
+		{
+			"id": "bucket-3",
+			"kind": "tray",
+			"at": [
+				126,
+				0,
+				0
+			],
+			"size": [
+				36,
+				38,
+				6
+			],
+			"r": 0,
+			"label": "Bucket 3"
+		},
+		{
+			"id": "machine",
+			"kind": "box",
+			"at": [
+				170,
+				4,
+				0
+			],
+			"size": [
+				26,
+				32,
+				20
+			],
+			"r": 0,
+			"label": "Coding machine"
+		},
+		{
+			"id": "incoming",
+			"kind": "slab",
+			"at": [
+				173,
+				8,
+				20
+			],
+			"size": [
+				20,
+				24,
+				2
+			],
+			"label": "Incoming letter, hash mod 4 = 3",
+			"state": "new",
+			"r": 0
+		},
+		{
+			"id": "letter-1",
+			"kind": "slab",
+			"at": [
+				47,
+				8,
+				2
+			],
+			"size": [
+				26,
+				22,
+				3
+			],
+			"label": "Letter in bucket 1",
+			"r": 0
+		},
+		{
+			"id": "letter-3a",
+			"kind": "slab",
+			"at": [
+				129,
+				5,
+				2
+			],
+			"size": [
+				26,
+				22,
+				3
+			],
+			"label": "First letter, bucket 3",
+			"r": 0
+		},
+		{
+			"id": "letter-3b",
+			"kind": "slab",
+			"at": [
+				131,
+				8,
+				9
+			],
+			"size": [
+				26,
+				22,
+				3
+			],
+			"label": "Second letter, bucket 3",
+			"r": 0
+		},
+		{
+			"id": "letter-3c",
+			"kind": "slab",
+			"at": [
+				133,
+				11,
+				16
+			],
+			"size": [
+				26,
+				22,
+				3
+			],
+			"label": "New letter, chain of 3",
+			"r": 0
+		}
+	],
+	"focal": "letter-3c",
+	"labels": [
+		{
+			"text": "Bucket 0, empty",
+			"target": "bucket-0",
+			"side": "left",
+			"anchor": [
+				2,
+				38,
+				4
+			]
+		},
+		{
+			"text": "Bucket 1, one letter",
+			"target": "bucket-1",
+			"side": "left",
+			"anchor": [
+				44,
+				38,
+				4
+			]
+		},
+		{
+			"text": "Bucket 2, empty",
+			"target": "bucket-2",
+			"side": "left",
+			"anchor": [
+				86,
+				38,
+				4
+			]
+		},
+		{
+			"text": "Bucket 3, chain of 3",
+			"target": "letter-3c",
+			"side": "right"
+		},
+		{
+			"text": "Incoming, hash mod 4 = 3",
+			"target": "incoming",
+			"side": "right"
+		},
+		{
+			"text": "Coding machine",
+			"target": "machine",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"bucket-0",
+				"bucket-1",
+				"bucket-2",
+				"bucket-3"
+			],
+			[
+				"machine",
+				"incoming"
+			],
+			[
+				"letter-1",
+				"letter-3a"
+			],
+			[
+				"letter-3b"
+			],
+			[
+				"letter-3c"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 14,
+		"rest": "4 buckets"
+	},
+	"meta": {
+		"margin": "[ PIGEONHOLES ]",
+		"corner": "VPK-HTML"
+	}
+}

@@ -1,0 +1,1008 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-rail",
+	"figId": "FIG_128",
+	"title": "A garment rail of bare hangers",
+	"label": "Dimetric garment rail: two uprights on feet carry a bar with seven bare hangers hooked over it, each a hook, a crown and a wide shoulder. The nearest hanger is accented; hovering brushes the row, lifting it most and the far ones least.",
+	"caption": "Brush the near end of the rail and the hangers rise off the bar, the one you touch most and the far ones barely, then settle back.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "foot-l",
+			"kind": "slab",
+			"at": [
+				-3,
+				-12,
+				0
+			],
+			"size": [
+				9,
+				24,
+				3
+			],
+			"r": 1,
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "foot-r",
+			"kind": "slab",
+			"at": [
+				104,
+				-12,
+				0
+			],
+			"size": [
+				9,
+				24,
+				3
+			],
+			"r": 1,
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "post-l",
+			"kind": "box",
+			"at": [
+				0,
+				-1.5,
+				3
+			],
+			"size": [
+				3,
+				3,
+				75
+			],
+			"r": 1,
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "post-r",
+			"kind": "box",
+			"at": [
+				107,
+				-1.5,
+				3
+			],
+			"size": [
+				3,
+				3,
+				75
+			],
+			"r": 1,
+			"explode": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"id": "bar-1",
+			"kind": "box",
+			"at": [
+				3,
+				-1.5,
+				75
+			],
+			"size": [
+				6.5,
+				3,
+				3
+			],
+			"r": 0,
+			"explode": [
+				0,
+				0,
+				0
+			],
+			"label": "Rail bar"
+		},
+		{
+			"id": "bar-2",
+			"kind": "box",
+			"at": [
+				9.5,
+				-1.5,
+				75
+			],
+			"size": [
+				12.5,
+				3,
+				3
+			],
+			"r": 0,
+			"explode": [
+				0,
+				0,
+				0
+			],
+			"label": "Rail bar"
+		},
+		{
+			"id": "bar-3",
+			"kind": "box",
+			"at": [
+				22,
+				-1.5,
+				75
+			],
+			"size": [
+				13,
+				3,
+				3
+			],
+			"r": 0,
+			"explode": [
+				0,
+				0,
+				0
+			],
+			"label": "Rail bar"
+		},
+		{
+			"id": "bar-4",
+			"kind": "box",
+			"at": [
+				35,
+				-1.5,
+				75
+			],
+			"size": [
+				13,
+				3,
+				3
+			],
+			"r": 0,
+			"explode": [
+				0,
+				0,
+				0
+			],
+			"label": "Rail bar"
+		},
+		{
+			"id": "bar-5",
+			"kind": "box",
+			"at": [
+				48,
+				-1.5,
+				75
+			],
+			"size": [
+				13,
+				3,
+				3
+			],
+			"r": 0,
+			"explode": [
+				0,
+				0,
+				0
+			],
+			"label": "Rail bar"
+		},
+		{
+			"id": "bar-6",
+			"kind": "box",
+			"at": [
+				61,
+				-1.5,
+				75
+			],
+			"size": [
+				13,
+				3,
+				3
+			],
+			"r": 0,
+			"explode": [
+				0,
+				0,
+				0
+			],
+			"label": "Rail bar"
+		},
+		{
+			"id": "bar-7",
+			"kind": "box",
+			"at": [
+				74,
+				-1.5,
+				75
+			],
+			"size": [
+				13,
+				3,
+				3
+			],
+			"r": 0,
+			"explode": [
+				0,
+				0,
+				0
+			],
+			"label": "Rail bar"
+		},
+		{
+			"id": "bar-8",
+			"kind": "box",
+			"at": [
+				87,
+				-1.5,
+				75
+			],
+			"size": [
+				12.5,
+				3,
+				3
+			],
+			"r": 0,
+			"explode": [
+				0,
+				0,
+				0
+			],
+			"label": "Rail bar"
+		},
+		{
+			"id": "bar-9",
+			"kind": "box",
+			"at": [
+				99.5,
+				-1.5,
+				75
+			],
+			"size": [
+				7.5,
+				3,
+				3
+			],
+			"r": 0,
+			"explode": [
+				0,
+				0,
+				0
+			],
+			"label": "Rail bar"
+		},
+		{
+			"id": "hook-1",
+			"kind": "slab",
+			"at": [
+				15,
+				-2.7,
+				78
+			],
+			"size": [
+				1,
+				4.4,
+				1.4
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				1
+			],
+			"label": "Hook 1 of 7"
+		},
+		{
+			"id": "neck-1",
+			"kind": "slab",
+			"at": [
+				15,
+				-2.7,
+				66
+			],
+			"size": [
+				1,
+				1,
+				12
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				1
+			],
+			"label": "Neck 1 of 7"
+		},
+		{
+			"id": "arm-1",
+			"kind": "slab",
+			"at": [
+				15,
+				-5,
+				63
+			],
+			"size": [
+				1,
+				10,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				1
+			],
+			"label": "Arms 1 of 7"
+		},
+		{
+			"id": "hanger-1",
+			"kind": "slab",
+			"at": [
+				15,
+				-9.5,
+				60
+			],
+			"size": [
+				1,
+				19,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				1
+			],
+			"label": "Hanger 1 of 7"
+		},
+		{
+			"id": "hook-2",
+			"kind": "slab",
+			"at": [
+				28,
+				-2.7,
+				78
+			],
+			"size": [
+				1,
+				4.4,
+				1.4
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				1.5
+			],
+			"label": "Hook 2 of 7"
+		},
+		{
+			"id": "neck-2",
+			"kind": "slab",
+			"at": [
+				28,
+				-2.7,
+				66
+			],
+			"size": [
+				1,
+				1,
+				12
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				1.5
+			],
+			"label": "Neck 2 of 7"
+		},
+		{
+			"id": "arm-2",
+			"kind": "slab",
+			"at": [
+				28,
+				-5,
+				63
+			],
+			"size": [
+				1,
+				10,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				1.5
+			],
+			"label": "Arms 2 of 7"
+		},
+		{
+			"id": "hanger-2",
+			"kind": "slab",
+			"at": [
+				28,
+				-9.5,
+				60
+			],
+			"size": [
+				1,
+				19,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				1.5
+			],
+			"label": "Hanger 2 of 7"
+		},
+		{
+			"id": "hook-3",
+			"kind": "slab",
+			"at": [
+				41,
+				-2.7,
+				78
+			],
+			"size": [
+				1,
+				4.4,
+				1.4
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				2
+			],
+			"label": "Hook 3 of 7"
+		},
+		{
+			"id": "neck-3",
+			"kind": "slab",
+			"at": [
+				41,
+				-2.7,
+				66
+			],
+			"size": [
+				1,
+				1,
+				12
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				2
+			],
+			"label": "Neck 3 of 7"
+		},
+		{
+			"id": "arm-3",
+			"kind": "slab",
+			"at": [
+				41,
+				-5,
+				63
+			],
+			"size": [
+				1,
+				10,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				2
+			],
+			"label": "Arms 3 of 7"
+		},
+		{
+			"id": "hanger-3",
+			"kind": "slab",
+			"at": [
+				41,
+				-9.5,
+				60
+			],
+			"size": [
+				1,
+				19,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				2
+			],
+			"label": "Hanger 3 of 7"
+		},
+		{
+			"id": "hook-4",
+			"kind": "slab",
+			"at": [
+				54,
+				-2.7,
+				78
+			],
+			"size": [
+				1,
+				4.4,
+				1.4
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				2.5
+			],
+			"label": "Hook 4 of 7"
+		},
+		{
+			"id": "neck-4",
+			"kind": "slab",
+			"at": [
+				54,
+				-2.7,
+				66
+			],
+			"size": [
+				1,
+				1,
+				12
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				2.5
+			],
+			"label": "Neck 4 of 7"
+		},
+		{
+			"id": "arm-4",
+			"kind": "slab",
+			"at": [
+				54,
+				-5,
+				63
+			],
+			"size": [
+				1,
+				10,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				2.5
+			],
+			"label": "Arms 4 of 7"
+		},
+		{
+			"id": "hanger-4",
+			"kind": "slab",
+			"at": [
+				54,
+				-9.5,
+				60
+			],
+			"size": [
+				1,
+				19,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				2.5
+			],
+			"label": "Hanger 4 of 7"
+		},
+		{
+			"id": "hook-5",
+			"kind": "slab",
+			"at": [
+				67,
+				-2.7,
+				78
+			],
+			"size": [
+				1,
+				4.4,
+				1.4
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				3.5
+			],
+			"label": "Hook 5 of 7"
+		},
+		{
+			"id": "neck-5",
+			"kind": "slab",
+			"at": [
+				67,
+				-2.7,
+				66
+			],
+			"size": [
+				1,
+				1,
+				12
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				3.5
+			],
+			"label": "Neck 5 of 7"
+		},
+		{
+			"id": "arm-5",
+			"kind": "slab",
+			"at": [
+				67,
+				-5,
+				63
+			],
+			"size": [
+				1,
+				10,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				3.5
+			],
+			"label": "Arms 5 of 7"
+		},
+		{
+			"id": "hanger-5",
+			"kind": "slab",
+			"at": [
+				67,
+				-9.5,
+				60
+			],
+			"size": [
+				1,
+				19,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				3.5
+			],
+			"label": "Hanger 5 of 7"
+		},
+		{
+			"id": "hook-6",
+			"kind": "slab",
+			"at": [
+				80,
+				-2.7,
+				78
+			],
+			"size": [
+				1,
+				4.4,
+				1.4
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				4.2
+			],
+			"label": "Hook 6 of 7"
+		},
+		{
+			"id": "neck-6",
+			"kind": "slab",
+			"at": [
+				80,
+				-2.7,
+				66
+			],
+			"size": [
+				1,
+				1,
+				12
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				4.2
+			],
+			"label": "Neck 6 of 7"
+		},
+		{
+			"id": "arm-6",
+			"kind": "slab",
+			"at": [
+				80,
+				-5,
+				63
+			],
+			"size": [
+				1,
+				10,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				4.2
+			],
+			"label": "Arms 6 of 7"
+		},
+		{
+			"id": "hanger-6",
+			"kind": "slab",
+			"at": [
+				80,
+				-9.5,
+				60
+			],
+			"size": [
+				1,
+				19,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				4.2
+			],
+			"label": "Hanger 6 of 7"
+		},
+		{
+			"id": "hook-7",
+			"kind": "slab",
+			"at": [
+				93,
+				-2.7,
+				78
+			],
+			"size": [
+				1,
+				4.4,
+				1.4
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				5
+			],
+			"label": "Hook 7 of 7"
+		},
+		{
+			"id": "neck-7",
+			"kind": "slab",
+			"at": [
+				93,
+				-2.7,
+				66
+			],
+			"size": [
+				1,
+				1,
+				12
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				5
+			],
+			"label": "Neck 7 of 7"
+		},
+		{
+			"id": "arm-7",
+			"kind": "slab",
+			"at": [
+				93,
+				-5,
+				63
+			],
+			"size": [
+				1,
+				10,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				5
+			],
+			"label": "Arms 7 of 7"
+		},
+		{
+			"id": "hanger-7",
+			"kind": "slab",
+			"at": [
+				93,
+				-9.5,
+				60
+			],
+			"size": [
+				1,
+				19,
+				3
+			],
+			"r": 0,
+			"bevel": 0,
+			"explode": [
+				0,
+				0,
+				5
+			],
+			"label": "Hanger 7 of 7"
+		}
+	],
+	"focal": "hanger-7",
+	"labels": [
+		{
+			"text": "Hanger",
+			"target": "hanger-7",
+			"side": "right"
+		},
+		{
+			"text": "Hook",
+			"target": "hook-7",
+			"side": "right",
+			"anchor": [
+				93.5,
+				0,
+				79.4
+			]
+		},
+		{
+			"text": "Rail bar",
+			"target": "bar-1",
+			"side": "left"
+		},
+		{
+			"text": "Upright",
+			"target": "post-l",
+			"side": "left",
+			"anchor": [
+				1.5,
+				1.5,
+				30
+			]
+		},
+		{
+			"text": "Foot",
+			"target": "foot-r",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"foot-l",
+				"foot-r"
+			],
+			[
+				"post-l",
+				"post-r"
+			],
+			[
+				"bar-1",
+				"bar-2",
+				"bar-3",
+				"bar-4",
+				"bar-5",
+				"bar-6",
+				"bar-7",
+				"bar-8",
+				"bar-9"
+			],
+			[
+				"hook-1",
+				"neck-1",
+				"arm-1",
+				"hanger-1",
+				"hook-2",
+				"neck-2",
+				"arm-2",
+				"hanger-2",
+				"hook-3",
+				"neck-3",
+				"arm-3",
+				"hanger-3"
+			],
+			[
+				"hook-4",
+				"neck-4",
+				"arm-4",
+				"hanger-4",
+				"hook-5",
+				"neck-5",
+				"arm-5",
+				"hanger-5",
+				"hook-6",
+				"neck-6",
+				"arm-6",
+				"hanger-6"
+			],
+			[
+				"hook-7",
+				"neck-7",
+				"arm-7",
+				"hanger-7"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "explode",
+		"explode": {
+			"rest": 0,
+			"min": 0,
+			"max": 1,
+			"step": 0.25,
+			"unit": "brush"
+		}
+	},
+	"meta": {
+		"margin": "[ RAIL ]",
+		"corner": "VPK-HTML"
+	}
+}

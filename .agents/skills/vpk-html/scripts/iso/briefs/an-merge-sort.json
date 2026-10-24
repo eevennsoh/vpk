@@ -1,0 +1,323 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "an-merge-sort",
+	"figId": "FIG_214",
+	"title": "Merge sort on a chime rack",
+	"label": "Dimetric chime rack: two sorted runs of bells, each shortening behind its front bell, a merged run of the longest bells, and an overhead traveller carrying the accented lower front bell to the end of the merged run.",
+	"caption": "Each step compares only the front bell of each sorted run and rehangs the lower note at the end of the merged run, so two ordered runs become one ordered run in a single pass.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{
+			"id": "foot",
+			"kind": "box",
+			"at": [
+				104,
+				-2,
+				0
+			],
+			"size": [
+				14,
+				14,
+				4
+			],
+			"r": 0,
+			"label": "Foot"
+		},
+		{
+			"id": "post",
+			"kind": "box",
+			"at": [
+				108,
+				2,
+				4
+			],
+			"size": [
+				6,
+				6,
+				62
+			],
+			"r": 0,
+			"label": "Upright"
+		},
+		{
+			"id": "rail-a",
+			"kind": "box",
+			"at": [
+				-4,
+				1,
+				66
+			],
+			"size": [
+				32,
+				8,
+				5
+			],
+			"r": 0,
+			"label": "Hanging rail"
+		},
+		{
+			"id": "rail",
+			"kind": "box",
+			"at": [
+				28,
+				1,
+				66
+			],
+			"size": [
+				30,
+				8,
+				5
+			],
+			"r": 0,
+			"label": "Hanging rail"
+		},
+		{
+			"id": "rail-t",
+			"kind": "box",
+			"at": [
+				58,
+				1,
+				66
+			],
+			"size": [
+				32,
+				8,
+				5
+			],
+			"r": 0,
+			"label": "Hanging rail"
+		},
+		{
+			"id": "rail-c",
+			"kind": "box",
+			"at": [
+				90,
+				1,
+				66
+			],
+			"size": [
+				26,
+				8,
+				5
+			],
+			"r": 0,
+			"label": "Hanging rail"
+		},
+		{
+			"id": "traveller",
+			"kind": "box",
+			"at": [
+				64,
+				0,
+				71
+			],
+			"size": [
+				12,
+				10,
+				5
+			],
+			"r": 0,
+			"label": "Traveller"
+		},
+		{
+			"id": "a-2",
+			"kind": "cylinder",
+			"at": [
+				8,
+				5,
+				40
+			],
+			"size": [
+				3.5,
+				3.5,
+				24
+			],
+			"label": "Run A, next bell"
+		},
+		{
+			"id": "a-1",
+			"kind": "cylinder",
+			"at": [
+				18,
+				5,
+				28
+			],
+			"size": [
+				3.5,
+				3.5,
+				36
+			],
+			"label": "Run A front"
+		},
+		{
+			"id": "b-2",
+			"kind": "cylinder",
+			"at": [
+				38,
+				5,
+				46
+			],
+			"size": [
+				3.5,
+				3.5,
+				18
+			],
+			"label": "Run B, next bell"
+		},
+		{
+			"id": "b-1",
+			"kind": "cylinder",
+			"at": [
+				48,
+				5,
+				32
+			],
+			"size": [
+				3.5,
+				3.5,
+				32
+			],
+			"label": "Run B front"
+		},
+		{
+			"id": "carried",
+			"kind": "cylinder",
+			"at": [
+				70,
+				5,
+				22
+			],
+			"size": [
+				3.5,
+				3.5,
+				42
+			],
+			"label": "Lower front bell"
+		},
+		{
+			"id": "out-2",
+			"kind": "cylinder",
+			"at": [
+				86,
+				5,
+				14
+			],
+			"size": [
+				3.5,
+				3.5,
+				50
+			],
+			"label": "Merged run"
+		},
+		{
+			"id": "out-1",
+			"kind": "cylinder",
+			"at": [
+				96,
+				5,
+				4
+			],
+			"size": [
+				3.5,
+				3.5,
+				60
+			],
+			"label": "Merged run"
+		}
+	],
+	"focal": "carried",
+	"labels": [
+		{
+			"text": "Run A front",
+			"target": "a-1",
+			"side": "left",
+			"anchor": [
+				18,
+				8.5,
+				29
+			]
+		},
+		{
+			"text": "Run B front",
+			"target": "b-1",
+			"side": "left",
+			"anchor": [
+				48,
+				8.5,
+				33
+			]
+		},
+		{
+			"text": "Lower front bell",
+			"target": "carried",
+			"side": "left",
+			"anchor": [
+				70,
+				8.5,
+				23
+			]
+		},
+		{
+			"text": "Merged run",
+			"target": "out-1",
+			"side": "left",
+			"anchor": [
+				96,
+				8.5,
+				5
+			]
+		},
+		{
+			"text": "Traveller",
+			"target": "traveller",
+			"side": "right"
+		},
+		{
+			"text": "Hanging rail",
+			"target": "rail-c",
+			"side": "right"
+		}
+	],
+	"assemble": {
+		"layers": [
+			[
+				"foot"
+			],
+			[
+				"post"
+			],
+			[
+				"rail-a",
+				"rail",
+				"rail-t",
+				"rail-c"
+			],
+			[
+				"a-2",
+				"a-1",
+				"b-2",
+				"b-1",
+				"out-2",
+				"out-1"
+			],
+			[
+				"traveller"
+			],
+			[
+				"carried"
+			]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"lift": 2,
+		"rest": "pass 3 · 3 of 7 hung"
+	},
+	"meta": {
+		"margin": "[ 7 BELLS ]",
+		"corner": "VPK-HTML"
+	}
+}

@@ -1,0 +1,49 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "hl-query",
+	"figId": "FIG_130",
+	"title": "A question mark on a stand",
+	"label": "Isometric question mark built from square bars: a short stem rises from a round stand, bends right into a riser, and a crown bar folds back into a hooked tip. A loose ball sits on the stand under the stem and is accented.",
+	"caption": "The hook is only bent bar; the question comes from the loose ball below it, free to roll whichever way the hook leans.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"parts": [
+		{ "id": "stand", "kind": "cylinder", "at": [30, 20, 0], "size": [30, 30, 10], "label": "Stand" },
+		{ "id": "ball", "kind": "cylinder", "at": [30, 20, 10], "size": [6, 6, 10], "label": "Loose ball" },
+		{ "id": "stem", "kind": "box", "at": [26, 16, 28], "size": [8, 8, 24], "r": 3, "label": "Stem" },
+		{ "id": "bend", "kind": "box", "at": [26, 16, 52], "size": [24, 8, 8], "r": 3, "label": "Bend" },
+		{ "id": "riser", "kind": "box", "at": [42, 16, 60], "size": [8, 8, 38], "r": 3, "label": "Riser" },
+		{ "id": "crown", "kind": "box", "at": [10, 16, 90], "size": [32, 8, 8], "r": 3, "label": "Crown" },
+		{ "id": "tip", "kind": "box", "at": [2, 16, 72], "size": [8, 8, 26], "r": 3, "label": "Hook tip" }
+	],
+	"focal": "ball",
+	"labels": [
+		{ "text": "Hook tip", "target": "tip", "side": "left", "anchor": [2, 20, 78] },
+		{ "text": "Crown", "target": "crown", "side": "right", "anchor": [36, 20, 98] },
+		{ "text": "Riser", "target": "riser", "side": "right", "anchor": [50, 20, 76] },
+		{ "text": "Bend", "target": "bend", "side": "right" },
+		{ "text": "Stem", "target": "stem", "side": "left" },
+		{ "text": "Loose ball", "target": "ball", "side": "left" },
+		{ "text": "Stand", "target": "stand", "side": "right" }
+	],
+	"assemble": {
+		"layers": [
+			["stand"],
+			["ball"],
+			["stem"],
+			["bend", "riser"],
+			["crown", "tip"]
+		]
+	},
+	"interact": {
+		"behavior": "select",
+		"rest": "Ball at rest",
+		"lift": 8
+	},
+	"meta": {
+		"margin": "[ QUERY ]",
+		"corner": "VPK-HTML"
+	}
+}

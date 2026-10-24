@@ -152,7 +152,7 @@ because `--muted-text` alone is 4.44:1 in light. This matches the anatomy plate.
 | R9 | the assembled figure is the static art | no `transform` attributes or `opacity < 1` at rest; runtime offsets are removed at rest, so the SVG's outerHTML equals the static art | A11, browser (3)(4) |
 | R10 | Decision 2 | paint values only from `ALLOWED_ISO_TOKENS` (grayscale, no status/heat/selected/code) plus the accent pair (`ACCENT_ISO_TOKENS`, alone or leading a srgb mix to a grey token); no `data-vpk-external-asset` or `data-vpk-raw-colors-allowed` in a plate | A1 |
 | R11 | one-shot drop assembly 1–1.8 s, no ghost or arrow | every SMIL element `begin="indefinite" data-vpk-begin="0s"`; root `data-vpk-smil-arm`; ≤ 6 layers; an even, overlapping stagger (every gap `ENTRY.STAGGER_MS` = 180 ms, shorter than the 700 ms drop) baked into `keyTimes`; total ≤ 1800 ms; keySplines `0.16 1 0.3 1`; last keyframe is rest; no repeats | A12 |
-| R12 | hairline rules 01, 02, 04, 08 | one behaviour per figure (`select` or `explode`); hits use rest silhouettes; neighbours stagger 40 ms by distance; discrete = 700 ms tween, continuous = spring (k 100, c 18); active = stroke only | browser (3)(4) |
+| R12 | hairline rules 01, 02, 04, 08 | one behaviour per figure (`select` or `explode`); hits use rest silhouettes; neighbours stagger 10 ms by distance; the hover lift is a 180 ms tween (`SELECT_MS`), other discrete moves 700 ms, continuous = spring (k 100, c 18); active = a 2 px accent outline only, never a face fill (filling large parts flickered as the pointer crossed boundaries) | browser (3)(4) |
 | R13 | reduced motion | no assembly; the pointer still answers and lands in one step; a live switch lands at once; print shows the rest pose, also after an interaction | browser (1)(5)(7)(8) |
 | R14 | loops sleep | all interactive motion in `vpkFrameLoop` ticks that return false when settled; no per-figure rAF; the only CSS animation is the motion at rest (§ 8), gated by `data-vpk-iso-rest`; one idle `setTimeout` per stage | browser (6), `runtime.test.mjs` |
 | R17 | flat cast shadows | one shadow per part with faces, flat paths in one group painted before every part, one fill (`SHADOW.TONE`, dark `SHADOW.DARK_TONE`), no stroke, filter, opacity or transform; gaps and rings cast none; shadows move with their part on the ground and carry no transform at rest | A21, `runtime.test.mjs` |
@@ -392,8 +392,11 @@ Iso-kit brief exemplars (`scripts/iso/briefs/`), rendered to `assets/illustratio
 - `iso-turntable-anatomy` (`briefs/turntable-anatomy.json`): a boxed true dimension (no scale bar: at its narrow-stage scale, under 0.4x, the bar label would render near 6 px inline and collide with the gutter tags, while the dimension moves into the legend); explodes upward.
 - `iso-card-stack-ui` (`briefs/card-stack-ui.json`): UI card layers; select a layer, primary button accented.
 
-`assets/demos/demo-illustration-gallery.html` shows all seven on one page (one inlined iso block; the
-builder gives each figure its own `FIG_nnn`, since every brief carries `FIG_001`).
+`assets/demos/demo-illustration-gallery.html` is the gallery hub: it shows all seven on one page (one inlined iso
+block; the builder renumbers each figure to its own `FIG_nnn`) and links the gallery pages. The 88 recreations of hairline
+(`hl-*`) and the anatomy collection (`an-*`) are `BRIEF_EXAMPLES` entries with a `gallery` key. They appear only on
+their gallery page, `demo-illustration-gallery-hairline-<shelf>.html` or `demo-illustration-gallery-anatomy-<n>.html`
+(`GALLERY_PAGES`). Each page must stay inside the data-URL viewer budget, and the builder fails if one does not.
 
 Hand-drawn exemplars, maintained in place by `--refresh-library` (not migrated to the kit): `isometric-device`, `exploded-assembly`, `annotated-mechanism`, `hatched-cross-section`,
 `isometric-pipeline`.
