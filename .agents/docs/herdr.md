@@ -40,6 +40,9 @@ node scripts/agent-surface.js run --script <file> --label <slug> \
   poll later.
 - An already-open worktree workspace gets a new tab; its root pane is never
   reused because the user may be typing there.
+- If herdr refuses `worktree open` with `linked_worktree_source` (the caller
+  sits in a linked worktree workspace), the pane goes in the caller's
+  workspace instead, with its cwd in the worktree. Other herdr errors fail.
 - Closing the pane before the script finishes is reported as an error, not a
   silent hang.
 - The full runner is written to `<script>.pane.sh` and the pane only runs

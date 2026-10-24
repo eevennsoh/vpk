@@ -322,7 +322,9 @@ dirty tree it will silently fold into its diff.
    it bare, so the user can watch the worker in herdr.
 5. **Read only the report file.** Never stream or parse raw worker output —
    raw material stays in worker contexts, which keeps the planner's context
-   window for review. An absent or empty report does **not**
+   window for review. The live feed and `events.jsonl` are for the human;
+   tail them only when the user asks for progress or a run needs diagnosing
+   (see *Checking progress*). An absent or empty report does **not**
    imply an absent diff: a worker killed mid-run may have already written
    every file. Always check `git status` in the task worktree before
    re-dispatching.
@@ -459,12 +461,28 @@ node scripts/agent-surface.js run \
 | Moved conversation (`--new-window`) | handled by `ai-api` | a new **tab** running the forked session |
 
 The `run.sh` keeps the lane's redirects: the report still lands in
-`report.md`, and the pane shows `stderr` and progress for the user. The
-planner reads only the report, as before. Each pane reports its state to
+`report.md`, and the pane shows live progress for the user — the GPT lane's
+stderr stream, or on the Claude lane one timestamped line per tool call and
+text snippet from `scripts/agent-stream-format.js`. The planner reads only
+the report, as before. Each pane reports its state to
 herdr, so the sidebar shows the worker as `working`, then `done` (with `exit N`
 on failure), and `herdr agent wait <label-slug>` can block on it. Panes are left
 open after exit so the user can scroll them; close them only when the user
 asks. Conventions, status reporting, and cleanup: `.agents/docs/herdr.md`.
+
+When herdr refuses to open the worktree's workspace (`linked_worktree_source`,
+raised when the planner pane itself sits in a linked worktree), the wrapper
+logs a note and places the pane in the planner's workspace instead — a tab, or
+a split in the `--group` tab — with its cwd in the worktree.
+
+### Checking progress
+
+| Question | Where to look |
+| --- | --- |
+| What is it doing right now? | the worker's herdr tab (live feed) |
+| Full trail, after the pane closed | `events.jsonl` (Claude lane, one JSON event per line) |
+| What has actually landed? | `git status` / `git diff` in the task worktree |
+| What did it conclude? | `report.md` |
 
 ## Artifacts
 
@@ -472,7 +490,7 @@ Everything lives under gitignored `output/`:
 
 ```text
 output/remote-gpt/worker-<n>/      # home/ (CODEX_HOME), brief.md, report.md, followup-<k>.md
-output/remote-claude/worker-<n>/   # brief.md, report.md, stderr.log, followup-<k>.md
+output/remote-claude/worker-<n>/   # brief.md, report.md, events.jsonl, stderr.log, followup-<k>.md
 output/remote-<lane>/advisor-<n>/  # advisor consults, same layout as that lane's workers
 ```
 

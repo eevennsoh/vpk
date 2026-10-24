@@ -8,7 +8,9 @@
 //        [--surface auto|herdr|inline]
 //
 // Placement inside herdr:
-//   --worktree <path>  the herdr workspace for that git worktree (opened if needed)
+//   --worktree <path>  the herdr workspace for that git worktree (opened if needed); when
+//                      herdr refuses (linked_worktree_source), a tab in the caller's
+//                      workspace with its cwd in the worktree
 //   --group <label>    a tab with that label in the caller's workspace, split per run
 //   neither            a new tab labelled --label in the caller's workspace
 
@@ -118,12 +120,24 @@ function buildPaneCommand({ script, exitFile, label, seq = Date.now(), lingerSec
 	].join("; ");
 }
 
+// herdr reports failures as `{"error":{"code":...,"message":...}}`; null when it did not.
+function herdrErrorCode(output) {
+	try {
+		return JSON.parse(output).error?.code ?? null;
+	} catch {
+		return null;
+	}
+}
+
 function createHerdr(env = process.env) {
 	const bin = env.HERDR_BIN_PATH || "herdr";
 	return function herdr(args) {
 		const result = spawnSync(bin, args, { encoding: "utf8", env });
 		if (result.status !== 0) {
-			throw new Error(`herdr ${args.slice(0, 2).join(" ")} failed: ${(result.stderr || result.stdout || "").trim()}`);
+			const output = (result.stderr || result.stdout || "").trim();
+			const error = new Error(`herdr ${args.slice(0, 2).join(" ")} failed: ${output}`);
+			error.code = herdrErrorCode(output);
+			throw error;
 		}
 		// `pane run` acknowledges admission with no output.
 		return result.stdout.trim() ? JSON.parse(result.stdout).result : {};
@@ -150,31 +164,48 @@ function createTab(herdr, workspaceId, label, cwd) {
 	return herdr(["tab", "create", "--workspace", workspaceId, "--cwd", cwd, "--label", label, "--no-focus"]).root_pane;
 }
 
-function placePane(herdr, options, env = process.env) {
-	if (options.worktree) {
-		const opened = herdr([
+// herdr refuses worktree actions from a workspace it treats as a linked worktree
+// source; the pane then lands in the caller's workspace, still in the worktree.
+const LINKED_WORKTREE_SOURCE = "linked_worktree_source";
+
+function openWorktree(herdr, options, log) {
+	try {
+		return herdr([
 			"worktree", "open",
 			"--cwd", options.cwd,
 			"--path", options.worktree,
 			"--label", options.label,
 			"--no-focus",
 		]);
-		if (!opened.already_open) return opened.root_pane;
-		const tabLabel = options.group ?? options.label;
-		const existing = findTab(herdr, opened.workspace.workspace_id, tabLabel);
-		return existing
-			? splitIntoTab(herdr, existing, options.worktree)
-			: createTab(herdr, opened.workspace.workspace_id, tabLabel, options.worktree);
+	} catch (error) {
+		if (error.code !== LINKED_WORKTREE_SOURCE) throw error;
+		log(JSON.stringify({ note: `herdr ${LINKED_WORKTREE_SOURCE}; opening a tab in this workspace at ${options.worktree}` }));
+		return null;
+	}
+}
+
+function placePane(herdr, options, env = process.env, log = console.log) {
+	if (options.worktree) {
+		const opened = openWorktree(herdr, options, log);
+		if (opened) {
+			if (!opened.already_open) return opened.root_pane;
+			const tabLabel = options.group ?? options.label;
+			const existing = findTab(herdr, opened.workspace.workspace_id, tabLabel);
+			return existing
+				? splitIntoTab(herdr, existing, options.worktree)
+				: createTab(herdr, opened.workspace.workspace_id, tabLabel, options.worktree);
+		}
 	}
 
 	const workspaceId = env.HERDR_WORKSPACE_ID;
 	if (!workspaceId) throw new Error("HERDR_WORKSPACE_ID is not set; run inside a herdr pane or pass --surface inline");
+	const cwd = options.worktree ?? options.cwd;
 	if (options.group) {
 		const existing = findTab(herdr, workspaceId, options.group);
-		if (existing) return splitIntoTab(herdr, existing, options.cwd);
-		return createTab(herdr, workspaceId, options.group, options.cwd);
+		if (existing) return splitIntoTab(herdr, existing, cwd);
+		return createTab(herdr, workspaceId, options.group, cwd);
 	}
-	return createTab(herdr, workspaceId, options.label, options.cwd);
+	return createTab(herdr, workspaceId, options.label, cwd);
 }
 
 function paneAlive(herdr, paneId) {
@@ -218,7 +249,7 @@ async function run(options, { env = process.env, herdr = createHerdr(env), log =
 		return status;
 	}
 
-	const pane = placePane(herdr, options, env);
+	const pane = placePane(herdr, options, env, log);
 	herdr(["pane", "rename", pane.pane_id, options.label]);
 	const runner = runnerFileFor(options.script);
 	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label })}\n`);
@@ -254,6 +285,7 @@ if (require.main === module) {
 module.exports = {
 	agentNameFor,
 	buildPaneCommand,
+	createHerdr,
 	parseArgs,
 	resolveSurface,
 	run,

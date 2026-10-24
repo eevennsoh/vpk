@@ -8,6 +8,7 @@ const test = require("node:test");
 const {
 	agentNameFor,
 	buildPaneCommand,
+	createHerdr,
 	parseArgs,
 	resolveSurface,
 	run,
@@ -22,7 +23,7 @@ function tempScript(body = "exit 0") {
 }
 
 // Fake herdr server: records calls and "runs" the pane command by writing the exit file.
-function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false } = {}) {
+function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false, worktreeError = null } = {}) {
 	const calls = [];
 	let nextPane = 50;
 	const herdr = (args) => {
@@ -42,6 +43,7 @@ function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false } = {}) {
 			return { pane: { pane_id: `w1:p${nextPane++}`, tab_id: panes[0].tab_id, workspace_id: "w1" } };
 		}
 		if (group === "worktree" && verb === "open") {
+			if (worktreeError) throw Object.assign(new Error(`herdr worktree open failed: ${worktreeError}`), { code: worktreeError });
 			return {
 				already_open: alreadyOpen,
 				workspace: { workspace_id: "w7" },
@@ -201,6 +203,49 @@ test("an already-open worktree gets a new tab instead of its busy root pane", as
 	const create = calls.find(([group, verb]) => group === "tab" && verb === "create");
 	assert.deepEqual(create.slice(2, 4), ["--workspace", "w7"]);
 	assert.equal(calls.some(([group, verb, pane]) => group === "pane" && verb === "run" && pane === "w7:p1"), false);
+});
+
+test("a linked worktree source falls back to a tab in the caller's workspace at the worktree", async () => {
+	const script = tempScript();
+	const { herdr, calls } = fakeHerdr({ worktreeError: "linked_worktree_source" });
+	const logs = [];
+	await run(parseArgs(["run", "--script", script, "--label", "fix-x", "--worktree", "/tmp/wt"]), { env: herdrEnv, herdr, log: (line) => logs.push(line) });
+	const create = calls.find(([group, verb]) => group === "tab" && verb === "create");
+	assert.deepEqual(create.slice(2), ["--workspace", "w1", "--cwd", "/tmp/wt", "--label", "fix-x", "--no-focus"]);
+	assert.match(JSON.parse(logs[0]).note, /linked_worktree_source/u);
+});
+
+test("a linked worktree source with a group splits into that tab at the worktree", async () => {
+	const script = tempScript();
+	const { herdr, calls } = fakeHerdr({
+		worktreeError: "linked_worktree_source",
+		tabs: [{ label: "fanout", tab_id: "w1:t4", workspace_id: "w1" }],
+		panes: [{ pane_id: "w1:p8", tab_id: "w1:t4" }],
+	});
+	await run(parseArgs(["run", "--script", script, "--label", "w-2", "--worktree", "/tmp/wt", "--group", "fanout"]), { env: herdrEnv, herdr, log: () => {} });
+	const split = calls.find(([group, verb]) => group === "pane" && verb === "split");
+	assert.deepEqual(split.slice(2), ["w1:p8", "--direction", "right", "--cwd", "/tmp/wt", "--no-focus"]);
+});
+
+test("other worktree open errors still fail", async () => {
+	const script = tempScript();
+	const { herdr, calls } = fakeHerdr({ worktreeError: "worktree_not_found" });
+	await assert.rejects(
+		run(parseArgs(["run", "--script", script, "--label", "fix-x", "--worktree", "/tmp/wt"]), { env: herdrEnv, herdr, log: () => {} }),
+		/worktree_not_found/u,
+	);
+	assert.equal(calls.some(([group, verb]) => group === "tab" && verb === "create"), false);
+});
+
+test("herdr failures carry the error code from herdr's JSON output", () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-"));
+	const bin = path.join(dir, "fake-herdr");
+	// Verbatim stderr from `herdr worktree open` inside a linked worktree workspace.
+	fs.writeFileSync(bin, `#!/bin/sh\necho '{"error":{"code":"linked_worktree_source","message":"New and open worktree actions start from the repo parent workspace."},"id":"cli:worktree:open"}' >&2\nexit 1\n`, { mode: 0o755 });
+	const herdr = createHerdr({ PATH: process.env.PATH, HERDR_BIN_PATH: bin });
+	assert.throws(() => herdr(["worktree", "open"]), (error) => error.code === "linked_worktree_source" && /worktree open failed/u.test(error.message));
+	fs.writeFileSync(bin, "#!/bin/sh\necho 'plain failure' >&2\nexit 1\n", { mode: 0o755 });
+	assert.throws(() => herdr(["tab", "list"]), (error) => error.code === null);
 });
 
 test("herdr surface outside a herdr workspace fails loudly", async () => {
