@@ -36,6 +36,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"thinking-orbs": dynamic(() => import("../demos/visual/thinking-orbs-demo"), {
 		ssr: false,
 	}),
+	"ui-generation": dynamic(() => import("../demos/visual/ui-generation-demo"), {
+		ssr: false,
+	}),
 	"scroll-mask": dynamic(() => import("../demos/visual/scroll-mask-demo"), {
 		ssr: false,
 	}),

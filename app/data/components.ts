@@ -547,6 +547,7 @@ export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("svg-tracing", "SVG Tracing", "@/components/visual/svg-tracing"),
 	visualComponent("visual-tracing", "Visual Tracing", "@/components/visual/visual-tracing"),
 	visualComponent("thinking-orbs", "Thinking Orbs", "@/components/visual/thinking-orbs"),
+	visualComponent("ui-generation", "UI Generation", "@/components/visual/ui-generation"),
 	visualComponent("scroll-mask", "Scroll Mask", "@/components/visual/scroll-mask"),
 	visualComponent("scrolling", "Scrolling", "@/components/visual/scrolling"),
 	visualComponent("motion", "Motion", "@/components/visual/motion"),

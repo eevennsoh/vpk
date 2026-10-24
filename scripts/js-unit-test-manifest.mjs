@@ -338,6 +338,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/visual/heatmap/data.test.js",
 		"components/visual/gooey/gooey.test.ts",
 		"components/visual/dropzone-effect/flow-model.test.ts",
+		"components/visual/ui-generation/timeline.test.ts",
+		"components/visual/ui-generation/ui-generation.behavior.test.js",
 		"components/visual/peel/peel-model.test.ts",
 		"components/blocks/agent-session/session-peel-preparation.test.js",
 		"components/visual/thinking-orbs/thinking-orbs.test.js",
