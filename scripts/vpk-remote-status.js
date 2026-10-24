@@ -178,9 +178,11 @@ function parseRunRecords(text) {
 		const startedAt = Date.parse(record.startedAt);
 		if (!Number.isFinite(startedAt)) continue;
 		const key = `${record.script}\n${startedAt}`;
-		const run = byRun.get(key) ?? { script: record.script, startedAt, endedAt: null, exitCode: null };
+		const run = byRun.get(key) ?? { script: record.script, startedAt, endedAt: null, exitCode: null, head: null };
 		const endedAt = Date.parse(record.endedAt ?? "");
 		if (Number.isFinite(endedAt) && Number.isInteger(record.exit)) Object.assign(run, { endedAt, exitCode: record.exit });
+		// A writing task's end line carries its worktree's HEAD.
+		if (typeof record.head === "string" && /^[0-9a-f]{40,64}$/u.test(record.head)) run.head = record.head;
 		byRun.set(key, run);
 	}
 	return [...byRun.values()];
@@ -292,6 +294,7 @@ function nextActionFor(status, pr) {
 
 function deriveStatus(task) {
 	const status = deriveStatusName(task);
+	if (status === "unknown" && task.lost) return { status, nextAction: "find the task's renamed branch (git branch)" };
 	// Merged, but whether the local branch is gone or carries newer commits went unobserved.
 	if (status === "merged" && (task.git.localBranch === null || task.git.aheadOfMergedPr === null)) return { status, nextAction: nextActionFor("unknown") };
 	return { status, nextAction: nextActionFor(status, task.pr) };
@@ -314,7 +317,7 @@ function runOutcome(run, { reportBlocks = true } = {}) {
 }
 
 // First match wins, in the order of the skill's status list.
-function deriveStatusName({ readOnly, advisor, workers, reviews, git, pr }) {
+function deriveStatusName({ readOnly, advisor, workers, reviews, git, pr, lost = false }) {
 	// Read-only work never ships, so no branch, PR, or review check applies to it.
 	if (readOnly) {
 		const runs = runsOf([...workers, ...reviews]);
@@ -332,8 +335,10 @@ function deriveStatusName({ readOnly, advisor, workers, reviews, git, pr }) {
 	if (workerRuns.some((run) => run.state === "unknown")) return "unknown";
 	// A merged PR settles the task, older failures and review verdicts included, unless
 	// work followed it: a worker run started after the merge, or commits past its head.
-	// An unlisted local branch may still need cleanup, so it is never done.
+	// An unlisted local branch may still need cleanup, so it is never done, and neither is
+	// a lost one (see collectStatus), which may hold work past the merge.
 	if (pr?.state === "MERGED" && !mergeHasNewerWork(pr, workerRuns, git)) {
+		if (lost && !git.worktreeExists) return "unknown";
 		return git.worktreeExists || git.localBranch !== false ? "merged" : "done";
 	}
 	// The worker's latest run decides on its own: a later review cannot mask its failure.
@@ -357,8 +362,9 @@ function deriveStatusName({ readOnly, advisor, workers, reviews, git, pr }) {
 	if (pr?.state === "CLOSED") return "PR closed";
 	if (git.ahead > 0) return approved ? "ready to ship" : "needs review";
 	// A run whose worktree and branch are both gone was landed and cleaned, even when
-	// no PR can be matched to it (legacy runs predate the branch naming).
-	if (git.worktree && !git.worktreeExists && !git.localBranch) return "done";
+	// no PR can be matched to it (legacy runs predate the branch naming), unless the
+	// branch may live on under a name nobody recorded.
+	if (git.worktree && !git.worktreeExists && !git.localBranch) return lost ? "unknown" : "done";
 	if (!git.branch) return "done (read-only)";
 	return "no commits";
 }
@@ -498,7 +504,7 @@ function runsForScript(dirPath, file, records) {
 		: records;
 	if (launches.length > 0) {
 		return launches.map((record, position) => {
-			const run = { script: file, scriptPath, index, exitCode: record.exitCode, startedAt: record.startedAt, endedAt: record.endedAt };
+			const run = { script: file, scriptPath, index, exitCode: record.exitCode, startedAt: record.startedAt, endedAt: record.endedAt, head: record.head ?? null };
 			const latest = position === launches.length - 1;
 			if (latest && run.endedAt === null && fileExit !== null && (statMs(exitFile) ?? 0) >= run.startedAt) {
 				Object.assign(run, { exitCode: fileExit, endedAt: statMs(exitFile) });
@@ -715,6 +721,27 @@ function resolveBranchName(name, { tree, localBranches, renames }) {
 	return renamedBranch(name, renames, localBranches) ?? name;
 }
 
+// The last HEAD a worker run recorded for its worktree, by end time; null when none did.
+function lastRecordedHead(workers) {
+	return runsOf(workers).filter((run) => run.head).sort((a, b) => (a.endedAt ?? 0) - (b.endedAt ?? 0)).at(-1)?.head ?? null;
+}
+
+// Whether a local branch still holds the work at a commit: its tip is the commit or
+// descends from it. A branch holding the merge that took the commit into origin/main (a
+// synced main, or one started from it) is not the task's. A commit git no longer has is on
+// no branch. Null when git could not tell.
+async function branchHoldsCommit(runCommand, cwd, commit) {
+	if (!commit) return null;
+	const present = await runCommand("git", ["rev-list", "--no-walk", "--ignore-missing", commit], { cwd });
+	if (!present.ok) return null;
+	if (!present.stdout.trim()) return false;
+	const mergedBy = await runCommand("git", ["rev-list", "--first-parent", "--ancestry-path", `${commit}..origin/main`], { cwd });
+	if (!mergedBy.ok) return null;
+	const merge = mergedBy.stdout.trim().split("\n").filter(Boolean).at(-1);
+	const holders = await runCommand("git", ["for-each-ref", "--contains", commit, ...(merge ? ["--no-contains", merge] : []), "--format=%(refname:short)", "refs/heads"], { cwd });
+	return holders.ok ? holders.stdout.trim().length > 0 : null;
+}
+
 async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(), env = process.env, now = Date.now() } = {}) {
 	const { mainCheckout, worktrees } = await resolveMainCheckout(runCommand, cwd);
 	// Started before the directory reads, so git runs while they do.
@@ -756,10 +783,17 @@ async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(),
 		// failed, it stays in play so the task reads unknown rather than done.
 		const proven = candidate && (!localBranches || !prs || localBranches.has(candidate) || prsFor(candidate).length > 0);
 		const branch = readOnly ? null : renamedTo ?? named ?? (proven ? candidate : null);
+			const pr = !branch ? null : prs ? pickPr(prsFor(branch)) : "unknown";
+		const merged = pr?.state === "MERGED";
+		// The recorded branch is gone with its worktree and no rename was followed: it was
+		// landed and deleted, or renamed where git's rename history no longer shows it. Only a
+		// merged PR with no local branch holding the last recorded HEAD (or, without one, the
+		// PR's head) rules a rename out; otherwise the work is lost and never done.
+		const gone = !readOnly && !tree && Boolean(named) && localBranches !== null && resolved === named && !localBranches.has(named);
+		const head = [lastRecordedHead(group.workers), merged ? pr.headRefOid : null].find((commit) => typeof commit === "string" && /^[0-9a-f]{40,64}$/u.test(commit)) ?? null;
+		const lost = gone && !(merged && (await branchHoldsCommit(runCommand, mainCheckout, head)) === false);
 		// A gone branch whose renames could not be read may live on under another name.
 		const localBranch = !branch ? false : localBranches && resolved !== undefined ? localBranches.has(branch) : null;
-		const pr = !branch ? null : prs ? pickPr(prsFor(branch)) : "unknown";
-		const merged = pr?.state === "MERGED";
 
 		const [ahead, status, pastMerge] = await Promise.all([
 			localBranch ? runCommand("git", ["rev-list", "--count", `origin/main..refs/heads/${branch}`], { cwd: mainCheckout }) : null,
@@ -780,7 +814,7 @@ async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(),
 			ahead: ahead?.ok ? Number.parseInt(ahead.stdout.trim(), 10) : null,
 			aheadOfMergedPr,
 		};
-		const { status: derived, nextAction } = deriveStatus({ readOnly, advisor: record?.advisor, workers: group.workers, reviews: group.reviews, git, pr });
+		const { status: derived, nextAction } = deriveStatus({ readOnly, advisor: record?.advisor, workers: group.workers, reviews: group.reviews, git, pr, lost });
 
 		const runs = runsOf(taskDirs).map((run) => {
 			const dir = taskDirs.find((candidateDir) => run.scriptPath.startsWith(`${candidateDir.path}/`));
@@ -890,6 +924,7 @@ if (require.main === module) {
 
 module.exports = {
 	STATUS_ORDER,
+	branchHoldsCommit,
 	collectStatus,
 	conventionalBranchFor,
 	createRunner,

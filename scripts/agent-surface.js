@@ -18,11 +18,12 @@
 //   --group <name>     a tab with that label in the caller's workspace, split per run
 //   neither            a new tab labelled --label in the caller's workspace
 //
-// A --worktree run also reports on the task workspace's root pane: working while it runs,
-// then idle or blocked (reportTaskState). `task-state` is the pane's end-of-run call:
+// A --worktree run also reports on the task workspace's root pane: working while any of its
+// runs goes, then idle or blocked (taskState). `task-state` is the pane's call as its script
+// starts and again once it has exited:
 //
-//   node scripts/agent-surface.js task-state --root <pane> --workspace <id>
-//        --script <file> --exit <status> [--caller <pane>]
+//   node scripts/agent-surface.js task-state start|end --root <pane> --workspace <id>
+//        --script <file> --pid <runner pid> [--exit <status>] [--caller <pane>]
 
 const crypto = require("node:crypto");
 const fs = require("node:fs");
@@ -30,8 +31,13 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const POLL_INTERVAL_MS = 1000;
-// Each herdr call of the end-of-run report, which runs before the pane closes.
-const TASK_STATE_TIMEOUT_MS = 3000;
+// Every herdr call: the wrapper's as it places and launches a run, and the pane's task-state
+// reports as a run starts and ends. A hung herdr then fails a launch it cannot place within
+// seconds, and never delays a run's script or its exit file.
+const HERDR_TIMEOUT_MS = 3000;
+// Longer than a lock holder can take: three herdr calls at HERDR_TIMEOUT_MS.
+const LOCK_STALE_MS = 20000;
+const LOCK_POLL_MS = 25;
 const PANE_CHECK_EVERY = 10;
 
 function shellQuote(value) {
@@ -47,20 +53,21 @@ function assertSurfaceName(flag, value) {
 	}
 }
 
-// The pane's end-of-run call. It never fails the run: it always exits 0.
-function parseTaskStateArgs(rest) {
-	const options = {};
+// The pane's task-state call. It never fails the run: it always exits 0.
+function parseTaskStateArgs([phase, ...rest]) {
+	const options = { phase };
 	for (let index = 0; index < rest.length; index += 2) {
 		const [flag, value] = [rest[index], rest[index + 1]];
 		if (value === undefined) throw new Error(`${flag} needs a value`);
-		const key = { "--root": "rootPaneId", "--workspace": "workspaceId", "--caller": "callerPaneId", "--script": "script", "--exit": "status" }[flag];
+		const key = { "--root": "rootPaneId", "--workspace": "workspaceId", "--caller": "callerPaneId", "--script": "script", "--pid": "pid", "--exit": "status" }[flag];
 		if (!key) throw new Error(`unknown option ${flag}`);
 		options[key] = value;
 	}
-	if (!options.rootPaneId || !options.workspaceId || !options.script || options.status === undefined) {
-		throw new Error("usage: agent-surface.js task-state --root <pane> --workspace <id> --script <file> --exit <status> [--caller <pane>]");
+	const pid = Number(options.pid);
+	if (!["start", "end"].includes(phase) || !options.rootPaneId || !options.workspaceId || !options.script || !Number.isInteger(pid) || pid <= 0 || (phase === "end" && options.status === undefined)) {
+		throw new Error("usage: agent-surface.js task-state start|end --root <pane> --workspace <id> --script <file> --pid <runner pid> [--exit <status>] [--caller <pane>]");
 	}
-	return options;
+	return { ...options, pid };
 }
 
 function parseArgs(argv) {
@@ -126,8 +133,15 @@ function recordStart(script, startedAt) {
 	fs.appendFileSync(runsFileFor(script), `${JSON.stringify({ script: path.basename(script), startedAt, endedAt: null, exit: null })}\n`);
 }
 
-function recordEnd(script, startedAt, status) {
-	fs.appendFileSync(runsFileFor(script), `${JSON.stringify({ script: path.basename(script), startedAt, endedAt: new Date().toISOString(), exit: status })}\n`);
+// `head` is the task worktree's HEAD as the run ended, so status can tell a renamed branch
+// from a landed one once the worktree is gone.
+function recordEnd(script, startedAt, status, head = null) {
+	fs.appendFileSync(runsFileFor(script), `${JSON.stringify({ script: path.basename(script), startedAt, endedAt: new Date().toISOString(), exit: status, ...(head ? { head } : {}) })}\n`);
+}
+
+function worktreeHead(worktree) {
+	const result = spawnSync("git", ["-C", worktree, "rev-parse", "HEAD"], { encoding: "utf8" });
+	return result.status === 0 ? result.stdout.trim() : null;
 }
 
 // The pane command is written here and run as `bash <runner>`: typed into a shell in
@@ -154,13 +168,14 @@ function agentNameFor(label) {
 	return `${prefix}-${hash}`;
 }
 
-// The pane closes itself as soon as the exit file is written, success or failure: the
-// planner reports the outcome, and herdr drops a tab when its last pane closes. The
-// root pane of a workspace opened for the run stays (`closeOnExit: false`), because
-// closing it would close the task's sidebar workspace. A --worktree run (`task`) then
-// reports idle or blocked on that root pane. herdr clears a report once its pane is back
-// at a shell prompt, so the root pane holds at a read until the user presses Enter.
-function buildPaneCommand({ script, exitFile, label, seq = Date.now(), startedAt = new Date().toISOString(), closeOnExit = true, task = null }) {
+// The pane closes itself once the exit file is written, success or failure: the planner
+// reports the outcome, and herdr drops a tab when its last pane closes. The root pane of
+// a workspace opened for the run stays (`closeOnExit: false`), because closing it would
+// close the task's sidebar workspace. A --worktree run (`task`) reports its task state
+// as its script starts and again after the exit file. herdr clears a report once its pane
+// is back at a shell prompt, so the root pane then holds at a read until the user presses
+// Enter. `worktree` adds the worktree's HEAD to the run's end line.
+function buildPaneCommand({ script, exitFile, label, seq = Date.now(), startedAt = new Date().toISOString(), closeOnExit = true, task = null, worktree = null }) {
 	// Seqs must increase per pane across runs and fit in a u64.
 	const base = seq * 1000;
 	const name = agentNameFor(label);
@@ -171,6 +186,7 @@ function buildPaneCommand({ script, exitFile, label, seq = Date.now(), startedAt
 		herdr("pane report-agent") + ` --state working --seq ${base}`,
 		herdr("pane report-metadata") + ` --title ${shellQuote(label)}`,
 		`"$h" agent rename "$HERDR_PANE_ID" ${name}`,
+		`"$h" pane rename "$HERDR_PANE_ID" ${shellQuote(label)}`,
 	].join("; ");
 	// The pane records the run's end itself, so it lands even with --no-wait or a dead
 	// wrapper, and before the exit file, so status never sees an exit without it.
@@ -178,29 +194,43 @@ function buildPaneCommand({ script, exitFile, label, seq = Date.now(), startedAt
 	// Milliseconds, like startedAt: BSD date has no %N, so the node running this wrapper
 	// prints it. Should that fail, round up, so the end is never recorded before it happened.
 	const endedAt = `"$(${shellQuote(process.execPath)} -e 'process.stdout.write(new Date().toISOString())' 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%S.999Z)"`;
+	// $$ is the pane runner, alive until the pane closes or its hold ends: the task's
+	// registry of live runs checks that pid. `ts start|end` is the task-state call.
+	const caller = task?.callerPaneId ? ` --caller ${shellQuote(task.callerPaneId)}` : "";
+	const taskSteps = task ? [
+		`ts() { ${shellQuote(process.execPath)} ${shellQuote(__filename)} task-state "$@" --root ${shellQuote(task.rootPaneId)} --workspace ${shellQuote(task.workspaceId)}${caller} --script ${shellQuote(script)} --pid $$; }`,
+		// In the background, so a slow herdr or a held lock never delays the script; the end
+		// waits for it, so a run never unregisters before it has registered.
+		"{ ts start; } & t=$!",
+		// A runner killed mid-run (its pane closed) still unregisters, so the workspace does
+		// not stay working; only SIGKILL skips this, and the registry prunes that run.
+		`trap 'wait "$t" 2>/dev/null; ts end --exit "${"$"}{s:-1}" >/dev/null 2>&1' EXIT`,
+	] : [];
+	const head = worktree ? `,"head":"%s"` : "";
 	const steps = [
 		`h="${"$"}{HERDR_BIN_PATH:-herdr}"`,
 		bg(start),
+		...taskSteps,
 		`bash ${shellQuote(script)}; s=$?`,
-		`printf '%s"endedAt":"%s","exit":%s}\\n' ${record} ${endedAt} "$s" 2>/dev/null >> ${shellQuote(runsFileFor(script))}`,
+		...(worktree ? [`hd="$(git -C ${shellQuote(worktree)} rev-parse HEAD 2>/dev/null)"`] : []),
+		`printf '%s"endedAt":"%s","exit":%s${head}}\\n' ${record} ${endedAt} "$s"${worktree ? ' "$hd"' : ""} 2>/dev/null >> ${shellQuote(runsFileFor(script))}`,
+		// The exit file lands before the task report and the close, so neither delays the
+		// waiting wrapper. The registry's lock, not this order, keeps a later run's working.
+		`printf '%s\\n' "$s" > ${shellQuote(exitFile)}`,
 	];
-	// Before the exit file, so the planner cannot start the next run, and report it working,
-	// before this run's idle or blocked lands.
-	if (task) {
-		const caller = task.callerPaneId ? ` --caller ${shellQuote(task.callerPaneId)}` : "";
-		steps.push(`${shellQuote(process.execPath)} ${shellQuote(__filename)} task-state --root ${shellQuote(task.rootPaneId)} --workspace ${shellQuote(task.workspaceId)}${caller} --script ${shellQuote(script)} --exit "$s"`);
-	}
-	// The exit file lands before the close, so the waiting wrapper always finds it.
-	steps.push(`printf '%s\\n' "$s" > ${shellQuote(exitFile)}`);
+	if (task) steps.push(`wait "$t"`, `ts end --exit "$s"`, "trap - EXIT");
 	if (closeOnExit) steps.push(`"$h" pane close "$HERDR_PANE_ID" >/dev/null 2>&1`);
 	else if (task) steps.push(`printf '\\nPress Enter for a shell.\\n'`, "read -r _");
 	return steps.join("; ");
 }
 
-function createHerdr(env = process.env, { timeoutMs } = {}) {
+function createHerdr(env = process.env, { timeoutMs = HERDR_TIMEOUT_MS } = {}) {
 	const bin = env.HERDR_BIN_PATH || "herdr";
 	return function herdr(args) {
-		const result = spawnSync(bin, args, { encoding: "utf8", env, timeout: timeoutMs });
+		const result = spawnSync(bin, args, { encoding: "utf8", env, timeout: timeoutMs, killSignal: "SIGKILL" });
+		if (result.error?.code === "ETIMEDOUT") {
+			throw Object.assign(new Error(`herdr ${args.slice(0, 2).join(" ")} timed out after ${timeoutMs}ms`), { code: "ETIMEDOUT" });
+		}
 		if (result.status !== 0) {
 			throw new Error(`herdr ${args.slice(0, 2).join(" ")} failed: ${(result.stderr || result.stdout || "").trim()}`);
 		}
@@ -281,31 +311,20 @@ function placePane(herdr, options, env = process.env) {
 }
 
 // A writing task's sidebar workspace keeps its root pane between runs. Each run reports
-// there too, so the workspace shows working while a run goes, then idle or blocked. Only
-// the root pane of the task's workspace is reported on, never the caller's (the
-// planner's) pane, and only while a pane runner holds it: herdr clears a report on a
-// pane back at its shell prompt, and a bare prompt may be the user's. A run ending while
-// another in the workspace still works leaves it working. Returns what it did; herdr
-// errors throw.
-function reportTaskState(herdr, { rootPaneId, workspaceId, callerPaneId = null, runPaneId = null, state, message }) {
+// there too, so the workspace shows working while any of its runs goes, then idle or
+// blocked. Only the root pane of the task's workspace is reported on, never the caller's
+// (the planner's) pane, and only while a pane runner holds it: herdr clears a report on a
+// pane back at its shell prompt, and a bare prompt may be the user's. Returns what it
+// did; herdr errors throw.
+function reportTaskState(herdr, { rootPaneId, workspaceId, callerPaneId = null, state, message, seq }) {
 	if (rootPaneId === callerPaneId) return "skipped: the caller's pane";
 	const { pane } = herdr(["pane", "get", rootPaneId]);
 	if (pane.workspace_id !== workspaceId) return "skipped: outside the task workspace";
 	if (pane.agent && pane.agent !== REPORT_AGENT) return `skipped: the pane hosts ${pane.agent}`;
-	// The root pane's reported state may be one of these reports, so what it runs comes
-	// from its processes: a pane runner, and while its own run goes, that run's script.
 	const { foreground_processes: processes = [] } = herdr(["pane", "process-info", "--pane", rootPaneId]).process_info ?? {};
-	const scripts = processes.map(({ argv = [] }) => (/^(?:\S*\/)?bash$/u.test(argv[0] ?? "") ? argv[1] ?? "" : "")).filter(Boolean);
-	if (!scripts.some((script) => script.endsWith(".pane.sh"))) return "skipped: the root pane is at a shell prompt, where herdr clears reports";
-	if (state !== "working") {
-		if (scripts.some((script) => !script.endsWith(".pane.sh"))) return "skipped: the root pane's run is working";
-		const others = herdr(["pane", "list", "--workspace", workspaceId]).panes
-			.filter((other) => other.pane_id !== rootPaneId && other.pane_id !== runPaneId);
-		if (others.some((other) => other.agent === REPORT_AGENT && other.agent_status === "working")) return "skipped: another run is working";
-	}
-	// Above the run pane's own start seq (its launch time × 1000), so a root pane that ran
-	// the first run takes this report.
-	herdr(["pane", "report-agent", rootPaneId, "--source", REPORT_SOURCE, "--agent", REPORT_AGENT, "--state", state, "--message", message, "--seq", String(Date.now() * 1000 + 500)]);
+	const held = processes.some(({ argv = [] }) => /^(?:\S*\/)?bash$/u.test(argv[0] ?? "") && (argv[1] ?? "").endsWith(".pane.sh"));
+	if (!held) return "skipped: the root pane is at a shell prompt, where herdr clears reports";
+	herdr(["pane", "report-agent", rootPaneId, "--source", REPORT_SOURCE, "--agent", REPORT_AGENT, "--state", state, "--message", message, "--seq", String(seq)]);
 	return "reported";
 }
 
@@ -315,12 +334,123 @@ function endOfRunState(script, status) {
 		: { state: "blocked", message: `failed · exit ${status}` };
 }
 
+// The task's live runs: one file per run in its directory's live-runs/, naming the run's
+// pane and its pane runner's pid. A run registers before its script starts and
+// unregisters once it has exited; each change and the report that follows it happen
+// under live-runs.lock, so the root pane's reports land in the order the registry
+// changed. A run ending cannot overwrite the working of a run that registered after it,
+// and of two runs ending together the second sees the first gone.
+function liveRunsDirFor(script) {
+	return path.join(path.dirname(script), "live-runs");
+}
+
+function sleepSync(ms) {
+	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function pidAlive(pid) {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		return error.code === "EPERM";
+	}
+}
+
+// A registered run is live while its pid is still its pane runner, so a crashed run, or
+// its pid reused by another process, never holds the workspace at working.
+function runnerAlive({ pid, script }) {
+	if (!pidAlive(pid)) return false;
+	const ps = spawnSync("ps", ["-ww", "-o", "command=", "-p", String(pid)], { encoding: "utf8" });
+	if (ps.error) return true;
+	return ps.status === 0 && ps.stdout.includes(runnerFileFor(script));
+}
+
+// Live runs, oldest first; entries of dead runs are removed.
+function liveRuns(dir, isAlive) {
+	const entries = fs.existsSync(dir) ? fs.readdirSync(dir).filter((file) => file.endsWith(".json")) : [];
+	const live = [];
+	for (const file of entries) {
+		let entry = null;
+		try {
+			entry = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
+		} catch {}
+		if (entry && Number.isInteger(entry.pid) && typeof entry.script === "string" && isAlive(entry)) live.push(entry);
+		else fs.rmSync(path.join(dir, file), { force: true });
+	}
+	return live.sort((a, b) => a.registeredAt - b.registeredAt);
+}
+
+// One holder at a time: the lock directory appears with its owner file inside, and goes,
+// by atomic renames, so it is never empty (a rename may replace an empty directory). A
+// holder makes at most three herdr calls of HERDR_TIMEOUT_MS each, so a lock whose holder
+// died, or older than LOCK_STALE_MS, is broken.
+function withLock(lockDir, fn) {
+	const token = `${process.pid} ${crypto.randomUUID()}`;
+	const staging = `${lockDir}.${process.pid}`;
+	const discard = () => {
+		const trash = `${lockDir}.gone.${crypto.randomUUID()}`;
+		try {
+			fs.renameSync(lockDir, trash);
+		} catch {
+			return;
+		}
+		fs.rmSync(trash, { recursive: true, force: true });
+	};
+	const readOwner = () => {
+		try {
+			return fs.readFileSync(path.join(lockDir, "owner"), "utf8");
+		} catch {
+			return "";
+		}
+	};
+	fs.mkdirSync(staging, { recursive: true });
+	fs.writeFileSync(path.join(staging, "owner"), token);
+	try {
+		for (;;) {
+			try {
+				fs.renameSync(staging, lockDir);
+				break;
+			} catch (error) {
+				if (error.code !== "ENOTEMPTY" && error.code !== "EEXIST") throw error;
+			}
+			const owner = readOwner();
+			const ageMs = Date.now() - (fs.statSync(lockDir, { throwIfNoEntry: false })?.mtimeMs ?? Date.now());
+			const ownerPid = Number.parseInt(owner, 10);
+			if ((Number.isInteger(ownerPid) && !pidAlive(ownerPid)) || ageMs > LOCK_STALE_MS) {
+				if (readOwner() === owner) discard();
+				continue;
+			}
+			sleepSync(LOCK_POLL_MS);
+		}
+	} finally {
+		fs.rmSync(staging, { recursive: true, force: true });
+	}
+	try {
+		return fn();
+	} finally {
+		// A holder slow enough to have its lock broken must not release the next holder's.
+		if (readOwner() === token) discard();
+	}
+}
+
+// Seqs must increase per pane. Above a root pane's own start seq (its launch time × 1000),
+// so a root pane that ran the first run takes these reports.
+function nextSeq(dir) {
+	const file = path.join(dir, "seq");
+	const last = Number(fs.existsSync(file) ? fs.readFileSync(file, "utf8") : 0) || 0;
+	const seq = Math.max(Date.now() * 1000 + 500, last + 1);
+	fs.writeFileSync(file, String(seq));
+	return seq;
+}
+
+// A herdr that timed out says nothing about the pane, so the wait goes on.
 function paneAlive(herdr, paneId) {
 	try {
 		herdr(["pane", "get", paneId]);
 		return true;
-	} catch {
-		return false;
+	} catch (error) {
+		return error.code === "ETIMEDOUT";
 	}
 }
 
@@ -363,27 +493,19 @@ async function run(options, { env = process.env, herdr = createHerdr(env), log =
 		recordStart(options.script, startedAt);
 		const result = spawnSync("bash", [options.script], { cwd: options.cwd, stdio: "inherit", env });
 		const status = result.status ?? 1;
-		recordEnd(options.script, startedAt, status);
+		recordEnd(options.script, startedAt, status, options.worktree ? worktreeHead(options.worktree) : null);
 		fs.writeFileSync(exitFile, `${status}\n`);
 		log(JSON.stringify({ exit: status }));
 		return status;
 	}
 
+	// Every herdr call here times out (HERDR_TIMEOUT_MS). The pane names itself and reports
+	// the task state, so only the calls that place and start the run stand before it, and a
+	// hung herdr there fails the launch instead of hanging it.
 	const { pane, closeOnExit, task = null } = placePane(herdr, options, env);
-	herdr(["pane", "rename", pane.pane_id, options.label]);
 	const runner = runnerFileFor(options.script);
-	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label, startedAt, closeOnExit, task })}\n`);
+	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label, startedAt, closeOnExit, task, worktree: options.worktree ?? null })}\n`);
 	recordStart(options.script, startedAt);
-	// Before the launch, so its seq is below the end-of-run report's however fast the run.
-	// A run in the root pane reports working there itself.
-	if (task && task.rootPaneId !== pane.pane_id) {
-		try {
-			const outcome = reportTaskState(herdr, { ...task, runPaneId: pane.pane_id, state: "working", message: `working · ${path.basename(options.script)}` });
-			if (outcome !== "reported") log(JSON.stringify({ task_state: outcome }));
-		} catch (error) {
-			log(JSON.stringify({ task_state: `not reported: ${error.message}` }));
-		}
-	}
 	herdr(["pane", "run", pane.pane_id, `bash ${shellQuote(runner)}`]);
 	log(JSON.stringify({
 		surface,
@@ -402,15 +524,35 @@ async function run(options, { env = process.env, herdr = createHerdr(env), log =
 	return status;
 }
 
-// The pane's end-of-run report on the task's root pane. A failure prints one line and
-// still exits 0: the run's status is already in its exit file.
-function taskState(argv, { env = process.env, herdr = createHerdr(env, { timeoutMs: TASK_STATE_TIMEOUT_MS }), log = console.error } = {}) {
+// The pane's task-state call, as its script starts (`start`) and once it has exited
+// (`end`): register or unregister the run, then report working while any registered run
+// is live, otherwise idle or blocked from this run's exit. A failure prints one line and
+// still exits 0: the run's status is in its exit file.
+function taskState(argv, { env = process.env, herdr = createHerdr(env), log = console.error, isAlive = runnerAlive } = {}) {
+	let options;
 	try {
-		const options = parseTaskStateArgs(argv);
-		const status = Number.parseInt(options.status, 10);
-		const outcome = reportTaskState(herdr, { ...options, runPaneId: env.HERDR_PANE_ID ?? null, ...endOfRunState(options.script, Number.isNaN(status) ? 1 : status) });
+		options = parseTaskStateArgs(argv);
+		const dir = liveRunsDirFor(options.script);
+		const outcome = withLock(`${dir}.lock`, () => {
+			const entry = path.join(dir, `${options.pid}.json`);
+			fs.mkdirSync(dir, { recursive: true });
+			if (options.phase === "start") {
+				fs.writeFileSync(entry, `${JSON.stringify({ pid: options.pid, pane: env.HERDR_PANE_ID ?? null, script: options.script, registeredAt: Date.now() })}\n`);
+			} else {
+				fs.rmSync(entry, { force: true });
+			}
+			// A run registering is live, whatever its process looks like.
+			const live = liveRuns(dir, (run) => (options.phase === "start" && run.pid === options.pid) || isAlive(run));
+			const status = Number.parseInt(options.status, 10);
+			const next = live.length > 0
+				? { state: "working", message: `working · ${path.basename(live.at(-1).script)}` }
+				: endOfRunState(options.script, Number.isNaN(status) ? 1 : status);
+			return reportTaskState(herdr, { ...options, ...next, seq: nextSeq(dir) });
+		});
 		if (outcome !== "reported") log(`agent-surface: task workspace state ${outcome}`);
 	} catch (error) {
+		// An ended run never stays registered, whatever failed.
+		if (options?.phase === "end") fs.rmSync(path.join(liveRunsDirFor(options.script), `${options.pid}.json`), { force: true });
 		log(`agent-surface: task workspace state not reported: ${error.message}`);
 	}
 	return 0;
@@ -447,4 +589,5 @@ module.exports = {
 	splitDirection,
 	taskState,
 	waitForExitFile,
+	withLock,
 };

@@ -544,8 +544,10 @@ record for diagnosing a failure. The only pane that stays is the root pane of
 a worktree workspace the run opened, because closing it would close the
 task's sidebar workspace. That root pane carries the task's status: the
 workspace shows `working` while any of its runs goes, then `idle` (last run
-exited 0) or `blocked` (`failed · exit N`) instead of `unknown`. To keep
-that status, it holds at `Press Enter for a shell.` after its run.
+exited 0) or `blocked` (`failed · exit N`) instead of `unknown`. Runs record
+themselves in `live-runs/` in the worker directory, under a lock, so
+overlapping runs never leave a wrong final state. To keep that status, it
+holds at `Press Enter for a shell.` after its run.
 Conventions and status reporting: `.agents/docs/herdr.md`.
 
 ### Checking progress
@@ -614,7 +616,11 @@ files does not count):
   and the local branch has no commits past its head; otherwise status comes
   from the newer runs. A merged task is `done` only once its worktree and
   local branch are both observed gone; if the branch list failed it stays
-  `merged` with next action "re-run status";
+  `merged` with next action "re-run status". A task whose recorded branch
+  and worktree are both gone, with no rename in git's history leading to a
+  live branch, is `unknown` (next action: find the renamed branch) unless its
+  PR merged and no local branch's tip is, or descends from, the last HEAD a
+  run recorded (else the PR's head);
 - `done (read-only)` for research, reviews, and tasks whose `task.json` has
   null `branch` and `worktree`, once none of their runs is live;
 - `unknown` when `ps`, `git` or `gh` failed, so the answer can't be
@@ -642,7 +648,10 @@ the worker's directory as `followup-<k>.md`, run by `run-<k>.sh`, so each run
 keeps its own exit file. `agent-surface.js` writes `<script>.start` before each
 launch and appends a start line and an end line per run to the directory's
 `runs.jsonl` (`script`, `startedAt`, `endedAt`, `exit`, both times ISO with
-milliseconds), so a relaunched script keeps every run in order.
+milliseconds, plus `head`, the task worktree's HEAD, on a writing run's end
+line), so a relaunched script keeps every run in order. A writing run also
+keeps `live-runs/<pid>.json` there while it is live (see *Terminal
+surfaces*).
 
 Artifacts stay under the **main checkout's** `output/`, never inside a task
 worktree, so reports from concurrently dispatched tasks stay readable in one

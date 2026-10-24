@@ -54,8 +54,10 @@ node scripts/agent-surface.js run --script <file> --label <name> \
   same label (`--group`, else `--label`) when one exists, and otherwise gets a
   new tab with that label. Its root pane is never reused because the user may
   be typing there.
-- The pane closes itself the moment the script exits, success or failure,
-  right after writing `<script>.exit`, so the close cannot race the wrapper.
+- The pane writes `<script>.exit` as soon as the script exits, success or
+  failure, then closes itself, so the close cannot race the wrapper. In a task
+  workspace (see below) the workspace report comes between the two, so the
+  close waits for it but the exit file never does.
   herdr drops a tab when its last pane closes, so a single-run tab goes too;
   a `--group` tab stays until its last worker exits. The one exception is the
   root pane of a worktree workspace the run just opened: closing it would
@@ -63,6 +65,10 @@ node scripts/agent-surface.js run --script <file> --label <name> \
   `Press Enter for a shell.` so its task status sticks (see below).
 - Closing the pane before the script finishes is reported as an error, not a
   silent hang.
+- Every herdr call the wrapper makes times out after 3 s. The pane names and
+  reports itself, so the wrapper only places the pane and starts the run: a
+  hung herdr fails the launch with `herdr <command> timed out` instead of
+  hanging it, and never holds up a run that has started.
 - The full runner is written to `<script>.pane.sh` and the pane only runs
   `bash '<that file>'`, because `herdr pane run` rejects lines over 1024 bytes.
   Like `<script>.exit`, it is left beside the script.
@@ -84,18 +90,35 @@ state instead of `unknown` between runs:
 | Phase | Root pane reports | Message |
 | --- | --- | --- |
 | Any run in the workspace starts | `working` | `working · run-2.sh` |
-| Run exits 0 | `idle` | `done · run-2.sh` |
-| Run exits non-zero | `blocked` | `failed · exit 1` |
+| A run ends while another is live | `working` | `working · <newest live run>` |
+| The last live run exits 0 | `idle` | `done · run-2.sh` |
+| The last live run exits non-zero | `blocked` | `failed · exit 1` |
 
-The per-run pane still closes on exit. herdr clears a report as soon as its
-pane is back at a shell prompt, so the root pane holds at
-`Press Enter for a shell.` after its run; once the user presses Enter it is
-their shell, and later runs leave it alone (status falls back to `unknown`).
-Reports go only to the root pane of the task's own workspace, never to the
-planner's pane or another workspace's, and a run that ends while another run
-in the workspace is still working leaves it `working`. A rejected report
-prints one `agent-surface: task workspace state …` line; the run's exit
-status never changes.
+The state comes from a registry of live runs in the task's artifact
+directory, never from herdr's pane states, which other runs change at the
+same moment. A run adds `live-runs/<pid>.json` (its pane and its pane
+runner's pid) as its script starts, and removes it after it has written its
+exit file. Each change and the report that follows it happen under
+`live-runs.lock`, so the reports land in the order the registry changed: a
+run ending cannot overwrite a newer run's `working`, and of two runs ending
+together the second sees the first gone and reports the final state. An
+entry whose pid is no longer its pane runner is dropped, so a crashed run
+never holds the workspace at `working`; a lock whose holder died, or older
+than 20 s, is broken.
+
+In order, a run's pane: registers in the background (the script never waits
+on herdr or the lock), runs the script, appends its end line to
+`runs.jsonl`, writes `<script>.exit`, unregisters and reports under the lock,
+then closes. A pane closed mid-run still unregisters on its way out. Each
+herdr call in a report times out after 3 s.
+
+herdr clears a report as soon as its pane is back at a shell prompt, so the
+root pane holds at `Press Enter for a shell.` after its run; once the user
+presses Enter it is their shell, and later runs leave it alone (status falls
+back to `unknown`). Reports go only to the root pane of the task's own
+workspace, never to the planner's pane or another workspace's. A rejected
+report prints one `agent-surface: task workspace state …` line; the run's
+exit status never changes.
 
 The pane itself shows the same level of detail: a `/vpk-remote` Claude-lane
 worker prints `working · <model> · started HH:MM`, one status line rewritten
