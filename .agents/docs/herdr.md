@@ -39,6 +39,9 @@ node scripts/agent-surface.js run --script <file> --label <name> \
 - The script's exit code lands in `<script>.exit`; the wrapper reads it, so
   it works the same for background Bash calls and for `--no-wait` callers that
   poll later.
+- Each run also leaves `<script>.start` (written before launch) and a start
+  and an end line in the script directory's `runs.jsonl`, so a relaunched
+  script keeps every run's times (ISO, with milliseconds).
 - `--label` and `--group` must match `vpk-<type>-<slug>[-<pane>]`
   (`SURFACE_NAME_PATTERN`); anything else is rejected before herdr is called.
 - `--worktree` runs `herdr worktree open` with the **main checkout** as

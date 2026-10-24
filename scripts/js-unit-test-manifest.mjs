@@ -52,6 +52,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-tunnel/scripts/vpk-tunnel.test.js",
 		"scripts/agent-surface.test.js",
 		"scripts/agent-stream-format.test.js",
+		"scripts/vpk-remote-status.test.js",
 		".agents/herdr/plugins/vpk-worktree/lib.test.js",
 		".agents/skills/vpk-build/scripts/plan-target-refresh.test.js",
 		".agents/skills/vpk-build/scripts/verify-target.test.js",
