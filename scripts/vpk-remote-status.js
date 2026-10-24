@@ -131,13 +131,13 @@ function sectionBody(markdown, heading) {
 	return body;
 }
 
-// The lines under "## Blockers". The section is empty only when it is blank or just
-// "None" ("- None", "- None."): any other text, even "None of the checks ran", blocks.
+// The lines under "## Blockers". A blank section, or a single "None" line, means no
+// blockers; "None." or "None —" may carry a note ("None. Playwright ran unsandboxed."),
+// but "None of the checks ran" or "None yet, …" is a blocker.
 function parseBlockers(markdown) {
 	const body = sectionBody(markdown ?? "", "Blockers");
 	if (!body) return [];
 	const lines = body.map((line) => line.trim()).filter(Boolean);
-	// "None." or "None —" may carry a note after it ("None. Playwright ran unsandboxed."); "None of the checks ran" is a blocker.
 	if (lines.length === 0 || (lines.length === 1 && /^(?:[-*+]\s+)?none(?:$|[.;:,—–]|\s+[—–-]\s)/iu.test(lines[0]))) return [];
 	return lines.map((line) => line.replace(/^(?:[-*+]|\d+\.)\s+/u, ""));
 }
