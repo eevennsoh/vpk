@@ -151,6 +151,28 @@ export function createIsoRuntime(win, loop, core) {
 	const role = name => `[data-vpk-iso-role="${name}"]`;
 	const line = (el, pts, pairs, movers) => ({ el, d0: el.getAttribute("d"), d: el.getAttribute("d"), pts, pairs, movers });
 
+	// A grown part (data-vpk-iso-grow, the brief's liftMode "grow") rises like a bar extending: its base stays where it stands and
+	// only its top moves. The build checked that the taller solid is the rest solid with its top-face points moved by the lift, so
+	// each face path keeps its base points and moves the points it shares with the top face; anything else in the part (its marks,
+	// received shadows, tags) sits on the top and moves whole. Returns null when the part has no top face (it then translates).
+	const PAIR = /(-?[\d.]+) (-?[\d.]+)/g;
+	function growOf(el) {
+		const top = el.querySelector(role("top"));
+		if (!top) return null;
+		const keys = new Set(top.getAttribute("d").match(PAIR));
+		return [...el.children].map(child => (/^(fill|shade|top|crease|edge)$/.test(attr(child, "role")) ? { el: child, d: child.getAttribute("d"), keys } : { el: child }));
+	}
+	function grow(p, value) {
+		for (const item of p.grow) {
+			if (!item.d) {
+				if (value) item.el.setAttribute("transform", value);
+				else item.el.removeAttribute("transform");
+				continue;
+			}
+			item.el.setAttribute("d", value ? item.d.replace(PAIR, (pair, x, y) => (item.keys.has(pair) ? `${r1(+x + p.dx)} ${r1(+y + p.dy)}` : pair)) : item.d);
+		}
+	}
+
 	function mount(stage) {
 		let labelsFor = [];
 		const root = stage.closest("[data-vpk-engine]") || stage;
@@ -158,8 +180,6 @@ export function createIsoRuntime(win, loop, core) {
 		const behavior = attr(stage, "behavior");
 		const vb = svg ? (svg.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number) : [];
 		if (!svg || vb.length !== 4 || !vb.every(Number.isFinite) || (behavior !== "select" && behavior !== "explode")) throw new Error("stage");
-		const zd = Number(attr(svg, "zdepth")) || 0;
-		const liftZ = Number(attr(svg, "lift-z")) || 0;
 		// The select blink and the narrow tag leaders live in manual-runtime.mjs (core.blink, core.tagLines).
 		const blinks = svg.hasAttribute("data-vpk-iso-blink");
 		const readout = find(root, "readout");
@@ -169,10 +189,13 @@ export function createIsoRuntime(win, loop, core) {
 		const units = [];
 		const unitOf = new Map();
 		const parts = [...svg.querySelectorAll("[data-vpk-iso-part]")].map((el, i) => {
-			const vec = core.parseVec(attr(el, vecKey));
-			if (!vec) throw new Error("vector");
 			const id = attr(el, "part");
 			const name = attr(el, "of") || id;
+			const base = { el, i, id, name, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
+			// A fixed part (data-vpk-iso-fixed) is scenery: it never moves, has no hit polygon and is no keyboard stop (unit -1).
+			if (el.hasAttribute("data-vpk-iso-fixed")) return { ...base, unit: -1, vec: [0, 0] };
+			const vec = core.parseVec(attr(el, vecKey));
+			if (!vec) throw new Error("vector");
 			if (!unitOf.has(name)) {
 				unitOf.set(name, units.length);
 				units.push({ name, label: attr(el, "label") || name, points: [] });
@@ -181,42 +204,41 @@ export function createIsoRuntime(win, loop, core) {
 			let points = [...el.querySelectorAll(role("fill"))].flatMap(p => core.parsePolyPath(p.getAttribute("d")) || []);
 			if (!points.length) points = core.parsePolyPath((el.querySelector(role("edge")) || el).getAttribute("d")) || [];
 			units[unit].points.push(...points);
-			return { el, i, id, unit, vec, depth: Number(attr(el, "depth")) || 0, group: el.parentNode, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
+			return { ...base, unit, vec, grow: el.hasAttribute("data-vpk-iso-grow") && growOf(el) };
 		});
 		for (const unit of units) unit.poly = core.hull(unit.points);
-		if (!parts.length || units.some(unit => unit.poly.length < 3)) throw new Error("polygon");
-		const polys = units.map(unit => unit.poly);
+		if (!units.length || units.some(unit => unit.poly.length < 3)) throw new Error("polygon");
+		// Hit order is painter order: each unit at its first part, and each face of a fixed part as a blocker (unit -1), so a fixed
+		// part drawn in front (a tray's near wall) stops the pointer reaching the part behind it.
+		const hits = parts.flatMap(p => (p.unit < 0
+			? [...p.el.querySelectorAll(role("fill"))].map(f => ({ at: p.i, unit: -1, poly: core.hull(core.parsePolyPath(f.getAttribute("d")) || []) }))
+			: parts.find(q => q.unit === p.unit) === p ? [{ at: p.i, unit: p.unit, poly: units[p.unit].poly }] : []));
+		const polys = hits.map(h => h.poly);
 		const byId = new Map(parts.map(p => [p.id, p]));
 		// Cast shadows stay on the ground: each moves by its cast vector times its part's motion (k: the lift, or the Gap offset).
 		// A received shadow (on a part's top) rides in its receiver's group, so it moves by its caster's cast less the receiver's (cast-on).
 		const shadows = [...svg.querySelectorAll(role("shadow"))].map(el => {
 			const on = el.closest("[data-vpk-iso-part]");
-			return { el, vec: core.parseVec(attr(el.closest("[data-vpk-iso-cast]"), "cast")), less: core.parseVec(attr(el, "cast-on")), on: on && parts.find(p => p.el === on), of: parts.find(p => units[p.unit].name === attr(el, "shadow-for")) };
+			const cast = el.closest("[data-vpk-iso-cast]");
+			return { el, vec: cast && core.parseVec(attr(cast, "cast")), less: core.parseVec(attr(el, "cast-on")), on: on && parts.find(p => p.el === on), of: parts.find(p => p.name === attr(el, "shadow-for")) };
 		}).filter(s => s.vec && s.of);
 		const lines = [];
 		for (const el of svg.querySelectorAll(role("guide"))) {
 			const pts = core.parsePolyPath(el.getAttribute("d"));
-			const from = byId.get(attr(el, "from"));
-			const to = byId.get(attr(el, "to"));
+			// A guide names its parts by id; a tray is drawn as <id>:back and <id>:front, so an id falls back to the unit name.
+			const end = name => byId.get(name) || parts.find(p => p.name === name);
+			const from = end(attr(el, "from"));
+			const to = end(attr(el, "to"));
 			if (pts && from && to) lines.push(line(el, pts, true, pts.map((_, k) => (k % 2 ? to : from))));
 		}
 		for (const g of svg.querySelectorAll("[data-vpk-iso-label-for]")) {
 			const el = g.querySelector(role("leader"));
 			const name = attr(g, "label-for");
-			const target = parts.find(p => p.id === name || units[p.unit].name === name);
+			const target = parts.find(p => p.id === name || p.name === name);
 			const pts = el && core.parsePolyPath(el.getAttribute("d"));
 			if (pts && target) lines.push(line(el, pts, false, pts.map((_, k) => (k === pts.length - 1 ? target : null))));
 		}
-		if (svg.querySelector("[data-vpk-iso-tag-for]")) lines.push(...core.tagLines(core.parsePolyPath, svg, parts, units, line));
-		const groups = new Map();
-		for (const p of parts) {
-			if (!groups.has(p.group)) groups.set(p.group, []);
-			groups.get(p.group).push(p);
-		}
-		for (const list of groups.values()) {
-			list.order = list.slice();
-			list.tail = list[list.length - 1].el.nextElementSibling;
-		}
+		if (svg.querySelector("[data-vpk-iso-tag-for]")) lines.push(...core.tagLines(core.parsePolyPath, svg, parts, line));
 
 		let rect = null;
 		const measure = () => (rect = rect || svg.getBoundingClientRect());
@@ -265,7 +287,8 @@ export function createIsoRuntime(win, loop, core) {
 				return;
 			}
 			st.leaveAt = null;
-			const hit = core.topmostHit(polys, toView(e.clientX, e.clientY));
+			const top = core.topmostHit(polys, toView(e.clientX, e.clientY));
+			const hit = top < 0 ? -1 : hits[top].unit;
 			if ((hit < 0 ? null : hit) !== st.sel.active) select(selectReducer(st.sel, { type: "hover", unit: hit }), now());
 		};
 		stage.addEventListener("pointerenter", invalidate);
@@ -304,22 +327,16 @@ export function createIsoRuntime(win, loop, core) {
 		const enhancer = doc.querySelector("script[data-vpkh-enhance]");
 		if (enhancer && !enhancer.textContent.includes("vpkh-no-lightbox")) stage.addEventListener("click", e => e.stopPropagation());
 
-		// Depth re-sort within a motion group (select lift); at rest the order is painter order again.
-		function resort() {
-			for (const [g, list] of groups) {
-				if (list.length < 2) continue;
-				const order = list.slice().sort((a, b) => a.depth + a.lv * liftZ * zd - (b.depth + b.lv * liftZ * zd) || a.i - b.i);
-				if (order.every((p, k) => p === list.order[k])) continue;
-				list.order = order;
-				for (const p of order) g.insertBefore(p.el, list.tail);
-			}
-		}
+		// A lift is vertical, so it never changes which part is nearer the viewer: the lifted part keeps its painter-order place and
+		// the parts in front of it still cover it (re-sorting by lifted height drew a lifted card over the nearer cards).
 
-		// One translate per moved element (a part, or a shadow on the ground), written only when it changes; none at rest.
+		// One translate per moved element (a part, or a shadow on the ground), written only when it changes; none at rest. A grown
+		// part (p.grow) is not translated: its face paths keep their base points and move their top-face points (grow()).
 		const place = (o, x, y) => {
 			const value = Math.abs(x) >= 0.05 || Math.abs(y) >= 0.05 ? `translate(${r1(x)} ${r1(y)})` : null;
 			if (value === o.tf) return;
 			o.tf = value;
+			if (o.grow) return grow(o, value);
 			if (value) o.el.setAttribute("transform", value);
 			else o.el.removeAttribute("transform");
 		};
@@ -345,7 +362,6 @@ export function createIsoRuntime(win, loop, core) {
 				line.d = d;
 				line.el.setAttribute("d", d);
 			}
-			if (liftZ && zd) resort();
 		}
 
 		// Print pose. The print CSS forces part transforms to none, but guide and leader `d`, the
@@ -416,7 +432,7 @@ export function createIsoRuntime(win, loop, core) {
 			return busy;
 		}
 
-		labelsFor = parts.map(p => [...svg.querySelectorAll("[data-vpk-iso-label-for], [data-vpk-iso-arrow-for]")].filter(g => [p.id, units[p.unit].name].includes(attr(g, "label-for") || attr(g, "arrow-for"))));
+		labelsFor = parts.map(p => [...svg.querySelectorAll("[data-vpk-iso-label-for], [data-vpk-iso-arrow-for]")].filter(g => [p.id, p.name].includes(attr(g, "label-for") || attr(g, "arrow-for"))));
 		board = loop.register(stage, tick, { rest: () => pose(true) });
 
 		// Motion at rest (iso/accent.mjs REST_MOTION; the keyframes are runtime-css): data-vpk-iso-rest on the stage (not the

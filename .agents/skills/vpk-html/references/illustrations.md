@@ -203,7 +203,7 @@ other value fails validation),
 `camera` (`preset`, `scale: "fit"`, `pad`), `viewBox` (default 720 × 450), `texture`, `parts`,
 `focal`, `labels`, `annotations`, `marks`, `dims`, `scale`, `assemble`, `interact`, `meta` (`margin`, `corner`).
 
-- **Parts** (1–160): `{ id, kind, at, size, r?, bevel?, marks?, label?, explode?, clipTo?, clipPad?, state? }`,
+- **Parts** (1–160): `{ id, kind, at, size, r?, bevel?, marks?, label?, explode?, clipTo?, clipPad?, state?, fixed?, liftMode? }`,
   `kind` ∈ `slab | box | plate | cylinder | tray | ring | gap`. `at` is the min corner (centre for
   `cylinder`/`ring`), `size` is `[w, d, h]` in world units, z up (`[r, r, h]` for a `cylinder`,
   `[r, r, 0]` for a `ring`; r is the radius). A `tray` splits into `:back` and
@@ -213,6 +213,17 @@ other value fails validation),
   dashed reserved outline. `state` (`"new"` | `"active"`) gives a part the pale fill
   without the focal's outline. `cut` is gone: the kit draws side faces flat, and a part that still says `cut` fails
   validation (`parts[n].cut is no longer supported`), with no silent fallback.
+- **Fixed parts**: `fixed: true` makes a part scenery: it never lifts or separates, never takes the hover outline, is not
+  a keyboard stop and cannot be selected (a select figure's pointer passes over it, and its faces drawn in front of a part
+  still block that part's hit). Use it for plinths, bases, housings and mats that hold the figure up. A select figure's
+  **support**, its one lowest part (not the focal) whose plan holds every other part's plan, is fixed by default; write
+  `fixed: false` to keep it selectable. Every other base (several feet, a plate on a housing, benches side by side) needs
+  `fixed: true`. A brief whose parts are all fixed, or a fixed part with a `liftMode`, fails validation.
+- **Lift mode** (select only): `interact.liftMode` (figure default) or a part's `liftMode` is `"raise"` (default: the part
+  rises whole) or `"grow"` (its base stays on what it stands on and only its top rises by `lift`, like a bar extending; the
+  terrain's pillars). `grow` takes a vertical prism (`box`, `slab`, `plate`, `cylinder`); the build checks that the solid
+  `lift` taller is the rest solid with its top-face points moved, and a solid that is not (a bevelled slab) raises instead,
+  with a build warning. A grown part's ground shadow holds still.
 - **Labels**: `{ text, target, side?: left|right|auto, anchor?: [x, y, z] }`.
   The kit anchors each leader on a visible point of its target; a crowded figure fails A7 instead
   of moving labels, so fix it with `side` or `anchor`. `side` is a hint: a label moves to
@@ -227,8 +238,10 @@ other value fails validation),
 - **Assembly**: `assemble.layers` lists every part once, in ≤ 6 layers; `from` (default `[0, 0, 30]`, `ENTRY.DROP_Z`) is the
   offset parts drop from (the camera fit counts only its first 14 units, so a part may start above the frame and fall in). The timing is fixed (rule 10 below); `staggerMs` and `partMs` still validate but
   do not change it.
-- **Behaviour**: `interact` is `null` (static, zoomable), `{ behavior: "select", rest?, lift? }`
-  (pointer or arrow keys lift one part and name it; Escape returns to rest) or
+- **Behaviour**: `interact` is `null` (static, zoomable), `{ behavior: "select", rest?, lift?, liftMode?, guides? }`
+  (pointer or arrow keys lift one part and name it; Escape returns to rest; a lifted part keeps its painter-order place, so
+  the parts in front of it still cover it; `guides: true` draws the explode figure's dashed drop guides, whose upper ends
+  ride the lift) or
   `{ behavior: "explode", explode: { rest, min, max, step, unit } }` (hovering the figure opens it to `max` and leaving
   closes it; a touch tap toggles; pointer position plays no part; the range input commits the resting gap). The brief's `at` values are the rest pose; offsets are
   `explode × (gap − rest)`. `rest` must be a slider stop (`min + n × step`), or the range input

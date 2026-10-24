@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "bench-a",
+			"fixed": true,
 			"kind": "box",
 			"at": [
 				0,
@@ -28,6 +29,7 @@
 		},
 		{
 			"id": "bench-b",
+			"fixed": true,
 			"kind": "box",
 			"at": [
 				56,

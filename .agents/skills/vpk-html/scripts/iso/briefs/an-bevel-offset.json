@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "base",
+			"fixed": true,
 			"kind": "box",
 			"at": [
 				0,
@@ -28,6 +29,7 @@
 		},
 		{
 			"id": "bench",
+			"fixed": true,
 			"kind": "box",
 			"at": [
 				82,

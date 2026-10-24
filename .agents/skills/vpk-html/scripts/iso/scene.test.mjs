@@ -5,9 +5,9 @@ import { iso } from "../anatomy/vendor/kit/iso-kit.mjs";
 import { FIGURE_CAMERA } from "../figures/camera.mjs";
 import { pointInPolygon } from "./core.mjs";
 import { homePiece } from "./manual-scene.mjs";
-import { NARROW_STAGE_PX, renderSvg, TAG_FONT } from "./emit.mjs";
+import { NARROW_STAGE_PX, renderRegion, renderSvg, TAG_FONT } from "./emit.mjs";
 import { clipConvex, nearerSide } from "./layout.mjs";
-import { BriefError, buildScene, CAMERA_PRESETS, DEFAULT_VIEWBOX, projectionFor, validateBrief } from "./scene.mjs";
+import { BriefError, buildScene, CAMERA_PRESETS, DEFAULT_VIEWBOX, projectionFor, supportOf, validateBrief } from "./scene.mjs";
 
 const EXEMPLAR = JSON.parse(fs.readFileSync(new URL("./briefs/exploded-stack.json", import.meta.url), "utf8"));
 const clone = value => structuredClone(value);
@@ -470,4 +470,77 @@ test("received shadows: the parts above shadow the receiving top, clipped to it,
 	assert.match(received.find(b => b.includes("recv-core")), /data-vpk-iso-cast-on="[\d. -]+"/);
 	assert.match(received.find(b => b.includes("recv-module")), /data-vpk-iso-cast-on="[\d. -]+"/);
 	assert.doesNotMatch(region, /<(filter|linearGradient|radialGradient|feGaussianBlur)\b|mix-blend/);
+});
+
+// Hover physics: fixed parts, the support default, grow, and select guides (illustrations.md § Using the kit).
+const HOVER = {
+	schema: "vpk-iso-brief/1",
+	id: "hover-kinds",
+	figId: "FIG_005",
+	title: "Hover kinds",
+	label: "Pillars on a plinth.",
+	parts: [
+		{ id: "plinth", kind: "tray", at: [0, 0, 0], size: [100, 60, 4] },
+		{ id: "a", kind: "box", at: [10, 10, 4], size: [12, 12, 10], r: 0 },
+		{ id: "b", kind: "cylinder", at: [50, 30, 4], size: [8, 8, 14] },
+		{ id: "c", kind: "slab", at: [70, 10, 4], size: [12, 12, 4], r: 2, bevel: 1 },
+	],
+	focal: "a",
+	interact: { behavior: "select", liftMode: "grow" },
+};
+
+test("fixed and liftMode validate: booleans, known modes, prisms for grow, select only, not every part fixed", () => {
+	const at = (patch, index = 1) => validateBrief({ ...HOVER, parts: HOVER.parts.map((part, i) => (i === index ? { ...part, ...patch } : part)) });
+	assert.deepEqual(validateBrief(HOVER), []);
+	assert.match(at({ fixed: "yes" }).join("\n"), /parts\[1\]\.fixed must be true or false/);
+	assert.match(at({ liftMode: "float" }).join("\n"), /parts\[1\]\.liftMode must be one of raise, grow/);
+	assert.match(at({ liftMode: "grow" }, 0).join("\n"), /needs a vertical prism/);
+	assert.match(at({ fixed: true, liftMode: "raise" }).join("\n"), /a fixed part never lifts/);
+	assert.match(validateBrief({ ...HOVER, interact: { behavior: "select", liftMode: "up" } }).join("\n"), /interact\.liftMode must be one of raise, grow/);
+	assert.match(validateBrief({ ...HOVER, interact: { behavior: "select", guides: "on" } }).join("\n"), /interact\.guides must be true or false/);
+	assert.match(validateBrief({ ...HOVER, interact: null, parts: HOVER.parts.map(part => (part.id === "a" ? { ...part, liftMode: "grow" } : part)) }).join("\n"), /liftMode needs interact\.behavior "select"/);
+	assert.match(validateBrief({ ...HOVER, parts: HOVER.parts.map(part => ({ ...part, fixed: true })) }).join("\n"), /every part is fixed/);
+});
+
+test("the support (one lowest part holding every other plan) is fixed by default on a select figure; fixed: false opts out", () => {
+	assert.equal(supportOf(HOVER), "plinth");
+	assert.equal(supportOf({ ...HOVER, focal: "plinth" }), null, "the focal is never fixed by default");
+	assert.equal(supportOf({ ...HOVER, parts: [...HOVER.parts, { id: "out", kind: "box", at: [120, 0, 0], size: [5, 5, 5] }] }), null, "a part outside its plan: no support");
+	const scene = buildScene(HOVER);
+	const fixed = scene.pieces.filter(piece => piece.fixed).map(piece => piece.id).sort();
+	assert.deepEqual(fixed, ["plinth:back", "plinth:front"]);
+	assert.ok(scene.pieces.filter(piece => piece.fixed).every(piece => !piece.lift), "a fixed part has no lift vector");
+	const region = renderRegion(scene);
+	assert.equal((region.match(/data-vpk-iso-fixed/g) ?? []).length, 2);
+	assert.doesNotMatch(region, /data-vpk-iso-lift-z/, "no lift re-sort input");
+	const open = buildScene({ ...HOVER, parts: HOVER.parts.map(part => (part.id === "plinth" ? { ...part, fixed: false } : part)) });
+	assert.equal(open.pieces.filter(piece => piece.fixed).length, 0, "fixed: false keeps the support selectable");
+	const explode = buildScene({ ...HOVER, interact: { behavior: "explode", explode: { rest: 0, min: 0, max: 1, step: 0.5 } } });
+	assert.equal(explode.pieces.filter(piece => piece.fixed).length, 0, "no default on an explode figure");
+	const marked = buildScene({ ...HOVER, interact: { behavior: "explode", explode: { rest: 0, min: 0, max: 1, step: 0.5 } }, parts: HOVER.parts.map(part => (part.id === "plinth" ? { ...part, fixed: true } : part)) });
+	assert.ok(marked.pieces.filter(piece => piece.partId === "plinth").every(piece => piece.fixed && piece.explode[0] === 0 && piece.explode[1] === 0), "a fixed part never separates");
+});
+
+test("grow: vertical prisms grow in place (the build checks the taller solid), a bevelled slab raises with a warning", () => {
+	const scene = buildScene(HOVER);
+	const by = id => scene.pieces.find(piece => piece.id === id);
+	assert.equal(by("a").grow, true);
+	assert.equal(by("b").grow, true, "a cylinder grows");
+	assert.notEqual(by("c").grow, true, "the bevelled slab cannot be drawn by moving its top points");
+	assert.ok(by("c").lift, "so it raises");
+	assert.ok(scene.warnings.some(text => text.includes('part "c"')), scene.warnings.join("; "));
+	// A grown caster's ground shadow holds still; a raised one moves.
+	const cast = id => scene.shadows.find(entry => entry.partId === id).cast;
+	assert.equal(cast("a"), null);
+	assert.ok(cast("c"));
+	const raised = buildScene({ ...HOVER, interact: { behavior: "select" } });
+	assert.equal(raised.pieces.some(piece => piece.grow), false, "raise is the default");
+	assert.match(renderRegion(scene), /data-vpk-iso-part="a"[^>]*data-vpk-iso-grow/);
+});
+
+test("select guides are opt-in and drop from a floating part to the tray under it, named by the tray id", () => {
+	const brief = { ...HOVER, parts: [...HOVER.parts, { id: "card", kind: "slab", at: [10, 30, 30], size: [20, 20, 2] }], interact: { behavior: "select" } };
+	assert.equal(buildScene(brief).guides.length, 0);
+	const guides = buildScene({ ...brief, interact: { behavior: "select", guides: true } }).guides;
+	assert.ok(guides.some(guide => guide.from === "card" && guide.to === "plinth"), JSON.stringify(guides.map(guide => [guide.from, guide.to])));
 });

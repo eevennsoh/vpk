@@ -405,3 +405,82 @@ test("(21) accent and motion at rest: accent focal and hover, rest after 3 s idl
 	await page.waitForTimeout(3500);
 	expect(await stage.getAttribute("data-vpk-iso-rest")).toBeNull();
 });
+
+// Hover physics: a guide end named by a tray id follows its lifted part, the support is fixed, a grown part keeps its bottom
+// edge, and a lifted part keeps its painter-order place.
+const HOVER_BRIEF = {
+	schema: "vpk-iso-brief/1",
+	id: "hover-physics",
+	figId: "FIG_006",
+	title: "Hover physics",
+	label: "A card floating over a plinth beside a pillar and two upright cards.",
+	parts: [
+		{ id: "plinth", kind: "tray", at: [0, 0, 0], size: [140, 90, 4], label: "plinth" },
+		{ id: "card", kind: "slab", at: [10, 10, 24], size: [40, 40, 3], label: "card" },
+		{ id: "pillar", kind: "box", at: [70, 20, 4], size: [12, 12, 12], r: 0, label: "pillar", liftMode: "grow" },
+		{ id: "back-card", kind: "slab", at: [96, 30, 4], size: [36, 2, 30], label: "back card" },
+		{ id: "front-card", kind: "slab", at: [96, 50, 4], size: [36, 2, 26], label: "front card" },
+	],
+	focal: "card",
+	interact: { behavior: "select", rest: "rest", guides: true },
+};
+
+test("(22) hover physics: guides follow a tray end, the support is fixed, a grown part keeps its base, lifts keep paint order", async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await open(page, buildPage(HOVER_BRIEF, "hover-physics"));
+	await page.evaluate(() => document.querySelector("[data-vpk-iso-stage]")?.scrollIntoView({ block: "center" }));
+	await page.waitForTimeout(2200);
+	const svg = page.locator("svg[data-vpk-iso-id]");
+	const guide = page.locator('[data-vpk-iso-role="guide"][data-vpk-iso-to="plinth"]').first();
+	const guideRest = await guide.getAttribute("d");
+	const order = () => svg.evaluate(node => [...node.querySelectorAll("[data-vpk-iso-part]")].map(el => el.getAttribute("data-vpk-iso-part")).join(" "));
+	const restOrder = await order();
+
+	// The guide's upper end rides the card's lift; its lower end stays on the plinth.
+	const card = await centroid(page, '[data-vpk-iso-part="card"] [data-vpk-iso-role="top"]');
+	await page.mouse.move(card.x, card.y, { steps: 3 });
+	await expect.poll(() => activeParts(page)).toEqual(["card"]);
+	await expect.poll(() => guide.getAttribute("d"), { timeout: 800 }).not.toBe(guideRest);
+	const ends = (d: string | null) => (d ?? "").match(/-?[\d.]+ -?[\d.]+/g)?.map(pair => pair.split(" ").map(Number)) ?? [];
+	await page.waitForTimeout(400);
+	const [a, b] = [ends(guideRest), ends(await guide.getAttribute("d"))];
+	expect(Math.abs(b[1][1] - a[1][1]), "lower end on the plinth").toBeLessThan(0.11);
+	expect(a[0][1] - b[0][1], "upper end lifted").toBeGreaterThan(5);
+
+	// The fixed plinth: hovering its floor selects nothing and nothing moves.
+	await page.mouse.move(2, 2);
+	await expect.poll(() => svg.evaluate(node => node.querySelectorAll("[class], [transform]").length), { timeout: 1200 }).toBe(0);
+	const floor = await svg.evaluate(node => {
+		const d = node.querySelector('[data-vpk-iso-part="plinth:back"] [data-vpk-iso-role="fill"]')?.getAttribute("d") ?? "";
+		const pts = (d.match(/-?[\d.]+ -?[\d.]+/g) ?? []).map(pair => pair.split(" ").map(Number));
+		const left = pts.reduce((best, p) => (p[0] < best[0] ? p : best));
+		const r = node.getBoundingClientRect();
+		const vb = node.viewBox.baseVal;
+		const s = Math.min(r.width / vb.width, r.height / vb.height);
+		return { x: r.left + (r.width - vb.width * s) / 2 + (left[0] + 14) * s, y: r.top + (r.height - vb.height * s) / 2 + left[1] * s };
+	});
+	await page.mouse.move(floor.x, floor.y, { steps: 3 });
+	await page.waitForTimeout(400);
+	expect(await activeParts(page), "the plinth takes no hover").toEqual([]);
+	expect(await svg.evaluate(node => node.querySelectorAll("[transform]").length)).toBe(0);
+
+	// The grown pillar: its lowest point stays put while its top rises.
+	const pillarBox = () => page.locator('[data-vpk-iso-part="pillar"] [data-vpk-iso-role="fill"]').boundingBox();
+	const before = await pillarBox();
+	const pillar = await centroid(page, '[data-vpk-iso-part="pillar"] [data-vpk-iso-role="top"]');
+	await page.mouse.move(pillar.x, pillar.y, { steps: 3 });
+	await expect.poll(() => activeParts(page)).toEqual(["pillar"]);
+	await page.waitForTimeout(500);
+	const after = await pillarBox();
+	expect(Math.abs((after!.y + after!.height) - (before!.y + before!.height)), "bottom edge in place").toBeLessThan(0.6);
+	expect(before!.y - after!.y, "top rose").toBeGreaterThan(5);
+	expect(await page.locator('[data-vpk-iso-part="pillar"]').getAttribute("transform")).toBeNull();
+
+	// The back card lifts but stays behind the front card in paint order.
+	const back = await centroid(page, '[data-vpk-iso-part="back-card"] [data-vpk-iso-role="top"]');
+	await page.mouse.move(back.x, back.y - 2, { steps: 3 });
+	await expect.poll(() => activeParts(page)).toEqual(["back-card"]);
+	await page.waitForTimeout(500);
+	expect(await order(), "lifting does not reorder").toBe(restOrder);
+	expect(restOrder.indexOf("back-card")).toBeLessThan(restOrder.indexOf("front-card"));
+});
