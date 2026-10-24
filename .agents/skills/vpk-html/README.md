@@ -1,6 +1,6 @@
 # vpk-html
 
-<!-- vpk-html-catalog-counts: templates=35 diagrams=61 demos=118 -->
+<!-- vpk-html-catalog-counts: templates=35 diagrams=61 demos=131 -->
 
 > Render structured material into offline, single-file HTML documents with the
 > vpk-html Algebrica editorial identity. **[See the index →](index.html)**
@@ -166,7 +166,7 @@ node scripts/build-index.mjs                      # alias of --refresh-library (
 | `assets/diagrams/` | 61 standalone SVG diagram/chart primitives |
 | `assets/illustrations/` | 12 technical illustration exemplars for remixing |
 | `assets/html-effectiveness/` | Snapshot of the 20 upstream html-effectiveness HTML demos plus index |
-| `assets/demos/` | 118 demo HTML outputs plus the embedded media needed by individual demos |
+| `assets/demos/` | 131 demo HTML outputs plus the embedded media needed by individual demos |
 | `evals/evals.json` | Frozen prompts, reader jobs, expectations, viewports, and human rubrics |
 | `assets/fonts/` | Geist and Geist Mono (inlined as base64 at port time, with a numeric Geist Mono face) |
 | `artifacts/vpk-html/<slug>/` | Ignored per-artifact folders for generated user HTML, PDFs, screenshots, and review captures |

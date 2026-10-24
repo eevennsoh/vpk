@@ -1,6 +1,6 @@
 # vpk-html
 
-# vpk-html-catalog-counts: templates=35 diagrams=61 demos=118
+# vpk-html-catalog-counts: templates=35 diagrams=61 demos=131
 
 > Algebrica editorial document design skill for AI agents. Built on kami's
 > template-edit architecture: the LLM copies an HTML template, fills
@@ -81,7 +81,7 @@ Optional doc-type hints and flags: `/vpk-html resume`, `/vpk-html one-pager`,
 - assets/templates/*.html — 35 offline document templates
 - assets/diagrams/*.html — 61 SVG diagram/chart primitives
 - assets/illustrations/*.html — 12 technical illustration exemplars
-- assets/demos/ — 118 curated, restyled, diagram, and illustration showcases
+- assets/demos/ — 131 curated, restyled, diagram, and illustration showcases
 - references/contract.md — Contract fields, figure-engine record, content IR, feedback protocol, definition of done, playbook format
 - references/publish.md — Artifacts and gist publishing, preflight, viewer capabilities
 - references/review-loop.md — Reviewable documents: block ids, comments, decision blocks, the four return paths, --review/--stamp
