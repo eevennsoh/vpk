@@ -1,11 +1,14 @@
 const assert = require("node:assert/strict");
+const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
 const {
+	branchHoldsCommit,
 	collectStatus,
+	createRunner,
 	deriveStatus,
 	formatAge,
 	groupKeyFor,
@@ -247,12 +250,17 @@ test("parseRunRecords pairs start and end lines per launch and skips junk", () =
 		'{"script":"../evil.sh","startedAt":"2026-10-24T11:00:00.000Z"}',
 	].join("\n"));
 	assert.deepEqual(records, [
-		{ script: "run.sh", startedAt: Date.parse("2026-10-24T10:00:00.000Z"), endedAt: Date.parse("2026-10-24T10:05:00Z"), exitCode: 0 },
-		{ script: "run.sh", startedAt: Date.parse("2026-10-24T11:00:00.000Z"), endedAt: null, exitCode: null },
+		{ script: "run.sh", startedAt: Date.parse("2026-10-24T10:00:00.000Z"), endedAt: Date.parse("2026-10-24T10:05:00Z"), exitCode: 0, head: null },
+		{ script: "run.sh", startedAt: Date.parse("2026-10-24T11:00:00.000Z"), endedAt: null, exitCode: null, head: null },
 	]);
 });
 
 // ── Pure parsing ──────────────────────────────────────────────────────────────
+
+test("parseBlockers stops at the first blank line after the section's content", () => {
+	assert.deepEqual(parseBlockers("## Blockers\nNone.\n\n`★ Insight ─────`\n- a closing note\n"), []);
+	assert.deepEqual(parseBlockers("## Blockers\n\n- Gateway returned 401\n- CI is red\n\nVerdict: request changes\n"), ["Gateway returned 401", "CI is red"]);
+});
 
 test("parseBlockers reads the section up to the next heading", () => {
 	assert.deepEqual(parseBlockers("## Findings\n- a\n\n## Blockers\n- None.\n"), []);
@@ -406,7 +414,8 @@ function fixtureCheckout() {
 	return { root, tree, out };
 }
 
-function fakeRunner({ root, tree }, { gh = "ok", ahead = "3", treeBranch = "vpk/feat-alpha", fail = [], extraTrees = "", prs = {} } = {}) {
+// `holders` are the local branches whose tips hold a commit; every commit is present.
+function fakeRunner({ root, tree }, { gh = "ok", ahead = "3", treeBranch = "vpk/feat-alpha", fail = [], extraTrees = "", prs = {}, branches = [], renames = [], holders = [] } = {}) {
 	const calls = [];
 	const ok = (stdout) => ({ ok: true, stdout, stderr: "" });
 	const failed = { ok: false, stdout: "", stderr: "timed out" };
@@ -416,7 +425,13 @@ function fakeRunner({ root, tree }, { gh = "ok", ahead = "3", treeBranch = "vpk/
 		if (line === "git worktree list --porcelain") {
 			return ok(`worktree ${root}\nHEAD abc\nbranch refs/heads/main\n\nworktree ${tree}\nHEAD def\nbranch refs/heads/${treeBranch}\n${extraTrees}`);
 		}
-		if (line.startsWith("git for-each-ref")) return fail.includes("branches") ? failed : ok(`main\n${treeBranch}\n`);
+		if (line.startsWith("git rev-list --no-walk --ignore-missing ")) return ok(`${args.at(-1)}\n`);
+		if (line.startsWith("git rev-list --first-parent --ancestry-path ")) return ok("");
+		if (line.startsWith("git for-each-ref --contains ")) return ok(holders.map((branch) => `${branch}\n`).join(""));
+		if (line.startsWith("git for-each-ref")) return fail.includes("branches") ? failed : ok(`${["main", treeBranch, ...branches].join("\n")}\n`);
+		if (line.startsWith("git log -g --branches")) {
+			return fail.includes("renames") ? failed : ok(renames.map(([from, to]) => `Branch: renamed refs/heads/${from} to refs/heads/${to}\n`).join(""));
+		}
 		if (line.startsWith("git rev-list --count")) return ok(`${ahead}\n`);
 		if (line.startsWith(`git -C ${tree} status`)) return ok("");
 		if (command === "ps") {
@@ -750,10 +765,103 @@ test("review 3.5: a merged task whose branch list failed is never done", async (
 	const fixture = fixtureCheckout();
 	writeFile(path.join(fixture.out("claude", "vpk-fix-delta"), "task.json"), JSON.stringify({ goal: "Delta", kind: "worker", branch: "vpk/fix-delta", worktree: ".claude/worktrees/vpk-fix-delta" }));
 	writeRun(fixture.out("claude", "vpk-fix-delta"), { start: NOW - 60 * MINUTE, end: NOW - 50 * MINUTE });
-	const prs = { "vpk/fix-delta": [{ number: 21, state: "MERGED", url: "https://x/21", mergedAt: new Date(NOW - 40 * MINUTE).toISOString() }] };
+	const prs = { "vpk/fix-delta": [{ number: 21, state: "MERGED", url: "https://x/21", mergedAt: new Date(NOW - 40 * MINUTE).toISOString(), headRefOid: "d".repeat(40) }] };
 	const { byName } = await statusOf(fixture, { prs, fail: ["branches"] });
 	assert.deepEqual([byName["vpk-fix-delta"].status, byName["vpk-fix-delta"].nextAction], ["merged", "re-run status"]);
 	assert.equal((await statusOf(fixture, { prs })).byName["vpk-fix-delta"].status, "done");
+});
+
+// ── Fourth review, one test each ──────────────────────────────────────────────
+
+test("review 4.1: a recorded rerun that left an older legacy report has no report of its own", async () => {
+	const fixture = fixtureCheckout();
+	// review-2's legacy run approved at -60m; a recorded rerun ran -30m to -20m and did not rewrite report.md.
+	writeRunRecords(fixture.out("gpt", "vpk-feat-alpha-review-2"), [{ start: NOW - 30 * MINUTE, end: NOW - 20 * MINUTE }]);
+	const { byName } = await statusOf(fixture);
+	const alpha = byName["vpk-feat-alpha"];
+	assert.equal(alpha.status, "review unclear");
+	assert.deepEqual(alpha.runs.filter((run) => run.dir === "vpk-feat-alpha-review-2").map((run) => [run.verdict, run.report]), [[null, null]]);
+	// A worker's stale blockers do not block its rerun either.
+	const eps = fixture.out("claude", "vpk-fix-eps");
+	writeFile(path.join(eps, "task.json"), JSON.stringify({ goal: "Eps", kind: "worker", branch: "vpk/feat-alpha", worktree: ".claude/worktrees/vpk-feat-alpha" }));
+	writeRun(eps, { start: NOW - 50 * MINUTE, end: NOW - 45 * MINUTE, report: "## Blockers\n- Gateway returned 401\n" });
+	writeRunRecords(eps, [{ start: NOW - 30 * MINUTE, end: NOW - 20 * MINUTE }]);
+	assert.equal((await statusOf(fixture)).byName["vpk-fix-eps"].status, "needs review");
+});
+
+test("review 4.2: a branch renamed before its worktree was removed is followed, not done", async () => {
+	const fixture = fixtureCheckout();
+	writeFile(path.join(fixture.out("claude", "vpk-fix-delta"), "task.json"), JSON.stringify({ goal: "Delta", kind: "worker", branch: "vpk/fix-delta", worktree: ".claude/worktrees/vpk-fix-delta" }));
+	writeRun(fixture.out("claude", "vpk-fix-delta"), { start: NOW - 60 * MINUTE, end: NOW - 50 * MINUTE });
+	const renamed = { branches: ["vpk/fix-delta-final"], renames: [["vpk/fix-delta", "vpk/fix-delta-panel"], ["vpk/fix-delta-panel", "vpk/fix-delta-final"]] };
+	const { byName, calls } = await statusOf(fixture, renamed);
+	assert.deepEqual([byName["vpk-fix-delta"].status, byName["vpk-fix-delta"].branch, byName["vpk-fix-delta"].localBranch], ["needs review", "vpk/fix-delta-final", true]);
+	assert.equal(calls.some((call) => call.includes("origin/main..refs/heads/vpk/fix-delta-final")), true);
+	// Rename history that cannot be read, or holds no rename, leaves a gone branch unknown (4.4).
+	assert.equal((await statusOf(fixture, { ...renamed, fail: ["renames"] })).byName["vpk-fix-delta"].status, "unknown");
+	assert.equal((await statusOf(fixture, { branches: ["vpk/fix-delta-final"] })).byName["vpk-fix-delta"].status, "unknown");
+});
+
+test("review 4.3: a run that completes between the file reads and ps is exited, not stopped", async () => {
+	const fixture = fixtureCheckout();
+	const worker = fixture.out("claude", "vpk-feat-alpha");
+	const startedAt = new Date(NOW - 5 * MINUTE).toISOString();
+	writeFile(path.join(worker, "run-1.sh"), "exit 0\n", NOW - 5 * MINUTE);
+	writeRunRecords(worker, [{ start: NOW - 120 * MINUTE, end: NOW - 90 * MINUTE }, { script: "run-1.sh", start: NOW - 5 * MINUTE }]);
+	const { runCommand } = fakeRunner(fixture);
+	// The pane writes its end line, exit file, and report while ps runs; ps no longer sees it.
+	const finishing = async (command, args) => {
+		if (command !== "ps") return runCommand(command, args);
+		fs.appendFileSync(path.join(worker, "runs.jsonl"), `${JSON.stringify({ script: "run-1.sh", startedAt, endedAt: new Date(NOW - MINUTE).toISOString(), exit: 0 })}\n`);
+		writeFile(path.join(worker, "run-1.sh.exit"), "0\n", NOW - MINUTE);
+		writeFile(path.join(worker, "report.md"), "## Blockers\n- None\n", NOW - MINUTE);
+		return { ok: true, stdout: "", stderr: "" };
+	};
+	const result = await collectStatus({ cwd: fixture.root, runCommand: finishing, env: {}, now: NOW });
+	const alpha = result.tasks.find((task) => task.name === "vpk-feat-alpha");
+	assert.deepEqual(alpha.runs.filter((run) => run.role === "worker").map((run) => [run.script, run.state, run.exitCode]), [["run.sh", "exited", 0], ["run-1.sh", "exited", 0]]);
+	assert.equal(alpha.status, "needs review");
+});
+
+test("review 5.4: a gone branch with no rename on record is unknown unless its merged work is on no local branch", async () => {
+	const fixture = fixtureCheckout();
+	const delta = fixture.out("claude", "vpk-fix-delta");
+	writeFile(path.join(delta, "task.json"), JSON.stringify({ goal: "Delta", kind: "worker", branch: "vpk/fix-delta", worktree: ".claude/worktrees/vpk-fix-delta" }));
+	writeRun(delta, { start: NOW - 60 * MINUTE, end: NOW - 50 * MINUTE });
+	const head = "a".repeat(40);
+	const startedAt = new Date(NOW - 60 * MINUTE).toISOString();
+	writeFile(path.join(delta, "runs.jsonl"), `${JSON.stringify({ script: "run.sh", startedAt, endedAt: null, exit: null })}\n${JSON.stringify({ script: "run.sh", startedAt, endedAt: new Date(NOW - 50 * MINUTE).toISOString(), exit: 0, head })}\n`);
+	const merged = { "vpk/fix-delta": [{ number: 21, state: "MERGED", url: "https://x/21", createdAt: new Date(NOW - 45 * MINUTE).toISOString(), mergedAt: new Date(NOW - 40 * MINUTE).toISOString(), headRefOid: "b".repeat(40) }] };
+	const statusFor = async (options) => (await statusOf(fixture, options)).byName["vpk-fix-delta"];
+	// Renamed after git dropped the rename: no PR, or a PR not merged, cannot rule it out.
+	assert.deepEqual([(await statusFor({})).status, (await statusFor({})).nextAction], ["unknown", "find the task's renamed branch (git branch)"]);
+	// Merged, but a local branch's tip holds the last recorded HEAD: the renamed branch lives on.
+	const { byName, calls } = await statusOf(fixture, { prs: merged, holders: ["vpk/fix-delta-renamed"] });
+	assert.equal(byName["vpk-fix-delta"].status, "unknown");
+	assert.ok(calls.some((call) => call.join(" ").startsWith(`git for-each-ref --contains ${head} `)), "checked against the recorded HEAD, not the PR's head");
+	// Merged and no local branch holds that HEAD: landed and cleaned.
+	assert.equal((await statusFor({ prs: merged })).status, "done");
+});
+
+test("review 5.4: against real git, only a branch carrying the recorded HEAD forward holds it", async () => {
+	const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "vpk-remote-status-git-")));
+	const git = (...args) => execFileSync("git", ["-C", dir, "-c", "user.name=t", "-c", "user.email=t@t", ...args], { encoding: "utf8" }).trim();
+	git("init", "-q", "-b", "main");
+	git("commit", "-q", "--allow-empty", "-m", "base");
+	git("checkout", "-q", "-b", "vpk/fix-delta");
+	git("commit", "-q", "--allow-empty", "-m", "work");
+	const head = git("rev-parse", "HEAD");
+	git("checkout", "-q", "main");
+	git("merge", "-q", "--no-ff", "vpk/fix-delta", "-m", "Merge PR");
+	git("update-ref", "refs/remotes/origin/main", "main");
+	// A branch started from the synced main holds the merge, so it is not the task's.
+	git("branch", "vpk/feat-next", "main");
+	git("branch", "-m", "vpk/fix-delta", "vpk/fix-delta-renamed");
+	const holds = () => branchHoldsCommit(createRunner(), dir, head);
+	assert.equal(await holds(), true, "renamed branch at the recorded HEAD");
+	git("branch", "-D", "vpk/fix-delta-renamed");
+	assert.equal(await holds(), false, "only main and a branch from it remain");
+	assert.equal(await branchHoldsCommit(createRunner(), dir, "f".repeat(40)), false, "a commit git no longer has");
 });
 
 function captureStdout() {
