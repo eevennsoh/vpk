@@ -163,9 +163,11 @@ function worktreeFromRunScript(script) {
 
 // runs.jsonl holds a start line per run and an end line once its exit is seen. The
 // script and startedAt together name a run; a line that is not a run record is skipped.
+// Every record starts `{"script":`, so a write cut off mid-line ends where the next record
+// begins and is the only one lost.
 function parseRunRecords(text) {
 	const byRun = new Map();
-	for (const line of (text ?? "").split("\n")) {
+	for (const line of (text ?? "").split(/\n|(?=\{"script":)/u)) {
 		let record;
 		try {
 			record = JSON.parse(line);
@@ -261,7 +263,16 @@ function nextActionFor(status, pr) {
 
 function deriveStatus(task) {
 	const status = deriveStatusName(task);
+	// Merged, but whether the local branch is gone or carries newer commits went unobserved.
+	if (status === "merged" && (task.git.localBranch === null || task.git.aheadOfMergedPr === null)) return { status, nextAction: nextActionFor("unknown") };
 	return { status, nextAction: nextActionFor(status, task.pr) };
+}
+
+// Work after a merged PR: a worker run that started after it merged, or local commits
+// the PR's head did not carry (git.aheadOfMergedPr, null when unobserved).
+function mergeHasNewerWork(pr, workerRuns, git) {
+	const mergedAt = Date.parse(pr.mergedAt ?? "");
+	return workerRuns.some((run) => (run.startedAt ?? 0) > mergedAt) || git.aheadOfMergedPr > 0;
 }
 
 // A review's "## Blockers" block the worker's change, not the review: only worker
@@ -277,28 +288,35 @@ function runOutcome(run, { reportBlocks = true } = {}) {
 function deriveStatusName({ readOnly, advisor, workers, reviews, git, pr }) {
 	// Read-only work never ships, so no branch, PR, or review check applies to it.
 	if (readOnly) {
-		if (runsOf([...workers, ...reviews]).some((run) => run.state === "running")) return "running";
+		const runs = runsOf([...workers, ...reviews]);
+		if (runs.some((run) => run.state === "running")) return "running";
+		if (runs.some((run) => run.state === "unknown")) return "unknown";
 		const own = workers.length > 0 ? workers : reviews;
 		return runOutcome(runsOf(own).at(-1), { reportBlocks: workers.length > 0 }) ?? "done (read-only)";
 	}
 
 	const workerRuns = runsOf(workers);
 	const workerRun = workerRuns.at(-1) ?? null;
-	// Runs in two lanes can overlap, so any live one counts, not just the latest.
+	// Runs in two lanes can overlap, so any live one counts, not just the latest, and
+	// any run that may be live (ps failed) leaves the task unknown.
 	if (workerRuns.some((run) => run.state === "running")) return "running";
-	if (workerRun?.state === "unknown") return "unknown";
-	// A merged PR settles the task; older failures and review verdicts are history.
-	if (pr?.state === "MERGED") return git.worktreeExists || git.localBranch ? "merged" : "done";
+	if (workerRuns.some((run) => run.state === "unknown")) return "unknown";
+	// A merged PR settles the task, older failures and review verdicts included, unless
+	// work followed it: a worker run started after the merge, or commits past its head.
+	// An unlisted local branch may still need cleanup, so it is never done.
+	if (pr?.state === "MERGED" && !mergeHasNewerWork(pr, workerRuns, git)) {
+		return git.worktreeExists || git.localBranch !== false ? "merged" : "done";
+	}
 	// The worker's latest run decides on its own: a later review cannot mask its failure.
 	const outcome = runOutcome(workerRun);
 	if (outcome) return outcome;
 
 	const reviewRuns = runsOf(reviews);
 	if (reviewRuns.some((run) => run.state === "running")) return "reviewing";
+	if (reviewRuns.some((run) => run.state === "unknown")) return "unknown";
 	// A review speaks for the worker's latest run only if it started after that run ended,
 	// and the latest started review decides. A stopped or failed review reached no verdict.
 	const fresh = reviewRuns.filter((run) => (run.startedAt ?? 0) >= runTime(workerRun) && run.state !== "stopped");
-	if (fresh.some((run) => run.state === "unknown")) return "unknown";
 	const review = fresh.filter((run) => run.exitCode === 0).at(-1);
 	if (review?.report?.verdict === "request changes") return "needs fixes";
 	if (review && !APPROVALS.has(review.report?.verdict)) return "review unclear";
@@ -435,27 +453,31 @@ function readExitCode(exitFile) {
 }
 
 // One script's runs. Recorded runs (runs.jsonl) carry their own start and end; a reused
-// script has one per launch. The latest may predate the pane writing its end line, so its
-// exit file stands in. A script with no record is a legacy run, timed by its .start file
-// or, failing that, by file times: the pane runner is rewritten on every herdr launch, so
-// it dates a reused script's latest launch better than the script does.
+// script has one per launch. A .start newer than every record is a launch whose start
+// line was lost, so it counts too. The latest may predate the pane writing its end line,
+// so its exit file stands in. A script with neither is a legacy run, timed by file times:
+// the pane runner is rewritten on every herdr launch, so it dates a reused script's latest
+// launch better than the script does.
 function runsForScript(dirPath, file, records) {
 	const scriptPath = path.join(dirPath, file);
 	const index = runIndexFor(file);
 	const exitFile = `${scriptPath}.exit`;
 	const fileExit = readExitCode(exitFile);
-	if (records.length > 0) {
-		return records.map((record, position) => {
+	const started = Date.parse(readText(`${scriptPath}.start`)?.trim() ?? "");
+	const launches = Number.isFinite(started) && records.every((record) => record.startedAt < started)
+		? [...records, { startedAt: started, endedAt: null, exitCode: null }]
+		: records;
+	if (launches.length > 0) {
+		return launches.map((record, position) => {
 			const run = { script: file, scriptPath, index, exitCode: record.exitCode, startedAt: record.startedAt, endedAt: record.endedAt };
-			const latest = position === records.length - 1;
+			const latest = position === launches.length - 1;
 			if (latest && run.endedAt === null && fileExit !== null && (statMs(exitFile) ?? 0) >= run.startedAt) {
 				Object.assign(run, { exitCode: fileExit, endedAt: statMs(exitFile) });
 			}
 			return run;
 		});
 	}
-	const started = Date.parse(readText(`${scriptPath}.start`)?.trim() ?? "");
-	const startedAt = Number.isFinite(started) ? started : Math.max(statMs(scriptPath) ?? 0, statMs(`${scriptPath}.pane.sh`) ?? 0) || null;
+	const startedAt = Math.max(statMs(scriptPath) ?? 0, statMs(`${scriptPath}.pane.sh`) ?? 0) || null;
 	return [{ script: file, scriptPath, index, exitCode: fileExit, startedAt, endedAt: fileExit === null ? null : statMs(exitFile) }];
 }
 
@@ -521,7 +543,8 @@ function resolveRunStates(dir, processes) {
 		} else if (isLatest && eventsEndInError(fs.existsSync(eventsFile) ? eventsFile : path.join(dir.path, "events.jsonl"))) {
 			Object.assign(run, { state: "exited", exitCode: 1, inferred: true, endedAt: statMs(eventsFile) });
 		} else {
-			run.state = processes ? "stopped" : "unknown";
+			// A relaunched run is not live whatever ps says; otherwise only ps can tell.
+			run.state = processes || relaunched ? "stopped" : "unknown";
 		}
 	});
 	assignReports(dir);
@@ -559,7 +582,7 @@ async function resolveMainCheckout(runCommand, cwd) {
 async function fetchPullRequests(runCommand, cwd, branches) {
 	if (branches.length === 0) return new Map();
 	const vars = branches.map((_, index) => `$b${index}:String!`).join(",");
-	const fields = branches.map((_, index) => `b${index}:pullRequests(headRefName:$b${index},first:10){nodes{number state url createdAt mergedAt}}`).join(" ");
+	const fields = branches.map((_, index) => `b${index}:pullRequests(headRefName:$b${index},first:10){nodes{number state url createdAt mergedAt headRefOid}}`).join(" ");
 	const query = `query($owner:String!,$name:String!,${vars}){repository(owner:$owner,name:$name){${fields}}}`;
 	const args = ["api", "graphql", "-F", "owner={owner}", "-F", "name={repo}", "-f", `query=${query}`];
 	branches.forEach((branch, index) => args.push("-f", `b${index}=${branch}`));
@@ -660,11 +683,19 @@ async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(),
 		const proven = candidate && (!localBranches || !prs || localBranches.has(candidate) || prsFor(candidate).length > 0);
 		const branch = readOnly ? null : named ?? (proven ? candidate : null);
 		const localBranch = !branch ? false : localBranches ? localBranches.has(branch) : null;
+		const pr = !branch ? null : prs ? pickPr(prsFor(branch)) : "unknown";
+		const merged = pr?.state === "MERGED";
 
-		const [ahead, status] = await Promise.all([
+		const [ahead, status, pastMerge] = await Promise.all([
 			localBranch ? runCommand("git", ["rev-list", "--count", `origin/main..refs/heads/${branch}`], { cwd: mainCheckout }) : null,
 			tree ? runCommand("git", ["-C", tree.path, "status", "--porcelain"]) : null,
+			merged && localBranch && pr.headRefOid ? runCommand("git", ["rev-list", "--count", `${pr.headRefOid}..refs/heads/${branch}`], { cwd: mainCheckout }) : null,
 		]);
+		// Local commits the merged PR's head did not carry: 0 without a local branch, null
+		// when that could not be observed.
+		let aheadOfMergedPr = null;
+		if (!merged || localBranch === false) aheadOfMergedPr = 0;
+		else if (pastMerge?.ok) aheadOfMergedPr = Number.parseInt(pastMerge.stdout.trim(), 10);
 		const git = {
 			branch,
 			localBranch,
@@ -672,8 +703,8 @@ async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(),
 			worktreeExists: Boolean(tree),
 			dirty: status?.ok ? status.stdout.trim().length > 0 : null,
 			ahead: ahead?.ok ? Number.parseInt(ahead.stdout.trim(), 10) : null,
+			aheadOfMergedPr,
 		};
-		const pr = !branch ? null : prs ? pickPr(prsFor(branch)) : "unknown";
 		const { status: derived, nextAction } = deriveStatus({ readOnly, advisor: record?.advisor, workers: group.workers, reviews: group.reviews, git, pr });
 
 		const runs = runsOf(taskDirs).map((run) => {

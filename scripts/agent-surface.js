@@ -150,11 +150,14 @@ function buildPaneCommand({ script, exitFile, label, seq = Date.now(), startedAt
 	// The pane records the run's end itself, so it lands even with --no-wait or a dead
 	// wrapper, and before the exit file, so status never sees an exit without it.
 	const record = shellQuote(`${JSON.stringify({ script: path.basename(script), startedAt }).slice(0, -1)},`);
+	// Milliseconds, like startedAt: BSD date has no %N, so the node running this wrapper
+	// prints it. Should that fail, round up, so the end is never recorded before it happened.
+	const endedAt = `"$(${shellQuote(process.execPath)} -e 'process.stdout.write(new Date().toISOString())' 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%S.999Z)"`;
 	const steps = [
 		`h="${"$"}{HERDR_BIN_PATH:-herdr}"`,
 		bg(start),
 		`bash ${shellQuote(script)}; s=$?`,
-		`printf '%s"endedAt":"%s","exit":%s}\\n' ${record} "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$s" 2>/dev/null >> ${shellQuote(runsFileFor(script))}`,
+		`printf '%s"endedAt":"%s","exit":%s}\\n' ${record} ${endedAt} "$s" 2>/dev/null >> ${shellQuote(runsFileFor(script))}`,
 		// The exit file lands before the close, so the waiting wrapper always finds it.
 		`printf '%s\\n' "$s" > ${shellQuote(exitFile)}`,
 	];

@@ -588,8 +588,9 @@ The script reads every `output/remote-<lane>/<name>/` directory. Both lanes
 share one task per name, and a worker joins its `-review` advisors
 (`task.json` `kind` decides when present). Runs are ordered by the start times
 `agent-surface.js` records in `runs.jsonl` and `<script>.start`, so a reused
-run script counts once per launch; file times stand in only for legacy runs
-with no record. `report.md` belongs to the latest run that started before it
+run script counts once per launch. A cut-off line in `runs.jsonl` loses only
+itself, and a `.start` newer than every record counts as a newer run; file
+times stand in only for legacy runs with no record. `report.md` belongs to the latest run that started before it
 was last written; earlier runs read their `report-<k>.md` snapshot (the k-th
 run by start) when the planner kept one. It derives one status from the runs' exits, the worker
 report's `## Blockers` (empty only when blank or just `None`), the review's
@@ -605,11 +606,17 @@ files does not count):
   A review counts only for worker runs that ended before it started, the
   latest started review decides even if an older one finishes later, and a
   stopped review is ignored;
-- `no commits`, `ready to ship`, `PR open`, `PR closed`, `merged`, `done`;
+- `no commits`, `ready to ship`, `PR open`, `PR closed`, `merged`, `done`.
+  A merged PR settles the task only if no worker run started after it merged
+  and the local branch has no commits past its head; otherwise status comes
+  from the newer runs. A merged task is `done` only once its worktree and
+  local branch are both observed gone; if the branch list failed it stays
+  `merged` with next action "re-run status";
 - `done (read-only)` for research, reviews, and tasks whose `task.json` has
   null `branch` and `worktree`, once none of their runs is live;
 - `unknown` when `ps`, `git` or `gh` failed, so the answer can't be
-  observed. Next action: re-run status.
+  observed; any run whose liveness is unknown makes the task unknown, even if
+  a later run finished. Next action: re-run status.
 
 Each status comes with its next action. The branch is the one checked out in
 the task's worktree, else `task.json`'s. Directories without `task.json` still
@@ -631,8 +638,8 @@ surface; never reuse a directory across concurrent workers. Follow-ups reuse
 the worker's directory as `followup-<k>.md`, run by `run-<k>.sh`, so each run
 keeps its own exit file. `agent-surface.js` writes `<script>.start` before each
 launch and appends a start line and an end line per run to the directory's
-`runs.jsonl` (`script`, `startedAt`, `endedAt`, `exit`), so a relaunched script
-keeps every run in order.
+`runs.jsonl` (`script`, `startedAt`, `endedAt`, `exit`, both times ISO with
+milliseconds), so a relaunched script keeps every run in order.
 
 Artifacts stay under the **main checkout's** `output/`, never inside a task
 worktree, so reports from concurrently dispatched tasks stay readable in one

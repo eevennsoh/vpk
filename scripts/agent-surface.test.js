@@ -271,6 +271,16 @@ test("the pane appends the run's end to runs.jsonl before it writes the exit fil
 	assert.ok(command.indexOf("runs.jsonl") < command.indexOf(".exit'"));
 });
 
+test("review 3.4: the pane records its end with milliseconds, never before the work finished", async () => {
+	// The script's last act is to note the time; the recorded end must not precede it.
+	const { command } = await runPaneCommand({ body: `sleep 0.2; "${process.execPath}" -e 'process.stdout.write(String(Date.now()))' > "$0.lastwork"` });
+	const script = command.match(/; bash '([^']+)'; s=\$\?/u)[1];
+	const [record] = readRecords(script);
+	for (const field of ["startedAt", "endedAt"]) assert.match(record[field], /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/u, field);
+	assert.ok(Date.parse(record.endedAt) >= Date.parse(record.startedAt));
+	assert.ok(Date.parse(record.endedAt) >= Number(fs.readFileSync(`${script}.lastwork`, "utf8")), `${record.endedAt} is before the work finished`);
+});
+
 test("default herdr placement opens a labelled tab in the caller's workspace", async () => {
 	const script = tempScript();
 	const { herdr, calls, startSeen } = fakeHerdr();

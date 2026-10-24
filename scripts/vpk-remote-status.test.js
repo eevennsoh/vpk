@@ -676,6 +676,86 @@ test("review 2.7: a worker report whose Blockers start with 'None of' is blocked
 	assert.equal(byName["vpk-fix-eps"].status, "blocked");
 });
 
+// ── Third review, one test each ───────────────────────────────────────────────
+
+test("review 3.1: a truncated runs.jsonl line loses only itself, never the record after it", () => {
+	const records = parseRunRecords([
+		'{"script":"run.sh","startedAt":"2026-10-24T10:00:00.000Z","endedAt":null,"exit":null}',
+		// The end line was cut off mid-write; the next launch's start was appended to it.
+		'{"script":"run.sh","startedAt":"2026-10-24T10:00:00.000Z","endedAt":"2026-10-2{"script":"run.sh","startedAt":"2026-10-24T11:00:00.000Z","endedAt":null,"exit":null}',
+	].join("\n"));
+	assert.deepEqual(records.map((record) => [new Date(record.startedAt).toISOString(), record.endedAt]), [["2026-10-24T10:00:00.000Z", null], ["2026-10-24T11:00:00.000Z", null]]);
+});
+
+test("review 3.1: a .start newer than every record is a newer run, even with its start line lost", async () => {
+	const fixture = fixtureCheckout();
+	const worker = fixture.out("claude", "vpk-feat-alpha");
+	// The first run's records are whole; the relaunch's start line was lost to a cut-off write.
+	writeRunRecords(worker, [{ start: NOW - 120 * MINUTE, end: NOW - 90 * MINUTE }]);
+	fs.appendFileSync(path.join(worker, "runs.jsonl"), '{"script":"run.sh","startedAt":"2026-10-24T11:5');
+	writeFile(path.join(worker, "run.sh.start"), `${new Date(NOW - 5 * MINUTE).toISOString()}\n`);
+	const { runCommand } = fakeRunner(fixture);
+	const withWorker = async (command, args) => (command === "ps" ? { ok: true, stdout: `  90 bash ${path.join(worker, "run.sh")}\n`, stderr: "" } : runCommand(command, args));
+	const result = await collectStatus({ cwd: fixture.root, runCommand: withWorker, env: {}, now: NOW });
+	const alpha = result.tasks.find((task) => task.name === "vpk-feat-alpha");
+	assert.equal(alpha.status, "running");
+	assert.deepEqual(alpha.runs.filter((run) => run.role === "worker").map((run) => run.state), ["exited", "running"]);
+});
+
+test("review 3.2: an old merged PR does not settle work that came after it", () => {
+	const merged = { number: 30, state: "MERGED", mergedAt: new Date(150).toISOString() };
+	// A correction run started after the merge: status comes from the runs as usual.
+	const rerun = facts({ workers: [dir([exited(0, 100, 50), exited(0, 300, 200)])], pr: merged });
+	assert.equal(deriveStatus(rerun).status, "needs review");
+	// Commits on the branch past the merged head, with no newer run on record.
+	assert.equal(deriveStatus(facts({ pr: merged, git: { ...GIT, aheadOfMergedPr: 2 } })).status, "needs review");
+	assert.equal(deriveStatus(facts({ pr: merged, git: { ...GIT, aheadOfMergedPr: 0 } })).status, "merged");
+});
+
+test("review 3.2: a retained merged branch with new commits reads from its runs, not merged", async () => {
+	const fixture = fixtureCheckout();
+	const prs = { "vpk/feat-alpha": [{ number: 30, state: "MERGED", url: "https://x/30", createdAt: "2026-10-24T09:00:00Z", mergedAt: "2026-10-24T10:30:00Z", headRefOid: "abc123" }] };
+	const { runCommand } = fakeRunner(fixture, { prs });
+	const pastHead = async (command, args) => (command === "git" && args.includes("abc123..refs/heads/vpk/feat-alpha") ? { ok: true, stdout: "2\n", stderr: "" } : runCommand(command, args));
+	const result = await collectStatus({ cwd: fixture.root, runCommand: pastHead, env: {}, now: NOW });
+	const alpha = result.tasks.find((task) => task.name === "vpk-feat-alpha");
+	assert.deepEqual([alpha.status, alpha.aheadOfMergedPr], ["ready to ship", 2]);
+	// The same branch at the merged head is merged.
+	const atHead = async (command, args) => (command === "git" && args.includes("abc123..refs/heads/vpk/feat-alpha") ? { ok: true, stdout: "0\n", stderr: "" } : runCommand(command, args));
+	const settled = await collectStatus({ cwd: fixture.root, runCommand: atHead, env: {}, now: NOW });
+	assert.equal(settled.tasks.find((task) => task.name === "vpk-feat-alpha").status, "merged");
+});
+
+test("review 3.3: an unresolved older run leaves the task unknown, even after a completed one", () => {
+	// The Claude run's liveness is unknown (ps failed); the GPT re-dispatch started later and finished.
+	const workers = [dir([unknown(50)]), dir([exited(0, 100, 80)])];
+	assert.equal(deriveStatus(facts({ readOnly: true, git: GONE, workers })).status, "unknown");
+	assert.equal(deriveStatus(facts({ advisor: false, workers })).status, "unknown");
+	// A review of an earlier worker run may still be live too.
+	const reviews = [dir([unknown(60)]), dir([exited(0, 300, 200)], { verdict: "ship" })];
+	assert.equal(deriveStatus(facts({ reviews })).status, "unknown");
+});
+
+test("review 3.4: a review starting 300 ms after the worker ends counts; one 300 ms before does not", () => {
+	const end = Date.parse("2026-10-24T10:00:10.900Z");
+	const worker = [dir([exited(0, end, end - 60_000)])];
+	const reviewAt = (start) => facts({ workers: worker, reviews: [dir([exited(0, start + 60_000, start)], { verdict: "ship" })] });
+	assert.equal(deriveStatus(reviewAt(end + 300)).status, "ready to ship");
+	assert.equal(deriveStatus(reviewAt(end - 300)).status, "needs review");
+});
+
+test("review 3.5: a merged task whose branch list failed is never done", async () => {
+	const unlisted = facts({ pr: { number: 12, state: "MERGED" }, git: { ...GIT, localBranch: null, worktreeExists: false, ahead: null } });
+	assert.deepEqual(deriveStatus(unlisted), { status: "merged", nextAction: "re-run status" });
+	const fixture = fixtureCheckout();
+	writeFile(path.join(fixture.out("claude", "vpk-fix-delta"), "task.json"), JSON.stringify({ goal: "Delta", kind: "worker", branch: "vpk/fix-delta", worktree: ".claude/worktrees/vpk-fix-delta" }));
+	writeRun(fixture.out("claude", "vpk-fix-delta"), { start: NOW - 60 * MINUTE, end: NOW - 50 * MINUTE });
+	const prs = { "vpk/fix-delta": [{ number: 21, state: "MERGED", url: "https://x/21", mergedAt: new Date(NOW - 40 * MINUTE).toISOString() }] };
+	const { byName } = await statusOf(fixture, { prs, fail: ["branches"] });
+	assert.deepEqual([byName["vpk-fix-delta"].status, byName["vpk-fix-delta"].nextAction], ["merged", "re-run status"]);
+	assert.equal((await statusOf(fixture, { prs })).byName["vpk-fix-delta"].status, "done");
+});
+
 function captureStdout() {
 	let text = "";
 	return { write: (chunk) => { text += chunk; }, get text() { return text; } };
@@ -698,7 +778,7 @@ test("default output is the JSON facts, and --json prints the same", async () =>
 	const alpha = parsed.tasks.find((task) => task.name === "vpk-feat-alpha");
 	assert.deepEqual(Object.keys(alpha), [
 		"name", "goal", "kind", "status", "nextAction", "pr",
-		"branch", "localBranch", "worktree", "worktreeExists", "dirty", "ahead",
+		"branch", "localBranch", "worktree", "worktreeExists", "dirty", "ahead", "aheadOfMergedPr",
 		"createdAt", "age", "lastActivityAt", "idle", "herdrOpen", "runs", "reports",
 	]);
 	assert.deepEqual([alpha.branch, alpha.worktree, alpha.age, alpha.idle], ["vpk/feat-alpha", fixture.tree, "2h 10m", "1h 0m"]);
