@@ -12,7 +12,9 @@ const {
 	main,
 	parseArgs,
 	parseBlockers,
+	parseRunRecords,
 	parseVerdict,
+	pickPr,
 	renderMarkdown,
 	roleFor,
 	runIndexFor,
@@ -29,8 +31,10 @@ const running = (at) => ({ state: "running", exitCode: null, startedAt: at, ende
 const stopped = (at) => ({ state: "stopped", exitCode: null, startedAt: at, endedAt: null });
 const unknown = (at) => ({ state: "unknown", exitCode: null, startedAt: at, endedAt: null });
 
+// The report belongs to the directory's latest run; give a run its own with `report`.
 function dir(runs, { blockers = [], verdict = null } = {}) {
-	return { runs, report: { nonEmpty: true, blockers, verdict } };
+	const report = { nonEmpty: true, blockers, verdict };
+	return { runs: runs.map((run, index) => ({ report: index === runs.length - 1 ? report : null, ...run })), report };
 }
 
 const GIT = { branch: "vpk/feat-x", localBranch: true, worktree: "/w", worktreeExists: true, ahead: 2 };
@@ -176,13 +180,81 @@ test("finding 10: task.json fields of the wrong type are dropped", () => {
 	assert.equal(sanitizeTask("x"), null);
 });
 
+// ── Second review, one test each ──────────────────────────────────────────────
+
+test("review 2.1: the latest started review decides, even when an older one finishes last", () => {
+	// A starts first; B starts later and rejects; A finishes last and approves.
+	const input = facts({
+		reviews: [
+			dir([exited(0, 400, 150)], { verdict: "ship" }),
+			dir([exited(0, 300, 200)], { verdict: "request changes" }),
+		],
+	});
+	assert.equal(deriveStatus(input).status, "needs fixes");
+});
+
+test("review 2.2: a read-only task with any live run is running", () => {
+	// The Claude re-dispatch started at 50 and still runs; the GPT run started at 80 and ended.
+	const input = facts({ readOnly: true, git: GONE, workers: [dir([running(50)]), dir([exited(0, 100, 80)])] });
+	assert.equal(deriveStatus(input).status, "running");
+	const reviewOnly = facts({ readOnly: true, git: GONE, workers: [], reviews: [dir([running(50)]), dir([exited(0, 100, 80)])] });
+	assert.equal(deriveStatus(reviewOnly).status, "running");
+});
+
+test("review 2.4: the most recently created PR speaks for the branch, not the merged one", () => {
+	const merged = { number: 30, state: "MERGED", createdAt: "2026-10-01T00:00:00Z" };
+	const closed = { number: 41, state: "CLOSED", createdAt: "2026-10-20T00:00:00Z" };
+	const open = { number: 12, state: "OPEN", createdAt: "2026-09-01T00:00:00Z" };
+	assert.equal(pickPr([merged, closed]), closed);
+	assert.equal(pickPr([open, merged]), merged);
+	assert.equal(pickPr([]), null);
+});
+
+test("review 2.5: only the worker process counts, never a pager, editor, or grep", () => {
+	const script = "/o/remote-gpt/vpk-fix-x/run.sh";
+	const live = (command) => runIsAlive(script, "/o/remote-gpt/vpk-fix-x", parseProcessList(`  9 ${command}`));
+	for (const command of [`less ${script}`, `vim ${script}`, `grep -n codex ${script}`, `tail -f /o/remote-gpt/vpk-fix-x/events.jsonl`, `cat /o/remote-gpt/vpk-fix-x/report.md`, `rg 'codex exec' /o/remote-gpt/vpk-fix-x/`]) {
+		assert.equal(live(command), false, command);
+	}
+	for (const command of [`bash ${script}`, `/bin/bash ${script}`, `node scripts/agent-surface.js run --script ${script} --label vpk-fix-x`, "codex exec -C /w --output-last-message /o/remote-gpt/vpk-fix-x/report.md -", "/usr/local/bin/codex --ignore-user-config exec --output-last-message /o/remote-gpt/vpk-fix-x/report.md -"]) {
+		assert.equal(live(command), true, command);
+	}
+	// The pane runner and a sibling task's directory are someone else's.
+	assert.equal(live(`bash ${script}.pane.sh`), false);
+	assert.equal(live("codex exec --output-last-message /o/remote-gpt/vpk-fix-x-review/report.md -"), false);
+});
+
+test("review 2.7: Blockers is empty only when blank or just None", () => {
+	for (const body of ["", "- None", "- None.", "None"]) {
+		assert.deepEqual(parseBlockers(`## Blockers\n${body}\n`), [], JSON.stringify(body));
+	}
+	assert.deepEqual(parseBlockers("## Blockers\nNone of the required checks could run because the gateway is down.\n"), ["None of the required checks could run because the gateway is down."]);
+	assert.deepEqual(parseBlockers("## Blockers\n- None. Playwright ran unsandboxed.\n"), ["None. Playwright ran unsandboxed."]);
+	assert.deepEqual(parseBlockers("## Blockers\n- No blockers, but CI is red\n"), ["No blockers, but CI is red"]);
+	const blocked = facts({ advisor: false, workers: [dir([exited(0, 100)], { blockers: parseBlockers("## Blockers\nNone of the checks ran.\n") })] });
+	assert.equal(deriveStatus(blocked).status, "blocked");
+});
+
+test("parseRunRecords pairs start and end lines per launch and skips junk", () => {
+	const records = parseRunRecords([
+		'{"script":"run.sh","startedAt":"2026-10-24T10:00:00.000Z","endedAt":null,"exit":null}',
+		"not json",
+		'{"script":"run.sh","startedAt":"2026-10-24T10:00:00.000Z","endedAt":"2026-10-24T10:05:00Z","exit":0}',
+		'{"script":"run.sh","startedAt":"2026-10-24T11:00:00.000Z","endedAt":null,"exit":null}',
+		'{"script":"../evil.sh","startedAt":"2026-10-24T11:00:00.000Z"}',
+	].join("\n"));
+	assert.deepEqual(records, [
+		{ script: "run.sh", startedAt: Date.parse("2026-10-24T10:00:00.000Z"), endedAt: Date.parse("2026-10-24T10:05:00Z"), exitCode: 0 },
+		{ script: "run.sh", startedAt: Date.parse("2026-10-24T11:00:00.000Z"), endedAt: null, exitCode: null },
+	]);
+});
+
 // ── Pure parsing ──────────────────────────────────────────────────────────────
 
-test("parseBlockers ignores None and unfilled template lines", () => {
+test("parseBlockers reads the section up to the next heading", () => {
 	assert.deepEqual(parseBlockers("## Findings\n- a\n\n## Blockers\n- None.\n"), []);
-	assert.deepEqual(parseBlockers("## Blockers\n- None. Playwright ran unsandboxed.\n"), []);
-	assert.deepEqual(parseBlockers("## Blockers\n- [only infrastructure or scope blockers]\n"), []);
 	assert.deepEqual(parseBlockers("## Blockers\n- Gateway returned 401\n\n## Next\n- x\n"), ["Gateway returned 401"]);
+	assert.deepEqual(parseBlockers("## Blockers\n\n## Next\n- x\n"), []);
 	assert.deepEqual(parseBlockers("no section here"), []);
 });
 
@@ -240,21 +312,50 @@ function row(name, status, overrides = {}) {
 	return { name, status, goal: "", nextAction: "none", pr: null, ...overrides };
 }
 
-test("renderMarkdown prints a plain table and escapes pipes and newlines", () => {
+test("renderMarkdown prints a plain table: header, separator, one row per task", () => {
 	const markdown = renderMarkdown([
-		row("vpk-fix-pipe", "running", { goal: "split a | b\nacross lines", nextAction: "wait | then\r\nship" }),
-		row("vpk-feat-ui-generation", "PR open", { pr: { number: 1984, state: "OPEN" }, nextAction: "/vpk-git-ship --merge 1984" }),
+		row("vpk-feat-ui-generation", "PR open", { goal: "Generate UI", pr: { number: 1984, state: "OPEN" }, nextAction: "/vpk-git-ship --merge 1984" }),
 		row("vpk-feat-gh", "unknown", { pr: "unknown", nextAction: "re-run status" }),
 	]);
-	assert.equal(markdown, [
-		"| Task | Status | PR | Next action |",
-		"| --- | --- | --- | --- |",
-		"| `vpk-fix-pipe` — split a \\| b across lines | running | — | wait \\| then ship |",
-		"| `vpk-feat-ui-generation` | PR open | #1984 open | /vpk-git-ship --merge 1984 |",
-		"| `vpk-feat-gh` | unknown | ? | re-run status |",
-	].join("\n"));
+	assert.deepEqual(markdown.split("\n").map(parseTableRow), [
+		["Task", "Status", "PR", "Next action"],
+		["---", "---", "---", "---"],
+		["`vpk-feat-ui-generation` — Generate UI", "PR open", "#1984 open", "/vpk-git-ship --merge 1984"],
+		["`vpk-feat-gh`", "unknown", "?", "re-run status"],
+	]);
 	assert.equal(renderMarkdown([]), "No vpk-remote tasks found.");
 	assert.match(renderMarkdown([], { hidden: 3 }), /3 done or e2e hidden \(--all shows them\)/u);
+});
+
+// Splits a GFM table row on pipes not escaped by a backslash, then unescapes each cell.
+function parseTableRow(line) {
+	const cells = [];
+	let cell = "";
+	for (let index = 0; index < line.length; index += 1) {
+		const char = line[index];
+		if (char === "\\" && index + 1 < line.length) {
+			cell += line[index + 1];
+			index += 1;
+		} else if (char === "|") {
+			cells.push(cell.trim());
+			cell = "";
+		} else {
+			cell += char;
+		}
+	}
+	cells.push(cell.trim());
+	return cells.slice(1, -1);
+}
+
+test("review 2.6: backslashes and pipes survive as cell text, newlines as spaces", () => {
+	const markdown = renderMarkdown([
+		row("vpk-fix-slash", "running", { goal: "split a \\| b\nthen C:\\path\\", nextAction: "wait \\\\| then\r\nship" }),
+		row("vpk-feat-plain", "PR open", { pr: { number: 7, state: "OPEN" }, nextAction: "/vpk-git-ship --merge 7" }),
+	]);
+	const rows = markdown.split("\n").map(parseTableRow);
+	assert.deepEqual(rows.map((cells) => cells.length), [4, 4, 4, 4]);
+	assert.deepEqual(rows[2], ["`vpk-fix-slash` — split a \\| b then C:\\path\\", "running", "—", "wait \\\\| then ship"]);
+	assert.deepEqual(rows[3], ["`vpk-feat-plain`", "PR open", "#7 open", "/vpk-git-ship --merge 7"]);
 });
 
 // ── Collection against a fixture checkout ─────────────────────────────────────
@@ -460,6 +561,118 @@ test("finding 10: malformed task.json fields neither crash collection nor render
 	assert.match(stdout.text, /\| `vpk-fix-broken` \| /u);
 });
 
+// A runs.jsonl as agent-surface writes it: a start line per launch, an end line per exit.
+function writeRunRecords(dirPath, runs) {
+	const lines = runs.flatMap(({ script = "run.sh", start, end, exitCode = 0 }) => {
+		const startedAt = new Date(start).toISOString();
+		const begin = JSON.stringify({ script, startedAt, endedAt: null, exit: null });
+		return end === undefined ? [begin] : [begin, JSON.stringify({ script, startedAt, endedAt: new Date(end).toISOString(), exit: exitCode })];
+	});
+	writeFile(path.join(dirPath, "runs.jsonl"), `${lines.join("\n")}\n`);
+}
+
+test("a reused review directory: the second run's request changes gives needs fixes", async () => {
+	const fixture = fixtureCheckout();
+	const review = fixture.out("gpt", "vpk-feat-alpha-review-2");
+	// run.sh is written once, before the worker's correction; it then runs twice.
+	writeRun(fixture.out("claude", "vpk-feat-alpha"), { script: "run-1.sh", start: NOW - 55 * MINUTE, end: NOW - 40 * MINUTE });
+	writeRunRecords(review, [
+		{ start: NOW - 70 * MINUTE, end: NOW - 60 * MINUTE },
+		{ start: NOW - 35 * MINUTE, end: NOW - 25 * MINUTE },
+	]);
+	writeFile(path.join(review, "report-0.md"), "Verdict: ship\n", NOW - 60 * MINUTE);
+	writeFile(path.join(review, "report.md"), "Verdict: request changes\n", NOW - 25 * MINUTE);
+	writeFile(path.join(review, "run.sh.exit"), "0\n", NOW - 25 * MINUTE);
+	const { byName } = await statusOf(fixture);
+	const alpha = byName["vpk-feat-alpha"];
+	assert.equal(alpha.status, "needs fixes");
+	const reviewRuns = alpha.runs.filter((run) => run.dir === "vpk-feat-alpha-review-2");
+	assert.deepEqual(reviewRuns.map((run) => [run.script, run.verdict, path.basename(run.report)]), [["run.sh", "ship", "report-0.md"], ["run.sh", "request changes", "report.md"]]);
+});
+
+test("report.md belongs to the run that last wrote it; earlier runs read their snapshot", async () => {
+	const fixture = fixtureCheckout();
+	const worker = fixture.out("claude", "vpk-feat-alpha");
+	// A second run is live and has emptied report.md; the first run's report is report-0.md.
+	writeRunRecords(worker, [{ start: NOW - 120 * MINUTE, end: NOW - 90 * MINUTE }, { script: "run-1.sh", start: NOW - 5 * MINUTE }]);
+	writeFile(path.join(worker, "run-1.sh"), "exit 0\n", NOW - 5 * MINUTE);
+	writeFile(path.join(worker, "report.md"), "", NOW - 5 * MINUTE);
+	writeFile(path.join(worker, "report-0.md"), "## Blockers\n- Gateway returned 401\n", NOW - 90 * MINUTE);
+	const { runCommand } = fakeRunner(fixture);
+	const withWorker = async (command, args) => (command === "ps" ? { ok: true, stdout: `  90 bash ${path.join(worker, "run-1.sh")}\n`, stderr: "" } : runCommand(command, args));
+	const result = await collectStatus({ cwd: fixture.root, runCommand: withWorker, env: {}, now: NOW });
+	const alpha = result.tasks.find((task) => task.name === "vpk-feat-alpha");
+	assert.deepEqual(alpha.runs.filter((run) => run.role === "worker").map((run) => [run.script, run.state, path.basename(run.report ?? "-")]), [["run.sh", "exited", "report-0.md"], ["run-1.sh", "running", "report.md"]]);
+});
+
+test("the latest started review wins over an older one that finished last", async () => {
+	const fixture = fixtureCheckout();
+	const a = fixture.out("gpt", "vpk-feat-alpha-review");
+	const b = fixture.out("gpt", "vpk-feat-alpha-review-2");
+	writeRunRecords(a, [{ start: NOW - 85 * MINUTE, end: NOW - 50 * MINUTE }]);
+	writeFile(path.join(a, "report.md"), "Verdict: ship\n", NOW - 50 * MINUTE);
+	writeFile(path.join(a, "run.sh.exit"), "0\n", NOW - 50 * MINUTE);
+	writeRunRecords(b, [{ start: NOW - 75 * MINUTE, end: NOW - 65 * MINUTE }]);
+	writeFile(path.join(b, "report.md"), "Verdict: request changes\n", NOW - 65 * MINUTE);
+	writeFile(path.join(b, "run.sh.exit"), "0\n", NOW - 65 * MINUTE);
+	const { byName } = await statusOf(fixture);
+	assert.equal(byName["vpk-feat-alpha"].status, "needs fixes");
+});
+
+test("a legacy reused run script is dated by its pane runner, not the stale script", async () => {
+	const fixture = fixtureCheckout();
+	const review = fixture.out("gpt", "vpk-feat-alpha-review-2");
+	writeRun(fixture.out("claude", "vpk-feat-alpha"), { script: "run-1.sh", start: NOW - 55 * MINUTE, end: NOW - 40 * MINUTE });
+	// No runs.jsonl: run.sh dates from the first review, its .pane.sh from the relaunch.
+	writeFile(path.join(review, "run.sh.pane.sh"), "bash run.sh\n", NOW - 35 * MINUTE);
+	writeFile(path.join(review, "report.md"), "Verdict: request changes\n", NOW - 25 * MINUTE);
+	writeFile(path.join(review, "run.sh.exit"), "0\n", NOW - 25 * MINUTE);
+	const { byName } = await statusOf(fixture);
+	assert.equal(byName["vpk-feat-alpha"].status, "needs fixes");
+	// A .start file outranks both file times.
+	writeFile(path.join(review, "run.sh.start"), `${new Date(NOW - 65 * MINUTE).toISOString()}\n`);
+	assert.equal((await statusOf(fixture)).byName["vpk-feat-alpha"].status, "needs review");
+});
+
+test("review 2.3: a legacy task whose branch and worktree are gone is unknown when gh fails", async () => {
+	const fixture = fixtureCheckout();
+	const legacy = fixture.out("claude", "vpk-fix-legacy");
+	writeFile(path.join(legacy, "run.sh"), `cd "${path.join(fixture.root, ".claude", "worktrees", "vpk-fix-legacy")}" || exit 1\n`, NOW - 50 * MINUTE);
+	writeFile(path.join(legacy, "run.sh.exit"), "0\n", NOW - 45 * MINUTE);
+	const { byName } = await statusOf(fixture, { gh: "fail" });
+	assert.deepEqual([byName["vpk-fix-legacy"].status, byName["vpk-fix-legacy"].pr], ["unknown", "unknown"]);
+	assert.equal((await statusOf(fixture)).byName["vpk-fix-legacy"].status, "done");
+});
+
+test("review 2.4: a newer closed PR beats an older merged one once the branch is gone", async () => {
+	const fixture = fixtureCheckout();
+	writeFile(path.join(fixture.out("claude", "vpk-fix-delta"), "task.json"), JSON.stringify({ goal: "Delta", kind: "worker", branch: "vpk/fix-delta", worktree: ".claude/worktrees/vpk-fix-delta", advisor: false }));
+	writeRun(fixture.out("claude", "vpk-fix-delta"), { start: NOW - 60 * MINUTE, end: NOW - 50 * MINUTE });
+	const prs = { "vpk/fix-delta": [
+		{ number: 30, state: "MERGED", url: "https://x/30", createdAt: "2026-10-01T00:00:00Z" },
+		{ number: 41, state: "CLOSED", url: "https://x/41", createdAt: "2026-10-20T00:00:00Z" },
+	] };
+	const { byName } = await statusOf(fixture, { prs });
+	assert.deepEqual([byName["vpk-fix-delta"].status, byName["vpk-fix-delta"].pr.number], ["PR closed", 41]);
+});
+
+test("review 2.5: a pager left open on a dead worker's run script is not the worker", async () => {
+	const fixture = fixtureCheckout();
+	const script = path.join(fixture.out("claude", "vpk-fix-beta"), "run.sh");
+	const { runCommand } = fakeRunner(fixture);
+	const withPager = async (command, args) => (command === "ps" ? { ok: true, stdout: `  88 less ${script}\n  89 vim ${script}\n`, stderr: "" } : runCommand(command, args));
+	const result = await collectStatus({ cwd: fixture.root, runCommand: withPager, env: {}, now: NOW });
+	assert.equal(result.tasks.find((task) => task.name === "vpk-fix-beta").status, "stopped");
+});
+
+test("review 2.7: a worker report whose Blockers start with 'None of' is blocked", async () => {
+	const fixture = fixtureCheckout();
+	writeFile(path.join(fixture.out("claude", "vpk-fix-eps"), "task.json"), JSON.stringify({ goal: "Eps", kind: "worker", branch: "vpk/feat-alpha", worktree: ".claude/worktrees/vpk-feat-alpha", advisor: false }));
+	writeRun(fixture.out("claude", "vpk-fix-eps"), { start: NOW - 20 * MINUTE, end: NOW - 10 * MINUTE, report: "## Findings\n- x\n\n## Blockers\nNone of the required checks could run because the gateway is down.\n" });
+	const { byName } = await statusOf(fixture);
+	assert.equal(byName["vpk-fix-eps"].status, "blocked");
+});
+
 function captureStdout() {
 	let text = "";
 	return { write: (chunk) => { text += chunk; }, get text() { return text; } };
@@ -489,7 +702,9 @@ test("default output is the JSON facts, and --json prints the same", async () =>
 	assert.deepEqual(alpha.runs[0], {
 		dir: "vpk-feat-alpha", lane: "claude", role: "worker", script: "run.sh", state: "exited", exitCode: 0,
 		startedAt: new Date(NOW - 120 * MINUTE).toISOString(), endedAt: new Date(NOW - 90 * MINUTE).toISOString(),
+		report: path.join(fixture.out("claude", "vpk-feat-alpha"), "report.md"),
 	});
+	assert.equal(alpha.runs.at(-1).verdict, "ship");
 	assert.deepEqual(alpha.reports.at(-1).verdict, "ship");
 });
 

@@ -2,6 +2,8 @@
 
 // Runs a prepared shell script in a visible terminal surface when the caller is
 // inside herdr, and inline otherwise, then waits for it and exits with its status.
+// Each run leaves <script>.start, <script>.exit, and a start and end line in the
+// script directory's runs.jsonl.
 //
 //   node scripts/agent-surface.js run --script <file> --label <name> [--cwd <dir>]
 //        [--worktree <path>] [--group <name>] [--no-wait] [--timeout-ms <n>]
@@ -84,6 +86,26 @@ function exitFileFor(script) {
 	return `${script}.exit`;
 }
 
+// Every run's start lands in <script>.start and runs.jsonl before launch, and its end in
+// runs.jsonl as soon as the exit is seen. A run script can be reused, so status orders runs
+// by these records, never by file times.
+function startFileFor(script) {
+	return `${script}.start`;
+}
+
+function runsFileFor(script) {
+	return path.join(path.dirname(script), "runs.jsonl");
+}
+
+function recordStart(script, startedAt) {
+	fs.writeFileSync(startFileFor(script), `${startedAt}\n`);
+	fs.appendFileSync(runsFileFor(script), `${JSON.stringify({ script: path.basename(script), startedAt, endedAt: null, exit: null })}\n`);
+}
+
+function recordEnd(script, startedAt, status) {
+	fs.appendFileSync(runsFileFor(script), `${JSON.stringify({ script: path.basename(script), startedAt, endedAt: new Date().toISOString(), exit: status })}\n`);
+}
+
 // The pane command is written here and run as `bash <runner>`: typed into a shell in
 // canonical mode, a line over 1024 bytes is rejected by `herdr pane run`.
 function runnerFileFor(script) {
@@ -113,7 +135,7 @@ function agentNameFor(label) {
 // root pane of a workspace opened for the run stays (`closeOnExit: false`), because
 // closing it would close the task's sidebar workspace; herdr clears its status once
 // the shell prompt returns.
-function buildPaneCommand({ script, exitFile, label, seq = Date.now(), closeOnExit = true }) {
+function buildPaneCommand({ script, exitFile, label, seq = Date.now(), startedAt = new Date().toISOString(), closeOnExit = true }) {
 	// Seqs must increase per pane across runs and fit in a u64.
 	const base = seq * 1000;
 	const name = agentNameFor(label);
@@ -125,11 +147,16 @@ function buildPaneCommand({ script, exitFile, label, seq = Date.now(), closeOnEx
 		herdr("pane report-metadata") + ` --title ${shellQuote(label)}`,
 		`"$h" agent rename "$HERDR_PANE_ID" ${name}`,
 	].join("; ");
+	// The pane records the run's end itself, so it lands even with --no-wait or a dead
+	// wrapper, and before the exit file, so status never sees an exit without it.
+	const record = shellQuote(`${JSON.stringify({ script: path.basename(script), startedAt }).slice(0, -1)},`);
 	const steps = [
 		`h="${"$"}{HERDR_BIN_PATH:-herdr}"`,
 		bg(start),
+		`bash ${shellQuote(script)}; s=$?`,
+		`printf '%s"endedAt":"%s","exit":%s}\\n' ${record} "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$s" 2>/dev/null >> ${shellQuote(runsFileFor(script))}`,
 		// The exit file lands before the close, so the waiting wrapper always finds it.
-		`bash ${shellQuote(script)}; s=$?; printf '%s\\n' "$s" > ${shellQuote(exitFile)}`,
+		`printf '%s\\n' "$s" > ${shellQuote(exitFile)}`,
 	];
 	if (closeOnExit) steps.push(`"$h" pane close "$HERDR_PANE_ID" >/dev/null 2>&1`);
 	return steps.join("; ");
@@ -258,11 +285,14 @@ async function run(options, { env = process.env, herdr = createHerdr(env), log =
 	const exitFile = exitFileFor(options.script);
 	fs.rmSync(exitFile, { force: true });
 	const surface = resolveSurface(options.surface, env);
+	const startedAt = new Date().toISOString();
 
 	if (surface === "inline") {
 		log(JSON.stringify({ surface, script: options.script, exit_file: exitFile }));
+		recordStart(options.script, startedAt);
 		const result = spawnSync("bash", [options.script], { cwd: options.cwd, stdio: "inherit", env });
 		const status = result.status ?? 1;
+		recordEnd(options.script, startedAt, status);
 		fs.writeFileSync(exitFile, `${status}\n`);
 		log(JSON.stringify({ exit: status }));
 		return status;
@@ -271,7 +301,8 @@ async function run(options, { env = process.env, herdr = createHerdr(env), log =
 	const { pane, closeOnExit } = placePane(herdr, options, env);
 	herdr(["pane", "rename", pane.pane_id, options.label]);
 	const runner = runnerFileFor(options.script);
-	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label, closeOnExit })}\n`);
+	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label, startedAt, closeOnExit })}\n`);
+	recordStart(options.script, startedAt);
 	herdr(["pane", "run", pane.pane_id, `bash ${shellQuote(runner)}`]);
 	log(JSON.stringify({
 		surface,
@@ -311,6 +342,7 @@ module.exports = {
 	parseArgs,
 	resolveSurface,
 	run,
+	runsFileFor,
 	shellQuote,
 	splitDirection,
 	waitForExitFile,

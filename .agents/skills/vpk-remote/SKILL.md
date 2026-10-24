@@ -586,19 +586,28 @@ throwaway test runs of this skill and show only with `--all`.
 
 The script reads every `output/remote-<lane>/<name>/` directory. Both lanes
 share one task per name, and a worker joins its `-review` advisors
-(`task.json` `kind` decides when present). It derives one status from the run
-exit files, the report's `## Blockers`, the review's `Verdict:` line, git, the
-PR, and live `claude -p` / `codex exec` processes:
+(`task.json` `kind` decides when present). Runs are ordered by the start times
+`agent-surface.js` records in `runs.jsonl` and `<script>.start`, so a reused
+run script counts once per launch; file times stand in only for legacy runs
+with no record. `report.md` belongs to the latest run that started before it
+was last written; earlier runs read their `report-<k>.md` snapshot (the k-th
+run by start) when the planner kept one. It derives one status from the runs' exits, the worker
+report's `## Blockers` (empty only when blank or just `None`), the review's
+`Verdict:` line, git, the branch's most recently created PR, and the live
+worker process (`bash <run script>`, its `agent-surface.js` wrapper, or
+`claude -p` / `codex exec` in the task directory; a pager or editor on its
+files does not count):
 
 - `running`, `stopped` (no exit file and no process), `not started`, `failed`
   (the worker's latest run, whatever reviews followed), `blocked`;
 - `needs fixes`, `review unclear` (the verdict line is missing or is not
   `ship`, `ship with nits`, or `request changes`), `reviewing`, `needs review`.
-  A review counts only for worker runs that ended before it started, and a
+  A review counts only for worker runs that ended before it started, the
+  latest started review decides even if an older one finishes later, and a
   stopped review is ignored;
 - `no commits`, `ready to ship`, `PR open`, `PR closed`, `merged`, `done`;
 - `done (read-only)` for research, reviews, and tasks whose `task.json` has
-  null `branch` and `worktree`;
+  null `branch` and `worktree`, once none of their runs is live;
 - `unknown` when `ps`, `git` or `gh` failed, so the answer can't be
   observed. Next action: re-run status.
 
@@ -611,8 +620,8 @@ show, with a blank goal, and `task.json` fields of the wrong type are ignored.
 Everything lives under gitignored `output/`:
 
 ```text
-output/remote-gpt/vpk-<type>-<slug>/          # home/ (CODEX_HOME), task.json, brief.md, run.sh(.exit), report.md, followup-<k>.md
-output/remote-claude/vpk-<type>-<slug>/       # task.json, brief.md, run.sh(.exit), report.md, events.jsonl, stderr.log, followup-<k>.md
+output/remote-gpt/vpk-<type>-<slug>/          # home/ (CODEX_HOME), task.json, brief.md, run.sh(.start/.exit), runs.jsonl, report.md, followup-<k>.md
+output/remote-claude/vpk-<type>-<slug>/       # task.json, brief.md, run.sh(.start/.exit), runs.jsonl, report.md, events.jsonl, stderr.log, followup-<k>.md
 output/remote-<lane>/vpk-<type>-<slug>-<n>/   # one per fan-out worker
 output/remote-<lane>/vpk-<type>-<slug>-review/  # advisor consults, same layout as that lane's workers
 ```
@@ -620,7 +629,10 @@ output/remote-<lane>/vpk-<type>-<slug>-review/  # advisor consults, same layout 
 The directory carries the surface's name (see *Naming*), so one directory per
 surface; never reuse a directory across concurrent workers. Follow-ups reuse
 the worker's directory as `followup-<k>.md`, run by `run-<k>.sh`, so each run
-keeps its own exit file.
+keeps its own exit file. `agent-surface.js` writes `<script>.start` before each
+launch and appends a start line and an end line per run to the directory's
+`runs.jsonl` (`script`, `startedAt`, `endedAt`, `exit`), so a relaunched script
+keeps every run in order.
 
 Artifacts stay under the **main checkout's** `output/`, never inside a task
 worktree, so reports from concurrently dispatched tasks stay readable in one

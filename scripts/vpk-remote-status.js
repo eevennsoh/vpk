@@ -10,7 +10,8 @@
 // renders the table and wraps it to its own pane.
 //
 // Facts come from the main checkout's output/remote-{claude,gpt}/<name>/ directories
-// (task.json, run*.sh and their .exit files, report.md), git, `gh`, `ps`, and herdr when
+// (task.json, runs.jsonl, run*.sh and their .start/.exit files, report.md and its
+// report-<k>.md snapshots), git, `gh`, `ps`, and herdr when
 // HERDR_ENV=1. A worker and its <name>-review[-n] advisor runs form one task, across both
 // lanes. Every external command goes through one runner with a timeout; one that fails
 // records "unknown", never a negative fact such as "no process" or "no commits".
@@ -130,13 +131,14 @@ function sectionBody(markdown, heading) {
 	return body;
 }
 
-// Lines under "## Blockers" other than "None" (or an unfilled "[…]" template line).
+// The lines under "## Blockers". The section is empty only when it is blank or just
+// "None" ("- None", "- None."): any other text, even "None of the checks ran", blocks.
 function parseBlockers(markdown) {
 	const body = sectionBody(markdown ?? "", "Blockers");
 	if (!body) return [];
-	return body
-		.map((line) => line.replace(/^\s*(?:[-*+]|\d+\.)\s+/u, "").trim())
-		.filter((line) => line && !/^\**\s*(?:none|no blockers|n\/a)\b/iu.test(line) && !/^\[.*\]$/u.test(line));
+	const lines = body.map((line) => line.trim()).filter(Boolean);
+	if (lines.length === 0 || (lines.length === 1 && /^(?:-\s+none\.?|none)$/iu.test(lines[0]))) return [];
+	return lines.map((line) => line.replace(/^(?:[-*+]|\d+\.)\s+/u, ""));
 }
 
 // The review's last "Verdict: …" line, read as ship, ship with nits, or request changes.
@@ -158,6 +160,29 @@ function worktreeFromRunScript(script) {
 	return match ? match[1] : null;
 }
 
+// runs.jsonl holds a start line per run and an end line once its exit is seen. The
+// script and startedAt together name a run; a line that is not a run record is skipped.
+function parseRunRecords(text) {
+	const byRun = new Map();
+	for (const line of (text ?? "").split("\n")) {
+		let record;
+		try {
+			record = JSON.parse(line);
+		} catch {
+			continue;
+		}
+		if (typeof record?.script !== "string" || runIndexFor(record.script) === null) continue;
+		const startedAt = Date.parse(record.startedAt);
+		if (!Number.isFinite(startedAt)) continue;
+		const key = `${record.script}\n${startedAt}`;
+		const run = byRun.get(key) ?? { script: record.script, startedAt, endedAt: null, exitCode: null };
+		const endedAt = Date.parse(record.endedAt ?? "");
+		if (Number.isFinite(endedAt) && Number.isInteger(record.exit)) Object.assign(run, { endedAt, exitCode: record.exit });
+		byRun.set(key, run);
+	}
+	return [...byRun.values()];
+}
+
 function parseProcessList(text) {
 	return text.split("\n").map((line) => {
 		const match = /^\s*(\d+)\s+(.*)$/u.exec(line);
@@ -166,25 +191,36 @@ function parseProcessList(text) {
 }
 
 // `…/run.sh` must not match `…/run.sh.pane.sh` or `…/run.sh.exit`.
-function mentionsPath(command, file) {
-	for (let at = command.indexOf(file); at !== -1; at = command.indexOf(file, at + 1)) {
-		if (/^(?:\s|$)/u.test(command.slice(at + file.length))) return true;
-	}
-	return false;
+function startsWithPath(text, file) {
+	return text.startsWith(file) && /^(?:\s|$)/u.test(text.slice(file.length));
 }
 
-// claude -p reads its brief on stdin, so its arguments never name the task directory;
-// the `bash <dir>/run.sh` (or `agent-surface.js --script <path>`) process does, for exactly
-// as long as the run lasts. codex exec names the directory in --output-last-message.
+function escapeRegExp(text) {
+	return text.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+// Only the worker itself counts, never a pager, editor, or grep that names its files:
+// `bash <script>` (the pane and inline runs), the agent-surface wrapper for that exact
+// script, or claude -p / codex exec naming the task directory. claude -p reads its brief
+// on stdin, so only its `bash <script>` parent identifies it; codex exec names the
+// directory in --output-last-message.
 function runIsAlive(scriptPath, dirPath, processes) {
-	return processes.some((proc) => mentionsPath(proc.command, scriptPath)
-		|| (/(?:^|\/)(?:claude\s+-p|codex\s+exec)\b/u.test(proc.command) && proc.command.includes(`${dirPath}/`)));
+	const shell = /^(?:\S*\/)?(?:bash|sh|zsh)\s+(?:-\S+\s+)*/u;
+	const wrapper = /^(?:\S*\/)?node\s+\S*agent-surface\.js\s+run\s/u;
+	const agent = /^(?:\S*\/)?(?:node\s+\S*\/)?(?:claude\s+(?:\S+\s+)*?(?:-p|--print)|codex\s+(?:\S+\s+)*?exec)(?:\s|$)/u;
+	const inDir = new RegExp(`(?:^|\\s)${escapeRegExp(dirPath)}/`, "u");
+	return processes.some(({ command }) => {
+		const shellMatch = shell.exec(command);
+		if (shellMatch && startsWithPath(command.slice(shellMatch[0].length), scriptPath)) return true;
+		if (wrapper.test(command) && command.split(/\s--script\s+/u).slice(1).some((rest) => startsWithPath(rest, scriptPath))) return true;
+		return agent.test(command) && inDir.test(command);
+	});
 }
 
-// Open beats merged beats closed; the newest PR wins within a state.
+// The most recently created PR speaks for the branch, whatever its state: an older merged
+// PR must not hide newer work closed unmerged.
 function pickPr(prs) {
-	const rank = { OPEN: 0, MERGED: 1, CLOSED: 2 };
-	return [...prs].sort((a, b) => (rank[a.state] ?? 3) - (rank[b.state] ?? 3) || b.number - a.number)[0] ?? null;
+	return [...prs].sort((a, b) => (Date.parse(b.createdAt ?? "") || 0) - (Date.parse(a.createdAt ?? "") || 0) || b.number - a.number)[0] ?? null;
 }
 
 // ── Status derivation (pure) ──────────────────────────────────────────────────
@@ -194,12 +230,10 @@ function runTime(run) {
 	return run.endedAt ?? run.startedAt ?? 0;
 }
 
-// Every run in these directories, oldest first. report.md belongs to its directory's
-// newest run, because each successful run overwrites it.
+// Every run in these directories, by start time: the latest started run speaks last, even
+// if an older one finishes after it. Each run carries its own report (see assignReports).
 function runsOf(dirs) {
-	return dirs
-		.flatMap((dir) => dir.runs.map((run, index) => ({ ...run, report: index === dir.runs.length - 1 ? dir.report : null })))
-		.sort((a, b) => runTime(a) - runTime(b));
+	return dirs.flatMap((dir) => dir.runs).sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
 }
 
 function nextActionFor(status, pr) {
@@ -242,6 +276,7 @@ function runOutcome(run, { reportBlocks = true } = {}) {
 function deriveStatusName({ readOnly, advisor, workers, reviews, git, pr }) {
 	// Read-only work never ships, so no branch, PR, or review check applies to it.
 	if (readOnly) {
+		if (runsOf([...workers, ...reviews]).some((run) => run.state === "running")) return "running";
 		const own = workers.length > 0 ? workers : reviews;
 		return runOutcome(runsOf(own).at(-1), { reportBlocks: workers.length > 0 }) ?? "done (read-only)";
 	}
@@ -259,8 +294,8 @@ function deriveStatusName({ readOnly, advisor, workers, reviews, git, pr }) {
 
 	const reviewRuns = runsOf(reviews);
 	if (reviewRuns.some((run) => run.state === "running")) return "reviewing";
-	// A review speaks for the worker's latest run only if it started after that run ended.
-	// A stopped or failed review reached no verdict.
+	// A review speaks for the worker's latest run only if it started after that run ended,
+	// and the latest started review decides. A stopped or failed review reached no verdict.
 	const fresh = reviewRuns.filter((run) => (run.startedAt ?? 0) >= runTime(workerRun) && run.state !== "stopped");
 	if (fresh.some((run) => run.state === "unknown")) return "unknown";
 	const review = fresh.filter((run) => run.exitCode === 0).at(-1);
@@ -318,11 +353,12 @@ function renderMarkdown(tasks, { hidden = 0 } = {}) {
 	if (tasks.length === 0) {
 		return hidden ? `No active vpk-remote tasks; ${hidden} done or e2e hidden (--all shows them).` : "No vpk-remote tasks found.";
 	}
-	const cell = (text) => String(text).replace(/\s*[\r\n]+\s*/gu, " ").replace(/\|/gu, "\\|");
+	// Backslashes first, so an escaped pipe in the text cannot become a column break.
+	const cell = (text) => String(text).replace(/\s*[\r\n]+\s*/gu, " ").replace(/\\/gu, "\\\\").replace(/\|/gu, "\\|");
 	const lines = ["| Task | Status | PR | Next action |", "| --- | --- | --- | --- |"];
 	for (const task of tasks) {
 		const name = task.goal ? `\`${cell(task.name)}\` — ${cell(task.goal)}` : `\`${cell(task.name)}\``;
-		lines.push(`| ${name} | ${task.status} | ${prLabel(task.pr)} | ${cell(task.nextAction)} |`);
+		lines.push(`| ${name} | ${cell(task.status)} | ${cell(prLabel(task.pr))} | ${cell(task.nextAction)} |`);
 	}
 	return lines.join("\n");
 }
@@ -378,47 +414,86 @@ function eventsEndInError(file) {
 	}
 }
 
-// Raw facts for one output/remote-<lane>/<name>/ directory. Run state is resolved later,
-// once the process list is in.
+function readReport(reportPath, role) {
+	const text = readText(reportPath);
+	if (text === null) return null;
+	return {
+		path: reportPath,
+		nonEmpty: text.trim().length > 0,
+		mtime: statMs(reportPath),
+		blockers: parseBlockers(text),
+		verdict: role === "review" ? parseVerdict(text) : null,
+	};
+}
+
+function readExitCode(exitFile) {
+	const text = readText(exitFile)?.trim();
+	if (!text) return null;
+	const code = Number.parseInt(text, 10);
+	return Number.isNaN(code) ? 1 : code;
+}
+
+// One script's runs. Recorded runs (runs.jsonl) carry their own start and end; a reused
+// script has one per launch. The latest may predate the pane writing its end line, so its
+// exit file stands in. A script with no record is a legacy run, timed by its .start file
+// or, failing that, by file times: the pane runner is rewritten on every herdr launch, so
+// it dates a reused script's latest launch better than the script does.
+function runsForScript(dirPath, file, records) {
+	const scriptPath = path.join(dirPath, file);
+	const index = runIndexFor(file);
+	const exitFile = `${scriptPath}.exit`;
+	const fileExit = readExitCode(exitFile);
+	if (records.length > 0) {
+		return records.map((record, position) => {
+			const run = { script: file, scriptPath, index, exitCode: record.exitCode, startedAt: record.startedAt, endedAt: record.endedAt };
+			const latest = position === records.length - 1;
+			if (latest && run.endedAt === null && fileExit !== null && (statMs(exitFile) ?? 0) >= run.startedAt) {
+				Object.assign(run, { exitCode: fileExit, endedAt: statMs(exitFile) });
+			}
+			return run;
+		});
+	}
+	const started = Date.parse(readText(`${scriptPath}.start`)?.trim() ?? "");
+	const startedAt = Number.isFinite(started) ? started : Math.max(statMs(scriptPath) ?? 0, statMs(`${scriptPath}.pane.sh`) ?? 0) || null;
+	return [{ script: file, scriptPath, index, exitCode: fileExit, startedAt, endedAt: fileExit === null ? null : statMs(exitFile) }];
+}
+
+// Raw facts for one output/remote-<lane>/<name>/ directory, runs ordered by start. Run
+// state is resolved later, once the process list is in.
 function readTaskDir(dirPath, lane, name) {
 	const reportPath = path.join(dirPath, "report.md");
-	const reportText = readText(reportPath) ?? "";
 	const task = sanitizeTask(readJson(path.join(dirPath, "task.json")));
 	const role = roleFor(name, task);
-	const runs = fs.readdirSync(dirPath)
-		.map((file) => ({ file, index: runIndexFor(file) }))
-		.filter(({ index }) => index !== null)
-		.sort((a, b) => a.index - b.index)
-		.map(({ file, index }) => {
-			const scriptPath = path.join(dirPath, file);
-			const exitText = readText(`${scriptPath}.exit`)?.trim();
-			const exitCode = exitText ? (Number.isNaN(Number.parseInt(exitText, 10)) ? 1 : Number.parseInt(exitText, 10)) : null;
-			return {
-				script: file,
-				scriptPath,
-				index,
-				exitCode,
-				startedAt: statMs(scriptPath),
-				endedAt: exitCode === null ? null : statMs(`${scriptPath}.exit`),
-			};
-		});
+	const records = parseRunRecords(readText(path.join(dirPath, "runs.jsonl")));
+	const scripts = new Set([...fs.readdirSync(dirPath).filter((file) => runIndexFor(file) !== null), ...records.map((record) => record.script)]);
+	const runs = [...scripts]
+		.sort((a, b) => runIndexFor(a) - runIndexFor(b))
+		.flatMap((file) => runsForScript(dirPath, file, records.filter((record) => record.script === file).sort((a, b) => a.startedAt - b.startedAt)))
+		.sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
+	const firstScript = runs.find((run) => run.index === 0) ?? runs[0];
 	return {
 		name,
 		lane,
 		path: dirPath,
 		role,
 		task,
-		worktreeHint: runs[0] ? worktreeFromRunScript(readText(runs[0].scriptPath) ?? "") : null,
+		worktreeHint: firstScript ? worktreeFromRunScript(readText(firstScript.scriptPath) ?? "") : null,
 		createdAt: Date.parse(task?.createdAt ?? "") || statMs(path.join(dirPath, "brief.md")) || runs[0]?.startedAt || statMs(dirPath),
 		runs,
-		report: {
-			path: reportPath,
-			nonEmpty: reportText.trim().length > 0,
-			mtime: statMs(reportPath),
-			blockers: parseBlockers(reportText),
-			verdict: role === "review" ? parseVerdict(reportText) : null,
-		},
+		report: readReport(reportPath, role) ?? { path: reportPath, nonEmpty: false, mtime: null, blockers: [], verdict: null },
 	};
+}
+
+// Runs in one directory never overlap, so report.md belongs to the latest run that started
+// before it was last written (the Claude lane empties it at start; a failed run may leave
+// the previous run's). Every other run has only its snapshot, report-<k>.md for the k-th
+// run by start, if the planner kept one.
+function assignReports(dir) {
+	const written = dir.report.mtime ?? Number.POSITIVE_INFINITY;
+	const owner = dir.runs.findLast((run) => (run.startedAt ?? 0) <= written) ?? dir.runs.at(-1);
+	dir.runs.forEach((run, position) => {
+		run.report = run === owner ? dir.report : readReport(path.join(dir.path, `report-${position}.md`), dir.role);
+	});
 }
 
 // A run with no exit file is running while its process lives. Without one, a report
@@ -432,7 +507,9 @@ function resolveRunStates(dir, processes) {
 			run.state = "exited";
 			return;
 		}
-		if (processes && runIsAlive(run.scriptPath, dir.path, processes)) {
+		// A later launch of the same script owns any live process for it.
+		const relaunched = dir.runs.slice(position + 1).some((later) => later.script === run.script);
+		if (processes && !relaunched && runIsAlive(run.scriptPath, dir.path, processes)) {
 			run.state = "running";
 			return;
 		}
@@ -446,6 +523,7 @@ function resolveRunStates(dir, processes) {
 			run.state = processes ? "stopped" : "unknown";
 		}
 	});
+	assignReports(dir);
 	return dir;
 }
 
@@ -480,7 +558,7 @@ async function resolveMainCheckout(runCommand, cwd) {
 async function fetchPullRequests(runCommand, cwd, branches) {
 	if (branches.length === 0) return new Map();
 	const vars = branches.map((_, index) => `$b${index}:String!`).join(",");
-	const fields = branches.map((_, index) => `b${index}:pullRequests(headRefName:$b${index},first:10){nodes{number state url mergedAt}}`).join(" ");
+	const fields = branches.map((_, index) => `b${index}:pullRequests(headRefName:$b${index},first:10){nodes{number state url createdAt mergedAt}}`).join(" ");
 	const query = `query($owner:String!,$name:String!,${vars}){repository(owner:$owner,name:$name){${fields}}}`;
 	const args = ["api", "graphql", "-F", "owner={owner}", "-F", "name={repo}", "-f", `query=${query}`];
 	branches.forEach((branch, index) => args.push("-f", `b${index}=${branch}`));
@@ -576,8 +654,9 @@ async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(),
 
 	const tasks = await Promise.all(plans.map(async ({ group, dirs: taskDirs, record, kind, readOnly, worktreeHint, worktreePath, tree, named, candidate }) => {
 		for (const dir of taskDirs) resolveRunStates(dir, processes);
-		// The conventional name only counts once something proves it existed.
-		const proven = candidate && (!localBranches || localBranches.has(candidate) || prsFor(candidate).length > 0);
+		// The conventional name only counts once something proves it existed; while git or gh
+		// failed, it stays in play so the task reads unknown rather than done.
+		const proven = candidate && (!localBranches || !prs || localBranches.has(candidate) || prsFor(candidate).length > 0);
 		const branch = readOnly ? null : named ?? (proven ? candidate : null);
 		const localBranch = !branch ? false : localBranches ? localBranches.has(branch) : null;
 
@@ -608,6 +687,8 @@ async function collectStatus({ cwd = process.cwd(), runCommand = createRunner(),
 				...(run.inferred ? { inferred: true } : {}),
 				startedAt: isoOrNull(run.startedAt),
 				endedAt: isoOrNull(run.endedAt),
+				report: run.report?.path ?? null,
+				...(dir.role === "review" ? { verdict: run.report?.verdict ?? null } : {}),
 			};
 		});
 		const createdAt = Math.min(...taskDirs.map((dir) => dir.createdAt).filter(Number.isFinite));
@@ -712,6 +793,7 @@ module.exports = {
 	parseArgs,
 	parseBlockers,
 	parseProcessList,
+	parseRunRecords,
 	parseVerdict,
 	parseWorktreeList,
 	pickPr,
