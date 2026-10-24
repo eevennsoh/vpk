@@ -137,7 +137,8 @@ function parseBlockers(markdown) {
 	const body = sectionBody(markdown ?? "", "Blockers");
 	if (!body) return [];
 	const lines = body.map((line) => line.trim()).filter(Boolean);
-	if (lines.length === 0 || (lines.length === 1 && /^(?:-\s+none\.?|none)$/iu.test(lines[0]))) return [];
+	// "None." or "None —" may carry a note after it ("None. Playwright ran unsandboxed."); "None of the checks ran" is a blocker.
+	if (lines.length === 0 || (lines.length === 1 && /^(?:[-*+]\s+)?none(?:$|[.;:,—–]|\s+[—–-]\s)/iu.test(lines[0]))) return [];
 	return lines.map((line) => line.replace(/^(?:[-*+]|\d+\.)\s+/u, ""));
 }
 

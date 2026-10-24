@@ -229,7 +229,10 @@ test("review 2.7: Blockers is empty only when blank or just None", () => {
 		assert.deepEqual(parseBlockers(`## Blockers\n${body}\n`), [], JSON.stringify(body));
 	}
 	assert.deepEqual(parseBlockers("## Blockers\nNone of the required checks could run because the gateway is down.\n"), ["None of the required checks could run because the gateway is down."]);
-	assert.deepEqual(parseBlockers("## Blockers\n- None. Playwright ran unsandboxed.\n"), ["None. Playwright ran unsandboxed."]);
+	assert.deepEqual(parseBlockers("## Blockers\n- None. Playwright ran unsandboxed.\n"), []);
+	assert.deepEqual(parseBlockers("## Blockers\n- None — the dev server needed a restart.\n"), []);
+	assert.deepEqual(parseBlockers("## Blockers\nNone yet, the gateway is still down.\n"), ["None yet, the gateway is still down."]);
+	assert.deepEqual(parseBlockers("## Blockers\n- Nonexistent API key\n"), ["Nonexistent API key"]);
 	assert.deepEqual(parseBlockers("## Blockers\n- No blockers, but CI is red\n"), ["No blockers, but CI is red"]);
 	const blocked = facts({ advisor: false, workers: [dir([exited(0, 100)], { blockers: parseBlockers("## Blockers\nNone of the checks ran.\n") })] });
 	assert.equal(deriveStatus(blocked).status, "blocked");
