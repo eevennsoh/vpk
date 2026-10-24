@@ -242,6 +242,13 @@ name: `vpk-<type>-<slug>[-<pane>]`, lowercase kebab-case.
 `scripts/agent-surface.js` rejects a `--label` or `--group` outside this
 scheme, so a misnamed surface fails before anything opens.
 
+The herdr agent name (what `herdr agent wait <name>` takes) is the label
+itself when it fits herdr's 32-character limit. A longer label becomes its
+first 25 characters, `-`, and a 6-character hash of the whole label:
+`vpk-research-authentication-middleware-1` →
+`vpk-research-authenticati-<hash>`. The hash is stable, so `-1` and `-2`
+stay distinct and a label always maps to the same name.
+
 ## Worktree isolation
 
 **Every brief that writes files gets its own git worktree, by default.** This
@@ -346,9 +353,11 @@ dirty tree it will silently fold into its diff.
    Write that command to `run.sh` in the worker directory and launch it
    through the surface wrapper (see *Terminal surfaces*) rather than running
    it bare, so the user can watch the worker in herdr. A writing task's
-   worker always launches with `--worktree "$tree"`, which opens it as its
-   own workspace in the herdr sidebar automatically; never omit
-   `--worktree` for a writing task.
+   worker launches with `--worktree "$tree"`, which opens it as its own
+   workspace in the herdr sidebar automatically, unless `--no-worktree`
+   applies. Then there is no `$tree`: the worker runs in the current checkout
+   as a tab in the planner's workspace, labelled per *Naming*. Leave
+   `--worktree` off only under `--no-worktree`.
 5. **Read only the report file.** Never stream or parse raw worker output —
    raw material stays in worker contexts, which keeps the planner's context
    window for review. The live feed and `events.jsonl` are for the human;

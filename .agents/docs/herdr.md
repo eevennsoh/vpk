@@ -67,8 +67,10 @@ The pane reports its own state, so workers show in the sidebar and
 | Script exits N | `idle` with message and state label `exit N` | `done`, label `exit N` |
 | 15 s after exit | released | gone |
 
-The pane is also named after the label (cut to herdr's 32-character agent
-name limit), so another pane can block on it:
+The pane is also named after the label, so another pane can block on it. A
+label over herdr's 32-character agent name limit becomes its first 25
+characters plus a 6-character hash of the full label, so long labels that
+differ only at the end stay distinct (see *Naming* in the vpk-remote skill):
 
 ```bash
 herdr agent wait vpk-fix-sidebar-flicker --timeout 20000

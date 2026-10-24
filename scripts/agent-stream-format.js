@@ -7,11 +7,14 @@
 //     | node scripts/agent-stream-format.js --events <file> --report <file> [--cwd <dir>]
 //
 //   --events  every JSON event, one per line (truncated at start, appended live)
-//   --report  the final `result` text of a successful run (truncated at start)
+//   --report  the final `result` text of a successful run (emptied at start, then
+//             replaced atomically via a temp file + rename once the result arrives)
 //   --cwd     base for relative paths in the feed; defaults to the session's cwd
 //
-// Exits 0 once the stream is read, so under `set -o pipefail` the pipeline's
-// status is claude's. Bad arguments exit 2 after draining stdin.
+// Exits 0 only for a successful `result` with both files written. An error result,
+// a stream without a result (including empty input), or a failed write prints an
+// `error` line and exits 1, so `set -o pipefail` fails the pipeline even when claude
+// exited 0. Bad arguments exit 2 after draining stdin.
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -134,11 +137,31 @@ function formatLine({ time, kind, text, nested = false, width = DEFAULT_WIDTH })
 	return truncate(line, width);
 }
 
+// Writes to a temp file beside `file`, then renames over it: readers see the old
+// content or the complete new content, never a fragment.
+function writeFileAtomic(file, content) {
+	const temp = path.join(path.dirname(file), `.${path.basename(file)}.${process.pid}.tmp`);
+	try {
+		fs.writeFileSync(temp, content);
+		fs.renameSync(temp, file);
+	} catch (error) {
+		fs.rmSync(temp, { force: true });
+		throw error;
+	}
+}
+
 function createFormatter({ eventsFile, reportFile, cwd, width = DEFAULT_WIDTH, now = () => new Date(), print = (line) => process.stdout.write(`${line}\n`) }) {
 	fs.writeFileSync(eventsFile, "");
 	fs.writeFileSync(reportFile, "");
 	let sessionCwd = cwd;
-	let sawResult = false;
+	let result = null;
+	let failed = false;
+	let eventsBroken = false;
+
+	const fail = (text) => {
+		failed = true;
+		print(formatLine({ time: now(), kind: "error", text, width }));
+	};
 
 	return {
 		line(raw) {
@@ -152,21 +175,35 @@ function createFormatter({ eventsFile, reportFile, cwd, width = DEFAULT_WIDTH, n
 				print(formatLine({ time: now(), kind: "?", text: oneLine(trimmed), width }));
 				return;
 			}
-			fs.appendFileSync(eventsFile, `${trimmed}\n`);
+			if (!eventsBroken) {
+				try {
+					fs.appendFileSync(eventsFile, `${trimmed}\n`);
+				} catch (error) {
+					// Stop appending: a gap would make events.jsonl look complete.
+					eventsBroken = true;
+					fail(`events.jsonl write failed: ${error.message}`);
+				}
+			}
 			if (event?.type === "system" && event.subtype === "init" && !sessionCwd) sessionCwd = event.cwd;
 			const nested = Boolean(event?.parent_tool_use_id);
 			for (const [kind, text] of describeEvent(event, sessionCwd)) {
 				print(formatLine({ time: now(), kind, text, nested, width }));
 			}
 			if (event?.type === "result") {
-				sawResult = true;
+				result = event;
 				if (!isFailedResult(event) && typeof event.result === "string") {
-					fs.writeFileSync(reportFile, event.result.endsWith("\n") ? event.result : `${event.result}\n`);
+					try {
+						writeFileAtomic(reportFile, event.result.endsWith("\n") ? event.result : `${event.result}\n`);
+					} catch (error) {
+						fail(`report.md write failed: ${error.message}`);
+					}
 				}
 			}
 		},
+		// Returns the process exit code.
 		end() {
-			if (!sawResult) print(formatLine({ time: now(), kind: "error", text: "stream ended without a result event", width }));
+			if (!result) fail("stream ended without a result event");
+			return failed || isFailedResult(result) ? 1 : 0;
 		},
 	};
 }
@@ -185,13 +222,16 @@ function main() {
 	}
 	const input = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
 	input.on("line", (raw) => {
+		// An unexpected event shape must not stop the reader: claude would die of SIGPIPE.
 		try {
 			formatter.line(raw);
 		} catch (error) {
 			console.error(`agent-stream-format: ${error.message}`);
 		}
 	});
-	input.on("close", () => formatter.end());
+	input.on("close", () => {
+		process.exitCode = formatter.end();
+	});
 }
 
 if (require.main === module) main();

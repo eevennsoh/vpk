@@ -39,14 +39,16 @@ worker_root="$PWD/output/remote-claude/vpk-<type>-<slug>"
 formatter="$PWD/scripts/agent-stream-format.js"
 mkdir -p "$worker_root"
 
-env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
-  ANTHROPIC_BASE_URL="http://localhost:29576/vertex/claude" \
-  "$HOME/.local/bin/claude" -p --dangerously-skip-permissions \
-  --settings "$HOME/.claude/settings-gw.json" \
-  --model "claude-opus-5[1m]" --effort high \
-  --no-session-persistence --output-format stream-json --verbose \
-  < "$worker_root/brief.md" \
-  2> >(tee "$worker_root/stderr.log" >&2) \
+{
+  env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
+    ANTHROPIC_BASE_URL="http://localhost:29576/vertex/claude" \
+    "$HOME/.local/bin/claude" -p --dangerously-skip-permissions \
+    --settings "$HOME/.claude/settings-gw.json" \
+    --model "claude-opus-5[1m]" --effort high \
+    --no-session-persistence --output-format stream-json --verbose \
+    < "$worker_root/brief.md" 2>&1 >&3 3>&- \
+    | tee "$worker_root/stderr.log" >&2 3>&-
+} 3>&1 \
   | node "$formatter" --events "$worker_root/events.jsonl" --report "$worker_root/report.md"
 ```
 
@@ -57,7 +59,9 @@ every event to `events.jsonl`, prints one timestamped line per step to the
 pane (`12:14:40  Edit   components/visual/x/index.tsx`, `Bash` commands,
 one-line text snippets, then `done` or `error` with duration and cost), and
 writes the final `result` text to `report.md` — the analogue of codex's
-`--output-last-message`. An error result leaves `report.md` empty.
+`--output-last-message`. The report is written to a temp file and renamed
+into place, so it is either empty or complete. An error result leaves it
+empty.
 
 Why each layer exists:
 
@@ -78,10 +82,19 @@ Why each layer exists:
 - `--output-format stream-json --verbose` is what makes the run observable:
   plain `-p` prints nothing until the end, so the pane stays blank for the
   whole run. `--verbose` is required for stream-json in print mode.
-- `set -o pipefail` makes the pipeline exit with `claude`'s status rather
-  than the formatter's (which exits 0 once the stream is read), so
-  `agent-surface.js` still reports a failed worker as `exit N`.
-- `tee` keeps `stderr.log` while also showing stderr in the pane.
+- `set -o pipefail` makes any failing stage fail the run, so
+  `agent-surface.js` reports it as `exit N`: `claude`'s own non-zero status,
+  or the formatter's `1` when the stream has no `result`, the result is an
+  error, or `events.jsonl` / `report.md` could not be written (it prints an
+  `error` line saying which). When several stages fail, bash reports the
+  rightmost, so a failed claude run usually shows as `exit 1`.
+- The fd swap (`2>&1 >&3`, then `3>&1` outside the braces) sends claude's
+  stdout to the formatter and its stderr through `tee`, which keeps
+  `stderr.log` and also shows stderr in the pane. `tee` is an ordinary
+  pipeline stage, so the run cannot end before `stderr.log` is complete and
+  a failing logger fails the run. A `2> >(tee …)` process substitution gets
+  neither: bash does not wait for it, and macOS's bash 3.2 does not set `$!`
+  for it, so it cannot be waited on.
 - `--dangerously-skip-permissions` lets headless implementation edit files
   without prompts, so on **writing briefs the scope boundaries are the only
   guardrail** — write Constraints and Non-goals explicitly. Read-only briefs
@@ -117,14 +130,16 @@ advisor_root="$PWD/output/remote-claude/vpk-<type>-<slug>-review"
 formatter="$PWD/scripts/agent-stream-format.js"
 mkdir -p "$advisor_root"
 
-env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
-  ANTHROPIC_BASE_URL="http://localhost:29576/vertex/claude" \
-  "$HOME/.local/bin/claude" -p --permission-mode plan \
-  --settings "$HOME/.claude/settings-gw.json" \
-  --model "claude-opus-5[1m]" --effort xhigh \
-  --no-session-persistence --output-format stream-json --verbose \
-  < "$advisor_root/brief.md" \
-  2> >(tee "$advisor_root/stderr.log" >&2) \
+{
+  env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
+    ANTHROPIC_BASE_URL="http://localhost:29576/vertex/claude" \
+    "$HOME/.local/bin/claude" -p --permission-mode plan \
+    --settings "$HOME/.claude/settings-gw.json" \
+    --model "claude-opus-5[1m]" --effort xhigh \
+    --no-session-persistence --output-format stream-json --verbose \
+    < "$advisor_root/brief.md" 2>&1 >&3 3>&- \
+    | tee "$advisor_root/stderr.log" >&2 3>&-
+} 3>&1 \
   | node "$formatter" --events "$advisor_root/events.jsonl" --report "$advisor_root/report.md"
 ```
 

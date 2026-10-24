@@ -16,6 +16,7 @@
 //   --group <name>     a tab with that label in the caller's workspace, split per run
 //   neither            a new tab labelled --label in the caller's workspace
 
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
@@ -98,9 +99,17 @@ const REPORT_AGENT = "vpk-worker";
 // pane; once the shell prompt returns Herdr auto-clears the agent). Ctrl-C skips.
 const LINGER_SECONDS = 15;
 
-// `herdr agent wait <name>` needs [a-z][a-z0-9_-]{0,31}; a surface name only needs truncating.
+// `herdr agent wait <name>` needs [a-z][a-z0-9_-]{0,31}. A surface name that fits is
+// used as is; a longer one becomes its first 25 characters plus a 6-character hash of
+// the whole label, so labels that differ only past the cut stay distinct.
+const AGENT_NAME_MAX = 32;
+const AGENT_NAME_HASH_LENGTH = 6;
+
 function agentNameFor(label) {
-	return label.slice(0, 32).replace(/-+$/u, "");
+	if (label.length <= AGENT_NAME_MAX) return label;
+	const hash = crypto.createHash("sha256").update(label).digest("hex").slice(0, AGENT_NAME_HASH_LENGTH);
+	const prefix = label.slice(0, AGENT_NAME_MAX - AGENT_NAME_HASH_LENGTH - 1).replace(/-+$/u, "");
+	return `${prefix}-${hash}`;
 }
 
 function buildPaneCommand({ script, exitFile, label, seq = Date.now(), lingerSeconds = LINGER_SECONDS }) {
@@ -165,10 +174,22 @@ function createTab(herdr, workspaceId, label, cwd) {
 
 // herdr opens worktree workspaces only from the repo parent (`linked_worktree_source`
 // otherwise), so `worktree open` gets the main checkout as --cwd, never the worktree.
+// Git lists the main working tree first. With --separate-git-dir git keeps no record
+// of the main checkout and lists the git dir there instead, so that is refused too.
 function mainCheckoutFor(worktree) {
-	const result = spawnSync("git", ["-C", worktree, "rev-parse", "--git-common-dir"], { encoding: "utf8" });
-	if (result.status !== 0) throw new Error(`--worktree ${worktree} is not a git worktree: ${result.stderr.trim()}`);
-	return path.dirname(path.resolve(worktree, result.stdout.trim()));
+	const git = (...args) => {
+		const result = spawnSync("git", ["-C", worktree, ...args], { encoding: "utf8" });
+		if (result.status !== 0) throw new Error(`--worktree ${worktree} is not a git worktree: ${result.stderr.trim()}`);
+		return result.stdout;
+	};
+	const lines = git("worktree", "list", "--porcelain").split("\n\n")[0].split("\n");
+	if (lines.includes("bare")) throw new Error(`--worktree ${worktree} belongs to a bare repository; herdr needs a main checkout to open it from`);
+	const main = lines.find((line) => line.startsWith("worktree "))?.slice("worktree ".length);
+	if (!main) throw new Error(`--worktree ${worktree}: git worktree list printed no main working tree`);
+	if (main === git("rev-parse", "--path-format=absolute", "--git-common-dir").trim()) {
+		throw new Error(`--worktree ${worktree}: git does not record the main checkout (separate git dir at ${main}); herdr needs one to open it from`);
+	}
+	return main;
 }
 
 function placePane(herdr, options, env = process.env) {

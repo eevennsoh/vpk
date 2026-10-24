@@ -122,7 +122,8 @@ This lane serves advisor consults at `gpt-5.6-sol` `xhigh` when the work
 under review came from the **Claude** lane, including plans written by the
 Claude planner itself — see the independence rule in
 [advisor-pattern.md](advisor-pattern.md). Use `--sandbox read-only`, an
-`advisor-<n>/` directory, and a read-only brief.
+`output/remote-gpt/vpk-<type>-<slug>-review/` directory (see *Naming* in
+SKILL.md), and a read-only brief.
 
 ## Failure handling
 

@@ -52,14 +52,15 @@ function format(lines, options = {}) {
 		...options,
 	});
 	for (const line of lines) formatter.line(line);
-	formatter.end();
-	return { ...files, printed };
+	const exitCode = formatter.end();
+	return { ...files, printed, exitCode };
 }
 
 const asLines = (events) => events.map((event) => JSON.stringify(event));
 
 test("a successful run prints one line per step and writes the report from the result", () => {
-	const { printed, eventsFile, reportFile } = format(asLines(SUCCESS_EVENTS));
+	const { printed, eventsFile, reportFile, exitCode } = format(asLines(SUCCESS_EVENTS));
+	assert.equal(exitCode, 0);
 	assert.deepEqual(printed, [
 		`12:07:31  start  claude-haiku-5-5 · bypassPermissions · ${CWD}`,
 		"12:07:31  text   Hi! Let me look around.",
@@ -77,8 +78,9 @@ test("a successful run prints one line per step and writes the report from the r
 	assert.deepEqual(saved, SUCCESS_EVENTS);
 });
 
-test("an error result prints an error line and leaves the report empty", () => {
-	const { printed, reportFile } = format(asLines(ERROR_EVENTS));
+test("an error result prints an error line, leaves the report empty, and fails", () => {
+	const { printed, reportFile, exitCode } = format(asLines(ERROR_EVENTS));
+	assert.equal(exitCode, 1);
 	assert.equal(printed.at(-1), "12:07:31  error  api_error · API Error: 400 Model Id [claude-nope-1] not found · 0.0s · $0.0000 · 1 turn");
 	assert.equal(printed.length, 3);
 	assert.equal(fs.readFileSync(reportFile, "utf8"), "");
@@ -86,12 +88,56 @@ test("an error result prints an error line and leaves the report empty", () => {
 
 test("malformed and partial lines are shown but never crash or reach events.jsonl", () => {
 	const lines = asLines(SUCCESS_EVENTS.slice(0, 2));
-	const { printed, eventsFile } = format(["", "not json at all", '{"type":"assistant","mess', ...lines, "null", "[]"]);
+	const { printed, eventsFile, exitCode } = format(["", "not json at all", '{"type":"assistant","mess', ...lines, "null", "[]"]);
 	assert.equal(printed[0], "12:07:31  ?      not json at all");
 	assert.equal(printed[1], '12:07:31  ?      {"type":"assistant","mess');
 	assert.equal(fs.readFileSync(eventsFile, "utf8").trim().split("\n").length, 4);
 	// No result event: the feed says so, because an empty report is otherwise silent.
 	assert.equal(printed.at(-1), "12:07:31  error  stream ended without a result event");
+	assert.equal(exitCode, 1);
+});
+
+test("empty input fails with an error line", () => {
+	const { printed, exitCode } = format([]);
+	assert.deepEqual(printed, ["12:07:31  error  stream ended without a result event"]);
+	assert.equal(exitCode, 1);
+});
+
+test("a failed events.jsonl write fails the run but still writes the report", () => {
+	const { eventsFile, reportFile } = tempFiles();
+	const printed = [];
+	const formatter = createFormatter({ eventsFile, reportFile, width: 200, print: (line) => printed.push(line) });
+	// A directory cannot be appended to, the same way a full disk refuses the write.
+	fs.rmSync(eventsFile);
+	fs.mkdirSync(eventsFile);
+	for (const line of asLines(SUCCESS_EVENTS)) formatter.line(line);
+	assert.equal(formatter.end(), 1);
+	assert.equal(printed.filter((line) => line.includes("events.jsonl write failed")).length, 1);
+	assert.equal(fs.readFileSync(reportFile, "utf8"), "Hi! I ran `echo ok` and it printed `ok`.\n");
+});
+
+test("the report is published by rename: a failed write leaves no fragment and fails the run", () => {
+	const { dir, reportFile } = tempFiles();
+	const lines = asLines(SUCCESS_EVENTS);
+	const printed = [];
+	const formatter = createFormatter({ eventsFile: path.join(dir, "events.jsonl"), reportFile, width: 200, print: (line) => printed.push(line) });
+	for (const line of lines.slice(0, -1)) formatter.line(line);
+	// Make the directory read-only so the temp file cannot be created.
+	fs.chmodSync(dir, 0o500);
+	try {
+		formatter.line(lines.at(-1));
+	} finally {
+		fs.chmodSync(dir, 0o700);
+	}
+	assert.equal(formatter.end(), 1);
+	assert.ok(printed.some((line) => line.includes("report.md write failed")));
+	assert.equal(fs.readFileSync(reportFile, "utf8"), "");
+	assert.deepEqual(fs.readdirSync(dir).sort(), ["events.jsonl", "report.md"]);
+});
+
+test("a successful report leaves no temp file behind", () => {
+	const { dir } = format(asLines(SUCCESS_EVENTS));
+	assert.deepEqual(fs.readdirSync(dir).sort(), ["events.jsonl", "report.md"]);
 });
 
 test("lines are truncated to the terminal width", () => {
@@ -114,7 +160,7 @@ test("parseArgs requires both output files", () => {
 	assert.equal(parseArgs(["--events", "e", "--report", "r", "--cwd", "/x"]).cwd, "/x");
 });
 
-test("the CLI streams stdin to the feed and keeps the producer's status under pipefail", () => {
+test("the CLI streams stdin to the feed and fails the pipeline under pipefail", () => {
 	const { dir, eventsFile, reportFile } = tempFiles();
 	const input = path.join(dir, "stream.jsonl");
 	fs.writeFileSync(input, `${asLines(SUCCESS_EVENTS).join("\n")}\n`);
@@ -128,4 +174,39 @@ test("the CLI streams stdin to the feed and keeps the producer's status under pi
 
 	const failed = run(`{ cat '${input}'; exit 7; }`);
 	assert.equal(failed.status, 7);
+
+	// claude exiting 0 is not enough: the formatter's own failures reach the wrapper.
+	const empty = run("true");
+	assert.equal(empty.status, 1);
+	assert.match(empty.stdout, /error {2}stream ended without a result event$/mu);
+
+	const truncated = run(`head -n 3 '${input}'`);
+	assert.equal(truncated.status, 1);
+
+	fs.writeFileSync(input, `${asLines(ERROR_EVENTS).join("\n")}\n`);
+	const errorResult = run(`cat '${input}'`);
+	assert.equal(errorResult.status, 1);
+	assert.match(errorResult.stdout, /error {2}api_error/u);
+});
+
+test("the CLI fails when report.md cannot be replaced", () => {
+	const { dir, eventsFile } = tempFiles();
+	const input = path.join(dir, "stream.jsonl");
+	fs.writeFileSync(input, `${asLines(SUCCESS_EVENTS).join("\n")}\n`);
+	const outDir = path.join(dir, "out");
+	fs.mkdirSync(outDir);
+	const reportFile = path.join(outDir, "report.md");
+	fs.writeFileSync(reportFile, "stale");
+	// The existing report can be emptied, but no temp file can be created beside it.
+	fs.chmodSync(outDir, 0o500);
+	const script = path.join(__dirname, "agent-stream-format.js");
+	let run;
+	try {
+		run = spawnSync("bash", ["-c", `set -o pipefail; cat "$3" | node "$0" --events "$1" --report "$2"`, script, eventsFile, reportFile, input], { encoding: "utf8" });
+	} finally {
+		fs.chmodSync(outDir, 0o700);
+	}
+	assert.equal(run.status, 1);
+	assert.match(run.stdout, /error {2}report\.md write failed/u);
+	assert.equal(fs.readFileSync(reportFile, "utf8"), "");
 });

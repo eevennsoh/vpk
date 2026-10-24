@@ -24,12 +24,13 @@ function tempScript(body = "exit 0") {
 	return script;
 }
 
+const git = (...args) => assert.equal(spawnSync("git", args, { encoding: "utf8" }).status, 0, `git ${args.join(" ")}`);
+
 // A real main checkout with one linked worktree, as the planner creates them.
 function linkedWorktree() {
 	const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-repo-")));
 	const main = path.join(dir, "main");
 	const tree = path.join(main, ".claude", "worktrees", "vpk-fix-x");
-	const git = (...args) => assert.equal(spawnSync("git", args, { encoding: "utf8" }).status, 0, `git ${args.join(" ")}`);
 	git("init", "-q", main);
 	git("-C", main, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "init");
 	git("-C", main, "worktree", "add", "-q", "-b", "vpk/fix-x", tree);
@@ -170,12 +171,26 @@ test("a broken herdr never changes the recorded exit status", async () => {
 	assert.equal(fs.readFileSync(`${missing}.exit`, "utf8").trim(), "0");
 });
 
-test("agent names are the surface name, cut to herdr's 32-character limit", () => {
+test("agent names are the surface name, or a hashed prefix that keeps long labels distinct", () => {
+	const AGENT_NAME = /^[a-z][a-z0-9_-]{0,31}$/u;
 	assert.equal(agentNameFor("vpk-fix-sidebar"), "vpk-fix-sidebar");
-	const long = agentNameFor("vpk-research-authentication-middleware-review");
-	assert.equal(long, "vpk-research-authentication-midd");
-	assert.equal(agentNameFor("vpk-research-authentication-mid-x"), "vpk-research-authentication-mid");
-	assert.match(long, /^[a-z][a-z0-9_-]{0,31}$/u);
+	const exact = "vpk-research-authentication-midd";
+	assert.equal(exact.length, 32);
+	assert.equal(agentNameFor(exact), exact);
+
+	const first = agentNameFor("vpk-research-authentication-middleware-1");
+	const second = agentNameFor("vpk-research-authentication-middleware-2");
+	assert.notEqual(first, second);
+	for (const name of [first, second]) {
+		assert.match(name, AGENT_NAME);
+		assert.match(name, /^vpk-research-authenticati-[0-9a-f]{6}$/u);
+	}
+	// Stable across runs, so `herdr agent wait` can be given the same name later.
+	assert.equal(agentNameFor("vpk-research-authentication-middleware-1"), first);
+	// A cut that lands on a dash drops it rather than doubling it before the hash.
+	const dashAt25 = agentNameFor("vpk-docs-abcdefghijklmnop-qrstuvwxyz");
+	assert.match(dashAt25, /^vpk-docs-abcdefghijklmnop-[0-9a-f]{6}$/u);
+	assert.doesNotMatch(dashAt25, /--/u);
 });
 
 test("inline surface runs the script and returns its status", async () => {
@@ -216,11 +231,34 @@ test("a group reuses its tab and splits beside the last pane", async () => {
 	assert.deepEqual(split.slice(2), ["w1:p8", "--direction", "right", "--cwd", process.cwd(), "--no-focus"]);
 });
 
-test("the main checkout is derived from a linked worktree and from itself", () => {
+test("the main checkout is git's first worktree, from a linked worktree and from itself", () => {
 	const { main, tree } = linkedWorktree();
 	assert.equal(mainCheckoutFor(tree), main);
 	assert.equal(mainCheckoutFor(main), main);
 	assert.throws(() => mainCheckoutFor(os.tmpdir()), /is not a git worktree/u);
+});
+
+test("a separate git dir, where git keeps no main checkout path, is refused with a clear error", () => {
+	const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-sep-")));
+	const main = path.join(dir, "checkout");
+	const tree = path.join(dir, "linked");
+	fs.mkdirSync(path.join(dir, "metadata"));
+	git("init", "-q", "--separate-git-dir", path.join(dir, "metadata", "project.git"), main);
+	git("-C", main, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "init");
+	git("-C", main, "worktree", "add", "-q", "-b", "vpk/fix-x", tree);
+	assert.throws(() => mainCheckoutFor(tree), /git does not record the main checkout/u);
+	assert.throws(() => mainCheckoutFor(main), /git does not record the main checkout/u);
+});
+
+test("a worktree of a bare repository is refused with a clear error", () => {
+	const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-bare-")));
+	const seed = path.join(dir, "seed");
+	git("init", "-q", seed);
+	git("-C", seed, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "init");
+	git("clone", "-q", "--bare", seed, path.join(dir, "bare.git"));
+	const tree = path.join(dir, "linked");
+	git("-C", path.join(dir, "bare.git"), "worktree", "add", "-q", "-b", "vpk/fix-x", tree);
+	assert.throws(() => mainCheckoutFor(tree), /belongs to a bare repository/u);
 });
 
 test("a linked worktree opens its own workspace from the main checkout and runs in its root pane", async () => {
