@@ -29,6 +29,7 @@ import {
 } from "@/components/blocks/agent-templates/data/demo-template-agents";
 import { RovoAppBrowserArtifact } from "@/components/projects/rovo-core/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/studio/components/rovo-app-composer";
+import type { RovoAppEmptyStateHeadingAs } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
 import { RovoAppHomeStarterBento } from "@/components/projects/studio/components/rovo-app-home-starter-bento";
 import { HOME_STARTER_DEFAULT_CATEGORY, type HomeStarterCategory } from "@/components/projects/studio/data/home-starter-templates";
 import { StudioAgentsSection } from "@/components/projects/studio/components/rovo-app-custom-agents-table";
@@ -207,6 +208,7 @@ const ChatPanel = dynamic(
 
 interface RovoAppShellProps {
 	embedded?: boolean;
+	headingAs?: RovoAppEmptyStateHeadingAs;
 	initialThreadId?: string | null;
 }
 
@@ -430,7 +432,7 @@ function getViewportPointFromScreenAssistantTarget(
 	};
 }
 
-export function RovoAppShell({ embedded = false, initialThreadId = null }: Readonly<RovoAppShellProps>) {
+export function RovoAppShell({ embedded = false, headingAs = "h1", initialThreadId = null }: Readonly<RovoAppShellProps>) {
 	const nav = useTopNavigation();
 	const studioAgentRegistry = useRovoSelectedAgent() as StudioAgentRegistryContext;
 	const { selectedAgent } = studioAgentRegistry;
@@ -2732,7 +2734,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	// Onboarding tour: anchors steps to the right "Ask Rovo" panel (result card +
 	// composer) and the center config panel (chat starters + Activate). shellRef
-	// wraps the center <main> and excludes the right panel, so it scopes those
+	// wraps the center pane and excludes the right panel, so it scopes those
 	// center selectors cleanly.
 	const askRovoPanelRef = useRef<HTMLDivElement | null>(null);
 	const agentOnboardingTour = useAgentOnboardingTour({
@@ -3211,6 +3213,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		<>
 			<ViewTransition key={chat.runtimeThreadId} enter="fade-in" exit="fade-out" default="none">
 				<RovoAppMessages
+					headingAs={headingAs}
 					activeDocumentId={chat.activeDocument?.id ?? null}
 					compact={isArtifactOpen || shouldShowAgentConfigPane}
 					extraHorizontalPaddingWhenCompact
@@ -3667,7 +3670,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						sendMode={chat.sendMode}
 					/>
 				) : null}
-				<main
+				<div
 					ref={shellRef}
 					className={cn(
 						"relative flex min-h-0 min-w-0 flex-1 bg-background text-foreground",
@@ -3686,7 +3689,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						chatPane={chatPaneContainer}
 						priorityPane={shouldShowAgentConfigPane ? agentConfigPane : undefined}
 					/>
-				</main>
+				</div>
 				{!embedded && shouldShowAgentConfigPane ? (
 					<div
 						ref={askRovoPanelRef}

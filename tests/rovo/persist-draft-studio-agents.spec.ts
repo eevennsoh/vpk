@@ -45,6 +45,26 @@ async function expectSeededAgentInSidebar(page: Page) {
 	await expect(sidebarNav.getByText(SEEDED_AGENT_NAME).first()).toBeVisible();
 }
 
+for (const project of ["studio", "rovo"]) {
+	test(`${project === "studio" ? "Studio" : "Rovo"} landing has one main landmark and one page heading`, async ({ page }) => {
+		await page.goto(appUrl(`/${project}`));
+
+		const introduction = project === "studio" ? "Move work forward with agents" : "How can I help?";
+		const main = page.getByRole("main");
+		await expect(main).toHaveCount(1);
+		await expect(main.getByRole("heading", { level: 1, name: introduction })).toBeVisible();
+		await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+	});
+
+	test(`${project} catalog documentation keeps one page heading above its preview`, async ({ page }) => {
+		await page.goto(appUrl(`/components/projects/${project}`));
+
+		const introduction = project === "studio" ? "Move work forward with agents" : "How can I help?";
+		await expect(page.getByRole("heading", { level: 2, name: introduction })).toBeVisible();
+		await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+	});
+}
+
 test.describe("Studio draft agent persistence", () => {
 	test("seeded draft agent appears in the left-hand Agents nav on first load", async ({ page }) => {
 		await seedSessionAgent(page);

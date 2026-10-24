@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { renderComponent } = require(path.join(process.cwd(), "scripts/lib/render-component.js"));
 
 const MESSAGES_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-app-messages.tsx"), "utf8");
 const CORE_MESSAGES_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/rovo-core/components/rovo-app-messages.tsx"), "utf8");
@@ -35,8 +36,142 @@ test("Rovo app empty state switches greeting and illustrations for Max mode", ()
 	assert.match(EMPTY_STATE_SOURCE, /transform: "translateY\(6px\)"/u);
 	assert.match(EMPTY_STATE_SOURCE, /transform: "translateY\(-6px\)"/u);
 	assert.doesNotMatch(EMPTY_STATE_SOURCE, /scale\(0\.98\)/u);
-	assert.match(EMPTY_STATE_SOURCE, /<motion\.div className=\{cn\(emptyState\.illustrationClassName, "relative"\)[\s\S]*<motion\.div style=\{\{ willChange: "transform, opacity" \}\} variants=\{emptyStateItemVariants\}>[\s\S]*<Heading size="xlarge">/u);
 	assert.match(SHELL_SOURCE, /isMaxMode=\{chat\.isPlanMode\}/u);
+});
+
+const emptyStateMocks = {
+	"motion/react": `
+		export function AnimatePresence({ children }) { return children; }
+		export const useReducedMotion = () => true;
+		export const motion = {
+			div: ({ animate, children, exit, initial, variants, ...props }) => <div {...props}>{children}</div>,
+		};
+	`,
+	"@/components/ui-custom/agent-avatar-visual": "export const AgentAvatarVisual = () => null;",
+	"@/components/projects/sidebar-chat/components/agent-result-card": `
+		export const AgentResultCard = () => null;
+		export const isGeneratedAgentResult = () => false;
+	`,
+	"@/components/projects/studio/components/studio-automation-artifact-list-widget":
+		"export const StudioAutomationArtifactListWidget = () => null;",
+	"@/components/projects/rovo-core/components/rovo-app-messages": `
+		import { RovoAppConversationEmptyState } from "@/components/projects/rovo-core/components/rovo-app-empty-state";
+		export { ROVO_APP_DEFAULT_EMPTY_STATE } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
+		export function RovoAppMessages({ emptyStateConfig, headingAs = "h2", isMaxMode = false, selectedAgent = null }) {
+			return <RovoAppConversationEmptyState customAgent={selectedAgent}
+				emptyStateConfig={emptyStateConfig} hideCustomAgentStarters={true}
+				headingAs={headingAs} isMaxMode={isMaxMode} onSelectSuggestion={async () => {}} />;
+		}
+	`,
+};
+
+const emptyStateSource = `
+	import { RovoAppMessages as RovoMessages } from "@/components/projects/rovo/components/rovo-app-messages";
+	import { RovoAppMessages as StudioMessages } from "@/components/projects/studio/components/rovo-app-messages";
+	export default function EmptyState({ surface, ...props }) {
+		return surface === "studio" ? <StudioMessages {...props} /> : <RovoMessages {...props} />;
+	}
+`;
+
+for (const scenario of [
+	{ surface: "studio", heading: "Move work forward with agents" },
+	{ surface: "studio", isMaxMode: true, heading: "Let's plan your next move" },
+	{ surface: "rovo", heading: "How can I help?" },
+	{ surface: "rovo", isMaxMode: true, heading: "Let's plan your next move" },
+	{ surface: "studio", selectedAgent: { id: "custom-agent", name: "Project guide", starters: [] }, heading: "Project guide" },
+]) {
+	test(`${scenario.surface} empty state exposes one page heading: ${scenario.heading}`, async () => {
+		const { heading, ...props } = scenario;
+		const view = await renderComponent({ source: emptyStateSource, mocks: emptyStateMocks, props: { ...props, headingAs: "h1" } });
+
+		assert.equal(view.getByRole("heading", { name: heading }).tagName, "H1");
+		assert.equal(view.container.querySelectorAll("h1").length, 1);
+	});
+}
+
+const projectHeadingMocks = {
+	...emptyStateMocks,
+	"@/app/rovo/rovo-queue-provider": "export const RovoAppQueueBoundary = ({ children }) => children;",
+	"@/app/studio/rovo-queue-provider": "export const RovoAppQueueBoundary = ({ children }) => children;",
+	"@/components/projects/rovo/components/rovo-app-shell": `
+		import { RovoAppMessages } from "@/components/projects/rovo/components/rovo-app-messages";
+		export const RovoAppShell = (props) => <RovoAppMessages {...props} />;
+	`,
+	"@/components/projects/studio/components/rovo-app-shell": `
+		import { RovoAppMessages } from "@/components/projects/studio/components/rovo-app-messages";
+		export const RovoAppShell = (props) => <RovoAppMessages {...props} />;
+	`,
+};
+
+const projectHeadingSource = `
+	import RovoPage from "@/components/projects/rovo/page";
+	import StudioPage from "@/components/projects/studio/page";
+	import RovoDemo from "@/components/website/demos/projects/rovo-demo";
+	import StudioDemo from "@/components/website/demos/projects/studio-demo";
+	import { DocHero } from "@/components/website/component-doc/components/doc-hero";
+	export default function ProjectHeading({ surface, host }) {
+		const Page = surface === "studio" ? StudioPage : RovoPage;
+		const Demo = surface === "studio" ? StudioDemo : RovoDemo;
+		return <>
+			{host === "docs" ? <DocHero category="projects" importPath={surface} name={surface + " documentation"} /> : null}
+			{host === "standalone" ? <Page /> : <Demo />}
+		</>;
+	}
+`;
+
+for (const surface of ["studio", "rovo"]) {
+	for (const host of ["standalone", "preview", "docs"]) {
+		test(`${surface} ${host} keeps the page title separate from the demo introduction`, async () => {
+			const pathname = host === "docs" ? `/components/projects/${surface}` : host === "preview" ? `/preview/projects/${surface}` : `/${surface}`;
+			const view = await renderComponent({
+				source: projectHeadingSource,
+				props: { surface, host },
+				mocks: { ...projectHeadingMocks, "next/navigation": `export const usePathname = () => ${JSON.stringify(pathname)};` },
+			});
+			const heading = surface === "studio" ? "Move work forward with agents" : "How can I help?";
+
+			assert.equal(view.getByRole("heading", { name: heading }).tagName, host === "docs" ? "H2" : "H1");
+			assert.equal(view.container.querySelectorAll("h1").length, 1);
+			if (host === "docs") {
+				assert.equal(view.getByRole("heading", { name: `${surface} documentation` }).tagName, "H1");
+			}
+		});
+	}
+}
+
+for (const props of [{ isMaxMode: true }, { selectedAgent: { id: "custom-agent", name: "Project guide", starters: [] } }]) {
+	test(`shared intro defaults to a secondary heading for ${props.isMaxMode ? "Max" : "custom agents"}`, async () => {
+		const view = await renderComponent({ source: emptyStateSource, mocks: emptyStateMocks, props: { surface: "studio", ...props } });
+		assert.equal(view.container.querySelectorAll("h1").length, 0);
+		assert.equal(view.getByRole("heading").tagName, "H2");
+	});
+}
+
+test("chat history empty title follows its section heading without changing the generic default", async () => {
+	const view = await renderComponent({
+		source: `
+			import { ControlledChatHistoryPanel } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
+			import { EmptyTitle } from "@/components/ui/empty";
+			import { token } from "@/lib/tokens";
+			export default function HistoryHeading() {
+				return <>
+					<h2>Chat history</h2>
+					<ControlledChatHistoryPanel activeThreadId={null} cancelThreadRun={async () => {}}
+						deleteThread={async () => {}} onNewChat={() => {}} selectThread={async () => {}}
+						showNavigation={false} threads={[]} threadsLoaded={true} />
+					<EmptyTitle style={{ font: token("font.heading.small") }}>Generic empty title</EmptyTitle>
+				</>;
+			}
+		`,
+		mocks: { "@/app/contexts": "export const useRovoChat = () => ({});" },
+	});
+
+	assert.equal(view.getByRole("heading", { name: "No recent chats yet" }).tagName, "H3");
+	assert.equal(view.getByRole("heading", { name: "Generic empty title" }).tagName, "H4");
+	assert.equal(view.getByRole("heading", { name: "No recent chats yet" }).style.font,
+		view.getByRole("heading", { name: "Generic empty title" }).style.font);
+	assert.equal(view.getByRole("heading", { name: "No recent chats yet" }).className,
+		view.getByRole("heading", { name: "Generic empty title" }).className);
 });
 
 test("Rovo app empty state renders selected custom agent profile and starters", () => {

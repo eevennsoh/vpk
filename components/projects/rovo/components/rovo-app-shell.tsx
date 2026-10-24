@@ -21,6 +21,7 @@ import { RovoAppHeaderCore as RovoAppHeader } from "@/components/projects/rovo-c
 import { RovoAppBrowserArtifact } from "@/components/projects/rovo-core/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/rovo/components/rovo-app-composer";
 import { RovoAppMessages } from "@/components/projects/rovo/components/rovo-app-messages";
+import type { RovoAppEmptyStateHeadingAs } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
 import {
 	RovoAppShellPaneLayoutCore as RovoAppShellPaneLayout,
 	useRovoAppShellPanePresentation,
@@ -102,6 +103,7 @@ import { motionEase } from "@/lib/motion";
 
 interface RovoAppShellProps {
 	embedded?: boolean;
+	headingAs?: RovoAppEmptyStateHeadingAs;
 	initialThreadId?: string | null;
 }
 
@@ -392,7 +394,7 @@ function RovoAppDirectoryAutocompleteRows({
 	);
 }
 
-export function RovoAppShell({ embedded = false, initialThreadId = null }: Readonly<RovoAppShellProps>) {
+export function RovoAppShell({ embedded = false, headingAs = "h1", initialThreadId = null }: Readonly<RovoAppShellProps>) {
 	const nav = useTopNavigation();
 	const { selectedAgent } = useRovoSelectedAgent();
 	const selectedAgentContextDescription = getRovoAgentPromptContext(selectedAgent);
@@ -1700,6 +1702,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		<>
 			<ViewTransition key={chat.runtimeThreadId} enter="fade-in" exit="fade-out" default="none">
 				<RovoAppMessages
+					headingAs={headingAs}
 					activeDocumentId={chat.activeDocument?.id ?? null}
 					compact={isArtifactOpen}
 					extraHorizontalPaddingWhenCompact
@@ -2066,13 +2069,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					}}
 					onOpenDocument={(documentId) => void chat.openDocument(documentId)}
 				/>
-				<main ref={shellRef} className="relative flex min-h-0 min-w-0 flex-1 bg-background px-3 text-foreground">
+				<div ref={shellRef} className="relative flex min-h-0 min-w-0 flex-1 bg-background px-3 text-foreground">
 					<RovoAppShellPaneLayout
 						presentation={panePresentation}
 						artifactPane={artifactPane}
 						chatPane={chatPaneContainer}
 					/>
-				</main>
+				</div>
 			</div>
 			<ClickyOverlay
 				state={clicky.state}

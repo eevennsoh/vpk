@@ -31,5 +31,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "public/1p/rovo-stage-kit"]
+  "exclude": ["node_modules", "output", "public/1p/rovo-stage-kit"]
 }

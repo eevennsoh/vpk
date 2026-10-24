@@ -490,7 +490,7 @@ function ChatHistoryPanelView({
 				) : threads.length === 0 ? (
 					<Empty width="narrow" className="gap-4 px-3 py-0">
 						<EmptyHeader>
-							<EmptyTitle style={{ font: token("font.heading.small") }}>No recent chats yet</EmptyTitle>
+							<EmptyTitle as="h3" style={{ font: token("font.heading.small") }}>No recent chats yet</EmptyTitle>
 							<EmptyDescription>
 								Start a new chat to see it here.
 							</EmptyDescription>

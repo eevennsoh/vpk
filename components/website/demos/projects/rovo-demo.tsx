@@ -8,5 +8,5 @@ export default function RovoDemo() {
 	const pathname = usePathname() ?? "";
 	const embedded = useProjectDemoEmbedded() && !pathname.startsWith("/components/");
 
-	return <RovoPage embedded={embedded} />;
+	return <RovoPage embedded={embedded} headingAs={pathname.startsWith("/components/") ? "h2" : "h1"} />;
 }
