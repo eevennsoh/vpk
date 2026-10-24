@@ -360,7 +360,7 @@ dirty tree it will silently fold into its diff.
    `--worktree` off only under `--no-worktree`.
 5. **Read only the report file.** Never stream or parse raw worker output —
    raw material stays in worker contexts, which keeps the planner's context
-   window for review. The live feed and `events.jsonl` are for the human;
+   window for review. The pane status and `events.jsonl` are for the human;
    tail them only when the user asks for progress or a run needs diagnosing
    (see *Checking progress*). An absent or empty report does **not**
    imply an absent diff: a worker killed mid-run may have already written
@@ -509,10 +509,14 @@ same label (`--group`, else `--label`) when there is one, otherwise it gets a
 new tab with that label.
 
 The `run.sh` keeps the lane's redirects: the report still lands in
-`report.md`, and the pane shows live progress for the user — the GPT lane's
-stderr stream, or on the Claude lane one timestamped line per tool call and
-text snippet from `scripts/agent-stream-format.js`. The planner reads only
-the report, as before. Each pane reports its state to
+`report.md`, and the pane shows the user the worker's status, not a per-step
+feed. On the GPT lane that is the codex stderr stream; on the Claude lane
+`scripts/agent-stream-format.js` prints `working · <model> · started HH:MM`,
+a `working · 4m12s · 23 steps` line rewritten in place, then
+`done · 8m54s · $5.47 · 16 turns` or `failed · <reason>`. Pass it `--feed`
+only to debug a run (see
+[references/claude-executor.md](references/claude-executor.md)). The planner
+reads only the report, as before. Each pane reports its state to
 herdr, so the sidebar shows the worker as `working`, then `done` (with `exit N`
 on failure), and `herdr agent wait <label>` can block on it. Panes are left
 open after exit so the user can scroll them; close them only when the user
@@ -522,10 +526,14 @@ asks. Conventions, status reporting, and cleanup: `.agents/docs/herdr.md`.
 
 | Question | Where to look |
 | --- | --- |
-| What is it doing right now? | the worker's herdr tab (live feed) |
-| Full trail, after the pane closed | `events.jsonl` (Claude lane, one JSON event per line) |
+| Is it still running? | the herdr sidebar or the worker's pane: `working`, `done`, or `failed` |
+| What has it done, step by step? | `events.jsonl` (Claude lane, one JSON event per line); rerun with `--feed` only to debug |
 | What has actually landed? | `git status` / `git diff` in the task worktree |
 | What did it conclude? | `report.md` |
+
+There is no "needs input" state. Workers run headless with permissions
+skipped, so they cannot stop to ask; a blocked worker ends as `failed`, or as
+`done` with the blocker written in its report.
 
 ## Artifacts
 

@@ -58,8 +58,69 @@ function format(lines, options = {}) {
 
 const asLines = (events) => events.map((event) => JSON.stringify(event));
 
-test("a successful run prints one line per step and writes the report from the result", () => {
+const feed = (lines, options = {}) => format(lines, { feed: true, ...options });
+
+test("by default a successful run prints only the start and done lines", () => {
 	const { printed, eventsFile, reportFile, exitCode } = format(asLines(SUCCESS_EVENTS));
+	assert.equal(exitCode, 0);
+	assert.deepEqual(printed, ["working · claude-haiku-5-5 · started 12:07", "done · 7s · $0.01 · 2 turns"]);
+	assert.equal(fs.readFileSync(reportFile, "utf8"), "Hi! I ran `echo ok` and it printed `ok`.\n");
+	assert.equal(fs.readFileSync(eventsFile, "utf8").trim().split("\n").length, SUCCESS_EVENTS.length);
+});
+
+test("by default an error result prints a failed line with a short reason", () => {
+	const { printed, exitCode } = format(asLines(ERROR_EVENTS));
+	assert.equal(exitCode, 1);
+	assert.deepEqual(printed, ["working · claude-nope-1 · started 12:07", "failed · api_error · API Error: 400 Model Id [claude-nope-1] not found"]);
+});
+
+test("by default formatter failures end in one failed line", () => {
+	assert.deepEqual(format([]).printed, ["failed · stream ended without a result event"]);
+	const bad = { type: "assistant", message: { role: "assistant", content: "plain string, not blocks" }, ...SESSION };
+	const { printed, exitCode } = format(asLines([SUCCESS_EVENTS[1], bad, SUCCESS_EVENTS.at(-1)]));
+	assert.equal(exitCode, 1);
+	assert.equal(printed.length, 2);
+	assert.match(printed[1], /^failed · could not handle assistant event: /u);
+});
+
+// Feeds one line per `stepMs` of a clock the test controls; `endMs` is the time at end().
+function formatTimed(lines, { stepMs, endMs, ...options }) {
+	const files = tempFiles();
+	const printed = [];
+	const statuses = [];
+	const start = new Date(2026, 9, 24, 12, 7, 31).getTime();
+	let offset = 0;
+	const formatter = createFormatter({
+		...files,
+		width: 200,
+		now: () => new Date(start + offset),
+		print: (line) => printed.push(line),
+		status: (text) => statuses.push(text),
+		...options,
+	});
+	lines.forEach((line, index) => {
+		offset = index * stepMs;
+		formatter.line(line);
+	});
+	offset = endMs ?? offset;
+	return { printed, statuses, exitCode: formatter.end() };
+}
+
+test("on a TTY the status line is rewritten in place at most once per second", () => {
+	const { printed, statuses } = formatTimed(asLines(SUCCESS_EVENTS), { stepMs: 400 });
+	assert.deepEqual(printed, ["working · claude-haiku-5-5 · started 12:07", "done · 7s · $0.01 · 2 turns"]);
+	// Events 400ms apart, init at 0.4s: rewrites at 0.4s, 1.6s, 2.8s, 4.0s, cleared before `done`.
+	assert.deepEqual(statuses, ["working · 0s · 0 steps", "working · 2s · 0 steps", "working · 3s · 2 steps", "working · 4s · 4 steps", ""]);
+});
+
+test("the done line falls back to wall-clock time and pluralizes", () => {
+	const { duration_ms: _, ...rest } = SUCCESS_EVENTS.at(-1);
+	const { printed } = formatTimed(asLines([SUCCESS_EVENTS[1], { ...rest, num_turns: 1, total_cost_usd: 5.4712 }]), { stepMs: 1000, endMs: 534_000, status: null });
+	assert.equal(printed.at(-1), "done · 8m54s · $5.47 · 1 turn");
+});
+
+test("--feed prints one line per step and writes the report from the result", () => {
+	const { printed, eventsFile, reportFile, exitCode } = feed(asLines(SUCCESS_EVENTS));
 	assert.equal(exitCode, 0);
 	assert.deepEqual(printed, [
 		`12:07:31  start  claude-haiku-5-5 · bypassPermissions · ${CWD}`,
@@ -78,17 +139,17 @@ test("a successful run prints one line per step and writes the report from the r
 	assert.deepEqual(saved, SUCCESS_EVENTS);
 });
 
-test("an error result prints an error line, leaves the report empty, and fails", () => {
-	const { printed, reportFile, exitCode } = format(asLines(ERROR_EVENTS));
+test("--feed: an error result prints an error line, leaves the report empty, and fails", () => {
+	const { printed, reportFile, exitCode } = feed(asLines(ERROR_EVENTS));
 	assert.equal(exitCode, 1);
 	assert.equal(printed.at(-1), "12:07:31  error  api_error · API Error: 400 Model Id [claude-nope-1] not found · 0.0s · $0.0000 · 1 turn");
 	assert.equal(printed.length, 3);
 	assert.equal(fs.readFileSync(reportFile, "utf8"), "");
 });
 
-test("malformed and partial lines are shown but never crash or reach events.jsonl", () => {
+test("--feed: malformed and partial lines are shown but never crash or reach events.jsonl", () => {
 	const lines = asLines(SUCCESS_EVENTS.slice(0, 2));
-	const { printed, eventsFile, exitCode } = format(["", "not json at all", '{"type":"assistant","mess', ...lines, "null", "[]"]);
+	const { printed, eventsFile, exitCode } = feed(["", "not json at all", '{"type":"assistant","mess', ...lines, "null", "[]"]);
 	assert.equal(printed[0], "12:07:31  ?      not json at all");
 	assert.equal(printed[1], '12:07:31  ?      {"type":"assistant","mess');
 	assert.equal(fs.readFileSync(eventsFile, "utf8").trim().split("\n").length, 4);
@@ -97,8 +158,8 @@ test("malformed and partial lines are shown but never crash or reach events.json
 	assert.equal(exitCode, 1);
 });
 
-test("empty input fails with an error line", () => {
-	const { printed, exitCode } = format([]);
+test("--feed: empty input fails with an error line", () => {
+	const { printed, exitCode } = feed([]);
 	assert.deepEqual(printed, ["12:07:31  error  stream ended without a result event"]);
 	assert.equal(exitCode, 1);
 });
@@ -106,7 +167,7 @@ test("empty input fails with an error line", () => {
 test("a failed events.jsonl write fails the run but still writes the report", () => {
 	const { eventsFile, reportFile } = tempFiles();
 	const printed = [];
-	const formatter = createFormatter({ eventsFile, reportFile, width: 200, print: (line) => printed.push(line) });
+	const formatter = createFormatter({ eventsFile, reportFile, feed: true, width: 200, print: (line) => printed.push(line) });
 	// A directory cannot be appended to, the same way a full disk refuses the write.
 	fs.rmSync(eventsFile);
 	fs.mkdirSync(eventsFile);
@@ -155,7 +216,7 @@ test("a report that cannot be published fails the run and leaves report.md empty
 	const { dir, reportFile } = tempFiles();
 	const lines = asLines(SUCCESS_EVENTS);
 	const printed = [];
-	const formatter = createFormatter({ eventsFile: path.join(dir, "events.jsonl"), reportFile, width: 200, print: (line) => printed.push(line) });
+	const formatter = createFormatter({ eventsFile: path.join(dir, "events.jsonl"), reportFile, feed: true, width: 200, print: (line) => printed.push(line) });
 	for (const line of lines.slice(0, -1)) formatter.line(line);
 	failRenames(t);
 	formatter.line(lines.at(-1));
@@ -168,7 +229,7 @@ test("a report that cannot be published fails the run and leaves report.md empty
 
 test("an event the formatter cannot handle fails the run but keeps reading", () => {
 	const bad = { type: "assistant", message: { role: "assistant", content: "plain string, not blocks" }, ...SESSION };
-	const { printed, reportFile, exitCode } = format(asLines([bad, SUCCESS_EVENTS.at(-1)]));
+	const { printed, reportFile, exitCode } = feed(asLines([bad, SUCCESS_EVENTS.at(-1)]));
 	assert.equal(exitCode, 1);
 	assert.match(printed[0], /^12:07:31 {2}error {2}could not handle assistant event: /u);
 	// Later events are still shown and the report is still written.
@@ -181,7 +242,7 @@ for (const [name, value] of [["missing", undefined], ["non-string", 42]]) {
 		const { result: _, ...rest } = SUCCESS_EVENTS.at(-1);
 		const malformed = value === undefined ? rest : { ...rest, result: value };
 		// A good result first: the malformed one that follows must not leave it standing.
-		const { printed, reportFile, exitCode } = format(asLines([SUCCESS_EVENTS.at(-1), malformed]));
+		const { printed, reportFile, exitCode } = feed(asLines([SUCCESS_EVENTS.at(-1), malformed]));
 		assert.equal(exitCode, 1);
 		assert.equal(printed.at(-1), "12:07:31  error  result event has no result text");
 		assert.equal(fs.readFileSync(reportFile, "utf8"), "");
@@ -195,7 +256,7 @@ test("a successful report leaves no temp file behind", () => {
 
 test("lines are truncated to the terminal width", () => {
 	const longCommand = { ...SUCCESS_EVENTS[5], message: { content: [{ type: "tool_use", name: "Bash", input: { command: "x".repeat(200) } }] } };
-	const { printed } = format([JSON.stringify(longCommand)], { width: 40 });
+	const { printed } = feed([JSON.stringify(longCommand)], { width: 40 });
 	assert.equal(printed[0].length, 40);
 	assert.ok(printed[0].endsWith("…"));
 });
@@ -207,23 +268,29 @@ test("tool summaries pick the key input and fall back to the first string", () =
 	assert.equal(summarizeTool("mcp__x__y", { count: 3, query: "find me" }), "find me");
 });
 
-test("parseArgs requires both output files", () => {
+test("parseArgs requires both output files and takes --feed as a bare flag", () => {
 	assert.throws(() => parseArgs(["--report", "r.md"]), /--events is required/u);
 	assert.throws(() => parseArgs(["--events", "e.jsonl"]), /--report is required/u);
 	assert.equal(parseArgs(["--events", "e", "--report", "r", "--cwd", "/x"]).cwd, "/x");
+	assert.equal(parseArgs(["--events", "e", "--report", "r"]).feed, undefined);
+	assert.equal(parseArgs(["--feed", "--events", "e", "--report", "r"]).feed, true);
 });
 
-test("the CLI streams stdin to the feed and fails the pipeline under pipefail", () => {
+test("the CLI prints a quiet status off a TTY, a feed with --feed, and fails the pipeline under pipefail", () => {
 	const { dir, eventsFile, reportFile } = tempFiles();
 	const input = path.join(dir, "stream.jsonl");
 	fs.writeFileSync(input, `${asLines(SUCCESS_EVENTS).join("\n")}\n`);
 	const script = path.join(__dirname, "agent-stream-format.js");
-	const run = (producer) => spawnSync("bash", ["-c", `set -o pipefail; ${producer} | node "$0" --events "$1" --report "$2"`, script, eventsFile, reportFile], { encoding: "utf8" });
+	const run = (producer, flags = "") => spawnSync("bash", ["-c", `set -o pipefail; ${producer} | node "$0" --events "$1" --report "$2" ${flags}`, script, eventsFile, reportFile], { encoding: "utf8" });
 
 	const ok = run(`cat '${input}'`);
 	assert.equal(ok.status, 0);
-	assert.match(ok.stdout, /^\d\d:\d\d:\d\d {2}Bash {3}pnpm run typecheck$/mu);
+	assert.match(ok.stdout, /^working · claude-haiku-5-5 · started \d\d:\d\d\ndone · 7s · \$0\.01 · 2 turns\n$/u);
 	assert.equal(fs.readFileSync(reportFile, "utf8"), "Hi! I ran `echo ok` and it printed `ok`.\n");
+
+	const fed = run(`cat '${input}'`, "--feed");
+	assert.equal(fed.status, 0);
+	assert.match(fed.stdout, /^\d\d:\d\d:\d\d {2}Bash {3}pnpm run typecheck$/mu);
 
 	const failed = run(`{ cat '${input}'; exit 7; }`);
 	assert.equal(failed.status, 7);
@@ -231,7 +298,7 @@ test("the CLI streams stdin to the feed and fails the pipeline under pipefail", 
 	// claude exiting 0 is not enough: the formatter's own failures reach the wrapper.
 	const empty = run("true");
 	assert.equal(empty.status, 1);
-	assert.match(empty.stdout, /error {2}stream ended without a result event$/mu);
+	assert.equal(empty.stdout, "failed · stream ended without a result event\n");
 
 	const truncated = run(`head -n 3 '${input}'`);
 	assert.equal(truncated.status, 1);
@@ -239,7 +306,7 @@ test("the CLI streams stdin to the feed and fails the pipeline under pipefail", 
 	fs.writeFileSync(input, `${asLines(ERROR_EVENTS).join("\n")}\n`);
 	const errorResult = run(`cat '${input}'`);
 	assert.equal(errorResult.status, 1);
-	assert.match(errorResult.stdout, /error {2}api_error/u);
+	assert.match(errorResult.stdout, /^failed · api_error · /mu);
 });
 
 test("the CLI fails when report.md cannot be replaced", () => {
@@ -260,6 +327,6 @@ test("the CLI fails when report.md cannot be replaced", () => {
 		fs.chmodSync(outDir, 0o700);
 	}
 	assert.equal(run.status, 1);
-	assert.match(run.stdout, /error {2}report\.md write failed/u);
+	assert.match(run.stdout, /^failed · report\.md write failed/mu);
 	assert.equal(fs.readFileSync(reportFile, "utf8"), "");
 });

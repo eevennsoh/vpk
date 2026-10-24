@@ -69,6 +69,15 @@ The pane reports its own state, so workers show in the sidebar and
 | Script exits N | `idle` with message and state label `exit N` | `done`, label `exit N` |
 | 15 s after exit | released | gone |
 
+The pane itself shows the same level of detail: a `/vpk-remote` Claude-lane
+worker prints `working · <model> · started HH:MM`, one status line rewritten
+in place, then `done · <time> · <cost> · <turns>` or `failed · <reason>`
+(`scripts/agent-stream-format.js`). The step-by-step trail is in the worker's
+`events.jsonl`; the formatter's `--feed` flag prints it to the pane for
+debugging. Headless workers cannot ask for input, so a run never reports
+`blocked`; a stuck worker ends as `exit N`, or as `done` with the blocker in
+its report.
+
 The pane is also named after the label, so another pane can block on it. A
 label over herdr's 32-character agent name limit becomes its first 25
 characters plus a 6-character hash of the full label, so long labels that

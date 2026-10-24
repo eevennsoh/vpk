@@ -55,11 +55,21 @@ mkdir -p "$worker_root"
 Run via Bash with `run_in_background: true` (a Codex planner runs it in the
 foreground; see *Codex as the planner* in SKILL.md). `claude -p` streams one
 JSON event per line on **stdout**; `scripts/agent-stream-format.js` saves
-every event to `events.jsonl`, prints one timestamped line per step to the
-pane (`12:14:40  Edit   components/visual/x/index.tsx`, `Bash` commands,
-one-line text snippets, then `done` or `error` with duration and cost), and
-writes the final `result` text to `report.md` — the analogue of codex's
-`--output-last-message`. The report is written to a temp file and renamed
+every event to `events.jsonl`, shows only a status in the pane, and writes
+the final `result` text to `report.md` — the analogue of codex's
+`--output-last-message`. The pane matches herdr's sidebar statuses:
+
+```text
+working · claude-opus-5[1m] · started 14:02
+working · 4m12s · 23 steps          # TTY only, rewritten in place at most once per second
+done · 8m54s · $5.47 · 16 turns     # or: failed · <short reason>
+```
+
+It never prints tool calls, commands, or assistant text. `events.jsonl` is the
+full trail; append `--feed` to the `node "$formatter"` line only when debugging
+a run, to get one timestamped line per step instead
+(`12:14:40  Edit   components/visual/x/index.tsx`). `--feed` changes the pane
+output only: the files, exit codes, and failure rules are the same. The report is written to a temp file and renamed
 into place, so it is either empty or complete. An error result leaves it
 empty.
 
