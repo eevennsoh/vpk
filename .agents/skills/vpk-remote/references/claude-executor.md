@@ -31,7 +31,10 @@ Write this as the worker's `run.sh` (`agent-surface.js` runs it with
 `bash`). Expand `worker_root` and `formatter` to absolute **main-checkout**
 paths when writing the file — the surface may start it with the task worktree
 as its cwd — and add `cd "$tree" || exit 1` after `set -o pipefail` when the
-worker writes in a task worktree.
+worker writes in a task worktree. The directory already holds the planner's
+`brief.md` and `task.json`; the run adds `report.md`, `events.jsonl`,
+`stderr.log`, and the `run.sh.exit` the surface wrapper writes, which
+`scripts/vpk-remote-status.js` reads.
 
 ```bash
 set -o pipefail

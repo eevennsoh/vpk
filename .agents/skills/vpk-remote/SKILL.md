@@ -111,6 +111,7 @@ Examples:
 /vpk-remote second opinion from opus on this plan               → advisor consult
 /vpk-remote I'm out of credits, move this chat to sol            → move the conversation, sol
 /vpk-remote continue my last session on opus at max             → move the conversation, --continue, opus, max
+/vpk-remote what's the status of my tasks                        → status table (see *Status*)
 ```
 
 Always echo the parsed plan in one line before acting (app, billing, model, effort),
@@ -127,6 +128,7 @@ Flags still work and override prose. They are never required.
 | `--advisor` / `--no-advisor` | *(no value)* | **on** |
 | `--fanout` / `--single` | *(no value)* | **auto** (see *Worker shapes*) |
 | `--worktree` / `--no-worktree` | *(no value)* | **on for briefs that write** (see *Worktree isolation*) |
+| `--status` / `status` | `--all`, or a task name | off; see *Status* |
 
 `/vpk-remote` with nothing after it asks what to run; it does not move the
 conversation unless the user says so.
@@ -346,7 +348,20 @@ dirty tree it will silently fold into its diff.
 3. **Freeze the brief** to a file — Goal / Exact repo paths / Constraints /
    Non-goals / Proof expected / Output shape, per
    [references/dispatch-patterns.md](references/dispatch-patterns.md). Never
-   inline a brief into a shell command.
+   inline a brief into a shell command. Beside it, write `task.json`, the
+   record *Status* reads:
+
+   ```json
+   { "name": "vpk-feat-ui-generation", "goal": "One-line summary", "type": "feat",
+     "branch": "vpk/feat-ui-generation", "worktree": ".claude/worktrees/vpk-feat-ui-generation",
+     "lane": "claude", "model": "claude-opus-5-5[1m]", "effort": "high",
+     "kind": "worker", "createdAt": "<ISO time>" }
+   ```
+
+   `kind` is `worker`, `review` (an advisor on a worker; its name ends in
+   `-review`), or `research` (read-only; `branch` and `worktree` are `null`).
+   Add `"advisor": false` under `--no-advisor`, so status does not ask for a
+   review that was skipped on purpose.
 4. **Dispatch** via background Bash (Codex planner: foreground; see *Codex as
    the planner*) using the lane's canonical command:
    [references/gpt-executor.md](references/gpt-executor.md) or
@@ -541,20 +556,48 @@ There is no "needs input" state. Workers run headless with permissions
 skipped, so they cannot stop to ask; a blocked worker exits non-zero, or
 exits 0 with the blocker written in its report.
 
+## Status
+
+`/vpk-remote --status`, `/vpk-remote status`, and plain English asking about
+task status ("what's the status of my tasks", "what's running") run, from the
+main checkout:
+
+```bash
+node scripts/vpk-remote-status.js            # --status
+node scripts/vpk-remote-status.js --all      # --status --all: include done tasks
+node scripts/vpk-remote-status.js --task <name>   # --status <name>: every run, report, branch, PR
+```
+
+Show its table to the user as is, in a code block, followed by at most two
+sentences on what needs attention. Status is read-only: it never dispatches,
+moves the conversation, or runs preflight. When the planner needs the facts
+for its own decisions, it runs `--json` instead.
+
+The script reads every `output/remote-<lane>/<name>/` directory, joins a
+worker with its `-review` advisors into one row, and derives one status from
+the run exit files, the report's `## Blockers`, the review verdict, git, the
+PR, and live `claude -p` / `codex exec` processes: `running`, `stopped` (no
+exit file and no process), `failed`, `blocked`, `needs fixes`, `reviewing`,
+`needs review`, `ready to ship`, `PR open`, `merged`, `done`, or
+`done (read-only)`. Each comes with its next action. Directories without
+`task.json` still show, with a blank goal. If `gh` fails, the PR column shows
+`?`.
+
 ## Artifacts
 
 Everything lives under gitignored `output/`:
 
 ```text
-output/remote-gpt/vpk-<type>-<slug>/          # home/ (CODEX_HOME), brief.md, report.md, followup-<k>.md
-output/remote-claude/vpk-<type>-<slug>/       # brief.md, report.md, events.jsonl, stderr.log, followup-<k>.md
+output/remote-gpt/vpk-<type>-<slug>/          # home/ (CODEX_HOME), task.json, brief.md, run.sh(.exit), report.md, followup-<k>.md
+output/remote-claude/vpk-<type>-<slug>/       # task.json, brief.md, run.sh(.exit), report.md, events.jsonl, stderr.log, followup-<k>.md
 output/remote-<lane>/vpk-<type>-<slug>-<n>/   # one per fan-out worker
 output/remote-<lane>/vpk-<type>-<slug>-review/  # advisor consults, same layout as that lane's workers
 ```
 
 The directory carries the surface's name (see *Naming*), so one directory per
 surface; never reuse a directory across concurrent workers. Follow-ups reuse
-the worker's directory as `followup-<k>.md`.
+the worker's directory as `followup-<k>.md`, run by `run-<k>.sh`, so each run
+keeps its own exit file.
 
 Artifacts stay under the **main checkout's** `output/`, never inside a task
 worktree, so reports from concurrently dispatched tasks stay readable in one
