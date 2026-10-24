@@ -3,7 +3,9 @@
 Run this gate before every merge, including merge-back of an existing PR. The
 `CI / PR checks` status must pass before merge. GitHub does not enforce this on
 the current plan, so this gate does: an unreported or running required check
-counts as pending, never as passing. Never use `--admin` to bypass checks or
+counts as pending, never as passing. The one exception is billing-blocked
+Actions, gated on a local `pnpm run ci:pr` instead (see
+[Billing-blocked CI](#billing-blocked-ci)). Never use `--admin` to bypass checks or
 conversation resolution.
 
 ## Codex auto-review status
@@ -64,10 +66,52 @@ seconds. A cancelled or timed-out run is `interrupted`, not `failing`:
 the full `--wait` after each, and never reruns a real failure. `PR checks` is required by default; pass `--required-check <name>`
 (repeatable) to replace that list. Exit 2 means at least one
 review, check, or merge-state condition remains; inspect the same JSON rather
-than weakening the gate. An API/schema failure exits 1. If a REST comment stays
+than weakening the gate. Exit 3 means the only blocker is billing-blocked
+GitHub Actions; follow [Billing-blocked CI](#billing-blocked-ci). An API/schema failure exits 1. If a REST comment stays
 missing after the bounded retries, or any surface cannot be fetched, stop and
 report its ID. Do not use scraped HTML, undocumented endpoints, or browser
 automation to manufacture a thread ID.
+
+## Billing-blocked CI
+
+When GitHub account billing fails (a failed payment or a spending limit), every
+Actions job reports `FAILURE` after 1-2 seconds without starting. The check-run
+annotation reads: "The job was not started because recent account payments
+have failed or your spending limit needs to be increased. Please check the
+'Billing & plans' section in your settings". The helper reads each failed
+check's annotations and lists those checks under `checks.billingBlocked`, not
+`checks.failing`. When they are the only non-passing checks, `checks.state` is
+`billing-blocked`. It never reruns them.
+
+If billing is the problem, always skip GitHub CI. On exit 3, do not ask the
+user, wait, or retry. Instead:
+
+1. In the PR's checkout, confirm `git rev-parse HEAD` equals the reported
+   `headRefOid` and the tree is clean. Then run the local gate and capture its
+   exit code with `$?` (zsh has no `PIPESTATUS`):
+
+   ```bash
+   pnpm run ci:pr; ci_status=$?
+   ```
+
+2. Merge only if `ci_status` is 0. A non-zero result is a real failure: stop
+   and report it as you would a failing check.
+3. The other gates still apply. Exit 3 already means the review gate is clear
+   and the merge state is `CLEAN` or `UNSTABLE`. `UNSTABLE` is expected here
+   only because of the failed billing check. `DIRTY`, `BLOCKED`, or any
+   unresolved thread exits 2 instead.
+4. Record the exception on the PR before merging:
+
+   ```bash
+   gh pr comment <number> --body "GitHub Actions was billing-blocked (jobs not started: account payment or spending limit). Local \`pnpm run ci:pr\` exited <ci_status> on <head-sha>."
+   ```
+
+5. Merge with `gh pr merge <number> --merge --delete-branch`. Never add
+   `--admin`; branch protection is not enforced here, so it is not needed.
+
+Billing-blocked is the only CI exception. A check with `checks.state:
+"failing"`, including a real failure next to billing-blocked checks, still
+blocks.
 
 ## Classify and remediate
 
