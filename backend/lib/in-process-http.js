@@ -121,6 +121,13 @@ function createCapturedResponse() {
 		return response;
 	};
 
+	response.setHeaders = (values) => {
+		for (const [name, value] of normalizeHeaderEntries(values)) {
+			response.setHeader(name, value);
+		}
+		return response;
+	};
+
 	response.getHeader = (name) => headers.get(String(name).toLowerCase());
 
 	response.writeHead = (statusCode, statusTextOrHeaders, maybeHeaders) => {
