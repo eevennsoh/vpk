@@ -28,6 +28,7 @@
 		},
 		{
 			"id": "plate",
+			"fixed": true,
 			"kind": "tray",
 			"at": [
 				6,

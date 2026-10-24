@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "bench",
+			"fixed": true,
 			"kind": "tray",
 			"at": [
 				0,

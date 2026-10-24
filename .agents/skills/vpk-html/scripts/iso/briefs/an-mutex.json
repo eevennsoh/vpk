@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "stand",
+			"fixed": true,
 			"kind": "box",
 			"at": [
 				48,

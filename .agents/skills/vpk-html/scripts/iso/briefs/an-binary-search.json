@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "plinth",
+			"fixed": true,
 			"kind": "box",
 			"at": [
 				38,

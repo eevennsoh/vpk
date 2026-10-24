@@ -258,6 +258,133 @@ test("select: rest-polygon hits, one active part, staggered lift, keyboard isola
 	});
 });
 
+test("select: a lifted part keeps its painter order, so it never jumps in front of a nearer part", async () => {
+	await withRuntime(renderRegion(buildScene(SELECT)), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const svg = stage.querySelector("svg");
+		const order = () => [...svg.querySelectorAll("[data-vpk-iso-part]")].map(el => el.getAttribute("data-vpk-iso-part")).join(" ");
+		const rest = order();
+		assert.ok(rest.indexOf("card-a") < rest.indexOf("card-b"), "card-a is drawn behind the nearer card-b at rest");
+		const cardA = svg.querySelector('[data-vpk-iso-part="card-a"]');
+		const [cx, cy] = centroid(cardA.querySelector('[data-vpk-iso-role="fill"]').getAttribute("d"));
+		pointer(stage, "pointermove", cx, cy);
+		step(800);
+		assert.equal(cardA.getAttribute("class"), "is-active");
+		assert.ok(cardA.hasAttribute("transform"), "card-a lifts");
+		assert.equal(order(), rest, "lifting does not reorder the parts");
+		assert.equal(svg.hasAttribute("data-vpk-iso-lift-z"), false, "no lift-height re-sort input is emitted");
+	});
+});
+
+// A plinth (tray) under a floating card and a pillar: the plinth is the figure's support, so it is fixed; the card's guide ends on
+// the tray, which is drawn as plinth:back and plinth:front; the pillar grows.
+const GROUND = {
+	schema: "vpk-iso-brief/1",
+	id: "ground-kinds",
+	figId: "FIG_004",
+	title: "Ground kinds",
+	label: "A card floating over a plinth beside a pillar.",
+	parts: [
+		{ id: "plinth", kind: "tray", at: [0, 0, 0], size: [120, 80, 4], label: "plinth" },
+		{ id: "card", kind: "slab", at: [10, 10, 20], size: [40, 40, 3], label: "card" },
+		{ id: "pillar", kind: "box", at: [70, 20, 4], size: [12, 12, 10], r: 0, label: "pillar", liftMode: "grow" },
+	],
+	focal: "card",
+	interact: { behavior: "select", rest: "rest", guides: true },
+};
+
+test("select guides: an end named by a tray's id follows by unit name, and the guide moves with its lifted part", async () => {
+	await withRuntime(renderRegion(buildScene(GROUND)), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const svg = stage.querySelector("svg");
+		const guide = svg.querySelector('[data-vpk-iso-role="guide"]');
+		assert.ok(guide, "the select figure draws its guide");
+		assert.equal(guide.getAttribute("data-vpk-iso-to"), "plinth", "the guide names the tray by its id");
+		assert.equal(svg.querySelector('[data-vpk-iso-part="plinth"]'), null, "no part carries the bare tray id");
+		const rest = guide.getAttribute("d");
+		const card = svg.querySelector('[data-vpk-iso-part="card"]');
+		const [cx, cy] = centroid(card.querySelector('[data-vpk-iso-role="fill"]').getAttribute("d"));
+		pointer(stage, "pointermove", cx, cy);
+		step(800);
+		assert.equal(card.getAttribute("class"), "is-active");
+		const [dx, dy] = card.getAttribute("data-vpk-iso-lift").split(" ").map(Number);
+		const a = core.parsePolyPath(rest);
+		const b = core.parsePolyPath(guide.getAttribute("d"));
+		assert.equal(b.length, a.length);
+		for (let k = 0; k < a.length; k++) {
+			const moved = k % 2 ? [0, 0] : [dx, dy];
+			assert.ok(Math.abs(b[k][0] - a[k][0] - moved[0]) < 0.11 && Math.abs(b[k][1] - a[k][1] - moved[1]) < 0.11, `guide point ${k}: the upper end rides the lift, the lower stays on the plinth`);
+		}
+		pointer(stage, "pointerleave", 0, 0);
+		step(1600);
+		assert.equal(guide.getAttribute("d"), rest, "back at rest");
+	});
+});
+
+test("fixed: the support never lifts, takes no outline, is no keyboard stop and blocks the pointer in front of it", async () => {
+	await withRuntime(renderRegion(buildScene(GROUND)), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const svg = stage.querySelector("svg");
+		const halves = [...svg.querySelectorAll('[data-vpk-iso-of="plinth"]')];
+		assert.equal(halves.length, 2);
+		assert.ok(halves.every(el => el.hasAttribute("data-vpk-iso-fixed") && !el.hasAttribute("data-vpk-iso-lift")), "both tray halves are fixed, with no lift vector");
+		// A point on the plinth's floor, clear of the card and the pillar.
+		const floor = core.parsePolyPath(halves[0].querySelector('[data-vpk-iso-role="fill"]').getAttribute("d"));
+		const xs = floor.map(([x]) => x);
+		const ys = floor.map(([, y]) => y);
+		const corner = [Math.min(...xs) + 12, ys[xs.indexOf(Math.min(...xs))]];
+		pointer(stage, "pointermove", corner[0], corner[1]);
+		step(800);
+		assert.equal(svg.querySelectorAll(".is-active").length, 0, "hovering the plinth selects nothing");
+		assert.equal(svg.querySelectorAll("[transform]").length, 0, "nothing lifts");
+		const key = name => stage.dispatchEvent(new window.KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true }));
+		const stops = [];
+		for (let n = 0; n < 3; n++) {
+			key("ArrowRight");
+			step(16);
+			stops.push([...svg.querySelectorAll(".is-active")].map(el => el.getAttribute("data-vpk-iso-part")).join("+"));
+		}
+		assert.deepEqual(stops.slice(0, 2).sort(), ["card", "pillar"], "the keyboard visits the card and the pillar only");
+		assert.equal(stops[2], stops[1], "and stops at the last selectable part, never on the plinth");
+		key("Home");
+		step(16);
+		assert.ok(["card", "pillar"].includes(svg.querySelector(".is-active")?.getAttribute("data-vpk-iso-part")), "Home lands on a selectable part");
+		assert.ok(halves.every(el => !el.classList.contains("is-active")));
+	});
+});
+
+test("grow: a grown part keeps its base points and raises only its top-face points; at rest its paths are the static art", async () => {
+	await withRuntime(renderRegion(buildScene(GROUND)), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const svg = stage.querySelector("svg");
+		const snapshot = svg.outerHTML;
+		const pillar = svg.querySelector('[data-vpk-iso-part="pillar"]');
+		assert.ok(pillar.hasAttribute("data-vpk-iso-grow"));
+		const path = role => pillar.querySelector(`[data-vpk-iso-role="${role}"]`).getAttribute("d");
+		const fill0 = core.parsePolyPath(path("fill"));
+		const top0 = new Set(core.parsePolyPath(path("top")).map(point => point.join(" ")));
+		const [dx, dy] = pillar.getAttribute("data-vpk-iso-lift").split(" ").map(Number);
+		const [cx, cy] = centroid(path("fill"));
+		pointer(stage, "pointermove", cx, cy);
+		step(800);
+		assert.equal(pillar.getAttribute("class"), "is-active");
+		assert.equal(pillar.hasAttribute("transform"), false, "a grown part is not translated");
+		const fill1 = core.parsePolyPath(path("fill"));
+		assert.equal(fill1.length, fill0.length);
+		let kept = 0;
+		fill0.forEach((point, k) => {
+			const up = top0.has(point.join(" "));
+			if (!up) kept++;
+			assert.ok(Math.abs(fill1[k][0] - point[0] - (up ? dx : 0)) < 0.11 && Math.abs(fill1[k][1] - point[1] - (up ? dy : 0)) < 0.11, `fill point ${k} ${up ? "rides the lift" : "stays on the base"}`);
+		});
+		assert.ok(kept >= 2, "the bottom edge stays put");
+		assert.equal(Math.max(...fill1.map(([, y]) => y)), Math.max(...fill0.map(([, y]) => y)), "the lowest point does not move");
+		pointer(stage, "pointerleave", 0, 0);
+		step(1600);
+		assert.equal(svg.outerHTML, snapshot, "back at rest the SVG is the static art");
+	});
+});
+
 // Verifier round 2: guide/leader `d` and the active class are runtime writes the print CSS cannot
 // reach, so the loop's `rest` (beforeprint) writes one rest frame and holds it; afterprint wakes.
 test("print: rest() lands guides, leaders, transforms and the active stroke at rest; afterprint brings the state back", async () => {

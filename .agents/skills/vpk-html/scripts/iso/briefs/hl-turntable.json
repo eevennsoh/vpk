@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "base",
+			"fixed": true,
 			"kind": "cylinder",
 			"at": [
 				0,
