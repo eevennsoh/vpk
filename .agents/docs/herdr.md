@@ -59,7 +59,8 @@ node scripts/agent-surface.js run --script <file> --label <name> \
   herdr drops a tab when its last pane closes, so a single-run tab goes too;
   a `--group` tab stays until its last worker exits. The one exception is the
   root pane of a worktree workspace the run just opened: closing it would
-  close the task's sidebar workspace, so it stays at a shell prompt.
+  close the task's sidebar workspace, so it stays, holding at
+  `Press Enter for a shell.` so its task status sticks (see below).
 - Closing the pane before the script finishes is reported as an error, not a
   silent hang.
 - The full runner is written to `<script>.pane.sh` and the pane only runs
@@ -76,16 +77,37 @@ The pane reports its own state, so workers show in the sidebar and
 | Script starts | `working`, title = `--label` | `working` |
 | Script exits, any status | pane closes | gone |
 
+A writing task's sidebar workspace (`--worktree`) also reports on its root
+pane, the one pane that outlives every run, so the workspace shows the task's
+state instead of `unknown` between runs:
+
+| Phase | Root pane reports | Message |
+| --- | --- | --- |
+| Any run in the workspace starts | `working` | `working · run-2.sh` |
+| Run exits 0 | `idle` | `done · run-2.sh` |
+| Run exits non-zero | `blocked` | `failed · exit 1` |
+
+The per-run pane still closes on exit. herdr clears a report as soon as its
+pane is back at a shell prompt, so the root pane holds at
+`Press Enter for a shell.` after its run; once the user presses Enter it is
+their shell, and later runs leave it alone (status falls back to `unknown`).
+Reports go only to the root pane of the task's own workspace, never to the
+planner's pane or another workspace's, and a run that ends while another run
+in the workspace is still working leaves it `working`. A rejected report
+prints one `agent-surface: task workspace state …` line; the run's exit
+status never changes.
+
 The pane itself shows the same level of detail: a `/vpk-remote` Claude-lane
 worker prints `working · <model> · started HH:MM`, one status line rewritten
 in place, then `done · <time> · <cost> · <turns>` or `failed · <reason>`
 (`scripts/agent-stream-format.js`). The step-by-step trail is in the worker's
 `events.jsonl`; the formatter's `--feed` flag prints it to the pane for
-debugging. Headless workers cannot ask for input, so a run never reports
+debugging. Headless workers cannot ask for input, so a run pane never reports
 `blocked`; a stuck worker ends as `exit N`, or as `done` with the blocker in
-its report.
+its report. The task workspace's `blocked` means its last run failed.
 
-The outcome is not shown in herdr: the wrapper's exit status and the worker's
+Beyond the task workspace's `idle` or `blocked`, the outcome is not shown
+in herdr: the wrapper's exit status and the worker's
 `report.md`, `events.jsonl`, and `stderr.log` carry it, and the planner
 reports it to the user. Those files keep the full record for diagnosing a
 failure after the pane is gone.

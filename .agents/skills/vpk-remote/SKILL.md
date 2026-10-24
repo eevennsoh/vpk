@@ -542,14 +542,17 @@ success or failure, and an emptied tab goes with them; the planner reports
 the outcome. `report.md`, `events.jsonl`, and `stderr.log` keep the full
 record for diagnosing a failure. The only pane that stays is the root pane of
 a worktree workspace the run opened, because closing it would close the
-task's sidebar workspace. Conventions and status reporting:
-`.agents/docs/herdr.md`.
+task's sidebar workspace. That root pane carries the task's status: the
+workspace shows `working` while any of its runs goes, then `idle` (last run
+exited 0) or `blocked` (`failed · exit N`) instead of `unknown`. To keep
+that status, it holds at `Press Enter for a shell.` after its run.
+Conventions and status reporting: `.agents/docs/herdr.md`.
 
 ### Checking progress
 
 | Question | Where to look |
 | --- | --- |
-| Is it still running? | the herdr sidebar or the worker's pane while it shows `working`; gone means it ended, and the wrapper's exit status says how |
+| Is it still running? | the herdr sidebar or the worker's pane while it shows `working`; gone means it ended, and the wrapper's exit status says how. A writing task's workspace shows `working`, then `idle` or `blocked` |
 | What has it done, step by step? | `events.jsonl` (Claude lane, one JSON event per line); rerun with `--feed` only to debug |
 | What has actually landed? | `git status` / `git diff` in the task worktree |
 | What did it conclude? | `report.md` |

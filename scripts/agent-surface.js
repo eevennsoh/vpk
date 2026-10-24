@@ -17,6 +17,12 @@
 //                      a linked worktree; a new tab or split when it is already open
 //   --group <name>     a tab with that label in the caller's workspace, split per run
 //   neither            a new tab labelled --label in the caller's workspace
+//
+// A --worktree run also reports on the task workspace's root pane: working while it runs,
+// then idle or blocked (reportTaskState). `task-state` is the pane's end-of-run call:
+//
+//   node scripts/agent-surface.js task-state --root <pane> --workspace <id>
+//        --script <file> --exit <status> [--caller <pane>]
 
 const crypto = require("node:crypto");
 const fs = require("node:fs");
@@ -24,6 +30,8 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const POLL_INTERVAL_MS = 1000;
+// Each herdr call of the end-of-run report, which runs before the pane closes.
+const TASK_STATE_TIMEOUT_MS = 3000;
 const PANE_CHECK_EVERY = 10;
 
 function shellQuote(value) {
@@ -37,6 +45,22 @@ function assertSurfaceName(flag, value) {
 	if (!SURFACE_NAME_PATTERN.test(value)) {
 		throw new Error(`${flag} ${JSON.stringify(value)} must be vpk-<type>-<slug>[-<pane>], lowercase kebab-case, with type one of feat, fix, refactor, perf, docs, chore, audit, research`);
 	}
+}
+
+// The pane's end-of-run call. It never fails the run: it always exits 0.
+function parseTaskStateArgs(rest) {
+	const options = {};
+	for (let index = 0; index < rest.length; index += 2) {
+		const [flag, value] = [rest[index], rest[index + 1]];
+		if (value === undefined) throw new Error(`${flag} needs a value`);
+		const key = { "--root": "rootPaneId", "--workspace": "workspaceId", "--caller": "callerPaneId", "--script": "script", "--exit": "status" }[flag];
+		if (!key) throw new Error(`unknown option ${flag}`);
+		options[key] = value;
+	}
+	if (!options.rootPaneId || !options.workspaceId || !options.script || options.status === undefined) {
+		throw new Error("usage: agent-surface.js task-state --root <pane> --workspace <id> --script <file> --exit <status> [--caller <pane>]");
+	}
+	return options;
 }
 
 function parseArgs(argv) {
@@ -133,9 +157,10 @@ function agentNameFor(label) {
 // The pane closes itself as soon as the exit file is written, success or failure: the
 // planner reports the outcome, and herdr drops a tab when its last pane closes. The
 // root pane of a workspace opened for the run stays (`closeOnExit: false`), because
-// closing it would close the task's sidebar workspace; herdr clears its status once
-// the shell prompt returns.
-function buildPaneCommand({ script, exitFile, label, seq = Date.now(), startedAt = new Date().toISOString(), closeOnExit = true }) {
+// closing it would close the task's sidebar workspace. A --worktree run (`task`) then
+// reports idle or blocked on that root pane. herdr clears a report once its pane is back
+// at a shell prompt, so the root pane holds at a read until the user presses Enter.
+function buildPaneCommand({ script, exitFile, label, seq = Date.now(), startedAt = new Date().toISOString(), closeOnExit = true, task = null }) {
 	// Seqs must increase per pane across runs and fit in a u64.
 	const base = seq * 1000;
 	const name = agentNameFor(label);
@@ -158,17 +183,24 @@ function buildPaneCommand({ script, exitFile, label, seq = Date.now(), startedAt
 		bg(start),
 		`bash ${shellQuote(script)}; s=$?`,
 		`printf '%s"endedAt":"%s","exit":%s}\\n' ${record} ${endedAt} "$s" 2>/dev/null >> ${shellQuote(runsFileFor(script))}`,
-		// The exit file lands before the close, so the waiting wrapper always finds it.
-		`printf '%s\\n' "$s" > ${shellQuote(exitFile)}`,
 	];
+	// Before the exit file, so the planner cannot start the next run, and report it working,
+	// before this run's idle or blocked lands.
+	if (task) {
+		const caller = task.callerPaneId ? ` --caller ${shellQuote(task.callerPaneId)}` : "";
+		steps.push(`${shellQuote(process.execPath)} ${shellQuote(__filename)} task-state --root ${shellQuote(task.rootPaneId)} --workspace ${shellQuote(task.workspaceId)}${caller} --script ${shellQuote(script)} --exit "$s"`);
+	}
+	// The exit file lands before the close, so the waiting wrapper always finds it.
+	steps.push(`printf '%s\\n' "$s" > ${shellQuote(exitFile)}`);
 	if (closeOnExit) steps.push(`"$h" pane close "$HERDR_PANE_ID" >/dev/null 2>&1`);
+	else if (task) steps.push(`printf '\\nPress Enter for a shell.\\n'`, "read -r _");
 	return steps.join("; ");
 }
 
-function createHerdr(env = process.env) {
+function createHerdr(env = process.env, { timeoutMs } = {}) {
 	const bin = env.HERDR_BIN_PATH || "herdr";
 	return function herdr(args) {
-		const result = spawnSync(bin, args, { encoding: "utf8", env });
+		const result = spawnSync(bin, args, { encoding: "utf8", env, timeout: timeoutMs });
 		if (result.status !== 0) {
 			throw new Error(`herdr ${args.slice(0, 2).join(" ")} failed: ${(result.stderr || result.stdout || "").trim()}`);
 		}
@@ -218,7 +250,7 @@ function mainCheckoutFor(worktree) {
 }
 
 // Returns the pane to run in, and whether it may close on exit: never the root pane of
-// a worktree workspace it just opened.
+// a worktree workspace it just opened. A worktree run also gets its workspace's root pane.
 function placePane(herdr, options, env = process.env) {
 	if (options.worktree) {
 		const opened = herdr([
@@ -228,13 +260,14 @@ function placePane(herdr, options, env = process.env) {
 			"--label", options.label,
 			"--no-focus",
 		]);
-		if (!opened.already_open) return { pane: opened.root_pane, closeOnExit: false };
+		const task = { rootPaneId: opened.root_pane.pane_id, workspaceId: opened.workspace.workspace_id, callerPaneId: env.HERDR_PANE_ID ?? null };
+		if (!opened.already_open) return { pane: opened.root_pane, closeOnExit: false, task };
 		const tabLabel = options.group ?? options.label;
 		const existing = findTab(herdr, opened.workspace.workspace_id, tabLabel);
 		const pane = existing
 			? splitIntoTab(herdr, existing, options.worktree)
 			: createTab(herdr, opened.workspace.workspace_id, tabLabel, options.worktree);
-		return { pane, closeOnExit: true };
+		return { pane, closeOnExit: true, task };
 	}
 
 	const workspaceId = env.HERDR_WORKSPACE_ID;
@@ -245,6 +278,41 @@ function placePane(herdr, options, env = process.env) {
 		return { pane, closeOnExit: true };
 	}
 	return { pane: createTab(herdr, workspaceId, options.label, options.cwd), closeOnExit: true };
+}
+
+// A writing task's sidebar workspace keeps its root pane between runs. Each run reports
+// there too, so the workspace shows working while a run goes, then idle or blocked. Only
+// the root pane of the task's workspace is reported on, never the caller's (the
+// planner's) pane, and only while a pane runner holds it: herdr clears a report on a
+// pane back at its shell prompt, and a bare prompt may be the user's. A run ending while
+// another in the workspace still works leaves it working. Returns what it did; herdr
+// errors throw.
+function reportTaskState(herdr, { rootPaneId, workspaceId, callerPaneId = null, runPaneId = null, state, message }) {
+	if (rootPaneId === callerPaneId) return "skipped: the caller's pane";
+	const { pane } = herdr(["pane", "get", rootPaneId]);
+	if (pane.workspace_id !== workspaceId) return "skipped: outside the task workspace";
+	if (pane.agent && pane.agent !== REPORT_AGENT) return `skipped: the pane hosts ${pane.agent}`;
+	// The root pane's reported state may be one of these reports, so what it runs comes
+	// from its processes: a pane runner, and while its own run goes, that run's script.
+	const { foreground_processes: processes = [] } = herdr(["pane", "process-info", "--pane", rootPaneId]).process_info ?? {};
+	const scripts = processes.map(({ argv = [] }) => (/^(?:\S*\/)?bash$/u.test(argv[0] ?? "") ? argv[1] ?? "" : "")).filter(Boolean);
+	if (!scripts.some((script) => script.endsWith(".pane.sh"))) return "skipped: the root pane is at a shell prompt, where herdr clears reports";
+	if (state !== "working") {
+		if (scripts.some((script) => !script.endsWith(".pane.sh"))) return "skipped: the root pane's run is working";
+		const others = herdr(["pane", "list", "--workspace", workspaceId]).panes
+			.filter((other) => other.pane_id !== rootPaneId && other.pane_id !== runPaneId);
+		if (others.some((other) => other.agent === REPORT_AGENT && other.agent_status === "working")) return "skipped: another run is working";
+	}
+	// Above the run pane's own start seq (its launch time × 1000), so a root pane that ran
+	// the first run takes this report.
+	herdr(["pane", "report-agent", rootPaneId, "--source", REPORT_SOURCE, "--agent", REPORT_AGENT, "--state", state, "--message", message, "--seq", String(Date.now() * 1000 + 500)]);
+	return "reported";
+}
+
+function endOfRunState(script, status) {
+	return status === 0
+		? { state: "idle", message: `done · ${path.basename(script)}` }
+		: { state: "blocked", message: `failed · exit ${status}` };
 }
 
 function paneAlive(herdr, paneId) {
@@ -301,11 +369,21 @@ async function run(options, { env = process.env, herdr = createHerdr(env), log =
 		return status;
 	}
 
-	const { pane, closeOnExit } = placePane(herdr, options, env);
+	const { pane, closeOnExit, task = null } = placePane(herdr, options, env);
 	herdr(["pane", "rename", pane.pane_id, options.label]);
 	const runner = runnerFileFor(options.script);
-	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label, startedAt, closeOnExit })}\n`);
+	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label, startedAt, closeOnExit, task })}\n`);
 	recordStart(options.script, startedAt);
+	// Before the launch, so its seq is below the end-of-run report's however fast the run.
+	// A run in the root pane reports working there itself.
+	if (task && task.rootPaneId !== pane.pane_id) {
+		try {
+			const outcome = reportTaskState(herdr, { ...task, runPaneId: pane.pane_id, state: "working", message: `working · ${path.basename(options.script)}` });
+			if (outcome !== "reported") log(JSON.stringify({ task_state: outcome }));
+		} catch (error) {
+			log(JSON.stringify({ task_state: `not reported: ${error.message}` }));
+		}
+	}
 	herdr(["pane", "run", pane.pane_id, `bash ${shellQuote(runner)}`]);
 	log(JSON.stringify({
 		surface,
@@ -324,8 +402,26 @@ async function run(options, { env = process.env, herdr = createHerdr(env), log =
 	return status;
 }
 
+// The pane's end-of-run report on the task's root pane. A failure prints one line and
+// still exits 0: the run's status is already in its exit file.
+function taskState(argv, { env = process.env, herdr = createHerdr(env, { timeoutMs: TASK_STATE_TIMEOUT_MS }), log = console.error } = {}) {
+	try {
+		const options = parseTaskStateArgs(argv);
+		const status = Number.parseInt(options.status, 10);
+		const outcome = reportTaskState(herdr, { ...options, runPaneId: env.HERDR_PANE_ID ?? null, ...endOfRunState(options.script, Number.isNaN(status) ? 1 : status) });
+		if (outcome !== "reported") log(`agent-surface: task workspace state ${outcome}`);
+	} catch (error) {
+		log(`agent-surface: task workspace state not reported: ${error.message}`);
+	}
+	return 0;
+}
+
 if (require.main === module) {
 	(async () => {
+		if (process.argv[2] === "task-state") {
+			process.exitCode = taskState(process.argv.slice(3));
+			return;
+		}
 		try {
 			process.exitCode = await run(parseArgs(process.argv.slice(2)));
 		} catch (error) {
@@ -343,10 +439,12 @@ module.exports = {
 	createHerdr,
 	mainCheckoutFor,
 	parseArgs,
+	reportTaskState,
 	resolveSurface,
 	run,
 	runsFileFor,
 	shellQuote,
 	splitDirection,
+	taskState,
 	waitForExitFile,
 };

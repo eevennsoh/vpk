@@ -12,9 +12,11 @@ const {
 	createHerdr,
 	mainCheckoutFor,
 	parseArgs,
+	reportTaskState,
 	resolveSurface,
 	run,
 	splitDirection,
+	taskState,
 	waitForExitFile,
 } = require("./agent-surface.js");
 
@@ -39,7 +41,7 @@ function linkedWorktree() {
 }
 
 // Fake herdr server: records calls and "runs" the pane command by writing the exit file.
-function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false, worktreeError = null } = {}) {
+function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false, worktreeError = null, rootHeld = true } = {}) {
 	const calls = [];
 	let nextPane = 50;
 	let startSeen = null;
@@ -53,6 +55,9 @@ function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false, worktreeError =
 			return { root_pane: { pane_id: `${workspace}:p${nextPane++}`, tab_id: `${workspace}:t-${label}`, workspace_id: workspace } };
 		}
 		if (group === "pane" && verb === "list") return { panes };
+		if (group === "pane" && verb === "get") return { pane: { pane_id: args[2], workspace_id: args[2].split(":")[0] } };
+		// The root pane still holds at its pane runner's read, so a report there sticks.
+		if (group === "pane" && verb === "process-info") return { process_info: { foreground_processes: rootHeld ? [{ argv: ["bash", "/o/run.sh.pane.sh"] }] : [] } };
 		if (group === "pane" && verb === "layout") {
 			return { layout: { panes: [{ pane_id: panes[0].pane_id, rect: { width: 200, height: 40 } }] } };
 		}
@@ -129,7 +134,7 @@ test("pane command records the exit status even when the script fails", () => {
 
 // Runs the real pane command in bash against a fake herdr that logs each call, and
 // whether the exit file already held the status when `pane close` ran.
-async function runPaneCommand({ body, label = "vpk-feat-live-probe", closeOnExit, herdrBody = 'printf "%s\\n" "$*" >> "$LOG"' }) {
+async function runPaneCommand({ body, label = "vpk-feat-live-probe", closeOnExit, task, paneId = "w1:p5", herdrBody = 'printf "%s\\n" "$*" >> "$LOG"' }) {
 	const script = tempScript(body);
 	const dir = path.dirname(script);
 	const bin = path.join(dir, "fake-herdr");
@@ -137,10 +142,10 @@ async function runPaneCommand({ body, label = "vpk-feat-live-probe", closeOnExit
 	const exitFile = `${script}.exit`;
 	const closeProbe = `if [ "$1 $2" = "pane close" ]; then printf 'exit-file-at-close:%s\\n' "$(cat "$EXIT_FILE" 2>/dev/null)" >> "$LOG"; fi`;
 	fs.writeFileSync(bin, `#!/bin/sh\n${closeProbe}\n${herdrBody}\n`, { mode: 0o755 });
-	const command = buildPaneCommand({ script, exitFile, label, seq: 1700000000000, closeOnExit });
+	const command = buildPaneCommand({ script, exitFile, label, seq: 1700000000000, closeOnExit, task });
 	const result = spawnSync("bash", ["-c", command], {
 		encoding: "utf8",
-		env: { PATH: process.env.PATH, HERDR_BIN_PATH: bin, HERDR_PANE_ID: "w1:p5", LOG: log, EXIT_FILE: exitFile },
+		env: { PATH: process.env.PATH, HERDR_BIN_PATH: bin, HERDR_PANE_ID: paneId, LOG: log, EXIT_FILE: exitFile },
 	});
 	// Start reports are detached; wait for all three, not the close probe's lines.
 	const readLog = () => (fs.existsSync(log) ? fs.readFileSync(log, "utf8").trim().split("\n") : []);
@@ -192,6 +197,90 @@ test("a broken herdr never changes the recorded exit status", async () => {
 	const command = buildPaneCommand({ script: missing, exitFile: `${missing}.exit`, label: "vpk-fix-x" });
 	spawnSync("bash", ["-c", command], { env: { PATH: process.env.PATH, HERDR_BIN_PATH: "/nonexistent/herdr", HERDR_PANE_ID: "w1:p5" } });
 	assert.equal(fs.readFileSync(`${missing}.exit`, "utf8").trim(), "0");
+});
+
+// ── Task workspace state on the root pane ─────────────────────────────────────
+
+const TASK = { rootPaneId: "w7:p1", workspaceId: "w7", callerPaneId: "w1:p9" };
+// A fake herdr binary for the pane's task-state call: the root pane is in w7 and held by
+// its pane runner; every call is logged.
+const TASK_HERDR = [
+	'printf "%s\\n" "$*" >> "$LOG"',
+	'case "$1 $2" in',
+	'"pane get") printf \'{"result":{"pane":{"pane_id":"%s","workspace_id":"w7"}}}\' "$3" ;;',
+	'"pane process-info") printf \'{"result":{"process_info":{"foreground_processes":[{"argv":["bash","/o/run.sh.pane.sh"]}]}}}\' ;;',
+	'"pane list") printf \'{"result":{"panes":[]}}\' ;;',
+	"esac",
+].join("\n");
+// Only task-state reports carry a message; the run pane's own detached start report does not.
+const rootReport = (calls) => calls.find((line) => line.startsWith("pane report-agent w7:p1 ") && line.includes(" --message ")) ?? "";
+
+test("task workspace: a run that exits 0 reports idle on the root pane, then holds it", async () => {
+	const { exit, calls, command } = await runPaneCommand({ body: "exit 0", closeOnExit: false, task: TASK, paneId: "w7:p1", herdrBody: TASK_HERDR });
+	assert.equal(exit, "0");
+	assert.match(rootReport(calls), /^pane report-agent w7:p1 --source vpk-agent-surface --agent vpk-worker --state idle --message done · run\.sh --seq \d+$/u);
+	// Reported before the exit file, and the pane then waits so herdr keeps the report.
+	assert.ok(command.indexOf(" task-state ") < command.indexOf(".exit'"));
+	assert.match(command, /read -r _$/u);
+	assert.equal(calls.some((line) => line.startsWith("pane close")), false);
+});
+
+test("task workspace: a run that fails reports blocked with its exit status", async () => {
+	const { exit, calls } = await runPaneCommand({ body: "exit 7", closeOnExit: true, task: TASK, paneId: "w7:p4", herdrBody: TASK_HERDR });
+	assert.equal(exit, "7");
+	assert.match(rootReport(calls), /--state blocked --message failed · exit 7 --seq \d+$/u);
+	assert.ok(calls.includes("pane close w7:p4"), "a run in its own tab still closes");
+});
+
+test("task workspace: a new run in an open workspace reports working on the root pane first", async () => {
+	const script = tempScript();
+	const { tree } = linkedWorktree();
+	const { herdr, calls } = fakeHerdr({ alreadyOpen: true });
+	await run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree]), { env: { ...herdrEnv, HERDR_PANE_ID: "w1:p9" }, herdr, log: () => {} });
+	const report = calls.findIndex(([group, verb, pane]) => group === "pane" && verb === "report-agent" && pane === "w7:p1");
+	assert.notEqual(report, -1);
+	assert.deepEqual(calls[report].slice(3, 11), ["--source", "vpk-agent-surface", "--agent", "vpk-worker", "--state", "working", "--message", "working · run.sh"]);
+	assert.ok(report < calls.findIndex(([group, verb]) => group === "pane" && verb === "run"), "before the launch");
+	// The runner hands the root pane and the planner's pane to the end-of-run call.
+	assert.match(fs.readFileSync(`${script}.pane.sh`, "utf8"), /task-state --root 'w7:p1' --workspace 'w7' --caller 'w1:p9' --script '[^']+' --exit "\$s"/u);
+});
+
+test("task workspace: a rejected report logs one line and never changes the run's exit", async () => {
+	const rejecting = TASK_HERDR.replace("esac", '"pane report-agent") echo "invalid_state" >&2; exit 1 ;;\nesac');
+	const { exit, result } = await runPaneCommand({ body: "exit 5", closeOnExit: true, task: TASK, paneId: "w7:p4", herdrBody: rejecting });
+	assert.equal(exit, "5");
+	assert.deepEqual(result.stderr.trim().split("\n"), ["agent-surface: task workspace state not reported: herdr pane report-agent failed: invalid_state"]);
+	// In the wrapper, a rejected working report neither throws nor stops the launch.
+	const script = tempScript();
+	const { tree } = linkedWorktree();
+	const { herdr: base } = fakeHerdr({ alreadyOpen: true });
+	const herdr = (args) => {
+		if (args[1] === "report-agent") throw new Error("herdr pane report-agent failed: invalid_state");
+		return base(args);
+	};
+	const lines = [];
+	const status = await run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree]), { env: herdrEnv, herdr, log: (line) => lines.push(line) });
+	assert.equal(status, 3);
+	assert.equal(lines.filter((line) => line.includes("task_state")).length, 1);
+});
+
+test("task workspace: never the planner's pane, a pane in another workspace, or a bare prompt", () => {
+	const calls = [];
+	const herdr = ({ workspace = "w7", held = true } = {}) => (args) => {
+		calls.push(args);
+		if (args[1] === "get") return { pane: { pane_id: args[2], workspace_id: workspace } };
+		if (args[1] === "process-info") return { process_info: { foreground_processes: held ? [{ argv: ["bash", "/o/run.sh.pane.sh"] }] : [{ argv: ["-zsh"] }] } };
+		if (args[1] === "list") return { panes: [] };
+		return {};
+	};
+	const reported = () => calls.some((args) => args[1] === "report-agent");
+	const report = (options, fake) => reportTaskState(fake, { ...TASK, state: "idle", message: "done · run.sh", ...options });
+	assert.equal(report({ callerPaneId: "w7:p1" }, herdr()), "skipped: the caller's pane");
+	assert.equal(report({}, herdr({ workspace: "w1" })), "skipped: outside the task workspace");
+	assert.match(report({}, herdr({ held: false })), /^skipped: the root pane is at a shell prompt/u);
+	assert.equal(reported(), false);
+	assert.equal(report({}, herdr()), "reported");
+	assert.equal(taskState(["--root", "w7:p1"], { herdr: herdr(), log: () => {} }), 0, "bad arguments still exit 0");
 });
 
 test("a pane that closed itself after writing the exit file is a result, not an error", async () => {
