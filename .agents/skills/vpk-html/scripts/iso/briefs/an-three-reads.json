@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "bench-card",
+			"fixed": true,
 			"kind": "slab",
 			"at": [
 				0,
@@ -28,6 +29,7 @@
 		},
 		{
 			"id": "bench-lens",
+			"fixed": true,
 			"kind": "slab",
 			"at": [
 				40,
@@ -56,6 +58,7 @@
 		},
 		{
 			"id": "bench-red",
+			"fixed": true,
 			"kind": "slab",
 			"at": [
 				100,
@@ -72,6 +75,7 @@
 		},
 		{
 			"id": "bench-green",
+			"fixed": true,
 			"kind": "slab",
 			"at": [
 				138,
@@ -88,6 +92,7 @@
 		},
 		{
 			"id": "bench-blue",
+			"fixed": true,
 			"kind": "slab",
 			"at": [
 				170,

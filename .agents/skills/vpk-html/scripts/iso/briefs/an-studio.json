@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "key-base",
+			"fixed": true,
 			"kind": "slab",
 			"at": [
 				2,
@@ -59,6 +60,7 @@
 		},
 		{
 			"id": "fill-base",
+			"fixed": true,
 			"kind": "slab",
 			"at": [
 				100,

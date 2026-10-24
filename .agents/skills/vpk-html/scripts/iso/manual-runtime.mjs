@@ -15,12 +15,12 @@ export function blink(p) {
 
 // The narrow-stage tags' leaders (r1.7/r1.8): each g[data-vpk-iso-tag-for] holds one leader whose last point follows its target
 // part, like a label's leader. runtime.mjs adds the returned lines to its list.
-export function tagLines(parse, svg, parts, units, line) {
+export function tagLines(parse, svg, parts, line) {
 	const out = [];
 	for (const g of svg.querySelectorAll("[data-vpk-iso-tag-for]")) {
 		const el = g.querySelector("[data-vpk-iso-role=\"leader\"]");
 		const name = g.getAttribute("data-vpk-iso-tag-for");
-		const target = parts.find(p => p.id === name || units[p.unit].name === name);
+		const target = parts.find(p => p.id === name || p.name === name);
 		const pts = el && parse(el.getAttribute("d"));
 		if (pts && target) out.push(line(el, pts, false, pts.map((_, k) => (k === pts.length - 1 ? target : null))));
 	}

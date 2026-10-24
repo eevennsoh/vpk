@@ -18,7 +18,7 @@
 		{ "id": "bar", "kind": "box", "at": [12, 26, 26], "size": [26, 4, 3], "r": 1, "label": "Bar" },
 		{ "id": "frame", "kind": "box", "at": [98, 16, 0], "size": [12, 16, 46], "r": 2, "label": "Hammer frame" },
 		{ "id": "head", "kind": "box", "at": [98, 18, 46], "size": [30, 12, 8], "r": 0, "label": "Hammer head" },
-		{ "id": "waist", "kind": "box", "at": [117, 21, 0], "size": [8, 6, 8], "r": 0, "label": "Anvil base" },
+		{ "id": "waist", "fixed": true, "kind": "box", "at": [117, 21, 0], "size": [8, 6, 8], "r": 0, "label": "Anvil base" },
 		{ "id": "anvil", "kind": "box", "at": [113, 18, 8], "size": [16, 12, 6], "r": 0, "label": "Anvil" },
 		{ "id": "ram", "kind": "box", "at": [116, 20, 24], "size": [10, 8, 10], "r": 0, "label": "Ram" }
 	],

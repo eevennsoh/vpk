@@ -280,6 +280,7 @@
 		},
 		{
 			"id": "plinth",
+			"fixed": true,
 			"kind": "slab",
 			"at": [
 				96,

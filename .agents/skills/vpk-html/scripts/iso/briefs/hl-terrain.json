@@ -901,7 +901,8 @@
 	"interact": {
 		"behavior": "select",
 		"lift": 10,
-		"rest": "Dune"
+		"rest": "Dune",
+		"liftMode": "grow"
 	},
 	"meta": {
 		"margin": "[ TERRAIN ]",

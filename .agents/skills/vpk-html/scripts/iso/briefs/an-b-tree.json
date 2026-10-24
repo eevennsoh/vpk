@@ -12,6 +12,7 @@
 	"parts": [
 		{
 			"id": "cabinet-back",
+			"fixed": true,
 			"kind": "box",
 			"at": [
 				-12,
@@ -28,6 +29,7 @@
 		},
 		{
 			"id": "cabinet",
+			"fixed": true,
 			"kind": "box",
 			"at": [
 				-12,
