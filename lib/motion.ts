@@ -27,6 +27,17 @@ export const motionEase = {
 	inOut: [0.4, 0, 0, 1],
 } as const satisfies Record<string, CubicBezier>;
 
+/**
+ * Curves a recreated reference motion is tuned against and that have no ADS
+ * token. Not for general UI — pick from `motionEase` first. Each names its source.
+ */
+export const referenceEase = {
+	/** transitions.dev UI generation: every stroke of the drawing, a quick-settling ease-out. */
+	generationDraw: [0.16, 1, 0.3, 1],
+	/** transitions.dev `--ease-smooth-out`: the UI generation reveal. */
+	smoothOut: [0.22, 1, 0.36, 1],
+} as const satisfies Record<string, CubicBezier>;
+
 interface MotionTiming {
 	readonly duration: number;
 	readonly ease: CubicBezier;
