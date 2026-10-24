@@ -218,6 +218,30 @@ never retry through a shell alias.
   session exports its own `ANTHROPIC_BASE_URL` and `CLAUDE_EFFORT`, so the
   Claude-lane recipe sets both explicitly rather than trusting inheritance.
 
+## Naming
+
+Every surface, branch, worktree, and artifact directory for a task uses one
+name: `vpk-<type>-<slug>[-<pane>]`, lowercase kebab-case.
+
+- `vpk` — always first; marks what this skill created, in this repo or any
+  other.
+- `<type>` — writing: `feat`, `fix`, `refactor`, `perf`, `docs`, `chore`;
+  read-only: `audit`, `research`.
+- `<slug>` — the work in 1–3 words (`ui-generation`, `live-progress`).
+- `<pane>` — only when a task has more than one surface: `-1`…`-n` for
+  fan-out panes, `-review` for the advisor. A single writing worker has no
+  suffix.
+
+| Thing | Format | Example |
+| --- | --- | --- |
+| herdr workspace / tab / pane label | `vpk-<type>-<slug>[-<pane>]` | `vpk-fix-sidebar-flicker` |
+| Branch | `vpk/<type>-<slug>` | `vpk/fix-sidebar-flicker` |
+| Worktree | `.claude/worktrees/vpk-<type>-<slug>` | `.claude/worktrees/vpk-fix-sidebar-flicker` |
+| Artifacts | `output/remote-<lane>/vpk-<type>-<slug>[-<pane>]/` | `output/remote-claude/vpk-fix-sidebar-flicker/` |
+
+`scripts/agent-surface.js` rejects a `--label` or `--group` outside this
+scheme, so a misnamed surface fails before anything opens.
+
 ## Worktree isolation
 
 **Every brief that writes files gets its own git worktree, by default.** This
@@ -251,11 +275,13 @@ nothing there and costs setup, which is why the default is keyed to the same
 
 Fetch first, then branch from `origin/main` — not the local `main` ref, which
 goes stale in a long-lived checkout and would start the worker on old code.
-Place it under the repo's ignored `.claude/worktrees/`, one per task:
+Place it under the repo's ignored `.claude/worktrees/`, one per task, named
+per *Naming*:
 
 ```bash
-branch="remote/<short-task-slug>"
-tree="$PWD/.claude/worktrees/<short-task-slug>"
+name="vpk-<type>-<slug>"
+branch="vpk/<type>-<slug>"
+tree="$PWD/.claude/worktrees/$name"
 git fetch origin main
 git worktree add --no-track -b "$branch" "$tree" origin/main
 ```
@@ -319,7 +345,10 @@ dirty tree it will silently fold into its diff.
    [references/claude-executor.md](references/claude-executor.md).
    Write that command to `run.sh` in the worker directory and launch it
    through the surface wrapper (see *Terminal surfaces*) rather than running
-   it bare, so the user can watch the worker in herdr.
+   it bare, so the user can watch the worker in herdr. A writing task's
+   worker always launches with `--worktree "$tree"`, which opens it as its
+   own workspace in the herdr sidebar automatically; never omit
+   `--worktree` for a writing task.
 5. **Read only the report file.** Never stream or parse raw worker output —
    raw material stays in worker contexts, which keeps the planner's context
    window for review. The live feed and `events.jsonl` are for the human;
@@ -449,16 +478,24 @@ runs the worker inline, so there is one recipe for both.
 
 ```bash
 node scripts/agent-surface.js run \
-  --script "$worker_root/run.sh" --label "<task-slug>-worker-1" \
-  [--worktree "$tree"] [--group "<task-slug>"]
+  --script "$worker_root/run.sh" --label "$name" --worktree "$tree"
 ```
 
 | Run | Flags | herdr surface |
 | --- | --- | --- |
-| Writing worker in its task worktree | `--worktree "$tree"` | the worktree's own **workspace** |
-| Fan-out (2–5 read-only workers) | `--group "<task-slug>"` on every worker | one **tab**, one **pane** per worker |
-| Single read-only worker or advisor | *(neither)* | a new **tab** in the planner's workspace |
+| Writing worker (always) | `--label "vpk-<type>-<slug>" --worktree "$tree"` | the worktree's own **workspace** in the sidebar |
+| Fan-out (2–5 read-only workers) | `--label "vpk-<type>-<slug>-<n>" --group "vpk-<type>-<slug>"` | one **tab**, one **pane** per worker |
+| Single read-only worker | `--label "vpk-<type>-<slug>"` | a new **tab** in the planner's workspace |
+| Advisor | `--label "vpk-<type>-<slug>-review"` | a new **tab** in the planner's workspace |
 | Moved conversation (`--new-window`) | handled by `ai-api` | a new **tab** running the forked session |
+
+A writing worker always gets its own sidebar workspace, with no manual step,
+even when the planner itself runs in a linked worktree: the wrapper opens the
+workspace from the main checkout (herdr refuses `worktree open` from a linked
+worktree), and if herdr still refuses, the wrapper exits with herdr's error
+rather than falling back to a tab. Report that error; do not relaunch the
+writing worker without `--worktree`. When the workspace is already open,
+the run gets a new tab in it.
 
 The `run.sh` keeps the lane's redirects: the report still lands in
 `report.md`, and the pane shows live progress for the user — the GPT lane's
@@ -466,14 +503,9 @@ stderr stream, or on the Claude lane one timestamped line per tool call and
 text snippet from `scripts/agent-stream-format.js`. The planner reads only
 the report, as before. Each pane reports its state to
 herdr, so the sidebar shows the worker as `working`, then `done` (with `exit N`
-on failure), and `herdr agent wait <label-slug>` can block on it. Panes are left
+on failure), and `herdr agent wait <label>` can block on it. Panes are left
 open after exit so the user can scroll them; close them only when the user
 asks. Conventions, status reporting, and cleanup: `.agents/docs/herdr.md`.
-
-When herdr refuses to open the worktree's workspace (`linked_worktree_source`,
-raised when the planner pane itself sits in a linked worktree), the wrapper
-logs a note and places the pane in the planner's workspace instead — a tab, or
-a split in the `--group` tab — with its cwd in the worktree.
 
 ### Checking progress
 
@@ -489,17 +521,19 @@ a split in the `--group` tab — with its cwd in the worktree.
 Everything lives under gitignored `output/`:
 
 ```text
-output/remote-gpt/worker-<n>/      # home/ (CODEX_HOME), brief.md, report.md, followup-<k>.md
-output/remote-claude/worker-<n>/   # brief.md, report.md, events.jsonl, stderr.log, followup-<k>.md
-output/remote-<lane>/advisor-<n>/  # advisor consults, same layout as that lane's workers
+output/remote-gpt/vpk-<type>-<slug>/          # home/ (CODEX_HOME), brief.md, report.md, followup-<k>.md
+output/remote-claude/vpk-<type>-<slug>/       # brief.md, report.md, events.jsonl, stderr.log, followup-<k>.md
+output/remote-<lane>/vpk-<type>-<slug>-<n>/   # one per fan-out worker
+output/remote-<lane>/vpk-<type>-<slug>-review/  # advisor consults, same layout as that lane's workers
 ```
 
-One directory per worker; never reuse a directory across concurrent workers.
+The directory carries the surface's name (see *Naming*), so one directory per
+surface; never reuse a directory across concurrent workers. Follow-ups reuse
+the worker's directory as `followup-<k>.md`.
 
 Artifacts stay under the **main checkout's** `output/`, never inside a task
 worktree, so reports from concurrently dispatched tasks stay readable in one
-place and survive worktree cleanup. Name the worker directory after the task
-when several are in flight (`output/remote-gpt/<task-slug>-worker-1/`).
+place and survive worktree cleanup.
 
 ## Boundaries
 

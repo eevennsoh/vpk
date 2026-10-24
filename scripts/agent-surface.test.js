@@ -6,9 +6,11 @@ const path = require("node:path");
 const test = require("node:test");
 
 const {
+	SURFACE_NAME_PATTERN,
 	agentNameFor,
 	buildPaneCommand,
 	createHerdr,
+	mainCheckoutFor,
 	parseArgs,
 	resolveSurface,
 	run,
@@ -20,6 +22,18 @@ function tempScript(body = "exit 0") {
 	const script = path.join(dir, "run.sh");
 	fs.writeFileSync(script, `${body}\n`);
 	return script;
+}
+
+// A real main checkout with one linked worktree, as the planner creates them.
+function linkedWorktree() {
+	const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-repo-")));
+	const main = path.join(dir, "main");
+	const tree = path.join(main, ".claude", "worktrees", "vpk-fix-x");
+	const git = (...args) => assert.equal(spawnSync("git", args, { encoding: "utf8" }).status, 0, `git ${args.join(" ")}`);
+	git("init", "-q", main);
+	git("-C", main, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "init");
+	git("-C", main, "worktree", "add", "-q", "-b", "vpk/fix-x", tree);
+	return { main, tree };
 }
 
 // Fake herdr server: records calls and "runs" the pane command by writing the exit file.
@@ -43,7 +57,7 @@ function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false, worktreeError =
 			return { pane: { pane_id: `w1:p${nextPane++}`, tab_id: panes[0].tab_id, workspace_id: "w1" } };
 		}
 		if (group === "worktree" && verb === "open") {
-			if (worktreeError) throw Object.assign(new Error(`herdr worktree open failed: ${worktreeError}`), { code: worktreeError });
+			if (worktreeError) throw new Error(`herdr worktree open failed: ${worktreeError}`);
 			return {
 				already_open: alreadyOpen,
 				workspace: { workspace_id: "w7" },
@@ -75,15 +89,31 @@ test("wide panes split right and tall panes split down", () => {
 });
 
 test("parseArgs requires script and label and defaults cwd to the worktree", () => {
-	assert.throws(() => parseArgs(["run", "--label", "x"]), /--script is required/u);
+	assert.throws(() => parseArgs(["run", "--label", "vpk-fix-x"]), /--script is required/u);
 	assert.throws(() => parseArgs(["run", "--script", "a.sh"]), /--label is required/u);
-	const options = parseArgs(["run", "--script", "a.sh", "--label", "x", "--worktree", "/tmp/wt"]);
+	const options = parseArgs(["run", "--script", "a.sh", "--label", "vpk-fix-x", "--worktree", "/tmp/wt"]);
 	assert.equal(options.cwd, "/tmp/wt");
 	assert.equal(options.wait, true);
 });
 
+test("surface names follow vpk-<type>-<slug>[-<pane>]", () => {
+	for (const name of ["vpk-feat-ui-generation", "vpk-fix-sidebar", "vpk-audit-tokens-2", "vpk-research-auth-flow-review", "vpk-chore-surface-e2e"]) {
+		assert.match(name, SURFACE_NAME_PATTERN);
+	}
+	for (const name of ["worker-1", "vpk-ui-generation", "vpk-bug-x", "vpk-feat", "vpk-feat-", "vpk-feat-UI", "vpk-feat-a--b", "vpk-feat-a_b", "remote/vpk-feat-x", "fix-x"]) {
+		assert.doesNotMatch(name, SURFACE_NAME_PATTERN);
+	}
+});
+
+test("parseArgs rejects labels and groups outside the naming scheme", () => {
+	assert.throws(() => parseArgs(["run", "--script", "a.sh", "--label", "worker-1"]), /--label "worker-1" must be vpk-<type>-<slug>\[-<pane>\]/u);
+	assert.throws(() => parseArgs(["run", "--script", "a.sh", "--label", "vpk-audit-x-1", "--group", "fanout"]), /--group "fanout" must be vpk-<type>-<slug>/u);
+	assert.equal(parseArgs(["run", "--script", "a.sh", "--label", "vpk-audit-x-2", "--group", "vpk-audit-x"]).group, "vpk-audit-x");
+	assert.equal(parseArgs(["run", "--script", "a.sh", "--label", "vpk-feat-x-review"]).label, "vpk-feat-x-review");
+});
+
 test("pane command records the exit status even when the script fails", () => {
-	const command = buildPaneCommand({ script: "/tmp/it's.sh", exitFile: "/tmp/x.exit", label: "w" });
+	const command = buildPaneCommand({ script: "/tmp/it's.sh", exitFile: "/tmp/x.exit", label: "vpk-fix-x" });
 	assert.ok(command.includes(`; bash '/tmp/it'\\''s.sh'; s=$?;`));
 	assert.ok(command.includes(`> '/tmp/x.exit'`));
 	// Herdr's own "finished" notification fires from the lifecycle reports, so no custom toast.
@@ -91,7 +121,7 @@ test("pane command records the exit status even when the script fails", () => {
 });
 
 // Runs the real pane command in bash against a fake herdr that logs each call.
-async function runPaneCommand({ body, label = "Worker 1", herdrBody = 'printf "%s\\n" "$*" >> "$LOG"' }) {
+async function runPaneCommand({ body, label = "vpk-feat-live-probe", herdrBody = 'printf "%s\\n" "$*" >> "$LOG"' }) {
 	const script = tempScript(body);
 	const dir = path.dirname(script);
 	const bin = path.join(dir, "fake-herdr");
@@ -120,8 +150,8 @@ test("pane reports working, then settles and releases with increasing seqs", asy
 		"pane report-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --state idle --seq 1700000000000001",
 		"pane release-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --seq 1700000000000002",
 	]));
-	assert.ok(calls.includes("pane report-metadata w1:p5 --source vpk-agent-surface --agent vpk-worker --title Worker 1"));
-	assert.ok(calls.includes("agent rename w1:p5 worker-1"));
+	assert.ok(calls.includes("pane report-metadata w1:p5 --source vpk-agent-surface --agent vpk-worker --title vpk-feat-live-probe"));
+	assert.ok(calls.includes("agent rename w1:p5 vpk-feat-live-probe"));
 });
 
 test("a failing script reports its exit status as the settled message", async () => {
@@ -135,24 +165,22 @@ test("a broken herdr never changes the recorded exit status", async () => {
 	const { exit } = await runPaneCommand({ body: "exit 5", herdrBody: "echo boom >&2; exit 9" });
 	assert.equal(exit, "5");
 	const missing = tempScript("exit 0");
-	const command = buildPaneCommand({ script: missing, exitFile: `${missing}.exit`, label: "x", lingerSeconds: 0 });
+	const command = buildPaneCommand({ script: missing, exitFile: `${missing}.exit`, label: "vpk-fix-x", lingerSeconds: 0 });
 	spawnSync("bash", ["-c", command], { env: { PATH: process.env.PATH, HERDR_BIN_PATH: "/nonexistent/herdr", HERDR_PANE_ID: "w1:p5" } });
 	assert.equal(fs.readFileSync(`${missing}.exit`, "utf8").trim(), "0");
 });
 
-test("agent names derived from labels satisfy herdr's name rule", () => {
-	assert.equal(agentNameFor("worker-1"), "worker-1");
-	assert.equal(agentNameFor("Fix Auth/Middleware!"), "fix-auth-middleware");
-	assert.equal(agentNameFor("42-retry"), "w-42-retry");
-	assert.equal(agentNameFor("***"), null);
-	const long = agentNameFor("a".repeat(40));
+test("agent names are the surface name, cut to herdr's 32-character limit", () => {
+	assert.equal(agentNameFor("vpk-fix-sidebar"), "vpk-fix-sidebar");
+	const long = agentNameFor("vpk-research-authentication-middleware-review");
+	assert.equal(long, "vpk-research-authentication-midd");
+	assert.equal(agentNameFor("vpk-research-authentication-mid-x"), "vpk-research-authentication-mid");
 	assert.match(long, /^[a-z][a-z0-9_-]{0,31}$/u);
-	assert.equal(buildPaneCommand({ script: "/tmp/s", exitFile: "/tmp/s.exit", label: "***" }).includes("agent rename"), false);
 });
 
 test("inline surface runs the script and returns its status", async () => {
 	const script = tempScript("exit 4");
-	const status = await run(parseArgs(["run", "--script", script, "--label", "x", "--surface", "inline"]), {
+	const status = await run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--surface", "inline"]), {
 		env: { PATH: process.env.PATH },
 		herdr: () => assert.fail("inline must not call herdr"),
 		log: () => {},
@@ -164,11 +192,11 @@ test("inline surface runs the script and returns its status", async () => {
 test("default herdr placement opens a labelled tab in the caller's workspace", async () => {
 	const script = tempScript();
 	const { herdr, calls } = fakeHerdr();
-	const status = await run(parseArgs(["run", "--script", script, "--label", "worker-1"]), { env: herdrEnv, herdr, log: () => {} });
+	const status = await run(parseArgs(["run", "--script", script, "--label", "vpk-audit-x"]), { env: herdrEnv, herdr, log: () => {} });
 	assert.equal(status, 3);
 	const create = calls.find(([group, verb]) => group === "tab" && verb === "create");
-	assert.deepEqual(create.slice(2), ["--workspace", "w1", "--cwd", process.cwd(), "--label", "worker-1", "--no-focus"]);
-	assert.ok(calls.some(([group, verb, pane, label]) => group === "pane" && verb === "rename" && pane === "w1:p50" && label === "worker-1"));
+	assert.deepEqual(create.slice(2), ["--workspace", "w1", "--cwd", process.cwd(), "--label", "vpk-audit-x", "--no-focus"]);
+	assert.ok(calls.some(([group, verb, pane, label]) => group === "pane" && verb === "rename" && pane === "w1:p50" && label === "vpk-audit-x"));
 	// The pane only receives a short `bash <runner>` line; the runner holds the reporting command.
 	const paneRun = calls.find(([group, verb]) => group === "pane" && verb === "run");
 	assert.equal(paneRun[3], `bash '${script}.pane.sh'`);
@@ -179,80 +207,68 @@ test("default herdr placement opens a labelled tab in the caller's workspace", a
 test("a group reuses its tab and splits beside the last pane", async () => {
 	const script = tempScript();
 	const { herdr, calls } = fakeHerdr({
-		tabs: [{ label: "fanout", tab_id: "w1:t4", workspace_id: "w1" }],
+		tabs: [{ label: "vpk-audit-x", tab_id: "w1:t4", workspace_id: "w1" }],
 		panes: [{ pane_id: "w1:p8", tab_id: "w1:t4" }, { pane_id: "w1:p2", tab_id: "w1:t1" }],
 	});
-	await run(parseArgs(["run", "--script", script, "--label", "worker-2", "--group", "fanout"]), { env: herdrEnv, herdr, log: () => {} });
+	await run(parseArgs(["run", "--script", script, "--label", "vpk-audit-x-2", "--group", "vpk-audit-x"]), { env: herdrEnv, herdr, log: () => {} });
 	assert.equal(calls.some(([group, verb]) => group === "tab" && verb === "create"), false);
 	const split = calls.find(([group, verb]) => group === "pane" && verb === "split");
 	assert.deepEqual(split.slice(2), ["w1:p8", "--direction", "right", "--cwd", process.cwd(), "--no-focus"]);
 });
 
-test("a fresh worktree runs in the root pane of its new workspace", async () => {
+test("the main checkout is derived from a linked worktree and from itself", () => {
+	const { main, tree } = linkedWorktree();
+	assert.equal(mainCheckoutFor(tree), main);
+	assert.equal(mainCheckoutFor(main), main);
+	assert.throws(() => mainCheckoutFor(os.tmpdir()), /is not a git worktree/u);
+});
+
+test("a linked worktree opens its own workspace from the main checkout and runs in its root pane", async () => {
 	const script = tempScript();
+	const { main, tree } = linkedWorktree();
 	const { herdr, calls } = fakeHerdr();
-	await run(parseArgs(["run", "--script", script, "--label", "fix-x", "--worktree", "/tmp/wt"]), { env: herdrEnv, herdr, log: () => {} });
+	await run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree]), { env: herdrEnv, herdr, log: () => {} });
+	const open = calls.find(([group, verb]) => group === "worktree" && verb === "open");
+	assert.deepEqual(open.slice(2), ["--cwd", main, "--path", tree, "--label", "vpk-fix-x", "--no-focus"]);
 	assert.ok(calls.some(([group, verb, pane]) => group === "pane" && verb === "run" && pane === "w7:p1"));
 	assert.equal(calls.some(([group, verb]) => group === "tab" && verb === "create"), false);
 });
 
-test("an already-open worktree gets a new tab instead of its busy root pane", async () => {
+test("an already-open worktree gets a new tab at the worktree instead of its busy root pane", async () => {
 	const script = tempScript();
+	const { tree } = linkedWorktree();
 	const { herdr, calls } = fakeHerdr({ alreadyOpen: true });
-	await run(parseArgs(["run", "--script", script, "--label", "fix-x", "--worktree", "/tmp/wt"]), { env: herdrEnv, herdr, log: () => {} });
+	await run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree]), { env: herdrEnv, herdr, log: () => {} });
 	const create = calls.find(([group, verb]) => group === "tab" && verb === "create");
-	assert.deepEqual(create.slice(2, 4), ["--workspace", "w7"]);
+	assert.deepEqual(create.slice(2), ["--workspace", "w7", "--cwd", tree, "--label", "vpk-fix-x", "--no-focus"]);
 	assert.equal(calls.some(([group, verb, pane]) => group === "pane" && verb === "run" && pane === "w7:p1"), false);
 });
 
-test("a linked worktree source falls back to a tab in the caller's workspace at the worktree", async () => {
+test("a failed worktree open throws instead of falling back to a tab", async () => {
 	const script = tempScript();
+	const { tree } = linkedWorktree();
 	const { herdr, calls } = fakeHerdr({ worktreeError: "linked_worktree_source" });
-	const logs = [];
-	await run(parseArgs(["run", "--script", script, "--label", "fix-x", "--worktree", "/tmp/wt"]), { env: herdrEnv, herdr, log: (line) => logs.push(line) });
-	const create = calls.find(([group, verb]) => group === "tab" && verb === "create");
-	assert.deepEqual(create.slice(2), ["--workspace", "w1", "--cwd", "/tmp/wt", "--label", "fix-x", "--no-focus"]);
-	assert.match(JSON.parse(logs[0]).note, /linked_worktree_source/u);
-});
-
-test("a linked worktree source with a group splits into that tab at the worktree", async () => {
-	const script = tempScript();
-	const { herdr, calls } = fakeHerdr({
-		worktreeError: "linked_worktree_source",
-		tabs: [{ label: "fanout", tab_id: "w1:t4", workspace_id: "w1" }],
-		panes: [{ pane_id: "w1:p8", tab_id: "w1:t4" }],
-	});
-	await run(parseArgs(["run", "--script", script, "--label", "w-2", "--worktree", "/tmp/wt", "--group", "fanout"]), { env: herdrEnv, herdr, log: () => {} });
-	const split = calls.find(([group, verb]) => group === "pane" && verb === "split");
-	assert.deepEqual(split.slice(2), ["w1:p8", "--direction", "right", "--cwd", "/tmp/wt", "--no-focus"]);
-});
-
-test("other worktree open errors still fail", async () => {
-	const script = tempScript();
-	const { herdr, calls } = fakeHerdr({ worktreeError: "worktree_not_found" });
 	await assert.rejects(
-		run(parseArgs(["run", "--script", script, "--label", "fix-x", "--worktree", "/tmp/wt"]), { env: herdrEnv, herdr, log: () => {} }),
-		/worktree_not_found/u,
+		run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree]), { env: herdrEnv, herdr, log: () => {} }),
+		/worktree open failed: linked_worktree_source/u,
 	);
-	assert.equal(calls.some(([group, verb]) => group === "tab" && verb === "create"), false);
+	assert.equal(calls.some(([group, verb]) => (group === "tab" && verb === "create") || (group === "pane" && verb === "run")), false);
 });
 
-test("herdr failures carry the error code from herdr's JSON output", () => {
+test("real herdr failures surface herdr's own error text", () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-"));
 	const bin = path.join(dir, "fake-herdr");
-	// Verbatim stderr from `herdr worktree open` inside a linked worktree workspace.
+	// Verbatim stderr from `herdr worktree open --cwd <linked worktree>`.
 	fs.writeFileSync(bin, `#!/bin/sh\necho '{"error":{"code":"linked_worktree_source","message":"New and open worktree actions start from the repo parent workspace."},"id":"cli:worktree:open"}' >&2\nexit 1\n`, { mode: 0o755 });
 	const herdr = createHerdr({ PATH: process.env.PATH, HERDR_BIN_PATH: bin });
-	assert.throws(() => herdr(["worktree", "open"]), (error) => error.code === "linked_worktree_source" && /worktree open failed/u.test(error.message));
-	fs.writeFileSync(bin, "#!/bin/sh\necho 'plain failure' >&2\nexit 1\n", { mode: 0o755 });
-	assert.throws(() => herdr(["tab", "list"]), (error) => error.code === null);
+	assert.throws(() => herdr(["worktree", "open"]), /herdr worktree open failed: .*linked_worktree_source/u);
 });
 
 test("herdr surface outside a herdr workspace fails loudly", async () => {
 	const script = tempScript();
 	const { herdr } = fakeHerdr();
 	await assert.rejects(
-		run(parseArgs(["run", "--script", script, "--label", "x", "--surface", "herdr"]), { env: {}, herdr, log: () => {} }),
+		run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--surface", "herdr"]), { env: {}, herdr, log: () => {} }),
 		/HERDR_WORKSPACE_ID is not set/u,
 	);
 });

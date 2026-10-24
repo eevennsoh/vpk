@@ -3,15 +3,17 @@
 // Runs a prepared shell script in a visible terminal surface when the caller is
 // inside herdr, and inline otherwise, then waits for it and exits with its status.
 //
-//   node scripts/agent-surface.js run --script <file> --label <slug> [--cwd <dir>]
-//        [--worktree <path>] [--group <tab-label>] [--no-wait] [--timeout-ms <n>]
+//   node scripts/agent-surface.js run --script <file> --label <name> [--cwd <dir>]
+//        [--worktree <path>] [--group <name>] [--no-wait] [--timeout-ms <n>]
 //        [--surface auto|herdr|inline]
 //
+// --label and --group are vpk-<type>-<slug>[-<pane>] names (SURFACE_NAME_PATTERN).
+//
 // Placement inside herdr:
-//   --worktree <path>  the herdr workspace for that git worktree (opened if needed); when
-//                      herdr refuses (linked_worktree_source), a tab in the caller's
-//                      workspace with its cwd in the worktree
-//   --group <label>    a tab with that label in the caller's workspace, split per run
+//   --worktree <path>  the herdr workspace for that git worktree, opened from the main
+//                      checkout so it lands in the sidebar even when the caller sits in
+//                      a linked worktree; a new tab or split when it is already open
+//   --group <name>     a tab with that label in the caller's workspace, split per run
 //   neither            a new tab labelled --label in the caller's workspace
 
 const fs = require("node:fs");
@@ -23,6 +25,15 @@ const PANE_CHECK_EVERY = 10;
 
 function shellQuote(value) {
 	return `'${String(value).replace(/'/gu, `'\\''`)}'`;
+}
+
+// One name for every vpk-remote surface: herdr workspace, tab, and pane labels.
+const SURFACE_NAME_PATTERN = /^vpk-(feat|fix|refactor|perf|docs|chore|audit|research)-[a-z0-9]+(-[a-z0-9]+)*$/u;
+
+function assertSurfaceName(flag, value) {
+	if (!SURFACE_NAME_PATTERN.test(value)) {
+		throw new Error(`${flag} ${JSON.stringify(value)} must be vpk-<type>-<slug>[-<pane>], lowercase kebab-case, with type one of feat, fix, refactor, perf, docs, chore, audit, research`);
+	}
 }
 
 function parseArgs(argv) {
@@ -48,9 +59,11 @@ function parseArgs(argv) {
 			default: throw new Error(`unknown option ${flag}`);
 		}
 	}
-	if (options.command !== "run") throw new Error("usage: agent-surface.js run --script <file> --label <slug> [options]");
+	if (options.command !== "run") throw new Error("usage: agent-surface.js run --script <file> --label <name> [options]");
 	if (!options.script) throw new Error("--script is required");
 	if (!options.label) throw new Error("--label is required");
+	assertSurfaceName("--label", options.label);
+	if (options.group !== undefined) assertSurfaceName("--group", options.group);
 	if (!["auto", "herdr", "inline"].includes(options.surface)) throw new Error("--surface must be auto, herdr, or inline");
 	options.cwd ??= options.worktree ?? process.cwd();
 	return options;
@@ -85,11 +98,9 @@ const REPORT_AGENT = "vpk-worker";
 // pane; once the shell prompt returns Herdr auto-clears the agent). Ctrl-C skips.
 const LINGER_SECONDS = 15;
 
-// `herdr agent wait <name>` needs [a-z][a-z0-9_-]{0,31}; null when the label has nothing usable.
+// `herdr agent wait <name>` needs [a-z][a-z0-9_-]{0,31}; a surface name only needs truncating.
 function agentNameFor(label) {
-	const slug = String(label).toLowerCase().replace(/[^a-z0-9_-]+/gu, "-").replace(/^[-_]+|[-_]+$/gu, "");
-	if (!slug) return null;
-	return (/^[a-z]/u.test(slug) ? slug : `w-${slug}`).slice(0, 32).replace(/[-_]+$/u, "");
+	return label.slice(0, 32).replace(/-+$/u, "");
 }
 
 function buildPaneCommand({ script, exitFile, label, seq = Date.now(), lingerSeconds = LINGER_SECONDS }) {
@@ -102,7 +113,7 @@ function buildPaneCommand({ script, exitFile, label, seq = Date.now(), lingerSec
 	const start = [
 		herdr("pane report-agent") + ` --state working --seq ${base}`,
 		herdr("pane report-metadata") + ` --title ${shellQuote(label)}`,
-		...(name ? [`"$h" agent rename "$HERDR_PANE_ID" ${name}`] : []),
+		`"$h" agent rename "$HERDR_PANE_ID" ${name}`,
 	].join("; ");
 	const failed = `"exit $s"`;
 	const end = [
@@ -120,24 +131,12 @@ function buildPaneCommand({ script, exitFile, label, seq = Date.now(), lingerSec
 	].join("; ");
 }
 
-// herdr reports failures as `{"error":{"code":...,"message":...}}`; null when it did not.
-function herdrErrorCode(output) {
-	try {
-		return JSON.parse(output).error?.code ?? null;
-	} catch {
-		return null;
-	}
-}
-
 function createHerdr(env = process.env) {
 	const bin = env.HERDR_BIN_PATH || "herdr";
 	return function herdr(args) {
 		const result = spawnSync(bin, args, { encoding: "utf8", env });
 		if (result.status !== 0) {
-			const output = (result.stderr || result.stdout || "").trim();
-			const error = new Error(`herdr ${args.slice(0, 2).join(" ")} failed: ${output}`);
-			error.code = herdrErrorCode(output);
-			throw error;
+			throw new Error(`herdr ${args.slice(0, 2).join(" ")} failed: ${(result.stderr || result.stdout || "").trim()}`);
 		}
 		// `pane run` acknowledges admission with no output.
 		return result.stdout.trim() ? JSON.parse(result.stdout).result : {};
@@ -164,48 +163,39 @@ function createTab(herdr, workspaceId, label, cwd) {
 	return herdr(["tab", "create", "--workspace", workspaceId, "--cwd", cwd, "--label", label, "--no-focus"]).root_pane;
 }
 
-// herdr refuses worktree actions from a workspace it treats as a linked worktree
-// source; the pane then lands in the caller's workspace, still in the worktree.
-const LINKED_WORKTREE_SOURCE = "linked_worktree_source";
+// herdr opens worktree workspaces only from the repo parent (`linked_worktree_source`
+// otherwise), so `worktree open` gets the main checkout as --cwd, never the worktree.
+function mainCheckoutFor(worktree) {
+	const result = spawnSync("git", ["-C", worktree, "rev-parse", "--git-common-dir"], { encoding: "utf8" });
+	if (result.status !== 0) throw new Error(`--worktree ${worktree} is not a git worktree: ${result.stderr.trim()}`);
+	return path.dirname(path.resolve(worktree, result.stdout.trim()));
+}
 
-function openWorktree(herdr, options, log) {
-	try {
-		return herdr([
+function placePane(herdr, options, env = process.env) {
+	if (options.worktree) {
+		const opened = herdr([
 			"worktree", "open",
-			"--cwd", options.cwd,
+			"--cwd", mainCheckoutFor(options.worktree),
 			"--path", options.worktree,
 			"--label", options.label,
 			"--no-focus",
 		]);
-	} catch (error) {
-		if (error.code !== LINKED_WORKTREE_SOURCE) throw error;
-		log(JSON.stringify({ note: `herdr ${LINKED_WORKTREE_SOURCE}; opening a tab in this workspace at ${options.worktree}` }));
-		return null;
-	}
-}
-
-function placePane(herdr, options, env = process.env, log = console.log) {
-	if (options.worktree) {
-		const opened = openWorktree(herdr, options, log);
-		if (opened) {
-			if (!opened.already_open) return opened.root_pane;
-			const tabLabel = options.group ?? options.label;
-			const existing = findTab(herdr, opened.workspace.workspace_id, tabLabel);
-			return existing
-				? splitIntoTab(herdr, existing, options.worktree)
-				: createTab(herdr, opened.workspace.workspace_id, tabLabel, options.worktree);
-		}
+		if (!opened.already_open) return opened.root_pane;
+		const tabLabel = options.group ?? options.label;
+		const existing = findTab(herdr, opened.workspace.workspace_id, tabLabel);
+		return existing
+			? splitIntoTab(herdr, existing, options.worktree)
+			: createTab(herdr, opened.workspace.workspace_id, tabLabel, options.worktree);
 	}
 
 	const workspaceId = env.HERDR_WORKSPACE_ID;
 	if (!workspaceId) throw new Error("HERDR_WORKSPACE_ID is not set; run inside a herdr pane or pass --surface inline");
-	const cwd = options.worktree ?? options.cwd;
 	if (options.group) {
 		const existing = findTab(herdr, workspaceId, options.group);
-		if (existing) return splitIntoTab(herdr, existing, cwd);
-		return createTab(herdr, workspaceId, options.group, cwd);
+		if (existing) return splitIntoTab(herdr, existing, options.cwd);
+		return createTab(herdr, workspaceId, options.group, options.cwd);
 	}
-	return createTab(herdr, workspaceId, options.label, cwd);
+	return createTab(herdr, workspaceId, options.label, options.cwd);
 }
 
 function paneAlive(herdr, paneId) {
@@ -249,7 +239,7 @@ async function run(options, { env = process.env, herdr = createHerdr(env), log =
 		return status;
 	}
 
-	const pane = placePane(herdr, options, env, log);
+	const pane = placePane(herdr, options, env);
 	herdr(["pane", "rename", pane.pane_id, options.label]);
 	const runner = runnerFileFor(options.script);
 	fs.writeFileSync(runner, `${buildPaneCommand({ script: options.script, exitFile, label: options.label })}\n`);
@@ -283,9 +273,12 @@ if (require.main === module) {
 }
 
 module.exports = {
+	SURFACE_NAME_PATTERN,
 	agentNameFor,
+	assertSurfaceName,
 	buildPaneCommand,
 	createHerdr,
+	mainCheckoutFor,
 	parseArgs,
 	resolveSurface,
 	run,

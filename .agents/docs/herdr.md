@@ -19,8 +19,9 @@ Never drive a herdr session from a process that is not inside one.
 | Quick command the caller watches (tests, a dev server log) | a **pane** split beside the caller | the herdr skill's default |
 
 Always pass `--no-focus`; the user's focus stays where it was. Label every tab
-and pane after the task or worker (`worker-1`, `fix-sidebar-flicker`) so the
-sidebar is readable from a glance or a phone.
+and pane after the task (`vpk-fix-sidebar-flicker`, `vpk-audit-tokens-2`) so
+the sidebar is readable from a glance or a phone; `/vpk-remote` names follow
+*Naming* in `.agents/skills/vpk-remote/SKILL.md`.
 
 ## Run a Script in a Visible Surface
 
@@ -30,19 +31,24 @@ status. Outside herdr it runs the script inline with the same contract, so
 callers never branch on terminal.
 
 ```bash
-node scripts/agent-surface.js run --script <file> --label <slug> \
-  [--cwd <dir>] [--worktree <path>] [--group <tab-label>] \
+node scripts/agent-surface.js run --script <file> --label <name> \
+  [--cwd <dir>] [--worktree <path>] [--group <name>] \
   [--no-wait] [--timeout-ms <n>] [--surface auto|herdr|inline]
 ```
 
 - The script's exit code lands in `<script>.exit`; the wrapper reads it, so
   it works the same for background Bash calls and for `--no-wait` callers that
   poll later.
+- `--label` and `--group` must match `vpk-<type>-<slug>[-<pane>]`
+  (`SURFACE_NAME_PATTERN`); anything else is rejected before herdr is called.
+- `--worktree` runs `herdr worktree open` with the **main checkout** as
+  `--cwd` (derived from `git rev-parse --git-common-dir`), because herdr opens
+  worktree workspaces only from the repo parent. The worktree then gets its
+  own sidebar workspace even when the caller sits in a linked worktree. If
+  herdr still refuses, the wrapper fails with herdr's error; it never falls
+  back to a tab.
 - An already-open worktree workspace gets a new tab; its root pane is never
   reused because the user may be typing there.
-- If herdr refuses `worktree open` with `linked_worktree_source` (the caller
-  sits in a linked worktree workspace), the pane goes in the caller's
-  workspace instead, with its cwd in the worktree. Other herdr errors fail.
 - Closing the pane before the script finishes is reported as an error, not a
   silent hang.
 - The full runner is written to `<script>.pane.sh` and the pane only runs
@@ -61,11 +67,11 @@ The pane reports its own state, so workers show in the sidebar and
 | Script exits N | `idle` with message and state label `exit N` | `done`, label `exit N` |
 | 15 s after exit | released | gone |
 
-The pane is also named after the label (`Live Probe` → `live-probe`; a
-leading digit gets a `w-` prefix), so another pane can block on it:
+The pane is also named after the label (cut to herdr's 32-character agent
+name limit), so another pane can block on it:
 
 ```bash
-herdr agent wait live-probe --timeout 20000
+herdr agent wait vpk-fix-sidebar-flicker --timeout 20000
 ```
 
 herdr's own "vpk-worker finished" notification fires on completion; it needs

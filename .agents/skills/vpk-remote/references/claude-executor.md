@@ -35,7 +35,7 @@ worker writes in a task worktree.
 
 ```bash
 set -o pipefail
-worker_root="$PWD/output/remote-claude/worker-1"
+worker_root="$PWD/output/remote-claude/vpk-<type>-<slug>"
 formatter="$PWD/scripts/agent-stream-format.js"
 mkdir -p "$worker_root"
 
@@ -113,7 +113,7 @@ writes at the tool layer:
 
 ```bash
 set -o pipefail
-advisor_root="$PWD/output/remote-claude/advisor-1"
+advisor_root="$PWD/output/remote-claude/vpk-<type>-<slug>-review"
 formatter="$PWD/scripts/agent-stream-format.js"
 mkdir -p "$advisor_root"
 
