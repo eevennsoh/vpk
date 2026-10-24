@@ -455,7 +455,7 @@ test("(22) hover physics: guides follow a tray end, the support is fixed, a grow
 		const pts = (d.match(/-?[\d.]+ -?[\d.]+/g) ?? []).map(pair => pair.split(" ").map(Number));
 		const left = pts.reduce((best, p) => (p[0] < best[0] ? p : best));
 		const r = node.getBoundingClientRect();
-		const vb = node.viewBox.baseVal;
+		const vb = (node as SVGSVGElement).viewBox.baseVal;
 		const s = Math.min(r.width / vb.width, r.height / vb.height);
 		return { x: r.left + (r.width - vb.width * s) / 2 + (left[0] + 14) * s, y: r.top + (r.height - vb.height * s) / 2 + left[1] * s };
 	});
