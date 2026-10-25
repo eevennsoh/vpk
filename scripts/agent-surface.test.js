@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { spawnSync } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -12,10 +12,14 @@ const {
 	createHerdr,
 	mainCheckoutFor,
 	parseArgs,
+	reportTaskState,
 	resolveSurface,
 	run,
+	shellQuote,
 	splitDirection,
+	taskState,
 	waitForExitFile,
+	withLock,
 } = require("./agent-surface.js");
 
 function tempScript(body = "exit 0") {
@@ -53,6 +57,7 @@ function fakeHerdr({ tabs = [], panes = [], alreadyOpen = false, worktreeError =
 			return { root_pane: { pane_id: `${workspace}:p${nextPane++}`, tab_id: `${workspace}:t-${label}`, workspace_id: workspace } };
 		}
 		if (group === "pane" && verb === "list") return { panes };
+		if (group === "pane" && verb === "get") return { pane: { pane_id: args[2], workspace_id: args[2].split(":")[0] } };
 		if (group === "pane" && verb === "layout") {
 			return { layout: { panes: [{ pane_id: panes[0].pane_id, rect: { width: 200, height: 40 } }] } };
 		}
@@ -132,6 +137,7 @@ async function waitForPaneReports(readLog, label, waitForNextPoll = () => new Pr
 		"pane report-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --state working --seq 1700000000000000",
 		`pane report-metadata w1:p5 --source vpk-agent-surface --agent vpk-worker --title ${label}`,
 		`agent rename w1:p5 ${agentNameFor(label)}`,
+		`pane rename w1:p5 ${label}`,
 	];
 	let calls = readLog();
 	for (let i = 0; i < 250 && !expected.every((line) => calls.includes(line)); i += 1) {
@@ -143,7 +149,7 @@ async function waitForPaneReports(readLog, label, waitForNextPoll = () => new Pr
 
 // Runs the real pane command in bash against a fake herdr that logs each call, and
 // whether the exit file already held the status when `pane close` ran.
-async function runPaneCommand({ body, label = "vpk-feat-live-probe", closeOnExit, herdrBody = 'printf "%s\\n" "$*" >> "$LOG"' }) {
+async function runPaneCommand({ body, label = "vpk-feat-live-probe", closeOnExit, task, paneId = "w1:p5", herdrBody = 'printf "%s\\n" "$*" >> "$LOG"' }) {
 	const script = tempScript(body);
 	const dir = path.dirname(script);
 	const bin = path.join(dir, "fake-herdr");
@@ -151,11 +157,12 @@ async function runPaneCommand({ body, label = "vpk-feat-live-probe", closeOnExit
 	const exitFile = `${script}.exit`;
 	const closeProbe = `if [ "$1 $2" = "pane close" ]; then printf 'exit-file-at-close:%s\\n' "$(cat "$EXIT_FILE" 2>/dev/null)" >> "$LOG"; fi`;
 	fs.writeFileSync(bin, `#!/bin/sh\n${closeProbe}\n${herdrBody}\n`, { mode: 0o755 });
-	const command = buildPaneCommand({ script, exitFile, label, seq: 1700000000000, closeOnExit });
+	const command = buildPaneCommand({ script, exitFile, label, seq: 1700000000000, closeOnExit, task });
 	const result = spawnSync("bash", ["-c", command], {
 		encoding: "utf8",
-		env: { PATH: process.env.PATH, HERDR_BIN_PATH: bin, HERDR_PANE_ID: "w1:p5", LOG: log, EXIT_FILE: exitFile },
+		env: { PATH: process.env.PATH, HERDR_BIN_PATH: bin, HERDR_PANE_ID: paneId, LOG: log, EXIT_FILE: exitFile },
 	});
+	// Start reports are detached; wait for all four, not the close probe's lines.
 	const readLog = () => (fs.existsSync(log) ? fs.readFileSync(log, "utf8").trim().split("\n") : []);
 	const calls = await waitForPaneReports(readLog, label);
 	return { command, result, exit: fs.readFileSync(exitFile, "utf8").trim(), calls };
@@ -173,9 +180,10 @@ test("pane report collection waits for the delayed rename after a close probe", 
 	let polls = 0;
 	const collected = await waitForPaneReports(() => [...calls], label, async () => {
 		polls += 1;
-		calls.push(rename);
+		calls.push(rename, `pane rename w1:p5 ${label}`);
 	});
 	assert.equal(collected.includes(rename), true);
+	assert.equal(collected.includes(`pane rename w1:p5 ${label}`), true);
 	assert.equal(polls, 1);
 });
 
@@ -184,6 +192,7 @@ test("pane reports working and names the agent after the label", async () => {
 	assert.ok(calls.includes("pane report-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --state working --seq 1700000000000000"));
 	assert.ok(calls.includes("pane report-metadata w1:p5 --source vpk-agent-surface --agent vpk-worker --title vpk-feat-live-probe"));
 	assert.ok(calls.includes("agent rename w1:p5 vpk-feat-live-probe"));
+	assert.ok(calls.includes("pane rename w1:p5 vpk-feat-live-probe"));
 });
 
 test("the pane closes itself on exit 0, after the exit file is written", async () => {
@@ -221,6 +230,277 @@ test("a broken herdr never changes the recorded exit status", async () => {
 	const command = buildPaneCommand({ script: missing, exitFile: `${missing}.exit`, label: "vpk-fix-x" });
 	spawnSync("bash", ["-c", command], { env: { PATH: process.env.PATH, HERDR_BIN_PATH: "/nonexistent/herdr", HERDR_PANE_ID: "w1:p5" } });
 	assert.equal(fs.readFileSync(`${missing}.exit`, "utf8").trim(), "0");
+});
+
+// ── Task workspace state on the root pane ─────────────────────────────────────
+
+const TASK = { rootPaneId: "w7:p1", workspaceId: "w7", callerPaneId: "w1:p9" };
+const SURFACE = path.join(__dirname, "agent-surface.js");
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function waitFor(check, { timeoutMs = 8000, what = "condition" } = {}) {
+	const deadline = Date.now() + timeoutMs;
+	while (!check()) {
+		if (Date.now() > deadline) assert.fail(`timed out waiting for ${what}`);
+		await sleep(20);
+	}
+}
+
+// A task workspace w7 (root pane w7:p1) served by scripts/fixtures/fake-herdr.js, which keeps
+// herdr's state across processes: real pane runners call it, and its pane run starts them.
+function taskWorkspace(config = {}) {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-herdr-"));
+	const bin = path.join(dir, "herdr");
+	fs.writeFileSync(bin, `#!/bin/sh\nexec ${shellQuote(process.execPath)} ${shellQuote(path.join(__dirname, "fixtures", "fake-herdr.js"))} "$@"\n`, { mode: 0o755 });
+	const settings = { workspace: "w7", rootPane: "w7:p1", alreadyOpen: true, rootHeld: true, ...config };
+	fs.writeFileSync(path.join(dir, "config.json"), JSON.stringify(settings));
+	const lines = (file) => (fs.existsSync(path.join(dir, file)) ? fs.readFileSync(path.join(dir, file), "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line)) : []);
+	const rootReports = () => lines("reports.jsonl").filter((report) => report.pane === "w7:p1" && report.message !== null).sort((a, b) => a.seq - b.seq);
+	return {
+		env: { PATH: process.env.PATH, HERDR_ENV: "1", HERDR_BIN_PATH: bin, FAKE_HERDR_DIR: dir, HERDR_PANE_ID: "w1:p9", HERDR_WORKSPACE_ID: "w1" },
+		calls: () => lines("calls.jsonl"),
+		reports: () => lines("reports.jsonl"),
+		rootReports,
+		rootState: () => rootReports().at(-1) ?? null,
+		closed: (pane) => lines("panes.jsonl").some((event) => event.pane === pane && event.event === "close"),
+	};
+}
+
+// One task directory; each script marks that it started, then waits for its .go file.
+function taskScripts(...exits) {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-task-"));
+	return exits.map((exit, index) => {
+		const script = path.join(dir, index === 0 ? "run.sh" : `run-${index}.sh`);
+		fs.writeFileSync(script, `touch "$0.started"\nwhile [ ! -f "$0.go" ]; do sleep 0.02; done\nexit ${exit}\n`);
+		return script;
+	});
+}
+const started = (script) => fs.existsSync(`${script}.started`);
+const release = (script) => fs.writeFileSync(`${script}.go`, "");
+const liveRunFiles = (script) => {
+	const dir = path.join(path.dirname(script), "live-runs");
+	return fs.existsSync(dir) ? fs.readdirSync(dir).filter((file) => file.endsWith(".json")) : [];
+};
+
+// The planner's launch: `agent-surface.js run --worktree … --no-wait` in a child process.
+function launch(ws, tree, script) {
+	return new Promise((resolve) => {
+		const child = spawn(process.execPath, [SURFACE, "run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree, "--no-wait"], { env: ws.env });
+		let stderr = "";
+		child.stderr.on("data", (chunk) => { stderr += chunk; });
+		child.on("close", (code) => resolve({ code, stderr }));
+	});
+}
+
+test("task workspace: a run that exits 0 reports working, then idle on the root pane, then holds it", () => {
+	const ws = taskWorkspace();
+	const script = tempScript("exit 0");
+	const command = buildPaneCommand({ script, exitFile: `${script}.exit`, label: "vpk-fix-x", closeOnExit: false, task: TASK });
+	fs.writeFileSync(`${script}.pane.sh`, `${command}\n`);
+	spawnSync("bash", [`${script}.pane.sh`], { env: { ...ws.env, HERDR_PANE_ID: "w7:p1" }, stdio: "ignore" });
+	assert.deepEqual(ws.rootReports().map(({ state, message }) => [state, message]), [["working", "working · run.sh"], ["idle", "done · run.sh"]]);
+	assert.match(command, /read -r _$/u);
+	assert.equal(ws.calls().some(({ key }) => key === "pane close"), false);
+	assert.deepEqual(liveRunFiles(script), [], "unregistered");
+});
+
+test("task workspace: a run that fails reports blocked with its exit status, and its own pane closes", () => {
+	const ws = taskWorkspace();
+	const script = tempScript("exit 7");
+	fs.writeFileSync(`${script}.pane.sh`, `${buildPaneCommand({ script, exitFile: `${script}.exit`, label: "vpk-fix-x", task: TASK })}\n`);
+	spawnSync("bash", [`${script}.pane.sh`], { env: { ...ws.env, HERDR_PANE_ID: "w7:p4" }, stdio: "ignore" });
+	assert.deepEqual([ws.rootState().state, ws.rootState().message], ["blocked", "failed · exit 7"]);
+	assert.equal(ws.closed("w7:p4"), true);
+});
+
+test("task workspace: a run is registered with its pane and runner pid while its script runs", () => {
+	const ws = taskWorkspace();
+	// The script waits for its own registry entry, which a background step writes, and keeps it.
+	const script = tempScript('for i in $(seq 250); do cat "$(dirname "$0")"/live-runs/*.json > "$0.entry" 2>/dev/null && break; sleep 0.02; done');
+	fs.writeFileSync(`${script}.pane.sh`, `${buildPaneCommand({ script, exitFile: `${script}.exit`, label: "vpk-fix-x", task: TASK })}\n`);
+	spawnSync("bash", [`${script}.pane.sh`], { env: { ...ws.env, HERDR_PANE_ID: "w7:p4" }, stdio: "ignore" });
+	const entry = JSON.parse(fs.readFileSync(`${script}.entry`, "utf8"));
+	assert.deepEqual([entry.pane, entry.script, Number.isInteger(entry.pid)], ["w7:p4", script, true]);
+	assert.deepEqual(liveRunFiles(script), []);
+});
+
+test("review 5.1: two runs ending together leave the workspace idle, not working", async () => {
+	// A slow pane list made both old end-of-run checks see the other run still working.
+	const ws = taskWorkspace({ delayMs: { "pane list": 500 } });
+	const { tree } = linkedWorktree();
+	const [first, second] = taskScripts(0, 0);
+	await launch(ws, tree, first);
+	await launch(ws, tree, second);
+	await waitFor(() => started(first) && started(second), { what: "both runs to start" });
+	release(first);
+	release(second);
+	await waitFor(() => ws.closed("w7:p100") && ws.closed("w7:p101"), { what: "both panes to close" });
+	assert.equal(ws.rootState().state, "idle");
+	assert.deepEqual(liveRunFiles(first), []);
+});
+
+test("review 5.1: a run ending while another starts, or still runs, leaves working until the last ends", async () => {
+	// The first run's end is slow: a stale answer and a delayed report, as from a busy herdr.
+	const ws = taskWorkspace({ delayMs: { "w7:p100 pane list": 1500, "w7:p100 pane report-agent": 1500 } });
+	const { tree } = linkedWorktree();
+	const [first, second] = taskScripts(0, 7);
+	await launch(ws, tree, first);
+	await waitFor(() => started(first), { what: "the first run to start" });
+	release(first);
+	// The second launches once the first has started its end-of-run decision.
+	const deciding = ({ caller, key, args }) => caller === "w7:p100" && (key === "pane list" || (key === "pane report-agent" && args[0] === "w7:p1" && args[args.indexOf("--state") + 1] !== "working"));
+	await waitFor(() => ws.calls().some(deciding), { what: "the first run's end-of-run report" });
+	await launch(ws, tree, second);
+	await waitFor(() => started(second) && ws.closed("w7:p100"), { what: "the first run to end" });
+	await sleep(300);
+	assert.equal(ws.rootState().state, "working", "the second run still runs");
+	release(second);
+	await waitFor(() => ws.closed("w7:p101"), { what: "the second run to end" });
+	assert.deepEqual([ws.rootState().state, ws.rootState().message], ["blocked", "failed · exit 7"]);
+});
+
+test("review 5.1: a crashed run's registry entry never holds the workspace at working", async () => {
+	const ws = taskWorkspace();
+	const { tree } = linkedWorktree();
+	const [crashed, next] = taskScripts(0, 0);
+	await launch(ws, tree, crashed);
+	await waitFor(() => started(crashed) && ws.reports().some((report) => report.pane === "w7:p100") && ws.rootState()?.state === "working", { what: "the first run to start and report" });
+	// SIGKILL: no EXIT trap, no end-of-run report, the pane stays open showing working.
+	spawnSync("pkill", ["-KILL", "-f", crashed]);
+	await launch(ws, tree, next);
+	release(next);
+	await waitFor(() => ws.closed("w7:p101"), { what: "the second run to end" });
+	assert.equal(ws.closed("w7:p100"), false, "the crashed run's pane is still open");
+	assert.deepEqual([ws.rootState().state, ws.rootState().message], ["idle", "done · run-1.sh"]);
+	assert.deepEqual(liveRunFiles(crashed), [], "the dead run's entry was pruned");
+});
+
+test("review 5.1: the registry lock admits one process at a time and breaks a dead or stale holder's", async () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-lock-"));
+	const lock = path.join(dir, "live-runs.lock");
+	const log = path.join(dir, "log");
+	// Each holder logs its entry, holds the lock for 30 ms, then logs its exit.
+	const holder = `const { withLock } = require(${JSON.stringify(SURFACE)}); const fs = require("node:fs");
+for (let i = 0; i < 5; i += 1) withLock(${JSON.stringify(lock)}, () => {
+	fs.appendFileSync(${JSON.stringify(log)}, "in\\n");
+	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 30);
+	fs.appendFileSync(${JSON.stringify(log)}, "out\\n");
+});`;
+	const exits = await Promise.all(Array.from({ length: 4 }, () => new Promise((resolve) => spawn(process.execPath, ["-e", holder], { stdio: "inherit" }).on("exit", resolve))));
+	assert.deepEqual(exits, [0, 0, 0, 0]);
+	const lines = fs.readFileSync(log, "utf8").trim().split("\n");
+	assert.equal(lines.length, 40);
+	assert.ok(lines.every((line, index) => line === (index % 2 === 0 ? "in" : "out")), "two holders overlapped");
+	assert.equal(fs.existsSync(lock), false, "released");
+
+	// A lock whose holder died, or one older than any holder takes, is broken.
+	const dead = spawnSync(process.execPath, ["-e", "process.stdout.write(String(process.pid))"], { encoding: "utf8" }).stdout;
+	fs.mkdirSync(lock);
+	fs.writeFileSync(path.join(lock, "owner"), `${dead} x`);
+	assert.equal(withLock(lock, () => "taken"), "taken");
+	fs.mkdirSync(lock);
+	fs.writeFileSync(path.join(lock, "owner"), `${process.ppid} x`);
+	fs.utimesSync(lock, new Date(Date.now() - 60_000), new Date(Date.now() - 60_000));
+	assert.equal(withLock(lock, () => "taken"), "taken");
+});
+
+test("review 5.2: a hung herdr at launch still starts the worker; a hung placement fails fast", async () => {
+	const ws = taskWorkspace({ hang: ["pane get", "pane process-info", "pane report-agent", "pane report-metadata", "pane rename", "agent rename"] });
+	const { tree } = linkedWorktree();
+	const script = tempScript('touch "$0.started"');
+	const begin = Date.now();
+	const launching = launch(ws, tree, script);
+	await waitFor(() => started(script), { timeoutMs: 2500, what: "the worker to start despite the hung herdr" });
+	assert.equal((await launching).code, 0);
+	await waitFor(() => fs.existsSync(`${script}.exit`), { timeoutMs: 2500, what: "the exit file" });
+	assert.ok(Date.now() - begin < 3000, "neither waited on a herdr timeout");
+
+	const placing = taskWorkspace({ hang: ["worktree open"] });
+	const before = Date.now();
+	const { code, stderr } = await launch(placing, tree, tempScript());
+	assert.equal(code, 2);
+	assert.match(stderr, /herdr worktree open timed out after 3000ms/u);
+	assert.ok(Date.now() - before < 6000);
+});
+
+test("review 5.3: the exit file lands before a slow workspace report", async () => {
+	const ws = taskWorkspace({ delayMs: { "w7:p4 pane get": 1500 } });
+	const script = tempScript(`"${process.execPath}" -e 'process.stdout.write(String(Date.now()))' > "$0.done"`);
+	fs.writeFileSync(`${script}.pane.sh`, `${buildPaneCommand({ script, exitFile: `${script}.exit`, label: "vpk-fix-x", task: TASK })}\n`);
+	const child = spawn("bash", [`${script}.pane.sh`], { env: { ...ws.env, HERDR_PANE_ID: "w7:p4" }, stdio: "ignore" });
+	await waitFor(() => fs.existsSync(`${script}.exit`) && fs.readFileSync(`${script}.exit`, "utf8").trim() !== "", { what: "the exit file" });
+	const exitAt = Date.now();
+	assert.ok(exitAt - Number(fs.readFileSync(`${script}.done`, "utf8")) < 1000, "the exit file waited on the report");
+	assert.notEqual(ws.rootState()?.state, "idle", "the report is still on its way");
+	await new Promise((resolve) => child.on("exit", resolve));
+	assert.equal(ws.rootState().state, "idle");
+});
+
+const PYTHON = spawnSync("python3", ["-I", "-c", "import pty"]).status === 0;
+
+test("task workspace: in a real terminal the root pane holds at Press Enter, its report kept, until Enter", { skip: !PYTHON && "needs python3 for a pseudo-terminal" }, async () => {
+	const ws = taskWorkspace();
+	const script = tempScript("exit 0");
+	fs.writeFileSync(`${script}.pane.sh`, `${buildPaneCommand({ script, exitFile: `${script}.exit`, label: "vpk-fix-x", closeOnExit: false, task: TASK })}\n`);
+	// pty.spawn gives bash a real terminal on stdin, as a herdr pane does, so read blocks.
+	const child = spawn("python3", ["-I", "-c", "import pty, sys; sys.exit(pty.spawn(sys.argv[1:]) >> 8)", "bash", `${script}.pane.sh`], { env: { ...ws.env, HERDR_PANE_ID: "w7:p1" } });
+	let output = "";
+	let exit = null;
+	child.stdout.on("data", (chunk) => { output += chunk; });
+	child.on("exit", (code) => { exit = code; });
+	await waitFor(() => output.includes("Press Enter for a shell.") && ws.rootState()?.state === "idle", { what: "the hold" });
+	await sleep(1000);
+	assert.equal(exit, null, "still holding a second later");
+	child.stdin.write("\r");
+	await waitFor(() => exit !== null, { what: "the runner to end on Enter" });
+	assert.equal(exit, 0);
+});
+
+test("task workspace: the wrapper makes no report call; the runner registers and reports before its script", async () => {
+	const script = tempScript();
+	const { tree } = linkedWorktree();
+	const { herdr, calls } = fakeHerdr({ alreadyOpen: true });
+	await run(parseArgs(["run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree]), { env: { ...herdrEnv, HERDR_PANE_ID: "w1:p9" }, herdr, log: () => {} });
+	assert.deepEqual(calls.map(([group, verb]) => `${group} ${verb}`), ["worktree open", "tab list", "tab create", "pane run"]);
+	const runner = fs.readFileSync(`${script}.pane.sh`, "utf8");
+	assert.match(runner, /task-state "\$@" --root 'w7:p1' --workspace 'w7' --caller 'w1:p9' --script '[^']+' --pid \$\$/u);
+	assert.ok(runner.indexOf("ts start") < runner.indexOf(`bash '${script}'`));
+});
+
+// A fake herdr binary for the pane's task-state calls: the root pane is in w7 and held by
+// its pane runner; every call is logged.
+const TASK_HERDR = [
+	'printf "%s\\n" "$*" >> "$LOG"',
+	'case "$1 $2" in',
+	'"pane get") printf \'{"result":{"pane":{"pane_id":"%s","workspace_id":"w7"}}}\' "$3" ;;',
+	'"pane process-info") printf \'{"result":{"process_info":{"foreground_processes":[{"argv":["bash","/o/run.sh.pane.sh"]}]}}}\' ;;',
+	'"pane report-agent") echo "invalid_state" >&2; exit 1 ;;',
+	"esac",
+].join("\n");
+
+test("task workspace: a rejected report logs one line per report and never changes the run's exit", async () => {
+	const { exit, result } = await runPaneCommand({ body: "exit 5", closeOnExit: true, task: TASK, paneId: "w7:p4", herdrBody: TASK_HERDR });
+	assert.equal(exit, "5");
+	const line = "agent-surface: task workspace state not reported: herdr pane report-agent failed: invalid_state";
+	assert.deepEqual(result.stderr.trim().split("\n"), [line, line], "one as the run starts, one as it ends");
+});
+
+test("task workspace: never the planner's pane, a pane in another workspace, or a bare prompt", () => {
+	const calls = [];
+	const herdr = ({ workspace = "w7", held = true } = {}) => (args) => {
+		calls.push(args);
+		if (args[1] === "get") return { pane: { pane_id: args[2], workspace_id: workspace } };
+		if (args[1] === "process-info") return { process_info: { foreground_processes: held ? [{ argv: ["bash", "/o/run.sh.pane.sh"] }] : [{ argv: ["-zsh"] }] } };
+		return {};
+	};
+	const reported = () => calls.some((args) => args[1] === "report-agent");
+	const report = (options, fake) => reportTaskState(fake, { ...TASK, state: "idle", message: "done · run.sh", seq: 1, ...options });
+	assert.equal(report({ callerPaneId: "w7:p1" }, herdr()), "skipped: the caller's pane");
+	assert.equal(report({}, herdr({ workspace: "w1" })), "skipped: outside the task workspace");
+	assert.match(report({}, herdr({ held: false })), /^skipped: the root pane is at a shell prompt/u);
+	assert.equal(reported(), false);
+	assert.equal(report({}, herdr()), "reported");
+	assert.equal(taskState(["end", "--root", "w7:p1"], { herdr: herdr(), log: () => {} }), 0, "bad arguments still exit 0");
 });
 
 test("a pane that closed itself after writing the exit file is a result, not an error", async () => {
@@ -319,12 +599,14 @@ test("default herdr placement opens a labelled tab in the caller's workspace", a
 	assert.equal(status, 3);
 	const create = calls.find(([group, verb]) => group === "tab" && verb === "create");
 	assert.deepEqual(create.slice(2), ["--workspace", "w1", "--cwd", process.cwd(), "--label", "vpk-audit-x", "--no-focus"]);
-	assert.ok(calls.some(([group, verb, pane, label]) => group === "pane" && verb === "rename" && pane === "w1:p50" && label === "vpk-audit-x"));
+	// The pane names itself, so a slow herdr never holds up the launch.
+	assert.equal(calls.some(([group, verb]) => group === "pane" && verb === "rename"), false);
 	// The pane only receives a short `bash <runner>` line; the runner holds the reporting command.
 	const paneRun = calls.find(([group, verb]) => group === "pane" && verb === "run");
 	assert.equal(paneRun[3], `bash '${script}.pane.sh'`);
 	const runner = fs.readFileSync(`${script}.pane.sh`, "utf8");
 	assert.ok(runner.includes("pane report-agent") && runner.includes("--state working"));
+	assert.ok(runner.includes(`pane rename "$HERDR_PANE_ID" 'vpk-audit-x'`));
 	assert.ok(runner.includes(`pane close "$HERDR_PANE_ID"`));
 });
 
