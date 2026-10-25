@@ -11,6 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { ACCENT_TOKENS_CSS } from "../iso/accent.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(HERE, "vendor/packages/hairline/src");
@@ -23,24 +24,47 @@ export const HAIRLINE_START = `<!-- vpk-${HAIRLINE_RUNTIME_ID}:start -->`;
 export const HAIRLINE_END = `<!-- vpk-${HAIRLINE_RUNTIME_ID}:end -->`;
 export const HAIRLINE_NOTICE = "/* vpk hairline runtime · figures from hairline 0.5.1 (MIT, Copyright (c) 2026 Lucas Marques, github.com/lucasmarkes/hairline), vendored unmodified · see scripts/hairline/NOTICE.md in the vpk-html skill */";
 
-// Hairline's five colours as vpk tokens. Light: plate on --paper, hi --ink, lo --ill-tone2; mid and edge sit
-// between --ill-tone2, --ill-tone3 and --ill-ink50 at upstream's lightness (#c3c3c9, #a4a4ac). Dark keeps the same
-// steps above the paper: lo --ill-tone2, mid --ill-tone3, edge --ill-hatch, hi --ink.
+// Hairline's five colours, set to the iso kit's manual style (illustrations.md § 4, iso/accent.mjs) so a hairline figure
+// reads like an iso-kit figure: plates on the raised surface, ink edges at 60% (NEUTRAL_LINES.edge), creases at 38%, the
+// bright `hi` stroke (hairline's active part) in the accent edge colour. Dark mirrors the iso dark overrides.
 export const HAIRLINE_PALETTE = Object.freeze({
-	light: Object.freeze({ plate: "var(--paper)", hi: "var(--ink)", edge: "color-mix(in srgb, var(--ill-tone3) 85%, var(--ill-ink50))", mid: "color-mix(in srgb, var(--ill-tone3) 70%, var(--ill-tone2))", lo: "var(--ill-tone2)" }),
-	dark: Object.freeze({ plate: "var(--paper)", hi: "var(--ink)", edge: "var(--ill-hatch)", mid: "var(--ill-tone3)", lo: "var(--ill-tone2)" }),
+	light: Object.freeze({ plate: "var(--surface-raised)", hi: "color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line))", edge: "color-mix(in srgb, var(--ill-line) 60%, var(--paper))", mid: "color-mix(in srgb, var(--ill-line) 60%, var(--paper))", lo: "color-mix(in srgb, var(--ill-line) 38%, var(--paper))" }),
+	dark: Object.freeze({ plate: "var(--ill-tone2)", hi: "var(--ill-accent)", edge: "color-mix(in srgb, var(--ill-line) 60%, var(--paper))", mid: "color-mix(in srgb, var(--ill-line) 60%, var(--paper))", lo: "color-mix(in srgb, var(--ill-line) 38%, var(--paper))" }),
 });
 
 const paletteVars = palette => Object.entries(palette).map(([key, value]) => `--hairline-${key}: ${value};`).join(" ");
 
-// The plate around a figure: a vpk frame like the iso plate, the stage at upstream's 5:4, and the mono readout.
+// The iso tone map on hairline solids (runtime/stage.mjs adds the side bands): top = plate, near (left) side tone 1, far
+// (right) side tone 2; an active solid (hairline's `.hi` silhouette) takes the iso accent faces, as a hovered iso part does.
+const SVG = '[data-vpk-engine="hairline"] [data-vpk-hairline] > svg';
+const TONE_CSS = `${SVG} [data-hl-side] { stroke: none; }
+${SVG} [data-hl-side="l"] { fill: var(--ill-tone1); }
+${SVG} [data-hl-side="r"] { fill: var(--ill-tone2); }
+${SVG} [data-hl-edge] { stroke: var(--hl-edge); }
+${SVG} :is(.sil.hi, .hi) ~ [data-hl-edge], ${SVG} g:has(> .sil.hi) > [data-hl-edge] { stroke: var(--hl-hi); stroke-width: 1.6; }
+${SVG} .sil.hi { fill: var(--ill-accent); }
+${SVG} g:has(> .sil.hi) > [data-hl-side="l"] { fill: color-mix(in srgb, var(--ill-accent) 62%, var(--surface-raised)); }
+${SVG} g:has(> .sil.hi) > [data-hl-side="r"] { fill: color-mix(in srgb, var(--ill-accent) 70%, var(--ill-line)); }
+${SVG} :where(path.hi:not(.nf), polygon.hi, ellipse.hi:not(.nf)) { fill: var(--ill-accent); }
+${SVG} .ghost { display: none; }
+${SVG} .dot { fill: var(--ill-line); }
+${SVG} .dot.m { fill: var(--ill-accent); }
+${SVG} .dot.off { fill: color-mix(in srgb, var(--ill-line) 25%, var(--paper)); }
+[data-theme="dark"] ${SVG} [data-hl-side="r"] { fill: var(--surface-sunken); }
+[data-theme="dark"] ${SVG} [data-hl-side="l"] { fill: var(--ill-tone1); }`;
+
+// The plate around a figure: the iso kit's frame (iso/runtime-css .vpk-iso-frame and .vpk-iso-plate__foot): a ruled box on
+// the paper, the stage at upstream's 5:4, a mono readout in the foot, and the caption below in the house figcaption style.
 const PLATE_CSS = `:where([data-vpk-engine="hairline"]) { ${paletteVars(HAIRLINE_PALETTE.light)} }
 [data-theme="dark"] :where([data-vpk-engine="hairline"]) { ${paletteVars(HAIRLINE_PALETTE.dark)} }
-.vpk-hairline-plate { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; display: grid !important; gap: 10px; margin: 0; padding: clamp(14px, 3vw, 24px); text-align: left !important; }
-.vpk-hairline-stage { margin: 0 auto; max-width: 640px; width: 100%; }
-:where([data-vpk-hairline]) { aspect-ratio: 5 / 4; display: block; position: relative; }
-.vpk-hairline-read { color: var(--ink); font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; line-height: 1.4; min-height: 1.4em; text-align: center; }
-.vpk-hairline-plate figcaption { border-top: 1px solid var(--rule); color: var(--muted-text); font-size: 14px; padding-top: 10px; }`;
+.vpk-hairline-plate { display: block !important; margin: 0; text-align: start !important; }
+.vpk-hairline-frame { padding: 20px 16px 12px; border: 1px solid var(--rule); background: var(--paper); }
+.vpk-hairline-stage { margin: 0 auto; max-width: 720px; width: 100%; }
+:where([data-vpk-hairline]) { aspect-ratio: 5 / 4; display: block; position: relative; --hairline-stroke: 1; }
+.vpk-hairline-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.vpk-hairline-read { margin: 0; min-width: 9ch; color: var(--ink); font: 12px/1.4 var(--font-numeric, var(--font-mono)); font-variant-numeric: tabular-nums; }
+.vpk-hairline-plate > figcaption { max-width: 72ch; text-align: left; }
+${TONE_CSS}`;
 
 // Upstream's rules, untouched apart from the palette fallbacks: `var(--hairline-x,#hex)` → `var(--hairline-x)`,
 // so the only colours are the vpk tokens above (the dark-ancestor and theme-option rules then restate the same
@@ -59,7 +83,8 @@ export function hairlineCss() {
 	return `${PLATE_CSS}\n${upstream}`;
 }
 
-export const hairlineStyleTag = () => `<style data-vpk-hairline-css>\n${hairlineCss()}\n</style>`;
+// The iso accent alias pair is declared here too: a hairline page carries no iso block, and the active part takes the accent.
+export const hairlineStyleTag = () => `<style data-vpk-hairline-css>\n${ACCENT_TOKENS_CSS}\n${hairlineCss()}\n</style>`;
 
 /* ---------- what the vendored sources say about each figure ---------- */
 
@@ -101,17 +126,23 @@ function loadEsbuild() {
 	}
 }
 
-const ADAPTED = { stage: path.join(RUNTIME, "stage.mjs"), styles: path.join(RUNTIME, "styles.mjs") };
+// Vendored modules swapped for adapters: core/stage (loop, tour, toned solids), core/styles (no injection), core/iso and
+// slab (prisms and slabs that also return their side bands for the iso tone map). Keyed by the vendored path they replace.
+const ADAPTED = new Map([
+	[path.join(SRC, "core", "stage"), path.join(RUNTIME, "stage.mjs")],
+	[path.join(SRC, "core", "styles"), path.join(RUNTIME, "styles.mjs")],
+	[path.join(SRC, "core", "iso"), path.join(RUNTIME, "iso.mjs")],
+	[path.join(SRC, "slab"), path.join(RUNTIME, "slab.mjs")],
+]);
 
 const vendorPlugin = {
 	name: "vpk-hairline",
 	setup(build) {
-		// A vendored import of core/stage or core/styles goes to its adapter; the adapters' own `.ts` imports pass.
-		build.onResolve({ filter: /^\.\.?\/(?:core\/)?(?:stage|styles)$/ }, args => {
+		// A vendored import of an adapted module goes to its adapter; the adapters' own `.ts` imports pass.
+		build.onResolve({ filter: /^\.\.?\/(?:\.\.\/)?(?:core\/)?(?:stage|styles|iso|slab)$/ }, args => {
 			if (!args.importer.startsWith(SRC)) return undefined;
-			const name = args.path.endsWith("stage") ? "stage" : "styles";
-			if (path.resolve(args.resolveDir, args.path) !== path.join(SRC, "core", name)) return undefined;
-			return { path: ADAPTED[name], sideEffects: false };
+			const adapter = ADAPTED.get(path.resolve(args.resolveDir, args.path));
+			return adapter ? { path: adapter, sideEffects: false } : undefined;
 		});
 		// Extensionless vendored imports resolve to their .ts file; the package declares no side effects.
 		build.onResolve({ filter: /^\.\.?\// }, args => {
@@ -191,8 +222,10 @@ export function hairlinePlate({ id, caption, indent = "\t\t" }) {
 	const role = spec.focusable ? ` role="group" tabindex="0"` : ` role="img"`;
 	return [
 		`<figure class="vpk-hairline-plate" id="vpk-hairline-${id}" data-vpk-engine="hairline" data-vpk-figure="hl-${id}" data-vpk-camera="45 30" data-vpk-block data-vpkh-no-lightbox>`,
-		`\t<div class="vpk-hairline-stage" data-vpk-review-ignore><div data-vpk-hairline="${id}"${role} aria-label="${escapeAttr(spec.label)}"></div></div>`,
-		`\t<p class="vpk-hairline-read" data-vpk-hairline-read data-vpk-review-ignore>${escapeText(spec.rest)}</p>`,
+		`\t<div class="vpk-hairline-frame" data-vpk-review-ignore>`,
+		`\t\t<div class="vpk-hairline-stage" data-vpk-review-ignore><div data-vpk-hairline="${id}"${role} aria-label="${escapeAttr(spec.label)}"></div></div>`,
+		`\t\t<div class="vpk-hairline-foot" data-vpk-review-ignore><p class="vpk-hairline-read" data-vpk-hairline-read>${escapeText(spec.rest)}</p></div>`,
+		`\t</div>`,
 		`\t<figcaption data-vpk-review-ignore>${escapeText(caption)}</figcaption>`,
 		"</figure>",
 	].join(`\n${indent}`);
