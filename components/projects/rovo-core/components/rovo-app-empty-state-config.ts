@@ -1,3 +1,5 @@
+export type RovoAppEmptyStateHeadingAs = "h1" | "h2";
+
 export type RovoAppPlainEmptyState = {
 	heading: string;
 	id: string;

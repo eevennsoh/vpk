@@ -132,6 +132,21 @@ test("pane command records the exit status even when the script fails", () => {
 	assert.equal(command.includes("notification show"), false);
 });
 
+async function waitForPaneReports(readLog, label, waitForNextPoll = () => new Promise((resolve) => setTimeout(resolve, 20))) {
+	const expected = [
+		"pane report-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --state working --seq 1700000000000000",
+		`pane report-metadata w1:p5 --source vpk-agent-surface --agent vpk-worker --title ${label}`,
+		`agent rename w1:p5 ${agentNameFor(label)}`,
+		`pane rename w1:p5 ${label}`,
+	];
+	let calls = readLog();
+	for (let i = 0; i < 250 && !expected.every((line) => calls.includes(line)); i += 1) {
+		await waitForNextPoll();
+		calls = readLog();
+	}
+	return calls;
+}
+
 // Runs the real pane command in bash against a fake herdr that logs each call, and
 // whether the exit file already held the status when `pane close` ran.
 async function runPaneCommand({ body, label = "vpk-feat-live-probe", closeOnExit, task, paneId = "w1:p5", herdrBody = 'printf "%s\\n" "$*" >> "$LOG"' }) {
@@ -149,11 +164,28 @@ async function runPaneCommand({ body, label = "vpk-feat-live-probe", closeOnExit
 	});
 	// Start reports are detached; wait for all four, not the close probe's lines.
 	const readLog = () => (fs.existsSync(log) ? fs.readFileSync(log, "utf8").trim().split("\n") : []);
-	for (let i = 0; i < 250 && readLog().filter((line) => /^(?:pane report-|agent rename|pane rename)/u.test(line)).length < 4; i += 1) {
-		await new Promise((resolve) => setTimeout(resolve, 20));
-	}
-	return { command, result, exit: fs.readFileSync(exitFile, "utf8").trim(), calls: readLog() };
+	const calls = await waitForPaneReports(readLog, label);
+	return { command, result, exit: fs.readFileSync(exitFile, "utf8").trim(), calls };
 }
+
+test("pane report collection waits for the delayed rename after a close probe", async () => {
+	const label = "vpk-feat-live-probe";
+	const rename = `agent rename w1:p5 ${label}`;
+	const calls = [
+		"pane report-agent w1:p5 --source vpk-agent-surface --agent vpk-worker --state working --seq 1700000000000000",
+		`pane report-metadata w1:p5 --source vpk-agent-surface --agent vpk-worker --title ${label}`,
+		"exit-file-at-close:0",
+		"pane close w1:p5",
+	];
+	let polls = 0;
+	const collected = await waitForPaneReports(() => [...calls], label, async () => {
+		polls += 1;
+		calls.push(rename, `pane rename w1:p5 ${label}`);
+	});
+	assert.equal(collected.includes(rename), true);
+	assert.equal(collected.includes(`pane rename w1:p5 ${label}`), true);
+	assert.equal(polls, 1);
+});
 
 test("pane reports working and names the agent after the label", async () => {
 	const { calls } = await runPaneCommand({ body: "exit 0" });

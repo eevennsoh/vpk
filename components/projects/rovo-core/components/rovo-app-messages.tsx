@@ -24,7 +24,7 @@ import {
 } from "@/components/projects/rovo-core/lib/rovo-app-message-display";
 import { resolveRovoAppPendingAssistantDisplayState, resolveRovoAppStreamingAssistantMessageId } from "@/components/projects/rovo-core/lib/rovo-app-streaming-assistant";
 import { RovoAppConversationEmptyState } from "@/components/projects/rovo-core/components/rovo-app-empty-state";
-import { ROVO_APP_DEFAULT_EMPTY_STATE, type RovoAppEmptyStateConfig } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
+import { ROVO_APP_DEFAULT_EMPTY_STATE, type RovoAppEmptyStateConfig, type RovoAppEmptyStateHeadingAs } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
 import { RovoAppScrollActiveTracker, RovoAppScrollAnchorSync } from "@/components/projects/rovo-core/components/rovo-app-scroll-sync";
 import { computeRovoAppAnchorScrollTop } from "@/components/projects/rovo-core/lib/rovo-app-scroll-anchor-dom";
 import { GenerativeWidgetCard } from "@/components/projects/shared/components/generative-widget-card";
@@ -70,6 +70,7 @@ export interface RovoAppMessagesProps {
 	compact?: boolean;
 	contentSpacingClassName?: string;
 	emptyStateConfig?: RovoAppEmptyStateConfig;
+	headingAs?: RovoAppEmptyStateHeadingAs;
 	extraHorizontalPaddingWhenCompact?: boolean;
 	hideCustomAgentStarters?: boolean;
 	isMaxMode?: boolean;
@@ -656,6 +657,7 @@ export function RovoAppMessages({
 	compact = false,
 	contentSpacingClassName = "py-6",
 	emptyStateConfig = ROVO_APP_DEFAULT_EMPTY_STATE,
+	headingAs = "h2",
 	extraHorizontalPaddingWhenCompact = false,
 	hideCustomAgentStarters = false,
 	isMaxMode = false,
@@ -759,6 +761,7 @@ export function RovoAppMessages({
 				<RovoAppConversationEmptyState
 					customAgent={customAgent}
 					emptyStateConfig={emptyStateConfig}
+					headingAs={headingAs}
 					hideCustomAgentStarters={hideCustomAgentStarters}
 					isMaxMode={isMaxMode}
 					onSelectSuggestion={onSelectSuggestion}

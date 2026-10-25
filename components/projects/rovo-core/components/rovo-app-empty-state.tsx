@@ -10,6 +10,7 @@ import Heading from "@/components/ui/heading";
 import type {
 	RovoAppEmptyStateConfig,
 	RovoAppEmptyState,
+	RovoAppEmptyStateHeadingAs,
 	RovoAppImageIllustrationEmptyState as RovoAppIllustratedEmptyState,
 } from "./rovo-app-empty-state-config";
 
@@ -77,11 +78,13 @@ function hasRovoAppEmptyStateIllustration(emptyState: RovoAppEmptyState): emptyS
 
 function RovoAppCustomAgentEmptyState({
 	agent,
+	headingAs,
 	hideStarters,
 	itemVariants,
 	onSelectSuggestion,
 }: Readonly<{
 	agent: RovoAgentProfile;
+	headingAs: RovoAppEmptyStateHeadingAs;
 	hideStarters: boolean;
 	itemVariants: RovoAppEmptyStateItemVariants;
 	onSelectSuggestion: (suggestion: string) => Promise<void>;
@@ -100,7 +103,7 @@ function RovoAppCustomAgentEmptyState({
 					<AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
 				</motion.div>
 				<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
-					<Heading size="xlarge">{agent.name}</Heading>
+					<Heading as={headingAs} size="xlarge">{agent.name}</Heading>
 					{agent.description ? (
 						<p className="max-w-[460px] text-base leading-6 text-text-subtle">{agent.description}</p>
 					) : null}
@@ -134,12 +137,14 @@ function RovoAppCustomAgentEmptyState({
 export function RovoAppConversationEmptyState({
 	customAgent,
 	emptyStateConfig,
+	headingAs = "h2",
 	hideCustomAgentStarters,
 	isMaxMode,
 	onSelectSuggestion,
 }: Readonly<{
 	customAgent: RovoAgentProfile | null;
 	emptyStateConfig: RovoAppEmptyStateConfig;
+	headingAs?: RovoAppEmptyStateHeadingAs;
 	hideCustomAgentStarters: boolean;
 	isMaxMode: boolean;
 	onSelectSuggestion: (suggestion: string) => Promise<void>;
@@ -154,6 +159,7 @@ export function RovoAppConversationEmptyState({
 				{customAgent ? (
 					<RovoAppCustomAgentEmptyState
 						agent={customAgent}
+						headingAs={headingAs}
 						hideStarters={hideCustomAgentStarters}
 						itemVariants={emptyStateItemVariants}
 						key={`agent-${customAgent.id}`}
@@ -175,7 +181,7 @@ export function RovoAppConversationEmptyState({
 							</motion.div>
 						) : null}
 						<motion.div style={{ willChange: "transform, opacity" }} variants={emptyStateItemVariants}>
-							<Heading size="xlarge">{emptyState.heading}</Heading>
+							<Heading as={headingAs} size="xlarge">{emptyState.heading}</Heading>
 						</motion.div>
 					</motion.div>
 				)}

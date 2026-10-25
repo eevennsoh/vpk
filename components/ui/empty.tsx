@@ -155,14 +155,15 @@ const emptyTitleVariants = cva("text-text", {
 })
 
 function EmptyTitle({
+	as: Component = "h4",
 	className,
 	headingSize = "medium",
 	style,
 	...props
 }: React.ComponentProps<"h4"> &
-	VariantProps<typeof emptyTitleVariants>) {
+	VariantProps<typeof emptyTitleVariants> & { as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" }) {
 	return (
-		<h4
+		<Component
 			data-slot="empty-title"
 			className={cn(emptyTitleVariants({ headingSize }), className)}
 			style={

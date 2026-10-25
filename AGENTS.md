@@ -213,7 +213,7 @@ Inside herdr (`HERDR_ENV=1`), use the `herdr` skill and `herdr pane read <pane> 
 - Worktrees isolate browser automation through deterministic ports, unique Portless origins, and persistent `vpk-dev-<worktree>` tmux sessions. `pnpm run dev:tmux:stop` affects only this worktree. Only `tmux kill-server` and `portless prune` cascade globally — never use either for per-worktree cleanup; use the stop command or `portless alias --remove <name>`.
 - Runtime port files: `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, `.dev-backend-port`. `.claude/launch.json` (Claude preview configs) is also per-checkout: the SessionStart hook writes it via `scripts/write-claude-launch-config.js`; don't commit it.
 - Dev API calls traverse Next.js proxy then Express; debug both layers.
-- TypeScript excludes only `node_modules`; all project directories are type-checked.
+- TypeScript checks authored project directories. Generated `output/` evidence and `public/1p/rovo-stage-kit` browser assets are excluded from file discovery; explicitly imported files remain type-checked.
 - Never import transitive pnpm dependencies directly — pnpm's strict isolation only allows imports from `package.json` direct dependencies. Use internal mechanisms (e.g., `globalThis.__PLATFORM_FEATURE_FLAGS__`) or add the package explicitly.
 - Tracked `.npmrc` contains token-free routing: public `@atlaskit/*` uses npmjs and `@atlassian/logo-third-party` uses `atlassian-npm`. Keep tokens in user `~/.npmrc` (as CI does) or ignored `.npmrc.local`.
 - Keep `@layer theme, base, components, utilities;` atop `app/globals.css`; it fixes cascade order so component layers do not lose to preflight.
@@ -284,7 +284,7 @@ Each rule's `paths:` frontmatter is its canonical scope; `scripts/agent-rule-sco
 
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 

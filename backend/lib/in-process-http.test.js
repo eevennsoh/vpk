@@ -46,6 +46,28 @@ test("createCapturedResponse captures JSON responses as a web Response", async (
 	assert.deepEqual(await webResponse.json(), { ok: true });
 });
 
+test("createCapturedResponse merges bulk Node response headers before writing", async () => {
+	const response = createCapturedResponse();
+	response.setHeader("X-Existing", "preserved");
+	const result = response.setHeaders(new Headers({
+		"Content-Type": "text/plain",
+		"X-Bulk": "initial",
+	}));
+	response.setHeaders(new Map([["X-Bulk", "replaced"]]));
+
+	assert.equal(result === response, true);
+	assert.equal(response.headersSent, false);
+	response.writeHead(202);
+	response.end("captured");
+
+	const webResponse = response.toWebResponse();
+	assert.equal(webResponse.status, 202);
+	assert.equal(webResponse.headers.get("x-existing"), "preserved");
+	assert.equal(webResponse.headers.get("x-bulk"), "replaced");
+	assert.equal(webResponse.headers.get("content-type"), "text/plain");
+	assert.equal(await webResponse.text(), "captured");
+});
+
 test("createCapturedResponse works with pipeUIMessageStreamToResponse", async () => {
 	const response = createCapturedResponse();
 	const stream = createUIMessageStream({

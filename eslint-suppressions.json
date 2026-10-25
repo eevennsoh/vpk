@@ -2460,7 +2460,7 @@
   },
   "components/projects/rovo/components/rovo-app-messages-empty-state.test.js": {
     "no-restricted-syntax": {
-      "count": 92
+      "count": 91
     }
   },
   "components/projects/rovo/components/rovo-app-shell-approval-card.test.js": {
