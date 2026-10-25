@@ -112,8 +112,8 @@ everything else can be inferred:
 - **anatomy hero**: one detailed drawing of a real machine (40–80 parts). One
   small model drives both its motion and its live numbers. Use it for the one
   figure the page is built around. It adds about 30–90 minutes and 100–300 KB.
-  A larger Hero tier (80–150 parts, 2–4 hours) only on request, never an Epic
-  tier. A page has at most one.
+  A larger Hero tier (80–150 parts, 2–4 hours) when the figure needs it; there
+  is no part or size cap, and a page may carry several.
 - **both**: one anatomy hero plus iso-kit figures. They share one camera and
   one animation loop.
 

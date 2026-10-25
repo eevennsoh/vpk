@@ -11,7 +11,7 @@
 
 import fs from "node:fs";
 import { createRequire } from "node:module";
-import { ACCENT_TOKENS_CSS } from "./accent.mjs";
+import { ACCENT_TOKENS_CSS, RAY_TOKENS_CSS } from "./accent.mjs";
 import { ISO_CSS } from "./runtime-css.mjs";
 
 export const ISO_RUNTIME_ID = "iso";
@@ -22,8 +22,13 @@ export const ISO_RUNTIME_ID = "iso";
 // CSS rules (dark tone, accent on the focal, .is-active and dropping-layer tops) and the cast-on term in the runtime's shadow
 // move, which keeps a shadow on a moving top exact under the Gap. The budget rose to 27,648 B (27 KiB), about 216 B of headroom.
 // 2026-10-23 (redline 2c): 27,378 B. The accent pair became ADS hex token declarations, one per line (about -54 B net).
+// 2026-10-25 (iso upgrade, phase 0): 29,703 B = style 11,159 B + script 18,499 B. The entry CSS is layer-agnostic (generic wait/drop classes, any layer count), and the ink tone
+// and the ink emphasis add a few rules. The budget rose to 49,152 B (48 KiB): the coming step, scrub and variant runtime adds
+// roughly 8–12 KB, and this keeps one budget for the whole upgrade instead of raising it per phase.
 // Re-measure when the block changes and keep this comment, figure-engines.md § 9 and illustrations.md in step.
-export const ISO_BUDGET_BYTES = 27648;
+// 2026-10-25 (iso upgrade, phase 2): 37,557 B = style 8,154 B + script (step, scrub, variants, per-state and per-scrub-segment order: state-runtime.mjs).
+// The layer-agnostic entry CSS shrank the style by about 3 KB.
+export const ISO_BUDGET_BYTES = 49152;
 export const ISO_START = `<!-- vpk-${ISO_RUNTIME_ID}:start -->`;
 export const ISO_END = `<!-- vpk-${ISO_RUNTIME_ID}:end -->`;
 export const ISO_NOTICE = "/* vpk iso runtime v1 · motion clocks and behaviours ported from hairline (MIT, Copyright (c) 2026 Lucas Marques, github.com/lucasmarkes/hairline) · see scripts/iso/NOTICE.md in the vpk-html skill */";
@@ -34,8 +39,9 @@ const KIT_SOURCES = Object.freeze([
 	["iso/core.mjs", new URL("./core.mjs", import.meta.url)],
 	["iso/runtime.mjs", new URL("./runtime.mjs", import.meta.url)],
 	["iso/manual-runtime.mjs", new URL("./manual-runtime.mjs", import.meta.url)],
+	["iso/state-runtime.mjs", new URL("./state-runtime.mjs", import.meta.url)],
 ]);
-const KIT_NAMES = "{ createIsoRuntime, hull, parsePolyPath, parseVec, topmostHit, blink, tagLines }";
+const KIT_NAMES = "{ createIsoRuntime, hull, padHull, parsePolyPath, parseVec, topmostHit, blink, tagLines, mountStates }";
 
 export function inlineSource(text, label = "source") {
 	if (/^\s*import\b/m.test(text)) throw new Error(`${label} must have no import statements to be inlined`);
@@ -93,7 +99,7 @@ export function isoRuntimeScript() {
 // The accent alias pair (iso/accent.mjs) leads the iso CSS: it is the token layer the accent rules and the emitted focal faces
 // read, declared once per iso document. Its hex values are ADS tokens listed in references/tokens.json (illAccent, illAccentInk),
 // so check-html's literal scan reads them as token declarations.
-export const isoStyleTag = () => `<style data-vpk-iso-css>\n${ACCENT_TOKENS_CSS}\n${ISO_CSS}\n</style>`;
+export const isoStyleTag = () => `<style data-vpk-iso-css>\n${ACCENT_TOKENS_CSS}\n${RAY_TOKENS_CSS}\n${ISO_CSS}\n</style>`;
 
 export const isoRuntimeBlockBody = () => `${isoStyleTag()}\n${isoRuntimeScript()}`;
 

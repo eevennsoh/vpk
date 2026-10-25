@@ -36,7 +36,7 @@ test("the block has its markers, two tags, no <svg and none of the forbidden sub
 	// token values; every rule after them paints through var().
 	const decls = [...BLOCK.matchAll(/^\t(--ill-accent(?:-ink)?): (#[0-9a-f]{6});$/gm)].map(match => `${match[1]} ${match[2]}`);
 	assert.deepEqual(decls, ["light", "dark"].flatMap(theme => [`--ill-accent ${ACCENT[theme].accent}`, `--ill-accent-ink ${ACCENT[theme].ink}`]));
-	const unlit = BLOCK.replace(/^\t--ill-accent(?:-ink)?: #[0-9a-f]{6};$/gm, "");
+	const unlit = BLOCK.replace(/^\t(?:--ill-accent(?:-ink)?|--ill-ray-[rgb]): #[0-9a-f]{6};$/gm, "");
 	for (const bad of [/#[0-9a-f]{3,8}\b/i]) assert.doesNotMatch(unlit, bad, String(bad));
 	for (const bad of [/<svg/, /\brgba?\(|\bhsla?\(/i, /<animate|<set /, /\{\{/, /\bease-in\b/, /\.repeat\(/, /"#" \+/, /https?:/]) assert.doesNotMatch(BLOCK, bad, String(bad));
 	assert.match(BLOCK, /hairline \(MIT, Copyright \(c\) 2026 Lucas Marques, github\.com\/lucasmarkes\/hairline\)/, "attribution survives minification");
@@ -70,7 +70,7 @@ test("the pipeline inlines the one block for any iso figure and is a fixed point
 test("only the kit scope is renamed: the frame loop keeps its names (the spec's rAF probe reads `gen && run()`)", () => {
 	for (const kept of ["function createFrameLoop(", "function getFrameLoop(", "gen&&run()", "window.vpkIso??=kit.createIsoRuntime(window,getFrameLoop(window),kit)"]) assert.ok(SCRIPT.includes(kept), kept);
 	assert.equal(count(SCRIPT, "function createIsoRuntime("), 0, "kit locals are renamed");
-	assert.match(SCRIPT, /return\{createIsoRuntime:[\w$]+,hull:[\w$]+,parsePolyPath:[\w$]+,parseVec:[\w$]+,topmostHit:[\w$]+,blink:[\w$]+,tagLines:[\w$]+\}/);
+	assert.match(SCRIPT, /return\{createIsoRuntime:[\w$]+,hull:[\w$]+,padHull:[\w$]+,parsePolyPath:[\w$]+,parseVec:[\w$]+,topmostHit:[\w$]+,blink:[\w$]+,tagLines:[\w$]+,mountStates:[\w$]+\}/);
 	assert.ok(SCRIPT.includes('querySelectorAll(".slide")') && SCRIPT.includes("maxHeight"), "the deck fit ships in the block");
 });
 

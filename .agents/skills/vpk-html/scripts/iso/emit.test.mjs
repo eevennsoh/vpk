@@ -256,9 +256,12 @@ test("focal faces take the accent with a 2 px darker-accent outline and accent l
 test("assemblies draw no entry ghost or arrow (the user's redline), and the select blink is declared once", () => {
 	for (const region of [MANUAL_REGION, MANUAL_EXEMPLAR]) {
 		assert.doesNotMatch(region, /data-vpk-iso-ghost|data-vpk-iso-cue|data-vpk-iso-role="cue"/, "no ghost or entry arrow");
-		// The hand-off is one class animation on the scene group; nothing paints over a dropping part.
-		assert.equal(tags(region, /<animate [^>]*attributeName="class"/g).length, 1);
-		assert.match(region, /<g data-vpk-iso-scene>[\s\S]*<animate [^>]*attributeName="class"[^>]*values="vpk-iso-h0 [^"]*;vpk-iso-a0 [^"]*;[^"]*vpk-iso-set"[^>]*calcMode="discrete"/);
+		// The hand-off is one class animation per layer group (layer-agnostic: no per-layer CSS); nothing paints over a dropping part.
+		const groups = tags(region, /<g data-vpk-iso-enter="\d+">/g).length;
+		assert.ok(tags(region, /<animate [^>]*attributeName="class"/g).length >= groups);
+		assert.doesNotMatch(region, /<g data-vpk-iso-scene>\s*<animate [^>]*attributeName="class"/, "the scene group carries no class animation");
+		assert.match(region, /<g data-vpk-iso-enter="1">[\s\S]*?<animate [^>]*attributeName="class"[^>]*values="vpk-iso-wait;vpk-iso-drop;vpk-iso-set"[^>]*calcMode="discrete"/);
+		assert.doesNotMatch(region, /vpk-iso-[ah]\d/, "no per-layer class names");
 	}
 	assert.match(MANUAL_REGION, /<svg [^>]*data-vpk-iso-blink/, "select figures arm the blink");
 	assert.doesNotMatch(MANUAL_EXEMPLAR, /data-vpk-iso-blink/, "explode figures do not");

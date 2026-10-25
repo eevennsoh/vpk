@@ -28,7 +28,7 @@
 		{ "text": "A pin per pixel", "target": "pin-1", "side": "left" },
 		{ "text": "Gauge head", "target": "head", "side": "left" },
 		{ "text": "Bezel, falling to the rim", "target": "bezel-3", "side": "right", "anchor": [86, 40, 12] },
-		{ "text": "The pin I'm reading", "target": "pin-4", "side": "right", "anchor": [84, 23.6, 50] },
+		{ "text": "The pin I'm reading", "target": "pin-4", "side": "right", "anchor": [84, 22, 52] },
 		{ "text": "Caliper, rim 26.8 px", "target": "caliper", "side": "right" },
 		{ "text": "Bench", "target": "bench", "side": "left" }
 	],

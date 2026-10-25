@@ -78,12 +78,6 @@ test("validateBrief accepts the exemplar and rejects bad briefs", () => {
 		[brief => (brief.id = "Bad_Id"), /id "Bad_Id"/],
 		[brief => (brief.focal = "nope"), /focal "nope"/],
 		[brief => (brief.assemble.layers = [["base"], ["core"], ["module"], ["shell"], [], [], []]), /layers/],
-		[brief => {
-			brief.parts = Array.from({ length: 7 }, (_, i) => ({ id: `p${i}`, kind: "slab", at: [0, 0, i * 10], size: [10, 10, 2] }));
-			brief.focal = "p0";
-			brief.labels = [];
-			brief.assemble.layers = brief.parts.map(part => [part.id]);
-		}, /7 layers; at most 6/],
 		[brief => (brief.interact = { behavior: "field" }), /behavior "field"/],
 		[brief => (brief.style = "current"), /style "current"/],
 		[brief => (brief.figId = "FIG_1"), /figId/],
@@ -163,7 +157,7 @@ test("painter order is by depth; explode guides drop from the extreme corners to
 // A part without its own explode vector moves with the part it rests on: the window controls stay on the window frame (a
 // tray's floor) instead of taking their assembly layer's 12 units and floating off it; a part on nothing keeps its layer.
 test("explode: a part resting on another part takes that part's vector; a free part keeps its layer's", () => {
-	const brief = JSON.parse(fs.readFileSync(new URL("./briefs/hl-exploded.json", import.meta.url), "utf8"));
+	const brief = JSON.parse(fs.readFileSync(new URL("./fixtures/hl-exploded.json", import.meta.url), "utf8"));
 	const scene = buildScene(brief);
 	const vector = id => scene.pieces.find(piece => piece.id === id).explode.join(" ");
 	for (const dot of ["dot1", "dot2", "dot3"]) assert.equal(vector(dot), vector("window:back"), `${dot} moves with the window frame`);
@@ -270,7 +264,7 @@ test("marks, dims and scale validate (vpk-iso-brief/1 additions)", () => {
 	assert.match(errors({ marks: [{ target: "tray", n: 2 }, { target: "card-a", n: 2 }] }), /marks\[1\]\.n 2 is used by another mark/);
 	assert.match(errors({ marks: [{ target: "tray", n: 0 }] }), /n must be an integer within 1–99/);
 	assert.match(errors({ marks: [{ target: "tray", offset: [500, 0] }] }), /offset must be \[dx, dy\] within ±200/);
-	assert.match(errors({ marks: Array.from({ length: 13 }, () => ({ target: "tray" })) }), /marks must be an array of at most 12/);
+	assert.doesNotMatch(errors({ marks: Array.from({ length: 21 }, () => ({ target: "tray" })) }), /marks must be an array of at most/, "the mark count is not capped");
 	assert.match(errors({ dims: [{ from: [0, 0, 0], to: [1, 0, 0], text: "" }] }), /dims\[0\]\.text must be a non-empty string/);
 	assert.match(errors({ dims: [{ from: [0, 0], to: [1, 0, 0], text: "X" }] }), /dims\[0\] needs from and to as \[x, y, z\]/);
 	assert.match(errors({ dims: [{ from: [0, 0, 0], to: [1, 0, 0], text: "X", offset: 200 }] }), /dims\[0\]\.offset must be within ±80/);
@@ -482,4 +476,52 @@ test("received shadows: the parts above shadow the receiving top, clipped to it,
 	assert.match(received.find(b => b.includes("recv-core")), /data-vpk-iso-cast-on="[\d. -]+"/);
 	assert.match(received.find(b => b.includes("recv-module")), /data-vpk-iso-cast-on="[\d. -]+"/);
 	assert.doesNotMatch(region, /<(filter|linearGradient|radialGradient|feGaussianBlur)\b|mix-blend/);
+});
+
+// Phase 0 ruleset (illustrations.md § Rules): parts up to 480 (warn above 240), labels "none", emphasis and focal lists, part.tone.
+const INK_BOARD = JSON.parse(fs.readFileSync(new URL("./fixtures/ink-board.json", import.meta.url), "utf8"));
+const plates = n => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, kind: "plate", at: [(i % 30) * 4, Math.floor(i / 30) * 4, 0], size: [3, 3, 1] }));
+
+test("parts: 1–480 after expansion, a warning above 240; the caps come from checks-thresholds.json", async () => {
+	const { MAX_PARTS, WARN_PARTS, MAX_LABELS } = await import("./scene.mjs");
+	const { ISO_THRESHOLDS } = await import("./thresholds.mjs");
+	assert.deepEqual([MAX_PARTS, WARN_PARTS, MAX_LABELS], [Infinity, Infinity, Infinity], "part and label counts are neither capped nor warned");
+	assert.equal(MAX_PARTS, ISO_THRESHOLDS.partsMax);
+	const brief = n => ({ schema: "vpk-iso-brief/1", id: "many", figId: "FIG_001", title: "Many", label: "Many plates.", labels: "none", emphasis: "none", parts: plates(n) });
+	assert.deepEqual(validateBrief(brief(480)), []);
+	assert.doesNotMatch(validateBrief(brief(481)).join("\n"), /parts must be/, "481 parts validate");
+	assert.ok(!buildScene(brief(600)).warnings.some(w => /parts; above/.test(w)), "no part-count warning");
+});
+
+test("labels: \"none\" forbids part.label and draws no label group; more than 14 leader labels fail", () => {
+	assert.deepEqual(validateBrief(INK_BOARD), []);
+	const labelled = structuredClone(INK_BOARD);
+	labelled.parts[0].label = "board";
+	assert.match(validateBrief(labelled).join("\n"), /parts\[0\]\.label is not allowed with labels "none"/);
+	assert.match(validateBrief({ ...structuredClone(INK_BOARD), labels: "some" }).join("\n"), /labels must be an array of labels, "leaders" or "none"/);
+	const scene = buildScene(INK_BOARD);
+	assert.equal(scene.labels.length, 0);
+	assert.equal(scene.gutters.left + scene.gutters.right, 0, "the full width is the drawing");
+	const svg = renderSvg(scene);
+	assert.doesNotMatch(svg, /data-vpk-iso-label-for|data-vpk-iso-tag=|data-vpk-iso-narrow/);
+	assert.match(svg, /data-vpk-iso-labels="none"/);
+	const crowded = { ...clone(KINDS_BRIEF), labels: Array.from({ length: 15 }, () => ({ text: "Tray", target: "tray" })) };
+	assert.doesNotMatch(validateBrief(crowded).join("\n"), /labels has 15 labels/, "the label count is not capped");
+});
+
+test("emphasis and focal: accent needs a focal, none forbids one, ink allows a list or nothing; tone is \"ink\" only", () => {
+	const base = clone(KINDS_BRIEF);
+	assert.match(validateBrief({ ...base, focal: undefined }).join("\n"), /focal is required with emphasis "accent"/);
+	assert.match(validateBrief({ ...base, emphasis: "none" }).join("\n"), /focal is not allowed with emphasis "none"/);
+	assert.deepEqual(validateBrief({ ...base, emphasis: "none", focal: undefined }), []);
+	assert.deepEqual(validateBrief({ ...base, emphasis: "ink", focal: undefined }), []);
+	assert.deepEqual(validateBrief({ ...base, focal: ["tray", "drum"] }), [], "a focal list under the accent");
+	assert.match(validateBrief({ ...base, focal: ["tray", "tray"] }).join("\n"), /focal lists "tray" more than once/);
+	assert.match(validateBrief({ ...base, focal: [] }).join("\n"), /non-empty list/);
+	assert.match(validateBrief({ ...base, emphasis: "loud" }).join("\n"), /emphasis "loud" must be one of accent, ink, none/);
+	const toned = clone(base);
+	toned.parts[0].tone = "glow";
+	assert.match(validateBrief(toned).join("\n"), /parts\[0\]\.tone "glow" must be one of ink/);
+	const scene = buildScene({ ...base, focal: ["tray", "drum"] });
+	assert.deepEqual([...new Set(scene.pieces.filter(p => p.focal).map(p => p.partId))].sort(), ["drum", "tray"]);
 });

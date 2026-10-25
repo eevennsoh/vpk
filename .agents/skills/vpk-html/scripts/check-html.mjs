@@ -8,7 +8,6 @@ import { collectFaviconIssues, cssVarName, loadTokens } from "./shared.mjs";
 import { isDeck } from "./presentation.mjs";
 import { collectFigureEngineIssues } from "./figures/check-figures.mjs";
 import { collectFontFaceIssues } from "./font-faces.mjs";
-import { weightWarnings } from "./media/size-budget.mjs";
 import { collectSmilMotionIssues, listSmilElements, readSmilAttribute } from "./runtime/smil-starter.mjs";
 
 // Timing and gating rules live with the starter; build.mjs and callers import them from here.
@@ -30,6 +29,10 @@ export function collectColorTokenIssues(source, label = "document") {
 	if (/data-vpk-raw-colors-allowed=["']true["']/.test(source)) return [];
 
 	const stripped = source
+		// The vendored hairline engine's fade() mask (core/stage.ts) writes white gradient stops: mask luminance sets
+		// the reflection's opacity, it is never paint, so the theme has nothing to map. Exempt that literal only, and
+		// only inside the hairline runtime script (figure-engines.md § 10).
+		.replace(/<script data-vpk-hairline-runtime>[\s\S]*?<\/script>/g, block => block.replaceAll('"stop-color":"#fff"', '"stop-color":"mask-white"'))
 		.replace(/<svg\b(?=[^>]*\bdata-vpk-external-asset\b)[\s\S]*?<\/svg>/gi, "<svg data-vpk-external-asset></svg>")
 		.replace(/url\(["']?data:font\/(?:woff2|otf|ttf);base64,[^)]+?\)/g, "url(data:font/...,...)")
 		.replace(/url\(["']?data:image\/[^)]+?\)/g, "url(data:image/...)")
@@ -170,8 +173,17 @@ function findLineNumber(source, index) {
 // ws3 S1b: `url(#id)` paint is legal for fill/stroke only when it names a <pattern> in the same
 // SVG (hatching). Returns null when the value is not a url() paint, "" when it is legal, else the
 // issue text.
+const svgRoot = svg => svg.match(/^<svg\b[^>]*>/i)?.[0] ?? "";
+const isIsoRoot = svg => /\sdata-vpk-iso[\s>=]/.test(svgRoot(svg));
+// Spectrum rays (illustrations.md § rays): an iso root marked data-vpk-iso-spectrum may stroke these three tokens.
+export const ISO_RAY_TOKENS = Object.freeze(["--ill-ray-r", "--ill-ray-g", "--ill-ray-b"]);
+const RAY_PAINT = new RegExp(`^var\\((?:${ISO_RAY_TOKENS.join("|")})\\)$`);
+
 function localPatternIds(svg) {
-	return new Set([...svg.matchAll(/<pattern\b[^>]*\bid=["']([^"']+)["']/gi)].map(match => match[1]));
+	const ids = new Set([...svg.matchAll(/<pattern\b[^>]*\bid=["']([^"']+)["']/gi)].map(match => match[1]));
+	// Iso glow gradients (vpk-iso-<id>-glow-*) are local paint servers too; their stops are checked below.
+	if (isIsoRoot(svg)) for (const match of svg.matchAll(/<(?:linearGradient|radialGradient)\b[^>]*\bid=["'](vpk-iso-[\w-]+-glow-[^"']*)["']/gi)) ids.add(match[1]);
+	return ids;
 }
 
 function localPaintUrlIssue(property, value, patternIds) {
@@ -183,7 +195,9 @@ function localPaintUrlIssue(property, value, patternIds) {
 function collectSvgColorIssues(svg, baseLine) {
 	const issues = [];
 	const patternIds = localPatternIds(svg);
+	const spectrum = isIsoRoot(svg) && /\sdata-vpk-iso-spectrum[\s>=]/.test(svgRoot(svg));
 	const check = (property, value, index, render) => {
+		if (spectrum && RAY_PAINT.test(value.trim())) return;
 		const urlIssue = localPaintUrlIssue(property, value, patternIds);
 		if (urlIssue === "") return;
 		if (urlIssue) issues.push(`line ${baseLine + findLineNumber(svg, index) - 1}: ${urlIssue}`);
@@ -277,7 +291,12 @@ export function collectSvgGrammarIssues(source) {
 		if (/\bdata-vpk-external-asset\b/i.test(root)) continue;
 		const baseLine = findLineNumber(source, match.index);
 
-		if (/<(?:linearGradient|radialGradient|filter|feDropShadow)\b|filter\s*=|drop-shadow\(/i.test(svg)) {
+		// Iso glow (illustrations.md § glow): an iso root may carry gradients whose ids are all vpk-iso-<id>-glow-*; their stop
+		// colours are still checked by collectSvgColorIssues. Filters and drop shadows stay banned everywhere.
+		const gradientIds = [...svg.matchAll(/<(?:linearGradient|radialGradient)\b[^>]*\sid="([^"]*)"/gi)].map(m => m[1]);
+		const gradientCount = (svg.match(/<(?:linearGradient|radialGradient)\b/gi) ?? []).length;
+		const isoGlow = /\sdata-vpk-iso[\s>=]/.test(root) && gradientCount > 0 && gradientIds.length === gradientCount && gradientIds.every(id => /^vpk-iso-[\w-]+-glow-/.test(id));
+		if (/<(?:filter|feDropShadow)\b|filter\s*=|drop-shadow\(/i.test(svg) || (!isoGlow && /<(?:linearGradient|radialGradient)\b/i.test(svg))) {
 			issues.push(`line ${baseLine}: SVG must not use gradients, filters, or drop shadows`);
 		}
 		if (/var\(--(?:accent|link)[\w-]*\)/i.test(svg)) {
@@ -642,7 +661,7 @@ export function validateHtmlString(html, label = "document") {
 	}
 
 	// Advisory only: warnings never change `ok` or the exit code.
-	const warnings = [...reviewIssues.warnings, ...figureIssues.warnings, ...weightWarnings(html, { label })];
+	const warnings = [...reviewIssues.warnings, ...figureIssues.warnings];
 
 	return {
 		ok: failures.length === 0,

@@ -260,7 +260,7 @@ test("select: rest-polygon hits, one active part, staggered lift, keyboard isola
 
 // A select lift is straight up: a card that rises behind a nearer card stays behind it (their plans do not overlap, so
 // painter order holds), and only parts that stand over one another in plan may trade places as one lifts.
-const RIFFLE = JSON.parse(fs.readFileSync(new URL("./briefs/hl-riffle.json", import.meta.url), "utf8"));
+const RIFFLE = JSON.parse(fs.readFileSync(new URL("./fixtures/hl-riffle.json", import.meta.url), "utf8"));
 test("select lift: a lifted back card stays behind the cards in front of it", async () => {
 	await withRuntime(renderRegion(buildScene(RIFFLE)), async ({ step }) => {
 		const stage = document.querySelector("[data-vpk-iso-stage]");
@@ -589,5 +589,61 @@ test("shadows follow lift and explode through the same write; at rest none carri
 		const [sx, sy] = translate(shadow);
 		assert.ok(Math.abs(sx - cast[0] * 0.4) <= 0.1 && Math.abs(sy - cast[1] * 0.4) <= 0.1, `the exploded shell's shadow moves by 0.4 Gap units of its cast (${sx} ${sy})`);
 		assert.equal(document.querySelector('[data-vpk-iso-shadow-for="base"]').hasAttribute("transform"), false, "the still base keeps its shadow");
+	});
+});
+
+// Plan § 2 U: each tube chunk hits by its own hull, never the hull of the whole bent tube, so the empty inside corner of an
+// L-pipe hits nothing and a point on a chunk still selects the pipe.
+test("select: a point inside an L-pipe's concave corner hits nothing; a point on the pipe hits it", async () => {
+	const { iso } = await import("../anatomy/vendor/kit/iso-kit.mjs");
+	const brief = {
+		schema: "vpk-iso-brief/1", id: "l-pipe", figId: "FIG_953", title: "L pipe", label: "An L-shaped pipe beside a block.", emphasis: "none",
+		parts: [{ id: "pipe", kind: "tube", points: [[0, 0, 2], [60, 0, 2], [60, 40, 2]], radius: 1.5, label: "pipe" }, { id: "block", kind: "box", at: [-30, 50, 0], size: [10, 10, 6], label: "block" }],
+		interact: { behavior: "select", rest: "rest" },
+	};
+	const scene = buildScene(brief);
+	assert.ok(scene.pieces.filter(piece => piece.partId === "pipe").length >= 3);
+	await withRuntime(renderRegion(scene), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const readout = document.querySelector("[data-vpk-iso-readout]");
+		// The test stage is RECT (720 x 450); the scene's viewBox was fitted to its own height, so view points scale to client.
+		const client = ([x, y]) => [(x * RECT.width) / scene.viewBox[0], (y * RECT.height) / scene.viewBox[1]];
+		const [cx, cy] = iso([40, 20, 2], scene.P);
+		const chunks = scene.pieces.filter(piece => piece.partId === "pipe").map(piece => piece.hit);
+		assert.ok(core.pointInPolygon([cx, cy], core.hull(chunks.flat())), "the corner point lies inside the whole pipe's hull");
+		pointer(stage, "pointermove", ...client([cx, cy]));
+		step(16);
+		assert.equal(readout.textContent, "rest", "the concave corner hits nothing");
+		pointer(stage, "pointermove", ...client(iso([30, 0, 2], scene.P)));
+		step(16);
+		assert.equal(readout.textContent, "pipe");
+	});
+});
+
+// Plan § 2 P: a concave prism hits by its convex solids (data-vpk-iso-hit="solids"), so a point in the L's notch hits nothing;
+// a glass case paints no face but is still hoverable through the hull of its edges.
+test("select: an L prism's notch hits nothing, its arm hits; a glass case is hoverable", async () => {
+	const { iso } = await import("../anatomy/vendor/kit/iso-kit.mjs");
+	const brief = {
+		schema: "vpk-iso-brief/1", id: "l-prism", figId: "FIG_963", title: "L prism", label: "An L-shaped kerb and a glass case.", emphasis: "none",
+		parts: [
+			{ id: "kerb", kind: "prism", at: [0, 0, 0], polygon: [[0, 0], [30, 0], [30, 6], [6, 6], [6, 30], [0, 30]], depth: 6, label: "kerb" },
+			{ id: "case", kind: "box", at: [60, 0, 0], size: [20, 20, 16], tone: "glass", label: "case" },
+		],
+		interact: { behavior: "select", rest: "rest" },
+	};
+	const scene = buildScene(brief);
+	await withRuntime(renderRegion(scene), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const readout = document.querySelector("[data-vpk-iso-readout]");
+		const client = ([x, y]) => [(x * RECT.width) / scene.viewBox[0], (y * RECT.height) / scene.viewBox[1]];
+		const at = point => {
+			pointer(stage, "pointermove", ...client(iso(point, scene.P)));
+			step(16);
+			return readout.textContent;
+		};
+		assert.equal(at([18, 18, 6]), "rest", "the notch hits nothing");
+		assert.equal(at([20, 3, 6]), "kerb");
+		assert.equal(at([70, 10, 16]), "case", "glass is hoverable");
 	});
 });

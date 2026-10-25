@@ -45,6 +45,9 @@ test("leaves vendored builds, replaced whole, out of the budget", () => {
 	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/anatomy/vendor/kit/lathe.mjs"), false);
 	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/anatomy/hero.mjs"), true);
 	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/anatomy/vendor-notes.md"), true);
+	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/hairline/vendor/packages/hairline/src/figures/vault.ts"), false);
+	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/hairline/vendor/apps/site/public/skill/hairline-mastra.html"), false);
+	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/hairline/inline.mjs"), true);
 });
 
 test("detects new oversized files, growth, and stale allowlist entries", () => {

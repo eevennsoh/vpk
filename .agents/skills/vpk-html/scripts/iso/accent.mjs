@@ -28,6 +28,25 @@ export const ACCENT_TOKENS_CSS = [
 
 export const ACCENT_TOKENS = Object.freeze(["--ill-accent", "--ill-accent-ink"]);
 
+// The spectrum rays (plan § 2 X: a light ray split into red, green and blue at a lens or prism). ADS icon accents red, green and
+// blue in each theme (scripts/ads-tokens.mjs ADS_RAY_MAP; references/tokens.json illRayR / illRayG / illRayB). They are an
+// explicit, scoped exception to the grayscale figure: only a `line` annotation with `spectrum` paints them, in role "ray", on a
+// root marked data-vpk-iso-spectrum (audit A1; check-html ISO_RAY_TOKENS). Declared after the accent pair, one per line.
+export const RAY = Object.freeze({
+	light: Object.freeze({ r: "#c9372c", g: "#22a06b", b: "#357de8" }),
+	dark: Object.freeze({ r: "#e2483d", g: "#2abb7f", b: "#4688ec" }),
+});
+export const RAY_TOKENS = Object.freeze({ r: "--ill-ray-r", g: "--ill-ray-g", b: "--ill-ray-b" });
+export const RAY_TOKENS_CSS = [
+	"/* the spectrum ray tokens (iso/accent.mjs RAY): ADS icon accents red, green and blue, rays only */",
+	":root {",
+	...Object.entries(RAY_TOKENS).map(([k, token]) => `\t${token}: ${RAY.light[k]};`),
+	"}",
+	'[data-theme="dark"] {',
+	...Object.entries(RAY_TOKENS).map(([k, token]) => `\t${token}: ${RAY.dark[k]};`),
+	"}",
+].join("\n");
+
 // Motion at rest (prototype runtime3d.js idle sway). The 3D figure sways its camera; the SVG cannot orbit, so it drifts the
 // whole drawing by DRIFT_PX on a Lissajous path (x over DRIFT_X_MS, y over DRIFT_Y_MS) and bobs the focal part BOB_PX on y
 // over BOB_PERIOD_MS. Any input stops it at once; it resumes IDLE_RESUME_MS after the last input. SWAY_DEG and SWAY_PERIOD_MS

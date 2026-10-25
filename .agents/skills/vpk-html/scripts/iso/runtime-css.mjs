@@ -49,14 +49,16 @@
 // `translate` property, y through `transform`, two periods) and the focal part bobs BOB_PX through `translate`, which composes
 // with the runtime's transform attribute. Pure CSS animations: no frame callback runs. Screen and no-preference only.
 
-// The entry hand-off (iso/accent.mjs ENTRY; motion.mjs handoffAnimation): one SMIL class animation on g[data-vpk-iso-scene] steps
-// the assembly through class lists: vpk-iso-h<j> hides layer j (and its shadows) until it starts dropping, vpk-iso-a<i> paints
-// the dropping layer i with the three accent faces and the darker accent line work (the current step) for ENTRY.ACCENT_HOLD_MS
-// from its start, the same for every layer, and the rest value vpk-iso-set paints nothing, so each layer fades back to the
-// neutral tone map over ENTRY.HANDOFF_MS at the same point of its own drop. The classes exist only while SMIL plays or after it
-// landed: a static, reduced-motion or print render never gains one, and a landed or printed figure is the neutral art.
+// The entry hand-off (iso/accent.mjs ENTRY; motion.mjs layerClassAnimation): each layer group (g[data-vpk-iso-enter], and each
+// g[data-vpk-iso-shadow-enter]) steps its own class with one discrete SMIL animation: vpk-iso-wait hides it until its layer
+// starts dropping, vpk-iso-drop paints a dropping part group with the three accent faces and the darker accent line work (the
+// current step) for ENTRY.ACCENT_HOLD_MS from its start, the same for every layer, and the rest value vpk-iso-set paints nothing,
+// so each layer fades back to the neutral tone map over ENTRY.HANDOFF_MS at the same point of its own drop. One rule set serves
+// any number of layers. The classes exist only while SMIL plays or after it landed: a static, reduced-motion or print render
+// never gains one, and a landed or printed figure is the neutral art.
 
 import { ACCENT_FACES, ENTRY, REST_MOTION as R, SHADOW } from "./accent.mjs";
+import { DARK_INK_OVERRIDES, DARK_RECESS_OVERRIDES } from "./palette.mjs";
 
 // The sine in-out curve, so the drift and the bob read as a slow pendulum (the 3D sway is a sine too).
 const SINE = "cubic-bezier(0.37, 0, 0.63, 1)";
@@ -82,18 +84,29 @@ const accentCss = [
 	"[data-vpk-iso-arrow-for].is-active > path { stroke: var(--ill-accent); fill: var(--ill-accent); }",
 ].join("\n");
 
-const LAYERS = Array.from({ length: 6 }, (_, i) => i);
+// Ink parts in dark (palette DARK_INK_OVERRIDES): the top and the far side swap, so the top stays the lightest face. Recesses in
+// dark (DARK_RECESS_OVERRIDES) take tone 1 pulled into the sunken surface, so a well still reads darker than its face.
+const inkCss = Object.entries({ ...DARK_INK_OVERRIDES, ...DARK_RECESS_OVERRIDES }).map(([tone, fill]) => `[data-theme="dark"] :where([data-vpk-engine="iso-kit"], svg[data-vpk-iso]) :where([data-vpk-iso-tone="${tone}"]) { fill: ${fill}; }`).join("\n");
+
+// A figure with emphasis "ink" or "none" (data-vpk-iso-emphasis on the root) paints no accent: the hovered or selected part and
+// an owned arrow take the ink instead. (0,4,1) and later, so they beat the accent rules above and the blink rule.
+const emphasisCss = [
+	'[data-vpk-engine="iso-kit"] svg[data-vpk-iso-emphasis] .is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-line); }',
+	'[data-vpk-engine="iso-kit"] svg[data-vpk-iso-emphasis] [data-vpk-iso-arrow-for].is-active > path { stroke: var(--ill-line); fill: var(--ill-line); }',
+].join("\n");
+
+const DROP = ".vpk-iso-drop[data-vpk-iso-enter] > *";
 const entryCss = [
 	// A layer that has not started dropping is hidden, with its shadows.
-	...LAYERS.map(i => `.vpk-iso-h${i} :is([data-vpk-iso-enter="${i}"], [data-vpk-iso-shadow-enter="${i}"]) { visibility: hidden; }`),
-	// The dropping layer takes the three accent faces (one rule per face role, every layer listed once).
-	...[["top", ACCENT_FACES.top], ["fill", ACCENT_FACES.light], ["shade", ACCENT_FACES.dark]].map(([role, fill]) => `:is(${LAYERS.map(i => `.vpk-iso-a${i} [data-vpk-iso-enter="${i}"]`).join(", ")}) > * > [data-vpk-iso-role="${role}"] { fill: ${fill}; }`),
+	":is([data-vpk-iso-enter], [data-vpk-iso-shadow-enter]).vpk-iso-wait { visibility: hidden; }",
+	// The dropping layer takes the three accent faces (one rule per face role).
+	...[["top", ACCENT_FACES.top], ["fill", ACCENT_FACES.light], ["shade", ACCENT_FACES.dark]].map(([role, fill]) => `${DROP} > [data-vpk-iso-role="${role}"] { fill: ${fill}; }`),
 	// A shadow on its top darkens the accent (SHADOW.RECEIVED_ACCENT), never grey on orange.
-	`:is(${LAYERS.map(i => `.vpk-iso-a${i} [data-vpk-iso-enter="${i}"]`).join(", ")}) > * > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED_ACCENT}; }`,
+	`${DROP} > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED_ACCENT}; }`,
 	// Its line work takes the darker accent too, so no grey line sits on an orange face.
-	`:is(${LAYERS.map(i => `.vpk-iso-a${i} [data-vpk-iso-enter="${i}"]`).join(", ")}) > * > ${LINES} { stroke: ${ACCENT_FACES.edge}; }`,
-	// A layer hands its accent back to the tone map over HANDOFF_MS, ACCENT_HOLD_MS after it starts (motion.mjs handoffAnimation).
-	`[data-vpk-iso-scene][class] [data-vpk-iso-part] > * { transition: fill ${ENTRY.HANDOFF_MS}ms var(--ease-out), stroke ${ENTRY.HANDOFF_MS}ms var(--ease-out); }`,
+	`${DROP} > ${LINES} { stroke: ${ACCENT_FACES.edge}; }`,
+	// A layer hands its accent back to the tone map over HANDOFF_MS, ACCENT_HOLD_MS after it starts (motion.mjs layerClassFrames).
+	`[data-vpk-iso-enter][class] [data-vpk-iso-part] > * { transition: fill ${ENTRY.HANDOFF_MS}ms var(--ease-out), stroke ${ENTRY.HANDOFF_MS}ms var(--ease-out); }`,
 ].join("\n");
 
 export const ISO_CSS = `:where([data-vpk-engine="iso-kit"] svg, svg[data-vpk-iso]) :where(path, line, polyline, polygon, ellipse, circle, rect) { vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
@@ -104,7 +117,8 @@ export const ISO_CSS = `:where([data-vpk-engine="iso-kit"] svg, svg[data-vpk-iso
 [data-theme="dark"] :where([data-vpk-engine="iso-kit"], svg[data-vpk-iso]) :where([data-vpk-iso-tone="pale"]) { fill: var(--ill-tone3); }
 [data-theme="dark"] [data-vpk-iso-shadows] { fill: ${SHADOW.DARK_TONE}; }
 [data-theme="dark"] :where([data-vpk-iso-received]) { fill: ${SHADOW.DARK_RECEIVED}; }
-[data-vpk-iso-focal] > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED_ACCENT}; }
+${inkCss}
+svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal] > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED_ACCENT}; }
 ${accentCss}
 ${entryCss}
 :where([data-vpk-engine="iso-kit"] .vpk-iso-stage) { position: relative; overflow: clip; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
@@ -120,12 +134,13 @@ ${entryCss}
 :where(.vpk-iso-control input) { accent-color: var(--ink); }
 :where(.vpk-iso-live) { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-vpk-engine="iso-kit"] svg[data-vpk-iso-blink] .is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }
+${emphasisCss}
 :where(.vpk-iso-plate--manual) { padding: 0; border: 0; border-radius: 0; background: none; }
 :where(.vpk-iso-frame) { padding: 20px 16px 12px; border: 1px solid var(--rule); background: var(--paper); }
 .vpk-iso-plate--manual svg[data-vpk-iso] { max-width: var(--vpk-iso-w, none); }
 :where(.vpk-iso-frame .vpk-iso-plate__foot) { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--rule); }
 :where(.vpk-iso-plate--manual > .vpk-iso-plate__foot) { margin-top: 10px; }
-@media print { :where(.vpk-iso-plate__foot) { display: none; } :where(.vpk-iso-plate) { break-inside: avoid; } }
+@media print { :where(.vpk-iso-plate__foot) { display: none; } :where(.vpk-iso-plate) { break-inside: avoid; } :where(svg[data-vpk-iso]) .iso-face-text { display: none; } }
 @media screen and (max-width: 720px) {
 .vpk-iso-stage svg[data-vpk-iso-narrow] :is([data-vpk-iso-label-for], [data-vpk-iso-annotation="dimension"]) { display: none; }
 .vpk-iso-stage svg[data-vpk-iso-narrow] [data-vpk-iso-tag] { display: inline; }

@@ -46,7 +46,8 @@ status readouts, and implementation briefs.
   remixing inside technical docs, plus seven iso-kit figures built from JSON briefs (`iso-exploded-stack`,
   `iso-flatpack-shelf`, `iso-phone-anatomy`, `iso-cache-shelves`, `iso-parcel-tray`,
   `iso-turntable-anatomy`, `iso-card-stack-ui`) and their gallery hub
-  `demo-illustration-gallery.html`, which links 13 gallery pages of 88 hairline and anatomy recreations
+  `demo-illustration-gallery.html`, which links 13 gallery pages: hairline's 36 figures drawn by the vendored
+  hairline engine and 52 anatomy recreations
   (`demo-illustration-gallery-hairline-<shelf>.html`, `demo-illustration-gallery-anatomy-<n>.html`).
 - **131 HTML demos** at `assets/demos/`: filled document showcases, Phase 2
   `html-effectiveness` ports, diagram previews, technical illustration previews,

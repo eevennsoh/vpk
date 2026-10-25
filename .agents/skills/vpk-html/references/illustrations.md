@@ -37,7 +37,8 @@ field. The five hand-drawn library exemplars keep the v1 recipe and are not migr
 
 A document may mix engines (locked decision 4). The agent records the choice at contract lock in
 `<meta name="vpk-figure-engine" content="none|iso-kit|anatomy-hero|both">`; the builders insert it
-when absent and never overwrite it.
+when absent and never overwrite it. Pages that show hairline's ready figures record `content="hairline"`
+(`references/figure-engines.md` § 10).
 
 | | Iso kit (this file) | Anatomy hero (`references/figure-engines.md`) |
 |---|---|---|
@@ -141,23 +142,23 @@ because `--muted-text` alone is 4.44:1 in light. This matches the anatomy plate.
 
 | Rule | Origin | Grayscale rule | Check |
 |---|---|---|---|
-| R1 | one hue plus white | Paper and raised surface plus ≤ 5 distinct face fills; pattern fills count once | A2 |
+| R1 | one hue plus white | Paper and raised surface plus ≤ 8 distinct face fills (`top`, `light`, `dark`, `pale`, `accent`, `ink`, and later `recess` and `glow`); the three accent faces, the three ink faces and any pattern fill each count once | A2 |
 | R2 | opaque plates, back to front | every face opaque; parts in painter order (anatomy `depthOf`); a guide precedes its plate | A5, A6 |
 | R3 | 1px strokes, 2px for the focal and active path | edges are 1; the focal outline is 2 (the emitted attribute), the active edge 2 from CSS only; a numbered mark's paper ring is 1.5; non-scaling strokes from CSS | A4 |
-| R4 | one focal fill | exactly one `data-vpk-iso-focal` part, its faces the three accent faces (`ACCENT_FACES`) with a 2 px darker-accent outline; a part with `state` takes the pale fill without the outline; accent paint appears nowhere else in the SVG except the focal label chip and text and the accent marker | A3 |
+| R4 | one emphasis | `brief.emphasis` is `accent` (default), `ink` or `none` (root `data-vpk-iso-emphasis` when not `accent`). `accent`: at least one `data-vpk-iso-focal` part (`focal` is an id or a list, a group drawn alike), its faces the three accent faces (`ACCENT_FACES`) with a 2 px darker-accent outline; accent paint appears nowhere else except the focal leader dot and an owned arrow. `ink`: focal parts (optional) keep their faces with a 2 px ink outline, and no accent paints anywhere, in the rest art, the entry hand-off or on hover. `none`: no focal part and no accent. A part with `state` takes the pale fill without the outline; a part with `tone: "ink"` takes the three ink faces | A3 |
 | R5 | flat side faces (hatching removed) | every side face is a plain flat face in the tone map, like the reference videos; the kit emits no hatch pattern and no `cut` role, and a brief part with `cut` fails validation with a message naming the field | A15, `scene.test.mjs` |
 | R6 | dashed explode guides | `3 3` dash, the 72% ink mix, 1; from the part's extreme base corners straight down to the part beneath | A16 |
-| R7 | mono labels near the part on leaders | Geist Mono 11 units, sentence case as the brief writes it (never forced to capitals), no extra tracking, ink; off the silhouettes, near the part, on a straight leader that ends in an ink dot on visible ink of the target; below 720 px the text becomes numbered gutter tags plus an HTML legend (see Narrow stages) | A7, A8, A20, browser (19) |
-| R8 | figure ids, no chrome | the plate carries `data-vpk-fig-id="FIG_001"` and no chrome corners: the frame holds the drawing, its labels and the readout only; SVG text never rotates | A9, A11, browser (15) |
+| R7 | mono labels near the part on leaders, or none | `brief.labels` is a list of labels (`"leaders"`, no count limit), or `"none" (root `data-vpk-iso-labels="none"`: no labels, tags, legend or gutters, and no `part.label`; the drawing takes the full width). Leaders: Geist Mono 11 units, sentence case as the brief writes it (never forced to capitals), no extra tracking, ink; off the silhouettes, near the part, on a straight leader that ends in an ink dot on visible ink of the target; below 720 px the text becomes numbered gutter tags plus an HTML legend (see Narrow stages) | A7, A8, A20, browser (19) |
+| R8 | figure ids, no chrome | the plate carries `data-vpk-fig-id="FIG_001"` and no chrome corners: the frame holds the drawing, its labels and the readout only; label text never rotates, and face text (detail `text`) is projected onto its face | A9, A11, browser (15) |
 | R9 | the assembled figure is the static art | no `transform` attributes or `opacity < 1` at rest; runtime offsets are removed at rest, so the SVG's outerHTML equals the static art | A11, browser (3)(4) |
 | R10 | Decision 2 | paint values only from `ALLOWED_ISO_TOKENS` (grayscale, no status/heat/selected/code) plus the accent pair (`ACCENT_ISO_TOKENS`, alone or leading a srgb mix to a grey token); no `data-vpk-external-asset` or `data-vpk-raw-colors-allowed` in a plate | A1 |
-| R11 | one-shot drop assembly 1–1.8 s, no ghost or arrow | every SMIL element `begin="indefinite" data-vpk-begin="0s"`; root `data-vpk-smil-arm`; ≤ 6 layers; an even, overlapping stagger (every gap `ENTRY.STAGGER_MS` = 180 ms, shorter than the 700 ms drop) baked into `keyTimes`; total ≤ 1800 ms; keySplines `0.16 1 0.3 1`; last keyframe is rest; no repeats | A12 |
-| R12 | hairline rules 01, 02, 04, 08 | one behaviour per figure (`select` or `explode`); hits use rest silhouettes; neighbours stagger 10 ms by distance; the hover lift is a 180 ms tween (`SELECT_MS`), other discrete moves 700 ms, continuous = spring (k 100, c 18); active = a 2 px accent outline only, never a face fill (filling large parts flickered as the pointer crossed boundaries) | browser (3)(4) |
+| R11 | one-shot drop assembly 1–1.8 s, no ghost or arrow | every SMIL element `begin="indefinite" data-vpk-begin="0s"`; root `data-vpk-smil-arm`; any number of layers (each layer group animates its own generic `vpk-iso-wait`/`vpk-iso-drop` class, so the CSS is the same size for 3 layers or 300); an even, overlapping stagger (every gap `staggerFor(layers)` = min(180, (1800 − 700) / (layers − 1)) ms, no floor: 180 ms up to 7 layers, 100 ms at 12, 11 ms at 100, always shorter than the 700 ms drop) baked into `keyTimes`; total ≤ 1800 ms; keySplines `0.16 1 0.3 1`; last keyframe is rest; no repeats | A12 |
+| R12 | hairline rules 01, 02, 04, 08 | one behaviour per figure (`select`, `explode`, `step` or `scrub`); step = discrete states (click, Enter, Space, arrows, Home/End, Escape to rest) on the 700 ms tween; scrub = a continuous position from a drag, `pointer-x` or arrow keys (snap to whole states) on the spring, with a slider under the frame; hovering a part during step or scrub only names it in the readout and outlines it; hits use rest silhouettes; neighbours stagger 10 ms by distance; the hover lift is a 180 ms tween (`SELECT_MS`), other discrete moves 700 ms, continuous = spring (k 100, c 18); active = a 2 px accent outline only, never a face fill (filling large parts flickered as the pointer crossed boundaries) | browser (3)(4) |
 | R13 | reduced motion | no assembly; the pointer still answers and lands in one step; a live switch lands at once; print shows the rest pose, also after an interaction | browser (1)(5)(7)(8) |
 | R14 | loops sleep | all interactive motion in `vpkFrameLoop` ticks that return false when settled; no per-figure rAF; the only CSS animation is the motion at rest (§ 8), gated by `data-vpk-iso-rest`; one idle `setTimeout` per stage | browser (6), `runtime.test.mjs` |
 | R17 | flat cast shadows | one shadow per part with faces, flat paths in one group painted before every part, one fill (`SHADOW.TONE`, dark `SHADOW.DARK_TONE`), no stroke, filter, opacity or transform; gaps and rings cast none; shadows move with their part on the ground and carry no transform at rest | A21, `runtime.test.mjs` |
-| R15 | page weight | ≤ 60 KB SVG per figure (≤ 120 KB with `data-vpk-iso-dense`, > 40 parts); coordinates rounded to 0.1 | A17 |
-| R16 | anatomy readout and ARIA | mono readout in true units (`gap 0.60`, part names, `rest`); the live region speaks only on a discrete commit | browser (3)(4) |
+| R15 | page weight | no size limit: SVG warns above 250 KB (`svgWarnBytes` 256,000) and never fails (`svgFailBytes` null); gallery pages may pass the data-URL viewer budget (a build warning, not an error); coordinates rounded to 0.1; merge each part's line work into one path per role. `data-vpk-iso-dense` is retired and tolerated as a no-op | A17 |
+| R16 | anatomy readout and ARIA | mono readout in true units (`gap 0.60`, part names, `rest`, or a state readout: the state's own `readout`, else the `interact.readout` template with `{name}`, `{n}`, `{count}`, `{t}` and `values` keys, `{key:0.1}` for decimals, interpolated while scrubbing); the live region speaks only on a discrete commit (a step change, a scrub release, a key or a slider change) | browser (3)(4) |
 
 ## 6. Acceptance checks
 
@@ -167,22 +168,25 @@ Mechanical checks run in `scripts/iso/audit.mjs` and `build.mjs --check-iso <fil
 | Id | Check |
 |---|---|
 | A1 | every paint value in the plate (fill, stroke, stop-color, color, SMIL paint) is `none`, `transparent`, a local pattern `url(#…)`, `var(--t)` or `color-mix(in srgb, var(--t) N%, var(--u))` with t, u in `ALLOWED_ISO_TOKENS`, or the accent (`var(--ill-accent)`, `var(--ill-accent-ink)`, or a mix led by `--ill-accent` towards a grey token); no escape-hatch attribute |
-| A2 | ≤ 5 distinct fills on `fill`/`shade`/`top` faces (a pattern fill counts once) |
-| A3 | exactly one focal part, its faces equal to `ACCENT_FACES` per role, with a 2 px darker-accent outline; `state` parts pale; accent paint only on focal faces (or a faceless focal's edge), the motion arrow that names the focal part (`data-vpk-iso-arrow-for`) and the accent marker; no other part has a heavier outline (R4) |
+| A2 | ≤ 8 distinct fills on `fill`/`shade`/`top` faces (`fillsMax`; the accent faces, the ink faces and a pattern fill each count once) |
+| A3 | per emphasis (R4): under `accent` at least one focal part, each with faces equal to `ACCENT_FACES` per role and a 2 px darker-accent outline, accent paint only on focal faces (or a faceless focal's edge), the motion arrow that names a focal part (`data-vpk-iso-arrow-for`) and the accent marker; under `ink` focal edges are 2 px `var(--ill-line)` and any accent paint is an error; under `none` a focal part is an error too; `state` parts pale; no non-focal part has a heavier outline |
 | A4 | every `stroke-width` attribute is in {1, 1.5, 2}; the root carries `data-vpk-iso-style="manual"` (any other value is an error naming the one style; a missing one is a warning) |
-| A5 | of two parts whose rest hulls overlap, the larger `data-vpk-iso-depth` comes later |
+| A5 | of two parts whose rest hulls overlap, the larger `data-vpk-iso-depth` comes later. The depth is the painter key from the vendored depth audit (`scripts/iso/painter.mjs`), so it follows the true front-to-back order; a painter cycle (two solids that each cover the other) is a model-audit warning |
 | A6 | each guide sits in `g[data-vpk-iso-fade]` before the fill of its `data-vpk-iso-from` part |
-| A7 | label boxes stay outside the scene hull; leaders start at their label, end inside (or within 2px of) the target's rest silhouette, and cross no other label. Before emitting, `auditScene` repeats this at rest and at every Gap slider stop from `min` to `max`: each leader ends on a visible point of its target (no part painted after it within 4px), touches no label and crosses no other leader |
+| A7 | with labels `"none"` any label or tag group is an error and nothing else is read. Otherwise label boxes stay outside the scene hull; leaders start at their label, end inside (or within 2px of) the target's rest silhouette, and cross no other label. Before emitting, `auditScene` repeats this at rest and at every Gap slider stop from `min` to `max`: each leader ends on a visible point of its target (no part painted after it within 4px), touches no label and crosses no other leader |
 | A8 | labels are sentence-case Geist Mono at 10–12 units (a label of four or more letters in all capitals fails; short acronyms pass) |
 | A9 | `data-vpk-fig-id` matches `FIG_nnn` and is unique; SVG ids start with `vpk-iso-<id>-` and are unique; `data-vpk-figure` equals `data-vpk-iso-id` |
 | A10 | the root carries exactly one valid `data-vpk-camera` that agrees with `data-vpk-iso-zdepth`; parts carry none |
-| A11 | no `transform=` outside SMIL, no `patternTransform`, no nested `<svg>`, no `opacity` below 1 |
-| A12 | SMIL per R11: gated begins, one shared `dur` ≤ 1800 ms, non-decreasing `keyTimes`, matching counts, rest last, root `data-vpk-smil-arm`, ≤ 6 `animateTransform` hold offsets 80–700 ms apart (label and guide fades are not layers), no repeats |
+| A11 | no `transform=` outside SMIL, no `patternTransform`, no nested `<svg>`, no `opacity` below 1. One exception: `<text data-vpk-iso-role="face-text" class="iso-face-text">` carries one `matrix(…)` that projects it onto its face (print hides face text, because print resets transforms) |
+| A12 | SMIL per R11: gated begins, one shared `dur` ≤ 1800 ms, non-decreasing `keyTimes`, matching counts, rest last, root `data-vpk-smil-arm`, any number of `animateTransform` hold offsets, every gap `staggerFor(layers)` (180 ms shrinking with no floor; label and guide fades are not layers), no repeats |
 | A13 | browser behaviour: `tests/vpk-html/iso-runtime.spec.ts` checks (1)–(5) and (7)–(10); `iso-runtime-print.spec.ts` checks (7b), (7c) and (12)–(15) |
 | A14 | browser loop: the same spec, checks (6) and (11) |
 | A15 | every `url(#…)` paint resolves to a `<pattern>` in the same SVG, without `patternTransform`; a stale hatched cut face (a `data-vpk-iso-role="cut"` path or a `-hatch` pattern) is an error: rebuild the figure |
 | A16 | guide dash, stroke and width match R6 |
-| A17 | SVG ≤ 60 KB (≤ 120 KB dense); path numbers have ≤ 1 decimal |
+| A17 | SVG warning above `svgWarnBytes` (256,000 B), never an error on size; path numbers have ≤ 1 decimal |
+| A18 | a focal part renders something a reader can see (a visible stroke, or at least 30% of its fill uncovered inside its clip window) |
+| A19 | detail budget as drawn segments (each `L` in a `mark`, `hatch` or `recess` path; each dot of a `dot` path counts one): warning above 400 per part; the fail limits follow `checks-thresholds.json` (null: off). Every detail entry is kept, merged into one path per role (`marksKept` is gone) |
+| A20 | (A7) a leader dot sits on visible ink of its target |
 | A21 | cast shadows (R17): one `g[data-vpk-iso-shadows]` painted before every part, filled `SHADOW.TONE`; every `data-vpk-iso-role="shadow"` is a path inside it, outside any part, with no stroke, filter, opacity, transform, style, mask or clip; each names a part with faces (a gap or ring shadow is an error); a figure with parts and no shadows warns |
 
 check-html enforces the shared part for every SVG: `url(#id)` paint only for a local `<pattern>`,
@@ -201,30 +205,103 @@ characters in full on a 320 px screen and cuts longer titles there), `label` (th
 `caption` (the insight, not an echo of the title), `style` (optional; absent or `"manual"`, the kit's one style; any
 other value fails validation),
 `camera` (`preset`, `scale: "fit"`, `pad`), `viewBox` (default 720 × 450), `texture`, `parts`,
-`focal`, `labels`, `annotations`, `marks`, `dims`, `scale`, `assemble`, `interact`, `meta` (`margin`, `corner`).
+`focal` (a part id, a non-empty list of ids drawn alike, or absent when `emphasis` is `ink` or `none`), `emphasis`
+(`accent` | `ink` | `none`, default `accent`), `labels` (a list, or `"none"`), `annotations`, `marks`, `dims`, `scale`,
+`assemble`, `interact`, `meta` (`margin`, `corner`). The numeric caps live in `references/checks-thresholds.json` → `iso`
+(read by `scripts/iso/thresholds.mjs`): `partsWarn` 240, `partsMax` (null: off), `svgWarnBytes`, `svgFailBytes` (null: off), `fillsMax` (null: off),
+every count and size key is `null` (off): there is no layer, label, mark, detail or size limit, and no warning for any of them.
 
-- **Parts** (1–160): `{ id, kind, at, size, r?, bevel?, marks?, label?, explode?, clipTo?, clipPad?, state? }`,
-  `kind` ∈ `slab | box | plate | cylinder | tray | ring | gap`. `at` is the min corner (centre for
+- **Parts** (any number after expansion; the build warns above `partsWarn`): `{ id, kind, at, size, r?, bevel?, yaw?, axis?, up?, dividers?, marks?, detail?, label?, explode?, clipTo?, clipPad?, state?, tone?: "ink" | "glass" }`,
+  `kind` ∈ `slab | box | plate | cylinder | tray | ring | gap` plus the turned, tube and ball kinds below. `at` is the min corner (centre for
   `cylinder`/`ring`), `size` is `[w, d, h]` in world units, z up (`[r, r, h]` for a `cylinder`,
   `[r, r, 0]` for a `ring`; r is the radius). A `tray` splits into `:back` and
   `:front` pieces so its contents sort between them; a `ring` is a flat disc (optionally clipped to
   another part's top, or, with `clipPad` (0–200 world units, `ring` + `clipTo` only), to that part's plan
   grown by `clipPad` on every side, so a ring wider than its target still shows an arc); a `gap` is a
   dashed reserved outline. `state` (`"new"` | `"active"`) gives a part the pale fill
-  without the focal's outline. `cut` is gone: the kit draws side faces flat, and a part that still says `cut` fails
+  without the focal's outline. `tone: "ink"` draws the part in three ink faces (`INK_TONES`, `--ill-line` at 62/78/90% into the
+  raised surface, swapped in dark so the top stays lightest) with an ink edge; it receives no shadows. `cut` is gone: the kit draws side faces flat, and a part that still says `cut` fails
   validation (`parts[n].cut is no longer supported`), with no silent fallback.
-- **Labels**: `{ text, target, side?: left|right|auto, anchor?: [x, y, z] }`.
+- **Part kinds: turned, tube and ball** (`scripts/iso/geometry.mjs`, `kinds.mjs`; drawn with the vendored `lathe`, `tubePieces` and
+  `sphereOf` under the same camera; none takes `size`). `axis` is `x | y | z | -x | -y | -z | [ax, ay, az]` (default `z`); `up`
+  (optional, not parallel to the axis) fixes where angle 0 points.
+  - `lathe`: `{ at, axis, up?, profile: [[s, r] | [s, r, "soft"], …] (2–64 points, s never decreasing, r ≥ 0), closed? (default true:
+    capped to the axis; false: an open shell), hole?: [s, r], steps? (8–160), bevel? }`. `cutaway` is not supported yet.
+  - `cylinder` + `axis` (any axis but +z) is the lathe `[[0, r], [h, r]]` from `at` along the axis; upright cylinders draw as before.
+  - `cone`: `{ at, axis, r0, r1, length }`. `torus`: `{ at, axis, R, r }` (r < R), a closed tube in chunks.
+  - `ring` + `thickness` (and `inner`, the bore radius, default 0.6 r): a washer whose bore stays open (even-odd fill); a ring without
+    `thickness` is the flat line-work ring.
+  - `tube`: `{ points: [[x, y, z], …] (2–512), radius, fillet?, closed?, caps?, corrugate?: { every } }`. `rod`: `{ from, to, radius,
+    caps? }`. `leg`: `{ at (top), radius, ground? (default 0), foot?: { r, h } }`. `spring`: `{ from, to, radius (coil), wire, turns }`.
+    `catenary`: `{ from, to, sag, radius }`. Tubes are chunked (at most 30 units each) into pieces `<id>:<k>` with `of`, so painter
+    order can pass a pipe behind one part and in front of another, and each chunk hits by its own hull. Tubes thinner than 0.8 cast
+    no shadow.
+  - `wire`: `{ points } | { from, to, sag? }`, a stroke drawn in the edge role (no radius, no shadow; its hit area is padded).
+  - `sphere`: `{ at, r }` (a circle on screen, three tones from the vendored caps). `pin`: `{ at, length, r, head, axis? }`, a rod and
+    a ball in one piece.
+  New kinds never act as supports for explode vectors or receive shadows (only flat legacy tops do); they cast shadows from their
+  sampled hull, and guides drop from their bounding plan.
+- **Prisms, turned boxes, open trays, glass** (`scripts/iso/prism.mjs`, `polygon.mjs`, `tray.mjs`):
+  - `prism`: `{ at, axis?, up?, yaw?, polygon: [[u, v], …] (3–128 points, simple: no two edges cross or touch), depth > 0, round? ≥ 0 }`.
+    The polygon lies in the frame's `u, v` plane and is extruded `depth` along `axis` from `at`. `v` is `up` made perpendicular to the
+    axis (default world z, or world y for a vertical axis), and `u = v × axis`. So an axis-`z` prism draws its polygon in plan, and an
+    axis-`-y` prism stands it upright with `u` along +x. `round` fillets every corner. A concave polygon (a key, zigzag bitting, an L
+    kerb) is split into convex solids (ear clipping, then merging diagonals while each piece stays convex). The solids are painted
+    back to front in one piece, the true outline is drawn with no internal diagonals, and the piece carries `data-vpk-iso-hit="solids"`,
+    so a point in a notch hits nothing. Its shadow is one hull per solid. A hole is drawn as a closed `tube`, not a holed prism.
+  - `box`, `slab`, `plate` take `yaw` (degrees about world z, ±360; the box turns about its own centre) and `axis`/`up` (`size` runs
+    w along `u`, d along `v`, h along the axis). Either one draws the box as a rounded-rect prism. Yaw 0 or an axis of `z` keeps the
+    legacy drawing byte for byte. An upright convex prism or turned box offers its top like a box: it supports parts for explode and
+    receives shadows. `repeat.polar.face` and a state `rotate` about `z` turn these kinds through yaw; a horizontal rotate axis is rejected.
+  - Orientation (R): `axis` must be non-zero, `up` must not be parallel to it, and `up` needs an `axis`. Geometry is baked, so there is
+    no transform at rest.
+  - `tray` takes `axis`, the open face: `+z` (default), `-z`, `+x`, `-x`, `+y` or `-y` (`x | y | z` mean `+`). At the 45/30 camera a
+    front the reader looks into is `+x` or `+y`. It also takes `dividers: { x?: [u…], y?: [v…], z?: [w…] }`, offsets from `at` that
+    make thin internal walls (x dividers full height, y between them, z shelves between both). The far walls are `<id>:back` (painted
+    before the contents), the near walls and the roof are `<id>:front` (painted after), and each divider is its own piece
+    `<id>:div-…`, ordered by the depth audit. Contents standing on the floor move with the tray. A side-open tray receives shadows
+    on its roof. A `+z` tray without dividers draws as before.
+  - Shallow wells and slots are the `recess` detail (see **Detail**). It works on a turned box's faces too, named in its own frame.
+  - `tone: "glass"` (on any part) paints no face. Its visible edges are the 1 px edge stroke and its hidden edges are dashed creases
+    (`stroke-dasharray="2 2"`, the hidden-line look), so parts behind it show through. It casts and receives no shadow, adds no fill
+    to A2, and stays hoverable: its hit polygon is the hull of its edges. A glass box draws through the prism path. A glass focal
+    takes its outline on the edge stroke, like a faceless part.
+- **Detail** (`part.detail`, `scripts/iso/detail.mjs`; at most 64 entries): drawn on a face in part-local `u, v`, or around a turned
+  part's axis. Box-like faces are `top | +x | -x | +y | -y` (side faces run `u` along the face from its min corner and `v` up from the
+  base); a tray offers its floor `top`; an upright cylinder its `top` (origin at the centre); turned parts `start | end` (and `top` on
+  an upright one), with `s` to move a cap face along the axis. Detail on a face turned away from the camera is skipped with a warning.
+  Types: `ticks { face, from, to, step, every?, lengths?, side? }`, `radialTicks { face?, at?, r, count, every?, lengths?, from?, span? }`,
+  `knurl { count, s0?, s1? }`, `ribs { count, s0?, s1?, phase? }`, `bands { at: [s, …] }`, `spokes { face?, at?, r0?, r1, count, phase? }`,
+  `bolts { face?, at?, r, count, size? }`, `dots { face, at?, grid: [cols, rows] (≤ 4000 dots), gap, size?, weights? }`,
+  `inset { face, by, r? }`, `recess { face, shape?: circle|rect|stadium, at, size, depth? }` (a recess-tone fill plus its outline and
+  far inner wall; one more fill tone for A2), `hatch { face: top, spacing ≥ 0.5, angle? }` (top faces only),
+  `spiral { face?, at?, r0?, r1, turns }`, `line { face, points, dash? }` and `text { face, at, text (≤ 48 ASCII or common symbols),
+  size? (2–6 world units), anchor? }`. Legacy `marks` are `line` detail on the top face and emit the same path as before. Each role
+  is one path per part (`mark`, a dashed `mark`, `hatch`, `dot`, `recess`), plus one `<text>` per face-text entry (A11's exception).
+- **Repeat, instances, vary** (`scripts/iso/expand.mjs`, expanded before validation, so caps and warnings count instances; ids are
+  `<id>-<k>`): `repeat: { linear: { count, step: [x, y, z] } }`, `{ grid: { count: [nx, ny(, nz)], step } }` or
+  `{ polar: { count, centre: [x, y], radius, from?, span?, face? } }` (the part's anchor, `at` or `from` or its first point, moves onto
+  the circle; `face: true` also turns turned and tube kinds towards the angle, and boxes, slabs, plates and prisms through yaw).
+  `instances: [{ …overrides }]` merges each override over the base part. `vary: { field: "size.2", values: […] }` or
+  `{ field, fn: "gauss", sigma, floor? }` (a Gaussian fall-off from the grid centre) sets one field per instance. A base id in `focal`
+  or `assemble.layers` names every instance; in `labels`, `marks`, an arrow's `of` or `clipTo` it names the first.
+- **Painter order** (`scripts/iso/painter.mjs`): every piece carries the vendored signed-distance shapes of its solids, and the
+  vendored `overlapsOf` + `orderKeys` order each pair that overlaps on screen by which is in front; pairs that never overlap keep the
+  old depth-point order, so separate parts sort as before. A long shaft between two posts, a card in a tray, letters in a cubby and a
+  long card beside a small box all sort correctly (`painter.test.mjs`).
+- **Labels**: `{ text, target, side?: left|right|auto, anchor?: [x, y, z] }`, any number; or `labels: "none"`, which drops labels,
+  tags, legend and gutters and forbids `part.label` (recommended above about 60 parts, with a readout).
   The kit anchors each leader on a visible point of its target; a crowded figure fails A7 instead
   of moving labels, so fix it with `side` or `anchor`. `side` is a hint: a label moves to
   the nearer hull edge when that edge is at least a third nearer, and labels keep 28 units apart.
-- **Marks, dimensions, scale**: `marks: [{ target, at?: [x, y, z], offset?: [dx, dy], n? }]` (at most 12;
+- **Marks, dimensions, scale**: `marks: [{ target, at?: [x, y, z], offset?: [dx, dy], n? }]` (any number;
   `n` 1–99, unique, default the list position) draws a numbered disc on a leader to a visible point of
   the target; `dims: [{ from: [x, y, z], to: [x, y, z], text, offset? }]` (world points, at most 8, text ≤ 40
   chars, `offset` within ±80) draws a tick-ended dimension line with a boxed mono label (a v1
   `dimension` annotation renders the same way); `scale: { length, text, at? }` draws a tick-ended scale bar of `length` world
   units along +x with its real length (`text` ≤ 24 chars, for example `"1,000 PX"`), only for a
   figure with real units. All three are validated by `scene.validateBrief` (`scene.test.mjs`).
-- **Assembly**: `assemble.layers` lists every part once, in ≤ 6 layers; `from` (default `[0, 0, 30]`, `ENTRY.DROP_Z`) is the
+- **Assembly**: `assemble.layers` lists every part once, in as many layers as it needs (the stagger shrinks past 7 so the total stays ≤ 1.8 s); `from` (default `[0, 0, 30]`, `ENTRY.DROP_Z`) is the
   offset parts drop from (the camera fit counts only its first 14 units, so a part may start above the frame and fall in). The timing is fixed (rule 10 below); `staggerMs` and `partMs` still validate but
   do not change it.
 - **Behaviour**: `interact` is `null` (static, zoomable), `{ behavior: "select", rest?, lift? }`
@@ -236,6 +313,24 @@ other value fails validation),
   stop keeps each label's target visible: a range that slides the focal part under another part,
   or crosses two leaders, fails A7 (the exemplar stops at 0.4). On touch, a tap does what a hover
   does and the result holds for 1.4 s after the finger lifts.
+- **States** (`scripts/iso/states.mjs`, runtime `state-runtime.mjs`): `{ behavior: "step" | "scrub", input?, rest?, loop?, values?,
+  readout?, states }`. `input` is `click` | `keys` for step (default `click`) and `drag` | `pointer-x` | `keys` for scrub
+  (default `drag`); `rest` is a state index or name (default 0); `loop: false` stops step at the ends; `values` is
+  `{ key: [one number per state] }` (a state may also carry its own `values`); `readout` is a template (see R16). Each of the
+  two or more `states` is `{ name, readout?, values?, parts?: { id: { variant?, hidden?, move?: [x, y, z], turn? } } }`.
+  The rest state is the static art: the brief's geometry, so its parts take no `move` (other states carry the difference);
+  its `hidden` parts and `variant`s are what the static SVG draws. Part fields for states:
+  `variants: { name: { ...geometry overrides } }` (each drawn as its own `<id>@<name>` piece with `data-vpk-iso-variant`, the
+  base as `@base`; `id`, `kind`, `label`, `explode`, `clipTo` and expansion keys cannot be overridden) and
+  `rotate: { axis, about?, deg: [a0, a1], samples? }` (12 samples by default, no cap; drawn as `turn-<i>` pieces, and a state's
+  `turn` or, by default, an even sweep of `deg` across the states picks the nearest). Pieces the rest state does not show
+  carry `display="none"` (last attribute) and drop out of A5, A7, A18, A20 and A21. The stage carries the state model as
+  `data-vpk-iso-states` (per state: screen moves for each part and its cast shadow, hidden/variant/turn, values, text, and
+  `o`, the painter order computed for that state); scrub interpolates moves, values and turns and switches the discrete parts
+  and the order at the middle of each segment; the runtime reorders the DOM only when the order string changes. Variants and
+  rotating parts cast their own ground shadows; received shadows are drawn only between parts that keep one shape and show
+  at rest. Back at rest the SVG's outerHTML equals the static art, also after reordering (each piece moves with its leading
+  whitespace).
 
 **Style.** The kit has one style, `manual` (credit: `SkylarKitchen/skills` `design/3d-assembly-manual`, MIT,
 `LICENSE`): a near-white model, ink hairlines at 72%, one accent focal with a 2 px darker-accent outline, labels near the part on
@@ -245,8 +340,10 @@ short leaders ending in an ink dot, numbered marks, boxed dimensions and a scale
 1. **Tones:** tops are the lightest kit tone, the two sides the next two light steps, no dark sides; dark
    theme mirrors the steps so tops stay lightest (R5, K13).
 2. **Edges:** 1 px ink hairlines at about 72%, non-scaling; plates stay opaque.
-3. **Detail:** one interior mark per part, the longest (A19); the focal keeps all of its own.
-4. **Emphasis:** exactly one focal part, the three accent faces plus a 2 px darker-accent outline (A3); a part with `state`
+3. **Detail:** every part keeps all of its marks, merged into one path per role; the budget is drawn segments (A19: warn above
+   400 per part; there is no fail limit).
+4. **Emphasis:** by default one or more focal parts take the three accent faces plus a 2 px darker-accent outline (A3);
+   `emphasis: "ink"` outlines them in 2 px ink with no accent anywhere, `emphasis: "none"` emphasises nothing; a part with `state`
    takes the pale fill without the outline; everything else is near-white. Its label sits on an accent chip with
    ink text, and its leader ends in the accent dot. A focal that renders no visible stroke
    or fill (a ring clipped away by a window it never crosses) fails A18.
@@ -276,8 +373,8 @@ short leaders ending in an ink dot, numbered marks, boxed dimensions and a scale
 The viewBox height of a figure shrinks to its drawing plus the camera pad (a 720 × 450 brief renders
 720 × 318 for the Done column), and the svg fills its frame up to 1.5 times its viewBox width. Every document
 with an iso figure inlines the same runtime block (the style's CSS, the select blink and the runtime), measured
-against one budget, `ISO_BUDGET_BYTES` = 27,648 B in `scripts/iso/inline.mjs` (27,432 B measured 2026-10-23; the comment there
-explains the rise from 25,600 B for the entry hand-off).
+against one budget, `ISO_BUDGET_BYTES` = 49,152 B in `scripts/iso/inline.mjs` (29,703 B measured 2026-10-25 with 12 entry
+layers and the ink rules; the headroom is for the step, scrub and variant runtime).
 
 **Commands** (writes under `.agents/skills/` or `artifacts/` are unsandboxed):
 
@@ -358,8 +455,9 @@ Kit specifics:
   is the current step and wears the three accent faces with darker-accent line work; `ACCENT_HOLD_MS` = 180 ms after it starts
   (the same for every layer, the last included) it hands back to the neutral tone map over `HANDOFF_MS` = 300 ms. The focal part keeps its accent. There is no entry arrow and no ghost or target
   outline (they were tried and removed: the falling part already shows the direction, and a ghost painted over the moving part).
-  Mechanism: one discrete SMIL `class` animation on `g[data-vpk-iso-scene]` steps class lists (`vpk-iso-h<j>` hides layer j
-  and its shadows until it starts, `vpk-iso-a<i>` accents the dropping layer, the rest value `vpk-iso-set` paints nothing);
+  Mechanism: each layer group (`g[data-vpk-iso-enter]`, and each `g[data-vpk-iso-shadow-enter]`) carries one discrete SMIL `class`
+  animation (`vpk-iso-wait` hides it until its layer starts, `vpk-iso-drop` accents a dropping part group, the rest value
+  `vpk-iso-set` paints nothing), so one rule set serves any number of layers;
   the iso CSS paints the classes and transitions `fill` for the hand-off. The base art carries no class, so a static, print or
   reduced-motion render is the neutral rest pose, and the grammar needs no `opacity`, filter or new rAF. The 3D prototype
   reads the same constants: its entry sampler returns an accent weight instead of a ghost, and its tour title fades from grey to
@@ -393,10 +491,12 @@ Iso-kit brief exemplars (`scripts/iso/briefs/`), rendered to `assets/illustratio
 - `iso-card-stack-ui` (`briefs/card-stack-ui.json`): UI card layers; select a layer, primary button accented.
 
 `assets/demos/demo-illustration-gallery.html` is the gallery hub: it shows all seven on one page (one inlined iso
-block; the builder renumbers each figure to its own `FIG_nnn`) and links the gallery pages. The 88 recreations of hairline
-(`hl-*`) and the anatomy collection (`an-*`) are `BRIEF_EXAMPLES` entries with a `gallery` key. They appear only on
-their gallery page, `demo-illustration-gallery-hairline-<shelf>.html` or `demo-illustration-gallery-anatomy-<n>.html`
-(`GALLERY_PAGES`). Each page must stay inside the data-URL viewer budget, and the builder fails if one does not.
+block; the builder renumbers each figure to its own `FIG_nnn`) and links the gallery pages. The 52 recreations of the
+anatomy collection (`an-*`) are `BRIEF_EXAMPLES` entries with a `gallery` key. They appear only on their gallery page,
+`demo-illustration-gallery-anatomy-<n>.html` (`GALLERY_PAGES`). The nine `demo-illustration-gallery-hairline-<shelf>.html`
+pages are not recreations: they show hairline's 36 figures drawn by the vendored hairline engine
+(`references/figure-engines.md` § 10, `scripts/hairline/figures.mjs`), which replaced the old `hl-*` iso briefs.
+Each page must stay inside the data-URL viewer budget, and the builder fails if one does not.
 
 Hand-drawn exemplars, maintained in place by `--refresh-library` (not migrated to the kit): `isometric-device`, `exploded-assembly`, `annotated-mechanism`, `hatched-cross-section`,
 `isometric-pipeline`.

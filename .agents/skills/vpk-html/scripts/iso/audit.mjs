@@ -14,17 +14,26 @@ import { convexOverlap, hull, parsePolyPath, parseVec, pointInPolygon } from "./
 import { ancestor, attr, has, norm, parseAttrs, parseMarkup, partOf, pointsOf, unitName } from "./audit-markup.mjs";
 import { auditLabelPoses, dimStrokes, boxPolygon, clipConvex, labelBox, nearPolygon, scenePoses, segmentHitsBox } from "./layout.mjs";
 import { auditDetailBudget, auditFocalVisible, auditLeaderInk, auditShadows, FOCAL_MIN_VISIBLE, paintedValue } from "./manual-audit.mjs";
-import { MANUAL_STEP_MS, MAX_LAYERS, MAX_TOTAL_MS } from "./motion.mjs";
+import { MAX_TOTAL_MS, staggerFor } from "./motion.mjs";
 import { ACCENT_TOKENS } from "./accent.mjs";
-import { isAccentPaint, ISO_PRESET, isAllowedIsoPaint, KIT_STYLE, rolesFor, STROKE_SET } from "./palette.mjs";
+import { EMPHASES, isAccentPaint, isInkFace, ISO_PRESET, isAllowedIsoPaint, KIT_STYLE, rolesFor, STROKE_SET } from "./palette.mjs";
+import { ISO_THRESHOLDS } from "./thresholds.mjs";
 
-export const SVG_BUDGET_BYTES = 60 * 1024;
-export const DENSE_SVG_BUDGET_BYTES = 120 * 1024;
+// A17 (checks-thresholds.json → iso): file size does not block parity. A figure's SVG warns above SVG_WARN_BYTES and fails only
+// above SVG_FAIL_BYTES. The old data-vpk-iso-dense attribute is tolerated as a no-op.
+export const SVG_WARN_BYTES = ISO_THRESHOLDS.svgWarnBytes;
+export const SVG_FAIL_BYTES = ISO_THRESHOLDS.svgFailBytes;
+// A2: distinct face fills (top, light, dark, pale, accent, ink, recess, glow; a pattern or gradient fill counts once).
+export const MAX_FILLS = ISO_THRESHOLDS.fillsMax;
 export { FOCAL_MIN_VISIBLE, parseMarkup };
 const PAINT_ATTRS = ["fill", "stroke", "stop-color", "color", "flood-color", "lighting-color"];
 const SMIL = new Set(["animate", "animateTransform", "animateMotion", "set"]);
 const FACE_ROLES = new Set(["fill", "shade", "top"]);
-const FOCAL_LINE_ROLES = new Set(["edge", "crease", "mark"]);
+const FOCAL_LINE_ROLES = new Set(["edge", "crease", "mark", "hatch"]);
+// Detail fills a focal part paints in the accent family: its dots (the darker accent) and its recesses (the darker accent face).
+const FOCAL_DETAIL_FILLS = new Set(["dot", "recess"]);
+// The one transform the kit emits: face text projected onto its face (detail.mjs faceMatrix).
+const FACE_TEXT_MATRIX = /^matrix\((?:\s*-?[\d.]+(?:e-?\d+)?){6}\s*\)$/;
 const decimals = d => /\d\.\d{2,}/.test(d);
 
 // The explode range a plate's Gap slider exposes ({ rest, min, max, step, unit }), or null. A hand-edited
@@ -96,7 +105,9 @@ export function auditSvg(svgSource, context = {}) {
 	if (/\bdata-vpk-(?:external-asset|raw-colors-allowed)\b/.test(context.plateHtml ?? svgSource)) push("A1", "escape-hatch attribute (data-vpk-external-asset / data-vpk-raw-colors-allowed) inside an iso plate");
 
 	// Parts, faces and hulls
-	const parts = elements.filter(el => has(el, "data-vpk-iso-part"));
+	// A step or scrub figure emits the variants, turn samples and hidden parts its rest state does not show with display="none"; the
+	// rest-pose geometry checks (A5, A7, A18, A20, A21) read only what is drawn. Paint, transform and opacity checks still cover them.
+	const parts = elements.filter(el => has(el, "data-vpk-iso-part") && attr(el, "display") !== "none");
 	const faces = elements.filter(el => el.name === "path" && FACE_ROLES.has(attr(el, "data-vpk-iso-role")));
 	const facePart = new Map(faces.map(el => [el, partOf(el)]));
 	// A clipped part (the flash ring) shows only inside its <clipPath>: the window polygon, or null for an unclipped part.
@@ -114,20 +125,27 @@ export function auditSvg(svgSource, context = {}) {
 		return [part, clipped.length >= 3 ? clipped : silhouette];
 	}));
 
-	// A2 distinct face fills (a pattern fill counts once, and so do the focal part's three accent faces: one accented part)
-	const fills = new Set(faces.map(el => (/^url\(/.test(attr(el, "fill") ?? "") ? "pattern" : isAccentPaint(attr(el, "fill") ?? "") ? "accent" : norm(attr(el, "fill") ?? "none"))));
-	if (fills.size > 5) push("A2", `${fills.size} distinct face fills (${[...fills].join(", ")}); at most 5`);
+	// A2 distinct face fills (a pattern fill counts once, and so do the accent faces and the three ink faces: one tone each)
+	const fillKey = value => (/^url\(/.test(value) ? "pattern" : isAccentPaint(value) ? "accent" : isInkFace(value) ? "ink" : norm(value));
+	const fills = new Set([...faces, ...elements.filter(el => attr(el, "data-vpk-iso-role") === "recess")].map(el => fillKey(attr(el, "fill") ?? "none")));
+	if (fills.size > MAX_FILLS) push("A2", `${fills.size} distinct face fills (${[...fills].join(", ")}); at most ${MAX_FILLS}`);
 
-	// A3 focal: exactly one focal part, drawn with the accent faces (top, near side, far side: preset.accent); a part in state
-	// "new" or "active" takes the pale fill. The accent appears nowhere else in the rest art except the focal part's line work
-	// (edge, creases and marks in the darker accent, preset.focalEdge), the focal label's leader dot and, for a faceless focal
-	// (the ring, a gap outline), its 2 px edge (the hover accent is runtime CSS, not markup).
+	// A3 emphasis (data-vpk-iso-emphasis on the root; absent means "accent"). Under "accent" at least one part carries
+	// data-vpk-iso-focal (a list is a group drawn alike), each drawn with the accent faces (top, near side, far side:
+	// preset.accent); a part in state "new" or "active" takes the pale fill. The accent appears nowhere else in the rest art
+	// except the focal parts' line work (edge, creases and marks in the darker accent, preset.focalEdge), the focal label's leader
+	// dot and, for a faceless focal (the ring, a gap outline), its 2 px edge (the hover accent is runtime CSS, not markup). Under
+	// "ink" the focal parts (if any) keep their faces with a 2 px ink outline and no accent paints anywhere; "none" has no focal.
+	const emphasis = attr(svg, "data-vpk-iso-emphasis") ?? "accent";
+	if (!EMPHASES.includes(emphasis)) push("A3", `data-vpk-iso-emphasis="${emphasis}" must be one of ${EMPHASES.join(", ")}`);
+	const accented = emphasis === "accent";
 	const focalUnits = new Set(parts.filter(part => has(part, "data-vpk-iso-focal")).map(unitName));
-	if (focalUnits.size !== 1) push("A3", `${focalUnits.size} focal parts; exactly one part carries data-vpk-iso-focal`);
+	if (accented && focalUnits.size < 1) push("A3", "no focal part; with the accent emphasis at least one part carries data-vpk-iso-focal (or set emphasis \"ink\" or \"none\")");
+	if (emphasis === "none" && focalUnits.size) push("A3", `${focalUnits.size} focal part(s) under emphasis "none"; no part carries data-vpk-iso-focal`);
 	const accentRole = { top: "top", fill: "light", shade: "dark" };
 	for (const face of faces) {
 		const part = facePart.get(face);
-		const isFocal = part && has(part, "data-vpk-iso-focal");
+		const isFocal = part && has(part, "data-vpk-iso-focal") && accented;
 		const role = attr(face, "data-vpk-iso-role");
 		const fill = norm(attr(face, "fill") ?? "");
 		if (isFocal && fill !== preset.accent[accentRole[role]]) push("A3", `focal part "${unitName(part)}" face ${role} is ${fill}, not the accent face ${preset.accent[accentRole[role]]}`);
@@ -136,27 +154,34 @@ export function auditSvg(svgSource, context = {}) {
 	const accentMarker = el => el.name === "circle" && ancestor(el, item => item.name === "marker");
 	for (const el of elements) {
 		if (SMIL.has(el.name) || !PAINT_ATTRS.some(name => isAccentPaint(attr(el, name) ?? ""))) continue;
+		if (!accented) {
+			push("A3", `<${el.name}${attr(el, "data-vpk-iso-role") ? ` data-vpk-iso-role="${attr(el, "data-vpk-iso-role")}"` : ""}> paints the accent under emphasis "${emphasis}"; no accent anywhere`);
+			continue;
+		}
 		const part = partOf(el);
 		const focalPart = part && has(part, "data-vpk-iso-focal");
 		const onFocalFace = focalPart && FACE_ROLES.has(attr(el, "data-vpk-iso-role"));
 		const onFacelessEdge = focalPart && attr(el, "data-vpk-iso-role") === "edge" && !faces.some(face => facePart.get(face) === part);
 		const onFocalLine = focalPart && FOCAL_LINE_ROLES.has(attr(el, "data-vpk-iso-role")) && norm(attr(el, "stroke") ?? "") === preset.focalEdge && !isAccentPaint(attr(el, "fill") ?? "");
+		const onFocalDetail = focalPart && FOCAL_DETAIL_FILLS.has(attr(el, "data-vpk-iso-role")) && [preset.focalEdge, preset.accent.dark].includes(norm(attr(el, "fill") ?? "")) && !has(el, "stroke");
 		// A motion arrow that names the focal part as the one it moves (data-vpk-iso-arrow-for) is drawn in the accent too.
 		const arrow = ancestor(el, item => has(item, "data-vpk-iso-arrow-for"));
 		const onFocalArrow = arrow && focalUnits.has(attr(arrow, "data-vpk-iso-arrow-for"));
-		if (!onFocalFace && !onFacelessEdge && !onFocalLine && !onFocalArrow && !accentMarker(el)) push("A3", `<${el.name}${attr(el, "data-vpk-iso-role") ? ` data-vpk-iso-role="${attr(el, "data-vpk-iso-role")}"` : ""}> paints the accent; only the focal part's faces and line work (or a faceless focal's edge), its motion arrow and the focal leader dot may`);
+		if (!onFocalFace && !onFacelessEdge && !onFocalLine && !onFocalDetail && !onFocalArrow && !accentMarker(el)) push("A3", `<${el.name}${attr(el, "data-vpk-iso-role") ? ` data-vpk-iso-role="${attr(el, "data-vpk-iso-role")}"` : ""}> paints the accent; only the focal part's faces and line work (or a faceless focal's edge), its motion arrow and the focal leader dot may`);
 	}
-	// The focal alone carries the 2 px outline, in the darker accent (preset.focalEdge); every other edge is the 1 px stroke. Its
-	// creases and marks take the same darker accent, never a grey line on an orange face.
+	// The focal parts alone carry the 2 px outline: the darker accent (preset.focalEdge) under "accent", the ink under "ink";
+	// every other edge is the 1 px stroke. Under "accent" their creases and marks take the same darker accent, never a grey line
+	// on an orange face.
 	for (const el of elements.filter(item => attr(item, "data-vpk-iso-role") === "edge")) {
 		const part = partOf(el);
 		const isFocal = part && has(part, "data-vpk-iso-focal");
 		const faceless = isFocal && !faces.some(face => facePart.get(face) === part);
-		const outlined = Number(attr(el, "stroke-width")) === preset.focalStroke && norm(attr(el, "stroke") ?? "") === (faceless ? `var(${ACCENT_TOKENS[0]})` : preset.focalEdge);
-		if (isFocal && !outlined) push("A3", `focal part "${unitName(part)}" edge must be a ${preset.focalStroke}px ${preset.focalEdge} outline`);
-		if (!isFocal && Number(attr(el, "stroke-width")) > preset.stroke) push("A3", `part "${part ? unitName(part) : "?"}" has a ${attr(el, "stroke-width")}px outline; only the focal part does`);
+		const want = !accented ? preset.ink : faceless ? `var(${ACCENT_TOKENS[0]})` : preset.focalEdge;
+		const outlined = Number(attr(el, "stroke-width")) === preset.focalStroke && norm(attr(el, "stroke") ?? "") === want;
+		if (isFocal && !outlined) push("A3", `focal part "${unitName(part)}" edge must be a ${preset.focalStroke}px ${want} outline`);
+		if (!isFocal && Number(attr(el, "stroke-width")) > preset.stroke) push("A3", `part "${part ? unitName(part) : "?"}" has a ${attr(el, "stroke-width")}px outline; only a focal part does`);
 	}
-	for (const el of elements.filter(item => ["crease", "mark"].includes(attr(item, "data-vpk-iso-role")))) {
+	for (const el of elements.filter(item => accented && ["crease", "mark"].includes(attr(item, "data-vpk-iso-role")))) {
 		const part = partOf(el);
 		if (part && has(part, "data-vpk-iso-focal") && norm(attr(el, "stroke") ?? "") !== preset.focalEdge) push("A3", `focal part "${unitName(part)}" ${attr(el, "data-vpk-iso-role")} is ${attr(el, "stroke")}, not the accent stroke ${preset.focalEdge}`);
 	}
@@ -237,6 +262,8 @@ export function auditSvg(svgSource, context = {}) {
 	// on its target that the narrow-stage CSS swaps in. A figure built before tags existed only warns.
 	const labelGroups = elements.filter(el => has(el, "data-vpk-iso-label-for"));
 	const tagGroups = elements.filter(el => has(el, "data-vpk-iso-tag"));
+	// labels "none" (data-vpk-iso-labels="none" on the root): the figure draws no labels and no tags; A7, A8 and A20 have nothing to read.
+	if (attr(svg, "data-vpk-iso-labels") === "none" && (labelGroups.length || tagGroups.length)) push("A7", `${labelGroups.length} label(s) and ${tagGroups.length} tag(s) on a figure built with labels "none"`);
 	if (labelGroups.length && !tagGroups.length) push("A7", `${labelGroups.length} label(s) but no numbered narrow-stage tags; the labels render near 4 px on a phone (rebuild with build-figure.mjs)`, "warning");
 	else if (tagGroups.length || labelGroups.length) {
 		if (tagGroups.length !== labelGroups.length) push("A7", `${tagGroups.length} numbered tags for ${labelGroups.length} labels; each label has one tag`);
@@ -302,7 +329,9 @@ export function auditSvg(svgSource, context = {}) {
 	}
 	if (elements.some(el => has(el, "data-vpk-camera"))) push("A10", "parts carry no camera; data-vpk-camera belongs on the plate root only");
 	for (const el of elements) {
-		if (has(el, "transform") && !SMIL.has(el.name)) push("A11", `<${el.name}> has a transform attribute; static art is the rest pose`);
+		// Face text alone may carry one projection matrix (rule 17: label text never rotates; face text lies on its face).
+		const faceText = el.name === "text" && attr(el, "data-vpk-iso-role") === "face-text" && attr(el, "class") === "iso-face-text" && FACE_TEXT_MATRIX.test(attr(el, "transform") ?? "");
+		if (has(el, "transform") && !SMIL.has(el.name) && !faceText) push("A11", `<${el.name}> has a transform attribute; static art is the rest pose${el.name === "text" ? " (face text carries one matrix(...) with data-vpk-iso-role=\"face-text\" class=\"iso-face-text\")" : ""}`);
 		if (el.name === "svg") push("A11", "nested <svg>");
 		// No opacity below 1 anywhere: the kit draws no entry ghost or arrow (the user's redline), so no group is exempt.
 		if (has(el, "opacity") && Number(attr(el, "opacity")) < 1) push("A11", `<${el.name}> has opacity="${attr(el, "opacity")}"`);
@@ -334,11 +363,12 @@ export function auditSvg(svgSource, context = {}) {
 			}
 		}
 		const layers = [...holds].sort((a, b) => a - b);
-		if (layers.length > MAX_LAYERS) push("A12", `${layers.length} assembly layers; at most ${MAX_LAYERS}`);
-		// Layers start on an even, overlapping stagger: every gap is MANUAL_STEP_MS.
+		// Layers start on an even, overlapping stagger: every gap is staggerFor(layers), 180 ms shrinking with no floor
+		// so the whole assembly still ends by MAX_TOTAL_MS.
+		const step = staggerFor(layers.length);
 		for (let k = 1; k < layers.length; k++) {
 			const gap = layers[k] - layers[k - 1];
-			if (Math.abs(gap - MANUAL_STEP_MS) > 2) push("A12", `layer stagger ${gap} ms; every gap is ${MANUAL_STEP_MS} ms`);
+			if (Math.abs(gap - step) > 2) push("A12", `layer stagger ${gap} ms; every gap is ${step} ms for ${layers.length} layers`);
 		}
 	}
 
@@ -351,10 +381,8 @@ export function auditSvg(svgSource, context = {}) {
 
 	// A17 weight and precision
 	const bytes = Buffer.byteLength(svgSource);
-	const dense = has(svg, "data-vpk-iso-dense");
-	const budget = dense ? DENSE_SVG_BUDGET_BYTES : SVG_BUDGET_BYTES;
-	if (bytes > budget) push("A17", `SVG is ${bytes} B; the budget is ${budget} B${dense ? " (dense)" : " (mark figures with > 40 parts data-vpk-iso-dense for 120 KB)"}`);
-	if (dense && parts.length <= 40) push("A17", `data-vpk-iso-dense on a figure with ${parts.length} parts (dense means > 40)`, "warning");
+	if (bytes > SVG_FAIL_BYTES) push("A17", `SVG is ${bytes} B; it fails above ${SVG_FAIL_BYTES} B (merge each part's line work into one path per role, split the figure)`);
+	else if (bytes > SVG_WARN_BYTES) push("A17", `SVG is ${bytes} B, above the ${SVG_WARN_BYTES} B warning (it fails above ${SVG_FAIL_BYTES} B)`, "warning");
 	for (const el of elements) if (el.name === "path" && decimals(attr(el, "d") ?? "")) {
 		push("A17", "path coordinates use more than one decimal");
 		break;
@@ -415,12 +443,17 @@ export function auditScene(scene) {
 		const b = label.box;
 		if (b.x < 0 || b.y < 0 || b.x + b.w > w || b.y + b.h > h) push("A7", `label "${label.text}" leaves the viewBox`);
 	}
-	// The focal part's three accent faces count as one tone (A2 in auditSvg counts them the same way).
+	// The accent faces and the three ink faces each count as one tone (A2 in auditSvg counts them the same way).
+	const emphasis = scene.emphasis ?? "accent";
 	const tones = new Set(scene.pieces.flatMap(piece => {
-		const roles = rolesFor({ focal: piece.focal, active: Boolean(piece.state) });
-		return piece.focal ? ["accent"] : [roles.fill.fill, roles.top.fill, roles.shade.fill];
+		const roles = rolesFor({ focal: piece.focal, active: Boolean(piece.state), tone: piece.tone, emphasis });
+		if (piece.focal && emphasis === "accent") return ["accent"];
+		return [roles.fill, roles.top, roles.shade].map(role => (isInkFace(role.fill) ? "ink" : role.fill));
 	}));
-	if (tones.size > 5) push("A2", `${tones.size} face tones`);
+	if (tones.size > MAX_FILLS) push("A2", `${tones.size} face tones; at most ${MAX_FILLS}`);
+	// Painter cycles (painter.mjs): two solids that each cover the other, so no painter order is right; they keep the depth-point order.
+	const cycles = scene.painterCycles ?? [];
+	if (cycles.length) findings.push({ rule: "A5", figure: scene.figId, severity: "warning", message: `${cycles.length} painter cycle(s), e.g. "${cycles[0][0]}" and "${cycles[0][1]}" each cover the other (interpenetrating solids); split one into pieces or move it clear` });
 	return findings;
 }
 

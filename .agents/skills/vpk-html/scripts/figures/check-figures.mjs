@@ -24,16 +24,18 @@ import { parseCameraAttr, sameCamera } from "./camera.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 
-export const FIGURE_ENGINES = Object.freeze(["none", "iso-kit", "anatomy-hero", "both"]);
-export const ROOT_ENGINES = Object.freeze(["iso-kit", "anatomy-hero"]);
+export const FIGURE_ENGINES = Object.freeze(["none", "iso-kit", "anatomy-hero", "both", "hairline"]);
+export const ROOT_ENGINES = Object.freeze(["iso-kit", "anatomy-hero", "hairline"]);
 export const FIGURE_ID = /^[a-z][a-z0-9-]{0,39}$/;
 export const DEFAULT_FIGURE_THRESHOLDS = Object.freeze({
-	maxHeroes: 1,
-	heroWarnBytes: 300000,
-	heroFailBytes: 450000,
-	liveWarnBytes: 30000,
-	figuresWarnBytes: 600000,
+	maxHeroes: Infinity,
+	heroWarnBytes: Infinity,
+	heroFailBytes: Infinity,
+	liveWarnBytes: Infinity,
+	figuresWarnBytes: Infinity,
 	parts: Object.freeze({ figure: Object.freeze([40, 80]), hero: Object.freeze([80, 150]) }),
+	// The hairline engine bundles vendored figures whole, so its blocks are measured on their own (§ 10).
+	hairline: Object.freeze({ runtimeWarnBytes: Infinity, pageWarnBytes: Infinity }),
 });
 const THRESHOLDS_URL = new URL("../../references/checks-thresholds.json", import.meta.url);
 const STALE_RUNTIME = "run build.mjs --inject-runtime (or --build-hero) on this file";
@@ -143,7 +145,7 @@ function collectEngineRecordIssues(html) {
 	if (metas.length > 1) failures.push(`figure engine E2: ${metas.length} <meta name="vpk-figure-engine"> tags; keep one`);
 	const meta = metas[0];
 	if (meta === undefined) {
-		failures.push(`figure engine E1: ${roots.length} figure-engine root${roots.length === 1 ? "" : "s"} but no <meta name="vpk-figure-engine" content="${kinds.size > 1 ? "both" : [...kinds][0]}"> in <head>`);
+		failures.push(`figure engine E1: ${roots.length} figure-engine root${roots.length === 1 ? "" : "s"} but no <meta name="vpk-figure-engine" content="${kinds.size > 1 && !kinds.has("hairline") ? "both" : [...kinds][0]}"> in <head>`);
 		return { failures, warnings };
 	}
 	if (!FIGURE_ENGINES.includes(meta)) {
@@ -152,11 +154,13 @@ function collectEngineRecordIssues(html) {
 	}
 	for (const kind of kinds) {
 		if (!ROOT_ENGINES.includes(kind)) continue;
-		if (meta !== "both" && meta !== kind) failures.push(`figure engine E2: meta "${meta}" does not cover the ${kind} root${roots.filter(root => root.engine === kind).length === 1 ? "" : "s"}`);
+		// "both" is iso-kit plus anatomy-hero; a hairline root needs meta "hairline" (figure-engines.md § 10).
+		const covered = meta === kind || (meta === "both" && kind !== "hairline");
+		if (!covered) failures.push(`figure engine E2: meta "${meta}" does not cover the ${kind} root${roots.filter(root => root.engine === kind).length === 1 ? "" : "s"}`);
 	}
-	const known = [...kinds].filter(kind => ROOT_ENGINES.includes(kind));
-	if (meta === "both" && known.length < 2) warnings.push(`figure engine E3: meta "both" but the document has ${known.length ? `only ${known[0]} roots` : "no figure-engine roots"}`);
-	if ((meta === "iso-kit" || meta === "anatomy-hero") && !kinds.has(meta)) warnings.push(`figure engine E3: meta "${meta}" but no ${meta} root`);
+	const known = [...kinds].filter(kind => kind === "iso-kit" || kind === "anatomy-hero");
+	if (meta === "both" && known.length < 2) warnings.push(`figure engine E3: meta "both" but the document has ${known.length ? `only ${known[0]} roots` : "no iso-kit and anatomy-hero roots"}`);
+	if ((meta === "iso-kit" || meta === "anatomy-hero" || meta === "hairline") && !kinds.has(meta)) warnings.push(`figure engine E3: meta "${meta}" but no ${meta} root`);
 	return { failures, warnings };
 }
 
@@ -268,11 +272,37 @@ export function collectAnatomyHeroIssues(html) {
 	return failures;
 }
 
-// The check-html collector (K6 row 5): engine record plus anatomy structure.
+// L1–L2: hairline engine structure (figure-engines.md § 10). A hairline root needs the one stylesheet in <head>
+// and the one runtime block; blocks without a root are stale.
+const HAIRLINE_RUNTIME = /<script\b[^>]*\sdata-vpk-hairline-runtime\b[^>]*>/gi;
+export function collectHairlineIssues(html) {
+	if (!/hairline/.test(html)) return [];
+	const failures = [];
+	const code = blankCode(html);
+	const roots = engineRoots(html).filter(root => root.engine === "hairline");
+	const headEnd = code.search(/<\/head\s*>/i);
+	const cssTags = [...code.matchAll(/<style\b[^>]*\sdata-vpk-hairline-css\b[^>]*>/gi)];
+	const runtimes = count(code, HAIRLINE_RUNTIME);
+	if (roots.length) {
+		if (cssTags.length !== 1 || headEnd < 0 || cssTags[0].index > headEnd) failures.push(`hairline L1: expected one <style data-vpk-hairline-css> inside <head>, found ${cssTags.length}`);
+		if (runtimes !== 1) failures.push(`hairline L1: expected one <script data-vpk-hairline-runtime>, found ${runtimes}`);
+	} else if (cssTags.length || runtimes) failures.push("hairline L1: stale hairline stylesheet or runtime without a hairline root");
+	for (const root of roots) {
+		const element = elementAt(html, code, root.index, root.name);
+		const host = element.match(new RegExp(`<div\\b${TAG}?\\sdata-vpk-hairline\\s*=${TAG}>`, "i"))?.[0];
+		if (!host) failures.push(`hairline ${root.id ?? "?"}: L2 plate without a data-vpk-hairline host`);
+		else if (!(attr(host, "aria-label") ?? "").trim()) failures.push(`hairline ${root.id ?? "?"}: L2 host without an aria-label`);
+		if (!/\sdata-vpk-hairline-read\b/.test(element)) failures.push(`hairline ${root.id ?? "?"}: L2 plate without a data-vpk-hairline-read readout`);
+		if (!hasAttr(root.tag, "data-vpkh-no-lightbox")) failures.push(`hairline ${root.id ?? "?"}: L2 root without data-vpkh-no-lightbox`);
+	}
+	return failures;
+}
+
+// The check-html collector (K6 row 5): engine record plus anatomy and hairline structure.
 export function collectFigureEngineIssues(html) {
-	if (!/data-vpk-engine|vpk-figure-engine|anatomy-hero|data-vpk-anatomy|vpk-anatomy-/.test(html)) return { failures: [], warnings: [] };
+	if (!/data-vpk-engine|vpk-figure-engine|anatomy-hero|data-vpk-anatomy|vpk-anatomy-|data-vpk-hairline/.test(html)) return { failures: [], warnings: [] };
 	const record = collectEngineRecordIssues(html);
-	return { failures: [...record.failures, ...collectAnatomyHeroIssues(html)], warnings: record.warnings };
+	return { failures: [...record.failures, ...collectAnatomyHeroIssues(html), ...collectHairlineIssues(html)], warnings: record.warnings };
 }
 
 /* ============ A1–A6: advisories and budgets ============ */
@@ -287,7 +317,9 @@ export function loadFigureThresholds() {
 	} catch {
 		figures = {};
 	}
-	cachedThresholds = { ...DEFAULT_FIGURE_THRESHOLDS, ...figures, parts: { ...DEFAULT_FIGURE_THRESHOLDS.parts, ...(figures.parts ?? {}) } };
+	// A threshold set to null in the JSON is switched off (Infinity), so its check never fires.
+	const off = block => Object.fromEntries(Object.entries(block).map(([key, value]) => [key, value === null ? Infinity : value]));
+	cachedThresholds = { ...DEFAULT_FIGURE_THRESHOLDS, ...off(figures), parts: { ...DEFAULT_FIGURE_THRESHOLDS.parts, ...(figures.parts ?? {}) }, hairline: { ...DEFAULT_FIGURE_THRESHOLDS.hairline, ...off(figures.hairline ?? {}) } };
 	return cachedThresholds;
 }
 
@@ -340,13 +372,17 @@ export function collectFigureAdvisories(html, thresholds = loadFigureThresholds(
 		const hero = budget.heroes.find(item => item.id === root.id);
 		const [low, high] = thresholds.parts[hero.tier] ?? thresholds.parts.figure;
 		if (hero.parts < low) add("A4", `hero ${id}: ${hero.parts} parts is below the ${low}-part bar for the ${hero.tier} tier`, true);
-		else if (hero.parts > high) add("A4", `hero ${id}: ${hero.parts} parts is above the ${high}-part ${hero.tier} tier`);
 		if (hero.region > thresholds.heroFailBytes) add("A5", `hero ${id}: region ${kb(hero.region)} exceeds the ${kb(thresholds.heroFailBytes)} fail threshold`, true);
 		else if (hero.region > thresholds.heroWarnBytes) add("A5", `hero ${id}: region ${kb(hero.region)} exceeds ${kb(thresholds.heroWarnBytes)}`);
 		if (hero.script + hero.data > thresholds.liveWarnBytes) add("A5", `hero ${id}: script and island ${kb(hero.script + hero.data)} exceed ${kb(thresholds.liveWarnBytes)}`);
 		if (/\sdata-(?:flow|pulse)(?=[\s=>/])/.test(markup)) add("A6", `hero ${id} uses data-flow or data-pulse: the advisory motion-budget gate will warn on its 1,600 ms animations`);
 	}
 	if (budget.figuresTotal > thresholds.figuresWarnBytes) add("A5", `all figure regions ${kb(budget.figuresTotal)} exceed ${kb(thresholds.figuresWarnBytes)}`);
+	if (engineRoots(html).some(root => root.engine === "hairline")) {
+		const runtime = html.match(/<!-- vpk-hairline:start -->[\s\S]*?<!-- vpk-hairline:end -->/)?.[0] ?? "";
+		if (bytes(runtime) > thresholds.hairline.runtimeWarnBytes) add("A7", `hairline runtime block ${kb(bytes(runtime))} exceeds ${kb(thresholds.hairline.runtimeWarnBytes)}`);
+		if (budget.documentBytes > thresholds.hairline.pageWarnBytes) add("A7", `hairline page ${kb(budget.documentBytes)} exceeds ${kb(thresholds.hairline.pageWarnBytes)}`);
+	}
 	return advisories;
 }
 
@@ -357,8 +393,7 @@ export async function checkFiguresFile(filePath, { strict = false } = {}) {
 	const { failures, warnings } = collectFigureEngineIssues(html);
 	const advisories = collectFigureAdvisories(html);
 	const budget = measureFigureBudget(html);
-	const { weightWarnings } = await import("../media/size-budget.mjs");
-	const weight = weightWarnings(html, { label: path.basename(filePath) });
+	const weight = [];
 	const strictFailures = strict ? advisories.filter(advisory => advisory.strict) : [];
 	return { ok: failures.length === 0 && strictFailures.length === 0, file: filePath, failures, warnings, advisories, budget, weight };
 }

@@ -201,7 +201,9 @@ test("shadow tone: allowed by both grammars, never the accent, paler than every 
 test("entry hand-off CSS: hide, accent and hand-off rules from the shared constants; no ghost, cue or arrow rule", async () => {
 	const { ISO_CSS } = await import("./runtime-css.mjs");
 	const { ENTRY } = await import("./accent.mjs");
-	for (let i = 0; i < 6; i++) assert.match(ISO_CSS, new RegExp(`\\.vpk-iso-h${i} :is\\(\\[data-vpk-iso-enter="${i}"\\], \\[data-vpk-iso-shadow-enter="${i}"\\]\\) \\{ visibility: hidden; \\}`));
+	// Layer-agnostic: one hide rule for every layer group and its shadows, no per-layer class names, so any layer count works.
+	assert.ok(ISO_CSS.includes(":is([data-vpk-iso-enter], [data-vpk-iso-shadow-enter]).vpk-iso-wait { visibility: hidden; }"));
+	assert.doesNotMatch(ISO_CSS, /vpk-iso-[ah]\d/, "no per-layer rules");
 	for (const fill of [ACCENT_FACES.top, ACCENT_FACES.light, ACCENT_FACES.dark]) assert.ok(ISO_CSS.includes(`{ fill: ${fill}; }`), fill);
 	assert.ok(ISO_CSS.includes(`{ stroke: ${ACCENT_FACES.edge}; }`), "the dropping layer's line work takes the darker accent");
 	assert.match(ISO_CSS, new RegExp(`transition: fill ${ENTRY.HANDOFF_MS}ms var\\(--ease-out\\), stroke ${ENTRY.HANDOFF_MS}ms`));
@@ -216,7 +218,7 @@ test("accent parts use the accent stroke: focal roles, hover and entry CSS; dark
 	const lines = ':is([data-vpk-iso-role="edge"], [data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"])';
 	assert.ok(ISO_CSS.includes('.is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }'), "hovered or selected part: a 2 px accent outline");
 	assert.doesNotMatch(ISO_CSS, /\.is-active > \[data-vpk-iso-role="(?:top|fill|shade)"\]/, "hover never fills the faces (large parts flooded orange)");
-	assert.ok(ISO_CSS.includes(`[data-vpk-iso-enter="5"]) > * > ${lines} { stroke: ${ACCENT_FACES.edge}; }`), "dropping entry layer");
+	assert.ok(ISO_CSS.includes(`.vpk-iso-drop[data-vpk-iso-enter] > * > ${lines} { stroke: ${ACCENT_FACES.edge}; }`), "dropping entry layer");
 	assert.doesNotMatch(ISO_CSS, /\.is-active > \[data-vpk-iso-role="edge"\]\) \{ stroke: var\(--focal\)/, "no ink hover edge");
 	assert.ok(ISO_CSS.includes('[data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }'), "a faceless part keeps the accent itself");
 	// The stroke is a darker shade of the same hue: below the far face's luminance (so it still draws the silhouette there).
@@ -233,4 +235,34 @@ test("accent parts use the accent stroke: focal roles, hover and entry CSS; dark
 		assert.ok(e.p < f.p, `${theme}: the stroke mixes in more line colour (${e.p}) than the far face (${f.p})`);
 		if (theme === "light") assert.ok(e.other < e.accent, "light: the line colour is darker than the accent, so the stroke is a darker accent");
 	}
+});
+
+// Phase 0 (capability K): the ink part tone and the ink emphasis, in both themes.
+test("ink tone: three ink faces, top lightest in both themes (dark swaps through CSS), allowed paints, no accent", async () => {
+	const { INK_TONES, DARK_INK_OVERRIDES, isInkFace } = await import("./palette.mjs");
+	const light = tokenBlock(":root");
+	const dark = { ...light, ...tokenBlock("[data-theme=\"dark\"]") };
+	for (const value of Object.values(INK_TONES)) {
+		assert.ok(isAllowedIsoPaint(value) && isAllowedFigureColorValue(value), value);
+		assert.equal(isAccentPaint(value), false);
+		assert.ok(isInkFace(value));
+	}
+	const roles = rolesFor({ tone: "ink" });
+	assert.deepEqual([roles.top.tone, roles.fill.tone, roles.shade.tone], ["ink-top", "ink-light", "ink-dark"]);
+	for (const [tone, fill] of Object.entries(DARK_INK_OVERRIDES)) assert.ok(ISO_CSS.includes(`:where([data-vpk-iso-tone="${tone}"]) { fill: ${fill}; }`), tone);
+	const byTone = { "ink-top": INK_TONES.top, "ink-light": INK_TONES.light, "ink-dark": INK_TONES.dark };
+	for (const [theme, tokens, overrides] of [["light", light, {}], ["dark", dark, DARK_INK_OVERRIDES]]) {
+		const L = Object.fromEntries(Object.entries(byTone).map(([tone, value]) => [tone, luminance(cssColor(overrides[tone] ?? value, tokens))]));
+		assert.ok(L["ink-top"] > L["ink-light"] && L["ink-light"] > L["ink-dark"], `${theme}: ink top > light > dark ${JSON.stringify(L)}`);
+		assert.ok(contrast(cssColor(overrides["ink-top"] ?? INK_TONES.top, tokens), tokens["--paper"]) >= 3, `${theme}: an ink part stands off the paper`);
+	}
+});
+
+test("ink emphasis: a focal part keeps its faces with a 2 px ink outline; no accent in its roles", () => {
+	const ink = rolesFor({ focal: true, emphasis: "ink" });
+	assert.equal(ink.top.fill, ISO_PRESET.tones.top);
+	assert.deepEqual(ink.edge, { stroke: ISO_PRESET.ink, width: 2 });
+	for (const role of Object.values(ink)) assert.equal(isAccentPaint(role.fill ?? role.stroke), false);
+	assert.deepEqual(rolesFor({ focal: true, emphasis: "accent" }), rolesFor({ focal: true }), "accent is the default");
+	assert.match(ISO_CSS, /svg\[data-vpk-iso-emphasis\] \.is-active > \[data-vpk-iso-role="edge"\] \{ stroke: var\(--ill-line\); \}/);
 });

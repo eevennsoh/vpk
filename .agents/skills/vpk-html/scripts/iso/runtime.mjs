@@ -157,7 +157,31 @@ export function createIsoRuntime(win, loop, core) {
 		const svg = find(stage, "id");
 		const behavior = attr(stage, "behavior");
 		const vb = svg ? (svg.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number) : [];
-		if (!svg || vb.length !== 4 || !vb.every(Number.isFinite) || (behavior !== "select" && behavior !== "explode")) throw new Error("stage");
+		if (!svg || vb.length !== 4 || !vb.every(Number.isFinite) || !["select", "explode", "step", "scrub"].includes(behavior)) throw new Error("stage");
+		let rect = null;
+		const measure = () => (rect = rect || svg.getBoundingClientRect());
+		const invalidate = () => {
+			rect = null;
+		};
+		win.addEventListener("scroll", invalidate, { passive: true, capture: true });
+		if (win.ResizeObserver) new win.ResizeObserver(invalidate).observe(stage);
+		stage.addEventListener("pointerenter", invalidate);
+		const toView = (cx, cy) => {
+			const r = measure();
+			const s = Math.min(r.width / vb[2], r.height / vb[3]) || 1;
+			return [(cx - r.left - (r.width - vb[2] * s) / 2) / s + vb[0], (cy - r.top - (r.height - vb[3] * s) / 2) / s + vb[1]];
+		};
+		// Step and scrub figures (state-runtime.mjs): states, variants and per-state painter order.
+		if (behavior === "step" || behavior === "scrub") {
+			const states = core.mountStates({ win, loop, core, stage, root, svg, attr, find, role, setText, restore, now, fromReview, line, measure, toView, clocks: { tween, tset, tval, tdone, spring, stepS } });
+			poses.push(on => {
+				states.pose(on);
+				rests.forEach(fn => fn());
+			});
+			const enhancer = doc.querySelector("script[data-vpkh-enhance]");
+			if (enhancer && !enhancer.textContent.includes("vpkh-no-lightbox")) stage.addEventListener("click", e => e.stopPropagation());
+			return restMotion(stage, root, svg, states.still);
+		}
 		const zd = Number(attr(svg, "zdepth")) || 0;
 		const liftZ = Number(attr(svg, "lift-z")) || 0;
 		// The select blink and the narrow tag leaders live in manual-runtime.mjs (core.blink, core.tagLines).
@@ -175,18 +199,17 @@ export function createIsoRuntime(win, loop, core) {
 			const name = attr(el, "of") || id;
 			if (!unitOf.has(name)) {
 				unitOf.set(name, units.length);
-				units.push({ name, label: attr(el, "label") || name, points: [] });
+				units.push({ name, label: attr(el, "label") || name });
 			}
 			const unit = unitOf.get(name);
-			let points = [...el.querySelectorAll(role("fill"))].flatMap(p => core.parsePolyPath(p.getAttribute("d")) || []);
-			if (!points.length) points = core.parsePolyPath((el.querySelector(role("edge")) || el).getAttribute("d")) || [];
-			units[unit].points.push(...points);
+			// Each piece hits by its own hull (a bent tube's chunks, a tray's back and front), never the hull of its whole unit; a
+			// straight wire's degenerate hull is padded; a concave prism hits by its convex solids (core.partPoly).
+			const poly = core.partPoly(el);
 			const plan = (attr(el, "plan") || "").split(";").map(box => box.trim().split(/\s+/).map(Number)).filter(box => box.length === 4 && box.every(Number.isFinite));
-			return { el, i, id, unit, vec, plan, depth: Number(attr(el, "depth")) || 0, group: el.parentNode, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
+			return { el, i, id, unit, poly, vec, plan, depth: Number(attr(el, "depth")) || 0, group: el.parentNode, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
 		});
-		for (const unit of units) unit.poly = core.hull(unit.points);
-		if (!parts.length || units.some(unit => unit.poly.length < 3)) throw new Error("polygon");
-		const polys = units.map(unit => unit.poly);
+		if (!parts.length || parts.some(p => p.poly.length < 3)) throw new Error("polygon");
+		const polys = parts.map(p => p.poly);
 		const byId = new Map(parts.map(p => [p.id, p]));
 		// Cast shadows stay on the ground: each moves by its cast vector times its part's motion (k: the lift, or the Gap offset).
 		// A received shadow (on a part's top) rides in its receiver's group, so it moves by its caster's cast less the receiver's (cast-on).
@@ -223,19 +246,6 @@ export function createIsoRuntime(win, loop, core) {
 			list.over = list.map(a => list.map(b => a !== b && overlap(a, b)));
 		}
 
-		let rect = null;
-		const measure = () => (rect = rect || svg.getBoundingClientRect());
-		const invalidate = () => {
-			rect = null;
-		};
-		win.addEventListener("scroll", invalidate, { passive: true, capture: true });
-		if (win.ResizeObserver) new win.ResizeObserver(invalidate).observe(stage);
-		const toView = (cx, cy) => {
-			const r = measure();
-			const s = Math.min(r.width / vb[2], r.height / vb[3]) || 1;
-			return [(cx - r.left - (r.width - vb[2] * s) / 2) / s + vb[0], (cy - r.top - (r.height - vb[3] * s) / 2) / s + vb[1]];
-		};
-
 		const cfg = behavior === "explode" && control
 			? { rest: Number(control.defaultValue || control.value), max: Number(control.max), unit: (readout && readout.textContent.trim().split(" ")[0]) || "gap" }
 			: null;
@@ -270,10 +280,10 @@ export function createIsoRuntime(win, loop, core) {
 				return;
 			}
 			st.leaveAt = null;
-			const hit = core.topmostHit(polys, toView(e.clientX, e.clientY));
+			const top = core.topmostHit(polys, toView(e.clientX, e.clientY));
+			const hit = top < 0 ? -1 : parts[top].unit;
 			if ((hit < 0 ? null : hit) !== st.sel.active) select(selectReducer(st.sel, { type: "hover", unit: hit }), now());
 		};
-		stage.addEventListener("pointerenter", invalidate);
 		// A finger or pen tap sends no pointermove, so non-mouse pointerdown hit-tests like a move
 		// (hairline kernel `pointer().down`). On a select figure the touch leave holds the result for 1400 ms; on an explode
 		// figure each tap toggles the full gap and the touch leave changes nothing.
@@ -445,11 +455,15 @@ export function createIsoRuntime(win, loop, core) {
 
 		labelsFor = parts.map(p => [...svg.querySelectorAll("[data-vpk-iso-label-for], [data-vpk-iso-arrow-for]")].filter(g => [p.id, units[p.unit].name].includes(attr(g, "label-for") || attr(g, "arrow-for"))));
 		board = loop.register(stage, tick, { rest: () => pose(true) });
+		restMotion(stage, root, svg, () => still);
+	}
 
-		// Motion at rest (iso/accent.mjs REST_MOTION; the keyframes are runtime-css): data-vpk-iso-rest on the stage (not the
-		// svg, whose outerHTML stays the static art, R9) once the figure has been idle IDLE_RESUME_MS after its entrance (SMIL)
-		// or the last input, while it is on screen, the tab is shown, motion is not reduced and it is not printing (the 3D
-		// prototype starts its sway the same idle delay after its entry). No frame callback: the CSS animates.
+	// Motion at rest (iso/accent.mjs REST_MOTION; the keyframes are runtime-css): data-vpk-iso-rest on the stage (not the
+	// svg, whose outerHTML stays the static art, R9) once the figure has been idle IDLE_RESUME_MS after its entrance (SMIL)
+	// or the last input, while it is on screen, the tab is shown, motion is not reduced and it is not printing (the 3D
+	// prototype starts its sway the same idle delay after its entry). No frame callback: the CSS animates. Every behaviour
+	// shares it; `still()` says whether the figure is holding its print pose.
+	function restMotion(stage, root, svg, still) {
 		let idleAt = now() + REST_IDLE_MS + Math.max(0, ...[...svg.querySelectorAll("[dur]")].map(a => restMs(a.getAttribute("dur"))));
 		let shown = !win.IntersectionObserver;
 		let timer = 0;
@@ -457,7 +471,7 @@ export function createIsoRuntime(win, loop, core) {
 			win.clearTimeout(timer);
 			const wait = idleAt - now();
 			if (wait > 0) timer = win.setTimeout(rest, wait + 20);
-			const allowed = shown && !still && !doc.hidden && !loop.reducedMotion();
+			const allowed = shown && !still() && !doc.hidden && !loop.reducedMotion();
 			// Input pauses the drift where it is (and it resumes from there), so the drawing never snaps back under the pointer.
 			if (allowed && wait <= 0) stage.setAttribute("data-vpk-iso-rest", "");
 			else if (allowed && stage.hasAttribute("data-vpk-iso-rest")) stage.setAttribute("data-vpk-iso-rest", "paused");

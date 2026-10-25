@@ -42,7 +42,7 @@ function countLines(source) {
 
 // Vendored builds served as is and replaced whole, never edited here (each
 // folder's own guide says so); their size is not this repository's to budget.
-const VENDORED_DIRECTORIES = ["public/1p/rovo-stage-kit/", ".agents/skills/vpk-html/scripts/anatomy/vendor/"];
+const VENDORED_DIRECTORIES = ["public/1p/rovo-stage-kit/", ".agents/skills/vpk-html/scripts/anatomy/vendor/", ".agents/skills/vpk-html/scripts/hairline/vendor/"];
 
 function isBudgetedTextFile(filePath) {
 	return TRACKED_TEXT_EXTENSIONS.has(path.extname(filePath)) && !VENDORED_DIRECTORIES.some((directory) => filePath.startsWith(directory));

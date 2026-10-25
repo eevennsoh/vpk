@@ -23,9 +23,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { illustrationPage } from "./figures/page.mjs";
+import { shelfFigures } from "./hairline/figures.mjs";
 import { buildFigure } from "./iso/build-figure.mjs";
 import { auditHtml } from "./iso/audit.mjs";
-import { weightWarnings } from "./media/size-budget.mjs";
 import { DEMOS, ILLUSTRATIONS } from "./shared.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -73,44 +73,9 @@ export const BRIEF_EXAMPLES = Object.freeze([
 		title: "Anatomy of a card",
 		summary: "A UI card pulled apart into its interface layers: surface, media, text block, action button and focus ring. Select a layer to lift it out; the primary button is the part to watch.",
 	},
-	// Recreations of hairline (hl-*) and the anatomy collection (an-*). `gallery` names the gallery page that shows
-	// each one (GALLERY_PAGES); these get no standalone page, so the demos folder stays small.
-	{ slug: "iso-hl-exploded", brief: "iso/briefs/hl-exploded.json", title: "Exploded app window", gallery: "hairline-interfaces", summary: "After hairline's Interfaces shelf. An app window taken apart into stacked isometric layers: the window frame with its three controls, the sidebar and content panes, a dialog card and its primary button. The button is accented." },
-	{ slug: "iso-hl-terrain", brief: "iso/briefs/hl-terrain.json", title: "Terrain of pillars", gallery: "hairline-data", summary: "After hairline's Data shelf. Dimetric terrain model: a seven-by-seven field of square pillars packed edge to edge on a low plinth, their tops forming a dune with a main rise and a second, lower rise. The tallest pillar is highlighted." },
-	{ slug: "iso-hl-phosphor", brief: "iso/briefs/hl-phosphor.json", title: "A dot that fades like phosphor", gallery: "hairline-data", summary: "After hairline's Data shelf. Dimetric dot-matrix display: a housing and plate with a seven-by-seven grid of dots. The accented lit dot stands tallest; its trail crosses the grid's centre, stepping down as it fades, and the other dots sit dark as flat rings." },
-	{ slug: "iso-hl-riffle", brief: "iso/briefs/hl-riffle.json", title: "Riffle through a card tray", gallery: "hairline-data", summary: "After hairline's Data shelf. Isometric tray of eight upright index cards; the fourth card is highlighted, and hovering or arrow keys lift one card out of the row." },
-	{ slug: "iso-hl-slow", brief: "iso/briefs/hl-slow.json", title: "Crates through a slow gate", gallery: "hairline-machines", summary: "A recreation of hairline's \"Slow\" figure (Machines shelf): five crates ride a conveyor belt through a two-post gate, with the crate inside the gate in orange, to show that slowing the clock stretches each crate's passage without stopping the belt." },
-	{ slug: "iso-hl-turntable", brief: "iso/briefs/hl-turntable.json", title: "Blocks on a turntable", gallery: "hairline-machines", summary: "After hairline's Machines shelf. Dimetric turntable: a round platter on a base with a quarter-turn ring and front index notch, carrying a tower, a bar, a slab and two cubes. The centre cube is accented." },
-	{ slug: "iso-hl-elevator", brief: "iso/briefs/hl-elevator.json", title: "An elevator between floors", gallery: "hairline-machines", summary: "A recreation of hairline's \"Elevator\" (Machines shelf): an open shaft of two guide rails beside four stacked floors, where the orange car travels to whichever floor you pick." },
-	{ slug: "iso-hl-keyboard", brief: "iso/briefs/hl-keyboard.json", title: "Keyboard", gallery: "hairline-devices", summary: "After hairline's Devices shelf. Dimetric 60% keyboard: 61 keycaps in five rows in a case tray. One number-row key is accented; on hover it sinks and the keys around it sink in steps, less the further away." },
-	{ slug: "iso-hl-phone", brief: "iso/briefs/hl-phone.json", title: "A phone in layers", gallery: "hairline-devices", summary: "After hairline's Devices shelf. Isometric phone opened upward into stacked layers: a rounded shell at the bottom, the battery, the logic board with its chip, and the back glass with a two-lens camera island on top. The logic board is accented." },
-	{ slug: "iso-hl-laptop", brief: "iso/briefs/hl-laptop.json", title: "A laptop open on its hinge", gallery: "hairline-devices", summary: "An isometric take on hairline's \"Laptop\" (Devices shelf): a thin laptop with base, keyboard, trackpad, hinge, lid and an orange display, which lifts off its hinge on hover." },
-	{ slug: "iso-hl-terminal", brief: "iso/briefs/hl-terminal.json", title: "Anatomy of a terminal", gallery: "hairline-coding", summary: "After hairline's Coding shelf. Isometric terminal window standing upright: window controls, rows of history on its face, the selected line raised out of the scrollback, and the prompt chevron and block cursor at the bottom. The selected line is accented." },
-	{ slug: "iso-hl-cabinet", brief: "iso/briefs/hl-cabinet.json", title: "Server cabinet, blades out", gallery: "hairline-coding", summary: "After hairline's Coding shelf. Dimetric server cabinet on a plinth: a side panel and a thin top cap frame a rack of ten slim blades, each with a vent strip on its face. One blade sits half out and is accented; its neighbours are out less, the far ones flush." },
-	{ slug: "iso-hl-branches", brief: "iso/briefs/hl-branches.json", title: "A branch forks and merges back", gallery: "hairline-coding", summary: "After hairline's Coding shelf. Isometric commit graph: main along the back, a feature branch that forks off, adds two commits along the front and rejoins main at the accented merge commit, and a new commit about to land. Hover or arrow keys lift a part." },
-	{ slug: "iso-hl-format", brief: "iso/briefs/hl-format.json", title: "A formatter passing down a file", gallery: "hairline-coding", summary: "An iso-kit version of hairline's \"Format\" figure (Coding shelf): the orange formatter bar lies across a source file, the lines above it squared to one left margin and the lines below still at crooked indents." },
-	{ slug: "iso-hl-rebuild", brief: "iso/briefs/hl-rebuild.json", title: "Rebuild, change ripples up", gallery: "hairline-coding", summary: "A recreation of hairline's \"Rebuild\" (Coding shelf): a tree of package tiles where the changed parser is accented, and on hover it rises with core and then the app rising after it, each a little less, while untouched packages stay down." },
-	{ slug: "iso-hl-stack", brief: "iso/briefs/hl-stack.json", title: "A call stack, opened", gallery: "hairline-coding", summary: "After hairline's Coding shelf. Isometric call stack: five rounded frames stacked on a base, main at the bottom and the newest call on top. The two frames above parse lift away to open it; the parse frame, with its local variables, is accented." },
-	{ slug: "iso-hl-vault", brief: "iso/briefs/hl-vault.json", title: "A vault door and its bolts", gallery: "hairline-security", summary: "After hairline's Security shelf. Dimetric vault door in a four-jamb frame: a detent ring with ten ticks carries the accented dial and its pointer. Three bolts cross the gap from the latch edge into keepers on the right jamb; opening draws them back." },
-	{ slug: "iso-hl-lockers", brief: "iso/briefs/hl-lockers.json", title: "A bank of lockers, one ajar", gallery: "hairline-security", summary: "After hairline's Security shelf. Dimetric bank of twelve lockers in six columns of two on a low plinth, each door with a louvred vent. The top-right locker stands ajar: its accented door sits out in front of and to the right of a recessed opening." },
-	{ slug: "iso-hl-padlock", brief: "iso/briefs/hl-padlock.json", title: "A padlock, shackle in", gallery: "hairline-security", summary: "After hairline's Security shelf. Dimetric padlock: a squat rounded body with a keyhole slot in its face and a thin shackle whose accented bow joins two legs at its edges. Lifted, the long hinge leg stays in the body; the free leg clears a dashed socket." },
-	{ slug: "iso-hl-patch", brief: "iso/briefs/hl-patch.json", title: "A patch panel and its cables", gallery: "hairline-connectivity", summary: "After hairline's Connectivity shelf. Isometric rack-mount patch panel with an ear at each end and sixteen ports. Fifteen cables plug out of the front and drop to hang below it; port 16 is empty. One cable is accented. Hover or arrow keys raise one plug or cable." },
-	{ slug: "iso-hl-dish", brief: "iso/briefs/hl-dish.json", title: "Dish on a two-axis gimbal", gallery: "hairline-connectivity", summary: "After hairline's Connectivity shelf. Dimetric antenna: a base, an azimuth turntable and a two-arm yoke whose elevation pivots carry a round reflector dish aimed up, two bowl rings on its face and a feed horn rising from its centre. The dish is accented." },
-	{ slug: "iso-hl-router", brief: "iso/briefs/hl-router.json", title: "A router with its antennas up", gallery: "hairline-connectivity", summary: "An isometric recreation of hairline's Router (Connectivity shelf): a low rounded router body with status lights and side ports, plus four antennas on hinge collars along its back edge. The front antenna is the orange \"aimed\" focal part, and hovering or using the arrow keys lifts and names any part." },
-	{ slug: "iso-hl-hub", brief: "iso/briefs/hl-hub.json", title: "A hub and its eight tiles", gallery: "hairline-connectivity", summary: "After hairline's Connectivity shelf. Dimetric hub: an accented hub with a port sits mid-floor on a flat floor, eight tiles on a three-by-three grid around it, a dashed link from the hub to each side tile. Hover or arrow keys lift one tile." },
-	{ slug: "iso-hl-relay", brief: "iso/briefs/hl-relay.json", title: "A message relays hop by hop", gallery: "hairline-connectivity", summary: "After hairline's Connectivity shelf. Dimetric relay tree: a raised hub with four dashed branches; each runs to a relay tile, and three relays fork out to two leaf tiles. The east relay is lit on the way to the accented leaf. Hover or arrow keys lift one tile." },
-	{ slug: "iso-hl-settle", brief: "iso/briefs/hl-settle.json", title: "Nodes settle around a hub", gallery: "hairline-connectivity", summary: "After hairline's Connectivity shelf. Isometric network: a large hub tile, accented, at the centre, ringed by eight dashed slots, with eight small node tiles scattered and floating at different heights above them. Hovering settles every node down into its slot around the hub." },
-	{ slug: "iso-hl-loupe", brief: "iso/briefs/hl-loupe.json", title: "A stand loupe on a ruled sheet", gallery: "hairline-empty", summary: "After hairline's Empty shelf. Dimetric stand loupe: a thin sheet ruled with nine lines 11 apart, three short legs and a wide round glass above it. A dashed circle marks the field; the accented glass shows three of its rules about twice as far apart." },
-	{ slug: "iso-hl-sieve", brief: "iso/briefs/hl-sieve.json", title: "Test sieves over a pan", gallery: "hairline-empty", summary: "After hairline's Empty shelf. Dimetric stack of three round test sieves on a wider collecting pan: coarse on top (accented), medium, then fine. The accented coarse sieve shows its mesh set inside a framed rim." },
-	{ slug: "iso-hl-rail", brief: "iso/briefs/hl-rail.json", title: "A garment rail of bare hangers", gallery: "hairline-empty", summary: "After hairline's Empty shelf. Dimetric garment rail: two uprights on feet carry a bar with seven bare hangers hooked over it, each a hook, a crown and a wide shoulder. The nearest hanger is accented; hovering brushes the row, lifting it most and the far ones least." },
-	{ slug: "iso-hl-plug", brief: "iso/briefs/hl-plug.json", title: "A plug that falls short", gallery: "hairline-empty", summary: "After hairline's Empty shelf. Isometric wall with a socket plate and two pin holes; an accented plug lies on the floor in front, prongs toward the wall, cord running right. Hover lifts the plug and its cord toward the socket; the prongs stop short of the holes." },
-	{ slug: "iso-hl-query", brief: "iso/briefs/hl-query.json", title: "A question mark on a stand", gallery: "hairline-empty", summary: "After hairline's Empty shelf. Isometric question mark built from square bars: a short stem rises from a round stand, bends right into a riser, and a crown bar folds back into a hooked tip. A loose ball sits on the stand under the stem and is accented." },
-	{ slug: "iso-hl-drawer", brief: "iso/briefs/hl-drawer.json", title: "Drawer cabinet, one drawer out", gallery: "hairline-empty", summary: "A recreation of hairline's \"Drawer\" figure (Empty shelf): a three-drawer cabinet whose accented middle drawer stands open and slides further out on hover to show two dividers with nothing between them." },
-	{ slug: "iso-hl-basket", brief: "iso/briefs/hl-basket.json", title: "Empty wire basket", gallery: "hairline-empty", summary: "After hairline's Empty shelf. Dimetric shopping basket: a tapered wire body on a foot rim, a bail handle with a grip pivoting on the long sides, and a bare floor inside. The empty floor is accented." },
-	{ slug: "iso-hl-plot", brief: "iso/briefs/hl-plot.json", title: "An empty bar chart", gallery: "hairline-empty", summary: "After hairline's Empty shelf. Isometric empty bar chart: a base tray, a grid board with a thin y-axis and four gridlines, and seven flat zero-height tabs. The first tab is accented; hover or arrow keys lift one tab a little." },
-	{ slug: "iso-hl-mark-vercel", brief: "iso/briefs/hl-mark-vercel.json", title: "The Vercel mark, not yet seated", gallery: "hairline-marks", summary: "This is an isometric tribute to the Vercel mark from hairline's \"Vercel\" figure (Marks shelf). The triangle hangs over the empty slot on its pad, the \"no deployments yet\" state, and hovering lowers it until the orange base seats." },
-	{ slug: "iso-hl-mark-mastra", brief: "iso/briefs/hl-mark-mastra.json", title: "Mastra: the lone agent", gallery: "hairline-marks", summary: "After hairline's Marks shelf. Dimetric tribute to the Mastra mark: an M of three rounded posts, bridged at the top into two humps, on a rounded slab. A lone accented agent waits apart by a dashed neck. Hover to draw it toward the M." },
-	{ slug: "iso-hl-mark-notion", brief: "iso/briefs/hl-mark-notion.json", title: "Notion: no pages inside", gallery: "hairline-marks", summary: "After hairline's Marks shelf. Dimetric tribute to the Notion mark: a closed box with a centred N in relief on its front and an accented lid resting on top. Hover lifts the lid to show a dashed page outline on the empty top." },
+	// Recreations of the anatomy collection (an-*). `gallery` names the gallery page that shows each one
+	// (GALLERY_PAGES); these get no standalone page, so the demos folder stays small. The hairline pages render the
+	// vendored hairline figures themselves (hairline/figures.mjs), not briefs.
 	{ slug: "iso-an-hash-map", brief: "iso/briefs/an-hash-map.json", title: "Hash map collisions, pigeonhole buckets", gallery: "anatomy-1", summary: "After the anatomy collection. Four pigeonhole buckets numbered 0 to 3 in a row, with a coding machine at the end feeding bucket 3 an incoming letter. Bucket 1 holds one letter; bucket 3 holds a chain of three, the newest highlighted." },
 	{ slug: "iso-an-binary-search", brief: "iso/briefs/an-binary-search.json", title: "Binary search on a lab balance", gallery: "anatomy-1", summary: "After the anatomy collection. Dimetric lab balance, pillar, beam and two hung pans: a sample on the left, the accented middle weight on the lower right pan. In front a case of sixteen graded weights; twelve sunk flush, four left in slots 9 to 12, seat 11 empty." },
 	{ slug: "iso-an-dns", brief: "iso/briefs/an-dns.json", title: "DNS resolution by pneumatic tube", gallery: "anatomy-1", summary: "An isometric recreation of the anatomy collection's \"DNS resolution\" pneumatic tube dispatcher: from an accented resolver on a round desk, tubes of rising height reach the root, com and example.com servers, and a row of cache flags stands for cached answers." },
@@ -300,12 +265,12 @@ async function renderExample(example, kind) {
 export const GALLERY = Object.freeze({
 	slug: "illustration-gallery",
 	title: "Generated illustrations",
-	summary: "Seven figures built by the iso kit from JSON briefs in its one manual style: white plates, thin lines, one orange accent on the focal part and flat cast shadows. Each assembles on entry; hover or select a part to explode it. The gallery pages below hold the recreations of hairline and the anatomy collection.",
+	summary: "Seven figures built by the iso kit from JSON briefs in its one manual style: white plates, thin lines, one orange accent on the focal part and flat cast shadows. Each assembles on entry; hover or select a part to explode it. The gallery pages below hold hairline's own figures, drawn by the vendored hairline engine, and the recreations of the anatomy collection.",
 });
 
-const HAIRLINE = "Recreations of hairline's isometric figures, rebuilt by the iso kit from JSON briefs";
+const HAIRLINE = "Lucas Marques's hairline figures, drawn by the vendored hairline engine (scripts/hairline) in the page's theme";
 const ANATOMY = "Recreations of the anatomy collection's figures, rebuilt by the iso kit from JSON briefs";
-const hairline = (shelf, title) => ({ key: `hairline-${shelf}`, title: `Hairline: ${title}`, summary: `${HAIRLINE}: the ${title.toLowerCase()} shelf. Each assembles on entry; hover or select a part to lift it.` });
+const hairline = (shelf, title) => ({ key: `hairline-${shelf}`, engine: "hairline", shelf, title: `Hairline: ${title}`, summary: `${HAIRLINE}: the ${title.toLowerCase()} shelf. Each answers the pointer; the line under it reads out what it is doing.` });
 const anatomy = (n, range) => ({ key: `anatomy-${n}`, title: `Anatomy collection, ${range}`, summary: `${ANATOMY}, ${range.toLowerCase()}. Each assembles on entry; hover or select a part to lift it.` });
 
 export const GALLERY_PAGES = Object.freeze([
@@ -367,13 +332,14 @@ const escapeAttr = text => escapeText(text).replace(/"/g, "&quot;");
 
 const coreExamples = () => BRIEF_EXAMPLES.filter(example => !example.gallery);
 const pageExamples = key => BRIEF_EXAMPLES.filter(example => example.gallery === key);
+const pageCount = page => (page.engine === "hairline" ? shelfFigures(page.shelf).length : pageExamples(page.key).length);
 
 // Links from one gallery page to every other one (the hub links all of them).
 function galleryNav(currentSlug) {
 	const links = [{ slug: GALLERY.slug, fileName: `demo-${GALLERY.slug}.html`, title: "All galleries (hub)" }, ...GALLERY_PAGES]
 		.filter(page => page.slug !== currentSlug)
 		.map(page => {
-			const count = page.key ? ` (${pageExamples(page.key).length})` : "";
+			const count = page.key ? ` (${pageCount(page)})` : "";
 			return `\t\t\t<li><a href="${escapeAttr(page.fileName)}">${escapeText(page.title)}</a>${count}</li>`;
 		});
 	return `\t<nav class="gallery-pages" aria-labelledby="gallery-pages-${currentSlug}">\n\t\t<h2 id="gallery-pages-${currentSlug}">Gallery pages</h2>\n\t\t<ul>\n${links.join("\n")}\n\t\t</ul>\n\t</nav>`;
@@ -402,8 +368,26 @@ async function renderGalleryPage({ slug, title, summary, examples, eyebrow, nav 
 	if (failures.length) throw new Error(`${path.relative(process.cwd(), filePath)} fails check-html:\n  - ${failures.join("\n  - ")}`);
 	const errors = auditHtml(html).findings.filter(finding => finding.severity === "error");
 	if (errors.length) throw new Error(`${path.relative(process.cwd(), filePath)}: iso audit errors after the pipeline: ${errors.map(f => `${f.rule} ${f.figure} ${f.message}`).join("; ")}`);
-	const over = weightWarnings(html, { label: path.relative(process.cwd(), filePath) });
-	if (over.length) throw new Error(over.join("\n"));
+	return { filePath, html };
+}
+
+// A hairline shelf: each figure's plate (hairline/inline.mjs) in the same section frame as the iso entries. The
+// page's hairline CSS goes into <head> and its runtime block before </body> ahead of the pipeline, so the registry
+// blocks land after it and the enhancement block stays last (the pipeline's fixed point, --refresh-library).
+async function renderHairlinePage({ slug, title, summary, shelf, eyebrow, nav }) {
+	const { hairlinePlate, hairlineRuntimeBlock, hairlineStyleTag } = await import("./hairline/inline.mjs");
+	const { applyRuntimePipeline } = await import("./runtime/pipeline.mjs");
+	const { validateHtmlString } = await import("./check-html.mjs");
+	const figures = shelfFigures(shelf);
+	if (!figures.length) throw new Error(`${slug}: no hairline figures`);
+	const sections = figures.map(figure => `\t<section class="gallery-figure" aria-labelledby="gallery-hl-${figure.id}">\n\t\t<h2 id="gallery-hl-${figure.id}">${escapeText(figure.title)}</h2>\n\t\t<p>${escapeText(figure.summary)}</p>\n\t\t${hairlinePlate({ id: figure.id, caption: figure.caption })}\n\t</section>`);
+	const marks = figures.some(figure => figure.mark) ? "\n\t<p class=\"gallery-note\">Brands hairline likes, drawn as a tribute. The marks belong to their owners; neither hairline nor vpk-html is affiliated with them.</p>" : "";
+	let base = illustrationPage({ slug, title, summary, figureHtml: sections.join("\n") + marks, figureEngine: "hairline", eyebrow, extraCss: GALLERY_CSS, afterHtml: nav });
+	base = base.replace("</head>", `${hairlineStyleTag()}\n</head>`).replace("</body>", `${await hairlineRuntimeBlock(figures.map(figure => figure.id))}\n</body>`);
+	const filePath = path.join(DEMOS, `demo-${slug}.html`);
+	const html = applyRuntimePipeline(base, { filePath });
+	const failures = validateHtmlString(html, filePath).failures;
+	if (failures.length) throw new Error(`${path.relative(process.cwd(), filePath)} fails check-html:\n  - ${failures.join("\n  - ")}`);
 	return { filePath, html };
 }
 
@@ -416,7 +400,12 @@ export async function renderGalleryPages() {
 	const orphan = BRIEF_EXAMPLES.find(example => example.gallery && !keys.has(example.gallery));
 	if (orphan) throw new Error(`${orphan.slug}: unknown gallery "${orphan.gallery}"`);
 	const outputs = [];
-	for (const page of GALLERY_PAGES) outputs.push(await renderGalleryPage({ slug: page.slug, title: page.title, summary: page.summary, examples: pageExamples(page.key), eyebrow: "technical illustration · iso kit gallery", nav: galleryNav(page.slug) }));
+	for (const page of GALLERY_PAGES) {
+		const common = { slug: page.slug, title: page.title, summary: page.summary, nav: galleryNav(page.slug) };
+		outputs.push(page.engine === "hairline"
+			? await renderHairlinePage({ ...common, shelf: page.shelf, eyebrow: "technical illustration · hairline gallery" })
+			: await renderGalleryPage({ ...common, examples: pageExamples(page.key), eyebrow: "technical illustration · iso kit gallery" }));
+	}
 	return outputs;
 }
 

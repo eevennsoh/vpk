@@ -92,8 +92,30 @@ export function parseVec(text) {
 	return out.every(Number.isFinite) && parts.every(part => /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(part)) ? out : null;
 }
 
-// Index of the topmost polygon (latest in painter order) containing the point, or -1.
+// A hit polygon for line work whose own hull is degenerate (a straight wire): the hull of each point padded by `pad` units.
+export function padHull(points, pad = 2) {
+	return hull(points.flatMap(([x, y]) => [[x - pad, y - pad], [x + pad, y - pad], [x + pad, y + pad], [x - pad, y + pad]]));
+}
+
+// Index of the topmost polygon (latest in painter order) containing the point, or -1. A polygon may carry `solids` (a concave
+// prism's convex fills, partPoly): then the point must fall inside one of them, so a notch in a key or an L hits nothing.
 export function topmostHit(polys, point) {
-	for (let i = polys.length - 1; i >= 0; i--) if (polys[i] && pointInPolygon(point, polys[i])) return i;
+	for (let i = polys.length - 1; i >= 0; i--) {
+		const poly = polys[i];
+		if (poly && (poly.solids ? poly.solids.some(q => pointInPolygon(point, q)) : pointInPolygon(point, poly))) return i;
+	}
 	return -1;
+}
+
+// A part group's hit polygon: the hull of its fills (else of its edges; a straight wire's degenerate hull is padded). A group with
+// data-vpk-iso-hit="solids" also keeps each fill's own hull as `solids`.
+export function partPoly(el) {
+	const paths = role => [...el.querySelectorAll(`[data-vpk-iso-role="${role}"]`)].map(p => parsePolyPath(p.getAttribute("d")) || []).filter(points => points.length);
+	let lists = paths("fill");
+	if (!lists.length) lists = paths("edge");
+	const points = lists.flat();
+	let poly = hull(points);
+	if (poly.length < 3 && points.length) poly = padHull(points);
+	if (el.getAttribute("data-vpk-iso-hit") === "solids") poly.solids = lists.map(hull).filter(q => q.length >= 3);
+	return poly;
 }

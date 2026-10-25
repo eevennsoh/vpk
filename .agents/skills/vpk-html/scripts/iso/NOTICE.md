@@ -24,6 +24,8 @@ below were ported or adapted, and each ported function carries a header comment 
 - Not ported: the camera (`Cam`, `proj`, `unproj`), `fade`/`reflect`/`ghost` (they use raw-colour
   gradient masks), `field`, `tour`, and the raw-hex palettes. Projection comes from the vendored
   anatomy kit instead.
+- Separately, the `hairline` figure engine vendors hairline 0.5.1 whole and unmodified in
+  `../hairline/vendor/`; its notice is `../hairline/NOTICE.md`.
 
 ```
 MIT License

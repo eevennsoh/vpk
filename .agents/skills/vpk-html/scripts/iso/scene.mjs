@@ -7,47 +7,48 @@ import { cameraAttr, FIGURE_CAMERA } from "../figures/camera.mjs";
 import { fitProjection, iso } from "../anatomy/vendor/kit/iso-kit.mjs";
 import { hull, parsePolyPath, pointInPolygon } from "./core.mjs";
 import { clipConvex, dimGeometry, gutterWidthsNear, placeLabelsNear, segmentBoxes, textWidth } from "./layout.mjs";
-import { buildMarks, fitHeight, fitNear, homePiece, narrowTagLayout, scaleGeometry, validateDims, validateMarks, validateScale } from "./manual-scene.mjs";
-import { manualTiming, MAX_LAYERS } from "./motion.mjs";
-import { KIT_STYLE, presetFor } from "./palette.mjs";
-import { ENTRY } from "./accent.mjs";
-import { castShadow, castsShadow, clipWindowPath, receivingTop, depthKey, guideCorners, guideSegments, shadowMove, shadowStep, solidFor } from "./solids.mjs";
+import { buildMarks, fitHeight, fitNear, homePiece, narrowTagLayout, scaleGeometry } from "./manual-scene.mjs";
+import { manualTiming } from "./motion.mjs";
+import { EMPHASES, KIT_STYLE, presetFor } from "./palette.mjs";
+import { boundsOf, contains, isLegacy, planCentre, TUBE_KINDS } from "./geometry.mjs";
+import { painterKeys } from "./painter.mjs";
+import { padHull } from "./core.mjs";
+import { castShadows, castsShadow, clipWindowPath, receivingTop, depthKey, guideCorners, guideSegments, shadowMove, shadowStep, solidFor, supportZs } from "./solids.mjs";
+import { drawEntries, hasVariants, pieceShows, restGeometry, stateConfig, stateModelOf, statePoses, viewIn } from "./states.mjs";
 
-export const BRIEF_SCHEMA_ID = "vpk-iso-brief/1";
-export const ENGINE_ID = "iso-kit";
-export const FIGURE_ID = /^[a-z][a-z0-9-]{0,39}$/;
-export const FIG_ID = /^FIG_\d{3}$/;
-export const DEFAULT_VIEWBOX = Object.freeze([720, 450]);
-export const DEFAULT_PAD = 24;
-export const CROP_PAD = 16;
-export const MIN_CROP_ZOOM = 1.15;
-// Landings drop from ENTRY.DROP_Z above (rule 10; iso/accent.mjs, shared with the 3D prototype). The camera fit counts only the
-// first FIT_FROM_Z of that drop, so a long drop does not shrink the drawing: a part may start above the frame and fall into it,
-// as in the reference videos.
-export const MANUAL_FROM = Object.freeze([0, 0, ENTRY.DROP_Z]);
-export const FIT_FROM_Z = 14;
+export { EMPHASES };
+
+export {
+	BRIEF_SCHEMA_ID,
+	BriefError,
+	CAMERA_PRESETS,
+	CROP_PAD,
+	DEFAULT_PAD,
+	DEFAULT_VIEWBOX,
+	emphasisOf,
+	ENGINE_ID,
+	FIG_ID,
+	FIGURE_ID,
+	FIT_FROM_Z,
+	focalIdsOf,
+	LABEL_MODES,
+	labelModeOf,
+	labelSpecsOf,
+	MANUAL_FROM,
+	MAX_LABELS,
+	MAX_PARTS,
+	MIN_CROP_ZOOM,
+	PART_KINDS,
+	PART_STATES,
+	PART_TONES,
+	validateBrief,
+	WARN_PARTS,
+} from "./schema.mjs";
+export { expandBrief } from "./expand.mjs";
+import { BriefError, CAMERA_PRESETS, CROP_PAD, DEFAULT_PAD, DEFAULT_VIEWBOX, emphasisOf, FIT_FROM_Z, focalIdsOf, labelModeOf, labelSpecsOf, MANUAL_FROM, MAX_PARTS, MIN_CROP_ZOOM, validateBrief, WARN_PARTS } from "./schema.mjs";
+import { expandBrief } from "./expand.mjs";
 const SCALE_GAP = 14;
-export const PART_KINDS = Object.freeze(["slab", "box", "plate", "cylinder", "tray", "ring", "gap"]);
-// A "new" or "active" part shares the focal's pale fill, without its outline (rule 4).
-export const PART_STATES = Object.freeze(["new", "active"]);
 
-export const CAMERA_PRESETS = Object.freeze({
-	dimetric: Object.freeze({ ...FIGURE_CAMERA }),
-	"true-iso": Object.freeze({ azimuth: 45, elevation: 35.26 }),
-	front: Object.freeze({ azimuth: 90, elevation: 0 }),
-	top: Object.freeze({ azimuth: 90, elevation: 90 }),
-});
-
-export class BriefError extends Error {
-	constructor(errors) {
-		super(`invalid iso brief:\n  - ${errors.join("\n  - ")}`);
-		this.name = "BriefError";
-		this.errors = errors;
-	}
-}
-
-const isNum = value => typeof value === "number" && Number.isFinite(value);
-const isVec = (value, n = 3) => Array.isArray(value) && value.length === n && value.every(isNum);
 const round = (value, step = 10) => Math.round(value * step) / step;
 
 export function resolveCamera(camera = {}) {
@@ -85,126 +86,10 @@ export function projectionFor(camera, [width, height], points, [gutterLeft, gutt
 
 export const cameraAttrOf = projection => cameraAttr({ azimuth: projection.azimuth, elevation: projection.elevation });
 
-function validatePart(part, index, push) {
-	const at = `parts[${index}]`;
-	if (!part || typeof part !== "object") return push(`${at} must be an object`);
-	if (!FIGURE_ID.test(part.id ?? "")) push(`${at}.id ${JSON.stringify(part.id)} must match ${FIGURE_ID}`);
-	if (!PART_KINDS.includes(part.kind)) push(`${at}.kind ${JSON.stringify(part.kind)} must be one of ${PART_KINDS.join(", ")}`);
-	if (!isVec(part.at)) push(`${at}.at must be [x, y, z]`);
-	if (!isVec(part.size) || !(part.size[0] > 0) || !(part.size[1] > 0) || !(part.size[2] >= 0)) push(`${at}.size must be [w, d, h] with w, d > 0 and h ≥ 0`);
-	else if ((part.kind === "gap" || part.kind === "plate") && part.size[2] > 2) push(`${at}.size: a ${part.kind} has h ≤ 2`);
-	else if (["slab", "box", "cylinder", "tray"].includes(part.kind) && !(part.size[2] > 0)) push(`${at}.size: a ${part.kind} needs h > 0`);
-	else if ((part.kind === "cylinder" || part.kind === "ring") && (part.size[1] !== part.size[0] || (part.kind === "ring" && part.size[2] !== 0))) push(`${at}.size: a ${part.kind} is [r, r, ${part.kind === "ring" ? 0 : "h"}] (r is the radius; \`at\` is the centre)`);
-	if (part.r !== undefined && !(isNum(part.r) && part.r >= 0)) push(`${at}.r must be ≥ 0`);
-	if (part.bevel !== undefined && !(isNum(part.bevel) && (part.bevel === 0 || (part.bevel >= 0.6 && part.bevel <= 2.2)))) push(`${at}.bevel must be 0 or within 0.6–2.2`);
-	// The kit draws every side face as a plain flat face; the hatched cut face is gone, so a brief that still asks for one fails.
-	if (part.cut !== undefined) push(`${at}.cut is no longer supported: the iso kit draws every side face as a plain flat face (no hatching); remove "cut" from the part`);
-	if (part.marks !== undefined && !(Array.isArray(part.marks) && part.marks.every(mark => Array.isArray(mark) && mark.length === 2 && mark.every(point => isVec(point, 2))))) push(`${at}.marks must be [[u, v], [u, v]] segments`);
-	if (part.label !== undefined && (typeof part.label !== "string" || part.label.length > 60)) push(`${at}.label must be a string of ≤ 60 chars`);
-	if (part.explode !== undefined && !isVec(part.explode)) push(`${at}.explode must be [x, y, z]`);
-	if (part.clipTo !== undefined && part.kind !== "ring") push(`${at}.clipTo is allowed on rings only`);
-	if (part.clipPad !== undefined && !(part.kind === "ring" && part.clipTo !== undefined && isNum(part.clipPad) && part.clipPad >= 0 && part.clipPad <= 200)) push(`${at}.clipPad is a number within 0–200, allowed on a ring with clipTo`);
-	if (part.state !== undefined && !PART_STATES.includes(part.state)) push(`${at}.state must be one of ${PART_STATES.join(", ")}`);
-}
-
-function validateInteract(interact, push) {
-	if (interact === undefined || interact === null) return;
-	if (!["select", "explode"].includes(interact.behavior)) return push(`interact.behavior ${JSON.stringify(interact.behavior)} must be "select" or "explode"`);
-	if (interact.lift !== undefined && !(isNum(interact.lift) && interact.lift > 0 && interact.lift <= 40)) push("interact.lift must be within (0, 40]");
-	if (interact.rest !== undefined && typeof interact.rest !== "string") push("interact.rest must be a string");
-	if (interact.behavior === "explode") {
-		const e = interact.explode;
-		if (!e || ![e.rest, e.min, e.max, e.step].every(isNum)) return push("interact.explode needs numeric rest, min, max and step");
-		if (!(e.min <= e.rest && e.rest <= e.max && e.min < e.max)) push("interact.explode needs min ≤ rest ≤ max and min < max");
-		if (!(e.step > 0 && e.step <= e.max - e.min)) push("interact.explode.step must be > 0 and ≤ max − min");
-		else if (e.min <= e.rest && e.rest <= e.max) {
-			// A range input snaps its value to min + n × step; an off-grid rest would load the slider
-			// elsewhere, and the figure could never settle back on its static art (R9).
-			const n = (e.rest - e.min) / e.step;
-			if (Math.abs(n - Math.round(n)) > 1e-6) {
-				const stops = [Math.floor(n), Math.floor(n) + 1].map(i => Math.round((e.min + i * e.step) * 1e6) / 1e6).filter(gap => gap <= e.max + 1e-9);
-				push(`interact.explode.rest ${e.rest} is off the slider's step grid (min + n × step): use ${stops.join(" or ")}, or change min or step`);
-			}
-		}
-		if (e.unit !== undefined && !/^[a-z][a-z0-9-]{0,15}$/.test(e.unit)) push("interact.explode.unit must be one short lowercase word (no spaces)");
-	}
-}
-
-export function validateBrief(brief) {
-	const errors = [];
-	const push = message => void errors.push(message);
-	if (!brief || typeof brief !== "object") return ["brief must be an object"];
-	if (brief.schema !== BRIEF_SCHEMA_ID) push(`schema must be "${BRIEF_SCHEMA_ID}"`);
-	if (!FIGURE_ID.test(brief.id ?? "")) push(`id ${JSON.stringify(brief.id)} must match ${FIGURE_ID}`);
-	if (!FIG_ID.test(brief.figId ?? "")) push(`figId ${JSON.stringify(brief.figId)} must match ${FIG_ID}`);
-	if (typeof brief.title !== "string" || !brief.title.trim() || brief.title.length > 48) push("title must be a non-empty string of ≤ 48 chars");
-	if (typeof brief.label !== "string" || !brief.label.trim() || brief.label.length > 240) push("label must be a non-empty string of ≤ 240 chars");
-	if (brief.caption !== undefined && typeof brief.caption !== "string") push("caption must be a string");
-	if (brief.style !== undefined && brief.style !== KIT_STYLE) push(`style ${JSON.stringify(brief.style)} is not supported; the iso kit has one style: "${KIT_STYLE}"`);
-	const camera = brief.camera;
-	if (camera !== undefined) {
-		if (!camera || typeof camera !== "object") push("camera must be an object");
-		else {
-			if (camera.preset !== undefined && !(camera.preset in CAMERA_PRESETS)) push(`camera.preset ${JSON.stringify(camera.preset)} must be one of ${Object.keys(CAMERA_PRESETS).join(", ")}`);
-			if (camera.azimuth !== undefined && !(isNum(camera.azimuth) && Math.abs(camera.azimuth) <= 360)) push("camera.azimuth must be within ±360");
-			if (camera.elevation !== undefined && !(isNum(camera.elevation) && camera.elevation >= 0 && camera.elevation <= 90)) push("camera.elevation must be within 0–90");
-			if (camera.scale !== undefined && camera.scale !== "fit" && !(isNum(camera.scale) && camera.scale > 0)) push('camera.scale must be "fit" or a positive number');
-			if (camera.pad !== undefined && !(isNum(camera.pad) && camera.pad >= 0)) push("camera.pad must be ≥ 0");
-		}
-	}
-	if (brief.viewBox !== undefined && !(isVec(brief.viewBox, 2) && brief.viewBox.every(value => Number.isInteger(value) && value >= 120 && value <= 4000))) push("viewBox must be [w, h] integers within 120–4000");
-	if (brief.texture !== undefined && !["none", "dots"].includes(brief.texture)) push('texture must be "none" or "dots"');
-	const parts = Array.isArray(brief.parts) ? brief.parts : [];
-	if (!Array.isArray(brief.parts) || parts.length < 1 || parts.length > 160) push("parts must be an array of 1–160 parts");
-	parts.forEach((part, index) => validatePart(part, index, push));
-	const ids = parts.map(part => part?.id);
-	const known = new Set(ids);
-	for (const id of new Set(ids.filter((id, index) => ids.indexOf(id) !== index))) push(`part id "${id}" is used more than once`);
-	parts.forEach((part, index) => {
-		if (part?.clipTo !== undefined && (!known.has(part.clipTo) || part.clipTo === part.id)) push(`parts[${index}].clipTo "${part.clipTo}" must name another part`);
-	});
-	if (!known.has(brief.focal)) push(`focal ${JSON.stringify(brief.focal)} must name a part`);
-	(brief.labels ?? []).forEach((label, index) => {
-		if (!label || typeof label.text !== "string" || !label.text.trim() || label.text.length > 40) push(`labels[${index}].text must be a non-empty string of ≤ 40 chars`);
-		if (!known.has(label?.target)) push(`labels[${index}].target ${JSON.stringify(label?.target)} must name a part`);
-		if (label?.side !== undefined && !["left", "right", "auto"].includes(label.side)) push(`labels[${index}].side must be left, right or auto`);
-		if (label?.anchor !== undefined && !isVec(label.anchor)) push(`labels[${index}].anchor must be [x, y, z]`);
-	});
-	(brief.annotations ?? []).forEach((note, index) => {
-		if (!["dimension", "arrow"].includes(note?.kind)) return push(`annotations[${index}].kind must be "dimension" or "arrow"`);
-		if (!isVec(note.from) || !isVec(note.to)) push(`annotations[${index}] needs from and to as [x, y, z]`);
-		if (note.kind === "dimension" && (typeof note.text !== "string" || !note.text.trim())) push(`annotations[${index}].text is required for a dimension`);
-		// A motion arrow may name the part it moves (`of`): it takes the accent while that part is the focal, hovered or selected one.
-		if (note.of !== undefined && (note.kind !== "arrow" || !known.has(note.of))) push(`annotations[${index}].of must name a part, on an arrow`);
-	});
-	const assemble = brief.assemble;
-	if (assemble !== undefined && assemble !== null) {
-		const layers = assemble.layers;
-		if (!Array.isArray(layers) || layers.length < 1 || !layers.every(layer => Array.isArray(layer) && layer.length > 0)) push("assemble.layers must be a non-empty array of non-empty id lists");
-		else {
-			if (layers.length > MAX_LAYERS) push(`assemble.layers has ${layers.length} layers; at most ${MAX_LAYERS}`);
-			const listed = layers.flat();
-			for (const id of listed) if (!known.has(id)) push(`assemble.layers names unknown part "${id}"`);
-			for (const id of new Set(listed.filter((id, index) => listed.indexOf(id) !== index))) push(`assemble.layers lists "${id}" more than once`);
-			for (const id of ids) if (known.has(id) && !listed.includes(id)) push(`assemble.layers must list every part; "${id}" is missing`);
-		}
-		for (const key of ["staggerMs", "partMs"]) if (assemble[key] !== undefined && !(isNum(assemble[key]) && assemble[key] > 0)) push(`assemble.${key} must be a positive number`);
-		if (assemble.from !== undefined && !isVec(assemble.from)) push("assemble.from must be [x, y, z]");
-	}
-	validateMarks(brief.marks, known, push);
-	validateDims(brief.dims, push);
-	validateScale(brief.scale, push);
-	validateInteract(brief.interact, push);
-	if (brief.meta !== undefined && !(brief.meta && typeof brief.meta === "object" && ["margin", "corner"].every(key => brief.meta[key] === undefined || (typeof brief.meta[key] === "string" && brief.meta[key].length <= 40)))) push("meta.margin and meta.corner must be strings of ≤ 40 chars");
-	return errors;
-}
-
-function partCorners(part) {
-	const [x, y, z] = part.at;
-	const [w, d, h] = part.size;
-	if (part.kind === "cylinder" || part.kind === "ring") return [[x - w, y - w], [x + w, y - w], [x + w, y + w], [x - w, y + w]].flatMap(([px, py]) => [[px, py, z], [px, py, z + h]]);
-	return [[x, y], [x + w, y], [x + w, y + d], [x, y + d]].flatMap(([px, py]) => [[px, py, z], [px, py, z + h]]);
-}
+// Fit, support, anchor and guide geometry comes from geometry.mjs boundsOf (one model for every kind; the legacy kinds keep their
+// old corners exactly).
+const partCorners = part => boundsOf(part).samples3;
+const bottomZ = part => boundsOf(part).bottom;
 
 // The part a clipped ring shows inside: its target, grown by `clipPad` world units on every side of the plan.
 export function clipWindowPart(part, byId) {
@@ -215,23 +100,13 @@ export function clipWindowPart(part, byId) {
 	return { ...target, at: [target.at[0] - pad, target.at[1] - pad, target.at[2]], size: [target.size[0] + 2 * pad, target.size[1] + 2 * pad, target.size[2]] };
 }
 
-const topZ = part => part.at[2] + (part.kind === "ring" || part.kind === "gap" ? 0 : part.size[2]);
-const planBox = part => (part.kind === "cylinder" || part.kind === "ring"
-	? [part.at[0] - part.size[0], part.at[1] - part.size[0], part.at[0] + part.size[0], part.at[1] + part.size[0]]
-	: [part.at[0], part.at[1], part.at[0] + part.size[0], part.at[1] + part.size[1]]);
-const planCentre = part => {
-	const [x0, y0, x1, y1] = planBox(part);
-	return [(x0 + x1) / 2, (y0 + y1) / 2];
-};
-// Plan containment with a half-unit tolerance (circles by radius, everything else by its box).
-function contains(part, [px, py], tolerance = 0.5) {
-	if (part.kind === "cylinder" || part.kind === "ring") return Math.hypot(px - part.at[0], py - part.at[1]) <= part.size[0] + tolerance;
-	const [x0, y0, x1, y1] = planBox(part);
-	return px >= x0 - tolerance && px <= x1 + tolerance && py >= y0 - tolerance && py <= y1 + tolerance;
-}
+const topZ = part => boundsOf(part).top;
+const planBox = part => boundsOf(part).plan;
 
-// Candidate anchor points on the visible faces of a part (top grid plus the sides facing the viewer).
+// Candidate anchor points on the visible faces of a part (top grid plus the sides facing the viewer); a new kind offers its
+// surface samples and its centre.
 function anchorCandidates(part, P) {
+	if (!isLegacy(part)) return [boundsOf(part).centre, ...boundsOf(part).samples3].map(point => iso(point, P));
 	const [x0, y0, x1, y1] = planBox(part);
 	const zTop = topZ(part);
 	const steps = [0.15, 0.35, 0.5, 0.65, 0.85];
@@ -266,9 +141,9 @@ function distanceToPolygon([px, py], poly) {
 // A visible point of the target nearest the label side; falls back to the top centre.
 function chooseAnchor(part, side, pieces, P, override) {
 	if (override) return { point: iso(override, P), visible: true };
-	const own = pieces.filter(piece => piece.partId === part.id);
+	const own = pieces.filter(piece => piece.partId === part.id && !piece.restHidden);
 	const lastOwn = Math.max(...own.map(piece => pieces.indexOf(piece)));
-	const covering = pieces.slice(lastOwn + 1).filter(piece => piece.partId !== part.id).map(piece => piece.hit);
+	const covering = pieces.slice(lastOwn + 1).filter(piece => piece.partId !== part.id && !piece.restHidden).map(piece => piece.hit);
 	const ownHull = hull(own.flatMap(piece => piece.hit));
 	const visible = anchorCandidates(part, P).filter(point => pointInPolygon(point, ownHull) && distanceToPolygon(point, ownHull) >= 3
 		&& covering.every(poly => !pointInPolygon(point, poly) && distanceToPolygon(point, poly) >= 4));
@@ -293,15 +168,24 @@ function screenVector(world, P) {
 }
 
 // A figure is built, then fitted to its frame: gutters first, then the viewBox height.
-export function buildScene(brief, { style = brief?.style } = {}) {
+export function buildScene(input, { style = input?.style } = {}) {
+	const errors = validateBrief({ ...input, style });
+	if (errors.length) throw new BriefError(errors);
+	// Repeat, instances and vary expand once; the scene (and scene.brief) holds the expanded parts.
+	const brief = expandBrief(input);
 	const scene = buildSceneAt(brief, style, null);
 	const rebuild = (gutters, viewBox) => buildSceneAt(brief, style, gutters, viewBox);
 	return fitHeight(scene.labels.length ? fitNear(scene, rebuild) : scene, rebuild);
 }
 
-function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
-	const errors = validateBrief({ ...brief, style });
+function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
+	const errors = validateBrief({ ...source, style });
 	if (errors.length) throw new BriefError(errors);
+	// Step and scrub figures (states.mjs): the scene's fit, supports, anchors and shadows read each part's rest geometry; the
+	// piece loop draws every variant and turn sample.
+	const stateModel = stateModelOf(source);
+	const brief = stateModel && source.parts.some(hasVariants) ? { ...source, parts: source.parts.map(part => (hasVariants(part) ? restGeometry(part, stateModel) : part)) } : source;
+	const drawOf = new Map(source.parts.map(part => [part.id, part]));
 	const preset = presetFor(style);
 	style = KIT_STYLE;
 	const warnings = [];
@@ -312,11 +196,11 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	const explode = behavior === "explode" ? { unit: "gap", ...interact.explode } : null;
 	const liftWorld = behavior === "select" ? interact.lift ?? 8 : 0;
 	const layers = layerIndexMap(brief);
-	const zRank = new Map([...brief.parts].sort((a, b) => a.at[2] - b.at[2]).map((part, index) => [part.id, index]));
+	const zRank = new Map([...brief.parts].sort((a, b) => bottomZ(a) - bottomZ(b)).map((part, index) => [part.id, index]));
 	// A part without its own explode vector that sits on another part (its base on that part's top, inside its plan; a tray's
 	// floor counts as its top) moves with that part: window controls stay on the window, pins on their bed. Only a part that
 	// rests on nothing falls back to its assembly layer, 12 units per layer.
-	const restsOn = part => brief.parts.find(other => other !== part && castsShadow(other) && Math.abs(receivingTop(other, 0).z - part.at[2]) < 1e-6 && contains(other, planCentre(part)));
+	const restsOn = part => brief.parts.find(other => other !== part && supportZs(other).some(z => Math.abs(z - bottomZ(part)) < 1e-6) && contains(other, planCentre(part)));
 	const vectors = new Map();
 	const vectorOf = (part, seen = new Set()) => {
 		if (part.explode) return part.explode;
@@ -330,10 +214,12 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	const from = assemble?.from ?? MANUAL_FROM;
 
 	const byId = new Map(brief.parts.map(part => [part.id, part]));
+	const emphasis = emphasisOf(brief);
+	const focalSet = new Set(focalIdsOf(brief));
 	// Cast shadows fall on the figure's ground, the lowest base of a part that casts one (illustrations.md § Shadows): one plane,
 	// so the shadow group paints first, under every part.
 	const casters = brief.parts.filter(castsShadow);
-	const ground = casters.length ? Math.min(...casters.map(part => part.at[2])) : 0;
+	const ground = casters.length ? Math.min(...casters.map(bottomZ)) : 0;
 	const step = shadowStep();
 	const shadowCorners = (part, [mx, my, mz] = [0, 0, 0]) => partCorners(part).map(([x, y, z]) => [x + mx + (z + mz - ground) * step[0], y + my + (z + mz - ground) * step[1], ground]);
 	// Fit every pose the figure can reach (explode, lift, assembly start). A clipped ring shows only inside its clip window,
@@ -343,6 +229,11 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	for (const part of brief.parts) {
 		const corners = partCorners(part.kind === "ring" && part.clipTo ? clipWindowPart(part, byId) : part);
 		poses.push(...corners);
+		if (stateModel) {
+			// Every state's pose, every variant and every turn sample is in frame.
+			const all = hasVariants(drawOf.get(part.id)) ? drawEntries(drawOf.get(part.id)).flatMap(entry => partCorners(entry.geom)) : corners;
+			poses.push(...all, ...statePoses(stateModel, part, all));
+		}
 		if (explode) {
 			const e = vectorOf(part);
 			for (const k of [explode.min - explode.rest, explode.max - explode.rest]) poses.push(...corners.map(([x, y, z]) => [x + e[0] * k, y + e[1] * k, z + e[2] * k]));
@@ -369,7 +260,7 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	}
 
 	const font = { size: preset.label.size, spacingEm: preset.label.spacingEm };
-	const labelSpecs = brief.labels ?? [];
+	const labelSpecs = labelSpecsOf(brief);
 	const P0 = projectionFor(cam, viewBox, poses);
 	const flat0 = poses.map(point => iso(point, P0)[0]);
 	const centre0 = (Math.min(...flat0) + Math.max(...flat0)) / 2;
@@ -383,17 +274,35 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	const P = projectionFor(cam, viewBox, poses, [gutters.left, gutters.right]);
 
 	const pieces = [];
+	if (brief.parts.length > WARN_PARTS) warnings.push(`${brief.parts.length} parts; above ${WARN_PARTS} a figure gets heavy${Number.isFinite(MAX_PARTS) ? ` (at most ${MAX_PARTS})` : ""}`);
 	for (const part of brief.parts) {
-		for (const piece of solidFor(part, P, preset)) {
-			const points = piece.solids.flatMap(solid => parsePolyPath(solid.fill ?? solid.edge) ?? []);
-			pieces.push({ ...piece, partId: part.id, label: part.label, z: part.at[2], depth: depthKey(piece, P), hit: hull(points) });
+		const drawn = drawOf.get(part.id);
+		for (const entry of drawEntries(drawn)) {
+			for (const built of solidFor(entry.geom, P, preset)) {
+				const piece = entry.variant === null ? built : { ...built, id: `${built.id}@${entry.variant}`, of: part.id, variant: entry.variant };
+				const points = piece.solids.flatMap(solid => parsePolyPath(solid.fill ?? solid.edge) ?? []);
+				const outline = hull(points);
+				// A piece the rest state does not show (another variant, a turn sample, a hidden part) is emitted with display="none" and
+				// takes no part in the rest painter order; its shapes order the states that show it (states.mjs stateOrder).
+				const restHidden = stateModel ? !pieceShows(stateModel, stateModel.rest, piece, drawn) : false;
+				pieces.push({ ...piece, partId: part.id, label: part.label, z: bottomZ(entry.geom), depth: depthKey(piece, P), hit: outline.length >= 3 ? outline : padHull(points), restHidden, allShapes: piece.shapes, shapes: restHidden ? [] : piece.shapes });
+				for (const note of piece.detail?.skipped ?? []) warnings.push(`part "${part.id}": ${note}; skipped`);
+			}
 		}
 	}
-	pieces.sort((a, b) => a.depth - b.depth || a.z - b.z || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+	for (const piece of pieces) piece.baseDepth = piece.depth;
+	// Painter order (painter.mjs): the vendored depth audit orders every pair of pieces that overlap on screen by which one is in
+	// front; the keys stay in depth units and become data-vpk-iso-depth.
+	const byOld = (a, b) => a.depth - b.depth || a.z - b.z || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+	pieces.sort(byOld);
+	const painted = painterKeys(pieces, P);
+	pieces.forEach((piece, index) => (piece.depth = painted.keys[index]));
+	pieces.sort(byOld);
 	for (const piece of pieces) {
 		const part = byId.get(piece.partId);
-		piece.focal = part.id === brief.focal;
-		piece.state = piece.focal ? null : part.state ?? null;
+		piece.focal = focalSet.has(part.id);
+		piece.state = piece.focal && emphasis === "accent" ? null : part.state ?? null;
+		piece.tone = part.tone ?? null;
 		piece.layer = assemble ? layers.get(part.id) : null;
 		if (explode) piece.explode = screenVector(vectorOf(part), P);
 		if (liftWorld) piece.lift = screenVector([0, 0, liftWorld], P);
@@ -402,16 +311,19 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	// One flat shadow per part that casts one, in painter order of its first piece; `cast` is the screen move of the shadow per
 	// unit of the figure's motion (the lift for select, a Gap unit for explode), so the runtime moves it with its part.
 	const shadows = [];
+	const shadowed = new Set();
 	for (const piece of pieces) {
 		const part = byId.get(piece.partId);
-		if (!castsShadow(part) || shadows.some(entry => entry.partId === part.id)) continue;
+		const key = piece.variant ? `${part.id}@${piece.variant}` : part.id;
+		if (!castsShadow(part) || shadowed.has(key)) continue;
+		shadowed.add(key);
 		const move = explode ? vectorOf(part) : liftWorld ? [0, 0, liftWorld] : null;
-		shadows.push({
-			partId: part.id,
-			layer: piece.layer,
-			hit: castShadow(part, P, { ground, r: part.r ?? preset.radius, step }),
-			cast: move ? screenVector(shadowMove(move, step), P) : null,
-		});
+		// A variant or turn sample casts its own shadow, shown and hidden with it (state-runtime.mjs).
+		const geom = piece.variant ? drawEntries(drawOf.get(part.id)).find(entry => entry.variant === piece.variant).geom : part;
+		if (!castsShadow(geom)) continue;
+		for (const hit of castShadows(geom, P, { ground, r: geom.r ?? preset.radius, step })) {
+			shadows.push({ partId: part.id, layer: piece.layer, hit, cast: move ? screenVector(shadowMove(move, step), P) : null, variant: piece.variant ?? null, restHidden: piece.restHidden });
+		}
 	}
 	// Shadows on the parts below (illustrations.md § Shadows): one light, so a point on a part's top face is in shadow when any
 	// part above it blocks the light, and the union of those casters' projections onto the face's plane is its shadow. Each pair
@@ -423,25 +335,32 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	};
 	const reach = explode ? [explode.min - explode.rest, 0, explode.max - explode.rest].map(k => [k, k]) : liftWorld ? [[0, 0], [1, 0]] : [[0, 0]];
 	const area = poly => Math.abs(poly.reduce((sum, [x, y], i) => sum + x * poly[(i + 1) % poly.length][1] - poly[(i + 1) % poly.length][0] * y, 0)) / 2;
-	for (const receiver of casters) {
+	// An ink part's top is darker than any received shadow, so it receives none. In a step or scrub figure only the parts that
+	// keep one shape and show at rest cast and receive these (a variant's received shadow would not follow its swap).
+	const settled = part => !stateModel || (!hasVariants(drawOf.get(part.id)) && !viewIn(stateModel, stateModel.rest, drawOf.get(part.id)).hidden);
+	for (const receiver of casters.filter(part => part.tone !== "ink" && receivingTop(part) && settled(part))) {
 		const top = receivingTop(receiver, receiver.r ?? preset.radius);
 		const face = top.ring.map(([x, y]) => iso([x, y, top.z], P));
 		const castOn = castOf(receiver);
 		const list = [];
 		for (const caster of casters) {
-			if (caster === receiver || caster.at[2] < top.z - 1e-6) continue;
-			const hit = castShadow(caster, P, { ground: top.z, r: caster.r ?? preset.radius, step });
+			if (caster === receiver || bottomZ(caster) < top.z - 1e-6 || !settled(caster)) continue;
 			const cast = castOf(caster);
 			const off = (v, k) => (v ? [v[0] * k, v[1] * k] : [0, 0]);
-			const touches = reach.some(([kc, kr]) => {
-				const [cx, cy] = off(cast, kc);
-				const [rx, ry] = off(castOn, kr);
-				return area(clipConvex(hit.map(([x, y]) => [x + cx - rx, y + cy - ry]), face)) > 1;
-			});
-			if (touches) list.push({ partId: caster.id, hit, cast, castOn, layer: assemble ? layers.get(caster.id) : null });
+			for (const hit of castShadows(caster, P, { ground: top.z, r: caster.r ?? preset.radius, step })) {
+				const touches = reach.some(([kc, kr]) => {
+					const [cx, cy] = off(cast, kc);
+					const [rx, ry] = off(castOn, kr);
+					return area(clipConvex(hit.map(([x, y]) => [x + cx - rx, y + cy - ry]), face)) > 1;
+				});
+				if (touches) list.push({ partId: caster.id, hit, cast, castOn, layer: assemble ? layers.get(caster.id) : null });
+			}
 		}
-		const home = pieces.find(piece => piece.id === (receiver.kind === "tray" ? `${receiver.id}:back` : receiver.id));
-		if (list.length && home) home.received = { clip: face, shadows: list };
+		const home = pieces.find(piece => piece.id === (top.piece ? `${receiver.id}:${top.piece}` : receiver.id));
+		// A caster painted entirely before the receiver stands behind it (painter order), so it cannot shadow the receiver's top (A21).
+		const homeAt = pieces.indexOf(home);
+		const inFront = list.filter(entry => Math.max(...pieces.map((piece, at) => (piece.partId === entry.partId ? at : -1))) > homeAt);
+		if (inFront.length && home) home.received = { clip: face, shadows: inFront, solid: top.solid ?? 0 };
 	}
 	// A clipped piece shows only inside its clip window: its target's top face, or that plan grown by `clipPad`. That
 	// window is its silhouette and hit polygon, and the emitted clipPath is the same path (`clipD`).
@@ -458,18 +377,18 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 	const guides = [];
 	if (explode) {
 		for (const part of brief.parts) {
-			if (["ring", "gap", "tray"].includes(part.kind)) continue;
+			if (["ring", "gap", "tray", "wire", "leg", ...TUBE_KINDS].includes(part.kind) && !(part.kind === "ring" && part.thickness)) continue;
 			const byTarget = new Map();
 			for (const corner of guideCorners(part, P, part.r ?? preset.radius)) {
 				const below = brief.parts
-					.filter(other => other !== part && other.kind !== "gap" && topZ(other) <= part.at[2] + 1e-6 && contains(other, corner))
+					.filter(other => other !== part && other.kind !== "gap" && topZ(other) <= bottomZ(part) + 1e-6 && contains(other, corner))
 					.sort((a, b) => topZ(b) - topZ(a) || (a.id < b.id ? -1 : 1))[0];
 				if (!below) continue;
 				if (!byTarget.has(below.id)) byTarget.set(below.id, { below, corners: [] });
 				byTarget.get(below.id).corners.push(corner);
 			}
 			for (const { below, corners } of byTarget.values()) {
-				const segment = guideSegments(corners, part.at[2], topZ(below), P);
+				const segment = guideSegments(corners, bottomZ(part), topZ(below), P);
 				if (segment) guides.push({ from: part.id, to: below.id, ...segment });
 			}
 		}
@@ -489,7 +408,7 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 		for (const group of groups) for (const index of group.pieces) pieces[index].stacks = group.pieces.some(other => other !== index && overlap(pieces[index], pieces[other]));
 	}
 
-	const sceneHull = hull(pieces.flatMap(piece => piece.hit));
+	const sceneHull = hull(pieces.filter(piece => !piece.restHidden).flatMap(piece => piece.hit));
 	const xs = sceneHull.map(([x]) => x);
 	const hullBox = { minX: Math.min(...xs), maxX: Math.max(...xs) };
 	const anchors = labelSpecs.map((label, index) => {
@@ -535,7 +454,7 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 
 	let timing = null;
 	if (assemble) timing = manualTiming({ layers: assemble.layers.length });
-	return {
+	const scene = {
 		brief,
 		id: brief.id,
 		figId: brief.figId,
@@ -572,6 +491,15 @@ function buildSceneAt(brief, style, gutterOverride, viewBoxOverride = null) {
 		poseYs: poses.map(point => iso(point, P)[1]),
 		gutters,
 		warnings,
+		// Pairs of pieces that each cover the other (interpenetrating solids); they keep the old depth-point order (audit A5 warns).
+		painterCycles: painted.cycles,
+		emphasis,
+		labelMode: labelModeOf(brief),
 		widthOf: text => textWidth(text, font),
+		stateModel,
+		states: null,
 	};
+	// The stage's state model: per state, the screen moves (part and cast shadow), discrete views, values, text and painter order.
+	if (stateModel) scene.states = stateConfig(scene, { byId: drawOf, screen: move => screenVector(move, P), shadowScreen: move => screenVector(shadowMove(move, step), P), P });
+	return scene;
 }
