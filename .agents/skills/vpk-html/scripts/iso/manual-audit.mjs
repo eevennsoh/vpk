@@ -34,7 +34,7 @@ const strokeSamples = points => points.flatMap((point, i) => (i ? [[(point[0] + 
 // by a window it never crossed, and passed every other check). It needs a painted fill or stroke, and either a
 // stroke point or at least FOCAL_MIN_VISIBLE of its silhouette inside its clip window and not covered by a part painted
 // later. Rest pose only, like A5.
-export function auditFocalVisible({ elements, parts, faces, facePart, hullOf, clipOf, focalUnits, push }) {
+export function auditFocalVisible({ elements, parts, faces, facePart, hullOf, clipOf, windowOf = () => null, focalUnits, push }) {
 	for (const unit of focalUnits) {
 		const members = parts.filter(part => unitName(part) === unit);
 		let painted = false;
@@ -43,7 +43,9 @@ export function auditFocalVisible({ elements, parts, faces, facePart, hullOf, cl
 		let shown = 0;
 		for (const part of members) {
 			const later = parts.slice(parts.indexOf(part) + 1).filter(other => unitName(other) !== unit && faces.some(face => facePart.get(face) === other && paintedValue(attr(face, "fill"))));
-			const visibleAt = point => later.every(other => !pointInPolygon(point, hullOf.get(other)));
+			// A cutaway's front shell covers nothing inside its window.
+			const covers = (other, point) => pointInPolygon(point, hullOf.get(other)) && !(windowOf(other) && pointInPolygon(point, windowOf(other)));
+			const visibleAt = point => later.every(other => !covers(other, point));
 			const ownFaces = faces.filter(face => facePart.get(face) === part && paintedValue(attr(face, "fill")));
 			const ownStrokes = elements.filter(el => partOf(el) === part && ["edge", "crease"].includes(attr(el, "data-vpk-iso-role")) && paintedValue(attr(el, "stroke")) && Number(attr(el, "stroke-width") ?? 1) > 0);
 			if (ownFaces.length || ownStrokes.length) painted = true;
@@ -107,7 +109,8 @@ export function auditLeaderInk({ elements, parts, faces, facePart, clipOf, label
 		for (const part of parts.filter(item => unitName(item) === target)) {
 			const window = clipOf(part);
 			if (window && !pointInPolygon(end, window) && distanceToPolygon(end, window) > 0.5) continue;
-			if (faces.some(face => facePart.get(face) === part && paintedValue(attr(face, "fill")) && !/^url\(/.test(attr(face, "fill")) && pointInPolygon(end, pointsOf(face)))) inked = true;
+			// A pattern fill is not ink; a glow gradient (url(#…-glow-…)) is a painted face.
+			if (faces.some(face => facePart.get(face) === part && paintedValue(attr(face, "fill")) && (!/^url\(/.test(attr(face, "fill")) || /-glow-[\w-]+\)$/.test(attr(face, "fill"))) && pointInPolygon(end, pointsOf(face)))) inked = true;
 			for (const el of elements.filter(item => partOf(item) === part && ["edge", "crease"].includes(attr(item, "data-vpk-iso-role")) && paintedValue(attr(item, "stroke")))) {
 				const points = pointsOf(el);
 				for (let i = 1; i < points.length; i++) if (segmentGap(end, points[i - 1], points[i]) <= INK_REACH + Number(attr(el, "stroke-width") ?? 1) / 2) inked = true;

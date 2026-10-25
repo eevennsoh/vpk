@@ -11,7 +11,7 @@ import { ISO_PRESET } from "./palette.mjs";
 import { convexParts, normalizePolygon, roundPolygon } from "./polygon.mjs";
 
 export const LEGACY_KINDS = Object.freeze(["slab", "box", "plate", "cylinder", "tray", "ring", "gap"]);
-export const NEW_KINDS = Object.freeze(["lathe", "cone", "torus", "tube", "rod", "leg", "spring", "catenary", "wire", "sphere", "pin", "prism"]);
+export const NEW_KINDS = Object.freeze(["lathe", "cone", "torus", "tube", "rod", "leg", "spring", "catenary", "wire", "sphere", "pin", "prism", "glow"]);
 export const BOX_KINDS = Object.freeze(["slab", "box", "plate"]);
 // Kinds drawn from one tube centreline (chunked into pieces with `of` for painter order).
 export const TUBE_KINDS = Object.freeze(["tube", "rod", "spring", "catenary", "torus"]);
@@ -127,6 +127,7 @@ const memo = new WeakMap();
 //   { type: "tube", points, radius, closed, caps, corrugate }
 //   { type: "ball", centre, r }
 //   { type: "line", points }
+//   { type: "glow", F, r }                           a flat halo disc of radius r across the frame's axis (plan § 2 W)
 export function bodiesOf(part) {
 	if (memo.has(part)) return memo.get(part);
 	const bodies = buildBodies(part);
@@ -144,7 +145,8 @@ function buildBodies(part) {
 		case "prism":
 			return [prismBody(prismFrame(at, part.axis, part.up, part.yaw ?? 0), roundPolygon(normalizePolygon(part.polygon), part.round ?? 0), part.depth)];
 		case "cylinder":
-			if (part.axis === undefined || (isZAxis(part.axis) && !part.up)) return null;
+			// A cutaway cylinder (plan § 2 C) draws as the lathe [[0, r], [h, r]], so it opens a window like any turned part.
+			if (!part.cutaway && (part.axis === undefined || (isZAxis(part.axis) && !part.up))) return null;
 			return [{ type: "lathe", F: frameFor(at, part.axis, part.up), meridian: disc(0, part.size[2], part.size[0]), closed: true, hole: null }];
 		case "ring": {
 			if (!part.thickness) return null;
@@ -188,6 +190,8 @@ function buildBodies(part) {
 			return [{ type: "line", points: part.points ? part.points.map(point => [...point]) : catenaryPoints(part.from, part.to, part.sag ?? 0, part.sag ? 24 : 1) }];
 		case "sphere":
 			return [{ type: "ball", centre: at, r: part.r }];
+		case "glow":
+			return [{ type: "glow", F: frameFor(at, part.axis ?? "z", part.up), r: part.r }];
 		case "pin": {
 			const F = frameFor(at, part.axis ?? "z", part.up);
 			const top = add3(at, mul3(F.a, part.length));
@@ -237,6 +241,7 @@ function bodySamples(body) {
 	if (body.type === "tube") return body.points.flatMap(p => TUBE_DIRS.map(d => add3(p, mul3(d, body.radius))));
 	if (body.type === "ball") return BALL_DIRS.map(d => add3(body.centre, mul3(d, body.r)));
 	if (body.type === "prism") return [0, body.depth].flatMap(s => body.ring.map(point => prismPoint(body.F, s, point)));
+	if (body.type === "glow") return Array.from({ length: 16 }, (_, j) => pointOf(body.F, 0, body.r, (j / 16) * TAU));
 	return body.points.map(point => [...point]);
 }
 
@@ -287,7 +292,8 @@ export function contains(part, [px, py], tolerance = 0.5) {
 export function castsShadow(part) {
 	// Glass is drawn as line work over what stands behind it: it casts no shadow and receives none.
 	if (part.tone === "glass") return false;
-	if (part.kind === "gap" || part.kind === "wire" || (part.kind === "ring" && !part.thickness)) return false;
+	// A glow (plan § 2 W) is light, not a solid: it casts none and receives none.
+	if (part.kind === "gap" || part.kind === "wire" || part.kind === "glow" || (part.kind === "ring" && !part.thickness)) return false;
 	const tube = (bodiesOf(part) ?? []).find(body => body.type === "tube");
 	if (tube && TUBE_KINDS.includes(part.kind) && tube.radius < 0.8) return false;
 	return true;

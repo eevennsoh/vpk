@@ -143,10 +143,12 @@ function chooseAnchor(part, side, pieces, P, override) {
 	if (override) return { point: iso(override, P), visible: true };
 	const own = pieces.filter(piece => piece.partId === part.id && !piece.restHidden);
 	const lastOwn = Math.max(...own.map(piece => pieces.indexOf(piece)));
-	const covering = pieces.slice(lastOwn + 1).filter(piece => piece.partId !== part.id && !piece.restHidden).map(piece => piece.hit);
+	const covering = pieces.slice(lastOwn + 1).filter(piece => piece.partId !== part.id && !piece.restHidden);
 	const ownHull = hull(own.flatMap(piece => piece.hit));
+	// A cutaway's front shell covers nothing inside its window (piece.window: the open part of its hull).
+	const covers = (piece, point) => (pointInPolygon(point, piece.hit) || distanceToPolygon(point, piece.hit) < 4) && !(piece.window && pointInPolygon(point, piece.window) && distanceToPolygon(point, piece.window) >= 4);
 	const visible = anchorCandidates(part, P).filter(point => pointInPolygon(point, ownHull) && distanceToPolygon(point, ownHull) >= 3
-		&& covering.every(poly => !pointInPolygon(point, poly) && distanceToPolygon(point, poly) >= 4));
+		&& covering.every(piece => !covers(piece, point)));
 	if (!visible.length) {
 		const [x0, y0, x1, y1] = planBox(part);
 		return { point: iso([(x0 + x1) / 2, (y0 + y1) / 2, topZ(part)], P), visible: false };
@@ -245,7 +247,7 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 	}
 	const solidPoses = poses.length;
 	poses.push(...shadowPoses);
-	for (const note of brief.annotations ?? []) poses.push(note.from, note.to);
+	for (const note of brief.annotations ?? []) poses.push(note.from, ...(note.via ?? []), note.to);
 
 	// A `dimension` annotation is drawn as a boxed label on a tick-ended line, like a `dims` entry.
 	const dimSpecs = [...(brief.dims ?? []), ...(brief.annotations ?? []).filter(note => note.kind === "dimension")];
@@ -280,12 +282,13 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 		for (const entry of drawEntries(drawn)) {
 			for (const built of solidFor(entry.geom, P, preset)) {
 				const piece = entry.variant === null ? built : { ...built, id: `${built.id}@${entry.variant}`, of: part.id, variant: entry.variant };
-				const points = piece.solids.flatMap(solid => parsePolyPath(solid.fill ?? solid.edge) ?? []);
+				// The hit polygon comes from the fills, else the line work, else a glow's halo or a section face's polygon.
+				const points = piece.solids.flatMap(solid => parsePolyPath(solid.fill ?? solid.edge ?? solid.glow ?? solid.cut) ?? []);
 				const outline = hull(points);
 				// A piece the rest state does not show (another variant, a turn sample, a hidden part) is emitted with display="none" and
 				// takes no part in the rest painter order; its shapes order the states that show it (states.mjs stateOrder).
 				const restHidden = stateModel ? !pieceShows(stateModel, stateModel.rest, piece, drawn) : false;
-				pieces.push({ ...piece, partId: part.id, label: part.label, z: bottomZ(entry.geom), depth: depthKey(piece, P), hit: outline.length >= 3 ? outline : padHull(points), restHidden, allShapes: piece.shapes, shapes: restHidden ? [] : piece.shapes });
+				pieces.push({ ...piece, partId: part.id, label: part.label, geomTone: entry.geom.tone ?? null, z: bottomZ(entry.geom), depth: depthKey(piece, P), hit: outline.length >= 3 ? outline : padHull(points), restHidden, allShapes: piece.shapes, shapes: restHidden ? [] : piece.shapes });
 				for (const note of piece.detail?.skipped ?? []) warnings.push(`part "${part.id}": ${note}; skipped`);
 			}
 		}
@@ -297,16 +300,37 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 	pieces.sort(byOld);
 	const painted = painterKeys(pieces, P);
 	pieces.forEach((piece, index) => (piece.depth = painted.keys[index]));
+	// A piece with no painter shape (a gap outline, a flat ring, a glow halo) keeps its old key while the audit pushes shaped keys
+	// forward, so a gap above a tray fell behind the whole tray. It stays in front of every shaped piece that was behind it before.
+	const shaped = pieces.filter(piece => piece.shapes?.length);
+	for (const piece of pieces) {
+		if (piece.shapes?.length) continue;
+		const behind = shaped.filter(other => other.baseDepth < piece.baseDepth || (other.baseDepth === piece.baseDepth && other.z < piece.z));
+		if (behind.length) piece.depth = Math.max(piece.depth, Math.max(...behind.map(other => other.depth)) + 0.01);
+	}
 	pieces.sort(byOld);
 	for (const piece of pieces) {
 		const part = byId.get(piece.partId);
 		piece.focal = focalSet.has(part.id);
 		piece.state = piece.focal && emphasis === "accent" ? null : part.state ?? null;
-		piece.tone = part.tone ?? null;
+		// A variant may carry its own tone (a nozzle that glows only in afterburner), so the tone is the drawn geometry's.
+		piece.tone = piece.geomTone;
 		piece.layer = assemble ? layers.get(part.id) : null;
 		if (explode) piece.explode = screenVector(vectorOf(part), P);
 		if (liftWorld) piece.lift = screenVector([0, 0, liftWorld], P);
 		if (part.clipTo) piece.clipTo = part.clipTo;
+	}
+	// Glow (plan § 2 W): each glowing piece's faces share one radial gradient centred on the piece, reaching its farthest corner
+	// (userSpaceOnUse, so it moves with the part); a glow halo takes the one shared halo gradient. An accent focal keeps its accent.
+	let glows = 0;
+	for (const piece of pieces) {
+		if (piece.kind === "glow") piece.halo = true;
+		else if (piece.tone === "glow" && !(piece.focal && emphasis === "accent")) {
+			const xs = piece.hit.map(([x]) => x);
+			const ys = piece.hit.map(([, y]) => y);
+			const [cx, cy] = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
+			piece.glow = { k: glows++, cx, cy, r: Math.max(1, ...piece.hit.map(([x, y]) => Math.hypot(x - cx, y - cy))) };
+		}
 	}
 	// One flat shadow per part that casts one, in painter order of its first piece; `cast` is the screen move of the shadow per
 	// unit of the figure's motion (the lift for select, a Gap unit for explode), so the runtime moves it with its part.
@@ -420,8 +444,12 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 	const hullCentre = [(hullBox.minX + hullBox.maxX) / 2, (Math.min(...sceneHull.map(([, y]) => y)) + Math.max(...sceneHull.map(([, y]) => y))) / 2];
 	const dims = dimSpecs.map(spec => ({ ...dimGeometry({ a: iso(spec.from, P), b: iso(spec.to, P), text: spec.text, offset: spec.offset, centre: hullCentre }, font), text: spec.text }));
 	const scaleBar = scaleSpec ? scaleGeometry(scaleSpec, scaleAt, P, font) : null;
-	// A motion arrow is not a part, but a label that sat on it would read as its caption; labels route around its line.
-	const arrowBoxes = (brief.annotations ?? []).filter(note => note.kind === "arrow").flatMap(note => segmentBoxes(iso(note.from, P), iso(note.to, P)));
+	// A motion arrow or a line (a ray) is not a part, but a label that sat on it would read as its caption; labels route around it.
+	const notePoints = note => [note.from, ...(note.via ?? []), note.to].map(point => iso(point, P));
+	const arrowBoxes = (brief.annotations ?? []).filter(note => note.kind === "arrow" || note.kind === "line").flatMap(note => {
+		const points = notePoints(note);
+		return points.slice(1).flatMap((point, i) => segmentBoxes(points[i], point));
+	});
 	const avoid = [...dims.map(dim => dim.box), ...(scaleBar ? [scaleBar.box] : []), ...arrowBoxes];
 	const labelRows = labelSpecs.map((label, index) => ({ text: label.text, target: label.target, side: sides[index], anchor: anchors[index] }));
 	const labels = placeLabelsNear({ viewBox, hull: sceneHull, pad: cam.pad, avoid }, labelRows, font);
@@ -429,7 +457,7 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 	const annotations = [];
 	for (const note of brief.annotations ?? []) {
 		if (note.kind === "dimension") continue;
-		annotations.push({ ...note, a: iso(note.from, P), b: iso(note.to, P), text: note.text });
+		annotations.push({ ...note, a: iso(note.from, P), b: iso(note.to, P), points: notePoints(note), text: note.text });
 	}
 
 	// Narrow stages (illustrations.md § Narrow stages, G2 J4): 11-unit callout text renders near 4 px on a phone, so below
@@ -494,6 +522,8 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 		// Pairs of pieces that each cover the other (interpenetrating solids); they keep the old depth-point order (audit A5 warns).
 		painterCycles: painted.cycles,
 		emphasis,
+		// A figure with a spectrum ray carries data-vpk-iso-spectrum (audit A1 and check-html admit the ray tokens only then).
+		spectrum: annotations.some(note => note.kind === "line" && note.spectrum),
 		labelMode: labelModeOf(brief),
 		widthOf: text => textWidth(text, font),
 		stateModel,

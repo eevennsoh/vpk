@@ -58,7 +58,7 @@
 // never gains one, and a landed or printed figure is the neutral art.
 
 import { ACCENT_FACES, ENTRY, REST_MOTION as R, SHADOW } from "./accent.mjs";
-import { DARK_INK_OVERRIDES, DARK_RECESS_OVERRIDES } from "./palette.mjs";
+import { DARK_CUT_OVERRIDES, DARK_INK_OVERRIDES, DARK_RECESS_OVERRIDES } from "./palette.mjs";
 
 // The sine in-out curve, so the drift and the bob read as a slow pendulum (the 3D sway is a sine too).
 const SINE = "cubic-bezier(0.37, 0, 0.63, 1)";
@@ -85,8 +85,10 @@ const accentCss = [
 ].join("\n");
 
 // Ink parts in dark (palette DARK_INK_OVERRIDES): the top and the far side swap, so the top stays the lightest face. Recesses in
-// dark (DARK_RECESS_OVERRIDES) take tone 1 pulled into the sunken surface, so a well still reads darker than its face.
-const inkCss = Object.entries({ ...DARK_INK_OVERRIDES, ...DARK_RECESS_OVERRIDES }).map(([tone, fill]) => `[data-theme="dark"] :where([data-vpk-engine="iso-kit"], svg[data-vpk-iso]) :where([data-vpk-iso-tone="${tone}"]) { fill: ${fill}; }`).join("\n");
+// dark (DARK_RECESS_OVERRIDES) take tone 1 pulled into the sunken surface, so a well still reads darker than its face; a cutaway's
+// section faces (DARK_CUT_OVERRIDES) the sunken surface pulled towards tone 3. Glow gradients and spectrum rays need no override:
+// their stops and strokes are tokens that the theme switch already repaints.
+const inkCss = Object.entries({ ...DARK_INK_OVERRIDES, ...DARK_RECESS_OVERRIDES, ...DARK_CUT_OVERRIDES }).map(([tone, fill]) => `[data-theme="dark"] :where([data-vpk-engine="iso-kit"], svg[data-vpk-iso]) :where([data-vpk-iso-tone="${tone}"]) { fill: ${fill}; }`).join("\n");
 
 // A figure with emphasis "ink" or "none" (data-vpk-iso-emphasis on the root) paints no accent: the hovered or selected part and
 // an owned arrow take the ink instead. (0,4,1) and later, so they beat the accent rules above and the blink rule.

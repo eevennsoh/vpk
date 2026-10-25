@@ -24,7 +24,7 @@ test("lathe schema: 2–64 profile points, r ≥ 0, s not decreasing, a non-zero
 	assert.match(errorsOf([lathe({ axis: [0, 0, 0] })]), /axis must be x, y, z, -x, -y, -z or a non-zero/);
 	assert.match(errorsOf([lathe({ up: [2, 0, 0] })]), /up must not be parallel to the axis/);
 	assert.match(errorsOf([lathe({ size: [1, 1, 1] })]), /size does not apply to a lathe/);
-	assert.match(errorsOf([lathe({ cutaway: { from: 0, to: 90 } })]), /cutaway is not supported yet/);
+	assert.match(errorsOf([lathe({ cutaway: { from: 0, to: 90 } })]), /cutaway\.wall must be > 0/);
 	assert.match(errorsOf([{ id: "c", kind: "cone", at: [0, 0, 0], r0: 0, r1: 0, length: 4 }]), /a cone needs r0 or r1 > 0/);
 	assert.match(errorsOf([{ id: "t", kind: "torus", at: [0, 0, 0], R: 3, r: 4 }]), /a torus needs r < R/);
 	assert.match(errorsOf([{ id: "w", kind: "ring", at: [0, 0, 0], size: [5, 5, 0], thickness: 2, inner: 6 }]), /inner is the bore radius/);

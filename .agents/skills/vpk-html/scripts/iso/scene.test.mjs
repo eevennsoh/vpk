@@ -520,8 +520,8 @@ test("emphasis and focal: accent needs a focal, none forbids one, ink allows a l
 	assert.match(validateBrief({ ...base, focal: [] }).join("\n"), /non-empty list/);
 	assert.match(validateBrief({ ...base, emphasis: "loud" }).join("\n"), /emphasis "loud" must be one of accent, ink, none/);
 	const toned = clone(base);
-	toned.parts[0].tone = "glow";
-	assert.match(validateBrief(toned).join("\n"), /parts\[0\]\.tone "glow" must be one of ink/);
+	toned.parts[0].tone = "neon";
+	assert.match(validateBrief(toned).join("\n"), /parts\[0\]\.tone "neon" must be one of ink, glass, glow/);
 	const scene = buildScene({ ...base, focal: ["tray", "drum"] });
 	assert.deepEqual([...new Set(scene.pieces.filter(p => p.focal).map(p => p.partId))].sort(), ["drum", "tray"]);
 });

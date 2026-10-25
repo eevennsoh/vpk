@@ -102,7 +102,7 @@ export function padHull(points, pad = 2) {
 export function topmostHit(polys, point) {
 	for (let i = polys.length - 1; i >= 0; i--) {
 		const poly = polys[i];
-		if (poly && (poly.solids ? poly.solids.some(q => pointInPolygon(point, q)) : pointInPolygon(point, poly))) return i;
+		if (poly && !(poly.window && pointInPolygon(point, poly.window)) && (poly.solids ? poly.solids.some(q => pointInPolygon(point, q)) : pointInPolygon(point, poly))) return i;
 	}
 	return -1;
 }
@@ -117,5 +117,8 @@ export function partPoly(el) {
 	let poly = hull(points);
 	if (poly.length < 3 && points.length) poly = padHull(points);
 	if (el.getAttribute("data-vpk-iso-hit") === "solids") poly.solids = lists.map(hull).filter(q => q.length >= 3);
+	// A cutaway's front shell (data-vpk-iso-window="x y x y …"): a point in its window hits the parts inside, not the shell.
+	const win = (el.getAttribute("data-vpk-iso-window") || "").trim().split(/\s+/).map(Number);
+	if (win.length >= 6 && win.length % 2 === 0 && win.every(Number.isFinite)) poly.window = win.reduce((out, v, k) => (k % 2 ? out : [...out, [v, win[k + 1]]]), []);
 	return poly;
 }

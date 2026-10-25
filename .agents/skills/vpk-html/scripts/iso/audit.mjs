@@ -16,7 +16,7 @@ import { auditLabelPoses, dimStrokes, boxPolygon, clipConvex, labelBox, nearPoly
 import { auditDetailBudget, auditFocalVisible, auditLeaderInk, auditShadows, FOCAL_MIN_VISIBLE, paintedValue } from "./manual-audit.mjs";
 import { MAX_TOTAL_MS, staggerFor } from "./motion.mjs";
 import { ACCENT_TOKENS } from "./accent.mjs";
-import { EMPHASES, isAccentPaint, isInkFace, ISO_PRESET, isAllowedIsoPaint, KIT_STYLE, rolesFor, STROKE_SET } from "./palette.mjs";
+import { EMPHASES, isAccentPaint, isInkFace, ISO_PRESET, isAllowedIsoPaint, KIT_STYLE, RAY_ISO_TOKENS, rolesFor, STROKE_SET } from "./palette.mjs";
 import { ISO_THRESHOLDS } from "./thresholds.mjs";
 
 // A17 (checks-thresholds.json → iso): file size does not block parity. A figure's SVG warns above SVG_WARN_BYTES and fails only
@@ -78,6 +78,19 @@ export function auditSvg(svgSource, context = {}) {
 	const figure = attr(svg, "data-vpk-iso-id") ?? context.figure;
 	const elements = all.slice(1);
 	const patterns = new Set(elements.filter(el => el.name === "pattern" && has(el, "id")).map(el => attr(el, "id")));
+	// Glow gradients (plan § 2 W): radialGradient paint servers whose ids are vpk-iso-<figure>-glow-<k>; their stops are the accent
+	// pair and grey tokens (A1 reads every stop-color), and they may paint the accent under any emphasis (A3: glow is heat, not focus).
+	const gradients = elements.filter(el => /^(?:radialGradient|linearGradient)$/.test(el.name));
+	const glowIds = new Set(gradients.map(el => attr(el, "id")).filter(id => new RegExp(`^vpk-iso-${figure}-glow-[\\w-]+$`).test(id ?? "")));
+	for (const el of gradients) if (!glowIds.has(attr(el, "id"))) push("A15", `<${el.name} id="${attr(el, "id") ?? ""}"> is not a glow gradient (ids are vpk-iso-${figure}-glow-<k>)`);
+	for (const el of gradients) for (const name of ["gradientTransform", "href", "xlink:href"]) if (has(el, name)) push("A15", `glow gradient ${attr(el, "id")} carries ${name}`);
+	const paintServers = new Set([...patterns, ...glowIds]);
+	const inGlow = el => Boolean(ancestor(el, item => glowIds.has(attr(item, "id"))));
+	// Spectrum rays (plan § 2 X): the three ray tokens, only as the paint of a ray (role "ray" or its end dots) on a root marked
+	// data-vpk-iso-spectrum.
+	const spectrum = has(svg, "data-vpk-iso-spectrum");
+	const isRay = el => ["ray", "ray-end"].includes(attr(el, "data-vpk-iso-role"));
+	const rayValue = value => RAY_ISO_TOKENS.has(/^var\((--[\w-]+)\)$/.exec(String(value).trim())?.[1]);
 
 	// A1 paint values (and A15 url targets)
 	for (const el of elements) {
@@ -86,12 +99,15 @@ export function auditSvg(svgSource, context = {}) {
 			if (SMIL.has(el.name) && name === "fill") continue;
 			const value = attr(el, name);
 			const url = /^url\(#([\w-]+)\)$/.exec(value.trim());
-			if (url && !patterns.has(url[1])) push("A15", `${name}="${value}" does not resolve to a <pattern> in this figure`);
-			else if (!isAllowedIsoPaint(value, { localIds: patterns })) push("A1", `<${el.name} ${name}="${value}"> is not a grayscale iso token`);
+			if (rayValue(value)) {
+				if (!spectrum || !isRay(el)) push("A1", `<${el.name} ${name}="${value}"> paints a spectrum ray token ${spectrum ? "outside a ray" : "on a figure without data-vpk-iso-spectrum"}`);
+			} else if (url && !paintServers.has(url[1])) push("A15", `${name}="${value}" does not resolve to a <pattern> or glow gradient in this figure`);
+			else if (url && glowIds.has(url[1]) && !["fill", "shade", "top", "glow"].includes(attr(el, "data-vpk-iso-role"))) push("A15", `${name}="${value}": a glow gradient paints only faces and glow halos`);
+			else if (!isAllowedIsoPaint(value, { localIds: paintServers })) push("A1", `<${el.name} ${name}="${value}"> is not a grayscale iso token`);
 		}
 		for (const css of [attr(el, "style") ?? "", el.name === "style" ? el.text : ""]) {
 			for (const m of css.matchAll(/\b(fill|stroke|stop-color|color)\s*:\s*([^;}]+)/gi)) {
-				if (!isAllowedIsoPaint(m[2], { localIds: patterns })) push("A1", `${m[1]}: ${m[2].trim()} is not a grayscale iso token`);
+				if (!isAllowedIsoPaint(m[2], { localIds: paintServers })) push("A1", `${m[1]}: ${m[2].trim()} is not a grayscale iso token`);
 			}
 		}
 		if (SMIL.has(el.name) && PAINT_ATTRS.includes(attr(el, "attributeName") ?? "")) {
@@ -99,8 +115,11 @@ export function auditSvg(svgSource, context = {}) {
 			for (const value of values) if (!isAllowedIsoPaint(value)) push("A1", `SMIL ${el.attrs.get("attributeName")} value "${value}" is not a grayscale iso token`);
 		}
 		if (el.name === "pattern" && has(el, "patternTransform")) push("A15", `pattern ${attr(el, "id")} uses patternTransform (bake the diagonals into the tile)`);
-		// Hatched cut faces were removed from the kit: every side face is a plain flat face. A stale figure still carrying one fails.
-		if (attr(el, "data-vpk-iso-role") === "cut" || (el.name === "pattern" && /-hatch(?:-sparse)?$/.test(attr(el, "id") ?? ""))) push("A15", `${el.name === "pattern" ? `pattern ${attr(el, "id")}` : "a data-vpk-iso-role=\"cut\" face"} is a hatched cut face; the kit draws side faces flat (rebuild with build-figure.mjs)`);
+		// Hatched side faces were removed from the kit: every side face is a plain flat face. The cut role survives only as a cutaway's
+		// section faces (plan § 2 C), inside the front shell of a part that opens a window (data-vpk-iso-window); a hatch pattern is stale.
+		const cutOutside = attr(el, "data-vpk-iso-role") === "cut" && !has(partOf(el) ?? svg, "data-vpk-iso-window");
+		if (cutOutside || (el.name === "pattern" && /-hatch(?:-sparse)?$/.test(attr(el, "id") ?? ""))) push("A15", `${el.name === "pattern" ? `pattern ${attr(el, "id")}` : "a data-vpk-iso-role=\"cut\" face"} is a hatched cut face outside a cutaway; the kit draws side faces flat (rebuild with build-figure.mjs)`);
+		if (attr(el, "data-vpk-iso-role") === "cut" && !cutOutside && /^url\(/.test(attr(el, "fill") ?? "")) push("A15", "a cutaway section face is one flat tone (its hatch is line work, never a pattern fill)");
 	}
 	if (/\bdata-vpk-(?:external-asset|raw-colors-allowed)\b/.test(context.plateHtml ?? svgSource)) push("A1", "escape-hatch attribute (data-vpk-external-asset / data-vpk-raw-colors-allowed) inside an iso plate");
 
@@ -124,10 +143,15 @@ export function auditSvg(svgSource, context = {}) {
 		const clipped = window ? clipConvex(silhouette, window) : [];
 		return [part, clipped.length >= 3 ? clipped : silhouette];
 	}));
+	// A cutaway's front shell (data-vpk-iso-window): the open part of its hull, which covers nothing inside it (A7, A18).
+	const windowOf = part => {
+		const nums = (attr(part, "data-vpk-iso-window") ?? "").trim().split(/\s+/).map(Number);
+		return nums.length >= 6 && nums.every(Number.isFinite) ? nums.flatMap((v, k) => (k % 2 ? [] : [[v, nums[k + 1]]])) : null;
+	};
 
 	// A2 distinct face fills (a pattern fill counts once, and so do the accent faces and the three ink faces: one tone each)
-	const fillKey = value => (/^url\(/.test(value) ? "pattern" : isAccentPaint(value) ? "accent" : isInkFace(value) ? "ink" : norm(value));
-	const fills = new Set([...faces, ...elements.filter(el => attr(el, "data-vpk-iso-role") === "recess")].map(el => fillKey(attr(el, "fill") ?? "none")));
+	const fillKey = value => (/^url\(/.test(value) ? (glowIds.has(/#([\w-]+)/.exec(value)?.[1]) ? "glow" : "pattern") : isAccentPaint(value) ? "accent" : isInkFace(value) ? "ink" : norm(value));
+	const fills = new Set([...faces, ...elements.filter(el => ["recess", "cut"].includes(attr(el, "data-vpk-iso-role")))].map(el => fillKey(attr(el, "fill") ?? "none")));
 	if (fills.size > MAX_FILLS) push("A2", `${fills.size} distinct face fills (${[...fills].join(", ")}); at most ${MAX_FILLS}`);
 
 	// A3 emphasis (data-vpk-iso-emphasis on the root; absent means "accent"). Under "accent" at least one part carries
@@ -149,11 +173,11 @@ export function auditSvg(svgSource, context = {}) {
 		const role = attr(face, "data-vpk-iso-role");
 		const fill = norm(attr(face, "fill") ?? "");
 		if (isFocal && fill !== preset.accent[accentRole[role]]) push("A3", `focal part "${unitName(part)}" face ${role} is ${fill}, not the accent face ${preset.accent[accentRole[role]]}`);
-		else if (!isFocal && part && has(part, "data-vpk-iso-state") && fill !== preset.tones.pale) push("A3", `new or active part "${unitName(part)}" face ${role} is ${fill}, not ${preset.tones.pale}`);
+		else if (!isFocal && part && has(part, "data-vpk-iso-state") && fill !== preset.tones.pale && !/^url\(/.test(fill)) push("A3", `new or active part "${unitName(part)}" face ${role} is ${fill}, not ${preset.tones.pale}`);
 	}
 	const accentMarker = el => el.name === "circle" && ancestor(el, item => item.name === "marker");
 	for (const el of elements) {
-		if (SMIL.has(el.name) || !PAINT_ATTRS.some(name => isAccentPaint(attr(el, name) ?? ""))) continue;
+		if (SMIL.has(el.name) || inGlow(el) || !PAINT_ATTRS.some(name => isAccentPaint(attr(el, name) ?? ""))) continue;
 		if (!accented) {
 			push("A3", `<${el.name}${attr(el, "data-vpk-iso-role") ? ` data-vpk-iso-role="${attr(el, "data-vpk-iso-role")}"` : ""}> paints the accent under emphasis "${emphasis}"; no accent anywhere`);
 			continue;
@@ -308,7 +332,7 @@ export function auditSvg(svgSource, context = {}) {
 		return { text: g.children.find(c => c.name === "text")?.text.trim() ?? "dimension", box: { x, y, w, h }, line: points.length >= 6 ? [points[4], points[5]] : null, strokes: Array.from({ length: Math.floor(points.length / 2) }, (_, i) => [points[2 * i], points[2 * i + 1]]) };
 	});
 	if (slider && (poseLabels.length || poseDims.length)) {
-		const pieces = parts.map(part => ({ partId: unitName(part), paints: faces.some(face => facePart.get(face) === part && paintedValue(attr(face, "fill"))), hit: hullOf.get(part), explode: parseVec(attr(part, "data-vpk-iso-explode")) ?? undefined }));
+		const pieces = parts.map(part => ({ partId: unitName(part), paints: faces.some(face => facePart.get(face) === part && paintedValue(attr(face, "fill"))), hit: hullOf.get(part), window: windowOf(part), explode: parseVec(attr(part, "data-vpk-iso-explode")) ?? undefined }));
 		findings.push(...auditLabelPoses({ figure: label, explode: slider, hull: sceneHull, pieces, labels: poseLabels, dims: poseDims }));
 	}
 
@@ -373,7 +397,7 @@ export function auditSvg(svgSource, context = {}) {
 	}
 
 	// A18 the focal part renders something a reader can see; A19 the detail budget; A20 leader ink (manual-audit.mjs).
-	const ctx = { elements, parts, faces, facePart, hullOf, clipOf, focalUnits, push };
+	const ctx = { elements, parts, faces, facePart, hullOf, clipOf, windowOf, focalUnits, push };
 	auditFocalVisible(ctx);
 	auditDetailBudget(ctx);
 	auditShadows(ctx);

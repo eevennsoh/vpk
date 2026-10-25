@@ -5,11 +5,12 @@
 // vendored anatomy kit (MIT © 2026 Ryan, scripts/anatomy/vendor/LICENSE); the kit is imported, never edited.
 
 import { iso, pathOf } from "../anatomy/vendor/kit/iso-kit.mjs";
-import { dot3, lathe, sphereOf, viewOf } from "../anatomy/vendor/kit/lathe.mjs";
+import { dot3, lathe, pointOf, sphereOf, viewOf } from "../anatomy/vendor/kit/lathe.mjs";
 import { tubePieces } from "../anatomy/vendor/kit/tube.mjs";
 import * as A from "../anatomy/vendor/kit/audit.mjs";
 import { bodiesOf, boundsOf, TUBE_KINDS } from "./geometry.mjs";
 import { prismPieces } from "./prism.mjs";
+import { cutawayPieces } from "./cutaway.mjs";
 
 const joined = paths => paths.filter(Boolean).join("");
 
@@ -68,6 +69,7 @@ function shapeOfBody(body) {
 export function newKindPieces(part, P, style) {
 	const bodies = bodiesOf(part);
 	if (bodies.length === 1 && bodies[0].type === "prism") return prismPieces(part, bodies[0], P, style);
+	if (part.cutaway && bodies.length === 1 && bodies[0].type === "lathe") return cutawayPieces(part, bodies[0], P, style, { shape: shapeOfBody(bodies[0]), solidOf: latheSolid });
 	const bounds = boundsOf(part);
 	const base = { kind: part.kind, plan: [bounds.plan], bottom: bounds.bottom, top: bounds.top };
 	const shading = style.shading;
@@ -99,7 +101,9 @@ export function newKindPieces(part, P, style) {
 		if (body.type === "lathe") solids.push(latheSolid(body, P, { shading, bevel: part.bevel ?? 0, steps: part.steps }));
 		else if (body.type === "ball") solids.push(...ballSolids(body, P));
 		else if (body.type === "tube") solids.push(...chunksOf(body, P).map(chunk => tubeSolid(chunk, { shading })));
+		else if (body.type === "glow") solids.push({ fill: null, top: null, shade: null, edge: null, crease: null, glow: pathOf(Array.from({ length: 48 }, (_, j) => iso(pointOf(body.F, 0, body.r, (j / 48) * Math.PI * 2), P)), true) });
 		else solids.push({ fill: null, top: null, shade: null, edge: pathOf(body.points.map(point => iso(point, P))), crease: null });
 	}
-	return [{ ...base, id: part.id, of: undefined, solids, depthPoint: bounds.centre, shapes: bodies.map(shapeOfBody) }];
+	// A glow is light, not a solid: it hides nothing, so it carries no painter shape and keeps its depth-point order.
+	return [{ ...base, id: part.id, of: undefined, solids, depthPoint: bounds.centre, shapes: part.kind === "glow" ? [] : bodies.map(shapeOfBody) }];
 }

@@ -110,7 +110,8 @@ function legacyShapes(part, half) {
 export function solidFor(part, P, style) {
 	const pieces = isLegacy(part) ? legacyPieces(part, P, style) : newKindPieces(part, P, style);
 	const detail = detailFor(part, P);
-	if (detail) pieces[0].detail = detail;
+	// Detail rides on the first piece, or on a cutaway's front shell (it is cut with the shell).
+	if (detail) (pieces.find(piece => piece.detailHost) ?? pieces[0]).detail = detail;
 	for (const piece of pieces) if (piece.rings) piece.detail = { ...(piece.detail ?? emptyDetail()), mark: [...(piece.detail?.mark ?? []), piece.rings] };
 	return pieces;
 }

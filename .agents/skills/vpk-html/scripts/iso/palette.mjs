@@ -43,7 +43,9 @@ export const GLOW_STOPS = Object.freeze({
 	halo: Object.freeze([
 		[0, "color-mix(in srgb, var(--ill-accent) 90%, transparent)"],
 		[0.45, "color-mix(in srgb, var(--ill-accent) 45%, transparent)"],
-		[1, "color-mix(in srgb, var(--ill-accent) 0%, transparent)"],
+		// 1%, not 0%: the outer stop keeps the accent's hue at near-zero alpha, so the gradient (interpolated unpremultiplied) never
+		// passes through transparent black, which drew a grey fringe round the halo.
+		[1, "color-mix(in srgb, var(--ill-accent) 1%, transparent)"],
 	]),
 });
 

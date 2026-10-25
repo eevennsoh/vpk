@@ -146,7 +146,7 @@ because `--muted-text` alone is 4.44:1 in light. This matches the anatomy plate.
 | R2 | opaque plates, back to front | every face opaque; parts in painter order (anatomy `depthOf`); a guide precedes its plate | A5, A6 |
 | R3 | 1px strokes, 2px for the focal and active path | edges are 1; the focal outline is 2 (the emitted attribute), the active edge 2 from CSS only; a numbered mark's paper ring is 1.5; non-scaling strokes from CSS | A4 |
 | R4 | one emphasis | `brief.emphasis` is `accent` (default), `ink` or `none` (root `data-vpk-iso-emphasis` when not `accent`). `accent`: at least one `data-vpk-iso-focal` part (`focal` is an id or a list, a group drawn alike), its faces the three accent faces (`ACCENT_FACES`) with a 2 px darker-accent outline; accent paint appears nowhere else except the focal leader dot and an owned arrow. `ink`: focal parts (optional) keep their faces with a 2 px ink outline, and no accent paints anywhere, in the rest art, the entry hand-off or on hover. `none`: no focal part and no accent. A part with `state` takes the pale fill without the outline; a part with `tone: "ink"` takes the three ink faces | A3 |
-| R5 | flat side faces (hatching removed) | every side face is a plain flat face in the tone map, like the reference videos; the kit emits no hatch pattern and no `cut` role, and a brief part with `cut` fails validation with a message naming the field | A15, `scene.test.mjs` |
+| R5 | flat side faces (hatching removed) | every side face is a plain flat face in the tone map, like the reference videos; the kit emits no hatch pattern, and the `cut` role appears only on a cutaway's section faces (flat `CUT_TONE`, hatch as line work); a brief part with `cut` fails validation with a message naming the field | A15, `scene.test.mjs` |
 | R6 | dashed explode guides | `3 3` dash, the 72% ink mix, 1; from the part's extreme base corners straight down to the part beneath | A16 |
 | R7 | mono labels near the part on leaders, or none | `brief.labels` is a list of labels (`"leaders"`, no count limit), or `"none" (root `data-vpk-iso-labels="none"`: no labels, tags, legend or gutters, and no `part.label`; the drawing takes the full width). Leaders: Geist Mono 11 units, sentence case as the brief writes it (never forced to capitals), no extra tracking, ink; off the silhouettes, near the part, on a straight leader that ends in an ink dot on visible ink of the target; below 720 px the text becomes numbered gutter tags plus an HTML legend (see Narrow stages) | A7, A8, A20, browser (19) |
 | R8 | figure ids, no chrome | the plate carries `data-vpk-fig-id="FIG_001"` and no chrome corners: the frame holds the drawing, its labels and the readout only; label text never rotates, and face text (detail `text`) is projected onto its face | A9, A11, browser (15) |
@@ -167,7 +167,7 @@ Mechanical checks run in `scripts/iso/audit.mjs` and `build.mjs --check-iso <fil
 
 | Id | Check |
 |---|---|
-| A1 | every paint value in the plate (fill, stroke, stop-color, color, SMIL paint) is `none`, `transparent`, a local pattern `url(#…)`, `var(--t)` or `color-mix(in srgb, var(--t) N%, var(--u))` with t, u in `ALLOWED_ISO_TOKENS`, or the accent (`var(--ill-accent)`, `var(--ill-accent-ink)`, or a mix led by `--ill-accent` towards a grey token); no escape-hatch attribute |
+| A1 | every paint value in the plate (fill, stroke, stop-color, color, SMIL paint) is `none`, `transparent`, a local pattern `url(#…)`, `var(--t)` or `color-mix(in srgb, var(--t) N%, var(--u))` with t, u in `ALLOWED_ISO_TOKENS`, or the accent (`var(--ill-accent)`, `var(--ill-accent-ink)`, or a mix led by `--ill-accent` towards a grey token or `transparent`); glow gradient stops follow the same rule; `--ill-ray-r|g|b` only on a `ray`/`ray-end` path of a root with `data-vpk-iso-spectrum`; no escape-hatch attribute |
 | A2 | ≤ 8 distinct fills on `fill`/`shade`/`top` faces (`fillsMax`; the accent faces, the ink faces and a pattern fill each count once) |
 | A3 | per emphasis (R4): under `accent` at least one focal part, each with faces equal to `ACCENT_FACES` per role and a 2 px darker-accent outline, accent paint only on focal faces (or a faceless focal's edge), the motion arrow that names a focal part (`data-vpk-iso-arrow-for`) and the accent marker; under `ink` focal edges are 2 px `var(--ill-line)` and any accent paint is an error; under `none` a focal part is an error too; `state` parts pale; no non-focal part has a heavier outline |
 | A4 | every `stroke-width` attribute is in {1, 1.5, 2}; the root carries `data-vpk-iso-style="manual"` (any other value is an error naming the one style; a missing one is a warning) |
@@ -181,7 +181,7 @@ Mechanical checks run in `scripts/iso/audit.mjs` and `build.mjs --check-iso <fil
 | A12 | SMIL per R11: gated begins, one shared `dur` ≤ 1800 ms, non-decreasing `keyTimes`, matching counts, rest last, root `data-vpk-smil-arm`, any number of `animateTransform` hold offsets, every gap `staggerFor(layers)` (180 ms shrinking with no floor; label and guide fades are not layers), no repeats |
 | A13 | browser behaviour: `tests/vpk-html/iso-runtime.spec.ts` checks (1)–(5) and (7)–(10); `iso-runtime-print.spec.ts` checks (7b), (7c) and (12)–(15) |
 | A14 | browser loop: the same spec, checks (6) and (11) |
-| A15 | every `url(#…)` paint resolves to a `<pattern>` in the same SVG, without `patternTransform`; a stale hatched cut face (a `data-vpk-iso-role="cut"` path or a `-hatch` pattern) is an error: rebuild the figure |
+| A15 | every `url(#…)` paint resolves to a `<pattern>` or a glow gradient (`vpk-iso-<id>-glow-*`, painting only faces and glow halos, no `gradientTransform` or `href`) in the same SVG, without `patternTransform`; any other gradient id is an error; a `data-vpk-iso-role="cut"` path outside a cutaway's front shell (`data-vpk-iso-window`), a pattern-filled cut face, or a `-hatch` pattern is an error: rebuild the figure |
 | A16 | guide dash, stroke and width match R6 |
 | A17 | SVG warning above `svgWarnBytes` (256,000 B), never an error on size; path numbers have ≤ 1 decimal |
 | A18 | a focal part renders something a reader can see (a visible stroke, or at least 30% of its fill uncovered inside its clip window) |
@@ -211,7 +211,7 @@ other value fails validation),
 (read by `scripts/iso/thresholds.mjs`): `partsWarn` 240, `partsMax` (null: off), `svgWarnBytes`, `svgFailBytes` (null: off), `fillsMax` (null: off),
 every count and size key is `null` (off): there is no layer, label, mark, detail or size limit, and no warning for any of them.
 
-- **Parts** (any number after expansion; the build warns above `partsWarn`): `{ id, kind, at, size, r?, bevel?, yaw?, axis?, up?, dividers?, marks?, detail?, label?, explode?, clipTo?, clipPad?, state?, tone?: "ink" | "glass" }`,
+- **Parts** (any number after expansion; the build warns above `partsWarn`): `{ id, kind, at, size, r?, bevel?, yaw?, axis?, up?, dividers?, marks?, detail?, label?, explode?, clipTo?, clipPad?, state?, tone?: "ink" | "glass" | "glow" }`,
   `kind` ∈ `slab | box | plate | cylinder | tray | ring | gap` plus the turned, tube and ball kinds below. `at` is the min corner (centre for
   `cylinder`/`ring`), `size` is `[w, d, h]` in world units, z up (`[r, r, h]` for a `cylinder`,
   `[r, r, 0]` for a `ring`; r is the radius). A `tray` splits into `:back` and
@@ -226,7 +226,7 @@ every count and size key is `null` (off): there is no layer, label, mark, detail
   `sphereOf` under the same camera; none takes `size`). `axis` is `x | y | z | -x | -y | -z | [ax, ay, az]` (default `z`); `up`
   (optional, not parallel to the axis) fixes where angle 0 points.
   - `lathe`: `{ at, axis, up?, profile: [[s, r] | [s, r, "soft"], …] (2–64 points, s never decreasing, r ≥ 0), closed? (default true:
-    capped to the axis; false: an open shell), hole?: [s, r], steps? (8–160), bevel? }`. `cutaway` is not supported yet.
+    capped to the axis; false: an open shell), hole?: [s, r], steps? (8–160), bevel?, cutaway? }` (see **Glow, cutaways, lines and rays**).
   - `cylinder` + `axis` (any axis but +z) is the lathe `[[0, r], [h, r]]` from `at` along the axis; upright cylinders draw as before.
   - `cone`: `{ at, axis, r0, r1, length }`. `torus`: `{ at, axis, R, r }` (r < R), a closed tube in chunks.
   - `ring` + `thickness` (and `inner`, the bore radius, default 0.6 r): a washer whose bore stays open (even-odd fill); a ring without
@@ -285,6 +285,25 @@ every count and size key is `null` (off): there is no layer, label, mark, detail
   `instances: [{ …overrides }]` merges each override over the base part. `vary: { field: "size.2", values: […] }` or
   `{ field, fn: "gauss", sigma, floor? }` (a Gaussian fall-off from the grid centre) sets one field per instance. A base id in `focal`
   or `assemble.layers` names every instance; in `labels`, `marks`, an arrow's `of` or `clipTo` it names the first.
+- **Glow, cutaways, lines and rays** (`scripts/iso/cutaway.mjs`, `kinds.mjs`, `emit.mjs`; plan § 2 W, C, X):
+  - `tone: "glow"` paints a part's three faces with one `<radialGradient>` (`GLOW_STOPS.body`: the accent fading 60% then 22% into the
+    raised surface) centred on the part in user space, so it moves with it; the faces stay opaque. Under emphasis `accent` a focal part
+    keeps its accent faces instead. A variant may carry `tone: "glow"` (a nozzle that glows only in one state).
+  - `kind: "glow"`: `{ at, r, axis? (default z), up? }`, a flat halo disc filled with the one shared halo gradient (the accent fading
+    to transparent), role `glow`. No faces, detail, tone, shadow or painter shape; it hides nothing.
+  - Gradient ids are `vpk-iso-<id>-glow-<k>` (and `-glow-halo`): the only gradients the kit emits, and the only ones check-html admits
+    in an iso root. Their stops are the accent pair and grey tokens only; a glow may paint the accent under any emphasis (heat, not focus).
+  - `cutaway: { from, to, wall, hatch? }` on a `lathe`, `cone` or `cylinder` (degrees around the axis from the frame's u towards v; an
+    upright part has u = +x, v = +y). The part becomes a shell `wall` thick: `<id>:back` (the outer surface and the dark cavity, recess
+    tone) paints before the contents, `<id>:front` after them, its shell and detail clipped by the frame less the visible window
+    (even-odd `clipPath` `vpk-iso-<id>-win-<part>`), then the section faces at `from` and `to` that face the reader in role `cut`
+    (`CUT_TONE`, dark `DARK_CUT_OVERRIDES`) with optional hatch lines `hatch` apart. The front carries
+    `data-vpk-iso-window="x y …"`: the runtime hits the parts inside through it, and A7/A18 treat it as uncovered. A window turned away
+    from the reader draws an open shell as the plain part. Not with `tone: "glass"` or `hole`.
+  - `annotations: [{ kind: "line", from, to, via?: [[x, y, z], …] (1–16), dash?: solid | dotted | dashed (default dashed), spectrum?:
+    r | g | b, ends?: none | dot }]`: a polyline in the guide tone (role `guide-line`), or with `spectrum` a solid ray in
+    `--ill-ray-r|g|b` (role `ray`, end dots `ray-end`); any ray marks the root `data-vpk-iso-spectrum`, the only case the ray tokens
+    are allowed (A1, check-html). Labels route around lines like arrows.
 - **Painter order** (`scripts/iso/painter.mjs`): every piece carries the vendored signed-distance shapes of its solids, and the
   vendored `overlapsOf` + `orderKeys` order each pair that overlaps on screen by which is in front; pairs that never overlap keep the
   old depth-point order, so separate parts sort as before. A long shaft between two posts, a card in a tray, letters in a cubby and a
