@@ -41,7 +41,7 @@ const KIT_SOURCES = Object.freeze([
 	["iso/manual-runtime.mjs", new URL("./manual-runtime.mjs", import.meta.url)],
 	["iso/state-runtime.mjs", new URL("./state-runtime.mjs", import.meta.url)],
 ]);
-const KIT_NAMES = "{ createIsoRuntime, hull, padHull, parsePolyPath, parseVec, topmostHit, blink, tagLines, mountStates }";
+const KIT_NAMES = "{ createIsoRuntime, hull, padHull, parsePolyPath, parseVec, topmostHit, blink, tagLines, mountStates, partPoly }";
 
 export function inlineSource(text, label = "source") {
 	if (/^\s*import\b/m.test(text)) throw new Error(`${label} must have no import statements to be inlined`);
