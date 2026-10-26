@@ -14,7 +14,6 @@
 		720,
 		720
 	],
-	"emphasis": "none",
 	"labels": "none",
 	"parts": [
 		{
@@ -6350,5 +6349,6 @@
 	"meta": {
 		"margin": "[ DEBOUNCE, THROTTLE ]",
 		"corner": "VPK-HTML"
-	}
+	},
+	"focal": "debounce"
 }

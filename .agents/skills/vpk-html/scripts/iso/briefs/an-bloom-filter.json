@@ -17,7 +17,7 @@
 		560
 	],
 	"labels": "none",
-	"emphasis": "none",
+	"focal": "coin-grape",
 	"parts": [
 		{
 			"id": "plinth-skirt",

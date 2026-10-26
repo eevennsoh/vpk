@@ -4916,7 +4916,6 @@
 		}
 	],
 	"focal": "probe",
-	"emphasis": "ink",
 	"annotations": [
 		{
 			"kind": "line",

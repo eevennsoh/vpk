@@ -16,7 +16,7 @@
 		450
 	],
 	"labels": "none",
-	"emphasis": "ink",
+	"focal": "arm-a",
 	"parts": [
 		{
 			"id": "plinth-a",

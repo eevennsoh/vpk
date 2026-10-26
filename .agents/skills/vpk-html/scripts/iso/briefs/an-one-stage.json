@@ -9,7 +9,8 @@
 		"preset": "dimetric",
 		"scale": "fit"
 	},
-	"emphasis": "none",
+	"emphasis": "accent",
+	"focal": "pill",
 	"labels": "none",
 	"parts": [
 		{

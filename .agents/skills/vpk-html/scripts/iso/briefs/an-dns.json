@@ -13,7 +13,6 @@
 		720,
 		560
 	],
-	"emphasis": "none",
 	"labels": "none",
 	"parts": [
 		{
@@ -3797,5 +3796,6 @@
 	"meta": {
 		"margin": "[ ROOT · COM · EXAMPLE ]",
 		"corner": "VPK-HTML"
-	}
+	},
+	"focal": "capsule"
 }

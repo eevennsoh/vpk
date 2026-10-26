@@ -9,7 +9,7 @@
 		"preset": "dimetric",
 		"scale": "fit"
 	},
-	"emphasis": "ink",
+	"emphasis": "accent",
 	"focal": [
 		"key",
 		"key-tab",

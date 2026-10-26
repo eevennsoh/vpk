@@ -11,7 +11,6 @@
 		"elevation": 30,
 		"scale": "fit"
 	},
-	"emphasis": "ink",
 	"focal": [
 		"block",
 		"block-side"

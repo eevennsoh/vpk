@@ -12,7 +12,8 @@
 		"scale": "fit",
 		"pad": 60
 	},
-	"emphasis": "ink",
+	"emphasis": "accent",
+	"focal": "loupe-c-top",
 	"labels": [],
 	"parts": [
 		{

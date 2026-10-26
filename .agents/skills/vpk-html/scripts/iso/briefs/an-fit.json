@@ -9,7 +9,6 @@
 		"preset": "dimetric",
 		"scale": "fit"
 	},
-	"emphasis": "none",
 	"labels": "none",
 	"parts": [
 		{
@@ -8177,5 +8176,6 @@
 	"meta": {
 		"margin": "[ OBJECT-FIT ]",
 		"corner": "VPK-HTML"
-	}
+	},
+	"focal": "strip-l"
 }

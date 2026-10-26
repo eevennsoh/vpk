@@ -12,7 +12,6 @@
 		"scale": "fit"
 	},
 	"labels": "none",
-	"emphasis": "none",
 	"parts": [
 		{
 			"id": "desk",
@@ -3764,5 +3763,6 @@
 	"meta": {
 		"margin": "[ DESK COMPUTER ]",
 		"corner": "VPK-HTML"
-	}
+	},
+	"focal": "screen"
 }

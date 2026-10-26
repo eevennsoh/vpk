@@ -11,8 +11,8 @@
 		"elevation": 33,
 		"scale": "fit"
 	},
-	"emphasis": "none",
 	"labels": "none",
+	"focal": "token-tank",
 	"parts": [
 		{
 			"id": "base",

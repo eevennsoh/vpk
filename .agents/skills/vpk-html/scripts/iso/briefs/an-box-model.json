@@ -12,7 +12,6 @@
 		"scale": "fit",
 		"pad": 36
 	},
-	"emphasis": "ink",
 	"focal": [
 		"rail-back",
 		"rail-left",

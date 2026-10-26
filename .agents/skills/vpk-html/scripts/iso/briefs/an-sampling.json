@@ -11,8 +11,8 @@
 		"elevation": 30,
 		"scale": "fit"
 	},
-	"emphasis": "none",
 	"labels": [],
+	"focal": "knob",
 	"parts": [
 		{
 			"id": "foot",

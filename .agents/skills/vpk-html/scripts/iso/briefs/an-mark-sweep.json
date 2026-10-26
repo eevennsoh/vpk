@@ -11,7 +11,7 @@
 		"elevation": 28,
 		"scale": "fit"
 	},
-	"emphasis": "none",
+	"focal": "stack-root",
 	"labels": [
 		{
 			"text": "Tap to collect",

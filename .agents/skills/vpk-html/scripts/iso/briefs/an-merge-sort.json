@@ -12,7 +12,7 @@
 		"scale": "fit"
 	},
 	"labels": "none",
-	"emphasis": "ink",
+	"focal": "carriage",
 	"parts": [
 		{
 			"id": "foot-l",

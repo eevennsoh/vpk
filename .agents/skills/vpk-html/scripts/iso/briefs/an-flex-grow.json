@@ -9,7 +9,7 @@
 		"preset": "dimetric",
 		"scale": "fit"
 	},
-	"emphasis": "none",
+	"focal": "block-b",
 	"labels": [
 		{
 			"text": "Drag the jaw",

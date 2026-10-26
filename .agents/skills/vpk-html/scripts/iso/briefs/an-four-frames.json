@@ -15,7 +15,6 @@
 		440
 	],
 	"labels": "none",
-	"emphasis": "none",
 	"parts": [
 		{
 			"id": "plinth",
@@ -11689,5 +11688,6 @@
 	"meta": {
 		"margin": "[ DRAW CALLS ]",
 		"corner": "VPK-HTML"
-	}
+	},
+	"focal": "s1k-t4"
 }

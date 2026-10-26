@@ -9,7 +9,6 @@
 		"preset": "dimetric",
 		"scale": "fit"
 	},
-	"emphasis": "ink",
 	"focal": "gantry",
 	"labels": "none",
 	"parts": [

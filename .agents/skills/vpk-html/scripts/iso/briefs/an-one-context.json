@@ -11,7 +11,7 @@
 		"pad": 18
 	},
 	"labels": "none",
-	"emphasis": "ink",
+	"emphasis": "accent",
 	"focal": [
 		"head",
 		"stamp"

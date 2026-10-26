@@ -12,7 +12,7 @@
 		"scale": "fit",
 		"pad": 40
 	},
-	"emphasis": "none",
+	"focal": "knob",
 	"labels": [
 		{
 			"text": "Tap a start",

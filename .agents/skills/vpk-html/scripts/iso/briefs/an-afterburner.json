@@ -12,7 +12,7 @@
 		"scale": "fit",
 		"pad": 16
 	},
-	"emphasis": "ink",
+	"focal": "nozzle",
 	"labels": "none",
 	"parts": [
 		{

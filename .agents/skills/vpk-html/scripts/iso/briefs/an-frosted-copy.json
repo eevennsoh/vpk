@@ -9,7 +9,7 @@
 		"preset": "dimetric",
 		"scale": "fit"
 	},
-	"emphasis": "none",
+	"focal": "subject",
 	"labels": "none",
 	"parts": [
 		{

@@ -14,8 +14,8 @@
 		"scale": "fit",
 		"pad": 12
 	},
-	"emphasis": "ink",
 	"labels": "none",
+	"focal": "central-solenoid",
 	"parts": [
 		{
 			"id": "plinth-foot",

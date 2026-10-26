@@ -9,7 +9,7 @@
 		"preset": "dimetric",
 		"scale": "fit"
 	},
-	"emphasis": "none",
+	"focal": "billet-hot",
 	"labels": "none",
 	"parts": [
 		{

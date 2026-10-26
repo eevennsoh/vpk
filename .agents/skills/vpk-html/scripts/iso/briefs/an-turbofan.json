@@ -9,8 +9,8 @@
 		"preset": "dimetric",
 		"scale": "fit"
 	},
-	"emphasis": "none",
 	"labels": [],
+	"focal": "combustor",
 	"parts": [
 		{
 			"id": "plinth",

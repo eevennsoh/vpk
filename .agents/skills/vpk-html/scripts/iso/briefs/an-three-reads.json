@@ -10,8 +10,8 @@
 		"scale": "fit",
 		"pad": 70
 	},
-	"emphasis": "none",
 	"labels": "none",
+	"focal": "bevel",
 	"parts": [
 		{
 			"id": "base-lip",

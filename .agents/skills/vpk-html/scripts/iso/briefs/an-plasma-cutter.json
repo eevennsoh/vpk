@@ -11,7 +11,8 @@
 		"elevation": 24.0,
 		"scale": "fit"
 	},
-	"emphasis": "none",
+	"emphasis": "accent",
+	"focal": "torch",
 	"labels": "none",
 	"parts": [
 		{

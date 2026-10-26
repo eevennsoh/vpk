@@ -16,7 +16,8 @@
 		720,
 		500
 	],
-	"emphasis": "none",
+	"emphasis": "accent",
+	"focal": "core",
 	"labels": "none",
 	"parts": [
 		{

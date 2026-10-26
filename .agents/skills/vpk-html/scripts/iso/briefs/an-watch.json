@@ -17,7 +17,7 @@
 		470
 	],
 	"labels": "none",
-	"emphasis": "none",
+	"focal": "balance",
 	"parts": [
 		{
 			"id": "mat",
