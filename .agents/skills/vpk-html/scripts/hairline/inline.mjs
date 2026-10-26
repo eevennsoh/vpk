@@ -11,7 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { ACCENT_TOKENS_CSS } from "../iso/accent.mjs";
+import { ACCENT_FACES, ACCENT_TOKENS_CSS, SHADOW } from "../iso/accent.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(HERE, "vendor/packages/hairline/src");
@@ -34,24 +34,28 @@ export const HAIRLINE_PALETTE = Object.freeze({
 
 const paletteVars = palette => Object.entries(palette).map(([key, value]) => `--hairline-${key}: ${value};`).join(" ");
 
-// The iso tone map on hairline solids (runtime/stage.mjs adds the side bands): top = plate, near (left) side tone 1, far
-// (right) side tone 2; an active solid (hairline's `.hi` silhouette) takes the iso accent faces, as a hovered iso part does.
+// The iso tone map on hairline solids (runtime/paint.mjs classifies every filled outline): a flat face takes data-hl-tone, a
+// solid gets a g[data-hl-faces] after it with its side bands and its outline; top = plate, near (l) side tone 1, far (r) side
+// tone 2. An active part (hairline's `.hi`) takes the iso accent faces and the darker accent outline, as a hovered iso part does.
+// Cast shadows are one flat fill (SHADOW.TONE, dark SHADOW.DARK_TONE) in g[data-hl-shadows], the svg's first child.
 const SVG = '[data-vpk-engine="hairline"] [data-vpk-hairline] > svg';
+const HI = `:is(.hi, .hi + [data-hl-faces] > *)`;
 const TONE_CSS = `${SVG} [data-hl-side] { stroke: none; }
-${SVG} [data-hl-side="l"] { fill: var(--ill-tone1); }
-${SVG} [data-hl-side="r"] { fill: var(--ill-tone2); }
-${SVG} [data-hl-edge] { stroke: var(--hl-edge); }
-${SVG} :is(.sil.hi, .hi) ~ [data-hl-edge], ${SVG} g:has(> .sil.hi) > [data-hl-edge] { stroke: var(--hl-hi); stroke-width: 1.6; }
-${SVG} .sil.hi { fill: var(--ill-accent); }
-${SVG} g:has(> .sil.hi) > [data-hl-side="l"] { fill: color-mix(in srgb, var(--ill-accent) 62%, var(--surface-raised)); }
-${SVG} g:has(> .sil.hi) > [data-hl-side="r"] { fill: color-mix(in srgb, var(--ill-accent) 70%, var(--ill-line)); }
-${SVG} :where(path.hi:not(.nf), polygon.hi, ellipse.hi:not(.nf)) { fill: var(--ill-accent); }
+${SVG} [data-hl-side="l"], ${SVG} :is([data-hl-tone="l"], [data-hl-tone="c"]) { fill: var(--ill-tone1); }
+${SVG} [data-hl-side="r"], ${SVG} [data-hl-tone="r"] { fill: var(--ill-tone2); }
+${SVG} [data-hl-edge] { fill: none; stroke: var(--hl-edge); }
+${SVG} [data-hl-edge].lo { stroke: var(--hl-lo); }
+${SVG} [data-hl-shadows] path { fill: ${SHADOW.TONE}; stroke: none; }
+${SVG} :where(path.hi:not(.nf), polygon.hi, ellipse.hi:not(.nf)), ${SVG} .hi:is([data-hl-tone="t"], [data-hl-tone="c"]) { fill: ${ACCENT_FACES.top}; }
+${SVG} ${HI}:is([data-hl-side="l"], [data-hl-tone="l"]) { fill: ${ACCENT_FACES.light}; }
+${SVG} ${HI}:is([data-hl-side="r"], [data-hl-tone="r"]) { fill: ${ACCENT_FACES.dark}; }
+${SVG} .hi:not(.nf), ${SVG} .hi + [data-hl-faces] > [data-hl-edge] { stroke: ${ACCENT_FACES.edge}; stroke-width: 1.6; }
 ${SVG} .ghost { display: none; }
 ${SVG} .dot { fill: var(--ill-line); }
 ${SVG} .dot.m { fill: var(--ill-accent); }
 ${SVG} .dot.off { fill: color-mix(in srgb, var(--ill-line) 25%, var(--paper)); }
-[data-theme="dark"] ${SVG} [data-hl-side="r"] { fill: var(--surface-sunken); }
-[data-theme="dark"] ${SVG} [data-hl-side="l"] { fill: var(--ill-tone1); }`;
+[data-theme="dark"] ${SVG} [data-hl-shadows] path { fill: ${SHADOW.DARK_TONE}; }
+[data-theme="dark"] ${SVG} :is([data-hl-side="r"], [data-hl-tone="r"]):not(${HI}) { fill: var(--surface-sunken); }`;
 
 // The plate around a figure: the iso kit's frame (iso/runtime-css .vpk-iso-frame and .vpk-iso-plate__foot): a ruled box on
 // the paper, the stage at upstream's 5:4, a mono readout in the foot, and the caption below in the house figcaption style.
@@ -126,20 +130,19 @@ function loadEsbuild() {
 	}
 }
 
-// Vendored modules swapped for adapters: core/stage (loop, tour, toned solids), core/styles (no injection), core/iso and
-// slab (prisms and slabs that also return their side bands for the iso tone map). Keyed by the vendored path they replace.
+// Vendored modules swapped for adapters: core/stage (loop, tour), core/styles (no injection), core/iso (projected points that
+// keep their world points, for the tone map and the shadows in runtime/paint.mjs). Keyed by the vendored path they replace.
 const ADAPTED = new Map([
 	[path.join(SRC, "core", "stage"), path.join(RUNTIME, "stage.mjs")],
 	[path.join(SRC, "core", "styles"), path.join(RUNTIME, "styles.mjs")],
 	[path.join(SRC, "core", "iso"), path.join(RUNTIME, "iso.mjs")],
-	[path.join(SRC, "slab"), path.join(RUNTIME, "slab.mjs")],
 ]);
 
 const vendorPlugin = {
 	name: "vpk-hairline",
 	setup(build) {
 		// A vendored import of an adapted module goes to its adapter; the adapters' own `.ts` imports pass.
-		build.onResolve({ filter: /^\.\.?\/(?:\.\.\/)?(?:core\/)?(?:stage|styles|iso|slab)$/ }, args => {
+		build.onResolve({ filter: /^\.\.?\/(?:\.\.\/)?(?:core\/)?(?:stage|styles|iso)$/ }, args => {
 			if (!args.importer.startsWith(SRC)) return undefined;
 			const adapter = ADAPTED.get(path.resolve(args.resolveDir, args.path));
 			return adapter ? { path: adapter, sideEffects: false } : undefined;
