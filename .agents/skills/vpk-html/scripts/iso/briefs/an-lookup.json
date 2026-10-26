@@ -3,432 +3,7041 @@
 	"id": "an-lookup",
 	"figId": "FIG_243",
 	"title": "Lookup, a reading stand",
-	"label": "Dimetric reading stand: a clear pane on four posts over a frosted plate, grid lines crowding to the rim, and a bezel probe whose wire leans outward from the plumb line to the highlighted spot, short of the sled stop.",
-	"caption": "In the flat middle a pixel reads straight down, but in the bezel the lookup leans outward along the surface normal, so the pane samples the frosted plate further out, up to the sled stop.",
+	"label": "Reading stand: a pillow-bevelled pane on four threaded posts over a long gridded frost plate; a gantry carriage carries a probe whose wire leans out through the bevel to a small read sled on a ticked track.",
+	"caption": "A reading stand: a pane on threaded posts over the frost plate it reads from. In the flat middle the wire drops straight down; slide the probe toward the rim and the bevel bends the lookup outward, so the sled runs far along the track.",
 	"camera": {
 		"preset": "dimetric",
 		"scale": "fit"
 	},
+	"focal": [
+		"wire-lo",
+		"needle"
+	],
+	"emphasis": "ink",
+	"labels": "none",
 	"parts": [
+		{
+			"id": "lip",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				260,
+				140,
+				3
+			],
+			"r": 8,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.6,
+						3.6
+					],
+					"size": 1.3,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						256.4,
+						3.6
+					],
+					"size": 1.3,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.6,
+						136.4
+					],
+					"size": 1.3,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						256.4,
+						136.4
+					],
+					"size": 1.3,
+					"depth": 0.3
+				}
+			]
+		},
 		{
 			"id": "plate",
 			"kind": "slab",
 			"at": [
-				6,
-				6,
-				0
+				3,
+				3,
+				3
 			],
 			"size": [
-				188,
-				92,
-				4
+				254,
+				134,
+				6
 			],
-			"r": 2,
-			"label": "Frost plate"
+			"r": 6,
+			"bevel": 0.8,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							17,
+							7
+						],
+						[
+							243,
+							7
+						],
+						[
+							243,
+							123
+						],
+						[
+							17,
+							123
+						],
+						[
+							17,
+							7
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							10
+						],
+						[
+							20,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							30,
+							10
+						],
+						[
+							30,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							40,
+							10
+						],
+						[
+							40,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							50,
+							10
+						],
+						[
+							50,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							60,
+							10
+						],
+						[
+							60,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							70,
+							10
+						],
+						[
+							70,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							80,
+							10
+						],
+						[
+							80,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							90,
+							10
+						],
+						[
+							90,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							100,
+							10
+						],
+						[
+							100,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							110,
+							10
+						],
+						[
+							110,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							120,
+							10
+						],
+						[
+							120,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							130,
+							10
+						],
+						[
+							130,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							140,
+							10
+						],
+						[
+							140,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							150,
+							10
+						],
+						[
+							150,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							160,
+							10
+						],
+						[
+							160,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							170,
+							10
+						],
+						[
+							170,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							180,
+							10
+						],
+						[
+							180,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							190,
+							10
+						],
+						[
+							190,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							200,
+							10
+						],
+						[
+							200,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							210,
+							10
+						],
+						[
+							210,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							220,
+							10
+						],
+						[
+							220,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							230,
+							10
+						],
+						[
+							230,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							240,
+							10
+						],
+						[
+							240,
+							120
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							10
+						],
+						[
+							240,
+							10
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							20
+						],
+						[
+							240,
+							20
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							30
+						],
+						[
+							240,
+							30
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							40
+						],
+						[
+							240,
+							40
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							50
+						],
+						[
+							240,
+							50
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							60
+						],
+						[
+							240,
+							60
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							70
+						],
+						[
+							240,
+							70
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							80
+						],
+						[
+							240,
+							80
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							90
+						],
+						[
+							240,
+							90
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							100
+						],
+						[
+							240,
+							100
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							110
+						],
+						[
+							240,
+							110
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"dash": true,
+					"points": [
+						[
+							20,
+							120
+						],
+						[
+							240,
+							120
+						]
+					]
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						52,
+						128
+					],
+					"to": [
+						243,
+						128
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						1.2,
+						2.4
+					],
+					"side": -1
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						248,
+						10
+					],
+					"to": [
+						248,
+						123
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						1.2,
+						2.4
+					],
+					"side": -1
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						20,
+						133
+					],
+					"text": "frost",
+					"size": 3
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						36,
+						133
+					],
+					"text": "12 px",
+					"size": 3
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						5,
+						22
+					],
+					"text": "0",
+					"size": 2.6
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						5,
+						67
+					],
+					"text": "64",
+					"size": 2.6
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						4,
+						113
+					],
+					"text": "128",
+					"size": 2.6
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						13,
+						10
+					],
+					"to": [
+						13,
+						120
+					],
+					"step": 5.5,
+					"every": 10,
+					"lengths": [
+						1,
+						2.2
+					],
+					"side": -1
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "stadium",
+					"at": [
+						120,
+						3
+					],
+					"size": [
+						70,
+						1.4
+					],
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "pad-1",
+			"kind": "box",
+			"at": [
+				7,
+				7,
+				9
+			],
+			"size": [
+				9,
+				9,
+				2.6
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4.5,
+						4.5
+					],
+					"size": 1,
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "pad-2",
+			"kind": "box",
+			"at": [
+				244,
+				7,
+				9
+			],
+			"size": [
+				9,
+				9,
+				2.6
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4.5,
+						4.5
+					],
+					"size": 1,
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "pad-3",
+			"kind": "box",
+			"at": [
+				7,
+				124,
+				9
+			],
+			"size": [
+				9,
+				9,
+				2.6
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4.5,
+						4.5
+					],
+					"size": 1,
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "pad-4",
+			"kind": "box",
+			"at": [
+				244,
+				124,
+				9
+			],
+			"size": [
+				9,
+				9,
+				2.6
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4.5,
+						4.5
+					],
+					"size": 1,
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "track",
+			"kind": "slab",
+			"at": [
+				90,
+				70.5,
+				9
+			],
+			"size": [
+				154,
+				3,
+				0.5
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						2,
+						2.6
+					],
+					"to": [
+						152,
+						2.6
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						0.9,
+						1.9
+					],
+					"side": 1
+				}
+			]
+		},
+		{
+			"id": "track-mark",
+			"kind": "slab",
+			"at": [
+				150.6,
+				65,
+				9
+			],
+			"size": [
+				0.8,
+				5,
+				0.4
+			]
 		},
 		{
 			"id": "stop",
 			"kind": "box",
 			"at": [
-				182,
-				34,
-				4
+				244,
+				68.5,
+				9
 			],
 			"size": [
 				6,
-				34,
-				7
+				7,
+				3.2
 			],
-			"r": 1,
-			"label": "Sled stop"
+			"r": 1.1,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3,
+						3.5
+					],
+					"size": 0.9,
+					"depth": 0.3
+				}
+			]
 		},
 		{
-			"id": "spot",
-			"kind": "plate",
+			"id": "sled",
+			"kind": "box",
 			"at": [
-				150,
-				9,
-				4
+				167.26,
+				68.5,
+				9
 			],
 			"size": [
-				12,
-				12,
-				1
+				7,
+				7,
+				1.8
 			],
-			"r": 1,
-			"label": "Read spot"
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.5,
+						3.5
+					],
+					"size": 4.4,
+					"depth": 0.35
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.5,
+						3.5
+					],
+					"size": 1.5,
+					"depth": 0.3
+				}
+			]
 		},
 		{
-			"id": "plumb",
+			"id": "post-fl-foot",
 			"kind": "cylinder",
 			"at": [
-				126,
-				15,
-				4
+				58,
+				120,
+				9
 			],
 			"size": [
-				0.4,
-				0.4,
-				44
-			],
-			"label": "Straight down"
+				2.6,
+				2.6,
+				0.8
+			]
 		},
 		{
-			"id": "post-bl",
+			"id": "post-fl-nut0",
 			"kind": "cylinder",
 			"at": [
-				-4,
-				104,
-				0
+				58,
+				120,
+				9.8
 			],
 			"size": [
-				3,
-				3,
-				56
+				2.2,
+				2.2,
+				2.6
 			],
-			"label": "Post 1"
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				}
+			]
 		},
 		{
-			"id": "post-br",
+			"id": "post-fl-core",
 			"kind": "cylinder",
 			"at": [
-				140,
-				104,
-				0
+				58,
+				120,
+				12.4
 			],
 			"size": [
-				3,
-				3,
-				56
-			],
-			"label": "Post 2"
+				0.85,
+				0.85,
+				21.6
+			]
 		},
 		{
-			"id": "post-fl",
+			"id": "post-fl-thread",
+			"kind": "spring",
+			"from": [
+				58,
+				120,
+				12.6
+			],
+			"to": [
+				58,
+				120,
+				33.8
+			],
+			"radius": 1.05,
+			"wire": 0.3,
+			"turns": 17
+		},
+		{
+			"id": "post-fl-nut1",
 			"kind": "cylinder",
 			"at": [
-				-4,
-				-4,
-				0
+				58,
+				120,
+				34
 			],
 			"size": [
-				3,
-				3,
-				56
+				2.2,
+				2.2,
+				2.8
 			],
-			"label": "Threaded post"
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				}
+			]
 		},
 		{
-			"id": "post-fr",
+			"id": "post-fl-cap",
 			"kind": "cylinder",
 			"at": [
-				140,
-				-4,
-				0
+				58,
+				120,
+				36.8
 			],
 			"size": [
-				3,
-				3,
-				56
-			],
-			"label": "Post 4"
+				1.35,
+				1.35,
+				3.8
+			]
 		},
 		{
-			"id": "pane",
+			"id": "post-fl-dome",
+			"kind": "sphere",
+			"at": [
+				58,
+				120,
+				40.8
+			],
+			"r": 1.25
+		},
+		{
+			"id": "post-fl-arm",
+			"kind": "rod",
+			"from": [
+				58,
+				120,
+				39.5
+			],
+			"to": [
+				58,
+				100,
+				39.5
+			],
+			"radius": 0.95
+		},
+		{
+			"id": "post-fr-foot",
+			"kind": "cylinder",
+			"at": [
+				134,
+				120,
+				9
+			],
+			"size": [
+				2.6,
+				2.6,
+				0.8
+			]
+		},
+		{
+			"id": "post-fr-nut0",
+			"kind": "cylinder",
+			"at": [
+				134,
+				120,
+				9.8
+			],
+			"size": [
+				2.2,
+				2.2,
+				2.6
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				}
+			]
+		},
+		{
+			"id": "post-fr-core",
+			"kind": "cylinder",
+			"at": [
+				134,
+				120,
+				12.4
+			],
+			"size": [
+				0.85,
+				0.85,
+				21.6
+			]
+		},
+		{
+			"id": "post-fr-thread",
+			"kind": "spring",
+			"from": [
+				134,
+				120,
+				12.6
+			],
+			"to": [
+				134,
+				120,
+				33.8
+			],
+			"radius": 1.05,
+			"wire": 0.3,
+			"turns": 17
+		},
+		{
+			"id": "post-fr-nut1",
+			"kind": "cylinder",
+			"at": [
+				134,
+				120,
+				34
+			],
+			"size": [
+				2.2,
+				2.2,
+				2.8
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				}
+			]
+		},
+		{
+			"id": "post-fr-cap",
+			"kind": "cylinder",
+			"at": [
+				134,
+				120,
+				36.8
+			],
+			"size": [
+				1.35,
+				1.35,
+				3.8
+			]
+		},
+		{
+			"id": "post-fr-dome",
+			"kind": "sphere",
+			"at": [
+				134,
+				120,
+				40.8
+			],
+			"r": 1.25
+		},
+		{
+			"id": "post-fr-arm",
+			"kind": "rod",
+			"from": [
+				134,
+				120,
+				39.5
+			],
+			"to": [
+				134,
+				100,
+				39.5
+			],
+			"radius": 0.95
+		},
+		{
+			"id": "post-bl-foot",
+			"kind": "cylinder",
+			"at": [
+				62,
+				18,
+				9
+			],
+			"size": [
+				2.6,
+				2.6,
+				0.8
+			]
+		},
+		{
+			"id": "post-bl-nut0",
+			"kind": "cylinder",
+			"at": [
+				62,
+				18,
+				9.8
+			],
+			"size": [
+				2.2,
+				2.2,
+				2.6
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				}
+			]
+		},
+		{
+			"id": "post-bl-core",
+			"kind": "cylinder",
+			"at": [
+				62,
+				18,
+				12.4
+			],
+			"size": [
+				0.85,
+				0.85,
+				21.6
+			]
+		},
+		{
+			"id": "post-bl-thread",
+			"kind": "spring",
+			"from": [
+				62,
+				18,
+				12.6
+			],
+			"to": [
+				62,
+				18,
+				33.8
+			],
+			"radius": 1.05,
+			"wire": 0.3,
+			"turns": 17
+		},
+		{
+			"id": "post-bl-nut1",
+			"kind": "cylinder",
+			"at": [
+				62,
+				18,
+				34
+			],
+			"size": [
+				2.2,
+				2.2,
+				2.8
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				}
+			]
+		},
+		{
+			"id": "post-bl-col",
+			"kind": "cylinder",
+			"at": [
+				62,
+				18,
+				36.8
+			],
+			"size": [
+				1,
+				1,
+				18.2
+			]
+		},
+		{
+			"id": "post-bl-bracket",
+			"kind": "box",
+			"at": [
+				58.5,
+				14,
+				55
+			],
+			"size": [
+				7,
+				8,
+				4.4
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						3.5,
+						2.2
+					],
+					"size": 1,
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "post-bl-arm",
+			"kind": "rod",
+			"from": [
+				62,
+				18,
+				39.5
+			],
+			"to": [
+				62,
+				36,
+				39.5
+			],
+			"radius": 0.95
+		},
+		{
+			"id": "post-br-foot",
+			"kind": "cylinder",
+			"at": [
+				136,
+				18,
+				9
+			],
+			"size": [
+				2.6,
+				2.6,
+				0.8
+			]
+		},
+		{
+			"id": "post-br-nut0",
+			"kind": "cylinder",
+			"at": [
+				136,
+				18,
+				9.8
+			],
+			"size": [
+				2.2,
+				2.2,
+				2.6
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				}
+			]
+		},
+		{
+			"id": "post-br-core",
+			"kind": "cylinder",
+			"at": [
+				136,
+				18,
+				12.4
+			],
+			"size": [
+				0.85,
+				0.85,
+				21.6
+			]
+		},
+		{
+			"id": "post-br-thread",
+			"kind": "spring",
+			"from": [
+				136,
+				18,
+				12.6
+			],
+			"to": [
+				136,
+				18,
+				33.8
+			],
+			"radius": 1.05,
+			"wire": 0.3,
+			"turns": 17
+		},
+		{
+			"id": "post-br-nut1",
+			"kind": "cylinder",
+			"at": [
+				136,
+				18,
+				34
+			],
+			"size": [
+				2.2,
+				2.2,
+				2.8
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				}
+			]
+		},
+		{
+			"id": "post-br-col",
+			"kind": "cylinder",
+			"at": [
+				136,
+				18,
+				36.8
+			],
+			"size": [
+				1,
+				1,
+				18.2
+			]
+		},
+		{
+			"id": "post-br-bracket",
+			"kind": "box",
+			"at": [
+				132.5,
+				14,
+				55
+			],
+			"size": [
+				7,
+				8,
+				4.4
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						3.5,
+						2.2
+					],
+					"size": 1,
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "post-br-arm",
+			"kind": "rod",
+			"from": [
+				136,
+				18,
+				39.5
+			],
+			"to": [
+				136,
+				36,
+				39.5
+			],
+			"radius": 0.95
+		},
+		{
+			"id": "pane-1",
 			"kind": "slab",
 			"at": [
-				2,
-				2,
-				48
+				46.2,
+				32.2,
+				40.5
 			],
 			"size": [
-				132,
-				96,
-				3
+				99.6,
+				71.6,
+				1.4
 			],
-			"r": 3,
-			"label": "Clear pane"
+			"r": 15.8
 		},
 		{
-			"id": "ring-1",
-			"kind": "gap",
+			"id": "pane-2",
+			"kind": "slab",
 			"at": [
-				10,
-				10,
-				51
+				44.6,
+				30.6,
+				41.9
 			],
 			"size": [
-				116,
-				80,
-				0
+				102.8,
+				74.8,
+				1.8
 			],
-			"r": 2,
-			"label": "Bezel grid"
+			"r": 17.4
 		},
 		{
-			"id": "ring-2",
-			"kind": "gap",
+			"id": "pane-3",
+			"kind": "slab",
 			"at": [
-				6,
-				6,
-				51
+				44,
+				30,
+				43.7
+			],
+			"size": [
+				104,
+				76,
+				3.6
+			],
+			"r": 18,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3.53,
+							7.79
+						],
+						[
+							3.53,
+							68.21
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							15.65,
+							0.65
+						],
+						[
+							15.65,
+							75.35
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							27.77,
+							0.5
+						],
+						[
+							27.77,
+							75.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							39.88,
+							0.5
+						],
+						[
+							39.88,
+							75.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							52,
+							0.5
+						],
+						[
+							52,
+							75.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							64.12,
+							0.5
+						],
+						[
+							64.12,
+							75.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							76.23,
+							0.5
+						],
+						[
+							76.23,
+							75.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							88.35,
+							0.65
+						],
+						[
+							88.35,
+							75.35
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							100.47,
+							7.79
+						],
+						[
+							100.47,
+							68.21
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.84,
+							11.18
+						],
+						[
+							102.16,
+							11.18
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							24.59
+						],
+						[
+							103.5,
+							24.59
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							38
+						],
+						[
+							103.5,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							51.41
+						],
+						[
+							103.5,
+							51.41
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.84,
+							64.82
+						],
+						[
+							102.16,
+							64.82
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pane-4",
+			"kind": "slab",
+			"at": [
+				44.6,
+				30.6,
+				47.3
+			],
+			"size": [
+				102.8,
+				74.8,
+				1.2
+			],
+			"r": 17.4,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3.49,
+							7.44
+						],
+						[
+							3.49,
+							67.36
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							15.47,
+							0.61
+						],
+						[
+							15.47,
+							74.19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							27.45,
+							0.5
+						],
+						[
+							27.45,
+							74.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							39.42,
+							0.5
+						],
+						[
+							39.42,
+							74.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							51.4,
+							0.5
+						],
+						[
+							51.4,
+							74.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							63.38,
+							0.5
+						],
+						[
+							63.38,
+							74.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							75.35,
+							0.5
+						],
+						[
+							75.35,
+							74.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							87.33,
+							0.61
+						],
+						[
+							87.33,
+							74.19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							99.31,
+							7.44
+						],
+						[
+							99.31,
+							67.36
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.72,
+							11
+						],
+						[
+							101.08,
+							11
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							24.2
+						],
+						[
+							102.3,
+							24.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							37.4
+						],
+						[
+							102.3,
+							37.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							50.6
+						],
+						[
+							102.3,
+							50.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.72,
+							63.8
+						],
+						[
+							101.08,
+							63.8
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pane-5",
+			"kind": "slab",
+			"at": [
+				45.6,
+				31.6,
+				48.5
+			],
+			"size": [
+				100.8,
+				72.8,
+				1
+			],
+			"r": 16.4,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3.43,
+							6.87
+						],
+						[
+							3.43,
+							65.93
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							15.17,
+							0.55
+						],
+						[
+							15.17,
+							72.25
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							26.91,
+							0.5
+						],
+						[
+							26.91,
+							72.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							38.66,
+							0.5
+						],
+						[
+							38.66,
+							72.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							50.4,
+							0.5
+						],
+						[
+							50.4,
+							72.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							62.14,
+							0.5
+						],
+						[
+							62.14,
+							72.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							73.89,
+							0.5
+						],
+						[
+							73.89,
+							72.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							85.63,
+							0.55
+						],
+						[
+							85.63,
+							72.25
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							97.37,
+							6.87
+						],
+						[
+							97.37,
+							65.93
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.52,
+							10.71
+						],
+						[
+							99.28,
+							10.71
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							23.55
+						],
+						[
+							100.3,
+							23.55
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							36.4
+						],
+						[
+							100.3,
+							36.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							49.25
+						],
+						[
+							100.3,
+							49.25
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.52,
+							62.09
+						],
+						[
+							99.28,
+							62.09
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pane-6",
+			"kind": "slab",
+			"at": [
+				47,
+				33,
+				49.5
+			],
+			"size": [
+				98,
+				70,
+				0.9
+			],
+			"r": 15,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3.33,
+							6.08
+						],
+						[
+							3.33,
+							63.92
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							14.75,
+							0.5
+						],
+						[
+							14.75,
+							69.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							26.17,
+							0.5
+						],
+						[
+							26.17,
+							69.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							37.58,
+							0.5
+						],
+						[
+							37.58,
+							69.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							49,
+							0.5
+						],
+						[
+							49,
+							69.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							60.42,
+							0.5
+						],
+						[
+							60.42,
+							69.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							71.83,
+							0.5
+						],
+						[
+							71.83,
+							69.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							83.25,
+							0.5
+						],
+						[
+							83.25,
+							69.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							94.67,
+							6.08
+						],
+						[
+							94.67,
+							63.92
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.26,
+							10.29
+						],
+						[
+							96.74,
+							10.29
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							22.65
+						],
+						[
+							97.5,
+							22.65
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							35
+						],
+						[
+							97.5,
+							35
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							47.35
+						],
+						[
+							97.5,
+							47.35
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.26,
+							59.71
+						],
+						[
+							96.74,
+							59.71
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pane-7",
+			"kind": "slab",
+			"at": [
+				49,
+				35,
+				50.4
+			],
+			"size": [
+				94,
+				66,
+				0.7
+			],
+			"r": 13,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3.19,
+							4.97
+						],
+						[
+							3.19,
+							61.03
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							14.15,
+							0.5
+						],
+						[
+							14.15,
+							65.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							25.1,
+							0.5
+						],
+						[
+							25.1,
+							65.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							36.05,
+							0.5
+						],
+						[
+							36.05,
+							65.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							47,
+							0.5
+						],
+						[
+							47,
+							65.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							57.95,
+							0.5
+						],
+						[
+							57.95,
+							65.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							68.9,
+							0.5
+						],
+						[
+							68.9,
+							65.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							79.85,
+							0.5
+						],
+						[
+							79.85,
+							65.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							90.81,
+							4.97
+						],
+						[
+							90.81,
+							61.03
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.92,
+							9.71
+						],
+						[
+							93.08,
+							9.71
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							21.35
+						],
+						[
+							93.5,
+							21.35
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							33
+						],
+						[
+							93.5,
+							33
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							44.65
+						],
+						[
+							93.5,
+							44.65
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.92,
+							56.29
+						],
+						[
+							93.08,
+							56.29
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pane-8",
+			"kind": "slab",
+			"at": [
+				51.6,
+				37.6,
+				51.1
+			],
+			"size": [
+				88.8,
+				60.8,
+				0.5
+			],
+			"r": 10.4,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3.02,
+							3.57
+						],
+						[
+							3.02,
+							57.23
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							13.36,
+							0.5
+						],
+						[
+							13.36,
+							60.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							23.71,
+							0.5
+						],
+						[
+							23.71,
+							60.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							34.05,
+							0.5
+						],
+						[
+							34.05,
+							60.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							44.4,
+							0.5
+						],
+						[
+							44.4,
+							60.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							54.75,
+							0.5
+						],
+						[
+							54.75,
+							60.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							65.09,
+							0.5
+						],
+						[
+							65.09,
+							60.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							75.44,
+							0.5
+						],
+						[
+							75.44,
+							60.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							85.78,
+							3.57
+						],
+						[
+							85.78,
+							57.23
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.6,
+							8.94
+						],
+						[
+							88.2,
+							8.94
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							19.67
+						],
+						[
+							88.3,
+							19.67
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							30.4
+						],
+						[
+							88.3,
+							30.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							41.13
+						],
+						[
+							88.3,
+							41.13
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.6,
+							51.86
+						],
+						[
+							88.2,
+							51.86
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pane-9",
+			"kind": "slab",
+			"at": [
+				54.8,
+				40.8,
+				51.6
+			],
+			"size": [
+				82.4,
+				54.4,
+				0.4
+			],
+			"r": 7.2,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.8,
+							2
+						],
+						[
+							2.8,
+							52.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							12.4,
+							0.5
+						],
+						[
+							12.4,
+							53.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							22,
+							0.5
+						],
+						[
+							22,
+							53.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							31.6,
+							0.5
+						],
+						[
+							31.6,
+							53.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							41.2,
+							0.5
+						],
+						[
+							41.2,
+							53.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							50.8,
+							0.5
+						],
+						[
+							50.8,
+							53.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							60.4,
+							0.5
+						],
+						[
+							60.4,
+							53.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							70,
+							0.5
+						],
+						[
+							70,
+							53.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							79.6,
+							2
+						],
+						[
+							79.6,
+							52.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							8
+						],
+						[
+							81.9,
+							8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							17.6
+						],
+						[
+							81.9,
+							17.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							27.2
+						],
+						[
+							81.9,
+							27.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							36.8
+						],
+						[
+							81.9,
+							36.8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							46.4
+						],
+						[
+							81.9,
+							46.4
+						]
+					]
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 9,
+					"r": 2.5
+				}
+			]
+		},
+		{
+			"id": "rail",
+			"kind": "box",
+			"at": [
+				50,
+				15,
+				59.4
 			],
 			"size": [
 				124,
-				88,
-				0
+				6,
+				4
 			],
-			"r": 2,
-			"label": "Bezel grid"
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						5,
+						5.2
+					],
+					"to": [
+						119,
+						5.2
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						1,
+						2.1
+					],
+					"side": -1
+				},
+				{
+					"type": "ticks",
+					"face": "+y",
+					"from": [
+						5,
+						3.6
+					],
+					"to": [
+						119,
+						3.6
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						0.7,
+						1.5
+					],
+					"side": -1
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3,
+							1.3
+						],
+						[
+							121,
+							1.3
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						14,
+						2.8
+					],
+					"size": 1.1,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						110,
+						2.8
+					],
+					"size": 1.1,
+					"depth": 0.3
+				}
+			]
 		},
 		{
-			"id": "ring-3",
-			"kind": "gap",
-			"at": [
-				4,
-				4,
-				51
-			],
-			"size": [
-				128,
-				92,
-				0
-			],
-			"r": 2,
-			"label": "Bezel grid"
-		},
-		{
-			"id": "middle",
-			"kind": "gap",
-			"at": [
-				18,
-				18,
-				51
-			],
-			"size": [
-				100,
-				64,
-				0
-			],
-			"r": 2,
-			"label": "Flat middle"
-		},
-		{
-			"id": "gx-1",
-			"kind": "gap",
-			"at": [
-				43,
-				18,
-				51
-			],
-			"size": [
-				0.3,
-				64,
-				0
-			],
-			"label": "Grid line"
-		},
-		{
-			"id": "gx-2",
-			"kind": "gap",
-			"at": [
-				68,
-				18,
-				51
-			],
-			"size": [
-				0.3,
-				64,
-				0
-			],
-			"label": "Grid line"
-		},
-		{
-			"id": "gx-3",
-			"kind": "gap",
-			"at": [
-				93,
-				18,
-				51
-			],
-			"size": [
-				0.3,
-				64,
-				0
-			],
-			"label": "Grid line"
-		},
-		{
-			"id": "gy-1",
-			"kind": "gap",
-			"at": [
-				18,
-				39,
-				51
-			],
-			"size": [
-				100,
-				0.3,
-				0
-			],
-			"label": "Grid line"
-		},
-		{
-			"id": "gy-2",
-			"kind": "gap",
-			"at": [
-				18,
-				61,
-				51
-			],
-			"size": [
-				100,
-				0.3,
-				0
-			],
-			"label": "Grid line"
-		},
-		{
-			"id": "probe",
+			"id": "cap-l",
 			"kind": "box",
 			"at": [
-				122,
-				11,
-				51
+				47,
+				13,
+				57.8
 			],
 			"size": [
-				8,
-				8,
-				10
+				3,
+				10,
+				7.6
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.9,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "cap-r",
+			"kind": "box",
+			"at": [
+				174,
+				13,
+				57.8
+			],
+			"size": [
+				3,
+				10,
+				7.6
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.1,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "carriage",
+			"kind": "box",
+			"at": [
+				139.26,
+				12,
+				58.6
+			],
+			"size": [
+				11,
+				13,
+				7.6
 			],
 			"r": 1,
-			"label": "Probe"
-		}
-	],
-	"focal": "spot",
-	"labels": [
-		{
-			"text": "Where that pixel reads",
-			"target": "spot",
-			"side": "right"
-		},
-		{
-			"text": "Probe, one pixel",
-			"target": "probe",
-			"side": "right",
-			"anchor": [
-				130,
-				15,
-				53
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 1.3,
+					"r": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "circle",
+					"at": [
+						6.5,
+						3.8
+					],
+					"size": 1.3,
+					"depth": 0.3
+				}
 			]
 		},
 		{
-			"text": "Straight down",
-			"target": "plumb",
-			"side": "right",
-			"anchor": [
-				126,
-				15,
-				26
+			"id": "knob",
+			"kind": "cylinder",
+			"at": [
+				144.76,
+				18,
+				66.2
+			],
+			"size": [
+				2.4,
+				2.4,
+				2.8
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 26
+				}
 			]
 		},
 		{
-			"text": "12 px grid crowds to the rim",
-			"target": "ring-3",
-			"side": "left",
-			"anchor": [
-				30,
-				96,
-				51
+			"id": "knob-cap",
+			"kind": "cylinder",
+			"at": [
+				144.76,
+				18,
+				69
+			],
+			"size": [
+				1.6,
+				1.6,
+				1
 			]
 		},
 		{
-			"text": "Frost plate",
-			"target": "plate",
-			"side": "left",
-			"anchor": [
-				70,
-				98,
-				2
-			]
-		},
-		{
-			"text": "Sled stop, 87 px",
-			"target": "stop",
-			"side": "right"
-		}
-	],
-	"annotations": [
-		{
-			"kind": "arrow",
+			"id": "probe-arm",
+			"kind": "rod",
 			"from": [
-				126,
-				15,
-				49
+				144.76,
+				24.5,
+				62.2
 			],
 			"to": [
-				151,
-				15,
-				5.5
+				144.76,
+				72,
+				62.2
+			],
+			"radius": 1.15
+		},
+		{
+			"id": "head",
+			"kind": "cylinder",
+			"at": [
+				144.76,
+				72,
+				56.6
+			],
+			"size": [
+				2.4,
+				2.4,
+				5.6
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 24
+				}
+			]
+		},
+		{
+			"id": "head-cap",
+			"kind": "cylinder",
+			"at": [
+				144.76,
+				72,
+				62.2
+			],
+			"size": [
+				2.7,
+				2.7,
+				1.4
+			],
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						0,
+						0
+					],
+					"size": 1.6,
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "collar",
+			"kind": "cylinder",
+			"at": [
+				144.76,
+				72,
+				55
+			],
+			"size": [
+				1.3,
+				1.3,
+				1.6
+			]
+		},
+		{
+			"id": "needle",
+			"kind": "rod",
+			"from": [
+				144.76,
+				72,
+				55
+			],
+			"to": [
+				144.76,
+				72,
+				52.9
+			],
+			"radius": 0.38
+		},
+		{
+			"id": "tip",
+			"kind": "torus",
+			"at": [
+				144.76,
+				72,
+				52.7
+			],
+			"axis": "z",
+			"R": 1.05,
+			"r": 0.3
+		},
+		{
+			"id": "wire-mid",
+			"kind": "wire",
+			"variants": {
+				"s0": {
+					"from": [
+						96,
+						72,
+						52.4
+					],
+					"to": [
+						96,
+						72,
+						40.5
+					]
+				},
+				"s1": {
+					"from": [
+						115.6,
+						72,
+						52.4
+					],
+					"to": [
+						115.93,
+						72,
+						40.5
+					]
+				},
+				"s2": {
+					"from": [
+						130.3,
+						72,
+						52.4
+					],
+					"to": [
+						131.03,
+						72,
+						40.5
+					]
+				},
+				"s3": {
+					"from": [
+						137.65,
+						72,
+						52.4
+					],
+					"to": [
+						138.85,
+						72,
+						40.5
+					]
+				},
+				"s4": {
+					"from": [
+						141.57,
+						72,
+						52.4
+					],
+					"to": [
+						143.46,
+						72,
+						40.5
+					]
+				},
+				"s5": {
+					"from": [
+						143.53,
+						72,
+						52.4
+					],
+					"to": [
+						146.51,
+						72,
+						40.5
+					]
+				},
+				"s6": {
+					"from": [
+						144.26,
+						72,
+						52.4
+					],
+					"to": [
+						148.53,
+						72,
+						40.5
+					]
+				},
+				"s8": {
+					"from": [
+						144.79,
+						72,
+						52.4
+					],
+					"to": [
+						152.89,
+						72,
+						40.5
+					]
+				},
+				"s9": {
+					"from": [
+						144.82,
+						72,
+						52.4
+					],
+					"to": [
+						153.57,
+						72,
+						40.5
+					]
+				},
+				"s10": {
+					"from": [
+						144.85,
+						72,
+						52.4
+					],
+					"to": [
+						154.25,
+						72,
+						40.5
+					]
+				},
+				"s11": {
+					"from": [
+						144.87,
+						72,
+						52.4
+					],
+					"to": [
+						154.92,
+						72,
+						40.5
+					]
+				},
+				"s12": {
+					"from": [
+						144.88,
+						72,
+						52.4
+					],
+					"to": [
+						155.59,
+						72,
+						40.5
+					]
+				},
+				"s13": {
+					"from": [
+						144.89,
+						72,
+						52.4
+					],
+					"to": [
+						156.26,
+						72,
+						40.5
+					]
+				},
+				"s14": {
+					"from": [
+						144.91,
+						72,
+						52.4
+					],
+					"to": [
+						156.93,
+						72,
+						40.5
+					]
+				},
+				"s15": {
+					"from": [
+						144.92,
+						72,
+						52.4
+					],
+					"to": [
+						157.59,
+						72,
+						40.5
+					]
+				},
+				"s16": {
+					"from": [
+						144.92,
+						72,
+						52.4
+					],
+					"to": [
+						158.25,
+						72,
+						40.5
+					]
+				},
+				"s17": {
+					"from": [
+						144.93,
+						72,
+						52.4
+					],
+					"to": [
+						158.91,
+						72,
+						40.5
+					]
+				},
+				"s18": {
+					"from": [
+						144.94,
+						72,
+						52.4
+					],
+					"to": [
+						159.58,
+						72,
+						40.5
+					]
+				},
+				"s19": {
+					"from": [
+						144.94,
+						72,
+						52.4
+					],
+					"to": [
+						160.24,
+						72,
+						40.5
+					]
+				},
+				"s20": {
+					"from": [
+						144.95,
+						72,
+						52.4
+					],
+					"to": [
+						160.89,
+						72,
+						40.5
+					]
+				},
+				"s21": {
+					"from": [
+						144.95,
+						72,
+						52.4
+					],
+					"to": [
+						161.55,
+						72,
+						40.5
+					]
+				},
+				"s22": {
+					"from": [
+						144.95,
+						72,
+						52.4
+					],
+					"to": [
+						162.21,
+						72,
+						40.5
+					]
+				},
+				"s23": {
+					"from": [
+						144.96,
+						72,
+						52.4
+					],
+					"to": [
+						162.87,
+						72,
+						40.5
+					]
+				},
+				"s24": {
+					"from": [
+						144.96,
+						72,
+						52.4
+					],
+					"to": [
+						163.53,
+						72,
+						40.5
+					]
+				},
+				"s25": {
+					"from": [
+						144.96,
+						72,
+						52.4
+					],
+					"to": [
+						164.18,
+						72,
+						40.5
+					]
+				},
+				"s26": {
+					"from": [
+						144.97,
+						72,
+						52.4
+					],
+					"to": [
+						164.84,
+						72,
+						40.5
+					]
+				},
+				"s27": {
+					"from": [
+						144.97,
+						72,
+						52.4
+					],
+					"to": [
+						165.5,
+						72,
+						40.5
+					]
+				},
+				"s28": {
+					"from": [
+						144.97,
+						72,
+						52.4
+					],
+					"to": [
+						166.15,
+						72,
+						40.5
+					]
+				},
+				"s29": {
+					"from": [
+						144.97,
+						72,
+						52.4
+					],
+					"to": [
+						166.81,
+						72,
+						40.5
+					]
+				},
+				"s30": {
+					"from": [
+						144.97,
+						72,
+						52.4
+					],
+					"to": [
+						167.47,
+						72,
+						40.5
+					]
+				},
+				"s31": {
+					"from": [
+						144.97,
+						72,
+						52.4
+					],
+					"to": [
+						168.12,
+						72,
+						40.5
+					]
+				},
+				"s32": {
+					"from": [
+						144.98,
+						72,
+						52.4
+					],
+					"to": [
+						168.78,
+						72,
+						40.5
+					]
+				},
+				"s33": {
+					"from": [
+						144.98,
+						72,
+						52.4
+					],
+					"to": [
+						169.44,
+						72,
+						40.5
+					]
+				}
+			},
+			"from": [
+				144.76,
+				72,
+				52.4
+			],
+			"to": [
+				152.19,
+				72,
+				40.5
+			]
+		},
+		{
+			"id": "wire-lo",
+			"kind": "wire",
+			"variants": {
+				"s0": {
+					"from": [
+						96,
+						72,
+						40.5
+					],
+					"to": [
+						96,
+						72,
+						10.8
+					]
+				},
+				"s1": {
+					"from": [
+						115.93,
+						72,
+						40.5
+					],
+					"to": [
+						116.74,
+						72,
+						10.8
+					]
+				},
+				"s2": {
+					"from": [
+						131.03,
+						72,
+						40.5
+					],
+					"to": [
+						132.86,
+						72,
+						10.8
+					]
+				},
+				"s3": {
+					"from": [
+						138.85,
+						72,
+						40.5
+					],
+					"to": [
+						141.86,
+						72,
+						10.8
+					]
+				},
+				"s4": {
+					"from": [
+						143.46,
+						72,
+						40.5
+					],
+					"to": [
+						148.17,
+						72,
+						10.8
+					]
+				},
+				"s5": {
+					"from": [
+						146.51,
+						72,
+						40.5
+					],
+					"to": [
+						153.94,
+						72,
+						10.8
+					]
+				},
+				"s6": {
+					"from": [
+						148.53,
+						72,
+						40.5
+					],
+					"to": [
+						159.16,
+						72,
+						10.8
+					]
+				},
+				"s8": {
+					"from": [
+						152.89,
+						72,
+						40.5
+					],
+					"to": [
+						173.08,
+						72,
+						10.8
+					]
+				},
+				"s9": {
+					"from": [
+						153.57,
+						72,
+						40.5
+					],
+					"to": [
+						175.4,
+						72,
+						10.8
+					]
+				},
+				"s10": {
+					"from": [
+						154.25,
+						72,
+						40.5
+					],
+					"to": [
+						177.71,
+						72,
+						10.8
+					]
+				},
+				"s11": {
+					"from": [
+						154.92,
+						72,
+						40.5
+					],
+					"to": [
+						180.02,
+						72,
+						10.8
+					]
+				},
+				"s12": {
+					"from": [
+						155.59,
+						72,
+						40.5
+					],
+					"to": [
+						182.33,
+						72,
+						10.8
+					]
+				},
+				"s13": {
+					"from": [
+						156.26,
+						72,
+						40.5
+					],
+					"to": [
+						184.63,
+						72,
+						10.8
+					]
+				},
+				"s14": {
+					"from": [
+						156.93,
+						72,
+						40.5
+					],
+					"to": [
+						186.93,
+						72,
+						10.8
+					]
+				},
+				"s15": {
+					"from": [
+						157.59,
+						72,
+						40.5
+					],
+					"to": [
+						189.22,
+						72,
+						10.8
+					]
+				},
+				"s16": {
+					"from": [
+						158.25,
+						72,
+						40.5
+					],
+					"to": [
+						191.52,
+						72,
+						10.8
+					]
+				},
+				"s17": {
+					"from": [
+						158.91,
+						72,
+						40.5
+					],
+					"to": [
+						193.82,
+						72,
+						10.8
+					]
+				},
+				"s18": {
+					"from": [
+						159.58,
+						72,
+						40.5
+					],
+					"to": [
+						196.11,
+						72,
+						10.8
+					]
+				},
+				"s19": {
+					"from": [
+						160.24,
+						72,
+						40.5
+					],
+					"to": [
+						198.4,
+						72,
+						10.8
+					]
+				},
+				"s20": {
+					"from": [
+						160.89,
+						72,
+						40.5
+					],
+					"to": [
+						200.7,
+						72,
+						10.8
+					]
+				},
+				"s21": {
+					"from": [
+						161.55,
+						72,
+						40.5
+					],
+					"to": [
+						202.99,
+						72,
+						10.8
+					]
+				},
+				"s22": {
+					"from": [
+						162.21,
+						72,
+						40.5
+					],
+					"to": [
+						205.28,
+						72,
+						10.8
+					]
+				},
+				"s23": {
+					"from": [
+						162.87,
+						72,
+						40.5
+					],
+					"to": [
+						207.57,
+						72,
+						10.8
+					]
+				},
+				"s24": {
+					"from": [
+						163.53,
+						72,
+						40.5
+					],
+					"to": [
+						209.86,
+						72,
+						10.8
+					]
+				},
+				"s25": {
+					"from": [
+						164.18,
+						72,
+						40.5
+					],
+					"to": [
+						212.16,
+						72,
+						10.8
+					]
+				},
+				"s26": {
+					"from": [
+						164.84,
+						72,
+						40.5
+					],
+					"to": [
+						214.45,
+						72,
+						10.8
+					]
+				},
+				"s27": {
+					"from": [
+						165.5,
+						72,
+						40.5
+					],
+					"to": [
+						216.74,
+						72,
+						10.8
+					]
+				},
+				"s28": {
+					"from": [
+						166.15,
+						72,
+						40.5
+					],
+					"to": [
+						219.03,
+						72,
+						10.8
+					]
+				},
+				"s29": {
+					"from": [
+						166.81,
+						72,
+						40.5
+					],
+					"to": [
+						221.32,
+						72,
+						10.8
+					]
+				},
+				"s30": {
+					"from": [
+						167.47,
+						72,
+						40.5
+					],
+					"to": [
+						223.61,
+						72,
+						10.8
+					]
+				},
+				"s31": {
+					"from": [
+						168.12,
+						72,
+						40.5
+					],
+					"to": [
+						225.9,
+						72,
+						10.8
+					]
+				},
+				"s32": {
+					"from": [
+						168.78,
+						72,
+						40.5
+					],
+					"to": [
+						228.19,
+						72,
+						10.8
+					]
+				},
+				"s33": {
+					"from": [
+						169.44,
+						72,
+						40.5
+					],
+					"to": [
+						230.48,
+						72,
+						10.8
+					]
+				}
+			},
+			"from": [
+				152.19,
+				72,
+				40.5
+			],
+			"to": [
+				170.76,
+				72,
+				10.8
 			]
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
+				"lip",
 				"plate"
 			],
 			[
-				"stop",
-				"spot",
-				"plumb"
+				"pad-1",
+				"pad-2",
+				"pad-3",
+				"pad-4",
+				"track",
+				"track-mark",
+				"stop"
 			],
 			[
-				"post-bl",
-				"post-br",
-				"post-fl",
-				"post-fr"
+				"post-fl-foot",
+				"post-fl-nut0",
+				"post-fl-core",
+				"post-fl-thread",
+				"post-fl-nut1",
+				"post-fl-cap",
+				"post-fl-dome",
+				"post-fl-arm",
+				"post-fr-foot",
+				"post-fr-nut0",
+				"post-fr-core",
+				"post-fr-thread",
+				"post-fr-nut1",
+				"post-fr-cap",
+				"post-fr-dome",
+				"post-fr-arm",
+				"post-bl-foot",
+				"post-bl-nut0",
+				"post-bl-core",
+				"post-bl-thread",
+				"post-bl-nut1",
+				"post-bl-col",
+				"post-bl-bracket",
+				"post-bl-arm",
+				"post-br-foot",
+				"post-br-nut0",
+				"post-br-core",
+				"post-br-thread",
+				"post-br-nut1",
+				"post-br-col",
+				"post-br-bracket",
+				"post-br-arm"
 			],
 			[
-				"pane",
-				"middle",
-				"ring-1",
-				"ring-2",
-				"ring-3",
-				"gx-1",
-				"gx-2",
-				"gx-3",
-				"gy-1",
-				"gy-2"
+				"pane-1",
+				"pane-2",
+				"pane-3",
+				"pane-4",
+				"pane-5",
+				"pane-6",
+				"pane-7",
+				"pane-8",
+				"pane-9"
 			],
 			[
-				"probe"
+				"rail",
+				"cap-l",
+				"cap-r"
+			],
+			[
+				"carriage",
+				"knob",
+				"knob-cap",
+				"probe-arm",
+				"head",
+				"head-cap",
+				"collar",
+				"needle",
+				"tip"
+			],
+			[
+				"sled",
+				"wire-mid",
+				"wire-lo"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 12,
-		"rest": "b 0.90"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 7,
+		"values": {
+			"b": [
+				0,
+				0.4,
+				0.7,
+				0.85,
+				0.93,
+				0.97,
+				0.985,
+				0.995,
+				0.996,
+				0.996,
+				0.997,
+				0.997,
+				0.998,
+				0.998,
+				0.998,
+				0.998,
+				0.998,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				0.999,
+				1,
+				1
+			],
+			"px": [
+				0,
+				4,
+				9,
+				14,
+				22,
+				35,
+				50,
+				87,
+				95,
+				102,
+				110,
+				118,
+				125,
+				133,
+				141,
+				148,
+				156,
+				164,
+				171,
+				179,
+				187,
+				194,
+				202,
+				210,
+				217,
+				225,
+				232,
+				240,
+				248,
+				255,
+				263,
+				271,
+				278,
+				286
+			]
+		},
+		"readout": "b {b:0.001} · reads {px:1} px out",
+		"states": [
+			{
+				"name": "flat middle",
+				"parts": {
+					"carriage": {
+						"move": [
+							-48.75,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							-48.75,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							-48.75,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-48.75,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-48.75,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							-48.75,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							-48.75,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							-48.75,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							-48.75,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							-74.76,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s0",
+						"hidden": true
+					},
+					"wire-lo": {
+						"variant": "s0"
+					}
+				}
+			},
+			{
+				"name": "shoulder 1",
+				"parts": {
+					"carriage": {
+						"move": [
+							-29.15,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							-29.15,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							-29.15,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-29.15,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-29.15,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							-29.15,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							-29.15,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							-29.15,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							-29.15,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							-54.02,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s1",
+						"hidden": true
+					},
+					"wire-lo": {
+						"variant": "s1"
+					}
+				}
+			},
+			{
+				"name": "shoulder 2",
+				"parts": {
+					"carriage": {
+						"move": [
+							-14.45,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							-14.45,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							-14.45,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-14.45,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-14.45,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							-14.45,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							-14.45,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							-14.45,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							-14.45,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							-37.9,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s2",
+						"hidden": true
+					},
+					"wire-lo": {
+						"variant": "s2"
+					}
+				}
+			},
+			{
+				"name": "shoulder 3",
+				"parts": {
+					"carriage": {
+						"move": [
+							-7.1,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							-7.1,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							-7.1,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-7.1,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-7.1,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							-7.1,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							-7.1,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							-7.1,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							-7.1,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							-28.9,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s3",
+						"hidden": true
+					},
+					"wire-lo": {
+						"variant": "s3"
+					}
+				}
+			},
+			{
+				"name": "shoulder 4",
+				"parts": {
+					"carriage": {
+						"move": [
+							-3.19,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							-3.19,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							-3.19,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-3.19,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-3.19,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							-3.19,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							-3.19,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							-3.19,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							-3.19,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							-22.58,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s4",
+						"hidden": true
+					},
+					"wire-lo": {
+						"variant": "s4"
+					}
+				}
+			},
+			{
+				"name": "bezel 5",
+				"parts": {
+					"carriage": {
+						"move": [
+							-1.22,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							-1.22,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							-1.22,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-1.22,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-1.22,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							-1.22,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							-1.22,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							-1.22,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							-1.22,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							-16.81,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s5",
+						"hidden": true
+					},
+					"wire-lo": {
+						"variant": "s5"
+					}
+				}
+			},
+			{
+				"name": "bezel 6",
+				"parts": {
+					"carriage": {
+						"move": [
+							-0.49,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							-0.49,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							-0.49,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-0.49,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-0.49,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							-0.49,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							-0.49,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							-0.49,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							-0.49,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							-11.59,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s6"
+					},
+					"wire-lo": {
+						"variant": "s6"
+					}
+				}
+			},
+			{
+				"name": "bezel",
+				"parts": {}
+			},
+			{
+				"name": "rim 1",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.04,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.04,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.04,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.04,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.04,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.04,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.04,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.04,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.04,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							2.33,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s8"
+					},
+					"wire-lo": {
+						"variant": "s8"
+					}
+				}
+			},
+			{
+				"name": "rim 2",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.07,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.07,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.07,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.07,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.07,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.07,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.07,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.07,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.07,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							4.64,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s9"
+					},
+					"wire-lo": {
+						"variant": "s9"
+					}
+				}
+			},
+			{
+				"name": "rim 3",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.09,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.09,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.09,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.09,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.09,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.09,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.09,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.09,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.09,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							6.96,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s10"
+					},
+					"wire-lo": {
+						"variant": "s10"
+					}
+				}
+			},
+			{
+				"name": "rim 4",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.11,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.11,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.11,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.11,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.11,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.11,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.11,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.11,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.11,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							9.26,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s11"
+					},
+					"wire-lo": {
+						"variant": "s11"
+					}
+				}
+			},
+			{
+				"name": "rim 5",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.13,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.13,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.13,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.13,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.13,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.13,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.13,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.13,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.13,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							11.57,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s12"
+					},
+					"wire-lo": {
+						"variant": "s12"
+					}
+				}
+			},
+			{
+				"name": "rim 6",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.14,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.14,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.14,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.14,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.14,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.14,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.14,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.14,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.14,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							13.87,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s13"
+					},
+					"wire-lo": {
+						"variant": "s13"
+					}
+				}
+			},
+			{
+				"name": "rim 7",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.15,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.15,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.15,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.15,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.15,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.15,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.15,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.15,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.15,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							16.17,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s14"
+					},
+					"wire-lo": {
+						"variant": "s14"
+					}
+				}
+			},
+			{
+				"name": "rim 8",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.16,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.16,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.16,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.16,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.16,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.16,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.16,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.16,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.16,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							18.47,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s15"
+					},
+					"wire-lo": {
+						"variant": "s15"
+					}
+				}
+			},
+			{
+				"name": "rim 9",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.17,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.17,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.17,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.17,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.17,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.17,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.17,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.17,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.17,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							20.76,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s16"
+					},
+					"wire-lo": {
+						"variant": "s16"
+					}
+				}
+			},
+			{
+				"name": "rim 10",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							23.06,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s17"
+					},
+					"wire-lo": {
+						"variant": "s17"
+					}
+				}
+			},
+			{
+				"name": "rim 11",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.18,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							25.35,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s18"
+					},
+					"wire-lo": {
+						"variant": "s18"
+					}
+				}
+			},
+			{
+				"name": "rim 12",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							27.65,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s19"
+					},
+					"wire-lo": {
+						"variant": "s19"
+					}
+				}
+			},
+			{
+				"name": "rim 13",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.19,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							29.94,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s20"
+					},
+					"wire-lo": {
+						"variant": "s20"
+					}
+				}
+			},
+			{
+				"name": "rim 14",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							32.23,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s21"
+					},
+					"wire-lo": {
+						"variant": "s21"
+					}
+				}
+			},
+			{
+				"name": "rim 15",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							34.52,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s22"
+					},
+					"wire-lo": {
+						"variant": "s22"
+					}
+				}
+			},
+			{
+				"name": "rim 16",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.2,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							36.82,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s23"
+					},
+					"wire-lo": {
+						"variant": "s23"
+					}
+				}
+			},
+			{
+				"name": "rim 17",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							39.11,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s24"
+					},
+					"wire-lo": {
+						"variant": "s24"
+					}
+				}
+			},
+			{
+				"name": "rim 18",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							41.4,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s25"
+					},
+					"wire-lo": {
+						"variant": "s25"
+					}
+				}
+			},
+			{
+				"name": "rim 19",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							43.69,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s26"
+					},
+					"wire-lo": {
+						"variant": "s26"
+					}
+				}
+			},
+			{
+				"name": "rim 20",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							45.98,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s27"
+					},
+					"wire-lo": {
+						"variant": "s27"
+					}
+				}
+			},
+			{
+				"name": "rim 21",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.21,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							48.27,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s28"
+					},
+					"wire-lo": {
+						"variant": "s28"
+					}
+				}
+			},
+			{
+				"name": "rim 22",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							50.56,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s29"
+					},
+					"wire-lo": {
+						"variant": "s29"
+					}
+				}
+			},
+			{
+				"name": "rim 23",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							52.85,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s30"
+					},
+					"wire-lo": {
+						"variant": "s30"
+					}
+				}
+			},
+			{
+				"name": "rim 24",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							55.14,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s31"
+					},
+					"wire-lo": {
+						"variant": "s31"
+					}
+				}
+			},
+			{
+				"name": "rim 25",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							57.43,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s32"
+					},
+					"wire-lo": {
+						"variant": "s32"
+					}
+				}
+			},
+			{
+				"name": "rim",
+				"parts": {
+					"carriage": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"knob-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"head-cap": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"collar": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"needle": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"tip": {
+						"move": [
+							0.22,
+							0,
+							0
+						]
+					},
+					"sled": {
+						"move": [
+							59.72,
+							0,
+							0
+						]
+					},
+					"wire-mid": {
+						"variant": "s33"
+					},
+					"wire-lo": {
+						"variant": "s33"
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[LOOKUP]",
 		"corner": "VPK-HTML"
-	},
-	"dims": [
-		{
-			"from": [
-				118,
-				2,
-				51
-			],
-			"to": [
-				134,
-				2,
-				51
-			],
-			"text": "Bezel, 26 px",
-			"offset": 40
-		}
-	]
+	}
 }

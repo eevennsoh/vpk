@@ -3,435 +3,14188 @@
 	"id": "an-power-station",
 	"figId": "FIG_222",
 	"title": "Power station",
-	"label": "Dimetric generating unit: generator and exciter on a pedestal, a step-up transformer with its bushing, a breaker, and a switchyard gantry over a disconnector blade on two insulator posts. The blade is highlighted; hover lifts it open.",
-	"caption": "The breaker is built to interrupt 660 MW; the disconnector is not. Open the breaker first, then lift the blade, or an arc climbs between the blade and its contact until the breaker clears it.",
+	"label": "Generating unit: cutaway turbo-generator with glowing core, flywheel guard, step-up transformer and a three-phase switchyard under a lattice gantry. Moving across the figure steps the switching sequence.",
+	"caption": "A 660 MW generator turning at 3,000 rpm feeds a transformer lifting 22 to 400 kV. Open the breaker first and the stator glow drops as the current stops; then lift the disconnector blades. Lift the blades while the breaker still carries load and an arc climbs between blade and jaw. Move across the figure or use the arrow keys to step the sequence.",
 	"camera": {
 		"preset": "dimetric",
-		"scale": "fit"
+		"azimuth": 54,
+		"elevation": 30,
+		"scale": "fit",
+		"pad": 14
 	},
+	"viewBox": [
+		720,
+		500
+	],
+	"emphasis": "none",
+	"labels": "none",
 	"parts": [
 		{
-			"id": "plinth-gen",
-			"kind": "box",
+			"id": "plinth",
+			"kind": "prism",
 			"at": [
 				0,
-				10,
+				0,
 				0
 			],
-			"size": [
-				74,
-				38,
-				4
-			],
-			"r": 0,
-			"marks": [
+			"axis": "z",
+			"depth": 9,
+			"polygon": [
 				[
-					[
-						4,
-						34
-					],
-					[
-						70,
-						34
-					]
+					0,
+					205
+				],
+				[
+					262,
+					205
+				],
+				[
+					292,
+					222
+				],
+				[
+					352,
+					182
+				],
+				[
+					360,
+					112
+				],
+				[
+					352,
+					-118
+				],
+				[
+					314,
+					-124
+				],
+				[
+					132,
+					-36
+				],
+				[
+					0,
+					90
 				]
 			],
-			"label": "Generator plinth",
-			"explode": [
-				0,
-				0,
-				0
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							4,
+							325
+						],
+						[
+							263.05,
+							325
+						],
+						[
+							291.83,
+							341.31
+						],
+						[
+							348.24,
+							303.7
+						],
+						[
+							355.99,
+							235.84
+						],
+						[
+							348.12,
+							9.44
+						],
+						[
+							314.61,
+							4.15
+						],
+						[
+							134.31,
+							91.33
+						],
+						[
+							4,
+							215.71
+						],
+						[
+							4,
+							325
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						8,
+						321
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						264.11,
+						321
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						291.66,
+						336.61
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						344.47,
+						301.4
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						351.98,
+						235.68
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						344.23,
+						12.87
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						315.23,
+						8.29
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						136.61,
+						94.65
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						8,
+						217.42
+					],
+					"size": 1.6,
+					"depth": 0.3
+				}
 			]
 		},
 		{
-			"id": "pedestal",
-			"kind": "box",
+			"id": "yard-bed",
+			"kind": "prism",
 			"at": [
-				6,
-				16,
-				4
-			],
-			"size": [
-				62,
-				24,
-				6
-			],
-			"r": 0,
-			"label": "Pedestal",
-			"explode": [
 				0,
 				0,
-				0
-			]
-		},
-		{
-			"id": "generator",
-			"kind": "box",
-			"at": [
-				8,
-				18,
-				10
+				9
 			],
-			"size": [
-				52,
-				20,
-				20
-			],
-			"r": 9,
-			"marks": [
+			"axis": "z",
+			"depth": 1.5,
+			"polygon": [
 				[
-					[
-						14,
+					226,
+					152
+				],
+				[
+					338,
+					152
+				],
+				[
+					346,
+					112
+				],
+				[
+					340,
+					-100
+				],
+				[
+					314,
+					-106
+				],
+				[
+					226,
+					-64
+				]
+			],
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3,
+							255
+						],
+						[
+							109.54,
+							255
+						],
+						[
+							116.99,
+							217.75
+						],
+						[
+							111.07,
+							8.4
+						],
+						[
+							88.35,
+							3.16
+						],
+						[
+							3,
+							43.89
+						],
+						[
+							3,
+							255
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "ruler",
+			"kind": "plate",
+			"at": [
+				14,
+				192,
+				9
+			],
+			"size": [
+				150,
+				6,
+				0.6
+			],
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						2,
+						5.5
+					],
+					"to": [
+						148,
+						5.5
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						1.4,
+						3
+					],
+					"side": -1
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2,
+							5.5
+						],
+						[
+							148,
+							5.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "square",
+			"kind": "prism",
+			"at": [
+				168,
+				150,
+				9
+			],
+			"axis": "z",
+			"depth": 0.6,
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					5,
+					0
+				],
+				[
+					5,
+					40
+				],
+				[
+					30,
+					40
+				],
+				[
+					30,
+					45
+				],
+				[
+					0,
+					45
+				]
+			],
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						1,
 						2
 					],
-					[
-						14,
-						18
+					"to": [
+						1,
+						43
+					],
+					"step": 2.5,
+					"every": 4,
+					"lengths": [
+						1,
+						2
 					]
-				]
-			],
-			"label": "Generator",
-			"explode": [
-				0,
-				0,
-				0
+				}
 			]
 		},
 		{
-			"id": "exciter",
-			"kind": "box",
+			"id": "nameplate",
+			"kind": "plate",
 			"at": [
-				60,
-				22,
-				10
+				176,
+				190,
+				9
 			],
 			"size": [
-				8,
-				12,
-				12
+				26,
+				6,
+				0.8
 			],
-			"r": 4,
-			"label": "Exciter",
-			"explode": [
-				0,
-				0,
-				0
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1,
+					"r": 0.5
+				}
 			]
 		},
 		{
-			"id": "plinth-tx",
+			"id": "deck",
 			"kind": "box",
 			"at": [
-				86,
+				2,
+				104,
+				32
+			],
+			"size": [
+				220,
+				72,
+				8
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							4
+						],
+						[
+							218,
+							4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							60,
+							66
+						],
+						[
+							150,
+							66
+						],
+						[
+							150,
+							68
+						],
+						[
+							60,
+							68
+						],
+						[
+							60,
+							66
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pier-0",
+			"kind": "box",
+			"at": [
 				14,
-				0
+				158,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							20
+						],
+						[
+							12,
+							20
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pier-b-0",
+			"kind": "box",
+			"at": [
+				14,
+				108,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0
+		},
+		{
+			"id": "pier-1",
+			"kind": "box",
+			"at": [
+				62,
+				158,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							20
+						],
+						[
+							12,
+							20
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pier-b-1",
+			"kind": "box",
+			"at": [
+				62,
+				108,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0
+		},
+		{
+			"id": "pier-2",
+			"kind": "box",
+			"at": [
+				112,
+				158,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							20
+						],
+						[
+							12,
+							20
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pier-b-2",
+			"kind": "box",
+			"at": [
+				112,
+				108,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0
+		},
+		{
+			"id": "pier-3",
+			"kind": "box",
+			"at": [
+				162,
+				158,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							20
+						],
+						[
+							12,
+							20
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pier-b-3",
+			"kind": "box",
+			"at": [
+				162,
+				108,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0
+		},
+		{
+			"id": "pier-4",
+			"kind": "box",
+			"at": [
+				204,
+				158,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							20
+						],
+						[
+							12,
+							20
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pier-b-4",
+			"kind": "box",
+			"at": [
+				204,
+				108,
+				9
+			],
+			"size": [
+				14,
+				14,
+				23
+			],
+			"r": 0
+		},
+		{
+			"id": "exciter-base",
+			"kind": "box",
+			"at": [
+				4,
+				118,
+				40
+			],
+			"size": [
+				24,
+				44,
+				22
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						12,
+						11
+					],
+					"size": 7,
+					"depth": 0.6
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3,
+							19
+						],
+						[
+							41,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "exciter-hub",
+			"kind": "cylinder",
+			"at": [
+				22,
+				140,
+				70
+			],
+			"axis": "x",
+			"size": [
+				7,
+				7,
+				8
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 36
+				}
+			]
+		},
+		{
+			"id": "shaft",
+			"kind": "rod",
+			"from": [
+				18,
+				140,
+				70
+			],
+			"to": [
+				214,
+				140,
+				70
+			],
+			"radius": 3.4
+		},
+		{
+			"id": "coupling-l",
+			"kind": "lathe",
+			"at": [
+				30,
+				140,
+				70
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					8
+				],
+				[
+					1,
+					9
+				],
+				[
+					5,
+					9
+				],
+				[
+					6,
+					8
+				],
+				[
+					6,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3
+					]
+				},
+				{
+					"type": "ribs",
+					"count": 18,
+					"s0": 0.5,
+					"s1": 5.5
+				}
+			]
+		},
+		{
+			"id": "coupling-r",
+			"kind": "lathe",
+			"at": [
+				186,
+				140,
+				70
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					8
+				],
+				[
+					1,
+					9
+				],
+				[
+					5,
+					9
+				],
+				[
+					6,
+					8
+				],
+				[
+					6,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3
+					]
+				},
+				{
+					"type": "ribs",
+					"count": 18,
+					"s0": 0.5,
+					"s1": 5.5
+				}
+			]
+		},
+		{
+			"id": "coupling-r2",
+			"kind": "lathe",
+			"at": [
+				198,
+				140,
+				70
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					6
+				],
+				[
+					1,
+					7
+				],
+				[
+					9,
+					7
+				],
+				[
+					10,
+					6
+				],
+				[
+					10,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						5
+					]
+				},
+				{
+					"type": "ribs",
+					"count": 18,
+					"s0": 0.5,
+					"s1": 9.5
+				}
+			]
+		},
+		{
+			"id": "shaft-end",
+			"kind": "cylinder",
+			"at": [
+				208,
+				140,
+				70
+			],
+			"axis": "x",
+			"size": [
+				5,
+				5,
+				8
+			],
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 3.4,
+					"count": 8,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "brg-l-ped",
+			"kind": "box",
+			"at": [
+				39,
+				128,
+				40
+			],
+			"size": [
+				14,
+				24,
+				24
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							4
+						],
+						[
+							12,
+							4
+						]
+					]
+				},
+				{
+					"type": "bolts",
+					"face": "top",
+					"at": [
+						7,
+						12
+					],
+					"r": 9,
+					"count": 4,
+					"size": 0.5
+				}
+			]
+		},
+		{
+			"id": "brg-l-cap",
+			"kind": "lathe",
+			"at": [
+				40,
+				140,
+				70
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					8
+				],
+				[
+					1,
+					9
+				],
+				[
+					11,
+					9
+				],
+				[
+					12,
+					8
+				],
+				[
+					12,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3,
+						9
+					]
+				}
+			]
+		},
+		{
+			"id": "brg-r-ped",
+			"kind": "box",
+			"at": [
+				165,
+				128,
+				40
+			],
+			"size": [
+				14,
+				24,
+				24
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							4
+						],
+						[
+							12,
+							4
+						]
+					]
+				},
+				{
+					"type": "bolts",
+					"face": "top",
+					"at": [
+						7,
+						12
+					],
+					"r": 9,
+					"count": 4,
+					"size": 0.5
+				}
+			]
+		},
+		{
+			"id": "brg-r-cap",
+			"kind": "lathe",
+			"at": [
+				166,
+				140,
+				70
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					8
+				],
+				[
+					1,
+					9
+				],
+				[
+					11,
+					9
+				],
+				[
+					12,
+					8
+				],
+				[
+					12,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3,
+						9
+					]
+				}
+			]
+		},
+		{
+			"id": "casing",
+			"kind": "lathe",
+			"at": [
+				58,
+				140,
+				70
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					9
+				],
+				[
+					2,
+					20
+				],
+				[
+					6,
+					25
+				],
+				[
+					9,
+					27
+				],
+				[
+					9,
+					27
+				],
+				[
+					9,
+					30.5
+				],
+				[
+					10.2,
+					30.5
+				],
+				[
+					10.2,
+					27
+				],
+				[
+					22.47,
+					27
+				],
+				[
+					22.47,
+					30.5
+				],
+				[
+					24.87,
+					30.5
+				],
+				[
+					24.87,
+					27
+				],
+				[
+					37.13,
+					27
+				],
+				[
+					37.13,
+					30.5
+				],
+				[
+					39.53,
+					30.5
+				],
+				[
+					39.53,
+					27
+				],
+				[
+					51.8,
+					27
+				],
+				[
+					51.8,
+					30.5
+				],
+				[
+					54.2,
+					30.5
+				],
+				[
+					54.2,
+					27
+				],
+				[
+					66.47,
+					27
+				],
+				[
+					66.47,
+					30.5
+				],
+				[
+					68.87,
+					30.5
+				],
+				[
+					68.87,
+					27
+				],
+				[
+					81.13,
+					27
+				],
+				[
+					81.13,
+					30.5
+				],
+				[
+					83.53,
+					30.5
+				],
+				[
+					83.53,
+					27
+				],
+				[
+					95.8,
+					27
+				],
+				[
+					95.8,
+					30.5
+				],
+				[
+					98.2,
+					30.5
+				],
+				[
+					98.2,
+					27
+				],
+				[
+					100,
+					25
+				],
+				[
+					104,
+					20
+				],
+				[
+					106,
+					9
+				]
+			],
+			"cutaway": {
+				"from": -24,
+				"to": 118,
+				"wall": 2.4,
+				"hatch": 2.5
+			},
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 24,
+					"s0": 9,
+					"s1": 97
+				}
+			]
+		},
+		{
+			"id": "core",
+			"kind": "lathe",
+			"at": [
+				70,
+				140,
+				70
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					16
+				],
+				[
+					1,
+					17
+				],
+				[
+					81,
+					17
+				],
+				[
+					82,
+					16
+				],
+				[
+					82,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 96,
+					"s0": 1,
+					"s1": 81
+				},
+				{
+					"type": "bands",
+					"at": [
+						8,
+						16,
+						24,
+						32,
+						40,
+						48,
+						56,
+						64,
+						72
+					]
+				}
+			],
+			"variants": {
+				"hot": {
+					"tone": "glow"
+				}
+			}
+		},
+		{
+			"id": "winding-l",
+			"kind": "torus",
+			"at": [
+				68,
+				140,
+				70
+			],
+			"axis": "x",
+			"R": 15,
+			"r": 3,
+			"variants": {
+				"hot": {
+					"tone": "glow"
+				}
+			}
+		},
+		{
+			"id": "winding-r",
+			"kind": "torus",
+			"at": [
+				154,
+				140,
+				70
+			],
+			"axis": "x",
+			"R": 15,
+			"r": 3,
+			"variants": {
+				"hot": {
+					"tone": "glow"
+				}
+			}
+		},
+		{
+			"id": "rotor-l",
+			"kind": "cylinder",
+			"at": [
+				62,
+				140,
+				70
+			],
+			"axis": "x",
+			"size": [
+				9,
+				9,
+				6
+			],
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 6.5,
+					"count": 12,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "rotor-r",
+			"kind": "cylinder",
+			"at": [
+				154,
+				140,
+				70
+			],
+			"axis": "x",
+			"size": [
+				9,
+				9,
+				6
+			],
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 6.5,
+					"count": 12,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "saddle-l",
+			"kind": "box",
+			"at": [
+				66,
+				118,
+				40
+			],
+			"size": [
+				10,
+				44,
+				8
+			],
+			"r": 0
+		},
+		{
+			"id": "saddle-r",
+			"kind": "box",
+			"at": [
+				146,
+				118,
+				40
+			],
+			"size": [
+				10,
+				44,
+				8
+			],
+			"r": 0
+		},
+		{
+			"id": "skirt",
+			"kind": "box",
+			"at": [
+				66,
+				160,
+				40
+			],
+			"size": [
+				90,
+				2,
+				4
+			],
+			"r": 0
+		},
+		{
+			"id": "cooler",
+			"kind": "box",
+			"at": [
+				88,
+				116,
+				98
+			],
+			"size": [
+				26,
+				18,
+				14
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 2,
+					"r": 1
+				},
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 2,
+					"r": 1
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						5,
+						9
+					],
+					"grid": [
+						4,
+						1
+					],
+					"gap": 5,
+					"size": 0.6
+				}
+			]
+		},
+		{
+			"id": "cooler-pipe",
+			"kind": "tube",
+			"points": [
+				[
+					114,
+					122,
+					105
+				],
+				[
+					166,
+					122,
+					105
+				],
+				[
+					166,
+					122,
+					76
+				],
+				[
+					174,
+					122,
+					76
+				]
+			],
+			"radius": 1.1,
+			"fillet": 3
+		},
+		{
+			"id": "cooler-pipe-2",
+			"kind": "tube",
+			"points": [
+				[
+					114,
+					126,
+					101
+				],
+				[
+					169,
+					126,
+					101
+				],
+				[
+					169,
+					126,
+					76
+				],
+				[
+					174,
+					126,
+					76
+				]
+			],
+			"radius": 1.1,
+			"fillet": 3
+		},
+		{
+			"id": "cooler-pipe-3",
+			"kind": "tube",
+			"points": [
+				[
+					92,
+					122,
+					105
+				],
+				[
+					78,
+					122,
+					105
+				],
+				[
+					78,
+					122,
+					99
+				]
+			],
+			"radius": 1.1,
+			"fillet": 3
+		},
+		{
+			"id": "term-box",
+			"kind": "box",
+			"at": [
+				172,
+				114,
+				66
+			],
+			"size": [
+				12,
+				18,
+				24
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.6,
+					"r": 0.8
+				},
+				{
+					"type": "bolts",
+					"face": "+x",
+					"at": [
+						9,
+						12
+					],
+					"r": 6,
+					"count": 6,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "inst-l-a",
+			"kind": "tube",
+			"points": [
+				[
+					42,
+					153,
+					40
+				],
+				[
+					42,
+					153,
+					54
+				],
+				[
+					45,
+					153,
+					58
+				]
+			],
+			"radius": 0.8,
+			"fillet": 2
+		},
+		{
+			"id": "inst-l-b",
+			"kind": "tube",
+			"points": [
+				[
+					48,
+					153,
+					40
+				],
+				[
+					48,
+					153,
+					52
+				],
+				[
+					50,
+					153,
+					54
+				]
+			],
+			"radius": 0.8,
+			"fillet": 2
+		},
+		{
+			"id": "inst-l-g",
+			"kind": "cylinder",
+			"at": [
+				49,
+				153,
+				60
+			],
+			"axis": "y",
+			"size": [
+				2.2,
+				2.2,
+				1
+			],
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 2,
+					"count": 12,
+					"every": 3,
+					"lengths": [
+						0.4,
+						0.8
+					]
+				}
+			]
+		},
+		{
+			"id": "inst-r-a",
+			"kind": "tube",
+			"points": [
+				[
+					168,
+					153,
+					40
+				],
+				[
+					168,
+					153,
+					54
+				],
+				[
+					171,
+					153,
+					58
+				]
+			],
+			"radius": 0.8,
+			"fillet": 2
+		},
+		{
+			"id": "inst-r-b",
+			"kind": "tube",
+			"points": [
+				[
+					174,
+					153,
+					40
+				],
+				[
+					174,
+					153,
+					52
+				],
+				[
+					176,
+					153,
+					54
+				]
+			],
+			"radius": 0.8,
+			"fillet": 2
+		},
+		{
+			"id": "inst-r-g",
+			"kind": "cylinder",
+			"at": [
+				175,
+				153,
+				60
+			],
+			"axis": "y",
+			"size": [
+				2.2,
+				2.2,
+				1
+			],
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 2,
+					"count": 12,
+					"every": 3,
+					"lengths": [
+						0.4,
+						0.8
+					]
+				}
+			]
+		},
+		{
+			"id": "landing",
+			"kind": "box",
+			"at": [
+				196,
+				168,
+				9
 			],
 			"size": [
 				36,
-				44,
-				4
+				28,
+				19
 			],
 			"r": 0,
-			"label": "Transformer plinth",
-			"explode": [
-				0,
-				0,
-				0
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							15
+						],
+						[
+							34,
+							15
+						]
+					]
+				}
 			]
+		},
+		{
+			"id": "landing-step",
+			"kind": "box",
+			"at": [
+				222,
+				150,
+				28
+			],
+			"size": [
+				10,
+				18,
+				12
+			],
+			"r": 0
+		},
+		{
+			"id": "rail-post-0",
+			"kind": "rod",
+			"from": [
+				198,
+				170,
+				28
+			],
+			"to": [
+				198,
+				170,
+				42
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "rail-post-1",
+			"kind": "rod",
+			"from": [
+				198,
+				194,
+				28
+			],
+			"to": [
+				198,
+				194,
+				42
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "rail-post-2",
+			"kind": "rod",
+			"from": [
+				230,
+				194,
+				28
+			],
+			"to": [
+				230,
+				194,
+				42
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "rail-post-3",
+			"kind": "rod",
+			"from": [
+				230,
+				170,
+				28
+			],
+			"to": [
+				230,
+				170,
+				42
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "rail-post-4",
+			"kind": "rod",
+			"from": [
+				230,
+				152,
+				28
+			],
+			"to": [
+				230,
+				152,
+				42
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "rail-top",
+			"kind": "tube",
+			"points": [
+				[
+					198,
+					170,
+					42
+				],
+				[
+					198,
+					194,
+					42
+				],
+				[
+					230,
+					194,
+					42
+				],
+				[
+					230,
+					170,
+					42
+				],
+				[
+					230,
+					152,
+					42
+				]
+			],
+			"radius": 0.45,
+			"fillet": 1
+		},
+		{
+			"id": "rail-mid",
+			"kind": "tube",
+			"points": [
+				[
+					198,
+					170,
+					35
+				],
+				[
+					198,
+					194,
+					35
+				],
+				[
+					230,
+					194,
+					35
+				],
+				[
+					230,
+					170,
+					35
+				],
+				[
+					230,
+					152,
+					35
+				]
+			],
+			"radius": 0.35,
+			"fillet": 1
+		},
+		{
+			"id": "stringer-a",
+			"kind": "rod",
+			"from": [
+				187,
+				172,
+				28
+			],
+			"to": [
+				187,
+				212,
+				9
+			],
+			"radius": 0.55
+		},
+		{
+			"id": "hand-a",
+			"kind": "tube",
+			"points": [
+				[
+					187,
+					166,
+					42
+				],
+				[
+					187,
+					172,
+					41
+				],
+				[
+					187,
+					212,
+					22
+				],
+				[
+					187,
+					212,
+					11
+				]
+			],
+			"radius": 0.4,
+			"fillet": 1
+		},
+		{
+			"id": "stringer-b",
+			"kind": "rod",
+			"from": [
+				195,
+				172,
+				28
+			],
+			"to": [
+				195,
+				212,
+				9
+			],
+			"radius": 0.55
+		},
+		{
+			"id": "hand-b",
+			"kind": "tube",
+			"points": [
+				[
+					195,
+					166,
+					42
+				],
+				[
+					195,
+					172,
+					41
+				],
+				[
+					195,
+					212,
+					22
+				],
+				[
+					195,
+					212,
+					11
+				]
+			],
+			"radius": 0.4,
+			"fillet": 1
+		},
+		{
+			"id": "tread-1",
+			"kind": "box",
+			"at": [
+				187,
+				174.84,
+				25.87
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "tread-2",
+			"kind": "box",
+			"at": [
+				187,
+				178.47,
+				24.15
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "tread-3",
+			"kind": "box",
+			"at": [
+				187,
+				182.11,
+				22.42
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "tread-4",
+			"kind": "box",
+			"at": [
+				187,
+				185.75,
+				20.69
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "tread-5",
+			"kind": "box",
+			"at": [
+				187,
+				189.38,
+				18.96
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "tread-6",
+			"kind": "box",
+			"at": [
+				187,
+				193.02,
+				17.24
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "tread-7",
+			"kind": "box",
+			"at": [
+				187,
+				196.65,
+				15.51
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "tread-8",
+			"kind": "box",
+			"at": [
+				187,
+				200.29,
+				13.78
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "tread-9",
+			"kind": "box",
+			"at": [
+				187,
+				203.93,
+				12.05
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "tread-10",
+			"kind": "box",
+			"at": [
+				187,
+				207.56,
+				10.33
+			],
+			"size": [
+				8,
+				1.6,
+				0.6
+			],
+			"r": 0
+		},
+		{
+			"id": "landing-box",
+			"kind": "box",
+			"at": [
+				220,
+				150,
+				36
+			],
+			"size": [
+				10,
+				6,
+				14
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						3,
+						10
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						6,
+						10
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 2,
+					"size": 0.5
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							4
+						],
+						[
+							8,
+							4
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "landing-box-leg",
+			"kind": "rod",
+			"from": [
+				225,
+				153,
+				28
+			],
+			"to": [
+				225,
+				153,
+				36
+			],
+			"radius": 0.8
+		},
+		{
+			"id": "bus-0",
+			"kind": "tube",
+			"radius": 4.2,
+			"fillet": 7,
+			"points": [
+				[
+					232,
+					150,
+					16
+				],
+				[
+					254,
+					150,
+					16
+				],
+				[
+					254,
+					129,
+					16
+				]
+			]
+		},
+		{
+			"id": "bus-flange-0",
+			"kind": "cylinder",
+			"at": [
+				240,
+				150,
+				16
+			],
+			"axis": "x",
+			"size": [
+				5.4,
+				5.4,
+				1.6
+			]
+		},
+		{
+			"id": "bus-box-0",
+			"kind": "box",
+			"at": [
+				249,
+				128,
+				10
+			],
+			"size": [
+				10,
+				4,
+				12
+			],
+			"r": 0.6
+		},
+		{
+			"id": "bus-1",
+			"kind": "tube",
+			"radius": 4.2,
+			"fillet": 7,
+			"points": [
+				[
+					232,
+					158,
+					22
+				],
+				[
+					264,
+					158,
+					22
+				],
+				[
+					264,
+					129,
+					22
+				]
+			]
+		},
+		{
+			"id": "bus-flange-1",
+			"kind": "cylinder",
+			"at": [
+				243,
+				158,
+				22
+			],
+			"axis": "x",
+			"size": [
+				5.4,
+				5.4,
+				1.6
+			]
+		},
+		{
+			"id": "bus-box-1",
+			"kind": "box",
+			"at": [
+				259,
+				128,
+				16
+			],
+			"size": [
+				10,
+				4,
+				12
+			],
+			"r": 0.6
+		},
+		{
+			"id": "bus-2",
+			"kind": "tube",
+			"radius": 4.2,
+			"fillet": 7,
+			"points": [
+				[
+					232,
+					166,
+					16
+				],
+				[
+					274,
+					166,
+					16
+				],
+				[
+					274,
+					129,
+					16
+				]
+			]
+		},
+		{
+			"id": "bus-flange-2",
+			"kind": "cylinder",
+			"at": [
+				246,
+				166,
+				16
+			],
+			"axis": "x",
+			"size": [
+				5.4,
+				5.4,
+				1.6
+			]
+		},
+		{
+			"id": "bus-box-2",
+			"kind": "box",
+			"at": [
+				269,
+				128,
+				10
+			],
+			"size": [
+				10,
+				4,
+				12
+			],
+			"r": 0.6
+		},
+		{
+			"id": "gauge-base",
+			"kind": "box",
+			"at": [
+				236,
+				178,
+				9
+			],
+			"size": [
+				34,
+				12,
+				10
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						4,
+						7
+					],
+					"grid": [
+						6,
+						1
+					],
+					"gap": 5,
+					"size": 0.4
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							3
+						],
+						[
+							32,
+							3
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gauge-board",
+			"kind": "box",
+			"at": [
+				238,
+				180,
+				19
+			],
+			"size": [
+				30,
+				4,
+				18
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						15,
+						11
+					],
+					"size": 9,
+					"depth": 0.4
+				},
+				{
+					"type": "radialTicks",
+					"face": "+y",
+					"at": [
+						15,
+						11
+					],
+					"r": 4.2,
+					"count": 20,
+					"every": 5,
+					"lengths": [
+						0.5,
+						1
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							15,
+							11
+						],
+						[
+							15,
+							15.5
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						5,
+						13
+					],
+					"size": 5,
+					"depth": 0.3
+				},
+				{
+					"type": "radialTicks",
+					"face": "+y",
+					"at": [
+						5,
+						13
+					],
+					"r": 2.3,
+					"count": 12,
+					"every": 3,
+					"lengths": [
+						0.3,
+						0.6
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							5,
+							13
+						],
+						[
+							6.6,
+							14
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						25,
+						13
+					],
+					"size": 5,
+					"depth": 0.3
+				},
+				{
+					"type": "radialTicks",
+					"face": "+y",
+					"at": [
+						25,
+						13
+					],
+					"r": 2.3,
+					"count": 12,
+					"every": 3,
+					"lengths": [
+						0.3,
+						0.6
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							25,
+							13
+						],
+						[
+							26.6,
+							14
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						6,
+						5
+					],
+					"size": 5,
+					"depth": 0.3
+				},
+				{
+					"type": "radialTicks",
+					"face": "+y",
+					"at": [
+						6,
+						5
+					],
+					"r": 2.3,
+					"count": 12,
+					"every": 3,
+					"lengths": [
+						0.3,
+						0.6
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							6,
+							5
+						],
+						[
+							7.6,
+							6
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						24,
+						5
+					],
+					"size": 5,
+					"depth": 0.3
+				},
+				{
+					"type": "radialTicks",
+					"face": "+y",
+					"at": [
+						24,
+						5
+					],
+					"r": 2.3,
+					"count": 12,
+					"every": 3,
+					"lengths": [
+						0.3,
+						0.6
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							24,
+							5
+						],
+						[
+							25.6,
+							6
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "toggle-0",
+			"kind": "pin",
+			"at": [
+				244,
+				186,
+				19
+			],
+			"axis": [
+				0,
+				0.5,
+				1
+			],
+			"length": 2.5,
+			"r": 0.4,
+			"head": 0.9
+		},
+		{
+			"id": "toggle-1",
+			"kind": "pin",
+			"at": [
+				253,
+				186,
+				19
+			],
+			"axis": [
+				0,
+				0.5,
+				1
+			],
+			"length": 2.5,
+			"r": 0.4,
+			"head": 0.9
+		},
+		{
+			"id": "toggle-2",
+			"kind": "pin",
+			"at": [
+				262,
+				186,
+				19
+			],
+			"axis": [
+				0,
+				0.5,
+				1
+			],
+			"length": 2.5,
+			"r": 0.4,
+			"head": 0.9
+		},
+		{
+			"id": "gauge-cap",
+			"kind": "cylinder",
+			"at": [
+				253,
+				182,
+				37
+			],
+			"size": [
+				1,
+				1,
+				2
+			]
+		},
+		{
+			"id": "cabinet-0",
+			"kind": "box",
+			"at": [
+				150,
+				-6,
+				9
+			],
+			"size": [
+				16,
+				14.4,
+				40
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.2,
+					"r": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						7.2,
+						30
+					],
+					"size": [
+						7,
+						4
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3,
+							22
+						],
+						[
+							11,
+							22
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3,
+							20
+						],
+						[
+							11,
+							20
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							12,
+							14
+						],
+						[
+							12,
+							18
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "cabinet-1",
+			"kind": "box",
+			"at": [
+				150,
+				9,
+				9
+			],
+			"size": [
+				16,
+				14.4,
+				40
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.2,
+					"r": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						7.2,
+						30
+					],
+					"size": [
+						7,
+						4
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3,
+							22
+						],
+						[
+							11,
+							22
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3,
+							20
+						],
+						[
+							11,
+							20
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							12,
+							14
+						],
+						[
+							12,
+							18
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "cabinet-2",
+			"kind": "box",
+			"at": [
+				150,
+				24,
+				9
+			],
+			"size": [
+				16,
+				14.4,
+				40
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.2,
+					"r": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						7.2,
+						30
+					],
+					"size": [
+						7,
+						4
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3,
+							22
+						],
+						[
+							11,
+							22
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3,
+							20
+						],
+						[
+							11,
+							20
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							12,
+							14
+						],
+						[
+							12,
+							18
+						]
+					]
+				},
+				{
+					"type": "text",
+					"face": "+x",
+					"at": [
+						7.2,
+						8
+					],
+					"text": "0",
+					"size": 4,
+					"anchor": "middle"
+				}
+			]
+		},
+		{
+			"id": "cab-top",
+			"kind": "box",
+			"at": [
+				154,
+				4,
+				49
+			],
+			"size": [
+				10,
+				14,
+				8
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1,
+					"r": 0.4
+				}
+			]
+		},
+		{
+			"id": "cab-knob",
+			"kind": "cylinder",
+			"at": [
+				159,
+				26,
+				49
+			],
+			"size": [
+				2.6,
+				2.6,
+				2
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				}
+			]
+		},
+		{
+			"id": "cab-conduit",
+			"kind": "tube",
+			"points": [
+				[
+					160,
+					-2,
+					49
+				],
+				[
+					160,
+					-2,
+					62
+				],
+				[
+					168,
+					-2,
+					62
+				],
+				[
+					168,
+					30,
+					62
+				],
+				[
+					176,
+					30,
+					62
+				]
+			],
+			"radius": 0.7,
+			"fillet": 3
 		},
 		{
 			"id": "transformer",
 			"kind": "box",
 			"at": [
-				86,
-				30,
-				4
+				248,
+				66,
+				10.5
 			],
 			"size": [
-				26,
-				28,
-				26
+				78,
+				62,
+				53.5
 			],
-			"r": 2,
-			"marks": [
-				[
-					[
-						6,
+			"r": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 1
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
 						2
 					],
-					[
-						6,
-						26
+					"grid": [
+						26,
+						1
+					],
+					"gap": 2.9,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
+						60
+					],
+					"grid": [
+						26,
+						1
+					],
+					"gap": 2.9,
+					"size": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							6,
+							2
+						],
+						[
+							6,
+							50
+						]
 					]
-				]
-			],
-			"label": "Transformer",
-			"explode": [
-				0,
-				0,
-				0
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							50,
+							2
+						],
+						[
+							50,
+							50
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							50
+						],
+						[
+							76,
+							50
+						]
+					]
+				}
 			]
 		},
 		{
-			"id": "bushing",
-			"kind": "cylinder",
+			"id": "tx-skid",
+			"kind": "box",
 			"at": [
-				99,
-				44,
+				246,
+				64,
+				9
+			],
+			"size": [
+				82,
+				66,
+				1.5
+			],
+			"r": 0
+		},
+		{
+			"id": "radiator-0",
+			"kind": "box",
+			"at": [
+				266,
+				128,
+				14
+			],
+			"size": [
+				7,
+				12,
+				40
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2.3,
+							2
+						],
+						[
+							2.3,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.7,
+							2
+						],
+						[
+							4.7,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							36
+						],
+						[
+							10,
+							36
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "rad-foot-0",
+			"kind": "rod",
+			"from": [
+				269.5,
+				136,
+				14
+			],
+			"to": [
+				269.5,
+				136,
+				10.5
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "radiator-1",
+			"kind": "box",
+			"at": [
+				275,
+				128,
+				14
+			],
+			"size": [
+				7,
+				12,
+				40
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2.3,
+							2
+						],
+						[
+							2.3,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.7,
+							2
+						],
+						[
+							4.7,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							36
+						],
+						[
+							10,
+							36
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "rad-foot-1",
+			"kind": "rod",
+			"from": [
+				278.5,
+				136,
+				14
+			],
+			"to": [
+				278.5,
+				136,
+				10.5
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "radiator-2",
+			"kind": "box",
+			"at": [
+				284,
+				128,
+				14
+			],
+			"size": [
+				7,
+				12,
+				40
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2.3,
+							2
+						],
+						[
+							2.3,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.7,
+							2
+						],
+						[
+							4.7,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							36
+						],
+						[
+							10,
+							36
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "rad-foot-2",
+			"kind": "rod",
+			"from": [
+				287.5,
+				136,
+				14
+			],
+			"to": [
+				287.5,
+				136,
+				10.5
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "radiator-3",
+			"kind": "box",
+			"at": [
+				293,
+				128,
+				14
+			],
+			"size": [
+				7,
+				12,
+				40
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2.3,
+							2
+						],
+						[
+							2.3,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.7,
+							2
+						],
+						[
+							4.7,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							36
+						],
+						[
+							10,
+							36
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "rad-foot-3",
+			"kind": "rod",
+			"from": [
+				296.5,
+				136,
+				14
+			],
+			"to": [
+				296.5,
+				136,
+				10.5
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "radiator-4",
+			"kind": "box",
+			"at": [
+				302,
+				128,
+				14
+			],
+			"size": [
+				7,
+				12,
+				40
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2.3,
+							2
+						],
+						[
+							2.3,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.7,
+							2
+						],
+						[
+							4.7,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							36
+						],
+						[
+							10,
+							36
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "rad-foot-4",
+			"kind": "rod",
+			"from": [
+				305.5,
+				136,
+				14
+			],
+			"to": [
+				305.5,
+				136,
+				10.5
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "rad-header",
+			"kind": "rod",
+			"from": [
+				264,
+				131,
+				56
+			],
+			"to": [
+				312,
+				131,
+				56
+			],
+			"radius": 1.4
+		},
+		{
+			"id": "tx-jbox",
+			"kind": "box",
+			"at": [
+				326,
+				104,
+				16
+			],
+			"size": [
+				4,
+				10,
+				14
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1,
+					"r": 0.4
+				}
+			]
+		},
+		{
+			"id": "tx-conduit",
+			"kind": "rod",
+			"from": [
+				328,
+				109,
 				30
 			],
-			"size": [
-				2.5,
-				2.5,
-				8
+			"to": [
+				328,
+				109,
+				54
 			],
-			"label": "Bushing",
-			"explode": [
-				0,
-				0,
-				0
-			]
+			"radius": 0.6
 		},
 		{
-			"id": "breaker",
-			"kind": "cylinder",
-			"at": [
-				134,
-				66,
-				0
-			],
-			"size": [
-				4,
-				4,
-				24
-			],
-			"label": "Breaker",
-			"explode": [
-				0,
-				0,
-				0
-			]
-		},
-		{
-			"id": "leg-a",
+			"id": "tx-gaugebox",
 			"kind": "box",
 			"at": [
-				148,
-				4,
-				0
-			],
-			"size": [
-				4,
-				4,
-				62
-			],
-			"r": 0,
-			"label": "Gantry leg",
-			"explode": [
-				0,
-				0,
-				0
-			]
-		},
-		{
-			"id": "leg-b",
-			"kind": "box",
-			"at": [
-				148,
-				54,
-				0
-			],
-			"size": [
-				4,
-				4,
-				62
-			],
-			"r": 0,
-			"label": "Gantry leg",
-			"explode": [
-				0,
-				0,
-				0
-			]
-		},
-		{
-			"id": "beam",
-			"kind": "box",
-			"at": [
-				148.5,
-				8,
-				55
+				326,
+				108,
+				52
 			],
 			"size": [
 				3,
-				46,
+				4,
 				4
 			],
-			"r": 0,
-			"label": "Gantry beam",
-			"explode": [
-				0,
-				0,
-				0
+			"r": 0.5
+		},
+		{
+			"id": "conservator",
+			"kind": "lathe",
+			"at": [
+				262,
+				86,
+				80
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					6
+				],
+				[
+					1.2,
+					8.5
+				],
+				[
+					3,
+					9.5
+				],
+				[
+					50,
+					9.5
+				],
+				[
+					51.8,
+					8.5
+				],
+				[
+					53,
+					6
+				],
+				[
+					53,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						26.5
+					]
+				}
 			]
 		},
 		{
-			"id": "post-a",
+			"id": "cons-leg-a",
+			"kind": "rod",
+			"from": [
+				270,
+				86,
+				64
+			],
+			"to": [
+				270,
+				86,
+				72
+			],
+			"radius": 1.3
+		},
+		{
+			"id": "cons-leg-b",
+			"kind": "rod",
+			"from": [
+				306,
+				86,
+				64
+			],
+			"to": [
+				306,
+				86,
+				72
+			],
+			"radius": 1.3
+		},
+		{
+			"id": "cons-pipe",
+			"kind": "tube",
+			"points": [
+				[
+					288,
+					86,
+					71
+				],
+				[
+					288,
+					92,
+					68
+				],
+				[
+					288,
+					92,
+					64
+				]
+			],
+			"radius": 0.7,
+			"fillet": 2
+		},
+		{
+			"id": "breather",
 			"kind": "cylinder",
 			"at": [
-				164,
-				16,
-				0
+				296,
+				112,
+				64
 			],
 			"size": [
-				2.5,
-				2.5,
-				34
+				4.5,
+				4.5,
+				4
 			],
-			"label": "Insulator",
-			"explode": [
-				0,
-				0,
-				0
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 28
+				}
 			]
 		},
 		{
-			"id": "post-b",
-			"kind": "cylinder",
-			"at": [
-				164,
-				36,
-				0
-			],
-			"size": [
-				2.5,
-				2.5,
-				34
-			],
-			"label": "Insulator",
-			"explode": [
-				0,
-				0,
-				0
-			]
-		},
-		{
-			"id": "blade",
+			"id": "tx-relay",
 			"kind": "box",
 			"at": [
-				163,
-				14.5,
-				34
+				272,
+				100,
+				64
 			],
 			"size": [
-				2,
-				23,
-				3
+				3,
+				3,
+				6
 			],
-			"r": 1,
-			"explode": [
-				0,
-				0,
-				10
-			],
-			"label": "Disconnector"
-		}
-	],
-	"focal": "blade",
-	"labels": [
-		{
-			"text": "Generator 3,000 rpm",
-			"target": "generator",
-			"side": "left"
+			"r": 0.4
 		},
 		{
-			"text": "Transformer 22 to 400 kV",
-			"target": "transformer",
-			"side": "left",
-			"anchor": [
-				88,
-				58,
+			"id": "bushing-0",
+			"kind": "lathe",
+			"at": [
+				262,
+				78,
+				64
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					6
+				],
+				[
+					3,
+					6
+				],
+				[
+					3.4,
+					4.2
+				],
+				[
+					5,
+					4.2
+				],
+				[
+					5.4,
+					3
+				],
+				[
+					6.2,
+					3.0
+				],
+				[
+					6.65,
+					4.4
+				],
+				[
+					7.7,
+					3.0
+				],
+				[
+					8.15,
+					4.4
+				],
+				[
+					9.2,
+					3.0
+				],
+				[
+					9.65,
+					4.4
+				],
+				[
+					10.7,
+					3.0
+				],
+				[
+					11.15,
+					4.4
+				],
+				[
+					12.2,
+					3.0
+				],
+				[
+					12.65,
+					4.4
+				],
+				[
+					13.7,
+					3.0
+				],
+				[
+					14.15,
+					4.4
+				],
+				[
+					15.2,
+					3.0
+				],
+				[
+					15.65,
+					4.4
+				],
+				[
+					16.7,
+					3.0
+				],
+				[
+					17.15,
+					4.4
+				],
+				[
+					18.2,
+					3.0
+				],
+				[
+					18.65,
+					4.4
+				],
+				[
+					19.7,
+					3.0
+				],
+				[
+					20.15,
+					4.4
+				],
+				[
+					21.2,
+					3.0
+				],
+				[
+					21.65,
+					4.4
+				],
+				[
+					22.7,
+					3.0
+				],
+				[
+					23.15,
+					4.4
+				],
+				[
+					24.2,
+					3.0
+				],
+				[
+					24.65,
+					4.4
+				],
+				[
+					25.7,
+					3.0
+				],
+				[
+					26.15,
+					4.4
+				],
+				[
+					27.2,
+					3.0
+				],
+				[
+					27.65,
+					4.4
+				],
+				[
+					28.7,
+					3.0
+				],
+				[
+					29.15,
+					4.4
+				],
+				[
+					30.2,
+					3.0
+				],
+				[
+					30.65,
+					4.4
+				],
+				[
+					31.7,
+					3.0
+				],
+				[
+					32.15,
+					4.4
+				],
+				[
+					33.2,
+					3.0
+				],
+				[
+					33.65,
+					4.4
+				],
+				[
+					34.7,
+					3.0
+				],
+				[
+					35.15,
+					4.4
+				],
+				[
+					36.2,
+					3.0
+				],
+				[
+					36.65,
+					4.4
+				],
+				[
+					37.7,
+					3.0
+				],
+				[
+					38.15,
+					4.4
+				],
+				[
+					39.2,
+					3.0
+				],
+				[
+					39.65,
+					4.4
+				],
+				[
+					40.7,
+					3.0
+				],
+				[
+					41.15,
+					4.4
+				],
+				[
+					42,
+					3
+				],
+				[
+					42,
+					3.8
+				],
+				[
+					44,
+					3.8
+				],
+				[
+					45,
+					2.4
+				],
+				[
+					46,
+					0.8
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						6.65,
+						8.15,
+						9.65,
+						11.15,
+						12.65,
+						14.15,
+						15.65,
+						17.15,
+						18.65,
+						20.15,
+						21.65,
+						23.15,
+						24.65,
+						26.15,
+						27.65,
+						29.15,
+						30.65,
+						32.15,
+						33.65,
+						35.15,
+						36.65,
+						38.15,
+						39.65,
+						41.15
+					]
+				}
+			]
+		},
+		{
+			"id": "bushing-1",
+			"kind": "lathe",
+			"at": [
+				288,
+				78,
+				64
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					6
+				],
+				[
+					3,
+					6
+				],
+				[
+					3.4,
+					4.2
+				],
+				[
+					5,
+					4.2
+				],
+				[
+					5.4,
+					3
+				],
+				[
+					6.2,
+					3.0
+				],
+				[
+					6.65,
+					4.4
+				],
+				[
+					7.7,
+					3.0
+				],
+				[
+					8.15,
+					4.4
+				],
+				[
+					9.2,
+					3.0
+				],
+				[
+					9.65,
+					4.4
+				],
+				[
+					10.7,
+					3.0
+				],
+				[
+					11.15,
+					4.4
+				],
+				[
+					12.2,
+					3.0
+				],
+				[
+					12.65,
+					4.4
+				],
+				[
+					13.7,
+					3.0
+				],
+				[
+					14.15,
+					4.4
+				],
+				[
+					15.2,
+					3.0
+				],
+				[
+					15.65,
+					4.4
+				],
+				[
+					16.7,
+					3.0
+				],
+				[
+					17.15,
+					4.4
+				],
+				[
+					18.2,
+					3.0
+				],
+				[
+					18.65,
+					4.4
+				],
+				[
+					19.7,
+					3.0
+				],
+				[
+					20.15,
+					4.4
+				],
+				[
+					21.2,
+					3.0
+				],
+				[
+					21.65,
+					4.4
+				],
+				[
+					22.7,
+					3.0
+				],
+				[
+					23.15,
+					4.4
+				],
+				[
+					24.2,
+					3.0
+				],
+				[
+					24.65,
+					4.4
+				],
+				[
+					25.7,
+					3.0
+				],
+				[
+					26.15,
+					4.4
+				],
+				[
+					27.2,
+					3.0
+				],
+				[
+					27.65,
+					4.4
+				],
+				[
+					28.7,
+					3.0
+				],
+				[
+					29.15,
+					4.4
+				],
+				[
+					30.2,
+					3.0
+				],
+				[
+					30.65,
+					4.4
+				],
+				[
+					31.7,
+					3.0
+				],
+				[
+					32.15,
+					4.4
+				],
+				[
+					33.2,
+					3.0
+				],
+				[
+					33.65,
+					4.4
+				],
+				[
+					34.7,
+					3.0
+				],
+				[
+					35.15,
+					4.4
+				],
+				[
+					36.2,
+					3.0
+				],
+				[
+					36.65,
+					4.4
+				],
+				[
+					37.7,
+					3.0
+				],
+				[
+					38.15,
+					4.4
+				],
+				[
+					39.2,
+					3.0
+				],
+				[
+					39.65,
+					4.4
+				],
+				[
+					40.7,
+					3.0
+				],
+				[
+					41.15,
+					4.4
+				],
+				[
+					42,
+					3
+				],
+				[
+					42,
+					3.8
+				],
+				[
+					44,
+					3.8
+				],
+				[
+					45,
+					2.4
+				],
+				[
+					46,
+					0.8
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						6.65,
+						8.15,
+						9.65,
+						11.15,
+						12.65,
+						14.15,
+						15.65,
+						17.15,
+						18.65,
+						20.15,
+						21.65,
+						23.15,
+						24.65,
+						26.15,
+						27.65,
+						29.15,
+						30.65,
+						32.15,
+						33.65,
+						35.15,
+						36.65,
+						38.15,
+						39.65,
+						41.15
+					]
+				}
+			]
+		},
+		{
+			"id": "bushing-2",
+			"kind": "lathe",
+			"at": [
+				314,
+				78,
+				64
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					6
+				],
+				[
+					3,
+					6
+				],
+				[
+					3.4,
+					4.2
+				],
+				[
+					5,
+					4.2
+				],
+				[
+					5.4,
+					3
+				],
+				[
+					6.2,
+					3.0
+				],
+				[
+					6.65,
+					4.4
+				],
+				[
+					7.7,
+					3.0
+				],
+				[
+					8.15,
+					4.4
+				],
+				[
+					9.2,
+					3.0
+				],
+				[
+					9.65,
+					4.4
+				],
+				[
+					10.7,
+					3.0
+				],
+				[
+					11.15,
+					4.4
+				],
+				[
+					12.2,
+					3.0
+				],
+				[
+					12.65,
+					4.4
+				],
+				[
+					13.7,
+					3.0
+				],
+				[
+					14.15,
+					4.4
+				],
+				[
+					15.2,
+					3.0
+				],
+				[
+					15.65,
+					4.4
+				],
+				[
+					16.7,
+					3.0
+				],
+				[
+					17.15,
+					4.4
+				],
+				[
+					18.2,
+					3.0
+				],
+				[
+					18.65,
+					4.4
+				],
+				[
+					19.7,
+					3.0
+				],
+				[
+					20.15,
+					4.4
+				],
+				[
+					21.2,
+					3.0
+				],
+				[
+					21.65,
+					4.4
+				],
+				[
+					22.7,
+					3.0
+				],
+				[
+					23.15,
+					4.4
+				],
+				[
+					24.2,
+					3.0
+				],
+				[
+					24.65,
+					4.4
+				],
+				[
+					25.7,
+					3.0
+				],
+				[
+					26.15,
+					4.4
+				],
+				[
+					27.2,
+					3.0
+				],
+				[
+					27.65,
+					4.4
+				],
+				[
+					28.7,
+					3.0
+				],
+				[
+					29.15,
+					4.4
+				],
+				[
+					30.2,
+					3.0
+				],
+				[
+					30.65,
+					4.4
+				],
+				[
+					31.7,
+					3.0
+				],
+				[
+					32.15,
+					4.4
+				],
+				[
+					33.2,
+					3.0
+				],
+				[
+					33.65,
+					4.4
+				],
+				[
+					34.7,
+					3.0
+				],
+				[
+					35.15,
+					4.4
+				],
+				[
+					36.2,
+					3.0
+				],
+				[
+					36.65,
+					4.4
+				],
+				[
+					37.7,
+					3.0
+				],
+				[
+					38.15,
+					4.4
+				],
+				[
+					39.2,
+					3.0
+				],
+				[
+					39.65,
+					4.4
+				],
+				[
+					40.7,
+					3.0
+				],
+				[
+					41.15,
+					4.4
+				],
+				[
+					42,
+					3
+				],
+				[
+					42,
+					3.8
+				],
+				[
+					44,
+					3.8
+				],
+				[
+					45,
+					2.4
+				],
+				[
+					46,
+					0.8
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						6.65,
+						8.15,
+						9.65,
+						11.15,
+						12.65,
+						14.15,
+						15.65,
+						17.15,
+						18.65,
+						20.15,
+						21.65,
+						23.15,
+						24.65,
+						26.15,
+						27.65,
+						29.15,
+						30.65,
+						32.15,
+						33.65,
+						35.15,
+						36.65,
+						38.15,
+						39.65,
+						41.15
+					]
+				}
+			]
+		},
+		{
+			"id": "lv-0",
+			"kind": "cylinder",
+			"at": [
+				262,
+				118,
+				64
+			],
+			"size": [
+				1.6,
+				1.6,
 				6
 			]
 		},
 		{
-			"text": "Breaker",
-			"target": "breaker",
-			"side": "left",
-			"anchor": [
-				131.2,
-				68.8,
-				4
+			"id": "lv-1",
+			"kind": "cylinder",
+			"at": [
+				269,
+				118,
+				64
+			],
+			"size": [
+				1.6,
+				1.6,
+				6
 			]
 		},
 		{
-			"text": "Gantry",
-			"target": "leg-a",
-			"side": "right",
-			"anchor": [
-				152,
+			"id": "lv-2",
+			"kind": "cylinder",
+			"at": [
+				276,
+				118,
+				64
+			],
+			"size": [
+				1.6,
+				1.6,
+				6
+			]
+		},
+		{
+			"id": "dpost-a-0-pad",
+			"kind": "box",
+			"at": [
+				257,
+				-63,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "dpost-a-0-stand",
+			"kind": "box",
+			"at": [
+				259.4,
+				-60.6,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "dpost-b-0-pad",
+			"kind": "box",
+			"at": [
+				257,
+				-43,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "dpost-b-0-stand",
+			"kind": "box",
+			"at": [
+				259.4,
+				-40.6,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "dins-a-0",
+			"kind": "lathe",
+			"at": [
+				262,
+				-58,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.65,
+					2.3
+				],
+				[
+					5.1,
+					3.7
+				],
+				[
+					5.9,
+					2.3
+				],
+				[
+					6.35,
+					3.7
+				],
+				[
+					7.15,
+					2.3
+				],
+				[
+					7.6,
+					3.7
+				],
+				[
+					8.4,
+					2.3
+				],
+				[
+					8.85,
+					3.7
+				],
+				[
+					9.65,
+					2.3
+				],
+				[
+					10.1,
+					3.7
+				],
+				[
+					10.9,
+					2.3
+				],
+				[
+					11.35,
+					3.7
+				],
+				[
+					12.15,
+					2.3
+				],
+				[
+					12.6,
+					3.7
+				],
+				[
+					13.4,
+					2.3
+				],
+				[
+					13.85,
+					3.7
+				],
+				[
+					14.65,
+					2.3
+				],
+				[
+					15.1,
+					3.7
+				],
+				[
+					15.9,
+					2.3
+				],
+				[
+					16.35,
+					3.7
+				],
+				[
+					17.15,
+					2.3
+				],
+				[
+					17.6,
+					3.7
+				],
+				[
+					18.4,
+					2.3
+				],
+				[
+					18.85,
+					3.7
+				],
+				[
+					19.65,
+					2.3
+				],
+				[
+					20.1,
+					3.7
+				],
+				[
+					20.9,
+					2.3
+				],
+				[
+					21.35,
+					3.7
+				],
+				[
+					22.15,
+					2.3
+				],
+				[
+					22.6,
+					3.7
+				],
+				[
+					23.4,
+					2.3
+				],
+				[
+					23.85,
+					3.7
+				],
+				[
+					24.65,
+					2.3
+				],
+				[
+					25.1,
+					3.7
+				],
+				[
+					25.9,
+					2.3
+				],
+				[
+					26.35,
+					3.7
+				],
+				[
+					27.15,
+					2.3
+				],
+				[
+					27.6,
+					3.7
+				],
+				[
+					28.4,
+					2.3
+				],
+				[
+					28.85,
+					3.7
+				],
+				[
+					29.65,
+					2.3
+				],
+				[
+					30.1,
+					3.7
+				],
+				[
+					31.6,
+					2.3
+				],
+				[
+					31.6,
+					3.4
+				],
+				[
+					34,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.1,
+						6.35,
+						7.6,
+						8.85,
+						10.1,
+						11.35,
+						12.6,
+						13.85,
+						15.1,
+						16.35,
+						17.6,
+						18.85,
+						20.1,
+						21.35,
+						22.6,
+						23.85,
+						25.1,
+						26.35,
+						27.6,
+						28.85,
+						30.1
+					]
+				}
+			]
+		},
+		{
+			"id": "dins-b-0",
+			"kind": "lathe",
+			"at": [
+				262,
+				-38,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.65,
+					2.3
+				],
+				[
+					5.1,
+					3.7
+				],
+				[
+					5.9,
+					2.3
+				],
+				[
+					6.35,
+					3.7
+				],
+				[
+					7.15,
+					2.3
+				],
+				[
+					7.6,
+					3.7
+				],
+				[
+					8.4,
+					2.3
+				],
+				[
+					8.85,
+					3.7
+				],
+				[
+					9.65,
+					2.3
+				],
+				[
+					10.1,
+					3.7
+				],
+				[
+					10.9,
+					2.3
+				],
+				[
+					11.35,
+					3.7
+				],
+				[
+					12.15,
+					2.3
+				],
+				[
+					12.6,
+					3.7
+				],
+				[
+					13.4,
+					2.3
+				],
+				[
+					13.85,
+					3.7
+				],
+				[
+					14.65,
+					2.3
+				],
+				[
+					15.1,
+					3.7
+				],
+				[
+					15.9,
+					2.3
+				],
+				[
+					16.35,
+					3.7
+				],
+				[
+					17.15,
+					2.3
+				],
+				[
+					17.6,
+					3.7
+				],
+				[
+					18.4,
+					2.3
+				],
+				[
+					18.85,
+					3.7
+				],
+				[
+					19.65,
+					2.3
+				],
+				[
+					20.1,
+					3.7
+				],
+				[
+					20.9,
+					2.3
+				],
+				[
+					21.35,
+					3.7
+				],
+				[
+					22.15,
+					2.3
+				],
+				[
+					22.6,
+					3.7
+				],
+				[
+					23.4,
+					2.3
+				],
+				[
+					23.85,
+					3.7
+				],
+				[
+					24.65,
+					2.3
+				],
+				[
+					25.1,
+					3.7
+				],
+				[
+					25.9,
+					2.3
+				],
+				[
+					26.35,
+					3.7
+				],
+				[
+					27.15,
+					2.3
+				],
+				[
+					27.6,
+					3.7
+				],
+				[
+					28.4,
+					2.3
+				],
+				[
+					28.85,
+					3.7
+				],
+				[
+					29.65,
+					2.3
+				],
+				[
+					30.1,
+					3.7
+				],
+				[
+					31.6,
+					2.3
+				],
+				[
+					31.6,
+					3.4
+				],
+				[
+					34,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.1,
+						6.35,
+						7.6,
+						8.85,
+						10.1,
+						11.35,
+						12.6,
+						13.85,
+						15.1,
+						16.35,
+						17.6,
+						18.85,
+						20.1,
+						21.35,
+						22.6,
+						23.85,
+						25.1,
+						26.35,
+						27.6,
+						28.85,
+						30.1
+					]
+				}
+			]
+		},
+		{
+			"id": "dhead-a-0",
+			"kind": "box",
+			"at": [
+				259.5,
+				-61,
+				70.5
+			],
+			"size": [
+				5,
 				6,
-				50
+				3
+			],
+			"r": 0.6
+		},
+		{
+			"id": "dhead-b-0",
+			"kind": "box",
+			"at": [
+				259.5,
+				-41,
+				70.5
+			],
+			"size": [
+				5,
+				6,
+				3
+			],
+			"r": 0.6
+		},
+		{
+			"id": "blade-0",
+			"kind": "rod",
+			"from": [
+				262,
+				-58,
+				75
+			],
+			"to": [
+				262,
+				-37,
+				75
+			],
+			"radius": 1.3,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					262,
+					-58,
+					75
+				],
+				"deg": [
+					0,
+					-62
+				],
+				"samples": 2
+			}
+		},
+		{
+			"id": "bjaw-0",
+			"kind": "sphere",
+			"at": [
+				262,
+				-38,
+				75
+			],
+			"r": 2.2
+		},
+		{
+			"id": "bhinge-0",
+			"kind": "sphere",
+			"at": [
+				262,
+				-58,
+				75
+			],
+			"r": 2.2
+		},
+		{
+			"id": "dmotor-0",
+			"kind": "box",
+			"at": [
+				264.6,
+				-40,
+				18.5
+			],
+			"size": [
+				3,
+				5,
+				8
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 0.6,
+					"r": 0.3
+				}
 			]
 		},
 		{
-			"text": "Disconnector",
-			"target": "blade",
-			"side": "right",
-			"anchor": [
-				164,
-				15.5,
-				37
+			"id": "drod-0",
+			"kind": "rod",
+			"from": [
+				266,
+				-38,
+				26.5
+			],
+			"to": [
+				266,
+				-38,
+				36.5
+			],
+			"radius": 0.4
+		},
+		{
+			"id": "brk-0-pad",
+			"kind": "box",
+			"at": [
+				257,
+				-19,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "brk-0-stand",
+			"kind": "box",
+			"at": [
+				259.4,
+				-16.6,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
 			]
 		},
 		{
-			"text": "Insulator",
-			"target": "post-a",
-			"side": "right"
+			"id": "brk-col-0",
+			"kind": "lathe",
+			"at": [
+				262,
+				-14,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.6,
+					2.3
+				],
+				[
+					5.05,
+					3.7
+				],
+				[
+					5.8,
+					2.3
+				],
+				[
+					6.25,
+					3.7
+				],
+				[
+					7.0,
+					2.3
+				],
+				[
+					7.45,
+					3.7
+				],
+				[
+					8.2,
+					2.3
+				],
+				[
+					8.65,
+					3.7
+				],
+				[
+					9.4,
+					2.3
+				],
+				[
+					9.85,
+					3.7
+				],
+				[
+					10.6,
+					2.3
+				],
+				[
+					11.05,
+					3.7
+				],
+				[
+					11.8,
+					2.3
+				],
+				[
+					12.25,
+					3.7
+				],
+				[
+					13.0,
+					2.3
+				],
+				[
+					13.45,
+					3.7
+				],
+				[
+					14.2,
+					2.3
+				],
+				[
+					14.65,
+					3.7
+				],
+				[
+					15.4,
+					2.3
+				],
+				[
+					15.85,
+					3.7
+				],
+				[
+					16.6,
+					2.3
+				],
+				[
+					17.05,
+					3.7
+				],
+				[
+					17.8,
+					2.3
+				],
+				[
+					18.25,
+					3.7
+				],
+				[
+					19.0,
+					2.3
+				],
+				[
+					19.45,
+					3.7
+				],
+				[
+					20.2,
+					2.3
+				],
+				[
+					20.65,
+					3.7
+				],
+				[
+					21.4,
+					2.3
+				],
+				[
+					21.85,
+					3.7
+				],
+				[
+					22.6,
+					2.3
+				],
+				[
+					23.05,
+					3.7
+				],
+				[
+					23.8,
+					2.3
+				],
+				[
+					24.25,
+					3.7
+				],
+				[
+					25.6,
+					2.3
+				],
+				[
+					25.6,
+					3.4
+				],
+				[
+					28,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.05,
+						6.25,
+						7.45,
+						8.65,
+						9.85,
+						11.05,
+						12.25,
+						13.45,
+						14.65,
+						15.85,
+						17.05,
+						18.25,
+						19.45,
+						20.65,
+						21.85,
+						23.05,
+						24.25
+					]
+				}
+			]
+		},
+		{
+			"id": "brk-head-0",
+			"kind": "lathe",
+			"at": [
+				262,
+				-1,
+				70.5
+			],
+			"axis": "-y",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					3.4
+				],
+				[
+					0.8,
+					4.6
+				],
+				[
+					2.4,
+					5.2
+				],
+				[
+					4.6,
+					5.2
+				],
+				[
+					5.4,
+					3.0
+				],
+				[
+					6.0,
+					3.0
+				],
+				[
+					6.4,
+					4.3
+				],
+				[
+					7.1,
+					3.0
+				],
+				[
+					7.5,
+					4.3
+				],
+				[
+					8.2,
+					3.0
+				],
+				[
+					8.6,
+					4.3
+				],
+				[
+					9.3,
+					3.0
+				],
+				[
+					9.7,
+					4.3
+				],
+				[
+					10.4,
+					3.0
+				],
+				[
+					10.8,
+					4.3
+				],
+				[
+					11.5,
+					3.0
+				],
+				[
+					11.9,
+					4.3
+				],
+				[
+					12.6,
+					3.0
+				],
+				[
+					13.0,
+					4.3
+				],
+				[
+					13.7,
+					3.0
+				],
+				[
+					14.1,
+					4.3
+				],
+				[
+					14.8,
+					3.0
+				],
+				[
+					15.2,
+					4.3
+				],
+				[
+					15.9,
+					3.0
+				],
+				[
+					16.3,
+					4.3
+				],
+				[
+					17.0,
+					3.0
+				],
+				[
+					17.4,
+					4.3
+				],
+				[
+					18.1,
+					3.0
+				],
+				[
+					18.5,
+					4.3
+				],
+				[
+					19.2,
+					3.0
+				],
+				[
+					19.6,
+					4.3
+				],
+				[
+					20.2,
+					3.0
+				],
+				[
+					21,
+					4.4
+				],
+				[
+					22.4,
+					4.8
+				],
+				[
+					25,
+					4.4
+				],
+				[
+					26,
+					3
+				],
+				[
+					26,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2.4,
+						23,
+						6.4,
+						7.5,
+						8.6,
+						9.7,
+						10.8,
+						11.9,
+						13.0,
+						14.1,
+						15.2,
+						16.3,
+						17.4,
+						18.5,
+						19.6
+					]
+				}
+			]
+		},
+		{
+			"id": "brk-cap-0",
+			"kind": "box",
+			"at": [
+				259,
+				-17,
+				64.5
+			],
+			"size": [
+				6,
+				6,
+				2.4
+			],
+			"r": 0.6
+		},
+		{
+			"id": "brk-box-0",
+			"kind": "box",
+			"at": [
+				264.6,
+				-17,
+				16.5
+			],
+			"size": [
+				3.4,
+				6,
+				10
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 0.6,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "brk-flag-0",
+			"kind": "box",
+			"at": [
+				268,
+				-15.5,
+				22.5
+			],
+			"size": [
+				1.2,
+				3,
+				3
+			],
+			"r": 0.3,
+			"variants": {
+				"open": {
+					"at": [
+						268,
+						-15.5,
+						26.5
+					]
+				}
+			}
+		},
+		{
+			"id": "ct-0-pad",
+			"kind": "box",
+			"at": [
+				257,
+				17,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "ct-0-stand",
+			"kind": "box",
+			"at": [
+				259.4,
+				19.4,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "ct-col-0",
+			"kind": "lathe",
+			"at": [
+				262,
+				22,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.6,
+					2.3
+				],
+				[
+					5.05,
+					3.7
+				],
+				[
+					5.8,
+					2.3
+				],
+				[
+					6.25,
+					3.7
+				],
+				[
+					7.0,
+					2.3
+				],
+				[
+					7.45,
+					3.7
+				],
+				[
+					8.2,
+					2.3
+				],
+				[
+					8.65,
+					3.7
+				],
+				[
+					9.4,
+					2.3
+				],
+				[
+					9.85,
+					3.7
+				],
+				[
+					10.6,
+					2.3
+				],
+				[
+					11.05,
+					3.7
+				],
+				[
+					11.8,
+					2.3
+				],
+				[
+					12.25,
+					3.7
+				],
+				[
+					13.0,
+					2.3
+				],
+				[
+					13.45,
+					3.7
+				],
+				[
+					14.2,
+					2.3
+				],
+				[
+					14.65,
+					3.7
+				],
+				[
+					15.4,
+					2.3
+				],
+				[
+					15.85,
+					3.7
+				],
+				[
+					16.6,
+					2.3
+				],
+				[
+					17.05,
+					3.7
+				],
+				[
+					17.8,
+					2.3
+				],
+				[
+					18.25,
+					3.7
+				],
+				[
+					19.0,
+					2.3
+				],
+				[
+					19.45,
+					3.7
+				],
+				[
+					20.2,
+					2.3
+				],
+				[
+					20.65,
+					3.7
+				],
+				[
+					21.4,
+					2.3
+				],
+				[
+					21.85,
+					3.7
+				],
+				[
+					22.6,
+					2.3
+				],
+				[
+					23.05,
+					3.7
+				],
+				[
+					23.8,
+					2.3
+				],
+				[
+					24.25,
+					3.7
+				],
+				[
+					25.0,
+					2.3
+				],
+				[
+					25.45,
+					3.7
+				],
+				[
+					26.2,
+					2.3
+				],
+				[
+					26.65,
+					3.7
+				],
+				[
+					27.6,
+					2.3
+				],
+				[
+					27.6,
+					3.4
+				],
+				[
+					30,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.05,
+						6.25,
+						7.45,
+						8.65,
+						9.85,
+						11.05,
+						12.25,
+						13.45,
+						14.65,
+						15.85,
+						17.05,
+						18.25,
+						19.45,
+						20.65,
+						21.85,
+						23.05,
+						24.25,
+						25.45,
+						26.65
+					]
+				}
+			]
+		},
+		{
+			"id": "ct-head-0",
+			"kind": "lathe",
+			"at": [
+				262,
+				22,
+				66.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					3
+				],
+				[
+					1,
+					5
+				],
+				[
+					3,
+					6.5
+				],
+				[
+					7,
+					6.5
+				],
+				[
+					9,
+					5
+				],
+				[
+					10,
+					2
+				],
+				[
+					10,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3,
+						7
+					]
+				}
+			]
+		},
+		{
+			"id": "ct-box-0",
+			"kind": "box",
+			"at": [
+				264.6,
+				19,
+				18.5
+			],
+			"size": [
+				3,
+				6,
+				9
+			],
+			"r": 0.5
+		},
+		{
+			"id": "dpost-a-1-pad",
+			"kind": "box",
+			"at": [
+				289,
+				-63,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "dpost-a-1-stand",
+			"kind": "box",
+			"at": [
+				291.4,
+				-60.6,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "dpost-b-1-pad",
+			"kind": "box",
+			"at": [
+				289,
+				-43,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "dpost-b-1-stand",
+			"kind": "box",
+			"at": [
+				291.4,
+				-40.6,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "dins-a-1",
+			"kind": "lathe",
+			"at": [
+				294,
+				-58,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.65,
+					2.3
+				],
+				[
+					5.1,
+					3.7
+				],
+				[
+					5.9,
+					2.3
+				],
+				[
+					6.35,
+					3.7
+				],
+				[
+					7.15,
+					2.3
+				],
+				[
+					7.6,
+					3.7
+				],
+				[
+					8.4,
+					2.3
+				],
+				[
+					8.85,
+					3.7
+				],
+				[
+					9.65,
+					2.3
+				],
+				[
+					10.1,
+					3.7
+				],
+				[
+					10.9,
+					2.3
+				],
+				[
+					11.35,
+					3.7
+				],
+				[
+					12.15,
+					2.3
+				],
+				[
+					12.6,
+					3.7
+				],
+				[
+					13.4,
+					2.3
+				],
+				[
+					13.85,
+					3.7
+				],
+				[
+					14.65,
+					2.3
+				],
+				[
+					15.1,
+					3.7
+				],
+				[
+					15.9,
+					2.3
+				],
+				[
+					16.35,
+					3.7
+				],
+				[
+					17.15,
+					2.3
+				],
+				[
+					17.6,
+					3.7
+				],
+				[
+					18.4,
+					2.3
+				],
+				[
+					18.85,
+					3.7
+				],
+				[
+					19.65,
+					2.3
+				],
+				[
+					20.1,
+					3.7
+				],
+				[
+					20.9,
+					2.3
+				],
+				[
+					21.35,
+					3.7
+				],
+				[
+					22.15,
+					2.3
+				],
+				[
+					22.6,
+					3.7
+				],
+				[
+					23.4,
+					2.3
+				],
+				[
+					23.85,
+					3.7
+				],
+				[
+					24.65,
+					2.3
+				],
+				[
+					25.1,
+					3.7
+				],
+				[
+					25.9,
+					2.3
+				],
+				[
+					26.35,
+					3.7
+				],
+				[
+					27.15,
+					2.3
+				],
+				[
+					27.6,
+					3.7
+				],
+				[
+					28.4,
+					2.3
+				],
+				[
+					28.85,
+					3.7
+				],
+				[
+					29.65,
+					2.3
+				],
+				[
+					30.1,
+					3.7
+				],
+				[
+					31.6,
+					2.3
+				],
+				[
+					31.6,
+					3.4
+				],
+				[
+					34,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.1,
+						6.35,
+						7.6,
+						8.85,
+						10.1,
+						11.35,
+						12.6,
+						13.85,
+						15.1,
+						16.35,
+						17.6,
+						18.85,
+						20.1,
+						21.35,
+						22.6,
+						23.85,
+						25.1,
+						26.35,
+						27.6,
+						28.85,
+						30.1
+					]
+				}
+			]
+		},
+		{
+			"id": "dins-b-1",
+			"kind": "lathe",
+			"at": [
+				294,
+				-38,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.65,
+					2.3
+				],
+				[
+					5.1,
+					3.7
+				],
+				[
+					5.9,
+					2.3
+				],
+				[
+					6.35,
+					3.7
+				],
+				[
+					7.15,
+					2.3
+				],
+				[
+					7.6,
+					3.7
+				],
+				[
+					8.4,
+					2.3
+				],
+				[
+					8.85,
+					3.7
+				],
+				[
+					9.65,
+					2.3
+				],
+				[
+					10.1,
+					3.7
+				],
+				[
+					10.9,
+					2.3
+				],
+				[
+					11.35,
+					3.7
+				],
+				[
+					12.15,
+					2.3
+				],
+				[
+					12.6,
+					3.7
+				],
+				[
+					13.4,
+					2.3
+				],
+				[
+					13.85,
+					3.7
+				],
+				[
+					14.65,
+					2.3
+				],
+				[
+					15.1,
+					3.7
+				],
+				[
+					15.9,
+					2.3
+				],
+				[
+					16.35,
+					3.7
+				],
+				[
+					17.15,
+					2.3
+				],
+				[
+					17.6,
+					3.7
+				],
+				[
+					18.4,
+					2.3
+				],
+				[
+					18.85,
+					3.7
+				],
+				[
+					19.65,
+					2.3
+				],
+				[
+					20.1,
+					3.7
+				],
+				[
+					20.9,
+					2.3
+				],
+				[
+					21.35,
+					3.7
+				],
+				[
+					22.15,
+					2.3
+				],
+				[
+					22.6,
+					3.7
+				],
+				[
+					23.4,
+					2.3
+				],
+				[
+					23.85,
+					3.7
+				],
+				[
+					24.65,
+					2.3
+				],
+				[
+					25.1,
+					3.7
+				],
+				[
+					25.9,
+					2.3
+				],
+				[
+					26.35,
+					3.7
+				],
+				[
+					27.15,
+					2.3
+				],
+				[
+					27.6,
+					3.7
+				],
+				[
+					28.4,
+					2.3
+				],
+				[
+					28.85,
+					3.7
+				],
+				[
+					29.65,
+					2.3
+				],
+				[
+					30.1,
+					3.7
+				],
+				[
+					31.6,
+					2.3
+				],
+				[
+					31.6,
+					3.4
+				],
+				[
+					34,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.1,
+						6.35,
+						7.6,
+						8.85,
+						10.1,
+						11.35,
+						12.6,
+						13.85,
+						15.1,
+						16.35,
+						17.6,
+						18.85,
+						20.1,
+						21.35,
+						22.6,
+						23.85,
+						25.1,
+						26.35,
+						27.6,
+						28.85,
+						30.1
+					]
+				}
+			]
+		},
+		{
+			"id": "dhead-a-1",
+			"kind": "box",
+			"at": [
+				291.5,
+				-61,
+				70.5
+			],
+			"size": [
+				5,
+				6,
+				3
+			],
+			"r": 0.6
+		},
+		{
+			"id": "dhead-b-1",
+			"kind": "box",
+			"at": [
+				291.5,
+				-41,
+				70.5
+			],
+			"size": [
+				5,
+				6,
+				3
+			],
+			"r": 0.6
+		},
+		{
+			"id": "blade-1",
+			"kind": "rod",
+			"from": [
+				294,
+				-58,
+				75
+			],
+			"to": [
+				294,
+				-37,
+				75
+			],
+			"radius": 1.3,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					294,
+					-58,
+					75
+				],
+				"deg": [
+					0,
+					-62
+				],
+				"samples": 2
+			}
+		},
+		{
+			"id": "bjaw-1",
+			"kind": "sphere",
+			"at": [
+				294,
+				-38,
+				75
+			],
+			"r": 2.2
+		},
+		{
+			"id": "bhinge-1",
+			"kind": "sphere",
+			"at": [
+				294,
+				-58,
+				75
+			],
+			"r": 2.2
+		},
+		{
+			"id": "dmotor-1",
+			"kind": "box",
+			"at": [
+				296.6,
+				-40,
+				18.5
+			],
+			"size": [
+				3,
+				5,
+				8
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 0.6,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "drod-1",
+			"kind": "rod",
+			"from": [
+				298,
+				-38,
+				26.5
+			],
+			"to": [
+				298,
+				-38,
+				36.5
+			],
+			"radius": 0.4
+		},
+		{
+			"id": "brk-1-pad",
+			"kind": "box",
+			"at": [
+				289,
+				-19,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "brk-1-stand",
+			"kind": "box",
+			"at": [
+				291.4,
+				-16.6,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "brk-col-1",
+			"kind": "lathe",
+			"at": [
+				294,
+				-14,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.6,
+					2.3
+				],
+				[
+					5.05,
+					3.7
+				],
+				[
+					5.8,
+					2.3
+				],
+				[
+					6.25,
+					3.7
+				],
+				[
+					7.0,
+					2.3
+				],
+				[
+					7.45,
+					3.7
+				],
+				[
+					8.2,
+					2.3
+				],
+				[
+					8.65,
+					3.7
+				],
+				[
+					9.4,
+					2.3
+				],
+				[
+					9.85,
+					3.7
+				],
+				[
+					10.6,
+					2.3
+				],
+				[
+					11.05,
+					3.7
+				],
+				[
+					11.8,
+					2.3
+				],
+				[
+					12.25,
+					3.7
+				],
+				[
+					13.0,
+					2.3
+				],
+				[
+					13.45,
+					3.7
+				],
+				[
+					14.2,
+					2.3
+				],
+				[
+					14.65,
+					3.7
+				],
+				[
+					15.4,
+					2.3
+				],
+				[
+					15.85,
+					3.7
+				],
+				[
+					16.6,
+					2.3
+				],
+				[
+					17.05,
+					3.7
+				],
+				[
+					17.8,
+					2.3
+				],
+				[
+					18.25,
+					3.7
+				],
+				[
+					19.0,
+					2.3
+				],
+				[
+					19.45,
+					3.7
+				],
+				[
+					20.2,
+					2.3
+				],
+				[
+					20.65,
+					3.7
+				],
+				[
+					21.4,
+					2.3
+				],
+				[
+					21.85,
+					3.7
+				],
+				[
+					22.6,
+					2.3
+				],
+				[
+					23.05,
+					3.7
+				],
+				[
+					23.8,
+					2.3
+				],
+				[
+					24.25,
+					3.7
+				],
+				[
+					25.6,
+					2.3
+				],
+				[
+					25.6,
+					3.4
+				],
+				[
+					28,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.05,
+						6.25,
+						7.45,
+						8.65,
+						9.85,
+						11.05,
+						12.25,
+						13.45,
+						14.65,
+						15.85,
+						17.05,
+						18.25,
+						19.45,
+						20.65,
+						21.85,
+						23.05,
+						24.25
+					]
+				}
+			]
+		},
+		{
+			"id": "brk-head-1",
+			"kind": "lathe",
+			"at": [
+				294,
+				-1,
+				70.5
+			],
+			"axis": "-y",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					3.4
+				],
+				[
+					0.8,
+					4.6
+				],
+				[
+					2.4,
+					5.2
+				],
+				[
+					4.6,
+					5.2
+				],
+				[
+					5.4,
+					3.0
+				],
+				[
+					6.0,
+					3.0
+				],
+				[
+					6.4,
+					4.3
+				],
+				[
+					7.1,
+					3.0
+				],
+				[
+					7.5,
+					4.3
+				],
+				[
+					8.2,
+					3.0
+				],
+				[
+					8.6,
+					4.3
+				],
+				[
+					9.3,
+					3.0
+				],
+				[
+					9.7,
+					4.3
+				],
+				[
+					10.4,
+					3.0
+				],
+				[
+					10.8,
+					4.3
+				],
+				[
+					11.5,
+					3.0
+				],
+				[
+					11.9,
+					4.3
+				],
+				[
+					12.6,
+					3.0
+				],
+				[
+					13.0,
+					4.3
+				],
+				[
+					13.7,
+					3.0
+				],
+				[
+					14.1,
+					4.3
+				],
+				[
+					14.8,
+					3.0
+				],
+				[
+					15.2,
+					4.3
+				],
+				[
+					15.9,
+					3.0
+				],
+				[
+					16.3,
+					4.3
+				],
+				[
+					17.0,
+					3.0
+				],
+				[
+					17.4,
+					4.3
+				],
+				[
+					18.1,
+					3.0
+				],
+				[
+					18.5,
+					4.3
+				],
+				[
+					19.2,
+					3.0
+				],
+				[
+					19.6,
+					4.3
+				],
+				[
+					20.2,
+					3.0
+				],
+				[
+					21,
+					4.4
+				],
+				[
+					22.4,
+					4.8
+				],
+				[
+					25,
+					4.4
+				],
+				[
+					26,
+					3
+				],
+				[
+					26,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2.4,
+						23,
+						6.4,
+						7.5,
+						8.6,
+						9.7,
+						10.8,
+						11.9,
+						13.0,
+						14.1,
+						15.2,
+						16.3,
+						17.4,
+						18.5,
+						19.6
+					]
+				}
+			]
+		},
+		{
+			"id": "brk-cap-1",
+			"kind": "box",
+			"at": [
+				291,
+				-17,
+				64.5
+			],
+			"size": [
+				6,
+				6,
+				2.4
+			],
+			"r": 0.6
+		},
+		{
+			"id": "brk-box-1",
+			"kind": "box",
+			"at": [
+				296.6,
+				-17,
+				16.5
+			],
+			"size": [
+				3.4,
+				6,
+				10
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 0.6,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "brk-flag-1",
+			"kind": "box",
+			"at": [
+				300,
+				-15.5,
+				22.5
+			],
+			"size": [
+				1.2,
+				3,
+				3
+			],
+			"r": 0.3,
+			"variants": {
+				"open": {
+					"at": [
+						300,
+						-15.5,
+						26.5
+					]
+				}
+			}
+		},
+		{
+			"id": "ct-1-pad",
+			"kind": "box",
+			"at": [
+				289,
+				17,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "ct-1-stand",
+			"kind": "box",
+			"at": [
+				291.4,
+				19.4,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "ct-col-1",
+			"kind": "lathe",
+			"at": [
+				294,
+				22,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.6,
+					2.3
+				],
+				[
+					5.05,
+					3.7
+				],
+				[
+					5.8,
+					2.3
+				],
+				[
+					6.25,
+					3.7
+				],
+				[
+					7.0,
+					2.3
+				],
+				[
+					7.45,
+					3.7
+				],
+				[
+					8.2,
+					2.3
+				],
+				[
+					8.65,
+					3.7
+				],
+				[
+					9.4,
+					2.3
+				],
+				[
+					9.85,
+					3.7
+				],
+				[
+					10.6,
+					2.3
+				],
+				[
+					11.05,
+					3.7
+				],
+				[
+					11.8,
+					2.3
+				],
+				[
+					12.25,
+					3.7
+				],
+				[
+					13.0,
+					2.3
+				],
+				[
+					13.45,
+					3.7
+				],
+				[
+					14.2,
+					2.3
+				],
+				[
+					14.65,
+					3.7
+				],
+				[
+					15.4,
+					2.3
+				],
+				[
+					15.85,
+					3.7
+				],
+				[
+					16.6,
+					2.3
+				],
+				[
+					17.05,
+					3.7
+				],
+				[
+					17.8,
+					2.3
+				],
+				[
+					18.25,
+					3.7
+				],
+				[
+					19.0,
+					2.3
+				],
+				[
+					19.45,
+					3.7
+				],
+				[
+					20.2,
+					2.3
+				],
+				[
+					20.65,
+					3.7
+				],
+				[
+					21.4,
+					2.3
+				],
+				[
+					21.85,
+					3.7
+				],
+				[
+					22.6,
+					2.3
+				],
+				[
+					23.05,
+					3.7
+				],
+				[
+					23.8,
+					2.3
+				],
+				[
+					24.25,
+					3.7
+				],
+				[
+					25.0,
+					2.3
+				],
+				[
+					25.45,
+					3.7
+				],
+				[
+					26.2,
+					2.3
+				],
+				[
+					26.65,
+					3.7
+				],
+				[
+					27.6,
+					2.3
+				],
+				[
+					27.6,
+					3.4
+				],
+				[
+					30,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.05,
+						6.25,
+						7.45,
+						8.65,
+						9.85,
+						11.05,
+						12.25,
+						13.45,
+						14.65,
+						15.85,
+						17.05,
+						18.25,
+						19.45,
+						20.65,
+						21.85,
+						23.05,
+						24.25,
+						25.45,
+						26.65
+					]
+				}
+			]
+		},
+		{
+			"id": "ct-head-1",
+			"kind": "lathe",
+			"at": [
+				294,
+				22,
+				66.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					3
+				],
+				[
+					1,
+					5
+				],
+				[
+					3,
+					6.5
+				],
+				[
+					7,
+					6.5
+				],
+				[
+					9,
+					5
+				],
+				[
+					10,
+					2
+				],
+				[
+					10,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3,
+						7
+					]
+				}
+			]
+		},
+		{
+			"id": "ct-box-1",
+			"kind": "box",
+			"at": [
+				296.6,
+				19,
+				18.5
+			],
+			"size": [
+				3,
+				6,
+				9
+			],
+			"r": 0.5
+		},
+		{
+			"id": "dpost-a-2-pad",
+			"kind": "box",
+			"at": [
+				321,
+				-63,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "dpost-a-2-stand",
+			"kind": "box",
+			"at": [
+				323.4,
+				-60.6,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "dpost-b-2-pad",
+			"kind": "box",
+			"at": [
+				321,
+				-43,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "dpost-b-2-stand",
+			"kind": "box",
+			"at": [
+				323.4,
+				-40.6,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "dins-a-2",
+			"kind": "lathe",
+			"at": [
+				326,
+				-58,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.65,
+					2.3
+				],
+				[
+					5.1,
+					3.7
+				],
+				[
+					5.9,
+					2.3
+				],
+				[
+					6.35,
+					3.7
+				],
+				[
+					7.15,
+					2.3
+				],
+				[
+					7.6,
+					3.7
+				],
+				[
+					8.4,
+					2.3
+				],
+				[
+					8.85,
+					3.7
+				],
+				[
+					9.65,
+					2.3
+				],
+				[
+					10.1,
+					3.7
+				],
+				[
+					10.9,
+					2.3
+				],
+				[
+					11.35,
+					3.7
+				],
+				[
+					12.15,
+					2.3
+				],
+				[
+					12.6,
+					3.7
+				],
+				[
+					13.4,
+					2.3
+				],
+				[
+					13.85,
+					3.7
+				],
+				[
+					14.65,
+					2.3
+				],
+				[
+					15.1,
+					3.7
+				],
+				[
+					15.9,
+					2.3
+				],
+				[
+					16.35,
+					3.7
+				],
+				[
+					17.15,
+					2.3
+				],
+				[
+					17.6,
+					3.7
+				],
+				[
+					18.4,
+					2.3
+				],
+				[
+					18.85,
+					3.7
+				],
+				[
+					19.65,
+					2.3
+				],
+				[
+					20.1,
+					3.7
+				],
+				[
+					20.9,
+					2.3
+				],
+				[
+					21.35,
+					3.7
+				],
+				[
+					22.15,
+					2.3
+				],
+				[
+					22.6,
+					3.7
+				],
+				[
+					23.4,
+					2.3
+				],
+				[
+					23.85,
+					3.7
+				],
+				[
+					24.65,
+					2.3
+				],
+				[
+					25.1,
+					3.7
+				],
+				[
+					25.9,
+					2.3
+				],
+				[
+					26.35,
+					3.7
+				],
+				[
+					27.15,
+					2.3
+				],
+				[
+					27.6,
+					3.7
+				],
+				[
+					28.4,
+					2.3
+				],
+				[
+					28.85,
+					3.7
+				],
+				[
+					29.65,
+					2.3
+				],
+				[
+					30.1,
+					3.7
+				],
+				[
+					31.6,
+					2.3
+				],
+				[
+					31.6,
+					3.4
+				],
+				[
+					34,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.1,
+						6.35,
+						7.6,
+						8.85,
+						10.1,
+						11.35,
+						12.6,
+						13.85,
+						15.1,
+						16.35,
+						17.6,
+						18.85,
+						20.1,
+						21.35,
+						22.6,
+						23.85,
+						25.1,
+						26.35,
+						27.6,
+						28.85,
+						30.1
+					]
+				}
+			]
+		},
+		{
+			"id": "dins-b-2",
+			"kind": "lathe",
+			"at": [
+				326,
+				-38,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.65,
+					2.3
+				],
+				[
+					5.1,
+					3.7
+				],
+				[
+					5.9,
+					2.3
+				],
+				[
+					6.35,
+					3.7
+				],
+				[
+					7.15,
+					2.3
+				],
+				[
+					7.6,
+					3.7
+				],
+				[
+					8.4,
+					2.3
+				],
+				[
+					8.85,
+					3.7
+				],
+				[
+					9.65,
+					2.3
+				],
+				[
+					10.1,
+					3.7
+				],
+				[
+					10.9,
+					2.3
+				],
+				[
+					11.35,
+					3.7
+				],
+				[
+					12.15,
+					2.3
+				],
+				[
+					12.6,
+					3.7
+				],
+				[
+					13.4,
+					2.3
+				],
+				[
+					13.85,
+					3.7
+				],
+				[
+					14.65,
+					2.3
+				],
+				[
+					15.1,
+					3.7
+				],
+				[
+					15.9,
+					2.3
+				],
+				[
+					16.35,
+					3.7
+				],
+				[
+					17.15,
+					2.3
+				],
+				[
+					17.6,
+					3.7
+				],
+				[
+					18.4,
+					2.3
+				],
+				[
+					18.85,
+					3.7
+				],
+				[
+					19.65,
+					2.3
+				],
+				[
+					20.1,
+					3.7
+				],
+				[
+					20.9,
+					2.3
+				],
+				[
+					21.35,
+					3.7
+				],
+				[
+					22.15,
+					2.3
+				],
+				[
+					22.6,
+					3.7
+				],
+				[
+					23.4,
+					2.3
+				],
+				[
+					23.85,
+					3.7
+				],
+				[
+					24.65,
+					2.3
+				],
+				[
+					25.1,
+					3.7
+				],
+				[
+					25.9,
+					2.3
+				],
+				[
+					26.35,
+					3.7
+				],
+				[
+					27.15,
+					2.3
+				],
+				[
+					27.6,
+					3.7
+				],
+				[
+					28.4,
+					2.3
+				],
+				[
+					28.85,
+					3.7
+				],
+				[
+					29.65,
+					2.3
+				],
+				[
+					30.1,
+					3.7
+				],
+				[
+					31.6,
+					2.3
+				],
+				[
+					31.6,
+					3.4
+				],
+				[
+					34,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.1,
+						6.35,
+						7.6,
+						8.85,
+						10.1,
+						11.35,
+						12.6,
+						13.85,
+						15.1,
+						16.35,
+						17.6,
+						18.85,
+						20.1,
+						21.35,
+						22.6,
+						23.85,
+						25.1,
+						26.35,
+						27.6,
+						28.85,
+						30.1
+					]
+				}
+			]
+		},
+		{
+			"id": "dhead-a-2",
+			"kind": "box",
+			"at": [
+				323.5,
+				-61,
+				70.5
+			],
+			"size": [
+				5,
+				6,
+				3
+			],
+			"r": 0.6
+		},
+		{
+			"id": "dhead-b-2",
+			"kind": "box",
+			"at": [
+				323.5,
+				-41,
+				70.5
+			],
+			"size": [
+				5,
+				6,
+				3
+			],
+			"r": 0.6
+		},
+		{
+			"id": "blade-2",
+			"kind": "rod",
+			"from": [
+				326,
+				-58,
+				75
+			],
+			"to": [
+				326,
+				-37,
+				75
+			],
+			"radius": 1.3,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					326,
+					-58,
+					75
+				],
+				"deg": [
+					0,
+					-62
+				],
+				"samples": 2
+			}
+		},
+		{
+			"id": "bjaw-2",
+			"kind": "sphere",
+			"at": [
+				326,
+				-38,
+				75
+			],
+			"r": 2.2
+		},
+		{
+			"id": "bhinge-2",
+			"kind": "sphere",
+			"at": [
+				326,
+				-58,
+				75
+			],
+			"r": 2.2
+		},
+		{
+			"id": "dmotor-2",
+			"kind": "box",
+			"at": [
+				328.6,
+				-40,
+				18.5
+			],
+			"size": [
+				3,
+				5,
+				8
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 0.6,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "drod-2",
+			"kind": "rod",
+			"from": [
+				330,
+				-38,
+				26.5
+			],
+			"to": [
+				330,
+				-38,
+				36.5
+			],
+			"radius": 0.4
+		},
+		{
+			"id": "brk-2-pad",
+			"kind": "box",
+			"at": [
+				321,
+				-19,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "brk-2-stand",
+			"kind": "box",
+			"at": [
+				323.4,
+				-16.6,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "brk-col-2",
+			"kind": "lathe",
+			"at": [
+				326,
+				-14,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.6,
+					2.3
+				],
+				[
+					5.05,
+					3.7
+				],
+				[
+					5.8,
+					2.3
+				],
+				[
+					6.25,
+					3.7
+				],
+				[
+					7.0,
+					2.3
+				],
+				[
+					7.45,
+					3.7
+				],
+				[
+					8.2,
+					2.3
+				],
+				[
+					8.65,
+					3.7
+				],
+				[
+					9.4,
+					2.3
+				],
+				[
+					9.85,
+					3.7
+				],
+				[
+					10.6,
+					2.3
+				],
+				[
+					11.05,
+					3.7
+				],
+				[
+					11.8,
+					2.3
+				],
+				[
+					12.25,
+					3.7
+				],
+				[
+					13.0,
+					2.3
+				],
+				[
+					13.45,
+					3.7
+				],
+				[
+					14.2,
+					2.3
+				],
+				[
+					14.65,
+					3.7
+				],
+				[
+					15.4,
+					2.3
+				],
+				[
+					15.85,
+					3.7
+				],
+				[
+					16.6,
+					2.3
+				],
+				[
+					17.05,
+					3.7
+				],
+				[
+					17.8,
+					2.3
+				],
+				[
+					18.25,
+					3.7
+				],
+				[
+					19.0,
+					2.3
+				],
+				[
+					19.45,
+					3.7
+				],
+				[
+					20.2,
+					2.3
+				],
+				[
+					20.65,
+					3.7
+				],
+				[
+					21.4,
+					2.3
+				],
+				[
+					21.85,
+					3.7
+				],
+				[
+					22.6,
+					2.3
+				],
+				[
+					23.05,
+					3.7
+				],
+				[
+					23.8,
+					2.3
+				],
+				[
+					24.25,
+					3.7
+				],
+				[
+					25.6,
+					2.3
+				],
+				[
+					25.6,
+					3.4
+				],
+				[
+					28,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.05,
+						6.25,
+						7.45,
+						8.65,
+						9.85,
+						11.05,
+						12.25,
+						13.45,
+						14.65,
+						15.85,
+						17.05,
+						18.25,
+						19.45,
+						20.65,
+						21.85,
+						23.05,
+						24.25
+					]
+				}
+			]
+		},
+		{
+			"id": "brk-head-2",
+			"kind": "lathe",
+			"at": [
+				326,
+				-1,
+				70.5
+			],
+			"axis": "-y",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					3.4
+				],
+				[
+					0.8,
+					4.6
+				],
+				[
+					2.4,
+					5.2
+				],
+				[
+					4.6,
+					5.2
+				],
+				[
+					5.4,
+					3.0
+				],
+				[
+					6.0,
+					3.0
+				],
+				[
+					6.4,
+					4.3
+				],
+				[
+					7.1,
+					3.0
+				],
+				[
+					7.5,
+					4.3
+				],
+				[
+					8.2,
+					3.0
+				],
+				[
+					8.6,
+					4.3
+				],
+				[
+					9.3,
+					3.0
+				],
+				[
+					9.7,
+					4.3
+				],
+				[
+					10.4,
+					3.0
+				],
+				[
+					10.8,
+					4.3
+				],
+				[
+					11.5,
+					3.0
+				],
+				[
+					11.9,
+					4.3
+				],
+				[
+					12.6,
+					3.0
+				],
+				[
+					13.0,
+					4.3
+				],
+				[
+					13.7,
+					3.0
+				],
+				[
+					14.1,
+					4.3
+				],
+				[
+					14.8,
+					3.0
+				],
+				[
+					15.2,
+					4.3
+				],
+				[
+					15.9,
+					3.0
+				],
+				[
+					16.3,
+					4.3
+				],
+				[
+					17.0,
+					3.0
+				],
+				[
+					17.4,
+					4.3
+				],
+				[
+					18.1,
+					3.0
+				],
+				[
+					18.5,
+					4.3
+				],
+				[
+					19.2,
+					3.0
+				],
+				[
+					19.6,
+					4.3
+				],
+				[
+					20.2,
+					3.0
+				],
+				[
+					21,
+					4.4
+				],
+				[
+					22.4,
+					4.8
+				],
+				[
+					25,
+					4.4
+				],
+				[
+					26,
+					3
+				],
+				[
+					26,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2.4,
+						23,
+						6.4,
+						7.5,
+						8.6,
+						9.7,
+						10.8,
+						11.9,
+						13.0,
+						14.1,
+						15.2,
+						16.3,
+						17.4,
+						18.5,
+						19.6
+					]
+				}
+			]
+		},
+		{
+			"id": "brk-cap-2",
+			"kind": "box",
+			"at": [
+				323,
+				-17,
+				64.5
+			],
+			"size": [
+				6,
+				6,
+				2.4
+			],
+			"r": 0.6
+		},
+		{
+			"id": "brk-box-2",
+			"kind": "box",
+			"at": [
+				328.6,
+				-17,
+				16.5
+			],
+			"size": [
+				3.4,
+				6,
+				10
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 0.6,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "brk-flag-2",
+			"kind": "box",
+			"at": [
+				332,
+				-15.5,
+				22.5
+			],
+			"size": [
+				1.2,
+				3,
+				3
+			],
+			"r": 0.3,
+			"variants": {
+				"open": {
+					"at": [
+						332,
+						-15.5,
+						26.5
+					]
+				}
+			}
+		},
+		{
+			"id": "ct-2-pad",
+			"kind": "box",
+			"at": [
+				321,
+				17,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "ct-2-stand",
+			"kind": "box",
+			"at": [
+				323.4,
+				19.4,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				23.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "ct-col-2",
+			"kind": "lathe",
+			"at": [
+				326,
+				22,
+				36.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.3
+				],
+				[
+					3.4,
+					2.3
+				],
+				[
+					3.85,
+					3.7
+				],
+				[
+					4.6,
+					2.3
+				],
+				[
+					5.05,
+					3.7
+				],
+				[
+					5.8,
+					2.3
+				],
+				[
+					6.25,
+					3.7
+				],
+				[
+					7.0,
+					2.3
+				],
+				[
+					7.45,
+					3.7
+				],
+				[
+					8.2,
+					2.3
+				],
+				[
+					8.65,
+					3.7
+				],
+				[
+					9.4,
+					2.3
+				],
+				[
+					9.85,
+					3.7
+				],
+				[
+					10.6,
+					2.3
+				],
+				[
+					11.05,
+					3.7
+				],
+				[
+					11.8,
+					2.3
+				],
+				[
+					12.25,
+					3.7
+				],
+				[
+					13.0,
+					2.3
+				],
+				[
+					13.45,
+					3.7
+				],
+				[
+					14.2,
+					2.3
+				],
+				[
+					14.65,
+					3.7
+				],
+				[
+					15.4,
+					2.3
+				],
+				[
+					15.85,
+					3.7
+				],
+				[
+					16.6,
+					2.3
+				],
+				[
+					17.05,
+					3.7
+				],
+				[
+					17.8,
+					2.3
+				],
+				[
+					18.25,
+					3.7
+				],
+				[
+					19.0,
+					2.3
+				],
+				[
+					19.45,
+					3.7
+				],
+				[
+					20.2,
+					2.3
+				],
+				[
+					20.65,
+					3.7
+				],
+				[
+					21.4,
+					2.3
+				],
+				[
+					21.85,
+					3.7
+				],
+				[
+					22.6,
+					2.3
+				],
+				[
+					23.05,
+					3.7
+				],
+				[
+					23.8,
+					2.3
+				],
+				[
+					24.25,
+					3.7
+				],
+				[
+					25.0,
+					2.3
+				],
+				[
+					25.45,
+					3.7
+				],
+				[
+					26.2,
+					2.3
+				],
+				[
+					26.65,
+					3.7
+				],
+				[
+					27.6,
+					2.3
+				],
+				[
+					27.6,
+					3.4
+				],
+				[
+					30,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.05,
+						6.25,
+						7.45,
+						8.65,
+						9.85,
+						11.05,
+						12.25,
+						13.45,
+						14.65,
+						15.85,
+						17.05,
+						18.25,
+						19.45,
+						20.65,
+						21.85,
+						23.05,
+						24.25,
+						25.45,
+						26.65
+					]
+				}
+			]
+		},
+		{
+			"id": "ct-head-2",
+			"kind": "lathe",
+			"at": [
+				326,
+				22,
+				66.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					3
+				],
+				[
+					1,
+					5
+				],
+				[
+					3,
+					6.5
+				],
+				[
+					7,
+					6.5
+				],
+				[
+					9,
+					5
+				],
+				[
+					10,
+					2
+				],
+				[
+					10,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3,
+						7
+					]
+				}
+			]
+		},
+		{
+			"id": "ct-box-2",
+			"kind": "box",
+			"at": [
+				328.6,
+				19,
+				18.5
+			],
+			"size": [
+				3,
+				6,
+				9
+			],
+			"r": 0.5
+		},
+		{
+			"id": "tower-pad-0",
+			"kind": "box",
+			"at": [
+				234,
+				-88,
+				10.5
+			],
+			"size": [
+				17,
+				17,
+				3
+			],
+			"r": 0
+		},
+		{
+			"id": "chord-0-0",
+			"kind": "box",
+			"at": [
+				237.3,
+				-84.7,
+				13.5
+			],
+			"size": [
+				1.4,
+				1.4,
+				150
+			],
+			"r": 0
+		},
+		{
+			"id": "chord-0-1",
+			"kind": "box",
+			"at": [
+				246.3,
+				-84.7,
+				13.5
+			],
+			"size": [
+				1.4,
+				1.4,
+				150
+			],
+			"r": 0
+		},
+		{
+			"id": "chord-0-2",
+			"kind": "box",
+			"at": [
+				246.3,
+				-75.7,
+				13.5
+			],
+			"size": [
+				1.4,
+				1.4,
+				150
+			],
+			"r": 0
+		},
+		{
+			"id": "chord-0-3",
+			"kind": "box",
+			"at": [
+				237.3,
+				-75.7,
+				13.5
+			],
+			"size": [
+				1.4,
+				1.4,
+				150
+			],
+			"r": 0
+		},
+		{
+			"id": "lace-0-y",
+			"kind": "wire",
+			"points": [
+				[
+					238,
+					-75,
+					13.5
+				],
+				[
+					247,
+					-75,
+					22.88
+				],
+				[
+					238,
+					-75,
+					32.25
+				],
+				[
+					247,
+					-75,
+					41.63
+				],
+				[
+					238,
+					-75,
+					51
+				],
+				[
+					247,
+					-75,
+					60.38
+				],
+				[
+					238,
+					-75,
+					69.75
+				],
+				[
+					247,
+					-75,
+					79.13
+				],
+				[
+					238,
+					-75,
+					88.5
+				],
+				[
+					247,
+					-75,
+					97.88
+				],
+				[
+					238,
+					-75,
+					107.25
+				],
+				[
+					247,
+					-75,
+					116.63
+				],
+				[
+					238,
+					-75,
+					126
+				],
+				[
+					247,
+					-75,
+					135.38
+				],
+				[
+					238,
+					-75,
+					144.75
+				],
+				[
+					247,
+					-75,
+					154.13
+				],
+				[
+					238,
+					-75,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-0-x",
+			"kind": "wire",
+			"points": [
+				[
+					247,
+					-84,
+					13.5
+				],
+				[
+					247,
+					-75,
+					22.88
+				],
+				[
+					247,
+					-84,
+					32.25
+				],
+				[
+					247,
+					-75,
+					41.63
+				],
+				[
+					247,
+					-84,
+					51
+				],
+				[
+					247,
+					-75,
+					60.38
+				],
+				[
+					247,
+					-84,
+					69.75
+				],
+				[
+					247,
+					-75,
+					79.13
+				],
+				[
+					247,
+					-84,
+					88.5
+				],
+				[
+					247,
+					-75,
+					97.88
+				],
+				[
+					247,
+					-84,
+					107.25
+				],
+				[
+					247,
+					-75,
+					116.63
+				],
+				[
+					247,
+					-84,
+					126
+				],
+				[
+					247,
+					-75,
+					135.38
+				],
+				[
+					247,
+					-84,
+					144.75
+				],
+				[
+					247,
+					-75,
+					154.13
+				],
+				[
+					247,
+					-84,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-0-y2",
+			"kind": "wire",
+			"points": [
+				[
+					247,
+					-75,
+					13.5
+				],
+				[
+					238,
+					-75,
+					22.88
+				],
+				[
+					247,
+					-75,
+					32.25
+				],
+				[
+					238,
+					-75,
+					41.63
+				],
+				[
+					247,
+					-75,
+					51
+				],
+				[
+					238,
+					-75,
+					60.38
+				],
+				[
+					247,
+					-75,
+					69.75
+				],
+				[
+					238,
+					-75,
+					79.13
+				],
+				[
+					247,
+					-75,
+					88.5
+				],
+				[
+					238,
+					-75,
+					97.88
+				],
+				[
+					247,
+					-75,
+					107.25
+				],
+				[
+					238,
+					-75,
+					116.63
+				],
+				[
+					247,
+					-75,
+					126
+				],
+				[
+					238,
+					-75,
+					135.38
+				],
+				[
+					247,
+					-75,
+					144.75
+				],
+				[
+					238,
+					-75,
+					154.13
+				],
+				[
+					247,
+					-75,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-0-x2",
+			"kind": "wire",
+			"points": [
+				[
+					247,
+					-75,
+					13.5
+				],
+				[
+					247,
+					-84,
+					22.88
+				],
+				[
+					247,
+					-75,
+					32.25
+				],
+				[
+					247,
+					-84,
+					41.63
+				],
+				[
+					247,
+					-75,
+					51
+				],
+				[
+					247,
+					-84,
+					60.38
+				],
+				[
+					247,
+					-75,
+					69.75
+				],
+				[
+					247,
+					-84,
+					79.13
+				],
+				[
+					247,
+					-75,
+					88.5
+				],
+				[
+					247,
+					-84,
+					97.88
+				],
+				[
+					247,
+					-75,
+					107.25
+				],
+				[
+					247,
+					-84,
+					116.63
+				],
+				[
+					247,
+					-75,
+					126
+				],
+				[
+					247,
+					-84,
+					135.38
+				],
+				[
+					247,
+					-75,
+					144.75
+				],
+				[
+					247,
+					-84,
+					154.13
+				],
+				[
+					247,
+					-75,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-0-b",
+			"kind": "wire",
+			"points": [
+				[
+					238,
+					-84,
+					13.5
+				],
+				[
+					238,
+					-75,
+					22.88
+				],
+				[
+					238,
+					-84,
+					32.25
+				],
+				[
+					238,
+					-75,
+					41.63
+				],
+				[
+					238,
+					-84,
+					51
+				],
+				[
+					238,
+					-75,
+					60.38
+				],
+				[
+					238,
+					-84,
+					69.75
+				],
+				[
+					238,
+					-75,
+					79.13
+				],
+				[
+					238,
+					-84,
+					88.5
+				],
+				[
+					238,
+					-75,
+					97.88
+				],
+				[
+					238,
+					-84,
+					107.25
+				],
+				[
+					238,
+					-75,
+					116.63
+				],
+				[
+					238,
+					-84,
+					126
+				],
+				[
+					238,
+					-75,
+					135.38
+				],
+				[
+					238,
+					-84,
+					144.75
+				],
+				[
+					238,
+					-75,
+					154.13
+				],
+				[
+					238,
+					-84,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-0-c",
+			"kind": "wire",
+			"points": [
+				[
+					238,
+					-84,
+					13.5
+				],
+				[
+					247,
+					-84,
+					22.88
+				],
+				[
+					238,
+					-84,
+					32.25
+				],
+				[
+					247,
+					-84,
+					41.63
+				],
+				[
+					238,
+					-84,
+					51
+				],
+				[
+					247,
+					-84,
+					60.38
+				],
+				[
+					238,
+					-84,
+					69.75
+				],
+				[
+					247,
+					-84,
+					79.13
+				],
+				[
+					238,
+					-84,
+					88.5
+				],
+				[
+					247,
+					-84,
+					97.88
+				],
+				[
+					238,
+					-84,
+					107.25
+				],
+				[
+					247,
+					-84,
+					116.63
+				],
+				[
+					238,
+					-84,
+					126
+				],
+				[
+					247,
+					-84,
+					135.38
+				],
+				[
+					238,
+					-84,
+					144.75
+				],
+				[
+					247,
+					-84,
+					154.13
+				],
+				[
+					238,
+					-84,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "tower-cap-0",
+			"kind": "box",
+			"at": [
+				237,
+				-85,
+				163.5
+			],
+			"size": [
+				11,
+				11,
+				2
+			],
+			"r": 0
+		},
+		{
+			"id": "spike-0",
+			"kind": "rod",
+			"from": [
+				242.5,
+				-79.5,
+				165.5
+			],
+			"to": [
+				242.5,
+				-79.5,
+				178.5
+			],
+			"radius": 0.9
+		},
+		{
+			"id": "tower-pad-1",
+			"kind": "box",
+			"at": [
+				334,
+				-88,
+				10.5
+			],
+			"size": [
+				17,
+				17,
+				3
+			],
+			"r": 0
+		},
+		{
+			"id": "chord-1-0",
+			"kind": "box",
+			"at": [
+				337.3,
+				-84.7,
+				13.5
+			],
+			"size": [
+				1.4,
+				1.4,
+				150
+			],
+			"r": 0
+		},
+		{
+			"id": "chord-1-1",
+			"kind": "box",
+			"at": [
+				346.3,
+				-84.7,
+				13.5
+			],
+			"size": [
+				1.4,
+				1.4,
+				150
+			],
+			"r": 0
+		},
+		{
+			"id": "chord-1-2",
+			"kind": "box",
+			"at": [
+				346.3,
+				-75.7,
+				13.5
+			],
+			"size": [
+				1.4,
+				1.4,
+				150
+			],
+			"r": 0
+		},
+		{
+			"id": "chord-1-3",
+			"kind": "box",
+			"at": [
+				337.3,
+				-75.7,
+				13.5
+			],
+			"size": [
+				1.4,
+				1.4,
+				150
+			],
+			"r": 0
+		},
+		{
+			"id": "lace-1-y",
+			"kind": "wire",
+			"points": [
+				[
+					338,
+					-75,
+					13.5
+				],
+				[
+					347,
+					-75,
+					22.88
+				],
+				[
+					338,
+					-75,
+					32.25
+				],
+				[
+					347,
+					-75,
+					41.63
+				],
+				[
+					338,
+					-75,
+					51
+				],
+				[
+					347,
+					-75,
+					60.38
+				],
+				[
+					338,
+					-75,
+					69.75
+				],
+				[
+					347,
+					-75,
+					79.13
+				],
+				[
+					338,
+					-75,
+					88.5
+				],
+				[
+					347,
+					-75,
+					97.88
+				],
+				[
+					338,
+					-75,
+					107.25
+				],
+				[
+					347,
+					-75,
+					116.63
+				],
+				[
+					338,
+					-75,
+					126
+				],
+				[
+					347,
+					-75,
+					135.38
+				],
+				[
+					338,
+					-75,
+					144.75
+				],
+				[
+					347,
+					-75,
+					154.13
+				],
+				[
+					338,
+					-75,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-1-x",
+			"kind": "wire",
+			"points": [
+				[
+					347,
+					-84,
+					13.5
+				],
+				[
+					347,
+					-75,
+					22.88
+				],
+				[
+					347,
+					-84,
+					32.25
+				],
+				[
+					347,
+					-75,
+					41.63
+				],
+				[
+					347,
+					-84,
+					51
+				],
+				[
+					347,
+					-75,
+					60.38
+				],
+				[
+					347,
+					-84,
+					69.75
+				],
+				[
+					347,
+					-75,
+					79.13
+				],
+				[
+					347,
+					-84,
+					88.5
+				],
+				[
+					347,
+					-75,
+					97.88
+				],
+				[
+					347,
+					-84,
+					107.25
+				],
+				[
+					347,
+					-75,
+					116.63
+				],
+				[
+					347,
+					-84,
+					126
+				],
+				[
+					347,
+					-75,
+					135.38
+				],
+				[
+					347,
+					-84,
+					144.75
+				],
+				[
+					347,
+					-75,
+					154.13
+				],
+				[
+					347,
+					-84,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-1-y2",
+			"kind": "wire",
+			"points": [
+				[
+					347,
+					-75,
+					13.5
+				],
+				[
+					338,
+					-75,
+					22.88
+				],
+				[
+					347,
+					-75,
+					32.25
+				],
+				[
+					338,
+					-75,
+					41.63
+				],
+				[
+					347,
+					-75,
+					51
+				],
+				[
+					338,
+					-75,
+					60.38
+				],
+				[
+					347,
+					-75,
+					69.75
+				],
+				[
+					338,
+					-75,
+					79.13
+				],
+				[
+					347,
+					-75,
+					88.5
+				],
+				[
+					338,
+					-75,
+					97.88
+				],
+				[
+					347,
+					-75,
+					107.25
+				],
+				[
+					338,
+					-75,
+					116.63
+				],
+				[
+					347,
+					-75,
+					126
+				],
+				[
+					338,
+					-75,
+					135.38
+				],
+				[
+					347,
+					-75,
+					144.75
+				],
+				[
+					338,
+					-75,
+					154.13
+				],
+				[
+					347,
+					-75,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-1-x2",
+			"kind": "wire",
+			"points": [
+				[
+					347,
+					-75,
+					13.5
+				],
+				[
+					347,
+					-84,
+					22.88
+				],
+				[
+					347,
+					-75,
+					32.25
+				],
+				[
+					347,
+					-84,
+					41.63
+				],
+				[
+					347,
+					-75,
+					51
+				],
+				[
+					347,
+					-84,
+					60.38
+				],
+				[
+					347,
+					-75,
+					69.75
+				],
+				[
+					347,
+					-84,
+					79.13
+				],
+				[
+					347,
+					-75,
+					88.5
+				],
+				[
+					347,
+					-84,
+					97.88
+				],
+				[
+					347,
+					-75,
+					107.25
+				],
+				[
+					347,
+					-84,
+					116.63
+				],
+				[
+					347,
+					-75,
+					126
+				],
+				[
+					347,
+					-84,
+					135.38
+				],
+				[
+					347,
+					-75,
+					144.75
+				],
+				[
+					347,
+					-84,
+					154.13
+				],
+				[
+					347,
+					-75,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-1-b",
+			"kind": "wire",
+			"points": [
+				[
+					338,
+					-84,
+					13.5
+				],
+				[
+					338,
+					-75,
+					22.88
+				],
+				[
+					338,
+					-84,
+					32.25
+				],
+				[
+					338,
+					-75,
+					41.63
+				],
+				[
+					338,
+					-84,
+					51
+				],
+				[
+					338,
+					-75,
+					60.38
+				],
+				[
+					338,
+					-84,
+					69.75
+				],
+				[
+					338,
+					-75,
+					79.13
+				],
+				[
+					338,
+					-84,
+					88.5
+				],
+				[
+					338,
+					-75,
+					97.88
+				],
+				[
+					338,
+					-84,
+					107.25
+				],
+				[
+					338,
+					-75,
+					116.63
+				],
+				[
+					338,
+					-84,
+					126
+				],
+				[
+					338,
+					-75,
+					135.38
+				],
+				[
+					338,
+					-84,
+					144.75
+				],
+				[
+					338,
+					-75,
+					154.13
+				],
+				[
+					338,
+					-84,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "lace-1-c",
+			"kind": "wire",
+			"points": [
+				[
+					338,
+					-84,
+					13.5
+				],
+				[
+					347,
+					-84,
+					22.88
+				],
+				[
+					338,
+					-84,
+					32.25
+				],
+				[
+					347,
+					-84,
+					41.63
+				],
+				[
+					338,
+					-84,
+					51
+				],
+				[
+					347,
+					-84,
+					60.38
+				],
+				[
+					338,
+					-84,
+					69.75
+				],
+				[
+					347,
+					-84,
+					79.13
+				],
+				[
+					338,
+					-84,
+					88.5
+				],
+				[
+					347,
+					-84,
+					97.88
+				],
+				[
+					338,
+					-84,
+					107.25
+				],
+				[
+					347,
+					-84,
+					116.63
+				],
+				[
+					338,
+					-84,
+					126
+				],
+				[
+					347,
+					-84,
+					135.38
+				],
+				[
+					338,
+					-84,
+					144.75
+				],
+				[
+					347,
+					-84,
+					154.13
+				],
+				[
+					338,
+					-84,
+					163.5
+				]
+			]
+		},
+		{
+			"id": "tower-cap-1",
+			"kind": "box",
+			"at": [
+				337,
+				-85,
+				163.5
+			],
+			"size": [
+				11,
+				11,
+				2
+			],
+			"r": 0
+		},
+		{
+			"id": "spike-1",
+			"kind": "rod",
+			"from": [
+				342.5,
+				-79.5,
+				165.5
+			],
+			"to": [
+				342.5,
+				-79.5,
+				178.5
+			],
+			"radius": 0.9
+		},
+		{
+			"id": "beam-chord-0",
+			"kind": "box",
+			"at": [
+				247,
+				-83.7,
+				151.8
+			],
+			"size": [
+				91,
+				1.4,
+				1.4
+			],
+			"r": 0
+		},
+		{
+			"id": "beam-chord-1",
+			"kind": "box",
+			"at": [
+				247,
+				-76.7,
+				151.8
+			],
+			"size": [
+				91,
+				1.4,
+				1.4
+			],
+			"r": 0
+		},
+		{
+			"id": "beam-chord-2",
+			"kind": "box",
+			"at": [
+				247,
+				-83.7,
+				159.8
+			],
+			"size": [
+				91,
+				1.4,
+				1.4
+			],
+			"r": 0
+		},
+		{
+			"id": "beam-chord-3",
+			"kind": "box",
+			"at": [
+				247,
+				-76.7,
+				159.8
+			],
+			"size": [
+				91,
+				1.4,
+				1.4
+			],
+			"r": 0
+		},
+		{
+			"id": "beam-lace-front",
+			"kind": "wire",
+			"points": [
+				[
+					247,
+					-76,
+					152.5
+				],
+				[
+					251.14,
+					-76,
+					160.5
+				],
+				[
+					255.27,
+					-76,
+					152.5
+				],
+				[
+					259.41,
+					-76,
+					160.5
+				],
+				[
+					263.55,
+					-76,
+					152.5
+				],
+				[
+					267.68,
+					-76,
+					160.5
+				],
+				[
+					271.82,
+					-76,
+					152.5
+				],
+				[
+					275.95,
+					-76,
+					160.5
+				],
+				[
+					280.09,
+					-76,
+					152.5
+				],
+				[
+					284.23,
+					-76,
+					160.5
+				],
+				[
+					288.36,
+					-76,
+					152.5
+				],
+				[
+					292.5,
+					-76,
+					160.5
+				],
+				[
+					296.64,
+					-76,
+					152.5
+				],
+				[
+					300.77,
+					-76,
+					160.5
+				],
+				[
+					304.91,
+					-76,
+					152.5
+				],
+				[
+					309.05,
+					-76,
+					160.5
+				],
+				[
+					313.18,
+					-76,
+					152.5
+				],
+				[
+					317.32,
+					-76,
+					160.5
+				],
+				[
+					321.45,
+					-76,
+					152.5
+				],
+				[
+					325.59,
+					-76,
+					160.5
+				],
+				[
+					329.73,
+					-76,
+					152.5
+				],
+				[
+					333.86,
+					-76,
+					160.5
+				],
+				[
+					338,
+					-76,
+					152.5
+				]
+			]
+		},
+		{
+			"id": "beam-lace-top",
+			"kind": "wire",
+			"points": [
+				[
+					247,
+					-83,
+					160.5
+				],
+				[
+					251.14,
+					-76,
+					160.5
+				],
+				[
+					255.27,
+					-83,
+					160.5
+				],
+				[
+					259.41,
+					-76,
+					160.5
+				],
+				[
+					263.55,
+					-83,
+					160.5
+				],
+				[
+					267.68,
+					-76,
+					160.5
+				],
+				[
+					271.82,
+					-83,
+					160.5
+				],
+				[
+					275.95,
+					-76,
+					160.5
+				],
+				[
+					280.09,
+					-83,
+					160.5
+				],
+				[
+					284.23,
+					-76,
+					160.5
+				],
+				[
+					288.36,
+					-83,
+					160.5
+				],
+				[
+					292.5,
+					-76,
+					160.5
+				],
+				[
+					296.64,
+					-83,
+					160.5
+				],
+				[
+					300.77,
+					-76,
+					160.5
+				],
+				[
+					304.91,
+					-83,
+					160.5
+				],
+				[
+					309.05,
+					-76,
+					160.5
+				],
+				[
+					313.18,
+					-83,
+					160.5
+				],
+				[
+					317.32,
+					-76,
+					160.5
+				],
+				[
+					321.45,
+					-83,
+					160.5
+				],
+				[
+					325.59,
+					-76,
+					160.5
+				],
+				[
+					329.73,
+					-83,
+					160.5
+				],
+				[
+					333.86,
+					-76,
+					160.5
+				],
+				[
+					338,
+					-83,
+					160.5
+				]
+			]
+		},
+		{
+			"id": "beam-lace-back",
+			"kind": "wire",
+			"points": [
+				[
+					247,
+					-83,
+					160.5
+				],
+				[
+					251.14,
+					-83,
+					152.5
+				],
+				[
+					255.27,
+					-83,
+					160.5
+				],
+				[
+					259.41,
+					-83,
+					152.5
+				],
+				[
+					263.55,
+					-83,
+					160.5
+				],
+				[
+					267.68,
+					-83,
+					152.5
+				],
+				[
+					271.82,
+					-83,
+					160.5
+				],
+				[
+					275.95,
+					-83,
+					152.5
+				],
+				[
+					280.09,
+					-83,
+					160.5
+				],
+				[
+					284.23,
+					-83,
+					152.5
+				],
+				[
+					288.36,
+					-83,
+					160.5
+				],
+				[
+					292.5,
+					-83,
+					152.5
+				],
+				[
+					296.64,
+					-83,
+					160.5
+				],
+				[
+					300.77,
+					-83,
+					152.5
+				],
+				[
+					304.91,
+					-83,
+					160.5
+				],
+				[
+					309.05,
+					-83,
+					152.5
+				],
+				[
+					313.18,
+					-83,
+					160.5
+				],
+				[
+					317.32,
+					-83,
+					152.5
+				],
+				[
+					321.45,
+					-83,
+					160.5
+				],
+				[
+					325.59,
+					-83,
+					152.5
+				],
+				[
+					329.73,
+					-83,
+					160.5
+				],
+				[
+					333.86,
+					-83,
+					152.5
+				],
+				[
+					338,
+					-83,
+					160.5
+				]
+			]
+		},
+		{
+			"id": "pulley-0",
+			"kind": "torus",
+			"at": [
+				262,
+				-79.5,
+				164
+			],
+			"axis": "y",
+			"R": 3,
+			"r": 0.9
+		},
+		{
+			"id": "strain-0",
+			"kind": "lathe",
+			"at": [
+				262,
+				-79.5,
+				151.5
+			],
+			"axis": "-z",
+			"profile": [
+				[
+					0,
+					1.4
+				],
+				[
+					1,
+					1.8
+				],
+				[
+					9,
+					1.8
+				],
+				[
+					10,
+					1.4
+				]
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 16,
+					"s0": 1,
+					"s1": 9
+				},
+				{
+					"type": "bands",
+					"at": [
+						2.5,
+						4,
+						5.5,
+						7,
+						8.5
+					]
+				}
+			]
+		},
+		{
+			"id": "pulley-1",
+			"kind": "torus",
+			"at": [
+				294,
+				-79.5,
+				164
+			],
+			"axis": "y",
+			"R": 3,
+			"r": 0.9
+		},
+		{
+			"id": "strain-1",
+			"kind": "lathe",
+			"at": [
+				294,
+				-79.5,
+				151.5
+			],
+			"axis": "-z",
+			"profile": [
+				[
+					0,
+					1.4
+				],
+				[
+					1,
+					1.8
+				],
+				[
+					9,
+					1.8
+				],
+				[
+					10,
+					1.4
+				]
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 16,
+					"s0": 1,
+					"s1": 9
+				},
+				{
+					"type": "bands",
+					"at": [
+						2.5,
+						4,
+						5.5,
+						7,
+						8.5
+					]
+				}
+			]
+		},
+		{
+			"id": "pulley-2",
+			"kind": "torus",
+			"at": [
+				326,
+				-79.5,
+				164
+			],
+			"axis": "y",
+			"R": 3,
+			"r": 0.9
+		},
+		{
+			"id": "strain-2",
+			"kind": "lathe",
+			"at": [
+				326,
+				-79.5,
+				151.5
+			],
+			"axis": "-z",
+			"profile": [
+				[
+					0,
+					1.4
+				],
+				[
+					1,
+					1.8
+				],
+				[
+					9,
+					1.8
+				],
+				[
+					10,
+					1.4
+				]
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 16,
+					"s0": 1,
+					"s1": 9
+				},
+				{
+					"type": "bands",
+					"at": [
+						2.5,
+						4,
+						5.5,
+						7,
+						8.5
+					]
+				}
+			]
+		},
+		{
+			"id": "jbox-0",
+			"kind": "box",
+			"at": [
+				334,
+				128,
+				9
+			],
+			"size": [
+				10,
+				10,
+				18
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1,
+					"r": 0.4
+				},
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 1,
+					"r": 0.4
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							0.5
+						],
+						[
+							9.5,
+							0.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "jbox-1",
+			"kind": "box",
+			"at": [
+				326,
+				-24,
+				10.5
+			],
+			"size": [
+				6,
+				6,
+				10
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1,
+					"r": 0.4
+				},
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 1,
+					"r": 0.4
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							0.5
+						],
+						[
+							5.5,
+							0.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "jbox-2",
+			"kind": "box",
+			"at": [
+				214,
+				104,
+				9
+			],
+			"size": [
+				7,
+				7,
+				9
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1,
+					"r": 0.4
+				},
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 1,
+					"r": 0.4
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.5,
+							0.5
+						],
+						[
+							6.5,
+							0.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "jbox-0-roof",
+			"kind": "box",
+			"at": [
+				333,
+				127,
+				27
+			],
+			"size": [
+				12,
+				12,
+				1
+			],
+			"r": 0
+		},
+		{
+			"id": "arc-0",
+			"kind": "glow",
+			"at": [
+				262,
+				-38,
+				80.5
+			],
+			"axis": "x",
+			"r": 9
+		},
+		{
+			"id": "arc-1",
+			"kind": "glow",
+			"at": [
+				294,
+				-38,
+				80.5
+			],
+			"axis": "x",
+			"r": 9
+		},
+		{
+			"id": "arc-2",
+			"kind": "glow",
+			"at": [
+				326,
+				-38,
+				80.5
+			],
+			"axis": "x",
+			"r": 9
+		},
+		{
+			"id": "guard",
+			"kind": "prism",
+			"at": [
+				8,
+				118,
+				62
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					44,
+					0
+				],
+				[
+					44,
+					10
+				],
+				[
+					43.67,
+					13.82
+				],
+				[
+					42.67,
+					17.52
+				],
+				[
+					41.05,
+					21.0
+				],
+				[
+					38.85,
+					24.14
+				],
+				[
+					36.14,
+					26.85
+				],
+				[
+					33.0,
+					29.05
+				],
+				[
+					29.52,
+					30.67
+				],
+				[
+					25.82,
+					31.67
+				],
+				[
+					22.0,
+					32.0
+				],
+				[
+					18.18,
+					31.67
+				],
+				[
+					14.48,
+					30.67
+				],
+				[
+					11.0,
+					29.05
+				],
+				[
+					7.86,
+					26.85
+				],
+				[
+					5.15,
+					24.14
+				],
+				[
+					2.95,
+					21.0
+				],
+				[
+					1.33,
+					17.52
+				],
+				[
+					0.33,
+					13.82
+				],
+				[
+					0,
+					10
+				]
+			],
+			"depth": 12,
+			"round": 0.6
+		},
+		{
+			"id": "guard-rim",
+			"kind": "prism",
+			"at": [
+				6,
+				117,
+				62
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					46,
+					0
+				],
+				[
+					46,
+					10
+				],
+				[
+					45.65,
+					13.99
+				],
+				[
+					44.61,
+					17.87
+				],
+				[
+					42.92,
+					21.5
+				],
+				[
+					40.62,
+					24.78
+				],
+				[
+					37.78,
+					27.62
+				],
+				[
+					34.5,
+					29.92
+				],
+				[
+					30.87,
+					31.61
+				],
+				[
+					26.99,
+					32.65
+				],
+				[
+					23.0,
+					33.0
+				],
+				[
+					19.01,
+					32.65
+				],
+				[
+					15.13,
+					31.61
+				],
+				[
+					11.5,
+					29.92
+				],
+				[
+					8.22,
+					27.62
+				],
+				[
+					5.38,
+					24.78
+				],
+				[
+					3.08,
+					21.5
+				],
+				[
+					1.39,
+					17.87
+				],
+				[
+					0.35,
+					13.99
+				],
+				[
+					0,
+					10
+				]
+			],
+			"depth": 2,
+			"round": 0.4
+		},
+		{
+			"id": "guard-rim-b",
+			"kind": "prism",
+			"at": [
+				20,
+				117,
+				62
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					46,
+					0
+				],
+				[
+					46,
+					10
+				],
+				[
+					45.65,
+					13.99
+				],
+				[
+					44.61,
+					17.87
+				],
+				[
+					42.92,
+					21.5
+				],
+				[
+					40.62,
+					24.78
+				],
+				[
+					37.78,
+					27.62
+				],
+				[
+					34.5,
+					29.92
+				],
+				[
+					30.87,
+					31.61
+				],
+				[
+					26.99,
+					32.65
+				],
+				[
+					23.0,
+					33.0
+				],
+				[
+					19.01,
+					32.65
+				],
+				[
+					15.13,
+					31.61
+				],
+				[
+					11.5,
+					29.92
+				],
+				[
+					8.22,
+					27.62
+				],
+				[
+					5.38,
+					24.78
+				],
+				[
+					3.08,
+					21.5
+				],
+				[
+					1.39,
+					17.87
+				],
+				[
+					0.35,
+					13.99
+				],
+				[
+					0,
+					10
+				]
+			],
+			"depth": 2,
+			"round": 0.4
+		},
+		{
+			"id": "stator",
+			"kind": "lathe",
+			"at": [
+				66,
+				140,
+				70
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					24
+				],
+				[
+					90,
+					24
+				]
+			],
+			"cutaway": {
+				"from": -24,
+				"to": 118,
+				"wall": 2
+			},
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 56,
+					"s0": 0,
+					"s1": 90
+				},
+				{
+					"type": "bands",
+					"at": [
+						15,
+						30,
+						45,
+						60,
+						75
+					]
+				}
+			]
+		},
+		{
+			"id": "bus-tx-0",
+			"kind": "tube",
+			"radius": 0.8,
+			"fillet": 3,
+			"points": [
+				[
+					262,
+					78,
+					110
+				],
+				[
+					262,
+					76,
+					115
+				],
+				[
+					262.0,
+					50,
+					104
+				],
+				[
+					262,
+					30,
+					88
+				],
+				[
+					262,
+					22,
+					80
+				]
+			]
+		},
+		{
+			"id": "bus-ct-0",
+			"kind": "tube",
+			"radius": 0.7,
+			"fillet": 2,
+			"points": [
+				[
+					262,
+					22,
+					77
+				],
+				[
+					262,
+					16,
+					82
+				],
+				[
+					262,
+					8,
+					82
+				],
+				[
+					262,
+					1,
+					77
+				]
+			]
+		},
+		{
+			"id": "bus-brk-0",
+			"kind": "tube",
+			"radius": 0.7,
+			"fillet": 2,
+			"points": [
+				[
+					262,
+					-27,
+					74
+				],
+				[
+					262,
+					-30,
+					80
+				],
+				[
+					262,
+					-35,
+					80
+				],
+				[
+					262,
+					-38,
+					77.5
+				]
+			]
+		},
+		{
+			"id": "drop-0",
+			"kind": "tube",
+			"radius": 0.8,
+			"fillet": 4,
+			"points": [
+				[
+					262,
+					-79.5,
+					141.5
+				],
+				[
+					262,
+					-79.5,
+					120
+				],
+				[
+					262,
+					-68,
+					100
+				],
+				[
+					262,
+					-61,
+					86
+				],
+				[
+					262,
+					-58,
+					79
+				]
+			]
+		},
+		{
+			"id": "clamp-0",
+			"kind": "sphere",
+			"at": [
+				262,
+				-79.5,
+				141.5
+			],
+			"r": 1.4
+		},
+		{
+			"id": "arr-0-pad",
+			"kind": "box",
+			"at": [
+				257,
+				37,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "arr-0-stand",
+			"kind": "box",
+			"at": [
+				259.4,
+				39.4,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				20
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "arr-box-0",
+			"kind": "box",
+			"at": [
+				264.6,
+				40,
+				17
+			],
+			"size": [
+				3,
+				5,
+				7
+			],
+			"r": 0.5
+		},
+		{
+			"id": "arr-col-0",
+			"kind": "lathe",
+			"at": [
+				262,
+				42,
+				33
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.1
+				],
+				[
+					3.4,
+					2.1
+				],
+				[
+					3.85,
+					3.5
+				],
+				[
+					4.6,
+					2.1
+				],
+				[
+					5.05,
+					3.5
+				],
+				[
+					5.8,
+					2.1
+				],
+				[
+					6.25,
+					3.5
+				],
+				[
+					7.0,
+					2.1
+				],
+				[
+					7.45,
+					3.5
+				],
+				[
+					8.2,
+					2.1
+				],
+				[
+					8.65,
+					3.5
+				],
+				[
+					9.4,
+					2.1
+				],
+				[
+					9.85,
+					3.5
+				],
+				[
+					10.6,
+					2.1
+				],
+				[
+					11.05,
+					3.5
+				],
+				[
+					11.8,
+					2.1
+				],
+				[
+					12.25,
+					3.5
+				],
+				[
+					13.0,
+					2.1
+				],
+				[
+					13.45,
+					3.5
+				],
+				[
+					14.2,
+					2.1
+				],
+				[
+					14.65,
+					3.5
+				],
+				[
+					15.4,
+					2.1
+				],
+				[
+					15.85,
+					3.5
+				],
+				[
+					16.6,
+					2.1
+				],
+				[
+					17.05,
+					3.5
+				],
+				[
+					17.8,
+					2.1
+				],
+				[
+					18.25,
+					3.5
+				],
+				[
+					19.0,
+					2.1
+				],
+				[
+					19.45,
+					3.5
+				],
+				[
+					20.2,
+					2.1
+				],
+				[
+					20.65,
+					3.5
+				],
+				[
+					21.4,
+					2.1
+				],
+				[
+					21.85,
+					3.5
+				],
+				[
+					22.6,
+					2.1
+				],
+				[
+					23.05,
+					3.5
+				],
+				[
+					23.8,
+					2.1
+				],
+				[
+					24.25,
+					3.5
+				],
+				[
+					25.0,
+					2.1
+				],
+				[
+					25.45,
+					3.5
+				],
+				[
+					26.2,
+					2.1
+				],
+				[
+					26.65,
+					3.5
+				],
+				[
+					27.6,
+					2.1
+				],
+				[
+					27.6,
+					3.4
+				],
+				[
+					30,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.05,
+						6.25,
+						7.45,
+						8.65,
+						9.85,
+						11.05,
+						12.25,
+						13.45,
+						14.65,
+						15.85,
+						17.05,
+						18.25,
+						19.45,
+						20.65,
+						21.85,
+						23.05,
+						24.25,
+						25.45,
+						26.65
+					]
+				}
+			]
+		},
+		{
+			"id": "arr-ring-0",
+			"kind": "torus",
+			"at": [
+				262,
+				42,
+				64
+			],
+			"axis": "z",
+			"R": 4,
+			"r": 0.6
+		},
+		{
+			"id": "bus-arr-0",
+			"kind": "tube",
+			"radius": 0.6,
+			"fillet": 2,
+			"points": [
+				[
+					262,
+					42,
+					64
+				],
+				[
+					262,
+					42,
+					68
+				],
+				[
+					262,
+					30,
+					72
+				],
+				[
+					262,
+					24,
+					76
+				]
+			]
+		},
+		{
+			"id": "bus-tx-1",
+			"kind": "tube",
+			"radius": 0.8,
+			"fillet": 3,
+			"points": [
+				[
+					288,
+					78,
+					110
+				],
+				[
+					288,
+					76,
+					115
+				],
+				[
+					291.0,
+					50,
+					104
+				],
+				[
+					294,
+					30,
+					88
+				],
+				[
+					294,
+					22,
+					80
+				]
+			]
+		},
+		{
+			"id": "bus-ct-1",
+			"kind": "tube",
+			"radius": 0.7,
+			"fillet": 2,
+			"points": [
+				[
+					294,
+					22,
+					77
+				],
+				[
+					294,
+					16,
+					82
+				],
+				[
+					294,
+					8,
+					82
+				],
+				[
+					294,
+					1,
+					77
+				]
+			]
+		},
+		{
+			"id": "bus-brk-1",
+			"kind": "tube",
+			"radius": 0.7,
+			"fillet": 2,
+			"points": [
+				[
+					294,
+					-27,
+					74
+				],
+				[
+					294,
+					-30,
+					80
+				],
+				[
+					294,
+					-35,
+					80
+				],
+				[
+					294,
+					-38,
+					77.5
+				]
+			]
+		},
+		{
+			"id": "drop-1",
+			"kind": "tube",
+			"radius": 0.8,
+			"fillet": 4,
+			"points": [
+				[
+					294,
+					-79.5,
+					141.5
+				],
+				[
+					294,
+					-79.5,
+					120
+				],
+				[
+					294,
+					-68,
+					100
+				],
+				[
+					294,
+					-61,
+					86
+				],
+				[
+					294,
+					-58,
+					79
+				]
+			]
+		},
+		{
+			"id": "clamp-1",
+			"kind": "sphere",
+			"at": [
+				294,
+				-79.5,
+				141.5
+			],
+			"r": 1.4
+		},
+		{
+			"id": "arr-1-pad",
+			"kind": "box",
+			"at": [
+				289,
+				37,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "arr-1-stand",
+			"kind": "box",
+			"at": [
+				291.4,
+				39.4,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				20
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "arr-box-1",
+			"kind": "box",
+			"at": [
+				296.6,
+				40,
+				17
+			],
+			"size": [
+				3,
+				5,
+				7
+			],
+			"r": 0.5
+		},
+		{
+			"id": "arr-col-1",
+			"kind": "lathe",
+			"at": [
+				294,
+				42,
+				33
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.1
+				],
+				[
+					3.4,
+					2.1
+				],
+				[
+					3.85,
+					3.5
+				],
+				[
+					4.6,
+					2.1
+				],
+				[
+					5.05,
+					3.5
+				],
+				[
+					5.8,
+					2.1
+				],
+				[
+					6.25,
+					3.5
+				],
+				[
+					7.0,
+					2.1
+				],
+				[
+					7.45,
+					3.5
+				],
+				[
+					8.2,
+					2.1
+				],
+				[
+					8.65,
+					3.5
+				],
+				[
+					9.4,
+					2.1
+				],
+				[
+					9.85,
+					3.5
+				],
+				[
+					10.6,
+					2.1
+				],
+				[
+					11.05,
+					3.5
+				],
+				[
+					11.8,
+					2.1
+				],
+				[
+					12.25,
+					3.5
+				],
+				[
+					13.0,
+					2.1
+				],
+				[
+					13.45,
+					3.5
+				],
+				[
+					14.2,
+					2.1
+				],
+				[
+					14.65,
+					3.5
+				],
+				[
+					15.4,
+					2.1
+				],
+				[
+					15.85,
+					3.5
+				],
+				[
+					16.6,
+					2.1
+				],
+				[
+					17.05,
+					3.5
+				],
+				[
+					17.8,
+					2.1
+				],
+				[
+					18.25,
+					3.5
+				],
+				[
+					19.0,
+					2.1
+				],
+				[
+					19.45,
+					3.5
+				],
+				[
+					20.2,
+					2.1
+				],
+				[
+					20.65,
+					3.5
+				],
+				[
+					21.4,
+					2.1
+				],
+				[
+					21.85,
+					3.5
+				],
+				[
+					22.6,
+					2.1
+				],
+				[
+					23.05,
+					3.5
+				],
+				[
+					23.8,
+					2.1
+				],
+				[
+					24.25,
+					3.5
+				],
+				[
+					25.0,
+					2.1
+				],
+				[
+					25.45,
+					3.5
+				],
+				[
+					26.2,
+					2.1
+				],
+				[
+					26.65,
+					3.5
+				],
+				[
+					27.6,
+					2.1
+				],
+				[
+					27.6,
+					3.4
+				],
+				[
+					30,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.05,
+						6.25,
+						7.45,
+						8.65,
+						9.85,
+						11.05,
+						12.25,
+						13.45,
+						14.65,
+						15.85,
+						17.05,
+						18.25,
+						19.45,
+						20.65,
+						21.85,
+						23.05,
+						24.25,
+						25.45,
+						26.65
+					]
+				}
+			]
+		},
+		{
+			"id": "arr-ring-1",
+			"kind": "torus",
+			"at": [
+				294,
+				42,
+				64
+			],
+			"axis": "z",
+			"R": 4,
+			"r": 0.6
+		},
+		{
+			"id": "bus-arr-1",
+			"kind": "tube",
+			"radius": 0.6,
+			"fillet": 2,
+			"points": [
+				[
+					294,
+					42,
+					64
+				],
+				[
+					294,
+					42,
+					68
+				],
+				[
+					294,
+					30,
+					72
+				],
+				[
+					294,
+					24,
+					76
+				]
+			]
+		},
+		{
+			"id": "bus-tx-2",
+			"kind": "tube",
+			"radius": 0.8,
+			"fillet": 3,
+			"points": [
+				[
+					314,
+					78,
+					110
+				],
+				[
+					314,
+					76,
+					115
+				],
+				[
+					320.0,
+					50,
+					104
+				],
+				[
+					326,
+					30,
+					88
+				],
+				[
+					326,
+					22,
+					80
+				]
+			]
+		},
+		{
+			"id": "bus-ct-2",
+			"kind": "tube",
+			"radius": 0.7,
+			"fillet": 2,
+			"points": [
+				[
+					326,
+					22,
+					77
+				],
+				[
+					326,
+					16,
+					82
+				],
+				[
+					326,
+					8,
+					82
+				],
+				[
+					326,
+					1,
+					77
+				]
+			]
+		},
+		{
+			"id": "bus-brk-2",
+			"kind": "tube",
+			"radius": 0.7,
+			"fillet": 2,
+			"points": [
+				[
+					326,
+					-27,
+					74
+				],
+				[
+					326,
+					-30,
+					80
+				],
+				[
+					326,
+					-35,
+					80
+				],
+				[
+					326,
+					-38,
+					77.5
+				]
+			]
+		},
+		{
+			"id": "drop-2",
+			"kind": "tube",
+			"radius": 0.8,
+			"fillet": 4,
+			"points": [
+				[
+					326,
+					-79.5,
+					141.5
+				],
+				[
+					326,
+					-79.5,
+					120
+				],
+				[
+					326,
+					-68,
+					100
+				],
+				[
+					326,
+					-61,
+					86
+				],
+				[
+					326,
+					-58,
+					79
+				]
+			]
+		},
+		{
+			"id": "clamp-2",
+			"kind": "sphere",
+			"at": [
+				326,
+				-79.5,
+				141.5
+			],
+			"r": 1.4
+		},
+		{
+			"id": "arr-2-pad",
+			"kind": "box",
+			"at": [
+				321,
+				37,
+				10.5
+			],
+			"size": [
+				10,
+				10,
+				2.5
+			],
+			"r": 0
+		},
+		{
+			"id": "arr-2-stand",
+			"kind": "box",
+			"at": [
+				323.4,
+				39.4,
+				13
+			],
+			"size": [
+				5.2,
+				5.2,
+				20
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							1
+						],
+						[
+							4.6,
+							7
+						],
+						[
+							0.6,
+							13
+						],
+						[
+							4.6,
+							19
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "arr-box-2",
+			"kind": "box",
+			"at": [
+				328.6,
+				40,
+				17
+			],
+			"size": [
+				3,
+				5,
+				7
+			],
+			"r": 0.5
+		},
+		{
+			"id": "arr-col-2",
+			"kind": "lathe",
+			"at": [
+				326,
+				42,
+				33
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4
+				],
+				[
+					2,
+					4
+				],
+				[
+					2.6,
+					2.1
+				],
+				[
+					3.4,
+					2.1
+				],
+				[
+					3.85,
+					3.5
+				],
+				[
+					4.6,
+					2.1
+				],
+				[
+					5.05,
+					3.5
+				],
+				[
+					5.8,
+					2.1
+				],
+				[
+					6.25,
+					3.5
+				],
+				[
+					7.0,
+					2.1
+				],
+				[
+					7.45,
+					3.5
+				],
+				[
+					8.2,
+					2.1
+				],
+				[
+					8.65,
+					3.5
+				],
+				[
+					9.4,
+					2.1
+				],
+				[
+					9.85,
+					3.5
+				],
+				[
+					10.6,
+					2.1
+				],
+				[
+					11.05,
+					3.5
+				],
+				[
+					11.8,
+					2.1
+				],
+				[
+					12.25,
+					3.5
+				],
+				[
+					13.0,
+					2.1
+				],
+				[
+					13.45,
+					3.5
+				],
+				[
+					14.2,
+					2.1
+				],
+				[
+					14.65,
+					3.5
+				],
+				[
+					15.4,
+					2.1
+				],
+				[
+					15.85,
+					3.5
+				],
+				[
+					16.6,
+					2.1
+				],
+				[
+					17.05,
+					3.5
+				],
+				[
+					17.8,
+					2.1
+				],
+				[
+					18.25,
+					3.5
+				],
+				[
+					19.0,
+					2.1
+				],
+				[
+					19.45,
+					3.5
+				],
+				[
+					20.2,
+					2.1
+				],
+				[
+					20.65,
+					3.5
+				],
+				[
+					21.4,
+					2.1
+				],
+				[
+					21.85,
+					3.5
+				],
+				[
+					22.6,
+					2.1
+				],
+				[
+					23.05,
+					3.5
+				],
+				[
+					23.8,
+					2.1
+				],
+				[
+					24.25,
+					3.5
+				],
+				[
+					25.0,
+					2.1
+				],
+				[
+					25.45,
+					3.5
+				],
+				[
+					26.2,
+					2.1
+				],
+				[
+					26.65,
+					3.5
+				],
+				[
+					27.6,
+					2.1
+				],
+				[
+					27.6,
+					3.4
+				],
+				[
+					30,
+					3.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.85,
+						5.05,
+						6.25,
+						7.45,
+						8.65,
+						9.85,
+						11.05,
+						12.25,
+						13.45,
+						14.65,
+						15.85,
+						17.05,
+						18.25,
+						19.45,
+						20.65,
+						21.85,
+						23.05,
+						24.25,
+						25.45,
+						26.65
+					]
+				}
+			]
+		},
+		{
+			"id": "arr-ring-2",
+			"kind": "torus",
+			"at": [
+				326,
+				42,
+				64
+			],
+			"axis": "z",
+			"R": 4,
+			"r": 0.6
+		},
+		{
+			"id": "bus-arr-2",
+			"kind": "tube",
+			"radius": 0.6,
+			"fillet": 2,
+			"points": [
+				[
+					326,
+					42,
+					64
+				],
+				[
+					326,
+					42,
+					68
+				],
+				[
+					326,
+					30,
+					72
+				],
+				[
+					326,
+					24,
+					76
+				]
+			]
+		},
+		{
+			"id": "girder-0",
+			"kind": "box",
+			"at": [
+				262,
+				-58.8,
+				30
+			],
+			"size": [
+				64,
+				1.6,
+				1.6
+			],
+			"r": 0
+		},
+		{
+			"id": "girder-1",
+			"kind": "box",
+			"at": [
+				262,
+				-38.8,
+				30
+			],
+			"size": [
+				64,
+				1.6,
+				1.6
+			],
+			"r": 0
+		},
+		{
+			"id": "girder-2",
+			"kind": "box",
+			"at": [
+				262,
+				-14.8,
+				30
+			],
+			"size": [
+				64,
+				1.6,
+				1.6
+			],
+			"r": 0
+		},
+		{
+			"id": "girder-3",
+			"kind": "box",
+			"at": [
+				262,
+				21.2,
+				30
+			],
+			"size": [
+				64,
+				1.6,
+				1.6
+			],
+			"r": 0
+		},
+		{
+			"id": "girder-4",
+			"kind": "box",
+			"at": [
+				262,
+				41.2,
+				30
+			],
+			"size": [
+				64,
+				1.6,
+				1.6
+			],
+			"r": 0
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"plinth-gen",
-				"plinth-tx"
+				"plinth",
+				"yard-bed",
+				"ruler",
+				"square",
+				"nameplate"
 			],
 			[
-				"pedestal",
-				"transformer"
+				"pier-0",
+				"pier-b-0",
+				"pier-1",
+				"pier-b-1",
+				"pier-2",
+				"pier-b-2",
+				"pier-3",
+				"pier-b-3",
+				"pier-4",
+				"pier-b-4"
 			],
 			[
-				"generator",
-				"exciter",
-				"bushing"
+				"deck",
+				"landing",
+				"landing-step"
 			],
 			[
-				"breaker",
-				"leg-a",
-				"leg-b"
+				"exciter-base",
+				"exciter-hub",
+				"brg-l-ped",
+				"brg-l-cap",
+				"brg-r-ped",
+				"brg-r-cap",
+				"saddle-l",
+				"saddle-r",
+				"skirt",
+				"term-box",
+				"guard",
+				"guard-rim",
+				"guard-rim-b"
 			],
 			[
-				"post-a",
-				"post-b",
-				"beam"
+				"shaft",
+				"coupling-l",
+				"coupling-r",
+				"coupling-r2",
+				"shaft-end"
 			],
 			[
-				"blade"
+				"casing",
+				"stator"
+			],
+			[
+				"core",
+				"winding-l",
+				"winding-r",
+				"rotor-l",
+				"rotor-r"
+			],
+			[
+				"cooler",
+				"cooler-pipe",
+				"cooler-pipe-2",
+				"cooler-pipe-3",
+				"inst-l-a",
+				"inst-l-b",
+				"inst-l-g",
+				"inst-r-a",
+				"inst-r-b",
+				"inst-r-g"
+			],
+			[
+				"rail-post-0",
+				"rail-post-1",
+				"rail-post-2",
+				"rail-post-3",
+				"rail-post-4",
+				"rail-top",
+				"rail-mid",
+				"landing-box",
+				"landing-box-leg"
+			],
+			[
+				"stringer-a",
+				"hand-a",
+				"stringer-b",
+				"hand-b",
+				"tread-1",
+				"tread-2",
+				"tread-3",
+				"tread-4",
+				"tread-5",
+				"tread-6",
+				"tread-7",
+				"tread-8",
+				"tread-9",
+				"tread-10"
+			],
+			[
+				"bus-0",
+				"bus-flange-0",
+				"bus-box-0",
+				"bus-1",
+				"bus-flange-1",
+				"bus-box-1",
+				"bus-2",
+				"bus-flange-2",
+				"bus-box-2"
+			],
+			[
+				"gauge-base",
+				"gauge-board",
+				"toggle-0",
+				"toggle-1",
+				"toggle-2",
+				"gauge-cap"
+			],
+			[
+				"cabinet-0",
+				"cabinet-1",
+				"cabinet-2",
+				"cab-top",
+				"cab-knob",
+				"cab-conduit"
+			],
+			[
+				"transformer",
+				"tx-skid",
+				"tx-jbox",
+				"tx-conduit",
+				"tx-gaugebox"
+			],
+			[
+				"radiator-0",
+				"rad-foot-0",
+				"radiator-1",
+				"rad-foot-1",
+				"radiator-2",
+				"rad-foot-2",
+				"radiator-3",
+				"rad-foot-3",
+				"radiator-4",
+				"rad-foot-4",
+				"rad-header"
+			],
+			[
+				"conservator",
+				"cons-leg-a",
+				"cons-leg-b",
+				"cons-pipe",
+				"breather",
+				"tx-relay",
+				"bushing-0",
+				"bushing-1",
+				"bushing-2",
+				"lv-0",
+				"lv-1",
+				"lv-2"
+			],
+			[
+				"dpost-a-0-pad",
+				"dpost-a-0-stand",
+				"dpost-b-0-pad",
+				"dpost-b-0-stand",
+				"brk-0-pad",
+				"brk-0-stand",
+				"ct-0-pad",
+				"ct-0-stand",
+				"dpost-a-1-pad",
+				"dpost-a-1-stand",
+				"dpost-b-1-pad",
+				"dpost-b-1-stand",
+				"brk-1-pad",
+				"brk-1-stand",
+				"ct-1-pad",
+				"ct-1-stand",
+				"dpost-a-2-pad",
+				"dpost-a-2-stand",
+				"dpost-b-2-pad",
+				"dpost-b-2-stand",
+				"brk-2-pad",
+				"brk-2-stand",
+				"ct-2-pad",
+				"ct-2-stand",
+				"arr-0-pad",
+				"arr-0-stand",
+				"arr-box-0",
+				"arr-1-pad",
+				"arr-1-stand",
+				"arr-box-1",
+				"arr-2-pad",
+				"arr-2-stand",
+				"arr-box-2"
+			],
+			[
+				"dins-a-0",
+				"dins-b-0",
+				"dhead-a-0",
+				"dhead-b-0",
+				"dmotor-0",
+				"drod-0",
+				"brk-col-0",
+				"ct-col-0",
+				"dins-a-1",
+				"dins-b-1",
+				"dhead-a-1",
+				"dhead-b-1",
+				"dmotor-1",
+				"drod-1",
+				"brk-col-1",
+				"ct-col-1",
+				"dins-a-2",
+				"dins-b-2",
+				"dhead-a-2",
+				"dhead-b-2",
+				"dmotor-2",
+				"drod-2",
+				"brk-col-2",
+				"ct-col-2",
+				"arr-col-0",
+				"arr-ring-0",
+				"arr-col-1",
+				"arr-ring-1",
+				"arr-col-2",
+				"arr-ring-2",
+				"girder-0",
+				"girder-1",
+				"girder-2",
+				"girder-3",
+				"girder-4"
+			],
+			[
+				"brk-head-0",
+				"brk-cap-0",
+				"brk-box-0",
+				"brk-flag-0",
+				"brk-head-1",
+				"brk-cap-1",
+				"brk-box-1",
+				"brk-flag-1",
+				"brk-head-2",
+				"brk-cap-2",
+				"brk-box-2",
+				"brk-flag-2"
+			],
+			[
+				"ct-head-0",
+				"ct-box-0",
+				"ct-head-1",
+				"ct-box-1",
+				"ct-head-2",
+				"ct-box-2"
+			],
+			[
+				"blade-0",
+				"bjaw-0",
+				"bhinge-0",
+				"blade-1",
+				"bjaw-1",
+				"bhinge-1",
+				"blade-2",
+				"bjaw-2",
+				"bhinge-2"
+			],
+			[
+				"tower-pad-0",
+				"chord-0-0",
+				"chord-0-1",
+				"chord-0-2",
+				"chord-0-3",
+				"tower-cap-0",
+				"spike-0",
+				"tower-pad-1",
+				"chord-1-0",
+				"chord-1-1",
+				"chord-1-2",
+				"chord-1-3",
+				"tower-cap-1",
+				"spike-1"
+			],
+			[
+				"beam-chord-0",
+				"beam-chord-1",
+				"beam-chord-2",
+				"beam-chord-3"
+			],
+			[
+				"lace-0-y",
+				"lace-0-x",
+				"lace-0-y2",
+				"lace-0-x2",
+				"lace-0-b",
+				"lace-0-c",
+				"lace-1-y",
+				"lace-1-x",
+				"lace-1-y2",
+				"lace-1-x2",
+				"lace-1-b",
+				"lace-1-c",
+				"beam-lace-front",
+				"beam-lace-top",
+				"beam-lace-back"
+			],
+			[
+				"pulley-0",
+				"strain-0",
+				"pulley-1",
+				"strain-1",
+				"pulley-2",
+				"strain-2"
+			],
+			[
+				"jbox-0",
+				"jbox-1",
+				"jbox-2",
+				"jbox-0-roof"
+			],
+			[
+				"arc-0",
+				"arc-1",
+				"arc-2",
+				"bus-tx-0",
+				"bus-ct-0",
+				"bus-brk-0",
+				"drop-0",
+				"clamp-0",
+				"bus-arr-0",
+				"bus-tx-1",
+				"bus-ct-1",
+				"bus-brk-1",
+				"drop-1",
+				"clamp-1",
+				"bus-arr-1",
+				"bus-tx-2",
+				"bus-ct-2",
+				"bus-brk-2",
+				"drop-2",
+				"clamp-2",
+				"bus-arr-2"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "explode",
-		"explode": {
-			"rest": 0,
-			"min": 0,
-			"max": 1,
-			"step": 0.25,
-			"unit": "open"
-		}
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 0,
+		"values": {
+			"MW": [
+				660,
+				0,
+				0,
+				660
+			],
+			"kA": [
+				20.4,
+				0,
+				0,
+				20.4
+			]
+		},
+		"readout": "{name} \u00b7 {MW} MW {kA:0.1} kA",
+		"states": [
+			{
+				"name": "Live",
+				"readout": "660 MW 20.4 kA \u00b7 breaker and disconnector closed",
+				"parts": {
+					"blade-0": {
+						"turn": 0
+					},
+					"arc-0": {
+						"hidden": true
+					},
+					"blade-1": {
+						"turn": 0
+					},
+					"arc-1": {
+						"hidden": true
+					},
+					"blade-2": {
+						"turn": 0
+					},
+					"arc-2": {
+						"hidden": true
+					},
+					"core": {
+						"variant": "hot"
+					},
+					"winding-l": {
+						"variant": "hot"
+					},
+					"winding-r": {
+						"variant": "hot"
+					}
+				}
+			},
+			{
+				"name": "Breaker open",
+				"readout": "0 MW 0.0 kA \u00b7 breaker open, current interrupted",
+				"parts": {
+					"blade-0": {
+						"turn": 0
+					},
+					"brk-flag-0": {
+						"variant": "open"
+					},
+					"arc-0": {
+						"hidden": true
+					},
+					"blade-1": {
+						"turn": 0
+					},
+					"brk-flag-1": {
+						"variant": "open"
+					},
+					"arc-1": {
+						"hidden": true
+					},
+					"blade-2": {
+						"turn": 0
+					},
+					"brk-flag-2": {
+						"variant": "open"
+					},
+					"arc-2": {
+						"hidden": true
+					},
+					"core": {
+						"variant": "base"
+					},
+					"winding-l": {
+						"variant": "base"
+					},
+					"winding-r": {
+						"variant": "base"
+					}
+				}
+			},
+			{
+				"name": "Isolated",
+				"readout": "0 MW 0.0 kA \u00b7 blades lifted, line isolated",
+				"parts": {
+					"blade-0": {
+						"turn": -62
+					},
+					"brk-flag-0": {
+						"variant": "open"
+					},
+					"arc-0": {
+						"hidden": true
+					},
+					"blade-1": {
+						"turn": -62
+					},
+					"brk-flag-1": {
+						"variant": "open"
+					},
+					"arc-1": {
+						"hidden": true
+					},
+					"blade-2": {
+						"turn": -62
+					},
+					"brk-flag-2": {
+						"variant": "open"
+					},
+					"arc-2": {
+						"hidden": true
+					},
+					"core": {
+						"variant": "base"
+					},
+					"winding-l": {
+						"variant": "base"
+					},
+					"winding-r": {
+						"variant": "base"
+					}
+				}
+			},
+			{
+				"name": "Wrong order",
+				"readout": "Arc 20.4 kA \u00b7 blades lifted under load",
+				"parts": {
+					"blade-0": {
+						"turn": -62
+					},
+					"blade-1": {
+						"turn": -62
+					},
+					"blade-2": {
+						"turn": -62
+					},
+					"core": {
+						"variant": "hot"
+					},
+					"winding-l": {
+						"variant": "hot"
+					},
+					"winding-r": {
+						"variant": "hot"
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ POWER STATION ]",
 		"corner": "VPK-HTML"
-	}
+	},
+	"annotations": [
+		{
+			"kind": "line",
+			"from": [
+				263,
+				-80,
+				167.5
+			],
+			"via": [
+				[
+					272,
+					-92,
+					171.5
+				],
+				[
+					284,
+					-106,
+					174.5
+				]
+			],
+			"to": [
+				304,
+				-126,
+				177.5
+			],
+			"spectrum": "b"
+		},
+		{
+			"kind": "line",
+			"from": [
+				263,
+				-80,
+				170
+			],
+			"via": [
+				[
+					272,
+					-95.5,
+					174
+				],
+				[
+					284,
+					-109.5,
+					177
+				]
+			],
+			"to": [
+				304,
+				-129.5,
+				180
+			],
+			"spectrum": "b"
+		},
+		{
+			"kind": "line",
+			"from": [
+				295,
+				-80,
+				167.5
+			],
+			"via": [
+				[
+					304,
+					-92,
+					171.5
+				],
+				[
+					316,
+					-106,
+					174.5
+				]
+			],
+			"to": [
+				336,
+				-126,
+				177.5
+			],
+			"spectrum": "b"
+		},
+		{
+			"kind": "line",
+			"from": [
+				295,
+				-80,
+				170
+			],
+			"via": [
+				[
+					304,
+					-95.5,
+					174
+				],
+				[
+					316,
+					-109.5,
+					177
+				]
+			],
+			"to": [
+				336,
+				-129.5,
+				180
+			],
+			"spectrum": "b"
+		},
+		{
+			"kind": "line",
+			"from": [
+				327,
+				-80,
+				167.5
+			],
+			"via": [
+				[
+					336,
+					-92,
+					171.5
+				],
+				[
+					348,
+					-106,
+					174.5
+				]
+			],
+			"to": [
+				368,
+				-126,
+				177.5
+			],
+			"spectrum": "b"
+		},
+		{
+			"kind": "line",
+			"from": [
+				327,
+				-80,
+				170
+			],
+			"via": [
+				[
+					336,
+					-95.5,
+					174
+				],
+				[
+					348,
+					-109.5,
+					177
+				]
+			],
+			"to": [
+				368,
+				-129.5,
+				180
+			],
+			"spectrum": "b"
+		}
+	]
 }

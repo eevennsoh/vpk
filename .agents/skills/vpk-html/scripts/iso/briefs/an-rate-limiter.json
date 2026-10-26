@@ -3,235 +3,2772 @@
 	"id": "an-rate-limiter",
 	"figId": "FIG_227",
 	"title": "Token bucket on an air bench",
-	"label": "Dimetric air bench: a pump feeds a token tank with a relief valve on its lid; at the left a punch press and interlock stand over a paper tape along the front. Hover or arrow keys lift one part.",
-	"caption": "The pump adds two tokens a second and the relief valve vents anything past eight; every punch of the tape spends one token, and when the tank is empty the interlock holds the press shut.",
+	"label": "Air bench: a C-frame punch press over one paper tape running reel to reel, a 2 s window on the tape, an interlock button, a token tank with a dial gauge, a relief valve and a finned pump. Hover across to punch.",
+	"caption": "A pump fills the tank at two tokens a second and the relief valve vents past eight. Each punch spends one token and drops the gauge needle from twelve o'clock; the 2 s window counts the punches, and with none left the interlock holds the press shut until the pump refills it.",
 	"camera": {
 		"preset": "dimetric",
+		"azimuth": 55,
+		"elevation": 33,
 		"scale": "fit"
 	},
+	"emphasis": "none",
+	"labels": "none",
 	"parts": [
 		{
-			"id": "bench-a",
-			"kind": "box",
+			"id": "base",
+			"kind": "slab",
 			"at": [
 				0,
 				0,
 				0
 			],
 			"size": [
-				56,
-				48,
-				8
+				172,
+				66,
+				6
 			],
-			"r": 2,
-			"label": "Press bench"
+			"r": 5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 2.4,
+					"r": 3.4
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5,
+						5
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						167,
+						5
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5,
+						61
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						167,
+						61
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						5,
+						5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						167,
+						5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						5,
+						61
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						167,
+						61
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							5,
+							3.6
+						],
+						[
+							167,
+							3.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							4,
+							3.6
+						],
+						[
+							62,
+							3.6
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "bench-b",
+			"id": "track",
 			"kind": "box",
 			"at": [
-				56,
-				0,
-				0
+				12,
+				49.5,
+				6
 			],
 			"size": [
-				110,
-				48,
-				8
+				148,
+				11,
+				1.2
 			],
-			"r": 2,
-			"label": "Air bench"
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0,
+							1.4
+						],
+						[
+							148,
+							1.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0,
+							9.6
+						],
+						[
+							148,
+							9.6
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "tape",
+			"id": "paper-tape",
 			"kind": "box",
 			"at": [
-				17,
-				36,
-				8
+				13,
+				52,
+				7.2
 			],
 			"size": [
-				36,
-				8,
-				1.5
+				146,
+				6,
+				0.5
 			],
-			"label": "Paper tape"
+			"r": 0.2,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						1,
+						6
+					],
+					"to": [
+						145,
+						6
+					],
+					"step": 1.8,
+					"every": 5,
+					"lengths": [
+						0.9,
+						2
+					],
+					"side": -1
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.9,
+						1.4
+					],
+					"grid": [
+						80,
+						1
+					],
+					"gap": 1.8,
+					"size": 0.26
+				}
+			]
+		},
+		{
+			"id": "old-punch-1",
+			"kind": "box",
+			"at": [
+				31.5,
+				53.6,
+				7.75
+			],
+			"size": [
+				0.6,
+				2.6,
+				0.2
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "old-punch-2",
+			"kind": "box",
+			"at": [
+				37.2,
+				53.6,
+				7.75
+			],
+			"size": [
+				0.6,
+				2.6,
+				0.2
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "old-punch-3",
+			"kind": "box",
+			"at": [
+				69.4,
+				53.6,
+				7.75
+			],
+			"size": [
+				0.6,
+				2.6,
+				0.2
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "reel-left",
+			"kind": "box",
+			"at": [
+				1.5,
+				47,
+				6
+			],
+			"size": [
+				11,
+				14,
+				8
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.5,
+						7
+					],
+					"size": 8.4,
+					"depth": 0.6
+				},
+				{
+					"type": "spokes",
+					"face": "top",
+					"at": [
+						5.5,
+						7
+					],
+					"r0": 1.1,
+					"r1": 4.1,
+					"count": 3,
+					"phase": 90
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.5,
+						7
+					],
+					"size": 2,
+					"depth": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.2,
+						1.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						9.8,
+						12.8
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.6,
+						6.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.45
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						9.4,
+						6.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.45
+				}
+			]
+		},
+		{
+			"id": "reel-right",
+			"kind": "box",
+			"at": [
+				159.5,
+				47,
+				6
+			],
+			"size": [
+				11,
+				14,
+				8
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.5,
+						7
+					],
+					"size": 8.4,
+					"depth": 0.6
+				},
+				{
+					"type": "spokes",
+					"face": "top",
+					"at": [
+						5.5,
+						7
+					],
+					"r0": 1.1,
+					"r1": 4.1,
+					"count": 3,
+					"phase": 90
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.5,
+						7
+					],
+					"size": 2,
+					"depth": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.2,
+						1.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						9.8,
+						12.8
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.6,
+						6.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.45
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						9.4,
+						6.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.45
+				}
+			]
+		},
+		{
+			"id": "window-rail",
+			"kind": "box",
+			"at": [
+				40,
+				43,
+				6
+			],
+			"size": [
+				48,
+				4.6,
+				3.2
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						27,
+						1.6
+					],
+					"text": "2 s",
+					"size": 2.4,
+					"anchor": "middle"
+				}
+			]
+		},
+		{
+			"id": "window-knob",
+			"kind": "cylinder",
+			"at": [
+				84.5,
+				45.3,
+				9.2
+			],
+			"size": [
+				1.3,
+				1.3,
+				2
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 14
+				}
+			]
+		},
+		{
+			"id": "window-left",
+			"kind": "box",
+			"at": [
+				40.2,
+				47.6,
+				7.7
+			],
+			"size": [
+				1.4,
+				12.4,
+				1.3
+			],
+			"r": 0.4
+		},
+		{
+			"id": "window-right",
+			"kind": "box",
+			"at": [
+				64.4,
+				47.6,
+				7.7
+			],
+			"size": [
+				1.4,
+				12.4,
+				1.3
+			],
+			"r": 0.4
+		},
+		{
+			"id": "window-front",
+			"kind": "box",
+			"at": [
+				40.2,
+				58.6,
+				7.7
+			],
+			"size": [
+				25.6,
+				1.4,
+				1.3
+			],
+			"r": 0.4
+		},
+		{
+			"id": "punch-1",
+			"kind": "cylinder",
+			"at": [
+				43.2,
+				54.6,
+				7.7
+			],
+			"size": [
+				0.5,
+				0.5,
+				0.12
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "punch-2",
+			"kind": "cylinder",
+			"at": [
+				45.7,
+				54.6,
+				7.7
+			],
+			"size": [
+				0.5,
+				0.5,
+				0.12
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "punch-3",
+			"kind": "cylinder",
+			"at": [
+				48.2,
+				54.6,
+				7.7
+			],
+			"size": [
+				0.5,
+				0.5,
+				0.12
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "punch-4",
+			"kind": "cylinder",
+			"at": [
+				50.7,
+				54.6,
+				7.7
+			],
+			"size": [
+				0.5,
+				0.5,
+				0.12
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "punch-5",
+			"kind": "cylinder",
+			"at": [
+				53.2,
+				54.6,
+				7.7
+			],
+			"size": [
+				0.5,
+				0.5,
+				0.12
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "punch-6",
+			"kind": "cylinder",
+			"at": [
+				55.7,
+				54.6,
+				7.7
+			],
+			"size": [
+				0.5,
+				0.5,
+				0.12
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "punch-7",
+			"kind": "cylinder",
+			"at": [
+				58.2,
+				54.6,
+				7.7
+			],
+			"size": [
+				0.5,
+				0.5,
+				0.12
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "punch-8",
+			"kind": "cylinder",
+			"at": [
+				60.7,
+				54.6,
+				7.7
+			],
+			"size": [
+				0.5,
+				0.5,
+				0.12
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "press-foot",
+			"kind": "box",
+			"at": [
+				25,
+				21,
+				6
+			],
+			"size": [
+				22,
+				22,
+				1.6
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						2,
+						2
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						20,
+						2
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						2,
+						20
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						20,
+						20
+					],
+					"size": 2.2,
+					"depth": 0.2
+				}
+			]
 		},
 		{
 			"id": "column",
 			"kind": "box",
 			"at": [
-				20,
-				4,
-				8
+				29,
+				23.5,
+				7.6
 			],
 			"size": [
-				16,
-				18,
-				30
+				10,
+				12.5,
+				41
 			],
-			"label": "Press column"
+			"r": 2.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						6.25,
+						19
+					],
+					"size": [
+						7.4,
+						24
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						3.2,
+						8
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						9.3,
+						8
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						3.2,
+						30
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						9.3,
+						30
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
 		},
 		{
-			"id": "head",
+			"id": "arm",
 			"kind": "box",
 			"at": [
-				18,
-				14,
-				38
+				23,
+				33.5,
+				39.5
 			],
 			"size": [
-				20,
-				30,
-				8
+				12,
+				27,
+				9
 			],
-			"label": "Press head"
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 1,
+					"r": 0.6
+				}
+			]
+		},
+		{
+			"id": "cylinder-cap-low",
+			"kind": "box",
+			"at": [
+				23.2,
+				48.6,
+				48.5
+			],
+			"size": [
+				11.6,
+				11.6,
+				2.4
+			],
+			"r": 0.9
+		},
+		{
+			"id": "air-cylinder",
+			"kind": "cylinder",
+			"at": [
+				29,
+				54.4,
+				50.9
+			],
+			"size": [
+				4.4,
+				4.4,
+				7.4
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						0.8,
+						6.6
+					]
+				}
+			]
+		},
+		{
+			"id": "tie-rod",
+			"kind": "rod",
+			"from": [
+				24.6,
+				50,
+				50.9
+			],
+			"to": [
+				24.6,
+				50,
+				58.3
+			],
+			"radius": 0.4,
+			"instances": [
+				{},
+				{
+					"from": [
+						33.4,
+						50,
+						50.9
+					],
+					"to": [
+						33.4,
+						50,
+						58.3
+					]
+				},
+				{
+					"from": [
+						24.6,
+						58.8,
+						50.9
+					],
+					"to": [
+						24.6,
+						58.8,
+						58.3
+					]
+				},
+				{
+					"from": [
+						33.4,
+						58.8,
+						50.9
+					],
+					"to": [
+						33.4,
+						58.8,
+						58.3
+					]
+				}
+			]
+		},
+		{
+			"id": "cylinder-cap-high",
+			"kind": "box",
+			"at": [
+				23.2,
+				48.6,
+				58.3
+			],
+			"size": [
+				11.6,
+				11.6,
+				2.4
+			],
+			"r": 0.9,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.5,
+						1.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						10.1,
+						1.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.5,
+						10.1
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						10.1,
+						10.1
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "air-port",
+			"kind": "cylinder",
+			"at": [
+				30.5,
+				52.4,
+				60.7
+			],
+			"size": [
+				1,
+				1,
+				2.2
+			]
+		},
+		{
+			"id": "piston",
+			"kind": "rod",
+			"from": [
+				29,
+				54.4,
+				39.5
+			],
+			"to": [
+				29,
+				54.4,
+				17
+			],
+			"radius": 0.85
+		},
+		{
+			"id": "punch-head",
+			"kind": "box",
+			"at": [
+				25.6,
+				51.2,
+				12.4
+			],
+			"size": [
+				6.8,
+				6.4,
+				5
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.9,
+					"r": 0.5
+				}
+			]
 		},
 		{
 			"id": "ram",
-			"kind": "cylinder",
+			"kind": "rod",
+			"from": [
+				29,
+				54.4,
+				12.4
+			],
+			"to": [
+				29,
+				54.4,
+				8.3
+			],
+			"radius": 0.5
+		},
+		{
+			"id": "column-arm",
+			"kind": "box",
 			"at": [
-				28,
-				40,
-				9.5
+				31.2,
+				36,
+				27.5
 			],
 			"size": [
-				2.5,
-				2.5,
-				28.5
+				3,
+				11,
+				2.8
 			],
-			"label": "Punch ram"
+			"r": 0.6
+		},
+		{
+			"id": "column-arm-grip",
+			"kind": "cylinder",
+			"at": [
+				32.7,
+				46.8,
+				21.5
+			],
+			"size": [
+				1.1,
+				1.1,
+				8
+			]
+		},
+		{
+			"id": "column-arm-rod",
+			"kind": "rod",
+			"from": [
+				32.7,
+				46.8,
+				21.5
+			],
+			"to": [
+				32.7,
+				46.8,
+				13.5
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "guide-rod",
+			"kind": "rod",
+			"from": [
+				41.8,
+				37.6,
+				7.6
+			],
+			"to": [
+				41.8,
+				37.6,
+				47
+			],
+			"radius": 0.7
+		},
+		{
+			"id": "guide-foot",
+			"kind": "cylinder",
+			"at": [
+				41.8,
+				37.6,
+				7.6
+			],
+			"size": [
+				1.4,
+				1.4,
+				1.2
+			]
+		},
+		{
+			"id": "guide-block",
+			"kind": "box",
+			"at": [
+				39.8,
+				35.6,
+				46.5
+			],
+			"size": [
+				4,
+				4,
+				6
+			],
+			"r": 0.8
+		},
+		{
+			"id": "guide-cap",
+			"kind": "cylinder",
+			"at": [
+				41.8,
+				37.6,
+				52.5
+			],
+			"size": [
+				1,
+				1,
+				2
+			]
+		},
+		{
+			"id": "air-hose",
+			"kind": "tube",
+			"points": [
+				[
+					30.5,
+					52.4,
+					62.9
+				],
+				[
+					32,
+					50.5,
+					67.5
+				],
+				[
+					39.5,
+					40,
+					67
+				],
+				[
+					41.8,
+					37.6,
+					54.5
+				]
+			],
+			"radius": 0.25,
+			"fillet": 5
 		},
 		{
 			"id": "interlock",
 			"kind": "box",
 			"at": [
-				4,
-				34,
-				8
+				49,
+				26.5,
+				6
 			],
 			"size": [
-				9,
-				9,
-				8
+				13,
+				12,
+				6.5
 			],
-			"label": "Interlock"
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1,
+					"r": 0.8
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.6,
+						1.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						11.4,
+						1.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.6,
+						10.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						11.4,
+						10.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						1.8,
+						3.4
+					],
+					"size": 1,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						11.2,
+						3.4
+					],
+					"size": 1,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "circle",
+					"at": [
+						10.2,
+						3.4
+					],
+					"size": 1,
+					"depth": 0.2
+				}
+			]
 		},
 		{
-			"id": "tank",
+			"id": "button-collar",
 			"kind": "cylinder",
 			"at": [
-				100,
-				30,
-				8
+				55.5,
+				32.5,
+				12.5
+			],
+			"size": [
+				3.4,
+				3.4,
+				1.4
+			]
+		},
+		{
+			"id": "button",
+			"kind": "cylinder",
+			"at": [
+				55.5,
+				32.5,
+				13.9
+			],
+			"size": [
+				4.3,
+				4.3,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						0.5
+					]
+				}
+			],
+			"variants": {
+				"pressed": {
+					"at": [
+						55.5,
+						32.5,
+						12.6
+					]
+				}
+			}
+		},
+		{
+			"id": "tank-foot",
+			"kind": "cylinder",
+			"at": [
+				74,
+				17,
+				6
 			],
 			"size": [
 				16,
 				16,
-				38
-			],
-			"label": "Token tank"
+				1.2
+			]
 		},
 		{
-			"id": "relief",
+			"id": "tank-ring",
 			"kind": "cylinder",
 			"at": [
-				106,
-				22,
-				46
+				74,
+				17,
+				7.2
 			],
 			"size": [
-				2.5,
-				2.5,
+				13.8,
+				13.8,
+				2.4
+			]
+		},
+		{
+			"id": "token-tank",
+			"kind": "cylinder",
+			"at": [
+				74,
+				17,
+				9.6
+			],
+			"size": [
+				12.6,
+				12.6,
+				31.4
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1,
+						30.4
+					]
+				}
+			]
+		},
+		{
+			"id": "tank-flange",
+			"kind": "cylinder",
+			"at": [
+				74,
+				17,
+				41
+			],
+			"size": [
+				14.6,
+				14.6,
+				2.4
+			],
+			"detail": [
+				{
+					"type": "bolts",
+					"r": 13.6,
+					"count": 16,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "tank-collar",
+			"kind": "cylinder",
+			"at": [
+				74,
+				17,
+				43.4
+			],
+			"size": [
+				13.4,
+				13.4,
+				1.4
+			]
+		},
+		{
+			"id": "gauge",
+			"kind": "cylinder",
+			"at": [
+				74,
+				17,
+				44.8
+			],
+			"size": [
+				11.2,
+				11.2,
+				5.4
+			],
+			"detail": [
+				{
+					"type": "radialTicks",
+					"r": 10,
+					"count": 60,
+					"every": 5,
+					"lengths": [
+						0.7,
+						2
+					]
+				},
+				{
+					"type": "knurl",
+					"count": 110,
+					"s0": 0,
+					"s1": 3
+				}
+			]
+		},
+		{
+			"id": "needle",
+			"kind": "rod",
+			"from": [
+				72.2,
+				17,
+				50.6
+			],
+			"to": [
+				82.4,
+				17,
+				50.6
+			],
+			"radius": 0.38,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					74,
+					17,
+					50.6
+				],
+				"deg": [
+					-365,
+					-125
+				],
+				"samples": 9
+			}
+		},
+		{
+			"id": "hub",
+			"kind": "cylinder",
+			"at": [
+				74,
+				17,
+				50.2
+			],
+			"size": [
+				1.1,
+				1.1,
+				0.8
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "tank-label",
+			"kind": "box",
+			"yaw": -35,
+			"at": [
+				77.15,
+				27.27,
+				20
+			],
+			"size": [
+				8.5,
+				0.6,
 				9
 			],
-			"label": "Relief valve"
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.6,
+					"r": 0.2
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.8,
+							6.6
+						],
+						[
+							6.7,
+							6.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.8,
+							5.1
+						],
+						[
+							6.7,
+							5.1
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.8,
+							3.6
+						],
+						[
+							5.2,
+							3.6
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						0.9,
+						8.1
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.25
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						7.6,
+						8.1
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.25
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						0.9,
+						0.9
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.25
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						7.6,
+						0.9
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.25
+				}
+			]
+		},
+		{
+			"id": "lever-fitting",
+			"kind": "box",
+			"at": [
+				61.6,
+				24.6,
+				12.2
+			],
+			"size": [
+				4,
+				4,
+				4
+			],
+			"r": 0.7,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						2,
+						1.6
+					],
+					"size": 1,
+					"depth": 0.2
+				}
+			]
+		},
+		{
+			"id": "lever",
+			"kind": "box",
+			"at": [
+				55.6,
+				26,
+				16.2
+			],
+			"size": [
+				7.6,
+				1.2,
+				1.1
+			],
+			"r": 0.4
+		},
+		{
+			"id": "sense-wire",
+			"kind": "wire",
+			"points": [
+				[
+					63.6,
+					28.6,
+					13.8
+				],
+				[
+					63.2,
+					31.5,
+					7.6
+				],
+				[
+					62.1,
+					34.1,
+					8.4
+				],
+				[
+					62,
+					35.5,
+					9.4
+				]
+			]
+		},
+		{
+			"id": "tank-fitting",
+			"kind": "box",
+			"at": [
+				85.6,
+				9.4,
+				20
+			],
+			"size": [
+				4,
+				4.2,
+				4.4
+			],
+			"r": 0.7
+		},
+		{
+			"id": "pipe-to-tee",
+			"kind": "rod",
+			"from": [
+				89.6,
+				11.5,
+				22.2
+			],
+			"to": [
+				93,
+				11.5,
+				22.2
+			],
+			"radius": 0.8
+		},
+		{
+			"id": "valve-tee",
+			"kind": "box",
+			"at": [
+				93,
+				9,
+				19.7
+			],
+			"size": [
+				5,
+				5,
+				5
+			],
+			"r": 0.8
+		},
+		{
+			"id": "valve-body",
+			"kind": "cylinder",
+			"at": [
+				95.5,
+				11.5,
+				24.7
+			],
+			"size": [
+				1.9,
+				1.9,
+				3.4
+			]
+		},
+		{
+			"id": "valve-bonnet",
+			"kind": "cylinder",
+			"at": [
+				95.5,
+				11.5,
+				28.1
+			],
+			"size": [
+				1.3,
+				1.3,
+				3.2
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1,
+						2.2
+					]
+				}
+			]
+		},
+		{
+			"id": "valve-stem",
+			"kind": "rod",
+			"from": [
+				95.5,
+				11.5,
+				31.3
+			],
+			"to": [
+				95.5,
+				11.5,
+				33.2
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "valve-cap",
+			"kind": "sphere",
+			"at": [
+				95.5,
+				11.5,
+				33.9
+			],
+			"r": 0.9
+		},
+		{
+			"id": "vent-puff",
+			"kind": "sphere",
+			"at": [
+				95.5,
+				11.5,
+				36.3
+			],
+			"r": 1.1,
+			"tone": "glass"
+		},
+		{
+			"id": "pipe-to-pump",
+			"kind": "rod",
+			"from": [
+				98,
+				11.5,
+				22.2
+			],
+			"to": [
+				103.5,
+				11.5,
+				22.2
+			],
+			"radius": 0.8
+		},
+		{
+			"id": "pump-plate",
+			"kind": "box",
+			"at": [
+				99,
+				3,
+				6
+			],
+			"size": [
+				42,
+				22,
+				1.6
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						2,
+						2
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						40,
+						2
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						2,
+						20
+					],
+					"size": 2.2,
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						40,
+						20
+					],
+					"size": 2.2,
+					"depth": 0.2
+				}
+			]
+		},
+		{
+			"id": "pump-head",
+			"kind": "box",
+			"at": [
+				102,
+				6,
+				7.6
+			],
+			"size": [
+				5,
+				15,
+				13.4
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.2,
+						11.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						3.8,
+						11.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "pump-inlet",
+			"kind": "cylinder",
+			"at": [
+				104.5,
+				11.5,
+				21
+			],
+			"size": [
+				1.3,
+				1.3,
+				2.8
+			]
+		},
+		{
+			"id": "fin",
+			"kind": "box",
+			"at": [
+				107.6,
+				5,
+				8.6
+			],
+			"size": [
+				0.9,
+				17,
+				13.6
+			],
+			"r": 0.3,
+			"repeat": {
+				"linear": {
+					"count": 5,
+					"step": [
+						2,
+						0,
+						0
+					]
+				}
+			}
+		},
+		{
+			"id": "pump-foot",
+			"kind": "cylinder",
+			"at": [
+				119.2,
+				19.6,
+				7.6
+			],
+			"size": [
+				0.9,
+				0.9,
+				0.8
+			],
+			"instances": [
+				{},
+				{
+					"at": [
+						133,
+						19.6,
+						7.6
+					]
+				},
+				{
+					"at": [
+						119.2,
+						7.4,
+						7.6
+					]
+				},
+				{
+					"at": [
+						133,
+						7.4,
+						7.6
+					]
+				}
+			]
 		},
 		{
 			"id": "pump",
 			"kind": "box",
 			"at": [
-				126,
-				2,
-				8
+				117,
+				5,
+				8.4
 			],
 			"size": [
-				32,
-				28,
-				22
+				18,
+				17,
+				15
 			],
-			"r": 2,
-			"label": "Pump"
-		}
-	],
-	"focal": "tank",
-	"labels": [
-		{
-			"text": "Press",
-			"target": "head",
-			"side": "left"
-		},
-		{
-			"text": "Paper tape",
-			"target": "tape",
-			"side": "left"
-		},
-		{
-			"text": "Interlock",
-			"target": "interlock",
-			"side": "left"
-		},
-		{
-			"text": "Token tank, 8 max",
-			"target": "tank",
-			"side": "right",
-			"anchor": [
-				112,
-				38,
-				42
+			"r": 2.4,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						8,
+						7
+					],
+					"size": 11.4,
+					"depth": 0.7
+				},
+				{
+					"type": "spokes",
+					"face": "+y",
+					"at": [
+						8,
+						7
+					],
+					"r0": 1.8,
+					"r1": 5.2,
+					"count": 4,
+					"phase": 0
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						8,
+						7
+					],
+					"size": 3.4,
+					"depth": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						10.6,
+						9.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.2,
+					"r": 1.2
+				}
 			]
 		},
 		{
-			"text": "Relief valve",
-			"target": "relief",
-			"side": "right"
+			"id": "pump-cap",
+			"kind": "cylinder",
+			"at": [
+				131,
+				9.5,
+				23.4
+			],
+			"size": [
+				1.4,
+				1.4,
+				1.8
+			]
 		},
 		{
-			"text": "Pump, 2 tokens/s",
-			"target": "pump",
-			"side": "right"
+			"id": "nameplate",
+			"kind": "plate",
+			"at": [
+				144,
+				3.5,
+				6
+			],
+			"size": [
+				21,
+				8,
+				0.8
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8,
+					"r": 0.6
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3,
+							2.4
+						],
+						[
+							17.5,
+							2.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3,
+							4
+						],
+						[
+							15.5,
+							4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3,
+							5.6
+						],
+						[
+							12,
+							5.6
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.5,
+						1.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.25
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						19.5,
+						6.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.25
+				}
+			]
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"bench-a",
-				"bench-b"
+				"base"
 			],
 			[
-				"tape",
-				"pump"
-			],
-			[
-				"column",
+				"track",
+				"reel-left",
+				"reel-right",
+				"press-foot",
+				"tank-foot",
+				"pump-plate",
+				"nameplate",
 				"interlock"
 			],
 			[
-				"head",
-				"ram"
+				"paper-tape",
+				"window-rail",
+				"column",
+				"guide-foot",
+				"tank-ring",
+				"pump-head",
+				"fin",
+				"pump-foot",
+				"button-collar"
 			],
 			[
-				"tank"
+				"window-left",
+				"window-right",
+				"window-front",
+				"window-knob",
+				"old-punch-1",
+				"old-punch-2",
+				"old-punch-3",
+				"punch-1",
+				"punch-2",
+				"punch-3",
+				"punch-4",
+				"punch-5",
+				"punch-6",
+				"punch-7",
+				"punch-8",
+				"guide-rod",
+				"token-tank",
+				"pump",
+				"button"
 			],
 			[
-				"relief"
+				"arm",
+				"column-arm",
+				"guide-block",
+				"tank-label",
+				"lever-fitting",
+				"tank-fitting",
+				"pump-inlet",
+				"pump-cap"
+			],
+			[
+				"cylinder-cap-low",
+				"column-arm-grip",
+				"column-arm-rod",
+				"piston",
+				"punch-head",
+				"ram",
+				"guide-cap",
+				"lever",
+				"sense-wire",
+				"tank-flange",
+				"pipe-to-tee",
+				"valve-tee",
+				"pipe-to-pump"
+			],
+			[
+				"air-cylinder",
+				"tie-rod",
+				"tank-collar",
+				"valve-body",
+				"valve-bonnet"
+			],
+			[
+				"cylinder-cap-high",
+				"gauge",
+				"valve-stem",
+				"valve-cap"
+			],
+			[
+				"air-port",
+				"air-hose",
+				"needle",
+				"hub",
+				"vent-puff"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 10,
-		"rest": "8 tokens, 2 per second"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"values": {
+			"tok": [
+				8,
+				7,
+				6,
+				5,
+				4,
+				3,
+				2,
+				1,
+				0,
+				0,
+				4
+			],
+			"k": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				8,
+				8
+			]
+		},
+		"readout": "{tok:0.1} / 8 · {k} of 12 in 2 s · hover the tape to punch",
+		"states": [
+			{
+				"name": "full",
+				"parts": {
+					"punch-1": {
+						"hidden": true
+					},
+					"punch-2": {
+						"hidden": true
+					},
+					"punch-3": {
+						"hidden": true
+					},
+					"punch-4": {
+						"hidden": true
+					},
+					"punch-5": {
+						"hidden": true
+					},
+					"punch-6": {
+						"hidden": true
+					},
+					"punch-7": {
+						"hidden": true
+					},
+					"punch-8": {
+						"hidden": true
+					},
+					"needle": {
+						"turn": -125
+					}
+				},
+				"readout": "8.0 / 8 full · 0 of 12 in 2 s"
+			},
+			{
+				"name": "punch 1",
+				"parts": {
+					"punch-2": {
+						"hidden": true
+					},
+					"punch-3": {
+						"hidden": true
+					},
+					"punch-4": {
+						"hidden": true
+					},
+					"punch-5": {
+						"hidden": true
+					},
+					"punch-6": {
+						"hidden": true
+					},
+					"punch-7": {
+						"hidden": true
+					},
+					"punch-8": {
+						"hidden": true
+					},
+					"needle": {
+						"turn": -155
+					},
+					"piston": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"punch-head": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"ram": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					}
+				}
+			},
+			{
+				"name": "punch 2",
+				"parts": {
+					"punch-3": {
+						"hidden": true
+					},
+					"punch-4": {
+						"hidden": true
+					},
+					"punch-5": {
+						"hidden": true
+					},
+					"punch-6": {
+						"hidden": true
+					},
+					"punch-7": {
+						"hidden": true
+					},
+					"punch-8": {
+						"hidden": true
+					},
+					"needle": {
+						"turn": -185
+					},
+					"piston": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"punch-head": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"ram": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					}
+				}
+			},
+			{
+				"name": "punch 3",
+				"parts": {
+					"punch-4": {
+						"hidden": true
+					},
+					"punch-5": {
+						"hidden": true
+					},
+					"punch-6": {
+						"hidden": true
+					},
+					"punch-7": {
+						"hidden": true
+					},
+					"punch-8": {
+						"hidden": true
+					},
+					"needle": {
+						"turn": -215
+					},
+					"piston": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"punch-head": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"ram": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					}
+				}
+			},
+			{
+				"name": "punch 4",
+				"parts": {
+					"punch-5": {
+						"hidden": true
+					},
+					"punch-6": {
+						"hidden": true
+					},
+					"punch-7": {
+						"hidden": true
+					},
+					"punch-8": {
+						"hidden": true
+					},
+					"needle": {
+						"turn": -245
+					},
+					"piston": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"punch-head": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"ram": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					}
+				}
+			},
+			{
+				"name": "punch 5",
+				"parts": {
+					"punch-6": {
+						"hidden": true
+					},
+					"punch-7": {
+						"hidden": true
+					},
+					"punch-8": {
+						"hidden": true
+					},
+					"needle": {
+						"turn": -275
+					},
+					"piston": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"punch-head": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"ram": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					}
+				}
+			},
+			{
+				"name": "punch 6",
+				"parts": {
+					"punch-7": {
+						"hidden": true
+					},
+					"punch-8": {
+						"hidden": true
+					},
+					"needle": {
+						"turn": -305
+					},
+					"piston": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"punch-head": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"ram": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					}
+				}
+			},
+			{
+				"name": "punch 7",
+				"parts": {
+					"punch-8": {
+						"hidden": true
+					},
+					"needle": {
+						"turn": -335
+					},
+					"piston": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"punch-head": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"ram": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					}
+				}
+			},
+			{
+				"name": "punch 8",
+				"parts": {
+					"needle": {
+						"turn": -365
+					},
+					"piston": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"punch-head": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					},
+					"ram": {
+						"move": [
+							0,
+							0,
+							-2.8
+						]
+					}
+				}
+			},
+			{
+				"name": "empty",
+				"parts": {
+					"needle": {
+						"turn": -365
+					},
+					"button": {
+						"variant": "pressed"
+					}
+				},
+				"readout": "0.0 / 8 empty · 8 of 12 in 2 s · interlock holds"
+			},
+			{
+				"name": "refill",
+				"parts": {
+					"needle": {
+						"turn": -245
+					}
+				},
+				"readout": "4.0 / 8 refilling at 2/s · 8 of 12 in 2 s"
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ TOKEN BUCKET ]",

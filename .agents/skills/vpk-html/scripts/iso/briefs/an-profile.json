@@ -3,48 +3,3355 @@
 	"id": "an-profile",
 	"figId": "FIG_244",
 	"title": "Profile gauge on a pane edge",
-	"label": "Dimetric bench: a glass pane edge, flat then stepping down over the bezel; a gauge head holds spring pins resting on the glass, one per pixel, and a caliper measures the rim. The pin being read is accented.",
-	"caption": "Every pin drops until it touches the glass, so their tops trace the edge: level across the middle, then giving way over the bezel, slowly at first and quickly at the rim, where the caliper reads about 19 px below the middle.",
+	"label": "Profile gauge: a hatched slice of a 46 px clear pane with an eased bevel; forty spring pins in a ruled gauge head press on its edge so their square caps trace the curve, beside a caliper slide.",
+	"caption": "Forty spring pins press against the edge: level across the flat glass, then falling away over the eased bevel, slowly at first and steeply at the rim, 19 px below the face. Hover a pin to read its depth.",
 	"camera": {
 		"preset": "dimetric",
-		"scale": "fit"
+		"scale": "fit",
+		"pad": 64
 	},
+	"labels": "none",
+	"emphasis": "none",
 	"parts": [
-		{ "id": "bench", "kind": "slab", "at": [-24, -24, 0], "size": [130, 80, 6], "r": 3, "label": "Bench" },
-		{ "id": "pane", "kind": "box", "at": [0, 0, 6], "size": [60, 40, 24], "r": 0, "label": "Clear pane", "marks": [[[0, 20], [60, 20]]] },
-		{ "id": "bezel-1", "kind": "box", "at": [60, 0, 6], "size": [12, 40, 22], "r": 0, "label": "Bezel" },
-		{ "id": "bezel-2", "kind": "box", "at": [72, 0, 6], "size": [9, 40, 18], "r": 0, "label": "Bezel" },
-		{ "id": "bezel-3", "kind": "box", "at": [81, 0, 6], "size": [6, 40, 12], "r": 0, "label": "Rim" },
-		{ "id": "head", "kind": "box", "at": [8, 26, 46], "size": [80, 6, 6], "r": 1, "label": "Gauge head", "marks": [[[0, 3], [80, 3]]] },
-		{ "id": "pin-1", "kind": "cylinder", "at": [24, 22, 30], "size": [1.6, 1.6, 22], "label": "Pin" },
-		{ "id": "pin-2", "kind": "cylinder", "at": [66, 22, 28], "size": [1.6, 1.6, 24], "label": "Pin" },
-		{ "id": "pin-3", "kind": "cylinder", "at": [76.5, 22, 24], "size": [1.6, 1.6, 28], "label": "Pin" },
-		{ "id": "pin-4", "kind": "cylinder", "at": [84, 22, 18], "size": [1.6, 1.6, 34], "label": "Pin being read" },
-		{ "id": "caliper", "kind": "box", "at": [92, -14, 6], "size": [6, 12, 28], "r": 1, "label": "Caliper", "marks": [[[0, 6], [6, 6]]] }
-	],
-	"focal": "pin-4",
-	"labels": [
-		{ "text": "Clear pane, 46 px", "target": "pane", "side": "left" },
-		{ "text": "A pin per pixel", "target": "pin-1", "side": "left" },
-		{ "text": "Gauge head", "target": "head", "side": "left" },
-		{ "text": "Bezel, falling to the rim", "target": "bezel-3", "side": "right", "anchor": [86, 40, 12] },
-		{ "text": "The pin I'm reading", "target": "pin-4", "side": "right", "anchor": [84, 22, 52] },
-		{ "text": "Caliper, rim 26.8 px", "target": "caliper", "side": "right" },
-		{ "text": "Bench", "target": "bench", "side": "left" }
+		{
+			"id": "plinth",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				96,
+				138,
+				7
+			],
+			"r": 8
+		},
+		{
+			"id": "foot-1",
+			"kind": "cylinder",
+			"at": [
+				9,
+				9,
+				-1.8
+			],
+			"size": [
+				3.6,
+				3.6,
+				1.8
+			]
+		},
+		{
+			"id": "foot-2",
+			"kind": "cylinder",
+			"at": [
+				87,
+				9,
+				-1.8
+			],
+			"size": [
+				3.6,
+				3.6,
+				1.8
+			]
+		},
+		{
+			"id": "foot-3",
+			"kind": "cylinder",
+			"at": [
+				9,
+				129,
+				-1.8
+			],
+			"size": [
+				3.6,
+				3.6,
+				1.8
+			]
+		},
+		{
+			"id": "foot-4",
+			"kind": "cylinder",
+			"at": [
+				87,
+				129,
+				-1.8
+			],
+			"size": [
+				3.6,
+				3.6,
+				1.8
+			]
+		},
+		{
+			"id": "lip",
+			"kind": "slab",
+			"at": [
+				2,
+				2,
+				7
+			],
+			"size": [
+				92,
+				134,
+				1.5
+			],
+			"r": 6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 2.6,
+					"r": 4
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						5,
+						129
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						52,
+						129
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						87,
+						71
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "plate",
+			"kind": "box",
+			"at": [
+				30,
+				138,
+				1.6
+			],
+			"size": [
+				44,
+				0.4,
+				3.8
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.45
+				},
+				{
+					"type": "text",
+					"face": "+y",
+					"at": [
+						22,
+						1.1
+					],
+					"text": "clear · 46 px",
+					"size": 2.2,
+					"anchor": "middle"
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.6,
+						1.9
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.2
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						42.4,
+						1.9
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.2
+				}
+			]
+		},
+		{
+			"id": "back-rail",
+			"kind": "box",
+			"at": [
+				3.6,
+				46,
+				8.5
+			],
+			"size": [
+				3.0,
+				36,
+				1.4
+			],
+			"r": 0.4
+		},
+		{
+			"id": "back-block",
+			"kind": "box",
+			"at": [
+				3,
+				22,
+				8.5
+			],
+			"size": [
+				6.5,
+				24,
+				3.6
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3.2,
+						4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3.2,
+						20
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "end-br",
+			"kind": "box",
+			"at": [
+				83,
+				8.5,
+				8.5
+			],
+			"size": [
+				7,
+				6.0,
+				5.0
+			],
+			"r": 0.7,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3.5,
+						3
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "end-br2",
+			"kind": "box",
+			"at": [
+				90,
+				9,
+				8.5
+			],
+			"size": [
+				3,
+				5,
+				3.6
+			],
+			"r": 0.5
+		},
+		{
+			"id": "pane",
+			"kind": "prism",
+			"at": [
+				14,
+				18,
+				8.5
+			],
+			"axis": "z",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					63,
+					0
+				],
+				[
+					63,
+					38
+				],
+				[
+					62.94,
+					39.57
+				],
+				[
+					62.77,
+					41.14
+				],
+				[
+					62.49,
+					42.69
+				],
+				[
+					62.1,
+					44.23
+				],
+				[
+					61.59,
+					45.75
+				],
+				[
+					60.98,
+					47.25
+				],
+				[
+					60.26,
+					48.72
+				],
+				[
+					59.43,
+					50.15
+				],
+				[
+					58.51,
+					51.54
+				],
+				[
+					57.48,
+					52.9
+				],
+				[
+					56.36,
+					54.2
+				],
+				[
+					55.15,
+					55.46
+				],
+				[
+					53.84,
+					56.66
+				],
+				[
+					52.46,
+					57.8
+				],
+				[
+					50.99,
+					58.88
+				],
+				[
+					49.45,
+					59.89
+				],
+				[
+					47.83,
+					60.84
+				],
+				[
+					46.15,
+					61.71
+				],
+				[
+					44.41,
+					62.51
+				],
+				[
+					42.62,
+					63.23
+				],
+				[
+					40.78,
+					63.87
+				],
+				[
+					38.89,
+					64.43
+				],
+				[
+					36.97,
+					64.91
+				],
+				[
+					35.01,
+					65.3
+				],
+				[
+					33.03,
+					65.6
+				],
+				[
+					31.03,
+					65.82
+				],
+				[
+					29.02,
+					65.96
+				],
+				[
+					27,
+					66
+				],
+				[
+					0,
+					66
+				]
+			],
+			"depth": 7.5,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							1.85
+						],
+						[
+							1.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							5.85
+						],
+						[
+							5.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							9.85
+						],
+						[
+							9.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							13.85
+						],
+						[
+							13.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							17.85
+						],
+						[
+							17.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							21.85
+						],
+						[
+							21.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							25.85
+						],
+						[
+							25.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							29.85
+						],
+						[
+							29.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							33.85
+						],
+						[
+							33.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							37.85
+						],
+						[
+							37.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							41.85
+						],
+						[
+							41.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							45.85
+						],
+						[
+							45.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							49.85
+						],
+						[
+							49.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							53.85
+						],
+						[
+							53.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							57.85
+						],
+						[
+							57.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							61.85
+						],
+						[
+							61.85,
+							0.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.15,
+							65.85
+						],
+						[
+							62.85,
+							3.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							4.15,
+							65.85
+						],
+						[
+							62.85,
+							7.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							8.15,
+							65.85
+						],
+						[
+							62.85,
+							11.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							12.15,
+							65.85
+						],
+						[
+							62.85,
+							15.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							16.15,
+							65.85
+						],
+						[
+							62.85,
+							19.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							20.15,
+							65.85
+						],
+						[
+							62.85,
+							23.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							24.15,
+							65.85
+						],
+						[
+							62.85,
+							27.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							28.17,
+							65.83
+						],
+						[
+							62.85,
+							31.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							32.47,
+							65.53
+						],
+						[
+							62.85,
+							35.15
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							37.28,
+							64.72
+						],
+						[
+							62.81,
+							39.19
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							43.02,
+							62.98
+						],
+						[
+							62.06,
+							43.94
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							51.63,
+							58.37
+						],
+						[
+							58.46,
+							51.54
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							27,
+							0.6
+						],
+						[
+							27,
+							65.4
+						]
+					],
+					"dash": true
+				}
+			]
+		},
+		{
+			"id": "bevel-edge",
+			"kind": "tube",
+			"points": [
+				[
+					77.0,
+					56.0,
+					16.12
+				],
+				[
+					76.94,
+					57.57,
+					16.12
+				],
+				[
+					76.77,
+					59.14,
+					16.12
+				],
+				[
+					76.49,
+					60.69,
+					16.12
+				],
+				[
+					76.1,
+					62.23,
+					16.12
+				],
+				[
+					75.59,
+					63.75,
+					16.12
+				],
+				[
+					74.98,
+					65.25,
+					16.12
+				],
+				[
+					74.26,
+					66.72,
+					16.12
+				],
+				[
+					73.43,
+					68.15,
+					16.12
+				],
+				[
+					72.51,
+					69.54,
+					16.12
+				],
+				[
+					71.48,
+					70.9,
+					16.12
+				],
+				[
+					70.36,
+					72.2,
+					16.12
+				],
+				[
+					69.15,
+					73.46,
+					16.12
+				],
+				[
+					67.84,
+					74.66,
+					16.12
+				],
+				[
+					66.46,
+					75.8,
+					16.12
+				],
+				[
+					64.99,
+					76.88,
+					16.12
+				],
+				[
+					63.45,
+					77.89,
+					16.12
+				],
+				[
+					61.83,
+					78.84,
+					16.12
+				],
+				[
+					60.15,
+					79.71,
+					16.12
+				],
+				[
+					58.41,
+					80.51,
+					16.12
+				],
+				[
+					56.62,
+					81.23,
+					16.12
+				],
+				[
+					54.78,
+					81.87,
+					16.12
+				],
+				[
+					52.89,
+					82.43,
+					16.12
+				],
+				[
+					50.97,
+					82.91,
+					16.12
+				],
+				[
+					49.01,
+					83.3,
+					16.12
+				],
+				[
+					47.03,
+					83.6,
+					16.12
+				],
+				[
+					45.03,
+					83.82,
+					16.12
+				],
+				[
+					43.02,
+					83.96,
+					16.12
+				],
+				[
+					41.0,
+					84.0,
+					16.12
+				]
+			],
+			"radius": 0.3,
+			"tone": "ink"
+		},
+		{
+			"id": "rail-l",
+			"kind": "box",
+			"at": [
+				11,
+				84,
+				8.5
+			],
+			"size": [
+				2.6,
+				46,
+				1.8
+			],
+			"r": 0.5
+		},
+		{
+			"id": "rail-r",
+			"kind": "box",
+			"at": [
+				77.4,
+				84,
+				8.5
+			],
+			"size": [
+				2.6,
+				46,
+				1.8
+			],
+			"r": 0.5
+		},
+		{
+			"id": "stop-l",
+			"kind": "box",
+			"at": [
+				9.6,
+				130,
+				8.5
+			],
+			"size": [
+				5.8,
+				5.4,
+				4.6
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.9,
+						2.7
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "stop-r",
+			"kind": "box",
+			"at": [
+				75.8,
+				130,
+				8.5
+			],
+			"size": [
+				5.8,
+				5.4,
+				4.6
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.9,
+						2.7
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "pin-1",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				15.5,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-2",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				17.06,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-3",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				18.62,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-4",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				20.18,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-5",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				21.74,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-6",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				23.3,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-7",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				24.86,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-8",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				26.42,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-9",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				27.98,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-10",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				29.54,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-11",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				31.1,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-12",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				32.66,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-13",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				34.22,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-14",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				35.78,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-15",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				37.34,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-16",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				38.9,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-17",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				40.46,
+				84.0,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-18",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				42.02,
+				83.99,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-19",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				43.58,
+				83.93,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-20",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				45.14,
+				83.81,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-21",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				46.7,
+				83.65,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-22",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				48.26,
+				83.42,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-23",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				49.82,
+				83.15,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-24",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				51.38,
+				82.81,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-25",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				52.94,
+				82.42,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-26",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				54.5,
+				81.96,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-27",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				56.06,
+				81.43,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-28",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				57.62,
+				80.84,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-29",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				59.18,
+				80.17,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-30",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				60.74,
+				79.42,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-31",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				62.3,
+				78.57,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-32",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				63.86,
+				77.63,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-33",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				65.42,
+				76.57,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-34",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				66.98,
+				75.38,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-35",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				68.54,
+				74.03,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-36",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				70.1,
+				72.48,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-37",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				71.66,
+				70.67,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-38",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				73.22,
+				68.49,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-39",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				74.78,
+				65.68,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "pin-40",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				76.34,
+				61.34,
+				9.3
+			],
+			"size": [
+				0.5,
+				0.5,
+				37
+			]
+		},
+		{
+			"id": "tip-1",
+			"kind": "box",
+			"at": [
+				14.76,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-2",
+			"kind": "box",
+			"at": [
+				16.32,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-3",
+			"kind": "box",
+			"at": [
+				17.88,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-4",
+			"kind": "box",
+			"at": [
+				19.44,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-5",
+			"kind": "box",
+			"at": [
+				21.0,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-6",
+			"kind": "box",
+			"at": [
+				22.56,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-7",
+			"kind": "box",
+			"at": [
+				24.12,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-8",
+			"kind": "box",
+			"at": [
+				25.68,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-9",
+			"kind": "box",
+			"at": [
+				27.24,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-10",
+			"kind": "box",
+			"at": [
+				28.8,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-11",
+			"kind": "box",
+			"at": [
+				30.36,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-12",
+			"kind": "box",
+			"at": [
+				31.92,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-13",
+			"kind": "box",
+			"at": [
+				33.48,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-14",
+			"kind": "box",
+			"at": [
+				35.04,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-15",
+			"kind": "box",
+			"at": [
+				36.6,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-16",
+			"kind": "box",
+			"at": [
+				38.16,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-17",
+			"kind": "box",
+			"at": [
+				39.72,
+				121.0,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-18",
+			"kind": "box",
+			"at": [
+				41.28,
+				120.99,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-19",
+			"kind": "box",
+			"at": [
+				42.84,
+				120.93,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-20",
+			"kind": "box",
+			"at": [
+				44.4,
+				120.81,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-21",
+			"kind": "box",
+			"at": [
+				45.96,
+				120.65,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-22",
+			"kind": "box",
+			"at": [
+				47.52,
+				120.42,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-23",
+			"kind": "box",
+			"at": [
+				49.08,
+				120.15,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-24",
+			"kind": "box",
+			"at": [
+				50.64,
+				119.81,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-25",
+			"kind": "box",
+			"at": [
+				52.2,
+				119.42,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-26",
+			"kind": "box",
+			"at": [
+				53.76,
+				118.96,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-27",
+			"kind": "box",
+			"at": [
+				55.32,
+				118.43,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-28",
+			"kind": "box",
+			"at": [
+				56.88,
+				117.84,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-29",
+			"kind": "box",
+			"at": [
+				58.44,
+				117.17,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-30",
+			"kind": "box",
+			"at": [
+				60.0,
+				116.42,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-31",
+			"kind": "box",
+			"at": [
+				61.56,
+				115.57,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-32",
+			"kind": "box",
+			"at": [
+				63.12,
+				114.63,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-33",
+			"kind": "box",
+			"at": [
+				64.68,
+				113.57,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-34",
+			"kind": "box",
+			"at": [
+				66.24,
+				112.38,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-35",
+			"kind": "box",
+			"at": [
+				67.8,
+				111.03,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-36",
+			"kind": "box",
+			"at": [
+				69.36,
+				109.48,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-37",
+			"kind": "box",
+			"at": [
+				70.92,
+				107.67,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-38",
+			"kind": "box",
+			"at": [
+				72.48,
+				105.49,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-39",
+			"kind": "box",
+			"at": [
+				74.04,
+				102.68,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "tip-40",
+			"kind": "box",
+			"at": [
+				75.6,
+				98.34,
+				8.7
+			],
+			"size": [
+				1.48,
+				1.5,
+				1.5
+			],
+			"r": 0.15
+		},
+		{
+			"id": "riser",
+			"kind": "box",
+			"at": [
+				7,
+				84.6,
+				10.3
+			],
+			"size": [
+				74.4,
+				9.6,
+				1.2
+			],
+			"r": 0.6
+		},
+		{
+			"id": "head",
+			"kind": "box",
+			"at": [
+				8,
+				85.4,
+				11.5
+			],
+			"size": [
+				71,
+				8.0,
+				3.2
+			],
+			"r": 0.7,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						7.5,
+						6.8
+					],
+					"to": [
+						66.0,
+						6.8
+					],
+					"step": 1.5,
+					"every": 5,
+					"lengths": [
+						1.0,
+						2.2
+					],
+					"side": -1
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.5,
+							6.8
+						],
+						[
+							69.5,
+							6.8
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						11,
+						2.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						46,
+						2.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "collar",
+			"kind": "cylinder",
+			"at": [
+				13,
+				89.4,
+				14.7
+			],
+			"size": [
+				2.7,
+				2.7,
+				0.5
+			]
+		},
+		{
+			"id": "thumbscrew",
+			"kind": "cylinder",
+			"at": [
+				13,
+				89.4,
+				15.2
+			],
+			"size": [
+				2.0,
+				2.0,
+				2.6
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							-0.3,
+							-1.2
+						],
+						[
+							0.3,
+							1.2
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "cursor",
+			"kind": "box",
+			"at": [
+				75.89,
+				89.6,
+				14.7
+			],
+			"size": [
+				0.9,
+				3.4,
+				0.5
+			]
+		},
+		{
+			"id": "beam",
+			"kind": "box",
+			"at": [
+				82,
+				14.5,
+				8.5
+			],
+			"size": [
+				8,
+				89.5,
+				1.4
+			],
+			"r": 0.5
+		},
+		{
+			"id": "rule-back",
+			"kind": "box",
+			"at": [
+				83,
+				16,
+				9.9
+			],
+			"size": [
+				5.5,
+				40.5,
+				2.2
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						0.6,
+						1.5
+					],
+					"to": [
+						0.6,
+						39
+					],
+					"step": 1.5,
+					"every": 5,
+					"lengths": [
+						1.0,
+						2.2
+					],
+					"side": -1
+				}
+			]
+		},
+		{
+			"id": "slider",
+			"kind": "box",
+			"at": [
+				82.5,
+				56.5,
+				9.9
+			],
+			"size": [
+				9.5,
+				13.5,
+				4.0
+			],
+			"r": 0.9,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						4.3,
+						6.75
+					],
+					"size": [
+						5.4,
+						2.6
+					],
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "clamp",
+			"kind": "cylinder",
+			"at": [
+				88.6,
+				63.2,
+				13.9
+			],
+			"size": [
+				1.2,
+				1.2,
+				2.0
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 14
+				}
+			]
+		},
+		{
+			"id": "rule-front",
+			"kind": "box",
+			"at": [
+				82,
+				70,
+				9.9
+			],
+			"size": [
+				6,
+				33,
+				3.0
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						0.6,
+						1.5
+					],
+					"to": [
+						0.6,
+						31.5
+					],
+					"step": 1.5,
+					"every": 5,
+					"lengths": [
+						1.0,
+						2.2
+					],
+					"side": -1
+				}
+			]
+		}
 	],
 	"assemble": {
 		"layers": [
-			["bench"],
-			["pane", "bezel-1", "bezel-2", "bezel-3"],
-			["caliper"],
-			["head"],
-			["pin-1", "pin-2", "pin-3", "pin-4"]
+			[
+				"plinth",
+				"foot-1",
+				"foot-2",
+				"foot-3",
+				"foot-4",
+				"plate"
+			],
+			[
+				"lip"
+			],
+			[
+				"back-rail",
+				"back-block",
+				"end-br",
+				"end-br2",
+				"beam",
+				"rail-l",
+				"rail-r",
+				"stop-l",
+				"stop-r"
+			],
+			[
+				"pane",
+				"bevel-edge"
+			],
+			[
+				"rule-back",
+				"rule-front"
+			],
+			[
+				"slider",
+				"clamp"
+			],
+			[
+				"pin-1",
+				"pin-2",
+				"pin-3",
+				"pin-4",
+				"pin-5",
+				"pin-6",
+				"pin-7",
+				"pin-8",
+				"pin-9",
+				"pin-10",
+				"pin-11",
+				"pin-12",
+				"pin-13",
+				"pin-14",
+				"pin-15",
+				"pin-16",
+				"pin-17",
+				"pin-18",
+				"pin-19",
+				"pin-20",
+				"pin-21",
+				"pin-22",
+				"pin-23",
+				"pin-24",
+				"pin-25",
+				"pin-26",
+				"pin-27",
+				"pin-28",
+				"pin-29",
+				"pin-30",
+				"pin-31",
+				"pin-32",
+				"pin-33",
+				"pin-34",
+				"pin-35",
+				"pin-36",
+				"pin-37",
+				"pin-38",
+				"pin-39",
+				"pin-40"
+			],
+			[
+				"tip-1",
+				"tip-2",
+				"tip-3",
+				"tip-4",
+				"tip-5",
+				"tip-6",
+				"tip-7",
+				"tip-8",
+				"tip-9",
+				"tip-10",
+				"tip-11",
+				"tip-12",
+				"tip-13",
+				"tip-14",
+				"tip-15",
+				"tip-16",
+				"tip-17",
+				"tip-18",
+				"tip-19",
+				"tip-20",
+				"tip-21",
+				"tip-22",
+				"tip-23",
+				"tip-24",
+				"tip-25",
+				"tip-26",
+				"tip-27",
+				"tip-28",
+				"tip-29",
+				"tip-30",
+				"tip-31",
+				"tip-32",
+				"tip-33",
+				"tip-34",
+				"tip-35",
+				"tip-36",
+				"tip-37",
+				"tip-38",
+				"tip-39",
+				"tip-40"
+			],
+			[
+				"riser"
+			],
+			[
+				"head",
+				"collar",
+				"thumbscrew",
+				"cursor"
+			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 6,
-		"rest": "pin at rim, 19 px below middle"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": "rim",
+		"readout": "{name} · falls {fall:0.1} px",
+		"states": [
+			{
+				"name": "pin 1",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-60.84,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 1 · level, on the flat glass"
+			},
+			{
+				"name": "pin 2",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-59.28,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 2 · level, on the flat glass"
+			},
+			{
+				"name": "pin 3",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-57.72,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 3 · level, on the flat glass"
+			},
+			{
+				"name": "pin 4",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-56.16,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 4 · level, on the flat glass"
+			},
+			{
+				"name": "pin 5",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-54.6,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 5 · level, on the flat glass"
+			},
+			{
+				"name": "pin 6",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-53.04,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 6 · level, on the flat glass"
+			},
+			{
+				"name": "pin 7",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-51.48,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 7 · level, on the flat glass"
+			},
+			{
+				"name": "pin 8",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-49.92,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 8 · level, on the flat glass"
+			},
+			{
+				"name": "pin 9",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-48.36,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 9 · level, on the flat glass"
+			},
+			{
+				"name": "pin 10",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-46.8,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 10 · level, on the flat glass"
+			},
+			{
+				"name": "pin 11",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-45.24,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 11 · level, on the flat glass"
+			},
+			{
+				"name": "pin 12",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-43.68,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 12 · level, on the flat glass"
+			},
+			{
+				"name": "pin 13",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-42.12,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 13 · level, on the flat glass"
+			},
+			{
+				"name": "pin 14",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-40.56,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 14 · level, on the flat glass"
+			},
+			{
+				"name": "pin 15",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-39.0,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 15 · level, on the flat glass"
+			},
+			{
+				"name": "pin 16",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-37.44,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 16 · level, on the flat glass"
+			},
+			{
+				"name": "pin 17",
+				"values": {
+					"fall": 0.0
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-35.88,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 17 · level, on the flat glass"
+			},
+			{
+				"name": "pin 18",
+				"values": {
+					"fall": 0.01
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-34.32,
+							0,
+							0
+						]
+					}
+				},
+				"readout": "pin 18 · level, on the flat glass"
+			},
+			{
+				"name": "pin 19",
+				"values": {
+					"fall": 0.05
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-32.76,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 20",
+				"values": {
+					"fall": 0.13
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-31.2,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 21",
+				"values": {
+					"fall": 0.25
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-29.64,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 22",
+				"values": {
+					"fall": 0.4
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-28.08,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 23",
+				"values": {
+					"fall": 0.59
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-26.52,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 24",
+				"values": {
+					"fall": 0.83
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-24.96,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 25",
+				"values": {
+					"fall": 1.1
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-23.4,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 26",
+				"values": {
+					"fall": 1.42
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-21.84,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 27",
+				"values": {
+					"fall": 1.79
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-20.28,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 28",
+				"values": {
+					"fall": 2.2
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-18.72,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 29",
+				"values": {
+					"fall": 2.67
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-17.16,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 30",
+				"values": {
+					"fall": 3.2
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-15.6,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 31",
+				"values": {
+					"fall": 3.78
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-14.04,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 32",
+				"values": {
+					"fall": 4.44
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-12.48,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 33",
+				"values": {
+					"fall": 5.18
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-10.92,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 34",
+				"values": {
+					"fall": 6.01
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-9.36,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 35",
+				"values": {
+					"fall": 6.95
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-7.8,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 36",
+				"values": {
+					"fall": 8.03
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-6.24,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 37",
+				"values": {
+					"fall": 9.29
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-4.68,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 38",
+				"values": {
+					"fall": 10.81
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-3.12,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "pin 39",
+				"values": {
+					"fall": 12.77
+				},
+				"parts": {
+					"cursor": {
+						"move": [
+							-1.56,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "rim",
+				"values": {
+					"fall": 19
+				},
+				"readout": "46 px thick · falls 19 px at the rim"
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ EDGE PROFILE ]",

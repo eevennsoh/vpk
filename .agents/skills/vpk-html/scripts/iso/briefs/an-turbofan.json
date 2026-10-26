@@ -2,294 +2,12809 @@
 	"schema": "vpk-iso-brief/1",
 	"id": "an-turbofan",
 	"figId": "FIG_221",
-	"title": "Turbofan on the thrust stand",
-	"label": "Dimetric turbofan on a ground-run thrust stand: the wide fan and spinner at the front, then compressors, combustor and turbines tapering to the exhaust cone, on a load cell atop the stand. The fan is highlighted.",
-	"caption": "Three spools turn at their own speeds, but the wide fan moves most of the air; its push drives the engine forward against the load cell, which reads 14 kN at idle and 334 kN at take-off.",
+	"title": "Turbofan ground run",
+	"label": "Cutaway Trent 970 hung from a goalpost thrust frame by a pylon and gauged load cell: inlet lip, fan cowl, swept fan blades, spinner, opened reverser sleeves, core stages, glowing combustor, exhaust cone and heat haze over a bed plate.",
+	"caption": "Drag ↔ thrust (End jumps to take-off). The three spools wind up at their own speeds, the combustor and the exhaust haze grow, and the load cell reads the push: 14 kN at idle, 334 kN at take-off.",
 	"camera": {
 		"preset": "dimetric",
 		"scale": "fit"
 	},
+	"emphasis": "none",
+	"labels": [],
 	"parts": [
 		{
-			"id": "stand",
-			"kind": "box",
+			"id": "plinth",
+			"kind": "slab",
 			"at": [
-				67,
-				18,
+				-2,
+				-60,
 				0
 			],
 			"size": [
-				12,
-				28,
+				224,
+				120,
+				3
+			],
+			"r": 5,
+			"label": "Bed plate"
+		},
+		{
+			"id": "base-plate",
+			"kind": "slab",
+			"at": [
+				0,
+				-58,
+				3
+			],
+			"size": [
+				220,
+				116,
 				6
 			],
-			"r": 1,
-			"marks": [
-				[
-					[
-						2,
-						24
-					],
-					[
+			"r": 4,
+			"label": "Bed plate",
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
 						10,
-						24
+						112.5
+					],
+					"to": [
+						206,
+						112.5
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						1.2,
+						2.6
+					],
+					"side": -1
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							8,
+							113.6
+						],
+						[
+							208,
+							113.6
+						]
 					]
-				]
-			],
-			"label": "Thrust stand"
-		},
-		{
-			"id": "cell",
-			"kind": "box",
-			"at": [
-				69,
-				24,
-				6
-			],
-			"size": [
-				8,
-				16,
-				8
-			],
-			"r": 1,
-			"label": "Load cell"
-		},
-		{
-			"id": "cone",
-			"kind": "box",
-			"at": [
-				3,
-				22,
-				22
-			],
-			"size": [
-				16,
-				12,
-				12
-			],
-			"r": 3,
-			"label": "Exhaust cone"
-		},
-		{
-			"id": "turbine",
-			"kind": "box",
-			"at": [
-				23,
-				18,
-				18
-			],
-			"size": [
-				14,
-				20,
-				20
-			],
-			"r": 3,
-			"label": "Turbines"
-		},
-		{
-			"id": "combustor",
-			"kind": "box",
-			"at": [
-				42,
-				19,
-				19
-			],
-			"size": [
-				14,
-				18,
-				18
-			],
-			"r": 3,
-			"label": "Combustor"
-		},
-		{
-			"id": "compressor",
-			"kind": "box",
-			"at": [
-				61,
-				14,
-				14
-			],
-			"size": [
-				20,
-				28,
-				28
-			],
-			"r": 3,
-			"label": "IP + HP compressors"
-		},
-		{
-			"id": "fan",
-			"kind": "box",
-			"at": [
-				86,
-				8,
-				8
-			],
-			"size": [
-				8,
-				40,
-				40
-			],
-			"r": 6,
-			"marks": [
-				[
-					[
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						92,
+						74
+					],
+					"size": [
+						96,
+						5
+					],
+					"depth": 0.8
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						45,
+						72
+					],
+					"to": [
+						139,
+						72
+					],
+					"step": 1.1,
+					"every": 1,
+					"lengths": [
 						4,
 						4
 					],
-					[
-						4,
-						36
+					"side": 1
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						190,
+						92
+					],
+					"size": [
+						40,
+						18
+					],
+					"depth": 1.2
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							190,
+							83
+						],
+						[
+							190,
+							101
+						]
 					]
-				]
-			],
-			"label": "Fan"
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						174,
+						103
+					],
+					"to": [
+						204,
+						103
+					],
+					"step": 7.5,
+					"every": 4,
+					"lengths": [
+						1.2,
+						2.2
+					],
+					"side": 1
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						172,
+						108.5
+					],
+					"text": "IDLE",
+					"size": 2.2
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						196,
+						108.5
+					],
+					"text": "TO",
+					"size": 2.2
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						172,
+						80
+					],
+					"text": "DRAG <-> THRUST",
+					"size": 2.2
+				}
+			]
 		},
 		{
-			"id": "spinner",
+			"id": "pad-0",
 			"kind": "box",
 			"at": [
-				94,
+				14,
+				-46,
+				9
+			],
+			"size": [
+				8,
+				8,
+				1.8
+			],
+			"r": 1,
+			"label": "Tie-down pad",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						4
+					],
+					"size": 3,
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "pad-1",
+			"kind": "box",
+			"at": [
+				14,
+				40,
+				9
+			],
+			"size": [
+				8,
+				8,
+				1.8
+			],
+			"r": 1,
+			"label": "Tie-down pad",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						4
+					],
+					"size": 3,
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "pad-2",
+			"kind": "box",
+			"at": [
+				112,
+				44,
+				9
+			],
+			"size": [
+				8,
+				8,
+				1.8
+			],
+			"r": 1,
+			"label": "Tie-down pad",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						4
+					],
+					"size": 3,
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "pad-3",
+			"kind": "box",
+			"at": [
+				170,
+				-46,
+				9
+			],
+			"size": [
+				8,
+				8,
+				1.8
+			],
+			"r": 1,
+			"label": "Tie-down pad",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						4
+					],
+					"size": 3,
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "pad-4",
+			"kind": "box",
+			"at": [
+				176,
+				30,
+				9
+			],
+			"size": [
+				8,
+				8,
+				1.8
+			],
+			"r": 1,
+			"label": "Tie-down pad",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						4
+					],
+					"size": 3,
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "nameplate",
+			"kind": "plate",
+			"at": [
+				150,
+				42,
+				9
+			],
+			"size": [
 				22,
-				22
+				10,
+				0.8
+			],
+			"r": 0.6,
+			"label": "Nameplate",
+			"detail": [
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						1.6,
+						6.2
+					],
+					"text": "TRENT 970",
+					"size": 2.6
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.6,
+							3.8
+						],
+						[
+							20,
+							3.8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.6,
+							2.2
+						],
+						[
+							14,
+							2.2
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "lever",
+			"kind": "box",
+			"at": [
+				172.0,
+				28,
+				8.6
 			],
 			"size": [
 				6,
-				12,
+				10,
+				3.2
+			],
+			"r": 1.4,
+			"label": "Thrust lever",
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3,
+							1.5
+						],
+						[
+							3,
+							8.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "foot-0",
+			"kind": "slab",
+			"at": [
+				17,
+				-58,
+				9.0
+			],
+			"size": [
+				20,
+				18,
+				1.8
+			],
+			"r": 0.8,
+			"label": "Column foot",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 14,
+					"size": 0.7
+				}
+			]
+		},
+		{
+			"id": "column-0",
+			"kind": "box",
+			"at": [
+				22,
+				-54,
+				10.8
+			],
+			"size": [
+				10,
+				10,
+				159.2
+			],
+			"label": "Frame column",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.4,
+						6
+					],
+					"grid": [
+						2,
+						26
+					],
+					"gap": 5.8,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						1.4,
+						6
+					],
+					"grid": [
+						2,
+						26
+					],
+					"gap": 5.8,
+					"size": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							70
+						],
+						[
+							10,
+							70
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0,
+							70
+						],
+						[
+							10,
+							70
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gusset-0a",
+			"kind": "prism",
+			"at": [
+				32,
+				-49.75,
+				10.8
+			],
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					-8,
+					0
+				],
+				[
+					0,
+					14
+				]
+			],
+			"depth": 1.5,
+			"label": "Gusset"
+		},
+		{
+			"id": "gusset-0b",
+			"kind": "prism",
+			"at": [
+				26.25,
+				-44,
+				10.8
+			],
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					8,
+					0
+				],
+				[
+					0,
+					14
+				]
+			],
+			"depth": 1.5,
+			"label": "Gusset"
+		},
+		{
+			"id": "foot-1",
+			"kind": "slab",
+			"at": [
+				127,
+				-58,
+				9.0
+			],
+			"size": [
+				20,
+				18,
+				1.8
+			],
+			"r": 0.8,
+			"label": "Column foot",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 14,
+					"size": 0.7
+				}
+			]
+		},
+		{
+			"id": "column-1",
+			"kind": "box",
+			"at": [
+				132,
+				-54,
+				10.8
+			],
+			"size": [
+				10,
+				10,
+				159.2
+			],
+			"label": "Frame column",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.4,
+						6
+					],
+					"grid": [
+						2,
+						26
+					],
+					"gap": 5.8,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						1.4,
+						6
+					],
+					"grid": [
+						2,
+						26
+					],
+					"gap": 5.8,
+					"size": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							70
+						],
+						[
+							10,
+							70
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0,
+							70
+						],
+						[
+							10,
+							70
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gusset-1a",
+			"kind": "prism",
+			"at": [
+				142,
+				-49.75,
+				10.8
+			],
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					-8,
+					0
+				],
+				[
+					0,
+					14
+				]
+			],
+			"depth": 1.5,
+			"label": "Gusset"
+		},
+		{
+			"id": "gusset-1b",
+			"kind": "prism",
+			"at": [
+				136.25,
+				-44,
+				10.8
+			],
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					8,
+					0
+				],
+				[
+					0,
+					14
+				]
+			],
+			"depth": 1.5,
+			"label": "Gusset"
+		},
+		{
+			"id": "beam-rear",
+			"kind": "box",
+			"at": [
+				18,
+				-56,
+				170.0
+			],
+			"size": [
+				130,
+				14,
+				11
+			],
+			"r": 0.5,
+			"label": "Rear crossbeam",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						3,
+						5.5
+					],
+					"grid": [
+						26,
+						1
+					],
+					"gap": 5,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "arm-0",
+			"kind": "box",
+			"at": [
+				22,
+				-42,
+				170.0
+			],
+			"size": [
+				10,
+				44,
+				11
+			],
+			"r": 0.5,
+			"label": "Portal arm",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						3,
+						5.5
+					],
+					"grid": [
+						8,
+						1
+					],
+					"gap": 5,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "arm-1",
+			"kind": "box",
+			"at": [
+				132,
+				-42,
+				170.0
+			],
+			"size": [
+				10,
+				44,
+				11
+			],
+			"r": 0.5,
+			"label": "Portal arm",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						3,
+						5.5
+					],
+					"grid": [
+						8,
+						1
+					],
+					"gap": 5,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "beam",
+			"kind": "box",
+			"at": [
+				14,
+				2,
+				170.0
+			],
+			"size": [
+				146,
+				14,
 				12
 			],
-			"r": 4,
-			"label": "Spinner"
-		}
-	],
-	"focal": "fan",
-	"labels": [
-		{
-			"text": "Fan \u00b7 LP spool",
-			"target": "fan",
-			"side": "right",
-			"anchor": [
-				94,
-				44,
-				18
+			"r": 0.5,
+			"label": "Portal beam",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						3,
+						6
+					],
+					"grid": [
+						29,
+						1
+					],
+					"gap": 5,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3,
+						7
+					],
+					"grid": [
+						29,
+						1
+					],
+					"gap": 5,
+					"size": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							48,
+							0
+						],
+						[
+							48,
+							12
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							100,
+							0
+						],
+						[
+							100,
+							12
+						]
+					]
+				}
 			]
 		},
 		{
-			"text": "Spinner",
-			"target": "spinner",
-			"side": "right",
-			"anchor": [
-				100,
-				28,
-				28
+			"id": "endcap-0",
+			"kind": "box",
+			"at": [
+				12,
+				1,
+				157.0
+			],
+			"size": [
+				10,
+				16,
+				13
+			],
+			"r": 0.6,
+			"label": "Beam end block"
+		},
+		{
+			"id": "upipe",
+			"kind": "tube",
+			"points": [
+				[
+					40,
+					12,
+					182.0
+				],
+				[
+					40,
+					12,
+					191.0
+				],
+				[
+					40,
+					-50,
+					191.0
+				],
+				[
+					40,
+					-50,
+					181.0
+				]
+			],
+			"radius": 1.2,
+			"fillet": 4,
+			"label": "Fuel line"
+		},
+		{
+			"id": "pylon",
+			"kind": "prism",
+			"at": [
+				0,
+				18,
+				0
+			],
+			"axis": "-y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"polygon": [
+				[
+					34,
+					134
+				],
+				[
+					128,
+					140
+				],
+				[
+					128,
+					158
+				],
+				[
+					28,
+					158
+				]
+			],
+			"depth": 20,
+			"label": "Pylon",
+			"detail": [
+				{
+					"type": "line",
+					"face": "start",
+					"points": [
+						[
+							22,
+							6
+						],
+						[
+							22,
+							24
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "start",
+					"points": [
+						[
+							56,
+							7.5
+						],
+						[
+							56,
+							24
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "start",
+					"points": [
+						[
+							0,
+							18
+						],
+						[
+							100,
+							18
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "start",
+					"shape": "rect",
+					"at": [
+						38,
+						11
+					],
+					"size": [
+						16,
+						5
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "ticks",
+					"face": "start",
+					"from": [
+						31,
+						9
+					],
+					"to": [
+						45,
+						9
+					],
+					"step": 1,
+					"every": 1,
+					"lengths": [
+						4,
+						4
+					],
+					"side": 1
+				},
+				{
+					"type": "dots",
+					"face": "start",
+					"at": [
+						4,
+						21.5
+					],
+					"grid": [
+						24,
+						1
+					],
+					"gap": 4,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "start",
+					"at": [
+						62,
+						9
+					],
+					"grid": [
+						9,
+						2
+					],
+					"gap": 4,
+					"size": 0.3
+				}
 			]
 		},
 		{
-			"text": "IP + HP compressors",
-			"target": "compressor",
-			"side": "left",
-			"anchor": [
-				65,
-				42,
-				18
-			]
-		},
-		{
-			"text": "Combustor",
-			"target": "combustor",
-			"side": "left",
-			"anchor": [
-				46,
-				37,
-				21
-			]
-		},
-		{
-			"text": "Turbines",
-			"target": "turbine",
-			"side": "left",
-			"anchor": [
-				27,
+			"id": "hanger-0",
+			"kind": "box",
+			"at": [
 				38,
-				23
+				6.5,
+				158
+			],
+			"size": [
+				3,
+				3,
+				12
+			],
+			"r": 0.4,
+			"label": "Hanger link"
+		},
+		{
+			"id": "clevis-0",
+			"kind": "box",
+			"at": [
+				36.5,
+				5,
+				158
+			],
+			"size": [
+				6,
+				6,
+				3.4
+			],
+			"r": 0.6,
+			"label": "Hanger link"
+		},
+		{
+			"id": "hanger-1",
+			"kind": "box",
+			"at": [
+				54,
+				6.5,
+				158
+			],
+			"size": [
+				3,
+				3,
+				12
+			],
+			"r": 0.4,
+			"label": "Hanger link"
+		},
+		{
+			"id": "clevis-1",
+			"kind": "box",
+			"at": [
+				52.5,
+				5,
+				158
+			],
+			"size": [
+				6,
+				6,
+				3.4
+			],
+			"r": 0.6,
+			"label": "Hanger link"
+		},
+		{
+			"id": "hanger-2",
+			"kind": "box",
+			"at": [
+				100,
+				6.5,
+				158
+			],
+			"size": [
+				3,
+				3,
+				12
+			],
+			"r": 0.4,
+			"label": "Hanger link"
+		},
+		{
+			"id": "clevis-2",
+			"kind": "box",
+			"at": [
+				98.5,
+				5,
+				158
+			],
+			"size": [
+				6,
+				6,
+				3.4
+			],
+			"r": 0.6,
+			"label": "Hanger link"
+		},
+		{
+			"id": "hanger-3",
+			"kind": "box",
+			"at": [
+				116,
+				6.5,
+				158
+			],
+			"size": [
+				3,
+				3,
+				12
+			],
+			"r": 0.4,
+			"label": "Hanger link"
+		},
+		{
+			"id": "clevis-3",
+			"kind": "box",
+			"at": [
+				114.5,
+				5,
+				158
+			],
+			"size": [
+				6,
+				6,
+				3.4
+			],
+			"r": 0.6,
+			"label": "Hanger link"
+		},
+		{
+			"id": "load-cell",
+			"kind": "box",
+			"at": [
+				140,
+				2,
+				148
+			],
+			"size": [
+				12,
+				12,
+				22
+			],
+			"r": 1,
+			"label": "Load cell",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 8,
+					"size": 0.4
+				}
 			]
 		},
 		{
-			"text": "Exhaust cone",
-			"target": "cone",
-			"side": "left",
-			"anchor": [
-				7,
-				34,
-				26
-			]
-		},
-		{
-			"text": "Load cell \u00b7 thrust",
-			"target": "cell",
-			"side": "left",
-			"anchor": [
-				69,
-				40,
-				10
-			]
-		},
-		{
-			"text": "Thrust stand",
-			"target": "stand",
-			"side": "right",
-			"anchor": [
-				67,
-				46,
-				3
-			]
-		}
-	],
-	"annotations": [
-		{
-			"kind": "arrow",
+			"id": "cell-link",
+			"kind": "rod",
 			"from": [
-				112,
-				28,
-				28
+				128,
+				8,
+				150
 			],
 			"to": [
-				126,
-				28,
-				28
+				140,
+				8,
+				150
 			],
-			"of": "fan"
+			"radius": 1.3,
+			"label": "Load link"
+		},
+		{
+			"id": "actuator",
+			"kind": "cylinder",
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				146,
+				14,
+				152
+			],
+			"size": [
+				2,
+				2,
+				5
+			],
+			"label": "Thrust actuator",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.6,
+						3.4
+					]
+				}
+			]
+		},
+		{
+			"id": "dial-gauge",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				152,
+				8,
+				160
+			],
+			"size": [
+				5.6,
+				5.6,
+				1.4
+			],
+			"label": "Thrust gauge",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 5.0,
+					"count": 20,
+					"every": 5,
+					"lengths": [
+						0.6,
+						1.4
+					],
+					"from": -45,
+					"span": 270
+				},
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 0,
+					"r1": 4.0,
+					"count": 1,
+					"phase": -40.0
+				}
+			],
+			"variants": {
+				"n1": {
+					"detail": [
+						{
+							"type": "radialTicks",
+							"face": "end",
+							"r": 5.0,
+							"count": 20,
+							"every": 5,
+							"lengths": [
+								0.6,
+								1.4
+							],
+							"from": -45,
+							"span": 270
+						},
+						{
+							"type": "spokes",
+							"face": "end",
+							"r0": 0,
+							"r1": 4.0,
+							"count": 1,
+							"phase": 25.0
+						}
+					]
+				},
+				"n2": {
+					"detail": [
+						{
+							"type": "radialTicks",
+							"face": "end",
+							"r": 5.0,
+							"count": 20,
+							"every": 5,
+							"lengths": [
+								0.6,
+								1.4
+							],
+							"from": -45,
+							"span": 270
+						},
+						{
+							"type": "spokes",
+							"face": "end",
+							"r0": 0,
+							"r1": 4.0,
+							"count": 1,
+							"phase": 90.0
+						}
+					]
+				},
+				"n3": {
+					"detail": [
+						{
+							"type": "radialTicks",
+							"face": "end",
+							"r": 5.0,
+							"count": 20,
+							"every": 5,
+							"lengths": [
+								0.6,
+								1.4
+							],
+							"from": -45,
+							"span": 270
+						},
+						{
+							"type": "spokes",
+							"face": "end",
+							"r0": 0,
+							"r1": 4.0,
+							"count": 1,
+							"phase": 155.0
+						}
+					]
+				},
+				"n4": {
+					"detail": [
+						{
+							"type": "radialTicks",
+							"face": "end",
+							"r": 5.0,
+							"count": 20,
+							"every": 5,
+							"lengths": [
+								0.6,
+								1.4
+							],
+							"from": -45,
+							"span": 270
+						},
+						{
+							"type": "spokes",
+							"face": "end",
+							"r0": 0,
+							"r1": 4.0,
+							"count": 1,
+							"phase": 220.0
+						}
+					]
+				}
+			}
+		},
+		{
+			"id": "shaft-lp",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				4,
+				8.0,
+				94.0
+			],
+			"size": [
+				1.4,
+				1.4,
+				146
+			],
+			"label": "LP shaft"
+		},
+		{
+			"id": "shaft-ip",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				30,
+				8.0,
+				94.0
+			],
+			"size": [
+				2.8,
+				2.8,
+				104
+			],
+			"label": "IP shaft",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						20,
+						50,
+						80
+					]
+				}
+			]
+		},
+		{
+			"id": "shaft-hp",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				48,
+				8.0,
+				94.0
+			],
+			"size": [
+				4.4,
+				4.4,
+				60
+			],
+			"label": "HP shaft",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						12,
+						30,
+						48
+					]
+				}
+			]
+		},
+		{
+			"id": "ipc-0",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				108.0,
+				8.0,
+				94.0
+			],
+			"size": [
+				19.6,
+				19.6,
+				1.6
+			],
+			"label": "IP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 4.5,
+					"r1": 19.3,
+					"count": 36
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					108.0,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					8.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "ipc-vane-0",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				110.0,
+				8.0,
+				94.0
+			],
+			"size": [
+				19.9,
+				19.9,
+				0.8
+			],
+			"label": "IP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 19.6,
+					"count": 30,
+					"every": 1,
+					"lengths": [
+						7.7,
+						7.7
+					]
+				}
+			]
+		},
+		{
+			"id": "ipc-1",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				111.8,
+				8.0,
+				94.0
+			],
+			"size": [
+				19.79,
+				19.79,
+				1.6
+			],
+			"label": "IP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 4.5,
+					"r1": 19.49,
+					"count": 36
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					111.8,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					8.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "ipc-vane-1",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				113.8,
+				8.0,
+				94.0
+			],
+			"size": [
+				20.09,
+				20.09,
+				0.8
+			],
+			"label": "IP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 19.79,
+					"count": 30,
+					"every": 1,
+					"lengths": [
+						7.795,
+						7.795
+					]
+				}
+			]
+		},
+		{
+			"id": "ipc-2",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				115.6,
+				8.0,
+				94.0
+			],
+			"size": [
+				19.98,
+				19.98,
+				1.6
+			],
+			"label": "IP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 4.5,
+					"r1": 19.68,
+					"count": 36
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					115.6,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					8.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "ipc-vane-2",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				117.6,
+				8.0,
+				94.0
+			],
+			"size": [
+				20.28,
+				20.28,
+				0.8
+			],
+			"label": "IP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 19.98,
+					"count": 30,
+					"every": 1,
+					"lengths": [
+						7.89,
+						7.89
+					]
+				}
+			]
+		},
+		{
+			"id": "ipc-3",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				119.4,
+				8.0,
+				94.0
+			],
+			"size": [
+				20.17,
+				20.17,
+				1.6
+			],
+			"label": "IP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 4.5,
+					"r1": 19.87,
+					"count": 36
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					119.4,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					8.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "ipc-vane-3",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				121.4,
+				8.0,
+				94.0
+			],
+			"size": [
+				20.47,
+				20.47,
+				0.8
+			],
+			"label": "IP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 20.17,
+					"count": 30,
+					"every": 1,
+					"lengths": [
+						7.985,
+						7.985
+					]
+				}
+			]
+		},
+		{
+			"id": "ipc-4",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				123.2,
+				8.0,
+				94.0
+			],
+			"size": [
+				20.36,
+				20.36,
+				1.6
+			],
+			"label": "IP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 4.5,
+					"r1": 20.06,
+					"count": 36
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					123.2,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					8.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "ipc-vane-4",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				125.2,
+				8.0,
+				94.0
+			],
+			"size": [
+				20.66,
+				20.66,
+				0.8
+			],
+			"label": "IP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 20.36,
+					"count": 30,
+					"every": 1,
+					"lengths": [
+						8.08,
+						8.08
+					]
+				}
+			]
+		},
+		{
+			"id": "ipc-5",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				127.0,
+				8.0,
+				94.0
+			],
+			"size": [
+				20.55,
+				20.55,
+				1.6
+			],
+			"label": "IP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 4.5,
+					"r1": 20.25,
+					"count": 36
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					127.0,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					8.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "ipc-vane-5",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				129.0,
+				8.0,
+				94.0
+			],
+			"size": [
+				20.85,
+				20.85,
+				0.8
+			],
+			"label": "IP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 20.55,
+					"count": 30,
+					"every": 1,
+					"lengths": [
+						8.175,
+						8.175
+					]
+				}
+			]
+		},
+		{
+			"id": "hpc-0",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				82.0,
+				8.0,
+				94.0
+			],
+			"size": [
+				17.55,
+				17.55,
+				1.4
+			],
+			"label": "HP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 5.5,
+					"r1": 17.25,
+					"count": 40
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					82.0,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					9.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "hpc-vane-0",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				83.9,
+				8.0,
+				94.0
+			],
+			"size": [
+				17.892,
+				17.892,
+				0.7
+			],
+			"label": "HP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 17.592,
+					"count": 32,
+					"every": 1,
+					"lengths": [
+						6.196,
+						6.196
+					]
+				}
+			]
+		},
+		{
+			"id": "hpc-1",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				85.6,
+				8.0,
+				94.0
+			],
+			"size": [
+				17.82,
+				17.82,
+				1.4
+			],
+			"label": "HP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 5.5,
+					"r1": 17.52,
+					"count": 40
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					85.6,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					9.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "hpc-vane-1",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				87.5,
+				8.0,
+				94.0
+			],
+			"size": [
+				18.162,
+				18.162,
+				0.7
+			],
+			"label": "HP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 17.862,
+					"count": 32,
+					"every": 1,
+					"lengths": [
+						6.331,
+						6.331
+					]
+				}
+			]
+		},
+		{
+			"id": "hpc-2",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				89.2,
+				8.0,
+				94.0
+			],
+			"size": [
+				18.09,
+				18.09,
+				1.4
+			],
+			"label": "HP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 5.5,
+					"r1": 17.79,
+					"count": 40
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					89.2,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					9.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "hpc-vane-2",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				91.1,
+				8.0,
+				94.0
+			],
+			"size": [
+				18.432,
+				18.432,
+				0.7
+			],
+			"label": "HP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 18.132,
+					"count": 32,
+					"every": 1,
+					"lengths": [
+						6.466,
+						6.466
+					]
+				}
+			]
+		},
+		{
+			"id": "hpc-3",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				92.8,
+				8.0,
+				94.0
+			],
+			"size": [
+				18.36,
+				18.36,
+				1.4
+			],
+			"label": "HP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 5.5,
+					"r1": 18.06,
+					"count": 40
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					92.8,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					9.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "hpc-vane-3",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				94.7,
+				8.0,
+				94.0
+			],
+			"size": [
+				18.703,
+				18.703,
+				0.7
+			],
+			"label": "HP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 18.402,
+					"count": 32,
+					"every": 1,
+					"lengths": [
+						6.601,
+						6.601
+					]
+				}
+			]
+		},
+		{
+			"id": "hpc-4",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				96.4,
+				8.0,
+				94.0
+			],
+			"size": [
+				18.63,
+				18.63,
+				1.4
+			],
+			"label": "HP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 5.5,
+					"r1": 18.33,
+					"count": 40
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					96.4,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					9.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "hpc-vane-4",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				98.3,
+				8.0,
+				94.0
+			],
+			"size": [
+				18.973,
+				18.973,
+				0.7
+			],
+			"label": "HP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 18.672,
+					"count": 32,
+					"every": 1,
+					"lengths": [
+						6.736,
+						6.736
+					]
+				}
+			]
+		},
+		{
+			"id": "hpc-5",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				100.0,
+				8.0,
+				94.0
+			],
+			"size": [
+				18.9,
+				18.9,
+				1.4
+			],
+			"label": "HP compressor",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 5.5,
+					"r1": 18.6,
+					"count": 40
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					100.0,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					9.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "hpc-vane-5",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				101.9,
+				8.0,
+				94.0
+			],
+			"size": [
+				19.242,
+				19.242,
+				0.7
+			],
+			"label": "HP compressor stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 18.942,
+					"count": 32,
+					"every": 1,
+					"lengths": [
+						6.871,
+						6.871
+					]
+				}
+			]
+		},
+		{
+			"id": "combustor",
+			"kind": "lathe",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				66,
+				8.0,
+				94.0
+			],
+			"profile": [
+				[
+					0,
+					7
+				],
+				[
+					2,
+					11.5,
+					"soft"
+				],
+				[
+					11,
+					12.5
+				],
+				[
+					14,
+					9
+				]
+			],
+			"label": "Combustor",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						4,
+						8
+					]
+				}
+			],
+			"variants": {
+				"lit": {
+					"tone": "glow"
+				}
+			}
+		},
+		{
+			"id": "flame",
+			"kind": "glow",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				72,
+				8.0,
+				94.0
+			],
+			"r": 4,
+			"label": "Combustion",
+			"variants": {
+				"g1": {
+					"r": 6
+				},
+				"g2": {
+					"r": 9
+				},
+				"g3": {
+					"r": 12
+				},
+				"g4": {
+					"r": 15
+				}
+			}
+		},
+		{
+			"id": "ngv",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				63,
+				8.0,
+				94.0
+			],
+			"size": [
+				12,
+				12,
+				1.6
+			],
+			"tone": "glow",
+			"label": "Nozzle guide vanes"
+		},
+		{
+			"id": "hpt-0",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				57.0,
+				8.0,
+				94.0
+			],
+			"size": [
+				15.875,
+				15.875,
+				1.6
+			],
+			"label": "HP turbine",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 5.5,
+					"r1": 15.575,
+					"count": 44
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					57.0,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					9.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "hpt-1",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				60.2,
+				8.0,
+				94.0
+			],
+			"size": [
+				16.115,
+				16.115,
+				1.6
+			],
+			"label": "HP turbine",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 5.5,
+					"r1": 15.815,
+					"count": 44
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					60.2,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					9.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "ipt-0",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				51,
+				8.0,
+				94.0
+			],
+			"size": [
+				15.425,
+				15.425,
+				1.8
+			],
+			"label": "IP turbine",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 4.5,
+					"r1": 15.125,
+					"count": 44
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					51,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					8.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "lpt-0",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				28.0,
+				8.0,
+				94.0
+			],
+			"size": [
+				14.1,
+				14.1,
+				1.6
+			],
+			"label": "LP turbine",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 3.5,
+					"r1": 13.8,
+					"count": 48
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					28.0,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					5.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "lpt-vane-0",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				30.0,
+				8.0,
+				94.0
+			],
+			"size": [
+				14.45,
+				14.45,
+				0.7
+			],
+			"label": "LP turbine stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 14.15,
+					"count": 36,
+					"every": 1,
+					"lengths": [
+						5.475,
+						5.475
+					]
+				}
+			]
+		},
+		{
+			"id": "lpt-1",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				31.8,
+				8.0,
+				94.0
+			],
+			"size": [
+				14.385,
+				14.385,
+				1.6
+			],
+			"label": "LP turbine",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 3.5,
+					"r1": 14.085,
+					"count": 48
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					31.8,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					5.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "lpt-vane-1",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				33.8,
+				8.0,
+				94.0
+			],
+			"size": [
+				14.735,
+				14.735,
+				0.7
+			],
+			"label": "LP turbine stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 14.435,
+					"count": 36,
+					"every": 1,
+					"lengths": [
+						5.617,
+						5.617
+					]
+				}
+			]
+		},
+		{
+			"id": "lpt-2",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				35.6,
+				8.0,
+				94.0
+			],
+			"size": [
+				14.67,
+				14.67,
+				1.6
+			],
+			"label": "LP turbine",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 3.5,
+					"r1": 14.37,
+					"count": 48
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					35.6,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					5.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "lpt-vane-2",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				37.6,
+				8.0,
+				94.0
+			],
+			"size": [
+				15.02,
+				15.02,
+				0.7
+			],
+			"label": "LP turbine stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 14.72,
+					"count": 36,
+					"every": 1,
+					"lengths": [
+						5.76,
+						5.76
+					]
+				}
+			]
+		},
+		{
+			"id": "lpt-3",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				39.4,
+				8.0,
+				94.0
+			],
+			"size": [
+				14.955,
+				14.955,
+				1.6
+			],
+			"label": "LP turbine",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 3.5,
+					"r1": 14.655,
+					"count": 48
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					39.4,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					5.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "lpt-vane-3",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				41.4,
+				8.0,
+				94.0
+			],
+			"size": [
+				15.305,
+				15.305,
+				0.7
+			],
+			"label": "LP turbine stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 15.005,
+					"count": 36,
+					"every": 1,
+					"lengths": [
+						5.902,
+						5.902
+					]
+				}
+			]
+		},
+		{
+			"id": "lpt-4",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				43.2,
+				8.0,
+				94.0
+			],
+			"size": [
+				15.24,
+				15.24,
+				1.6
+			],
+			"label": "LP turbine",
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 3.5,
+					"r1": 14.94,
+					"count": 48
+				}
+			],
+			"rotate": {
+				"axis": "x",
+				"about": [
+					43.2,
+					8.0,
+					94.0
+				],
+				"deg": [
+					0,
+					5.0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "lpt-vane-4",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				45.2,
+				8.0,
+				94.0
+			],
+			"size": [
+				15.59,
+				15.59,
+				0.7
+			],
+			"label": "LP turbine stator",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 15.29,
+					"count": 36,
+					"every": 1,
+					"lengths": [
+						6.045,
+						6.045
+					]
+				}
+			]
+		},
+		{
+			"id": "core-cowl",
+			"kind": "lathe",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				24,
+				8.0,
+				94.0
+			],
+			"profile": [
+				[
+					0,
+					15
+				],
+				[
+					40,
+					18
+				],
+				[
+					80,
+					21
+				],
+				[
+					110,
+					22.5
+				]
+			],
+			"closed": false,
+			"cutaway": {
+				"from": -100,
+				"to": 10,
+				"wall": 0.9,
+				"hatch": 1.2
+			},
+			"label": "Core casing",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						18,
+						40,
+						58,
+						84
+					]
+				}
+			]
+		},
+		{
+			"id": "exhaust-cone",
+			"kind": "cone",
+			"axis": "-x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				26,
+				8.0,
+				94.0
+			],
+			"r0": 11,
+			"r1": 0.4,
+			"length": 44,
+			"label": "Exhaust cone",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						8
+					]
+				}
+			]
+		},
+		{
+			"id": "gearbox",
+			"kind": "box",
+			"at": [
+				86,
+				14,
+				36
+			],
+			"size": [
+				26,
+				8,
+				10
+			],
+			"r": 1.4,
+			"label": "Accessory gearbox",
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.5,
+						1.5
+					],
+					"grid": [
+						10,
+						3
+					],
+					"gap": 2.5,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "gear-0",
+			"kind": "cylinder",
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				91,
+				22,
+				41
+			],
+			"size": [
+				3.0,
+				3.0,
+				1.6
+			],
+			"label": "Accessory drive",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 3.0,
+					"count": 18,
+					"every": 1,
+					"lengths": [
+						0.5,
+						0.5
+					]
+				}
+			]
+		},
+		{
+			"id": "gear-1",
+			"kind": "cylinder",
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				98.5,
+				22,
+				41
+			],
+			"size": [
+				2.2,
+				2.2,
+				1.6
+			],
+			"label": "Accessory drive",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 2.2,
+					"count": 18,
+					"every": 1,
+					"lengths": [
+						0.5,
+						0.5
+					]
+				}
+			]
+		},
+		{
+			"id": "gear-2",
+			"kind": "cylinder",
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				105.5,
+				22,
+				41
+			],
+			"size": [
+				2.6,
+				2.6,
+				1.6
+			],
+			"label": "Accessory drive",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 2.6,
+					"count": 18,
+					"every": 1,
+					"lengths": [
+						0.5,
+						0.5
+					]
+				}
+			]
+		},
+		{
+			"id": "gb-pump",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				112,
+				18,
+				41
+			],
+			"size": [
+				2.8,
+				2.8,
+				7
+			],
+			"label": "Fuel pump",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2.4,
+						4.6
+					]
+				}
+			]
+		},
+		{
+			"id": "gb-strut",
+			"kind": "rod",
+			"from": [
+				96,
+				18,
+				46
+			],
+			"to": [
+				96,
+				18,
+				54
+			],
+			"radius": 1.0,
+			"label": "Gearbox mount"
+		},
+		{
+			"id": "gb-pipe",
+			"kind": "tube",
+			"points": [
+				[
+					87,
+					22,
+					41
+				],
+				[
+					80,
+					24,
+					41
+				],
+				[
+					78,
+					24,
+					50
+				],
+				[
+					78,
+					20,
+					54
+				]
+			],
+			"radius": 0.7,
+			"fillet": 1.8,
+			"label": "Oil line"
+		},
+		{
+			"id": "sleeve-lower",
+			"kind": "lathe",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				60,
+				8.0,
+				90.0
+			],
+			"profile": [
+				[
+					0,
+					30
+				],
+				[
+					1.5,
+					31.5,
+					"soft"
+				],
+				[
+					48,
+					40
+				],
+				[
+					68,
+					42.5
+				]
+			],
+			"closed": false,
+			"cutaway": {
+				"from": -100,
+				"to": 95,
+				"wall": 2.2,
+				"hatch": 1.4
+			},
+			"label": "Lower thrust-reverser sleeve",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						22,
+						46
+					]
+				}
+			]
+		},
+		{
+			"id": "sleeve-upper",
+			"kind": "lathe",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				60,
+				6.0,
+				97.0
+			],
+			"profile": [
+				[
+					0,
+					30
+				],
+				[
+					1.5,
+					31.5,
+					"soft"
+				],
+				[
+					48,
+					40
+				],
+				[
+					68,
+					42.5
+				]
+			],
+			"closed": false,
+			"cutaway": {
+				"from": 95,
+				"to": 370,
+				"wall": 2.2,
+				"hatch": 1.4
+			},
+			"label": "Upper thrust-reverser sleeve",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						22,
+						46
+					]
+				}
+			]
+		},
+		{
+			"id": "cowl-1",
+			"kind": "prism",
+			"at": [
+				128.0,
+				11.842,
+				94.922
+			],
+			"axis": [
+				0.0,
+				-0.972,
+				-0.233
+			],
+			"up": [
+				0,
+				-0.233,
+				0.972
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-2",
+			"kind": "prism",
+			"at": [
+				128.0,
+				11.65,
+				95.512
+			],
+			"axis": [
+				0.0,
+				-0.924,
+				-0.383
+			],
+			"up": [
+				0,
+				-0.383,
+				0.924
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-3",
+			"kind": "prism",
+			"at": [
+				128.0,
+				11.369,
+				96.064
+			],
+			"axis": [
+				0.0,
+				-0.853,
+				-0.522
+			],
+			"up": [
+				0,
+				-0.522,
+				0.853
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-4",
+			"kind": "prism",
+			"at": [
+				128.0,
+				11.004,
+				96.566
+			],
+			"axis": [
+				0.0,
+				-0.76,
+				-0.649
+			],
+			"up": [
+				0,
+				-0.649,
+				0.76
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-5",
+			"kind": "prism",
+			"at": [
+				128.0,
+				10.566,
+				97.004
+			],
+			"axis": [
+				0.0,
+				-0.649,
+				-0.76
+			],
+			"up": [
+				0,
+				-0.76,
+				0.649
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-6",
+			"kind": "prism",
+			"at": [
+				128.0,
+				10.064,
+				97.369
+			],
+			"axis": [
+				0.0,
+				-0.522,
+				-0.853
+			],
+			"up": [
+				0,
+				-0.853,
+				0.522
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-7",
+			"kind": "prism",
+			"at": [
+				128.0,
+				9.512,
+				97.65
+			],
+			"axis": [
+				0.0,
+				-0.383,
+				-0.924
+			],
+			"up": [
+				0,
+				-0.924,
+				0.383
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-8",
+			"kind": "prism",
+			"at": [
+				128.0,
+				8.922,
+				97.842
+			],
+			"axis": [
+				0.0,
+				-0.233,
+				-0.972
+			],
+			"up": [
+				0,
+				-0.972,
+				0.233
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-9",
+			"kind": "prism",
+			"at": [
+				128.0,
+				8.31,
+				97.939
+			],
+			"axis": [
+				0.0,
+				-0.078,
+				-0.997
+			],
+			"up": [
+				0,
+				-0.997,
+				0.078
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-10",
+			"kind": "prism",
+			"at": [
+				128.0,
+				7.69,
+				97.939
+			],
+			"axis": [
+				0.0,
+				0.078,
+				-0.997
+			],
+			"up": [
+				0,
+				-0.997,
+				-0.078
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-11",
+			"kind": "prism",
+			"at": [
+				128.0,
+				7.078,
+				97.842
+			],
+			"axis": [
+				0.0,
+				0.233,
+				-0.972
+			],
+			"up": [
+				0,
+				-0.972,
+				-0.233
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-12",
+			"kind": "prism",
+			"at": [
+				128.0,
+				6.488,
+				97.65
+			],
+			"axis": [
+				0.0,
+				0.383,
+				-0.924
+			],
+			"up": [
+				0,
+				-0.924,
+				-0.383
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-13",
+			"kind": "prism",
+			"at": [
+				128.0,
+				5.936,
+				97.369
+			],
+			"axis": [
+				0.0,
+				0.522,
+				-0.853
+			],
+			"up": [
+				0,
+				-0.853,
+				-0.522
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-14",
+			"kind": "prism",
+			"at": [
+				128.0,
+				5.434,
+				97.004
+			],
+			"axis": [
+				0.0,
+				0.649,
+				-0.76
+			],
+			"up": [
+				0,
+				-0.76,
+				-0.649
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-15",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.996,
+				96.566
+			],
+			"axis": [
+				0.0,
+				0.76,
+				-0.649
+			],
+			"up": [
+				0,
+				-0.649,
+				-0.76
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-16",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.631,
+				96.064
+			],
+			"axis": [
+				0.0,
+				0.853,
+				-0.522
+			],
+			"up": [
+				0,
+				-0.522,
+				-0.853
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-17",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.35,
+				95.512
+			],
+			"axis": [
+				0.0,
+				0.924,
+				-0.383
+			],
+			"up": [
+				0,
+				-0.383,
+				-0.924
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-18",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.158,
+				94.922
+			],
+			"axis": [
+				0.0,
+				0.972,
+				-0.233
+			],
+			"up": [
+				0,
+				-0.233,
+				-0.972
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-19",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.061,
+				94.31
+			],
+			"axis": [
+				0.0,
+				0.997,
+				-0.078
+			],
+			"up": [
+				0,
+				-0.078,
+				-0.997
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-20",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.061,
+				93.69
+			],
+			"axis": [
+				-0.0,
+				0.997,
+				0.078
+			],
+			"up": [
+				0,
+				0.078,
+				-0.997
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-21",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.158,
+				93.078
+			],
+			"axis": [
+				-0.0,
+				0.972,
+				0.233
+			],
+			"up": [
+				0,
+				0.233,
+				-0.972
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-22",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.35,
+				92.488
+			],
+			"axis": [
+				-0.0,
+				0.924,
+				0.383
+			],
+			"up": [
+				0,
+				0.383,
+				-0.924
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-23",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.631,
+				91.936
+			],
+			"axis": [
+				-0.0,
+				0.853,
+				0.522
+			],
+			"up": [
+				0,
+				0.522,
+				-0.853
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-24",
+			"kind": "prism",
+			"at": [
+				128.0,
+				4.996,
+				91.434
+			],
+			"axis": [
+				-0.0,
+				0.76,
+				0.649
+			],
+			"up": [
+				0,
+				0.649,
+				-0.76
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-25",
+			"kind": "prism",
+			"at": [
+				128.0,
+				5.434,
+				90.996
+			],
+			"axis": [
+				-0.0,
+				0.649,
+				0.76
+			],
+			"up": [
+				0,
+				0.76,
+				-0.649
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-26",
+			"kind": "prism",
+			"at": [
+				128.0,
+				5.936,
+				90.631
+			],
+			"axis": [
+				-0.0,
+				0.522,
+				0.853
+			],
+			"up": [
+				0,
+				0.853,
+				-0.522
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-27",
+			"kind": "prism",
+			"at": [
+				128.0,
+				6.488,
+				90.35
+			],
+			"axis": [
+				-0.0,
+				0.383,
+				0.924
+			],
+			"up": [
+				0,
+				0.924,
+				-0.383
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "cowl-28",
+			"kind": "prism",
+			"at": [
+				128.0,
+				7.078,
+				90.158
+			],
+			"axis": [
+				-0.0,
+				0.233,
+				0.972
+			],
+			"up": [
+				0,
+				0.972,
+				-0.233
+			],
+			"polygon": [
+				[
+					0,
+					46.0
+				],
+				[
+					4,
+					48.4
+				],
+				[
+					16,
+					50.0
+				],
+				[
+					30,
+					50.2
+				],
+				[
+					41,
+					48.8
+				],
+				[
+					41,
+					45.2
+				],
+				[
+					30,
+					46.6
+				],
+				[
+					16,
+					46.4
+				],
+				[
+					4,
+					44.8
+				],
+				[
+					0,
+					42.4
+				]
+			],
+			"depth": 7.902,
+			"label": "Fan cowl"
+		},
+		{
+			"id": "inlet-lip",
+			"kind": "torus",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				170.5,
+				8.0,
+				94.0
+			],
+			"R": 45.2,
+			"r": 3.8,
+			"label": "Inlet lip"
+		},
+		{
+			"id": "fan-hub",
+			"kind": "cylinder",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				143,
+				8.0,
+				94.0
+			],
+			"size": [
+				11.5,
+				11.5,
+				9
+			],
+			"label": "Fan disc",
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 9,
+					"count": 26,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "spinner",
+			"kind": "lathe",
+			"axis": "x",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"at": [
+				152,
+				8.0,
+				94.0
+			],
+			"profile": [
+				[
+					0,
+					11.5
+				],
+				[
+					5,
+					10.4,
+					"soft"
+				],
+				[
+					11,
+					6.6,
+					"soft"
+				],
+				[
+					16,
+					2.0,
+					"soft"
+				],
+				[
+					18,
+					0
+				]
+			],
+			"label": "Spinner",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3
+					]
+				}
+			]
+		},
+		{
+			"id": "fan-blade-0",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.085,
+				94.0
+			],
+			"axis": [
+				-0.848,
+				-0.53,
+				0.0
+			],
+			"up": [
+				0,
+				-0.0,
+				1.0
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.085,
+						94.004
+					],
+					"axis": [
+						-0.848,
+						-0.529,
+						-0.026
+					],
+					"up": [
+						0,
+						-0.048,
+						0.999
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.084,
+						94.008
+					],
+					"axis": [
+						-0.848,
+						-0.527,
+						-0.051
+					],
+					"up": [
+						0,
+						-0.097,
+						0.995
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.084,
+						94.012
+					],
+					"axis": [
+						-0.848,
+						-0.524,
+						-0.077
+					],
+					"up": [
+						0,
+						-0.144,
+						0.99
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.083,
+						94.016
+					],
+					"axis": [
+						-0.848,
+						-0.52,
+						-0.102
+					],
+					"up": [
+						0,
+						-0.192,
+						0.981
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-1",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.082,
+				94.02
+			],
+			"axis": [
+				-0.848,
+				-0.515,
+				-0.127
+			],
+			"up": [
+				0,
+				-0.239,
+				0.971
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.081,
+						94.024
+					],
+					"axis": [
+						-0.848,
+						-0.508,
+						-0.152
+					],
+					"up": [
+						0,
+						-0.286,
+						0.958
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.08,
+						94.028
+					],
+					"axis": [
+						-0.848,
+						-0.5,
+						-0.176
+					],
+					"up": [
+						0,
+						-0.332,
+						0.943
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.079,
+						94.032
+					],
+					"axis": [
+						-0.848,
+						-0.491,
+						-0.2
+					],
+					"up": [
+						0,
+						-0.377,
+						0.926
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.077,
+						94.036
+					],
+					"axis": [
+						-0.848,
+						-0.481,
+						-0.223
+					],
+					"up": [
+						0,
+						-0.421,
+						0.907
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-2",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.075,
+				94.039
+			],
+			"axis": [
+				-0.848,
+				-0.469,
+				-0.246
+			],
+			"up": [
+				0,
+				-0.465,
+				0.885
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.073,
+						94.043
+					],
+					"axis": [
+						-0.848,
+						-0.457,
+						-0.269
+					],
+					"up": [
+						0,
+						-0.507,
+						0.862
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.071,
+						94.046
+					],
+					"axis": [
+						-0.848,
+						-0.443,
+						-0.29
+					],
+					"up": [
+						0,
+						-0.548,
+						0.836
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.069,
+						94.05
+					],
+					"axis": [
+						-0.848,
+						-0.429,
+						-0.311
+					],
+					"up": [
+						0,
+						-0.588,
+						0.809
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.066,
+						94.053
+					],
+					"axis": [
+						-0.848,
+						-0.413,
+						-0.332
+					],
+					"up": [
+						0,
+						-0.626,
+						0.78
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-3",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.063,
+				94.056
+			],
+			"axis": [
+				-0.848,
+				-0.397,
+				-0.351
+			],
+			"up": [
+				0,
+				-0.663,
+				0.749
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.061,
+						94.059
+					],
+					"axis": [
+						-0.848,
+						-0.379,
+						-0.37
+					],
+					"up": [
+						0,
+						-0.699,
+						0.716
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.058,
+						94.062
+					],
+					"axis": [
+						-0.848,
+						-0.361,
+						-0.388
+					],
+					"up": [
+						0,
+						-0.732,
+						0.681
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.055,
+						94.065
+					],
+					"axis": [
+						-0.848,
+						-0.342,
+						-0.405
+					],
+					"up": [
+						0,
+						-0.764,
+						0.645
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.051,
+						94.067
+					],
+					"axis": [
+						-0.848,
+						-0.322,
+						-0.421
+					],
+					"up": [
+						0,
+						-0.795,
+						0.607
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-4",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.048,
+				94.07
+			],
+			"axis": [
+				-0.848,
+				-0.301,
+				-0.436
+			],
+			"up": [
+				0,
+				-0.823,
+				0.568
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.045,
+						94.072
+					],
+					"axis": [
+						-0.848,
+						-0.28,
+						-0.45
+					],
+					"up": [
+						0,
+						-0.849,
+						0.528
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.041,
+						94.074
+					],
+					"axis": [
+						-0.848,
+						-0.258,
+						-0.463
+					],
+					"up": [
+						0,
+						-0.874,
+						0.486
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.038,
+						94.076
+					],
+					"axis": [
+						-0.848,
+						-0.235,
+						-0.475
+					],
+					"up": [
+						0,
+						-0.896,
+						0.443
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.034,
+						94.078
+					],
+					"axis": [
+						-0.848,
+						-0.212,
+						-0.486
+					],
+					"up": [
+						0,
+						-0.917,
+						0.399
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-5",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.03,
+				94.079
+			],
+			"axis": [
+				-0.848,
+				-0.188,
+				-0.495
+			],
+			"up": [
+				0,
+				-0.935,
+				0.355
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.026,
+						94.081
+					],
+					"axis": [
+						-0.848,
+						-0.164,
+						-0.504
+					],
+					"up": [
+						0,
+						-0.951,
+						0.309
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.022,
+						94.082
+					],
+					"axis": [
+						-0.848,
+						-0.139,
+						-0.511
+					],
+					"up": [
+						0,
+						-0.965,
+						0.263
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.018,
+						94.083
+					],
+					"axis": [
+						-0.848,
+						-0.114,
+						-0.517
+					],
+					"up": [
+						0,
+						-0.976,
+						0.216
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.014,
+						94.084
+					],
+					"axis": [
+						-0.848,
+						-0.089,
+						-0.522
+					],
+					"up": [
+						0,
+						-0.986,
+						0.168
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-6",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.01,
+				94.084
+			],
+			"axis": [
+				-0.848,
+				-0.064,
+				-0.526
+			],
+			"up": [
+				0,
+				-0.993,
+				0.121
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.006,
+						94.085
+					],
+					"axis": [
+						-0.848,
+						-0.038,
+						-0.529
+					],
+					"up": [
+						0,
+						-0.997,
+						0.072
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.002,
+						94.085
+					],
+					"axis": [
+						-0.848,
+						-0.013,
+						-0.53
+					],
+					"up": [
+						0,
+						-1.0,
+						0.024
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.998,
+						94.085
+					],
+					"axis": [
+						-0.848,
+						0.013,
+						-0.53
+					],
+					"up": [
+						0,
+						-1.0,
+						-0.024
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.994,
+						94.085
+					],
+					"axis": [
+						-0.848,
+						0.038,
+						-0.529
+					],
+					"up": [
+						0,
+						-0.997,
+						-0.072
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-7",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.99,
+				94.084
+			],
+			"axis": [
+				-0.848,
+				0.064,
+				-0.526
+			],
+			"up": [
+				0,
+				-0.993,
+				-0.121
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.986,
+						94.084
+					],
+					"axis": [
+						-0.848,
+						0.089,
+						-0.522
+					],
+					"up": [
+						0,
+						-0.986,
+						-0.168
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.982,
+						94.083
+					],
+					"axis": [
+						-0.848,
+						0.114,
+						-0.517
+					],
+					"up": [
+						0,
+						-0.976,
+						-0.216
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.978,
+						94.082
+					],
+					"axis": [
+						-0.848,
+						0.139,
+						-0.511
+					],
+					"up": [
+						0,
+						-0.965,
+						-0.263
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.974,
+						94.081
+					],
+					"axis": [
+						-0.848,
+						0.164,
+						-0.504
+					],
+					"up": [
+						0,
+						-0.951,
+						-0.309
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-8",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.97,
+				94.079
+			],
+			"axis": [
+				-0.848,
+				0.188,
+				-0.495
+			],
+			"up": [
+				0,
+				-0.935,
+				-0.355
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.966,
+						94.078
+					],
+					"axis": [
+						-0.848,
+						0.212,
+						-0.486
+					],
+					"up": [
+						0,
+						-0.917,
+						-0.399
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.962,
+						94.076
+					],
+					"axis": [
+						-0.848,
+						0.235,
+						-0.475
+					],
+					"up": [
+						0,
+						-0.896,
+						-0.443
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.959,
+						94.074
+					],
+					"axis": [
+						-0.848,
+						0.258,
+						-0.463
+					],
+					"up": [
+						0,
+						-0.874,
+						-0.486
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.955,
+						94.072
+					],
+					"axis": [
+						-0.848,
+						0.28,
+						-0.45
+					],
+					"up": [
+						0,
+						-0.849,
+						-0.528
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-9",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.952,
+				94.07
+			],
+			"axis": [
+				-0.848,
+				0.301,
+				-0.436
+			],
+			"up": [
+				0,
+				-0.823,
+				-0.568
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.949,
+						94.067
+					],
+					"axis": [
+						-0.848,
+						0.322,
+						-0.421
+					],
+					"up": [
+						0,
+						-0.795,
+						-0.607
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.945,
+						94.065
+					],
+					"axis": [
+						-0.848,
+						0.342,
+						-0.405
+					],
+					"up": [
+						0,
+						-0.764,
+						-0.645
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.942,
+						94.062
+					],
+					"axis": [
+						-0.848,
+						0.361,
+						-0.388
+					],
+					"up": [
+						0,
+						-0.732,
+						-0.681
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.939,
+						94.059
+					],
+					"axis": [
+						-0.848,
+						0.379,
+						-0.37
+					],
+					"up": [
+						0,
+						-0.699,
+						-0.716
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-10",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.937,
+				94.056
+			],
+			"axis": [
+				-0.848,
+				0.397,
+				-0.351
+			],
+			"up": [
+				0,
+				-0.663,
+				-0.749
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.934,
+						94.053
+					],
+					"axis": [
+						-0.848,
+						0.413,
+						-0.332
+					],
+					"up": [
+						0,
+						-0.626,
+						-0.78
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.931,
+						94.05
+					],
+					"axis": [
+						-0.848,
+						0.429,
+						-0.311
+					],
+					"up": [
+						0,
+						-0.588,
+						-0.809
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.929,
+						94.046
+					],
+					"axis": [
+						-0.848,
+						0.443,
+						-0.29
+					],
+					"up": [
+						0,
+						-0.548,
+						-0.836
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.927,
+						94.043
+					],
+					"axis": [
+						-0.848,
+						0.457,
+						-0.269
+					],
+					"up": [
+						0,
+						-0.507,
+						-0.862
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-11",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.925,
+				94.039
+			],
+			"axis": [
+				-0.848,
+				0.469,
+				-0.246
+			],
+			"up": [
+				0,
+				-0.465,
+				-0.885
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.923,
+						94.036
+					],
+					"axis": [
+						-0.848,
+						0.481,
+						-0.223
+					],
+					"up": [
+						0,
+						-0.421,
+						-0.907
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.921,
+						94.032
+					],
+					"axis": [
+						-0.848,
+						0.491,
+						-0.2
+					],
+					"up": [
+						0,
+						-0.377,
+						-0.926
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.92,
+						94.028
+					],
+					"axis": [
+						-0.848,
+						0.5,
+						-0.176
+					],
+					"up": [
+						0,
+						-0.332,
+						-0.943
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.919,
+						94.024
+					],
+					"axis": [
+						-0.848,
+						0.508,
+						-0.152
+					],
+					"up": [
+						0,
+						-0.286,
+						-0.958
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-12",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.918,
+				94.02
+			],
+			"axis": [
+				-0.848,
+				0.515,
+				-0.127
+			],
+			"up": [
+				0,
+				-0.239,
+				-0.971
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.917,
+						94.016
+					],
+					"axis": [
+						-0.848,
+						0.52,
+						-0.102
+					],
+					"up": [
+						0,
+						-0.192,
+						-0.981
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.916,
+						94.012
+					],
+					"axis": [
+						-0.848,
+						0.524,
+						-0.077
+					],
+					"up": [
+						0,
+						-0.144,
+						-0.99
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.916,
+						94.008
+					],
+					"axis": [
+						-0.848,
+						0.527,
+						-0.051
+					],
+					"up": [
+						0,
+						-0.097,
+						-0.995
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.915,
+						94.004
+					],
+					"axis": [
+						-0.848,
+						0.529,
+						-0.026
+					],
+					"up": [
+						0,
+						-0.048,
+						-0.999
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-13",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.915,
+				94.0
+			],
+			"axis": [
+				-0.848,
+				0.53,
+				-0.0
+			],
+			"up": [
+				0,
+				-0.0,
+				-1.0
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.915,
+						93.996
+					],
+					"axis": [
+						-0.848,
+						0.529,
+						0.026
+					],
+					"up": [
+						0,
+						0.048,
+						-0.999
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.916,
+						93.992
+					],
+					"axis": [
+						-0.848,
+						0.527,
+						0.051
+					],
+					"up": [
+						0,
+						0.097,
+						-0.995
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.916,
+						93.988
+					],
+					"axis": [
+						-0.848,
+						0.524,
+						0.077
+					],
+					"up": [
+						0,
+						0.144,
+						-0.99
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.917,
+						93.984
+					],
+					"axis": [
+						-0.848,
+						0.52,
+						0.102
+					],
+					"up": [
+						0,
+						0.192,
+						-0.981
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-14",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.918,
+				93.98
+			],
+			"axis": [
+				-0.848,
+				0.515,
+				0.127
+			],
+			"up": [
+				0,
+				0.239,
+				-0.971
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.919,
+						93.976
+					],
+					"axis": [
+						-0.848,
+						0.508,
+						0.152
+					],
+					"up": [
+						0,
+						0.286,
+						-0.958
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.92,
+						93.972
+					],
+					"axis": [
+						-0.848,
+						0.5,
+						0.176
+					],
+					"up": [
+						0,
+						0.332,
+						-0.943
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.921,
+						93.968
+					],
+					"axis": [
+						-0.848,
+						0.491,
+						0.2
+					],
+					"up": [
+						0,
+						0.377,
+						-0.926
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.923,
+						93.964
+					],
+					"axis": [
+						-0.848,
+						0.481,
+						0.223
+					],
+					"up": [
+						0,
+						0.421,
+						-0.907
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-15",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.925,
+				93.961
+			],
+			"axis": [
+				-0.848,
+				0.469,
+				0.246
+			],
+			"up": [
+				0,
+				0.465,
+				-0.885
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.927,
+						93.957
+					],
+					"axis": [
+						-0.848,
+						0.457,
+						0.269
+					],
+					"up": [
+						0,
+						0.507,
+						-0.862
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.929,
+						93.954
+					],
+					"axis": [
+						-0.848,
+						0.443,
+						0.29
+					],
+					"up": [
+						0,
+						0.548,
+						-0.836
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.931,
+						93.95
+					],
+					"axis": [
+						-0.848,
+						0.429,
+						0.311
+					],
+					"up": [
+						0,
+						0.588,
+						-0.809
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.934,
+						93.947
+					],
+					"axis": [
+						-0.848,
+						0.413,
+						0.332
+					],
+					"up": [
+						0,
+						0.626,
+						-0.78
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-16",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.937,
+				93.944
+			],
+			"axis": [
+				-0.848,
+				0.397,
+				0.351
+			],
+			"up": [
+				0,
+				0.663,
+				-0.749
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.939,
+						93.941
+					],
+					"axis": [
+						-0.848,
+						0.379,
+						0.37
+					],
+					"up": [
+						0,
+						0.699,
+						-0.716
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.942,
+						93.938
+					],
+					"axis": [
+						-0.848,
+						0.361,
+						0.388
+					],
+					"up": [
+						0,
+						0.732,
+						-0.681
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.945,
+						93.935
+					],
+					"axis": [
+						-0.848,
+						0.342,
+						0.405
+					],
+					"up": [
+						0,
+						0.764,
+						-0.645
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.949,
+						93.933
+					],
+					"axis": [
+						-0.848,
+						0.322,
+						0.421
+					],
+					"up": [
+						0,
+						0.795,
+						-0.607
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-17",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.952,
+				93.93
+			],
+			"axis": [
+				-0.848,
+				0.301,
+				0.436
+			],
+			"up": [
+				0,
+				0.823,
+				-0.568
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.955,
+						93.928
+					],
+					"axis": [
+						-0.848,
+						0.28,
+						0.45
+					],
+					"up": [
+						0,
+						0.849,
+						-0.528
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.959,
+						93.926
+					],
+					"axis": [
+						-0.848,
+						0.258,
+						0.463
+					],
+					"up": [
+						0,
+						0.874,
+						-0.486
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.962,
+						93.924
+					],
+					"axis": [
+						-0.848,
+						0.235,
+						0.475
+					],
+					"up": [
+						0,
+						0.896,
+						-0.443
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.966,
+						93.922
+					],
+					"axis": [
+						-0.848,
+						0.212,
+						0.486
+					],
+					"up": [
+						0,
+						0.917,
+						-0.399
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-18",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.97,
+				93.921
+			],
+			"axis": [
+				-0.848,
+				0.188,
+				0.495
+			],
+			"up": [
+				0,
+				0.935,
+				-0.355
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.974,
+						93.919
+					],
+					"axis": [
+						-0.848,
+						0.164,
+						0.504
+					],
+					"up": [
+						0,
+						0.951,
+						-0.309
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.978,
+						93.918
+					],
+					"axis": [
+						-0.848,
+						0.139,
+						0.511
+					],
+					"up": [
+						0,
+						0.965,
+						-0.263
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						7.982,
+						93.917
+					],
+					"axis": [
+						-0.848,
+						0.114,
+						0.517
+					],
+					"up": [
+						0,
+						0.976,
+						-0.216
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						7.986,
+						93.916
+					],
+					"axis": [
+						-0.848,
+						0.089,
+						0.522
+					],
+					"up": [
+						0,
+						0.986,
+						-0.168
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-19",
+			"kind": "prism",
+			"at": [
+				147.636,
+				7.99,
+				93.916
+			],
+			"axis": [
+				-0.848,
+				0.064,
+				0.526
+			],
+			"up": [
+				0,
+				0.993,
+				-0.121
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						7.994,
+						93.915
+					],
+					"axis": [
+						-0.848,
+						0.038,
+						0.529
+					],
+					"up": [
+						0,
+						0.997,
+						-0.072
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						7.998,
+						93.915
+					],
+					"axis": [
+						-0.848,
+						0.013,
+						0.53
+					],
+					"up": [
+						0,
+						1.0,
+						-0.024
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.002,
+						93.915
+					],
+					"axis": [
+						-0.848,
+						-0.013,
+						0.53
+					],
+					"up": [
+						0,
+						1.0,
+						0.024
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.006,
+						93.915
+					],
+					"axis": [
+						-0.848,
+						-0.038,
+						0.529
+					],
+					"up": [
+						0,
+						0.997,
+						0.072
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-20",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.01,
+				93.916
+			],
+			"axis": [
+				-0.848,
+				-0.064,
+				0.526
+			],
+			"up": [
+				0,
+				0.993,
+				0.121
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.014,
+						93.916
+					],
+					"axis": [
+						-0.848,
+						-0.089,
+						0.522
+					],
+					"up": [
+						0,
+						0.986,
+						0.168
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.018,
+						93.917
+					],
+					"axis": [
+						-0.848,
+						-0.114,
+						0.517
+					],
+					"up": [
+						0,
+						0.976,
+						0.216
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.022,
+						93.918
+					],
+					"axis": [
+						-0.848,
+						-0.139,
+						0.511
+					],
+					"up": [
+						0,
+						0.965,
+						0.263
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.026,
+						93.919
+					],
+					"axis": [
+						-0.848,
+						-0.164,
+						0.504
+					],
+					"up": [
+						0,
+						0.951,
+						0.309
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-21",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.03,
+				93.921
+			],
+			"axis": [
+				-0.848,
+				-0.188,
+				0.495
+			],
+			"up": [
+				0,
+				0.935,
+				0.355
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.034,
+						93.922
+					],
+					"axis": [
+						-0.848,
+						-0.212,
+						0.486
+					],
+					"up": [
+						0,
+						0.917,
+						0.399
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.038,
+						93.924
+					],
+					"axis": [
+						-0.848,
+						-0.235,
+						0.475
+					],
+					"up": [
+						0,
+						0.896,
+						0.443
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.041,
+						93.926
+					],
+					"axis": [
+						-0.848,
+						-0.258,
+						0.463
+					],
+					"up": [
+						0,
+						0.874,
+						0.486
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.045,
+						93.928
+					],
+					"axis": [
+						-0.848,
+						-0.28,
+						0.45
+					],
+					"up": [
+						0,
+						0.849,
+						0.528
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-22",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.048,
+				93.93
+			],
+			"axis": [
+				-0.848,
+				-0.301,
+				0.436
+			],
+			"up": [
+				0,
+				0.823,
+				0.568
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.051,
+						93.933
+					],
+					"axis": [
+						-0.848,
+						-0.322,
+						0.421
+					],
+					"up": [
+						0,
+						0.795,
+						0.607
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.055,
+						93.935
+					],
+					"axis": [
+						-0.848,
+						-0.342,
+						0.405
+					],
+					"up": [
+						0,
+						0.764,
+						0.645
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.058,
+						93.938
+					],
+					"axis": [
+						-0.848,
+						-0.361,
+						0.388
+					],
+					"up": [
+						0,
+						0.732,
+						0.681
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.061,
+						93.941
+					],
+					"axis": [
+						-0.848,
+						-0.379,
+						0.37
+					],
+					"up": [
+						0,
+						0.699,
+						0.716
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-23",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.063,
+				93.944
+			],
+			"axis": [
+				-0.848,
+				-0.397,
+				0.351
+			],
+			"up": [
+				0,
+				0.663,
+				0.749
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.066,
+						93.947
+					],
+					"axis": [
+						-0.848,
+						-0.413,
+						0.332
+					],
+					"up": [
+						0,
+						0.626,
+						0.78
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.069,
+						93.95
+					],
+					"axis": [
+						-0.848,
+						-0.429,
+						0.311
+					],
+					"up": [
+						0,
+						0.588,
+						0.809
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.071,
+						93.954
+					],
+					"axis": [
+						-0.848,
+						-0.443,
+						0.29
+					],
+					"up": [
+						0,
+						0.548,
+						0.836
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.073,
+						93.957
+					],
+					"axis": [
+						-0.848,
+						-0.457,
+						0.269
+					],
+					"up": [
+						0,
+						0.507,
+						0.862
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-24",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.075,
+				93.961
+			],
+			"axis": [
+				-0.848,
+				-0.469,
+				0.246
+			],
+			"up": [
+				0,
+				0.465,
+				0.885
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.077,
+						93.964
+					],
+					"axis": [
+						-0.848,
+						-0.481,
+						0.223
+					],
+					"up": [
+						0,
+						0.421,
+						0.907
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.079,
+						93.968
+					],
+					"axis": [
+						-0.848,
+						-0.491,
+						0.2
+					],
+					"up": [
+						0,
+						0.377,
+						0.926
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.08,
+						93.972
+					],
+					"axis": [
+						-0.848,
+						-0.5,
+						0.176
+					],
+					"up": [
+						0,
+						0.332,
+						0.943
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.081,
+						93.976
+					],
+					"axis": [
+						-0.848,
+						-0.508,
+						0.152
+					],
+					"up": [
+						0,
+						0.286,
+						0.958
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "fan-blade-25",
+			"kind": "prism",
+			"at": [
+				147.636,
+				8.082,
+				93.98
+			],
+			"axis": [
+				-0.848,
+				-0.515,
+				0.127
+			],
+			"up": [
+				0,
+				0.239,
+				0.971
+			],
+			"polygon": [
+				[
+					-4.2,
+					11.0
+				],
+				[
+					3.4,
+					11.0
+				],
+				[
+					5.2,
+					26
+				],
+				[
+					3.6,
+					41.5
+				],
+				[
+					-7.4,
+					41.5
+				],
+				[
+					-6.6,
+					26
+				]
+			],
+			"depth": 0.32,
+			"label": "Fan blade",
+			"variants": {
+				"s1": {
+					"at": [
+						147.636,
+						8.083,
+						93.984
+					],
+					"axis": [
+						-0.848,
+						-0.52,
+						0.102
+					],
+					"up": [
+						0,
+						0.192,
+						0.981
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s2": {
+					"at": [
+						147.636,
+						8.084,
+						93.988
+					],
+					"axis": [
+						-0.848,
+						-0.524,
+						0.077
+					],
+					"up": [
+						0,
+						0.144,
+						0.99
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s3": {
+					"at": [
+						147.636,
+						8.084,
+						93.992
+					],
+					"axis": [
+						-0.848,
+						-0.527,
+						0.051
+					],
+					"up": [
+						0,
+						0.097,
+						0.995
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				},
+				"s4": {
+					"at": [
+						147.636,
+						8.085,
+						93.996
+					],
+					"axis": [
+						-0.848,
+						-0.529,
+						0.026
+					],
+					"up": [
+						0,
+						0.048,
+						0.999
+					],
+					"polygon": [
+						[
+							-4.2,
+							11.0
+						],
+						[
+							3.4,
+							11.0
+						],
+						[
+							5.2,
+							26
+						],
+						[
+							3.6,
+							41.5
+						],
+						[
+							-7.4,
+							41.5
+						],
+						[
+							-6.6,
+							26
+						]
+					],
+					"depth": 0.32
+				}
+			}
+		},
+		{
+			"id": "ogv-0",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.15,
+				94.01
+			],
+			"axis": [
+				0.0,
+				-0.998,
+				-0.07
+			],
+			"up": [
+				0,
+				-0.07,
+				0.998
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-1",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.141,
+				94.052
+			],
+			"axis": [
+				0.0,
+				-0.938,
+				-0.348
+			],
+			"up": [
+				0,
+				-0.348,
+				0.938
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-2",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.12,
+				94.09
+			],
+			"axis": [
+				0.0,
+				-0.801,
+				-0.598
+			],
+			"up": [
+				0,
+				-0.598,
+				0.801
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-3",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.09,
+				94.12
+			],
+			"axis": [
+				0.0,
+				-0.601,
+				-0.8
+			],
+			"up": [
+				0,
+				-0.8,
+				0.601
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-4",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.053,
+				94.14
+			],
+			"axis": [
+				0.0,
+				-0.351,
+				-0.936
+			],
+			"up": [
+				0,
+				-0.936,
+				0.351
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-5",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.011,
+				94.15
+			],
+			"axis": [
+				0.0,
+				-0.073,
+				-0.997
+			],
+			"up": [
+				0,
+				-0.997,
+				0.073
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-6",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.968,
+				94.147
+			],
+			"axis": [
+				0.0,
+				0.211,
+				-0.977
+			],
+			"up": [
+				0,
+				-0.977,
+				-0.211
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-7",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.928,
+				94.132
+			],
+			"axis": [
+				0.0,
+				0.478,
+				-0.878
+			],
+			"up": [
+				0,
+				-0.878,
+				-0.478
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-8",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.894,
+				94.106
+			],
+			"axis": [
+				0.0,
+				0.706,
+				-0.708
+			],
+			"up": [
+				0,
+				-0.708,
+				-0.706
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-9",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.868,
+				94.072
+			],
+			"axis": [
+				0.0,
+				0.877,
+				-0.481
+			],
+			"up": [
+				0,
+				-0.481,
+				-0.877
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-10",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.853,
+				94.032
+			],
+			"axis": [
+				0.0,
+				0.977,
+				-0.214
+			],
+			"up": [
+				0,
+				-0.214,
+				-0.977
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-11",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.85,
+				93.99
+			],
+			"axis": [
+				-0.0,
+				0.998,
+				0.07
+			],
+			"up": [
+				0,
+				0.07,
+				-0.998
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-12",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.859,
+				93.948
+			],
+			"axis": [
+				-0.0,
+				0.938,
+				0.348
+			],
+			"up": [
+				0,
+				0.348,
+				-0.938
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-13",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.88,
+				93.91
+			],
+			"axis": [
+				-0.0,
+				0.801,
+				0.598
+			],
+			"up": [
+				0,
+				0.598,
+				-0.801
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-14",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.91,
+				93.88
+			],
+			"axis": [
+				-0.0,
+				0.601,
+				0.8
+			],
+			"up": [
+				0,
+				0.8,
+				-0.601
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-15",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.947,
+				93.86
+			],
+			"axis": [
+				-0.0,
+				0.351,
+				0.936
+			],
+			"up": [
+				0,
+				0.936,
+				-0.351
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-16",
+			"kind": "prism",
+			"at": [
+				133.0,
+				7.989,
+				93.85
+			],
+			"axis": [
+				-0.0,
+				0.073,
+				0.997
+			],
+			"up": [
+				0,
+				0.997,
+				-0.073
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-17",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.032,
+				93.853
+			],
+			"axis": [
+				0.0,
+				-0.211,
+				0.977
+			],
+			"up": [
+				0,
+				0.977,
+				0.211
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-18",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.072,
+				93.868
+			],
+			"axis": [
+				0.0,
+				-0.478,
+				0.878
+			],
+			"up": [
+				0,
+				0.878,
+				0.478
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-19",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.106,
+				93.894
+			],
+			"axis": [
+				0.0,
+				-0.706,
+				0.708
+			],
+			"up": [
+				0,
+				0.708,
+				0.706
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-20",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.132,
+				93.928
+			],
+			"axis": [
+				0.0,
+				-0.877,
+				0.481
+			],
+			"up": [
+				0,
+				0.481,
+				0.877
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "ogv-21",
+			"kind": "prism",
+			"at": [
+				133.0,
+				8.147,
+				93.968
+			],
+			"axis": [
+				0.0,
+				-0.977,
+				0.214
+			],
+			"up": [
+				0,
+				0.214,
+				0.977
+			],
+			"polygon": [
+				[
+					-2.4,
+					23.5
+				],
+				[
+					2.4,
+					23.5
+				],
+				[
+					2.8,
+					45.0
+				],
+				[
+					-2.8,
+					45.0
+				]
+			],
+			"depth": 0.3,
+			"label": "Outlet guide vane"
+		},
+		{
+			"id": "haze-0",
+			"kind": "glow",
+			"axis": [
+				0.612,
+				0.612,
+				0.5
+			],
+			"at": [
+				-24,
+				8.0,
+				94.0
+			],
+			"r": 4,
+			"label": "Exhaust heat haze",
+			"variants": {
+				"h1": {
+					"r": 5
+				},
+				"h2": {
+					"r": 7
+				},
+				"h3": {
+					"r": 8
+				},
+				"h4": {
+					"r": 9
+				}
+			}
+		},
+		{
+			"id": "haze-1",
+			"kind": "glow",
+			"axis": [
+				0.612,
+				0.612,
+				0.5
+			],
+			"at": [
+				-34,
+				8.0,
+				94.0
+			],
+			"r": 4,
+			"label": "Exhaust heat haze",
+			"variants": {
+				"h1": {
+					"r": 6
+				},
+				"h2": {
+					"r": 8
+				},
+				"h3": {
+					"r": 9
+				},
+				"h4": {
+					"r": 11
+				}
+			}
+		},
+		{
+			"id": "haze-2",
+			"kind": "glow",
+			"axis": [
+				0.612,
+				0.612,
+				0.5
+			],
+			"at": [
+				-46,
+				8.0,
+				94.0
+			],
+			"r": 5,
+			"label": "Exhaust heat haze",
+			"variants": {
+				"h1": {
+					"r": 6
+				},
+				"h2": {
+					"r": 8
+				},
+				"h3": {
+					"r": 10
+				},
+				"h4": {
+					"r": 12
+				}
+			}
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"stand",
-				"cell"
+				"plinth",
+				"base-plate",
+				"pad-0",
+				"pad-1",
+				"pad-2",
+				"pad-3",
+				"pad-4",
+				"nameplate",
+				"lever"
 			],
 			[
-				"combustor"
+				"foot-0",
+				"column-0",
+				"gusset-0a",
+				"gusset-0b",
+				"foot-1",
+				"column-1",
+				"gusset-1a",
+				"gusset-1b",
+				"beam-rear",
+				"arm-0",
+				"arm-1",
+				"beam",
+				"endcap-0",
+				"upipe"
 			],
 			[
-				"turbine",
-				"compressor"
+				"pylon",
+				"hanger-0",
+				"clevis-0",
+				"hanger-1",
+				"clevis-1",
+				"hanger-2",
+				"clevis-2",
+				"hanger-3",
+				"clevis-3",
+				"load-cell",
+				"cell-link",
+				"actuator",
+				"dial-gauge"
 			],
 			[
-				"cone"
+				"shaft-lp",
+				"shaft-ip",
+				"shaft-hp",
+				"ipc-0",
+				"ipc-vane-0",
+				"ipc-1",
+				"ipc-vane-1",
+				"ipc-2",
+				"ipc-vane-2",
+				"ipc-3",
+				"ipc-vane-3",
+				"ipc-4",
+				"ipc-vane-4",
+				"ipc-5",
+				"ipc-vane-5",
+				"hpc-0",
+				"hpc-vane-0",
+				"hpc-1",
+				"hpc-vane-1",
+				"hpc-2",
+				"hpc-vane-2",
+				"hpc-3",
+				"hpc-vane-3",
+				"hpc-4",
+				"hpc-vane-4",
+				"hpc-5",
+				"hpc-vane-5",
+				"combustor",
+				"flame",
+				"ngv",
+				"hpt-0",
+				"hpt-1",
+				"ipt-0",
+				"lpt-0",
+				"lpt-vane-0",
+				"lpt-1",
+				"lpt-vane-1",
+				"lpt-2",
+				"lpt-vane-2",
+				"lpt-3",
+				"lpt-vane-3",
+				"lpt-4",
+				"lpt-vane-4",
+				"core-cowl",
+				"exhaust-cone",
+				"gearbox",
+				"gear-0",
+				"gear-1",
+				"gear-2",
+				"gb-pump",
+				"gb-strut",
+				"gb-pipe"
 			],
 			[
-				"fan"
+				"sleeve-lower",
+				"sleeve-upper",
+				"cowl-1",
+				"cowl-2",
+				"cowl-3",
+				"cowl-4",
+				"cowl-5",
+				"cowl-6",
+				"cowl-7",
+				"cowl-8",
+				"cowl-9",
+				"cowl-10",
+				"cowl-11",
+				"cowl-12",
+				"cowl-13",
+				"cowl-14",
+				"cowl-15",
+				"cowl-16",
+				"cowl-17",
+				"cowl-18",
+				"cowl-19",
+				"cowl-20",
+				"cowl-21",
+				"cowl-22",
+				"cowl-23",
+				"cowl-24",
+				"cowl-25",
+				"cowl-26",
+				"cowl-27",
+				"cowl-28",
+				"inlet-lip"
 			],
 			[
-				"spinner"
+				"fan-hub",
+				"spinner",
+				"fan-blade-0",
+				"fan-blade-1",
+				"fan-blade-2",
+				"fan-blade-3",
+				"fan-blade-4",
+				"fan-blade-5",
+				"fan-blade-6",
+				"fan-blade-7",
+				"fan-blade-8",
+				"fan-blade-9",
+				"fan-blade-10",
+				"fan-blade-11",
+				"fan-blade-12",
+				"fan-blade-13",
+				"fan-blade-14",
+				"fan-blade-15",
+				"fan-blade-16",
+				"fan-blade-17",
+				"fan-blade-18",
+				"fan-blade-19",
+				"fan-blade-20",
+				"fan-blade-21",
+				"fan-blade-22",
+				"fan-blade-23",
+				"fan-blade-24",
+				"fan-blade-25",
+				"ogv-0",
+				"ogv-1",
+				"ogv-2",
+				"ogv-3",
+				"ogv-4",
+				"ogv-5",
+				"ogv-6",
+				"ogv-7",
+				"ogv-8",
+				"ogv-9",
+				"ogv-10",
+				"ogv-11",
+				"ogv-12",
+				"ogv-13",
+				"ogv-14",
+				"ogv-15",
+				"ogv-16",
+				"ogv-17",
+				"ogv-18",
+				"ogv-19",
+				"ogv-20",
+				"ogv-21"
+			],
+			[
+				"haze-0",
+				"haze-1",
+				"haze-2"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 8,
-		"rest": "idle 14 kN"
+		"behavior": "scrub",
+		"input": "drag",
+		"rest": "idle",
+		"values": {
+			"N1": [
+				21.0,
+				45.2,
+				68.4,
+				85.0,
+				96.8
+			],
+			"kN": [
+				14,
+				70,
+				190,
+				270,
+				334
+			],
+			"TGT": [
+				367,
+				520,
+				720,
+				830,
+				905
+			]
+		},
+		"readout": "{name} · N1 {N1:0.1}% · {kN:1} kN · TGT {TGT:1}°C",
+		"states": [
+			{
+				"name": "idle",
+				"parts": {
+					"flame": {
+						"hidden": true
+					},
+					"haze-0": {
+						"hidden": true
+					},
+					"haze-1": {
+						"hidden": true
+					},
+					"haze-2": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "approach",
+				"parts": {
+					"fan-blade-0": {
+						"variant": "s1"
+					},
+					"fan-blade-1": {
+						"variant": "s1"
+					},
+					"fan-blade-2": {
+						"variant": "s1"
+					},
+					"fan-blade-3": {
+						"variant": "s1"
+					},
+					"fan-blade-4": {
+						"variant": "s1"
+					},
+					"fan-blade-5": {
+						"variant": "s1"
+					},
+					"fan-blade-6": {
+						"variant": "s1"
+					},
+					"fan-blade-7": {
+						"variant": "s1"
+					},
+					"fan-blade-8": {
+						"variant": "s1"
+					},
+					"fan-blade-9": {
+						"variant": "s1"
+					},
+					"fan-blade-10": {
+						"variant": "s1"
+					},
+					"fan-blade-11": {
+						"variant": "s1"
+					},
+					"fan-blade-12": {
+						"variant": "s1"
+					},
+					"fan-blade-13": {
+						"variant": "s1"
+					},
+					"fan-blade-14": {
+						"variant": "s1"
+					},
+					"fan-blade-15": {
+						"variant": "s1"
+					},
+					"fan-blade-16": {
+						"variant": "s1"
+					},
+					"fan-blade-17": {
+						"variant": "s1"
+					},
+					"fan-blade-18": {
+						"variant": "s1"
+					},
+					"fan-blade-19": {
+						"variant": "s1"
+					},
+					"fan-blade-20": {
+						"variant": "s1"
+					},
+					"fan-blade-21": {
+						"variant": "s1"
+					},
+					"fan-blade-22": {
+						"variant": "s1"
+					},
+					"fan-blade-23": {
+						"variant": "s1"
+					},
+					"fan-blade-24": {
+						"variant": "s1"
+					},
+					"fan-blade-25": {
+						"variant": "s1"
+					},
+					"dial-gauge": {
+						"variant": "n1"
+					},
+					"flame": {
+						"variant": "g1"
+					},
+					"combustor": {
+						"variant": "lit"
+					},
+					"lever": {
+						"move": [
+							7.5,
+							0,
+							0
+						]
+					},
+					"haze-0": {
+						"variant": "h1"
+					},
+					"haze-1": {
+						"hidden": true
+					},
+					"haze-2": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "climb",
+				"parts": {
+					"fan-blade-0": {
+						"variant": "s2"
+					},
+					"fan-blade-1": {
+						"variant": "s2"
+					},
+					"fan-blade-2": {
+						"variant": "s2"
+					},
+					"fan-blade-3": {
+						"variant": "s2"
+					},
+					"fan-blade-4": {
+						"variant": "s2"
+					},
+					"fan-blade-5": {
+						"variant": "s2"
+					},
+					"fan-blade-6": {
+						"variant": "s2"
+					},
+					"fan-blade-7": {
+						"variant": "s2"
+					},
+					"fan-blade-8": {
+						"variant": "s2"
+					},
+					"fan-blade-9": {
+						"variant": "s2"
+					},
+					"fan-blade-10": {
+						"variant": "s2"
+					},
+					"fan-blade-11": {
+						"variant": "s2"
+					},
+					"fan-blade-12": {
+						"variant": "s2"
+					},
+					"fan-blade-13": {
+						"variant": "s2"
+					},
+					"fan-blade-14": {
+						"variant": "s2"
+					},
+					"fan-blade-15": {
+						"variant": "s2"
+					},
+					"fan-blade-16": {
+						"variant": "s2"
+					},
+					"fan-blade-17": {
+						"variant": "s2"
+					},
+					"fan-blade-18": {
+						"variant": "s2"
+					},
+					"fan-blade-19": {
+						"variant": "s2"
+					},
+					"fan-blade-20": {
+						"variant": "s2"
+					},
+					"fan-blade-21": {
+						"variant": "s2"
+					},
+					"fan-blade-22": {
+						"variant": "s2"
+					},
+					"fan-blade-23": {
+						"variant": "s2"
+					},
+					"fan-blade-24": {
+						"variant": "s2"
+					},
+					"fan-blade-25": {
+						"variant": "s2"
+					},
+					"dial-gauge": {
+						"variant": "n2"
+					},
+					"flame": {
+						"variant": "g2"
+					},
+					"combustor": {
+						"variant": "lit"
+					},
+					"lever": {
+						"move": [
+							15.0,
+							0,
+							0
+						]
+					},
+					"haze-0": {
+						"variant": "h2"
+					},
+					"haze-1": {
+						"variant": "h2"
+					},
+					"haze-2": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "max continuous",
+				"parts": {
+					"fan-blade-0": {
+						"variant": "s3"
+					},
+					"fan-blade-1": {
+						"variant": "s3"
+					},
+					"fan-blade-2": {
+						"variant": "s3"
+					},
+					"fan-blade-3": {
+						"variant": "s3"
+					},
+					"fan-blade-4": {
+						"variant": "s3"
+					},
+					"fan-blade-5": {
+						"variant": "s3"
+					},
+					"fan-blade-6": {
+						"variant": "s3"
+					},
+					"fan-blade-7": {
+						"variant": "s3"
+					},
+					"fan-blade-8": {
+						"variant": "s3"
+					},
+					"fan-blade-9": {
+						"variant": "s3"
+					},
+					"fan-blade-10": {
+						"variant": "s3"
+					},
+					"fan-blade-11": {
+						"variant": "s3"
+					},
+					"fan-blade-12": {
+						"variant": "s3"
+					},
+					"fan-blade-13": {
+						"variant": "s3"
+					},
+					"fan-blade-14": {
+						"variant": "s3"
+					},
+					"fan-blade-15": {
+						"variant": "s3"
+					},
+					"fan-blade-16": {
+						"variant": "s3"
+					},
+					"fan-blade-17": {
+						"variant": "s3"
+					},
+					"fan-blade-18": {
+						"variant": "s3"
+					},
+					"fan-blade-19": {
+						"variant": "s3"
+					},
+					"fan-blade-20": {
+						"variant": "s3"
+					},
+					"fan-blade-21": {
+						"variant": "s3"
+					},
+					"fan-blade-22": {
+						"variant": "s3"
+					},
+					"fan-blade-23": {
+						"variant": "s3"
+					},
+					"fan-blade-24": {
+						"variant": "s3"
+					},
+					"fan-blade-25": {
+						"variant": "s3"
+					},
+					"dial-gauge": {
+						"variant": "n3"
+					},
+					"flame": {
+						"variant": "g3"
+					},
+					"combustor": {
+						"variant": "lit"
+					},
+					"lever": {
+						"move": [
+							22.5,
+							0,
+							0
+						]
+					},
+					"haze-0": {
+						"variant": "h3"
+					},
+					"haze-1": {
+						"variant": "h3"
+					},
+					"haze-2": {
+						"variant": "h3"
+					}
+				}
+			},
+			{
+				"name": "take-off",
+				"parts": {
+					"fan-blade-0": {
+						"variant": "s4"
+					},
+					"fan-blade-1": {
+						"variant": "s4"
+					},
+					"fan-blade-2": {
+						"variant": "s4"
+					},
+					"fan-blade-3": {
+						"variant": "s4"
+					},
+					"fan-blade-4": {
+						"variant": "s4"
+					},
+					"fan-blade-5": {
+						"variant": "s4"
+					},
+					"fan-blade-6": {
+						"variant": "s4"
+					},
+					"fan-blade-7": {
+						"variant": "s4"
+					},
+					"fan-blade-8": {
+						"variant": "s4"
+					},
+					"fan-blade-9": {
+						"variant": "s4"
+					},
+					"fan-blade-10": {
+						"variant": "s4"
+					},
+					"fan-blade-11": {
+						"variant": "s4"
+					},
+					"fan-blade-12": {
+						"variant": "s4"
+					},
+					"fan-blade-13": {
+						"variant": "s4"
+					},
+					"fan-blade-14": {
+						"variant": "s4"
+					},
+					"fan-blade-15": {
+						"variant": "s4"
+					},
+					"fan-blade-16": {
+						"variant": "s4"
+					},
+					"fan-blade-17": {
+						"variant": "s4"
+					},
+					"fan-blade-18": {
+						"variant": "s4"
+					},
+					"fan-blade-19": {
+						"variant": "s4"
+					},
+					"fan-blade-20": {
+						"variant": "s4"
+					},
+					"fan-blade-21": {
+						"variant": "s4"
+					},
+					"fan-blade-22": {
+						"variant": "s4"
+					},
+					"fan-blade-23": {
+						"variant": "s4"
+					},
+					"fan-blade-24": {
+						"variant": "s4"
+					},
+					"fan-blade-25": {
+						"variant": "s4"
+					},
+					"dial-gauge": {
+						"variant": "n4"
+					},
+					"flame": {
+						"variant": "g4"
+					},
+					"combustor": {
+						"variant": "lit"
+					},
+					"lever": {
+						"move": [
+							30.0,
+							0,
+							0
+						]
+					},
+					"haze-0": {
+						"variant": "h4"
+					},
+					"haze-1": {
+						"variant": "h4"
+					},
+					"haze-2": {
+						"variant": "h4"
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ TRENT 970 ]",

@@ -3,426 +3,2771 @@
 	"id": "an-tcp-handshake",
 	"figId": "FIG_206",
 	"title": "TCP handshake, a mail ropeway",
-	"label": "Dimetric mail ropeway between client and server stations. SYN has landed, SYN with ACK flies an ACK pennant home, and the highlighted ACK canister heads out. Client arm reads established, server arm SYN received.",
-	"caption": "Three canisters cross the rope in order: SYN out, SYN with ACK back, then ACK out; only after the third lands do both semaphores read established.",
+	"label": "Mail ropeway on three screwed plinths: client and server stations with gauges, mail bins, spoked bull wheels and semaphores, and a midway hut on braced stilts carrying two sagging ropes. Click to run the handshake.",
+	"caption": "Click to connect: SYN rides out, may drop into the hut bin and be resent, SYN with ACK flies its pennant home, then ACK goes out; each semaphore arm rises as its side reaches established.",
 	"camera": {
 		"preset": "dimetric",
+		"azimuth": 55,
+		"elevation": 30,
 		"scale": "fit"
 	},
+	"viewBox": [
+		900,
+		450
+	],
+	"labels": "none",
+	"emphasis": "ink",
 	"parts": [
 		{
-			"id": "station-a",
-			"kind": "box",
+			"id": "plinth-a",
+			"kind": "slab",
 			"at": [
 				0,
-				4,
+				0,
 				0
 			],
 			"size": [
 				44,
-				32,
-				24
+				40,
+				3
 			],
-			"r": 2,
-			"label": "Client station",
-			"marks": [
-				[
-					[
-						6,
-						6
+			"r": 3,
+			"bevel": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 2
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						2.4
 					],
-					[
-						30,
-						6
-					]
-				]
+					"grid": [
+						2,
+						1
+					],
+					"gap": 39.2,
+					"size": 0.7
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						37.6
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 39.2,
+					"size": 0.7
+				}
 			]
 		},
 		{
-			"id": "sem-a",
+			"id": "cab-a",
 			"kind": "box",
 			"at": [
-				4,
-				30,
-				24
+				3,
+				3,
+				3
+			],
+			"size": [
+				24,
+				32,
+				20
+			],
+			"r": 1.5,
+			"bevel": 0.8,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 1
+				},
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 1.2,
+					"r": 0.8
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "stadium",
+					"at": [
+						4.2,
+						8.5
+					],
+					"size": [
+						1.6,
+						7
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2.4,
+							4
+						],
+						[
+							6,
+							4
+						],
+						[
+							6,
+							13
+						],
+						[
+							2.4,
+							13
+						],
+						[
+							2.4,
+							4
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gauge-a",
+			"kind": "cylinder",
+			"at": [
+				12.5,
+				35,
+				12
+			],
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"size": [
+				3.4,
+				3.4,
+				0.8
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 0.5
+				},
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 2.6,
+					"count": 12,
+					"every": 3,
+					"lengths": [
+						0.35,
+						0.8
+					]
+				},
+				{
+					"type": "line",
+					"face": "end",
+					"points": [
+						[
+							0,
+							0
+						],
+						[
+							0.4,
+							2.2
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "lever-a",
+			"kind": "rod",
+			"from": [
+				7.2,
+				35.4,
+				9.5
+			],
+			"to": [
+				7.2,
+				36.6,
+				14
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "knob-a",
+			"kind": "sphere",
+			"at": [
+				7.2,
+				36.7,
+				14.5
+			],
+			"r": 1.1
+		},
+		{
+			"id": "plate-a",
+			"kind": "box",
+			"at": [
+				16,
+				35,
+				4.6
+			],
+			"size": [
+				8,
+				0.5,
+				2.8
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.2,
+							1.9
+						],
+						[
+							6.8,
+							1.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.2,
+							1
+						],
+						[
+							5,
+							1
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "bin-a",
+			"kind": "box",
+			"at": [
+				27.5,
+				5,
+				3
+			],
+			"size": [
+				15,
+				28,
+				19
+			],
+			"r": 1.5,
+			"bevel": 0.8,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						7.5,
+						7.5600000000000005
+					],
+					"size": 9.9,
+					"depth": 1.4
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						7.5,
+						20.439999999999998
+					],
+					"size": 9.9,
+					"depth": 1.4
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							1.6
+						],
+						[
+							13,
+							1.6
+						],
+						[
+							13,
+							15
+						],
+						[
+							2,
+							15
+						],
+						[
+							2,
+							1.6
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						7.5,
+						12
+					],
+					"size": [
+						6.3,
+						1.2
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						3,
+						3
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 10,
+					"size": 0.45
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						12,
+						3
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 10,
+					"size": 0.45
+				}
+			]
+		},
+		{
+			"id": "collar-a",
+			"kind": "cylinder",
+			"at": [
+				15,
+				19,
+				23
 			],
 			"size": [
 				3,
 				3,
-				22
+				2.2
+			]
+		},
+		{
+			"id": "post-a",
+			"kind": "cylinder",
+			"at": [
+				15,
+				19,
+				25.2
 			],
-			"r": 1,
-			"label": "Client semaphore, established"
+			"size": [
+				1.8,
+				1.8,
+				7.3
+			]
+		},
+		{
+			"id": "boss-a",
+			"kind": "cylinder",
+			"at": [
+				15,
+				19,
+				31.5
+			],
+			"size": [
+				2.5,
+				2.5,
+				1.5
+			]
+		},
+		{
+			"id": "wheel-a",
+			"kind": "lathe",
+			"at": [
+				15,
+				19,
+				33
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					9.4
+				],
+				[
+					0.5,
+					10
+				],
+				[
+					1.1,
+					10
+				],
+				[
+					1.4,
+					9.2
+				],
+				[
+					1.8,
+					9.2
+				],
+				[
+					2.1,
+					10
+				],
+				[
+					2.7,
+					10
+				],
+				[
+					3,
+					9.6
+				]
+			],
+			"steps": 96,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.7
+				},
+				{
+					"type": "spokes",
+					"face": "top",
+					"r0": 2.3,
+					"r1": 7.9,
+					"count": 5,
+					"phase": 18
+				}
+			]
+		},
+		{
+			"id": "hub-a",
+			"kind": "cylinder",
+			"at": [
+				15,
+				19,
+				36
+			],
+			"size": [
+				2.2,
+				2.2,
+				0.8
+			]
+		},
+		{
+			"id": "nut-a",
+			"kind": "prism",
+			"at": [
+				15,
+				19,
+				36.8
+			],
+			"axis": "z",
+			"polygon": [
+				[
+					1.1,
+					0
+				],
+				[
+					0.55,
+					0.95
+				],
+				[
+					-0.55,
+					0.95
+				],
+				[
+					-1.1,
+					0
+				],
+				[
+					-0.55,
+					-0.95
+				],
+				[
+					0.55,
+					-0.95
+				]
+			],
+			"depth": 0.6
+		},
+		{
+			"id": "sem-post-a",
+			"kind": "cylinder",
+			"at": [
+				5,
+				6,
+				23
+			],
+			"size": [
+				0.8,
+				0.8,
+				26.5
+			]
+		},
+		{
+			"id": "sem-pivot-a",
+			"kind": "cylinder",
+			"at": [
+				5,
+				6.6,
+				48
+			],
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"size": [
+				1.7,
+				1.7,
+				1
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 0.6
+				}
+			]
 		},
 		{
 			"id": "arm-a",
 			"kind": "box",
 			"at": [
-				7,
-				30.5,
-				42
+				4.8,
+				7.7,
+				45.55
+			],
+			"axis": [
+				-0.37,
+				0,
+				0.93
+			],
+			"up": [
+				0,
+				1,
+				0
 			],
 			"size": [
-				9,
-				2,
-				2
+				2.2,
+				0.6,
+				10
 			],
-			"r": 0,
-			"label": "Client semaphore arm, raised: established"
+			"r": 0.3,
+			"variants": {
+				"mid": {
+					"at": [
+						6.06,
+						7.7,
+						45.78
+					],
+					"axis": [
+						-0.79,
+						0,
+						0.62
+					],
+					"up": [
+						0,
+						1,
+						0
+					]
+				},
+				"flat": {
+					"at": [
+						7.2,
+						7.7,
+						46.9
+					],
+					"axis": [
+						-1,
+						0,
+						0
+					],
+					"up": [
+						0,
+						1,
+						0
+					]
+				}
+			}
 		},
 		{
-			"id": "wheel-a",
-			"kind": "cylinder",
+			"id": "plinth-h",
+			"kind": "slab",
 			"at": [
-				26,
-				20,
-				24
+				62,
+				1,
+				0
 			],
 			"size": [
-				11,
-				11,
-				4.5
+				34,
+				38,
+				3
 			],
-			"label": "Client bull wheel"
+			"r": 3,
+			"bevel": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 2
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						2.4
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 29.2,
+					"size": 0.7
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						35.6
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 29.2,
+					"size": 0.7
+				}
+			]
 		},
 		{
-			"id": "tower",
+			"id": "bin-h",
 			"kind": "box",
 			"at": [
-				100,
-				13,
+				73,
+				8.5,
+				3
+			],
+			"size": [
+				12,
+				21,
+				5.5
+			],
+			"r": 1,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						6,
+						5.5
+					],
+					"size": 8,
+					"depth": 1.4
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						6,
+						15.5
+					],
+					"size": 8,
+					"depth": 1.4
+				}
+			]
+		},
+		{
+			"id": "stilt-0",
+			"kind": "box",
+			"at": [
+				70.4,
+				5,
+				3
+			],
+			"size": [
+				1.6,
+				1.6,
+				16
+			],
+			"r": 0.2
+		},
+		{
+			"id": "stilt-1",
+			"kind": "box",
+			"at": [
+				86,
+				5,
+				3
+			],
+			"size": [
+				1.6,
+				1.6,
+				16
+			],
+			"r": 0.2
+		},
+		{
+			"id": "stilt-2",
+			"kind": "box",
+			"at": [
+				70.4,
+				31.4,
+				3
+			],
+			"size": [
+				1.6,
+				1.6,
+				16
+			],
+			"r": 0.2
+		},
+		{
+			"id": "stilt-3",
+			"kind": "box",
+			"at": [
+				86,
+				31.4,
+				3
+			],
+			"size": [
+				1.6,
+				1.6,
+				16
+			],
+			"r": 0.2
+		},
+		{
+			"id": "brace-x1",
+			"kind": "rod",
+			"from": [
+				86.8,
+				6.6,
+				4.5
+			],
+			"to": [
+				86.8,
+				31.4,
+				18
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "brace-x2",
+			"kind": "rod",
+			"from": [
+				86.8,
+				31.4,
+				4.5
+			],
+			"to": [
+				86.8,
+				6.6,
+				18
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "brace-y",
+			"kind": "rod",
+			"from": [
+				72,
+				32.2,
+				18
+			],
+			"to": [
+				86,
+				32.2,
+				4.5
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "lever-base-h",
+			"kind": "box",
+			"at": [
+				83.6,
+				32.4,
+				3
+			],
+			"size": [
+				3.4,
+				2.4,
+				1.2
+			],
+			"r": 0.4
+		},
+		{
+			"id": "lever-h",
+			"kind": "rod",
+			"from": [
+				85.3,
+				33.6,
+				4.2
+			],
+			"to": [
+				82.6,
+				34.6,
+				10
+			],
+			"radius": 0.4
+		},
+		{
+			"id": "knob-h",
+			"kind": "sphere",
+			"at": [
+				82.4,
+				34.7,
+				10.4
+			],
+			"r": 1.1
+		},
+		{
+			"id": "hut",
+			"kind": "box",
+			"at": [
+				70,
+				4.5,
+				19
+			],
+			"size": [
+				14.6,
+				29,
+				22
+			],
+			"r": 0.6
+		},
+		{
+			"id": "hut-back-wall",
+			"kind": "box",
+			"at": [
+				84.6,
+				6,
+				19.6
+			],
+			"size": [
+				1.6,
+				26,
+				15
+			],
+			"r": 0
+		},
+		{
+			"id": "hut-arches",
+			"kind": "prism",
+			"at": [
+				86.4,
+				4.5,
+				19
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					2.9,
+					0
+				],
+				[
+					2.9,
+					12.5
+				],
+				[
+					3.05,
+					13.65
+				],
+				[
+					3.5,
+					14.73
+				],
+				[
+					4.2,
+					15.65
+				],
+				[
+					5.13,
+					16.35
+				],
+				[
+					6.2,
+					16.8
+				],
+				[
+					7.35,
+					16.95
+				],
+				[
+					8.5,
+					16.8
+				],
+				[
+					9.57,
+					16.35
+				],
+				[
+					10.5,
+					15.65
+				],
+				[
+					11.2,
+					14.73
+				],
+				[
+					11.65,
+					13.65
+				],
+				[
+					11.8,
+					12.5
+				],
+				[
+					11.8,
+					0
+				],
+				[
+					17.4,
+					0
+				],
+				[
+					17.4,
+					12.5
+				],
+				[
+					17.55,
+					13.65
+				],
+				[
+					18,
+					14.73
+				],
+				[
+					18.7,
+					15.65
+				],
+				[
+					19.63,
+					16.35
+				],
+				[
+					20.7,
+					16.8
+				],
+				[
+					21.85,
+					16.95
+				],
+				[
+					23,
+					16.8
+				],
+				[
+					24.08,
+					16.35
+				],
+				[
+					25,
+					15.65
+				],
+				[
+					25.7,
+					14.73
+				],
+				[
+					26.15,
+					13.65
+				],
+				[
+					26.3,
+					12.5
+				],
+				[
+					26.3,
+					0
+				],
+				[
+					29,
+					0
+				],
+				[
+					29,
+					22
+				],
+				[
+					0,
+					22
+				]
+			],
+			"depth": 1.6
+		},
+		{
+			"id": "window",
+			"kind": "box",
+			"at": [
+				74.5,
+				33.5,
+				26.5
+			],
+			"size": [
+				7,
+				0.5,
+				7
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.6
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							3.5,
+							0.6
+						],
+						[
+							3.5,
+							6.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.6,
+							3.5
+						],
+						[
+							6.4,
+							3.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "sill",
+			"kind": "box",
+			"at": [
+				73.8,
+				33.5,
+				25.4
+			],
+			"size": [
+				8.4,
+				1.4,
+				0.8
+			],
+			"r": 0.2
+		},
+		{
+			"id": "roof",
+			"kind": "slab",
+			"at": [
+				68.5,
+				3,
+				41
+			],
+			"size": [
+				21,
+				32,
+				1.4
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.2,
+					"r": 1
+				}
+			]
+		},
+		{
+			"id": "vent",
+			"kind": "box",
+			"at": [
+				76,
+				15.5,
+				42.4
+			],
+			"size": [
+				6,
+				6,
+				2.2
+			],
+			"r": 1,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8,
+					"r": 0.6
+				}
+			]
+		},
+		{
+			"id": "plinth-b",
+			"kind": "slab",
+			"at": [
+				104,
+				0,
 				0
+			],
+			"size": [
+				52,
+				40,
+				3
+			],
+			"r": 3,
+			"bevel": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 2
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						2.4
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 47.2,
+					"size": 0.7
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						37.6
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 47.2,
+					"size": 0.7
+				}
+			]
+		},
+		{
+			"id": "bin-b",
+			"kind": "box",
+			"at": [
+				107,
+				5,
+				3
 			],
 			"size": [
 				16,
-				14,
-				27
+				28,
+				19
 			],
-			"r": 1,
-			"label": "Midway hut"
-		},
-		{
-			"id": "rope-1",
-			"kind": "box",
-			"at": [
-				37,
-				19,
-				27
-			],
-			"size": [
-				26,
-				2,
-				1.5
-			],
-			"r": 0,
-			"label": "Rope"
-		},
-		{
-			"id": "can-ack",
-			"kind": "cylinder",
-			"at": [
-				66,
-				20,
-				17
-			],
-			"size": [
-				3,
-				3,
-				12
-			],
-			"label": "ACK canister, closing the handshake"
-		},
-		{
-			"id": "rope-2",
-			"kind": "box",
-			"at": [
-				69,
-				19,
-				27
-			],
-			"size": [
-				55,
-				2,
-				1.5
-			],
-			"r": 0,
-			"label": "Rope"
-		},
-		{
-			"id": "can-synack",
-			"kind": "cylinder",
-			"at": [
-				127,
-				20,
-				17
-			],
-			"size": [
-				3,
-				3,
-				12
-			],
-			"label": "SYN with ACK canister, ACK-marked lid, returning",
-			"marks": [
-				[
-					[
-						-2,
-						0
+			"r": 1.5,
+			"bevel": 0.8,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						8,
+						7.5600000000000005
 					],
-					[
-						2,
-						0
+					"size": 10.56,
+					"depth": 1.4
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						8,
+						20.439999999999998
+					],
+					"size": 10.56,
+					"depth": 1.4
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							1.6
+						],
+						[
+							14,
+							1.6
+						],
+						[
+							14,
+							15
+						],
+						[
+							2,
+							15
+						],
+						[
+							2,
+							1.6
+						]
 					]
-				],
-				[
-					[
-						0,
-						-2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						8,
+						12
 					],
-					[
-						0,
+					"size": [
+						6.72,
+						1.2
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						3,
+						3
+					],
+					"grid": [
+						1,
 						2
-					]
-				]
+					],
+					"gap": 10,
+					"size": 0.45
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						13,
+						3
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 10,
+					"size": 0.45
+				}
 			]
 		},
 		{
-			"id": "rope-4",
+			"id": "cab-b",
 			"kind": "box",
+			"at": [
+				123,
+				3,
+				3
+			],
+			"size": [
+				30,
+				34,
+				20
+			],
+			"r": 1.5,
+			"bevel": 0.8,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 1
+				},
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 1.2,
+					"r": 0.8
+				},
+				{
+					"type": "ticks",
+					"face": "+x",
+					"from": [
+						7,
+						6
+					],
+					"to": [
+						7,
+						15
+					],
+					"step": 1.1,
+					"every": 1,
+					"lengths": [
+						9,
+						9
+					],
+					"side": -1
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							20,
+							3
+						],
+						[
+							27,
+							3
+						],
+						[
+							27,
+							14
+						],
+						[
+							20,
+							14
+						],
+						[
+							20,
+							3
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gauge-b",
+			"kind": "cylinder",
 			"at": [
 				130,
-				19,
-				27
+				37,
+				9
+			],
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
 			],
 			"size": [
-				17,
-				2,
-				1.5
+				3.4,
+				3.4,
+				0.8
 			],
-			"r": 0,
-			"label": "Rope"
-		},
-		{
-			"id": "rope-3",
-			"kind": "box",
-			"at": [
-				153,
-				19,
-				27
-			],
-			"size": [
-				24,
-				2,
-				1.5
-			],
-			"r": 0,
-			"label": "Rope"
-		},
-		{
-			"id": "can-syn",
-			"kind": "cylinder",
-			"at": [
-				150,
-				20,
-				17
-			],
-			"size": [
-				3,
-				3,
-				12
-			],
-			"label": "SYN canister, landed"
-		},
-		{
-			"id": "station-b",
-			"kind": "box",
-			"at": [
-				182,
-				4,
-				0
-			],
-			"size": [
-				44,
-				32,
-				24
-			],
-			"r": 2,
-			"label": "Server station",
-			"marks": [
-				[
-					[
-						6,
-						6
-					],
-					[
-						30,
-						6
+			"detail": [
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 0.5
+				},
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 2.6,
+					"count": 12,
+					"every": 3,
+					"lengths": [
+						0.35,
+						0.8
 					]
-				]
+				},
+				{
+					"type": "line",
+					"face": "end",
+					"points": [
+						[
+							0,
+							0
+						],
+						[
+							0.4,
+							2.2
+						]
+					]
+				}
 			]
 		},
 		{
-			"id": "sem-b",
+			"id": "motor-b",
 			"kind": "box",
 			"at": [
-				221,
-				30,
-				24
+				135.6,
+				21.6,
+				23
+			],
+			"size": [
+				5,
+				5,
+				4.6
+			],
+			"r": 0.6,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.8
+				}
+			]
+		},
+		{
+			"id": "knurl-b",
+			"kind": "cylinder",
+			"at": [
+				143.8,
+				25,
+				23
+			],
+			"size": [
+				2.4,
+				2.4,
+				4.8
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 28
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.5
+				}
+			]
+		},
+		{
+			"id": "collar-b",
+			"kind": "cylinder",
+			"at": [
+				141,
+				19,
+				23
 			],
 			"size": [
 				3,
 				3,
-				22
+				2.2
+			]
+		},
+		{
+			"id": "post-b",
+			"kind": "cylinder",
+			"at": [
+				141,
+				19,
+				25.2
 			],
-			"r": 1,
-			"label": "Server semaphore, SYN received"
+			"size": [
+				1.8,
+				1.8,
+				7.3
+			]
+		},
+		{
+			"id": "boss-b",
+			"kind": "cylinder",
+			"at": [
+				141,
+				19,
+				31.5
+			],
+			"size": [
+				2.5,
+				2.5,
+				1.5
+			]
+		},
+		{
+			"id": "wheel-b",
+			"kind": "lathe",
+			"at": [
+				141,
+				19,
+				33
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					9.4
+				],
+				[
+					0.5,
+					10
+				],
+				[
+					1.1,
+					10
+				],
+				[
+					1.4,
+					9.2
+				],
+				[
+					1.8,
+					9.2
+				],
+				[
+					2.1,
+					10
+				],
+				[
+					2.7,
+					10
+				],
+				[
+					3,
+					9.6
+				]
+			],
+			"steps": 96,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.7
+				},
+				{
+					"type": "spokes",
+					"face": "top",
+					"r0": 2.3,
+					"r1": 7.9,
+					"count": 5,
+					"phase": 18
+				}
+			]
+		},
+		{
+			"id": "hub-b",
+			"kind": "cylinder",
+			"at": [
+				141,
+				19,
+				36
+			],
+			"size": [
+				2.2,
+				2.2,
+				0.8
+			]
+		},
+		{
+			"id": "nut-b",
+			"kind": "prism",
+			"at": [
+				141,
+				19,
+				36.8
+			],
+			"axis": "z",
+			"polygon": [
+				[
+					1.1,
+					0
+				],
+				[
+					0.55,
+					0.95
+				],
+				[
+					-0.55,
+					0.95
+				],
+				[
+					-1.1,
+					0
+				],
+				[
+					-0.55,
+					-0.95
+				],
+				[
+					0.55,
+					-0.95
+				]
+			],
+			"depth": 0.6
+		},
+		{
+			"id": "sem-base-b",
+			"kind": "box",
+			"at": [
+				149,
+				4,
+				23
+			],
+			"size": [
+				4,
+				4,
+				1.6
+			],
+			"r": 0.5
+		},
+		{
+			"id": "sem-post-b",
+			"kind": "cylinder",
+			"at": [
+				151,
+				6,
+				24.6
+			],
+			"size": [
+				0.8,
+				0.8,
+				26.5
+			]
+		},
+		{
+			"id": "sem-pivot-b",
+			"kind": "cylinder",
+			"at": [
+				151,
+				6.6,
+				49.6
+			],
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"size": [
+				1.7,
+				1.7,
+				1
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 0.6
+				}
+			]
 		},
 		{
 			"id": "arm-b",
 			"kind": "box",
 			"at": [
-				224,
-				30.5,
-				34
+				149.47,
+				7.7,
+				47.68
+			],
+			"axis": [
+				0.21,
+				0,
+				0.98
+			],
+			"up": [
+				0,
+				1,
+				0
 			],
 			"size": [
-				9,
-				2,
-				2
+				2.2,
+				0.6,
+				10
 			],
-			"r": 0,
-			"label": "Server semaphore arm, half: SYN received"
+			"r": 0.3,
+			"variants": {
+				"mid": {
+					"at": [
+						148.59,
+						7.7,
+						49.11
+					],
+					"axis": [
+						0.79,
+						0,
+						0.62
+					],
+					"up": [
+						0,
+						1,
+						0
+					]
+				},
+				"flat": {
+					"at": [
+						148.8,
+						7.7,
+						50.7
+					],
+					"axis": [
+						1,
+						0,
+						0
+					],
+					"up": [
+						0,
+						1,
+						0
+					]
+				}
+			}
 		},
 		{
-			"id": "wheel-b",
-			"kind": "cylinder",
+			"id": "rope-back-a",
+			"kind": "wire",
+			"points": [
+				[
+					15,
+					9,
+					34.5
+				],
+				[
+					17.99,
+					9,
+					34.18
+				],
+				[
+					20.98,
+					9,
+					33.87
+				],
+				[
+					23.97,
+					9,
+					33.57
+				],
+				[
+					26.96,
+					9,
+					33.3
+				],
+				[
+					29.95,
+					9,
+					33.04
+				],
+				[
+					32.94,
+					9,
+					32.79
+				],
+				[
+					35.93,
+					9,
+					32.56
+				],
+				[
+					38.92,
+					9,
+					32.35
+				],
+				[
+					41.91,
+					9,
+					32.15
+				],
+				[
+					44.89,
+					9,
+					31.97
+				],
+				[
+					47.88,
+					9,
+					31.8
+				],
+				[
+					50.87,
+					9,
+					31.65
+				],
+				[
+					53.86,
+					9,
+					31.51
+				],
+				[
+					56.85,
+					9,
+					31.39
+				],
+				[
+					59.84,
+					9,
+					31.29
+				],
+				[
+					62.83,
+					9,
+					31.2
+				],
+				[
+					65.82,
+					9,
+					31.13
+				],
+				[
+					68.81,
+					9,
+					31.07
+				],
+				[
+					71.8,
+					9,
+					31.03
+				]
+			]
+		},
+		{
+			"id": "rope-back-h",
+			"kind": "wire",
+			"points": [
+				[
+					71.8,
+					9,
+					31.03
+				],
+				[
+					74.72,
+					9,
+					31.01
+				],
+				[
+					77.64,
+					9,
+					31
+				],
+				[
+					80.56,
+					9,
+					31.01
+				],
+				[
+					83.48,
+					9,
+					31.03
+				],
+				[
+					86.4,
+					9,
+					31.06
+				]
+			]
+		},
+		{
+			"id": "rope-back-b",
+			"kind": "wire",
+			"points": [
+				[
+					86.4,
+					9,
+					31.06
+				],
+				[
+					89.27,
+					9,
+					31.11
+				],
+				[
+					92.15,
+					9,
+					31.18
+				],
+				[
+					95.02,
+					9,
+					31.26
+				],
+				[
+					97.89,
+					9,
+					31.35
+				],
+				[
+					100.77,
+					9,
+					31.46
+				],
+				[
+					103.64,
+					9,
+					31.58
+				],
+				[
+					106.52,
+					9,
+					31.72
+				],
+				[
+					109.39,
+					9,
+					31.87
+				],
+				[
+					112.26,
+					9,
+					32.04
+				],
+				[
+					115.14,
+					9,
+					32.22
+				],
+				[
+					118.01,
+					9,
+					32.41
+				],
+				[
+					120.88,
+					9,
+					32.62
+				],
+				[
+					123.76,
+					9,
+					32.85
+				],
+				[
+					126.63,
+					9,
+					33.09
+				],
+				[
+					129.51,
+					9,
+					33.34
+				],
+				[
+					132.38,
+					9,
+					33.61
+				],
+				[
+					135.25,
+					9,
+					33.89
+				],
+				[
+					138.13,
+					9,
+					34.19
+				],
+				[
+					141,
+					9,
+					34.5
+				]
+			]
+		},
+		{
+			"id": "rope-front-a",
+			"kind": "wire",
+			"points": [
+				[
+					15,
+					29,
+					34.5
+				],
+				[
+					17.99,
+					29,
+					34.18
+				],
+				[
+					20.98,
+					29,
+					33.87
+				],
+				[
+					23.97,
+					29,
+					33.57
+				],
+				[
+					26.96,
+					29,
+					33.3
+				],
+				[
+					29.95,
+					29,
+					33.04
+				],
+				[
+					32.94,
+					29,
+					32.79
+				],
+				[
+					35.93,
+					29,
+					32.56
+				],
+				[
+					38.92,
+					29,
+					32.35
+				],
+				[
+					41.91,
+					29,
+					32.15
+				],
+				[
+					44.89,
+					29,
+					31.97
+				],
+				[
+					47.88,
+					29,
+					31.8
+				],
+				[
+					50.87,
+					29,
+					31.65
+				],
+				[
+					53.86,
+					29,
+					31.51
+				],
+				[
+					56.85,
+					29,
+					31.39
+				],
+				[
+					59.84,
+					29,
+					31.29
+				],
+				[
+					62.83,
+					29,
+					31.2
+				],
+				[
+					65.82,
+					29,
+					31.13
+				],
+				[
+					68.81,
+					29,
+					31.07
+				],
+				[
+					71.8,
+					29,
+					31.03
+				]
+			]
+		},
+		{
+			"id": "rope-front-h",
+			"kind": "wire",
+			"points": [
+				[
+					71.8,
+					29,
+					31.03
+				],
+				[
+					74.72,
+					29,
+					31.01
+				],
+				[
+					77.64,
+					29,
+					31
+				],
+				[
+					80.56,
+					29,
+					31.01
+				],
+				[
+					83.48,
+					29,
+					31.03
+				],
+				[
+					86.4,
+					29,
+					31.06
+				]
+			]
+		},
+		{
+			"id": "rope-front-b",
+			"kind": "wire",
+			"points": [
+				[
+					86.4,
+					29,
+					31.06
+				],
+				[
+					89.27,
+					29,
+					31.11
+				],
+				[
+					92.15,
+					29,
+					31.18
+				],
+				[
+					95.02,
+					29,
+					31.26
+				],
+				[
+					97.89,
+					29,
+					31.35
+				],
+				[
+					100.77,
+					29,
+					31.46
+				],
+				[
+					103.64,
+					29,
+					31.58
+				],
+				[
+					106.52,
+					29,
+					31.72
+				],
+				[
+					109.39,
+					29,
+					31.87
+				],
+				[
+					112.26,
+					29,
+					32.04
+				],
+				[
+					115.14,
+					29,
+					32.22
+				],
+				[
+					118.01,
+					29,
+					32.41
+				],
+				[
+					120.88,
+					29,
+					32.62
+				],
+				[
+					123.76,
+					29,
+					32.85
+				],
+				[
+					126.63,
+					29,
+					33.09
+				],
+				[
+					129.51,
+					29,
+					33.34
+				],
+				[
+					132.38,
+					29,
+					33.61
+				],
+				[
+					135.25,
+					29,
+					33.89
+				],
+				[
+					138.13,
+					29,
+					34.19
+				],
+				[
+					141,
+					29,
+					34.5
+				]
+			]
+		},
+		{
+			"id": "trolley-syn",
+			"kind": "sphere",
 			"at": [
-				195,
-				20,
-				24
+				45,
+				29,
+				31.96
 			],
-			"size": [
-				11,
-				11,
-				4.5
-			],
-			"label": "Server bull wheel"
-		}
-	],
-	"focal": "can-ack",
-	"labels": [
-		{
-			"text": "3 ACK, established",
-			"target": "can-ack",
-			"side": "right"
+			"r": 0.8
 		},
 		{
-			"text": "2 SYN with ACK",
-			"target": "can-synack",
-			"side": "right",
-			"anchor": [
-				126.5,
-				20,
-				29
-			]
-		},
-		{
-			"text": "1 SYN",
-			"target": "can-syn",
-			"side": "right",
-			"anchor": [
-				149.5,
-				20,
-				29
-			]
-		},
-		{
-			"text": "Client station",
-			"target": "station-a",
-			"side": "left"
-		},
-		{
-			"text": "Server station",
-			"target": "station-b",
-			"side": "right"
-		},
-		{
-			"text": "Midway hut",
-			"target": "tower",
-			"side": "left",
-			"anchor": [
-				100,
-				13,
-				6
-			]
-		},
-		{
-			"text": "Client: established",
-			"target": "sem-a",
-			"side": "left",
-			"anchor": [
-				5.5,
-				31.5,
-				38
-			]
-		},
-		{
-			"text": "Server: SYN received",
-			"target": "sem-b",
-			"side": "right"
-		}
-	],
-	"annotations": [
-		{
-			"kind": "arrow",
+			"id": "hanger-syn",
+			"kind": "rod",
 			"from": [
-				70,
-				20,
-				34
+				45,
+				29,
+				31.36
 			],
 			"to": [
-				86,
-				20,
-				34
+				45,
+				29,
+				30.16
 			],
-			"of": "can-ack"
+			"radius": 0.3
+		},
+		{
+			"id": "can-syn",
+			"kind": "lathe",
+			"at": [
+				42.2,
+				29,
+				28.56
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0.7,
+					"soft"
+				],
+				[
+					0.6,
+					1.6
+				],
+				[
+					5,
+					1.6
+				],
+				[
+					5.6,
+					0.7,
+					"soft"
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2.8
+					]
+				}
+			]
+		},
+		{
+			"id": "trolley-synack",
+			"kind": "sphere",
+			"at": [
+				112,
+				9,
+				32.02
+			],
+			"r": 0.8
+		},
+		{
+			"id": "hanger-synack",
+			"kind": "rod",
+			"from": [
+				112,
+				9,
+				31.42
+			],
+			"to": [
+				112,
+				9,
+				30.22
+			],
+			"radius": 0.3
+		},
+		{
+			"id": "can-synack",
+			"kind": "lathe",
+			"at": [
+				109.2,
+				9,
+				28.62
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0.7,
+					"soft"
+				],
+				[
+					0.6,
+					1.6
+				],
+				[
+					5,
+					1.6
+				],
+				[
+					5.6,
+					0.7,
+					"soft"
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.8,
+						3.8
+					]
+				}
+			]
+		},
+		{
+			"id": "flagpole-synack",
+			"kind": "rod",
+			"from": [
+				113.8,
+				9,
+				30.02
+			],
+			"to": [
+				113.8,
+				9,
+				35.22
+			],
+			"radius": 0.2
+		},
+		{
+			"id": "flag-synack",
+			"kind": "prism",
+			"at": [
+				113.8,
+				9.15,
+				32.62
+			],
+			"axis": "-y",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					3.6,
+					1.3
+				],
+				[
+					0,
+					2.6
+				]
+			],
+			"depth": 0.3
+		},
+		{
+			"id": "trolley-ack",
+			"kind": "sphere",
+			"at": [
+				108,
+				29,
+				31.79
+			],
+			"r": 0.8
+		},
+		{
+			"id": "hanger-ack",
+			"kind": "rod",
+			"from": [
+				108,
+				29,
+				31.19
+			],
+			"to": [
+				108,
+				29,
+				29.99
+			],
+			"radius": 0.3
+		},
+		{
+			"id": "can-ack",
+			"kind": "lathe",
+			"at": [
+				105.2,
+				29,
+				28.39
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0.7,
+					"soft"
+				],
+				[
+					0.6,
+					1.6
+				],
+				[
+					5,
+					1.6
+				],
+				[
+					5.6,
+					0.7,
+					"soft"
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.4,
+						2.8,
+						4.2
+					]
+				}
+			]
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"station-a",
-				"station-b",
-				"tower"
+				"plinth-a",
+				"plinth-h",
+				"plinth-b"
 			],
 			[
+				"cab-a",
+				"bin-a",
+				"bin-h",
+				"stilt-0",
+				"stilt-1",
+				"stilt-2",
+				"stilt-3",
+				"bin-b",
+				"cab-b",
+				"lever-base-h"
+			],
+			[
+				"gauge-a",
+				"lever-a",
+				"knob-a",
+				"plate-a",
+				"gauge-b",
+				"brace-x1",
+				"brace-x2",
+				"brace-y",
+				"lever-h",
+				"knob-h",
+				"motor-b",
+				"knurl-b",
+				"sem-base-b"
+			],
+			[
+				"hut",
+				"hut-back-wall",
+				"hut-arches",
+				"window",
+				"sill",
+				"collar-a",
+				"post-a",
+				"boss-a",
+				"collar-b",
+				"post-b",
+				"boss-b"
+			],
+			[
+				"roof",
 				"wheel-a",
 				"wheel-b",
-				"sem-a",
-				"sem-b",
+				"sem-post-a",
+				"sem-post-b"
+			],
+			[
+				"vent",
+				"hub-a",
+				"nut-a",
+				"hub-b",
+				"nut-b",
+				"sem-pivot-a",
+				"sem-pivot-b",
 				"arm-a",
 				"arm-b"
 			],
 			[
-				"rope-1",
-				"rope-2",
-				"rope-3",
-				"rope-4"
-			],
-			[
-				"can-syn"
-			],
-			[
-				"can-synack"
-			],
-			[
+				"rope-back-a",
+				"rope-back-h",
+				"rope-back-b",
+				"rope-front-a",
+				"rope-front-h",
+				"rope-front-b",
+				"trolley-syn",
+				"hanger-syn",
+				"can-syn",
+				"trolley-synack",
+				"hanger-synack",
+				"can-synack",
+				"flagpole-synack",
+				"flag-synack",
+				"trolley-ack",
+				"hanger-ack",
 				"can-ack"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 10,
-		"rest": "3 canisters"
+		"behavior": "step",
+		"input": "click",
+		"states": [
+			{
+				"name": "established",
+				"readout": "ESTABLISHED · 750 ms",
+				"parts": {
+					"trolley-syn": {
+						"hidden": true
+					},
+					"hanger-syn": {
+						"hidden": true
+					},
+					"can-syn": {
+						"hidden": true
+					},
+					"trolley-synack": {
+						"hidden": true
+					},
+					"hanger-synack": {
+						"hidden": true
+					},
+					"can-synack": {
+						"hidden": true
+					},
+					"flagpole-synack": {
+						"hidden": true
+					},
+					"flag-synack": {
+						"hidden": true
+					},
+					"trolley-ack": {
+						"hidden": true
+					},
+					"hanger-ack": {
+						"hidden": true
+					},
+					"can-ack": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "syn-sent",
+				"readout": "SYN-SENT · SYN on the rope · 0 ms",
+				"parts": {
+					"trolley-synack": {
+						"hidden": true
+					},
+					"hanger-synack": {
+						"hidden": true
+					},
+					"can-synack": {
+						"hidden": true
+					},
+					"flagpole-synack": {
+						"hidden": true
+					},
+					"flag-synack": {
+						"hidden": true
+					},
+					"trolley-ack": {
+						"hidden": true
+					},
+					"hanger-ack": {
+						"hidden": true
+					},
+					"can-ack": {
+						"hidden": true
+					},
+					"arm-a": {
+						"variant": "mid"
+					},
+					"arm-b": {
+						"variant": "flat"
+					}
+				}
+			},
+			{
+				"name": "dropped",
+				"readout": "SYN-SENT · dropped at the hut, resend in 67 ms",
+				"parts": {
+					"trolley-syn": {
+						"hidden": true
+					},
+					"hanger-syn": {
+						"hidden": true
+					},
+					"trolley-synack": {
+						"hidden": true
+					},
+					"hanger-synack": {
+						"hidden": true
+					},
+					"can-synack": {
+						"hidden": true
+					},
+					"flagpole-synack": {
+						"hidden": true
+					},
+					"flag-synack": {
+						"hidden": true
+					},
+					"trolley-ack": {
+						"hidden": true
+					},
+					"hanger-ack": {
+						"hidden": true
+					},
+					"can-ack": {
+						"hidden": true
+					},
+					"can-syn": {
+						"move": [
+							34,
+							-5,
+							-21.26
+						]
+					},
+					"arm-a": {
+						"variant": "mid"
+					},
+					"arm-b": {
+						"variant": "flat"
+					}
+				}
+			},
+			{
+				"name": "syn-received",
+				"readout": "SYN-RECEIVED · SYN with ACK heads home · 500 ms",
+				"parts": {
+					"trolley-syn": {
+						"hidden": true
+					},
+					"hanger-syn": {
+						"hidden": true
+					},
+					"can-syn": {
+						"hidden": true
+					},
+					"trolley-ack": {
+						"hidden": true
+					},
+					"hanger-ack": {
+						"hidden": true
+					},
+					"can-ack": {
+						"hidden": true
+					},
+					"arm-a": {
+						"variant": "mid"
+					},
+					"arm-b": {
+						"variant": "mid"
+					}
+				}
+			},
+			{
+				"name": "ack",
+				"readout": "ESTABLISHED at the client · ACK out · 625 ms",
+				"parts": {
+					"trolley-syn": {
+						"hidden": true
+					},
+					"hanger-syn": {
+						"hidden": true
+					},
+					"can-syn": {
+						"hidden": true
+					},
+					"trolley-synack": {
+						"hidden": true
+					},
+					"hanger-synack": {
+						"hidden": true
+					},
+					"can-synack": {
+						"hidden": true
+					},
+					"flagpole-synack": {
+						"hidden": true
+					},
+					"flag-synack": {
+						"hidden": true
+					},
+					"arm-a": {
+						"variant": "base"
+					},
+					"arm-b": {
+						"variant": "mid"
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ MAIL ROPEWAY ]",

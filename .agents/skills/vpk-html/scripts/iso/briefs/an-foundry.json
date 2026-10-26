@@ -2,288 +2,3633 @@
 	"schema": "vpk-iso-brief/1",
 	"id": "an-foundry",
 	"figId": "FIG_230",
-	"title": "Pouring steel",
-	"label": "Dimetric foundry: a lined ladle on a trunnion, tilted by a hand wheel through a worm gearbox, pours a steel stream into the basin of a sand mould clamped on its bottom board. Hover or arrow keys lift a part.",
-	"caption": "Forty turns of the hand wheel tip the ladle one turn on its trunnion, so the pourer can meter a 1,636 °C stream into the basin and stop before the mould overflows its riser.",
+	"title": "Ladle and mould",
+	"label": "Pouring station: a banded, riveted ladle on trunnions, tipped by a worm gearbox with dial and hand wheel, pours a glowing stream into a sand flask cup, watched by a tripod pyrometer. Move across, drag or use arrow keys to tilt.",
+	"caption": "A lined ladle on trunnions, tilted by a hand wheel through a 40 to 1 worm gearbox. Forty turns of the wheel tip it one turn, so the pourer can meter the stream into the cup and stop before the flask floods its risers. Move left to set it upright, right to pour; the arrow keys step it.",
 	"camera": {
 		"preset": "dimetric",
 		"scale": "fit"
 	},
+	"emphasis": "none",
+	"labels": "none",
 	"parts": [
 		{
-			"id": "board",
-			"kind": "box",
+			"id": "plate-l",
+			"kind": "slab",
 			"at": [
 				0,
-				10,
+				0,
 				0
 			],
 			"size": [
-				44,
-				42,
-				4
+				40,
+				106,
+				3
 			],
-			"r": 1,
-			"label": "Bottom board"
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						4
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 32,
+					"size": 0.8
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						102
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 32,
+					"size": 0.8
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						53
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.8
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							1.5
+						],
+						[
+							40,
+							1.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							1.5
+						],
+						[
+							40,
+							1.5
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "mould",
+			"id": "plate-r",
+			"kind": "slab",
+			"at": [
+				41,
+				0,
+				0
+			],
+			"size": [
+				99,
+				106,
+				3
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						4
+					],
+					"grid": [
+						3,
+						1
+					],
+					"gap": 42.5,
+					"size": 0.8
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						102
+					],
+					"grid": [
+						3,
+						1
+					],
+					"gap": 42.5,
+					"size": 0.8
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						89,
+						53
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.8
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						52,
+						101
+					],
+					"size": [
+						56,
+						1.6
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						90,
+						66
+					],
+					"size": [
+						1.6,
+						30
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							1.5
+						],
+						[
+							99,
+							1.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0,
+							1.5
+						],
+						[
+							106,
+							1.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "beam-0",
 			"kind": "box",
 			"at": [
-				2,
-				12,
-				4
+				5,
+				9,
+				3
 			],
 			"size": [
-				40,
-				38,
-				26
-			],
-			"r": 1,
-			"marks": [
-				[
-					[
-						0,
-						19
-					],
-					[
-						40,
-						19
-					]
-				]
-			],
-			"label": "Sand mould"
-		},
-		{
-			"id": "riser",
-			"kind": "cylinder",
-			"at": [
-				12,
-				40,
-				30
-			],
-			"size": [
-				4,
-				4,
+				34,
+				14,
 				5
 			],
-			"label": "Riser"
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8,
+					"r": 0.6
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							1.2
+						],
+						[
+							34,
+							1.2
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "basin",
+			"id": "beam-bolt-0-0",
 			"kind": "cylinder",
 			"at": [
-				37,
-				17,
-				30
+				9,
+				16,
+				8
 			],
 			"size": [
-				4,
-				4,
-				4
+				1.5,
+				1.5,
+				1.0
 			],
-			"label": "Basin"
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "top",
+					"r0": 0,
+					"r1": 1.2,
+					"count": 6
+				}
+			]
 		},
 		{
-			"id": "column",
+			"id": "beam-bolt-0-1",
+			"kind": "cylinder",
+			"at": [
+				35,
+				16,
+				8
+			],
+			"size": [
+				1.5,
+				1.5,
+				1.0
+			],
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "top",
+					"r0": 0,
+					"r1": 1.2,
+					"count": 6
+				}
+			]
+		},
+		{
+			"id": "beam-1",
 			"kind": "box",
 			"at": [
-				-18,
-				-1,
-				0
+				5,
+				77,
+				3
+			],
+			"size": [
+				34,
+				14,
+				5
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8,
+					"r": 0.6
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							1.2
+						],
+						[
+							34,
+							1.2
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "beam-bolt-1-0",
+			"kind": "cylinder",
+			"at": [
+				9,
+				84,
+				8
+			],
+			"size": [
+				1.5,
+				1.5,
+				1.0
+			],
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "top",
+					"r0": 0,
+					"r1": 1.2,
+					"count": 6
+				}
+			]
+		},
+		{
+			"id": "beam-bolt-1-1",
+			"kind": "cylinder",
+			"at": [
+				35,
+				84,
+				8
+			],
+			"size": [
+				1.5,
+				1.5,
+				1.0
+			],
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "top",
+					"r0": 0,
+					"r1": 1.2,
+					"count": 6
+				}
+			]
+		},
+		{
+			"id": "rail-0",
+			"kind": "box",
+			"at": [
+				9,
+				23,
+				3
+			],
+			"size": [
+				5,
+				54,
+				3.5
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0,
+							1
+						],
+						[
+							54,
+							1
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "rail-1",
+			"kind": "box",
+			"at": [
+				34,
+				23,
+				3
+			],
+			"size": [
+				5,
+				54,
+				3.5
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0,
+							1
+						],
+						[
+							54,
+							1
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "post-foot-0",
+			"kind": "box",
+			"at": [
+				21.5,
+				8.5,
+				8
+			],
+			"size": [
+				15,
+				15,
+				1.4
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.4,
+						1.4
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 12.2,
+					"size": 0.45
+				}
+			]
+		},
+		{
+			"id": "post-0",
+			"kind": "box",
+			"at": [
+				24,
+				11,
+				9.4
 			],
 			"size": [
 				10,
 				10,
-				62
+				66.6
 			],
-			"r": 1,
-			"label": "Column"
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.2,
+							2
+						],
+						[
+							1.2,
+							60
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.2,
+							2
+						],
+						[
+							1.2,
+							60
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gus-0-a",
+			"kind": "prism",
+			"at": [
+				34,
+				17,
+				9.4
+			],
+			"axis": "-y",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					4.5,
+					0
+				],
+				[
+					0,
+					14
+				]
+			],
+			"depth": 2
+		},
+		{
+			"id": "gus-0-b",
+			"kind": "prism",
+			"at": [
+				28,
+				21,
+				9.4
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					4.5,
+					0
+				],
+				[
+					0,
+					14
+				]
+			],
+			"depth": 2
+		},
+		{
+			"id": "post-foot-1",
+			"kind": "box",
+			"at": [
+				21.5,
+				76.5,
+				8
+			],
+			"size": [
+				15,
+				15,
+				1.4
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.4,
+						1.4
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 12.2,
+					"size": 0.45
+				}
+			]
+		},
+		{
+			"id": "post-1",
+			"kind": "box",
+			"at": [
+				24,
+				79,
+				9.4
+			],
+			"size": [
+				10,
+				10,
+				66.6
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.2,
+							2
+						],
+						[
+							1.2,
+							60
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.2,
+							2
+						],
+						[
+							1.2,
+							60
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gus-1-a",
+			"kind": "prism",
+			"at": [
+				34,
+				85,
+				9.4
+			],
+			"axis": "-y",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					4.5,
+					0
+				],
+				[
+					0,
+					14
+				]
+			],
+			"depth": 2
+		},
+		{
+			"id": "gus-1-b",
+			"kind": "prism",
+			"at": [
+				28,
+				89,
+				9.4
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					4.5,
+					0
+				],
+				[
+					0,
+					14
+				]
+			],
+			"depth": 2
+		},
+		{
+			"id": "post-cap-0",
+			"kind": "box",
+			"at": [
+				23,
+				10,
+				76
+			],
+			"size": [
+				12,
+				12,
+				2.4
+			],
+			"r": 0.6
+		},
+		{
+			"id": "pin-far",
+			"kind": "cylinder",
+			"at": [
+				29,
+				21,
+				72
+			],
+			"size": [
+				2.6,
+				2.6,
+				7.5
+			],
+			"axis": "y"
+		},
+		{
+			"id": "pin-near",
+			"kind": "cylinder",
+			"at": [
+				29,
+				71.5,
+				72
+			],
+			"size": [
+				2.6,
+				2.6,
+				7.5
+			],
+			"axis": "y"
+		},
+		{
+			"id": "gearbox-bracket",
+			"kind": "box",
+			"at": [
+				23,
+				87,
+				49
+			],
+			"size": [
+				12,
+				6,
+				3
+			],
+			"r": 0.5
 		},
 		{
 			"id": "gearbox",
 			"kind": "box",
 			"at": [
-				-28,
-				-1,
-				44
-			],
-			"size": [
-				10,
-				10,
-				12
-			],
-			"r": 1,
-			"label": "Worm gearbox"
-		},
-		{
-			"id": "wheel",
-			"kind": "box",
-			"at": [
-				-29.5,
-				9,
-				43.5
-			],
-			"size": [
-				13,
-				1.5,
-				13
-			],
-			"label": "Hand wheel"
-		},
-		{
-			"id": "trunnion",
-			"kind": "box",
-			"at": [
-				-8,
-				5,
+				19,
+				89,
 				52
 			],
 			"size": [
-				48,
-				4,
-				4
+				20,
+				11,
+				25
 			],
-			"label": "Trunnion"
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.2,
+					"r": 0.8
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						5.5,
+						17
+					],
+					"size": [
+						6,
+						7
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3.4,
+							18.8
+						],
+						[
+							7.6,
+							18.8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3.4,
+							17.2
+						],
+						[
+							7.6,
+							17.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3.4,
+							15.6
+						],
+						[
+							6.4,
+							15.6
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						1.8,
+						1.8
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 7.4,
+					"size": 0.4
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							2.6
+						],
+						[
+							20,
+							2.6
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.6,
+						23.4
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 16.8,
+					"size": 0.4
+				},
+				{
+					"type": "bolts",
+					"face": "top",
+					"at": [
+						10,
+						5.5
+					],
+					"r": 7,
+					"count": 4,
+					"size": 0.45,
+					"phase": 45
+				}
+			]
 		},
 		{
-			"id": "ladle",
+			"id": "gearbox-knob",
 			"kind": "cylinder",
 			"at": [
-				41,
-				9,
-				44
+				31,
+				94.5,
+				77
 			],
 			"size": [
-				5,
-				5,
-				16
+				1.7,
+				1.7,
+				1.6
 			],
-			"label": "Lined ladle"
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.5
+				}
+			]
 		},
 		{
-			"id": "lip",
-			"kind": "box",
+			"id": "dial-bezel",
+			"kind": "cylinder",
 			"at": [
+				28,
+				100,
+				64.5
+			],
+			"size": [
+				9.2,
+				9.2,
+				1.2
+			],
+			"axis": "y",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 0.9
+				}
+			]
+		},
+		{
+			"id": "dial",
+			"kind": "cylinder",
+			"at": [
+				28,
+				101.2,
+				64.5
+			],
+			"size": [
+				8.1,
+				8.1,
+				0.3
+			],
+			"axis": "y",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 7.4,
+					"count": 48,
+					"every": 6,
+					"lengths": [
+						0.8,
+						1.7
+					],
+					"from": -50,
+					"span": 150
+				},
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 6.6
+				}
+			]
+		},
+		{
+			"id": "needle",
+			"kind": "rod",
+			"to": [
+				33.6,
+				101.6,
+				67.9
+			],
+			"radius": 0.42,
+			"rotate": {
+				"axis": "y",
+				"about": [
+					28,
+					101.6,
+					64.5
+				],
+				"deg": [
+					-80,
+					0
+				],
+				"samples": 9
+			},
+			"from": [
+				28,
+				101.6,
+				64.5
+			]
+		},
+		{
+			"id": "needle-hub",
+			"kind": "cylinder",
+			"at": [
+				28,
+				101.39999999999999,
+				64.5
+			],
+			"size": [
+				1.2,
+				1.2,
+				0.6
+			],
+			"axis": "y"
+		},
+		{
+			"id": "axle-boss",
+			"kind": "cylinder",
+			"at": [
+				34,
+				84,
+				49
+			],
+			"size": [
+				2.8,
+				2.8,
+				1.6
+			],
+			"axis": "x",
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 2.1,
+					"count": 4,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "axle",
+			"kind": "rod",
+			"to": [
+				41.800000000000004,
+				84,
+				49
+			],
+			"radius": 1.05,
+			"from": [
 				35,
-				13,
-				57
-			],
-			"size": [
-				4,
-				6,
-				3
-			],
-			"label": "Pouring lip"
-		},
-		{
-			"id": "stream",
-			"kind": "cylinder",
-			"at": [
-				37,
-				17,
-				34
-			],
-			"size": [
-				0.8,
-				0.8,
-				23
-			],
-			"label": "Steel stream"
-		}
-	],
-	"focal": "ladle",
-	"labels": [
-		{
-			"text": "Lined ladle",
-			"target": "ladle",
-			"side": "right",
-			"anchor": [
-				45,
-				13,
+				84,
 				49
 			]
 		},
 		{
-			"text": "Stream 1,636 °C",
-			"target": "stream",
-			"side": "right",
-			"anchor": [
+			"id": "wheel-rim",
+			"kind": "torus",
+			"at": [
+				41.2,
+				84,
+				49
+			],
+			"axis": "x",
+			"R": 8,
+			"r": 0.8
+		},
+		{
+			"id": "wheel-hub",
+			"kind": "cylinder",
+			"at": [
+				40.0,
+				84,
+				49
+			],
+			"size": [
+				2,
+				2,
+				2.8
+			],
+			"axis": "x"
+		},
+		{
+			"id": "spoke-0",
+			"kind": "rod",
+			"to": [
+				41.2,
+				84.0,
+				56.4
+			],
+			"radius": 0.45,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					41.2,
+					84,
+					49
+				],
+				"deg": [
+					-150,
+					0
+				],
+				"samples": 9
+			},
+			"from": [
+				41.5,
+				84.0,
+				50.7
+			]
+		},
+		{
+			"id": "spoke-1",
+			"kind": "rod",
+			"to": [
+				41.2,
+				76.96,
+				51.29
+			],
+			"radius": 0.45,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					41.2,
+					84,
+					49
+				],
+				"deg": [
+					-150,
+					0
+				],
+				"samples": 9
+			},
+			"from": [
+				41.5,
+				82.38,
+				49.53
+			]
+		},
+		{
+			"id": "spoke-2",
+			"kind": "rod",
+			"to": [
+				41.2,
+				79.65,
+				43.01
+			],
+			"radius": 0.45,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					41.2,
+					84,
+					49
+				],
+				"deg": [
+					-150,
+					0
+				],
+				"samples": 9
+			},
+			"from": [
+				41.5,
+				83.0,
+				47.62
+			]
+		},
+		{
+			"id": "spoke-3",
+			"kind": "rod",
+			"to": [
+				41.2,
+				88.35,
+				43.01
+			],
+			"radius": 0.45,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					41.2,
+					84,
+					49
+				],
+				"deg": [
+					-150,
+					0
+				],
+				"samples": 9
+			},
+			"from": [
+				41.5,
+				85.0,
+				47.62
+			]
+		},
+		{
+			"id": "spoke-4",
+			"kind": "rod",
+			"to": [
+				41.2,
+				91.04,
+				51.29
+			],
+			"radius": 0.45,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					41.2,
+					84,
+					49
+				],
+				"deg": [
+					-150,
+					0
+				],
+				"samples": 9
+			},
+			"from": [
+				41.5,
+				85.62,
+				49.53
+			]
+		},
+		{
+			"id": "crank",
+			"kind": "pin",
+			"at": [
+				41.5,
+				84,
+				41.4
+			],
+			"axis": "x",
+			"length": 3.8,
+			"r": 0.5,
+			"head": 1.1,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					41.2,
+					84,
+					49
+				],
+				"deg": [
+					-150,
+					0
+				],
+				"samples": 9
+			}
+		},
+		{
+			"id": "ladle",
+			"kind": "lathe",
+			"at": [
+				29,
+				50,
+				51
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					14
+				],
+				[
+					1.6,
+					18.5,
+					"soft"
+				],
+				[
+					4,
+					20.8,
+					"soft"
+				],
+				[
+					6,
+					21.5
+				],
+				[
+					11.4,
+					21.5
+				],
+				[
+					11.6,
+					22.8
+				],
+				[
+					14.4,
+					22.8
+				],
+				[
+					14.6,
+					21.5
+				],
+				[
+					27.4,
+					21.5
+				],
+				[
+					27.6,
+					23.0
+				],
+				[
+					31.4,
+					23.0
+				],
+				[
+					31.6,
+					21.5
+				],
+				[
+					38,
+					21.5
+				],
+				[
+					40.5,
+					23.2
+				],
+				[
+					42.6,
+					26
+				],
+				[
+					43,
+					27.5
+				],
+				[
+					46,
+					27.5
+				]
+			],
+			"hole": [
+				46,
+				20.2
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						6,
+						9,
+						18,
+						24,
+						35,
+						38
+					]
+				},
+				{
+					"type": "ribs",
+					"count": 64,
+					"s0": 7.35,
+					"s1": 7.65
+				},
+				{
+					"type": "ribs",
+					"count": 64,
+					"s0": 20.85,
+					"s1": 21.15,
+					"phase": 2.8
+				},
+				{
+					"type": "ribs",
+					"count": 64,
+					"s0": 36.35,
+					"s1": 36.65
+				},
+				{
+					"type": "ribs",
+					"count": 64,
+					"s0": 12.85,
+					"s1": 13.15,
+					"phase": 2.8
+				},
+				{
+					"type": "ribs",
+					"count": 64,
+					"s0": 29.35,
+					"s1": 29.65
+				},
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 26,
+					"count": 40,
+					"size": 0.32
+				},
+				{
+					"type": "bands",
+					"at": [
+						44.4
+					]
+				}
+			],
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "lining",
+			"kind": "lathe",
+			"at": [
+				29,
+				50,
+				88
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					19.8
+				],
+				[
+					9,
+					20.2
+				]
+			],
+			"closed": false,
+			"tone": "glow",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "metal",
+			"kind": "cylinder",
+			"at": [
+				29,
+				50,
+				95.55
+			],
+			"size": [
+				19.9,
+				19.9,
+				0.25
+			],
+			"axis": "z",
+			"tone": "glow",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-0",
+			"kind": "cylinder",
+			"at": [
+				41,
+				51,
+				96.7
+			],
+			"size": [
+				3.4,
+				3.4,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-1",
+			"kind": "cylinder",
+			"at": [
+				43.5,
+				46,
+				96.7
+			],
+			"size": [
+				2.6,
+				2.6,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-2",
+			"kind": "cylinder",
+			"at": [
+				39,
+				57,
+				96.7
+			],
+			"size": [
+				2.4,
+				2.4,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-3",
+			"kind": "cylinder",
+			"at": [
+				44.5,
+				55,
+				96.7
+			],
+			"size": [
+				2.2,
+				2.2,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-4",
+			"kind": "cylinder",
+			"at": [
+				40.5,
+				41,
+				96.7
+			],
+			"size": [
+				2.0,
+				2.0,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-5",
+			"kind": "cylinder",
+			"at": [
+				45.5,
+				49.5,
+				96.7
+			],
+			"size": [
+				1.8,
+				1.8,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-6",
+			"kind": "cylinder",
+			"at": [
+				42,
+				61,
+				96.7
+			],
+			"size": [
+				1.6,
+				1.6,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-7",
+			"kind": "cylinder",
+			"at": [
 				37,
-				17.8,
-				42
+				47,
+				96.7
+			],
+			"size": [
+				1.3,
+				1.3,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-8",
+			"kind": "cylinder",
+			"at": [
+				46.5,
+				43,
+				96.7
+			],
+			"size": [
+				1.2,
+				1.2,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-9",
+			"kind": "cylinder",
+			"at": [
+				35.5,
+				54,
+				96.7
+			],
+			"size": [
+				1.0,
+				1.0,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "slag-10",
+			"kind": "cylinder",
+			"at": [
+				38,
+				62.5,
+				96.7
+			],
+			"size": [
+				0.9,
+				0.9,
+				0.12
+			],
+			"axis": "z",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "spout",
+			"kind": "cone",
+			"at": [
+				53.0,
+				50,
+				94.5
+			],
+			"axis": [
+				1,
+				0,
+				0.35
+			],
+			"r0": 6,
+			"r1": 4.2,
+			"length": 7.5,
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "bail-lug",
+			"kind": "cylinder",
+			"at": [
+				8.0,
+				50,
+				92
+			],
+			"size": [
+				2.6,
+				2.6,
+				4.2
+			],
+			"axis": "-x",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "bail",
+			"kind": "torus",
+			"at": [
+				-0.09999999999999964,
+				50,
+				92
+			],
+			"axis": "y",
+			"R": 4.8,
+			"r": 1.5,
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "rim-lug-far",
+			"kind": "cylinder",
+			"at": [
+				29,
+				23.0,
+				95.5
+			],
+			"size": [
+				2.2,
+				2.2,
+				2.6
+			],
+			"axis": "-y",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "rim-lug-near",
+			"kind": "cylinder",
+			"at": [
+				29,
+				77.0,
+				95.5
+			],
+			"size": [
+				2.2,
+				2.2,
+				2.6
+			],
+			"axis": "y",
+			"rotate": {
+				"axis": "y",
+				"about": [
+					29,
+					50,
+					72
+				],
+				"deg": [
+					0,
+					45
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "boss-far",
+			"kind": "cylinder",
+			"at": [
+				29,
+				29.1,
+				72
+			],
+			"size": [
+				4.8,
+				4.8,
+				2.6
+			],
+			"axis": "-y",
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 3.4,
+					"count": 6,
+					"size": 0.35
+				}
 			]
 		},
 		{
-			"text": "Basin",
-			"target": "basin",
-			"side": "right"
+			"id": "boss-near",
+			"kind": "cylinder",
+			"at": [
+				29,
+				70.9,
+				72
+			],
+			"size": [
+				4.8,
+				4.8,
+				2.6
+			],
+			"axis": "y",
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 3.4,
+					"count": 6,
+					"size": 0.35
+				}
+			]
 		},
 		{
-			"text": "Trunnion",
-			"target": "trunnion",
-			"side": "right",
-			"anchor": [
+			"id": "board",
+			"kind": "slab",
+			"at": [
+				52,
+				20,
+				3
+			],
+			"size": [
+				56,
+				60,
+				2
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.6,
+						1.6
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 52.8,
+					"size": 0.5
+				}
+			]
+		},
+		{
+			"id": "drag",
+			"kind": "box",
+			"at": [
+				54,
 				22,
-				7,
-				56
+				5
+			],
+			"size": [
+				52,
+				56,
+				15
+			],
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							2.2
+						],
+						[
+							52,
+							2.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0,
+							2.2
+						],
+						[
+							56,
+							2.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							11
+						],
+						[
+							52,
+							11
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0,
+							11
+						],
+						[
+							56,
+							11
+						]
+					]
+				}
 			]
 		},
 		{
-			"text": "Worm gearbox 40:1",
-			"target": "gearbox",
-			"side": "left"
+			"id": "drag-lip",
+			"kind": "box",
+			"at": [
+				53,
+				21,
+				19
+			],
+			"size": [
+				54,
+				58,
+				2.2
+			],
+			"r": 1.4
 		},
 		{
-			"text": "Hand wheel",
-			"target": "wheel",
-			"side": "left"
+			"id": "cope-lip",
+			"kind": "box",
+			"at": [
+				53,
+				21,
+				21.6
+			],
+			"size": [
+				54,
+				58,
+				2.2
+			],
+			"r": 1.4
 		},
 		{
-			"text": "Riser",
-			"target": "riser",
-			"side": "left"
+			"id": "cope",
+			"kind": "box",
+			"at": [
+				54,
+				22,
+				23.8
+			],
+			"size": [
+				52,
+				56,
+				15.2
+			],
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							4
+						],
+						[
+							52,
+							4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0,
+							4
+						],
+						[
+							56,
+							4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							12.8
+						],
+						[
+							52,
+							12.8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0,
+							12.8
+						],
+						[
+							56,
+							12.8
+						]
+					]
+				}
+			]
 		},
 		{
-			"text": "Sand mould",
-			"target": "mould",
-			"side": "left"
+			"id": "cope-heat",
+			"kind": "glow",
+			"at": [
+				70.74,
+				50,
+				39.4
+			],
+			"r": 13
 		},
 		{
-			"text": "Bottom board",
-			"target": "board",
-			"side": "left"
+			"id": "cope-top",
+			"kind": "plate",
+			"at": [
+				55.5,
+				23.5,
+				39
+			],
+			"size": [
+				49,
+				53,
+				0.3
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						5,
+						4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.55
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						5,
+						48.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.55
+				}
+			]
+		},
+		{
+			"id": "cup",
+			"kind": "ring",
+			"at": [
+				70.74,
+				50,
+				39.3
+			],
+			"size": [
+				10,
+				10,
+				0
+			],
+			"thickness": 6.4,
+			"inner": 7.4,
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 8.7,
+					"count": 28,
+					"size": 0.32
+				},
+				{
+					"type": "bands",
+					"at": [
+						2.6
+					]
+				}
+			]
+		},
+		{
+			"id": "cup-lining",
+			"kind": "cylinder",
+			"at": [
+				70.74,
+				50,
+				42.2
+			],
+			"size": [
+				7.4,
+				7.4,
+				0.3
+			],
+			"tone": "glow"
+		},
+		{
+			"id": "riser-0",
+			"kind": "cylinder",
+			"at": [
+				97,
+				39,
+				39.3
+			],
+			"size": [
+				6,
+				6,
+				7.5
+			],
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						0,
+						0
+					],
+					"size": [
+						8.8,
+						8.8
+					],
+					"depth": 3.6
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "riser-1",
+			"kind": "cylinder",
+			"at": [
+				91,
+				62,
+				39.3
+			],
+			"size": [
+				6,
+				6,
+				7.5
+			],
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						0,
+						0
+					],
+					"size": [
+						8.8,
+						8.8
+					],
+					"depth": 3.6
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "handle-0",
+			"kind": "tube",
+			"points": [
+				[
+					67,
+					78,
+					11.5
+				],
+				[
+					67,
+					81.4,
+					11.5
+				],
+				[
+					81,
+					81.4,
+					11.5
+				],
+				[
+					81,
+					78,
+					11.5
+				]
+			],
+			"radius": 0.75,
+			"fillet": 1,
+			"caps": true
+		},
+		{
+			"id": "knob-0",
+			"kind": "cylinder",
+			"at": [
+				106,
+				62,
+				12.5
+			],
+			"size": [
+				2.3,
+				2.3,
+				1.8
+			],
+			"axis": "x",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 0.5
+				}
+			]
+		},
+		{
+			"id": "handle-1",
+			"kind": "tube",
+			"points": [
+				[
+					67,
+					78,
+					30.5
+				],
+				[
+					67,
+					81.4,
+					30.5
+				],
+				[
+					81,
+					81.4,
+					30.5
+				],
+				[
+					81,
+					78,
+					30.5
+				]
+			],
+			"radius": 0.75,
+			"fillet": 1,
+			"caps": true
+		},
+		{
+			"id": "knob-1",
+			"kind": "cylinder",
+			"at": [
+				106,
+				62,
+				31.5
+			],
+			"size": [
+				2.3,
+				2.3,
+				1.8
+			],
+			"axis": "x",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 0.5
+				}
+			]
+		},
+		{
+			"id": "clamp-0",
+			"kind": "box",
+			"at": [
+				58,
+				79.2,
+				13.5
+			],
+			"size": [
+				4,
+				2.4,
+				16.5
+			],
+			"r": 0.4
+		},
+		{
+			"id": "clamp-jaw-0",
+			"kind": "box",
+			"at": [
+				57.5,
+				77,
+				28
+			],
+			"size": [
+				5,
+				4.6,
+				2.2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "clamp-jaw-lo-0",
+			"kind": "box",
+			"at": [
+				57.5,
+				77,
+				12.2
+			],
+			"size": [
+				5,
+				4.6,
+				2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "clamp-screw-0",
+			"kind": "pin",
+			"at": [
+				60,
+				80.4,
+				8.4
+			],
+			"length": 3.8,
+			"r": 0.35,
+			"head": 0.85,
+			"axis": "-z"
+		},
+		{
+			"id": "clamp-1",
+			"kind": "box",
+			"at": [
+				92,
+				79.2,
+				13.5
+			],
+			"size": [
+				4,
+				2.4,
+				16.5
+			],
+			"r": 0.4
+		},
+		{
+			"id": "clamp-jaw-1",
+			"kind": "box",
+			"at": [
+				91.5,
+				77,
+				28
+			],
+			"size": [
+				5,
+				4.6,
+				2.2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "clamp-jaw-lo-1",
+			"kind": "box",
+			"at": [
+				91.5,
+				77,
+				12.2
+			],
+			"size": [
+				5,
+				4.6,
+				2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "clamp-screw-1",
+			"kind": "pin",
+			"at": [
+				94,
+				80.4,
+				8.4
+			],
+			"length": 3.8,
+			"r": 0.35,
+			"head": 0.85,
+			"axis": "-z"
+		},
+		{
+			"id": "align-pin-0",
+			"kind": "cylinder",
+			"at": [
+				101,
+				79,
+				20
+			],
+			"size": [
+				1.1,
+				1.1,
+				6
+			]
+		},
+		{
+			"id": "align-pin-1",
+			"kind": "cylinder",
+			"at": [
+				104.5,
+				79,
+				20
+			],
+			"size": [
+				1.1,
+				1.1,
+				6
+			]
+		},
+		{
+			"id": "stream-lip",
+			"kind": "tube",
+			"points": [
+				[
+					67.54,
+					50,
+					68.25
+				],
+				[
+					69.14,
+					50,
+					67.05
+				],
+				[
+					70.14,
+					50,
+					64.65
+				]
+			],
+			"radius": 1.35,
+			"fillet": 1.2,
+			"tone": "glow"
+		},
+		{
+			"id": "stream",
+			"kind": "tube",
+			"points": [
+				[
+					70.14,
+					50,
+					64.85
+				],
+				[
+					70.54,
+					50,
+					61.75
+				],
+				[
+					70.54,
+					50,
+					58.25
+				],
+				[
+					70.74,
+					50,
+					52
+				],
+				[
+					70.74,
+					50,
+					42.6
+				]
+			],
+			"radius": 0.72,
+			"fillet": 2.2,
+			"tone": "glow"
+		},
+		{
+			"id": "tleg-0",
+			"kind": "rod",
+			"to": [
+				115.58,
+				7.14,
+				3.6
+			],
+			"radius": 0.5,
+			"from": [
+				126,
+				12,
+				36
+			]
+		},
+		{
+			"id": "tfoot-0",
+			"kind": "sphere",
+			"at": [
+				115.58,
+				7.14,
+				3.6
+			],
+			"r": 0.85
+		},
+		{
+			"id": "tleg-1",
+			"kind": "rod",
+			"to": [
+				135.96,
+				6.25,
+				3.6
+			],
+			"radius": 0.5,
+			"from": [
+				126,
+				12,
+				36
+			]
+		},
+		{
+			"id": "tfoot-1",
+			"kind": "sphere",
+			"at": [
+				135.96,
+				6.25,
+				3.6
+			],
+			"r": 0.85
+		},
+		{
+			"id": "tleg-2",
+			"kind": "rod",
+			"to": [
+				125.0,
+				23.46,
+				3.6
+			],
+			"radius": 0.5,
+			"from": [
+				126,
+				12,
+				36
+			]
+		},
+		{
+			"id": "tfoot-2",
+			"kind": "sphere",
+			"at": [
+				125.0,
+				23.46,
+				3.6
+			],
+			"r": 0.85
+		},
+		{
+			"id": "tcollar",
+			"kind": "cylinder",
+			"at": [
+				126,
+				12,
+				35
+			],
+			"size": [
+				1.7,
+				1.7,
+				3.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.4
+				}
+			]
+		},
+		{
+			"id": "tmast",
+			"kind": "rod",
+			"to": [
+				126,
+				12,
+				60
+			],
+			"radius": 0.62,
+			"from": [
+				126,
+				12,
+				38
+			]
+		},
+		{
+			"id": "tdisplay",
+			"kind": "box",
+			"at": [
+				125.4,
+				12.6,
+				39.5
+			],
+			"size": [
+				7.2,
+				6.4,
+				7.2
+			],
+			"r": 0.7,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						3.6,
+						3.8
+					],
+					"size": [
+						5.4,
+						2.6
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "text",
+					"face": "+y",
+					"at": [
+						3.6,
+						3.1
+					],
+					"text": "1634",
+					"size": 2.1,
+					"anchor": "middle"
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.6,
+						1.3
+					],
+					"grid": [
+						3,
+						1
+					],
+					"gap": 1.4,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "tdisplay-link",
+			"kind": "rod",
+			"to": [
+				125.4,
+				14,
+				44
+			],
+			"radius": 0.5,
+			"from": [
+				126,
+				12,
+				44
+			]
+		},
+		{
+			"id": "tclamp-0",
+			"kind": "cylinder",
+			"at": [
+				126,
+				12,
+				48.5
+			],
+			"size": [
+				1.15,
+				1.15,
+				1.6
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.3
+				}
+			]
+		},
+		{
+			"id": "tknob-0",
+			"kind": "pin",
+			"at": [
+				125,
+				12,
+				49.3
+			],
+			"axis": "-x",
+			"length": 2.6,
+			"r": 0.35,
+			"head": 0.75
+		},
+		{
+			"id": "tclamp-1",
+			"kind": "cylinder",
+			"at": [
+				126,
+				12,
+				52.5
+			],
+			"size": [
+				1.15,
+				1.15,
+				1.6
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.3
+				}
+			]
+		},
+		{
+			"id": "tknob-1",
+			"kind": "pin",
+			"at": [
+				125,
+				12,
+				53.3
+			],
+			"axis": "-x",
+			"length": 2.6,
+			"r": 0.35,
+			"head": 0.75
+		},
+		{
+			"id": "thead",
+			"kind": "box",
+			"at": [
+				123.8,
+				9.8,
+				60
+			],
+			"size": [
+				4.4,
+				4.4,
+				1.8
+			],
+			"r": 0.4
+		},
+		{
+			"id": "tcam-mount",
+			"kind": "box",
+			"at": [
+				124.3,
+				10.3,
+				61.8
+			],
+			"size": [
+				3.4,
+				3.4,
+				1
+			],
+			"r": 0.2
+		},
+		{
+			"id": "tcam",
+			"kind": "lathe",
+			"at": [
+				130.5,
+				11.8,
+				65
+			],
+			"axis": [
+				-1,
+				0.18,
+				-0.06
+			],
+			"profile": [
+				[
+					0,
+					2.4
+				],
+				[
+					0.6,
+					2.9
+				],
+				[
+					7.4,
+					2.9
+				],
+				[
+					7.8,
+					3.5
+				],
+				[
+					11.6,
+					3.5
+				],
+				[
+					11.6,
+					3.0
+				],
+				[
+					12.6,
+					3.0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2.2,
+						4.4
+					]
+				},
+				{
+					"type": "knurl",
+					"count": 28,
+					"s0": 8.0,
+					"s1": 11.4
+				}
+			]
+		},
+		{
+			"id": "tcam-eye",
+			"kind": "cylinder",
+			"at": [
+				130.6,
+				11.8,
+				65
+			],
+			"size": [
+				1.5,
+				1.5,
+				1.6
+			],
+			"axis": [
+				1,
+				-0.18,
+				0.06
+			]
+		},
+		{
+			"id": "tpan",
+			"kind": "tube",
+			"points": [
+				[
+					128.2,
+					12,
+					61.2
+				],
+				[
+					133.5,
+					13.8,
+					61.2
+				],
+				[
+					133.5,
+					13.8,
+					54
+				]
+			],
+			"radius": 0.48,
+			"fillet": 1.4
+		},
+		{
+			"id": "tpan-grip",
+			"kind": "cylinder",
+			"at": [
+				133.5,
+				13.8,
+				50
+			],
+			"size": [
+				0.9,
+				0.9,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "tcable",
+			"kind": "tube",
+			"points": [
+				[
+					131.9,
+					11.8,
+					64
+				],
+				[
+					134.5,
+					12.200000000000001,
+					63
+				],
+				[
+					134.5,
+					12.8,
+					50
+				],
+				[
+					128.6,
+					14.6,
+					46
+				]
+			],
+			"radius": 0.3,
+			"fillet": 1.6
+		},
+		{
+			"id": "skimmer",
+			"kind": "rod",
+			"to": [
+				94,
+				95,
+				3.7
+			],
+			"radius": 0.55,
+			"from": [
+				62,
+				95,
+				3.7
+			]
+		},
+		{
+			"id": "skimmer-t",
+			"kind": "rod",
+			"to": [
+				61.4,
+				97,
+				3.7
+			],
+			"radius": 0.55,
+			"from": [
+				61.4,
+				93,
+				3.7
+			]
+		},
+		{
+			"id": "skimmer-neck",
+			"kind": "rod",
+			"to": [
+				97,
+				93,
+				3.4
+			],
+			"radius": 0.45,
+			"from": [
+				94,
+				95,
+				3.7
+			]
+		},
+		{
+			"id": "skimmer-blade",
+			"kind": "plate",
+			"at": [
+				97,
+				89.5,
+				3
+			],
+			"size": [
+				8,
+				7,
+				0.6
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "nameplate",
+			"kind": "plate",
+			"at": [
+				4,
+				96,
+				3
+			],
+			"size": [
+				15,
+				6.5,
+				0.6
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							2
+						],
+						[
+							12.5,
+							2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							3.3
+						],
+						[
+							12.5,
+							3.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							4.6
+						],
+						[
+							9.5,
+							4.6
+						]
+					]
+				}
+			]
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
+				"plate-l",
+				"plate-r"
+			],
+			[
+				"beam-0",
+				"beam-bolt-0-0",
+				"beam-bolt-0-1",
+				"beam-1",
+				"beam-bolt-1-0",
+				"beam-bolt-1-1",
+				"rail-0",
+				"rail-1",
 				"board",
-				"column"
+				"skimmer",
+				"skimmer-t",
+				"skimmer-neck",
+				"skimmer-blade",
+				"nameplate"
 			],
 			[
-				"mould",
-				"gearbox"
+				"post-foot-0",
+				"post-0",
+				"gus-0-a",
+				"gus-0-b",
+				"post-foot-1",
+				"post-1",
+				"gus-1-a",
+				"gus-1-b",
+				"drag",
+				"tleg-0",
+				"tfoot-0",
+				"tleg-1",
+				"tfoot-1",
+				"tleg-2",
+				"tfoot-2"
 			],
 			[
-				"trunnion",
-				"wheel"
+				"post-cap-0",
+				"pin-far",
+				"pin-near",
+				"gearbox-bracket",
+				"axle-boss",
+				"axle",
+				"drag-lip",
+				"tcollar"
 			],
 			[
-				"basin",
-				"riser",
-				"ladle"
+				"gearbox",
+				"gearbox-knob",
+				"dial-bezel",
+				"wheel-rim",
+				"wheel-hub",
+				"spoke-0",
+				"spoke-1",
+				"spoke-2",
+				"spoke-3",
+				"spoke-4",
+				"crank",
+				"cope-lip",
+				"tmast",
+				"tdisplay",
+				"tdisplay-link"
 			],
 			[
-				"lip",
+				"dial",
+				"cope",
+				"tclamp-0",
+				"tknob-0",
+				"tclamp-1",
+				"tknob-1",
+				"thead"
+			],
+			[
+				"needle",
+				"needle-hub",
+				"cope-top",
+				"handle-0",
+				"knob-0",
+				"handle-1",
+				"knob-1",
+				"clamp-0",
+				"clamp-jaw-0",
+				"clamp-jaw-lo-0",
+				"clamp-screw-0",
+				"clamp-1",
+				"clamp-jaw-1",
+				"clamp-jaw-lo-1",
+				"clamp-screw-1",
+				"align-pin-0",
+				"align-pin-1",
+				"tcam-mount",
+				"tcam",
+				"tcam-eye",
+				"tpan",
+				"tpan-grip",
+				"tcable"
+			],
+			[
+				"ladle",
+				"boss-far",
+				"boss-near",
+				"cope-heat",
+				"cup",
+				"cup-lining",
+				"riser-0",
+				"riser-1"
+			],
+			[
+				"lining",
+				"metal",
+				"spout",
+				"bail-lug",
+				"bail",
+				"rim-lug-far",
+				"rim-lug-near"
+			],
+			[
+				"slag-0",
+				"slag-1",
+				"slag-2",
+				"slag-3",
+				"slag-4",
+				"slag-5",
+				"slag-6",
+				"slag-7",
+				"slag-8",
+				"slag-9",
+				"slag-10"
+			],
+			[
+				"stream-lip",
 				"stream"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 10,
-		"rest": "Ladle pouring from its lip"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": "pouring",
+		"values": {
+			"temp": [
+				1639,
+				1639,
+				1634
+			],
+			"kg": [
+				85.0,
+				85.0,
+				17.8
+			]
+		},
+		"readout": "ladle {temp} °C · {kg:0.1} kg",
+		"states": [
+			{
+				"name": "upright",
+				"readout": "ladle 1,639 °C · 85.0 kg · upright",
+				"parts": {
+					"needle": {
+						"turn": -80
+					},
+					"spoke-0": {
+						"turn": -150
+					},
+					"spoke-1": {
+						"turn": -150
+					},
+					"spoke-2": {
+						"turn": -150
+					},
+					"spoke-3": {
+						"turn": -150
+					},
+					"spoke-4": {
+						"turn": -150
+					},
+					"crank": {
+						"turn": -150
+					},
+					"ladle": {
+						"turn": 0
+					},
+					"lining": {
+						"turn": 0
+					},
+					"metal": {
+						"turn": 0
+					},
+					"slag-0": {
+						"turn": 0
+					},
+					"slag-1": {
+						"turn": 0
+					},
+					"slag-2": {
+						"turn": 0
+					},
+					"slag-3": {
+						"turn": 0
+					},
+					"slag-4": {
+						"turn": 0
+					},
+					"slag-5": {
+						"turn": 0
+					},
+					"slag-6": {
+						"turn": 0
+					},
+					"slag-7": {
+						"turn": 0
+					},
+					"slag-8": {
+						"turn": 0
+					},
+					"slag-9": {
+						"turn": 0
+					},
+					"slag-10": {
+						"turn": 0
+					},
+					"spout": {
+						"turn": 0
+					},
+					"bail-lug": {
+						"turn": 0
+					},
+					"bail": {
+						"turn": 0
+					},
+					"rim-lug-far": {
+						"turn": 0
+					},
+					"rim-lug-near": {
+						"turn": 0
+					},
+					"stream": {
+						"hidden": true
+					},
+					"stream-lip": {
+						"hidden": true
+					},
+					"cup-lining": {
+						"hidden": true
+					},
+					"cope-heat": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "tipping",
+				"readout": "ladle 1,639 °C · 85.0 kg",
+				"parts": {
+					"needle": {
+						"turn": -62.22
+					},
+					"spoke-0": {
+						"turn": -116.67
+					},
+					"spoke-1": {
+						"turn": -116.67
+					},
+					"spoke-2": {
+						"turn": -116.67
+					},
+					"spoke-3": {
+						"turn": -116.67
+					},
+					"spoke-4": {
+						"turn": -116.67
+					},
+					"crank": {
+						"turn": -116.67
+					},
+					"ladle": {
+						"turn": 10.0
+					},
+					"lining": {
+						"turn": 10.0
+					},
+					"metal": {
+						"turn": 10.0
+					},
+					"slag-0": {
+						"turn": 10.0
+					},
+					"slag-1": {
+						"turn": 10.0
+					},
+					"slag-2": {
+						"turn": 10.0
+					},
+					"slag-3": {
+						"turn": 10.0
+					},
+					"slag-4": {
+						"turn": 10.0
+					},
+					"slag-5": {
+						"turn": 10.0
+					},
+					"slag-6": {
+						"turn": 10.0
+					},
+					"slag-7": {
+						"turn": 10.0
+					},
+					"slag-8": {
+						"turn": 10.0
+					},
+					"slag-9": {
+						"turn": 10.0
+					},
+					"slag-10": {
+						"turn": 10.0
+					},
+					"spout": {
+						"turn": 10.0
+					},
+					"bail-lug": {
+						"turn": 10.0
+					},
+					"bail": {
+						"turn": 10.0
+					},
+					"rim-lug-far": {
+						"turn": 10.0
+					},
+					"rim-lug-near": {
+						"turn": 10.0
+					},
+					"stream": {
+						"hidden": true
+					},
+					"stream-lip": {
+						"hidden": true
+					},
+					"cup-lining": {
+						"hidden": true
+					},
+					"cope-heat": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pouring",
+				"readout": "stream 1,634 °C · 17.8 kg poured",
+				"parts": {
+					"needle": {
+						"turn": 0
+					},
+					"spoke-0": {
+						"turn": 0
+					},
+					"spoke-1": {
+						"turn": 0
+					},
+					"spoke-2": {
+						"turn": 0
+					},
+					"spoke-3": {
+						"turn": 0
+					},
+					"spoke-4": {
+						"turn": 0
+					},
+					"crank": {
+						"turn": 0
+					},
+					"ladle": {
+						"turn": 45
+					},
+					"lining": {
+						"turn": 45
+					},
+					"metal": {
+						"turn": 45
+					},
+					"slag-0": {
+						"turn": 45
+					},
+					"slag-1": {
+						"turn": 45
+					},
+					"slag-2": {
+						"turn": 45
+					},
+					"slag-3": {
+						"turn": 45
+					},
+					"slag-4": {
+						"turn": 45
+					},
+					"slag-5": {
+						"turn": 45
+					},
+					"slag-6": {
+						"turn": 45
+					},
+					"slag-7": {
+						"turn": 45
+					},
+					"slag-8": {
+						"turn": 45
+					},
+					"slag-9": {
+						"turn": 45
+					},
+					"slag-10": {
+						"turn": 45
+					},
+					"spout": {
+						"turn": 45
+					},
+					"bail-lug": {
+						"turn": 45
+					},
+					"bail": {
+						"turn": 45
+					},
+					"rim-lug-far": {
+						"turn": 45
+					},
+					"rim-lug-near": {
+						"turn": 45
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ FOUNDRY ]",
