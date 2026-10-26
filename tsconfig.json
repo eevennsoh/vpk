@@ -31,5 +31,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "output", "public/1p/rovo-stage-kit", ".agents/skills/vpk-html/scripts/hairline/vendor"]
+  "exclude": ["node_modules", "output", "public/1p/rovo-stage-kit", ".agents/skills/vpk-html/scripts/hairline/vendor", ".agents/skills/vpk-html/scripts/anatomy-gl/vendor"]
 }

@@ -283,3 +283,26 @@ and advisory A7 (`figures.hairline.runtimeWarnBytes`, `pageWarnBytes`).
 **Gallery.** `GALLERY_PAGES` entries with `engine: "hairline"` render a shelf from `scripts/hairline/figures.mjs`
 (site order; titles and summaries are the site's). Rebuild with `node .agents/skills/vpk-html/scripts/build-illustrations.mjs`
 then `build.mjs --refresh-library` (both unsandboxed).
+
+## 11. The anatomy WebGL engine (`anatomy-gl`)
+
+The anatomy collection's ten WebGL machines (afterburner, glory hole, tokamak, plasma cutter, forge, turbofan, power
+station, process pump, pouring steel, pool reactor) draw their flame, plasma, arcs, sparks, molten steel and Cherenkov
+light with fragment shaders ray-marched against each figure's geometry every frame. No SVG kit can reproduce that, so these
+ten figures are not iso-kit briefs: the page runs the original figures, vendored unmodified from `anatomy-figures@0.1.0`
+(MIT, `scripts/anatomy-gl/vendor/`, pinned with sha256 in `VENDOR.json`; notice in `scripts/anatomy-gl/NOTICE.md`).
+
+- **Style.** The vpk look comes in through upstream's own token API: the boot calls `render(host, { theme, tokens })` with
+  `ANATOMY_GL_TOKENS` (`scripts/anatomy-gl/inline.mjs`), which points every `--anatomy-*` colour at the vpk ramp (paper,
+  raised surface, tone 1 and 2 sides, hairlines at 60/38/20%, mono text) and makes the lit part the iso kit's orange accent.
+  The shaders keep upstream's colours: the fire, plasma and light are the effect itself. The figure follows the page theme
+  (`data-theme` on `<html>`) and remounts on a change; upstream's teardown releases its WebGL contexts.
+- **Markup.** `figure[data-vpk-engine="anatomy-gl"]` with one host `[data-vpk-anatomy-gl="<slug>"]` (aria-label = the
+  summary) inside the iso kit's ruled frame, and the house caption below; `data-vpkh-no-lightbox`. The figure draws its own
+  corners (figure number, title, hint, live readout) and its own interaction (throttle, drag, keys) as upstream does.
+- **Blocks.** `<style data-vpk-anatomy-gl-css>` in `<head>` (the accent pair and the plate CSS) and one
+  `<!-- vpk-anatomy-gl:start -->…<!-- vpk-anatomy-gl:end -->` runtime block before `</body>`: an esbuild bundle of only the
+  figures the page shows, offline. check-html skips upstream's built-in theme tables and run-time SVG inside that one script.
+- **Meta.** `<meta name="vpk-figure-engine" content="anatomy-gl">`; `both` does not cover it.
+- **Gallery.** The `GALLERY_PAGES` entry with `engine: "anatomy-gl"` ("Anatomy collection, WebGL") renders all ten from
+  `scripts/anatomy-gl/figures.mjs`; their iso-kit briefs (`briefs/an-<slug>.json`) stay in the repo but are no longer shown.

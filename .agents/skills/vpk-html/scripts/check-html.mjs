@@ -33,6 +33,10 @@ export function collectColorTokenIssues(source, label = "document") {
 		// the reflection's opacity, it is never paint, so the theme has nothing to map. Exempt that literal only, and
 		// only inside the hairline runtime script (figure-engines.md § 10).
 		.replace(/<script data-vpk-hairline-runtime>[\s\S]*?<\/script>/g, block => block.replaceAll('"stop-color":"#fff"', '"stop-color":"mask-white"'))
+		// The vendored anatomy-figures bundle (anatomy-gl engine, figure-engines.md § 11) carries upstream's five built-in
+		// theme tables as hex; the page never uses them, because the boot hands every figure the vpk token map. Exempt the
+		// one runtime script, nothing else.
+		.replace(/<script data-vpk-anatomy-gl-runtime>[\s\S]*?<\/script>/g, "<script data-vpk-anatomy-gl-runtime></script>")
 		.replace(/<svg\b(?=[^>]*\bdata-vpk-external-asset\b)[\s\S]*?<\/svg>/gi, "<svg data-vpk-external-asset></svg>")
 		.replace(/url\(["']?data:font\/(?:woff2|otf|ttf);base64,[^)]+?\)/g, "url(data:font/...,...)")
 		.replace(/url\(["']?data:image\/[^)]+?\)/g, "url(data:image/...)")
@@ -283,6 +287,9 @@ function collectSvgStrokeWidthIssues(svg, baseLine) {
 
 export function collectSvgGrammarIssues(source) {
 	const issues = [];
+	// SVG built at run time inside the vendored anatomy-gl runtime (shader-lit plates, soot gradients) is upstream's own
+	// drawing, not authored markup; the grammar applies to the document's SVG, so that one script is skipped.
+	source = source.replace(/<script data-vpk-anatomy-gl-runtime>[\s\S]*?<\/script>/g, "<script data-vpk-anatomy-gl-runtime></script>");
 	const svgPattern = /<svg\b[\s\S]*?<\/svg>/gi;
 	let match;
 	while ((match = svgPattern.exec(source)) !== null) {

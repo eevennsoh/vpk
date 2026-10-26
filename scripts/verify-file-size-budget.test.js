@@ -47,6 +47,7 @@ test("leaves vendored builds, replaced whole, out of the budget", () => {
 	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/anatomy/vendor-notes.md"), true);
 	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/hairline/vendor/packages/hairline/src/figures/vault.ts"), false);
 	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/hairline/vendor/apps/site/public/skill/hairline-mastra.html"), false);
+	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/anatomy-gl/vendor/dist/chunks/chunk-OXWCF3XB.js"), false);
 	assert.equal(isBudgetedTextFile(".agents/skills/vpk-html/scripts/hairline/inline.mjs"), true);
 });
 

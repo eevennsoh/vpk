@@ -24,6 +24,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { illustrationPage } from "./figures/page.mjs";
 import { shelfFigures } from "./hairline/figures.mjs";
+import { ANATOMY_GL_FIGURES } from "./anatomy-gl/figures.mjs";
 import { buildFigure } from "./iso/build-figure.mjs";
 import { auditHtml } from "./iso/audit.mjs";
 import { DEMOS, ILLUSTRATIONS } from "./shared.mjs";
@@ -91,24 +92,14 @@ export const BRIEF_EXAMPLES = Object.freeze([
 	{ slug: "iso-an-mutex", brief: "iso/briefs/an-mutex.json", title: "A mutex as a tank and key", gallery: "anatomy-1", summary: "After the anatomy collection. Dimetric water tank on a stand, filled by two pumps, one at each side, each run by its own controller with a key slot on top. Between them a lock box holds a single accented interlock key. Hover or arrow keys lift one part." },
 	{ slug: "iso-an-merge-sort", brief: "iso/briefs/an-merge-sort.json", title: "Merge sort on a chime rack", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric chime rack: two sorted runs of bells, each shortening behind its front bell, a merged run of the longest bells, and an overhead traveller carrying the accented lower front bell to the end of the merged run." },
 	{ slug: "iso-an-sampling", brief: "iso/briefs/an-sampling.json", title: "Temperature as a roulette wheel", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric roulette table: an accented pocket rotor whose sixteen frets are spaced by next-token probability, a ball in the widest pocket, a thermostat with temperature knob and thermometer, and a chip tray." },
-	{ slug: "iso-an-afterburner", brief: "iso/briefs/an-afterburner.json", title: "Afterburner on a thrust stand", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric turbojet hung on a thrust stand: two pylons, an intake, the core, an accented afterburner duct cut open over a fuel spray bar and flame holder, the nozzle, and a load cell at the front that reads thrust." },
-	{ slug: "iso-an-glass-furnace", brief: "iso/briefs/an-glass-furnace.json", title: "Glory hole", gallery: "anatomy-2", summary: "After the anatomy collection. Drum furnace with a burner and a door whose framed port is the glory hole, beside a steel marver on a stand; the blowpipe rests its accented gather on it. Hover slides the pipe into the glory hole to reheat it." },
-	{ slug: "iso-an-tokamak", brief: "iso/briefs/an-tokamak.json", title: "Tokamak taken apart", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric tokamak: a plasma ring floating inside an open vacuum vessel round a central solenoid, caged by eight upright field coils and two field rings, on a cryostat base. The plasma ring is highlighted." },
-	{ slug: "iso-an-plasma-cutter", brief: "iso/briefs/an-plasma-cutter.json", title: "Plasma cutter on its gantry", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric CNC plasma table: a frame with a water pan and slats, a steel plate on the slats, side rails carrying a gantry on uprights, and a carriage holding the accented torch, with a dashed kerf trailing behind its tip." },
-	{ slug: "iso-an-forge", brief: "iso/briefs/an-forge.json", title: "Forge and hammer", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric smithy: a forge table with firepot, hood and chimney, an accented bar in the fire, a cranked blower ducted to the fire, a quench tub, and a power hammer ram over an anvil. Hover or arrow keys lift a part." },
-	{ slug: "iso-an-turbofan", brief: "iso/briefs/an-turbofan.json", title: "Turbofan on the thrust stand", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric turbofan on a ground-run thrust stand: the wide fan and spinner at the front, then compressors, combustor and turbines tapering to the exhaust cone, on a load cell atop the stand. The fan is highlighted." },
-	{ slug: "iso-an-power-station", brief: "iso/briefs/an-power-station.json", title: "Power station", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric generating unit: generator and exciter on a pedestal, a step-up transformer with its bushing, a breaker, and a switchyard gantry over a disconnector blade on two insulator posts. The blade is highlighted; hover lifts it open." },
-	{ slug: "iso-an-process-pump", brief: "iso/briefs/an-process-pump.json", title: "Refinery process pump", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric refinery pump: a suction drum with a level glass, a suction line through a strainer, an open pump casing showing the accented impeller, coupling and motor, and a discharge riser up to the control valve." },
 	{ slug: "iso-an-watch", brief: "iso/briefs/an-watch.json", title: "Watch movement taken apart", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric watch movement in a holder: main plate with mainspring barrel, gear train, escape wheel, pallet fork and balance wheel as thin discs on arbors, crown on its stem at the case edge. The balance wheel is highlighted." },
 	{ slug: "iso-an-seasons", brief: "iso/briefs/an-seasons.json", title: "Tellurion on a turntable", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric tellurion: a lamp on a pillar for the Sun, an orbit arm whose five gears carry a globe with its axis tilted 23.4 degrees from vertical, and a ring tracing the yearly orbit. The globe is highlighted." },
 	{ slug: "iso-an-computer", brief: "iso/briefs/an-computer.json", title: "An old desk computer", gallery: "anatomy-2", summary: "After the anatomy collection. Dimetric all-in-one desk computer on a desk mat: a vented case, a deep bezel round a display showing a prompt and cursor, a floppy slot, and a keyboard tied to the case by a coiled cable. The display is accented." },
 	{ slug: "iso-an-rate-limiter", brief: "iso/briefs/an-rate-limiter.json", title: "Token bucket on an air bench", gallery: "anatomy-3", summary: "A recreation of anatomy's \"Token bucket\" (No. 27, Air bench) as an isometric air bench: a pump fills an orange token tank that holds at most eight tokens, a relief valve on the lid vents the overflow, and a punch press with an interlock spends one token for each punch of the paper tape." },
 	{ slug: "iso-an-easing", brief: "iso/briefs/an-easing.json", title: "Easing curves on a bench", gallery: "anatomy-3", summary: "After the anatomy collection. Dimetric easing bench: a lead screw moves a carriage at a constant rate (time); its follower, highlighted, rides a raised ease-in-out band on an upright graph plate, and a lift arm sets the element's height on the progress rail." },
 	{ slug: "iso-an-public-key", brief: "iso/briefs/an-public-key.json", title: "A strongbox with two kinds of key", gallery: "anatomy-3", summary: "After the anatomy collection. Dimetric strongbox with hinges, a hasp and a keyholed lid lock. Three public keys (bit, shaft, bow) lie on a rack on its left; one private key with an accented bow sits alone on a plinth on its right." },
-	{ slug: "iso-an-foundry", brief: "iso/briefs/an-foundry.json", title: "Pouring steel", gallery: "anatomy-3", summary: "After the anatomy collection. Dimetric foundry: a lined ladle on a trunnion, tilted by a hand wheel through a worm gearbox, pours a steel stream into the basin of a sand mould clamped on its bottom board. Hover or arrow keys lift a part." },
 	{ slug: "iso-an-box-model", brief: "iso/briefs/an-box-model.json", title: "The box model as a frame jig", gallery: "anatomy-3", summary: "A recreation of the anatomy collection's \"Box model\" frame jig. A picture-frame jig on a base, with a fence and a clamp, holds the CSS box model as nested frames: a dashed margin outline, a border moulding, a padding mat and the content print in orange. Hovering lifts the frames apart." },
 	{ slug: "iso-an-git-merge", brief: "iso/briefs/an-git-merge.json", title: "Branch and merge on a model railway", gallery: "anatomy-3", summary: "After the anatomy collection. Dimetric model railway: stations threaded on a main line, and a feature line that branches off and crosses back into main at the accented merge station, which has one stud per parent. Hover or arrow keys lift a part." },
-	{ slug: "iso-an-reactor", brief: "iso/briefs/an-reactor.json", title: "Pool reactor", gallery: "anatomy-3", summary: "After the anatomy collection. Dimetric TRIGA pool reactor in half section: a fuel core on a grid plate at the bottom of an open water tank, a control rod hanging from a drive on the bridge, and a console. The rod is highlighted; hover pulls it out." },
 	{ slug: "iso-an-one-pane", brief: "iso/briefs/an-one-pane.json", title: "One pane as a die set", gallery: "anatomy-3", summary: "After the anatomy collection. Dimetric die set: a base on four feet holds the picture bed; four guide pillars pass through the frosted copy, the ringed distance field and the glass pane on top, highlighted. A 2D canvas stands on the front ledge." },
 	{ slug: "iso-an-one-context", brief: "iso/briefs/an-one-context.json", title: "One context as a plotter", gallery: "anatomy-3", summary: "After the anatomy collection. Dimetric plotter: sixteen tiles, one 2D canvas per pane, each holding a stamped shape. A carriage on a back rail holds one print head over pane 16, and pane 15 beside it holds the image just stamped. Hover or arrow keys lift one part." },
 	{ slug: "iso-an-shared-canvas", brief: "iso/briefs/an-shared-canvas.json", title: "Shared canvas, a drafting board", gallery: "anatomy-3", summary: "After the anatomy collection. Dimetric drafting board in device pixels: a corner block at (0, 0), width and height rulers with ratchet stops marking a 512 by 352 canvas, and the accented draw card seated at the corner." },
@@ -294,6 +285,7 @@ export const GALLERY_PAGES = Object.freeze([
 	anatomy(2, "Part 2"),
 	anatomy(3, "Part 3"),
 	anatomy(4, "Part 4"),
+	{ key: "anatomy-webgl", engine: "anatomy-gl", title: "Anatomy collection, WebGL", summary: "The anatomy collection's ten WebGL machines, drawn by the original figures: their flame, plasma, arcs, molten steel and Cherenkov light are fragment shaders, coloured with the vpk-html tokens and its one orange accent. Click, drag or use the keys as each hint says." },
 	{ key: "teardown", title: "Teardowns", summary: "Exploded views after the teardown skill: each figure is drawn taken apart along its assembly paths. Use Exploded and Assembled or the Spread slider to put it together, and point at a part to name it." },
 ].map(page => Object.freeze({ ...page, slug: `illustration-gallery-${page.key}`, fileName: `demo-illustration-gallery-${page.key}.html` })));
 
@@ -340,7 +332,7 @@ const escapeAttr = text => escapeText(text).replace(/"/g, "&quot;");
 
 const coreExamples = () => BRIEF_EXAMPLES.filter(example => !example.gallery);
 const pageExamples = key => BRIEF_EXAMPLES.filter(example => example.gallery === key);
-const pageCount = page => (page.engine === "hairline" ? shelfFigures(page.shelf).length : pageExamples(page.key).length);
+const pageCount = page => (page.engine === "hairline" ? shelfFigures(page.shelf).length : page.engine === "anatomy-gl" ? ANATOMY_GL_FIGURES.length : pageExamples(page.key).length);
 
 // Links from one gallery page to every other one (the hub links all of them).
 function galleryNav(currentSlug) {
@@ -399,6 +391,22 @@ async function renderHairlinePage({ slug, title, summary, shelf, eyebrow, nav })
 	return { filePath, html };
 }
 
+// The anatomy collection's WebGL figures (anatomy-gl/inline.mjs): the vendored figures run as they are, each in the same
+// section frame as the iso entries, with the plate CSS in <head> and the runtime block before </body>, as hairline does.
+async function renderAnatomyGlPage({ slug, title, summary, eyebrow, nav }) {
+	const { anatomyGlPlate, anatomyGlRuntimeBlock, anatomyGlStyleTag } = await import("./anatomy-gl/inline.mjs");
+	const { applyRuntimePipeline } = await import("./runtime/pipeline.mjs");
+	const { validateHtmlString } = await import("./check-html.mjs");
+	const sections = ANATOMY_GL_FIGURES.map(figure => `\t<section class="gallery-figure" aria-labelledby="gallery-an-${figure.slug}">\n\t\t<h2 id="gallery-an-${figure.slug}">${escapeText(figure.title)}</h2>\n\t\t<p>${escapeText(figure.summary)}</p>\n\t\t${anatomyGlPlate({ slug: figure.slug })}\n\t</section>`);
+	let base = illustrationPage({ slug, title, summary, figureHtml: sections.join("\n"), figureEngine: "anatomy-gl", eyebrow, extraCss: GALLERY_CSS, afterHtml: nav });
+	base = base.replace("</head>", `${anatomyGlStyleTag()}\n</head>`).replace("</body>", `${await anatomyGlRuntimeBlock(ANATOMY_GL_FIGURES.map(figure => figure.slug))}\n</body>`);
+	const filePath = path.join(DEMOS, `demo-${slug}.html`);
+	const html = applyRuntimePipeline(base, { filePath });
+	const failures = validateHtmlString(html, filePath).failures;
+	if (failures.length) throw new Error(`${path.relative(process.cwd(), filePath)} fails check-html:\n  - ${failures.join("\n  - ")}`);
+	return { filePath, html };
+}
+
 export async function renderGallery() {
 	return renderGalleryPage({ slug: GALLERY.slug, title: GALLERY.title, summary: GALLERY.summary, examples: coreExamples(), eyebrow: "technical illustration · iso kit gallery", nav: galleryNav(GALLERY.slug) });
 }
@@ -412,6 +420,8 @@ export async function renderGalleryPages() {
 		const common = { slug: page.slug, title: page.title, summary: page.summary, nav: galleryNav(page.slug) };
 		outputs.push(page.engine === "hairline"
 			? await renderHairlinePage({ ...common, shelf: page.shelf, eyebrow: "technical illustration · hairline gallery" })
+			: page.engine === "anatomy-gl"
+			? await renderAnatomyGlPage({ ...common, eyebrow: "technical illustration · anatomy WebGL gallery" })
 			: await renderGalleryPage({ ...common, examples: pageExamples(page.key), eyebrow: "technical illustration · iso kit gallery" }));
 	}
 	return outputs;

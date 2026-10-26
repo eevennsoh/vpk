@@ -18,7 +18,7 @@
 import { buildFaviconLinkBlock, buildSharedCssBlock } from "../shared.mjs";
 import { engineRoots } from "./check-figures.mjs";
 
-export const FIGURE_ENGINE_VALUES = Object.freeze(["none", "iso-kit", "anatomy-hero", "both", "hairline"]);
+export const FIGURE_ENGINE_VALUES = Object.freeze(["none", "iso-kit", "anatomy-hero", "both", "hairline", "anatomy-gl"]);
 
 const ENGINE_META = /<meta\b[^>]*\bname\s*=\s*["']vpk-figure-engine["'][^>]*>/i;
 
@@ -37,7 +37,8 @@ export function deriveFigureEngine(html) {
 	const kinds = new Set([...roots].filter(engine => engine === "iso-kit" || engine === "anatomy-hero"));
 	if (kinds.size === 2) return "both";
 	if (kinds.size === 1) return [...kinds][0];
-	return roots.has("hairline") ? "hairline" : "none";
+	if (roots.has("hairline")) return "hairline";
+	return roots.has("anatomy-gl") ? "anatomy-gl" : "none";
 }
 
 export function figureEngineMetaTag(engine) {

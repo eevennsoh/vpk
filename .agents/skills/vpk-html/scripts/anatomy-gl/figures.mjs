@@ -1,0 +1,18 @@
+// anatomy-gl/figures — the anatomy collection's ten WebGL figures (figure-engines.md § 11), drawn by the vendored
+// anatomy-figures package itself so the shaders (flame, plasma, arcs, water, heat) run exactly as upstream wrote them.
+// Titles, summaries and captions follow each figure's page at skills.wheresryan.sh/anatomy/collection/<slug>.
+
+export const ANATOMY_GL_FIGURES = Object.freeze([
+	{ slug: "afterburner", title: "Afterburner on a thrust stand", summary: "A turbojet hung on a thrust stand with its afterburner cut open. Click or use the arrow keys to move the throttle; past military power the fuel sprays in, the flame catches on the V-gutters and the nozzle petals open.", caption: "A load cell reads the thrust climb from 52.9 to 79.3 kN as the afterburner lights." },
+	{ slug: "glass-furnace", title: "Glory hole", summary: "A gas-fired drum furnace beside a steel marver. In the hole, walls at 1,150 °C and the burner flame reheat the gather toward 990 °C; on the marver, the steel takes the heat back.", caption: "Heat goes in at the glory hole and comes back out at the marver." },
+	{ slug: "tokamak", title: "Tokamak shot", summary: "A research tokamak cut open at the front, its 32 D-shaped coils, six field rings and solenoid around a ray-marched plasma. Scrub a 37 s pulse from breakdown to flat-top at 3.5 MA and back onto the limiter.", caption: "The plasma current ramps to a 3.5 MA flat-top, then lands back on the limiter." },
+	{ slug: "plasma-cutter", title: "Plasma cutter", summary: "A gantry carries a torch over a 12 mm steel plate on water-pan slats. It pierces, then cuts a part with the arc dragging behind; sparks quench in the water.", caption: "The kerf glows for only a few millimetres behind the arc." },
+	{ slug: "forge", title: "Forge and hammer", summary: "A coal forge with a hand-cranked blower beside a 100 lb power hammer. Cranking brings the bar to a yellow forging heat; each blow of the 45 kg ram flattens it a little more.", caption: "The quench tub takes the bar back to cold." },
+	{ slug: "turbofan", title: "Turbofan ground run", summary: "A Rolls-Royce Trent 970 hung from a ground-run thrust frame, its upper quarter cut away. Push the lever and the three spools wind up at their own speeds.", caption: "The load cell reads the thrust climb from 14 to 334 kN." },
+	{ slug: "power-station", title: "Power station", summary: "A 660 MW generator turning at exactly 3,000 rpm and a transformer lifting 22 to 400 kV. Open the disconnector before the breaker and an arc climbs between the blades.", caption: "The arc climbs until the breaker clears it." },
+	{ slug: "process-pump", title: "Process pump", summary: "An API 610 process pump cut open at the shaft, drawing 255 °C gas oil from a suction drum. Starve its suction head and vapour sheets grow on the vanes at the eye.", caption: "As cavitation grows, the head on the curve drops." },
+	{ slug: "foundry", title: "Pouring steel", summary: "A lined ladle on trunnions, tilted by a hand wheel through a 40 to 1 worm gearbox, pours steel through a basin into a sand mould clamped on its bottom board.", caption: "Turn the wheel to tilt the ladle and pour." },
+	{ slug: "reactor", title: "Pool reactor", summary: "A TRIGA research reactor in half section, its core at the bottom of a 6.4 m water tank. Pull the rods and the power climbs; scram and they drop.", caption: "Cherenkov light brightens in the water as the power climbs." },
+]);
+
+export const anatomyGlFigure = slug => ANATOMY_GL_FIGURES.find(figure => figure.slug === slug);

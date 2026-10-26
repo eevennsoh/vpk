@@ -24,8 +24,8 @@ import { parseCameraAttr, sameCamera } from "./camera.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 
-export const FIGURE_ENGINES = Object.freeze(["none", "iso-kit", "anatomy-hero", "both", "hairline"]);
-export const ROOT_ENGINES = Object.freeze(["iso-kit", "anatomy-hero", "hairline"]);
+export const FIGURE_ENGINES = Object.freeze(["none", "iso-kit", "anatomy-hero", "both", "hairline", "anatomy-gl"]);
+export const ROOT_ENGINES = Object.freeze(["iso-kit", "anatomy-hero", "hairline", "anatomy-gl"]);
 export const FIGURE_ID = /^[a-z][a-z0-9-]{0,39}$/;
 export const DEFAULT_FIGURE_THRESHOLDS = Object.freeze({
 	maxHeroes: Infinity,
@@ -155,12 +155,12 @@ function collectEngineRecordIssues(html) {
 	for (const kind of kinds) {
 		if (!ROOT_ENGINES.includes(kind)) continue;
 		// "both" is iso-kit plus anatomy-hero; a hairline root needs meta "hairline" (figure-engines.md § 10).
-		const covered = meta === kind || (meta === "both" && kind !== "hairline");
+		const covered = meta === kind || (meta === "both" && kind !== "hairline" && kind !== "anatomy-gl");
 		if (!covered) failures.push(`figure engine E2: meta "${meta}" does not cover the ${kind} root${roots.filter(root => root.engine === kind).length === 1 ? "" : "s"}`);
 	}
 	const known = [...kinds].filter(kind => kind === "iso-kit" || kind === "anatomy-hero");
 	if (meta === "both" && known.length < 2) warnings.push(`figure engine E3: meta "both" but the document has ${known.length ? `only ${known[0]} roots` : "no iso-kit and anatomy-hero roots"}`);
-	if ((meta === "iso-kit" || meta === "anatomy-hero" || meta === "hairline") && !kinds.has(meta)) warnings.push(`figure engine E3: meta "${meta}" but no ${meta} root`);
+	if ((meta === "iso-kit" || meta === "anatomy-hero" || meta === "hairline" || meta === "anatomy-gl") && !kinds.has(meta)) warnings.push(`figure engine E3: meta "${meta}" but no ${meta} root`);
 	return { failures, warnings };
 }
 
